@@ -937,27 +937,26 @@ static const char * const uc_float_strings[] = {
     "E",
 };
 
-static char *
-zmij_shortest_digits(double d, int *decpt, int *sign, char **digits_end)
+static Py_ssize_t
+zmij_shortest_digits(double d, char *digits, int *decpt, int *sign)
 {
     char buffer[zmij_double_buffer_size];
-    char *digits;
-    Py_ssize_t ndigits = 0, lead = 0;
+    Py_ssize_t ndigits = 0, start;
     int decpt_pos = 0, seen_dot = 0;
-    char *p, *end;
+    const char *end;
+    char *p;
 
     if (!Py_IS_FINITE(d)) {
-        const char *name = Py_IS_INFINITY(d) ? "Infinity" : "NaN";
-        size_t namelen = strlen(name);
-        digits = (char *)PyMem_Malloc(namelen + 1);
-        if (digits == NULL) {
-            return NULL;
+        if (Py_IS_INFINITY(d)) {
+            strcpy(digits, "Infinity");
+            *sign = d < 0.0;
+            *decpt = 9999;
+            return 8;
         }
-        memcpy(digits, name, namelen + 1);
+        strcpy(digits, "NaN");
+        *sign = 0;
         *decpt = 9999;
-        *sign = Py_IS_INFINITY(d) && d < 0.0;
-        *digits_end = digits + namelen;
-        return digits;
+        return 3;
     }
 
     end = zmij_detail_write_double(d, buffer);
@@ -965,51 +964,61 @@ zmij_shortest_digits(double d, int *decpt, int *sign, char **digits_end)
     *sign = (*p == '-');
     p += *sign;
 
-    digits = (char *)PyMem_Malloc((size_t)(end - p) + 1);
-    if (digits == NULL) {
-        return NULL;
-    }
-
-    /* Żmij's shortest output is [-]ddd[.ddd][e[+-]ddd]; collect the digits
+    /* Żmij's shortest output is [-]ddd[.ddd][e[+-]ddd]. Collect the digits
        and the decimal point position */
     for (; p < end; p++) {
-        if (*p >= '0' && *p <= '9') {
-            digits[ndigits++] = *p;
+        char c = *p;
+        if (c >= '0' && c <= '9') {
+            digits[ndigits++] = c;
             if (!seen_dot) {
                 decpt_pos++;
             }
         }
-        else if (*p == '.') {
+        else if (c == '.') {
             seen_dot = 1;
         }
         else {
-            assert(*p == 'e');
-            decpt_pos += (int)strtol(p + 1, NULL, 10);
+            /* Exponent: 'e', a sign and 2-3 digits. */
+            int exp_sign = 1, exp_val = 0;
+            assert(c == 'e');
+            p++;
+            if (*p == '-') {
+                exp_sign = -1;
+                p++;
+            }
+            else if (*p == '+') {
+                p++;
+            }
+            for (; p < end; p++) {
+                exp_val = exp_val * 10 + (*p - '0');
+            }
+            decpt_pos += exp_sign * exp_val;
             break;
         }
     }
 
-    /* Strip leading zeros, adjusting the decimal point positio */
-    while (lead < ndigits && digits[lead] == '0') {
-        lead++;
+    /* Skip leading zeros, adjusting the decimal point positio */
+    start = 0;
+    while (start < ndigits && digits[start] == '0') {
+        start++;
     }
-    if (lead == ndigits) {
+    if (start == ndigits) {
         digits[0] = '0';
-        ndigits = 1;
         *decpt = 1;
+        return 1;
     }
-    else {
-        ndigits -= lead;
-        memmove(digits, digits + lead, ndigits);
-        /* 100.0 -> digits "1", decpt 3 */
-        while (ndigits > 0 && digits[ndigits - 1] == '0') {
-            ndigits--;
+    if (start > 0) {
+        for (Py_ssize_t i = start; i < ndigits; i++) {
+            digits[i - start] = digits[i];
         }
-        *decpt = decpt_pos - (int)lead;
+        ndigits -= start;
     }
-    digits[ndigits] = '\0';
-    *digits_end = digits + ndigits;
-    return digits;
+    /* Strip trailing zeros (100.0 -> digits "1", decpt 3) */
+    while (digits[ndigits - 1] == '0') {
+        ndigits--;
+    }
+    *decpt = decpt_pos - (int)start;
+    return ndigits;
 }
 
 
@@ -1048,6 +1057,7 @@ format_float_short(double d, char format_code,
                    int use_alt_formatting, int no_negative_zero,
                    const char * const *float_strings, int *type)
 {
+    char shortest_digits[24];
     char *buf = NULL;
     char *p = NULL;
     Py_ssize_t bufsize = 0;
@@ -1057,12 +1067,14 @@ format_float_short(double d, char format_code,
     _Py_SET_53BIT_PRECISION_HEADER;
 
     /* _Py_dg_dtoa returns a digit string (no decimal point or exponent).
-       Must be matched by a call to _Py_dg_freedtoa.  Mode 0 (shortest
+       Must be matched by a call to _Py_dg_freedtoa. Mode 0 (shortest
        representation, used by repr/str) goes through the faster Żmij
-       algorithm instead; its buffer is PyMem_Malloc'd. */
+       algorithm instead, which needs no allocation. */
     _Py_SET_53BIT_PRECISION_START;
     if (mode == 0) {
-        digits = zmij_shortest_digits(d, &decpt_as_int, &sign, &digits_end);
+        digits = shortest_digits;
+        digits_len = zmij_shortest_digits(d, digits, &decpt_as_int, &sign);
+        digits_end = digits + digits_len;
     }
     else {
         digits = _Py_dg_dtoa(d, mode, precision, &decpt_as_int, &sign,
@@ -1071,8 +1083,8 @@ format_float_short(double d, char format_code,
     _Py_SET_53BIT_PRECISION_END;
 
     decpt = (Py_ssize_t)decpt_as_int;
-    if (digits == NULL) {
-        /* The only failure mode is no memory. */
+    if (mode != 0 && digits == NULL) {
+        /* Only failure mode is no memory. */
         PyErr_NoMemory();
         goto exit;
     }
@@ -1294,13 +1306,8 @@ format_float_short(double d, char format_code,
            memory that isn't ours. But it's an okay debugging test. */
         assert(p-buf < bufsize);
     }
-    if (digits) {
-        if (mode == 0) {
-            PyMem_Free(digits);
-        }
-        else {
-            _Py_dg_freedtoa(digits);
-        }
+    if (digits && mode != 0) {
+        _Py_dg_freedtoa(digits);
     }
 
     return buf;
