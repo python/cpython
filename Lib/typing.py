@@ -494,7 +494,7 @@ def _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset()
         if isinstance(t, GenericAlias):
             return _rebuild_generic_alias(t, ev_args)
         if isinstance(t, Union):
-            return functools.reduce(operator.or_, ev_args)
+            return Union[ev_args]
         else:
             return t.copy_with(ev_args)
     return t
@@ -2546,7 +2546,7 @@ def _strip_annotations(t):
         stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
         if stripped_args == t.__args__:
             return t
-        return functools.reduce(operator.or_, stripped_args)
+        return Union[stripped_args]
 
     return t
 
