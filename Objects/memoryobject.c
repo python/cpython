@@ -3305,8 +3305,8 @@ memory_richcompare(PyObject *v, PyObject *w, int op)
         }
     }
     /* Prevent memoryview object from being released and its underlying buffer
-       reshaped during a mixed format comparison loop. */
-    // See https://github.com/python/cpython/issues/142663.
+       reshaped during a mixed format comparison loop.
+       See https://github.com/python/cpython/issues/142663. */
     FT_ATOMIC_ADD_SSIZE(_PyMemoryView_CAST(v)->exports, 1);
     if (w_is_mv) {
         FT_ATOMIC_ADD_SSIZE(_PyMemoryView_CAST(w)->exports, 1);
