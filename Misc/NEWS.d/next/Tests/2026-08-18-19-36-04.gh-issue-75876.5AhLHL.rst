@@ -1,0 +1,5 @@
+A test decorated with :func:`~test.support.bigmemtest` now runs with the
+address space limited to what it declares plus 512 MiB, so that a test which
+uses much more memory than it declares fails instead of making the machine
+swap.  Pass ``limit_address_space=False`` for a test which reserves much more
+address space than it uses.

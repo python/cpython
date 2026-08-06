@@ -1270,6 +1270,27 @@ def set_memlimit(limit: str) -> None:
     max_memuse = memlimit
 
 
+def _limit_address_space(nbytes):
+    """Limit the address space of this process to *nbytes* plus a margin.
+
+    A test which uses much more memory than it declares then fails with a
+    MemoryError instead of making the machine swap.
+    """
+    try:
+        import resource
+        rlimit = resource.RLIMIT_AS
+    except (ImportError, AttributeError):
+        return
+    # The margin does not grow with the declared size: the interpreter itself
+    # reserves about 250 MiB, whatever the test asks for.
+    limit = int(nbytes) + 512 * _1M
+    soft, hard = resource.getrlimit(rlimit)
+    for current in soft, hard:
+        if current != resource.RLIM_INFINITY:
+            limit = min(limit, current)
+    resource.setrlimit(rlimit, (limit, hard))
+
+
 def _memory_watchdog(pid):
     """Return a function printing the memory usage of process *pid*."""
     # Imported here: test.support does not depend on test.libregrtest.
@@ -1283,7 +1304,7 @@ def _memory_watchdog(pid):
     return watch
 
 
-def bigmemtest(size, memuse, dry_run=True):
+def bigmemtest(size, memuse, dry_run=True, *, limit_address_space=True):
     """Decorator for bigmem tests.
 
     'size' is a requested size for the test (in arbitrary, test-interpreted
@@ -1299,6 +1320,12 @@ def bigmemtest(size, memuse, dry_run=True):
     A test that actually allocates the requested memory (that is, one run with
     -M) runs in a subprocess, so that the memory it uses and the address space
     it fragments are released when it ends.  A dummy run stays in the process.
+
+    The address space of that subprocess is limited to what the test declares
+    plus a margin, so that a test which uses much more memory than it declares
+    fails instead of making the machine swap.  Pass 'limit_address_space' as
+    false for a test which reserves much more address space than it uses, for
+    example one which starts many threads.
     """
     def decorator(f):
         from test.support import isolation
@@ -1335,6 +1362,11 @@ def bigmemtest(size, memuse, dry_run=True):
                 watchdog = _memory_watchdog(proc.pid) if verbose else None
                 isolation._replay_test(self, *proc.wait(tick=watchdog))
                 return
+
+            if (real_max_memuse and limit_address_space
+                    and isolation.runningInSubprocess):
+                # Only in the subprocess: the limit is never lifted.
+                _limit_address_space(size * memuse)
 
             return f(self, maxsize)
 
