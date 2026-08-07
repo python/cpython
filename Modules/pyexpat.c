@@ -2323,11 +2323,11 @@ pyexpat_exec(PyObject *mod)
     capi.SetAllocTrackerMaximumAmplification = NULL;
 #endif
 #if XML_COMBINED_VERSION >= 20400
-    capi->SetBillionLaughsAttackProtectionActivationThreshold = XML_SetBillionLaughsAttackProtectionActivationThreshold;
-    capi->SetBillionLaughsAttackProtectionMaximumAmplification = XML_SetBillionLaughsAttackProtectionMaximumAmplification;
+    capi.SetBillionLaughsAttackProtectionActivationThreshold = XML_SetBillionLaughsAttackProtectionActivationThreshold;
+    capi.SetBillionLaughsAttackProtectionMaximumAmplification = XML_SetBillionLaughsAttackProtectionMaximumAmplification;
 #else
-    capi->SetBillionLaughsAttackProtectionActivationThreshold = NULL;
-    capi->SetBillionLaughsAttackProtectionMaximumAmplification = NULL;
+    capi.SetBillionLaughsAttackProtectionActivationThreshold = NULL;
+    capi.SetBillionLaughsAttackProtectionMaximumAmplification = NULL;
 #endif
 
     /* export using capsule */
