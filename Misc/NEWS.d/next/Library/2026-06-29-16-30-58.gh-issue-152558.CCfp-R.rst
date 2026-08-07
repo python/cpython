@@ -1,0 +1,1 @@
+﻿Avoid redundant quoting in :exc:`subprocess.TimeoutExpired` messages.
