@@ -2117,7 +2117,10 @@ PyObject* PyAST_mod2obj(mod_ty t)
     if (state == NULL) {
         return NULL;
     }
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyGC_DeferAutomaticCollection(tstate);
     PyObject *result = ast2obj_mod(state, t);
+    _PyGC_ResumeAutomaticCollection(tstate);
 
     return result;
 }
@@ -2254,6 +2257,7 @@ def generate_module_def(mod, metadata, f, internal_h):
         #include "pycore_ast.h"
         #include "pycore_ast_state.h"     // struct ast_state
         #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+        #include "pycore_gc.h"            // _PyGC_DeferAutomaticCollection()
         #include "pycore_lock.h"          // _PyOnceFlag
         #include "pycore_modsupport.h"    // _PyArg_NoPositional()
         #include "pycore_pystate.h"       // _PyInterpreterState_GET()

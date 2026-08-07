@@ -2928,6 +2928,20 @@ get_tracked_heap_size(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
+defer_automatic_gc(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    _PyGC_DeferAutomaticCollection(_PyThreadState_GET());
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+resume_automatic_gc(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    _PyGC_ResumeAutomaticCollection(_PyThreadState_GET());
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 is_static_immortal(PyObject *self, PyObject *op)
 {
     if (_Py_IsStaticImmortal(op)) {
@@ -3378,6 +3392,8 @@ static PyMethodDef module_functions[] = {
     {"identify_type_slot_wrappers", identify_type_slot_wrappers, METH_NOARGS},
     {"has_deferred_refcount", has_deferred_refcount, METH_O},
     {"get_tracked_heap_size", get_tracked_heap_size, METH_NOARGS},
+    {"defer_automatic_gc", defer_automatic_gc, METH_NOARGS},
+    {"resume_automatic_gc", resume_automatic_gc, METH_NOARGS},
     {"is_static_immortal", is_static_immortal, METH_O},
     {"incref_decref_delayed", incref_decref_delayed, METH_O},
     GET_NEXT_DICT_KEYS_VERSION_METHODDEF
