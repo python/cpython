@@ -570,48 +570,61 @@ class WaveWriteValidationTest(unittest.TestCase):
         self.addCleanup(self._close, w)
         return w
 
-    def test_setnchannels_rejects_nonpositive(self):
+    def test_get(self):
         w = self.open_writer()
+        self.assertEqual(w.getformat(), wave.WAVE_FORMAT_PCM)
+        self.assertEqual(w.getnframes(), 0)
+        # getcomptype() and getcompname() raise AttributeError
+        # until setcomptype() is called
+
+        with self.assertRaisesRegex(wave.Error, 'number of channels not set'):
+            w.getnchannels()
+        with self.assertRaisesRegex(wave.Error, 'sample width not set'):
+            w.getsampwidth()
+        with self.assertRaisesRegex(wave.Error, 'frame rate not set'):
+            w.getframerate()
+        with self.assertRaisesRegex(wave.Error, 'not all parameters set'):
+            w.getparams()
+
+    def test_set(self):
+        w = self.open_writer()
+
+        w.setnchannels(1)
+        self.assertEqual(w.getnchannels(), 1)
         with self.assertRaisesRegex(wave.Error, 'bad # of channels'):
             w.setnchannels(0)
 
-    def test_getnchannels_not_set(self):
-        w = self.open_writer()
-        with self.assertRaisesRegex(wave.Error, 'number of channels not set'):
-            w.getnchannels()
-
-    def test_setsampwidth_rejects_out_of_range(self):
+        w.setsampwidth(2)
+        self.assertEqual(w.getsampwidth(), 2)
         for width in (0, 5):
             with self.subTest(width=width):
-                w = self.open_writer()
                 with self.assertRaisesRegex(wave.Error, 'bad sample width'):
                     w.setsampwidth(width)
 
-    def test_getsampwidth_not_set(self):
-        w = self.open_writer()
-        with self.assertRaisesRegex(wave.Error, 'sample width not set'):
-            w.getsampwidth()
+        w.setframerate(44100)
+        self.assertEqual(w.getframerate(), 44100)
+        with self.assertRaisesRegex(wave.Error, 'bad frame rate'):
+            w.setframerate(0)
 
-    def test_getframerate_not_set(self):
-        w = self.open_writer()
-        with self.assertRaisesRegex(wave.Error, 'frame rate not set'):
-            w.getframerate()
+        w.setnframes(10)
+        self.assertEqual(w.getnframes(), 0)
 
-    def test_setcomptype_rejects_unknown(self):
-        w = self.open_writer()
+        w.setcomptype('NONE', 'not compressed')
+        self.assertEqual(w.getcomptype(), 'NONE')
+        self.assertEqual(w.getcompname(), 'not compressed')
         with self.assertRaisesRegex(wave.Error, 'unsupported compression type'):
             w.setcomptype('ADPCM', 'unsupported')
 
-    def test_setformat_rejects_unknown(self):
-        w = self.open_writer()
+        w.setformat(wave.WAVE_FORMAT_PCM)
+        self.assertEqual(w.getformat(), wave.WAVE_FORMAT_PCM)
         with self.assertRaisesRegex(wave.Error, 'unsupported wave format'):
             w.setformat(0x1234)
 
-    def test_getparams_incomplete(self):
-        w = self.open_writer()
-        w.setnchannels(1)
-        with self.assertRaisesRegex(wave.Error, 'not all parameters set'):
-            w.getparams()
+        w.setparams((1, 2, 44100, 0, 'NONE', 'not compressed'))
+        self.assertEqual(w.getparams(),
+                         (1, 2, 44100, 0, 'NONE', 'not compressed'))
+        with self.assertRaisesRegex(wave.Error, 'bad # of channels'):
+            w.setparams((0, 2, 44100, 0, 'NONE', 'not compressed'))
 
     def test_tell(self):
         def check_nframes(nframes):
