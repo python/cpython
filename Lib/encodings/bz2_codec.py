@@ -10,14 +10,20 @@ by Marc-Andre Lemburg (mal@lemburg.com).
 import codecs
 import bz2 # this codec needs the optional bz2 module !
 
+### Codec Helpers
+
+def _assert_strict(errors):
+    if errors != 'strict':
+        raise ValueError(f'Unsupported error handling mode: "{errors}" - must be "strict"')
+
 ### Codec APIs
 
 def bz2_encode(input, errors='strict'):
-    assert errors == 'strict'
+    _assert_strict(errors)
     return (bz2.compress(input), len(input))
 
 def bz2_decode(input, errors='strict'):
-    assert errors == 'strict'
+    _assert_strict(errors)
     return (bz2.decompress(input), len(input))
 
 class Codec(codecs.Codec):
@@ -28,7 +34,7 @@ class Codec(codecs.Codec):
 
 class IncrementalEncoder(codecs.IncrementalEncoder):
     def __init__(self, errors='strict'):
-        assert errors == 'strict'
+        _assert_strict(errors)
         self.errors = errors
         self.compressobj = bz2.BZ2Compressor()
 
@@ -44,7 +50,7 @@ class IncrementalEncoder(codecs.IncrementalEncoder):
 
 class IncrementalDecoder(codecs.IncrementalDecoder):
     def __init__(self, errors='strict'):
-        assert errors == 'strict'
+        _assert_strict(errors)
         self.errors = errors
         self.decompressobj = bz2.BZ2Decompressor()
 

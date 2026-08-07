@@ -8,14 +8,20 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 import codecs
 import zlib # this codec needs the optional zlib module !
 
+### Codec Helpers
+
+def _assert_strict(errors):
+    if errors != 'strict':
+        raise ValueError(f'Unsupported error handling mode: "{errors}" - must be "strict"')
+
 ### Codec APIs
 
 def zlib_encode(input, errors='strict'):
-    assert errors == 'strict'
+    _assert_strict(errors)
     return (zlib.compress(input), len(input))
 
 def zlib_decode(input, errors='strict'):
-    assert errors == 'strict'
+    _assert_strict(errors)
     return (zlib.decompress(input), len(input))
 
 class Codec(codecs.Codec):
@@ -26,7 +32,7 @@ class Codec(codecs.Codec):
 
 class IncrementalEncoder(codecs.IncrementalEncoder):
     def __init__(self, errors='strict'):
-        assert errors == 'strict'
+        _assert_strict(errors)
         self.errors = errors
         self.compressobj = zlib.compressobj()
 
@@ -42,7 +48,7 @@ class IncrementalEncoder(codecs.IncrementalEncoder):
 
 class IncrementalDecoder(codecs.IncrementalDecoder):
     def __init__(self, errors='strict'):
-        assert errors == 'strict'
+        _assert_strict(errors)
         self.errors = errors
         self.decompressobj = zlib.decompressobj()
 
