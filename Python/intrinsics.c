@@ -271,6 +271,23 @@ make_typevar_with_constraints(PyThreadState* Py_UNUSED(ignored), PyObject *name,
 }
 
 static PyObject *
+add_conditional_annotation(PyThreadState* tstate, PyObject *conditional_annotations,
+                           PyObject *index)
+{
+    // gh-154902: user code can rebind __conditional_annotations__ to any object
+    if (!PySet_CheckExact(conditional_annotations)) {
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "__conditional_annotations__ must be a set, not %T",
+                      conditional_annotations);
+        return NULL;
+    }
+    if (PySet_Add(conditional_annotations, index) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 match_class_isinstance(PyThreadState* tstate, PyObject *subject, PyObject *type)
 {
     /* Fast path for class patterns with no sub-patterns, e.g. `case C():`
@@ -297,6 +314,7 @@ _PyIntrinsics_BinaryFunctions[] = {
     INTRINSIC_FUNC_ENTRY(INTRINSIC_TYPEVAR_WITH_CONSTRAINTS, make_typevar_with_constraints)
     INTRINSIC_FUNC_ENTRY(INTRINSIC_SET_FUNCTION_TYPE_PARAMS, _Py_set_function_type_params)
     INTRINSIC_FUNC_ENTRY(INTRINSIC_SET_TYPEPARAM_DEFAULT, _Py_set_typeparam_default)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_ADD_CONDITIONAL_ANNOTATION, add_conditional_annotation)
     INTRINSIC_FUNC_ENTRY(INTRINSIC_MATCH_CLASS_ISINSTANCE, match_class_isinstance)
 };
 

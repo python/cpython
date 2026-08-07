@@ -19,6 +19,7 @@ that may be changed without notice. Use at your own risk!
 """
 
 from abc import abstractmethod, ABCMeta
+import atexit
 import collections
 from collections import defaultdict
 import collections.abc
@@ -392,6 +393,16 @@ _cleanups = []
 _caches = {}
 
 
+def _clear_caches():
+    for cleanup in _cleanups:
+        cleanup()
+
+
+# Release the LRU caches at shutdown, they otherwise redistribute reference
+# leaks of one extension to types of unrelated ones. See GH-151728.
+atexit.register(_clear_caches)
+
+
 def _tp_cache(func=None, /, *, typed=False):
     """Internal wrapper caching __getitem__ of generic types.
 
@@ -483,7 +494,7 @@ def _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset()
         if isinstance(t, GenericAlias):
             return _rebuild_generic_alias(t, ev_args)
         if isinstance(t, Union):
-            return functools.reduce(operator.or_, ev_args)
+            return Union[ev_args]
         else:
             return t.copy_with(ev_args)
     return t
@@ -775,13 +786,16 @@ def Literal(self, *parameters):
     # There is no '_type_check' call because arguments to Literal[...] are
     # values, not types.
     parameters = _flatten_literal_params(parameters)
+    value_and_type_parameters = list(_value_and_type_iter(parameters))
+    deduplicated_parameters = tuple(
+        p
+        for p, _ in _deduplicate(
+            value_and_type_parameters,
+            unhashable_fallback=True,
+        )
+    )
 
-    try:
-        parameters = tuple(p for p, _ in _deduplicate(list(_value_and_type_iter(parameters))))
-    except TypeError:  # unhashable parameters
-        pass
-
-    return _LiteralGenericAlias(self, parameters)
+    return _LiteralGenericAlias(self, deduplicated_parameters)
 
 
 @_SpecialForm
@@ -2532,7 +2546,7 @@ def _strip_annotations(t):
         stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
         if stripped_args == t.__args__:
             return t
-        return functools.reduce(operator.or_, stripped_args)
+        return Union[stripped_args]
 
     return t
 
