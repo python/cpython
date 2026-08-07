@@ -1961,7 +1961,7 @@ class AbstractRepackTests(RepackHelperMixin):
                 with zipfile.ZipFile(TESTFN) as zh:
                     self.assertIsNone(zh.testzip())
 
-    @without_source_date_epoch  # it would override the time mock below
+    @without_source_date_epoch  # SOURCE_DATE_EPOCH would bypass the time mock below
     @mock.patch.object(time, 'time', new=lambda: 315590400)  # fix time for ZipFile.writestr()
     def test_repack_bytes_before_removed_files(self):
         """Should preserve if there are bytes before stale local file entries."""
@@ -2006,7 +2006,7 @@ class AbstractRepackTests(RepackHelperMixin):
                 with zipfile.ZipFile(TESTFN) as zh:
                     self.assertIsNone(zh.testzip())
 
-    @without_source_date_epoch  # it would override the time mock below
+    @without_source_date_epoch  # SOURCE_DATE_EPOCH would bypass the time mock below
     @mock.patch.object(time, 'time', new=lambda: 315590400)  # fix time for ZipFile.writestr()
     def test_repack_bytes_after_removed_files(self):
         """Should keep extra bytes if there are bytes after stale local file entries."""
@@ -2050,7 +2050,7 @@ class AbstractRepackTests(RepackHelperMixin):
                 with zipfile.ZipFile(TESTFN) as zh:
                     self.assertIsNone(zh.testzip())
 
-    @without_source_date_epoch  # it would override the time mock below
+    @without_source_date_epoch  # SOURCE_DATE_EPOCH would bypass the time mock below
     @mock.patch.object(time, 'time', new=lambda: 315590400)  # fix time for ZipFile.writestr()
     def test_repack_bytes_between_removed_files(self):
         """Should strip only local file entries before random bytes."""
@@ -2255,7 +2255,7 @@ class AbstractRepackTests(RepackHelperMixin):
                 with zipfile.ZipFile(TESTFN) as zh:
                     self.assertIsNone(zh.testzip())
 
-    @without_source_date_epoch  # it would override the time mock below
+    @without_source_date_epoch  # SOURCE_DATE_EPOCH would bypass the time mock below
     @mock.patch.object(time, 'time', new=lambda: 315590400)  # fix time for ZipFile.writestr()
     def test_repack_removed_bytes_between_files(self):
         """Should not remove bytes between local file entries."""
