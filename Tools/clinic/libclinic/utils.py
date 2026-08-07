@@ -5,6 +5,7 @@ import hashlib
 import os
 import re
 import string
+from collections.abc import Iterable
 from typing import Literal, Final
 
 
@@ -17,11 +18,14 @@ def read_file(filename: str) -> str | None:
         return None
 
 
-def write_file(filename: str, new_contents: str) -> None:
-    """Write new content to file, iff the content changed."""
+def write_file(filename: str, new_contents: str) -> bool:
+    """Write new content to file, iff the content changed.
+
+    Return True if the file was written.
+    """
     if read_file(filename) == new_contents:
         # no change: avoid modifying the file modification time
-        return
+        return False
     # Atomic write using a temporary file and os.replace()
     filename_new = f"{filename}.new"
     with open(filename_new, "w", encoding="utf-8") as fp:
@@ -31,6 +35,7 @@ def write_file(filename: str, new_contents: str) -> None:
     except:
         os.unlink(filename_new)
         raise
+    return True
 
 
 @dc.dataclass(slots=True, frozen=True)
@@ -50,6 +55,8 @@ class FileWriter:
 
     dry_run: bool = False
     changes: list[FileChange] = dc.field(default_factory=list)
+    # (filename, changed) for every file which was passed to write().
+    files: list[tuple[str, bool]] = dc.field(default_factory=list)
 
     def makedirs(self, dirname: str) -> None:
         if not self.dry_run:
@@ -61,12 +68,34 @@ class FileWriter:
 
     def write(self, filename: str, new_contents: str) -> None:
         if not self.dry_run:
-            write_file(filename, new_contents)
+            changed = write_file(filename, new_contents)
+        else:
+            old_contents = read_file(filename)
+            changed = old_contents != new_contents
+            if changed:
+                self.changes.append(
+                    FileChange(filename, old_contents, new_contents))
+        self.files.append((filename, changed))
+
+    def update_times(self, source: str, generated: Iterable[str],
+                     changed: bool) -> None:
+        """Keep the generated files newer than the source file.
+
+        The build system does not know that the source file depends on
+        the files generated from it, so the source file is touched to
+        force its recompilation.
+        """
+        if self.dry_run:
             return
-        old_contents = read_file(filename)
-        if old_contents != new_contents:
-            self.changes.append(
-                FileChange(filename, old_contents, new_contents))
+        if changed:
+            os.utime(source)
+            for filename in generated:
+                os.utime(filename)
+        else:
+            mtime = os.stat(source).st_mtime_ns
+            for filename in generated:
+                if os.stat(filename).st_mtime_ns <= mtime:
+                    os.utime(filename)
 
 
 def compute_checksum(input_: str, length: int | None = None) -> str:
