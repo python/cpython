@@ -669,10 +669,14 @@ class CAPITest(unittest.TestCase):
         self.assertIsNot(fd2, fd)
         self.assertEqual(fd2, fd)
 
-        # PyFrozenDict_New(NULL) creates an empty dictionary
-        dct = frozendict_new(NULL)
-        self.assertEqual(dct, frozendict())
-        self.assertIs(type(dct), frozendict)
+        # PyFrozenDict_New(NULL) gets the empty frozendict singleton
+        singleton = frozendict()
+        self.assertIs(frozendict_new(NULL), singleton)
+
+        # PyFrozenDict_New(iterable) gets the empty frozendict singleton
+        # if iterable is empty
+        for iterable in ((), [], {}, frozendict(), [x for x in ()]):
+            self.assertIs(frozendict_new(iterable), singleton)
 
 
 if __name__ == "__main__":

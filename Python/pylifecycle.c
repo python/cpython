@@ -978,6 +978,11 @@ pycore_interp_init(PyThreadState *tstate)
         return status;
     }
 
+    status = _PyDict_Init(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     status = pycore_init_types(interp);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
@@ -2137,6 +2142,8 @@ finalize_interp_clear(PyThreadState *tstate)
     }
 
     finalize_interp_types(tstate->interp);
+
+    _PyDict_Fini(tstate->interp);
 
     /* Finalize dtoa at last so that finalizers calling repr of float doesn't crash */
     _PyDtoa_Fini(tstate->interp);
