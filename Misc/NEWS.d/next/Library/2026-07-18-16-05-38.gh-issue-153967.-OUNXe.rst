@@ -1,0 +1,3 @@
+:meth:`argparse.ArgumentParser.print_usage` and
+:meth:`argparse.ArgumentParser.print_help` won't silently fail when an invalid
+file object is specified. Patch by Timothy Poon.
