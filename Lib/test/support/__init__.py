@@ -46,6 +46,7 @@ __all__ = [
     "check_disallow_instantiation", "check_sanitizer", "skip_if_sanitizer",
     "requires_limited_api", "requires_specialization", "thread_unsafe",
     "skip_if_unlimited_stack_size", "skip_if_huge_c_stack",
+    "run_with_limited_c_stack",
     # sys
     "MS_WINDOWS", "is_jython", "is_android", "is_emscripten", "is_wasi",
     "is_apple_mobile", "check_impl_detail", "unix_shell", "setswitchinterval",
@@ -1292,6 +1293,7 @@ def bigmemtest(size, memuse, dry_run=True):
     test doesn't support dummy runs when -M is not specified.
     """
     def decorator(f):
+        @functools.wraps(f)
         def wrapper(self):
             size = wrapper.size
             memuse = wrapper.memuse
@@ -1344,6 +1346,7 @@ def nomemtest(f):
 
 def bigaddrspacetest(f):
     """Decorator for tests that fill the address space."""
+    @functools.wraps(f)
     def wrapper(self):
         if max_memuse < MAX_Py_ssize_t:
             if MAX_Py_ssize_t >= 2**63 - 1 and max_memuse >= 2**31:
@@ -1449,6 +1452,7 @@ def no_rerun(reason):
     def deco(func):
         assert not isinstance(func, type), func
         _has_run = False
+        @functools.wraps(func)
         def wrapper(self):
             nonlocal _has_run
             if _has_run:
@@ -2839,6 +2843,26 @@ def exceeds_recursion_limit():
     return 150_000
 
 
+def _has_huge_c_stack(depth):
+    """Check that *depth* recursive calls cannot exhaust the C stack."""
+    try:
+        from _testinternalcapi import get_c_recursion_remaining
+    except ImportError:
+        # Fall back to checking for an unlimited stack size.
+        if is_emscripten or is_wasi or os.name == "nt":
+            return False
+        import resource
+        soft, hard = resource.getrlimit(resource.RLIMIT_STACK)
+        return soft == hard and soft in (-1, 0xFFFF_FFFF_FFFF_FFFF)
+    else:
+        remaining = get_c_recursion_remaining()
+        # A negative value means integer overflow in the estimate
+        # (e.g. with an unlimited RLIMIT_STACK).  The estimate is based on
+        # the size of the interpreter loop frame, so it is only a lower
+        # bound for recursion with smaller C frames.
+        return remaining >= depth or remaining < 0
+
+
 def skip_if_huge_c_stack(depth=150_000):
     """Skip decorator for tests which cannot overflow the C stack.
 
@@ -2846,23 +2870,67 @@ def skip_if_huge_c_stack(depth=150_000):
     trigger the recursion protection if the C stack is too large (e.g.
     with a large or unlimited RLIMIT_STACK), and either fail, or run
     for a very long time, or crash, or consume all memory.
+
+    Prefer run_with_limited_c_stack() for tests recursing to a fixed depth.
     """
-    try:
-        from _testinternalcapi import get_c_recursion_remaining
-    except ImportError:
-        # Fall back to checking for an unlimited stack size.
-        huge = False
-        if not (is_emscripten or is_wasi) and os.name != "nt":
-            import resource
-            soft, hard = resource.getrlimit(resource.RLIMIT_STACK)
-            huge = soft == hard and soft in (-1, 0xFFFF_FFFF_FFFF_FFFF)
-    else:
-        remaining = get_c_recursion_remaining()
-        # A negative value means integer overflow in the estimate
-        # (e.g. with an unlimited RLIMIT_STACK).
-        huge = remaining >= depth or remaining < 0
     return unittest.skipIf(
-        huge, f"the C stack is large enough for {depth} recursive calls")
+        _has_huge_c_stack(depth),
+        f"the C stack is large enough for {depth} recursive calls")
+
+
+# Small enough to be exhausted by tens of thousands of recursive calls,
+# but not smaller than Py_C_STACK_SIZE (4 MiB) which the interpreter
+# assumes if it cannot query the thread stack size.
+C_STACK_SIZE = 8 * 1024 * 1024
+
+
+def run_with_limited_c_stack(depth=150_000, size=C_STACK_SIZE):
+    """Decorator for tests exhausting the C stack with *depth* recursive calls.
+
+    Run the test in a separate thread with the C stack of *size* bytes, so
+    that the outcome does not depend on the C stack size of the main thread
+    (which can be large or unlimited, see RLIMIT_STACK).
+
+    If a thread with the limited C stack cannot be created, run the test in
+    the current thread, but skip it if the C stack is too large.
+    """
+    reason = f"the C stack is large enough for {depth} recursive calls"
+    def decorator(test):
+        @functools.wraps(test)
+        def wrapper(*args, **kwargs):
+            def run_test():
+                # The C stack can still be too large if limiting it failed.
+                if _has_huge_c_stack(depth):
+                    raise unittest.SkipTest(reason)
+                test(*args, **kwargs)
+
+            try:
+                import threading
+                old_size = threading.stack_size(size)
+            except (ImportError, ValueError, RuntimeError):
+                # Setting the thread stack size is not supported.
+                return run_test()
+
+            exceptions = []
+            def run():
+                try:
+                    run_test()
+                except BaseException as exc:
+                    exceptions.append(exc)
+
+            thread = threading.Thread(target=run)
+            try:
+                thread.start()
+            except RuntimeError:
+                # Threads are not supported.
+                return run_test()
+            finally:
+                threading.stack_size(old_size)
+            thread.join()
+            if exceptions:
+                raise exceptions[0]
+        return wrapper
+    return decorator
 
 
 # Windows doesn't have os.uname() but it doesn't support s390x.
