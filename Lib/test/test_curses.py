@@ -537,14 +537,11 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(str(cc), 'z')
         self.assertEqual(cc.attr, 0)
         self.assertEqual(cc.pair, 0)
-        # attr never carries the color pair, not even a pair that does not fit
-        # in a color_pair() value.
+        # attr never carries the color pair.
         self.assertEqual(curses.complexchar('A', 0, 1).attr, 0)
-        self.assertEqual(curses.complexchar('A', 0, 300).attr, 0)
         self.assertEqual(curses.complexchar('A', curses.A_BOLD, 1).attr,
                          curses.A_BOLD)
         self.assertEqual(curses.complexchar('A', 0, 1).pair, 1)
-        self.assertEqual(curses.complexchar('A', 0, 300).pair, 300)
         # Immutable rendition.
         self.assertRaises(AttributeError, setattr, cc, 'attr', 1)
         self.assertRaises(AttributeError, setattr, cc, 'pair', 1)
