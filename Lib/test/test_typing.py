@@ -9806,6 +9806,7 @@ class AnnotatedTests(BaseTestCase):
         for args in itertools.permutations(get_args(expr1)):
             with self.subTest(args=args):
                 self.assertEqual(expr1, reduce(operator.or_, args))
+                self.assertEqual(expr1, Union[args])
 
         expr2 = Union[Annotated[int, 1], str, Annotated[str, {}], int]
         for args in itertools.permutations(get_args(expr2)):
