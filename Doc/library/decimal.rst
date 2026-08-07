@@ -638,6 +638,12 @@ Decimal objects
 
       >>> Decimal(2).fma(3, 5)
       Decimal('11')
+      >>> with localcontext(ExtendedContext):
+      ...     a, b, c = map(Decimal, ['888565290', '1557.96930',
+      ...                             '-86087.7578'])
+      ...     a.fma(b, c), a*b + c
+      ...
+      (Decimal('1.38435736E+12'), Decimal('1.38435735E+12'))
 
    .. method:: is_canonical()
 
