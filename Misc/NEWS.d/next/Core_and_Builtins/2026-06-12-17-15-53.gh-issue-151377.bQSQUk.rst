@@ -1,0 +1,2 @@
+Fix races in free-threaded builds when updating type slots for newly created
+classes and when removing entries from a base type's subclasses dictionary.
