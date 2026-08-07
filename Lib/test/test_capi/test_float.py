@@ -7,6 +7,7 @@ import warnings
 from test.test_capi.test_getargs import (Float, FloatSubclass, FloatSubclass2,
                                          BadIndex2, BadFloat2, Index, BadIndex,
                                          BadFloat)
+from test import support
 from test.support import import_helper
 
 _testcapi = import_helper.import_module('_testcapi')
@@ -23,7 +24,6 @@ EPSILON = {
     8: 2.0 ** -53,  # binary64
 }
 
-HAVE_IEEE_754 = float.__getformat__("double").startswith("IEEE")
 INF = float("inf")
 NAN = float("nan")
 
@@ -170,14 +170,13 @@ class CAPIFloatTest(unittest.TestCase):
         self.assertEqual(unpack(b'\x00\x00\x00\x00\x00\x00\xf8?', LITTLE_ENDIAN),
                          1.5)
 
+    @support.requires_IEEE_754
     def test_pack_unpack_roundtrip(self):
         pack = _testcapi.float_pack
         unpack = _testcapi.float_unpack
 
         large = 2.0 ** 100
-        values = [1.0, 1.5, large, 1.0/7, math.pi]
-        if HAVE_IEEE_754:
-            values.extend((INF, NAN))
+        values = [1.0, 1.5, large, 1.0/7, math.pi, INF, NAN]
         for value in values:
             for size in (2, 4, 8,):
                 if size == 2 and value == large:
@@ -196,7 +195,7 @@ class CAPIFloatTest(unittest.TestCase):
                         else:
                             self.assertEqual(value2, value)
 
-    @unittest.skipUnless(HAVE_IEEE_754, "requires IEEE 754")
+    @support.requires_IEEE_754
     def test_pack_unpack_roundtrip_for_nans(self):
         pack = _testcapi.float_pack
         unpack = _testcapi.float_unpack
@@ -228,7 +227,7 @@ class CAPIFloatTest(unittest.TestCase):
                         self.assertTrue(math.isnan(value))
                         self.assertEqual(data1, data2)
 
-    @unittest.skipUnless(HAVE_IEEE_754, "requires IEEE 754")
+    @support.requires_IEEE_754
     @unittest.skipUnless(sys.maxsize != 2147483647, "requires 64-bit mode")
     def test_pack_unpack_nans_for_different_formats(self):
         pack = _testcapi.float_pack
