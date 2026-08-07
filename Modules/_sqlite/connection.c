@@ -1758,6 +1758,7 @@ pysqlite_connection_load_extension_impl(pysqlite_Connection *self,
     rc = sqlite3_load_extension(self->db, extension_name, entrypoint, &errmsg);
     if (rc != 0) {
         PyErr_SetString(self->OperationalError, errmsg);
+        sqlite3_free((void *)errmsg);
         return NULL;
     } else {
         Py_RETURN_NONE;
