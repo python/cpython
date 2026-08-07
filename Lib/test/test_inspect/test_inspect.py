@@ -781,6 +781,22 @@ class TestRetrievingSourceCode(GetSourceBase):
             with self.subTest(i=i):
                 self.assertEqual(func(input), expected)
 
+    def test_cleandoc_no_dedent(self):
+        func = inspect.cleandoc
+        self.assertEqual(func('An\n  indented\n   docstring.', dedent=False),
+                         'An\n  indented\n   docstring.')
+        # Everything else that cleandoc() does still applies.
+        self.assertEqual(func('  An\n\n\tindented\n\n', dedent=False),
+                         'An\n\n        indented')
+
+    def test_getdoc_no_dedent(self):
+        class C:
+            pass
+        # Written as a docstring, it would be dedented by the compiler.
+        C.__doc__ = 'Summary.\n\n  param\n    description'
+        self.assertEqual(inspect.getdoc(C, dedent=False), C.__doc__)
+        self.assertEqual(inspect.getdoc(C), 'Summary.\n\nparam\n  description')
+
     @cpython_only
     def test_c_cleandoc(self):
         try:
