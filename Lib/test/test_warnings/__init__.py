@@ -1693,6 +1693,30 @@ a=A()
         self.assertEqual(err.decode().rstrip(),
                          '<string>:7: UserWarning: test')
 
+    def test_showwarning_during_finalization(self):
+        # gh-149211: warnings.warn() should use a custom showwarning()
+        # during Python finalization.
+        code = """
+import sys
+import warnings
+
+def showwarning(message, category, filename, lineno,
+                file=None, line=None, stderr=sys.stderr):
+    print(f"custom showwarning: {message}", file=file or stderr)
+
+warnings.showwarning = showwarning
+
+class A:
+    def __del__(self):
+        warnings.warn("test")
+
+a = A()
+        """
+        rc, out, err = assert_python_ok("-c", code)
+        self.assertEqual(out, b"")
+        self.assertEqual(err.decode().rstrip(),
+                         "custom showwarning: test")
+
     def test_late_resource_warning(self):
         # Issue #21925: Emitting a ResourceWarning late during the Python
         # shutdown must be logged.
