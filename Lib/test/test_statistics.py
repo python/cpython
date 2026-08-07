@@ -59,8 +59,8 @@ def _nan_equal(a, b):
         return False
     if isinstance(a, float):
         return math.isnan(a) and math.isnan(b)
-    aexp = a.as_tuple()[2]
-    bexp = b.as_tuple()[2]
+    aexp = a.as_tuple().exponent
+    bexp = b.as_tuple().exponent
     return (aexp == bexp) and (aexp in ('n', 'N'))  # Both NAN or both sNAN.
 
 

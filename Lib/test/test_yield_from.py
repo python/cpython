@@ -963,7 +963,7 @@ class TestPEP380Operation(unittest.TestCase):
 
     def test_delegator_is_visible_to_debugger(self):
         def call_stack():
-            return [f[3] for f in inspect.stack()]
+            return [f.function for f in inspect.stack()]
 
         def gen():
             yield call_stack()

@@ -358,10 +358,10 @@ try:
 except ImportError:
     _tuplegetter = lambda index, doc: property(_itemgetter(index), doc=doc)
 
-def namedtuple(typename, field_names, *, rename=False, defaults=None, module=None):
+def namedtuple(typename, field_names, *, rename=False, defaults=None, module=None, deprecate_tuple_api=True):
     """Returns a new subclass of tuple with named fields.
 
-    >>> Point = namedtuple('Point', ['x', 'y'])
+    >>> Point = namedtuple('Point', ['x', 'y'], deprecate_tuple_api=False)
     >>> Point.__doc__                   # docstring for the new class
     'Point(x, y)'
     >>> p = Point(11, y=22)             # instantiate with positional args or keywords
@@ -511,6 +511,15 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     for index, name in enumerate(field_names):
         doc = _sys.intern(f'Alias for field number {index}')
         class_namespace[name] = _tuplegetter(index, doc)
+
+    if deprecate_tuple_api:
+        def __getitem__(self, key):
+            import warnings
+            warnings.warn('tuple API is deprecated, use named attributes',
+                          DeprecationWarning, stacklevel=2)
+            return tuple.__getitem__(self, key)
+
+        class_namespace['__getitem__'] = __getitem__
 
     result = type(typename, (tuple,), class_namespace)
 

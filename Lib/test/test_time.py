@@ -815,7 +815,8 @@ class TestPytime(unittest.TestCase):
         # Try and make UNIX times from the localtime and a 9-tuple
         # created from the localtime. Test to see that the times are
         # the same.
-        t = time.mktime(lt); t9 = time.mktime(lt[:9])
+        t = time.mktime(lt)
+        t9 = time.mktime(lt[:9])
         self.assertEqual(t, t9)
 
         # Make localtimes from the UNIX times and compare them to

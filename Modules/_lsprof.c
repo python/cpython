@@ -6,6 +6,7 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_SetProfile()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_structseq.h"     // _PyStructSequence_NewType()
 #include "pycore_time.h"          // _PyTime_FromSecondsObject()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
@@ -1105,7 +1106,7 @@ _lsprof_exec(PyObject *module)
         return -1;
     }
 
-    state->stats_entry_type = PyStructSequence_NewType(&profiler_entry_desc);
+    state->stats_entry_type = _PyStructSequence_NewType(&profiler_entry_desc, 0, 1);
     if (state->stats_entry_type == NULL) {
         return -1;
     }
@@ -1113,7 +1114,7 @@ _lsprof_exec(PyObject *module)
         return -1;
     }
 
-    state->stats_subentry_type = PyStructSequence_NewType(&profiler_subentry_desc);
+    state->stats_subentry_type = _PyStructSequence_NewType(&profiler_subentry_desc, 0, 1);
     if (state->stats_subentry_type == NULL) {
         return -1;
     }
