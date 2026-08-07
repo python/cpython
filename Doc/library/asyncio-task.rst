@@ -288,6 +288,17 @@ Creating tasks
               # completion:
               task.add_done_callback(background_tasks.discard)
 
+      Note that this approach never awaits the tasks, so if a task
+      fails, its exception is never retrieved and asyncio logs a
+      "Task exception was never retrieved" message when the task is
+      garbage collected.  To avoid this, use :class:`asyncio.TaskGroup`
+      which keeps a strong reference to each task, awaits them and
+      propagates their exceptions::
+
+          async with asyncio.TaskGroup() as tg:
+              for i in range(10):
+                  tg.create_task(some_coro(param=i))
+
    .. versionadded:: 3.7
 
    .. versionchanged:: 3.8
