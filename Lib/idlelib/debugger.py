@@ -170,6 +170,11 @@ class Debugger:
         # (Causes a harmless extra cycle through close_debugger() if user
         # toggled debugger from pyshell Debug menu)
         self.pyshell.close_debugger()
+        # Tell observers (e.g. the disassembly browser) debugging has ended.
+        try:
+            self.pyshell.text.event_generate("<<debugger-off>>", when="tail")
+        except Exception:
+            pass
         # Now close the debugger control window....
         self.top.destroy()
 
@@ -282,6 +287,9 @@ class Debugger:
         if self.vsource.get():
             self.sync_source_line()
 
+        # Let observers (e.g. the disassembly browser) react to the stop.
+        self.pyshell.text.event_generate("<<debugger-stopped>>", when="tail")
+
         for b in self.buttons:
             b.configure(state="normal")
 
@@ -312,6 +320,20 @@ class Debugger:
         filename = code.co_filename
         lineno = frame.f_lineno
         return filename, lineno
+
+    def current_frame_code(self):
+        """Return (code object, last-instruction offset) for the current frame.
+
+        The code object is the one actually executing: obtained via marshal
+        from a remote FrameProxy, or directly from a local frame.  Return None
+        when the program is not stopped.
+        """
+        frame = self.frame
+        if frame is None:
+            return None
+        get_code = getattr(frame, "code_object", None)  # A remote FrameProxy.
+        code = get_code() if get_code else frame.f_code  # Else a local frame.
+        return code, frame.f_lasti
 
     def cont(self):
         self.idb.set_continue()

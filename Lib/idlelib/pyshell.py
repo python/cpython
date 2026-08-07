@@ -865,6 +865,7 @@ class PyShell(OutputWindow):
         ("file", "_File"),
         ("edit", "_Edit"),
         ("debug", "_Debug"),
+        ("browse", "_Browse"),
         ("options", "_Options"),
         ("window", "_Window"),
         ("help", "_Help"),

@@ -79,6 +79,36 @@ AboutDialog_spec = {
            "Verify x.y.z versions and test each button, including Close.\n "
     }
 
+_token_browser_spec = {
+    'file': 'tokenbrowser',
+    'kwds': {},
+    'msg': "Select rows in the token table and verify the matching regions\n"
+           "are highlighted in the sample editor above.  Select the whole\n"
+           "editor text, or part of it, and press Refresh.\n"
+           "Double-click a row and verify the editor cursor jumps to the\n"
+           "start of that token and the editor gets focus."
+    }
+
+_ast_browser_spec = {
+    'file': 'astbrowser',
+    'kwds': {},
+    'msg': "Expand nodes in the AST tree and verify the matching source\n"
+           "regions are highlighted in the sample editor above.  Select\n"
+           "text in the editor and verify the enclosing node is selected.\n"
+           "Double-click a node and verify the editor cursor jumps to it\n"
+           "and the editor gets focus."
+    }
+
+_disassembly_browser_spec = {
+    'file': 'disbrowser',
+    'kwds': {},
+    'msg': "Expand code objects in the tree and select instructions; verify\n"
+           "the matching source regions are highlighted in the sample editor\n"
+           "above.  Select text in the editor and verify the instructions\n"
+           "built from it are selected.  Double-click a row and verify the\n"
+           "editor cursor jumps to it and the editor gets focus."
+    }
+
 # TODO implement ^\; adding '<Control-Key-\\>' to function does not work.
 _calltip_window_spec = {
     'file': 'calltip_w',

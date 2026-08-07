@@ -1,0 +1,6 @@
+Add a Disassembly Browser to IDLE, opened from the Browse menu.  It shows the
+disassembled bytecode of the editor content, the Shell input, or the
+selection, as collapsible code objects colored by operand kind.  Selecting an
+instruction highlights the matching source, and selecting source selects the
+instructions.  While the debugger is stopped, the browser instead shows the
+code object that is executing and marks the current instruction.

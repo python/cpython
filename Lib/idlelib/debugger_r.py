@@ -19,6 +19,7 @@ arguments and return values that cannot be transported through the RPC
 barrier, in particular frame and traceback objects.
 
 """
+import marshal
 import reprlib
 import types
 from idlelib import debugger
@@ -144,6 +145,12 @@ class IdbAdapter:
         codetable[cid] = code
         return cid
 
+    def frame_code_marshal(self, fid):
+        # A code object cannot be pickled through the RPC, but it can be
+        # marshalled; the two interpreters are the same build, so the bytes
+        # load back into an equivalent code object in the IDLE process.
+        return marshal.dumps(frametable[fid].f_code)
+
     #----------called by a CodeProxy----------
 
     def code_name(self, cid):
@@ -218,6 +225,12 @@ class FrameProxy:
     def _get_f_code(self):
         cid = self._conn.remotecall(self._oid, "frame_code", (self._fid,), {})
         return CodeProxy(self._conn, self._oid, cid)
+
+    def code_object(self):
+        "Return the frame's real code object, transported via marshal."
+        blob = self._conn.remotecall(self._oid, "frame_code_marshal",
+                                     (self._fid,), {})
+        return marshal.loads(blob)
 
     def _get_f_globals(self):
         did = self._conn.remotecall(self._oid, "frame_globals",
