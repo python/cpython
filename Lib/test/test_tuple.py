@@ -119,6 +119,18 @@ class TupleTest(seq_tests.CommonTest):
         check_one_exact((0.5, (), (-2, 3, (4, 6))), 714642271,
                         -1845940830829704396)
 
+    @support.skip_if_huge_c_stack()
+    @support.skip_wasi_stack_overflow()
+    @support.skip_emscripten_stack_overflow()
+    def test_hash_deeply_nested(self):
+        # This should raise a RecursionError and not crash.
+        # See https://github.com/python/cpython/issues/154318.
+        t = ()
+        for _ in range(support.exceeds_recursion_limit()):
+            t = (t,)
+        with self.assertRaisesRegex(RecursionError, "while hashing a tuple"):
+            hash(t)
+
     # Various tests for hashing of tuples to check that we get few collisions.
     # Does something only if RUN_ALL_HASH_TESTS is true.
     #
