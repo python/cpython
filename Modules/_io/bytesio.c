@@ -1054,7 +1054,9 @@ bytesio_setstate_lock_held(PyObject *op, PyObject *state)
                 return NULL;
         }
         else {
-            self->dict = Py_NewRef(dict);
+            /* The LOAD_ATTR specializations read the dict slot lock-free
+               with an acquire load, so pair it with a release store. */
+            FT_ATOMIC_STORE_PTR_RELEASE(self->dict, Py_NewRef(dict));
         }
     }
 

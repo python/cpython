@@ -285,8 +285,6 @@ _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
     return ((type->tp_flags) & feature) != 0;
 }
 
-extern void _PyType_InitCache(PyInterpreterState *interp);
-
 extern PyStatus _PyObject_InitState(PyInterpreterState *interp);
 extern void _PyObject_FiniState(PyInterpreterState *interp);
 extern bool _PyRefchain_IsTraced(PyInterpreterState *interp, PyObject *obj);

@@ -504,6 +504,8 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #  define HAVE_MKFIFOAT_RUNTIME __builtin_available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 #  define HAVE_MKNODAT_RUNTIME __builtin_available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 #  define HAVE_PTSNAME_R_RUNTIME __builtin_available(macOS 10.13.4, iOS 11.3, tvOS 11.3, watchOS 4.3, *)
+#  define HAVE_DUP3_RUNTIME __builtin_available(macOS 27.0, *)
+#  define HAVE_PIPE2_RUNTIME __builtin_available(macOS 27.0, *)
 
 #  define HAVE_POSIX_SPAWN_SETSID_RUNTIME __builtin_available(macOS 10.15, *)
 
@@ -589,6 +591,14 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #    define HAVE_PTSNAME_R_RUNTIME (ptsname_r != NULL)
 #  endif
 
+#  ifdef HAVE_DUP3
+#    define HAVE_DUP3_RUNTIME (dup3 != NULL)
+#  endif
+
+#  ifdef HAVE_PIPE2
+#    define HAVE_PIPE2_RUNTIME (pipe2 != NULL)
+#  endif
+
 #endif
 
 #ifdef HAVE_FUTIMESAT
@@ -619,6 +629,8 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #  define HAVE_MKFIFOAT_RUNTIME 1
 #  define HAVE_MKNODAT_RUNTIME 1
 #  define HAVE_PTSNAME_R_RUNTIME 1
+#  define HAVE_DUP3_RUNTIME 1
+#  define HAVE_PIPE2_RUNTIME 1
 #endif
 
 
@@ -829,9 +841,9 @@ PyOS_AfterFork(void)
 #ifdef MS_WINDOWS
 /* defined in fileutils.c */
 void _Py_time_t_to_FILE_TIME(time_t, int, FILETIME *);
-void _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *, ULONG,
-                                FILE_BASIC_INFO *, FILE_ID_INFO *,
-                                struct _Py_stat_struct *);
+void _Py_attribute_data_to_stat(FILE_STANDARD_INFO*, ULONG,
+                                FILE_BASIC_INFO*, FILE_ID_INFO*,
+                                struct _Py_stat_struct*);
 void _Py_stat_basic_info_to_stat(FILE_STAT_BASIC_INFORMATION *,
                                  struct _Py_stat_struct *);
 #endif
@@ -2025,17 +2037,23 @@ win32_wchdir(LPCWSTR path)
 
 static void
 find_data_to_file_info(WIN32_FIND_DATAW *pFileData,
-                       BY_HANDLE_FILE_INFORMATION *info,
+                       FILE_BASIC_INFO* basic_info,
+                       FILE_STANDARD_INFO* standard_info,
                        ULONG *reparse_tag)
 {
-    memset(info, 0, sizeof(*info));
-    info->dwFileAttributes = pFileData->dwFileAttributes;
-    info->ftCreationTime   = pFileData->ftCreationTime;
-    info->ftLastAccessTime = pFileData->ftLastAccessTime;
-    info->ftLastWriteTime  = pFileData->ftLastWriteTime;
-    info->nFileSizeHigh    = pFileData->nFileSizeHigh;
-    info->nFileSizeLow     = pFileData->nFileSizeLow;
-/*  info->nNumberOfLinks   = 1; */
+    memset(basic_info, 0, sizeof(*basic_info));
+    memset(standard_info, 0, sizeof(*standard_info));
+
+    basic_info->FileAttributes = pFileData->dwFileAttributes;
+    basic_info->CreationTime.HighPart = pFileData->ftCreationTime.dwHighDateTime;
+    basic_info->CreationTime.LowPart = pFileData->ftCreationTime.dwLowDateTime;
+    basic_info->LastAccessTime.HighPart = pFileData->ftLastAccessTime.dwHighDateTime;
+    basic_info->LastAccessTime.LowPart = pFileData->ftLastAccessTime.dwLowDateTime;
+    basic_info->LastWriteTime.HighPart = pFileData->ftLastWriteTime.dwHighDateTime;
+    basic_info->LastWriteTime.LowPart = pFileData->ftLastWriteTime.dwLowDateTime;
+    standard_info->EndOfFile.HighPart = pFileData->nFileSizeHigh;
+    standard_info->EndOfFile.LowPart = pFileData->nFileSizeLow;
+
     if (pFileData->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
         *reparse_tag = pFileData->dwReserved0;
     else
@@ -2043,7 +2061,7 @@ find_data_to_file_info(WIN32_FIND_DATAW *pFileData,
 }
 
 static BOOL
-attributes_from_dir(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *reparse_tag)
+attributes_from_dir(LPCWSTR pszFile, FILE_BASIC_INFO* basic_info, FILE_STANDARD_INFO* standard_info, ULONG* reparse_tag)
 {
     HANDLE hFindFile;
     WIN32_FIND_DATAW FileData;
@@ -2074,7 +2092,7 @@ attributes_from_dir(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *re
         return FALSE;
     }
     FindClose(hFindFile);
-    find_data_to_file_info(&FileData, info, reparse_tag);
+    find_data_to_file_info(&FileData, basic_info, standard_info, reparse_tag);
     return TRUE;
 }
 
@@ -2108,10 +2126,9 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
                       BOOL traverse)
 {
     HANDLE hFile;
-    BY_HANDLE_FILE_INFORMATION fileInfo;
-    FILE_BASIC_INFO basicInfo;
-    FILE_BASIC_INFO *pBasicInfo = NULL;
-    FILE_ID_INFO idInfo;
+    FILE_STANDARD_INFO standardInfo = {0};
+    FILE_BASIC_INFO basicInfo = {0};
+    FILE_ID_INFO idInfo = {0};
     FILE_ID_INFO *pIdInfo = NULL;
     FILE_ATTRIBUTE_TAG_INFO tagInfo = { 0 };
     DWORD fileType, error;
@@ -2132,7 +2149,7 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
         case ERROR_ACCESS_DENIED:     /* Cannot sync or read attributes. */
         case ERROR_SHARING_VIOLATION: /* It's a paging file. */
             /* Try reading the parent directory. */
-            if (!attributes_from_dir(path, &fileInfo, &tagInfo.ReparseTag)) {
+            if (!attributes_from_dir(path, &basicInfo, &standardInfo, &tagInfo.ReparseTag)) {
                 /* Cannot read the parent directory. */
                 switch (GetLastError()) {
                 case ERROR_FILE_NOT_FOUND: /* File cannot be found */
@@ -2147,7 +2164,7 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
 
                 return -1;
             }
-            if (fileInfo.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+            if (basicInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
                 if (traverse ||
                     !IsReparseTagNameSurrogate(tagInfo.ReparseTag)) {
                     /* The stat call has to traverse but cannot, so fail. */
@@ -2247,9 +2264,8 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
             }
         }
 
-        if (!GetFileInformationByHandle(hFile, &fileInfo) ||
-            !GetFileInformationByHandleEx(hFile, FileBasicInfo,
-                                          &basicInfo, sizeof(basicInfo))) {
+        if (!GetFileInformationByHandleEx(hFile, FileStandardInfo, &standardInfo, sizeof(standardInfo)) ||
+            !GetFileInformationByHandleEx(hFile, FileBasicInfo, &basicInfo, sizeof(basicInfo))) {
             switch (GetLastError()) {
             case ERROR_INVALID_PARAMETER:
             case ERROR_INVALID_FUNCTION:
@@ -2264,17 +2280,14 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
             goto cleanup;
         }
 
-        /* Successfully got FileBasicInfo, so we'll pass it along */
-        pBasicInfo = &basicInfo;
-
         if (GetFileInformationByHandleEx(hFile, FileIdInfo, &idInfo, sizeof(idInfo))) {
             /* Successfully got FileIdInfo, so pass it along */
             pIdInfo = &idInfo;
         }
     }
 
-    _Py_attribute_data_to_stat(&fileInfo, tagInfo.ReparseTag, pBasicInfo, pIdInfo, result);
-    update_st_mode_from_path(path, fileInfo.dwFileAttributes, result);
+    _Py_attribute_data_to_stat(&standardInfo, tagInfo.ReparseTag, &basicInfo, pIdInfo, result);
+    update_st_mode_from_path(path, basicInfo.FileAttributes, result);
 
 cleanup:
     if (hFile != INVALID_HANDLE_VALUE) {
@@ -9186,7 +9199,9 @@ os_posix_openpt_impl(PyObject *module, int oflag)
 {
     int fd;
 
-#if defined(O_CLOEXEC)
+    // OpenBSD posix_openpt() rejects any flag other than O_RDWR and
+    // O_NOCTTY; the fd is made non-inheritable below in any case.
+#if defined(O_CLOEXEC) && !defined(__OpenBSD__)
     oflag |= O_CLOEXEC;
 #endif
 
@@ -9429,11 +9444,30 @@ os_openpty_impl(PyObject *module)
         goto posix_error;
 
 #if defined(HAVE_STROPTS_H) && !defined(HAVE_DEV_PTC)
+    // Pushing "ptem" makes the slave a terminal, which a session leader
+    // without a controlling terminal then acquires as one despite O_NOCTTY.
+    // Note whether we already had one, so a new one can be disowned below.
+    int had_ctty = 0;
+#ifdef TIOCNOTTY
+    int tty_fd = open("/dev/tty", O_RDONLY | O_NOCTTY);
+    if (tty_fd >= 0) {
+        had_ctty = 1;
+        close(tty_fd);
+    }
+#endif
     ioctl(slave_fd, I_PUSH, "ptem"); /* push ptem */
     ioctl(slave_fd, I_PUSH, "ldterm"); /* push ldterm */
 #ifndef __hpux
     ioctl(slave_fd, I_PUSH, "ttcompat"); /* push ttcompat */
 #endif /* __hpux */
+#ifdef TIOCNOTTY
+    if (!had_ctty && getsid(0) == getpid()) {
+        // Disown it; TIOCNOTTY sends SIGHUP to the session leader.
+        PyOS_sighandler_t sig_saved = PyOS_setsig(SIGHUP, SIG_IGN);
+        ioctl(slave_fd, TIOCNOTTY);
+        PyOS_setsig(SIGHUP, sig_saved);
+    }
+#endif
 #endif /* defined(HAVE_STROPTS_H) && !defined(HAVE_DEV_PTC) */
 #endif /* HAVE_OPENPTY */
 
@@ -11844,11 +11878,16 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
 /*[clinic end generated code: output=bc059d34a73404d1 input=c3cddda8922b038d]*/
 {
     int res = 0;
-#if defined(HAVE_DUP3) && \
-    !(defined(HAVE_FCNTL_H) && defined(F_DUP2FD_CLOEXEC))
-    /* dup3() is available on Linux 2.6.27+ and glibc 2.9 */
-    static int dup3_works = -1;
-#endif
+
+    /* dup3() is available on Linux 2.6.27+ and glibc 2.9 and macOS 27.0;
+     * it needs runtime detection for the case of running on older kernels.
+     * Values: -1: unknown; 0: doesn't work; 1: works
+     * For thread safety, use a process-global with one read & one store,
+     * both relaxed. (It's fine if two threads race and do the detection
+     * simultaneously; they should get the same result.)
+     */
+    static int dup3_works_atomic = -1;
+    (void) dup3_works_atomic;  // unused on some platforms
 
     /* dup2() can fail with EINTR if the target FD is already open, because it
      * then has to be closed. See os_close_impl() for why we don't handle EINTR
@@ -11887,17 +11926,26 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
 #else
 
 #ifdef HAVE_DUP3
+    int dup3_works = FT_ATOMIC_LOAD_INT_RELAXED(dup3_works_atomic);
     if (!inheritable && dup3_works != 0) {
-        Py_BEGIN_ALLOW_THREADS
-        res = dup3(fd, fd2, O_CLOEXEC);
-        Py_END_ALLOW_THREADS
-        if (res < 0) {
-            if (dup3_works == -1)
-                dup3_works = (errno != ENOSYS);
-            if (dup3_works) {
-                posix_error();
-                return -1;
+        if (HAVE_DUP3_RUNTIME) {
+            Py_BEGIN_ALLOW_THREADS
+            res = dup3(fd, fd2, O_CLOEXEC);
+            Py_END_ALLOW_THREADS
+            if (res < 0) {
+                if (dup3_works == -1) {
+                    dup3_works = (errno != ENOSYS);
+                    FT_ATOMIC_STORE_INT_RELAXED(dup3_works_atomic, dup3_works);
+                }
+                if (dup3_works) {
+                    posix_error();
+                    return -1;
+                }
             }
+        }
+        else {
+            dup3_works = 0;
+            FT_ATOMIC_STORE_INT_RELAXED(dup3_works_atomic, dup3_works);
         }
     }
 
@@ -12592,27 +12640,35 @@ done:
         return PyLong_FromLong(0);
     }
 
-    // On illumos specifically sendfile() may perform a partial write but
-    // return -1/an error (in one confirmed case the destination socket
-    // had a 5 second timeout set and errno was EAGAIN) and it's on the client
-    // code to check if the offset parameter was modified by sendfile().
-    //
-    // We need this variable to track said change.
-    off_t original_offset = offset;
-#endif
+    // sendfile() may perform a partial write and still return -1, so the
+    // number of transferred bytes must be taken from the out parameter.
+    // sendfile() reports it by adding it to the offset, but does not
+    // initialize it when the transfer fails before writing any data, so use
+    // sendfilev(), which reports it explicitly.
+    sendfilevec_t vec;
+    size_t xferred;
+
+    vec.sfv_fd = in_fd;
+    vec.sfv_flag = 0;
+    vec.sfv_off = offset;
+    vec.sfv_len = count;
 
     do {
         Py_BEGIN_ALLOW_THREADS
-        ret = sendfile(out_fd, in_fd, &offset, count);
-#if defined(__sun) && defined(__SVR4)
-        // This handles illumos-specific sendfile() partial write behavior,
-        // see a comment above for more details.
-        if (ret < 0 && offset != original_offset) {
-            ret = offset - original_offset;
+        xferred = 0;
+        ret = sendfilev(out_fd, &vec, 1, &xferred);
+        if (ret < 0 && xferred != 0) {
+            ret = (Py_ssize_t)xferred;
         }
-#endif
         Py_END_ALLOW_THREADS
     } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+#else
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        ret = sendfile(out_fd, in_fd, &offset, count);
+        Py_END_ALLOW_THREADS
+    } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+#endif
     if (ret < 0)
         return (!async_err) ? posix_error() : NULL;
     return PyLong_FromSsize_t(ret);
@@ -12731,7 +12787,13 @@ os_pipe_impl(PyObject *module)
     SECURITY_ATTRIBUTES attr;
     BOOL ok;
 #else
-    int res;
+    int res = -1;
+
+    /* pipe2() is available on some newer linux/glibc & macOS;
+     * use the same runtime detection as for dup3 above.
+     */
+    static int pipe2_works_atomic = -1;
+    (void) pipe2_works_atomic;  // unused on some platforms
 #endif
 
 #ifdef MS_WINDOWS
@@ -12757,11 +12819,30 @@ os_pipe_impl(PyObject *module)
 #else
 
 #ifdef HAVE_PIPE2
-    Py_BEGIN_ALLOW_THREADS
-    res = pipe2(fds, O_CLOEXEC);
-    Py_END_ALLOW_THREADS
+    int pipe2_works = FT_ATOMIC_LOAD_INT_RELAXED(pipe2_works_atomic);
+    if (pipe2_works != 0) {
+        if (HAVE_PIPE2_RUNTIME) {
+            Py_BEGIN_ALLOW_THREADS
+            res = pipe2(fds, O_CLOEXEC);
+            Py_END_ALLOW_THREADS
+            if (pipe2_works == -1) {
+                if (res != 0 && errno == ENOSYS) {
+                    pipe2_works = 0;
+                }
+                else {
+                    // pipe2 is present but this call failed
+                    pipe2_works = 1;
+                }
+                FT_ATOMIC_STORE_INT_RELAXED(pipe2_works_atomic, pipe2_works);
+            }
+        }
+        else {
+            pipe2_works = 0;
+            FT_ATOMIC_STORE_INT_RELAXED(pipe2_works_atomic, pipe2_works);
+        }
+    }
 
-    if (res != 0 && errno == ENOSYS)
+    if (pipe2_works == 0)
     {
 #endif
         Py_BEGIN_ALLOW_THREADS
@@ -12784,8 +12865,9 @@ os_pipe_impl(PyObject *module)
     }
 #endif
 
-    if (res != 0)
+    if (res != 0) {
         return PyErr_SetFromErrno(PyExc_OSError);
+    }
 #endif /* !MS_WINDOWS */
     return Py_BuildValue("(ii)", fds[0], fds[1]);
 }
@@ -12815,9 +12897,17 @@ os_pipe2_impl(PyObject *module, int flags)
     int fds[2];
     int res;
 
-    res = pipe2(fds, flags);
-    if (res != 0)
+    if (HAVE_PIPE2_RUNTIME) {
+        res = pipe2(fds, flags);
+    }
+    else {
+        res = -1;
+        errno = ENOSYS;
+    }
+    if (res != 0) {
         return posix_error();
+    }
+
     return Py_BuildValue("(ii)", fds[0], fds[1]);
 }
 #endif /* HAVE_PIPE2 */
@@ -13487,6 +13577,10 @@ os_posix_fallocate_impl(PyObject *module, int fd, Py_off_t offset,
         Py_BEGIN_ALLOW_THREADS
         result = posix_fallocate(fd, offset, length);
         Py_END_ALLOW_THREADS
+        // DragonFly BSD returns -1 and sets errno.
+        if (result == -1) {
+            result = errno;
+        }
     } while (result == EINTR && !(async_err = PyErr_CheckSignals()));
 
     if (result == 0)
@@ -13534,6 +13628,10 @@ os_posix_fadvise_impl(PyObject *module, int fd, Py_off_t offset,
         Py_BEGIN_ALLOW_THREADS
         result = posix_fadvise(fd, offset, length, advice);
         Py_END_ALLOW_THREADS
+        // DragonFly BSD returns -1 and sets errno.
+        if (result == -1) {
+            result = errno;
+        }
     } while (result == EINTR && !(async_err = PyErr_CheckSignals()));
 
     if (result == 0)
@@ -15933,6 +16031,13 @@ os_get_terminal_size_impl(PyObject *module, int fd)
 
 #ifdef TERMSIZE_USE_IOCTL
     {
+        // On Android, stdout is probably not connected, and calling TIOCGWINSZ
+        // on an invalid file descriptor causes a log message "avc:  denied  {
+        // ioctl }". Some common tools such as pytest call get_terminal_size
+        // very often, so check it's a TTY first to avoid cluttering the log.
+        if (!isatty(fd))
+            return PyErr_SetFromErrno(PyExc_OSError);
+
         struct winsize w;
         if (ioctl(fd, TIOCGWINSZ, &w))
             return PyErr_SetFromErrno(PyExc_OSError);
@@ -16673,7 +16778,8 @@ static PyObject *
 DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
 {
     DirEntry *entry;
-    BY_HANDLE_FILE_INFORMATION file_info;
+    FILE_BASIC_INFO basic_info;
+    FILE_STANDARD_INFO standard_info;
     ULONG reparse_tag;
     wchar_t *joined_path;
 
@@ -16711,8 +16817,8 @@ DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
             goto error;
     }
 
-    find_data_to_file_info(dataW, &file_info, &reparse_tag);
-    _Py_attribute_data_to_stat(&file_info, reparse_tag, NULL, NULL, &entry->win32_lstat);
+    find_data_to_file_info(dataW, &basic_info, &standard_info, &reparse_tag);
+    _Py_attribute_data_to_stat(&standard_info, reparse_tag, &basic_info, NULL, &entry->win32_lstat);
 
     /* ctime is only deprecated from 3.12, so we copy birthtime across */
     entry->win32_lstat.st_ctime = entry->win32_lstat.st_birthtime;
@@ -18793,6 +18899,22 @@ posixmodule_exec(PyObject *m)
     else {
         state->StatxResultType = PyType_FromModuleAndSpec(m, &pystatx_result_spec, NULL);
         if (PyModule_AddObjectRef(m, "statx_result", state->StatxResultType) < 0) {
+            return -1;
+        }
+    }
+#endif
+
+#if HAVE_PIPE2
+    if (HAVE_PIPE2_RUNTIME) {
+        // Do nothing. (`__builtin_available` doesn't allow `!`; see
+        // "using negations" in a comment above.)
+    }
+    else {
+        PyObject* dct = PyModule_GetDict(m);
+        if (dct == NULL) {
+            return -1;
+        }
+        if (PyDict_PopString(dct, "pipe2", NULL) < 0) {
             return -1;
         }
     }

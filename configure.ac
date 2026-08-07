@@ -871,11 +871,8 @@ case $ac_sys_system/$ac_sys_release in
   # Marc Recht
   NetBSD/1.5 | NetBSD/1.5.* | NetBSD/1.6 | NetBSD/1.6.* | NetBSD/1.6@<:@A-S@:>@)
     define_xopen_source=no;;
-  # From the perspective of Solaris, _XOPEN_SOURCE is not so much a
-  # request to enable features supported by the standard as a request
-  # to disable features not supported by the standard.  The best way
-  # for Python to use Solaris is simply to leave _XOPEN_SOURCE out
-  # entirely and define __EXTENSIONS__ instead.
+  # On Solaris, _XOPEN_SOURCE=800 hides platform specific features.
+  # A lower level is defined below.
   SunOS/*)
     define_xopen_source=no;;
   # On UnixWare 7, u_long is never defined with _XOPEN_SOURCE,
@@ -935,6 +932,20 @@ then
 
   AC_DEFINE([_POSIX_C_SOURCE], [202405L],
             [Define to activate features from IEEE Std 1003.1-2024])
+
+  # Defining _POSIX_C_SOURCE and _XOPEN_SOURCE hides C23 library
+  # declarations on FreeBSD (e.g. sinpi() in math.h) when compiling
+  # with -std=c11.  Defining _ISOC23_SOURCE makes them visible again.
+  AC_DEFINE([_ISOC23_SOURCE], [1],
+            [Define to activate ISO C23 library declarations])
+elif test "$ac_sys_system" = "SunOS"
+then
+  # On illumos the socket ancillary-data API (CMSG_*, sendmsg(), recvmsg())
+  # is declared only with _XOPEN_SOURCE >= 600; Solaris declares it anyway.
+  # __EXTENSIONS__ keeps the platform specific features which _XOPEN_SOURCE
+  # would otherwise hide.  See gh-57208.
+  AC_DEFINE([_XOPEN_SOURCE], [600],
+            [Define to the level of X/Open that your system supports])
 fi
 
 # On HP-UX mbstate_t requires _INCLUDE__STDC_A1_SOURCE
@@ -1090,6 +1101,8 @@ AC_CACHE_CHECK([for CC compiler name], [ac_cv_cc_name], [
 cat > conftest.c <<EOF
 #if defined(__EMSCRIPTEN__)
   emcc
+#elif defined(__INTEL_CLANG_COMPILER) || defined(__INTEL_LLVM_COMPILER)
+  icx
 #elif defined(__INTEL_COMPILER) || defined(__ICC)
   icc
 #elif defined(__ibmxl__) || defined(__xlc__) || defined(__xlC__)
@@ -1139,8 +1152,9 @@ then
         case "$ac_cv_cc_name" in
         gcc)    AC_PATH_TOOL([CXX], [g++], [notfound]) ;;
         cc)     AC_PATH_TOOL([CXX], [c++], [notfound]) ;;
-        clang)             AC_PATH_TOOL([CXX], [clang++], [notfound]) ;;
-        icc)               AC_PATH_TOOL([CXX], [icpc], [notfound]) ;;
+        clang)  AC_PATH_TOOL([CXX], [clang++], [notfound]) ;;
+        icx)    AC_PATH_TOOL([CXX], [icpx], [notfound]) ;;
+        icc)    AC_PATH_TOOL([CXX], [icpc], [notfound]) ;;
         esac
 	if test "$CXX" = "notfound"
 	then
@@ -1211,6 +1225,10 @@ AS_CASE([$ac_sys_system],
   [iOS], [SOABI_PLATFORM=`echo "$PLATFORM_TRIPLET" | cut -d '-' -f2`],
   [SOABI_PLATFORM=$PLATFORM_TRIPLET]
 )
+
+if test x$SOABI_PLATFORM != x; then
+    AC_DEFINE_UNQUOTED([SOABI_PLATFORM], ["${SOABI_PLATFORM}"], [Platform tag, used in binary module extension filenames.])
+fi
 
 if test x$MULTIARCH != x; then
   MULTIARCH_CPPFLAGS="-DMULTIARCH=\\\"$MULTIARCH\\\""
@@ -1355,6 +1373,20 @@ AC_ARG_ENABLE([wasm-pthreads],
   enable_wasm_pthreads=missing
 ])
 AC_MSG_RESULT([$enable_wasm_pthreads])
+
+AC_MSG_CHECKING([for --enable-emscripten-syscalls])
+AC_ARG_ENABLE([emscripten-syscalls],
+  [AS_HELP_STRING([--disable-emscripten-syscalls],
+                  [Disable the Emscripten syscall overrides in Python/emscripten_syscalls.c (default is enabled for Emscripten)])],
+[
+  AS_CASE([$ac_sys_system],
+    [Emscripten], [],
+    [AC_MSG_ERROR([--enable-emscripten-syscalls only applies to Emscripten])]
+  )
+], [
+  enable_emscripten_syscalls=yes
+])
+AC_MSG_RESULT([$enable_emscripten_syscalls])
 
 AC_MSG_CHECKING([for --with-suffix])
 AC_ARG_WITH([suffix],
@@ -2085,7 +2117,7 @@ fi
 LLVM_PROF_ERR=no
 
 case "$ac_cv_cc_name" in
-  clang)
+  clang|icx)
     # Any changes made here should be reflected in the GCC+Darwin case below
     PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
     PGO_PROF_USE_FLAG="-fprofile-instr-use=\"\$(shell pwd)/code.profclangd\""
@@ -2410,8 +2442,6 @@ AS_CASE([$ac_sys_system],
     AS_VAR_APPEND([LINKFORSHARED], [" -sSTACK_SIZE=5MB"])
     dnl Avoid bugs in JS fallback string decoding path
     AS_VAR_APPEND([LINKFORSHARED], [" -sTEXTDECODER=2"])
-    dnl workaround for emscripten#27241, can remove when we update to emscripten 6.0.3
-    AS_VAR_APPEND([LINKFORSHARED], [" -sGROWABLE_ARRAYBUFFERS=0"])
 
     AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
       AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE"])
@@ -2964,6 +2994,10 @@ fi
 case "$ac_cv_cc_name" in
 mpicc)
     CFLAGS_NODIST="$CFLAGS_NODIST"
+    ;;
+icx)
+    # ICX needs fp-model=precise (the default in clang) or floats behave badly
+    CFLAGS_NODIST="$CFLAGS_NODIST -ffp-model=precise"
     ;;
 icc)
     # ICC needs -fp-model strict or floats behave badly
@@ -4066,9 +4100,10 @@ AS_VAR_IF([ac_cv_have_uuid_generate_time_safe], [yes], [
   AC_DEFINE([HAVE_UUID_GENERATE_TIME_SAFE], [1])
 ])
 
-# gh-124228: While the libuuid library is available on NetBSD, it supports only UUID version 4.
+# gh-124228: While the libuuid library is available on NetBSD and OpenBSD,
+# it supports only UUID version 4.
 # This restriction inhibits the proper generation of time-based UUIDs.
-if test "$ac_sys_system" = "NetBSD"; then
+if test "$ac_sys_system" = "NetBSD" || test "$ac_sys_system" = "OpenBSD"; then
   have_uuid=missing
   AC_DEFINE([HAVE_UUID_H], [0])
 fi
@@ -5368,7 +5403,10 @@ PLATFORM_OBJS=
 
 AS_CASE([$ac_sys_system],
   [Emscripten], [
-    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_trampoline_wasm.o Python/emscripten_syscalls.o'])
+    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_trampoline_wasm.o'])
+    AS_VAR_IF([enable_emscripten_syscalls], [yes], [
+      AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_syscalls.o'])
+    ])
     AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'])
   ],
 )
@@ -5382,6 +5420,9 @@ DLINCLDIR=.
 # the dlopen() function means we might want to use dynload_shlib.o. some
 # platforms have dlopen(), but don't want to use it.
 AC_CHECK_FUNCS([dlopen])
+
+# Used by ctypes.util.dllist().
+AC_CHECK_FUNCS([dl_iterate_phdr])
 
 # DYNLOADFILE specifies which dynload_*.o file we will use for dynamic
 # loading of modules.
@@ -6340,8 +6381,8 @@ AX_C_FLOAT_WORDS_BIGENDIAN(
 # rounding precision of 64 bits.  For gcc/x86, we can fix this by
 # using inline assembler to get and set the x87 FPU control word.
 
-# This inline assembler syntax may also work for suncc and icc,
-# so we try it on all platforms.
+# This inline assembler syntax works for icx and may also work for
+# suncc and icc, so we try it on all platforms.
 
 AC_CACHE_CHECK([whether we can use gcc inline assembler to get and set x87 control word], [ac_cv_gcc_asm_for_x87], [
 AC_LINK_IFELSE(   [AC_LANG_PROGRAM([[]], [[
@@ -6628,18 +6669,21 @@ LDVERSION='$(VERSION)$(ABIFLAGS)'
 AC_MSG_RESULT([$LDVERSION])
 
 # Configure the flags and dependencies used when compiling shared modules.
-# Do not rename LIBPYTHON - it's accessed via sysconfig by package build
-# systems (e.g. Meson) to decide whether to link extension modules against
-# libpython.
 AC_SUBST([MODULE_DEPS_SHARED])
 AC_SUBST([LIBPYTHON])
 MODULE_DEPS_SHARED='$(MODULE_DEPS_STATIC) $(EXPORTSYMS)'
+
+# On most platforms, extension modules aren't linked against libpython, so
+# LIBPYTHON must be empty.
 LIBPYTHON=''
 
 # On Android and Cygwin the shared libraries must be linked with libpython.
+# LIBPYTHON is used by python-config, python3.pc, the commands for building the
+# stdlib's own extension modules, and external package build systems via
+# sysconfig, so its value must be suitable for all those contexts.
 if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MACHDEP" = "cygwin"); then
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(LDLIBRARY)"
-  LIBPYTHON="\$(BLDLIBRARY)"
+  LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
 fi
 
 # On iOS the shared libraries must be linked with the Python framework
@@ -7219,12 +7263,18 @@ AS_VAR_IF([ac_sys_system], [Darwin], [
 dnl pyconfig.h defines _XOPEN_SOURCE=700
 PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
-dnl Native curses ("curses") may be wide-character capable (e.g. on NetBSD)
-dnl even though it is not ncursesw.  Probe for the wide API; if present, build
-dnl the module against it like ncursesw by defining HAVE_NCURSESW.  ncursesw
-dnl already defines HAVE_NCURSESW, and ncurses must stay narrow, so only the
-dnl native backend is probed here.
-AS_VAR_IF([with_curses], [curses], [
+dnl A curses that is not named "ncursesw" can still be wide-character capable:
+dnl the system curses of NetBSD, or an ncurses built with --enable-widec that
+dnl keeps the plain name (pkgsrc, macOS).  Probe for the wide API and, if
+dnl present, build the module wide by defining HAVE_NCURSESW.  The "ncursesw"
+dnl backend already defines it, so only the other backends are probed.
+AS_CASE([$with_curses], [ncursesw|no], [], [
+  dnl Use the adjusted CURSES_CFLAGS (e.g. macOS's -D_XOPEN_SOURCE_EXTENDED)
+  dnl so the wide-character declarations are visible to the probe.  This runs
+  dnl inside an outer WITH_SAVE_ENV, whose single CPPFLAGS save slot is not
+  dnl reentrant, so save and restore CPPFLAGS with a dedicated variable here.
+  save_curses_cppflags=$CPPFLAGS
+  AS_VAR_APPEND([CPPFLAGS], [" $CURSES_CFLAGS"])
   AC_CACHE_CHECK([whether curses supports wide characters],
     [ac_cv_curses_wide],
     [AC_LINK_IFELSE(
@@ -7235,6 +7285,7 @@ AS_VAR_IF([with_curses], [curses], [
       ]])],
       [ac_cv_curses_wide=yes],
       [ac_cv_curses_wide=no])])
+  CPPFLAGS=$save_curses_cppflags
   dnl HAVE_NCURSESW marks the wide (cchar_t) curses API; its template comes
   dnl from the ncursesw pkg-config check above, so no description here.
   AS_VAR_IF([ac_cv_curses_wide], [yes], [AC_DEFINE([HAVE_NCURSESW], [1])])
