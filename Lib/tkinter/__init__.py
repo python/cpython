@@ -149,7 +149,8 @@ def _splitdict(tk, v, cut_minus=True, conv=None):
     return dict
 
 class _VersionInfoType(collections.namedtuple('_VersionInfoType',
-        ('major', 'minor', 'micro', 'releaselevel', 'serial'))):
+        ('major', 'minor', 'micro', 'releaselevel', 'serial'),
+        deprecate_tuple_api=False)):
     def __str__(self):
         if self.releaselevel == 'final':
             return f'{self.major}.{self.minor}.{self.micro}'
