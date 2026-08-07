@@ -6200,7 +6200,6 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
 #else
     char buf[16384];
     int buf_len = (sizeof buf) - 1;
-    int errnop;
 #endif
 #ifdef HAVE_GETHOSTBYNAME_R_3_ARG
     int result;
@@ -6219,11 +6218,9 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
 #if   defined(HAVE_GETHOSTBYNAME_R_6_ARG)
-    gethostbyname_r(name, &hp_allocated, buf, buf_len, &h, &errnop);
-    h_error = errnop;
+    gethostbyname_r(name, &hp_allocated, buf, buf_len, &h, &h_error);
 #elif defined(HAVE_GETHOSTBYNAME_R_5_ARG)
-    h = gethostbyname_r(name, &hp_allocated, buf, buf_len, &errnop);
-    h_error = errnop;
+    h = gethostbyname_r(name, &hp_allocated, buf, buf_len, &h_error);
 #else /* HAVE_GETHOSTBYNAME_R_3_ARG */
     memset((void *) &data, '\0', sizeof(data));
     result = gethostbyname_r(name, &hp_allocated, &data);
@@ -6286,7 +6283,6 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
        to maintain this alignment. */
     _Py_ALIGNED_DEF(8, char) buf[16384];
     int buf_len = (sizeof buf) - 1;
-    int errnop;
 #endif
 #ifdef HAVE_GETHOSTBYNAME_R_3_ARG
     int result;
@@ -6328,11 +6324,9 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
 #if   defined(HAVE_GETHOSTBYNAME_R_6_ARG)
-    gethostbyaddr_r(ap, al, af, &hp_allocated, buf, buf_len, &h, &errnop);
-    h_error = errnop;
+    gethostbyaddr_r(ap, al, af, &hp_allocated, buf, buf_len, &h, &h_error);
 #elif defined(HAVE_GETHOSTBYNAME_R_5_ARG)
-    h = gethostbyaddr_r(ap, al, af, &hp_allocated, buf, buf_len, &errnop);
-    h_error = errnop;
+    h = gethostbyaddr_r(ap, al, af, &hp_allocated, buf, buf_len, &h_error);
 #else /* HAVE_GETHOSTBYNAME_R_3_ARG */
     memset((void *) &data, '\0', sizeof(data));
     result = gethostbyaddr_r(ap, al, af, &hp_allocated, &data);
