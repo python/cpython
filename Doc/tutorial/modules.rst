@@ -603,3 +603,17 @@ modules found in a package.
 .. [#] In fact function definitions are also 'statements' that are 'executed'; the
    execution of a module-level function definition adds the function name to
    the module's global namespace.
+
+Public Names
+------------
+
+.. note::
+   When using a module, it is important to know which names (functions, classes, variables) are intended for you to use (the *public API*), and which are internal details that might change.
+
+The rules for public names are:
+
+1. If a module defines an ``__all__`` variable, only the names listed inside it are considered public. All remaining names are considered private.
+
+2. If a module does not define an ``__all__`` variable, then any name that does NOT start with an underscore (``_``) is considered public.
+
+3. Any imported names from other modules are not public, unless they are explicitly included in ``__all__``.
