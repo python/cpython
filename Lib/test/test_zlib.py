@@ -1090,7 +1090,7 @@ class ZlibDecompressorTest(unittest.TestCase):
         self.assertRaises(EOFError, zlibd.decompress, b"")
 
     @support.skip_if_pgo_task
-    @bigmemtest(size=_4G + 100, memuse=3.3)
+    @bigmemtest(size=_4G + 100, memuse=4.5)
     def testDecompress4G(self, size):
         # "Test zlib._ZlibDecompressor.decompress() with >4GiB input"
         blocksize = min(10 * 1024 * 1024, size)
