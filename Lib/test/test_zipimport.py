@@ -9,6 +9,7 @@ import struct
 import time
 import unittest
 import unittest.mock
+import warnings
 
 from test import support
 from test.support import import_helper
@@ -228,6 +229,23 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
     def testPy(self):
         files = {TESTMOD + ".py": test_src}
         self.doTest(".py", files, TESTMOD)
+
+    def test_syntax_warning(self):
+        files = {TESTMOD + ".py": "x = 1 is 1\n"}
+        self.makeZip(files)
+        zi = zipimport.zipimporter(TEMP_ZIP)
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always", SyntaxWarning)
+            spec = zi.find_spec(TESTMOD)
+            self.assertIsNotNone(spec)
+            self.assertEqual(caught, [])
+
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+
+        self.assertEqual(len(caught), 1)
+        self.assertIsInstance(caught[0].message, SyntaxWarning)
 
     def testPyc(self):
         files = {TESTMOD + pyc_ext: test_pyc}
