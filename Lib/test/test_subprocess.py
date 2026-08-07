@@ -2449,6 +2449,16 @@ class POSIXProcessTestCase(BaseTestCase):
         err = subprocess.CalledProcessError(-9876543, "fake cmd")
         self.assertEqual(str(err), "Command 'fake cmd' died with unknown signal 9876543.")
 
+        # returncode which is not an integer, which happens for example when
+        # Popen is mocked: str() must not fail
+        for returncode in (None, "2", 2.5, [2]):
+            with self.subTest(returncode=returncode):
+                err = subprocess.CalledProcessError(returncode, "fake cmd")
+                self.assertEqual(
+                    str(err),
+                    f"Command 'fake cmd' returned non-zero "
+                    f"exit status {returncode}.")
+
     def test_preexec(self):
         # DISCLAIMER: Setting environment variables is *not* a good use
         # of a preexec_fn.  This is merely a test.
