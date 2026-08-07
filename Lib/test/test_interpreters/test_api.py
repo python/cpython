@@ -1726,6 +1726,74 @@ class TestInterpreterCall(TestBase):
             with self.assertRaises(interpreters.NotShareableError):
                 interp.call(func, op, 'eggs!')
 
+    def test_call_result_unpickling_raises(self):
+        # gh-151892: a caller-side result-unpickle failure left the exception
+        # set in _PyXI_Exit(), tripping an assertion instead of propagating.
+        source = dedent("""
+            from concurrent import interpreters
+
+            def _raise_on_unpickle():
+                raise ValueError('unpickling failed')
+
+            def _raise_notshareable_on_unpickle():
+                raise interpreters.NotShareableError('nope')
+
+            class BadResult:
+                def __reduce__(self):
+                    return (_raise_on_unpickle, ())
+
+            class NotShareableResult:
+                def __reduce__(self):
+                    return (_raise_notshareable_on_unpickle, ())
+
+            class ReduceRaises:
+                def __reduce__(self):
+                    raise RuntimeError('reduce failed')
+
+            def make_bad_result():
+                return BadResult()
+
+            def make_notshareable_result():
+                return NotShareableResult()
+
+            def make_reduce_raises():
+                return ReduceRaises()
+        """)
+        with import_helper.ready_to_import('unpicklable_result', source) as (
+                name, path):
+            interp = interpreters.create()
+            interp.prepare_main(_moddir=os.path.dirname(path))
+            interp.exec(dedent(f"""
+                import sys
+                sys.path.insert(0, _moddir)
+                import {name} as mod
+                """))
+
+            # Guards this fix: caller-side unpickle raises (ValueError).
+            with self.subTest('unpickle raises'):
+                with self.assertRaises(
+                        interpreters.NotShareableError) as cm:
+                    interp.call(eval, 'mod.make_bad_result()')
+                # __cause__ is a generic Exception (the type cannot cross
+                # interpreters); don't tighten this to assertIsInstance.
+                self.assertIn('ValueError', str(cm.exception.__cause__))
+                self.assertIn('unpickling failed',
+                              str(cm.exception.__cause__))
+
+            # Same branch as above, but the unpickle error is itself a
+            # NotShareableError; verify it is preserved as the __cause__.
+            with self.subTest('unpickle raises NotShareableError'):
+                with self.assertRaises(interpreters.NotShareableError) as cm:
+                    interp.call(eval, 'mod.make_notshareable_result()')
+                self.assertIn('NotShareableError',
+                              str(cm.exception.__cause__))
+
+            # Adjacent coverage: callee-side reduce raises (the pre-existing
+            # capture_session_error path); does not exercise this fix.
+            with self.subTest('reduce raises'):
+                with self.assertRaises(interpreters.NotShareableError):
+                    interp.call(eval, 'mod.make_reduce_raises()')
+
     def test_callable_requires_frame(self):
         # There are various functions that require a current frame.
         interp = interpreters.create()
