@@ -670,7 +670,7 @@ class CalendarTestCase(unittest.TestCase):
             importlib.reload(calendar)
 
         self.assertEqual(calendar.standalone_month_name[1], calendar.month_name[1])
-    
+
     def test_locale_text_calendar(self):
         try:
             cal = calendar.LocaleTextCalendar(locale='')
