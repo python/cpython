@@ -1,0 +1,2 @@
+Fix a free-threaded stop-the-world race that could starve a thread reattaching
+after being suspended while detached.
