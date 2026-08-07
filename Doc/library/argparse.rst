@@ -1625,9 +1625,9 @@ See also :ref:`the argparse howto on ambiguous arguments <specifying-ambiguous-a
 for more details.
 
    .. versionchanged:: 3.14
-      Negative numbers in scientific notation (e.g. ``-2.5e-6``), with
-      underscores (e.g. ``-1_234.5``) and complex numbers (e.g. ``-1.2e-3j``)
-      are recognized as negative numbers.
+      Negative numbers in scientific notation (``-2.5e-6``), with underscores
+      (``-1_234.5``) and complex numbers (``-1.2e-3j``) are recognized as
+      negative numbers.
 
 .. _prefix-matching:
 
