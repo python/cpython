@@ -1,0 +1,2 @@
+Optimize bytecode for leading null unpack cases such as the ``ast.unparse``
+empty set representation.
