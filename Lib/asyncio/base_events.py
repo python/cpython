@@ -1083,6 +1083,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         connection in the background.  When successful, the coroutine
         returns a (transport, protocol) pair.
         """
+        sock_was_provided = sock is not None
         if server_hostname is not None and not ssl:
             raise ValueError('server_hostname is only meaningful with ssl')
 
@@ -1204,7 +1205,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         transport, protocol = await self._create_connection_transport(
             sock, protocol_factory, ssl, server_hostname,
             ssl_handshake_timeout=ssl_handshake_timeout,
-            ssl_shutdown_timeout=ssl_shutdown_timeout)
+            ssl_shutdown_timeout=ssl_shutdown_timeout,
+            sock_was_provided=sock_was_provided)
         if self._debug:
             # Get the socket from the transport because SSL transport closes
             # the old socket and creates a new SSL socket
@@ -1217,7 +1219,8 @@ class BaseEventLoop(events.AbstractEventLoop):
             self, sock, protocol_factory, ssl,
             server_hostname, server_side=False,
             ssl_handshake_timeout=None,
-            ssl_shutdown_timeout=None, context=None):
+            ssl_shutdown_timeout=None, context=None,
+            sock_was_provided=False):
 
         try:
             sock.setblocking(False)
@@ -1236,8 +1239,10 @@ class BaseEventLoop(events.AbstractEventLoop):
             else:
                 transport = self._make_socket_transport(sock, protocol, waiter, context=context)
         except:
-            # gh-153133: close the socket if the transport is never created.
-            sock.close()
+            # gh-153133: close internally created sockets if the transport is
+            # never created.
+            if not sock_was_provided:
+                sock.close()
             raise
 
         try:
@@ -1705,7 +1710,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         transport, protocol = await self._create_connection_transport(
             sock, protocol_factory, ssl, '', server_side=True,
             ssl_handshake_timeout=ssl_handshake_timeout,
-            ssl_shutdown_timeout=ssl_shutdown_timeout)
+            ssl_shutdown_timeout=ssl_shutdown_timeout,
+            sock_was_provided=True)
         if self._debug:
             # Get the socket from the transport because SSL transport closes
             # the old socket and creates a new SSL socket

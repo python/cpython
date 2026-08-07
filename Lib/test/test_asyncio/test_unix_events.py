@@ -393,6 +393,19 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
                                         'A UNIX Domain Stream.*was expected'):
                 self.loop.run_until_complete(coro)
 
+    def test_create_unix_connection_transport_error_does_not_close_sock(self):
+        sock = mock.Mock()
+        sock.family = socket.AF_UNIX
+        sock.type = socket.SOCK_STREAM
+
+        def factory():
+            raise ZeroDivisionError
+
+        coro = self.loop.create_unix_connection(factory, sock=sock)
+        with self.assertRaises(ZeroDivisionError):
+            self.loop.run_until_complete(coro)
+        self.assertFalse(sock.close.called)
+
     @mock.patch('asyncio.unix_events.socket')
     def test_create_unix_server_bind_error(self, m_socket):
         # Ensure that the socket is closed on any bind error

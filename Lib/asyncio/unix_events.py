@@ -227,6 +227,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             server_hostname=None,
             ssl_handshake_timeout=None,
             ssl_shutdown_timeout=None):
+        sock_was_provided = sock is not None
         assert server_hostname is None or isinstance(server_hostname, str)
         if ssl:
             if server_hostname is None:
@@ -268,7 +269,8 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         transport, protocol = await self._create_connection_transport(
             sock, protocol_factory, ssl, server_hostname,
             ssl_handshake_timeout=ssl_handshake_timeout,
-            ssl_shutdown_timeout=ssl_shutdown_timeout)
+            ssl_shutdown_timeout=ssl_shutdown_timeout,
+            sock_was_provided=sock_was_provided)
         return transport, protocol
 
     async def create_unix_server(

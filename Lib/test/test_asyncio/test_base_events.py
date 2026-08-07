@@ -1341,9 +1341,9 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
                 self.loop.run_until_complete(coro)
             self.assertTrue(sock.close.called)
 
-    def test_create_connection_sock_transport_error_closes_sock(self):
-        # gh-153133: a user-provided socket is closed if the transport is
-        # never created.
+    def test_create_connection_sock_transport_error_does_not_close_sock(self):
+        # gh-155305: a user-provided socket remains owned by the caller when
+        # the transport is never created.
         sock = mock.Mock()
         sock.type = socket.SOCK_STREAM
 
@@ -1353,7 +1353,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         coro = self.loop.create_connection(factory, sock=sock)
         with self.assertRaises(ZeroDivisionError):
             self.loop.run_until_complete(coro)
-        self.assertTrue(sock.close.called)
+        self.assertFalse(sock.close.called)
 
     @patch_socket
     def test_create_connection_transport_error_closes_sock(self, m_socket):
