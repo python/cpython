@@ -63,6 +63,8 @@ jobs:
         # On ubuntu-26.04 image, LLVM is LLVM-21 by default
         sudo apt-get install --no-install-recommends bolt-21
         echo PATH="$(llvm-config-21 --bindir):$PATH" >> $GITHUB_ENV
+    - name: Reproducible install timestamps
+      run: echo "SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)" >> $GITHUB_ENV
     - name: Configure OpenSSL env vars
       run: |
         echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
