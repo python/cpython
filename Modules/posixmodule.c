@@ -18973,7 +18973,7 @@ posixmodule_exec(PyObject *m)
 #endif
 
     /* initialize TerminalSize_info */
-    state->TerminalSizeType = (PyObject *)_PyStructSequence_NewType(&TerminalSize_desc, 0, 1);
+    state->TerminalSizeType = (PyObject *)PyStructSequence_NewType(&TerminalSize_desc);
     if (PyModule_AddObjectRef(m, "terminal_size", state->TerminalSizeType) < 0) {
         return -1;
     }
