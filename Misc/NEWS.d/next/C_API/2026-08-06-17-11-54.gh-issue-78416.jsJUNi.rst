@@ -1,0 +1,3 @@
+:c:func:`PyArg_ParseTupleAndKeywords` now supports required keyword-only arguments mixed with optional arguments.
+``|`` can now be specified after ``$`` to end the required keyword-only arguments.
+For example, the format string ``"O|O$O|O"`` corresponds to the Python signature ``f(a, b=None, *, c, d=None)``.
