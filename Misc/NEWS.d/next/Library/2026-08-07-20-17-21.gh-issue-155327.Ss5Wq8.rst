@@ -1,0 +1,4 @@
+Fix ``ssl.SSLSocket.get_verified_chain()`` and
+``ssl.SSLSocket.get_unverified_chain()`` to return an empty list instead of
+raising :exc:`AttributeError` when called after the socket's TLS layer has been
+shut down. Patch by tonghuaroot.
