@@ -12,6 +12,7 @@ import unittest
 
 from test import support
 from test.support import findfile, MS_WINDOWS
+from test.support import os_helper
 
 
 if not support.has_subprocess_support:
@@ -209,29 +210,31 @@ class SystemTapBackend(TraceBackend):
     PROBE_PLACEHOLDER = "@PYTHON_SYSTEMTAP_PROBE@"
 
     @staticmethod
-    def _quote_systemtap_string(value):
+    def quote_systemtap_string(value):
         return value.replace("\\", "\\\\").replace('"', '\\"')
 
-    def _python_probe(self):
-        executable = self._quote_systemtap_string(sys.executable)
+    def python_probe(self):
+        executable = self.quote_systemtap_string(sys.executable)
         probe_binary = get_probe_binary()
-        if probe_binary != sys.executable:
-            probe_binary = self._quote_systemtap_string(probe_binary)
-            return f'process("{executable}").library("{probe_binary}").mark'
-        return f'process("{executable}").mark'
+        if probe_binary == sys.executable:
+            return f'process("{executable}").mark'
 
-    def _render_script(self, script_file):
-        with open(script_file) as script:
-            return script.read().replace(
-                self.PROBE_PLACEHOLDER, self._python_probe()
-            )
+        # Python built with --enable-shared
+        probe_binary = self.quote_systemtap_string(probe_binary)
+        return f'process("{executable}").library("{probe_binary}").mark'
+
+    def render_script(self, filename):
+        with open(filename) as fp:
+            script = fp.read()
+
+        return script.replace(self.PROBE_PLACEHOLDER, self.python_probe())
 
     def trace(self, script_file, subcommand=None, *, timeout=None,
               check_returncode=False):
         with tempfile.NamedTemporaryFile(
             mode="w", encoding="utf-8", suffix=self.EXTENSION, delete=False
         ) as script:
-            script.write(self._render_script(script_file))
+            script.write(self.render_script(script_file))
             generated_script_file = script.name
 
         try:
@@ -242,7 +245,7 @@ class SystemTapBackend(TraceBackend):
                 check_returncode=check_returncode,
             )
         finally:
-            os.unlink(generated_script_file)
+            os_helper.unlink(generated_script_file)
 
 
 class BPFTraceBackend(TraceBackend):
