@@ -399,8 +399,14 @@ def encode_rfc2231(s, charset=None, language=None):
     return "%s'%s'%s" % (charset, language, s)
 
 
-rfc2231_continuation = re.compile(r'^(?P<name>\w+)\*((?P<num>[0-9]+)\*?)?$',
+rfc2231_continuation = re.compile(r'^(?P<name>[\w-]+)\*((?P<num>[0-9]+)\*?)?$',
     re.ASCII)
+# `\w` is ASCII-only here (re.ASCII), so it matches exactly [A-Za-z0-9_],
+# all of which are valid RFC 2045 `token` characters. Adding `-` lets the
+# regex recognize hyphenated continuation parameter names (e.g. `file-name*0*`).
+# This is intentionally stricter than the full RFC 2045 `token` set (which
+# also permits e.g. `.`, `!`, `#`); none of those appear in practice for
+# RFC 2231 parameter names, and broadening the class is out of scope here.
 
 def decode_params(params):
     """Decode parameters list according to RFC 2231.
