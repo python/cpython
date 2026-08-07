@@ -1,0 +1,4 @@
+Introduce ``with_ext_timestamps`` parameter to
+:class:`~zipfile.ZipFile` and :meth:`~zipfile.ZipInfo.from_file` to
+fill extra data with the file's extended timestamps when writing a
+file to the archive.
