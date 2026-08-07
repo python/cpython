@@ -2837,12 +2837,12 @@ class TarFile(object):
             if not numeric_owner:
                 try:
                     if grp and tarinfo.gname:
-                        g = grp.getgrnam(tarinfo.gname)[2]
+                        g = grp.getgrnam(tarinfo.gname).gr_gid
                 except KeyError:
                     pass
                 try:
                     if pwd and tarinfo.uname:
-                        u = pwd.getpwnam(tarinfo.uname)[2]
+                        u = pwd.getpwnam(tarinfo.uname).pw_uid
                 except KeyError:
                     pass
             if g is None:

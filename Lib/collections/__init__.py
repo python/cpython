@@ -361,7 +361,7 @@ except ImportError:
 def namedtuple(typename, field_names, *, rename=False, defaults=None, module=None, deprecate_tuple_api=True):
     """Returns a new subclass of tuple with named fields.
 
-    >>> Point = namedtuple('Point', ['x', 'y'])
+    >>> Point = namedtuple('Point', ['x', 'y'], deprecate_tuple_api=False)
     >>> Point.__doc__                   # docstring for the new class
     'Point(x, y)'
     >>> p = Point(11, y=22)             # instantiate with positional args or keywords

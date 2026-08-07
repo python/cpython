@@ -319,7 +319,7 @@ TestNT = namedtuple('TestNT', 'x y z')    # type used for pickle tests
 class TestNamedTuple(unittest.TestCase):
 
     def test_factory(self):
-        Point = namedtuple('Point', 'x y')
+        Point = namedtuple('Point', 'x y', deprecate_tuple_api=False)
         self.assertEqual(Point.__name__, 'Point')
         self.assertEqual(Point.__slots__, ())
         self.assertEqual(Point.__module__, __name__)
@@ -398,7 +398,7 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(Point(), (10, 20))
 
     def test_readonly(self):
-        Point = namedtuple('Point', 'x y')
+        Point = namedtuple('Point', 'x y', deprecate_tuple_api=False)
         p = Point(11, 22)
         with self.assertRaises(AttributeError):
             p.x = 33
@@ -504,7 +504,7 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(repr(p), 'Point(x=11, y=22)')
 
     def test_tupleness(self):
-        Point = namedtuple('Point', 'x y')
+        Point = namedtuple('Point', 'x y', deprecate_tuple_api=False)
         p = Point(11, 22)
 
         self.assertIsInstance(p, tuple)
