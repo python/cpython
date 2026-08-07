@@ -915,18 +915,20 @@ class StatAttributeTests(unittest.TestCase):
         result = os.statvfs(self.fname)
 
         # Make sure direct access works
-        self.assertEqual(result.f_bfree, result[3])
+        with warnings.catch_warnings(category=DeprecationWarning):
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            self.assertEqual(result.f_bfree, result[3])
 
-        # Make sure all the attributes are there.
-        members = ('bsize', 'frsize', 'blocks', 'bfree', 'bavail', 'files',
-                    'ffree', 'favail', 'flag', 'namemax')
-        for value, member in enumerate(members):
-            self.assertEqual(getattr(result, 'f_' + member), result[value])
+            # Make sure all the attributes are there.
+            members = ('bsize', 'frsize', 'blocks', 'bfree', 'bavail', 'files',
+                        'ffree', 'favail', 'flag', 'namemax')
+            for value, member in enumerate(members):
+                self.assertEqual(getattr(result, 'f_' + member), result[value])
+
+            # Test that the size of the tuple doesn't change
+            self.assertEqual(len(result), 10)
 
         self.assertTrue(isinstance(result.f_fsid, int))
-
-        # Test that the size of the tuple doesn't change
-        self.assertEqual(len(result), 10)
 
         # Make sure that assignment really fails
         try:
@@ -2467,8 +2469,8 @@ class URandomTests(unittest.TestCase):
             'data = os.urandom(%s)' % count,
             'sys.stdout.buffer.write(data)',
             'sys.stdout.buffer.flush()'))
-        out = assert_python_ok('-c', code)
-        stdout = out[1]
+        proc = assert_python_ok('-c', code)
+        stdout = proc.out
         self.assertEqual(len(stdout), count)
         return stdout
 

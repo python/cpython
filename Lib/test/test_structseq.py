@@ -281,9 +281,11 @@ class StructSeqTest(unittest.TestCase):
         # visible fields
         self.assertEqual(copy.replace(t), t)
         self.assertIsInstance(copy.replace(t), os.times_result)
-        self.assertEqual(copy.replace(t, user=1.5), (1.5, *t[1:]))
-        self.assertEqual(copy.replace(t, system=2.5), (t[0], 2.5, *t[2:]))
-        self.assertEqual(copy.replace(t, user=1.5, system=2.5), (1.5, 2.5, *t[2:]))
+        with warnings.catch_warnings(category=DeprecationWarning):
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            self.assertEqual(copy.replace(t, user=1.5), (1.5, *t[1:]))
+            self.assertEqual(copy.replace(t, system=2.5), (t[0], 2.5, *t[2:]))
+            self.assertEqual(copy.replace(t, user=1.5, system=2.5), (1.5, 2.5, *t[2:]))
 
         # unknown fields
         with self.assertRaisesRegex(TypeError, 'unexpected field name'):

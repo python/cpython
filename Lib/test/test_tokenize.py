@@ -2015,16 +2015,16 @@ class TestRoundtrip(TestCase):
             code = f.read()
         readline = iter(code.splitlines(keepends=True)).__next__
         tokens5 = list(tokenize.tokenize(readline))
-        tokens2 = [tok[:2] for tok in tokens5]
+        tokens2 = [(tok.type, tok.string) for tok in tokens5]
         # Reproduce tokens2 from pairs
         bytes_from2 = tokenize.untokenize(tokens2)
         readline2 = iter(bytes_from2.splitlines(keepends=True)).__next__
-        tokens2_from2 = [tok[:2] for tok in tokenize.tokenize(readline2)]
+        tokens2_from2 = [(tok.type, tok.string) for tok in tokenize.tokenize(readline2)]
         self.assertEqual(tokens2_from2, tokens2)
         # Reproduce tokens2 from 5-tuples
         bytes_from5 = tokenize.untokenize(tokens5)
         readline5 = iter(bytes_from5.splitlines(keepends=True)).__next__
-        tokens2_from5 = [tok[:2] for tok in tokenize.tokenize(readline5)]
+        tokens2_from5 = [(tok.type, tok.string) for tok in tokenize.tokenize(readline5)]
         self.assertEqual(tokens2_from5, tokens2)
 
         if not contains_ambiguous_backslash(code):

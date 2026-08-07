@@ -868,7 +868,7 @@ def open_urlresource(url, *args, **kw):
 
     check = kw.pop('check', None)
 
-    filename = urllib.parse.urlparse(url)[2].split('/')[-1] # '/': it's URL!
+    filename = urllib.parse.urlparse(url).path.split('/')[-1] # '/': it's URL!
 
     fn = os.path.join(TEST_DATA_DIR, filename)
 
