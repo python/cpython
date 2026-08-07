@@ -4073,7 +4073,7 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
 #if defined(MS_WINDOWS)
     /* getwindowsversion */
     state->windows_version_type = _PyStructSequence_NewType(
-        &windows_version_desc, Py_TPFLAGS_DISALLOW_INSTANTIATION, 1);
+        &windows_version_desc, Py_TPFLAGS_DISALLOW_INSTANTIATION, 0);
     if (state->windows_version_type == NULL) {
         goto type_init_failed;
     }
