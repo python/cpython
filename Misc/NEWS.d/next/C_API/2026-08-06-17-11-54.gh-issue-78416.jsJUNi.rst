@@ -1,0 +1,3 @@
+:c:func:`PyArg_ParseTupleAndKeywords` now supports required keyword-only arguments mixed with optional arguments.
+The new format unit ``%`` starts the keyword-only arguments which are required until ``|``.
+For example, the format string ``"O|O%O|O"`` corresponds to the Python signature ``f(a, b=None, *, c, d=None)``.

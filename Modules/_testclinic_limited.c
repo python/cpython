@@ -129,8 +129,30 @@ static PyMethodDef tester_methods[] = {
     MY_FLOAT_SUM_METHODDEF
     MY_DOUBLE_SUM_METHODDEF
     GET_FILE_DESCRIPTOR_METHODDEF
+    REQUIRED_KWONLY_METHODDEF
     {NULL, NULL}
 };
+
+/*[clinic input]
+required_kwonly
+
+    a: object
+    b: object = None
+    *
+    c: object
+    d: object = None
+
+Mix an optional parameter with a required keyword-only one.
+[clinic start generated code]*/
+
+static PyObject *
+required_kwonly_impl(PyObject *module, PyObject *a, PyObject *b, PyObject *c,
+                     PyObject *d)
+/*[clinic end generated code: output=8e9a974afa614cd6 input=297ec6487f6373dd]*/
+{
+    return Py_BuildValue("OOOO", a, b, c, d);
+}
+
 
 static struct PyModuleDef _testclinic_module = {
     PyModuleDef_HEAD_INIT,

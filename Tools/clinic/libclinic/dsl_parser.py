@@ -1179,6 +1179,10 @@ class DSLParser:
             self.check_previous_star()
             self.check_remaining_star()
             self.keyword_only = True
+            # A keyword-only parameter can be required even if
+            # a positional one is optional.
+            if self.parameter_state is ParamState.OPTIONAL:
+                self.parameter_state = ParamState.REQUIRED
         else:
             if self.keyword_only:
                 fail(f"Function {function.name!r}: '* [from ...]' must precede '*'")
