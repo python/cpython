@@ -1,0 +1,3 @@
+Improve performance of :meth:`bytes.join` when the operands are known to be
+buffer views on :class:`bytes` objects (but not subclasses thereof) by
+releasing the GIL during the concatenation. Patch by Bénédikt Tran.
