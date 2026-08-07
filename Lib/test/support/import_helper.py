@@ -139,7 +139,7 @@ def multi_interp_extensions_check(enabled=True):
         _imp._override_multi_interp_extensions_check(old)
 
 
-def import_fresh_module(name, fresh=(), blocked=(), *,
+def import_fresh_module(name, fresh=(), blocked=(), cleared=(), *,
                         deprecated=False,
                         usefrozen=False,
                         ):
@@ -158,7 +158,12 @@ def import_fresh_module(name, fresh=(), blocked=(), *,
     in the module cache during the import to ensure that attempts to import
     them raise ImportError.
 
-    The named module and any modules named in the *fresh* and *blocked*
+    *cleared* is an iterable of module names that are removed from the
+    sys.modules cache before doing the import but *are not* re-imported.
+    This is to allow for the case where these module imports may fail as part
+    of the test due to other modules that are blocked.
+
+    The named module and any modules named in the *fresh*, *blocked* and *cleared*
     parameters are saved before starting the import and then reinserted into
     sys.modules when the fresh import is complete.
 
@@ -178,7 +183,8 @@ def import_fresh_module(name, fresh=(), blocked=(), *,
         # as those which just need a blocking entry removed
         fresh = list(fresh)
         blocked = list(blocked)
-        names = {name, *fresh, *blocked}
+        cleared = list(cleared)
+        names = {name, *fresh, *blocked, *cleared}
         orig_modules = _save_and_remove_modules(names)
         for modname in blocked:
             sys.modules[modname] = None

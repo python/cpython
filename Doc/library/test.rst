@@ -1699,7 +1699,7 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
    byte-compiled files of the module.
 
 
-.. function:: import_fresh_module(name, fresh=(), blocked=(), deprecated=False)
+.. function:: import_fresh_module(name, fresh=(), blocked=(), cleared=(), *, deprecated=False, usefrozen=False)
 
    This function imports and returns a fresh copy of the named Python module
    by removing the named module from ``sys.modules`` before doing the import.
@@ -1713,6 +1713,11 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
    in the module cache during the import to ensure that attempts to import
    them raise :exc:`ImportError`.
 
+   *cleared* is an iterable of module names that are removed from the
+   sys.modules cache before doing the import but *are not* re-imported.
+   This is to allow for the case where these module imports may fail as part
+   of the test due to other modules that are blocked.
+
    The named module and any modules named in the *fresh* and *blocked*
    parameters are saved before starting the import and then reinserted into
    ``sys.modules`` when the fresh import is complete.
@@ -1722,6 +1727,9 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
 
    This function will raise :exc:`ImportError` if the named module cannot be
    imported.
+
+   If "usefrozen" is False (the default) then the frozen importer is
+   disabled (except for essential modules like ``importlib._bootstrap``).
 
    Example use::
 
@@ -1733,6 +1741,8 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
       c_warnings = import_fresh_module('warnings', fresh=['_warnings'])
 
    .. versionadded:: 3.1
+   .. versionchanged:: next
+      New optional argument *cleared*.
 
 
 .. function:: import_module(name, deprecated=False, *, required_on=())
