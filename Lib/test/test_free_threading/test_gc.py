@@ -124,6 +124,35 @@ class TestGC(TestCase):
         finally:
             gc.set_threshold(*current_threshold)
 
+    def test_get_count(self):
+        class CyclicReference:
+            def __init__(self):
+                self.ref = self
+
+        NUM_ALLOCATORS = 7
+        NUM_READERS = 1
+        NUM_THREADS = NUM_ALLOCATORS + NUM_READERS
+        NUM_ITERS = 1000
+
+        barrier = threading.Barrier(NUM_THREADS)
+
+        def allocator():
+            barrier.wait()
+            for _ in range(NUM_ITERS):
+                CyclicReference()
+
+
+        def reader():
+            barrier.wait()
+            for _ in range(NUM_ITERS):
+                gc.get_count()
+
+        threads = [Thread(target=allocator) for _ in range(NUM_ALLOCATORS)]
+        threads.extend(Thread(target=reader) for _ in range(NUM_READERS))
+
+        with threading_helper.start_threads(threads):
+            pass
+
 
 if __name__ == "__main__":
     unittest.main()

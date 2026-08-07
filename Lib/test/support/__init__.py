@@ -35,18 +35,18 @@ __all__ = [
     "requires_gil_enabled", "requires_linux_version", "requires_mac_ver",
     "check_syntax_error",
     "requires_gzip", "requires_bz2", "requires_lzma", "requires_zstd",
-    "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
+    "bigmemtest", "nomemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "requires_zlib",
     "has_fork_support", "requires_fork",
     "has_subprocess_support", "requires_subprocess",
     "has_socket_support", "requires_working_socket",
-    "has_st_birthtime",
     "has_remote_subprocess_debugging", "requires_remote_subprocess_debugging",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_if_buggy_ucrt_strfptime",
     "check_disallow_instantiation", "check_sanitizer", "skip_if_sanitizer",
     "requires_limited_api", "requires_specialization", "thread_unsafe",
-    "skip_if_unlimited_stack_size",
+    "skip_if_unlimited_stack_size", "skip_if_huge_c_stack",
+    "run_with_limited_c_stack",
     # sys
     "MS_WINDOWS", "is_jython", "is_android", "is_emscripten", "is_wasi",
     "is_apple_mobile", "check_impl_detail", "unix_shell", "setswitchinterval",
@@ -237,20 +237,41 @@ def _is_gui_available():
         # if Python is running as a service (such as the buildbot service),
         # gui interaction may be disallowed
         import ctypes
+        import ctypes.util
         import ctypes.wintypes
+
         UOI_FLAGS = 1
         WSF_VISIBLE = 0x0001
-        class USEROBJECTFLAGS(ctypes.Structure):
-            _fields_ = [("fInherit", ctypes.wintypes.BOOL),
-                        ("fReserved", ctypes.wintypes.BOOL),
-                        ("dwFlags", ctypes.wintypes.DWORD)]
-        dll = ctypes.windll.user32
-        h = dll.GetProcessWindowStation()
+
+        @ctypes.util.struct
+        class USEROBJECTFLAGS:
+            fInherit: ctypes.wintypes.BOOL
+            fReserved: ctypes.wintypes.BOOL
+            dwFlags: ctypes.wintypes.DWORD
+
+        user32 = ctypes.windll.user32
+
+        @ctypes.util.wrap_dll_function(user32)
+        def GetProcessWindowStation() -> ctypes.wintypes.HANDLE:
+            ...
+
+        h = GetProcessWindowStation()
         if not h:
             raise ctypes.WinError()
+
+        @ctypes.util.wrap_dll_function(user32)
+        def GetUserObjectInformationW(
+            hObj: ctypes.wintypes.HANDLE,
+            nIndex: ctypes.c_int,
+            pvInfo: ctypes.c_void_p,
+            nLength: ctypes.wintypes.DWORD,
+            lpnLengthNeeded: ctypes.POINTER(ctypes.wintypes.DWORD),
+        ) -> ctypes.wintypes.BOOL:
+            ...
+
         uof = USEROBJECTFLAGS()
         needed = ctypes.wintypes.DWORD()
-        res = dll.GetUserObjectInformationW(h,
+        res = GetUserObjectInformationW(h,
             UOI_FLAGS,
             ctypes.byref(uof),
             ctypes.sizeof(uof),
@@ -620,10 +641,6 @@ has_fork_support = hasattr(os, "fork") and not (
     # all Android apps are multi-threaded.
     or is_android
 )
-
-# At the moment, st_birthtime attribute is only supported on Windows,
-# MacOS and FreeBSD.
-has_st_birthtime = sys.platform.startswith(("win", "freebsd", "darwin"))
 
 def requires_fork():
     return unittest.skipUnless(has_fork_support, "requires working os.fork()")
@@ -1276,6 +1293,7 @@ def bigmemtest(size, memuse, dry_run=True):
     test doesn't support dummy runs when -M is not specified.
     """
     def decorator(f):
+        @functools.wraps(f)
         def wrapper(self):
             size = wrapper.size
             memuse = wrapper.memuse
@@ -1310,8 +1328,25 @@ def bigmemtest(size, memuse, dry_run=True):
         return wrapper
     return decorator
 
+def nomemtest(f):
+    """Check that we can use this test with `_testcapi.set_nomemory`."""
+    from .import_helper import import_module
+
+    @functools.wraps(f)
+    def internal(*args, **kwargs):
+        import_module('_testcapi')
+        return f(*args, **kwargs)
+
+    return unittest.skipIf(
+        # Python built with Py_TRACE_REFS fail with a fatal error in
+        # _PyRefchain_Trace() on memory allocation error.
+        Py_TRACE_REFS,
+        'cannot test Py_TRACE_REFS build',
+    )(cpython_only(internal))
+
 def bigaddrspacetest(f):
     """Decorator for tests that fill the address space."""
+    @functools.wraps(f)
     def wrapper(self):
         if max_memuse < MAX_Py_ssize_t:
             if MAX_Py_ssize_t >= 2**63 - 1 and max_memuse >= 2**31:
@@ -1417,6 +1452,7 @@ def no_rerun(reason):
     def deco(func):
         assert not isinstance(func, type), func
         _has_run = False
+        @functools.wraps(func)
         def wrapper(self):
             nonlocal _has_run
             if _has_run:
@@ -2278,10 +2314,10 @@ class _SMALLEST:
 
 SMALLEST = _SMALLEST()
 
-def maybe_get_event_loop_policy():
-    """Return the global event loop policy if one is set, else return None."""
+def maybe_get_event_loop():
+    """Return the event loop set for the current thread, else return None."""
     import asyncio.events
-    return asyncio.events._event_loop_policy
+    return asyncio.events._local._loop
 
 # Helpers for testing hashing.
 NHASHBITS = sys.hash_info.width # number of bits in hash() result
@@ -2807,6 +2843,96 @@ def exceeds_recursion_limit():
     return 150_000
 
 
+def _has_huge_c_stack(depth):
+    """Check that *depth* recursive calls cannot exhaust the C stack."""
+    try:
+        from _testinternalcapi import get_c_recursion_remaining
+    except ImportError:
+        # Fall back to checking for an unlimited stack size.
+        if is_emscripten or is_wasi or os.name == "nt":
+            return False
+        import resource
+        soft, hard = resource.getrlimit(resource.RLIMIT_STACK)
+        return soft == hard and soft in (-1, 0xFFFF_FFFF_FFFF_FFFF)
+    else:
+        remaining = get_c_recursion_remaining()
+        # A negative value means integer overflow in the estimate
+        # (e.g. with an unlimited RLIMIT_STACK).  The estimate is based on
+        # the size of the interpreter loop frame, so it is only a lower
+        # bound for recursion with smaller C frames.
+        return remaining >= depth or remaining < 0
+
+
+def skip_if_huge_c_stack(depth=150_000):
+    """Skip decorator for tests which cannot overflow the C stack.
+
+    Tests exhausting the C stack with *depth* recursive calls cannot
+    trigger the recursion protection if the C stack is too large (e.g.
+    with a large or unlimited RLIMIT_STACK), and either fail, or run
+    for a very long time, or crash, or consume all memory.
+
+    Prefer run_with_limited_c_stack() for tests recursing to a fixed depth.
+    """
+    return unittest.skipIf(
+        _has_huge_c_stack(depth),
+        f"the C stack is large enough for {depth} recursive calls")
+
+
+# Small enough to be exhausted by tens of thousands of recursive calls,
+# but not smaller than Py_C_STACK_SIZE (4 MiB) which the interpreter
+# assumes if it cannot query the thread stack size.
+C_STACK_SIZE = 8 * 1024 * 1024
+
+
+def run_with_limited_c_stack(depth=150_000, size=C_STACK_SIZE):
+    """Decorator for tests exhausting the C stack with *depth* recursive calls.
+
+    Run the test in a separate thread with the C stack of *size* bytes, so
+    that the outcome does not depend on the C stack size of the main thread
+    (which can be large or unlimited, see RLIMIT_STACK).
+
+    If a thread with the limited C stack cannot be created, run the test in
+    the current thread, but skip it if the C stack is too large.
+    """
+    reason = f"the C stack is large enough for {depth} recursive calls"
+    def decorator(test):
+        @functools.wraps(test)
+        def wrapper(*args, **kwargs):
+            def run_test():
+                # The C stack can still be too large if limiting it failed.
+                if _has_huge_c_stack(depth):
+                    raise unittest.SkipTest(reason)
+                test(*args, **kwargs)
+
+            try:
+                import threading
+                old_size = threading.stack_size(size)
+            except (ImportError, ValueError, RuntimeError):
+                # Setting the thread stack size is not supported.
+                return run_test()
+
+            exceptions = []
+            def run():
+                try:
+                    run_test()
+                except BaseException as exc:
+                    exceptions.append(exc)
+
+            thread = threading.Thread(target=run)
+            try:
+                thread.start()
+            except RuntimeError:
+                # Threads are not supported.
+                return run_test()
+            finally:
+                threading.stack_size(old_size)
+            thread.join()
+            if exceptions:
+                raise exceptions[0]
+        return wrapper
+    return decorator
+
+
 # Windows doesn't have os.uname() but it doesn't support s390x.
 is_s390x = hasattr(os, 'uname') and os.uname().machine == 's390x'
 skip_on_s390x = unittest.skipIf(is_s390x, 'skipped on s390x')
@@ -3164,7 +3290,7 @@ def in_systemd_nspawn_sync_suppressed() -> bool:
         with open("/run/systemd/container", "rb") as fp:
             if fp.read().rstrip() != b"systemd-nspawn":
                 return False
-    except FileNotFoundError:
+    except (FileNotFoundError, PermissionError):
         return False
 
     # If systemd-nspawn is used, O_SYNC flag will immediately
