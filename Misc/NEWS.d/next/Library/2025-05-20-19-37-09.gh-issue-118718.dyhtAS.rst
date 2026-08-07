@@ -1,0 +1,2 @@
+Fix incorrect decoding of preamble in BytesParser
+Contributed by Gustaf Gyllensporre.
