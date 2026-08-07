@@ -2118,8 +2118,9 @@ finalize_interp_clear(PyThreadState *tstate)
     _PyExc_ClearExceptionGroupType(interp);
     _Py_clear_generic_types(interp);
     _PyTypes_FiniCachedDescriptors(interp);
+    _PySys_Fini(interp);
 
-    /* Clear interpreter state and all thread states */
+    /* Clear interpreter state and all thread states: last GC collection! */
     _PyInterpreterState_Clear(tstate);
 
     /* Clear all loghooks */
@@ -2137,7 +2138,6 @@ finalize_interp_clear(PyThreadState *tstate)
     }
 
     finalize_interp_types(interp);
-    _PySys_Fini(interp);
 
     /* Finalize dtoa at last so that finalizers calling repr of float doesn't crash */
     _PyDtoa_Fini(interp);
