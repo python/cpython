@@ -510,7 +510,7 @@ since it is impossible to detect the termination of alien threads.
 
 
 .. class:: Thread(group=None, target=None, name=None, args=(), kwargs={}, *, \
-                  daemon=None, context=None)
+                  daemon=None, context=None, start=False)
 
    This constructor should always be called with keyword arguments.  Arguments
    are:
@@ -545,6 +545,8 @@ since it is impossible to detect the termination of alien threads.
    current context, pass the value from :func:`~contextvars.copy_context`. The
    flag defaults true on free-threaded builds and false otherwise.
 
+   If *start* is true, start immediately the thread after initialization.
+
    If the subclass overrides the constructor, it must make sure to invoke the
    base class constructor (``Thread.__init__()``) before doing anything else to
    the thread.
@@ -557,6 +559,9 @@ since it is impossible to detect the termination of alien threads.
 
    .. versionchanged:: 3.14
       Added the *context* parameter.
+
+   .. versionchanged:: next
+      Added the *start* parameter.
 
    .. method:: start()
 

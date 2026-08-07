@@ -1,0 +1,2 @@
+Add *start* parameter to :class:`threading.Thread` to start immediately the
+thread after initialization. Patch by Victor Stinner.

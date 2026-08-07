@@ -1014,7 +1014,7 @@ class Thread:
     _initialized = False
 
     def __init__(self, group=None, target=None, name=None,
-                 args=(), kwargs=None, *, daemon=None, context=None):
+                 args=(), kwargs=None, *, daemon=None, context=None, start=False):
         """This constructor should always be called with keyword arguments. Arguments are:
 
         *group* should be None; reserved for future extension when a ThreadGroup
@@ -1038,6 +1038,8 @@ class Thread:
         explicitly start with an empty context, pass a new instance of
         contextvars.Context().  To explicitly start with a copy of the current
         context, pass the value from contextvars.copy_context().
+
+        If *start* is true, start immediately the thread after initialization.
 
         If a subclass overrides the constructor, it must make sure to invoke
         the base class constructor (Thread.__init__()) before doing anything
@@ -1080,6 +1082,9 @@ class Thread:
         self._invoke_excepthook = _make_invoke_excepthook()
         # For debugging and _after_fork()
         _dangling.add(self)
+
+        if start:
+            self.start()
 
     def _after_fork(self, new_ident=None):
         # Private!  Called by threading._after_fork().

@@ -461,6 +461,13 @@ symtable
   (Contributed by Serhiy Storchaka in :gh:`153844`.)
 
 
+threading
+---------
+
+* Add *start* parameter to :class:`threading.Thread` to start immediately the
+  thread after initialization
+  (Contributed by Victor Stinner in :gh:`155334`.)
+
 tkinter
 -------
 

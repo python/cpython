@@ -172,9 +172,8 @@ class Server(object):
         self.stop_event = threading.Event()
         process.current_process()._manager_server = self
         try:
-            accepter = threading.Thread(target=self.accepter)
-            accepter.daemon = True
-            accepter.start()
+            accepter = threading.Thread(target=self.accepter,
+                                        daemon=True, start=True)
             try:
                 while not self.stop_event.is_set():
                     self.stop_event.wait(1)
@@ -193,9 +192,8 @@ class Server(object):
                 c = self.listener.accept()
             except OSError:
                 continue
-            t = threading.Thread(target=self.handle_request, args=(c,))
-            t.daemon = True
-            t.start()
+            threading.Thread(target=self.handle_request, args=(c,),
+                             daemon=True, start=True)
 
     def _handle_request(self, c):
         request = None
