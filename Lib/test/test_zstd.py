@@ -2120,16 +2120,16 @@ class FileTestCase(unittest.TestCase):
         self.assertNotEqual(c.flush(c.FLUSH_FRAME), b'')
         self.assertNotEqual(c.flush(c.FLUSH_FRAME), b'')
 
-        # don't generate empty content frame
+        # generate an empty content frame when the file is closed
         bo = io.BytesIO()
         with ZstdFile(bo, 'w') as f:
             pass
-        self.assertEqual(bo.getvalue(), b'')
+        self.assertEqual(decompress(bo.getvalue()), b'')
 
         bo = io.BytesIO()
         with ZstdFile(bo, 'w') as f:
             f.flush(f.FLUSH_FRAME)
-        self.assertEqual(bo.getvalue(), b'')
+        self.assertEqual(decompress(bo.getvalue()), b'')
 
         # if .write(b''), generate empty content frame
         bo = io.BytesIO()
