@@ -1,0 +1,6 @@
+Add the *validate* option to :mod:`xml.etree.ElementTree` serialization
+functions, which allows to check that all characters are legal,
+that element and attribute names are valid, and that the content
+of comments, processing instructions and HTML elements
+like ``<script>`` do not contain illegal sequences according
+to the selected *method* (``"xml"`` or ``"html"``).
