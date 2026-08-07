@@ -14,7 +14,8 @@ extern "C" {
 // Export for '_curses' shared extension
 PyAPI_FUNC(PyTypeObject*) _PyStructSequence_NewType(
     PyStructSequence_Desc *desc,
-    unsigned long tp_flags);
+    unsigned long tp_flags,
+    int deprecate_tuple_api);
 
 extern int _PyStructSequence_InitBuiltinWithFlags(
     PyInterpreterState *interp,

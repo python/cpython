@@ -874,8 +874,10 @@ class SysModuleTest(unittest.TestCase):
             attr_type = bool if attr in ("dev_mode", "safe_path") else int
             self.assertEqual(type(getattr(sys.flags, attr)), attr_type, attr)
             attr_value = getattr(sys.flags, attr)
-            self.assertEqual(sys.flags[attr_idx], attr_value,
-                             msg=f"sys.flags .{attr} vs [{attr_idx}]")
+            with warnings.catch_warnings(category=DeprecationWarning):
+                warnings.simplefilter("ignore", category=DeprecationWarning)
+                self.assertEqual(sys.flags[attr_idx], attr_value,
+                                 msg=f"sys.flags .{attr} vs [{attr_idx}]")
         self.assertTrue(repr(sys.flags))
         self.assertEqual(len(sys.flags), 18, msg="Do not increase, see GH-122575")
 
@@ -1965,16 +1967,20 @@ class SizeofTest(unittest.TestCase):
         sys.set_asyncgen_hooks(firstiter=firstiter)
         hooks = sys.get_asyncgen_hooks()
         self.assertIs(hooks.firstiter, firstiter)
-        self.assertIs(hooks[0], firstiter)
         self.assertIs(hooks.finalizer, None)
-        self.assertIs(hooks[1], None)
+        with warnings.catch_warnings(category=DeprecationWarning):
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            self.assertIs(hooks[0], firstiter)
+            self.assertIs(hooks[1], None)
 
         sys.set_asyncgen_hooks(finalizer=finalizer)
         hooks = sys.get_asyncgen_hooks()
         self.assertIs(hooks.firstiter, firstiter)
-        self.assertIs(hooks[0], firstiter)
         self.assertIs(hooks.finalizer, finalizer)
-        self.assertIs(hooks[1], finalizer)
+        with warnings.catch_warnings(category=DeprecationWarning):
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            self.assertIs(hooks[0], firstiter)
+            self.assertIs(hooks[1], finalizer)
 
         sys.set_asyncgen_hooks(*old)
         cur = sys.get_asyncgen_hooks()

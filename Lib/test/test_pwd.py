@@ -2,6 +2,7 @@ import random
 import string
 import sys
 import unittest
+import warnings
 from test.support import import_helper
 
 pwd = import_helper.import_module('pwd')
@@ -13,21 +14,24 @@ class PwdTest(unittest.TestCase):
         entries = pwd.getpwall()
 
         for e in entries:
-            self.assertEqual(len(e), 7)
-            self.assertEqual(e[0], e.pw_name)
             self.assertIsInstance(e.pw_name, str)
-            self.assertEqual(e[1], e.pw_passwd)
             self.assertIsInstance(e.pw_passwd, str)
-            self.assertEqual(e[2], e.pw_uid)
             self.assertIsInstance(e.pw_uid, int)
-            self.assertEqual(e[3], e.pw_gid)
             self.assertIsInstance(e.pw_gid, int)
-            self.assertEqual(e[4], e.pw_gecos)
             self.assertIn(type(e.pw_gecos), (str, type(None)))
-            self.assertEqual(e[5], e.pw_dir)
             self.assertIsInstance(e.pw_dir, str)
-            self.assertEqual(e[6], e.pw_shell)
             self.assertIsInstance(e.pw_shell, str)
+
+            with warnings.catch_warnings(category=DeprecationWarning):
+                warnings.simplefilter("ignore", category=DeprecationWarning)
+                self.assertEqual(len(e), 7)
+                self.assertEqual(e[0], e.pw_name)
+                self.assertEqual(e[1], e.pw_passwd)
+                self.assertEqual(e[2], e.pw_uid)
+                self.assertEqual(e[3], e.pw_gid)
+                self.assertEqual(e[4], e.pw_gecos)
+                self.assertEqual(e[5], e.pw_dir)
+                self.assertEqual(e[6], e.pw_shell)
 
             # The following won't work, because of duplicate entries
             # for one uid
@@ -50,7 +54,7 @@ class PwdTest(unittest.TestCase):
         # check whether the entry returned by getpwuid()
         # for each uid is among those from getpwall() for this uid
         for e in entries:
-            if not e[0] or e[0] == '+':
+            if not e.pw_name or e.pw_name == '+':
                 continue # skip NIS entries etc.
             self.assertIn(pwd.getpwnam(e.pw_name), entriesbyname[e.pw_name])
             self.assertIn(pwd.getpwuid(e.pw_uid), entriesbyuid[e.pw_uid])

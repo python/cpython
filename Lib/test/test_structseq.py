@@ -6,6 +6,7 @@ import re
 import textwrap
 import time
 import unittest
+import warnings
 from test.support import script_helper
 
 
@@ -228,7 +229,9 @@ class StructSeqTest(unittest.TestCase):
         self.assertEqual(r2.st_mode, r.st_mode)
         self.assertEqual(r2.st_atime, r.st_atime)
         self.assertEqual(r2.st_atime_ns, r.st_atime_ns)
-        self.assertIs(r2[0], r[0])
+        with warnings.catch_warnings(category=DeprecationWarning):
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            self.assertIs(r2[0], r[0])
         self.assertIs(r2.st_mode, r.st_mode)
         self.assertIs(r2.st_atime, r.st_atime)
         self.assertIs(r2.st_atime_ns, r.st_atime_ns)
@@ -239,7 +242,9 @@ class StructSeqTest(unittest.TestCase):
         self.assertEqual(r3.st_mode, r.st_mode)
         self.assertEqual(r3.st_atime, r.st_atime)
         self.assertEqual(r3.st_atime_ns, r.st_atime_ns)
-        self.assertIsNot(r3[0], r[0])
+        with warnings.catch_warnings(category=DeprecationWarning):
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            self.assertIsNot(r3[0], r[0])
         self.assertIsNot(r3.st_mode, r.st_mode)
         self.assertIsNot(r3.st_atime, r.st_atime)
         self.assertIsNot(r3.st_atime_ns, r.st_atime_ns)

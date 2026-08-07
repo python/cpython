@@ -665,7 +665,9 @@ class StatAttributeTests(unittest.TestCase):
         result = os.stat(fname)
 
         # Make sure direct access works
-        self.assertEqual(result[stat.ST_SIZE], 3)
+        with warnings.catch_warnings(category=DeprecationWarning):
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            self.assertEqual(result[stat.ST_SIZE], 3)
         self.assertEqual(result.st_size, 3)
 
         # Make sure all the attributes are there
@@ -677,8 +679,10 @@ class StatAttributeTests(unittest.TestCase):
                     def trunc(x): return int(x)
                 else:
                     def trunc(x): return x
-                self.assertEqual(trunc(getattr(result, attr)),
-                                  result[getattr(stat, name)])
+                with warnings.catch_warnings(category=DeprecationWarning):
+                    warnings.simplefilter("ignore", category=DeprecationWarning)
+                    self.assertEqual(trunc(getattr(result, attr)),
+                                      result[getattr(stat, name)])
                 self.assertIn(attr, members)
 
         time_attributes = ['st_atime', 'st_mtime', 'st_ctime']
@@ -692,7 +696,9 @@ class StatAttributeTests(unittest.TestCase):
         self.check_timestamp_agreement(result, time_attributes)
 
         try:
-            result[200]
+            with warnings.catch_warnings(category=DeprecationWarning):
+                warnings.simplefilter("ignore", category=DeprecationWarning)
+                result[200]
             self.fail("No exception raised")
         except IndexError:
             pass
@@ -1055,9 +1061,11 @@ class UtimeTests(unittest.TestCase):
         # Heuristic to check if the filesystem supports timestamp with
         # subsecond resolution: check if float and int timestamps are different
         st = os.stat(filename)
-        return ((st.st_atime != st[7])
-                or (st.st_mtime != st[8])
-                or (st.st_ctime != st[9]))
+        with warnings.catch_warnings(category=DeprecationWarning):
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            return ((st.st_atime != st[7])
+                    or (st.st_mtime != st[8])
+                    or (st.st_ctime != st[9]))
 
     def support_atime(self, filename):
         # Heuristic to check if the filesystem stores the access time.
