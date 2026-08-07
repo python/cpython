@@ -1816,8 +1816,8 @@ class TestPosixDirFd(unittest.TestCase):
                 self.skipTest('posix.link(): %s' % e)
             self.addCleanup(posix.unlink, fulllinkname)
             # should have same inodes
-            self.assertEqual(posix.stat(fullname)[1],
-                posix.stat(fulllinkname)[1])
+            self.assertEqual(posix.stat(fullname).st_ino,
+                             posix.stat(fulllinkname).st_ino)
 
     @unittest.skipUnless(os.mkdir in os.supports_dir_fd, "test needs dir_fd support in os.mkdir()")
     def test_mkdir_dir_fd(self):
