@@ -618,7 +618,7 @@ class BasicTest(BaseTest):
         bindir = os.path.join(self.env_dir, self.bindir)
         os.makedirs(bindir)
         python = os.path.join(bindir, 'python3')
-        os.symlink('/path/to/deleted/conda/env/bin/python3', python)
+        os.symlink('/path/to/deleted/env/bin/python3', python)
         self.assertTrue(os.path.islink(python))
         self.assertFalse(os.path.exists(python))
 
@@ -629,7 +629,7 @@ class BasicTest(BaseTest):
 
         rmtree(self.env_dir)
         os.makedirs(bindir)
-        os.symlink('/path/to/deleted/conda/env/bin/python3', python)
+        os.symlink('/path/to/deleted/env/bin/python3', python)
         builder = venv.EnvBuilder(with_pip=False, symlinks=False)
         self.run_with_capture(builder.create, self.env_dir)
         self.assertFalse(os.path.islink(python))
