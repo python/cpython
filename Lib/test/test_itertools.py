@@ -2489,6 +2489,25 @@ class RegressionTests(unittest.TestCase):
         for j in range(2):
             next(g, None)  # shouldn't crash
 
+    def test_zip_longest_reentrancy(self):
+        class Reenter:
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                z = self.zip_longest
+                if z is None:
+                    raise StopIteration
+                self.zip_longest = None
+                next(z, None)
+                raise StopIteration
+
+        driver = Reenter()
+        driver.zip_longest = itertools.zip_longest(itertools.chain(driver), itertools.repeat(None))
+
+        with self.assertRaises(ValueError):
+            next(driver.zip_longest)
+
 
 class SubclassWithKwargsTest(unittest.TestCase):
     def test_keywords_in_subclass(self):
