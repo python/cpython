@@ -2916,11 +2916,14 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self._print_message(help_text, file)
 
     def _print_message(self, message, file=None):
-        if message:
-            file = file or _sys.stderr
+        if not message:
+            return
+        if file is None:
+            file = _sys.stderr
+        if file is not None:
             try:
                 file.write(message)
-            except (AttributeError, OSError):
+            except OSError:
                 pass
 
     def _get_theme(self, file=None):
