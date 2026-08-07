@@ -1447,15 +1447,7 @@ _ZINFO_PUBLIC_KEYS = [k for k in zipfile.ZipInfo.__slots__ if not k.startswith('
 
 def comparable_zinfo(zinfo):
     """Return a dict of public ZipInfo attributes for assertEqual comparison."""
-    attrs = {k: getattr(zinfo, k) for k in _ZINFO_PUBLIC_KEYS}
-
-    # Since patch gh-84353, the _MASK_UTF_FILENAME (0x800) bit may be
-    # changed when writing to the end record depending on whether filename
-    # can be encoded with ascii or cp437. Skip checking this bit by
-    # pretending it's always set.
-    attrs['flag_bits'] |= 0x800
-
-    return attrs
+    return {k: getattr(zinfo, k) for k in _ZINFO_PUBLIC_KEYS}
 
 _struct_pack = struct.pack
 
@@ -5689,6 +5681,7 @@ class TestExecutablePrependedZip(unittest.TestCase):
 
 class EncodedMetadataTests(unittest.TestCase):
     file_names = ['\u4e00', '\u4e8c', '\u4e09']  # Han 'one', 'two', 'three'
+    file_codecs = ['shift_jis', 'shift_jis', 'utf-8']
     file_content = [
         "This is pure ASCII.\n".encode('ascii'),
         # This is modern Japanese. (UTF-8)
@@ -5704,28 +5697,36 @@ class EncodedMetadataTests(unittest.TestCase):
         # The ASCII names are arbitrary as long as they are length 2 and
         # not otherwise contained in the zip file.
         # Data elements are encoded bytes (ascii, utf-8, shift_jis).
-        placeholders = ["n1", "n2"] + self.file_names[2:]
-        with zipfile.ZipFile(TESTFN, mode="w") as tf:
-            for temp, content in zip(placeholders, self.file_content):
-                tf.writestr(temp, content, zipfile.ZIP_STORED)
-        # Hack in the Shift JIS names with flag bit 11 (UTF-8) unset.
-        with open(TESTFN, "rb") as tf:
-            data = tf.read()
-        for name, temp in zip(self.file_names, placeholders[:2]):
-            data = data.replace(temp.encode('ascii'),
-                                name.encode('shift_jis'))
-        with open(TESTFN, "wb") as tf:
-            tf.write(data)
+        def mock_encode(zi):
+            idx = self.file_names.index(zi.filename)
+            return (zi.filename.encode(self.file_codecs[idx]), zi.flag_bits | (
+                zipfile._MASK_UTF_FILENAME if self.file_codecs[idx] == 'utf-8' else 0))
+        with mock.patch('zipfile.ZipInfo._encodeFilenameFlags', mock_encode), \
+             zipfile.ZipFile(TESTFN, mode="w") as tf:
+            for name, content in zip(self.file_names, self.file_content):
+                tf.writestr(name, content, zipfile.ZIP_STORED)
 
-    def _test_read(self, zipfp, expected_names, expected_content):
+    def _test_read(self, zipfp, expected_names, expected_content,
+                   expected_comments=None, expected_efs_flags=None):
         # Check the namelist
         names = zipfp.namelist()
-        self.assertEqual(sorted(names), sorted(expected_names))
+        self.assertEqual(names, expected_names)
 
         # Check infolist
         infos = zipfp.infolist()
         names = [zi.filename for zi in infos]
-        self.assertEqual(sorted(names), sorted(expected_names))
+        self.assertEqual(names, expected_names)
+
+        if expected_comments is not None:
+            comments = [zi.comment for zi in infos]
+            self.assertEqual(comments, expected_comments)
+
+        if expected_efs_flags is not None:
+            efs_flags = [
+                bool(zi.flag_bits & zipfile._MASK_UTF_FILENAME)
+                for zi in infos
+            ]
+            self.assertEqual(efs_flags, expected_efs_flags)
 
         # check getinfo
         for name, content in zip(expected_names, expected_content):
@@ -5738,6 +5739,8 @@ class EncodedMetadataTests(unittest.TestCase):
         # Read the ZIP archive with correct metadata_encoding
         with zipfile.ZipFile(TESTFN, "r", metadata_encoding='shift_jis') as zipfp:
             self._test_read(zipfp, self.file_names, self.file_content)
+        with zipfile.ZipFile(TESTFN, "a", metadata_encoding='shift_jis') as zipfp:
+            self._test_read(zipfp, self.file_names, self.file_content)
 
     def test_read_without_metadata_encoding(self):
         # Read the ZIP archive without metadata_encoding
@@ -5745,12 +5748,16 @@ class EncodedMetadataTests(unittest.TestCase):
                           for name in self.file_names[:2]] + self.file_names[2:]
         with zipfile.ZipFile(TESTFN, "r") as zipfp:
             self._test_read(zipfp, expected_names, self.file_content)
+        with zipfile.ZipFile(TESTFN, "a") as zipfp:
+            self._test_read(zipfp, expected_names, self.file_content)
 
     def test_read_with_incorrect_metadata_encoding(self):
         # Read the ZIP archive with incorrect metadata_encoding
         expected_names = [name.encode('shift_jis').decode('koi8-u')
                           for name in self.file_names[:2]] + self.file_names[2:]
         with zipfile.ZipFile(TESTFN, "r", metadata_encoding='koi8-u') as zipfp:
+            self._test_read(zipfp, expected_names, self.file_content)
+        with zipfile.ZipFile(TESTFN, "a", metadata_encoding='koi8-u') as zipfp:
             self._test_read(zipfp, expected_names, self.file_content)
 
     def test_read_with_unsuitable_metadata_encoding(self):
@@ -5760,8 +5767,14 @@ class EncodedMetadataTests(unittest.TestCase):
             zipfile.ZipFile(TESTFN, "r", metadata_encoding='ascii')
         with self.assertRaises(UnicodeDecodeError):
             zipfile.ZipFile(TESTFN, "r", metadata_encoding='utf-8')
+        with self.assertRaises(UnicodeDecodeError):
+            zipfile.ZipFile(TESTFN, "a", metadata_encoding='ascii')
+        with self.assertRaises(UnicodeDecodeError):
+            zipfile.ZipFile(TESTFN, "a", metadata_encoding='utf-8')
 
     def test_read_after_append(self):
+        """Files loaded from an archive should keep original filenames and encodings
+        when rewritten to central directory in append mode."""
         newname = '\u56db'  # Han 'four'
         newname2 = 'fünf'  # representable in cp437, but still stored as UTF-8
         expected_names = [*self.file_names, newname, newname2]
@@ -5773,20 +5786,72 @@ class EncodedMetadataTests(unittest.TestCase):
         with zipfile.ZipFile(TESTFN, "a") as zipfp:
             zipfp.writestr(newname, "newcontent")
             zipfp.writestr(newname2, "newcontent2")
-            self.assertEqual(sorted(zipfp.namelist()), sorted(mojibake_expected_names))
+            self.assertEqual(zipfp.namelist(), mojibake_expected_names)
 
         with zipfile.ZipFile(TESTFN, "r") as zipfp:
+            self._test_read(zipfp, mojibake_expected_names, expected_content)
+        with zipfile.ZipFile(TESTFN, "a") as zipfp:
             self._test_read(zipfp, mojibake_expected_names, expected_content)
 
         with zipfile.ZipFile(TESTFN, "r", metadata_encoding='shift_jis') as zipfp:
             self._test_read(zipfp, expected_names, expected_content)
+        with zipfile.ZipFile(TESTFN, "a", metadata_encoding='shift_jis') as zipfp:
+            self._test_read(zipfp, expected_names, expected_content)
 
-    def test_write_with_metadata_encoding(self):
-        ZF = zipfile.ZipFile
+    def test_append_keep_efs(self):
+        """Files loaded from an archive should keep original EFS flags when
+        rewritten to central directory in append mode."""
+        names = ['file1', 'file2', 'file3', 'file4']
+        contents = [b'content1', b'content2', b'content3', b'content4']
+        comments = ['\u4e00'.encode('utf-8'), b'foo', '\u4e8c'.encode('shift_jis'), b'bar']
+        efs_flags = [True, True, False, False]
+
+        def mock_encode(self):
+            idx = names.index(self.filename)
+            return (self.filename.encode('ascii'), self.flag_bits | (
+                zipfile._MASK_UTF_FILENAME if efs_flags[idx] else 0))
+
+        with mock.patch('zipfile.ZipInfo._encodeFilenameFlags', mock_encode), \
+             zipfile.ZipFile(TESTFN, "w") as zipfp:
+            for i, name in enumerate(names):
+                zinfo = zipfile.ZipInfo(name)
+                zinfo.comment = comments[i]
+                zipfp.writestr(zinfo, contents[i])
+            self.assertEqual(zipfp.namelist(), names)
+
+        with zipfile.ZipFile(TESTFN, "a") as zipfp:
+            self._test_read(zipfp, names, contents, comments, efs_flags)
+            # trigger archive rewriting
+            zipfp.comment = b'comment'
+
+        with zipfile.ZipFile(TESTFN, "r") as zipfp:
+            self._test_read(zipfp, names, contents, comments, efs_flags)
+
+    def test_write_enforce_efs_on_demand(self):
+        """New files should enforce EFS flag if filename or comment is not ASCII,
+        regardless of mode or metadata_encoding."""
+        names = ['\u4e00', '\u4e8c', 'file3', 'file4']
+        contents = [b'content1', b'content2', b'content3', b'content4']
+        comments = ['\u4e00'.encode('utf-8'), b'foo', '\u4e8c'.encode('utf-8'), b'bar']
+        expected_efs_flags = [True, True, True, False]
+
+        def sub_test():
+            with zipfile.ZipFile(TESTFN, mode=mode,
+                                 metadata_encoding=encoding) as zipfp:
+                for i, name in enumerate(names):
+                    zinfo = zipfile.ZipInfo(name)
+                    zinfo.comment = comments[i]
+                    zipfp.writestr(zinfo, contents[i])
+                self.assertEqual(zipfp.namelist(), names)
+
+            with zipfile.ZipFile(TESTFN, "r") as zipfp:
+                self._test_read(zipfp, names, contents, comments, expected_efs_flags)
+
         for mode in ("w", "x", "a"):
-            with self.assertRaisesRegex(ValueError,
-                                        "^metadata_encoding is only"):
-                ZF("nonesuch.zip", mode, metadata_encoding="shift_jis")
+            for encoding in (None, 'shift_jis'):
+                unlink(TESTFN)
+                with self.subTest(mode=mode, metadata_encoding=encoding):
+                    sub_test()
 
     def test_add_comment(self):
         with zipfile.ZipFile(TESTFN, "r") as zipfp:

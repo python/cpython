@@ -227,9 +227,10 @@ ZipFile objects
    Similar behavior occurs with files newer than 2107-12-31,
    the timestamp is also set to the limit.
 
-   When mode is ``'r'``, *metadata_encoding* may be set to the name of a codec,
-   which will be used to decode metadata such as the names of members and ZIP
-   comments.
+   The *metadata_encoding* argument may be set to the name of a codec, which
+   will be used to decode metadata such as the names of members and ZIP
+   comments when reading from an archive.  This argument is ignored for writing
+   new members.
 
    If the file is created with mode ``'w'``, ``'x'`` or ``'a'`` and then
    :meth:`closed <close>` without adding any files to the archive, the appropriate
@@ -284,6 +285,10 @@ ZipFile objects
    .. versionchanged:: 3.11
       Added support for specifying member name encoding for reading
       metadata in the zipfile's directory and file headers.
+
+   .. versionchanged:: next
+      The *metadata_encoding* parameter is now allowed in all modes. Previously
+      it could only be specified in mode ``'r'``.
 
 
 .. method:: ZipFile.close()
