@@ -689,10 +689,10 @@ class PydocDocTest(unittest.TestCase):
         self.assertNotIn('Built-in subclasses', text)
 
     def test_fail_help_cli(self):
-        elines = (missing_pattern % 'abd').splitlines()
+        elines = (missing_pattern % 'abd').splitlines(False)[:1]
         with spawn_python("-c" "help()") as proc:
             out, _ = proc.communicate(b"abd")
-            olines = out.decode().splitlines()[-9:-6]
+            olines = out.decode().splitlines(False)[-7:-6]
             olines[0] = olines[0].removeprefix('help> ')
             self.assertEqual(elines, olines)
 
