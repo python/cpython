@@ -3354,6 +3354,10 @@ class TestFrame(unittest.TestCase):
         f = traceback.FrameSummary("f", 1, "dummy", line="line")
         self.assertEqual("line", f.line)
 
+    def test_explicit_multiline_line(self):
+        f = traceback.FrameSummary("f", 1, "dummy", line="line 1\nline 2")
+        self.assertEqual("line 1", f.line)
+
     def test_len(self):
         f = traceback.FrameSummary("f", 1, "dummy", line="line")
         self.assertEqual(len(f), 4)
@@ -3414,6 +3418,46 @@ class TestStack(unittest.TestCase):
         self.assertEqual(
             ['  File "foo.py", line 1, in fred\n    line\n'],
             s.format())
+
+    def test_from_list_multiline_without_columns(self):
+        frame = traceback.FrameSummary(
+            'foo.py', 1, 'fred', line='line 1\nline 2')
+        s = traceback.StackSummary.from_list([frame])
+        self.assertEqual(
+            ['  File "foo.py", line 1, in fred\n    line 1\n'],
+            s.format())
+
+    def test_from_list_multiline_with_columns(self):
+        frame = traceback.FrameSummary(
+            'foo.py', 1, 'fred', line='line 1\nline 2',
+            end_lineno=2, colno=0, end_colno=6)
+        s = traceback.StackSummary.from_list([frame])
+        self.assertEqual(
+            ['  File "foo.py", line 1, in fred\n'
+             '    line 1\n'
+             '    line 2\n'],
+            s.format())
+
+    def test_from_list_multiline_with_columns_without_end_lineno(self):
+        # end_lineno defaults to lineno, so the frame spans a single line
+        # and the trailing physical lines are not displayed.
+        frame = traceback.FrameSummary(
+            'foo.py', 1, 'fred', line='line 1\nline 2',
+            colno=0, end_colno=6)
+        s = traceback.StackSummary.from_list([frame])
+        self.assertEqual(
+            ['  File "foo.py", line 1, in fred\n    line 1\n'],
+            s.format())
+
+    def test_format_list_multiline_old_style_tuple(self):
+        frames = [
+            ('test.py', 10, 'func',
+             'x = foo + bar\n\t\thello\n\tworld'),
+        ]
+        self.assertEqual(
+            ['  File "test.py", line 10, in func\n'
+             '    x = foo + bar\n'],
+            traceback.format_list(frames))
 
     def test_from_list_edited_stack(self):
         s = traceback.StackSummary.from_list([('foo.py', 1, 'fred', 'line')])
