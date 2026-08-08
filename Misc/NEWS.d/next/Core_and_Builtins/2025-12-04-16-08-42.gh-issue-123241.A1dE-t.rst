@@ -1,0 +1,3 @@
+Make the GC for the :term:`free threading` build more robust to
+:c:member:`~PyTypeObject.tp_traverse` implementations that call
+:c:func:`Py_INCREF` and :c:func:`Py_DECREF`.
