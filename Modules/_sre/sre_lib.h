@@ -94,6 +94,10 @@ SRE(charset)(SRE_STATE* state, const SRE_CODE* set, SRE_CODE ch)
     /* check if character is a member of the given set */
 
     int ok = 1;
+    /* INVERT toggles inv, which inverts each following membership test
+       (set difference/intersection within a single charset).  Member tests
+       are normalized to 0/1 before the ^ inv. */
+    int inv = 0;
 
     for (;;) {
         switch (*set++) {
@@ -103,29 +107,32 @@ SRE(charset)(SRE_STATE* state, const SRE_CODE* set, SRE_CODE ch)
 
         case SRE_OP_LITERAL:
             /* <LITERAL> <code> */
-            if (ch == set[0])
+            if ((ch == set[0]) ^ inv)
                 return ok;
             set++;
             break;
 
         case SRE_OP_CATEGORY:
             /* <CATEGORY> <code> */
-            if (sre_category(set[0], (int) ch))
+            if (!!sre_category(set[0], (int) ch) ^ inv)
                 return ok;
             set++;
             break;
 
         case SRE_OP_CHARSET:
             /* <CHARSET> <bitmap> */
-            if (ch < 256 &&
-                (set[ch/SRE_CODE_BITS] & (1u << (ch & (SRE_CODE_BITS-1)))))
+        {
+            int m = ch < 256 &&
+                (set[ch/SRE_CODE_BITS] & (1u << (ch & (SRE_CODE_BITS-1))));
+            if (m ^ inv)
                 return ok;
             set += 256/SRE_CODE_BITS;
             break;
+        }
 
         case SRE_OP_RANGE:
             /* <RANGE> <lower> <upper> */
-            if (set[0] <= ch && ch <= set[1])
+            if ((set[0] <= ch && ch <= set[1]) ^ inv)
                 return ok;
             set += 2;
             break;
@@ -134,11 +141,14 @@ SRE(charset)(SRE_STATE* state, const SRE_CODE* set, SRE_CODE ch)
             /* <RANGE_UNI_IGNORE> <lower> <upper> */
         {
             SRE_CODE uch;
+            int m;
             /* ch is already lower cased */
-            if (set[0] <= ch && ch <= set[1])
-                return ok;
-            uch = sre_upper_unicode(ch);
-            if (set[0] <= uch && uch <= set[1])
+            m = set[0] <= ch && ch <= set[1];
+            if (!m) {
+                uch = sre_upper_unicode(ch);
+                m = set[0] <= uch && uch <= set[1];
+            }
+            if (m ^ inv)
                 return ok;
             set += 2;
             break;
@@ -148,10 +158,15 @@ SRE(charset)(SRE_STATE* state, const SRE_CODE* set, SRE_CODE ch)
             ok = !ok;
             break;
 
+        case SRE_OP_INVERT:
+            inv = !inv;
+            break;
+
         case SRE_OP_BIGCHARSET:
             /* <BIGCHARSET> <blockcount> <256 blockindices> <blocks> */
         {
             Py_ssize_t count, block;
+            int m;
             count = *(set++);
 
             if (ch < 0x10000u)
@@ -159,9 +174,10 @@ SRE(charset)(SRE_STATE* state, const SRE_CODE* set, SRE_CODE ch)
             else
                 block = -1;
             set += 256/sizeof(SRE_CODE);
-            if (block >=0 &&
+            m = block >= 0 &&
                 (set[(block * 256 + (ch & 255))/SRE_CODE_BITS] &
-                    (1u << (ch & (SRE_CODE_BITS-1)))))
+                    (1u << (ch & (SRE_CODE_BITS-1))));
+            if (m ^ inv)
                 return ok;
             set += count * (256/SRE_CODE_BITS);
             break;
@@ -1614,6 +1630,7 @@ dispatch:
         TARGET(SRE_OP_SUBPATTERN):
         TARGET(SRE_OP_RANGE):
         TARGET(SRE_OP_NEGATE):
+        TARGET(SRE_OP_INVERT):
         TARGET(SRE_OP_BIGCHARSET):
         TARGET(SRE_OP_CHARSET):
             TRACE(("|%p|%p|UNKNOWN %d\n", pattern, ptr,

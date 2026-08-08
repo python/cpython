@@ -11,7 +11,7 @@
  * See the sre.c file for information on usage and redistribution.
  */
 
-static void *sre_targets[43] = {
+static void *sre_targets[44] = {
     &&TARGET_SRE_OP_FAILURE,
     &&TARGET_SRE_OP_SUCCESS,
     &&TARGET_SRE_OP_ANY,
@@ -55,4 +55,5 @@ static void *sre_targets[43] = {
     &&TARGET_SRE_OP_LITERAL_UNI_IGNORE,
     &&TARGET_SRE_OP_NOT_LITERAL_UNI_IGNORE,
     &&TARGET_SRE_OP_RANGE_UNI_IGNORE,
+    &&TARGET_SRE_OP_INVERT,
 };
