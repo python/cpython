@@ -58,7 +58,30 @@ class FLUFLTests(unittest.TestCase):
         self.assertEqual(cm.exception.lineno, 1)
         self.assertEqual(cm.exception.offset, len(code) - 4)
 
+    def test_guido_as_bdfl_ineq_tokens(self):
+        code = """
+from io import BytesIO
+import tokenize
+from test.test_tokenize import stringify_tokens_from_source
 
+s = "{0}"
+f = BytesIO(s.encode('utf-8'))
+globals()['result'] = stringify_tokens_from_source(tokenize.tokenize(f.readline), s)
+"""
+        ns = {}
+        exec(code.format('1 != 2'), ns)
+        self.assertEqual(ns['result'],
+                         ["    ENCODING   'utf-8'       (0, 0) (0, 0)",
+                          "    NUMBER     '1'           (1, 0) (1, 1)",
+                          "    OP         '!='          (1, 2) (1, 4)",
+                          "    NUMBER     '2'           (1, 5) (1, 6)"])
+        exec(code.format('1 <> 2'), ns)
+        self.assertEqual(ns['result'],
+                         ["    ENCODING   'utf-8'       (0, 0) (0, 0)",
+                          "    NUMBER     '1'           (1, 0) (1, 1)",
+                          "    OP         '<'           (1, 2) (1, 3)",
+                          "    OP         '>'           (1, 3) (1, 4)",
+                          "    NUMBER     '2'           (1, 5) (1, 6)"])
 
 
 if __name__ == '__main__':

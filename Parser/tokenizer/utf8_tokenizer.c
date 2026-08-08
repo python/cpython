@@ -28,7 +28,8 @@ tok_underflow_string(struct tok_state *tok) {
 
 /* Set up tokenizer for UTF-8 string */
 struct tok_state *
-_PyTokenizer_FromUTF8(const char *str, int exec_input, int preserve_crlf)
+_PyTokenizer_FromUTF8(const char *str, int exec_input, int preserve_crlf,
+                      int BARRY_AS_BDFL)
 {
     struct tok_state *tok = _PyTokenizer_tok_new();
     char *translated;
@@ -51,5 +52,6 @@ _PyTokenizer_FromUTF8(const char *str, int exec_input, int preserve_crlf)
     tok->buf = tok->cur = tok->inp = translated;
     tok->end = translated;
     tok->underflow = &tok_underflow_string;
+    tok->BARRY_AS_BDFL = BARRY_AS_BDFL;
     return tok;
 }
