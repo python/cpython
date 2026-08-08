@@ -1118,7 +1118,12 @@ def _typevartuple_prepare_subst(self, alias, args):
         raise TypeError(f"Too few arguments for {alias};"
                         f" actual {alen}, expected at least {plen-1}")
     if left == alen - right and self.has_default():
-        replacement = _unpack_args(self.__default__)
+        try:
+            default = self.__default__
+        except NameError:
+            default = annotationlib.call_evaluate_function(
+                self.evaluate_default, annotationlib.Format.FORWARDREF)
+        replacement = _unpack_args(default)
     else:
         replacement = args[left: alen - right]
 
@@ -1144,7 +1149,12 @@ def _paramspec_prepare_subst(self, alias, args):
     params = alias.__parameters__
     i = params.index(self)
     if i == len(args) and self.has_default():
-        args = (*args, self.__default__)
+        try:
+            default = self.__default__
+        except NameError:
+            default = annotationlib.call_evaluate_function(
+                self.evaluate_default, annotationlib.Format.FORWARDREF)
+        args = (*args, default)
     if i >= len(args):
         raise TypeError(f"Too few arguments for {alias}")
     # Special case where Z[[int, str, bool]] == Z[int, str, bool] in PEP 612.

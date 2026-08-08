@@ -351,6 +351,24 @@ call_typing_func_object(const char *name, PyObject **args, size_t nargs)
 }
 
 static PyObject *
+call_annotationlib_func_object(const char *name, PyObject **args, size_t nargs)
+{
+    PyObject *annotationlib = PyImport_ImportModule("annotationlib");
+    if (annotationlib == NULL) {
+        return NULL;
+    }
+    PyObject *func = PyObject_GetAttrString(annotationlib, name);
+    if (func == NULL) {
+        Py_DECREF(annotationlib);
+        return NULL;
+    }
+    PyObject *result = PyObject_Vectorcall(func, args, nargs, NULL);
+    Py_DECREF(func);
+    Py_DECREF(annotationlib);
+    return result;
+}
+
+static PyObject *
 type_check(PyObject *arg, const char *msg)
 {
     // Calling typing.py here leads to bootstrapping problems
@@ -803,8 +821,29 @@ typevar_typing_prepare_subst_impl(typevarobject *self, PyObject *alias,
         // If the TypeVar has a default, use it.
         PyObject *dflt = typevar_default((PyObject *)self, NULL);
         if (dflt == NULL) {
-            Py_DECREF(params);
-            return NULL;
+            if (!PyErr_ExceptionMatches(PyExc_NameError)) {
+                Py_DECREF(params);
+                return NULL;
+            }
+            PyErr_Clear();
+            if (self->evaluate_default == NULL) {
+                dflt = &_Py_NoDefaultStruct;
+            }
+            else {
+                PyObject *format = PyLong_FromLong(_Py_ANNOTATE_FORMAT_FORWARDREF);
+                if (format == NULL) {
+                    Py_DECREF(params);
+                    return NULL;
+                }
+                PyObject *call_args[2] = {self->evaluate_default, format};
+                dflt = call_annotationlib_func_object(
+                    "call_evaluate_function", call_args, 2);
+                Py_DECREF(format);
+                if (dflt == NULL) {
+                    Py_DECREF(params);
+                    return NULL;
+                }
+            }
         }
         if (dflt != &_Py_NoDefaultStruct) {
             PyObject *new_args = PyTuple_Pack(1, dflt);
