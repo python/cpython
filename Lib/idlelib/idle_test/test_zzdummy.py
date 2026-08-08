@@ -11,7 +11,8 @@ from idlelib import format
 
 
 usercfg = zzdummy.idleConf.userCfg
-testcfg = {
+
+make_testcfg = lambda: {
     'main': config.IdleUserConfParser(''),
     'highlight': config.IdleUserConfParser(''),
     'keys': config.IdleUserConfParser(''),
@@ -128,7 +129,7 @@ class ZZDummyTest(ZZDummyMixin, unittest.TestCase):
         root.withdraw()
         text = cls.text = Text(cls.root)
         cls.editor = DummyEditwin(root, text)
-        zzdummy.idleConf.userCfg = testcfg
+        zzdummy.idleConf.userCfg = make_testcfg()
 
     @classmethod
     def tearDownClass(cls):
