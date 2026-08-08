@@ -1,0 +1,3 @@
+:mod:`multiprocessing`: fix creation of temporary socket files following
+:gh:`137335` (`PR#148578 <https://github.com/python/cpython/pull/148578>`__
+and corresponding backports). Patch by Bénédikt Tran.
