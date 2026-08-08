@@ -2525,8 +2525,8 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
         ]
         expected = [
             ("LOAD_FAST", 0, 1),
-            ("LOAD_FAST_BORROW", 1, 2),
-            ("POP_TOP", None, 3),
+            ("NOP", None, 2),
+            ("NOP", None, 3),
         ]
         self.check(insts, expected)
 
