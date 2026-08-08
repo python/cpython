@@ -1100,6 +1100,43 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         rv = shutil.copytree(src_dir, dst_dir)
         self.assertEqual(['pol'], os.listdir(rv))
 
+    def test_copytree_to_itself_gives_sensible_error_message(self):
+        base_dir = self.mkdtemp()
+        self.addCleanup(shutil.rmtree, base_dir, ignore_errors=True)
+        src_dir = os.path.join(base_dir, "src")
+        os.makedirs(src_dir)
+        create_file((src_dir, "somefilename"), "somecontent")
+        with self._assert_are_the_same_file_is_raised():
+            shutil.copytree(src_dir, src_dir, dirs_exist_ok=True)
+
+    @os_helper.skip_unless_symlink
+    def test_copytree_to_backpointing_symlink_gives_sensible_error_message(self):
+        base_dir = self.mkdtemp()
+        self.addCleanup(shutil.rmtree, base_dir, ignore_errors=True)
+        src_dir = os.path.join(base_dir, "src")
+        target_dir = os.path.join(base_dir, "target")
+        os.makedirs(src_dir)
+        os.makedirs(target_dir)
+        some_file = os.path.join(src_dir, "somefilename")
+        create_file(some_file, "somecontent")
+        os.symlink(some_file, os.path.join(target_dir, "somefilename"))
+        with self._assert_are_the_same_file_is_raised():
+            shutil.copytree(src_dir, target_dir, dirs_exist_ok=True)
+
+    @contextlib.contextmanager
+    def _assert_are_the_same_file_is_raised(self):
+        with self.assertRaises(Error) as cm:
+            yield
+
+        errors = cm.exception.args[0]
+        self.assertEqual(len(errors), 1)
+        _, _, why = errors[0]
+        if sys.platform == "win32":
+            self.assertIn("it is being used by another process", why)
+        else:
+            self.assertIn("are the same file", why)
+
+
 class TestCopy(BaseTest, unittest.TestCase):
 
     ### shutil.copymode
