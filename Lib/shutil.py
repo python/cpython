@@ -213,6 +213,24 @@ def _fastcopy_sendfile(fsrc, fdst):
                 _USE_CP_SENDFILE = False
                 raise _GiveupOnFastCopy(err)
 
+            if err.errno == errno.ENODATA:
+                # In rare cases, sendfile() on Linux Lustre returns
+                # ENODATA.
+                _USE_CP_SENDFILE = False
+
+                # 'infd' and 'outfd' are assumed to be seekable, as
+                # they are checked to be "regular" files.
+                dstpos = os.lseek(outfd, 0, os.SEEK_CUR)
+                if dstpos > 0:
+                    # Some data has already been written but we use
+                    # sendfile in a mode that does not update the
+                    # input fd position when reading. Hence seek the
+                    # input fd to the correct position before falling
+                    # back on POSIX read/write method.
+                    os.lseek(infd, dstpos, os.SEEK_SET)
+
+                raise _GiveupOnFastCopy(err)
+
             if err.errno == errno.ENOSPC:  # filesystem is full
                 raise err from None
 
