@@ -318,6 +318,34 @@ class TestWarningsRaces(TestBase):
 
         do_race(modify_filters, emit_warning)
 
+    def test_brc_queue_sys_intern_race(self):
+        # 1 million strings will take Thread A significant time to process in map()
+        # giving Thread B plenty of time to drop references to strings that Thread A
+        # hasn't interned yet!
+        strings = ["race_string_massive_" + str(j) for j in range(1000000)]
+
+        # Give Thread B a copy of the list.
+        # Thread A still holds 'strings' so local refcount > 0.
+        shared = list(strings)
+
+        def thread_b_func():
+            # Thread B simply clears its list, which decrements the shared refcount
+            # of every string. Since Thread B is not the owner, this calls
+            # _Py_DecRefShared. Since shared refcount drops to 0, they get queued
+            # to Thread A!
+            shared.clear()
+
+        tb = threading.Thread(target=thread_b_func)
+        tb.start()
+
+        # Thread A enters map() which runs entirely in C!
+        # While Thread A iterates over the 1,000,000 strings, Thread B is
+        # concurrently clearing its list and queueing them.
+        # Any string that Thread B queues BEFORE Thread A reaches it in map()
+        # will become queued, AND THEN made immortal by sys.intern!
+        list(map(sys.intern, strings))
+        tb.join()
+
 
 if __name__ == "__main__":
     unittest.main()
