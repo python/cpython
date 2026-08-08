@@ -1282,6 +1282,19 @@ class CodeWeakRefTest(unittest.TestCase):
         self.assertFalse(bool(coderef()))
         self.assertTrue(self.called)
 
+    def test_code_const_reference_cycle_collected(self):
+        def f():
+            return 1234.5
+
+        a = []
+        code = f.__code__.replace(co_consts=f.__code__.co_consts + (a,))
+        coderef = weakref.ref(code)
+        a.append(code)
+
+        del code, a
+        gc_collect()
+        self.assertIsNone(coderef())
+
 # Python implementation of location table parsing algorithm
 def read(it):
     return next(it)
