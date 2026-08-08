@@ -283,10 +283,15 @@ class ForwardRef:
                 if isinstance(self.__cell__, dict) and isinstance(other.__cell__, dict)
                 else self.__cell__ is other.__cell__
             )
-            and self.__owner__ == other.__owner__
+            # Owners may be unhashable; __hash__ uses id(), so compare by "is".
+            and self.__owner__ is other.__owner__
+            # Compare extra-name values by identity (see __hash__).
             and (
-                (tuple(sorted(self.__extra_names__.items())) if self.__extra_names__ else None) ==
-                (tuple(sorted(other.__extra_names__.items())) if other.__extra_names__ else None)
+                {n: id(v) for n, v in self.__extra_names__.items()}
+                if self.__extra_names__ else None
+            ) == (
+                {n: id(v) for n, v in other.__extra_names__.items()}
+                if other.__extra_names__ else None
             )
         )
 
@@ -300,8 +305,13 @@ class ForwardRef:
                 tuple(sorted([(name, id(cell)) for name, cell in self.__cell__.items()]))
                 if isinstance(self.__cell__, dict) else id(self.__cell__),
             ),
-            self.__owner__,
-            tuple(sorted(self.__extra_names__.items())) if self.__extra_names__ else None,
+            id(self.__owner__),  # owners may be unhashable, so hash by identity
+            (  # extra-name values may be unhashable, so hash by identity
+                tuple(sorted(
+                    (n, id(v)) for n, v in self.__extra_names__.items()
+                ))
+                if self.__extra_names__ else None
+            ),
         ))
 
     def __or__(self, other):
