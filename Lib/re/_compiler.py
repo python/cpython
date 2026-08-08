@@ -221,7 +221,7 @@ def _code(p, flags):
     flags = p.state.flags | flags
 
     # run the optimizer passes over the parsed pattern
-    optimize(p)
+    optimize(p, flags)
 
     code = []
 

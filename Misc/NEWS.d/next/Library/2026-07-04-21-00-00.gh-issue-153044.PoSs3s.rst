@@ -1,0 +1,5 @@
+Regular expressions now compile a greedy repeat as possessive when the
+repeated characters and the characters that can follow it are provably
+disjoint (for example ``\d+\.`` as if it were ``\d++\.``).  This cannot
+change what a pattern matches, and makes failing and heavily backtracking
+matches severalfold faster.
