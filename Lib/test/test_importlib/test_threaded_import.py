@@ -461,6 +461,93 @@ raise RuntimeError("Intentional import failure")
                 errors, [],
                 f"Import(s) failed on iteration {i}: {errors}")
 
+    def test_lazy_submodule_getattr_no_recursion(self):
+        # Regression test: a package that uses a lazy `__getattr__` doing
+        # `import pkg.sub as sub` must not recurse to RecursionError when
+        # another thread first-touches the same submodule during the
+        # window between `_load_unlocked` clearing `spec._initializing`
+        # and `_find_and_load_unlocked` running `setattr(parent, child,
+        # module)`. The race is widened deterministically with a
+        # threading.Event so the test does not depend on luck.
+        import importlib._bootstrap as _b
+
+        os.makedirs(os.path.join(TESTFN, "lazypkg", "sub"))
+        self.addCleanup(shutil.rmtree, TESTFN)
+        with open(os.path.join(TESTFN, "lazypkg", "__init__.py"), "w") as f:
+            f.write(
+                "def __getattr__(attr):\n"
+                "    if attr == 'sub':\n"
+                "        import lazypkg.sub as sub\n"
+                "        return sub\n"
+                "    raise AttributeError(attr)\n"
+            )
+        with open(os.path.join(TESTFN, "lazypkg", "sub", "__init__.py"), "w") as f:
+            f.write("X = 42\n")
+
+        sys.path.insert(0, TESTFN)
+        self.addCleanup(sys.path.remove, TESTFN)
+        for mod in ("lazypkg", "lazypkg.sub"):
+            self.addCleanup(forget, mod)
+        importlib.invalidate_caches()
+
+        gate = threading.Event()
+        done = threading.Event()
+        orig_find_and_load_unlocked = _b._find_and_load_unlocked
+
+        def widen(name, import_):
+            if name != "lazypkg.sub":
+                return orig_find_and_load_unlocked(name, import_)
+            parent_module = sys.modules["lazypkg"]
+            spec = _b._find_spec(name, parent_module.__path__)
+            parent_module.__spec__._uninitialized_submodules.append("sub")
+            try:
+                module = _b._load_unlocked(spec)
+            finally:
+                parent_module.__spec__._uninitialized_submodules.pop()
+            # Pause inside the unsafe window so the observer thread
+            # can probe the half-initialized state. Without the fix
+            # in _bootstrap, that probe drives `__getattr__` into
+            # infinite recursion.
+            gate.set()
+            done.wait(timeout=5.0)
+            setattr(parent_module, "sub", module)
+            return module
+
+        _b._find_and_load_unlocked = widen
+        self.addCleanup(setattr, _b, "_find_and_load_unlocked",
+                        orig_find_and_load_unlocked)
+
+        result = {}
+
+        def loader():
+            __import__("lazypkg").sub
+
+        def observer():
+            gate.wait(timeout=5.0)
+            try:
+                result["value"] = __import__("lazypkg").sub
+            except BaseException as exc:
+                result["error"] = exc
+            done.set()
+
+        t_loader = threading.Thread(target=loader)
+        t_observer = threading.Thread(target=observer)
+        t_observer.start()
+        t_loader.start()
+        t_loader.join(timeout=10)
+        t_observer.join(timeout=10)
+
+        self.assertFalse(t_loader.is_alive(), "loader thread deadlocked")
+        self.assertFalse(t_observer.is_alive(), "observer thread deadlocked")
+        self.assertNotIn(
+            "error", result,
+            f"observer thread raised {type(result.get('error')).__name__}: "
+            f"{result.get('error')!r}",
+        )
+        self.assertIs(
+            result["value"], sys.modules["lazypkg.sub"],
+            "observer thread did not get the loaded submodule")
+
 
 def setUpModule():
     thread_info = threading_helper.threading_setup()
