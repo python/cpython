@@ -245,6 +245,39 @@ class ProxyTests(unittest.TestCase):
         self.assertFalse(bypass('newdomain.com'))            # no port
         self.assertFalse(bypass('newdomain.com:1235'))       # wrong port
 
+    def test_proxy_bypass_environment_cidr_match(self):
+        bypass = urllib.request.proxy_bypass_environment
+        self.env.set('NO_PROXY',
+                     '192.168.0.0/16, 2001:db8::/32, 172.16.1.1/24')
+        self.assertTrue(bypass('192.168.1.1'))
+        self.assertTrue(bypass('192.168.1.1:1234'))
+        self.assertTrue(bypass('2001:db8::1'))
+        self.assertTrue(bypass('[2001:db8::1]:1234'))
+        self.assertTrue(bypass('172.16.1.255'))
+        self.assertFalse(bypass('192.169.1.1'))
+        self.assertFalse(bypass('2001:db9::1'))
+        self.assertFalse(bypass('172.16.2.1'))
+        self.assertFalse(bypass('python.org'))
+
+    def test_proxy_bypass_environment_invalid_cidr(self):
+        bypass = urllib.request.proxy_bypass_environment
+        self.env.set('NO_PROXY',
+                     '192.168.0.0/33, 2001:db8::/129, anotherdomain.com')
+        self.assertFalse(bypass('192.168.1.1'))
+        self.assertFalse(bypass('2001:db8::1'))
+        self.assertTrue(bypass('anotherdomain.com'))
+
+    def test_proxy_bypass_ip_address(self):
+        bypass = urllib.request.proxy_bypass_environment
+        self.env.set('NO_PROXY', '169.254.169.254')
+        self.assertTrue(bypass('169.254.169.254'))
+        self.assertTrue(bypass('169.254.169.254:1234'))
+        self.assertFalse(bypass('169.254.169:254'))
+        self.assertFalse(bypass('169.254.169.254.org'))
+        self.assertFalse(bypass('2001:db9::1'))
+        self.assertFalse(bypass('172.16.2.1'))
+        self.assertFalse(bypass('python.org'))
+
     def test_proxy_bypass_environment_always_match(self):
         bypass = urllib.request.proxy_bypass_environment
         self.env.set('NO_PROXY', '*')
