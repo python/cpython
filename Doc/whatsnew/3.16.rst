@@ -291,6 +291,13 @@ gzip
   which is passed on to the constructor of the :class:`~gzip.GzipFile` class.
   (Contributed by Marin Misur in :gh:`91372`.)
 
+heapq
+-----
+
+* Add the :class:`~heapq.MinHeap` and :class:`~heapq.MaxHeap` classes, an
+  object-oriented interface to the module's heap functions.
+  (Contributed by Facundo Batista in :gh:`137200`.)
+
 io
 --
 
