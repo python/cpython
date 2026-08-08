@@ -888,6 +888,9 @@ class CookieTests(unittest.TestCase):
         self.assertFalse(domain_match("blah.blah", ""))
         self.assertFalse(domain_match("", ".rhubarb.rhubarb"))
         self.assertTrue(domain_match("", ""))
+        # B must be a suffix of A, not just an interior substring
+        self.assertFalse(domain_match("www.acme.com.evil.org", ".acme.com"))
+        self.assertFalse(domain_match("a.b.c.com.example.net", ".c.com"))
 
         self.assertTrue(user_domain_match("acme.com", "acme.com"))
         self.assertFalse(user_domain_match("acme.com", ".acme.com"))

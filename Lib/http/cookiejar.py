@@ -578,8 +578,9 @@ def domain_match(A, B):
     if not is_HDN(A):
         return False
     i = A.rfind(B)
-    if i == -1 or i == 0:
-        # A does not have form NB, or N is the empty string
+    if i == -1 or i == 0 or i + len(B) != len(A):
+        # A does not have form NB, N is the empty string, or B is not a
+        # suffix of A (so A only contains B as an interior substring)
         return False
     if not B.startswith("."):
         return False
