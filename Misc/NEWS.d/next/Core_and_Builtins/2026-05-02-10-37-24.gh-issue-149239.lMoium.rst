@@ -1,0 +1,2 @@
+Deopt ``LOAD_ATTR_CLASS_WITH_METACLASS_CHECK`` opcode on ``__class__``
+reassigning.
