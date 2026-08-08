@@ -1498,7 +1498,8 @@ are always available.  They are listed here in alphabetical order.
    file descriptor for the file object is then obtained by calling *opener* with
    (*file*, *flags*). *opener* must return an open file descriptor (passing
    :mod:`os.open` as *opener* results in functionality similar to passing
-   ``None``).
+   ``None`` but will also request, subject to the process ``umask``, the file be
+   created with executable permissions on Unix).
 
    The newly created file is :ref:`non-inheritable <fd_inheritance>`.
 
