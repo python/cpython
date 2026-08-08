@@ -2523,7 +2523,16 @@ class ThreadedNetworkedTests(unittest.TestCase):
             self.assertRaises(imaplib.IMAP4.error, client.enable, 'foo')
             self.assertFalse(client.utf8_enabled)
 
-    # XXX Also need a test that enable after SELECT raises an error.
+    @threading_helper.reap_threads
+    def test_enable_raises_error_after_select(self):
+        with self.reaped_pair(self.UTF8Server) as (server, client):
+            typ, _ = client.authenticate('MYAUTH', lambda x: b'fake')
+            self.assertEqual(typ, 'OK')
+            typ, _ = client.select()
+            self.assertEqual(typ, 'OK')
+            self.assertFalse(client.utf8_enabled)
+            self.assertRaises(imaplib.IMAP4.error, client.enable, 'UTF8=ACCEPT')
+            self.assertFalse(client.utf8_enabled)
 
     @threading_helper.reap_threads
     def test_enable_raises_error_if_no_capability(self):
