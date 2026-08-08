@@ -219,10 +219,11 @@ The grammar for a replacement field is as follows:
 .. productionlist:: format-string
    replacement_field: "{" [`field_name`] ["!" `conversion`] [":" `format_spec`] "}"
    field_name: `arg_name` ("." `attribute_name` | "[" `element_index` "]")*
-   arg_name: [`~python-grammar:identifier` | `~python-grammar:digit`+]
-   attribute_name: `~python-grammar:identifier`
-   element_index: `~python-grammar:digit`+ | `index_string`
+   arg_name: [`decimal_number` | `attribute_name`]
+   attribute_name: <any source character except "{", "}", "[", ".", "!", or ":"> +
+   element_index: `decimal_number` | `index_string`
    index_string: <any source character except "]"> +
+   decimal_number: <any Unicode decimal digit character> +
    conversion: "r" | "s" | "a"
    format_spec: `format-spec:format_spec`
 
