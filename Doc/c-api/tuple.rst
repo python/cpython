@@ -165,6 +165,11 @@ type.
 
    Return ``NULL`` with an exception set on failure.
 
+   .. versionchanged:: next
+      Raise :exc:`SystemError` if *desc* places an unnamed field outside the visible
+      sequence fields, or if :c:member:`~PyStructSequence_Desc.n_in_sequence` is
+      negative or exceeds the total number of fields.
+
 
 .. c:function:: void PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc)
 
@@ -177,6 +182,10 @@ type.
    and ``-1`` with an exception set on failure.
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: next
+      Raise :exc:`SystemError` for an invalid *desc*, as described in
+      :c:func:`PyStructSequence_NewType`.
 
 
 .. c:type:: PyStructSequence_Desc
@@ -199,6 +208,7 @@ type.
    .. c:member:: int n_in_sequence
 
       Number of fields visible to the Python side (if used as tuple).
+      Must be non-negative and must not exceed the total number of fields.
 
 
 .. c:type:: PyStructSequence_Field
@@ -221,7 +231,9 @@ type.
 
 .. c:var:: const char * const PyStructSequence_UnnamedField
 
-   Special value for a field name to leave it unnamed.
+   Special value for a field name to leave it unnamed.  An unnamed field must be
+   one of the visible sequence fields, that is, its index must be less than
+   :c:member:`~PyStructSequence_Desc.n_in_sequence`.
 
    .. versionchanged:: 3.9
       The type was changed from ``char *``.

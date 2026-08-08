@@ -1304,6 +1304,81 @@ test_structseq_newtype_null_descr_doc(PyObject *Py_UNUSED(self),
     Py_RETURN_NONE;
 }
 
+static PyObject *
+structseq_newtype_negative_n_in_sequence(PyObject *Py_UNUSED(self),
+                              PyObject *Py_UNUSED(args))
+{
+    // gh-154387: n_in_sequence must not be negative.
+    PyStructSequence_Field descr_fields[] = {
+        {"a", "field a"},
+        {NULL, NULL},
+    };
+    PyStructSequence_Desc descr = {
+        "_testcapi.negative_n_in_sequence", NULL, descr_fields, -1,
+    };
+
+    PyTypeObject *type = PyStructSequence_NewType(&descr);
+    if (type != NULL) {
+        Py_DECREF(type);
+        PyErr_SetString(PyExc_AssertionError,
+                        "negative n_in_sequence was not rejected");
+        return NULL;
+    }
+    // NewType() failed and left the expected SystemError set; propagate it.
+    return NULL;
+}
+
+static PyObject *
+structseq_newtype_unnamed_hidden_field(PyObject *Py_UNUSED(self),
+                              PyObject *Py_UNUSED(args))
+{
+    // gh-154387: an unnamed field is only allowed among the visible sequence
+    // fields.  Placing one at a hidden index must be rejected.
+    PyStructSequence_Field descr_fields[] = {
+        {"visible", "a visible field"},
+        {PyStructSequence_UnnamedField, "an unnamed hidden field"},
+        {NULL, NULL},
+    };
+    PyStructSequence_Desc descr = {
+        "_testcapi.bad_unnamed", NULL, descr_fields, 1,
+    };
+
+    PyTypeObject *type = PyStructSequence_NewType(&descr);
+    if (type != NULL) {
+        Py_DECREF(type);
+        PyErr_SetString(PyExc_AssertionError,
+                        "unnamed field at a hidden index was not rejected");
+        return NULL;
+    }
+    // NewType() failed and left the expected SystemError set; propagate it.
+    return NULL;
+}
+
+static PyObject *
+structseq_newtype_too_many_visible_fields(PyObject *Py_UNUSED(self),
+                              PyObject *Py_UNUSED(args))
+{
+    // gh-154387: n_in_sequence must not exceed the total number of fields.
+    PyStructSequence_Field descr_fields[] = {
+        {"a", "field a"},
+        {"b", "field b"},
+        {NULL, NULL},
+    };
+    PyStructSequence_Desc descr = {
+        "_testcapi.too_many_visible", NULL, descr_fields, 3,
+    };
+
+    PyTypeObject *type = PyStructSequence_NewType(&descr);
+    if (type != NULL) {
+        Py_DECREF(type);
+        PyErr_SetString(PyExc_AssertionError,
+                        "n_in_sequence exceeding the field count was not rejected");
+        return NULL;
+    }
+    // NewType() failed and left the expected SystemError set; propagate it.
+    return NULL;
+}
+
 typedef struct {
     PyThread_type_lock start_event;
     PyThread_type_lock exit_event;
@@ -3007,6 +3082,12 @@ static PyMethodDef TestMethods[] = {
         test_structseq_newtype_doesnt_leak, METH_NOARGS},
     {"test_structseq_newtype_null_descr_doc",
         test_structseq_newtype_null_descr_doc, METH_NOARGS},
+    {"structseq_newtype_negative_n_in_sequence",
+        structseq_newtype_negative_n_in_sequence, METH_NOARGS},
+    {"structseq_newtype_unnamed_hidden_field",
+        structseq_newtype_unnamed_hidden_field, METH_NOARGS},
+    {"structseq_newtype_too_many_visible_fields",
+        structseq_newtype_too_many_visible_fields, METH_NOARGS},
     {"pyobject_repr_from_null", pyobject_repr_from_null, METH_NOARGS},
     {"pyobject_str_from_null",  pyobject_str_from_null, METH_NOARGS},
     {"pyobject_bytes_from_null", pyobject_bytes_from_null, METH_NOARGS},
