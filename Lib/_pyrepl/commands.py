@@ -138,6 +138,13 @@ class clear_screen(Command):
         r.invalidate_full()
 
 
+class clear_display(Command):
+    def do(self) -> None:
+        r = self.reader
+        r.console.clear_all()
+        r.dirty = True
+
+
 class refresh(Command):
     def do(self) -> None:
         trace("command.refresh")
