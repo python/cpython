@@ -2602,9 +2602,14 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
                 result = NULL;
             }
             else {
-                len--;   /* strip trailing '\n' */
-                if (len != 0 && s[len-1] == '\r')
-                    len--;   /* strip trailing '\r' */
+                /* strip trailing '\n' */
+                if (s[len-1] == '\n') {
+                    len--;
+                }
+                /* strip trailing '\r' */
+                if (len != 0 && s[len-1] == '\r') {
+                    len--;
+                }
                 result = PyUnicode_Decode(s, len, stdin_encoding_str,
                                                   stdin_errors_str);
             }
