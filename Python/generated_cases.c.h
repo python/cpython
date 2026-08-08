@@ -5152,6 +5152,63 @@
             DISPATCH();
         }
 
+        TARGET(CLEANUP_ASYNC_THROW) {
+            #if _Py_TAIL_CALL_INTERP
+            int opcode = CLEANUP_ASYNC_THROW;
+            (void)(opcode);
+            #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(CLEANUP_ASYNC_THROW);
+            _PyStackRef iter;
+            _PyStackRef exc_value_st;
+            _PyStackRef value;
+            exc_value_st = stack_pointer[-1];
+            iter = stack_pointer[-2];
+            PyObject *exc_value = PyStackRef_AsPyObjectBorrow(exc_value_st);
+            assert(exc_value != NULL);
+            assert(PyExceptionInstance_Check(exc_value));
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
+            int matches = PyErr_GivenExceptionMatches(exc_value, PyExc_StopAsyncIteration);
+            _PyFrame_StackPointerInvalidate(frame);
+            if (matches) {
+                value = PyStackRef_FromPyObjectNew(((PyStopAsyncIterationObject *)exc_value)->value);
+                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                _PyFrame_StackPointerValidate(frame);
+                _PyStackRef tmp = iter;
+                iter = value;
+                stack_pointer[-2] = iter;
+                PyStackRef_CLOSE(tmp);
+                _PyFrame_StackPointerInvalidate(frame);
+                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                _PyFrame_StackPointerValidate(frame);
+                tmp = exc_value_st;
+                exc_value_st = PyStackRef_NULL;
+                stack_pointer[-1] = exc_value_st;
+                PyStackRef_CLOSE(tmp);
+                _PyFrame_StackPointerInvalidate(frame);
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            }
+            else {
+                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                _PyFrame_StackPointerValidate(frame);
+                _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
+                _PyFrame_StackPointerInvalidate(frame);
+                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                _PyFrame_StackPointerValidate(frame);
+                monitor_reraise(tstate, frame, this_instr);
+                _PyFrame_StackPointerInvalidate(frame);
+                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                _PyFrame_StackPointerValidate(frame);
+                JUMP_TO_LABEL(exception_unwind);
+            }
+            DISPATCH();
+        }
+
         TARGET(CLEANUP_THROW) {
             #if _Py_TAIL_CALL_INTERP
             int opcode = CLEANUP_THROW;
