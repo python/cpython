@@ -1,0 +1,4 @@
+Fixes race conditions in :mod:`xml.etree.ElementTree` where the ``extra``
+pointer dereference and ``attrib`` access was unsynchronized. This prevents
+potential crashes (core dumps) in the free-threading build caused by
+concurrent modification of an element's internal structure.
