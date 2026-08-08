@@ -1,0 +1,5 @@
+Fix the pure-Python implementation of :meth:`datetime.date.fromisoformat`
+silently mis-parsing some malformed ISO 8601 basic-format dates (for example
+``'2020+12'`` or ``'2020061'``).  Each fixed-width field is now required to be
+exactly *N* ASCII digits before conversion, matching the C implementation,
+which already rejected these inputs.
