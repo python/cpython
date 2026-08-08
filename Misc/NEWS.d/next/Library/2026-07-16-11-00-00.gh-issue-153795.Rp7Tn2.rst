@@ -1,0 +1,2 @@
+:meth:`urllib.robotparser.RobotFileParser.can_fetch` no longer raises
+:exc:`ValueError` for a malformed URL. Patch by tonghuaroot.
