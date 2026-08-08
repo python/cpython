@@ -1,0 +1,3 @@
+Fix thread safety of :term:`asynchronous generators <asynchronous
+generator>` when iterated, closed or thrown into concurrently from multiple
+threads on the :term:`free threading` build.
