@@ -8,6 +8,8 @@ __all__ = ['MIMEImage']
 
 from email import encoders
 from email.mime.nonmultipart import MIMENonMultipart
+import base64
+from textwrap import wrap
 
 
 class MIMEImage(MIMENonMultipart):
@@ -39,9 +41,19 @@ class MIMEImage(MIMENonMultipart):
             raise TypeError('Could not guess image MIME subtype')
         MIMENonMultipart.__init__(self, 'image', _subtype, policy=policy,
                                   **_params)
-        self.set_payload(_imagedata)
-        _encoder(self)
-
+        #self.set_payload(_imagedata)
+        #_encoder(self)
+        # 1) Turn your image bytes into one long Base64 string
+        b64str = base64.b64encode(_imagedata).decode('ascii')
+        
+        # 2) Ask the policy “how long should each line be?”
+        maxlen = getattr(self.policy, 'max_line_length', 76)
+        
+        # 3) Break that long string into chunks of that length
+        wrapped = "\r\n".join(wrap(b64str, maxlen))
+        
+        # 4) Give the email library those nice, wrapped lines
+        self.set_payload(wrapped, 'base64', policy=self.policy)
 
 _rules = []
 
