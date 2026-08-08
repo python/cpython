@@ -35,7 +35,7 @@ Data members:
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_pystats.h"       // _Py_PrintSpecializationStats()
 #include "pycore_runtime.h"       // _PyRuntimeState_Get*()
-#include "pycore_structseq.h"     // _PyStructSequence_InitBuiltinWithFlags()
+#include "pycore_structseq.h"     // _PyStructSequence_NewType()
 #include "pycore_sysmodule.h"     // export _PySys_GetSizeOf()
 #include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal()
 
@@ -74,6 +74,13 @@ module sys
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=3726b388feee8cea]*/
 
 #include "clinic/sysmodule.c.h"
+
+
+static _PySys_State*
+sys_get_state(PyInterpreterState *interp)
+{
+    return &interp->sys_state;
+}
 
 
 PyObject *
@@ -1414,8 +1421,6 @@ sys_get_coroutine_origin_tracking_depth_impl(PyObject *module)
     return _PyEval_GetCoroutineOriginTrackingDepth();
 }
 
-static PyTypeObject AsyncGenHooksType;
-
 PyDoc_STRVAR(asyncgen_hooks_doc,
 "asyncgen_hooks\n\
 \n\
@@ -1429,7 +1434,7 @@ static PyStructSequence_Field asyncgen_hooks_fields[] = {
 };
 
 static PyStructSequence_Desc asyncgen_hooks_desc = {
-    "asyncgen_hooks",          /* name */
+    "sys.asyncgen_hooks",      /* name */
     asyncgen_hooks_doc,        /* doc */
     asyncgen_hooks_fields ,    /* fields */
     2
@@ -1514,8 +1519,10 @@ sys_get_asyncgen_hooks_impl(PyObject *module)
     PyObject *res;
     PyObject *firstiter = _PyEval_GetAsyncGenFirstiter();
     PyObject *finalizer = _PyEval_GetAsyncGenFinalizer();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PySys_State *state = sys_get_state(interp);
 
-    res = PyStructSequence_New(&AsyncGenHooksType);
+    res = PyStructSequence_New(state->async_gen_hooks_type);
     if (res == NULL) {
         return NULL;
     }
@@ -1534,8 +1541,6 @@ sys_get_asyncgen_hooks_impl(PyObject *module)
     return res;
 }
 
-
-static PyTypeObject Hash_InfoType;
 
 PyDoc_STRVAR(hash_info_doc,
 "hash_info\n\
@@ -1566,12 +1571,12 @@ static PyStructSequence_Desc hash_info_desc = {
 };
 
 static PyObject *
-get_hash_info(PyThreadState *tstate)
+get_hash_info(PyTypeObject *hash_info_type)
 {
     PyObject *hash_info;
     int field = 0;
     PyHash_FuncDef *hashfunc;
-    hash_info = PyStructSequence_New(&Hash_InfoType);
+    hash_info = PyStructSequence_New(hash_info_type);
     if (hash_info == NULL) {
         return NULL;
     }
@@ -1619,8 +1624,6 @@ sys_getrecursionlimit_impl(PyObject *module)
 }
 
 #ifdef MS_WINDOWS
-
-static PyTypeObject WindowsVersionType = { 0 };
 
 static PyStructSequence_Field windows_version_fields[] = {
     {"major", "Major version number"},
@@ -1721,10 +1724,14 @@ sys_getwindowsversion_impl(PyObject *module)
     int pos = 0;
     OSVERSIONINFOEXW ver;
 
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PySys_State *state = sys_get_state(interp);
+    PyTypeObject *windows_version_type = state->windows_version_type;
+
     if (PyObject_GetOptionalAttrString(module, "_cached_windows_version", &version) < 0) {
         return NULL;
-    };
-    if (version && PyObject_TypeCheck(version, &WindowsVersionType)) {
+    }
+    if (version && PyObject_TypeCheck(version, windows_version_type)) {
         return version;
     }
     Py_XDECREF(version);
@@ -1733,7 +1740,7 @@ sys_getwindowsversion_impl(PyObject *module)
     if (!GetVersionExW((OSVERSIONINFOW*) &ver))
         return PyErr_SetFromWindowsErr(0);
 
-    version = PyStructSequence_New(&WindowsVersionType);
+    version = PyStructSequence_New(windows_version_type);
     if (version == NULL)
         return NULL;
 
@@ -3437,8 +3444,6 @@ PyDoc_STRVAR(flags__doc__,
 \n\
 Flags provided through command line arguments or environment vars.");
 
-static PyTypeObject FlagsType;
-
 static PyStructSequence_Field flags_fields[] = {
     {"debug",                   "-d"},
     {"inspect",                 "-i"},
@@ -3499,7 +3504,9 @@ _PySys_SetFlagObj(Py_ssize_t pos, PyObject *value)
         goto error;
     }
 
-    new_flags = PyStructSequence_New(&FlagsType);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PySys_State *state = sys_get_state(interp);
+    new_flags = PyStructSequence_New(state->flags_type);
     if (new_flags == NULL) {
         goto error;
     }
@@ -3598,9 +3605,9 @@ set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
 
 
 static PyObject*
-make_flags(PyInterpreterState *interp)
+make_flags(PyInterpreterState *interp, PyTypeObject *flags_type)
 {
-    PyObject *flags = PyStructSequence_New(&FlagsType);
+    PyObject *flags = PyStructSequence_New(flags_type);
     if (flags == NULL) {
         return NULL;
     }
@@ -3617,8 +3624,6 @@ PyDoc_STRVAR(version_info__doc__,
 "sys.version_info\n\
 \n\
 Version information as a named tuple.");
-
-static PyTypeObject VersionInfoType;
 
 static PyStructSequence_Field version_info_fields[] = {
     {"major", "Major release number"},
@@ -3637,13 +3642,13 @@ static PyStructSequence_Desc version_info_desc = {
 };
 
 static PyObject *
-make_version_info(PyThreadState *tstate)
+make_version_info(PyThreadState *tstate, PyTypeObject *version_info_type)
 {
     PyObject *version_info;
     char *s;
     int pos = 0;
 
-    version_info = PyStructSequence_New(&VersionInfoType);
+    version_info = PyStructSequence_New(version_info_type);
     if (version_info == NULL) {
         return NULL;
     }
@@ -3843,8 +3848,6 @@ PyDoc_STRVAR(emscripten_info__doc__,
 \n\
 WebAssembly Emscripten platform information.");
 
-static PyTypeObject *EmscriptenInfoType;
-
 static PyStructSequence_Field emscripten_info_fields[] = {
     {"emscripten_version", "Emscripten version (major, minor, micro)"},
     {"runtime", "Runtime (Node.JS version, browser user agent)"},
@@ -3898,14 +3901,14 @@ EM_JS(char *, _Py_emscripten_runtime, (void), {
 });
 
 static PyObject *
-make_emscripten_info(void)
+make_emscripten_info(PyTypeObject *emscripten_info_type)
 {
     PyObject *emscripten_info = NULL;
     PyObject *version = NULL;
     char *ua;
     int pos = 0;
 
-    emscripten_info = PyStructSequence_New(EmscriptenInfoType);
+    emscripten_info = PyStructSequence_New(emscripten_info_type);
     if (emscripten_info == NULL) {
         return NULL;
     }
@@ -3993,6 +3996,7 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     PyObject *version_info;
     int res;
     PyInterpreterState *interp = tstate->interp;
+    _PySys_State *state = sys_get_state(interp);
 
     /* stdin/stdout/stderr are set in pylifecycle.c */
 
@@ -4017,13 +4021,17 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     SET_SYS("maxsize", PyLong_FromSsize_t(PY_SSIZE_T_MAX));
     SET_SYS("float_info", PyFloat_GetInfo());
     SET_SYS("int_info", PyLong_GetInfo());
+
     /* initialize hash_info */
-    if (_PyStructSequence_InitBuiltin(interp, &Hash_InfoType,
-                                      &hash_info_desc) < 0)
-    {
+    PyTypeObject *hash_info_type = _PyStructSequence_NewType(
+        &hash_info_desc, Py_TPFLAGS_IMMUTABLETYPE);
+    if (hash_info_type == NULL) {
         goto type_init_failed;
     }
-    SET_SYS("hash_info", get_hash_info(tstate));
+    PyObject *hash_info = get_hash_info(hash_info_type);
+    Py_DECREF(hash_info_type);
+    SET_SYS("hash_info", hash_info);
+
     SET_SYS("maxunicode", PyLong_FromLong(0x10FFFF));
     SET_SYS("builtin_module_names", list_builtin_module_names());
     SET_SYS("stdlib_module_names", list_stdlib_module_names());
@@ -4041,34 +4049,40 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     SET_SYS_FROM_STRING("abiflags", ABIFLAGS);
 #endif
 
-#define ENSURE_INFO_TYPE(TYPE, DESC) \
-    do { \
-        if (_PyStructSequence_InitBuiltinWithFlags( \
-                interp, &TYPE, &DESC, Py_TPFLAGS_DISALLOW_INSTANTIATION) < 0) { \
-            goto type_init_failed; \
-        } \
-    } while (0)
-
     /* version_info */
-    ENSURE_INFO_TYPE(VersionInfoType, version_info_desc);
-    version_info = make_version_info(tstate);
+    PyTypeObject *version_info_type = _PyStructSequence_NewType(
+        &version_info_desc,
+        Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION);
+    if (version_info_type == NULL) {
+        goto type_init_failed;
+    }
+    version_info = make_version_info(tstate, version_info_type);
+    Py_DECREF(version_info_type);
     SET_SYS("version_info", version_info);
 
     /* implementation */
     SET_SYS("implementation", make_impl_info(version_info));
 
     // sys.flags: updated later by _PySys_UpdateConfig()
-    ENSURE_INFO_TYPE(FlagsType, flags_desc);
-    SET_SYS("flags", make_flags(tstate->interp));
+    state->flags_type = _PyStructSequence_NewType(
+        &flags_desc,
+        Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION);
+    if (state->flags_type == NULL) {
+        goto type_init_failed;
+    }
+    SET_SYS("flags", make_flags(tstate->interp, state->flags_type));
 
 #if defined(MS_WINDOWS)
     /* getwindowsversion */
-    ENSURE_INFO_TYPE(WindowsVersionType, windows_version_desc);
+    state->windows_version_type = _PyStructSequence_NewType(
+        &windows_version_desc,
+        Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION);
+    if (state->windows_version_type == NULL) {
+        goto type_init_failed;
+    }
 
     SET_SYS_FROM_STRING("_vpath", VPATH);
 #endif
-
-#undef ENSURE_INFO_TYPE
 
     /* float repr style: 0.03 (short) vs 0.029999999999999999 (legacy) */
 #if _PY_SHORT_FLOAT_REPR == 1
@@ -4082,20 +4096,18 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     SET_SYS("abi_info", make_abi_info());
 
     /* initialize asyncgen_hooks */
-    if (_PyStructSequence_InitBuiltin(interp, &AsyncGenHooksType,
-                                      &asyncgen_hooks_desc) < 0)
-    {
+    state->async_gen_hooks_type = _PyStructSequence_NewType(
+        &asyncgen_hooks_desc, Py_TPFLAGS_IMMUTABLETYPE);
+    if (state->async_gen_hooks_type == NULL) {
         goto type_init_failed;
     }
 
 #ifdef __EMSCRIPTEN__
-    if (EmscriptenInfoType == NULL) {
-        EmscriptenInfoType = PyStructSequence_NewType(&emscripten_info_desc);
-        if (EmscriptenInfoType == NULL) {
-            goto type_init_failed;
-        }
+    state->emscripten_info_type = PyStructSequence_NewType(&emscripten_info_desc);
+    if (state->emscripten_info_type == NULL) {
+        goto type_init_failed;
     }
-    SET_SYS("_emscripten_info", make_emscripten_info());
+    SET_SYS("_emscripten_info", make_emscripten_info(state->emscripten_info_type));
 #endif
 
     /* adding sys.path_hooks and sys.path_importer_cache */
@@ -4178,7 +4190,8 @@ _PySys_UpdateConfig(PyThreadState *tstate)
 #undef COPY_WSTR
 
     // replace sys.flags
-    PyObject *new_flags = PyStructSequence_New(&FlagsType);
+    _PySys_State *state = sys_get_state(interp);
+    PyObject *new_flags = PyStructSequence_New(state->flags_type);
     if (new_flags == NULL) {
         return -1;
     }
@@ -4397,17 +4410,14 @@ error:
 void
 _PySys_FiniTypes(PyInterpreterState *interp)
 {
-    _PyStructSequence_FiniBuiltin(interp, &VersionInfoType);
-    _PyStructSequence_FiniBuiltin(interp, &FlagsType);
+    _PySys_State *state = sys_get_state(interp);
+    Py_CLEAR(state->async_gen_hooks_type);
+    Py_CLEAR(state->flags_type);
 #if defined(MS_WINDOWS)
-    _PyStructSequence_FiniBuiltin(interp, &WindowsVersionType);
+    Py_CLEAR(state->windows_version_type);
 #endif
-    _PyStructSequence_FiniBuiltin(interp, &Hash_InfoType);
-    _PyStructSequence_FiniBuiltin(interp, &AsyncGenHooksType);
 #ifdef __EMSCRIPTEN__
-    if (_Py_IsMainInterpreter(interp)) {
-        Py_CLEAR(EmscriptenInfoType);
-    }
+    Py_CLEAR(state->emscripten_info_type);
 #endif
 }
 
