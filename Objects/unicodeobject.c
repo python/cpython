@@ -7829,14 +7829,34 @@ PyUnicode_DecodeMBCS(const char *s,
     return PyUnicode_DecodeMBCSStateful(s, size, errors, NULL);
 }
 
+/* WideCharToMultiByte() only supports some code pages with flags=0 and
+   lpUsedDefaultChar=NULL, see its documentation.  Unencodable characters
+   are silently replaced then, so they are detected by decoding the result
+   back (see encode_code_page_lossy()). */
+static int
+encode_code_page_zero_flags(UINT code_page)
+{
+    switch (code_page) {
+    case 42:                            /* Symbol */
+    case 50220: case 50221: case 50222: /* ISO-2022-JP */
+    case 50225:                         /* ISO-2022-KR */
+    case 50227: case 50229:             /* ISO-2022-CN */
+    case 52936:                         /* HZ-GB2312 */
+    case 54936:                         /* GB18030 */
+    case CP_UTF7:
+        return 1;
+    default:
+        return 57002 <= code_page && code_page <= 57011;  /* ISCII */
+    }
+}
+
 static DWORD
 encode_code_page_flags(UINT code_page, const char *errors)
 {
     if (code_page == CP_UTF8) {
         return WC_ERR_INVALID_CHARS;
     }
-    else if (code_page == CP_UTF7) {
-        /* CP_UTF7 only supports flags=0 */
+    else if (encode_code_page_zero_flags(code_page)) {
         return 0;
     }
     else {
@@ -7845,6 +7865,56 @@ encode_code_page_flags(UINT code_page, const char *errors)
         else
             return WC_NO_BEST_FIT_CHARS;
     }
+}
+
+/* Code pages encoded without WC_NO_BEST_FIT_CHARS and lpUsedDefaultChar
+   need the result to be decoded back to detect replaced characters.
+   UTF-7 encodes every character, so it is exempted. */
+static int
+encode_code_page_check_lossy(UINT code_page)
+{
+    return code_page != CP_UTF7 && encode_code_page_zero_flags(code_page);
+}
+
+/*
+ * Check whether some characters were replaced when encoding, i.e. whether
+ * the encoded string is not decoded back into the original string.
+ *
+ * Returns 1 if some characters were replaced, 0 if not, or raise an OSError
+ * and returns -1 on error.
+ */
+static int
+encode_code_page_lossy(UINT code_page,
+                       const wchar_t *p, int size,
+                       const char *out, int outsize)
+{
+    wchar_t *decoded;
+    int n, lossy;
+
+    n = MultiByteToWideChar(code_page, 0, out, outsize, NULL, 0);
+    if (n <= 0) {
+        PyErr_SetFromWindowsErr(0);
+        return -1;
+    }
+    if (n != size) {
+        return 1;
+    }
+
+    decoded = PyMem_New(wchar_t, n);
+    if (decoded == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    n = MultiByteToWideChar(code_page, 0, out, outsize, decoded, n);
+    if (n <= 0) {
+        PyErr_SetFromWindowsErr(0);
+        lossy = -1;
+    }
+    else {
+        lossy = (memcmp(decoded, p, (size_t)size * sizeof(wchar_t)) != 0);
+    }
+    PyMem_Free(decoded);
+    return lossy;
 }
 
 /*
@@ -7866,6 +7936,7 @@ encode_code_page_strict(UINT code_page, PyBytesWriter **writer,
     Py_ssize_t size;
     const DWORD flags = encode_code_page_flags(code_page, NULL);
     char *out;
+    Py_ssize_t start;
     /* Create a substring so that we can get the UTF-16 representation
        of just the slice under consideration. */
     PyObject *substring;
@@ -7873,7 +7944,7 @@ encode_code_page_strict(UINT code_page, PyBytesWriter **writer,
 
     assert(len > 0);
 
-    if (code_page != CP_UTF8 && code_page != CP_UTF7)
+    if (code_page != CP_UTF8 && !encode_code_page_zero_flags(code_page))
         pusedDefaultChar = &usedDefaultChar;
     else
         pusedDefaultChar = NULL;
@@ -7903,6 +7974,7 @@ encode_code_page_strict(UINT code_page, PyBytesWriter **writer,
 
     if (*writer == NULL) {
         /* Create string object */
+        start = 0;
         *writer = PyBytesWriter_Create(outsize);
         if (*writer == NULL) {
             goto done;
@@ -7911,11 +7983,11 @@ encode_code_page_strict(UINT code_page, PyBytesWriter **writer,
     }
     else {
         /* Extend string object */
-        Py_ssize_t n = PyBytesWriter_GetSize(*writer);
+        start = PyBytesWriter_GetSize(*writer);
         if (PyBytesWriter_Grow(*writer, outsize) < 0) {
             goto done;
         }
-        out = (char*)PyBytesWriter_GetData(*writer) + n;
+        out = (char*)PyBytesWriter_GetData(*writer) + start;
     }
 
     /* Do the conversion */
@@ -7928,6 +8000,22 @@ encode_code_page_strict(UINT code_page, PyBytesWriter **writer,
     if (pusedDefaultChar && *pusedDefaultChar) {
         ret = -2;
         goto done;
+    }
+    if (encode_code_page_check_lossy(code_page)) {
+        int lossy = encode_code_page_lossy(code_page, p, (int)size,
+                                           out, outsize);
+        if (lossy < 0) {
+            goto done;
+        }
+        if (lossy) {
+            /* Drop the lossy result, it will be re-encoded with an error
+               handler. */
+            if (PyBytesWriter_Resize(*writer, start) < 0) {
+                goto done;
+            }
+            ret = -2;
+            goto done;
+        }
     }
     ret = 0;
 
@@ -7962,8 +8050,10 @@ encode_code_page_errors(UINT code_page, PyBytesWriter **writer,
     /* Ideally, we should get reason from FormatMessage. This is the Windows
        2000 English version of the message. */
     const char *reason = "invalid character";
-    /* 4=maximum length of a UTF-8 sequence */
-    char buffer[4];
+    /* 4=maximum length of a UTF-8 sequence, 16 is enough for a character
+       encoded together with escape sequences (e.g. in ISO-2022) */
+    char buffer[16];
+    int maxcharsize;
     BOOL usedDefaultChar = FALSE, *pusedDefaultChar;
     Py_ssize_t outsize;
     char *out;
@@ -7993,16 +8083,21 @@ encode_code_page_errors(UINT code_page, PyBytesWriter **writer,
         return -1;
     }
 
-    if (code_page != CP_UTF8 && code_page != CP_UTF7)
+    if (code_page != CP_UTF8 && !encode_code_page_zero_flags(code_page))
         pusedDefaultChar = &usedDefaultChar;
     else
         pusedDefaultChar = NULL;
 
-    if (Py_ARRAY_LENGTH(buffer) > PY_SSIZE_T_MAX / insize) {
+    /* Only code pages encoded with flags=0 can need more than 4 bytes
+       per character. */
+    maxcharsize = encode_code_page_zero_flags(code_page)
+                  ? (int)Py_ARRAY_LENGTH(buffer) : 4;
+
+    if (maxcharsize > PY_SSIZE_T_MAX / insize) {
         PyErr_NoMemory();
         goto error;
     }
-    outsize = insize * Py_ARRAY_LENGTH(buffer);
+    outsize = insize * maxcharsize;
 
     if (*writer == NULL) {
         /* Create string object */
@@ -8039,10 +8134,18 @@ encode_code_page_errors(UINT code_page, PyBytesWriter **writer,
 
         outsize = WideCharToMultiByte(code_page, flags,
                                       chars, charsize,
-                                      buffer, Py_ARRAY_LENGTH(buffer),
+                                      buffer, maxcharsize,
                                       NULL, pusedDefaultChar);
         if (outsize > 0) {
-            if (pusedDefaultChar == NULL || !(*pusedDefaultChar))
+            int lossy = (pusedDefaultChar != NULL && *pusedDefaultChar);
+            if (!lossy && encode_code_page_check_lossy(code_page)) {
+                lossy = encode_code_page_lossy(code_page, chars, charsize,
+                                               buffer, (int)outsize);
+                if (lossy < 0) {
+                    goto error;
+                }
+            }
+            if (!lossy)
             {
                 pos++;
                 memcpy(out, buffer, outsize);
