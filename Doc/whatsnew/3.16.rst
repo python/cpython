@@ -368,6 +368,11 @@ logging
   before the rotation interval expires.
   (Contributed by Iván Márton and Serhiy Storchaka in :gh:`84649`.)
 
+* :class:`~logging.handlers.SysLogHandler` now accepts ``address=None`` to log
+  to the local system logger via the :mod:`syslog` module, which works even
+  where there is no syslog socket, such as on recent versions of macOS.
+  (Contributed by Serhiy Storchaka in :gh:`96339`.)
+
 
 lzma
 ----

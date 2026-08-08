@@ -1,0 +1,3 @@
+:class:`logging.handlers.SysLogHandler` now accepts ``address=None`` to log to
+the local system logger via the :mod:`syslog` module.  This works even where
+there is no syslog socket, such as on recent versions of macOS.
