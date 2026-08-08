@@ -707,6 +707,61 @@ class TestDialectRegistry(unittest.TestCase):
             dialect = csv.get_dialect(name)
             self.assertRaises(TypeError, copy.copy, dialect)
 
+    def test_replace(self):
+        dialect = csv.get_dialect('excel')
+        new = copy.replace(dialect, delimiter=';', strict=True)
+        self.assertIsInstance(new, type(dialect))
+        self.assertEqual(new.delimiter, ';')
+        self.assertTrue(new.strict)
+        # Not replaced parameters are inherited from the original dialect.
+        self.assertEqual(new.quotechar, dialect.quotechar)
+        self.assertEqual(new.escapechar, dialect.escapechar)
+        self.assertEqual(new.lineterminator, dialect.lineterminator)
+        self.assertEqual(new.quoting, dialect.quoting)
+        self.assertEqual(new.doublequote, dialect.doublequote)
+        self.assertEqual(new.skipinitialspace, dialect.skipinitialspace)
+        # The original dialect is left unchanged.
+        self.assertEqual(dialect.delimiter, ',')
+        self.assertFalse(dialect.strict)
+        self.assertEqual(list(csv.reader(['a;b'], new)), [['a', 'b']])
+
+        self.assertIs(copy.replace(dialect), dialect)
+        self.assertRaises(TypeError, copy.replace, dialect, delimeter=';')
+        self.assertRaises(TypeError, copy.replace, dialect, delimiter=';;')
+        self.assertRaises(TypeError, dialect.__replace__, dialect)
+
+    def test_replace_dialect_subclass(self):
+        class mydialect(csv.Dialect):
+            delimiter = ";"
+            quotechar = '"'
+            doublequote = False
+            skipinitialspace = True
+            lineterminator = '\r\n'
+            quoting = csv.QUOTE_ALL
+
+        dialect = mydialect()
+        new = copy.replace(dialect, delimiter=':', quoting=csv.QUOTE_MINIMAL)
+        self.assertIsInstance(new, mydialect)
+        self.assertEqual(new.delimiter, ':')
+        self.assertEqual(new.quoting, csv.QUOTE_MINIMAL)
+        # Not replaced parameters are inherited from the original dialect.
+        self.assertEqual(new.quotechar, '"')
+        self.assertEqual(new.escapechar, None)
+        self.assertEqual(new.lineterminator, '\r\n')
+        self.assertFalse(new.doublequote)
+        self.assertTrue(new.skipinitialspace)
+        # The original dialect is left unchanged.
+        self.assertEqual(dialect.delimiter, ';')
+        self.assertEqual(dialect.quoting, csv.QUOTE_ALL)
+        self.assertEqual(list(csv.reader(['a:b'], new)), [['a', 'b']])
+        # "strict" is supported even if it is not set on the class.
+        self.assertTrue(copy.replace(dialect, strict=True).strict)
+
+        with self.assertRaises(csv.Error):
+            copy.replace(dialect, delimiter='::')
+        with self.assertRaisesRegex(TypeError, "'delimeter'"):
+            copy.replace(dialect, delimeter=':')
+
     def test_pickle(self):
         for name in csv.list_dialects():
             dialect = csv.get_dialect(name)
