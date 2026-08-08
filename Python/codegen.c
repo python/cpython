@@ -4006,6 +4006,25 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
         return 1;
     }
 
+    if (_PyUnicode_EqualToASCIIString(func->v.Name.id, "frozendict")
+        && (arg_expr->kind == Dict_kind || arg_expr->kind == DictComp_kind)) {
+        NEW_JUMP_TARGET_LABEL(c, skip_optimization);
+
+        ADDOP_I(c, loc, COPY, 1);
+        ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, CONSTANT_BUILTIN_FROZENDICT);
+        ADDOP_COMPARE(c, loc, Is);
+        ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, skip_optimization);
+        ADDOP(c, loc, POP_TOP);
+
+        VISIT(c, expr, arg_expr);
+        ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_BUILD_FROZENDICT);
+
+        ADDOP_JUMP(c, loc, JUMP, end);
+
+        USE_LABEL(c, skip_optimization);
+        return 1;
+    }
+
     if (arg_expr->kind != GeneratorExp_kind) {
         return 0;
     }
