@@ -576,6 +576,13 @@ class Message:
         msg.add_header('content-disposition', 'attachment',
                        filename='Fußballer.ppt'))
         """
+        if not _params:
+            # With no parameters, mirror __setitem__ so add_header() accepts
+            # the same values, e.g. the Header instances that items() returns
+            # under the compat32 policy.  None is coerced to '' to preserve
+            # add_header()'s historical behavior (__setitem__ would store None).
+            self[_name] = '' if _value is None else _value
+            return
         parts = []
         for k, v in _params.items():
             if v is None:
