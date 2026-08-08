@@ -12,7 +12,7 @@ This is the pure Python implementation of the module.
 
 __all__ = ['abs', 'add', 'and_', 'attrgetter', 'call', 'concat', 'contains', 'countOf',
            'delitem', 'eq', 'floordiv', 'ge', 'getitem', 'gt', 'iadd', 'iand',
-           'iconcat', 'ifloordiv', 'ilshift', 'imatmul', 'imod', 'imul',
+           'iconcat', 'identity', 'ifloordiv', 'ilshift', 'imatmul', 'imod', 'imul',
            'index', 'indexOf', 'inv', 'invert', 'ior', 'ipow', 'irshift',
            'is_', 'is_none', 'is_not', 'is_not_none', 'isub', 'itemgetter', 'itruediv',
            'ixor', 'le', 'length_hint', 'lshift', 'lt', 'matmul', 'methodcaller', 'mod',
@@ -230,6 +230,10 @@ def length_hint(obj, default=0):
     return val
 
 # Other Operations ************************************************************#
+
+def identity(obj, /):
+    """Return the argument unchanged."""
+    return obj
 
 def call(obj, /, *args, **kwargs):
     """Same as obj(*args, **kwargs)."""
