@@ -2036,6 +2036,22 @@ that proxy attribute access, like the `django settings object
 <https://web.archive.org/web/20200603181648/http://www.voidspace.org.uk/python/weblog/arch_d7_2010_12_04.shtml#e1198>`_.
 
 
+Patching with multiprocessing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:func:`patch` modifies objects in the current process's memory. Patches are
+not inherited by child processes created with the ``"forkserver"`` or
+``"spawn"`` :mod:`multiprocessing` start methods.
+
+To apply patches in child processes, use a pool initializer::
+
+    def init_worker():
+        mock.patch.object(MyClass, "method", return_value=42).start()
+
+    with multiprocessing.Pool(initializer=init_worker) as pool:
+        pool.map(my_func, range(5))
+
+
 MagicMock and magic method support
 ----------------------------------
 
