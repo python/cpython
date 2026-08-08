@@ -67,7 +67,7 @@ import itertools
 import os
 import re
 import struct
-from xml.parsers.expat import ParserCreate
+from xml.parsers.expat import ExpatError, ParserCreate
 
 
 PlistFormat = enum.Enum('PlistFormat', 'FMT_XML FMT_BINARY', module=__name__)
@@ -185,7 +185,15 @@ class _PlistParser:
         self.parser.EndElementHandler = self.handle_end_element
         self.parser.CharacterDataHandler = self.handle_data
         self.parser.EntityDeclHandler = self.handle_entity_decl
-        self.parser.ParseFile(fileobj)
+        try:
+            self.parser.ParseFile(fileobj)
+        except (ExpatError, LookupError):
+            # gh-155397: ExpatError is raised for XML that is not
+            # well-formed, and LookupError for a <?xml ... ?> declaration
+            # naming an unknown encoding; neither is a ValueError, so it
+            # would otherwise escape uncaught instead of the documented
+            # InvalidFileException.
+            raise InvalidFileException()
         return self.root
 
     def handle_entity_decl(self, entity_name, is_parameter_entity, value, base, system_id, public_id, notation_name):

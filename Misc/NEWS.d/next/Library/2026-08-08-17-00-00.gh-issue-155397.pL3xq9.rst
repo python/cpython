@@ -1,0 +1,4 @@
+Fix :mod:`plistlib` to raise :exc:`~plistlib.InvalidFileException` instead
+of leaking the underlying :exc:`xml.parsers.expat.ExpatError` (for
+not-well-formed XML) or :exc:`LookupError` (for an ``<?xml ... ?>``
+declaration naming an unknown encoding) when parsing a malformed XML plist.

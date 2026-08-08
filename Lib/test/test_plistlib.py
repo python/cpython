@@ -933,6 +933,24 @@ class TestPlistlib(unittest.TestCase):
                                     "XML entity declarations are not supported"):
             plistlib.loads(XML_PLIST_WITH_ENTITY, fmt=plistlib.FMT_XML)
 
+    def test_xml_plist_not_well_formed(self):
+        # gh-155397: malformed XML must raise InvalidFileException, not the
+        # underlying xml.parsers.expat.ExpatError.
+        with self.assertRaises(plistlib.InvalidFileException):
+            plistlib.loads(b"<plist><dict>")
+        with self.assertRaises(plistlib.InvalidFileException):
+            plistlib.loads(b"<plist><foo></bar></plist>")
+        with self.assertRaises(plistlib.InvalidFileException):
+            plistlib.loads(b"<plist>&undefined_entity;</plist>")
+
+    def test_xml_plist_unknown_encoding(self):
+        # gh-155397: an <?xml ... ?> declaration naming an encoding unknown
+        # to Python must raise InvalidFileException, not the underlying
+        # LookupError.
+        with self.assertRaises(plistlib.InvalidFileException):
+            plistlib.loads(
+                b'<?xml version="1.0" encoding="BogusEncoding"?><plist></plist>')
+
     def test_load_aware_datetime(self):
         dt = plistlib.loads(b"<plist><date>2023-12-10T08:03:30Z</date></plist>",
                             aware_datetime=True)
