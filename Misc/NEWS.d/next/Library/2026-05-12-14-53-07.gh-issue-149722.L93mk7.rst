@@ -1,0 +1,3 @@
+Make :func:`ipaddress.collapse_addresses` always raising ``TypeError`` for
+unsupported types, including IP interfaces. Document that IP addresses are
+supported.
