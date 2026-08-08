@@ -1,0 +1,4 @@
+On Linux, :func:`os.copy_file_range`, :func:`os.memfd_create`,
+:func:`os.pidfd_open` and :func:`os.pidfd_getfd` are now resolved at runtime, so
+they stay available on interpreters built against an older glibc when the
+running system provides them.
