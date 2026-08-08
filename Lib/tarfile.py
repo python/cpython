@@ -453,8 +453,12 @@ class _Stream:
                                          self.zlib.DEF_MEM_LEVEL,
                                          0)
         if mtime is None:
-            mtime = int(time.time())
-        timestamp = struct.pack("<L", mtime)
+            mtime = time.time()
+        # gh-133998: substitute 0 for an out-of-range mtime and coerce to int,
+        # mirroring gzip (RFC 1952), so struct.pack cannot raise struct.error.
+        if not 0 <= mtime < 2**32:
+            mtime = 0
+        timestamp = struct.pack("<L", int(mtime))
         self.__write(b"\037\213\010\010" + timestamp + b"\002\377")
         if self.name.endswith(".gz"):
             self.name = self.name[:-3]
