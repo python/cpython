@@ -427,7 +427,12 @@ def _read_directory(archive):
 
                 if flags & 0x800:
                     # UTF-8 file names extension
-                    name = name.decode()
+                    try:
+                        name = name.decode()
+                    except UnicodeDecodeError as exc:
+                        raise ZipImportError(
+                            f"can't decode file name in Zip file: {archive!r}",
+                            path=archive) from exc
                 else:
                     # Historical ZIP filename encoding
                     try:
