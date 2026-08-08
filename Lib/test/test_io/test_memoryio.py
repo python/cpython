@@ -558,6 +558,31 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         memio.seek(1, 1)
         self.assertEqual(memio.read(), buf[1:])
 
+    def test_truncate_extend(self):
+        # gh-71448: Extending with truncate should allocate space.
+        buf = self.buftype("123")
+        memio = self.ioclass(buf)
+
+        self.assertEqual(memio.tell(), 0)
+        self.assertEqual(memio.truncate(4), 4)
+        self.assertEqual(len(memio.getbuffer()), 4)
+        self.assertEqual(memio.getvalue(), b"123\x00")
+        self.assertEqual(memio.tell(), 0)  # Truncate keeps pos.
+        # Truncate to position 0 should work.
+        self.assertEqual(memio.truncate(), 0)
+        self.assertEqual(memio.getvalue(), b"")
+
+        self.assertEqual(memio.seek(12), 12)
+        self.assertEqual(memio.truncate(1), 1)
+        self.assertEqual(len(memio.getbuffer()), 1)
+        self.assertEqual(memio.getvalue(), b"\x00")
+        self.assertEqual(memio.tell(), 12)
+
+        self.assertEqual(memio.truncate(), 12)
+        self.assertEqual(len(memio.getbuffer()), 12)
+        self.assertEqual(memio.getvalue(), b"\x00" * 12)
+        self.assertEqual(memio.tell(), 12)
+
     def test_issue141311(self):
         memio = self.ioclass()
         # Seek allows PY_SSIZE_T_MAX, read should handle that.
