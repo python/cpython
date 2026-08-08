@@ -163,10 +163,11 @@ source.
    added to the start of :data:`sys.path` and the ``__main__.py`` file in
    that location is executed as the :mod:`__main__` module.
 
-   :option:`-I` option can  be used to run the script in isolated mode where
-   :data:`sys.path` contains neither the script's directory nor the user's
-   site-packages directory. All ``PYTHON*`` environment variables are
-   ignored, too.
+   :option:`-I` can be used to run the script in isolated mode. For a Python
+   file, the containing directory is then omitted from :data:`sys.path`, as
+   is the user's site-packages directory; a directory or zipfile target
+   remains, as described under :option:`-P`. All ``PYTHON*`` environment
+   variables are ignored, too.
 
    .. audit-event:: cpython.run_file filename
 
@@ -361,6 +362,13 @@ Miscellaneous options
      If it's a symbolic link, resolve symbolic links.
    * ``python -c code`` and ``python`` (REPL) command lines: Don't prepend an
      empty string, which means the current working directory.
+
+   If the script name refers to a directory or zipfile (see
+   :ref:`using-on-interface-options`), the script name is still added to the
+   start of :data:`sys.path`. This also applies when safe-path mode is
+   enabled by :option:`-I` or :envvar:`PYTHONSAFEPATH`. The entry is used to
+   locate ``__main__.py`` and makes other modules stored in the target
+   importable.
 
    See also the :envvar:`PYTHONSAFEPATH` environment variable, and :option:`-E`
    and :option:`-I` (isolated) options.
