@@ -1186,20 +1186,20 @@ _lzma.LZMADecompressor.__new__
 
     format: int(c_default="FORMAT_AUTO") = FORMAT_AUTO
         Specifies the container format of the input stream.  If this is
-        FORMAT_AUTO (the default), the decompressor will automatically detect
-        whether the input is FORMAT_XZ or FORMAT_ALONE.  Streams created with
-        FORMAT_RAW cannot be autodetected.
+        FORMAT_AUTO (the default), the decompressor will automatically
+        detect whether the input is FORMAT_XZ or FORMAT_ALONE.  Streams
+        created with FORMAT_RAW cannot be autodetected.
 
     memlimit: object = None
-        Limit the amount of memory used by the decompressor.  This will cause
-        decompression to fail if the input cannot be decompressed within the
-        given limit.
+        Limit the amount of memory used by the decompressor.  This will
+        cause decompression to fail if the input cannot be decompressed
+        within the given limit.
 
     filters: object = None
-        A custom filter chain.  This argument is required for FORMAT_RAW, and
-        not accepted with any other format.  When provided, this should be a
-        sequence of dicts, each indicating the ID and options for a single
-        filter.
+        A custom filter chain.  This argument is required for FORMAT_RAW,
+        and not accepted with any other format.  When provided, this
+        should be a sequence of dicts, each indicating the ID and options
+        for a single filter.
 
 Create a decompressor object for decompressing data incrementally.
 
@@ -1209,7 +1209,7 @@ For one-shot decompression, use the decompress() function instead.
 static PyObject *
 _lzma_LZMADecompressor_impl(PyTypeObject *type, int format,
                             PyObject *memlimit, PyObject *filters)
-/*[clinic end generated code: output=2d46d5e70f10bc7f input=ca40cd1cb1202b0d]*/
+/*[clinic end generated code: output=2d46d5e70f10bc7f input=a9b1c4db9f5acb69]*/
 {
     Decompressor *self;
     const uint32_t decoder_flags = LZMA_TELL_ANY_CHECK | LZMA_TELL_NO_CHECK;

@@ -84,7 +84,8 @@ PyDoc_STRVAR(_zstd_finalize_dict__doc__,
 "  dict_size\n"
 "    The size of the dictionary.\n"
 "  compression_level\n"
-"    Optimize for a specific Zstandard compression level, 0 means default.");
+"    Optimize for a specific Zstandard compression level,\n"
+"    0 means default.");
 
 #define _ZSTD_FINALIZE_DICT_METHODDEF    \
     {"finalize_dict", _PyCFunction_CAST(_zstd_finalize_dict), METH_FASTCALL, _zstd_finalize_dict__doc__},
@@ -426,4 +427,4 @@ _zstd_set_parameter_types(PyObject *module, PyObject *const *args, Py_ssize_t na
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=437b084f149e68e5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2ef60ca57f676751 input=a9049054013a1b77]*/

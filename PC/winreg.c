@@ -1809,7 +1809,8 @@ winreg.SetValueEx
         An integer that specifies the type of the data, one of:
         REG_BINARY -- Binary data in any form.
         REG_DWORD -- A 32-bit number.
-        REG_DWORD_LITTLE_ENDIAN -- A 32-bit number in little-endian format. Equivalent to REG_DWORD
+        REG_DWORD_LITTLE_ENDIAN -- A 32-bit number in little-endian
+                                   format. Equivalent to REG_DWORD
         REG_DWORD_BIG_ENDIAN -- A 32-bit number in big-endian format.
         REG_EXPAND_SZ -- A null-terminated string that contains unexpanded
                          references to environment variables (for example,
@@ -1820,7 +1821,8 @@ winreg.SetValueEx
                         this termination automatically.
         REG_NONE -- No defined value type.
         REG_QWORD -- A 64-bit number.
-        REG_QWORD_LITTLE_ENDIAN -- A 64-bit number in little-endian format. Equivalent to REG_QWORD.
+        REG_QWORD_LITTLE_ENDIAN -- A 64-bit number in little-endian
+                                   format. Equivalent to REG_QWORD.
         REG_RESOURCE_LIST -- A device-driver resource list.
         REG_SZ -- A null-terminated string.
     value: object
@@ -1843,7 +1845,7 @@ the configuration registry to help the registry perform efficiently.
 static PyObject *
 winreg_SetValueEx_impl(PyObject *module, HKEY key, const wchar_t *value_name,
                        PyObject *reserved, DWORD type, PyObject *value)
-/*[clinic end generated code: output=295db04deb456d9e input=900a9e3990bfb196]*/
+/*[clinic end generated code: output=295db04deb456d9e input=b585d77ff4afaf31]*/
 {
     LONG rc;
     BYTE *data = NULL;
@@ -1988,8 +1990,8 @@ winreg.DeleteTree
     key: HKEY
         An already open key, or any one of the predefined HKEY_* constants.
     sub_key: Py_UNICODE(accept={str, NoneType}) = None
-        A string that names the subkey to delete. If None, deletes all subkeys
-        and values of the specified key.
+        A string that names the subkey to delete. If None, deletes all
+        subkeys and values of the specified key.
     /
 
 Deletes the specified key and all its subkeys and values recursively.
@@ -2000,7 +2002,7 @@ all subkeys and values of the specified key are deleted.
 
 static PyObject *
 winreg_DeleteTree_impl(PyObject *module, HKEY key, const wchar_t *sub_key)
-/*[clinic end generated code: output=c34395ee59290501 input=419ef9bb8b06e4bf]*/
+/*[clinic end generated code: output=c34395ee59290501 input=bcddd25bfe6f040b]*/
 {
     LONG rc;
 

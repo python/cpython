@@ -204,9 +204,10 @@ PyDoc_STRVAR(unicode_encode__doc__,
 "  errors\n"
 "    The error handling scheme to use for encoding errors.\n"
 "    The default is \'strict\' meaning that encoding errors raise a\n"
-"    UnicodeEncodeError.  Other possible values are \'ignore\', \'replace\'\n"
-"    and \'xmlcharrefreplace\' as well as any other name registered with\n"
-"    codecs.register_error that can handle UnicodeEncodeErrors.");
+"    UnicodeEncodeError.  Other possible values are \'ignore\',\n"
+"    \'replace\' and \'xmlcharrefreplace\' as well as any other name\n"
+"    registered with codecs.register_error that can handle\n"
+"    UnicodeEncodeErrors.");
 
 #define UNICODE_ENCODE_METHODDEF    \
     {"encode", _PyCFunction_CAST(unicode_encode), METH_FASTCALL|METH_KEYWORDS, unicode_encode__doc__},
@@ -1916,4 +1917,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9d243c63e951e31d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4cdf44de2d63aa5e input=a9049054013a1b77]*/

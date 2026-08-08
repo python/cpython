@@ -162,7 +162,8 @@ PyDoc_STRVAR(gc_set_debug__doc__,
 "      DEBUG_COLLECTABLE - Print collectable objects found.\n"
 "      DEBUG_UNCOLLECTABLE - Print unreachable but uncollectable objects\n"
 "        found.\n"
-"      DEBUG_SAVEALL - Save objects to gc.garbage rather than freeing them.\n"
+"      DEBUG_SAVEALL - Save objects to gc.garbage rather than\n"
+"        freeing them.\n"
 "      DEBUG_LEAK - Debug leaking programs (everything but STATS).\n"
 "\n"
 "Debugging information is written to sys.stderr.");
@@ -584,4 +585,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=756c0e7719b76971 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=34642af2e85b6715 input=a9049054013a1b77]*/

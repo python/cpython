@@ -1568,12 +1568,27 @@ class DSLParser:
             # between it and the {parameters} we're about to add.
             lines.append('')
 
+        parameters_marker_count = len(f.docstring.split('{parameters}')) - 1
+        if parameters_marker_count > 1:
+            fail('You may not specify {parameters} more than once in a docstring!')
+
+        params = f.render_parameters
+        parameters = self.format_docstring_parameters(params)
+
+        # The parameter descriptions are part of the docstring body, even
+        # though they are only substituted for the {parameters} marker below.
+        # linear_format() indents the substituted lines by the indentation of
+        # the marker line, so take that into account as well.
+        marker_indent = next((line.partition('{parameters}')[0]
+                              for line in lines if '{parameters}' in line), '')
+        body = [line for line in lines[1:] if '{parameters}' not in line]
+        body += [marker_indent + line for line in parameters.splitlines()]
+
         # Fail if the summary line is too long.
         # Warn if any of the body lines are too long.
-        # Existing violations are recorded in OVERLONG_{SUMMARY,BODY}.
         max_width = f.docstring_line_width
         summary_len = len(lines[0])
-        max_body = max(map(len, lines[1:]))
+        max_body = max(map(len, body), default=0)
         if summary_len > max_width:
             if not self.permit_long_summary:
                 fail(f"Summary line for {f.full_name!r} is too long!\n"
@@ -1581,20 +1596,19 @@ class DSLParser:
         else:
             if self.permit_long_summary:
                 warn("Remove the @permit_long_summary decorator from "
-                     f"{f.full_name!r}!\n")
+                     f"{f.full_name!r}!\n",
+                     filename=self.clinic.filename)
 
         if max_body > max_width:
             if not self.permit_long_docstring_body:
                 warn(f"Docstring lines for {f.full_name!r} are too long!\n"
-                     f"Lines should be no longer than {max_width} characters.")
+                     f"Lines should be no longer than {max_width} characters.",
+                     filename=self.clinic.filename)
         else:
             if self.permit_long_docstring_body:
                 warn("Remove the @permit_long_docstring_body decorator from "
-                     f"{f.full_name!r}!\n")
-
-        parameters_marker_count = len(f.docstring.split('{parameters}')) - 1
-        if parameters_marker_count > 1:
-            fail('You may not specify {parameters} more than once in a docstring!')
+                     f"{f.full_name!r}!\n",
+                     filename=self.clinic.filename)
 
         # insert signature at front and params after the summary line
         if not parameters_marker_count:
@@ -1602,8 +1616,6 @@ class DSLParser:
         lines.insert(0, '{signature}')
 
         # finalize docstring
-        params = f.render_parameters
-        parameters = self.format_docstring_parameters(params)
         signature = self.format_docstring_signature(f, params)
         docstring = "\n".join(lines)
         return libclinic.linear_format(docstring,

@@ -1468,7 +1468,8 @@ PyDoc_STRVAR(winreg_SetValueEx__doc__,
 "    An integer that specifies the type of the data, one of:\n"
 "    REG_BINARY -- Binary data in any form.\n"
 "    REG_DWORD -- A 32-bit number.\n"
-"    REG_DWORD_LITTLE_ENDIAN -- A 32-bit number in little-endian format. Equivalent to REG_DWORD\n"
+"    REG_DWORD_LITTLE_ENDIAN -- A 32-bit number in little-endian\n"
+"                               format. Equivalent to REG_DWORD\n"
 "    REG_DWORD_BIG_ENDIAN -- A 32-bit number in big-endian format.\n"
 "    REG_EXPAND_SZ -- A null-terminated string that contains unexpanded\n"
 "                     references to environment variables (for example,\n"
@@ -1479,7 +1480,8 @@ PyDoc_STRVAR(winreg_SetValueEx__doc__,
 "                    this termination automatically.\n"
 "    REG_NONE -- No defined value type.\n"
 "    REG_QWORD -- A 64-bit number.\n"
-"    REG_QWORD_LITTLE_ENDIAN -- A 64-bit number in little-endian format. Equivalent to REG_QWORD.\n"
+"    REG_QWORD_LITTLE_ENDIAN -- A 64-bit number in little-endian\n"
+"                               format. Equivalent to REG_QWORD.\n"
 "    REG_RESOURCE_LIST -- A device-driver resource list.\n"
 "    REG_SZ -- A null-terminated string.\n"
 "  value\n"
@@ -1636,8 +1638,8 @@ PyDoc_STRVAR(winreg_DeleteTree__doc__,
 "  key\n"
 "    An already open key, or any one of the predefined HKEY_* constants.\n"
 "  sub_key\n"
-"    A string that names the subkey to delete. If None, deletes all subkeys\n"
-"    and values of the specified key.\n"
+"    A string that names the subkey to delete. If None, deletes all\n"
+"    subkeys and values of the specified key.\n"
 "\n"
 "This function deletes a key and all its descendants. If sub_key is None,\n"
 "all subkeys and values of the specified key are deleted.");
@@ -1836,4 +1838,4 @@ exit:
 #ifndef WINREG_QUERYREFLECTIONKEY_METHODDEF
     #define WINREG_QUERYREFLECTIONKEY_METHODDEF
 #endif /* !defined(WINREG_QUERYREFLECTIONKEY_METHODDEF) */
-/*[clinic end generated code: output=97295995db2c24e9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1d295f62e99a1d2d input=a9049054013a1b77]*/

@@ -260,7 +260,8 @@ PyDoc_STRVAR(_zstd_ZstdCompressor_set_pledged_input_size__doc__,
 "Set the uncompressed content size to be written into the frame header.\n"
 "\n"
 "  size\n"
-"    The size of the uncompressed data to be provided to the compressor.\n"
+"    The size of the uncompressed data to be provided to the\n"
+"    compressor.\n"
 "\n"
 "This method can be used to ensure the header of the frame about to\n"
 "be written includes the size of the data, unless the\n"
@@ -292,4 +293,4 @@ _zstd_ZstdCompressor_set_pledged_input_size(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1a5e21476885866c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b304ed0ec81a2119 input=a9049054013a1b77]*/

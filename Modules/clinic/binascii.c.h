@@ -126,15 +126,17 @@ PyDoc_STRVAR(binascii_a2b_base64__doc__,
 "\n"
 "  strict_mode\n"
 "    When set to true, bytes that are not part of the base64 standard are\n"
-"    not allowed.  The same applies to excess data after padding (= / ==).\n"
-"    Set to True by default if ignorechars is specified, False otherwise.\n"
+"    not allowed.  The same applies to excess data after padding\n"
+"    (= / ==).  Set to True by default if ignorechars is specified,\n"
+"    False otherwise.\n"
 "  padded\n"
 "    When set to false, padding in input is not required.\n"
 "  ignorechars\n"
 "    A byte string containing characters to ignore from the input when\n"
 "    strict_mode is true.\n"
 "  canonical\n"
-"    When set to true, reject non-zero padding bits per RFC 4648 section 3.5.");
+"    When set to true, reject non-zero padding bits\n"
+"    per RFC 4648 section 3.5.");
 
 #define BINASCII_A2B_BASE64_METHODDEF    \
     {"a2b_base64", _PyCFunction_CAST(binascii_a2b_base64), METH_FASTCALL|METH_KEYWORDS, binascii_a2b_base64__doc__},
@@ -816,7 +818,8 @@ PyDoc_STRVAR(binascii_a2b_base32__doc__,
 "  ignorechars\n"
 "    A byte string containing characters to ignore from the input.\n"
 "  canonical\n"
-"    When set to true, reject non-zero padding bits per RFC 4648 section 3.5.");
+"    When set to true, reject non-zero padding bits\n"
+"    per RFC 4648 section 3.5.");
 
 #define BINASCII_A2B_BASE32_METHODDEF    \
     {"a2b_base32", _PyCFunction_CAST(binascii_a2b_base32), METH_FASTCALL|METH_KEYWORDS, binascii_a2b_base32__doc__},
@@ -1685,4 +1688,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=42dd48f323cbb118 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2ed68937eeab7766 input=a9049054013a1b77]*/

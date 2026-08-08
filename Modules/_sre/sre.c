@@ -1862,8 +1862,8 @@ _sre.template
 
     pattern: object
     template: object(subclass_of="&PyList_Type")
-        A list containing interleaved literal strings (str or bytes) and group
-        indices (int), as returned by re._parser.parse_template():
+        A list containing interleaved literal strings (str or bytes) and
+        group indices (int), as returned by re._parser.parse_template():
             [literal1, group1, ..., literalN, groupN]
     /
 
@@ -1871,7 +1871,7 @@ _sre.template
 
 static PyObject *
 _sre_template_impl(PyObject *module, PyObject *pattern, PyObject *template)
-/*[clinic end generated code: output=d51290e596ebca86 input=af55380b27f02942]*/
+/*[clinic end generated code: output=d51290e596ebca86 input=e015cbc1c71d0d20]*/
 {
     /* template is a list containing interleaved literal strings (str or bytes)
      * and group indices (int), as returned by _parser.parse_template:

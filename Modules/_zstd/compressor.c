@@ -696,7 +696,8 @@ _zstd_ZstdCompressor_flush_impl(ZstdCompressor *self, int mode)
 _zstd.ZstdCompressor.set_pledged_input_size
 
     size: zstd_contentsize
-        The size of the uncompressed data to be provided to the compressor.
+        The size of the uncompressed data to be provided to the
+        compressor.
     /
 
 Set the uncompressed content size to be written into the frame header.
@@ -714,7 +715,7 @@ may be corrupted and the final chunk written may be lost.
 static PyObject *
 _zstd_ZstdCompressor_set_pledged_input_size_impl(ZstdCompressor *self,
                                                  unsigned long long size)
-/*[clinic end generated code: output=3a09e55cc0e3b4f9 input=714cd7a9aa10e2a8]*/
+/*[clinic end generated code: output=3a09e55cc0e3b4f9 input=2996f63a521943dc]*/
 {
     // Error occurred while converting argument, should be unreachable
     assert(size != ZSTD_CONTENTSIZE_ERROR);

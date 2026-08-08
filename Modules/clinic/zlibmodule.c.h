@@ -222,14 +222,14 @@ PyDoc_STRVAR(zlib_compressobj__doc__,
 "  method\n"
 "    The compression algorithm.  If given, this must be DEFLATED.\n"
 "  wbits\n"
-"    +9 to +15: The base-two logarithm of the window size.  Include a zlib\n"
-"        container.\n"
+"    +9 to +15: The base-two logarithm of the window size.\n"
+"        Include a zlib container.\n"
 "    -9 to -15: Generate a raw stream.\n"
 "    +25 to +31: Include a gzip container.\n"
 "  memLevel\n"
 "    Controls the amount of memory used for internal compression state.\n"
-"    Valid values range from 1 to 9.  Higher values result in higher memory\n"
-"    usage, faster compression, and smaller output.\n"
+"    Valid values range from 1 to 9.  Higher values result in higher\n"
+"    memory usage, faster compression, and smaller output.\n"
 "  strategy\n"
 "    Used to tune the compression algorithm.  Possible values are\n"
 "    Z_DEFAULT_STRATEGY, Z_FILTERED, and Z_HUFFMAN_ONLY.\n"
@@ -1018,8 +1018,8 @@ PyDoc_STRVAR(zlib__ZlibDecompressor__doc__,
 "    (such as a bytes object) containing subsequences that are expected\n"
 "    to occur frequently in the data that is to be compressed. Those\n"
 "    subsequences that are expected to be most common should come at the\n"
-"    end of the dictionary. This must be the same dictionary as used by the\n"
-"    compressor that produced the input data.");
+"    end of the dictionary. This must be the same dictionary as used by\n"
+"    the compressor that produced the input data.");
 
 static PyObject *
 zlib__ZlibDecompressor_impl(PyTypeObject *type, int wbits, PyObject *zdict);
@@ -1403,4 +1403,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=c9a60fe6600a2e4d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=22bab4a51025d11e input=a9049054013a1b77]*/

@@ -174,18 +174,18 @@ PyDoc_STRVAR(_lzma_LZMADecompressor__doc__,
 "\n"
 "  format\n"
 "    Specifies the container format of the input stream.  If this is\n"
-"    FORMAT_AUTO (the default), the decompressor will automatically detect\n"
-"    whether the input is FORMAT_XZ or FORMAT_ALONE.  Streams created with\n"
-"    FORMAT_RAW cannot be autodetected.\n"
+"    FORMAT_AUTO (the default), the decompressor will automatically\n"
+"    detect whether the input is FORMAT_XZ or FORMAT_ALONE.  Streams\n"
+"    created with FORMAT_RAW cannot be autodetected.\n"
 "  memlimit\n"
-"    Limit the amount of memory used by the decompressor.  This will cause\n"
-"    decompression to fail if the input cannot be decompressed within the\n"
-"    given limit.\n"
+"    Limit the amount of memory used by the decompressor.  This will\n"
+"    cause decompression to fail if the input cannot be decompressed\n"
+"    within the given limit.\n"
 "  filters\n"
-"    A custom filter chain.  This argument is required for FORMAT_RAW, and\n"
-"    not accepted with any other format.  When provided, this should be a\n"
-"    sequence of dicts, each indicating the ID and options for a single\n"
-"    filter.\n"
+"    A custom filter chain.  This argument is required for FORMAT_RAW,\n"
+"    and not accepted with any other format.  When provided, this\n"
+"    should be a sequence of dicts, each indicating the ID and options\n"
+"    for a single filter.\n"
 "\n"
 "For one-shot decompression, use the decompress() function instead.");
 
@@ -334,4 +334,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=ffc6d673d858048c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=15bc2c0e6d969ca8 input=a9049054013a1b77]*/

@@ -3012,8 +3012,9 @@ _winapi_CopyFile2_impl(PyObject *module, LPCWSTR existing_file_name,
 _winapi.RegisterEventSource -> HANDLE
 
     unc_server_name: LPCWSTR(accept={str, NoneType})
-        The UNC name of the server on which the event source should be registered.
-        If None, registers the event source on the local computer.
+        The UNC name of the server on which the event source should be
+        registered.  If None, registers the event source on the local
+        computer.
     source_name: LPCWSTR
         The name of the event source to register.
     /
@@ -3024,7 +3025,7 @@ Retrieves a registered handle to the specified event log.
 static HANDLE
 _winapi_RegisterEventSource_impl(PyObject *module, LPCWSTR unc_server_name,
                                  LPCWSTR source_name)
-/*[clinic end generated code: output=e376c8950a89ae8f input=9d01059ac2156d0c]*/
+/*[clinic end generated code: output=e376c8950a89ae8f input=ca9cb7b8959582dd]*/
 {
     HANDLE handle;
 

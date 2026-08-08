@@ -481,7 +481,8 @@ update_ufd_array(pollObject *self)
 select.poll.register
 
     fd: fildes
-      either an integer, or an object with a fileno() method returning an int
+      either an integer, or an object with a fileno() method
+      returning an int
     eventmask: unsigned_short(c_default="POLLIN | POLLPRI | POLLOUT") = select.POLLIN | select.POLLPRI | select.POLLOUT
       an optional bitmask describing the type of events to check for
     /
@@ -491,7 +492,7 @@ Register a file descriptor with the polling object.
 
 static PyObject *
 select_poll_register_impl(pollObject *self, int fd, unsigned short eventmask)
-/*[clinic end generated code: output=0dc7173c800a4a65 input=c475e029ce6c2830]*/
+/*[clinic end generated code: output=0dc7173c800a4a65 input=56be3dc0bd0d7858]*/
 {
     PyObject *key, *value;
     int err;
@@ -610,8 +611,8 @@ select_poll_unregister_impl(pollObject *self, int fd)
 select.poll.poll
 
     timeout as timeout_obj: object = None
-      The maximum time to wait in milliseconds, or else None (or a negative
-      value) to wait indefinitely.
+      The maximum time to wait in milliseconds, or else None (or a
+      negative value) to wait indefinitely.
     /
 
 Polls the set of registered file descriptors.
@@ -622,7 +623,7 @@ to report, as a list of (fd, event) 2-tuples.
 
 static PyObject *
 select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
-/*[clinic end generated code: output=876e837d193ed7e4 input=e0a9c0aa283de8c8]*/
+/*[clinic end generated code: output=876e837d193ed7e4 input=ce649b435fccd6a6]*/
 {
     PyObject *result_list = NULL;
     int poll_result, i, j;
@@ -1386,20 +1387,21 @@ newPyEpoll_Object(PyTypeObject *type, int sizehint, SOCKET fd)
 select.epoll.__new__
 
     sizehint: int = -1
-      The expected number of events to be registered.  It must be positive,
-      or -1 to use the default.  It is only used on older systems where
-      epoll_create1() is not available; otherwise it has no effect (though its
-      value is still checked).
+      The expected number of events to be registered.  It must be
+      positive, or -1 to use the default.  It is only used on older
+      systems where epoll_create1() is not available; otherwise it has no
+      effect (though its value is still checked).
     flags: int = 0
-      Deprecated and completely ignored.  However, when supplied, its value
-      must be 0 or select.EPOLL_CLOEXEC, otherwise OSError is raised.
+      Deprecated and completely ignored.  However, when supplied, its
+      value must be 0 or select.EPOLL_CLOEXEC, otherwise OSError is
+      raised.
 
 Returns an epolling object.
 [clinic start generated code]*/
 
 static PyObject *
 select_epoll_impl(PyTypeObject *type, int sizehint, int flags)
-/*[clinic end generated code: output=c87404e705013bb5 input=303e3295e7975e43]*/
+/*[clinic end generated code: output=c87404e705013bb5 input=8a00db8f43da1805]*/
 {
     if (sizehint == -1) {
         sizehint = FD_SETSIZE - 1;
@@ -2320,13 +2322,13 @@ select_kqueue_fromfd_impl(PyTypeObject *type, int fd)
 select.kqueue.control
 
     changelist: object
-        Must be an iterable of kevent objects describing the changes to be made
-        to the kernel's watch list or None.
+        Must be an iterable of kevent objects describing the changes to
+        be made to the kernel's watch list or None.
     maxevents: int
         The maximum number of events that the kernel will return.
     timeout as otimeout: object = None
-        The maximum time to wait in seconds, or else None to wait forever.
-        This accepts non-integers for smaller timeouts, too.
+        The maximum time to wait in seconds, or else None to wait
+        forever.  This accepts non-integers for smaller timeouts, too.
     /
 
 Calls the kernel kevent function.
@@ -2335,7 +2337,7 @@ Calls the kernel kevent function.
 static PyObject *
 select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
                            int maxevents, PyObject *otimeout)
-/*[clinic end generated code: output=81324ff5130db7ae input=be969d2bc6f84205]*/
+/*[clinic end generated code: output=81324ff5130db7ae input=4871319486c4d5a4]*/
 {
     int gotevents = 0;
     int nchanges = 0;
