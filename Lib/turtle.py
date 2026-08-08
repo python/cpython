@@ -1625,6 +1625,8 @@ class TNavigator(object):
 
     def _setDegreesPerAU(self, fullcircle):
         """Helper function for degrees() and radians()"""
+        if fullcircle == 0:
+            raise ValueError("fullcircle must be a nonzero number")
         self._fullcircle = fullcircle
         self._degreesPerAU = 360/fullcircle
         if self._mode == "standard":
