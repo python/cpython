@@ -1,0 +1,1 @@
+Fixed excessive memory allocation and data race issues in Solaris specific ``DevPollSelector``. Patch by Jakub Kulik.
