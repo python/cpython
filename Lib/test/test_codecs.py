@@ -3677,6 +3677,10 @@ _ICONV_SINGLE_BYTE = [
     ('ISO-8859-1', 'Grüße'),
 ]
 _ICONV_MULTIBYTE = ['EUC-JP', 'SHIFT_JIS', 'GBK', 'GB18030', 'BIG5']
+# Stateful encodings: the shift state set by an escape sequence has to survive
+# from one incremental call to the next.  CPython has no built-in codec for
+# these, so the plain name reaches the iconv codec.
+_ICONV_STATEFUL = ['ISO-2022-CN']
 # Encodings iconv may provide but for which CPython has no built-in codec
 # (cp1047 is EBCDIC, i.e. not ASCII-compatible).
 _ICONV_ONLY = ['cp1047', 'cp1133', 'GEORGIAN-PS', 'ARMSCII-8']
@@ -3819,6 +3823,33 @@ class IconvTest(unittest.TestCase):
         raw = codecs.encode(text, 'iconv:' + enc)
         reader = codecs.getreader('iconv:' + enc)(io.BytesIO(raw))
         self.assertEqual(reader.read(), text)
+
+    def require_stateful(self):
+        # Encoded here rather than by the platform: an iconv that provides the
+        # encoding may still be unable to encode the sample, as macOS and iOS
+        # cannot for ISO-2022-CN.  Decoding is what these tests are about, so
+        # the bytes are fixed and only decoding has to work.
+        enc = self.require(*_ICONV_STATEFUL)
+        text = 'ABC\u4e2d\u6587DEF'
+        data = b'ABC\x1b$)A\x0eVPND\x0fDEF\x0f'
+        if codecs.decode(data, 'iconv:' + enc) != text:
+            self.skipTest('%s: this iconv cannot decode the sample' % enc)
+        return enc, text, data
+
+    def test_incremental_decode_shift_state(self):
+        enc, text, data = self.require_stateful()
+        dec = codecs.getincrementaldecoder('iconv:' + enc)()
+        out = ''.join(dec.decode(data[i:i+1]) for i in range(len(data)))
+        out += dec.decode(b'', True)
+        self.assertEqual(out, text)
+        # reset() starts a new conversion, so decoding can begin again.
+        dec.reset()
+        self.assertEqual(dec.decode(data, True), text)
+
+    def test_stream_shift_state(self):
+        enc, text, data = self.require_stateful()
+        reader = codecs.getreader('iconv:' + enc)(io.BytesIO(data))
+        self.assertEqual(''.join(iter(lambda: reader.read(1), '')), text)
 
     def test_encode_kinds(self):
         # The string's own buffer is fed to iconv per storage kind; check each
