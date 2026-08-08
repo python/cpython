@@ -30,6 +30,30 @@ class LowLevelTests(TestBase):
         # See gh-115490 (https://github.com/python/cpython/issues/115490).
         importlib.reload(channels)
 
+    def test_channel_id_types(self):
+        # See https://github.com/python/cpython/issues/143376.
+        class End:
+            __slots__ = ()
+            def __new__(cls, chan=None):
+                return object.__new__(cls)
+            @property
+            def _id(self):
+                return object()
+
+        class Send(End): pass
+        class Recv(End): pass
+
+        _ = importlib.reload(_channels)
+        _._register_end_types(Send, Recv)
+        chan = _._channel_id(_.create(), _resolve=True)
+        interp = interpreters.create()
+        # The TypeError exception arises from our internal check,
+        # but subinterpreters use a generic exception message instead
+        # while retaining the original exception type.
+        err = "does not support cross-interpreter data"
+        with self.assertRaisesRegex(TypeError, err):
+            interp.prepare_main(chan=Send(chan))
+
 
 class TestChannels(TestBase):
 
