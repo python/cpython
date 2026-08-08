@@ -574,6 +574,7 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
             self.assertIsInstance(memio.peek(), bytes)
             self.assertIsInstance(memio.peek(1), bytes)
             self.assertEqual(memio.peek(IntLike(3)), buf[:3])
+            self.assertRaises(TypeError, memio.peek, 1.5)
             self.assertEqual(memio.peek(1), buf[:1])
             self.assertEqual(memio.peek(1), buf[:1])
             self.assertEqual(memio.peek(), buf)

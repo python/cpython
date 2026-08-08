@@ -1010,9 +1010,10 @@ class BytesIO(BufferedIOBase):
         else:
             size = size_index()
 
+        if size < 1:
+            size = io.DEFAULT_BUFFER_SIZE
+
         with self._lock:
-            if size < 1:
-                size = io.DEFAULT_BUFFER_SIZE
             b = self._buffer[self._pos:self._pos + size]
             return b.take_bytes()
 
