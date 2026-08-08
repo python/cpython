@@ -183,6 +183,10 @@ static PyMethodDef module_methods[] = {
 #if !defined(POSIX_SEMAPHORES_NOT_ENABLED)
     _MULTIPROCESSING_SEM_UNLINK_METHODDEF
 #endif
+#ifdef HAVE_BROKEN_SEM_GETVALUE
+    {"_set_shm_names", _multiprocessing_set_shm_names, METH_VARARGS,
+     "Set shared memory and glock names (used by spawned child processes)."},
+#endif
     {NULL}
 };
 
@@ -229,6 +233,11 @@ multiprocessing_exec(PyObject *module)
         return -1;
     }
     Py_DECREF(py_sem_value_max);
+
+#ifdef HAVE_BROKEN_SEM_GETVALUE
+    if (_PyMp_init_module_constants(module) < 0)
+        return -1;
+#endif
 
 #endif
 
