@@ -425,7 +425,19 @@ def _tp_cache(func=None, /, *, typed=False):
             try:
                 return _caches[func](*args, **kwds)
             except TypeError:
-                pass  # All real errors (not unhashable args) are raised below.
+                # A TypeError here may mean the arguments are unhashable
+                # (so they cannot be cached and the original function is
+                # used as a fallback), or that the wrapped function itself
+                # raised TypeError.  Rebuild the same key lru_cache uses to
+                # tell the two apart: only fall back when the key really is
+                # unhashable, otherwise re-raise so the function is not run
+                # a second time.
+                try:
+                    hash(functools._make_key(args, kwds, typed))
+                except TypeError:
+                    pass  # Unhashable arguments: fall back below.
+                else:
+                    raise
             return func(*args, **kwds)
         return inner
 
