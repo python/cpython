@@ -2108,12 +2108,20 @@ update_st_mode_from_path(const wchar_t *path, DWORD attr,
            GetSecurityInfo, OpenThreadToken/OpenProcessToken, and
            AccessCheck to check for generic read, write, and execute
            access. */
-        const wchar_t *fileExtension = wcsrchr(path, '.');
-        if (fileExtension) {
-            if (_wcsicmp(fileExtension, L".exe") == 0 ||
-                _wcsicmp(fileExtension, L".bat") == 0 ||
-                _wcsicmp(fileExtension, L".cmd") == 0 ||
-                _wcsicmp(fileExtension, L".com") == 0) {
+        size_t len = wcslen(path);
+        if (wcsncmp(path, L"\\\\?\\", 4) != 0) {
+            /* Trailing dots and spaces are stripped from the last component
+               of the path, unless the \\?\ prefix disables normalization. */
+            while (len > 0 && (path[len - 1] == L'.' || path[len - 1] == L' ')) {
+                len--;
+            }
+        }
+        if (len >= 4) {
+            const wchar_t *fileExtension = path + len - 4;
+            if (_wcsnicmp(fileExtension, L".exe", 4) == 0 ||
+                _wcsnicmp(fileExtension, L".bat", 4) == 0 ||
+                _wcsnicmp(fileExtension, L".cmd", 4) == 0 ||
+                _wcsnicmp(fileExtension, L".com", 4) == 0) {
                 result->st_mode |= 0111;
             }
         }
