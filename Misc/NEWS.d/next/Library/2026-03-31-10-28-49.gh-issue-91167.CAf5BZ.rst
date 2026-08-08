@@ -1,0 +1,1 @@
+Fix cloned turtle clear not clearing source pen state.
