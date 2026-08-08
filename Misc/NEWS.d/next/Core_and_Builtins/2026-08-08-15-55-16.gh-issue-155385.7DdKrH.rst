@@ -1,0 +1,4 @@
+Speed up ``in`` and :meth:`!count` on :class:`range` objects by up to 4x when
+the value and the range bounds are all small integers, by testing membership
+with machine arithmetic instead of the abstract number API.  Larger values fall
+back to the previous implementation.
