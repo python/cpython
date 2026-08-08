@@ -1,0 +1,2 @@
+Add support for negative end positions to re.finditer and re.findall
+(original patch by Matthew Barnett, tests and PR by Mustafa Anıl Tuncel).
