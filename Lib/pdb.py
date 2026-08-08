@@ -374,16 +374,34 @@ def get_default_backend():
     return _default_backend
 
 
-def _pyrepl_available():
-    """return whether pdb should use _pyrepl for input"""
+def _pyrepl_available(stdin=None, stdout=None):
+    """Return whether pdb should use _pyrepl for input.
+
+    stdin and stdout default to sys.stdin and sys.stdout.  Callers that pass
+    explicit streams (such as Pdb) should pass the streams they will use.
+    """
     if os.getenv("PYTHON_BASIC_REPL"):
-        CAN_USE_PYREPL = False
-    else:
-        try:
-            from _pyrepl.main import CAN_USE_PYREPL
-        except ModuleNotFoundError:
-            CAN_USE_PYREPL = False
-    return CAN_USE_PYREPL
+        return False
+    try:
+        from _pyrepl.main import CAN_USE_PYREPL
+    except ModuleNotFoundError:
+        return False
+    if not CAN_USE_PYREPL:
+        return False
+    if stdin is None:
+        stdin = sys.stdin
+    if stdout is None:
+        stdout = sys.stdout
+    # CAN_USE_PYREPL is fixed at import time; streams may no longer be usable
+    # when this is called (e.g. in regrtest worker subprocesses).  Doctests
+    # may replace sys.stdin with a fake object that has no fileno().
+    try:
+        if not os.isatty(stdin.fileno()):
+            return False
+        stdout.fileno()
+        return True
+    except (AttributeError, ValueError, OSError):
+        return False
 
 
 class PdbPyReplInput:
@@ -520,7 +538,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             pass
 
         self.pyrepl_input = None
-        if _pyrepl_available():
+        if _pyrepl_available(self.stdin, self.stdout):
             try:
                 self.pyrepl_input = PdbPyReplInput(self, self.stdin, self.stdout, self.prompt)
             except Exception:

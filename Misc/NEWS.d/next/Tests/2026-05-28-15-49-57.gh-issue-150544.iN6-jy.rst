@@ -1,0 +1,3 @@
+Fix ``test.test_pdb`` to skip pyrepl-dependent tests at runtime instead of
+using import-time :func:`unittest.skipIf` on ``pdb._pyrepl_available()``.
+This fixes ``PdbTestColorize.test_gen_colors`` errors under ``make test``.
