@@ -190,9 +190,8 @@ class property(DynamicClassAttribute):
             if self.member is not None:
                 return self.member
             else:
-                raise AttributeError(
-                        '%r has no attribute %r' % (ownerclass, self.name)
-                        )
+                errmsg = f'{ownerclass!r} has no attribute {self.name!r}'
+                raise AttributeError(errmsg)
         if self.fget is not None:
             # use previous enum.property
             return self.fget(instance)
@@ -206,9 +205,8 @@ class property(DynamicClassAttribute):
         try:
             return ownerclass._member_map_[self.name]
         except KeyError:
-            raise AttributeError(
-                    '%r has no attribute %r' % (ownerclass, self.name)
-                    ) from None
+            errmsg = f'{ownerclass!r} has no attribute {self.name!r}'
+            raise AttributeError(errmsg) from None
 
     def __set__(self, instance, value):
         if self.fset is not None:
