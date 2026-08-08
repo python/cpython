@@ -15,6 +15,11 @@ accessing and manipulating on-disk mailboxes and the messages they contain.
 :class:`~email.message.Message` class with format-specific state and behavior.
 Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
+.. warning::
+
+ The :mod:`!mailbox` module is designed for use in trusted environments,
+ where all inputs are provided by the local user and the underlying mailbox
+ storage is accessible only to that user.
 
 .. seealso::
 
