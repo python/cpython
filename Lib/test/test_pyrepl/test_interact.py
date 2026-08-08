@@ -1,8 +1,9 @@
 import contextlib
 import io
+import sys
 import warnings
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from textwrap import dedent
 
 from test.support import force_not_colorized
@@ -299,3 +300,53 @@ class TestWarnings(unittest.TestCase):
         count = sum("'return' in a 'finally' block" in str(w.message)
                     for w in caught)
         self.assertEqual(count, 1)
+
+
+class TestPreexecHook(unittest.TestCase):
+
+    def _run_interactive(self, statements, *, preexec=None):
+        from _pyrepl.simple_interact import run_multiline_interactive_console
+
+        console = InteractiveColoredConsole()
+        statement_iter = iter(statements)
+
+        def fake_multiline_input(more_lines, ps1, ps2):
+            try:
+                return next(statement_iter)
+            except StopIteration:
+                raise EOFError
+
+        patches = [
+            patch("_pyrepl.simple_interact.multiline_input", side_effect=fake_multiline_input),
+            patch("_pyrepl.simple_interact._get_reader"),
+            patch("_pyrepl.simple_interact.append_history_file"),
+            patch("_pyrepl.readline._setup"),
+        ]
+        if preexec is not None:
+            patches.append(patch.object(sys, "_preexec", preexec, create=True))
+
+        f = io.StringIO()
+        with contextlib.ExitStack() as stack:
+            for p in patches:
+                stack.enter_context(p)
+            stack.enter_context(contextlib.redirect_stdout(f))
+            stack.enter_context(contextlib.redirect_stderr(f))
+            run_multiline_interactive_console(console)
+
+        return f.getvalue()
+
+    def test_preexec_called_with_statement(self):
+        preexec = MagicMock()
+        self._run_interactive(["x = 1"], preexec=preexec)
+        preexec.assert_called_once_with("x = 1")
+
+    def test_preexec_exception_does_not_break_repl(self):
+        def bad_preexec(cmd):
+            raise RuntimeError("hook error")
+
+        self._run_interactive(["x = 1", "y = 2"], preexec=bad_preexec)
+
+    def test_preexec_not_called_for_repl_commands(self):
+        preexec = MagicMock()
+        self._run_interactive(["clear"], preexec=preexec)
+        preexec.assert_not_called()
