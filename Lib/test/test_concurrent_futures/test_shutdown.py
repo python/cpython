@@ -115,20 +115,21 @@ class ExecutorShutdownTest:
 
         See https://github.com/python/cpython/issues/83386.
         """
-        if self.executor_type == futures.ProcessPoolExecutor:
-            raise unittest.SkipTest(
-                "Hangs, see https://github.com/python/cpython/issues/83386")
-
         rc, out, err = assert_python_ok('-c', """if True:
             from concurrent.futures import {executor_type}
             from test.test_concurrent_futures.test_shutdown import sleep_and_print
             if __name__ == "__main__":
-                if {context!r}: multiprocessing.set_start_method({context!r})
-                t = {executor_type}(max_workers=3)
+                context = '{context}'
+                if context == "":
+                    t = {executor_type}(max_workers=3)
+                else:
+                    from multiprocessing import get_context
+                    t = {executor_type}(max_workers=3,
+                                        mp_context=get_context(context))
                 t.submit(sleep_and_print, 1.0, "apple")
                 t.shutdown(wait=False)
             """.format(executor_type=self.executor_type.__name__,
-                       context=getattr(self, 'ctx', None)))
+                       context=getattr(self, 'ctx', '')))
         self.assertFalse(err)
         self.assertEqual(out.strip(), b"apple")
 
@@ -243,8 +244,6 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
             t.join()
 
     def test_cancel_futures_wait_false(self):
-        # Can only be reliably tested for TPE, since PPE often hangs with
-        # `wait=False` (even without *cancel_futures*).
         rc, out, err = assert_python_ok('-c', """if True:
             from concurrent.futures import ThreadPoolExecutor
             from test.test_concurrent_futures.test_shutdown import sleep_and_print

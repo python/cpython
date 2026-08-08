@@ -40,6 +40,9 @@ import types
 
 __all__ = ["Completer"]
 
+# Sentinel object to distinguish "missing" from "present but None"
+_MISSING = sentinel("MISSING")
+
 class Completer:
     def __init__(self, namespace = None):
         """Create a new completer for the command line.
@@ -194,14 +197,14 @@ class Completer:
                         and
                         isinstance(thisobject.__dict__.get(word),
                                    types.LazyImportType)
-                    ):
+                       ):
                         value = thisobject.__dict__.get(word)
                     else:
-                        value = getattr(thisobject, word, None)
+                        value = getattr(thisobject, word, _MISSING)
 
-                    if value is not None:
+                    if value is not _MISSING:
                         matches.append(self._callable_postfix(value, match))
-                    else:
+                    elif word in getattr(type(thisobject), '__slots__', ()):
                         matches.append(match)
             if matches or not noprefix:
                 break
