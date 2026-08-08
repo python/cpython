@@ -1,0 +1,3 @@
+Fix :func:`tarfile.open` failing with :exc:`~tarfile.ReadError` when
+opening a PAX format tar archive that contains only global headers and
+no regular members.
