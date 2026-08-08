@@ -1,0 +1,5 @@
+Symbol table entries returned by the internal :mod:`!_symtable` module
+now expose the scope attributes computed by the analysis:
+``is_generator``, ``is_coroutine``, ``has_annotations``,
+``has_conditional_annotations``, ``needs_class_closure``,
+``needs_classdict``, ``can_see_class_scope`` and ``annotation_block``.
