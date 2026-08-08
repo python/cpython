@@ -1,0 +1,3 @@
+:mod:`sqlite3`: Prevent ``Cursor`` or ``Connection`` objects from having
+uninitialized ``row_factory`` or ``text_factory`` attributes before
+``__init__`` is called.
