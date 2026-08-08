@@ -1,0 +1,1 @@
+shutil.copy, copy2, copyfile, copytree, and move now consistently return str even when passed pathlib.Path arguments.
