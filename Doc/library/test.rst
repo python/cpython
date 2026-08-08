@@ -232,9 +232,10 @@ The :mod:`!test.support` module defines the following constants:
 
 .. data:: verbose
 
-   ``True`` when verbose output is enabled. Should be checked when more
-   detailed information is desired about a running test. *verbose* is set by
-   :mod:`test.regrtest`.
+   How verbose the output is: the number of :option:`!-v` options which
+   :mod:`test.regrtest` was run with, and therefore ``0`` when verbose output
+   is not enabled.  Should be checked when more detailed information is
+   desired about a running test.
 
 
 .. data:: is_jython
