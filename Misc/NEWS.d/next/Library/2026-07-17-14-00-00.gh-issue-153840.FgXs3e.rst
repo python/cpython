@@ -1,0 +1,3 @@
+Escape special characters in ``profiling.sampling`` flamegraph function
+names to prevent markup injection in the generated HTML report.  Patch by
+tonghuaroot.
