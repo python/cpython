@@ -529,7 +529,7 @@ groupby_step(groupbyobject *gbo)
 }
 
 static PyObject *
-groupby_next(PyObject *op)
+groupby_next_lock_held(PyObject *op)
 {
     PyObject *grouper;
     groupbyobject *gbo = groupbyobject_CAST(op);
@@ -572,6 +572,16 @@ groupby_next(PyObject *op)
         return NULL;
 
     return _PyTuple_FromPairSteal(Py_NewRef(gbo->currkey), grouper);
+}
+
+static PyObject *
+groupby_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = groupby_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 static PyType_Slot groupby_slots[] = {
@@ -659,7 +669,7 @@ _grouper_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-_grouper_next(PyObject *op)
+_grouper_next_lock_held(PyObject *op)
 {
     _grouperobject *igo = _grouperobject_CAST(op);
     groupbyobject *gbo = groupbyobject_CAST(igo->parent);
@@ -693,6 +703,16 @@ _grouper_next(PyObject *op)
     Py_CLEAR(gbo->currkey);
 
     return r;
+}
+
+static PyObject *
+_grouper_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(_grouperobject_CAST(op)->parent);
+    result = _grouper_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 static PyType_Slot _grouper_slots[] = {
