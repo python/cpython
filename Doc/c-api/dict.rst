@@ -507,6 +507,23 @@ Dictionary objects
       modified by another thread.
 
 
+.. c:function:: PyObject* PyDict_AsFrozenDictAndClear(PyObject *dict)
+
+   Return a new :class:`frozendict` created
+   from the existing :class:`dict` instance.
+
+   Transfers all keys and values from *dict*
+   to the newly allocated :class:`!frozendict`.
+   Clears the input *dict* on success.
+   Returns ``NULL`` with the exception set on error.
+
+   .. impl-detail::
+
+      Works with O(1) complexity.
+
+   .. versionadded:: next
+
+
 .. c:function:: int PyDict_AddWatcher(PyDict_WatchCallback callback)
 
    Register *callback* as a dictionary watcher. Return a non-negative integer
