@@ -1,5 +1,5 @@
 import unittest
-from collections import OrderedDict, deque
+from collections import OrderedDict, deque, defaultdict
 from copy import copy
 from test.support import threading_helper
 
@@ -47,6 +47,34 @@ class TestDeque(unittest.TestCase):
         threading_helper.run_concurrently(
             [index, *[mutate for _ in range(3)]],
         )
+
+
+class TestDefaultDict(unittest.TestCase):
+    def test_missing_race(self):
+        dd = defaultdict(int)
+
+        def getter():
+            for i in range(1000):
+                dd[f"{i}"]
+
+        def setter():
+            for _ in range(1000):
+                dd.default_factory = lambda: 0
+
+        threading_helper.run_concurrently([getter, setter])
+
+    def test_repr_race(self):
+        dd = defaultdict(int)
+
+        def reprer():
+            for _ in range(1000):
+                repr(dd)
+
+        def setter():
+            for _ in range(1000):
+                dd.default_factory = lambda: 0
+
+        threading_helper.run_concurrently([reprer, setter])
 
 
 class TestOrderedDict(unittest.TestCase):
