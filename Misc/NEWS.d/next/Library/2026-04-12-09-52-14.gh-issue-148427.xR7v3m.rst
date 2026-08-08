@@ -1,0 +1,3 @@
+Fix bare ``except`` clause in :mod:`xml.sax` Expat's external entity
+handler that silently swallowed :exc:`BaseException` instances such
+as :exc:`KeyboardInterrupt`.
