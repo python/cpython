@@ -2368,6 +2368,9 @@ create_elementiter(elementtreestate *st, ElementObject *self, PyObject *tag,
     if (!it)
         return NULL;
 
+    it->parent_stack = NULL;
+    it->parent_stack_used = 0;
+
     it->sought_tag = Py_NewRef(tag);
     it->gettext = gettext;
     it->root_element = (ElementObject*)Py_NewRef(self);
@@ -2378,7 +2381,6 @@ create_elementiter(elementtreestate *st, ElementObject *self, PyObject *tag,
         PyErr_NoMemory();
         return NULL;
     }
-    it->parent_stack_used = 0;
     it->parent_stack_size = INIT_PARENT_STACK_SIZE;
 
     PyObject_GC_Track(it);
