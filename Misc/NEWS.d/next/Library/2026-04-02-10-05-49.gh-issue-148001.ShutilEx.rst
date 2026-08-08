@@ -1,0 +1,1 @@
+Publicly expose :exc:`shutil.ReadError` and :exc:`shutil.RegistryError`.
