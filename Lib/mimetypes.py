@@ -106,7 +106,7 @@ class MimeTypes:
             exts.append(ext)
 
     def guess_type(self, url, strict=True):
-        """Guess the type of a file which is either a URL or a path-like object.
+        """Guess the type of a file based on its URL.
 
         Return value is a tuple (type, encoding) where type is None if
         the type can't be guessed (no or unknown suffix) or a string
@@ -128,13 +128,19 @@ class MimeTypes:
         import os
         import urllib.parse
 
-        # TODO: Deprecate accepting file paths (in particular path-like objects).
         url = os.fspath(url)
         p = urllib.parse.urlparse(url)
         if p.scheme and len(p.scheme) > 1:
             scheme = p.scheme
             url = p.path
         else:
+            import warnings
+            warnings.warn(
+                "Passing a file path to guess_type() is deprecated and will be "
+                "removed in a future version. Use guess_file_type() instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             return self.guess_file_type(url, strict=strict)
         if scheme == 'data':
             # syntax of data URLs:
@@ -752,8 +758,13 @@ def _main(args=None):
                 results.append(f"error: unknown type {gtype}")
         return results
     else:
+        import urllib.parse
         for gtype in args.type:
-            guess, encoding = guess_type(gtype, not args.lenient)
+            p = urllib.parse.urlparse(gtype)
+            if p.scheme and len(p.scheme) > 1:
+                guess, encoding = guess_type(gtype, strict=not args.lenient)
+            else:
+                guess, encoding = guess_file_type(gtype, strict=not args.lenient)
             if guess:
                 results.append(f"type: {guess} encoding: {encoding}")
             else:
