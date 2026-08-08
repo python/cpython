@@ -3943,6 +3943,9 @@ _testcapi_exec(PyObject *m)
     if (_PyTestCapi_Init_Weakref(m) < 0) {
         return -1;
     }
+    if (_PyTestCapi_Init_Context(m) < 0) {
+        return -1;
+    }
 
     return 0;
 }
