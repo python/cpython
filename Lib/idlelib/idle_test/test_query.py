@@ -27,7 +27,7 @@ class QueryTest(unittest.TestCase):
     class Dummy_Query:
         # Test the following Query methods.
         entry_ok = query.Query.entry_ok
-        ok = query.Query.ok
+        validate = query.Query.validate
         cancel = query.Query.cancel
         # Add attributes and initialization needed for tests.
         def __init__(self, dummy_entry):
@@ -53,18 +53,16 @@ class QueryTest(unittest.TestCase):
         Equal((dialog.result, dialog.destroyed), (None, False))
         Equal(dialog.entry_error['text'], '')
 
-    def test_ok_blank(self):
+    def test_validate_blank(self):
         dialog = self.Dummy_Query('')
-        dialog.entry.focus_set = mock.Mock()
-        self.assertEqual(dialog.ok(), None)
-        self.assertTrue(dialog.entry.focus_set.called)
-        del dialog.entry.focus_set
+        self.assertFalse(dialog.validate())
         self.assertEqual((dialog.result, dialog.destroyed), (None, False))
 
-    def test_ok_good(self):
+    def test_validate_good(self):
         dialog = self.Dummy_Query('good')
-        self.assertEqual(dialog.ok(), None)
-        self.assertEqual((dialog.result, dialog.destroyed), ('good', True))
+        self.assertTrue(dialog.validate())
+        # validate stores the result; Dialog.ok destroys the window.
+        self.assertEqual((dialog.result, dialog.destroyed), ('good', False))
 
     def test_cancel(self):
         dialog = self.Dummy_Query('does not matter')
