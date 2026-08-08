@@ -1,0 +1,3 @@
+Cache multiple popped Python stack chunks per thread, within a small fixed
+memory budget, to avoid allocator thrashing when repeatedly crossing more than
+one stack chunk boundary.
