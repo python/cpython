@@ -3,10 +3,10 @@ General functions for HTML manipulation.
 """
 
 import re as _re
-from html.entities import html5 as _html5
+from html.entities import codepoint2name as _codepoint2name, html5 as _html5
 
 
-__all__ = ['escape', 'unescape']
+__all__ = ['escape', 'unescape', 'htmlcharrefreplace_errors']
 
 
 def escape(s, quote=True):
@@ -130,3 +130,20 @@ def unescape(s):
     if '&' not in s:
         return s
     return _charref.sub(_replace_charref, s)
+
+
+def htmlcharrefreplace_errors(exception):
+    """Implements the 'htmlcharrefreplace' error handling.
+
+    Replaces an unencodable character with the corresponding HTML named
+    character reference, or with a numeric character reference if there
+    is no name for it.
+    """
+    if not isinstance(exception, UnicodeEncodeError):
+        raise exception
+    replace = []
+    for c in exception.object[exception.start:exception.end]:
+        n = ord(c)
+        name = _codepoint2name.get(n)
+        replace.append(f'&{name};' if name is not None else f'&#{n};')
+    return ''.join(replace), exception.end
