@@ -1,5 +1,7 @@
 #include "Python.h"
 
+struct _PyExecutorObject;
+
 #ifdef _Py_TIER2
 
 #include "opcode.h"
@@ -53,7 +55,7 @@ has_space_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
     if (code->co_executors == NULL) {
         return true;
     }
-    return code->co_executors->size < MAX_EXECUTORS_SIZE;
+    return _PyExecutorArray_SIZE(code->co_executors) < MAX_EXECUTORS_SIZE;
 }
 
 static int32_t
@@ -62,7 +64,7 @@ get_index_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
     if (instr->op.code == ENTER_EXECUTOR) {
         return instr->op.arg;
     }
-    _PyExecutorArray *old = code->co_executors;
+    _PyExecutorArrayInternal *old = _PyExecutorArray_CAST(code->co_executors);
     int size = 0;
     int capacity = 0;
     if (old != NULL) {
@@ -74,18 +76,18 @@ get_index_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
     if (size == capacity) {
         /* Array is full. Grow array */
         int new_capacity = capacity ? capacity * 2 : 4;
-        _PyExecutorArray *new = PyMem_Realloc(
+        _PyExecutorArrayInternal *new = PyMem_Realloc(
             old,
-            offsetof(_PyExecutorArray, executors) +
+            offsetof(_PyExecutorArrayInternal, executors) +
             new_capacity * sizeof(_PyExecutorObject *));
         if (new == NULL) {
             return -1;
         }
         new->capacity = new_capacity;
         new->size = size;
-        code->co_executors = new;
+        code->co_executors = (_PyExecutorArray *)new;
     }
-    assert(size < code->co_executors->capacity);
+    assert(size < _PyExecutorArray_CAST(code->co_executors)->capacity);
     return size;
 }
 
@@ -95,18 +97,18 @@ insert_executor(PyCodeObject *code, _Py_CODEUNIT *instr, int index, _PyExecutorO
     Py_INCREF(executor);
     if (instr->op.code == ENTER_EXECUTOR) {
         assert(index == instr->op.arg);
-        _Py_ExecutorDetach(code->co_executors->executors[index]);
+        _Py_ExecutorDetach(_PyExecutorArray_EXECUTORS(code->co_executors)[index]);
     }
     else {
-        assert(code->co_executors->size == index);
-        assert(code->co_executors->capacity > index);
-        code->co_executors->size++;
+        assert(_PyExecutorArray_SIZE(code->co_executors) == index);
+        assert(_PyExecutorArray_CAST(code->co_executors)->capacity > index);
+        _PyExecutorArray_CAST(code->co_executors)->size++;
     }
     executor->vm_data.opcode = instr->op.code;
     executor->vm_data.oparg = instr->op.arg;
     executor->vm_data.code = code;
     executor->vm_data.index = (int)(instr - _PyCode_CODE(code));
-    code->co_executors->executors[index] = executor;
+    _PyExecutorArray_EXECUTORS(code->co_executors)[index] = executor;
     assert(index < MAX_EXECUTORS_SIZE);
     instr->op.code = ENTER_EXECUTOR;
     instr->op.arg = index;
@@ -188,7 +190,7 @@ _PyOptimizer_Optimize(
     assert(executor->vm_data.valid);
     _PyExitData *exit = _tstate->jit_tracer_state->initial_state.exit;
     if (exit != NULL && !progress_needed) {
-        exit->executor = executor;
+        exit->executor = _PyExecutor_AsHandle(executor);
     }
     else {
         // An executor inserted into the code object now has a strong reference
@@ -209,7 +211,7 @@ get_executor_lock_held(PyCodeObject *code, int offset)
     for (int i = 0 ; i < code_len;) {
         if (_PyCode_CODE(code)[i].op.code == ENTER_EXECUTOR && i*2 == offset) {
             int oparg = _PyCode_CODE(code)[i].op.arg;
-            _PyExecutorObject *res = code->co_executors->executors[oparg];
+            _PyExecutorObject *res = _PyExecutorArray_EXECUTORS(code->co_executors)[oparg];
             Py_INCREF(res);
             return res;
         }
@@ -219,14 +221,14 @@ get_executor_lock_held(PyCodeObject *code, int offset)
     return NULL;
 }
 
-_PyExecutorObject *
+_PyExecutorHandle *
 _Py_GetExecutor(PyCodeObject *code, int offset)
 {
     _PyExecutorObject *executor;
     Py_BEGIN_CRITICAL_SECTION(code);
     executor = get_executor_lock_held(code, offset);
     Py_END_CRITICAL_SECTION();
-    return executor;
+    return _PyExecutor_AsHandle(executor);
 }
 
 static PyObject *
@@ -270,8 +272,8 @@ executor_clear_exits(_PyExecutorObject *executor)
     for (uint32_t i = 0; i < executor->exit_count; i++) {
         _PyExitData *exit = &executor->exits[i];
         exit->temperature = initial_unreachable_backoff_counter();
-        _PyExecutorObject *old = executor->exits[i].executor;
-        exit->executor = exit->is_dynamic ? cold_dynamic : cold;
+        _PyExecutorObject *old = _PyExecutor_FromHandle(executor->exits[i].executor);
+        exit->executor = _PyExecutor_AsHandle(exit->is_dynamic ? cold_dynamic : cold);
         Py_DECREF(old);
     }
 }
@@ -706,7 +708,7 @@ _PyJit_translate_single_bytecode_to_trace(
     }
 
     if (opcode == ENTER_EXECUTOR) {
-        _PyExecutorObject *executor = old_code->co_executors->executors[oparg & 255];
+        _PyExecutorObject *executor = _PyExecutorArray_EXECUTORS(old_code->co_executors)[oparg & 255];
         opcode = executor->vm_data.opcode;
         oparg = (oparg & ~255) | executor->vm_data.oparg;
     }
@@ -1117,8 +1119,9 @@ Py_NO_INLINE int
 _PyJit_TryInitializeTracing(
     PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *curr_instr,
     _Py_CODEUNIT *start_instr, _Py_CODEUNIT *close_loop_instr, _PyStackRef *stack_pointer, int chain_depth,
-    _PyExitData *exit, int oparg, _PyExecutorObject *current_executor)
+    _PyExitData *exit, int oparg, _PyExecutorHandle *current_executor_handle)
 {
+    _PyExecutorObject *current_executor = _PyExecutor_FromHandle(current_executor_handle);
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     if (_tstate->jit_tracer_state == NULL) {
         _tstate->jit_tracer_state = (_PyJitTracerState *)_PyObject_VirtualAlloc(sizeof(_PyJitTracerState));
@@ -1532,7 +1535,7 @@ make_executor_from_uops(_PyThreadStateImpl *tstate, _PyUOpInstruction *buffer, i
             _PyExitData *exit = &executor->exits[next_exit];
             exit->target = buffer[i].target;
             dest->operand0 = (uint64_t)exit;
-            exit->executor = base_opcode == _EXIT_TRACE ? cold : cold_dynamic;
+            exit->executor = _PyExecutor_AsHandle(base_opcode == _EXIT_TRACE ? cold : cold_dynamic);
             exit->is_dynamic = (char)(base_opcode == _DYNAMIC_EXIT);
             exit->is_control_flow = (char)buffer[i].operand1;
             next_exit--;
@@ -1843,12 +1846,12 @@ _PyExecutor_ClearExit(_PyExitData *exit)
     if (exit == NULL) {
         return;
     }
-    _PyExecutorObject *old = exit->executor;
+    _PyExecutorObject *old = _PyExecutor_FromHandle(exit->executor);
     if (exit->is_dynamic) {
-        exit->executor = _PyExecutor_GetColdDynamicExecutor();
+        exit->executor = _PyExecutor_AsHandle(_PyExecutor_GetColdDynamicExecutor());
     }
     else {
-        exit->executor = _PyExecutor_GetColdExecutor();
+        exit->executor = _PyExecutor_AsHandle(_PyExecutor_GetColdExecutor());
     }
     Py_DECREF(old);
 }
@@ -1865,11 +1868,11 @@ _Py_ExecutorDetach(_PyExecutorObject *executor)
     _Py_CODEUNIT *instruction = &_PyCode_CODE(code)[executor->vm_data.index];
     assert(instruction->op.code == ENTER_EXECUTOR);
     int index = instruction->op.arg;
-    assert(code->co_executors->executors[index] == executor);
+    assert(_PyExecutorArray_EXECUTORS(code->co_executors)[index] == executor);
     instruction->op.code = _PyOpcode_Deopt[executor->vm_data.opcode];
     instruction->op.arg = executor->vm_data.oparg;
     executor->vm_data.code = NULL;
-    code->co_executors->executors[index] = NULL;
+    _PyExecutorArray_EXECUTORS(code->co_executors)[index] = NULL;
     Py_DECREF(executor);
 }
 
@@ -1899,8 +1902,9 @@ executor_clear(PyObject *op)
 }
 
 void
-_Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj)
+_Py_Executor_DependsOn(_PyExecutorHandle *executor_handle, void *obj)
 {
+    _PyExecutorObject *executor = _PyExecutor_FromHandle(executor_handle);
     assert(executor->vm_data.valid);
     PyInterpreterState *interp = _PyInterpreterState_GET();
     int32_t idx = executor->vm_data.bloom_array_idx;
@@ -2058,7 +2062,7 @@ find_line_number(PyCodeObject *code, _PyExecutorObject *executor)
         _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
         int opcode = instr->op.code;
         if (opcode == ENTER_EXECUTOR) {
-            _PyExecutorObject *exec = code->co_executors->executors[instr->op.arg];
+            _PyExecutorObject *exec = _PyExecutorArray_EXECUTORS(code->co_executors)[instr->op.arg];
             if (exec == executor) {
                 return PyCode_Addr2Line(code, i*2);
             }
@@ -2206,7 +2210,7 @@ executor_to_gv(_PyExecutorObject *executor, FILE *out)
             exit = (_PyExitData *)exit_inst->operand0;
         }
         if (exit != NULL) {
-            if (exit->executor == cold || exit->executor == cold_dynamic) {
+            if (_PyExecutor_FromHandle(exit->executor) == cold || _PyExecutor_FromHandle(exit->executor) == cold_dynamic) {
 #ifdef Py_STATS
                 /* Only mark as have cold exit if it has actually exited */
                 uint64_t diff = inst->execution_count - executor->trace[i+1].execution_count;
@@ -2217,7 +2221,7 @@ executor_to_gv(_PyExecutorObject *executor, FILE *out)
 #endif
             }
             else {
-                fprintf(out, "executor_%p:i%d -> executor_%p:start\n", executor, i, exit->executor);
+                fprintf(out, "executor_%p:i%d -> executor_%p:start\n", executor, i, _PyExecutor_FromHandle(exit->executor));
             }
         }
         if (is_stop(inst)) {

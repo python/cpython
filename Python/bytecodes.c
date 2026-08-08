@@ -3585,7 +3585,7 @@ dummy_func(
         tier1 inst(ENTER_EXECUTOR, (--)) {
             #ifdef _Py_TIER2
             PyCodeObject *code = _PyFrame_GetCode(frame);
-            _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
+            _PyExecutorObject *executor = ((_PyExecutorArrayInternal *)code->co_executors)->executors[oparg & 255];
             if (IS_JIT_TRACING()) {
                 int og_opcode = executor->vm_data.opcode;
                 int og_oparg = (oparg & ~255) | executor->vm_data.oparg;
@@ -6151,7 +6151,7 @@ dummy_func(
             }
         #endif
             tstate->jit_exit = exit;
-            TIER2_TO_TIER2(exit->executor);
+            TIER2_TO_TIER2((_PyExecutorObject *)exit->executor);
         }
 
         tier2 op(_DYNAMIC_EXIT, (exit_p/4 --)) {
@@ -6196,10 +6196,10 @@ dummy_func(
 #ifndef _Py_JIT
             assert(current_executor == (_PyExecutorObject*)executor);
 #endif
-            assert(tstate->jit_exit == NULL || tstate->jit_exit->executor == current_executor);
+            assert(tstate->jit_exit == NULL || (_PyExecutorObject *)tstate->jit_exit->executor == current_executor);
             tstate->current_executor = (PyObject *)current_executor;
             if (!current_executor->vm_data.valid) {
-                assert(tstate->jit_exit->executor == current_executor);
+                assert((_PyExecutorObject *)tstate->jit_exit->executor == current_executor);
                 assert(tstate->current_executor == executor);
                 _PyExecutor_ClearExit(tstate->jit_exit);
                 DEOPT_IF(true);
@@ -6261,11 +6261,11 @@ dummy_func(
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
                 PyCodeObject *code = _PyFrame_GetCode(frame);
-                executor = code->co_executors->executors[target->op.arg];
+                executor = ((_PyExecutorArrayInternal *)code->co_executors)->executors[target->op.arg];
                 Py_INCREF(executor);
                 assert(tstate->jit_exit == exit);
-                exit->executor = executor;
-                TIER2_TO_TIER2(exit->executor);
+                exit->executor = (_PyExecutorHandle *)executor;
+                TIER2_TO_TIER2((_PyExecutorObject *)exit->executor);
             }
             else {
                 SYNC_SP();
@@ -6281,7 +6281,7 @@ dummy_func(
                 // Note: it's safe to use target->op.arg here instead of the oparg given by EXTENDED_ARG.
                 // The invariant in the optimizer is the deopt target always points back to the first EXTENDED_ARG.
                 // So setting it to anything else is wrong.
-                int succ = _PyJit_TryInitializeTracing(tstate, frame, target, target, target, stack_pointer, chain_depth, exit, target->op.arg, previous_executor);
+                int succ = _PyJit_TryInitializeTracing(tstate, frame, target, target, target, stack_pointer, chain_depth, exit, target->op.arg, (_PyExecutorHandle *)previous_executor);
                 exit->temperature = restart_backoff_counter(exit->temperature);
                 if (succ) {
                     GOTO_TIER_ONE_CONTINUE_TRACING(target);

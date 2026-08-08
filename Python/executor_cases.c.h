@@ -22707,7 +22707,7 @@
             #endif
             tstate->jit_exit = exit;
             SET_CURRENT_CACHED_VALUES(0);
-            TIER2_TO_TIER2(exit->executor);
+            TIER2_TO_TIER2((_PyExecutorObject *)exit->executor);
         }
 
         case _EXIT_TRACE_r10: {
@@ -22748,7 +22748,7 @@
             stack_pointer[0] = _stack_item_0;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            TIER2_TO_TIER2(exit->executor);
+            TIER2_TO_TIER2((_PyExecutorObject *)exit->executor);
         }
 
         case _EXIT_TRACE_r20: {
@@ -22792,7 +22792,7 @@
             stack_pointer[1] = _stack_item_1;
             stack_pointer += 2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            TIER2_TO_TIER2(exit->executor);
+            TIER2_TO_TIER2((_PyExecutorObject *)exit->executor);
         }
 
         case _EXIT_TRACE_r30: {
@@ -22839,7 +22839,7 @@
             stack_pointer[2] = _stack_item_2;
             stack_pointer += 3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            TIER2_TO_TIER2(exit->executor);
+            TIER2_TO_TIER2((_PyExecutorObject *)exit->executor);
         }
 
         case _DYNAMIC_EXIT_r00: {
@@ -23252,10 +23252,10 @@
             #ifndef _Py_JIT
             assert(current_executor == (_PyExecutorObject*)executor);
             #endif
-            assert(tstate->jit_exit == NULL || tstate->jit_exit->executor == current_executor);
+            assert(tstate->jit_exit == NULL || (_PyExecutorObject *)tstate->jit_exit->executor == current_executor);
             tstate->current_executor = (PyObject *)current_executor;
             if (!current_executor->vm_data.valid) {
-                assert(tstate->jit_exit->executor == current_executor);
+                assert((_PyExecutorObject *)tstate->jit_exit->executor == current_executor);
                 assert(tstate->current_executor == executor);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
@@ -23788,12 +23788,12 @@
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
                 PyCodeObject *code = _PyFrame_GetCode(frame);
-                executor = code->co_executors->executors[target->op.arg];
+                executor = ((_PyExecutorArrayInternal *)code->co_executors)->executors[target->op.arg];
                 Py_INCREF(executor);
                 assert(tstate->jit_exit == exit);
-                exit->executor = executor;
+                exit->executor = (_PyExecutorHandle *)executor;
                 SET_CURRENT_CACHED_VALUES(0);
-                TIER2_TO_TIER2(exit->executor);
+                TIER2_TO_TIER2((_PyExecutorObject *)exit->executor);
             }
             else {
                 if (!backoff_counter_triggers(temperature)) {
@@ -23804,7 +23804,7 @@
                 _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
                 assert(tstate->current_executor == (PyObject *)previous_executor);
                 int chain_depth = previous_executor->vm_data.chain_depth + !exit->is_control_flow;
-                int succ = _PyJit_TryInitializeTracing(tstate, frame, target, target, target, stack_pointer, chain_depth, exit, target->op.arg, previous_executor);
+                int succ = _PyJit_TryInitializeTracing(tstate, frame, target, target, target, stack_pointer, chain_depth, exit, target->op.arg, (_PyExecutorHandle *)previous_executor);
                 exit->temperature = restart_backoff_counter(exit->temperature);
                 if (succ) {
                     GOTO_TIER_ONE_CONTINUE_TRACING(target);
