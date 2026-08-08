@@ -437,12 +437,12 @@ class SMTPChannel(asynchat.async_chat):
         if not arg:
             return '', ''
         if arg.lstrip().startswith('<'):
-            address, rest = get_angle_addr(arg)
+            address, pos = get_angle_addr(arg)
         else:
-            address, rest = get_addr_spec(arg)
+            address, pos = get_addr_spec(arg)
         if not address:
-            return address, rest
-        return address.addr_spec, rest
+            return address, arg[pos:]
+        return address.addr_spec, arg[pos:]
 
     def _getparams(self, params):
         # Return params as dictionary. Return None if not all parameters

@@ -38,8 +38,8 @@ class Address:
             if username or domain:
                 raise TypeError("addrspec specified when username and/or "
                                 "domain also specified")
-            a_s, rest = parser.get_addr_spec(addr_spec)
-            if rest:
+            a_s, pos = parser.get_addr_spec(addr_spec)
+            if pos < len(addr_spec):
                 raise ValueError("Invalid addr_spec; only '{}' "
                                  "could be parsed from '{}'".format(
                                     a_s, addr_spec))
@@ -328,8 +328,8 @@ class AddressHeader:
 
     @staticmethod
     def value_parser(value):
-        address_list, value = parser.get_address_list(value)
-        assert not value, 'this should not happen'
+        address_list, pos = parser.get_address_list(value)
+        assert pos >= len(value), 'this should not happen'
         return address_list
 
     @classmethod
