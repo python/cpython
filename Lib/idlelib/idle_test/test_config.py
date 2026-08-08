@@ -93,6 +93,20 @@ class IdleConfParserTest(unittest.TestCase):
         self.assertEqual(parser.Get('Foo Bar', 'foo'), 'newbar')
         self.assertEqual(parser.GetOptionList('Foo Bar'), ['foo'])
 
+    def test_load_invalid_file(self):
+        # gh-153477: a corrupt config file must warn and fall back to
+        # defaults, not abort IDLE startup.
+        self.addCleanup(config._warned.clear)
+        with tempfile.TemporaryDirectory() as tdir:
+            path = os.path.join(tdir, 'invalid.cfg')
+            with open(path, 'w', encoding='utf-8') as f:
+                f.write('option = value\n')  # missing section header
+            parser = config.IdleConfParser(path)
+            with captured_stderr() as stderr:
+                parser.Load()  # must not raise
+            self.assertEqual(parser.sections(), [])
+            self.assertIn('Invalid config file', stderr.getvalue())
+
 
 class IdleUserConfParserTest(unittest.TestCase):
     """Test that IdleUserConfParser works"""

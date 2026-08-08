@@ -1,0 +1,2 @@
+IDLE now warns and falls back to the default configuration when a user
+configuration file cannot be parsed, instead of failing to start.
