@@ -1,0 +1,4 @@
+Optimize the algorithm to grow the buffer when reading a full file and the
+file size was unknown or changed since the file was opened. Increase
+exponentially and faster and in steps no smaller than 128 kB. This should
+improve I/O performance.
