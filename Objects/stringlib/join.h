@@ -60,7 +60,16 @@ STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
      */
     for (i = 0, nbufs = 0; i < seqlen; i++) {
         Py_ssize_t itemlen;
+#ifdef Py_GIL_DISABLED
+        if (PyList_Check(seq)) {
+            item = _PyList_GetItemRef((PyListObject *)seq, i);
+        }
+        else {
+            item = PyTuple_GET_ITEM(seq, i);
+        }
+#else
         item = PySequence_Fast_GET_ITEM(seq, i);
+#endif
         if (PyBytes_CheckExact(item)) {
             /* Fast path. */
             buffers[i].obj = Py_NewRef(item);
