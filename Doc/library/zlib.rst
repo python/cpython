@@ -479,26 +479,59 @@ the following constants:
 
    The version string of the zlib library that was used for building the module.
    This may be different from the zlib library actually used at runtime, which
-   is available as :const:`ZLIB_RUNTIME_VERSION`.
+   is available as :const:`zlib_version`.
 
 
 .. data:: ZLIB_RUNTIME_VERSION
+.. data:: zlib_version
 
    The version string of the zlib library actually loaded by the interpreter.
 
    .. versionadded:: 3.3
+   .. versionchanged:: next
+      Added alias :const:`!zlib_version`.
+
+
+.. data:: ZLIB_VERSION_INFO
+
+   A named tuple containing the four components of the zlib library
+   version that was used for building the module:
+   *major*, *minor*, *revision*, and *subversion*.
+   All values are integers.
+   The components can also be accessed by name, so ``zlib.VERSION_INFO[0]``
+   is equivalent to ``zlib.VERSION_INFO.major`` and so on.
+   This may be different from the zlib library actually used at runtime, which
+   is available as :const:`zlib_version_info`.
+
+   .. versionadded:: next
+
+
+.. data:: zlib_version_info
+
+   A named tuple containing the zlib library version actually loaded by the interpreter.
+
+   .. versionadded:: next
+
+
+The following constants are only present if zlib-ng was used to build
+the module:
 
 
 .. data:: ZLIBNG_VERSION
 
    The version string of the zlib-ng library that was used for building the
-   module if zlib-ng was used. When present, the :data:`ZLIB_VERSION` and
-   :data:`ZLIB_RUNTIME_VERSION` constants reflect the version of the zlib API
+   module if zlib-ng was used. When present, the :const:`ZLIB_VERSION` and
+   :const:`zlib_version` constants reflect the version of the zlib API
    provided by zlib-ng.
 
-   If zlib-ng was not used to build the module, this constant will be absent.
-
    .. versionadded:: 3.14
+
+.. data:: ZLIBNG_VERSION_INFO
+
+   A named tuple containing the version of the zlib-ng library that was
+   used for building the module if zlib-ng was used.
+
+   .. versionadded:: next
 
 
 .. seealso::

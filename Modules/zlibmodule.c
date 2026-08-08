@@ -2060,6 +2060,107 @@ zlib_getattr(PyObject *self, PyObject *args)
     return NULL;
 }
 
+PyDoc_STRVAR(zlib_version__doc__,
+"zlib.zlib_version_info\n\
+\n\
+Zlib version information as a named tuple.");
+
+static PyStructSequence_Field zlib_version_fields[] = {
+    {"major", "Major release number"},
+    {"minor", "Minor release number"},
+    {"revision", "Revision release number"},
+    {"subversion", "Subversion release number"},
+    {0}
+};
+
+static PyStructSequence_Desc zlib_version_desc = {
+    "zlib.zlib_version_info",   /* name */
+    zlib_version__doc__,        /* doc */
+    zlib_version_fields,        /* fields */
+    4
+};
+
+static PyObject *
+make_zlib_version(PyTypeObject *type, const char *string)
+{
+    PyObject *version;
+    int pos = 0;
+    unsigned int major = 0, minor = 0, revision = 0, subversion = 0;
+
+    sscanf(string, "%u.%u.%u.%u", &major, &minor, &revision, &subversion);
+
+    version = PyStructSequence_New(type);
+    if (version == NULL) {
+        return NULL;
+    }
+
+#define SetIntItem(VALUE) \
+    PyStructSequence_SET_ITEM(version, pos++, PyLong_FromUnsignedLong(VALUE)); \
+    if (PyErr_Occurred()) { \
+        Py_DECREF(version); \
+        return NULL; \
+    }
+
+    SetIntItem(major)
+    SetIntItem(minor)
+    SetIntItem(revision)
+    SetIntItem(subversion)
+#undef SetIntItem
+
+    return version;
+}
+
+#ifdef ZLIBNG_VERSION
+PyDoc_STRVAR(zlibng_version__doc__,
+             "zlib.zlibng_version_info\n\
+\n\
+Zlib-ng version information as a named tuple.");
+
+static PyStructSequence_Field zlibng_version_fields[] = {
+    {"major", "Major release number"},
+    {"minor", "Minor release number"},
+    {"revision", "Revision release number"},
+    {0}
+};
+
+static PyStructSequence_Desc zlibng_version_desc = {
+    "zlib.zlibng_version_info",   /* name */
+    zlibng_version__doc__,        /* doc */
+    zlibng_version_fields,        /* fields */
+    3
+};
+
+static PyObject *
+make_zlibng_version(PyTypeObject *type, const char *string)
+{
+    PyObject *version;
+    int pos = 0;
+    unsigned int major = 0, minor = 0, revision = 0;
+
+    sscanf(string, "%u.%u.%u", &major, &minor, &revision);
+
+    version = PyStructSequence_New(type);
+    if (version == NULL) {
+        return NULL;
+    }
+
+    #define SetIntItem(VALUE) \
+    PyStructSequence_SET_ITEM(version, pos++, PyLong_FromUnsignedLong(VALUE)); \
+    if (PyErr_Occurred()) { \
+        Py_DECREF(version); \
+        return NULL; \
+    }
+
+    SetIntItem(major)
+    SetIntItem(minor)
+    SetIntItem(revision)
+    #undef SetIntItem
+
+    return version;
+}
+#endif // ZLIBNG_VERSION
+
+
 static PyMethodDef zlib_methods[] =
 {
     ZLIB_ADLER32_METHODDEF
@@ -2255,8 +2356,14 @@ zlib_exec(PyObject *mod)
 #ifdef Z_TREES // 1.2.3.4, only for inflate
     ZLIB_ADD_INT_MACRO(Z_TREES);
 #endif
+
+    /* zlib_version */
     if (PyModule_Add(mod, "ZLIB_VERSION",
                      PyUnicode_FromString(ZLIB_VERSION)) < 0) {
+        return -1;
+    }
+    if (PyModule_Add(mod, "zlib_version",
+                     PyUnicode_FromString(zlibVersion())) < 0) {
         return -1;
     }
     if (PyModule_Add(mod, "ZLIB_RUNTIME_VERSION",
@@ -2268,6 +2375,37 @@ zlib_exec(PyObject *mod)
                      PyUnicode_FromString(ZLIBNG_VERSION)) < 0) {
         return -1;
     }
+#endif
+    PyTypeObject *version_type;
+    version_type = PyStructSequence_NewType(&zlib_version_desc);
+    if (version_type == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(mod, "ZLIB_VERSION_INFO",
+            make_zlib_version(version_type, ZLIB_VERSION)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    if (PyModule_Add(mod, "zlib_version_info",
+            make_zlib_version(version_type, zlibVersion())) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    Py_DECREF(version_type);
+#ifdef ZLIBNG_VERSION
+    version_type = PyStructSequence_NewType(&zlibng_version_desc);
+    if (version_type == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(mod, "ZLIBNG_VERSION_INFO",
+            make_zlibng_version(version_type, ZLIBNG_VERSION)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    Py_DECREF(version_type);
 #endif
     return 0;
 }

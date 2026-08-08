@@ -571,6 +571,55 @@ static PyMethodDef _zstd_methods[] = {
     {NULL, NULL}
 };
 
+PyDoc_STRVAR(zstd_version__doc__,
+             "_zstd.zstd_version_info\n\
+\n\
+Zstd version information as a named tuple.");
+
+static PyStructSequence_Field zstd_version_fields[] = {
+    {"major", "Major release number"},
+    {"minor", "Minor release number"},
+    {"patch", "Patch release number"},
+    {0}
+};
+
+static PyStructSequence_Desc zstd_version_desc = {
+    "_zstd.zstd_version_info",   /* name */
+    zstd_version__doc__,    /* doc */
+    zstd_version_fields,    /* fields */
+    3
+};
+
+static PyObject *
+make_zstd_version(PyTypeObject *type, unsigned int number)
+{
+    PyObject *version;
+    int pos = 0;
+    unsigned int major = number / 10000u;
+    unsigned int minor = (number % 10000u) / 100u;
+    unsigned int patch = number % 100u;
+
+    version = PyStructSequence_New(type);
+    if (version == NULL) {
+        return NULL;
+    }
+
+    #define SetItem(VALUE) \
+    PyStructSequence_SET_ITEM(version, pos++, VALUE); \
+    if (PyErr_Occurred()) { \
+        Py_DECREF(version); \
+        return NULL; \
+    }
+
+    SetItem(PyLong_FromUnsignedLong(major))
+    SetItem(PyLong_FromUnsignedLong(minor))
+    SetItem(PyLong_FromUnsignedLong(patch))
+    #undef SetItem
+
+    return version;
+}
+
+
 static int
 _zstd_exec(PyObject *m)
 {
@@ -623,15 +672,32 @@ do {                                                                         \
     }
 
     /* Add constants */
-    if (PyModule_AddIntConstant(m, "zstd_version_number",
-                                ZSTD_versionNumber()) < 0) {
+    if (PyModule_AddStringConstant(m, "ZSTD_VERSION",
+                                   ZSTD_VERSION_STRING) < 0) {
         return -1;
     }
-
     if (PyModule_AddStringConstant(m, "zstd_version",
                                    ZSTD_versionString()) < 0) {
         return -1;
     }
+    PyTypeObject *version_type;
+    version_type = PyStructSequence_NewType(&zstd_version_desc);
+    if (version_type == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(m, "ZSTD_VERSION_INFO",
+        make_zstd_version(version_type, ZSTD_VERSION_NUMBER)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    if (PyModule_Add(m, "zstd_version_info",
+        make_zstd_version(version_type, ZSTD_versionNumber())) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    Py_DECREF(version_type);
 
 #if ZSTD_VERSION_NUMBER >= 10500
     if (PyModule_AddIntConstant(m, "ZSTD_CLEVEL_DEFAULT",
