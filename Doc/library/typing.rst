@@ -3727,6 +3727,24 @@ Introspection helpers
 
    .. versionadded:: 3.14
 
+.. function:: evaluate_type(type_hint, *, owner=None, globals=None, locals=None, type_params=None, format=annotationlib.Format.VALUE)
+
+   Evaluate a :term:`type hint`, by resolving any forward references nested
+   within the type hint.
+
+   This is similar to calling :func:`evaluate_forward_ref`, but unlike that
+   method, :func:`evaluate_type` also supports arbitrary type hints.
+
+   See the documentation for :meth:`annotationlib.ForwardRef.evaluate` for
+   the meaning of the *owner*, *globals*, *locals*, *type_params*, and *format* parameters.
+
+   .. caution::
+
+      This function may execute arbitrary code contained the type hint.
+      See :ref:`annotationlib-security` for more information.
+
+   .. versionadded:: next
+
 .. data:: NoDefault
 
    A sentinel object used to indicate that a type parameter has no default
