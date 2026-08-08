@@ -15,6 +15,7 @@ import os.path
 import re
 import sys
 import unittest
+import warnings
 
 test_tools.skip_if_missing('clinic')
 with test_tools.imports_under_tool('clinic'):
@@ -2206,6 +2207,128 @@ class ClinicParserTest(TestCase):
         """
         err = "Function 'bar': '/ [from 3.14]' must precede '/ [from 3.15]'"
         self.expect_failure(block, err, lineno=5)
+
+    def test_alias(self):
+        function = self.parse_function("""
+            module foo
+            foo.bar
+                a: int
+                *
+                b as a: int = 0
+            Docstring.
+        """)
+        _, a, b = function.parameters.values()
+        self.assertIsNone(a.converter.alias_of)
+        self.assertIs(b.converter.alias_of, a)
+        self.assertEqual(function.docstring.splitlines()[0],
+                         "bar($module, /, a)")
+
+    def test_alias_must_be_keyword_only(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                b as a: int = 0
+            Docstring.
+        """
+        err = "Alias 'b' of the parameter 'a' must be keyword-only."
+        self.expect_failure(block, err, lineno=3)
+
+    def test_alias_must_have_default(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                *
+                b as a: int
+            Docstring.
+        """
+        err = "Alias 'b' of the parameter 'a' must have a default value."
+        self.expect_failure(block, err, lineno=4)
+
+    def test_alias_deprecated(self):
+        function = self.parse_function("""
+            module foo
+            foo.bar
+                a: int
+                *
+                [until 3.14] b as a: int = 0
+            Docstring.
+        """)
+        _, a, b = function.parameters.values()
+        self.assertIsNone(a.deprecated_until)
+        self.assertEqual(b.deprecated_until, (3, 14))
+
+    def test_deprecated_last_positional_only_parameters(self):
+        function = self.parse_function("""
+            module foo
+            foo.bar
+                a: int = 0
+                [until 3.14] b: int = 0
+                [until 3.14] c: int = 0
+                /
+                d: int = 0
+            Docstring.
+        """)
+        _, a, b, c, d = function.parameters.values()
+        self.assertIsNone(a.deprecated_until)
+        self.assertEqual(b.deprecated_until, (3, 14))
+        self.assertEqual(c.deprecated_until, (3, 14))
+        self.assertIsNone(d.deprecated_until)
+
+    def test_deprecated_non_last_positional_only_parameter(self):
+        block = """
+            module foo
+            foo.bar
+                [until 3.14] a: int = 0
+                b: int = 0
+                /
+            Docstring.
+        """
+        err = ("Parameter 'b' cannot follow the deprecated parameter 'a': "
+               "only the last positional-only parameters can be deprecated.")
+        self.expect_failure(block, err, lineno=4)
+
+    def test_deprecated_non_positional_only_parameters(self):
+        # The following parameters can still be passed by keyword.
+        function = self.parse_function("""
+            module foo
+            foo.bar
+                [until 3.14] a: int = 0
+                b: int = 0
+                *
+                [until 3.14] c: int = 0
+                d: int = 0
+            Docstring.
+        """)
+        _, a, b, c, d = function.parameters.values()
+        self.assertEqual(a.deprecated_until, (3, 14))
+        self.assertIsNone(b.deprecated_until)
+        self.assertEqual(c.deprecated_until, (3, 14))
+        self.assertIsNone(d.deprecated_until)
+
+    def test_deprecated_parameter_without_default(self):
+        block = """
+            module foo
+            foo.bar
+                [until 3.14] a: int
+            Docstring.
+        """
+        err = "Deprecated parameter 'a' must have a default value."
+        self.expect_failure(block, err, lineno=2)
+
+    def test_deprecated_invalid_format(self):
+        block = """
+            module foo
+            foo.bar
+                [until 3] a: int = 0
+            Docstring.
+        """
+        err = (
+            "Function 'bar': expected format '[until major.minor]' "
+            "where 'major' and 'minor' are integers; got '3'"
+        )
+        self.expect_failure(block, err, lineno=2)
 
     def test_single_slash(self):
         block = """
@@ -4592,6 +4715,58 @@ class ClinicFunctionalTest(unittest.TestCase):
         check("a", b="b", c="c", d="d", e="e", f="f", g="g")
         self.assertRaises(TypeError, fn, a="a", b="b", c="c", d="d", e="e", f="f", g="g")
 
+    def test_alias_pos(self):
+        fn = ac_tester.alias_pos
+        self.assertIsNone(fn())
+        self.assertEqual(fn(1), 1)
+        self.assertEqual(fn(a=1), 1)
+        self.assertEqual(fn(b=1), 1)
+        self.assertEqual(fn.__text_signature__, "($module, /, a=None)")
+        errmsg = re.escape(
+            "argument for alias_pos() given by name ('b') and position (1)")
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, b=2)
+        errmsg = re.escape(
+            "argument for alias_pos() given by name ('b') and name ('a')")
+        self.assertRaisesRegex(TypeError, errmsg, fn, a=1, b=2)
+
+    def test_alias_kwonly(self):
+        fn = ac_tester.alias_kwonly
+        self.assertIsNone(fn())
+        self.assertEqual(fn(a=1), 1)
+        self.assertEqual(fn(b=1), 1)
+        self.assertEqual(fn.__text_signature__, "($module, /, *, a=None)")
+        self.assertRaises(TypeError, fn, 1)
+        errmsg = re.escape(
+            "argument for alias_kwonly() given by name ('b') and name ('a')")
+        self.assertRaisesRegex(TypeError, errmsg, fn, a=1, b=2)
+
+    def test_depr_alias(self):
+        fn = ac_tester.depr_alias
+        self.assertEqual(fn(1), 1)
+        self.assertEqual(fn(a=1), 1)
+        errmsg = ("Passing the argument 'b' to depr_alias() is deprecated. "
+                  "Use 'a' instead. It will be removed in Python 3.14.")
+        self.check_depr(re.escape(errmsg), fn, b=1)
+
+    def test_depr_param(self):
+        fn = ac_tester.depr_param
+        self.assertEqual(fn(), (None, None, None, None))
+        self.assertEqual(fn(1), (1, None, None, None))
+        def errmsg(name):
+            return re.escape(f"Passing the argument {name!r} to depr_param() "
+                             f"is deprecated. "
+                             f"It will be removed in Python 3.14.")
+        self.check_depr(errmsg('b'), fn, 1, 2)
+        self.check_depr(errmsg('d'), fn, 1, d=4)
+        # Each deprecated parameter is reported on its own.
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            self.assertEqual(fn(1, 2, 3), (1, 2, 3, None))
+        self.assertEqual(len(caught), 2)
+        for warning, name in zip(caught, 'bc'):
+            self.assertIs(warning.category, DeprecationWarning)
+            self.assertRegex(str(warning.message), errmsg(name))
+
     def test_lone_kwds(self):
         with self.assertRaises(TypeError):
             ac_tester.lone_kwds(1, 2)
@@ -4674,6 +4849,26 @@ class LimitedCAPIOutputTests(unittest.TestCase):
         self.assertNotIn("PyFloat_AS_DOUBLE", generated)
         self.assertIn("double f;", generated)
         self.assertIn("f = PyFloat_AsDouble", generated)
+
+    def test_limited_capi_alias(self):
+        block = self.wrap_clinic_input("""
+            func
+                a: object = None
+                *
+                b as a: object = None
+        """)
+        err = ("Parameter 'b' cannot be an alias: "
+               "the arguments are not parsed one by one.")
+        _expect_failure(self, self.clinic.parse, block, err)
+
+    def test_limited_capi_deprecated(self):
+        block = self.wrap_clinic_input("""
+            func
+                [until 3.14] a: object = None
+        """)
+        err = ("Parameter 'a' cannot be deprecated: "
+               "the arguments are not parsed one by one.")
+        _expect_failure(self, self.clinic.parse, block, err)
 
 
 try:

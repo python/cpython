@@ -102,7 +102,8 @@ class CLanguage(Language):
     ) -> str | None:
         minversion: VersionTuple | None = None
         for p in parameters:
-            for version in p.deprecated_positional, p.deprecated_keyword:
+            for version in (p.deprecated_positional, p.deprecated_keyword,
+                            p.deprecated_until):
                 if version and (not minversion or minversion > version):
                     minversion = version
         if not minversion:
