@@ -1,0 +1,3 @@
+Fix a race in free-threaded builds where storing an instance attribute could
+write to a detached ``__dict__`` if another thread replaced ``obj.__dict__``
+concurrently.
