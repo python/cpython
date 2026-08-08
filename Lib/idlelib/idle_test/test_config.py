@@ -424,7 +424,8 @@ class IdleConfTest(unittest.TestCase):
         eq(iGE(), ['ZzDummy'])
         eq(iGE(editor_only=True), ['ZzDummy'])
         eq(iGE(active_only=False), ['ZzDummy', 'DISABLE'])
-        eq(iGE(active_only=False, editor_only=True), ['ZzDummy', 'DISABLE'])
+        eq(iGE(active_only=False, editor_only=True),
+           ['ZzDummy', 'DISABLE'])
         userextn.remove_section('ZzDummy')
         userextn.remove_section('DISABLE')
 
@@ -434,7 +435,8 @@ class IdleConfTest(unittest.TestCase):
 
         self.assertCountEqual(
             conf.RemoveKeyBindNames(conf.GetSectionList('default', 'extensions')),
-            ['AutoComplete', 'CodeContext', 'FormatParagraph', 'ParenMatch', 'ZzDummy'])
+            ['AutoComplete', 'CodeContext', 'FormatParagraph', 'ParenMatch',
+             'ZzDummy'])
 
     def test_get_extn_name_for_event(self):
         userextn.read_string('''

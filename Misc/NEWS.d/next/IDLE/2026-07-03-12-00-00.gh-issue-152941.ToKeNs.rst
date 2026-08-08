@@ -1,0 +1,3 @@
+Add a Token Browser to IDLE, opened from the new Browse menu.  It lists the
+Python tokens of the editor content, the Shell input, or the selection, with
+token type names colored as by ``python -m tokenize``.
