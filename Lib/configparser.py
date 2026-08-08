@@ -971,11 +971,11 @@ class RawConfigParser(MutableMapping):
             d = " {} ".format(self._delimiters[0])
         else:
             d = self._delimiters[0]
+        if UNNAMED_SECTION in self._sections and self._sections[UNNAMED_SECTION]:
+            self._write_section(fp, UNNAMED_SECTION, self._sections[UNNAMED_SECTION].items(), d, unnamed=True)
         if self._defaults:
             self._write_section(fp, self.default_section,
                                     self._defaults.items(), d)
-        if UNNAMED_SECTION in self._sections and self._sections[UNNAMED_SECTION]:
-            self._write_section(fp, UNNAMED_SECTION, self._sections[UNNAMED_SECTION].items(), d, unnamed=True)
 
         for section in self._sections:
             if section is UNNAMED_SECTION:
