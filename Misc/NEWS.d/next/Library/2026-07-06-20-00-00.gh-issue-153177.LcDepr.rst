@@ -1,0 +1,3 @@
+Deprecate the :const:`re.LOCALE` flag and the inline flag ``(?L)``.
+They only work with bytes patterns in 8-bit locales and make matching
+much slower.  Decode the input and match str patterns instead.
