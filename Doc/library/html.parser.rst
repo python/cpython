@@ -15,7 +15,8 @@
 This module defines a class :class:`HTMLParser` which serves as the basis for
 parsing text files formatted in HTML (HyperText Mark-up Language) and XHTML.
 
-.. class:: HTMLParser(*, convert_charrefs=True, scripting=False)
+.. class:: HTMLParser(*, convert_charrefs=True, scripting=False, \
+                      support_cdata=None)
 
    Create a parser instance able to parse invalid markup.
 
@@ -26,6 +27,21 @@ parsing text files formatted in HTML (HyperText Mark-up Language) and XHTML.
    If *scripting* is false (the default), the content of the ``noscript``
    element is parsed normally; if it's true, it's returned as is without
    being parsed.
+
+   If *support_cdata* is ``None`` (the default),
+   a CDATA section ``<![CDATA[...]]>`` is only recognized in foreign content
+   (the content of ``svg`` and ``math`` elements,
+   which the parser detects by following start and end tags);
+   in HTML content it is parsed as a bogus comment
+   which ends at the first ``>``.
+   RAWTEXT and RCDATA elements
+   (such as ``script``, ``style``, ``title`` or ``textarea``)
+   are only special in HTML content;
+   in foreign content they are parsed as normal elements.
+   If *support_cdata* is true, a CDATA section is recognized in any context
+   (the previous default behavior);
+   if it's false -- in no context.
+   In both cases foreign content is not detected.
 
    An :class:`.HTMLParser` instance is fed HTML data and calls handler methods
    when start tags, end tags, text, comments, and other markup elements are
@@ -43,6 +59,13 @@ parsing text files formatted in HTML (HyperText Mark-up Language) and XHTML.
 
    .. versionchanged:: 3.14.1
       Added the *scripting* parameter.
+
+   .. versionchanged:: next
+      Added the *support_cdata* parameter.
+      By default, CDATA sections are now only recognized in foreign content,
+      and RAWTEXT and RCDATA elements in foreign content
+      are parsed as normal elements.
+      Pass ``support_cdata=True`` to restore the previous behavior.
 
 
 Example HTML Parser Application
@@ -226,11 +249,17 @@ implementations do nothing (except for :meth:`~HTMLParser.handle_startendtag`):
 
 .. method:: HTMLParser.unknown_decl(data)
 
-   This method is called when an unrecognized declaration is read by the parser.
+   This method is called when an unrecognized declaration is read by the
+   parser, and for a CDATA section ``<![CDATA[...]]>`` in foreign content
+   (the *data* parameter will be ``'CDATA[...'`` in this case).
 
    The *data* parameter will be the entire contents of the declaration inside
    the ``<![...]>`` markup.  It is sometimes useful to be overridden by a
    derived class.  The base class implementation does nothing.
+
+   .. versionchanged:: next
+      This method is no longer called for a CDATA section in HTML content;
+      :meth:`~HTMLParser.handle_comment` is called for it instead.
 
 
 .. _htmlparser-examples:

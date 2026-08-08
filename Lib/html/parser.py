@@ -88,6 +88,51 @@ locatestarttagend_tolerant = re.compile(r"""
 endendtag = re.compile('>')
 endtagfind = re.compile(r'</\s*([a-zA-Z][-.a-zA-Z0-9:_]*)\s*>')
 
+# The following tables are used for tracking foreign content (the content
+# of "svg" and "math" elements).
+# See the HTML5 specs section "13.2.6.5 The rules for parsing tokens in
+# foreign content".
+# https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-inforeign
+
+# Start tags (and end tags "br" and "p") which break out of foreign content.
+_BREAKOUT_ELEMENTS = frozenset({
+    'b', 'big', 'blockquote', 'body', 'br', 'center', 'code', 'dd', 'div',
+    'dl', 'dt', 'em', 'embed', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head',
+    'hr', 'i', 'img', 'li', 'listing', 'menu', 'meta', 'nobr', 'ol', 'p',
+    'pre', 'ruby', 's', 'small', 'span', 'strong', 'strike', 'sub', 'sup',
+    'table', 'tt', 'u', 'ul', 'var'})
+# HTML elements which are immediately popped from the stack of open elements.
+_VOID_ELEMENTS = frozenset({
+    'area', 'base', 'basefont', 'bgsound', 'br', 'col', 'embed', 'frame',
+    'hr', 'img', 'input', 'keygen', 'link', 'meta', 'param', 'source',
+    'track', 'wbr'})
+# Elements in the "special" category, which stop the search for a matching
+# end tag in HTML content.
+# https://html.spec.whatwg.org/multipage/parsing.html#special
+_SPECIAL_ELEMENTS = {
+    'html': frozenset({
+        'address', 'applet', 'area', 'article', 'aside', 'base', 'basefont',
+        'bgsound', 'blockquote', 'body', 'br', 'button', 'caption', 'center',
+        'col', 'colgroup', 'dd', 'details', 'dir', 'div', 'dl', 'dt',
+        'embed', 'fieldset', 'figcaption', 'figure', 'footer', 'form',
+        'frame', 'frameset', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head',
+        'header', 'hgroup', 'hr', 'html', 'iframe', 'img', 'input', 'keygen',
+        'li', 'link', 'listing', 'main', 'marquee', 'menu', 'meta', 'nav',
+        'noembed', 'noframes', 'noscript', 'object', 'ol', 'p', 'param',
+        'plaintext', 'pre', 'script', 'search', 'section', 'select',
+        'source', 'style', 'summary', 'table', 'tbody', 'td', 'template',
+        'textarea', 'tfoot', 'th', 'thead', 'title', 'tr', 'track', 'ul',
+        'wbr', 'xmp'}),
+    'math': frozenset({'mi', 'mo', 'mn', 'ms', 'mtext', 'annotation-xml'}),
+    'svg': frozenset({'foreignobject', 'desc', 'title'}),
+}
+# https://html.spec.whatwg.org/multipage/parsing.html#mathml-text-integration-point
+_MATHML_TEXT_INTEGRATION_POINTS = frozenset({'mi', 'mo', 'mn', 'ms', 'mtext'})
+# SVG elements which are HTML integration points.  A MathML annotation-xml
+# element is an HTML integration point depending on its "encoding" attribute.
+# https://html.spec.whatwg.org/multipage/parsing.html#html-integration-point
+_SVG_HTML_INTEGRATION_POINTS = frozenset({'foreignobject', 'desc', 'title'})
+
 # Character reference processing logic specific to attribute values
 # See: https://html.spec.whatwg.org/multipage/parsing.html#named-character-reference-state
 def _replace_attr_charref(match):
@@ -134,7 +179,8 @@ class HTMLParser(_markupbase.ParserBase):
     CDATA_CONTENT_ELEMENTS = ("script", "style", "xmp", "iframe", "noembed", "noframes")
     RCDATA_CONTENT_ELEMENTS = ("textarea", "title")
 
-    def __init__(self, *, convert_charrefs=True, scripting=False):
+    def __init__(self, *, convert_charrefs=True, scripting=False,
+                 support_cdata=None):
         """Initialize and reset this instance.
 
         If convert_charrefs is true (the default), all character references
@@ -143,10 +189,19 @@ class HTMLParser(_markupbase.ParserBase):
         If *scripting* is false (the default), the content of the
         ``noscript`` element is parsed normally; if it's true,
         it's returned as is without being parsed.
+
+        If *support_cdata* is None (the default), a CDATA section
+        "<![CDATA[...]]>" is only recognized in foreign content (the
+        content of "svg" and "math" elements), where RAWTEXT and RCDATA
+        elements (such as "script" or "title") are also parsed as normal
+        elements.  If *support_cdata* is true, a CDATA section is
+        recognized in any context; if it's false -- in no context.  In
+        both cases foreign content is not detected.
         """
         super().__init__()
         self.convert_charrefs = convert_charrefs
         self.scripting = scripting
+        self.support_cdata = support_cdata
         self.reset()
 
     def reset(self):
@@ -155,7 +210,8 @@ class HTMLParser(_markupbase.ParserBase):
         self.lasttag = '???'
         self.interesting = interesting_normal
         self.cdata_elem = None
-        self._support_cdata = True
+        self._open_elements = []
+        self._support_cdata = bool(self.support_cdata)
         self._escapable = True
         self._pending = []
         self._pending_len = 0
@@ -225,16 +281,129 @@ class HTMLParser(_markupbase.ParserBase):
 
     def _set_support_cdata(self, flag=True):
         """Enable or disable support of the CDATA sections.
-        If enabled, "<[CDATA[" starts a CDATA section which ends with "]]>".
-        If disabled, "<[CDATA[" starts a bogus comments which ends with ">".
+        If enabled, "<![CDATA[" starts a CDATA section which ends with "]]>".
+        If disabled, "<![CDATA[" starts a bogus comment which ends with ">".
 
-        This method is not called by default. Its purpose is to be called
-        in custom handle_starttag() and handle_endtag() methods, with
-        value that depends on the adjusted current node.
+        Calling this method disables automatic detection of foreign
+        content, as if the parser was created with support_cdata=flag.
+        It can be called in custom handle_starttag() and handle_endtag()
+        methods, with value that depends on the adjusted current node.
         See https://html.spec.whatwg.org/multipage/parsing.html#markup-declaration-open-state
         for details.
         """
-        self._support_cdata = flag
+        self.support_cdata = bool(flag)
+        self._open_elements = []
+        self._support_cdata = bool(flag)
+
+    # Internal -- update the stack of open elements for a start tag and
+    # return whether it was processed by the rules for HTML content.
+    # The stack contains (namespace, name, html_integration_point) triples
+    # and only tracks foreign elements and their descendants.
+    # This approximates the tree construction dispatcher and the rules for
+    # parsing tokens in foreign content.
+    # https://html.spec.whatwg.org/multipage/parsing.html#tree-construction-dispatcher
+    # https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-inforeign
+    def _handle_starttag_context(self, tag, attrs, selfclosing):
+        stack = self._open_elements
+        if self._dispatch_html(tag):
+            if tag in ('svg', 'math'):
+                if not selfclosing:
+                    stack.append((tag, tag, False))
+            elif stack and not selfclosing and tag not in _VOID_ELEMENTS:
+                stack.append(('html', tag, False))
+            html = True
+        elif (tag in _BREAKOUT_ELEMENTS or
+              (tag == 'font' and
+               any(name in ('color', 'face', 'size') for name, _ in attrs))):
+            self._exit_foreign_content()
+            # Reprocess following the rules for HTML content.
+            if stack and not selfclosing and tag not in _VOID_ELEMENTS:
+                stack.append(('html', tag, False))
+            html = True
+        else:
+            ns = stack[-1][0]
+            if not selfclosing:
+                if ns == 'svg':
+                    html_ip = tag in _SVG_HTML_INTEGRATION_POINTS
+                    if tag == 'foreignobject':
+                        # The adjusted element name does not match
+                        # the lowercased end tag name in HTML content.
+                        tag = 'foreignObject'
+                else:
+                    html_ip = (tag == 'annotation-xml' and
+                               self._get_attr(attrs, 'encoding', '').lower()
+                               in ('text/html', 'application/xhtml+xml'))
+                stack.append((ns, tag, html_ip))
+            html = False
+        self._support_cdata = bool(stack) and stack[-1][0] != 'html'
+        return html
+
+    # Internal -- return whether a start tag is processed by the rules
+    # for HTML content.
+    def _dispatch_html(self, tag):
+        stack = self._open_elements
+        if not stack:
+            return True
+        ns, name, html_ip = stack[-1]
+        return (ns == 'html' or
+                html_ip or
+                (ns == 'math' and name in _MATHML_TEXT_INTEGRATION_POINTS and
+                 tag not in ('mglyph', 'malignmark')) or
+                (ns == 'math' and name == 'annotation-xml' and tag == 'svg'))
+
+    @staticmethod
+    def _get_attr(attrs, name, default=None):
+        for attrname, attrvalue in attrs:
+            if attrname == name:
+                return attrvalue if attrvalue is not None else default
+        return default
+
+    # Internal -- pop foreign elements from the stack of open elements
+    # until the current node is a MathML text integration point, an HTML
+    # integration point, or an element in HTML content.
+    def _exit_foreign_content(self):
+        stack = self._open_elements
+        while stack:
+            ns, name, html_ip = stack[-1]
+            if (ns == 'html' or html_ip or
+                (ns == 'math' and name in _MATHML_TEXT_INTEGRATION_POINTS)):
+                break
+            stack.pop()
+
+    # Internal -- update the stack of open elements for an end tag.
+    def _handle_endtag_context(self, tag):
+        stack = self._open_elements
+        if stack:
+            if stack[-1][0] == 'html':
+                self._pop_matching_element(tag)
+            elif tag in ('br', 'p'):
+                # An end tag "br" or "p" breaks out of foreign content.
+                self._exit_foreign_content()
+            else:
+                # The rules for parsing an end tag in foreign content.
+                for i in reversed(range(len(stack))):
+                    ns, name, html_ip = stack[i]
+                    if ns == 'html':
+                        self._pop_matching_element(tag)
+                        break
+                    if name is not None and name.lower() == tag:
+                        del stack[i:]
+                        break
+        self._support_cdata = bool(stack) and stack[-1][0] != 'html'
+
+    # Internal -- pop the matching element and all elements above it from
+    # the stack of open elements.  The search stops at a "special" element.
+    # This approximates "any other end tag" in the "in body" insertion mode.
+    # https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-inbody
+    def _pop_matching_element(self, tag):
+        stack = self._open_elements
+        for i in reversed(range(len(stack))):
+            ns, name, html_ip = stack[i]
+            if name == tag:
+                del stack[i:]
+                break
+            if name is not None and name.lower() in _SPECIAL_ELEMENTS[ns]:
+                break
 
     # Internal -- handle data as far as reasonable.  May leave state
     # and data to be processed by a subsequent call.  If 'end' is
@@ -488,17 +657,24 @@ class HTMLParser(_markupbase.ParserBase):
         if end not in (">", "/>"):
             self.handle_data(rawdata[i:endpos])
             return endpos
+        if (self.support_cdata is None and
+                (self._open_elements or tag in ('svg', 'math'))):
+            html = self._handle_starttag_context(tag, attrs, end == "/>")
+        else:
+            html = True
         if end.endswith('/>'):
             # XHTML-style empty tag: <span attr="value" />
             self.handle_startendtag(tag, attrs)
         else:
             self.handle_starttag(tag, attrs)
-            if (tag in self.CDATA_CONTENT_ELEMENTS or
-                (self.scripting and tag == "noscript") or
-                tag == "plaintext"):
-                self.set_cdata_mode(tag, escapable=False)
-            elif tag in self.RCDATA_CONTENT_ELEMENTS:
-                self.set_cdata_mode(tag, escapable=True)
+            # In foreign content these elements are not special.
+            if html:
+                if (tag in self.CDATA_CONTENT_ELEMENTS or
+                    (self.scripting and tag == "noscript") or
+                    tag == "plaintext"):
+                    self.set_cdata_mode(tag, escapable=False)
+                elif tag in self.RCDATA_CONTENT_ELEMENTS:
+                    self.set_cdata_mode(tag, escapable=True)
         return endpos
 
     # Internal -- check to see if we have a complete starttag; return end
@@ -538,6 +714,8 @@ class HTMLParser(_markupbase.ParserBase):
         match = tagfind_tolerant.match(rawdata, i+2)
         assert match
         tag = match.group(1).lower()
+        if self.support_cdata is None and self._open_elements:
+            self._handle_endtag_context(tag)
         self.handle_endtag(tag)
         self.clear_cdata_mode()
         return j
