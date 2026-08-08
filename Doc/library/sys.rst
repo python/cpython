@@ -242,6 +242,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    .. deprecated:: 3.13
       Use the more general :func:`_clear_internal_caches` function instead.
 
+   .. note::
+      This function is now a no-op and no longer clears the internal type cache.
+
 
 .. function:: _clear_internal_caches()
 
@@ -250,6 +253,8 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. versionadded:: 3.13
 
+   .. note::
+      This function no longer clears the internal type cache, as the underlying operation is now a no-op.
 
 .. function:: _current_frames()
 
