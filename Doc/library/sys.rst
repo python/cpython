@@ -242,6 +242,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    .. deprecated:: 3.13
       Use the more general :func:`_clear_internal_caches` function instead.
 
+   .. versionchanged:: next
+      The type cache is no longer cleared, as it is now implemented per-type.
+
 
 .. function:: _clear_internal_caches()
 
@@ -249,6 +252,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    release unnecessary references and memory blocks when hunting for leaks.
 
    .. versionadded:: 3.13
+
+   .. versionchanged:: next
+      The type cache is no longer cleared, as it is now implemented per-type.
 
 
 .. function:: _current_frames()
