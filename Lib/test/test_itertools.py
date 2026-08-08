@@ -2489,6 +2489,34 @@ class RegressionTests(unittest.TestCase):
         for j in range(2):
             next(g, None)  # shouldn't crash
 
+    @threading_helper.requires_working_threading()
+    def test_islice_thread_safety(self):
+        # gh-151409: islice must not yield more items than its stop argument
+        # when consumed concurrently from multiple threads.
+        STOP = 100
+        NTHREADS = 8
+        data = iter(range(STOP + NTHREADS * 2))
+        sl = islice(data, STOP)
+        results: list[int] = []
+        lock = threading.Lock()
+
+        def consume() -> None:
+            while True:
+                v = next(sl, None)
+                if v is None:
+                    break
+                with lock:
+                    results.append(v)
+
+        threads = [threading.Thread(target=consume) for _ in range(NTHREADS)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        self.assertLessEqual(len(results), STOP)
+        self.assertEqual(sorted(results), list(range(len(results))))
+
 
 class SubclassWithKwargsTest(unittest.TestCase):
     def test_keywords_in_subclass(self):
