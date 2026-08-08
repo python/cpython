@@ -1644,6 +1644,39 @@ ghi\0jkl
         dialect = sniffer.sniff(sample)
         self.assertEqual(dialect.delimiter, ',')
         self.assertEqual(dialect.quotechar, '"')
+        self.assertEqual(dialect.lineterminator, '\r\n')
+
+    def test_sniff_lineterminator(self):
+        sniffer = csv.Sniffer()
+        for lineterminator in '\r\n', '\n', '\r':
+            with self.subTest(lineterminator=lineterminator):
+                sample = lineterminator.join(['a,b,c', 'd,e,f', 'g,h,i', ''])
+                dialect = sniffer.sniff(sample)
+                self.assertEqual(dialect.lineterminator, lineterminator)
+                self.assertEqual(dialect.delimiter, ',')
+        # The majority wins.
+        sample = 'a,b,c\nd,e,f\r\ng,h,i\n'
+        self.assertEqual(sniffer.sniff(sample).lineterminator, '\n')
+        sample = 'a,b,c\r\nd,e,f\ng,h,i\r\n'
+        self.assertEqual(sniffer.sniff(sample).lineterminator, '\r\n')
+        # A line break inside a quoted field is counted too, but it is
+        # outvoted by the real ones.
+        sample = 'a,"x\ny",c\r\nd,e,f\r\ng,h,i\r\n'
+        self.assertEqual(sniffer.sniff(sample).lineterminator, '\r\n')
+
+    def test_sniff_lineterminator_tie(self):
+        # A tie is broken in the order '\r\n', '\n', '\r'.
+        sniffer = csv.Sniffer()
+        for sample, lineterminator in (
+            ('a,b,c\nd,e,f\r\n', '\r\n'),
+            ('a,b,c\r\nd,e,f\ng,h,i\rj,k,l', '\r\n'),
+            ('a,b,c\nd,e,f\rg,h,i', '\n'),
+            # A sample without a complete line is a tie of zeros.
+            ('a,b,c', '\r\n'),
+        ):
+            with self.subTest(sample=sample):
+                self.assertEqual(sniffer.sniff(sample).lineterminator,
+                                 lineterminator)
 
     def test_sniff_excel_tab_with_quotes(self):
         # gh-62029: tab-delimited data with a quoted field containing
