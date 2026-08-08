@@ -2035,6 +2035,14 @@ win32_wchdir(LPCWSTR path)
 #define HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES 1
 #define HAVE_STRUCT_STAT_ST_REPARSE_TAG 1
 
+/* The \\?\ prefix disables the path normalization, in particular
+   stripping of trailing dots and spaces. */
+static int
+is_extended_path(const wchar_t *path)
+{
+    return wcsncmp(path, L"\\\\?\\", 4) == 0;
+}
+
 static void
 find_data_to_file_info(WIN32_FIND_DATAW *pFileData,
                        FILE_BASIC_INFO* basic_info,
@@ -2109,9 +2117,9 @@ update_st_mode_from_path(const wchar_t *path, DWORD attr,
            AccessCheck to check for generic read, write, and execute
            access. */
         size_t len = wcslen(path);
-        if (wcsncmp(path, L"\\\\?\\", 4) != 0) {
+        if (!is_extended_path(path)) {
             /* Trailing dots and spaces are stripped from the last component
-               of the path, unless the \\?\ prefix disables normalization. */
+               of the path. */
             while (len > 0 && (path[len - 1] == L'.' || path[len - 1] == L' ')) {
                 len--;
             }
@@ -16718,12 +16726,6 @@ static PyType_Spec DirEntryType_spec = {
 
 
 #ifdef MS_WINDOWS
-
-static int
-is_extended_path(const wchar_t *path)
-{
-    return wcsncmp(path, L"\\\\?\\", 4) == 0;
-}
 
 static wchar_t *
 join_path_filenameW(const wchar_t *path_wide, const wchar_t *filename,
