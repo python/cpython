@@ -1,0 +1,3 @@
+Make frame, coroutine and task-waiter walks iterative and bounded, avoiding
+potential hangs and stack overflows. Fix asyncio task inspection when
+awaited-by sets contain removed entries. Patch by Maurycy Pawłowski-Wieroński.
