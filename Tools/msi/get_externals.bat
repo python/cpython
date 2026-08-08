@@ -6,7 +6,7 @@ set HERE=%~dp0
 if "%PCBUILD%"=="" (set PCBUILD=%HERE%..\..\PCbuild\)
 if "%EXTERNALS_DIR%"=="" (set EXTERNALS_DIR=%HERE%..\..\externals\windows-installer)
 if "%NUGET%"=="" (set NUGET=%EXTERNALS_DIR%\..\nuget.exe)
-if "%NUGET_URL%"=="" (set NUGET_URL=https://aka.ms/nugetclidl)
+if "%NUGET_URL%"=="" (set NUGET_URL=https://dist.nuget.org/win-x86-commandline/latest/nuget.exe)
 
 set DO_FETCH=true
 set DO_CLEAN=false
