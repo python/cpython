@@ -93,6 +93,130 @@ Opening a file::
    '#!/bin/bash\n'
 
 
+Summary
+-------
+
+.. currentmodule:: pathlib
+
+.. autosummary::
+
+   .. **Exceptions**
+
+   UnsupportedOperation
+
+   .. **Pure paths**
+
+   PurePath
+   PurePosixPath
+   PureWindowsPath
+
+   .. **Pure path attributes**
+
+   PurePath.parts
+   PurePath.parser
+   PurePath.drive
+   PurePath.root
+   PurePath.anchor
+   PurePath.parents
+   PurePath.parent
+   PurePath.name
+   PurePath.suffix
+   PurePath.suffixes
+   PurePath.stem
+
+   .. **Pure path methods**
+
+   PurePath.as_posix
+   PurePath.is_absolute
+   PurePath.is_relative_to
+   PurePath.is_reserved
+   PurePath.joinpath
+   PurePath.full_match
+   PurePath.match
+   PurePath.relative_to
+   PurePath.with_name
+   PurePath.with_stem
+   PurePath.with_suffix
+   PurePath.with_segments
+
+   .. **Concrete paths**
+
+   Path
+   PosixPath
+   WindowsPath
+
+   .. **Parsing and generating URIs**
+
+   Path.from_uri
+   Path.as_uri
+
+   .. **Expanding and resolving paths**
+
+   Path.home
+   Path.expanduser
+   Path.cwd
+   Path.absolute
+   Path.resolve
+   Path.readlink
+
+   .. **Querying file type and status**
+
+   Path.stat
+   Path.lstat
+   Path.exists
+   Path.is_file
+   Path.is_dir
+   Path.is_symlink
+   Path.is_junction
+   Path.is_mount
+   Path.is_socket
+   Path.is_fifo
+   Path.is_block_device
+   Path.is_char_device
+   Path.samefile
+
+   .. **Reading and writing files**
+
+   Path.open
+   Path.read_text
+   Path.read_bytes
+   Path.write_text
+   Path.write_bytes
+
+   .. **Reading directories**
+
+   Path.iterdir
+   Path.scandir
+   Path.glob
+   Path.rglob
+   Path.walk
+
+   .. **Creating files and directories**
+
+   Path.touch
+   Path.mkdir
+   Path.symlink_to
+   Path.hardlink_to
+
+   .. **Copying, moving and deleting**
+
+   Path.copy
+   Path.copy_into
+   Path.rename
+   Path.replace
+   Path.move
+   Path.move_into
+   Path.unlink
+   Path.rmdir
+
+   .. **Permissions and ownership**
+
+   Path.owner
+   Path.group
+   Path.chmod
+   Path.lchmod
+
+
 Exceptions
 ----------
 
