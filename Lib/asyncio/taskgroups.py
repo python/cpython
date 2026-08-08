@@ -87,7 +87,7 @@ class TaskGroup:
         self._exiting = True
 
         if (exc is not None and
-                self._is_base_error(exc) and
+                (self._is_base_error(exc) or isinstance(exc, GeneratorExit)) and
                 self._base_error is None):
             self._base_error = exc
 
@@ -140,6 +140,18 @@ class TaskGroup:
         assert not self._tasks
 
         if self._base_error is not None:
+            # self._base_error (e.g. SystemExit, KeyboardInterrupt, or
+            # GeneratorExit) is about to propagate out of this method,
+            # which discards any other collected task errors silently.
+            # Report them instead of losing them.  See gh-135736.
+            for suppressed_exc in self._errors:
+                self._loop.call_exception_handler({
+                    'message': 'TaskGroup task exception was not '
+                               'propagated because the TaskGroup body '
+                               'is being closed with a BaseException',
+                    'exception': suppressed_exc,
+                    'task_group': self,
+                })
             try:
                 raise self._base_error
             finally:

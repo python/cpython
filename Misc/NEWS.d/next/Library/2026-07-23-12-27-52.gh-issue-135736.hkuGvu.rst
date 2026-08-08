@@ -1,0 +1,8 @@
+Fix :class:`asyncio.TaskGroup` raising a spurious :exc:`ExceptionGroup` instead
+of propagating :exc:`GeneratorExit` directly when the ``async with`` block is
+exited via an enclosing async generator's :meth:`~agen.aclose`. Errors from
+sibling tasks that would otherwise be silently discarded whenever the
+``async with`` block exits with *any* :ref:`base exception <bltin-exceptions>`
+(:exc:`GeneratorExit`, :exc:`KeyboardInterrupt`, :exc:`SystemExit`, etc.), not
+just :exc:`GeneratorExit`, are now reported via
+:meth:`loop.call_exception_handler() <asyncio.loop.call_exception_handler>`.

@@ -608,6 +608,119 @@ class BaseTestTaskGroup:
             get_error_types(cm.exception), {MyBaseExc, ZeroDivisionError}
         )
 
+    async def test_taskgroup_20b(self):
+        # See gh-135736: a GeneratorExit raised by the "async with" body
+        # itself (e.g. propagating out of an enclosing async generator's
+        # aclose()) must propagate directly, not be wrapped in an
+        # ExceptionGroup, since callers of GeneratorExit-closing APIs
+        # only know how to handle GeneratorExit/StopAsyncIteration.
+        async def nested():
+            try:
+                await asyncio.sleep(10)
+            finally:
+                raise GeneratorExit
+
+        async def runner():
+            async with taskgroups.TaskGroup() as g:
+                await nested()
+
+        with self.assertRaises(GeneratorExit):
+            await runner()
+
+    async def test_taskgroup_20c(self):
+        # Same as test_taskgroup_20b, but with a sibling task that also
+        # fails.  The sibling's exception can't be raised (only one
+        # exception can propagate through GeneratorExit-closing APIs),
+        # but it must be reported via the loop's exception handler
+        # instead of silently discarded.
+        async def crash_soon():
+            await asyncio.sleep(0.1)
+            1 / 0
+
+        async def nested():
+            try:
+                await asyncio.sleep(10)
+            finally:
+                raise GeneratorExit
+
+        async def runner():
+            async with taskgroups.TaskGroup() as g:
+                g.create_task(crash_soon())
+                await nested()
+
+        contexts = []
+        loop = asyncio.get_running_loop()
+        loop.set_exception_handler(lambda loop, context: contexts.append(context))
+
+        with self.assertRaises(GeneratorExit):
+            await runner()
+
+        self.assertEqual(len(contexts), 1)
+        self.assertIsInstance(contexts[0]['exception'], ZeroDivisionError)
+
+    async def test_taskgroup_20d(self):
+        # Reproduces the original report in gh-135736: closing an async
+        # generator whose body awaits inside a TaskGroup must not raise
+        # an ExceptionGroup out of aclose().
+        async def genfn():
+            async with taskgroups.TaskGroup():
+                yield 1
+
+        g = genfn()
+        await g.asend(None)
+        await g.aclose()
+
+    async def test_taskgroup_20e(self):
+        # Unlike a GeneratorExit raised by the "async with" body itself
+        # (test_taskgroup_20b), a GeneratorExit raised by a *task* inside
+        # the group is not a "close this generator" signal and continues
+        # to be wrapped in an ExceptionGroup like any other exception.
+        async def crash_soon():
+            await asyncio.sleep(0.1)
+            raise GeneratorExit
+
+        async def runner():
+            async with taskgroups.TaskGroup() as g:
+                g.create_task(crash_soon())
+                await asyncio.sleep(10)
+
+        with self.assertRaises(BaseExceptionGroup) as cm:
+            await runner()
+
+        self.assertEqual(get_error_types(cm.exception), {GeneratorExit})
+
+    async def test_taskgroup_20f(self):
+        # Same setup as test_taskgroup_20 (a KeyboardInterrupt from the
+        # "async with" body itself, alongside a sibling task's exception),
+        # but confirms the gh-135736 fix also applies to non-GeneratorExit
+        # base errors: the sibling's exception must be reported via the
+        # loop's exception handler, the same as test_taskgroup_20c, instead
+        # of being discarded silently.
+        async def crash_soon():
+            await asyncio.sleep(0.1)
+            1 / 0
+
+        async def nested():
+            try:
+                await asyncio.sleep(10)
+            finally:
+                raise KeyboardInterrupt
+
+        async def runner():
+            async with taskgroups.TaskGroup() as g:
+                g.create_task(crash_soon())
+                await nested()
+
+        contexts = []
+        loop = asyncio.get_running_loop()
+        loop.set_exception_handler(lambda loop, context: contexts.append(context))
+
+        with self.assertRaises(KeyboardInterrupt):
+            await runner()
+
+        self.assertEqual(len(contexts), 1)
+        self.assertIsInstance(contexts[0]['exception'], ZeroDivisionError)
+
     async def _test_taskgroup_21(self):
         # This test doesn't work as asyncio, currently, doesn't
         # correctly propagate KeyboardInterrupt (or SystemExit) --
