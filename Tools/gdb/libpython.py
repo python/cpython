@@ -1720,6 +1720,7 @@ class Frame(object):
     '''
     def __init__(self, gdbframe):
         self._gdbframe = gdbframe
+        self._is_tail_call_interp = None  # lazy initialization
 
     def older(self):
         older = self._gdbframe.older()
@@ -1858,8 +1859,51 @@ class Frame(object):
             'gc_collect_young', 'gc_collect_increment',
         )
 
+
+    def is_tail_call_interp(self):
+        if self._is_tail_call_interp is None:
+            self._is_tail_call_interp = False
+            try:
+                if gdb.lookup_static_symbol('instruction_funcptr_handler_table'):
+                    self._is_tail_call_interp = True
+            except (AttributeError, gdb.error):
+                # Older gdb without lookup_static_symbol, or no debug info.
+                pass
+        return self._is_tail_call_interp
+
+    def get_frame_for_tail_call(self):
+        '''
+        For tail call interpreter, `_gdbframe.read_var('frame')` isn't reliable,
+        so we have to read from `thread_state['current_frame']`.
+
+        A more complex case is, _PyEval_EvalFrameDefault C frame can be nested.
+        (e.g. see `SAMPLE_WITH_C_CALL` in `test_misc.py`) So we have to walk the interpreter frames,
+        skip several inner shims and return the first frame of the matching loop.
+        '''
+        depth = 0  # depth means how many inner evalframes are there.
+        newer = self.newer()
+        while newer:
+            if newer.is_evalframe():
+                depth += 1
+            newer = newer.newer()
+
+        interp_frame = PyFramePtr.get_thread_local_frame()
+        if depth == 0:  # normal case: just return
+            return interp_frame
+
+        while depth > 0:  # this loop walks through the interpreter frames, skipping shims.
+            interp_frame = interp_frame.previous()
+            if interp_frame.is_shim():
+                depth -= 1
+
+        return interp_frame.previous() # we can't return shim, but its previous frame
+
     def get_pyop(self):
         try:
+            if self.is_tail_call_interp():
+                frame = self.get_frame_for_tail_call()
+                if frame is not None and not frame.is_optimized_out():
+                    return frame
             frame = self._gdbframe.read_var('frame')
             frame = PyFramePtr(frame)
             if not frame.is_optimized_out():
