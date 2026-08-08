@@ -48,6 +48,7 @@
 #include <winioctl.h>
 #include <crtdbg.h>
 #include "winreparse.h"
+#include "internal/pycore_fileutils_windows.h"
 
 // PSAPI_VERSION=2 redirects GetProcessMemoryInfo() to
 // K32GetProcessMemoryInfo() in kernel32.dll, so we don't need to link
@@ -546,7 +547,7 @@ _winapi_CreateFile_impl(PyObject *module, LPCWSTR file_name,
     }
 
     Py_BEGIN_ALLOW_THREADS
-    handle = CreateFileW(file_name, desired_access,
+    handle = _Py_WinCreateFile(file_name, desired_access,
                          share_mode, security_attributes,
                          creation_disposition,
                          flags_and_attributes, template_file);
@@ -721,7 +722,7 @@ _winapi_CreateJunction_impl(PyObject *module, LPCWSTR src_path,
     if (!CreateDirectoryW(dst_path, NULL))
         goto cleanup;
 
-    junction = CreateFileW(dst_path, GENERIC_READ | GENERIC_WRITE, 0, NULL,
+    junction = _Py_WinCreateFile(dst_path, GENERIC_READ | GENERIC_WRITE, 0, NULL,
         OPEN_EXISTING,
         FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS, NULL);
     if (junction == INVALID_HANDLE_VALUE)
