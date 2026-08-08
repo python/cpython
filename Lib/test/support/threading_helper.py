@@ -247,7 +247,7 @@ def requires_working_threading(*, module=False, globals=None):
     if module or globals is not None:
         if globals is None:
             globals = sys._getframe(1).f_globals
-        support.mark(label, globals=globals)
+        support.mark_module(label, globals=globals)
         if not can_start_thread:
             raise unittest.SkipTest(msg)
     else:

@@ -531,12 +531,10 @@ The :mod:`!test.support` module defines the following functions:
    rather than looking directly in the path directories.
 
 
-.. function:: mark(label, value=True, *, globals=None)
+.. function:: mark(label, value=True, /)
 
-   Add a label to tests.
-   The ``@mark('label')`` decorator adds a label to method or class.
-   ``test.support.mark('label', globals=globals())`` adds a label to the whole
-   module.
+   Add a label to a test.  Use ``@mark('label')`` as a decorator of a test
+   method or class.
 
    The optional *value* (``True`` by default) is matched on the command line
    by ``--label label=value``, whereas ``--label label`` matches any value.
@@ -544,6 +542,16 @@ The :mod:`!test.support` module defines the following functions:
    Many :mod:`test.support` decorators like :func:`requires_resource`,
    :func:`~test.support.cpython_only` or :func:`bigmemtest` add labels
    automatically.
+
+
+.. function:: mark_module(label, value=True, /, *, globals=None)
+
+   Add a label to every test of a module.  Call it at the module level::
+
+      test.support.mark_module('pickletest')
+
+   The module is the caller, unless its :func:`globals` dict is passed as the
+   *globals* argument.
 
 
 .. function:: get_pagesize()

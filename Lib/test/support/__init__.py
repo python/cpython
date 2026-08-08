@@ -340,7 +340,7 @@ def requires(resource, msg=None):
     """Raise ResourceDenied if the specified resource is not available."""
     f = sys._getframe(1)
     if f.f_globals is f.f_locals:
-        mark(f'requires_{resource}', globals=f.f_globals)
+        mark_module(f'requires_{resource}', globals=f.f_globals)
     if not is_resource_enabled(resource):
         if msg is None:
             msg = "Use of the %r resource not enabled" % resource
@@ -682,7 +682,7 @@ def requires_working_socket(*, module=False, globals=None):
     if module or globals is not None:
         if globals is None:
             globals = sys._getframe(1).f_globals
-        mark(label, globals=globals)
+        mark_module(label, globals=globals)
         if not has_socket_support:
             raise unittest.SkipTest(msg)
     else:
@@ -1374,23 +1374,26 @@ def bigaddrspacetest(f):
 #=======================================================================
 # unittest integration.
 
-def mark(label, value=True, *, globals=None):
-    """Add a label to test.
-
-    To add a label to method or class, use it as a decorator.
-
-    To add a label to module, pass the globals() dict as the globals argument.
+def mark(label, value=True, /):
+    """Add a label to a test method or class.  Use it as a decorator.
 
     The optional value (``True`` by default) can be matched on the command
     line with ``--label name=value``.
     """
-    if globals is not None:
-        globals[f'_label_{label}'] = value
-        return
     def decorator(test):
         setattr(test, f'_label_{label}', value)
         return test
     return decorator
+
+def mark_module(label, value=True, /, *, globals=None):
+    """Add a label to every test of a module.
+
+    The module is the caller, unless its globals() dict is passed as the
+    globals argument.
+    """
+    if globals is None:
+        globals = sys._getframe(1).f_globals
+    globals[f'_label_{label}'] = value
 
 def combine(*decorators):
     def decorator(test):
