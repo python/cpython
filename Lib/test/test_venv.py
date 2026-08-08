@@ -773,6 +773,30 @@ class BasicTest(BaseTest):
         self.assertTrue(env_name.encode() in lines[0])
         self.assertEndsWith(lines[1], env_name.encode())
 
+    # gh-152686: '!' triggers csh history expansion even inside single quotes
+    @unittest.skipIf(os.name == 'nt', 'contains invalid characters on Windows')
+    @unittest.skipIf(sys.platform.startswith('netbsd'),
+                     "NetBSD csh fails with quoted special chars; see gh-139308")
+    def test_special_chars_csh_prompt(self):
+        """
+        Test that a '!' in the prompt is quoted properly (csh)
+        """
+        rmtree(self.env_dir)
+        csh = shutil.which('tcsh') or shutil.which('csh')
+        if csh is None:
+            self.skipTest('csh required for this test')
+        prompt = 'py!env'
+        builder = venv.EnvBuilder(clear=True, prompt=prompt)
+        builder.create(self.env_dir)
+        activate = os.path.join(self.env_dir, self.bindir, 'activate.csh')
+        test_script = os.path.join(self.env_dir, 'test_special_chars_prompt.csh')
+        with open(test_script, "w") as f:
+            f.write(f'source {shlex.quote(activate)}\n'
+                    'python -c \'import os; print(os.environ["VIRTUAL_ENV_PROMPT"])\'\n'
+                    'deactivate\n')
+        out, err = check_output([csh, test_script])
+        self.assertEndsWith(out.splitlines()[-1], prompt.encode())
+
     # gh-140006: the fish prompt override must keep working when a user
     # function shadows a builtin it relies on.
     @unittest.skipIf(os.name == 'nt', 'fish is not available on Windows')
