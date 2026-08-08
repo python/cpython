@@ -875,6 +875,42 @@ dispatch:
                      !SRE(charset)(state, pattern + 3,
                                    (SRE_CODE) *ptr)))
                     continue;
+                if (pattern[1] == SRE_OP_MARK) {
+                    /* the quick checks above also apply behind group marks
+                       and to a repeat of one item with a nonzero minimum */
+                    const SRE_CODE *alt = pattern + 1;
+                    do {
+                        alt += 2;
+                    } while (alt[0] == SRE_OP_MARK);
+                    if ((alt[0] == SRE_OP_REPEAT_ONE ||
+                         alt[0] == SRE_OP_MIN_REPEAT_ONE ||
+                         alt[0] == SRE_OP_POSSESSIVE_REPEAT_ONE) &&
+                        alt[2] > 0)
+                        alt += 4;
+                    if (alt[0] == SRE_OP_LITERAL &&
+                        (ptr >= end ||
+                         (SRE_CODE) *ptr != alt[1]))
+                        continue;
+                    if (alt[0] == SRE_OP_IN &&
+                        (ptr >= end ||
+                         !SRE(charset)(state, alt + 2,
+                                       (SRE_CODE) *ptr)))
+                        continue;
+                }
+                else if ((pattern[1] == SRE_OP_REPEAT_ONE ||
+                          pattern[1] == SRE_OP_MIN_REPEAT_ONE ||
+                          pattern[1] == SRE_OP_POSSESSIVE_REPEAT_ONE) &&
+                         pattern[3] > 0) {
+                    if (pattern[5] == SRE_OP_LITERAL &&
+                        (ptr >= end ||
+                         (SRE_CODE) *ptr != pattern[6]))
+                        continue;
+                    if (pattern[5] == SRE_OP_IN &&
+                        (ptr >= end ||
+                         !SRE(charset)(state, pattern + 7,
+                                       (SRE_CODE) *ptr)))
+                        continue;
+                }
                 state->ptr = ptr;
                 DO_JUMP(JUMP_BRANCH, jump_branch, pattern+1);
                 if (ret) {
