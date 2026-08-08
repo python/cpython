@@ -1,0 +1,6 @@
+Fix ordering of scoped :class:`~ipaddress.IPv6Address` objects.  Comparison
+now takes the interface ``scope_id`` into account, consistent with equality
+and hashing, so that ``sorted()``, ``min()`` and ``max()`` are deterministic
+for addresses that differ only in scope.  Ordering of the corresponding
+scoped :class:`~ipaddress.IPv6Interface` and :class:`~ipaddress.IPv6Network`
+objects is fixed as well.  Patch by Olayinka Vaughan.
