@@ -1,0 +1,1 @@
+Fix false negatives in the :meth:`~csv.Sniffer.has_header` method of :class:`csv.Sniffer` when all cells in the first row are strings.
