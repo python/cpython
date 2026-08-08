@@ -1,7 +1,8 @@
 import random
+import time
 import unittest
 
-from functools import lru_cache
+from functools import lru_cache, cached_property
 from threading import Barrier, Thread
 
 from test.support import threading_helper
@@ -69,6 +70,59 @@ class TestLRUCache(unittest.TestCase):
 
     def test_reentrant_cache_clear_bounded(self):
         self._test_reentrant_cache_clear(maxsize=128)
+
+    def test_unbounded_cache_idempotent(self):
+        all_identical = True
+
+        @lru_cache(maxsize=None)
+        def func(arg=0):
+            time.sleep(0.01)
+            return object()
+
+        def thread_func():
+            nonlocal all_identical
+
+            for i in range(1000):
+                if func(i) is not func(i):
+                    all_identical = False
+
+        threads = []
+        for _ in range(10):
+            t = Thread(target=thread_func)
+            threads.append(t)
+
+        with threading_helper.start_threads(threads):
+            pass
+
+        self.assertTrue(all_identical)
+
+
+    def test_cached_property_idempotent(self):
+        all_identical = True
+
+        class C:
+            @cached_property
+            def prop(self):
+                time.sleep(0.01)
+                return object()
+
+        c = C()
+
+        def thread_func():
+            nonlocal all_identical
+
+            if c.prop is not c.prop:
+                all_identical = False
+
+        threads = []
+        for _ in range(10):
+            t = Thread(target=thread_func)
+            threads.append(t)
+
+        with threading_helper.start_threads(threads):
+            pass
+
+        self.assertTrue(all_identical)
 
 
 if __name__ == "__main__":
