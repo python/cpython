@@ -2538,7 +2538,7 @@ with the :class:`Pool` class.
 
    .. method:: imap(func, iterable, chunksize=1, *, buffersize=None)
 
-      A lazier version of :meth:`.map`.
+      An iterator-based version of :meth:`.map`.
 
       The *chunksize* argument is the same as the one used by the :meth:`.map`
       method.  For very long iterables using a large value for *chunksize* can
