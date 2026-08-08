@@ -437,6 +437,11 @@ class TestSuper(unittest.TestCase):
                 with self.assertRaisesRegex(TypeError, regex):
                     c.method(type_, obj)
 
+    def test_supercheck_uninitialized_super(self):
+        s = super.__new__(super)
+        with self.assertRaisesRegex(TypeError, "super object has no type"):
+            s.__get__(1)
+
     def test_super___class__(self):
         class C:
             def method(self):
