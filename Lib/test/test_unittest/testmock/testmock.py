@@ -2196,9 +2196,9 @@ class MockTest(unittest.TestCase):
             manager.attach_mock(mocked, 'attach_meth')
             obj = Something()
             obj.meth(1, 2, 3, d=4)
-            manager.assert_has_calls([call.attach_meth(mock.ANY, 1, 2, 3, d=4)])
-            obj.meth.assert_has_calls([call(mock.ANY, 1, 2, 3, d=4)])
-            mocked.assert_has_calls([call(mock.ANY, 1, 2, 3, d=4)])
+            manager.assert_has_calls([call.attach_meth(1, 2, 3, d=4)])
+            obj.meth.assert_has_calls([call(1, 2, 3, d=4)])
+            mocked.assert_has_calls([call(1, 2, 3, d=4)])
 
         with mock.patch(f'{__name__}.something', autospec=True) as mocked:
             manager = Mock()
