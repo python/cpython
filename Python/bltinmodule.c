@@ -1030,8 +1030,8 @@ eval as builtin_eval
 
 Evaluate the given source in the context of globals and locals.
 
-The source may be a string representing a Python expression
-or a code object as returned by compile().
+The source may be a string representing a Python expression,
+a bytes-like object, or a code object as returned by compile().
 The globals must be a dictionary and locals can be any mapping,
 defaulting to the current globals and locals.
 If only globals is given, locals defaults to it.
@@ -1040,7 +1040,7 @@ If only globals is given, locals defaults to it.
 static PyObject *
 builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
                   PyObject *locals)
-/*[clinic end generated code: output=0a0824aa70093116 input=7c7bce5299a89062]*/
+/*[clinic end generated code: output=0a0824aa70093116 input=6e40d0037038f7de]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *result = NULL, *source_copy;
@@ -1154,8 +1154,8 @@ exec as builtin_exec
 
 Execute the given source in the context of globals and locals.
 
-The source may be a string representing one or more Python statements
-or a code object as returned by compile().
+The source may be a string representing one or more Python statements,
+a bytes-like object, or a code object as returned by compile().
 The globals must be a dictionary and locals can be any mapping,
 defaulting to the current globals and locals.
 If only globals is given, locals defaults to it.
@@ -1166,7 +1166,7 @@ when source is a code object requiring exactly that many cellvars.
 static PyObject *
 builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
                   PyObject *locals, PyObject *closure)
-/*[clinic end generated code: output=7579eb4e7646743d input=25e989b6d87a3a21]*/
+/*[clinic end generated code: output=7579eb4e7646743d input=c4d82645bc8976e5]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *v;
