@@ -1072,8 +1072,7 @@ _PyJit_translate_single_bytecode_to_trace(
             DPRINTF(1, "Unknown uop needing guard ip %s\n", _PyOpcode_uop_name[last_opcode]);
             Py_UNREACHABLE();
         }
-        PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
-        Py_INCREF(code);
+        PyObject *code = Py_NewRef(frame->f_executable);
         ADD_TO_TRACE(_RECORD_CODE, 0, (uintptr_t)code, 0);
         ADD_TO_TRACE(guard_ip, 0, (uintptr_t)next_instr, 0);
         if (PyCode_Check(code)) {

@@ -8312,7 +8312,7 @@
                 FT_ATOMIC_STORE_INT8_RELEASE(gen->gi_frame_state, FRAME_SUSPENDED + oparg);
                 assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
                 #if TIER_ONE && defined(Py_DEBUG)
-                if (!PyStackRef_IsNone(frame->f_executable)) {
+                if (frame->f_executable != NULL) {
                     Py_ssize_t i = frame->instr_ptr - _PyFrame_GetBytecode(frame);
                     assert(i >= 0 && i <= INT_MAX);
                     int opcode = _Py_GetBaseCodeUnit(_PyFrame_GetCode(frame), (int)i).op.code;
@@ -13191,7 +13191,7 @@
             }
             tracer->prev_state.recorded_count = 0;
             tracer->prev_state.instr = next_instr;
-            PyObject *prev_code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            PyObject *prev_code = frame->f_executable;
             if (tracer->prev_state.instr_code != (PyCodeObject *)prev_code) {
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
@@ -13200,7 +13200,7 @@
             }
             tracer->prev_state.instr_frame = frame;
             tracer->prev_state.instr_oparg = oparg;
-            tracer->prev_state.instr_stacklevel = PyStackRef_IsNone(frame->f_executable) ? 2 : STACK_LEVEL();
+            tracer->prev_state.instr_stacklevel = frame->f_executable == NULL ? 2 : STACK_LEVEL();
             if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]
                 // Branch opcodes use the cache for branch history, not
                 // specialization counters.  Don't reset it.
@@ -13653,7 +13653,7 @@
                 FT_ATOMIC_STORE_INT8_RELEASE(gen->gi_frame_state, FRAME_SUSPENDED + oparg);
                 assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
                 #if TIER_ONE && defined(Py_DEBUG)
-                if (!PyStackRef_IsNone(frame->f_executable)) {
+                if (frame->f_executable != NULL) {
                     Py_ssize_t i = frame->instr_ptr - _PyFrame_GetBytecode(frame);
                     assert(i >= 0 && i <= INT_MAX);
                     int opcode = _Py_GetBaseCodeUnit(_PyFrame_GetCode(frame), (int)i).op.code;

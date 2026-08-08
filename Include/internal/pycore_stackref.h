@@ -770,7 +770,6 @@ PyStackRef_TYPE(_PyStackRef stackref) {
 STACKREF_CHECK_FUNC(Gen)
 STACKREF_CHECK_FUNC(Bool)
 STACKREF_CHECK_FUNC(ExceptionInstance)
-STACKREF_CHECK_FUNC(Code)
 STACKREF_CHECK_FUNC(Function)
 
 static inline bool
