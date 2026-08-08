@@ -2230,6 +2230,34 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                         self.theclass(2026, 2, 3),
                     )
 
+    def test_strptime_C_format(self):
+        # verify zero-padding, modern cent., last supported cent.
+        for c in ('01', '20', '99'):
+            expected_year = int(c) * 100
+            with self.subTest(format_directive="C", century=c):
+                self.assertEqual(
+                    self.theclass.strptime(c, "%C"),
+                    self.theclass(expected_year, 1, 1)
+                )
+
+    def test_strptime_C_y_format(self):
+        # verify %y correctly augmented by century %C
+        for y in ('0001', '1687', '1991', '2026'):
+            with self.subTest(format_directive="%C%y", year=y):
+                self.assertEqual(
+                    self.theclass.strptime(y, "%C%y"),
+                    self.theclass(int(y), 1, 1)
+                )
+
+    def test_strptime_C_d_format(self):
+        # verify %C provides a year directive, allowing days in format
+        for day_directive in ('%d', '%e'):
+            format_directive = f"%C-%m-{day_directive}"
+            with self.subTest(format_directive=format_directive):
+                self.assertEqual(
+                    self.theclass.strptime('20-05-22', format_directive),
+                    self.theclass(2000, 5, 22)
+                )
 
 #############################################################################
 # datetime tests
