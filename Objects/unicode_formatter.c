@@ -243,46 +243,65 @@ _PyUnicode_InsertThousandsGrouping(
 }
 
 
-/* Raises an exception about an unknown presentation type for this
- * type. */
-
 static void
 unknown_presentation_type(Py_UCS4 presentation_type,
                           const char* type_name)
 {
-    /* %c might be out-of-range, hence the two cases. */
-    if (presentation_type > 32 && presentation_type < 128)
+    if (presentation_type == '\'') {
+        PyErr_Format(PyExc_ValueError,
+                     "Unknown format code \"'\" "
+                     "for object of type '%.200s'",
+                     type_name);
+    }
+    else if (presentation_type >= 32 && presentation_type < 127) {
         PyErr_Format(PyExc_ValueError,
                      "Unknown format code '%c' "
                      "for object of type '%.200s'",
-                     (char)presentation_type,
+                     (int)presentation_type,
                      type_name);
-    else
+    }
+    else if (Py_UNICODE_ISPRINTABLE(presentation_type)) {
         PyErr_Format(PyExc_ValueError,
-                     "Unknown format code '\\x%x' "
+                     "Unknown format code '%c' (U+%04X) "
                      "for object of type '%.200s'",
-                     (unsigned int)presentation_type,
+                     (int)presentation_type, (int)presentation_type,
                      type_name);
+    }
+    else {
+        PyErr_Format(PyExc_ValueError,
+                     "Unknown format code U+%04X "
+                     "for object of type '%.200s'",
+                     (int)presentation_type,
+                     type_name);
+    }
 }
 
 static void
-invalid_thousands_separator_type(char specifier, Py_UCS4 presentation_type)
+invalid_thousands_separator_type(char separator, Py_UCS4 presentation_type)
 {
-    assert(specifier == ',' || specifier == '_');
-    if (presentation_type > 32 && presentation_type < 128)
-        PyErr_Format(PyExc_ValueError,
-                     "Cannot specify '%c' with '%c'.",
-                     specifier, (char)presentation_type);
-    else
-        PyErr_Format(PyExc_ValueError,
-                     "Cannot specify '%c' with '\\x%x'.",
-                     specifier, (unsigned int)presentation_type);
+    assert(separator == ',' || separator == '_');
+    /* presentation_type has been checked before thousands separator. */
+    assert(presentation_type >= 32 && presentation_type < 127);
+    PyErr_Format(PyExc_ValueError,
+                 "Cannot specify '%c' with '%c'",
+                 separator, (int)presentation_type);
+}
+
+static void
+invalid_fraction_separator_type(char separator, Py_UCS4 presentation_type)
+{
+    assert(separator == ',' || separator == '_');
+    /* presentation_type has been checked before fraction separator. */
+    assert(presentation_type >= 32 && presentation_type < 127);
+    PyErr_Format(PyExc_ValueError,
+                 "Cannot specify '%c' in fractional part with '%c'",
+                 separator, (int)presentation_type);
 }
 
 static void
 invalid_comma_and_underscore(void)
 {
-    PyErr_Format(PyExc_ValueError, "Cannot specify both ',' and '_'.");
+    PyErr_SetString(PyExc_ValueError, "Cannot specify both ',' and '_'");
 }
 
 /*
@@ -532,7 +551,18 @@ parse_internal_render_format_spec(PyObject *obj,
                          "Format specifier missing precision");
             return 0;
         }
+    }
 
+    if (end-pos) {
+        Py_UCS4 next = READ_spec(pos);
+        if (next == ',' || next == '_') {
+            /* Expect type, got another grouping character */
+            PyErr_Format(PyExc_ValueError,
+                         "Cannot specify grouping character '%c' "
+                         "more than once",
+                         next);
+            return 0;
+        }
     }
 
     /* Finally, parse the type field. */
@@ -547,7 +577,7 @@ parse_internal_render_format_spec(PyObject *obj,
                                          end-start);
         if (actual_format_spec != NULL) {
             PyErr_Format(PyExc_ValueError,
-                "Invalid format specifier '%U' for object of type '%.200s'",
+                "Invalid format specifier %R for object of type '%.200s'",
                 actual_format_spec, Py_TYPE(obj)->tp_name);
             Py_DECREF(actual_format_spec);
         }
@@ -563,41 +593,59 @@ parse_internal_render_format_spec(PyObject *obj,
        specifier.  Do not take into account what type of formatting
        we're doing (int, float, string). */
 
-    if (format->thousands_separators) {
-        switch (format->type) {
-        case 'd':
-        case 'e':
-        case 'f':
-        case 'g':
-        case 'E':
-        case 'G':
-        case '%':
-        case 'F':
-        case '\0':
-            /* These are allowed. See PEP 378.*/
-            break;
-        case 'b':
-        case 'o':
-        case 'x':
-        case 'X':
-            /* Underscores are allowed in bin/oct/hex. See PEP 515. */
-            if (format->thousands_separators == LT_UNDERSCORE_LOCALE) {
-                /* Every four digits, not every three, in bin/oct/hex. */
-                format->thousands_separators = LT_UNDER_FOUR_LOCALE;
-                break;
-            }
-            _Py_FALLTHROUGH;
-        default:
-            invalid_thousands_separator_type(format->thousands_separators, format->type);
+    switch (format->type) {
+    case 'e':
+    case 'E':
+    case 'f':
+    case 'F':
+    case 'g':
+    case 'G':
+    case '%':
+    case '\0':
+        break;
+    case 'd':
+        if (format->frac_thousands_separator != LT_NO_LOCALE) {
+            invalid_fraction_separator_type(format->frac_thousands_separator,
+                                            format->type);
             return 0;
         }
-    }
-
-    if (format->type == 'n'
-        && format->frac_thousands_separator != LT_NO_LOCALE)
-    {
-        invalid_thousands_separator_type(format->frac_thousands_separator,
-                                         format->type);
+        break;
+    case 'c':
+    case 's':
+    case 'n':
+        if (format->thousands_separators != LT_NO_LOCALE) {
+            invalid_thousands_separator_type(format->thousands_separators,
+                                             format->type);
+            return 0;
+        }
+        if (format->frac_thousands_separator != LT_NO_LOCALE) {
+            invalid_fraction_separator_type(format->frac_thousands_separator,
+                                            format->type);
+            return 0;
+        }
+        break;
+    case 'b':
+    case 'o':
+    case 'x':
+    case 'X':
+        /* Underscores are allowed in bin/oct/hex. See PEP 515. */
+        if (format->thousands_separators == LT_UNDERSCORE_LOCALE) {
+            /* Every four digits, not every three, in bin/oct/hex. */
+            format->thousands_separators = LT_UNDER_FOUR_LOCALE;
+        }
+        else if (format->thousands_separators != LT_NO_LOCALE) {
+            invalid_thousands_separator_type(format->thousands_separators,
+                                             format->type);
+            return 0;
+        }
+        if (format->frac_thousands_separator != LT_NO_LOCALE) {
+            invalid_fraction_separator_type(format->frac_thousands_separator,
+                                            format->type);
+            return 0;
+        }
+        break;
+    default:
+        unknown_presentation_type(format->type, Py_TYPE(obj)->tp_name);
         return 0;
     }
 
