@@ -4033,6 +4033,12 @@ win32_hchmod(HANDLE hfile, int mode)
     }
     if (mode & _S_IWRITE) {
         info.FileAttributes &= ~FILE_ATTRIBUTE_READONLY;
+        if (info.FileAttributes == 0) {
+            /* SetFileInformationByHandle() interprets FileAttributes == 0
+               as "leave the attributes unchanged"; FILE_ATTRIBUTE_NORMAL
+               is the documented way to clear all attributes. */
+            info.FileAttributes = FILE_ATTRIBUTE_NORMAL;
+        }
     }
     else {
         info.FileAttributes |= FILE_ATTRIBUTE_READONLY;
