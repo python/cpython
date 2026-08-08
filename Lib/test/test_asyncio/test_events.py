@@ -914,6 +914,18 @@ class EventLoopTestsMixin:
                 'ssl_handshake_timeout is only meaningful with ssl'):
             self.loop.run_until_complete(coro)
 
+    def test_connect_accepted_socket_transport_error_does_not_close_sock(self):
+        sock = mock.Mock()
+        sock.type = socket.SOCK_STREAM
+
+        def factory():
+            raise ZeroDivisionError
+
+        coro = self.loop.connect_accepted_socket(factory, sock)
+        with self.assertRaises(ZeroDivisionError):
+            self.loop.run_until_complete(coro)
+        self.assertFalse(sock.close.called)
+
     @mock.patch('asyncio.base_events.socket')
     def create_server_multiple_hosts(self, family, hosts, mock_sock):
         async def getaddrinfo(host, port, *args, **kw):
