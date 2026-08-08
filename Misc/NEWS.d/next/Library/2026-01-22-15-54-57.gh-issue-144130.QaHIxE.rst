@@ -1,0 +1,1 @@
+Add support for FreeBSD's implementation of getrandom, so :func:`os.getrandom` works there too.
