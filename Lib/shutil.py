@@ -292,22 +292,33 @@ def copyfile(src, dst, *, follow_symlinks=True):
     if _samefile(src, dst):
         raise SameFileError("{!r} and {!r} are the same file".format(src, dst))
 
+    copy_symlink = not follow_symlinks and _islink(src)
     file_size = 0
     for i, fn in enumerate([src, dst]):
+        if copy_symlink and i == 0:
+            continue
         try:
             st = _stat(fn)
         except OSError:
             # File most likely does not exist
             pass
         else:
-            # XXX What about other special files? (sockets, devices...)
             if stat.S_ISFIFO(st.st_mode):
                 fn = fn.path if isinstance(fn, os.DirEntry) else fn
                 raise SpecialFileError("`%s` is a named pipe" % fn)
+            elif stat.S_ISSOCK(st.st_mode):
+                fn = fn.path if isinstance(fn, os.DirEntry) else fn
+                raise SpecialFileError("`%s` is a socket" % fn)
+            elif stat.S_ISBLK(st.st_mode):
+                fn = fn.path if isinstance(fn, os.DirEntry) else fn
+                raise SpecialFileError("`%s` is a block device" % fn)
+            elif stat.S_ISCHR(st.st_mode):
+                fn = fn.path if isinstance(fn, os.DirEntry) else fn
+                raise SpecialFileError("`%s` is a character device" % fn)
             if _WINDOWS and i == 0:
                 file_size = st.st_size
 
-    if not follow_symlinks and _islink(src):
+    if copy_symlink:
         os.symlink(os.readlink(src), dst)
     else:
         with open(src, 'rb') as fsrc:

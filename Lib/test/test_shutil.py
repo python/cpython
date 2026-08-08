@@ -10,6 +10,7 @@ import os
 import os.path
 import errno
 import functools
+import socket
 import subprocess
 import random
 import string
@@ -29,7 +30,7 @@ except ImportError:
     posix = None
 
 from test import support
-from test.support import os_helper
+from test.support import os_helper, socket_helper
 from test.support.os_helper import TESTFN, FakePath
 
 TESTFN2 = TESTFN + "2"
@@ -1550,12 +1551,90 @@ class TestCopy(BaseTest, unittest.TestCase):
         except PermissionError as e:
             self.skipTest('os.mkfifo(): %s' % e)
         try:
-            self.assertRaises(shutil.SpecialFileError,
-                                shutil.copyfile, TESTFN, TESTFN2)
-            self.assertRaises(shutil.SpecialFileError,
-                                shutil.copyfile, __file__, TESTFN)
+            self.assertRaisesRegex(shutil.SpecialFileError, 'is a named pipe',
+                                   shutil.copyfile, TESTFN, TESTFN2)
+            self.assertRaisesRegex(shutil.SpecialFileError, 'is a named pipe',
+                                   shutil.copyfile, __file__, TESTFN)
         finally:
             os.remove(TESTFN)
+
+    @socket_helper.skip_unless_bind_unix_socket
+    def test_copyfile_socket(self):
+        sock_path = os.path.join(self.mkdtemp(), 'sock')
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+        try:
+            socket_helper.bind_unix_socket(sock, sock_path)
+        except OSError as e:
+            # AF_UNIX path too long (e.g. on iOS)
+            self.skipTest(f'cannot bind AF_UNIX socket: {e}')
+        self.addCleanup(os_helper.unlink, sock_path)
+        self.assertRaisesRegex(shutil.SpecialFileError, 'is a socket',
+                               shutil.copyfile, sock_path, sock_path + '.copy')
+        self.assertRaisesRegex(shutil.SpecialFileError, 'is a socket',
+                               shutil.copyfile, __file__, sock_path)
+
+    def _check_copyfile_symlink_to_special_file(self, target):
+        tmp_dir = self.mkdtemp()
+        src = os.path.join(tmp_dir, 'src')
+        dst = os.path.join(tmp_dir, 'dst')
+        os.symlink(target, src)
+
+        shutil.copyfile(src, dst, follow_symlinks=False)
+
+        self.assertTrue(os.path.islink(dst))
+        self.assertEqual(os.readlink(dst), target)
+
+    @os_helper.skip_unless_symlink
+    @unittest.skipUnless(os.path.exists('/dev/null'), 'requires /dev/null')
+    def test_copyfile_symlink_to_character_device(self):
+        self._check_copyfile_symlink_to_special_file('/dev/null')
+
+    @os_helper.skip_unless_symlink
+    @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
+    def test_copyfile_symlink_to_named_pipe(self):
+        fifo_path = os.path.join(self.mkdtemp(), 'fifo')
+        try:
+            os.mkfifo(fifo_path)
+        except PermissionError as e:
+            self.skipTest('os.mkfifo(): %s' % e)
+        self._check_copyfile_symlink_to_special_file(fifo_path)
+
+    @os_helper.skip_unless_symlink
+    @socket_helper.skip_unless_bind_unix_socket
+    def test_copyfile_symlink_to_socket(self):
+        sock_path = os.path.join(self.mkdtemp(), 'sock')
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+        try:
+            socket_helper.bind_unix_socket(sock, sock_path)
+        except OSError as e:
+            self.skipTest(f'cannot bind AF_UNIX socket: {e}')
+        self.addCleanup(os_helper.unlink, sock_path)
+        self._check_copyfile_symlink_to_special_file(sock_path)
+
+    @unittest.skipUnless(os.path.exists('/dev/null'), 'requires /dev/null')
+    def test_copyfile_character_device(self):
+        self.assertRaisesRegex(shutil.SpecialFileError, 'is a character device',
+                               shutil.copyfile, '/dev/null', TESTFN)
+        src_file = os.path.join(self.mkdtemp(), 'src')
+        create_file(src_file, 'foo')
+        self.assertRaisesRegex(shutil.SpecialFileError, 'is a character device',
+                               shutil.copyfile, src_file, '/dev/null')
+
+    def test_copyfile_block_device(self):
+        block_dev = None
+        for dev in ['/dev/loop0', '/dev/sda', '/dev/vda', '/dev/disk0']:
+            if os.path.exists(dev) and stat.S_ISBLK(os.stat(dev).st_mode):
+                if os.access(dev, os.R_OK):
+                    block_dev = dev
+                    break
+        if block_dev is None:
+            self.skipTest('no accessible block device found')
+        self.assertRaisesRegex(shutil.SpecialFileError, 'is a block device',
+                               shutil.copyfile, block_dev, TESTFN)
 
     def test_copyfile_return_value(self):
         # copytree returns its destination path.

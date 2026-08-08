@@ -55,8 +55,13 @@ class RobotFileParser:
         self.last_checked = time.time()
 
     def set_url(self, url):
-        """Sets the URL referring to a robots.txt file."""
+        """Sets the URL referring to a robots.txt file.
+        can be a string or a Request object.
+        """
         self.url = url
+
+        if isinstance(url, urllib.request.Request):
+            url = url.full_url
         self.host, self.path = urllib.parse.urlsplit(url)[1:3]
 
     def read(self):
@@ -143,15 +148,15 @@ class RobotFileParser:
                         # before trying to convert to int we need to make
                         # sure that robots.txt has valid syntax otherwise
                         # it will crash
-                        if line[1].strip().isdigit():
+                        if line[1].strip().isdecimal():
                             entry.delay = int(line[1])
                         state = 2
                 elif line[0] == "request-rate":
                     if state != 0:
                         numbers = line[1].split('/')
                         # check if all values are sane
-                        if (len(numbers) == 2 and numbers[0].strip().isdigit()
-                            and numbers[1].strip().isdigit()):
+                        if (len(numbers) == 2 and numbers[0].strip().isdecimal()
+                            and numbers[1].strip().isdecimal()):
                             entry.req_rate = RequestRate(int(numbers[0]), int(numbers[1]))
                         state = 2
                 elif line[0] == "sitemap":
