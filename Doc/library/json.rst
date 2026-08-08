@@ -9,7 +9,7 @@
 --------------
 
 `JSON (JavaScript Object Notation) <https://json.org>`_, specified by
-:rfc:`7159` (which obsoletes :rfc:`4627`) and by
+:rfc:`8259` (which obsoletes :rfc:`7159`) and by
 `ECMA-404 <https://ecma-international.org/publications-and-standards/standards/ecma-404/>`_,
 is a lightweight data interchange format inspired by
 `JavaScript <https://en.wikipedia.org/wiki/JavaScript>`_ object literal syntax
@@ -632,7 +632,7 @@ Exceptions
 Standard Compliance and Interoperability
 ----------------------------------------
 
-The JSON format is specified by :rfc:`7159` and by
+The JSON format is specified by :rfc:`8259` and by
 `ECMA-404 <https://ecma-international.org/publications-and-standards/standards/ecma-404/>`_.
 This section details this module's level of compliance with the RFC.
 For simplicity, :class:`JSONEncoder` and :class:`JSONDecoder` subclasses, and
@@ -652,8 +652,9 @@ default settings.
 Character Encodings
 ^^^^^^^^^^^^^^^^^^^
 
-The RFC requires that JSON be represented using either UTF-8, UTF-16, or
-UTF-32, with UTF-8 being the recommended default for maximum interoperability.
+The RFC requires that JSON exchanged between systems that are not part of a
+closed ecosystem be encoded using UTF-8 for maximum interoperability.  Earlier
+specifications of JSON also permitted the use of UTF-16 and UTF-32.
 
 As permitted, though not required, by the RFC, this module's serializer sets
 *ensure_ascii=True* by default, thus escaping the output so that the resulting
