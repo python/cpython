@@ -1398,6 +1398,16 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     if (PyErr_Occurred()) {
         return NULL;
     }
+    // Other threads could have raced to load the submodule.
+    // Re-check the module dict to avoid race condition.
+    attr = _PyObject_GenericGetAttrWithDict((PyObject *)m, name, NULL, 1);
+    if (attr != NULL) {
+        return attr;
+    }
+    if (PyErr_Occurred()) {
+        // pass up non-AttributeError exception
+        return NULL;
+    }
     if (PyDict_GetItemRef(m->md_dict, &_Py_ID(__getattr__), &getattr) < 0) {
         return NULL;
     }
