@@ -237,5 +237,51 @@ class RMenuTest(unittest.TestCase):
         pass
 
 
+class ColorizeSyntaxErrorTest(unittest.TestCase):
+    "Test EditorWindow.colorize_syntax_error highlighting."
+
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+        cls.root = Tk()
+        cls.root.withdraw()
+        cls.text = Text(cls.root)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.text.destroy()
+        del cls.text
+        cls.root.destroy()
+        del cls.root
+
+    def tearDown(self):
+        self.text.tag_delete('ERROR')
+        self.text.delete('1.0', 'end')
+
+    def colorize(self, line, pos):
+        self.text.insert('1.0', line)
+        # colorize_syntax_error() only uses its text and pos arguments.
+        Editor.colorize_syntax_error(None, self.text, pos)
+
+    def test_ascii_identifier(self):
+        # The whole word is highlighted, not just the error character.
+        self.colorize('abc', '1.2')
+        self.assertEqual(self.text.index('ERROR.first'), '1.0')
+        self.assertEqual(self.text.index('ERROR.last'), '1.3')
+
+    def test_non_ascii_identifier(self):
+        # gh-89855: this works when the word both starts with and has the
+        # error at a non-ASCII character.
+        self.colorize('їжак', '1.1')   # 'ж', in a word starting with 'ї'
+        self.assertEqual(self.text.index('ERROR.first'), '1.0')
+        self.assertEqual(self.text.index('ERROR.last'), '1.2')
+
+    def test_non_identifier_char(self):
+        # A non-identifier character highlights only itself.
+        self.colorize('a+b', '1.1')   # the '+'
+        self.assertEqual(self.text.index('ERROR.first'), '1.1')
+        self.assertEqual(self.text.index('ERROR.last'), '1.2')
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
