@@ -3954,6 +3954,144 @@ class ExtractTests(unittest.TestCase):
             unlink(TESTFN2)
 
 
+class ExtractorTests(unittest.TestCase):
+    test_data = [
+        ('folder1/', b'', (1990, 1, 2, 0, 0, 0), (0o47777 << 16) | 0x10),
+        ('folder1/file1.txt', b'qawsedrftg', (1990, 2, 2, 0, 0, 0), 0o106642 << 16),
+        ('implicit_folder/file2.txt', b'azsxdcfvgb', (1990, 3, 2, 0, 0, 0), 0o100246 << 16),
+    ]
+
+    @classmethod
+    def setUpClass(cls):
+        os.mkdir(TESTFNDIR)
+        cls.dmode = os.stat(TESTFNDIR).st_mode
+        rmtree(TESTFNDIR)
+
+        with open(TESTFN, 'wb'):
+            pass
+        cls.fmode = os.stat(TESTFN).st_mode
+        unlink(TESTFN)
+
+    def setUp(self):
+        os.mkdir(TESTFNDIR)
+
+    def tearDown(self):
+        unlink(TESTFN)
+        rmtree(TESTFNDIR)
+
+    def make_test_archive(self, data):
+        with zipfile.ZipFile(TESTFN, 'w') as zipfp:
+            for filename, content, dt, ext_attr in data:
+                zinfo = zipfile.ZipInfo(filename, dt)
+                zinfo.external_attr = ext_attr
+                zipfp.writestr(zinfo, content)
+
+    def test_extract_default(self):
+        """Should not restore attributes by default."""
+        self.make_test_archive(self.test_data)
+        with zipfile.ZipFile(TESTFN) as zipfp:
+            for filename, content, dt, ext_attr in self.test_data:
+                with self.subTest(filename=filename):
+                    zipfp.extract(filename, TESTFNDIR)
+                    now = time.time()
+                    outfile = os.path.join(TESTFNDIR, filename)
+                    mtime = os.path.getmtime(outfile)
+                    self.assertAlmostEqual(mtime, now, delta=5)
+
+    def test_extract_time(self):
+        """Should restore mtime/atime."""
+        for extractor_cls, mask in (
+            (zipfile.ZipExtractorTime, 0),
+            (zipfile.ZipExtractorTimeModeX, 0o111),
+            (zipfile.ZipExtractorTimeModeSafe, 0o777),
+            (zipfile.ZipExtractorTimeMode, 0o7777),
+        ):
+            rmtree(TESTFNDIR)
+            self.make_test_archive(self.test_data)
+            with zipfile.ZipFile(TESTFN) as zipfp:
+                for filename, content, dt, ext_attr in self.test_data:
+                    with self.subTest(filename=filename, extractor=extractor_cls):
+                        zipfp.extract(filename, TESTFNDIR, extractor=extractor_cls)
+                        outfile = os.path.join(TESTFNDIR, filename)
+                        mtuple = time.localtime(os.path.getmtime(outfile))[:6]
+                        atuple = time.localtime(os.path.getatime(outfile))[:6]
+                        self.assertEqual(mtuple, dt)
+                        self.assertEqual(atuple, dt)
+
+    def test_extract_all_default(self):
+        """Should not restore attributes by default."""
+        self.make_test_archive(self.test_data)
+        now = time.time()
+        with zipfile.ZipFile(TESTFN) as zipfp:
+            zipfp.extractall(TESTFNDIR)
+        for filename, content, dt, ext_attr in self.test_data:
+            with self.subTest(filename=filename):
+                outfile = os.path.join(TESTFNDIR, filename)
+                mtime = os.path.getmtime(outfile)
+                self.assertAlmostEqual(mtime, now, delta=5)
+
+    def test_extract_all_time(self):
+        """Should restore mtime/atime."""
+        for extractor_cls, mask in (
+            (zipfile.ZipExtractorTime, 0),
+            (zipfile.ZipExtractorTimeModeX, 0o111),
+            (zipfile.ZipExtractorTimeModeSafe, 0o777),
+            (zipfile.ZipExtractorTimeMode, 0o7777),
+        ):
+            rmtree(TESTFNDIR)
+            self.make_test_archive(self.test_data)
+            with zipfile.ZipFile(TESTFN) as zipfp:
+                zipfp.extractall(TESTFNDIR, extractor=extractor_cls)
+            for filename, content, dt, ext_attr in self.test_data:
+                with self.subTest(filename=filename, extractor=extractor_cls):
+                    outfile = os.path.join(TESTFNDIR, filename)
+                    mtuple = time.localtime(os.path.getmtime(outfile))[:6]
+                    atuple = time.localtime(os.path.getatime(outfile))[:6]
+                    self.assertEqual(mtuple, dt)
+                    self.assertEqual(atuple, dt)
+
+    @unittest.skipIf(sys.platform == 'win32' or sys.platform == 'wasi', 'Requires file permissions')
+    def test_extract_all_mode(self):
+        """Should restore (masked) mode."""
+        for extractor_cls, mask in (
+            (zipfile.ZipExtractorTime, 0),
+            (zipfile.ZipExtractorTimeModeX, 0o111),
+            (zipfile.ZipExtractorTimeModeSafe, 0o777),
+            (zipfile.ZipExtractorTimeMode, 0o7777),
+        ):
+            rmtree(TESTFNDIR)
+            self.make_test_archive(self.test_data)
+            with zipfile.ZipFile(TESTFN) as zipfp:
+                zipfp.extractall(TESTFNDIR, extractor=extractor_cls)
+            for filename, content, dt, ext_attr in self.test_data:
+                with self.subTest(filename=filename, extractor=extractor_cls):
+                    outfile = os.path.join(TESTFNDIR, filename)
+                    default_mode = (self.dmode if os.path.isdir(outfile) else self.fmode)
+                    expected_mode = (default_mode & ~mask | ((ext_attr >> 16) & mask))
+                    mode = os.stat(outfile).st_mode
+                    self.assertEqual(oct(mode), oct(expected_mode))
+
+    @unittest.skipIf(sys.platform == 'win32' or sys.platform == 'wasi', 'Requires file permissions')
+    def test_extract_all_hierarchy(self):
+        """Should safely extract contents into a non-writable directory."""
+        test_data = [
+            ('folder1/', b'', (1990, 1, 2, 0, 0, 0), (0o40100 << 16) | 0x10),
+            ('folder1/file1.txt', b'qawsedrftg', (1990, 2, 2, 0, 0, 0), 0o100000 << 16),
+            ('folder1/file2.txt', b'azsxdcfvgb', (1990, 3, 2, 0, 0, 0), 0o100777 << 16),
+        ]
+        mask = 0o7777
+        self.make_test_archive(self.test_data)
+        with zipfile.ZipFile(TESTFN) as zipfp:
+            zipfp.extractall(TESTFNDIR, extractor=zipfile.ZipExtractorTimeMode)
+        for filename, content, dt, ext_attr in self.test_data:
+            with self.subTest(filename=filename):
+                outfile = os.path.join(TESTFNDIR, filename)
+                default_mode = (self.dmode if os.path.isdir(outfile) else self.fmode)
+                expected_mode = (default_mode & ~mask | ((ext_attr >> 16) & mask))
+                mode = os.stat(outfile).st_mode
+                self.assertEqual(oct(mode), oct(expected_mode))
+
+
 class OverwriteTests(archiver_tests.OverwriteTests, unittest.TestCase):
     testdir = TESTFN
 

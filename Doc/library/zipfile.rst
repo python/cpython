@@ -377,13 +377,14 @@ ZipFile objects
       object was changed from ``'r'`` to ``'rb'``.
 
 
-.. method:: ZipFile.extract(member, path=None, pwd=None)
+.. method:: ZipFile.extract(member, path=None, pwd=None, extractor=None)
 
    Extract a member from the archive to the current working directory; *member*
-   must be its full name or a :class:`ZipInfo` object.  Its file information is
-   extracted as accurately as possible.  *path* specifies a different directory
-   to extract to.  *member* can be a filename or a :class:`ZipInfo` object.
-   *pwd* is the password used for encrypted files as a :class:`bytes` object.
+   must be its full name or a :class:`ZipInfo` object.  *path* specifies a
+   different directory to extract to.  *pwd* is the password used for encrypted
+   files as a :class:`bytes` object.  *extractor* is a custom
+   :ref:`extractor class <extractors>` that handles file attribute restoration
+   (defaults to :class:`ZipExtractorBase`, which restores no attributes).
 
    Returns the normalized path created (a directory or new file).
 
@@ -397,6 +398,12 @@ ZipFile objects
       characters (``:``, ``<``, ``>``, ``|``, ``"``, ``?``, and ``*``)
       replaced by underscore (``_``).
 
+   .. note::
+
+      Use :meth:`extractall` when extracting multiple members.  The
+      :meth:`extract` method may not restore all file attributes for the whole
+      directory hierarchy reliably.
+
    .. versionchanged:: 3.6
       Calling :meth:`extract` on a closed ZipFile will raise a
       :exc:`ValueError`.  Previously, a :exc:`RuntimeError` was raised.
@@ -404,13 +411,18 @@ ZipFile objects
    .. versionchanged:: 3.6.2
       The *path* parameter accepts a :term:`path-like object`.
 
+   .. versionchanged:: next
+      Added the *extractor* parameter.
 
-.. method:: ZipFile.extractall(path=None, members=None, pwd=None)
+
+.. method:: ZipFile.extractall(path=None, members=None, pwd=None, extractor=None)
 
    Extract all members from the archive to the current working directory.  *path*
    specifies a different directory to extract to.  *members* is optional and must
    be a subset of the list returned by :meth:`namelist`.  *pwd* is the password
-   used for encrypted files as a :class:`bytes` object.
+   used for encrypted files as a :class:`bytes` object.  *extractor* is a custom
+   :ref:`extractor class <extractors>` that handles file attribute restoration
+   (defaults to :class:`ZipExtractorBase`, which restores no attributes).
 
    .. warning::
 
@@ -426,6 +438,9 @@ ZipFile objects
 
    .. versionchanged:: 3.6.2
       The *path* parameter accepts a :term:`path-like object`.
+
+   .. versionchanged:: next
+      Added the *extractor* parameter.
 
 
 .. method:: ZipFile.printdir()
@@ -1043,6 +1058,74 @@ Instances have the following methods and attributes:
 .. attribute:: ZipInfo.file_size
 
    Size of the uncompressed file.
+
+
+.. _extractors:
+
+Extractors
+----------
+
+An extractor class can be passed to :meth:`ZipFile.extract` or
+:meth:`ZipFile.extractall` to handle file attribute restoration.
+
+To create a custom extractor, subclass :class:`ZipExtractorBase` and implement
+the :meth:`~ZipExtractorBase.restore_attributes` method.  Here is an example
+that ignores errors when restoring file attributes:
+
+.. code-block:: python
+
+   class SafeZipExtractorTimeMode(zipfile.ZipExtractorTimeMode):
+       def restore_attributes(self, targetpath, zinfo):
+           try:
+               super().restore_attributes(targetpath, zinfo)
+           except (OSError, OverflowError, ValueError):
+               pass
+
+   with zipfile.ZipFile('spam.zip') as myzip:
+       myzip.extractall('eggs', extractor=SafeZipExtractorTimeMode)
+
+
+.. class:: ZipExtractorBase(archive, path=None, pwd=None)
+
+   The base extractor class that restores no file attributes.
+
+   .. method:: restore_attributes(targetpath, zinfo)
+
+      Called for every extracted member *zinfo* at *targetpath* to restore
+      its attributes.  This method does nothing by default.  Subclasses
+      should override this method to customize attribute restoration.
+
+   .. method:: finalize(exc_type=None, exc_value=None, traceback=None)
+
+      Called after all members have been extracted (or when an exception
+      occurs) to restore attributes for extracted directories in reverse
+      (bottom-up) order.  This prevents issues where extracting contents into
+      a directory resets its modification time or fails if it's not writable.
+      Subclasses can override this method to customize cleanup or error
+      recovery logic.
+
+
+.. class:: ZipExtractorTime(archive, path=None, pwd=None)
+
+   A subclass of :class:`ZipExtractorBase` that restores file mtime and atime.
+
+
+.. class:: ZipExtractorTimeMode(archive, path=None, pwd=None)
+
+   A subclass of :class:`ZipExtractorTime` that restores file mtime, atime, and
+   all mode bits (``0o7777``).
+
+
+.. class:: ZipExtractorTimeModeSafe(archive, path=None, pwd=None)
+
+   A subclass of :class:`ZipExtractorTimeMode` that restores file mtime, atime,
+   and safe file mode bits (``0o777``).
+
+
+.. class:: ZipExtractorTimeModeX(archive, path=None, pwd=None)
+
+   A subclass of :class:`ZipExtractorTimeMode` that restores file mtime, atime,
+   and executable bits (``0o111``).
 
 
 .. _zipfile-commandline:
