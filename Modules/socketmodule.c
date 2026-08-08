@@ -290,6 +290,10 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 /* Helpers needed for AF_HYPERV */
 # include <Rpc.h>
 
+#ifndef RPC_S_OK
+#define RPC_S_OK 0L
+#endif
+
 /* Macros based on the IPPROTO enum, see: https://bugs.python.org/issue29515 */
 #define IPPROTO_ICMP IPPROTO_ICMP
 #define IPPROTO_IGMP IPPROTO_IGMP
@@ -631,14 +635,14 @@ _PyLong_##NAME##_Converter(PyObject *obj, void *ptr)                \
     return 1;                                                       \
 }
 
-#if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
+#if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS_DESKTOP)
 # ifdef MS_WINDOWS
     UNSIGNED_INT_CONVERTER(NetIfindex, NET_IFINDEX)
 # else
 #   define _PyLong_NetIfindex_Converter _PyLong_UnsignedInt_Converter
 #   define NET_IFINDEX unsigned int
 # endif
-#endif // defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
+#endif // defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS_DESKTOP)
 
 /*[python input]
 class NET_IFINDEX_converter(CConverter):
@@ -5895,10 +5899,12 @@ socket_gethostname(PyObject *self, PyObject *unused)
        Otherwise, gethostname apparently also returns the DNS name. */
     wchar_t buf[MAX_COMPUTERNAME_LENGTH + 1];
     DWORD size = Py_ARRAY_LENGTH(buf);
-    wchar_t *name;
-    PyObject *result;
 
+#ifdef MS_WINDOWS_DESKTOP
     if (GetComputerNameExW(ComputerNamePhysicalDnsHostname, buf, &size))
+#else
+    if (GetComputerNameW(buf, &size))
+#endif
         return PyUnicode_FromWideChar(buf, size);
 
     if (GetLastError() != ERROR_MORE_DATA)
@@ -5907,9 +5913,12 @@ socket_gethostname(PyObject *self, PyObject *unused)
     if (size == 0)
         return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
 
+#ifndef MS_WINDOWS_DESKTOP
+    return NULL;
+#else
     /* MSDN says ERROR_MORE_DATA may occur because DNS allows longer
        names */
-    name = PyMem_New(wchar_t, size);
+    wchar_t* name = PyMem_New(wchar_t, size);
     if (!name) {
         PyErr_NoMemory();
         return NULL;
@@ -5923,9 +5932,10 @@ socket_gethostname(PyObject *self, PyObject *unused)
         return NULL;
     }
 
-    result = PyUnicode_FromWideChar(name, size);
+    PyObject* result = PyUnicode_FromWideChar(name, size);
     PyMem_Free(name);
     return result;
+#endif
 #else
     char buf[1024];
     int res;
@@ -7212,7 +7222,7 @@ Set the default timeout in seconds (real number) for new socket objects.\n\
 A value of None indicates that new socket objects have no timeout.\n\
 When the socket module is first imported, the default is None.");
 
-#if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
+#if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS_DESKTOP)
 /* Python API for getting interface indices and names */
 
 static PyObject *
@@ -7353,7 +7363,7 @@ _socket_if_indextoname_impl(PyObject *module, NET_IFINDEX index)
     return PyUnicode_DecodeFSDefault(name);
 }
 
-#endif // defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
+#endif // defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS_DESKTOP)
 
 
 #ifdef CMSG_LEN
@@ -7489,7 +7499,7 @@ static PyMethodDef socket_methods[] = {
      METH_NOARGS, getdefaulttimeout_doc},
     {"setdefaulttimeout",       socket_setdefaulttimeout,
      METH_O, setdefaulttimeout_doc},
-#if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
+#if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS_DESKTOP)
     {"if_nameindex", socket_if_nameindex,
      METH_NOARGS, if_nameindex_doc},
     _SOCKET_IF_NAMETOINDEX_METHODDEF
@@ -9302,7 +9312,7 @@ socket_exec(PyObject *m)
 #endif
 #endif /* _MSTCPIP_ */
 
-#ifdef MS_WINDOWS
+#ifdef MS_WINDOWS_DESKTOP
     /* remove some flags on older version Windows during run-time */
     if (remove_unusable_flags(m) < 0) {
         goto error;
