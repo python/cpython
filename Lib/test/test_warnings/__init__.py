@@ -24,7 +24,6 @@ from test.test_warnings.data import stacklevel as warning_tests
 import warnings as original_warnings
 from warnings import deprecated
 
-
 py_warnings = import_helper.import_fresh_module('_py_warnings')
 py_warnings._set_module(py_warnings)
 
@@ -1236,6 +1235,25 @@ class _WarningsTests(BaseTest, unittest.TestCase):
             with support.swap_item(globals(), '__name__', b'foo'), \
                  support.swap_item(globals(), '__file__', None):
                 self.assertRaises(UserWarning, self.module.warn, 'bar')
+
+    @support.cpython_only
+    # Python built with Py_TRACE_REFS fail with a fatal error in
+    # _PyRefchain_Trace() on memory allocation error.
+    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
+    def test_issue151673(self):
+        # Skip this test if the _testcapi module isn't available.
+        _testcapi = import_helper.import_module('_testcapi')
+        # warn() shouldn't crash when the "<sys>" fallback filename
+        # can't be allocated under memory pressure.
+        code = """if 1:
+            import _testcapi, warnings
+            warnings.simplefilter("always")
+            _testcapi.set_nomemory(0)
+            warnings.warn("boom")
+        """
+        rc, out, err = assert_python_failure("-c", code)
+        self.assertIn(rc, (1, 120))
+        self.assertIn(b'MemoryError', err)
 
 
 class WarningsDisplayTests(BaseTest):
