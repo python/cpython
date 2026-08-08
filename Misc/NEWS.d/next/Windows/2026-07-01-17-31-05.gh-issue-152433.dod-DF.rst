@@ -1,0 +1,1 @@
+make ``dynload_win.c`` UWP compatible.
