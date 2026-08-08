@@ -2982,7 +2982,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
             /* Leverage stack space we allocated but won't otherwise use */
             keys = &ms.temparray[saved_ob_size+1];
         else {
-            keys = PyMem_Malloc(sizeof(PyObject *) * saved_ob_size);
+            keys = PyMem_New(PyObject *, saved_ob_size);
             if (keys == NULL) {
                 PyErr_NoMemory();
                 goto keyfunc_fail;
@@ -3770,7 +3770,7 @@ list_ass_subscript_lock_held(PyObject *_self, PyObject *item, PyObject *value)
             }
 
             garbage = (PyObject**)
-                PyMem_Malloc(slicelength*sizeof(PyObject*));
+                PyMem_New(PyObject*, slicelength);
             if (!garbage) {
                 PyErr_NoMemory();
                 return -1;
@@ -3858,7 +3858,7 @@ list_ass_subscript_lock_held(PyObject *_self, PyObject *item, PyObject *value)
             }
 
             garbage = (PyObject**)
-                PyMem_Malloc(slicelength*sizeof(PyObject*));
+                PyMem_New(PyObject*, slicelength);
             if (!garbage) {
                 Py_DECREF(seq);
                 PyErr_NoMemory();

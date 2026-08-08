@@ -1042,13 +1042,12 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
     self->num_ttinfos = (size_t)num_ttinfos;
 
     // Load the transition indices and list
-    self->trans_list_utc =
-        PyMem_Malloc(self->num_transitions * sizeof(int64_t));
+    self->trans_list_utc = PyMem_New(int64_t, self->num_transitions);
     if (self->trans_list_utc == NULL) {
         PyErr_NoMemory();
         goto error;
     }
-    trans_idx = PyMem_Malloc(self->num_transitions * sizeof(Py_ssize_t));
+    trans_idx = PyMem_New(size_t, self->num_transitions);
     if (trans_idx == NULL) {
         PyErr_NoMemory();
         goto error;
@@ -1086,8 +1085,8 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
     }
 
     // Load UTC offsets and isdst (size num_ttinfos)
-    utcoff = PyMem_Malloc(self->num_ttinfos * sizeof(long));
-    isdst = PyMem_Malloc(self->num_ttinfos * sizeof(unsigned char));
+    utcoff = PyMem_New(long, self->num_ttinfos);
+    isdst = PyMem_New(unsigned char, self->num_ttinfos);
 
     if (utcoff == NULL || isdst == NULL) {
         PyErr_NoMemory();
@@ -1135,7 +1134,7 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
     }
 
     // Build _ttinfo objects from utcoff, dstoff and abbr
-    self->_ttinfos = PyMem_Malloc(self->num_ttinfos * sizeof(_ttinfo));
+    self->_ttinfos = PyMem_New(_ttinfo, self->num_ttinfos);
     if (self->_ttinfos == NULL) {
         PyErr_NoMemory();
         goto error;
@@ -2148,7 +2147,7 @@ ts_to_local(size_t *trans_idx, int64_t *trans_utc, long *utcoff,
 
     // Copy the UTC transitions into each array to be modified in place later
     for (size_t i = 0; i < 2; ++i) {
-        trans_local[i] = PyMem_Malloc(num_transitions * sizeof(int64_t));
+        trans_local[i] = PyMem_New(int64_t, num_transitions);
         if (trans_local[i] == NULL) {
             PyErr_NoMemory();
             return -1;

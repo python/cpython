@@ -1785,7 +1785,7 @@ PyCArrayType_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (stginfo->format == NULL)
         goto error;
     stginfo->ndim = iteminfo->ndim + 1;
-    stginfo->shape = PyMem_Malloc(sizeof(Py_ssize_t) * stginfo->ndim);
+    stginfo->shape = PyMem_New(Py_ssize_t, stginfo->ndim);
     if (stginfo->shape == NULL) {
         PyErr_NoMemory();
         goto error;

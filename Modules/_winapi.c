@@ -1591,7 +1591,7 @@ _winapi_GetLongPathName_impl(PyObject *module, LPCWSTR path)
     cchBuffer = GetLongPathNameW(path, NULL, 0);
     Py_END_ALLOW_THREADS
     if (cchBuffer) {
-        WCHAR *buffer = (WCHAR *)PyMem_Malloc(cchBuffer * sizeof(WCHAR));
+        WCHAR *buffer = PyMem_New(WCHAR, cchBuffer);
         if (buffer) {
             Py_BEGIN_ALLOW_THREADS
             cchBuffer = GetLongPathNameW(path, buffer, cchBuffer);
@@ -1672,7 +1672,7 @@ _winapi_GetShortPathName_impl(PyObject *module, LPCWSTR path)
     cchBuffer = GetShortPathNameW(path, NULL, 0);
     Py_END_ALLOW_THREADS
     if (cchBuffer) {
-        WCHAR *buffer = (WCHAR *)PyMem_Malloc(cchBuffer * sizeof(WCHAR));
+        WCHAR *buffer = PyMem_New(WCHAR, cchBuffer);
         if (buffer) {
             Py_BEGIN_ALLOW_THREADS
             cchBuffer = GetShortPathNameW(path, buffer, cchBuffer);

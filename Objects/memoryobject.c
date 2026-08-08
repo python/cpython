@@ -413,6 +413,10 @@ copy_single(PyMemoryViewObject *self, const Py_buffer *dest, const Py_buffer *sr
         return -1;
 
     if (!last_dim_is_contiguous(dest, src)) {
+        if (dest->shape[0] > PY_SSIZE_T_MAX / dest->itemsize) {
+            PyErr_NoMemory();
+            return -1;
+        }
         mem = PyMem_Malloc(dest->shape[0] * dest->itemsize);
         if (mem == NULL) {
             PyErr_NoMemory();
@@ -445,6 +449,10 @@ copy_buffer(const Py_buffer *dest, const Py_buffer *src)
         return -1;
 
     if (!last_dim_is_contiguous(dest, src)) {
+        if (dest->shape[dest->ndim-1] > PY_SSIZE_T_MAX / dest->itemsize) {
+            PyErr_NoMemory();
+            return -1;
+        }
         mem = PyMem_Malloc(dest->shape[dest->ndim-1] * dest->itemsize);
         if (mem == NULL) {
             PyErr_NoMemory();
@@ -503,7 +511,7 @@ buffer_to_contiguous(char *mem, const Py_buffer *src, char order)
     assert(src->shape != NULL);
     assert(src->strides != NULL);
 
-    strides = PyMem_Malloc(src->ndim * (sizeof *src->strides));
+    strides = PyMem_New(Py_ssize_t, src->ndim);
     if (strides == NULL) {
         PyErr_NoMemory();
         return -1;
@@ -861,7 +869,12 @@ static int
 mbuf_copy_format(_PyManagedBufferObject *mbuf, const char *fmt)
 {
     if (fmt != NULL) {
-        char *cp = PyMem_Malloc(strlen(fmt)+1);
+        size_t fmt_len = strlen(fmt);
+        if (fmt_len >= (size_t)PY_SSIZE_T_MAX) {
+            PyErr_NoMemory();
+            return -1;
+        }
+        char *cp = PyMem_Malloc(fmt_len+1);
         if (cp == NULL) {
             PyErr_NoMemory();
             return -1;
@@ -1065,6 +1078,10 @@ PyBuffer_ToContiguous(void *buf, const Py_buffer *src, Py_ssize_t len, char orde
     }
 
     /* buffer_to_contiguous() assumes PyBUF_FULL */
+    if ((size_t)src->ndim > ((size_t)PY_SSIZE_T_MAX - sizeof *fb) / (3 * sizeof *fb->array)) {
+        PyErr_NoMemory();
+        return -1;
+    }
     fb = PyMem_Malloc(sizeof *fb + 3 * src->ndim * (sizeof *fb->array));
     if (fb == NULL) {
         PyErr_NoMemory();
