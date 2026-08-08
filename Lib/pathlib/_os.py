@@ -268,16 +268,24 @@ def ensure_distinct_paths(source, target):
     # Note: there is no straightforward, foolproof algorithm to determine
     # if one directory is within another (a particularly perverse example
     # would be a single network share mounted in one location via NFS, and
-    # in another location via CIFS), so we simply checks whether the
-    # other path is lexically equal to, or within, this path.
+    # in another location via CIFS). Resolve when possible so relative vs
+    # absolute paths and symlink aliases are compared like shutil._destinsrc
+    # (realpath); otherwise fall back to a lexical check.
+    source_orig, target_orig = source, target
+    try:
+        source = source.resolve(strict=False)
+        target = target.resolve(strict=False)
+    except (AttributeError, OSError):
+        # No resolve(), or realpath failed.
+        pass
     if source == target:
         err = OSError(EINVAL, "Source and target are the same path")
     elif source in target.parents:
         err = OSError(EINVAL, "Source path is a parent of target path")
     else:
         return
-    err.filename = vfspath(source)
-    err.filename2 = vfspath(target)
+    err.filename = vfspath(source_orig)
+    err.filename2 = vfspath(target_orig)
     raise err
 
 
