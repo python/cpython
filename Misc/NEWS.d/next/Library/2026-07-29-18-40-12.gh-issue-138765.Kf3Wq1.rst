@@ -1,0 +1,3 @@
+Items cached by :func:`itertools.tee` are now released as soon as every
+iterator has passed them,
+instead of being kept until the internal buffer holding them is recycled.

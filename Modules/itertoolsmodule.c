@@ -727,11 +727,24 @@ static PyType_Spec _grouper_spec = {
 */
 #define LINKCELLS 57
 
+/* A teedataobject does not own the items it caches.  They are owned by its
+   direct referrers: every tee object currently positioned in this link, and
+   the preceding link (which stands for all tee objects that have not reached
+   this link yet).  A referrer owns one reference to every item it can still
+   reach -- items[index:numread] for a tee object at position index, and
+   items[0:numread] for the preceding link.  A tee object drops its reference
+   as it steps over an item, so the item is released as soon as the last
+   referrer passes it, instead of waiting for the whole link to be retired.
+   nrefs is the number of direct referrers; it is the number of references
+   that a newly cached item starts with.
+*/
+
 typedef struct {
     PyObject_HEAD
     PyObject *it;
-    int numread;                /* 0 <= numread <= LINKCELLS */
-    int running;
+    short numread;              /* 0 <= numread <= LINKCELLS */
+    short running;
+    Py_ssize_t nrefs;           /* number of direct referrers */
     PyObject *nextlink;
     PyObject *(values[LINKCELLS]);
 } teedataobject;
@@ -759,10 +772,48 @@ teedataobject_newinternal(itertools_state *state, PyObject *it)
 
     tdo->running = 0;
     tdo->numread = 0;
+    tdo->nrefs = 1;             /* the caller, which stores the only reference */
     tdo->nextlink = NULL;
     tdo->it = Py_NewRef(it);
     PyObject_GC_Track(tdo);
     return (PyObject *)tdo;
+}
+
+/* Register a new referrer of tdo, positioned at index: it takes a reference
+   to every item it can still reach. */
+static void
+teedataobject_attach_lock_held(teedataobject *tdo, int index)
+{
+    tdo->nrefs++;
+    for (int i = index; i < tdo->numread; i++)
+        Py_INCREF(tdo->values[i]);
+}
+
+static void
+teedataobject_attach(teedataobject *tdo, int index)
+{
+    Py_BEGIN_CRITICAL_SECTION(tdo);
+    teedataobject_attach_lock_held(tdo, index);
+    Py_END_CRITICAL_SECTION();
+}
+
+/* Unregister a referrer of tdo positioned at index; the items it still owns
+   are released here. */
+static void
+teedataobject_detach_lock_held(teedataobject *tdo, int index)
+{
+    assert(tdo->nrefs > 0);
+    tdo->nrefs--;
+    for (int i = index; i < tdo->numread; i++)
+        Py_DECREF(tdo->values[i]);
+}
+
+static void
+teedataobject_detach(teedataobject *tdo, int index)
+{
+    Py_BEGIN_CRITICAL_SECTION(tdo);
+    teedataobject_detach_lock_held(tdo, index);
+    Py_END_CRITICAL_SECTION();
 }
 
 static PyObject *
@@ -774,11 +825,17 @@ teedataobject_jumplink(itertools_state *state, teedataobject *tdo)
         tdo->nextlink = teedataobject_newinternal(state, tdo->it);
     link = Py_XNewRef(tdo->nextlink);
     Py_END_CRITICAL_SECTION();
+    if (link != NULL) {
+        /* The tee object that jumps here becomes a new referrer. */
+        teedataobject_attach(teedataobject_CAST(link), 0);
+    }
     return link;
 }
 
+/* If steal is true, the caller takes over the reference owned by the tee
+   object it advances; the caller must advance past the item. */
 static PyObject *
-teedataobject_getitem_lock_held(teedataobject *tdo, int i)
+teedataobject_getitem_lock_held(teedataobject *tdo, int i, int steal)
 {
     PyObject *value;
 
@@ -798,18 +855,22 @@ teedataobject_getitem_lock_held(teedataobject *tdo, int i)
         tdo->running = 0;
         if (value == NULL)
             return NULL;
+        /* The new item is owned by every referrer of this link; PyIter_Next()
+           already provided one of those references. */
+        assert(tdo->nrefs > 0);
+        _Py_RefcntAdd(value, tdo->nrefs - 1);
         tdo->numread++;
         tdo->values[i] = value;
     }
-    return Py_NewRef(value);
+    return steal ? value : Py_NewRef(value);
 }
 
 static PyObject *
-teedataobject_getitem(teedataobject *tdo, int i)
+teedataobject_getitem(teedataobject *tdo, int i, int steal)
 {
     PyObject *result;
     Py_BEGIN_CRITICAL_SECTION(tdo);
-    result = teedataobject_getitem_lock_held(tdo, i);
+    result = teedataobject_getitem_lock_held(tdo, i, steal);
     Py_END_CRITICAL_SECTION();
     return result;
 }
@@ -822,8 +883,13 @@ teedataobject_traverse(PyObject *op, visitproc visit, void * arg)
 
     Py_VISIT(Py_TYPE(tdo));
     Py_VISIT(tdo->it);
-    for (i = 0; i < tdo->numread; i++)
-        Py_VISIT(tdo->values[i]);
+    /* The items of the next link are owned by this one, its own items are
+       not owned by it. */
+    if (tdo->nextlink != NULL) {
+        teedataobject *next = teedataobject_CAST(tdo->nextlink);
+        for (i = 0; i < next->numread; i++)
+            Py_VISIT(next->values[i]);
+    }
     Py_VISIT(tdo->nextlink);
     return 0;
 }
@@ -838,6 +904,8 @@ teedataobject_safe_decref(PyObject *obj)
         nextlink = tmp->nextlink;
         tmp->nextlink = NULL;
         Py_END_CRITICAL_SECTION();
+        if (nextlink != NULL)
+            teedataobject_detach(teedataobject_CAST(nextlink), 0);
         Py_SETREF(obj, nextlink);
     }
     Py_XDECREF(obj);
@@ -846,17 +914,19 @@ teedataobject_safe_decref(PyObject *obj)
 static int
 teedataobject_clear(PyObject *op)
 {
-    int i;
     PyObject *tmp;
     teedataobject *tdo = teedataobject_CAST(op);
 
     Py_BEGIN_CRITICAL_SECTION(op);
     Py_CLEAR(tdo->it);
-    for (i=0 ; i<tdo->numread ; i++)
-        Py_CLEAR(tdo->values[i]);
     tmp = tdo->nextlink;
     tdo->nextlink = NULL;
     Py_END_CRITICAL_SECTION();
+    /* The values are not owned by this link, they are released by their
+       owners.  Only the reference to the items of the next link is dropped
+       here. */
+    if (tmp != NULL)
+        teedataobject_detach(teedataobject_CAST(tmp), 0);
     teedataobject_safe_decref(tmp);
     return 0;
 }
@@ -865,8 +935,16 @@ static void
 teedataobject_dealloc(PyObject *op)
 {
     PyTypeObject *tp = Py_TYPE(op);
+    teedataobject *tdo = teedataobject_CAST(op);
     PyObject_GC_UnTrack(op);
     (void)teedataobject_clear(op);
+    /* Referrers that never detached (a link created from Python code is
+       owned by the code that created it) still hold references. */
+    while (tdo->nrefs > 0) {
+        tdo->nrefs--;
+        for (int i = 0; i < tdo->numread; i++)
+            Py_DECREF(tdo->values[i]);
+    }
     PyObject_GC_Del(op);
     Py_DECREF(tp);
 }
@@ -904,13 +982,16 @@ itertools_teedataobject_impl(PyTypeObject *type, PyObject *it,
         Py_INCREF(tdo->values[i]);
     }
     /* len <= LINKCELLS < INT_MAX */
-    tdo->numread = Py_SAFE_DOWNCAST(len, Py_ssize_t, int);
+    tdo->numread = Py_SAFE_DOWNCAST(len, Py_ssize_t, short);
 
     if (len == LINKCELLS) {
         if (next != Py_None) {
             if (!Py_IS_TYPE(next, state->teedataobject_type))
                 goto err;
             assert(tdo->nextlink == NULL);
+            /* this link now owns the items of the next one; take the
+               references before teedataobject_traverse() reports them */
+            teedataobject_attach(teedataobject_CAST(next), 0);
             tdo->nextlink = Py_NewRef(next);
         }
     } else {
@@ -959,10 +1040,12 @@ tee_next(PyObject *op)
         if (link == NULL) {
             return NULL;
         }
+        teedataobject_detach(to->dataobj, to->index);
         Py_SETREF(to->dataobj, (teedataobject *)link);
         to->index = 0;
     }
-    value = teedataobject_getitem(to->dataobj, to->index);
+    /* Advancing past the item hands its reference to the caller. */
+    value = teedataobject_getitem(to->dataobj, to->index, 1);
     if (value == NULL) {
         return NULL;
     }
@@ -982,13 +1065,39 @@ tee_next(PyObject *op)
         Py_END_CRITICAL_SECTION();
 
         if (index < LINKCELLS) {
-            value = teedataobject_getitem(dataobj, index);
+            /* If the item is already cached, hand over the reference owned by
+               this tee object and advance in the same atomic step: taking
+               both locks at once is what makes the hand over safe. */
+            value = NULL;
+            Py_BEGIN_CRITICAL_SECTION2(op, (PyObject *)dataobj);
+            if (to->dataobj == dataobj && to->index == index
+                && index < dataobj->numread)
+            {
+                value = dataobj->values[index];
+                to->index = index + 1;
+            }
+            Py_END_CRITICAL_SECTION2();
             if (value != NULL) {
+                Py_DECREF(dataobj);
+                return value;
+            }
+            /* The item is not there yet, it has to be read from the source
+               iterator, which cannot be done atomically with the advance.
+               The reference owned by this tee object cannot be handed to the
+               caller then, because the advance may lose the race below. */
+            value = teedataobject_getitem(dataobj, index, 0);
+            if (value != NULL) {
+                int advanced = 0;
                 Py_BEGIN_CRITICAL_SECTION(op);
                 if (to->dataobj == dataobj && to->index == index) {
                     to->index = index + 1;
+                    advanced = 1;
                 }
                 Py_END_CRITICAL_SECTION();
+                if (advanced) {
+                    /* stepping over the item releases it */
+                    Py_DECREF(value);
+                }
             }
             Py_DECREF(dataobj);
             return value;
@@ -999,14 +1108,22 @@ tee_next(PyObject *op)
             Py_DECREF(dataobj);
             return NULL;
         }
-        Py_BEGIN_CRITICAL_SECTION(op);
+        /* Both locks are needed at once: this tee object stops referring to
+           dataobj exactly when it starts referring to the new link. */
+        Py_BEGIN_CRITICAL_SECTION2(op, (PyObject *)dataobj);
         if (to->dataobj == dataobj) {
+            assert(to->index == LINKCELLS);
+            teedataobject_detach_lock_held(dataobj, to->index);
             Py_SETREF(to->dataobj, (teedataobject *)link);
             to->index = 0;
             link = NULL;
         }
-        Py_END_CRITICAL_SECTION();
-        Py_XDECREF(link);
+        Py_END_CRITICAL_SECTION2();
+        if (link != NULL) {
+            /* another thread jumped first: undo the attach */
+            teedataobject_detach(teedataobject_CAST(link), 0);
+            Py_DECREF(link);
+        }
         Py_DECREF(dataobj);
     }
 #endif
@@ -1017,6 +1134,11 @@ tee_traverse(PyObject *op, visitproc visit, void *arg)
 {
     teeobject *to = teeobject_CAST(op);
     Py_VISIT(Py_TYPE(to));
+    /* the items which are not passed yet are owned by this tee object */
+    if (to->dataobj != NULL) {
+        for (int i = to->index; i < to->dataobj->numread; i++)
+            Py_VISIT(to->dataobj->values[i]);
+    }
     Py_VISIT((PyObject *)to->dataobj);
     return 0;
 }
@@ -1028,10 +1150,18 @@ tee_copy_impl(teeobject *to)
     if (newto == NULL) {
         return NULL;
     }
+    teedataobject *dataobj;
+    int index;
     Py_BEGIN_CRITICAL_SECTION(to);
-    newto->dataobj = (teedataobject *)Py_NewRef(to->dataobj);
-    newto->index = to->index;
+    dataobj = (teedataobject *)Py_NewRef(to->dataobj);
+    index = to->index;
     Py_END_CRITICAL_SECTION();
+    /* The copy is a new referrer of the same link.  Its references must be
+       taken before the copy is tracked, because tee_traverse() reports them
+       as soon as it is. */
+    teedataobject_attach(dataobj, index);
+    newto->dataobj = dataobj;
+    newto->index = index;
     newto->weakreflist = NULL;
     newto->state = to->state;
     PyObject_GC_Track(newto);
@@ -1103,6 +1233,8 @@ tee_clear(PyObject *op)
     teeobject *to = teeobject_CAST(op);
     if (to->weakreflist != NULL)
         PyObject_ClearWeakRefs(op);
+    if (to->dataobj != NULL)
+        teedataobject_detach(to->dataobj, to->index);
     Py_CLEAR(to->dataobj);
     return 0;
 }
