@@ -1624,6 +1624,11 @@ argument::
 See also :ref:`the argparse howto on ambiguous arguments <specifying-ambiguous-arguments>`
 for more details.
 
+.. versionchanged:: 3.14
+   Negative-number matching was expanded to include numbers in scientific
+   notation (``-2.5e-6``), numbers containing underscores (``-1_234.5``),
+   and complex numbers (``-1.2e-3j``).
+
 .. _prefix-matching:
 
 Argument abbreviations (prefix matching)
