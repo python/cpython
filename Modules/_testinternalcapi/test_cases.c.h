@@ -8969,10 +8969,13 @@
             }
             // _CHECK_MANAGED_OBJECT_HAS_VALUES
             {
+                uint16_t validity_offset = read_u16(&this_instr[4].cache);
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
                 assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-                if (!FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid)) {
+                assert((char *)&_PyObject_InlineValues(owner_o)->valid ==
+                   (char *)owner_o + validity_offset);
+                if (!FT_ATOMIC_LOAD_UINT8(*((uint8_t *)owner_o + validity_offset))) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
                     JUMP_TO_PREDICTED(LOAD_ATTR);
@@ -8980,7 +8983,7 @@
             }
             // _LOAD_ATTR_INSTANCE_VALUE
             {
-                uint16_t offset = read_u16(&this_instr[4].cache);
+                uint16_t offset = read_u16(&this_instr[5].cache);
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 PyObject **value_ptr = (PyObject**)(((char *)owner_o) + offset);
                 PyObject *attr_o = FT_ATOMIC_LOAD_PTR_ACQUIRE(*value_ptr);
@@ -9013,7 +9016,7 @@
                 PyStackRef_XCLOSE(value);
                 _PyFrame_StackPointerInvalidate(frame);
             }
-            /* Skip 5 cache entries */
+            /* Skip 4 cache entries */
             // _PUSH_NULL_CONDITIONAL
             {
                 null = &stack_pointer[0];
@@ -9157,16 +9160,19 @@
             }
             // _CHECK_MANAGED_OBJECT_HAS_VALUES
             {
+                uint16_t validity_offset = read_u16(&this_instr[4].cache);
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
                 assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-                if (!FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid)) {
+                assert((char *)&_PyObject_InlineValues(owner_o)->valid ==
+                   (char *)owner_o + validity_offset);
+                if (!FT_ATOMIC_LOAD_UINT8(*((uint8_t *)owner_o + validity_offset))) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
-            /* Skip 2 cache entries */
+            /* Skip 1 cache entry */
             // _LOAD_ATTR_METHOD_WITH_VALUES
             {
                 PyObject *descr = read_obj(&this_instr[6].cache);
@@ -9342,16 +9348,19 @@
             }
             // _CHECK_MANAGED_OBJECT_HAS_VALUES
             {
+                uint16_t validity_offset = read_u16(&this_instr[4].cache);
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
                 assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-                if (!FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid)) {
+                assert((char *)&_PyObject_InlineValues(owner_o)->valid ==
+                   (char *)owner_o + validity_offset);
+                if (!FT_ATOMIC_LOAD_UINT8(*((uint8_t *)owner_o + validity_offset))) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
-            /* Skip 2 cache entries */
+            /* Skip 1 cache entry */
             // _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES
             {
                 PyObject *descr = read_obj(&this_instr[6].cache);
