@@ -1,0 +1,3 @@
+:func:`ntpath.abspath` on non-Windows platforms now strips trailing dots and
+spaces like the Windows path normalization does.  This makes
+:func:`ntpath.relpath` and other functions based on it platform independent.
