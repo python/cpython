@@ -1,0 +1,4 @@
+Fix :mod:`urllib.request` HTTP authentication retries sending an empty POST
+body when :attr:`~urllib.request.Request.data` is a consumed file-like
+object.  The body is now re-read from the start on retry; non-seekable
+streams raise :exc:`ValueError`.
