@@ -1517,56 +1517,129 @@ ValuesView({'a': 6,
 
     def test_template(self):
         d = t""
-        self.assertEqual(pprint.pformat(d),
-                         "Template(strings=('',), interpolations=())")
+        self.assertEqual(pprint.pformat(d), "Template()")
         self.assertEqual(pprint.pformat(d), repr(d))
-        self.assertEqual(pprint.pformat(d, width=1),
-"""\
-Template(strings=('',),
-         interpolations=())""")
+        self.assertEqual(pprint.pformat(d, width=1), "Template()")
         name = "World"
         d = t"Hello {name}"
         self.assertEqual(pprint.pformat(d),
 """\
-Template(strings=('Hello ', ''),
-         interpolations=(Interpolation('World', 'name', None, ''),))""")
+Template('Hello ', Interpolation('World', 'name'))""")
+        d = t"Hello {name!r}"
+        self.assertEqual(pprint.pformat(d),
+"""\
+Template('Hello ', Interpolation('World', 'name', 'r'))""")
+        d = t"Hello {name:0}"
+        self.assertEqual(pprint.pformat(d),
+"""\
+Template('Hello ', Interpolation('World', 'name', None, '0'))""")
+        d = t"Hello {name!r:0}"
+        self.assertEqual(pprint.pformat(d),
+"""\
+Template('Hello ', Interpolation('World', 'name', 'r', '0'))""")
+        d = t"Hello {name}"
+        self.assertEqual(pprint.pformat(d, width=10),
+"""\
+Template('Hello ',
+         Interpolation('World',
+                       'name'))""")
+        d = t"Hello {name!r}"
+        self.assertEqual(pprint.pformat(d, width=10),
+"""\
+Template('Hello ',
+         Interpolation('World',
+                       'name',
+                       'r'))""")
+        d = t"Hello {name:0}"
+        self.assertEqual(pprint.pformat(d, width=10),
+"""\
+Template('Hello ',
+         Interpolation('World',
+                       'name',
+                       None,
+                       '0'))""")
+        d = t"Hello {name!r:0}"
+        self.assertEqual(pprint.pformat(d, width=10),
+"""\
+Template('Hello ',
+         Interpolation('World',
+                       'name',
+                       'r',
+                       '0'))""")
         ver = {3.13: False, 3.14: True}
         d = t"Hello { {"name": "Python", "version": ver}!s:z}!"
         self.assertEqual(pprint.pformat(d, width=1),
 """\
-Template(strings=('Hello ',
-                  '!'),
-         interpolations=(Interpolation({'name': 'Python',
-                                        'version': {3.13: False,
-                                                    3.14: True}},
-                                       ' '
-                                       '{"name": '
-                                       '"Python", '
-                                       '"version": '
-                                       'ver}',
-                                       's',
-                                       'z'),))""")
+Template('Hello ',
+         Interpolation({'name': 'Python',
+                        'version': {3.13: False,
+                                    3.14: True}},
+                       ' '
+                       '{"name": '
+                       '"Python", '
+                       '"version": '
+                       'ver}',
+                       's',
+                       'z'),
+         '!')""")
 
     def test_expand_template(self):
         d = t""
         self.assertEqual(
             pprint.pformat(d, expand=True),
-            "Template(strings=('',), interpolations=())",
+            "Template()",
         )
         name = "World"
         d = t"Hello {name}"
         self.assertEqual(
-            pprint.pformat(d, width=40, indent=4, expand=True),
+            pprint.pformat(d, width=30, indent=4, expand=True),
             """\
 Template(
-    strings=('Hello ', ''),
-    interpolations=(
-        Interpolation(
-            value='World',
-            expression='name',
-            conversion=None,
-            format_spec='',
-        ),
+    'Hello ',
+    Interpolation(
+        value='World',
+        expression='name',
+    ),
+)""",
+        )
+        d = t"Hello {name!r}"
+        self.assertEqual(
+            pprint.pformat(d, width=30, indent=4, expand=True),
+            """\
+Template(
+    'Hello ',
+    Interpolation(
+        value='World',
+        expression='name',
+        conversion='r',
+    ),
+)""",
+        )
+        d = t"Hello {name:0}"
+        self.assertEqual(
+            pprint.pformat(d, width=30, indent=4, expand=True),
+            """\
+Template(
+    'Hello ',
+    Interpolation(
+        value='World',
+        expression='name',
+        conversion=None,
+        format_spec='0',
+    ),
+)""",
+        )
+        d = t"Hello {name!r:0}"
+        self.assertEqual(
+            pprint.pformat(d, width=30, indent=4, expand=True),
+            """\
+Template(
+    'Hello ',
+    Interpolation(
+        value='World',
+        expression='name',
+        conversion='r',
+        format_spec='0',
     ),
 )""",
         )
@@ -1576,22 +1649,18 @@ Template(
             pprint.pformat(d, width=40, indent=4, expand=True),
             """\
 Template(
-    strings=('Hello ', '!'),
-    interpolations=(
-        Interpolation(
-            value={
-                'name': 'Python',
-                'version': {
-                    3.13: False,
-                    3.14: True,
-                },
-            },
-            expression=' {"name": "Python", '
-            '"version": ver}',
-            conversion='s',
-            format_spec='z',
-        ),
+    'Hello ',
+    Interpolation(
+        value={
+            'name': 'Python',
+            'version': {3.13: False, 3.14: True},
+        },
+        expression=' {"name": "Python", '
+        '"version": ver}',
+        conversion='s',
+        format_spec='z',
     ),
+    '!',
 )""",
         )
 

@@ -1,0 +1,2 @@
+Change :func:`repr` output of :class:`string.templatelib.Template` objects
+to list the parts of the template in their original source order.
