@@ -885,13 +885,17 @@ class RawConfigParser(MutableMapping):
                               raw=raw, vars=vars, fallback=fallback, **kwargs)
 
     def items(self, section=_UNSET, raw=False, vars=None):
-        """Return a list of (name, value) tuples for each option in a section.
+        """Return the items of the parser or of a section.
 
-        All % interpolations are expanded in the return values, based on the
-        defaults passed into the constructor, unless the optional argument
-        `raw` is true.  Additional substitutions may be provided using the
-        `vars` argument, which must be a dictionary whose contents overrides
-        any pre-existing defaults.
+        When `section` is not given, return an ItemsView of
+        (section_name, section_proxy) pairs, including DEFAULTSECT.
+
+        Otherwise, return a list of (name, value) tuples for each option in
+        the given section.  All % interpolations are expanded in the return
+        values, based on the defaults passed into the constructor, unless the
+        optional argument `raw` is true.  Additional substitutions may be
+        provided using the `vars` argument, which must be a dictionary whose
+        contents overrides any pre-existing defaults.
 
         The section DEFAULT is special.
         """
