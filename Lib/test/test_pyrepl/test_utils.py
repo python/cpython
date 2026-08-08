@@ -47,6 +47,13 @@ class TestUtils(TestCase):
         self.assertEqual(wlen('e\N{COMBINING ACUTE ACCENT}'), 1)
         self.assertEqual(wlen('a\N{ZERO WIDTH JOINER}b'), 2)
 
+        # Backspace decreases cursor position, and cannot move before column 0.
+        self.assertEqual(wlen('Question? _\b'), 10)
+        self.assertEqual(wlen('ab\b'), 1)
+        self.assertEqual(wlen('ab\b\b'), 0)
+        self.assertEqual(wlen('\babc'), 3)
+        self.assertEqual(wlen('樂\b'), 1)
+
     def test_prev_next_window(self):
         def gen_normal():
             yield 1
