@@ -1,0 +1,1 @@
+Fix :class:`configparser.BasicInterpolation` raising ``TypeError`` when interpolating a reference to a value-less option with ``allow_no_value=True``; it now treats the missing value as empty, like :class:`configparser.ExtendedInterpolation`.
