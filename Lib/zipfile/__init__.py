@@ -4,6 +4,7 @@ Read and write ZIP files.
 XXX references to utf-8 need further investigation.
 """
 import binascii
+import copy
 import io
 import os
 import shutil
@@ -502,6 +503,22 @@ class ZipInfo:
     def _compresslevel(self, value):
         self.compress_level = value
 
+    def __replace__(self, /, **changes):
+        unexpected = changes.keys() - _zipinfo_attributes
+        if unexpected:
+            raise TypeError(f'__replace__() got an unexpected keyword '
+                            f'argument {min(unexpected)!r}')
+        new = copy.copy(self)
+        if 'filename' in changes:
+            filename = changes.pop('filename')
+            new.orig_filename = filename
+            new.filename = _sanitize_filename(filename)
+        if changes.get('date_time', (1980,))[0] < 1980:
+            raise ValueError('ZIP does not support timestamps before 1980')
+        for name, value in changes.items():
+            setattr(new, name, value)
+        return new
+
     def __repr__(self):
         result = ['<%s filename=%r' % (self.__class__.__name__, self.filename)]
         if self.compress_type != ZIP_STORED:
@@ -703,6 +720,11 @@ class ZipInfo:
         if os.path.altsep:
             return self.filename.endswith((os.path.sep, os.path.altsep))
         return False
+
+
+# Attributes which can be replaced by ZipInfo.__replace__().
+_zipinfo_attributes = frozenset(ZipInfo.__slots__) - {
+    'orig_filename', '_raw_time', '_end_offset'}
 
 
 # ZIP encryption uses the CRC32 one-byte primitive for scrambling some
