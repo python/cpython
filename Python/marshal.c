@@ -1670,6 +1670,10 @@ r_object(RFILE *p)
             };
 
             if (_PyCode_Validate(&con) < 0) {
+                if (PyErr_ExceptionMatches(PyExc_SystemError)) {
+                    PyErr_SetString(PyExc_ValueError,
+                        "bad marshal data (invalid code object)");
+                }
                 goto code_error;
             }
 

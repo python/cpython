@@ -1,0 +1,3 @@
+Fixed :func:`marshal.loads` raising :exc:`SystemError` instead of
+:exc:`ValueError` for serialized data containing a code object with
+inconsistent internal fields.

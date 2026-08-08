@@ -4,6 +4,7 @@ from test.support.script_helper import assert_python_ok
 import array
 import io
 import marshal
+import struct
 import sys
 import unittest
 import os
@@ -139,6 +140,29 @@ class CodeTestCase(unittest.TestCase):
         co1, co2 = marshal.loads(marshal.dumps((co1, co2)))
         self.assertEqual(co1.co_filename, "f1")
         self.assertEqual(co2.co_filename, "f2")
+
+    def test_inconsistent_code_object(self):
+        # localsplusnames and localspluskinds must have equal length; if
+        # not, marshal must raise ValueError, not SystemError (gh-151830).
+        co = compile("def f():\n a=1;b=2;c=3", "<test>", "exec").co_consts[0]
+        n = len(co.co_varnames) + len(co.co_cellvars) + len(co.co_freevars)
+        blob = marshal.dumps(co)
+        # Find the localspluskinds record: the TYPE_STRING ('s') whose payload
+        # is exactly n bytes long (one kind byte per localsplus name).
+        kinds = None
+        for off in range(len(blob) - 5):
+            if blob[off] == ord('s'):
+                if struct.unpack_from('<i', blob, off + 1)[0] == n:
+                    kinds = blob[off + 5:off + 5 + n]
+                    break
+        # f's locals (a, b, c) are all plain fast locals (CO_FAST_LOCAL).
+        self.assertEqual(kinds, bytes([0x20]) * n)
+        # Rewrite it with one fewer kind byte than there are names.
+        corrupt = (blob[:off] + b's' + struct.pack('<i', n - 1)
+                   + kinds[:n - 1] + blob[off + 5 + n:])
+        with self.assertRaisesRegex(
+                ValueError, r'bad marshal data \(invalid code object\)'):
+            marshal.loads(corrupt)
 
     def test_no_allow_code(self):
         data = {'a': [({0},)]}
