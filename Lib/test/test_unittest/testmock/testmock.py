@@ -1,9 +1,11 @@
+import asyncio
 import copy
+import functools
 import re
 import sys
 import tempfile
 
-from test.support import ALWAYS_EQ
+from test.support import ALWAYS_EQ, requires_working_socket
 import unittest
 from test.test_unittest.testmock.support import is_instance
 from unittest import mock
@@ -29,13 +31,24 @@ class Iter(object):
 
 
 class Something(object):
-    def meth(self, a, b, c, d=None): pass
+    def meth(self, a, b, c, d=None):
+        return a, b, c, d
 
     @classmethod
     def cmeth(cls, a, b, c, d=None): pass
 
     @staticmethod
     def smeth(a, b, c, d=None): pass
+
+
+class SomethingAsync(object):
+    async def meth(self, a, b, c, d=None): pass
+
+    @classmethod
+    async def cmeth(cls, a, b, c, d=None): pass
+
+    @staticmethod
+    async def smeth(a, b, c, d=None): pass
 
 
 class SomethingElse(object):
@@ -55,7 +68,21 @@ class Typos():
     set_spec = None
 
 
-def something(a): pass
+def something(a):
+    return a
+
+
+def something_two_args(a, b):
+    return a, b
+
+
+class SomethingWithProps(object):
+    def __init__(self, a, b, c=None):
+        self.a = a
+        self.b = b
+        self.c = c
+
+    def meth(self, x, y): pass
 
 
 class MockTest(unittest.TestCase):
@@ -371,6 +398,17 @@ class MockTest(unittest.TestCase):
                           "children incorrectly cleared")
         self.assertFalse(mock.something.called, "child not reset")
 
+    def test_mock_autospec_reset_mock(self):
+        mock_something = Mock(autospec=Something)
+        mock_something.meth(sentinel.a, sentinel.b, sentinel.c)
+
+        mock_something.reset_mock()
+
+        self.assertEqual(mock_something.meth.call_count, 0)
+        # the child mock is preserved by reset_mock(), so signature checking
+        # is still enforced afterwards.
+        self.assertRaises(TypeError, mock_something.meth)
+        mock_something.meth(sentinel.a, sentinel.b, sentinel.c)
 
     def test_reset_mock_recursion(self):
         mock = Mock()
@@ -693,6 +731,212 @@ class MockTest(unittest.TestCase):
 
         test_attributes(Mock(spec=Something))
         test_attributes(Mock(spec=Something()))
+
+
+    def _check_autospeced_something(self, something):
+        # assert that AttributeError is raised if the method does not exist.
+        self.assertRaises(AttributeError, getattr, something, 'foolish')
+
+        self._check_autospeced_something_method(something.meth)
+        self._check_autospeced_something_method(something.cmeth)
+        self._check_autospeced_something_method(something.smeth)
+
+
+    def _check_autospeced_something_method(self, mock_method):
+        # check that the methods are callable with correct args.
+        mock_method(sentinel.a, sentinel.b, sentinel.c)
+        mock_method(sentinel.a, sentinel.b, sentinel.c, d=sentinel.d)
+        mock_method.assert_has_calls([
+            call(sentinel.a, sentinel.b, sentinel.c),
+            call(sentinel.a, sentinel.b, sentinel.c, d=sentinel.d)])
+
+        # assert that TypeError is raised if the method signature is not
+        # respected.
+        self.assertRaises(TypeError, mock_method)
+        self.assertRaises(TypeError, mock_method, sentinel.a)
+        self.assertRaises(TypeError, mock_method, a=sentinel.a)
+        self.assertRaises(TypeError, mock_method, sentinel.a, sentinel.b,
+                          sentinel.c, e=sentinel.e)
+
+
+    def test_mock_autospec_all_members(self):
+        for spec in [Something, Something()]:
+            mock_something = Mock(autospec=spec)
+            self._check_autospeced_something(mock_something)
+
+
+    def test_mock_autospec_all_members_wraps(self):
+        something = Something()
+        mock_something = Mock(autospec=something, wraps=something)
+        self._check_autospeced_something(mock_something)
+
+
+    def _check_autospeced_something_async(self, something):
+        # assert that AttributeError is raised if the method does not exist.
+        self.assertRaises(AttributeError, getattr, something, 'foolish')
+
+        self._check_autospeced_something_method_async(something.meth)
+        self._check_autospeced_something_method_async(something.cmeth)
+        self._check_autospeced_something_method_async(something.smeth)
+
+
+    def _check_autospeced_something_method_async(self, mock_method):
+        # check that the methods are callable with correct args.
+        asyncio.run(mock_method(sentinel.a, sentinel.b, sentinel.c))
+        asyncio.run(mock_method(sentinel.a, sentinel.b, sentinel.c,
+                                d=sentinel.d))
+        mock_method.assert_has_calls([
+            call(sentinel.a, sentinel.b, sentinel.c),
+            call(sentinel.a, sentinel.b, sentinel.c, d=sentinel.d)])
+
+        # assert that TypeError is raised if the method signature is not
+        # respected.
+        self.assertRaises(TypeError, mock_method)
+        self.assertRaises(TypeError, mock_method, sentinel.a)
+        self.assertRaises(TypeError, mock_method, a=sentinel.a)
+        self.assertRaises(TypeError, mock_method, sentinel.a, sentinel.b,
+                          sentinel.c, e=sentinel.e)
+
+
+    @requires_working_socket()
+    def test_mock_autospec_all_members_async(self):
+        for spec in [SomethingAsync, SomethingAsync()]:
+            mock_something = AsyncMock(autospec=spec)
+            self._check_autospeced_something_async(mock_something)
+
+
+    @requires_working_socket()
+    def test_mock_autospec_all_members_wraps_async(self):
+        something = SomethingAsync()
+        mock_something = AsyncMock(autospec=something, wraps=something)
+        self._check_autospeced_something_async(mock_something)
+
+
+    def test_mock_autospec_function(self):
+        mock_func = Mock(autospec=something, wraps=something)
+
+        result = mock_func(sentinel.a)
+        self.assertEqual(result, sentinel.a)
+
+        self.assertRaises(TypeError, mock_func)
+        self.assertRaises(TypeError, mock_func, sentinel.a, sentinel.b)
+
+
+    def test_mock_autospec_partial_function(self):
+        partial_something = functools.partial(something_two_args, sentinel.a)
+
+        mock_func = Mock(autospec=partial_something, wraps=partial_something)
+
+        result = mock_func(sentinel.b)
+        self.assertEqual(result, (sentinel.a, sentinel.b))
+
+        self.assertRaises(TypeError, mock_func)
+        self.assertRaises(TypeError, mock_func, sentinel.b, sentinel.c)
+
+
+    def test_mock_autospec_partial_method(self):
+        obj = Something()
+        partial_meth = functools.partial(obj.meth, sentinel.a, sentinel.b)
+
+        mock_meth = Mock(autospec=partial_meth, wraps=partial_meth)
+
+        result = mock_meth(sentinel.c)
+        self.assertEqual(result, (sentinel.a, sentinel.b, sentinel.c, None))
+
+        self.assertRaises(TypeError, mock_meth)
+        self.assertRaises(TypeError, mock_meth, sentinel.d, e=sentinel.e)
+
+
+    def test_mock_autospec_side_effect(self):
+        def side_effect(a, b, c, d=None):
+            return (a, b, c, d)
+
+        mock_something = Mock(autospec=Something)
+        mock_something.meth.side_effect = side_effect
+
+        result = mock_something.meth(sentinel.a, sentinel.b, sentinel.c)
+        self.assertEqual(result, (sentinel.a, sentinel.b, sentinel.c, None))
+
+        # signature checking is enforced before the side_effect runs.
+        self.assertRaises(TypeError, mock_something.meth)
+        self.assertRaises(TypeError, mock_something.meth, sentinel.a)
+
+
+    def test_mock_autospec_class_init_signature(self):
+        mock_class = Mock(autospec=SomethingWithProps)
+
+        mock_class(sentinel.a, sentinel.b)
+        mock_class(sentinel.a, sentinel.b, sentinel.c)
+
+        self.assertRaises(TypeError, mock_class)
+        self.assertRaises(TypeError, mock_class, sentinel.a)
+        self.assertRaises(TypeError, mock_class, sentinel.a, sentinel.b,
+                          sentinel.c, e=sentinel.e)
+
+
+    def test_mock_autospec_with_spec_list_for_init_only_attributes(self):
+        # SomethingWithProps only assigns 'a' and 'b' as instance attributes
+        # in __init__, so they are absent from dir(SomethingWithProps) and
+        # would normally be rejected by autospec.
+        mock_something = Mock(
+            autospec=SomethingWithProps, spec=['a', 'b', 'c'])
+
+        # the extra attributes from `spec` are accessible.
+        mock_something.a
+        mock_something.b
+
+        # autospec is still applied: methods are still signature-checked.
+        mock_something.meth(sentinel.x, sentinel.y)
+        self.assertRaises(TypeError, mock_something.meth)
+
+        # attributes that are neither on the spec class nor in the extra
+        # `spec` list are still rejected.
+        self.assertRaises(AttributeError, getattr, mock_something, 'foolish')
+
+
+    def test_mock_autospec_nested(self):
+        class Inner(object):
+            def meth(self, a, b): pass
+
+        class Outer(object):
+            inner = Inner()
+
+        mock_outer = Mock(autospec=Outer)
+        self.assertIsInstance(mock_outer.inner, Mock)
+
+        mock_outer.inner.meth(sentinel.a, sentinel.b)
+        self.assertRaises(TypeError, mock_outer.inner.meth)
+        self.assertRaises(TypeError, mock_outer.inner.meth, sentinel.a)
+
+
+    def test_mock_autospec_magic_methods(self):
+        for Klass in MagicMock, NonCallableMagicMock:
+            mock = Klass(autospec=int)
+            int(mock)
+
+            mock.__int__.return_value = 4
+            self.assertEqual(int(mock), 4)
+
+            # attributes that don't exist on the spec are still rejected.
+            self.assertRaises(AttributeError, getattr, mock, 'foo')
+
+
+    def test_mock_autospec_call_signature(self):
+        class Caller(object):
+            def __init__(self, a): pass
+            def __call__(self, x): pass
+
+        # autospeccing the class checks the constructor signature.
+        mock_cls = MagicMock(autospec=Caller)
+        mock_cls(a=sentinel.a)
+        self.assertRaises(TypeError, mock_cls)
+        self.assertRaises(TypeError, mock_cls, sentinel.a, sentinel.b)
+
+        # autospeccing an instance checks the __call__ signature instead.
+        mock_instance = MagicMock(autospec=Caller(sentinel.a))
+        mock_instance(x=sentinel.x)
+        self.assertRaises(TypeError, mock_instance)
+        self.assertRaises(TypeError, mock_instance, sentinel.x, sentinel.y)
 
 
     def test_wraps_calls(self):
@@ -1974,6 +2218,21 @@ class MockTest(unittest.TestCase):
             self.assertRaises(TypeError, lambda: mock['foo'])
 
 
+    def test_mock_add_spec_autospec_all_members(self):
+        for spec in [Something, Something()]:
+            mock_something = Mock()
+            mock_something.mock_add_spec(spec, autospec=True)
+            self._check_autospeced_something(mock_something)
+
+
+    @requires_working_socket()
+    def test_mock_add_spec_autospec_all_members_async(self):
+        for spec in [SomethingAsync, SomethingAsync()]:
+            mock_something = Mock()
+            mock_something.mock_add_spec(spec, autospec=True)
+            self._check_autospeced_something_async(mock_something)
+
+
     def test_adding_child_mock(self):
         for Klass in (NonCallableMock, Mock, MagicMock, NonCallableMagicMock,
                       AsyncMock):
@@ -2168,6 +2427,19 @@ class MockTest(unittest.TestCase):
 
                 m2.foo()
                 self.assertEqual(m.mock_calls, call().foo().call_list())
+
+
+    def test_mock_autospec_attach_mock(self):
+        m = Mock()
+        child = Mock(autospec=Something)
+        m.attach_mock(child, 'child')
+
+        child.meth(sentinel.a, sentinel.b, sentinel.c)
+        m.assert_has_calls(
+            [call.child.meth(sentinel.a, sentinel.b, sentinel.c)])
+
+        # signature checking survives being attached to another mock.
+        self.assertRaises(TypeError, child.meth)
 
 
     def test_attach_mock_patch_autospec(self):
@@ -2417,6 +2689,13 @@ class MockTest(unittest.TestCase):
         self.assertIsNone(obj._instance, msg='before mock')
         mock = Mock(spec=obj)
         self.assertIsNone(obj._instance, msg='after mock')
+        self.assertEqual('object', obj.instance)
+
+    def test_mock_autospec_property_not_called(self):
+        obj = SomethingElse()
+        self.assertIsNone(obj._instance, msg='before mock')
+        mock = Mock(autospec=obj)
+        self.assertIsNone(obj._instance)
         self.assertEqual('object', obj.instance)
 
     def test_decorated_async_methods_with_spec_mock(self):
