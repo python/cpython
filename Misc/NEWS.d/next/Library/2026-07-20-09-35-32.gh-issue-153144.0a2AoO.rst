@@ -1,0 +1,7 @@
+The return values of ``atan2(0.0, 0.0)``, ``atan2(0.0, -0.0)``, etc. are
+specified in Annex F of the C standard.  The Intel math library, for legacy
+compatibility, also sets ``errno`` to indicate a domain error when both
+arguments are zero.  Python's :func:`math.atan2` and :func:`cmath.phase`
+should return the values specified by Annex F, not raise ``ValueError``.
+This patch fixes these cases when building Python with the Intel math
+library. Contributed by High Performance Kernels LLC.

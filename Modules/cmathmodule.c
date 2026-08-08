@@ -1004,12 +1004,8 @@ cmath_phase_impl(PyObject *module, Py_complex z)
 {
     double phi;
 
-    errno = 0;
     phi = atan2(z.imag, z.real); /* should not cause any exception */
-    if (errno != 0)
-        return math_error();
-    else
-        return PyFloat_FromDouble(phi);
+    return PyFloat_FromDouble(phi);
 }
 
 /*[clinic input]
