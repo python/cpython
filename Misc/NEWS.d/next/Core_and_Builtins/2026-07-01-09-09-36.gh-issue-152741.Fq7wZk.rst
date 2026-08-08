@@ -1,0 +1,4 @@
+Fix a data race on a thread state's thread id in the free-threaded build.
+A starting thread now publishes its thread id with an atomic store so that
+stop-the-world readers such as ``sys._current_exceptions()`` and
+``sys._current_frames()`` no longer race with it.
