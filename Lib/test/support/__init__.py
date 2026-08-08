@@ -1374,6 +1374,9 @@ def bigaddrspacetest(f):
 #=======================================================================
 # unittest integration.
 
+def _id(obj):
+    return obj
+
 def mark(label, value=True, /):
     """Add a label to a test method or class.  Use it as a decorator.
 
