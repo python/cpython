@@ -79,6 +79,16 @@ AboutDialog_spec = {
            "Verify x.y.z versions and test each button, including Close.\n "
     }
 
+_token_browser_spec = {
+    'file': 'tokenbrowser',
+    'kwds': {},
+    'msg': "Select rows in the token table and verify the matching regions\n"
+           "are highlighted in the sample editor above.  Select the whole\n"
+           "editor text, or part of it, and press Refresh.\n"
+           "Double-click a row and verify the editor cursor jumps to the\n"
+           "start of that token and the editor gets focus."
+    }
+
 # TODO implement ^\; adding '<Control-Key-\\>' to function does not work.
 _calltip_window_spec = {
     'file': 'calltip_w',

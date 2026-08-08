@@ -4,6 +4,11 @@ Released on 2026-10-01
 =========================
 
 
+gh-152941: Add a Token Browser to IDLE, opened from the new Browse menu.
+It lists the Python tokens of the editor content, the Shell input, or
+the selection, with token type names colored as by `python -m tokenize`.
+Patch by Serhiy Storchaka and Claude Code.
+
 gh-152745:  When "Run... Customized" with "Restart shell" unchecked
 while Shell is running code, including waiting for an input('prompt:')
 response, just report that the shell is executing instead of
