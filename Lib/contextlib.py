@@ -660,7 +660,23 @@ class ExitStack(_BaseExitStack, AbstractContextManager):
                     exc_details = None, None, None
                 else:
                     exc_details = type(exc), exc, exc.__traceback__
-                if cb(*exc_details):
+                if frame_exc is None and exc is not None:
+                    # gh-102201: No exception is being handled, so make the
+                    # most recent one active (without disturbing its own
+                    # __context__) while the callback runs, so the interpreter
+                    # chains any exception the callback raises onto it, exactly
+                    # as equivalent nested `with` statements would.
+                    saved_tb = exc.__traceback__
+                    try:
+                        raise exc
+                    except BaseException:
+                        try:
+                            cb_suppress = cb(*exc_details)
+                        finally:
+                            exc.__traceback__ = saved_tb
+                else:
+                    cb_suppress = cb(*exc_details)
+                if cb_suppress:
                     suppressed_exc = True
                     pending_raise = False
                     exc = None
@@ -790,7 +806,24 @@ class AsyncExitStack(_BaseExitStack, AbstractAsyncContextManager):
                     exc_details = None, None, None
                 else:
                     exc_details = type(exc), exc, exc.__traceback__
-                if is_sync:
+                if frame_exc is None and exc is not None:
+                    # gh-102201: No exception is being handled, so make the
+                    # most recent one active (without disturbing its own
+                    # __context__) while the callback runs, so the interpreter
+                    # chains any exception the callback raises onto it, exactly
+                    # as equivalent nested `with` statements would.
+                    saved_tb = exc.__traceback__
+                    try:
+                        raise exc
+                    except BaseException:
+                        try:
+                            if is_sync:
+                                cb_suppress = cb(*exc_details)
+                            else:
+                                cb_suppress = await cb(*exc_details)
+                        finally:
+                            exc.__traceback__ = saved_tb
+                elif is_sync:
                     cb_suppress = cb(*exc_details)
                 else:
                     cb_suppress = await cb(*exc_details)
