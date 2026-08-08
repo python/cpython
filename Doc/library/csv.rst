@@ -51,7 +51,7 @@ The :mod:`!csv` module defines the following functions:
 .. index::
    single: universal newlines; csv.reader function
 
-.. function:: reader(csvfile, /, dialect='excel', **fmtparams)
+.. function:: reader(csvfile, /, dialect='excel', *, converter=None, **fmtparams)
 
    Return a :ref:`reader object <reader-objects>` that will process
    lines from the given *csvfile*.  A csvfile must be an iterable of
@@ -69,7 +69,11 @@ The :mod:`!csv` module defines the following functions:
 
    Each row read from the csv file is returned as a list of strings.  No
    automatic data type conversion is performed unless the :data:`QUOTE_NONNUMERIC` format
-   option is specified (in which case unquoted fields are transformed into floats).
+   option is specified,
+   in which case unquoted fields are transformed with the optional *converter* argument,
+   or into floats if it is not given.
+   *converter* is called as ``converter(index, field)``,
+   where *index* is the 0-based position of the field in the row.
 
    A short usage example::
 
@@ -88,8 +92,11 @@ The :mod:`!csv` module defines the following functions:
       Spam Spam Spam Spam Spam |Baked Beans|
       Spam |Lovely Spam| |Wonderful Spam|
 
+   .. versionadded:: next
+      The *converter* parameter.
 
-.. function:: writer(csvfile, /, dialect='excel', **fmtparams)
+
+.. function:: writer(csvfile, /, dialect='excel', *, formatter=None, **fmtparams)
 
    Return a writer object responsible for converting the user's data into delimited
    strings on the given file-like object.  *csvfile* can be any object with a
@@ -101,12 +108,20 @@ The :mod:`!csv` module defines the following functions:
    :func:`list_dialects` function.  The other optional *fmtparams* keyword arguments
    can be given to override individual formatting parameters in the current
    dialect.  For full details about dialects and formatting parameters, see
-   the :ref:`csv-fmt-params` section. To make it
-   as easy as possible to interface with modules which implement the DB API, the
-   value :const:`None` is written as the empty string.  While this isn't a
-   reversible transformation, it makes it easier to dump SQL NULL data values to
-   CSV files without preprocessing the data returned from a ``cursor.fetch*`` call.
-   All other non-string data are stringified with :func:`str` before being written.
+   the :ref:`csv-fmt-params` section.
+
+   To make it as easy as possible to interface with modules which implement the DB API,
+   the value :const:`None` is written as the empty string.
+   While this isn't a reversible transformation,
+   it makes it easier to dump SQL NULL data values to CSV files
+   without preprocessing the data returned from a ``cursor.fetch*`` call.
+   All other non-string data are stringified before being written
+   with the optional *formatter* argument,
+   or with :func:`str` if it is not given.
+   *formatter* is called as ``formatter(index, value)``,
+   where *index* is the 0-based position of the field in the row,
+   and must return a string.
+   Quoting is still determined by the original value.
 
    A short usage example::
 
@@ -123,6 +138,9 @@ The :mod:`!csv` module defines the following functions:
 
       Spam Spam Spam Spam Spam |Baked Beans|
       Spam |Lovely Spam| |Wonderful Spam|
+
+   .. versionadded:: next
+      The *formatter* parameter.
 
 
 .. function:: register_dialect(name, /, dialect='excel', **fmtparams)
