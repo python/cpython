@@ -1,0 +1,1 @@
+Fix a data race on a socket's timeout in the :term:`free-threaded build`.

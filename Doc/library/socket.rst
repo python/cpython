@@ -2094,6 +2094,24 @@ Socket Objects
 
       For further information, please consult the :ref:`notes on socket timeouts <socket-timeouts>`.
 
+      .. note::
+
+         Do not call :meth:`setblocking` or :meth:`settimeout` while another
+         thread is performing an operation on the same socket.  Changing the
+         blocking mode concurrently with operations such as :meth:`connect`,
+         :meth:`accept`, :meth:`recv`, or :meth:`send` can cause the operation
+         to block unexpectedly or to fail with a non-blocking error.
+
+         Applications must use external synchronization when changing a
+         socket's blocking mode or timeout.  This also applies to socket
+         objects and file descriptors that share the same underlying socket,
+         since the blocking mode is shared at the operating-system level.
+
+         Reading a socket's current timeout or blocking mode with
+         :meth:`gettimeout` or :meth:`getblocking` remains safe to do
+         concurrently, only *changing* it during an operation requires the
+         synchronization described above.
+
       .. versionchanged:: 3.7
          The method no longer toggles :const:`SOCK_NONBLOCK` flag on
          :attr:`socket.type`.

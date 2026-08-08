@@ -346,6 +346,9 @@ typedef struct {
                                         sets a Python exception */
     PyTime_t sock_timeout;     /* Operation timeout in seconds;
                                         0.0 means non-blocking */
+#ifdef Py_GIL_DISABLED
+    PyMutex sock_timeout_mutex;
+#endif
     struct _socket_state *state;
 #ifdef MS_WINDOWS
     int quickack;
