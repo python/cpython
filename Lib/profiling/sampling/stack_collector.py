@@ -70,7 +70,7 @@ class CollapsedStackCollector(StackTraceCollector):
 class FlamegraphCollector(StackTraceCollector):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.stats = {}
+        self.stats = {"sample_interval_usec": self.sample_interval_usec}
         self._root = {"samples": 0, "children": {}, "threads": set()}
         self._total_samples = 0
         self._sample_count = 0  # Track actual number of samples (not thread traces)
