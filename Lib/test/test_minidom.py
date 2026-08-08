@@ -1784,5 +1784,38 @@ class MinidomTest(unittest.TestCase):
         dom2 = parseString(dom1.toprettyxml())
         self.checkWholeText(dom2.getElementsByTagName('node')[0].firstChild, '</data>')
 
+    def test_notation_decl_filter(self):
+        # gh-152142: a DOMBuilderFilter accepting a notation must keep it and
+        # rejecting it must drop it, matching entity declarations.
+        from xml.dom.expatbuilder import makeBuilder
+        from xml.dom.xmlbuilder import DOMBuilderFilter, Options
+
+        source = (b'<?xml version="1.0"?>\n'
+                  b'<!DOCTYPE root [\n'
+                  b'  <!NOTATION gif PUBLIC "image/gif">\n'
+                  b'  <!ENTITY logo SYSTEM "logo.gif" NDATA gif>\n'
+                  b']>\n'
+                  b'<root/>')
+
+        class Filter(DOMBuilderFilter):
+            def __init__(self, result):
+                self.result = result
+            def acceptNode(self, node):
+                if node.nodeType == Node.NOTATION_NODE:
+                    return self.result
+                return self.FILTER_ACCEPT
+
+        def counts(filt):
+            options = Options()
+            options.filter = filt
+            doctype = makeBuilder(options).parseFile(io.BytesIO(source)).doctype
+            return doctype.notations.length, doctype.entities.length
+
+        # The entity must stay untouched in every case; only the notation
+        # follows the filter result.
+        self.assertEqual(counts(None), (1, 1))
+        self.assertEqual(counts(Filter(DOMBuilderFilter.FILTER_ACCEPT)), (1, 1))
+        self.assertEqual(counts(Filter(DOMBuilderFilter.FILTER_REJECT)), (0, 1))
+
 if __name__ == "__main__":
     unittest.main()
