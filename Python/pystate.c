@@ -857,8 +857,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
      */
     // XXX Make sure we properly deal with problematic finalizers.
 
-    Py_CLEAR(interp->audit_hooks);
-
     // gh-140257: Threads have already been cleared, but daemon threads may
     // still access eval_breaker atomically via take_gil() right before they
     // hang. Use an atomic store to prevent data races during finalization.
