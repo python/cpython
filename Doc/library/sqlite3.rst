@@ -418,6 +418,40 @@ Module functions
    Note: *typename* and the name of the type in your query are matched
    case-insensitively.
 
+.. function:: Date(year, month, day)
+
+   This function constructs an object holding a date value.
+
+.. function:: Time(hour, minute, second)
+
+   This function constructs an object holding a time value.
+
+.. function:: Timestamp(year, month, day, hour, minute, second)
+
+   This function constructs an object holding a time stamp value.
+
+.. function:: DateFromTicks(ticks)
+
+   This function constructs an object holding a date value from the given ticks
+   value (number of seconds since the epoch; see the documentation of the
+   standard Python :mod:`time` module for details).
+
+.. function:: TimeFromTicks(ticks)
+
+   This function constructs an object holding a time value from the given ticks
+   value (number of seconds since the epoch; see the documentation of the
+   standard Python :mod:`time` module for details).
+
+.. function:: TimestampFromTicks(ticks)
+
+   This function constructs an object holding a time stamp value from the given
+   ticks value (number of seconds since the epoch; see the documentation of the
+   standard Python :mod:`time` module for details).
+
+.. function:: Binary(string)
+
+   This function constructs an object capable of holding a binary (long) string
+   value.
 
 .. _sqlite3-module-constants:
 
