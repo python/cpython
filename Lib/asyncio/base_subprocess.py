@@ -14,7 +14,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
 
     def __init__(self, loop, protocol, args, shell,
                  stdin, stdout, stderr, bufsize,
-                 waiter=None, extra=None, **kwargs):
+                 waiter=None, extra=None, _proc=None, **kwargs):
         super().__init__(extra)
         self._closed = False
         self._protocol = protocol
@@ -34,13 +34,19 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         if stderr == subprocess.PIPE:
             self._pipes[2] = None
 
-        # Create the child process: set the _proc attribute
-        try:
-            self._start(args=args, shell=shell, stdin=stdin, stdout=stdout,
-                        stderr=stderr, bufsize=bufsize, **kwargs)
-        except:
-            self.close()
-            raise
+        # Create the child process: set the _proc attribute.
+        # _proc lets a caller hand in an already-spawned Popen (e.g. one
+        # created off the event loop thread) instead of spawning it here.
+        if _proc is not None:
+            self._proc = _proc
+        else:
+            try:
+                self._start(args=args, shell=shell, stdin=stdin,
+                            stdout=stdout, stderr=stderr, bufsize=bufsize,
+                            **kwargs)
+            except:
+                self.close()
+                raise
 
         self._pid = self._proc.pid
         self._extra['subprocess'] = self._proc

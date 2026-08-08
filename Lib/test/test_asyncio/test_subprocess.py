@@ -3,6 +3,7 @@ import shlex
 import signal
 import sys
 import textwrap
+import threading
 import unittest
 import warnings
 from unittest import mock
@@ -1119,6 +1120,89 @@ if sys.platform != 'win32':
                 self.assertEqual(stale_kills, [])
 
             self.loop.run_until_complete(run())
+
+        def test_subprocess_exec_does_not_block_loop(self):
+            # gh-146181: subprocess.Popen() is spawned in a worker thread
+            # so that a slow-to-start child (large binary, contended
+            # disk, etc.) doesn't stall every other task on the loop.
+            real_spawn = unix_events._spawn_subprocess
+            entered = threading.Event()
+            release = threading.Event()
+
+            def blocking_spawn(*args, **kwargs):
+                entered.set()
+                release.wait(10)
+                return real_spawn(*args, **kwargs)
+
+            async def main():
+                ticks = 0
+
+                async def ticker():
+                    nonlocal ticks
+                    while not release.is_set():
+                        ticks += 1
+                        await asyncio.sleep(0)
+
+                ticker_task = asyncio.ensure_future(ticker())
+                with mock.patch.object(unix_events, '_spawn_subprocess',
+                                       blocking_spawn):
+                    create_task = asyncio.ensure_future(
+                        asyncio.create_subprocess_exec(*PROGRAM_BLOCKED))
+                    # Wait until Popen() is actually running (and
+                    # blocked) in the worker thread.
+                    await asyncio.get_running_loop().run_in_executor(
+                        None, entered.wait, 10)
+                    # While the worker thread is stuck in Popen(), the
+                    # loop must still be able to run other coroutines.
+                    for _ in range(5):
+                        await asyncio.sleep(0)
+                    ticks_while_spawning = ticks
+                    release.set()
+                    proc = await create_task
+                await ticker_task
+                proc.kill()
+                await proc.wait()
+                return ticks_while_spawning
+
+            ticks_while_spawning = self.loop.run_until_complete(main())
+            self.assertGreater(ticks_while_spawning, 0)
+
+        def test_cancel_make_subprocess_transport_kills_process(self):
+            # gh-146181: cancelling subprocess creation while Popen() is
+            # still spawning in the worker thread (i.e. before a
+            # transport exists to own cleanup) must not leave an
+            # orphaned child process or leaked pipe fds behind.
+            real_spawn = unix_events._spawn_subprocess
+            procs = []
+
+            def capturing_spawn(*args, **kwargs):
+                proc = real_spawn(*args, **kwargs)
+                procs.append(proc)
+                return proc
+
+            async def main():
+                with mock.patch.object(unix_events, '_spawn_subprocess',
+                                       capturing_spawn):
+                    coro = self.loop.subprocess_exec(
+                        asyncio.SubprocessProtocol, *PROGRAM_BLOCKED)
+                    task = self.loop.create_task(coro)
+                    self.loop.call_soon(task.cancel)
+                    with self.assertRaises(asyncio.CancelledError):
+                        await task
+
+            with test_utils.disable_logger():
+                self.loop.run_until_complete(main())
+                test_utils.run_briefly(self.loop)
+
+            self.assertEqual(len(procs), 1)
+            proc = procs[0]
+            # The process must have been killed and reaped, not left
+            # running in the background.
+            self.assertIsNotNone(proc.poll())
+            # Its pipe ends must have been closed, not leaked.
+            for pipe in (proc.stdin, proc.stdout, proc.stderr):
+                if pipe is not None:
+                    self.assertTrue(pipe.closed)
 
 
     class SubprocessThreadedWatcherTests(SubprocessWatcherMixin,
