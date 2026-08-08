@@ -1090,9 +1090,17 @@ def type_repr(value):
 
     """
     if isinstance(value, (type, types.FunctionType, types.BuiltinFunctionType)):
-        if value.__module__ == "builtins":
+        module = value.__module__
+        if module is None:
+            # Built-in methods have __module__ set to None; recover the module
+            # from the bound object (the class itself for class-bound methods).
+            obj = getattr(value, "__self__", None)
+            if obj is not None:
+                cls = obj if isinstance(obj, type) else type(obj)
+                module = cls.__module__
+        if module is None or module == "builtins":
             return value.__qualname__
-        return f"{value.__module__}.{value.__qualname__}"
+        return f"{module}.{value.__qualname__}"
     elif isinstance(value, _Template):
         tree = _template_to_ast(value)
         return ast.unparse(tree)
