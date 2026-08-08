@@ -237,6 +237,15 @@ AH_BOTTOM([
 #define STRICT_SYSV_CURSES /* Don't use ncurses extensions */
 #endif
 
+/* Define _POSIX_C_SOURCE only when it was not defined by an earlier
+   system-header include. */
+#ifdef _PYTHON_POSIX_C_SOURCE
+#  ifndef _POSIX_C_SOURCE
+#    define _POSIX_C_SOURCE 202405L
+#  endif
+#  undef _PYTHON_POSIX_C_SOURCE
+#endif
+
 #endif /*Py_PYCONFIG_H*/
 ])
 
@@ -930,8 +939,8 @@ then
   AC_DEFINE([_XOPEN_SOURCE_EXTENDED], [1],
             [Define to activate Unix95-and-earlier features])
 
-  AC_DEFINE([_POSIX_C_SOURCE], [202405L],
-            [Define to activate features from IEEE Std 1003.1-2024])
+  AC_DEFINE([_PYTHON_POSIX_C_SOURCE], [1],
+            [Define to configure _POSIX_C_SOURCE in pyconfig.h])
 
   # Defining _POSIX_C_SOURCE and _XOPEN_SOURCE hides C23 library
   # declarations on FreeBSD (e.g. sinpi() in math.h) when compiling
