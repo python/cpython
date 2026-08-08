@@ -235,8 +235,17 @@ class GeneratedParser(Parser):
 
     @memoize
     def flag(self) -> Optional[str]:
-        # flag: NAME
+        # flag: NAME '=' NAME | NAME
         mark = self._mark()
+        if (
+            (a := self.name())
+            and
+            (literal := self.expect('='))
+            and
+            (b := self.name())
+        ):
+            return a . string + "=" + b . string
+        self._reset(mark)
         if (
             (name := self.name())
         ):

@@ -598,6 +598,34 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
     def _should_memoize(self, node: Rule) -> bool:
         return "memo" in node.flags and not node.left_recursive
 
+    def _rule_fast_path(self, node: Rule) -> str | None:
+        """Return the C fast-path hook declared by a (fastpath=<function>) rule flag.
+
+        The hook is called on rule entry and returns 1 if it handled the
+        parse (storing its result), 0 to fall through to the rule's
+        alternatives. For example, given
+
+            disjunction[expr_ty] (memo, fastpath=_PyPegen_atom_fast_path):
+
+        the disjunction rule body starts with
+
+            if (_PyPegen_atom_fast_path(p, &_res)) {
+                p->level--;
+                return _res;
+            }
+
+        See "Fast-path hooks" in InternalDocs/parser.md.
+        """
+        for flag in node.flags:
+            name, _, func = flag.partition("=")
+            if name == "fastpath":
+                if not func:
+                    raise ValueError(
+                        f"rule {node.name!r}: fastpath flag needs a function"
+                    )
+                return func
+        return None
+
     def _handle_default_rule_body(self, node: Rule, rhs: Rhs, result_type: str) -> None:
         memoize = self._should_memoize(node)
 
@@ -605,6 +633,12 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             self.add_level()
             self._check_for_errors()
             self.print(f"{result_type} _res = NULL;")
+            fastpath = self._rule_fast_path(node)
+            if fastpath:
+                self.print(f"if ({fastpath}(p, &_res)) {{")
+                with self.indent():
+                    self.add_return("_res")
+                self.print("}")
             if memoize:
                 self.print(f"if (_PyPegen_is_memoized(p, {node.name}_type, &_res)) {{")
                 with self.indent():

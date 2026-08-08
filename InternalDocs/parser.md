@@ -563,6 +563,51 @@ in the generated C parse code that allows to measure how much each rule uses
 memoization (check the [`Parser/pegen.c`](../Parser/pegen.c)
 file for more information) but it needs to be manually activated.
 
+Fast-path hooks
+---------------
+
+Some rules are entered so often that even the bookkeeping of trying their
+alternatives is expensive. Consider parsing the argument ``a`` in a call
+like ``f(a, b)``: the argument is a full expression, so the parser descends
+the whole operator precedence chain
+
+```
+expression -> disjunction -> conjunction -> inversion -> comparison
+    -> bitwise_or -> bitwise_xor -> bitwise_and -> shift_expr -> sum
+    -> term -> factor -> power -> await_primary -> primary -> atom
+```
+
+before it can produce the ``Name`` node for ``a``: around fourteen rule
+invocations, each paying its own C-stack check and memoization lookups, to
+consume a single token. But since the following token is ``,``, which
+cannot continue any binary or postfix expression, that outcome is already
+known after peeking at two tokens.
+
+For cases like this a rule can declare a hand-written C hook with the
+``fastpath`` flag, next to where ``memo`` goes:
+
+```
+disjunction[expr_ty] (memo, fastpath=_PyPegen_atom_fast_path):
+```
+
+The generator calls the hook on rule entry, before any alternative is tried:
+
+```c
+if (_PyPegen_atom_fast_path(p, &_res)) {
+    p->level--;
+    return _res;
+}
+```
+
+The hook receives the parser and a pointer to the rule's result variable and
+returns 1 if it handled the parse (storing its result, which can be ``NULL``
+to signal failure with ``p->error_indicator`` set) or 0 to fall through to
+the rule's normal alternatives. The generator knows nothing about what the
+hook does: all parsing logic lives in the hook itself, next to the other
+token helpers in [`Parser/pegen.c`](../Parser/pegen.c). A hook must behave
+exactly like the rule it accelerates, including which tokens it fills,
+because error reporting depends on the number of tokens read (``p->fill``).
+
 Automatic variables
 -------------------
 
