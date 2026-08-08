@@ -153,7 +153,7 @@
 #ifdef HAVE_LINUX_RANDOM_H
 #  include <linux/random.h>       // GRND_RANDOM
 #endif
-#ifdef HAVE_GETRANDOM_SYSCALL
+#ifdef HAVE_SYS_SYSCALL_H
 #  include <sys/syscall.h>        // syscall()
 #endif
 
