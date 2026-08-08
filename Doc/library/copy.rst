@@ -87,6 +87,14 @@ pickling.  See the description of module :mod:`pickle` for information on these
 methods.  In fact, the :mod:`!copy` module uses the registered
 pickle functions from the :mod:`copyreg` module.
 
+Copying of instances of a specific type can also be customized
+without modifying the class:
+see :func:`copyreg.copy` and :func:`copyreg.deepcopy`.
+
+.. versionchanged:: next
+   Added support for functions registered
+   with :func:`copyreg.copy` and :func:`copyreg.deepcopy`.
+
 .. index::
    single: __copy__() (copy protocol)
    single: __deepcopy__() (copy protocol)

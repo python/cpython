@@ -309,14 +309,13 @@ class OperatorsTest(unittest.TestCase):
     @unittest.skipIf(xxsubtype is None, "requires xxsubtype module")
     def test_spam_lists(self):
         # Testing spamlist operations...
-        import copy, xxsubtype as spam
+        import xxsubtype as spam
 
         def spamlist(l, memo=None):
             import xxsubtype as spam
             return spam.spamlist(l)
 
-        # This is an ugly hack:
-        copy._deepcopy_dispatch[spam.spamlist] = spamlist
+        copyreg.deepcopy(spam.spamlist, spamlist)
 
         self.binop_test(spamlist([1]), spamlist([2]), spamlist([1,2]), "a+b",
                        "__add__")
@@ -354,15 +353,14 @@ class OperatorsTest(unittest.TestCase):
     @unittest.skipIf(xxsubtype is None, "requires xxsubtype module")
     def test_spam_dicts(self):
         # Testing spamdict operations...
-        import copy, xxsubtype as spam
+        import xxsubtype as spam
         def spamdict(d, memo=None):
             import xxsubtype as spam
             sd = spam.spamdict()
             for k, v in list(d.items()):
                 sd[k] = v
             return sd
-        # This is an ugly hack:
-        copy._deepcopy_dispatch[spam.spamdict] = spamdict
+        copyreg.deepcopy(spam.spamdict, spamdict)
 
         self.binop_test(spamdict({1:2,3:4}), 1, 1, "b in a", "__contains__")
         self.binop_test(spamdict({1:2,3:4}), 2, 0, "b in a", "__contains__")
