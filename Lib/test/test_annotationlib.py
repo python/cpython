@@ -1713,6 +1713,37 @@ class TestCallAnnotateFunction(unittest.TestCase):
             with self.assertRaises(DemoException):
                 annotationlib.call_annotate_function(annotate, format=fmt)
 
+    def test_generated_annotate_non_bool_compare_result(self):
+        class NonBool:
+            def __gt__(self, other):
+                return None
+
+        # Function __annotate__
+        def func(x: int):
+            pass
+
+        self.assertEqual(
+            func.__annotate__(NonBool()),
+            {"x": int},
+        )
+
+        # Class __annotate__
+        class C:
+            y: int
+
+        self.assertEqual(
+            C.__annotate__(NonBool()),
+            {"y": int},
+        )
+
+        # Module __annotate__
+        ns = {}
+        exec("z: int", ns)
+
+        self.assertEqual(
+            ns["__annotate__"](NonBool()),
+            {"z": int},
+        )
 
 class MetaclassTests(unittest.TestCase):
     def test_annotated_meta(self):
