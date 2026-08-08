@@ -12,6 +12,7 @@
 #include "binary_io.h"
 #include "_remote_debugging.h"
 #include "pycore_opcode_utils.h"  // MAX_REAL_OPCODE
+#include <math.h>
 #include <string.h>
 
 #ifdef HAVE_ZSTD
@@ -1146,6 +1147,24 @@ binary_writer_finalize(BinaryWriter *writer)
         }
     }
 
+    if (writer->has_profile_stats) {
+        uint8_t profile_stats[PROFILE_STATS_SIZE] = {0};
+        uint32_t version = PROFILE_STATS_VERSION;
+        uint32_t size = PROFILE_STATS_SIZE;
+        memcpy(profile_stats + PST_OFF_DURATION,
+               &writer->duration_sec, PST_SIZE_DURATION);
+        memcpy(profile_stats + PST_OFF_SAMPLE_RATE,
+               &writer->sample_rate, PST_SIZE_SAMPLE_RATE);
+        memcpy(profile_stats + PST_OFF_MAGIC,
+               PROFILE_STATS_MAGIC, PROFILE_STATS_MAGIC_SIZE);
+        memcpy(profile_stats + PST_OFF_VERSION, &version, PST_SIZE_VERSION);
+        memcpy(profile_stats + PST_OFF_SIZE, &size, PST_SIZE_SIZE);
+        if (fwrite_checked_allow_threads(
+                profile_stats, PROFILE_STATS_SIZE, writer->fp) < 0) {
+            return -1;
+        }
+    }
+
     /* Footer: string_count(4) + frame_count(4) + file_size(8) + checksum(16) */
     file_offset_t footer_offset = FTELL64(writer->fp);
     if (footer_offset < 0) {
@@ -1204,6 +1223,26 @@ binary_writer_finalize(BinaryWriter *writer)
     }
     writer->fp = NULL;
 
+    return 0;
+}
+
+int
+binary_writer_set_stats(BinaryWriter *writer, double duration_sec,
+                        double sample_rate)
+{
+    if (!isfinite(duration_sec) || duration_sec < 0.0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "duration must be a finite non-negative value");
+        return -1;
+    }
+    if (!isfinite(sample_rate) || sample_rate < 0.0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "sample rate must be a finite non-negative value");
+        return -1;
+    }
+    writer->duration_sec = duration_sec;
+    writer->sample_rate = sample_rate;
+    writer->has_profile_stats = 1;
     return 0;
 }
 

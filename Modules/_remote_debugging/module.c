@@ -1781,6 +1781,31 @@ _remote_debugging_BinaryWriter_write_sample_impl(BinaryWriterObject *self,
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_remote_debugging.BinaryWriter.set_stats
+    duration_sec: double
+    sample_rate: double
+
+Store measured profile statistics in the binary file.
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_BinaryWriter_set_stats_impl(BinaryWriterObject *self,
+                                              double duration_sec,
+                                              double sample_rate)
+/*[clinic end generated code: output=e5e1eb2ed9478edf input=e163d3ff3fd5c474]*/
+{
+    if (!self->writer) {
+        PyErr_SetString(PyExc_ValueError, "Writer is closed");
+        return NULL;
+    }
+    if (binary_writer_set_stats(
+            self->writer, duration_sec, sample_rate) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 /* Finalize the writer, cache total_samples, and destroy it.
  *
  * The cache assignment must happen AFTER binary_writer_finalize(): finalize
@@ -1928,6 +1953,7 @@ static PyGetSetDef BinaryWriter_getset[] = {
 
 static PyMethodDef BinaryWriter_methods[] = {
     _REMOTE_DEBUGGING_BINARYWRITER_WRITE_SAMPLE_METHODDEF
+    _REMOTE_DEBUGGING_BINARYWRITER_SET_STATS_METHODDEF
     _REMOTE_DEBUGGING_BINARYWRITER_FINALIZE_METHODDEF
     _REMOTE_DEBUGGING_BINARYWRITER_CLOSE_METHODDEF
     _REMOTE_DEBUGGING_BINARYWRITER___ENTER___METHODDEF
