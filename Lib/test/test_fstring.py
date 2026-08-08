@@ -1678,6 +1678,14 @@ except Exception:
         self.assertEqual(f'{" # nooo "=}', '" # nooo "=\' # nooo \'')
         self.assertEqual(f'{" \" # nooo \" "=}', '" \\" # nooo \\" "=\' " # nooo " \'')
 
+        result = f'''{(
+            1,  # Force lexer metadata reconstruction.
+            "\"#")=}'''
+        self.assertEqual(
+            result,
+            '(\n            1,  \n            "\\"#")=(1, \'"#\')',
+        )
+
         self.assertEqual(f'{ # some comment goes here
   """hello"""=}',  ' \n  """hello"""=\'hello\'')
         self.assertEqual(f'{"""# this is not a comment
