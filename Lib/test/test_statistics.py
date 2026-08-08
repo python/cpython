@@ -2647,6 +2647,24 @@ class TestQuantiles(unittest.TestCase):
             self.assertEqual(quantiles(data, method='inclusive'),
                             [10.0, 10.0, 10.0])
 
+    def test_monotonic_with_duplicate_floats(self):
+        quantiles = statistics.quantiles
+        for x in (3.141592653589793,  # irrational-ish
+                  1/3,                # repeating binary fraction
+                  0.1,                # non-exact decimal
+                  2.0,                # exact power of two
+                  1e300,              # large magnitude
+                  1e-300,             # small magnitude
+                  float.fromhex('0x1.fffffffffffffp+1023'),  # near max float
+                  sys.float_info.min, # smallest normal
+                  ):
+            for n in range(2, 20):
+                result = quantiles([x, x], n=n, method='exclusive')
+                self.assertEqual(result, sorted(result),
+                                 msg=f'x={x}, n={n}')
+                self.assertTrue(all(v == x for v in result),
+                                msg=f'x={x}, n={n}')
+
     def test_equal_sized_groups(self):
         quantiles = statistics.quantiles
         total = 10_000
