@@ -11,6 +11,7 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_fileutils.h"           // _PyFile_Flush
+#include "pycore_list.h"                // _PyList_AppendTakeRef()
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyType_HasFeature()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
@@ -753,12 +754,10 @@ _io__IOBase_readlines_impl(PyObject *self, Py_ssize_t hint)
                 break; /* StopIteration raised */
         }
 
-        if (PyList_Append(result, line) < 0) {
-            Py_DECREF(line);
+        if (_PyList_AppendTakeRef((PyListObject *)result, line) < 0) {
             goto error;
         }
         line_length = PyObject_Size(line);
-        Py_DECREF(line);
         if (line_length < 0) {
             goto error;
         }
