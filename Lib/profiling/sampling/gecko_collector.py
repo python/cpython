@@ -749,8 +749,7 @@ class GeckoCollector(Collector):
             sys.stderr.write('\r' + ' ' * (len(message) + 3) + '\r')
             sys.stderr.flush()
 
-        spinner_thread = threading.Thread(target=spin, daemon=True)
-        spinner_thread.start()
+        spinner_thread = threading.Thread(target=spin, daemon=True, start=True)
 
         temp_path = None
         replaced = False

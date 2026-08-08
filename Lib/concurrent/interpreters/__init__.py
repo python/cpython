@@ -242,6 +242,6 @@ class Interpreter:
 
         The return value and any raised exception are discarded.
         """
-        t = threading.Thread(target=self._call, args=(callable, args, kwargs))
-        t.start()
-        return t
+        return threading.Thread(target=self._call,
+                                args=(callable, args, kwargs),
+                                start=True)

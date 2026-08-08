@@ -88,8 +88,8 @@ class ChildProcessMonitor:
             target=self._monitor_loop,
             daemon=True,
             name=f"child-monitor-{self.parent_pid}",
+            start=True,
         )
-        self._monitor_thread.start()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):

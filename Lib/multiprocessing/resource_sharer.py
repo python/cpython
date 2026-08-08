@@ -125,9 +125,7 @@ class _ResourceSharer(object):
         util.debug('starting listener and thread for sending handles')
         self._listener = Listener(authkey=process.current_process().authkey, backlog=128)
         self._address = self._listener.address
-        t = threading.Thread(target=self._serve)
-        t.daemon = True
-        t.start()
+        t = threading.Thread(target=self._serve, daemon=True, start=True)
         self._thread = t
 
     def _serve(self):
