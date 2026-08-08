@@ -12,7 +12,7 @@ from typing import NoReturn
 from test.support import os_helper, MS_WINDOWS, flush_std_streams
 
 from .cmdline import _parse_args, Namespace
-from .findtests import findtests, split_test_packages, list_cases
+from .findtests import findtests, split_test_packages, list_cases, collect_cases
 from .logger import Logger
 from .pgo import setup_pgo_tests
 from .result import TestResult
@@ -73,6 +73,7 @@ class Regrtest:
         self.want_header: bool = ns.header
         self.want_list_tests: bool = ns.list_tests
         self.want_list_cases: bool = ns.list_cases
+        self.want_single_process_per_case: bool = ns.single_process_per_case
         self.want_wait: bool = ns.wait
         self.want_cleanup: bool = ns.cleanup
         self.want_rerun: bool = ns.rerun
@@ -99,6 +100,10 @@ class Regrtest:
         else:
             num_workers = ns.use_mp  # run in parallel
         self.num_workers: int = num_workers
+        if ns.single_process_per_case and ns.use_mp is None:
+            # Each test case runs in its own worker subprocess;
+            # default to one worker when -j was not given.
+            self.num_workers = 1
         self.worker_json: StrJSON | None = ns.worker_json
 
         # Options to run tests
@@ -521,6 +526,8 @@ class Regrtest:
             randomize=self.randomize,
             random_seed=self.random_seed,
             parallel_threads=self.parallel_threads,
+            single_process_per_case=self.want_single_process_per_case,
+            case_groups=None,
         )
 
     def _run_tests(self, selected: TestTuple, tests: TestList | None) -> int:
@@ -546,6 +553,22 @@ class Regrtest:
         print("Using random seed:", self.random_seed)
 
         runtests = self.create_run_tests(selected)
+        if self.want_single_process_per_case:
+            cases_by_module, _ = collect_cases(
+                selected,
+                match_tests=self.match_tests,
+                test_dir=self.test_dir)
+            case_groups = tuple(
+                (module_name, tuple(cases))
+                for module_name, cases in cases_by_module.items()
+            )
+            if not case_groups:
+                self.log("No test cases found")
+                return 0
+            case_ids = tuple(
+                case_id for _, cases in case_groups for case_id in cases
+            )
+            runtests = runtests.copy(tests=case_ids, case_groups=case_groups)
         self.first_runtests = runtests
         self.logger.set_tests(runtests)
 
