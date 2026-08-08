@@ -464,6 +464,38 @@ _Py_MergeZeroLocalRefcount(PyObject *op)
     }
 }
 
+void
+_Py_MergeZeroLocalRefcountSpecialized(PyObject *op, const destructor destruct)
+{
+    assert(op->ob_ref_local == 0);
+
+    Py_ssize_t shared = _Py_atomic_load_ssize_acquire(&op->ob_ref_shared);
+    if (shared == 0) {
+#ifdef Py_TRACE_REFS
+        _Py_ForgetReference(op);
+#endif
+        _PyReftracerTrack(op, PyRefTracer_DESTROY);
+        destruct(op);
+        return;
+    }
+
+    _Py_atomic_store_uintptr_relaxed(&op->ob_tid, 0);
+
+    Py_ssize_t new_shared;
+    do {
+        new_shared = (shared & ~_Py_REF_SHARED_FLAG_MASK) | _Py_REF_MERGED;
+    } while (!_Py_atomic_compare_exchange_ssize(&op->ob_ref_shared,
+                                                &shared, new_shared));
+
+    if (new_shared == _Py_REF_MERGED) {
+#ifdef Py_TRACE_REFS
+        _Py_ForgetReference(op);
+#endif
+        _PyReftracerTrack(op, PyRefTracer_DESTROY);
+        destruct(op);
+    }
+}
+
 Py_ssize_t
 _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra)
 {
