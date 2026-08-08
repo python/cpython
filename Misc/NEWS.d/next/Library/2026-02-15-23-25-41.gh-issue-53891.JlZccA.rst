@@ -1,0 +1,2 @@
+Include the offending label value in IDNA codec "label too long" error
+messages to make them more informative and easier to debug.
