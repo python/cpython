@@ -381,6 +381,44 @@ class TestQueueOps(TestBase):
                 self.assertEqual(obj, obj2)
                 self.assertIsNot(obj, obj2)
 
+    def _check_unpickle_attributeerror_arg(self, arg):
+        # Cross an object through a queue where get() must re-import its
+        # class via a module __getattr__ that raises AttributeError(arg).
+        source = dedent("""
+            _attrerr_arg = None
+
+            class Thing:
+                pass
+
+            def break_module(mod, arg):
+                del mod.Thing
+                mod._attrerr_arg = arg
+                def __getattr__(name):
+                    raise AttributeError(mod._attrerr_arg)
+                mod.__getattr__ = __getattr__
+            """)
+        with import_helper.ready_to_import('_xi_attrerr', source) as (name, _):
+            mod = importlib.import_module(name)
+            queue = queues.create()
+            queue.put(mod.Thing())
+            mod.break_module(mod, arg)
+            with self.assertRaises(interpreters.NotShareableError):
+                queue.get()
+
+    def test_get_unpickle_fails_with_bad_attributeerror_arg(self):
+        # gh-151862: an AttributeError arg that can't be UTF-8 encoded used
+        # to crash (NULL deref); covers both non-str and surrogate-str args.
+        for arg in [42, b'x', None, '\ud800']:
+            with self.subTest(arg=arg):
+                self._check_unpickle_attributeerror_arg(arg)
+
+    def test_get_unpickle_fails_with_str_attributeerror_arg(self):
+        # Positive control: a normal str arg (incl. the real missing-__main__
+        # message) must not crash, locking in the non-NULL strncmp() path.
+        for arg in ['boom', "module '__main__' has no attribute 'Thing'"]:
+            with self.subTest(arg=arg):
+                self._check_unpickle_attributeerror_arg(arg)
+
     def test_put_get_same_interpreter(self):
         interp = interpreters.create()
         interp.exec(dedent("""
