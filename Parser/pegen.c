@@ -104,6 +104,17 @@ _PyPegen_insert_memo(Parser *p, int mark, int type, void *node)
     return 0;
 }
 
+// Like _PyPegen_insert_memo(), but returns the inserted Memo so callers
+// can update it in place without re-walking the token's memo list.
+Memo *
+_PyPegen_insert_memo_direct(Parser *p, int mark, int type)
+{
+    if (_PyPegen_insert_memo(p, mark, type, NULL) < 0) {
+        return NULL;
+    }
+    return p->tokens[mark]->memo;
+}
+
 // Like _PyPegen_insert_memo(), but updates an existing node if found.
 int
 _PyPegen_update_memo(Parser *p, int mark, int type, void *node)
