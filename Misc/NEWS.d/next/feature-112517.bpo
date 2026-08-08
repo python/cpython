@@ -1,0 +1,1 @@
+The `json.encoder` module now supports overriding how NaN and Infinity values are serialized by allowing a custom `floatstr` function.
