@@ -2402,6 +2402,11 @@ class ZipFile:
             raise ValueError(
                 "Can't write to ZIP archive while an open writing handle exists"
             )
+        if self._fileRefCnt > 1:
+            raise ValueError(
+                "Can't repack the ZIP archive while an open reading handle "
+                "exists. Close the reading handle before repacking."
+            )
 
         with self._lock:
             self._writing = True
