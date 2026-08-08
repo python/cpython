@@ -28682,6 +28682,10 @@ _loop0_1_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_1[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NEWLINE"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -28749,6 +28753,10 @@ _loop1_2_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop1_2[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "statement"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
@@ -28830,6 +28838,10 @@ _loop0_3_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_3[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "';' simple_stmt"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -29375,6 +29387,10 @@ _loop1_12_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop1_12[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(star_targets '=')"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
@@ -29456,6 +29472,10 @@ _loop0_13_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_13[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' NAME"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -29667,6 +29687,10 @@ _loop0_17_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_17[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "('.' | '...')"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -29734,6 +29758,10 @@ _loop1_18_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop1_18[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "('.' | '...')"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
@@ -29815,6 +29843,10 @@ _loop0_19_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_19[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' import_from_as_name"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -29978,6 +30010,10 @@ _loop0_22_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_22[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' dotted_as_name"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -30086,6 +30122,10 @@ _loop1_24_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop1_24[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "('@' named_expression NEWLINE)"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
@@ -30253,6 +30293,10 @@ _loop0_27_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_27[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "param_no_default"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -30320,6 +30364,10 @@ _loop0_28_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_28[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "param_with_default"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -30387,6 +30435,10 @@ _loop1_29_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop1_29[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "param_no_default"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
@@ -30459,6 +30511,10 @@ _loop1_30_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop1_30[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "param_with_default"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
@@ -30531,6 +30587,10 @@ _loop0_31_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_31[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "param_maybe_default"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -30598,6 +30658,10 @@ _loop1_32_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop1_32[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "param_maybe_default"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
@@ -30679,6 +30743,10 @@ _loop0_33_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_33[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' with_item"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -30863,6 +30931,10 @@ _loop1_36_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop1_36[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "except_block"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
@@ -30935,6 +31007,10 @@ _loop1_37_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop1_37[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "except_star_block"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
@@ -31007,6 +31083,10 @@ _loop1_38_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop1_38[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "case_block"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
@@ -31088,6 +31168,10 @@ _loop0_39_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_39[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'|' closed_pattern"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -31414,6 +31498,10 @@ _loop0_44_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_44[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' maybe_star_pattern"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -31531,6 +31619,10 @@ _loop0_46_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_46[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' key_value_pattern"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -31705,6 +31797,10 @@ _loop0_49_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_49[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' pattern"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -31822,6 +31918,10 @@ _loop0_51_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_51[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' keyword_pattern"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -31939,6 +32039,10 @@ _loop0_53_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_53[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' type_param"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -32047,6 +32151,10 @@ _loop1_55_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop1_55[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(',' expression)"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
@@ -32119,6 +32227,10 @@ _loop1_56_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop1_56[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(',' star_expression)"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
@@ -32200,6 +32312,10 @@ _loop0_57_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_57[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' star_named_expression"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -32317,6 +32433,10 @@ _loop0_59_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_59[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' star_named_expression_sequence"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -32425,6 +32545,10 @@ _loop1_61_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop1_61[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "('or' conjunction)"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
@@ -32497,6 +32621,10 @@ _loop1_62_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop1_62[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "('and' inversion)"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
@@ -32569,6 +32697,10 @@ _loop1_63_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop1_63[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "compare_op_bitwise_or_pair"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
@@ -32693,6 +32825,10 @@ _loop0_65_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_65[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' (slice | starred_expression)"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -33132,6 +33268,10 @@ _loop0_72_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_72[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "lambda_param_no_default"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -33199,6 +33339,10 @@ _loop0_73_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_73[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "lambda_param_with_default"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -33266,6 +33410,10 @@ _loop1_74_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop1_74[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "lambda_param_no_default"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
@@ -33338,6 +33486,10 @@ _loop1_75_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop1_75[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "lambda_param_with_default"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
@@ -33410,6 +33562,10 @@ _loop0_76_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_76[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "lambda_param_maybe_default"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -33477,6 +33633,10 @@ _loop1_77_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop1_77[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "lambda_param_maybe_default"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
@@ -33549,6 +33709,10 @@ _loop0_78_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_78[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "fstring_format_spec"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -33616,6 +33780,10 @@ _loop0_79_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_79[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "fstring_middle"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -33683,6 +33851,10 @@ _loop0_80_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_80[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "tstring_format_spec"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -33750,6 +33922,10 @@ _loop0_81_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_81[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "tstring_middle"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -33817,6 +33993,10 @@ _loop1_82_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop1_82[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(fstring | string)"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
@@ -33889,6 +34069,10 @@ _loop1_83_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop1_83[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "tstring"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
@@ -34019,6 +34203,10 @@ _loop0_85_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_85[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' double_starred_kvpair"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -34127,6 +34315,10 @@ _loop1_87_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop1_87[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "for_if_clause"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
@@ -34199,6 +34391,10 @@ _loop0_88_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_88[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "('if' disjunction)"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -34353,6 +34549,10 @@ _loop0_90_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_90[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' (starred_expression | (assignment_expression | expression !':=') !'=')"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -34517,6 +34717,10 @@ _loop0_93_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_93[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' kwarg_or_starred"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -34634,6 +34838,10 @@ _loop0_95_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_95[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' kwarg_or_double_starred"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -34742,6 +34950,10 @@ _loop0_97_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_97[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(',' star_target)"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -34818,6 +35030,10 @@ _loop0_98_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_98[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' star_target"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -34926,6 +35142,10 @@ _loop1_100_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop1_100[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(',' star_target)"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
@@ -35047,6 +35267,10 @@ _loop0_102_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_102[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' del_target"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -35164,6 +35388,10 @@ _loop0_104_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_104[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' expression"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -35381,6 +35609,10 @@ _loop0_108_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_108[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' (starred_expression !'=')"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -35764,6 +35996,10 @@ _loop1_115_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop1_115[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(!STRING expression_without_invalid)"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
@@ -36219,6 +36455,10 @@ _loop0_121_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_121[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "star_named_expressions"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -36286,6 +36526,10 @@ _loop0_122_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_122[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(star_targets '=')"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -36840,6 +37084,10 @@ _loop0_131_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_131[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' lambda_param"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -37176,6 +37424,10 @@ _loop0_137_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_137[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' dotted_name"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -37334,6 +37586,10 @@ _loop0_140_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_140[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' (expression ['as' star_target])"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -37451,6 +37707,10 @@ _loop0_142_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_142[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' (expressions ['as' star_target])"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -37616,6 +37876,10 @@ _loop0_145_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_145[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "block"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -39269,6 +39533,10 @@ _loop0_174_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_174[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(',' bitwise_or)"));
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
