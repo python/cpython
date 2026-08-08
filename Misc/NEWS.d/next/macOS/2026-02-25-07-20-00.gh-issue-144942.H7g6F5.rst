@@ -1,0 +1,1 @@
+Correctly link with $(MODLIBS) when building the macOS dylib and remove the -undefined dynamic_lookup linker flag.
