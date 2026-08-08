@@ -1,2 +1,4 @@
-Add :meth:`~ipaddress.IPv4Network.next_network` and
-:meth:`~ipaddress.IPv6Network.next_network`.  Patch by Faisal Mahmood.
+Add :meth:`~ipaddress.IPv4Network.next_network`,
+:meth:`~ipaddress.IPv6Network.next_network`,
+:meth:`~ipaddress.IPv4Network.prev_network` and
+:meth:`~ipaddress.IPv6Network.prev_network`. Patch by Faisal Mahmood.

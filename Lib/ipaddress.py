@@ -1119,6 +1119,50 @@ class _BaseNetwork(_IPAddressBase):
         return (self.network_address.is_loopback and
                 self.broadcast_address.is_loopback)
 
+    def _network_by_offset(self, prefix, offset):
+        """Get the network offset from this network.
+
+        Args:
+            prefix: Target prefix length.
+            offset: Number of networks to move (+1 or -1).
+
+        Returns:
+            An IPv(4|6) Network object.
+
+        """
+        if prefix < 1 or prefix > self.max_prefixlen:
+            raise ValueError(
+                f"prefix must be between 1 and {self.max_prefixlen}"
+            )
+        new_netmask, _ = self._make_netmask(prefix)
+        error = f"out of address space, cannot make another /{prefix} network"
+
+        if prefix > self.prefixlen:
+            if offset < 0:
+                new_ip = self.network_address._ip - 1
+            else:
+                new_ip = self.broadcast_address._ip + 1
+            if new_ip < 0 or new_ip > self._ALL_ONES:
+                raise ValueError(error)
+
+            new_ip &= new_netmask._ip
+        else:
+            bit_shift = self.max_prefixlen - prefix
+            new_ip = (
+                ((new_netmask._ip & self.network_address._ip) >> bit_shift)
+                + offset
+            ) << bit_shift
+
+        if new_ip < 0:
+            raise ValueError(error)
+
+        try:
+            return self.__class__(
+                f"{self._string_from_ip_int(new_ip)}/{prefix}"
+            )
+        except OverflowError:
+            raise ValueError(error) from None
+
     def next_network(self, next_prefix=None):
         """Get the next closest network with a specific prefix.
 
@@ -1132,33 +1176,25 @@ class _BaseNetwork(_IPAddressBase):
         """
         if next_prefix is None:
             next_prefix = self.prefixlen
-            new_netmask = self.netmask
-        else:
-            if next_prefix < 1 or next_prefix > self.max_prefixlen:
-                raise ValueError(
-                    f"next prefix must be between 1 and {self.max_prefixlen}"
-                )
-            new_netmask, _ = self._make_netmask(next_prefix)
 
-        bit_shift = (
-            self.max_prefixlen - next_prefix
-            if next_prefix <= self.prefixlen
-            else self.max_prefixlen - self.prefixlen
-        )
+        return self._network_by_offset(next_prefix, 1)
 
-        next_ip = (
-            ((new_netmask._ip & self.network_address._ip) >> bit_shift) + 1
-        ) << bit_shift
 
-        try:
-            return self.__class__(
-                f"{self._string_from_ip_int(next_ip)}/{next_prefix}"
-            )
-        except OverflowError:
-            raise ValueError(
-                f"out of address space, cannot make another /{next_prefix} "
-                "network"
-            ) from None
+    def prev_network(self, prev_prefix=None):
+        """Get the previous closest network with a specific prefix.
+
+        Args:
+            prev_prefix: The desired previous prefix length, if not specified the
+            same self.prefixlen will be used
+
+        Returns:
+            An IPv(4|6) Network object of the previous closest network.
+
+        """
+        if prev_prefix is None:
+            prev_prefix = self.prefixlen
+
+        return self._network_by_offset(prev_prefix, -1)
 
 
 class _BaseConstants:
