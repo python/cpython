@@ -38,6 +38,7 @@ import os
 import queue
 import random
 import re
+import select
 import shutil
 import socket
 import struct
@@ -1956,6 +1957,44 @@ class SocketHandlerTest(BaseTest):
         self.assertGreater(self.sock_hdlr.retryTime, now)
         time.sleep(self.sock_hdlr.retryTime - now + 0.001)
         self.root_logger.error('Nor this')
+
+    def test_reconnect(self):
+        # If the server closes the connection, the record whose send fails is
+        # not dropped, but resent on a reopened socket (gh-84532).
+        server = socket.create_server(('localhost', 0))
+        self.addCleanup(server.close)
+        server.settimeout(support.LONG_TIMEOUT)
+        port = server.getsockname()[1]
+        hdlr = logging.handlers.SocketHandler('localhost', port)
+        self.addCleanup(hdlr.close)
+
+        def recv_message():
+            conn, _ = server.accept()
+            self.addCleanup(conn.close)
+            chunk = conn.recv(4)
+            slen = struct.unpack(">L", chunk)[0]
+            chunk = b''
+            while len(chunk) < slen:
+                chunk += conn.recv(slen - len(chunk))
+            return conn, logging.makeLogRecord(pickle.loads(chunk)).msg
+
+        # Connect and receive the first record.
+        hdlr.handle(logging.makeLogRecord({'msg': 'spam'}))
+        conn, msg = recv_message()
+        self.assertEqual(msg, 'spam')
+
+        # Close the connection on the server side.  After a peer close the
+        # first send still succeeds (the data is lost when the reset arrives),
+        # so a throwaway send is used up here to make the next send fail.
+        conn.close()
+        # Wait until the close is received, so the sends below are ordered.
+        select.select([hdlr.sock], [], [], support.LONG_TIMEOUT)
+        hdlr.sock.sendall(b'\x00\x00\x00\x00')
+
+        # The next send fails and the record is resent on a new connection.
+        hdlr.handle(logging.makeLogRecord({'msg': 'eggs'}))
+        conn, msg = recv_message()
+        self.assertEqual(msg, 'eggs')
 
 
 @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
