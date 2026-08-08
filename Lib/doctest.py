@@ -1768,7 +1768,7 @@ class OutputChecker:
                           '', want)
             # If a line in got contains only spaces, then remove the
             # spaces.
-            got = re.sub(r'(?m)^[^\S\n]+$', '', got)
+            got = re.sub(r'(?m)^[\s--\n]+$', '', got)
             if got == want:
                 return True
 

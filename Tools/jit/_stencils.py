@@ -2,7 +2,6 @@
 
 import dataclasses
 import enum
-import sys
 import typing
 
 import _schema

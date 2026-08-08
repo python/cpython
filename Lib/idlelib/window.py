@@ -61,6 +61,10 @@ unregister_callback = registry.unregister_callback
 class ListedToplevel(Toplevel):
 
     def __init__(self, master, **kw):
+        # Set the WM_CLASS property so that X11 window managers group and
+        # label IDLE's windows under 'Idle' instead of the default
+        # 'Toplevel' (gh-66331).  It matches the class name passed to Tk().
+        kw.setdefault('class_', 'Idle')
         Toplevel.__init__(self, master, kw)
         registry.add(self)
         self.focused_widget = self

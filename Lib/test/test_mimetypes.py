@@ -67,8 +67,49 @@ class MimeTypesModuleTestCase(unittest.TestCase):
         with unittest.mock.patch.object(mimetypes, 'open',
                                         return_value=fp) as mock_open:
             mime_dict = mimetypes.read_mime_types(filename)
-            mock_open.assert_called_with(filename, encoding='utf-8')
+            mock_open.assert_called_with(filename, encoding='utf-8',
+                                         errors='surrogateescape')
         eq(mime_dict[".Français"], "application/no-mans-land")
+
+    def test_read_mime_types_invalid_utf8_comment(self):
+        with os_helper.temp_dir() as directory:
+            data = (b"# non-UTF-8 comment: \x83\n"
+                    b"x-application/x-unittest pyunit\n")
+            file = os.path.join(directory, "sample.mimetype")
+            with open(file, "wb") as f:
+                f.write(data)
+
+            mime_dict = mimetypes.read_mime_types(file)
+            self.assertEqual(
+                mime_dict[".pyunit"], "x-application/x-unittest")
+
+            db = mimetypes.MimeTypes()
+            db.read(file)
+            self.assertEqual(
+                db.guess_file_type("sample.pyunit")[0],
+                "x-application/x-unittest")
+
+            mimetypes.init(files=[file])
+            self.assertEqual(
+                mimetypes.guess_file_type("sample.pyunit")[0],
+                "x-application/x-unittest")
+
+    def test_read_mime_types_invalid_utf8_type(self):
+        # A non-UTF-8 byte in a type or extension (not only in a comment) is
+        # preserved via surrogateescape, so the mapping is not corrupted.
+        with os_helper.temp_dir() as directory:
+            data = (b"x-application/x-unittest pyunit\n"
+                    b"application/bad\x83 badext\x83\n")
+            file = os.path.join(directory, "sample.mimetype")
+            with open(file, "wb") as f:
+                f.write(data)
+
+            bad_type = b"application/bad\x83".decode("utf-8", "surrogateescape")
+            bad_ext = b".badext\x83".decode("utf-8", "surrogateescape")
+
+            mime_dict = mimetypes.read_mime_types(file)
+            self.assertEqual(mime_dict[".pyunit"], "x-application/x-unittest")
+            self.assertEqual(mime_dict[bad_ext], bad_type)
 
     def test_init_reinitializes(self):
         # Issue 4936: make sure an init starts clean
@@ -286,6 +327,50 @@ class MimeTypesClassTestCase(unittest.TestCase):
         eq(self.db.guess_type("scheme:foobar.tar.Z"), ("application/x-tar", "compress"))
         eq(self.db.guess_file_type("foobar.tar.z"), (None, None))
         eq(self.db.guess_type("scheme:foobar.tar.z"), (None, None))
+
+    def test_suffix_map_case_sensitive_preferred(self):
+        self.db.suffix_map[".TEST-SUFFIX"] = ".tar.gz"
+        self.db.suffix_map[".test-suffix"] = ".tar.xz"
+        self.assertEqual(
+            self.db.guess_file_type("example.TEST-SUFFIX"),
+            ("application/x-tar", "gzip"),
+        )
+        self.assertEqual(
+            self.db.guess_file_type("example.test-suffix"),
+            ("application/x-tar", "xz"),
+        )
+
+    def test_added_types_case_sensitive_preferred(self):
+        self.db.add_type("text/x-test-uppercase-r", ".R")
+        self.db.add_type("text/x-test-lowercase-r", ".r")
+        self.assertEqual(
+            self.db.guess_file_type("example.R"),
+            ("text/x-test-uppercase-r", None),
+        )
+        self.assertEqual(
+            self.db.guess_file_type("example.r"),
+            ("text/x-test-lowercase-r", None),
+        )
+        self.db.add_type("text/x-test-uppercase-non-strict",
+                         ".NON-STRICT-EXT", strict=False)
+        self.db.add_type("text/x-test-lowercase-non-strict",
+                         ".non-strict-ext", strict=False)
+        self.assertEqual(
+            self.db.guess_file_type("example.NON-STRICT-EXT"),
+            (None, None),
+        )
+        self.assertEqual(
+            self.db.guess_file_type("example.non-strict-ext"),
+            (None, None),
+        )
+        self.assertEqual(
+            self.db.guess_file_type("example.NON-STRICT-EXT", strict=False),
+            ("text/x-test-uppercase-non-strict", None),
+        )
+        self.assertEqual(
+            self.db.guess_file_type("example.non-strict-ext", strict=False),
+            ("text/x-test-lowercase-non-strict", None),
+        )
 
     def test_default_data(self):
         eq = self.assertEqual

@@ -112,8 +112,8 @@ ConverterArgs = dict[str, Any]
 class ParamState(enum.IntEnum):
     """Parameter parsing state.
 
-     [ [ a, b, ] c, ] d, e, f=3, [ g, h, [ i ] ]   <- line
-    01   2          3       4    5           6     <- state transitions
+     [ [ a, b, ] c, ] [ d, ] e, f=3, [ g, h, [ i ] ] [ j ]   <- line
+    01   2          3 12   3     4   5           6   5     6 <- state transitions
     """
     # Before we've seen anything.
     # Legal transitions: to LEFT_SQUARE_BEFORE or REQUIRED
@@ -251,7 +251,8 @@ class DSLParser:
     positional_only: bool
     deprecated_positional: VersionTuple | None
     deprecated_keyword: VersionTuple | None
-    group: int
+    group_stack: list[int]
+    group_count: int
     parameter_state: ParamState
     indent: IndentStack
     kind: FunctionKind
@@ -291,7 +292,8 @@ class DSLParser:
         self.positional_only = False
         self.deprecated_positional = None
         self.deprecated_keyword = None
-        self.group = 0
+        self.group_stack = []
+        self.group_count = 0
         self.parameter_state: ParamState = ParamState.START
         self.indent = IndentStack()
         self.kind = CALLABLE
@@ -829,6 +831,7 @@ class DSLParser:
             assert self.function is not None
             for p in self.function.parameters.values():
                 p.group = -p.group
+            self.group_count = 0
 
     def state_parameter(self, line: str) -> None:
         assert isinstance(self.function, Function)
@@ -888,7 +891,7 @@ class DSLParser:
             case ParamState.LEFT_SQUARE_BEFORE:
                 self.parameter_state = ParamState.GROUP_BEFORE
             case ParamState.GROUP_BEFORE:
-                if not self.group:
+                if not self.group_stack:
                     self.to_required()
             case ParamState.GROUP_AFTER | ParamState.OPTIONAL:
                 pass
@@ -1082,7 +1085,7 @@ class DSLParser:
 
         if isinstance(converter, self_converter):
             if len(self.function.parameters) == 1:
-                if self.group:
+                if self.group_stack:
                     fail("A 'self' parameter cannot be in an optional group.")
                 assert self.parameter_state is ParamState.REQUIRED
                 assert value is unspecified
@@ -1096,7 +1099,7 @@ class DSLParser:
         if isinstance(converter, defining_class_converter):
             _lp = len(self.function.parameters)
             if _lp == 1:
-                if self.group:
+                if self.group_stack:
                     fail("A 'defining_class' parameter cannot be in an optional group.")
                 if self.function.cls is None:
                     fail("A 'defining_class' parameter cannot be defined at module level.")
@@ -1110,7 +1113,9 @@ class DSLParser:
 
 
         p = Parameter(parameter_name, kind, function=self.function,
-                      converter=converter, default=value, group=self.group,
+                      converter=converter, default=value,
+                      group=self.group_stack[-1] if self.group_stack else 0,
+                      group_depth=len(self.group_stack),
                       deprecated_positional=self.deprecated_positional)
 
         names = [k.name for k in self.function.parameters.values()]
@@ -1189,26 +1194,34 @@ class DSLParser:
 
     def parse_opening_square_bracket(self, function: Function) -> None:
         """Parse opening parameter group symbol '['."""
+        # A group can only be nested in a group which does not contain
+        # parameters yet, but two groups on the same nesting level can
+        # follow each other.
         match self.parameter_state:
             case ParamState.START | ParamState.LEFT_SQUARE_BEFORE:
                 self.parameter_state = ParamState.LEFT_SQUARE_BEFORE
+            case ParamState.GROUP_BEFORE if not self.group_stack:
+                self.parameter_state = ParamState.LEFT_SQUARE_BEFORE
             case ParamState.REQUIRED | ParamState.GROUP_AFTER:
+                self.parameter_state = ParamState.GROUP_AFTER
+            case ParamState.RIGHT_SQUARE_AFTER if not self.group_stack:
                 self.parameter_state = ParamState.GROUP_AFTER
             case st:
                 fail(f"Function {function.name!r} "
                      f"has an unsupported group configuration. "
                      f"(Unexpected state {st}.b)")
-        self.group += 1
+        self.group_count += 1
+        self.group_stack.append(self.group_count)
         function.docstring_only = True
 
     def parse_closing_square_bracket(self, function: Function) -> None:
         """Parse closing parameter group symbol ']'."""
-        if not self.group:
+        if not self.group_stack:
             fail(f"Function {function.name!r} has a ']' without a matching '['.")
-        if not any(p.group == self.group for p in function.parameters.values()):
+        group = self.group_stack.pop()
+        if not any(p.group == group for p in function.parameters.values()):
             fail(f"Function {function.name!r} has an empty group. "
                  "All groups must contain at least one parameter.")
-        self.group -= 1
         match self.parameter_state:
             case ParamState.LEFT_SQUARE_BEFORE | ParamState.GROUP_BEFORE:
                 self.parameter_state = ParamState.GROUP_BEFORE
@@ -1268,7 +1281,7 @@ class DSLParser:
             ParamState.RIGHT_SQUARE_AFTER,
             ParamState.GROUP_BEFORE,
         }
-        if (self.parameter_state not in allowed) or self.group:
+        if (self.parameter_state not in allowed) or self.group_stack:
             fail(f"Function {function.name!r} has an unsupported group configuration. "
                  f"(Unexpected state {self.parameter_state}.d)")
         # fixup preceding parameters
@@ -1329,7 +1342,7 @@ class DSLParser:
     def state_function_docstring(self, line: str) -> None:
         assert self.function is not None
 
-        if self.group:
+        if self.group_stack:
             fail(f"Function {self.function.name!r} has a ']' without a matching '['.")
 
         if not self.valid_line(line):
@@ -1364,16 +1377,25 @@ class DSLParser:
                 else:
                     assert positional_only
                 if positional_only:
-                    p.right_bracket_count = abs(p.group)
+                    p.right_bracket_count = p.group_depth
                 else:
                     # don't put any right brackets around non-positional-only parameters, ever.
                     p.right_bracket_count = 0
 
             right_bracket_count = 0
+            last_group = 0
 
-            def fix_right_bracket_count(desired: int) -> str:
-                nonlocal right_bracket_count
+            def fix_right_bracket_count(desired: int, group: int = 0) -> str:
+                nonlocal right_bracket_count, last_group
                 s = ''
+                if (group != last_group and right_bracket_count and
+                    ((desired >= right_bracket_count) if group < 0 else
+                     (desired <= right_bracket_count))):
+                    # The group is not nested in the previous group,
+                    # close the brackets of the latter first.
+                    s += ']' * right_bracket_count
+                    right_bracket_count = 0
+                last_group = group
                 while right_bracket_count < desired:
                     s += '['
                     right_bracket_count += 1
@@ -1441,7 +1463,8 @@ class DSLParser:
                     added_star = True
                     add_parameter('*,')
 
-                p_lines = [fix_right_bracket_count(p.right_bracket_count)]
+                p_lines = [fix_right_bracket_count(p.right_bracket_count,
+                                                   p.group)]
 
                 if isinstance(p.converter, self_converter):
                     # annotate first parameter as being a "self".
