@@ -776,6 +776,38 @@ dummy_func(
             EXIT_IF(!PyFloat_CheckExact(value_o));
         }
 
+        tier2 op(_GUARD_TOS_AND_NOS_INT, (left, right -- left, right)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            EXIT_IF(!PyLong_CheckExact(left_o) ||
+                    !PyLong_CheckExact(right_o) ||
+                    !_PyLong_BothAreCompact(
+                        (PyLongObject *)left_o, (PyLongObject *)right_o));
+        }
+
+        tier2 op(_GUARD_TOS_AND_NOS_OVERFLOWED, (left, right -- left, right)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(PyLong_CheckExact(left_o));
+            assert(PyLong_CheckExact(right_o));
+            EXIT_IF(!_PyLong_BothAreCompact(
+                (PyLongObject *)left_o, (PyLongObject *)right_o));
+        }
+
+        tier2 op(_GUARD_TOS_AND_NOS_FLOAT, (left, right -- left, right)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            EXIT_IF(!PyFloat_CheckExact(left_o) ||
+                    !PyFloat_CheckExact(right_o));
+        }
+
+        tier2 op(_GUARD_TOS_AND_NOS_UNICODE, (left, right -- left, right)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            EXIT_IF(!PyUnicode_CheckExact(left_o) ||
+                    !PyUnicode_CheckExact(right_o));
+        }
+
         pure op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res, l, r)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
