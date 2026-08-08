@@ -4455,6 +4455,22 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_POP_TOP_NOP", uops)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
+    def test_int_subtract_shrink_specialization(self):
+        def testfunc(args):
+            a, b, n = args
+            res = 0
+            for _ in range(n):
+                res = a - b
+            return res
+
+        res, ex = self._run_with_optimizer(
+            testfunc, (10_000_000_001, 10_000_000_000, TIER2_THRESHOLD)
+        )
+        self.assertEqual(res, 1)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_SUBTRACT_INT", uops)
+
     def test_int_mul_op_refcount_elimination(self):
         def testfunc(n):
             c = 1

@@ -116,6 +116,7 @@ PyAPI_DATA(PyObject*) _PyLong_Lshift(PyObject *, int64_t);
 PyAPI_FUNC(_PyStackRef) _PyCompactLong_Add(PyLongObject *left, PyLongObject *right);
 PyAPI_FUNC(_PyStackRef) _PyCompactLong_Multiply(PyLongObject *left, PyLongObject *right);
 PyAPI_FUNC(_PyStackRef) _PyCompactLong_Subtract(PyLongObject *left, PyLongObject *right);
+PyAPI_FUNC(_PyStackRef) _PyLong_SubtractShrink(PyLongObject *left, PyLongObject *right);
 
 // Export for 'binascii' shared extension.
 PyAPI_DATA(unsigned char) _PyLong_DigitValue[256];
@@ -344,6 +345,28 @@ static inline int
 _PyLong_CheckExactAndCompact(PyObject *op)
 {
     return PyLong_CheckExact(op) && _PyLong_IsCompact((const PyLongObject *)op);
+}
+
+static inline bool
+_PyLong_IsShrinkSubtractPair(const PyLongObject *left, const PyLongObject *right)
+{
+#if PyLong_SHIFT == 30
+    if (_PyLong_IsCompact((PyLongObject *)left) ||
+        _PyLong_IsCompact((PyLongObject *)right) ||
+        !_PyLong_SameSign(left, right)) {
+        return false;
+    }
+    Py_ssize_t left_size = _PyLong_DigitCount(left);
+    if (left_size != _PyLong_DigitCount(right) ||
+        left_size < 2 ||
+        left_size > 3) {
+        return false;
+    }
+    return left->long_value.ob_digit[left_size - 1] ==
+           right->long_value.ob_digit[left_size - 1];
+#else
+    return false;
+#endif
 }
 
 #ifdef __cplusplus
