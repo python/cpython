@@ -368,6 +368,11 @@ logging
   before the rotation interval expires.
   (Contributed by Iván Márton and Serhiy Storchaka in :gh:`84649`.)
 
+* :class:`~logging.handlers.DatagramHandler` now supports IPv6.
+  Previously it always created an IPv4 socket, so sending to an IPv6 address
+  failed and the log record was silently lost.
+  (Contributed by Serhiy Storchaka in :gh:`59060`.)
+
 
 lzma
 ----
