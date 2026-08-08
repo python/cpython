@@ -1,0 +1,2 @@
+:mod:`base64`: Replace :mod:`getopt` with :mod:`argparse` for parsing
+command line arguments.
