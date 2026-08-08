@@ -99,6 +99,12 @@ Customizing JSON object decoding::
     >>> import decimal
     >>> json.loads('1.1', parse_float=decimal.Decimal)
     Decimal('1.1')
+    >>> json.loads('{"name": "point", "coords": [[1, 2], [3, 4]]}',
+    ...     array_hook=tuple)  # doctest: +SKIP
+    {'name': 'point', 'coords': ((1, 2), (3, 4))}
+    >>> json.loads('{"name": "point", "coords": [1, 2]}',
+    ...     object_pairs_hook=frozendict, array_hook=tuple)  # doctest: +SKIP
+    frozendict({'name': 'point', 'coords': (1, 2)})
 
 Extending :class:`JSONEncoder`::
 
@@ -303,7 +309,7 @@ Basic Usage
 
    :param array_hook:
       If set, a function that is called with the result of
-      any JSON array literal decoded with as a Python list.
+      any JSON array literal decoded as a Python list.
       The return value of this function will be used
       instead of the :class:`list`.
       This feature can be used to implement custom decoders.
