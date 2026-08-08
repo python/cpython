@@ -1,0 +1,2 @@
+Fixed an issue in :mod:`email` where an incorrect comparison in the header value parser :func:`get_parameter` could lead to improper parameter handling.
+Patch by Benedikt Johannes.
