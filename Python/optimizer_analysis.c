@@ -578,7 +578,8 @@ optimize_uops(
     int trace_len,
     int curr_stacklen,
     _PyUOpInstruction *output,
-    _PyBloomFilter *dependencies
+    _PyBloomFilter *dependencies,
+    bool progress_needed
 )
 {
     assert(!PyErr_Occurred());
@@ -607,9 +608,13 @@ optimize_uops(
 
     _PyUOpInstruction *this_instr = NULL;
     JitOptRef *stack_pointer = ctx->frame->stack_pointer;
+    int bytecode_count = 0;
 
     for (int i = 0; i < trace_len; i++) {
         this_instr = &trace[i];
+        if (this_instr->opcode == _CHECK_VALIDITY) {
+            bytecode_count++;
+        }
         if (ctx->done) {
             // Don't do any more optimization, but
             // we still need to reach a terminator for corrctness.
@@ -638,6 +643,9 @@ optimize_uops(
             default:
                 DPRINTF(1, "\nUnknown opcode in abstract interpreter\n");
                 Py_UNREACHABLE();
+        }
+        if (progress_needed && bytecode_count < 2) {
+            ctx->out_buffer.next = out_ptr;
         }
         // If no ADD_OP was called during this iteration, copy the original instruction
         if (ctx->out_buffer.next == out_ptr) {
@@ -807,13 +815,14 @@ _Py_uop_analyze_and_optimize(
     int length,
     int curr_stacklen,
     _PyUOpInstruction *output,
-    _PyBloomFilter *dependencies
+    _PyBloomFilter *dependencies,
+    bool progress_needed
 )
 {
     OPT_STAT_INC(optimizer_attempts);
 
     length = optimize_uops(
-        tstate, buffer, length, curr_stacklen, output, dependencies);
+        tstate, buffer, length, curr_stacklen, output, dependencies, progress_needed);
 
     if (length == 0) {
         return length;
