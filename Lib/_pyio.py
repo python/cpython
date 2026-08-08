@@ -1003,9 +1003,18 @@ class BytesIO(BufferedIOBase):
     def peek(self, size=0):
         if self.closed:
             raise ValueError("peek on closed file")
-        if size < 1:
-            return self._buffer[self._pos:self._pos + io.DEFAULT_BUFFER_SIZE]
-        return self._buffer[self._pos:self._pos + size]
+        try:
+            size_index = size.__index__
+        except AttributeError:
+            raise TypeError(f"{size!r} is not an integer")
+        else:
+            size = size_index()
+
+        with self._lock:
+            if size < 1:
+                size = io.DEFAULT_BUFFER_SIZE
+            b = self._buffer[self._pos:self._pos + size]
+            return b.take_bytes()
 
     def truncate(self, pos=None):
         if self.closed:
