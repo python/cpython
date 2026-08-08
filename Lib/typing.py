@@ -2259,7 +2259,14 @@ class _AnnotatedAlias(_NotIterable, _GenericAlias, _root=True):
         return super().__getattr__(attr)
 
     def __mro_entries__(self, bases):
-        return (self.__origin__,)
+        origin = self.__origin__
+        if not isinstance(origin, type):
+            # The origin can need a resolution itself, e.g. list[int].
+            meth = getattr(origin, '__mro_entries__', None)
+            if meth is not None:
+                bases = tuple(origin if b is self else b for b in bases)
+                return meth(bases)
+        return (origin,)
 
 
 @_TypedCacheSpecialForm
