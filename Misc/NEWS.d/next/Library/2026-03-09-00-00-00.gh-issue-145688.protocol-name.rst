@@ -1,0 +1,2 @@
+Fixed :func:`typing.get_protocol_members` returning empty results for
+:class:`typing.Protocol` subclasses named ``"Protocol"`` or ``"Generic"``.
