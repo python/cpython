@@ -1541,6 +1541,18 @@ class UrlParseTestCase(unittest.TestCase):
         with self.assertRaises(UnicodeDecodeError):
             urllib.parse.parse_qsl('a=b', separator=b'\xa6')
 
+    def test_parse_qsl_strict_invalid_query_chars(self):
+        # gh-135523: RFC 3986 excludes '#', '[', ']', etc. from query
+        for qs in ['foo=#', 'foo=[bar]', 'a={b}', 'a=b c']:
+            with self.subTest(qs=qs):
+                self.assertRaises(ValueError, urllib.parse.parse_qsl,
+                                  qs, strict_parsing=True)
+        # bytes input
+        self.assertRaises(ValueError, urllib.parse.parse_qsl,
+                          b'foo=#', strict_parsing=True)
+        # valid query chars accepted
+        urllib.parse.parse_qsl('a=1&b=2%20x', strict_parsing=True)
+
     def test_urlencode_sequences(self):
         # Other tests incidentally urlencode things; test non-covered cases:
         # Sequence and object values.
