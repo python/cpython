@@ -1,0 +1,4 @@
+Fix a race in :class:`asyncio.Server` where calling :meth:`~asyncio.Server.close`
+while a connection was in the process of being accepted could raise an
+uncatchable :exc:`AssertionError` deep inside transport creation instead of
+simply dropping the connection.
