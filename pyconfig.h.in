@@ -497,6 +497,9 @@
 /* Define if you have the 'ffi_prep_closure_loc' function. */
 #undef HAVE_FFI_PREP_CLOSURE_LOC
 
+/* Defined if _Float16 C type is supported */
+#undef HAVE_FLOAT16
+
 /* Define to 1 if you have the 'flock' function. */
 #undef HAVE_FLOCK
 

@@ -1894,6 +1894,69 @@ _PyFloat_DebugMallocStats(FILE *out)
 int
 PyFloat_Pack2(double x, char *data, int le)
 {
+#if HAVE_FLOAT16
+    unsigned char *p = (unsigned char *)data;
+    _Float16 y = (_Float16)x;
+    int i, incr = 1;
+
+    if (isinf(y) && !isinf(x)) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "float too large to pack with e format");
+        return -1;
+    }
+
+    /* correct y if x was a sNaN, transformed to qNaN by conversion */
+    if (isnan(x)) {
+        uint64_t v;
+
+        memcpy(&v, &x, 8);
+#ifndef __riscv
+        if ((v & (1ULL << 51)) == 0) {
+            uint16_t u16;
+
+            memcpy(&u16, &y, 2);
+            /* if have payload, make sNaN */
+            if (u16 & 0x1ff) {
+                u16 &= ~(1 << 9);
+                memcpy(&y, &u16, 2);
+            }
+        }
+#else
+        uint16_t u16;
+
+        memcpy(&u16, &y, 2);
+        /* Workaround RISC-V: "If a NaN value is converted to a
+         * different floating-point type, the result is the
+         * canonical NaN of the new type".  The canonical NaN here
+         * is a positive qNaN with zero payload. */
+        /* add payload */
+        u16 -= (u16 & 0x1ff);
+        u16 += ((v & 0x7ffffffffffffULL) >> 42);
+        /* if have payload, make sNaN */
+        if ((v & (1ULL << 51)) == 0 && (u16 & 0x1ff)) {
+            u16 &= ~(1 << 9);
+        }
+        if (v & (1ULL << 63)) {
+            u16 |= (1 << 15); /* set sign */
+        }
+        memcpy(&y, &u16, 2);
+#endif
+    }
+
+    unsigned char s[sizeof(_Float16)];
+    memcpy(s, &y, sizeof(_Float16));
+
+    if ((_PY_FLOAT_LITTLE_ENDIAN && !le) || (_PY_FLOAT_BIG_ENDIAN && le)) {
+        p += 1;
+        incr = -1;
+    }
+
+    for (i = 0; i < 2; i++) {
+        *p = s[i];
+        p += incr;
+    }
+    return 0;
+#else
     unsigned char *p = (unsigned char *)data;
     unsigned char sign;
     int e;
@@ -1997,6 +2060,7 @@ PyFloat_Pack2(double x, char *data, int le)
     PyErr_SetString(PyExc_OverflowError,
                     "float too large to pack with e format");
     return -1;
+#endif /* HAVE_FLOAT16 */
 }
 
 int
@@ -2089,6 +2153,62 @@ PyFloat_Pack8(double x, char *data, int le)
 double
 PyFloat_Unpack2(const char *data, int le)
 {
+#if HAVE_FLOAT16
+    unsigned char *p = (unsigned char *)data;
+    _Float16 x;
+
+    if ((_PY_FLOAT_LITTLE_ENDIAN && !le) || (_PY_FLOAT_BIG_ENDIAN && le)) {
+        char buf[2];
+        char *d = &buf[1];
+        int i;
+
+        for (i = 0; i < 2; i++) {
+            *d-- = *p++;
+        }
+        memcpy(&x, buf, 2);
+    }
+    else {
+        memcpy(&x, p, 2);
+    }
+
+    /* return sNaN double if x was sNaN float */
+    if (isnan(x)) {
+        uint16_t v;
+
+        memcpy(&v, &x, 2);
+#ifndef __riscv
+        if ((v & (1 << 9)) == 0) {
+            double y = x; /* will make qNaN double */
+            uint64_t u64;
+
+            memcpy(&u64, &y, 8);
+            u64 &= ~(1ULL << 51); /* make sNaN */
+            memcpy(&y, &u64, 8);
+            return y;
+        }
+#else
+        double y = x;
+        uint64_t u64;
+
+        memcpy(&u64, &y, 8);
+        if ((v & (1 << 9)) == 0) {
+            u64 &= ~(1ULL << 51);
+        }
+        /* Workaround RISC-V, see PyFloat_Pack4() */
+        if (v & (1U << 15)) {
+            u64 |= (1ULL << 63); /* set sign */
+        }
+        /* add payload */
+        u64 -= (u64 & 0x7ffffffffffffULL);
+        u64 += ((v & 0x1ffULL) << 42);
+
+        memcpy(&y, &u64, 8);
+        return y;
+#endif
+    }
+
+    return x;
+#else
     unsigned char *p = (unsigned char *)data;
     unsigned char sign;
     int e;
@@ -2140,6 +2260,7 @@ PyFloat_Unpack2(const char *data, int le)
         x = -x;
 
     return x;
+#endif /* HAVE_FLOAT16 */
 }
 
 double
