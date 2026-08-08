@@ -1,0 +1,1 @@
+Use :c:func:``_PyObject_ptr_wise_atomic_memmove`` in ``_elementtree``

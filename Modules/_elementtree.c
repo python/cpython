@@ -18,6 +18,7 @@
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_dict.h"          // _PyDict_CopyAsDict()
+#include "pycore_object.h"        // _PyObject_ptr_wise_atomic_memmove()
 #include "pycore_pyhash.h"        // _Py_HashSecret
 #include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
@@ -1863,6 +1864,7 @@ element_subscr(PyObject *op, PyObject *item)
     }
 }
 
+
 static int
 element_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
 {
@@ -1938,19 +1940,21 @@ element_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
 
                 PyList_SET_ITEM(recycle, i, self->extra->children[cur]);
 
-                memmove(
+                _PyObject_ptr_wise_atomic_memmove(
+                    self,
                     self->extra->children + cur - i,
                     self->extra->children + cur + 1,
-                    num_moved * sizeof(PyObject *));
+                    num_moved);
             }
 
             /* Leftover "tail" after the last removed child */
             cur = start + (size_t)slicelen * step;
             if (cur < (size_t)self->extra->length) {
-                memmove(
+                _PyObject_ptr_wise_atomic_memmove(
+                    self,
                     self->extra->children + cur - slicelen,
                     self->extra->children + cur,
-                    (self->extra->length - cur) * sizeof(PyObject *));
+                    self->extra->length - cur);
             }
 
             self->extra->length -= slicelen;
