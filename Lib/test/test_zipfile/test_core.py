@@ -1198,6 +1198,55 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
                     self.assertEqual(zinfo.header_offset, expected_header_offset)
                     self.assertEqual(zf.read(zinfo), expected_content)
 
+    def test_generated_extra_in_local_entry(self):
+        """Should not write duplicated or improper fields to local file entry."""
+        comment = '\u4e00'.encode('utf-8')
+
+        # zip64
+        fh = io.BytesIO()
+        with zipfile.ZipFile(fh, 'w') as zh:
+            zinfo = zipfile.ZipInfo('strfile')
+            zinfo.extra = (
+                # zip64
+                struct.pack('<HHQQ', 0x0001, 16, 0, 0) +
+                # unicode comment
+                struct.pack('<HHBL5s', 0x6375, 10, 1,
+                            zipfile.crc32(comment), comment) +
+                # invalid tail
+                b'zzz'
+            )
+            zh.writestr(zinfo, self.data)
+
+        fh.seek(zinfo.header_offset)
+        entry = fh.read(zh.start_dir - zinfo.header_offset - zinfo.compress_size)
+        header = struct.unpack_from(zipfile.structFileHeader, entry)
+        extra = entry[-header[zipfile._FH_EXTRA_FIELD_LENGTH]:]
+        self.assertEqual(extra, (
+            struct.pack('<HHQQ', 0x0001, 16, 25889, 25889) +
+            b'zzz'
+        ))
+
+        # no zip64
+        fh = io.BytesIO()
+        with zipfile.ZipFile(fh, 'w') as zh:
+            zinfo = zipfile.ZipInfo('strfile')
+            zinfo.extra = (
+                # zip64
+                struct.pack('<HHQQ', 0x0001, 16, 0, 0) +
+                # unicode comment
+                struct.pack('<HHBL5s', 0x6375, 10, 1,
+                            zipfile.crc32(comment), comment) +
+                # invalid tail
+                b'zzz'
+            )
+            zh.writestr(zinfo, 'foo')
+
+        fh.seek(zinfo.header_offset)
+        entry = fh.read(zh.start_dir - zinfo.header_offset - zinfo.compress_size)
+        header = struct.unpack_from(zipfile.structFileHeader, entry)
+        extra = entry[-header[zipfile._FH_EXTRA_FIELD_LENGTH]:]
+        self.assertEqual(extra, b'zzz')
+
     def test_force_zip64(self):
         """Test that forcing zip64 extensions correctly notes this in the zip file"""
 
