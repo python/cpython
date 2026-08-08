@@ -287,8 +287,11 @@ class CoverageResults:
                 n_lines, n_hits, modulename, filename = sums[m]
                 print(f"{n_lines:5d}   {n_hits/n_lines:.1%}   {modulename}   ({filename})")
 
+        self.save_counts()
+
+    def save_counts(self):
+        """Save the accumulated counts to ``self.outfile`` if one was given."""
         if self.outfile:
-            # try and store counts and module info into self.outfile
             try:
                 with open(self.outfile, 'wb') as f:
                     pickle.dump((self.counts, self.calledfuncs, self.callers),
@@ -744,6 +747,8 @@ def main():
 
     if not opts.no_report:
         results.write_results(opts.missing, opts.summary, opts.coverdir)
+    else:
+        results.save_counts()
 
 if __name__=='__main__':
     main()
