@@ -766,6 +766,7 @@ class _TestProcess(BaseTestCase):
         p.daemon = True
         p.start()
         self.assertEqual(p.is_alive(), True)
+        self.assertFalse(p.closed)
         # Child is still alive, cannot close
         with self.assertRaises(ValueError):
             p.close()
@@ -774,7 +775,9 @@ class _TestProcess(BaseTestCase):
         p.join()
         self.assertEqual(p.is_alive(), False)
         self.assertEqual(p.exitcode, 0)
+        self.assertFalse(p.closed)
         p.close()
+        self.assertTrue(p.closed)
         with self.assertRaises(ValueError):
             p.is_alive()
         with self.assertRaises(ValueError):
@@ -782,6 +785,7 @@ class _TestProcess(BaseTestCase):
         with self.assertRaises(ValueError):
             p.terminate()
         p.close()
+        self.assertTrue(p.closed)
 
         wr = weakref.ref(p)
         del p
