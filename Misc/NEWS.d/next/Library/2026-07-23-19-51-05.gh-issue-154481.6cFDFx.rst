@@ -1,0 +1,2 @@
+Fix :mod:`zipfile` to correctly read Zstandard-compressed archive members
+that could previously be truncated or incorrectly rejected.

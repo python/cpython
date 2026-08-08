@@ -717,6 +717,36 @@ class ZstdTestsWithSourceFile(AbstractTestsWithSourceFile,
                               unittest.TestCase):
     compression = zipfile.ZIP_ZSTANDARD
 
+    def test_read_multiframe(self):
+        first = b'first frame' * 20
+        second = b'second frame' * 20
+        data = first + second
+
+        class MultiframeCompressor:
+            def compress(self, value):
+                value = bytes(value)
+                return (zipfile.zstd.compress(value[:len(first)]) +
+                        zipfile.zstd.compress(value[len(first):]))
+
+            def flush(self):
+                return b''
+
+        archive = io.BytesIO()
+        with mock.patch.object(zipfile, '_get_compressor',
+                               return_value=MultiframeCompressor()):
+            with zipfile.ZipFile(archive, 'w', self.compression) as zipfp:
+                zipfp.writestr('multiframe', data)
+
+        with zipfile.ZipFile(archive) as zipfp:
+            self.assertEqual(zipfp.read('multiframe'), data)
+
+        # Exercise a frame boundary between two reads from the archive.
+        with zipfile.ZipFile(archive) as zipfp:
+            with zipfp.open('multiframe') as fp:
+                fp.MIN_READ_SIZE = 1
+                self.assertEqual(b''.join(iter(lambda: fp.read(1), b'')),
+                                 data)
+
 class AbstractTestZip64InSmallFiles:
     # These tests test the ZIP64 functionality without using large files,
     # see test_zipfile64 for proper tests.
