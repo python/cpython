@@ -3052,7 +3052,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                     return NULL;
                 }
             }
-            if (PyFloat_Check(item)) {
+            if (PyFloat_CheckExact(item)) {
                 double value = PyFloat_AS_DOUBLE(item);
                 re_sum = cs_add(re_sum, value);
                 _Py_DECREF_SPECIALIZED(item, _PyFloat_ExactDealloc);
