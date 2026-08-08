@@ -598,9 +598,11 @@ dummy_func(void) {
         if (sym_is_const(ctx, sub_st)) {
             assert(PyLong_CheckExact(sym_get_const(ctx, sub_st)));
             long index = PyLong_AsLong(sym_get_const(ctx, sub_st));
-            assert(index >= 0);
             Py_ssize_t tuple_length = sym_tuple_length(tuple_st);
-            if (tuple_length != -1 && index < tuple_length) {
+            if (tuple_length != -1 && index < 0) {
+                index += tuple_length;
+            }
+            if (tuple_length != -1 && 0 <= index && index < tuple_length) {
                 ADD_OP(_NOP, 0, 0);
             }
         }
@@ -611,14 +613,17 @@ dummy_func(void) {
         if (sym_is_const(ctx, sub_st)) {
             assert(PyLong_CheckExact(sym_get_const(ctx, sub_st)));
             long index = PyLong_AsLong(sym_get_const(ctx, sub_st));
-            assert(index >= 0);
             Py_ssize_t tuple_length = sym_tuple_length(tuple_st);
             if (tuple_length == -1) {
                 // Unknown length
                 res = sym_new_not_null(ctx);
             }
             else {
+                if (index < 0) {
+                    index += tuple_length;
+                }
                 assert(index < tuple_length);
+                assert(index >= 0);
                 res = sym_tuple_getitem(ctx, tuple_st, index);
             }
         }
