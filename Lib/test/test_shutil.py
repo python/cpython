@@ -1559,6 +1559,8 @@ class TestCopy(BaseTest, unittest.TestCase):
             os.remove(TESTFN)
 
     @socket_helper.skip_unless_bind_unix_socket
+    @unittest.skipIf(sys.platform == 'win32',
+                     'socket file is not a special file on Windows')
     def test_copyfile_socket(self):
         sock_path = os.path.join(self.mkdtemp(), 'sock')
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -1604,6 +1606,8 @@ class TestCopy(BaseTest, unittest.TestCase):
 
     @os_helper.skip_unless_symlink
     @socket_helper.skip_unless_bind_unix_socket
+    @unittest.skipIf(sys.platform == 'win32',
+                     'socket file is not a special file on Windows')
     def test_copyfile_symlink_to_socket(self):
         sock_path = os.path.join(self.mkdtemp(), 'sock')
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
