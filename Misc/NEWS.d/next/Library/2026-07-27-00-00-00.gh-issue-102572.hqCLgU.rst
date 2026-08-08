@@ -1,0 +1,4 @@
+Fix :class:`asyncio.TaskGroup` so that a :exc:`KeyboardInterrupt` or
+:exc:`SystemExit` raised by a task in the group no longer crashes the event
+loop. As already documented, the exception is now re-raised in the parent
+task after the group has cancelled and waited for the remaining tasks.

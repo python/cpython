@@ -1953,6 +1953,44 @@ class BaseTaskTests:
         self.assertFalse(task.cancelled())
         self.assertIs(task.exception(), base_exc)
 
+    def test_baseexception_during_cancel_no_reraise(self):
+        # gh-102572: with _reraise_base_exceptions disabled, a
+        # KeyboardInterrupt/SystemExit is only set as the task's
+        # exception and not re-raised into the event loop.
+        for exc_type in (KeyboardInterrupt, SystemExit):
+            with self.subTest(exc_type=exc_type):
+                def gen():
+                    when = yield
+                    self.assertAlmostEqual(10.0, when)
+                    yield 0
+
+                loop = self.new_test_loop(gen)
+
+                async def sleeper():
+                    await asyncio.sleep(10)
+
+                base_exc = exc_type()
+
+                async def notmutch():
+                    try:
+                        await sleeper()
+                    except asyncio.CancelledError:
+                        raise base_exc
+
+                task = self.new_task(loop, notmutch())
+                self.assertTrue(task._reraise_base_exceptions)
+                task._reraise_base_exceptions = False
+                test_utils.run_briefly(loop)
+
+                task.cancel()
+                self.assertFalse(task.done())
+
+                test_utils.run_briefly(loop)
+
+                self.assertTrue(task.done())
+                self.assertFalse(task.cancelled())
+                self.assertIs(task.exception(), base_exc)
+
     def test_coroutine_non_gen_function(self):
         async def func():
             return 'test'

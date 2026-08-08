@@ -214,6 +214,9 @@ class TaskGroup:
             raise RuntimeError(f"TaskGroup {self!r} is shutting down")
         task = self._loop.create_task(coro, **kwargs)
 
+        # gh-102572: the TaskGroup re-raises base exceptions in the parent task
+        task._reraise_base_exceptions = False
+
         futures.future_add_to_awaited_by(task, self._parent_task)
 
         # Always schedule the done callback even if the task is
