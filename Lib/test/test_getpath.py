@@ -290,6 +290,32 @@ class MockGetPathTests(unittest.TestCase):
         actual = getpath(ns, expected)
         self.assertEqual(expected, actual)
 
+    def test_relative_path_env_posix(self):
+        "Resolving the executable from a relative PATH entry yields an absolute path (gh-154160)"
+        ns = MockPosixNamespace(
+            PREFIX="/usr",
+            argv0="python",
+            ENV_PATH="usr/bin",
+        )
+        ns.add_known_xfile("usr/bin/python")
+        ns.add_known_xfile("/Absolute/usr/bin/python")
+        ns.add_known_file("/usr/lib/python9.8/os.py")
+        ns.add_known_dir("/usr/lib/python9.8/lib-dynload")
+        expected = dict(
+            executable="/Absolute/usr/bin/python",
+            base_executable="/Absolute/usr/bin/python",
+            prefix="/usr",
+            exec_prefix="/usr",
+            module_search_paths_set=1,
+            module_search_paths=[
+                "/usr/lib/python98.zip",
+                "/usr/lib/python9.8",
+                "/usr/lib/python9.8/lib-dynload",
+            ],
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
+
     def test_buildpath_posix(self):
         """Test an in-build-tree layout on POSIX.
 
