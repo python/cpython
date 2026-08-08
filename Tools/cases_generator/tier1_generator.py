@@ -89,7 +89,12 @@ def write_uop(
 
     for cache in uop.caches:
         if cache.name != "unused":
-            if cache.size == 4:
+            if cache.pretagged:
+                # Read raw bits; read_obj would falsely declare PyObject* for
+                # what is actually a tagged uintptr_t.
+                type = "uintptr_t "
+                reader = "read_u64"
+            elif cache.size == 4:
                 type = "PyObject *"
                 reader = "read_obj"
             else:

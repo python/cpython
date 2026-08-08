@@ -1,0 +1,2 @@
+Optimize _LOAD_CONST_INLINE_BORROW by pre-tagging operands at trace
+creation. Patch by Donghee Na.
