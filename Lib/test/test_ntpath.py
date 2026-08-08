@@ -1210,6 +1210,35 @@ class TestNtpath(NtpathTestCase):
 
 
 
+    def test_abspath_dots_and_spaces(self):
+        # gh-85681: trailing dots and spaces are stripped from the last
+        # component, and a single trailing dot from other components.
+        tester('ntpath.abspath("C:/spam. . .")', "C:\\spam")
+        tester('ntpath.abspath("C:/spam.")', "C:\\spam")
+        tester('ntpath.abspath("C:/spam ")', "C:\\spam")
+        tester('ntpath.abspath("C:/spam..")', "C:\\spam")
+        tester('ntpath.abspath("C:/.spam")', "C:\\.spam")
+        tester('ntpath.abspath("C:/spam./eggs")', "C:\\spam\\eggs")
+        tester('ntpath.abspath("C:/spam.b./eggs")', "C:\\spam.b\\eggs")
+        tester('ntpath.abspath("C:/spam ./eggs")', "C:\\spam \\eggs")
+        # A trailing dot preceded by a dot is not stripped.
+        tester('ntpath.abspath("C:/spam../eggs")', "C:\\spam..\\eggs")
+        tester('ntpath.abspath("C:/spam.../eggs")', "C:\\spam...\\eggs")
+        # Trailing dots and spaces are stripped even in extended paths.
+        tester('ntpath.abspath("\\\\?\\C:/spam. . .")', "\\\\?\\C:\\spam")
+        tester('ntpath.abspath("\\\\.\\C:/spam. . .")', "\\\\.\\C:\\spam")
+        tester('ntpath.abspath("//server/share/spam. ")',
+               "\\\\server\\share\\spam")
+
+    def test_relpath_dots_and_spaces(self):
+        # gh-85681: relpath() is based on abspath().
+        tester('ntpath.relpath("foo ", "foo")', ".")
+        tester('ntpath.relpath("foo.", "foo")', ".")
+        tester('ntpath.relpath("foo/bar ", "foo")', "bar")
+        tester('ntpath.relpath("foo/bar.", "foo")', "bar")
+        # "foo.." denotes "foo" as the last component, but not as other.
+        tester('ntpath.relpath("foo../bar", "foo..")', "..\\foo..\\bar")
+
     @unittest.skipUnless(nt, "abspath requires 'nt' module")
     def test_abspath(self):
         tester('ntpath.abspath("C:\\")', "C:\\")
