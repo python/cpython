@@ -1,0 +1,3 @@
+Fix libc thread safety issues with :mod:`socket` by replacing
+``getservbyname``, ``getservbyport``, and ``getprotobyname`` with ``*_r``
+re-entrant versions.
