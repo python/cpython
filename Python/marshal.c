@@ -106,6 +106,7 @@ module marshal
 #define WFERR_NESTEDTOODEEP 2
 #define WFERR_NOMEMORY 3
 #define WFERR_CODE_NOT_ALLOWED 4
+#define WFERR_CHANGED_SIZE 5
 
 typedef struct {
     FILE *fp;
@@ -489,8 +490,13 @@ w_object(PyObject *v, WFILE *p)
     else if (v == Py_True) {
         w_byte(TYPE_TRUE, p);
     }
-    else if (!w_ref(v, &flag, p))
+    else if (!w_ref(v, &flag, p)) {
+        /* Keep v alive: serializing it may run Python (an item's __buffer__)
+           that drops the caller's last reference. */
+        Py_INCREF(v);
         w_complex_object(v, flag, p);
+        Py_DECREF(v);
+    }
 
     p->depth--;
 }
@@ -603,6 +609,11 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         W_SIZE(n, p);
         for (i = 0; i < n; i++) {
             w_object(PyList_GET_ITEM(v, i), p);
+            /* Serializing an item may have resized the list; n is stale. */
+            if (PyList_GET_SIZE(v) != n) {
+                p->error = WFERR_CHANGED_SIZE;
+                return;
+            }
         }
     }
     else if (PyAnyDict_CheckExact(v)) {
@@ -621,10 +632,22 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             W_TYPE(TYPE_DICT, p);
         }
         /* This one is NULL object terminated! */
+        n = PyDict_GET_SIZE(v);
         pos = 0;
         while (PyDict_Next(v, &pos, &key, &value)) {
+            /* key and value are only borrowed; an item's __buffer__() may run
+               Python that drops the dict's last reference to them. */
+            Py_INCREF(key);
+            Py_INCREF(value);
             w_object(key, p);
             w_object(value, p);
+            Py_DECREF(key);
+            Py_DECREF(value);
+            /* It may also have resized the dict, making pos stale. */
+            if (PyDict_GET_SIZE(v) != n) {
+                p->error = WFERR_CHANGED_SIZE;
+                return;
+            }
         }
         w_object((PyObject *)NULL, p);
         if (PyFrozenDict_CheckExact(v)) {
@@ -654,6 +677,13 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         Py_ssize_t i = 0;
         Py_BEGIN_CRITICAL_SECTION(v);
         while (_PySet_NextEntryRef(v, &pos, &value, &hash)) {
+            /* An earlier element may have grown the set; i >= n avoids
+               writing past the pre-sized pairs list. */
+            if (i >= n) {
+                p->error = WFERR_CHANGED_SIZE;
+                Py_DECREF(value);
+                break;
+            }
             PyObject *dump = _PyMarshal_WriteObjectToString(value,
                                     p->version, p->allow_code);
             if (dump == NULL) {
@@ -669,11 +699,17 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             PyList_SET_ITEM(pairs, i++, pair);
         }
         Py_END_CRITICAL_SECTION();
-        if (p->error == WFERR_UNMARSHALLABLE || p->error == WFERR_NOMEMORY) {
+        if (p->error == WFERR_UNMARSHALLABLE || p->error == WFERR_NOMEMORY
+                || p->error == WFERR_CHANGED_SIZE) {
             Py_DECREF(pairs);
             return;
         }
-        assert(i == n);
+        if (i != n || PySet_GET_SIZE(v) != n) {
+            /* The set was mutated while being marshalled. */
+            p->error = WFERR_CHANGED_SIZE;
+            Py_DECREF(pairs);
+            return;
+        }
         if (PyList_Sort(pairs)) {
             p->error = WFERR_NOMEMORY;
             Py_DECREF(pairs);
@@ -1940,6 +1976,10 @@ _PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code)
         case WFERR_CODE_NOT_ALLOWED:
             PyErr_SetString(PyExc_ValueError,
                             "marshalling code objects is disallowed");
+            break;
+        case WFERR_CHANGED_SIZE:
+            PyErr_SetString(PyExc_RuntimeError,
+                            "dict, list or set changed size during iteration");
             break;
         default:
         case WFERR_UNMARSHALLABLE:
