@@ -25,7 +25,7 @@ Warning (from warnings module):
     Line of code
 UserWarning: Test
 '''
-shellmsg = idlemsg + ">>> "
+shellmsg = idlemsg
 
 
 class RunWarnTest(unittest.TestCase):
