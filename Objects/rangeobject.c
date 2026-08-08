@@ -454,9 +454,54 @@ fail:
     return NULL;
 }
 
+/* Fast path for the common case where the needle and all three range fields
+   are compact ints, so that the whole membership test can be done in
+   Py_ssize_t arithmetic instead of going through the abstract number API.
+
+   Compact ints hold a single digit, so their values are bounded by
+   PyLong_MASK (2**30 - 1 on 64-bit builds, 2**15 - 1 on 15-bit-digit builds).
+   That leaves at least one spare bit, so "value - start" cannot overflow
+   Py_ssize_t.
+
+   Assumes (PyLong_CheckExact(ob) || PyBool_Check(ob)).  Returns 1 or 0 like
+   range_contains_long(), or -1 to mean "not representable, use the general
+   path" -- this helper never raises, so -1 is not an error indicator here. */
+static int
+range_contains_compact_long(rangeobject *r, PyObject *ob)
+{
+    if (!_PyLong_IsCompact((PyLongObject *)ob) ||
+        !_PyLong_IsCompact((PyLongObject *)r->start) ||
+        !_PyLong_IsCompact((PyLongObject *)r->stop) ||
+        !_PyLong_IsCompact((PyLongObject *)r->step))
+    {
+        return -1;
+    }
+
+    Py_ssize_t value = _PyLong_CompactValue((PyLongObject *)ob);
+    Py_ssize_t start = _PyLong_CompactValue((PyLongObject *)r->start);
+    Py_ssize_t stop = _PyLong_CompactValue((PyLongObject *)r->stop);
+    Py_ssize_t step = _PyLong_CompactValue((PyLongObject *)r->step);
+
+    if (step > 0) {
+        /* positive steps: start <= ob < stop */
+        if (value < start || value >= stop) {
+            return 0;
+        }
+    }
+    else {
+        /* negative steps: stop < ob <= start */
+        if (value > start || value <= stop) {
+            return 0;
+        }
+    }
+    /* C and Python remainders differ in sign but never in whether they are
+       zero, so this matches the (ob - start) % step == 0 test below. */
+    return ((value - start) % step) == 0;
+}
+
 /* Assumes (PyLong_CheckExact(ob) || PyBool_Check(ob)) */
 static int
-range_contains_long(rangeobject *r, PyObject *ob)
+range_contains_long_slow(rangeobject *r, PyObject *ob)
 {
     PyObject *zero = _PyLong_GetZero();  // borrowed reference
     int cmp1, cmp2, cmp3;
@@ -498,6 +543,17 @@ range_contains_long(rangeobject *r, PyObject *ob)
     Py_XDECREF(tmp1);
     Py_XDECREF(tmp2);
     return result;
+}
+
+/* Assumes (PyLong_CheckExact(ob) || PyBool_Check(ob)) */
+static int
+range_contains_long(rangeobject *r, PyObject *ob)
+{
+    int result = range_contains_compact_long(r, ob);
+    if (result != -1) {
+        return result;
+    }
+    return range_contains_long_slow(r, ob);
 }
 
 static int
