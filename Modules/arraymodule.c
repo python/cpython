@@ -2281,7 +2281,7 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
     case IEEE_754_FLOAT16_LE:
     case IEEE_754_FLOAT16_BE: {
         Py_ssize_t i;
-        int le = (mformat_code == IEEE_754_FLOAT_LE) ? 1 : 0;
+        int le = (mformat_code == IEEE_754_FLOAT16_LE) ? 1 : 0;
         Py_ssize_t itemcount = Py_SIZE(items) / 2;
         const char *memstr = PyBytes_AS_STRING(items);
 
