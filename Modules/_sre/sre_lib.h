@@ -115,6 +115,13 @@ SRE(charset)(SRE_STATE* state, const SRE_CODE* set, SRE_CODE ch)
             set++;
             break;
 
+        case SRE_OP_CATEGORY_UCD:
+            /* <CATEGORY_UCD> <packed> */
+            if (sre_category_ucd(set[0], (Py_UCS4) ch))
+                return ok;
+            set++;
+            break;
+
         case SRE_OP_CHARSET:
             /* <CHARSET> <bitmap> */
             if (ch < 256 &&
@@ -726,6 +733,17 @@ dispatch:
             TRACE(("|%p|%p|CATEGORY %d\n", pattern,
                    ptr, *pattern));
             if (ptr >= end || !sre_category(pattern[0], ptr[0]))
+                RETURN_FAILURE;
+            pattern++;
+            ptr++;
+            DISPATCH;
+
+        TARGET(SRE_OP_CATEGORY_UCD):
+            /* match at given unicodedata property */
+            /* <CATEGORY_UCD> <packed> */
+            TRACE(("|%p|%p|CATEGORY_UCD %d\n", pattern,
+                   ptr, *pattern));
+            if (ptr >= end || !sre_category_ucd(pattern[0], (Py_UCS4) ptr[0]))
                 RETURN_FAILURE;
             pattern++;
             ptr++;
