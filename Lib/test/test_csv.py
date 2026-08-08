@@ -49,8 +49,9 @@ class Test_Csv(unittest.TestCase):
         self.assertRaises(TypeError, ctor, arg, quoting=None)
         self.assertRaises(TypeError, ctor, arg,
                           quoting=csv.QUOTE_ALL, quotechar='')
-        self.assertRaises(TypeError, ctor, arg,
-                          quoting=csv.QUOTE_ALL, quotechar=None)
+        for quoting in csv.QUOTE_ALL, csv.QUOTE_STRINGS, csv.QUOTE_NOTNULL:
+            self.assertRaises(TypeError, ctor, arg,
+                              quoting=quoting, quotechar=None)
         self.assertRaises(TypeError, ctor, arg,
                           quoting=csv.QUOTE_NONE, quotechar='')
         self.assertRaises(ValueError, ctor, arg, delimiter='\n')
@@ -258,6 +259,22 @@ class Test_Csv(unittest.TestCase):
                          escapechar='\\', quoting=csv.QUOTE_MINIMAL)
         self._write_test(['C\\', '6', '7', 'X"'], 'C\\\\,6,7,"X"""',
                          escapechar='\\', quoting=csv.QUOTE_MINIMAL)
+
+    def test_write_quote_styles_escape(self):
+        self._write_test(['a"b', 'x\\y', 1, None],
+                         '"a""b","x\\\\y",1,',
+                         quoting=csv.QUOTE_STRINGS, escapechar='\\')
+        self._write_test(['a"b', 'x\\y', 1, None],
+                         '"a\\"b","x\\\\y",1,',
+                         quoting=csv.QUOTE_STRINGS, escapechar='\\',
+                         doublequote=False)
+        self._write_test(['a"b', 'x\\y', 1, None],
+                         '"a""b","x\\\\y","1",',
+                         quoting=csv.QUOTE_NOTNULL, escapechar='\\')
+        self._write_test(['a"b', 'x\\y', 1, None],
+                         '"a\\"b","x\\\\y","1",',
+                         quoting=csv.QUOTE_NOTNULL, escapechar='\\',
+                         doublequote=False)
 
     def test_write_lineterminator(self):
         for lineterminator in '\r\n', '\n', '\r', '!@#', '\0':
