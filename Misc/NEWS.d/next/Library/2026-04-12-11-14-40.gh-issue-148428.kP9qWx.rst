@@ -1,0 +1,4 @@
+:class:`xml.dom.pulldom.DOMEventStream` now supports the :term:`context
+manager` protocol and has a :meth:`~xml.dom.pulldom.DOMEventStream.close`
+method. File handles opened by :func:`xml.dom.pulldom.parse` are now
+properly closed, fixing a resource leak.
