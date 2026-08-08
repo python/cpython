@@ -1,0 +1,1 @@
+Avoid possible memory leak in ``pylifecycle.c``. Patch by Ivy Xu.
