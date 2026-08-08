@@ -1,0 +1,4 @@
+Speed up :func:`copy.deepcopy` of :class:`dict`, :class:`list` and
+:class:`tuple` containers whose elements are atomic immutable objects, by
+skipping the per-element recursive call for those elements. Patch by Bernát
+Gábor.
