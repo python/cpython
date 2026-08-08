@@ -4,6 +4,8 @@ import re
 import shutil
 import sys
 import unittest
+from errno import EMFILE
+from unittest import mock
 
 from test.support import is_wasi, Py_DEBUG
 from test.support.os_helper import (TESTFN, skip_unless_symlink,
@@ -391,6 +393,12 @@ class GlobTests(unittest.TestCase):
             p = os.path.join(p, 'd')
             for it in iters:
                 self.assertEqual(next(it), p)
+
+    def test_glob_too_many_open_files(self):
+        with mock.patch('os.scandir') as mocked_func:
+            mocked_func.side_effect = OSError(EMFILE, os.strerror(EMFILE), '.')
+
+            self.assertRaises(OSError, glob.glob, '*')
 
     def test_translate_matching(self):
         match = re.compile(glob.translate('*')).match
