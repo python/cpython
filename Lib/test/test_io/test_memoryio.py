@@ -457,9 +457,6 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         # raises a BufferError.
         self.assertRaises(BufferError, memio.write, b'x' * 100)
         self.assertRaises(BufferError, memio.truncate)
-        # gh-111049: _io.BytesIO detach on close would lead to corruption.
-        if self.ioclass is io.BytesIO:
-            self.assertRaises(BufferError, memio.close)
         self.assertFalse(memio.closed)
         # Mutating the buffer updates the BytesIO
         buf[3:6] = b"abc"
@@ -474,12 +471,7 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         self.assertRaises(ValueError, memio.getbuffer)
 
     def test_getbuffer_delete(self):
-        # gh-111330: _pyio .close() works and the buffer stays working
-        if self.ioclass is io.BytesIO:
-            # gh-111049: _io.BytesIO detach on close would lead to corruption.
-            # gh-111331: It would be nice to support this.
-            self.skipTest("io.BytesIO does not support, gh-111049")
-
+        # gh-111330, gh-111331: .close() works and the buffer stays working
         memio = self.ioclass(b"1234567890")
         buf = memio.getbuffer()
         self.assertEqual(bytes(buf), b"1234567890")
@@ -489,6 +481,21 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         buf[3:6] = b"abc"
         self.assertEqual(bytes(buf), b"123abc7890")
         self.assertRaises(ValueError, memio.getbuffer)
+        self.assertRaises(ValueError, memio.getvalue)
+        del buf
+        support.gc_collect()
+        memio.close()
+
+    def test_getbuffer_del(self):
+        # gh-111330, gh-111331: deleting the BytesIO which has an exported
+        # buffer does not emit an unraisable exception.
+        memio = self.ioclass(b"1234567890")
+        buf = memio.getbuffer()
+        with support.catch_unraisable_exception() as cm:
+            del memio
+            support.gc_collect()
+            self.assertIsNone(cm.unraisable)
+        self.assertEqual(bytes(buf), b"1234567890")
 
     def test_getbuffer_empty(self):
         memio = self.ioclass()
@@ -513,15 +520,13 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         a = [buf]
         a.append(a)
 
-        # gh-111330: _pyio GC with exports should pass.
+        # gh-111330, gh-111331: no unraisable exception is emitted.
         with support.catch_unraisable_exception() as cm:
             del memio
-            self.assertIsNone(cm.unraisable)
-        del buf
-        del a
-        # The C implementation emits an unraisable exception.
-        with support.catch_unraisable_exception():
+            del buf
+            del a
             gc.collect()
+            self.assertIsNone(cm.unraisable)
         self.assertIsNone(memiowr())
         self.assertIsNone(bufwr())
 
