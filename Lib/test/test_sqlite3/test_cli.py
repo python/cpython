@@ -189,6 +189,28 @@ class InteractiveSession(unittest.TestCase):
         self.assertEqual(out.count(self.PS1), 2)
         self.assertEqual(out.count(self.PS2), 0)
 
+    def test_interact_null_byte(self):
+        # NUL byte -> ValueError from complete_statement().
+        out, err = self.run_cli(commands=("SELECT '\0';", "SELECT 1;"))
+        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertNotIn("Traceback (most recent call last)", err)
+        self.assertIn("ValueError: ", err)
+        self.assertIn("(1,)\n", out)
+        self.assertEndsWith(out, self.PS1)
+        self.assertEqual(out.count(self.PS1), 3)
+        self.assertEqual(out.count(self.PS2), 0)
+
+    def test_interact_lone_surrogate(self):
+        # Lone surrogate -> UnicodeEncodeError from complete_statement().
+        out, err = self.run_cli(commands=("SELECT '\udc80';", "SELECT 1;"))
+        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertNotIn("Traceback (most recent call last)", err)
+        self.assertIn("UnicodeEncodeError: ", err)
+        self.assertIn("(1,)\n", out)
+        self.assertEndsWith(out, self.PS1)
+        self.assertEqual(out.count(self.PS1), 3)
+        self.assertEqual(out.count(self.PS2), 0)
+
     def test_interact_on_disk_file(self):
         self.addCleanup(unlink, TESTFN)
 
