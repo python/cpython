@@ -147,8 +147,9 @@ class Queue(mixins._LoopBoundMixin):
                     # previous get_nowait call or a shutdown call.
                     pass
                 if not self.full() and not putter.cancelled():
-                    # We were woken up by get_nowait(), but can't take
-                    # the call.  Wake up the next in line.
+                    # We were woken up by get_nowait(), but can't take the
+                    # call. Wake up the next in line. This can happen when
+                    # the putter is set, then the await cancelled.
                     self._wakeup_next(self._putters)
                 raise
         return self.put_nowait(item)
@@ -194,8 +195,9 @@ class Queue(mixins._LoopBoundMixin):
                     # previous put_nowait call, or a shutdown call.
                     pass
                 if not self.empty() and not getter.cancelled():
-                    # We were woken up by put_nowait(), but can't take
-                    # the call.  Wake up the next in line.
+                    # We were woken up by put_nowait(), but can't take the
+                    # call. Wake up the next in line. This can happen when
+                    # the getter is set, then the await cancelled.
                     self._wakeup_next(self._getters)
                 raise
         return self.get_nowait()
