@@ -3953,6 +3953,29 @@ def test_syntax_error_with_incorrect_expected_note():
     """
 
 
+def test_unable_to_check_for_wrapped_attr():
+    """
+    Before gh-70186, DocTestFinder.find() failed when inspect.unwrap()
+    raised anything else but AttributeError while checking if a given
+    object had the __wrapped__ attribute.
+
+    >>> # An unwrapable class
+    >>> class UnwrapMeAndDie:
+    ...     def __getattr__(self, name):
+    ...         raise RuntimeError('boom')
+
+    >>> # A module using this class
+    >>> import types
+    >>> m = types.ModuleType('some_module')
+    >>> m.__dict__.update({'unwrap_me_not': UnwrapMeAndDie()})
+    >>> # DocTestFinder.find() should fail with a specific ValueError, nothing else
+    >>> finder = doctest.DocTestFinder()
+    >>> finder.find(m)  # doctest: +ELLIPSIS
+    Traceback (most recent call last):
+    ValueError: DocTestFinder.find: __wrapped__ threw RuntimeError('boom'): ...
+    """
+
+
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite(doctest))
     tests.addTest(doctest.DocTestSuite())
