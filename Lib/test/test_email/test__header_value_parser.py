@@ -1,9 +1,427 @@
+import re
 import string
 import unittest
+from contextlib import ExitStack
 from email import _header_value_parser as parser
 from email import errors
 from email import policy
-from test.test_email import TestEmailBase, parameterize
+from importlib import import_module
+from random import choices, randint, sample
+from test.support.import_helper import CleanImport
+from test.test_email import (
+    charname,
+    check_all_warnings,
+    for_each_character,
+    TestEmailBase,
+    parameterize,
+    )
+from test.test_email.params import (
+    add_label,
+    as_value,
+    C,
+    for_each_name,
+    include_unless,
+    only,
+    params,
+    Params,
+    params_map,
+    with_names,
+    )
+
+# https://datatracker.ietf.org/doc/html/rfc5322#section-2.2
+RFC_PRINTABLES = bytes(range(33, 127)).decode('ascii')
+
+# https://datatracker.ietf.org/doc/html/rfc5322#section-2.2
+RFC_WSP = chr(32) + chr(9)
+
+# https://datatracker.ietf.org/doc/html/rfc5322#section-2.2
+RFC_NONPRINTABLES = bytes([*range(0, 33), 127]).decode('ascii')
+
+# https://datatracker.ietf.org/doc/html/rfc2978#section-2.3
+# Except that like
+#   https://datatracker.ietf.org/doc/html/rfc8187#section-3.2.1
+# we omit the "'" character as otherwise it is difficult to correctly parse
+# extended parameters values absent a complete registry.  In any case charset
+# names generally do not include special characters in practice.
+RFC_CHARSET_CHARS = ''.join((
+    string.ascii_letters,
+    string.digits,
+    "!#$%&+-^_`{}~",
+    ))
+
+# https://datatracker.ietf.org/doc/html/rfc5322#section-3.2.3
+RFC_ATEXT = ''.join((
+    string.ascii_letters,
+    string.digits,
+    "!#$%&'*+-/=?^_`{|}~",
+    ))
+
+# https://datatracker.ietf.org/doc/html/rfc5322#section-3.2.3
+RFC_SPECIALS = r'()<>[]:;@\,."'
+
+# This isn't an RFC concept, but it is as useful in tests as it is in the code.
+CFWS_LEADER = RFC_WSP + '('
+
+ALL_ASCII = bytes(range(0, 128)).decode('ascii')
+
+
+# ---> Defect Expectations
+
+undecodable_bytes_defect = (
+    errors.UndecodableBytesDefect,
+    'Non-ASCII characters found in header token',
+    )
+
+def undecodable_bytes_in_ew_defect(chars):
+    return (
+        errors.UndecodableBytesDefect,
+        f"Encoded word contains bytes not decodable using '{chars}' charset",
+        )
+
+def nonprintable_defect(chars):
+    return (
+        errors.NonPrintableDefect,
+        'the following ASCII non-printables found in header:'
+            f' {re.escape(repr(list(chars)))}',
+        )
+
+whitespace_inside_ew_defect = (
+    errors.InvalidHeaderDefect,
+    'whitespace inside encoded-word',
+    )
+
+missing_whitespace_before_ew_defect = (
+    errors.InvalidHeaderDefect,
+    'missing whitespace before encoded-word',
+    )
+
+missing_whitespace_after_ew_defect = (
+    errors.InvalidHeaderDefect,
+    'missing whitespace after encoded-word',
+    )
+
+def charset_defect(chars):
+    return (
+        errors.CharsetError,
+        f"Unknown charset '{chars}' in encoded word; decoded as unknown bytes",
+        )
+
+invalid_base64_padding_defect = (
+    errors.InvalidBase64PaddingDefect,
+    '',
+    )
+
+invalid_base64_characters_defect = (
+    errors.InvalidBase64CharactersDefect,
+    '',
+    )
+
+invalid_base64_length_defect = (
+    errors.InvalidBase64LengthDefect,
+    '',
+    )
+
+end_inside_quoted_string_defect = (
+    errors.InvalidHeaderDefect,
+    'end of header inside quoted string',
+    )
+
+ew_inside_quoted_string_defect = (
+    errors.InvalidHeaderDefect,
+    'encoded-word inside quoted string',
+    )
+
+end_inside_comment_defect = (
+    errors.InvalidHeaderDefect,
+    'end of header inside comment',
+    )
+
+period_in_phrase_obs_defect = (
+    errors.ObsoleteHeaderDefect,
+    "period in 'phrase'",
+    )
+
+cfws_without_atom_in_phrase_obs_defect = (
+    errors.ObsoleteHeaderDefect,
+    'cfws found without atom',
+    )
+
+non_word_phrase_start_defect = (
+    errors.InvalidHeaderDefect,
+    "phrase does not start with word",
+    )
+
+non_dot_atom_local_part_obs_defect = (
+    errors.ObsoleteHeaderDefect,
+    r'local-part is not a valid dot-atom \(it contains internal CFWS\)',
+    )
+
+not_even_obs_local_part_defect = (
+    errors.InvalidHeaderDefect,
+    'local-part is not dot-atom, quoted-string, or obs-local-part',
+    )
+
+missing_dot_in_local_part_defect = (
+    errors.InvalidHeaderDefect,
+    "missing '.' between words",
+    )
+
+trailing_dot_in_local_part_defect = (
+    errors.InvalidHeaderDefect,
+    "invalid trailing '.' in local-part",
+    )
+
+leading_dot_in_local_part_defect = (
+    errors.InvalidHeaderDefect,
+    "invalid leading '.' in local-part",
+    )
+
+repeated_dot_in_local_part_defect = (
+    errors.InvalidHeaderDefect,
+    "invalid repeated '.' in local-part",
+    )
+
+misplaced_backslash_defect = (
+    errors.InvalidHeaderDefect,
+    r"'\\' character outside of quoted-string/ccontent",
+    )
+
+ew_in_local_part_defect = (
+    errors.InvalidHeaderDefect,
+    'encoded-word in local-part',
+    )
+
+# ---> End Defect Expectations
+
+
+# XXX POSTDEP: Delete this test case, from here...
+
+class TestDeprecations(TestEmailBase):
+
+    def test___getattr___attribute_error(self):
+        nonsense = 'this_does_not_exist'
+        with self.assertRaisesRegex(AttributeError, nonsense):
+            getattr(parser, nonsense)
+
+    def test___getattr___deprecation(self):
+        with CleanImport(parser.__name__):
+            foo = import_module(parser.__name__)
+            foo._deprecated_foo = lambda: 42
+            foo._deprecated_bar = 1
+            with check_all_warnings((
+                    r"(?=.*'bar')(?=.*is deprecated)",
+                    DeprecationWarning,
+                    )):
+                self.assertEqual(foo.bar, 1)
+            self.assertEqual(foo.foo(), 42)
+
+    def test___getattr___replacement(self):
+        with CleanImport(parser.__name__):
+            foo = import_module(parser.__name__)
+            a_func = lambda: 42
+            foo._deprecated_foo = a_func
+            foo._REPLACED_NAMES['foo'] = 'bird'
+            foo._deprecated_bar = 2
+            foo._REPLACED_NAMES['bar'] = 'brain'
+            with check_all_warnings((
+                    r"(?=.*'foo')(?=.*is deprecated)(?=.*'bird')",
+                    DeprecationWarning,
+                    )):
+                self.assertEqual(foo.foo, a_func)
+            self.assertEqual(foo.foo(), 42)
+            with check_all_warnings((
+                    r"(?=.*'bar')(?=.*is deprecated)(?=.*'brain')",
+                    DeprecationWarning,
+                    )):
+                self.assertEqual(foo.bar, 2)
+
+    def test__replaced_with(self):
+        with CleanImport(parser.__name__):
+            p = import_module(parser.__name__)
+            @p._replaced_with('foo')
+            def _deprecated_bar(a):
+                return a
+            p._deprecated_bar = _deprecated_bar
+            with check_all_warnings((
+                    r"(?=.*'bar')(?=.*is deprecated)(?=.*'foo')",
+                    DeprecationWarning,
+                    )):
+                self.assertEqual(p.bar(2), 2)
+
+    @params(as_value(
+        # XXX XXX make sure this is completely filled in with all the
+        # names we expect to be deprecated.
+        '_InvalidEwError',
+        'rfc2047_matcher',
+        '_wsp_splitter',
+        '_non_atom_end_matcher',
+        ))
+    def test_deprecated_names(self, name):
+        with check_all_warnings((
+                rf'(?=.*{name})(?=.*is.*deprecated)',
+                DeprecationWarning,
+            )):
+            getattr(parser, name)
+
+    @params(with_names(
+        # XXX XXX make sure this is completely filled in with all the names
+        # we've replaced.
+        get_qp_ctext='get_ccontent_sequence',
+        get_atext='get_atext_sequence',
+        ))
+    def test_replaced_names(self, oldname, newname):
+        with check_all_warnings((
+                rf'(?=.*{oldname!r}.*is deprecated)(?=.*{newname})',
+                DeprecationWarning,
+            )):
+            getattr(parser, oldname)
+
+    @params(
+        old_simple = C('foo x', '', res=('f', 'oo x', 9), warn=True),
+        old_with_arg = C('foo x', ' ', res=('fo', 'o x', 9), warn=True),
+        old_with_kw = C('foo x', '', b=2, res=('foo', ' x', 9), warn=True),
+        new_with_zero = C('foo x', 0, '', res=('f', 1, 9)),
+        new_with_nonzero = C('foo x', 3, '', res=(' ', 4, 9)),
+        new_with_arg = C('foo x', 1, ' ', res=('oo', 3, 9)),
+        new_with_kw = C('foo x', 2, '', b=2, res=('o x', 5, 9)),
+        )
+    def test__deprecate_old_api(self, value, *args, b=0, warn=False, res):
+        @parser._deprecate_old_api
+        def t(value, start, a, b=0):
+            end = start + 1 + len(a) + b
+            return value[start:end], end, 9
+        warnings = []
+        if warn:
+            warnings += [(
+                r"(?=.*'t')(?=.*API)(?=.*has changed)",
+                DeprecationWarning,
+                )]
+        with check_all_warnings(*warnings):
+            self.assertEqual(t(value, *args, b=b), res)
+
+    @params(
+        old_api_no_error = C(C('abc')),
+        new_api_no_error = C(C('abc', 0)),
+        old_api_error = C(C(''), warning=True),
+        new_api_error = C(C('', 0), exception=True),
+        new_api_no_error_with_non_zero_start = C(C('abc', 2)),
+        new_api_error_with_non_zero_start = C(C('abc', 3), exception=True),
+        )
+    def test__deprecate_old_api_and_lack_of_raise_on_invalid_input(
+            self,
+            callspec,
+            exception=False,
+            warning=False,
+        ):
+        @parser._deprecate_old_api_and_lack_of_raise_on_invalid_input
+        def foo(value, start):
+            if not value[start:]:
+                return parser.TokenList(['']), start, Exception('bar'), 'bird'
+            return parser.TokenList([value]), start + len(value)
+        value, *start = callspec.args
+        warnings = []
+        if start == []:
+            warnings += [
+                (r"(?=.*'foo')(?=.*API)(?=.*has changed)", DeprecationWarning)
+                ]
+        if warning:
+            warnings += [('bird', DeprecationWarning)]
+        if exception:
+            exceptioncheck = self.assertRaisesRegex(Exception, 'bar')
+        else:
+            exceptioncheck = ExitStack()
+        with exceptioncheck:
+            with check_all_warnings(*warnings):
+                tl, rest = callspec(foo)
+        if exception:
+            return
+        start = start[0] if start else 0
+        self.assertEqual(tl, parser.TokenList([value]))
+        rest = (len(value) - len(rest)) if hasattr(rest, 'encode') else rest
+        self.assertEqual(rest, start + len(tl[0]))
+
+    # XXX XXX _deprecate will go away by the end of refactoring.
+
+    def test__deprecate_no_arg(self):
+        @parser._deprecate
+        def t(a, b):
+            return a, b
+        with self.assertWarnsRegex(
+                DeprecationWarning,
+                r"(?=.*'t'.*is deprecated)",
+            ):
+            self.assertEqual(t(1, 2), (1, 2))
+
+    def test__deprecate_with_arg(self):
+        @parser._deprecate('t2')
+        def t(a, b):
+            return a, b
+        with self.assertWarnsRegex(
+                DeprecationWarning,
+                r"(?=.*'t'.*is deprecated)(?=.*t2)",
+            ):
+            self.assertEqual(t(1, 2), (1, 2))
+
+# XXX POSTDEP: ...to here
+
+
+class TestTokenList(TestEmailBase):
+
+    @params(
+        none_none = C([], []),
+        one_none =  C([errors.InvalidHeaderDefect('a')], []),
+        none_one =  C([], [errors.InvalidHeaderDefect('b')]),
+        one_one =   C(
+            [errors.InvalidHeaderDefect('a')],
+            [errors.InvalidHeaderDefect('b')],
+            ),
+        two_two =   C(
+            [errors.InvalidHeaderDefect('a'), errors.NonPrintableDefect('y')],
+            [errors.NonPrintableDefect('b'), errors.InvalidHeaderDefect('z')],
+            ),
+        )
+    def test_extend_copies_defects(self, existing, new):
+        tl1 = parser.TokenList()
+        tl1.defects.extend(existing)
+        tl2 = parser.TokenList(['fake', 'values'])
+        tl2.defects.extend(new)
+        tl1.extend(tl2)
+        self.assertEqual(tl1.defects, existing + new)
+
+    def test_extend_with_non_token_list_leaves_defects_unchanged(self):
+        tl = parser.TokenList()
+        defects = [errors.InvalidHeaderDefect('a')]
+        tl.defects.extend(defects)
+        tl.extend(['fake', 'values'])
+        self.assertEqual(tl.defects, defects)
+
+    for_each_method = for_each_name('append', 'extend', 'push')
+
+    @params(
+        for_each_method(
+            none_none = C([],       []          ),
+            one_none =  C([1],      []          ),
+            none_one =  C([],       [20]        ),
+            one_one =   C([1],      [20]        ),
+            two_two =   C([1, 20],  [27, 40]    ),
+            )
+        )
+    def test_ew_indexes(self, method, existing, new):
+        expected = new + existing if method == 'push' else existing + new
+        tl1 = parser.TokenList()
+        tl1.ew_indexes = list(existing)
+        tl2 = parser.TokenList(['fake', 'values'])
+        tl2.ew_indexes = list(new)
+        getattr(tl1, method)(tl2)
+        self.assertEqual(tl1.ew_indexes, expected)
+
+    @params(for_each_method(C([1, 20])))
+    def test_non_token_list_leaves_ew_indexes_unchanged(self, method, idxs):
+        tl1 = parser.TokenList()
+        tl1.ew_indexes = idxs
+        getattr(tl1, method)(['fake', parser.Terminal('values', 'fake')])
+        self.assertEqual(tl1.ew_indexes, idxs)
+
 
 class TestTokens(TestEmailBase):
 
@@ -41,1271 +459,3937 @@ class TestParserMixin:
         self._assert_results(tl, '', string, value, defects, '', comments)
         return tl
 
+    def _test_parse(
+            self,
+            method,
+            callspec,
+            stringified=None,
+            value=None,
+            defects=None,
+            remainder='',
+            comments=None,
+            *,
+            commenttree=None,
+            exception=None,
+            warnings=None,
+            test_start=True,
+            no_end=False,
+            ew_indexes=[],
+            pprint=False,
+            ):
+        """Call method with callspec, make asserts, and return results of call.
+
+        Expect method to be a parsing method that takes a string as its first
+        argument and returns a Terminal or TokenList as its return value,
+        possibly followed by an "unparsed remainder" index, and possibly
+        additional return values.
+
+        If test_start is true (the default), modify the callspec to add a
+        random prefix to its first (string) argument, and add a new parameter
+        after it consisting of the length of the added prefix.  If the callspec
+        contains a value for 'end', modify that value by adding the prefix
+        length.
+
+        If exception has a value, assert that using callspec to call method
+        raises the exception that must be the first element of value tuple with
+        a string value that matches the regex that must be the second element
+        of the value tuple.
+
+        Otherwise use the (possibly modified) callspec to call the method,
+        capturing its return value, which should either be a single Terminal or
+        TokenList, or a tuple whose first element is a Terminal or TokenList.
+
+        If no_end is True, assert that the return value was not a tuple or its
+        second value was not an integer.
+
+        If warnings has a value, use it as the argument value to a
+        check_all_warnings assert around the callspec call.
+
+        If pprint is true, call the pprint method of returned object.
+
+        If the return value is not a singleton and the second element of
+        the return value is an integer, use it, modified by the length of
+        the prefix if test_start s true, to assert that the unparsed
+        remainder matches the value of 'remainder'.
+
+        Assert that str called on the returned object matches the value
+        of stringified, or the characters from start to end or the end
+        of the string if stringified is None.
+
+        Assert that the value attribute of the returned object matches
+        value, or stringified is value is None.
+
+        Assert that the comments attribute of the returned object matches
+        comments.
+
+        If commenttree is not None, assert that the comment tree of the
+        returned object matches it. XXX commenttree is an internal testing
+        hack, a real API is needed some day.
+
+        Assert that the defects attribute of the returned object matches
+        defects.
+
+        Assert that the ew_indexes attribute of the returned object matches
+        ew_indexes.
+
+        Return whatever the called method returned.
+
+        """
+        s, *args = callspec.args
+        base = s[:-len(remainder)] if remainder else s
+        prefix_len = 0
+        if test_start:
+            # XXX I'm not at sure the overhead of this randomization is worth
+            # it.  We do at least need to test having a prefix though...
+            prefix_len = randint(1, 20)
+            prefix = ''.join(choices(ALL_ASCII, k=prefix_len))
+            kw = dict(callspec.kw)
+            callspec = C(prefix + s, prefix_len, *args, **kw)
+        # XXX POSTDEP: Change this if to do only what's in the else clause.
+        if warnings is ...:
+            warningscheck = ExitStack()
+        else:
+            warnings = [(x[1], x[0]) for x in warnings] if warnings else []
+            warningscheck = check_all_warnings(*warnings)
+        if exception:
+            with warningscheck:
+                with self.assertRaisesRegex(exception[0], exception[1]):
+                    callspec(method)
+            return
+        stringified = base if stringified is None else stringified
+        value = stringified if value is None else value
+        comments = [] if comments is None else comments
+        defects = [] if defects is None else defects
+        with warningscheck:
+            result = callspec(method)
+        if result is None:
+            return
+        if isinstance(result, (parser.TokenList, parser.Terminal)):
+            other = []
+        else:
+            result, *other = result
+        if pprint:
+            print(f'\n{result.ppstr()}')
+        # XXX POSTDEP: remove str from this 'if'
+        if other and isinstance(other[0], (int, str)):
+            if no_end:
+                self.fail(
+                    "It looks like the function incorrectly returned an"
+                    " end of parsing pointer"
+                    )
+            # a get_x method that returns a remainder or pointer.
+            actual_remainder, *other = other
+            if isinstance(actual_remainder, int):
+                if test_start:
+                    actual_remainder -= prefix_len
+                actual_remainder = s[actual_remainder:]
+            self.assertEqual(actual_remainder, remainder)
+        self.assertEqual(str(result), stringified)
+        if isinstance(result, parser.TokenList):
+            self.assertEqual(result.value, value)
+            self.assertDefectsMatch(result.all_defects, defects)
+            # XXX XXX at the end of the refactor get rid of this conditional.
+            if comments != ...:
+                self.assertEqual(result.comments, comments)
+            if commenttree is not None:
+                self.assertEqual(self.ctree(result), commenttree)
+            if ew_indexes is not ...:
+                self.assertEqual(
+                    [x - prefix_len for x in result.ew_indexes],
+                    ew_indexes,
+                    )
+        return (result, *other) if other else result
+
+    def verify_terminal_types(self, tl, *text_types):
+        """Raise error if token_type of any Terminal is not in text_types."""
+        self.assertIsInstance(tl, (parser.Terminal, parser.TokenList))
+        if isinstance(tl, parser.Terminal):
+            self.assertIn(tl.token_type, text_types, repr(tl))
+        elif isinstance(tl, parser.TokenList):
+            for t in tl:
+                # Some functions return a TokenList, but there should never be
+                # a plain TokenList anywhere deeper.  This will catch failures
+                # to use 'extend' when consuming returned a TokenList.
+                self.assertIsNotNone(t.token_type, t)
+                self.verify_terminal_types(t, *text_types)
+
+    def ctree(self, tl, cnt=0):
+        """Return a testing-adequate depiction of the nested comments"""
+        if isinstance(tl, parser.Comment):
+            return self._ctree(tl)
+        comments = []
+        for t in tl:
+            if isinstance(t, parser.Comment):
+                comments.append(self._ctree(t))
+            elif isinstance(t, parser.TokenList):
+                comments.extend(self.ctree(t))
+        return comments
+
+    def _ctree(self, tl):
+        comments = []
+        empty = True
+        text = ''
+        for t in tl:
+            if isinstance(t, parser.Comment):
+                if text:
+                    comments.append(text)
+                    text = ''
+                comments.append(self._ctree(t))
+                empty = False
+            else:
+                text += str(t)
+        if text or empty:
+            comments.append(text)
+        return comments
+
+
+# XXX XXX temporary step-wise refactoring tool, goes away at end of refactor.
+@params_map(with_namelist=True)
+def old_api_only(nl, *args, **kw):
+    if 'newapi' in nl:
+        return
+    kw['warnings'] = ...  # Ignore pre-refactoring warnings.
+    kw.setdefault('test_start', False)
+    yield '' if 'oldapi' in nl else 'oldapionly', C(*args, **kw)
+
+# XXX POSTDEP: Delete this params_map and replace calls to it with params_set.
+@params_map(with_namelist=True)
+def for_each_api(nl, *args, **kw):
+    if nl.has_any('oldapi', 'newapi'):
+        # Reused tests; they've been through here before.
+        yield '', C(*args, **kw)
+        return
+    yield 'newapi', C(*args, **kw)
+    kw['warnings'] = kw.get('warnings', []) + [
+        (DeprecationWarning, r'.*API.*has changed')
+        ]
+    yield 'oldapi', C(*args, **kw, test_start=False)
+
 
 class TestParser(TestParserMixin, TestEmailBase):
 
-    # _wsp_splitter
-
     rfc_printable_ascii = bytes(range(33, 127)).decode('ascii')
-    rfc_atext_chars = (string.ascii_letters + string.digits +
-                        "!#$%&\'*+-/=?^_`{}|~")
     rfc_dtext_chars = rfc_printable_ascii.translate(str.maketrans('','',r'\[]'))
 
-    def test__wsp_splitter_one_word(self):
-        self.assertEqual(parser._wsp_splitter('foo', 1), ['foo'])
+    # XXX POSTDEP: delete from here...
+    #
+    # _wsp_splitter
 
-    def test__wsp_splitter_two_words(self):
-        self.assertEqual(parser._wsp_splitter('foo def', 1),
-                                               ['foo', ' ', 'def'])
+    @params
+    def test__wsp_splitter(self, s, res):
+        self.assertEqual(parser._deprecated__wsp_splitter(s, 1), res)
 
-    def test__wsp_splitter_ws_runs(self):
-        self.assertEqual(parser._wsp_splitter('foo \t def jik', 1),
-                                              ['foo', ' \t ', 'def jik'])
+    params_test__wsp_splitter = Params(
+        one_word = C('foo', ['foo']),
+        two_words = C('foo def', ['foo', ' ', 'def']),
+        ws_runs = C('foo \t def jik', ['foo', ' \t ', 'def jik']),
+        )
+
+    # XXX POSTDEP: ...to here
+
+
+    # _make_xtext
+
+    @params
+    def test__make_xtext(
+            self,
+            s,
+            terminal_class=parser.ValueTerminal,
+            token_type='test',
+            **kw,
+        ):
+        vt = self._test_parse(
+            parser._make_xtext,
+            C(s, terminal_class, token_type),
+            stringified=('' if terminal_class.__name__.startswith('EW')
+                            else None),
+            value=' ' if terminal_class.__name__.startswith('White') else None,
+            test_start=False,
+            **kw,
+            )
+        self.assertEqual(vt.token_type, token_type)
+
+    @params_map
+    def for_each_terminal_type(*args, **kw):
+        vt_types = (
+            parser.ValueTerminal,
+            parser.WhiteSpaceTerminal,
+            parser.EWWhiteSpaceTerminal,
+            )
+        for vt_type in vt_types:
+            yield vt_type.__name__, C(*args, **kw, terminal_class=vt_type)
+
+    params_test__make_xtext = for_each_terminal_type(
+
+        token_type = C('foo', token_type='bar'),
+
+        # XXX POSTDEP: delete from here...
+
+        )
+
+
+    # _validate_xtext
+
+    @params
+    def test__validate_xtext(self, s, defects=[]):
+        vt = parser.ValueTerminal(s, 'test')
+        parser._validate_xtext(vt)
+        self.assertDefectsMatch(vt.defects, defects)
+
+    params_test__validate_xtext = Params(
+
+        # XXX POSTDEP: ...to here
+
+        valid = C('foo'),
+
+        # Although it looks a bit odd for unicode to be acceptable when we have
+        # a non-ascii error, the parser in fact handles unicode.
+        unicode = C('föö'),
+
+        # The non-ascii error arises only if the input was supposed to be 7-bit
+        # ASCII but in fact had non-ascii in it, in which case those bytes end
+        # up as surrogates.  Thus the name of the defect.
+        surrogates = C(
+            'föö'.encode().decode('ascii', 'surrogateescape'),
+            # "Non-ASCII characters found in header token"
+            defects=[undecodable_bytes_defect],
+            ),
+
+        multiple_nps = C(
+            'a\ttab spaces and\rcarriage return',
+            defects=[(nonprintable_defect, '\t  \r ')],
+            ),
+
+        nps_and_surrogates = C(
+            'föö\t'.encode().decode('ascii', 'surrogateescape'),
+            defects=[undecodable_bytes_defect, nonprintable_defect('\t')],
+            ),
+
+        **for_each_character(RFC_NONPRINTABLES)(
+            non_printable = C(
+                'f{char}o',
+                defects=[(nonprintable_defect, '{char}')],
+                ),
+            ),
+
+        )
+
+    # XXX POSTDEP: delete from here...
+    params_test__make_xtext.update(
+        add_label('from_test_validate_xtext')(
+            for_each_terminal_type(params_test__validate_xtext),
+            ),
+        )
+    # XXX POSTDEP: ...to here.
+
+
+    # _get_xtext
+
+    @params
+    def test__get_xtext(
+            self,
+            s,
+            # DOTALL allows the LF in our first test set to pass...in the
+            # normal use of _get_xtext LF will terminate the matches we use,
+            # leaving the LF (which shouldn't normally happen) for later code.
+            regex=re.compile('.*', re.DOTALL),
+            terminal_class=parser.ValueTerminal,
+            token_type='test',
+            err=None,
+            **kw,
+        ):
+        vt = self._test_parse(
+            parser._get_xtext,
+            C(s, regex, terminal_class, token_type, err=err),
+            stringified=('' if terminal_class.__name__.startswith('EW')
+                            else None),
+            value=' ' if terminal_class.__name__.startswith('White') else None,
+            **kw,
+            )
+        if 'exception' in kw:
+            return
+        self.assertEqual(vt.token_type, token_type)
+
+    params_test__get_xtext__regex = Params(
+
+        params_test__make_xtext,
+
+        raises_on_no_match = C(
+            'foo bar',
+            regex=re.compile(r'x'),
+            err=Exception('foo'),
+            exception=(Exception, 'foo'),
+            ),
+
+        returns_match = C(
+            'foo bar',
+            regex=re.compile(r'[^ ]+'),
+            remainder=' bar',
+            ),
+
+        ignores_non_printable_after_match = C(
+            'foobar\x00',
+            regex=re.compile(r'[^b]+'),
+            remainder='bar\x00',
+            ),
+
+        **for_each_character(RFC_WSP + '()')(
+            regex_from_make_non_match_re = C(
+                'foo{char}bar',
+                regex=parser._make_non_match_re(RFC_WSP + '()'),
+                remainder='{char}bar',
+                ),
+            ),
+
+        )
 
 
     # get_fws
 
-    def test_get_fws_only(self):
-        fws = self._test_get_x(parser.get_fws, ' \t  ', ' \t  ', ' ', [], '')
+    @params
+    def test_get_fws(self, s, *args, **kw):
+        fws = self._test_parse(parser.get_fws, C(s), *args, value=' ', **kw)
+        if 'exception' in kw:
+            return
+        self.assertIsInstance(fws, parser.WhiteSpaceTerminal)
         self.assertEqual(fws.token_type, 'fws')
 
-    def test_get_fws_space(self):
-        self._test_get_x(parser.get_fws, ' foo', ' ', ' ', [], 'foo')
+    # XXX POSTDEP: delete from here...
+    @params_map
+    def deprecate_oldapi_no_raise_behavior(*args, **kw):
+        kw['warnings'] = kw.get('warnings', []) + [
+            (DeprecationWarning, r'.*API.*has changed'),
+            (DeprecationWarning, r'(?i).*raise'),
+            ]
+        yield 'oldapi', C(*args, **kw, test_start=False)
+    # XXX POSTDEP: ...to here.
 
-    def test_get_fws_ws_run(self):
-        self._test_get_x(parser.get_fws, ' \t foo ', ' \t ', ' ', [], 'foo ')
+    params_test_get_fws = for_each_api(
+
+        wsp_run = C(' \t  '),
+
+        **for_each_character(RFC_WSP)(
+            ends_at_non_wsp_after_wsp = C('{char}foo', remainder='foo'),
+            ),
+
+        **for_each_character(RFC_PRINTABLES)(
+            ends_at_non_wsp_after_wsp_run = C(' \t{char} ', remainder='{char} '),
+            ),
+
+    # XXX POSTDEP: delete from here...
+        )
+
+    # These ought to error, but get_fws should never be called this way
+    # We'll deprecate the lack of raise during the refactor.
+    params_test_get_fws.update(
+        deprecate_oldapi_no_raise_behavior(
+            empty = C(''),
+            no_wsp = C('foo', remainder='foo'),
+            no_leading_wsp = C('foo bar', remainder='foo bar'),
+            ),
+        )
+
+    params_test_get_fws.update(
+        add_label('newapi')(
+    # XXX POStDEP: ... to here.  And fix the indentation below.
+            **params_map(
+                lambda s, **k: only(
+                    C(s, exception=(errors.HeaderParseError, '(?i)expected'))
+                    )
+                )(
+                empty='',
+                no_wsp='foo',
+                no_leading_wsp='foo bar',
+                )
+            ),  # XXX POSTDEP: delete this line
+
+        )
+
 
     # get_encoded_word
 
-    def test_get_encoded_word_missing_start_raises(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_encoded_word('abc')
+    @params
+    def test_get_encoded_word(
+            self,
+            s,
+            *args,
+            charset='us-ascii',
+            lang='',
+            # XXX POSTDEP: delete the following line:
+            terminal_type=None,
+            # XXX POSTDEP: uncomment following line:
+            # terminal_type='ttext',
+            prefix=None,
+            expect_none=False,
+            decode_qp=False,
+            **kw,
+            ):
+        # XXX POSTDEP: delete from here...
+        if 'warnings' in kw:
+            # old api
+            callspec = C(s) if terminal_type is None else C(s, terminal_type)
+            terminal_type = terminal_type or 'vtext'
+            if (r := kw.get('remainder')) and r[0] not in RFC_WSP:
+                kw['defects'] = kw.get('defects', []) + [
+                    missing_whitespace_after_ew_defect,
+                    ]
+        else:
+            terminal_type = terminal_type or 'ttext'
+            callspec = C(s, terminal_type)
+        callspec.kw['decode_qp'] = decode_qp
+        # XXX POSTDEP: ...to here
+        # XXX POSTDEP: uncomment the following line:
+        #callspec = C(s, terminal_type, decode_qp=decode_qp)
+        ew = self._test_parse(parser.get_encoded_word, callspec, *args, **kw)
+        if 'exception' in kw:
+            return
+        if expect_none:
+            self.assertIsNone(ew)
+            return
+        self.assertEqual(ew.charset, charset)
+        self.assertEqual(ew.lang, lang)
+        self.verify_terminal_types(ew, terminal_type, 'fws')
 
-    def test_get_encoded_word_missing_end_raises(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_encoded_word('=?abc')
+    # This params_map will handle either single strings or C objects.
+    @params_map
+    def invalid_encoded_words(v, *args, **kw):
+        # XXX POSTDEP: change 'newapi' to '' in the next line.
+        yield 'newapi', C(v, expect_none=True)
+        # XXX POSTDEP: delete from here...
+        newspec = C(
+            v,
+            *args,
+            # "expected encoded word but found '...'"
+            exception=(errors.HeaderParseError, re.escape(v)),
+            warnings=[(DeprecationWarning, r"(?=.*API)(?=.*has changed)")],
+            test_start=False,
+            **kw,
+            )
+        yield 'oldapi', newspec
+        # XXX POSTDEP: ...to here
 
-    def test_get_encoded_word_missing_middle_raises(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_encoded_word('=?abc?=')
+    params_test_get_encoded_word__invalid_input = invalid_encoded_words(
+        null_string =                               '',
+        no_chrome =                                 'content',
+        eq_only =                                   '=content',
+        start_chrome_only =                         '=?',
+        start_and_charset_only =                    '=?UTF-8',
+        start_charset_qm_only =                     '=?UTF-8?',
+        start_charset_qm_cte_only =                 '=?UTF-8?q',
+        start_charset_qm_cte_qm_only =              '=?UTF-8?q?',
+        start_charset_qm_cte_qm_content_only =      '=?UTF-8?q?content',
+        start_charset_qm_cte_qm_content_qm_only =   '=?UTF-8?q?content?',
+        end_eq_only =                               'content=',
+        end_chrome_only =                           '?=',
+        end_and_content_only =                      'content?=',
+        end_content_eq_only =                       '?content?=',
+        end_content_eq_cte_only =                   'q?content?=',
+        end_content_eq_cte_eq_only =                '?q?content?=',
+        end_content_eq_cte_eq_charset_only =        'UTF-8?q?content?=',
+        end_content_eq_cte_eq_charset_eq_only =     '?UTF-8?q?content?=',
+        missing_both_middle =                       '=?content?=',
+        missing_one_middle =                        '=?q?content?=',
+        empty_cte =                                 '=UTF-8??content?=',
+        empty_charset_and_cte =                     '=???content?=',
+        empty_everything =                          '=????=',
+        unknown_cte =                               '=?UTF-8?X?content?=',
+        invalid_base64_length =                     '=?utf-8?b?abcde?=',
+        multicharacter_cte =                        '=?UTF-8?qq?content?=',
+        empty_lang =                                '=?UTF-8*??q?content?=',
+        lang_with_empty_charset =                   '=?*foo??q?content?=',
+        **for_each_character(ALL_ASCII)(
+            character_before_valid_ew = C('{char}=?us-ascii?q?test?='),
+            ),
+        )
 
-    def test_get_encoded_word_invalid_cte(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_encoded_word('=?utf-8?X?somevalue?=')
+    # XXX POSTDEP: delete from here...
+    def test_get_encoded_word_old_api_supports_keywords(self):
+        self._test_parse(
+            parser.get_encoded_word,
+            C('=?UTF-8?q?foo?=', terminal_type='a'),
+            stringified='foo',
+            warnings=[(DeprecationWarning, r"(?=.*API)(?=.*has changed)")],
+            test_start=False,
+            )
+    # XXX POSTDEP: ...to here.
 
-    def test_get_encoded_word_valid_ew(self):
-        self._test_get_x(parser.get_encoded_word,
-                         '=?us-ascii?q?this_is_a_test?=  bird',
-                         'this is a test',
-                         'this is a test',
-                         [],
-                         '  bird')
+    params_test_get_encoded_word = for_each_api(
 
-    def test_get_encoded_word_internal_spaces(self):
-        self._test_get_x(parser.get_encoded_word,
-                         '=?us-ascii?q?this is a test?=  bird',
-                         'this is a test',
-                         'this is a test',
-                         [errors.InvalidHeaderDefect],
-                         '  bird')
+        valid_ew = C(
+            '=?us-ascii?q?this_is_a_test?=  bird',
+            stringified='this is a test',
+            remainder='  bird',
+            ),
 
-    def test_get_encoded_word_gets_first(self):
-        self._test_get_x(parser.get_encoded_word,
-                         '=?us-ascii?q?first?=  =?utf-8?q?second?=',
-                         'first',
-                         'first',
-                         [],
-                         '  =?utf-8?q?second?=')
+        **for_each_character(ALL_ASCII)(
+            ew_followed_by = C(
+                '=?us-ascii?q?foo?={char}',
+                stringified='foo',
+                remainder='{char}',
+                ),
+            ),
 
-    def test_get_encoded_word_gets_first_even_if_no_space(self):
-        self._test_get_x(parser.get_encoded_word,
-                         '=?us-ascii?q?first?==?utf-8?q?second?=',
-                         'first',
-                         'first',
-                         [errors.InvalidHeaderDefect],
-                         '=?utf-8?q?second?=')
+        # XXX some of these characters should result in defects depending on
+        # the context from which get_encoded_word is called (ex: ()s are
+        # illegal in comment encoded words), but but at least at the moment
+        # that it isn't worth the effort to implement.
+        **for_each_character(RFC_PRINTABLES, skip='_')(
+            q_content_may_contain = C(
+                '=?us-ascii?q?foo_{char}_bar_{char}?=',
+                stringified='foo {char} bar {char}',
+                )
+            ),
 
-    def test_get_encoded_word_sets_extra_attributes(self):
-        ew = self._test_get_x(parser.get_encoded_word,
-                         '=?us-ascii*jive?q?first_second?=',
-                         'first second',
-                         'first second',
-                         [],
-                         '')
-        self.assertEqual(ew.charset, 'us-ascii')
-        self.assertEqual(ew.lang, 'jive')
+        internal_spaces = C(
+            '=?us-ascii?q?this is a test?=  bird',
+            stringified='this is a test',
+            # 'whitespace inside encoded word'
+            defects=[whitespace_inside_ew_defect],
+            remainder='  bird',
+            ),
 
-    def test_get_encoded_word_lang_default_is_blank(self):
-        ew = self._test_get_x(parser.get_encoded_word,
-                         '=?us-ascii?q?first_second?=',
-                         'first second',
-                         'first second',
-                         [],
-                         '')
-        self.assertEqual(ew.charset, 'us-ascii')
-        self.assertEqual(ew.lang, '')
+        only_gets_first_ew = C(
+            '=?us-ascii?q?first?=  =?utf-8?q?second?=',
+            stringified='first',
+            remainder='  =?utf-8?q?second?=',
+            ),
 
-    def test_get_encoded_word_non_printable_defect(self):
-        self._test_get_x(parser.get_encoded_word,
-                         '=?us-ascii?q?first\x02second?=',
-                         'first\x02second',
-                         'first\x02second',
-                         [errors.NonPrintableDefect],
-                         '')
+        only_gets_first_ew_even_if_no_space = C(
+            '=?us-ascii?q?first?==?utf-8?q?second?=',
+            stringified='first',
+            remainder='=?utf-8?q?second?=',
+            ),
 
-    def test_get_encoded_word_leading_internal_space(self):
-        self._test_get_x(parser.get_encoded_word,
-                        '=?us-ascii?q?=20foo?=',
-                        ' foo',
-                        ' foo',
-                        [],
-                        '')
+        lang_set = C(
+            '=?us-ascii*jive?q?first_second?=',
+            stringified='first second',
+            lang='jive',
+            ),
 
-    def test_get_encoded_word_quopri_utf_escape_follows_cte(self):
+        utf8_charset = C(
+            '=?utf-8?q?first_second?=',
+            stringified='first second',
+            charset='utf-8',
+            ),
+
+        **for_each_character(RFC_NONPRINTABLES, skip=RFC_WSP)(
+            non_printable_defect = C(
+                '=?us-ascii?q?first{char}second?=',
+                stringified='first{char}second',
+                defects=[(nonprintable_defect, '{char}')],
+                ),
+            ),
+
+        # Note that other characters may work as well, but these *must* work.
+        **for_each_character(RFC_CHARSET_CHARS)(
+            char_valid_in_charset_name = C(
+                '=?a_bad_{char}set_name?q?foo?=',
+                stringified='foo',
+                defects=[(charset_defect('a_bad_{echar}set_name'))],
+                charset='a_bad_{char}set_name',
+                ),
+            ),
+
+        leading_internal_encoded_space = C(
+            '=?us-ascii?q?=20foo?=',
+            stringified=' foo',
+            ),
+
+        leading_internal_unencoded_space = C(
+            '=?us-ascii?q? foo?=',
+            stringified=' foo',
+            defects=[whitespace_inside_ew_defect],
+            ),
+
+        trailing_internal_encoded_space = C(
+            '=?us-ascii?q?foo=20_?=  bird',
+            stringified='foo  ',
+            value='foo ',
+            remainder='  bird',
+            ),
+
+        trailing_internal_unencoded_space = C(
+            '=?us-ascii?q?foo _ ?=  bird',
+            stringified='foo   ',
+            value='foo ',
+            defects=[whitespace_inside_ew_defect],
+            remainder='  bird',
+            ),
+
         # Issue 18044
-        self._test_get_x(parser.get_encoded_word,
-                        '=?utf-8?q?=C3=89ric?=',
-                        'Éric',
-                        'Éric',
-                        [],
-                        '')
+        quopri_utf_escape_follows_cte = C(
+            '=?utf-8?q?=C3=89ric?=',
+            stringified='Éric',
+            charset='utf-8',
+            ),
 
-    # get_unstructured
+        unknown_charset_leads_to_undecodable_bytes_with_non_ascii = C(
+            '=?invalid?q?=C3=89ric?=',
+            stringified='\udcc3\udc89ric',
+            charset='invalid',
+            defects=[charset_defect('invalid'), undecodable_bytes_defect],
+            ),
 
-    def _get_unst(self, value):
-        token = parser.get_unstructured(value)
-        return token, ''
+        empty_charset = C(
+            '=??q?content?=',
+            stringified='content',
+            charset='',
+            defects=[charset_defect('')],
+            ),
 
-    def test_get_unstructured_null(self):
-        self._test_get_x(self._get_unst, '', '', '', [], '')
+        missing_base64_padding = C(
+            '=?us-ascii?b?dmk?=',
+            stringified='vi',
+            defects=[invalid_base64_padding_defect],
+            ),
 
-    def test_get_unstructured_one_word(self):
-        self._test_get_x(self._get_unst, 'foo', 'foo', 'foo', [], '')
 
-    def test_get_unstructured_normal_phrase(self):
-        self._test_get_x(self._get_unst, 'foo bar bird',
-                                         'foo bar bird',
-                                         'foo bar bird',
-                                         [],
-                                         '')
+        invalid_base64_character = C(
+            '=?us-ascii?b?dm\x01k===?=',
+            stringified='vi',
+            defects=[invalid_base64_characters_defect],
+            ),
 
-    def test_get_unstructured_normal_phrase_with_whitespace(self):
-        self._test_get_x(self._get_unst, 'foo \t bar      bird',
-                                         'foo \t bar      bird',
-                                         'foo bar bird',
-                                         [],
-                                         '')
+        invalid_base64_character_and_bad_padding = C(
+            '=?us-ascii?b?dm\x01k?=',
+            stringified='vi',
+            defects=[
+                invalid_base64_padding_defect,
+                invalid_base64_characters_defect,
+                ],
+            ),
 
-    def test_get_unstructured_leading_whitespace(self):
-        self._test_get_x(self._get_unst, '  foo bar',
-                                         '  foo bar',
-                                         ' foo bar',
-                                         [],
-                                         '')
+        ws_only_charset_leads_to_undecodable_bytes_with_non_ascii = C(
+            '=? * ?q?=C3=89ric?=',
+            stringified='\udcc3\udc89ric',
+            charset='',
+            defects=[
+               charset_defect(''),
+               undecodable_bytes_defect,
+               whitespace_inside_ew_defect,
+               ],
+            ),
 
-    def test_get_unstructured_trailing_whitespace(self):
-        self._test_get_x(self._get_unst, 'foo bar  ',
-                                         'foo bar  ',
-                                         'foo bar ',
-                                         [],
-                                         '')
+        eq_is_only_special_with_two_digits_after_it = C(
+            '=?UTF-8?q?=C3=89ric_=_?=',
+            stringified='Éric = ',
+            charset='UTF-8',
+            ),
 
-    def test_get_unstructured_leading_and_trailing_whitespace(self):
-        self._test_get_x(self._get_unst, '  foo bar  ',
-                                         '  foo bar  ',
-                                         ' foo bar ',
-                                         [],
-                                         '')
+        ws_around_charset_and_lang = C(
+            '=?  us-ascii\t* jive\t ?q?test?=  bird',
+            stringified='test',
+            lang='jive',
+            defects=[whitespace_inside_ew_defect],
+            remainder='  bird',
+            ),
 
-    def test_get_unstructured_one_valid_ew_no_ws(self):
-        self._test_get_x(self._get_unst, '=?us-ascii?q?bar?=',
-                                         'bar',
-                                         'bar',
-                                         [],
-                                         '')
+        set_terminal_type_on_single_word_content = C(
+            '=?us-ascii?q?text?=',
+            stringified='text',
+            terminal_type='test',
+            ),
 
-    def test_get_unstructured_one_ew_trailing_ws(self):
-        self._test_get_x(self._get_unst, '=?us-ascii?q?bar?=  ',
-                                         'bar  ',
-                                         'bar ',
-                                         [],
-                                         '')
+        set_terminal_type_on_multiple_word_content = C(
+            '=?us-ascii?q?text_and_more_text?=',
+            stringified='text and more text',
+            terminal_type='test',
+            ),
 
-    def test_get_unstructured_one_valid_ew_trailing_text(self):
-        self._test_get_x(self._get_unst, '=?us-ascii?q?bar?= bird',
-                                         'bar bird',
-                                         'bar bird',
-                                         [],
-                                         '')
+        qp_true_no_qp = C(
+            r'=?us-ascii?q?test?=',
+            decode_qp=True,
+            stringified=r'test',
+            ),
 
-    def test_get_unstructured_phrase_with_ew_in_middle_of_text(self):
-        self._test_get_x(self._get_unst, 'foo =?us-ascii?q?bar?= bird',
-                                         'foo bar bird',
-                                         'foo bar bird',
-                                         [],
-                                         '')
+        qp_true_with_qp = C(
+            r'=?us-ascii?q?tes\t?=',
+            decode_qp=True,
+            stringified='test',
+            ),
 
-    def test_get_unstructured_phrase_with_two_ew(self):
-        self._test_get_x(self._get_unst,
+        qp_false_with_qp = C(
+            r'=?us-ascii?q?tes\t?=',
+            decode_qp=False,
+            stringified=r'tes\t',
+            ),
+
+        )
+
+
+    # content_getter
+
+    @params
+    def test_content_getter(
+            self,
+            s,
+            *args,
+            start=0,
+            tl_class=parser.TokenList,
+            text_type='ttext',
+            end_chars='',
+            qp=False,
+            **kw,
+            ):
+        result = self._test_parse(
+            parser.content_getter(
+                tl_class,
+                text_type,
+                end_chars=end_chars,
+                qp=qp,
+                ),
+            C(s, start),
+            *args,
+            test_start=False,
+            **kw,
+            )
+        if 'exception' in kw:
+            return
+        self.assertIsInstance(result, tl_class)
+        self.verify_terminal_types(result, text_type, 'fws')
+
+    @params_map
+    def for_each_endchar_set(*args, **kw):
+        # The function is general, but these are the ones we actually use.
+        endchar_sets = dict(
+            quoted_string='"',
+            comment='()',
+            domain_literal='[]',
+            )
+        for name, end_chars in endchar_sets.items():
+            yield name, C(*args, end_chars=end_chars, **kw)
+
+    @params_map
+    def for_each_endchar(*args, **kw):
+        return for_each_character(kw['end_chars'])(C(*args, **kw)).items()
+
+    # This params_map is used on exactly one expression, which has to contain a
+    # list of characters with no repeats.
+    @params_map
+    def stops_at_first_endchar_found(s):
+        for i in range(len(s)):
+            end_chars = ''.join(sample((r := s[i:]), len(r)))
+            ec = charname(s[i])
+            yield f'stops_at_first_endchar_found__string__{ec}', C(
+                s,
+                end_chars=end_chars,
+                remainder=r,
+                )
+            yield f'stops_at_first_endchar_found__set__{ec}', C(
+                s,
+                end_chars=set(end_chars),
+                remainder=r,
+                )
+
+    params_test_content_getter = Params(
+
+        specified_tl_class = C(
+            'word',
+            stringified='"word"',
+            value='word',
+            tl_class=parser.BareQuotedString,
+            ),
+
+        text_type_ew = C(
+            'A test =?UTF-8?q?foo?= ',
+            stringified='A test foo ',
+            text_type='fake',
+            ew_indexes = [7],
+            ),
+
+        text_type_ew_missing_ws = C(
+            'Never=?utf8?q?_foo_bar_?=do this',
+            stringified='Never foo bar do this',
+            defects=[
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                ],
+            text_type='fake',
+            ew_indexes = [5],
+            ),
+
+        text_type_no_ew_unicode = C(
+            'A test Éric',
+            text_type='fake',
+            ),
+
+        **for_each_character(ALL_ASCII)(
+            char_after_end_char = C(
+                '" a test "{char}',
+                start=1,
+                end_chars='"',
+                stringified=' a test ',
+                remainder='"{char}',
+                ),
+            ),
+
+        start_in_middle_of_ew = C(
+            '=?UTF-8?q?foo?=',
+            start=3,
+            stringified='=?UTF-8?q?foo?='[3:],
+            ),
+
+        end_in_middle_of_ew = C(
+            'foo =?UTF-8?q?foo',
+            ),
+
+        end_char = C(
+            '"foo"',
+            start=1,
+            end_chars='"',
+            stringified='foo',
+            remainder='"',
+            ),
+
+        end_char_at_start = C(
+            '"foo"',
+            start=0,
+            end_chars='"',
+            stringified='',
+            remainder='"foo"',
+            ),
+
+        no_end_char = C(
+            'foo bar',
+            start=0,
+            end_chars='"',
+            stringified='foo bar',
+            ),
+
+        end_char_inside_ew = C(
+            '"quoted =?UTF-8?q?q"?=" not',
+            start=1,
+            end_chars='"',
+            stringified='quoted q"',
+            remainder='" not',
+            ew_indexes = [8],
+            ),
+
+        first_end_char_ends_parse = C(
+            "(a comment)bar",
+            start=1,
+            end_chars="()",
+            stringified="a comment",
+            remainder=')bar',
+            ),
+
+        second_end_char_ends_parse = C(
+            "(a comment(nested))",
+            start=1,
+            end_chars="()",
+            stringified="a comment",
+            remainder='(nested))',
+            ),
+
+        endchar_inside_ew_preserved = C(
+            r'"foo =?UTF-8?q?"bar?="',
+            start=1,
+            end_chars='"',
+            stringified='foo "bar',
+            remainder='"',
+            ew_indexes = [5],
+            ),
+
+        qp_decoded_with_qp_true = C(
+            r"\fo\o",
+            qp=True,
+            stringified="foo",
+            ),
+
+        qp_quoted_endchar_preserved_with_qp_true = C(
+            r'"foo\"bar"',
+            start=1,
+            end_chars='"',
+            qp=True,
+            stringified='foo"bar',
+            remainder='"',
+            ),
+
+        qp_quoted_endchar_inside_ew_preserved_and_unquoted_with_qp_true = C(
+            r'"\foo =?UTF-8?q?\"bar?="',
+            start=1,
+            end_chars='"',
+            qp=True,
+            stringified='foo "bar',
+            remainder='"',
+            ew_indexes = [6],
+            ),
+
+        qp_remains_quoted_if_qp_false = C(
+            r'"\foo\ =?UTF-8?q?\"bar?="',
+            start=1,
+            end_chars='"',
+            stringified=r'\foo\ \"bar',
+            qp=False,
+            remainder='"',
+            ew_indexes = [7],
+            ),
+
+        # XXX POSTDEP: delete from here...
+
+        )
+
+
+    # _get_ptext_to_endchars
+
+    # These tests are also passed by the replacement function, content_getter.
+
+    @params
+    def test__get_ptext_to_endchars(self, s, end_chars, qp=False, **kw):
+        ptext, had_qp = self._test_parse(
+            parser._get_ptext_to_endchars,
+            C(s, end_chars),
+            warnings=[
+                (DeprecationWarning, '.*deprecated.*content_getter'),
+                ],
+            test_start=False,
+            **kw,
+            )
+        self.assertEqual(had_qp, qp)
+
+    params_test__get_ptext_to_endchars = Params(
+
+        # XXX POSTDEP: ...to here
+
+        **for_each_endchar(
+            wsp_can_be_legal_endchars = C(
+                'foo{char}bar"',
+                end_chars='()' + RFC_WSP,
+                remainder='{char}bar"',
+                ),
+            ),
+
+        **stops_at_first_endchar_found('(random?{})'),
+
+        **for_each_endchar_set(
+
+            one_word_no_wsp = C(
+                'foo',
+                ),
+
+            escaped_letter = C(
+                r'bar\s',
+                stringified='bars',
+                qp=True,
+                ),
+
+            escaped_escape_char = C(
+                r'foo\\bar',
+                stringified=r'foo\bar',
+                qp=True,
+                ),
+
+            any_printable_may_be_quoted = C(
+                ''.join(rf'\{c}' for c in RFC_PRINTABLES),
+                stringified=RFC_PRINTABLES,
+                qp=True,
+                ),
+
+            ),
+
+        **for_each_endchar(
+            for_each_endchar_set(
+
+                stops_at_endchar = C(
+                    'foo{char}bar"',
+                    remainder='{char}bar"',
+                    ),
+
+                quoted_endchar_no_actual_endchar = C(
+                    r'foo\{char}bar',
+                    stringified=r'foo{char}bar',
+                    qp=True,
+                    ),
+
+                quoted_endchar_before_actual_endchar = C(
+                    r'foo\{char}bar{char}',
+                    stringified='foo{char}bar',
+                    remainder='{char}',
+                    qp=True,
+                    ),
+
+                multiple_qp = C(
+                    r'\{char}\foo\\\{char}\a{char}',
+                    stringified=r'{char}foo\{char}a',
+                    remainder=r'{char}',
+                    qp=True,
+                    ),
+
+                ),
+            ),
+
+        )
+
+    # XXX POSTDEP: delete from here...
+    # As the replacement function for _get_ptext_to_endchars (among other
+    # things) content_getter needs to pass the _get_ptext_to_endchars tests,
+    # which test somewhat different scenarios than the other content_getter
+    # tests.
+    params_test_content_getter.update(params_test__get_ptext_to_endchars)
+    # XXX POSTDEP: ...to here
+
+
+    # parse_unstructured
+
+    @params
+    def test_parse_unstructured(self, s, *args, **kw):
+        # We ignore kw_indexes, that's for content_getter.
+        result = self._test_parse(
+            parser.parse_unstructured,
+            C(s),
+            *args,
+            test_start=False,
+            no_end=True,
+            **kw,
+            )
+        self.assertIsInstance(result, parser.UnstructuredTokenList)
+        self.verify_terminal_types(result, 'utext', 'fws')
+
+    # XXX POSTDEP: delete from here...
+    @params
+    def test_get_unstructured(self, s, *args, **kw):
+        result = self._test_parse(
+            parser.get_unstructured,
+            C(s),
+            *args,
+            test_start=False,
+            no_end=True,
+            warnings=[
+                (DeprecationWarning, r".*is.*deprecated.*parse_unstructured"),
+                ],
+            **kw,
+            )
+        self.assertIsInstance(result, parser.UnstructuredTokenList)
+        self.verify_terminal_types(result, 'utext', 'fws')
+    # XXX POSTDEP: ...to here
+
+    # parse_unstructured should correctly decode anything get_encoded_word does,
+    # so it should correctly handle most get_encoded_word parameters.
+    @params_map(with_namelist=True)
+    def adapt_get_encoded_word_tests_for_parse_unstructured(nl, *args, **kw):
+        kw.pop('test_start', None)
+        kw.pop('charset', None)
+        kw.pop('terminal_type', None)
+        kw.pop('lang', None)
+        # parse_unstructured parses all of its input, so it will also parse and
+        # return anything get_encoded_word treats as a remainder.
+        remainder = kw.pop('remainder', '')
+        if '=?' in remainder or 'ew_followed_by' in nl:
+            # The remainder includes something parse_unstructured would decode,
+            # or might contain something it would treat as a defect.  Either
+            # way, parse_unstructured isn't expected to handle those parameters.
+            return
+        if kw.pop('decode_qp', False):
+            # parse_unstructured does not unquote quoted printables, so skip
+            # the tests where they are decoded.
+            return
+        if 'stringified' in kw:
+            stringified = kw['stringified']
+            kw['stringified'] = stringified + remainder
+        rstripped = remainder.lstrip(RFC_WSP)
+        if remainder != rstripped:
+            kw['value'] = kw.get('value', stringified) + ' ' + rstripped
+        if 'oldapi' in nl:
+            # get_encoded_word is checking for warnings about its old api being
+            # deprecated, but parse_unstructured don't have an API change.
+            kw.pop('warnings')
+        yield 'from_test_get_encoded_word', C(*args, **kw)
+
+    @params_map(with_namelist=True)
+    def adapt_get_encoded_word_invalid_input_for_parse_unstructured(nl, s, **kw):
+        # Get unstructured should return the inputs unaltered,
+        # except for the ones where the ew itself is valid.
+        if 'character_before_valid_ew' in nl:
+            return
+        yield 'from_test_get_encoded_word_invalid_input', C(s)
+
+    @params_map
+    def add_unstructured_prefix_and_suffix(s, *args, **kw):
+        # Make sure the reused parameters are correctly interpreted when
+        # intermixed with other text by adding some text.
+        prefix = 'pre fix '
+        pad = lambda s: f'{prefix}{s} suf fix'
+        if not s:
+            # null value is a special case, and we already have a test for it.
+            return
+        s = pad(s)
+        kw = {n: (pad(v) if n in ('stringified', 'value') else v)
+              for n, v in kw.items()
+              }
+        ew_indexes, len_prefix = [], len(prefix)
+        if s != kw.get('stringified', s):
+            ew_indexes = [len_prefix]
+        yield '', C(s, *args, ew_indexes=ew_indexes, **kw)
+
+    # XXX POSTDEP: remove 'params_test_get_unstructured' from next line.
+    params_test_get_unstructured = params_test_parse_unstructured = Params(
+
+        add_unstructured_prefix_and_suffix(
+            adapt_get_encoded_word_tests_for_parse_unstructured(
+                params_test_get_encoded_word,
+                ),
+            adapt_get_encoded_word_invalid_input_for_parse_unstructured(
+                params_test_get_encoded_word__invalid_input,
+                ),
+            ),
+
+        null = C(
+            '',
+            ),
+
+        one_word = C(
+            'foo',
+            ),
+
+        normal_phrase = C(
+            'foo bar bird',
+            ),
+
+        normal_phrase_with_whitespace = C(
+            'foo \t bar      bird',
+            value='foo bar bird',
+            ),
+
+        leading_whitespace = C(
+            '  foo bar',
+            value=' foo bar',
+            ),
+
+        trailing_whitespace = C(
+            'foo bar  ',
+            value='foo bar ',
+            ),
+
+        leading_and_trailing_whitespace = C(
+            '  foo bar  ',
+            value=' foo bar ',
+            ),
+
+        one_valid_ew_no_ws = C(
+            '=?us-ascii?q?bar?=',
+            stringified='bar',
+            value='bar',
+            ew_indexes = [0],
+            ),
+
+        one_ew_trailing_ws = C(
+            '=?us-ascii?q?bar?=  ',
+            stringified='bar  ',
+            value='bar ',
+            ew_indexes = [0],
+            ),
+
+        one_valid_ew_trailing_text = C(
+            '=?us-ascii?q?bar?= bird',
+            stringified='bar bird',
+            ew_indexes = [0],
+            ),
+
+        phrase_with_ew_in_middle_of_text = C(
+            'foo =?us-ascii?q?bar?= bird',
+            stringified='foo bar bird',
+            ew_indexes = [4],
+            ),
+
+        phrase_with_two_ew = C(
             'foo =?us-ascii?q?bar?= =?us-ascii?q?bird?=',
-            'foo barbird',
-            'foo barbird',
-            [],
-            '')
+            stringified='foo barbird',
+            ew_indexes = [4, 23],
+            ),
 
-    def test_get_unstructured_phrase_with_two_ew_trailing_ws(self):
-        self._test_get_x(self._get_unst,
+        phrase_with_two_ew_trailing_ws = C(
             'foo =?us-ascii?q?bar?= =?us-ascii?q?bird?=   ',
-            'foo barbird   ',
-            'foo barbird ',
-            [],
-            '')
+            stringified='foo barbird   ',
+            value='foo barbird ',
+            ew_indexes = [4, 23],
+            ),
 
-    def test_get_unstructured_phrase_with_ew_with_leading_ws(self):
-        self._test_get_x(self._get_unst,
+        phrase_with_ew_with_leading_ws = C(
             '  =?us-ascii?q?bar?=',
-            '  bar',
-            ' bar',
-            [],
-            '')
+            stringified='  bar',
+            value=' bar',
+            ew_indexes = [2],
+            ),
 
-    def test_get_unstructured_phrase_with_two_ew_extra_ws(self):
-        self._test_get_x(self._get_unst,
+        phrase_with_two_ew_extra_ws = C(
             'foo =?us-ascii?q?bar?= \t  =?us-ascii?q?bird?=',
-            'foo barbird',
-            'foo barbird',
-            [],
-            '')
+            stringified='foo barbird',
+            ew_indexes = [4, 26],
+            ),
 
-    def test_get_unstructured_two_ew_extra_ws_trailing_text(self):
-        self._test_get_x(self._get_unst,
+        two_ew_extra_ws_trailing_text = C(
             '=?us-ascii?q?test?=   =?us-ascii?q?foo?=  val',
-            'testfoo  val',
-            'testfoo val',
-            [],
-            '')
+            stringified='testfoo  val',
+            value='testfoo val',
+            ew_indexes = [0, 22],
+            ),
 
-    def test_get_unstructured_ew_with_internal_ws(self):
-        self._test_get_x(self._get_unst,
+        ew_with_internal_ws = C(
             '=?iso-8859-1?q?hello=20world?=',
-            'hello world',
-            'hello world',
-            [],
-            '')
+            stringified='hello world',
+            ew_indexes = [0],
+            ),
 
-    def test_get_unstructured_ew_with_internal_leading_ws(self):
-        self._test_get_x(self._get_unst,
+        ew_with_internal_leading_ws = C(
             '   =?us-ascii?q?=20test?=   =?us-ascii?q?=20foo?=  val',
-            '    test foo  val',
-            '  test foo val',
-            [],
-            '')
+            stringified='    test foo  val',
+            value='  test foo val',
+            ew_indexes = [3, 28],
+            ),
 
-    def test_get_unstructured_invalid_ew(self):
-        self._test_get_x(self._get_unst,
+        invalid_ew = C(
             '=?test val',
-            '=?test val',
-            '=?test val',
-            [],
-            '')
+            ),
 
-    def test_get_unstructured_undecodable_bytes(self):
-        self._test_get_x(self._get_unst,
+        undecodable_bytes = C(
             b'test \xACfoo  val'.decode('ascii', 'surrogateescape'),
-            'test \uDCACfoo  val',
-            'test \uDCACfoo val',
-            [errors.UndecodableBytesDefect],
-            '')
+            stringified='test \uDCACfoo  val',
+            value='test \uDCACfoo val',
+            defects=[undecodable_bytes_defect],
+            ),
 
-    def test_get_unstructured_undecodable_bytes_in_EW(self):
-        self._test_get_x(self._get_unst,
+        undecodable_bytes_in_EW = C(
             (b'=?us-ascii?q?=20test?=   =?us-ascii?q?=20\xACfoo?='
                 b'  val').decode('ascii', 'surrogateescape'),
-            ' test \uDCACfoo  val',
-            ' test \uDCACfoo val',
-            [errors.UndecodableBytesDefect]*2,
-            '')
+            stringified=' test \uDCACfoo  val',
+            value=' test \uDCACfoo val',
+            defects=[
+                undecodable_bytes_defect,
+                (undecodable_bytes_in_ew_defect, 'us-ascii'),
+                ],
+            ew_indexes = [0, 25],
+            ),
 
-    def test_get_unstructured_missing_base64_padding(self):
-        self._test_get_x(self._get_unst,
-            '=?utf-8?b?dmk?=',
-            'vi',
-            'vi',
-            [errors.InvalidBase64PaddingDefect],
-            '')
 
-    def test_get_unstructured_invalid_base64_character(self):
-        self._test_get_x(self._get_unst,
-            '=?utf-8?b?dm\x01k===?=',
-            'vi',
-            'vi',
-            [errors.InvalidBase64CharactersDefect],
-            '')
-
-    def test_get_unstructured_invalid_base64_character_and_bad_padding(self):
-        self._test_get_x(self._get_unst,
-            '=?utf-8?b?dm\x01k?=',
-            'vi',
-            'vi',
-            [errors.InvalidBase64CharactersDefect,
-             errors.InvalidBase64PaddingDefect],
-            '')
-
-    def test_get_unstructured_invalid_base64_length(self):
-        # bpo-27397: Return the encoded string since there's no way to decode.
-        self._test_get_x(self._get_unst,
-            '=?utf-8?b?abcde?=',
-            'abcde',
-            'abcde',
-            [errors.InvalidBase64LengthDefect],
-            '')
-
-    def test_get_unstructured_no_whitespace_between_ews(self):
-        self._test_get_x(self._get_unst,
+        no_whitespace_between_ews = C(
             '=?utf-8?q?foo?==?utf-8?q?bar?=',
-            'foobar',
-            'foobar',
-            [errors.InvalidHeaderDefect,
-            errors.InvalidHeaderDefect],
-            '')
+            stringified='foobar',
+            defects=[
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                ],
+            ew_indexes = [0, 15],
+            ),
 
-    def test_get_unstructured_ew_without_leading_whitespace(self):
-        self._test_get_x(
-            self._get_unst,
+        ew_without_leading_whitespace = C(
             'nowhitespace=?utf-8?q?somevalue?=',
-            'nowhitespacesomevalue',
-            'nowhitespacesomevalue',
-            [errors.InvalidHeaderDefect],
-            '')
+            stringified='nowhitespacesomevalue',
+            defects=[missing_whitespace_before_ew_defect],
+            ew_indexes = [12],
+            ),
 
-    def test_get_unstructured_ew_without_trailing_whitespace(self):
-        self._test_get_x(
-            self._get_unst,
+        ew_without_trailing_whitespace = C(
             '=?utf-8?q?somevalue?=nowhitespace',
-            'somevaluenowhitespace',
-            'somevaluenowhitespace',
-            [errors.InvalidHeaderDefect],
-            '')
+            stringified='somevaluenowhitespace',
+            defects=[missing_whitespace_after_ew_defect],
+            ew_indexes = [0],
+            ),
 
-    def test_get_unstructured_without_trailing_whitespace_hang_case(self):
-        self._test_get_x(self._get_unst,
+        # bpo-37764
+        without_trailing_whitespace_hang_case = C(
             '=?utf-8?q?somevalue?=aa',
-            'somevalueaa',
-            'somevalueaa',
-            [errors.InvalidHeaderDefect],
-            '')
+            stringified='somevalueaa',
+            defects=[missing_whitespace_after_ew_defect],
+            ew_indexes = [0],
+            ),
 
-    def test_get_unstructured_invalid_ew2(self):
-        self._test_get_x(self._get_unst,
+        # Although this is technically invalid (unencoded =) we handle it anyway
+        # XXX there should be a defect, which is currently missing.
+        invalid_ew2 = C(
             '=?utf-8?q?=somevalue?=',
-            '=?utf-8?q?=somevalue?=',
-            '=?utf-8?q?=somevalue?=',
-            [],
-            '')
+            '=somevalue',
+            ew_indexes = [0],
+            ),
 
-    def test_get_unstructured_invalid_ew_cte(self):
-        self._test_get_x(self._get_unst,
-            '=?utf-8?X?=somevalue?=',
-            '=?utf-8?X?=somevalue?=',
-            '=?utf-8?X?=somevalue?=',
-            [],
-            '')
+        **for_each_character(RFC_PRINTABLES)(
+            printable_around_and_between_ews = C(
+                '{char} =?utf-8?q?foo?= {char} =?utf-8?q?bar?= {char}',
+                stringified='{char} foo {char} bar {char}',
+                ew_indexes = [2, 20],
+                ),
+            ),
+
+        **for_each_character(RFC_PRINTABLES, skip='_')(
+            printable_inside_ews = C(
+                '=?utf-8?q?rock{char}?= =?utf-8?q?{char}hard_place?=',
+                stringified='rock{char}{char}hard place',
+                ew_indexes = [0, 18],
+                ),
+            ),
+
+        **for_each_character(RFC_NONPRINTABLES, skip=RFC_WSP)(
+            non_wsp_non_printable = C(
+                'some {char} text',
+                stringified='some {char} text',
+                defects=[(nonprintable_defect, '{char}')],
+                ),
+            ),
+
+        **for_each_character(RFC_NONPRINTABLES, skip=RFC_WSP)(
+            non_wsp_non_printable_inside_ew = C(
+                '=?utf-8?q?some{char}?= text',
+                stringified='some{char} text',
+                defects=[(nonprintable_defect, '{char}')],
+                ew_indexes = [0],
+                ),
+            ),
+
+        unicode = C(
+            '📦',
+            ),
+
+        non_ascii_bytes = C(
+            '📦'.encode().decode('ascii', 'surrogateescape'),
+            defects=[undecodable_bytes_defect],
+            ),
+
+        invalid_ew_charset = C(
+            'a =?invalid?q?=C3=89ric?= b',
+            stringified='a \udcc3\udc89ric b',
+            defects=[charset_defect('invalid'), undecodable_bytes_defect],
+            ew_indexes = [2],
+            ),
+
+        ew_start_chrome_before_real_ew = C(
+            'z=?xx =?UTF-8?Q?foo?=',
+            stringified='z=?xx foo',
+            ew_indexes = [6],
+            ),
+
+        )
+
+    # content_getter and parse_unstructured must behave identically for all the
+    # data parse_unstructured handles.
+    params_test_content_getter__with_parse_unstructured_params = (
+        params_test_parse_unstructured
+        )
+
+
+    # get_ccontent_sequence
+
+    @params
+    def test_get_ccontent_sequence(self, s, *args, **kw):
+        tl = self._test_parse(
+            parser.get_ccontent_sequence,
+            C(s),
+            *args,
+            **kw,
+            )
+        self.assertIsInstance(tl, parser.TokenList)
+        self.verify_terminal_types(tl, 'ptext', 'fws')
+
+    params_test_get_ccontent_sequence = Params(
+
+        **for_each_character(RFC_WSP)(
+            two_words = C(
+                'foo{char}de',
+                value='foo de',
+                ),
+            ),
+
+        wsp_before_close_paren = C(
+            'foo  \t)',
+            value='foo ',
+            remainder=')',
+            ),
+
+        up_to_open_paren_only = C(
+            'foo(',
+            remainder='(',
+            ),
+
+        wsp_before_open_paren = C(
+            'foo \t(',
+            value='foo ',
+            remainder='(',
+            ),
+
+        ew = C(
+            '=?UTF-8?q?test?=',
+            stringified='test',
+            ew_indexes=[0],
+            ),
+
+        ws_around_ew = C(
+            ' =?UTF-8?q?test?= ',
+            stringified=' test ',
+            ew_indexes=[1],
+            ),
+
+        ws_inside_ew = C(
+            '=?UTF-8?q? Test ?=',
+            stringified=' Test ',
+            defects=[whitespace_inside_ew_defect],
+            ew_indexes=[0],
+            ),
+
+        non_ws_around_ew = C(
+            'foo=?UTF-8?q?bar_?=bird',
+            stringified='foobar bird',
+            defects=[
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                ],
+            ew_indexes=[3],
+            ),
+
+        multiple_ew = C(
+            'foo =?UTF-8?q?a?= =?UTF-8?q?t?=',
+            stringified='foo at',
+            ew_indexes=[4, 18],
+            ),
+
+        ew_missing_whitespace_between_ews = C(
+            'foo =?UTF-8?q?a?==?UTF-8?q?t?=',
+            stringified='foo at',
+            defects=[
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                ],
+            ew_indexes=[4, 17],
+            ),
+
+        **for_each_character(RFC_WSP)(
+            inter_ew_whitespace_handled_correctly = C(
+                '{char}=?UTF-8?q?_foo_?={char}{char}=?UTF-8?q?bar_?= ',
+                stringified='{char} foo bar  ',
+                value='  foo bar  ',
+                ew_indexes=[1, 20],
+                ),
+            ),
+
+        qp_inside_ew = C(
+            r'=?UTF-8?q?\test\)_?= =?UTF-8?q?\(test?=',
+            stringified=r'test) (test',
+            ew_indexes=[0, 21],
+            ),
+
+        unquoted_parens_inside_ew = C(
+            '=?UTF-8?q?test)_?= =?UTF-8?q?(test?=) foo',
+            stringified=r'test) (test',
+            remainder=') foo',
+            ew_indexes=[0, 19],
+            ),
+
+        # XXX POSTDEP: delete from here...
+
+        )
+
 
     # get_qp_ctext
 
-    def test_get_qp_ctext_only(self):
-        ptext = self._test_get_x(parser.get_qp_ctext,
-                                'foobar', 'foobar', ' ', [], '')
+    @params
+    def test_get_qp_ctext(self, s, *args, value=' ', **kw):
+        ptext = self._test_parse(
+            parser._deprecated_get_qp_ctext,
+            C(s),
+            *args,
+            value=value,
+            warnings=...,
+            test_start=False,
+            **kw,
+            )
+        self.assertIsInstance(ptext, parser.Terminal)
         self.assertEqual(ptext.token_type, 'ptext')
 
-    def test_get_qp_ctext_all_printables(self):
-        with_qp = self.rfc_printable_ascii.replace('\\', '\\\\')
-        with_qp = with_qp.  replace('(', r'\(')
-        with_qp = with_qp.replace(')', r'\)')
-        ptext = self._test_get_x(parser.get_qp_ctext,
-                                 with_qp, self.rfc_printable_ascii, ' ', [], '')
+    params_test_get_qp_ctext__wsp_cases = Params(
 
-    def test_get_qp_ctext_two_words_gets_first(self):
-        self._test_get_x(parser.get_qp_ctext,
-                        'foo de', 'foo', ' ', [], ' de')
+        two_words_gets_first = C(
+            'foo de',
+            remainder=' de',
+            ),
 
-    def test_get_qp_ctext_following_wsp_preserved(self):
-        self._test_get_x(parser.get_qp_ctext,
-                        'foo \t\tde', 'foo', ' ', [], ' \t\tde')
+        following_wsp_preserved = C(
+            'foo \t\tde',
+            remainder=' \t\tde',
+            ),
 
-    def test_get_qp_ctext_up_to_close_paren_only(self):
-        self._test_get_x(parser.get_qp_ctext,
-                        'foo)', 'foo', ' ', [], ')')
+        wsp_before_close_paren_preserved = C(
+            'foo  )',
+            remainder='  )',
+            ),
 
-    def test_get_qp_ctext_wsp_before_close_paren_preserved(self):
-        self._test_get_x(parser.get_qp_ctext,
-                        'foo  )', 'foo', ' ', [], '  )')
+        wsp_before_open_paren_preserved = C(
+            'foo  (',
+            remainder='  (',
+            ),
 
-    def test_get_qp_ctext_close_paren_mid_word(self):
-        self._test_get_x(parser.get_qp_ctext,
-                        'foo)bar', 'foo', ' ', [], ')bar')
+        )
 
-    def test_get_qp_ctext_up_to_open_paren_only(self):
-        self._test_get_x(parser.get_qp_ctext,
-                        'foo(', 'foo', ' ', [], '(')
+    params_test_get_qp_ctext = Params(
 
-    def test_get_qp_ctext_wsp_before_open_paren_preserved(self):
-        self._test_get_x(parser.get_qp_ctext,
-                        'foo  (', 'foo', ' ', [], '  (')
+        # XXX POSTDEP: ...to here.
 
-    def test_get_qp_ctext_open_paren_mid_word(self):
-        self._test_get_x(parser.get_qp_ctext,
-                        'foo(bar', 'foo', ' ', [], '(bar')
+        value_ends_at_input_end = C(
+            'foobar',
+            ),
 
-    def test_get_qp_ctext_non_printables(self):
-        ptext = self._test_get_x(parser.get_qp_ctext,
-                                'foo\x00bar)', 'foo\x00bar', ' ',
-                                [errors.NonPrintableDefect], ')')
-        self.assertEqual(ptext.defects[0].non_printables[0], '\x00')
+        all_printables = C(
+            RFC_PRINTABLES.
+                replace('\\', r'\\').replace('(', r'\(').replace(')', r'\)'),
+            stringified=RFC_PRINTABLES,
+            ),
 
-    def test_get_qp_ctext_close_paren_only(self):
-        self._test_get_x(parser.get_qp_ctext,
-                        ')', '', ' ', [], ')')
+        up_to_close_paren_only = C(
+            'foo)',
+            remainder=')',
+            ),
 
-    def test_get_qp_ctext_open_paren_only(self):
-        self._test_get_x(parser.get_qp_ctext,
-                        '(', '', ' ', [], '(')
+        close_paren_mid_word = C(
+            'foo)bar',
+            remainder=')bar',
+            ),
 
-    def test_get_qp_ctext_no_end_char(self):
-        self._test_get_x(parser.get_qp_ctext,
-                        '', '', ' ', [], '')
+        up_to_open_paren_only = C(
+            'foo(',
+            remainder='(',
+            ),
+
+        open_paren_mid_word = C(
+            'foo(bar',
+            remainder='(bar',
+            ),
+
+        **for_each_character(RFC_NONPRINTABLES, skip=RFC_WSP)(
+            non_printables = C(
+                'foo{char}bar)',
+                defects=[(nonprintable_defect, '{char}')],
+                remainder=')',
+                ),
+            ),
+
+        close_paren_only = C(
+            ')',
+            remainder=')',
+            ),
+
+        open_paren_only = C(
+            '(',
+            remainder='(',
+            ),
+
+        no_content = C(
+            '',
+            ),
+
+        parens_are_content_if_quoted = C(
+            r'\(bar\)\)bird\(',
+            stringified='(bar))bird(',
+            ),
+
+        escapes_are_removed_in_str = C(
+            r'fairly\&\boring\W\@\!ks',
+            stringified='fairly&boringW@!ks',
+            ),
+
+        any_printable_may_be_escaped = C(
+            ''.join(rf'\{c}' for c in RFC_PRINTABLES),
+            RFC_PRINTABLES,
+            ),
+
+        unicode_content = C(
+            '⛔❌❗',
+            ),
+
+        mixed_unicode_and_ascii = C(
+            'ministry✌of⛔silly❌walks❗',
+            ),
+
+        unicode_can_be_quoted = C(
+            r'sillier\❌walks\❗',
+            stringified='sillier❌walks❗',
+            ),
+
+        )
+
+    # XXX POSTDEP: delete from here...
+    # get_ccontent_sequence is handling a superset of what get_qp_ctext used to
+    # handle.  It should pass this subset of get_qp_ctext tests that don't
+    # involve whitespace.
+    params_test_get_ccontent_sequence.update(
+        add_label('from_test_get_qp_ctext')(params_test_get_qp_ctext)
+        )
+    # XXX POSDEP: ...to here.
 
 
+    # XXX POSTDEP: delete from here...
+    #
     # get_qcontent
 
-    def test_get_qcontent_only(self):
-        ptext = self._test_get_x(parser.get_qcontent,
-                                'foobar', 'foobar', 'foobar', [], '')
+    @params
+    def test_get_qcontent(self, s, *args, **kw):
+        ptext = self._test_parse(
+            parser.get_qcontent,
+            C(s),
+            *args,
+            test_start=False,
+            warnings=[
+                (DeprecationWarning, r".*deprecated.*get_bare_quoted_string"),
+                (DeprecationWarning, r".*ptext.*deprecated"),
+                (DeprecationWarning, r".*validate.*deprecated"),
+                ],
+            **kw,
+            )
+        self.assertIsInstance(ptext, parser.Terminal)
         self.assertEqual(ptext.token_type, 'ptext')
 
-    def test_get_qcontent_all_printables(self):
-        with_qp = self.rfc_printable_ascii.replace('\\', '\\\\')
-        with_qp = with_qp.  replace('"', r'\"')
-        ptext = self._test_get_x(parser.get_qcontent, with_qp,
-                                 self.rfc_printable_ascii,
-                                 self.rfc_printable_ascii, [], '')
+    params_test_get_qcontent = Params(
 
-    def test_get_qcontent_two_words_gets_first(self):
-        self._test_get_x(parser.get_qcontent,
-                        'foo de', 'foo', 'foo', [], ' de')
+        no_qp_no_end_char = C(
+            'foobar',
+            ),
 
-    def test_get_qcontent_following_wsp_preserved(self):
-        self._test_get_x(parser.get_qcontent,
-                        'foo \t\tde', 'foo', 'foo', [], ' \t\tde')
+        all_printables = C(
+            RFC_PRINTABLES.replace('\\', r'\\').replace('"', r'\"'),
+            stringified=RFC_PRINTABLES,
+            ),
 
-    def test_get_qcontent_up_to_dquote_only(self):
-        self._test_get_x(parser.get_qcontent,
-                        'foo"', 'foo', 'foo', [], '"')
+        **for_each_character(RFC_WSP)(
+            two_words_gets_first = C(
+                 'foo{char}de',
+                 remainder='{char}de',
+                 ),
+            ),
 
-    def test_get_qcontent_wsp_before_close_paren_preserved(self):
-        self._test_get_x(parser.get_qcontent,
-                        'foo  "', 'foo', 'foo', [], '  "')
+        following_wsp_preserved = C(
+            'foo \t\tde',
+            remainder=' \t\tde',
+            ),
 
-    def test_get_qcontent_close_paren_mid_word(self):
-        self._test_get_x(parser.get_qcontent,
-                        'foo"bar', 'foo', 'foo', [], '"bar')
+        up_to_dquote_only = C(
+            'foo"',
+            remainder='"',
+            ),
 
-    def test_get_qcontent_non_printables(self):
-        ptext = self._test_get_x(parser.get_qcontent,
-                                'foo\x00fg"', 'foo\x00fg', 'foo\x00fg',
-                                [errors.NonPrintableDefect], '"')
-        self.assertEqual(ptext.defects[0].non_printables[0], '\x00')
+        wsp_before_dquote_preserved = C(
+            'foo  "',
+            remainder='  "',
+            ),
 
-    def test_get_qcontent_empty(self):
-        self._test_get_x(parser.get_qcontent,
-                         '"', '', '', [], '"')
+        dquote_mid_word = C(
+            'foo"bar',
+            remainder='"bar',
+            ),
 
-    def test_get_qcontent_no_end_char(self):
-        self._test_get_x(parser.get_qcontent,
-                         '', '', '', [], '')
+        **for_each_character(RFC_NONPRINTABLES, skip=RFC_WSP)(
+            non_printable = C(
+                'foo{char}bar"',
+                defects=[(nonprintable_defect, '{char}')],
+                remainder='"',
+                ),
+            ),
+
+        no_content_before_dquote = C(
+            '"',
+            remainder='"',
+            ),
+
+        empty_value = C(
+            '',
+            ),
+
+        )
+
+    # XXX POSTDEP: ...to here.
+
+
+    # get_atext_sequence
+
+    @params
+    def test_get_atext_sequence(self, s, *args, **kw):
+        tl = self._test_parse(parser.get_atext_sequence, C(s), *args, **kw)
+        if 'exception' in kw:
+            return
+        self.assertIsInstance(tl, parser.TokenList)
+        # There can be fws inside the encoded words.
+        self.verify_terminal_types(tl, 'atext', 'fws')
+
+    params_test_get_atext_sequence = Params(
+
+        ew_only = C(
+            '=?utf-8?q?=20bob?=',
+            stringified=' bob',
+            ew_indexes=[0],
+            ),
+
+        # get_atext_sequence doesn't add a missing whitespace error here even
+        # though the RFC requires one before the special, because adding that
+        # defect is handled at the next level up in the parser.
+        # XXX Ideally this should have a defect for the specials.
+        **for_each_character(RFC_SPECIALS)(
+            ew_with_unencoded_special = C(
+                '=?UTF-8?q?bob{char}?=@foo',
+                stringified='bob{char}',
+                remainder='@foo',
+                ew_indexes=[0],
+                ),
+            ),
+
+        ew_after_atom_no_ws = C(
+            'foo@=?UTF-8?q?bob?=',
+            value='foo',
+            remainder='@=?UTF-8?q?bob?=',
+            ),
+
+        multiple_ew_no_ws = C(
+            '=?UTF-8?q?foo?==?UTF-8?q?bar?=',
+            stringified='foobar',
+            defects=[
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                ],
+            ew_indexes=[0, 15],
+            ),
+
+        ew_in_middle_of_atext = C(
+            'foo{=?UTF-8?q?foo?=}{=?UTF-8?q?bar?=}bar',
+            stringified='foo{foo}{bar}bar',
+            defects=[
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                ],
+            ew_indexes=[4, 21],
+            ),
+
+        all_non_special_printables_are_allowed = C(
+            f'{"".join(set(RFC_PRINTABLES) - set(RFC_SPECIALS))}@',
+            remainder='@',
+            ),
+
+        # XXX POSTDEP: delete from here...
+
+        )
+
 
     # get_atext
 
-    def test_get_atext_only(self):
-        atext = self._test_get_x(parser.get_atext,
-                                'foobar', 'foobar', 'foobar', [], '')
+    @params
+    def test_get_atext(self, s, *args, **kw):
+        atext = self._test_parse(
+            parser._deprecated_get_atext,
+            C(s),
+            *args,
+            warnings=...,
+            test_start=False,
+            **kw,
+            )
+        if 'exception' in kw:
+            return
+        self.assertIsInstance(atext, parser.Terminal)
         self.assertEqual(atext.token_type, 'atext')
 
-    def test_get_atext_all_atext(self):
-        atext = self._test_get_x(parser.get_atext, self.rfc_atext_chars,
-                                 self.rfc_atext_chars,
-                                 self.rfc_atext_chars, [], '')
+    params_test_get_atext = Params(
 
-    def test_get_atext_two_words_gets_first(self):
-        self._test_get_x(parser.get_atext,
-                        'foo bar', 'foo', 'foo', [], ' bar')
+        # XXX POSTDEP: ....to here
 
-    def test_get_atext_following_wsp_preserved(self):
-        self._test_get_x(parser.get_atext,
-                        'foo \t\tbar', 'foo', 'foo', [], ' \t\tbar')
+        only = C(
+            'foobar',
+            ),
 
-    def test_get_atext_up_to_special(self):
-        self._test_get_x(parser.get_atext,
-                        'foo@bar', 'foo', 'foo', [], '@bar')
+        all_atext = C(
+             RFC_ATEXT,
+             ),
 
-    def test_get_atext_non_printables(self):
-        atext = self._test_get_x(parser.get_atext,
-                                'foo\x00bar(', 'foo\x00bar', 'foo\x00bar',
-                                [errors.NonPrintableDefect], '(')
-        self.assertEqual(atext.defects[0].non_printables[0], '\x00')
+        two_words_gets_first = C(
+            'foo bar',
+            remainder=' bar',
+            ),
+
+        following_wsp_preserved = C(
+            'foo \t\tbar',
+            remainder=' \t\tbar',
+            ),
+
+        **for_each_character(RFC_SPECIALS)(
+            up_to_special = C(
+                RFC_ATEXT.
+                    replace('{', '{{').replace('}', '}}') + '{char}' + 'bar',
+                remainder='{char}bar',
+                ),
+            ),
+
+        **for_each_character(RFC_NONPRINTABLES, skip=RFC_WSP)(
+            non_printables = C(
+                'foo{char}bar(',
+                defects=[(nonprintable_defect, '{char}')],
+                remainder='(',
+                ),
+            ),
+
+        **for_each_character(RFC_SPECIALS + RFC_WSP)(
+            no_atext_before_special_or_wsp = C(
+                '{char}foo',
+                # XXX POSTDEP: replace 'echar' with 'erchar':
+                exception=(errors.HeaderParseError, '{echar}foo'),
+                ),
+            ),
+
+        undecodable_characters = C(
+            'foo🎁bar'.encode().decode('us-ascii', errors='surrogateescape'),
+            defects=[undecodable_bytes_defect],
+            ),
+
+        empty = C(
+            '',
+            exception=(errors.HeaderParseError, '(?i)expected'),
+            ),
+
+        )
+
+    # XXX POSTDEP: Delete from here...
+    #
+    # This params_map deals with the fact that get_atext doesn't call repr
+    # on value in the exception message, but get_atext_sequence does.
+    @params_map(with_namelist=True)
+    def atext_repr_fixup(nl, *args, **kw):
+        if nl.has_all('no_atext_before_special_or_wsp', 'HT'):
+            kw['exception'] = (kw['exception'][0], re.escape('\\tfoo'))
+        yield '', C(*args, **kw)
+
+    # get_atext_sequence needs to pass all the get_atext tests.
+    params_test_get_atext_sequence.update(
+        atext_repr_fixup(params_test_get_atext)
+        )
+    # XXX POSTDEP: ...to here.
+
 
     # get_bare_quoted_string
 
-    def test_get_bare_quoted_string_only(self):
-        bqs = self._test_get_x(parser.get_bare_quoted_string,
-                               '"foo"', '"foo"', 'foo', [], '')
+    @params
+    def test_get_bare_quoted_string(self, s, *args, **kw):
+        bqs = self._test_parse(
+            parser.get_bare_quoted_string,
+            C(s),
+            *args,
+            **kw,
+            )
+        if 'exception' in kw:
+            return
+        self.assertIsInstance(bqs, parser.BareQuotedString)
         self.assertEqual(bqs.token_type, 'bare-quoted-string')
+        self.verify_terminal_types(bqs, 'ptext', 'fws')
 
-    def test_get_bare_quoted_string_must_start_with_dquote(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_bare_quoted_string('foo"')
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_bare_quoted_string('  "foo"')
+    params_test_get_bare_quoted_string = for_each_api(
 
-    def test_get_bare_quoted_string_only_quotes(self):
-        self._test_get_x(parser.get_bare_quoted_string,
-                         '""', '""', '', [], '')
+        non_ws = C(
+            '"foo"',
+            value='foo',
+            ),
 
-    def test_get_bare_quoted_string_missing_endquotes(self):
-        self._test_get_x(parser.get_bare_quoted_string,
-                         '"', '""', '', [errors.InvalidHeaderDefect], '')
+        no_leading_dquote_before_non_ws = C(
+            'foo"',
+            exception=(errors.HeaderParseError, 'expected.*foo'),
+            ),
 
-    def test_get_bare_quoted_string_following_wsp_preserved(self):
-        self._test_get_x(parser.get_bare_quoted_string,
-             '"foo"\t bar', '"foo"', 'foo', [], '\t bar')
+        no_leading_dquote_before_ws = C(
+            '  "foo"',
+            exception=(errors.HeaderParseError, 'expected.*"foo"'),
+            ),
 
-    def test_get_bare_quoted_string_multiple_words(self):
-        self._test_get_x(parser.get_bare_quoted_string,
-             '"foo bar moo"', '"foo bar moo"', 'foo bar moo', [], '')
+        only_quotes = C(
+            '""',
+            value='',
+            ),
 
-    def test_get_bare_quoted_string_multiple_words_wsp_preserved(self):
-        self._test_get_x(parser.get_bare_quoted_string,
-             '" foo  moo\t"', '" foo  moo\t"', ' foo  moo\t', [], '')
+        missing_endquote = C(
+            '"',
+            stringified='""',
+            value='',
+            defects=[end_inside_quoted_string_defect],
+            ),
 
-    def test_get_bare_quoted_string_end_dquote_mid_word(self):
-        self._test_get_x(parser.get_bare_quoted_string,
-             '"foo"bar', '"foo"', 'foo', [], 'bar')
+        following_wsp_preserved = C(
+            '"foo"\t bar',
+            value='foo',
+            remainder='\t bar',
+            ),
 
-    def test_get_bare_quoted_string_quoted_dquote(self):
-        self._test_get_x(parser.get_bare_quoted_string,
-             r'"foo\"in"a', r'"foo\"in"', 'foo"in', [], 'a')
+        multiple_words = C(
+            '"foo bar moo"',
+            value='foo bar moo',
+            ),
 
-    def test_get_bare_quoted_string_non_printables(self):
-        self._test_get_x(parser.get_bare_quoted_string,
-             '"a\x01a"', '"a\x01a"', 'a\x01a',
-             [errors.NonPrintableDefect], '')
+        multiple_words_wsp_preserved = C(
+            '" foo  moo\t"',
+            value=' foo  moo\t',
+            ),
 
-    def test_get_bare_quoted_string_no_end_dquote(self):
-        self._test_get_x(parser.get_bare_quoted_string,
-             '"foo', '"foo"', 'foo',
-             [errors.InvalidHeaderDefect], '')
-        self._test_get_x(parser.get_bare_quoted_string,
-             '"foo ', '"foo "', 'foo ',
-             [errors.InvalidHeaderDefect], '')
+        end_dquote_mid_word = C(
+            '"foo"bar',
+            value='foo',
+            remainder='bar',
+            ),
 
-    def test_get_bare_quoted_string_empty_quotes(self):
-        self._test_get_x(parser.get_bare_quoted_string,
-            '""', '""', '', [], '')
+        quoted_dquote = C(
+            r'"foo\"in"@',
+            value='foo"in',
+            remainder='@',
+            ),
 
-    # Issue 16983: apply postel's law to some bad encoding.
-    def test_encoded_word_inside_quotes(self):
-        self._test_get_x(parser.get_bare_quoted_string,
+        **for_each_character(RFC_NONPRINTABLES, skip=RFC_WSP)(
+            non_printables = C(
+                 '"a{char}a"',
+                 value='a{char}a',
+                 defects=[(nonprintable_defect, '{char}')],
+                 ),
+            ),
+
+        all_printables_allowed = C(
+            f'"{RFC_PRINTABLES.replace('\\', r'\\').replace('"', r'\"')}"',
+            value=RFC_PRINTABLES,
+            ),
+
+        any_printable_may_be_escaped = C(
+            f'"{''.join(rf'\{c}' for c in RFC_PRINTABLES)}"',
+            stringified=
+                f'"{RFC_PRINTABLES.replace('\\', r'\\').replace('"', r'\"')}"',
+            value=RFC_PRINTABLES,
+            ),
+
+        no_end_dquote_after_non_ws = C(
+            '"foo',
+            stringified='"foo"',
+            value='foo',
+            defects=[end_inside_quoted_string_defect],
+            ),
+
+        no_end_dquote_after_ws = C(
+            '"foo ',
+            stringified='"foo "',
+            value='foo ',
+            defects=[end_inside_quoted_string_defect],
+            ),
+
+        # Issue 16983: apply postel's law to some bad encoding.
+        encoded_word_inside_quotes = C(
             '"=?utf-8?Q?not_really_valid?="',
-            '"not really valid"',
-            'not really valid',
-            [errors.InvalidHeaderDefect,
-             errors.InvalidHeaderDefect],
-            '')
+            stringified='"not really valid"',
+            value='not really valid',
+            defects=[ew_inside_quoted_string_defect],
+            ew_indexes=[1],
+            ),
+
+        mixed_encoded_words_and_regular_text = C(
+            '"This has=?utf-8?Q?multiple?= =?utf-8?q?errors?=in it',
+            stringified='"This hasmultipleerrorsin it"',
+            value='This hasmultipleerrorsin it',
+            defects=[
+                *[ew_inside_quoted_string_defect]*2,
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                end_inside_quoted_string_defect,
+                ],
+            ew_indexes=[9, 30],
+            ),
+
+        encoded_word_after_dquote_with_no_ws = C(
+            '"test"of=?UTF-8?q?bad?=data',
+            value='test',
+            remainder='of=?UTF-8?q?bad?=data',
+            ),
+
+        invalid_charset = C(
+            '"=?foo?Q?not_really_valid?= at all"',
+            stringified='"not really valid at all"',
+            value='not really valid at all',
+            defects=[
+                ew_inside_quoted_string_defect,
+                charset_defect('foo'),
+                ],
+            ew_indexes=[1],
+            ),
+
+        empty = C(
+            '',
+            exception=(errors.HeaderParseError, '(?i)expected'),
+            ),
+
+        )
+
 
     # get_comment
 
-    def test_get_comment_only(self):
-        comment = self._test_get_x(parser.get_comment,
-            '(comment)', '(comment)', ' ', [], '', ['comment'])
-        self.assertEqual(comment.token_type, 'comment')
+    @params
+    def test_get_comment(self,
+            s,
+            *args,
+            value=' ',
+            comments=None,
+            content=None,
+            commenttree=None,
+            **kw):
+        if content is None:
+            content = comments[0] if comments else None
+        if commenttree is None:
+            commenttree = [content]
+        cmt = self._test_parse(
+            parser.get_comment,
+            C(s),
+            *args,
+            value=value,
+            comments=comments,
+            commenttree=commenttree,
+            **kw,
+            )
+        if 'exception' in kw:
+            return
+        self.assertEqual(cmt.content, content)
+        self.assertIsInstance(cmt, parser.Comment)
+        self.assertEqual(cmt.token_type, 'comment')
+        self.verify_terminal_types(cmt, 'ptext', 'fws')
 
-    def test_get_comment_must_start_with_paren(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_comment('foo"')
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_comment('  (foo"')
+    @params_map
+    def adapt_get_ccontent_sequence_tests_for_get_comment(
+            s,
+            *args,
+            stringified=None,
+            remainder='',
+            ew_indexes=[],
+            **kw,
+        ):
+        # get_comment parses parens, and quotes them differently in str, so
+        # tests involving parens in the test string won't pass here.
+        if '(' in s or ')' in s:
+            return
+        if stringified:
+            kw['comments'] = [stringified]
+            kw['stringified'] = f"({stringified})"
+        else:
+            kw['comments'] = [s]
+        kw.pop('value', None)
+        kw['ew_indexes'] = [x + 1 for x in ew_indexes]
+        yield 'from_test_get_ccontent_sequence', C(f'({s})', *args, **kw)
 
-    def test_get_comment_following_wsp_preserved(self):
-        self._test_get_x(parser.get_comment,
-            '(comment)  \t', '(comment)', ' ', [], '  \t', ['comment'])
+    params_test_get_comment = for_each_api(
 
-    def test_get_comment_multiple_words(self):
-        self._test_get_x(parser.get_comment,
-            '(foo bar)  \t', '(foo bar)', ' ', [], '  \t', ['foo bar'])
+        adapt_get_ccontent_sequence_tests_for_get_comment(
+            params_test_get_ccontent_sequence,
+            ),
 
-    def test_get_comment_multiple_words_wsp_preserved(self):
-        self._test_get_x(parser.get_comment,
-            '( foo  bar\t )  \t', '( foo  bar\t )', ' ', [], '  \t',
-                [' foo  bar\t '])
+        simple_comment_only = C(
+            '(comment)',
+            comments=['comment'],
+            ),
 
-    def test_get_comment_end_paren_mid_word(self):
-        self._test_get_x(parser.get_comment,
-            '(foo)bar', '(foo)', ' ', [], 'bar', ['foo'])
+        non_wsp_before_left_paren_is_error = C(
+            'foo"',
+            exception=(errors.HeaderParseError, r'(?=.*expected)(?=.*foo)'),
+            ),
 
-    def test_get_comment_quoted_parens(self):
-        self._test_get_x(parser.get_comment,
-            r'(foo\) \(\)bar)', r'(foo\) \(\)bar)', ' ', [], '', ['foo) ()bar'])
+        wsp_before_left_paren_is_error = C(
+            '  (foo"',
+            exception=(errors.HeaderParseError, r'(?=.*expected)(?=.* \(foo)'),
+            ),
 
-    def test_get_comment_non_printable(self):
-        self._test_get_x(parser.get_comment,
-            '(foo\x7Fbar)', '(foo\x7Fbar)', ' ',
-            [errors.NonPrintableDefect], '', ['foo\x7Fbar'])
+        wsp_after_right_paren = C(
+            '(comment)  \t',
+            remainder='  \t',
+            comments=['comment'],
+            ),
 
-    def test_get_comment_no_end_paren(self):
-        self._test_get_x(parser.get_comment,
-            '(foo bar', '(foo bar)', ' ',
-            [errors.InvalidHeaderDefect], '', ['foo bar'])
-        self._test_get_x(parser.get_comment,
-            '(foo bar  ', '(foo bar  )', ' ',
-            [errors.InvalidHeaderDefect], '', ['foo bar  '])
+        multiple_words = C(
+            '(foo bar)',
+            comments=['foo bar'],
+            ),
 
-    def test_get_comment_nested_comment(self):
-        comment = self._test_get_x(parser.get_comment,
-            '(foo(bar))', '(foo(bar))', ' ', [], '', ['foo(bar)'])
-        self.assertEqual(comment[1].content, 'bar')
+        wsp_runs_inside_comment = C(
+            '( foo  bar\t )',
+            comments=[' foo  bar\t '],
+            ),
 
-    def test_get_comment_nested_comment_wsp(self):
-        comment = self._test_get_x(parser.get_comment,
-            '(foo ( bar ) )', '(foo ( bar ) )', ' ', [], '', ['foo ( bar ) '])
-        self.assertEqual(comment[2].content, ' bar ')
+        non_wsp_after_right_paren = C(
+            '(foo)bar',
+            remainder='bar',
+            comments=['foo'],
+            ),
 
-    def test_get_comment_empty_comment(self):
-        self._test_get_x(parser.get_comment,
-            '()', '()', ' ', [], '', [''])
+        quoted_parens = C(
+            r'(foo\) \(\)bar)',
+            comments=['foo) ()bar'],
+            ),
 
-    def test_get_comment_multiple_nesting(self):
-        comment = self._test_get_x(parser.get_comment,
-            '(((((foo)))))', '(((((foo)))))', ' ', [], '', ['((((foo))))'])
-        for i in range(4, 0, -1):
-            self.assertEqual(comment[0].content, '('*(i-1)+'foo'+')'*(i-1))
-            comment = comment[0]
-        self.assertEqual(comment.content, 'foo')
+        **for_each_character(RFC_NONPRINTABLES, skip=RFC_WSP)(
+            non_printable = C(
+                '(foo{char}bar)',
+                defects=[(nonprintable_defect, '{char}')],
+                comments=['foo{char}bar'],
+                ),
+            ),
 
-    def test_get_comment_missing_end_of_nesting(self):
-        self._test_get_x(parser.get_comment,
-            '(((((foo)))', '(((((foo)))))', ' ',
-            [errors.InvalidHeaderDefect]*2, '', ['((((foo))))'])
+        no_right_paren_after_non_ws = C(
+            '(foo bar',
+            stringified='(foo bar)',
+            defects=[end_inside_comment_defect],
+            comments=['foo bar'],
+            ),
 
-    def test_get_comment_qs_in_nested_comment(self):
-        comment = self._test_get_x(parser.get_comment,
-            r'(foo (b\)))', r'(foo (b\)))', ' ', [], '', [r'foo (b\))'])
-        self.assertEqual(comment[2].content, 'b)')
+        no_right_paren_after_ws = C(
+            '(foo bar  ',
+            stringified='(foo bar  )',
+            defects=[end_inside_comment_defect],
+            comments=['foo bar  '],
+            ),
+
+        nested_comment = C(
+            '(foo(bar))',
+            comments=['foo(bar)'],
+            commenttree=['foo', ['bar']],
+            ),
+
+        nested_comment_wsp = C(
+            '(foo ( bar ) )',
+            comments=['foo ( bar ) '],
+            commenttree=['foo ', [' bar '], ' '],
+            ),
+
+        empty_comment = C(
+            '()',
+            comments=[''],
+            commenttree=[''],
+            ),
+
+        multiple_nesting = C(
+            '(((((foo)))))',
+            comments=['((((foo))))'],
+            commenttree=[[[[['foo']]]]],
+            ),
+
+        multiple_mesting_missing_two_right_parens = C(
+            '(((((foo)))',
+            stringified='(((((foo)))))',
+            defects=[*[end_inside_comment_defect]*2],
+            comments=['((((foo))))'],
+            commenttree=[[[[['foo']]]]],
+            ),
+
+        quoted_paren_in_nested_comment = C(
+            r'(foo (b\)))',
+            comments=[r'foo (b\))'],
+            commenttree=['foo ', ['b)']],
+            ),
+
+        any_printable_may_be_escaped = C(
+            f"({''.join(fr'\{c}' for c in RFC_PRINTABLES)})",
+            stringified=
+                f"({RFC_PRINTABLES
+                    .replace('\\', r'\\')
+                    .replace('(', r'\(')
+                    .replace(')', r'\)')
+                    })",
+            comments=[RFC_PRINTABLES],
+            ),
+
+        all_printables = C(
+            f"({RFC_PRINTABLES.
+                replace('\\', r'\\').replace('(', r'\(').replace(')', r'\)')})",
+            comments=[RFC_PRINTABLES],
+            ),
+
+        multiple_nested_comments = C(
+            '(foo (nest 1) (nest 2 (nest 3)))',
+            comments=['foo (nest 1) (nest 2 (nest 3))'],
+            commenttree=['foo ', ['nest 1'], ' ', ['nest 2 ', ['nest 3']]],
+            ),
+
+        nested_empty_comments = C(
+            '( () ( (   ) ) )',
+            comments=[' () ( (   ) ) '],
+            commenttree=[' ', [''], ' ', [' ', ['   '], ' '], ' '],
+            ),
+
+        empty = C(
+            '',
+            exception=(errors.HeaderParseError, '(?i)expected'),
+            ),
+
+        ew_after_comment_no_ws = C(
+            '(foo)=?UTF-8?q?foo?=',
+            stringified='(foo)',
+            comments=['foo'],
+            remainder='=?UTF-8?q?foo?=',
+            ),
+
+        ws_around_ew = C(
+            '( =?utf-8?q?test?= )',
+            stringified='( test )',
+            comments=[' test '],
+            ew_indexes=[2],
+            ),
+
+        ew_in_nested_comment = C(
+            '(foo (=?UTF-8?q?bar?=))',
+            stringified='(foo (bar))',
+            comments=['foo (bar)'],
+            commenttree=['foo ', ['bar']],
+            ew_indexes=[6],
+            ),
+
+        ew_missing_whitespace = C(
+            '(=?UTF-8?q?foo?==?UTF-8?q?bar?=)',
+            stringified='(foobar)',
+            comments=['foobar'],
+            defects=[
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                ],
+            ew_indexes=[1, 16],
+            ),
+
+        no_ws_around_ew = C(
+            '(=?UTF-8?q?test?=)',
+            stringified='(test)',
+            comments=['test'],
+            ew_indexes=[1],
+            ),
+
+        ws_inside_ew = C(
+            '(=?UTF-8?q? Test ?=)',
+            stringified='( Test )',
+            comments=[' Test '],
+            defects=[whitespace_inside_ew_defect],
+            ew_indexes=[1],
+            ),
+
+        non_ws_around_ew = C(
+            '(foo=?UTF-8?q?bar_?=bird)',
+            stringified='(foobar bird)',
+            comments=['foobar bird'],
+            defects=[
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                ],
+            ew_indexes=[4],
+            ),
+
+        multiple_ew = C(
+            '(foo =?UTF-8?q?a?= =?UTF-8?q?t?=)',
+            stringified='(foo at)',
+            comments=['foo at'],
+            ew_indexes=[5, 19],
+            ),
+
+        **for_each_character(RFC_WSP)(
+            inter_ew_whitespace_handled_correctly = C(
+                '({char}=?UTF-8?q?_foo_?={char}{char}=?UTF-8?q?bar_?= )',
+                stringified='({char} foo bar  )',
+                comments=['{char} foo bar  '],
+                ew_indexes=[2, 21],
+                ),
+            ),
+
+        ew_nested_first_comment_valid_no_ws = C(
+            '((=?UTF-8?q?foo?=)=?UTF-8?q?bar?=)',
+            stringified='((foo)bar)',
+            comments=['(foo)bar'],
+            commenttree=[['foo'], 'bar'],
+            ew_indexes=[2, 18],
+            ),
+
+        ew_in_nested_second_comment_valid_no_ws = C(
+            '(=?UTF-8?q?foo?=(=?UTF-8?q?bar?=))',
+            stringified='(foo(bar))',
+            comments=['foo(bar)'],
+            commenttree=['foo', ['bar']],
+            ew_indexes=[1, 17],
+            ),
+
+        # parenthesis inside encoded words in comments is RFC illegal, but
+        # we handle it anyway.  XXX we aren't registering defects for this, but
+        # ideally we should be.
+
+        qp_inside_ew = C(
+            r'(=?UTF-8?q?\test\)_?= =?UTF-8?q?\(test?=)',
+            stringified=r'(test\) \(test)',
+            comments=['test) (test'],
+            ew_indexes=[1, 22],
+            ),
+
+        unquoted_parens_inside_ew = C(
+            '(=?UTF-8?q?test)_?= =?UTF-8?q?(test?=) foo',
+            stringified=r'(test\) \(test)',
+            comments=[r'test) (test'],
+            remainder=' foo',
+            ew_indexes=[1, 20],
+            ),
+
+        )
+
 
     # get_cfws
 
-    def test_get_cfws_only_ws(self):
-        cfws = self._test_get_x(parser.get_cfws,
-            '  \t \t', '  \t \t', ' ', [], '', [])
+    @params
+    def test_get_cfws(self, s, *args, **kw):
+        kw.setdefault('value', ' ')
+        cfws = self._test_parse(parser.get_cfws, C(s), *args, **kw)
+        if 'exception' in kw:
+            return
+        self.assertIsInstance(cfws, parser.CFWSList)
         self.assertEqual(cfws.token_type, 'cfws')
+        self.verify_terminal_types(cfws, 'ptext', 'fws')
 
-    def test_get_cfws_only_comment(self):
-        cfws = self._test_get_x(parser.get_cfws,
-            '(foo)', '(foo)', ' ', [], '', ['foo'])
-        self.assertEqual(cfws[0].content, 'foo')
+    # get_cfws should behave exactly the same as get_comment when parsing
+    # values containing just a comment.
+    @params_map(with_namelist=True)
+    def adapt_comment_tests_for_cfws(nl, s, *args, **kw):
+        # Our 'ctree' nested comment check returns a list of comments instead
+        # of just the single nested comment it does for Comment.
+        if 'commenttree' in kw:
+            kw['commenttree'] = [kw['commenttree']]
+        # XXX POSTDEP: delete from here...
+        #   get_cfws had the same bug that get_fws had: it did *not*
+        #   raise an error if there is no cfws, and it should.  For backward
+        #   compatibility we continue to not raise under the old api.
+        if ('oldapi' in nl
+                and nl.has_any('empty', 'non_wsp_before_left_paren_is_error')
+            ):
+            kw.pop('exception')
+            kw['remainder'] = s
+            kw['warnings'] = kw.get('warnings', []) + [
+                (
+                    DeprecationWarning,
+                    r'(?i)(?=.*no whitespace)(?=.*comment)(?=.*raise)',
+                    )
+                ]
+        # XXX POSTDEP: ...to here
+        yield 'from_test_get_comment', C(s, *args, **kw)
 
-    def test_get_cfws_only_mixed(self):
-        cfws = self._test_get_x(parser.get_cfws,
-            ' (foo )  ( bar) ', ' (foo )  ( bar) ', ' ', [], '',
-                ['foo ', ' bar'])
-        self.assertEqual(cfws[1].content, 'foo ')
-        self.assertEqual(cfws[3].content, ' bar')
+    params_test_get_cfws = for_each_api(
 
-    def test_get_cfws_ends_at_non_leader(self):
-        cfws = self._test_get_x(parser.get_cfws,
-            '(foo) bar', '(foo) ', ' ', [], 'bar', ['foo'])
-        self.assertEqual(cfws[0].content, 'foo')
+        # get_cfws should behave exactly the same as get_fws when parsing
+        # whitespace only strings, except for the case of ending at a '('
+        # because cfws *doesn't* end there.
+        include_unless(
+            lambda n, *a, **k: 'left_parenthesis' in n,
+            label="from_test_get_fws",
+            )(params_test_get_fws),
 
-    def test_get_cfws_ends_at_non_printable(self):
-        cfws = self._test_get_x(parser.get_cfws,
-            '(foo) \x07', '(foo) ', ' ', [], '\x07', ['foo'])
-        self.assertEqual(cfws[0].content, 'foo')
+        # get_cfws should behave exactly the same as get_comment when parsing
+        # values containing just a comment.  Even the tests with remainders
+        # should pass if the remainder doesn't start with whitespace.
+        include_unless(
+            lambda n, *a, remainder=..., **k:
+                remainder is not ...
+                    and remainder.startswith(tuple(RFC_WSP))
+                or 'wsp_before_left_paren_is_error' in n
+            )(adapt_comment_tests_for_cfws(params_test_get_comment)),
 
-    def test_get_cfws_non_printable_in_comment(self):
-        cfws = self._test_get_x(parser.get_cfws,
-            '(foo \x07) "test"', '(foo \x07) ', ' ',
-            [errors.NonPrintableDefect], '"test"', ['foo \x07'])
-        self.assertEqual(cfws[0].content, 'foo \x07')
+        mixed_comments_and_wsp = C(
+            ' (foo )  ( bar) ',
+            comments=['foo ', ' bar'],
+            commenttree=[['foo '], [' bar']],
+            ),
 
-    def test_get_cfws_header_ends_in_comment(self):
-        cfws = self._test_get_x(parser.get_cfws,
-            '  (foo ', '  (foo )', ' ',
-            [errors.InvalidHeaderDefect], '', ['foo '])
-        self.assertEqual(cfws[1].content, 'foo ')
+        **for_each_character(ALL_ASCII, skip=CFWS_LEADER)(
+            ends_at_non_comment_non_ws = C(
+                '(foo) {char}',
+                remainder='{char}',
+                comments=['foo'],
+                commenttree=[['foo']],
+                ),
+            ),
 
-    def test_get_cfws_multiple_nested_comments(self):
-        cfws = self._test_get_x(parser.get_cfws,
-            '(foo (bar)) ((a)(a))', '(foo (bar)) ((a)(a))', ' ', [],
-                '', ['foo (bar)', '(a)(a)'])
-        self.assertEqual(cfws[0].comments, ['foo (bar)'])
-        self.assertEqual(cfws[2].comments, ['(a)(a)'])
+        header_ends_in_comment = C(
+            '  (foo ',
+            stringified='  (foo )',
+            defects=[end_inside_comment_defect],
+            comments=['foo '],
+            commenttree=[['foo ']],
+            ),
+
+        multiple_nested_comments = C(
+            '(foo (bar)) ((a)(a))',
+            comments=['foo (bar)', '(a)(a)'],
+            commenttree=[['foo ', ['bar']], [['a'], ['a']]],
+            ),
+
+        ew_after_comment_no_ws = C(
+            '  (bar)  (foo)=?UTF-8?q?foo?=',
+            comments=['bar', 'foo'],
+            remainder='=?UTF-8?q?foo?=',
+            ),
+
+        ew_in_nested_comment = C(
+            ' (a) (foo (=?UTF-8?q?bar?=))',
+            stringified=' (a) (foo (bar))',
+            comments=['a', 'foo (bar)'],
+            commenttree=[['a'], ['foo ', ['bar']]],
+            ew_indexes=[11],
+            ),
+
+        ew_missing_whitespace = C(
+            '(=?UTF-8?q?foo?==?UTF-8?q?bar?=) (b)',
+            stringified='(foobar) (b)',
+            comments=['foobar', 'b'],
+            defects=[
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                ],
+            ew_indexes=[1, 16],
+            ),
+
+        nested_and_unnested_empty_comments = C(
+            '()  (()) ( () ) ( ( ) )',
+            comments=['', '()', ' () ', ' ( ) '],
+            commenttree=[[''], [['']], [' ', [''], ' '], [' ', [' '], ' ']],
+            ),
+
+        )
 
     # get_quoted_string
 
-    def test_get_quoted_string_only(self):
-        qs = self._test_get_x(parser.get_quoted_string,
-            '"bob"', '"bob"', 'bob', [], '')
+    @params
+    def test_get_quoted_string(
+            self,
+            s,
+            *args,
+            content=None,
+            quoted_value=None,
+            **kw,
+            ):
+        qs = self._test_parse(parser.get_quoted_string, C(s), *args, **kw)
+        if 'exception' in kw:
+            return
+        self.assertEqual(qs.content, content)
+        self.assertEqual(qs.quoted_value, quoted_value)
+        self.assertIsInstance(qs, parser.QuotedString)
         self.assertEqual(qs.token_type, 'quoted-string')
-        self.assertEqual(qs.quoted_value, '"bob"')
-        self.assertEqual(qs.content, 'bob')
+        self.verify_terminal_types(qs, 'ptext', 'fws')
 
-    def test_get_quoted_string_with_wsp(self):
-        qs = self._test_get_x(parser.get_quoted_string,
-            '\t "bob"  ', '\t "bob"  ', ' bob ', [], '')
-        self.assertEqual(qs.quoted_value, ' "bob" ')
-        self.assertEqual(qs.content, 'bob')
+    # get_quoted_string should pass any get_bare_quoted_string test that
+    # doesn't involve leading or trailing whitespace.
+    @params_map
+    def adapt_bare_quoted_string_tests_for_get_quoted_string(s, *args, **kw):
+        r = kw.get('remainder', '')
+        if s.startswith(tuple(RFC_WSP)) or r.startswith(tuple(RFC_WSP)):
+            return
+        if not 'exception' in kw:
+            kw['quoted_value'] = kw.get('stringified', s[:-len(r)] if r else s)
+            kw['content'] = kw['value']
+        kw['quoted_value'] = kw.get('stringified', s[:-len(r)] if r else s)
+        yield 'from_test_bare_quoted_string', C(s, *args, **kw)
 
-    def test_get_quoted_string_with_comments_and_wsp(self):
-        qs = self._test_get_x(parser.get_quoted_string,
-            ' (foo) "bob"(bar)', ' (foo) "bob"(bar)', ' bob ', [], '')
-        self.assertEqual(qs[0][1].content, 'foo')
-        self.assertEqual(qs[2][0].content, 'bar')
-        self.assertEqual(qs.content, 'bob')
-        self.assertEqual(qs.quoted_value, ' "bob" ')
+    # If there is no remainder or exception expectation, a cfws test string
+    # should be valid as a quoted string prefix or suffix, with a few
+    # exceptions that test for what happens if closing parens are missing.
+    @params_map(with_namelist=True)
+    def adapt_get_cfws_tests_for_get_quoted_string(
+            nl,
+            s,
+            *args,
+            stringified=None,
+            remainder=None,
+            exception=None,
+            **kw,
+        ):
+        if remainder or exception or nl.has_any(
+                'multiple_mesting_missing_two_right_parens',
+                'no_right_paren_after_non_ws',
+                'no_right_paren_after_ws',
+                'header_ends_in_comment',
+                'empty', # XXX POSTDEP remove this line, it's from a deprecation
+            ):
+            return
+        new_s = f'{s} "foo" {s}'
+        if stringified:
+            kw['stringified'] = f'{stringified} "foo" {stringified}'
+        kw['value'] = ' foo '
+        kw['quoted_value'] = ' "foo" '
+        kw['content'] = 'foo'
+        for k in ('comments', 'commenttree', 'defects'):
+            if (v := kw.get(k)):
+                kw[k] = v * 2
+        if (idxs := kw.get('ew_indexes')):
+            kw['ew_indexes'] = idxs + [x + len(s) + 7 for x in idxs]
+        yield 'adapted_from_get_cfws', C(new_s, **kw)
 
-    def test_get_quoted_string_with_multiple_comments(self):
-        qs = self._test_get_x(parser.get_quoted_string,
-            ' (foo) (bar) "bob"(bird)', ' (foo) (bar) "bob"(bird)', ' bob ',
-                [], '')
-        self.assertEqual(qs[0].comments, ['foo', 'bar'])
-        self.assertEqual(qs[2].comments, ['bird'])
-        self.assertEqual(qs.content, 'bob')
-        self.assertEqual(qs.quoted_value, ' "bob" ')
+    params_test_get_quoted_string = for_each_api(
 
-    def test_get_quoted_string_non_printable_in_comment(self):
-        qs = self._test_get_x(parser.get_quoted_string,
-            ' (\x0A) "bob"', ' (\x0A) "bob"', ' bob',
-                [errors.NonPrintableDefect], '')
-        self.assertEqual(qs[0].comments, ['\x0A'])
-        self.assertEqual(qs.content, 'bob')
-        self.assertEqual(qs.quoted_value, ' "bob"')
+        adapt_bare_quoted_string_tests_for_get_quoted_string(
+            params_test_get_bare_quoted_string,
+            ),
 
-    def test_get_quoted_string_non_printable_in_qcontent(self):
-        qs = self._test_get_x(parser.get_quoted_string,
-            ' (a) "a\x0B"', ' (a) "a\x0B"', ' a\x0B',
-                [errors.NonPrintableDefect], '')
-        self.assertEqual(qs[0].comments, ['a'])
-        self.assertEqual(qs.content, 'a\x0B')
-        self.assertEqual(qs.quoted_value, ' "a\x0B"')
+        adapt_get_cfws_tests_for_get_quoted_string(params_test_get_cfws),
 
-    def test_get_quoted_string_internal_ws(self):
-        qs = self._test_get_x(parser.get_quoted_string,
-            ' (a) "foo  bar "', ' (a) "foo  bar "', ' foo  bar ',
-                [], '')
-        self.assertEqual(qs[0].comments, ['a'])
-        self.assertEqual(qs.content, 'foo  bar ')
-        self.assertEqual(qs.quoted_value, ' "foo  bar "')
+        with_wsp = C(
+            '\t "bob"  ',
+            value=' bob ',
+            quoted_value=' "bob" ',
+            content='bob',
+            ),
 
-    def test_get_quoted_string_header_ends_in_comment(self):
-        qs = self._test_get_x(parser.get_quoted_string,
-            ' (a) "bob" (a', ' (a) "bob" (a)', ' bob ',
-                [errors.InvalidHeaderDefect], '')
-        self.assertEqual(qs[0].comments, ['a'])
-        self.assertEqual(qs[2].comments, ['a'])
-        self.assertEqual(qs.content, 'bob')
-        self.assertEqual(qs.quoted_value, ' "bob" ')
+        with_comments_and_wsp = C(
+            ' (foo) "bob"(bar)',
+            value=' bob ',
+            quoted_value=' "bob" ',
+            content='bob',
+            comments=['foo', 'bar'],
+            commenttree=[['foo'], ['bar']],
+            ),
 
-    def test_get_quoted_string_header_ends_in_qcontent(self):
-        qs = self._test_get_x(parser.get_quoted_string,
-            ' (a) "bob', ' (a) "bob"', ' bob',
-                [errors.InvalidHeaderDefect], '')
-        self.assertEqual(qs[0].comments, ['a'])
-        self.assertEqual(qs.content, 'bob')
-        self.assertEqual(qs.quoted_value, ' "bob"')
+        with_multiple_comments = C(
+            ' (foo) (bar) "bob"(bird)',
+            value=' bob ',
+            quoted_value=' "bob" ',
+            content='bob',
+            comments=['foo', 'bar', 'bird'],
+            commenttree=[['foo'], ['bar'], ['bird']],
+            ),
 
-    def test_get_quoted_string_cfws_only_raises(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_quoted_string(' (foo) ')
+        **for_each_character(RFC_NONPRINTABLES, skip=RFC_WSP)(
+            non_printable_in_comment = C(
+                ' ({char}) "bob"',
+                value=' bob',
+                quoted_value=' "bob"',
+                content='bob',
+                defects=[(nonprintable_defect, '{char}')],
+                comments=['{char}'],
+                ),
+            ),
 
-    def test_get_quoted_string_no_quoted_string(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_quoted_string(' (ab) xyz')
+        # all the non printables in qcontent are checked by the included
+        # bare_quoted_string tests, this one proves that the defect is
+        # correctly copied up even if there is also comment text involved.
+        non_printable_in_qcontent = C(
+            ' (a) "a\x0B"',
+            value=' a\x0B',
+            quoted_value=' "a\x0B"',
+            content='a\x0B',
+            defects=[nonprintable_defect('\x0b')],
+            comments=['a'],
+            ),
 
-    def test_get_quoted_string_qs_ends_at_noncfws(self):
-        qs = self._test_get_x(parser.get_quoted_string,
-            '\t "bob" fee', '\t "bob" ', ' bob ', [], 'fee')
-        self.assertEqual(qs.content, 'bob')
-        self.assertEqual(qs.quoted_value, ' "bob" ')
+        internal_ws = C(
+            ' (a) "foo  bar "',
+            value=' foo  bar ',
+            quoted_value=' "foo  bar "',
+            content='foo  bar ',
+            comments=['a'],
+            ),
+
+        header_ends_in_comment = C(
+            ' (a) "bob" (a',
+            stringified=' (a) "bob" (a)',
+            value=' bob ',
+            quoted_value=' "bob" ',
+            content='bob',
+            defects=[end_inside_comment_defect],
+            comments=['a', 'a'],
+            commenttree=[['a'], ['a']],
+            ),
+
+        header_ends_in_qcontent = C(
+            ' (a) "bob',
+            stringified=' (a) "bob"',
+            value=' bob',
+            quoted_value=' "bob"',
+            content='bob',
+            defects=[end_inside_quoted_string_defect],
+            comments=['a'],
+            ),
+
+        cfws_only_raises = C(
+            '(foo) ',
+            exception=(errors.HeaderParseError, '(?i)expected'),
+            ),
+
+        no_quoted_string = C(
+            '(ab) xyz',
+            exception=(errors.HeaderParseError, '(?=.*expected.*")(?=.*xyz)'),
+            ),
+
+        **for_each_character(RFC_PRINTABLES, skip='(')(
+            qs_ends_at_noncfws = C(
+                '\t "bob" {char}',
+                value=' bob ',
+                quoted_value=' "bob" ',
+                content='bob',
+                remainder='{char}',
+                ),
+            ),
+
+        ew_after_dquote = C(
+            '"bob"=?UTF-8?q?foo?=',
+            value='bob',
+            quoted_value='"bob"',
+            content='bob',
+            remainder='=?UTF-8?q?foo?=',
+            ),
+
+        empty_quotes_between_comments = C(
+            ' (a)  ""  (foo)',
+            value='  ',
+            quoted_value=' "" ',
+            content='',
+            comments=['a', 'foo'],
+            ),
+
+        empty_input = C(
+            '',
+            exception=(errors.HeaderParseError, r'(?i)expected'),
+            ),
+
+        )
+
 
     # get_atom
 
-    def test_get_atom_only(self):
-        atom = self._test_get_x(parser.get_atom,
-            'bob', 'bob', 'bob', [], '')
+    @params
+    def test_get_atom(self, s, *args, **kw):
+        atom = self._test_parse(parser.get_atom, C(s), *args, **kw)
+        if 'exception' in kw:
+            return
+        self.assertIsInstance(atom, parser.Atom)
         self.assertEqual(atom.token_type, 'atom')
+        self.verify_terminal_types(atom, 'atext', 'ptext', 'fws')
 
-    def test_get_atom_with_wsp(self):
-        self._test_get_x(parser.get_atom,
-            '\t bob  ', '\t bob  ', ' bob ', [], '')
+    # If there is no remainder or exception expectation, a cfws test string
+    # should be valid as a atom prefix or suffix, with a few exceptions that
+    # test for what happens if closing parens are missing.
+    @params_map(with_namelist=True)
+    def adapt_get_cfws_tests_for_get_atom(
+            nl,
+            s,
+            *args,
+            stringified=None,
+            remainder=None,
+            exception=None,
+            **kw,
+        ):
+        if remainder or exception or nl.has_any(
+                'multiple_mesting_missing_two_right_parens',
+                'no_right_paren_after_non_ws',
+                'no_right_paren_after_ws',
+                'header_ends_in_comment',
+                'empty', # XXX POSTDEP remove this line, it's from a deprecation
+            ):
+            return
+        new_s = f'{s} foo {s}'
+        if stringified:
+            kw['stringified'] = f'{stringified} foo {stringified}'
+        kw['value'] = ' foo '
+        for k in ('comments', 'commenttree', 'defects'):
+            if (v := kw.get(k)):
+                kw[k] = v * 2
+        if (idxs := kw.get('ew_indexes')):
+            kw['ew_indexes'] = idxs + [x + len(s) + 5 for x in idxs]
+        yield 'adapted_from_get_cfws', C(new_s, **kw)
 
-    def test_get_atom_with_comments_and_wsp(self):
-        atom = self._test_get_x(parser.get_atom,
-            ' (foo) bob(bar)', ' (foo) bob(bar)', ' bob ', [], '')
-        self.assertEqual(atom[0][1].content, 'foo')
-        self.assertEqual(atom[2][0].content, 'bar')
+    params_test_get_atom = for_each_api(
 
-    def test_get_atom_with_multiple_comments(self):
-        atom = self._test_get_x(parser.get_atom,
-            ' (foo) (bar) bob(bird)', ' (foo) (bar) bob(bird)', ' bob ',
-                [], '')
-        self.assertEqual(atom[0].comments, ['foo', 'bar'])
-        self.assertEqual(atom[2].comments, ['bird'])
+        adapt_get_cfws_tests_for_get_atom(params_test_get_cfws),
 
-    def test_get_atom_non_printable_in_comment(self):
-        atom = self._test_get_x(parser.get_atom,
-            ' (\x0A) bob', ' (\x0A) bob', ' bob',
-                [errors.NonPrintableDefect], '')
-        self.assertEqual(atom[0].comments, ['\x0A'])
+        # get_atom should pass all the get_atext_sequence tests except for those
+        # involving leading or trailing whitespace.
+        include_unless(
+            lambda n, s, *a, remainder='', **k:
+                s.startswith(tuple(CFWS_LEADER))
+                or remainder.startswith(tuple(CFWS_LEADER)),
+            label='from_test_get_atext_sequence',
+            )(params_test_get_atext_sequence),
 
-    def test_get_atom_non_printable_in_atext(self):
-        atom = self._test_get_x(parser.get_atom,
-            ' (a) a\x0B', ' (a) a\x0B', ' a\x0B',
-                [errors.NonPrintableDefect], '')
-        self.assertEqual(atom[0].comments, ['a'])
+        with_wsp = C(
+            '\t bob  ',
+            value=' bob ',
+            ),
 
-    def test_get_atom_header_ends_in_comment(self):
-        atom = self._test_get_x(parser.get_atom,
-            ' (a) bob (a', ' (a) bob (a)', ' bob ',
-                [errors.InvalidHeaderDefect], '')
-        self.assertEqual(atom[0].comments, ['a'])
-        self.assertEqual(atom[2].comments, ['a'])
+        with_comments_and_wsp = C(
+            ' (foo) bob(bar)',
+            value=' bob ',
+            comments=['foo', 'bar'],
+            ),
 
-    def test_get_atom_no_atom(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_atom(' (ab) ')
+        with_multiple_comments = C(
+            ' (foo) (bar) bob(bird)',
+            value=' bob ',
+            comments=['foo', 'bar', 'bird'],
+            ),
 
-    def test_get_atom_no_atom_before_special(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_atom(' (ab) @')
+        **for_each_character(RFC_NONPRINTABLES, skip=RFC_WSP)(
+            non_printable_in_comment = C(
+                ' ({char}) bob',
+                value=' bob',
+                defects=[(nonprintable_defect, '{char}')],
+                comments=['{char}'],
+                ),
 
-    def test_get_atom_atom_ends_at_special(self):
-        atom = self._test_get_x(parser.get_atom,
-            ' (foo) bob(bar)  @bang', ' (foo) bob(bar)  ', ' bob ', [], '@bang')
-        self.assertEqual(atom[0].comments, ['foo'])
-        self.assertEqual(atom[2].comments, ['bar'])
+            non_printable_in_atext = C(
+                ' (a) a{char}',
+                value=' a{char}',
+                defects=[(nonprintable_defect, '{char}')],
+                comments=['a'],
+                ),
 
-    def test_get_atom_atom_ends_at_noncfws(self):
-        self._test_get_x(parser.get_atom,
-            'bob  fred', 'bob  ', 'bob ', [], 'fred')
+            ),
 
-    def test_get_atom_rfc2047_atom(self):
-        self._test_get_x(parser.get_atom,
-            '=?utf-8?q?=20bob?=', ' bob', ' bob', [], '')
+        header_ends_in_comment = C(
+            ' (a) bob (a',
+            stringified=' (a) bob (a)',
+            value=' bob ',
+            defects=[end_inside_comment_defect],
+            comments=['a', 'a'],
+            ),
+
+        no_atom = C(
+            ' (ab) ',
+            exception=(errors.HeaderParseError, '(?i)expected'),
+            ),
+
+        **for_each_character(RFC_SPECIALS, skip='(')(
+
+            no_atom_before_special = C(
+                ' (ab) {char}',
+                exception=(
+                    errors.HeaderParseError,
+                    '(?i)(?=.*expected)(?=.*{echar})',
+                    ),
+                ),
+
+            atom_ends_at_special = C(
+                ' (foo) bob(bar)  {char}bang',
+                value=' bob ',
+                remainder='{char}bang',
+                comments=['foo', 'bar'],
+                ),
+
+            ),
+
+        **for_each_character(RFC_PRINTABLES, skip='(')(
+            atom_ends_at_noncfws = C(
+                'bob  {char}',
+                value='bob ',
+                remainder='{char}',
+                ),
+            ),
+
+        ew_only = C(
+            '=?utf-8?q?=20bob?=',
+            stringified=' bob',
+            ew_indexes=[0],
+            ),
+
+        ew_and_comments = C(
+            '(a) =?UTF-8?q?bob?= (b)',
+            stringified='(a) bob (b)',
+            value=' bob ',
+            comments=['a', 'b'],
+            ew_indexes=[4],
+            ),
+
+        ew_and_comments_no_ws = C(
+            '(a)=?UTF-8?q?bob?=(b)',
+            stringified='(a)bob(b)',
+            value=' bob ',
+            comments=['a', 'b'],
+            defects=[
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                ],
+            ew_indexes=[3],
+            ),
+
+        ew_and_empty_comments_no_ws = C(
+            '()=?UTF-8?q?bob?=()',
+            stringified='()bob()',
+            value=' bob ',
+            comments=['', ''],
+            defects=[
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                ],
+            ew_indexes=[2],
+            ),
+
+        # XXX Ideally this should have a defect for the specials.
+        **for_each_character(RFC_SPECIALS)(
+            ew_with_unencoded_special = C(
+                '=?UTF-8?q?bob{char}?= @foo',
+                stringified='bob{char} ',
+                remainder='@foo',
+                ew_indexes=[0],
+                ),
+            ),
+
+        ew_after_atom_no_ws = C(
+            'foo@=?UTF-8?q?bob?=',
+            value='foo',
+            remainder='@=?UTF-8?q?bob?=',
+            ),
+
+        multiple_ew_no_ws = C(
+            '=?UTF-8?q?foo?==?UTF-8?q?bar?=',
+            stringified='foobar',
+            defects=[
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                ],
+            ew_indexes=[0, 15],
+            ),
+
+        ew_in_middle_of_atom_text = C(
+            'foo{=?UTF-8?q?foo?=}{=?UTF-8?q?bar?=}bar',
+            stringified='foo{foo}{bar}bar',
+            defects=[
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                ],
+            ew_indexes=[4, 21],
+            ),
+
+        empty_comments_no_ws = C(
+            ' ()bob() ',
+            value=' bob ',
+            comments=['', ''],
+            ),
+
+        all_non_special_printables_are_allowed = C(
+            f'{"".join(set(RFC_PRINTABLES) - set(RFC_SPECIALS))}@',
+            remainder='@',
+            ),
+
+        )
 
     # get_dot_atom_text
 
-    def test_get_dot_atom_text(self):
-        dot_atom_text = self._test_get_x(parser.get_dot_atom_text,
-            'foo.bar.bang', 'foo.bar.bang', 'foo.bar.bang', [], '')
-        self.assertEqual(dot_atom_text.token_type, 'dot-atom-text')
-        self.assertEqual(len(dot_atom_text), 5)
+    @params
+    def test_get_dot_atom_text(self, s, *args, **kw):
+        atom = self._test_parse(parser.get_dot_atom_text, C(s), *args, **kw)
+        if 'exception' in kw:
+            return
+        self.assertIsInstance(atom, parser.DotAtomText)
+        self.assertEqual(atom.token_type, 'dot-atom-text')
+        # There can be fws inside encoded words.
+        self.verify_terminal_types(atom, 'dot', 'atext', 'fws')
 
-    def test_get_dot_atom_text_lone_atom_is_valid(self):
-        dot_atom_text = self._test_get_x(parser.get_dot_atom_text,
-            'foo', 'foo', 'foo', [], '')
+    params_test_get_dot_atom_text = for_each_api(
 
-    def test_get_dot_atom_text_raises_on_leading_dot(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_dot_atom_text('.foo.bar')
+        # a bare atext is valid in a dot-atom, so we should pass all the
+        # get_atext_sequence tests except the ones involving the dot.
+        include_unless(
+            lambda n, *a, **k:  'full_stop' in n,
+            label='from_test_get_atext',
+            )(params_test_get_atext_sequence),
 
-    def test_get_dot_atom_text_raises_on_trailing_dot(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_dot_atom_text('foo.bar.')
+        only = C(
+            'foo.bar.bang',
+            ),
 
-    def test_get_dot_atom_text_raises_on_leading_non_atext(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_dot_atom_text(' foo.bar')
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_dot_atom_text('@foo.bar')
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_dot_atom_text('"foo.bar"')
+        raises_on_leading_dot = C(
+            '.foo.bar',
+            exception=(errors.HeaderParseError, '.*'),
+            ),
 
-    def test_get_dot_atom_text_trailing_text_preserved(self):
-        dot_atom_text = self._test_get_x(parser.get_dot_atom_text,
-            'foo@bar', 'foo', 'foo', [], '@bar')
+        raises_on_trailing_dot = C(
+            'foo.bar.',
+            exception=(errors.HeaderParseError, '.*'),
+            ),
 
-    def test_get_dot_atom_text_trailing_ws_preserved(self):
-        dot_atom_text = self._test_get_x(parser.get_dot_atom_text,
-            'foo .bar', 'foo', 'foo', [], ' .bar')
+        **for_each_character(RFC_SPECIALS + RFC_WSP)(
+            raises_on_leading_special_or_wsp = C(
+                '{char}foo.bar',
+                exception=(errors.HeaderParseError, r'expected.*{erchar}foo\.'),
+                ),
+            ),
+
+        **for_each_character(RFC_SPECIALS + RFC_WSP, skip='.')(
+            ends_at_special_or_wsp = C(
+                'foo.bird{char}bar',
+                remainder='{char}bar',
+                ),
+            ),
+
+        **for_each_character(RFC_NONPRINTABLES, skip=RFC_WSP)(
+            non_printable_in_atext = C(
+                'foo.{char}.bar',
+                defects=[(nonprintable_defect, '{char}')],
+                ),
+            ),
+
+        undecodable_characters = C(
+            'foo.🎁.bar'.encode().decode('us-ascii', errors='surrogateescape'),
+            defects=[undecodable_bytes_defect],
+            ),
+
+        all_atext_characters_allowed = C(
+            RFC_ATEXT + '.' + RFC_ATEXT + '@foo',
+            remainder = '@foo',
+            ),
+
+        raises_on_paired_dots = C(
+            'foo..bar',
+            exception=(
+                errors.HeaderParseError,
+                r'(?=.*expected)(?=.*atom)(?=.*\.\.bar)',
+                ),
+            ),
+
+        ew = C(
+            '=?UTF-8?q?foo?=',
+            stringified='foo',
+            ew_indexes=[0],
+            ),
+
+        two_ew_two_atoms = C(
+            '=?UTF-8?q?foo?= =?UTF-8?q?bar?=',
+            stringified='foo',
+            remainder=' =?UTF-8?q?bar?=',
+            ew_indexes=[0],
+            ),
+
+        # The tests above are the only RFC valid way for an encoded word to be
+        # in a dot-atom-text, but we're going to be generous.
+
+        two_ew_with_dot = C(
+            '=?UTF-8?q?foo?=.=?UTF-8?q?bar?=',
+            stringified='foo.bar',
+            defects=[
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                ],
+            ew_indexes=[0, 16],
+            ),
+
+        two_ew_no_dot = C(
+            '=?UTF-8?q?foo?==?UTF-8?q?bar?=',
+            stringified='foobar',
+            defects=[
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                ],
+            ew_indexes=[0, 15],
+            ),
+
+        mixed_ews_and_atext = C(
+            'foo.bar=?UTF-8?q?_foo?=bar.=?UTF-8?q?foo?=bar',
+            stringified='foo.bar foobar.foobar',
+            defects=[
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                ],
+            ew_indexes=[7, 27],
+            ),
+
+        )
+
 
     # get_dot_atom
 
-    def test_get_dot_atom_only(self):
-        dot_atom = self._test_get_x(parser.get_dot_atom,
-            'foo.bar.bing', 'foo.bar.bing', 'foo.bar.bing', [], '')
-        self.assertEqual(dot_atom.token_type, 'dot-atom')
-        self.assertEqual(len(dot_atom), 1)
+    @params
+    def test_get_dot_atom(self, s, *args, **kw):
+        atom = self._test_parse(parser.get_dot_atom, C(s), *args, **kw)
+        if 'exception' in kw:
+            return
+        self.assertIsInstance(atom, parser.DotAtom)
+        self.assertEqual(atom.token_type, 'dot-atom')
+        self.verify_terminal_types(atom, 'dot', 'atext', 'ptext', 'fws')
 
-    def test_get_dot_atom_with_wsp(self):
-        self._test_get_x(parser.get_dot_atom,
-            '\t  foo.bar.bing  ', '\t  foo.bar.bing  ', ' foo.bar.bing ', [], '')
+    params_test_get_dot_atom = for_each_api(
 
-    def test_get_dot_atom_with_comments_and_wsp(self):
-        self._test_get_x(parser.get_dot_atom,
-            ' (sing)  foo.bar.bing (here) ', ' (sing)  foo.bar.bing (here) ',
-                ' foo.bar.bing ', [], '')
+        # Atom is a subset of dot atom, so get_dot_atom should pass any
+        # get_atom test except those involving the dot (full_stop).
+        include_unless(
+            lambda n, *a, **k:  'full_stop' in n,
+            label='from_test_get_atom',
+            )(params_test_get_atom),
 
-    def test_get_dot_atom_space_ends_dot_atom(self):
-        self._test_get_x(parser.get_dot_atom,
-            ' (sing)  foo.bar .bing (here) ', ' (sing)  foo.bar ',
-                ' foo.bar ', [], '.bing (here) ')
+        with_wsp = C(
+            '\t  foo.bar.bing  ',
+            value=' foo.bar.bing ',
+            ),
 
-    def test_get_dot_atom_no_atom_raises(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_dot_atom(' (foo) ')
+        with_comments_and_wsp = C(
+            ' (sing)  foo.bar.bing (here) ',
+            value=' foo.bar.bing ',
+            comments=['sing', 'here'],
+            ),
 
-    def test_get_dot_atom_leading_dot_raises(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_dot_atom(' (foo) .bar')
+        space_ends_dot_atom = C(
+            ' (sing)  foo.bar .bing (here) ',
+            value=' foo.bar ',
+            remainder='.bing (here) ',
+            comments=['sing'],
+            ),
 
-    def test_get_dot_atom_two_dots_raises(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_dot_atom('bar..bang')
+        no_atom_raises = C(
+            ' (foo) ',
+            exception=(errors.HeaderParseError, r'expected')
+            ),
 
-    def test_get_dot_atom_trailing_dot_raises(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_dot_atom(' (foo) bar.bang. foo')
+        **for_each_character(RFC_SPECIALS, skip='(')(
+            leading_special_raises = C(
+                ' (foo) {char}bar',
+                exception=(errors.HeaderParseError, r'(?i)expected.*{echar}bar')
+                ),
+            ),
 
-    def test_get_dot_atom_rfc2047_atom(self):
-        self._test_get_x(parser.get_dot_atom,
-            '=?utf-8?q?=20bob?=', ' bob', ' bob', [], '')
+        two_dots_raises = C(
+            'bar..bang',
+            exception=(errors.HeaderParseError, r'expected.*\.\.bang')
+            ),
 
-    # get_word (if this were black box we'd repeat all the qs/atom tests)
+        trailing_dot_raises = C(
+            ' (foo) bar.bang. foo',
+            exception=(errors.HeaderParseError, r'expected.*\. foo')
+            ),
 
-    def test_get_word_atom_yields_atom(self):
-        word = self._test_get_x(parser.get_word,
-            ' (foo) bar (bang) :ah', ' (foo) bar (bang) ', ' bar ', [], ':ah')
-        self.assertEqual(word.token_type, 'atom')
-        self.assertEqual(word[0].token_type, 'cfws')
+        rfc2047_atom = C(
+            '=?utf-8?q?=20bob?=',
+            stringified=' bob',
+            ew_indexes=[0],
+            ),
 
-    def test_get_word_all_CFWS(self):
-        # bpo-29412: Test that we don't raise IndexError when parsing CFWS only
-        # token.
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_word('(Recipients list suppressed')
+        **for_each_character(RFC_NONPRINTABLES, skip=RFC_WSP)(
+            non_printable_in_atext = C(
+                'foo.{char}.bar',
+                defects=[(nonprintable_defect, '{char}')],
+                ),
+            ),
 
-    def test_get_word_qs_yields_qs(self):
-        word = self._test_get_x(parser.get_word,
-            '"bar " (bang) ah', '"bar " (bang) ', 'bar  ', [], 'ah')
-        self.assertEqual(word.token_type, 'quoted-string')
-        self.assertEqual(word[0].token_type, 'bare-quoted-string')
-        self.assertEqual(word[0].value, 'bar ')
-        self.assertEqual(word.content, 'bar ')
+        undecodable_characters = C(
+            'foo.🎁.bar'.encode().decode('us-ascii', errors='surrogateescape'),
+            defects=[undecodable_bytes_defect],
+            ),
 
-    def test_get_word_ends_at_dot(self):
-        self._test_get_x(parser.get_word,
-            'foo.', 'foo', 'foo', [], '.')
+        **for_each_character(RFC_SPECIALS, skip='.(')(
+            ends_at_special = C(
+                '(hey)foo.bar{char}.bird',
+                value=' foo.bar',
+                remainder='{char}.bird',
+                comments=['hey'],
+                ),
+            ),
+
+        **for_each_character(RFC_SPECIALS, skip='(')(
+            ends_at_special_after_comment = C(
+                '(hey)foo.bar(hey){char} bird',
+                value=' foo.bar ',
+                remainder='{char} bird',
+                comments=['hey', 'hey'],
+                ),
+            ),
+
+        two_ew_two_atoms = C(
+            '(hey) =?UTF-8?q?foo?= =?UTF-8?q?bar?=',
+            stringified='(hey) foo ',
+            value=' foo ',
+            remainder='=?UTF-8?q?bar?=',
+            comments=['hey'],
+            ew_indexes=[6],
+            ),
+
+        mixed_ews_and_atext = C(
+            '(hey)foo.bar=?UTF-8?q?_foo?=bar.=?UTF-8?q?foo?=bar (hey)',
+            stringified='(hey)foo.bar foobar.foobar (hey)',
+            value=' foo.bar foobar.foobar ',
+            defects=[
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                ],
+            comments=['hey', 'hey'],
+            ew_indexes=[12, 32],
+            ),
+
+        two_ew_with_dot = C(
+            '=?UTF-8?q?foo?=.=?UTF-8?q?bar?=(hey)',
+            stringified='foo.bar(hey)',
+            value='foo.bar ',
+            defects=[
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                ],
+            comments=['hey'],
+            ew_indexes=[0, 16],
+            ),
+
+        )
+
+
+    # get_word
+
+    @params
+    def test_get_word(
+            self,
+            s,
+            *args,
+            quoted_value=None,
+            content=None,
+            tokenlisttype,
+            **kw,
+            ):
+        word = self._test_parse(parser.get_word, C(s), *args, **kw)
+        if 'exception' in kw:
+            return
+        self.assertIsInstance(word, tokenlisttype)
+        if quoted_value is not None:
+            self.assertEqual(word.quoted_value, quoted_value)
+        if content is not None:
+            self.assertEqual(word.content, content)
+        self.verify_terminal_types(word, 'dot', 'atext', 'ptext', 'fws')
+
+    @params_map
+    def adapt_get_atom_tests_for_get_word(*args, **kw):
+        kw['tokenlisttype'] = parser.TokenList
+        yield '', C(*args, **kw)
+
+    @params_map
+    def adapt_get_quoted_string_tests_for_get_word(*args, **kw):
+        kw['tokenlisttype'] = parser.QuotedString
+        yield '', C(*args, **kw)
+
+    params_test_get_word = for_each_api(
+
+        # A word can be an atom, so get_word should pass many of the atom tests.
+        adapt_get_atom_tests_for_get_word(
+            include_unless(
+                lambda n, *a, **k:
+                    # For get_atom a leading quotation mark means there is no
+                    # atom and is therefor an error, but get_word will treat it
+                    # as a quoted_string.  Quoted strings are tested below.
+                    n.has_any(
+                        'no_atom_before_special',
+                        'no_atext_before_special_or_wsp',
+                        )
+                    and 'quotation_mark' in n,
+                label='from_test_get_atom',
+                )(params_test_get_atom),
+            ),
+
+        # Or it can be a quoted string, so should pass most quoted_string tests.
+        adapt_get_quoted_string_tests_for_get_word(
+            include_unless(
+                lambda n, *a, **k:
+                    # These tests have an atom first; get_quoted_string raises
+                    # for that, but get_word parses it. Atoms are tested above.
+                    n.has_any(
+                        'no_quoted_string',
+                        'no_leading_dquote_before_non_ws',
+                        ),
+                label='from_test_get_quoted_string',
+                )(params_test_get_quoted_string),
+            ),
+
+        )
+
 
     # get_phrase
 
-    def test_get_phrase_simple(self):
-        phrase = self._test_get_x(parser.get_phrase,
+    @params
+    def test_get_phrase(self, s, *args, obs_dots=0, **kw):
+        phrase = self._test_parse(parser.get_phrase, C(s), *args, **kw)
+        if 'exception' in kw:
+            return
+        self.assertIsInstance(phrase, parser.Phrase)
+        self.assertEqual(
+            len([x for x in phrase if x.token_type == 'dot']),
+            obs_dots,
+            phrase.ppstr(),
+            )
+        self.verify_terminal_types(phrase, 'dot', 'atext', 'ptext', 'fws')
+
+    @params_map(with_namelist=True)
+    def adapt_get_word_tests_for_get_phrase(nl, s, *args, **kw):
+        kw.pop('tokenlisttype')
+        kw.pop('quoted_value', None)
+        kw.pop('content', None)
+        # XXX POSTDEP: delete from here...
+        if 'oldapi' in nl:
+            # A phrase has to have at least one word, but the old code did not
+            # enforce this.  For backward compatibility we preserve that
+            # behavior in the old api, so for the parameters that expect a
+            # raise on no content we'll either skip them or adapt them.
+            if nl.has_any(
+                    'no_atom_before_special',
+                    'no_atom',
+                    'cfws_only_raises',
+                    'empty_input',
+                ):
+                return
+            # These two tests will serve to test the lack-of-raise deprecation.
+            if nl.has_any(
+                    'empty',
+                    'no_atext_before_special_or_wsp',
+                ):
+                kw.pop('exception')
+                kw['remainder'] = s
+                kw['warnings'] = kw.get('warnings', []) + [
+                    (
+                        DeprecationWarning,
+                        r'(?i)(?=.*word)(?=.*whitespace)(?=.*raise)',
+                        )
+                    ]
+                kw['defects'] = kw.get('defects', []) + [
+                    non_word_phrase_start_defect,
+                    ]
+        # XXX POSTDEP: ...to here
+        yield '', C(s, *args, **kw)
+
+    params_test_get_phrase = for_each_api(
+
+        # A phrase is a series of words, and single words are valid,
+        # so get_phrase should pass many of the get_word tests.
+        adapt_get_word_tests_for_get_phrase(
+            # A phrase only ends at specials other than " and ., so skip
+            # get_word tests that expect parsing to stop on those characters.
+            include_unless(
+                lambda n, *a, remainder=False, **k:
+                    n.has_any(
+                        'atom_ends_at_noncfws',
+                        'no_atext_before_special_or_wsp',
+                        'qs_ends_at_noncfws',
+                        'ew_after_dquote',
+                        'encoded_word_after_dquote_with_no_ws',
+                        'end_dquote_mid_word',
+                        )
+                    or n.has_any('atom_ends_at_special', 'up_to_special')
+                        and n.has_any('full_stop', 'quotation_mark')
+                    or n.has_all('no_atom_before_special', 'full_stop'),
+                label='from_test_get_word',
+                )(params_test_get_word),
+            ),
+
+        simple_phrase = C(
             '"Fred A. Johnson" is his name, oh.',
-            '"Fred A. Johnson" is his name',
-            'Fred A. Johnson is his name',
-            [],
-            ', oh.')
-        self.assertEqual(phrase.token_type, 'phrase')
+            value='Fred A. Johnson is his name',
+            remainder=', oh.',
+            ),
 
-    def test_get_phrase_complex(self):
-        phrase = self._test_get_x(parser.get_phrase,
+        complex_phrase = C(
             ' (A) bird (in (my|your)) "hand  " is messy\t<>\t',
-            ' (A) bird (in (my|your)) "hand  " is messy\t',
-            ' bird hand   is messy ',
-            [],
-            '<>\t')
-        self.assertEqual(phrase[0][0].comments, ['A'])
-        self.assertEqual(phrase[0][2].comments, ['in (my|your)'])
+            value=' bird hand   is messy ',
+            remainder='<>\t',
+            comments=['A', 'in (my|your)'],
+            ),
 
-    def test_get_phrase_obsolete(self):
-        phrase = self._test_get_x(parser.get_phrase,
+        obsolete_phrase = C(
             'Fred A.(weird).O Johnson',
-            'Fred A.(weird).O Johnson',
-            'Fred A. .O Johnson',
-            [errors.ObsoleteHeaderDefect]*3,
-            '')
-        self.assertEqual(len(phrase), 7)
-        self.assertEqual(phrase[3].comments, ['weird'])
+            value='Fred A. .O Johnson',
+            defects=[
+                *[period_in_phrase_obs_defect]*2,
+                cfws_without_atom_in_phrase_obs_defect,
+                ],
+            comments=['weird'],
+            obs_dots=2,
+            ),
 
-    def test_get_phrase_pharse_must_start_with_word(self):
-        phrase = self._test_get_x(parser.get_phrase,
+        should_start_with_word = C(
             '(even weirder).name',
-            '(even weirder).name',
-            ' .name',
-            [errors.InvalidHeaderDefect] + [errors.ObsoleteHeaderDefect]*2,
-            '')
-        self.assertEqual(len(phrase), 3)
-        self.assertEqual(phrase[0].comments, ['even weirder'])
+            value=' .name',
+            defects=[
+                non_word_phrase_start_defect,
+                cfws_without_atom_in_phrase_obs_defect,
+                period_in_phrase_obs_defect,
+                ],
+            comments=['even weirder'],
+            obs_dots=1,
+            ),
 
-    def test_get_phrase_ending_with_obsolete(self):
-        phrase = self._test_get_x(parser.get_phrase,
+        obsolete_ending = C(
             'simple phrase.(with trailing comment):boo',
-            'simple phrase.(with trailing comment)',
-            'simple phrase. ',
-            [errors.ObsoleteHeaderDefect]*2,
-            ':boo')
-        self.assertEqual(len(phrase), 4)
-        self.assertEqual(phrase[3].comments, ['with trailing comment'])
+            value='simple phrase. ',
+            defects=[
+                period_in_phrase_obs_defect,
+                cfws_without_atom_in_phrase_obs_defect,
+                ],
+            remainder=':boo',
+            comments=['with trailing comment'],
+            obs_dots=1,
+            ),
 
-    def get_phrase_cfws_only_raises(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_phrase(' (foo) ')
-
-    def test_get_phrase_adjacent_ew(self):
         # "'linear-white-space' that separates a pair of adjacent
         # 'encoded-word's is ignored" (rfc2047 section 6.2)
-        self._test_get_x(parser.get_phrase, '=?ascii?q?Joi?= \t =?ascii?q?ned?=', 'Joined', 'Joined', [], '')
 
-    def test_get_phrase_adjacent_ew_different_encodings(self):
-        self._test_get_x(
-            parser.get_phrase,
-            '=?utf-8?q?B=C3=A9r?= =?iso-8859-1?q?=E9nice?=', 'Bérénice', 'Bérénice', [], ''
-        )
+        adjacent_ew = C(
+            '=?ascii?q?Joi?= \t =?ascii?q?ned?=',
+            stringified='Joined',
+            ew_indexes=[0, 18],
+            ),
 
-    def test_get_phrase_adjacent_ew_encoded_spaces(self):
-        self._test_get_x(
-            parser.get_phrase,
+        adjacent_ew_different_encodings = C(
+            '=?utf-8?q?B=C3=A9r?= =?iso-8859-1?q?=E9nice?=',
+            stringified='Bérénice',
+            ew_indexes=[0, 21],
+            ),
+
+        adjacent_ew_encoded_spaces = C(
             '=?ascii?q?Encoded?= =?ascii?q?_spaces_?= =?ascii?q?preserved?=',
-            'Encoded spaces preserved',
-            'Encoded spaces preserved',
-            [],
-            ''
-        )
+            stringified='Encoded spaces preserved',
+            ew_indexes=[0, 20, 41],
+            ),
 
-    def test_get_phrase_adjacent_ew_comment_is_not_linear_white_space(self):
-        self._test_get_x(
-            parser.get_phrase,
+        adjacent_ew_comment_is_not_linear_white_space = C(
             '=?ascii?q?Comment?= (is not) =?ascii?q?linear-white-space?=',
-            'Comment (is not) linear-white-space',
-            'Comment linear-white-space',
-            [],
-            '',
+            stringified='Comment (is not) linear-white-space',
+            value='Comment linear-white-space',
             comments=['is not'],
-        )
+            ew_indexes=[0, 29],
+            ),
 
-    def test_get_phrase_adjacent_ew_no_error_on_defects(self):
-        self._test_get_x(
-            parser.get_phrase,
+        adjacent_ew_no_error_on_defects = C(
             '=?ascii?q?Def?= =?ascii?q?ect still joins?=',
-            'Defect still joins',
-            'Defect still joins',
-            [errors.InvalidHeaderDefect],  # whitespace inside encoded word
-            ''
-        )
+            stringified='Defect still joins',
+            defects=[whitespace_inside_ew_defect],
+            ew_indexes=[0, 16],
+            ),
 
-    def test_get_phrase_adjacent_ew_ignore_non_ew(self):
-        self._test_get_x(
-            parser.get_phrase,
+        adjacent_ew_ignore_non_ew = C(
             '=?ascii?q?No?= =?join?= for non-ew',
-            'No =?join?= for non-ew',
-            'No =?join?= for non-ew',
-            [],
-            ''
-        )
+            stringified='No =?join?= for non-ew',
+            ew_indexes=[0],
+            ),
 
-    def test_get_phrase_adjacent_ew_ignore_invalid_ew(self):
-        self._test_get_x(
-            parser.get_phrase,
+        adjacent_ew_ignore_invalid_ew = C(
             '=?ascii?q?No?= =?ascii?rot13?wbva= for invalid ew',
-            'No =?ascii?rot13?wbva= for invalid ew',
-            'No =?ascii?rot13?wbva= for invalid ew',
-            [],
-            ''
+            stringified='No =?ascii?rot13?wbva= for invalid ew',
+            ew_indexes=[0],
+            ),
+
+        adjacent_ew_missing_space = C(
+            '=?ascii?q?Joi?==?ascii?q?ned?=',
+            stringified='Joined',
+            defects=[
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                ],
+            ew_indexes=[0, 15],
+            ),
+
+        ew_before_quoted_string_missing_space = C(
+            '=?ascii?q?disjoin?="=?ascii?q?ted?="',
+            stringified='disjoin"ted"',
+            value='disjointed',
+            defects=[
+                missing_whitespace_after_ew_defect,
+                ew_inside_quoted_string_defect,
+                ],
+            ew_indexes=[0, 20],
+            ),
+
+        ew_after_quoted_string_missing_space = C(
+            '"=?ascii?q?disjoin?="=?ascii?q?ted?=',
+            stringified='"disjoin"ted',
+            value='disjointed',
+            defects=[
+                missing_whitespace_before_ew_defect,
+                ew_inside_quoted_string_defect,
+                ],
+            ew_indexes=[1, 21],
+            ),
+
+        **for_each_character(RFC_SPECIALS, skip=CFWS_LEADER + '."')(
+            ends_at_special = C(
+                'complex (obsolete). "phrase" {char}foo',
+                value='complex . phrase ',
+                defects=[period_in_phrase_obs_defect],
+                remainder='{char}foo',
+                comments=['obsolete'],
+                obs_dots=1,
+                ),
+            ),
+
+        # While these violate the RFC in several ways, allowing the '.'
+        # as the value of the phrase is the only sensible recovery.
+
+        obsolete_dot_only = C(
+            '.',
+            defects=[
+                non_word_phrase_start_defect,
+                period_in_phrase_obs_defect,
+                ],
+            obs_dots=1,
+            ),
+
+        obsolete_dot_with_wsp = C(
+            '\t .  ',
+            value=' . ',
+            defects=[
+                non_word_phrase_start_defect,
+                *[cfws_without_atom_in_phrase_obs_defect]*2,
+                period_in_phrase_obs_defect,
+                ],
+            obs_dots=1,
+            ),
+
+        obsolete_dot_and_comments_only = C(
+            '(foo).(bar)',
+            value=' . ',
+            comments=['foo', 'bar'],
+            defects=[
+                non_word_phrase_start_defect,
+                *[cfws_without_atom_in_phrase_obs_defect]*2,
+                period_in_phrase_obs_defect,
+                ],
+            obs_dots=1,
+            ),
+
+        obsolete_dot_and_comments_with_fws = C(
+            ' (foo).  (bar) ',
+            value=' . ',
+            comments=['foo', 'bar'],
+            defects=[
+                non_word_phrase_start_defect,
+                *[cfws_without_atom_in_phrase_obs_defect]*2,
+                period_in_phrase_obs_defect,
+                ],
+            obs_dots=1,
+            ),
+
+       )
+
+
+    # get_obs_local_part
+
+    @params
+    def test_get_obs_local_part(self, s, *args, local_part=None, **kw):
+        lp = self._test_parse(parser.get_obs_local_part, C(s), *args, **kw)
+        if 'exception' in kw:
+            return
+        self.verify_terminal_types(
+            lp,
+            'dot',
+            'atext',
+            'ptext',
+            'fws',
+            'misplaced-special',
+            )
+
+    # This function should only get called when the non-obs expressions have
+    # already been checked for, so we are only testing the obs syntax handling,
+    # not what it does with non-obs syntax.  Anything else is "don't care".
+    # The 'local_part' specs are checked by the get_local_part tests, since the
+    # token list returned by get_obs_local_part doesn't have that attribute.
+    params_test_get_obs_local_part = for_each_api(
+
+        simple_obsolete = C(
+            'Fred. A.Johnson@python.org',
+            remainder='@python.org',
+            local_part='Fred.A.Johnson',
+            ),
+
+        complex_obsolete_1 = C(
+            ' (foo )Fred (bar).(bird) A.(sheep)Johnson."and  dogs "@python.org',
+            value=' Fred . A. Johnson.and  dogs ',
+            remainder='@python.org',
+            comments=['foo ', 'bar', 'bird', 'sheep'],
+            local_part='Fred.A.Johnson.and  dogs ',
+            ),
+
+        complex_obsolete_invalid = C(
+            ' (foo )Fred (bar).(bird) A.(sheep)Johnson "and  dogs"@python.org',
+            value=' Fred . A. Johnson and  dogs',
+            defects=[missing_dot_in_local_part_defect],
+            remainder='@python.org',
+            comments=['foo ', 'bar', 'bird', 'sheep'],
+            local_part='Fred.A.Johnson and  dogs',
+            ),
+
+        trailing_dot = C(
+            ' borris.@python.org',
+            defects=[trailing_dot_in_local_part_defect],
+            remainder='@python.org',
+            local_part='borris.',
+            ),
+
+        trailing_dot_with_ws = C(
+            ' borris. @python.org',
+            defects=[trailing_dot_in_local_part_defect],
+            remainder='@python.org',
+            local_part='borris.',
+            ),
+
+        leading_dot = C(
+            '.borris@python.org',
+            defects=[leading_dot_in_local_part_defect],
+            remainder='@python.org',
+            local_part='.borris',
+            ),
+
+        leading_dot_after_ws = C(
+            ' .borris@python.org',
+            defects=[leading_dot_in_local_part_defect],
+            remainder='@python.org',
+            local_part='.borris',
+            ),
+
+        dots_around_comment = C(
+            ' borris.(foo).natasha@python.org',
+            value=' borris. .natasha',
+            defects=[repeated_dot_in_local_part_defect],
+            remainder='@python.org',
+            comments=['foo'],
+            local_part='borris..natasha',
+            ),
+
+        quoted_strings_in_atom_list = C(
+            '""example" example"@example.com',
+            value='example example',
+            defects=[*[missing_dot_in_local_part_defect]*2],
+            remainder='@example.com',
+            local_part="example example",
+            ),
+
+        # This is intentionally a weird one: first there is a quoted string
+        # consisting of a single quoted pair resolving to a single backslash.
+        # Then there is unquoted atext and an invalid quoted pair that
+        # therefore gets interpreted as two backslashes.  Then there is a
+        # quoted string containing 'example' with a leading space.
+        valid_and_invalid_qp_in_atom_list = C(
+            r'"\\"example\\" example"@example.com',
+            value=r'\example\\ example',
+            defects=[
+                *[missing_dot_in_local_part_defect]*2,
+                *[misplaced_backslash_defect]*2,
+                ],
+            remainder='@example.com',
+            local_part=r'\example\\ example',
+            ),
+
+        # We do want to check that it raises on an empty input, even
+        # though it should never be called with one.
+        empty = C(
+            '',
+            exception=(errors.HeaderParseError, '(?i)expected'),
+            ),
+
+        quoted_words_but_no_ws = C(
+            '"words"."separated".by.dots',
+            value='words.separated.by.dots',
+            local_part='words.separated.by.dots',
+            ),
+
+        backlashes_in_various_places = C(
+            r"\invali\d\.\really" + '\\',
+            local_part=r'\invali\d\.\really' + '\\',
+            defects=[
+                *[misplaced_backslash_defect]*5,
+                *[missing_dot_in_local_part_defect]*3,
+                ],
+            ),
+
+        double_dot_no_ws = C(
+            ' borris..natasha@python.org',
+            value=' borris..natasha',
+            defects=[repeated_dot_in_local_part_defect],
+            remainder='@python.org',
+            local_part='borris..natasha',
+            ),
+
+        # The end of this is treated as a quoted string, so the stringified
+        # version has a trailing quote added, but the local_part attribute
+        # does not include the quotes.
+        looks_like_qp_quote_but_quote_is_respected = C(
+            r'invalid.\"for.sure',
+            stringified=r'invalid.\"for.sure"',
+            value=r'invalid.\for.sure',
+            local_part=r'invalid.\for.sure',
+            defects=[
+                end_inside_quoted_string_defect,
+                misplaced_backslash_defect,
+                missing_dot_in_local_part_defect,
+                ],
+            ),
+
+        # obs_local_part parses anything that can be in a phrase (cfws
+        # atoms and quoted strings), plus \ and dots.
+        **for_each_character(RFC_SPECIALS, skip=CFWS_LEADER + r'\."')(
+            ends_at_phrase_ends = C(
+                'doted.words. and . space{char}',
+                local_part='doted.words.and.space',
+                remainder='{char}',
+                ),
+            ),
+
+        # Encoded words are not legitimate in local-part, but we decode
+        # them anyway.
+
+        invalid_ew_atoms = C(
+            '=?utf-8?q?foo_?="=?utf-8?q?_bar?=".bird',
+            # It's not clear this str is the best choice.  It's
+            # a consequence of the underlying parsed structures.
+            stringified='foo " bar".bird',
+            value="foo  bar.bird",
+            local_part="foo  bar.bird",
+            defects=[
+                # XXX XXX There should be exactly one ew whitespace defect
+                # here, but the number generated will change during refactor,
+                # until it is fixed when get_obs_local_part is refactored.
+                #missing_whitespace_after_ew_defect,
+                missing_dot_in_local_part_defect,
+                ew_inside_quoted_string_defect,
+                ],
+            ew_indexes=[0, 17],
+            ),
+
+        less_invalid_ew_atoms = C(
+            '=?utf-8?q?foo_?= . (=?utf-8?q?test?=) =?utf-8?q?_bar?= .bird',
+            stringified='foo  . (test)  bar .bird',
+            value="foo  .  bar .bird",
+            local_part="foo . bar.bird",
+            comments=['test'],
+            ew_indexes=[0, 20, 38],
+            ),
+
         )
 
-    def test_get_phrase_adjacent_ew_missing_space(self):
-        self._test_get_x(
-            parser.get_phrase,
-            '=?ascii?q?Joi?==?ascii?q?ned?=',
-            'Joined',
-            'Joined',
-            [errors.InvalidHeaderDefect],  # missing trailing whitespace
-            ''
-        )
 
     # get_local_part
 
-    def test_get_local_part_simple(self):
-        local_part = self._test_get_x(parser.get_local_part,
-            'dinsdale@python.org', 'dinsdale', 'dinsdale', [], '@python.org')
-        self.assertEqual(local_part.token_type, 'local-part')
-        self.assertEqual(local_part.local_part, 'dinsdale')
+    @params
+    def test_get_local_part(self, s, *args, local_part=None, **kw):
+        lp = self._test_parse(parser.get_local_part, C(s), *args, **kw)
+        if 'exception' in kw:
+            return
+        self.verify_terminal_types(
+            lp,
+            'dot',
+            'atext',
+            'ptext',
+            'fws',
+            'misplaced-special',
+            )
+        self.assertEqual(lp.local_part, local_part)
 
-    def test_get_local_part_with_dot(self):
-        local_part = self._test_get_x(parser.get_local_part,
+    @params_map
+    def add_ew_defects(*args, ew_indexes=[], defects=[], **kw):
+        if ew_indexes:
+            defects = defects + [ew_in_local_part_defect] * len(ew_indexes)
+        yield '', C(*args, ew_indexes=ew_indexes, defects=defects, **kw)
+
+    @params_map(with_namelist=True)
+    def adapt_get_dot_atom_tests_for_get_local_part(nl, s, *args, **kw):
+        r = kw.get('remainder')
+        if 'value' in kw:
+            local_part = kw['value']
+        else:
+            local_part = kw.get('stringified', s[:-len(r)] if r else s)
+        if not nl.has_any('ew_only', 'rfc2047_atom'):
+            # Except for the above two tests, the leading and trailing
+            # whitespace in the 'value' is the 'semantic blank' it produces
+            # for leading and trailing cfws, which local_part doesn't include.
+            # For those two ew tests the blank comes from inside the ew.
+            local_part = local_part.removeprefix(' ').removesuffix(' ')
+        kw['local_part'] = local_part
+        yield '', C(s, *args, **kw)
+
+    @params_map
+    def adapt_get_quoted_string_tests_for_get_local_part(*args, **kw):
+        if 'quoted_value' in kw:
+            kw['value'] = kw.pop('quoted_value')
+        if 'exception' not in kw:
+            kw['local_part'] = kw.pop('content')
+        yield '', C(*args, **kw)
+
+    @params_map
+    def adapt_get_obs_local_part_tests_for_get_local_part(
+            *args,
+            defects=[],
+            **kw,
+        ):
+        defects = list(defects)
+        if any(
+            x in (
+                repeated_dot_in_local_part_defect,
+                misplaced_backslash_defect,
+                missing_dot_in_local_part_defect,
+                leading_dot_in_local_part_defect,
+                trailing_dot_in_local_part_defect,
+                ) for x in defects
+            ):
+            defects.append(not_even_obs_local_part_defect)
+        else:
+            defects.append(non_dot_atom_local_part_obs_defect)
+        yield '', C(*args, defects=defects, **kw)
+
+    params_test_get_local_part = for_each_api(
+
+        # An RFC compliant local part can be a dot atom or a quoted string, so
+        # it should pass some of the tests for those.
+
+        add_ew_defects(
+            adapt_get_dot_atom_tests_for_get_local_part(
+                include_unless(
+                    lambda n, *a, **k:
+                        n.has_any(
+                            # Get local part handles multiple atoms.
+                            'two_ew_two_atoms',
+                            'atom_ends_at_noncfws',
+                            # There are some things get_dot_atom raises for
+                            # that get_local_part treats as obs-local-part.
+                            'two_dots_raises',
+                            'trailing_dot_raises',
+                            'space_ends_dot_atom',
+                            # XXX XXX These need a logic fix to whitespace
+                            # handling in get_local_part itself.
+                            'ew_and_comments_no_ws',
+                            'ew_and_empty_comments_no_ws',
+                            )
+                        or
+                            # get_local_part handles quoted strings (tested
+                            # above), and leading dots or \ are handled as
+                            # obs-local-part.
+                            n.has_any(
+                                'up_to_special',
+                                'leading_special_raises',
+                                'no_atom_before_special',
+                                'no_atext_before_special_or_wsp',
+                                'atom_ends_at_special',
+                                'ends_at_special_after_comment',
+                                'ends_at_special',
+                                )
+                            and n.has_any(
+                                'reverse_solidus',
+                                'quotation_mark',
+                                'full_stop',
+                                ),
+                    label='from_test_get_dot_atom',
+                    )(params_test_get_dot_atom),
+                ),
+            ),
+
+        add_ew_defects(
+            adapt_get_quoted_string_tests_for_get_local_part(
+                include_unless(
+                    lambda n, *a, **k: n.has_any(
+                        # These tests have an atom first; get_quoted_string
+                        # raises, but get_local_part parses the atom.  Atoms
+                        # are tested above.
+                        'no_quoted_string',
+                        'no_leading_dquote_before_non_ws',
+                        # A local part only ends at specials other than " and .
+                        'qs_ends_at_noncfws',
+                        'ew_after_dquote',
+                        'encoded_word_after_dquote_with_no_ws',
+                        'end_dquote_mid_word',
+                        ),
+                    label='from_test_get_quoted_string',
+                    )(params_test_get_quoted_string),
+                ),
+            ),
+
+        add_ew_defects(
+            add_label('from_test_get_obs_local_part')(
+                adapt_get_obs_local_part_tests_for_get_local_part(
+                    params_test_get_obs_local_part,
+                    ),
+                ),
+            ),
+
+        simple = C(
+            'dinsdale@python.org',
+            remainder='@python.org',
+            local_part='dinsdale',
+            ),
+
+        with_dot = C(
             'Fred.A.Johnson@python.org',
-            'Fred.A.Johnson',
-            'Fred.A.Johnson',
-            [],
-            '@python.org')
-        self.assertEqual(local_part.local_part, 'Fred.A.Johnson')
+            remainder='@python.org',
+            local_part='Fred.A.Johnson',
+            ),
 
-    def test_get_local_part_with_whitespace(self):
-        local_part = self._test_get_x(parser.get_local_part,
+        with_whitespace = C(
             ' Fred.A.Johnson  @python.org',
-            ' Fred.A.Johnson  ',
-            ' Fred.A.Johnson ',
-            [],
-            '@python.org')
-        self.assertEqual(local_part.local_part, 'Fred.A.Johnson')
+            value=' Fred.A.Johnson ',
+            remainder='@python.org',
+            local_part='Fred.A.Johnson',
+            ),
 
-    def test_get_local_part_with_cfws(self):
-        local_part = self._test_get_x(parser.get_local_part,
+        with_cfws = C(
             ' (foo) Fred.A.Johnson (bar (bird))  @python.org',
-            ' (foo) Fred.A.Johnson (bar (bird))  ',
-            ' Fred.A.Johnson ',
-            [],
-            '@python.org')
-        self.assertEqual(local_part.local_part, 'Fred.A.Johnson')
-        self.assertEqual(local_part[0][0].comments, ['foo'])
-        self.assertEqual(local_part[0][2].comments, ['bar (bird)'])
+            value=' Fred.A.Johnson ',
+            remainder='@python.org',
+            comments=['foo', 'bar (bird)'],
+            local_part='Fred.A.Johnson',
+            ),
 
-    def test_get_local_part_simple_quoted(self):
-        local_part = self._test_get_x(parser.get_local_part,
-            '"dinsdale"@python.org', '"dinsdale"', '"dinsdale"', [], '@python.org')
-        self.assertEqual(local_part.token_type, 'local-part')
-        self.assertEqual(local_part.local_part, 'dinsdale')
+        simple_quoted = C(
+            '"dinsdale"@python.org',
+            remainder='@python.org',
+            local_part='dinsdale',
+            ),
 
-    def test_get_local_part_with_quoted_dot(self):
-        local_part = self._test_get_x(parser.get_local_part,
+        with_quoted_dot = C(
             '"Fred.A.Johnson"@python.org',
-            '"Fred.A.Johnson"',
-            '"Fred.A.Johnson"',
-            [],
-            '@python.org')
-        self.assertEqual(local_part.local_part, 'Fred.A.Johnson')
+            remainder='@python.org',
+            local_part='Fred.A.Johnson',
+            ),
 
-    def test_get_local_part_quoted_with_whitespace(self):
-        local_part = self._test_get_x(parser.get_local_part,
+        quoted_with_whitespace = C(
             ' "Fred A. Johnson"  @python.org',
-            ' "Fred A. Johnson"  ',
-            ' "Fred A. Johnson" ',
-            [],
-            '@python.org')
-        self.assertEqual(local_part.local_part, 'Fred A. Johnson')
+            value=' "Fred A. Johnson" ',
+            remainder='@python.org',
+            local_part='Fred A. Johnson',
+            ),
 
-    def test_get_local_part_quoted_with_cfws(self):
-        local_part = self._test_get_x(parser.get_local_part,
+        quoted_with_cfws = C(
             ' (foo) " Fred A. Johnson " (bar (bird))  @python.org',
-            ' (foo) " Fred A. Johnson " (bar (bird))  ',
-            ' " Fred A. Johnson " ',
-            [],
-            '@python.org')
-        self.assertEqual(local_part.local_part, ' Fred A. Johnson ')
-        self.assertEqual(local_part[0][0].comments, ['foo'])
-        self.assertEqual(local_part[0][2].comments, ['bar (bird)'])
+            value=' " Fred A. Johnson " ',
+            remainder='@python.org',
+            comments=['foo', 'bar (bird)'],
+            local_part=' Fred A. Johnson ',
+            ),
 
+        empty_raises = C(
+            '',
+            exception=(errors.HeaderParseError, '.*'),
+            ),
 
-    def test_get_local_part_simple_obsolete(self):
-        local_part = self._test_get_x(parser.get_local_part,
-            'Fred. A.Johnson@python.org',
-            'Fred. A.Johnson',
-            'Fred. A.Johnson',
-            [errors.ObsoleteHeaderDefect],
-            '@python.org')
-        self.assertEqual(local_part.local_part, 'Fred.A.Johnson')
+        no_part_raises = C(
+            ' (foo) ',
+            exception=(errors.HeaderParseError, '.*'),
+            ),
 
-    def test_get_local_part_complex_obsolete_1(self):
-        local_part = self._test_get_x(parser.get_local_part,
-            ' (foo )Fred (bar).(bird) A.(sheep)Johnson."and  dogs "@python.org',
-            ' (foo )Fred (bar).(bird) A.(sheep)Johnson."and  dogs "',
-            ' Fred . A. Johnson.and  dogs ',
-            [errors.ObsoleteHeaderDefect],
-            '@python.org')
-        self.assertEqual(local_part.local_part, 'Fred.A.Johnson.and  dogs ')
+        special_instead_raises = C(
+            ' (foo) @python.org',
+            exception=(errors.HeaderParseError, '.*'),
+            ),
 
-    def test_get_local_part_complex_obsolete_invalid(self):
-        local_part = self._test_get_x(parser.get_local_part,
-            ' (foo )Fred (bar).(bird) A.(sheep)Johnson "and  dogs"@python.org',
-            ' (foo )Fred (bar).(bird) A.(sheep)Johnson "and  dogs"',
-            ' Fred . A. Johnson and  dogs',
-            [errors.InvalidHeaderDefect]*2,
-            '@python.org')
-        self.assertEqual(local_part.local_part, 'Fred.A.Johnson and  dogs')
+        unicode = C(
+            'exámple@example.com',
+            remainder='@example.com',
+            local_part='exámple',
+            ),
 
-    def test_get_local_part_empty_raises(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_local_part('')
+        ew_non_ascii = C(
+            '=?utf-8?q?ex=c3=a1mple?=@example.com',
+            stringified='exámple',
+            remainder='@example.com',
+            defects=[
+                # XXX XXX there should be exactly one missing whitespace here,
+                # but it will change until we refactor get_local_part.
+                #missing_whitespace_after_ew_defect,
+                ew_in_local_part_defect,
+                ],
+            local_part='exámple',
+            ew_indexes=[0],
+            ),
 
-    def test_get_local_part_no_part_raises(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_local_part(' (foo) ')
+        # Since we've decided to decode encoded words, this is a "valid"
+        # dot-atom.  But if you clear up the whitespace defects whitespace, it
+        # turns into an obs_local_part because of the whitespace.
+        sort_of_valid_ew_dot_atom = C(
+            '=?utf-8?q?foo_?=.=?utf-8?q?_bar?=.bird',
+            stringified='foo . bar.bird',
+            value="foo . bar.bird",
+            local_part="foo . bar.bird",
+            defects=[
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                # XXX XXX There should also be an ew in local part defect.
+                *[ew_in_local_part_defect]*2,
+                ],
+            ew_indexes=[0, 17],
+            ),
 
-    def test_get_local_part_special_instead_raises(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_local_part(' (foo) @python.org')
+        )
 
-    def test_get_local_part_trailing_dot(self):
-        local_part = self._test_get_x(parser.get_local_part,
-            ' borris.@python.org',
-            ' borris.',
-            ' borris.',
-            [errors.InvalidHeaderDefect]*2,
-            '@python.org')
-        self.assertEqual(local_part.local_part, 'borris.')
-
-    def test_get_local_part_trailing_dot_with_ws(self):
-        local_part = self._test_get_x(parser.get_local_part,
-            ' borris. @python.org',
-            ' borris. ',
-            ' borris. ',
-            [errors.InvalidHeaderDefect]*2,
-            '@python.org')
-        self.assertEqual(local_part.local_part, 'borris.')
-
-    def test_get_local_part_leading_dot(self):
-        local_part = self._test_get_x(parser.get_local_part,
-            '.borris@python.org',
-            '.borris',
-            '.borris',
-            [errors.InvalidHeaderDefect]*2,
-            '@python.org')
-        self.assertEqual(local_part.local_part, '.borris')
-
-    def test_get_local_part_leading_dot_after_ws(self):
-        local_part = self._test_get_x(parser.get_local_part,
-            ' .borris@python.org',
-            ' .borris',
-            ' .borris',
-            [errors.InvalidHeaderDefect]*2,
-            '@python.org')
-        self.assertEqual(local_part.local_part, '.borris')
-
-    def test_get_local_part_double_dot_raises(self):
-        local_part = self._test_get_x(parser.get_local_part,
-            ' borris.(foo).natasha@python.org',
-            ' borris.(foo).natasha',
-            ' borris. .natasha',
-            [errors.InvalidHeaderDefect]*2,
-            '@python.org')
-        self.assertEqual(local_part.local_part, 'borris..natasha')
-
-    def test_get_local_part_quoted_strings_in_atom_list(self):
-        local_part = self._test_get_x(parser.get_local_part,
-            '""example" example"@example.com',
-            '""example" example"',
-            'example example',
-            [errors.InvalidHeaderDefect]*3,
-            '@example.com')
-        self.assertEqual(local_part.local_part, 'example example')
-
-    def test_get_local_part_valid_and_invalid_qp_in_atom_list(self):
-        local_part = self._test_get_x(parser.get_local_part,
-            r'"\\"example\\" example"@example.com',
-            r'"\\"example\\" example"',
-            r'\example\\ example',
-            [errors.InvalidHeaderDefect]*5,
-            '@example.com')
-        self.assertEqual(local_part.local_part, r'\example\\ example')
 
     # get_dtext
 
@@ -2269,7 +5353,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             ', (foo),,(bar)',
             ', (foo),,(bar)',
             ', ,, ',
-            [errors.ObsoleteHeaderDefect],
+            [errors.ObsoleteHeaderDefect] * 5,
             '')
         self.assertEqual(group_list.token_type, 'group-list')
         self.assertEqual(len(group_list.mailboxes), 0)

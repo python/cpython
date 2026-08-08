@@ -2,6 +2,15 @@
 # Author: Barry Warsaw
 # Contact: email-sig@python.org
 
+# XXX POSTDEP: delete from here...
+def __getattr__(name):
+    if f'_deprecated_{name}' not in globals():
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    import warnings
+    warnings._deprecated(name, remove=(3, 18))
+    return globals()[f'_deprecated_{name}']
+
+# XXX POSTDEP: ...to here
 """email package exception classes."""
 
 
@@ -108,10 +117,12 @@ class NonPrintableDefect(HeaderDefect):
 class ObsoleteHeaderDefect(HeaderDefect):
     """Header uses syntax declared obsolete by RFC 5322"""
 
-class NonASCIILocalPartDefect(HeaderDefect):
-    """Unused. Note: this error is deprecated and may be removed in the future."""
+# XXX POSTDEP: delete from here...
+class _deprecated_NonASCIILocalPartDefect(HeaderDefect):
+    """Unused.  This error is deprecated and will be removed in the future."""
     # RFC 6532 permits a non-ASCII local-part. _header_value_parser previously
     # treated this as a parse-time defect (when parsing Unicode, but not bytes).
 
+# XXX POSTDEP: ...to here
 class InvalidDateDefect(HeaderDefect):
     """Header has unparsable or invalid date"""

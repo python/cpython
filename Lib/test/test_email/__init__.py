@@ -1,11 +1,15 @@
-import os
-import unittest
 import collections
 import email
+import os
+import re
+import unicodedata
+import unittest
+from curses.ascii import controlnames
 from email.message import Message
 from email._policybase import compat32
 from test.support import load_package_tests
 from test.test_email import __file__ as landmark
+from test.test_email.params import C, params_map, ParamsMixin
 
 # Load all tests in package
 def load_tests(*args):
@@ -18,9 +22,63 @@ def openfile(filename, *args, **kws):
     path = os.path.join(os.path.dirname(landmark), 'data', filename)
     return open(path, *args, **kws)
 
+def charname(c):
+    try:
+        n = unicodedata.name(c).lower().replace(' ', '_').replace('-', '_')
+    except ValueError:
+        try:
+            n = controlnames[ord(c)]
+        except IndexError:
+            assert c == '\x7F'
+            return 'DEL'
+    return n
+
+def for_each_character(chars, skip=''):
+    """Create a filter that expands each input into a test per character.
+
+    chars should be an iterable of characters (eg a string), as should skip.
+
+    For each character in chars that is not in skip, the filter should process
+    all arguments and keywords, creating a new call spec.  For any objects and
+    (recursively} sub-objects found that have a 'format' attribute, replace the
+    object in the new call spec with the results of calling the object's format
+    method, passing the method three keyword arguments: 'char', set to the
+    character, 'echar', set to the character passed through re.escape, and
+    'erchar', set to the repr of the character (without the quotes) passed
+    through re.escape.
+
+    Process any dictionary object's values, but not its keys.  Assume that any
+    other object that is an iterator can be recreated by passing its type a
+    list of objects.
+
+    Return the character name as derived from unicodedata or the curses ascii
+    module as as the name string to be added to the test name.
+
+    """
+    chars = {charname(v): v for v in chars if v not in skip}
+    @params_map
+    def for_each_character_in(*args, **kw):
+        for name, c in chars.items():
+            subs = dict(
+                char=c,
+                echar=re.escape(c),
+                erchar=re.escape(repr(c)[1:-1]),
+                )
+            yield name, C(*args, **kw).fmtall(**subs)
+    return for_each_character_in
+
 
 # Base test class
-class TestEmailBase(unittest.TestCase):
+class TestEmailBase(ParamsMixin, unittest.TestCase):
+
+    # XXX XXX Delete this at end of refactor.  We will be putting in temporary
+    # empty parameter lists during the refactoring process.
+    paramsRequired = False
+
+    # XXX XXX temporary usability hack, edit this out before publishing PR.
+    def __str__(self):
+        from unittest.util import strclass
+        return "%s.%s" % (strclass(self.__class__), self._testMethodName)
 
     maxDiff = None
     # Currently the default policy is compat32.  By setting that as the default
@@ -65,13 +123,90 @@ class TestEmailBase(unittest.TestCase):
         """Our byte strings are really encoded strings; improve diff output"""
         self.assertEqual(self._bytes_repr(first), self._bytes_repr(second))
 
-    def assertDefectsEqual(self, actual, expected):
-        self.assertEqual(len(actual), len(expected), actual)
-        for i in range(len(actual)):
-            self.assertIsInstance(actual[i], expected[i],
-                                    'item {}'.format(i))
+    def assertDefectsMatch(self, actual, expected):
+        """Assert list of defects matches a list of expected defect patterns
+
+        actual should be a list of actual defect instances.  expected should
+        a list of patterns.  Match the patterns against the actual list,
+        and report any defects that do not match a pattern or any patterns
+        that do not match a defect.  Matching must be one to one: if there
+        are two identical defects in the actual list, it should be an error
+        if there are not two patterns that match those defects in the
+        expected list.
+
+        A pattern can be one of three things:
+            1) a defect class (eg: InvalidHeaderDefect)
+            2) a tuple of (defect_class, regex), where the regex must
+                match the message produced by calling str on the actual defect
+            3) a tuple of (callable, *args) where calling the callable
+                with the args must produce a tuple as in (2).
+
+        """
+        aleft = list(actual)
+        eleft = []
+        for x in expected:
+            p = None
+            while not p:
+                if type(x) is type:
+                    p = (x, '.*')
+                elif not hasattr(x, '__getitem__'):
+                    raise ValueError(f'invalid defect pattern: {x!r}')
+                elif type(x[0]) is type:
+                    p = x
+                elif callable(x[0]):
+                    x = x[0](*x[1:])
+                else:
+                    raise ValueError(f'invalid defect pattern: {x!r}')
+            eleft.append(p)
+        for t, s in list(eleft):
+            for a in aleft:
+                if type(a) == t and re.search(s, str(a), flags=re.I):
+                    eleft.remove((t, s))
+                    aleft.remove(a)
+                    break
+        if eleft or aleft:
+            areprs = [repr((type(a), str(a))) for a in aleft]
+            ereprs = [repr(e) for e in eleft]
+            matched = f"{len(actual) - len(aleft)} defects matched"
+            if len(eleft) == len(aleft):
+                raise self.failureException(
+                    f"{matched}, {len(aleft)} defects did not match:"
+                    f"\n  unmatched expected:\n    {'\n    '.join(ereprs)}"
+                    f"\n  unmatched actual:\n    {'\n    '.join(areprs)}"
+                    )
+            if len(eleft) == 0:
+                raise self.failureException(
+                    f"{matched}, {len(aleft)} extra defects:"
+                    f"\n  {'\n  '.join(areprs)}"
+                    )
+            if len(aleft) == 0:
+                raise self.failureException(
+                    f"{matched}, {len(eleft)} missing defects:"
+                    f"\n  {'\n  '.join(ereprs)}"
+                    )
+            else:
+                raise self.failureException(
+                    f"Expected {len(expected)} defects but got {len(actual)};"
+                    f" {matched}, {len(eleft)} missing, {len(aleft)} extra:"
+                    f"\n  unmatched actual:\n    {'\n    '.join(areprs)}"
+                    f"\n  unmatched expected:\n    {'\n    '.join(ereprs)}"
+                    )
+
+    # XXX assertDefectsEqual can go away when it is no longer used.
+    assertDefectsEqual = assertDefectsMatch
 
 
+# A more stringent version of the test.support check_warnings helper.
+from contextlib import contextmanager
+from test.support.warnings_helper import _filterwarnings
+@contextmanager
+def check_all_warnings(*filters):
+    """Raise an error if the generated warnings to not exactly match filters."""
+    return _filterwarnings(filters)
+
+
+# XXX Don't use this for new tests, use params instead.  @parameterized will be
+# deprecated and removed eventually.
 def parameterize(cls):
     """A test method parameterization class decorator.
 

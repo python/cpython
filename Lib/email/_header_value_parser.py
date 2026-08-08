@@ -70,20 +70,25 @@ XXX: provide complete list of token types.
 import re
 import sys
 import urllib   # For urllib.parse.unquote
-from string import hexdigits
 from operator import itemgetter
 from email import _encoded_words as _ew
 from email import errors
 from email import utils
+from functools import partial, wraps
 
 #
 # Useful constants and functions
 #
 
+# https://datatracker.ietf.org/doc/html/rfc5322#section-2.2
 _WSP = ' \t'
 WSP = set(_WSP)
+# This isn't an RFC concept but is useful for parsing.
 CFWS_LEADER = WSP | set('(')
+# https://datatracker.ietf.org/doc/html/rfc5322#section-3.2.3
 SPECIALS = set(r'()<>@,:;.\"[]')
+# https://datatracker.ietf.org/doc/html/rfc5322#section-3.2.3
+# These are the characters that *can't* appear in an atom/dot-atom (non-atext).
 ATOM_ENDS = SPECIALS | WSP
 DOT_ATOM_ENDS = ATOM_ENDS - set('.')
 # '.', '"', and '(' do not end phrases in order to support obs-phrase
@@ -114,7 +119,7 @@ def quote_string(value):
 
 
 # Match a RFC 2047 word, looks like =?utf-8?q?someword?=
-rfc2047_matcher = re.compile(r'''
+_deprecated_rfc2047_matcher = re.compile(r'''
    =\?            # literal =?
    [^?]*          # charset
    \?             # literal ?
@@ -138,6 +143,7 @@ class TokenList(list):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         self.defects = []
+        self.ew_indexes = []
 
     def __str__(self):
         return ''.join(str(x) for x in self)
@@ -145,6 +151,23 @@ class TokenList(list):
     def __repr__(self):
         return '{}({})'.format(self.__class__.__name__,
                              super().__repr__())
+
+    def append(self, value):
+        super().append(value)
+        if hasattr(value, 'ew_indexes'):
+            self.ew_indexes += value.ew_indexes
+
+    def push(self, value):
+        super().insert(0, value)
+        if hasattr(value, 'ew_indexes'):
+            self.ew_indexes[:0] = value.ew_indexes
+
+    def extend(self, value):
+        super().extend(value)
+        if hasattr(value, 'defects'):
+            self.defects.extend(value.defects)
+        if hasattr(value, 'ew_indexes'):
+            self.ew_indexes += value.ew_indexes
 
     @property
     def value(self):
@@ -155,7 +178,10 @@ class TokenList(list):
         return sum((x.all_defects for x in self), self.defects)
 
     def startswith_fws(self):
-        return self[0].startswith_fws()
+        return self and self[0].startswith_fws()
+
+    def endswith_fws(self):
+        return self and self[-1].endswith_fws()
 
     as_ew_allowed = True
 
@@ -946,6 +972,9 @@ class WhiteSpaceTerminal(Terminal):
     def startswith_fws(self):
         return self and self[0] in WSP
 
+    def endswith_fws(self):
+        return self and self[-1] in WSP
+
 
 class ValueTerminal(Terminal):
 
@@ -954,6 +983,9 @@ class ValueTerminal(Terminal):
         return self
 
     def startswith_fws(self):
+        return False
+
+    def endswith_fws(self):
         return False
 
 
@@ -967,7 +999,7 @@ class EWWhiteSpaceTerminal(WhiteSpaceTerminal):
         return ''
 
 
-class _InvalidEwError(errors.HeaderParseError):
+class _deprecated__InvalidEwError(errors.HeaderParseError):
     """Invalid encoded word found while parsing headers."""
 
 
@@ -980,31 +1012,146 @@ ListSeparator.as_ew_allowed = False
 ListSeparator.syntactic_break = False
 RouteComponentMarker = ValueTerminal('@', 'route-component-marker')
 
+
+# XXX POSTDEP: Remove from here...
+#
+# Temporary backward compatibility and deprecation support.  Although this is
+# an internal module and not a public API, and therefore we *will* eventually
+# remove the backward compatibility support, we're still doing backward
+# compatibility to minimize disruption for anyone who made use of these
+# internal APIs.
+#
+
+OLDAPIREMVER = (3, 18)
+
+_REPLACED_NAMES = dict(
+    )
+
+def __getattr__(name):
+    from warnings import _deprecated, _DEPRECATED_MSG
+    if f'_deprecated_{name}' not in globals():
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    if name in _REPLACED_NAMES:
+        _deprecated(
+            name,
+            _DEPRECATED_MSG + f", try {_REPLACED_NAMES[name]!r} instead",
+            remove=OLDAPIREMVER,
+            )
+    else:
+        _deprecated(name, remove=OLDAPIREMVER)
+    return globals()[f'_deprecated_{name}']
+
+def _replaced_with(name):
+    def _(func):
+        _REPLACED_NAMES[func.__name__.removeprefix('_deprecated_')] = name
+        return func
+    return _
+
+_API_CHANGE_MSG = (
+    "The API of the internal function {name!r} has changed; the backward"
+    " compatibility wrapper will be removed in {remove}"
+    )
+
+def _deprecate_old_api(func):
+    @wraps(func)
+    def dispatch(value, *args, **kw):
+        if args and isinstance(args[0], int):
+            return func(value, *args, **kw)
+        # The runtime error is going to say the function should be removed, but
+        # it's only the decorator that needs to be removed.
+        from warnings import _deprecated
+        _deprecated(func.__name__, _API_CHANGE_MSG, remove=OLDAPIREMVER)
+        result, start, *other = func(value, 0, *args, **kw)
+        return result, value[start:], *other
+    return dispatch
+
+# A specialized deprecation for some functions that should be raising
+# errors when handed input that is empty or doesn't contain the expected
+# value, but current return an empty object instead.  The return signature
+# of the wrapped function must be either (result, start) or (result, start,
+# exception, warning).  If present, 'exception' will be raised from the new
+# api, and 'warning' will be passed to 'warn' as a DeprecationWarning for
+# the old api.
+def _deprecate_old_api_and_lack_of_raise_on_invalid_input(func):
+    @wraps(func)
+    def dispatch(value, *args, **kw):
+        if args and isinstance(args[0], int):
+            result, start, *error = func(value, *args, **kw)
+            if error:
+                raise error[0]
+            return result, start
+        from warnings import _deprecated, warn
+        _deprecated(func.__name__, _API_CHANGE_MSG, remove=OLDAPIREMVER)
+        result, start, *error = func(value, 0, *args, **kw)
+        if error:
+            warn(error[1], DeprecationWarning, stacklevel=2)
+        return result, value[start:]
+    return dispatch
+
+# XXX XXX By the end of the refactoring, calls to _deprecate will be replaced by
+# renaming the functions with _deprecated_ in front and adding any new names to
+# _REPLACED_NAMES.  The deprecation testing will need to be adjusted.  This
+# decorator should not exist in the final version of the branch.
+
+from functools import singledispatch
+from collections.abc import Callable
+
+def __deprecate(msg, new_name=None):
+    def _(func):
+        @wraps(func)
+        def deprecate(*args, **kw):
+            from warnings import _deprecated
+            _deprecated(func.__name__, msg, remove=OLDAPIREMVER)
+            return func(*args, **kw)
+        return deprecate
+    return _
+
+@singledispatch
+def _deprecate(new_name):
+    from warnings import _DEPRECATED_MSG
+    return __deprecate(_DEPRECATED_MSG + f", try {new_name} instead")
+
+@_deprecate.register(Callable)
+def _(func):
+    from warnings import _DEPRECATED_MSG
+    return __deprecate(_DEPRECATED_MSG)(func)
+
+# XXX POSTDEP: ...to here.
+
+
 #
 # Parser
 #
 
 # Parse strings according to RFC822/2047/2822/5322 rules.
 #
-# This is a stateless parser.  Each get_XXX function accepts a string and
-# returns either a Terminal or a TokenList representing the RFC object named
-# by the method and a string containing the remaining unparsed characters
-# from the input.  Thus a parser method consumes the next syntactic construct
-# of a given type and returns a token representing the construct plus the
-# unparsed remainder of the input string.
+# This is a stateless parser.  Each get_XXX function accepts a string and a
+# starting position and returns either a Terminal or a TokenList representing
+# the RFC (or local concept) object named by the method and a pointer to
+# remaining unparsed characters in the string.  Thus a parser method consumes
+# the next syntactic construct of a given type and returns a token representing
+# the construct plus a pointer to the unparsed remainder of the input string.
 #
 # For example, if the first element of a structured header is a 'phrase',
 # then:
 #
-#     phrase, value = get_phrase(value)
+#     phrase, rest = get_phrase(value, start)
 #
-# returns the complete phrase from the start of the string value, plus any
-# characters left in the string after the phrase is removed.
+# returns a complete 'phrase' from 'start' to 'rest' in the value.
 
-_wsp_splitter = re.compile(r'([{}]+)'.format(''.join(WSP))).split
-_non_atom_end_matcher = re.compile(r"[^{}]+".format(
+# Often used Defects.  XXX These could become subclasses.
+
+_MissingWhitespaceBeforeEWDefect = errors.InvalidHeaderDefect(
+    "missing whitespace before encoded-word",
+    )
+
+_MissingWhitespaceAfterEWDefect = errors.InvalidHeaderDefect(
+    "missing whitespace after encoded-word",
+    )
+
+_deprecated__wsp_splitter = re.compile(r'([{}]+)'.format(''.join(WSP))).split
+_deprecated__non_atom_end_matcher = re.compile(r"[^{}]+".format(
     re.escape(''.join(ATOM_ENDS)))).match
-_non_printable_finder = re.compile(r"[\x00-\x20\x7F]").findall
 _non_token_end_matcher = re.compile(r"[^{}]+".format(
     re.escape(''.join(TOKEN_ENDS)))).match
 _non_attribute_end_matcher = re.compile(r"[^{}]+".format(
@@ -1012,6 +1159,25 @@ _non_attribute_end_matcher = re.compile(r"[^{}]+".format(
 _non_extended_attribute_end_matcher = re.compile(r"[^{}]+".format(
     re.escape(''.join(EXTENDED_ATTRIBUTE_ENDS)))).match
 
+# https://datatracker.ietf.org/doc/html/rfc5322#section-2.2 for non_printable.
+_non_printable_finder = re.compile(r"[\x00-\x20\x7F]").findall
+def _make_xtext(text, terminal_class, token_type):
+    """Return text wrapped in terminal_class of token_type, with defects if any.
+
+    If text contains non-printable ASCII or undecodable bytes, add those
+    defects to the returned terminal_class object.
+
+    """
+    vt = terminal_class(text, token_type=token_type)
+    non_printables = _non_printable_finder(text)
+    if non_printables:
+        vt.defects.append(errors.NonPrintableDefect(non_printables))
+    if utils._has_surrogates(text):
+        vt.defects.append(errors.UndecodableBytesDefect(
+            "Non-ASCII characters found in header token"))
+    return vt
+
+@_deprecate('_get_xtext')
 def _validate_xtext(xtext):
     """If input token contains ASCII non-printables, register a defect."""
 
@@ -1022,6 +1188,23 @@ def _validate_xtext(xtext):
         xtext.defects.append(errors.UndecodableBytesDefect(
             "Non-ASCII characters found in header token"))
 
+# _make_non_match_re is for use by the callers of _get_xtext.
+_make_non_match_re = lambda s: re.compile(rf'[^{re.escape(s)}]+')
+def _get_xtext(value, start, regex, terminal_class, token_type, err=None):
+    """Return text matching regex via _make_xtext, raise err if no match.
+
+    Use the regex 'match' to identify a substring.  If there is no match, raise
+    err.  If there is a match, pass it to _make_xtext to create a
+    terminal_class of terminal_type.  Return the terminal and the index of the
+    end of the match.
+
+    """
+    m = regex.match(value, start)
+    if m is None:
+        raise err
+    return _make_xtext(m.group(), terminal_class, token_type), m.end()
+
+@_deprecate('content_getter')
 def _get_ptext_to_endchars(value, endchars):
     """Scan printables/quoted-pairs until endchars and return unquoted ptext.
 
@@ -1033,7 +1216,7 @@ def _get_ptext_to_endchars(value, endchars):
     """
     if not value:
         return '', '', False
-    fragment, *remainder = _wsp_splitter(value, 1)
+    fragment, *remainder = _deprecated__wsp_splitter(value, 1)
     vchars = []
     escape = False
     had_qp = False
@@ -1047,6 +1230,7 @@ def _get_ptext_to_endchars(value, endchars):
                 continue
         if escape:
             escape = False
+            had_qp = True
         elif fragment[pos] in endchars:
             break
         vchars.append(fragment[pos])
@@ -1054,135 +1238,310 @@ def _get_ptext_to_endchars(value, endchars):
         pos = pos + 1
     return ''.join(vchars), ''.join([fragment[pos:]] + remainder), had_qp
 
-def get_fws(value):
+_wsp_matcher = re.compile(fr'[{_WSP}]+').match
+@_deprecate_old_api_and_lack_of_raise_on_invalid_input
+def get_fws(value, start):
     """FWS = 1*WSP
 
-    This isn't the RFC definition.  We're using fws to represent tokens where
-    folding can be done, but when we are parsing the *un*folding has already
-    been done so we don't need to watch out for CRLF.
+    If start does not point to a WSP character in value, raise a HeaderParse
+    error.  Otherwise, return a WhiteSpaceTerminal of token_type 'fws'
+    containing all of the WSP characters from start to the next non-WSP
+    character (or the end of value), and the index of the non-WSP character (or
+    the len of value).
+
+    This is a subset of the RFC 5322 definition of FWS: the strings passed to
+    the parser should already have been unfolded, so there should be no
+    legitimate CRLF characters in value.
 
     """
-    newvalue = value.lstrip()
-    fws = WhiteSpaceTerminal(value[:len(value)-len(newvalue)], 'fws')
-    return fws, newvalue
+    m = _wsp_matcher(value, start)
+    if m is None:
+        # XXX POSTDEP: change this to raise the exception.
+        return (
+            WhiteSpaceTerminal('', 'fws'),
+            start,
+            errors.HeaderParseError(
+                f'expected whitespace but found {value[start:]!r}'
+                ),
+            (
+                "Calling get_fws when there is no whitespace at the start"
+                " is deprecated and will raise an error in the future."
+                ),
+            )
+    fws = WhiteSpaceTerminal(m.group(), 'fws')
+    return fws, m.end()
 
-def get_encoded_word(value, terminal_type='vtext'):
+# We need a custom deprecation for this one because we want terminal_type to be
+# required, a return of None instead of exceptions, and for the trailing
+# whitespace defect addition to move elsewhere.
+def _deprecate_old_encoded_word_api(func):
+    @wraps(func)
+    def dispatch(value, *args, **kw):
+        if args and isinstance(args[0], int):
+            return func(value, *args, **kw)
+        from warnings import _deprecated
+        _deprecated(func.__name__, _API_CHANGE_MSG, remove=OLDAPIREMVER)
+        kw.setdefault('terminal_type', args[0] if args else 'vtext')
+        result = func(value, 0, **kw)
+        if result is None:
+            raise _deprecated__InvalidEwError(
+                f"expected encoded word but found {value}",
+                )
+        result, start = result
+        ew, value = result, value[start:]
+        if value and value[0] not in WSP:
+            ew.defects.append(_MissingWhitespaceAfterEWDefect)
+        return ew, value
+    return dispatch
+
+# This match is generous; defects are detected during ew parsing.
+_ew_finder = re.compile(r'''
+    =\?                     # literal =?
+    (                       # We might have 'charset' or 'charset*lang' next.
+      (                       # First case: no *
+        (?P<csnolang>[^?*]*?)   # non-greedy to next ? if no * is the charset
+        \?                      # literal ?
+        )
+      |
+      (                       # Second case: charset*lang
+        (?P<cslang>[^?*]*?)     # non-greedy to * is the charset
+        \*                      # literal *
+        (?P<lang>[^?]*?)        # non-greedy to next ? is the lang
+        \?                      # literal ?
+        )
+      )
+    (?P<cte>[^?]*?)         # non-greedy up to the next ? is the CTE
+    \?                      # literal ?
+    (?P<encoded>.*?)        # non-greedy to next ?= is the encoded string
+    \?=                     # literal ?=
+    ''', re.VERBOSE | re.DOTALL).match
+_wsp_finder = re.compile(rf'[{_WSP}]+').search
+_non_wsp_re = _make_non_match_re(_WSP)
+@_deprecate_old_encoded_word_api
+def get_encoded_word(value, start, terminal_type, *, decode_qp=False):
     """ encoded-word = "=?" charset "?" encoding "?" encoded-text "?="
 
+    If something interpretable as an encoded word occurs starting at start,
+    return an EncodedWord token list with the decoded text decomposed into
+    whitespace and non-whitespace value terminals, and the index of the last
+    character of the encoded word (the '=') plus one.  Register a defect if
+    there is un-encoded whitespace inside the encoded word, and register
+    defects for any any non-printable or invalid characters in the
+    non-whitespace ValueTerminals.
+
+    If decode_qp is True, decode any quoted pairs in the payload of the encoded
+    word before decoding.
+
+    If the characters starting at start are not interpretable as an encoded
+    word such that it can be decoded from the content transfer encoding, return
+    None.
+
     """
+    ew_match = _ew_finder(value, start)
+    if ew_match is None:
+        return
     ew = EncodedWord()
-    if not value.startswith('=?'):
-        raise errors.HeaderParseError(
-            "expected encoded word but found {}".format(value))
-    tok, *remainder = value[2:].split('?=', 1)
-    if tok == value[2:]:
-        raise errors.HeaderParseError(
-            "expected encoded word but found {}".format(value))
-    remstr = ''.join(remainder)
-    if (len(remstr) > 1 and
-        remstr[0] in hexdigits and
-        remstr[1] in hexdigits and
-        tok.count('?') < 2):
-        # The ? after the CTE was followed by an encoded word escape (=XX).
-        rest, *remainder = remstr.split('?=', 1)
-        tok = tok + '?=' + rest
-    if len(tok.split()) > 1:
-        ew.defects.append(errors.InvalidHeaderDefect(
-            "whitespace inside encoded word"))
-    ew.cte = value
-    value = ''.join(remainder)
+    csnolang, cslang, lang, cte, encoded = ew_match.group(
+        'csnolang', 'cslang', 'lang', 'cte', 'encoded')
+    charset, lang = cslang or csnolang or '', lang or ''
+    ew.charset = charset.strip()
+    ew.lang = lang.strip()
+    encoded, _ = _qp_unquote(encoded) if decode_qp else (encoded, 0)
     try:
-        text, charset, lang, defects = _ew.decode('=?' + tok + '?=')
-    except (ValueError, KeyError):
-        raise _InvalidEwError(
-            "encoded word format invalid: '{}'".format(ew.cte))
-    ew.charset = charset
-    ew.lang = lang
+        text, defects = _ew._decode(ew.charset, cte, encoded)
+    except KeyError:
+        # With an unknown CTE we can't decode the content.  We could just
+        # return it, but that would be less clear than leaving the ew alone.
+        return None
+    if any(isinstance(x, errors.InvalidBase64LengthDefect) for x in defects):
+        return None
     ew.defects.extend(defects)
-    while text:
-        if text[0] in WSP:
-            token, text = get_fws(text)
+    if _wsp_finder(ew_match.group()):
+        ew.defects.append(errors.InvalidHeaderDefect(
+            "whitespace inside encoded-word"))
+    tptr, tlen = 0, len(text)
+    while tptr < tlen:
+        if text[tptr] in WSP:
+            token, tptr = get_fws(text, tptr)
             ew.append(token)
             continue
-        chars, *remainder = _wsp_splitter(text, 1)
-        vtext = ValueTerminal(chars, terminal_type)
-        _validate_xtext(vtext)
-        ew.append(vtext)
-        text = ''.join(remainder)
-    # Encoded words should be followed by a WS
-    if value and value[0] not in WSP:
-        ew.defects.append(errors.InvalidHeaderDefect(
-            "missing trailing whitespace after encoded-word"))
-    return ew, value
+        t, tptr = _get_xtext(
+            text,
+            tptr,
+            _non_wsp_re,
+            ValueTerminal,
+            terminal_type,
+            )
+        ew.append(t)
+    return ew, ew_match.end()
 
-def get_unstructured(value):
+# In theory encoded words should only appear in certain places.  In
+# practice they tend to appear any where "normal text" tokens appear.  This
+# outside-the-rfc-grammar function-generator provides the tools to handle that.
+_make_content_re = lambda s: re.compile(rf'[^{re.escape(s)}]*')
+_make_qp_content_re = lambda s: re.compile( rf"([^{re.escape(s)}\\]|\\.)*")
+_qp_finder = re.compile(r'\\(.)')
+_qp_unquote = lambda s: _qp_finder.subn(r'\1', s)
+def content_getter(
+        tl_class,
+        text_type,
+        end_chars='',
+        qp=False,
+    ):
+    """Return a function that can be used to parse up to certain end chars.
+
+    The returned function has the following contract:
+
+    new_function(value, start)
+
+    Return a token list containing decoded text tokens and WSP.
+
+    Process value from start until the first occurrence of any of the
+    characters in the iterable end_chars, breaking it up into whitespace and
+    non-whitespace tokens, and decoding encoded words wherever they are found
+    regardless of whitespace.  Return the resulting list of tokens in an
+    instance of tl_type and then index of whichever end_char was found first
+    (or the len of value if none were found).  Decoded encoded words should be
+    EncodedWord token lists, non-encoded word tokens should be of type
+    ValueTerminal with a token_type text_type, and whitespace tokens should be
+    WhiteSpaceTerminals or EWWhiteSpaceTerminals, as appropriate.
+
+    Encoded word detection should take precedence over end_chars detection: an
+    end_char inside an encoded word should be treated as part of the encoded
+    word content rather than ending the processing.
+
+    If qp is true, ignore end characters that are part of quoted pairs when
+    looking for the end of the parsable text, and unquote any quoted pairs in
+    the parsed text.
+
+    if an encoded word is found, set the `has_ew` attribute of the returned
+    token list to `True`.
+
+    """
+    end_chars = ''.join(list(end_chars))
+    if qp:
+        pre_ew_re = _make_qp_content_re(end_chars + _WSP + '=')
+        post_ew_re = _make_qp_content_re(end_chars + _WSP)
+    else:
+        pre_ew_re = _make_content_re(end_chars + _WSP + '=')
+        post_ew_re = _make_content_re(end_chars + _WSP)
+    return partial(
+        _get_content,
+        tl_class=tl_class,
+        text_type=text_type,
+        qp=qp,
+        end_chars=end_chars,
+        pre_ew_re=pre_ew_re,
+        post_ew_re=post_ew_re,
+        )
+
+def _get_content(
+        value,
+        start=0,
+        *,
+        tl_class,
+        text_type,
+        pre_ew_re,
+        post_ew_re,
+        end_chars,
+        qp,
+    ):
+    tl = tl_class()
+    vlen = len(value)
+    while start < vlen:
+        if value[start] in end_chars:
+            break
+        if value[start] in WSP:
+            token, start = get_fws(value, start)
+            tl.append(token)
+            continue
+        ew = None
+        m = pre_ew_re.match(value, start)
+        end = m.end()
+        if end < vlen:
+            if value[end] == '=':
+                res = get_encoded_word(value, end, text_type, decode_qp=qp)
+                if res:
+                    # XXX save the index; some day the defects will use it
+                    tl.ew_indexes.append(end)
+                    ew, end = res
+                else:
+                    m = post_ew_re.match(value, start)
+                    ew, end = None, m.end()
+        text = m.group()
+        # At this point we have text, an ew, or both; we can't have neither.
+        if tl and tl[-1].token_type == 'encoded-word':
+            tl.defects.append(_MissingWhitespaceAfterEWDefect)
+        if text:
+            text, _ = _qp_unquote(text) if qp else (text, 0)
+            tl.append(_make_xtext(text, ValueTerminal, text_type))
+        if ew:
+            if tl:
+                if tl[-1].token_type == 'fws':
+                    if len(tl) > 1 and tl[-2].token_type == 'encoded-word':
+                        tl[-1] = EWWhiteSpaceTerminal(tl[-1], 'fws')
+                else:
+                    tl.defects.append(_MissingWhitespaceBeforeEWDefect)
+            tl.append(ew)
+        start = end
+    return tl, start
+
+_get_unstructured_content = content_getter(UnstructuredTokenList, 'utext')
+def parse_unstructured(value):
     """unstructured = (*([FWS] vchar) *WSP) / obs-unstruct
        obs-unstruct = *((*LF *CR *(obs-utext) *LF *CR)) / FWS)
        obs-utext = %d0 / obs-NO-WS-CTL / LF / CR
+       obs-NO-WS-CTL = <control characters except WSP/CR/LF>
 
-       obs-NO-WS-CTL is control characters except WSP/CR/LF.
-
-    So, basically, we have printable runs, plus control characters or nulls in
-    the obsolete syntax, separated by whitespace.  Since RFC 2047 uses the
-    obsolete syntax in its specification, but requires whitespace on either
-    side of the encoded words, I can see no reason to need to separate the
-    non-printable-non-whitespace from the printable runs if they occur, so we
-    parse this into xtext tokens separated by WSP tokens.
-
-    Because an 'unstructured' value must by definition constitute the entire
-    value, this 'get' routine does not return a remaining value, only the
-    parsed TokenList.
+    Return an UnstructuredTokenList containing whitespace and non-whitespace
+    tokens obtained from value, decoding any encoded words found, regardless of
+    whitespace, into EncodedWord tokens lists.  Register defects if the encoded
+    words are not correctly surrounded by whitespace or the ends of the value
+    or have internal whitespace.  Register defects if the non-whitespace tokens
+    contain any non-printable or invalid characters.  All ValueTerminals
+    should have the token_type 'utext'.
 
     """
-    # XXX: but what about bare CR and LF?  They might signal the start or
-    # end of an encoded word.  YAGNI for now, since our current parsers
-    # will never send us strings with bare CR or LF.
-
-    unstructured = UnstructuredTokenList()
-    while value:
-        if value[0] in WSP:
-            token, value = get_fws(value)
-            unstructured.append(token)
-            continue
-        valid_ew = True
-        if value.startswith('=?'):
-            try:
-                token, value = get_encoded_word(value, 'utext')
-            except _InvalidEwError:
-                valid_ew = False
-            except errors.HeaderParseError:
-                # XXX: Need to figure out how to register defects when
-                # appropriate here.
-                pass
-            else:
-                have_ws = True
-                if len(unstructured) > 0:
-                    if unstructured[-1].token_type != 'fws':
-                        unstructured.defects.append(errors.InvalidHeaderDefect(
-                            "missing whitespace before encoded word"))
-                        have_ws = False
-                if have_ws and len(unstructured) > 1:
-                    if unstructured[-2].token_type == 'encoded-word':
-                        unstructured[-1] = EWWhiteSpaceTerminal(
-                            unstructured[-1], 'fws')
-                unstructured.append(token)
-                continue
-        tok, *remainder = _wsp_splitter(value, 1)
-        # Split in the middle of an atom if there is a rfc2047 encoded word
-        # which does not have WSP on both sides. The defect will be registered
-        # the next time through the loop.
-        # This needs to only be performed when the encoded word is valid;
-        # otherwise, performing it on an invalid encoded word can cause
-        # the parser to go in an infinite loop.
-        if valid_ew and rfc2047_matcher.search(tok):
-            tok, *remainder = value.partition('=?')
-        vtext = ValueTerminal(tok, 'utext')
-        _validate_xtext(vtext)
-        unstructured.append(vtext)
-        value = ''.join(remainder)
+    # We don't actually handle CR or LF in obs, instead we treat them as a
+    # non-printable defect.  Normally they won't even appear in value, since
+    # the code that calls the parser will have done header unfolding.
+    unstructured, _ = _get_unstructured_content(value, 0)
     return unstructured
 
-def get_qp_ctext(value):
+@_deprecate('parse_unstructured')
+def get_unstructured(value):
+    return parse_unstructured(value)
+
+_get_ccontent_content = content_getter(
+    TokenList,
+    'ptext',
+    end_chars='()',
+    qp=True,
+    )
+def get_ccontent_sequence(value, start):
+    """ccontent_sequence = *([FWS] qp_ctext / encoded_word [FWS])
+
+    This bridges the RFC ctext, ccontent, and comment into something that
+    makes recovery from errors in the input easier.
+
+    Return a (possibly empty) TokenList containing all characters up to the
+    next unquoted open or close parenthesis outside of an encoded word (or the
+    end of value if there isn't one) and the index of that parenthesis (or the
+    len of value), unquoting any quoted pairs and decoding any encoded words.
+    All ValueTerminals returned should have the token_type 'ptext'.
+
+    Encoded words should be decoded even if there is non-whitespace around
+    them, and whether or not they contain any RFC invalid whitespace.  Register
+    defects for any internal or missing whitespace.
+
+    Register defects if there are any non-printable or undecodable characters
+    in the non-whitespace tokens.
+
+    """
+    return _get_ccontent_content(value, start)
+
+@_replaced_with('get_ccontent_sequence')
+def _deprecated_get_qp_ctext(value):
     r"""ctext = <printable ascii except \ ( )>
 
     This is not the RFC ctext, since we are handling nested comments in comment
@@ -1199,6 +1558,7 @@ def get_qp_ctext(value):
     _validate_xtext(ptext)
     return ptext, value
 
+@_deprecate('get_bare_quoted_string')
 def get_qcontent(value):
     """qcontent = qtext / quoted-pair
 
@@ -1214,13 +1574,45 @@ def get_qcontent(value):
     _validate_xtext(ptext)
     return ptext, value
 
-def get_atext(value):
+_get_atext_content = content_getter(TokenList, 'atext', end_chars=ATOM_ENDS)
+def get_atext_sequence(value, start):
+    """atext = Printable US-ASCII characters not including specials
+
+    This augments the RFC atext by handling encoded words at a level that makes
+    it easier to recover from errors in the input.
+
+    Return a TokenList containing all characters up to the next special or WSP
+    outside of an encoded word (or the end of value), and the index of the
+    special or WSP (or the len of value), decoding any encoded words.
+
+    Raise a HeaderParseError if no characters are found before the special,
+    WSP, or end of value.
+
+    Encoded words should be decoded even if there is non-whitespace around
+    them, and whether or not they contain any RFC invalid whitespace.  Register
+    internal or missing whitespace defects.
+
+    Register defects if there are any non-printable or undecodable characters
+    in the non-whitespace tokens.
+
+    All ValueTerminals returned should have the type 'atext'.
+
+    """
+    atext, end = _get_atext_content(value, start)
+    if not atext:
+        raise errors.HeaderParseError(
+            f"expected atext but found {value[start:]!r}",
+            )
+    return atext, end
+
+@_replaced_with('get_atext_sequence')
+def _deprecated_get_atext(value):
     """atext = <matches _atext_matcher>
 
     We allow any non-ATOM_ENDS in atext, but add an InvalidATextDefect to
     the token's defects list if we find non-atext characters.
     """
-    m = _non_atom_end_matcher(value)
+    m = _deprecated__non_atom_end_matcher(value)
     if not m:
         raise errors.HeaderParseError(
             "expected atext but found '{}'".format(value))
@@ -1230,323 +1622,445 @@ def get_atext(value):
     _validate_xtext(atext)
     return atext, value
 
-def get_bare_quoted_string(value):
+_get_bare_quoted_string_content = content_getter(
+    BareQuotedString,
+    'ptext',
+    end_chars='"',
+    qp=True,
+    )
+@_deprecate_old_api
+def get_bare_quoted_string(value, start):
     """bare-quoted-string = DQUOTE *([FWS] qcontent) [FWS] DQUOTE
 
-    A quoted-string without the leading or trailing white space.  Its
-    value is the text between the quote marks, with whitespace
-    preserved and quoted pairs decoded.
-    """
-    if not value or value[0] != '"':
-        raise errors.HeaderParseError(
-            "expected '\"' but found '{}'".format(value))
-    bare_quoted_string = BareQuotedString()
-    value = value[1:]
-    if value and value[0] == '"':
-        return bare_quoted_string, value[1:]
-    while value and value[0] != '"':
-        if value[0] in WSP:
-            token, value = get_fws(value)
-        elif value[:2] == '=?':
-            valid_ew = False
-            try:
-                token, value = get_encoded_word(value)
-                bare_quoted_string.defects.append(errors.InvalidHeaderDefect(
-                    "encoded word inside quoted string"))
-                valid_ew = True
-            except errors.HeaderParseError:
-                token, value = get_qcontent(value)
-            # Collapse the whitespace between two encoded words that occur in a
-            # bare-quoted-string.
-            if valid_ew and len(bare_quoted_string) > 1:
-                if (bare_quoted_string[-1].token_type == 'fws' and
-                        bare_quoted_string[-2].token_type == 'encoded-word'):
-                    bare_quoted_string[-1] = EWWhiteSpaceTerminal(
-                        bare_quoted_string[-1], 'fws')
-        else:
-            token, value = get_qcontent(value)
-        bare_quoted_string.append(token)
-    if not value:
-        bare_quoted_string.defects.append(errors.InvalidHeaderDefect(
-            "end of header inside quoted string"))
-        return bare_quoted_string, value
-    return bare_quoted_string, value[1:]
+    This is a subset of the RFC 5322 quoted-string: the quoted string without
+    any of the CFWS that might come before or after the '"'s.
 
-def get_comment(value):
+    If start does not point to a double quote in value, raise an error.
+    Otherwise return a (possibly empty) BareQuotedString incorporating all
+    characters up to the next unquoted double quote (or the end of value if
+    there is no double quote) and the index of the character after the double
+    quote (or the len of value), unquoting any quoted pairs.  The returned
+    BareQuotedString should not contain any ValueTerminals for the double quote
+    marks, but when stringified the quotes should be added, whether the
+    trailing quote was present in value or not.  If the trailing quote is not
+    present register a defect.
+
+    If the content after quoted pair decoding contains any RFC 2047 encoded
+    words, decode them, whether they are correctly bracketed by whitespace
+    or not, and whether they contain internal whitespace or not.  Register
+    a defect for the presence of any such word, as well as defects for
+    any whitespace issues.
+
+    Register defects if there are any non-printable or invalid characters in
+    the non-whitespace tokens.
+
+    """
+    # This implementation bypasses the RFC qcontent BNF element in favor of
+    # using our generic content_getter to decode (RFC invalid) encoded words.
+    vlen = len(value)
+    if start >= vlen or value[start] != '"':
+        raise errors.HeaderParseError(
+            f"expected '\"' but found {value[start:]!r}"
+            )
+    start += 1
+    bare_quoted_string, start = _get_bare_quoted_string_content(value, start)
+    if bare_quoted_string.ew_indexes:
+        # XXX some day we'll put each index into its own defect.
+        bare_quoted_string.defects.extend(
+            [
+                errors.InvalidHeaderDefect('encoded-word inside quoted string'),
+                ] * len(bare_quoted_string.ew_indexes)
+            )
+    if start < vlen:
+        return bare_quoted_string, start + 1
+    bare_quoted_string.defects.append(
+        errors.InvalidHeaderDefect("end of header inside quoted string"),
+        )
+    return bare_quoted_string, start
+
+@_deprecate_old_api
+def get_comment(value, start):
     """comment = "(" *([FWS] ccontent) [FWS] ")"
-       ccontent = ctext / quoted-pair / comment
+       ccontent = ctext / quoted-pair / encoded_word / comment
 
-    We handle nested comments here, and quoted-pair in our qp-ctext routine.
+    If start does not point to an open parenthesis, raise an error.  Otherwise
+    return a (possibly empty) Comment that incorporates all characters up to
+    the corresponding close parenthesis (or the end of the value if there is no
+    corresponding close parenthesis) and the index to the character after that
+    closing parenthesis (or the len of input), unquoting any quoted printables,
+    and decoding any encoded words.  The Comment should be a nested token list
+    structure containing any nested comments. The Comment should not contain
+    any ValueTerminals for the parentheses, but when stringified the
+    parentheses should be added, whether the trailing parenthesis was present
+    or not.  If the trailing parenthesis is not present register a defect.
+
+    Register defects if there are any non-printable or invalid characters in
+    the non-whitespace tokens.
+
     """
-    if value and value[0] != '(':
+    vlen = len(value)
+    if start >= vlen or value[start] != '(':
         raise errors.HeaderParseError(
-            "expected '(' but found '{}'".format(value))
+            f"expected '(' but found {value[start:]!r}"
+            )
     comment = Comment()
-    value = value[1:]
-    while value and value[0] != ")":
-        if value[0] in WSP:
-            token, value = get_fws(value)
-        elif value[0] == '(':
-            token, value = get_comment(value)
+    start += 1
+    while start < vlen:
+        if (c := value[start]) == ")":
+            break
+        elif c == '(':
+            token, start = get_comment(value, start)
+            comment.append(token)
         else:
-            token, value = get_qp_ctext(value)
-        comment.append(token)
-    if not value:
-        comment.defects.append(errors.InvalidHeaderDefect(
-            "end of header inside comment"))
-        return comment, value
-    return comment, value[1:]
+            tl, start = get_ccontent_sequence(value, start)
+            comment.extend(tl)
+    else:
+        comment.defects.append(
+            errors.InvalidHeaderDefect("end of header inside comment"),
+            )
+        return comment, start
+    return comment, start + 1
 
-def get_cfws(value):
+@_deprecate_old_api_and_lack_of_raise_on_invalid_input
+def get_cfws(value, start):
     """CFWS = (1*([FWS] comment) [FWS]) / FWS
+
+    Raise an error if start does not point to either whitespace or an open
+    parenthesis in value.  Otherwise return a CFWSList containing any
+    whitespace or comments up to the next non-CFWS character outside of a
+    comment (or the end of value), and the index of that next character (or the
+    len of value).
 
     """
     cfws = CFWSList()
-    while value and value[0] in CFWS_LEADER:
-        if value[0] in WSP:
-            token, value = get_fws(value)
+    vlen = len(value)
+    while start < vlen:
+        if (c := value[start]) in WSP:
+            token, start = get_fws(value, start)
+        elif c == '(':
+            token, start = get_comment(value, start)
         else:
-            token, value = get_comment(value)
+            break
         cfws.append(token)
-    return cfws, value
+    if not cfws:
+        # XXX POSTDEP: change this to raise the exception.
+        return (
+            cfws,
+            start,
+            errors.HeaderParseError(
+                f'expected cfws but found {value[start:]!r}'
+                ),
+            (
+                "Calling get_cfws when there is no whitespace or comment at"
+                " the start is deprecated and will raise an error in the"
+                " future."
+                ),
+            )
+    return cfws, start
 
-def get_quoted_string(value):
-    """quoted-string = [CFWS] <bare-quoted-string> [CFWS]
+@_deprecate_old_api
+def get_quoted_string(value, start):
+    """quoted-string = [CFWS] bare-quoted-string [CFWS]
 
-    'bare-quoted-string' is an intermediate class defined by this
-    parser and not by the RFC grammar.  It is the quoted string
-    without any attached CFWS.
+    Return a QuotedString containing the leading CFWSList (if any), the
+    BareQuotedString, and the trailing CFWSList (if any), plus the index of the
+    character after the parsed text (or the len of value if there is no text
+    left unparsed).
+
+    If no bare-quoted-string is found raise a HeaderParseError.
+
     """
     quoted_string = QuotedString()
-    if value and value[0] in CFWS_LEADER:
-        token, value = get_cfws(value)
+    vlen = len(value)
+    if start < vlen and value[start] in CFWS_LEADER:
+        token, start = get_cfws(value, start)
         quoted_string.append(token)
-    token, value = get_bare_quoted_string(value)
+    token, start = get_bare_quoted_string(value, start)
     quoted_string.append(token)
-    if value and value[0] in CFWS_LEADER:
-        token, value = get_cfws(value)
+    if start < vlen and value[start] in CFWS_LEADER:
+        token, start = get_cfws(value, start)
         quoted_string.append(token)
-    return quoted_string, value
+    return quoted_string, start
 
-def get_atom(value):
+@_deprecate_old_api
+def get_atom(value, start):
     """atom = [CFWS] 1*atext [CFWS]
 
-    An atom could be an rfc2047 encoded word.
+    Return an Atom containing the leading and trailing CFWSList tokens
+    if appropriate, as well as ValueTerminals of token_type atext, containing
+    all characters up to the next SPECIAL character or the end of value, and a
+    pointer to the special or the len of value.
+
+    Decode any encoded words, regardless of whitespace, registering defects
+    if the RFC required whitespace is missing.
+
+    Register defects if there are any non-printable or invalid characters in
+    the non-whitespace tokens.
+
     """
+    # We decode encoded words mixed in to atext without whitespace to in-total
+    # comprise the body of the atom. This might qualify as a separate defect.
     atom = Atom()
-    if value and value[0] in CFWS_LEADER:
-        token, value = get_cfws(value)
+    vlen = len(value)
+    if start < vlen and value[start] in CFWS_LEADER:
+        token, start = get_cfws(value, start)
         atom.append(token)
-    if value and value[0] in ATOM_ENDS:
+    if start >= vlen or value[start] in ATOM_ENDS:
         raise errors.HeaderParseError(
-            "expected atom but found '{}'".format(value))
-    if value.startswith('=?'):
-        try:
-            token, value = get_encoded_word(value)
-        except errors.HeaderParseError:
-            # XXX: need to figure out how to register defects when
-            # appropriate here.
-            token, value = get_atext(value)
-    else:
-        token, value = get_atext(value)
-    atom.append(token)
-    if value and value[0] in CFWS_LEADER:
-        token, value = get_cfws(value)
+            "expected atom but found '{}'".format(value[start:]))
+    tl, start = get_atext_sequence(value, start)
+    if (tl[0].token_type == 'encoded-word'
+            and atom and not atom[-1].endswith_fws()
+        ):
+        atom.defects.append(_MissingWhitespaceBeforeEWDefect)
+    atom.extend(tl)
+    if start < vlen and value[start] in CFWS_LEADER:
+        token, start = get_cfws(value, start)
+        if tl[-1].token_type == 'encoded-word' and not token.startswith_fws():
+            atom.defects.append(_MissingWhitespaceAfterEWDefect)
         atom.append(token)
-    return atom, value
+    return atom, start
 
-def get_dot_atom_text(value):
-    """ dot-text = 1*atext *("." 1*atext)
+@_deprecate_old_api
+def get_dot_atom_text(value, start):
+    """ dot-atom-text = 1*atext *("." 1*atext)
+
+    Return a DotAtomText containing all characters up to the next non-'.'
+    special or WSP outside of an enocded word or the end of value, and the
+    index of the special, WSP, or the len of value, decoding any encoded words.
+    All ValueTerminals returned should have the type 'atext'.  '.' characters
+    should be returned as ValueTermibnals of token_type 'dot'.
+
+    Encoded words should be decoded even if there is non-whitespace around
+    them, and whether or not they contain any RFC invalid whitespace.  Register
+    defects for any missing whitespace.
+
+    Register defects if there are any non-printable or undecodable characters
+    in the non-whitespace tokens.
 
     """
+    # The only legitimate way an encoded word can be in a dot-atom-text
+    # position is if it is the only thing there.  Following our policy of
+    # generous decoding we accept them anywhere in the dot-atom-text.  The only
+    # defects we're registering are the whitespace defects.  An encoded word is
+    # legitimate here; it's the whitespace that's wrong.  To get it right the
+    # text, including the dots, would end up inside the encoded word.
     dot_atom_text = DotAtomText()
-    if not value or value[0] in ATOM_ENDS:
-        raise errors.HeaderParseError("expected atom at a start of "
-            "dot-atom-text but found '{}'".format(value))
-    while value and value[0] not in ATOM_ENDS:
-        token, value = get_atext(value)
-        dot_atom_text.append(token)
-        if value and value[0] == '.':
+    vlen = len(value)
+    if start >= vlen or value[start] in ATOM_ENDS:
+        raise errors.HeaderParseError(
+            f"expected atom at a start of dot-atom-text"
+            f" but found {value[start:]!r}"
+            )
+    while start < vlen and value[start] not in ATOM_ENDS:
+        token, start = get_atext_sequence(value, start)
+        if token[0].token_type == 'encoded-word' and dot_atom_text:
+                dot_atom_text.defects.append(_MissingWhitespaceBeforeEWDefect)
+        dot_atom_text.extend(token)
+        if start < vlen and value[start] == '.':
+            if dot_atom_text[-1].token_type == 'encoded-word':
+                dot_atom_text.defects.append(_MissingWhitespaceAfterEWDefect)
             dot_atom_text.append(DOT)
-            value = value[1:]
+            start += 1
     if dot_atom_text[-1] is DOT:
-        raise errors.HeaderParseError("expected atom at end of dot-atom-text "
-            "but found '{}'".format('.'+value))
-    return dot_atom_text, value
+        raise errors.HeaderParseError(
+            f"expected atom at end of dot-atom-text"
+            f" but found {value[start-1:]!r}"
+            )
+    return dot_atom_text, start
 
-def get_dot_atom(value):
+@_deprecate_old_api
+def get_dot_atom(value, start):
     """ dot-atom = [CFWS] dot-atom-text [CFWS]
 
-    Any place we can have a dot atom, we could instead have an rfc2047 encoded
-    word.
+    Return a DotAtom containing leading and trailing CFWSList tokens, if
+    appropriate, as well as a DotAtomText token, containing all of the
+    characters up to the next SPECIAL character or the end of value,
+    and a pointer to the special or the len of value.
+
+    Decode any encoded words, regardless of whitespace, registering defects
+    if the RFC required whitespace is missing.
+
+    Register defects if there are any non-printable or invalid characters in
+    the non-whitespace tokens.
+
     """
     dot_atom = DotAtom()
-    if value[0] in CFWS_LEADER:
-        token, value = get_cfws(value)
+    vlen = len(value)
+    if start < vlen and value[start] in CFWS_LEADER:
+        token, start = get_cfws(value, start)
         dot_atom.append(token)
-    if value.startswith('=?'):
-        try:
-            token, value = get_encoded_word(value)
-        except errors.HeaderParseError:
-            # XXX: need to figure out how to register defects when
-            # appropriate here.
-            token, value = get_dot_atom_text(value)
-    else:
-        token, value = get_dot_atom_text(value)
-    dot_atom.append(token)
-    if value and value[0] in CFWS_LEADER:
-        token, value = get_cfws(value)
+    tl, start = get_dot_atom_text(value, start)
+    if (tl[0].token_type == 'encoded-word'
+            and dot_atom and not dot_atom[-1].endswith_fws()
+        ):
+        dot_atom.defects.append(_MissingWhitespaceBeforeEWDefect)
+    dot_atom.append(tl)
+    if start < vlen and value[start] in CFWS_LEADER:
+        token, start = get_cfws(value, start)
+        if tl[-1].token_type == 'encoded-word' and not token.startswith_fws():
+            dot_atom.defects.append(_MissingWhitespaceAfterEWDefect)
         dot_atom.append(token)
-    return dot_atom, value
+    return dot_atom, start
 
-def get_word(value):
+@_deprecate_old_api
+def get_word(value, start):
     """word = atom / quoted-string
 
-    Either atom or quoted-string may start with CFWS.  We have to peel off this
-    CFWS first to determine which type of word to parse.  Afterward we splice
-    the leading CFWS, if any, into the parsed sub-token.
-
-    If neither an atom or a quoted-string is found before the next special, a
-    HeaderParseError is raised.
-
-    The token returned is either an Atom or a QuotedString, as appropriate.
-    This means the 'word' level of the formal grammar is not represented in the
-    parse tree; this is because having that extra layer when manipulating the
-    parse tree is more confusing than it is helpful.
+    Return either an Atom or a QuotedString, as appropriate, containing any
+    leading or trailing whitespace, up to the next non-whitespace
+    non-special character, and a pointer to the special or the len of value.
+    If no quoted string or atom is found, raise a HeaderParseError.
 
     """
-    if value[0] in CFWS_LEADER:
-        leader, value = get_cfws(value)
+    # The 'word' level of the RFC grammar is not represented in the parse tree;
+    # having that extra layer when manipulating the parse tree is more
+    # confusing than it is helpful, and would not affect re-folding.
+    vlen = len(value)
+    if start < vlen and value[start] in CFWS_LEADER:
+        leader, start = get_cfws(value, start)
     else:
         leader = None
-    if not value:
+    if start >= vlen:
         raise errors.HeaderParseError(
             "Expected 'atom' or 'quoted-string' but found nothing.")
-    if value[0]=='"':
-        token, value = get_quoted_string(value)
-    elif value[0] in SPECIALS:
-        raise errors.HeaderParseError("Expected 'atom' or 'quoted-string' "
-                                      "but found '{}'".format(value))
+    if value[start]=='"':
+        token, start = get_quoted_string(value, start)
+    elif value[start] in SPECIALS:
+        raise errors.HeaderParseError(
+            f"Expected 'atom' or 'quoted-string' but found {value[start:]!r}"
+            )
     else:
-        token, value = get_atom(value)
+        token, start = get_atom(value, start)
     if leader is not None:
-        token[:0] = [leader]
-    return token, value
+        if not leader.endswith_fws() and token[0].token_type == 'encoded-word':
+            token.defects.append(_MissingWhitespaceBeforeEWDefect)
+        token.push(leader)
+    return token, start
 
-def get_phrase(value):
+@_deprecate_old_api_and_lack_of_raise_on_invalid_input
+def get_phrase(value, start):
     """ phrase = 1*word / obs-phrase
         obs-phrase = word *(word / "." / CFWS)
 
-    This means a phrase can be a sequence of words, periods, and CFWS in any
-    order as long as it starts with at least one word.  If anything other than
-    words is detected, an ObsoleteHeaderDefect is added to the token's defect
-    list.  We also accept a phrase that starts with CFWS followed by a dot;
-    this is registered as an InvalidHeaderDefect, since it is not supported by
-    even the obsolete grammar.
+    Return a Phrase containing the any sequence of words, periods, and CFWS in
+    any order up to the next unquoted character that is not allowed in a phrase
+    or obsolete phrase, and a pointer to that character or the len of value.
+    If periods or cfws without adjacent words are found, add an
+    ObsoleteHeaderDefect to the token's defect list.  If one or more periods
+    are found before the first word (or if there are no words, only periods and
+    whitespace), add an InvalidHeaderDefect.  If there are no words or periods,
+    raise a HeaderParseError.
 
     """
+    origstart = start
+    found_content = False
     phrase = Phrase()
+    vlen = len(value)
     try:
-        token, value = get_word(value)
+        token, start = get_word(value, start)
+        found_content = True
         phrase.append(token)
     except errors.HeaderParseError:
         phrase.defects.append(errors.InvalidHeaderDefect(
             "phrase does not start with word"))
-    while value and value[0] not in PHRASE_ENDS:
-        if value[0]=='.':
+    while start < vlen and value[start] not in PHRASE_ENDS:
+        if value[start]=='.':
             phrase.append(DOT)
+            found_content = True
             phrase.defects.append(errors.ObsoleteHeaderDefect(
                 "period in 'phrase'"))
-            value = value[1:]
+            start += 1
         else:
             try:
-                token, value = get_word(value)
-                if (token[0].token_type == 'encoded-word'
-                    and phrase
-                    and phrase[-1].token_type == 'atom'
-                    and len(phrase[-1]) > 1
-                    and phrase[-1][-2].token_type == 'encoded-word'
-                    and phrase[-1][-1].token_type == 'cfws'
-                    and not phrase[-1][-1].comments
-                ):
-                    # linear ws between ews needs special handing...
-                    phrase[-1][-1] = EWWhiteSpaceTerminal(phrase[-1], 'fws')
+                token, start = get_word(value, start)
+                found_content = True
             except errors.HeaderParseError:
-                if value[0] in CFWS_LEADER:
-                    token, value = get_cfws(value)
+                if value[start] in CFWS_LEADER:
+                    token, start = get_cfws(value, start)
                     phrase.defects.append(errors.ObsoleteHeaderDefect(
-                        "comment found without atom"))
+                        "cfws found without atom"))
                 else:
                     raise
+            if phrase and phrase[-1].token_type == 'atom':
+                if phrase[-1][-1].token_type == 'encoded-word':
+                    if not token.startswith_fws():
+                        phrase.defects.append(_MissingWhitespaceAfterEWDefect)
+                elif (token[0].token_type == 'encoded-word'
+                        and len(phrase[-1]) > 1
+                        and phrase[-1][-2].token_type == 'encoded-word'
+                        and phrase[-1][-1].token_type == 'cfws'
+                        and not phrase[-1][-1].comments
+                    ):
+                    phrase[-1][-1] = EWWhiteSpaceTerminal(phrase[-1], 'fws')
+            if (phrase
+                    and token[0].token_type == 'encoded-word'
+                    and not phrase.endswith_fws()
+                ):
+                phrase.defects.append(_MissingWhitespaceBeforeEWDefect)
             phrase.append(token)
-    return phrase, value
+    if found_content:
+        return phrase, start
+    # XXX POSTDEP: change this to raise the exception.
+    return (
+        phrase,
+        start,
+        errors.HeaderParseError(
+            f"expected phrase but found {value[origstart:]!r}",
+            ),
+        "Calling get_phrase when there is not at least one word or"
+            " period in addition to whitespace is deprecated and will"
+            " raise an error in the future."
+        )
 
-def get_local_part(value):
-    """ local-part = dot-atom / quoted-string / obs-local-part
-
-    """
-    local_part = LocalPart()
-    leader = None
-    if value and value[0] in CFWS_LEADER:
-        leader, value = get_cfws(value)
-    if not value:
-        raise errors.HeaderParseError(
-            "expected local-part but found '{}'".format(value))
-    try:
-        token, value = get_dot_atom(value)
-    except errors.HeaderParseError:
-        try:
-            token, value = get_word(value)
-        except errors.HeaderParseError:
-            if value[0] != '\\' and value[0] in PHRASE_ENDS:
-                raise
-            token = TokenList()
-    if leader is not None:
-        token[:0] = [leader]
-    local_part.append(token)
-    if value and (value[0]=='\\' or value[0] not in PHRASE_ENDS):
-        obs_local_part, value = get_obs_local_part(str(local_part) + value)
-        if obs_local_part.token_type == 'invalid-obs-local-part':
-            local_part.defects.append(errors.InvalidHeaderDefect(
-                "local-part is not dot-atom, quoted-string, or obs-local-part"))
-        else:
-            local_part.defects.append(errors.ObsoleteHeaderDefect(
-                "local-part is not a dot-atom (contains CFWS)"))
-        local_part[0] = obs_local_part
-    return local_part, value
-
-def get_obs_local_part(value):
+@_deprecate_old_api
+def get_obs_local_part(value, start):
     """ obs-local-part = word *("." word)
+
+    Return an ObsLocalPart containing a list of words and DOTs containing
+    all of the characters up to the next character not allowed in a phrase or
+    the end of the value, and a pointer to the SPECIAL or the len of value.
+
+    Decode any encoded words, registering a defect if any are found.
+    Missing whitespace defects may also be registered.
+
+    Register defects if there are any non-printable or invalid characters in
+    the non-whitespace tokens.
+
     """
     obs_local_part = ObsLocalPart()
+    vlen = len(value)
     last_non_ws_was_dot = False
-    while value and (value[0]=='\\' or value[0] not in PHRASE_ENDS):
-        if value[0] == '.':
+    while start < vlen and ((c := value[start]) == '\\' or c not in PHRASE_ENDS):
+        if c == '.':
             if last_non_ws_was_dot:
                 obs_local_part.defects.append(errors.InvalidHeaderDefect(
-                    "invalid repeated '.'"))
+                    "invalid repeated '.' in local-part")
+                    )
             obs_local_part.append(DOT)
             last_non_ws_was_dot = True
-            value = value[1:]
+            start += 1
             continue
-        elif value[0]=='\\':
-            obs_local_part.append(ValueTerminal(value[0],
-                                                'misplaced-special'))
-            value = value[1:]
+        elif c == '\\':
+            # RFC 5322 doesn't allow \, but the old email code parsed it.
+            obs_local_part.append(ValueTerminal(c,'misplaced-special'))
+            start += 1
             obs_local_part.defects.append(errors.InvalidHeaderDefect(
                 "'\\' character outside of quoted-string/ccontent"))
             last_non_ws_was_dot = False
             continue
         if obs_local_part and obs_local_part[-1].token_type != 'dot':
-            obs_local_part.defects.append(errors.InvalidHeaderDefect(
-                "missing '.' between words"))
+            obs_local_part.defects.append(
+                errors.InvalidHeaderDefect("missing '.' between words"),
+                )
         try:
-            token, value = get_word(value)
+            token, start = get_word(value, start)
             last_non_ws_was_dot = False
         except errors.HeaderParseError:
-            if value[0] not in CFWS_LEADER:
+            if value[start] not in CFWS_LEADER:
                 raise
-            token, value = get_cfws(value)
+            # There will be a 'dot' defect; no need for no-word defect here.
+            token, start = get_cfws(value, start)
         obs_local_part.append(token)
     if not obs_local_part:
         raise errors.HeaderParseError(
@@ -1556,16 +2070,66 @@ def get_obs_local_part(value):
             len(obs_local_part) > 1 and
             obs_local_part[1].token_type=='dot'):
         obs_local_part.defects.append(errors.InvalidHeaderDefect(
-            "Invalid leading '.' in local part"))
+            "Invalid leading '.' in local-part"))
     if (obs_local_part[-1].token_type == 'dot' or
             obs_local_part[-1].token_type=='cfws' and
             len(obs_local_part) > 1 and
             obs_local_part[-2].token_type=='dot'):
         obs_local_part.defects.append(errors.InvalidHeaderDefect(
-            "Invalid trailing '.' in local part"))
+            "Invalid trailing '.' in local-part"))
     if obs_local_part.defects:
         obs_local_part.token_type = 'invalid-obs-local-part'
-    return obs_local_part, value
+    return obs_local_part, start
+
+@_deprecate_old_api
+def get_local_part(value, start):
+    """ local-part = dot-atom / quoted-string / obs-local-part
+
+    """
+    local_part = LocalPart()
+    vlen = len(value)
+    leader = None
+    if start < vlen and value[start] in CFWS_LEADER:
+        leader, start = get_cfws(value, start)
+    text_start = start
+    if start >= vlen:
+        raise errors.HeaderParseError(
+            "expected local-part but found '{}'".format(value))
+    try:
+        token, start = get_dot_atom(value, start)
+    except errors.HeaderParseError:
+        try:
+            token, start = get_word(value, start)
+        except errors.HeaderParseError:
+            if value[start] != '\\' and value[start] in PHRASE_ENDS:
+                # XXX XXX should this be a separate message mentioning
+                # both dot atom and word?
+                raise
+            token = TokenList()
+    if start < vlen and (value[start]=='\\' or value[start] not in PHRASE_ENDS):
+        # Even if we started with valid text there is more, so start over as obs
+        token, start = get_obs_local_part(value, text_start)
+        if token.token_type == 'invalid-obs-local-part':
+            local_part.defects.append(errors.InvalidHeaderDefect(
+                "local-part is not dot-atom, quoted-string, or obs-local-part"))
+        else:
+            local_part.defects.append(
+                errors.ObsoleteHeaderDefect(
+                    "local-part is not a valid dot-atom"
+                    " (it contains internal CFWS)"
+                    )
+                )
+    if leader is not None:
+        token.push(leader)
+    local_part.append(token)
+    if local_part.ew_indexes:
+        # XXX some day we'll put each index into its own defect.
+        local_part.defects.extend(
+            [
+                errors.InvalidHeaderDefect('encoded-word in local-part'),
+                ] * len(local_part.ew_indexes)
+            )
+    return local_part, start
 
 def get_dtext(value):
     r""" dtext = <printable ascii except \ [ ]> / obs-dtext
@@ -2214,8 +2778,7 @@ def parse_message_ids(value):
 # XXX: As I begin to add additional header parsers, I'm realizing we probably
 # have two level of parser routines: the get_XXX methods that get a token in
 # the grammar, and parse_XXX methods that parse an entire field value.  So
-# get_address_list above should really be a parse_ method, as probably should
-# be get_unstructured.
+# get_address_list above should really be a parse_ method.
 #
 
 def parse_mime_version(value):
@@ -2916,7 +3479,9 @@ def _refold_with_ew(parse_tree, lines, maxlen, encoding, *, policy):
             continue
         tstr = str(part)
         if not want_encoding:
-            if part.token_type in ('ptext', 'vtext'):
+            # XXX At the end of the old API deprecation period 'vtext' can
+            # be removed from this list as it will no longer exist at all.
+            if part.token_type in ('ptext', 'atext', 'vtext'):
                 # Encode if tstr contains special characters.
                 want_encoding = not SPECIALSNL.isdisjoint(tstr)
             else:

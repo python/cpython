@@ -374,6 +374,17 @@ class TestDefectRaising(TestDefectsBase, TestEmailBase):
     def get_defects(self, obj):
         return obj.defects
 
+# XXX POSTDEP: delete from here...
+class TestDefectDeprecation(TestEmailBase):
+
+    def test_non_ascii_defect_deprecated(self):
+        with self.assertWarnsRegex(
+                DeprecationWarning,
+                rf'(?i)(?=.*NonASCIILocalPartDefect)(?=.*is deprecated)',
+            ):
+            errors.NonASCIILocalPartDefect
+
+# XXX POSTDEP: ...to here.
 
 if __name__ == '__main__':
     unittest.main()
