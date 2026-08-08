@@ -1,0 +1,2 @@
+Record the profiling mode in Tachyon binary profiles and reject differential
+comparisons whose known modes do not match.

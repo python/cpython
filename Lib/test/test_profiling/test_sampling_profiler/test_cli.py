@@ -23,11 +23,13 @@ from test.support import (
     requires_remote_subprocess_debugging,
 )
 
+from profiling.sampling.binary_reader import BinaryReader
 from profiling.sampling.cli import (
     FORMAT_EXTENSIONS,
     _create_collector,
     _generate_output_filename,
     _handle_output,
+    _replay_with_reader,
     main,
 )
 from profiling.sampling.constants import (
@@ -963,6 +965,39 @@ class TestSampleProfilerCLI(unittest.TestCase):
             "Error: Unsupported format version 2",
         )
 
+    def test_cli_replay_propagates_recorded_mode(self):
+        reader = mock.MagicMock()
+        reader.get_info.return_value = {
+            "sample_interval_us": 1000,
+            "sample_count": 0,
+            "compression_type": 0,
+            "mode": PROFILING_MODE_CPU,
+        }
+        reader.replay_samples.return_value = 0
+        collector = mock.MagicMock()
+        collector.export.return_value = True
+        args = SimpleNamespace(
+            format="diff_flamegraph",
+            input_file="current.bin",
+            diff_baseline="baseline.bin",
+            outfile="diff.html",
+            browser=False,
+        )
+
+        with mock.patch(
+            "profiling.sampling.cli._create_collector",
+            return_value=collector,
+        ) as create_collector:
+            _replay_with_reader(args, reader)
+
+        create_collector.assert_called_once_with(
+            "diff_flamegraph",
+            1000,
+            skip_idle=False,
+            mode=PROFILING_MODE_CPU,
+            diff_baseline="baseline.bin",
+        )
+
     def test_cli_jsonl_format_mutually_exclusive_with_pstats(self):
         """--jsonl and --pstats cannot be combined (mutually exclusive group)."""
         with (
@@ -1004,6 +1039,23 @@ class TestSampleProfilerCLI(unittest.TestCase):
             records = [json.loads(line) for line in f]
         meta = next(r for r in records if r["type"] == "meta")
         self.assertEqual(meta["mode"], "cpu")
+
+    def test_cli_binary_create_collector_propagates_mode(self):
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            binary_path = f.name
+        self.addCleanup(os.unlink, binary_path)
+        collector = _create_collector(
+            "binary",
+            sample_interval_usec=1000,
+            skip_idle=True,
+            mode=PROFILING_MODE_CPU,
+            output_file=binary_path,
+            compression="none",
+        )
+        collector.export(None)
+
+        with BinaryReader(binary_path) as reader:
+            self.assertEqual(reader.get_info()["mode"], PROFILING_MODE_CPU)
 
     def test_cli_jsonl_rejects_opcodes_combination(self):
         """--opcodes is incompatible with --jsonl per opcodes_compatible_formats."""

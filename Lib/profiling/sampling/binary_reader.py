@@ -50,6 +50,7 @@ class BinaryReader:
                 - string_count: Number of unique strings
                 - frame_count: Number of unique frames
                 - compression: Compression type used
+                - mode: Profiling mode, or None if not recorded
         """
         if self._reader is None:
             raise RuntimeError("Reader not open. Use as context manager.")
@@ -119,12 +120,14 @@ def convert_binary_to_format(input_file, output_file, output_format,
         elif output_format == 'gecko':
             collector = GeckoCollector(interval)
         elif output_format == "jsonl":
-            collector = JsonlCollector(interval)
+            collector = JsonlCollector(interval, mode=info.get("mode"))
         else:
             raise ValueError(f"Unknown output format: {output_format}")
 
         # Replay samples through collector
         count = reader.replay_samples(collector, progress_callback)
+        if hasattr(collector, "set_mode"):
+            collector.set_mode(info.get("mode"))
 
         # Export to target format
         collector.export(output_file)
