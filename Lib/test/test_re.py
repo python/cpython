@@ -2712,6 +2712,20 @@ class ReTests(unittest.TestCase):
         # With optimization -- 0.0003 seconds.
         self.assertLess(stopwatch.seconds, 0.1)
 
+    def test_search_anchor_at_beginning_line(self):
+        # Test "^" anchor with UCS-1, UCS-2 and UCS-4 characters.
+        p = re.compile('^a', re.MULTILINE)
+        self.assertEqual([m.span() for m in p.finditer('a\n\xe0a\na')], [(0, 1), (5, 6)])
+        self.assertEqual([m.span() for m in p.finditer('a\n\u0430a\na')], [(0, 1), (5, 6)])
+        self.assertEqual([m.span() for m in p.finditer('a\n\U0001d49ca\na')], [(0, 1), (5, 6)])
+
+    def test_search_anchor_at_beginning_line_at_end(self):
+        # "^" matches the end of the string if the string ends with a newline.
+        p = re.compile('^', re.MULTILINE)
+        self.assertEqual([m.span() for m in p.finditer('\xe0\n')], [(0, 0), (2, 2)])
+        self.assertEqual([m.span() for m in p.finditer('\u0430\n')], [(0, 0), (2, 2)])
+        self.assertEqual([m.span() for m in p.finditer('\U0001d49c\n')], [(0, 0), (2, 2)])
+
     def test_possessive_quantifiers(self):
         """Test Possessive Quantifiers
         Test quantifiers of the form @+ for some repetition operator @,
