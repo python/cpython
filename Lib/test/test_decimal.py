@@ -1770,6 +1770,59 @@ class ThreadingTest:
         DefaultContext.Emax = save_emax
         DefaultContext.Emin = save_emin
 
+    @threading_helper.requires_working_threading()
+    def test_inherited_context_isolation(self):
+        # Test that when threads inherit contextvars (e.g. via
+        # sys.flags.thread_inherit_context), each thread gets its own
+        # copy of the decimal context so mutations don't leak between
+        # threads.  Also verifies correct behavior with asyncio tasks.
+        Decimal = self.decimal.Decimal
+        getcontext = self.decimal.getcontext
+        setcontext = self.decimal.setcontext
+        Context = self.decimal.Context
+        Underflow = self.decimal.Underflow
+
+        # Set up parent context with specific precision
+        parent_ctx = getcontext()
+        parent_ctx.prec = 20
+
+        barrier = threading.Barrier(2, timeout=2)
+        results = {}
+
+        def child(name, prec_delta):
+            barrier.wait()
+            ctx = getcontext()
+            # Each child should see a context with the parent's precision
+            results[name + '_initial_prec'] = ctx.prec
+            results[name + '_ctx_id'] = id(ctx)
+            # Mutate this thread's context
+            ctx.prec += prec_delta
+            results[name + '_modified_prec'] = ctx.prec
+
+        # Spawn threads that inherit the parent's contextvars.
+        t1 = threading.Thread(target=child, args=('t1', 5),
+                              context=contextvars.copy_context())
+        t2 = threading.Thread(target=child, args=('t2', 10),
+                              context=contextvars.copy_context())
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
+
+        # Each thread should have started with the parent's precision
+        self.assertEqual(results['t1_initial_prec'], 20)
+        self.assertEqual(results['t2_initial_prec'], 20)
+
+        # Each thread should have its own context (different id)
+        self.assertNotEqual(results['t1_ctx_id'], results['t2_ctx_id'])
+
+        # Mutations should be independent
+        self.assertEqual(results['t1_modified_prec'], 25)
+        self.assertEqual(results['t2_modified_prec'], 30)
+
+        # Parent context should be unaffected
+        self.assertEqual(getcontext().prec, 20)
+
 
 @requires_cdecimal
 class CThreadingTest(ThreadingTest, unittest.TestCase):
