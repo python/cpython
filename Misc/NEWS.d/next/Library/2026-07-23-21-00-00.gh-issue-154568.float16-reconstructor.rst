@@ -1,5 +1,1 @@
-Fix ``array._array_reconstructor`` (used internally for unpickling
-:class:`array.array`) ignoring the requested byte order and always
-decoded as big-endian.  This could silently produce wrong values when
-unpickling a half precision float array on a machine with different
-native endianness than the one that pickled it.
+Fix :mod:`array` unpickling of little-endian float16.
