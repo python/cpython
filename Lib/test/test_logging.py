@@ -6304,11 +6304,12 @@ class BaseFileTest(BaseTest):
         self.rmfiles = []
 
     def tearDown(self):
-        for fn in self.rmfiles:
-            os.unlink(fn)
-        if os.path.exists(self.fn):
-            os.unlink(self.fn)
-        BaseTest.tearDown(self)
+        try:
+            for fn in self.rmfiles:
+                os_helper.unlink(fn)
+            os_helper.unlink(self.fn)
+        finally:
+            BaseTest.tearDown(self)
 
     def assertLogFile(self, filename):
         "Assert a log file is there and register it for deletion"
