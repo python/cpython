@@ -179,6 +179,11 @@ class JSONEncoder(object):
                 return super().default(o)
 
         """
+        if isinstance(o, float):
+            raise ValueError(
+                "Out of range float values are not JSON compliant: " +
+                repr(o)
+            )
         raise TypeError(f'Object of type {o.__class__.__name__} '
                         f'is not JSON serializable')
 
@@ -239,9 +244,7 @@ class JSONEncoder(object):
                 return _repr(o)
 
             if not allow_nan:
-                raise ValueError(
-                    "Out of range float values are not JSON compliant: " +
-                    repr(o))
+                return self.default(o)
 
             return text
 
