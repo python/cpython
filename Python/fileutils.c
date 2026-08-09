@@ -78,34 +78,59 @@ get_surrogateescape(_Py_error_handler errors, int *surrogateescape)
 PyObject *
 _Py_device_encoding(int fd)
 {
+#if defined(MS_WINDOWS) && defined(HAVE_WINDOWS_CONSOLE_IO)
+    HANDLE handle;
+    DWORD temp;
+    UINT cp = 0;
+
+    _Py_BEGIN_SUPPRESS_IPH
+    handle = (HANDLE)_get_osfhandle(fd);
+    _Py_END_SUPPRESS_IPH
+    if (handle == INVALID_HANDLE_VALUE) {
+        Py_RETURN_NONE;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    if (GetFileType(handle) == FILE_TYPE_CHAR) {
+        /* GetConsoleMode() only succeeds for a console handle. */
+        if (!GetConsoleMode(handle, &temp)) {
+            /* Assume that access denied implies an output handle. */
+            if (GetLastError() == ERROR_ACCESS_DENIED) {
+                cp = GetConsoleOutputCP();
+            }
+        }
+        else if (GetNumberOfConsoleInputEvents(handle, &temp)) {
+            cp = GetConsoleCP();
+        }
+        else {
+            cp = GetConsoleOutputCP();
+        }
+    }
+    Py_END_ALLOW_THREADS
+
+    /* GetConsoleCP() and GetConsoleOutputCP() return 0 if the application
+       has no console */
+    if (cp == CP_UTF8) {
+        _Py_DECLARE_STR(utf_8, "utf-8");
+        return &_Py_STR(utf_8);
+    }
+    if (cp == 0) {
+        Py_RETURN_NONE;
+    }
+    return PyUnicode_FromFormat("cp%u", (unsigned int)cp);
+#else
     int valid;
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
     valid = isatty(fd);
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
-    if (!valid)
-        Py_RETURN_NONE;
-
-#ifdef MS_WINDOWS
-#ifdef HAVE_WINDOWS_CONSOLE_IO
-    UINT cp;
-    if (fd == 0)
-        cp = GetConsoleCP();
-    else if (fd == 1 || fd == 2)
-        cp = GetConsoleOutputCP();
-    else
-        cp = 0;
-    /* GetConsoleCP() and GetConsoleOutputCP() return 0 if the application
-       has no console */
-    if (cp == 0) {
+    if (!valid) {
         Py_RETURN_NONE;
     }
 
-    return PyUnicode_FromFormat("cp%u", (unsigned int)cp);
-#else
+#ifdef MS_WINDOWS
     Py_RETURN_NONE;
-#endif /* HAVE_WINDOWS_CONSOLE_IO */
 #else
     if (_PyRuntime.preconfig.utf8_mode) {
         _Py_DECLARE_STR(utf_8, "utf-8");
@@ -113,6 +138,7 @@ _Py_device_encoding(int fd)
     }
     return _Py_GetLocaleEncodingObject();
 #endif
+#endif /* MS_WINDOWS && HAVE_WINDOWS_CONSOLE_IO */
 }
 
 
