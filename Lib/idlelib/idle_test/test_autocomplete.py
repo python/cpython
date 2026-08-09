@@ -21,6 +21,9 @@ class DummyEditwin:
         self.tabwidth = 8
         self.prompt_last_line = '>>>'  # Currently not used by autocomplete.
 
+    def getlineno(self, index):
+        return int(float(self.text.index(index)))
+
 
 class AutoCompleteTest(unittest.TestCase):
 
