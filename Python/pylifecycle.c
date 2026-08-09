@@ -3070,7 +3070,18 @@ create_stdio(const PyConfig *config, PyObject* io,
     newline = "\n";
 #endif
 
-    PyObject *encoding_str = PyUnicode_FromWideChar(encoding, -1);
+    PyObject *encoding_str;
+    if (encoding != NULL) {
+        encoding_str = PyUnicode_FromWideChar(encoding, -1);
+    }
+    else {
+        /* gh-86427: use the encoding of the device. */
+        encoding_str = _Py_device_encoding(fd);
+        if (encoding_str == Py_None) {
+            Py_DECREF(encoding_str);
+            encoding_str = _Py_GetLocaleEncodingObject();
+        }
+    }
     if (encoding_str == NULL) {
         Py_CLEAR(buf);
         goto error;
