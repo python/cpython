@@ -1,0 +1,3 @@
+Make sure that the pure Python fallback of :func:`hmac.digest` reject
+keys that are neither :class:`bytes` or :class:`bytearray`. Patch by
+Bénédikt Tran.
