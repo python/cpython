@@ -126,7 +126,7 @@ This module offers the following functions:
    .. versionchanged:: 3.3
       See :ref:`above <exception-changed>`.
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: 3.16
       Added *options* and *exist_ok* parameters.
 
 
@@ -361,7 +361,7 @@ This module offers the following functions:
    .. versionchanged:: 3.3
       See :ref:`above <exception-changed>`.
 
-   .. deprecated-removed:: 3.15 3.17
+   .. deprecated-removed:: 3.16 3.18
       *reserved* is deprecated and will be removed in the future.
       Please use :func:`OpenKeyEx` instead.
 
@@ -402,10 +402,10 @@ This module offers the following functions:
    .. versionchanged:: 3.3
       See :ref:`above <exception-changed>`.
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: 3.16
       Added *options* parameter.
 
-   .. deprecated-removed:: 3.15 3.17
+   .. deprecated-removed:: 3.16 3.18
       *reserved* is deprecated and will be removed in the future.
       Please use *options* instead.
 
