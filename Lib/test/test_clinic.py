@@ -9,6 +9,7 @@ from test.support import os_helper
 from test.support.os_helper import TESTFN, unlink, rmtree
 from textwrap import dedent
 from unittest import TestCase
+import difflib
 import inspect
 import os.path
 import re
@@ -329,6 +330,24 @@ class ClinicWholeFileTest(TestCase):
             [clinic start generated code]*/
         """
         self.expect_failure(block, err, lineno=8)
+
+    def test_ambiguous_group_and_optional_parameters(self):
+        err = ("Function 'my_test_func' has an ambiguous group configuration: "
+               "a call with 2 argument(s) can be parsed in more than one way.")
+        block = """
+            /*[clinic input]
+            my_test_func
+
+                [
+                a: object
+                b: object
+                ]
+                c: object = None
+                d: object = None
+                /
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err)
 
     def test_star_after_vararg(self):
         err = "'my_test_func' uses '*' more than once."
@@ -817,7 +836,7 @@ class ClinicGroupPermuterTest(TestCase):
         self.assertEqual(output, computed)
 
     def test_range(self):
-        self._test([['start']], ['stop'], [['step']],
+        self._test([[['start']]], ['stop'], [[['step']]],
           (
             ('stop',),
             ('start', 'stop',),
@@ -825,7 +844,7 @@ class ClinicGroupPermuterTest(TestCase):
           ))
 
     def test_add_window(self):
-        self._test([['x', 'y']], ['ch'], [['attr']],
+        self._test([[['x', 'y']]], ['ch'], [[['attr']]],
           (
             ('ch',),
             ('ch', 'attr'),
@@ -834,7 +853,8 @@ class ClinicGroupPermuterTest(TestCase):
           ))
 
     def test_ludicrous(self):
-        self._test([['a1', 'a2', 'a3'], ['b1', 'b2']], ['c1'], [['d1', 'd2'], ['e1', 'e2', 'e3']],
+        self._test([[['a1', 'a2', 'a3'], ['b1', 'b2']]], ['c1'],
+                   [[['d1', 'd2'], ['e1', 'e2', 'e3']]],
           (
           ('c1',),
           ('b1', 'b2', 'c1'),
@@ -845,7 +865,7 @@ class ClinicGroupPermuterTest(TestCase):
           ))
 
     def test_right_only(self):
-        self._test([], [], [['a'],['b'],['c']],
+        self._test([], [], [[['a'],['b'],['c']]],
           (
           (),
           ('a',),
@@ -853,9 +873,28 @@ class ClinicGroupPermuterTest(TestCase):
           ('a', 'b', 'c')
           ))
 
+    def test_chgat(self):
+        # Two independent groups on the left.
+        self._test([[['y', 'x']], [['n']]], ['attr'], [],
+          (
+          ('attr',),
+          ('n', 'attr'),
+          ('y', 'x', 'attr'),
+          ('y', 'x', 'n', 'attr'),
+          ))
+
+    def test_independent_groups_on_the_right(self):
+        self._test([], ['a'], [[['b']], [['c', 'd']]],
+          (
+          ('a',),
+          ('a', 'b'),
+          ('a', 'c', 'd'),
+          ('a', 'b', 'c', 'd'),
+          ))
+
     def test_have_left_options_but_required_is_empty(self):
         def fn():
-            permute_optional_groups(['a'], [], [])
+            permute_optional_groups([[['a']]], [], [])
         self.assertRaises(ValueError, fn)
 
 
@@ -1696,41 +1735,74 @@ class ClinicParserTest(TestCase):
                 Attributes for the character.
         """)
 
-    def test_disallowed_grouping__two_top_groups_on_left(self):
-        err = (
-            "Function 'two_top_groups_on_left' has an unsupported group "
-            "configuration. (Unexpected state 2.b)"
+    def test_two_top_groups_on_left(self):
+        function = self.parse_function("""
+            module curses
+            curses.chgat
+                [
+                y: int
+                    Y-coordinate.
+                x: int
+                    X-coordinate.
+                ]
+                [
+                num: int
+                    Number of characters.
+                ]
+                attr: long
+                    Attributes for the characters.
+                /
+        """)
+        dataset = (
+            ('y', -1), ('x', -1),
+            ('num', -2),
+            ('attr', 0),
         )
-        block = """
-            module foo
-            foo.two_top_groups_on_left
-                [
-                group1 : int
-                ]
-                [
-                group2 : int
-                ]
-                param: int
-        """
-        self.expect_failure(block, err, lineno=5)
+        for name, group in dataset:
+            with self.subTest(name=name, group=group):
+                p = function.parameters[name]
+                self.assertEqual(p.group, group)
+                self.assertEqual(p.kind, inspect.Parameter.POSITIONAL_ONLY)
+        self.checkDocstring(function, """
+            chgat([y, x,] [num,] attr)
 
-    def test_disallowed_grouping__two_top_groups_on_right(self):
-        block = """
+
+              y
+                Y-coordinate.
+              x
+                X-coordinate.
+              num
+                Number of characters.
+              attr
+                Attributes for the characters.
+        """)
+
+    def test_two_top_groups_on_right(self):
+        function = self.parse_function("""
             module foo
             foo.two_top_groups_on_right
                 param: int
                 [
-                group1 : int
+                group1: int
                 ]
                 [
-                group2 : int
+                group2: int
                 ]
-        """
-        err = (
-            "Function 'two_top_groups_on_right' has an unsupported group "
-            "configuration. (Unexpected state 6.b)"
+                /
+        """)
+        dataset = (
+            ('param', 0),
+            ('group1', 1),
+            ('group2', 2),
         )
-        self.expect_failure(block, err)
+        for name, group in dataset:
+            with self.subTest(name=name, group=group):
+                p = function.parameters[name]
+                self.assertEqual(p.group, group)
+                self.assertEqual(p.kind, inspect.Parameter.POSITIONAL_ONLY)
+        self.checkDocstring(function, """
+            two_top_groups_on_right(param, [group1,] [group2])
+        """)
 
     def test_disallowed_grouping__parameter_after_group_on_right(self):
         block = """
@@ -3042,6 +3114,148 @@ class ClinicExternalTest(TestCase):
                 generated = f.read()
             self.assertEndsWith(generated, checksum)
 
+    DRY_RUN_CODE = dedent("""
+        /*[clinic input]
+        func
+            a: int
+            /
+
+        Docstring.
+        [clinic start generated code]*/
+    """)
+
+    def make_dry_run_file(self, tmp_dir):
+        fn = os.path.join(tmp_dir, "test.c")
+        with open(fn, "w", encoding="utf-8") as f:
+            f.write(self.DRY_RUN_CODE)
+        return fn
+
+    @staticmethod
+    def dest_file(fn):
+        # The default destination for the generated code.  Its path is
+        # built from the "{dirname}/clinic/{basename}.h" template, so it
+        # always uses forward slashes, even on Windows.
+        dirname, basename = os.path.split(fn)
+        return f"{dirname}/clinic/{basename}.h"
+
+    def check_unchanged(self, tmp_dir, fn, pre_mtime):
+        # Neither the source file nor the destination file
+        # nor its directory is created or modified.
+        with open(fn, encoding="utf-8") as f:
+            self.assertEqual(f.read(), self.DRY_RUN_CODE)
+        self.assertEqual(os.stat(fn).st_mtime_ns, pre_mtime)
+        self.assertEqual(os.listdir(tmp_dir), ["test.c"])
+
+    def test_cli_dry_run(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = self.make_dry_run_file(tmp_dir)
+            pre_mtime = os.stat(fn).st_mtime_ns
+            out = self.expect_success("--dry-run", fn)
+            self.assertEqual(out.splitlines(), [
+                f"would create {self.dest_file(fn)}",
+                f"would update {fn}",
+            ])
+            self.check_unchanged(tmp_dir, fn, pre_mtime)
+
+    def test_cli_dry_run_no_change(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = self.make_dry_run_file(tmp_dir)
+            self.expect_success(fn)
+            self.assertEqual(self.expect_success("--dry-run", fn), "")
+            self.assertEqual(self.expect_success("--diff", fn), "")
+
+    def test_cli_dry_run_no_clinic_block(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write("int x;\n")
+            self.assertEqual(self.expect_success("--dry-run", fn), "")
+
+    def test_cli_dry_run_output(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = self.make_dry_run_file(tmp_dir)
+            out_fn = os.path.join(tmp_dir, "output.c")
+            out = self.expect_success("--dry-run", "-o", out_fn, fn)
+            self.assertIn(f"would create {out_fn}", out)
+            self.assertNotIn(f"would update {fn}", out)
+            self.assertFalse(os.path.exists(out_fn))
+
+    def test_cli_dry_run_make(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = self.make_dry_run_file(tmp_dir)
+            pre_mtime = os.stat(fn).st_mtime_ns
+            out = self.expect_success("--dry-run", "--make", "--srcdir", tmp_dir)
+            self.assertIn(f"would update {fn}", out)
+            self.check_unchanged(tmp_dir, fn, pre_mtime)
+
+    def test_cli_dry_run_verbose(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = self.make_dry_run_file(tmp_dir)
+            out, err, code = self.run_clinic("-v", "--dry-run", fn)
+            self.assertEqual(code, 0)
+            # The progress goes to stderr, so that the standard output
+            # contains only the report.
+            self.assertEqual(err.splitlines(), [fn])
+            self.assertEqual(out.splitlines(), [
+                f"would create {self.dest_file(fn)}",
+                f"would update {fn}",
+            ])
+
+    def test_cli_dry_run_checksum_mismatch(self):
+        invalid_input = dedent("""
+            /*[clinic input]
+            output preset block
+            module test
+            test.fn
+                a: int
+            [clinic start generated code]*/
+            /*[clinic end generated code: output=bogus input=bogus]*/
+        """)
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write(invalid_input)
+            pre_mtime = os.stat(fn).st_mtime_ns
+            # The dry run does not disable the checksum verification.
+            _, err = self.expect_failure("--dry-run", fn)
+            self.assertIn("Checksum mismatch!", err)
+            # With -f the change is reported, but still not written.
+            out = self.expect_success("--dry-run", "-f", fn)
+            self.assertIn(f"would update {fn}", out)
+            with open(fn, encoding="utf-8") as f:
+                self.assertEqual(f.read(), invalid_input)
+            self.assertEqual(os.stat(fn).st_mtime_ns, pre_mtime)
+
+    def test_cli_diff(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = self.make_dry_run_file(tmp_dir)
+            pre_mtime = os.stat(fn).st_mtime_ns
+            out = self.expect_success("--diff", fn)
+            self.check_unchanged(tmp_dir, fn, pre_mtime)
+
+            # A new file is created by the patch.
+            dest_fn = self.dest_file(fn)
+            self.assertStartsWith(out, f"--- /dev/null\n+++ {dest_fn}\n@@ -0,0 +1,")
+            self.assertIn(f"--- {fn}\n+++ {fn}\n", out)
+            self.assertIn("+/*[clinic end generated code:", out)
+
+            # The patch is what clinic would have written.
+            self.expect_success(fn)
+            with open(fn, encoding="utf-8") as f:
+                new_contents = f.read()
+            expected = "".join(difflib.unified_diff(
+                self.DRY_RUN_CODE.splitlines(keepends=True),
+                new_contents.splitlines(keepends=True),
+                fromfile=fn, tofile=fn))
+            self.assertEndsWith(out, expected)
+
+    def test_cli_fail_converters_and_dry_run(self):
+        for opt in "--dry-run", "--diff":
+            with self.subTest(opt=opt):
+                _, err = self.expect_failure("--converters", opt)
+                msg = "can't use --dry-run or --diff with --converters"
+                self.assertIn(msg, err)
+
     def test_cli_make(self):
         c_code = dedent("""
             /*[clinic input]
@@ -3203,10 +3417,66 @@ class ClinicExternalTest(TestCase):
             with self.subTest(converter=converter):
                 self.assertStartsWith(line, converter)
 
-    def test_cli_fail_converters_and_filename(self):
-        _, err = self.expect_failure("--converters", "test.c")
-        msg = "can't specify --converters and a filename at the same time"
-        self.assertIn(msg, err)
+    def test_cli_converters_file(self):
+        code = dedent("""
+            /*[python input]
+            class my_type_converter(CConverter):
+                type = 'my_type'
+                converter = 'my_type_converter'
+
+                def converter_init(self, *, strict=False):
+                    pass
+
+            class my_result_return_converter(CReturnConverter):
+                type = 'my_result'
+            [python start generated code]*/
+        """)
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write(code)
+            out = self.expect_success("--converters", fn)
+            self.assertIn("Converters:\n    my_type(strict=False)\n", out)
+            self.assertIn("Return converters:\n    my_result()\n", out)
+            # Only the converters defined in the file are listed.
+            self.assertNotIn("Legacy converters:", out)
+            self.assertNotIn("bool(", out)
+            # Listing the converters does not write anything.
+            with open(fn, encoding="utf-8") as f:
+                self.assertEqual(f.read(), code)
+            self.assertEqual(os.listdir(tmp_dir), ["test.c"])
+
+    def test_cli_converters_make(self):
+        code = dedent("""
+            /*[python input]
+            class my_type_converter(CConverter):
+                type = 'my_type'
+                converter = 'my_type_converter'
+            [python start generated code]*/
+        """)
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write(code)
+            out = self.expect_success("--converters", "--make",
+                                      "--srcdir", tmp_dir)
+            self.assertIn("Converters:\n    my_type()\n", out)
+            with open(fn, encoding="utf-8") as f:
+                self.assertEqual(f.read(), code)
+
+    def test_cli_converters_no_converters(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write("/*[clinic input]\n[clinic start generated code]*/\n")
+            self.assertEqual(self.expect_success("--converters", fn), "")
+
+    def test_cli_fail_directory(self):
+        with os_helper.temp_dir() as tmp_dir:
+            subdir = os.path.join(tmp_dir, "test.c")
+            os.mkdir(subdir)
+            _, err = self.expect_failure(subdir)
+            self.assertIn(f"Can't read file {subdir!r}: it is a directory", err)
 
     def test_cli_fail_no_filename(self):
         _, err = self.expect_failure()
@@ -3865,6 +4135,55 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(fn(1, a=2, b=3), ((1,), 2, 3, False))
         self.assertEqual(fn(1, a=2, b=3, c=4), ((1,), 2, 3, 4))
 
+    def test_only_group(self):
+        # fn([a])
+        fn = ac_tester.only_group
+        self.assertEqual(fn(), (False, None))
+        self.assertEqual(fn(1), (True, 1))
+        self.assertRaises(TypeError, fn, 1, 2)
+        self.assertRaises(TypeError, fn, a=1)
+
+    def test_group_and_opt(self):
+        # fn([a, b,] c=None)
+        fn = ac_tester.group_and_opt
+        self.assertEqual(fn(), (False, None, None, None))
+        self.assertEqual(fn(1), (False, None, None, 1))
+        self.assertEqual(fn(1, 2), (True, 1, 2, None))
+        self.assertEqual(fn(1, 2, 3), (True, 1, 2, 3))
+        self.assertRaises(TypeError, fn, 1, 2, 3, 4)
+        self.assertRaises(TypeError, fn, c=1)
+
+    def test_group_and_two_opt(self):
+        # fn([a, b, c,] d=None, e=None)
+        fn = ac_tester.group_and_two_opt
+        self.assertEqual(fn(), (False, None, None, None, None, None))
+        self.assertEqual(fn(1), (False, None, None, None, 1, None))
+        self.assertEqual(fn(1, 2), (False, None, None, None, 1, 2))
+        self.assertEqual(fn(1, 2, 3), (True, 1, 2, 3, None, None))
+        self.assertEqual(fn(1, 2, 3, 4), (True, 1, 2, 3, 4, None))
+        self.assertEqual(fn(1, 2, 3, 4, 5), (True, 1, 2, 3, 4, 5))
+        self.assertRaises(TypeError, fn, 1, 2, 3, 4, 5, 6)
+
+    def test_two_groups_on_left(self):
+        # fn([a, b,] [c,] d)
+        fn = ac_tester.two_groups_on_left
+        self.assertRaises(TypeError, fn)
+        self.assertEqual(fn(1), (False, None, None, False, None, 1))
+        self.assertEqual(fn(1, 2), (False, None, None, True, 1, 2))
+        self.assertEqual(fn(1, 2, 3), (True, 1, 2, False, None, 3))
+        self.assertEqual(fn(1, 2, 3, 4), (True, 1, 2, True, 3, 4))
+        self.assertRaises(TypeError, fn, 1, 2, 3, 4, 5)
+
+    def test_two_groups_on_right(self):
+        # fn(a, [b,] [c, d])
+        fn = ac_tester.two_groups_on_right
+        self.assertRaises(TypeError, fn)
+        self.assertEqual(fn(1), (1, False, None, False, None, None))
+        self.assertEqual(fn(1, 2), (1, True, 2, False, None, None))
+        self.assertEqual(fn(1, 2, 3), (1, False, None, True, 2, 3))
+        self.assertEqual(fn(1, 2, 3, 4), (1, True, 2, True, 3, 4))
+        self.assertRaises(TypeError, fn, 1, 2, 3, 4, 5)
+
     def test_gh_32092_oob(self):
         ac_tester.gh_32092_oob(1, 2, 3, 4, kw1=5, kw2=6)
 
@@ -4467,21 +4786,21 @@ class PermutationTests(unittest.TestCase):
             "expected": ((),),
         }
         noleft1 = {
-            "left": (), "required": ("b",), "right": ("c",),
+            "left": (), "required": ("b",), "right": (("c",),),
             "expected": (
                 ("b",),
                 ("b", "c"),
             ),
         }
         noleft2 = {
-            "left": (), "required": ("b", "c",), "right": ("d",),
+            "left": (), "required": ("b", "c",), "right": (("d",),),
             "expected": (
                 ("b", "c"),
                 ("b", "c", "d"),
             ),
         }
         noleft3 = {
-            "left": (), "required": ("b", "c",), "right": ("d", "e"),
+            "left": (), "required": ("b", "c",), "right": (("d", "e"),),
             "expected": (
                 ("b", "c"),
                 ("b", "c", "d"),
@@ -4489,21 +4808,21 @@ class PermutationTests(unittest.TestCase):
             ),
         }
         noright1 = {
-            "left": ("a",), "required": ("b",), "right": (),
+            "left": (("a",),), "required": ("b",), "right": (),
             "expected": (
                 ("b",),
                 ("a", "b"),
             ),
         }
         noright2 = {
-            "left": ("a",), "required": ("b", "c"), "right": (),
+            "left": (("a",),), "required": ("b", "c"), "right": (),
             "expected": (
                 ("b", "c"),
                 ("a", "b", "c"),
             ),
         }
         noright3 = {
-            "left": ("a", "b"), "required": ("c",), "right": (),
+            "left": (("a", "b"),), "required": ("c",), "right": (),
             "expected": (
                 ("c",),
                 ("b", "c"),
@@ -4511,7 +4830,7 @@ class PermutationTests(unittest.TestCase):
             ),
         }
         leftandright1 = {
-            "left": ("a",), "required": ("b",), "right": ("c",),
+            "left": (("a",),), "required": ("b",), "right": (("c",),),
             "expected": (
                 ("b",),
                 ("a", "b"),  # Prefer left.
@@ -4519,7 +4838,7 @@ class PermutationTests(unittest.TestCase):
             ),
         }
         leftandright2 = {
-            "left": ("a", "b"), "required": ("c", "d"), "right": ("e", "f"),
+            "left": (("a", "b"),), "required": ("c", "d"), "right": (("e", "f"),),
             "expected": (
                 ("c", "d"),
                 ("b", "c", "d"),       # Prefer left.
@@ -4528,11 +4847,28 @@ class PermutationTests(unittest.TestCase):
                 ("a", "b", "c", "d", "e", "f"),
             ),
         }
+        independentleft = {
+            "left": (("a",), ("b",)), "required": ("c",), "right": (),
+            "expected": (
+                ("c",),
+                ("b", "c"),
+                ("a", "b", "c"),
+            ),
+        }
+        independentright = {
+            "left": (), "required": ("a",), "right": (("b",), ("c",)),
+            "expected": (
+                ("a",),
+                ("a", "b"),
+                ("a", "b", "c"),
+            ),
+        }
         dataset = (
             empty,
             noleft1, noleft2, noleft3,
             noright1, noright2, noright3,
             leftandright1, leftandright2,
+            independentleft, independentright,
         )
         for params in dataset:
             with self.subTest(**params):

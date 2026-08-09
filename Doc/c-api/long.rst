@@ -71,6 +71,12 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    on failure.
 
 
+.. c:function:: PyObject* PyLong_FromUnsignedLongLong(unsigned long long v)
+
+   Return a new :c:type:`PyLongObject` object from a C :c:expr:`unsigned long long`,
+   or ``NULL`` on failure.
+
+
 .. c:function:: PyObject* PyLong_FromInt32(int32_t value)
                 PyObject* PyLong_FromInt64(int64_t value)
 
@@ -79,12 +85,6 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    with an exception set on failure.
 
    .. versionadded:: 3.14
-
-
-.. c:function:: PyObject* PyLong_FromUnsignedLongLong(unsigned long long v)
-
-   Return a new :c:type:`PyLongObject` object from a C :c:expr:`unsigned long long`,
-   or ``NULL`` on failure.
 
 
 .. c:function:: PyObject* PyLong_FromUInt32(uint32_t value)

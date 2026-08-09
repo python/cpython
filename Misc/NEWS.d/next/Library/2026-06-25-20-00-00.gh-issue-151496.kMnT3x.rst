@@ -1,0 +1,3 @@
+Fixed ``profiling.sampling --gecko`` with ``--async-aware`` by flattening
+async task stacks before generating Gecko samples. ``--binary`` now rejects
+``--async-aware`` until the binary format supports async task data.

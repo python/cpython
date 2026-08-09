@@ -556,19 +556,74 @@ get_decomp_record(PyObject *self, Py_UCS4 code,
     (*index)++;
 }
 
+/* Small combining runs are usually cheaper with insertion sort. */
+#define CANONICAL_ORDERING_COUNTING_SORT_THRESHOLD 20
+
+static void
+canonical_ordering_sort_insertion(Py_UCS4 *data, Py_ssize_t length)
+{
+    for (Py_ssize_t i = 1; i < length; i++) {
+        Py_UCS4 code = data[i];
+        unsigned char combining = _getrecord_ex(code)->combining;
+        Py_ssize_t j = i;
+
+        while (j > 0) {
+            Py_UCS4 previous = data[j - 1];
+            if (_getrecord_ex(previous)->combining <= combining) {
+                break;
+            }
+            data[j] = previous;
+            j--;
+        }
+        if (j != i) {
+            data[j] = code;
+        }
+    }
+}
+
+static void
+canonical_ordering_sort_counting(Py_UCS4 *data, Py_ssize_t length,
+                                 Py_UCS4 *sortbuf)
+{
+    Py_ssize_t counts[256] = {0};
+    Py_ssize_t total = 0;
+
+    for (Py_ssize_t i = 0; i < length; i++) {
+        Py_UCS4 code = data[i];
+        unsigned char combining = _getrecord_ex(code)->combining;
+        counts[combining]++;
+    }
+
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(counts); i++) {
+        Py_ssize_t count = counts[i];
+        counts[i] = total;
+        total += count;
+    }
+
+    /* Reuse counts[] as the next output slot for each CCC. */
+    for (Py_ssize_t i = 0; i < length; i++) {
+        Py_UCS4 code = data[i];
+        unsigned char combining = _getrecord_ex(code)->combining;
+        sortbuf[counts[combining]++] = code;
+    }
+    memcpy(data, sortbuf, length * sizeof(Py_UCS4));
+}
+
 static PyObject*
 nfd_nfkd(PyObject *self, PyObject *input, int k)
 {
     PyObject *result;
     Py_UCS4 *output;
     Py_ssize_t i, o, osize;
-    int kind;
-    const void *data;
+    int input_kind;
+    const void *input_data;
     /* Longest decomposition in Unicode 3.2: U+FDFA */
     Py_UCS4 stack[20];
     Py_ssize_t space, isize;
     int index, prefix, count, stackptr;
     unsigned char prev, cur;
+    Py_UCS4 *sortbuf = NULL;
+    Py_ssize_t sortbuflen = 0;
 
     stackptr = 0;
     isize = PyUnicode_GET_LENGTH(input);
@@ -588,11 +643,11 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
         return NULL;
     }
     i = o = 0;
-    kind = PyUnicode_KIND(input);
-    data = PyUnicode_DATA(input);
+    input_kind = PyUnicode_KIND(input);
+    input_data = PyUnicode_DATA(input);
 
     while (i < isize) {
-        stack[stackptr++] = PyUnicode_READ(kind, data, i++);
+        stack[stackptr++] = PyUnicode_READ(input_kind, input_data, i++);
         while(stackptr) {
             Py_UCS4 code = stack[--stackptr];
             /* Hangul Decomposition adds three characters in
@@ -654,55 +709,79 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
         }
     }
 
-    result = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
-                                       output, o);
-    PyMem_Free(output);
-    if (!result)
-        return NULL;
-
-    kind = PyUnicode_KIND(result);
-    data = PyUnicode_DATA(result);
-
-    /* Sort canonically. */
+    /* Sort each consecutive combining-character run canonically. */
     i = 0;
-    prev = _getrecord_ex(PyUnicode_READ(kind, data, i))->combining;
-    for (i++; i < PyUnicode_GET_LENGTH(result); i++) {
-        cur = _getrecord_ex(PyUnicode_READ(kind, data, i))->combining;
-        if (prev == 0 || cur == 0 || prev <= cur) {
-            prev = cur;
+    while (i < o) {
+        Py_ssize_t run_length, run_start;
+        int needs_sort = 0;
+
+        Py_UCS4 ch = output[i];
+        prev = _getrecord_ex(ch)->combining;
+        if (prev == 0) {
+            i++;
             continue;
         }
-        /* Non-canonical order. Need to switch *i with previous. */
-        o = i - 1;
-        while (1) {
-            Py_UCS4 tmp = PyUnicode_READ(kind, data, o+1);
-            PyUnicode_WRITE(kind, data, o+1,
-                            PyUnicode_READ(kind, data, o));
-            PyUnicode_WRITE(kind, data, o, tmp);
-            o--;
-            if (o < 0)
+
+        run_start = i++;
+        while (i < o) {
+            Py_UCS4 ch = output[i];
+            cur = _getrecord_ex(ch)->combining;
+            if (cur == 0) {
                 break;
-            prev = _getrecord_ex(PyUnicode_READ(kind, data, o))->combining;
-            if (prev == 0 || prev <= cur)
-                break;
+            }
+            if (prev > cur) {
+                needs_sort = 1;
+            }
+            prev = cur;
+            i++;
         }
-        prev = _getrecord_ex(PyUnicode_READ(kind, data, i))->combining;
+        if (!needs_sort) {
+            continue;
+        }
+
+        run_length = i - run_start;
+        if (run_length < CANONICAL_ORDERING_COUNTING_SORT_THRESHOLD) {
+            canonical_ordering_sort_insertion(output + run_start, run_length);
+            continue;
+        }
+
+        if (run_length > sortbuflen) {
+            Py_UCS4 *new_sortbuf = PyMem_Resize(sortbuf, Py_UCS4, run_length);
+            if (new_sortbuf == NULL) {
+                PyErr_NoMemory();
+                PyMem_Free(sortbuf);
+                PyMem_Free(output);
+                return NULL;
+            }
+            sortbuf = new_sortbuf;
+            sortbuflen = run_length;
+        }
+
+        canonical_ordering_sort_counting(output + run_start, run_length,
+                                         sortbuf);
     }
+    PyMem_Free(sortbuf);
+    result = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, output, o);
+    PyMem_Free(output);
     return result;
 }
 
 static int
 find_nfc_index(const struct reindex* nfc, Py_UCS4 code)
 {
-    unsigned int index;
-    for (index = 0; nfc[index].start; index++) {
-        unsigned int start = nfc[index].start;
-        if (code < start)
-            return -1;
-        if (code <= start + nfc[index].count) {
-            unsigned int delta = code - start;
-            return nfc[index].index + delta;
-        }
+    /* The table is sorted by .start ascending with disjoint [start, start+count]
+       ranges and ends with a sentinel whose .start exceeds every codepoint, so
+       a single .start <= code test per entry also stops at the sentinel.  Find
+       the first entry past code, then range-check the candidate (entry i - 1). */
+    unsigned int i;
+    for (i = 0; (Py_UCS4)nfc[i].start <= code; i++) {
+    }
+    if (i == 0) {
+        return -1;
+    }
+    unsigned int start = nfc[i - 1].start;
+    if (code <= start + nfc[i - 1].count) {
+        return nfc[i - 1].index + (code - start);
     }
     return -1;
 }
