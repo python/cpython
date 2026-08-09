@@ -70,13 +70,8 @@ typedef struct
 
     PyObject *statement_cache;
 
-    /* Lists of weak references to cursors and blobs used within this connection */
-    PyObject *cursors;
+    /* Lists of weak references to blobs used within this connection */
     PyObject *blobs;
-
-    /* Counters for how many cursors were created in the connection. May be
-     * reset to 0 at certain intervals */
-    int created_cursors;
 
     PyObject* row_factory;
 

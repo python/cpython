@@ -1,5 +1,0 @@
-Add an ``on_error`` keyword-only parameter to
-:func:`multiprocessing.set_forkserver_preload` to control how import failures
-during module preloading are handled. Accepts ``'ignore'`` (default, silent),
-``'warn'`` (emit :exc:`ImportWarning`), or ``'fail'`` (raise exception).
-Contributed by Nick Neumann and Gregory P. Smith.

@@ -1,1 +1,0 @@
-Reject control characters in ``data:`` URL media types.

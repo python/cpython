@@ -420,7 +420,7 @@ of the class::
     'Buddy'
 
 As discussed in :ref:`tut-object`, shared data can have possibly surprising
-effects with involving :term:`mutable` objects such as lists and dictionaries.
+effects involving :term:`mutable` objects such as lists and dictionaries.
 For example, the *tricks* list in the following code should not be used as a
 class variable because just a single list would be shared by all *Dog*
 instances::

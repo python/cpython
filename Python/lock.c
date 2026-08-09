@@ -27,8 +27,10 @@ static const PyTime_t TIME_TO_BE_FAIR_NS = 1000*1000;
 // enabled.
 #if Py_GIL_DISABLED
 static const int MAX_SPIN_COUNT = 40;
+static const int RELOAD_SPIN_MASK = 3;
 #else
 static const int MAX_SPIN_COUNT = 0;
+static const int RELOAD_SPIN_MASK = 1;
 #endif
 
 struct mutex_entry {
@@ -79,6 +81,16 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
     };
 
     Py_ssize_t spin_count = 0;
+#ifdef Py_GIL_DISABLED
+    // Using thread-id as a way of reducing contention further in the reload below.
+    // It adds a pseudo-random starting offset to the recurrence, so that threads
+    // are less likely to try and run compare-exchange at the same time.
+    // The lower bits of platform thread ids are likely to not be random,
+    // hence the right shift.
+    const Py_ssize_t tid = (Py_ssize_t)(_Py_ThreadId() >> 12);
+#else
+    const Py_ssize_t tid = 0;
+#endif
     for (;;) {
         if ((v & _Py_LOCKED) == 0) {
             // The lock is unlocked. Try to grab it.
@@ -92,6 +104,9 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
             // Spin for a bit.
             _Py_yield();
             spin_count++;
+            if (((spin_count + tid) & RELOAD_SPIN_MASK) == 0) {
+                v = _Py_atomic_load_uint8_relaxed(&m->_bits);
+            }
             continue;
         }
 
@@ -233,7 +248,16 @@ _PyRawMutex_LockSlow(_PyRawMutex *m)
 
         // Wait for us to be woken up. Note that we still have to lock the
         // mutex ourselves: it is NOT handed off to us.
-        _PySemaphore_Wait(&waiter.sema, -1);
+        //
+        // Loop until we observe an actual wakeup. A return of Py_PARK_INTR
+        // could otherwise let us exit _PySemaphore_Wait and destroy
+        // `waiter.sema` while _PyRawMutex_UnlockSlow's matching
+        // _PySemaphore_Wakeup is still pending, since the unlocker has
+        // already CAS-removed us from the waiter list without any handshake.
+        int res;
+        do {
+            res = _PySemaphore_Wait(&waiter.sema, -1);
+        } while (res != Py_PARK_OK);
     }
 
     _PySemaphore_Destroy(&waiter.sema);
@@ -548,81 +572,6 @@ _PyRWMutex_Unlock(_PyRWMutex *rwmutex)
     if ((old_bits & _Py_HAS_PARKED) != 0) {
         _PyParkingLot_UnparkAll(&rwmutex->bits);
     }
-}
-
-#define SEQLOCK_IS_UPDATING(sequence) (sequence & 0x01)
-
-void _PySeqLock_LockWrite(_PySeqLock *seqlock)
-{
-    // lock by moving to an odd sequence number
-    uint32_t prev = _Py_atomic_load_uint32_relaxed(&seqlock->sequence);
-    while (1) {
-        if (SEQLOCK_IS_UPDATING(prev)) {
-            // Someone else is currently updating the cache
-            _Py_yield();
-            prev = _Py_atomic_load_uint32_relaxed(&seqlock->sequence);
-        }
-        else if (_Py_atomic_compare_exchange_uint32(&seqlock->sequence, &prev, prev + 1)) {
-            // We've locked the cache
-            _Py_atomic_fence_release();
-            break;
-        }
-        else {
-            _Py_yield();
-        }
-    }
-}
-
-void _PySeqLock_AbandonWrite(_PySeqLock *seqlock)
-{
-    uint32_t new_seq = _Py_atomic_load_uint32_relaxed(&seqlock->sequence) - 1;
-    assert(!SEQLOCK_IS_UPDATING(new_seq));
-    _Py_atomic_store_uint32(&seqlock->sequence, new_seq);
-}
-
-void _PySeqLock_UnlockWrite(_PySeqLock *seqlock)
-{
-    uint32_t new_seq = _Py_atomic_load_uint32_relaxed(&seqlock->sequence) + 1;
-    assert(!SEQLOCK_IS_UPDATING(new_seq));
-    _Py_atomic_store_uint32(&seqlock->sequence, new_seq);
-}
-
-uint32_t _PySeqLock_BeginRead(_PySeqLock *seqlock)
-{
-    uint32_t sequence = _Py_atomic_load_uint32_acquire(&seqlock->sequence);
-    while (SEQLOCK_IS_UPDATING(sequence)) {
-        _Py_yield();
-        sequence = _Py_atomic_load_uint32_acquire(&seqlock->sequence);
-    }
-
-    return sequence;
-}
-
-int _PySeqLock_EndRead(_PySeqLock *seqlock, uint32_t previous)
-{
-    // gh-121368: We need an explicit acquire fence here to ensure that
-    // this load of the sequence number is not reordered before any loads
-    // within the read lock.
-    _Py_atomic_fence_acquire();
-
-    if (_Py_atomic_load_uint32_relaxed(&seqlock->sequence) == previous) {
-        return 1;
-    }
-
-    _Py_yield();
-    return 0;
-}
-
-int _PySeqLock_AfterFork(_PySeqLock *seqlock)
-{
-    // Synchronize again and validate that the entry hasn't been updated
-    // while we were readying the values.
-    if (SEQLOCK_IS_UPDATING(seqlock->sequence)) {
-        seqlock->sequence = 0;
-        return 1;
-    }
-
-    return 0;
 }
 
 #undef PyMutex_Lock

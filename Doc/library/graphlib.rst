@@ -204,7 +204,7 @@
 
 Exceptions
 ----------
-The :mod:`graphlib` module defines the following exception classes:
+The :mod:`!graphlib` module defines the following exception classes:
 
 .. exception:: CycleError
 

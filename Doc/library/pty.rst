@@ -2,17 +2,13 @@
 =========================================
 
 .. module:: pty
-   :platform: Unix
    :synopsis: Pseudo-Terminal Handling for Unix.
-
-.. moduleauthor:: Steen Lumholt
-.. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
 **Source code:** :source:`Lib/pty.py`
 
 --------------
 
-The :mod:`pty` module defines operations for handling the pseudo-terminal
+The :mod:`!pty` module defines operations for handling the pseudo-terminal
 concept: starting another process and being able to write to and read from its
 controlling terminal programmatically.
 
@@ -22,7 +18,7 @@ Pseudo-terminal handling is highly platform dependent. This code is mainly
 tested on Linux, FreeBSD, and macOS (it is supposed to work on other POSIX
 platforms but it's not been thoroughly tested).
 
-The :mod:`pty` module defines the following functions:
+The :mod:`!pty` module defines the following functions:
 
 
 .. function:: fork()
@@ -92,8 +88,6 @@ The :mod:`pty` module defines the following functions:
 
 Example
 -------
-
-.. sectionauthor:: Steen Lumholt
 
 The following program acts like the Unix command :manpage:`script(1)`, using a
 pseudo-terminal to record all input and output of a terminal session in a

@@ -109,6 +109,16 @@ def test_block_add_hook_baseexception():
                 pass
 
 
+def test_block_add_hook_valueerror():
+    # Non-RuntimeError exceptions (like ValueError) should propagate out
+    with assertRaises(ValueError):
+        with TestHook(
+            raise_on_events="sys.addaudithook", exc_type=ValueError
+        ) as hook1:
+            with TestHook() as hook2:
+                pass
+
+
 def test_marshal():
     import marshal
     o = ("a", "b", "c", 1, 2, 3)
@@ -208,6 +218,16 @@ def test_open(testfn):
         else:
             return None
 
+    try:
+        import _remote_debugging
+    except ImportError:
+        _remote_debugging = None
+
+    def rd(name):
+        if _remote_debugging:
+            return getattr(_remote_debugging, name, None)
+        return None
+
     # Try a range of "open" functions.
     # All of them should fail
     with TestHook(raise_on_events={"open"}) as hook:
@@ -225,6 +245,8 @@ def test_open(testfn):
             (rl("append_history_file"), 0, None),
             (rl("read_init_file"), testfn),
             (rl("read_init_file"), None),
+            (rd("BinaryWriter"), testfn, 1000, 0),
+            (rd("BinaryReader"), testfn),
         ]:
             if not fn:
                 continue
@@ -258,6 +280,8 @@ def test_open(testfn):
                 ("~/.history", "a") if rl("append_history_file") else None,
                 (testfn, "r") if readline else None,
                 ("<readline_init_file>", "r") if readline else None,
+                (testfn, "wb") if rd("BinaryWriter") else None,
+                (testfn, "rb") if rd("BinaryReader") else None,
             ]
             if i is not None
         ],

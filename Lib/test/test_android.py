@@ -1,5 +1,4 @@
 import io
-import platform
 import queue
 import re
 import subprocess
@@ -16,8 +15,6 @@ from unittest.mock import patch
 
 if sys.platform != "android":
     raise unittest.SkipTest("Android-specific")
-
-api_level = platform.android_ver().api_level
 
 # (name, level, fileno)
 STREAM_INFO = [("stdout", "I", 1), ("stderr", "W", 2)]
@@ -44,13 +41,18 @@ class TestAndroidOutput(unittest.TestCase):
 
         try:
             from ctypes import CDLL, c_char_p, c_int
-            android_log_write = getattr(CDLL("liblog.so"), "__android_log_write")
-            android_log_write.argtypes = (c_int, c_char_p, c_char_p)
-            ANDROID_LOG_INFO = 4
+            from ctypes.util import wrap_dll_function
+            liblog = CDLL("liblog.so")
+
+            @wrap_dll_function(liblog)
+            def __android_log_write(prio: c_int, tag: c_char_p,
+                                    text: c_char_p) -> c_int:
+                pass
 
             # Separate tests using a marker line with a different tag.
+            ANDROID_LOG_INFO = 4
             tag, message = "python.test", f"{self.id()} {time()}"
-            android_log_write(
+            __android_log_write(
                 ANDROID_LOG_INFO, tag.encode("UTF-8"), message.encode("UTF-8"))
             self.assert_log("I", tag, message, skip=True)
         except:
@@ -179,14 +181,18 @@ class TestAndroidOutput(unittest.TestCase):
 
                 # Multi-line messages. Avoid identical consecutive lines, as
                 # they may activate "chatty" filtering and break the tests.
-                write("\nx", [""])
+                #
+                # Additional spaces will appear in the output where necessary to
+                # protect leading newlines.
+                write("\nx", [" "])
                 write("\na\n", ["x", "a"])
-                write("\n", [""])
+                write("\n", [" "])
+                write("\n\n", [" ", " "])
                 write("b\n", ["b"])
-                write("c\n\n", ["c", ""])
+                write("c\n\n", ["c", " "])
                 write("d\ne", ["d"])
                 write("xx", [])
-                write("f\n\ng", ["exxf", ""])
+                write("f\n\ng", ["exxf", " "])
                 write("\n", ["g"])
 
                 # Since this is a line-based logging system, line buffering
@@ -197,15 +203,16 @@ class TestAndroidOutput(unittest.TestCase):
                 # However, buffering can be turned off completely if you want a
                 # flush after every write.
                 with self.reconfigure(stream, write_through=True):
-                    write("\nx", ["", "x"])
-                    write("\na\n", ["", "a"])
-                    write("\n", [""])
+                    write("\nx", [" ", "x"])
+                    write("\na\n", [" ", "a"])
+                    write("\n", [" "])
+                    write("\n\n", [" ", " "])
                     write("b\n", ["b"])
-                    write("c\n\n", ["c", ""])
+                    write("c\n\n", ["c", " "])
                     write("d\ne", ["d", "e"])
                     write("xx", ["xx"])
-                    write("f\n\ng", ["f", "", "g"])
-                    write("\n", [""])
+                    write("f\n\ng", ["f", " ", "g"])
+                    write("\n", [" "])
 
                 # "\r\n" should be translated into "\n".
                 write("hello\r\n", ["hello"])
@@ -325,19 +332,16 @@ class TestAndroidOutput(unittest.TestCase):
                 # currently use `logcat -v tag`, which shows each line as if it
                 # was a separate log entry, but strips a single trailing
                 # newline.
-                #
-                # On newer versions of Android, all three of the above tools (or
-                # maybe Logcat itself) will also strip any number of leading
-                # newlines.
-                write(b"\nx", ["", "x"] if api_level < 30 else ["x"])
-                write(b"\na\n", ["", "a"] if api_level < 30 else ["a"])
-                write(b"\n", [""])
+                write(b"\nx", [" ", "x"])
+                write(b"\na\n", [" ", "a"])
+                write(b"\n", [" "])
+                write(b"\n\n", [" ", ""])
                 write(b"b\n", ["b"])
                 write(b"c\n\n", ["c", ""])
                 write(b"d\ne", ["d", "e"])
                 write(b"xx", ["xx"])
                 write(b"f\n\ng", ["f", "", "g"])
-                write(b"\n", [""])
+                write(b"\n", [" "])
 
                 # "\r\n" should be translated into "\n".
                 write(b"hello\r\n", ["hello"])

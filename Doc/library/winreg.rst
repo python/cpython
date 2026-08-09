@@ -2,10 +2,7 @@
 ==========================================
 
 .. module:: winreg
-   :platform: Windows
    :synopsis: Routines and objects for manipulating the Windows registry.
-
-.. sectionauthor:: Mark Hammond <MarkH@ActiveState.com>
 
 **Source code:** :source:`PC/winreg.c`
 
@@ -619,7 +616,7 @@ This module offers the following functions:
 Constants
 ---------
 
-The following constants are defined for use in many :mod:`winreg` functions.
+The following constants are defined for use in many :mod:`!winreg` functions.
 
 .. _hkey-constants:
 
