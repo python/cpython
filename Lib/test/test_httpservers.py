@@ -786,6 +786,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
     def test_get(self):
         #constructs the path relative to the root directory of the HTTPServer
         response = self.request(self.base_url + '/test')
+        self.assertEqual(response.getheader('accept-ranges'), 'bytes')
         self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
         # check for trailing "/" which should return 404. See Issue17324
         response = self.request(self.base_url + '/test/')
@@ -833,6 +834,81 @@ class SimpleHTTPServerTestCase(BaseTestCase):
                 self.check_status_and_reason(response, HTTPStatus.NOT_FOUND)
             finally:
                 os.chmod(self.tempdir, 0o755)
+
+    @support.subTests(
+        'range_header,content_range,content_length,start,end',
+        [
+            ('bYtEs=2-5', 'bytes 2-5/30', '4', 2, 6),
+            ('bytes=3-', 'bytes 3-29/30', '27', 3, None),
+            ('bytes=-5', 'bytes 25-29/30', '5', 25, None),
+            ('bytes=29-29', 'bytes 29-29/30', '1', 29, None),
+            ('bytes=25-100', 'bytes 25-29/30', '5', 25, None),
+        ],
+    )
+    def test_single_range_get(self, range_header, content_range,
+                              content_length, start, end):
+        route = self.base_url + '/test'
+        response = self.request(route, headers={'Range': range_header})
+        self.assertEqual(response.getheader('content-range'), content_range)
+        self.assertEqual(response.getheader('content-length'), content_length)
+        self.check_status_and_reason(
+            response, HTTPStatus.PARTIAL_CONTENT, data=self.data[start:end])
+
+    def test_single_range_head(self):
+        response = self.request(
+            self.base_url + '/test', method='HEAD',
+            headers={'Range': 'bytes=2-5'})
+        self.check_status_and_reason(response, HTTPStatus.PARTIAL_CONTENT)
+        self.assertEqual(response.getheader('content-range'), 'bytes 2-5/30')
+        self.assertEqual(response.getheader('content-length'), '4')
+        self.assertEqual(response.read(), b'')
+
+    @support.subTests('range_header', [
+        'bytes=4-3',
+        'bytes=wrong format',
+        'bytes=-',
+        'bytes=--',
+        'bytes=',
+        'bytes=1-2, 4-7',
+    ])
+    def test_invalid_range_get(self, range_header):
+        route = self.base_url + '/test'
+        response = self.request(route, headers={'Range': range_header})
+        self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
+
+    def test_range_get_ignored_for_directory_listing(self):
+        response = self.request(
+            self.base_url + '/', headers={'Range': 'bytes=0-3'})
+        self.check_status_and_reason(response, HTTPStatus.OK)
+        self.assertIsNone(response.getheader('content-range'))
+
+    @support.subTests('range_header', ['bytes=100-200', 'bytes=-0'])
+    def test_unsatisfiable_range_get(self, range_header):
+        route = self.base_url + '/test'
+        response = self.request(route, headers={'Range': range_header})
+        self.assertEqual(response.getheader('content-range'), 'bytes */30')
+        self.assertEqual(response.getheader('content-length'), '0')
+        self.check_status_and_reason(
+            response, HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
+
+    @support.subTests('range_header', ['bytes=0-512', 'bytes=-512'])
+    def test_single_range_get_empty(self, range_header):
+        os_helper.create_empty_file(os.path.join(self.tempdir_name, 'empty'))
+        empty_path = self.base_url + '/empty'
+
+        response = self.request(empty_path, headers={'Range': range_header})
+        self.check_status_and_reason(response, HTTPStatus.OK, data=b'')
+
+    @support.subTests('range_header', ['bytes=1-2', 'bytes=-0'])
+    def test_unsatisfiable_range_get_empty(self, range_header):
+        os_helper.create_empty_file(os.path.join(self.tempdir_name, 'empty'))
+        empty_path = self.base_url + '/empty'
+
+        response = self.request(empty_path, headers={'Range': range_header})
+        self.assertEqual(response.getheader('content-range'), 'bytes */0')
+        self.assertEqual(response.getheader('content-length'), '0')
+        self.check_status_and_reason(
+            response, HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
 
     def test_head(self):
         response = self.request(

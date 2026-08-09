@@ -1,0 +1,2 @@
+SimpleHTTPRequestHandler now supports single-part HTTP range requests, as
+specified in RFC 9110 section 14.

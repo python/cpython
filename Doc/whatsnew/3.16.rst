@@ -291,6 +291,13 @@ gzip
   which is passed on to the constructor of the :class:`~gzip.GzipFile` class.
   (Contributed by Marin Misur in :gh:`91372`.)
 
+http.server
+-----------
+
+* :class:`~http.server.SimpleHTTPRequestHandler` now supports HTTP
+  single-part range requests for files, as specified in :rfc:`9110#section-14`.
+  (Contributed by David Bord in :gh:`86809`.)
+
 io
 --
 
