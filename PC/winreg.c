@@ -961,15 +961,13 @@ winreg_CreateKeyEx_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
         PyErr_SetFromWindowsErrWithFunction(rc, "CreateKeyEx");
         return NULL;
     }
-    if (!exist_ok) {
-        if (disposition == REG_OPENED_EXISTING_KEY) {
-            PyErr_SetFromWindowsErrWithFunction(ERROR_ALREADY_EXISTS, "CreateKeyEx");
-            if (retKey != key) {
-                // This is not a predefined key and needs to be closed.
-                RegCloseKey(key);
-            }
-            return NULL;
+    if (!exist_ok && disposition == REG_OPENED_EXISTING_KEY) {
+        PyErr_SetFromWindowsErrWithFunction(ERROR_ALREADY_EXISTS, "CreateKeyEx");
+        if (retKey != key) {
+            // This is not a predefined key and needs to be closed.
+            RegCloseKey(retKey);
         }
+        return NULL;
     }
     if (PySys_Audit("winreg.OpenKey/result", "n",
                     (Py_ssize_t)retKey) < 0) {
