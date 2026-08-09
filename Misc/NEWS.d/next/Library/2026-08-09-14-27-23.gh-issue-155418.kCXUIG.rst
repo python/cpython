@@ -1,0 +1,2 @@
+Fix :class:`asyncio.TaskGroup` hang when a task cancels it before
+suspending.
