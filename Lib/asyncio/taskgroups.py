@@ -151,6 +151,9 @@ class TaskGroup:
                 # If there are no pending cancellations left,
                 # don't propagate CancelledError.
                 propagate_cancellation_error = None
+            else:
+                # gh-155433: the remaining cancellation is not ours, don't drop it
+                propagate_cancellation_error = exceptions.CancelledError()
 
         # Propagate CancelledError if there is one, except if there
         # are other errors -- those have priority.
