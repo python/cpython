@@ -9,7 +9,16 @@ import sys
 import doctest
 import unittest
 import io
+import textwrap
 from test import support
+from test.support.import_helper import ensure_lazy_imports, import_module
+from test.support.pty_helper import run_pty
+
+class LazyImportTest(unittest.TestCase):
+    @support.cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("cmd", {"inspect", "string"})
+
 
 class samplecmdclass(cmd.Cmd):
     """
@@ -244,23 +253,79 @@ class TestAlternateInput(unittest.TestCase):
              "(Cmd) *** Unknown syntax: EOF\n"))
 
 
+class CmdPrintExceptionClass(cmd.Cmd):
+    """
+    GH-80731
+    cmd.Cmd should print the correct exception in default()
+    >>> mycmd = CmdPrintExceptionClass()
+    >>> try:
+    ...     raise ValueError("test")
+    ... except ValueError:
+    ...     mycmd.onecmd("not important")
+    (<class 'ValueError'>, ValueError('test'))
+    """
+
+    def default(self, line):
+        print(sys.exc_info()[:2])
+
+
+@support.requires_subprocess()
+class CmdTestReadline(unittest.TestCase):
+    def setUpClass():
+        # Ensure that the readline module is loaded
+        # If this fails, the test is skipped because SkipTest will be raised
+        readline = import_module('readline')
+
+    def test_basic_completion(self):
+        script = textwrap.dedent("""
+            import cmd
+            class simplecmd(cmd.Cmd):
+                def do_tab_completion_test(self, args):
+                    print('tab completion success')
+                    return True
+
+            simplecmd().cmdloop()
+        """)
+
+        # 't' and complete 'ab_completion_test' to 'tab_completion_test'
+        input = b"t\t\n"
+
+        output = run_pty(script, input)
+
+        self.assertIn(b'ab_completion_test', output)
+        self.assertIn(b'tab completion success', output)
+
+    def test_bang_completion_without_do_shell(self):
+        script = textwrap.dedent("""
+            import cmd
+            class simplecmd(cmd.Cmd):
+                def completedefault(self, text, line, begidx, endidx):
+                    return ["hello"]
+
+                def default(self, line):
+                    if line.replace(" ", "") == "!hello":
+                        print('tab completion success')
+                    else:
+                        print('tab completion failure')
+                    return True
+
+            simplecmd().cmdloop()
+        """)
+
+        # '! h' or '!h' and complete 'ello' to 'hello'
+        for input in [b"! h\t\n", b"!h\t\n"]:
+            with self.subTest(input=input):
+                output = run_pty(script, input)
+                self.assertIn(b'hello', output)
+                self.assertIn(b'tab completion success', output)
+
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite())
     return tests
 
-def test_coverage(coverdir):
-    trace = support.import_module('trace')
-    tracer=trace.Trace(ignoredirs=[sys.base_prefix, sys.base_exec_prefix,],
-                        trace=0, count=1)
-    tracer.run('import importlib; importlib.reload(cmd); test_main()')
-    r=tracer.results()
-    print("Writing coverage results...")
-    r.write_results(show_missing=True, summary=True, coverdir=coverdir)
 
 if __name__ == "__main__":
-    if "-c" in sys.argv:
-        test_coverage('/tmp/cmd.cover')
-    elif "-i" in sys.argv:
+    if "-i" in sys.argv:
         samplecmdclass().cmdloop()
     else:
         unittest.main()

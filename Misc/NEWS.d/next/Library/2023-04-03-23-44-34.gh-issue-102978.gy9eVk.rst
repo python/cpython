@@ -1,3 +1,0 @@
-Fixes :func:`unittest.mock.patch` not enforcing function signatures for methods
-decorated with ``@classmethod`` or ``@staticmethod`` when patch is called with
-``autospec=True``.

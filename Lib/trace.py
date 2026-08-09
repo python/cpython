@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # portions copyright 2001, Autonomous Zones Industries, Inc., all rights...
 # err...  reserved and offered to the public under the terms of the
 # Python 2.2 license.
@@ -49,6 +47,7 @@ Sample use, programmatically
 """
 __all__ = ['Trace', 'CoverageResults']
 
+import io
 import linecache
 import os
 import sys
@@ -201,7 +200,8 @@ class CoverageResults:
         for key in other_callers:
             callers[key] = 1
 
-    def write_results(self, show_missing=True, summary=False, coverdir=None):
+    def write_results(self, show_missing=True, summary=False, coverdir=None, *,
+                      ignore_missing_files=False):
         """
         Write the coverage results.
 
@@ -210,6 +210,9 @@ class CoverageResults:
         :param coverdir: If None, the results of each module are placed in its
                          directory, otherwise it is included in the directory
                          specified.
+        :param ignore_missing_files: If True, counts for files that no longer
+                         exist are silently ignored. Otherwise, a missing file
+                         will raise a FileNotFoundError.
         """
         if self.calledfuncs:
             print()
@@ -252,13 +255,15 @@ class CoverageResults:
             if filename.endswith(".pyc"):
                 filename = filename[:-1]
 
+            if ignore_missing_files and not os.path.isfile(filename):
+                continue
+
             if coverdir is None:
                 dir = os.path.dirname(os.path.abspath(filename))
                 modulename = _modname(filename)
             else:
                 dir = coverdir
-                if not os.path.exists(dir):
-                    os.makedirs(dir)
+                os.makedirs(dir, exist_ok=True)
                 modulename = _fullmodname(filename)
 
             # If desired, get a list of the line numbers which represent
@@ -274,15 +279,13 @@ class CoverageResults:
             n_hits, n_lines = self.write_results_file(coverpath, source,
                                                       lnotab, count, encoding)
             if summary and n_lines:
-                percent = int(100 * n_hits / n_lines)
-                sums[modulename] = n_lines, percent, modulename, filename
-
+                sums[modulename] = n_lines, n_hits, modulename, filename
 
         if summary and sums:
             print("lines   cov%   module   (path)")
             for m in sorted(sums):
-                n_lines, percent, modulename, filename = sums[m]
-                print("%5d   %3d%%   %s   (%s)" % sums[m])
+                n_lines, n_hits, modulename, filename = sums[m]
+                print(f"{n_lines:5d}   {n_hits/n_lines:.1%}   {modulename}   ({filename})")
 
         if self.outfile:
             # try and store counts and module info into self.outfile
@@ -396,7 +399,7 @@ class Trace:
         @param countfuncs true iff it should just output a list of
                      (filename, modulename, funcname,) for functions
                      that were called at least once;  This overrides
-                     `count' and `trace'
+                     'count' and 'trace'
         @param ignoremods a list of the names of modules to ignore
         @param ignoredirs a list of the names of directories to ignore
                      all of the (recursive) contents of
@@ -528,7 +531,7 @@ class Trace:
     def globaltrace_lt(self, frame, why, arg):
         """Handler for call events.
 
-        If the code block being entered is to be ignored, returns `None',
+        If the code block being entered is to be ignored, returns 'None',
         else returns self.localtrace.
         """
         if why == 'call':
@@ -559,8 +562,12 @@ class Trace:
             if self.start_time:
                 print('%.2f' % (_time() - self.start_time), end=' ')
             bname = os.path.basename(filename)
-            print("%s(%d): %s" % (bname, lineno,
-                                  linecache.getline(filename, lineno)), end='')
+            line = linecache.getline(filename, lineno)
+            print("%s(%d)" % (bname, lineno), end='')
+            if line:
+                print(": ", line, end='')
+            else:
+                print()
         return self.localtrace
 
     def localtrace_trace(self, frame, why, arg):
@@ -572,8 +579,12 @@ class Trace:
             if self.start_time:
                 print('%.2f' % (_time() - self.start_time), end=' ')
             bname = os.path.basename(filename)
-            print("%s(%d): %s" % (bname, lineno,
-                                  linecache.getline(filename, lineno)), end='')
+            line = linecache.getline(filename, lineno)
+            print("%s(%d)" % (bname, lineno), end='')
+            if line:
+                print(": ", line, end='')
+            else:
+                print()
         return self.localtrace
 
     def localtrace_count(self, frame, why, arg):
@@ -601,27 +612,27 @@ def main():
 
     grp.add_argument('-c', '--count', action='store_true',
             help='Count the number of times each line is executed and write '
-                 'the counts to <module>.cover for each module executed, in '
-                 'the module\'s directory. See also --coverdir, --file, '
-                 '--no-report below.')
+                 'the counts to `<module>.cover` for each module executed, in '
+                 'the module\'s directory. See also `--coverdir`, `--file`, '
+                 '`--no-report` below.')
     grp.add_argument('-t', '--trace', action='store_true',
-            help='Print each line to sys.stdout before it is executed')
+            help='Print each line to `sys.stdout` before it is executed')
     grp.add_argument('-l', '--listfuncs', action='store_true',
             help='Keep track of which functions are executed at least once '
-                 'and write the results to sys.stdout after the program exits. '
-                 'Cannot be specified alongside --trace or --count.')
+                 'and write the results to `sys.stdout` after the program exits. '
+                 'Cannot be specified alongside `--trace` or `--count`.')
     grp.add_argument('-T', '--trackcalls', action='store_true',
             help='Keep track of caller/called pairs and write the results to '
-                 'sys.stdout after the program exits.')
+                 '`sys.stdout` after the program exits.')
 
     grp = parser.add_argument_group('Modifiers')
 
     _grp = grp.add_mutually_exclusive_group()
     _grp.add_argument('-r', '--report', action='store_true',
             help='Generate a report from a counts file; does not execute any '
-                 'code. --file must specify the results file to read, which '
-                 'must have been created in a previous run with --count '
-                 '--file=FILE')
+                 'code. `--file` must specify the results file to read, which '
+                 'must have been created in a previous run with `--count` '
+                 '`--file=FILE`')
     _grp.add_argument('-R', '--no-report', action='store_true',
             help='Do not generate the coverage report files. '
                  'Useful if you want to accumulate over several runs.')
@@ -630,14 +641,14 @@ def main():
             help='File to accumulate counts over several runs')
     grp.add_argument('-C', '--coverdir',
             help='Directory where the report files go. The coverage report '
-                 'for <package>.<module> will be written to file '
-                 '<dir>/<package>/<module>.cover')
+                 'for `<package>.<module>` will be written to file '
+                 '`<dir>/<package>/<module>.cover`')
     grp.add_argument('-m', '--missing', action='store_true',
             help='Annotate executable lines that were not executed with '
                  '">>>>>> "')
     grp.add_argument('-s', '--summary', action='store_true',
-            help='Write a brief summary for each file to sys.stdout. '
-                 'Can only be used with --count or --report')
+            help='Write a brief summary for each file to `sys.stdout`. '
+                 'Can only be used with `--count` or `--report`')
     grp.add_argument('-g', '--timing', action='store_true',
             help='Prefix each line with the time since the program started. '
                  'Only used while tracing')
@@ -650,7 +661,7 @@ def main():
                  'module names.')
     grp.add_argument('--ignore-dir', action='append', default=[],
             help='Ignore files in the given directory '
-                 '(multiple directories can be joined by os.pathsep).')
+                 '(multiple directories can be joined by `os.pathsep`).')
 
     parser.add_argument('--module', action='store_true', default=False,
                         help='Trace a module. ')
@@ -710,20 +721,18 @@ def main():
                 '__package__': mod_spec.parent,
                 '__loader__': mod_spec.loader,
                 '__spec__': mod_spec,
-                '__cached__': None,
             }
         else:
             sys.argv = [opts.progname, *opts.arguments]
             sys.path[0] = os.path.dirname(opts.progname)
 
-            with open(opts.progname, 'rb') as fp:
+            with io.open_code(opts.progname) as fp:
                 code = compile(fp.read(), opts.progname, 'exec')
             # try to emulate __main__ namespace as much as possible
             globs = {
                 '__file__': opts.progname,
                 '__name__': '__main__',
                 '__package__': None,
-                '__cached__': None,
             }
         t.runctx(code, globs, globs)
     except OSError as err:
