@@ -1,0 +1,4 @@
+The specialized opcodes ``CALL_EX_PY`` and ``CALL_KW_BOUND_METHOD`` now check
+the recursion limit before entering the callee, matching the behavior of their
+generic counterparts. Previously, after warmup, these opcodes could bypass the
+recursion limit check.
