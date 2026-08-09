@@ -3547,6 +3547,18 @@ expat_comment_handler(void *op, const XML_Char *comment_in)
         /* shortcut */
         TreeBuilderObject *target = (TreeBuilderObject*) self->target;
 
+        /* Fast path: if comments aren't being collected (no comment_factory
+           and no event tracking), skip the expensive UTF-8 decoding and
+           processing. This significantly improves performance when parsing
+           XML with many comments that aren't being collected (gh-150096). */
+        if (!target->comment_factory && !target->events_append) {
+            /* Still need to flush any pending text data before the comment */
+            if (treebuilder_flush_data(target) < 0) {
+                return;
+            }
+            return;
+        }
+
         comment = PyUnicode_DecodeUTF8(comment_in, strlen(comment_in), "strict");
         if (!comment)
             return; /* parser will look for errors */
