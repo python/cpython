@@ -1,0 +1,2 @@
+Document that ``'store_true'`` and ``'store_false'`` defaults are affected by
+``argument_default`` in the :mod:`argparse` documentation.
