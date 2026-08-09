@@ -727,6 +727,17 @@ tarfile
 * The undocumented and unused :attr:`!tarfile.TarFile.tarfile` attribute
   has been deprecated since Python 3.13.
 
+xml.etree.ElementTree
+---------------------
+
+* The undocumented :meth:`!xml.etree.ElementTree.ElementTree.write_c14n` method
+  and the support of ``method="c14n"`` in
+  :meth:`~xml.etree.ElementTree.ElementTree.write` and
+  :func:`~xml.etree.ElementTree.tostring`.
+  They never worked and always raised :exc:`ValueError`.
+  Use :func:`xml.etree.ElementTree.canonicalize` instead.
+  (Contributed by Daniel Hillier in :gh:`118318`.)
+
 .. Add removals above alphabetically, not here at the end.
 
 
