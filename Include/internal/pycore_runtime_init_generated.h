@@ -2000,6 +2000,7 @@ extern "C" {
     INIT_ID(prec), \
     INIT_ID(preserve_exc), \
     INIT_ID(print_file_and_line), \
+    INIT_ID(printname), \
     INIT_ID(priority), \
     INIT_ID(progress), \
     INIT_ID(progress_callback), \

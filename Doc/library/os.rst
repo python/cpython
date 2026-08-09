@@ -2758,7 +2758,7 @@ features:
    .. availability:: Unix.
 
 
-.. function:: readlink(path, *, dir_fd=None)
+.. function:: readlink(path, *, dir_fd=None, printname=False)
 
    Return a string representing the path to which the symbolic link points.  The
    result may be either an absolute or relative pathname; if it is relative, it
@@ -2772,6 +2772,13 @@ features:
 
    This function can also support :ref:`paths relative to directory descriptors
    <dir_fd>`.
+
+   On Windows, if *printname* is true, return the *print name* of the link --
+   the target path as it was specified when the link was created --
+   instead of the *substitute name* used by the system to resolve the link,
+   which typically includes the ``\\?\`` prefix.
+   The substitute name is returned if the link has no print name.
+   *printname* is ignored on non-Windows platforms.
 
    When trying to resolve a path that may contain links, use
    :func:`~os.path.realpath` to properly handle recursion and platform
@@ -2794,6 +2801,9 @@ features:
       Added support for directory junctions, and changed to return the
       substitution path (which typically includes ``\\?\`` prefix) rather
       than the optional "print name" field that was previously returned.
+
+   .. versionchanged:: next
+      Added the *printname* parameter.
 
 .. function:: remove(path, *, dir_fd=None)
 

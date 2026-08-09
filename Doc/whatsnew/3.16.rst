@@ -414,6 +414,11 @@ os
   process via a pidfd.  Available on Linux 5.6+.
   (Contributed by Maurycy Pawłowski-Wieroński in :gh:`149464`.)
 
+* :func:`os.readlink` has a new *printname* parameter
+  to return the print name of a link on Windows --
+  the target path as it was specified when the link was created.
+  (Contributed by Serhiy Storchaka in :gh:`85004`.)
+
 
 pydoc
 -----
