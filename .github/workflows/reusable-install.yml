@@ -35,7 +35,7 @@ jobs:
     - name: Install dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: Configure CPython
-      run: ./configure --config-cache --with-pydebug --prefix="$INSTALL_DIR"
+      run: ./configure --config-cache --prefix="$INSTALL_DIR"
     - name: Build CPython
       run: make -j
     - name: Install CPython
