@@ -700,6 +700,20 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         f = Foo()
         self.assertIn("y", dir(f))
 
+        # dir(obj) - cyclic __bases__ must raise RecursionError
+        class Fake:
+            pass
+
+        a = Fake()
+        a.__bases__ = (a,)
+
+        class C:
+            @property
+            def __class__(self):
+                return a
+
+        self.assertRaises(RecursionError, dir, C())
+
         # dir(obj_no__dict__)
         class Foo(object):
             __slots__ = []
