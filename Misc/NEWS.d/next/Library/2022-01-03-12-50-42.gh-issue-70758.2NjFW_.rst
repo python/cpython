@@ -1,2 +1,2 @@
 Creating a new :mod:`turtle` screen after the previous one was closed no
-longer raises :exc:`turtle.Terminator` on the first turtle command.
+longer raises ``turtle.Terminator`` on the first turtle command.
