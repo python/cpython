@@ -3186,7 +3186,7 @@ init_sys_streams(PyThreadState *tstate)
      * GUI apps don't have valid standard streams by default.
      */
     std = create_stdio(config, iomod, fd, 0, "<stdin>",
-                       config->stdio_encoding,
+                       config->stdin_encoding,
                        config->stdio_errors);
     if (std == NULL)
         goto error;
@@ -3197,7 +3197,7 @@ init_sys_streams(PyThreadState *tstate)
     /* Set sys.stdout */
     fd = fileno(stdout);
     std = create_stdio(config, iomod, fd, 1, "<stdout>",
-                       config->stdio_encoding,
+                       config->stdout_encoding,
                        config->stdio_errors);
     if (std == NULL)
         goto error;
@@ -3209,7 +3209,7 @@ init_sys_streams(PyThreadState *tstate)
     /* Set sys.stderr, replaces the preliminary stderr */
     fd = fileno(stderr);
     std = create_stdio(config, iomod, fd, 1, "<stderr>",
-                       config->stdio_encoding,
+                       config->stderr_encoding,
                        L"backslashreplace");
     if (std == NULL)
         goto error;
