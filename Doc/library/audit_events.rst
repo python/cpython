@@ -41,6 +41,8 @@ public API of CPython:
 +----------------------------+-------------------------------------------+
 | _winapi.OpenProcess        | ``process_id``, ``desired_access``        |
 +----------------------------+-------------------------------------------+
+| _winapi.OpenThread         | ``thread_id``, ``desired_access``         |
++----------------------------+-------------------------------------------+
 | _winapi.TerminateProcess   | ``handle``, ``exit_code``                 |
 +----------------------------+-------------------------------------------+
 | _posixsubprocess.fork_exec | ``exec_list``, ``args``, ``env``          |
@@ -50,3 +52,6 @@ public API of CPython:
 
 .. versionadded:: 3.14
    The ``_posixsubprocess.fork_exec`` internal audit event.
+
+.. versionadded:: next
+   The ``_winapi.OpenThread`` internal audit event.
