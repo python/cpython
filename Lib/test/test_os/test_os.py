@@ -2459,8 +2459,8 @@ class URandomTests(unittest.TestCase):
             'data = os.urandom(%s)' % count,
             'sys.stdout.buffer.write(data)',
             'sys.stdout.buffer.flush()'))
-        out = assert_python_ok('-c', code)
-        stdout = out[1]
+        proc = assert_python_ok('-c', code)
+        stdout = proc.out
         self.assertEqual(len(stdout), count)
         return stdout
 
