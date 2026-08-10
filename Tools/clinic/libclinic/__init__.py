@@ -2,23 +2,42 @@ from typing import Final
 
 from .errors import (
     ClinicError,
+    warn,
+    fail,
 )
 from .formatting import (
     SIG_END_MARKER,
-    c_repr,
+    c_str_repr,
+    c_bytes_repr,
+    c_unichar_repr,
     docstring_for_c_string,
     format_escape,
     indent_all_lines,
+    linear_format,
     normalize_snippet,
     pprint_words,
     suffix_all_lines,
     wrap_declarations,
     wrapped_c_string_literal,
 )
+from .identifiers import (
+    ensure_legal_c_identifier,
+    is_legal_c_identifier,
+    is_legal_py_identifier,
+)
 from .utils import (
+    FileChange,
+    FileWriter,
     FormatCounterFormatter,
+    NULL,
+    NullType,
+    Sentinels,
+    VersionTuple,
     compute_checksum,
     create_regex,
+    read_file,
+    unknown,
+    unspecified,
     write_file,
 )
 
@@ -26,23 +45,42 @@ from .utils import (
 __all__ = [
     # Error handling
     "ClinicError",
+    "warn",
+    "fail",
 
     # Formatting helpers
     "SIG_END_MARKER",
-    "c_repr",
+    "c_str_repr",
+    "c_bytes_repr",
+    "c_unichar_repr",
     "docstring_for_c_string",
     "format_escape",
     "indent_all_lines",
+    "linear_format",
     "normalize_snippet",
     "pprint_words",
     "suffix_all_lines",
     "wrap_declarations",
     "wrapped_c_string_literal",
 
+    # Identifier helpers
+    "ensure_legal_c_identifier",
+    "is_legal_c_identifier",
+    "is_legal_py_identifier",
+
     # Utility functions
+    "FileChange",
+    "FileWriter",
     "FormatCounterFormatter",
+    "NULL",
+    "NullType",
+    "Sentinels",
+    "VersionTuple",
     "compute_checksum",
     "create_regex",
+    "read_file",
+    "unknown",
+    "unspecified",
     "write_file",
 ]
 
@@ -56,6 +94,7 @@ CLINIC_PREFIXED_ARGS: Final = frozenset(
         "argsbuf",
         "fastargs",
         "kwargs",
+        "kwds",
         "kwnames",
         "nargs",
         "noptargs",

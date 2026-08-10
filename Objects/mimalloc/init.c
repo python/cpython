@@ -13,27 +13,7 @@ terms of the MIT license. A copy of the license can be found in the file
 
 
 // Empty page used to initialize the small free pages array
-const mi_page_t _mi_page_empty = {
-  0, false, false, false, 0,
-  0,       // capacity
-  0,       // reserved capacity
-  { 0 },   // flags
-  false,   // is_zero
-  0,       // retire_expire
-  NULL,    // free
-  0,       // used
-  0,       // xblock_size
-  NULL,    // local_free
-  #if (MI_PADDING || MI_ENCODE_FREELIST)
-  { 0, 0 },
-  #endif
-  MI_ATOMIC_VAR_INIT(0), // xthread_free
-  MI_ATOMIC_VAR_INIT(0), // xheap
-  NULL, NULL
-  #if MI_INTPTR_SIZE==8
-  , { 0 }  // padding
-  #endif
-};
+const mi_page_t _mi_page_empty;
 
 #define MI_PAGE_EMPTY() ((mi_page_t*)&_mi_page_empty)
 
@@ -122,6 +102,7 @@ mi_decl_cache_align const mi_heap_t _mi_heap_empty = {
   MI_BIN_FULL, 0,   // page retired min/max
   NULL,             // next
   false,
+  0,
   0
 };
 
@@ -202,9 +183,9 @@ mi_heap_t* _mi_heap_main_get(void) {
 
 // note: in x64 in release build `sizeof(mi_thread_data_t)` is under 4KiB (= OS page size).
 typedef struct mi_thread_data_s {
-  mi_heap_t  heap;  // must come first due to cast in `_mi_heap_done`
+  mi_heap_t  heap;   // must come first due to cast in `_mi_heap_done`
   mi_tld_t   tld;
-  mi_memid_t memid;
+  mi_memid_t memid;  // must come last due to zero'ing
 } mi_thread_data_t;
 
 
@@ -250,7 +231,7 @@ static mi_thread_data_t* mi_thread_data_zalloc(void) {
   }
 
   if (td != NULL && !is_zero) {
-    _mi_memzero_aligned(td, sizeof(*td));
+    _mi_memzero_aligned(td, offsetof(mi_thread_data_t,memid));
   }
   return td;
 }
@@ -579,7 +560,7 @@ void mi_process_init(void) mi_attr_noexcept {
   _mi_verbose_message("secure level: %d\n", MI_SECURE);
   _mi_verbose_message("mem tracking: %s\n", MI_TRACK_TOOL);
   #if MI_TSAN
-  _mi_verbose_message("thread santizer enabled\n");
+  _mi_verbose_message("thread sanitizer enabled\n");
   #endif
   mi_thread_init();
 

@@ -103,7 +103,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="..\PC\pycon.ico" />
+    <None Include="..\PC\icons\python.ico" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_exe.rc" />
@@ -134,6 +134,14 @@
     <Exec Command='setlocal
 set PYTHONPATH=$(PySourcePath)Lib
 "$(OutDir)$(PyExeName)$(PyDebugExt).exe" "$(PySourcePath)PC\validate_ucrtbase.py" $(UcrtName)' ContinueOnError="true" />
+  </Target>
+  <Target Name="CopyFreethreadedBinary" AfterTargets="AfterBuild"
+          Condition="$(DisableGil) == 'true' and $(Configuration) != 'PGInstrument'">
+    <Message Text="Duplicating $(TargetPath) to $(PyExeName)$(MajorVersionNumber).$(MinorVersionNumber)t$(PyDebugExt).exe for free-threaded compatibility" />
+    <Copy SourceFiles="$(TargetPath)"
+          DestinationFiles="$(OutDir)\$(PyExeName)$(MajorVersionNumber).$(MinorVersionNumber)t$(PyDebugExt).exe"
+          SkipUnchangedFiles="true"
+          UseHardLinksIfPossible="true" />
   </Target>
   <Target Name="GeneratePythonBat" AfterTargets="AfterBuild">
     <PropertyGroup>

@@ -14,6 +14,7 @@ BaseException
       ├── EOFError
       ├── ExceptionGroup [BaseExceptionGroup]
       ├── ImportError
+      │    └── ImportCycleError
       │    └── ModuleNotFoundError
       ├── LookupError
       │    ├── IndexError
@@ -40,11 +41,11 @@ BaseException
       ├── ReferenceError
       ├── RuntimeError
       │    ├── NotImplementedError
+      │    ├── PythonFinalizationError
       │    └── RecursionError
       ├── StopAsyncIteration
       ├── StopIteration
       ├── SyntaxError
-      │    └── IncompleteInputError
       │    └── IndentationError
       │         └── TabError
       ├── SystemError

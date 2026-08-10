@@ -1,2 +1,0 @@
-Dismiss the :exc:`FileNotFound` error in :func:`ctypes.util.find_library` and
-just return ``None`` on Linux.

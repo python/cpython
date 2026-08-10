@@ -1,6 +1,6 @@
 global tracing
 
-probe process.mark("function__entry")
+probe @PYTHON_SYSTEMTAP_PROBE@("function__entry")
 {
     funcname = user_string($arg2);
 
@@ -9,14 +9,15 @@ probe process.mark("function__entry")
     }
 }
 
-probe process.mark("gc__start"), process.mark("gc__done")
+probe @PYTHON_SYSTEMTAP_PROBE@("gc__start"),
+      @PYTHON_SYSTEMTAP_PROBE@("gc__done")
 {
     if (tracing) {
         printf("%d\t%s:%ld\n", gettimeofday_us(), $$name, $arg1);
     }
 }
 
-probe process.mark("function__return")
+probe @PYTHON_SYSTEMTAP_PROBE@("function__return")
 {
     funcname = user_string($arg2);
 

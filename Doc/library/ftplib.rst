@@ -1,5 +1,5 @@
-:mod:`ftplib` --- FTP protocol client
-=====================================
+:mod:`!ftplib` --- FTP protocol client
+======================================
 
 .. module:: ftplib
    :synopsis: FTP protocol client (requires sockets).
@@ -23,7 +23,7 @@ The default encoding is UTF-8, following :rfc:`2640`.
 
 .. include:: ../includes/wasm-notavail.rst
 
-Here's a sample session using the :mod:`ftplib` module::
+Here's a sample session using the :mod:`!ftplib` module::
 
    >>> from ftplib import FTP
    >>> ftp = FTP('ftp.us.debian.org')  # connect to host, default port
@@ -104,7 +104,7 @@ FTP objects
    :param timeout:
       A timeout in seconds for blocking operations like :meth:`connect`
       (default: the global default timeout setting).
-   :type timeout: int | None
+   :type timeout: float | None
 
    :param source_address:
       |param_doc_source_address|
@@ -178,7 +178,7 @@ FTP objects
       :param timeout:
          A timeout in seconds for the connection attempt
          (default: the global default timeout setting).
-      :type timeout: int | None
+      :type timeout: float | None
 
       :param source_address:
          |param_doc_source_address|
@@ -232,8 +232,8 @@ FTP objects
    .. method:: FTP.voidcmd(cmd)
 
       Send a simple command string to the server and handle the response.  Return
-      nothing if a response code corresponding to success (codes in the range
-      200--299) is received.  Raise :exc:`error_reply` otherwise.
+      the response string if the response code corresponds to success (codes in
+      the range 200--299).  Raise :exc:`error_reply` otherwise.
 
       .. audit-event:: ftplib.sendcmd self,cmd ftplib.FTP.voidcmd
 
@@ -243,7 +243,7 @@ FTP objects
       Retrieve a file in binary transfer mode.
 
       :param str cmd:
-        An appropriate ``STOR`` command: :samp:`"STOR {filename}"`.
+        An appropriate ``RETR`` command: :samp:`"RETR {filename}"`.
 
       :param callback:
          A single parameter callable that is called
@@ -483,7 +483,7 @@ FTP_TLS objects
    :param timeout:
       A timeout in seconds for blocking operations like :meth:`~FTP.connect`
       (default: the global default timeout setting).
-   :type timeout: int | None
+   :type timeout: float | None
 
    :param source_address:
       |param_doc_source_address|
@@ -524,14 +524,9 @@ FTP_TLS objects
    :class:`!FTP_TLS` class inherits from :class:`FTP`,
    defining these additional methods and attributes:
 
-   .. attribute:: FTP_TLS.ssl_version
-
-      The SSL version to use (defaults to :data:`ssl.PROTOCOL_SSLv23`).
-
    .. method:: FTP_TLS.auth()
 
-      Set up a secure control connection by using TLS or SSL, depending on what
-      is specified in the :attr:`ssl_version` attribute.
+      Set up a secure control connection by using TLS.
 
       .. versionchanged:: 3.4
          The method now supports hostname check with
@@ -548,7 +543,7 @@ FTP_TLS objects
 
    .. method:: FTP_TLS.prot_p()
 
-      Set up secure data connection.
+      Set up secure data connection by using TLS.
 
    .. method:: FTP_TLS.prot_c()
 
