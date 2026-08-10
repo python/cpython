@@ -68,6 +68,9 @@ STDLIB_INSTALL = os.path.join(sys.prefix, sys.platlibdir,
 if not os.path.isfile(os.path.join(STDLIB_INSTALL, 'os.py')):
     STDLIB_INSTALL = None
 
+CODE_EXITCODE_123 = 'raise SystemExit(123)'
+
+
 def debug_build(program):
     program = os.path.basename(program)
     name = os.path.splitext(program)[0]
@@ -140,12 +143,16 @@ class EmbeddingTestsMixin:
             env = env.copy()
             env['SYSTEMROOT'] = os.environ['SYSTEMROOT']
 
-        p = subprocess.Popen(cmd,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE,
-                             universal_newlines=True,
-                             env=env,
-                             cwd=cwd)
+        kwargs = dict(
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+            env=env,
+            cwd=cwd,
+        )
+        if input is not None:
+            kwargs['stdin'] = subprocess.PIPE
+        p = subprocess.Popen(cmd, **kwargs)
         try:
             (out, err) = p.communicate(input=input, timeout=timeout)
         except:
@@ -589,6 +596,55 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             if expected_runtime_warning not in line
         ]
         return "\n".join(filtered_err_lines)
+
+    def check_program_exitcode(self, *args, check_stderr=True, **kwargs):
+        out, err = self.run_embedded_interpreter(*args, **kwargs)
+        self.assertEqual(out.rstrip(), 'ok! Py_RunMain() returned 123')
+        if check_stderr:
+            self.assertEqual(err, '')
+
+    def test_init_run_main_code_exitcode(self):
+        code = CODE_EXITCODE_123
+        self.check_program_exitcode("test_init_run_main_code_exitcode", code)
+
+    def test_init_run_main_script_exitcode(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            filename = os.path.join(tmpdir, 'script.py')
+            with open(filename, 'w') as fp:
+                fp.write(CODE_EXITCODE_123)
+
+            self.check_program_exitcode("test_init_run_main_script_exitcode",
+                                        filename)
+
+    def test_init_run_main_interactive_exitcode(self):
+        code = CODE_EXITCODE_123
+        self.check_program_exitcode("test_init_run_main_interactive_exitcode",
+                                    input=code,
+                                    check_stderr=False)
+
+    def test_init_run_main_startup_exitcode(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            filename = os.path.join(tmpdir, 'startup.py')
+            with open(filename, 'x') as fp:
+                fp.write(CODE_EXITCODE_123)
+
+            env = dict(os.environ)
+            env['PYTHONSTARTUP'] = filename
+            self.check_program_exitcode("test_init_run_main_interactive_exitcode",
+                                        env=env,
+                                        check_stderr=False)
+
+    def test_init_run_main_module_exitcode(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            modname = '_testembed_testmodule'
+            filename = os.path.join(tmpdir, modname + '.py')
+            with open(filename, 'x', encoding='utf8') as fp:
+                fp.write(CODE_EXITCODE_123)
+
+            env = dict(os.environ)
+            env['PYTHONPATH'] = tmpdir
+            self.check_program_exitcode("test_init_run_main_module_exitcode",
+                                        modname, env=env)
 
 
 def config_dev_mode(preconfig, config):
@@ -1828,19 +1884,31 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         # The global path configuration (_Py_path_config) must be a copy
         # of the path configuration of PyInterpreter.config (PyConfig).
         ctypes = import_helper.import_module('ctypes')
+        import ctypes.util  # noqa: F811
 
-        def get_func(name):
-            func = getattr(ctypes.pythonapi, name)
-            func.argtypes = ()
-            func.restype = ctypes.c_wchar_p
-            return func
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_GetPath() -> ctypes.c_wchar_p:
+            pass
 
-        Py_GetPath = get_func('Py_GetPath')
-        Py_GetPrefix = get_func('Py_GetPrefix')
-        Py_GetExecPrefix = get_func('Py_GetExecPrefix')
-        Py_GetProgramName = get_func('Py_GetProgramName')
-        Py_GetProgramFullPath = get_func('Py_GetProgramFullPath')
-        Py_GetPythonHome = get_func('Py_GetPythonHome')
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_GetPrefix() -> ctypes.c_wchar_p:
+            pass
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_GetExecPrefix() -> ctypes.c_wchar_p:
+            pass
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_GetProgramName() -> ctypes.c_wchar_p:
+            pass
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_GetProgramFullPath() -> ctypes.c_wchar_p:
+            pass
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_GetPythonHome() -> ctypes.c_wchar_p:
+            pass
 
         config = _testinternalcapi.get_configs()['config']
 
