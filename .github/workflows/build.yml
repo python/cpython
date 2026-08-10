@@ -659,11 +659,11 @@ jobs:
     - build-windows-msi
     - build-macos
     - build-ubuntu
+    - build-ubuntu-installed
     - build-ubuntu-ssltests
     - build-ios
     - build-emscripten
     - build-wasi
-    - build-ubuntu-installed
     - test-hypothesis
     - build-asan
     - build-san
@@ -710,8 +710,8 @@ jobs:
             !fromJSON(needs.build-context.outputs.run-ubuntu)
             && '
             build-ubuntu,
-            build-ubuntu-ssltests,
             build-ubuntu-installed,
+            build-ubuntu-ssltests,
             test-hypothesis,
             build-asan,
             build-san,
