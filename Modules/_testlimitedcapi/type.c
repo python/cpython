@@ -31,6 +31,9 @@ get_heaptype_for_name(PyObject *self, PyObject *Py_UNUSED(ignored))
 static int
 check_type_arg(PyObject *arg)
 {
+    if (arg == NULL) {
+        return 0;
+    }
     if (!PyType_Check(arg)) {
         PyErr_SetString(PyExc_TypeError, "argument must be a type");
         return -1;
@@ -41,45 +44,57 @@ check_type_arg(PyObject *arg)
 
 // Test PyType_GetName()
 static PyObject*
-get_type_name(PyObject *self, PyObject *type)
+get_type_name(PyObject *self, PyObject *arg)
 {
-    if (check_type_arg(type) < 0) {
+    NULLABLE(arg);
+    if (check_type_arg(arg) < 0) {
         return NULL;
     }
-    return PyType_GetName((PyTypeObject *)type);
+    PyTypeObject *type = (PyTypeObject*)arg;
+
+    return PyType_GetName(type);
 }
 
 
 // Test PyType_GetQualName()
 static PyObject*
-get_type_qualname(PyObject *self, PyObject *type)
+get_type_qualname(PyObject *self, PyObject *arg)
 {
-    if (check_type_arg(type) < 0) {
+    NULLABLE(arg);
+    if (check_type_arg(arg) < 0) {
         return NULL;
     }
-    return PyType_GetQualName((PyTypeObject *)type);
+    PyTypeObject *type = (PyTypeObject*)arg;
+
+    return PyType_GetQualName(type);
 }
 
 
 // Test PyType_GetFullyQualifiedName()
 static PyObject*
-get_type_fullyqualname(PyObject *self, PyObject *type)
+get_type_fullyqualname(PyObject *self, PyObject *arg)
 {
-    if (check_type_arg(type) < 0) {
+    NULLABLE(arg);
+    if (check_type_arg(arg) < 0) {
         return NULL;
     }
-    return PyType_GetFullyQualifiedName((PyTypeObject *)type);
+    PyTypeObject *type = (PyTypeObject*)arg;
+
+    return PyType_GetFullyQualifiedName(type);
 }
 
 
 // Test PyType_GetModuleName()
 static PyObject*
-get_type_module_name(PyObject *self, PyObject *type)
+get_type_module_name(PyObject *self, PyObject *arg)
 {
-    if (check_type_arg(type) < 0) {
+    NULLABLE(arg);
+    if (check_type_arg(arg) < 0) {
         return NULL;
     }
-    return PyType_GetModuleName((PyTypeObject *)type);
+    PyTypeObject *type = (PyTypeObject*)arg;
+
+    return PyType_GetModuleName(type);
 }
 
 
@@ -87,6 +102,7 @@ get_type_module_name(PyObject *self, PyObject *type)
 static PyObject*
 type_modified(PyObject *self, PyObject *arg)
 {
+    NULLABLE(arg);
     if (check_type_arg(arg) < 0) {
         return NULL;
     }
@@ -103,6 +119,7 @@ type_ready(PyObject *self, PyObject *arg)
 {
     assert(!PyErr_Occurred());
 
+    NULLABLE(arg);
     if (check_type_arg(arg) < 0) {
         return NULL;
     }
@@ -121,6 +138,7 @@ type_ready(PyObject *self, PyObject *arg)
 static PyObject *
 type_freeze(PyObject *module, PyObject *arg)
 {
+    NULLABLE(arg);
     if (check_type_arg(arg) < 0) {
         return NULL;
     }
@@ -149,6 +167,7 @@ type_clearcache(PyObject *module, PyObject *Py_UNUSED(arg))
 static PyObject *
 type_getflags(PyObject *module, PyObject *arg)
 {
+    NULLABLE(arg);
     if (check_type_arg(arg) < 0) {
         return NULL;
     }
@@ -172,13 +191,7 @@ type_issubtype(PyObject *module, PyObject *args)
     }
 
     int is_subtype = PyType_IsSubtype(type1, type2);
-    if (is_subtype != 0 && is_subtype != 1) {
-        PyErr_Format(PyExc_AssertionError,
-                     "PyType_IsSubtype expected result: %i",
-                     is_subtype);
-        return NULL;
-    }
-    return PyBool_FromLong(is_subtype);
+    return PyLong_FromLong(is_subtype);
 }
 
 
@@ -201,7 +214,7 @@ int
 _PyTestLimitedCAPI_Init_Type(PyObject *m)
 {
     if (PyModule_AddFunctions(m, test_methods) < 0) {
-        return 0;
+        return -1;
     }
 
 #define ADD_INT(macro) \

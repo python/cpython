@@ -98,6 +98,9 @@ test_get_statictype_slots(PyObject *self, PyObject *Py_UNUSED(ignored))
 static int
 check_type_arg(PyObject *arg)
 {
+    if (arg == NULL) {
+        return 0;
+    }
     if (!PyType_Check(arg)) {
         PyErr_SetString(PyExc_TypeError, "argument must be a type");
         return -1;
@@ -110,6 +113,7 @@ check_type_arg(PyObject *arg)
 static PyObject *
 type_get_version(PyObject *self, PyObject *arg)
 {
+    NULLABLE(arg);
     if (check_type_arg(arg) < 0) {
         return NULL;
     }
@@ -128,6 +132,7 @@ type_get_version(PyObject *self, PyObject *arg)
 static PyObject *
 type_assign_version(PyObject *self, PyObject *arg)
 {
+    NULLABLE(arg);
     if (check_type_arg(arg) < 0) {
         return NULL;
     }
@@ -142,6 +147,7 @@ type_assign_version(PyObject *self, PyObject *arg)
 static PyObject *
 type_get_tp_bases(PyObject *self, PyObject *arg)
 {
+    NULLABLE(arg);
     if (check_type_arg(arg) < 0) {
         return NULL;
     }
@@ -159,6 +165,7 @@ type_get_tp_bases(PyObject *self, PyObject *arg)
 static PyObject *
 type_get_tp_mro(PyObject *self, PyObject *arg)
 {
+    NULLABLE(arg);
     if (check_type_arg(arg) < 0) {
         return NULL;
     }

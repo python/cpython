@@ -4,6 +4,8 @@ import unittest
 _testcapi = import_helper.import_module('_testcapi')
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 
+NULL = None
+
 
 class BuiltinStaticTypesTests(unittest.TestCase):
 
@@ -110,6 +112,11 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(get_type_fullyqualname(MyType), 'my_qualname')
         MyType.__module__ = 123
         self.assertEqual(get_type_fullyqualname(MyType), 'my_qualname')
+
+        # CRASHES get_type_name(NULL)
+        # CRASHES get_type_qualname(NULL)
+        # CRASHES get_type_fullyqualname(NULL)
+        # CRASHES get_type_module_name(NULL)
 
     def test_get_base_by_token(self):
         def get_base_by_token(src, key, comparable=True):
@@ -249,6 +256,8 @@ class TypeTests(unittest.TestCase):
         # as well
         type_freeze(D)
 
+        # CRASHES type_freeze(NULL)
+
     @unittest.skipIf(
         Py_GIL_DISABLED and refleak_helper.hunting_for_refleaks(),
         "Specialization failure triggers gh-127773")
@@ -315,6 +324,8 @@ class TypeTests(unittest.TestCase):
         type_ready(int)
         type_ready(dict)
         type_ready(HeapType)
+
+        # CRASHES type_ready(NULL)
 
     def test_type_clearcache(self):
         # Test PyType_ClearCache()
@@ -447,9 +458,16 @@ class TypeTests(unittest.TestCase):
             pass
         check_type(HeapType, static_type=False, have_gc=True, match_self=False)
 
+        # CRASHES type_getflags(NULL)
+
     def test_type_issubtype(self):
         # Test PyType_IsSubtype()
-        type_issubtype = _testlimitedcapi.type_issubtype
+        _type_issubtype = _testlimitedcapi.type_issubtype
+
+        def type_issubtype(type1, type2):
+            res = _type_issubtype(type1, type2)
+            self.assertIn(res, (0, 1))
+            return bool(res)
 
         class MyList(list):
             pass
@@ -460,3 +478,13 @@ class TypeTests(unittest.TestCase):
         self.assertFalse(type_issubtype(int, type))
         self.assertFalse(type_issubtype(frozendict, dict))
         self.assertFalse(type_issubtype(MyList, tuple))
+
+    def test_type_modified(self):
+        # Test PyType_Modified()
+        type_modified = _testlimitedcapi.type_modified
+
+        class MyType:
+            pass
+        type_modified(MyType)
+
+        # CRASHES type_modified(NULL)
