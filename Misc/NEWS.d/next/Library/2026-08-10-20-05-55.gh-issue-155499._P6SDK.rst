@@ -1,0 +1,3 @@
+:meth:`curses.window.border` and :meth:`curses.window.box` no longer raise
+:exc:`TypeError` when ``0`` is mixed with a one-character string or bytes
+argument, restoring the documented default-character sentinel behavior.

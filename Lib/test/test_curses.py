@@ -1521,6 +1521,21 @@ class TestCurses(unittest.TestCase):
                     win.box(v, v)
                     self.assertEqual(win.instr(0, 1, 1), b)
 
+    def test_border_box_zero_sentinel(self):
+        # gh-155499: 0 must still mean "use the default character" even
+        # when mixed with a one-character str/bytes argument.
+        win = curses.newwin(5, 10, 5, 2)
+        win.border('|', '|', '-', '-')
+        win.border('|', '|', '-', '-', 0, 0, 0, 0)
+        win.border(0, '|', 0, '-', 0, 0, 0, 0)
+        self.assertRaises(TypeError, win.border,
+                          '|', '|', '-', '-', 1, 0, 0, 0)
+        win.box('|', 0)
+        win.box(0, '-')
+        win.box(0, 0)
+        self.assertRaises(TypeError, win.box, '|', 1)
+        self.assertRaises(TypeError, win.box, 1, '-')
+
     def test_unctrl(self):
         self.assertEqual(curses.unctrl(b'A'), b'A')
         self.assertEqual(curses.unctrl('A'), b'A')

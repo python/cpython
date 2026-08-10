@@ -2711,6 +2711,9 @@ _curses_window_border_impl(PyCursesWindowObject *self, PyObject *ls,
             else if (types[i] == 2) {
                 wch_p[i] = &wch[i];
             }
+            else if (types[i] == 1 && ch[i] == 0) {
+                wch_p[i] = NULL;  /* int 0 also means "use default" */
+            }
             else {
                 PyErr_SetString(PyExc_TypeError,
                                 "border() cannot mix integer or bytes "
@@ -2775,15 +2778,37 @@ _curses_window_box_impl(PyCursesWindowObject *self, int group_right_1,
         }
     }
     if (t1 == 2 || t2 == 2) {
-        if (t1 != 2 || t2 != 2) {
-            PyErr_SetString(PyExc_TypeError,
-                            "box() cannot mix integer or bytes characters "
-                            "with wide string characters");
-            return NULL;
+        const cchar_t *wch1_p, *wch2_p;
+
+        if (t1 == 2) {
+            wch1_p = &wch1;
         }
-        int rtn = wborder_set(self->win, &wch1, &wch1, &wch2, &wch2,
+        else if (t1 == 1 && ch1 == 0) {
+            wch1_p = NULL;
+        }
+        else {
+            goto mixed_type_error;
+        }
+
+        if (t2 == 2) {
+            wch2_p = &wch2;
+        }
+        else if (t2 == 1 && ch2 == 0) {
+            wch2_p = NULL;
+        }
+        else {
+            goto mixed_type_error;
+        }
+
+        int rtn = wborder_set(self->win, wch1_p, wch1_p, wch2_p, wch2_p,
                               NULL, NULL, NULL, NULL);
         return curses_window_check_err(self, rtn, "wborder_set", "box");
+
+    mixed_type_error:
+        PyErr_SetString(PyExc_TypeError,
+                         "box() cannot mix integer or bytes characters "
+                         "with wide string characters");
+        return NULL;
     }
 #else
     if (group_right_1) {
