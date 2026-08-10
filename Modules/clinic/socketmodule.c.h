@@ -49,15 +49,21 @@ PyDoc_STRVAR(_socket_socket_setblocking__doc__,
     {"setblocking", (PyCFunction)_socket_socket_setblocking, METH_O, _socket_socket_setblocking__doc__},
 
 static PyObject *
-_socket_socket_setblocking_impl(PySocketSockObject *s, PyObject *arg);
+_socket_socket_setblocking_impl(PySocketSockObject *s, int flag);
 
 static PyObject *
 _socket_socket_setblocking(PyObject *s, PyObject *arg)
 {
     PyObject *return_value = NULL;
+    int flag;
 
-    return_value = _socket_socket_setblocking_impl((PySocketSockObject *)s, arg);
+    flag = PyObject_IsTrue(arg);
+    if (flag < 0) {
+        goto exit;
+    }
+    return_value = _socket_socket_setblocking_impl((PySocketSockObject *)s, flag);
 
+exit:
     return return_value;
 }
 
@@ -2466,4 +2472,4 @@ exit:
 #ifndef _SOCKET_CMSG_SPACE_METHODDEF
     #define _SOCKET_CMSG_SPACE_METHODDEF
 #endif /* !defined(_SOCKET_CMSG_SPACE_METHODDEF) */
-/*[clinic end generated code: output=c96ac95c17326e10 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e4322f43486f34a0 input=a9049054013a1b77]*/

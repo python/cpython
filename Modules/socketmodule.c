@@ -3176,7 +3176,7 @@ error:
 /*[clinic input]
 _socket.socket.setblocking
     self as s: self(type="PySocketSockObject *")
-    flag as arg: object
+    flag: bool
     /
 
 Set the socket to blocking (flag is true) or non-blocking (false).
@@ -3186,17 +3186,11 @@ setblocking(False) is equivalent to settimeout(0.0).
 [clinic start generated code]*/
 
 static PyObject *
-_socket_socket_setblocking_impl(PySocketSockObject *s, PyObject *arg)
-/*[clinic end generated code: output=39a348904324f352 input=115fee5787faedac]*/
+_socket_socket_setblocking_impl(PySocketSockObject *s, int flag)
+/*[clinic end generated code: output=0d27b1c391538401 input=bfc2c8564d8b67f6]*/
 {
-    long block;
-
-    block = PyObject_IsTrue(arg);
-    if (block < 0)
-        return NULL;
-
-    s->sock_timeout = _PyTime_FromSeconds(block ? -1 : 0);
-    if (internal_setblocking(s, block) == -1) {
+    s->sock_timeout = _PyTime_FromSeconds(flag ? -1 : 0);
+    if (internal_setblocking(s, flag) == -1) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -5349,8 +5343,6 @@ _socket_socket_sendmsg_afalg_impl(PySocketSockObject *self,
 
   finally:
     PyMem_Free(controlbuf);
-    if (iv->buf != NULL) {
-            }
     PyMem_Free(msg.msg_iov);
     for (i = 0; i < ndatabufs; i++) {
         PyBuffer_Release(&databufs[i]);
@@ -6425,6 +6417,7 @@ _socket_gethostbyaddr(PyObject *module, PyObject *hobj)
     PyMutex_Unlock(&netdb_lock);
 #endif
 finally:
+    PyMem_Free(ip_num);
     return ret;
 }
 #endif
