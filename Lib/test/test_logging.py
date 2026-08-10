@@ -73,6 +73,11 @@ except ImportError:
     win32evtlog = win32evtlogutil = pywintypes = None
 
 try:
+    import syslog
+except ImportError:
+    syslog = None
+
+try:
     import zlib
 except ImportError:
     pass
@@ -2210,6 +2215,31 @@ class IPv6SysLogHandlerTest(SysLogHandlerTest):
     def tearDown(self):
         self.server_class.address_family = socket.AF_INET
         super(IPv6SysLogHandlerTest, self).tearDown()
+
+@unittest.skipUnless(syslog, 'syslog module required')
+class LocalSysLogHandlerTest(BaseTest):
+
+    """Test for SysLogHandler using the syslog module (address=None)."""
+
+    def test_emit(self):
+        h = logging.handlers.SysLogHandler(address=None)
+        self.addCleanup(h.close)
+        self.assertFalse(h.unixsocket)
+        h.setFormatter(logging.Formatter('%(message)s'))
+        record = self.next_message()
+        logrec = logging.makeLogRecord({'msg': record, 'levelname': 'WARNING',
+                                        'levelno': logging.WARNING})
+        with patch.object(syslog, 'syslog') as mock_syslog:
+            h.emit(logrec)
+        mock_syslog.assert_called_once_with(
+            syslog.LOG_USER | syslog.LOG_WARNING, record)
+
+    def test_reject_socktype_and_timeout(self):
+        with self.assertRaises(ValueError):
+            logging.handlers.SysLogHandler(address=None,
+                                           socktype=socket.SOCK_DGRAM)
+        with self.assertRaises(ValueError):
+            logging.handlers.SysLogHandler(address=None, timeout=1)
 
 @support.requires_working_socket()
 @threading_helper.requires_working_threading()
