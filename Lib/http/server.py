@@ -1013,7 +1013,7 @@ def nobody_uid():
     except ImportError:
         return -1
     try:
-        nobody = pwd.getpwnam('nobody')[2]
+        nobody = pwd.getpwnam('nobody').pw_uid
     except KeyError:
         nobody = 1 + max(x[2] for x in pwd.getpwall())
     return nobody
