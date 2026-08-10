@@ -2890,7 +2890,7 @@ class AbstractPickleTests:
     def test_recursive_frozendict_and_inst(self):
         if self.py_version < (3, 15):
             self.skipTest('need frozendict')
-        self._test_recursive_collection_and_inst(frozendict.fromkeys, minprotocol=2)
+        self._test_recursive_collection_and_inst(frozendict.fromkeys)
 
     def test_recursive_set_and_inst(self):
         self._test_recursive_collection_and_inst(set)
@@ -2929,7 +2929,7 @@ class AbstractPickleTests:
     def test_recursive_frozendict_in_key(self):
         if self.py_version < (3, 15):
             self.skipTest('need frozendict')
-        self._test_recursive_collection_in_key(frozendict, minprotocol=2)
+        self._test_recursive_collection_in_key(frozendict)
 
     def test_recursive_frozendict_subclass_in_key(self):
         if self.py_version < (3, 15):
@@ -2950,7 +2950,7 @@ class AbstractPickleTests:
     def test_recursive_frozendict_in_value(self):
         if self.py_version < (3, 15):
             self.skipTest('need frozendict')
-        self._test_recursive_collection_in_value(frozendict, minprotocol=2)
+        self._test_recursive_collection_in_value(frozendict)
 
     def test_recursive_frozendict_subclass_in_value(self):
         if self.py_version < (3, 15):
@@ -4635,7 +4635,7 @@ class AbstractPickleTests:
     def test_fast_save_enter_frozendict(self):
         if self.py_version < (3, 15):
             self.skipTest('need frozendict')
-        self.fast_save_enter(lambda i: frozendict(key=i), minprotocol=2)
+        self.fast_save_enter(lambda i: frozendict(key=i))
 
     def test_fast_save_enter_dict(self):
         self.fast_save_enter(lambda i: {"key": i})
