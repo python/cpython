@@ -825,13 +825,14 @@ poll_dealloc(PyObject *op)
 static PyMethodDef devpoll_methods[];
 
 #define DEVPOLL_IN_BUFFER_SIZE 128
-#define DEVPOLL_MAX_OUT_BUFFER_SIZE 1024
+#define DEVPOLL_OUT_BUFFER_SIZE 1024
 
 typedef struct {
     PyObject_HEAD
     int fd_devpoll;
     int n_fds;
     int out_size;
+    int registered;
     struct pollfd *fds;
     struct pollfd *out_fds;
 } devpollObject;
@@ -890,6 +891,7 @@ internal_devpoll_register(devpollObject *self, int fd,
             if (devpoll_flush(self))
                 return NULL;
         }
+        self->registered -= 1;
     }
 
     self->fds[self->n_fds].fd = fd;
@@ -900,6 +902,7 @@ internal_devpoll_register(devpollObject *self, int fd,
             return NULL;
     }
 
+    self->registered += 1;
     Py_RETURN_NONE;
 }
 
@@ -972,6 +975,7 @@ select_devpoll_unregister_impl(devpollObject *self, int fd)
             return NULL;
     }
 
+    self->registered -= 1;
     Py_RETURN_NONE;
 }
 
@@ -1027,6 +1031,17 @@ select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
 
     if (devpoll_flush(self))
         return NULL;
+
+    /* Ensure the output buffer is large enough to potentially
+     * fit all registered file descriptors. */
+    if (self->registered > self->out_size) {
+        self->out_size = self->registered + 128;
+        self->out_fds = PyMem_Resize(self->out_fds, struct pollfd, self->out_size);
+        if (self->out_fds == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+    }
 
     dvp.dp_fds = self->out_fds;
     dvp.dp_nfds = self->out_size;
@@ -1187,8 +1202,8 @@ newDevPollObject(PyObject *module)
     ** allocate huge amounts of memory or even fail to allocate.
     */
     out_size = limit.rlim_cur;
-    if ((rlim_t)out_size > DEVPOLL_MAX_OUT_BUFFER_SIZE) {
-        out_size = DEVPOLL_MAX_OUT_BUFFER_SIZE;
+    if ((rlim_t)out_size > DEVPOLL_OUT_BUFFER_SIZE) {
+        out_size = DEVPOLL_OUT_BUFFER_SIZE;
     }
 
     fd_devpoll = _Py_open("/dev/poll", O_RDWR);
@@ -1220,6 +1235,7 @@ newDevPollObject(PyObject *module)
     self->fd_devpoll = fd_devpoll;
     self->n_fds = 0;
     self->fds = fds;
+    self->registered = 0;
     self->out_size = out_size;
     self->out_fds = out_fds;
 
