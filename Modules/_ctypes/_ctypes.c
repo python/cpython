@@ -267,7 +267,7 @@ _PyDict_GetItemProxy(PyObject *dict, PyObject *key, PyObject **presult)
   later on.
  */
 static char *
-_ctypes_alloc_format_string_for_type(const char *code, int big_endian)
+_ctypes_alloc_format_string_for_type(const char *code)
 {
     const char *pep_code = NULL;
 
@@ -310,14 +310,13 @@ _ctypes_alloc_format_string_for_type(const char *code, int big_endian)
         break;
     }
 
-    char *result = PyMem_Malloc(1 + strlen(pep_code) + 1);
+    char *result = PyMem_Malloc(1 + strlen(pep_code));
     if (result == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
 
-    result[0] = big_endian ? '>' : '<';
-    strcpy(result + 1, pep_code);
+    strcpy(result, pep_code);
     return result;
 }
 
@@ -2405,11 +2404,7 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
     stginfo->size = fmt->pffi_type->size;
     stginfo->setfunc = fmt->setfunc;
     stginfo->getfunc = fmt->getfunc;
-#ifdef WORDS_BIGENDIAN
-    stginfo->format = _ctypes_alloc_format_string_for_type(proto_str, 1);
-#else
-    stginfo->format = _ctypes_alloc_format_string_for_type(proto_str, 0);
-#endif
+    stginfo->format = _ctypes_alloc_format_string_for_type(proto_str);
     if (stginfo->format == NULL) {
         Py_DECREF(proto);
         return -1;
@@ -2504,14 +2499,14 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
         PyObject_SetAttrString(swapped, "__ctype_be__", self);
         PyObject_SetAttrString(swapped, "__ctype_le__", swapped);
         /* We are creating the type for the OTHER endian */
-        sw_info->format = _ctypes_alloc_format_string("<", stginfo->format+1);
+        sw_info->format = _ctypes_alloc_format_string("<", stginfo->format);
 #else
         PyObject_SetAttrString(self, "__ctype_be__", swapped);
         PyObject_SetAttrString(self, "__ctype_le__", self);
         PyObject_SetAttrString(swapped, "__ctype_le__", self);
         PyObject_SetAttrString(swapped, "__ctype_be__", swapped);
         /* We are creating the type for the OTHER endian */
-        sw_info->format = _ctypes_alloc_format_string(">", stginfo->format+1);
+        sw_info->format = _ctypes_alloc_format_string(">", stginfo->format);
 #endif
         Py_DECREF(swapped);
         if (PyErr_Occurred()) {

@@ -1,0 +1,4 @@
+Correct the :ref:`buffer protocol <bufferobjects>` support in the
+:mod:`ctypes` module to use the machine’s native format and byte order,
+rather than explicitly specify endianness (by ``'<'`` or ``'>'``).  The
+later kept for byte-swapped types.  Patch by Sergey B Kirpichev.
