@@ -1,12 +1,7 @@
-name: Reusable Ubuntu (Installed)
+name: Reusable Ubuntu (installed)
 
 on:
   workflow_call:
-    inputs:
-      os:
-         description: OS to run the job
-         required: true
-         type: string
 
 permissions:
   contents: read
@@ -16,17 +11,15 @@ env:
 
 jobs:
   build-install-test:
-    name: build, install and test (${{ inputs.os }})
-    runs-on: ${{ inputs.os }}
+    name: build, install and test
+    runs-on: ubuntu-26.04-arm
     timeout-minutes: 60
     env:
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       with:
         persist-credentials: false
-    - name: Runner image version
-      run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Set install dir
@@ -48,4 +41,4 @@ jobs:
       run: |
         "$INSTALLED_PYTHON" -m test.pythoninfo
     - name: Test the installed Python
-      run: xvfb-run "$INSTALLED_PYTHON" -m test -j0 --fast-ci --timeout=900
+      run: xvfb-run "$INSTALLED_PYTHON" -m test --fast-ci --timeout=900
