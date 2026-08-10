@@ -32,6 +32,7 @@ import pickle, copy
 import unittest
 import numbers
 import locale
+from test import support
 from test.support import (is_resource_enabled,
                           requires_IEEE_754, requires_docstrings,
                           check_disallow_instantiation)
@@ -5806,8 +5807,7 @@ class CWhitebox(unittest.TestCase):
         )
         for tp in types:
             with self.subTest(tp=tp):
-                with self.assertRaisesRegex(TypeError, "immutable"):
-                    tp.foo = 1
+                support.check_immutable_type(self, tp)
 
     def test_c_disallow_instantiation(self):
         ContextManager = type(C.localcontext())
