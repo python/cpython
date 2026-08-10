@@ -68,6 +68,10 @@
 #  include "emscripten.h"         // emscripten_debugger()
 #endif
 
+#ifdef HAVE_SYS_RANDOM_H
+#  include <sys/random.h>
+#endif
+
 #ifdef HAVE_SYS_UIO_H
 #  include <sys/uio.h>
 #endif
@@ -10810,8 +10814,9 @@ os_wait_impl(PyObject *module)
 
 
 // This system call always crashes on older Android versions.
-#if defined(__linux__) && defined(__NR_pidfd_open) && \
-    !(defined(__ANDROID__) && __ANDROID_API__ < 31)
+#if defined(HAVE_PIDFD_OPEN) \
+    || (defined(__linux__) && defined(__NR_pidfd_open) \
+        && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
 /*[clinic input]
 os.pidfd_open
   pid: pid_t
@@ -10827,7 +10832,11 @@ static PyObject *
 os_pidfd_open_impl(PyObject *module, pid_t pid, unsigned int flags)
 /*[clinic end generated code: output=5c7252698947dc41 input=03058b32c389f874]*/
 {
+#ifdef HAVE_PIDFD_OPEN
+    int fd = pidfd_open(pid, flags);
+#else
     int fd = syscall(__NR_pidfd_open, pid, flags);
+#endif
     if (fd < 0) {
         return posix_error();
     }
@@ -10836,8 +10845,9 @@ os_pidfd_open_impl(PyObject *module, pid_t pid, unsigned int flags)
 #endif
 
 
-#if defined(__linux__) && defined(__NR_pidfd_getfd) && \
-    !(defined(__ANDROID__) && __ANDROID_API__ < 31)
+#if defined(HAVE_PIDFD_GETFD) \
+    || (defined(__linux__) && defined(__NR_pidfd_getfd) \
+        && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
 /*[clinic input]
 os.pidfd_getfd
   pidfd: int
@@ -10856,7 +10866,11 @@ os_pidfd_getfd_impl(PyObject *module, int pidfd, int targetfd,
                     unsigned int flags)
 /*[clinic end generated code: output=e1a1415a13c7137f input=ef6417fb10deb1cc]*/
 {
+#ifdef HAVE_PIDFD_GETFD
+    int fd = pidfd_getfd(pidfd, targetfd, flags);
+#else
     int fd = syscall(__NR_pidfd_getfd, pidfd, targetfd, flags);
+#endif
     if (fd < 0) {
         return posix_error();
     }
@@ -17369,7 +17383,7 @@ os_fspath_impl(PyObject *module, PyObject *path)
     return PyOS_FSPath(path);
 }
 
-#ifdef HAVE_GETRANDOM_SYSCALL
+#if defined(HAVE_GETRANDOM) || defined(HAVE_GETRANDOM_SYSCALL)
 /*[clinic input]
 os.getrandom
 
@@ -17396,7 +17410,11 @@ os_getrandom_impl(PyObject *module, Py_ssize_t size, int flags)
 
     Py_ssize_t n;
     while (1) {
+#ifdef HAVE_GETRANDOM
+        n = getrandom(data, size, flags);
+#else
         n = syscall(SYS_getrandom, data, size, flags);
+#endif
         if (n < 0 && errno == EINTR) {
             if (PyErr_CheckSignals() < 0) {
                 goto error;
@@ -18504,7 +18522,7 @@ all_ins(PyObject *m)
     if (PyModule_AddIntMacro(m, RTLD_MEMBER)) return -1;
 #endif
 
-#ifdef HAVE_GETRANDOM_SYSCALL
+#if defined(HAVE_GETRANDOM) || defined(HAVE_GETRANDOM_SYSCALL)
     if (PyModule_AddIntMacro(m, GRND_RANDOM)) return -1;
     if (PyModule_AddIntMacro(m, GRND_NONBLOCK)) return -1;
 #endif
