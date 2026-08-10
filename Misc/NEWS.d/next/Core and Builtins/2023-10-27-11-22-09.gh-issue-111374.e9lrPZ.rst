@@ -1,3 +1,0 @@
-Added a new environment variable :envvar:`PYTHON_FROZEN_MODULES`. It
-determines whether or not frozen modules are ignored by the import machinery,
-equivalent of the :option:`-X frozen_modules <-X>` command-line option.

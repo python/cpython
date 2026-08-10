@@ -1,1 +1,0 @@
-Raise exception if :meth:`frame.clear` is called on a suspended frame.

@@ -1,1 +1,0 @@
-Remove redundant C-contiguity check in :file:`getargs.c`, :mod:`binascii`, :mod:`ssl` and Argument Clinic. Patched by Stefan Krah and Furkan Onder

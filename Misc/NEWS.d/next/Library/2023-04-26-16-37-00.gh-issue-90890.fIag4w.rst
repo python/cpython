@@ -1,7 +1,0 @@
-New methods :meth:`mailbox.Maildir.get_info`,
-:meth:`mailbox.Maildir.set_info`, :meth:`mailbox.Maildir.get_flags`,
-:meth:`mailbox.Maildir.set_flags`, :meth:`mailbox.Maildir.add_flag`,
-:meth:`mailbox.Maildir.remove_flag`. These methods speed up accessing a
-message's info and/or flags and are useful when it is not necessary to
-access the message's contents, as when iterating over a Maildir to find
-messages with specific flags.

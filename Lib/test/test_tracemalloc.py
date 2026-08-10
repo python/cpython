@@ -1,13 +1,16 @@
 import contextlib
 import os
 import sys
+import textwrap
 import tracemalloc
 import unittest
 from unittest.mock import patch
 from test.support.script_helper import (assert_python_ok, assert_python_failure,
                                         interpreter_requires_environment)
 from test import support
+from test.support import force_not_colorized, warnings_helper
 from test.support import os_helper
+from test.support import threading_helper
 
 try:
     import _testcapi
@@ -17,6 +20,7 @@ except ImportError:
     _testinternalcapi = None
 
 
+DEFAULT_DOMAIN = 0
 EMPTY_STRING_SIZE = sys.getsizeof(b'')
 INVALID_NFRAME = (-1, 2**30)
 
@@ -350,6 +354,7 @@ class TestTracemallocEnabled(unittest.TestCase):
         # everything is fine
         return 0
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.requires_fork()
     def test_fork(self):
         # check that tracemalloc is still working after fork
@@ -938,6 +943,7 @@ class TestCommandLine(unittest.TestCase):
         stdout = stdout.rstrip()
         self.assertEqual(stdout, b'10')
 
+    @force_not_colorized
     def check_env_var_invalid(self, nframe):
         with support.SuppressCrashReport():
             ok, stdout, stderr = assert_python_failure(
@@ -949,7 +955,6 @@ class TestCommandLine(unittest.TestCase):
         if b'PYTHONTRACEMALLOC: invalid number of frames' in stderr:
             return
         self.fail(f"unexpected output: {stderr!a}")
-
 
     def test_env_var_invalid(self):
         for nframe in INVALID_NFRAME:
@@ -979,6 +984,7 @@ class TestCommandLine(unittest.TestCase):
             return
         self.fail(f"unexpected output: {stderr!a}")
 
+    @force_not_colorized
     def test_sys_xoptions_invalid(self):
         for nframe in INVALID_NFRAME:
             with self.subTest(nframe=nframe):
@@ -1024,8 +1030,8 @@ class TestCAPI(unittest.TestCase):
                                     release_gil)
         return frames
 
-    def untrack(self):
-        _testcapi.tracemalloc_untrack(self.domain, self.ptr)
+    def untrack(self, release_gil=False):
+        _testcapi.tracemalloc_untrack(self.domain, self.ptr, release_gil)
 
     def get_traced_memory(self):
         # Get the traced size in the domain
@@ -1067,7 +1073,7 @@ class TestCAPI(unittest.TestCase):
         self.assertEqual(self.get_traceback(),
                          tracemalloc.Traceback(frames))
 
-    def test_untrack(self):
+    def check_untrack(self, release_gil):
         tracemalloc.start()
 
         self.track()
@@ -1075,13 +1081,19 @@ class TestCAPI(unittest.TestCase):
         self.assertEqual(self.get_traced_memory(), self.size)
 
         # untrack must remove the trace
-        self.untrack()
+        self.untrack(release_gil)
         self.assertIsNone(self.get_traceback())
         self.assertEqual(self.get_traced_memory(), 0)
 
         # calling _PyTraceMalloc_Untrack() multiple times must not crash
-        self.untrack()
-        self.untrack()
+        self.untrack(release_gil)
+        self.untrack(release_gil)
+
+    def test_untrack(self):
+        self.check_untrack(False)
+
+    def test_untrack_without_gil(self):
+        self.check_untrack(True)
 
     def test_stop_track(self):
         tracemalloc.start()
@@ -1098,6 +1110,38 @@ class TestCAPI(unittest.TestCase):
         tracemalloc.stop()
         with self.assertRaises(RuntimeError):
             self.untrack()
+
+    @unittest.skipIf(_testcapi is None, 'need _testcapi')
+    @threading_helper.requires_working_threading()
+    # gh-128679: Test crash on a debug build (especially on FreeBSD).
+    @unittest.skipIf(support.Py_DEBUG, 'need release build')
+    @support.skip_if_sanitizer('gh-131566: race when setting allocator', thread=True)
+    def test_tracemalloc_track_race(self):
+        # gh-128679: Test fix for tracemalloc.stop() race condition
+        _testcapi.tracemalloc_track_race()
+
+    def test_late_untrack(self):
+        code = textwrap.dedent(f"""
+            from test import support
+            import tracemalloc
+            import _testcapi
+
+            class Tracked:
+                def __init__(self, domain, size):
+                    self.domain = domain
+                    self.ptr = id(self)
+                    self.size = size
+                    _testcapi.tracemalloc_track(self.domain, self.ptr, self.size)
+
+                def __del__(self, untrack=_testcapi.tracemalloc_untrack):
+                    untrack(self.domain, self.ptr, 1)
+
+            domain = {DEFAULT_DOMAIN}
+            tracemalloc.start()
+            obj = Tracked(domain, 1024 * 1024)
+            support.late_deletion(obj)
+        """)
+        assert_python_ok("-c", code)
 
 
 if __name__ == "__main__":

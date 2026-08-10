@@ -1,2 +1,0 @@
-Deprecate assignment to a function's ``__code__`` field when the new code
-object is of a mismatched type (e.g., from a generator to a plain function).

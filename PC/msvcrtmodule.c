@@ -218,6 +218,7 @@ msvcrt_get_osfhandle_impl(PyObject *module, int fd)
 
 /* Console I/O */
 /*[clinic input]
+@permit_long_summary
 msvcrt.kbhit -> long
 
 Returns a nonzero value if a keypress is waiting to be read. Otherwise, return 0.
@@ -225,7 +226,7 @@ Returns a nonzero value if a keypress is waiting to be read. Otherwise, return 0
 
 static long
 msvcrt_kbhit_impl(PyObject *module)
-/*[clinic end generated code: output=940dfce6587c1890 input=d0f4cb3289ff51e2]*/
+/*[clinic end generated code: output=940dfce6587c1890 input=52c0c44143f3fba5]*/
 {
     return _kbhit();
 }
@@ -316,6 +317,22 @@ msvcrt_getwche_impl(PyObject *module)
 
 #endif /* MS_WINDOWS_DESKTOP */
 
+/* Raise an OSError for a failed _putch()/_putwch() call.
+
+   These functions fail, for example, when the process has no console
+   attached, but the CRT reports the failure without setting errno (and
+   without setting the Windows last error either), so fall back to a
+   generic error message in that case. */
+static PyObject *
+set_console_write_error(void)
+{
+    if (errno != 0) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    PyErr_SetString(PyExc_OSError, "write to console failed");
+    return NULL;
+}
+
 /*[clinic input]
 msvcrt.putch
 
@@ -329,9 +346,16 @@ static PyObject *
 msvcrt_putch_impl(PyObject *module, char char_value)
 /*[clinic end generated code: output=92ec9b81012d8f60 input=ec078dd10cb054d6]*/
 {
+    int res;
+
     _Py_BEGIN_SUPPRESS_IPH
-    _putch(char_value);
+    errno = 0;
+    res = _putch(char_value);
     _Py_END_SUPPRESS_IPH
+
+    if (res == EOF) {
+        return set_console_write_error();
+    }
     Py_RETURN_NONE;
 }
 
@@ -350,11 +374,17 @@ static PyObject *
 msvcrt_putwch_impl(PyObject *module, int unicode_char)
 /*[clinic end generated code: output=a3bd1a8951d28eee input=996ccd0bbcbac4c3]*/
 {
-    _Py_BEGIN_SUPPRESS_IPH
-    _putwch(unicode_char);
-    _Py_END_SUPPRESS_IPH
-    Py_RETURN_NONE;
+    wint_t res;
 
+    _Py_BEGIN_SUPPRESS_IPH
+    errno = 0;
+    res = _putwch(unicode_char);
+    _Py_END_SUPPRESS_IPH
+
+    if (res == WEOF) {
+        return set_console_write_error();
+    }
+    Py_RETURN_NONE;
 }
 
 #endif /* MS_WINDOWS_DESKTOP */
@@ -656,6 +686,7 @@ exec_module(PyObject* m)
 static PyModuleDef_Slot msvcrt_slots[] = {
     {Py_mod_exec, exec_module},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

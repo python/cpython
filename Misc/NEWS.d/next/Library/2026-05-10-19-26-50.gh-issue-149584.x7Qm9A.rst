@@ -1,0 +1,4 @@
+Fix excessive overhead in the Tachyon profiler when inspecting a remote
+process by avoiding repeated remote page-cache scans, batching predicted
+remote reads, and reusing cached profiler result objects. Patch by Pablo
+Galindo and Maurycy Pawłowski-Wieroński.

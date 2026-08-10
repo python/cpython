@@ -1,3 +1,0 @@
-On Windows, ``Python.h`` no longer includes the ``<stddef.h>`` standard
-header file. If needed, it should now be included explicitly. Patch by
-Victor Stinner.
