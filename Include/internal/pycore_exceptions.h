@@ -13,7 +13,7 @@ extern "C" {
 
 extern PyStatus _PyExc_InitState(PyInterpreterState *);
 extern PyStatus _PyExc_InitGlobalObjects(PyInterpreterState *);
-extern PyStatus _PyExc_InitTypes(PyInterpreterState *);
+extern int _PyExc_InitTypes(PyInterpreterState *);
 extern void _PyExc_Fini(PyInterpreterState *);
 
 
@@ -24,6 +24,9 @@ struct _Py_exc_state {
     PyObject *errnomap;
     PyBaseExceptionObject *memerrors_freelist;
     int memerrors_numfree;
+#ifdef Py_GIL_DISABLED
+    PyMutex memerrors_lock;
+#endif
     // The ExceptionGroup type
     PyObject *PyExc_ExceptionGroup;
 };

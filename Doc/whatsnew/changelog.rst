@@ -1,5 +1,7 @@
 .. _changelog:
 
+.. default-role:: py:obj
+
 +++++++++
 Changelog
 +++++++++
