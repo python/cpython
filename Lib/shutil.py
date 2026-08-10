@@ -292,8 +292,11 @@ def copyfile(src, dst, *, follow_symlinks=True):
     if _samefile(src, dst):
         raise SameFileError("{!r} and {!r} are the same file".format(src, dst))
 
+    copy_symlink = not follow_symlinks and _islink(src)
     file_size = 0
     for i, fn in enumerate([src, dst]):
+        if copy_symlink and i == 0:
+            continue
         try:
             st = _stat(fn)
         except OSError:
@@ -315,7 +318,7 @@ def copyfile(src, dst, *, follow_symlinks=True):
             if _WINDOWS and i == 0:
                 file_size = st.st_size
 
-    if not follow_symlinks and _islink(src):
+    if copy_symlink:
         os.symlink(os.readlink(src), dst)
     else:
         with open(src, 'rb') as fsrc:
@@ -980,7 +983,7 @@ def _get_gid(name):
     except KeyError:
         result = None
     if result is not None:
-        return result[2]
+        return result.gr_gid
     return None
 
 def _get_uid(name):
@@ -998,7 +1001,7 @@ def _get_uid(name):
     except KeyError:
         result = None
     if result is not None:
-        return result[2]
+        return result.pw_uid
     return None
 
 def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,

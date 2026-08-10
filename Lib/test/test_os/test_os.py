@@ -2459,8 +2459,8 @@ class URandomTests(unittest.TestCase):
             'data = os.urandom(%s)' % count,
             'sys.stdout.buffer.write(data)',
             'sys.stdout.buffer.flush()'))
-        out = assert_python_ok('-c', code)
-        stdout = out[1]
+        proc = assert_python_ok('-c', code)
+        stdout = proc.out
         self.assertEqual(len(stdout), count)
         return stdout
 
@@ -3970,12 +3970,7 @@ class TermsizeTests(unittest.TestCase):
         try:
             size = os.get_terminal_size()
         except OSError as e:
-            known_errnos = [errno.EINVAL, errno.ENOTTY]
-            if sys.platform == "android":
-                # The Android testbed redirects the native stdout to a pipe,
-                # which returns a different error code.
-                known_errnos.append(errno.EACCES)
-            if sys.platform == "win32" or e.errno in known_errnos:
+            if sys.platform == "win32" or e.errno in (errno.EINVAL, errno.ENOTTY):
                 # Under win32 a generic OSError can be thrown if the
                 # handle cannot be retrieved
                 self.skipTest("failed to query terminal size")

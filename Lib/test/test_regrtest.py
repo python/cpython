@@ -170,21 +170,20 @@ class ParseArgsTestCase(unittest.TestCase):
                 ns = self.parse_args([opt])
                 self.assertTrue(ns.randomize)
 
-        with os_helper.EnvironmentVarGuard() as env:
-            # with SOURCE_DATE_EPOCH
-            env['SOURCE_DATE_EPOCH'] = '1697839080'
-            ns = self.parse_args(['--randomize'])
-            regrtest = main.Regrtest(ns)
-            self.assertFalse(regrtest.randomize)
-            self.assertIsInstance(regrtest.random_seed, str)
-            self.assertEqual(regrtest.random_seed, '1697839080')
+    @os_helper.with_source_date_epoch(epoch=1697839080)
+    def test_randomize_with_source_date_epoch(self):
+        ns = self.parse_args(['--randomize'])
+        regrtest = main.Regrtest(ns)
+        self.assertFalse(regrtest.randomize)
+        self.assertIsInstance(regrtest.random_seed, str)
+        self.assertEqual(regrtest.random_seed, '1697839080')
 
-            # without SOURCE_DATE_EPOCH
-            del env['SOURCE_DATE_EPOCH']
-            ns = self.parse_args(['--randomize'])
-            regrtest = main.Regrtest(ns)
-            self.assertTrue(regrtest.randomize)
-            self.assertIsInstance(regrtest.random_seed, int)
+    @os_helper.without_source_date_epoch
+    def test_randomize_without_source_date_epoch(self):
+        ns = self.parse_args(['--randomize'])
+        regrtest = main.Regrtest(ns)
+        self.assertTrue(regrtest.randomize)
+        self.assertIsInstance(regrtest.random_seed, int)
 
     def test_no_randomize(self):
         ns = self.parse_args([])
