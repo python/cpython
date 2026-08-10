@@ -45,9 +45,9 @@ PyAPI_FUNC(Py_ssize_t) PySlice_AdjustIndices(Py_ssize_t length,
 #endif
 
 #ifndef Py_LIMITED_API
-#  define Py_CPYTHON_SLICEOBJECT_H
+#  define _Py_CPYTHON_SLICEOBJECT_H
 #  include "cpython/sliceobject.h"
-#  undef Py_CPYTHON_SLICEOBJECT_H
+#  undef _Py_CPYTHON_SLICEOBJECT_H
 #endif
 
 #ifdef __cplusplus

@@ -1,0 +1,6 @@
+:mod:`imaplib` now again quotes command arguments when necessary, for
+example mailbox names containing a space.  Such quoting was inadvertently
+disabled when the module was ported to Python 3, and the arguments are now
+quoted according to the :rfc:`3501` grammar.  For backward compatibility,
+an argument already enclosed in double quotes is left unchanged, so code
+that quotes arguments itself keeps working.

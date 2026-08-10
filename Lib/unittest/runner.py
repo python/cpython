@@ -4,11 +4,10 @@ import sys
 import time
 import warnings
 
-from _colorize import get_theme
-
 from . import result
 from .case import _SubTest
 from .signals import registerResult
+lazy from _colorize import get_theme
 
 __unittest = True
 

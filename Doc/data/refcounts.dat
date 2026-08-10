@@ -2037,6 +2037,11 @@ PySeqIter_Check:PyObject *:op:0:
 PySeqIter_New:PyObject*::+1:
 PySeqIter_New:PyObject*:seq:0:
 
+PySentinel_New:PyObject*::+1:
+PySentinel_New:const char*:name::
+PySentinel_New:const char*:module_name::
+PySentinel_New:const char*:repr::
+
 PySequence_Check:int:::
 PySequence_Check:PyObject*:o:0:
 

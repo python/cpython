@@ -1,2 +1,0 @@
-Reject CR/LF characters in tunnel request headers for the
-HTTPConnection.set_tunnel() method.

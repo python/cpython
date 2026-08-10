@@ -1,2 +1,0 @@
-Fix a bug in the JIT optimizer reading operands for uops with multiple
-caches.
