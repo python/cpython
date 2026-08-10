@@ -25,7 +25,7 @@ jobs:
         # to avoid "fatal: shallow file has changed since we read it" bug.
         # See https://github.com/python/cpython/issues/151365.
         run: |
-          sudo apt-get install -y --allow-downgrades git/noble-updates git-man/noble-updates
+          sudo apt-get install -y --allow-downgrades 'git=1:2.43.*' 'git-man=1:2.43.*'
           git --version
       - name: 'Find merge base'
         id: merge-base
