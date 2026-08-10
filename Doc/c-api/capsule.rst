@@ -108,8 +108,10 @@ Refer to :ref:`using-capsules` for more information on using these objects.
 
    Import a pointer to a C object from a capsule attribute in a module.  The
    *name* parameter should specify the full name to the attribute, as in
-   ``module.attribute``.  The *name* stored in the capsule must match this
-   string exactly.
+   ``package.module.attribute``.
+   Modules are imported if needed,
+   other components are looked up as attributes.
+   The *name* stored in the capsule must match this string exactly.
 
    Return the capsule's internal *pointer* on success.  On failure, set an
    exception and return ``NULL``.
@@ -118,8 +120,7 @@ Refer to :ref:`using-capsules` for more information on using these objects.
       *no_block* has no effect anymore.
 
    .. versionchanged:: next
-      Submodules are now imported if needed,
-      as in ``package.module.attribute``.
+      Submodules are now imported if needed.
 
 
 .. c:function:: int PyCapsule_IsValid(PyObject *capsule, const char *name)

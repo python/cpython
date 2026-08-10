@@ -232,14 +232,13 @@ PyCapsule_Import(const char *name, int Py_UNUSED(no_block))
 {
     PyObject *object = NULL;
     void *return_value = NULL;
-    char *trace;
     char *name_dup = _PyMem_Strdup(name);
 
     if (!name_dup) {
         return PyErr_NoMemory();
     }
 
-    trace = name_dup;
+    char *trace = name_dup;
     while (1) {
         char *dot = strchr(trace, '.');
         if (dot) {
@@ -254,8 +253,10 @@ PyCapsule_Import(const char *name, int Py_UNUSED(no_block))
             Py_SETREF(object, attr);
         }
         if (!dot) {
+            // We are done
             break;
         }
+
         if (!object) {
             object = PyImport_ImportModule(name_dup);
             if (!object) {
