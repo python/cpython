@@ -1621,7 +1621,10 @@ PyDoc_STRVAR(_socket_close__doc__,
 "close($module, fd, /)\n"
 "--\n"
 "\n"
-"Close a socket fd.");
+"Close a socket fd.\n"
+"\n"
+"This is like os.close(), but for sockets; on some platforms os.close()\n"
+"won\'t work for socket file descriptors.");
 
 #define _SOCKET_CLOSE_METHODDEF    \
     {"close", (PyCFunction)_socket_close, METH_O, _socket_close__doc__},
@@ -1634,7 +1637,9 @@ PyDoc_STRVAR(_socket_dup__doc__,
 "\n"
 "Duplicate a socket descriptor.\n"
 "\n"
-"The new descriptor is non-inheritable.");
+"The new descriptor is non-inheritable.  This is like os.dup(), but for\n"
+"sockets; on some platforms os.dup() won\'t work for socket file\n"
+"descriptors.");
 
 #define _SOCKET_DUP_METHODDEF    \
     {"dup", (PyCFunction)_socket_dup, METH_O, _socket_dup__doc__},
@@ -1650,7 +1655,9 @@ PyDoc_STRVAR(_socket_socketpair__doc__,
 "Create a pair of connected socket objects.\n"
 "\n"
 "The sockets are returned by the platform socketpair() function.  The\n"
-"arguments are the same as for socket().");
+"arguments are the same as for socket(), except that the default\n"
+"family is AF_UNIX if defined on the platform; otherwise, the default\n"
+"is AF_INET.");
 
 #define _SOCKET_SOCKETPAIR_METHODDEF    \
     {"socketpair", _PyCFunction_CAST(_socket_socketpair), METH_FASTCALL, _socket_socketpair__doc__},
@@ -1662,7 +1669,7 @@ static PyObject *
 _socket_socketpair(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    int family = AF_UNIX;
+    int family = SOCKETPAIR_DEFAULT_FAMILY;
     int type = SOCK_STREAM;
     int proto = 0;
 
@@ -2472,4 +2479,4 @@ exit:
 #ifndef _SOCKET_CMSG_SPACE_METHODDEF
     #define _SOCKET_CMSG_SPACE_METHODDEF
 #endif /* !defined(_SOCKET_CMSG_SPACE_METHODDEF) */
-/*[clinic end generated code: output=e4322f43486f34a0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=133662a8c304b1b7 input=a9049054013a1b77]*/

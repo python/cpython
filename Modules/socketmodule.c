@@ -692,6 +692,14 @@ class _socket.socket "PySocketSockObject *" "clinic_state()->sock_type"
 #  undef HAVE_SETHOSTNAME
 #endif
 
+/* The default family of socketpair() is AF_UNIX if defined on the
+   platform; otherwise, the default is AF_INET. */
+#if defined(AF_UNIX)
+#  define SOCKETPAIR_DEFAULT_FAMILY AF_UNIX
+#else
+#  define SOCKETPAIR_DEFAULT_FAMILY AF_INET
+#endif
+
 #define clinic_state() (find_module_state_by_def(type))
 #include "clinic/socketmodule.c.h"
 #undef clinic_state
@@ -5482,25 +5490,15 @@ _socket_socket_share_impl(PySocketSockObject *s, unsigned int processId)
 /* List of methods for socket objects */
 
 static PyMethodDef sock_methods[] = {
-#if defined(HAVE_ACCEPT) || defined(HAVE_ACCEPT4)
     _SOCKET_SOCKET__ACCEPT_METHODDEF
-#endif
-#ifdef HAVE_BIND
     _SOCKET_SOCKET_BIND_METHODDEF
-#endif
     _SOCKET_SOCKET_CLOSE_METHODDEF
-#ifdef HAVE_CONNECT
     _SOCKET_SOCKET_CONNECT_METHODDEF
     _SOCKET_SOCKET_CONNECT_EX_METHODDEF
-#endif
     _SOCKET_SOCKET_DETACH_METHODDEF
     _SOCKET_SOCKET_FILENO_METHODDEF
-#ifdef HAVE_GETPEERNAME
     _SOCKET_SOCKET_GETPEERNAME_METHODDEF
-#endif
-#ifdef HAVE_GETSOCKNAME
     _SOCKET_SOCKET_GETSOCKNAME_METHODDEF
-#endif
     _SOCKET_SOCKET_GETSOCKOPT_METHODDEF
 #if defined(MS_WINDOWS) && defined(SIO_RCVALL)
     {"ioctl", sock_ioctl, METH_VARARGS, sock_ioctl_doc},
@@ -5523,9 +5521,7 @@ static PyMethodDef sock_methods[] = {
 #ifdef HAVE_SETSOCKOPT
     {"setsockopt", sock_setsockopt, METH_VARARGS, setsockopt_doc},
 #endif
-#ifdef HAVE_SHUTDOWN
     _SOCKET_SOCKET_SHUTDOWN_METHODDEF
-#endif
     _SOCKET_SOCKET_RECVMSG_METHODDEF
     _SOCKET_SOCKET_RECVMSG_INTO_METHODDEF
     _SOCKET_SOCKET_SENDMSG_METHODDEF
@@ -6551,11 +6547,14 @@ _socket.close
     /
 
 Close a socket fd.
+
+This is like os.close(), but for sockets; on some platforms os.close()
+won't work for socket file descriptors.
 [clinic start generated code]*/
 
 static PyObject *
 _socket_close(PyObject *module, PyObject *fdobj)
-/*[clinic end generated code: output=1d62092e6fc365dc input=3928558b90299147]*/
+/*[clinic end generated code: output=1d62092e6fc365dc input=b9fc18380117ee4b]*/
 {
     SOCKET_T fd;
     int res;
@@ -6586,12 +6585,14 @@ _socket.dup
 
 Duplicate a socket descriptor.
 
-The new descriptor is non-inheritable.
+The new descriptor is non-inheritable.  This is like os.dup(), but for
+sockets; on some platforms os.dup() won't work for socket file
+descriptors.
 [clinic start generated code]*/
 
 static PyObject *
 _socket_dup(PyObject *module, PyObject *fdobj)
-/*[clinic end generated code: output=7e9c4485cf5a76c0 input=dfc5de188bf696ef]*/
+/*[clinic end generated code: output=7e9c4485cf5a76c0 input=d1d74c320feb3d04]*/
 {
     SOCKET_T fd, newfd;
     PyObject *newfdobj;
@@ -6647,7 +6648,7 @@ _socket_dup(PyObject *module, PyObject *fdobj)
 /*[clinic input]
 _socket.socketpair
 
-    family: int(c_default="AF_UNIX") = AF_UNIX
+    family: int(c_default="SOCKETPAIR_DEFAULT_FAMILY") = AF_UNIX
     type: int(c_default="SOCK_STREAM") = SOCK_STREAM
     proto: int = 0
     /
@@ -6655,12 +6656,14 @@ _socket.socketpair
 Create a pair of connected socket objects.
 
 The sockets are returned by the platform socketpair() function.  The
-arguments are the same as for socket().
+arguments are the same as for socket(), except that the default
+family is AF_UNIX if defined on the platform; otherwise, the default
+is AF_INET.
 [clinic start generated code]*/
 
 static PyObject *
 _socket_socketpair_impl(PyObject *module, int family, int type, int proto)
-/*[clinic end generated code: output=c012ae1f558bb0ca input=823902632e78e181]*/
+/*[clinic end generated code: output=c012ae1f558bb0ca input=59695511a31a2d52]*/
 {
     PySocketSockObject *s0 = NULL, *s1 = NULL;
     SOCKET_T sv[2];
@@ -7532,17 +7535,13 @@ static PyMethodDef socket_methods[] = {
     _SOCKET_GETHOSTBYNAME_METHODDEF
     _SOCKET_GETHOSTBYNAME_EX_METHODDEF
     _SOCKET_GETHOSTBYADDR_METHODDEF
-#ifdef HAVE_GETHOSTNAME
     _SOCKET_GETHOSTNAME_METHODDEF
-#endif
     _SOCKET_SETHOSTNAME_METHODDEF
     _SOCKET_GETSERVBYNAME_METHODDEF
     _SOCKET_GETSERVBYPORT_METHODDEF
     _SOCKET_GETPROTOBYNAME_METHODDEF
     _SOCKET_CLOSE_METHODDEF
-#ifndef NO_DUP
     _SOCKET_DUP_METHODDEF
-#endif
     _SOCKET_SOCKETPAIR_METHODDEF
     _SOCKET_NTOHS_METHODDEF
     _SOCKET_NTOHL_METHODDEF
@@ -7556,11 +7555,9 @@ static PyMethodDef socket_methods[] = {
     _SOCKET_GETNAMEINFO_METHODDEF
     _SOCKET_GETDEFAULTTIMEOUT_METHODDEF
     _SOCKET_SETDEFAULTTIMEOUT_METHODDEF
-#if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
     _SOCKET_IF_NAMEINDEX_METHODDEF
     _SOCKET_IF_NAMETOINDEX_METHODDEF
     _SOCKET_IF_INDEXTONAME_METHODDEF
-#endif
     _SOCKET_CMSG_LEN_METHODDEF
     _SOCKET_CMSG_SPACE_METHODDEF
     {NULL,                      NULL}            /* Sentinel */
