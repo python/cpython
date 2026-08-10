@@ -57,6 +57,11 @@ struct PyExpat_CAPI
         XML_Parser parser, unsigned long long activationThresholdBytes);
     XML_Bool (*SetAllocTrackerMaximumAmplification)(
         XML_Parser parser, float maxAmplificationFactor);
+    /* might be NULL for expat < 2.4.0 */
+    XML_Bool (*SetBillionLaughsAttackProtectionActivationThreshold)(
+        XML_Parser parser, unsigned long long activationThresholdBytes);
+    XML_Bool (*SetBillionLaughsAttackProtectionMaximumAmplification)(
+        XML_Parser parser, float maxAmplificationFactor);
     /* always add new stuff to the end! */
 };
 
