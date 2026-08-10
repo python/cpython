@@ -142,6 +142,25 @@ def _have_socket_bluetooth():
     return True
 
 
+def _have_udp_lite():
+    if not hasattr(socket, "IPPROTO_UDPLITE"):
+        return False
+    # Older Android versions block UDPLITE with SELinux.
+    if support.is_android and platform.android_ver().api_level < 29:
+        return False
+
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDPLITE)
+    except OSError as exc:
+        # Linux 7.1 removed UDP Lite support
+        if exc.errno == errno.EPROTONOSUPPORT:
+            return False
+        raise
+    sock.close()
+
+    return True
+
+
 @contextlib.contextmanager
 def socket_setdefaulttimeout(timeout):
     old_timeout = socket.getdefaulttimeout()
@@ -166,7 +185,7 @@ HAVE_SOCKET_QIPCRTR = _have_socket_qipcrtr()
 
 HAVE_SOCKET_VSOCK = _have_socket_vsock()
 
-HAVE_SOCKET_UDPLITE = hasattr(socket, "IPPROTO_UDPLITE")
+HAVE_SOCKET_UDPLITE = _have_udp_lite()
 
 HAVE_SOCKET_BLUETOOTH = _have_socket_bluetooth()
 
