@@ -1,0 +1,1 @@
+Fix false positive detection of BZ2 support in ``shutil`` under the ``lazy_imports=all`` mode.
