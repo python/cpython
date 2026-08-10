@@ -452,7 +452,7 @@ process and user.
    process.  For most purposes, it is more useful to use
    :func:`getpass.getuser` since the latter checks the environment variables
    :envvar:`LOGNAME` or :envvar:`USERNAME` to find out who the user is, and
-   falls back to ``pwd.getpwuid(os.getuid())[0]`` to get the login name of the
+   falls back to ``pwd.getpwuid(os.getuid()).pw_name`` to get the login name of the
    current real user id.
 
    .. availability:: Unix, Windows, not WASI.

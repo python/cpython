@@ -1322,8 +1322,8 @@ class PosixTester(unittest.TestCase):
     @unittest.skipUnless(hasattr(pwd, 'getpwuid'), "test needs pwd.getpwuid()")
     @unittest.skipUnless(hasattr(os, 'getuid'), "test needs os.getuid()")
     def test_getgrouplist(self):
-        user = pwd.getpwuid(os.getuid())[0]
-        group = pwd.getpwuid(os.getuid())[3]
+        user = pwd.getpwuid(os.getuid()).pw_name
+        group = pwd.getpwuid(os.getuid()).pw_gid
         self.assertIn(group, posix.getgrouplist(user, group))
 
 

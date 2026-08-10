@@ -15,7 +15,7 @@ def _can_security_check():
 def _getpwuid(uid):
     try:
         import pwd
-        return pwd.getpwuid(uid)[0]
+        return pwd.getpwuid(uid).pw_name
     except (ImportError, LookupError):
         return f'uid {uid}'
 

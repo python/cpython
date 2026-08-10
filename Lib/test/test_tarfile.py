@@ -3351,12 +3351,12 @@ def root_is_uid_gid_0():
     except ImportError:
         return False
     try:
-        if pwd.getpwuid(0)[0] != 'root':
+        if pwd.getpwuid(0).pw_name != 'root':
             return False
     except KeyError:
         # On Cygwin, there is no root user (uid 0)
         return False
-    if grp.getgrgid(0)[0] != 'root':
+    if grp.getgrgid(0).gr_name != 'root':
         return False
     return True
 
