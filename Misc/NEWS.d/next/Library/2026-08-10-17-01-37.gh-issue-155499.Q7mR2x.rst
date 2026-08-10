@@ -1,0 +1,2 @@
+Fix :meth:`~curses.window.border` and :meth:`~curses.window.box` to accept the
+documented ``0`` default character alongside strings.

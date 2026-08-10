@@ -2705,7 +2705,7 @@ _curses_window_border_impl(PyCursesWindowObject *self, PyObject *ls,
     }
     if (use_wide) {
         for (i = 0; i < 8; i++) {
-            if (objs[i] == NULL) {
+            if (objs[i] == NULL || (types[i] == 1 && ch[i] == 0)) {
                 wch_p[i] = NULL;  /* use the default character */
             }
             else if (types[i] == 2) {
@@ -2775,13 +2775,15 @@ _curses_window_box_impl(PyCursesWindowObject *self, int group_right_1,
         }
     }
     if (t1 == 2 || t2 == 2) {
-        if (t1 != 2 || t2 != 2) {
+        if ((t1 != 2 && ch1 != 0) || (t2 != 2 && ch2 != 0)) {
             PyErr_SetString(PyExc_TypeError,
                             "box() cannot mix integer or bytes characters "
                             "with wide string characters");
             return NULL;
         }
-        int rtn = wborder_set(self->win, &wch1, &wch1, &wch2, &wch2,
+        const cchar_t *wch1_p = t1 == 2 ? &wch1 : NULL;
+        const cchar_t *wch2_p = t2 == 2 ? &wch2 : NULL;
+        int rtn = wborder_set(self->win, wch1_p, wch1_p, wch2_p, wch2_p,
                               NULL, NULL, NULL, NULL);
         return curses_window_check_err(self, rtn, "wborder_set", "box");
     }

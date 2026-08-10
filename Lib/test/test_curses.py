@@ -467,6 +467,10 @@ class TestCurses(unittest.TestCase):
         if self._encodable(vline + hline):
             stdscr.border(vline, vline, hline, hline)
             stdscr.box(vline, hline)
+        # Zero still requests the default character in the wide path.
+        stdscr.border('|', '|', '-', '-', 0, 0, 0, 0)
+        stdscr.box('|', 0)
+        stdscr.box(0, '-')
         # border() and box() cannot mix integer and wide-string characters.
         self.assertRaises(TypeError, stdscr.box, vline, ord('-'))
 
