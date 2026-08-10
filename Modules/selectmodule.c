@@ -1203,7 +1203,7 @@ newDevPollObject(PyObject *module)
     }
 
     out_fds = PyMem_NEW(struct pollfd, out_size);
-    if (fds == NULL) {
+    if (out_fds == NULL) {
         close(fd_devpoll);
         PyMem_Free(fds);
         PyErr_NoMemory();
