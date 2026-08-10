@@ -921,7 +921,7 @@ class BytesIO(BufferedIOBase):
 
     def close(self):
         if self._buffer is not None:
-            self._buffer.clear()
+            self._buffer = bytearray()
         super().close()
 
     def read(self, size=-1):
