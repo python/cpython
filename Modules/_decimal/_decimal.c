@@ -740,6 +740,11 @@ signaldict_setitem(PyObject *self, PyObject *key, PyObject *value)
         return -1;
     }
 
+    if (SdFlagAddr(self) == NULL) {
+        /* value.__bool__() may have deallocated the owning context. */
+        return value_error_int(INVALID_SIGNALDICT_ERROR_MSG);
+    }
+
     if (x == 1) {
         SdFlags(self) |= flag;
     }
@@ -813,6 +818,10 @@ signaldict_richcompare(PyObject *v, PyObject *w, int op)
                 else {
                     return NULL;
                 }
+            }
+            else if (SdFlagAddr(v) == NULL) {
+                /* w's __bool__() may have deallocated v's context. */
+                return value_error_ptr(INVALID_SIGNALDICT_ERROR_MSG);
             }
             else {
                 res = (SdFlags(v)==flags) ^ (op==Py_NE) ? Py_True : Py_False;
