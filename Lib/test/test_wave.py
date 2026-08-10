@@ -493,7 +493,7 @@ class WaveOpen(unittest.TestCase):
 
 
 class WaveReadErrorTest(unittest.TestCase):
-    """Cover error and edge paths of Wave_read, _Chunk and wave.open()."""
+    """Cover error and edge paths of Wave_read, and wave.open()."""
 
     FMT_PCM = struct.pack('<HHLLHH', wave.WAVE_FORMAT_PCM, 1, 11025, 11025, 1, 8)
 
