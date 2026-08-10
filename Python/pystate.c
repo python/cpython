@@ -1669,24 +1669,21 @@ new_threadstate(PyInterpreterState *interp, int whence)
 
 #ifdef Py_STATS
     // The PyStats structure is quite large and is allocated separated from
-    // tstate.  This is done before reserving the QSBR and TLBC indices below
-    // so that a failure here does not have to give them back.
+    // tstate.
     if (!_PyStats_ThreadInit(interp, tstate)) {
         free_threadstate(tstate);
         return NULL;
     }
 #endif
 #ifdef Py_GIL_DISABLED
-    Py_ssize_t qsbr_idx = _Py_qsbr_reserve(interp);
-    if (qsbr_idx < 0) {
+    int32_t tlbc_idx = _Py_ReserveTLBCIndex(interp);
+    if (tlbc_idx < 0) {
         free_threadstate(tstate);
         return NULL;
     }
-    int32_t tlbc_idx = _Py_ReserveTLBCIndex(interp);
-    if (tlbc_idx < 0) {
-        // free_threadstate() does not know about the QSBR entry, which is only
-        // reclaimed by _Py_qsbr_unregister() once _Py_qsbr_register() has run.
-        _Py_qsbr_unreserve(interp, qsbr_idx);
+    Py_ssize_t qsbr_idx = _Py_qsbr_reserve(interp);
+    if (qsbr_idx < 0) {
+        _Py_UnreserveTLBCIndex(interp, tlbc_idx);
         free_threadstate(tstate);
         return NULL;
     }

@@ -218,25 +218,6 @@ _Py_qsbr_reserve(PyInterpreterState *interp)
 }
 
 void
-_Py_qsbr_unreserve(PyInterpreterState *interp, Py_ssize_t index)
-{
-    struct _qsbr_shared *shared = &interp->qsbr;
-
-    PyMutex_Lock(&shared->mutex);
-    // NOTE: we must load shared->array inside the mutex because the array may
-    // have been resized since the entry was reserved.  The index remains
-    // valid: grow_thread_array() preserves the position of existing entries.
-    struct _qsbr_thread_state *qsbr = &shared->array[index].qsbr;
-
-    assert(qsbr->allocated && qsbr->tstate == NULL);
-
-    qsbr->allocated = false;
-    qsbr->freelist_next = shared->freelist;
-    shared->freelist = qsbr;
-    PyMutex_Unlock(&shared->mutex);
-}
-
-void
 _Py_qsbr_register(_PyThreadStateImpl *tstate, PyInterpreterState *interp,
                   Py_ssize_t index)
 {

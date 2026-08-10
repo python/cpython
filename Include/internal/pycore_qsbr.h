@@ -152,11 +152,6 @@ _Py_qsbr_detach(struct _qsbr_thread_state *qsbr);
 extern Py_ssize_t
 _Py_qsbr_reserve(PyInterpreterState *interp);
 
-// Frees a QSBR state reserved by _Py_qsbr_reserve() that was never associated
-// with a PyThreadState by _Py_qsbr_register().
-extern void
-_Py_qsbr_unreserve(PyInterpreterState *interp, Py_ssize_t index);
-
 // Associates a PyThreadState with the QSBR state at the given index
 extern void
 _Py_qsbr_register(struct _PyThreadStateImpl *tstate,
