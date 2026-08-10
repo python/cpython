@@ -1269,6 +1269,8 @@ class TestSubTests(unittest.TestCase):
         self.assertEqual(len(result.failures), 1)
         self.assertEndsWith(result.failures[0][0].id(), 'test_it (a=2)')
 
+    # Running an asyncio event loop needs a working socket.
+    @support.requires_working_socket()
     def test_async(self):
         # An asynchronous test must be awaited: a synchronous wrapper would
         # make it silently not run at all.
