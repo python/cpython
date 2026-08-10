@@ -830,6 +830,106 @@ class DecompressorTestCase(unittest.TestCase):
         self.assertEqual(d.unused_data, b'')
         self.assertEqual(d.unused_data, b'') # twice
 
+    @staticmethod
+    def _patch_content_size(frame, new_size):
+        # Rewrite the Frame_Content_Size field of a frame header, see
+        # RFC 8878 section 3.1.1.1.
+        frame_header_descriptor = frame[4]
+        fcs_flag = frame_header_descriptor >> 6
+        single_segment = (frame_header_descriptor >> 5) & 1
+        did_field_size = (0, 1, 2, 4)[frame_header_descriptor & 3]
+        offset = 5 + (0 if single_segment else 1) + did_field_size
+        fcs_field_size = (1 if single_segment else 0, 2, 4, 8)[fcs_flag]
+        if fcs_field_size == 2:
+            new_size -= 256
+        patched = bytearray(frame)
+        patched[offset:offset+fcs_field_size] = \
+            new_size.to_bytes(fcs_field_size, 'little')
+        return bytes(patched)
+
+    def test_decompress_wrong_content_size(self):
+        # The decompressed size recorded in the frame header is used to
+        # pre-allocate the output buffer, so decompressing frames whose
+        # recorded size does not match the real one (only possible with
+        # hand-crafted frames) deserves extra attention.
+        frame = compress(DAT_130K_D)
+        self.assertEqual(get_frame_info(frame).decompressed_size, _130_1K)
+
+        # patching the real size back is harmless (checks the patch helper)
+        patched = self._patch_content_size(frame, _130_1K)
+        self.assertEqual(patched, frame)
+
+        for lie in (_130_1K + 1000, 1000, 0):
+            with self.subTest(lie=lie):
+                patched = self._patch_content_size(frame, lie)
+                self.assertEqual(get_frame_info(patched).decompressed_size,
+                                 lie)
+                with self.assertRaises(ZstdError):
+                    decompress(patched)
+
+    def test_decompress_absurd_content_size(self):
+        # A recorded size that is absurdly large for the frame's size, or
+        # even impossible to produce from it, must not lead to a huge
+        # pre-allocation.
+        for data in (DAT_130K_D,   # bigger than the compressed frame
+                     b'a' * 66000  # tiny compressed frame
+                     ):
+            frame = compress(data)
+            patched = self._patch_content_size(frame, 0xFFFF_FFFF)
+            with self.subTest(frame_size=len(frame)):
+                self.assertEqual(get_frame_info(patched).decompressed_size,
+                                 0xFFFF_FFFF)
+                with self.assertRaises(ZstdError):
+                    decompress(patched)
+
+    def test_decompress_content_size_known(self):
+        # frames whose header records the decompressed size, with sizes
+        # around the output buffer block boundaries
+        big_data = DAT_130K_D * 9
+        for size in (1, 100,
+                     32*_1K - 1, 32*_1K, 32*_1K + 1,
+                     _1M + 17):
+            with self.subTest(size=size):
+                data = big_data[:size]
+                frame = compress(data)
+                self.assertEqual(get_frame_info(frame).decompressed_size,
+                                 size)
+                self.assertEqual(decompress(frame), data)
+
+                d = ZstdDecompressor()
+                self.assertEqual(d.decompress(frame), data)
+                self.assertTrue(d.eof)
+
+    def test_decompress_content_size_unknown(self):
+        # streaming compression does not record the decompressed size in
+        # the frame header
+        c = ZstdCompressor()
+        frame = c.compress(DAT_130K_D) + c.flush()
+        self.assertIsNone(get_frame_info(frame).decompressed_size)
+        self.assertEqual(decompress(frame), DAT_130K_D)
+
+    def test_decompress_content_size_known_max_length(self):
+        frame = compress(DAT_130K_D)
+        d = ZstdDecompressor()
+        dat = d.decompress(frame, max_length=1000)
+        self.assertEqual(len(dat), 1000)
+        self.assertFalse(d.needs_input)
+        while not d.eof:
+            dat += d.decompress(b'', max_length=32*_1K)
+        self.assertEqual(dat, DAT_130K_D)
+
+    def test_decompress_content_size_known_split_input(self):
+        frame = compress(DAT_130K_D)
+        # a split point of 3 cuts the frame header's magic number,
+        # 18 cuts right after the (complete) frame header
+        for split in (3, 18, len(frame) // 2):
+            with self.subTest(split=split):
+                d = ZstdDecompressor()
+                dat = d.decompress(frame[:split])
+                dat += d.decompress(frame[split:])
+                self.assertEqual(dat, DAT_130K_D)
+                self.assertTrue(d.eof)
+
 class DecompressorFlagsTestCase(unittest.TestCase):
 
     @classmethod
