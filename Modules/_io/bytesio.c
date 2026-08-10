@@ -973,9 +973,15 @@ _io_BytesIO_close_impl(bytesio *self)
      return state;
 }
 
+/*[clinic input]
+_io.BytesIO.__getstate__
+[clinic start generated code]*/
+
 static PyObject *
-bytesio_getstate(PyObject *op, PyObject *Py_UNUSED(dummy))
+_io_BytesIO___getstate___impl(bytesio *self)
+/*[clinic end generated code: output=4a776270c8443b85 input=6e3cd9132f0cacdd]*/
 {
+    PyObject *op = (PyObject *)self;
     PyObject *ret;
     Py_BEGIN_CRITICAL_SECTION(op);
     ret = bytesio_getstate_lock_held(op);
@@ -1063,9 +1069,18 @@ bytesio_setstate_lock_held(PyObject *op, PyObject *state)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_io.BytesIO.__setstate__
+
+    state: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-bytesio_setstate(PyObject *op, PyObject *state)
+_io_BytesIO___setstate___impl(bytesio *self, PyObject *state)
+/*[clinic end generated code: output=3605abdec171bb98 input=7d4339f5be0039ba]*/
 {
+    PyObject *op = (PyObject *)self;
     PyObject *ret;
     Py_BEGIN_CRITICAL_SECTION(op);
     ret = bytesio_setstate_lock_held(op, state);
@@ -1170,9 +1185,17 @@ bytesio_sizeof_lock_held(PyObject *op)
     return PyLong_FromSize_t(res);
 }
 
+/*[clinic input]
+_io.BytesIO.__sizeof__
+
+Size of object in memory, in bytes.
+[clinic start generated code]*/
+
 static PyObject *
-bytesio_sizeof(PyObject *op, PyObject *Py_UNUSED(dummy))
+_io_BytesIO___sizeof___impl(bytesio *self)
+/*[clinic end generated code: output=f61b601bd055c4de input=097b24a2755a7b0b]*/
 {
+    PyObject *op = (PyObject *)self;
     PyObject *ret;
     Py_BEGIN_CRITICAL_SECTION(op);
     ret = bytesio_sizeof_lock_held(op);
@@ -1232,9 +1255,9 @@ static struct PyMethodDef bytesio_methods[] = {
     _IO_BYTESIO_GETVALUE_METHODDEF
     _IO_BYTESIO_SEEK_METHODDEF
     _IO_BYTESIO_TRUNCATE_METHODDEF
-    {"__getstate__",  bytesio_getstate,  METH_NOARGS, NULL},
-    {"__setstate__",  bytesio_setstate,  METH_O, NULL},
-    {"__sizeof__", bytesio_sizeof,     METH_NOARGS, NULL},
+    _IO_BYTESIO___GETSTATE___METHODDEF
+    _IO_BYTESIO___SETSTATE___METHODDEF
+    _IO_BYTESIO___SIZEOF___METHODDEF
     {NULL, NULL}        /* sentinel */
 };
 

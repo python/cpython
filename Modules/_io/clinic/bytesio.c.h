@@ -621,6 +621,44 @@ _io_BytesIO_close(PyObject *self, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
+PyDoc_STRVAR(_io_BytesIO___getstate____doc__,
+"__getstate__($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO_BYTESIO___GETSTATE___METHODDEF    \
+    {"__getstate__", (PyCFunction)_io_BytesIO___getstate__, METH_NOARGS, _io_BytesIO___getstate____doc__},
+
+static PyObject *
+_io_BytesIO___getstate___impl(bytesio *self);
+
+static PyObject *
+_io_BytesIO___getstate__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io_BytesIO___getstate___impl((bytesio *)self);
+}
+
+PyDoc_STRVAR(_io_BytesIO___setstate____doc__,
+"__setstate__($self, state, /)\n"
+"--\n"
+"\n");
+
+#define _IO_BYTESIO___SETSTATE___METHODDEF    \
+    {"__setstate__", (PyCFunction)_io_BytesIO___setstate__, METH_O, _io_BytesIO___setstate____doc__},
+
+static PyObject *
+_io_BytesIO___setstate___impl(bytesio *self, PyObject *state);
+
+static PyObject *
+_io_BytesIO___setstate__(PyObject *self, PyObject *state)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _io_BytesIO___setstate___impl((bytesio *)self, state);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_io_BytesIO___init____doc__,
 "BytesIO(initial_bytes=b\'\')\n"
 "--\n"
@@ -684,4 +722,22 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b5e625e31b2a82f0 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_io_BytesIO___sizeof____doc__,
+"__sizeof__($self, /)\n"
+"--\n"
+"\n"
+"Size of object in memory, in bytes.");
+
+#define _IO_BYTESIO___SIZEOF___METHODDEF    \
+    {"__sizeof__", (PyCFunction)_io_BytesIO___sizeof__, METH_NOARGS, _io_BytesIO___sizeof____doc__},
+
+static PyObject *
+_io_BytesIO___sizeof___impl(bytesio *self);
+
+static PyObject *
+_io_BytesIO___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io_BytesIO___sizeof___impl((bytesio *)self);
+}
+/*[clinic end generated code: output=37e0318a34125084 input=a9049054013a1b77]*/

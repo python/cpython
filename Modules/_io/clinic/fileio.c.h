@@ -9,6 +9,27 @@ preserve
 #include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
+PyDoc_STRVAR(_io_FileIO__dealloc_warn__doc__,
+"_dealloc_warn($self, source, /)\n"
+"--\n"
+"\n");
+
+#define _IO_FILEIO__DEALLOC_WARN_METHODDEF    \
+    {"_dealloc_warn", (PyCFunction)_io_FileIO__dealloc_warn, METH_O, _io_FileIO__dealloc_warn__doc__},
+
+static PyObject *
+_io_FileIO__dealloc_warn_impl(fileio *self, PyObject *source);
+
+static PyObject *
+_io_FileIO__dealloc_warn(PyObject *self, PyObject *source)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _io_FileIO__dealloc_warn_impl((fileio *)self, source);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_io_FileIO_close__doc__,
 "close($self, /)\n"
 "--\n"
@@ -550,7 +571,24 @@ _io_FileIO_isatty(PyObject *self, PyObject *Py_UNUSED(ignored))
     return _io_FileIO_isatty_impl((fileio *)self);
 }
 
+PyDoc_STRVAR(_io_FileIO__isatty_open_only__doc__,
+"_isatty_open_only($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO_FILEIO__ISATTY_OPEN_ONLY_METHODDEF    \
+    {"_isatty_open_only", (PyCFunction)_io_FileIO__isatty_open_only, METH_NOARGS, _io_FileIO__isatty_open_only__doc__},
+
+static PyObject *
+_io_FileIO__isatty_open_only_impl(fileio *self);
+
+static PyObject *
+_io_FileIO__isatty_open_only(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io_FileIO__isatty_open_only_impl((fileio *)self);
+}
+
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=453d584e2e72f986 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a4d50af066c7ceb0 input=a9049054013a1b77]*/

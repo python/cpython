@@ -99,10 +99,17 @@ _PyFileIO_closed(PyObject *self)
 /* Because this can call arbitrary code, it shouldn't be called when
    the refcount is 0 (that is, not directly from tp_dealloc unless
    the refcount has been temporarily re-incremented). */
+/*[clinic input]
+_io.FileIO._dealloc_warn
+
+    source: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-fileio_dealloc_warn(PyObject *op, PyObject *source)
+_io_FileIO__dealloc_warn_impl(fileio *self, PyObject *source)
+/*[clinic end generated code: output=c7b7d122decd6575 input=3ea7e1cc0685edc2]*/
 {
-    fileio *self = PyFileIO_CAST(op);
     if (self->fd >= 0 && self->closefd) {
         PyObject *exc = PyErr_GetRaisedException();
         if (PyErr_ResourceWarning(source, 1, "unclosed file %R", source)) {
@@ -176,7 +183,7 @@ _io_FileIO_close_impl(fileio *self, PyTypeObject *cls)
         exc = PyErr_GetRaisedException();
     }
     if (self->finalizing) {
-        PyObject *r = fileio_dealloc_warn((PyObject*)self, (PyObject *) self);
+        PyObject *r = _io_FileIO__dealloc_warn_impl(self, (PyObject *)self);
         if (r) {
             Py_DECREF(r);
         }
@@ -1243,10 +1250,14 @@ _io_FileIO_isatty_impl(fileio *self)
    information. Use the stat result to skip a system call. Outside of that
    context TOCTOU issues (the fd could be arbitrarily modified by
    surrounding code). */
+/*[clinic input]
+_io.FileIO._isatty_open_only
+[clinic start generated code]*/
+
 static PyObject *
-_io_FileIO_isatty_open_only(PyObject *op, PyObject *Py_UNUSED(dummy))
+_io_FileIO__isatty_open_only_impl(fileio *self)
+/*[clinic end generated code: output=2b4689154d4b8b84 input=228767ff567cdfb6]*/
 {
-    fileio *self = PyFileIO_CAST(op);
     if (self->stat_atopen != NULL && !S_ISCHR(self->stat_atopen->st_mode)) {
         Py_RETURN_FALSE;
     }
@@ -1269,8 +1280,8 @@ static PyMethodDef fileio_methods[] = {
     _IO_FILEIO_WRITABLE_METHODDEF
     _IO_FILEIO_FILENO_METHODDEF
     _IO_FILEIO_ISATTY_METHODDEF
-    {"_isatty_open_only", _io_FileIO_isatty_open_only, METH_NOARGS},
-    {"_dealloc_warn", fileio_dealloc_warn, METH_O, NULL},
+    _IO_FILEIO__ISATTY_OPEN_ONLY_METHODDEF
+    _IO_FILEIO__DEALLOC_WARN_METHODDEF
     {"__getstate__", _PyIOBase_cannot_pickle, METH_NOARGS},
     {NULL,           NULL}             /* sentinel */
 };
