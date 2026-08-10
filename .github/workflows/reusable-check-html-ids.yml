@@ -23,17 +23,33 @@ jobs:
       - name: 'Find merge base'
         id: merge-base
         run: |
+          # Fetching can fail with "fatal: shallow file has changed since we
+          # read it", especially for old pull requests, which have a lot of
+          # history to fetch.  Retry it several times (see gh-151365).
+          retry_fetch() {
+            for attempt in $(seq 5); do
+              if [ "${attempt}" -gt 1 ]; then
+                echo "::warning::git fetch failed, retrying (attempt ${attempt})"
+                sleep 3
+              fi
+              if git fetch "$@"; then
+                return 0
+              fi
+            done
+            return 1
+          }
+
           BASE="${{ github.event.pull_request.base.sha }}"
           HEAD="${{ github.event.pull_request.head.sha }}"
-          git fetch --depth=$((${{ github.event.pull_request.commits }} + 10)) --no-tags origin "$BASE" "$HEAD"
+          retry_fetch --depth=$((${{ github.event.pull_request.commits }} + 10)) --no-tags origin "$BASE" "$HEAD"
 
           if ! MERGE_BASE=$(git merge-base "$BASE" "$HEAD" 2>/dev/null); then
-            git fetch --deepen=1 --no-tags origin "$BASE" "$HEAD"
+            retry_fetch --deepen=1 --no-tags origin "$BASE" "$HEAD"
 
             OLDEST=$(git rev-list --reflog --max-parents=0 --reverse "${BASE}^" "${HEAD}^" | head -1)
             TIMESTAMP=$(git show --format=%at --no-patch "$OLDEST")
 
-            git fetch --shallow-since="$TIMESTAMP" --no-tags origin "$BASE" "$HEAD"
+            retry_fetch --shallow-since="$TIMESTAMP" --no-tags origin "$BASE" "$HEAD"
 
             MERGE_BASE=$(git merge-base "$BASE" "$HEAD")
           fi

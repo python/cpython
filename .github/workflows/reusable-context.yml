@@ -96,8 +96,24 @@ jobs:
       run: |
         set -eux
 
+        # Fetching can fail with "fatal: shallow file has changed since we
+        # read it", especially for old pull requests, which have a lot of
+        # history to fetch.  Retry it several times (see gh-151365).
+        retry_fetch() {
+          for attempt in $(seq 5); do
+            if [ "${attempt}" -gt 1 ]; then
+              echo "::warning::git fetch failed, retrying (attempt ${attempt})"
+              sleep 3
+            fi
+            if git fetch "$@"; then
+              return 0
+            fi
+          done
+          return 1
+        }
+
         # Fetch enough history to find a common ancestor commit (aka merge-base):
-        git fetch origin "${refspec_pr}" --depth=$(( commits + 1 )) \
+        retry_fetch origin "${refspec_pr}" --depth=$(( commits + 1 )) \
           --no-tags --prune --no-recurse-submodules
 
         # This should get the oldest commit in the local fetched history (which may not be the commit the PR branched from):
@@ -105,7 +121,7 @@ jobs:
         DATE=$( git log --date=iso8601 --format=%cd "${COMMON_ANCESTOR}" )
 
         # Get all commits since that commit date from the base branch (eg: main):
-        git fetch origin "${refspec_base}" --shallow-since="${DATE}" \
+        retry_fetch origin "${refspec_base}" --shallow-since="${DATE}" \
           --no-tags --prune --no-recurse-submodules
       env:
         branch_pr: 'origin/${{ github.event.pull_request.head.ref }}'
