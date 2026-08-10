@@ -280,7 +280,7 @@ class LazyImportTypeTests(LazyImportTestCase):
     @support.requires_subprocess()
     def test_lazy_import_type_attribute_error_message(self):
         """Check that LazyImportType attribute error message is helpful."""
-        code = textwrap.dedent(f"""
+        code = textwrap.dedent("""
             lazy import asyncio
             try:
                 globals()["asyncio"].Task
@@ -293,6 +293,7 @@ class LazyImportTypeTests(LazyImportTestCase):
                 assert False, 'AttributeError is not raised'
         """)
         assert_python_ok("-c", code)
+
 
 class SyntaxRestrictionTests(LazyImportTestCase):
     """Tests for syntax restrictions on lazy imports."""
