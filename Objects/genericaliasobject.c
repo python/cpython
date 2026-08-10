@@ -992,13 +992,14 @@ ga_iter_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
     gaiterobject *gi = (gaiterobject *)self;
+    PyObject *obj = FT_ATOMIC_LOAD_PTR(gi->obj);
 
     /* _PyEval_GetBuiltin can invoke arbitrary code,
      * call must be before access of iterator pointers.
      * see issue #101765 */
 
-    if (gi->obj)
-        return Py_BuildValue("N(O)", iter, gi->obj);
+    if (obj)
+        return Py_BuildValue("N(O)", iter, obj);
     else
         return Py_BuildValue("N(())", iter);
 }

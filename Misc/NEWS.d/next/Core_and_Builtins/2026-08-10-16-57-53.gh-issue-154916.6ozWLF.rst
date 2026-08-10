@@ -1,0 +1,2 @@
+Fix data race when calling :meth:`~object.__reduce__` on a shared :class:`types.GenericAlias` iterator
+under the :term:`free-threaded build`.
