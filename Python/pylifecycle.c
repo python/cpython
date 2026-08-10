@@ -429,7 +429,8 @@ interpreter_update_config(PyThreadState *tstate, int only_update_path_config)
         }
     }
 
-    tstate->interp->long_state.max_str_digits = config->int_max_str_digits;
+    _Py_atomic_store_int(&tstate->interp->long_state.max_str_digits,
+                         config->int_max_str_digits);
 
     // Update the sys module for the new configuration
     if (_PySys_UpdateConfig(tstate) < 0) {
@@ -3826,8 +3827,8 @@ handle_thread_shutdown_exception(PyThreadState *tstate)
     assert(tstate != NULL);
     assert(_PyErr_Occurred(tstate));
     PyInterpreterState *interp = tstate->interp;
-    assert(interp->threads.head != NULL);
     _PyEval_StopTheWorld(interp);
+    assert(interp->threads.head != NULL);
 
     // We don't have to worry about locking this because the
     // world is stopped.

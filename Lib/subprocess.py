@@ -143,16 +143,16 @@ class CalledProcessError(SubprocessError):
         self.stderr = stderr
 
     def __str__(self):
-        if self.returncode and self.returncode < 0:
+        if isinstance(self.returncode, int) and self.returncode < 0:
             try:
-                return "Command '%s' died with %r." % (
+                return "Command %r died with %r." % (
                         self.cmd, signal.Signals(-self.returncode))
             except ValueError:
-                return "Command '%s' died with unknown signal %d." % (
+                return "Command %r died with unknown signal %d." % (
                         self.cmd, -self.returncode)
         else:
-            return "Command '%s' returned non-zero exit status %d." % (
-                    self.cmd, self.returncode)
+            return (f"Command {self.cmd!r} returned non-zero "
+                    f"exit status {self.returncode}.")
 
     @property
     def stdout(self):
@@ -916,6 +916,12 @@ def _can_use_kqueue():
 
 _CAN_USE_PIDFD_OPEN = not _mswindows and _can_use_pidfd_open()
 _CAN_USE_KQUEUE = not _mswindows and _can_use_kqueue()
+
+# Maximum timeout passed to poll() / kqueue.control() by Popen._wait():
+# very large values (e.g. timeout=float('inf')) overflow the C timestamp
+# conversion (gh-154836).  Longer waits are performed in bounded slices
+# until the deadline, like asyncio's MAXIMUM_SELECT_TIMEOUT.
+_MAXIMUM_WAIT_TIMEOUT = 24 * 3600
 
 
 # These are primarily fail-safe knobs for negatives. A True value does not
@@ -1682,8 +1688,9 @@ class Popen:
                     close_fds = False
 
             if shell:
-                startupinfo.dwFlags |= _winapi.STARTF_USESHOWWINDOW
-                startupinfo.wShowWindow = _winapi.SW_HIDE
+                if not startupinfo.dwFlags & _winapi.STARTF_USESHOWWINDOW:
+                    startupinfo.dwFlags |= _winapi.STARTF_USESHOWWINDOW
+                    startupinfo.wShowWindow = _winapi.SW_HIDE
                 if not executable:
                     # gh-101283: without a fully-qualified path, before Windows
                     # checks the system directories, it first looks in the
@@ -2228,10 +2235,19 @@ class Popen:
             try:
                 poller = select.poll()
                 poller.register(pidfd, select.POLLIN)
-                events = poller.poll(timeout * 1000)
-                if not events:
-                    raise TimeoutExpired(self.args, timeout)
-                return True
+                endtime = _time() + timeout
+                while True:
+                    # Clamp very large timeouts (e.g. float('inf')):
+                    # they overflow the C timestamp conversion in
+                    # poll().  Wait in bounded slices until the real
+                    # deadline (gh-154836).
+                    delay = min(_deadline_remaining(endtime),
+                                _MAXIMUM_WAIT_TIMEOUT)
+                    events = poller.poll(max(delay, 0) * 1000)
+                    if events:
+                        return True
+                    if _deadline_remaining(endtime) <= 0:
+                        raise TimeoutExpired(self.args, timeout)
             finally:
                 os.close(pidfd)
 
@@ -2252,14 +2268,26 @@ class Popen:
                     flags=select.KQ_EV_ADD | select.KQ_EV_ONESHOT,
                     fflags=select.KQ_NOTE_EXIT,
                 )
-                try:
-                    events = kq.control([kev], 1, timeout)  # wait
-                except OSError:
-                    return False
-                else:
-                    if not events:
+                changelist = [kev]
+                endtime = _time() + timeout
+                while True:
+                    # Clamp very large timeouts (e.g. float('inf')):
+                    # they overflow the C timestamp conversion in
+                    # kqueue.control().  Wait in bounded slices until
+                    # the real deadline (gh-154836).
+                    delay = min(_deadline_remaining(endtime),
+                                _MAXIMUM_WAIT_TIMEOUT)
+                    try:
+                        events = kq.control(changelist, 1, max(delay, 0))
+                    except OSError:
+                        return False
+                    if events:
+                        return True
+                    if _deadline_remaining(endtime) <= 0:
                         raise TimeoutExpired(self.args, timeout)
-                    return True
+                    # The kevent was registered by the first control()
+                    # call; don't re-add it on later slices.
+                    changelist = None
             finally:
                 kq.close()
 

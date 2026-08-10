@@ -288,6 +288,17 @@ Creating tasks
               # completion:
               task.add_done_callback(background_tasks.discard)
 
+      Note that this approach never awaits the tasks, so if a task
+      fails, its exception is never retrieved and asyncio logs a
+      "Task exception was never retrieved" message when the task is
+      garbage collected.  To avoid this, use :class:`asyncio.TaskGroup`
+      which keeps a strong reference to each task, awaits them and
+      propagates their exceptions::
+
+          async with asyncio.TaskGroup() as tg:
+              for i in range(10):
+                  tg.create_task(some_coro(param=i))
+
    .. versionadded:: 3.7
 
    .. versionchanged:: 3.8
@@ -377,7 +388,7 @@ and reliable way to wait for all tasks in the group to finish.
 
       * call it from the task group body based on some condition or event
       * pass the task group instance to child tasks via :meth:`create_task`, allowing a child
-        task to conditionally cancel the entire entire group
+        task to conditionally cancel the entire group
       * pass the task group instance or bound :meth:`cancel` method to some other task *before*
         opening the task group, allowing remote cancellation
 
@@ -433,6 +444,10 @@ unless it is :exc:`asyncio.CancelledError`,
 is also included in the exception group.
 The same special case is made for
 :exc:`KeyboardInterrupt` and :exc:`SystemExit` as in the previous paragraph.
+There is an additional special case made only for the body of the
+``async with``: if it raises :exc:`GeneratorExit` and none of the
+other tasks raise exceptions that would be reported, then the
+:exc:`GeneratorExit` is reraised.
 
 Task groups are careful not to mix up the internal cancellation used to
 "wake up" their :meth:`~object.__aexit__` with cancellation requests
@@ -455,6 +470,10 @@ reported by :meth:`asyncio.Task.cancelling`.
 
    Improved handling of simultaneous internal and external cancellations
    and correct preservation of cancellation counts.
+
+.. versionchanged:: 3.15
+
+   Addition of the special case for :exc:`GeneratorExit`.
 
 Sleeping
 ========
@@ -649,12 +668,12 @@ Eager task factory
 Shielding from cancellation
 ===========================
 
-.. awaitablefunction:: shield(aw)
+.. awaitablefunction:: shield(arg)
 
    Protect an :ref:`awaitable object <asyncio-awaitables>`
    from being :meth:`cancelled <Task.cancel>`.
 
-   If *aw* is a coroutine it is automatically scheduled as a Task.
+   If *arg* is a coroutine it is automatically scheduled as a Task.
 
    The statement::
 
@@ -695,7 +714,7 @@ Shielding from cancellation
       Removed the *loop* parameter.
 
    .. deprecated:: 3.10
-      Deprecation warning is emitted if *aw* is not Future-like object
+      Deprecation warning is emitted if *arg* is not Future-like object
       and there is no running event loop.
 
 
@@ -818,13 +837,13 @@ Timeouts
 
    .. versionadded:: 3.11
 
-.. function:: wait_for(aw, timeout)
+.. function:: wait_for(fut, timeout)
    :async:
 
-   Wait for the *aw* :ref:`awaitable <asyncio-awaitables>`
+   Wait for the *fut* :ref:`awaitable <asyncio-awaitables>`
    to complete with a timeout.
 
-   If *aw* is a coroutine it is automatically scheduled as a Task.
+   If *fut* is a coroutine it is automatically scheduled as a Task.
 
    *timeout* can either be ``None`` or a float or int number of seconds
    to wait for.  If *timeout* is ``None``, block until the future
@@ -840,7 +859,7 @@ Timeouts
    so the total wait time may exceed the *timeout*. If an exception
    happens during cancellation, it is propagated.
 
-   If the wait is cancelled, the future *aw* is also cancelled.
+   If the wait is cancelled, the future *fut* is also cancelled.
 
    .. _asyncio_example_waitfor:
 
@@ -865,8 +884,8 @@ Timeouts
        #     timeout!
 
    .. versionchanged:: 3.7
-      When *aw* is cancelled due to a timeout, ``wait_for`` waits
-      for *aw* to be cancelled.  Previously, it raised
+      When *fut* is cancelled due to a timeout, ``wait_for`` waits
+      for *fut* to be cancelled.  Previously, it raised
       :exc:`TimeoutError` immediately.
 
    .. versionchanged:: 3.10
@@ -879,20 +898,20 @@ Timeouts
 Waiting primitives
 ==================
 
-.. function:: wait(aws, *, timeout=None, return_when=ALL_COMPLETED)
+.. function:: wait(fs, *, timeout=None, return_when=ALL_COMPLETED)
    :async:
 
-   Run :class:`~asyncio.Future` and :class:`~asyncio.Task` instances in the *aws*
+   Run :class:`~asyncio.Future` and :class:`~asyncio.Task` instances in the *fs*
    iterable concurrently and block until the condition specified
    by *return_when*.
 
-   The *aws* iterable must not be empty.
+   The *fs* iterable must not be empty.
 
    Returns two sets of Tasks/Futures: ``(done, pending)``.
 
    Usage::
 
-        done, pending = await asyncio.wait(aws)
+        done, pending = await asyncio.wait(fs)
 
    *timeout* (a float or int), if specified, can be used to control
    the maximum number of seconds to wait before returning.
@@ -924,6 +943,9 @@ Waiting primitives
    Unlike :func:`~asyncio.wait_for`, ``wait()`` does not cancel the
    futures when a timeout occurs.
 
+   If ``wait()`` is cancelled, the futures in *fs* are not cancelled
+   and continue to run.
+
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
 
@@ -934,9 +956,9 @@ Waiting primitives
       Added support for generators yielding tasks.
 
 
-.. function:: as_completed(aws, *, timeout=None)
+.. function:: as_completed(fs, *, timeout=None)
 
-   Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws* iterable
+   Run :ref:`awaitable objects <asyncio-awaitables>` in the *fs* iterable
    concurrently. The returned object can be iterated to obtain the results
    of the awaitables as they finish.
 
@@ -981,11 +1003,15 @@ Waiting primitives
    are done. This is raised by the ``async for`` loop during asynchronous
    iteration or by the coroutines yielded during plain iteration.
 
+   ``as_completed()`` does not cancel the tasks running the supplied
+   awaitables: if a timeout occurs or the iteration is cancelled, the
+   remaining tasks continue to run.
+
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
 
    .. deprecated:: 3.10
-      Deprecation warning is emitted if not all awaitable objects in the *aws*
+      Deprecation warning is emitted if not all awaitable objects in the *fs*
       iterable are Future-like objects and there is no running event loop.
 
    .. versionchanged:: 3.12
