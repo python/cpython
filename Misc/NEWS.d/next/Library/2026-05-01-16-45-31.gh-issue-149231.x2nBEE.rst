@@ -1,0 +1,1 @@
+In :mod:`tomllib`, the number of parts in TOML keys is now limited.
