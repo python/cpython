@@ -647,7 +647,7 @@ translate_jump_labels_to_targets(basicblock *entryblock)
 {
     int max_label = get_max_label(entryblock);
     size_t mapsize = sizeof(basicblock *) * (max_label + 1);
-    basicblock **label2block = (basicblock **)PyMem_Malloc(mapsize);
+    basicblock **label2block = PyMem_New(basicblock *, max_label + 1);
     if (!label2block) {
         PyErr_NoMemory();
         return ERROR;
@@ -754,7 +754,7 @@ make_cfg_traversal_stack(basicblock *entryblock) {
         b->b_visited = 0;
         nblocks++;
     }
-    basicblock **stack = (basicblock **)PyMem_Malloc(sizeof(basicblock *) * nblocks);
+    basicblock **stack = PyMem_New(basicblock *, nblocks);
     if (!stack) {
         PyErr_NoMemory();
     }
@@ -2083,7 +2083,7 @@ swaptimize(basicblock *block, int *ix)
         return SUCCESS;
     }
     // Create an array with elements {0, 1, 2, ..., depth - 1}:
-    int *stack = PyMem_Malloc(depth * sizeof(int));
+    int *stack = PyMem_New(int, depth);
     if (stack == NULL) {
         PyErr_NoMemory();
         return ERROR;
@@ -3276,7 +3276,7 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
     Py_ssize_t *reverse_index_map = NULL;
     int err = ERROR;
 
-    index_map = PyMem_Malloc(nconsts * sizeof(Py_ssize_t));
+    index_map = PyMem_New(Py_ssize_t, nconsts);
     if (index_map == NULL) {
         PyErr_NoMemory();
         goto end;
@@ -3329,7 +3329,7 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
         goto end;
     }
     /* adjust const indices in the bytecode */
-    reverse_index_map = PyMem_Malloc(nconsts * sizeof(Py_ssize_t));
+    reverse_index_map = PyMem_New(Py_ssize_t, nconsts);
     if (reverse_index_map == NULL) {
         PyErr_NoMemory();
         goto end;

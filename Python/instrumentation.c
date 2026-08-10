@@ -1760,6 +1760,10 @@ update_instrumentation_data(PyCodeObject *code, PyInterpreterState *interp)
             else {
                 bytes_per_entry = 5;
             }
+            if (code_len > (PY_SSIZE_T_MAX - 1) / bytes_per_entry) {
+                PyErr_NoMemory();
+                return -1;
+            }
             _PyCoLineInstrumentationData *lines = PyMem_Malloc(1 + code_len * bytes_per_entry);
             if (lines == NULL) {
                 PyErr_NoMemory();
@@ -1779,7 +1783,7 @@ update_instrumentation_data(PyCodeObject *code, PyInterpreterState *interp)
     }
     if (all_events.tools[PY_MONITORING_EVENT_INSTRUCTION]) {
         if (code->_co_monitoring->per_instruction_opcodes == NULL) {
-            code->_co_monitoring->per_instruction_opcodes = PyMem_Malloc(code_len * sizeof(_PyCoLineInstrumentationData));
+            code->_co_monitoring->per_instruction_opcodes = PyMem_New(uint8_t, code_len);
             if (code->_co_monitoring->per_instruction_opcodes == NULL) {
                 PyErr_NoMemory();
                 return -1;

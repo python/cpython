@@ -2001,6 +2001,10 @@ win32_wchdir(LPCWSTR path)
     if (!result)
         return FALSE;
     if (result > Py_ARRAY_LENGTH(path_buf)) {
+        if ((size_t)result > (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t)) {
+            SetLastError(ERROR_OUTOFMEMORY);
+            return FALSE;
+        }
         new_path = PyMem_RawMalloc(result * sizeof(wchar_t));
         if (!new_path) {
             SetLastError(ERROR_OUTOFMEMORY);
@@ -5330,7 +5334,7 @@ os_listmounts_impl(PyObject *module, path_t *volume)
         if (buffer != default_buffer) {
             PyMem_Free((void *)buffer);
         }
-        buffer = (wchar_t*)PyMem_Malloc(sizeof(wchar_t) * buflen);
+        buffer = PyMem_New(wchar_t, buflen);
         if (!buffer) {
             PyErr_NoMemory();
             goto exit;
@@ -5702,7 +5706,7 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
     PyObject *result = NULL;
     HRESULT ret;
 
-    buffer = (wchar_t*)PyMem_Malloc(sizeof(wchar_t) * (wcslen(path->wide) + 1));
+    buffer = PyMem_New(wchar_t, wcslen(path->wide) + 1);
     if (!buffer) {
         return PyErr_NoMemory();
     }
@@ -7304,6 +7308,11 @@ fsconvert_strdup(PyObject *o, EXECV_CHAR **out)
     if (!PyUnicode_FSConverter(o, &ub))
         return 0;
     size = PyBytes_GET_SIZE(ub);
+    if (size == PY_SSIZE_T_MAX) {
+        PyErr_NoMemory();
+        Py_DECREF(ub);
+        return 0;
+    }
     *out = PyMem_Malloc(size + 1);
     if (*out) {
         memcpy(*out, PyBytes_AS_STRING(ub), size + 1);
