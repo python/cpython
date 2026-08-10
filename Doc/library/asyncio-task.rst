@@ -288,6 +288,17 @@ Creating tasks
               # completion:
               task.add_done_callback(background_tasks.discard)
 
+      Note that this approach never awaits the tasks, so if a task
+      fails, its exception is never retrieved and asyncio logs a
+      "Task exception was never retrieved" message when the task is
+      garbage collected.  To avoid this, use :class:`asyncio.TaskGroup`
+      which keeps a strong reference to each task, awaits them and
+      propagates their exceptions::
+
+          async with asyncio.TaskGroup() as tg:
+              for i in range(10):
+                  tg.create_task(some_coro(param=i))
+
    .. versionadded:: 3.7
 
    .. versionchanged:: 3.8
@@ -433,6 +444,10 @@ unless it is :exc:`asyncio.CancelledError`,
 is also included in the exception group.
 The same special case is made for
 :exc:`KeyboardInterrupt` and :exc:`SystemExit` as in the previous paragraph.
+There is an additional special case made only for the body of the
+``async with``: if it raises :exc:`GeneratorExit` and none of the
+other tasks raise exceptions that would be reported, then the
+:exc:`GeneratorExit` is reraised.
 
 Task groups are careful not to mix up the internal cancellation used to
 "wake up" their :meth:`~object.__aexit__` with cancellation requests
@@ -455,6 +470,10 @@ reported by :meth:`asyncio.Task.cancelling`.
 
    Improved handling of simultaneous internal and external cancellations
    and correct preservation of cancellation counts.
+
+.. versionchanged:: 3.15
+
+   Addition of the special case for :exc:`GeneratorExit`.
 
 Sleeping
 ========

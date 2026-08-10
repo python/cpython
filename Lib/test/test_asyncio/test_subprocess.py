@@ -12,7 +12,7 @@ from asyncio import base_subprocess
 from asyncio import subprocess
 from test.test_asyncio import utils as test_utils
 from test import support
-from test.support import os_helper, warnings_helper, gc_collect
+from test.support import os_helper, gc_collect
 
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
@@ -176,6 +176,116 @@ class SubprocessMixin:
         exitcode, stdout = self.loop.run_until_complete(task)
         self.assertEqual(exitcode, 0)
         self.assertEqual(stdout, b'')
+
+    def test_communicate_cancelled_mid_read_retry(self):
+        # gh-139373: output read before communicate() was cancelled must
+        # be returned by a subsequent communicate() call.
+        code = ('import sys, time;'
+                'sys.stdout.buffer.write(b"first\\n");'
+                'sys.stdout.buffer.flush();'
+                'time.sleep(3600)')
+
+        async def run():
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable, '-c', code,
+                stdout=subprocess.PIPE,
+            )
+            task = asyncio.create_task(proc.communicate())
+            # wait until communicate() has read the first line
+            while not proc._stdout_buf:
+                await asyncio.sleep(0.01)
+            task.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await task
+            proc.kill()
+            stdout, stderr = await proc.communicate()
+            return stdout
+
+        task = asyncio.wait_for(run(), support.LONG_TIMEOUT)
+        stdout = self.loop.run_until_complete(task)
+        self.assertEqual(stdout, b'first\n')
+
+    def test_communicate_cancelled_during_wait_retry(self):
+        # gh-139373: cancellation landing after the output was fully read
+        # but before wait() completed must not lose the output.
+        code = ('import os, time;'
+                'os.write(1, b"all output\\n");'
+                'os.close(1);'
+                'time.sleep(3600)')
+
+        async def run():
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable, '-c', code,
+                stdout=subprocess.PIPE,
+            )
+            task = asyncio.create_task(proc.communicate())
+            # wait until the stdout reader has consumed everything up to
+            # EOF; communicate() is then blocked on wait()
+            while not proc.stdout.at_eof():
+                await asyncio.sleep(0.01)
+            task.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await task
+            proc.kill()
+            stdout, stderr = await proc.communicate()
+            return stdout
+
+        task = asyncio.wait_for(run(), support.LONG_TIMEOUT)
+        stdout = self.loop.run_until_complete(task)
+        self.assertEqual(stdout, b'all output\n')
+
+    def test_communicate_cancelled_input_not_resendable(self):
+        # gh-139373: like subprocess.Popen.communicate(), sending new
+        # input after a cancelled communicate() call is an error.
+        async def run():
+            proc = await asyncio.create_subprocess_exec(
+                *PROGRAM_CAT,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+            )
+            task = asyncio.create_task(proc.communicate(b'data'))
+            await asyncio.sleep(0)
+            task.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await task
+            with self.assertRaises(ValueError):
+                await proc.communicate(b'more data')
+            proc.kill()
+            await proc.communicate()
+
+        self.loop.run_until_complete(
+            asyncio.wait_for(run(), support.LONG_TIMEOUT))
+
+    def test_communicate_cancelled_stdin_retry(self):
+        # gh-139373: input already fed before cancellation is not re-sent
+        # by the retried communicate() call, and the output is preserved.
+        code = ('import sys, time;'
+                'sys.stdout.buffer.write(sys.stdin.buffer.read());'
+                'sys.stdout.buffer.flush();'
+                'time.sleep(3600)')
+
+        async def run():
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable, '-c', code,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+            )
+            task = asyncio.create_task(proc.communicate(b'hello'))
+            # the child echoes stdin only after it is closed, so once
+            # output arrives the input was fully written and
+            # communicate() is blocked on wait()
+            while not proc._stdout_buf:
+                await asyncio.sleep(0.01)
+            task.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await task
+            proc.kill()
+            stdout, stderr = await proc.communicate()
+            return stdout
+
+        task = asyncio.wait_for(run(), support.LONG_TIMEOUT)
+        stdout = self.loop.run_until_complete(task)
+        self.assertEqual(stdout, b'hello')
 
     def test_shell(self):
         proc = self.loop.run_until_complete(
@@ -918,7 +1028,6 @@ class SubprocessMixin:
 
         self.loop.run_until_complete(main())
 
-    @warnings_helper.ignore_warnings(category=ResourceWarning)
     def test_subprocess_read_pipe_cancelled(self):
         async def main():
             loop = asyncio.get_running_loop()
@@ -929,7 +1038,6 @@ class SubprocessMixin:
         asyncio.run(main())
         gc_collect()
 
-    @warnings_helper.ignore_warnings(category=ResourceWarning)
     def test_subprocess_write_pipe_cancelled(self):
         async def main():
             loop = asyncio.get_running_loop()
@@ -940,7 +1048,6 @@ class SubprocessMixin:
         asyncio.run(main())
         gc_collect()
 
-    @warnings_helper.ignore_warnings(category=ResourceWarning)
     def test_subprocess_read_write_pipe_cancelled(self):
         async def main():
             loop = asyncio.get_running_loop()

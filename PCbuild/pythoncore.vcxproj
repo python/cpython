@@ -332,6 +332,7 @@
     <ClInclude Include="..\Include\internal\pycore_tracemalloc.h" />
     <ClInclude Include="..\Include\internal\pycore_tstate.h" />
     <ClInclude Include="..\Include\internal\pycore_tuple.h" />
+    <ClInclude Include="..\Include\internal\pycore_typecache.h" />
     <ClInclude Include="..\Include\internal\pycore_typedefs.h" />
     <ClInclude Include="..\Include\internal\pycore_typeobject.h" />
     <ClInclude Include="..\Include\internal\pycore_typevarobject.h" />
@@ -703,6 +704,7 @@
     <ClCompile Include="..\Python\thread.c" />
     <ClCompile Include="..\Python\traceback.c" />
     <ClCompile Include="..\Python\tracemalloc.c" />
+    <ClCompile Include="..\Python\typecache.c" />
     <ClCompile Include="..\Python\uniqueid.c" />
   </ItemGroup>
   <ItemGroup Condition="$(IncludeExternals)">
