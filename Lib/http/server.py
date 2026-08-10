@@ -857,7 +857,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-type", ctype)
-            self.send_header("Content-Length", str(fs[6]))
+            self.send_header("Content-Length", str(fs.st_size))
             self.send_header("Last-Modified",
                 self.date_time_string(fs.st_mtime))
             self._send_extra_response_headers()
