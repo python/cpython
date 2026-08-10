@@ -533,6 +533,11 @@ dummy_func(
             EXIT_IF(!PyList_CheckExact(o));
         }
 
+        op(_GUARD_NOS_LIST_SUBTYPE, (nos, unused -- nos, unused)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
+            EXIT_IF(!PyList_Check(o));
+        }
+
         op(_GUARD_TOS_LIST, (tos -- tos)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
             EXIT_IF(!PyList_CheckExact(o));
@@ -4340,6 +4345,7 @@ dummy_func(
             CALL_LEN,
             CALL_ISINSTANCE,
             CALL_LIST_APPEND,
+            CALL_LIST_APPEND_SUBTYPE,
             CALL_METHOD_DESCRIPTOR_O,
             CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS,
             CALL_METHOD_DESCRIPTOR_NOARGS,
@@ -5050,6 +5056,16 @@ dummy_func(
             _GUARD_CALLABLE_LIST_APPEND +
             _GUARD_NOS_NOT_NULL +
             _GUARD_NOS_LIST +
+            _CALL_LIST_APPEND +
+            POP_TOP +
+            POP_TOP;
+
+        macro(CALL_LIST_APPEND_SUBTYPE) =
+            unused/1 +
+            unused/2 +
+            _GUARD_CALLABLE_LIST_APPEND +
+            _GUARD_NOS_NOT_NULL +
+            _GUARD_NOS_LIST_SUBTYPE +
             _CALL_LIST_APPEND +
             POP_TOP +
             POP_TOP;

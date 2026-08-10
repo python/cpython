@@ -2147,8 +2147,8 @@ class TestSpecializer(TestBase):
     @cpython_only
     @requires_specialization
     def test_call_list_append(self):
-        # gh-141367: only exact lists should use
-        # CALL_LIST_APPEND instruction after specialization.
+        # gh-141367: list subclasses that inherit list.append
+        # should use the list append specialization.
 
         r = range(_testinternalcapi.SPECIALIZATION_THRESHOLD)
 
@@ -2167,9 +2167,25 @@ class TestSpecializer(TestBase):
 
         class MyList(list): pass
         my_list_append(MyList())
-        self.assert_specialized(my_list_append, "CALL_METHOD_DESCRIPTOR_O")
-        self.assert_no_opcode(my_list_append, "CALL_LIST_APPEND")
+        self.assert_specialized(my_list_append, "CALL_LIST_APPEND_SUBTYPE")
+        self.assert_no_opcode(my_list_append, "CALL_METHOD_DESCRIPTOR_O")
         self.assert_no_opcode(my_list_append, "CALL")
+        class MyListOverride(list):
+            def append(self, value):
+                self.append_called = True
+                super().append(value)
+
+        def my_list_override_append(l):
+            for _ in r:
+                l.append(1)
+
+        obj = MyListOverride()
+        my_list_override_append(obj)
+        self.assertTrue(obj.append_called)
+        self.assert_no_opcode(
+            my_list_override_append, "CALL_LIST_APPEND_SUBTYPE"
+        )
+
 
     @cpython_only
     @requires_specialization

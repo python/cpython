@@ -1735,6 +1735,10 @@ specialize_method_descriptor(PyMethodDescrObject *descr, PyObject *self_or_null,
                     specialize(instr, CALL_LIST_APPEND);
                     return 0;
                 }
+                if (PyList_Check(self_or_null)) {
+                    specialize(instr, CALL_LIST_APPEND_SUBTYPE);
+                    return 0;
+                }
             }
             specialize(instr, CALL_METHOD_DESCRIPTOR_O);
             return 0;

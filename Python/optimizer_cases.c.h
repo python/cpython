@@ -377,6 +377,10 @@
             break;
         }
 
+        case _GUARD_NOS_LIST_SUBTYPE: {
+            break;
+        }
+
         case _GUARD_TOS_LIST: {
             JitOptRef tos;
             tos = stack_pointer[-1];
