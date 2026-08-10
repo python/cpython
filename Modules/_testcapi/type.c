@@ -13,50 +13,11 @@ static PyType_Spec HeapTypeNameType_Spec = {
     .slots = HeapTypeNameType_slots,
 };
 
-static PyObject *
-get_heaptype_for_name(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    return PyType_FromSpec(&HeapTypeNameType_Spec);
-}
 
-
-static PyObject *
-get_type_name(PyObject *self, PyObject *type)
-{
-    assert(PyType_Check(type));
-    return PyType_GetName((PyTypeObject *)type);
-}
-
-
-static PyObject *
-get_type_qualname(PyObject *self, PyObject *type)
-{
-    assert(PyType_Check(type));
-    return PyType_GetQualName((PyTypeObject *)type);
-}
-
-
-static PyObject *
-get_type_fullyqualname(PyObject *self, PyObject *type)
-{
-    assert(PyType_Check(type));
-    return PyType_GetFullyQualifiedName((PyTypeObject *)type);
-}
-
-
-static PyObject *
-get_type_module_name(PyObject *self, PyObject *type)
-{
-    assert(PyType_Check(type));
-    return PyType_GetModuleName((PyTypeObject *)type);
-}
-
-
+// Test for PyType_GetDict()
 static PyObject *
 test_get_type_dict(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    /* Test for PyType_GetDict */
-
     // Assert ints have a `to_bytes` method
     PyObject *long_dict = PyType_GetDict(&PyLong_Type);
     assert(long_dict);
@@ -77,6 +38,7 @@ test_get_type_dict(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 
+// Test PyType_GetSlot()
 static PyObject *
 test_get_statictype_slots(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
@@ -133,16 +95,27 @@ test_get_statictype_slots(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 
+static int
+check_type_arg(PyObject *arg)
+{
+    if (!PyType_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a type");
+        return -1;
+    }
+    return 0;
+}
+
+
 // Get type->tp_version_tag
 static PyObject *
-type_get_version(PyObject *self, PyObject *type)
+type_get_version(PyObject *self, PyObject *arg)
 {
-    if (!PyType_Check(type)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a type");
+    if (check_type_arg(arg) < 0) {
         return NULL;
     }
-    PyObject *res = PyLong_FromUnsignedLong(
-        ((PyTypeObject *)type)->tp_version_tag);
+    PyTypeObject *type = (PyTypeObject*)arg;
+
+    PyObject *res = PyLong_FromUnsignedLong(type->tp_version_tag);
     if (res == NULL) {
         assert(PyErr_Occurred());
         return NULL;
@@ -150,25 +123,12 @@ type_get_version(PyObject *self, PyObject *type)
     return res;
 }
 
-static PyObject *
-type_modified(PyObject *self, PyObject *arg)
-{
-    if (!PyType_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a type");
-        return NULL;
-    }
-    PyTypeObject *type = (PyTypeObject*)arg;
 
-    PyType_Modified(type);
-    Py_RETURN_NONE;
-}
-
-
+// Test PyUnstable_Type_AssignVersionTag()
 static PyObject *
 type_assign_version(PyObject *self, PyObject *arg)
 {
-    if (!PyType_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a type");
+    if (check_type_arg(arg) < 0) {
         return NULL;
     }
     PyTypeObject *type = (PyTypeObject*)arg;
@@ -178,11 +138,11 @@ type_assign_version(PyObject *self, PyObject *arg)
 }
 
 
+// Get PyTypeObject.tp_bases
 static PyObject *
 type_get_tp_bases(PyObject *self, PyObject *arg)
 {
-    if (!PyType_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a type");
+    if (check_type_arg(arg) < 0) {
         return NULL;
     }
     PyTypeObject *type = (PyTypeObject*)arg;
@@ -194,16 +154,17 @@ type_get_tp_bases(PyObject *self, PyObject *arg)
     return Py_NewRef(bases);
 }
 
+
+// Get PyTypeObject.tp_mro
 static PyObject *
 type_get_tp_mro(PyObject *self, PyObject *arg)
 {
-    if (!PyType_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a type");
+    if (check_type_arg(arg) < 0) {
         return NULL;
     }
     PyTypeObject *type = (PyTypeObject*)arg;
 
-    PyObject *mro = ((PyTypeObject *)type)->tp_mro;
+    PyObject *mro = type->tp_mro;
     if (mro == NULL) {
         Py_RETURN_NONE;
     }
@@ -211,41 +172,38 @@ type_get_tp_mro(PyObject *self, PyObject *arg)
 }
 
 
-static PyObject *
-type_freeze(PyObject *module, PyObject *arg)
-{
-    if (!PyType_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a type");
-        return NULL;
-    }
-    PyTypeObject *type = (PyTypeObject*)arg;
-
-    if (PyType_Freeze(type) < 0) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-
 static PyMethodDef test_methods[] = {
-    {"get_heaptype_for_name", get_heaptype_for_name, METH_NOARGS},
-    {"get_type_name", get_type_name, METH_O},
-    {"get_type_qualname",  get_type_qualname, METH_O},
-    {"get_type_fullyqualname", get_type_fullyqualname, METH_O},
-    {"get_type_module_name", get_type_module_name, METH_O},
     {"test_get_type_dict", test_get_type_dict, METH_NOARGS},
     {"test_get_statictype_slots", test_get_statictype_slots,     METH_NOARGS},
     {"type_get_version", type_get_version, METH_O, PyDoc_STR("type->tp_version_tag")},
-    {"type_modified", type_modified, METH_O, PyDoc_STR("PyType_Modified")},
     {"type_assign_version", type_assign_version, METH_O, PyDoc_STR("PyUnstable_Type_AssignVersionTag")},
     {"type_get_tp_bases", type_get_tp_bases, METH_O},
     {"type_get_tp_mro", type_get_tp_mro, METH_O},
-    {"type_freeze", type_freeze, METH_O},
     {NULL},
 };
 
 int
 _PyTestCapi_Init_Type(PyObject *m)
 {
-    return PyModule_AddFunctions(m, test_methods);
+    if (PyModule_AddFunctions(m, test_methods) < 0) {
+        return -1;
+    }
+
+#define ADD_INT(macro) \
+    do { \
+        if (PyModule_AddIntConstant(m, #macro, macro) < 0) { \
+            return -1; \
+        } \
+    } while (0)
+
+    // Flags excluded from the limited C API
+    ADD_INT(_Py_TPFLAGS_STATIC_BUILTIN);
+    ADD_INT(Py_TPFLAGS_INLINE_VALUES);
+    ADD_INT(Py_TPFLAGS_MANAGED_WEAKREF);
+    ADD_INT(Py_TPFLAGS_MANAGED_DICT);
+    ADD_INT(Py_TPFLAGS_SEQUENCE);
+    ADD_INT(Py_TPFLAGS_MAPPING);
+
+#undef ADD_INT
+    return 0;
 }

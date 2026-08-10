@@ -2,6 +2,7 @@ from test.support import import_helper, Py_GIL_DISABLED, refleak_helper
 import unittest
 
 _testcapi = import_helper.import_module('_testcapi')
+_testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 
 
 class BuiltinStaticTypesTests(unittest.TestCase):
@@ -39,15 +40,18 @@ class BuiltinStaticTypesTests(unittest.TestCase):
 
 class TypeTests(unittest.TestCase):
     def test_get_type_name(self):
+        # Test PyType_GetName(), PyType_GetQualName(),
+        # PyType_GetFullyQualifiedName() and PyType_GetModuleName().
+
         class MyType:
             pass
 
-        from _testcapi import (
+        from _testlimitedcapi import (
             get_type_name, get_type_qualname,
             get_type_fullyqualname, get_type_module_name)
 
         from collections import OrderedDict
-        ht = _testcapi.get_heaptype_for_name()
+        ht = _testlimitedcapi.get_heaptype_for_name()
         for cls, fullname, modname, qualname, name in (
             (int,
              'int',
@@ -215,7 +219,7 @@ class TypeTests(unittest.TestCase):
 
     def test_freeze(self):
         # test PyType_Freeze()
-        type_freeze = _testcapi.type_freeze
+        type_freeze = _testlimitedcapi.type_freeze
 
         # simple case, no inherante
         class MyType:
@@ -250,7 +254,7 @@ class TypeTests(unittest.TestCase):
         "Specialization failure triggers gh-127773")
     def test_freeze_meta(self):
         """test PyType_Freeze() with overridden MRO"""
-        type_freeze = _testcapi.type_freeze
+        type_freeze = _testlimitedcapi.type_freeze
 
         class Base:
             value = 1
@@ -299,3 +303,160 @@ class TypeTests(unittest.TestCase):
                "flag but not Py_TPFLAGS_HAVE_GC flag")
         with self.assertRaisesRegex(SystemError, msg):
             _testcapi.create_managed_weakref_nogc_type()
+
+    def test_type_ready(self):
+        # Test PyType_Ready(): calling it on initialized types
+        # must not raise an exception.
+        type_ready = _testlimitedcapi.type_ready
+
+        class HeapType:
+            pass
+
+        type_ready(int)
+        type_ready(dict)
+        type_ready(HeapType)
+
+    def test_type_clearcache(self):
+        # Test PyType_ClearCache()
+        type_clearcache = _testlimitedcapi.type_clearcache
+        version_tag = type_clearcache()
+        self.assertEqual(type(version_tag), int)
+        self.assertGreaterEqual(version_tag, 0)
+
+    def test_type_getflags(self):
+        # Test PyType_GetFlags()
+        type_getflags = _testlimitedcapi.type_getflags
+
+        from _testlimitedcapi import (
+            Py_TPFLAGS_HEAPTYPE,
+            Py_TPFLAGS_HAVE_GC,
+            Py_TPFLAGS_HAVE_FINALIZE,
+            Py_TPFLAGS_HAVE_VERSION_TAG,
+            Py_TPFLAGS_VALID_VERSION_TAG,
+            Py_TPFLAGS_HAVE_VECTORCALL,
+            Py_TPFLAGS_DISALLOW_INSTANTIATION,
+            Py_TPFLAGS_IMMUTABLETYPE,
+            Py_TPFLAGS_READY,
+            Py_TPFLAGS_READYING,
+            Py_TPFLAGS_LONG_SUBCLASS,
+            Py_TPFLAGS_LIST_SUBCLASS,
+            Py_TPFLAGS_TUPLE_SUBCLASS,
+            Py_TPFLAGS_BYTES_SUBCLASS,
+            Py_TPFLAGS_UNICODE_SUBCLASS,
+            Py_TPFLAGS_DICT_SUBCLASS,
+            Py_TPFLAGS_BASE_EXC_SUBCLASS,
+            Py_TPFLAGS_TYPE_SUBCLASS,
+            Py_TPFLAGS_IS_ABSTRACT,
+            Py_TPFLAGS_BASETYPE,
+            _Py_TPFLAGS_MATCH_SELF,
+            Py_TPFLAGS_ITEMS_AT_END,
+            Py_TPFLAGS_METHOD_DESCRIPTOR,
+        )
+        from _testcapi import (
+            _Py_TPFLAGS_STATIC_BUILTIN,
+            Py_TPFLAGS_SEQUENCE,
+            Py_TPFLAGS_MAPPING,
+            Py_TPFLAGS_INLINE_VALUES,
+            Py_TPFLAGS_MANAGED_WEAKREF,
+            Py_TPFLAGS_MANAGED_DICT,
+        )
+
+        def check_flag(flags, flag, expected):
+            self.assertEqual(bool(flags & flag), expected)
+
+        def check_subclasses(test_type, flags):
+            for flag, base_type in (
+                (Py_TPFLAGS_LONG_SUBCLASS, int),
+                (Py_TPFLAGS_LIST_SUBCLASS, list),
+                (Py_TPFLAGS_TUPLE_SUBCLASS, tuple),
+                (Py_TPFLAGS_BYTES_SUBCLASS, bytes),
+                (Py_TPFLAGS_UNICODE_SUBCLASS, str),
+                (Py_TPFLAGS_DICT_SUBCLASS, dict),
+                (Py_TPFLAGS_BASE_EXC_SUBCLASS, BaseException),
+                (Py_TPFLAGS_TYPE_SUBCLASS, type),
+            ):
+                with self.subTest(test_type=test_type, flag=flag, base_type=base_type):
+                    check_flag(flags, flag, issubclass(test_type, base_type))
+
+        def check_type(test_type, static_type, have_gc=False, have_vectorcall=False,
+                       is_base_type=True, sequence=False, mapping=False,
+                       match_self=True, items_at_end=False):
+            heap_type = not static_type
+
+            flags = type_getflags(test_type)
+            check_flag(flags, _Py_TPFLAGS_STATIC_BUILTIN, static_type)
+            check_flag(flags, Py_TPFLAGS_HEAPTYPE, heap_type)
+            check_flag(flags, Py_TPFLAGS_HAVE_GC, have_gc)
+            check_subclasses(test_type, flags)
+            check_flag(flags, Py_TPFLAGS_HAVE_VECTORCALL, have_vectorcall)
+            check_flag(flags, Py_TPFLAGS_DISALLOW_INSTANTIATION, False)
+            check_flag(flags, Py_TPFLAGS_IMMUTABLETYPE, static_type)
+            check_flag(flags, Py_TPFLAGS_READY, True)
+            check_flag(flags, Py_TPFLAGS_READYING, False)
+            check_flag(flags, Py_TPFLAGS_IS_ABSTRACT, False)
+            check_flag(flags, Py_TPFLAGS_BASETYPE, is_base_type)
+            check_flag(flags, Py_TPFLAGS_SEQUENCE, sequence)
+            check_flag(flags, Py_TPFLAGS_MAPPING, mapping)
+
+            check_flag(flags, Py_TPFLAGS_INLINE_VALUES, heap_type)
+            check_flag(flags, Py_TPFLAGS_MANAGED_WEAKREF, heap_type)
+            check_flag(flags, Py_TPFLAGS_MANAGED_DICT, heap_type)
+            check_flag(flags, Py_TPFLAGS_ITEMS_AT_END, items_at_end)
+            check_flag(flags, Py_TPFLAGS_METHOD_DESCRIPTOR, False)
+
+            check_flag(flags, _Py_TPFLAGS_MATCH_SELF, match_self)
+
+            # Flags kept for backward compatibility
+            check_flag(flags, Py_TPFLAGS_HAVE_FINALIZE, False)
+            check_flag(flags, Py_TPFLAGS_HAVE_VERSION_TAG, False)
+            check_flag(flags, Py_TPFLAGS_VALID_VERSION_TAG, False)
+
+        # Scalar types
+        check_type(int, static_type=True)
+        check_type(bool, static_type=True,
+                   is_base_type=False)
+        check_type(float, static_type=True)
+        check_type(complex, static_type=True,
+                   match_self=False)
+        check_type(bytes, static_type=True)
+        check_type(bytearray, static_type=True)
+        check_type(str, static_type=True)
+
+        # Collection types
+        check_type(tuple, static_type=True, have_gc=True,
+                   sequence=True)
+        check_type(list, static_type=True, have_gc=True,
+                   sequence=True)
+        check_type(dict, static_type=True, have_gc=True,
+                   mapping=True)
+        check_type(frozendict, static_type=True, have_gc=True,
+                   mapping=True)
+        check_type(set, static_type=True, have_gc=True)
+        check_type(frozenset, static_type=True, have_gc=True)
+
+        # Other types
+        check_type(BaseException, static_type=True, have_gc=True,
+                   match_self=False)
+        check_type(type, static_type=True, have_gc=True,
+                   have_vectorcall=True,
+                   match_self=False,
+                   items_at_end=True)
+
+        # Heap type
+        class HeapType:
+            pass
+        check_type(HeapType, static_type=False, have_gc=True, match_self=False)
+
+    def test_type_issubtype(self):
+        # Test PyType_IsSubtype()
+        type_issubtype = _testlimitedcapi.type_issubtype
+
+        class MyList(list):
+            pass
+
+        self.assertTrue(type_issubtype(bool, int))
+        self.assertTrue(type_issubtype(MyList, list))
+
+        self.assertFalse(type_issubtype(int, type))
+        self.assertFalse(type_issubtype(frozendict, dict))
+        self.assertFalse(type_issubtype(MyList, tuple))
