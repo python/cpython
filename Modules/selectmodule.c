@@ -832,7 +832,7 @@ typedef struct {
     int fd_devpoll;
     int n_fds;
     int out_size;
-    int registered;
+    PyObject *registered;  // set of registered fds
     struct pollfd *fds;
     struct pollfd *out_fds;
 } devpollObject;
@@ -883,6 +883,17 @@ internal_devpoll_register(devpollObject *self, int fd,
     if (self->fd_devpoll < 0)
         return devpoll_err_closed();
 
+    // registered.add(fd)
+    PyObject *fd_obj = PyLong_FromLong(fd);
+    if (fd_obj == NULL) {
+        return NULL;
+    }
+    int res = PySet_Add(self->registered, fd_obj);
+    Py_DECREF(fd_obj);
+    if (res < 0) {
+        return NULL;
+    }
+
     if (remove) {
         self->fds[self->n_fds].fd = fd;
         self->fds[self->n_fds].events = POLLREMOVE;
@@ -891,7 +902,6 @@ internal_devpoll_register(devpollObject *self, int fd,
             if (devpoll_flush(self))
                 return NULL;
         }
-        self->registered -= 1;
     }
 
     self->fds[self->n_fds].fd = fd;
@@ -902,7 +912,6 @@ internal_devpoll_register(devpollObject *self, int fd,
             return NULL;
     }
 
-    self->registered += 1;
     Py_RETURN_NONE;
 }
 
@@ -967,6 +976,17 @@ select_devpoll_unregister_impl(devpollObject *self, int fd)
     if (self->fd_devpoll < 0)
         return devpoll_err_closed();
 
+    // registered.discard(fd)
+    PyObject *fd_obj = PyLong_FromLong(fd);
+    if (fd_obj == NULL) {
+        return NULL;
+    }
+    int res = PySet_Discard(self->registered, fd_obj);
+    Py_DECREF(fd_obj);
+    if (res < 0) {
+        return NULL;
+    }
+
     self->fds[self->n_fds].fd = fd;
     self->fds[self->n_fds].events = POLLREMOVE;
 
@@ -975,7 +995,6 @@ select_devpoll_unregister_impl(devpollObject *self, int fd)
             return NULL;
     }
 
-    self->registered -= 1;
     Py_RETURN_NONE;
 }
 
@@ -1034,9 +1053,10 @@ select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
 
     /* Ensure the output buffer is large enough to potentially
      * fit all registered file descriptors. */
-    if (self->registered > self->out_size) {
-        self->out_size = self->registered + 128;
-        self->out_fds = PyMem_Resize(self->out_fds, struct pollfd, self->out_size);
+    Py_ssize_t registered = PySet_GET_SIZE(self->registered);
+    if (registered > self->out_size) {
+        self->out_size = registered + 128;
+        PyMem_Resize(self->out_fds, struct pollfd, self->out_size);
         if (self->out_fds == NULL) {
             PyErr_NoMemory();
             return NULL;
@@ -1225,17 +1245,26 @@ newDevPollObject(PyObject *module)
         return NULL;
     }
 
-    self = PyObject_New(devpollObject, get_select_state(module)->devpoll_Type);
-    if (self == NULL) {
+    PyObject *registered = PySet_New(NULL);
+    if (registered == NULL) {
         close(fd_devpoll);
         PyMem_Free(fds);
         PyMem_Free(out_fds);
         return NULL;
     }
+
+    self = PyObject_New(devpollObject, get_select_state(module)->devpoll_Type);
+    if (self == NULL) {
+        close(fd_devpoll);
+        PyMem_Free(fds);
+        PyMem_Free(out_fds);
+        Py_DECREF(registered);
+        return NULL;
+    }
     self->fd_devpoll = fd_devpoll;
     self->n_fds = 0;
     self->fds = fds;
-    self->registered = 0;
+    self->registered = registered;
     self->out_size = out_size;
     self->out_fds = out_fds;
 
@@ -1250,6 +1279,7 @@ devpoll_dealloc(PyObject *op)
     (void)devpoll_internal_close(self);
     PyMem_Free(self->fds);
     PyMem_Free(self->out_fds);
+    Py_DECREF(self->registered);
     PyObject_Free(self);
     Py_DECREF(type);
 }
