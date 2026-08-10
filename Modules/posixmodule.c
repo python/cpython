@@ -69,7 +69,7 @@
 #endif
 
 #ifdef HAVE_SYS_RANDOM_H
-#  include <sys/random.h>
+#  include <sys/random.h>         // getrandom()
 #endif
 
 #ifdef HAVE_SYS_UIO_H
@@ -17388,14 +17388,14 @@ os_fspath_impl(PyObject *module, PyObject *path)
 os.getrandom
 
     size: Py_ssize_t
-    flags: int=0
+    flags: unsigned_int(bitwise=True) = 0
 
 Obtain a series of random bytes.
 [clinic start generated code]*/
 
 static PyObject *
-os_getrandom_impl(PyObject *module, Py_ssize_t size, int flags)
-/*[clinic end generated code: output=b3a618196a61409c input=59bafac39c594947]*/
+os_getrandom_impl(PyObject *module, Py_ssize_t size, unsigned int flags)
+/*[clinic end generated code: output=c2163c05f0e1d0a1 input=e0174983f5703f82]*/
 {
     if (size < 0) {
         errno = EINVAL;
