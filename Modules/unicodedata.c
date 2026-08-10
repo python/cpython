@@ -1173,10 +1173,15 @@ find_prefix_id(Py_UCS4 code)
 }
 
 /* macros used to determine if the given code point is in the PUA range that
- * we are using to store aliases and named sequences */
+ * we are using to store alias type labels, aliases and named sequences */
+#define IS_ALIAS_TYPE_LABEL(cp) ((cp >= alias_type_labels_start) && \
+                                 (cp < alias_type_labels_end))
 #define IS_ALIAS(cp) ((cp >= aliases_start) && (cp < aliases_end))
 #define IS_NAMED_SEQ(cp) ((cp >= named_sequences_start) && \
                           (cp < named_sequences_end))
+#define IS_FOR_INTERNAL_USE(cp) (IS_ALIAS_TYPE_LABEL(cp) || \
+                                 IS_ALIAS(cp) || \
+                                 IS_NAMED_SEQ(cp))
 
 
 // DAWG decoding functions
@@ -1421,24 +1426,26 @@ _inverse_dawg_lookup(char* buffer, unsigned int buflen, unsigned int pos)
 
 static int
 _getucname(PyObject *self,
-           Py_UCS4 code, char* buffer, int buflen, int with_alias_and_seq)
+           Py_UCS4 code, char* buffer, int buflen,
+           int allow_internal_use_codepoints)
 {
     /* Find the name associated with the given code point.
-     * If with_alias_and_seq is 1, check for names in the Private Use Area 15
-     * that we are using for aliases and named sequences. */
+     * If allow_internal_use_codepoints is 1, check for names in the Private
+     * Use Area 15 that we are using for alias type labels, aliases and named
+     * sequences. */
     int offset;
 
     if (code >= 0x110000)
         return 0;
 
     /* XXX should we just skip all the code points in the PUAs here? */
-    if (!with_alias_and_seq && (IS_ALIAS(code) || IS_NAMED_SEQ(code)))
+    if (!allow_internal_use_codepoints && IS_FOR_INTERNAL_USE(code))
         return 0;
 
     if (UCD_Check(self)) {
         /* in 3.2.0 there are no aliases and named sequences */
         const change_record *old;
-        if (IS_ALIAS(code) || IS_NAMED_SEQ(code))
+        if (IS_FOR_INTERNAL_USE(code))
             return 0;
         old = get_old_record(self, code);
         if (old->category_changed == 0) {
@@ -1493,9 +1500,9 @@ _getucname(PyObject *self,
 static int
 capi_getucname(Py_UCS4 code,
                char* buffer, int buflen,
-               int with_alias_and_seq)
+               int allow_internal_use_codepoints)
 {
-    return _getucname(NULL, code, buffer, buflen, with_alias_and_seq);
+    return _getucname(NULL, code, buffer, buflen, allow_internal_use_codepoints);
 
 }
 
@@ -1528,7 +1535,7 @@ _check_alias_and_seq(Py_UCS4* code, int with_named_seq)
     /* if the code point is in the PUA range that we use for aliases,
      * convert it to obtain the right code point */
     if (IS_ALIAS(*code))
-        *code = name_aliases[*code-aliases_start];
+        *code = alias_infos[*code-aliases_start].aliased_codepoint;
     return 1;
 }
 
@@ -1639,6 +1646,37 @@ unicodedata_create_capi(void)
     return PyCapsule_New(&capi, PyUnicodeData_CAPSULE_NAME, NULL);
 }
 
+Py_ssize_t
+_locate_first_alias_info(int chr)
+{
+    /* Return the index of the first item in alias_infos that describe’s one of
+     * chr’s aliases. If chr has no aliases, then this function will return -1.
+     */
+    // Use binary search to find one of chr’s aliases.
+    Py_ssize_t i = -1;
+    Py_ssize_t search_min = 0;
+    Py_ssize_t search_max = (sizeof(alias_infos) / sizeof(alias_infos[0])) - 1;
+    do {
+        Py_ssize_t search_middle = (search_min + search_max) / 2;
+        if (alias_infos[search_middle].aliased_codepoint == chr) {
+            i = search_middle;
+            break;
+        }
+        else if (chr > alias_infos[search_middle].aliased_codepoint)
+            search_min = search_middle + 1;
+        else
+            search_max = search_middle - 1;
+    } while (search_min <= search_max);
+    /* If something was found, then roll back to the first alias_infos index
+     * that’s for chr.
+     */
+    if (i != -1)
+        while (i > 0 && alias_infos[i - 1].aliased_codepoint == chr)
+            i--;
+
+    return i;
+}
+
 
 /* -------------------------------------------------------------------- */
 /* Python bindings */
@@ -1675,6 +1713,95 @@ unicodedata_UCD_name_impl(PyObject *self, int chr, PyObject *default_value)
     }
 
     return PyUnicode_FromString(name);
+}
+
+/*[clinic input]
+unicodedata.UCD.aliases
+
+    self: self
+    chr: int(accept={str})
+    /
+
+Returns a frozendict of character name aliases for chr.
+
+Each of the frozen dictionary's keys will be a string that
+represents a type of alias (for example, "correction" or
+"abbreviation"). If the character has no aliases of a particular
+type, then the key for that type will be omitted. The value for each
+key will be a tuple that contains one string for each alias of the
+given type. If chr has no character name aliases, then an empty
+frozen dictionary will be returned.
+[clinic start generated code]*/
+
+static PyObject *
+unicodedata_UCD_aliases_impl(PyObject *self, int chr)
+/*[clinic end generated code: output=885c251405189c5f input=2a4435e16e01244c]*/
+{
+    Py_ssize_t i = _locate_first_alias_info(chr); // Index for alias_infos
+    if (i == -1)
+        return PyFrozenDict_New(NULL);
+
+    PyObject *dict = PyDict_New();
+    if (dict == NULL) {
+        PyErr_SetString(PyExc_SystemError, "failed to create a dict");
+        return NULL;
+    }
+    int current_type_label_codepoint = 0;
+    static_assert(0 < alias_type_labels_start,
+                  "bad initial value for current_type_label");
+    PyObject *aliases_for_current_type;
+    Py_ssize_t j = 0; // Index for aliases_for_current_type
+    while (true) {
+        bool ac_changed = alias_infos[i].aliased_codepoint != chr;
+        bool type_changed = alias_infos[i].alias_type_label_codepoint != current_type_label_codepoint;
+        char buffer[NAME_MAXLEN+1];
+        if (ac_changed || type_changed) {
+            // Skip doing this next part for the first time this chunk of code
+            // is run.
+            if (current_type_label_codepoint != 0) {
+                if (_PyTuple_Resize(&aliases_for_current_type, j)) {
+                    Py_DECREF(dict);
+                    return NULL;
+                }
+                if (!_getucname(self, current_type_label_codepoint, buffer,
+                                NAME_MAXLEN, 1)) {
+                    Py_DECREF(dict);
+                    PyErr_Format(PyExc_SystemError,
+                                 "failed to find 0x%04X in DAWG",
+                                 current_type_label_codepoint);
+                    return NULL;
+                }
+                // buffer now contains an alias type label.
+                PyDict_SetItemString(dict, buffer, aliases_for_current_type);
+            }
+
+            if (ac_changed)
+                break;
+
+            current_type_label_codepoint = alias_infos[i].alias_type_label_codepoint;
+            j = 0;
+            aliases_for_current_type = PyTuple_New(max_alias_tuple_length);
+            if (aliases_for_current_type == NULL) {
+                Py_DECREF(dict);
+                return NULL;
+            }
+        }
+        const unsigned int alias_location = aliases_start + i;
+        if (!_getucname(self, alias_location, buffer, NAME_MAXLEN, 1)) {
+            Py_DECREF(dict);
+            PyErr_Format(PyExc_SystemError, "failed to find 0x%04X in DAWG",
+                         alias_location);
+            return NULL;
+        }
+        // buffer now contains an alias.
+        PyTuple_SetItem(aliases_for_current_type,
+                        j, PyUnicode_FromString(buffer));
+        i++;
+        j++;
+    }
+    PyObject *return_value = PyFrozenDict_New(dict);
+    Py_DECREF(dict);
+    return return_value;
 }
 
 /*[clinic input]
@@ -1756,7 +1883,7 @@ unicodedata_UCD_lookup_impl(PyObject *self, const char *name,
                                          named_sequences[index].seqlen);
     }
     if (IS_ALIAS(code)) {
-        code = name_aliases[code-aliases_start];
+        code = alias_infos[code-aliases_start].aliased_codepoint;
     }
     return PyUnicode_FromOrdinal(code);
 }
@@ -2243,10 +2370,11 @@ static PyMethodDef unicodedata_functions[] = {
     UNICODEDATA_ITER_GRAPHEMES_METHODDEF
     UNICODEDATA_ISXIDSTART_METHODDEF
     UNICODEDATA_ISXIDCONTINUE_METHODDEF
+    UNICODEDATA_UCD_ALIASES_METHODDEF
 
     // The following definitions are shared between the module
     // and the UCD class.
-#define DB_methods (unicodedata_functions + 7)
+#define DB_methods (unicodedata_functions + 8)
 
     UNICODEDATA_UCD_DECIMAL_METHODDEF
     UNICODEDATA_UCD_DIGIT_METHODDEF

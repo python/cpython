@@ -8,6 +8,7 @@ Modified for Python 2.0 by Fredrik Lundh (fredrik@pythonware.com)
 """#"
 
 import ast
+import string
 import unittest
 import unicodedata
 import urllib.error
@@ -148,10 +149,11 @@ class UnicodeNamesTest(unittest.TestCase):
         self.checkletter("HALFWIDTH KATAKANA SEMI-VOICED SOUND MARK", "\uFF9F")
         self.checkletter("FULLWIDTH LATIN SMALL LETTER A", "\uFF41")
 
-    def test_aliases(self):
-        # Check that the aliases defined in the NameAliases.txt file work.
-        # This should be updated when new aliases are added or the file
-        # should be downloaded and parsed instead.  See #12753.
+    def test_turning_aliases_into_characters(self):
+        # Check that the aliases defined in the NameAliases.txt can be
+        # used with "\N{…}" and unicodedata.name().  This should be
+        # updated when new aliases are added or the file should be
+        # downloaded and parsed instead.  See #12753.
         aliases = [
             ('LATIN CAPITAL LETTER GHA', 0x01A2),
             ('LATIN SMALL LETTER GHA', 0x01A3),
@@ -174,16 +176,149 @@ class UnicodeNamesTest(unittest.TestCase):
             with self.assertRaises(KeyError):
                 unicodedata.ucd_3_2_0.lookup(alias)
 
+    def test_turning_characters_into_aliases(self):
+        # Check that the aliases defined in the NameAliases.txt can be
+        # looked up using unicodedata.aliases(). When NameAliases.txt is
+        # updated, characters that this test uses might get new aliases.
+        # If that happens, then this test will need to be updated.
+        codepoints_and_their_aliases = [
+            # Characters that have aliases:
+            (
+                "\u0000",
+                frozendict({
+                    "control": ("NULL",),
+                    "abbreviation": ("NUL",)
+                })
+            ),
+            (
+                # I could have used "\t" here, but I’m using "\uXXXX"
+                # escapes in order to make it easier to manual copy and
+                # double check the relevant data from NameAliases.txt.
+                "\u0009",
+                frozendict({
+                    "control": ("CHARACTER TABULATION", "HORIZONTAL TABULATION"),
+                    "abbreviation": ("HT", "TAB")
+                })
+            ),
+            (
+                "\u000A",
+                frozendict({
+                    "control": ("END OF LINE", "LINE FEED", "NEW LINE"),
+                    "abbreviation": ("EOL", "LF", "NL")
+                })
+            ),
+            (
+                "\u000D",
+                frozendict({
+                    "control": ("CARRIAGE RETURN",),
+                    "abbreviation": ("CR",)
+                })
+            ),
+            (
+                "\u0080",
+                frozendict({
+                    "figment": ("PADDING CHARACTER",),
+                    "abbreviation": ("PAD",)
+                })
+            ),
+            (
+                "\u01A2",
+                frozendict({
+                    "correction": ("LATIN CAPITAL LETTER GHA",)
+                })
+            ),
+            (
+                "\uFEFF",
+                frozendict({
+                    "alternate": ("BYTE ORDER MARK",),
+                    "abbreviation": ("BOM", "ZWNBSP")
+                })
+            ),
+            (
+                "\U000E01EF",
+                frozendict({
+                    "abbreviation": ("VS256",),
+                })
+            ),
+            # Code points that do not have aliases at the moment:
+            #
+            # (This is a list of the first character that doesn’t have
+            # any aliases in each Unicode plane. There are no characters
+            # in Planes 4–13. For those planes, I used the first code
+            # point in the plane.)
+            ("\u0021", frozendict()),
+            ("\U00010000", frozendict()),
+            ("\U00020000", frozendict()),
+            ("\U00030000", frozendict()),
+            ("\U00040000", frozendict()),
+            ("\U00050000", frozendict()),
+            ("\U00060000", frozendict()),
+            ("\U00070000", frozendict()),
+            ("\U00080000", frozendict()),
+            ("\U00090000", frozendict()),
+            ("\U000A0000", frozendict()),
+            ("\U000B0000", frozendict()),
+            ("\U000C0000", frozendict()),
+            ("\U000D0000", frozendict()),
+            ("\U000E0001", frozendict()),
+            ("\U000F0000", frozendict()),
+            ("\U00100000", frozendict()),
+        ]
+        for codepoint, expected_aliases in codepoints_and_their_aliases:
+            actual_aliases = unicodedata.aliases(codepoint)
+            self.assertEqual(expected_aliases, actual_aliases)
+            # Make sure that all of the types are correct.
+            self.assertIs(type(codepoint), str)
+            self.assertEqual(len(codepoint), 1)
+            self.assertIs(type(expected_aliases), frozendict)
+            self.assertIs(type(actual_aliases), frozendict)
+
+            for alias_type in expected_aliases:
+                self.assertIs(type(alias_type), str)
+
+            for alias_type in actual_aliases:
+                self.assertIs(type(alias_type), str)
+
+                self.assertIs(type(expected_aliases[alias_type]), tuple)
+                for alias in expected_aliases[alias_type]:
+                    self.assertIs(type(alias), str)
+
+                self.assertIs(type(actual_aliases[alias_type]), tuple)
+                for alias in actual_aliases[alias_type]:
+                    self.assertIs(type(alias), str)
+
+        with self.assertRaises(AttributeError):
+            unicodedata.ucd_3_2_0.aliases
+
+    def test_calling_aliases_with_bad_args(self):
+        bad_args = [
+            "",
+            "01",
+            "ABC",
+            string.printable
+        ]
+        for bad_arg in bad_args:
+            with self.assertRaises(TypeError):
+                unicodedata.aliases(bad_arg)
+
+    def test_alias_type_labels_in_pua_range(self):
+        # We are storing alias type labels in the PUA 15, but their
+        # names shouldn’t leak.
+        for cp in range(0xf0000, 0xf0200):
+            with self.assertRaises(ValueError) as cm:
+                unicodedata.name(chr(cp))
+            self.assertEqual(str(cm.exception), 'no such name')
+
     def test_aliases_names_in_pua_range(self):
         # We are storing aliases in the PUA 15, but their names shouldn't leak
-        for cp in range(0xf0000, 0xf0200):
+        for cp in range(0xf0200, 0xf0400):
             with self.assertRaises(ValueError) as cm:
                 unicodedata.name(chr(cp))
             self.assertEqual(str(cm.exception), 'no such name')
 
     def test_named_sequences_names_in_pua_range(self):
         # We are storing named seq in the PUA 15, but their names shouldn't leak
-        for cp in range(0xf0200, 0xf0fff):
+        for cp in range(0xf0400, 0xf0fff):
             with self.assertRaises(ValueError) as cm:
                 unicodedata.name(chr(cp))
             self.assertEqual(str(cm.exception), 'no such name')
