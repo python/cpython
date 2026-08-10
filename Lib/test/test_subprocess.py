@@ -3777,6 +3777,34 @@ class Win32ProcessTestCase(BaseTestCase):
             self.assertEqual(startupinfo.wShowWindow, subprocess.SW_HIDE)
             self.assertEqual(startupinfo.lpAttributeList, {"handle_list": []})
 
+    def test_startupinfo_shell_show_window(self):
+        # gh-85028: shell=True must not override wShowWindow set by the caller
+        import _winapi
+        SW_MAXIMIZE = 3
+        used = []
+        create_process = _winapi.CreateProcess
+
+        def spy(*args):
+            # The startup info is the last argument of CreateProcess()
+            used.append(args[-1])
+            return create_process(*args)
+
+        startupinfo = subprocess.STARTUPINFO(
+            dwFlags=subprocess.STARTF_USESHOWWINDOW,
+            wShowWindow=SW_MAXIMIZE)
+        with mock.patch.object(_winapi, 'CreateProcess', spy):
+            rc = subprocess.call(ZERO_RETURN_CMD, shell=True,
+                                 startupinfo=startupinfo)
+            self.assertEqual(rc, 0)
+            rc = subprocess.call(ZERO_RETURN_CMD, shell=True)
+            self.assertEqual(rc, 0)
+
+        requested, default = used
+        self.assertEqual(requested.wShowWindow, SW_MAXIMIZE)
+        # Without STARTF_USESHOWWINDOW the shell window is still hidden.
+        self.assertTrue(default.dwFlags & subprocess.STARTF_USESHOWWINDOW)
+        self.assertEqual(default.wShowWindow, subprocess.SW_HIDE)
+
     # CREATE_NEW_CONSOLE creates a "popup" window.
     @support.requires_resource('gui')
     def test_creationflags(self):

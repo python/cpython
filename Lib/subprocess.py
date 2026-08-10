@@ -1688,8 +1688,9 @@ class Popen:
                     close_fds = False
 
             if shell:
-                startupinfo.dwFlags |= _winapi.STARTF_USESHOWWINDOW
-                startupinfo.wShowWindow = _winapi.SW_HIDE
+                if not startupinfo.dwFlags & _winapi.STARTF_USESHOWWINDOW:
+                    startupinfo.dwFlags |= _winapi.STARTF_USESHOWWINDOW
+                    startupinfo.wShowWindow = _winapi.SW_HIDE
                 if not executable:
                     # gh-101283: without a fully-qualified path, before Windows
                     # checks the system directories, it first looks in the
