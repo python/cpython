@@ -12,7 +12,7 @@ env:
 jobs:
   build-install-test:
     name: build, install and test
-    runs-on: ubuntu-26.04-arm
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 60
     env:
       PYTHONSTRICTEXTENSIONBUILD: 1
