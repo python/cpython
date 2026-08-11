@@ -392,6 +392,11 @@ PyContextVar_New:PyObject*::+1:
 PyContextVar_New:const char*:name::
 PyContextVar_New:PyObject*:def:+1:
 
+PyContextVar_NewWithFlags:PyObject*::+1:
+PyContextVar_NewWithFlags:const char*:name::
+PyContextVar_NewWithFlags:PyObject*:def:+1:
+PyContextVar_NewWithFlags:int:flags::
+
 PyContextVar_Set:PyObject*::+1:
 PyContextVar_Set:PyObject*:var:0:
 PyContextVar_Set:PyObject*:value:+1:

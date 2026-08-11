@@ -24,7 +24,7 @@ See also :pep:`567` for additional details.
 Context Variables
 -----------------
 
-.. class:: ContextVar(name, [*, default])
+.. class:: ContextVar(name, [*, default, thread_inheritable])
 
    This class is used to declare a new Context Variable, e.g.::
 
@@ -36,6 +36,38 @@ Context Variables
    The optional keyword-only *default* parameter is returned by
    :meth:`ContextVar.get` when no value for the variable is found
    in the current context.
+
+   The optional keyword-only *thread_inheritable* parameter controls whether
+   the variable's current binding is automatically inherited by a
+   :class:`threading.Thread` when no explicit :class:`Context` is supplied.
+   If ``None`` (the default), :data:`sys.flags.thread_inherit_context`
+   determines whether the binding is inherited.  If true, the binding is
+   inherited regardless of that flag; if false, it is not inherited regardless
+   of the flag.
+
+   This parameter only affects implicit context inheritance by
+   :meth:`threading.Thread.start`.  The bindings are captured from the caller
+   of :meth:`~threading.Thread.start`, not the creator of the
+   :class:`~threading.Thread` object.  It does not affect threads started
+   directly through :mod:`_thread` or by extension modules.
+
+   An explicitly supplied thread context is not filtered, and neither are
+   contexts copied for other purposes, including asynchronous tasks and
+   :func:`asyncio.to_thread`.  An inherited binding is an ordinary binding in
+   the new thread's context: it is visible to :func:`copy_context`, may be
+   changed independently, and may in turn be inherited by threads started from
+   that thread.  Only the binding is copied; the bound object itself is not
+   copied.  A mutable bound object can therefore be accessed concurrently by
+   the starting and new threads.
+
+   For a thread pool, inheritance occurs when each worker thread starts, not
+   each time work is submitted.  Consequently,
+   :class:`~concurrent.futures.ThreadPoolExecutor` does not propagate the
+   submitter's current bindings to an existing worker merely because a variable
+   is thread-inheritable.
+
+   .. versionchanged:: 3.16
+      Added the *thread_inheritable* parameter.
 
    **Important:** Context Variables should be created at the top module
    level and never in closures.  :class:`Context` objects hold strong
@@ -50,6 +82,13 @@ Context Variables
       The name of the variable.  This is a read-only property.
 
       .. versionadded:: 3.7.1
+
+   .. attribute:: ContextVar.thread_inheritable
+
+      The value of the *thread_inheritable* constructor parameter: ``None``,
+      ``True``, or ``False``.  This is a read-only property.
+
+      .. versionadded:: 3.16
 
    .. method:: get([default])
 

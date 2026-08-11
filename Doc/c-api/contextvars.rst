@@ -155,7 +155,37 @@ Context variable functions:
    Create a new ``ContextVar`` object.  The *name* parameter is used
    for introspection and debug purposes.  The *def* parameter specifies
    a default value for the context variable, or ``NULL`` for no default.
-   If an error has occurred, this function returns ``NULL``.
+   Automatic inheritance of the variable's bindings by
+   :class:`threading.Thread` follows
+   :data:`sys.flags.thread_inherit_context`.  If an error has occurred, this
+   function returns ``NULL``.
+
+.. c:function:: PyObject *PyContextVar_NewWithFlags(const char *name, PyObject *def, int flags)
+
+   Create a new ``ContextVar`` object with the specified *flags*.  The *name*,
+   *def*, and return value are the same as for :c:func:`PyContextVar_New`.
+   *flags* must be one of the following values:
+
+   .. c:macro:: Py_CONTEXTVAR_INHERIT_THREAD_DEFAULT
+
+      Follow :data:`sys.flags.thread_inherit_context` when deciding whether a
+      new :class:`threading.Thread` inherits the variable's binding.  This is
+      equivalent to :c:func:`PyContextVar_New`.
+
+   .. c:macro:: Py_CONTEXTVAR_INHERIT_THREAD_NEVER
+
+      Do not automatically inherit the variable's binding, regardless of
+      :data:`sys.flags.thread_inherit_context`.
+
+   .. c:macro:: Py_CONTEXTVAR_INHERIT_THREAD_ALWAYS
+
+      Automatically inherit the variable's binding, regardless of
+      :data:`sys.flags.thread_inherit_context`.
+
+   Passing any other value causes the function to return ``NULL`` with
+   :exc:`ValueError` set.
+
+   .. versionadded:: 3.16
 
 .. c:function:: int PyContextVar_Get(PyObject *var, PyObject *default_value, PyObject **value)
 
