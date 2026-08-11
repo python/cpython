@@ -1,3 +1,0 @@
-Path expressions in xml.etree.ElementTree can now avoid explicit namespace
-prefixes for tags (or the "{namespace}tag" notation) by passing a default
-namespace with an empty string prefix.

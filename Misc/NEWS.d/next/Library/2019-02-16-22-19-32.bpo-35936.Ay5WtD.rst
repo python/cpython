@@ -1,2 +1,0 @@
-:mod:`modulefinder` no longer depends on the deprecated :mod:`imp` module, and the initializer for :class:`modulefinder.ModuleFinder` now has immutable default arguments.
-Patch by Brandt Bucher.

@@ -1,5 +1,0 @@
-Changing ``dict`` keys during iteration of the dict itself, ``keys()``,
-``values()``, or ``items()`` will now be detected in certain corner cases where
-keys are deleted/added so that the number of keys isn't changed.
-A `RuntimeError` will be raised after ``len(dict)`` iterations.
-Contributed by Thomas Perl.

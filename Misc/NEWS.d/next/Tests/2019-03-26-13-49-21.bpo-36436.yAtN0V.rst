@@ -1,1 +1,0 @@
-Fix ``_testcapi.pymem_buffer_overflow()``: handle memory allocation failure.

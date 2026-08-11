@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(tuple_index__doc__,
 "index($self, value, start=0, stop=sys.maxsize, /)\n"
 "--\n"
@@ -11,14 +13,14 @@ PyDoc_STRVAR(tuple_index__doc__,
 "Raises ValueError if the value is not present.");
 
 #define TUPLE_INDEX_METHODDEF    \
-    {"index", (PyCFunction)(void(*)(void))tuple_index, METH_FASTCALL, tuple_index__doc__},
+    {"index", _PyCFunction_CAST(tuple_index), METH_FASTCALL, tuple_index__doc__},
 
 static PyObject *
 tuple_index_impl(PyTupleObject *self, PyObject *value, Py_ssize_t start,
                  Py_ssize_t stop);
 
 static PyObject *
-tuple_index(PyTupleObject *self, PyObject *const *args, Py_ssize_t nargs)
+tuple_index(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *value;
@@ -42,7 +44,7 @@ tuple_index(PyTupleObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
-    return_value = tuple_index_impl(self, value, start, stop);
+    return_value = tuple_index_impl((PyTupleObject *)self, value, start, stop);
 
 exit:
     return return_value;
@@ -56,6 +58,19 @@ PyDoc_STRVAR(tuple_count__doc__,
 
 #define TUPLE_COUNT_METHODDEF    \
     {"count", (PyCFunction)tuple_count, METH_O, tuple_count__doc__},
+
+static PyObject *
+tuple_count_impl(PyTupleObject *self, PyObject *value);
+
+static PyObject *
+tuple_count(PyObject *self, PyObject *value)
+{
+    PyObject *return_value = NULL;
+
+    return_value = tuple_count_impl((PyTupleObject *)self, value);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(tuple_new__doc__,
 "tuple(iterable=(), /)\n"
@@ -75,9 +90,10 @@ static PyObject *
 tuple_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &PyTuple_Type;
     PyObject *iterable = NULL;
 
-    if ((type == &PyTuple_Type) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("tuple", kwargs)) {
         goto exit;
     }
@@ -107,8 +123,8 @@ static PyObject *
 tuple___getnewargs___impl(PyTupleObject *self);
 
 static PyObject *
-tuple___getnewargs__(PyTupleObject *self, PyObject *Py_UNUSED(ignored))
+tuple___getnewargs__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return tuple___getnewargs___impl(self);
+    return tuple___getnewargs___impl((PyTupleObject *)self);
 }
-/*[clinic end generated code: output=56fab9b7368aba49 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bd11662d62d973c2 input=a9049054013a1b77]*/

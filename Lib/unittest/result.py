@@ -43,6 +43,7 @@ class TestResult(object):
         self.skipped = []
         self.expectedFailures = []
         self.unexpectedSuccesses = []
+        self.collectedDurations = []
         self.shouldStop = False
         self.buffer = False
         self.tb_locals = False
@@ -157,11 +158,22 @@ class TestResult(object):
         """Called when a test was expected to fail, but succeed."""
         self.unexpectedSuccesses.append(test)
 
+    def addDuration(self, test, elapsed):
+        """Called when a test finished to run, regardless of its outcome.
+        *test* is the test case corresponding to the test method.
+        *elapsed* is the time represented in seconds, and it includes the
+        execution of cleanup functions.
+        """
+        # support for a TextTestRunner using an old TestResult class
+        if hasattr(self, "collectedDurations"):
+            # Pass test repr and not the test object itself to avoid resources leak
+            self.collectedDurations.append((str(test), elapsed))
+
     def wasSuccessful(self):
         """Tells whether or not this result was a success."""
         # The hasattr check is for test_result's OldResult test.  That
         # way this method works on objects that lack the attribute.
-        # (where would such result intances come from? old stored pickles?)
+        # (where would such result instances come from? old stored pickles?)
         return ((len(self.failures) == len(self.errors) == 0) and
                 (not hasattr(self, 'unexpectedSuccesses') or
                  len(self.unexpectedSuccesses) == 0))
@@ -173,18 +185,14 @@ class TestResult(object):
     def _exc_info_to_string(self, err, test):
         """Converts a sys.exc_info()-style tuple of values into a string."""
         exctype, value, tb = err
-        # Skip test runner traceback levels
-        while tb and self._is_relevant_tb_level(tb):
-            tb = tb.tb_next
-
-        if exctype is test.failureException:
-            # Skip assert*() traceback levels
-            length = self._count_relevant_tb_levels(tb)
-        else:
-            length = None
+        tb = self._clean_tracebacks(exctype, value, tb, test)
         tb_e = traceback.TracebackException(
-            exctype, value, tb, limit=length, capture_locals=self.tb_locals)
-        msgLines = list(tb_e.format())
+            exctype, value, tb,
+            capture_locals=self.tb_locals, compact=True)
+        from _colorize import can_colorize
+
+        colorize = hasattr(self, "stream") and can_colorize(file=self.stream)
+        msgLines = list(tb_e.format(colorize=colorize))
 
         if self.buffer:
             output = sys.stdout.getvalue()
@@ -199,16 +207,51 @@ class TestResult(object):
                 msgLines.append(STDERR_LINE % error)
         return ''.join(msgLines)
 
+    def _clean_tracebacks(self, exctype, value, tb, test):
+        ret = None
+        first = True
+        excs = [(exctype, value, tb)]
+        seen = {id(value)}  # Detect loops in chained exceptions.
+        while excs:
+            (exctype, value, tb) = excs.pop()
+            # Skip test runner traceback levels
+            while tb and self._is_relevant_tb_level(tb):
+                tb = tb.tb_next
+
+            # Skip assert*() traceback levels
+            if exctype is test.failureException:
+                self._remove_unittest_tb_frames(tb)
+
+            if first:
+                ret = tb
+                first = False
+            else:
+                value.__traceback__ = tb
+
+            if value is not None:
+                for c in (value.__cause__, value.__context__):
+                    if c is not None and id(c) not in seen:
+                        excs.append((type(c), c, c.__traceback__))
+                        seen.add(id(c))
+        return ret
 
     def _is_relevant_tb_level(self, tb):
         return '__unittest' in tb.tb_frame.f_globals
 
-    def _count_relevant_tb_levels(self, tb):
-        length = 0
+    def _remove_unittest_tb_frames(self, tb):
+        '''Truncates usercode tb at the first unittest frame.
+
+        If the first frame of the traceback is in user code,
+        the prefix up to the first unittest frame is returned.
+        If the first frame is already in the unittest module,
+        the traceback is not modified.
+        '''
+        prev = None
         while tb and not self._is_relevant_tb_level(tb):
-            length += 1
+            prev = tb
             tb = tb.tb_next
-        return length
+        if prev is not None:
+            prev.tb_next = None
 
     def __repr__(self):
         return ("<%s run=%i errors=%i failures=%i>" %

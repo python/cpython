@@ -1,5 +1,0 @@
-Change the value of ``CLEANBYTE``, ``DEADDYTE`` and ``FORBIDDENBYTE`` internal
-constants used by debug hooks on Python memory allocators
-(:c:func:`PyMem_SetupDebugHooks` function). Byte patterns ``0xCB``, ``0xDB``
-and ``0xFB`` have been replaced with ``0xCD``, ``0xDD`` and ``0xFD`` to use the
-same values than Windows CRT debug ``malloc()`` and ``free()``.
