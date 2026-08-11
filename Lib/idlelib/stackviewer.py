@@ -11,7 +11,7 @@ from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
 def StackBrowser(root, exc, flist=None, top=None):
     global sc, item, node  # For testing.
     if top is None:
-        top = tk.Toplevel(root)
+        top = tk.Toplevel(root, class_='Idle')
     sc = ScrolledCanvas(top, bg="white", highlightthickness=0)
     sc.frame.pack(expand=1, fill="both")
     item = StackTreeItem(exc, flist)
@@ -106,8 +106,8 @@ class VariablesTreeItem(ObjectTreeItem):
                 value = self.object[key]
             except KeyError:
                 continue
-            def setfunction(value, key=key, object=self.object):
-                object[key] = value
+            def setfunction(value, key=key, object_=self.object):
+                object_[key] = value
             item = make_objecttreeitem(key + " =", value, setfunction)
             sublist.append(item)
         return sublist

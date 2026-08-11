@@ -1,2 +1,0 @@
-Fix ``test_tarfile_vs_tar`` in ``test_shutil`` for macOS, where system tar
-can include more information in the archive than :mod:`shutil.make_archive`.

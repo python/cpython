@@ -1,8 +1,9 @@
-from parsing import (
+from parsing import (  # noqa: F401
     InstDef,
     Macro,
     Pseudo,
     Family,
+    LabelDef,
     Parser,
     Context,
     CacheEffect,
@@ -10,8 +11,27 @@ from parsing import (
     InputEffect,
     OpName,
     AstNode,
+    Stmt,
+    SimpleStmt,
+    IfStmt,
+    ForStmt,
+    WhileStmt,
+    BlockStmt,
+    MacroIfStmt,
 )
-from formatting import prettify_filename
+
+
+CodeDef = InstDef | LabelDef
+
+def prettify_filename(filename: str) -> str:
+    # Make filename more user-friendly and less platform-specific,
+    # it is only used for error reporting at this point.
+    filename = filename.replace("\\", "/")
+    if filename.startswith("./"):
+        filename = filename[2:]
+    if filename.endswith(".new"):
+        filename = filename[:-4]
+    return filename
 
 
 BEGIN_MARKER = "// BEGIN BYTECODES //"
