@@ -91,7 +91,7 @@ Executor Objects
 
       .. versionchanged:: next
          The returned iterator is no longer automatically closed if a *fn*
-         call raises an exception.  Added its :meth:`!close` method.
+         call raises an exception.
 
    .. method:: shutdown(wait=True, *, cancel_futures=False)
 
