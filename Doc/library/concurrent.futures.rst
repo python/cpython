@@ -61,11 +61,18 @@ Executor Objects
       The returned iterator raises a :exc:`TimeoutError`
       if :meth:`~iterator.__next__` is called and the result isn't available
       after *timeout* seconds from the original call to :meth:`Executor.map`.
-      *timeout* can be an int or a float.  If *timeout* is not specified or
+      *timeout* can be an int or a float.
+      It cancels all future calls of *fn* and closes the iterator.
+      If *timeout* is not specified or
       ``None``, there is no limit to the wait time.
 
       If a *fn* call raises an exception, then that exception will be
       raised when its value is retrieved from the iterator.
+      It does not cancel future calls of *fn*.
+
+      The returned iterator has method :meth:`!close` which cancels all
+      future calls of *fn* and discards the results of already finished calls
+      if they are available.
 
       When using :class:`ProcessPoolExecutor`, this method chops *iterables*
       into a number of chunks which it submits to the pool as separate
@@ -81,6 +88,10 @@ Executor Objects
 
       .. versionchanged:: 3.14
          Added the *buffersize* parameter.
+
+      .. versionchanged:: next
+         The returned iterator is no longer automatically closed if a *fn*
+         call raises an exception.
 
    .. method:: shutdown(wait=True, *, cancel_futures=False)
 
@@ -386,11 +397,6 @@ in a REPL or a lambda should not be expected to work.
    default in absence of a *mp_context* parameter. This feature is incompatible
    with the "fork" start method.
 
-   .. note::
-      Bugs have been reported when using the *max_tasks_per_child* feature that
-      can result in the :class:`ProcessPoolExecutor` hanging in some
-      circumstances. Follow its eventual resolution in :gh:`115634`.
-
    .. versionchanged:: 3.3
       When one of the worker processes terminates abruptly, a
       :exc:`~concurrent.futures.process.BrokenProcessPool` error is now raised.
@@ -425,6 +431,11 @@ in a REPL or a lambda should not be expected to work.
       :ref:`multiprocessing-start-methods`) changed away from *fork*. If you
       require the *fork* start method for :class:`ProcessPoolExecutor` you must
       explicitly pass ``mp_context=multiprocessing.get_context("fork")``.
+
+   .. versionchanged:: next
+      Fixed a deadlock (:gh:`115634`) where the executor could hang after
+      a worker process exited upon reaching its *max_tasks_per_child*
+      limit while tasks remained queued.
 
    .. method:: terminate_workers()
 

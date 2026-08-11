@@ -1,0 +1,2 @@
+Fix crash in :class:`io.TextIOWrapper` when reentrant
+:meth:`io.TextIOBase.detach` is called reentrantly from the underlying buffer.

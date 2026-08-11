@@ -921,7 +921,7 @@ class BytesIO(BufferedIOBase):
 
     def close(self):
         if self._buffer is not None:
-            self._buffer.clear()
+            self._buffer = bytearray()
         super().close()
 
     def read(self, size=-1):
@@ -999,6 +999,13 @@ class BytesIO(BufferedIOBase):
         if self.closed:
             raise ValueError("tell on closed file")
         return self._pos
+
+    def peek(self, size=0):
+        if self.closed:
+            raise ValueError("peek on closed file")
+        if size < 1:
+            return self._buffer[self._pos:self._pos + io.DEFAULT_BUFFER_SIZE]
+        return self._buffer[self._pos:self._pos + size]
 
     def truncate(self, pos=None):
         if self.closed:
@@ -1928,7 +1935,7 @@ class TextIOBase(IOBase):
         """Truncate size to pos, where pos is an int."""
         self._unsupported("truncate")
 
-    def readline(self):
+    def readline(self, size=-1, /):
         """Read until newline or EOF.
 
         Returns an empty string if EOF is hit immediately.

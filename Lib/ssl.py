@@ -721,10 +721,9 @@ def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
         # root CA certificates for the given purpose. This may fail silently.
         context.load_default_certs(purpose)
     # OpenSSL 1.1.1 keylog file
-    if hasattr(context, 'keylog_filename'):
-        keylogfile = os.environ.get('SSLKEYLOGFILE')
-        if keylogfile and not sys.flags.ignore_environment:
-            context.keylog_filename = keylogfile
+    keylogfile = os.environ.get('SSLKEYLOGFILE')
+    if keylogfile and not sys.flags.ignore_environment:
+        context.keylog_filename = keylogfile
     return context
 
 def _create_unverified_context(protocol=None, *, cert_reqs=CERT_NONE,
@@ -758,8 +757,6 @@ def _create_unverified_context(protocol=None, *, cert_reqs=CERT_NONE,
     context.check_hostname = check_hostname
     if cert_reqs is not None:
         context.verify_mode = cert_reqs
-    if check_hostname:
-        context.check_hostname = True
 
     if keyfile and not certfile:
         raise ValueError("certfile must be specified")
@@ -775,10 +772,9 @@ def _create_unverified_context(protocol=None, *, cert_reqs=CERT_NONE,
         # root CA certificates for the given purpose. This may fail silently.
         context.load_default_certs(purpose)
     # OpenSSL 1.1.1 keylog file
-    if hasattr(context, 'keylog_filename'):
-        keylogfile = os.environ.get('SSLKEYLOGFILE')
-        if keylogfile and not sys.flags.ignore_environment:
-            context.keylog_filename = keylogfile
+    keylogfile = os.environ.get('SSLKEYLOGFILE')
+    if keylogfile and not sys.flags.ignore_environment:
+        context.keylog_filename = keylogfile
     return context
 
 # Used by http.client if no context is explicitly passed.
