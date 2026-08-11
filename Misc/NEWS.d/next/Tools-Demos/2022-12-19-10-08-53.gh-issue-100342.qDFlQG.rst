@@ -1,1 +1,0 @@
-Add missing ``NULL`` check for possible allocation failure in ``*args`` parsing in Argument Clinic.

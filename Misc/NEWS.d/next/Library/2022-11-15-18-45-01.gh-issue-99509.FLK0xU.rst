@@ -1,1 +1,0 @@
-Add :pep:`585` support for :class:`multiprocessing.queues.Queue`.

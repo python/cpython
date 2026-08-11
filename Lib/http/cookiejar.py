@@ -53,7 +53,8 @@ def _debug(*args):
 HTTPONLY_ATTR = "HTTPOnly"
 HTTPONLY_PREFIX = "#HttpOnly_"
 DEFAULT_HTTP_PORT = str(http.client.HTTP_PORT)
-NETSCAPE_MAGIC_RGX = re.compile("#( Netscape)? HTTP Cookie File")
+NETSCAPE_MAGIC_RGX = re.compile("#( Netscape)? HTTP Cookie File",
+                                re.IGNORECASE | re.ASCII)
 MISSING_FILENAME_TEXT = ("a filename was not supplied (nor was the CookieJar "
                          "instance initialised with one)")
 NETSCAPE_HEADER_TEXT =  """\
@@ -104,9 +105,9 @@ def time2isoz(t=None):
 
     """
     if t is None:
-        dt = datetime.datetime.utcnow()
+        dt = datetime.datetime.now(tz=datetime.UTC)
     else:
-        dt = datetime.datetime.utcfromtimestamp(t)
+        dt = datetime.datetime.fromtimestamp(t, tz=datetime.UTC)
     return "%04d-%02d-%02d %02d:%02d:%02dZ" % (
         dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second)
 
@@ -122,9 +123,9 @@ def time2netscape(t=None):
 
     """
     if t is None:
-        dt = datetime.datetime.utcnow()
+        dt = datetime.datetime.now(tz=datetime.UTC)
     else:
-        dt = datetime.datetime.utcfromtimestamp(t)
+        dt = datetime.datetime.fromtimestamp(t, tz=datetime.UTC)
     return "%s, %02d-%s-%04d %02d:%02d:%02d GMT" % (
         DAYS[dt.weekday()], dt.day, MONTHS[dt.month-1],
         dt.year, dt.hour, dt.minute, dt.second)
@@ -430,6 +431,7 @@ def split_header_words(header_values):
         if pairs: result.append(pairs)
     return result
 
+HEADER_JOIN_TOKEN_RE = re.compile(r"[!#$%&'*+\-.^_`|~0-9A-Za-z]+")
 HEADER_JOIN_ESCAPE_RE = re.compile(r"([\"\\])")
 def join_header_words(lists):
     """Do the inverse (almost) of the conversion done by split_header_words.
@@ -437,10 +439,10 @@ def join_header_words(lists):
     Takes a list of lists of (key, value) pairs and produces a single header
     value.  Attribute values are quoted if needed.
 
-    >>> join_header_words([[("text/plain", None), ("charset", "iso-8859-1")]])
-    'text/plain; charset="iso-8859-1"'
-    >>> join_header_words([[("text/plain", None)], [("charset", "iso-8859-1")]])
-    'text/plain, charset="iso-8859-1"'
+    >>> join_header_words([[("text/plain", None), ("charset", "iso-8859/1")]])
+    'text/plain; charset="iso-8859/1"'
+    >>> join_header_words([[("text/plain", None)], [("charset", "iso-8859/1")]])
+    'text/plain, charset="iso-8859/1"'
 
     """
     headers = []
@@ -448,7 +450,7 @@ def join_header_words(lists):
         attr = []
         for k, v in pairs:
             if v is not None:
-                if not re.search(r"^\w+$", v):
+                if not HEADER_JOIN_TOKEN_RE.fullmatch(v):
                     v = HEADER_JOIN_ESCAPE_RE.sub(r"\\\1", v)  # escape " and \
                     v = '"%s"' % v
                 k = "%s=%s" % (k, v)
@@ -1031,10 +1033,13 @@ class DefaultCookiePolicy(CookiePolicy):
                 if j == 0:  # domain like .foo.bar
                     tld = domain[i+1:]
                     sld = domain[j+1:i]
-                    if sld.lower() in ("co", "ac", "com", "edu", "org", "net",
-                       "gov", "mil", "int", "aero", "biz", "cat", "coop",
-                       "info", "jobs", "mobi", "museum", "name", "pro",
-                       "travel", "eu") and len(tld) == 2:
+                    known_slds = (
+                        "co", "ac", "com", "edu", "org", "net",
+                        "gov", "mil", "int", "aero", "biz", "cat", "coop",
+                        "info", "jobs", "mobi", "museum", "name", "pro",
+                        "travel", "eu", "tv", "or", "nom", "sch", "web",
+                    )
+                    if sld.lower() in known_slds and len(tld) == 2:
                         # domain like .co.uk
                         _debug("   country-code second level domain %s", domain)
                         return False
@@ -1986,7 +1991,7 @@ class MozillaCookieJar(FileCookieJar):
 
     This class differs from CookieJar only in the format it uses to save and
     load cookies to and from a file.  This class uses the Mozilla/Netscape
-    `cookies.txt' format.  curl and lynx use this file format, too.
+    'cookies.txt' format.  curl and lynx use this file format, too.
 
     Don't expect cookies saved while the browser is running to be noticed by
     the browser (in fact, Mozilla on unix will overwrite your saved cookies if

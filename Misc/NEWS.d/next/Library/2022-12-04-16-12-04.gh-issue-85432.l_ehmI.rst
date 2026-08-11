@@ -1,5 +1,0 @@
-Rename the *fmt* parameter of the pure-Python implementation of
-:meth:`datetime.time.strftime` to *format*. Rename the *t* parameter of
-:meth:`datetime.datetime.fromtimestamp` to *timestamp*. These changes mean
-the parameter names in the pure-Python implementation now match the
-parameter names in the C implementation. Patch by Alex Waygood.

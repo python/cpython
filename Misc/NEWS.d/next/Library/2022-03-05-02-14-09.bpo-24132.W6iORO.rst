@@ -1,3 +1,0 @@
-Make :class:`pathlib.PurePath` and :class:`~pathlib.Path` subclassable
-(private to start). Previously, attempting to instantiate a subclass
-resulted in an :exc:`AttributeError` being raised. Patch by Barney Gale.

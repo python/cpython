@@ -1,7 +1,6 @@
 import multiprocessing
 import random
 import sys
-import time
 
 def fill_queue(queue, code):
     queue.put(code)
@@ -30,6 +29,7 @@ def test_func():
 
 
 def main():
+    multiprocessing.set_start_method('spawn')
     test_pool = multiprocessing.Process(target=test_func)
     test_pool.start()
     test_pool.join()
