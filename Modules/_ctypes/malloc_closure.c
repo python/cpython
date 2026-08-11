@@ -14,6 +14,7 @@
 #  endif
 #endif
 #include "ctypes.h"
+#include "pycore_mmap.h"          // _PyAnnotateMemoryMap()
 
 /* BLOCKSIZE can be adjusted.  Larger blocksize will take a larger memory
    overhead, but allocate less blocks from the system.  It may be that some
@@ -30,11 +31,6 @@
 
 #ifdef Py_GIL_DISABLED
 static PyMutex malloc_closure_lock;
-# define MALLOC_CLOSURE_LOCK()   PyMutex_Lock(&malloc_closure_lock)
-# define MALLOC_CLOSURE_UNLOCK() PyMutex_Unlock(&malloc_closure_lock)
-#else
-# define MALLOC_CLOSURE_LOCK()   ((void)0)
-# define MALLOC_CLOSURE_UNLOCK() ((void)0)
 #endif
 
 typedef union _tagITEM {
@@ -79,14 +75,16 @@ static void more_core(void)
     if (item == NULL)
         return;
 #else
+    size_t mem_size = count * sizeof(ITEM);
     item = (ITEM *)mmap(NULL,
-                        count * sizeof(ITEM),
+                        mem_size,
                         PROT_READ | PROT_WRITE | PROT_EXEC,
                         MAP_PRIVATE | MAP_ANONYMOUS,
                         -1,
                         0);
     if (item == (void *)MAP_FAILED)
         return;
+    _PyAnnotateMemoryMap(item, mem_size, "cpython:ctypes");
 #endif
 
 #ifdef MALLOC_CLOSURE_DEBUG
@@ -120,11 +118,11 @@ void Py_ffi_closure_free(void *p)
     }
 #endif
 #endif
-    MALLOC_CLOSURE_LOCK();
+    FT_MUTEX_LOCK(&malloc_closure_lock);
     ITEM *item = (ITEM *)p;
     item->next = free_list;
     free_list = item;
-    MALLOC_CLOSURE_UNLOCK();
+    FT_MUTEX_UNLOCK(&malloc_closure_lock);
 }
 
 /* return one item from the free list, allocating more if needed */
@@ -143,13 +141,13 @@ void *Py_ffi_closure_alloc(size_t size, void** codeloc)
     }
 #endif
 #endif
-    MALLOC_CLOSURE_LOCK();
+    FT_MUTEX_LOCK(&malloc_closure_lock);
     ITEM *item;
     if (!free_list) {
         more_core();
     }
     if (!free_list) {
-        MALLOC_CLOSURE_UNLOCK();
+        FT_MUTEX_UNLOCK(&malloc_closure_lock);
         return NULL;
     }
     item = free_list;
@@ -160,6 +158,6 @@ void *Py_ffi_closure_alloc(size_t size, void** codeloc)
 #else
     *codeloc = (void *)item;
 #endif
-    MALLOC_CLOSURE_UNLOCK();
+    FT_MUTEX_UNLOCK(&malloc_closure_lock);
     return (void *)item;
 }

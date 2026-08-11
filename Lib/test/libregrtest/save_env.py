@@ -9,6 +9,13 @@ from test.support import os_helper
 
 from .utils import print_warning
 
+# Import termios to save and restore terminal echo.  This is only available on
+# Unix, and it's fine if the module can't be found.
+try:
+    import termios                                # noqa: F401
+except ModuleNotFoundError:
+    pass
+
 
 class SkipTestEnvironment(Exception):
     pass
@@ -63,8 +70,9 @@ class saved_test_environment:
                  'sysconfig._CONFIG_VARS', 'sysconfig._INSTALL_SCHEMES',
                  'files', 'locale', 'warnings.showwarning',
                  'shutil_archive_formats', 'shutil_unpack_formats',
-                 'asyncio.events._event_loop_policy',
+                 'asyncio.events._local._loop',
                  'urllib.requests._url_tempfiles', 'urllib.requests._opener',
+                 'stty_echo',
                 )
 
     def get_module(self, name):
@@ -92,12 +100,12 @@ class saved_test_environment:
         urllib_request = self.get_module('urllib.request')
         urllib_request._opener = opener
 
-    def get_asyncio_events__event_loop_policy(self):
+    def get_asyncio_events__local__loop(self):
         self.try_get_module('asyncio')
-        return support.maybe_get_event_loop_policy()
-    def restore_asyncio_events__event_loop_policy(self, policy):
+        return support.maybe_get_event_loop()
+    def restore_asyncio_events__local__loop(self, loop):
         asyncio = self.get_module('asyncio')
-        asyncio._set_event_loop_policy(policy)
+        asyncio.events._local._loop = loop
 
     def get_sys_argv(self):
         return id(sys.argv), sys.argv, sys.argv[:]
@@ -291,6 +299,24 @@ class saved_test_environment:
     def restore_warnings_showwarning(self, fxn):
         warnings = self.get_module('warnings')
         warnings.showwarning = fxn
+
+    def get_stty_echo(self):
+        termios = self.try_get_module('termios')
+        if not os.isatty(fd := sys.__stdin__.fileno()):
+            return None
+        attrs = termios.tcgetattr(fd)
+        lflags = attrs[3]
+        return bool(lflags & termios.ECHO)
+    def restore_stty_echo(self, echo):
+        termios = self.get_module('termios')
+        attrs = termios.tcgetattr(fd := sys.__stdin__.fileno())
+        if echo:
+            # Turn echo on.
+            attrs[3] |= termios.ECHO
+        else:
+            # Turn echo off.
+            attrs[3] &= ~termios.ECHO
+        termios.tcsetattr(fd, termios.TCSADRAIN, attrs)
 
     def resource_info(self):
         for name in self.resources:

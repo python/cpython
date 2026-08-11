@@ -24,7 +24,6 @@ import warnings
 import sys, array, io, os
 from decimal import Decimal
 from fractions import Fraction
-from test.support import warnings_helper
 
 try:
     from _testbuffer import *
@@ -38,6 +37,7 @@ except ImportError:
 
 try:
     import ctypes
+    import ctypes.util
 except ImportError:
     ctypes = None
 
@@ -66,7 +66,8 @@ NATIVE = {
     '?':0, 'c':0, 'b':0, 'B':0,
     'h':0, 'H':0, 'i':0, 'I':0,
     'l':0, 'L':0, 'n':0, 'N':0,
-    'e':0, 'f':0, 'd':0, 'P':0
+    'e':0, 'f':0, 'd':0, 'P':0,
+    'Zf':0, 'Zd':0,
 }
 
 # NumPy does not have 'n' or 'N':
@@ -92,7 +93,9 @@ STANDARD = {
     'l':(-(1<<31), 1<<31), 'L':(0, 1<<32),
     'q':(-(1<<63), 1<<63), 'Q':(0, 1<<64),
     'e':(-65519, 65520),   'f':(-(1<<63), 1<<63),
-    'd':(-(1<<1023), 1<<1023)
+    'd':(-(1<<1023), 1<<1023),
+    'Zf':(-(1<<63), 1<<63),
+    'Zd':(-(1<<1023), 1<<1023),
 }
 
 def native_type_range(fmt):
@@ -106,6 +109,10 @@ def native_type_range(fmt):
     elif fmt == 'f':
         lh = (-(1<<63), 1<<63)
     elif fmt == 'd':
+        lh = (-(1<<1023), 1<<1023)
+    elif fmt == 'Zf':
+        lh = (-(1<<63), 1<<63)
+    elif fmt == 'Zd':
         lh = (-(1<<1023), 1<<1023)
     else:
         for exp in (128, 127, 64, 63, 32, 31, 16, 15, 8, 7):
@@ -136,7 +143,7 @@ MEMORYVIEW = NATIVE.copy()
 # Format codes supported by array.array
 ARRAY = NATIVE.copy()
 for k in NATIVE:
-    if not k in "bBhHiIlLfd":
+    if k not in list("bBhHiIlLefd") + ['Zf', 'Zd']:
         del ARRAY[k]
 
 BYTEFMT = NATIVE.copy()
@@ -175,13 +182,28 @@ def randrange_fmt(mode, char, obj):
     if char in 'efd':
         x = struct.pack(char, x)
         x = struct.unpack(char, x)[0]
+    if char in ('Zf', 'Zd'):
+        y = randrange(*fmtdict[mode][char])
+        x = complex(x, y)
+        x = struct.pack(char, x)
+        x = struct.unpack(char, x)[0]
     return x
+
+def split_format(fmt):
+    i = 0
+    while i < len(fmt):
+        if fmt[i] == 'Z':
+            n = 2
+        else:
+            n = 1
+        yield fmt[i:i + n]
+        i += n
 
 def gen_item(fmt, obj):
     """Return single random item."""
     mode, chars = fmt.split('#')
     x = []
-    for c in chars:
+    for c in split_format(chars):
         x.append(randrange_fmt(mode, c, obj))
     return x[0] if len(x) == 1 else tuple(x)
 
@@ -242,9 +264,7 @@ def is_byte_format(fmt):
 
 def is_memoryview_format(fmt):
     """format suitable for memoryview"""
-    x = len(fmt)
-    return ((x == 1 or (x == 2 and fmt[0] == '@')) and
-            fmt[x-1] in MEMORYVIEW)
+    return fmt.removeprefix('@') in MEMORYVIEW
 
 NON_BYTE_FORMAT = [c for c in fmtdict['@'] if not is_byte_format(c)]
 
@@ -636,14 +656,22 @@ def ndarray_from_structure(items, fmt, t, flags=0):
     return ndarray(items, shape=shape, strides=strides, format=fmt,
                    offset=offset, flags=ND_WRITABLE|flags)
 
+# Convert PEP 3118 formats to numpy dtypes
+FORMAT_TO_DTYPE = {
+    'Zf': 'F',
+    'Zd': 'D',
+}
+
 def numpy_array_from_structure(items, fmt, t):
     """Return numpy_array from the tuple returned by rand_structure()"""
     memlen, itemsize, ndim, shape, strides, offset = t
     buf = bytearray(memlen)
     for j, v in enumerate(items):
         struct.pack_into(fmt, buf, j*itemsize, v)
+    # Replace Zd/Zf formats with D/F dtypes
+    dtype = FORMAT_TO_DTYPE.get(fmt, fmt)
     return numpy_array(buffer=buf, shape=shape, strides=strides,
-                       dtype=fmt, offset=offset)
+                       dtype=dtype, offset=offset)
 
 
 # ======================================================================
@@ -2822,8 +2850,11 @@ class TestBufferProtocol(unittest.TestCase):
 
         if ctypes:
             # format: "T{>l:x:>d:y:}"
-            class BEPoint(ctypes.BigEndianStructure):
-                _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_double)]
+            @ctypes.util.struct(endian='big')
+            class BEPoint:
+                x: ctypes.c_long
+                y: ctypes.c_double
+
             point = BEPoint(100, 200.1)
             m1 = memoryview(point)
             m2 = m1.cast('B')
@@ -2845,6 +2876,32 @@ class TestBufferProtocol(unittest.TestCase):
             self.assertEqual(m2.shape, (m2.nbytes,))
             self.assertEqual(m2.strides, (1,))
             self.assertEqual(m2.suboffsets, ())
+
+    def test_memoryview_cast_f_contiguous_ND_1D(self):
+        nd = ndarray(list(range(12)), shape=[3, 4], format='B', flags=ND_FORTRAN)
+        m = memoryview(nd)
+        self.assertTrue(m.f_contiguous)
+        self.assertTrue(m.contiguous)
+
+        m1 = m.cast('B')
+        self.assertEqual(m1.ndim, 1)
+        self.assertEqual(m1.shape, (m.nbytes,))
+        self.assertEqual(m1.strides, (1,))
+        self.assertTrue(m1.c_contiguous)
+        self.assertTrue(m1.contiguous)
+        self.assertEqual(m1.tobytes(), memoryview(nd).tobytes(order='F'))
+
+        for fmt in ('B', 'b', 'c', 'H', 'I'):
+            size = struct.calcsize(fmt)
+            if m.nbytes % size == 0:
+                m2 = m.cast(fmt)
+                self.assertEqual(m2.ndim, 1)
+                self.assertEqual(m2.shape, (m.nbytes // size,))
+                self.assertTrue(m2.contiguous)
+
+        m3 = m[::-1]
+        with self.assertRaises(TypeError):
+            m3.cast('B')
 
     def test_memoryview_tolist(self):
 
@@ -2879,11 +2936,11 @@ class TestBufferProtocol(unittest.TestCase):
     def test_memoryview_repr(self):
         m = memoryview(bytearray(9))
         r = m.__repr__()
-        self.assertTrue(r.startswith("<memory"))
+        self.assertStartsWith(r, "<memory")
 
         m.release()
         r = m.__repr__()
-        self.assertTrue(r.startswith("<released"))
+        self.assertStartsWith(r, "<released")
 
     def test_memoryview_sequence(self):
 
@@ -3015,7 +3072,7 @@ class TestBufferProtocol(unittest.TestCase):
         m = memoryview(nd)
         self.assertRaises(TypeError, m.__setitem__, 0, 100)
 
-        ex = ndarray(list(range(120)), shape=[1,2,3,4,5], flags=ND_WRITABLE)
+        ex = ndarray(list(range(144)), shape=[1,2,3,4,6], flags=ND_WRITABLE)
         m1 = memoryview(ex)
 
         for fmt, _range in fmtdict['@'].items():
@@ -3025,7 +3082,7 @@ class TestBufferProtocol(unittest.TestCase):
                 continue
             m2 = m1.cast(fmt)
             lo, hi = _range
-            if fmt == 'd' or fmt == 'f':
+            if fmt in ("d", "f", "Zd", "Zf"):
                 lo, hi = -2**1024, 2**1024
             if fmt != 'P': # PyLong_AsVoidPtr() accepts negative numbers
                 self.assertRaises(ValueError, m2.__setitem__, 0, lo-1)
@@ -3223,8 +3280,11 @@ class TestBufferProtocol(unittest.TestCase):
         # Some ctypes format strings are unknown to the struct module.
         if ctypes:
             # format: "T{>l:x:>l:y:}"
-            class BEPoint(ctypes.BigEndianStructure):
-                _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
+            @ctypes.util.struct(endian='big')
+            class BEPoint:
+                x: ctypes.c_long
+                y: ctypes.c_long
+
             point = BEPoint(100, 200)
             a = memoryview(point)
             b = memoryview(point)
@@ -3232,15 +3292,6 @@ class TestBufferProtocol(unittest.TestCase):
             self.assertNotEqual(a, point)
             self.assertNotEqual(point, a)
             self.assertRaises(NotImplementedError, a.tolist)
-
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-80480 array('u')
-    def test_memoryview_compare_special_cases_deprecated_u_type_code(self):
-
-        # Depends on issue #15625: the struct module does not understand 'u'.
-        a = array.array('u', 'xyz')
-        v = memoryview(a)
-        self.assertNotEqual(a, v)
-        self.assertNotEqual(v, a)
 
     def test_memoryview_compare_ndim_zero(self):
 
@@ -3970,8 +4021,11 @@ class TestBufferProtocol(unittest.TestCase):
         # Unknown formats are handled: tobytes() purely depends on itemsize.
         if ctypes:
             # format: "T{>l:x:>l:y:}"
-            class BEPoint(ctypes.BigEndianStructure):
-                _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
+            @ctypes.util.struct(endian='big')
+            class BEPoint:
+                x: ctypes.c_long
+                y: ctypes.c_long
+
             point = BEPoint(100, 200)
             a = memoryview(point)
             self.assertEqual(a.tobytes(), bytes(point))
@@ -4446,6 +4500,43 @@ class TestBufferProtocol(unittest.TestCase):
             obj.__buffer__(inspect.BufferFlags.READ)
         with self.assertRaises(SystemError):
             obj.__buffer__(inspect.BufferFlags.WRITE)
+
+    @support.cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_bytearray_alignment(self):
+        # gh-140557: pointer alignment of buffers including empty allocation
+        # should be at least to `size_t`.
+        align = struct.calcsize("N")
+        cases = [
+            bytearray(),
+            bytearray(1),
+            bytearray(b"0123456789abcdef"),
+            bytearray(16),
+        ]
+        ptrs = [_testcapi.buffer_pointer_as_int(array) for array in cases]
+        self.assertEqual([ptr % align for ptr in ptrs], [0]*len(ptrs))
+
+    @support.cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_array_alignment(self):
+        # gh-140557: pointer alignment of buffers including empty allocation
+        # should match the maximum array alignment.
+        formats = [fmt for fmt in ARRAY
+                   if struct.calcsize(fmt) <= struct.calcsize('P')]
+        align = max(struct.calcsize(fmt) for fmt in formats)
+        cases = [array.array(fmt) for fmt in formats]
+        # Empty arrays
+        self.assertEqual(
+            [_testcapi.buffer_pointer_as_int(case) % align for case in cases],
+            [0] * len(cases),
+        )
+        for case in cases:
+            case.append(0)
+        # Allocated arrays
+        self.assertEqual(
+            [_testcapi.buffer_pointer_as_int(case) % align for case in cases],
+            [0] * len(cases),
+        )
 
     @support.cpython_only
     def test_pybuffer_size_from_format(self):

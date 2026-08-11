@@ -111,8 +111,17 @@ def _enter_context(cm, addcleanup):
         enter = cls.__enter__
         exit = cls.__exit__
     except AttributeError:
-        raise TypeError(f"'{cls.__module__}.{cls.__qualname__}' object does "
-                        f"not support the context manager protocol") from None
+        msg = (f"'{cls.__module__}.{cls.__qualname__}' object does "
+               "not support the context manager protocol")
+        try:
+            cls.__aenter__
+            cls.__aexit__
+        except AttributeError:
+            pass
+        else:
+            msg += (" but it supports the asynchronous context manager "
+                    "protocol. Did you mean to use enterAsyncContext()?")
+        raise TypeError(msg) from None
     result = enter(cm)
     addcleanup(exit, cm, None, None, None)
     return result
@@ -140,9 +149,7 @@ def doModuleCleanups():
         except Exception as exc:
             exceptions.append(exc)
     if exceptions:
-        # Swallows all but first exception. If a multi-exception handler
-        # gets written we should use that here instead.
-        raise exceptions[0]
+        raise ExceptionGroup('module cleanup failed', exceptions)
 
 
 def skip(reason):
@@ -294,7 +301,7 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
                 v.__warningregistry__ = {}
         self.warnings_manager = warnings.catch_warnings(record=True)
         self.warnings = self.warnings_manager.__enter__()
-        warnings.simplefilter("always", self.expected)
+        warnings.simplefilter("always")
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
@@ -307,19 +314,44 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
         except AttributeError:
             exc_name = str(self.expected)
         first_matching = None
+        matched = False
+        non_matching_warnings = []
         for m in self.warnings:
             w = m.message
             if not isinstance(w, self.expected):
+                non_matching_warnings.append(m)
                 continue
             if first_matching is None:
                 first_matching = w
             if (self.expected_regex is not None and
                 not self.expected_regex.search(str(w))):
+                non_matching_warnings.append(m)
                 continue
+            if matched:
+                continue
+            matched = True
             # store warning for later retrieval
             self.warning = w
             self.filename = m.filename
             self.lineno = m.lineno
+        for m in non_matching_warnings:
+            module = m.module
+            module_globals = None
+            registry = None
+            if module is not None:
+                try:
+                    module_globals = vars(sys.modules[module])
+                except (KeyError, TypeError):
+                    # module == "<string>" or sys.modules[module] is None
+                    pass
+                else:
+                    registry = module_globals.setdefault("__warningregistry__", {})
+            warnings.warn_explicit(m.message, m.category, m.filename, m.lineno,
+                                   module=module,
+                                   registry=registry,
+                                   module_globals=module_globals,
+                                   source=m.source)
+        if matched:
             return
         # Now we simply try to choose a helpful failure message
         if first_matching is not None:
@@ -330,7 +362,6 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
                                                                self.obj_name))
         else:
             self._raiseFailure("{} not triggered".format(exc_name))
-
 
 class _AssertNotWarnsContext(_AssertWarnsContext):
 
@@ -842,7 +873,7 @@ class TestCase(object):
         context = _AssertNotWarnsContext(expected_warning, self)
         return context.handle('_assertNotWarns', args, kwargs)
 
-    def assertLogs(self, logger=None, level=None):
+    def assertLogs(self, logger=None, level=None, formatter=None):
         """Fail unless a log message of level *level* or higher is emitted
         on *logger_name* or its children.  If omitted, *level* defaults to
         INFO and *logger* defaults to the root logger.
@@ -854,6 +885,8 @@ class TestCase(object):
         `records` attribute will be a list of the corresponding LogRecord
         objects.
 
+        Optionally supply `formatter` to control how messages are formatted.
+
         Example::
 
             with self.assertLogs('foo', level='INFO') as cm:
@@ -864,7 +897,7 @@ class TestCase(object):
         """
         # Lazy import to avoid importing logging if it is not needed.
         from ._log import _AssertLogsContext
-        return _AssertLogsContext(self, logger, level, no_logs=False)
+        return _AssertLogsContext(self, logger, level, no_logs=False, formatter=formatter)
 
     def assertNoLogs(self, logger=None, level=None):
         """ Fail unless no log messages of level *level* or higher are emitted

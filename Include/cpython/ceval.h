@@ -23,6 +23,9 @@ _PyEval_RequestCodeExtraIndex(freefunc f) {
 
 PyAPI_FUNC(int) _PyEval_SliceIndex(PyObject *, Py_ssize_t *);
 PyAPI_FUNC(int) _PyEval_SliceIndexNotNone(PyObject *, Py_ssize_t *);
+PyAPI_FUNC(int) _PyEval_UnpackIndices(PyObject *, PyObject *,
+                                      Py_ssize_t,
+                                      Py_ssize_t *, Py_ssize_t *);
 
 
 // Trampoline API
@@ -35,7 +38,7 @@ typedef struct {
 PyAPI_FUNC(int) PyUnstable_PerfMapState_Init(void);
 PyAPI_FUNC(int) PyUnstable_WritePerfMapEntry(
     const void *code_addr,
-    unsigned int code_size,
+    size_t code_size,
     const char *entry_name);
 PyAPI_FUNC(void) PyUnstable_PerfMapState_Fini(void);
 PyAPI_FUNC(int) PyUnstable_CopyPerfMapFile(const char* parent_filename);

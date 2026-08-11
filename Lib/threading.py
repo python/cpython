@@ -29,6 +29,7 @@ __all__ = ['get_ident', 'active_count', 'Condition', 'current_thread',
            'Barrier', 'BrokenBarrierError', 'Timer', 'ThreadError',
            'setprofile', 'settrace', 'local', 'stack_size',
            'excepthook', 'ExceptHookArgs', 'gettrace', 'getprofile',
+           'serialize_iterator', 'synchronized_iterator', 'concurrent_tee',
            'setprofile_all_threads','settrace_all_threads']
 
 # Rename some stuff so "from threading import *" is safe
@@ -123,7 +124,7 @@ def gettrace():
 
 Lock = _LockType
 
-def RLock(*args, **kwargs):
+def RLock():
     """Factory function that returns a new reentrant lock.
 
     A reentrant lock must be released by the thread that acquired it. Once a
@@ -132,16 +133,9 @@ def RLock(*args, **kwargs):
     acquired it.
 
     """
-    if args or kwargs:
-        import warnings
-        warnings.warn(
-            'Passing arguments to RLock is deprecated and will be removed in 3.15',
-            DeprecationWarning,
-            stacklevel=2,
-        )
     if _CRLock is None:
-        return _PyRLock(*args, **kwargs)
-    return _CRLock(*args, **kwargs)
+        return _PyRLock()
+    return _CRLock()
 
 class _RLock:
     """This class implements reentrant lock objects.
@@ -165,7 +159,7 @@ class _RLock:
         except KeyError:
             pass
         return "<%s %s.%s object owner=%r count=%d at %s>" % (
-            "locked" if self._block.locked() else "unlocked",
+            "locked" if self.locked() else "unlocked",
             self.__class__.__module__,
             self.__class__.__qualname__,
             owner,
@@ -244,7 +238,7 @@ class _RLock:
 
     def locked(self):
         """Return whether this object is locked."""
-        return self._count > 0
+        return self._block.locked()
 
     # Internal methods used by condition variables
 
@@ -660,7 +654,8 @@ class Event:
         (or fractions thereof).
 
         This method returns the internal flag on exit, so it will always return
-        True except if a timeout is given and the operation times out.
+        ``True`` except if a timeout is given and the operation times out, when
+        it will return ``False``.
 
         """
         with self._cond:
@@ -848,6 +843,148 @@ class BrokenBarrierError(RuntimeError):
     pass
 
 
+## Synchronization tools for iterators #####################
+
+class serialize_iterator:
+    """Wrap a non-concurrent iterator with a lock to enforce sequential access.
+
+    Applies a non-reentrant lock around calls to __next__.  If the
+    wrapped iterator also defines send(), throw(), or close(), those
+    calls are serialized as well.
+
+    Allows iterator and generator instances to be shared by multiple consumer
+    threads.
+
+    For example, itertools.count does not make thread-safe instances,
+    but that is easily fixed with:
+
+        atomic_counter = serialize_iterator(itertools.count())
+
+    """
+
+    __slots__ = ('_iterator', '_lock')
+
+    def __init__(self, iterable):
+        self._iterator = iter(iterable)
+        self._lock = Lock()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        with self._lock:
+            return next(self._iterator)
+
+    def send(self, value, /):
+        """Send a value to a generator.
+
+        Raises AttributeError if not a generator.
+        """
+        with self._lock:
+            return self._iterator.send(value)
+
+    def throw(self, *args):
+        """Call throw() on a generator.
+
+        Raises AttributeError if not a generator.
+        """
+        with self._lock:
+            return self._iterator.throw(*args)
+
+    def close(self):
+        """Call close() on a generator.
+
+        Raises AttributeError if not a generator.
+        """
+        with self._lock:
+            return self._iterator.close()
+
+
+def synchronized_iterator(func):
+    """Wrap an iterator-returning callable to make its iterators thread-safe.
+
+    Existing itertools and more-itertools can be wrapped so that their
+    iterator instances are serialized.
+
+    For example, itertools.count does not make thread-safe instances,
+    but that is easily fixed with:
+
+        atomic_counter = synchronized_iterator(itertools.count)
+
+    Can also be used as a decorator for generator function definitions
+    so that the generator instances are serialized::
+
+        import time
+
+        @synchronized_iterator
+        def enumerate_and_timestamp(iterable):
+            for count, value in enumerate(iterable):
+                yield count, time.time_ns(), value
+
+    """
+
+    from functools import wraps
+
+    @wraps(func)
+    def inner(*args, **kwargs):
+        iterator = func(*args, **kwargs)
+        return serialize_iterator(iterator)
+
+    return inner
+
+
+def concurrent_tee(iterable, n=2):
+    """Variant of itertools.tee() but with guaranteed threading semantics.
+
+    Takes a non-threadsafe iterator as an input and creates concurrent
+    tee objects for other threads to have reliable independent copies of
+    the data stream.
+
+    The new iterators are only thread-safe if consumed within a single thread.
+    To share just one of the new iterators across multiple threads, wrap it
+    with threading.serialize_iterator().
+    """
+
+    if n < 0:
+        raise ValueError("n must be a non-negative integer")
+    if n == 0:
+        return ()
+    iterator = _concurrent_tee(iterable)
+    result = [iterator]
+    for _ in range(n - 1):
+        result.append(_concurrent_tee(iterator))
+    return tuple(result)
+
+
+class _concurrent_tee:
+    __slots__ = ('iterator', 'link', 'lock')
+
+    def __init__(self, iterable):
+        if isinstance(iterable, _concurrent_tee):
+            self.iterator = iterable.iterator
+            self.link = iterable.link
+            self.lock = iterable.lock
+        else:
+            self.iterator = iter(iterable)
+            self.link = [None, None]
+            self.lock = Lock()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        link = self.link
+        if link[1] is None:
+            with self.lock:
+                if link[1] is None:
+                    link[0] = next(self.iterator)
+                    link[1] = [None, None]
+        value, self.link = link
+        return value
+
+############################################################
+
+
 # Helper to generate new thread names
 _counter = _count(1).__next__
 def _newname(name_template):
@@ -935,7 +1072,7 @@ class Thread:
         self._ident = None
         if _HAVE_THREAD_NATIVE_ID:
             self._native_id = None
-        self._handle = _ThreadHandle()
+        self._os_thread_handle = _ThreadHandle()
         self._started = Event()
         self._initialized = True
         # Copy of sys.stderr used by self._invoke_excepthook()
@@ -950,7 +1087,9 @@ class Thread:
         if new_ident is not None:
             # This thread is alive.
             self._ident = new_ident
-            assert self._handle.ident == new_ident
+            assert self._os_thread_handle.ident == new_ident
+            if _HAVE_THREAD_NATIVE_ID:
+                self._set_native_id()
         else:
             # Otherwise, the thread is dead, Jim.  _PyThread_AfterFork()
             # already marked our handle done.
@@ -961,7 +1100,7 @@ class Thread:
         status = "initial"
         if self._started.is_set():
             status = "started"
-        if self._handle.is_done():
+        if self._os_thread_handle.is_done():
             status = "stopped"
         if self._daemonic:
             status += " daemon"
@@ -999,7 +1138,7 @@ class Thread:
 
         try:
             # Start joinable thread
-            _start_joinable_thread(self._bootstrap, handle=self._handle,
+            _start_joinable_thread(self._bootstrap, handle=self._os_thread_handle,
                                    daemon=self.daemon)
         except Exception:
             with _active_limbo_lock:
@@ -1127,7 +1266,7 @@ class Thread:
         if timeout is not None:
             timeout = max(timeout, 0)
 
-        self._handle.join(timeout)
+        self._os_thread_handle.join(timeout)
 
     @property
     def name(self):
@@ -1180,7 +1319,7 @@ class Thread:
 
         """
         assert self._initialized, "Thread.__init__() not called"
-        return self._started.is_set() and not self._handle.is_done()
+        return self._started.is_set() and not self._os_thread_handle.is_done()
 
     @property
     def daemon(self):
@@ -1391,7 +1530,7 @@ class _MainThread(Thread):
         Thread.__init__(self, name="MainThread", daemon=False)
         self._started.set()
         self._ident = _get_main_thread_ident()
-        self._handle = _make_thread_handle(self._ident)
+        self._os_thread_handle = _make_thread_handle(self._ident)
         if _HAVE_THREAD_NATIVE_ID:
             self._set_native_id()
         with _active_limbo_lock:
@@ -1419,7 +1558,7 @@ class _DeleteDummyThreadOnDel:
         # the related _DummyThread will be kept forever!
         _thread_local_info._track_dummy_thread_ref = self
 
-    def __del__(self):
+    def __del__(self, _active_limbo_lock=_active_limbo_lock, _active=_active):
         with _active_limbo_lock:
             if _active.get(self._tident) is self._dummy_thread:
                 _active.pop(self._tident, None)
@@ -1439,7 +1578,7 @@ class _DummyThread(Thread):
                         daemon=_daemon_threads_allowed())
         self._started.set()
         self._set_ident()
-        self._handle = _make_thread_handle(self._ident)
+        self._os_thread_handle = _make_thread_handle(self._ident)
         if _HAVE_THREAD_NATIVE_ID:
             self._set_native_id()
         with _active_limbo_lock:
@@ -1447,7 +1586,7 @@ class _DummyThread(Thread):
         _DeleteDummyThreadOnDel(self)
 
     def is_alive(self):
-        if not self._handle.is_done() and self._started.is_set():
+        if not self._os_thread_handle.is_done() and self._started.is_set():
             return True
         raise RuntimeError("thread is not alive")
 
@@ -1561,9 +1700,10 @@ def _shutdown():
     # dubious, but some code does it. We can't wait for it to be marked as done
     # normally - that won't happen until the interpreter is nearly dead. So
     # mark it done here.
-    if _main_thread._handle.is_done() and _is_main_interpreter():
-        # _shutdown() was already called
-        return
+    if _main_thread._os_thread_handle.is_done() and _is_main_interpreter():
+        # _shutdown() was already called, but threads might have started
+        # in the meantime.
+        return _thread_shutdown()
 
     global _SHUTTING_DOWN
     _SHUTTING_DOWN = True
@@ -1574,7 +1714,7 @@ def _shutdown():
         atexit_call()
 
     if _is_main_interpreter():
-        _main_thread._handle._set_done()
+        _main_thread._os_thread_handle._set_done()
 
     # Wait for all non-daemon threads to exit.
     _thread_shutdown()
