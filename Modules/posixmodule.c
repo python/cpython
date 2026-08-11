@@ -7520,7 +7520,7 @@ os_execv_impl(PyObject *module, path_t *path, PyObject *argv)
 
     /* If we get here it's definitely an error */
 
-    posix_error();
+    posix_path_error(path);
     free_string_array(argvlist, argc);
     return NULL;
 }
