@@ -1,3 +1,0 @@
-In the limited C API version 3.12, :c:func:`Py_INCREF` and
-:c:func:`Py_DECREF` functions are now implemented as opaque function calls
-to hide implementation details. Patch by Victor Stinner.

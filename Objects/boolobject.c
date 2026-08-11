@@ -13,8 +13,7 @@
 static PyObject *
 bool_repr(PyObject *self)
 {
-    PyObject *res = self == Py_True ? &_Py_ID(True) : &_Py_ID(False);
-    return Py_NewRef(res);
+    return self == Py_True ? &_Py_ID(True) : &_Py_ID(False);
 }
 
 /* Function to return a bool from a C long */
@@ -72,8 +71,8 @@ static PyObject *
 bool_invert(PyObject *v)
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "Bitwise inversion '~' on bool is deprecated. This "
-                     "returns the bitwise inversion of the underlying int "
+                     "Bitwise inversion '~' on bool is deprecated and will be removed in "
+                     "Python 3.16. This returns the bitwise inversion of the underlying int "
                      "object and is usually not what you expect from negating "
                      "a bool. Use the 'not' operator for boolean negation or "
                      "~int(x) if you really want the bitwise inversion of the "
@@ -111,9 +110,10 @@ bool_xor(PyObject *a, PyObject *b)
 /* Doc string */
 
 PyDoc_STRVAR(bool_doc,
-"bool(x) -> bool\n\
+"bool(object=False, /)\n\
+--\n\
 \n\
-Returns True when the argument x is true, False otherwise.\n\
+Returns True when the argument is true, False otherwise.\n\
 The builtins True and False are the only two instances of the class bool.\n\
 The class bool is a subclass of the class int, and cannot be subclassed.");
 
@@ -130,7 +130,7 @@ static PyNumberMethods bool_as_number = {
     0,                          /* nb_positive */
     0,                          /* nb_absolute */
     0,                          /* nb_bool */
-    (unaryfunc)bool_invert,     /* nb_invert */
+    bool_invert,                /* nb_invert */
     0,                          /* nb_lshift */
     0,                          /* nb_rshift */
     bool_and,                   /* nb_and */

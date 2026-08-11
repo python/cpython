@@ -1,1 +1,0 @@
-Removed Emscripten import trampoline as it was no longer necessary for Pyodide.

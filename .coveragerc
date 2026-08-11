@@ -7,6 +7,11 @@ exclude_lines =
     # Don't complain if non-runnable code isn't run:
     if 0:
     if __name__ == .__main__.:
+    raise AssertionError\(
+
+    # Empty bodies in protocols or abstract methods
+    ^\s*def [a-zA-Z0-9_]+\(.*\)(\s*->.*)?:\s*\.\.\.(\s*#.*)?$
+    ^\s*\.\.\.(\s*#.*)?$
 
     .*# pragma: no cover
     .*# pragma: no branch

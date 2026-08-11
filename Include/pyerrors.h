@@ -1,12 +1,10 @@
+// Error handling definitions
+
 #ifndef Py_ERRORS_H
 #define Py_ERRORS_H
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdarg.h>               // va_list
-
-/* Error handling definitions */
 
 PyAPI_FUNC(void) PyErr_SetNone(PyObject *);
 PyAPI_FUNC(void) PyErr_SetObject(PyObject *, PyObject *);
@@ -93,6 +91,9 @@ PyAPI_DATA(PyObject *) PyExc_EOFError;
 PyAPI_DATA(PyObject *) PyExc_FloatingPointError;
 PyAPI_DATA(PyObject *) PyExc_OSError;
 PyAPI_DATA(PyObject *) PyExc_ImportError;
+#if !defined(Py_LIMITED_API)
+PyAPI_DATA(PyObject *) PyExc_ImportCycleError;
+#endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03060000
 PyAPI_DATA(PyObject *) PyExc_ModuleNotFoundError;
 #endif

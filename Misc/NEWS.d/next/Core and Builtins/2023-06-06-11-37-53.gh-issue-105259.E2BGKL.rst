@@ -1,2 +1,0 @@
-Don't include newline character for trailing ``NEWLINE`` tokens emitted in
-the :mod:`tokenize` module. Patch by Pablo Galindo

@@ -1,1 +1,0 @@
-Make pydoc.doc catch bad module ImportError when output stream is not None.

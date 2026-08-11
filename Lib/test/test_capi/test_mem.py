@@ -8,8 +8,10 @@ from test.support import import_helper, requires_subprocess
 from test.support.script_helper import assert_python_failure, assert_python_ok
 
 
-# Skip this test if the _testcapi module isn't available.
+# Skip this test if the _testcapi and _testinternalcapi extensions are not
+# available.
 _testcapi = import_helper.import_module('_testcapi')
+_testinternalcapi = import_helper.import_module('_testinternalcapi')
 
 @requires_subprocess()
 class PyMemDebugTests(unittest.TestCase):
@@ -22,9 +24,12 @@ class PyMemDebugTests(unittest.TestCase):
             out = assert_python_failure(
                 '-c', code,
                 PYTHONMALLOC=self.PYTHONMALLOC,
-                # FreeBSD: instruct jemalloc to not fill freed() memory
-                # with junk byte 0x5a, see JEMALLOC(3)
+                # Instruct the system allocator to not fill freed() memory
+                # with junk bytes:
+                # FreeBSD: jemalloc, see JEMALLOC(3).
                 MALLOC_CONF="junk:false",
+                # OpenBSD: see MALLOC.CONF(5).
+                MALLOC_OPTIONS="j",
             )
         stderr = out.err
         return stderr.decode('ascii', 'replace')
@@ -66,8 +71,13 @@ class PyMemDebugTests(unittest.TestCase):
 
     def check_malloc_without_gil(self, code):
         out = self.check(code)
-        expected = ('Fatal Python error: _PyMem_DebugMalloc: '
-                    'Python memory allocator called without holding the GIL')
+        if not support.Py_GIL_DISABLED:
+            expected = ('Fatal Python error: _PyMem_DebugMalloc: '
+                        'Python memory allocator called without holding the GIL')
+        else:
+            expected = ('Fatal Python error: _PyMem_DebugMalloc: '
+                        'Python memory allocator called without an active thread state. '
+                        'Are you trying to call it inside of a Py_BEGIN_ALLOW_THREADS block?')
         self.assertIn(expected, out)
 
     def test_pymem_malloc_without_gil(self):
@@ -84,21 +94,20 @@ class PyMemDebugTests(unittest.TestCase):
 
     def check_pyobject_is_freed(self, func_name):
         code = textwrap.dedent(f'''
-            import gc, os, sys, _testcapi
+            import gc, os, sys, _testinternalcapi
             # Disable the GC to avoid crash on GC collection
             gc.disable()
-            try:
-                _testcapi.{func_name}()
-                # Exit immediately to avoid a crash while deallocating
-                # the invalid object
-                os._exit(0)
-            except _testcapi.error:
-                os._exit(1)
+            _testinternalcapi.{func_name}()
+            # Exit immediately to avoid a crash while deallocating
+            # the invalid object
+            os._exit(0)
         ''')
         assert_python_ok(
             '-c', code,
             PYTHONMALLOC=self.PYTHONMALLOC,
+            # See the comment in check() above.
             MALLOC_CONF="junk:false",
+            MALLOC_OPTIONS="j",
         )
 
     def test_pyobject_null_is_freed(self):
@@ -113,6 +122,7 @@ class PyMemDebugTests(unittest.TestCase):
     def test_pyobject_freed_is_freed(self):
         self.check_pyobject_is_freed('check_pyobject_freed_is_freed')
 
+    @support.nomemtest
     def test_set_nomemory(self):
         code = """if 1:
             import _testcapi
@@ -146,10 +156,12 @@ class PyMemDebugTests(unittest.TestCase):
             self.assertIn(b'MemoryError', out)
             *_, count = line.split(b' ')
             count = int(count)
-            self.assertLessEqual(count, i*5)
-            self.assertGreaterEqual(count, i*5-2)
+            self.assertLessEqual(count, i*10)
+            self.assertGreaterEqual(count, i*10-4)
 
 
+# free-threading requires mimalloc (not malloc)
+@support.requires_gil_enabled()
 class PyMemMallocDebugTests(PyMemDebugTests):
     PYTHONMALLOC = 'malloc_debug'
 
@@ -157,6 +169,11 @@ class PyMemMallocDebugTests(PyMemDebugTests):
 @unittest.skipUnless(support.with_pymalloc(), 'need pymalloc')
 class PyMemPymallocDebugTests(PyMemDebugTests):
     PYTHONMALLOC = 'pymalloc_debug'
+
+
+@unittest.skipUnless(support.with_mimalloc(), 'need mimaloc')
+class PyMemMimallocDebugTests(PyMemDebugTests):
+    PYTHONMALLOC = 'mimalloc_debug'
 
 
 @unittest.skipUnless(support.Py_DEBUG, 'need Py_DEBUG')

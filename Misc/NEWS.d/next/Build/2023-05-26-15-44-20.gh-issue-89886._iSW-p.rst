@@ -1,2 +1,0 @@
-Autoconf 2.71 and aclocal 1.16.4 is now required to regenerate
-:file:`!configure`.

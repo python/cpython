@@ -1,7 +1,10 @@
+// clinic/vectorcall.c.h uses internal pycore_modsupport.h API
+#define PYTESTCAPI_NEED_INTERNAL_API
+
 #include "parts.h"
 #include "clinic/vectorcall.c.h"
 
-#include "structmember.h"           // PyMemberDef
+
 #include <stddef.h>                 // offsetof
 
 /*[clinic input]
@@ -155,12 +158,12 @@ VectorCallClass_vectorcall(PyObject *callable,
 }
 
 /*[clinic input]
-module _testcapi
 class _testcapi.VectorCallClass "PyObject *" "&PyType_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=8423a8e919f2f0df]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=95c63c1a47f9a995]*/
 
 /*[clinic input]
+@permit_long_summary
 _testcapi.VectorCallClass.set_vectorcall
 
     type: object(subclass_of="&PyType_Type", type="PyTypeObject *")
@@ -172,19 +175,19 @@ Set self's vectorcall function for `type` to one that returns "vectorcall"
 static PyObject *
 _testcapi_VectorCallClass_set_vectorcall_impl(PyObject *self,
                                               PyTypeObject *type)
-/*[clinic end generated code: output=b37f0466f15da903 input=840de66182c7d71a]*/
+/*[clinic end generated code: output=b37f0466f15da903 input=170fefc7ee77fd36]*/
 {
     if (!PyObject_TypeCheck(self, type)) {
         return PyErr_Format(
             PyExc_TypeError,
-            "expected %s instance",
-            PyType_GetName(type));
+            "expected %N instance",
+            type);
     }
     if (!type->tp_vectorcall_offset) {
         return PyErr_Format(
             PyExc_TypeError,
-            "type %s has no vectorcall offset",
-            PyType_GetName(type));
+            "type %N has no vectorcall offset",
+            type);
     }
     *(vectorcallfunc*)((char*)self + type->tp_vectorcall_offset) = (
         VectorCallClass_vectorcall);
@@ -197,7 +200,7 @@ PyMethodDef VectorCallClass_methods[] = {
 };
 
 PyMemberDef VectorCallClass_members[] = {
-    {"__vectorcalloffset__", T_PYSSIZET, 0/* set later */, READONLY},
+    {"__vectorcalloffset__", Py_T_PYSSIZET, 0/* set later */, Py_READONLY},
     {NULL}
 };
 
@@ -346,6 +349,9 @@ static PyObject *
 MethodDescriptor2_new(PyTypeObject* type, PyObject* args, PyObject *kw)
 {
     MethodDescriptor2Object *op = PyObject_New(MethodDescriptor2Object, type);
+    if (op == NULL) {
+        return NULL;
+    }
     op->base.vectorcall = NULL;
     op->vectorcall = MethodDescriptor_vectorcall;
     return (PyObject *)op;
