@@ -502,8 +502,10 @@ ctype_free_stginfo_members(StgInfo *info)
     info->ffi_type_pointer.elements = NULL;
     PyMem_Free(info->format);
     info->format = NULL;
+    /* The strides point into the shape allocation. */
     PyMem_Free(info->shape);
     info->shape = NULL;
+    info->strides = NULL;
     ctype_clear_stginfo(info);
 }
 
@@ -3134,9 +3136,9 @@ PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
     }
     assert(item_info);
 
-    if ((flags & PyBUF_F_CONTIGUOUS) == PyBUF_F_CONTIGUOUS) {
-        view->obj = NULL;
-        PyErr_Format(PyExc_TypeError, "Fortran contiguous buffer is not supported");
+    if (info->ndim > 1 && (flags & PyBUF_F_CONTIGUOUS) == PyBUF_F_CONTIGUOUS) {
+        PyErr_SetString(PyExc_BufferError,
+                        "ctypes array is not Fortran contiguous");
         return -1;
     }
 
@@ -3151,10 +3153,21 @@ PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
     else {
         view->format = NULL;
     }
-    view->ndim = info->ndim;
-    view->shape = ((flags & PyBUF_ND) == PyBUF_ND) ? info->shape : NULL;
+    if ((flags & PyBUF_ND) == PyBUF_ND) {
+        view->ndim = info->ndim;
+        view->shape = info->shape;
+    }
+    else {
+        /* The buffer is C contiguous, so it can be exposed as flat.
+           Keep ndim <= 1: ndim > 1 implies shape != NULL, see
+           PyBuffer_IsContiguous(). */
+        view->ndim = info->ndim ? 1 : 0;
+        view->shape = NULL;
+    }
     view->itemsize = item_info->size;
-    view->strides = ((flags & PyBUF_STRIDES) == PyBUF_STRIDES) ? info->strides : NULL;
+    /* PyBUF_STRIDES implies PyBUF_ND. */
+    view->strides = ((flags & PyBUF_STRIDES) == PyBUF_STRIDES)
+                    ? info->strides : NULL;
     view->suboffsets = NULL;
     view->internal = NULL;
     return 0;
