@@ -2636,10 +2636,17 @@ def _execvpe_mockup(defpath=None):
 
 @unittest.skipUnless(hasattr(os, 'execv'),
                      "need os.execv()")
+@unittest.skipIf(support.is_emscripten,
+                 "Emscripten always fails with ENOEXEC")
+@unittest.skipIf(support.is_android,
+                 "PATH contains an inaccessible directory on Android")
 class ExecTests(unittest.TestCase):
     def _test_bad_program(self, do_exec, exc_type=OSError):
-        for bad_filename in ('nosuchapp', b'nosuchapp',
-                             FakePath('nosuchapp'), FakePath(b'nosuchapp')):
+        bad_filenames = ['nosuchapp', FakePath('nosuchapp')]
+        if os.name != 'nt':
+            # Bytes program names are not supported on Windows.
+            bad_filenames += [b'nosuchapp', FakePath(b'nosuchapp')]
+        for bad_filename in bad_filenames:
             with self.subTest(bad_filename):
                 with self.assertRaises(exc_type) as ctx:
                     do_exec(bad_filename)
