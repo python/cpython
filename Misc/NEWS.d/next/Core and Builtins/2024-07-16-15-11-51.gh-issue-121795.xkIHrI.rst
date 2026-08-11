@@ -1,1 +1,0 @@
-Improve performance of set membership testing, ``set.remove()`` and ``set.discard()`` when the argument is a set.

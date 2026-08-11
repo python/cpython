@@ -274,7 +274,7 @@ class CAPITest(unittest.TestCase):
 
         # PyObject_SetAttr(obj, attr_name, NULL) removes the attribute
         xsetattr(obj, 'a', NULL)
-        self.assertFalse(hasattr(obj, 'a'))
+        self.assertNotHasAttr(obj, 'a')
         self.assertRaises(AttributeError, xsetattr, obj, 'b', NULL)
         self.assertRaises(RuntimeError, xsetattr, obj, 'evil', NULL)
 
@@ -294,7 +294,7 @@ class CAPITest(unittest.TestCase):
 
         # PyObject_SetAttrString(obj, attr_name, NULL) removes the attribute
         setattrstring(obj, b'a', NULL)
-        self.assertFalse(hasattr(obj, 'a'))
+        self.assertNotHasAttr(obj, 'a')
         self.assertRaises(AttributeError, setattrstring, obj, b'b', NULL)
         self.assertRaises(RuntimeError, setattrstring, obj, b'evil', NULL)
 
@@ -311,10 +311,10 @@ class CAPITest(unittest.TestCase):
         obj.a = 1
         setattr(obj, '\U0001f40d', 2)
         xdelattr(obj, 'a')
-        self.assertFalse(hasattr(obj, 'a'))
+        self.assertNotHasAttr(obj, 'a')
         self.assertRaises(AttributeError, xdelattr, obj, 'b')
         xdelattr(obj, '\U0001f40d')
-        self.assertFalse(hasattr(obj, '\U0001f40d'))
+        self.assertNotHasAttr(obj, '\U0001f40d')
 
         self.assertRaises(AttributeError, xdelattr, 42, 'numerator')
         self.assertRaises(RuntimeError, xdelattr, obj, 'evil')
@@ -328,10 +328,10 @@ class CAPITest(unittest.TestCase):
         obj.a = 1
         setattr(obj, '\U0001f40d', 2)
         delattrstring(obj, b'a')
-        self.assertFalse(hasattr(obj, 'a'))
+        self.assertNotHasAttr(obj, 'a')
         self.assertRaises(AttributeError, delattrstring, obj, b'b')
         delattrstring(obj, '\U0001f40d'.encode())
-        self.assertFalse(hasattr(obj, '\U0001f40d'))
+        self.assertNotHasAttr(obj, '\U0001f40d')
 
         self.assertRaises(AttributeError, delattrstring, 42, b'numerator')
         self.assertRaises(RuntimeError, delattrstring, obj, b'evil')
@@ -411,6 +411,11 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(getitem(dct2, 'a'), 1)
         self.assertEqual(getitem(dct2, 'b'), KeyError)
 
+        frozendct = frozendict(dct)
+        self.assertEqual(getitem(frozendct, 'a'), 1)
+        self.assertEqual(getitem(frozendct, 'b'), KeyError)
+        self.assertEqual(getitem(frozendct, '\U0001f40d'), 2)
+
         self.assertEqual(getitem(['a', 'b', 'c'], 1), 'b')
 
         self.assertRaises(TypeError, getitem, 42, 'a')
@@ -430,6 +435,11 @@ class CAPITest(unittest.TestCase):
         dct2 = ProxyGetItem(dct)
         self.assertEqual(getitemstring(dct2, b'a'), 1)
         self.assertEqual(getitemstring(dct2, b'b'), KeyError)
+
+        frozendct = frozendict(dct)
+        self.assertEqual(getitemstring(frozendct, 'a'), 1)
+        self.assertEqual(getitemstring(frozendct, 'b'), KeyError)
+        self.assertEqual(getitemstring(frozendct, '\U0001f40d'.encode()), 2)
 
         self.assertRaises(TypeError, getitemstring, 42, b'a')
         self.assertRaises(UnicodeDecodeError, getitemstring, {}, b'\xff')
@@ -460,7 +470,8 @@ class CAPITest(unittest.TestCase):
             self.assertFalse(haskey({}, []))
             self.assertEqual(cm.unraisable.exc_type, TypeError)
             self.assertEqual(str(cm.unraisable.exc_value),
-                             "unhashable type: 'list'")
+                             "cannot use 'list' as a dict key "
+                             "(unhashable type: 'list')")
 
         with support.catch_unraisable_exception() as cm:
             self.assertFalse(haskey([], 1))
@@ -676,8 +687,10 @@ class CAPITest(unittest.TestCase):
         dict_obj = {'foo': 1, 'bar': 2, 'spam': 3}
 
         for mapping in [{}, OrderedDict(), Mapping1(), Mapping2(),
+                        frozendict(),
                         dict_obj, OrderedDict(dict_obj),
-                        Mapping1(dict_obj), Mapping2(dict_obj)]:
+                        Mapping1(dict_obj), Mapping2(dict_obj),
+                        frozendict(dict_obj)]:
             self.assertListEqual(_testlimitedcapi.mapping_keys(mapping),
                                  list(mapping.keys()))
             self.assertListEqual(_testlimitedcapi.mapping_values(mapping),
@@ -994,6 +1007,42 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, xtuple, 42)
         self.assertRaises(SystemError, xtuple, NULL)
 
+    def test_sequence_fast(self):
+        # Test PySequence_Fast()
+        sequence_fast = _testlimitedcapi.sequence_fast
+        sequence_fast_get_size = _testcapi.sequence_fast_get_size
+        sequence_fast_get_item = _testcapi.sequence_fast_get_item
+
+        tpl = ('a', 'b', 'c')
+        fast = sequence_fast(tpl, "err_msg")
+        self.assertIs(fast, tpl)
+        self.assertEqual(sequence_fast_get_size(fast), 3)
+        self.assertEqual(sequence_fast_get_item(fast, 2), 'c')
+
+        lst = ['a', 'b', 'c']
+        fast = sequence_fast(lst, "err_msg")
+        self.assertIs(fast, lst)
+        self.assertEqual(sequence_fast_get_size(fast), 3)
+        self.assertEqual(sequence_fast_get_item(fast, 2), 'c')
+
+        it = iter(['A', 'B'])
+        fast = sequence_fast(it, "err_msg")
+        self.assertEqual(fast, ['A', 'B'])
+        self.assertEqual(sequence_fast_get_size(fast), 2)
+        self.assertEqual(sequence_fast_get_item(fast, 1), 'B')
+
+        text = 'fast'
+        fast = sequence_fast(text, "err_msg")
+        self.assertEqual(fast, ['f', 'a', 's', 't'])
+        self.assertEqual(sequence_fast_get_size(fast), 4)
+        self.assertEqual(sequence_fast_get_item(fast, 0), 'f')
+
+        self.assertRaises(TypeError, sequence_fast, 42, "err_msg")
+        self.assertRaises(SystemError, sequence_fast, NULL, "err_msg")
+
+        # CRASHES sequence_fast_get_size(NULL)
+        # CRASHES sequence_fast_get_item(NULL, 0)
+
     def test_object_generichash(self):
         # Test PyObject_GenericHash()
         generichash = _testcapi.object_generichash
@@ -1039,6 +1088,31 @@ class CAPITest(unittest.TestCase):
         regex = "expected.*iterator.*got.*'int'"
         with self.assertRaisesRegex(TypeError, regex):
             PyIter_NextItem(10)
+
+    def test_object_setattr_null_exc(self):
+        class Obj:
+            pass
+        obj = Obj()
+        obj.attr = 123
+
+        exc = ValueError("error")
+        with self.assertRaises(SystemError) as cm:
+            _testcapi.object_setattr_null_exc(obj, 'attr', exc)
+        self.assertIs(cm.exception.__context__, exc)
+        self.assertIsNone(cm.exception.__cause__)
+        self.assertHasAttr(obj, 'attr')
+
+        with self.assertRaises(SystemError) as cm:
+            _testcapi.object_setattrstring_null_exc(obj, 'attr', exc)
+        self.assertIs(cm.exception.__context__, exc)
+        self.assertIsNone(cm.exception.__cause__)
+        self.assertHasAttr(obj, 'attr')
+
+        with self.assertRaises(SystemError) as cm:
+            # undecodable name
+            _testcapi.object_setattrstring_null_exc(obj, b'\xff', exc)
+        self.assertIs(cm.exception.__context__, exc)
+        self.assertIsNone(cm.exception.__cause__)
 
 
 if __name__ == "__main__":

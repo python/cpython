@@ -1,1 +1,0 @@
-:func:`unittest.mock.Mock.attach_mock` no longer triggers a call to a ``PropertyMock`` being attached.

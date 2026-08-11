@@ -1,0 +1,3 @@
+Speed up :func:`logging.getLogger` with a lock-free fast path that returns an
+already-registered logger without acquiring the logging lock. Patch by Bernát
+Gábor.

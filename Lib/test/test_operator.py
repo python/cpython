@@ -482,6 +482,8 @@ class OperatorTestCase:
                 return f
             def baz(*args, **kwds):
                 return kwds['name'], kwds['self']
+            def return_arguments(self, *args, **kwds):
+                return args, kwds
         a = A()
         f = operator.methodcaller('foo')
         self.assertRaises(IndexError, f, a)
@@ -497,6 +499,17 @@ class OperatorTestCase:
         self.assertEqual(f(a), 5)
         f = operator.methodcaller('baz', name='spam', self='eggs')
         self.assertEqual(f(a), ('spam', 'eggs'))
+
+        many_positional_arguments = tuple(range(10))
+        many_kw_arguments = dict(zip('abcdefghij', range(10)))
+        f = operator.methodcaller('return_arguments', *many_positional_arguments)
+        self.assertEqual(f(a), (many_positional_arguments, {}))
+
+        f = operator.methodcaller('return_arguments', **many_kw_arguments)
+        self.assertEqual(f(a), ((), many_kw_arguments))
+
+        f = operator.methodcaller('return_arguments', *many_positional_arguments, **many_kw_arguments)
+        self.assertEqual(f(a), (many_positional_arguments, many_kw_arguments))
 
     def test_inplace(self):
         operator = self.module
@@ -623,6 +636,7 @@ class OperatorTestCase:
             if dunder:
                 self.assertIs(dunder, orig)
 
+    @support.requires_docstrings
     def test_attrgetter_signature(self):
         operator = self.module
         sig = inspect.signature(operator.attrgetter)
@@ -630,6 +644,7 @@ class OperatorTestCase:
         sig = inspect.signature(operator.attrgetter('x', 'z', 'y'))
         self.assertEqual(str(sig), '(obj, /)')
 
+    @support.requires_docstrings
     def test_itemgetter_signature(self):
         operator = self.module
         sig = inspect.signature(operator.itemgetter)
@@ -637,6 +652,7 @@ class OperatorTestCase:
         sig = inspect.signature(operator.itemgetter(2, 3, 5))
         self.assertEqual(str(sig), '(obj, /)')
 
+    @support.requires_docstrings
     def test_methodcaller_signature(self):
         operator = self.module
         sig = inspect.signature(operator.methodcaller)
@@ -653,6 +669,7 @@ class COperatorTestCase(OperatorTestCase, unittest.TestCase):
     module = c_operator
 
 
+@support.thread_unsafe("swaps global operator module")
 class OperatorPickleTestCase:
     def copy(self, obj, proto):
         with support.swap_item(sys.modules, 'operator', self.module):

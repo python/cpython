@@ -277,8 +277,8 @@ _Py_bytes_upper(char *result, const char *cptr, Py_ssize_t len)
 PyDoc_STRVAR_shared(_Py_title__doc__,
 "B.title() -> copy of B\n\
 \n\
-Return a titlecased version of B, i.e. ASCII words start with uppercase\n\
-characters, all remaining cased characters have lowercase.");
+Return a titlecased version of B, i.e. ASCII words start with\n\
+uppercase characters, all remaining cased characters have lowercase.");
 
 void
 _Py_bytes_title(char *result, const char *s, Py_ssize_t len)
@@ -356,26 +356,24 @@ The bytes objects frm and to must be of the same length.");
 PyObject *
 _Py_bytes_maketrans(Py_buffer *frm, Py_buffer *to)
 {
-    PyObject *res = NULL;
-    Py_ssize_t i;
-    char *p;
-
     if (frm->len != to->len) {
         PyErr_Format(PyExc_ValueError,
                      "maketrans arguments must have same length");
         return NULL;
     }
-    res = PyBytes_FromStringAndSize(NULL, 256);
-    if (!res)
+    PyBytesWriter *writer = PyBytesWriter_Create(256);
+    if (!writer) {
         return NULL;
-    p = PyBytes_AS_STRING(res);
+    }
+    char *p = PyBytesWriter_GetData(writer);
+    Py_ssize_t i;
     for (i = 0; i < 256; i++)
         p[i] = (char) i;
     for (i = 0; i < frm->len; i++) {
         p[((unsigned char *)frm->buf)[i]] = ((char *)to->buf)[i];
     }
 
-    return res;
+    return PyBytesWriter_Finish(writer);
 }
 
 #define FASTSEARCH fastsearch

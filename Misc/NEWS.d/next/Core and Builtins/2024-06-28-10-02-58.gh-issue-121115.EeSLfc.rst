@@ -1,3 +1,0 @@
-:c:func:`PyLong_AsNativeBytes` no longer uses :meth:`~object.__index__`
-methods by default. The ``Py_ASNATIVEBYTES_ALLOW_INDEX`` flag has been added
-to allow it.

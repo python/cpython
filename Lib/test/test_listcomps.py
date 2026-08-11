@@ -171,6 +171,17 @@ class ListComprehensionTest(unittest.TestCase):
         """
         self._check_in_scopes(code, raises=NameError)
 
+    def test_references___class___nested(self):
+        code = """
+            res = [(lambda: __class__)() for _ in [1]]
+        """
+        self._check_in_scopes(code, raises=NameError)
+
+    def test_references___class___nested_used(self):
+        class _C:
+            res = [lambda: __class__ for _ in [1]]
+        self.assertIs(_C.res[0](), _C)
+
     def test_references___class___defined(self):
         code = """
             __class__ = 2
@@ -179,6 +190,38 @@ class ListComprehensionTest(unittest.TestCase):
         self._check_in_scopes(
                 code, outputs={"res": [2]}, scopes=["module", "function"])
         self._check_in_scopes(code, raises=NameError, scopes=["class"])
+
+    def test_references___class___defined_nested(self):
+        code = """
+            __class__ = 2
+            res = [(lambda: __class__)() for x in [1]]
+        """
+        self._check_in_scopes(
+                code, outputs={"res": [2]}, scopes=["module", "function"])
+        self._check_in_scopes(code, raises=NameError, scopes=["class"])
+
+    def test_references___classdict__(self):
+        code = """
+            class i: [__classdict__ for x in y]
+        """
+        self._check_in_scopes(code, raises=NameError)
+
+    def test_references___classdict___nested(self):
+        class _C:
+            res = [(lambda: __classdict__)() for _ in [1]]
+        self.assertIn("res", _C.res[0])
+
+    def test_references___conditional_annotations__(self):
+        code = """
+            class i: [__conditional_annotations__ for x in y]
+        """
+        self._check_in_scopes(code, raises=NameError)
+
+    def test_references___conditional_annotations___nested(self):
+        code = """
+            class i: [lambda: __conditional_annotations__ for x in y]
+        """
+        self._check_in_scopes(code, raises=NameError)
 
     def test_references___class___enclosing(self):
         code = """
@@ -609,7 +652,7 @@ class ListComprehensionTest(unittest.TestCase):
             result = snapshot = None
             try:
                 result = [{func}(value) for value in value]
-            except:
+            except ValueError:
                 snapshot = value
                 raise
         """
@@ -643,7 +686,7 @@ class ListComprehensionTest(unittest.TestCase):
             value = [1, None]
             try:
                 [v for v in value].sort()
-            except:
+            except TypeError:
                 pass
         """
         self._check_in_scopes(code, {"value": [1, None]})
@@ -716,7 +759,7 @@ class ListComprehensionTest(unittest.TestCase):
 
     def test_exception_locations(self):
         # The location of an exception raised from __init__ or
-        # __next__ should should be the iterator expression
+        # __next__ should be the iterator expression
 
         def init_raises():
             try:
@@ -749,6 +792,75 @@ class ListComprehensionTest(unittest.TestCase):
                 self.assertEqual(f.end_lineno, co.co_firstlineno + 2)
                 self.assertEqual(f.line[f.colno - indent : f.end_colno - indent],
                                  expected)
+
+    def test_optimization_with_side_effects(self):
+        # List comprehensions that aren't used as a value are optimized
+        # to avoid creating a list. Ensure that side effects are still
+        # retained when this happens.
+        with self.assertRaises(ZeroDivisionError):
+            [0/0 for _ in [1]]
+
+        count = 0
+        def increment():
+            nonlocal count
+            count += 1
+
+        [increment() for _ in range(5)]
+        self.assertEqual(count, 5)
+
+    def test_async_optimization_with_side_effects(self):
+        async def gen1(aiterator):
+            with self.assertRaises(ZeroDivisionError):
+                [0/0 async for _ in aiterator]
+
+        async def gen2(aiterator):
+            [increment() async for _ in aiterator]
+
+        async def numbers():
+            for i in range(5):
+                yield i
+
+        count = 0
+        def increment():
+            nonlocal count
+            count += 1
+
+        def exhaust(coro):
+            try:
+                coro.send(None)
+            except StopIteration:
+                pass
+
+        exhaust(gen1(numbers()))
+        exhaust(gen2(numbers()))
+        self.assertEqual(count, 5)
+
+    def test_optimization_with_starred_unpack(self):
+        with self.assertRaises(TypeError):
+            [*i for i in [1, 2, 3]]
+
+        async def coro():
+            async def gen():
+                yield 1
+
+            with self.assertRaises(TypeError):
+                [*i async for i in gen()]
+
+        c = coro()
+        while True:
+            try:
+                c.send(None)
+            except StopIteration:
+                break
+
+        count = 0
+        def weird():
+            nonlocal count
+            count += 1
+            yield 0
+
+        [*weird() for _ in range(5)]
+        self.assertEqual(count, 5)
 
 __test__ = {'doctests' : doctests}
 

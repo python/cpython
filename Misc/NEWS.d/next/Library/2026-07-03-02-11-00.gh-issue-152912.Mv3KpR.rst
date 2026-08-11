@@ -1,0 +1,1 @@
+``sys.addaudithook()`` now correctly suppresses only :exc:`RuntimeError` instead of all :exc:`Exception` subclasses when an existing audit hook raises during hook registration. Patch by Yeongu Kim.

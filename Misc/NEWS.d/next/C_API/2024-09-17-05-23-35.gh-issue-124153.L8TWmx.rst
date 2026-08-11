@@ -1,2 +1,0 @@
-Add :c:func:`PyType_GetBaseByToken` and :c:data:`Py_tp_token` slot for easier
-type checking, related to :pep:`489` and :pep:`630`.

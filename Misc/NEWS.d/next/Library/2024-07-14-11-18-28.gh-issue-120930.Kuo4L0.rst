@@ -1,2 +1,0 @@
-Fixed a bug introduced by gh-92081 that added an incorrect extra
-blank to encoded words occurring in wrapped headers.

@@ -1,2 +1,0 @@
-Enables inline values (Python's equivalent of hidden classes) on any class
-who's instances are of a fixed size.

@@ -1,3 +1,0 @@
-Restore the deprecated :mod:`logging` ``warn()`` method. It was removed in
-Python 3.13 alpha 1. Keep the deprecated ``warn()`` method in Python 3.13.
-Patch by Victor Stinner.

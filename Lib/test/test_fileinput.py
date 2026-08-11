@@ -245,7 +245,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
         orig_stdin = sys.stdin
         try:
             sys.stdin = BytesIO(b'spam, bacon, sausage, and spam')
-            self.assertFalse(hasattr(sys.stdin, 'buffer'))
+            self.assertNotHasAttr(sys.stdin, 'buffer')
             fi = FileInput(files=['-'], mode='rb')
             lines = list(fi)
             self.assertEqual(lines, [b'spam, bacon, sausage, and spam'])

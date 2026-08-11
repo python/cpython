@@ -1,2 +1,0 @@
-Limit exposed globals from internal imports and definitions on new REPL
-startup. Patch by Eugene Triguba and Pablo Galindo.

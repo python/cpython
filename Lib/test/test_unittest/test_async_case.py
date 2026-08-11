@@ -2,6 +2,7 @@ import asyncio
 import contextvars
 import unittest
 from test import support
+from test.support import force_not_colorized
 
 support.requires_working_socket(module=True)
 
@@ -11,7 +12,7 @@ class MyException(Exception):
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class TestCM:
@@ -252,6 +253,7 @@ class TestAsyncCase(unittest.TestCase):
         test.doCleanups()
         self.assertEqual(events, ['asyncSetUp', 'test', 'asyncTearDown', 'cleanup'])
 
+    @force_not_colorized
     def test_exception_in_tear_clean_up(self):
         class Test(unittest.IsolatedAsyncioTestCase):
             async def asyncSetUp(self):
@@ -478,7 +480,7 @@ class TestAsyncCase(unittest.TestCase):
 
         class TestCase1(unittest.IsolatedAsyncioTestCase):
             def setUp(self):
-                asyncio.get_event_loop_policy().get_event_loop()
+                asyncio.get_event_loop()
 
             async def test_demo1(self):
                 pass
@@ -488,7 +490,7 @@ class TestAsyncCase(unittest.TestCase):
         self.assertTrue(result.wasSuccessful())
 
     def test_loop_factory(self):
-        asyncio.set_event_loop_policy(None)
+        asyncio.set_event_loop(None)
 
         class TestCase1(unittest.IsolatedAsyncioTestCase):
             loop_factory = asyncio.EventLoop
@@ -499,7 +501,7 @@ class TestAsyncCase(unittest.TestCase):
         test = TestCase1('test_demo1')
         result = test.run()
         self.assertTrue(result.wasSuccessful())
-        self.assertIsNone(support.maybe_get_event_loop_policy())
+        self.assertIsNone(support.maybe_get_event_loop())
 
 if __name__ == "__main__":
     unittest.main()

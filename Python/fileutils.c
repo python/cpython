@@ -1,6 +1,8 @@
 #include "Python.h"
 #include "pycore_fileutils.h"     // fileutils definitions
 #include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_pystate.h"       // _Py_AssertHoldsTstate()
+#include "pycore_unicodeobject.h" // _Py_MAX_UNICODE
 #include "osdefs.h"               // SEP
 
 #include <stdlib.h>               // mbstowcs()
@@ -49,12 +51,11 @@ extern int winerror_to_errno(int);
 int _Py_open_cloexec_works = -1;
 #endif
 
-// The value must be the same in unicodeobject.c.
-#define MAX_UNICODE 0x10ffff
-
 // mbstowcs() and mbrtowc() errors
 static const size_t DECODE_ERROR = ((size_t)-1);
+#ifdef HAVE_MBRTOWC
 static const size_t INCOMPLETE_CHARACTER = (size_t)-2;
+#endif
 
 
 static int
@@ -120,7 +121,7 @@ is_valid_wide_char(wchar_t ch)
 {
 #ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
     /* Oracle Solaris doesn't use Unicode code points as wchar_t encoding
-       for non-Unicode locales, which makes values higher than MAX_UNICODE
+       for non-Unicode locales, which makes values higher than _Py_MAX_UNICODE
        possibly valid. */
     return 1;
 #endif
@@ -128,13 +129,15 @@ is_valid_wide_char(wchar_t ch)
         // Reject lone surrogate characters
         return 0;
     }
-    if (ch > MAX_UNICODE) {
+#if SIZEOF_WCHAR_T > 2
+    if (ch > _Py_MAX_UNICODE) {
         // bpo-35883: Reject characters outside [U+0000; U+10ffff] range.
         // The glibc mbstowcs() UTF-8 decoder does not respect the RFC 3629,
         // it creates characters outside the [U+0000; U+10ffff] range:
         // https://sourceware.org/bugzilla/show_bug.cgi?id=2373
         return 0;
     }
+#endif
     return 1;
 }
 
@@ -175,7 +178,7 @@ _Py_mbrtowc(wchar_t *pwc, const char *str, size_t len, mbstate_t *pmbs)
 
 #define USE_FORCE_ASCII
 
-extern int _Py_normalize_encoding(const char *, char *, size_t);
+extern int _Py_normalize_encoding(const char *, char *, size_t, int);
 
 /* Workaround FreeBSD and OpenIndiana locale encoding issue with the C locale
    and POSIX locale. nl_langinfo(CODESET) announces an alias of the
@@ -226,7 +229,7 @@ check_force_ascii(void)
     }
 
     char encoding[20];   /* longest name: "iso_646.irv_1991\0" */
-    if (!_Py_normalize_encoding(codeset, encoding, sizeof(encoding))) {
+    if (!_Py_normalize_encoding(codeset, encoding, sizeof(encoding), 1)) {
         goto error;
     }
 
@@ -523,15 +526,7 @@ decode_current_locale(const char* arg, wchar_t **wstr, size_t *wlen,
             break;
         }
 
-        if (converted == INCOMPLETE_CHARACTER) {
-            /* Incomplete character. This should never happen,
-               since we provide everything that we have -
-               unless there is a bug in the C library, or I
-               misunderstood how mbrtowc works. */
-            goto decode_error;
-        }
-
-        if (converted == DECODE_ERROR) {
+        if (converted == DECODE_ERROR || converted == INCOMPLETE_CHARACTER) {
             if (!surrogateescape) {
                 goto decode_error;
             }
@@ -1108,50 +1103,41 @@ typedef union {
 
 
 void
-_Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag,
+_Py_attribute_data_to_stat(FILE_STANDARD_INFO* standard_info, ULONG reparse_tag,
                            FILE_BASIC_INFO *basic_info, FILE_ID_INFO *id_info,
                            struct _Py_stat_struct *result)
 {
     memset(result, 0, sizeof(*result));
-    result->st_mode = attributes_to_mode(info->dwFileAttributes);
-    result->st_size = (((__int64)info->nFileSizeHigh)<<32) + info->nFileSizeLow;
-    result->st_dev = id_info ? id_info->VolumeSerialNumber : info->dwVolumeSerialNumber;
-    result->st_rdev = 0;
+
+    result->st_size = standard_info->EndOfFile.QuadPart;
+    result->st_nlink = standard_info->NumberOfLinks;
+
     /* st_ctime is deprecated, but we preserve the legacy value in our caller, not here */
-    if (basic_info) {
-        LARGE_INTEGER_to_time_t_nsec(&basic_info->CreationTime, &result->st_birthtime, &result->st_birthtime_nsec);
-        LARGE_INTEGER_to_time_t_nsec(&basic_info->ChangeTime, &result->st_ctime, &result->st_ctime_nsec);
-        LARGE_INTEGER_to_time_t_nsec(&basic_info->LastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
-        LARGE_INTEGER_to_time_t_nsec(&basic_info->LastAccessTime, &result->st_atime, &result->st_atime_nsec);
-    } else {
-        FILE_TIME_to_time_t_nsec(&info->ftCreationTime, &result->st_birthtime, &result->st_birthtime_nsec);
-        FILE_TIME_to_time_t_nsec(&info->ftLastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
-        FILE_TIME_to_time_t_nsec(&info->ftLastAccessTime, &result->st_atime, &result->st_atime_nsec);
-    }
-    result->st_nlink = info->nNumberOfLinks;
+    LARGE_INTEGER_to_time_t_nsec(&basic_info->CreationTime, &result->st_birthtime, &result->st_birthtime_nsec);
+    LARGE_INTEGER_to_time_t_nsec(&basic_info->ChangeTime, &result->st_ctime, &result->st_ctime_nsec);
+    LARGE_INTEGER_to_time_t_nsec(&basic_info->LastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
+    LARGE_INTEGER_to_time_t_nsec(&basic_info->LastAccessTime, &result->st_atime, &result->st_atime_nsec);
 
     if (id_info) {
+        result->st_dev = id_info->VolumeSerialNumber;
         id_128_to_ino file_id;
         file_id.id = id_info->FileId;
         result->st_ino = file_id.st_ino;
         result->st_ino_high = file_id.st_ino_high;
     }
-    if (!result->st_ino && !result->st_ino_high) {
-        /* should only occur for DirEntry_from_find_data, in which case the
-           index is likely to be zero anyway. */
-        result->st_ino = (((uint64_t)info->nFileIndexHigh) << 32) + info->nFileIndexLow;
-    }
+
+    result->st_file_attributes = basic_info->FileAttributes;
+    result->st_mode = attributes_to_mode(result->st_file_attributes);
 
     /* bpo-37834: Only actual symlinks set the S_IFLNK flag. But lstat() will
        open other name surrogate reparse points without traversing them. To
        detect/handle these, check st_file_attributes and st_reparse_tag. */
     result->st_reparse_tag = reparse_tag;
-    if (info->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
+    if (result->st_file_attributes & FILE_ATTRIBUTE_REPARSE_POINT &&
         reparse_tag == IO_REPARSE_TAG_SYMLINK) {
         /* set the bits that make this a symlink */
         result->st_mode = (result->st_mode & ~S_IFMT) | S_IFLNK;
     }
-    result->st_file_attributes = info->dwFileAttributes;
 }
 
 void
@@ -1236,9 +1222,9 @@ int
 _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
 {
 #ifdef MS_WINDOWS
-    BY_HANDLE_FILE_INFORMATION info;
-    FILE_BASIC_INFO basicInfo;
-    FILE_ID_INFO idInfo;
+    FILE_STANDARD_INFO standardInfo = {0};
+    FILE_BASIC_INFO basicInfo = {0};
+    FILE_ID_INFO idInfo = {0};
     FILE_ID_INFO *pIdInfo = &idInfo;
     HANDLE h;
     int type;
@@ -1271,7 +1257,7 @@ _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
         return 0;
     }
 
-    if (!GetFileInformationByHandle(h, &info) ||
+    if (!GetFileInformationByHandleEx(h,FileStandardInfo, &standardInfo, sizeof(standardInfo)) ||
         !GetFileInformationByHandleEx(h, FileBasicInfo, &basicInfo, sizeof(basicInfo))) {
         /* The Win32 error is already set, but we also set errno for
            callers who expect it */
@@ -1284,7 +1270,7 @@ _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
         pIdInfo = NULL;
     }
 
-    _Py_attribute_data_to_stat(&info, 0, &basicInfo, pIdInfo, status);
+    _Py_attribute_data_to_stat(&standardInfo, 0, &basicInfo, pIdInfo, status);
     return 0;
 #else
     return fstat(fd, status);
@@ -1311,7 +1297,7 @@ _Py_fstat(int fd, struct _Py_stat_struct *status)
 {
     int res;
 
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
 
     Py_BEGIN_ALLOW_THREADS
     res = _Py_fstat_noraise(fd, status);
@@ -1373,22 +1359,21 @@ _Py_stat(PyObject *path, struct stat *statbuf)
     PyMem_Free(wpath);
     return err;
 #else
-    int ret;
-    PyObject *bytes;
-    char *cpath;
-
-    bytes = PyUnicode_EncodeFSDefault(path);
-    if (bytes == NULL)
+    PyObject *bytes = PyUnicode_EncodeFSDefault(path);
+    if (bytes == NULL) {
         return -2;
+    }
 
     /* check for embedded null bytes */
+    char *cpath;
     if (PyBytes_AsStringAndSize(bytes, &cpath, NULL) == -1) {
         Py_DECREF(bytes);
         return -2;
     }
 
-    ret = stat(cpath, statbuf);
+    int ret = stat(cpath, statbuf);
     Py_DECREF(bytes);
+    assert(ret == 0 || ret == -1);
     return ret;
 #endif
 }
@@ -1468,14 +1453,14 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
     assert(!(atomic_flag_works != NULL && inheritable));
 
     if (atomic_flag_works != NULL && !inheritable) {
-        if (*atomic_flag_works == -1) {
+        if (_Py_atomic_load_int_relaxed(atomic_flag_works) == -1) {
             int isInheritable = get_inheritable(fd, raise);
             if (isInheritable == -1)
                 return -1;
-            *atomic_flag_works = !isInheritable;
+            _Py_atomic_store_int_relaxed(atomic_flag_works, !isInheritable);
         }
 
-        if (*atomic_flag_works)
+        if (_Py_atomic_load_int_relaxed(atomic_flag_works))
             return 0;
     }
 
@@ -1691,7 +1676,7 @@ int
 _Py_open(const char *pathname, int flags)
 {
     /* _Py_open() must be called with the GIL held. */
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
     return _Py_open_impl(pathname, flags, 1);
 }
 
@@ -1748,8 +1733,10 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
 }
 
 
-/* Open a file. Call _wfopen() on Windows, or encode the path to the filesystem
-   encoding and call fopen() otherwise.
+/* Open a file.
+
+   On Windows, if 'path' is a Unicode string, call _wfopen(). Otherwise, encode
+   the path to the filesystem encoding and call fopen().
 
    Return the new file object on success. Raise an exception and return NULL
    on error.
@@ -1762,32 +1749,32 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
    Release the GIL to call _wfopen() or fopen(). The caller must hold
    the GIL. */
 FILE*
-_Py_fopen_obj(PyObject *path, const char *mode)
+Py_fopen(PyObject *path, const char *mode)
 {
-    FILE *f;
-    int async_err = 0;
-#ifdef MS_WINDOWS
-    wchar_t wmode[10];
-    int usize;
-
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
 
     if (PySys_Audit("open", "Osi", path, mode, 0) < 0) {
         return NULL;
     }
-    if (!PyUnicode_Check(path)) {
-        PyErr_Format(PyExc_TypeError,
-                     "str file path expected under Windows, got %R",
-                     Py_TYPE(path));
+
+    FILE *f;
+    int async_err = 0;
+    int saved_errno;
+#ifdef MS_WINDOWS
+    PyObject *unicode;
+    if (!PyUnicode_FSDecoder(path, &unicode)) {
         return NULL;
     }
 
-    wchar_t *wpath = PyUnicode_AsWideCharString(path, NULL);
-    if (wpath == NULL)
+    wchar_t *wpath = PyUnicode_AsWideCharString(unicode, NULL);
+    Py_DECREF(unicode);
+    if (wpath == NULL) {
         return NULL;
+    }
 
-    usize = MultiByteToWideChar(CP_ACP, 0, mode, -1,
-                                wmode, Py_ARRAY_LENGTH(wmode));
+    wchar_t wmode[10];
+    int usize = MultiByteToWideChar(CP_ACP, 0, mode, -1,
+                                    wmode, Py_ARRAY_LENGTH(wmode));
     if (usize == 0) {
         PyErr_SetFromWindowsErr(0);
         PyMem_Free(wpath);
@@ -1796,26 +1783,20 @@ _Py_fopen_obj(PyObject *path, const char *mode)
 
     do {
         Py_BEGIN_ALLOW_THREADS
+        _Py_BEGIN_SUPPRESS_IPH
         f = _wfopen(wpath, wmode);
+        _Py_END_SUPPRESS_IPH
         Py_END_ALLOW_THREADS
     } while (f == NULL
              && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-    int saved_errno = errno;
+    saved_errno = errno;
     PyMem_Free(wpath);
 #else
     PyObject *bytes;
-    const char *path_bytes;
-
-    assert(PyGILState_Check());
-
-    if (!PyUnicode_FSConverter(path, &bytes))
-        return NULL;
-    path_bytes = PyBytes_AS_STRING(bytes);
-
-    if (PySys_Audit("open", "Osi", path, mode, 0) < 0) {
-        Py_DECREF(bytes);
+    if (!PyUnicode_FSConverter(path, &bytes)) {
         return NULL;
     }
+    const char *path_bytes = PyBytes_AS_STRING(bytes);
 
     do {
         Py_BEGIN_ALLOW_THREADS
@@ -1823,11 +1804,13 @@ _Py_fopen_obj(PyObject *path, const char *mode)
         Py_END_ALLOW_THREADS
     } while (f == NULL
              && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-    int saved_errno = errno;
+    saved_errno = errno;
     Py_DECREF(bytes);
 #endif
-    if (async_err)
+
+    if (async_err) {
         return NULL;
+    }
 
     if (f == NULL) {
         errno = saved_errno;
@@ -1841,6 +1824,19 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     }
     return f;
 }
+
+
+// Call fclose().
+//
+// On Windows, files opened by Py_fopen() in the Python DLL must be closed by
+// the Python DLL to use the same C runtime version. Otherwise, calling
+// fclose() directly can cause undefined behavior.
+int
+Py_fclose(FILE *file)
+{
+    return fclose(file);
+}
+
 
 /* Read count bytes from fd into buf.
 
@@ -1862,7 +1858,7 @@ _Py_read(int fd, void *buf, size_t count)
     int err;
     int async_err = 0;
 
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
 
     /* _Py_read() must not be called with an exception set, otherwise the
      * caller may think that read() was interrupted by a signal and the signal
@@ -2028,7 +2024,7 @@ _Py_write_impl(int fd, const void *buf, size_t count, int gil_held)
 Py_ssize_t
 _Py_write(int fd, const void *buf, size_t count)
 {
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
 
     /* _Py_write() must not be called with an exception set, otherwise the
      * caller may think that write() was interrupted by a signal and the signal
@@ -2112,7 +2108,6 @@ _Py_wrealpath(const wchar_t *path,
               wchar_t *resolved_path, size_t resolved_path_len)
 {
     char *cpath;
-    char cresolved_path[MAXPATHLEN];
     wchar_t *wresolved_path;
     char *res;
     size_t r;
@@ -2121,12 +2116,14 @@ _Py_wrealpath(const wchar_t *path,
         errno = EINVAL;
         return NULL;
     }
-    res = realpath(cpath, cresolved_path);
+    res = realpath(cpath, NULL);
     PyMem_RawFree(cpath);
     if (res == NULL)
         return NULL;
 
-    wresolved_path = Py_DecodeLocale(cresolved_path, &r);
+    wresolved_path = Py_DecodeLocale(res, &r);
+    free(res);
+
     if (wresolved_path == NULL) {
         errno = EINVAL;
         return NULL;
@@ -2506,37 +2503,38 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t *normsize)
 #endif
 #define SEP_OR_END(x) (IS_SEP(x) || IS_END(x))
 
-    if (p1[0] == L'.' && IS_SEP(&p1[1])) {
-        // Skip leading '.\'
-        path = &path[2];
-        while (IS_SEP(path)) {
-            path++;
-        }
-        p1 = p2 = minP2 = path;
-        lastC = SEP;
-    }
-    else {
-        Py_ssize_t drvsize, rootsize;
-        _Py_skiproot(path, size, &drvsize, &rootsize);
-        if (drvsize || rootsize) {
-            // Skip past root and update minP2
-            p1 = &path[drvsize + rootsize];
+    Py_ssize_t drvsize, rootsize;
+    _Py_skiproot(path, size, &drvsize, &rootsize);
+    if (drvsize || rootsize) {
+        // Skip past root and update minP2
+        p1 = &path[drvsize + rootsize];
 #ifndef ALTSEP
-            p2 = p1;
+        p2 = p1;
 #else
-            for (; p2 < p1; ++p2) {
-                if (*p2 == ALTSEP) {
-                    *p2 = SEP;
-                }
+        for (; p2 < p1; ++p2) {
+            if (*p2 == ALTSEP) {
+                *p2 = SEP;
             }
+        }
 #endif
-            minP2 = p2 - 1;
-            lastC = *minP2;
+        minP2 = p2 - 1;
+        lastC = *minP2;
 #ifdef MS_WINDOWS
-            if (lastC != SEP) {
-                minP2++;
-            }
+        if (lastC != SEP) {
+            minP2++;
+        }
 #endif
+    }
+    if (p1[0] == L'.' && SEP_OR_END(&p1[1])) {
+        // Skip leading '.\'
+        lastC = *++p1;
+#ifdef ALTSEP
+        if (lastC == ALTSEP) {
+            lastC = SEP;
+        }
+#endif
+        while (IS_SEP(p1)) {
+            p1++;
         }
     }
 
@@ -2655,7 +2653,7 @@ _Py_dup(int fd)
     HANDLE handle;
 #endif
 
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
 
 #ifdef MS_WINDOWS
     handle = _Py_get_osfhandle(fd);
@@ -2775,6 +2773,43 @@ error:
     return -1;
 }
 #else   /* MS_WINDOWS */
+
+// The Windows Games API family doesn't expose GetNamedPipeHandleStateW so attempt
+// to load it directly from the Kernel32.dll
+#if !defined(MS_WINDOWS_APP) && !defined(MS_WINDOWS_SYSTEM)
+BOOL
+GetNamedPipeHandleStateW(HANDLE hNamedPipe, LPDWORD lpState, LPDWORD lpCurInstances, LPDWORD lpMaxCollectionCount,
+                         LPDWORD lpCollectDataTimeout, LPWSTR lpUserName, DWORD nMaxUserNameSize)
+{
+    static int initialized = 0;
+    typedef BOOL(__stdcall* PGetNamedPipeHandleStateW) (
+        HANDLE hNamedPipe, LPDWORD lpState, LPDWORD lpCurInstances, LPDWORD lpMaxCollectionCount,
+        LPDWORD lpCollectDataTimeout, LPWSTR lpUserName, DWORD nMaxUserNameSize);
+    static PGetNamedPipeHandleStateW _GetNamedPipeHandleStateW;
+
+    if (initialized == 0) {
+        HMODULE api = LoadLibraryExW(L"Kernel32.dll", NULL, LOAD_LIBRARY_SEARCH_SYSTEM32);
+        if (api) {
+            _GetNamedPipeHandleStateW = (PGetNamedPipeHandleStateW)GetProcAddress(
+                api, "GetNamedPipeHandleStateW");
+        }
+        else {
+            _GetNamedPipeHandleStateW = NULL;
+        }
+        initialized = 1;
+    }
+
+    if (!_GetNamedPipeHandleStateW) {
+        SetLastError(E_NOINTERFACE);
+        return FALSE;
+    }
+
+    return _GetNamedPipeHandleStateW(
+        hNamedPipe, lpState, lpCurInstances, lpMaxCollectionCount, lpCollectDataTimeout, lpUserName, nMaxUserNameSize
+    );
+}
+#endif /* !MS_WINDOWS_APP && !MS_WINDOWS_SYSTEM */
+
 int
 _Py_get_blocking(int fd)
 {

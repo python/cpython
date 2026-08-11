@@ -1,8 +1,6 @@
 #ifndef Py_INTERNAL_MODSUPPORT_H
 #define Py_INTERNAL_MODSUPPORT_H
 
-#include "pycore_lock.h"    // _PyOnceFlag
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -29,9 +27,8 @@ PyAPI_FUNC(int) _PyArg_NoKeywords(const char *funcname, PyObject *kwargs);
 // Export for 'zlib' shared extension
 PyAPI_FUNC(int) _PyArg_CheckPositional(const char *, Py_ssize_t,
                                        Py_ssize_t, Py_ssize_t);
-#define _Py_ANY_VARARGS(n) ((n) == PY_SSIZE_T_MAX)
 #define _PyArg_CheckPositional(funcname, nargs, min, max) \
-    ((!_Py_ANY_VARARGS(max) && (min) <= (nargs) && (nargs) <= (max)) \
+    (((min) <= (nargs) && (nargs) <= (max)) \
      || _PyArg_CheckPositional((funcname), (nargs), (min), (max)))
 
 extern PyObject ** _Py_VaBuildStack(
@@ -85,20 +82,14 @@ PyAPI_FUNC(PyObject * const *) _PyArg_UnpackKeywords(
     int minpos,
     int maxpos,
     int minkw,
+    int varpos,
     PyObject **buf);
-#define _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, parser, minpos, maxpos, minkw, buf) \
+#define _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, parser, minpos, maxpos, minkw, varpos, buf) \
     (((minkw) == 0 && (kwargs) == NULL && (kwnames) == NULL && \
-      (minpos) <= (nargs) && (nargs) <= (maxpos) && (args) != NULL) ? (args) : \
+      (minpos) <= (nargs) && ((varpos) || (nargs) <= (maxpos)) && (args) != NULL) ? \
+      (args) : \
      _PyArg_UnpackKeywords((args), (nargs), (kwargs), (kwnames), (parser), \
-                           (minpos), (maxpos), (minkw), (buf)))
-
-// Export for '_testclinic' shared extension
-PyAPI_FUNC(PyObject * const *) _PyArg_UnpackKeywordsWithVararg(
-        PyObject *const *args, Py_ssize_t nargs,
-        PyObject *kwargs, PyObject *kwnames,
-        struct _PyArg_Parser *parser,
-        int minpos, int maxpos, int minkw,
-        int vararg, PyObject **buf);
+                           (minpos), (maxpos), (minkw), (varpos), (buf)))
 
 #ifdef __cplusplus
 }

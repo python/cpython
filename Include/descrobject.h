@@ -80,10 +80,14 @@ struct PyMemberDef {
 #define _Py_T_NONE     20 // Deprecated. Value is always None.
 
 /* Flags */
-#define Py_READONLY            1
-#define Py_AUDIT_READ          2 // Added in 3.10, harmless no-op before that
-#define _Py_WRITE_RESTRICTED   4 // Deprecated, no-op. Do not reuse the value.
-#define Py_RELATIVE_OFFSET     8
+#define Py_READONLY            (1 << 0)
+#define Py_AUDIT_READ          (1 << 1) // Added in 3.10, harmless no-op before that
+#define _Py_WRITE_RESTRICTED   (1 << 2) // Deprecated, no-op. Do not reuse the value.
+#define Py_RELATIVE_OFFSET     (1 << 3)
+
+#ifndef Py_LIMITED_API
+#  define _Py_AFTER_ITEMS      (1 << 4) // For internal use.
+#endif
 
 PyAPI_FUNC(PyObject *) PyMember_GetOne(const char *, PyMemberDef *);
 PyAPI_FUNC(int) PyMember_SetOne(char *, PyMemberDef *, PyObject *);

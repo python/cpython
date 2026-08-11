@@ -30,7 +30,7 @@ LimitedVectorCallClass_vectorcall(PyObject *callable,
 }
 
 static PyObject *
-LimitedVectorCallClass_new(PyTypeObject *tp, PyTypeObject *a, PyTypeObject *kw)
+LimitedVectorCallClass_new(PyTypeObject *tp, PyObject *a, PyObject *kw)
 {
     PyObject *self = ((allocfunc)PyType_GetSlot(tp, Py_tp_alloc))(tp, 0);
     if (!self) {
@@ -182,7 +182,7 @@ typedef struct {
 } LimitedRelativeVectorCallStruct;
 
 static PyObject *
-LimitedRelativeVectorCallClass_new(PyTypeObject *tp, PyTypeObject *a, PyTypeObject *kw)
+LimitedRelativeVectorCallClass_new(PyTypeObject *tp, PyObject *a, PyObject *kw)
 {
     PyObject *self = ((allocfunc)PyType_GetSlot(tp, Py_tp_alloc))(tp, 0);
     if (!self) {
