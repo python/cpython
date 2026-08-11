@@ -1,13 +1,15 @@
 import logging
 import sys
+import textwrap
 
-from c_common.fsutil import expand_filenames, iter_files_by_suffix
 from c_common.scriptutil import (
+    VERBOSITY,
     add_verbosity_cli,
     add_traceback_cli,
     add_commands_cli,
     add_kind_filtering_cli,
     add_files_cli,
+    add_progress_cli,
     process_args_by_key,
     configure_logger,
     get_prog,
@@ -17,17 +19,50 @@ import c_parser.__main__ as c_parser
 import c_analyzer.__main__ as c_analyzer
 import c_analyzer as _c_analyzer
 from c_analyzer.info import UNKNOWN
-from . import _analyzer, _parser, REPO_ROOT
+from . import _analyzer, _builtin_types, _capi, _files, _parser, REPO_ROOT
 
 
 logger = logging.getLogger(__name__)
 
 
+CHECK_EXPLANATION = textwrap.dedent('''
+    -------------------------
+
+    Non-constant global variables are generally not supported
+    in the CPython repo.  We use a tool to analyze the C code
+    and report if any unsupported globals are found.  The tool
+    may be run manually with:
+
+      ./python Tools/c-analyzer/check-c-globals.py --format summary [FILE]
+
+    Occasionally the tool is unable to parse updated code.
+    If this happens then add the file to the "EXCLUDED" list
+    in Tools/c-analyzer/cpython/_parser.py and create a new
+    issue for fixing the tool (and CC ericsnowcurrently
+    on the issue).
+
+    If the tool reports an unsupported global variable and
+    it is actually const (and thus supported) then first try
+    fixing the declaration appropriately in the code.  If that
+    doesn't work then add the variable to the "should be const"
+    section of Tools/c-analyzer/cpython/ignored.tsv.
+
+    If the tool otherwise reports an unsupported global variable
+    then first try to make it non-global, possibly adding to
+    PyInterpreterState (for core code) or module state (for
+    extension modules).  In an emergency, you can add the
+    variable to Tools/c-analyzer/cpython/globals-to-fix.tsv
+    to get CI passing, but doing so should be avoided.  If
+    this course it taken, be sure to create an issue for
+    eliminating the global (and CC ericsnowcurrently).
+''')
+
+
 def _resolve_filenames(filenames):
     if filenames:
-        resolved = (_parser.resolve_filename(f) for f in filenames)
+        resolved = (_files.resolve_filename(f) for f in filenames)
     else:
-        resolved = _parser.iter_filenames()
+        resolved = _files.iter_filenames()
     return resolved
 
 
@@ -108,6 +143,7 @@ def cmd_parse(filenames=None, **kwargs):
     c_parser.cmd_parse(
         filenames,
         relroot=REPO_ROOT,
+        file_maxsizes=_parser.MAX_SIZES,
         **kwargs
     )
 
@@ -119,13 +155,26 @@ def _cli_check(parser, **kwargs):
 def cmd_check(filenames=None, **kwargs):
     filenames = _resolve_filenames(filenames)
     kwargs['get_file_preprocessor'] = _parser.get_preprocessor(log_err=print)
-    c_analyzer.cmd_check(
-        filenames,
-        relroot=REPO_ROOT,
-        _analyze=_analyzer.analyze,
-        _CHECKS=CHECKS,
-        **kwargs
-    )
+    try:
+        c_analyzer.cmd_check(
+            filenames,
+            relroot=REPO_ROOT,
+            _analyze=_analyzer.analyze,
+            _CHECKS=CHECKS,
+            file_maxsizes=_parser.MAX_SIZES,
+            **kwargs
+        )
+    except SystemExit as exc:
+        num_failed = exc.args[0] if getattr(exc, 'args', None) else None
+        if isinstance(num_failed, int):
+            if num_failed > 0:
+                sys.stderr.flush()
+                print(CHECK_EXPLANATION, flush=True)
+        raise  # re-raise
+    except Exception:
+        sys.stderr.flush()
+        print(CHECK_EXPLANATION, flush=True)
+        raise  # re-raise
 
 
 def cmd_analyze(filenames=None, **kwargs):
@@ -138,6 +187,7 @@ def cmd_analyze(filenames=None, **kwargs):
         relroot=REPO_ROOT,
         _analyze=_analyzer.analyze,
         formats=formats,
+        file_maxsizes=_parser.MAX_SIZES,
         **kwargs
     )
 
@@ -204,6 +254,162 @@ def cmd_data(datacmd, **kwargs):
     )
 
 
+def _cli_capi(parser):
+    parser.add_argument('--levels', action='append', metavar='LEVEL[,...]')
+    parser.add_argument(f'--public', dest='levels',
+                        action='append_const', const='public')
+    parser.add_argument(f'--no-public', dest='levels',
+                        action='append_const', const='no-public')
+    for level in _capi.LEVELS:
+        parser.add_argument(f'--{level}', dest='levels',
+                            action='append_const', const=level)
+    def process_levels(args, *, argv=None):
+        levels = []
+        for raw in args.levels or ():
+            for level in raw.replace(',', ' ').strip().split():
+                if level == 'public':
+                    levels.append('stable')
+                    levels.append('cpython')
+                elif level == 'no-public':
+                    levels.append('private')
+                    levels.append('internal')
+                elif level in _capi.LEVELS:
+                    levels.append(level)
+                else:
+                    parser.error(f'expected LEVEL to be one of {sorted(_capi.LEVELS)}, got {level!r}')
+        args.levels = set(levels)
+
+    parser.add_argument('--kinds', action='append', metavar='KIND[,...]')
+    for kind in _capi.KINDS:
+        parser.add_argument(f'--{kind}', dest='kinds',
+                            action='append_const', const=kind)
+    def process_kinds(args, *, argv=None):
+        kinds = []
+        for raw in args.kinds or ():
+            for kind in raw.replace(',', ' ').strip().split():
+                if kind in _capi.KINDS:
+                    kinds.append(kind)
+                else:
+                    parser.error(f'expected KIND to be one of {sorted(_capi.KINDS)}, got {kind!r}')
+        args.kinds = set(kinds)
+
+    parser.add_argument('--group-by', dest='groupby',
+                        choices=['level', 'kind'])
+
+    parser.add_argument('--format', default='table')
+    parser.add_argument('--summary', dest='format',
+                        action='store_const', const='summary')
+    def process_format(args, *, argv=None):
+        orig = args.format
+        args.format = _capi.resolve_format(args.format)
+        if isinstance(args.format, str):
+            if args.format not in _capi._FORMATS:
+                parser.error(f'unsupported format {orig!r}')
+
+    parser.add_argument('--show-empty', dest='showempty', action='store_true')
+    parser.add_argument('--no-show-empty', dest='showempty', action='store_false')
+    parser.set_defaults(showempty=None)
+
+    # XXX Add --sort-by, --sort and --no-sort.
+
+    parser.add_argument('--ignore', dest='ignored', action='append')
+    def process_ignored(args, *, argv=None):
+        ignored = []
+        for raw in args.ignored or ():
+            ignored.extend(raw.replace(',', ' ').strip().split())
+        args.ignored = ignored or None
+
+    parser.add_argument('filenames', nargs='*', metavar='FILENAME')
+    process_progress = add_progress_cli(parser)
+
+    return [
+        process_levels,
+        process_kinds,
+        process_format,
+        process_ignored,
+        process_progress,
+    ]
+
+
+def cmd_capi(filenames=None, *,
+             levels=None,
+             kinds=None,
+             groupby='kind',
+             format='table',
+             showempty=None,
+             ignored=None,
+             track_progress=None,
+             verbosity=VERBOSITY,
+             **kwargs
+             ):
+    render = _capi.get_renderer(format)
+
+    filenames = _files.iter_header_files(filenames, levels=levels)
+    #filenames = (file for file, _ in main_for_filenames(filenames))
+    if track_progress:
+        filenames = track_progress(filenames)
+    items = _capi.iter_capi(filenames)
+    if levels:
+        items = (item for item in items if item.level in levels)
+    if kinds:
+        items = (item for item in items if item.kind in kinds)
+
+    filter = _capi.resolve_filter(ignored)
+    if filter:
+        items = (item for item in items if filter(item, log=lambda msg: logger.log(1, msg)))
+
+    lines = render(
+        items,
+        groupby=groupby,
+        showempty=showempty,
+        verbose=verbosity > VERBOSITY,
+    )
+    print()
+    for line in lines:
+        print(line)
+
+
+def _cli_builtin_types(parser):
+    parser.add_argument('--format', dest='fmt', default='table')
+#    parser.add_argument('--summary', dest='format',
+#                        action='store_const', const='summary')
+    def process_format(args, *, argv=None):
+        orig = args.fmt
+        args.fmt = _builtin_types.resolve_format(args.fmt)
+        if isinstance(args.fmt, str):
+            if args.fmt not in _builtin_types._FORMATS:
+                parser.error(f'unsupported format {orig!r}')
+
+    parser.add_argument('--include-modules', dest='showmodules',
+                        action='store_true')
+    def process_modules(args, *, argv=None):
+        pass
+
+    return [
+        process_format,
+        process_modules,
+    ]
+
+
+def cmd_builtin_types(fmt, *,
+                      showmodules=False,
+                      verbosity=VERBOSITY,
+                      ):
+    render = _builtin_types.get_renderer(fmt)
+    types = _builtin_types.iter_builtin_types()
+    match = _builtin_types.resolve_matcher(showmodules)
+    if match:
+        types = (t for t in types if match(t, log=lambda msg: logger.log(1, msg)))
+
+    lines = render(
+        types,
+#        verbose=verbosity > VERBOSITY,
+    )
+    print()
+    for line in lines:
+        print(line)
+
+
 # We do not define any other cmd_*() handlers here,
 # favoring those defined elsewhere.
 
@@ -224,9 +430,19 @@ COMMANDS = {
         cmd_parse,
     ),
     'data': (
-        'check/manage local data (e.g. knwon types, ignored vars, caches)',
+        'check/manage local data (e.g. known types, ignored vars, caches)',
         [_cli_data],
         cmd_data,
+    ),
+    'capi': (
+        'inspect the C-API',
+        [_cli_capi],
+        cmd_capi,
+    ),
+    'builtin-types': (
+        'show the builtin types',
+        [_cli_builtin_types],
+        cmd_builtin_types,
     ),
 }
 
@@ -263,6 +479,7 @@ def parse_args(argv=sys.argv[1:], prog=None, *, subset=None):
 
     verbosity, traceback_cm = process_args_by_key(
         args,
+        argv,
         processors[cmd],
         ['verbosity', 'traceback_cm'],
     )

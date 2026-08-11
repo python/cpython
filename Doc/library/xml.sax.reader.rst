@@ -1,11 +1,8 @@
-:mod:`xml.sax.xmlreader` --- Interface for XML parsers
-======================================================
+:mod:`!xml.sax.xmlreader` --- Interface for XML parsers
+=======================================================
 
 .. module:: xml.sax.xmlreader
    :synopsis: Interface which SAX-compliant XML parsers must implement.
-
-.. moduleauthor:: Lars Marius Garshol <larsga@garshol.priv.no>
-.. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
 
 **Source code:** :source:`Lib/xml/sax/xmlreader.py`
 

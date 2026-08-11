@@ -1,2 +1,0 @@
-``zipfile.Path.joinpath`` now accepts arbitrary arguments, same as
-``pathlib.Path.joinpath``.

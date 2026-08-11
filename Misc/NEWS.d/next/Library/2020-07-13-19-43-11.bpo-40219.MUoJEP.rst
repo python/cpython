@@ -1,1 +1,0 @@
-Lowered :class:`tkinter.ttk.LabeledScale` dummy widget to prevent hiding part of the content label.

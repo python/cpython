@@ -1,1 +1,0 @@
-StrEnum: fix _generate_next_value_ to return a str

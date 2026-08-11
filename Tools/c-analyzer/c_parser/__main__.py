@@ -1,10 +1,7 @@
 import logging
-import os.path
 import sys
 
-from c_common import fsutil
 from c_common.scriptutil import (
-    CLIArgSpec as Arg,
     add_verbosity_cli,
     add_traceback_cli,
     add_kind_filtering_cli,
@@ -15,7 +12,6 @@ from c_common.scriptutil import (
     get_prog,
     main_for_filenames,
 )
-from .preprocessor import get_preprocessor
 from .preprocessor.__main__ import (
     add_common_cli as add_preprocessor_cli,
 )
@@ -149,7 +145,7 @@ def add_output_cli(parser):
     parser.add_argument('--showfwd', action='store_true', default=None)
     parser.add_argument('--no-showfwd', dest='showfwd', action='store_false', default=None)
 
-    def process_args(args):
+    def process_args(args, *, argv=None):
         pass
     return process_args
 
@@ -243,6 +239,7 @@ def parse_args(argv=sys.argv[1:], prog=sys.argv[0], *, subset='parse'):
 
     verbosity, traceback_cm = process_args_by_key(
         args,
+        argv,
         processors[cmd],
         ['verbosity', 'traceback_cm'],
     )
