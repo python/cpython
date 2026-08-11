@@ -819,6 +819,13 @@ that may require changes to your code.
   :exc:`TypeError`.
   (Contributed by Serhiy Storchaka in :gh:`152587`.)
 
+* On Windows, seeking a pipe now fails instead of silently appearing to
+  succeed: :func:`os.lseek` and :meth:`~io.IOBase.seek` raise :exc:`OSError`,
+  and :meth:`~io.IOBase.seekable` returns ``False``.  As a consequence,
+  opening a pipe in a read-write binary mode (``'r+b'`` or ``'w+b'``) now
+  raises :exc:`io.UnsupportedOperation` unless buffering is disabled.
+  (Contributed by An Long in :gh:`86768`.)
+
 
 Build changes
 =============
