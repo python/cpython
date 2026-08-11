@@ -14,10 +14,11 @@ PyDoc_STRVAR(_multibytecodec_MultibyteCodec_encode__doc__,
 "\n"
 "Return an encoded string version of \'input\'.\n"
 "\n"
-"\'errors\' may be given to set a different error handling scheme. Default is\n"
-"\'strict\' meaning that encoding errors raise a UnicodeEncodeError. Other possible\n"
-"values are \'ignore\', \'replace\' and \'xmlcharrefreplace\' as well as any other name\n"
-"registered with codecs.register_error that can handle UnicodeEncodeErrors.");
+"\'errors\' may be given to set a different error handling scheme.\n"
+"Default is \'strict\' meaning that encoding errors raise\n"
+"a UnicodeEncodeError.  Other possible values are \'ignore\', \'replace\'\n"
+"and \'xmlcharrefreplace\' as well as any other name registered with\n"
+"codecs.register_error that can handle UnicodeEncodeErrors.");
 
 #define _MULTIBYTECODEC_MULTIBYTECODEC_ENCODE_METHODDEF    \
     {"encode", _PyCFunction_CAST(_multibytecodec_MultibyteCodec_encode), METH_FASTCALL|METH_KEYWORDS, _multibytecodec_MultibyteCodec_encode__doc__},
@@ -28,7 +29,7 @@ _multibytecodec_MultibyteCodec_encode_impl(MultibyteCodecObject *self,
                                            const char *errors);
 
 static PyObject *
-_multibytecodec_MultibyteCodec_encode(MultibyteCodecObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_multibytecodec_MultibyteCodec_encode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -37,9 +38,11 @@ _multibytecodec_MultibyteCodec_encode(MultibyteCodecObject *self, PyObject *cons
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(input), &_Py_ID(errors), },
     };
     #undef NUM_KEYWORDS
@@ -61,7 +64,8 @@ _multibytecodec_MultibyteCodec_encode(MultibyteCodecObject *self, PyObject *cons
     PyObject *input;
     const char *errors = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -88,7 +92,7 @@ _multibytecodec_MultibyteCodec_encode(MultibyteCodecObject *self, PyObject *cons
         goto exit;
     }
 skip_optional_pos:
-    return_value = _multibytecodec_MultibyteCodec_encode_impl(self, input, errors);
+    return_value = _multibytecodec_MultibyteCodec_encode_impl((MultibyteCodecObject *)self, input, errors);
 
 exit:
     return return_value;
@@ -100,9 +104,10 @@ PyDoc_STRVAR(_multibytecodec_MultibyteCodec_decode__doc__,
 "\n"
 "Decodes \'input\'.\n"
 "\n"
-"\'errors\' may be given to set a different error handling scheme. Default is\n"
-"\'strict\' meaning that encoding errors raise a UnicodeDecodeError. Other possible\n"
-"values are \'ignore\' and \'replace\' as well as any other name registered with\n"
+"\'errors\' may be given to set a different error handling scheme.\n"
+"Default is \'strict\' meaning that encoding errors raise\n"
+"a UnicodeDecodeError.  Other possible values are \'ignore\' and\n"
+"\'replace\' as well as any other name registered with\n"
 "codecs.register_error that is able to handle UnicodeDecodeErrors.\"");
 
 #define _MULTIBYTECODEC_MULTIBYTECODEC_DECODE_METHODDEF    \
@@ -114,7 +119,7 @@ _multibytecodec_MultibyteCodec_decode_impl(MultibyteCodecObject *self,
                                            const char *errors);
 
 static PyObject *
-_multibytecodec_MultibyteCodec_decode(MultibyteCodecObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_multibytecodec_MultibyteCodec_decode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -123,9 +128,11 @@ _multibytecodec_MultibyteCodec_decode(MultibyteCodecObject *self, PyObject *cons
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(input), &_Py_ID(errors), },
     };
     #undef NUM_KEYWORDS
@@ -147,7 +154,8 @@ _multibytecodec_MultibyteCodec_decode(MultibyteCodecObject *self, PyObject *cons
     Py_buffer input = {NULL, NULL};
     const char *errors = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -176,7 +184,7 @@ _multibytecodec_MultibyteCodec_decode(MultibyteCodecObject *self, PyObject *cons
         goto exit;
     }
 skip_optional_pos:
-    return_value = _multibytecodec_MultibyteCodec_decode_impl(self, &input, errors);
+    return_value = _multibytecodec_MultibyteCodec_decode_impl((MultibyteCodecObject *)self, &input, errors);
 
 exit:
     /* Cleanup for input */
@@ -201,7 +209,7 @@ _multibytecodec_MultibyteIncrementalEncoder_encode_impl(MultibyteIncrementalEnco
                                                         int final);
 
 static PyObject *
-_multibytecodec_MultibyteIncrementalEncoder_encode(MultibyteIncrementalEncoderObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_multibytecodec_MultibyteIncrementalEncoder_encode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -210,9 +218,11 @@ _multibytecodec_MultibyteIncrementalEncoder_encode(MultibyteIncrementalEncoderOb
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(input), &_Py_ID(final), },
     };
     #undef NUM_KEYWORDS
@@ -234,7 +244,8 @@ _multibytecodec_MultibyteIncrementalEncoder_encode(MultibyteIncrementalEncoderOb
     PyObject *input;
     int final = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -247,7 +258,7 @@ _multibytecodec_MultibyteIncrementalEncoder_encode(MultibyteIncrementalEncoderOb
         goto exit;
     }
 skip_optional_pos:
-    return_value = _multibytecodec_MultibyteIncrementalEncoder_encode_impl(self, input, final);
+    return_value = _multibytecodec_MultibyteIncrementalEncoder_encode_impl((MultibyteIncrementalEncoderObject *)self, input, final);
 
 exit:
     return return_value;
@@ -265,9 +276,9 @@ static PyObject *
 _multibytecodec_MultibyteIncrementalEncoder_getstate_impl(MultibyteIncrementalEncoderObject *self);
 
 static PyObject *
-_multibytecodec_MultibyteIncrementalEncoder_getstate(MultibyteIncrementalEncoderObject *self, PyObject *Py_UNUSED(ignored))
+_multibytecodec_MultibyteIncrementalEncoder_getstate(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multibytecodec_MultibyteIncrementalEncoder_getstate_impl(self);
+    return _multibytecodec_MultibyteIncrementalEncoder_getstate_impl((MultibyteIncrementalEncoderObject *)self);
 }
 
 PyDoc_STRVAR(_multibytecodec_MultibyteIncrementalEncoder_setstate__doc__,
@@ -283,7 +294,7 @@ _multibytecodec_MultibyteIncrementalEncoder_setstate_impl(MultibyteIncrementalEn
                                                           PyLongObject *statelong);
 
 static PyObject *
-_multibytecodec_MultibyteIncrementalEncoder_setstate(MultibyteIncrementalEncoderObject *self, PyObject *arg)
+_multibytecodec_MultibyteIncrementalEncoder_setstate(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyLongObject *statelong;
@@ -293,7 +304,7 @@ _multibytecodec_MultibyteIncrementalEncoder_setstate(MultibyteIncrementalEncoder
         goto exit;
     }
     statelong = (PyLongObject *)arg;
-    return_value = _multibytecodec_MultibyteIncrementalEncoder_setstate_impl(self, statelong);
+    return_value = _multibytecodec_MultibyteIncrementalEncoder_setstate_impl((MultibyteIncrementalEncoderObject *)self, statelong);
 
 exit:
     return return_value;
@@ -311,9 +322,9 @@ static PyObject *
 _multibytecodec_MultibyteIncrementalEncoder_reset_impl(MultibyteIncrementalEncoderObject *self);
 
 static PyObject *
-_multibytecodec_MultibyteIncrementalEncoder_reset(MultibyteIncrementalEncoderObject *self, PyObject *Py_UNUSED(ignored))
+_multibytecodec_MultibyteIncrementalEncoder_reset(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multibytecodec_MultibyteIncrementalEncoder_reset_impl(self);
+    return _multibytecodec_MultibyteIncrementalEncoder_reset_impl((MultibyteIncrementalEncoderObject *)self);
 }
 
 PyDoc_STRVAR(_multibytecodec_MultibyteIncrementalDecoder_decode__doc__,
@@ -330,7 +341,7 @@ _multibytecodec_MultibyteIncrementalDecoder_decode_impl(MultibyteIncrementalDeco
                                                         int final);
 
 static PyObject *
-_multibytecodec_MultibyteIncrementalDecoder_decode(MultibyteIncrementalDecoderObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_multibytecodec_MultibyteIncrementalDecoder_decode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -339,9 +350,11 @@ _multibytecodec_MultibyteIncrementalDecoder_decode(MultibyteIncrementalDecoderOb
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(input), &_Py_ID(final), },
     };
     #undef NUM_KEYWORDS
@@ -363,7 +376,8 @@ _multibytecodec_MultibyteIncrementalDecoder_decode(MultibyteIncrementalDecoderOb
     Py_buffer input = {NULL, NULL};
     int final = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -378,7 +392,7 @@ _multibytecodec_MultibyteIncrementalDecoder_decode(MultibyteIncrementalDecoderOb
         goto exit;
     }
 skip_optional_pos:
-    return_value = _multibytecodec_MultibyteIncrementalDecoder_decode_impl(self, &input, final);
+    return_value = _multibytecodec_MultibyteIncrementalDecoder_decode_impl((MultibyteIncrementalDecoderObject *)self, &input, final);
 
 exit:
     /* Cleanup for input */
@@ -401,9 +415,9 @@ static PyObject *
 _multibytecodec_MultibyteIncrementalDecoder_getstate_impl(MultibyteIncrementalDecoderObject *self);
 
 static PyObject *
-_multibytecodec_MultibyteIncrementalDecoder_getstate(MultibyteIncrementalDecoderObject *self, PyObject *Py_UNUSED(ignored))
+_multibytecodec_MultibyteIncrementalDecoder_getstate(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multibytecodec_MultibyteIncrementalDecoder_getstate_impl(self);
+    return _multibytecodec_MultibyteIncrementalDecoder_getstate_impl((MultibyteIncrementalDecoderObject *)self);
 }
 
 PyDoc_STRVAR(_multibytecodec_MultibyteIncrementalDecoder_setstate__doc__,
@@ -419,7 +433,7 @@ _multibytecodec_MultibyteIncrementalDecoder_setstate_impl(MultibyteIncrementalDe
                                                           PyObject *state);
 
 static PyObject *
-_multibytecodec_MultibyteIncrementalDecoder_setstate(MultibyteIncrementalDecoderObject *self, PyObject *arg)
+_multibytecodec_MultibyteIncrementalDecoder_setstate(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *state;
@@ -429,7 +443,7 @@ _multibytecodec_MultibyteIncrementalDecoder_setstate(MultibyteIncrementalDecoder
         goto exit;
     }
     state = arg;
-    return_value = _multibytecodec_MultibyteIncrementalDecoder_setstate_impl(self, state);
+    return_value = _multibytecodec_MultibyteIncrementalDecoder_setstate_impl((MultibyteIncrementalDecoderObject *)self, state);
 
 exit:
     return return_value;
@@ -447,9 +461,9 @@ static PyObject *
 _multibytecodec_MultibyteIncrementalDecoder_reset_impl(MultibyteIncrementalDecoderObject *self);
 
 static PyObject *
-_multibytecodec_MultibyteIncrementalDecoder_reset(MultibyteIncrementalDecoderObject *self, PyObject *Py_UNUSED(ignored))
+_multibytecodec_MultibyteIncrementalDecoder_reset(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multibytecodec_MultibyteIncrementalDecoder_reset_impl(self);
+    return _multibytecodec_MultibyteIncrementalDecoder_reset_impl((MultibyteIncrementalDecoderObject *)self);
 }
 
 PyDoc_STRVAR(_multibytecodec_MultibyteStreamReader_read__doc__,
@@ -465,7 +479,7 @@ _multibytecodec_MultibyteStreamReader_read_impl(MultibyteStreamReaderObject *sel
                                                 PyObject *sizeobj);
 
 static PyObject *
-_multibytecodec_MultibyteStreamReader_read(MultibyteStreamReaderObject *self, PyObject *const *args, Py_ssize_t nargs)
+_multibytecodec_MultibyteStreamReader_read(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *sizeobj = Py_None;
@@ -478,7 +492,7 @@ _multibytecodec_MultibyteStreamReader_read(MultibyteStreamReaderObject *self, Py
     }
     sizeobj = args[0];
 skip_optional:
-    return_value = _multibytecodec_MultibyteStreamReader_read_impl(self, sizeobj);
+    return_value = _multibytecodec_MultibyteStreamReader_read_impl((MultibyteStreamReaderObject *)self, sizeobj);
 
 exit:
     return return_value;
@@ -497,7 +511,7 @@ _multibytecodec_MultibyteStreamReader_readline_impl(MultibyteStreamReaderObject 
                                                     PyObject *sizeobj);
 
 static PyObject *
-_multibytecodec_MultibyteStreamReader_readline(MultibyteStreamReaderObject *self, PyObject *const *args, Py_ssize_t nargs)
+_multibytecodec_MultibyteStreamReader_readline(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *sizeobj = Py_None;
@@ -510,7 +524,7 @@ _multibytecodec_MultibyteStreamReader_readline(MultibyteStreamReaderObject *self
     }
     sizeobj = args[0];
 skip_optional:
-    return_value = _multibytecodec_MultibyteStreamReader_readline_impl(self, sizeobj);
+    return_value = _multibytecodec_MultibyteStreamReader_readline_impl((MultibyteStreamReaderObject *)self, sizeobj);
 
 exit:
     return return_value;
@@ -529,7 +543,7 @@ _multibytecodec_MultibyteStreamReader_readlines_impl(MultibyteStreamReaderObject
                                                      PyObject *sizehintobj);
 
 static PyObject *
-_multibytecodec_MultibyteStreamReader_readlines(MultibyteStreamReaderObject *self, PyObject *const *args, Py_ssize_t nargs)
+_multibytecodec_MultibyteStreamReader_readlines(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *sizehintobj = Py_None;
@@ -542,7 +556,7 @@ _multibytecodec_MultibyteStreamReader_readlines(MultibyteStreamReaderObject *sel
     }
     sizehintobj = args[0];
 skip_optional:
-    return_value = _multibytecodec_MultibyteStreamReader_readlines_impl(self, sizehintobj);
+    return_value = _multibytecodec_MultibyteStreamReader_readlines_impl((MultibyteStreamReaderObject *)self, sizehintobj);
 
 exit:
     return return_value;
@@ -560,9 +574,9 @@ static PyObject *
 _multibytecodec_MultibyteStreamReader_reset_impl(MultibyteStreamReaderObject *self);
 
 static PyObject *
-_multibytecodec_MultibyteStreamReader_reset(MultibyteStreamReaderObject *self, PyObject *Py_UNUSED(ignored))
+_multibytecodec_MultibyteStreamReader_reset(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multibytecodec_MultibyteStreamReader_reset_impl(self);
+    return _multibytecodec_MultibyteStreamReader_reset_impl((MultibyteStreamReaderObject *)self);
 }
 
 PyDoc_STRVAR(_multibytecodec_MultibyteStreamWriter_write__doc__,
@@ -579,7 +593,7 @@ _multibytecodec_MultibyteStreamWriter_write_impl(MultibyteStreamWriterObject *se
                                                  PyObject *strobj);
 
 static PyObject *
-_multibytecodec_MultibyteStreamWriter_write(MultibyteStreamWriterObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_multibytecodec_MultibyteStreamWriter_write(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -598,12 +612,13 @@ _multibytecodec_MultibyteStreamWriter_write(MultibyteStreamWriterObject *self, P
     PyObject *argsbuf[1];
     PyObject *strobj;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
     strobj = args[0];
-    return_value = _multibytecodec_MultibyteStreamWriter_write_impl(self, cls, strobj);
+    return_value = _multibytecodec_MultibyteStreamWriter_write_impl((MultibyteStreamWriterObject *)self, cls, strobj);
 
 exit:
     return return_value;
@@ -623,7 +638,7 @@ _multibytecodec_MultibyteStreamWriter_writelines_impl(MultibyteStreamWriterObjec
                                                       PyObject *lines);
 
 static PyObject *
-_multibytecodec_MultibyteStreamWriter_writelines(MultibyteStreamWriterObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_multibytecodec_MultibyteStreamWriter_writelines(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -642,12 +657,13 @@ _multibytecodec_MultibyteStreamWriter_writelines(MultibyteStreamWriterObject *se
     PyObject *argsbuf[1];
     PyObject *lines;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
     lines = args[0];
-    return_value = _multibytecodec_MultibyteStreamWriter_writelines_impl(self, cls, lines);
+    return_value = _multibytecodec_MultibyteStreamWriter_writelines_impl((MultibyteStreamWriterObject *)self, cls, lines);
 
 exit:
     return return_value;
@@ -666,13 +682,13 @@ _multibytecodec_MultibyteStreamWriter_reset_impl(MultibyteStreamWriterObject *se
                                                  PyTypeObject *cls);
 
 static PyObject *
-_multibytecodec_MultibyteStreamWriter_reset(MultibyteStreamWriterObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_multibytecodec_MultibyteStreamWriter_reset(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "reset() takes no arguments");
         return NULL;
     }
-    return _multibytecodec_MultibyteStreamWriter_reset_impl(self, cls);
+    return _multibytecodec_MultibyteStreamWriter_reset_impl((MultibyteStreamWriterObject *)self, cls);
 }
 
 PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
@@ -682,4 +698,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=f09052c5a28cc6e6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a84b1544d7d01abb input=a9049054013a1b77]*/

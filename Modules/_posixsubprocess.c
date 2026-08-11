@@ -4,9 +4,11 @@
 #endif
 
 #include "Python.h"
-#include "pycore_fileutils.h"
-#include "pycore_pystate.h"
+#include "pycore_fileutils.h"     // _Py_set_inheritable_async_safe()
+#include "pycore_interp.h"        // _PyInterpreterState_GetFinalizing()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_signal.h"        // _Py_RestoreSignals()
+
 #if defined(HAVE_PIPE2) && !defined(_GNU_SOURCE)
 #  define _GNU_SOURCE
 #endif
@@ -61,7 +63,7 @@
 # endif
 #endif
 
-#if defined(__FreeBSD__) || (defined(__APPLE__) && defined(__MACH__)) || defined(__DragonFly__)
+#if defined(__CYGWIN__) || defined(__FreeBSD__) || (defined(__APPLE__) && defined(__MACH__)) || defined(__DragonFly__)
 # define FD_DIR "/dev/fd"
 #else
 # define FD_DIR "/proc/self/fd"
@@ -512,7 +514,13 @@ _close_open_fds_maybe_unsafe(int start_fd, int *fds_to_keep,
         proc_fd_dir = NULL;
     else
 #endif
+#if defined(_AIX)
+        char fd_path[PATH_MAX];
+        snprintf(fd_path, sizeof(fd_path), "/proc/%ld/fd", (long)getpid());
+        proc_fd_dir = opendir(fd_path);
+#else
         proc_fd_dir = opendir(FD_DIR);
+#endif
     if (!proc_fd_dir) {
         /* No way to get a list of open fds. */
         _close_range_except(start_fd, -1, fds_to_keep, fds_to_keep_len,
@@ -628,7 +636,7 @@ reset_signal_handlers(const sigset_t *child_sigmask)
  * (v)fork to set things up and call exec().
  *
  * All of the code in this function must only use async-signal-safe functions,
- * listed at `man 7 signal` or
+ * listed at `man 7 signal-safety` or
  * http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_04.html.
  *
  * This restriction is documented at
@@ -977,20 +985,19 @@ _posixsubprocess.fork_exec as subprocess_fork_exec
     uid as uid_object: object
     child_umask: int
     preexec_fn: object
-    allow_vfork: bool
     /
 
 Spawn a fresh new child process.
 
-Fork a child process, close parent file descriptors as appropriate in the
-child and duplicate the few that are needed before calling exec() in the
-child process.
+Fork a child process, close parent file descriptors as appropriate in
+the child and duplicate the few that are needed before calling exec() in
+the child process.
 
-If close_fds is True, close file descriptors 3 and higher, except those listed
-in the sorted tuple pass_fds.
+If close_fds is True, close file descriptors 3 and higher, except those
+listed in the sorted tuple pass_fds.
 
-The preexec_fn, if supplied, will be called immediately before closing file
-descriptors and exec.
+The preexec_fn, if supplied, will be called immediately before closing
+file descriptors and exec.
 
 WARNING: preexec_fn is NOT SAFE if your application uses threads.
          It may trigger infrequent, difficult to debug deadlocks.
@@ -1014,8 +1021,8 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
                           pid_t pgid_to_set, PyObject *gid_object,
                           PyObject *extra_groups_packed,
                           PyObject *uid_object, int child_umask,
-                          PyObject *preexec_fn, int allow_vfork)
-/*[clinic end generated code: output=7ee4f6ee5cf22b5b input=51757287ef266ffa]*/
+                          PyObject *preexec_fn)
+/*[clinic end generated code: output=288464dc56e373c7 input=5e56eac3e036e349]*/
 {
     PyObject *converted_args = NULL, *fast_args = NULL;
     PyObject *preexec_fn_args_tuple = NULL;
@@ -1083,8 +1090,14 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
                 goto cleanup;
             }
             borrowed_arg = PySequence_Fast_GET_ITEM(fast_args, arg_num);
-            if (PyUnicode_FSConverter(borrowed_arg, &converted_arg) == 0)
+            /* borrowed_arg is only borrowed; its __fspath__() may run Python
+               that drops fast_args' last reference to it. */
+            Py_INCREF(borrowed_arg);
+            if (PyUnicode_FSConverter(borrowed_arg, &converted_arg) == 0) {
+                Py_DECREF(borrowed_arg);
                 goto cleanup;
+            }
+            Py_DECREF(borrowed_arg);
             PyTuple_SET_ITEM(converted_args, arg_num, converted_arg);
         }
 
@@ -1202,6 +1215,19 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
         goto cleanup;
     }
 
+    /* NOTE: user-defined classes may be able to present different
+     * executable/argument/env lists to the eventual exec as to this hook.
+     * The audit hook receives the original object, so would nevertheless
+     * be able to detect weird behaviour, hence we do not add extra
+     * complexity or performance penalties to attempt to avoid this. */
+    if (PySys_Audit("_posixsubprocess.fork_exec",
+                    "OOO",
+                    executable_list,
+                    process_args,
+                    env_list) < 0) {
+        goto cleanup;
+    }
+
     /* This must be the last thing done before fork() because we do not
      * want to call PyOS_BeforeFork() if there is any chance of another
      * error leading to the cleanup: code without calling fork(). */
@@ -1218,7 +1244,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
 #ifdef VFORK_USABLE
     /* Use vfork() only if it's safe. See the comment above child_exec(). */
     sigset_t old_sigs;
-    if (preexec_fn == Py_None && allow_vfork &&
+    if (preexec_fn == Py_None &&
         uid == (uid_t)-1 && gid == (gid_t)-1 && extra_group_size < 0) {
         /* Block all signals to ensure that no signal handlers are run in the
          * child process while it shares memory with us. Note that signals
@@ -1316,6 +1342,7 @@ static PyMethodDef module_methods[] = {
 };
 
 static PyModuleDef_Slot _posixsubprocess_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}

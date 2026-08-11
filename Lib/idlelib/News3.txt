@@ -1,8 +1,99 @@
-What's New in IDLE 3.13.0
-(since 3.12.0)
-Released on 2024-10-xx
+What's New in IDLE 3.15.0
+(since 3.14.0)
+Released on 2026-10-01
 =========================
 
+
+gh-152745:  When "Run... Customized" with "Restart shell" unchecked
+while Shell is running code, including waiting for an input('prompt:')
+response, just report that the shell is executing instead of
+reporting twice and restarting anyway.  Patch by Serhiy Storchaka.
+
+gh-152743: When an integer entry in IDLE's Settings dialog, such as
+"Auto squeeze min lines", is deleted, do not save '', which is an
+invalid configuration value.  Patch by Serhiy Storchaka.
+
+gh-152742: MakeChange the default extension when saving a Shell or
+Output window '.txt' and list text files before Python files.  Their
+content is not Python source. Patch by Serhiy Storchaka and Claude Code.
+
+gh-152740: Fill the "In files:" field of IDLE's Find in Files dialog
+with a full directory path, even for an unsaved editor or the Shell.
+In the grep output whow which directory was searched.  Patch by Serhiy
+Storchaka and Claude Code.
+
+gh-152739: Omit the idlelib directory from the path of the IDLE user
+process. User code imports such as `import help' can no longer import
+an idlelib submodule (here idlelib.help) instead of the intended
+top-level module.  Patch by Serhiy Storchaka and Claude Code.
+
+gh-152738: Fix a rare crash in the IDLE editor when the completion
+window is closed: deleting a key binding for a sequence that is not
+bound to the virtual event is now ignored instead of raising a
+ValueError. Patch by Serhiy Storchaka and Claude Code.
+
+gh-152737: Fix Replace All in the IDLE editor's Replace dialog when the
+search direction is "Up" and "Wrap around" is off: it now replaces all
+matches above the current position instead of only the first one.
+Patch by Serhiy Storchaka and Claude Code.
+
+gh-152733: For X11 window managers, set toplevel window classes to
+"Idle".  Patch by Serhiy Storchaka and Claude Code.
+
+gh-152728: Move functions run.fix_scaling, editor.fixwordbreaks
+(as 'fix_word_breaks') and pyshell.fix_x11_paste to module util.
+Patch by Terry J. Reedy.
+
+gh-85320: IDLE now reads and writes its configuration files and the
+breakpoints file using UTF-8 instead of the locale encoding.
+Files with non-ASCII characters and non-UTF-8 encoding may need
+to be opened in an editor and resaved with UTF-8 encoding.
+
+gh-143774: Better explain the operation of Format / Format Paragraph.
+Patch by Terry J. Reedy.
+
+gh-139742: Colorize t-string prefixes for template strings in IDLE,
+as done for f-string prefixes.  Patch by Anuradha Agrawal.
+
+What's New in IDLE 3.14.0
+(since 3.13.0)
+Released on 2025-10-07
+=========================
+
+gh-129873: Simplify displaying the IDLE doc by only copying the text
+section of idle.html to idlelib/help.html. Patch by Stan Ulbrych.
+
+gh-112936: IDLE - Include Shell menu in single-process mode,
+though with Restart Shell and View Last Restart disabled.
+Patch by Zhikang Yan.
+
+gh-112938: IDLE - Fix uninteruptable hang when Shell gets
+rapid continuous output.
+
+gh-127060: Set TERM environment variable to 'dumb' to not add ANSI escape
+sequences for text color in tracebacks. IDLE does not understand them.
+Patch by Victor Stinner.
+
+gh-122392: Increase currently inadequate vertical spacing for the IDLE
+browsers (path, module, and stack) on high-resolution monitors.
+
+
+What's New in IDLE 3.13.0
+(since 3.12.0)
+Released on 2024-10-07
+=========================
+
+gh-120104: Fix padding in config and search dialog windows in IDLE.
+
+gh-120083: Add explicit black IDLE Hovertip foreground color needed for
+recent macOS. Fixes Sonoma showing unreadable white on pale yellow.
+Patch by John Riggles.
+
+gh-122482: Change About IDLE to direct users to discuss.python.org
+instead of the now unused idle-dev email and mailing list.
+
+gh-78889: Stop Shell freezes by blocking user access to non-method
+sys.stdout.shell attributes, which are all private.
 
 gh-78955: Use user-selected color theme for Help => IDLE Doc.
 
@@ -568,14 +659,14 @@ bpo-33679: Enable theme-specific color configuration for Code Context.
 color setting, default or custom, on the extensions tab, that applied
 to all themes.)  For built-in themes, the foreground is the same as
 normal text and the background is a contrasting gray.  Context colors for
-custom themes are set on the Hightlights tab along with other colors.
+custom themes are set on the Highlights tab along with other colors.
 When one starts IDLE from a console and loads a custom theme without
 definitions for 'context', one will see a warning message on the
 console.
 
 bpo-33642: Display up to maxlines non-blank lines for Code Context.
 If there is no current context, show a single blank line.  (Previously,
-the Code Contex had numlines lines, usually with some blank.)  The use
+the Code Context had numlines lines, usually with some blank.)  The use
 of a new option, 'maxlines' (default 15), avoids possible interference
 with user settings of the old option, 'numlines' (default 3).
 
@@ -729,7 +820,7 @@ not affect their keyset-specific customization after 3.6.3. and vice
 versa.
   Initial patch by Charles Wohlganger, revised by Terry Jan Reedy.
 
-bpo-31051:  Rearrange condigdialog General tab.
+bpo-31051:  Rearrange configdialog General tab.
 Sort non-Help options into Window (Shell+Editor) and Editor (only).
 Leave room for the addition of new options.
 Patch by Terry Jan Reedy.

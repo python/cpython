@@ -1,4 +1,0 @@
-Prepare Tkinter for C API changes in Tcl 8.7/9.0 to avoid
-:class:`_tkinter.Tcl_Obj` being unexpectedly returned
-instead of :class:`bool`, :class:`str`,
-:class:`bytearray`, or :class:`int`.

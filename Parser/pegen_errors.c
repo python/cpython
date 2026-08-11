@@ -2,51 +2,13 @@
 #include <errcode.h>
 
 #include "pycore_pyerrors.h"      // _PyErr_ProgramDecodedTextObject()
+#include "pycore_runtime.h"       // _Py_ID()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "lexer/state.h"
 #include "lexer/lexer.h"
 #include "pegen.h"
 
 // TOKENIZER ERRORS
-
-void
-_PyPegen_raise_tokenizer_init_error(PyObject *filename)
-{
-    if (!(PyErr_ExceptionMatches(PyExc_LookupError)
-          || PyErr_ExceptionMatches(PyExc_SyntaxError)
-          || PyErr_ExceptionMatches(PyExc_ValueError)
-          || PyErr_ExceptionMatches(PyExc_UnicodeDecodeError))) {
-        return;
-    }
-    PyObject *errstr = NULL;
-    PyObject *tuple = NULL;
-    PyObject *type;
-    PyObject *value;
-    PyObject *tback;
-    PyErr_Fetch(&type, &value, &tback);
-    errstr = PyObject_Str(value);
-    if (!errstr) {
-        goto error;
-    }
-
-    PyObject *tmp = Py_BuildValue("(OiiO)", filename, 0, -1, Py_None);
-    if (!tmp) {
-        goto error;
-    }
-
-    tuple = PyTuple_Pack(2, errstr, tmp);
-    Py_DECREF(tmp);
-    if (!value) {
-        goto error;
-    }
-    PyErr_SetObject(PyExc_SyntaxError, tuple);
-
-error:
-    Py_XDECREF(type);
-    Py_XDECREF(value);
-    Py_XDECREF(tback);
-    Py_XDECREF(errstr);
-    Py_XDECREF(tuple);
-}
 
 static inline void
 raise_unclosed_parentheses_error(Parser *p) {
@@ -155,7 +117,7 @@ _Pypegen_raise_decode_error(Parser *p)
 static int
 _PyPegen_tokenize_full_source_to_check_for_errors(Parser *p) {
     // Tokenize the whole input to see if there are any tokenization
-    // errors such as mistmatching parentheses. These will get priority
+    // errors such as mismatching parentheses. These will get priority
     // over generic syntax errors only if the line number of the error is
     // before the one that we had for the generic error.
 
@@ -276,7 +238,7 @@ get_error_line_from_tokenizer_buffers(Parser *p, Py_ssize_t lineno)
         assert(p->tok->fp_interactive);
         // We can reach this point if the tokenizer buffers for interactive source have not been
         // initialized because we failed to decode the original source with the given locale.
-        return PyUnicode_FromStringAndSize("", 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
 
     Py_ssize_t relative_lineno = p->starting_lineno ? lineno - p->starting_lineno + 1 : lineno;
@@ -352,14 +314,14 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
         assert(p->tok->fp == NULL || p->tok->fp == stdin || p->tok->done == E_EOF);
 
         if (p->tok->lineno <= lineno && p->tok->inp > p->tok->buf) {
-            Py_ssize_t size = p->tok->inp - p->tok->buf;
-            error_line = PyUnicode_DecodeUTF8(p->tok->buf, size, "replace");
+            Py_ssize_t size = p->tok->inp - p->tok->line_start;
+            error_line = PyUnicode_DecodeUTF8(p->tok->line_start, size, "replace");
         }
         else if (p->tok->fp == NULL || p->tok->fp == stdin) {
             error_line = get_error_line_from_tokenizer_buffers(p, lineno);
         }
         else {
-            error_line = PyUnicode_FromStringAndSize("", 0);
+            error_line = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
         }
         if (!error_line) {
             goto error;
@@ -385,7 +347,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     if (!tmp) {
         goto error;
     }
-    value = PyTuple_Pack(2, errstr, tmp);
+    value = _PyTuple_FromPair(errstr, tmp);
     Py_DECREF(tmp);
     if (!value) {
         goto error;
