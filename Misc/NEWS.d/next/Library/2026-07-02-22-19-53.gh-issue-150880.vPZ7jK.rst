@@ -1,0 +1,3 @@
+Normalize non-extended Windows paths before appending the wildcard used by
+``os.listdir()`` and ``os.scandir()``, making paths with trailing spaces
+behave consistently with other filesystem APIs.

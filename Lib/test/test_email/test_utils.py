@@ -102,6 +102,15 @@ class DateTimeTests(unittest.TestCase):
                     expected_year,
                 )
 
+    def test_parsedate_to_datetime_out_of_range_raises_valueerror(self):
+        out_of_range_dates = [
+            'Mon, 20 Nov 9999999999 12:00:00 +0000',
+            'Mon, 20 Nov 2017 12:00:00 +24000000000000',
+        ]
+        for dtstr in out_of_range_dates:
+            with self.subTest(dtstr=dtstr):
+                self.assertRaises(ValueError, utils.parsedate_to_datetime, dtstr)
+
 class LocaltimeTests(unittest.TestCase):
 
     def test_localtime_is_tz_aware_daylight_true(self):

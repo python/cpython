@@ -1542,6 +1542,7 @@ extern "C" {
     INIT_ID(_filters), \
     INIT_ID(_finalizing), \
     INIT_ID(_find_and_load), \
+    INIT_ID(_find_and_load_lazy_submodule), \
     INIT_ID(_fix_up_module), \
     INIT_ID(_flags_), \
     INIT_ID(_get_sourcefile), \
@@ -1595,6 +1596,7 @@ extern "C" {
     INIT_ID(asend), \
     INIT_ID(ast), \
     INIT_ID(athrow), \
+    INIT_ID(attr), \
     INIT_ID(attribute), \
     INIT_ID(autocommit), \
     INIT_ID(backtick), \
@@ -1791,7 +1793,6 @@ extern "C" {
     INIT_ID(generation), \
     INIT_ID(get), \
     INIT_ID(get_debug), \
-    INIT_ID(get_event_loop), \
     INIT_ID(get_loop), \
     INIT_ID(get_source), \
     INIT_ID(getattr), \
@@ -1977,6 +1978,7 @@ extern "C" {
     INIT_ID(pad), \
     INIT_ID(padded), \
     INIT_ID(pages), \
+    INIT_ID(pair), \
     INIT_ID(parameter), \
     INIT_ID(parent), \
     INIT_ID(password), \
@@ -2151,6 +2153,7 @@ extern "C" {
     INIT_ID(updates), \
     INIT_ID(uri), \
     INIT_ID(usedforsecurity), \
+    INIT_ID(utcoffset), \
     INIT_ID(value), \
     INIT_ID(values), \
     INIT_ID(version), \
