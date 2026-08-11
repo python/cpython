@@ -11,8 +11,8 @@ instances of subclasses may have different costs.
 
 We use |big O notation|_ to describe how the running time of an operation grows
 with the size of its input. Unless stated otherwise, *n* denotes the number of
-elements currently in the container, and *k* is the value of a parameter, the
-number of elements in a parameter, or the length of a slice.
+elements currently in the container, and *k* is the value of a numeric
+parameter, such as an index or a repeat count.
 
 For a pragmatic approach to assessing time complexity, see Ned Batchelder's
 `Big-O: How Code Slows as Data Grows <https://nedbatchelder.com/text/bigo>`__
@@ -54,17 +54,18 @@ If you need to add or remove at both ends, consider using a
    * - Iteration
      - *O*\ (*n*)
    * - Get slice (``s[i:j]``)
-     - *O*\ (*k*)
-   * - Set slice (``s[i:j] = t``)
-     - *O*\ (*k* + *n*)
+     - *O*\ (*j* - *i*)
+   * - Set slice (``s[i:j] = t``) [1]_
+     - *O*\ (*j* - *i*) if len(*t*) == *j* - *i*,
+       otherwise *O*\ (*n* - *i* + len(*t*))
    * - Delete slice (``del s[i:j]``)
-     - *O*\ (*n*)
+     - *O*\ (*n* - *i*)
    * - Extend (``s.extend(t)``) [1]_
-     - *O*\ (*k*)
+     - *O*\ (len(*t*))
    * - Sort (``s.sort()``) [3]_
      - *O*\ (*n* log *n*)
    * - Concatenate (``s + t``)
-     - *O*\ (*n* + *k*)
+     - *O*\ (len(*s*) + len(*t*))
    * - Multiply (``s * k``)
      - *O*\ (*nk*)
    * - ``x in s``
@@ -92,9 +93,9 @@ time as the same object is returned.
    * - Get item (``s[k]``)
      - *O*\ (1)
    * - Get slice (``s[i:j]``)
-     - *O*\ (*k*)
+     - *O*\ (*j* - *i*)
    * - Concatenate (``s + t``)
-     - *O*\ (*n* + *k*)
+     - *O*\ (len(*s*) + len(*t*))
    * - Multiply (``s * k``)
      - *O*\ (*nk*)
    * - Iteration
@@ -137,7 +138,7 @@ or updating items; the other operations below apply to it at the same costs.
    * - Delete item (``del d[key]``)
      - *O*\ (1)
    * - Update (``d.update(t)``) [1]_ [6]_
-     - *O*\ (*k*)
+     - *O*\ (len(*t*))
    * - Iteration [6]_
      - *O*\ (*n*)
    * - Get length (``len(d)``) [4]_
@@ -203,9 +204,9 @@ the buffer instead of moving the remaining bytes, and is amortized *O*\ (1).
    * - Get item (``s[k]``)
      - *O*\ (1)
    * - Get slice (``s[i:j]``)
-     - *O*\ (*k*)
+     - *O*\ (*j* - *i*)
    * - Concatenate (``s + t``) [9]_
-     - *O*\ (*n* + *k*)
+     - *O*\ (len(*s*) + len(*t*))
    * - Multiply (``s * k``)
      - *O*\ (*nk*)
    * - Substring search (``x in s``, ``s.find(x)``, ``s.index(x)``) [10]_
