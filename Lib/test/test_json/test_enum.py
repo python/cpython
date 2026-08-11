@@ -26,10 +26,13 @@ INF = float('inf')
 NEG_INF = float('-inf')
 NAN = float('nan')
 
-class WierdNum(float, Enum):
+class WeirdNum(float, Enum):
     inf = INF
     neg_inf = NEG_INF
     nan = NAN
+
+class StringEnum(str, Enum):
+    COLOR = "color"
 
 class TestEnum:
 
@@ -40,7 +43,7 @@ class TestEnum:
             self.assertEqual(self.loads(self.dumps(enum)), enum)
 
     def test_weird_floats(self):
-        for enum, expected in zip(WierdNum, ('Infinity', '-Infinity', 'NaN')):
+        for enum, expected in zip(WeirdNum, ('Infinity', '-Infinity', 'NaN')):
             self.assertEqual(self.dumps(enum), expected)
             if not isnan(enum):
                 self.assertEqual(float(self.dumps(enum)), enum)
@@ -64,16 +67,16 @@ class TestEnum:
                          str([E, PI, TAU]))
         self.assertEqual(self.loads(self.dumps(list(FloatNum))),
                          list(FloatNum))
-        self.assertEqual(self.dumps(list(WierdNum)),
+        self.assertEqual(self.dumps(list(WeirdNum)),
                         '[Infinity, -Infinity, NaN]')
-        self.assertEqual(self.loads(self.dumps(list(WierdNum)))[:2],
-                         list(WierdNum)[:2])
-        self.assertTrue(isnan(self.loads(self.dumps(list(WierdNum)))[2]))
+        self.assertEqual(self.loads(self.dumps(list(WeirdNum)))[:2],
+                         list(WeirdNum)[:2])
+        self.assertTrue(isnan(self.loads(self.dumps(list(WeirdNum)))[2]))
 
     def test_dict_keys(self):
         s, b, h, r = BigNum
         e, p, t = FloatNum
-        i, j, n = WierdNum
+        i, j, n = WeirdNum
         d = {
             s:'tiny', b:'large', h:'larger', r:'largest',
             e:"Euler's number", p:'pi', t:'tau',
@@ -100,9 +103,9 @@ class TestEnum:
                 e=FloatNum.e,
                 pi=FloatNum.pi,
                 tau=FloatNum.tau,
-                i=WierdNum.inf,
-                j=WierdNum.neg_inf,
-                n=WierdNum.nan,
+                i=WeirdNum.inf,
+                j=WeirdNum.neg_inf,
+                n=WeirdNum.nan,
                 )
         nd = self.loads(self.dumps(d))
         self.assertEqual(nd['tiny'], SMALL)
@@ -115,6 +118,12 @@ class TestEnum:
         self.assertEqual(nd['i'], INF)
         self.assertEqual(nd['j'], NEG_INF)
         self.assertTrue(isnan(nd['n']))
+
+    def test_str_enum(self):
+        obj = StringEnum.COLOR
+        self.assertEqual(self.dumps(obj), '"color"')
+        self.assertEqual(self.dumps([obj]), '["color"]')
+        self.assertEqual(self.dumps({'key': obj}), '{"key": "color"}')
 
 class TestPyEnum(TestEnum, PyTest): pass
 class TestCEnum(TestEnum, CTest): pass

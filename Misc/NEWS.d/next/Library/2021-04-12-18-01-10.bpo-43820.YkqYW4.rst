@@ -1,2 +1,0 @@
-Remove an unneeded copy of the namespace passed to
-dataclasses.make_dataclass().

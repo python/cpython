@@ -2,6 +2,10 @@
 """
 This script is used to build "official" universal installers on macOS.
 
+NEW for 3.10 and backports:
+- support universal2 variant with arm64 and x86_64 archs
+- enable clang optimizations when building on 10.15+
+
 NEW for 3.9.0 and backports:
 - 2.7 end-of-life issues:
     - Python 3 installs now update the Current version link
@@ -161,8 +165,10 @@ def getTargetCompilers():
         '10.4': ('gcc-4.0', 'g++-4.0'),
         '10.5': ('gcc', 'g++'),
         '10.6': ('gcc', 'g++'),
+        '10.7': ('gcc', 'g++'),
+        '10.8': ('gcc', 'g++'),
     }
-    return target_cc_map.get(DEPTARGET, ('gcc', 'g++') )
+    return target_cc_map.get(DEPTARGET, ('clang', 'clang++') )
 
 CC, CXX = getTargetCompilers()
 
@@ -197,7 +203,7 @@ def internalTk():
 
 # Do we use 8.6.8 when building our own copy
 # of Tcl/Tk or a modern version.
-#   We use the old version when buildin on
+#   We use the old version when building on
 #   old versions of macOS due to build issues.
 def useOldTk():
     return getBuildTuple() < (10, 15)
@@ -234,17 +240,15 @@ THIRD_PARTY_LIBS = []
 def library_recipes():
     result = []
 
-    LT_10_5 = bool(getDeptargetTuple() < (10, 5))
-
     # Since Apple removed the header files for the deprecated system
     # OpenSSL as of the Xcode 7 release (for OS X 10.10+), we do not
     # have much choice but to build our own copy here, too.
 
     result.extend([
           dict(
-              name="OpenSSL 1.1.1k",
-              url="https://www.openssl.org/source/openssl-1.1.1k.tar.gz",
-              checksum='c4e7d95f782b08116afa27b30393dd27',
+              name="OpenSSL 3.5.7",
+              url="https://github.com/openssl/openssl/releases/download/openssl-3.5.7/openssl-3.5.7.tar.gz",
+              checksum="a8c0d28a529ca480f9f36cf5792e2cd21984552a3c8e4aa11a24aa31aeac98e8",
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -257,20 +261,21 @@ def library_recipes():
             tcl_checksum='81656d3367af032e0ae6157eff134f89'
 
             tk_checksum='5e0faecba458ee1386078fb228d008ba'
-            tk_patches = ['tk868_on_10_8_10_9.patch']
+            tk_patches = ['backport_gh71383_fix.patch', 'tk868_on_10_8_10_9.patch', 'backport_gh110950_fix.patch']
 
         else:
-            tcl_tk_ver='8.6.11'
-            tcl_checksum='8a4c004f48984a03a7747e9ba06e4da4'
+            tcl_tk_ver='9.0.4'
+            tcl_checksum='d0aed49230bc02a65c1e0229e65f34590a4b037ec40d546f32573b467f7551ea'
 
-            tk_checksum='c7ee71a2d05bba78dfffd76528dc17c6'
-            tk_patches = [ ]
+            tk_checksum='d7a146d2917eb8b5cc95276dbf0e3d03c7464d2b19c1675357857c989301dbb4'
+            tk_patches = []
 
 
+        base_url = "https://prdownloads.sourceforge.net/tcl/{what}{version}-src.tar.gz"
         result.extend([
           dict(
               name="Tcl %s"%(tcl_tk_ver,),
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tcl%s-src.tar.gz"%(tcl_tk_ver,),
+              url=base_url.format(what="tcl", version=tcl_tk_ver),
               checksum=tcl_checksum,
               buildDir="unix",
               configure_pre=[
@@ -287,7 +292,7 @@ def library_recipes():
               ),
           dict(
               name="Tk %s"%(tcl_tk_ver,),
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tk%s-src.tar.gz"%(tcl_tk_ver,),
+              url=base_url.format(what="tk", version=tcl_tk_ver),
               checksum=tk_checksum,
               patches=tk_patches,
               buildDir="unix",
@@ -320,32 +325,32 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="NCurses 5.9",
-              url="http://ftp.gnu.org/pub/gnu/ncurses/ncurses-5.9.tar.gz",
-              checksum='8cb9c412e5f2d96bc6f459aa8c6282a1',
+              name="NCurses 6.5",
+              url="https://ftp.gnu.org/gnu/ncurses/ncurses-6.5.tar.gz",
+              checksum="136d91bc269a9a5785e5f9e980bc76ab57428f604ce3e5a5a90cebc767971cc6",
               configure_pre=[
+                  "--datadir=/usr/share",
+                  "--disable-lib-suffixes",
+                  "--disable-db-install",
+                  "--disable-mixed-case",
+                  "--enable-overwrite",
                   "--enable-widec",
+                  f"--libdir=/Library/Frameworks/Python.framework/Versions/{getVersion()}/lib",
+                  "--sharedstatedir=/usr/com",
+                  "--sysconfdir=/etc",
+                  "--with-default-terminfo-dir=/usr/share/terminfo",
+                  "--with-shared",
+                  "--with-terminfo-dirs=/usr/share/terminfo",
+                  "--without-ada",
                   "--without-cxx",
                   "--without-cxx-binding",
-                  "--without-ada",
-                  "--without-curses-h",
-                  "--enable-shared",
-                  "--with-shared",
+                  "--without-cxx-shared",
                   "--without-debug",
-                  "--without-normal",
-                  "--without-tests",
                   "--without-manpages",
-                  "--datadir=/usr/share",
-                  "--sysconfdir=/etc",
-                  "--sharedstatedir=/usr/com",
-                  "--with-terminfo-dirs=/usr/share/terminfo",
-                  "--with-default-terminfo-dir=/usr/share/terminfo",
-                  "--libdir=/Library/Frameworks/Python.framework/Versions/%s/lib"%(getVersion(),),
+                  "--without-normal",
+                  "--without-progs",
+                  "--without-tests",
               ],
-              patchscripts=[
-                  ("ftp://ftp.invisible-island.net/ncurses//5.9/ncurses-5.9-20120616-patch.sh.bz2",
-                   "f54bf02a349f96a7c4f0d00922f3a0d4"),
-                   ],
               useLDFlags=False,
               install='make && make install DESTDIR=%s && cd %s/usr/local/lib && ln -fs ../../../Library/Frameworks/Python.framework/Versions/%s/lib/lib* .'%(
                   shellQuote(os.path.join(WORKDIR, 'libraries')),
@@ -354,64 +359,32 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.35.5",
-              url="https://sqlite.org/2021/sqlite-autoconf-3350500.tar.gz",
-              checksum='d1d1aba394c8e0443077dc9f1a681bb8',
+              name="SQLite 3.53.3",
+              url="https://www.sqlite.org/2026/sqlite-autoconf-3530300.tar.gz",
+              checksum="c917d7db16648ec95f714974ace5e5dcf46b7dc70e26600a0a102a3141125db0",
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
                             '-DSQLITE_ENABLE_FTS3_PARENTHESIS '
-                            '-DSQLITE_ENABLE_JSON1 '
+                            '-DSQLITE_ENABLE_PERCENTILE '
                             '-DSQLITE_ENABLE_RTREE '
+                            '-DSQLITE_OMIT_AUTOINIT '
                             '-DSQLITE_TCL=0 '
-                 '%s' % ('','-DSQLITE_WITHOUT_ZONEMALLOC ')[LT_10_5]),
+                            ),
               configure_pre=[
                   '--enable-threadsafe',
-                  '--enable-shared=no',
-                  '--enable-static=yes',
                   '--disable-readline',
                   '--disable-dependency-tracking',
-              ]
-          ),
-        ])
-
-    if getDeptargetTuple() < (10, 5):
-        result.extend([
-          dict(
-              name="Bzip2 1.0.6",
-              url="http://bzip.org/1.0.6/bzip2-1.0.6.tar.gz",
-              checksum='00b516f4704d4a7cb50a1d97e6e8e15b',
-              configure=None,
-              install='make install CC=%s CXX=%s, PREFIX=%s/usr/local/ CFLAGS="-arch %s"'%(
-                  CC, CXX,
-                  shellQuote(os.path.join(WORKDIR, 'libraries')),
-                  ' -arch '.join(ARCHLIST),
-              ),
+              ],
+              install=f"make && ranlib libsqlite3.a && make install DESTDIR={shellQuote(os.path.join(WORKDIR, 'libraries'))}",
           ),
           dict(
-              name="ZLib 1.2.3",
-              url="http://www.gzip.org/zlib/zlib-1.2.3.tar.gz",
-              checksum='debc62758716a169df9f62e6ab2bc634',
-              configure=None,
-              install='make install CC=%s CXX=%s, prefix=%s/usr/local/ CFLAGS="-arch %s"'%(
-                  CC, CXX,
-                  shellQuote(os.path.join(WORKDIR, 'libraries')),
-                  ' -arch '.join(ARCHLIST),
-              ),
-          ),
-          dict(
-              # Note that GNU readline is GPL'd software
-              name="GNU Readline 6.1.2",
-              url="http://ftp.gnu.org/pub/gnu/readline/readline-6.1.tar.gz" ,
-              checksum='fc2f7e714fe792db1ce6ddc4c9fb4ef3',
-              patchlevel='0',
-              patches=[
-                  # The readline maintainers don't do actual micro releases, but
-                  # just ship a set of patches.
-                  ('http://ftp.gnu.org/pub/gnu/readline/readline-6.1-patches/readline61-001',
-                   'c642f2e84d820884b0bf9fd176bc6c3f'),
-                  ('http://ftp.gnu.org/pub/gnu/readline/readline-6.1-patches/readline61-002',
-                   '1a76781a1ea734e831588285db7ec9b1'),
+              name="libmpdec 4.0.1",
+              url="https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-4.0.1.tar.gz",
+              checksum="96d33abb4bb0070c7be0fed4246cd38416188325f820468214471938545b1ac8",
+              configure_pre=[
+                  "--disable-cxx",
+                  "MACHINE=universal",
               ]
           ),
         ])
@@ -432,6 +405,14 @@ def library_recipes():
 
     return result
 
+def compilerCanOptimize():
+    """
+    Return True iff the default Xcode version can use PGO and LTO
+    """
+    # bpo-42235: The version check is pretty conservative, can be
+    # adjusted after testing
+    mac_ver = tuple(map(int, platform.mac_ver()[0].split('.')))
+    return mac_ver >= (10, 15)
 
 # Instructions for building packages inside the .mpkg.
 def pkg_recipes():
@@ -481,7 +462,7 @@ def pkg_recipes():
             source="/pydocs",
             readme="""\
                 This package installs the python documentation at a location
-                that is useable for pydoc and IDLE.
+                that is usable for pydoc and IDLE.
                 """,
             postflight="scripts/postflight.documentation",
             required=False,
@@ -756,6 +737,10 @@ def extractArchive(builddir, archiveName):
             if ((retval.startswith('tcl') or retval.startswith('tk'))
                     and retval.endswith('-src')):
                 retval = retval[:-4]
+                # Strip rcxx suffix from Tcl/Tk release candidates
+                retval_rc = retval.find('rc')
+                if retval_rc > 0:
+                    retval = retval[:retval_rc]
             if os.path.exists(retval):
                 shutil.rmtree(retval)
             fp = os.popen("tar zxf %s 2>&1"%(shellQuote(archiveName),), 'r')
@@ -821,10 +806,16 @@ def verifyThirdPartyFile(url, checksum, fname):
         print("Downloading %s"%(name,))
         downloadURL(url, fname)
         print("Archive for %s stored as %s"%(name, fname))
+    if len(checksum) == 32:
+        algo = 'md5'
+    elif len(checksum) == 64:
+        algo = 'sha256'
+    else:
+        raise ValueError(checksum)
     if os.system(
-            'MD5=$(openssl md5 %s) ; test "${MD5##*= }" = "%s"'
-                % (shellQuote(fname), checksum) ):
-        fatal('MD5 checksum mismatch for file %s' % fname)
+            'CHECKSUM=$(openssl %s %s) ; test "${CHECKSUM##*= }" = "%s"'
+                % (algo, shellQuote(fname), checksum) ):
+        fatal('%s checksum mismatch for file %s' % (algo, fname))
 
 def build_universal_openssl(basedir, archList):
     """
@@ -1165,8 +1156,11 @@ def buildPython():
     # will find them during its extension import sanity checks.
 
     print("Running configure...")
+    print(" NOTE: --with-mimalloc=no pending resolution of weak linking issues")
     runCommand("%s -C --enable-framework --enable-universalsdk=/ "
+               "--with-mimalloc=no "
                "--with-universal-archs=%s "
+               "%s "
                "%s "
                "%s "
                "%s "
@@ -1180,9 +1174,10 @@ def buildPython():
         (' ', '--without-ensurepip ')[PYTHON_3],
         (' ', "--with-openssl='%s/libraries/usr/local'"%(
                             shellQuote(WORKDIR)[1:-1],))[PYTHON_3],
-        (' ', "--with-tcltk-includes='-I%s/libraries/usr/local/include'"%(
+        (' ', "--enable-optimizations --with-lto")[compilerCanOptimize()],
+        (' ', "TCLTK_CFLAGS='-I%s/libraries/usr/local/include'"%(
                             shellQuote(WORKDIR)[1:-1],))[internalTk()],
-        (' ', "--with-tcltk-libs='-L%s/libraries/usr/local/lib -ltcl8.6 -ltk8.6'"%(
+        (' ', "TCLTK_LIBS='-L%s/libraries/usr/local/lib -ltcl8.6 -ltk8.6'"%(
                             shellQuote(WORKDIR)[1:-1],))[internalTk()],
         shellQuote(WORKDIR)[1:-1],
         shellQuote(WORKDIR)[1:-1]))
@@ -1374,7 +1369,7 @@ def buildPython():
         build_time_vars = l_dict['build_time_vars']
     vars = {}
     for k, v in build_time_vars.items():
-        if type(v) == type(''):
+        if isinstance(v, str):
             for p in (include_path, lib_path):
                 v = v.replace(' ' + p, '')
                 v = v.replace(p + ' ', '')
@@ -1506,7 +1501,7 @@ def packageFromRecipe(targetDir, recipe):
                 IFPkgFlagRelocatable=False,
                 IFPkgFlagRestartAction="NoRestart",
                 IFPkgFlagRootVolumeOnly=True,
-                IFPkgFlagUpdateInstalledLangauges=False,
+                IFPkgFlagUpdateInstalledLanguages=False,
             )
         writePlist(pl, os.path.join(packageContents, 'Info.plist'))
 
@@ -1627,7 +1622,7 @@ def buildDMG():
     # instead of 11.  We should not run into that situation here.)
     # Also we should use "macos" instead of "macosx" going forward.
     #
-    # To maintain compability for legacy variants, the file name for
+    # To maintain compatibility for legacy variants, the file name for
     # builds on macOS 10.15 and earlier remains:
     #   python-3.x.y-macosx10.z.{dmg->pkg}
     #   e.g. python-3.9.4-macosx10.9.{dmg->pkg}
@@ -1752,7 +1747,7 @@ def main():
     fn = os.path.join(folder, "ReadMe.rtf")
     patchFile("resources/ReadMe.rtf",  fn)
     fn = os.path.join(folder, "Update Shell Profile.command")
-    patchScript("scripts/postflight.patch-profile",  fn)
+    patchScript("resources/update_shell_profile.command",  fn)
     fn = os.path.join(folder, "Install Certificates.command")
     patchScript("resources/install_certificates.command",  fn)
     os.chmod(folder, STAT_0o755)

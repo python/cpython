@@ -1,5 +1,0 @@
-Match patterns now use new dedicated AST nodes (``MatchValue``,
-``MatchSingleton``, ``MatchSequence``, ``MatchStar``, ``MatchMapping``,
-``MatchClass``) rather than reusing expression AST nodes. ``MatchAs`` and
-``MatchOr`` are now defined as pattern nodes rather than as expression nodes.
-Patch by Nick Coghlan.

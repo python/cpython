@@ -65,8 +65,8 @@ integer with binary base.
 .. nonce: MtgLCn
 .. section: Core and Builtins
 
-Fix an assertion failure in `zipimporter.get_source()` in case of a bad
-`zlib.decompress()`. Patch by Oren Milman.
+Fix an assertion failure in ``zipimporter.get_source()`` in case of a bad
+``zlib.decompress()``. Patch by Oren Milman.
 
 ..
 
@@ -76,7 +76,7 @@ Fix an assertion failure in `zipimporter.get_source()` in case of a bad
 .. section: Core and Builtins
 
 Fixed an assertion failure in Python parser in case of a bad
-`unicodedata.normalize()`. Patch by Oren Milman.
+``unicodedata.normalize()``. Patch by Oren Milman.
 
 ..
 
@@ -85,7 +85,7 @@ Fixed an assertion failure in Python parser in case of a bad
 .. nonce: wT9Iy7
 .. section: Core and Builtins
 
-Raise a `TypeError` with a helpful error message when class creation fails
+Raise a ``TypeError`` with a helpful error message when class creation fails
 due to a metaclass with a bad ``__prepare__()`` method. Patch by Oren
 Milman.
 
@@ -105,7 +105,7 @@ Importlib was instrumented with two dtrace probes to profile import timing.
 .. nonce: OxwINs
 .. section: Core and Builtins
 
-Fix an assertion failure in `_warnings.warn()` in case of a bad ``__name__``
+Fix an assertion failure in ``_warnings.warn()`` in case of a bad ``__name__``
 global. Patch by Oren Milman.
 
 ..
@@ -115,7 +115,7 @@ global. Patch by Oren Milman.
 .. nonce: pRVTRB
 .. section: Core and Builtins
 
-Improved the error message logic for object.__new__ and object.__init__.
+Improved the error message logic for ``object.__new__`` and ``object.__init__``.
 
 ..
 
@@ -124,8 +124,8 @@ Improved the error message logic for object.__new__ and object.__init__.
 .. nonce: VomaFa
 .. section: Core and Builtins
 
-Fix an assertion failure in `json`, in case `_json.make_encoder()` received
-a bad `encoder()` argument. Patch by Oren Milman.
+Fix an assertion failure in ``json``, in case ``_json.make_encoder()`` received
+a bad ``encoder()`` argument. Patch by Oren Milman.
 
 ..
 
@@ -145,7 +145,7 @@ such a module. Patch by Oren Milman.
 .. nonce: o06iKD
 .. section: Core and Builtins
 
-Fix an assertion failure in `_random.Random.seed()` in case the argument has
+Fix an assertion failure in ``_random.Random.seed()`` in case the argument has
 a bad ``__abs__()`` method. Patch by Oren Milman.
 
 ..
@@ -218,7 +218,7 @@ string. Patch by Oren Milman.
 .. nonce: bNE2l-
 .. section: Core and Builtins
 
-Fix a crash in the ``__setstate__()`` method of `ctypes._CData`, in case of
+Fix a crash in the ``__setstate__()`` method of ``ctypes._CData``, in case of
 a bad ``__dict__``. Patch by Oren Milman.
 
 ..
@@ -238,8 +238,8 @@ float with a bad as_integer_ratio() method. Patch by Oren Milman.
 .. nonce: 7lzaKV
 .. section: Core and Builtins
 
-Fix an assertion failure in `warnings.warn_explicit`, when the return value
-of the received loader's get_source() has a bad splitlines() method. Patch
+Fix an assertion failure in ``warnings.warn_explicit``, when the return value
+of the received loader's ``get_source()`` has a bad ``splitlines()`` method. Patch
 by Oren Milman.
 
 ..
@@ -286,8 +286,8 @@ On Windows, faulthandler.enable() now ignores MSC and COM exceptions.
 .. nonce: XrVMME
 .. section: Library
 
-Prevent crashes in `_elementtree` due to unsafe cleanup of `Element.text`
-and `Element.tail`. Patch by Oren Milman.
+Prevent crashes in ``_elementtree`` due to unsafe cleanup of ``Element.text``
+and ``Element.tail``. Patch by Oren Milman.
 
 ..
 
@@ -307,8 +307,8 @@ compiling. bm_regex_compile benchmark shows 14% performance improvements.
 .. section: Library
 
 The types of compiled regular objects and match objects are now exposed as
-`re.Pattern` and `re.Match`.  This adds information in pydoc output for the
-re module.
+``re.Pattern`` and ``re.Match``.  This adds information in pydoc output for the
+``re`` module.
 
 ..
 
@@ -485,10 +485,10 @@ since Python 3.3.)
 .. nonce: cIMFJW
 .. section: Library
 
-Reprs of subclasses of some collection and iterator classes (`bytearray`,
-`array.array`, `collections.deque`, `collections.defaultdict`,
-`itertools.count`, `itertools.repeat`) now contain actual type name insteads
-of hardcoded name of the base class.
+Reprs of subclasses of some collection and iterator classes (``bytearray``,
+``array.array``, ``collections.deque``, ``collections.defaultdict``,
+``itertools.count``, ``itertools.repeat``) now contain actual type name instead
+of hardcoded names of the base class.
 
 ..
 
@@ -584,7 +584,7 @@ Correct PCBuild/ case to PCbuild/ in build scripts and documentation.
 .. nonce: KUDjno
 .. section: Build
 
-Avoid wholesale rebuild after `make regen-all` if nothing changed.
+Avoid wholesale rebuild after ``make regen-all`` if nothing changed.
 
 ..
 
@@ -657,8 +657,8 @@ for code and tests by Guilherme Polo and Cheryl Sabella, respectively.
 .. nonce: K_EjpO
 .. section: C API
 
-Make `PyMapping_Keys()`, `PyMapping_Values()` and `PyMapping_Items()` always
-return a `list` (rather than a `list` or a `tuple`). Patch by Oren Milman.
+Make ``PyMapping_Keys()``, ``PyMapping_Values()`` and ``PyMapping_Items()`` always
+return a ``list`` (rather than a ``list`` or a ``tuple``). Patch by Oren Milman.
 
 ..
 
