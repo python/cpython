@@ -806,7 +806,7 @@ are always available.  They are listed here in alphabetical order.
    (not-a-number), or positive or negative infinity.
 
    If the argument is a bytes-like object, its contents are parsed as a decimal
-   string.  Therefore, the bytes-like object must contain a valid representation 
+   string.  Therefore, the bytes-like object must contain a valid representation
    of a floating-point number, otherwise :exc:`ValueError` is raised.
 
    More precisely, the input must conform to the :token:`~float:floatvalue`
