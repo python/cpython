@@ -1,0 +1,4 @@
+Skip ``test_subparser_inherits_reparse_deferral`` in ``test_pyexpat`` when
+Python was compiled against Expat < 2.6.0.
+:meth:`~xml.parsers.expat.xmlparser.GetReparseDeferralEnabled`
+always returns false with this Expat version and hence the test does not work.
