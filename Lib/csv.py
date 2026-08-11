@@ -218,7 +218,9 @@ class Sniffer:
         # The body of a quoted field ends at the first quote which is
         # not doubled, as it does for a reader.  A lazy ".*?" scans to
         # the end of the sample instead, from every start: quadratically.
-        body = r'(?:(?P=quote){2}|(?!(?P=quote)).)*+'
+        # As an unrolled loop it is unambiguous, so it does not backtrack.
+        other = r'(?:(?!(?P=quote)).)*'
+        body = r'%s(?:(?P=quote){2}%s)*' % (other, other)
         matches = []
         for restr in (r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\'])%s(?P=quote)(?P=delim)',   # ,"...",
                       r'(?:^|\n)(?P<quote>["\'])%s(?P=quote)(?P<delim>[^\w\n"\'])(?P<space> ?)',     #  "...",
