@@ -7,6 +7,9 @@
     <Filter Include="Source Files">
       <UniqueIdentifier>{0e842fe2-176b-4e83-9d1f-0ad13a859efd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{0248795a-00c9-4090-ad61-55ae23438598}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(sqlite3Dir)\sqlite3.h">
@@ -20,5 +23,10 @@
     <ClCompile Include="$(sqlite3Dir)\sqlite3.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\PC\sqlite3.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

@@ -18,9 +18,11 @@ multitasking). Here's an overview:
    multiprocessing.shared_memory.rst
    concurrent.rst
    concurrent.futures.rst
+   concurrent.interpreters.rst
    subprocess.rst
    sched.rst
    queue.rst
+   contextvars.rst
 
 
 The following are support modules for some of the above services:
@@ -28,5 +30,3 @@ The following are support modules for some of the above services:
 .. toctree::
 
    _thread.rst
-   _dummy_thread.rst
-   dummy_threading.rst

@@ -2,9 +2,10 @@
 
 import logging
 import socket
-import sys
 import unittest
 import weakref
+from test import support
+from test.support import socket_helper
 from unittest import mock
 try:
     import ssl
@@ -15,13 +16,12 @@ import asyncio
 from asyncio import log
 from asyncio import protocols
 from asyncio import sslproto
-from asyncio import tasks
 from test.test_asyncio import utils as test_utils
 from test.test_asyncio import functional as func_tests
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 @unittest.skipIf(ssl is None, 'No ssl module')
@@ -44,16 +44,14 @@ class SslProtoHandshakeTests(test_utils.TestCase):
 
     def connection_made(self, ssl_proto, *, do_handshake=None):
         transport = mock.Mock()
-        sslpipe = mock.Mock()
-        sslpipe.shutdown.return_value = b''
-        if do_handshake:
-            sslpipe.do_handshake.side_effect = do_handshake
-        else:
-            def mock_handshake(callback):
-                return []
-            sslpipe.do_handshake.side_effect = mock_handshake
-        with mock.patch('asyncio.sslproto._SSLPipe', return_value=sslpipe):
-            ssl_proto.connection_made(transport)
+        sslobj = mock.Mock()
+        # emulate reading decompressed data
+        sslobj.read.side_effect = ssl.SSLWantReadError
+        sslobj.write.side_effect = ssl.SSLWantReadError
+        if do_handshake is not None:
+            sslobj.do_handshake = do_handshake
+        ssl_proto._sslobj = sslobj
+        ssl_proto.connection_made(transport)
         return transport
 
     def test_handshake_timeout_zero(self):
@@ -73,9 +71,12 @@ class SslProtoHandshakeTests(test_utils.TestCase):
                                  ssl_handshake_timeout=-10)
 
     def test_eof_received_waiter(self):
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         ssl_proto = self.ssl_protocol(waiter=waiter)
-        self.connection_made(ssl_proto)
+        self.connection_made(
+            ssl_proto,
+            do_handshake=mock.Mock(side_effect=ssl.SSLWantReadError)
+        )
         ssl_proto.eof_received()
         test_utils.run_briefly(self.loop)
         self.assertIsInstance(waiter.exception(), ConnectionResetError)
@@ -84,7 +85,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         # From issue #363.
         # _fatal_error() generates a NameError if sslproto.py
         # does not import base_events.
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         ssl_proto = self.ssl_protocol(waiter=waiter)
         # Temporarily turn off error logging so as not to spoil test output.
         log_level = log.logger.getEffectiveLevel()
@@ -98,26 +99,92 @@ class SslProtoHandshakeTests(test_utils.TestCase):
     def test_connection_lost(self):
         # From issue #472.
         # yield from waiter hang if lost_connection was called.
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         ssl_proto = self.ssl_protocol(waiter=waiter)
-        self.connection_made(ssl_proto)
+        self.connection_made(
+            ssl_proto,
+            do_handshake=mock.Mock(side_effect=ssl.SSLWantReadError)
+        )
         ssl_proto.connection_lost(ConnectionAbortedError)
         test_utils.run_briefly(self.loop)
         self.assertIsInstance(waiter.exception(), ConnectionAbortedError)
 
+    def test_connection_lost_when_busy(self):
+        # gh-118950: SSLProtocol.connection_lost not being called when OSError
+        # is thrown on asyncio.write.
+        sock = mock.Mock()
+        sock.fileno = mock.Mock(return_value=12345)
+        sock.send = mock.Mock(side_effect=BrokenPipeError)
+
+        # construct StreamWriter chain that contains loop dependant logic this emulates
+        # what _make_ssl_transport() does in BaseSelectorEventLoop
+        reader = asyncio.StreamReader(limit=2 ** 16, loop=self.loop)
+        protocol = asyncio.StreamReaderProtocol(reader, loop=self.loop)
+        ssl_proto = self.ssl_protocol(proto=protocol)
+
+        # emulate reading decompressed data
+        sslobj = mock.Mock()
+        sslobj.read.side_effect = ssl.SSLWantReadError
+        sslobj.write.side_effect = ssl.SSLWantReadError
+        ssl_proto._sslobj = sslobj
+
+        # emulate outgoing data
+        data = b'An interesting message'
+
+        outgoing = mock.Mock()
+        outgoing.read = mock.Mock(return_value=data)
+        outgoing.pending = len(data)
+        ssl_proto._outgoing = outgoing
+
+        # use correct socket transport to initialize the SSLProtocol
+        self.loop._make_socket_transport(sock, ssl_proto)
+
+        transport = ssl_proto._app_transport
+        writer = asyncio.StreamWriter(transport, protocol, reader, self.loop)
+
+        async def main():
+            # writes data to transport
+            async def write():
+                writer.write(data)
+                await writer.drain()
+
+            # try to write for the first time
+            await write()
+            # try to write for the second time, this raises as the connection_lost
+            # callback should be done with error
+            with self.assertRaises(ConnectionResetError):
+                await write()
+
+        self.loop.run_until_complete(main())
+
     def test_close_during_handshake(self):
         # bpo-29743 Closing transport during handshake process leaks socket
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         ssl_proto = self.ssl_protocol(waiter=waiter)
 
-        transport = self.connection_made(ssl_proto)
+        transport = self.connection_made(
+            ssl_proto,
+            do_handshake=mock.Mock(side_effect=ssl.SSLWantReadError)
+        )
         test_utils.run_briefly(self.loop)
 
         ssl_proto._app_transport.close()
-        self.assertTrue(transport.abort.called)
+        self.assertTrue(transport._force_close.called)
+
+    def test_close_during_ssl_over_ssl(self):
+        # gh-113214: passing exceptions from the inner wrapped SSL protocol to the
+        # shim transport provided by the outer SSL protocol should not raise
+        # attribute errors
+        outer = self.ssl_protocol(proto=self.ssl_protocol())
+        self.connection_made(outer)
+        # Closing the outer app transport should not raise an exception
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+        outer._app_transport.close()
+        self.assertEqual(messages, [])
 
     def test_get_extra_info_on_closed_connection(self):
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         ssl_proto = self.ssl_protocol(waiter=waiter)
         self.assertIsNone(ssl_proto._get_extra_info('socket'))
         default = object()
@@ -128,7 +195,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         self.assertIsNone(ssl_proto._get_extra_info('socket'))
 
     def test_set_new_app_protocol(self):
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         ssl_proto = self.ssl_protocol(waiter=waiter)
         new_app_proto = asyncio.Protocol()
         ssl_proto._app_transport.set_protocol(new_app_proto)
@@ -143,7 +210,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         transp.close()
 
         # should not raise
-        self.assertIsNone(ssl_proto.data_received(b'data'))
+        self.assertIsNone(ssl_proto.buffer_updated(5))
 
     def test_write_after_closing(self):
         ssl_proto = self.ssl_protocol()
@@ -163,7 +230,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
 class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
     PAYLOAD_SIZE = 1024 * 100
-    TIMEOUT = 60
+    TIMEOUT = support.LONG_TIMEOUT
 
     def new_loop(self):
         raise NotImplementedError
@@ -273,10 +340,12 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(
-                asyncio.wait_for(client(srv.addr), timeout=10))
+                asyncio.wait_for(client(srv.addr),
+                                 timeout=support.SHORT_TIMEOUT))
 
         # No garbage is left if SSL is closed uncleanly
         client_context = weakref.ref(client_context)
+        support.gc_collect()
         self.assertIsNone(client_context())
 
     def test_create_connection_memory_leak(self):
@@ -334,13 +403,16 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(
-                asyncio.wait_for(client(srv.addr), timeout=10))
+                asyncio.wait_for(client(srv.addr),
+                                 timeout=support.SHORT_TIMEOUT))
 
         # No garbage is left for SSL client from loop.create_connection, even
         # if user stores the SSLTransport in corresponding protocol instance
         client_context = weakref.ref(client_context)
+        support.gc_collect()
         self.assertIsNone(client_context())
 
+    @socket_helper.skip_if_tcp_blackhole
     def test_start_tls_client_buf_proto_1(self):
         HELLO_MSG = b'1' * self.PAYLOAD_SIZE
 
@@ -379,9 +451,9 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
             def get_buffer(self, sizehint):
                 return self.buf
 
-            def buffer_updated(self, nsize):
-                assert nsize == 1
-                self.on_data.set_result(bytes(self.buf[:nsize]))
+            def buffer_updated(slf, nsize):
+                self.assertEqual(nsize, 1)
+                slf.on_data.set_result(bytes(slf.buf[:nsize]))
 
         class ClientProtoSecond(asyncio.Protocol):
             def __init__(self, on_data, on_eof):
@@ -490,21 +562,20 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(
-                asyncio.wait_for(client(srv.addr), timeout=10))
+                asyncio.wait_for(client(srv.addr),
+                                 timeout=support.SHORT_TIMEOUT))
 
+    @socket_helper.skip_if_tcp_blackhole
     def test_start_tls_server_1(self):
         HELLO_MSG = b'1' * self.PAYLOAD_SIZE
+        ANSWER = b'answer'
 
         server_context = test_utils.simple_server_sslcontext()
         client_context = test_utils.simple_client_sslcontext()
-        if sys.platform.startswith('freebsd'):
-            # bpo-35031: Some FreeBSD buildbots fail to run this test
-            # as the eof was not being received by the server if the payload
-            # size is not big enough. This behaviour only appears if the
-            # client is using TLS1.3.
-            client_context.options |= ssl.OP_NO_TLSv1_3
+        answer = None
 
         def client(sock, addr):
+            nonlocal answer
             sock.settimeout(self.TIMEOUT)
 
             sock.connect(addr)
@@ -513,33 +584,37 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
             sock.start_tls(client_context)
             sock.sendall(HELLO_MSG)
-
-            sock.shutdown(socket.SHUT_RDWR)
+            answer = sock.recv_all(len(ANSWER))
             sock.close()
 
         class ServerProto(asyncio.Protocol):
-            def __init__(self, on_con, on_eof, on_con_lost):
+            def __init__(self, on_con, on_con_lost, on_got_hello):
                 self.on_con = on_con
-                self.on_eof = on_eof
                 self.on_con_lost = on_con_lost
+                self.on_got_hello = on_got_hello
                 self.data = b''
+                self.transport = None
 
             def connection_made(self, tr):
+                self.transport = tr
                 self.on_con.set_result(tr)
+
+            def replace_transport(self, tr):
+                self.transport = tr
 
             def data_received(self, data):
                 self.data += data
-
-            def eof_received(self):
-                self.on_eof.set_result(1)
+                if len(self.data) >= len(HELLO_MSG):
+                    self.on_got_hello.set_result(None)
 
             def connection_lost(self, exc):
+                self.transport = None
                 if exc is None:
                     self.on_con_lost.set_result(None)
                 else:
                     self.on_con_lost.set_exception(exc)
 
-        async def main(proto, on_con, on_eof, on_con_lost):
+        async def main(proto, on_con, on_con_lost, on_got_hello):
             tr = await on_con
             tr.write(HELLO_MSG)
 
@@ -549,17 +624,20 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 tr, proto, server_context,
                 server_side=True,
                 ssl_handshake_timeout=self.TIMEOUT)
+            proto.replace_transport(new_tr)
 
-            await on_eof
+            await on_got_hello
+            new_tr.write(ANSWER)
+
             await on_con_lost
             self.assertEqual(proto.data, HELLO_MSG)
             new_tr.close()
 
         async def run_main():
             on_con = self.loop.create_future()
-            on_eof = self.loop.create_future()
             on_con_lost = self.loop.create_future()
-            proto = ServerProto(on_con, on_eof, on_con_lost)
+            on_got_hello = self.loop.create_future()
+            proto = ServerProto(on_con, on_con_lost, on_got_hello)
 
             server = await self.loop.create_server(
                 lambda: proto, '127.0.0.1', 0)
@@ -568,11 +646,12 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
             with self.tcp_client(lambda sock: client(sock, addr),
                                  timeout=self.TIMEOUT):
                 await asyncio.wait_for(
-                    main(proto, on_con, on_eof, on_con_lost),
+                    main(proto, on_con, on_con_lost, on_got_hello),
                     timeout=self.TIMEOUT)
 
             server.close()
             await server.wait_closed()
+            self.assertEqual(answer, ANSWER)
 
         self.loop.run_until_complete(run_main())
 
@@ -613,7 +692,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                     *addr,
                     ssl=client_sslctx,
                     server_hostname='',
-                    ssl_handshake_timeout=10.0),
+                    ssl_handshake_timeout=support.SHORT_TIMEOUT),
                 0.5)
 
         with self.tcp_server(server,
@@ -632,6 +711,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
         # The 10s handshake timeout should be cancelled to free related
         # objects without really waiting for 10s
         client_sslctx = weakref.ref(client_sslctx)
+        support.gc_collect()
         self.assertIsNone(client_sslctx())
 
     def test_create_connection_ssl_slow_handshake(self):
@@ -653,7 +733,6 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 *addr,
                 ssl=client_sslctx,
                 server_hostname='',
-                loop=self.loop,
                 ssl_handshake_timeout=1.0)
 
         with self.tcp_server(server,
@@ -674,14 +753,16 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
         sslctx = test_utils.simple_server_sslcontext()
         client_sslctx = test_utils.simple_client_sslcontext(
             disable_verify=False)
+        server_err = None
 
         def server(sock):
+            nonlocal server_err
             try:
                 sock.start_tls(
                     sslctx,
                     server_side=True)
-            except ssl.SSLError:
-                pass
+            except ssl.SSLError as exc:
+                server_err = exc
             except OSError:
                 pass
             finally:
@@ -692,8 +773,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 *addr,
                 ssl=client_sslctx,
                 server_hostname='',
-                loop=self.loop,
-                ssl_handshake_timeout=1.0)
+                ssl_handshake_timeout=support.LOOPBACK_TIMEOUT)
 
         with self.tcp_server(server,
                              max_clients=1,
@@ -702,13 +782,71 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
             with self.assertRaises(ssl.SSLCertVerificationError):
                 self.loop.run_until_complete(client(srv.addr))
 
+        # gh-98078: the client must send a fatal TLS alert to the
+        # server instead of just closing the connection, so that the
+        # server knows why the handshake failed.
+        self.assertIsInstance(server_err, ssl.SSLError)
+        self.assertIn('ALERT_UNKNOWN_CA', server_err.reason or '')
+
+    def test_create_server_ssl_failed_handshake_sends_alert(self):
+        # gh-98078: when the handshake fails, the server must send the
+        # fatal TLS alert generated by OpenSSL to the client before
+        # closing the connection, so that the client knows why the
+        # handshake failed (here: no TLS version in common).
+        if not ssl.HAS_TLSv1_3 or not ssl.HAS_TLSv1_2:
+            self.skipTest('needs TLSv1.2 and TLSv1.3 support')
+
+        self.loop.set_exception_handler(lambda loop, ctx: None)
+
+        server_context = test_utils.simple_server_sslcontext()
+        server_context.minimum_version = ssl.TLSVersion.TLSv1_3
+        client_context = test_utils.simple_client_sslcontext()
+        client_context.maximum_version = ssl.TLSVersion.TLSv1_2
+
+        client_done = self.loop.create_future()
+        client_err = None
+
+        def client(sock, addr):
+            nonlocal client_err
+            try:
+                sock.settimeout(self.TIMEOUT)
+                sock.connect(addr)
+                try:
+                    sock.start_tls(client_context)
+                except OSError as exc:
+                    client_err = exc
+                finally:
+                    sock.close()
+            finally:
+                self.loop.call_soon_threadsafe(
+                    client_done.set_result, None)
+
+        async def run_main():
+            server = await self.loop.create_server(
+                asyncio.Protocol, '127.0.0.1', 0, ssl=server_context)
+            addr = server.sockets[0].getsockname()
+            try:
+                with self.tcp_client(lambda sock: client(sock, addr),
+                                     timeout=self.TIMEOUT):
+                    await asyncio.wait_for(client_done, self.TIMEOUT)
+            finally:
+                server.close()
+                await server.wait_closed()
+
+        self.loop.run_until_complete(run_main())
+
+        self.assertIsInstance(client_err, ssl.SSLError)
+        self.assertIn('ALERT_PROTOCOL_VERSION', client_err.reason or '')
+
     def test_start_tls_client_corrupted_ssl(self):
         self.loop.set_exception_handler(lambda loop, ctx: None)
 
         sslctx = test_utils.simple_server_sslcontext()
         client_sslctx = test_utils.simple_client_sslcontext()
+        server_err = None
 
         def server(sock):
+            nonlocal server_err
             orig_sock = sock.dup()
             try:
                 sock.start_tls(
@@ -717,8 +855,11 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 sock.sendall(b'A\n')
                 sock.recv_all(1)
                 orig_sock.send(b'please corrupt the SSL connection')
-            except ssl.SSLError:
-                pass
+                # gh-98078: receive the fatal TLS alert sent by the
+                # client before it closed the connection
+                sock.recv(16)
+            except ssl.SSLError as exc:
+                server_err = exc
             finally:
                 orig_sock.close()
                 sock.close()
@@ -727,8 +868,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
             reader, writer = await asyncio.open_connection(
                 *addr,
                 ssl=client_sslctx,
-                server_hostname='',
-                loop=self.loop)
+                server_hostname='')
 
             self.assertEqual(await reader.readline(), b'A\n')
             writer.write(b'B')
@@ -745,6 +885,71 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
             res = self.loop.run_until_complete(client(srv.addr))
 
         self.assertEqual(res, 'OK')
+        # gh-98078: the client must send a fatal TLS alert to the
+        # server instead of just closing the connection, so that the
+        # server knows why the connection was dropped.
+        self.assertIsInstance(server_err, ssl.SSLError)
+        self.assertIn('ALERT_', server_err.reason or '')
+
+    def test_shutdown_corrupted_ssl_sends_close_notify(self):
+        # gh-98078: when the TLS shutdown fails (here: on a corrupted
+        # record that was buffered while the application had reading
+        # paused), the close_notify alert that OpenSSL already
+        # generated must be sent to the peer before the transport is
+        # closed, so that the peer sees a clean TLS EOF instead of a
+        # connection reset.
+        self.loop.set_exception_handler(lambda loop, ctx: None)
+
+        sslctx = test_utils.simple_server_sslcontext()
+        client_sslctx = test_utils.simple_client_sslcontext()
+        server_err = None
+
+        def server(sock):
+            nonlocal server_err
+            orig_sock = sock.dup()
+            try:
+                sock.start_tls(
+                    sslctx,
+                    server_side=True)
+                sock.sendall(b'A\n')
+                sock.recv_all(1)
+                orig_sock.send(b'please corrupt the SSL connection')
+                # the client now closes the connection; although its
+                # TLS shutdown fails on the corrupted record, it must
+                # still send close_notify, completing our unwrap()
+                sock.unwrap()
+            except ssl.SSLError as exc:
+                server_err = exc
+            finally:
+                orig_sock.close()
+                sock.close()
+
+        async def client(addr):
+            reader, writer = await asyncio.open_connection(
+                *addr,
+                ssl=client_sslctx,
+                server_hostname='')
+            # drain the post-handshake data (e.g. TLS session tickets)
+            # so that only the corrupted record can be buffered next
+            self.assertEqual(await reader.readline(), b'A\n')
+            # keep the corrupted record buffered in the incoming BIO
+            writer.transport.pause_reading()
+            writer.write(b'B')
+            await writer.drain()
+            # wait for the corrupted record to arrive in the read buffer
+            async with asyncio.timeout(support.SHORT_TIMEOUT):
+                while not writer.transport.get_read_buffer_size():
+                    await asyncio.sleep(0)
+            writer.close()
+            with self.assertRaises(ssl.SSLError):
+                await writer.wait_closed()
+
+        with self.tcp_server(server,
+                             max_clients=1,
+                             backlog=1) as srv:
+            self.loop.run_until_complete(client(srv.addr))
+
+        self.assertIsNone(server_err)
 
 
 @unittest.skipIf(ssl is None, 'No ssl module')

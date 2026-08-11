@@ -2,6 +2,7 @@ __all__ = (
     'StreamReader', 'StreamWriter', 'StreamReaderProtocol',
     'open_connection', 'start_server')
 
+import collections
 import socket
 import sys
 import warnings
@@ -23,7 +24,7 @@ _DEFAULT_LIMIT = 2 ** 16  # 64 KiB
 
 
 async def open_connection(host=None, port=None, *,
-                          loop=None, limit=_DEFAULT_LIMIT, **kwds):
+                          limit=_DEFAULT_LIMIT, **kwds):
     """A wrapper for create_connection() returning a (reader, writer) pair.
 
     The reader returned is a StreamReader instance; the writer is a
@@ -41,21 +42,17 @@ async def open_connection(host=None, port=None, *,
     StreamReaderProtocol classes, just copy the code -- there's
     really nothing special here except some convenience.)
     """
-    if loop is None:
-        loop = events.get_event_loop()
-    reader = StreamReader(limit=limit, loop=loop,
-                          _asyncio_internal=True)
-    protocol = StreamReaderProtocol(reader, loop=loop,
-                                    _asyncio_internal=True)
+    loop = events.get_running_loop()
+    reader = StreamReader(limit=limit, loop=loop)
+    protocol = StreamReaderProtocol(reader, loop=loop)
     transport, _ = await loop.create_connection(
         lambda: protocol, host, port, **kwds)
-    writer = StreamWriter(transport, protocol, reader, loop,
-                          _asyncio_internal=True)
+    writer = StreamWriter(transport, protocol, reader, loop)
     return reader, writer
 
 
 async def start_server(client_connected_cb, host=None, port=None, *,
-                       loop=None, limit=_DEFAULT_LIMIT, **kwds):
+                       limit=_DEFAULT_LIMIT, **kwds):
     """Start a socket server, call back for each client connected.
 
     The first parameter, `client_connected_cb`, takes two parameters:
@@ -70,22 +67,18 @@ async def start_server(client_connected_cb, host=None, port=None, *,
     positional host and port, with various optional keyword arguments
     following.  The return value is the same as loop.create_server().
 
-    Additional optional keyword arguments are loop (to set the event loop
-    instance to use) and limit (to set the buffer limit passed to the
-    StreamReader).
+    Additional optional keyword argument is limit (to set the buffer
+    limit passed to the StreamReader).
 
     The return value is the same as loop.create_server(), i.e. a
     Server object which can be used to stop the service.
     """
-    if loop is None:
-        loop = events.get_event_loop()
+    loop = events.get_running_loop()
 
     def factory():
-        reader = StreamReader(limit=limit, loop=loop,
-                              _asyncio_internal=True)
+        reader = StreamReader(limit=limit, loop=loop)
         protocol = StreamReaderProtocol(reader, client_connected_cb,
-                                        loop=loop,
-                                        _asyncio_internal=True)
+                                        loop=loop)
         return protocol
 
     return await loop.create_server(factory, host, port, **kwds)
@@ -95,32 +88,26 @@ if hasattr(socket, 'AF_UNIX'):
     # UNIX Domain Sockets are supported on this platform
 
     async def open_unix_connection(path=None, *,
-                                   loop=None, limit=_DEFAULT_LIMIT, **kwds):
+                                   limit=_DEFAULT_LIMIT, **kwds):
         """Similar to `open_connection` but works with UNIX Domain Sockets."""
-        if loop is None:
-            loop = events.get_event_loop()
-        reader = StreamReader(limit=limit, loop=loop,
-                              _asyncio_internal=True)
-        protocol = StreamReaderProtocol(reader, loop=loop,
-                                        _asyncio_internal=True)
+        loop = events.get_running_loop()
+
+        reader = StreamReader(limit=limit, loop=loop)
+        protocol = StreamReaderProtocol(reader, loop=loop)
         transport, _ = await loop.create_unix_connection(
             lambda: protocol, path, **kwds)
-        writer = StreamWriter(transport, protocol, reader, loop,
-                              _asyncio_internal=True)
+        writer = StreamWriter(transport, protocol, reader, loop)
         return reader, writer
 
     async def start_unix_server(client_connected_cb, path=None, *,
-                                loop=None, limit=_DEFAULT_LIMIT, **kwds):
+                                limit=_DEFAULT_LIMIT, **kwds):
         """Similar to `start_server` but works with UNIX Domain Sockets."""
-        if loop is None:
-            loop = events.get_event_loop()
+        loop = events.get_running_loop()
 
         def factory():
-            reader = StreamReader(limit=limit, loop=loop,
-                                  _asyncio_internal=True)
+            reader = StreamReader(limit=limit, loop=loop)
             protocol = StreamReaderProtocol(reader, client_connected_cb,
-                                            loop=loop,
-                                            _asyncio_internal=True)
+                                            loop=loop)
             return protocol
 
         return await loop.create_unix_server(factory, path, **kwds)
@@ -136,22 +123,13 @@ class FlowControlMixin(protocols.Protocol):
     StreamWriter.drain() must wait for _drain_helper() coroutine.
     """
 
-    def __init__(self, loop=None, *, _asyncio_internal=False):
+    def __init__(self, loop=None):
         if loop is None:
             self._loop = events.get_event_loop()
         else:
             self._loop = loop
-        if not _asyncio_internal:
-            # NOTE:
-            # Avoid inheritance from FlowControlMixin
-            # Copy-paste the code to your project
-            # if you need flow control helpers
-            warnings.warn(f"{self.__class__} should be instaniated "
-                          "by asyncio internals only, "
-                          "please avoid its creation from user code",
-                          DeprecationWarning)
         self._paused = False
-        self._drain_waiter = None
+        self._drain_waiters = collections.deque()
         self._connection_lost = False
 
     def pause_writing(self):
@@ -166,38 +144,34 @@ class FlowControlMixin(protocols.Protocol):
         if self._loop.get_debug():
             logger.debug("%r resumes writing", self)
 
-        waiter = self._drain_waiter
-        if waiter is not None:
-            self._drain_waiter = None
+        for waiter in self._drain_waiters:
             if not waiter.done():
                 waiter.set_result(None)
 
     def connection_lost(self, exc):
         self._connection_lost = True
-        # Wake up the writer if currently paused.
+        # Wake up the writer(s) if currently paused.
         if not self._paused:
             return
-        waiter = self._drain_waiter
-        if waiter is None:
-            return
-        self._drain_waiter = None
-        if waiter.done():
-            return
-        if exc is None:
-            waiter.set_result(None)
-        else:
-            waiter.set_exception(exc)
+
+        for waiter in self._drain_waiters:
+            if not waiter.done():
+                if exc is None:
+                    waiter.set_result(None)
+                else:
+                    waiter.set_exception(exc)
 
     async def _drain_helper(self):
         if self._connection_lost:
             raise ConnectionResetError('Connection lost')
         if not self._paused:
             return
-        waiter = self._drain_waiter
-        assert waiter is None or waiter.cancelled()
         waiter = self._loop.create_future()
-        self._drain_waiter = waiter
-        await waiter
+        self._drain_waiters.append(waiter)
+        try:
+            await waiter
+        finally:
+            self._drain_waiters.remove(waiter)
 
     def _get_close_waiter(self, stream):
         raise NotImplementedError
@@ -214,12 +188,10 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
 
     _source_traceback = None
 
-    def __init__(self, stream_reader, client_connected_cb=None, loop=None,
-                 *, _asyncio_internal=False):
-        super().__init__(loop=loop, _asyncio_internal=_asyncio_internal)
+    def __init__(self, stream_reader, client_connected_cb=None, loop=None):
+        super().__init__(loop=loop)
         if stream_reader is not None:
-            self._stream_reader_wr = weakref.ref(stream_reader,
-                                                 self._on_reader_gc)
+            self._stream_reader_wr = weakref.ref(stream_reader)
             self._source_traceback = stream_reader._source_traceback
         else:
             self._stream_reader_wr = None
@@ -229,33 +201,24 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             # is established.
             self._strong_reader = stream_reader
         self._reject_connection = False
-        self._stream_writer = None
+        self._task = None
         self._transport = None
         self._client_connected_cb = client_connected_cb
         self._over_ssl = False
         self._closed = self._loop.create_future()
-
-    def _on_reader_gc(self, wr):
-        transport = self._transport
-        if transport is not None:
-            # connection_made was called
-            context = {
-                'message': ('An open stream object is being garbage '
-                            'collected; call "stream.close()" explicitly.')
-            }
-            if self._source_traceback:
-                context['source_traceback'] = self._source_traceback
-            self._loop.call_exception_handler(context)
-            transport.abort()
-        else:
-            self._reject_connection = True
-        self._stream_reader_wr = None
 
     @property
     def _stream_reader(self):
         if self._stream_reader_wr is None:
             return None
         return self._stream_reader_wr()
+
+    def _replace_transport(self, transport):
+        self._transport = transport
+        self._over_ssl = transport.get_extra_info('sslcontext') is not None
+        reader = self._stream_reader
+        if reader is not None:
+            reader._replace_transport(transport)
 
     def connection_made(self, transport):
         if self._reject_connection:
@@ -275,14 +238,25 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             reader.set_transport(transport)
         self._over_ssl = transport.get_extra_info('sslcontext') is not None
         if self._client_connected_cb is not None:
-            self._stream_writer = StreamWriter(transport, self,
-                                               reader,
-                                               self._loop,
-                                               _asyncio_internal=True)
-            res = self._client_connected_cb(reader,
-                                            self._stream_writer)
+            writer = StreamWriter(transport, self, reader, self._loop)
+            res = self._client_connected_cb(reader, writer)
             if coroutines.iscoroutine(res):
-                self._loop.create_task(res)
+                def callback(task):
+                    if task.cancelled():
+                        transport.close()
+                        return
+                    exc = task.exception()
+                    if exc is not None:
+                        self._loop.call_exception_handler({
+                            'message': 'Unhandled exception in client_connected_cb',
+                            'exception': exc,
+                            'transport': transport,
+                        })
+                        transport.close()
+
+                self._task = self._loop.create_task(res)
+                self._task.add_done_callback(callback)
+
             self._strong_reader = None
 
     def connection_lost(self, exc):
@@ -299,7 +273,7 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
                 self._closed.set_exception(exc)
         super().connection_lost(exc)
         self._stream_reader_wr = None
-        self._stream_writer = None
+        self._task = None
         self._transport = None
 
     def data_received(self, data):
@@ -324,9 +298,13 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
     def __del__(self):
         # Prevent reports about unhandled exceptions.
         # Better than self._closed._log_traceback = False hack
-        closed = self._closed
-        if closed.done() and not closed.cancelled():
-            closed.exception()
+        try:
+            closed = self._closed
+        except AttributeError:
+            pass  # failed constructor
+        else:
+            if closed.done() and not closed.cancelled():
+                closed.exception()
 
 
 class StreamWriter:
@@ -339,13 +317,7 @@ class StreamWriter:
     directly.
     """
 
-    def __init__(self, transport, protocol, reader, loop,
-                 *, _asyncio_internal=False):
-        if not _asyncio_internal:
-            warnings.warn(f"{self.__class__} should be instaniated "
-                          "by asyncio internals only, "
-                          "please avoid its creation from user code",
-                          DeprecationWarning)
+    def __init__(self, transport, protocol, reader, loop):
         self._transport = transport
         self._protocol = protocol
         # drain() expects that the reader has an exception() method
@@ -376,7 +348,7 @@ class StreamWriter:
         return self._transport.can_write_eof()
 
     def close(self):
-        self._transport.close()
+        return self._transport.close()
 
     def is_closing(self):
         return self._transport.is_closing()
@@ -403,32 +375,44 @@ class StreamWriter:
             # Wait for protocol.connection_lost() call
             # Raise connection closing error if any,
             # ConnectionResetError otherwise
-            fut = self._protocol._get_close_waiter(self)
-            await fut
-            raise ConnectionResetError('Connection lost')
+            # Yield to the event loop so connection_lost() may be
+            # called.  Without this, _drain_helper() would return
+            # immediately, and code that calls
+            #     write(...); await drain()
+            # in a loop would never call connection_lost(), so it
+            # would not see an error when the socket is closed.
+            await sleep(0)
         await self._protocol._drain_helper()
 
-    async def aclose(self):
-        self.close()
-        await self.wait_closed()
-
-    async def awrite(self, data):
-        self.write(data)
+    async def start_tls(self, sslcontext, *,
+                        server_hostname=None,
+                        ssl_handshake_timeout=None,
+                        ssl_shutdown_timeout=None):
+        """Upgrade an existing stream-based connection to TLS."""
+        server_side = self._protocol._client_connected_cb is not None
+        protocol = self._protocol
         await self.drain()
+        new_transport = await self._loop.start_tls(  # type: ignore
+            self._transport, protocol, sslcontext,
+            server_side=server_side, server_hostname=server_hostname,
+            ssl_handshake_timeout=ssl_handshake_timeout,
+            ssl_shutdown_timeout=ssl_shutdown_timeout)
+        self._transport = new_transport
+        protocol._replace_transport(new_transport)
 
+    def __del__(self, warnings=warnings):
+        if not self._transport.is_closing():
+            if self._loop.is_closed():
+                warnings.warn("loop is closed", ResourceWarning)
+            else:
+                self.close()
+                warnings.warn(f"unclosed {self!r}", ResourceWarning)
 
 class StreamReader:
 
     _source_traceback = None
 
-    def __init__(self, limit=_DEFAULT_LIMIT, loop=None,
-                 *, _asyncio_internal=False):
-        if not _asyncio_internal:
-            warnings.warn(f"{self.__class__} should be instaniated "
-                          "by asyncio internals only, "
-                          "please avoid its creation from user code",
-                          DeprecationWarning)
-
+    def __init__(self, limit=_DEFAULT_LIMIT, loop=None):
         # The line length limit is  a security feature;
         # it also doubles as half the buffer limit.
 
@@ -490,6 +474,10 @@ class StreamReader:
 
     def set_transport(self, transport):
         assert self._transport is None, 'Transport already set'
+        self._transport = transport
+
+    def _replace_transport(self, transport):
+        assert self._transport is not None, 'Transport not set'
         self._transport = transport
 
     def _maybe_resume_transport(self):
@@ -556,17 +544,17 @@ class StreamReader:
             self._waiter = None
 
     async def readline(self):
-        """Read chunk of data from the stream until newline (b'\n') is found.
+        r"""Read chunk of data from the stream until newline (b'\n') is found.
 
-        On success, return chunk that ends with newline. If only partial
+        On success, return chunk that ends with newline.  If only partial
         line can be read due to EOF, return incomplete line without
-        terminating newline. When EOF was reached while no bytes read, empty
-        bytes object is returned.
+        terminating newline.  When EOF was reached while no bytes read,
+        empty bytes object is returned.
 
-        If limit is reached, ValueError will be raised. In that case, if
+        If limit is reached, ValueError will be raised.  In that case, if
         newline was found, complete line including newline will be removed
-        from internal buffer. Else, internal buffer will be cleared. Limit is
-        compared against part of the line without newline.
+        from internal buffer.  Else, internal buffer will be cleared.
+        Limit is compared against part of the line without newline.
 
         If stream was paused, this function will automatically resume it if
         needed.
@@ -605,20 +593,34 @@ class StreamReader:
         If the data cannot be read because of over limit, a
         LimitOverrunError exception  will be raised, and the data
         will be left in the internal buffer, so it can be read again.
+
+        The ``separator`` may also be a tuple of separators. In this
+        case the return value will be the shortest possible that has any
+        separator as the suffix. For the purposes of LimitOverrunError,
+        the shortest possible separator is considered to be the one that
+        matched.
         """
-        seplen = len(separator)
-        if seplen == 0:
+        if isinstance(separator, tuple):
+            # Makes sure shortest matches wins
+            separator = sorted(separator, key=len)
+        else:
+            separator = [separator]
+        if not separator:
+            raise ValueError('Separator should contain at least one element')
+        min_seplen = len(separator[0])
+        max_seplen = len(separator[-1])
+        if min_seplen == 0:
             raise ValueError('Separator should be at least one-byte string')
 
         if self._exception is not None:
             raise self._exception
 
         # Consume whole buffer except last bytes, which length is
-        # one less than seplen. Let's check corner cases with
-        # separator='SEPARATOR':
+        # one less than max_seplen. Let's check corner cases with
+        # separator[-1]='SEPARATOR':
         # * we have received almost complete separator (without last
         #   byte). i.e buffer='some textSEPARATO'. In this case we
-        #   can safely consume len(separator) - 1 bytes.
+        #   can safely consume max_seplen - 1 bytes.
         # * last byte of buffer is first byte of separator, i.e.
         #   buffer='abcdefghijklmnopqrS'. We may safely consume
         #   everything except that last byte, but this require to
@@ -631,26 +633,35 @@ class StreamReader:
         #   messages :)
 
         # `offset` is the number of bytes from the beginning of the buffer
-        # where there is no occurrence of `separator`.
+        # where there is no occurrence of any `separator`.
         offset = 0
 
-        # Loop until we find `separator` in the buffer, exceed the buffer size,
+        # Loop until we find a `separator` in the buffer, exceed the buffer size,
         # or an EOF has happened.
         while True:
             buflen = len(self._buffer)
 
-            # Check if we now have enough data in the buffer for `separator` to
-            # fit.
-            if buflen - offset >= seplen:
-                isep = self._buffer.find(separator, offset)
+            # Check if we now have enough data in the buffer for shortest
+            # separator to fit.
+            if buflen - offset >= min_seplen:
+                match_start = None
+                match_end = None
+                for sep in separator:
+                    isep = self._buffer.find(sep, offset)
 
-                if isep != -1:
-                    # `separator` is in the buffer. `isep` will be used later
-                    # to retrieve the data.
+                    if isep != -1:
+                        # `separator` is in the buffer. `match_start` and
+                        # `match_end` will be used later to retrieve the
+                        # data.
+                        end = isep + len(sep)
+                        if match_end is None or end < match_end:
+                            match_end = end
+                            match_start = isep
+                if match_end is not None:
                     break
 
                 # see upper comment for explanation.
-                offset = buflen + 1 - seplen
+                offset = max(0, buflen + 1 - max_seplen)
                 if offset > self._limit:
                     raise exceptions.LimitOverrunError(
                         'Separator is not found, and chunk exceed the limit',
@@ -659,37 +670,36 @@ class StreamReader:
             # Complete message (with full separator) may be present in buffer
             # even when EOF flag is set. This may happen when the last chunk
             # adds data which makes separator be found. That's why we check for
-            # EOF *ater* inspecting the buffer.
+            # EOF *after* inspecting the buffer.
             if self._eof:
-                chunk = bytes(self._buffer)
-                self._buffer.clear()
+                chunk = self._buffer.take_bytes()
                 raise exceptions.IncompleteReadError(chunk, None)
 
             # _wait_for_data() will resume reading if stream was paused.
             await self._wait_for_data('readuntil')
 
-        if isep > self._limit:
+        if match_start > self._limit:
             raise exceptions.LimitOverrunError(
-                'Separator is found, but chunk is longer than limit', isep)
+                'Separator is found, but chunk is longer than limit', match_start)
 
-        chunk = self._buffer[:isep + seplen]
-        del self._buffer[:isep + seplen]
+        chunk = self._buffer.take_bytes(match_end)
         self._maybe_resume_transport()
-        return bytes(chunk)
+        return chunk
 
     async def read(self, n=-1):
         """Read up to `n` bytes from the stream.
 
-        If n is not provided, or set to -1, read until EOF and return all read
-        bytes. If the EOF was received and the internal buffer is empty, return
-        an empty bytes object.
+        If `n` is not provided or set to -1,
+        read until EOF, then return all read bytes.
+        If EOF was received and the internal buffer is empty,
+        return an empty bytes object.
 
-        If n is zero, return empty bytes object immediately.
+        If `n` is 0, return an empty bytes object immediately.
 
-        If n is positive, this function try to read `n` bytes, and may return
-        less or equal bytes than requested, but at least one byte. If EOF was
-        received before any byte is read, this function returns empty byte
-        object.
+        If `n` is positive, return at most `n` available bytes
+        as soon as at least 1 byte is available in the internal buffer.
+        If EOF is received before any byte is read, return an empty
+        bytes object.
 
         Returned value is not limited with limit, configured at stream
         creation.
@@ -709,20 +719,16 @@ class StreamReader:
             # collect everything in self._buffer, but that would
             # deadlock if the subprocess sends more than self.limit
             # bytes.  So just call self.read(self._limit) until EOF.
-            blocks = []
-            while True:
-                block = await self.read(self._limit)
-                if not block:
-                    break
-                blocks.append(block)
-            return b''.join(blocks)
+            joined = bytearray()
+            while block := await self.read(self._limit):
+                joined += block
+            return joined.take_bytes()
 
         if not self._buffer and not self._eof:
             await self._wait_for_data('read')
 
         # This will work right even if buffer is less than n bytes
-        data = bytes(self._buffer[:n])
-        del self._buffer[:n]
+        data = self._buffer.take_bytes(min(len(self._buffer), n))
 
         self._maybe_resume_transport()
         return data
@@ -753,18 +759,12 @@ class StreamReader:
 
         while len(self._buffer) < n:
             if self._eof:
-                incomplete = bytes(self._buffer)
-                self._buffer.clear()
+                incomplete = self._buffer.take_bytes()
                 raise exceptions.IncompleteReadError(incomplete, n)
 
             await self._wait_for_data('readexactly')
 
-        if len(self._buffer) == n:
-            data = bytes(self._buffer)
-            self._buffer.clear()
-        else:
-            data = bytes(self._buffer[:n])
-            del self._buffer[:n]
+        data = self._buffer.take_bytes(n)
         self._maybe_resume_transport()
         return data
 

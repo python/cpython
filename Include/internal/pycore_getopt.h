@@ -17,6 +17,6 @@ typedef struct {
     int val;
 } _PyOS_LongOption;
 
-extern int _PyOS_GetOpt(Py_ssize_t argc, wchar_t **argv, int *longindex);
+extern int _PyOS_GetOpt(Py_ssize_t argc, wchar_t * const *argv, int *longindex);
 
 #endif /* !Py_INTERNAL_PYGETOPT_H */

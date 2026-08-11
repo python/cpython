@@ -1,10 +1,8 @@
-:mod:`modulefinder` --- Find modules used by a script
-=====================================================
+:mod:`!modulefinder` --- Find modules used by a script
+======================================================
 
 .. module:: modulefinder
    :synopsis: Find modules used by a script.
-
-.. sectionauthor:: A.M. Kuchling <amk@amk.ca>
 
 **Source code:** :source:`Lib/modulefinder.py`
 
@@ -96,14 +94,14 @@ Sample output (may vary depending on the architecture)::
     Loaded modules:
     _types:
     copyreg:  _inverted_registry,_slotnames,__all__
-    sre_compile:  isstring,_sre,_optimize_unicode
+    re._compiler:  isstring,_sre,_optimize_unicode
     _sre:
-    sre_constants:  REPEAT_ONE,makedict,AT_END_LINE
+    re._constants:  REPEAT_ONE,makedict,AT_END_LINE
     sys:
     re:  __module__,finditer,_expand
     itertools:
     __main__:  re,itertools,baconhameggs
-    sre_parse:  _PATTERNENDERS,SRE_FLAG_UNICODE
+    re._parser:  _PATTERNENDERS,SRE_FLAG_UNICODE
     array:
     types:  __module__,IntType,TypeType
     ---------------------------------------------------
