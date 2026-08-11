@@ -665,11 +665,11 @@ def _execvpe(file, args, env=None):
                 saved_exc = e
     if saved_exc is not None:
         raise saved_exc
-    if isinstance(last_exc, FileNotFoundError):
-        # At this point, last_exc.filename will contain the full path of
-        # whatever directory happened to be last in path_list. Set it to the
-        # filename that was passed in, which is what the caller will expect.
-        last_exc.filename = orig_file
+    # At this point, last_exc.filename contains the full path of whatever
+    # directory happened to be last in path_list. Set it to the filename that
+    # was passed in, which is what the caller will expect. This is what
+    # subprocess does too (see err_filename in Popen._execute_child()).
+    last_exc.filename = orig_file
     raise last_exc
 
 

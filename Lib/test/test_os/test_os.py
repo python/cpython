@@ -2637,11 +2637,11 @@ def _execvpe_mockup(defpath=None):
 @unittest.skipUnless(hasattr(os, 'execv'),
                      "need os.execv()")
 class ExecTests(unittest.TestCase):
-    def _test_bad_program(self, do_exec):
+    def _test_bad_program(self, do_exec, exc_type=OSError):
         for bad_filename in ('nosuchapp', b'nosuchapp',
                              FakePath('nosuchapp'), FakePath(b'nosuchapp')):
             with self.subTest(bad_filename):
-                with self.assertRaises(OSError) as ctx:
+                with self.assertRaises(exc_type) as ctx:
                     do_exec(bad_filename)
                 self.assertEqual(ctx.exception.filename,
                                  os.fspath(bad_filename))
@@ -2662,6 +2662,17 @@ class ExecTests(unittest.TestCase):
     @unittest.skipIf(USING_LINUXTHREADS, "linuxthreads bug: see issue #4970")
     def test_execvpe_with_bad_program(self):
         self._test_bad_program(lambda name: os.execvpe(name, ['nosuchapp'], {}))
+
+    @unittest.skipUnless(os.name == 'posix', 'POSIX specific test')
+    @unittest.skipIf(USING_LINUXTHREADS, "linuxthreads bug: see issue #4970")
+    def test_execvp_with_bad_path_entry(self):
+        # A regular file in PATH makes the exec fail with ENOTDIR.
+        create_file(os_helper.TESTFN)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with os_helper.EnvironmentVarGuard() as env:
+            env['PATH'] = os.path.abspath(os_helper.TESTFN)
+            self._test_bad_program(lambda name: os.execvp(name, ['nosuchapp']),
+                                   NotADirectoryError)
 
     def test_execv_with_bad_arglist(self):
         self.assertRaises(ValueError, os.execv, 'notepad', ())
