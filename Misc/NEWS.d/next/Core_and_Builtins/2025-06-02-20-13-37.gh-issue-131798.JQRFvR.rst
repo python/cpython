@@ -1,1 +1,0 @@
-Optimize ``_CHECK_METHOD_VERSION`` into ``_CHECK_FUNCTION_VERSION_INLINE`` in JIT-compiled code.

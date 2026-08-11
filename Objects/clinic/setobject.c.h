@@ -425,9 +425,7 @@ set___contains__(PyObject *so, PyObject *key)
 {
     PyObject *return_value = NULL;
 
-    Py_BEGIN_CRITICAL_SECTION(so);
     return_value = set___contains___impl((PySetObject *)so, key);
-    Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
@@ -554,4 +552,4 @@ set___sizeof__(PyObject *so, PyObject *Py_UNUSED(ignored))
 
     return return_value;
 }
-/*[clinic end generated code: output=7f7fe845ca165078 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5800c0bf136a5a0a input=a9049054013a1b77]*/

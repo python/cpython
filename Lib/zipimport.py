@@ -10,15 +10,12 @@ used by the builtin import mechanism for sys.path items that are paths
 to Zip archives.
 """
 
-#from importlib import _bootstrap_external
-#from importlib import _bootstrap  # for _verbose_message
 import _frozen_importlib_external as _bootstrap_external
 from _frozen_importlib_external import _unpack_uint16, _unpack_uint32, _unpack_uint64
 import _frozen_importlib as _bootstrap  # for _verbose_message
 import _imp  # for check_hash_based_pycs
 import _io  # for open
 import marshal  # for loads
-import sys  # for modules
 import time  # for mktime
 
 __all__ = ['ZipImportError', 'zipimporter']
@@ -33,8 +30,6 @@ class ZipImportError(ImportError):
 
 # _read_directory() cache
 _zip_directory_cache = {}
-
-_module_type = type(sys)
 
 END_CENTRAL_DIR_SIZE = 22
 END_CENTRAL_DIR_SIZE_64 = 56
@@ -747,9 +742,9 @@ def _normalize_line_endings(source):
 
 # Given a string buffer containing Python source code, compile it
 # and return a code object.
-def _compile_source(pathname, source):
+def _compile_source(pathname, source, module):
     source = _normalize_line_endings(source)
-    return compile(source, pathname, 'exec', dont_inherit=True)
+    return compile(source, pathname, 'exec', dont_inherit=True, module=module)
 
 # Convert the date/time values found in the Zip archive to a value
 # that's compatible with the time stamp stored in .pyc files.
@@ -820,7 +815,7 @@ def _get_module_code(self, fullname):
                 except ImportError as exc:
                     import_error = exc
             else:
-                code = _compile_source(modpath, data)
+                code = _compile_source(modpath, data, fullname)
             if code is None:
                 # bad magic number or non-matching mtime
                 # in byte code, try next

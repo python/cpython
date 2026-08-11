@@ -1,2 +1,0 @@
-:mod:`http.server`: Fix IPv6 address binding and
-:option:`--directory <http.server --directory>` handling when using HTTPS.
