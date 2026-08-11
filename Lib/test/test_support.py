@@ -1247,5 +1247,65 @@ class TestIsolated(unittest.TestCase):
         self.assertEqual(calls, [])
 
 
+class TestSubTests(unittest.TestCase):
+
+    def run_test(self, cls):
+        result = unittest.TestResult()
+        cls('test_it').run(result)
+        return result
+
+    def test_sync(self):
+        ran = []
+
+        class Sample(unittest.TestCase):
+            @support.subTests('a', [1, 2, 3])
+            def test_it(self, a):
+                ran.append(a)
+                self.assertNotEqual(a, 2)
+
+        result = self.run_test(Sample)
+        self.assertEqual(ran, [1, 2, 3])
+        self.assertEqual(result.testsRun, 1)
+        self.assertEqual(len(result.failures), 1)
+        self.assertEndsWith(result.failures[0][0].id(), 'test_it (a=2)')
+
+    # Running an asyncio event loop needs a working socket.
+    @support.requires_working_socket()
+    def test_async(self):
+        # An asynchronous test must be awaited: a synchronous wrapper would
+        # make it silently not run at all.
+        ran = []
+
+        class Sample(unittest.IsolatedAsyncioTestCase):
+            @support.subTests('a', [1, 2, 3])
+            async def test_it(self, a):
+                ran.append(a)
+                self.assertNotEqual(a, 2)
+
+        result = self.run_test(Sample)
+        self.assertEqual(ran, [1, 2, 3])
+        self.assertEqual(result.testsRun, 1)
+        self.assertEqual(len(result.failures), 1)
+        self.assertEndsWith(result.failures[0][0].id(), 'test_it (a=2)')
+
+    def test_multiple_parameters(self):
+        ran = []
+
+        class Sample(unittest.TestCase):
+            @support.subTests('a,b', [(1, 'x'), (2, 'y')])
+            def test_it(self, a, b):
+                ran.append((a, b))
+
+        result = self.run_test(Sample)
+        self.assertTrue(result.wasSuccessful(), result.errors)
+        self.assertEqual(ran, [(1, 'x'), (2, 'y')])
+
+    def test_cannot_decorate_class(self):
+        with self.assertRaises(TypeError):
+            @support.subTests('a', [1])
+            class Sample(unittest.TestCase):
+                pass
+
+
 if __name__ == '__main__':
     unittest.main()
