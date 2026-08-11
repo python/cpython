@@ -796,6 +796,7 @@ are always available.  They are listed here in alphabetical order.
       -inf
       >>> float(bytearray(b'-2.5'))
       -2.5
+      >>> import array
       >>> float(array.array('b', [49, 50, 51]))
       123.0
 
