@@ -1,2 +1,0 @@
-Improved documentation for the :option:`-x` command-line option, explaining
-its use for turning Python scripts into Windows batch files.
