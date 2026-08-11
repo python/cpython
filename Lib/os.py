@@ -599,6 +599,7 @@ def _execvpe(file, args, env=None):
         argrest = (args,)
         env = environ
 
+    file = os.fspath(file)
     if path.dirname(file):
         exec_func(file, *argrest)
         return
