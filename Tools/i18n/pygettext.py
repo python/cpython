@@ -193,7 +193,7 @@ def make_escapes(pass_nonascii):
         escape = escape_ascii
     else:
         escape = escape_nonascii
-    escapes = [r"\%03o" % i for i in range(256)]
+    escapes = [fr"\{i:03o}" for i in range(256)]
     for i in range(32, 127):
         escapes[i] = chr(i)
     escapes[ord('\\')] = r'\\'
@@ -727,7 +727,7 @@ def main():
         if opt in ('-h', '--help'):
             usage(0)
         elif opt in ('-a', '--extract-all'):
-            print("DepreciationWarning: -a/--extract-all is not implemented and will be removed in a future version",
+            print("DeprecationWarning: -a/--extract-all is not implemented and will be removed in a future version",
                   file=sys.stderr)
             options.extractall = 1
         elif opt in ('-c', '--add-comments'):
@@ -796,7 +796,7 @@ def main():
         try:
             with open(options.excludefilename) as fp:
                 options.toexclude = fp.readlines()
-        except IOError:
+        except OSError:
             print(f"Can't read --exclude-file: {options.excludefilename}",
                   file=sys.stderr)
             sys.exit(1)

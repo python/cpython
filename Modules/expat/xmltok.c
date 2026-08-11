@@ -24,6 +24,8 @@
    Copyright (c) 2022      Martin Ettl <ettl.martin78@googlemail.com>
    Copyright (c) 2022      Sean McBride <sean@rogue-research.com>
    Copyright (c) 2023      Hanno Böck <hanno@gentoo.org>
+   Copyright (c) 2025      Alfonso Gregory <gfunni234@gmail.com>
+   Copyright (c) 2026      Nick Begg <nick@stunttruck.net>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -56,8 +58,8 @@
 #  include "winconfig.h"
 #endif
 
-#include "expat_external.h"
 #include "internal.h"
+#include "fallthrough.h"
 #include "xmltok.h"
 #include "nametab.h"
 
@@ -641,7 +643,7 @@ unicode_byte_type(char hi, char lo) {
           *(*toP)++ = lo;                                                      \
           break;                                                               \
         }                                                                      \
-        /* fall through */                                                     \
+        EXPAT_FALLTHROUGH;                                                     \
       case 0x1:                                                                \
       case 0x2:                                                                \
       case 0x3:                                                                \
@@ -1398,7 +1400,7 @@ unknown_toUtf16(const ENCODING *enc, const char **fromP, const char *fromLim,
 }
 
 ENCODING *
-XmlInitUnknownEncoding(void *mem, int *table, CONVERTER convert,
+XmlInitUnknownEncoding(void *mem, const int *table, CONVERTER convert,
                        void *userData) {
   int i;
   struct unknown_encoding *e = (struct unknown_encoding *)mem;
@@ -1557,7 +1559,7 @@ initScan(const ENCODING *const *encodingTable, const INIT_ENCODING *enc,
     case 0xEF: /* possibly first byte of UTF-8 BOM */
       if (INIT_ENC_INDEX(enc) == ISO_8859_1_ENC && state == XML_CONTENT_STATE)
         break;
-      /* fall through */
+      EXPAT_FALLTHROUGH;
     case 0x00:
     case 0x3C:
       return XML_TOK_PARTIAL;
@@ -1661,7 +1663,7 @@ initScan(const ENCODING *const *encodingTable, const INIT_ENCODING *enc,
 #  undef ns
 
 ENCODING *
-XmlInitUnknownEncodingNS(void *mem, int *table, CONVERTER convert,
+XmlInitUnknownEncodingNS(void *mem, const int *table, CONVERTER convert,
                          void *userData) {
   ENCODING *enc = XmlInitUnknownEncoding(mem, table, convert, userData);
   if (enc)

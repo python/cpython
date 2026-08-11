@@ -134,7 +134,7 @@ class ImportTests(unittest.TestCase):
         # CRASHES importmodule(NULL)
 
     def test_importmodulenoblock(self):
-        # Test deprecated PyImport_ImportModuleNoBlock()
+        # Test deprecated (stable ABI only) PyImport_ImportModuleNoBlock()
         importmodulenoblock = _testlimitedcapi.PyImport_ImportModuleNoBlock
         with check_warnings(('', DeprecationWarning)):
             self.check_import_func(importmodulenoblock)
@@ -289,7 +289,10 @@ class ImportTests(unittest.TestCase):
             self.check_executecodemodule(execute_code_func, NULL, pathname)
 
         # Test NULL pathname and non-NULL cpathname
-        pyc_filename = importlib.util.cache_from_source(__file__)
+        try:
+            pyc_filename = importlib.util.cache_from_source(__file__)
+        except NotImplementedError:
+            return
         py_filename = importlib.util.source_from_cache(pyc_filename)
         origin = self.check_executecodemodule(execute_code_func, NULL, pyc_filename)
         if not object:

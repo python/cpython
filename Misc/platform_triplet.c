@@ -57,21 +57,21 @@ PLATFORM_TRIPLET=arm-linux-androideabi
 #  endif
 #  if defined(_MIPS_SIM)
 #   if defined(__mips_hard_float)
-#    if _MIPS_SIM == _ABIO32
+#    if defined(_ABIO32) && _MIPS_SIM == _ABIO32
 #     define LIBC_MIPS gnu
-#    elif _MIPS_SIM == _ABIN32
+#    elif defined(_ABIN32) && _MIPS_SIM == _ABIN32
 #     define LIBC_MIPS gnuabin32
-#    elif _MIPS_SIM == _ABI64
+#    elif defined(_ABI64) && _MIPS_SIM == _ABI64
 #     define LIBC_MIPS gnuabi64
 #    else
 #     error unknown mips sim value
 #    endif
 #   else
-#    if _MIPS_SIM == _ABIO32
+#    if defined(_ABIO32) && _MIPS_SIM == _ABIO32
 #     define LIBC_MIPS gnusf
-#    elif _MIPS_SIM == _ABIN32
+#    elif defined(_ABIN32) && _MIPS_SIM == _ABIN32
 #     define LIBC_MIPS gnuabin32sf
-#    elif _MIPS_SIM == _ABI64
+#    elif defined(_ABI64) && _MIPS_SIM == _ABI64
 #     define LIBC_MIPS gnuabi64sf
 #    else
 #     error unknown mips sim value
@@ -107,21 +107,21 @@ PLATFORM_TRIPLET=arm-linux-androideabi
 #   endif
 #   if defined(_MIPS_SIM)
 #    if defined(__mips_hard_float)
-#     if _MIPS_SIM == _ABIO32
+#     if defined(_ABIO32) && _MIPS_SIM == _ABIO32
 #      define LIBC_MIPS musl
-#     elif _MIPS_SIM == _ABIN32
+#     elif defined(_ABIN32) && _MIPS_SIM == _ABIN32
 #      define LIBC_MIPS musln32
-#     elif _MIPS_SIM == _ABI64
+#     elif defined(_ABI64) && _MIPS_SIM == _ABI64
 #      define LIBC_MIPS musl
 #     else
 #      error unknown mips sim value
 #     endif
 #    else
-#     if _MIPS_SIM == _ABIO32
+#     if defined(_ABIO32) && _MIPS_SIM == _ABIO32
 #      define LIBC_MIPS muslsf
-#     elif _MIPS_SIM == _ABIN32
+#     elif defined(_ABIN32) && _MIPS_SIM == _ABIN32
 #      define LIBC_MIPS musln32sf
-#     elif _MIPS_SIM == _ABI64
+#     elif defined(_ABI64) && _MIPS_SIM == _ABI64
 #      define LIBC_MIPS muslsf
 #     else
 #      error unknown mips sim value

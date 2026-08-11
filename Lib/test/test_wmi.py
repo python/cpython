@@ -70,8 +70,8 @@ class WmiTests(unittest.TestCase):
     def test_wmi_query_multiple_rows(self):
         # Multiple instances should have an extra null separator
         r = wmi_exec_query("SELECT ProcessId FROM Win32_Process WHERE ProcessId < 1000")
-        self.assertFalse(r.startswith("\0"), r)
-        self.assertFalse(r.endswith("\0"), r)
+        self.assertNotStartsWith(r, "\0")
+        self.assertNotEndsWith(r, "\0")
         it = iter(r.split("\0"))
         try:
             while True:

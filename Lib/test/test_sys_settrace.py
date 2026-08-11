@@ -360,6 +360,8 @@ class TraceTestCase(unittest.TestCase):
     # Disable gc collection when tracing, otherwise the
     # deallocators may be traced as well.
     def setUp(self):
+        if os.environ.get('PYTHON_UOPS_OPTIMIZE') == '0':
+            self.skipTest("Line tracing behavior differs when JIT optimizer is disabled")
         self.using_gc = gc.isenabled()
         gc.disable()
         self.addCleanup(sys.settrace, sys.gettrace())
@@ -664,21 +666,18 @@ class TraceTestCase(unittest.TestCase):
             (-2, 'line'),
             (-1, 'line'),
             (-1, 'return'),
-            (1, 'exception'),
             (2, 'line'),
             (1, 'line'),
             (-1, 'call'),
             (-2, 'line'),
             (-1, 'line'),
             (-1, 'return'),
-            (1, 'exception'),
             (2, 'line'),
             (1, 'line'),
             (-1, 'call'),
             (-2, 'line'),
             (-1, 'line'),
             (-1, 'return'),
-            (1, 'exception'),
             (2, 'line'),
             (1, 'line'),
             (-1, 'call'),

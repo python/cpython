@@ -8,7 +8,7 @@
 
 --------------
 
-The :mod:`trace` module allows you to trace program execution, generate
+The :mod:`!trace` module allows you to trace program execution, generate
 annotated statement coverage listings, print caller/callee relationships and
 list functions executed during a program run.  It can be used in another program
 or from the command line.
@@ -24,7 +24,7 @@ or from the command line.
 Command-Line Usage
 ------------------
 
-The :mod:`trace` module can be invoked from the command line.  It can be as
+The :mod:`!trace` module can be invoked from the command line.  It can be as
 simple as ::
 
    python -m trace --count -C . somefile.py ...
@@ -43,13 +43,13 @@ all Python modules imported during the execution into the current directory.
    Display the version of the module and exit.
 
 .. versionadded:: 3.8
-    Added ``--module`` option that allows to run an executable module.
+    Added ``--module`` option that allows running an executable module.
 
 Main options
 ^^^^^^^^^^^^
 
 At least one of the following options must be specified when invoking
-:mod:`trace`.  The :option:`--listfuncs <-l>` option is mutually exclusive with
+:mod:`!trace`.  The :option:`--listfuncs <-l>` option is mutually exclusive with
 the :option:`--trace <-t>` and :option:`--count <-c>` options. When
 :option:`--listfuncs <-l>` is provided, neither :option:`--count <-c>` nor
 :option:`--trace <-t>` are accepted, and vice versa.

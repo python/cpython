@@ -3,7 +3,8 @@
 Glossary:
     * errored    : Whitespace related problems present in file.
 """
-from unittest import TestCase, mock
+
+from unittest import TestCase, main, mock
 import errno
 import os
 import tabnanny
@@ -352,3 +353,17 @@ class TestCommandLine(TestCase):
                 "offending line: '\\tprint(\"world\")'"
             ).strip()
             self.validate_cmd("-vv", path, stdout=stdout, partial=True)
+
+
+class TestModule(TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(tabnanny, "__version__")
+        self.assertEqual(cm.filename, __file__)
+
+
+if __name__ == "__main__":
+    main()

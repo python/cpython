@@ -13,19 +13,20 @@
 #if defined(__clang__)
 #define _SILENCE_CLANG_COROUTINE_MESSAGE
 #endif
+#define _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS
 
 #include <appmodel.h>
 #include <winrt\Windows.ApplicationModel.h>
 #include <winrt\Windows.Storage.h>
 
 #ifdef PYTHONW
-#ifdef _DEBUG
+#ifdef Py_DEBUG
 const wchar_t *PROGNAME = L"pythonw_d.exe";
 #else
 const wchar_t *PROGNAME = L"pythonw.exe";
 #endif
 #else
-#ifdef _DEBUG
+#ifdef Py_DEBUG
 const wchar_t *PROGNAME = L"python_d.exe";
 #else
 const wchar_t *PROGNAME = L"python.exe";

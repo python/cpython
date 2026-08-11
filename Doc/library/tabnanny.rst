@@ -5,11 +5,6 @@
    :synopsis: Tool for detecting white space related problems in Python
               source files in a directory tree.
 
-.. moduleauthor:: Tim Peters <tim_one@users.sourceforge.net>
-.. sectionauthor:: Peter Funk <pf@artcom-gmbh.de>
-
-.. rudimentary documentation based on module comments
-
 **Source code:** :source:`Lib/tabnanny.py`
 
 --------------

@@ -162,6 +162,14 @@ class Test_pygettext(unittest.TestCase):
             # This will raise if the date format does not exactly match.
             datetime.strptime(creationDate, '%Y-%m-%d %H:%M%z')
 
+    def test_output_option(self):
+        for opt in ('-o', '--output='):
+            with temp_cwd():
+                assert_python_ok(self.script, f'{opt}test')
+                self.assertTrue(os.path.exists('test'))
+                res = assert_python_ok(self.script, f'{opt}-')
+                self.assertIn(b'Project-Id-Version: PACKAGE VERSION', res.out)
+
     def test_funcdocstring(self):
         for doc in ('"""doc"""', "r'''doc'''", "R'doc'", 'u"doc"'):
             with self.subTest(doc):
@@ -418,6 +426,11 @@ class Test_pygettext(unittest.TestCase):
         res = assert_python_ok(self.script, '--help')
         self.assertEqual(res.out, b'')
         self.assertIn(b'pygettext -- Python equivalent of xgettext(1)', res.err)
+
+    def test_version_text(self):
+        """Test that the version text is displayed."""
+        res = assert_python_ok(self.script, '--version')
+        self.assertIn(b'pygettext.py (xgettext for Python) 1.5', res.out)
 
     def test_error_messages(self):
         """Test that pygettext outputs error messages to stderr."""
