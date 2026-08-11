@@ -1,0 +1,4 @@
+Deprecate these C-API functions: :c:func:`PyGen_New`,
+:c:func:`PyGen_NewWithQualName`, :c:func:`PyCoro_New`, and
+:c:func:`PyAsyncGen_New`.
+Schedule them for removal in 3.18

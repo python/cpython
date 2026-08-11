@@ -1,2 +1,0 @@
-Document the new :const:`Py_TPFLAGS_MAPPING` and
-:const:`Py_TPFLAGS_SEQUENCE` type flags.

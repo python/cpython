@@ -1,0 +1,1 @@
+Fix bad return code from Lib/venv/bin/activate if hashing is disabled

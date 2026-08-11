@@ -1,1 +1,0 @@
-Fixing the example code in Doc/extending/extending.rst to declare and initialize the pmodule variable to be of the right type.

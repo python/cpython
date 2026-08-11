@@ -1,3 +1,0 @@
-The ``P.args`` and ``P.kwargs`` attributes of :class:`typing.ParamSpec` are
-now instances of the new classes :class:`typing.ParamSpecArgs` and
-:class:`typing.ParamSpecKwargs`, which enables a more useful ``repr()``. Patch by Jelle Zijlstra.
