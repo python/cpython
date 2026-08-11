@@ -71,7 +71,7 @@ class PosixTester(unittest.TestCase):
         NO_ARG_FUNCTIONS = [ "ctermid", "getcwd", "getcwdb", "uname",
                              "times", "getloadavg",
                              "getegid", "geteuid", "getgid", "getgroups",
-                             "getpid", "getpgrp", "getppid", "getuid", "sync",
+                             "getpid", "getpgrp", "getppid", "getuid",
                            ]
 
         for name in NO_ARG_FUNCTIONS:
@@ -80,6 +80,13 @@ class PosixTester(unittest.TestCase):
                 with self.subTest(name):
                     posix_func()
                     self.assertRaises(TypeError, posix_func, 1)
+
+    # gh-102184: sync() can block for a long time.
+    @support.requires_resource('walltime')
+    @unittest.skipUnless(hasattr(posix, 'sync'), 'test needs posix.sync()')
+    def test_sync(self):
+        posix.sync()
+        self.assertRaises(TypeError, posix.sync, 1)
 
     @unittest.skipUnless(hasattr(posix, 'getresuid'),
                          'test needs posix.getresuid()')
@@ -1315,8 +1322,8 @@ class PosixTester(unittest.TestCase):
     @unittest.skipUnless(hasattr(pwd, 'getpwuid'), "test needs pwd.getpwuid()")
     @unittest.skipUnless(hasattr(os, 'getuid'), "test needs os.getuid()")
     def test_getgrouplist(self):
-        user = pwd.getpwuid(os.getuid())[0]
-        group = pwd.getpwuid(os.getuid())[3]
+        user = pwd.getpwuid(os.getuid()).pw_name
+        group = pwd.getpwuid(os.getuid()).pw_gid
         self.assertIn(group, posix.getgrouplist(user, group))
 
 
@@ -1816,8 +1823,8 @@ class TestPosixDirFd(unittest.TestCase):
                 self.skipTest('posix.link(): %s' % e)
             self.addCleanup(posix.unlink, fulllinkname)
             # should have same inodes
-            self.assertEqual(posix.stat(fullname)[1],
-                posix.stat(fulllinkname)[1])
+            self.assertEqual(posix.stat(fullname).st_ino,
+                             posix.stat(fulllinkname).st_ino)
 
     @unittest.skipUnless(os.mkdir in os.supports_dir_fd, "test needs dir_fd support in os.mkdir()")
     def test_mkdir_dir_fd(self):
@@ -2387,6 +2394,22 @@ class TestPosixWeaklinking(unittest.TestCase):
         else:
             self.assertNotHasAttr(os, "pwritev")
             self.assertNotHasAttr(os, "preadv")
+
+    def test_pipe2(self):
+        self._verify_available("HAVE_PIPE2")
+        if self.mac_ver >= (27, 0):
+            self.assertHasAttr(os, "pipe2")
+        else:
+            self.assertNotHasAttr(os, "pipe2")
+
+    def test_dup3(self):
+        self._verify_available("HAVE_DUP3")
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        # Must not crash even when dup3 unavailable at runtime.
+        # os.dup2 returns fd2 (here w); do not double-close.
+        os.dup2(r, w, inheritable=False)
 
     def test_stat(self):
         self._verify_available("HAVE_FSTATAT")

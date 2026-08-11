@@ -1,0 +1,2 @@
+Store per-thread sample counts in Tachyon flamegraphs so filtering a thread
+updates frame widths and totals.
