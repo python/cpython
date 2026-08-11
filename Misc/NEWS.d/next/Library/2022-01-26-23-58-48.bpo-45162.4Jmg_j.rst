@@ -1,3 +1,0 @@
-The deprecated :mod:`unittest` APIs removed in 3.11a1 have been
-temporarily restored to be removed in 3.12 while cleanups in external
-projects go in.

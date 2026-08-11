@@ -1,4 +1,0 @@
-Remove the ``PyHeapType_GET_MEMBERS()`` macro. It was exposed in the public C
-API by mistake, it must only be used by Python internally.  Use the
-``PyTypeObject.tp_members`` member instead. Patch by Victor Stinner.
-

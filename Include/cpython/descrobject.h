@@ -43,7 +43,7 @@ typedef struct {
 
 typedef struct {
     PyDescr_COMMON;
-    struct PyMemberDef *d_member;
+    PyMemberDef *d_member;
 } PyMemberDescrObject;
 
 typedef struct {
@@ -56,8 +56,6 @@ typedef struct {
     struct wrapperbase *d_base;
     void *d_wrapped; /* This can be any function pointer */
 } PyWrapperDescrObject;
-
-PyAPI_DATA(PyTypeObject) _PyMethodWrapper_Type;
 
 PyAPI_FUNC(PyObject *) PyDescr_NewWrapper(PyTypeObject *,
                                                 struct wrapperbase *, void *);

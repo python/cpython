@@ -1,6 +1,0 @@
-Add new ``RETURN_GENERATOR`` bytecode to make generators.
-Simplifies calling Python functions in the VM, as they no
-longer any need to special case generator functions.
-
-Also add ``JUMP_NO_INTERRUPT`` bytecode that acts like
-``JUMP_ABSOLUTE``, but does not check for interrupts.
