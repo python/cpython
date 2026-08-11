@@ -5,6 +5,15 @@
  * standard Python regression test, via Lib/test/test_capi.py.
  */
 
+#include "pyconfig.h"   // Py_GIL_DISABLED
+
+#ifdef Py_GIL_DISABLED
+   // FIXME: use the Py_TARGET_ABI3T
+#else
+   // Need limited C API version 3.13 for Py_MOD_GIL_NOT_USED
+#  define Py_LIMITED_API 0x030d0000
+#endif
+
 #include "_testlimitedcapi/parts.h"
 
 static PyMethodDef TestMethods[] = {
