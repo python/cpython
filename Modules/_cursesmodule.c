@@ -798,6 +798,9 @@ curses_getcchar(const cchar_t *wcval, wchar_t *wstr, attr_t *attrs, int *pair)
         *pair = spair;
     }
 #endif
+    if (rtn != ERR) {
+        *attrs &= ~(attr_t)A_COLOR;
+    }
     return rtn;
 }
 
@@ -3674,7 +3677,7 @@ _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
             byte = 0;
         }
     }
-    rtn = (chtype)byte | (attrs & ~(attr_t)A_COLOR) | COLOR_PAIR(pair);
+    rtn = (chtype)byte | attrs | COLOR_PAIR(pair);
 #else
     if (!group_right_1) {
         rtn = winch(self->win);
