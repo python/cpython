@@ -79,8 +79,8 @@ In a Python shell, import all the objects of the ``turtle`` module::
 
     from turtle import *
 
-If you run into a ``No module named '_tkinter'`` error, you'll have to
-install the :mod:`Tk interface package <tkinter>` on your system.
+If you run into a ``Standard library module '_tkinter' was not found`` error,
+you'll have to install the :mod:`Tk interface package <tkinter>` on your system.
 
 
 Basic drawing
@@ -167,14 +167,16 @@ filling can be turned on and off::
 
 Next we'll create a loop::
 
+    start = pos()
+
     while True:
         forward(200)
         left(170)
-        if abs(pos()) < 1:
+        if distance(start) < 1:
             break
 
-``abs(pos()) < 1`` is a good way to know when the turtle is back at its
-home position.
+``distance(start) < 1`` is a good way to know when the turtle is back at its
+start position.
 
 Finally, complete the filling::
 
