@@ -1,2 +1,0 @@
-Switch Windows Store package's pip to use bundled :file:`pip.ini` instead of
-:envvar:`PIP_USER` variable.

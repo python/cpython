@@ -1,2 +1,0 @@
-venv activate.bat now works when the existing variables contain double quote
-characters.

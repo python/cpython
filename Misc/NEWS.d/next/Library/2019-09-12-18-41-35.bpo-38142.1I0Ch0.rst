@@ -1,1 +1,0 @@
-The _hashlib OpenSSL wrapper extension module is now PEP-384 compliant.

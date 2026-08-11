@@ -1,3 +1,0 @@
-The ``_PyObject_CheckConsistency()`` function is now also available in release
-mode. For example, it can be used to debug a crash in the ``visit_decref()``
-function of the GC.

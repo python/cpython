@@ -1,3 +1,0 @@
-Mark some individual tests to skip when --pgo is used.  The tests marked
-increase the PGO task time significantly and likely don't help improve
-optimization of the final executable.

@@ -1,2 +1,0 @@
-``pdb.Pdb`` supports ~/.pdbrc in Windows 7. Patch by Tim Hopper and Dan 
-Lidral-Porter.

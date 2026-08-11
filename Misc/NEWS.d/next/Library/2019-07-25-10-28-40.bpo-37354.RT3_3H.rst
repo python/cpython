@@ -1,1 +1,0 @@
-Make Activate.ps1 Powershell script static to allow for signing it.

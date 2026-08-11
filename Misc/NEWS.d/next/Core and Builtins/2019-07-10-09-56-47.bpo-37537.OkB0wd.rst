@@ -1,3 +1,0 @@
-Compute allocated pymalloc blocks inside _Py_GetAllocatedBlocks().  This
-slows down _Py_GetAllocatedBlocks() but gives a small speedup to
-_PyObject_Malloc() and _PyObject_Free().

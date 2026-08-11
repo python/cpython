@@ -1,5 +1,0 @@
-The logging.getLogger() API now returns the root logger when passed the name
-'root', whereas previously it returned a non-root logger named 'root'. This
-could affect cases where user code explicitly wants a non-root logger named
-'root', or instantiates a logger using logging.getLogger(__name__) in some
-top-level module called 'root.py'.

@@ -1,2 +1,0 @@
-Ensure command-line and unattend.xml setting override previously detected
-states in Windows installer.
