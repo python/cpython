@@ -633,7 +633,8 @@ class SMTPServer(asyncore.dispatcher):
                              " be set to True at the same time")
         asyncore.dispatcher.__init__(self, map=map)
         try:
-            gai_results = socket.getaddrinfo(*localaddr,
+            family = 0 if socket.has_ipv6 else socket.AF_INET
+            gai_results = socket.getaddrinfo(*localaddr, family=family,
                                              type=socket.SOCK_STREAM)
             self.create_socket(gai_results[0][0], gai_results[0][1])
             # try to re-use a server port if possible
@@ -861,7 +862,7 @@ if __name__ == '__main__':
         except ImportError:
             print('Cannot import module "pwd"; try running with -n option.', file=sys.stderr)
             sys.exit(1)
-        nobody = pwd.getpwnam('nobody')[2]
+        nobody = pwd.getpwnam('nobody').pw_uid
         try:
             os.setuid(nobody)
         except PermissionError:

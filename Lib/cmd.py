@@ -42,12 +42,15 @@ listings of documented functions, miscellaneous topics, and undocumented
 functions respectively.
 """
 
-import inspect, string, sys
+import sys
 
 __all__ = ["Cmd"]
 
 PROMPT = '(Cmd) '
-IDENTCHARS = string.ascii_letters + string.digits + '_'
+IDENTCHARS = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+              'abcdefghijklmnopqrstuvwxyz'
+              '0123456789'
+              '_')
 
 class Cmd:
     """A simple framework for writing line-oriented command interpreters.
@@ -270,7 +273,7 @@ class Cmd:
             endidx = readline.get_endidx() - stripped
             if begidx>0:
                 cmd, args, foo = self.parseline(line)
-                if cmd == '':
+                if not cmd:
                     compfunc = self.completedefault
                 else:
                     try:
@@ -303,9 +306,11 @@ class Cmd:
             try:
                 func = getattr(self, 'help_' + arg)
             except AttributeError:
+                from inspect import cleandoc
+
                 try:
                     doc=getattr(self, 'do_' + arg).__doc__
-                    doc = inspect.cleandoc(doc)
+                    doc = cleandoc(doc)
                     if doc:
                         self.stdout.write("%s\n"%str(doc))
                         return

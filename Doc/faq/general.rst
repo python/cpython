@@ -152,10 +152,11 @@ Alpha, beta and release candidate versions have an additional suffix:
 In other words, all versions labeled *2.0aN* precede the versions labeled
 *2.0bN*, which precede versions labeled *2.0rcN*, and *those* precede 2.0.
 
-You may also find version numbers with a "+" suffix, e.g. "2.2+".  These are
-unreleased versions, built directly from the CPython development repository.  In
-practice, after a final minor release is made, the version is incremented to the
-next minor version, which becomes the "a0" version, e.g. "2.4a0".
+You may also find version numbers with a "+dev" suffix, such as "3.15.0b3+dev".
+These are unreleased versions, built directly from the CPython development
+repository. After the first beta release is made, the version is
+incremented to the next feature version, which becomes the "a0" version,
+such as "3.16.0a0".
 
 See the `Developer's Guide
 <https://devguide.python.org/developer-workflow/development-cycle/>`__
@@ -186,7 +187,7 @@ How do I get documentation on Python?
 -------------------------------------
 
 The standard documentation for the current stable version of Python is available
-at https://docs.python.org/3/.  PDF, plain text, and downloadable HTML versions are
+at https://docs.python.org/3/.  EPUB, plain text, and downloadable HTML versions are
 also available at https://docs.python.org/3/download.html.
 
 The documentation is written in reStructuredText and processed by `the Sphinx
@@ -309,10 +310,9 @@ guaranteed that interfaces will remain the same throughout a series of bugfix
 releases.
 
 The latest stable releases can always be found on the `Python download page
-<https://www.python.org/downloads/>`_.  There are two production-ready versions
-of Python: 2.x and 3.x. The recommended version is 3.x, which is supported by
-most widely used libraries.  Although 2.x is still widely used, `it is not
-maintained anymore <https://peps.python.org/pep-0373/>`_.
+<https://www.python.org/downloads/>`_.
+Python 3.x is the recommended version and supported by most widely used libraries.
+Python 2.x :pep:`is not maintained anymore <373>`.
 
 How many people are using Python?
 ---------------------------------

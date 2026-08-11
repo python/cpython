@@ -76,7 +76,7 @@ virtual environment you're using, and modify the environment so that running
 ``python`` will get you that particular version and installation of Python.
 For example:
 
-.. code-block:: bash
+.. code-block:: console
 
   $ source ~/envs/tutorial-env/bin/activate
   (tutorial-env) $ python
@@ -87,6 +87,11 @@ For example:
   ['', '/usr/local/lib/python35.zip', ...,
   '~/envs/tutorial-env/lib/python3.5/site-packages']
   >>>
+
+Note that the activated virtual environment does not alter the ``PYTHONPATH`` variable in any way.
+This may lead to unexpected results if the path includes references to code which is incompatible with
+the Python version the virtual environment is using. The best practice is to ``unset PYTHONPATH``
+in bash or the equivalent for the shell you are using.
 
 To deactivate a virtual environment, type::
 
@@ -108,7 +113,7 @@ complete documentation for ``pip``.)
 
 You can install the latest version of a package by specifying a package's name:
 
-.. code-block:: bash
+.. code-block:: console
 
   (tutorial-env) $ python -m pip install novas
   Collecting novas
@@ -120,7 +125,7 @@ You can install the latest version of a package by specifying a package's name:
 You can also install a specific version of a package by giving the
 package name  followed by ``==`` and the version number:
 
-.. code-block:: bash
+.. code-block:: console
 
   (tutorial-env) $ python -m pip install requests==2.6.0
   Collecting requests==2.6.0
@@ -133,7 +138,7 @@ version is already installed and do nothing.  You can supply a
 different version number to get that version, or you can run ``python
 -m pip install --upgrade`` to upgrade the package to the latest version:
 
-.. code-block:: bash
+.. code-block:: console
 
   (tutorial-env) $ python -m pip install --upgrade requests
   Collecting requests
@@ -148,7 +153,7 @@ remove the packages from the virtual environment.
 
 ``python -m pip show`` will display information about a particular package:
 
-.. code-block:: bash
+.. code-block:: console
 
   (tutorial-env) $ python -m pip show requests
   ---
@@ -166,7 +171,7 @@ remove the packages from the virtual environment.
 ``python -m pip list`` will display all of the packages installed in
 the virtual environment:
 
-.. code-block:: bash
+.. code-block:: console
 
   (tutorial-env) $ python -m pip list
   novas (3.1.1.3)
@@ -179,7 +184,7 @@ the virtual environment:
 but the output uses the format that ``python -m pip install`` expects.
 A common convention is to put this list in a ``requirements.txt`` file:
 
-.. code-block:: bash
+.. code-block:: console
 
   (tutorial-env) $ python -m pip freeze > requirements.txt
   (tutorial-env) $ cat requirements.txt
@@ -191,7 +196,7 @@ The ``requirements.txt`` can then be committed to version control and
 shipped as part of an application.  Users can then install all the
 necessary packages with ``install -r``:
 
-.. code-block:: bash
+.. code-block:: console
 
   (tutorial-env) $ python -m pip install -r requirements.txt
   Collecting novas==3.1.1.3 (from -r requirements.txt (line 1))
