@@ -7,6 +7,7 @@ let invertedData = null;
 let currentThreadFilter = 'all';
 let isInverted = false;
 let useModuleNames = true;
+let zoomedNodeValue = null;
 
 // Heat colors are now defined in CSS variables (--heat-1 through --heat-8)
 // and automatically switch with theme changes - no JS color arrays needed!
@@ -98,11 +99,21 @@ function getDisplayName(moduleName, filename) {
   return filename;
 }
 
-function selectFlamegraphData() {
-  const baseData = isShowingElided ? elidedFlamegraphData : normalData;
+function selectFlamegraphData(selectedThreadId = null) {
+  let baseData = isShowingElided ? elidedFlamegraphData : normalData;
+
+  if (selectedThreadId !== null) {
+    baseData = filterDataByThread(baseData, selectedThreadId);
+  }
 
   if (!isInverted) {
     return baseData;
+  }
+
+  // Thread-filtered trees have different values, so invert them after filtering
+  // instead of using the cached all-thread tree.
+  if (selectedThreadId !== null) {
+    return generateInvertedFlamegraph(baseData);
   }
 
   if (isShowingElided) {
@@ -119,12 +130,11 @@ function selectFlamegraphData() {
 }
 
 function updateFlamegraphView() {
-  const selectedData = selectFlamegraphData();
   const selectedThreadId = currentThreadFilter !== 'all' ? parseInt(currentThreadFilter, 10) : null;
-  const filteredData = selectedThreadId !== null ? filterDataByThread(selectedData, selectedThreadId) : selectedData;
-  const tooltip = createPythonTooltip(filteredData);
-  const chart = createFlamegraph(tooltip, filteredData.value, filteredData);
-  renderFlamegraph(chart, filteredData);
+  const selectedData = selectFlamegraphData(selectedThreadId);
+  const tooltip = createPythonTooltip(selectedData);
+  const chart = createFlamegraph(tooltip, selectedData.value, selectedData);
+  renderFlamegraph(chart, selectedData);
   populateThreadStats(selectedData, selectedThreadId);
 }
 
@@ -316,6 +326,7 @@ function createPythonTooltip(data) {
     const selfSamples = d.data.self || 0;
     const selfMs = (selfSamples / 1000).toFixed(2);
     const percentage = ((d.data.value / data.value) * 100).toFixed(2);
+    const relativePercentage = Math.min(100, ((d.data.value / (zoomedNodeValue ?? data.value)) * 100)).toFixed(2);
     const calls = d.data.calls || 0;
     const childCount = d.children ? d.children.length : 0;
     const source = d.data.source;
@@ -438,6 +449,11 @@ function createPythonTooltip(data) {
 
         <span class="tooltip-stat-label">Percentage:</span>
         <span class="tooltip-stat-value accent">${percentage}%</span>
+
+        ${relativePercentage != percentage && relativePercentage != "100.00" ? `
+          <span class="tooltip-stat-label">Relative Percentage:</span>
+          <span class="tooltip-stat-value accent">${relativePercentage}%</span>
+        ` : ''}
 
         ${calls > 0 ? `
           <span class="tooltip-stat-label">Function Calls:</span>
@@ -620,6 +636,9 @@ function createFlamegraph(tooltip, rootValue, data) {
       const percentage = d.data.value / rootValue;
       const level = getHeatLevel(percentage);
       return heatColors[level];
+    })
+    .onClick(function (d) {
+      zoomedNodeValue = d.data.value;
     });
 
   return chart;
@@ -629,6 +648,7 @@ function renderFlamegraph(chart, data) {
   d3.select("#chart").datum(data).call(chart);
   window.flamegraphChart = chart;
   window.flamegraphData = data;
+  zoomedNodeValue = null;
   populateStats(data);
 }
 
@@ -926,7 +946,9 @@ function formatDuration(seconds) {
 
 function populateProfileSummary(data) {
   const stats = data.stats || {};
-  const totalSamples = stats.total_samples || data.value || 0;
+  const totalSamples = currentThreadFilter !== 'all'
+    ? (data.value ?? 0)
+    : (stats.total_samples ?? data.value ?? 0);
   const duration = stats.duration_sec || 0;
   const sampleRate = stats.sample_rate || (duration > 0 ? totalSamples / duration : 0);
   const errorRate = stats.error_rate || 0;
@@ -1198,7 +1220,7 @@ function initThreadFilter(data) {
   const threadFilter = document.getElementById('thread-filter');
   const threadSection = document.getElementById('thread-section');
 
-  if (!threadFilter || !data.threads) return;
+  if (!threadFilter || !data.threads || data.stats?.is_differential) return;
 
   threadFilter.innerHTML = '<option value="all">All Threads</option>';
 
@@ -1227,11 +1249,23 @@ function filterByThread() {
 
 function filterDataByThread(data, threadId) {
   function filterNode(node) {
-    if (!node.threads || !node.threads.includes(threadId)) {
+    const threadValues = node.thread_values?.[threadId];
+    if (!threadValues) {
       return null;
     }
 
-    const filteredNode = { ...node, children: [] };
+    const {
+      thread_values: _threadValues,
+      thread_opcodes: threadOpcodes,
+      ...sharedNode
+    } = node;
+    const filteredNode = {
+      ...sharedNode,
+      value: threadValues[0],
+      self: threadValues[1],
+      opcodes: threadOpcodes?.[threadId] ?? {},
+      children: []
+    };
 
     if (node.children && Array.isArray(node.children)) {
       filteredNode.children = node.children
@@ -1242,25 +1276,7 @@ function filterDataByThread(data, threadId) {
     return filteredNode;
   }
 
-  function recalculateValue(node) {
-    if (!node.children || node.children.length === 0) {
-      return node.value || 0;
-    }
-    const childrenValue = node.children.reduce((sum, child) => sum + recalculateValue(child), 0);
-    node.value = Math.max(node.value || 0, childrenValue);
-    return node.value;
-  }
-
-  const filteredRoot = { ...data, children: [] };
-
-  if (data.children && Array.isArray(data.children)) {
-    filteredRoot.children = data.children
-      .map(child => filterNode(child))
-      .filter(child => child !== null);
-  }
-
-  recalculateValue(filteredRoot);
-  return filteredRoot;
+  return filterNode(data);
 }
 
 // ============================================================================
@@ -1269,6 +1285,7 @@ function filterDataByThread(data, threadId) {
 
 function resetZoom() {
   if (window.flamegraphChart) {
+    zoomedNodeValue = null;
     window.flamegraphChart.resetZoom();
   }
 }

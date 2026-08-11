@@ -200,6 +200,7 @@ static int codegen_nameop(compiler *, location, identifier, expr_context_ty);
 static int codegen_visit_stmt(compiler *, stmt_ty);
 static int codegen_visit_keyword(compiler *, keyword_ty);
 static int codegen_visit_expr(compiler *, expr_ty);
+static int codegen_visit_unused_expr(compiler *, expr_ty);
 static int codegen_augassign(compiler *, stmt_ty);
 static int codegen_annassign(compiler *, stmt_ty);
 static int codegen_subscript(compiler *, expr_ty);
@@ -238,14 +239,14 @@ static int codegen_sync_comprehension_generator(
                                       asdl_comprehension_seq *generators, int gen_index,
                                       int depth,
                                       expr_ty elt, expr_ty val, int type,
-                                      IterStackPosition iter_pos);
+                                      IterStackPosition iter_pos, bool avoid_creation);
 
 static int codegen_async_comprehension_generator(
                                       compiler *c, location loc,
                                       asdl_comprehension_seq *generators, int gen_index,
                                       int depth,
                                       expr_ty elt, expr_ty val, int type,
-                                      IterStackPosition iter_pos);
+                                      IterStackPosition iter_pos, bool avoid_creation);
 
 static int codegen_pattern(compiler *, pattern_ty, pattern_context *);
 static int codegen_match(compiler *, stmt_ty);
@@ -474,6 +475,9 @@ codegen_addop_j(instr_sequence *seq, location loc,
             }                                                               \
         }                                                                   \
     } while (0)
+
+#define VISIT_UNUSED(C, TYPE, V) \
+    RETURN_IF_ERROR(codegen_visit_unused_ ## TYPE((C), (V)))
 
 static int
 codegen_call_exit_with_nones(compiler *c, location loc)
@@ -733,14 +737,8 @@ codegen_setup_annotations_scope(compiler *c, location loc,
 }
 
 static int
-codegen_leave_annotations_scope(compiler *c, location loc)
+codegen_rename_annotations_format_param(PyCodeObject *co)
 {
-    ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
-    PyCodeObject *co = _PyCompile_OptimizeAndAssemble(c, 1);
-    if (co == NULL) {
-        return ERROR;
-    }
-
     // We want the parameter to __annotate__ to be named "format" in the
     // signature  shown by inspect.signature(), but we need to use a
     // different name (.format) in the symtable; if the name
@@ -749,19 +747,16 @@ codegen_leave_annotations_scope(compiler *c, location loc)
     // co->co_localsplusnames = ("format", *co->co_localsplusnames[1:])
     const Py_ssize_t size = PyObject_Size(co->co_localsplusnames);
     if (size == -1) {
-        Py_DECREF(co);
         return ERROR;
     }
     PyObject *new_names = PyTuple_New(size);
     if (new_names == NULL) {
-        Py_DECREF(co);
         return ERROR;
     }
     PyTuple_SET_ITEM(new_names, 0, Py_NewRef(&_Py_ID(format)));
     for (int i = 1; i < size; i++) {
         PyObject *item = PyTuple_GetItem(co->co_localsplusnames, i);
         if (item == NULL) {
-            Py_DECREF(co);
             Py_DECREF(new_names);
             return ERROR;
         }
@@ -769,6 +764,22 @@ codegen_leave_annotations_scope(compiler *c, location loc)
         PyTuple_SET_ITEM(new_names, i, item);
     }
     Py_SETREF(co->co_localsplusnames, new_names);
+    return SUCCESS;
+}
+
+static int
+codegen_leave_annotations_scope(compiler *c, location loc)
+{
+    ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
+    PyCodeObject *co = _PyCompile_OptimizeAndAssemble(c, 1);
+    if (co == NULL) {
+        return ERROR;
+    }
+
+    if (codegen_rename_annotations_format_param(co) < 0) {
+        Py_DECREF(co);
+        return ERROR;
+    }
 
     _PyCompile_ExitScope(c);
     int ret = codegen_make_closure(c, loc, co, 0);
@@ -1267,6 +1278,10 @@ codegen_type_param_bound_or_default(compiler *c, expr_ty e,
     PyCodeObject *co = _PyCompile_OptimizeAndAssemble(c, 1);
     _PyCompile_ExitScope(c);
     if (co == NULL) {
+        return ERROR;
+    }
+    if (codegen_rename_annotations_format_param(co) < 0) {
+        Py_DECREF(co);
         return ERROR;
     }
     int ret = codegen_make_closure(c, LOC(e), co, MAKE_FUNCTION_DEFAULTS);
@@ -1768,6 +1783,10 @@ codegen_typealias_body(compiler *c, stmt_ty s)
     PyCodeObject *co = _PyCompile_OptimizeAndAssemble(c, 0);
     _PyCompile_ExitScope(c);
     if (co == NULL) {
+        return ERROR;
+    }
+    if (codegen_rename_annotations_format_param(co) < 0) {
+        Py_DECREF(co);
         return ERROR;
     }
     int ret = codegen_make_closure(c, loc, co, MAKE_FUNCTION_DEFAULTS);
@@ -3069,7 +3088,7 @@ codegen_stmt_expr(compiler *c, location loc, expr_ty value)
         return SUCCESS;
     }
 
-    VISIT(c, expr, value);
+    VISIT_UNUSED(c, expr, value);
     ADDOP(c, NO_LOCATION, POP_TOP); /* artificial */
     return SUCCESS;
 }
@@ -3354,7 +3373,10 @@ codegen_nameop(compiler *c, location loc,
             }
             break;
         case Store: op = STORE_GLOBAL; break;
-        case Del: op = DELETE_GLOBAL; break;
+        case Del:
+            ADDOP(c, loc, PUSH_NULL);
+            op = STORE_GLOBAL;
+            break;
         }
         break;
     case COMPILE_OP_NAME:
@@ -3366,7 +3388,10 @@ codegen_nameop(compiler *c, location loc,
                 : LOAD_NAME;
             break;
         case Store: op = STORE_NAME; break;
-        case Del: op = DELETE_NAME; break;
+        case Del:
+            ADDOP(c, loc, PUSH_NULL);
+            op = STORE_NAME;
+            break;
         }
         break;
     }
@@ -3953,21 +3978,44 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
 
     if (! (func->kind == Name_kind &&
            asdl_seq_LEN(args) == 1 &&
-           asdl_seq_LEN(kwds) == 0 &&
-           asdl_seq_GET(args, 0)->kind == GeneratorExp_kind))
+           asdl_seq_LEN(kwds) == 0))
     {
         return 0;
     }
 
-    expr_ty generator_exp = asdl_seq_GET(args, 0);
-    PySTEntryObject *generator_entry = _PySymtable_Lookup(SYMTABLE(c), (void *)generator_exp);
+    location loc = LOC(func);
+
+    expr_ty arg_expr = asdl_seq_GET(args, 0);
+
+    if (_PyUnicode_EqualToASCIIString(func->v.Name.id, "frozenset")
+        && (arg_expr->kind == Set_kind || arg_expr->kind == SetComp_kind)) {
+        NEW_JUMP_TARGET_LABEL(c, skip_optimization);
+
+        ADDOP_I(c, loc, COPY, 1);
+        ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, CONSTANT_BUILTIN_FROZENSET);
+        ADDOP_COMPARE(c, loc, Is);
+        ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, skip_optimization);
+        ADDOP(c, loc, POP_TOP);
+
+        VISIT(c, expr, arg_expr);
+        ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_BUILD_FROZENSET);
+
+        ADDOP_JUMP(c, loc, JUMP, end);
+
+        USE_LABEL(c, skip_optimization);
+        return 1;
+    }
+
+    if (arg_expr->kind != GeneratorExp_kind) {
+        return 0;
+    }
+
+    PySTEntryObject *generator_entry = _PySymtable_Lookup(SYMTABLE(c), (void *)arg_expr);
     if (generator_entry->ste_coroutine) {
         Py_DECREF(generator_entry);
         return 0;
     }
     Py_DECREF(generator_entry);
-
-    location loc = LOC(func);
 
     int optimized = 0;
     NEW_JUMP_TARGET_LABEL(c, skip_optimization);
@@ -3994,6 +4042,9 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
     else if (_PyUnicode_EqualToASCIIString(func->v.Name.id, "set")) {
         const_oparg = CONSTANT_BUILTIN_SET;
     }
+    else if (_PyUnicode_EqualToASCIIString(func->v.Name.id, "frozenset")) {
+        const_oparg = CONSTANT_BUILTIN_FROZENSET;
+    }
     if (const_oparg != -1) {
         ADDOP_I(c, loc, COPY, 1); // the function
         ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, const_oparg);
@@ -4003,10 +4054,10 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
 
         if (const_oparg == CONSTANT_BUILTIN_TUPLE || const_oparg == CONSTANT_BUILTIN_LIST) {
             ADDOP_I(c, loc, BUILD_LIST, 0);
-        } else if (const_oparg == CONSTANT_BUILTIN_SET) {
+        } else if (const_oparg == CONSTANT_BUILTIN_SET || const_oparg == CONSTANT_BUILTIN_FROZENSET) {
             ADDOP_I(c, loc, BUILD_SET, 0);
         }
-        VISIT(c, expr, generator_exp);
+        VISIT(c, expr, arg_expr);
 
         NEW_JUMP_TARGET_LABEL(c, loop);
         NEW_JUMP_TARGET_LABEL(c, cleanup);
@@ -4017,7 +4068,7 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
         if (const_oparg == CONSTANT_BUILTIN_TUPLE || const_oparg == CONSTANT_BUILTIN_LIST) {
             ADDOP_I(c, loc, LIST_APPEND, 3);
             ADDOP_JUMP(c, loc, JUMP, loop);
-        } else if (const_oparg == CONSTANT_BUILTIN_SET) {
+        } else if (const_oparg == CONSTANT_BUILTIN_SET || const_oparg == CONSTANT_BUILTIN_FROZENSET) {
             ADDOP_I(c, loc, SET_ADD, 3);
             ADDOP_JUMP(c, loc, JUMP, loop);
         }
@@ -4029,7 +4080,8 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
         ADDOP(c, NO_LOCATION, POP_ITER);
         if (const_oparg != CONSTANT_BUILTIN_TUPLE &&
             const_oparg != CONSTANT_BUILTIN_LIST &&
-            const_oparg != CONSTANT_BUILTIN_SET) {
+            const_oparg != CONSTANT_BUILTIN_SET &&
+            const_oparg != CONSTANT_BUILTIN_FROZENSET) {
             ADDOP_LOAD_CONST(c, loc, initial_res == Py_True ? Py_False : Py_True);
         }
         ADDOP_JUMP(c, loc, JUMP, end);
@@ -4043,6 +4095,9 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
             // result is already a list
         } else if (const_oparg == CONSTANT_BUILTIN_SET) {
             // result is already a set
+        }
+        else if (const_oparg == CONSTANT_BUILTIN_FROZENSET) {
+            ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_BUILD_FROZENSET);
         }
         else {
             ADDOP_LOAD_CONST(c, loc, initial_res);
@@ -4496,19 +4551,39 @@ codegen_comprehension_generator(compiler *c, location loc,
                                 asdl_comprehension_seq *generators, int gen_index,
                                 int depth,
                                 expr_ty elt, expr_ty val, int type,
-                                IterStackPosition iter_pos)
+                                IterStackPosition iter_pos, bool avoid_creation)
 {
     comprehension_ty gen;
     gen = (comprehension_ty)asdl_seq_GET(generators, gen_index);
     if (gen->is_async) {
         return codegen_async_comprehension_generator(
             c, loc, generators, gen_index, depth, elt, val, type,
-            iter_pos);
+            iter_pos, avoid_creation);
     } else {
         return codegen_sync_comprehension_generator(
             c, loc, generators, gen_index, depth, elt, val, type,
-            iter_pos);
+            iter_pos, avoid_creation);
     }
+}
+
+static int
+codegen_unpack_starred(compiler *c, location loc, expr_ty value, bool yield)
+{
+    NEW_JUMP_TARGET_LABEL(c, unpack_start);
+    NEW_JUMP_TARGET_LABEL(c, unpack_end);
+    VISIT(c, expr, value);
+    ADDOP_I(c, loc, GET_ITER, 0);
+    USE_LABEL(c, unpack_start);
+    ADDOP_JUMP(c, loc, FOR_ITER, unpack_end);
+    if (yield) {
+        ADDOP_YIELD(c, loc);
+    }
+    ADDOP(c, loc, POP_TOP);
+    ADDOP_JUMP(c, NO_LOCATION, JUMP, unpack_start);
+    USE_LABEL(c, unpack_end);
+    ADDOP(c, NO_LOCATION, END_FOR);
+    ADDOP(c, NO_LOCATION, POP_ITER);
+    return SUCCESS;
 }
 
 static int
@@ -4516,7 +4591,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
                                      asdl_comprehension_seq *generators,
                                      int gen_index, int depth,
                                      expr_ty elt, expr_ty val, int type,
-                                     IterStackPosition iter_pos)
+                                     IterStackPosition iter_pos, bool avoid_creation)
 {
     /* generate code for the iterator, then each of the ifs,
        and then write to the element */
@@ -4584,7 +4659,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
         RETURN_IF_ERROR(
             codegen_comprehension_generator(c, loc,
                                             generators, gen_index, depth,
-                                            elt, val, type, ITERABLE_IN_LOCAL));
+                                            elt, val, type, ITERABLE_IN_LOCAL, avoid_creation));
     }
 
     location elt_loc = LOC(elt);
@@ -4594,19 +4669,9 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
         /* comprehension specific code */
         switch (type) {
         case COMP_GENEXP:
+            assert(!avoid_creation);
             if (elt->kind == Starred_kind) {
-                NEW_JUMP_TARGET_LABEL(c, unpack_start);
-                NEW_JUMP_TARGET_LABEL(c, unpack_end);
-                VISIT(c, expr, elt->v.Starred.value);
-                ADDOP_I(c, elt_loc, GET_ITER, 0);
-                USE_LABEL(c, unpack_start);
-                ADDOP_JUMP(c, elt_loc, FOR_ITER, unpack_end);
-                ADDOP_YIELD(c, elt_loc);
-                ADDOP(c, elt_loc, POP_TOP);
-                ADDOP_JUMP(c, NO_LOCATION, JUMP, unpack_start);
-                USE_LABEL(c, unpack_end);
-                ADDOP(c, NO_LOCATION, END_FOR);
-                ADDOP(c, NO_LOCATION, POP_ITER);
+                RETURN_IF_ERROR(codegen_unpack_starred(c, elt_loc, elt->v.Starred.value, /*yield=*/true));
             }
             else {
                 VISIT(c, expr, elt);
@@ -4615,6 +4680,15 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
             }
             break;
         case COMP_LISTCOMP:
+            if (avoid_creation) {
+                if (elt->kind == Starred_kind) {
+                    RETURN_IF_ERROR(codegen_unpack_starred(c, elt_loc, elt->v.Starred.value, /*yield=*/false));
+                } else {
+                    VISIT(c, expr, elt);
+                    ADDOP(c, elt_loc, POP_TOP);
+                }
+                break;
+            }
             if (elt->kind == Starred_kind) {
                 VISIT(c, expr, elt->v.Starred.value);
                 ADDOP_I(c, elt_loc, LIST_EXTEND, depth + 1);
@@ -4678,7 +4752,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
                                       asdl_comprehension_seq *generators,
                                       int gen_index, int depth,
                                       expr_ty elt, expr_ty val, int type,
-                                      IterStackPosition iter_pos)
+                                      IterStackPosition iter_pos, bool avoid_creation)
 {
     NEW_JUMP_TARGET_LABEL(c, start);
     NEW_JUMP_TARGET_LABEL(c, send);
@@ -4728,7 +4802,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
         RETURN_IF_ERROR(
             codegen_comprehension_generator(c, loc,
                                             generators, gen_index, depth,
-                                            elt, val, type, 0));
+                                            elt, val, type, 0, avoid_creation));
     }
 
     location elt_loc = LOC(elt);
@@ -4737,6 +4811,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
         /* comprehension specific code */
         switch (type) {
         case COMP_GENEXP:
+            assert(!avoid_creation);
             if (elt->kind == Starred_kind) {
                 NEW_JUMP_TARGET_LABEL(c, unpack_start);
                 NEW_JUMP_TARGET_LABEL(c, unpack_end);
@@ -4758,6 +4833,16 @@ codegen_async_comprehension_generator(compiler *c, location loc,
             }
             break;
         case COMP_LISTCOMP:
+            if (avoid_creation) {
+                if (elt->kind == Starred_kind) {
+                    RETURN_IF_ERROR(codegen_unpack_starred(c, elt_loc, elt->v.Starred.value, /*yield=*/false));
+                } else {
+                    VISIT(c, expr, elt);
+                    ADDOP(c, elt_loc, POP_TOP);
+                }
+                break;
+            }
+
             if (elt->kind == Starred_kind) {
                 VISIT(c, expr, elt->v.Starred.value);
                 ADDOP_I(c, elt_loc, LIST_EXTEND, depth + 1);
@@ -4768,6 +4853,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
             }
             break;
         case COMP_SETCOMP:
+            assert(!avoid_creation);
             if (elt->kind == Starred_kind) {
                 VISIT(c, expr, elt->v.Starred.value);
                 ADDOP_I(c, elt_loc, SET_UPDATE, depth + 1);
@@ -4778,6 +4864,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
             }
             break;
         case COMP_DICTCOMP:
+            assert(!avoid_creation);
             if (val == NULL) {
                 /* unpacking (**) case */
                 VISIT(c, expr, elt);
@@ -4951,7 +5038,7 @@ pop_inlined_comprehension_state(compiler *c, location loc,
 static int
 codegen_comprehension(compiler *c, expr_ty e, int type,
                       identifier name, asdl_comprehension_seq *generators, expr_ty elt,
-                      expr_ty val)
+                      expr_ty val, bool avoid_creation)
 {
     PyCodeObject *co = NULL;
     _PyCompile_InlinedComprehensionState inline_state = {NULL, NULL, NULL, NO_LABEL};
@@ -5025,13 +5112,17 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
             goto error_in_scope;
         }
 
-        ADDOP_I(c, loc, op, 0);
-        if (is_inlined) {
-            ADDOP_I(c, loc, SWAP, 2);
+        if (!avoid_creation) {
+            ADDOP_I(c, loc, op, 0);
+            if (is_inlined) {
+                ADDOP_I(c, loc, SWAP, 2);
+            }
+        } else {
+            ADDOP_I(c, loc, COPY, 1);
         }
     }
     if (codegen_comprehension_generator(c, loc, generators, 0, 0,
-                                        elt, val, type, iter_state) < 0) {
+                                        elt, val, type, iter_state, avoid_creation) < 0) {
         goto error_in_scope;
     }
 
@@ -5073,6 +5164,8 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
         ADD_YIELD_FROM(c, loc, 1);
     }
 
+    assert(!avoid_creation);
+
     return SUCCESS;
 error_in_scope:
     if (!is_inlined) {
@@ -5094,17 +5187,17 @@ codegen_genexp(compiler *c, expr_ty e)
     _Py_DECLARE_STR(anon_genexpr, "<genexpr>");
     return codegen_comprehension(c, e, COMP_GENEXP, &_Py_STR(anon_genexpr),
                                  e->v.GeneratorExp.generators,
-                                 e->v.GeneratorExp.elt, NULL);
+                                 e->v.GeneratorExp.elt, NULL, false);
 }
 
 static int
-codegen_listcomp(compiler *c, expr_ty e)
+codegen_listcomp(compiler *c, expr_ty e, bool avoid_creation)
 {
     assert(e->kind == ListComp_kind);
     _Py_DECLARE_STR(anon_listcomp, "<listcomp>");
     return codegen_comprehension(c, e, COMP_LISTCOMP, &_Py_STR(anon_listcomp),
                                  e->v.ListComp.generators,
-                                 e->v.ListComp.elt, NULL);
+                                 e->v.ListComp.elt, NULL, avoid_creation);
 }
 
 static int
@@ -5114,7 +5207,7 @@ codegen_setcomp(compiler *c, expr_ty e)
     _Py_DECLARE_STR(anon_setcomp, "<setcomp>");
     return codegen_comprehension(c, e, COMP_SETCOMP, &_Py_STR(anon_setcomp),
                                  e->v.SetComp.generators,
-                                 e->v.SetComp.elt, NULL);
+                                 e->v.SetComp.elt, NULL, /*avoid_creation=*/false);
 }
 
 
@@ -5125,7 +5218,7 @@ codegen_dictcomp(compiler *c, expr_ty e)
     _Py_DECLARE_STR(anon_dictcomp, "<dictcomp>");
     return codegen_comprehension(c, e, COMP_DICTCOMP, &_Py_STR(anon_dictcomp),
                                  e->v.DictComp.generators,
-                                 e->v.DictComp.key, e->v.DictComp.value);
+                                 e->v.DictComp.key, e->v.DictComp.value, /*avoid_creation=*/false);
 }
 
 
@@ -5373,7 +5466,7 @@ codegen_with(compiler *c, stmt_ty s)
 }
 
 static int
-codegen_visit_expr(compiler *c, expr_ty e)
+codegen_visit_expr_impl(compiler *c, expr_ty e, bool result_is_unused)
 {
     if (Py_EnterRecursiveCall(" during compilation")) {
         return ERROR;
@@ -5416,7 +5509,7 @@ codegen_visit_expr(compiler *c, expr_ty e)
     case GeneratorExp_kind:
         return codegen_genexp(c, e);
     case ListComp_kind:
-        return codegen_listcomp(c, e);
+        return codegen_listcomp(c, e, result_is_unused);
     case SetComp_kind:
         return codegen_setcomp(c, e);
     case DictComp_kind:
@@ -5483,18 +5576,21 @@ codegen_visit_expr(compiler *c, expr_ty e)
             }
         }
         RETURN_IF_ERROR(_PyCompile_MaybeAddStaticAttributeToClass(c, e));
-        VISIT(c, expr, e->v.Attribute.value);
         loc = LOC(e);
         loc = update_start_location_to_match_attr(c, loc, e);
         switch (e->v.Attribute.ctx) {
         case Load:
+            VISIT(c, expr, e->v.Attribute.value);
             ADDOP_NAME(c, loc, LOAD_ATTR, e->v.Attribute.attr, names);
             break;
         case Store:
+            VISIT(c, expr, e->v.Attribute.value);
             ADDOP_NAME(c, loc, STORE_ATTR, e->v.Attribute.attr, names);
             break;
         case Del:
-            ADDOP_NAME(c, loc, DELETE_ATTR, e->v.Attribute.attr, names);
+            ADDOP(c, loc, PUSH_NULL);
+            VISIT(c, expr, e->v.Attribute.value);
+            ADDOP_NAME(c, loc, STORE_ATTR, e->v.Attribute.attr, names);
             break;
         }
         break;
@@ -5524,6 +5620,18 @@ codegen_visit_expr(compiler *c, expr_ty e)
         return codegen_tuple(c, e);
     }
     return SUCCESS;
+}
+
+static int
+codegen_visit_expr(compiler *c, expr_ty e)
+{
+    return codegen_visit_expr_impl(c, e, false);
+}
+
+static int
+codegen_visit_unused_expr(compiler *c, expr_ty e)
+{
+    return codegen_visit_expr_impl(c, e, true);
 }
 
 static bool
@@ -5699,7 +5807,9 @@ codegen_annassign(compiler *c, stmt_ty s)
                         ADDOP_NAME(c, loc, LOAD_NAME, &_Py_ID(__conditional_annotations__), names);
                     }
                     ADDOP_LOAD_CONST_NEW(c, loc, conditional_annotation_index);
-                    ADDOP_I(c, loc, SET_ADD, 1);
+                    // gh-154902: change SET_ADD to new INTRINSIC_ADD_CONDITIONAL_ANNOTATION intrinsic
+                    ADDOP_I(c, loc, CALL_INTRINSIC_2,
+                            INTRINSIC_ADD_CONDITIONAL_ANNOTATION);
                     ADDOP(c, loc, POP_TOP);
                 }
             }

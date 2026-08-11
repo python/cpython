@@ -101,10 +101,10 @@ to break, they've been backported to 2.6 and are described in this
 document in the appropriate place.  Some of the 3.0-derived features
 are:
 
-* A :meth:`__complex__` method for converting objects to a complex number.
+* A :meth:`~object.__complex__` method for converting objects to a complex number.
 * Alternate syntax for catching exceptions: ``except TypeError as exc``.
 * The addition of :func:`functools.reduce` as a synonym for the built-in
-  :func:`reduce` function.
+  :func:`!reduce` function.
 
 Python 3.0 adds several new built-in functions and changes the
 semantics of some existing builtins.  Functions that are new in 3.0
@@ -431,7 +431,7 @@ The contextlib module
 The :mod:`contextlib` module provides some functions and a decorator that
 are useful when writing objects for use with the ':keyword:`with`' statement.
 
-The decorator is called :func:`~contextlib.contextmanager`, and lets you write
+The decorator is called :deco:`~contextlib.contextmanager`, and lets you write
 a single generator function instead of defining a new class.  The generator
 should yield exactly one value.  The code up to the :keyword:`yield` will be
 executed as the :meth:`~object.__enter__` method, and the value yielded will
@@ -1145,7 +1145,7 @@ constraints upon the memory returned.  Some examples are:
 
 * :c:macro:`PyBUF_WRITABLE` indicates that the memory must be writable.
 
-* :c:macro:`PyBUF_LOCK` requests a read-only or exclusive lock on the memory.
+* :c:macro:`!PyBUF_LOCK` requests a read-only or exclusive lock on the memory.
 
 * :c:macro:`PyBUF_C_CONTIGUOUS` and :c:macro:`PyBUF_F_CONTIGUOUS`
   requests a C-contiguous (last dimension varies the fastest) or
@@ -1339,7 +1339,7 @@ builtin returns the binary representation for a number::
     >>> bin(173)
     '0b10101101'
 
-The :func:`int` and :func:`long` builtins will now accept the "0o"
+The :func:`int` and :func:`!long` builtins will now accept the "0o"
 and "0b" prefixes when base-8 or base-2 are requested, or when the
 *base* argument is zero (signalling that the base used should be
 determined from the string)::
@@ -1392,35 +1392,36 @@ This is equivalent to::
 .. _pep-3141:
 
 PEP 3141: A Type Hierarchy for Numbers
-=====================================================
+======================================
 
 Python 3.0 adds several abstract base classes for numeric types
 inspired by Scheme's numeric tower.  These classes were backported to
 2.6 as the :mod:`numbers` module.
 
-The most general ABC is :class:`Number`.  It defines no operations at
+The most general ABC is :class:`~numbers.Number`.  It defines no operations at
 all, and only exists to allow checking if an object is a number by
 doing ``isinstance(obj, Number)``.
 
-:class:`Complex` is a subclass of :class:`Number`.  Complex numbers
+:class:`~numbers.Complex` is a subclass of :class:`~numbers.Number`.  Complex numbers
 can undergo the basic operations of addition, subtraction,
 multiplication, division, and exponentiation, and you can retrieve the
 real and imaginary parts and obtain a number's conjugate.  Python's built-in
-complex type is an implementation of :class:`Complex`.
+complex type is an implementation of :class:`~numbers.Complex`.
 
-:class:`Real` further derives from :class:`Complex`, and adds
-operations that only work on real numbers: :func:`floor`, :func:`trunc`,
+:class:`~numbers.Real` further derives from :class:`~numbers.Complex`, and adds
+operations that only work on real numbers: :func:`~math.floor`, :func:`~math.trunc`,
 rounding, taking the remainder mod N, floor division,
 and comparisons.
 
-:class:`Rational` numbers derive from :class:`Real`, have
-:attr:`numerator` and :attr:`denominator` properties, and can be
+:class:`~numbers.Rational` numbers derive from :class:`~numbers.Real`, have
+:attr:`~numbers.Rational.numerator` and :attr:`~numbers.Rational.denominator`
+properties, and can be
 converted to floats.  Python 2.6 adds a simple rational-number class,
-:class:`Fraction`, in the :mod:`fractions` module.  (It's called
-:class:`Fraction` instead of :class:`Rational` to avoid
+:class:`~fractions.Fraction`, in the :mod:`fractions` module.  (It's called
+:class:`~fractions.Fraction` instead of ``Rational`` to avoid
 a name clash with :class:`numbers.Rational`.)
 
-:class:`Integral` numbers derive from :class:`Rational`, and
+:class:`~numbers.Integral` numbers derive from :class:`~numbers.Rational`, and
 can be shifted left and right with ``<<`` and ``>>``,
 combined using bitwise operations such as ``&`` and ``|``,
 and can be used as array indexes and slice boundaries.
@@ -1429,7 +1430,7 @@ In Python 3.0, the PEP slightly redefines the existing builtins
 :func:`round`, :func:`math.floor`, :func:`math.ceil`, and adds a new
 one, :func:`math.trunc`, that's been backported to Python 2.6.
 :func:`math.trunc` rounds toward zero, returning the closest
-:class:`Integral` that's between the function's argument and zero.
+:class:`~numbers.Integral` that's between the function's argument and zero.
 
 .. seealso::
 
@@ -1442,7 +1443,7 @@ one, :func:`math.trunc`, that's been backported to Python 2.6.
 
 
 The :mod:`fractions` Module
---------------------------------------------------
+---------------------------
 
 To fill out the hierarchy of numeric types, the :mod:`fractions`
 module provides a rational-number class.  Rational numbers store their
@@ -1450,7 +1451,7 @@ values as a numerator and denominator forming a fraction, and can
 exactly represent numbers such as ``2/3`` that floating-point numbers
 can only approximate.
 
-The :class:`Fraction` constructor takes two :class:`Integral` values
+The :class:`~fractions.Fraction` constructor takes two :class:`~numbers.Integral` values
 that will be the numerator and denominator of the resulting fraction. ::
 
     >>> from fractions import Fraction
@@ -1464,7 +1465,7 @@ that will be the numerator and denominator of the resulting fraction. ::
     Fraction(5, 3)
 
 For converting floating-point numbers to rationals,
-the float type now has an :meth:`as_integer_ratio` method that returns
+the float type now has an :meth:`~float.as_integer_ratio` method that returns
 the numerator and denominator for a fraction that evaluates to the same
 floating-point value::
 
@@ -1499,7 +1500,7 @@ Some smaller changes made to the core Python language are:
   :issue:`1739468`.)
 
 * The :func:`hasattr` function was catching and ignoring all errors,
-  under the assumption that they meant a :meth:`__getattr__` method
+  under the assumption that they meant a :meth:`~object.__getattr__` method
   was failing somehow and the return value of :func:`hasattr` would
   therefore be ``False``.  This logic shouldn't be applied to
   :exc:`KeyboardInterrupt` and :exc:`SystemExit`, however; Python 2.6
@@ -1557,8 +1558,9 @@ Some smaller changes made to the core Python language are:
 
   .. Revision 57619
 
-* Properties now have three attributes, :attr:`getter`, :attr:`setter`
-  and :attr:`deleter`, that are decorators providing useful shortcuts
+* Properties now have three decorators, :deco:`~property.getter`,
+  :deco:`~property.setter` and :deco:`~property.deleter`, that are
+  decorators providing useful shortcuts
   for adding a getter, setter or deleter function to an existing
   property. You would use them like this::
 
@@ -1585,10 +1587,10 @@ Some smaller changes made to the core Python language are:
             self._x = value / 2
 
 * Several methods of the built-in set types now accept multiple iterables:
-  :meth:`intersection`,
-  :meth:`intersection_update`,
-  :meth:`union`, :meth:`update`,
-  :meth:`difference` and :meth:`difference_update`.
+  :meth:`~set.intersection`,
+  :meth:`~set.intersection_update`,
+  :meth:`~set.union`, :meth:`~set.update`,
+  :meth:`~set.difference` and :meth:`~set.difference_update`.
 
   ::
 
@@ -1606,8 +1608,8 @@ Some smaller changes made to the core Python language are:
   positive or negative infinity.  This works on any platform with
   IEEE 754 semantics.  (Contributed by Christian Heimes; :issue:`1635`.)
 
-  Other functions in the :mod:`math` module, :func:`isinf` and
-  :func:`isnan`, return true if their floating-point argument is
+  Other functions in the :mod:`math` module, :func:`~math.isinf` and
+  :func:`~math.isnan`, return true if their floating-point argument is
   infinite or Not A Number.  (:issue:`1640`)
 
   Conversion functions were added to convert floating-point numbers
@@ -1632,17 +1634,17 @@ Some smaller changes made to the core Python language are:
   :func:`complex` constructor will now preserve the sign
   of the zero.  (Fixed by Mark T. Dickinson; :issue:`1507`.)
 
-* Classes that inherit a :meth:`__hash__` method from a parent class
+* Classes that inherit a :meth:`~object.__hash__` method from a parent class
   can set ``__hash__ = None`` to indicate that the class isn't
   hashable.  This will make ``hash(obj)`` raise a :exc:`TypeError`
   and the class will not be indicated as implementing the
   :class:`Hashable` ABC.
 
-  You should do this when you've defined a :meth:`__cmp__` or
-  :meth:`__eq__` method that compares objects by their value rather
+  You should do this when you've defined a :meth:`!__cmp__` or
+  :meth:`~object.__eq__` method that compares objects by their value rather
   than by identity.  All objects have a default hash method that uses
   ``id(obj)`` as the hash value.  There's no tidy way to remove the
-  :meth:`__hash__` method inherited from a parent class, so
+  :meth:`~object.__hash__` method inherited from a parent class, so
   assigning ``None`` was implemented as an override.  At the
   C level, extensions can set ``tp_hash`` to
   :c:func:`PyObject_HashNotImplemented`.
@@ -1654,7 +1656,7 @@ Some smaller changes made to the core Python language are:
   will not inadvertently catch :exc:`GeneratorExit`.
   (Contributed by Chad Austin; :issue:`1537`.)
 
-* Generator objects now have a :attr:`gi_code` attribute that refers to
+* Generator objects now have a :attr:`!gi_code` attribute that refers to
   the original code object backing the generator.
   (Contributed by Collin Winter; :issue:`1473257`.)
 
@@ -1667,17 +1669,17 @@ Some smaller changes made to the core Python language are:
   will now round-trip values.  For example, ``complex('(3+4j)')``
   now returns the value (3+4j).  (:issue:`1491866`)
 
-* The string :meth:`translate` method now accepts ``None`` as the
+* The string :meth:`~str.translate` method now accepts ``None`` as the
   translation table parameter, which is treated as the identity
   transformation.   This makes it easier to carry out operations
   that only delete characters.  (Contributed by Bengt Richter and
   implemented by Raymond Hettinger; :issue:`1193128`.)
 
-* The built-in :func:`dir` function now checks for a :meth:`__dir__`
+* The built-in :func:`dir` function now checks for a :meth:`~object.__dir__`
   method on the objects it receives.  This method must return a list
   of strings containing the names of valid attributes for the object,
   and lets the object control the value that :func:`dir` produces.
-  Objects that have :meth:`__getattr__` or :meth:`__getattribute__`
+  Objects that have :meth:`~object.__getattr__` or :meth:`~object.__getattribute__`
   methods can use this to advertise pseudo-attributes they will honor.
   (:issue:`1591665`)
 
@@ -1738,8 +1740,8 @@ Optimizations
   one of these types.  (Contributed by Neal Norwitz.)
 
 * Unicode strings now use faster code for detecting
-  whitespace and line breaks; this speeds up the :meth:`split` method
-  by about 25% and :meth:`splitlines` by 35%.
+  whitespace and line breaks; this speeds up the :meth:`~str.split` method
+  by about 25% and :meth:`~str.splitlines` by 35%.
   (Contributed by Antoine Pitrou.)  Memory usage is reduced
   by using pymalloc for the Unicode string's data.
 
@@ -1755,7 +1757,7 @@ Optimizations
 .. _new-26-interpreter:
 
 Interpreter Changes
--------------------------------
+-------------------
 
 Two command-line options have been reserved for use by other Python
 implementations.  The :option:`!-J` switch has been reserved for use by
@@ -1799,15 +1801,15 @@ changes, or look through the Subversion logs for all the details.
   were applied.  (Maintained by Josiah Carlson; see :issue:`1736190` for
   one patch.)
 
-* The :mod:`bsddb` module also has a new maintainer, Jesús Cea Avión, and the package
-  is now available as a standalone package.  The web page for the package is
-  `www.jcea.es/programacion/pybsddb.htm
+* The :mod:`!bsddb` module also has a new maintainer, Jesús Cea Avión, and the
+  package is now available as a standalone package.  The web page for the package
+  is `www.jcea.es/programacion/pybsddb.htm
   <https://www.jcea.es/programacion/pybsddb.htm>`__.
   The plan is to remove the package from the standard library
   in Python 3.0, because its pace of releases is much more frequent than
   Python's.
 
-  The :mod:`bsddb.dbshelve` module now uses the highest pickling protocol
+  The :mod:`!bsddb.dbshelve` module now uses the highest pickling protocol
   available, instead of restricting itself to protocol 1.
   (Contributed by W. Barnes.)
 
@@ -1817,9 +1819,9 @@ changes, or look through the Subversion logs for all the details.
   "/cgi-bin/add.py?category=1".  (Contributed by Alexandre Fiori and
   Nubis; :issue:`1817`.)
 
-  The :func:`parse_qs` and :func:`parse_qsl` functions have been
-  relocated from the :mod:`!cgi` module to the :mod:`urlparse <urllib.parse>` module.
-  The versions still available in the :mod:`!cgi` module will
+  The :func:`~urllib.parse.parse_qs` and :func:`~urllib.parse.parse_qsl` functions
+  have been relocated from the :mod:`!cgi` module to the :mod:`urlparse <urllib.parse>`
+  module. The versions still available in the :mod:`!cgi` module will
   trigger :exc:`PendingDeprecationWarning` messages in 2.6
   (:issue:`600362`).
 
@@ -1827,27 +1829,27 @@ changes, or look through the Subversion logs for all the details.
   contributed by Mark Dickinson and Christian Heimes.
   Five new functions were added:
 
-  * :func:`polar` converts a complex number to polar form, returning
+  * :func:`~cmath.polar` converts a complex number to polar form, returning
     the modulus and argument of the complex number.
 
-  * :func:`rect` does the opposite, turning a modulus, argument pair
+  * :func:`~cmath.rect` does the opposite, turning a modulus, argument pair
     back into the corresponding complex number.
 
-  * :func:`phase` returns the argument (also called the angle) of a complex
+  * :func:`~cmath.phase` returns the argument (also called the angle) of a complex
     number.
 
-  * :func:`isnan` returns True if either
+  * :func:`~cmath.isnan` returns True if either
     the real or imaginary part of its argument is a NaN.
 
-  * :func:`isinf` returns True if either the real or imaginary part of
+  * :func:`~cmath.isinf` returns True if either the real or imaginary part of
     its argument is infinite.
 
   The revisions also improved the numerical soundness of the
   :mod:`cmath` module.  For all functions, the real and imaginary
   parts of the results are accurate to within a few units of least
   precision (ulps) whenever possible.  See :issue:`1381` for the
-  details.  The branch cuts for :func:`asinh`, :func:`atanh`: and
-  :func:`atan` have also been corrected.
+  details.  The branch cuts for :func:`~cmath.asinh`, :func:`~cmath.atanh`, and
+  :func:`~cmath.atan` have also been corrected.
 
   The tests for the module have been greatly expanded; nearly 2000 new
   test cases exercise the algebraic functions.
@@ -1879,14 +1881,14 @@ changes, or look through the Subversion logs for all the details.
      variable(id=1, name='amplitude', type='int', size=4)
 
   Several places in the standard library that returned tuples have
-  been modified to return :func:`namedtuple` instances.  For example,
-  the :meth:`Decimal.as_tuple` method now returns a named tuple with
-  :attr:`sign`, :attr:`digits`, and :attr:`exponent` fields.
+  been modified to return :func:`~collections.namedtuple` instances.  For example,
+  the :meth:`decimal.Decimal.as_tuple` method now returns a named tuple with
+  :attr:`!sign`, :attr:`!digits`, and :attr:`!exponent` fields.
 
   (Contributed by Raymond Hettinger.)
 
 * Another change to the :mod:`collections` module is that the
-  :class:`deque` type now supports an optional *maxlen* parameter;
+  :class:`~collections.deque` type now supports an optional *maxlen* parameter;
   if supplied, the deque's size will be restricted to no more
   than *maxlen* items.  Adding more items to a full deque causes
   old items to be discarded.
@@ -1912,7 +1914,7 @@ changes, or look through the Subversion logs for all the details.
   (Contributed by Arvin Schnell; :issue:`1638033`.)
 
 * A new window method in the :mod:`curses` module,
-  :meth:`chgat`, changes the display attributes for a certain number of
+  :meth:`~curses.window.chgat`, changes the display attributes for a certain number of
   characters on a single line.  (Contributed by Fabian Kreutz.)
 
   ::
@@ -1921,20 +1923,20 @@ changes, or look through the Subversion logs for all the details.
      # and affecting the rest of the line.
      stdscr.chgat(0, 21, curses.A_BOLD)
 
-  The :class:`Textbox` class in the :mod:`curses.textpad` module
+  The :class:`~curses.textpad.Textbox` class in the :mod:`curses.textpad` module
   now supports editing in insert mode as well as overwrite mode.
   Insert mode is enabled by supplying a true value for the *insert_mode*
-  parameter when creating the :class:`Textbox` instance.
+  parameter when creating the :class:`~curses.textpad.Textbox` instance.
 
-* The :mod:`datetime` module's :meth:`strftime` methods now support a
-  ``%f`` format code that expands to the number of microseconds in the
+* The :mod:`datetime` module's :meth:`~datetime.datetime.strftime` methods now
+  support a ``%f`` format code that expands to the number of microseconds in the
   object, zero-padded on
   the left to six places.  (Contributed by Skip Montanaro; :issue:`1158`.)
 
 * The :mod:`decimal` module was updated to version 1.66 of
   `the General Decimal Specification <https://speleotrove.com/decimal/decarith.html>`__.  New features
   include some methods for some basic mathematical functions such as
-  :meth:`exp` and :meth:`log10`::
+  :meth:`~decimal.Decimal.exp` and :meth:`~decimal.Decimal.log10`::
 
     >>> Decimal(1).exp()
     Decimal("2.718281828459045235360287471")
@@ -1943,28 +1945,29 @@ changes, or look through the Subversion logs for all the details.
     >>> Decimal(1000).log10()
     Decimal("3")
 
-  The :meth:`as_tuple` method of :class:`Decimal` objects now returns a
-  named tuple with :attr:`sign`, :attr:`digits`, and :attr:`exponent` fields.
+  The :meth:`~decimal.Decimal.as_tuple` method of :class:`~decimal.Decimal`
+  objects now returns a named tuple with :attr:`!sign`, :attr:`!digits`, and
+  :attr:`!exponent` fields.
 
   (Implemented by Facundo Batista and Mark Dickinson.  Named tuple
   support added by Raymond Hettinger.)
 
-* The :mod:`difflib` module's :class:`SequenceMatcher` class
+* The :mod:`difflib` module's :class:`~difflib.SequenceMatcher` class
   now returns named tuples representing matches,
-  with :attr:`a`, :attr:`b`, and :attr:`size` attributes.
+  with :attr:`!a`, :attr:`!b`, and :attr:`!size` attributes.
   (Contributed by Raymond Hettinger.)
 
 * An optional ``timeout`` parameter, specifying a timeout measured in
   seconds, was added to the :class:`ftplib.FTP` class constructor as
-  well as the :meth:`connect` method.  (Added by Facundo Batista.)
-  Also, the :class:`FTP` class's :meth:`storbinary` and
-  :meth:`storlines` now take an optional *callback* parameter that
+  well as the :meth:`~ftplib.FTP.connect` method.  (Added by Facundo Batista.)
+  Also, the :class:`~ftplib.FTP` class's :meth:`~ftplib.FTP.storbinary` and
+  :meth:`~ftplib.FTP.storlines` now take an optional *callback* parameter that
   will be called with each block of data after the data has been sent.
   (Contributed by Phil Schwartz; :issue:`1221598`.)
 
-* The :func:`reduce` built-in function is also available in the
+* The :func:`!reduce` built-in function is also available in the
   :mod:`functools` module.  In Python 3.0, the builtin has been
-  dropped and :func:`reduce` is only available from :mod:`functools`;
+  dropped and :func:`~functools.reduce` is only available from :mod:`functools`;
   currently there are no plans to drop the builtin in the 2.x series.
   (Patched by Christian Heimes; :issue:`1739906`.)
 
@@ -1988,8 +1991,8 @@ changes, or look through the Subversion logs for all the details.
 
   Another new function, ``heappushpop(heap, item)``,
   pushes *item* onto *heap*, then pops off and returns the smallest item.
-  This is more efficient than making a call to :func:`heappush` and then
-  :func:`heappop`.
+  This is more efficient than making a call to :func:`~heapq.heappush` and then
+  :func:`~heapq.heappop`.
 
   :mod:`heapq` is now implemented to only use less-than comparison,
   instead of the less-than-or-equal comparison it previously used.
@@ -2003,14 +2006,14 @@ changes, or look through the Subversion logs for all the details.
   Batista.)
 
 * Most of the :mod:`inspect` module's functions, such as
-  :func:`getmoduleinfo` and :func:`getargs`, now return named tuples.
+  :func:`!getmoduleinfo` and :func:`!getargs`, now return named tuples.
   In addition to behaving like tuples, the elements of the  return value
   can also be accessed as attributes.
   (Contributed by Raymond Hettinger.)
 
   Some new functions in the module include
-  :func:`isgenerator`, :func:`isgeneratorfunction`,
-  and :func:`isabstract`.
+  :func:`~inspect.isgenerator`, :func:`~inspect.isgeneratorfunction`,
+  and :func:`~inspect.isabstract`.
 
 * The :mod:`itertools` module gained several new functions.
 
@@ -2071,7 +2074,7 @@ changes, or look through the Subversion logs for all the details.
   ``itertools.chain(*iterables)`` is an existing function in
   :mod:`itertools` that gained a new constructor in Python 2.6.
   ``itertools.chain.from_iterable(iterable)`` takes a single
-  iterable that should return other iterables.  :func:`chain` will
+  iterable that should return other iterables.  :func:`~itertools.chain` will
   then return all the elements of the first iterable, then
   all the elements of the second, and so on. ::
 
@@ -2080,14 +2083,15 @@ changes, or look through the Subversion logs for all the details.
 
   (All contributed by Raymond Hettinger.)
 
-* The :mod:`logging` module's :class:`FileHandler` class
-  and its subclasses :class:`WatchedFileHandler`, :class:`RotatingFileHandler`,
-  and :class:`TimedRotatingFileHandler` now
+* The :mod:`logging` module's :class:`~logging.FileHandler` class
+  and its subclasses :class:`~logging.handlers.WatchedFileHandler`,
+  :class:`~logging.handlers.RotatingFileHandler`,
+  and :class:`~logging.handlers.TimedRotatingFileHandler` now
   have an optional *delay* parameter to their constructors.  If *delay*
   is true, opening of the log file is deferred until the first
-  :meth:`emit` call is made.  (Contributed by Vinay Sajip.)
+  :meth:`~logging.FileHandler.emit` call is made.  (Contributed by Vinay Sajip.)
 
-  :class:`TimedRotatingFileHandler` also has a *utc* constructor
+  :class:`~logging.handlers.TimedRotatingFileHandler` also has a *utc* constructor
   parameter.  If the argument is true, UTC time will be used
   in determining when midnight occurs and in generating filenames;
   otherwise local time will be used.
@@ -2116,8 +2120,8 @@ changes, or look through the Subversion logs for all the details.
   * :func:`~math.log1p` returns the natural logarithm of *1+x*
     (base *e*).
 
-  * :func:`trunc` rounds a number toward zero, returning the closest
-    :class:`Integral` that's between the function's argument and zero.
+  * :func:`~math.trunc` rounds a number toward zero, returning the closest
+    :class:`~numbers.Integral` that's between the function's argument and zero.
     Added as part of the backport of
     `PEP 3141's type hierarchy for numbers <#pep-3141>`__.
 
@@ -2137,14 +2141,15 @@ changes, or look through the Subversion logs for all the details.
 
   (Contributed by Christian Heimes and Mark Dickinson.)
 
-* :class:`~mmap.mmap` objects now have a :meth:`rfind` method that searches for a
+* :class:`~mmap.mmap` objects now have a :meth:`~mmap.mmap.rfind` method that
+  searches for a
   substring beginning at the end of the string and searching
-  backwards.  The :meth:`find` method also gained an *end* parameter
+  backwards.  The :meth:`~mmap.mmap.find` method also gained an *end* parameter
   giving an index at which to stop searching.
   (Contributed by John Lenton.)
 
 * The :mod:`operator` module gained a
-  :func:`methodcaller` function that takes a name and an optional
+  :func:`~operator.methodcaller` function that takes a name and an optional
   set of arguments, returning a callable that will call
   the named function on any arguments passed to it.  For example::
 
@@ -2155,7 +2160,7 @@ changes, or look through the Subversion logs for all the details.
 
   (Contributed by Georg Brandl, after a suggestion by Gregory Petrosyan.)
 
-  The :func:`attrgetter` function now accepts dotted names and performs
+  The :func:`~operator.attrgetter` function now accepts dotted names and performs
   the corresponding attribute lookups::
 
     >>> inst_name = operator.attrgetter(
@@ -2173,12 +2178,12 @@ changes, or look through the Subversion logs for all the details.
   the mode of a symlink.  (Contributed by Georg Brandl and Christian
   Heimes.)
 
-  :func:`chflags` and :func:`lchflags` are wrappers for the
+  :func:`~os.chflags` and :func:`~os.lchflags` are wrappers for the
   corresponding system calls (where they're available), changing the
   flags set on a file.  Constants for the flag values are defined in
   the :mod:`stat` module; some possible values include
-  :const:`UF_IMMUTABLE` to signal the file may not be changed and
-  :const:`UF_APPEND` to indicate that data can only be appended to the
+  :const:`~stat.UF_IMMUTABLE` to signal the file may not be changed and
+  :const:`~stat.UF_APPEND` to indicate that data can only be appended to the
   file.  (Contributed by M. Levinson.)
 
   ``os.closerange(low, high)`` efficiently closes all file descriptors
@@ -2186,7 +2191,7 @@ changes, or look through the Subversion logs for all the details.
   This function is now used by the :mod:`subprocess` module to make starting
   processes faster.  (Contributed by Georg Brandl; :issue:`1663329`.)
 
-* The ``os.environ`` object's :meth:`clear` method will now unset the
+* The ``os.environ`` object's :meth:`!clear` method will now unset the
   environment variables using :func:`os.unsetenv` in addition to clearing
   the object's keys.  (Contributed by Martin Horcicka; :issue:`1181`.)
 
@@ -2197,7 +2202,7 @@ changes, or look through the Subversion logs for all the details.
   into an infinite recursion if there's a symlink that points to a
   parent directory.  (:issue:`1273829`)
 
-* In the :mod:`os.path` module, the :func:`splitext` function
+* In the :mod:`os.path` module, the :func:`~os.path.splitext` function
   has been changed to not split on leading period characters.
   This produces better results when operating on Unix's dot-files.
   For example, ``os.path.splitext('.ipython')``
@@ -2224,12 +2229,12 @@ changes, or look through the Subversion logs for all the details.
   if no traceback is supplied.   (Contributed by Facundo Batista;
   :issue:`1106316`.)
 
-* The :mod:`pickletools` module now has an :func:`optimize` function
+* The :mod:`pickletools` module now has an :func:`~pickletools.optimize` function
   that takes a string containing a pickle and removes some unused
   opcodes, returning a shorter pickle that contains the same data structure.
   (Contributed by Raymond Hettinger.)
 
-* A :func:`get_data` function was added to the :mod:`pkgutil`
+* A :func:`~pkgutil.get_data` function was added to the :mod:`pkgutil`
   module that returns the contents of resource files included
   with an installed Python package.  For example::
 
@@ -2246,22 +2251,22 @@ changes, or look through the Subversion logs for all the details.
 
   (Contributed by Paul Moore; :issue:`2439`.)
 
-* The :mod:`pyexpat` module's :class:`Parser` objects now allow setting
-  their :attr:`buffer_size` attribute to change the size of the buffer
+* The :mod:`!pyexpat` module's :class:`!Parser` objects now allow setting
+  their :attr:`!buffer_size` attribute to change the size of the buffer
   used to hold character data.
   (Contributed by Achim Gaedke; :issue:`1137`.)
 
-* The :mod:`Queue` module now provides queue variants that retrieve entries
-  in different orders.  The :class:`PriorityQueue` class stores
+* The :mod:`queue` module now provides queue variants that retrieve entries
+  in different orders.  The :class:`~queue.PriorityQueue` class stores
   queued items in a heap and retrieves them in priority order,
-  and :class:`LifoQueue` retrieves the most recently added entries first,
+  and :class:`~queue.LifoQueue` retrieves the most recently added entries first,
   meaning that it behaves like a stack.
   (Contributed by Raymond Hettinger.)
 
-* The :mod:`random` module's :class:`Random` objects can
+* The :mod:`random` module's :class:`~random.Random` objects can
   now be pickled on a 32-bit system and unpickled on a 64-bit
   system, and vice versa.  Unfortunately, this change also means
-  that Python 2.6's :class:`Random` objects can't be unpickled correctly
+  that Python 2.6's :class:`~random.Random` objects can't be unpickled correctly
   on earlier versions of Python.
   (Contributed by Shawn Ligocki; :issue:`1727780`.)
 
@@ -2284,11 +2289,11 @@ changes, or look through the Subversion logs for all the details.
   (Contributed by Guido van Rossum from work for Google App Engine;
   :issue:`3487`.)
 
-* The :mod:`rlcompleter` module's :meth:`Completer.complete` method
+* The :mod:`rlcompleter` module's :meth:`~rlcompleter.Completer.complete` method
   will now ignore exceptions triggered while evaluating a name.
   (Fixed by Lorenz Quack; :issue:`2250`.)
 
-* The :mod:`sched` module's :class:`scheduler` instances now
+* The :mod:`sched` module's :class:`~sched.scheduler` instances now
   have a read-only :attr:`queue` attribute that returns the
   contents of the scheduler's queue, represented as a list of
   named tuples with the fields ``(time, priority, action, argument)``.
@@ -2296,7 +2301,7 @@ changes, or look through the Subversion logs for all the details.
 
 * The :mod:`select` module now has wrapper functions
   for the Linux :c:func:`!epoll` and BSD :c:func:`!kqueue` system calls.
-  :meth:`modify` method was added to the existing :class:`poll`
+  :meth:`~select.poll.modify` method was added to the existing ``poll``
   objects; ``pollobj.modify(fd, eventmask)`` takes a file descriptor
   or file object and an event mask, modifying the recorded event mask
   for that file.
@@ -2307,8 +2312,8 @@ changes, or look through the Subversion logs for all the details.
   and a list of the directory's contents, and returns a list of names that
   will be ignored, not copied.
 
-  The :mod:`shutil` module also provides an :func:`ignore_patterns`
-  function for use with this new parameter.  :func:`ignore_patterns`
+  The :mod:`shutil` module also provides an :func:`~shutil.ignore_patterns`
+  function for use with this new parameter.  :func:`~shutil.ignore_patterns`
   takes an arbitrary number of glob-style patterns and returns a
   callable that will ignore any files and directories that match any
   of these patterns.  The following example copies a directory tree,
@@ -2332,7 +2337,7 @@ changes, or look through the Subversion logs for all the details.
 
   Event loops will use this by opening a pipe to create two descriptors,
   one for reading and one for writing.  The writable descriptor
-  will be passed to :func:`set_wakeup_fd`, and the readable descriptor
+  will be passed to :func:`~signal.set_wakeup_fd`, and the readable descriptor
   will be added to the list of descriptors monitored by the event loop via
   :c:func:`!select` or :c:func:`!poll`.
   On receiving a signal, a byte will be written and the main event loop
@@ -2340,20 +2345,20 @@ changes, or look through the Subversion logs for all the details.
 
   (Contributed by Adam Olsen; :issue:`1583`.)
 
-  The :func:`siginterrupt` function is now available from Python code,
+  The :func:`~signal.siginterrupt` function is now available from Python code,
   and allows changing whether signals can interrupt system calls or not.
   (Contributed by Ralf Schmitt.)
 
-  The :func:`setitimer` and :func:`getitimer` functions have also been
-  added (where they're available).  :func:`setitimer`
+  The :func:`~signal.setitimer` and :func:`~signal.getitimer` functions have also been
+  added (where they're available).  :func:`~signal.setitimer`
   allows setting interval timers that will cause a signal to be
   delivered to the process after a specified time, measured in
   wall-clock time, consumed process time, or combined process+system
   time.  (Contributed by Guilherme Polo; :issue:`2240`.)
 
 * The :mod:`smtplib` module now supports SMTP over SSL thanks to the
-  addition of the :class:`SMTP_SSL` class. This class supports an
-  interface identical to the existing :class:`SMTP` class.
+  addition of the :class:`~smtplib.SMTP_SSL` class. This class supports an
+  interface identical to the existing :class:`~smtplib.SMTP` class.
   (Contributed by Monty Taylor.)  Both class constructors also have an
   optional ``timeout`` parameter that specifies a timeout for the
   initial connection attempt, measured in seconds.  (Contributed by
@@ -2364,7 +2369,7 @@ changes, or look through the Subversion logs for all the details.
   e-mail between agents that don't manage a mail queue.  (LMTP
   implemented by Leif Hedstrom; :issue:`957003`.)
 
-  :meth:`SMTP.starttls` now complies with :rfc:`3207` and forgets any
+  :meth:`smtplib.SMTP.starttls` now complies with :rfc:`3207` and forgets any
   knowledge obtained from the server not obtained from the TLS
   negotiation itself.  (Patch contributed by Bill Fenner;
   :issue:`829951`.)
@@ -2374,11 +2379,11 @@ changes, or look through the Subversion logs for all the details.
   environments.  TIPC addresses are 4- or 5-tuples.
   (Contributed by Alberto Bertogli; :issue:`1646`.)
 
-  A new function, :func:`create_connection`, takes an address and
+  A new function, :func:`~socket.create_connection`, takes an address and
   connects to it using an optional timeout value, returning the
   connected socket object.  This function also looks up the address's
   type and connects to it using IPv4 or IPv6 as appropriate.  Changing
-  your code to use :func:`create_connection` instead of
+  your code to use :func:`~socket.create_connection` instead of
   ``socket(socket.AF_INET, ...)`` may be all that's required to make
   your code work with IPv6.
 
@@ -2406,15 +2411,15 @@ changes, or look through the Subversion logs for all the details.
   :c:func:`!TerminateProcess`.
   (Contributed by Christian Heimes.)
 
-* A new variable in the :mod:`sys` module, :attr:`float_info`, is an
+* A new variable in the :mod:`sys` module, :data:`~sys.float_info`, is an
   object containing information derived from the :file:`float.h` file
   about the platform's floating-point support.  Attributes of this
-  object include :attr:`mant_dig` (number of digits in the mantissa),
-  :attr:`epsilon` (smallest difference between 1.0 and the next
+  object include :attr:`~sys.float_info.mant_dig` (number of digits in the mantissa),
+  :attr:`~sys.float_info.epsilon` (smallest difference between 1.0 and the next
   largest value representable), and several others.  (Contributed by
   Christian Heimes; :issue:`1534`.)
 
-  Another new variable, :attr:`dont_write_bytecode`, controls whether Python
+  Another new variable, :data:`~sys.dont_write_bytecode`, controls whether Python
   writes any :file:`.pyc` or :file:`.pyo` files on importing a module.
   If this variable is true, the compiled files are not written.  The
   variable is initially set on start-up by supplying the :option:`-B`
@@ -2427,16 +2432,16 @@ changes, or look through the Subversion logs for all the details.
 
   Information about the command-line arguments supplied to the Python
   interpreter is available by reading attributes of a named
-  tuple available as ``sys.flags``.  For example, the :attr:`verbose`
+  tuple available as ``sys.flags``.  For example, the :attr:`~sys.flags.verbose`
   attribute is true if Python
-  was executed in verbose mode, :attr:`debug` is true in debugging mode, etc.
+  was executed in verbose mode, :attr:`~sys.flags.debug` is true in debugging mode, etc.
   These attributes are all read-only.
   (Contributed by Christian Heimes.)
 
-  A new function, :func:`getsizeof`, takes a Python object and returns
+  A new function, :func:`~sys.getsizeof`, takes a Python object and returns
   the amount of memory used by the object, measured in bytes.  Built-in
   objects return correct results; third-party extensions may not,
-  but can define a :meth:`__sizeof__` method to return the
+  but can define a :meth:`!__sizeof__` method to return the
   object's size.
   (Contributed by Robert Schuppenies; :issue:`2898`.)
 
@@ -2460,12 +2465,12 @@ changes, or look through the Subversion logs for all the details.
   their UTF-8 representation.  (Character conversions occur because the
   PAX format supports Unicode filenames, defaulting to UTF-8 encoding.)
 
-  The :meth:`TarFile.add` method now accepts an ``exclude`` argument that's
+  The :meth:`tarfile.TarFile.add` method now accepts an ``exclude`` argument that's
   a function that can be used to exclude certain filenames from
   an archive.
   The function must take a filename and return true if the file
   should be excluded or false if it should be archived.
-  The function is applied to both the name initially passed to :meth:`add`
+  The function is applied to both the name initially passed to :meth:`~tarfile.TarFile.add`
   and to the names of files in recursively added directories.
 
   (All changes contributed by Lars Gustäbel).
@@ -2479,12 +2484,13 @@ changes, or look through the Subversion logs for all the details.
   behaviour can now be changed by passing ``delete=False`` to the
   constructor.  (Contributed by Damien Miller; :issue:`1537850`.)
 
-  A new class, :class:`SpooledTemporaryFile`, behaves like
+  A new class, :class:`~tempfile.SpooledTemporaryFile`, behaves like
   a temporary file but stores its data in memory until a maximum size is
   exceeded.  On reaching that limit, the contents will be written to
   an on-disk temporary file.  (Contributed by Dustin J. Mitchell.)
 
-  The :class:`NamedTemporaryFile` and :class:`SpooledTemporaryFile` classes
+  The :class:`~tempfile.NamedTemporaryFile` and
+  :class:`~tempfile.SpooledTemporaryFile` classes
   both work as context managers, so you can write
   ``with tempfile.NamedTemporaryFile() as tmp: ...``.
   (Contributed by Alexander Belopolsky; :issue:`2021`.)
@@ -2495,7 +2501,7 @@ changes, or look through the Subversion logs for all the details.
   context manager that temporarily changes environment variables and
   automatically restores them to their old values.
 
-  Another context manager, :class:`TransientResource`, can surround calls
+  Another context manager, :class:`!TransientResource`, can surround calls
   to resources that may or may not be available; it will catch and
   ignore a specified list of exceptions.  For example,
   a network test may ignore certain failures when connecting to an
@@ -2506,9 +2512,9 @@ changes, or look through the Subversion logs for all the details.
           f = urllib.urlopen('https://sf.net')
           ...
 
-  Finally, :func:`check_warnings` resets the :mod:`warning` module's
-  warning filters and returns an object that will record all warning
-  messages triggered (:issue:`3781`)::
+  Finally, :func:`~test.support.warnings_helper.check_warnings` resets the
+  :mod:`warnings` module's warning filters and returns an object that will record
+  all warning messages triggered (:issue:`3781`)::
 
       with test_support.check_warnings() as wrec:
           warnings.simplefilter("always")
@@ -2540,31 +2546,31 @@ changes, or look through the Subversion logs for all the details.
   (Contributed by Dwayne Bailey; :issue:`1581073`.)
 
 * The :mod:`threading` module API is being changed to use properties
-  such as :attr:`daemon` instead of :meth:`setDaemon` and
-  :meth:`isDaemon` methods, and some methods have been renamed to use
+  such as :attr:`~threading.Thread.daemon` instead of :meth:`!setDaemon` and
+  :meth:`!isDaemon` methods, and some methods have been renamed to use
   underscores instead of camel-case; for example, the
-  :meth:`activeCount` method is renamed to :meth:`active_count`.  Both
+  :meth:`!activeCount` method is renamed to :func:`~threading.active_count`.  Both
   the 2.6 and 3.0 versions of the module support the same properties
   and renamed methods, but don't remove the old methods.  No date has been set
   for the deprecation of the old APIs in Python 3.x; the old APIs won't
   be removed in any 2.x version.
   (Carried out by several people, most notably Benjamin Peterson.)
 
-  The :mod:`threading` module's :class:`Thread` objects
-  gained an :attr:`ident` property that returns the thread's
+  The :mod:`threading` module's :class:`~threading.Thread` objects
+  gained an :attr:`~threading.Thread.ident` property that returns the thread's
   identifier, a nonzero integer.  (Contributed by Gregory P. Smith;
   :issue:`2871`.)
 
 * The :mod:`timeit` module now accepts callables as well as strings
   for the statement being timed and for the setup code.
   Two convenience functions were added for creating
-  :class:`Timer` instances:
+  :class:`~timeit.Timer` instances:
   ``repeat(stmt, setup, time, repeat, number)`` and
   ``timeit(stmt, setup, time, number)`` create an instance and call
   the corresponding method. (Contributed by Erik Demaine;
   :issue:`1533909`.)
 
-* The :mod:`Tkinter` module now accepts lists and tuples for options,
+* The :mod:`tkinter` module now accepts lists and tuples for options,
   separating the elements by spaces before passing the resulting value to
   Tcl/Tk.
   (Contributed by Guilherme Polo; :issue:`2906`.)
@@ -2573,11 +2579,11 @@ changes, or look through the Subversion logs for all the details.
   Gregor Lingl.  New features in the module include:
 
   * Better animation of turtle movement and rotation.
-  * Control over turtle movement using the new :meth:`delay`,
-    :meth:`tracer`, and :meth:`speed` methods.
+  * Control over turtle movement using the new :func:`~turtle.delay`,
+    :func:`~turtle.tracer`, and :func:`~turtle.speed` methods.
   * The ability to set new shapes for the turtle, and to
     define a new coordinate system.
-  * Turtles now have an :meth:`undo` method that can roll back actions.
+  * Turtles now have an :func:`~turtle.undo` method that can roll back actions.
   * Simple support for reacting to input events such as mouse and keyboard
     activity, making it possible to write simple games.
   * A :file:`turtle.cfg` file can be used to customize the starting appearance
@@ -2589,7 +2595,7 @@ changes, or look through the Subversion logs for all the details.
 
 * An optional ``timeout`` parameter was added to the
   :func:`urllib.urlopen <urllib.request.urlopen>` function and the
-  :class:`urllib.ftpwrapper` class constructor, as well as the
+  :class:`!urllib.ftpwrapper` class constructor, as well as the
   :func:`urllib2.urlopen <urllib.request.urlopen>` function.  The parameter specifies a timeout
   measured in seconds.   For example::
 
@@ -2606,12 +2612,13 @@ changes, or look through the Subversion logs for all the details.
   has been updated to version 5.1.0.  (Updated by
   Martin von Löwis; :issue:`3811`.)
 
-* The :mod:`warnings` module's :func:`formatwarning` and :func:`showwarning`
+* The :mod:`warnings` module's :func:`~warnings.formatwarning` and
+  :func:`~warnings.showwarning`
   gained an optional *line* argument that can be used to supply the
   line of source code.  (Added as part of :issue:`1631171`, which re-implemented
   part of the :mod:`warnings` module in C code.)
 
-  A new function, :func:`catch_warnings`, is a context manager
+  A new function, :func:`~warnings.catch_warnings`, is a context manager
   intended for testing purposes that lets you temporarily modify the
   warning filters and then restore their original values (:issue:`3781`).
 
@@ -2619,12 +2626,13 @@ changes, or look through the Subversion logs for all the details.
   classes can now be prevented from immediately opening and binding to
   their socket by passing ``False`` as the *bind_and_activate*
   constructor parameter.  This can be used to modify the instance's
-  :attr:`allow_reuse_address` attribute before calling the
-  :meth:`server_bind` and :meth:`server_activate` methods to
+  :attr:`~socketserver.BaseServer.allow_reuse_address` attribute before calling the
+  :meth:`~socketserver.BaseServer.server_bind` and
+  :meth:`~socketserver.BaseServer.server_activate` methods to
   open the socket and begin listening for connections.
   (Contributed by Peter Parente; :issue:`1599845`.)
 
-  :class:`SimpleXMLRPCServer` also has a :attr:`_send_traceback_header`
+  :class:`~xmlrpc.server.SimpleXMLRPCServer` also has a :attr:`!_send_traceback_header`
   attribute; if true, the exception and formatted traceback are returned
   as HTTP headers "X-Exception" and "X-Traceback".  This feature is
   for debugging purposes only and should not be used on production servers
@@ -2636,14 +2644,15 @@ changes, or look through the Subversion logs for all the details.
   :class:`datetime.date` and :class:`datetime.time` to the
   :class:`xmlrpclib.DateTime <xmlrpc.client.DateTime>` type; the conversion semantics were
   not necessarily correct for all applications.  Code using
-  :mod:`!xmlrpclib` should convert :class:`date` and :class:`~datetime.time`
+  :mod:`!xmlrpclib` should convert :class:`~datetime.date` and :class:`~datetime.time`
   instances. (:issue:`1330538`)  The code can also handle
   dates before 1900 (contributed by Ralf Schmitt; :issue:`2014`)
   and 64-bit integers represented by using ``<i8>`` in XML-RPC responses
   (contributed by Riku Lindblad; :issue:`2985`).
 
-* The :mod:`zipfile` module's :class:`ZipFile` class now has
-  :meth:`extract` and :meth:`extractall` methods that will unpack
+* The :mod:`zipfile` module's :class:`~zipfile.ZipFile` class now has
+  :meth:`~zipfile.ZipFile.extract` and :meth:`~zipfile.ZipFile.extractall`
+  methods that will unpack
   a single file or all the files in the archive to the current directory, or
   to a specified directory::
 
@@ -2658,8 +2667,9 @@ changes, or look through the Subversion logs for all the details.
 
   (Contributed by Alan McIntyre; :issue:`467924`.)
 
-  The :meth:`open`, :meth:`read` and :meth:`extract` methods can now
-  take either a filename or a :class:`ZipInfo` object.  This is useful when an
+  The :meth:`~zipfile.ZipFile.open`, :meth:`~zipfile.ZipFile.read` and
+  :meth:`~zipfile.ZipFile.extract` methods can now
+  take either a filename or a :class:`~zipfile.ZipInfo` object.  This is useful when an
   archive accidentally contains a duplicated filename.
   (Contributed by Graham Horler; :issue:`1775025`.)
 
@@ -2670,7 +2680,7 @@ changes, or look through the Subversion logs for all the details.
 .. whole new modules get described in subsections here
 
 The :mod:`ast` module
-----------------------
+---------------------
 
 The :mod:`ast` module provides an Abstract Syntax Tree
 representation of Python code, and Armin Ronacher
@@ -2679,8 +2689,8 @@ common tasks.  These will be useful for HTML templating
 packages, code analyzers, and similar tools that process
 Python code.
 
-The :func:`parse` function takes an expression and returns an AST.
-The :func:`dump` function outputs a representation of a tree, suitable
+The :func:`~ast.parse` function takes an expression and returns an AST.
+The :func:`~ast.dump` function outputs a representation of a tree, suitable
 for debugging::
 
     import ast
@@ -2726,13 +2736,13 @@ This outputs a deeply nested tree::
        ], nl=True)
      ])
 
-The :func:`literal_eval` method takes a string or an AST
+The :func:`~ast.literal_eval` method takes a string or an AST
 representing a literal expression, parses and evaluates it, and
 returns the resulting value.  A literal expression is a Python
 expression containing only strings, numbers, dictionaries,
 etc. but no statements or function calls.  If you need to
 evaluate an expression but cannot accept the security risk of using an
-:func:`eval` call, :func:`literal_eval` will handle it safely::
+:func:`eval` call, :func:`~ast.literal_eval` will handle it safely::
 
     >>> literal = '("a", "b", {2:4, 3:8, 1:2})'
     >>> print ast.literal_eval(literal)
@@ -2742,15 +2752,15 @@ evaluate an expression but cannot accept the security risk of using an
       ...
     ValueError: malformed string
 
-The module also includes :class:`NodeVisitor` and
-:class:`NodeTransformer` classes for traversing and modifying an AST,
+The module also includes :class:`~ast.NodeVisitor` and
+:class:`~ast.NodeTransformer` classes for traversing and modifying an AST,
 and functions for common transformations such as changing line
 numbers.
 
 .. ======================================================================
 
 The :mod:`!future_builtins` module
---------------------------------------
+----------------------------------
 
 Python 3.0 makes many changes to the repertoire of built-in
 functions, and most of the changes can't be introduced in the Python
@@ -2770,15 +2780,15 @@ The functions in this module currently include:
   return iterators, unlike the 2.x builtins which return lists.
 
 * ``hex(value)``, ``oct(value)``: instead of calling the
-  :meth:`__hex__` or :meth:`__oct__` methods, these versions will
-  call the :meth:`__index__` method and convert the result to hexadecimal
+  :meth:`!__hex__` or :meth:`!__oct__` methods, these versions will
+  call the :meth:`~object.__index__` method and convert the result to hexadecimal
   or octal.  :func:`oct` will use the new ``0o`` notation for its
   result.
 
 .. ======================================================================
 
 The :mod:`json` module: JavaScript Object Notation
---------------------------------------------------------------------
+--------------------------------------------------
 
 The new :mod:`json` module supports the encoding and decoding of Python types in
 JSON (Javascript Object Notation). JSON is a lightweight interchange format
@@ -2845,12 +2855,12 @@ Using the module is simple::
 .. ======================================================================
 
 ctypes Enhancements
---------------------------------------------------
+-------------------
 
 Thomas Heller continued to maintain and enhance the
 :mod:`ctypes` module.
 
-:mod:`ctypes` now supports a :class:`c_bool` datatype
+:mod:`ctypes` now supports a :class:`~ctypes.c_bool` datatype
 that represents the C99 ``bool`` type.  (Contributed by David Remahl;
 :issue:`1649190`.)
 
@@ -2862,11 +2872,11 @@ where various combinations of ``(start, stop, step)`` are supplied.
 .. Revision 57769
 
 All :mod:`ctypes` data types now support
-:meth:`from_buffer` and :meth:`from_buffer_copy`
+:meth:`~ctypes._CData.from_buffer` and :meth:`~ctypes._CData.from_buffer_copy`
 methods that create a ctypes instance based on a
-provided buffer object.  :meth:`from_buffer_copy` copies
+provided buffer object.  :meth:`~ctypes._CData.from_buffer_copy` copies
 the contents of the object,
-while :meth:`from_buffer` will share the same memory area.
+while :meth:`~ctypes._CData.from_buffer` will share the same memory area.
 
 A new calling convention tells :mod:`ctypes` to clear the ``errno`` or
 Win32 LastError variables at the outset of each wrapped call.
@@ -2874,24 +2884,24 @@ Win32 LastError variables at the outset of each wrapped call.
 
 You can now retrieve the Unix ``errno`` variable after a function
 call.  When creating a wrapped function, you can supply
-``use_errno=True`` as a keyword parameter to the :func:`DLL` function
-and then call the module-level methods :meth:`set_errno` and
-:meth:`get_errno` to set and retrieve the error value.
+``use_errno=True`` as a keyword parameter to the ``DLL`` function
+and then call the module-level methods :func:`~ctypes.set_errno` and
+:func:`~ctypes.get_errno` to set and retrieve the error value.
 
 The Win32 LastError variable is similarly supported by
-the :func:`DLL`, :func:`OleDLL`, and :func:`WinDLL` functions.
+the ``DLL``, :func:`~ctypes.OleDLL`, and :func:`~ctypes.WinDLL` functions.
 You supply ``use_last_error=True`` as a keyword parameter
-and then call the module-level methods :meth:`set_last_error`
-and :meth:`get_last_error`.
+and then call the module-level methods :func:`~ctypes.set_last_error`
+and :func:`~ctypes.get_last_error`.
 
-The :func:`byref` function, used to retrieve a pointer to a ctypes
+The :func:`~ctypes.byref` function, used to retrieve a pointer to a ctypes
 instance, now has an optional *offset* parameter that is a byte
 count that will be added to the returned pointer.
 
 .. ======================================================================
 
 Improved SSL Support
---------------------------------------------------
+--------------------
 
 Bill Janssen made extensive improvements to Python 2.6's support for
 the Secure Sockets Layer by adding a new module, :mod:`ssl`, that's
@@ -2903,9 +2913,9 @@ in the :mod:`socket` module hasn't been removed and continues to work,
 though it will be removed in Python 3.0.
 
 To use the new module, you must first create a TCP connection in the
-usual way and then pass it to the :func:`ssl.wrap_socket` function.
+usual way and then pass it to the :func:`!ssl.wrap_socket` function.
 It's possible to specify whether a certificate is required, and to
-obtain certificate info by calling the :meth:`getpeercert` method.
+obtain certificate info by calling the :meth:`~ssl.SSLSocket.getpeercert` method.
 
 .. seealso::
 
@@ -3031,7 +3041,7 @@ Changes to Python's build process and to the C API include:
 
 * The BerkeleyDB module now has a C API object, available as
   ``bsddb.db.api``.   This object can be used by other C extensions
-  that wish to use the :mod:`bsddb` module for their own purposes.
+  that wish to use the :mod:`!bsddb` module for their own purposes.
   (Contributed by Duncan Grisby.)
 
 * The new buffer interface, previously described in
@@ -3073,7 +3083,7 @@ Changes to Python's build process and to the C API include:
 
 * C functions and methods that use
   :c:func:`PyComplex_AsCComplex` will now accept arguments that
-  have a :meth:`__complex__` method.  In particular, the functions in the
+  have a :meth:`~object.__complex__` method.  In particular, the functions in the
   :mod:`cmath` module will now accept objects with this method.
   This is a backport of a Python 3.0 change.
   (Contributed by Mark Dickinson; :issue:`1675423`.)
@@ -3126,7 +3136,7 @@ Changes to Python's build process and to the C API include:
 .. ======================================================================
 
 Port-Specific Changes: Windows
------------------------------------
+------------------------------
 
 * The support for Windows 95, 98, ME and NT4 has been dropped.
   Python 2.6 requires at least Windows 2000 SP4.
@@ -3152,7 +3162,7 @@ Port-Specific Changes: Windows
 
 * The :mod:`socket` module's socket objects now have an
   :meth:`~socket.socket.ioctl` method that provides a limited interface to the
-  :c:func:`WSAIoctl` system interface.
+  :c:func:`!WSAIoctl` system interface.
 
 * The :mod:`_winreg <winreg>` module now has a function,
   :func:`~winreg.ExpandEnvironmentStrings`,
@@ -3175,7 +3185,7 @@ Port-Specific Changes: Windows
 .. ======================================================================
 
 Port-Specific Changes: Mac OS X
------------------------------------
+-------------------------------
 
 * When compiling a framework build of Python, you can now specify the
   framework name to be used by providing the
@@ -3229,7 +3239,7 @@ Port-Specific Changes: Mac OS X
 .. ======================================================================
 
 Port-Specific Changes: IRIX
------------------------------------
+---------------------------
 
 A number of old IRIX-specific modules were deprecated and will
 be removed in Python 3.0:
@@ -3273,7 +3283,7 @@ that may require changes to your code:
 * String exceptions have been removed.  Attempting to use them raises a
   :exc:`TypeError`.
 
-* The :meth:`__init__` method of :class:`collections.deque`
+* The :meth:`!__init__` method of :class:`collections.deque`
   now clears any existing contents of the deque
   before adding elements from the iterable.  This change makes the
   behavior match ``list.__init__()``.
@@ -3281,16 +3291,16 @@ that may require changes to your code:
 * :meth:`object.__init__` previously accepted arbitrary arguments and
   keyword arguments, ignoring them.  In Python 2.6, this is no longer
   allowed and will result in a :exc:`TypeError`.  This will affect
-  :meth:`__init__` methods that end up calling the corresponding
+  :meth:`!__init__` methods that end up calling the corresponding
   method on :class:`object` (perhaps through using :func:`super`).
   See :issue:`1683368` for discussion.
 
-* The :class:`Decimal` constructor now accepts leading and trailing
+* The :class:`~decimal.Decimal` constructor now accepts leading and trailing
   whitespace when passed a string.  Previously it would raise an
-  :exc:`InvalidOperation` exception.  On the other hand, the
-  :meth:`create_decimal` method of :class:`Context` objects now
+  :exc:`~decimal.InvalidOperation` exception.  On the other hand, the
+  :meth:`~decimal.Context.create_decimal` method of :class:`~decimal.Context` objects now
   explicitly disallows extra whitespace, raising a
-  :exc:`ConversionSyntax` exception.
+  :exc:`!ConversionSyntax` exception.
 
 * Due to an implementation accident, if you passed a file path to
   the built-in  :func:`__import__` function, it would actually import
@@ -3308,14 +3318,14 @@ that may require changes to your code:
 
 * The :mod:`socket` module exception :exc:`socket.error` now inherits
   from :exc:`IOError`.  Previously it wasn't a subclass of
-  :exc:`StandardError` but now it is, through :exc:`IOError`.
+  :exc:`!StandardError` but now it is, through :exc:`IOError`.
   (Implemented by Gregory P. Smith; :issue:`1706815`.)
 
 * The :mod:`xmlrpclib <xmlrpc.client>` module no longer automatically converts
   :class:`datetime.date` and :class:`datetime.time` to the
   :class:`xmlrpclib.DateTime <xmlrpc.client.DateTime>` type; the conversion semantics were
   not necessarily correct for all applications.  Code using
-  :mod:`!xmlrpclib` should convert :class:`date` and :class:`~datetime.time`
+  :mod:`!xmlrpclib` should convert :class:`~datetime.date` and :class:`~datetime.time`
   instances. (:issue:`1330538`)
 
 * (3.0-warning mode) The :class:`Exception` class now warns
