@@ -2,6 +2,7 @@
 #include "pycore_fileutils.h"     // DECODE_LOCALE_ERR
 #include "pycore_getopt.h"        // _PyOS_GetOpt()
 #include "pycore_initconfig.h"    // _PyArgv
+#include "pycore_pylifecycle.h"   // _Py_LegacyLocaleDetected()
 #include "pycore_pymem.h"         // _PyMem_GetAllocatorName()
 #include "pycore_runtime.h"       // _PyRuntime_Initialize()
 
@@ -24,6 +25,8 @@ int _Py_HasFileSystemDefaultEncodeErrors = 0;
 void
 _Py_ClearFileSystemEncoding(void)
 {
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     if (!Py_HasFileSystemDefaultEncoding && Py_FileSystemDefaultEncoding) {
         PyMem_RawFree((char*)Py_FileSystemDefaultEncoding);
         Py_FileSystemDefaultEncoding = NULL;
@@ -32,6 +35,7 @@ _Py_ClearFileSystemEncoding(void)
         PyMem_RawFree((char*)Py_FileSystemDefaultEncodeErrors);
         Py_FileSystemDefaultEncodeErrors = NULL;
     }
+_Py_COMP_DIAG_POP
 }
 
 
@@ -56,11 +60,14 @@ _Py_SetFileSystemEncoding(const char *encoding, const char *errors)
 
     _Py_ClearFileSystemEncoding();
 
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     Py_FileSystemDefaultEncoding = encoding2;
     Py_HasFileSystemDefaultEncoding = 0;
 
     Py_FileSystemDefaultEncodeErrors = errors2;
     _Py_HasFileSystemDefaultEncodeErrors = 0;
+_Py_COMP_DIAG_POP
     return 0;
 }
 
@@ -284,12 +291,12 @@ _PyPreConfig_InitCompatConfig(PyPreConfig *config)
     config->use_environment = -1;
     config->configure_locale = 1;
 
-    /* bpo-36443: C locale coercion (PEP 538) and UTF-8 Mode (PEP 540)
-       are disabled by default using the Compat configuration.
+    /* gh-80624: C locale coercion (PEP 538) is disabled by default using
+       the Compat configuration.
 
-       Py_UTF8Mode=1 enables the UTF-8 mode. PYTHONUTF8 environment variable
+       Py_UTF8Mode=0 disables the UTF-8 mode. PYTHONUTF8 environment variable
        is ignored (even if use_environment=1). */
-    config->utf8_mode = 0;
+    config->utf8_mode = 1;
     config->coerce_c_locale = 0;
     config->coerce_c_locale_warn = 0;
 
@@ -310,8 +317,8 @@ PyPreConfig_InitPythonConfig(PyPreConfig *config)
     config->isolated = 0;
     config->parse_argv = 1;
     config->use_environment = 1;
-    /* Set to -1 to enable C locale coercion (PEP 538) and UTF-8 Mode (PEP 540)
-       depending on the LC_CTYPE locale, PYTHONUTF8 and PYTHONCOERCECLOCALE
+    /* Set to -1 to enable C locale coercion (PEP 538) depending on
+       the LC_CTYPE locale, PYTHONUTF8 and PYTHONCOERCECLOCALE
        environment variables. */
     config->coerce_c_locale = -1;
     config->coerce_c_locale_warn = -1;
@@ -331,7 +338,7 @@ PyPreConfig_InitIsolatedConfig(PyPreConfig *config)
     config->configure_locale = 0;
     config->isolated = 1;
     config->use_environment = 0;
-    config->utf8_mode = 0;
+    config->utf8_mode = 1;
     config->dev_mode = 0;
 #ifdef MS_WINDOWS
     config->legacy_windows_fs_encoding = 0;
@@ -472,6 +479,8 @@ preconfig_get_global_vars(PyPreConfig *config)
         config->ATTR = !(VALUE); \
     }
 
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     COPY_FLAG(isolated, Py_IsolatedFlag);
     COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
     if (Py_UTF8Mode > 0) {
@@ -480,6 +489,7 @@ preconfig_get_global_vars(PyPreConfig *config)
 #ifdef MS_WINDOWS
     COPY_FLAG(legacy_windows_fs_encoding, Py_LegacyWindowsFSEncodingFlag);
 #endif
+_Py_COMP_DIAG_POP
 
 #undef COPY_FLAG
 #undef COPY_NOT_FLAG
@@ -498,12 +508,15 @@ preconfig_set_global_vars(const PyPreConfig *config)
         VAR = !config->ATTR; \
     }
 
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     COPY_FLAG(isolated, Py_IsolatedFlag);
     COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
 #ifdef MS_WINDOWS
     COPY_FLAG(legacy_windows_fs_encoding, Py_LegacyWindowsFSEncodingFlag);
 #endif
     COPY_FLAG(utf8_mode, Py_UTF8Mode);
+_Py_COMP_DIAG_POP
 
 #undef COPY_FLAG
 #undef COPY_NOT_FLAG
@@ -571,7 +584,7 @@ _Py_get_xoption(const PyWideStringList *xoptions, const wchar_t *name)
     for (Py_ssize_t i=0; i < xoptions->length; i++) {
         const wchar_t *option = xoptions->items[i];
         size_t len;
-        wchar_t *sep = wcschr(option, L'=');
+        const wchar_t *sep = wcschr(option, L'=');
         if (sep != NULL) {
             len = (sep - option);
         }
@@ -602,7 +615,7 @@ preconfig_init_utf8_mode(PyPreConfig *config, const _PyPreCmdline *cmdline)
     const wchar_t *xopt;
     xopt = _Py_get_xoption(&cmdline->xoptions, L"utf8");
     if (xopt) {
-        wchar_t *sep = wcschr(xopt, L'=');
+        const wchar_t *sep = wcschr(xopt, L'=');
         if (sep) {
             xopt = sep + 1;
             if (wcscmp(xopt, L"1") == 0) {
@@ -636,23 +649,7 @@ preconfig_init_utf8_mode(PyPreConfig *config, const _PyPreCmdline *cmdline)
         return _PyStatus_OK();
     }
 
-
-#ifndef MS_WINDOWS
-    if (config->utf8_mode < 0) {
-        /* The C locale and the POSIX locale enable the UTF-8 Mode (PEP 540) */
-        const char *ctype_loc = setlocale(LC_CTYPE, NULL);
-        if (ctype_loc != NULL
-           && (strcmp(ctype_loc, "C") == 0
-               || strcmp(ctype_loc, "POSIX") == 0))
-        {
-            config->utf8_mode = 1;
-        }
-    }
-#endif
-
-    if (config->utf8_mode < 0) {
-        config->utf8_mode = 0;
-    }
+    config->utf8_mode = 1;
     return _PyStatus_OK();
 }
 
@@ -687,7 +684,7 @@ preconfig_init_coerce_c_locale(PyPreConfig *config)
 
     /* Test if coerce_c_locale equals to -1 or equals to 1:
        PYTHONCOERCECLOCALE=1 doesn't imply that the C locale is always coerced.
-       It is only coerced if if the LC_CTYPE locale is "C". */
+       It is only coerced if the LC_CTYPE locale is "C". */
     if (config->coerce_c_locale < 0 || config->coerce_c_locale == 1) {
         /* The C locale enables the C locale coercion (PEP 538) */
         if (_Py_LegacyLocaleDetected(0)) {
@@ -931,7 +928,7 @@ _PyPreConfig_Write(const PyPreConfig *src_config)
         return status;
     }
 
-    if (_PyRuntime.core_initialized) {
+    if (_Py_IsCoreInitialized()) {
         /* bpo-34008: Calling this functions after Py_Initialize() ignores
            the new configuration. */
         return _PyStatus_OK();

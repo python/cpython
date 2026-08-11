@@ -1,3 +1,0 @@
-Allow :mod:`logging` filters to return a :class:`logging.LogRecord` instance
-so that filters attached to :class:`logging.Handler`\ s can enrich records without
-side effects on other handlers.

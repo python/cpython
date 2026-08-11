@@ -1,0 +1,2 @@
+Fix a crash in :class:`collections.OrderedDict` iterators in free-threaded
+builds when the dictionary is concurrently cleared or updated.
