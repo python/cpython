@@ -1232,6 +1232,13 @@ Stonecutters Seafood and Chop House+ Lemont+ IL+ 12/19/02+ Week Back
         self.assertEqual(dialect.delimiter, ' ')
         self.assertIs(dialect.doublequote, False)
 
+    def test_sniff_quoted_single_column(self):
+        # gh-98820: this sample used to take minutes.
+        sniffer = csv.Sniffer()
+        sample = '"abcdefghijklmnopqrstuvwxyz"\n' * 10000
+        with self.assertRaisesRegex(csv.Error, "Could not determine delimiter"):
+            sniffer.sniff(sample, delimiters=',:|\t')
+
 
 class NUL:
     def write(s, *args):
