@@ -1901,9 +1901,7 @@ PyFloat_Pack2(double x, char *data, int le)
         int i, incr = 1;
 
         if (isinf(y) && !isinf(x)) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "float too large to pack with e format");
-            return -1;
+            goto Overflow;
         }
 
         unsigned char s[sizeof(_Float16)];
