@@ -4835,7 +4835,7 @@ class OtherTests(unittest.TestCase):
 class AbstractBoundedDecompressTests:
     # ZipExtFile._read1() bounds the output of each decompress() call so that a
     # small member declaring a large uncompressed size cannot expand into one
-    # unbounded read.  DEFLATE was already bounded; check the other methods too.
+    # unbounded read.
     def test_read1_output_is_bounded(self):
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w", compression=self.compression) as zf:
@@ -4843,6 +4843,17 @@ class AbstractBoundedDecompressTests:
         with zipfile.ZipFile(io.BytesIO(buf.getvalue())) as zf:
             with zf.open("big") as f:
                 self.assertLessEqual(len(f._read1(100)), f.MIN_READ_SIZE)
+
+
+class StoredBoundedDecompressTests(AbstractBoundedDecompressTests,
+                                   unittest.TestCase):
+    compression = zipfile.ZIP_STORED
+
+
+@requires_zlib()
+class DeflateBoundedDecompressTests(AbstractBoundedDecompressTests,
+                                    unittest.TestCase):
+    compression = zipfile.ZIP_DEFLATED
 
 
 @requires_bz2()
