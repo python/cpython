@@ -5,11 +5,20 @@
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-// Similar to _Py_HashPointer(), but don't replace -1 with -2
-extern Py_hash_t _Py_HashPointerRaw(const void*);
+// Similar to Py_HashPointer(), but don't replace -1 with -2.
+static inline Py_hash_t
+_Py_HashPointerRaw(const void *ptr)
+{
+    uintptr_t x = (uintptr_t)ptr;
+    Py_BUILD_ASSERT(sizeof(x) == sizeof(ptr));
 
-// Export for '_datetime' shared extension
-PyAPI_FUNC(Py_hash_t) _Py_HashBytes(const void*, Py_ssize_t);
+    // Bottom 3 or 4 bits are likely to be 0; rotate x by 4 to the right
+    // to avoid excessive hash collisions for dicts and sets.
+    x = (x >> 4) | (x << (8 * sizeof(uintptr_t) - 4));
+
+    Py_BUILD_ASSERT(sizeof(x) == sizeof(Py_hash_t));
+    return (Py_hash_t)x;
+}
 
 /* Hash secret
  *
@@ -18,14 +27,14 @@ PyAPI_FUNC(Py_hash_t) _Py_HashBytes(const void*, Py_ssize_t);
  *   pppppppp ssssssss ........  fnv -- two Py_hash_t
  *   k0k0k0k0 k1k1k1k1 ........  siphash -- two uint64_t
  *   ........ ........ ssssssss  djbx33a -- 16 bytes padding + one Py_hash_t
- *   ........ ........ eeeeeeee  pyexpat XML hash salt
+ *   eeeeeeee eeeeeeee eeeeeeee  pyexpat XML hash salt
  *
  * memory layout on 32 bit systems
  *   cccccccc cccccccc cccccccc  uc
  *   ppppssss ........ ........  fnv -- two Py_hash_t
  *   k0k0k0k0 k1k1k1k1 ........  siphash -- two uint64_t (*)
  *   ........ ........ ssss....  djbx33a -- 16 bytes padding + one Py_hash_t
- *   ........ ........ eeee....  pyexpat XML hash salt
+ *   eeeeeeee eeeeeeee eeee....  pyexpat XML hash salt
  *
  * (*) The siphash member may not be available on 32 bit platforms without
  *     an unsigned int64 data type.
@@ -49,7 +58,9 @@ typedef union {
         Py_hash_t suffix;
     } djbx33a;
     struct {
-        unsigned char padding[16];
+        /* 16 bytes for XML_SetHashSalt16Bytes */
+        uint8_t hashsalt16[16];
+        /* 4/8 bytes for legacy XML_SetHashSalt */
         Py_hash_t hashsalt;
     } expat;
 } _Py_HashSecret_t;
@@ -61,19 +72,6 @@ PyAPI_DATA(_Py_HashSecret_t) _Py_HashSecret;
 extern int _Py_HashSecret_Initialized;
 #endif
 
-
-struct pyhash_runtime_state {
-    struct {
-#ifndef MS_WINDOWS
-        int fd;
-        dev_t st_dev;
-        ino_t st_ino;
-#else
-    // This is a placeholder so the struct isn't empty on Windows.
-    int _not_used;
-#endif
-    } urandom_cache;
-};
 
 #ifndef MS_WINDOWS
 # define _py_urandom_cache_INIT \

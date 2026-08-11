@@ -5,7 +5,9 @@ from tkinter import ttk
 from tkinter import TclError
 from test import support
 from test.support import requires
-from test.test_tkinter.support import AbstractTkTest, get_tk_patchlevel
+from test.test_tkinter.support import setUpModule  # noqa: F401
+from test.test_tkinter.support import (AbstractTkTest, get_tk_patchlevel,
+                                       requires_tk)
 
 requires('gui')
 
@@ -123,6 +125,41 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
 
         self.style.theme_use(curr_theme)
 
+    @requires_tk(9, 0)
+    def test_theme_styles(self):
+        # The 'default' theme is always available and defines the base styles.
+        default_styles = self.style.theme_styles('default')
+        self.assertIsInstance(default_styles, tuple)
+        self.assertIn('.', default_styles)
+        self.assertIn('TButton', default_styles)
+
+        # Without an argument the current theme is used.
+        styles = self.style.theme_styles()
+        self.assertIsInstance(styles, tuple)
+        self.assertIn('.', styles)
+
+        for theme in self.style.theme_names():
+            self.assertIsInstance(self.style.theme_styles(theme), tuple)
+
+        self.assertRaises(tkinter.TclError,
+                          self.style.theme_styles, 'nonexistingname')
+
+    def test_theme_settings(self):
+        style = self.style
+        theme = style.theme_use()
+        style.theme_settings(theme, {
+            'Test.TLabel': {
+                'configure': {'foreground': 'red', 'background': 'blue'},
+                'map': {'foreground': [('active', 'green')]},
+            },
+        })
+        self.assertEqual(style.lookup('Test.TLabel', 'foreground'), 'red')
+        self.assertEqual(style.lookup('Test.TLabel', 'background'), 'blue')
+        self.assertEqual(style.map('Test.TLabel', 'foreground'),
+                         [('active', 'green')])
+        self.assertRaises(tkinter.TclError, style.theme_settings,
+                          'nonexistingname', {})
+
     def test_configure_custom_copy(self):
         style = self.style
 
@@ -205,7 +242,8 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
         style = self.style
         with self.assertRaises(IndexError):
             style.element_create('plain.newelem', 'from')
-        with self.assertRaisesRegex(TclError, 'theme "spam" doesn\'t exist'):
+        with self.assertRaisesRegex(TclError,
+            'theme "spam" (does not|doesn\'t) exist'):
             style.element_create('plain.newelem', 'from', 'spam')
 
     def test_element_create_image(self):
@@ -227,13 +265,13 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
                                    foreground='blue', background='yellow')
         img3 = tkinter.BitmapImage(master=self.root, file=imgfile,
                                    foreground='white', background='black')
-        style.element_create('Button.button', 'image',
+        style.element_create('TestButton.button', 'image',
                              img1, ('pressed', img2), ('active', img3),
                              border=(2, 4), sticky='we')
-        self.assertIn('Button.button', style.element_names())
+        self.assertIn('TestButton.button', style.element_names())
 
-        style.layout('Button', [('Button.button', {'sticky': 'news'})])
-        b = ttk.Button(self.root, style='Button')
+        style.layout('TestButton', [('TestButton.button', {'sticky': 'news'})])
+        b = ttk.Button(self.root, style='TestButton')
         b.pack(expand=True, fill='both')
         self.assertEqual(b.winfo_reqwidth(), 16)
         self.assertEqual(b.winfo_reqheight(), 16)
@@ -257,6 +295,55 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
             style.element_create('block2', 'image', image, (1, 'selected', image))
         with self.assertRaisesRegex(TclError, 'bad option'):
             style.element_create('block2', 'image', image, spam=1)
+
+    def test_element_create_vsapi_1(self):
+        style = self.style
+        if 'xpnative' not in style.theme_names():
+            self.skipTest("requires 'xpnative' theme")
+        style.element_create('smallclose', 'vsapi', 'WINDOW', 19, [
+                             ('disabled', 4),
+                             ('pressed', 3),
+                             ('active', 2),
+                             ('', 1)])
+        style.layout('CloseButton',
+                     [('CloseButton.smallclose', {'sticky': 'news'})])
+        b = ttk.Button(self.root, style='CloseButton')
+        b.pack(expand=True, fill='both')
+        self.assertEqual(b.winfo_reqwidth(), 13)
+        self.assertEqual(b.winfo_reqheight(), 13)
+
+    def test_element_create_vsapi_2(self):
+        style = self.style
+        if 'xpnative' not in style.theme_names():
+            self.skipTest("requires 'xpnative' theme")
+        style.element_create('pin', 'vsapi', 'EXPLORERBAR', 3, [
+                             ('pressed', '!selected', 3),
+                             ('active', '!selected', 2),
+                             ('pressed', 'selected', 6),
+                             ('active', 'selected', 5),
+                             ('selected', 4),
+                             ('', 1)])
+        style.layout('Explorer.Pin',
+                     [('Explorer.Pin.pin', {'sticky': 'news'})])
+        pin = ttk.Checkbutton(self.root, style='Explorer.Pin')
+        pin.pack(expand=True, fill='both')
+        self.assertEqual(pin.winfo_reqwidth(), 16)
+        self.assertEqual(pin.winfo_reqheight(), 16)
+
+    def test_element_create_vsapi_3(self):
+        style = self.style
+        if 'xpnative' not in style.theme_names():
+            self.skipTest("requires 'xpnative' theme")
+        style.element_create('headerclose', 'vsapi', 'EXPLORERBAR', 2, [
+                             ('pressed', 3),
+                             ('active', 2),
+                             ('', 1)])
+        style.layout('Explorer.CloseButton',
+                     [('Explorer.CloseButton.headerclose', {'sticky': 'news'})])
+        b = ttk.Button(self.root, style='Explorer.CloseButton')
+        b.pack(expand=True, fill='both')
+        self.assertEqual(b.winfo_reqwidth(), 16)
+        self.assertEqual(b.winfo_reqheight(), 16)
 
     def test_theme_create(self):
         style = self.style
@@ -353,8 +440,42 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
 
         b = ttk.Label(self.root, style='TestWidget')
         b.pack(expand=True, fill='both')
-        self.assertEqual(b.winfo_reqwidth(), 134)
+        # The exact width varies with the Tk version and display scaling.
+        self.assertGreater(b.winfo_reqwidth(), 130)
         self.assertEqual(b.winfo_reqheight(), 100)
+
+        style.theme_use(curr_theme)
+
+    def test_theme_create_vsapi(self):
+        style = self.style
+        if 'xpnative' not in style.theme_names():
+            self.skipTest("requires 'xpnative' theme")
+        curr_theme = style.theme_use()
+        new_theme = 'testtheme5'
+        style.theme_create(new_theme, settings={
+            'pin' : {
+                'element create': ['vsapi', 'EXPLORERBAR', 3, [
+                                   ('pressed', '!selected', 3),
+                                   ('active', '!selected', 2),
+                                   ('pressed', 'selected', 6),
+                                   ('active', 'selected', 5),
+                                   ('selected', 4),
+                                   ('', 1)]],
+            },
+            'Explorer.Pin' : {
+                'layout': [('Explorer.Pin.pin', {'sticky': 'news'})],
+            },
+        })
+
+        style.theme_use(new_theme)
+        self.assertIn('pin', style.element_names())
+        self.assertEqual(style.layout('Explorer.Pin'),
+                         [('Explorer.Pin.pin', {'sticky': 'nswe'})])
+
+        pin = ttk.Checkbutton(self.root, style='Explorer.Pin')
+        pin.pack(expand=True, fill='both')
+        self.assertEqual(pin.winfo_reqwidth(), 16)
+        self.assertEqual(pin.winfo_reqheight(), 16)
 
         style.theme_use(curr_theme)
 

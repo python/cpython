@@ -29,7 +29,7 @@ class ListedToplevelTest(unittest.TestCase):
     def tearDownClass(cls):
         window.registry = window.WindowList()
         cls.root.update_idletasks()
-##        for id in cls.root.tk.call('after', 'info'):
+##        for id in cls.root.after_info():
 ##            cls.root.after_cancel(id)  # Need for EditorWindow.
         cls.root.destroy()
         del cls.root
@@ -39,6 +39,11 @@ class ListedToplevelTest(unittest.TestCase):
         win = window.ListedToplevel(self.root)
         self.assertIn(win, window.registry)
         self.assertEqual(win.focused_widget, win)
+        self.assertEqual(win.winfo_class(), 'Idle')
+
+    def test_init_class_override(self):
+        win = window.ListedToplevel(self.root, class_='Other')
+        self.assertEqual(win.winfo_class(), 'Other')
 
 
 if __name__ == '__main__':

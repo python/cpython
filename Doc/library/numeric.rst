@@ -19,6 +19,7 @@ The following modules are documented in this chapter:
 
    numbers.rst
    math.rst
+   math.integer.rst
    cmath.rst
    decimal.rst
    fractions.rst

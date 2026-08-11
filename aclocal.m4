@@ -41,32 +41,81 @@ m4_ifndef([AC_CONFIG_MACRO_DIRS], [m4_defun([_AM_CONFIG_MACRO_DIRS], [])m4_defun
 #   If neither value is found, the user is instructed to specify the
 #   ordering.
 #
+#   Early versions of this macro (i.e., before serial 12) would not work
+#   when interprocedural optimization (via link-time optimization) was
+#   enabled. This would happen when, say, the GCC/clang "-flto" flag, or the
+#   ICC "-ipo" flag was used, for example. The problem was that under
+#   these conditions, the compiler did not allocate for and write the special
+#   float value in the data segment of the object file, since doing so might
+#   not prove optimal once more context was available. Thus, the special value
+#   (in platform-dependent binary form) could not be found in the object file,
+#   and the macro would fail.
+#
+#   The solution to the above problem was to:
+#
+#     1) Compile and link a whole test program rather than just compile an
+#        object file. This ensures that we reach the point where even an
+#        interprocedural optimizing compiler writes values to the data segment.
+#
+#     2) Add code that requires the compiler to write the special value to
+#        the data segment, as opposed to "optimizing away" the variable's
+#        allocation. This could be done via compiler keywords or options, but
+#        it's tricky to make this work for all versions of all compilers with
+#        all optimization settings. The chosen solution was to make the exit
+#        code of the test program depend on the storing of the special value
+#        in memory (in the data segment). Because the exit code can be
+#        verified, any compiler that aspires to be correct will produce a
+#        program binary that contains the value, which the macro can then find.
+#
+#   How does the exit code depend on the special value residing in memory?
+#   Memory, unlike variables and registers, can be addressed indirectly at run
+#   time. The exit code of this test program is a result of indirectly reading
+#   and writing to the memory region where the special value is supposed to
+#   reside. The actual memory addresses used and the values to be written are
+#   derived from the the program input ("argv") and are therefore not known at
+#   compile or link time. The compiler has no choice but to defer the
+#   computation to run time, and to prepare by allocating and populating the
+#   data segment with the special value. For further details, refer to the
+#   source code of the test program.
+#
+#   Note that the test program is never meant to be run. It only exists to host
+#   a double float value in a given platform's binary format. Thus, error
+#   handling is not included.
+#
 # LICENSE
 #
-#   Copyright (c) 2008 Daniel Amelang <dan@amelang.net>
+#   Copyright (c) 2008, 2023 Daniel Amelang <dan@amelang.net>
 #
 #   Copying and distribution of this file, with or without modification, are
 #   permitted in any medium without royalty provided the copyright notice
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 11
+#serial 14
 
 AC_DEFUN([AX_C_FLOAT_WORDS_BIGENDIAN],
   [AC_CACHE_CHECK(whether float word ordering is bigendian,
                   ax_cv_c_float_words_bigendian, [
 
 ax_cv_c_float_words_bigendian=unknown
-AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+AC_LINK_IFELSE([AC_LANG_SOURCE([[
 
-double d = 90904234967036810337470478905505011476211692735615632014797120844053488865816695273723469097858056257517020191247487429516932130503560650002327564517570778480236724525140520121371739201496540132640109977779420565776568942592.0;
+#include <stdlib.h>
+
+static double m[] = {9.090423496703681e+223, 0.0};
+
+int main (int argc, char *argv[])
+{
+    m[atoi (argv[1])] += atof (argv[2]);
+    return m[atoi (argv[3])] > 0.0;
+}
 
 ]])], [
 
-if grep noonsees conftest.$ac_objext >/dev/null ; then
+if grep noonsees conftest* > /dev/null ; then
   ax_cv_c_float_words_bigendian=yes
 fi
-if grep seesnoon conftest.$ac_objext >/dev/null ; then
+if grep seesnoon conftest* >/dev/null ; then
   if test "$ax_cv_c_float_words_bigendian" = unknown; then
     ax_cv_c_float_words_bigendian=no
   else
@@ -149,6 +198,80 @@ AS_VAR_IF(CACHEVAR,yes,
   [m4_default([$3], :)])
 AS_VAR_POPDEF([CACHEVAR])dnl
 ])dnl AX_CHECK_COMPILE_FLAGS
+
+# ===========================================================================
+#     https://www.gnu.org/software/autoconf-archive/ax_check_define.html
+# ===========================================================================
+#
+# SYNOPSIS
+#
+#   AC_CHECK_DEFINE([symbol], [ACTION-IF-FOUND], [ACTION-IF-NOT])
+#   AX_CHECK_DEFINE([includes],[symbol], [ACTION-IF-FOUND], [ACTION-IF-NOT])
+#
+# DESCRIPTION
+#
+#   Complements AC_CHECK_FUNC but it does not check for a function but for a
+#   define to exist. Consider a usage like:
+#
+#    AC_CHECK_DEFINE(__STRICT_ANSI__, CFLAGS="$CFLAGS -D_XOPEN_SOURCE=500")
+#
+# LICENSE
+#
+#   Copyright (c) 2008 Guido U. Draheim <guidod@gmx.de>
+#
+#   Copying and distribution of this file, with or without modification, are
+#   permitted in any medium without royalty provided the copyright notice
+#   and this notice are preserved.  This file is offered as-is, without any
+#   warranty.
+
+#serial 11
+
+AU_ALIAS([AC_CHECK_DEFINED], [AC_CHECK_DEFINE])
+AC_DEFUN([AC_CHECK_DEFINE],[
+AS_VAR_PUSHDEF([ac_var],[ac_cv_defined_$1])dnl
+AC_CACHE_CHECK([for $1 defined], ac_var,
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  #ifdef $1
+  int ok;
+  (void)ok;
+  #else
+  choke me
+  #endif
+]])],[AS_VAR_SET(ac_var, yes)],[AS_VAR_SET(ac_var, no)]))
+AS_IF([test AS_VAR_GET(ac_var) != "no"], [$2], [$3])dnl
+AS_VAR_POPDEF([ac_var])dnl
+])
+
+AU_ALIAS([AX_CHECK_DEFINED], [AX_CHECK_DEFINE])
+AC_DEFUN([AX_CHECK_DEFINE],[
+AS_VAR_PUSHDEF([ac_var],[ac_cv_defined_$2_$1])dnl
+AC_CACHE_CHECK([for $2 defined in $1], ac_var,
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <$1>]], [[
+  #ifdef $2
+  int ok;
+  (void)ok;
+  #else
+  choke me
+  #endif
+]])],[AS_VAR_SET(ac_var, yes)],[AS_VAR_SET(ac_var, no)]))
+AS_IF([test AS_VAR_GET(ac_var) != "no"], [$3], [$4])dnl
+AS_VAR_POPDEF([ac_var])dnl
+])
+
+AC_DEFUN([AX_CHECK_FUNC],
+[AS_VAR_PUSHDEF([ac_var], [ac_cv_func_$2])dnl
+AC_CACHE_CHECK([for $2], ac_var,
+dnl AC_LANG_FUNC_LINK_TRY
+[AC_LINK_IFELSE([AC_LANG_PROGRAM([$1
+                #undef $2
+                char $2 ();],[
+                char (*f) () = $2;
+                return f != $2; ])],
+                [AS_VAR_SET(ac_var, yes)],
+                [AS_VAR_SET(ac_var, no)])])
+AS_IF([test AS_VAR_GET(ac_var) = yes], [$3], [$4])dnl
+AS_VAR_POPDEF([ac_var])dnl
+])# AC_CHECK_FUNC
 
 # ===========================================================================
 #     https://www.gnu.org/software/autoconf-archive/ax_check_openssl.html
@@ -275,7 +398,7 @@ AC_DEFUN([AX_CHECK_OPENSSL], [
     AC_SUBST([OPENSSL_LDFLAGS])
 ])
 
-# pkg.m4 - Macros to locate and utilise pkg-config.   -*- Autoconf -*-
+# pkg.m4 - Macros to locate and use pkg-config.   -*- Autoconf -*-
 # serial 12 (pkg-config-0.29.2)
 
 dnl Copyright © 2004 Scott James Remnant <scott@netsplit.com>.
@@ -363,7 +486,7 @@ dnl Check to see whether a particular set of modules exists. Similar to
 dnl PKG_CHECK_MODULES(), but does not set variables or print errors.
 dnl
 dnl Please remember that m4 expands AC_REQUIRE([PKG_PROG_PKG_CONFIG])
-dnl only at the first occurence in configure.ac, so if the first place
+dnl only at the first occurrence in configure.ac, so if the first place
 dnl it's called might be skipped (such as if it is within an "if", you
 dnl have to call PKG_CHECK_EXISTS manually
 AC_DEFUN([PKG_CHECK_EXISTS],
@@ -432,14 +555,14 @@ if test $pkg_failed = yes; then
         AC_MSG_RESULT([no])
         _PKG_SHORT_ERRORS_SUPPORTED
         if test $_pkg_short_errors_supported = yes; then
-	        $1[]_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "$2" 2>&1`
+                $1[]_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "$2" 2>&1`
         else
-	        $1[]_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "$2" 2>&1`
+                $1[]_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "$2" 2>&1`
         fi
-	# Put the nasty error message in config.log where it belongs
-	echo "$$1[]_PKG_ERRORS" >&AS_MESSAGE_LOG_FD
+        # Put the nasty error message in config.log where it belongs
+        echo "$$1[]_PKG_ERRORS" >&AS_MESSAGE_LOG_FD
 
-	m4_default([$4], [AC_MSG_ERROR(
+        m4_default([$4], [AC_MSG_ERROR(
 [Package requirements ($2) were not met:
 
 $$1_PKG_ERRORS
@@ -451,7 +574,7 @@ _PKG_TEXT])[]dnl
         ])
 elif test $pkg_failed = untried; then
         AC_MSG_RESULT([no])
-	m4_default([$4], [AC_MSG_FAILURE(
+        m4_default([$4], [AC_MSG_FAILURE(
 [The pkg-config script could not be found or is too old.  Make sure it
 is in your PATH or set the PKG_CONFIG environment variable to the full
 path to pkg-config.
@@ -461,10 +584,10 @@ _PKG_TEXT
 To get pkg-config, see <http://pkg-config.freedesktop.org/>.])[]dnl
         ])
 else
-	$1[]_CFLAGS=$pkg_cv_[]$1[]_CFLAGS
-	$1[]_LIBS=$pkg_cv_[]$1[]_LIBS
+        $1[]_CFLAGS=$pkg_cv_[]$1[]_CFLAGS
+        $1[]_LIBS=$pkg_cv_[]$1[]_LIBS
         AC_MSG_RESULT([yes])
-	$3
+        $3
 fi[]dnl
 ])dnl PKG_CHECK_MODULES
 
@@ -550,6 +673,74 @@ AS_VAR_COPY([$1], [pkg_cv_][$1])
 
 AS_VAR_IF([$1], [""], [$5], [$4])dnl
 ])dnl PKG_CHECK_VAR
+
+dnl PKG_WITH_MODULES(VARIABLE-PREFIX, MODULES,
+dnl   [ACTION-IF-FOUND],[ACTION-IF-NOT-FOUND],
+dnl   [DESCRIPTION], [DEFAULT])
+dnl ------------------------------------------
+dnl
+dnl Prepare a "--with-" configure option using the lowercase
+dnl [VARIABLE-PREFIX] name, merging the behaviour of AC_ARG_WITH and
+dnl PKG_CHECK_MODULES in a single macro.
+AC_DEFUN([PKG_WITH_MODULES],
+[
+m4_pushdef([with_arg], m4_tolower([$1]))
+
+m4_pushdef([description],
+           [m4_default([$5], [build with ]with_arg[ support])])
+
+m4_pushdef([def_arg], [m4_default([$6], [auto])])
+m4_pushdef([def_action_if_found], [AS_TR_SH([with_]with_arg)=yes])
+m4_pushdef([def_action_if_not_found], [AS_TR_SH([with_]with_arg)=no])
+
+m4_case(def_arg,
+            [yes],[m4_pushdef([with_without], [--without-]with_arg)],
+            [m4_pushdef([with_without],[--with-]with_arg)])
+
+AC_ARG_WITH(with_arg,
+     AS_HELP_STRING(with_without, description[ @<:@default=]def_arg[@:>@]),,
+    [AS_TR_SH([with_]with_arg)=def_arg])
+
+AS_CASE([$AS_TR_SH([with_]with_arg)],
+            [yes],[PKG_CHECK_MODULES([$1],[$2],$3,$4)],
+            [auto],[PKG_CHECK_MODULES([$1],[$2],
+                                        [m4_n([def_action_if_found]) $3],
+                                        [m4_n([def_action_if_not_found]) $4])])
+
+m4_popdef([with_arg])
+m4_popdef([description])
+m4_popdef([def_arg])
+
+])dnl PKG_WITH_MODULES
+
+dnl PKG_HAVE_WITH_MODULES(VARIABLE-PREFIX, MODULES,
+dnl   [DESCRIPTION], [DEFAULT])
+dnl -----------------------------------------------
+dnl
+dnl Convenience macro to trigger AM_CONDITIONAL after PKG_WITH_MODULES
+dnl check._[VARIABLE-PREFIX] is exported as make variable.
+AC_DEFUN([PKG_HAVE_WITH_MODULES],
+[
+PKG_WITH_MODULES([$1],[$2],,,[$3],[$4])
+
+AM_CONDITIONAL([HAVE_][$1],
+               [test "$AS_TR_SH([with_]m4_tolower([$1]))" = "yes"])
+])dnl PKG_HAVE_WITH_MODULES
+
+dnl PKG_HAVE_DEFINE_WITH_MODULES(VARIABLE-PREFIX, MODULES,
+dnl   [DESCRIPTION], [DEFAULT])
+dnl ------------------------------------------------------
+dnl
+dnl Convenience macro to run AM_CONDITIONAL and AC_DEFINE after
+dnl PKG_WITH_MODULES check. HAVE_[VARIABLE-PREFIX] is exported as make
+dnl and preprocessor variable.
+AC_DEFUN([PKG_HAVE_DEFINE_WITH_MODULES],
+[
+PKG_HAVE_WITH_MODULES([$1],[$2],[$3],[$4])
+
+AS_IF([test "$AS_TR_SH([with_]m4_tolower([$1]))" = "yes"],
+        [AC_DEFINE([HAVE_][$1], 1, [Enable ]m4_tolower([$1])[ support])])
+])dnl PKG_HAVE_DEFINE_WITH_MODULES
 
 # AM_CONDITIONAL                                            -*- Autoconf -*-
 
