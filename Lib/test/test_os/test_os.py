@@ -2638,27 +2638,30 @@ def _execvpe_mockup(defpath=None):
                      "need os.execv()")
 class ExecTests(unittest.TestCase):
     def _test_bad_program(self, do_exec):
-        bad_filename = 'nosuchapp'
-        with self.assertRaises(OSError) as ctx:
-            do_exec(bad_filename)
-        self.assertEqual(ctx.exception.filename, bad_filename)
-        self.assertIn(bad_filename, str(ctx.exception))
+        for bad_filename in ('nosuchapp', b'nosuchapp',
+                             FakePath('nosuchapp'), FakePath(b'nosuchapp')):
+            with self.subTest(bad_filename):
+                with self.assertRaises(OSError) as ctx:
+                    do_exec(bad_filename)
+                self.assertEqual(ctx.exception.filename,
+                                 os.fspath(bad_filename))
+                self.assertIn('nosuchapp', str(ctx.exception))
 
     @unittest.skipIf(USING_LINUXTHREADS, "linuxthreads bug: see issue #4970")
     def test_execv_with_bad_program(self):
-        self._test_bad_program(lambda name: os.execv(name, [name]))
+        self._test_bad_program(lambda name: os.execv(name, ['nosuchapp']))
 
     @unittest.skipIf(USING_LINUXTHREADS, "linuxthreads bug: see issue #4970")
     def test_execvp_with_bad_program(self):
-        self._test_bad_program(lambda name: os.execvp(name, [name]))
+        self._test_bad_program(lambda name: os.execvp(name, ['nosuchapp']))
 
     @unittest.skipIf(USING_LINUXTHREADS, "linuxthreads bug: see issue #4970")
     def test_execve_with_bad_program(self):
-        self._test_bad_program(lambda name: os.execve(name, [name], {}))
+        self._test_bad_program(lambda name: os.execve(name, ['nosuchapp'], {}))
 
     @unittest.skipIf(USING_LINUXTHREADS, "linuxthreads bug: see issue #4970")
     def test_execvpe_with_bad_program(self):
-        self._test_bad_program(lambda name: os.execvpe(name, [name], {}))
+        self._test_bad_program(lambda name: os.execvpe(name, ['nosuchapp'], {}))
 
     def test_execv_with_bad_arglist(self):
         self.assertRaises(ValueError, os.execv, 'notepad', ())
