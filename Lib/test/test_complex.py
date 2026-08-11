@@ -1,6 +1,7 @@
 import unittest
 import sys
 from test import support
+from test.support import import_helper
 from test.support.testcase import ComplexesAreIdenticalMixin
 from test.support.numbers import (
     VALID_UNDERSCORE_LITERALS,
@@ -790,6 +791,12 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             self.assertAlmostEqual((num.real**2 + num.imag**2)  ** 0.5, abs(num))
 
         self.assertRaises(OverflowError, abs, complex(DBL_MAX, DBL_MAX))
+
+    def test_abs_errno_handling(self):
+        _testcapi = import_helper.import_module('_testcapi')
+        z = complex('nan')
+        _testcapi.set_errno(34)
+        self.assertTrue(isnan(abs(z)))
 
     def test_repr_str(self):
         def test(v, expected, test_fn=self.assertEqual):
