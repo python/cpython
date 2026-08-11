@@ -4,7 +4,6 @@
 # Keep this script in sync with python-config.sh.in
 
 import getopt
-import os
 import sys
 import sysconfig
 
@@ -14,7 +13,8 @@ valid_opts = ['prefix', 'exec-prefix', 'includes', 'libs', 'cflags',
 
 def exit_with_usage(code=1):
     print("Usage: {0} [{1}]".format(
-        sys.argv[0], '|'.join('--'+opt for opt in valid_opts)), file=sys.stderr)
+        sys.argv[0], '|'.join('--'+opt for opt in valid_opts)),
+        file=sys.stdout if code == 0 else sys.stderr)
     sys.exit(code)
 
 try:

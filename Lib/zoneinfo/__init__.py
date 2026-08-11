@@ -12,7 +12,10 @@ from ._common import ZoneInfoNotFoundError
 
 try:
     from _zoneinfo import ZoneInfo
-except ImportError:  # pragma: nocover
+except (ImportError, AttributeError):  # pragma: nocover
+    # AttributeError: module 'datetime' has no attribute 'datetime_CAPI'.
+    # This happens when the '_datetime' module is not available and the
+    # pure Python implementation is used instead.
     from ._zoneinfo import ZoneInfo
 
 reset_tzpath = _tzpath.reset_tzpath

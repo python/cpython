@@ -12,8 +12,8 @@ import unittest
 def get_tb():
     try:
         raise OSError()
-    except:
-        return sys.exc_info()[2]
+    except OSError as e:
+        return e.__traceback__
 
 
 class Context:
@@ -48,7 +48,7 @@ class TestRaise(unittest.TestCase):
         def reraise():
             try:
                 raise TypeError("foo")
-            except:
+            except TypeError:
                 try:
                     raise KeyError("caught")
                 except KeyError:
@@ -60,7 +60,7 @@ class TestRaise(unittest.TestCase):
         def reraise():
             try:
                 raise TypeError("foo")
-            except:
+            except TypeError:
                 try:
                     raise KeyError("caught")
                 finally:
@@ -73,7 +73,7 @@ class TestRaise(unittest.TestCase):
         def reraise():
             try:
                 raise TypeError("foo")
-            except:
+            except TypeError:
                 nested_reraise()
         self.assertRaises(TypeError, reraise)
 
@@ -81,7 +81,7 @@ class TestRaise(unittest.TestCase):
         try:
             try:
                 raise TypeError("foo")
-            except:
+            except TypeError:
                 raise ValueError() from None
         except ValueError as e:
             self.assertIsInstance(e.__context__, TypeError)
@@ -91,7 +91,7 @@ class TestRaise(unittest.TestCase):
         def reraise():
             try:
                 raise TypeError("foo")
-            except:
+            except TypeError:
                 with Context():
                     pass
                 raise
@@ -101,7 +101,7 @@ class TestRaise(unittest.TestCase):
         def reraise():
             try:
                 raise TypeError("foo")
-            except:
+            except TypeError:
                 with Context():
                     raise KeyError("caught")
                 raise
@@ -111,7 +111,7 @@ class TestRaise(unittest.TestCase):
         def reraise():
             try:
                 raise TypeError("foo")
-            except:
+            except TypeError:
                 yield 1
                 raise
         g = reraise()
@@ -184,6 +184,16 @@ class TestCause(unittest.TestCase):
             self.assertIsInstance(e.__cause__, KeyError)
         else:
             self.fail("No exception raised")
+
+    def test_class_cause_nonexception_result(self):
+        # See https://github.com/python/cpython/issues/140530.
+        class ConstructMortal(BaseException):
+            def __new__(*args, **kwargs):
+                return ["mortal value"]
+
+        msg = ".*should have returned an instance of BaseException.*"
+        with self.assertRaisesRegex(TypeError, msg):
+            raise IndexError from ConstructMortal
 
     def test_instance_cause(self):
         cause = KeyError()
@@ -300,10 +310,10 @@ class TestContext(unittest.TestCase):
         try:
             try:
                 raise context
-            except:
+            except IndexError:
                 raise OSError()
         except OSError as e:
-            self.assertEqual(e.__context__, context)
+            self.assertIs(e.__context__, context)
         else:
             self.fail("No exception raised")
 
@@ -312,10 +322,10 @@ class TestContext(unittest.TestCase):
         try:
             try:
                 raise context
-            except:
+            except IndexError:
                 raise OSError()
         except OSError as e:
-            self.assertNotEqual(e.__context__, context)
+            self.assertIsNot(e.__context__, context)
             self.assertIsInstance(e.__context__, context)
         else:
             self.fail("No exception raised")
@@ -325,10 +335,10 @@ class TestContext(unittest.TestCase):
         try:
             try:
                 raise context
-            except:
+            except IndexError:
                 raise OSError
         except OSError as e:
-            self.assertNotEqual(e.__context__, context)
+            self.assertIsNot(e.__context__, context)
             self.assertIsInstance(e.__context__, context)
         else:
             self.fail("No exception raised")
@@ -337,7 +347,7 @@ class TestContext(unittest.TestCase):
         try:
             try:
                 1/0
-            except:
+            except ZeroDivisionError:
                 raise OSError
         except OSError as e:
             self.assertIsInstance(e.__context__, ZeroDivisionError)
@@ -348,7 +358,7 @@ class TestContext(unittest.TestCase):
         try:
             try:
                 1/0
-            except:
+            except ZeroDivisionError:
                 xyzzy
         except NameError as e:
             self.assertIsInstance(e.__context__, ZeroDivisionError)
@@ -415,6 +425,22 @@ class TestContext(unittest.TestCase):
         except NameError as e:
             self.assertIsNone(e.__context__.__context__)
 
+    def test_not_last(self):
+        # Context is not necessarily the last exception
+        context = Exception("context")
+        try:
+            raise context
+        except Exception:
+            try:
+                raise Exception("caught")
+            except Exception:
+                pass
+            try:
+                raise Exception("new")
+            except Exception as exc:
+                raised = exc
+        self.assertIs(raised.__context__, context)
+
     def test_3118(self):
         # deleting the generator caused the __context__ to be cleared
         def gen():
@@ -429,7 +455,7 @@ class TestContext(unittest.TestCase):
             try:
                 try:
                     raise ValueError
-                except:
+                except ValueError:
                     del g
                     raise KeyError
             except Exception as e:
@@ -445,7 +471,7 @@ class TestContext(unittest.TestCase):
             def __del__(self):
                 try:
                     1/0
-                except:
+                except ZeroDivisionError:
                     raise
 
         def f():
