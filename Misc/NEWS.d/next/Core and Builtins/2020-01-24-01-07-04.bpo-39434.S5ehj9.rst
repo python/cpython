@@ -1,3 +1,0 @@
-:term:`floor division` of float operation now has a better performance. Also
-the message of :exc:`ZeroDivisionError` for this operation is updated.
-Patch by Dong-hee Na.

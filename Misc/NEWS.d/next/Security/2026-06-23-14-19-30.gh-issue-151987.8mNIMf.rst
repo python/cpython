@@ -1,0 +1,2 @@
+The :meth:`tarfile.TarFile.extract` method now applies the given filter when
+it extracts a link target from the archive as a fallback.

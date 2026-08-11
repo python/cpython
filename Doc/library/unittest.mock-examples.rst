@@ -1,7 +1,6 @@
-:mod:`unittest.mock` --- getting started
-========================================
+:mod:`!unittest.mock` --- getting started
+=========================================
 
-.. moduleauthor:: Michael Foord <michael@python.org>
 .. currentmodule:: unittest.mock
 
 .. versionadded:: 3.3
@@ -26,7 +25,7 @@
 Using Mock
 ----------
 
-Mock Patching Methods
+Mock patching methods
 ~~~~~~~~~~~~~~~~~~~~~
 
 Common uses for :class:`Mock` objects include:
@@ -72,7 +71,7 @@ the ``something`` method:
 
 
 
-Mock for Method Calls on an Object
+Mock for method calls on an object
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In the last example we patched a method directly on an object to check that it
@@ -102,7 +101,7 @@ accessing it in the test will create it, but :meth:`~Mock.assert_called_with`
 will raise a failure exception.
 
 
-Mocking Classes
+Mocking classes
 ~~~~~~~~~~~~~~~
 
 A common use case is to mock out classes instantiated by your code under test.
@@ -140,7 +139,7 @@ name is also propagated to attributes or methods of the mock:
     <MagicMock name='foo.method' id='...'>
 
 
-Tracking all Calls
+Tracking all calls
 ~~~~~~~~~~~~~~~~~~
 
 Often you want to track more than a single call to a method. The
@@ -177,7 +176,7 @@ possible to track nested calls where the parameters used to create ancestors are
     True
 
 
-Setting Return Values and Attributes
+Setting return values and attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Setting the return values on a mock object is trivially easy:
@@ -318,7 +317,7 @@ return an async function.
     >>> mock_instance.__aexit__.assert_awaited_once()
 
 
-Creating a Mock from an Existing Object
+Creating a mock from an existing object
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 One problem with over use of mocking is that it couples your tests to the
@@ -339,7 +338,7 @@ instantiate the class in those tests.
     >>> mock.old_method()
     Traceback (most recent call last):
        ...
-    AttributeError: object has no attribute 'old_method'
+    AttributeError: Mock object has no attribute 'old_method'. Did you mean: 'class_method'?
 
 Using a specification also enables a smarter matching of calls made to the
 mock, regardless of whether some parameters were passed as positional or
@@ -360,8 +359,32 @@ of arbitrary attributes as well as the getting of them then you can use
 *spec_set* instead of *spec*.
 
 
+Using side_effect to return per file content
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Patch Decorators
+:func:`mock_open` is used to patch :func:`open` method. :attr:`~Mock.side_effect`
+can be used to return a new Mock object per call. This can be used to return different
+contents per file stored in a dictionary::
+
+   DEFAULT = "default"
+   data_dict = {"file1": "data1",
+                "file2": "data2"}
+
+   def open_side_effect(name):
+       return mock_open(read_data=data_dict.get(name, DEFAULT))()
+
+   with patch("builtins.open", side_effect=open_side_effect):
+       with open("file1") as file1:
+           assert file1.read() == "data1"
+
+       with open("file2") as file2:
+           assert file2.read() == "data2"
+
+       with open("file3") as file2:
+           assert file2.read() == "default"
+
+
+Patch decorators
 ----------------
 
 .. note::
@@ -495,7 +518,7 @@ decorator individually to every method whose name starts with "test".
 
 .. _further-examples:
 
-Further Examples
+Further examples
 ----------------
 
 
@@ -576,28 +599,28 @@ this list of calls for us::
 Partial mocking
 ~~~~~~~~~~~~~~~
 
-In some tests I wanted to mock out a call to :meth:`datetime.date.today`
-to return a known date, but I didn't want to prevent the code under test from
-creating new date objects. Unfortunately :class:`datetime.date` is written in C, and
-so I couldn't just monkey-patch out the static :meth:`date.today` method.
+For some tests, you may want to mock out a call to :meth:`datetime.date.today`
+to return a known date, but don't want to prevent the code under test from
+creating new date objects. Unfortunately :class:`datetime.date` is written in C,
+so you cannot just monkey-patch out the static :meth:`datetime.date.today` method.
 
-I found a simple way of doing this that involved effectively wrapping the date
-class with a mock, but passing through calls to the constructor to the real
+Instead, you can effectively wrap the date
+class with a mock, while passing through calls to the constructor to the real
 class (and returning real instances).
 
 The :func:`patch decorator <patch>` is used here to
-mock out the ``date`` class in the module under test. The :attr:`side_effect`
+mock out the ``date`` class in the module under test. The :attr:`~Mock.side_effect`
 attribute on the mock date class is then set to a lambda function that returns
 a real date. When the mock date class is called a real date will be
 constructed and returned by ``side_effect``. ::
 
-    >>> from datetime import date
+    >>> import datetime as dt
     >>> with patch('mymodule.date') as mock_date:
-    ...     mock_date.today.return_value = date(2010, 10, 8)
-    ...     mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
+    ...     mock_date.today.return_value = dt.date(2010, 10, 8)
+    ...     mock_date.side_effect = lambda *args, **kw: dt.date(*args, **kw)
     ...
-    ...     assert mymodule.date.today() == date(2010, 10, 8)
-    ...     assert mymodule.date(2009, 6, 8) == date(2009, 6, 8)
+    ...     assert mymodule.date.today() == dt.date(2010, 10, 8)
+    ...     assert mymodule.date(2009, 6, 8) == dt.date(2009, 6, 8)
 
 Note that we don't patch :class:`datetime.date` globally, we patch ``date`` in the
 module that *uses* it. See :ref:`where to patch <where-to-patch>`.
@@ -615,7 +638,7 @@ is discussed in `this blog entry
 <https://williambert.online/2011/07/how-to-unit-testing-in-django-with-mocking-and-patching/>`_.
 
 
-Mocking a Generator Method
+Mocking a generator method
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A Python generator is a function or method that uses the :keyword:`yield` statement
@@ -660,7 +683,7 @@ Applying the same patch to every test method
 
 If you want several patches in place for multiple test methods the obvious way
 is to apply the patch decorators to every method. This can feel like unnecessary
-repetition. For Python 2.6 or more recent you can use :func:`patch` (in all its
+repetition. Instead, you can use :func:`patch` (in all its
 various forms) as a class decorator. This applies the patches to all test
 methods on the class. A test method is identified by methods whose names start
 with ``test``::
@@ -716,19 +739,18 @@ exception is raised in the setUp then tearDown is not called.
     >>> MyTest('test_foo').run()
 
 
-Mocking Unbound Methods
+Mocking unbound methods
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Whilst writing tests today I needed to patch an *unbound method* (patching the
-method on the class rather than on the instance). I needed self to be passed
-in as the first argument because I want to make asserts about which objects
-were calling this particular method. The issue is that you can't patch with a
-mock for this, because if you replace an unbound method with a mock it doesn't
-become a bound method when fetched from the instance, and so it doesn't get
-self passed in. The workaround is to patch the unbound method with a real
-function instead. The :func:`patch` decorator makes it so simple to
-patch out methods with a mock that having to create a real function becomes a
-nuisance.
+Sometimes a test needs to patch an *unbound method*, which means patching the
+method on the class rather than on the instance. In order to make assertions
+about which objects were calling this particular method, you need to pass
+``self`` as the first argument. The issue is that you can't patch with a mock for
+this, because if you replace an unbound method with a mock it doesn't become
+a bound method when fetched from the instance, and so it doesn't get ``self``
+passed in. The workaround is to patch the unbound method with a real function
+instead. The :func:`patch` decorator makes it so simple to patch out methods
+with a mock that having to create a real function becomes a nuisance.
 
 If you pass ``autospec=True`` to patch then it does the patching with a
 *real* function object. This function object has the same signature as the one
@@ -736,8 +758,8 @@ it is replacing, but delegates to a mock under the hood. You still get your
 mock auto-created in exactly the same way as before. What it means though, is
 that if you use it to patch out an unbound method on a class the mocked
 function will be turned into a bound method if it is fetched from an instance.
-It will have ``self`` passed in as the first argument, which is exactly what I
-wanted:
+It will have ``self`` passed in as the first argument, which is exactly what
+was needed:
 
     >>> class Foo:
     ...   def foo(self):
@@ -766,15 +788,16 @@ mock has a nice API for making assertions about how your mock objects are used.
     >>> mock.foo_bar.assert_called_with('baz', spam='eggs')
 
 If your mock is only being called once you can use the
-:meth:`assert_called_once_with` method that also asserts that the
-:attr:`call_count` is one.
+:meth:`~Mock.assert_called_once_with` method that also asserts that the
+:attr:`~Mock.call_count` is one.
 
     >>> mock.foo_bar.assert_called_once_with('baz', spam='eggs')
     >>> mock.foo_bar()
     >>> mock.foo_bar.assert_called_once_with('baz', spam='eggs')
     Traceback (most recent call last):
         ...
-    AssertionError: Expected to be called once. Called 2 times.
+    AssertionError: Expected 'foo_bar' to be called once. Called 2 times.
+    Calls: [call('baz', spam='eggs'), call()].
 
 Both ``assert_called_with`` and ``assert_called_once_with`` make assertions about
 the *most recent* call. If your mock is going to be called several times, and
@@ -835,13 +858,13 @@ One possibility would be for mock to copy the arguments you pass in. This
 could then cause problems if you do assertions that rely on object identity
 for equality.
 
-Here's one solution that uses the :attr:`side_effect`
+Here's one solution that uses the :attr:`~Mock.side_effect`
 functionality. If you provide a ``side_effect`` function for a mock then
 ``side_effect`` will be called with the same args as the mock. This gives us an
 opportunity to copy the arguments and store them for later assertions. In this
-example I'm using *another* mock to store the arguments so that I can use the
+example we're using *another* mock to store the arguments so that we can use the
 mock methods for doing the assertion. Again a helper function sets this up for
-me. ::
+us. ::
 
     >>> from copy import deepcopy
     >>> from unittest.mock import Mock, patch, DEFAULT
@@ -893,7 +916,7 @@ Here's an example implementation:
     ...     def __call__(self, /, *args, **kwargs):
     ...         args = deepcopy(args)
     ...         kwargs = deepcopy(kwargs)
-    ...         return super(CopyingMock, self).__call__(*args, **kwargs)
+    ...         return super().__call__(*args, **kwargs)
     ...
     >>> c = CopyingMock(return_value=None)
     >>> arg = set()
@@ -903,8 +926,9 @@ Here's an example implementation:
     >>> c.assert_called_with(arg)
     Traceback (most recent call last):
         ...
-    AssertionError: Expected call: mock({1})
-    Actual call: mock(set())
+    AssertionError: expected call not found.
+    Expected: mock({1})
+    Actual: mock(set())
     >>> c.foo
     <CopyingMock name='mock.foo' id='...'>
 
@@ -913,7 +937,7 @@ and the ``return_value`` will use your subclass automatically. That means all
 children of a ``CopyingMock`` will also have the type ``CopyingMock``.
 
 
-Nesting Patches
+Nesting patches
 ~~~~~~~~~~~~~~~
 
 Using patch as a context manager is nice, but if you do multiple patches you
@@ -971,7 +995,8 @@ We can do this with :class:`MagicMock`, which will behave like a dictionary,
 and using :data:`~Mock.side_effect` to delegate dictionary access to a real
 underlying dictionary that is under our control.
 
-When the :meth:`__getitem__` and :meth:`__setitem__` methods of our ``MagicMock`` are called
+When the :meth:`~object.__getitem__` and :meth:`~object.__setitem__` methods
+of our ``MagicMock`` are called
 (normal dictionary access) then ``side_effect`` is called with the key (and in
 the case of ``__setitem__`` the value too). We can also control what is returned.
 
@@ -1074,7 +1099,7 @@ subclass.
 Sometimes this is inconvenient. For example, `one user
 <https://code.google.com/archive/p/mock/issues/105>`_ is subclassing mock to
 created a `Twisted adaptor
-<https://twistedmatrix.com/documents/11.0.0/api/twisted.python.components.html>`_.
+<https://twisted.org/documents/11.0.0/api/twisted.python.components.html>`_.
 Having this applied to attributes too actually causes errors.
 
 ``Mock`` (in all its flavours) uses a method called ``_get_child_mock`` to create
@@ -1116,7 +1141,7 @@ on first use).
 That aside there is a way to use ``mock`` to affect the results of an import.
 Importing fetches an *object* from the :data:`sys.modules` dictionary. Note that it
 fetches an *object*, which need not be a module. Importing a module for the
-first time results in a module object being put in `sys.modules`, so usually
+first time results in a module object being put in ``sys.modules``, so usually
 when you import something you get a module back. This need not be the case
 however.
 
@@ -1267,8 +1292,9 @@ sufficient:
     >>> mock.assert_called_with(Foo(1, 2))
     Traceback (most recent call last):
         ...
-    AssertionError: Expected: call(<__main__.Foo object at 0x...>)
-    Actual call: call(<__main__.Foo object at 0x...>)
+    AssertionError: expected call not found.
+    Expected: mock(<__main__.Foo object at 0x...>)
+    Actual: mock(<__main__.Foo object at 0x...>)
 
 A comparison function for our ``Foo`` class might look something like this:
 

@@ -1,21 +1,27 @@
 #!/bin/sh
 apt-get update
 
-apt-get -yq install \
+apt-get -yq --no-install-recommends install \
     build-essential \
-    zlib1g-dev \
+    pkg-config \
+    cmake \
+    curl \
+    gdb \
+    lcov \
+    libb2-dev \
     libbz2-dev \
+    libffi-dev \
+    libgdbm-compat-dev \
+    libgdbm-dev \
     liblzma-dev \
+    libmpdec-dev \
     libncurses5-dev \
     libreadline6-dev \
     libsqlite3-dev \
     libssl-dev \
-    libgdbm-dev \
+    libzstd-dev \
+    strace \
     tk-dev \
-    lzma \
-    lzma-dev \
-    liblzma-dev \
-    libffi-dev \
     uuid-dev \
     xvfb \
-    lcov
+    zlib1g-dev
