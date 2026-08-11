@@ -37,24 +37,24 @@ the constructor, the :meth:`datetime.replace <datetime.datetime.replace>`
 method or :meth:`datetime.astimezone <datetime.datetime.astimezone>`::
 
     >>> from zoneinfo import ZoneInfo
-    >>> from datetime import datetime, timedelta
+    >>> import datetime as dt
 
-    >>> dt = datetime(2020, 10, 31, 12, tzinfo=ZoneInfo("America/Los_Angeles"))
-    >>> print(dt)
+    >>> when = dt.datetime(2020, 10, 31, 12, tzinfo=ZoneInfo("America/Los_Angeles"))
+    >>> print(when)
     2020-10-31 12:00:00-07:00
 
-    >>> dt.tzname()
+    >>> when.tzname()
     'PDT'
 
 Datetimes constructed in this way are compatible with datetime arithmetic and
 handle daylight saving time transitions with no further intervention::
 
-    >>> dt_add = dt + timedelta(days=1)
+    >>> when_add = when + dt.timedelta(days=1)
 
-    >>> print(dt_add)
+    >>> print(when_add)
     2020-11-01 12:00:00-08:00
 
-    >>> dt_add.tzname()
+    >>> when_add.tzname()
     'PST'
 
 These time zones also support the :attr:`~datetime.datetime.fold` attribute
@@ -63,26 +63,25 @@ times (such as a daylight saving time to standard time transition), the offset
 from *before* the transition is used when ``fold=0``, and the offset *after*
 the transition is used when ``fold=1``, for example::
 
-    >>> dt = datetime(2020, 11, 1, 1, tzinfo=ZoneInfo("America/Los_Angeles"))
-    >>> print(dt)
+    >>> when = dt.datetime(2020, 11, 1, 1, tzinfo=ZoneInfo("America/Los_Angeles"))
+    >>> print(when)
     2020-11-01 01:00:00-07:00
 
-    >>> print(dt.replace(fold=1))
+    >>> print(when.replace(fold=1))
     2020-11-01 01:00:00-08:00
 
 When converting from another time zone, the fold will be set to the correct
 value::
 
-    >>> from datetime import timezone
     >>> LOS_ANGELES = ZoneInfo("America/Los_Angeles")
-    >>> dt_utc = datetime(2020, 11, 1, 8, tzinfo=timezone.utc)
+    >>> when_utc = dt.datetime(2020, 11, 1, 8, tzinfo=dt.timezone.utc)
 
     >>> # Before the PDT -> PST transition
-    >>> print(dt_utc.astimezone(LOS_ANGELES))
+    >>> print(when_utc.astimezone(LOS_ANGELES))
     2020-11-01 01:00:00-07:00
 
     >>> # After the PDT -> PST transition
-    >>> print((dt_utc + timedelta(hours=1)).astimezone(LOS_ANGELES))
+    >>> print((when_utc + dt.timedelta(hours=1)).astimezone(LOS_ANGELES))
     2020-11-01 01:00:00-08:00
 
 Data sources
@@ -276,8 +275,8 @@ the note on usage in the attribute documentation)::
     >>> str(zone)
     'Pacific/Kwajalein'
 
-    >>> dt = datetime(2020, 4, 1, 3, 15, tzinfo=zone)
-    >>> f"{dt.isoformat()} [{dt.tzinfo}]"
+    >>> when = dt.datetime(2020, 4, 1, 3, 15, tzinfo=zone)
+    >>> f"{when.isoformat()} [{when.tzinfo}]"
     '2020-04-01T03:15:00+12:00 [Pacific/Kwajalein]'
 
 For objects constructed from a file without specifying a ``key`` parameter,

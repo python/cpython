@@ -459,7 +459,7 @@ static inline uint16_t
 _Py_atomic_load_uint16(const uint16_t *obj)
 {
     _Py_USING_STD;
-    return atomic_load((const _Atomic(uint32_t)*)obj);
+    return atomic_load((const _Atomic(uint16_t)*)obj);
 }
 
 static inline uint32_t

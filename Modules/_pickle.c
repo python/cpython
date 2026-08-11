@@ -12,6 +12,7 @@
 #include "pycore_bytesobject.h"   // _PyBytesWriter
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_dict.h"          // _PyDict_SetItem_Take2()
 #include "pycore_long.h"          // _PyLong_AsByteArray()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyNone_Type
@@ -21,6 +22,7 @@
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_symtable.h"      // _Py_Mangle()
 #include "pycore_sysmodule.h"     // _PySys_GetSizeOf()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 #include <stdlib.h>               // strtol()
@@ -667,6 +669,10 @@ typedef struct UnpicklerObject {
     Py_ssize_t input_len;
     Py_ssize_t next_read_idx;
     Py_ssize_t prefetched_idx;  /* index of first prefetched byte */
+    Py_ssize_t frame_end;       /* End of the current frame, or -1 if not in a
+                                   frame.  While in a frame, input_len is capped
+                                   here so reads can't cross it (PEP 3154). */
+    Py_ssize_t saved_input_len; /* input_len to restore when the frame ends. */
 
     PyObject *read;             /* read() method of the input stream. */
     PyObject *readinto;         /* readinto() method of the input stream. */
@@ -1248,6 +1254,7 @@ _Unpickler_SetStringInput(UnpicklerObject *self, PyObject *input)
     self->input_len = self->buffer.len;
     self->next_read_idx = 0;
     self->prefetched_idx = self->input_len;
+    self->frame_end = -1;
     return self->input_len;
 }
 
@@ -1256,6 +1263,30 @@ bad_readline(PickleState *st)
 {
     PyErr_SetString(st->UnpicklingError, "pickle data was truncated");
     return -1;
+}
+
+/* End the current frame, uncapping input_len.  The frame must be fully read. */
+static void
+_Unpickler_EndFrame(UnpicklerObject *self)
+{
+    assert(self->frame_end >= 0);
+    assert(self->next_read_idx == self->frame_end);
+    self->input_len = self->saved_input_len;
+    self->frame_end = -1;
+}
+
+/* Reached the end of the current frame.  If straddle, the read crosses the
+   frame boundary (PEP 3154) and fails; otherwise end the frame. */
+static int
+_Unpickler_LeaveFrame(PickleState *st, UnpicklerObject *self, int straddle)
+{
+    if (straddle) {
+        PyErr_SetString(st->UnpicklingError,
+                        "pickle exhausted before end of frame");
+        return -1;
+    }
+    _Unpickler_EndFrame(self);
+    return 0;
 }
 
 /* Skip any consumed data that was only prefetched using peek() */
@@ -1442,6 +1473,19 @@ _Unpickler_ReadImpl(UnpicklerObject *self, PickleState *st, char **s, Py_ssize_t
         return -1;
     }
 
+    if (self->frame_end >= 0) {
+        if (_Unpickler_LeaveFrame(st, self,
+                                  self->next_read_idx < self->frame_end) < 0) {
+            return -1;
+        }
+        /* Frame ended; the read may now be satisfied from the buffer. */
+        if (n <= self->input_len - self->next_read_idx) {
+            *s = self->input_buffer + self->next_read_idx;
+            self->next_read_idx += n;
+            return n;
+        }
+    }
+
     /* This case is handled by the _Unpickler_Read() macro for efficiency */
     assert(self->next_read_idx + n > self->input_len);
 
@@ -1484,6 +1528,25 @@ _Unpickler_ReadInto(PickleState *state, UnpicklerObject *self, char *buf,
         if (n == 0) {
             /* Entire read was satisfied from buffer */
             return n;
+        }
+    }
+
+    if (self->frame_end >= 0) {
+        /* in_buffer > 0 is next_read_idx < frame_end on entry: frame data was
+           consumed above, so the read crosses the frame boundary. */
+        if (_Unpickler_LeaveFrame(state, self, in_buffer > 0) < 0) {
+            return -1;
+        }
+        in_buffer = self->input_len - self->next_read_idx;
+        if (in_buffer > 0) {
+            Py_ssize_t to_read = Py_MIN(in_buffer, n);
+            memcpy(buf, self->input_buffer + self->next_read_idx, to_read);
+            self->next_read_idx += to_read;
+            buf += to_read;
+            n -= to_read;
+            if (n == 0) {
+                return n;
+            }
         }
     }
 
@@ -1545,6 +1608,7 @@ _Unpickler_Readline(PickleState *state, UnpicklerObject *self, char **result)
 {
     Py_ssize_t i, num_read;
 
+rescan:
     for (i = self->next_read_idx; i < self->input_len; i++) {
         if (self->input_buffer[i] == '\n') {
             char *line_start = self->input_buffer + self->next_read_idx;
@@ -1552,6 +1616,14 @@ _Unpickler_Readline(PickleState *state, UnpicklerObject *self, char **result)
             self->next_read_idx = i + 1;
             return _Unpickler_CopyLine(self, line_start, num_read, result);
         }
+    }
+    if (self->frame_end >= 0) {
+        if (_Unpickler_LeaveFrame(state, self,
+                                  self->next_read_idx < self->frame_end) < 0) {
+            return -1;
+        }
+        /* Frame ended; continue the line past its end. */
+        goto rescan;
     }
     if (!self->read)
         return bad_readline(state);
@@ -1727,6 +1799,8 @@ _Unpickler_New(PyObject *module)
     self->input_len = 0;
     self->next_read_idx = 0;
     self->prefetched_idx = 0;
+    self->frame_end = -1;
+    self->saved_input_len = 0;
     self->read = NULL;
     self->readinto = NULL;
     self->readline = NULL;
@@ -2054,21 +2128,33 @@ whichmodule(PickleState *st, PyObject *global, PyObject *global_name, PyObject *
             return NULL;
         }
         if (PyDict_CheckExact(modules)) {
+            PyObject *found_name = NULL;
+            int error = 0;
             i = 0;
+            Py_BEGIN_CRITICAL_SECTION(modules);
             while (PyDict_Next(modules, &i, &module_name, &module)) {
                 Py_INCREF(module_name);
                 Py_INCREF(module);
                 if (_checkmodule(module_name, module, global, dotted_path) == 0) {
                     Py_DECREF(module);
-                    Py_DECREF(modules);
-                    return module_name;
+                    found_name = module_name;
+                    break;
                 }
                 Py_DECREF(module);
                 Py_DECREF(module_name);
                 if (PyErr_Occurred()) {
-                    Py_DECREF(modules);
-                    return NULL;
+                    error = 1;
+                    break;
                 }
+            }
+            Py_END_CRITICAL_SECTION();
+            if (error) {
+                Py_DECREF(modules);
+                return NULL;
+            }
+            if (found_name != NULL) {
+                Py_DECREF(modules);
+                return found_name;
             }
         }
         else {
@@ -3178,7 +3264,7 @@ static int
 batch_list_exact(PickleState *state, PicklerObject *self, PyObject *obj)
 {
     PyObject *item = NULL;
-    Py_ssize_t this_batch, total;
+    Py_ssize_t this_batch, total, list_size;
 
     const char append_op = APPEND;
     const char appends_op = APPENDS;
@@ -3187,14 +3273,18 @@ batch_list_exact(PickleState *state, PicklerObject *self, PyObject *obj)
     assert(obj != NULL);
     assert(self->proto > 0);
     assert(PyList_CheckExact(obj));
-    assert(PyList_GET_SIZE(obj));
+
+    list_size = PyList_GET_SIZE(obj);
 
     /* Write in batches of BATCHSIZE. */
     total = 0;
     do {
-        if (PyList_GET_SIZE(obj) - total == 1) {
-            item = PyList_GET_ITEM(obj, total);
-            Py_INCREF(item);
+        if (list_size - total == 1) {
+            item = PyList_GetItemRef(obj, total);
+            if (item == NULL) {
+                _PyErr_FormatNote("when serializing %T item %zd", obj, total);
+                return -1;
+            }
             int err = save(state, self, item, 0);
             Py_DECREF(item);
             if (err < 0) {
@@ -3209,8 +3299,11 @@ batch_list_exact(PickleState *state, PicklerObject *self, PyObject *obj)
         if (_Pickler_Write(self, &mark_op, 1) < 0)
             return -1;
         while (total < PyList_GET_SIZE(obj)) {
-            item = PyList_GET_ITEM(obj, total);
-            Py_INCREF(item);
+            item = PyList_GetItemRef(obj, total);
+            if (item == NULL) {
+                _PyErr_FormatNote("when serializing %T item %zd", obj, total);
+                return -1;
+            }
             int err = save(state, self, item, 0);
             Py_DECREF(item);
             if (err < 0) {
@@ -3223,8 +3316,14 @@ batch_list_exact(PickleState *state, PicklerObject *self, PyObject *obj)
         }
         if (_Pickler_Write(self, &appends_op, 1) < 0)
             return -1;
+        if (PyList_GET_SIZE(obj) != list_size) {
+            PyErr_Format(
+                PyExc_RuntimeError,
+                "list changed size during iteration");
+            return -1;
+        }
 
-    } while (total < PyList_GET_SIZE(obj));
+    } while (total < list_size);
 
     return 0;
 }
@@ -3451,7 +3550,7 @@ batch_dict(PickleState *state, PicklerObject *self, PyObject *iter, PyObject *or
  * Note that this currently doesn't work for protocol 0.
  */
 static int
-batch_dict_exact(PickleState *state, PicklerObject *self, PyObject *obj)
+batch_dict_exact_impl(PickleState *state, PicklerObject *self, PyObject *obj)
 {
     PyObject *key = NULL, *value = NULL;
     int i;
@@ -3522,6 +3621,18 @@ error:
     Py_XDECREF(key);
     Py_XDECREF(value);
     return -1;
+}
+
+/* gh-146452: Wrap the dict iteration in a critical section to prevent
+   concurrent mutation from invalidating PyDict_Next() iteration state. */
+static int
+batch_dict_exact(PickleState *state, PicklerObject *self, PyObject *obj)
+{
+    int ret;
+    Py_BEGIN_CRITICAL_SECTION(obj);
+    ret = batch_dict_exact_impl(state, self, obj);
+    Py_END_CRITICAL_SECTION();
+    return ret;
 }
 
 static int
@@ -3671,15 +3782,12 @@ save_set(PickleState *state, PicklerObject *self, PyObject *obj)
 }
 
 static int
-save_frozenset(PickleState *state, PicklerObject *self, PyObject *obj)
+save_frozenset_impl(PickleState *state, PicklerObject *self, PyObject *obj)
 {
     PyObject *iter;
 
     const char mark_op = MARK;
     const char frozenset_op = FROZENSET;
-
-    if (self->fast && !fast_save_enter(self, obj))
-        return -1;
 
     if (self->proto < 4) {
         PyObject *items;
@@ -3752,12 +3860,25 @@ save_frozenset(PickleState *state, PicklerObject *self, PyObject *obj)
 }
 
 static int
+save_frozenset(PickleState *state, PicklerObject *self, PyObject *obj)
+{
+    if (self->fast && !fast_save_enter(self, obj)) {
+        return -1;
+    }
+    int status = save_frozenset_impl(state, self, obj);
+    if (self->fast && !fast_save_leave(self, obj)) {
+        return -1;
+    }
+    return status;
+}
+
+static int
 fix_imports(PickleState *st, PyObject **module_name, PyObject **global_name)
 {
     PyObject *key;
     PyObject *item;
 
-    key = PyTuple_Pack(2, *module_name, *global_name);
+    key = _PyTuple_FromPair(*module_name, *global_name);
     if (key == NULL)
         return -1;
     item = PyDict_GetItemWithError(st->name_mapping_3to2, key);
@@ -3863,7 +3984,7 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
         char pdata[5];
         Py_ssize_t n;
 
-        extension_key = PyTuple_Pack(2, module_name, global_name);
+        extension_key = _PyTuple_FromPair(module_name, global_name);
         if (extension_key == NULL) {
             goto error;
         }
@@ -5099,9 +5220,7 @@ _pickle_PicklerMemoProxy_copy_impl(PicklerMemoProxyObject *self)
                 Py_DECREF(key);
                 goto error;
             }
-            status = PyDict_SetItem(new_memo, key, value);
-            Py_DECREF(key);
-            Py_DECREF(value);
+            status = _PyDict_SetItem_Take2((PyDictObject *)new_memo, key, value);
             if (status < 0)
                 goto error;
         }
@@ -5123,26 +5242,19 @@ static PyObject *
 _pickle_PicklerMemoProxy___reduce___impl(PicklerMemoProxyObject *self)
 /*[clinic end generated code: output=bebba1168863ab1d input=2f7c540e24b7aae4]*/
 {
-    PyObject *reduce_value, *dict_args;
+    PyObject *dict_args;
     PyObject *contents = _pickle_PicklerMemoProxy_copy_impl(self);
     if (contents == NULL)
         return NULL;
 
-    reduce_value = PyTuple_New(2);
-    if (reduce_value == NULL) {
-        Py_DECREF(contents);
-        return NULL;
-    }
     dict_args = PyTuple_New(1);
     if (dict_args == NULL) {
         Py_DECREF(contents);
-        Py_DECREF(reduce_value);
         return NULL;
     }
     PyTuple_SET_ITEM(dict_args, 0, contents);
-    PyTuple_SET_ITEM(reduce_value, 0, Py_NewRef(&PyDict_Type));
-    PyTuple_SET_ITEM(reduce_value, 1, dict_args);
-    return reduce_value;
+
+    return _PyTuple_FromPairSteal(Py_NewRef(&PyDict_Type), dict_args);
 }
 
 static PyMethodDef picklerproxy_methods[] = {
@@ -7038,6 +7150,17 @@ load_frame(PickleState *state, UnpicklerObject *self)
     if (_Unpickler_Read(self, state, &s, 8) < 0)
         return -1;
 
+    /* A new frame must not begin before the current one ends (PEP 3154).  Its
+       header may lie at the tail of the current frame if it drains it. */
+    if (self->frame_end >= 0) {
+        if (self->next_read_idx < self->frame_end) {
+            PyErr_SetString(state->UnpicklingError,
+                    "beginning of a new frame before end of current frame");
+            return -1;
+        }
+        _Unpickler_EndFrame(self);
+    }
+
     frame_len = calc_binsize(s, 8);
     if (frame_len < 0) {
         PyErr_Format(PyExc_OverflowError,
@@ -7051,6 +7174,12 @@ load_frame(PickleState *state, UnpicklerObject *self)
 
     /* Rewind to start of frame */
     self->next_read_idx -= frame_len;
+
+    /* Cap input_len at the frame end so reads can't cross it (PEP 3154);
+       _Unpickler_EndFrame() restores it when the frame is fully read. */
+    self->frame_end = self->next_read_idx + frame_len;
+    self->saved_input_len = self->input_len;
+    self->input_len = self->frame_end;
     return 0;
 }
 
@@ -7300,7 +7429,7 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self, PyTypeObject *cls,
 
         /* Check if the global (i.e., a function or a class) was renamed
            or moved to another module. */
-        key = PyTuple_Pack(2, module_name, global_name);
+        key = _PyTuple_FromPair(module_name, global_name);
         if (key == NULL)
             return NULL;
         item = PyDict_GetItemWithError(st->name_mapping_2to3, key);
@@ -7630,27 +7759,19 @@ static PyObject *
 _pickle_UnpicklerMemoProxy___reduce___impl(UnpicklerMemoProxyObject *self)
 /*[clinic end generated code: output=6da34ac048d94cca input=6920862413407199]*/
 {
-    PyObject *reduce_value;
     PyObject *constructor_args;
     PyObject *contents = _pickle_UnpicklerMemoProxy_copy_impl(self);
     if (contents == NULL)
         return NULL;
 
-    reduce_value = PyTuple_New(2);
-    if (reduce_value == NULL) {
-        Py_DECREF(contents);
-        return NULL;
-    }
     constructor_args = PyTuple_New(1);
     if (constructor_args == NULL) {
         Py_DECREF(contents);
-        Py_DECREF(reduce_value);
         return NULL;
     }
     PyTuple_SET_ITEM(constructor_args, 0, contents);
-    PyTuple_SET_ITEM(reduce_value, 0, Py_NewRef(&PyDict_Type));
-    PyTuple_SET_ITEM(reduce_value, 1, constructor_args);
-    return reduce_value;
+
+    return _PyTuple_FromPairSteal(Py_NewRef(&PyDict_Type), constructor_args);
 }
 
 static PyMethodDef unpicklerproxy_methods[] = {
@@ -8240,6 +8361,7 @@ _pickle_exec(PyObject *m)
 }
 
 static PyModuleDef_Slot pickle_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _pickle_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

@@ -1,1 +1,0 @@
-Fix :func:`unicodedata.decomposition` for Hangul characters.
