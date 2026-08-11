@@ -276,6 +276,15 @@ ctypes
   (Contributed by Peter Bierma in :gh:`153903`.)
 
 
+concurrent.futures
+------------------
+
+* The iterator returned by :meth:`concurrent.futures.Executor.map` is no longer
+  automatically closed if a function call raises an exception.
+  Use method :meth:`!close` to explicitly close the iterator.
+  (Contributed by xzmeng and Serhiy Storchaka in :gh:`108518`.)
+
+
 encodings
 ---------
 
