@@ -1,0 +1,2 @@
+Fix :func:`zipfile.ZipFile.writestr` so it sets the "regular file" bit by
+default.
