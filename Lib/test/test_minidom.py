@@ -64,6 +64,15 @@ class MinidomTest(unittest.TestCase):
         self.assertFalse(doc.async_)
         self.assertFalse(Document.async_)
 
+    def testNodeValueDefaultOnBaseNode(self):
+        # gh-100710: nodeValue must be declared on the base Node class
+        # (not just on its subclasses) so that generic Node-typed code
+        # and static type checkers see the attribute.
+        self.assertIsNone(Node.nodeValue)
+        node = Node()
+        self.assertTrue(hasattr(node, 'nodeValue'))
+        self.assertIsNone(node.nodeValue)
+
     def testParseFromBinaryFile(self):
         with open(tstfile, 'rb') as file:
             dom = parse(file)
