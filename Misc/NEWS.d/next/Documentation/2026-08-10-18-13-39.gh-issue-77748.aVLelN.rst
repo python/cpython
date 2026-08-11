@@ -1,1 +1,0 @@
-Document that float() accepts bytes-like objects.
