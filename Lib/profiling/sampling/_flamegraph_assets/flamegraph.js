@@ -255,12 +255,12 @@ function setupLogos() {
 // Status Bar
 // ============================================================================
 
-function updateStatusBar(nodeData, rootValue) {
+function updateStatusBar(nodeData, rootValue, sampleIntervalUsec) {
   const funcname = resolveString(nodeData.funcname) || resolveString(nodeData.name) || "--";
   const filename = resolveString(nodeData.filename) || "";
   const moduleName = resolveString(nodeData.module) || "";
   const lineno = nodeData.lineno;
-  const timeMs = (nodeData.value / 1000).toFixed(2);
+  const timeMs = (nodeData.value * sampleIntervalUsec / 1000).toFixed(2);
   const percent = rootValue > 0 ? ((nodeData.value / rootValue) * 100).toFixed(1) : "0.0";
 
   const brandEl = document.getElementById('status-brand');
@@ -313,6 +313,7 @@ function clearStatusBar() {
 
 function createPythonTooltip(data) {
   const pythonTooltip = flamegraph.tooltip.defaultFlamegraphTooltip();
+  const sampleIntervalUsec = data.stats.sample_interval_usec;
 
   pythonTooltip.show = function (d, element) {
     if (!this._tooltip) {
@@ -322,9 +323,9 @@ function createPythonTooltip(data) {
         .style("opacity", 0);
     }
 
-    const timeMs = (d.data.value / 1000).toFixed(2);
+    const timeMs = (d.data.value * sampleIntervalUsec / 1000).toFixed(2);
     const selfSamples = d.data.self || 0;
-    const selfMs = (selfSamples / 1000).toFixed(2);
+    const selfMs = (selfSamples * sampleIntervalUsec / 1000).toFixed(2);
     const percentage = ((d.data.value / data.value) * 100).toFixed(2);
     const relativePercentage = Math.min(100, ((d.data.value / (zoomedNodeValue ?? data.value)) * 100)).toFixed(2);
     const calls = d.data.calls || 0;
@@ -408,9 +409,9 @@ function createPythonTooltip(data) {
     // Differential stats section
     let diffSection = "";
     if (d.data.diff !== undefined && d.data.baseline !== undefined) {
-      const baselineSelf = (d.data.baseline / 1000).toFixed(2);
-      const currentSelf = ((d.data.self_time || 0) / 1000).toFixed(2);
-      const diffMs = (d.data.diff / 1000).toFixed(2);
+      const baselineSelf = (d.data.baseline * sampleIntervalUsec / 1000).toFixed(2);
+      const currentSelf = ((d.data.self_time || 0) * sampleIntervalUsec / 1000).toFixed(2);
+      const diffMs = (d.data.diff * sampleIntervalUsec / 1000).toFixed(2);
       const diffPct = d.data.diff_pct;
       const sign = d.data.diff >= 0 ? "+" : "";
       const diffClass = d.data.diff > 0 ? "regression" : (d.data.diff < 0 ? "improvement" : "neutral");
@@ -508,7 +509,7 @@ function createPythonTooltip(data) {
       .style("opacity", 1);
 
     // Update status bar
-    updateStatusBar(d.data, data.value);
+    updateStatusBar(d.data, data.value, sampleIntervalUsec);
   };
 
   pythonTooltip.hide = function () {
