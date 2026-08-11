@@ -371,8 +371,7 @@ tok_underflow_file(struct tok_state *tok)
 /* Set up tokenizer for file */
 struct tok_state *
 _PyTokenizer_FromFile(FILE *fp, const char* enc,
-                      const char *ps1, const char *ps2,
-                      int barry_as_bdfl)
+                      const char *ps1, const char *ps2)
 {
     struct tok_state *tok = _PyTokenizer_tok_new();
     if (tok == NULL)
@@ -402,7 +401,6 @@ _PyTokenizer_FromFile(FILE *fp, const char* enc,
         }
         tok->decoding_state = STATE_NORMAL;
     }
-    tok->barry_as_bdfl = barry_as_bdfl;
     return tok;
 }
 
@@ -459,7 +457,7 @@ _PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
     if (fp == NULL) {
         return NULL;
     }
-    tok = _PyTokenizer_FromFile(fp, NULL, NULL, NULL, 0);
+    tok = _PyTokenizer_FromFile(fp, NULL, NULL, NULL);
     if (tok == NULL) {
         fclose(fp);
         return NULL;

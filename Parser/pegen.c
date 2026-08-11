@@ -1055,8 +1055,7 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
                              PyObject **interactive_src, PyArena *arena)
 {
     int parser_flags = compute_parser_flags(flags);
-    struct tok_state *tok = _PyTokenizer_FromFile(fp, enc, ps1, ps2,
-                                                  parser_flags & PyPARSE_BARRY_AS_BDFL);
+    struct tok_state *tok = _PyTokenizer_FromFile(fp, enc, ps1, ps2);
     if (tok == NULL) {
         if (PyErr_Occurred()) {
             _PyTokenizer_raise_init_error(filename_ob);
@@ -1067,6 +1066,7 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
         }
         return NULL;
     }
+    tok->barry_as_bdfl = parser_flags & PyPARSE_BARRY_AS_BDFL;
     if (!tok->fp || ps1 != NULL || ps2 != NULL ||
         PyUnicode_CompareWithASCIIString(filename_ob, "<stdin>") == 0) {
         tok->fp_interactive = 1;
@@ -1114,9 +1114,9 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
 
     struct tok_state *tok;
     if (flags != NULL && flags->cf_flags & PyCF_IGNORE_COOKIE) {
-        tok = _PyTokenizer_FromUTF8(str, exec_input, 0, parser_flags & PyPARSE_BARRY_AS_BDFL);
+        tok = _PyTokenizer_FromUTF8(str, exec_input, 0);
     } else {
-        tok = _PyTokenizer_FromString(str, exec_input, 0, parser_flags & PyPARSE_BARRY_AS_BDFL);
+        tok = _PyTokenizer_FromString(str, exec_input, 0);
     }
     if (tok == NULL) {
         if (PyErr_Occurred()) {
@@ -1128,6 +1128,7 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
         }
         return NULL;
     }
+    tok->barry_as_bdfl = parser_flags & PyPARSE_BARRY_AS_BDFL;
     // This transfers the ownership to the tokenizer
     tok->filename = Py_NewRef(filename_ob);
     tok->module = Py_XNewRef(module);
