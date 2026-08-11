@@ -14,7 +14,7 @@ let zoomedNodeValue = null;
 // Convert a sample count into wall-clock milliseconds. Returns "--" when the
 // sampling interval is unknown, since a sample count is not a time.
 function formatSampleMs(samples) {
-  if (!(sampleIntervalUsec > 0)) return "--";
+  if (sampleIntervalUsec <= 0) return "--";
   return ((samples * sampleIntervalUsec) / 1000).toFixed(2);
 }
 
