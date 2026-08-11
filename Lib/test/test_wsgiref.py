@@ -298,7 +298,8 @@ class IntegrationTests(TestCase):
         app = errors_app("close")
 
         out, err = run_amock(validator(app), b"GET / HTTP/1.0\n\n")
-        self.assertTrue(err.splitlines()[-2], 'AssertionError: errors.close() must not be called')
+        self.assertEqual(err.splitlines()[-2],
+                         'AssertionError: errors.close() must not be called')
 
     @force_not_colorized
     def test_bytes_validation(self):
