@@ -581,6 +581,10 @@
             break;
         }
 
+        case _GUARD_TOS_EXACT_INT: {
+            break;
+        }
+
         case _GUARD_NOS_OVERFLOWED: {
             break;
         }
