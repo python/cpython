@@ -309,6 +309,21 @@ class MockResponse(io.StringIO):
         return self.url
 
 
+class MockLegacyResponse(io.StringIO):
+    # A response object written before the status attribute and the headers
+    # attribute were added in 3.9 (gh-123503).
+    def __init__(self, code, msg, headers, data, url=None):
+        io.StringIO.__init__(self, data)
+        self.code, self.msg, self.url = code, msg, url
+        self._headers = headers
+
+    def info(self):
+        return self._headers
+
+    def geturl(self):
+        return self.url
+
+
 class MockCookieJar:
     def add_cookie_header(self, request):
         self.ach_req = request
@@ -1230,6 +1245,14 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual(newreq.selector, '')
 
     def test_errors(self):
+        self._test_errors(MockResponse)
+
+    def test_errors_legacy_response(self):
+        # A response object providing only the attributes deprecated in 3.9
+        # is still accepted (gh-123503).
+        self._test_errors(MockLegacyResponse)
+
+    def _test_errors(self, MockResponse):
         h = urllib.request.HTTPErrorProcessor()
         o = h.parent = MockOpener()
 
