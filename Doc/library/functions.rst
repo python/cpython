@@ -778,7 +778,7 @@ are always available.  They are listed here in alphabetical order.
       single: NaN
       single: Infinity
 
-   Return a floating-point number constructed from a number or a string.
+   Return a floating-point number constructed from a string, number, or bytes-like object, if possible.
 
    Examples:
 
@@ -794,12 +794,21 @@ are always available.  They are listed here in alphabetical order.
       1000000.0
       >>> float('-Infinity')
       -inf
+      >>> float(bytearray(b'-2.5'))
+      -2.5
+      >>> float(array.array('b', [49, 50, 51]))
+      123.0
 
    If the argument is a string, it should contain a decimal number, optionally
    preceded by a sign, and optionally embedded in whitespace.  The optional
    sign may be ``'+'`` or ``'-'``; a ``'+'`` sign has no effect on the value
    produced.  The argument may also be a string representing a NaN
    (not-a-number), or positive or negative infinity.
+
+   If the argument is a bytes-like object, its contents are parsed as a decimal
+   string.  Therefore, the bytes-like object must contain a valid representation 
+   of a floating-point number, otherwise :exc:`ValueError` is raised.
+
    More precisely, the input must conform to the :token:`~float:floatvalue`
    production rule in the following grammar, after leading and trailing
    whitespace characters are removed:
