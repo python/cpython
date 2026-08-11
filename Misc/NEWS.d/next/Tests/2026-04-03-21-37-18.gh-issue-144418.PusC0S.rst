@@ -1,1 +1,0 @@
-The Android testbed's emulator RAM has been increased from 2 GB to 4 GB.

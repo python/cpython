@@ -1,0 +1,21 @@
+extend = "../.ruff.toml"  # Inherit the project-wide settings
+
+# Unlike Tools/, stdlib can use newer syntax than PYTHON_FOR_REGEN
+target-version = "py315"
+
+[lint]
+select = [
+    "F401",  # Unused import
+]
+
+[lint.per-file-ignores]
+"ctypes/__init__.py" = ["F401"]  # Re-exports from _ctypes
+"ensurepip/__init__.py" = ["F401"]  # `import zlib` availability check
+"idlelib/idle_test/htest.py" = ["F401"]  # Import for Windows DPI side effect
+"idlelib/idle_test/test_iomenu.py" = ["F401"]  # Imports checked for existence
+"importlib/_abc.py" = ["F401"]  # Bootstrap-sensitive _bootstrap import
+"importlib/machinery.py" = ["F401"]  # NamespacePath re-export
+"importlib/metadata/__init__.py" = ["F401"]  # Synced from importlib_metadata
+"profiling/sampling/sample.py" = ["F401"]  # Re-exports PROFILING_MODE_* constants
+"ssl.py" = ["F401"]  # Re-exports from _ssl
+"warnings.py" = ["F401"]  # Re-exports from _py_warnings

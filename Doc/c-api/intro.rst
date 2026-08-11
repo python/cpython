@@ -536,16 +536,14 @@ have been standardized in C11 (or previous standards).
 
    Use the standard ``alignas`` specifier rather than this macro.
 
-   .. deprecated:: next
-      The macro is :term:`soft deprecated`.
+   .. soft-deprecated:: 3.15
 
 .. c:macro:: PY_FORMAT_SIZE_T
 
    The :c:func:`printf` formatting modifier for :c:type:`size_t`.
    Use ``"z"`` directly instead.
 
-   .. deprecated:: next
-      The macro is :term:`soft deprecated`.
+   .. soft-deprecated:: 3.15
 
 .. c:macro:: Py_LL(number)
              Py_ULL(number)
@@ -558,8 +556,7 @@ have been standardized in C11 (or previous standards).
 
    Consider using the C99 standard suffixes ``LL`` and ``LLU`` directly.
 
-   .. deprecated:: next
-      The macro is :term:`soft deprecated`.
+   .. soft-deprecated:: 3.15
 
 .. c:macro:: PY_LONG_LONG
              PY_INT32_T
@@ -572,8 +569,7 @@ have been standardized in C11 (or previous standards).
    respectively.
    Historically, these types needed compiler-specific extensions.
 
-   .. deprecated:: next
-      These macros are :term:`soft deprecated`.
+   .. soft-deprecated:: 3.15
 
 .. c:macro:: PY_LLONG_MIN
              PY_LLONG_MAX
@@ -587,16 +583,14 @@ have been standardized in C11 (or previous standards).
    The required header, ``<limits.h>``,
    :ref:`is included <capi-system-includes>` in ``Python.h``.
 
-   .. deprecated:: next
-      These macros are :term:`soft deprecated`.
+   .. soft-deprecated:: 3.15
 
 .. c:macro:: Py_MEMCPY(dest, src, n)
 
-   This is a :term:`soft deprecated` alias to :c:func:`!memcpy`.
-   Use :c:func:`!memcpy` directly instead.
+   This is an alias to :c:func:`!memcpy`.
 
-   .. deprecated:: 3.14
-      The macro is :term:`soft deprecated`.
+   .. soft-deprecated:: 3.14
+      Use :c:func:`!memcpy` directly instead.
 
 .. c:macro:: Py_UNICODE_SIZE
 
@@ -606,29 +600,25 @@ have been standardized in C11 (or previous standards).
    The required header for the latter, ``<limits.h>``,
    :ref:`is included <capi-system-includes>` in ``Python.h``.
 
-   .. deprecated:: next
-      The macro is :term:`soft deprecated`.
+   .. soft-deprecated:: 3.15
 
 .. c:macro:: Py_UNICODE_WIDE
 
    Defined if ``wchar_t`` can hold a Unicode character (UCS-4).
    Use ``sizeof(wchar_t) >= 4`` instead
 
-   .. deprecated:: next
-      The macro is :term:`soft deprecated`.
+   .. soft-deprecated:: 3.15
 
 .. c:macro:: Py_VA_COPY
 
-   This is a :term:`soft deprecated` alias to the C99-standard ``va_copy``
-   function.
+   This is an alias to the C99-standard ``va_copy`` function.
 
    Historically, this would use a compiler-specific method to copy a ``va_list``.
 
    .. versionchanged:: 3.6
       This is now an alias to ``va_copy``.
 
-   .. deprecated:: next
-      The macro is :term:`soft deprecated`.
+   .. soft-deprecated:: 3.15
 
 
 .. _api-objects:
@@ -747,9 +737,12 @@ the caller is said to *borrow* the reference. Nothing needs to be done for a
 
 Conversely, when a calling function passes in a reference to an  object, there
 are two possibilities: the function *steals* a  reference to the object, or it
-does not.  *Stealing a reference* means that when you pass a reference to a
-function, that function assumes that it now owns that reference, and you are not
-responsible for it any longer.
+does not.
+
+*Stealing a reference* means that when you pass a reference to a
+function, that function assumes that it now owns that reference.
+Since the new owner can use :c:func:`!Py_DECREF` at its discretion,
+you (the caller) must not use that reference after the call.
 
 .. index::
    single: PyList_SetItem (C function)
@@ -1170,7 +1163,7 @@ when defined by the compiler, will also implicitly enable :c:macro:`!Py_DEBUG`.
 In addition to the reference count debugging described below, extra checks are
 performed. See :ref:`Python Debug Build <debug-build>` for more details.
 
-Defining :c:macro:`Py_TRACE_REFS` enables reference tracing
+Defining ``Py_TRACE_REFS`` enables reference tracing
 (see the :option:`configure --with-trace-refs option <--with-trace-refs>`).
 When defined, a circular doubly linked list of active objects is maintained by adding two extra
 fields to every :c:type:`PyObject`.  Total allocations are tracked as well.  Upon

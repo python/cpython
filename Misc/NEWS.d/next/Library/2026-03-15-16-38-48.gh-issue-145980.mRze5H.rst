@@ -1,5 +1,0 @@
-Added the *alphabet* parameter in :func:`~binascii.b2a_base64`,
-:func:`~binascii.a2b_base64`, :func:`~binascii.b2a_base85` and
-:func:`~binascii.a2b_base85` and a number of ``*_ALPHABET`` constants in the
-:mod:`binascii` module. Removed :func:`!b2a_z85` and
-:func:`!a2b_z85`.

@@ -55,7 +55,7 @@ This document includes four main sections:
       PEP written by Marc-André Lemburg.
 
 
-.. We use the following practises for SQL code:
+.. We use the following practices for SQL code:
    - UPPERCASE for keywords
    - snake_case for schema
    - single quotes for string literals
@@ -1417,6 +1417,9 @@ Connection objects
 
       See :ref:`sqlite3-howto-row-factory` for more details.
 
+      .. versionchanged:: next
+         Deleting the ``row_factory`` attribute is no longer allowed.
+
    .. attribute:: text_factory
 
       A :term:`callable` that accepts a :class:`bytes` parameter
@@ -1425,6 +1428,9 @@ Connection objects
       By default, this attribute is set to :class:`str`.
 
       See :ref:`sqlite3-howto-encoding` for more details.
+
+      .. versionchanged:: next
+         Deleting the ``text_factory`` attribute is no longer allowed.
 
    .. attribute:: total_changes
 
@@ -1708,6 +1714,9 @@ Cursor objects
       :attr:`Connection.row_factory` of the parent connection.
 
       See :ref:`sqlite3-howto-row-factory` for more details.
+
+      .. versionchanged:: next
+         Deleting the ``row_factory`` attribute is no longer allowed.
 
 
 .. The sqlite3.Row example used to be a how-to. It has now been incorporated

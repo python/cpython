@@ -40,7 +40,7 @@ from . import commands, historical_reader
 from .completing_reader import CompletingReader, stripcolor
 from .console import Console as ConsoleType
 from ._module_completer import ModuleCompleter, make_default_module_completer
-from .fancycompleter import Completer as FancyCompleter
+from .fancycompleter import Completer as FancyCompleter, colorize_matches
 
 Console: type[ConsoleType]
 _error: tuple[type[Exception], ...] | type[Exception]
@@ -104,6 +104,7 @@ class ReadlineConfig:
     readline_completer: Completer | None = None
     completer_delims: frozenset[str] = frozenset(" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?")
     module_completer: ModuleCompleter = field(default_factory=make_default_module_completer)
+    colorize_completions: Callable[[list[str], list[Any]], list[str]] | None = None
 
 @dataclass(kw_only=True)
 class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
@@ -169,8 +170,17 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
         return result, None
 
     def get_module_completions(self) -> tuple[list[str], CompletionAction | None] | None:
-        line = self.get_line()
-        return self.config.module_completer.get_completions(line)
+        line = stripcolor(self.get_line())
+        colorize_completions = self.config.colorize_completions
+        result = self.config.module_completer.get_completions(
+            line, include_values=bool(colorize_completions)
+        )
+        if result is None:
+            return None
+        names, values, action = result
+        if colorize_completions:
+            names = colorize_completions(names, values)
+        return names, action
 
     def get_trimmed_history(self, maxlength: int) -> list[str]:
         if maxlength >= 0:
@@ -277,7 +287,7 @@ class maybe_accept(commands.Command):
     def do(self) -> None:
         r: ReadlineAlikeReader
         r = self.reader  # type: ignore[assignment]
-        r.dirty = True  # this is needed to hide the completion menu, if visible
+        r.invalidate_overlay()  # hide completion menu, if visible
 
         # if there are already several lines and the cursor
         # is not on the last one, always insert a new \n.
@@ -337,7 +347,7 @@ class backspace_dedent(commands.Command):
                             break
             r.pos -= repeat
             del b[r.pos : r.pos + repeat]
-            r.dirty = True
+            r.invalidate_buffer(r.pos)
         else:
             self.reader.error("can't backspace at start")
 
@@ -413,8 +423,12 @@ class _ReadlineWrapper:
     def get_completer_delims(self) -> str:
         return "".join(sorted(self.config.completer_delims))
 
-    def _histline(self, line: str) -> str:
+    def _histline(self, line: str, *, sanitize_nuls: bool = False) -> str:
         line = line.rstrip("\n")
+        if "\0" in line:
+            if not sanitize_nuls:
+                raise ValueError("embedded null character")
+            line = line.replace("\0", "")
         return line
 
     def get_history_length(self) -> int:
@@ -447,9 +461,12 @@ class _ReadlineWrapper:
                 if line.endswith("\r"):
                     buffer.append(line+'\n')
                 else:
-                    line = self._histline(line)
+                    line = self._histline(line, sanitize_nuls=True)
                     if buffer:
-                        line = self._histline("".join(buffer).replace("\r", "") + line)
+                        line = self._histline(
+                            "".join(buffer).replace("\r", "") + line,
+                            sanitize_nuls=True,
+                        )
                         del buffer[:]
                     if line:
                         history.append(line)
@@ -609,13 +626,19 @@ def _setup(namespace: Mapping[str, Any]) -> None:
     # set up namespace in rlcompleter, which requires it to be a bona fide dict
     if not isinstance(namespace, dict):
         namespace = dict(namespace)
-    _wrapper.config.module_completer = ModuleCompleter(namespace)
     use_basic_completer = (
         not sys.flags.ignore_environment
         and os.getenv("PYTHON_BASIC_COMPLETER")
     )
     completer_cls = RLCompleter if use_basic_completer else FancyCompleter
-    _wrapper.config.readline_completer = completer_cls(namespace).complete
+    completer = completer_cls(namespace)
+    _wrapper.config.readline_completer = completer.complete
+    if isinstance(completer, FancyCompleter) and completer.use_colors:
+        theme = completer.theme
+        def _colorize(names: list[str], values: list[object]) -> list[str]:
+            return colorize_matches(names, values, theme)
+        _wrapper.config.colorize_completions = _colorize
+    _wrapper.config.module_completer = ModuleCompleter(namespace)
 
     # this is not really what readline.c does.  Better than nothing I guess
     import builtins

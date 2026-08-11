@@ -53,7 +53,8 @@ def _debug(*args):
 HTTPONLY_ATTR = "HTTPOnly"
 HTTPONLY_PREFIX = "#HttpOnly_"
 DEFAULT_HTTP_PORT = str(http.client.HTTP_PORT)
-NETSCAPE_MAGIC_RGX = re.compile("#( Netscape)? HTTP Cookie File")
+NETSCAPE_MAGIC_RGX = re.compile("#( Netscape)? HTTP Cookie File",
+                                re.IGNORECASE | re.ASCII)
 MISSING_FILENAME_TEXT = ("a filename was not supplied (nor was the CookieJar "
                          "instance initialised with one)")
 NETSCAPE_HEADER_TEXT =  """\
@@ -1032,10 +1033,13 @@ class DefaultCookiePolicy(CookiePolicy):
                 if j == 0:  # domain like .foo.bar
                     tld = domain[i+1:]
                     sld = domain[j+1:i]
-                    if sld.lower() in ("co", "ac", "com", "edu", "org", "net",
-                       "gov", "mil", "int", "aero", "biz", "cat", "coop",
-                       "info", "jobs", "mobi", "museum", "name", "pro",
-                       "travel", "eu") and len(tld) == 2:
+                    known_slds = (
+                        "co", "ac", "com", "edu", "org", "net",
+                        "gov", "mil", "int", "aero", "biz", "cat", "coop",
+                        "info", "jobs", "mobi", "museum", "name", "pro",
+                        "travel", "eu", "tv", "or", "nom", "sch", "web",
+                    )
+                    if sld.lower() in known_slds and len(tld) == 2:
                         # domain like .co.uk
                         _debug("   country-code second level domain %s", domain)
                         return False

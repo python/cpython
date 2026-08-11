@@ -166,7 +166,8 @@ _PyStack_UnpackDict(PyThreadState *tstate,
     PyObject *const *args, Py_ssize_t nargs,
     PyObject *kwargs, PyObject **p_kwnames);
 
-extern void _PyStack_UnpackDict_Free(
+// Exported for external JIT support
+PyAPI_FUNC(void) _PyStack_UnpackDict_Free(
     PyObject *const *stack,
     Py_ssize_t nargs,
     PyObject *kwnames);

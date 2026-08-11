@@ -1,2 +1,0 @@
-Use GCC dialect alternatives for inline assembly in ``object.h`` so that the
-Python headers compile correctly with ``-masm=intel``.
