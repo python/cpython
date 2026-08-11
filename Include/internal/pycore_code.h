@@ -582,6 +582,10 @@ PyAPI_FUNC(_Py_CODEUNIT *) _PyCode_GetTLBC(PyCodeObject *co);
 // Returns the reserved index or -1 on error.
 extern int32_t _Py_ReserveTLBCIndex(PyInterpreterState *interp);
 
+// Release an index returned by _Py_ReserveTLBCIndex() that was never stored
+// in a PyThreadState.
+extern void _Py_UnreserveTLBCIndex(PyInterpreterState *interp, int32_t index);
+
 // Release the current thread's index into thread-local bytecode arrays
 extern void _Py_ClearTLBCIndex(_PyThreadStateImpl *tstate);
 
