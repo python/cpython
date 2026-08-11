@@ -1,2 +1,0 @@
-The result of :func:`operator.index` now always has exact type :class:`int`.
-Previously, the result could have been an instance of a subclass of ``int``.

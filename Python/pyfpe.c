@@ -3,9 +3,12 @@
  * though, because they may be referenced by extensions using the stable ABI.
  */
 
-#include "setjmp.h"
+#ifdef HAVE_SETJMP_H
+#include <setjmp.h>
 
 jmp_buf PyFPE_jbuf;
+#endif
+
 int PyFPE_counter;
 
 double

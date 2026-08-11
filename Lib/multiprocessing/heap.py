@@ -324,10 +324,6 @@ class BufferWrapper(object):
     _heap = Heap()
 
     def __init__(self, size):
-        if size < 0:
-            raise ValueError("Size {0:n} out of range".format(size))
-        if sys.maxsize <= size:
-            raise OverflowError("Size {0:n} too large".format(size))
         block = BufferWrapper._heap.malloc(size)
         self._state = (block, size)
         util.Finalize(self, BufferWrapper._heap.free, args=(block,))
