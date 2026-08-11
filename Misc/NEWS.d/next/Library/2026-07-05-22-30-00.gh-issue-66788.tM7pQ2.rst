@@ -1,0 +1,2 @@
+Add the ``utf-7-imap`` codec, implementing the modified UTF-7 encoding
+used for international IMAP4 mailbox names (:rfc:`3501`, section 5.1.3).

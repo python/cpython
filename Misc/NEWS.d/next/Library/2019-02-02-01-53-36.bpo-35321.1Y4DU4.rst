@@ -1,1 +1,0 @@
-Set ``__spec__.origin`` of  ``_frozen_importlib`` to frozen so that it matches the behavior of ``_frozen_importlib_external``.  Patch by Nina Zakharenko.
