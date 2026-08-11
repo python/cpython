@@ -139,27 +139,27 @@ else:
     __all__ += ['DupFd', 'sendfds', 'recvfds']
     import array
 
-    # On MacOSX we should acknowledge receipt of fds -- see Issue14669
-    ACKNOWLEDGE = sys.platform == 'darwin'
-
     def sendfds(sock, fds):
         '''Send an array of fds over an AF_UNIX socket.'''
         fds = array.array('i', fds)
         msg = bytes([len(fds) % 256])
         sock.sendmsg([msg], [(socket.SOL_SOCKET, socket.SCM_RIGHTS, fds)])
-        if ACKNOWLEDGE and sock.recv(1) != b'A':
+        if sock.recv(1) != b'A':
             raise RuntimeError('did not receive acknowledgement of fd')
 
     def recvfds(sock, size):
         '''Receive an array of fds over an AF_UNIX socket.'''
         a = array.array('i')
         bytes_size = a.itemsize * size
-        msg, ancdata, flags, addr = sock.recvmsg(1, socket.CMSG_LEN(bytes_size))
+        msg, ancdata, flags, addr = sock.recvmsg(1, socket.CMSG_SPACE(bytes_size))
         if not msg and not ancdata:
             raise EOFError
         try:
-            if ACKNOWLEDGE:
-                sock.send(b'A')
+            # We send/recv an Ack byte after the fds to work around an old
+            # macOS bug; it isn't clear if this is still required but it
+            # makes unit testing fd sending easier.
+            # See: https://github.com/python/cpython/issues/58874
+            sock.send(b'A')  # Acknowledge
             if len(ancdata) != 1:
                 raise RuntimeError('received %d items of ancdata' %
                                    len(ancdata))

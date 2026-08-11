@@ -1,5 +1,5 @@
-:mod:`timeit` --- Measure execution time of small code snippets
-===============================================================
+:mod:`!timeit` --- Measure execution time of small code snippets
+================================================================
 
 .. module:: timeit
    :synopsis: Measure the execution time of small code snippets.
@@ -15,11 +15,11 @@
 This module provides a simple way to time small bits of Python code. It has both
 a :ref:`timeit-command-line-interface` as well as a :ref:`callable <python-interface>`
 one.  It avoids a number of common traps for measuring execution times.
-See also Tim Peters' introduction to the "Algorithms" chapter in the *Python
-Cookbook*, published by O'Reilly.
+See also Tim Peters' introduction to the "Algorithms" chapter in the second
+edition of *Python Cookbook*, published by O'Reilly.
 
 
-Basic Examples
+Basic examples
 --------------
 
 The following example shows how the :ref:`timeit-command-line-interface`
@@ -27,11 +27,11 @@ can be used to compare three different expressions:
 
 .. code-block:: shell-session
 
-   $ python3 -m timeit '"-".join(str(n) for n in range(100))'
+   $ python -m timeit "'-'.join(str(n) for n in range(100))"
    10000 loops, best of 5: 30.2 usec per loop
-   $ python3 -m timeit '"-".join([str(n) for n in range(100)])'
+   $ python -m timeit "'-'.join([str(n) for n in range(100)])"
    10000 loops, best of 5: 27.5 usec per loop
-   $ python3 -m timeit '"-".join(map(str, range(100)))'
+   $ python -m timeit "'-'.join(map(str, range(100)))"
    10000 loops, best of 5: 23.2 usec per loop
 
 This can be achieved from the :ref:`python-interface` with::
@@ -44,15 +44,19 @@ This can be achieved from the :ref:`python-interface` with::
    >>> timeit.timeit('"-".join(map(str, range(100)))', number=10000)
    0.23702679807320237
 
+A callable can also be passed from the :ref:`python-interface`::
 
-Note however that :mod:`timeit` will automatically determine the number of
+   >>> timeit.timeit(lambda: "-".join(map(str, range(100))), number=10000)
+   0.19665591977536678
+
+Note however that :func:`.timeit` will automatically determine the number of
 repetitions only when the command-line interface is used.  In the
 :ref:`timeit-examples` section you can find more advanced examples.
 
 
 .. _python-interface:
 
-Python Interface
+Python interface
 ----------------
 
 The module defines three convenience functions and a public class:
@@ -82,9 +86,11 @@ The module defines three convenience functions and a public class:
    .. versionchanged:: 3.7
       Default value of *repeat* changed from 3 to 5.
 
+
 .. function:: default_timer()
 
-   The default timer, which is always :func:`time.perf_counter`.
+   The default timer, which is always time.perf_counter(), returns float seconds.
+   An alternative, time.perf_counter_ns, returns integer nanoseconds.
 
    .. versionchanged:: 3.3
       :func:`time.perf_counter` is now the default timer.
@@ -120,7 +126,7 @@ The module defines three convenience functions and a public class:
 
       Time *number* executions of the main statement.  This executes the setup
       statement once, and then returns the time it takes to execute the main
-      statement a number of times, measured in seconds as a float.
+      statement a number of times.  The default timer returns seconds as a float.
       The argument is the number of times through the loop, defaulting to one
       million.  The main statement, the setup statement and the timer function
       to be used are passed to the constructor.
@@ -129,7 +135,7 @@ The module defines three convenience functions and a public class:
 
          By default, :meth:`.timeit` temporarily turns off :term:`garbage
          collection` during the timing.  The advantage of this approach is that
-         it makes independent timings more comparable.  This disadvantage is
+         it makes independent timings more comparable.  The disadvantage is
          that GC may be an important component of the performance of the
          function being measured.  If so, GC can be re-enabled as the first
          statement in the *setup* string.  For example::
@@ -137,20 +143,23 @@ The module defines three convenience functions and a public class:
             timeit.Timer('for i in range(10): oct(i)', 'gc.enable()').timeit()
 
 
-   .. method:: Timer.autorange(callback=None)
+   .. method:: Timer.autorange(callback=None, target_time=None)
 
       Automatically determine how many times to call :meth:`.timeit`.
 
       This is a convenience function that calls :meth:`.timeit` repeatedly
-      so that the total time >= 0.2 second, returning the eventual
+      so that the total time >= *Timer.target_time* seconds, returning the eventual
       (number of loops, time taken for that number of loops). It calls
       :meth:`.timeit` with increasing numbers from the sequence 1, 2, 5,
-      10, 20, 50, ... until the time taken is at least 0.2 second.
+      10, 20, 50, ... until the time taken is at least *target_time* seconds.
 
       If *callback* is given and is not ``None``, it will be called after
       each trial with two arguments: ``callback(number, time_taken)``.
 
       .. versionadded:: 3.6
+
+      .. versionchanged:: 3.15
+         The optional *target_time* parameter was added.
 
 
    .. method:: Timer.repeat(repeat=5, number=1000000)
@@ -197,47 +206,54 @@ The module defines three convenience functions and a public class:
 
 .. _timeit-command-line-interface:
 
-Command-Line Interface
+Command-line interface
 ----------------------
 
 When called as a program from the command line, the following form is used::
 
-   python -m timeit [-n N] [-r N] [-u U] [-s S] [-h] [statement ...]
+   python -m timeit [-n N] [-r N] [-u U] [-s S] [-p] [-v] [-h] [statement ...]
 
 Where the following options are understood:
 
 .. program:: timeit
 
-.. cmdoption:: -n N, --number=N
+.. option:: -n N, --number=N
 
    how many times to execute 'statement'
 
-.. cmdoption:: -r N, --repeat=N
+.. option:: -r N, --repeat=N
 
    how many times to repeat the timer (default 5)
 
-.. cmdoption:: -s S, --setup=S
+.. option:: -s S, --setup=S
 
    statement to be executed once initially (default ``pass``)
 
-.. cmdoption:: -p, --process
+.. option:: -p, --process
 
    measure process time, not wallclock time, using :func:`time.process_time`
    instead of :func:`time.perf_counter`, which is the default
 
    .. versionadded:: 3.3
 
-.. cmdoption:: -u, --unit=U
+.. option:: -u, --unit=U
 
-    specify a time unit for timer output; can select nsec, usec, msec, or sec
+   specify a time unit for timer output; can select ``nsec``, ``usec``, ``msec``, or ``sec``
 
    .. versionadded:: 3.5
 
-.. cmdoption:: -v, --verbose
+.. option:: -t, --target-time=T
+
+   if :option:`--number` is 0, the code will run until it takes at
+   least this many seconds (default: 0.2)
+
+   .. versionadded:: 3.15
+
+.. option:: -v, --verbose
 
    print raw timing results; repeat for more digits precision
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    print a short usage message and exit
 
@@ -247,7 +263,8 @@ quotes and using leading spaces.  Multiple :option:`-s` options are treated
 similarly.
 
 If :option:`-n` is not given, a suitable number of loops is calculated by trying
-successive powers of 10 until the total time is at least 0.2 seconds.
+increasing numbers from the sequence 1, 2, 5, 10, 20, 50, ... until the total
+time is at least :option:`--target-time` seconds (default: 0.2).
 
 :func:`default_timer` measurements can be affected by other programs running on
 the same machine, so the best thing to do when accurate timing is necessary is
@@ -262,6 +279,9 @@ most cases.  You can use :func:`time.process_time` to measure CPU time.
    baseline overhead can be measured by invoking the program without arguments,
    and it might differ between Python versions.
 
+.. versionadded:: 3.15
+   Output is in color by default and can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
 
 .. _timeit-examples:
 
@@ -272,10 +292,17 @@ It is possible to provide a setup statement that is executed only once at the be
 
 .. code-block:: shell-session
 
-   $ python -m timeit -s 'text = "sample string"; char = "g"'  'char in text'
+   $ python -m timeit -s "text = 'sample string'; char = 'g'" "char in text"
    5000000 loops, best of 5: 0.0877 usec per loop
-   $ python -m timeit -s 'text = "sample string"; char = "g"'  'text.find(char)'
+   $ python -m timeit -s "text = 'sample string'; char = 'g'" "text.find(char)"
    1000000 loops, best of 5: 0.342 usec per loop
+
+In the output, there are three fields. The loop count, which tells you how many
+times the statement body was run per timing loop repetition. The repetition
+count ('best of 5') which tells you how many times the timing loop was
+repeated, and finally the time the statement body took on average within the
+best repetition of the timing loop. That is, the time the fastest repetition
+took divided by the loop count.
 
 ::
 
@@ -292,7 +319,7 @@ The same can be done using the :class:`Timer` class and its methods::
    >>> t.timeit()
    0.3955516149999312
    >>> t.repeat()
-   [0.40193588800002544, 0.3960157959998014, 0.39594301399984033]
+   [0.40183617287970225, 0.37027556854118704, 0.38344867356679524, 0.3712595970846668, 0.37866875250654886]
 
 
 The following examples show how to time expressions that contain multiple lines.
@@ -301,14 +328,14 @@ to test for missing and present object attributes:
 
 .. code-block:: shell-session
 
-   $ python -m timeit 'try:' '  str.__bool__' 'except AttributeError:' '  pass'
+   $ python -m timeit "try:" "  str.__bool__" "except AttributeError:" "  pass"
    20000 loops, best of 5: 15.7 usec per loop
-   $ python -m timeit 'if hasattr(str, "__bool__"): pass'
+   $ python -m timeit "if hasattr(str, '__bool__'): pass"
    50000 loops, best of 5: 4.26 usec per loop
 
-   $ python -m timeit 'try:' '  int.__bool__' 'except AttributeError:' '  pass'
+   $ python -m timeit "try:" "  int.__bool__" "except AttributeError:" "  pass"
    200000 loops, best of 5: 1.43 usec per loop
-   $ python -m timeit 'if hasattr(int, "__bool__"): pass'
+   $ python -m timeit "if hasattr(int, '__bool__'): pass"
    100000 loops, best of 5: 2.23 usec per loop
 
 ::
@@ -341,7 +368,7 @@ to test for missing and present object attributes:
    0.08588060699912603
 
 
-To give the :mod:`timeit` module access to functions you define, you can pass a
+To give the :mod:`!timeit` module access to functions you define, you can pass a
 *setup* parameter which contains an import statement::
 
    def test():

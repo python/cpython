@@ -1,2 +1,0 @@
-Fixed implementation of :func:`platform.libc_ver`. It almost always returned
-version '2.9' for glibc.

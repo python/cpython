@@ -4,7 +4,7 @@
 from idlelib import zoomheight
 import unittest
 from test.support import requires
-from tkinter import Tk, Text
+from tkinter import Tk
 from idlelib.editor import EditorWindow
 
 
@@ -21,7 +21,7 @@ class Test(unittest.TestCase):
     def tearDownClass(cls):
         cls.editwin._close()
         cls.root.update_idletasks()
-        for id in cls.root.tk.call('after', 'info'):
+        for id in cls.root.after_info():
             cls.root.after_cancel(id)  # Need for EditorWindow.
         cls.root.destroy()
         del cls.root

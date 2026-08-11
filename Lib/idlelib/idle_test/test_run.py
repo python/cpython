@@ -1,13 +1,19 @@
-"Test run, coverage 42%."
+"Test run, coverage 54%."
 
 from idlelib import run
+import io
+import sys
+from test.support import captured_output, captured_stderr
 import unittest
 from unittest import mock
-from test.support import captured_stderr
+import idlelib
+from idlelib.idle_test.mock_idle import Func
+from test.support import force_not_colorized
 
-import io
+idlelib.testing = True  # Use {} for executing test user code.
 
-class RunTest(unittest.TestCase):
+
+class ExceptionTest(unittest.TestCase):
 
     def test_print_exception_unhashable(self):
         class UnhashableException(Exception):
@@ -23,8 +29,7 @@ class RunTest(unittest.TestCase):
                 raise ex1
             except UnhashableException:
                 with captured_stderr() as output:
-                    with mock.patch.object(run,
-                                           'cleanup_traceback') as ct:
+                    with mock.patch.object(run, 'cleanup_traceback') as ct:
                         ct.side_effect = lambda t, e: t
                         run.print_exception()
 
@@ -33,8 +38,144 @@ class RunTest(unittest.TestCase):
         self.assertIn('UnhashableException: ex2', tb[3])
         self.assertIn('UnhashableException: ex1', tb[10])
 
+    data = (('1/0', ZeroDivisionError, "division by zero\n"),
+            ('abc', NameError, "name 'abc' is not defined. "
+                               "Did you mean: 'abs'? "
+                               "Or did you forget to import 'abc'?\n"),
+            ('int.reel', AttributeError,
+                 "type object 'int' has no attribute 'reel'. "
+                 "Did you mean '.real' instead of '.reel'?\n"),  # More in 3.15.
+            )
 
-# PseudoFile tests.
+    @force_not_colorized
+    def test_get_message(self):
+        for code, exc, msg in self.data:
+            with self.subTest(code=code):
+                try:
+                    eval(compile(code, '', 'eval'))
+                except exc:
+                    typ, val, tb = sys.exc_info()
+                    actual = run.get_message_lines(typ, val, tb)[0]
+                    expect = f'{exc.__name__}: {msg}'
+                    self.assertEqual(actual, expect)
+
+    @force_not_colorized
+    @mock.patch.object(run, 'cleanup_traceback',
+                       new_callable=lambda: (lambda t, e: None))
+    def test_get_multiple_message(self, mock):
+        d = self.data
+        data2 = ((d[0], d[1]), (d[1], d[2]), (d[2], d[0]))
+        subtests = 0
+        for (code1, exc1, msg1), (code2, exc2, msg2) in data2:
+            with self.subTest(codes=(code1,code2)):
+                try:
+                    eval(compile(code1, '', 'eval'))
+                except exc1:
+                    try:
+                        eval(compile(code2, '', 'eval'))
+                    except exc2:
+                        with captured_stderr() as output:
+                            run.print_exception()
+                        actual = output.getvalue()
+                        self.assertIn(msg1, actual)
+                        self.assertIn(msg2, actual)
+                        subtests += 1
+        self.assertEqual(subtests, len(data2))  # All subtests ran?
+
+    def _capture_exception(self):
+        """Call run.print_exception() and return its stderr output."""
+        with captured_stderr() as output:
+            with mock.patch.object(run, 'cleanup_traceback') as ct:
+                ct.side_effect = lambda t, e: t
+                run.print_exception()
+        return output.getvalue()
+
+    @force_not_colorized
+    def test_print_exception_group_nested(self):
+        try:
+            try:
+                raise ExceptionGroup('inner', [ValueError('v1')])
+            except ExceptionGroup as inner:
+                raise ExceptionGroup('outer', [inner, TypeError('t1')])
+        except ExceptionGroup:
+            tb = self._capture_exception()
+
+        self.assertIn('ExceptionGroup: outer (2 sub-exceptions)', tb)
+        self.assertIn('ExceptionGroup: inner', tb)
+        self.assertIn('ValueError: v1', tb)
+        self.assertIn('TypeError: t1', tb)
+        # Verify tree structure characters.
+        self.assertIn('+-+---------------- 1 ----------------', tb)
+        self.assertIn('+---------------- 2 ----------------', tb)
+        self.assertIn('+------------------------------------', tb)
+
+    @force_not_colorized
+    def test_print_exception_group_chaining(self):
+        # __cause__ on a sub-exception exercises the prefixed
+        # chaining-message path (margin chars on separator lines).
+        sub = TypeError('t1')
+        sub.__cause__ = ValueError('original')
+        try:
+            raise ExceptionGroup('eg1', [sub])
+        except ExceptionGroup:
+            tb = self._capture_exception()
+        self.assertIn('ValueError: original', tb)
+        self.assertIn('| The above exception was the direct cause', tb)
+        self.assertIn('ExceptionGroup: eg1', tb)
+
+        # __context__ (implicit chaining) on a sub-exception.
+        sub = TypeError('t2')
+        sub.__context__ = ValueError('first')
+        try:
+            raise ExceptionGroup('eg2', [sub])
+        except ExceptionGroup:
+            tb = self._capture_exception()
+        self.assertIn('ValueError: first', tb)
+        self.assertIn('| During handling of the above exception', tb)
+        self.assertIn('ExceptionGroup: eg2', tb)
+
+    @force_not_colorized
+    def test_print_exception_group_seen(self):
+        shared = ValueError('shared')
+        try:
+            raise ExceptionGroup('eg', [shared, shared])
+        except ExceptionGroup:
+            tb = self._capture_exception()
+
+        self.assertIn('ValueError: shared', tb)
+        self.assertIn('<exception ValueError has printed>', tb)
+
+    @force_not_colorized
+    def test_print_exception_group_max_width(self):
+        excs = [ValueError(f'v{i}') for i in range(20)]
+        try:
+            raise ExceptionGroup('eg', excs)
+        except ExceptionGroup:
+            tb = self._capture_exception()
+
+        self.assertIn('+---------------- 15 ----------------', tb)
+        self.assertIn('+---------------- ... ----------------', tb)
+        self.assertIn('and 5 more exceptions', tb)
+        self.assertNotIn('+---------------- 16 ----------------', tb)
+
+    @force_not_colorized
+    def test_print_exception_group_max_depth(self):
+        def make_nested(depth):
+            if depth == 0:
+                return ValueError('leaf')
+            return ExceptionGroup(f'level{depth}',
+                                  [make_nested(depth - 1)])
+
+        try:
+            raise make_nested(15)
+        except ExceptionGroup:
+            tb = self._capture_exception()
+
+        self.assertIn('... (max_group_depth is 10)', tb)
+        self.assertIn('ExceptionGroup: level15', tb)
+        self.assertNotIn('ValueError: leaf', tb)
+
+# StdioFile tests.
 
 class S(str):
     def __str__(self):
@@ -66,14 +207,14 @@ class MockShell:
         self.lines = list(lines)[::-1]
 
 
-class PseudeInputFilesTest(unittest.TestCase):
+class StdInputFilesTest(unittest.TestCase):
 
     def test_misc(self):
         shell = MockShell()
-        f = run.PseudoInputFile(shell, 'stdin', 'utf-8')
+        f = run.StdInputFile(shell, 'stdin')
         self.assertIsInstance(f, io.TextIOBase)
         self.assertEqual(f.encoding, 'utf-8')
-        self.assertIsNone(f.errors)
+        self.assertEqual(f.errors, 'strict')
         self.assertIsNone(f.newlines)
         self.assertEqual(f.name, '<stdin>')
         self.assertFalse(f.closed)
@@ -84,7 +225,7 @@ class PseudeInputFilesTest(unittest.TestCase):
 
     def test_unsupported(self):
         shell = MockShell()
-        f = run.PseudoInputFile(shell, 'stdin', 'utf-8')
+        f = run.StdInputFile(shell, 'stdin')
         self.assertRaises(OSError, f.fileno)
         self.assertRaises(OSError, f.tell)
         self.assertRaises(OSError, f.seek, 0)
@@ -93,7 +234,7 @@ class PseudeInputFilesTest(unittest.TestCase):
 
     def test_read(self):
         shell = MockShell()
-        f = run.PseudoInputFile(shell, 'stdin', 'utf-8')
+        f = run.StdInputFile(shell, 'stdin')
         shell.push(['one\n', 'two\n', ''])
         self.assertEqual(f.read(), 'one\ntwo\n')
         shell.push(['one\n', 'two\n', ''])
@@ -113,7 +254,7 @@ class PseudeInputFilesTest(unittest.TestCase):
 
     def test_readline(self):
         shell = MockShell()
-        f = run.PseudoInputFile(shell, 'stdin', 'utf-8')
+        f = run.StdInputFile(shell, 'stdin')
         shell.push(['one\n', 'two\n', 'three\n', 'four\n'])
         self.assertEqual(f.readline(), 'one\n')
         self.assertEqual(f.readline(-1), 'two\n')
@@ -138,7 +279,7 @@ class PseudeInputFilesTest(unittest.TestCase):
 
     def test_readlines(self):
         shell = MockShell()
-        f = run.PseudoInputFile(shell, 'stdin', 'utf-8')
+        f = run.StdInputFile(shell, 'stdin')
         shell.push(['one\n', 'two\n', ''])
         self.assertEqual(f.readlines(), ['one\n', 'two\n'])
         shell.push(['one\n', 'two\n', ''])
@@ -159,7 +300,7 @@ class PseudeInputFilesTest(unittest.TestCase):
 
     def test_close(self):
         shell = MockShell()
-        f = run.PseudoInputFile(shell, 'stdin', 'utf-8')
+        f = run.StdInputFile(shell, 'stdin')
         shell.push(['one\n', 'two\n', ''])
         self.assertFalse(f.closed)
         self.assertEqual(f.readline(), 'one\n')
@@ -169,14 +310,14 @@ class PseudeInputFilesTest(unittest.TestCase):
         self.assertRaises(TypeError, f.close, 1)
 
 
-class PseudeOutputFilesTest(unittest.TestCase):
+class StdOutputFilesTest(unittest.TestCase):
 
     def test_misc(self):
         shell = MockShell()
-        f = run.PseudoOutputFile(shell, 'stdout', 'utf-8')
+        f = run.StdOutputFile(shell, 'stdout')
         self.assertIsInstance(f, io.TextIOBase)
         self.assertEqual(f.encoding, 'utf-8')
-        self.assertIsNone(f.errors)
+        self.assertEqual(f.errors, 'strict')
         self.assertIsNone(f.newlines)
         self.assertEqual(f.name, '<stdout>')
         self.assertFalse(f.closed)
@@ -187,7 +328,7 @@ class PseudeOutputFilesTest(unittest.TestCase):
 
     def test_unsupported(self):
         shell = MockShell()
-        f = run.PseudoOutputFile(shell, 'stdout', 'utf-8')
+        f = run.StdOutputFile(shell, 'stdout')
         self.assertRaises(OSError, f.fileno)
         self.assertRaises(OSError, f.tell)
         self.assertRaises(OSError, f.seek, 0)
@@ -196,16 +337,36 @@ class PseudeOutputFilesTest(unittest.TestCase):
 
     def test_write(self):
         shell = MockShell()
-        f = run.PseudoOutputFile(shell, 'stdout', 'utf-8')
+        f = run.StdOutputFile(shell, 'stdout')
         f.write('test')
         self.assertEqual(shell.written, [('test', 'stdout')])
         shell.reset()
-        f.write('t\xe8st')
-        self.assertEqual(shell.written, [('t\xe8st', 'stdout')])
+        f.write('t\xe8\u015b\U0001d599')
+        self.assertEqual(shell.written, [('t\xe8\u015b\U0001d599', 'stdout')])
         shell.reset()
 
-        f.write(S('t\xe8st'))
-        self.assertEqual(shell.written, [('t\xe8st', 'stdout')])
+        f.write(S('t\xe8\u015b\U0001d599'))
+        self.assertEqual(shell.written, [('t\xe8\u015b\U0001d599', 'stdout')])
+        self.assertEqual(type(shell.written[0][0]), str)
+        shell.reset()
+
+        self.assertRaises(TypeError, f.write)
+        self.assertEqual(shell.written, [])
+        self.assertRaises(TypeError, f.write, b'test')
+        self.assertRaises(TypeError, f.write, 123)
+        self.assertEqual(shell.written, [])
+        self.assertRaises(TypeError, f.write, 'test', 'spam')
+        self.assertEqual(shell.written, [])
+
+    def test_write_stderr_nonencodable(self):
+        shell = MockShell()
+        f = run.StdOutputFile(shell, 'stderr', 'iso-8859-15', 'backslashreplace')
+        f.write('t\xe8\u015b\U0001d599\xa4')
+        self.assertEqual(shell.written, [('t\xe8\\u015b\\U0001d599\\xa4', 'stderr')])
+        shell.reset()
+
+        f.write(S('t\xe8\u015b\U0001d599\xa4'))
+        self.assertEqual(shell.written, [('t\xe8\\u015b\\U0001d599\\xa4', 'stderr')])
         self.assertEqual(type(shell.written[0][0]), str)
         shell.reset()
 
@@ -219,7 +380,7 @@ class PseudeOutputFilesTest(unittest.TestCase):
 
     def test_writelines(self):
         shell = MockShell()
-        f = run.PseudoOutputFile(shell, 'stdout', 'utf-8')
+        f = run.StdOutputFile(shell, 'stdout')
         f.writelines([])
         self.assertEqual(shell.written, [])
         shell.reset()
@@ -249,7 +410,7 @@ class PseudeOutputFilesTest(unittest.TestCase):
 
     def test_close(self):
         shell = MockShell()
-        f = run.PseudoOutputFile(shell, 'stdout', 'utf-8')
+        f = run.StdOutputFile(shell, 'stdout')
         self.assertFalse(f.closed)
         f.write('test')
         f.close()
@@ -258,6 +419,107 @@ class PseudeOutputFilesTest(unittest.TestCase):
         self.assertEqual(shell.written, [('test', 'stdout')])
         f.close()
         self.assertRaises(TypeError, f.close, 1)
+
+
+class RecursionLimitTest(unittest.TestCase):
+    # Test (un)install_recursionlimit_wrappers and fixdoc.
+
+    def test_bad_setrecursionlimit_calls(self):
+        run.install_recursionlimit_wrappers()
+        self.addCleanup(run.uninstall_recursionlimit_wrappers)
+        f = sys.setrecursionlimit
+        self.assertRaises(TypeError, f, limit=100)
+        self.assertRaises(TypeError, f, 100, 1000)
+        self.assertRaises(ValueError, f, 0)
+
+    def test_roundtrip(self):
+        run.install_recursionlimit_wrappers()
+        self.addCleanup(run.uninstall_recursionlimit_wrappers)
+
+        # Check that setting the recursion limit works.
+        orig_reclimit = sys.getrecursionlimit()
+        self.addCleanup(sys.setrecursionlimit, orig_reclimit)
+        sys.setrecursionlimit(orig_reclimit + 3)
+
+        # Check that the new limit is returned by sys.getrecursionlimit().
+        new_reclimit = sys.getrecursionlimit()
+        self.assertEqual(new_reclimit, orig_reclimit + 3)
+
+    def test_default_recursion_limit_preserved(self):
+        orig_reclimit = sys.getrecursionlimit()
+        run.install_recursionlimit_wrappers()
+        self.addCleanup(run.uninstall_recursionlimit_wrappers)
+        new_reclimit = sys.getrecursionlimit()
+        self.assertEqual(new_reclimit, orig_reclimit)
+
+    def test_fixdoc(self):
+        # Put here until better place for miscellaneous test.
+        def func(): "docstring"
+        run.fixdoc(func, "more")
+        self.assertEqual(func.__doc__, "docstring\n\nmore")
+        func.__doc__ = None
+        run.fixdoc(func, "more")
+        self.assertEqual(func.__doc__, "more")
+
+
+class HandleErrorTest(unittest.TestCase):
+    # Method of MyRPCServer
+    def test_fatal_error(self):
+        eq = self.assertEqual
+        with captured_output('__stderr__') as err,\
+             mock.patch('idlelib.run.thread.interrupt_main',
+                        new_callable=Func) as func:
+            try:
+                raise EOFError
+            except EOFError:
+                run.MyRPCServer.handle_error(None, 'abc', '123')
+            eq(run.exit_now, True)
+            run.exit_now = False
+            eq(err.getvalue(), '')
+
+            try:
+                raise IndexError
+            except IndexError:
+                run.MyRPCServer.handle_error(None, 'abc', '123')
+            eq(run.quitting, True)
+            run.quitting = False
+            msg = err.getvalue()
+            self.assertIn('abc', msg)
+            self.assertIn('123', msg)
+            self.assertIn('IndexError', msg)
+            eq(func.called, 2)
+
+
+class ExecRuncodeTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.addClassCleanup(setattr,run,'print_exception',run.print_exception)
+        cls.prt = Func()  # Need reference.
+        run.print_exception = cls.prt
+        mockrpc = mock.Mock()
+        mockrpc.console.getvar = Func(result=False)
+        cls.ex = run.Executive(mockrpc)
+
+    @classmethod
+    def tearDownClass(cls):
+        assert sys.excepthook == sys.__excepthook__
+
+    def test_exceptions(self):
+        ex = self.ex
+        ex.runcode('1/0')
+        self.assertIs(ex.user_exc_info[0], ZeroDivisionError)
+
+        self.addCleanup(setattr, sys, 'excepthook', sys.__excepthook__)
+        sys.excepthook = lambda t, e, tb: run.print_exception(t)
+        ex.runcode('1/0')
+        self.assertIs(self.prt.args[0], ZeroDivisionError)
+
+        sys.excepthook = lambda: None
+        ex.runcode('1/0')
+        t, e, tb = ex.user_exc_info
+        self.assertIs(t, TypeError)
+        self.assertTrue(isinstance(e.__context__, ZeroDivisionError))
 
 
 if __name__ == '__main__':
