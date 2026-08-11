@@ -1,3 +1,7 @@
+// Thin wrappers to PyType functions.
+// Do no check PyType_Check() so Python tests can pass arbitrary objects,
+// even if it's likely to crash.
+
 #include "parts.h"
 #include "util.h"
 
@@ -95,28 +99,11 @@ test_get_statictype_slots(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 
-static int
-check_type_arg(PyObject *arg)
-{
-    if (arg == NULL) {
-        return 0;
-    }
-    if (!PyType_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a type");
-        return -1;
-    }
-    return 0;
-}
-
-
 // Get type->tp_version_tag
 static PyObject *
 type_get_version(PyObject *self, PyObject *arg)
 {
     NULLABLE(arg);
-    if (check_type_arg(arg) < 0) {
-        return NULL;
-    }
     PyTypeObject *type = (PyTypeObject*)arg;
 
     PyObject *res = PyLong_FromUnsignedLong(type->tp_version_tag);
@@ -133,9 +120,6 @@ static PyObject *
 type_assign_version(PyObject *self, PyObject *arg)
 {
     NULLABLE(arg);
-    if (check_type_arg(arg) < 0) {
-        return NULL;
-    }
     PyTypeObject *type = (PyTypeObject*)arg;
 
     int res = PyUnstable_Type_AssignVersionTag(type);
@@ -148,9 +132,6 @@ static PyObject *
 type_get_tp_bases(PyObject *self, PyObject *arg)
 {
     NULLABLE(arg);
-    if (check_type_arg(arg) < 0) {
-        return NULL;
-    }
     PyTypeObject *type = (PyTypeObject*)arg;
 
     PyObject *bases = type->tp_bases;
@@ -166,9 +147,6 @@ static PyObject *
 type_get_tp_mro(PyObject *self, PyObject *arg)
 {
     NULLABLE(arg);
-    if (check_type_arg(arg) < 0) {
-        return NULL;
-    }
     PyTypeObject *type = (PyTypeObject*)arg;
 
     PyObject *mro = type->tp_mro;

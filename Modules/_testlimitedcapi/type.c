@@ -1,3 +1,7 @@
+// Thin wrappers to PyType functions.
+// Do no check PyType_Check() so Python tests can pass arbitrary objects,
+// even if it's likely to crash.
+
 // Need limited C API version 3.14 for PyType_Freeze()
 #include "pyconfig.h"   // Py_GIL_DISABLED
 #if !defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
@@ -28,28 +32,11 @@ get_heaptype_for_name(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 
-static int
-check_type_arg(PyObject *arg)
-{
-    if (arg == NULL) {
-        return 0;
-    }
-    if (!PyType_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a type");
-        return -1;
-    }
-    return 0;
-}
-
-
 // Test PyType_GetName()
 static PyObject*
 get_type_name(PyObject *self, PyObject *arg)
 {
     NULLABLE(arg);
-    if (check_type_arg(arg) < 0) {
-        return NULL;
-    }
     PyTypeObject *type = (PyTypeObject*)arg;
 
     return PyType_GetName(type);
@@ -61,9 +48,6 @@ static PyObject*
 get_type_qualname(PyObject *self, PyObject *arg)
 {
     NULLABLE(arg);
-    if (check_type_arg(arg) < 0) {
-        return NULL;
-    }
     PyTypeObject *type = (PyTypeObject*)arg;
 
     return PyType_GetQualName(type);
@@ -75,9 +59,6 @@ static PyObject*
 get_type_fullyqualname(PyObject *self, PyObject *arg)
 {
     NULLABLE(arg);
-    if (check_type_arg(arg) < 0) {
-        return NULL;
-    }
     PyTypeObject *type = (PyTypeObject*)arg;
 
     return PyType_GetFullyQualifiedName(type);
@@ -89,9 +70,6 @@ static PyObject*
 get_type_module_name(PyObject *self, PyObject *arg)
 {
     NULLABLE(arg);
-    if (check_type_arg(arg) < 0) {
-        return NULL;
-    }
     PyTypeObject *type = (PyTypeObject*)arg;
 
     return PyType_GetModuleName(type);
@@ -103,9 +81,6 @@ static PyObject*
 type_modified(PyObject *self, PyObject *arg)
 {
     NULLABLE(arg);
-    if (check_type_arg(arg) < 0) {
-        return NULL;
-    }
     PyTypeObject *type = (PyTypeObject*)arg;
 
     PyType_Modified(type);
@@ -118,11 +93,7 @@ static PyObject*
 type_ready(PyObject *self, PyObject *arg)
 {
     assert(!PyErr_Occurred());
-
     NULLABLE(arg);
-    if (check_type_arg(arg) < 0) {
-        return NULL;
-    }
     PyTypeObject *type = (PyTypeObject*)arg;
 
     if (PyType_Ready(type) < 0) {
@@ -139,9 +110,6 @@ static PyObject *
 type_freeze(PyObject *module, PyObject *arg)
 {
     NULLABLE(arg);
-    if (check_type_arg(arg) < 0) {
-        return NULL;
-    }
     PyTypeObject *type = (PyTypeObject*)arg;
 
     if (PyType_Freeze(type) < 0) {
@@ -168,9 +136,6 @@ static PyObject *
 type_getflags(PyObject *module, PyObject *arg)
 {
     NULLABLE(arg);
-    if (check_type_arg(arg) < 0) {
-        return NULL;
-    }
     PyTypeObject *type = (PyTypeObject*)arg;
 
     unsigned long flags = PyType_GetFlags(type);
