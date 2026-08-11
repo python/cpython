@@ -10,8 +10,8 @@
 #ifdef Py_GIL_DISABLED
    // FIXME: use the Py_TARGET_ABI3T
 #else
-   // Need limited C API version 3.13 for Py_MOD_GIL_NOT_USED
-#  define Py_LIMITED_API 0x030d0000
+   // Use the oldest limited C API version
+#  define Py_LIMITED_API 0x03020000
 #endif
 
 #include "_testlimitedcapi/parts.h"

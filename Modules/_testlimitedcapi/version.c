@@ -4,7 +4,7 @@
 #ifdef Py_GIL_DISABLED
 #  define Py_TARGET_ABI3T 0x030f0000
 #else
-   // API added in 3.14
+   // Need limited C API version 3.14 for Py_PACK_VERSION()
 #  define Py_LIMITED_API 0x030e0000
 #endif
 
