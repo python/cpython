@@ -1,13 +1,15 @@
 import re
 import sys
 import unittest
-from _ctypes_test import buffer_info
+from test.support import import_helper
 from ctypes import (CFUNCTYPE, POINTER, sizeof, Union,
                     Structure, LittleEndianStructure, BigEndianStructure,
                     c_char, c_byte, c_ubyte,
                     c_short, c_ushort, c_int, c_uint,
                     c_long, c_ulong, c_longlong, c_ulonglong, c_uint64,
                     c_bool, c_float, c_double, c_longdouble, py_object)
+
+_testbuffer = import_helper.import_module('_testbuffer')
 
 
 if sys.byteorder == "little":
@@ -50,17 +52,43 @@ class Test(unittest.TestCase):
             self.assertEqual(n * v.itemsize, len(v.tobytes()))
 
     def test_native_types_shape_strides(self):
-        # check that ctypes (not memoryview) correctly fills out shape and
-        # strides in the buffer protocol
+        # memoryview fills in the shape and the strides which the exporter
+        # does not provide, and always requests all of them, so check what
+        # ctypes exports itself.
         for tp, fmt, shape, stride, itemtp in native_types:
             with self.subTest(tp=tp):
-                v = buffer_info(tp())
-                if v['ndim'] == 0:
-                    self.assertIsNone(v['shape'])
-                    self.assertIsNone(v['strides'])
-                else:
-                    self.assertEqual(v['shape'], shape)
-                    self.assertEqual(v['strides'], stride)
+                v = _testbuffer.ndarray(tp(), getbuf=_testbuffer.PyBUF_FULL_RO)
+                self.assertEqual(v.shape, shape)
+                self.assertEqual(v.strides, stride)
+
+    def test_flags(self):
+        ob = (c_int * 3 * 2)()
+
+        v = _testbuffer.ndarray(ob, getbuf=_testbuffer.PyBUF_SIMPLE)
+        # ndim > 1 implies shape != NULL, so a flat buffer is exported.
+        self.assertEqual(v.ndim, 1)
+        self.assertEqual(v.shape, ())
+        self.assertEqual(v.strides, ())
+
+        v = _testbuffer.ndarray(ob, getbuf=_testbuffer.PyBUF_ND)
+        self.assertEqual(v.shape, (2, 3))
+        self.assertEqual(v.strides, ())
+
+        v = _testbuffer.ndarray(ob, getbuf=_testbuffer.PyBUF_STRIDES)
+        self.assertEqual(v.shape, (2, 3))
+        self.assertEqual(v.strides, (12, 4))
+
+    def test_fortran_contiguous(self):
+        # A multidimensional array is C contiguous, but not Fortran
+        # contiguous.  A one-dimensional array is contiguous in both orders.
+        ob = (c_int * 3 * 2)()
+        with self.assertRaises(BufferError):
+            _testbuffer.ndarray(ob, getbuf=_testbuffer.PyBUF_F_CONTIGUOUS)
+        _testbuffer.ndarray(ob, getbuf=_testbuffer.PyBUF_C_CONTIGUOUS)
+
+        ob = (c_int * 3)()
+        _testbuffer.ndarray(ob, getbuf=_testbuffer.PyBUF_F_CONTIGUOUS)
+        _testbuffer.ndarray(ob, getbuf=_testbuffer.PyBUF_C_CONTIGUOUS)
 
     def test_endian_types(self):
         for tp, fmt, shape, stride, itemtp in endian_types:
