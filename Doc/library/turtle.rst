@@ -79,8 +79,8 @@ In a Python shell, import all the objects of the ``turtle`` module::
 
     from turtle import *
 
-If you run into a ``Standard library module '_tkinter' was not found`` error, you'll have to
-install the :mod:`Tk interface package <tkinter>` on your system.
+If you run into a ``Standard library module '_tkinter' was not found`` error,
+you'll have to install the :mod:`Tk interface package <tkinter>` on your system.
 
 
 Basic drawing
