@@ -117,6 +117,10 @@ class TypeTests(unittest.TestCase):
         # CRASHES get_type_qualname(NULL)
         # CRASHES get_type_fullyqualname(NULL)
         # CRASHES get_type_module_name(NULL)
+        # CRASHES get_type_name(object()): argument must be a type
+        # CRASHES get_type_qualname(object()): argument must be a type
+        # CRASHES get_type_fullyqualname(object()): argument must be a type
+        # CRASHES get_type_module_name(object()): argument must be a type
 
     def test_get_base_by_token(self):
         def get_base_by_token(src, key, comparable=True):
@@ -257,6 +261,7 @@ class TypeTests(unittest.TestCase):
         type_freeze(D)
 
         # CRASHES type_freeze(NULL)
+        # CRASHES type_freeze(object()): argument must be a type
 
     @unittest.skipIf(
         Py_GIL_DISABLED and refleak_helper.hunting_for_refleaks(),
@@ -326,6 +331,7 @@ class TypeTests(unittest.TestCase):
         type_ready(HeapType)
 
         # CRASHES type_ready(NULL)
+        # CRASHES type_ready(123): argument must be a type
 
     def test_type_clearcache(self):
         # Test PyType_ClearCache()
@@ -488,3 +494,4 @@ class TypeTests(unittest.TestCase):
         type_modified(MyType)
 
         # CRASHES type_modified(NULL)
+        # CRASHES type_modified({}): argument must be a type
