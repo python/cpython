@@ -1517,14 +1517,27 @@ ValuesView({'a': 6,
 
     def test_template(self):
         d = t""
+        # Templates are always printed using constructor syntax, i.e. the
+        # "<Template ...>" format of repr() is never used
         self.assertEqual(pprint.pformat(d), "Template()")
-        self.assertEqual(pprint.pformat(d), repr(d))
+        self.assertNotEqual(pprint.pformat(d), repr(d))
         self.assertEqual(pprint.pformat(d, width=1), "Template()")
         name = "World"
         d = t"Hello {name}"
         self.assertEqual(pprint.pformat(d),
 """\
 Template('Hello ', Interpolation('World', 'name'))""")
+        # This is also true for templates nested inside other objects and for
+        # saferepr()
+        self.assertEqual(pprint.pformat({'greeting': d}),
+"""\
+{'greeting': Template('Hello ', Interpolation('World', 'name'))}""")
+        self.assertEqual(pprint.saferepr(d),
+"""\
+Template('Hello ', Interpolation('World', 'name'))""")
+        self.assertEqual(pprint.saferepr(d.interpolations[0]),
+"""\
+Interpolation('World', 'name')""")
         d = t"Hello {name!r}"
         self.assertEqual(pprint.pformat(d),
 """\

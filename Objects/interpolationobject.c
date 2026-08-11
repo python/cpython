@@ -139,6 +139,46 @@ interpolation_repr(PyObject *op)
     }
 }
 
+/* Write a representation of the interpolation that resembles the source code
+   it was created from, i.e. the expression, the conversion and the format spec
+   (if they are non-default), followed by "=" and the repr of the value, all
+   enclosed in braces. This is used by the repr of Template. */
+int
+_PyInterpolation_WriteSource(PyUnicodeWriter *writer, PyObject *op)
+{
+    interpolationobject *self = interpolationobject_CAST(op);
+
+    if (PyUnicodeWriter_WriteChar(writer, '{') < 0) {
+        return -1;
+    }
+    if (PyUnicodeWriter_WriteStr(writer, self->expression) < 0) {
+        return -1;
+    }
+    if (self->conversion != Py_None) {
+        if (PyUnicodeWriter_WriteChar(writer, '!') < 0) {
+            return -1;
+        }
+        if (PyUnicodeWriter_WriteStr(writer, self->conversion) < 0) {
+            return -1;
+        }
+    }
+    if (PyUnicode_GET_LENGTH(self->format_spec) > 0) {
+        if (PyUnicodeWriter_WriteChar(writer, ':') < 0) {
+            return -1;
+        }
+        if (PyUnicodeWriter_WriteStr(writer, self->format_spec) < 0) {
+            return -1;
+        }
+    }
+    if (PyUnicodeWriter_WriteChar(writer, '=') < 0) {
+        return -1;
+    }
+    if (PyUnicodeWriter_WriteRepr(writer, self->value) < 0) {
+        return -1;
+    }
+    return PyUnicodeWriter_WriteChar(writer, '}');
+}
+
 static PyMemberDef interpolation_members[] = {
     {"value", Py_T_OBJECT_EX, offsetof(interpolationobject, value), Py_READONLY, "Value"},
     {"expression", Py_T_OBJECT_EX, offsetof(interpolationobject, expression), Py_READONLY, "Expression"},
