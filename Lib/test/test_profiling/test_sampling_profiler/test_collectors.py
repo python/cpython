@@ -1336,6 +1336,31 @@ class TestSampleProfilerComponents(unittest.TestCase):
             self.assertIn("gc_pct", thread_data)
             self.assertIn("total", thread_data)
 
+    def test_flamegraph_stats_always_include_sample_interval(self):
+        """The sampling interval is needed to turn sample counts into times."""
+        collector = FlamegraphCollector(sample_interval_usec=250)
+
+        stack_frames = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [MockFrameInfo("a.py", 1, "func_a")])],
+            )
+        ]
+        collector.collect(stack_frames)
+
+        # No set_stats() call: the interval must still be reported.
+        data = collector._convert_to_flamegraph_format()
+        self.assertEqual(data["stats"]["sample_interval_usec"], 250)
+
+        collector.set_stats(
+            sample_interval_usec=250,
+            duration_sec=1.0,
+            sample_rate=4000.0,
+            mode=PROFILING_MODE_WALL,
+        )
+        data = collector._convert_to_flamegraph_format()
+        self.assertEqual(data["stats"]["sample_interval_usec"], 250)
+
     def test_flamegraph_nodes_include_per_thread_values(self):
         collector = FlamegraphCollector(sample_interval_usec=1000)
         root = MockFrameInfo("app.py", 1, "main")

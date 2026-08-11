@@ -2,12 +2,21 @@ const EMBEDDED_DATA = {{FLAMEGRAPH_DATA}};
 
 // Global string table for resolving string indices
 let stringTable = [];
+// Duration of a single sample, in microseconds; node values are sample counts.
+let sampleIntervalUsec = EMBEDDED_DATA?.stats?.sample_interval_usec;
 let normalData = null;
 let invertedData = null;
 let currentThreadFilter = 'all';
 let isInverted = false;
 let useModuleNames = true;
 let zoomedNodeValue = null;
+
+// Convert a sample count into wall-clock milliseconds. Returns "--" when the
+// sampling interval is unknown, since a sample count is not a time.
+function formatSampleMs(samples) {
+  if (!(sampleIntervalUsec > 0)) return "--";
+  return ((samples * sampleIntervalUsec) / 1000).toFixed(2);
+}
 
 // Heat colors are now defined in CSS variables (--heat-1 through --heat-8)
 // and automatically switch with theme changes - no JS color arrays needed!
@@ -260,7 +269,7 @@ function updateStatusBar(nodeData, rootValue) {
   const filename = resolveString(nodeData.filename) || "";
   const moduleName = resolveString(nodeData.module) || "";
   const lineno = nodeData.lineno;
-  const timeMs = (nodeData.value / 1000).toFixed(2);
+  const timeMs = formatSampleMs(nodeData.value);
   const percent = rootValue > 0 ? ((nodeData.value / rootValue) * 100).toFixed(1) : "0.0";
 
   const brandEl = document.getElementById('status-brand');
@@ -322,9 +331,9 @@ function createPythonTooltip(data) {
         .style("opacity", 0);
     }
 
-    const timeMs = (d.data.value / 1000).toFixed(2);
+    const timeMs = formatSampleMs(d.data.value);
     const selfSamples = d.data.self || 0;
-    const selfMs = (selfSamples / 1000).toFixed(2);
+    const selfMs = formatSampleMs(selfSamples);
     const percentage = ((d.data.value / data.value) * 100).toFixed(2);
     const relativePercentage = Math.min(100, ((d.data.value / (zoomedNodeValue ?? data.value)) * 100)).toFixed(2);
     const calls = d.data.calls || 0;
@@ -408,9 +417,9 @@ function createPythonTooltip(data) {
     // Differential stats section
     let diffSection = "";
     if (d.data.diff !== undefined && d.data.baseline !== undefined) {
-      const baselineSelf = (d.data.baseline / 1000).toFixed(2);
-      const currentSelf = ((d.data.self_time || 0) / 1000).toFixed(2);
-      const diffMs = (d.data.diff / 1000).toFixed(2);
+      const baselineSelf = formatSampleMs(d.data.baseline);
+      const currentSelf = formatSampleMs(d.data.self_time || 0);
+      const diffMs = formatSampleMs(d.data.diff);
       const diffPct = d.data.diff_pct;
       const sign = d.data.diff >= 0 ? "+" : "";
       const diffClass = d.data.diff > 0 ? "regression" : (d.data.diff < 0 ? "improvement" : "neutral");

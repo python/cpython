@@ -1,0 +1,5 @@
+Fix the times shown in :mod:`profiling.sampling` flame graph tooltips and status
+bar.  Sample counts were divided by 1000 and labelled as milliseconds, so the
+reported times were wrong by a factor of the sampling interval.  They are now
+converted using the actual interval, which is always recorded in the exported
+data.

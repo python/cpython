@@ -371,6 +371,7 @@ class FlamegraphCollector(StackTraceCollector):
             old_label = self._string_table.get_string(main_child["label"])
             main_child["label"] = self._string_table.intern(f"Program Root: {old_label}")
             main_child["stats"] = {
+                "sample_interval_usec": self.sample_interval_usec,
                 **self.stats,
                 "thread_stats": thread_stats,
                 "per_thread_stats": per_thread_stats_with_pct
@@ -387,6 +388,7 @@ class FlamegraphCollector(StackTraceCollector):
             "value": total_samples,
             "children": root_children,
             "stats": {
+                "sample_interval_usec": self.sample_interval_usec,
                 **self.stats,
                 "thread_stats": thread_stats,
                 "per_thread_stats": per_thread_stats_with_pct
