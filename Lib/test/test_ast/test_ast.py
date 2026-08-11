@@ -26,7 +26,9 @@ except ImportError:
 
 from test import support
 from test.support import os_helper
-from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow, skip_if_unlimited_stack_size
+from test.support import (skip_emscripten_stack_overflow,
+                          skip_wasi_stack_overflow,
+                          skip_if_unlimited_stack_size, skip_if_huge_c_stack)
 from test.support.ast_helper import ASTTestMixin
 from test.support.import_helper import ensure_lazy_imports
 from test.test_ast.utils import to_tuple
@@ -523,6 +525,12 @@ class AST_Tests(unittest.TestCase):
         self.assertIs(ast.Constant(None).value, None)
         self.assertIs(ast.Constant(...).value, ...)
 
+        with self.assertWarns(DeprecationWarning):
+            ast.Tuple().dims
+
+        with self.assertWarns(DeprecationWarning):
+            ast.Tuple().dims = 3
+
     def test_constant_subclasses(self):
         class N(ast.Constant):
             def __init__(self, *args, **kwargs):
@@ -619,7 +627,7 @@ class AST_Tests(unittest.TestCase):
         ast.fix_missing_locations(m)
         with self.assertRaises(TypeError) as cm:
             compile(m, "<test>", "exec")
-        self.assertIn("identifier must be of type str", str(cm.exception))
+        self.assertIn("expecting a string object", str(cm.exception))
 
     def test_invalid_constant(self):
         for invalid_constant in int, (1, 2, int), frozenset((1, 2, int)):
@@ -1017,7 +1025,8 @@ class AST_Tests(unittest.TestCase):
         enum._test_simple_enum(_Precedence, _ast_unparse._Precedence)
 
     @support.cpython_only
-    @skip_if_unlimited_stack_size
+    @support.run_with_limited_c_stack(
+        100_000 if sys.platform == "android" else 500_000)
     @skip_wasi_stack_overflow()
     @skip_emscripten_stack_overflow()
     def test_ast_recursion_limit(self):
@@ -1075,6 +1084,37 @@ class AST_Tests(unittest.TestCase):
         for node, attr, source in tests:
             self.assert_none_check(node, attr, source)
 
+    def test_required_field_messages(self):
+        binop = ast.BinOp(
+            left=ast.Constant(value=2),
+            right=ast.Constant(value=2),
+            op=ast.Add(),
+        )
+        expr_without_position = ast.Expression(body=binop)
+        expr_with_wrong_body = ast.Expression(body=[binop])
+
+        with self.assertRaisesRegex(TypeError, "required field") as cm:
+            compile(expr_without_position, "<test>", "eval")
+        with self.assertRaisesRegex(
+            TypeError,
+            "field 'body' was expecting node of type 'expr', got 'list'",
+        ):
+            compile(expr_with_wrong_body, "<test>", "eval")
+
+        variable = ast.parse("test", mode="eval")
+        variable.body.id = b'test'
+        with self.assertRaisesRegex(TypeError,
+            "field 'id' was expecting a string object, got bytes"
+        ):
+            compile(variable, "<test>", "eval")
+
+        constant = ast.parse("u'test'", mode="eval")
+        constant.body.kind = 0xFF
+        with self.assertRaisesRegex(TypeError,
+            "field 'kind' was expecting a string or bytes object, got int"
+        ):
+            compile(constant, "<test>", "eval")
+
     def test_repr(self) -> None:
         snapshots = AST_REPR_DATA_FILE.read_text().split("\n")
         for test, snapshot in zip(ast_repr_get_test_cases(), snapshots, strict=True):
@@ -1099,6 +1139,38 @@ class AST_Tests(unittest.TestCase):
         self.assertIsInstance(tree.body[0].value, ast.TemplateStr)
         self.assertIsInstance(tree.body[0].value.values[0], ast.Constant)
         self.assertIsInstance(tree.body[0].value.values[1], ast.Interpolation)
+
+    def test_deprecated(self):
+        with self.assertWarns(DeprecationWarning):
+            ast.slice
+
+        with self.assertWarns(DeprecationWarning):
+            ast.Index
+
+        with self.assertWarns(DeprecationWarning):
+            ast.ExtSlice
+
+        with self.assertWarns(DeprecationWarning):
+            ast.Suite
+
+        with self.assertWarns(DeprecationWarning):
+            ast.AugLoad
+
+        with self.assertWarns(DeprecationWarning):
+            ast.AugStore
+
+        with self.assertWarns(DeprecationWarning):
+            ast.Param
+
+        namespace = {}
+        exec("from ast import *", namespace)
+        self.assertNotIn("slice", namespace)
+        self.assertNotIn("Index", namespace)
+        self.assertNotIn("ExtSlice", namespace)
+        self.assertNotIn("Suite", namespace)
+        self.assertNotIn("AugLoad", namespace)
+        self.assertNotIn("AugStore", namespace)
+        self.assertNotIn("Param", namespace)
 
     def test_filter_syntax_warnings_by_module(self):
         filename = support.findfile('test_import/data/syntax_warnings.py')
@@ -1139,8 +1211,9 @@ class CopyTests(unittest.TestCase):
         def do(cls):
             if cls.__module__ != 'ast':
                 return
-            if cls is ast.Index:
-                return
+            with warnings.catch_warnings(action="ignore", category=DeprecationWarning):
+                if cls is ast.Index:
+                    return
             # Don't attempt to create instances of abstract AST nodes
             if _ast._is_abstract(cls):
                 return
@@ -2026,7 +2099,7 @@ Module(
         exec(code, ns)
         self.assertIn('sleep', ns)
 
-    @skip_if_unlimited_stack_size
+    @skip_if_huge_c_stack()
     @skip_emscripten_stack_overflow()
     def test_recursion_direct(self):
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
@@ -2035,7 +2108,7 @@ Module(
             with support.infinite_recursion():
                 compile(ast.Expression(e), "<test>", "eval")
 
-    @skip_if_unlimited_stack_size
+    @skip_if_huge_c_stack()
     @skip_emscripten_stack_overflow()
     def test_recursion_indirect(self):
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
