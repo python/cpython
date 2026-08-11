@@ -1940,7 +1940,8 @@ class SuppressCrashReport:
 
             self.old_value = msvcrt.GetErrorMode()
 
-            msvcrt.SetErrorMode(self.old_value | msvcrt.SEM_NOGPFAULTERRORBOX)
+            msvcrt.SetErrorMode(self.old_value | msvcrt.SEM_NOGPFAULTERRORBOX
+                                               | msvcrt.SEM_FAILCRITICALERRORS)
 
             # bpo-23314: Suppress assert dialogs in debug builds.
             # CrtSetReportMode() is only available in debug build.
@@ -3464,3 +3465,9 @@ def skip_on_low_desktop_heap_memory_subprocess(returncode):
     if returncode == STATUS_DLL_INIT_FAILED:
         raise unittest.SkipTest('gh-150436: DLL init failed, likely because '
                                 'of low desktop heap memory')
+
+
+def check_immutable_type(testcase, type):
+    regex = r'cannot set .* attribute of immutable type'
+    with testcase.assertRaisesRegex(TypeError, regex):
+        setattr(type, 'custom_attr', 123)

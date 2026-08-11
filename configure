@@ -7376,6 +7376,8 @@ case $ac_sys_system in #(
     MULTIARCH="" ;; #(
   FreeBSD*) :
     MULTIARCH="" ;; #(
+  OpenBSD*) :
+    MULTIARCH="" ;; #(
   *) :
     MULTIARCH=$($CC --print-multiarch 2>/dev/null)
  ;;
