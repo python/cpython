@@ -1,2 +1,0 @@
-Optimized decoding short ASCII string with UTF-8 and ascii codecs.
-``b"foo".decode()`` is about 15% faster.  Patch by Inada Naoki.

@@ -10,21 +10,28 @@ import functools
 import html
 import io
 import itertools
-import locale
 import operator
 import os
 import pickle
+import pyexpat
 import sys
 import textwrap
 import types
 import unittest
+import unittest.mock as mock
 import warnings
 import weakref
 
+from contextlib import nullcontext
 from functools import partial
 from itertools import product, islice
 from test import support
-from test.support import TESTFN, findfile, import_fresh_module, gc_collect, swap_attr
+from test.support import os_helper
+from test.support import warnings_helper
+from test.support import findfile, gc_collect, swap_attr, swap_item
+from test.support.import_helper import import_fresh_module
+from test.support.os_helper import TESTFN
+
 
 # pyET is the pure-Python implementation.
 #
@@ -103,27 +110,58 @@ EXTERNAL_ENTITY_XML = """\
 <document>&entity;</document>
 """
 
+ATTLIST_XML = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Foo [
+<!ELEMENT foo (bar*)>
+<!ELEMENT bar (#PCDATA)*>
+<!ATTLIST bar xml:lang CDATA "eng">
+<!ENTITY qux "quux">
+]>
+<foo>
+<bar>&qux;</bar>
+</foo>
+"""
+
+def is_python_implementation():
+    assert ET is not None, "ET must be initialized"
+    assert pyET is not None, "pyET must be initialized"
+    return ET is pyET
+
+
+def equal_wrapper(cls):
+    """Mock cls.__eq__ to check whether it has been called or not.
+
+    The behaviour of cls.__eq__ (side-effects included) is left as is.
+    """
+    eq = cls.__eq__
+    return mock.patch.object(cls, "__eq__", autospec=True, wraps=eq)
+
+
 def checkwarnings(*filters, quiet=False):
     def decorator(test):
         def newtest(*args, **kwargs):
-            with support.check_warnings(*filters, quiet=quiet):
+            with warnings_helper.check_warnings(*filters, quiet=quiet):
                 test(*args, **kwargs)
         functools.update_wrapper(newtest, test)
         return newtest
     return decorator
+
+def convlinesep(data):
+    return data.replace(b'\n', os.linesep.encode())
 
 
 class ModuleTest(unittest.TestCase):
     def test_sanity(self):
         # Import sanity.
 
-        from xml.etree import ElementTree
-        from xml.etree import ElementInclude
-        from xml.etree import ElementPath
+        from xml.etree import ElementTree     # noqa: F401
+        from xml.etree import ElementInclude  # noqa: F401
+        from xml.etree import ElementPath     # noqa: F401
 
     def test_all(self):
         names = ("xml.etree.ElementTree", "_elementtree")
-        support.check__all__(self, ET, names, blacklist=("HTML_EMPTY",))
+        support.check__all__(self, ET, names, not_exported=("HTML_EMPTY",))
 
 
 def serialize(elem, to_string=True, encoding='unicode', **options):
@@ -149,12 +187,11 @@ class ElementTestCase:
         cls.modules = {pyET, ET}
 
     def pickleRoundTrip(self, obj, name, dumper, loader, proto):
-        save_m = sys.modules[name]
         try:
-            sys.modules[name] = dumper
-            temp = pickle.dumps(obj, proto)
-            sys.modules[name] = loader
-            result = pickle.loads(temp)
+            with swap_item(sys.modules, name, dumper):
+                temp = pickle.dumps(obj, proto)
+            with swap_item(sys.modules, name, loader):
+                result = pickle.loads(temp)
         except pickle.PicklingError as pe:
             # pyET must be second, because pyET may be (equal to) ET.
             human = dict([(ET, "cET"), (pyET, "pyET")])
@@ -162,8 +199,6 @@ class ElementTestCase:
                                      % (obj,
                                         human.get(dumper, dumper),
                                         human.get(loader, loader))) from pe
-        finally:
-            sys.modules[name] = save_m
         return result
 
     def assertEqualElements(self, alice, bob):
@@ -183,43 +218,50 @@ class ElementTreeTest(unittest.TestCase):
     def serialize_check(self, elem, expected):
         self.assertEqual(serialize(elem), expected)
 
+    def test_constructor(self):
+        # Test constructor behavior.
+
+        with self.assertRaises(TypeError):
+            tree = ET.ElementTree("")
+        with self.assertRaises(TypeError):
+            tree = ET.ElementTree(ET.ElementTree())
+
+    def test_setroot(self):
+        # Test _setroot behavior.
+
+        tree = ET.ElementTree()
+        element = ET.Element("tag")
+        tree._setroot(element)
+        self.assertEqual(tree.getroot().tag, "tag")
+        self.assertEqual(tree.getroot(), element)
+
+        # Test behavior with an invalid root element
+
+        tree = ET.ElementTree()
+        with self.assertRaises(TypeError):
+            tree._setroot("")
+        with self.assertRaises(TypeError):
+            tree._setroot(ET.ElementTree())
+        with self.assertRaises(TypeError):
+            tree._setroot(None)
+
     def test_interface(self):
         # Test element tree interface.
-
-        def check_string(string):
-            len(string)
-            for char in string:
-                self.assertEqual(len(char), 1,
-                        msg="expected one-character string, got %r" % char)
-            new_string = string + ""
-            new_string = string + " "
-            string[:0]
-
-        def check_mapping(mapping):
-            len(mapping)
-            keys = mapping.keys()
-            items = mapping.items()
-            for key in keys:
-                item = mapping[key]
-            mapping["key"] = "value"
-            self.assertEqual(mapping["key"], "value",
-                    msg="expected value string, got %r" % mapping["key"])
 
         def check_element(element):
             self.assertTrue(ET.iselement(element), msg="not an element")
             direlem = dir(element)
             for attr in 'tag', 'attrib', 'text', 'tail':
-                self.assertTrue(hasattr(element, attr),
-                        msg='no %s member' % attr)
+                self.assertHasAttr(element, attr)
                 self.assertIn(attr, direlem,
                         msg='no %s visible by dir' % attr)
 
-            check_string(element.tag)
-            check_mapping(element.attrib)
+            self.assertIsInstance(element.tag, str)
+            self.assertIsInstance(element.attrib, dict)
             if element.text is not None:
-                check_string(element.text)
+                self.assertIsInstance(element.text, str)
             if element.tail is not None:
-                check_string(element.tail)
+                self.assertIsInstance(element.tail, str)
             for elem in element:
                 check_element(elem)
 
@@ -235,14 +277,13 @@ class ElementTreeTest(unittest.TestCase):
         # Make sure all standard element methods exist.
 
         def check_method(method):
-            self.assertTrue(hasattr(method, '__call__'),
+            self.assertHasAttr(method, '__call__',
                     msg="%s not callable" % method)
 
         check_method(element.append)
         check_method(element.extend)
         check_method(element.insert)
         check_method(element.remove)
-        check_method(element.getchildren)
         check_method(element.find)
         check_method(element.iterfind)
         check_method(element.findall)
@@ -254,7 +295,6 @@ class ElementTreeTest(unittest.TestCase):
         check_method(element.items)
         check_method(element.iter)
         check_method(element.itertext)
-        check_method(element.getiterator)
 
         # These methods return an iterable. See bug 6472.
 
@@ -314,6 +354,9 @@ class ElementTreeTest(unittest.TestCase):
         elem.extend([e])
         self.serialize_check(elem, '<body><tag /><tag2 /></body>')
         elem.remove(e)
+        elem.extend(iter([e]))
+        self.serialize_check(elem, '<body><tag /><tag2 /></body>')
+        elem.remove(e)
 
         element = ET.Element("tag", key="value")
         self.serialize_check(element, '<tag key="value" />') # 1
@@ -327,9 +370,8 @@ class ElementTreeTest(unittest.TestCase):
         self.serialize_check(element, '<tag key="value"><subtag /></tag>') # 4
         element.remove(subelement)
         self.serialize_check(element, '<tag key="value" />') # 5
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaises(ValueError):
             element.remove(subelement)
-        self.assertEqual(str(cm.exception), 'list.remove(x): x not in list')
         self.serialize_check(element, '<tag key="value" />') # 6
         element[0:0] = [subelement, subelement, subelement]
         self.serialize_check(element[1], '<subtag />')
@@ -338,6 +380,19 @@ class ElementTreeTest(unittest.TestCase):
         del element[1:2]
         self.serialize_check(element,
                 '<tag key="value"><subtag /><subtag /></tag>')
+
+    def test_positional_only_parameter(self):
+        # Test Element positional-only parameters (gh-144846).
+
+        # 'tag' is positional-only
+        with self.assertRaises(TypeError):
+            ET.Element(tag='fail')
+
+        # 'tag' and 'attrib' as kwarg/attribute names
+        e = ET.Element('e', attrib={'attrib': 'foo'}, tag='bar')
+        self.assertEqual(e.tag, 'e')
+        self.assertEqual(e.get('attrib'), 'foo')
+        self.assertEqual(e.get('tag'), 'bar')
 
     def test_cdata(self):
         # Test CDATA handling (etc).
@@ -366,6 +421,7 @@ class ElementTreeTest(unittest.TestCase):
         from xml.etree import ElementPath
 
         elem = ET.XML(SAMPLE_XML)
+        ElementPath._cache.clear()
         for i in range(10): ET.ElementTree(elem).find('./'+str(i))
         cache_len_10 = len(ElementPath._cache)
         for i in range(10): ET.ElementTree(elem).find('./'+str(i))
@@ -432,13 +488,36 @@ class ElementTreeTest(unittest.TestCase):
         self.assertEqual(ET.tostring(elem),
                 b'<test testa="testval" testb="test1" testc="test2">aa</test>')
 
+        # Test preserving white space chars in attributes
         elem = ET.Element('test')
         elem.set('a', '\r')
         elem.set('b', '\r\n')
         elem.set('c', '\t\n\r ')
-        elem.set('d', '\n\n')
+        elem.set('d', '\n\n\r\r\t\t  ')
         self.assertEqual(ET.tostring(elem),
-                b'<test a="&#10;" b="&#10;" c="&#09;&#10;&#10; " d="&#10;&#10;" />')
+                b'<test a="&#13;" b="&#13;&#10;" c="&#09;&#10;&#13; " d="&#10;&#10;&#13;&#13;&#09;&#09;  " />')
+
+    def test_subelement_positional_only_parameter(self):
+        # Test SubElement positional-only parameters (gh-144270).
+        parent = ET.Element('parent')
+
+        # 'parent' and 'tag' are positional-only
+        with self.assertRaises(TypeError):
+            ET.SubElement(parent=parent, tag='fail')
+        with self.assertRaises(TypeError):
+            ET.SubElement(parent, tag='fail')
+
+        # 'attrib' can be passed as keyword
+        sub1 = ET.SubElement(parent, 'sub1', attrib={'key': 'value'})
+        self.assertEqual(sub1.get('key'), 'value')
+
+        # 'tag' and 'parent' as kwargs become XML attributes, not func params
+        sub2 = ET.SubElement(parent, 'sub2', attrib={'attrib': 'foo'},
+                             tag='bar', parent='baz')
+        self.assertEqual(sub2.tag, 'sub2')
+        self.assertEqual(sub2.get('attrib'), 'foo')
+        self.assertEqual(sub2.get('tag'), 'bar')
+        self.assertEqual(sub2.get('parent'), 'baz')
 
     def test_makeelement(self):
         # Test makeelement handling.
@@ -528,118 +607,6 @@ class ElementTreeTest(unittest.TestCase):
         _, ids = ET.XMLID("<html><body id='body'>text</body></html>")
         self.assertEqual(len(ids), 1)
         self.assertEqual(ids["body"].tag, 'body')
-
-    def test_iterparse(self):
-        # Test iterparse interface.
-
-        iterparse = ET.iterparse
-
-        context = iterparse(SIMPLE_XMLFILE)
-        action, elem = next(context)
-        self.assertEqual((action, elem.tag), ('end', 'element'))
-        self.assertEqual([(action, elem.tag) for action, elem in context], [
-                ('end', 'element'),
-                ('end', 'empty-element'),
-                ('end', 'root'),
-            ])
-        self.assertEqual(context.root.tag, 'root')
-
-        context = iterparse(SIMPLE_NS_XMLFILE)
-        self.assertEqual([(action, elem.tag) for action, elem in context], [
-                ('end', '{namespace}element'),
-                ('end', '{namespace}element'),
-                ('end', '{namespace}empty-element'),
-                ('end', '{namespace}root'),
-            ])
-
-        events = ()
-        context = iterparse(SIMPLE_XMLFILE, events)
-        self.assertEqual([(action, elem.tag) for action, elem in context], [])
-
-        events = ()
-        context = iterparse(SIMPLE_XMLFILE, events=events)
-        self.assertEqual([(action, elem.tag) for action, elem in context], [])
-
-        events = ("start", "end")
-        context = iterparse(SIMPLE_XMLFILE, events)
-        self.assertEqual([(action, elem.tag) for action, elem in context], [
-                ('start', 'root'),
-                ('start', 'element'),
-                ('end', 'element'),
-                ('start', 'element'),
-                ('end', 'element'),
-                ('start', 'empty-element'),
-                ('end', 'empty-element'),
-                ('end', 'root'),
-            ])
-
-        events = ("start", "end", "start-ns", "end-ns")
-        context = iterparse(SIMPLE_NS_XMLFILE, events)
-        self.assertEqual([(action, elem.tag) if action in ("start", "end")
-                                             else (action, elem)
-                          for action, elem in context], [
-                ('start-ns', ('', 'namespace')),
-                ('start', '{namespace}root'),
-                ('start', '{namespace}element'),
-                ('end', '{namespace}element'),
-                ('start', '{namespace}element'),
-                ('end', '{namespace}element'),
-                ('start', '{namespace}empty-element'),
-                ('end', '{namespace}empty-element'),
-                ('end', '{namespace}root'),
-                ('end-ns', None),
-            ])
-
-        events = ('start-ns', 'end-ns')
-        context = iterparse(io.StringIO(r"<root xmlns=''/>"), events)
-        res = [action for action, elem in context]
-        self.assertEqual(res, ['start-ns', 'end-ns'])
-
-        events = ("start", "end", "bogus")
-        with open(SIMPLE_XMLFILE, "rb") as f:
-            with self.assertRaises(ValueError) as cm:
-                iterparse(f, events)
-            self.assertFalse(f.closed)
-        self.assertEqual(str(cm.exception), "unknown event 'bogus'")
-
-        with support.check_no_resource_warning(self):
-            with self.assertRaises(ValueError) as cm:
-                iterparse(SIMPLE_XMLFILE, events)
-            self.assertEqual(str(cm.exception), "unknown event 'bogus'")
-            del cm
-
-        source = io.BytesIO(
-            b"<?xml version='1.0' encoding='iso-8859-1'?>\n"
-            b"<body xmlns='http://&#233;ffbot.org/ns'\n"
-            b"      xmlns:cl\xe9='http://effbot.org/ns'>text</body>\n")
-        events = ("start-ns",)
-        context = iterparse(source, events)
-        self.assertEqual([(action, elem) for action, elem in context], [
-                ('start-ns', ('', 'http://\xe9ffbot.org/ns')),
-                ('start-ns', ('cl\xe9', 'http://effbot.org/ns')),
-            ])
-
-        source = io.StringIO("<document />junk")
-        it = iterparse(source)
-        action, elem = next(it)
-        self.assertEqual((action, elem.tag), ('end', 'document'))
-        with self.assertRaises(ET.ParseError) as cm:
-            next(it)
-        self.assertEqual(str(cm.exception),
-                'junk after document element: line 1, column 12')
-
-        self.addCleanup(support.unlink, TESTFN)
-        with open(TESTFN, "wb") as f:
-            f.write(b"<document />junk")
-        it = iterparse(TESTFN)
-        action, elem = next(it)
-        self.assertEqual((action, elem.tag), ('end', 'document'))
-        with support.check_no_resource_warning(self):
-            with self.assertRaises(ET.ParseError) as cm:
-                next(it)
-            self.assertEqual(str(cm.exception),
-                    'junk after document element: line 1, column 12')
-            del cm, it
 
     def test_writefile(self):
         elem = ET.Element("tag")
@@ -741,24 +708,29 @@ class ElementTreeTest(unittest.TestCase):
                 ('end-ns', ''),
             ])
 
-    # Element.getchildren() and ElementTree.getiterator() are deprecated.
-    @checkwarnings(("This method will be removed in future versions.  "
-                    "Use .+ instead.",
-                    DeprecationWarning))
-    def test_getchildren(self):
-        # Test Element.getchildren()
+    def test_initialize_parser_without_target(self):
+        # Explicit None
+        parser = ET.XMLParser(target=None)
+        self.assertIsInstance(parser.target, ET.TreeBuilder)
+
+        # Implicit None
+        parser2 = ET.XMLParser()
+        self.assertIsInstance(parser2.target, ET.TreeBuilder)
+
+    def test_children(self):
+        # Test Element children iteration
 
         with open(SIMPLE_XMLFILE, "rb") as f:
             tree = ET.parse(f)
-        self.assertEqual([summarize_list(elem.getchildren())
+        self.assertEqual([summarize_list(elem)
                           for elem in tree.getroot().iter()], [
                 ['element', 'element', 'empty-element'],
                 [],
                 [],
                 [],
             ])
-        self.assertEqual([summarize_list(elem.getchildren())
-                          for elem in tree.getiterator()], [
+        self.assertEqual([summarize_list(elem)
+                          for elem in tree.iter()], [
                 ['element', 'element', 'empty-element'],
                 [],
                 [],
@@ -766,13 +738,13 @@ class ElementTreeTest(unittest.TestCase):
             ])
 
         elem = ET.XML(SAMPLE_XML)
-        self.assertEqual(len(elem.getchildren()), 3)
-        self.assertEqual(len(elem[2].getchildren()), 1)
-        self.assertEqual(elem[:], elem.getchildren())
+        self.assertEqual(len(list(elem)), 3)
+        self.assertEqual(len(list(elem[2])), 1)
+        self.assertEqual(elem[:], list(elem))
         child1 = elem[0]
         child2 = elem[2]
         del elem[1:2]
-        self.assertEqual(len(elem.getchildren()), 2)
+        self.assertEqual(len(list(elem)), 2)
         self.assertEqual(child1, elem[0])
         self.assertEqual(child2, elem[1])
         elem[0:2] = [child2, child1]
@@ -780,13 +752,130 @@ class ElementTreeTest(unittest.TestCase):
         self.assertEqual(child1, elem[1])
         self.assertNotEqual(child1, elem[0])
         elem.clear()
-        self.assertEqual(elem.getchildren(), [])
+        self.assertEqual(list(elem), [])
 
     def test_writestring(self):
         elem = ET.XML("<html><body>text</body></html>")
         self.assertEqual(ET.tostring(elem), b'<html><body>text</body></html>')
         elem = ET.fromstring("<html><body>text</body></html>")
         self.assertEqual(ET.tostring(elem), b'<html><body>text</body></html>')
+
+    def test_indent(self):
+        elem = ET.XML("<root></root>")
+        ET.indent(elem)
+        self.assertEqual(ET.tostring(elem), b'<root />')
+
+        elem = ET.XML("<html><body>text</body></html>")
+        ET.indent(elem)
+        self.assertEqual(ET.tostring(elem), b'<html>\n  <body>text</body>\n</html>')
+
+        elem = ET.XML("<html> <body>text</body>  </html>")
+        ET.indent(elem)
+        self.assertEqual(ET.tostring(elem), b'<html>\n  <body>text</body>\n</html>')
+
+        elem = ET.XML("<html><body>text</body>tail</html>")
+        ET.indent(elem)
+        self.assertEqual(ET.tostring(elem), b'<html>\n  <body>text</body>tail</html>')
+
+        elem = ET.XML("<html><body><p>par</p>\n<p>text</p>\t<p><br/></p></body></html>")
+        ET.indent(elem)
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html>\n'
+            b'  <body>\n'
+            b'    <p>par</p>\n'
+            b'    <p>text</p>\n'
+            b'    <p>\n'
+            b'      <br />\n'
+            b'    </p>\n'
+            b'  </body>\n'
+            b'</html>'
+        )
+
+        elem = ET.XML("<html><body><p>pre<br/>post</p><p>text</p></body></html>")
+        ET.indent(elem)
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html>\n'
+            b'  <body>\n'
+            b'    <p>pre<br />post</p>\n'
+            b'    <p>text</p>\n'
+            b'  </body>\n'
+            b'</html>'
+        )
+
+    def test_indent_space(self):
+        elem = ET.XML("<html><body><p>pre<br/>post</p><p>text</p></body></html>")
+        ET.indent(elem, space='\t')
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html>\n'
+            b'\t<body>\n'
+            b'\t\t<p>pre<br />post</p>\n'
+            b'\t\t<p>text</p>\n'
+            b'\t</body>\n'
+            b'</html>'
+        )
+
+        elem = ET.XML("<html><body><p>pre<br/>post</p><p>text</p></body></html>")
+        ET.indent(elem, space='')
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html>\n'
+            b'<body>\n'
+            b'<p>pre<br />post</p>\n'
+            b'<p>text</p>\n'
+            b'</body>\n'
+            b'</html>'
+        )
+
+    def test_indent_space_caching(self):
+        elem = ET.XML("<html><body><p>par</p><p>text</p><p><br/></p><p /></body></html>")
+        ET.indent(elem)
+        self.assertEqual(
+            {el.tail for el in elem.iter()},
+            {None, "\n", "\n  ", "\n    "}
+        )
+        self.assertEqual(
+            {el.text for el in elem.iter()},
+            {None, "\n  ", "\n    ", "\n      ", "par", "text"}
+        )
+        self.assertEqual(
+            len({el.tail for el in elem.iter()}),
+            len({id(el.tail) for el in elem.iter()}),
+        )
+
+    def test_indent_level(self):
+        elem = ET.XML("<html><body><p>pre<br/>post</p><p>text</p></body></html>")
+        with self.assertRaises(ValueError):
+            ET.indent(elem, level=-1)
+        self.assertEqual(
+            ET.tostring(elem),
+            b"<html><body><p>pre<br />post</p><p>text</p></body></html>"
+        )
+
+        ET.indent(elem, level=2)
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html>\n'
+            b'      <body>\n'
+            b'        <p>pre<br />post</p>\n'
+            b'        <p>text</p>\n'
+            b'      </body>\n'
+            b'    </html>'
+        )
+
+        elem = ET.XML("<html><body><p>pre<br/>post</p><p>text</p></body></html>")
+        ET.indent(elem, level=1, space=' ')
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html>\n'
+            b'  <body>\n'
+            b'   <p>pre<br />post</p>\n'
+            b'   <p>text</p>\n'
+            b'  </body>\n'
+            b' </html>'
+        )
 
     def test_tostring_default_namespace(self):
         elem = ET.XML('<body xmlns="http://effbot.org/ns"><tag/></body>')
@@ -828,15 +917,13 @@ class ElementTreeTest(unittest.TestCase):
 
     def test_tostring_xml_declaration_unicode_encoding(self):
         elem = ET.XML('<body><tag/></body>')
-        preferredencoding = locale.getpreferredencoding()
         self.assertEqual(
-            f"<?xml version='1.0' encoding='{preferredencoding}'?>\n<body><tag /></body>",
-            ET.tostring(elem, encoding='unicode', xml_declaration=True)
+            ET.tostring(elem, encoding='unicode', xml_declaration=True),
+            "<?xml version='1.0' encoding='utf-8'?>\n<body><tag /></body>"
         )
 
     def test_tostring_xml_declaration_cases(self):
         elem = ET.XML('<body><tag>ø</tag></body>')
-        preferredencoding = locale.getpreferredencoding()
         TESTCASES = [
         #   (expected_retval,                  encoding, xml_declaration)
             # ... xml_declaration = None
@@ -863,7 +950,7 @@ class ElementTreeTest(unittest.TestCase):
              b"<body><tag>&#248;</tag></body>", 'US-ASCII', True),
             (b"<?xml version='1.0' encoding='ISO-8859-1'?>\n"
              b"<body><tag>\xf8</tag></body>", 'ISO-8859-1', True),
-            (f"<?xml version='1.0' encoding='{preferredencoding}'?>\n"
+            ("<?xml version='1.0' encoding='utf-8'?>\n"
              "<body><tag>ø</tag></body>", 'unicode', True),
 
         ]
@@ -901,11 +988,10 @@ class ElementTreeTest(unittest.TestCase):
             b"<?xml version='1.0' encoding='us-ascii'?>\n<body><tag /></body>"
         )
 
-        preferredencoding = locale.getpreferredencoding()
         stringlist = ET.tostringlist(elem, encoding='unicode', xml_declaration=True)
         self.assertEqual(
             ''.join(stringlist),
-            f"<?xml version='1.0' encoding='{preferredencoding}'?>\n<body><tag /></body>"
+            "<?xml version='1.0' encoding='utf-8'?>\n<body><tag /></body>"
         )
         self.assertRegex(stringlist[0], r"^<\?xml version='1.0' encoding='.+'?>")
         self.assertEqual(['<body', '>', '<tag', ' />', '</body>'], stringlist[1:])
@@ -922,13 +1008,15 @@ class ElementTreeTest(unittest.TestCase):
         check("iso-8859-15", '\u20ac')
         check("cp437", '\u221a')
         check("mac-roman", '\u02da')
+        check('shift-jis-2004', '\u203e\u3406\uff66')
+        check('euc-jis-2004', '\u3406\uff66')
 
-        def xml(encoding):
-            return "<?xml version='1.0' encoding='%s'?><xml />" % encoding
-        def bxml(encoding):
-            return xml(encoding).encode(encoding)
+        def xml(encoding, body=''):
+            return "<?xml version='1.0' encoding='%s'?><xml>%s</xml>" % (encoding, body)
+        def bxml(encoding, body=''):
+            return xml(encoding, body).encode(encoding)
         supported_encodings = [
-            'ascii', 'utf-8', 'utf-8-sig', 'utf-16', 'utf-16be', 'utf-16le',
+            'utf-8', 'utf-16', 'utf-16be', 'utf-16le',
             'iso8859-1', 'iso8859-2', 'iso8859-3', 'iso8859-4', 'iso8859-5',
             'iso8859-6', 'iso8859-7', 'iso8859-8', 'iso8859-9', 'iso8859-10',
             'iso8859-13', 'iso8859-14', 'iso8859-15', 'iso8859-16',
@@ -939,35 +1027,53 @@ class ElementTreeTest(unittest.TestCase):
             'cp1256', 'cp1257', 'cp1258',
             'mac-cyrillic', 'mac-greek', 'mac-iceland', 'mac-latin2',
             'mac-roman', 'mac-turkish',
-            'iso2022-jp', 'iso2022-jp-1', 'iso2022-jp-2', 'iso2022-jp-2004',
-            'iso2022-jp-3', 'iso2022-jp-ext',
-            'koi8-r', 'koi8-t', 'koi8-u', 'kz1048',
-            'hz', 'ptcp154',
-        ]
-        for encoding in supported_encodings:
-            self.assertEqual(ET.tostring(ET.XML(bxml(encoding))), b'<xml />')
-
-        unsupported_ascii_compatible_encodings = [
+            'koi8-r', 'koi8-t', 'koi8-u', 'kz1048', 'ptcp154',
             'big5', 'big5hkscs',
             'cp932', 'cp949', 'cp950',
-            'euc-jp', 'euc-jis-2004', 'euc-jisx0213', 'euc-kr',
-            'gb2312', 'gbk', 'gb18030',
-            'iso2022-kr', 'johab',
+            'euc-jp', 'euc-jis-2004', 'euc-jisx0213',
+            'gb2312', 'gbk', 'johab',
             'shift-jis', 'shift-jis-2004', 'shift-jisx0213',
+            'utf-8-sig', 'utf8',
+        ]
+        for encoding in supported_encodings:
+            with self.subTest(encoding=encoding):
+                self.assertEqual(ET.tostring(ET.XML(bxml(encoding))), b'<xml />')
+                c = 'éπя\u05d0\u060c€'.encode(encoding, 'ignore').decode(encoding)[0]
+                self.assertEqual(ET.tostring(ET.XML(bxml(encoding, c))),
+                                 ('<xml>&#%d;</xml>' % ord(c)).encode())
+
+        unsupported_ascii_compatible_encodings = [
+            'euc-kr', 'gb18030',
+            'iso2022-jp', 'iso2022-jp-1', 'iso2022-jp-2', 'iso2022-jp-2004',
+            'iso2022-jp-3', 'iso2022-jp-ext',
+            'iso2022-kr', 'hz',
             'utf-7',
         ]
         for encoding in unsupported_ascii_compatible_encodings:
-            self.assertRaises(ValueError, ET.XML, bxml(encoding))
+            with self.subTest(encoding=encoding):
+                self.assertRaises(ValueError, ET.XML, bxml(encoding))
 
         unsupported_ascii_incompatible_encodings = [
             'cp037', 'cp424', 'cp500', 'cp864', 'cp875', 'cp1026', 'cp1140',
             'utf_32', 'utf_32_be', 'utf_32_le',
         ]
         for encoding in unsupported_ascii_incompatible_encodings:
-            self.assertRaises(ET.ParseError, ET.XML, bxml(encoding))
+            with self.subTest(encoding=encoding):
+                self.assertRaises(ET.ParseError, ET.XML, bxml(encoding))
 
         self.assertRaises(ValueError, ET.XML, xml('undefined').encode('ascii'))
         self.assertRaises(LookupError, ET.XML, xml('xxx').encode('ascii'))
+
+    @support.subTests('sample,exception', [
+        (b'<x> \xa1</x>', UnicodeDecodeError),  # crashed
+        (b'<x> \xa1</x', UnicodeDecodeError),  # crashed
+        (b'<x> \xa1', None), # ET.ParseError
+    ])
+    def test_multibyte_encoding_errors(self, sample, exception):
+        exception = exception or ET.ParseError
+        data = b'<?xml version="1.0" encoding="EUC-JP"?>\n' + sample
+        with self.assertRaises(exception):
+            ET.XML(data)
 
     def test_methods(self):
         # Test serialization methods.
@@ -1192,7 +1298,15 @@ class ElementTreeTest(unittest.TestCase):
               {'': 'http://www.w3.org/2001/XMLSchema',
                'ns': 'http://www.w3.org/2001/XMLSchema'})
 
-    def test_processinginstruction(self):
+    def test_comment_serialization(self):
+        comm = ET.Comment('<spam> & ham')
+        # comments are not escaped
+        self.assertEqual(ET.tostring(comm), b'<!--<spam> & ham-->')
+        self.assertEqual(ET.tostring(comm, method='html'), b'<!--<spam> & ham-->')
+        # no comments in text serialization
+        self.assertEqual(ET.tostring(comm, method='text'), b'')
+
+    def test_processinginstruction_serialization(self):
         # Test ProcessingInstruction directly
 
         self.assertEqual(ET.tostring(ET.ProcessingInstruction('test', 'instruction')),
@@ -1201,18 +1315,39 @@ class ElementTreeTest(unittest.TestCase):
                 b'<?test instruction?>')
 
         # Issue #2746
-
+        # processing instructions are not escaped
         self.assertEqual(ET.tostring(ET.PI('test', '<testing&>')),
                 b'<?test <testing&>?>')
         self.assertEqual(ET.tostring(ET.PI('test', '<testing&>\xe3'), 'latin-1'),
                 b"<?xml version='1.0' encoding='latin-1'?>\n"
                 b"<?test <testing&>\xe3?>")
+        pi = ET.PI('test', 'ham & eggs < spam')
+        self.assertEqual(ET.tostring(pi), b'<?test ham & eggs < spam?>')
+        self.assertEqual(ET.tostring(pi, method='html'), b'<?test ham & eggs < spam?>')
+        # no processing instructions in text serialization
+        self.assertEqual(ET.tostring(pi, method='text'), b'')
+
+    def test_empty_attribute_serialization(self):
+        # empty attrs only work in html
+        elem = ET.Element('tag', attrib={'attr': None})
+        self.assertRaises(TypeError, ET.tostring, elem)
+        self.assertEqual(ET.tostring(elem, method='html'), b'<tag attr></tag>')
+
+    @support.subTests('tag', ("script", "style", "xmp", "iframe", "noembed", "noframes"))
+    def test_html_cdata_elems_serialization(self, tag):
+        # content of raw text elements is not escaped in html
+        tag = tag.title()
+        elem = ET.Element(tag)
+        elem.text = '<spam>&ham'
+        self.assertEqual(ET.tostring(elem, method='html'),
+                         ('<%s><spam>&ham</%s>' % (tag, tag)).encode())
 
     def test_html_empty_elems_serialization(self):
         # issue 15970
         # from http://www.w3.org/TR/html401/index/elements.html
-        for element in ['AREA', 'BASE', 'BASEFONT', 'BR', 'COL', 'FRAME', 'HR',
-                        'IMG', 'INPUT', 'ISINDEX', 'LINK', 'META', 'PARAM']:
+        for element in ['AREA', 'BASE', 'BASEFONT', 'BR', 'COL', 'EMBED', 'FRAME',
+                        'HR', 'IMG', 'INPUT', 'ISINDEX', 'LINK', 'META', 'PARAM',
+                        'SOURCE', 'TRACK', 'WBR']:
             for elem in [element, element.lower()]:
                 expected = '<%s>' % elem
                 serialized = serialize(ET.XML('<%s />' % elem), method='html')
@@ -1220,6 +1355,14 @@ class ElementTreeTest(unittest.TestCase):
                 serialized = serialize(ET.XML('<%s></%s>' % (elem,elem)),
                                        method='html')
                 self.assertEqual(serialized, expected)
+
+    def test_html_plaintext_serialization(self):
+        # content of plaintext is not escaped in html
+        # no end tag for plaintext
+        elem = ET.Element('PlainText')
+        elem.text = '<spam>&ham'
+        self.assertEqual(ET.tostring(elem, method='html'),
+                         b'<PlainText><spam>&ham')
 
     def test_dump_attribute_order(self):
         # See BPO 34160
@@ -1237,15 +1380,298 @@ class ElementTreeTest(unittest.TestCase):
         self.assertEqual(serialize(root, method='html'),
                 '<cirriculum status="public" company="example"></cirriculum>')
 
+    def test_attlist_default(self):
+        # Test default attribute values; See BPO 42151.
+        root = ET.fromstring(ATTLIST_XML)
+        self.assertEqual(root[0].attrib,
+                         {'{http://www.w3.org/XML/1998/namespace}lang': 'eng'})
+
+
+class IterparseTest(unittest.TestCase):
+    # Test iterparse interface.
+
+    def test_basic(self):
+        iterparse = ET.iterparse
+
+        it = iterparse(SIMPLE_XMLFILE)
+        self.assertIsNone(it.root)
+        action, elem = next(it)
+        self.assertIsNone(it.root)
+        self.assertEqual((action, elem.tag), ('end', 'element'))
+        self.assertEqual([(action, elem.tag) for action, elem in it], [
+                ('end', 'element'),
+                ('end', 'empty-element'),
+                ('end', 'root'),
+            ])
+        self.assertEqual(it.root.tag, 'root')
+        it.close()
+
+        it = iterparse(SIMPLE_NS_XMLFILE)
+        self.assertEqual([(action, elem.tag) for action, elem in it], [
+                ('end', '{namespace}element'),
+                ('end', '{namespace}element'),
+                ('end', '{namespace}empty-element'),
+                ('end', '{namespace}root'),
+            ])
+        it.close()
+
+    def test_external_file(self):
+        with open(SIMPLE_XMLFILE, 'rb') as source:
+            it = ET.iterparse(source)
+            action, elem = next(it)
+            self.assertEqual((action, elem.tag), ('end', 'element'))
+            self.assertEqual([(action, elem.tag) for action, elem in it], [
+                    ('end', 'element'),
+                    ('end', 'empty-element'),
+                    ('end', 'root'),
+                ])
+            self.assertEqual(it.root.tag, 'root')
+
+    def test_events(self):
+        iterparse = ET.iterparse
+
+        events = ()
+        it = iterparse(SIMPLE_XMLFILE, events)
+        self.assertEqual([(action, elem.tag) for action, elem in it], [])
+        it.close()
+
+        events = ()
+        it = iterparse(SIMPLE_XMLFILE, events=events)
+        self.assertEqual([(action, elem.tag) for action, elem in it], [])
+        it.close()
+
+        events = ("start", "end")
+        it = iterparse(SIMPLE_XMLFILE, events)
+        self.assertEqual([(action, elem.tag) for action, elem in it], [
+                ('start', 'root'),
+                ('start', 'element'),
+                ('end', 'element'),
+                ('start', 'element'),
+                ('end', 'element'),
+                ('start', 'empty-element'),
+                ('end', 'empty-element'),
+                ('end', 'root'),
+            ])
+        it.close()
+
+    def test_namespace_events(self):
+        iterparse = ET.iterparse
+
+        events = ("start", "end", "start-ns", "end-ns")
+        it = iterparse(SIMPLE_NS_XMLFILE, events)
+        self.assertEqual([(action, elem.tag) if action in ("start", "end")
+                                             else (action, elem)
+                          for action, elem in it], [
+                ('start-ns', ('', 'namespace')),
+                ('start', '{namespace}root'),
+                ('start', '{namespace}element'),
+                ('end', '{namespace}element'),
+                ('start', '{namespace}element'),
+                ('end', '{namespace}element'),
+                ('start', '{namespace}empty-element'),
+                ('end', '{namespace}empty-element'),
+                ('end', '{namespace}root'),
+                ('end-ns', None),
+            ])
+        it.close()
+
+        events = ('start-ns', 'end-ns')
+        it = iterparse(io.BytesIO(br"<root xmlns=''/>"), events)
+        res = [action for action, elem in it]
+        self.assertEqual(res, ['start-ns', 'end-ns'])
+        it.close()
+
+    def test_unknown_events(self):
+        iterparse = ET.iterparse
+
+        events = ("start", "end", "bogus")
+        with open(SIMPLE_XMLFILE, "rb") as f:
+            with self.assertRaises(ValueError) as cm:
+                iterparse(f, events)
+            self.assertFalse(f.closed)
+        self.assertEqual(str(cm.exception), "unknown event 'bogus'")
+
+        with warnings_helper.check_no_resource_warning(self):
+            with self.assertRaises(ValueError) as cm:
+                iterparse(SIMPLE_XMLFILE, events)
+            self.assertEqual(str(cm.exception), "unknown event 'bogus'")
+            del cm
+            gc_collect()
+
+    def test_non_utf8(self):
+        source = io.BytesIO(
+            b"<?xml version='1.0' encoding='iso-8859-1'?>\n"
+            b"<body xmlns='http://&#233;ffbot.org/ns'\n"
+            b"      xmlns:cl\xe9='http://effbot.org/ns'>text</body>\n")
+        events = ("start-ns",)
+        it = ET.iterparse(source, events)
+        self.assertEqual([(action, elem) for action, elem in it], [
+                ('start-ns', ('', 'http://\xe9ffbot.org/ns')),
+                ('start-ns', ('cl\xe9', 'http://effbot.org/ns')),
+            ])
+
+    def test_parsing_error(self):
+        source = io.BytesIO(b"<document />junk")
+        it = ET.iterparse(source)
+        action, elem = next(it)
+        self.assertEqual((action, elem.tag), ('end', 'document'))
+        with self.assertRaises(ET.ParseError) as cm:
+            next(it)
+        self.assertEqual(str(cm.exception),
+                'junk after document element: line 1, column 12')
+
+    def test_nonexistent_file(self):
+        with self.assertRaises(FileNotFoundError):
+            ET.iterparse("nonexistent")
+
+    def test_resource_warnings_not_exhausted(self):
+        # Not exhausting the iterator still closes the underlying file (bpo-43292)
+        # Not closing before del should emit ResourceWarning
+        it = ET.iterparse(SIMPLE_XMLFILE)
+        with warnings_helper.check_no_resource_warning(self):
+            it.close()
+            del it
+            gc_collect()
+
+        it = ET.iterparse(SIMPLE_XMLFILE)
+        with self.assertWarns(ResourceWarning) as wm:
+            del it
+            gc_collect()
+        # Not 'unclosed file'.
+        self.assertIn('unclosed iterparse iterator', str(wm.warning))
+        self.assertIn(repr(SIMPLE_XMLFILE), str(wm.warning))
+        self.assertEqual(wm.filename, __file__)
+
+        it = ET.iterparse(SIMPLE_XMLFILE)
+        with warnings_helper.check_no_resource_warning(self):
+            action, elem = next(it)
+            it.close()
+            self.assertEqual((action, elem.tag), ('end', 'element'))
+            del it, elem
+            gc_collect()
+
+        it = ET.iterparse(SIMPLE_XMLFILE)
+        with self.assertWarns(ResourceWarning) as wm:
+            action, elem = next(it)
+            self.assertEqual((action, elem.tag), ('end', 'element'))
+            del it, elem
+            gc_collect()
+        self.assertIn('unclosed iterparse iterator', str(wm.warning))
+        self.assertIn(repr(SIMPLE_XMLFILE), str(wm.warning))
+        self.assertEqual(wm.filename, __file__)
+
+    def test_resource_warnings_failed_iteration(self):
+        self.addCleanup(os_helper.unlink, TESTFN)
+        with open(TESTFN, "wb") as f:
+            f.write(b"<document />junk")
+
+        it = ET.iterparse(TESTFN)
+        action, elem = next(it)
+        self.assertEqual((action, elem.tag), ('end', 'document'))
+        with warnings_helper.check_no_resource_warning(self):
+            with self.assertRaises(ET.ParseError) as cm:
+                next(it)
+            self.assertEqual(str(cm.exception),
+                    'junk after document element: line 1, column 12')
+            it.close()
+            del cm, it
+            gc_collect()
+
+        it = ET.iterparse(TESTFN)
+        action, elem = next(it)
+        self.assertEqual((action, elem.tag), ('end', 'document'))
+        with self.assertWarns(ResourceWarning) as wm:
+            with self.assertRaises(ET.ParseError) as cm:
+                next(it)
+            self.assertEqual(str(cm.exception),
+                    'junk after document element: line 1, column 12')
+            del cm, it
+            gc_collect()
+        self.assertIn('unclosed iterparse iterator', str(wm.warning))
+        self.assertIn(repr(TESTFN), str(wm.warning))
+        self.assertEqual(wm.filename, __file__)
+
+    def test_resource_warnings_exhausted(self):
+        it = ET.iterparse(SIMPLE_XMLFILE)
+        with warnings_helper.check_no_resource_warning(self):
+            list(it)
+            it.close()
+            del it
+            gc_collect()
+
+        it = ET.iterparse(SIMPLE_XMLFILE)
+        with self.assertWarns(ResourceWarning) as wm:
+            list(it)
+            del it
+            gc_collect()
+        self.assertIn('unclosed iterparse iterator', str(wm.warning))
+        self.assertIn(repr(SIMPLE_XMLFILE), str(wm.warning))
+        self.assertEqual(wm.filename, __file__)
+
+    def test_close_not_exhausted(self):
+        iterparse = ET.iterparse
+
+        it = iterparse(SIMPLE_XMLFILE)
+        it.close()
+        with self.assertRaises(StopIteration):
+            next(it)
+        it.close()  # idempotent
+
+        with open(SIMPLE_XMLFILE, 'rb') as source:
+            it = iterparse(source)
+            it.close()
+            self.assertFalse(source.closed)
+            with self.assertRaises(StopIteration):
+                next(it)
+            it.close()  # idempotent
+
+        it = iterparse(SIMPLE_XMLFILE)
+        action, elem = next(it)
+        self.assertEqual((action, elem.tag), ('end', 'element'))
+        it.close()
+        with self.assertRaises(StopIteration):
+            next(it)
+        it.close()  # idempotent
+
+        with open(SIMPLE_XMLFILE, 'rb') as source:
+            it = iterparse(source)
+            action, elem = next(it)
+            self.assertEqual((action, elem.tag), ('end', 'element'))
+            it.close()
+            self.assertFalse(source.closed)
+            with self.assertRaises(StopIteration):
+                next(it)
+            it.close()  # idempotent
+
+    def test_close_exhausted(self):
+        iterparse = ET.iterparse
+        it = iterparse(SIMPLE_XMLFILE)
+        list(it)
+        it.close()
+        with self.assertRaises(StopIteration):
+            next(it)
+        it.close()  # idempotent
+
+        with open(SIMPLE_XMLFILE, 'rb') as source:
+            it = iterparse(source)
+            list(it)
+            it.close()
+            self.assertFalse(source.closed)
+            with self.assertRaises(StopIteration):
+                next(it)
+            it.close()  # idempotent
+
 
 class XMLPullParserTest(unittest.TestCase):
 
-    def _feed(self, parser, data, chunk_size=None):
+    def _feed(self, parser, data, chunk_size=None, flush=False):
         if chunk_size is None:
             parser.feed(data)
         else:
             for i in range(0, len(data), chunk_size):
                 parser.feed(data[i:i+chunk_size])
+        if flush:
+            parser.flush()
 
     def assert_events(self, parser, expected, max_events=None):
         self.assertEqual(
@@ -1263,28 +1689,35 @@ class XMLPullParserTest(unittest.TestCase):
         self.assertEqual([(action, elem.tag) for action, elem in events],
                          expected)
 
-    def test_simple_xml(self):
-        for chunk_size in (None, 1, 5):
-            with self.subTest(chunk_size=chunk_size):
-                parser = ET.XMLPullParser()
-                self.assert_event_tags(parser, [])
-                self._feed(parser, "<!-- comment -->\n", chunk_size)
-                self.assert_event_tags(parser, [])
-                self._feed(parser,
-                           "<root>\n  <element key='value'>text</element",
-                           chunk_size)
-                self.assert_event_tags(parser, [])
-                self._feed(parser, ">\n", chunk_size)
-                self.assert_event_tags(parser, [('end', 'element')])
-                self._feed(parser, "<element>text</element>tail\n", chunk_size)
-                self._feed(parser, "<empty-element/>\n", chunk_size)
-                self.assert_event_tags(parser, [
-                    ('end', 'element'),
-                    ('end', 'empty-element'),
-                    ])
-                self._feed(parser, "</root>\n", chunk_size)
-                self.assert_event_tags(parser, [('end', 'root')])
-                self.assertIsNone(parser.close())
+    def test_simple_xml(self, chunk_size=None, flush=False):
+        parser = ET.XMLPullParser()
+        self.assert_event_tags(parser, [])
+        self._feed(parser, "<!-- comment -->\n", chunk_size, flush)
+        self.assert_event_tags(parser, [])
+        self._feed(parser,
+                   "<root>\n  <element key='value'>text</element",
+                   chunk_size, flush)
+        self.assert_event_tags(parser, [])
+        self._feed(parser, ">\n", chunk_size, flush)
+        self.assert_event_tags(parser, [('end', 'element')])
+        self._feed(parser, "<element>text</element>tail\n", chunk_size, flush)
+        self._feed(parser, "<empty-element/>\n", chunk_size, flush)
+        self.assert_event_tags(parser, [
+            ('end', 'element'),
+            ('end', 'empty-element'),
+            ])
+        self._feed(parser, "</root>\n", chunk_size, flush)
+        self.assert_event_tags(parser, [('end', 'root')])
+        self.assertIsNone(parser.close())
+
+    def test_simple_xml_chunk_1(self):
+        self.test_simple_xml(chunk_size=1, flush=True)
+
+    def test_simple_xml_chunk_5(self):
+        self.test_simple_xml(chunk_size=5, flush=True)
+
+    def test_simple_xml_chunk_22(self):
+        self.test_simple_xml(chunk_size=22)
 
     def test_feed_while_iterating(self):
         parser = ET.XMLPullParser()
@@ -1479,7 +1912,59 @@ class XMLPullParserTest(unittest.TestCase):
     def test_unknown_event(self):
         with self.assertRaises(ValueError):
             ET.XMLPullParser(events=('start', 'end', 'bogus'))
+        with self.assertRaisesRegex(ValueError, "unknown event 'bogus'"):
+            ET.XMLPullParser(events=(x.decode() for x in (b'start', b'end', b'bogus')))
 
+    @unittest.skipIf(pyexpat.version_info < (2, 6, 0),
+                     f'Expat {pyexpat.version_info} does not '
+                     'support reparse deferral')
+    def test_flush_reparse_deferral_enabled(self):
+        parser = ET.XMLPullParser(events=('start', 'end'))
+
+        for chunk in ("<doc", ">"):
+            parser.feed(chunk)
+
+        self.assert_event_tags(parser, [])  # i.e. no elements started
+        if ET is pyET:
+            self.assertTrue(parser._parser._parser.GetReparseDeferralEnabled())
+
+        parser.flush()
+
+        self.assert_event_tags(parser, [('start', 'doc')])
+        if ET is pyET:
+            self.assertTrue(parser._parser._parser.GetReparseDeferralEnabled())
+
+        parser.feed("</doc>")
+        parser.close()
+
+        self.assert_event_tags(parser, [('end', 'doc')])
+
+    def test_flush_reparse_deferral_disabled(self):
+        parser = ET.XMLPullParser(events=('start', 'end'))
+
+        for chunk in ("<doc", ">"):
+            parser.feed(chunk)
+
+        if pyexpat.version_info >= (2, 6, 0):
+            if not ET is pyET:
+                self.skipTest(f'XMLParser.(Get|Set)ReparseDeferralEnabled '
+                              'methods not available in C')
+            parser._parser._parser.SetReparseDeferralEnabled(False)
+            self.assert_event_tags(parser, [])  # i.e. no elements started
+
+        if ET is pyET:
+            self.assertFalse(parser._parser._parser.GetReparseDeferralEnabled())
+
+        parser.flush()
+
+        self.assert_event_tags(parser, [('start', 'doc')])
+        if ET is pyET:
+            self.assertFalse(parser._parser._parser.GetReparseDeferralEnabled())
+
+        parser.feed("</doc>")
+        parser.close()
+
+        self.assert_event_tags(parser, [('end', 'doc')])
 
 #
 # xinclude tests (samples from appendix C of the xinclude specification)
@@ -1557,6 +2042,17 @@ XINCLUDE["default.xml"] = """\
 </document>
 """.format(html.escape(SIMPLE_XMLFILE, True))
 
+XINCLUDE["include_c1_repeated.xml"] = """\
+<?xml version='1.0'?>
+<document xmlns:xi="http://www.w3.org/2001/XInclude">
+  <p>The following is the source code of Recursive1.xml:</p>
+  <xi:include href="C1.xml"/>
+  <xi:include href="C1.xml"/>
+  <xi:include href="C1.xml"/>
+  <xi:include href="C1.xml"/>
+</document>
+"""
+
 #
 # badly formatted xi:include tags
 
@@ -1576,6 +2072,31 @@ XINCLUDE_BAD["B2.xml"] = """\
     <xi:fallback></xi:fallback>
 </div>
 """
+
+XINCLUDE["Recursive1.xml"] = """\
+<?xml version='1.0'?>
+<document xmlns:xi="http://www.w3.org/2001/XInclude">
+  <p>The following is the source code of Recursive2.xml:</p>
+  <xi:include href="Recursive2.xml"/>
+</document>
+"""
+
+XINCLUDE["Recursive2.xml"] = """\
+<?xml version='1.0'?>
+<document xmlns:xi="http://www.w3.org/2001/XInclude">
+  <p>The following is the source code of Recursive3.xml:</p>
+  <xi:include href="Recursive3.xml"/>
+</document>
+"""
+
+XINCLUDE["Recursive3.xml"] = """\
+<?xml version='1.0'?>
+<document xmlns:xi="http://www.w3.org/2001/XInclude">
+  <p>The following is the source code of Recursive1.xml:</p>
+  <xi:include href="Recursive1.xml"/>
+</document>
+"""
+
 
 class XIncludeTest(unittest.TestCase):
 
@@ -1678,6 +2199,13 @@ class XIncludeTest(unittest.TestCase):
             '  </ns0:include>\n'
             '</div>') # C5
 
+    def test_xinclude_repeated(self):
+        from xml.etree import ElementInclude
+
+        document = self.xinclude_loader("include_c1_repeated.xml")
+        ElementInclude.include(document, self.xinclude_loader)
+        self.assertEqual(1+4*2, len(document.findall(".//p")))
+
     def test_xinclude_failures(self):
         from xml.etree import ElementInclude
 
@@ -1709,6 +2237,45 @@ class XIncludeTest(unittest.TestCase):
         self.assertEqual(str(cm.exception),
                 "xi:fallback tag must be child of xi:include "
                 "('{http://www.w3.org/2001/XInclude}fallback')")
+
+        # Test infinitely recursive includes.
+        document = self.xinclude_loader("Recursive1.xml")
+        with self.assertRaises(ElementInclude.FatalIncludeError) as cm:
+            ElementInclude.include(document, self.xinclude_loader)
+        self.assertEqual(str(cm.exception),
+                "recursive include of Recursive2.xml")
+
+        # Test 'max_depth' limitation.
+        document = self.xinclude_loader("Recursive1.xml")
+        with self.assertRaises(ElementInclude.FatalIncludeError) as cm:
+            ElementInclude.include(document, self.xinclude_loader, max_depth=None)
+        self.assertEqual(str(cm.exception),
+                "recursive include of Recursive2.xml")
+
+        document = self.xinclude_loader("Recursive1.xml")
+        with self.assertRaises(ElementInclude.LimitedRecursiveIncludeError) as cm:
+            ElementInclude.include(document, self.xinclude_loader, max_depth=0)
+        self.assertEqual(str(cm.exception),
+                "maximum xinclude depth reached when including file Recursive2.xml")
+
+        document = self.xinclude_loader("Recursive1.xml")
+        with self.assertRaises(ElementInclude.LimitedRecursiveIncludeError) as cm:
+            ElementInclude.include(document, self.xinclude_loader, max_depth=1)
+        self.assertEqual(str(cm.exception),
+                "maximum xinclude depth reached when including file Recursive3.xml")
+
+        document = self.xinclude_loader("Recursive1.xml")
+        with self.assertRaises(ElementInclude.LimitedRecursiveIncludeError) as cm:
+            ElementInclude.include(document, self.xinclude_loader, max_depth=2)
+        self.assertEqual(str(cm.exception),
+                "maximum xinclude depth reached when including file Recursive1.xml")
+
+        document = self.xinclude_loader("Recursive1.xml")
+        with self.assertRaises(ElementInclude.FatalIncludeError) as cm:
+            ElementInclude.include(document, self.xinclude_loader, max_depth=3)
+        self.assertEqual(str(cm.exception),
+                "recursive include of Recursive2.xml")
+
 
 # --------------------------------------------------------------------
 # reported bugs
@@ -1965,12 +2532,6 @@ class BugsTest(unittest.TestCase):
                 b"<?xml version='1.0' encoding='ascii'?>\n"
                 b'<body>t&#227;g</body>')
 
-    def test_issue3151(self):
-        e = ET.XML('<prefix:localname xmlns:prefix="${stuff}"/>')
-        self.assertEqual(e.tag, '{${stuff}}localname')
-        t = ET.ElementTree(e)
-        self.assertEqual(ET.tostring(e), b'<ns0:localname xmlns:ns0="${stuff}" />')
-
     def test_issue6565(self):
         elem = ET.XML("<body><tag/></body>")
         self.assertEqual(summarize_list(elem), ['tag'])
@@ -2065,6 +2626,26 @@ class BugsTest(unittest.TestCase):
         text = text.replace('\r\n', ' ')
         text = text[6:-4]
         self.assertEqual(root.get('b'), text)
+
+    def test_39495_treebuilder_start(self):
+        self.assertRaises(TypeError, ET.TreeBuilder().start, "tag")
+        self.assertRaises(TypeError, ET.TreeBuilder().start, "tag", None)
+
+    def test_issue123213_correct_extend_exception(self):
+        # Does not hide the internal exception when extending the element
+        self.assertRaises(ZeroDivisionError, ET.Element('tag').extend,
+                          (1/0 for i in range(2)))
+
+        # Still raises the TypeError when extending with a non-iterable
+        self.assertRaises(TypeError, ET.Element('tag').extend, None)
+
+        # Preserves the TypeError message when extending with a generator
+        def f():
+            raise TypeError("mymessage")
+
+        self.assertRaisesRegex(
+            TypeError, 'mymessage',
+            ET.Element('tag').extend, (f() for i in range(2)))
 
 
 
@@ -2226,6 +2807,7 @@ class BasicElementTest(ElementTestCase, unittest.TestCase):
         wref = weakref.ref(e, wref_cb)
         self.assertEqual(wref().tag, 'e')
         del e
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(flag, True)
         self.assertEqual(wref(), None)
 
@@ -2260,15 +2842,26 @@ class BasicElementTest(ElementTestCase, unittest.TestCase):
                     <group><dogs>4</dogs>
                     </group>"""
                 e1 = dumper.fromstring(XMLTEXT)
-                if hasattr(e1, '__getstate__'):
-                    self.assertEqual(e1.__getstate__()['tag'], 'group')
+                self.assertEqual(e1.__getstate__()['tag'], 'group')
                 e2 = self.pickleRoundTrip(e1, 'xml.etree.ElementTree',
                                           dumper, loader, proto)
                 self.assertEqual(e2.tag, 'group')
                 self.assertEqual(e2[0].tag, 'dogs')
 
+    def test_remove_errors(self):
+        e = ET.Element('tag')
+        with self.assertRaisesRegex(ValueError,
+                r"<Element 'subtag'.*> not in <Element 'tag'.*>"):
+            e.remove(ET.Element('subtag'))
+        with self.assertRaisesRegex(TypeError,
+                r".*\bElement, not type"):
+            e.remove(ET.Element)
+        with self.assertRaisesRegex(TypeError,
+                r".*\bElement, not int"):
+            e.remove(1)
 
 class BadElementTest(ElementTestCase, unittest.TestCase):
+
     def test_extend_mutable_list(self):
         class X:
             @property
@@ -2307,19 +2900,170 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         e = ET.Element('foo')
         e.extend(L)
 
-    def test_remove_with_mutating(self):
-        class X(ET.Element):
+    def test_remove_with_clear_assume_missing(self):
+        # gh-126033: Check that a concurrent clear() for an assumed-to-be
+        # missing element does not make the interpreter crash.
+        self.do_test_remove_with_clear(raises=True)
+
+    def test_remove_with_clear_assume_existing(self):
+        # gh-126033: Check that a concurrent clear() for an assumed-to-be
+        # existing element does not make the interpreter crash.
+        self.do_test_remove_with_clear(raises=False)
+
+    def do_test_remove_with_clear(self, *, raises):
+
+        # Until the discrepency between "del root[:]" and "root.clear()" is
+        # resolved, we need to keep two tests. Previously, using "del root[:]"
+        # did not crash with the reproducer of gh-126033 while "root.clear()"
+        # did.
+
+        class E(ET.Element):
+            """Local class to be able to mock E.__eq__ for introspection."""
+
+        class X(E):
             def __eq__(self, o):
-                del e[:]
-                return False
-        e = ET.Element('foo')
-        e.extend([X('bar')])
-        self.assertRaises(ValueError, e.remove, ET.Element('baz'))
+                del root[:]
+                return not raises
 
-        e = ET.Element('foo')
-        e.extend([ET.Element('bar')])
-        self.assertRaises(ValueError, e.remove, X('baz'))
+        class Y(E):
+            def __eq__(self, o):
+                root.clear()
+                return not raises
 
+        if raises:
+            get_checker_context = lambda: self.assertRaises(ValueError)
+        else:
+            get_checker_context = nullcontext
+
+        self.assertIs(E.__eq__, object.__eq__)
+
+        for Z, side_effect in [(X, 'del root[:]'), (Y, 'root.clear()')]:
+            self.enterContext(self.subTest(side_effect=side_effect))
+
+            # test removing R() from [U()]
+            for R, U, description in [
+                (E, Z, "remove missing E() from [Z()]"),
+                (Z, E, "remove missing Z() from [E()]"),
+                (Z, Z, "remove missing Z() from [Z()]"),
+            ]:
+                with self.subTest(description):
+                    root = E('top')
+                    root.extend([U('one')])
+                    with get_checker_context():
+                        root.remove(R('missing'))
+
+            # test removing R() from [U(), V()]
+            cases = self.cases_for_remove_missing_with_mutations(E, Z)
+            for R, U, V, description in cases:
+                with self.subTest(description):
+                    root = E('top')
+                    root.extend([U('one'), V('two')])
+                    with get_checker_context():
+                        root.remove(R('missing'))
+
+            # Test removing root[0] from [Z()].
+            #
+            # Since we call root.remove() with root[0], Z.__eq__()
+            # will not be called (we branch on the fast Py_EQ path).
+            with self.subTest("remove root[0] from [Z()]"):
+                root = E('top')
+                root.append(Z('rem'))
+                with equal_wrapper(E) as f, equal_wrapper(Z) as g:
+                    root.remove(root[0])
+                f.assert_not_called()
+                g.assert_not_called()
+
+            # Test removing root[1] (of type R) from [U(), R()].
+            is_special = is_python_implementation() and raises and Z is Y
+            if is_python_implementation() and raises and Z is Y:
+                # In pure Python, using root.clear() sets the children
+                # list to [] without calling list.clear().
+                #
+                # For this reason, the call to root.remove() first
+                # checks root[0] and sets the children list to []
+                # since either root[0] or root[1] is an evil element.
+                #
+                # Since checking root[1] still uses the old reference
+                # to the children list, PyObject_RichCompareBool() branches
+                # to the fast Py_EQ path and Y.__eq__() is called exactly
+                # once (when checking root[0]).
+                continue
+            else:
+                cases = self.cases_for_remove_existing_with_mutations(E, Z)
+                for R, U, description in cases:
+                    with self.subTest(description):
+                        root = E('top')
+                        root.extend([U('one'), R('rem')])
+                        with get_checker_context():
+                            root.remove(root[1])
+
+    def test_remove_with_mutate_root_assume_missing(self):
+        # gh-126033: Check that a concurrent mutation for an assumed-to-be
+        # missing element does not make the interpreter crash.
+        self.do_test_remove_with_mutate_root(raises=True)
+
+    def test_remove_with_mutate_root_assume_existing(self):
+        # gh-126033: Check that a concurrent mutation for an assumed-to-be
+        # existing element does not make the interpreter crash.
+        self.do_test_remove_with_mutate_root(raises=False)
+
+    def do_test_remove_with_mutate_root(self, *, raises):
+        E = ET.Element
+
+        class Z(E):
+            def __eq__(self, o):
+                del root[0]
+                return not raises
+
+        if raises:
+            get_checker_context = lambda: self.assertRaises(ValueError)
+        else:
+            get_checker_context = nullcontext
+
+        # test removing R() from [U(), V()]
+        cases = self.cases_for_remove_missing_with_mutations(E, Z)
+        for R, U, V, description in cases:
+            with self.subTest(description):
+                root = E('top')
+                root.extend([U('one'), V('two')])
+                with get_checker_context():
+                    root.remove(R('missing'))
+
+        # test removing root[1] (of type R) from [U(), R()]
+        cases = self.cases_for_remove_existing_with_mutations(E, Z)
+        for R, U, description in cases:
+            with self.subTest(description):
+                root = E('top')
+                root.extend([U('one'), R('rem')])
+                with get_checker_context():
+                    root.remove(root[1])
+
+    def cases_for_remove_missing_with_mutations(self, E, Z):
+        # Cases for removing R() from [U(), V()].
+        # The case U = V = R = E is not interesting as there is no mutation.
+        for U, V in [(E, Z), (Z, E), (Z, Z)]:
+            description = (f"remove missing {E.__name__}() from "
+                           f"[{U.__name__}(), {V.__name__}()]")
+            yield E, U, V, description
+
+        for U, V in [(E, E), (E, Z), (Z, E), (Z, Z)]:
+            description = (f"remove missing {Z.__name__}() from "
+                           f"[{U.__name__}(), {V.__name__}()]")
+            yield Z, U, V, description
+
+    def cases_for_remove_existing_with_mutations(self, E, Z):
+        # Cases for removing root[1] (of type R) from [U(), R()].
+        # The case U = R = E is not interesting as there is no mutation.
+        for U, R, description in [
+            (E, Z, "remove root[1] from [E(), Z()]"),
+            (Z, E, "remove root[1] from [Z(), E()]"),
+            (Z, Z, "remove root[1] from [Z(), Z()]"),
+        ]:
+            description = (f"remove root[1] (of type {R.__name__}) "
+                           f"from [{U.__name__}(), {R.__name__}()]")
+            yield R, U, description
+
+    @support.infinite_recursion(25)
     def test_recursive_repr(self):
         # Issue #25455
         e = ET.Element('foo')
@@ -2367,32 +3111,72 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         elem = b.close()
         self.assertEqual(elem[0].tail, 'ABCDEFGHIJKL')
 
-    def test_subscr(self):
-        # Issue #27863
+    def test_subscr_with_clear(self):
+        # See https://github.com/python/cpython/issues/143200.
+        self.do_test_subscr_with_mutating_slice(use_clear_method=True)
+
+    def test_subscr_with_delete(self):
+        # See https://github.com/python/cpython/issues/72050.
+        self.do_test_subscr_with_mutating_slice(use_clear_method=False)
+
+    def do_test_subscr_with_mutating_slice(self, *, use_clear_method):
         class X:
+            def __init__(self, i=0):
+                self.i = i
             def __index__(self):
-                del e[:]
-                return 1
+                if use_clear_method:
+                    e.clear()
+                else:
+                    del e[:]
+                return self.i
 
-        e = ET.Element('elem')
-        e.append(ET.Element('child'))
-        e[:X()]  # shouldn't crash
+        for s in self.get_mutating_slices(X, 10):
+            with self.subTest(s):
+                e = ET.Element('elem')
+                e.extend([ET.Element(f'c{i}') for i in range(10)])
+                e[s]  # shouldn't crash
 
-        e.append(ET.Element('child'))
-        e[0:10:X()]  # shouldn't crash
+    def test_ass_subscr_with_mutating_slice(self):
+        # See https://github.com/python/cpython/issues/72050
+        # and https://github.com/python/cpython/issues/143200.
 
-    def test_ass_subscr(self):
-        # Issue #27863
         class X:
+            def __init__(self, i=0):
+                self.i = i
             def __index__(self):
                 e[:] = []
-                return 1
+                return self.i
+
+        for s in self.get_mutating_slices(X, 10):
+            with self.subTest(s):
+                e = ET.Element('elem')
+                e.extend([ET.Element(f'c{i}') for i in range(10)])
+                e[s] = []  # shouldn't crash
+
+    def get_mutating_slices(self, index_class, n_children):
+        self.assertGreaterEqual(n_children, 10)
+        return [
+            slice(index_class(), None, None),
+            slice(index_class(2), None, None),
+            slice(None, index_class(), None),
+            slice(None, index_class(2), None),
+            slice(0, 2, index_class(1)),
+            slice(0, 2, index_class(2)),
+            slice(0, n_children, index_class(1)),
+            slice(0, n_children, index_class(2)),
+            slice(0, 2 * n_children, index_class(1)),
+            slice(0, 2 * n_children, index_class(2)),
+        ]
+
+    def test_ass_subscr_with_mutating_iterable_value(self):
+        class V:
+            def __iter__(self):
+                e.clear()
+                return iter([ET.Element('a'), ET.Element('b')])
 
         e = ET.Element('elem')
-        for _ in range(10):
-            e.insert(0, ET.Element('child'))
-
-        e[0:10:X()] = []  # shouldn't crash
+        e.extend([ET.Element(f'c{i}') for i in range(10)])
+        e[:] = V()
 
     def test_treebuilder_start(self):
         # Issue #27863
@@ -2418,21 +3202,96 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         del b
         gc_collect()
 
+    def test_deepcopy_clear(self):
+        # Prevent crashes when __deepcopy__() clears the children list.
+        # See https://github.com/python/cpython/issues/133009.
+        class X(ET.Element):
+            def __deepcopy__(self, memo):
+                root.clear()
+                return self
 
-class MutatingElementPath(str):
+        root = ET.Element('a')
+        evil = X('x')
+        root.extend([evil, ET.Element('y')])
+        if is_python_implementation():
+            # Mutating a list over which we iterate raises an error.
+            self.assertRaises(RuntimeError, copy.deepcopy, root)
+        else:
+            c = copy.deepcopy(root)
+            # In the C implementation, we can still copy the evil element.
+            self.assertListEqual(list(c), [evil])
+
+    def test_deepcopy_grow(self):
+        # Prevent crashes when __deepcopy__() mutates the children list.
+        # See https://github.com/python/cpython/issues/133009.
+        a = ET.Element('a')
+        b = ET.Element('b')
+        c = ET.Element('c')
+
+        class X(ET.Element):
+            def __deepcopy__(self, memo):
+                root.append(a)
+                root.append(b)
+                return self
+
+        root = ET.Element('top')
+        evil1, evil2 = X('1'), X('2')
+        root.extend([evil1, c, evil2])
+        children = list(copy.deepcopy(root))
+        # mock deep copies
+        self.assertIs(children[0], evil1)
+        self.assertIs(children[2], evil2)
+        # true deep copies
+        self.assertEqual(children[1].tag, c.tag)
+        self.assertEqual([c.tag for c in children[3:]],
+                         [a.tag, b.tag, a.tag, b.tag])
+
+    @support.run_with_limited_c_stack(500_000)
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
+    def test_deeply_nested_deepcopy(self):
+        # This should raise a RecursionError and not crash.
+        # See https://github.com/python/cpython/issues/148801.
+        root = cur = ET.Element('s')
+        for _ in range(500_000):
+            cur = ET.SubElement(cur, 'u')
+        with support.infinite_recursion():
+            with self.assertRaises(RecursionError):
+                copy.deepcopy(root)
+
+
+class MutationDeleteElementPath(str):
     def __new__(cls, elem, *args):
         self = str.__new__(cls, *args)
         self.elem = elem
         return self
+
     def __eq__(self, o):
         del self.elem[:]
         return True
-MutatingElementPath.__hash__ = str.__hash__
+
+    __hash__ = str.__hash__
+
+
+class MutationClearElementPath(str):
+    def __new__(cls, elem, *args):
+        self = str.__new__(cls, *args)
+        self.elem = elem
+        return self
+
+    def __eq__(self, o):
+        self.elem.clear()
+        return True
+
+    __hash__ = str.__hash__
+
 
 class BadElementPath(str):
     def __eq__(self, o):
         raise 1/0
-BadElementPath.__hash__ = str.__hash__
+
+    __hash__ = str.__hash__
+
 
 class BadElementPathTest(ElementTestCase, unittest.TestCase):
     def setUp(self):
@@ -2447,9 +3306,11 @@ class BadElementPathTest(ElementTestCase, unittest.TestCase):
         super().tearDown()
 
     def test_find_with_mutating(self):
-        e = ET.Element('foo')
-        e.extend([ET.Element('bar')])
-        e.find(MutatingElementPath(e, 'x'))
+        for cls in [MutationDeleteElementPath, MutationClearElementPath]:
+            with self.subTest(cls):
+                e = ET.Element('foo')
+                e.extend([ET.Element('bar')])
+                e.find(cls(e, 'x'))
 
     def test_find_with_error(self):
         e = ET.Element('foo')
@@ -2460,9 +3321,21 @@ class BadElementPathTest(ElementTestCase, unittest.TestCase):
             pass
 
     def test_findtext_with_mutating(self):
-        e = ET.Element('foo')
-        e.extend([ET.Element('bar')])
-        e.findtext(MutatingElementPath(e, 'x'))
+        for cls in [MutationDeleteElementPath, MutationClearElementPath]:
+            with self.subTest(cls):
+                e = ET.Element('foo')
+                e.extend([ET.Element('bar')])
+                e.findtext(cls(e, 'x'))
+
+    def test_findtext_with_mutating_non_none_text(self):
+        for cls in [MutationDeleteElementPath, MutationClearElementPath]:
+            with self.subTest(cls):
+                e = ET.Element('foo')
+                child = ET.Element('bar')
+                child.text = str(object())
+                e.append(child)
+                del child
+                repr(e.findtext(cls(e, 'x')))
 
     def test_findtext_with_error(self):
         e = ET.Element('foo')
@@ -2472,10 +3345,26 @@ class BadElementPathTest(ElementTestCase, unittest.TestCase):
         except ZeroDivisionError:
             pass
 
+    def test_findtext_with_falsey_text_attribute(self):
+        root_elem = ET.Element('foo')
+        sub_elem = ET.SubElement(root_elem, 'bar')
+        falsey = ["", 0, False, [], (), {}]
+        for val in falsey:
+            sub_elem.text = val
+            self.assertEqual(root_elem.findtext('./bar'), val)
+
+    def test_findtext_with_none_text_attribute(self):
+        root_elem = ET.Element('foo')
+        sub_elem = ET.SubElement(root_elem, 'bar')
+        sub_elem.text = None
+        self.assertEqual(root_elem.findtext('./bar'), '')
+
     def test_findall_with_mutating(self):
-        e = ET.Element('foo')
-        e.extend([ET.Element('bar')])
-        e.findall(MutatingElementPath(e, 'x'))
+        for cls in [MutationDeleteElementPath, MutationClearElementPath]:
+            with self.subTest(cls):
+                e = ET.Element('foo')
+                e.extend([ET.Element('bar')])
+                e.findall(cls(e, 'x'))
 
     def test_findall_with_error(self):
         e = ET.Element('foo')
@@ -2588,6 +3477,37 @@ class ElementFindTest(unittest.TestCase):
         self.assertRaisesRegex(SyntaxError, 'XPath', e.find, './tag[last()-0]')
         self.assertRaisesRegex(SyntaxError, 'XPath', e.find, './tag[last()+1]')
 
+    def test_find_xpath_index_no_quadratic_complexity(self):
+        class CountingElement(ET.Element):
+            findall_calls = 0
+            def findall(self, *args, **kwargs):
+                type(self).findall_calls += 1
+                return super().findall(*args, **kwargs)
+
+        def work(n, pattern):
+            root = CountingElement("root")
+            for _ in range(n):
+                ET.SubElement(root, "a")
+            CountingElement.findall_calls = 0
+            root.findall(pattern)
+            return CountingElement.findall_calls
+
+        for pattern in [".//a[1]", ".//a[last()]"]:
+            w1 = work(1024, pattern)
+            w2 = work(2048, pattern)
+            w3 = work(4096, pattern)
+
+            self.assertGreater(w1, 0)
+            r1 = w2 / w1
+            r2 = w3 / w2
+            # Doubling N must not ~double the parent.findall calls.
+            # Linear-in-N call counts indicate the cache is missing.
+            self.assertLess(
+                max(r1, r2), 1.5,
+                msg=f"Possible quadratic behavior on {pattern!r}: "
+                    f"calls={w1, w2, w3} ratios={r1, r2}",
+            )
+
     def test_findall(self):
         e = ET.XML(SAMPLE_XML)
         e[2] = ET.XML(SAMPLE_SECTION)
@@ -2620,8 +3540,12 @@ class ElementFindTest(unittest.TestCase):
             ['tag'] * 3)
         self.assertEqual(summarize_list(e.findall('.//tag[@class="a"]')),
             ['tag'])
+        self.assertEqual(summarize_list(e.findall('.//tag[@class!="a"]')),
+            ['tag'] * 2)
         self.assertEqual(summarize_list(e.findall('.//tag[@class="b"]')),
             ['tag'] * 2)
+        self.assertEqual(summarize_list(e.findall('.//tag[@class!="b"]')),
+            ['tag'])
         self.assertEqual(summarize_list(e.findall('.//tag[@id]')),
             ['tag'])
         self.assertEqual(summarize_list(e.findall('.//section[tag]')),
@@ -2643,6 +3567,19 @@ class ElementFindTest(unittest.TestCase):
         self.assertEqual(summarize_list(e.findall(".//section[ tag = 'subtext' ]")),
             ['section'])
 
+        # Negations of above tests. They match nothing because the sole section
+        # tag has subtext.
+        self.assertEqual(summarize_list(e.findall(".//section[tag!='subtext']")),
+            [])
+        self.assertEqual(summarize_list(e.findall(".//section[tag !='subtext']")),
+            [])
+        self.assertEqual(summarize_list(e.findall(".//section[tag!= 'subtext']")),
+            [])
+        self.assertEqual(summarize_list(e.findall(".//section[tag != 'subtext']")),
+            [])
+        self.assertEqual(summarize_list(e.findall(".//section[ tag != 'subtext' ]")),
+            [])
+
         self.assertEqual(summarize_list(e.findall(".//tag[.='subtext']")),
                          ['tag'])
         self.assertEqual(summarize_list(e.findall(".//tag[. ='subtext']")),
@@ -2657,6 +3594,24 @@ class ElementFindTest(unittest.TestCase):
                          [])
         self.assertEqual(summarize_list(e.findall(".//tag[.= ' subtext']")),
                          [])
+
+        # Negations of above tests.
+        #   Matches everything but the tag containing subtext
+        self.assertEqual(summarize_list(e.findall(".//tag[.!='subtext']")),
+                         ['tag'] * 3)
+        self.assertEqual(summarize_list(e.findall(".//tag[. !='subtext']")),
+                         ['tag'] * 3)
+        self.assertEqual(summarize_list(e.findall('.//tag[.!= "subtext"]')),
+                         ['tag'] * 3)
+        self.assertEqual(summarize_list(e.findall('.//tag[ . != "subtext" ]')),
+                         ['tag'] * 3)
+        self.assertEqual(summarize_list(e.findall(".//tag[. != 'subtext']")),
+                         ['tag'] * 3)
+        # Matches all tags.
+        self.assertEqual(summarize_list(e.findall(".//tag[. != 'subtext ']")),
+                         ['tag'] * 4)
+        self.assertEqual(summarize_list(e.findall(".//tag[.!= ' subtext']")),
+                         ['tag'] * 4)
 
         # duplicate section => 2x tag matches
         e[1] = e[2]
@@ -2777,8 +3732,7 @@ class ElementIterTest(unittest.TestCase):
         # With an explicit parser too (issue #9708)
         sourcefile = serialize(doc, to_string=False)
         parser = ET.XMLParser(target=ET.TreeBuilder())
-        self.assertEqual(next(ET.iterparse(sourcefile, parser=parser))[0],
-                         'end')
+        self.assertEqual(next(ET.iterparse(sourcefile, parser=parser))[0], 'end')
 
         tree = ET.ElementTree(None)
         self.assertRaises(AttributeError, tree.iter)
@@ -2786,6 +3740,32 @@ class ElementIterTest(unittest.TestCase):
         # Issue #16913
         doc = ET.XML("<root>a&amp;<sub>b&amp;</sub>c&amp;</root>")
         self.assertEqual(''.join(doc.itertext()), 'a&b&c&')
+
+    def test_comment(self):
+        e = ET.Element('root')
+        e.text = 'before'
+        comment = ET.Comment('comment')
+        self.assertEqual(comment.text, 'comment')
+        comment.tail = 'after'
+        e.append(comment)
+        self.assertEqual(''.join(e.itertext()), 'beforeafter')
+        self.assertEqual(list(e.iter()), [e, comment])
+        self.assertEqual(list(e.iter('root')), [e])
+        self.assertEqual(''.join(comment.itertext()), '')
+        self.assertEqual(list(comment.iter()), [comment])
+
+    def test_processinginstruction(self):
+        e = ET.Element('root')
+        e.text = 'before'
+        pi = ET.PI('test', 'instruction')
+        self.assertEqual(pi.text, 'test instruction')
+        pi.tail = 'after'
+        e.append(pi)
+        self.assertEqual(''.join(e.itertext()), 'beforeafter')
+        self.assertEqual(list(e.iter()), [e, pi])
+        self.assertEqual(list(e.iter('root')), [e])
+        self.assertEqual(''.join(pi.itertext()), '')
+        self.assertEqual(list(pi.iter()), [pi])
 
     def test_corners(self):
         # single root, no subelements
@@ -2837,40 +3817,6 @@ class ElementIterTest(unittest.TestCase):
         self.assertEqual(summarize_list(doc.iter()), all_tags)
         self.assertEqual(self._ilist(doc), all_tags)
         self.assertEqual(self._ilist(doc, '*'), all_tags)
-
-    # Element.getiterator() is deprecated.
-    @checkwarnings(("This method will be removed in future versions.  "
-                    "Use .+ instead.", DeprecationWarning))
-    def test_getiterator(self):
-        doc = ET.XML('''
-            <document>
-                <house>
-                    <room>bedroom1</room>
-                    <room>bedroom2</room>
-                </house>
-                <shed>nothing here
-                </shed>
-                <house>
-                    <room>bedroom8</room>
-                </house>
-            </document>''')
-
-        self.assertEqual(summarize_list(doc.getiterator('room')),
-                         ['room'] * 3)
-        self.assertEqual(summarize_list(doc.getiterator('house')),
-                         ['house'] * 2)
-
-        # test that getiterator also accepts 'tag' as a keyword arg
-        self.assertEqual(
-            summarize_list(doc.getiterator(tag='room')),
-            ['room'] * 3)
-
-        # make sure both tag=None and tag='*' return all tags
-        all_tags = ['document', 'house', 'room', 'room',
-                    'shed', 'house', 'room']
-        self.assertEqual(summarize_list(doc.getiterator()), all_tags)
-        self.assertEqual(summarize_list(doc.getiterator(None)), all_tags)
-        self.assertEqual(summarize_list(doc.getiterator('*')), all_tags)
 
     def test_copy(self):
         a = ET.Element('a')
@@ -2954,6 +3900,66 @@ class TreeBuilderTest(unittest.TestCase):
         self.assertEqual(b.pi('target'), (len('target'), None))
         self.assertEqual(b.pi('pitarget', ' text '), (len('pitarget'), ' text '))
 
+    def test_late_tail(self):
+        # Issue #37399: The tail of an ignored comment could overwrite the text before it.
+        class TreeBuilderSubclass(ET.TreeBuilder):
+            pass
+
+        xml = "<a>text<!-- comment -->tail</a>"
+        a = ET.fromstring(xml)
+        self.assertEqual(a.text, "texttail")
+
+        parser = ET.XMLParser(target=TreeBuilderSubclass())
+        parser.feed(xml)
+        a = parser.close()
+        self.assertEqual(a.text, "texttail")
+
+        xml = "<a>text<?pi data?>tail</a>"
+        a = ET.fromstring(xml)
+        self.assertEqual(a.text, "texttail")
+
+        xml = "<a>text<?pi data?>tail</a>"
+        parser = ET.XMLParser(target=TreeBuilderSubclass())
+        parser.feed(xml)
+        a = parser.close()
+        self.assertEqual(a.text, "texttail")
+
+    def test_late_tail_mix_pi_comments(self):
+        # Issue #37399: The tail of an ignored comment could overwrite the text before it.
+        # Test appending tails to comments/pis.
+        class TreeBuilderSubclass(ET.TreeBuilder):
+            pass
+
+        xml = "<a>text<?pi1?> <!-- comment -->\n<?pi2?>tail</a>"
+        parser = ET.XMLParser(target=ET.TreeBuilder(insert_comments=True))
+        parser.feed(xml)
+        a = parser.close()
+        self.assertEqual(a[0].text, ' comment ')
+        self.assertEqual(a[0].tail, '\ntail')
+        self.assertEqual(a.text, "text ")
+
+        parser = ET.XMLParser(target=TreeBuilderSubclass(insert_comments=True))
+        parser.feed(xml)
+        a = parser.close()
+        self.assertEqual(a[0].text, ' comment ')
+        self.assertEqual(a[0].tail, '\ntail')
+        self.assertEqual(a.text, "text ")
+
+        xml = "<a>text<!-- comment -->\n<?pi data?>tail</a>"
+        parser = ET.XMLParser(target=ET.TreeBuilder(insert_pis=True))
+        parser.feed(xml)
+        a = parser.close()
+        self.assertEqual(a[0].text, 'pi data')
+        self.assertEqual(a[0].tail, 'tail')
+        self.assertEqual(a.text, "text\n")
+
+        parser = ET.XMLParser(target=TreeBuilderSubclass(insert_pis=True))
+        parser.feed(xml)
+        a = parser.close()
+        self.assertEqual(a[0].text, 'pi data')
+        self.assertEqual(a[0].tail, 'tail')
+        self.assertEqual(a.text, "text\n")
+
     def test_treebuilder_elementfactory_none(self):
         parser = ET.XMLParser(target=ET.TreeBuilder(element_factory=None))
         parser.feed(self.sample1)
@@ -3018,7 +4024,7 @@ class TreeBuilderTest(unittest.TestCase):
         self._check_element_factory_class(MyElement)
 
     def test_element_factory_pure_python_subclass(self):
-        # Mimick SimpleTAL's behaviour (issue #16089): both versions of
+        # Mimic SimpleTAL's behaviour (issue #16089): both versions of
         # TreeBuilder should be able to cope with a subclass of the
         # pure Python Element class.
         base = ET._Element_Py
@@ -3316,6 +4322,22 @@ class ElementSlicingTest(unittest.TestCase):
         e[1::-sys.maxsize<<64] = [ET.Element('d')]
         self.assertEqual(self._subelem_tags(e), ['a0', 'd', 'a2', 'a3'])
 
+    def test_issue123213_setslice_exception(self):
+        e = ET.Element('tag')
+        # Does not hide the internal exception when assigning to the element
+        with self.assertRaises(ZeroDivisionError):
+            e[:1] = (1/0 for i in range(2))
+
+        # Still raises the TypeError when assigning with a non-iterable
+        with self.assertRaises(TypeError):
+            e[:1] = None
+
+        # Preserve the original TypeError message when assigning.
+        def f():
+            raise TypeError("mymessage")
+
+        with self.assertRaisesRegex(TypeError, 'mymessage'):
+            e[:1] = (f() for i in range(2))
 
 class IOTest(unittest.TestCase):
     def test_encoding(self):
@@ -3388,33 +4410,86 @@ class IOTest(unittest.TestCase):
                      "<tag key=\"åöö&lt;&gt;\" />" % enc).encode(enc))
 
     def test_write_to_filename(self):
-        self.addCleanup(support.unlink, TESTFN)
-        tree = ET.ElementTree(ET.XML('''<site />'''))
+        self.addCleanup(os_helper.unlink, TESTFN)
+        tree = ET.ElementTree(ET.XML('''<site>\xf8</site>'''))
         tree.write(TESTFN)
         with open(TESTFN, 'rb') as f:
-            self.assertEqual(f.read(), b'''<site />''')
+            self.assertEqual(f.read(), b'''<site>&#248;</site>''')
+
+    def test_write_to_filename_with_encoding(self):
+        self.addCleanup(os_helper.unlink, TESTFN)
+        tree = ET.ElementTree(ET.XML('''<site>\xf8</site>'''))
+        tree.write(TESTFN, encoding='utf-8')
+        with open(TESTFN, 'rb') as f:
+            self.assertEqual(f.read(), b'''<site>\xc3\xb8</site>''')
+
+        tree.write(TESTFN, encoding='ISO-8859-1')
+        with open(TESTFN, 'rb') as f:
+            self.assertEqual(f.read(), convlinesep(
+                             b'''<?xml version='1.0' encoding='ISO-8859-1'?>\n'''
+                             b'''<site>\xf8</site>'''))
+
+    def test_write_to_filename_as_unicode(self):
+        self.addCleanup(os_helper.unlink, TESTFN)
+        with open(TESTFN, 'w') as f:
+            encoding = f.encoding
+        os_helper.unlink(TESTFN)
+
+        tree = ET.ElementTree(ET.XML('''<site>\xf8</site>'''))
+        tree.write(TESTFN, encoding='unicode')
+        with open(TESTFN, 'rb') as f:
+            self.assertEqual(f.read(), b"<site>\xc3\xb8</site>")
 
     def test_write_to_text_file(self):
-        self.addCleanup(support.unlink, TESTFN)
-        tree = ET.ElementTree(ET.XML('''<site />'''))
+        self.addCleanup(os_helper.unlink, TESTFN)
+        tree = ET.ElementTree(ET.XML('''<site>\xf8</site>'''))
         with open(TESTFN, 'w', encoding='utf-8') as f:
             tree.write(f, encoding='unicode')
             self.assertFalse(f.closed)
         with open(TESTFN, 'rb') as f:
-            self.assertEqual(f.read(), b'''<site />''')
+            self.assertEqual(f.read(), b'''<site>\xc3\xb8</site>''')
+
+        with open(TESTFN, 'w', encoding='ascii', errors='xmlcharrefreplace') as f:
+            tree.write(f, encoding='unicode')
+            self.assertFalse(f.closed)
+        with open(TESTFN, 'rb') as f:
+            self.assertEqual(f.read(),  b'''<site>&#248;</site>''')
+
+        with open(TESTFN, 'w', encoding='ISO-8859-1') as f:
+            tree.write(f, encoding='unicode')
+            self.assertFalse(f.closed)
+        with open(TESTFN, 'rb') as f:
+            self.assertEqual(f.read(), b'''<site>\xf8</site>''')
 
     def test_write_to_binary_file(self):
-        self.addCleanup(support.unlink, TESTFN)
-        tree = ET.ElementTree(ET.XML('''<site />'''))
+        self.addCleanup(os_helper.unlink, TESTFN)
+        tree = ET.ElementTree(ET.XML('''<site>\xf8</site>'''))
         with open(TESTFN, 'wb') as f:
             tree.write(f)
             self.assertFalse(f.closed)
         with open(TESTFN, 'rb') as f:
-            self.assertEqual(f.read(), b'''<site />''')
+            self.assertEqual(f.read(), b'''<site>&#248;</site>''')
+
+    def test_write_to_binary_file_with_encoding(self):
+        self.addCleanup(os_helper.unlink, TESTFN)
+        tree = ET.ElementTree(ET.XML('''<site>\xf8</site>'''))
+        with open(TESTFN, 'wb') as f:
+            tree.write(f, encoding='utf-8')
+            self.assertFalse(f.closed)
+        with open(TESTFN, 'rb') as f:
+            self.assertEqual(f.read(), b'''<site>\xc3\xb8</site>''')
+
+        with open(TESTFN, 'wb') as f:
+            tree.write(f, encoding='ISO-8859-1')
+            self.assertFalse(f.closed)
+        with open(TESTFN, 'rb') as f:
+            self.assertEqual(f.read(),
+                             b'''<?xml version='1.0' encoding='ISO-8859-1'?>\n'''
+                             b'''<site>\xf8</site>''')
 
     def test_write_to_binary_file_with_bom(self):
-        self.addCleanup(support.unlink, TESTFN)
-        tree = ET.ElementTree(ET.XML('''<site />'''))
+        self.addCleanup(os_helper.unlink, TESTFN)
+        tree = ET.ElementTree(ET.XML('''<site>\xf8</site>'''))
         # test BOM writing to buffered file
         with open(TESTFN, 'wb') as f:
             tree.write(f, encoding='utf-16')
@@ -3422,7 +4497,7 @@ class IOTest(unittest.TestCase):
         with open(TESTFN, 'rb') as f:
             self.assertEqual(f.read(),
                     '''<?xml version='1.0' encoding='utf-16'?>\n'''
-                    '''<site />'''.encode("utf-16"))
+                    '''<site>\xf8</site>'''.encode("utf-16"))
         # test BOM writing to non-buffered file
         with open(TESTFN, 'wb', buffering=0) as f:
             tree.write(f, encoding='utf-16')
@@ -3430,7 +4505,7 @@ class IOTest(unittest.TestCase):
         with open(TESTFN, 'rb') as f:
             self.assertEqual(f.read(),
                     '''<?xml version='1.0' encoding='utf-16'?>\n'''
-                    '''<site />'''.encode("utf-16"))
+                    '''<site>\xf8</site>'''.encode("utf-16"))
 
     def test_read_from_stringio(self):
         tree = ET.ElementTree()
@@ -3439,10 +4514,10 @@ class IOTest(unittest.TestCase):
         self.assertEqual(tree.getroot().tag, 'site')
 
     def test_write_to_stringio(self):
-        tree = ET.ElementTree(ET.XML('''<site />'''))
+        tree = ET.ElementTree(ET.XML('''<site>\xf8</site>'''))
         stream = io.StringIO()
         tree.write(stream, encoding='unicode')
-        self.assertEqual(stream.getvalue(), '''<site />''')
+        self.assertEqual(stream.getvalue(), '''<site>\xf8</site>''')
 
     def test_read_from_bytesio(self):
         tree = ET.ElementTree()
@@ -3451,10 +4526,10 @@ class IOTest(unittest.TestCase):
         self.assertEqual(tree.getroot().tag, 'site')
 
     def test_write_to_bytesio(self):
-        tree = ET.ElementTree(ET.XML('''<site />'''))
+        tree = ET.ElementTree(ET.XML('''<site>\xf8</site>'''))
         raw = io.BytesIO()
         tree.write(raw)
-        self.assertEqual(raw.getvalue(), b'''<site />''')
+        self.assertEqual(raw.getvalue(), b'''<site>&#248;</site>''')
 
     class dummy:
         pass
@@ -3468,12 +4543,12 @@ class IOTest(unittest.TestCase):
         self.assertEqual(tree.getroot().tag, 'site')
 
     def test_write_to_user_text_writer(self):
-        tree = ET.ElementTree(ET.XML('''<site />'''))
+        tree = ET.ElementTree(ET.XML('''<site>\xf8</site>'''))
         stream = io.StringIO()
         writer = self.dummy()
         writer.write = stream.write
         tree.write(writer, encoding='unicode')
-        self.assertEqual(stream.getvalue(), '''<site />''')
+        self.assertEqual(stream.getvalue(), '''<site>\xf8</site>''')
 
     def test_read_from_user_binary_reader(self):
         raw = io.BytesIO(b'''<?xml version="1.0"?><site></site>''')
@@ -3485,12 +4560,12 @@ class IOTest(unittest.TestCase):
         tree = ET.ElementTree()
 
     def test_write_to_user_binary_writer(self):
-        tree = ET.ElementTree(ET.XML('''<site />'''))
+        tree = ET.ElementTree(ET.XML('''<site>\xf8</site>'''))
         raw = io.BytesIO()
         writer = self.dummy()
         writer.write = raw.write
         tree.write(writer)
-        self.assertEqual(raw.getvalue(), b'''<site />''')
+        self.assertEqual(raw.getvalue(), b'''<site>&#248;</site>''')
 
     def test_write_to_user_binary_writer_with_bom(self):
         tree = ET.ElementTree(ET.XML('''<site />'''))
@@ -3568,6 +4643,9 @@ class KeywordArgsTest(unittest.TestCase):
             ET.Element('a', dict(href="#"), id="foo"),
             ET.Element('a', href="#", id="foo"),
             ET.Element('a', dict(href="#", id="foo"), href="#", id="foo"),
+            ET.Element('a', frozendict(href="#", id="foo")),
+            ET.Element('a', frozendict(href="#"), id="foo"),
+            ET.Element('a', attrib=frozendict(href="#", id="foo")),
         ]
         for e in elements:
             self.assertEqual(e.tag, 'a')
@@ -3575,17 +4653,22 @@ class KeywordArgsTest(unittest.TestCase):
 
         e2 = ET.SubElement(elements[0], 'foobar', attrib={'key1': 'value1'})
         self.assertEqual(e2.attrib['key1'], 'value1')
+        e3 = ET.SubElement(elements[0], 'foobar',
+                           attrib=frozendict({'key1': 'value1'}))
+        self.assertEqual(e3.attrib['key1'], 'value1')
 
-        with self.assertRaisesRegex(TypeError, 'must be dict, not str'):
+        errmsg = 'must be dict or frozendict, not str'
+        with self.assertRaisesRegex(TypeError, errmsg):
             ET.Element('a', "I'm not a dict")
-        with self.assertRaisesRegex(TypeError, 'must be dict, not str'):
+        with self.assertRaisesRegex(TypeError, errmsg):
             ET.Element('a', attrib="I'm not a dict")
 
 # --------------------------------------------------------------------
 
 class NoAcceleratorTest(unittest.TestCase):
-    def setUp(self):
-        if not pyET:
+    @classmethod
+    def setUpClass(cls):
+        if ET is not pyET:
             raise unittest.SkipTest('only for the Python version')
 
     # Test that the C accelerator was not imported for pyET
@@ -3596,6 +4679,25 @@ class NoAcceleratorTest(unittest.TestCase):
         self.assertIsInstance(pyET.Element.__init__, types.FunctionType)
         self.assertIsInstance(pyET.XMLParser.__init__, types.FunctionType)
 
+# --------------------------------------------------------------------
+
+class BoolTest(unittest.TestCase):
+    def test_warning(self):
+        e = ET.fromstring('<a style="new"></a>')
+        msg = (
+            r"Testing an element's truth value will always return True in "
+            r"future versions.  "
+            r"Use specific 'len\(elem\)' or 'elem is not None' test instead.")
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            result = bool(e)
+        # Emulate prior behavior for now
+        self.assertIs(result, False)
+
+        # Element with children
+        ET.SubElement(e, 'b')
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            new_result = bool(e)
+        self.assertIs(new_result, True)
 
 # --------------------------------------------------------------------
 
@@ -3640,6 +4742,14 @@ class C14NTest(unittest.TestCase):
         # fragments from PJ's tests
         #self.assertEqual(c14n_roundtrip("<doc xmlns:x='http://example.com/x' xmlns='http://example.com/default'><b y:a1='1' xmlns='http://example.com/default' a3='3' xmlns:y='http://example.com/y' y:a2='2'/></doc>"),
         #'<doc xmlns:x="http://example.com/x"><b xmlns:y="http://example.com/y" a3="3" y:a1="1" y:a2="2"></b></doc>')
+
+        # Namespace issues
+        xml = '<X xmlns="http://nps/a"><Y targets="abc,xyz"></Y></X>'
+        self.assertEqual(c14n_roundtrip(xml), xml)
+        xml = '<X xmlns="http://nps/a"><Y xmlns="http://nsp/b" targets="abc,xyz"></Y></X>'
+        self.assertEqual(c14n_roundtrip(xml), xml)
+        xml = '<X xmlns="http://nps/a"><Y xmlns:b="http://nsp/b" b:targets="abc,xyz"></Y></X>'
+        self.assertEqual(c14n_roundtrip(xml), xml)
 
     def test_c14n_exclusion(self):
         xml = textwrap.dedent("""\
@@ -3824,7 +4934,19 @@ class C14NTest(unittest.TestCase):
 # --------------------------------------------------------------------
 
 
-def test_main(module=None):
+class TestModule(unittest.TestCase):
+    def test_deprecated_version(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'VERSION' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+                getattr(ET, "VERSION")
+        self.assertEqual(cm.filename, __file__)
+
+
+# --------------------------------------------------------------------
+
+def setUpModule(module=None):
     # When invoked without a module, runs the Python ET tests by loading pyET.
     # Otherwise, uses the given module as the ET.
     global pyET
@@ -3836,62 +4958,30 @@ def test_main(module=None):
     global ET
     ET = module
 
-    test_classes = [
-        ModuleTest,
-        ElementSlicingTest,
-        BasicElementTest,
-        BadElementTest,
-        BadElementPathTest,
-        ElementTreeTest,
-        IOTest,
-        ParseErrorTest,
-        XIncludeTest,
-        ElementTreeTypeTest,
-        ElementFindTest,
-        ElementIterTest,
-        TreeBuilderTest,
-        XMLParserTest,
-        XMLPullParserTest,
-        BugsTest,
-        KeywordArgsTest,
-        C14NTest,
-        ]
-
-    # These tests will only run for the pure-Python version that doesn't import
-    # _elementtree. We can't use skipUnless here, because pyET is filled in only
-    # after the module is loaded.
-    if pyET is not ET:
-        test_classes.extend([
-            NoAcceleratorTest,
-            ])
+    # don't interfere with subsequent tests
+    def cleanup():
+        global ET, pyET
+        ET = pyET = None
+    unittest.addModuleCleanup(cleanup)
 
     # Provide default namespace mapping and path cache.
     from xml.etree import ElementPath
     nsmap = ET.register_namespace._namespace_map
     # Copy the default namespace mapping
     nsmap_copy = nsmap.copy()
+    unittest.addModuleCleanup(nsmap.update, nsmap_copy)
+    unittest.addModuleCleanup(nsmap.clear)
+
     # Copy the path cache (should be empty)
     path_cache = ElementPath._cache
+    unittest.addModuleCleanup(setattr, ElementPath, "_cache", path_cache)
     ElementPath._cache = path_cache.copy()
+
     # Align the Comment/PI factories.
     if hasattr(ET, '_set_factories'):
         old_factories = ET._set_factories(ET.Comment, ET.PI)
-    else:
-        old_factories = None
-
-    try:
-        support.run_unittest(*test_classes)
-    finally:
-        from xml.etree import ElementPath
-        # Restore mapping and path cache
-        nsmap.clear()
-        nsmap.update(nsmap_copy)
-        ElementPath._cache = path_cache
-        if old_factories is not None:
-            ET._set_factories(*old_factories)
-        # don't interfere with subsequent tests
-        ET = pyET = None
+        unittest.addModuleCleanup(ET._set_factories, *old_factories)
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

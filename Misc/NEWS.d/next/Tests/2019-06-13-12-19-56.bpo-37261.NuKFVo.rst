@@ -1,3 +1,0 @@
-Fix :func:`test.support.catch_unraisable_exception`: its __exit__() method
-now ignores unraisable exception raised when clearing its ``unraisable``
-attribute.

@@ -1,2 +1,0 @@
-When `Enum.__str__` is overridden in a derived class, the override will be
-used by `Enum.__format__` regardless of whether mixin classes are present.

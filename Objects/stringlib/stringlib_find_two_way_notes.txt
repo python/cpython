@@ -1,0 +1,431 @@
+This document explains Crochemore and Perrin's Two-Way string matching
+algorithm, in which a smaller string (the "pattern" or "needle")
+is searched for in a longer string (the "text" or "haystack"),
+determining whether the needle is a substring of the haystack, and if
+so, at what index(es). It is to be used by Python's string
+(and bytes-like) objects when calling `find`, `index`, `__contains__`,
+or implicitly in methods like `replace` or `partition`.
+
+This is essentially a re-telling of the paper
+
+    Crochemore M., Perrin D., 1991, Two-way string-matching,
+        Journal of the ACM 38(3):651-675.
+
+focused more on understanding and examples than on rigor. See also
+the code sample here:
+
+    http://www-igm.univ-mlv.fr/~lecroq/string/node26.html#SECTION00260
+
+The algorithm runs in O(len(needle) + len(haystack)) time and with
+O(1) space. However, since there is a larger preprocessing cost than
+simpler algorithms, this Two-Way algorithm is to be used only when the
+needle and haystack lengths meet certain thresholds.
+
+
+These are the basic steps of the algorithm:
+
+    * "Very carefully" cut the needle in two.
+    * For each alignment attempted:
+        1. match the right part
+            * On failure, jump by the amount matched + 1
+        2. then match the left part.
+            * On failure jump by max(len(left), len(right)) + 1
+    * If the needle is periodic, don't re-do comparisons; maintain
+      a "memory" of how many characters you already know match.
+
+
+-------- Matching the right part --------
+
+We first scan the right part of the needle to check if it matches the
+the aligned characters in the haystack. We scan left-to-right,
+and if a mismatch occurs, we jump ahead by the amount matched plus 1.
+
+Example:
+
+       text:    ........EFGX...................
+    pattern:    ....abcdEFGH....
+        cut:        <<<<>>>>
+
+Matched 3, so jump ahead by 4:
+
+       text:    ........EFGX...................
+    pattern:        ....abcdEFGH....
+        cut:            <<<<>>>>
+
+Why are we allowed to do this? Because we cut the needle very
+carefully, in such a way that if the cut is ...abcd + EFGH... then
+we have
+
+        d != E
+       cd != EF
+      bcd != EFG
+     abcd != EFGH
+          ... and so on.
+
+If this is true for every pair of equal-length substrings around the
+cut, then the following alignments do not work, so we can skip them:
+
+       text:    ........EFG....................
+    pattern:     ....abcdEFGH....
+                        ^   (Bad because d != E)
+       text:    ........EFG....................
+    pattern:      ....abcdEFGH....
+                        ^^   (Bad because cd != EF)
+       text:    ........EFG....................
+    pattern:       ....abcdEFGH....
+                        ^^^   (Bad because bcd != EFG)
+
+Skip 3 alignments => increment alignment by 4.
+
+
+-------- If len(left_part) < len(right_part) --------
+
+Above is the core idea, and it begins to suggest how the algorithm can
+be linear-time. There is one bit of subtlety involving what to do
+around the end of the needle: if the left half is shorter than the
+right, then we could run into something like this:
+
+       text:    .....EFG......
+    pattern:       cdEFGH
+
+The same argument holds that we can skip ahead by 4, so long as
+
+       d != E
+      cd != EF
+     ?cd != EFG
+    ??cd != EFGH
+         etc.
+
+The question marks represent "wildcards" that always match; they're
+outside the limits of the needle, so there's no way for them to
+invalidate a match. To ensure that the inequalities above are always
+true, we need them to be true for all possible '?' values. We thus
+need cd != FG and cd != GH, etc.
+
+
+-------- Matching the left part --------
+
+Once we have ensured the right part matches, we scan the left part
+(order doesn't matter, but traditionally right-to-left), and if we
+find a mismatch, we jump ahead by
+max(len(left_part), len(right_part)) + 1. That we can jump by
+at least len(right_part) + 1 we have already seen:
+
+       text: .....EFG.....
+    pattern:  abcdEFG
+    Matched 3, so jump by 4,
+    using the fact that d != E, cd != EF, and bcd != EFG.
+
+But we can also jump by at least len(left_part) + 1:
+
+       text: ....cdEF.....
+    pattern:   abcdEF
+    Jump by len('abcd') + 1 = 5.
+
+    Skip the alignments:
+       text: ....cdEF.....
+    pattern:    abcdEF
+       text: ....cdEF.....
+    pattern:     abcdEF
+       text: ....cdEF.....
+    pattern:      abcdEF
+       text: ....cdEF.....
+    pattern:       abcdEF
+
+This requires the following facts:
+       d != E
+      cd != EF
+     bcd != EF?
+    abcd != EF??
+         etc., for all values of ?s, as above.
+
+If we have both sets of inequalities, then we can indeed jump by
+max(len(left_part), len(right_part)) + 1. Under the assumption of such
+a nice splitting of the needle, we now have enough to prove linear
+time for the search: consider the forward-progress/comparisons ratio
+at each alignment position. If a mismatch occurs in the right part,
+the ratio is 1 position forward per comparison. On the other hand,
+if a mismatch occurs in the left half, we advance by more than
+len(needle)//2 positions for at most len(needle) comparisons,
+so this ratio is more than 1/2. This average "movement speed" is
+bounded below by the constant "1 position per 2 comparisons", so we
+have linear time.
+
+
+-------- The periodic case --------
+
+The sets of inequalities listed so far seem too good to be true in
+the general case. Indeed, they fail when a needle is periodic:
+there's no way to split 'AAbAAbAAbA' in two such that
+
+    (the stuff n characters to the left of the split)
+    cannot equal
+    (the stuff n characters to the right of the split)
+    for all n.
+
+This is because no matter how you cut it, you'll get
+s[cut-3:cut] == s[cut:cut+3]. So what do we do? We still cut the
+needle in two so that n can be as big as possible. If we were to
+split it as
+
+    AAbA + AbAAbA
+
+then A == A at the split, so this is bad (we failed at length 1), but
+if we split it as
+
+    AA + bAAbAAbA
+
+we at least have A != b and AA != bA, and we fail at length 3
+since ?AA == bAA. We already knew that a cut to make length-3
+mismatch was impossible due to the period, but we now see that the
+bound is sharp; we can get length-1 and length-2 to mismatch.
+
+This is exactly the content of the *critical factorization theorem*:
+that no matter the period of the original needle, you can cut it in
+such a way that (with the appropriate question marks),
+needle[cut-k:cut] mismatches needle[cut:cut+k] for all k < the period.
+
+Even "non-periodic" strings are periodic with a period equal to
+their length, so for such needles, the CFT already guarantees that
+the algorithm described so far will work, since we can cut the needle
+so that the length-k chunks on either side of the cut mismatch for all
+k < len(needle). Looking closer at the algorithm, we only actually
+require that k go up to max(len(left_part), len(right_part)).
+So long as the period exceeds that, we're good.
+
+The more general shorter-period case is a bit harder. The essentials
+are the same, except we use the periodicity to our advantage by
+"remembering" periods that we've already compared. In our running
+example, say we're computing
+
+    "AAbAAbAAbA" in "bbbAbbAAbAAbAAbbbAAbAAbAAbAA".
+
+We cut as AA + bAAbAAbA, and then the algorithm runs as follows:
+
+    First alignment:
+    bbbAbbAAbAAbAAbbbAAbAAbAAbAA
+    AAbAAbAAbA
+      ^^X
+    - Mismatch at third position, so jump by 3.
+    - This requires that A!=b and AA != bA.
+
+    Second alignment:
+    bbbAbbAAbAAbAAbbbAAbAAbAAbAA
+       AAbAAbAAbA
+         ^^^^^^^^
+        X
+    - Matched entire right part
+    - Mismatch at left part.
+    - Jump forward a period, remembering the existing comparisons
+
+    Third alignment:
+    bbbAbbAAbAAbAAbbbAAbAAbAAbAA
+          AAbAAbAAbA
+          mmmmmmm^^X
+    - There's "memory": a bunch of characters were already matched.
+    - Two more characters match beyond that.
+    - The 8th character of the right part mismatched, so jump by 8
+    - The above rule is more complicated than usual: we don't have
+      the right inequalities for lengths 1 through 7, but we do have
+      shifted copies of the length-1 and length-2 inequalities,
+      along with knowledge of the mismatch. We can skip all of these
+      alignments at once:
+
+        bbbAbbAAbAAbAAbbbAAbAAbAAbAA
+               AAbAAbAAbA
+                ~                   A != b at the cut
+        bbbAbbAAbAAbAAbbbAAbAAbAAbAA
+                AAbAAbAAbA
+                ~~                  AA != bA at the cut
+        bbbAbbAAbAAbAAbbbAAbAAbAAbAA
+                 AAbAAbAAbA
+                   ^^^^X            7-3=4 match, and the 5th misses.
+        bbbAbbAAbAAbAAbbbAAbAAbAAbAA
+                  AAbAAbAAbA
+                   ~                A != b at the cut
+        bbbAbbAAbAAbAAbbbAAbAAbAAbAA
+                   AAbAAbAAbA
+                   ~~               AA != bA at the cut
+        bbbAbbAAbAAbAAbbbAAbAAbAAbAA
+                    AAbAAbAAbA
+                      ^X            7-3-3=1 match and the 2nd misses.
+        bbbAbbAAbAAbAAbbbAAbAAbAAbAA
+                     AAbAAbAAbA
+                      ~             A != b at the cut
+
+    Fourth alignment:
+    bbbAbbAAbAAbAAbbbAAbAAbAAbAA
+                 AAbAAbAAbA
+                   ^X
+    - Second character mismatches, so jump by 2.
+
+    Fifth alignment:
+    bbbAbbAAbAAbAAbbbAAbAAbAAbAA
+                  AAbAAbAAbA
+                    ^^^^^^^^
+                   X
+    - Right half matches, so use memory and skip ahead by period=3
+
+    Sixth alignment:
+    bbbAbbAAbAAbAAbbbAAbAAbAAbAA
+                     AAbAAbAAbA
+                     mmmmmmmm^^
+    - Right part matches, left part is remembered, found a match!
+
+The one tricky skip by 8 here generalizes: if we have a period of p,
+then the CFT says we can ensure the cut has the inequality property
+for lengths 1 through p-1, and jumping by p would line up the
+matching characters and mismatched character one period earlier.
+Inductively, this proves that we can skip by the number of characters
+matched in the right half, plus 1, just as in the original algorithm.
+
+To make it explicit, the memory is set whenever the entire right part
+is matched and is then used as a starting point in the next alignment.
+In such a case, the alignment jumps forward one period, and the right
+half matches all except possibly the last period. Additionally,
+if we cut so that the left part has a length strictly less than the
+period (we always can!), then we can know that the left part already
+matches. The memory is reset to 0 whenever there is a mismatch in the
+right part.
+
+To prove linearity for the periodic case, note that if a right-part
+character mismatches, then we advance forward 1 unit per comparison.
+On the other hand, if the entire right part matches, then the skipping
+forward by one period "defers" some of the comparisons to the next
+alignment, where they will then be spent at the usual rate of
+one comparison per step forward. Even if left-half comparisons
+are always "wasted", they constitute less than half of all
+comparisons, so the average rate is certainly at least 1 move forward
+per 2 comparisons.
+
+
+-------- When to choose the periodic algorithm ---------
+
+The periodic algorithm is always valid but has an overhead of one
+more "memory" register and some memory computation steps, so the
+here-described-first non-periodic/long-period algorithm -- skipping by
+max(len(left_part), len(right_part)) + 1 rather than the period --
+should be preferred when possible.
+
+Interestingly, the long-period algorithm does not require an exact
+computation of the period; it works even with some long-period, but
+undeniably "periodic" needles:
+
+    Cut: AbcdefAbc == Abcde + fAbc
+
+This cut gives these inequalities:
+
+                 e != f
+                de != fA
+               cde != fAb
+              bcde != fAbc
+             Abcde != fAbc?
+    The first failure is a period long, per the CFT:
+            ?Abcde == fAbc??
+
+A sufficient condition for using the long-period algorithm is having
+the period of the needle be greater than
+max(len(left_part), len(right_part)). This way, after choosing a good
+split, we get all of the max(len(left_part), len(right_part))
+inequalities around the cut that were required in the long-period
+version of the algorithm.
+
+With all of this in mind, here's how we choose:
+
+    (1) Choose a "critical factorization" of the needle -- a cut
+        where we have period minus 1 inequalities in a row.
+        More specifically, choose a cut so that the left_part
+        is less than one period long.
+    (2) Determine the period P_r of the right_part.
+    (3) Check if the left part is just an extension of the pattern of
+        the right part, so that the whole needle has period P_r.
+        Explicitly, check if
+            needle[0:cut] == needle[0+P_r:cut+P_r]
+        If so, we use the periodic algorithm. If not equal, we use the
+        long-period algorithm.
+
+Note that if equality holds in (3), then the period of the whole
+string is P_r. On the other hand, suppose equality does not hold.
+The period of the needle is then strictly greater than P_r. Here's
+a general fact:
+
+    If p is a substring of s and p has period r, then the period
+    of s is either equal to r or greater than len(p).
+
+We know that needle_period != P_r,
+and therefore needle_period > len(right_part).
+Additionally, we'll choose the cut (see below)
+so that len(left_part) < needle_period.
+
+Thus, in the case where equality does not hold, we have that
+needle_period >= max(len(left_part), len(right_part)) + 1,
+so the long-period algorithm works, but otherwise, we know the period
+of the needle.
+
+Note that this decision process doesn't always require an exact
+computation of the period -- we can get away with only computing P_r!
+
+
+-------- Computing the cut --------
+
+Our remaining tasks are now to compute a cut of the needle with as
+many inequalities as possible, ensuring that cut < needle_period.
+Meanwhile, we must also compute the period P_r of the right_part.
+
+The computation is relatively simple, essentially doing this:
+
+    suffix1 = max(needle[i:] for i in range(len(needle)))
+    suffix2 = ... # the same as above, but invert the alphabet
+    cut1 = len(needle) - len(suffix1)
+    cut2 = len(needle) - len(suffix2)
+    cut = max(cut1, cut2) # the later cut
+
+For cut2, "invert the alphabet" is different than saying min(...),
+since in lexicographic order, we still put "py" < "python", even
+if the alphabet is inverted. Computing these, along with the method
+of computing the period of the right half, is easiest to read directly
+from the source code in fastsearch.h, in which these are computed
+in linear time.
+
+Crochemore & Perrin's Theorem 3.1 give that "cut" above is a
+critical factorization less than the period, but a very brief sketch
+of their proof goes something like this (this is far from complete):
+
+    * If this cut splits the needle as some
+      needle == (a + w) + (w + b), meaning there's a bad equality
+      w == w, it's impossible for w + b to be bigger than both
+      b and w + w + b, so this can't happen. We thus have all of
+      the inequalities with no question marks.
+    * By maximality, the right part is not a substring of the left
+      part. Thus, we have all of the inequalities involving no
+      left-side question marks.
+    * If you have all of the inequalities without right-side question
+      marks, we have a critical factorization.
+    * If one such inequality fails, then there's a smaller period,
+      but the factorization is nonetheless critical. Here's where
+      you need the redundancy coming from computing both cuts and
+      choosing the later one.
+
+
+-------- Some more Bells and Whistles --------
+
+Beyond Crochemore & Perrin's original algorithm, we can use a couple
+more tricks for speed in fastsearch.h:
+
+    1. Even though C&P has a best-case O(n/m) time, this doesn't occur
+       very often, so we add a Boyer-Moore bad character table to
+       achieve sublinear time in more cases.
+
+    2. The prework of computing the cut/period is expensive per
+       needle character, so we shouldn't do it if it won't pay off.
+       For this reason, if the needle and haystack are long enough,
+       only automatically start with two-way if the needle's length
+       is a small percentage of the length of the haystack.
+
+    3. In cases where the needle and haystack are large but the needle
+       makes up a significant percentage of the length of the
+       haystack, don't pay the expensive two-way preprocessing cost
+       if you don't need to. Instead, keep track of how many
+       character comparisons are equal, and if that exceeds
+       O(len(needle)), then pay that cost, since the simpler algorithm
+       isn't doing very well.

@@ -1,1 +1,0 @@
-`argparse._ActionsContainer.add_argument` now throws error, if someone accidentally pass FileType class object instead of instance of FileType as `type` argument
