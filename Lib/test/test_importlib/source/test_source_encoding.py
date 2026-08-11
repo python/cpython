@@ -102,19 +102,6 @@ class EncodingTestPEP451(EncodingTest):
  ) = util.test_both(EncodingTestPEP451, machinery=machinery)
 
 
-class EncodingTestPEP302(EncodingTest):
-
-    def load(self, loader):
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            return loader.load_module(self.module_name)
-
-
-(Frozen_EncodingTestPEP302,
- Source_EncodingTestPEP302
- ) = util.test_both(EncodingTestPEP302, machinery=machinery)
-
-
 class LineEndingTest:
 
     r"""Source written with the three types of line endings (\n, \r\n, \r)
@@ -156,19 +143,6 @@ class LineEndingTestPEP451(LineEndingTest):
 (Frozen_LineEndingTestPEP451,
  Source_LineEndingTestPEP451
  ) = util.test_both(LineEndingTestPEP451, machinery=machinery)
-
-
-class LineEndingTestPEP302(LineEndingTest):
-
-    def load(self, loader, module_name):
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            return loader.load_module(module_name)
-
-
-(Frozen_LineEndingTestPEP302,
- Source_LineEndingTestPEP302
- ) = util.test_both(LineEndingTestPEP302, machinery=machinery)
 
 
 if __name__ == '__main__':

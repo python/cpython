@@ -1,2 +1,0 @@
-Fix some error messages for invalid ISO format string combinations in ``strptime()`` that referred to directives not contained in the format string.
-Patch by Gordon P. Hemsley.

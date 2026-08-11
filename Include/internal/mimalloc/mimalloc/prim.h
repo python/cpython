@@ -131,7 +131,13 @@ extern bool _mi_process_is_initialized;             // has mi_process_init been 
 
 static inline mi_threadid_t _mi_prim_thread_id(void) mi_attr_noexcept;
 
-#if defined(_WIN32)
+#ifdef MI_PRIM_THREAD_ID
+
+static inline mi_threadid_t _mi_prim_thread_id(void) mi_attr_noexcept {
+  return MI_PRIM_THREAD_ID();
+}
+
+#elif defined(_WIN32)
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -145,9 +151,9 @@ static inline mi_threadid_t _mi_prim_thread_id(void) mi_attr_noexcept {
 // If you test on another platform and it works please send a PR :-)
 // see also https://akkadia.org/drepper/tls.pdf for more info on the TLS register.
 #elif defined(__GNUC__) && ( \
-           (defined(__GLIBC__)   && (defined(__x86_64__) || defined(__i386__) || defined(__arm__) || defined(__aarch64__))) \
+           (defined(__GLIBC__)   && (defined(__x86_64__) || defined(__i386__) || (defined(__arm__) && __ARM_ARCH >= 7) || defined(__aarch64__))) \
         || (defined(__APPLE__)   && (defined(__x86_64__) || defined(__aarch64__))) \
-        || (defined(__BIONIC__)  && (defined(__x86_64__) || defined(__i386__) || defined(__arm__) || defined(__aarch64__))) \
+        || (defined(__BIONIC__)  && (defined(__x86_64__) || defined(__i386__) || (defined(__arm__) && __ARM_ARCH >= 7) || defined(__aarch64__))) \
         || (defined(__FreeBSD__) && (defined(__x86_64__) || defined(__i386__) || defined(__aarch64__))) \
         || (defined(__OpenBSD__) && (defined(__x86_64__) || defined(__i386__) || defined(__aarch64__))) \
       )

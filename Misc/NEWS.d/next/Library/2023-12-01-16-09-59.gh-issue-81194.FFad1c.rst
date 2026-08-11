@@ -1,3 +1,0 @@
-Fix a crash in :func:`socket.if_indextoname` with specific value (UINT_MAX).
-Fix an integer overflow in :func:`socket.if_indextoname` on 64-bit
-non-Windows platforms.

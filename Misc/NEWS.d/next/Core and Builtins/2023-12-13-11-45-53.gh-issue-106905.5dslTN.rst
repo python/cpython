@@ -1,7 +1,0 @@
-Use per AST-parser state rather than global state to track recursion depth
-within the AST parser to prevent potential race condition due to
-simultaneous parsing.
-
-The issue primarily showed up in 3.11 by multithreaded users of
-:func:`ast.parse`.  In 3.12 a change to when garbage collection can be
-triggered prevented the race condition from occurring.

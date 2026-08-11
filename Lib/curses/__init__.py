@@ -30,10 +30,26 @@ def initscr():
               fd=_sys.__stdout__.fileno())
     stdscr = _curses.initscr()
     for key, value in _curses.__dict__.items():
-        if key[0:4] == 'ACS_' or key in ('LINES', 'COLS'):
+        if key.startswith('ACS_') or key in ('LINES', 'COLS'):
             setattr(curses, key, value)
-
     return stdscr
+
+# newterm() is wrapped for the same reason as initscr(): the ACS_* constants
+# and LINES/COLS only become available once a terminal is initialized, and are
+# then copied to the curses package's dictionary.
+
+try:
+    newterm
+except NameError:
+    pass
+else:
+    def newterm(type=None, fd=None, infd=None, /):
+        import _curses, curses
+        screen = _curses.newterm(type, fd, infd)
+        for key, value in _curses.__dict__.items():
+            if key.startswith('ACS_') or key in ('LINES', 'COLS'):
+                setattr(curses, key, value)
+        return screen
 
 # This is a similar wrapper for start_color(), which adds the COLORS and
 # COLOR_PAIRS variables which are only available after start_color() is
@@ -41,19 +57,16 @@ def initscr():
 
 def start_color():
     import _curses, curses
-    retval = _curses.start_color()
-    if hasattr(_curses, 'COLORS'):
-        curses.COLORS = _curses.COLORS
-    if hasattr(_curses, 'COLOR_PAIRS'):
-        curses.COLOR_PAIRS = _curses.COLOR_PAIRS
-    return retval
+    _curses.start_color()
+    curses.COLORS = _curses.COLORS
+    curses.COLOR_PAIRS = _curses.COLOR_PAIRS
 
 # Import Python has_key() implementation if _curses doesn't contain has_key()
 
 try:
     has_key
 except NameError:
-    from .has_key import has_key
+    from .has_key import has_key  # noqa: F401
 
 # Wrapper for the entire curses-based application.  Runs a function which
 # should be the rest of your curses-based application.  If the application
@@ -85,10 +98,11 @@ def wrapper(func, /, *args, **kwds):
         # Start color, too.  Harmless if the terminal doesn't have
         # color; user can test with has_color() later on.  The try/catch
         # works around a minor bit of over-conscientiousness in the curses
-        # module -- the error return from C start_color() is ignorable.
+        # module -- the error return from C start_color() is ignorable,
+        # unless they are raised by the interpreter due to other issues.
         try:
             start_color()
-        except:
+        except _curses.error:
             pass
 
         return func(stdscr, *args, **kwds)
