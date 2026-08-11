@@ -1,9 +1,8 @@
+.. _functional-howto:
+
 ********************************
   Functional Programming HOWTO
 ********************************
-
-:Author: A. M. Kuchling
-:Release: 0.32
 
 In this document, we'll take a tour of Python's features suitable for
 implementing programs in a functional style.  After an introduction to the
@@ -65,11 +64,10 @@ output must only depend on its input.
 
 Some languages are very strict about purity and don't even have assignment
 statements such as ``a=3`` or ``c = a + b``, but it's difficult to avoid all
-side effects.  Printing to the screen or writing to a disk file are side
-effects, for example.  For example, in Python a call to the :func:`print` or
-:func:`time.sleep` function both return no useful value; they're only called for
-their side effects of sending some text to the screen or pausing execution for a
-second.
+side effects, such as printing to the screen or writing to a disk file. Another
+example is a call to the :func:`print` or :func:`time.sleep` function, neither
+of which returns a useful value. Both are called only for their side effects
+of sending some text to the screen or pausing execution for a second.
 
 Python programs written in functional style usually won't go to the extreme of
 avoiding all I/O or all assignments; instead, they'll provide a
@@ -316,9 +314,15 @@ line of a file like this::
 Sets can take their contents from an iterable and let you iterate over the set's
 elements::
 
-    S = {2, 3, 5, 7, 11, 13}
-    for i in S:
-        print(i)
+    >>> S = {2, 3, 5, 7, 11, 13}
+    >>> for i in S:
+    ...     print(i)
+    2
+    3
+    5
+    7
+    11
+    13
 
 
 
@@ -336,18 +340,18 @@ List comprehensions and generator expressions (short form: "listcomps" and
 functional programming language Haskell (https://www.haskell.org/).  You can strip
 all the whitespace from a stream of strings with the following code::
 
-    line_list = ['  line 1\n', 'line 2  \n', ...]
+    >>> line_list = ['  line 1\n', 'line 2  \n', ' \n', '']
 
-    # Generator expression -- returns iterator
-    stripped_iter = (line.strip() for line in line_list)
+    >>> # Generator expression -- returns iterator
+    >>> stripped_iter = (line.strip() for line in line_list)
 
-    # List comprehension -- returns list
-    stripped_list = [line.strip() for line in line_list]
+    >>> # List comprehension -- returns list
+    >>> stripped_list = [line.strip() for line in line_list]
 
 You can select only certain elements by adding an ``"if"`` condition::
 
-    stripped_list = [line.strip() for line in line_list
-                     if line != ""]
+    >>> stripped_list = [line.strip() for line in line_list
+    ...                  if line != ""]
 
 With a list comprehension, you get back a Python list; ``stripped_list`` is a
 list containing the resulting lines, not an iterator.  Generator expressions
@@ -364,8 +368,9 @@ have the form::
                  if condition1
                  for expr2 in sequence2
                  if condition2
-                 for expr3 in sequence3 ...
+                 for expr3 in sequence3
                  if condition3
+                 ...
                  for exprN in sequenceN
                  if conditionN )
 
@@ -590,11 +595,11 @@ generator function.
 In addition to :meth:`~generator.send`, there are two other methods on
 generators:
 
-* :meth:`throw(type, value=None, traceback=None) <generator.throw>` is used to
+* :meth:`throw(value) <generator.throw>` is used to
   raise an exception inside the generator; the exception is raised by the
   ``yield`` expression where the generator's execution is paused.
 
-* :meth:`~generator.close` raises a :exc:`GeneratorExit` exception inside the
+* :meth:`~generator.close` sends a :exc:`GeneratorExit` exception to the
   generator to terminate the iteration.  On receiving this exception, the
   generator's code must either raise :exc:`GeneratorExit` or
   :exc:`StopIteration`; catching the exception and doing anything else is
@@ -735,7 +740,7 @@ further because you risk skipping a discarded element.
 The itertools module
 ====================
 
-The :mod:`itertools` module contains a number of commonly-used iterators as well
+The :mod:`itertools` module contains a number of commonly used iterators as well
 as functions for combining several iterators.  This section will introduce the
 module's contents by showing small examples.
 
@@ -988,7 +993,7 @@ requesting iterator-2 and its corresponding key.
 The functools module
 ====================
 
-The :mod:`functools` module in Python 2.5 contains some higher-order functions.
+The :mod:`functools` module contains some higher-order functions.
 A **higher-order function** takes one or more functions as input and returns a
 new function.  The most useful tool in this module is the
 :func:`functools.partial` function.
@@ -1034,7 +1039,7 @@ first calculation. ::
     >>> functools.reduce(operator.concat, [])
     Traceback (most recent call last):
       ...
-    TypeError: reduce() of empty sequence with no initial value
+    TypeError: reduce() of empty iterable with no initial value
     >>> functools.reduce(operator.mul, [1, 2, 3], 1)
     6
     >>> functools.reduce(operator.mul, [], 1)
@@ -1066,8 +1071,8 @@ write the obvious :keyword:`for` loop::
 
 A related function is :func:`itertools.accumulate(iterable, func=operator.add)
 <itertools.accumulate>`.  It performs the same calculation, but instead of
-returning only the final result, :func:`accumulate` returns an iterator that
-also yields each partial result::
+returning only the final result, :func:`~itertools.accumulate` returns an iterator
+that also yields each partial result::
 
     itertools.accumulate([1, 2, 3, 4, 5]) =>
       1, 3, 6, 10, 15
@@ -1177,7 +1182,8 @@ about whether this lambda-free style is better.
 Revision History and Acknowledgements
 =====================================
 
-The author would like to thank the following people for offering suggestions,
+This HOWTO was originally written by A. M. Kuchling. The author would like to
+thank the following people for offering suggestions,
 corrections and assistance with various drafts of this article: Ian Bicking,
 Nick Coghlan, Nick Efford, Raymond Hettinger, Jim Jewett, Mike Krell, Leandro
 Lameiro, Jussi Salmela, Collin Winter, Blake Winton.
@@ -1202,14 +1208,14 @@ General
 -------
 
 **Structure and Interpretation of Computer Programs**, by Harold Abelson and
-Gerald Jay Sussman with Julie Sussman.  Full text at
-https://mitpress.mit.edu/sicp/.  In this classic textbook of computer science,
+Gerald Jay Sussman with Julie Sussman.  The book can be found at
+https://mitpress.mit.edu/sicp.  In this classic textbook of computer science,
 chapters 2 and 3 discuss the use of sequences and streams to organize the data
 flow inside a program.  The book uses Scheme for its examples, but many of the
 design approaches described in these chapters are applicable to functional-style
 Python code.
 
-http://www.defmacro.org/ramblings/fp.html: A general introduction to functional
+https://defmacro.org/2006/06/19/fp.html: A general introduction to functional
 programming that uses Java examples and has a lengthy historical introduction.
 
 https://en.wikipedia.org/wiki/Functional_programming: General Wikipedia entry
@@ -1217,21 +1223,23 @@ describing functional programming.
 
 https://en.wikipedia.org/wiki/Coroutine: Entry for coroutines.
 
+https://en.wikipedia.org/wiki/Partial_application: Entry for the concept of partial function application.
+
 https://en.wikipedia.org/wiki/Currying: Entry for the concept of currying.
 
 Python-specific
 ---------------
 
-http://gnosis.cx/TPiP/: The first chapter of David Mertz's book
+https://gnosis.cx/TPiP/: The first chapter of David Mertz's book
 :title-reference:`Text Processing in Python` discusses functional programming
 for text processing, in the section titled "Utilizing Higher-Order Functions in
 Text Processing".
 
 Mertz also wrote a 3-part series of articles on functional programming
 for IBM's DeveloperWorks site; see
-`part 1 <https://developer.ibm.com/articles/l-prog/>`__,
-`part 2 <https://developer.ibm.com/tutorials/l-prog2/>`__, and
-`part 3 <https://developer.ibm.com/tutorials/l-prog3/>`__,
+`part 1 <https://web.archive.org/web/20211006103639/https://developer.ibm.com/articles/l-prog/>`__,
+`part 2 <https://web.archive.org/web/20211205224606/https://developer.ibm.com/tutorials/l-prog2/>`__, and
+`part 3 <https://web.archive.org/web/20211127083846/https://developer.ibm.com/tutorials/l-prog3/>`__.
 
 
 Python documentation

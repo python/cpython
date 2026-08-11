@@ -12,7 +12,7 @@
 # type          ::= product | sum
 # product       ::= fields ["attributes" fields]
 # fields        ::= "(" { field, "," } field ")"
-# field         ::= TypeId ["?" | "*"] [Id]
+# field         ::= TypeId { "?" | "*" } [Id]
 # sum           ::= constructor { "|" constructor } ["attributes" fields]
 # constructor   ::= ConstructorId [fields]
 #
@@ -20,6 +20,7 @@
 #     http://asdl.sourceforge.net/
 #-------------------------------------------------------------------------------
 from collections import namedtuple
+import enum
 import re
 
 __all__ = [
@@ -64,30 +65,43 @@ class Constructor(AST):
     def __repr__(self):
         return 'Constructor({0.name}, {0.fields})'.format(self)
 
+class Quantifier(enum.Enum):
+    OPTIONAL = enum.auto()
+    SEQUENCE = enum.auto()
+
 class Field(AST):
-    def __init__(self, type, name=None, seq=False, opt=False):
+    def __init__(self, type, name=None, quantifiers=None):
         self.type = type
         self.name = name
-        self.seq = seq
-        self.opt = opt
+        self.seq = False
+        self.opt = False
+        self.quantifiers = quantifiers or []
+        if len(self.quantifiers) > 0:
+            self.seq = self.quantifiers[-1] is Quantifier.SEQUENCE
+            self.opt = self.quantifiers[-1] is Quantifier.OPTIONAL
 
     def __str__(self):
-        if self.seq:
-            extra = "*"
-        elif self.opt:
-            extra = "?"
-        else:
-            extra = ""
+        extra = ""
+        for mod in self.quantifiers:
+            if mod is Quantifier.SEQUENCE:
+                extra += "*"
+            elif mod is Quantifier.OPTIONAL:
+                extra += "?"
 
         return "{}{} {}".format(self.type, extra, self.name)
 
     def __repr__(self):
-        if self.seq:
-            extra = ", seq=True"
-        elif self.opt:
-            extra = ", opt=True"
+        if self.quantifiers:
+            texts = []
+            for mod in self.quantifiers:
+                if mod is Quantifier.SEQUENCE:
+                    texts.append("SEQUENCE")
+                elif mod is Quantifier.OPTIONAL:
+                    texts.append("OPTIONAL")
+            extra = ", quantifiers=[{}]".format(", ".join(texts))
         else:
             extra = ""
+
         if self.name is None:
             return 'Field({0.type}{1})'.format(self, extra)
         else:
@@ -314,10 +328,10 @@ class ASDLParser:
         self._match(TokenKind.LParen)
         while self.cur_token.kind == TokenKind.TypeId:
             typename = self._advance()
-            is_seq, is_opt = self._parse_optional_field_quantifier()
+            quantifiers = self._parse_optional_field_quantifier()
             id = (self._advance() if self.cur_token.kind in self._id_kinds
                                   else None)
-            fields.append(Field(typename, id, seq=is_seq, opt=is_opt))
+            fields.append(Field(typename, id, quantifiers=quantifiers))
             if self.cur_token.kind == TokenKind.RParen:
                 break
             elif self.cur_token.kind == TokenKind.Comma:
@@ -339,14 +353,14 @@ class ASDLParser:
             return None
 
     def _parse_optional_field_quantifier(self):
-        is_seq, is_opt = False, False
-        if self.cur_token.kind == TokenKind.Asterisk:
-            is_seq = True
+        quantifiers = []
+        while self.cur_token.kind in (TokenKind.Asterisk, TokenKind.Question):
+            if self.cur_token.kind == TokenKind.Asterisk:
+                quantifiers.append(Quantifier.SEQUENCE)
+            elif self.cur_token.kind == TokenKind.Question:
+                quantifiers.append(Quantifier.OPTIONAL)
             self._advance()
-        elif self.cur_token.kind == TokenKind.Question:
-            is_opt = True
-            self._advance()
-        return is_seq, is_opt
+        return quantifiers
 
     def _advance(self):
         """ Return the value of the current token and read the next one into

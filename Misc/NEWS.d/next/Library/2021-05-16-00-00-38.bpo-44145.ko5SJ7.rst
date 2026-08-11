@@ -1,3 +1,0 @@
-:mod:`hmac` computations were not releasing the GIL while calling the
-OpenSSL ``HMAC_Update`` C API (a new feature in 3.9).  This unintentionally
-prevented parallel computation as other :mod:`hashlib` algorithms support.

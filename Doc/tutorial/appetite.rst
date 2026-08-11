@@ -23,7 +23,7 @@ You could write a Unix shell script or Windows batch files for some of these
 tasks, but shell scripts are best at moving around files and changing text data,
 not well-suited for GUI applications or games. You could write a C/C++/Java
 program, but it can take a lot of development time to get even a first-draft
-program.  Python is simpler to use, available on Windows, Mac OS X, and Unix
+program.  Python is simpler to use, available on Windows, macOS, and Unix
 operating systems, and will help you get the job done more quickly.
 
 Python is simple to use, but it is a real programming language, offering much
