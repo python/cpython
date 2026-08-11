@@ -276,6 +276,15 @@ ctypes
   (Contributed by Peter Bierma in :gh:`153903`.)
 
 
+concurrent.futures
+------------------
+
+* The iterator returned by :meth:`concurrent.futures.Executor.map` is no longer
+  automatically closed if a function call raises an exception.
+  Use method :meth:`!close` to explicitly close the iterator.
+  (Contributed by xzmeng and Serhiy Storchaka in :gh:`108518`.)
+
+
 encodings
 ---------
 
@@ -818,6 +827,13 @@ that may require changes to your code.
   them, which formerly defaulted to ``'PY_VAR'`` and ``'1'``, now raises
   :exc:`TypeError`.
   (Contributed by Serhiy Storchaka in :gh:`152587`.)
+
+* On Windows, seeking a pipe now fails instead of silently appearing to
+  succeed: :func:`os.lseek` and :meth:`~io.IOBase.seek` raise :exc:`OSError`,
+  and :meth:`~io.IOBase.seekable` returns ``False``.  As a consequence,
+  opening a pipe in a read-write binary mode (``'r+b'`` or ``'w+b'``) now
+  raises :exc:`io.UnsupportedOperation` unless buffering is disabled.
+  (Contributed by An Long in :gh:`86768`.)
 
 
 Build changes
