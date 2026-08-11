@@ -1322,8 +1322,8 @@ class PosixTester(unittest.TestCase):
     @unittest.skipUnless(hasattr(pwd, 'getpwuid'), "test needs pwd.getpwuid()")
     @unittest.skipUnless(hasattr(os, 'getuid'), "test needs os.getuid()")
     def test_getgrouplist(self):
-        user = pwd.getpwuid(os.getuid())[0]
-        group = pwd.getpwuid(os.getuid())[3]
+        user = pwd.getpwuid(os.getuid()).pw_name
+        group = pwd.getpwuid(os.getuid()).pw_gid
         self.assertIn(group, posix.getgrouplist(user, group))
 
 
@@ -1823,8 +1823,8 @@ class TestPosixDirFd(unittest.TestCase):
                 self.skipTest('posix.link(): %s' % e)
             self.addCleanup(posix.unlink, fulllinkname)
             # should have same inodes
-            self.assertEqual(posix.stat(fullname)[1],
-                posix.stat(fulllinkname)[1])
+            self.assertEqual(posix.stat(fullname).st_ino,
+                             posix.stat(fulllinkname).st_ino)
 
     @unittest.skipUnless(os.mkdir in os.supports_dir_fd, "test needs dir_fd support in os.mkdir()")
     def test_mkdir_dir_fd(self):
