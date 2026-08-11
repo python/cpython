@@ -18,7 +18,7 @@ __all__ = ['URLError', 'HTTPError', 'ContentTooShortError']
 
 class URLError(OSError):
     # URLError is a sub-type of OSError, but it doesn't share any of
-    # the implementation.  need to override __init__ and __str__.
+    # the implementation. It overrides __init__ and __str__.
     # It sets self.args for compatibility with other OSError
     # subclasses, but args doesn't have the typical format with errno in
     # slot 0 and strerror in slot 1.  This may be better than nothing.

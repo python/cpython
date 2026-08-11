@@ -1,0 +1,2 @@
+The :func:`os.exec\* <os.execl>` functions now set the
+:attr:`~OSError.filename` attribute of the raised :exc:`FileNotFoundError`.

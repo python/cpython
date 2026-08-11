@@ -1,1 +1,0 @@
-Remove the bundled setuptools wheel from ``ensurepip``, and stop installing setuptools in environments created by ``venv``.

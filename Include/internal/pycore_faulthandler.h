@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 #ifdef HAVE_SIGACTION
-#  include <signal.h>
+#  include <signal.h>             // sigaction
 #endif
 
 
@@ -42,6 +42,7 @@ struct faulthandler_user_signal {
     int chain;
     _Py_sighandler_t previous;
     PyInterpreterState *interp;
+    Py_ssize_t max_threads;
 };
 #endif /* FAULTHANDLER_USER */
 
@@ -56,6 +57,8 @@ struct _faulthandler_runtime_state {
 #ifdef MS_WINDOWS
         void *exc_handler;
 #endif
+        int c_stack;
+        Py_ssize_t max_threads;
     } fatal_error;
 
     struct {
@@ -67,6 +70,7 @@ struct _faulthandler_runtime_state {
         int exit;
         char *header;
         size_t header_len;
+        Py_ssize_t max_threads;
         /* The main thread always holds this lock. It is only released when
            faulthandler_thread() is interrupted before this thread exits, or at
            Python exit. */
