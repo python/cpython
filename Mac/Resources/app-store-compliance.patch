@@ -1,0 +1,29 @@
+diff --git a/Lib/test/test_urlparse.py b/Lib/test/test_urlparse.py
+index 49a292df934..e1669a0c9b2 100644
+--- a/Lib/test/test_urlparse.py
++++ b/Lib/test/test_urlparse.py
+@@ -282,11 +282,6 @@ def test_qs(self, orig, expect):
+               None,None,None),
+              ('git+ssh', 'git@github.com','/user/project.git',
+               None, None)),
+-            ('itms-services://?action=download-manifest&url=https://example.com/app',
+-             ('itms-services', '', '', None,
+-              'action=download-manifest&url=https://example.com/app', None),
+-             ('itms-services', '', '',
+-              'action=download-manifest&url=https://example.com/app', None)),
+             ('+scheme:path/to/file',
+              (None, None, '+scheme:path/to/file', None, None, None),
+              (None, None, '+scheme:path/to/file', None, None)),
+diff --git a/Lib/urllib/parse.py b/Lib/urllib/parse.py
+index e917f8b61bb..8575172573f 100644
+--- a/Lib/urllib/parse.py
++++ b/Lib/urllib/parse.py
+@@ -59,7 +59,7 @@
+                'imap', 'wais', 'file', 'mms', 'https', 'shttp',
+                'snews', 'prospero', 'rtsp', 'rtsps', 'rtspu', 'rsync',
+                'svn', 'svn+ssh', 'sftp', 'nfs', 'git', 'git+ssh',
+-               'ws', 'wss', 'itms-services']
++               'ws', 'wss']
+
+ uses_params = ['', 'ftp', 'hdl', 'prospero', 'http', 'imap',
+                'https', 'shttp', 'rtsp', 'rtsps', 'rtspu', 'sip',

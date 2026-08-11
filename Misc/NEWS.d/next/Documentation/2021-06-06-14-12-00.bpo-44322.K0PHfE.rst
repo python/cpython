@@ -1,2 +1,0 @@
-Document that SyntaxError args have a details tuple and that details are
-adjusted for errors in f-string field replacement expressions.

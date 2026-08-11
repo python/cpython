@@ -1,5 +1,0 @@
- :meth:`ctypes.util.find_library` now works correctly on macOS 11 Big Sur
- even if Python is built on an older version of macOS.  Previously, when
- built on older macOS systems, ``find_library`` was not able to find
- macOS system libraries when running on Big Sur due to changes in
- how system libraries are stored.

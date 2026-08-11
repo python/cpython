@@ -1,2 +1,0 @@
-Tests were added to clarify :func:`id` is preserved when ``obj * 1`` is used
-on :class:`str` and :class:`bytes` objects. Patch by Nikita Sobolev.
