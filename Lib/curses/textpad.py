@@ -23,22 +23,25 @@ class Textbox:
     Ctrl-A      Go to left edge of window.
     Ctrl-B      Cursor left, wrapping to previous line if appropriate.
     Ctrl-D      Delete character under cursor.
-    Ctrl-E      Go to right edge (stripspaces off) or end of line (stripspaces on).
+    Ctrl-E      Go to right edge (stripspaces off) or end of line
+                (stripspaces on).
     Ctrl-F      Cursor right, wrapping to next line when appropriate.
     Ctrl-G      Terminate, returning the window contents.
     Ctrl-H      Delete character backward.
-    Ctrl-J      Terminate if the window is 1 line, otherwise insert newline.
+    Ctrl-J      Terminate if the window is 1 line, otherwise move to start
+                of next line.
     Ctrl-K      If line is blank, delete it, otherwise clear to end of line.
     Ctrl-L      Refresh screen.
     Ctrl-N      Cursor down; move down one line.
     Ctrl-O      Insert a blank line at cursor location.
     Ctrl-P      Cursor up; move up one line.
 
-    Move operations do nothing if the cursor is at an edge where the movement
-    is not possible.  The following synonyms are supported where possible:
+    Move operations do nothing if the cursor is at an edge where the
+    movement is not possible.  The following synonyms are supported where
+    possible:
 
-    KEY_LEFT = Ctrl-B, KEY_RIGHT = Ctrl-F, KEY_UP = Ctrl-P, KEY_DOWN = Ctrl-N
-    KEY_BACKSPACE = Ctrl-h
+    KEY_LEFT = Ctrl-B, KEY_RIGHT = Ctrl-F, KEY_UP = Ctrl-P,
+    KEY_DOWN = Ctrl-N, KEY_BACKSPACE = Ctrl-h
     """
     def __init__(self, win, insert_mode=False):
         self.win = win
@@ -53,13 +56,27 @@ class Textbox:
         self.maxy = maxy - 1
         self.maxx = maxx - 1
 
+    def _decode(self, ch):
+        # An integer keystroke is a byte: get_wch() passes a character as a
+        # string, and getch() reports one as its bytes in the encoding.
+        return bytes([ch & 0xff]).decode(self.win.encoding, 'replace')
+
+    def _printable_key(self, ch):
+        # Whether the integer keystroke is a printable character rather than a
+        # key code.  Key codes occupy [curses.KEY_MIN, curses.KEY_MAX], which
+        # may start above a byte.
+        return (ch <= 0xff
+                and not curses.KEY_MIN <= ch <= curses.KEY_MAX
+                and self._decode(ch).isprintable())
+
     def _end_of_line(self, y):
         """Go to the location of the first blank on the given line,
         returning the index of the last non-blank character."""
         self._update_max_yx()
         last = self.maxx
         while True:
-            if curses.ascii.ascii(self.win.inch(y, last)) != curses.ascii.SP:
+            # The text of the cell at (y, last).
+            if str(self.win.in_wch(y, last)) != ' ':
                 last = min(self.maxx, last+1)
                 break
             elif last == 0:
@@ -71,17 +88,28 @@ class Textbox:
         self._update_max_yx()
         (y, x) = self.win.getyx()
         backyx = None
-        while y < self.maxy or x < self.maxx:
+        while True:
             if self.insert_mode:
-                oldch = self.win.inch()
-            # The try-catch ignores the error we trigger from some curses
-            # versions by trying to write into the lowest-rightmost spot
-            # in the window.
-            try:
+                # The displaced cell, as a complexchar so addch() can rewrite it
+                # with its rendition.
+                oldch = self.win.in_wch()
+            if y >= self.maxy and x >= self.maxx:
+                # Use insch() in the lower-right cell; addch() there would push
+                # the cursor out of the window (an error, and it scrolls a
+                # scrollable window).
+                if isinstance(ch, int):
+                    self.win.insch(self._decode(ch), ch & curses.A_ATTRIBUTES)
+                else:
+                    self.win.insch(ch)
+                break
+            # Pass the character as text: an integer is a byte, which addch()
+            # takes as a code point on a wide build.
+            if isinstance(ch, int):
+                self.win.addch(self._decode(ch), ch & curses.A_ATTRIBUTES)
+            else:
                 self.win.addch(ch)
-            except curses.error:
-                pass
-            if not self.insert_mode or not curses.ascii.isprint(oldch):
+            # In insert mode keep shifting cells right until a blank one.
+            if not self.insert_mode or not str(oldch).isprintable():
                 break
             ch = oldch
             (y, x) = self.win.getyx()
@@ -97,10 +125,17 @@ class Textbox:
         self._update_max_yx()
         (y, x) = self.win.getyx()
         self.lastcmd = ch
-        if curses.ascii.isprint(ch):
-            if y < self.maxy or x < self.maxx:
+        if isinstance(ch, str):
+            # A character from get_wch(); a control character is dispatched
+            # below by its code point.
+            if ch.isprintable():
                 self._insert_printable_char(ch)
-        elif ch == curses.ascii.SOH:                           # ^a
+                return 1
+            ch = ord(ch)
+        elif self._printable_key(ch):
+            self._insert_printable_char(ch)
+            return 1
+        if ch == curses.ascii.SOH:                             # ^a
             self.win.move(y, 0)
         elif ch in (curses.ascii.STX,curses.KEY_LEFT,
                     curses.ascii.BS,
@@ -172,7 +207,7 @@ class Textbox:
             for x in range(self.maxx+1):
                 if self.stripspaces and x > stop:
                     break
-                result = result + chr(curses.ascii.ascii(self.win.inch(y, x)))
+                result = result + str(self.win.in_wch(y, x))
             if self.maxy > 0:
                 result = result + "\n"
         return result
@@ -180,7 +215,12 @@ class Textbox:
     def edit(self, validate=None):
         "Edit in the widget window and collect the results."
         while 1:
-            ch = self.win.getch()
+            ch = self.win.get_wch()
+            # Represent an ASCII keystroke by its code point, the way getch()
+            # always has, so that existing validators and the command dispatch
+            # keep working; only non-ASCII characters are passed as strings.
+            if isinstance(ch, str) and ch.isascii():
+                ch = ord(ch)
             if validate:
                 ch = validate(ch)
             if not ch:

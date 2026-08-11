@@ -36,6 +36,33 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(monitoring_clear_tool_id__doc__,
+"clear_tool_id($module, tool_id, /)\n"
+"--\n"
+"\n");
+
+#define MONITORING_CLEAR_TOOL_ID_METHODDEF    \
+    {"clear_tool_id", (PyCFunction)monitoring_clear_tool_id, METH_O, monitoring_clear_tool_id__doc__},
+
+static PyObject *
+monitoring_clear_tool_id_impl(PyObject *module, int tool_id);
+
+static PyObject *
+monitoring_clear_tool_id(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int tool_id;
+
+    tool_id = PyLong_AsInt(arg);
+    if (tool_id == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = monitoring_clear_tool_id_impl(module, tool_id);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(monitoring_free_tool_id__doc__,
 "free_tool_id($module, tool_id, /)\n"
 "--\n"
@@ -304,4 +331,4 @@ monitoring__all_events(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return monitoring__all_events_impl(module);
 }
-/*[clinic end generated code: output=14ffc0884a6de50a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8f81876c6aba9be8 input=a9049054013a1b77]*/

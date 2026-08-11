@@ -1,0 +1,5 @@
+Optimize matching of character class escapes (``\d``, ``\D``, ``\s``,
+``\S``, ``\w`` and ``\W``) that occur outside a character set: they are now
+compiled to a single ``CATEGORY`` opcode instead of being wrapped in an
+``IN`` block.  This speeds up patterns such as ``\d+`` and reduces the size
+of the compiled byte code.

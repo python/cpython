@@ -8,7 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "dynamic_annotations.h" // _Py_ANNOTATE_PURE_HAPPENS_BEFORE_MUTEX
+#include "dynamic_annotations.h"     // _Py_ANNOTATE_PURE_HAPPENS_BEFORE_MUTEX
+#include "pycore_llist.h"            // struct llist_node
 
 // Get _POSIX_THREADS and _POSIX_SEMAPHORES macros if available
 #if (defined(HAVE_UNISTD_H) && !defined(_POSIX_THREADS) \
@@ -45,7 +46,8 @@ extern "C" {
 
 
 #if defined(HAVE_PTHREAD_STUBS)
-#include <stdbool.h>              // bool
+#include "cpython/pthread_stubs.h"  // PTHREAD_KEYS_MAX
+#include <stdbool.h>                // bool
 
 // pthread_key
 struct py_stub_tls_entry {
@@ -75,21 +77,29 @@ struct _pythread_runtime_state {
         struct py_stub_tls_entry tls_entries[PTHREAD_KEYS_MAX];
     } stubs;
 #endif
+
+    // Linked list of ThreadHandles
+    struct llist_node handles;
 };
 
+#define _pythread_RUNTIME_INIT(pythread) \
+    { \
+        .handles = LLIST_INIT(pythread.handles), \
+    }
 
 #ifdef HAVE_FORK
 /* Private function to reinitialize a lock at fork in the child process.
    Reset the lock to the unlocked state.
    Return 0 on success, return -1 on error. */
 extern int _PyThread_at_fork_reinit(PyThread_type_lock *lock);
+extern void _PyThread_AfterFork(struct _pythread_runtime_state *state);
 #endif  /* HAVE_FORK */
 
 
 // unset: -1 seconds, in nanoseconds
-#define PyThread_UNSET_TIMEOUT ((_PyTime_t)(-1 * 1000 * 1000 * 1000))
+#define PyThread_UNSET_TIMEOUT ((PyTime_t)(-1 * 1000 * 1000 * 1000))
 
-// Exported for the _xxinterpchannels module.
+// Exported for the _interpchannels module.
 PyAPI_FUNC(int) PyThread_ParseTimeoutArg(
     PyObject *arg,
     int blocking,
@@ -101,7 +111,7 @@ PyAPI_FUNC(int) PyThread_ParseTimeoutArg(
  * are returned, depending on whether the lock can be acquired within the
  * timeout.
  */
-// Exported for the _xxinterpchannels module.
+// Exported for the _interpchannels module.
 PyAPI_FUNC(PyLockStatus) PyThread_acquire_lock_timed_with_retries(
     PyThread_type_lock,
     PY_TIMEOUT_T microseconds);
@@ -137,17 +147,24 @@ PyAPI_FUNC(int) PyThread_start_joinable_thread(void (*func)(void *),
 PyAPI_FUNC(int) PyThread_join_thread(PyThread_handle_t);
 /*
  * Detach a thread started with `PyThread_start_joinable_thread`, such
- * that its resources are relased as soon as it exits.
+ * that its resources are released as soon as it exits.
  * This function cannot be interrupted. It returns 0 on success,
  * a non-zero value on failure.
  */
 PyAPI_FUNC(int) PyThread_detach_thread(PyThread_handle_t);
-
 /*
- * Obtain the new thread ident and handle in a forked child process.
+ * Hangs the thread indefinitely without exiting it.
+ *
+ * gh-87135: There is no safe way to exit a thread other than returning
+ * normally from its start function.  This is used during finalization in lieu
+ * of actually exiting the thread.  Since the program is expected to terminate
+ * soon anyway, it does not matter if the thread stack stays around until then.
+ *
+ * This is unfortunate for embedders who may not be terminating their process
+ * when they're done with the interpreter, but our C API design does not allow
+ * for safely exiting threads attempting to re-enter Python post finalization.
  */
-PyAPI_FUNC(void) PyThread_update_thread_after_fork(PyThread_ident_t* ident,
-                                                   PyThread_handle_t* handle);
+void _Py_NO_RETURN PyThread_hang_thread(void);
 
 #ifdef __cplusplus
 }

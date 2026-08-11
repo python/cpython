@@ -1,0 +1,4 @@
+Speed up :mod:`shutil` import by probing the ``_bz2``, ``_lzma`` and
+``_zstd`` extension modules instead of importing the :mod:`bz2`,
+:mod:`lzma` and :mod:`compression.zstd` wrappers, which are now only
+imported when an archive is actually created or extracted.

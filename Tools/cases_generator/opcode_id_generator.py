@@ -1,15 +1,12 @@
 """Generate the list of opcode IDs.
 Reads the instruction definitions from bytecodes.c.
-Writes the IDs to opcode._ids.h by default.
+Writes the IDs to opcode_ids.h by default.
 """
 
 import argparse
-import os.path
-import sys
 
 from analyzer import (
     Analysis,
-    Instruction,
     analyze_files,
 )
 from generators_common import (
@@ -40,6 +37,7 @@ def generate_opcode_header(
 
         out.emit("\n")
         write_define("HAVE_ARGUMENT", analysis.have_arg)
+        write_define("MIN_SPECIALIZED_OPCODE", analysis.opmap["RESUME"]+1)
         write_define("MIN_INSTRUMENTED_OPCODE", analysis.min_instrumented)
 
 

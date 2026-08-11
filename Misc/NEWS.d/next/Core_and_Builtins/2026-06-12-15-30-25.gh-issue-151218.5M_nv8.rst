@@ -1,0 +1,3 @@
+:c:func:`PyConfig_Set` and :func:`sys.set_int_max_str_digits` now replace
+:data:`sys.flags` (create a new object), instead of modifying :data:`sys.flags`
+in-place. Patch by Victor Stinner.

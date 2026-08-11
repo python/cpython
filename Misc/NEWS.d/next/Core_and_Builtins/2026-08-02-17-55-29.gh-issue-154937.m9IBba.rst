@@ -1,0 +1,3 @@
+Fix a data race on thread handle identifiers when ``_thread._shutdown()``
+runs concurrently with the startup of non-daemon threads in the
+:term:`free-threaded build`.

@@ -1,5 +1,0 @@
-In :meth:`asyncio.StreamReaderProtocol.connection_made`, there is callback
-that logs an error if the task wrapping the "connected callback" fails. This
-callback would itself fail if the task was cancelled. Prevent this by
-checking whether the task was cancelled first. If so, close the transport
-but don't log an error.
