@@ -417,6 +417,13 @@ class NormalizeTest(unittest.TestCase):
         self.check('english', 'en_EN.ISO8859-1')
         self.check('english_uk.ascii', 'en_GB.ISO8859-1')
 
+    def test_en_in_utf8(self):
+        # gh-151316: en_IN is UTF-8 on modern glibc; do not invent ISO8859-1.
+        self.check('en_IN', 'en_IN.UTF-8')
+        self.check('en_in', 'en_IN.UTF-8')
+        self.assertEqual(locale._parse_localename('en_IN'), ('en_IN', 'UTF-8'))
+        self.assertEqual(locale._parse_localename('en_in'), ('en_IN', 'UTF-8'))
+
     def test_hyphenated_encoding(self):
         self.check('az_AZ.iso88599e', 'az_AZ.ISO8859-9E')
         self.check('az_AZ.ISO8859-9E', 'az_AZ.ISO8859-9E')
@@ -640,6 +647,38 @@ class TestRealLocales(unittest.TestCase):
 
         locale.setlocale(locale.LC_CTYPE, loctuple)
         self.assertEqual(locale.getlocale(locale.LC_CTYPE), localetuple)
+
+
+class TestEnINLocale(unittest.TestCase):
+    """gh-151316: en_IN must round-trip without inventing ISO8859-1."""
+
+    def setUp(self):
+        self.oldlocale = locale.setlocale(locale.LC_CTYPE)
+        self.addCleanup(locale.setlocale, locale.LC_CTYPE, self.oldlocale)
+
+    def test_getlocale_setlocale_roundtrip(self):
+        try:
+            locale.setlocale(locale.LC_CTYPE, 'en_IN')
+        except locale.Error as exc:
+            self.skipTest(str(exc))
+        loc = locale.getlocale(locale.LC_CTYPE)
+        self.assertEqual(loc[0], 'en_IN')
+        self.assertNotEqual(loc[1], 'ISO8859-1')
+        locale.setlocale(locale.LC_CTYPE, loc)
+        self.assertEqual(locale.getlocale(locale.LC_CTYPE), loc)
+
+    def test_setlocale_from_getlocale_tuple(self):
+        # Reproduces the issue report: setlocale(LC_*, getlocale()).
+        try:
+            locale.setlocale(locale.LC_CTYPE, 'en_IN.UTF-8')
+        except locale.Error:
+            try:
+                locale.setlocale(locale.LC_CTYPE, 'en_IN')
+            except locale.Error as exc:
+                self.skipTest(str(exc))
+        loc = locale.getlocale(locale.LC_CTYPE)
+        locale.setlocale(locale.LC_CTYPE, loc)
+        self.assertEqual(locale.getlocale(locale.LC_CTYPE)[0], 'en_IN')
 
 
 class TestMiscellaneous(unittest.TestCase):

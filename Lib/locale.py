@@ -921,6 +921,11 @@ del k, v
 #
 #    removed 'el_gr@euro'
 #    removed 'uz_uz@cyrillic'
+#
+# gh-151316:
+# Prefer UTF-8 for en_IN.  X11 locale.alias maps en_IN to ISO8859-1 and that
+# entry overrides glibc's en_IN/UTF-8 during makelocalealias regeneration,
+# so hardcode the modern codeset (mirroring the c.utf8 carve-out).
 
 locale_alias = {
     'a3':                                   'az_AZ.KOI8-C',
@@ -1066,7 +1071,7 @@ locale_alias = {
     'en_hk':                                'en_HK.ISO8859-1',
     'en_ie':                                'en_IE.ISO8859-1',
     'en_il':                                'en_IL.ISO8859-1',
-    'en_in':                                'en_IN.ISO8859-1',
+    'en_in':                                'en_IN.UTF-8',
     'en_ng':                                'en_NG.UTF-8',
     'en_nz':                                'en_NZ.ISO8859-1',
     'en_ph':                                'en_PH.ISO8859-1',

@@ -154,6 +154,9 @@ if __name__ == '__main__':
     # Hardcode 'c.utf8' -> 'C.UTF-8' because 'en_US.UTF-8' does not exist
     # on all platforms.
     data['c.utf8'] = 'C.UTF-8'
+    # Hardcode 'en_in' -> 'en_IN.UTF-8'.  X11 locale.alias still maps en_IN to
+    # ISO8859-1 and would otherwise override glibc's en_IN/UTF-8 (gh-151316).
+    data['en_in'] = 'en_IN.UTF-8'
     while True:
         # Repeat optimization while the size is decreased.
         n = len(data)
