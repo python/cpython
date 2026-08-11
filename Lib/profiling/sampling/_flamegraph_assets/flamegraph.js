@@ -15,7 +15,7 @@ let zoomedNodeValue = null;
 // sampling interval is unknown, since a sample count is not a time.
 function formatSampleMs(samples) {
   if (sampleIntervalUsec <= 0) return "--";
-  return ((samples * sampleIntervalUsec) / 1000).toFixed(2);
+  return ((samples * sampleIntervalUsec) / 1_000).toFixed(2);
 }
 
 // Heat colors are now defined in CSS variables (--heat-1 through --heat-8)
