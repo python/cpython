@@ -119,15 +119,15 @@ Complete._fields_ = [("a", c_long)]
 #
 
 # Platform-specific type codes
-s_bool = {1: '?', 2: 'H', 4: 'L', 8: 'Q'}[sizeof(c_bool)]
-s_short = {2: 'h', 4: 'l', 8: 'q'}[sizeof(c_short)]
-s_ushort = {2: 'H', 4: 'L', 8: 'Q'}[sizeof(c_ushort)]
-s_int = {2: 'h', 4: 'i', 8: 'q'}[sizeof(c_int)]
-s_uint = {2: 'H', 4: 'I', 8: 'Q'}[sizeof(c_uint)]
-s_long = {4: 'l', 8: 'q'}[sizeof(c_long)]
-s_ulong = {4: 'L', 8: 'Q'}[sizeof(c_ulong)]
-s_longlong = "q"
-s_ulonglong = "Q"
+s_bool = c_bool._type_
+s_short = c_short._type_
+s_ushort = c_ushort._type_
+s_int = c_int._type_
+s_uint = c_uint._type_
+s_long = c_long._type_
+s_ulong = c_ulong._type_
+s_longlong = c_longlong._type_
+s_ulonglong = c_ulonglong._type_
 s_float = "f"
 s_double = "d"
 s_longdouble = "g"
@@ -194,9 +194,9 @@ native_types = [
     (Point,                     "T{l:x:l:y:}".replace('l', s_long),   (),  Point),
     (PackedPoint,               "T{l:x:l:y:}".replace('l', s_long),   (),  PackedPoint),
     (PointMidPad,               "T{b:x:3xI:y:}".replace('I', s_uint), (),  PointMidPad),
-    (PackedPointMidPad,         "T{b:x:xQ:y:}",                       (),  PackedPointMidPad),
+    (PackedPointMidPad,         "T{b:x:xQ:y:}".replace('Q', s_ulonglong),                       (),  PackedPointMidPad),
     (PointEndPad,               "T{I:x:b:y:3x}".replace('I', s_uint), (),  PointEndPad),
-    (PackedPointEndPad,         "T{Q:x:b:y:x}",                       (),  PackedPointEndPad),
+    (PackedPointEndPad,         "T{Q:x:b:y:x}".replace('Q', s_ulonglong),                       (),  PackedPointEndPad),
     (EmptyStruct,               "T{}",                                (),  EmptyStruct),
     # the pep doesn't support unions
     (aUnion,                    "B",                                  (),  aUnion),
@@ -229,21 +229,24 @@ class LEPoint(LittleEndianStructure):
     _fields_ = [("x", c_long), ("y", c_long)]
 
 
+s_long2 = {4: 'l', 8: 'q'}[sizeof(c_long)]
+
+
 # This table contains format strings as they really look, on both big
 # and little endian machines.
 if sys.byteorder == "little":
     endian_types = [
-            (BEPoint, "T{>l:x:>l:y:}".replace('l', s_long), (), BEPoint),
-            (LEPoint * 1, "T{l:x:l:y:}".replace('l', s_long), (1,), LEPoint),
-            (POINTER(BEPoint), "&T{>l:x:>l:y:}".replace('l', s_long), (), POINTER(BEPoint)),
-            (POINTER(LEPoint), "&T{l:x:l:y:}".replace('l', s_long), (), POINTER(LEPoint)),
+            (BEPoint, "T{>l:x:>l:y:}".replace('l', s_long2), (), BEPoint),
+            (LEPoint * 1, "T{l:x:l:y:}", (1,), LEPoint),
+            (POINTER(BEPoint), "&T{>l:x:>l:y:}".replace('l', s_long2), (), POINTER(BEPoint)),
+            (POINTER(LEPoint), "&T{l:x:l:y:}", (), POINTER(LEPoint)),
             ]
 else:
     endian_types = [
-            (BEPoint * 1, "T{l:x:l:y:}".replace('l', s_long), (1,), BEPoint),
-            (LEPoint, "T{<l:x:<l:y:}".replace('l', s_long), (), LEPoint),
-            (POINTER(BEPoint), "&T{l:x:l:y:}".replace('l', s_long), (), POINTER(BEPoint)),
-            (POINTER(LEPoint), "&T{<l:x:<l:y:}".replace('l', s_long), (), POINTER(LEPoint)),
+            (BEPoint * 1, "T{l:x:l:y:}", (1,), BEPoint),
+            (LEPoint, "T{<l:x:<l:y:}".replace('l', s_long2), (), LEPoint),
+            (POINTER(BEPoint), "&T{l:x:l:y:}", (), POINTER(BEPoint)),
+            (POINTER(LEPoint), "&T{<l:x:<l:y:}".replace('l', s_long2), (), POINTER(LEPoint)),
             ]
 
 

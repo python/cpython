@@ -267,7 +267,7 @@ _PyDict_GetItemProxy(PyObject *dict, PyObject *key, PyObject **presult)
   later on.
  */
 static char *
-_ctypes_alloc_format_string_for_type(const char *code)
+_ctypes_alloc_format_string_for_type(const char *code, int big_endian)
 {
     const char *pep_code = NULL;
 
@@ -310,13 +310,14 @@ _ctypes_alloc_format_string_for_type(const char *code)
         break;
     }
 
-    char *result = PyMem_Malloc(1 + strlen(pep_code));
+    char *result = PyMem_Malloc(1 + strlen(pep_code) + 1);
     if (result == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
 
-    strcpy(result, pep_code);
+    result[0] = big_endian ? '>' : '<';
+    strcpy(result + 1, pep_code);
     return result;
 }
 
@@ -2404,11 +2405,12 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
     stginfo->size = fmt->pffi_type->size;
     stginfo->setfunc = fmt->setfunc;
     stginfo->getfunc = fmt->getfunc;
-    stginfo->format = _ctypes_alloc_format_string_for_type(proto_str);
+    stginfo->format = PyMem_Malloc(1 + strlen(proto_str));
     if (stginfo->format == NULL) {
         Py_DECREF(proto);
         return -1;
     }
+    strcpy(stginfo->format, proto_str);
 
     stginfo->paramfunc = PyCSimpleType_paramfunc;
 /*
@@ -2499,14 +2501,14 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
         PyObject_SetAttrString(swapped, "__ctype_be__", self);
         PyObject_SetAttrString(swapped, "__ctype_le__", swapped);
         /* We are creating the type for the OTHER endian */
-        sw_info->format = _ctypes_alloc_format_string("<", stginfo->format);
+        sw_info->format = _ctypes_alloc_format_string_for_type(stginfo->format, 0);
 #else
         PyObject_SetAttrString(self, "__ctype_be__", swapped);
         PyObject_SetAttrString(self, "__ctype_le__", self);
         PyObject_SetAttrString(swapped, "__ctype_le__", self);
         PyObject_SetAttrString(swapped, "__ctype_be__", swapped);
         /* We are creating the type for the OTHER endian */
-        sw_info->format = _ctypes_alloc_format_string(">", stginfo->format);
+        sw_info->format = _ctypes_alloc_format_string_for_type(stginfo->format, 1);
 #endif
         Py_DECREF(swapped);
         if (PyErr_Occurred()) {
