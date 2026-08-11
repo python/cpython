@@ -1,8 +1,6 @@
 #ifndef Py_INTERNAL_OBJECT_STACK_H
 #define Py_INTERNAL_OBJECT_STACK_H
 
-#include "pycore_freelist.h"        // _PyFreeListState
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -71,6 +69,16 @@ _PyObjectStack_Pop(_PyObjectStack *stack)
         _PyObjectStackChunk_Free(buf);
     }
     return obj;
+}
+
+static inline Py_ssize_t
+_PyObjectStack_Size(_PyObjectStack *stack)
+{
+    Py_ssize_t size = 0;
+    for (_PyObjectStackChunk *buf = stack->head; buf != NULL; buf = buf->prev) {
+        size += buf->n;
+    }
+    return size;
 }
 
 // Merge src into dst, leaving src empty

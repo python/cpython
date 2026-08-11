@@ -1,0 +1,2 @@
+Fix compilation of :mod:`curses` on platforms that define the ``stdscr``
+macro. Patch by Bénédikt Tran.

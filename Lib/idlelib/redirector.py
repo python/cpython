@@ -106,6 +106,7 @@ class WidgetRedirector:
         to *args to accomplish that.  For an example, see colorizer.py.
 
         '''
+        operation = str(operation)  # can be a Tcl_Obj
         m = self._operations.get(operation)
         try:
             if m:
