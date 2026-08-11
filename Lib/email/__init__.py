@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2007 Python Software Foundation
+# Copyright (C) 2001 Python Software Foundation
 # Author: Barry Warsaw
 # Contact: email-sig@python.org
 
@@ -25,7 +25,6 @@ __all__ = [
     ]
 
 
-
 # Some convenience routines.  Don't import Parser and Message as side-effects
 # of importing email since those cascadingly import most of the rest of the
 # email package.

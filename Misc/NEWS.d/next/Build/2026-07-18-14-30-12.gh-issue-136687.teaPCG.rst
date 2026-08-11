@@ -1,0 +1,4 @@
+Add the :option:`--with-curses` option to :program:`configure` to select the
+curses backend (``ncursesw``, ``ncurses`` or the system's native ``curses``) or,
+as :option:`--without-curses`, to exclude the :mod:`curses` and
+:mod:`curses.panel` modules from the build.

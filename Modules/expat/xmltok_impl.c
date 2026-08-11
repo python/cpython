@@ -10,12 +10,14 @@
    Copyright (c) 2000      Clark Cooper <coopercc@users.sourceforge.net>
    Copyright (c) 2002      Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
    Copyright (c) 2002-2016 Karl Waclawek <karl@waclawek.net>
-   Copyright (c) 2016-2021 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2016-2022 Sebastian Pipping <sebastian@pipping.org>
    Copyright (c) 2017      Rhodri James <rhodri@wildebeest.org.uk>
    Copyright (c) 2018      Benjamin Peterson <benjamin@python.org>
    Copyright (c) 2018      Anton Maklakov <antmak.pub@gmail.com>
    Copyright (c) 2019      David Loffredo <loffredo@steptools.com>
    Copyright (c) 2020      Boris Kolpackov <boris@codesynthesis.com>
+   Copyright (c) 2022      Martin Ettl <ettl.martin78@googlemail.com>
+   Copyright (c) 2026      Nick Begg <nick@stunttruck.net>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -69,7 +71,7 @@
   case BT_LEAD##n:                                                             \
     if (end - ptr < n)                                                         \
       return XML_TOK_PARTIAL_CHAR;                                             \
-    if (! IS_NAME_CHAR(enc, ptr, n)) {                                         \
+    if (IS_INVALID_CHAR(enc, ptr, n) || ! IS_NAME_CHAR(enc, ptr, n)) {         \
       *nextTokPtr = ptr;                                                       \
       return XML_TOK_INVALID;                                                  \
     }                                                                          \
@@ -82,7 +84,7 @@
       *nextTokPtr = ptr;                                                       \
       return XML_TOK_INVALID;                                                  \
     }                                                                          \
-    /* fall through */                                                         \
+    EXPAT_FALLTHROUGH;                                                         \
   case BT_NMSTRT:                                                              \
   case BT_HEX:                                                                 \
   case BT_DIGIT:                                                               \
@@ -96,9 +98,9 @@
 
 #  define CHECK_NMSTRT_CASE(n, enc, ptr, end, nextTokPtr)                      \
   case BT_LEAD##n:                                                             \
-    if (end - ptr < n)                                                         \
+    if ((end) - (ptr) < (n))                                                   \
       return XML_TOK_PARTIAL_CHAR;                                             \
-    if (! IS_NMSTRT_CHAR(enc, ptr, n)) {                                       \
+    if (IS_INVALID_CHAR(enc, ptr, n) || ! IS_NMSTRT_CHAR(enc, ptr, n)) {       \
       *nextTokPtr = ptr;                                                       \
       return XML_TOK_INVALID;                                                  \
     }                                                                          \
@@ -111,7 +113,7 @@
       *nextTokPtr = ptr;                                                       \
       return XML_TOK_INVALID;                                                  \
     }                                                                          \
-    /* fall through */                                                         \
+    EXPAT_FALLTHROUGH;                                                         \
   case BT_NMSTRT:                                                              \
   case BT_HEX:                                                                 \
     ptr += MINBPC(enc);                                                        \
@@ -124,7 +126,8 @@
 #    define PREFIX(ident) ident
 #  endif
 
-#  define HAS_CHARS(enc, ptr, end, count) (end - ptr >= count * MINBPC(enc))
+#  define HAS_CHARS(enc, ptr, end, count)                                      \
+    ((end) - (ptr) >= ((count) * MINBPC(enc)))
 
 #  define HAS_CHAR(enc, ptr, end) HAS_CHARS(enc, ptr, end, 1)
 
@@ -207,7 +210,7 @@ PREFIX(scanDecl)(const ENCODING *enc, const char *ptr, const char *end,
         *nextTokPtr = ptr;
         return XML_TOK_INVALID;
       }
-      /* fall through */
+      EXPAT_FALLTHROUGH;
     case BT_S:
     case BT_CR:
     case BT_LF:
@@ -321,7 +324,7 @@ PREFIX(scanPi)(const ENCODING *enc, const char *ptr, const char *end,
         *nextTokPtr = ptr + MINBPC(enc);
         return tok;
       }
-      /* fall through */
+      EXPAT_FALLTHROUGH;
     default:
       *nextTokPtr = ptr;
       return XML_TOK_INVALID;
@@ -613,7 +616,7 @@ PREFIX(scanAtts)(const ENCODING *enc, const char *ptr, const char *end,
           return XML_TOK_INVALID;
         }
       }
-      /* fall through */
+      EXPAT_FALLTHROUGH;
     case BT_EQUALS: {
       int open;
 #  ifdef XML_NS
@@ -896,7 +899,7 @@ PREFIX(contentTok)(const ENCODING *enc, const char *ptr, const char *end,
           return XML_TOK_INVALID;
         }
       }
-      /* fall through */
+      EXPAT_FALLTHROUGH;
     case BT_AMP:
     case BT_LT:
     case BT_NONXML:
@@ -1057,7 +1060,7 @@ PREFIX(prologTok)(const ENCODING *enc, const char *ptr, const char *end,
       /* indicate that this might be part of a CR/LF pair */
       return -XML_TOK_PROLOG_S;
     }
-    /* fall through */
+    EXPAT_FALLTHROUGH;
   case BT_S:
   case BT_LF:
     for (;;) {
@@ -1072,7 +1075,7 @@ PREFIX(prologTok)(const ENCODING *enc, const char *ptr, const char *end,
         /* don't split CR/LF pair */
         if (ptr + MINBPC(enc) != end)
           break;
-        /* fall through */
+        EXPAT_FALLTHROUGH;
       default:
         *nextTokPtr = ptr;
         return XML_TOK_PROLOG_S;
@@ -1142,6 +1145,10 @@ PREFIX(prologTok)(const ENCODING *enc, const char *ptr, const char *end,
   case BT_LEAD##n:                                                             \
     if (end - ptr < n)                                                         \
       return XML_TOK_PARTIAL_CHAR;                                             \
+    if (IS_INVALID_CHAR(enc, ptr, n)) {                                        \
+      *nextTokPtr = ptr;                                                       \
+      return XML_TOK_INVALID;                                                  \
+    }                                                                          \
     if (IS_NMSTRT_CHAR(enc, ptr, n)) {                                         \
       ptr += n;                                                                \
       tok = XML_TOK_NAME;                                                      \
@@ -1183,7 +1190,7 @@ PREFIX(prologTok)(const ENCODING *enc, const char *ptr, const char *end,
       tok = XML_TOK_NMTOKEN;
       break;
     }
-    /* fall through */
+    EXPAT_FALLTHROUGH;
   default:
     *nextTokPtr = ptr;
     return XML_TOK_INVALID;
@@ -1270,7 +1277,7 @@ PREFIX(attributeValueTok)(const ENCODING *enc, const char *ptr, const char *end,
     switch (BYTE_TYPE(enc, ptr)) {
 #  define LEAD_CASE(n)                                                         \
   case BT_LEAD##n:                                                             \
-    ptr += n;                                                                  \
+    ptr += n; /* NOTE: The encoding has already been validated. */             \
     break;
       LEAD_CASE(2)
       LEAD_CASE(3)
@@ -1339,7 +1346,7 @@ PREFIX(entityValueTok)(const ENCODING *enc, const char *ptr, const char *end,
     switch (BYTE_TYPE(enc, ptr)) {
 #  define LEAD_CASE(n)                                                         \
   case BT_LEAD##n:                                                             \
-    ptr += n;                                                                  \
+    ptr += n; /* NOTE: The encoding has already been validated. */             \
     break;
       LEAD_CASE(2)
       LEAD_CASE(3)
@@ -1478,7 +1485,7 @@ PREFIX(isPublicId)(const ENCODING *enc, const char *ptr, const char *end,
     case BT_NMSTRT:
       if (! (BYTE_TO_ASCII(enc, ptr) & ~0x7f))
         break;
-      /* fall through */
+      EXPAT_FALLTHROUGH;
     default:
       switch (BYTE_TO_ASCII(enc, ptr)) {
       case 0x24: /* $ */
@@ -1518,7 +1525,7 @@ PREFIX(getAtts)(const ENCODING *enc, const char *ptr, int attsMax,
       state = inName;                                                          \
     }
 #  define LEAD_CASE(n)                                                         \
-  case BT_LEAD##n:                                                             \
+  case BT_LEAD##n: /* NOTE: The encoding has already been validated. */        \
     START_NAME ptr += (n - MINBPC(enc));                                       \
     break;
       LEAD_CASE(2)
@@ -1730,7 +1737,7 @@ PREFIX(nameLength)(const ENCODING *enc, const char *ptr) {
     switch (BYTE_TYPE(enc, ptr)) {
 #  define LEAD_CASE(n)                                                         \
   case BT_LEAD##n:                                                             \
-    ptr += n;                                                                  \
+    ptr += n; /* NOTE: The encoding has already been validated. */             \
     break;
       LEAD_CASE(2)
       LEAD_CASE(3)
@@ -1775,7 +1782,7 @@ PREFIX(updatePosition)(const ENCODING *enc, const char *ptr, const char *end,
     switch (BYTE_TYPE(enc, ptr)) {
 #  define LEAD_CASE(n)                                                         \
   case BT_LEAD##n:                                                             \
-    ptr += n;                                                                  \
+    ptr += n; /* NOTE: The encoding has already been validated. */             \
     pos->columnNumber++;                                                       \
     break;
       LEAD_CASE(2)

@@ -18,7 +18,7 @@ def abstractmethod(funcobj):
 
         class C(metaclass=ABCMeta):
             @abstractmethod
-            def my_abstract_method(self, ...):
+            def my_abstract_method(self, arg1, arg2, argN):
                 ...
     """
     funcobj.__isabstractmethod__ = True
@@ -36,11 +36,15 @@ class abstractclassmethod(classmethod):
             def my_abstract_classmethod(cls, ...):
                 ...
 
+    .. deprecated-removed: 3.3 3.21
+
     """
 
     __isabstractmethod__ = True
 
     def __init__(self, callable):
+        import warnings
+        warnings._deprecated('abc.abstractclassmethod', remove=(3, 21))
         callable.__isabstractmethod__ = True
         super().__init__(callable)
 
@@ -56,11 +60,15 @@ class abstractstaticmethod(staticmethod):
             def my_abstract_staticmethod(...):
                 ...
 
+    .. deprecated-removed: 3.3 3.21
+
     """
 
     __isabstractmethod__ = True
 
     def __init__(self, callable):
+        import warnings
+        warnings._deprecated('abc.abstractstaticmethod', remove=(3, 21))
         callable.__isabstractmethod__ = True
         super().__init__(callable)
 
@@ -76,9 +84,22 @@ class abstractproperty(property):
             def my_abstract_property(self):
                 ...
 
+    .. deprecated-removed: 3.3 3.21
+
     """
 
     __isabstractmethod__ = True
+
+    def __init__(
+        self,
+        fget=None,
+        fset=None,
+        fdel=None,
+        doc=None,
+    ):
+        import warnings
+        warnings._deprecated('abc.abstractproperty', remove=(3, 21))
+        super().__init__(fget, fset, fdel, doc)
 
 
 try:
@@ -102,7 +123,7 @@ else:
         implementations defined by the registering ABC be callable (not
         even via super()).
         """
-        def __new__(mcls, name, bases, namespace, **kwargs):
+        def __new__(mcls, name, bases, namespace, /, **kwargs):
             cls = super().__new__(mcls, name, bases, namespace, **kwargs)
             _abc_init(cls)
             return cls
