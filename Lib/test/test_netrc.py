@@ -1,10 +1,9 @@
 import netrc, os, unittest, sys, textwrap
+from pathlib import Path
+from test import support
 from test.support import os_helper
+from unittest.mock import patch
 
-try:
-    import pwd
-except ImportError:
-    pwd = None
 
 temp_filename = os_helper.TESTFN
 
@@ -269,9 +268,14 @@ class NetrcTestCase(unittest.TestCase):
             machine bar.domain.com login foo password pass
             """, '#pass')
 
+    @unittest.skipUnless(support.is_wasi, 'WASI only test')
+    def test_security_on_WASI(self):
+        self.assertFalse(netrc._can_security_check())
+        self.assertEqual(netrc._getpwuid(0), 'uid 0')
+        self.assertEqual(netrc._getpwuid(123456), 'uid 123456')
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX only test')
-    @unittest.skipIf(pwd is None, 'security check requires pwd module')
+    @unittest.skipUnless(hasattr(os, 'getuid'), "os.getuid is required")
     @os_helper.skip_unless_working_chmod
     def test_security(self):
         # This test is incomplete since we are normally not run as root and
@@ -307,6 +311,26 @@ class NetrcTestCase(unittest.TestCase):
             os.chmod(fn, 0o622)
             self.assertEqual(nrc.hosts['foo.domain.com'],
                              ('anonymous', '', 'pass'))
+
+    @unittest.skipUnless(os.name == 'posix', 'POSIX only test')
+    @unittest.skipUnless(hasattr(os, 'getuid'), "os.getuid is required")
+    @os_helper.skip_unless_working_chmod
+    def test_security_only_once(self):
+        # Make sure security check is only run once per parse when multiple
+        # entries are found.
+        with patch.object(netrc.netrc, "_security_check") as mock:
+            with os_helper.temp_dir() as tmp_dir:
+                netrc_path = Path(tmp_dir) / '.netrc'
+                netrc_path.write_text("""\
+                machine foo.domain.com login bar password pass
+                machine bar.domain.com login foo password pass
+                """)
+                netrc_path.chmod(0o600)
+                with os_helper.EnvironmentVarGuard() as environ:
+                    environ.set('HOME', tmp_dir)
+                    netrc.netrc()
+
+            mock.assert_called_once()
 
 
 if __name__ == "__main__":

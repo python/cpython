@@ -4,7 +4,6 @@ import filecmp
 import importlib.util
 import io
 import os
-import pathlib
 import py_compile
 import shutil
 import struct
@@ -19,7 +18,7 @@ try:
     # compileall relies on ProcessPoolExecutor if ProcessPoolExecutor exists
     # and it can function.
     from multiprocessing.util import _cleanup_tests as multiprocessing_cleanup_tests
-    from concurrent.futures import ProcessPoolExecutor
+    from concurrent.futures import ProcessPoolExecutor  # noqa: F401
     from concurrent.futures.process import _check_system_limits
     _check_system_limits()
     _have_multiprocessing = True
@@ -29,8 +28,13 @@ except (NotImplementedError, ModuleNotFoundError):
 from test import support
 from test.support import os_helper
 from test.support import script_helper
-from test.test_py_compile import without_source_date_epoch
-from test.test_py_compile import SourceDateEpochTestMeta
+from test.support.os_helper import without_source_date_epoch
+from test.support.os_helper import SourceDateEpochTestMeta
+from test.support.os_helper import FakePath
+
+
+if sys.implementation.cache_tag is None:
+    raise unittest.SkipTest('requires sys.implementation.cache_tag is not None')
 
 
 def get_pyc(script, opt):
@@ -156,28 +160,28 @@ class CompileallTestsBase:
         self.assertFalse(os.path.isfile(self.bc_path))
         # we should also test the output
         with support.captured_stdout() as stdout:
-            self.assertTrue(compileall.compile_file(pathlib.Path(self.source_path)))
+            self.assertTrue(compileall.compile_file(FakePath(self.source_path)))
         self.assertRegex(stdout.getvalue(), r'Compiling ([^WindowsPath|PosixPath].*)')
         self.assertTrue(os.path.isfile(self.bc_path))
 
     def test_compile_file_pathlike_ddir(self):
         self.assertFalse(os.path.isfile(self.bc_path))
-        self.assertTrue(compileall.compile_file(pathlib.Path(self.source_path),
-                                                ddir=pathlib.Path('ddir_path'),
+        self.assertTrue(compileall.compile_file(FakePath(self.source_path),
+                                                ddir=FakePath('ddir_path'),
                                                 quiet=2))
         self.assertTrue(os.path.isfile(self.bc_path))
 
     def test_compile_file_pathlike_stripdir(self):
         self.assertFalse(os.path.isfile(self.bc_path))
-        self.assertTrue(compileall.compile_file(pathlib.Path(self.source_path),
-                                                stripdir=pathlib.Path('stripdir_path'),
+        self.assertTrue(compileall.compile_file(FakePath(self.source_path),
+                                                stripdir=FakePath('stripdir_path'),
                                                 quiet=2))
         self.assertTrue(os.path.isfile(self.bc_path))
 
     def test_compile_file_pathlike_prependdir(self):
         self.assertFalse(os.path.isfile(self.bc_path))
-        self.assertTrue(compileall.compile_file(pathlib.Path(self.source_path),
-                                                prependdir=pathlib.Path('prependdir_path'),
+        self.assertTrue(compileall.compile_file(FakePath(self.source_path),
+                                                prependdir=FakePath('prependdir_path'),
                                                 quiet=2))
         self.assertTrue(os.path.isfile(self.bc_path))
 
@@ -228,22 +232,22 @@ class CompileallTestsBase:
     def test_compile_dir_pathlike(self):
         self.assertFalse(os.path.isfile(self.bc_path))
         with support.captured_stdout() as stdout:
-            compileall.compile_dir(pathlib.Path(self.directory))
+            compileall.compile_dir(FakePath(self.directory))
         line = stdout.getvalue().splitlines()[0]
         self.assertRegex(line, r'Listing ([^WindowsPath|PosixPath].*)')
         self.assertTrue(os.path.isfile(self.bc_path))
 
     def test_compile_dir_pathlike_stripdir(self):
         self.assertFalse(os.path.isfile(self.bc_path))
-        self.assertTrue(compileall.compile_dir(pathlib.Path(self.directory),
-                                               stripdir=pathlib.Path('stripdir_path'),
+        self.assertTrue(compileall.compile_dir(FakePath(self.directory),
+                                               stripdir=FakePath('stripdir_path'),
                                                quiet=2))
         self.assertTrue(os.path.isfile(self.bc_path))
 
     def test_compile_dir_pathlike_prependdir(self):
         self.assertFalse(os.path.isfile(self.bc_path))
-        self.assertTrue(compileall.compile_dir(pathlib.Path(self.directory),
-                                               prependdir=pathlib.Path('prependdir_path'),
+        self.assertTrue(compileall.compile_dir(FakePath(self.directory),
+                                               prependdir=FakePath('prependdir_path'),
                                                quiet=2))
         self.assertTrue(os.path.isfile(self.bc_path))
 
@@ -316,7 +320,7 @@ class CompileallTestsBase:
 
         self.assertTrue(mods)
         for mod in mods:
-            self.assertTrue(mod.startswith(self.directory), mod)
+            self.assertStartsWith(mod, self.directory)
             modcode = importlib.util.cache_from_source(mod)
             modpath = mod[len(self.directory+os.sep):]
             _, _, err = script_helper.assert_python_failure(modcode)
@@ -355,6 +359,31 @@ class CompileallTestsBase:
         expected_in = os.path.join(*fullpath[2:])
         self.assertIn(
             expected_in,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+        self.assertNotIn(
+            stripdir,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+
+    def test_strip_only_invalid(self):
+        fullpath = ["test", "build", "real", "path"]
+        path = os.path.join(self.directory, *fullpath)
+        os.makedirs(path)
+        script = script_helper.make_script(path, "test", "1 / 0")
+        bc = importlib.util.cache_from_source(script)
+        stripdir = os.path.join(self.directory, *(fullpath[:2] + ['fake']))
+        with support.captured_stdout() as out:
+            compileall.compile_dir(path, quiet=True, stripdir=stripdir)
+        self.assertIn("not a valid prefix", out.getvalue())
+        rc, out, err = script_helper.assert_python_failure(bc)
+        expected_not_in = os.path.join(self.directory, *fullpath[2:])
+        self.assertIn(
+            path,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+        self.assertNotIn(
+            expected_not_in,
             str(err, encoding=sys.getdefaultencoding())
         )
         self.assertNotIn(
@@ -477,19 +506,25 @@ class EncodingTest(unittest.TestCase):
         self.directory = tempfile.mkdtemp()
         self.source_path = os.path.join(self.directory, '_test.py')
         with open(self.source_path, 'w', encoding='utf-8') as file:
-            file.write('# -*- coding: utf-8 -*-\n')
-            file.write('print u"\u20ac"\n')
+            # Intentional syntax error: bytes can only contain
+            # ASCII literal characters.
+            file.write('b"\u20ac"')
 
     def tearDown(self):
         shutil.rmtree(self.directory)
 
     def test_error(self):
-        try:
-            orig_stdout = sys.stdout
-            sys.stdout = io.TextIOWrapper(io.BytesIO(),encoding='ascii')
-            compileall.compile_dir(self.directory)
-        finally:
-            sys.stdout = orig_stdout
+        buffer = io.TextIOWrapper(io.BytesIO(), encoding='ascii')
+        with contextlib.redirect_stdout(buffer):
+            compiled = compileall.compile_dir(self.directory)
+        self.assertFalse(compiled)  # should not be successful
+        buffer.seek(0)
+        res = buffer.read()
+        self.assertIn(
+            'SyntaxError: bytes can only contain ASCII literal characters',
+            res,
+        )
+        self.assertNotIn('UnicodeEncodeError', res)
 
 
 class CommandLineTestsBase:
@@ -516,6 +551,24 @@ class CommandLineTestsBase:
                 'PYTHONPATH': self.directory,
                 'PYTHONPYCACHEPREFIX': new_prefix,
             }
+        finally:
+            sys.pycache_prefix = old_prefix
+
+    @contextlib.contextmanager
+    def no_pycache_prefix(self):
+        """Ignore any ambient pycache prefix for the duration of the test.
+
+        Some tests assume bytecode is written next to the source in a
+        __pycache__ directory.  When the test suite is run with
+        PYTHONPYCACHEPREFIX set, neutralize it both in this process (used by
+        cache_from_source) and in any spawned subprocesses.
+        """
+        old_prefix = sys.pycache_prefix
+        sys.pycache_prefix = None
+        try:
+            with os_helper.EnvironmentVarGuard() as env:
+                env.unset('PYTHONPYCACHEPREFIX')
+                yield
         finally:
             sys.pycache_prefix = old_prefix
 
@@ -615,15 +668,16 @@ class CommandLineTestsBase:
     def test_multiple_runs(self):
         # Bug 8527 reported that multiple calls produced empty
         # __pycache__/__pycache__ directories.
-        self.assertRunOK('-q', self.pkgdir)
-        # Verify the __pycache__ directory contents.
-        self.assertTrue(os.path.exists(self.pkgdir_cachedir))
-        cachecachedir = os.path.join(self.pkgdir_cachedir, '__pycache__')
-        self.assertFalse(os.path.exists(cachecachedir))
-        # Call compileall again.
-        self.assertRunOK('-q', self.pkgdir)
-        self.assertTrue(os.path.exists(self.pkgdir_cachedir))
-        self.assertFalse(os.path.exists(cachecachedir))
+        with self.no_pycache_prefix():
+            self.assertRunOK('-q', self.pkgdir)
+            # Verify the __pycache__ directory contents.
+            self.assertTrue(os.path.exists(self.pkgdir_cachedir))
+            cachecachedir = os.path.join(self.pkgdir_cachedir, '__pycache__')
+            self.assertFalse(os.path.exists(cachecachedir))
+            # Call compileall again.
+            self.assertRunOK('-q', self.pkgdir)
+            self.assertTrue(os.path.exists(self.pkgdir_cachedir))
+            self.assertFalse(os.path.exists(cachecachedir))
 
     @without_source_date_epoch  # timestamp invalidation test
     def test_force(self):
@@ -696,10 +750,13 @@ class CommandLineTestsBase:
         script_helper.make_pkg(pkg)
         os.symlink('.', os.path.join(pkg, 'evil'))
         os.symlink('.', os.path.join(pkg, 'evil2'))
-        self.assertRunOK('-q', self.pkgdir)
-        self.assertCompiled(os.path.join(
-            self.pkgdir, 'spam', 'evil', 'evil2', '__init__.py'
-        ))
+        # This relies on the __pycache__ layout (shared across the symlinked
+        # paths), so neutralize any ambient PYTHONPYCACHEPREFIX.
+        with self.no_pycache_prefix():
+            self.assertRunOK('-q', self.pkgdir)
+            self.assertCompiled(os.path.join(
+                self.pkgdir, 'spam', 'evil', 'evil2', '__init__.py'
+            ))
 
     def test_quiet(self):
         noisy = self.assertRunOK(self.pkgdir)
@@ -735,6 +792,7 @@ class CommandLineTestsBase:
         rc, out, err = self.assertRunNotOK('-q', '-d', 'dinsdale', self.pkgdir)
         self.assertRegex(out, b'File "dinsdale')
 
+    @support.force_not_colorized
     def test_d_runtime_error(self):
         bazfn = script_helper.make_script(self.pkgdir, 'baz', 'raise Exception')
         self.assertRunOK('-q', '-d', 'dinsdale', self.pkgdir)
@@ -785,13 +843,16 @@ class CommandLineTestsBase:
         f2 = script_helper.make_script(self.pkgdir, 'f2', '')
         f3 = script_helper.make_script(self.pkgdir, 'f3', '')
         f4 = script_helper.make_script(self.pkgdir, 'f4', '')
-        p = script_helper.spawn_python(*(self._get_run_args(()) + ['-i', '-']))
-        p.stdin.write((f3+os.linesep).encode('ascii'))
-        script_helper.kill_python(p)
-        self.assertNotCompiled(f1)
-        self.assertNotCompiled(f2)
-        self.assertCompiled(f3)
-        self.assertNotCompiled(f4)
+        # spawn_python() runs with -E, ignoring PYTHONPYCACHEPREFIX, so make
+        # cache_from_source() in this process agree by neutralizing it too.
+        with self.no_pycache_prefix():
+            p = script_helper.spawn_python(*(self._get_run_args(()) + ['-i', '-']))
+            p.stdin.write((f3+os.linesep).encode('ascii'))
+            script_helper.kill_python(p)
+            self.assertNotCompiled(f1)
+            self.assertNotCompiled(f2)
+            self.assertCompiled(f3)
+            self.assertNotCompiled(f4)
 
     def test_compiles_as_much_as_possible(self):
         bingfn = script_helper.make_script(self.pkgdir, 'bing', 'syntax(error')
@@ -952,7 +1013,7 @@ class CommandLineTestsNoSourceEpoch(CommandLineTestsBase,
 
 
 
-@unittest.skipUnless(hasattr(os, 'link'), 'requires os.link')
+@os_helper.skip_unless_hardlink
 class HardlinkDedupTestsBase:
     # Test hardlink_dupes parameter of compileall.compile_dir()
 

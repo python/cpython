@@ -1,3 +1,0 @@
-Add :envvar:`PYTHON_PRESITE=package.module` to import a module early in the
-interpreter lifecycle before ``site.py`` is executed.  Python needs to be
-:ref:`built in debug mode <debug-build>` for this option to exist.
