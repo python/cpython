@@ -108,6 +108,7 @@ class ExecutorTest:
         self.assertRaises(StopIteration, next, i)
         self.assertRaises(StopIteration, next, i)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_map_close(self):
         i = self.executor.map(divmod, [5, 5, 5, 5], [2, 0, 3, 5])
         self.assertEqual(next(i), (2, 1))
