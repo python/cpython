@@ -1,0 +1,2 @@
+Prevent a crash when allocation fails while copying a :func:`BLAKE-2s/2b
+<hashlib.blake2b>` object. Patch by Bénédikt Tran.

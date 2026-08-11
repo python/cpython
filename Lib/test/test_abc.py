@@ -11,20 +11,30 @@ import unittest
 import abc
 import _py_abc
 from inspect import isabstract
+from test.support import warnings_helper
 
 def test_factory(abc_ABCMeta, abc_get_cache_token):
     class TestLegacyAPI(unittest.TestCase):
 
         def test_abstractproperty_basics(self):
-            @abc.abstractproperty
-            def foo(self): pass
+            with self.assertWarnsRegex(
+                DeprecationWarning,
+                'abstractproperty',
+            ):
+                @abc.abstractproperty
+                def foo(self): pass
+
             self.assertTrue(foo.__isabstractmethod__)
             def bar(self): pass
-            self.assertFalse(hasattr(bar, "__isabstractmethod__"))
+            self.assertNotHasAttr(bar, "__isabstractmethod__")
 
-            class C(metaclass=abc_ABCMeta):
-                @abc.abstractproperty
-                def foo(self): return 3
+            with self.assertWarnsRegex(
+                DeprecationWarning,
+                'abstractproperty',
+            ):
+                class C(metaclass=abc_ABCMeta):
+                    @abc.abstractproperty
+                    def foo(self): return 3
             self.assertRaises(TypeError, C)
             class D(C):
                 @property
@@ -33,16 +43,26 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             self.assertFalse(getattr(D.foo, "__isabstractmethod__", False))
 
         def test_abstractclassmethod_basics(self):
-            @abc.abstractclassmethod
-            def foo(cls): pass
+            with self.assertWarnsRegex(
+                DeprecationWarning,
+                'abstractclassmethod',
+            ):
+                @abc.abstractclassmethod
+                def foo(cls): pass
+
             self.assertTrue(foo.__isabstractmethod__)
             @classmethod
             def bar(cls): pass
             self.assertFalse(getattr(bar, "__isabstractmethod__", False))
 
-            class C(metaclass=abc_ABCMeta):
-                @abc.abstractclassmethod
-                def foo(cls): return cls.__name__
+            with self.assertWarnsRegex(
+                DeprecationWarning,
+                'abstractclassmethod',
+            ):
+                class C(metaclass=abc_ABCMeta):
+                    @abc.abstractclassmethod
+                    def foo(cls): return cls.__name__
+
             self.assertRaises(TypeError, C)
             class D(C):
                 @classmethod
@@ -51,16 +71,26 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             self.assertEqual(D().foo(), 'D')
 
         def test_abstractstaticmethod_basics(self):
-            @abc.abstractstaticmethod
-            def foo(): pass
+            with self.assertWarnsRegex(
+                DeprecationWarning,
+                'abstractstaticmethod',
+            ):
+                @abc.abstractstaticmethod
+                def foo(): pass
+
             self.assertTrue(foo.__isabstractmethod__)
             @staticmethod
             def bar(): pass
             self.assertFalse(getattr(bar, "__isabstractmethod__", False))
 
-            class C(metaclass=abc_ABCMeta):
-                @abc.abstractstaticmethod
-                def foo(): return 3
+            with self.assertWarnsRegex(
+                DeprecationWarning,
+                'abstractstaticmethod',
+            ):
+                class C(metaclass=abc_ABCMeta):
+                    @abc.abstractstaticmethod
+                    def foo(): return 3
+
             self.assertRaises(TypeError, C)
             class D(C):
                 @staticmethod
@@ -89,7 +119,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             def foo(self): pass
             self.assertTrue(foo.__isabstractmethod__)
             def bar(self): pass
-            self.assertFalse(hasattr(bar, "__isabstractmethod__"))
+            self.assertNotHasAttr(bar, "__isabstractmethod__")
 
         def test_abstractproperty_basics(self):
             @property
@@ -168,6 +198,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             msg = r"class C without an implementation for abstract methods 'method_one', 'method_two'"
             self.assertRaisesRegex(TypeError, msg, C)
 
+        @warnings_helper.ignore_warnings(category=DeprecationWarning)
         def test_abstractmethod_integration(self):
             for abstractthing in [abc.abstractmethod, abc.abstractproperty,
                                   abc.abstractclassmethod,
@@ -276,21 +307,21 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             class B(object):
                 pass
             b = B()
-            self.assertFalse(issubclass(B, A))
-            self.assertFalse(issubclass(B, (A,)))
+            self.assertNotIsSubclass(B, A)
+            self.assertNotIsSubclass(B, (A,))
             self.assertNotIsInstance(b, A)
             self.assertNotIsInstance(b, (A,))
             B1 = A.register(B)
-            self.assertTrue(issubclass(B, A))
-            self.assertTrue(issubclass(B, (A,)))
+            self.assertIsSubclass(B, A)
+            self.assertIsSubclass(B, (A,))
             self.assertIsInstance(b, A)
             self.assertIsInstance(b, (A,))
             self.assertIs(B1, B)
             class C(B):
                 pass
             c = C()
-            self.assertTrue(issubclass(C, A))
-            self.assertTrue(issubclass(C, (A,)))
+            self.assertIsSubclass(C, A)
+            self.assertIsSubclass(C, (A,))
             self.assertIsInstance(c, A)
             self.assertIsInstance(c, (A,))
 
@@ -301,16 +332,16 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             class B(object):
                 pass
             b = B()
-            self.assertTrue(issubclass(B, A))
-            self.assertTrue(issubclass(B, (A,)))
+            self.assertIsSubclass(B, A)
+            self.assertIsSubclass(B, (A,))
             self.assertIsInstance(b, A)
             self.assertIsInstance(b, (A,))
             @A.register
             class C(B):
                 pass
             c = C()
-            self.assertTrue(issubclass(C, A))
-            self.assertTrue(issubclass(C, (A,)))
+            self.assertIsSubclass(C, A)
+            self.assertIsSubclass(C, (A,))
             self.assertIsInstance(c, A)
             self.assertIsInstance(c, (A,))
             self.assertIs(C, A.register(C))
@@ -321,14 +352,14 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             class B:
                 pass
             b = B()
-            self.assertFalse(isinstance(b, A))
-            self.assertFalse(isinstance(b, (A,)))
+            self.assertNotIsInstance(b, A)
+            self.assertNotIsInstance(b, (A,))
             token_old = abc_get_cache_token()
             A.register(B)
             token_new = abc_get_cache_token()
             self.assertGreater(token_new, token_old)
-            self.assertTrue(isinstance(b, A))
-            self.assertTrue(isinstance(b, (A,)))
+            self.assertIsInstance(b, A)
+            self.assertIsInstance(b, (A,))
 
         def test_registration_builtins(self):
             class A(metaclass=abc_ABCMeta):
@@ -336,18 +367,18 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             A.register(int)
             self.assertIsInstance(42, A)
             self.assertIsInstance(42, (A,))
-            self.assertTrue(issubclass(int, A))
-            self.assertTrue(issubclass(int, (A,)))
+            self.assertIsSubclass(int, A)
+            self.assertIsSubclass(int, (A,))
             class B(A):
                 pass
             B.register(str)
             class C(str): pass
             self.assertIsInstance("", A)
             self.assertIsInstance("", (A,))
-            self.assertTrue(issubclass(str, A))
-            self.assertTrue(issubclass(str, (A,)))
-            self.assertTrue(issubclass(C, A))
-            self.assertTrue(issubclass(C, (A,)))
+            self.assertIsSubclass(str, A)
+            self.assertIsSubclass(str, (A,))
+            self.assertIsSubclass(C, A)
+            self.assertIsSubclass(C, (A,))
 
         def test_registration_edge_cases(self):
             class A(metaclass=abc_ABCMeta):
@@ -375,39 +406,39 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
         def test_registration_transitiveness(self):
             class A(metaclass=abc_ABCMeta):
                 pass
-            self.assertTrue(issubclass(A, A))
-            self.assertTrue(issubclass(A, (A,)))
+            self.assertIsSubclass(A, A)
+            self.assertIsSubclass(A, (A,))
             class B(metaclass=abc_ABCMeta):
                 pass
-            self.assertFalse(issubclass(A, B))
-            self.assertFalse(issubclass(A, (B,)))
-            self.assertFalse(issubclass(B, A))
-            self.assertFalse(issubclass(B, (A,)))
+            self.assertNotIsSubclass(A, B)
+            self.assertNotIsSubclass(A, (B,))
+            self.assertNotIsSubclass(B, A)
+            self.assertNotIsSubclass(B, (A,))
             class C(metaclass=abc_ABCMeta):
                 pass
             A.register(B)
             class B1(B):
                 pass
-            self.assertTrue(issubclass(B1, A))
-            self.assertTrue(issubclass(B1, (A,)))
+            self.assertIsSubclass(B1, A)
+            self.assertIsSubclass(B1, (A,))
             class C1(C):
                 pass
             B1.register(C1)
-            self.assertFalse(issubclass(C, B))
-            self.assertFalse(issubclass(C, (B,)))
-            self.assertFalse(issubclass(C, B1))
-            self.assertFalse(issubclass(C, (B1,)))
-            self.assertTrue(issubclass(C1, A))
-            self.assertTrue(issubclass(C1, (A,)))
-            self.assertTrue(issubclass(C1, B))
-            self.assertTrue(issubclass(C1, (B,)))
-            self.assertTrue(issubclass(C1, B1))
-            self.assertTrue(issubclass(C1, (B1,)))
+            self.assertNotIsSubclass(C, B)
+            self.assertNotIsSubclass(C, (B,))
+            self.assertNotIsSubclass(C, B1)
+            self.assertNotIsSubclass(C, (B1,))
+            self.assertIsSubclass(C1, A)
+            self.assertIsSubclass(C1, (A,))
+            self.assertIsSubclass(C1, B)
+            self.assertIsSubclass(C1, (B,))
+            self.assertIsSubclass(C1, B1)
+            self.assertIsSubclass(C1, (B1,))
             C1.register(int)
             class MyInt(int):
                 pass
-            self.assertTrue(issubclass(MyInt, A))
-            self.assertTrue(issubclass(MyInt, (A,)))
+            self.assertIsSubclass(MyInt, A)
+            self.assertIsSubclass(MyInt, (A,))
             self.assertIsInstance(42, A)
             self.assertIsInstance(42, (A,))
 
@@ -448,15 +479,16 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
 
             # Also check that issubclass() propagates exceptions raised by
             # __subclasses__.
+            class CustomError(Exception): ...
             exc_msg = "exception from __subclasses__"
 
             def raise_exc():
-                raise Exception(exc_msg)
+                raise CustomError(exc_msg)
 
             class S(metaclass=abc_ABCMeta):
                 __subclasses__ = raise_exc
 
-            with self.assertRaisesRegex(Exception, exc_msg):
+            with self.assertRaisesRegex(CustomError, exc_msg):
                 issubclass(int, S)
 
         def test_subclasshook(self):
@@ -466,16 +498,16 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                     if cls is A:
                         return 'foo' in C.__dict__
                     return NotImplemented
-            self.assertFalse(issubclass(A, A))
-            self.assertFalse(issubclass(A, (A,)))
+            self.assertNotIsSubclass(A, A)
+            self.assertNotIsSubclass(A, (A,))
             class B:
                 foo = 42
-            self.assertTrue(issubclass(B, A))
-            self.assertTrue(issubclass(B, (A,)))
+            self.assertIsSubclass(B, A)
+            self.assertIsSubclass(B, (A,))
             class C:
                 spam = 42
-            self.assertFalse(issubclass(C, A))
-            self.assertFalse(issubclass(C, (A,)))
+            self.assertNotIsSubclass(C, A)
+            self.assertNotIsSubclass(C, (A,))
 
         def test_all_new_methods_are_called(self):
             class A(metaclass=abc_ABCMeta):
@@ -492,7 +524,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             self.assertEqual(B.counter, 1)
 
         def test_ABC_has___slots__(self):
-            self.assertTrue(hasattr(abc.ABC, '__slots__'))
+            self.assertHasAttr(abc.ABC, '__slots__')
 
         def test_tricky_new_works(self):
             def with_metaclass(meta, *bases):
@@ -514,7 +546,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
 
             del A.foo
             self.assertEqual(A.__abstractmethods__, {'foo'})
-            self.assertFalse(hasattr(A, 'foo'))
+            self.assertNotHasAttr(A, 'foo')
 
             abc.update_abstractmethods(A)
 
@@ -587,7 +619,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             A.foo = updated_foo
             abc.update_abstractmethods(A)
             A()
-            self.assertFalse(hasattr(A, '__abstractmethods__'))
+            self.assertNotHasAttr(A, '__abstractmethods__')
 
         def test_update_del_implementation(self):
             class A(metaclass=abc_ABCMeta):
@@ -683,10 +715,16 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
 
     return TestLegacyAPI, TestABC, TestABCWithInitSubclass
 
-TestLegacyAPI_Py, TestABC_Py, TestABCWithInitSubclass_Py = test_factory(abc.ABCMeta,
-                                                                        abc.get_cache_token)
-TestLegacyAPI_C, TestABC_C, TestABCWithInitSubclass_C = test_factory(_py_abc.ABCMeta,
-                                                                     _py_abc.get_cache_token)
+TestLegacyAPI_Py, TestABC_Py, TestABCWithInitSubclass_Py = test_factory(_py_abc.ABCMeta,
+                                                                        _py_abc.get_cache_token)
+TestLegacyAPI_C, TestABC_C, TestABCWithInitSubclass_C = test_factory(abc.ABCMeta,
+                                                                     abc.get_cache_token)
+
+# gh-130095: The _py_abc tests are not thread-safe when run with
+# `--parallel-threads`
+TestLegacyAPI_Py.__unittest_thread_unsafe__ = True
+TestABC_Py.__unittest_thread_unsafe__ = True
+TestABCWithInitSubclass_Py.__unittest_thread_unsafe__ = True
 
 if __name__ == "__main__":
     unittest.main()

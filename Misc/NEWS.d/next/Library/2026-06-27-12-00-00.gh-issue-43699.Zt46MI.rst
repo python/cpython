@@ -1,0 +1,3 @@
+The drag cursor in :mod:`tkinter.dnd` is now changed only once the pointer
+starts moving rather than on the initial button press, so that a plain
+click no longer flashes it.

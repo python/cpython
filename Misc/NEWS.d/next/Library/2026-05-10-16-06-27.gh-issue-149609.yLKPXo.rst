@@ -1,0 +1,3 @@
+Raise :exc:`DeprecationWarning` on using :class:`abc.abstractclassmethod`,
+:class:`abc.abstractstaticmethod`, and :class:`abc.abstractproperty`,
+schedule its removal for Python 3.21.
