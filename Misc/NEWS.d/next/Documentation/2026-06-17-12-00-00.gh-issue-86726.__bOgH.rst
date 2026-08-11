@@ -1,0 +1,4 @@
+Greatly expand the :mod:`tkinter` documentation to cover the full public API
+of the package and its submodules.  The descriptions are oriented towards
+Python rather than Tcl/Tk, with corrected return types and
+``versionadded``/``versionchanged`` information.

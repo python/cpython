@@ -1,2 +1,0 @@
-Fixed a regression when :func:`copy.copy`-ing :class:`enum.Flag` with
-multiple flag members.

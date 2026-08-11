@@ -1,2 +1,0 @@
-Fixed an assert where an f-string has an equal sign '=' following an
-expression, but there's no trailing brace. For example, f"{i=".

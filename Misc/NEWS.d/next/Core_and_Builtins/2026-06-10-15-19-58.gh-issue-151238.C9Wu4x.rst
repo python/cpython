@@ -1,0 +1,2 @@
+Fix a crash when compiling a concatenated f-string or t-string if an error
+occurs when processing one of it's parts.

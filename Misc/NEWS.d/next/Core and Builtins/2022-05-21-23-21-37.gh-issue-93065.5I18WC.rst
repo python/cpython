@@ -1,5 +1,0 @@
-Fix contextvars HAMT implementation to handle iteration over deep trees.
-
-The bug was discovered and fixed by Eli Libman. See
-`MagicStack/immutables#84 <https://github.com/MagicStack/immutables/issues/84>`_
-for more details.

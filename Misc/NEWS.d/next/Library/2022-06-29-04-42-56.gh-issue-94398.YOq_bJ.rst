@@ -1,1 +1,0 @@
-Once a :class:`asyncio.TaskGroup` has started shutting down (i.e., at least one task has failed and the task group has started cancelling the remaining tasks), it should not be possible to add new tasks to the task group.

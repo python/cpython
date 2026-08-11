@@ -86,7 +86,8 @@ APPXMANIFEST_NS = {
 }
 
 APPXMANIFEST_TEMPLATE = """<?xml version="1.0" encoding="utf-8"?>
-<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+<Package IgnorableNamespaces="desktop4 desktop6"
+    xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
     xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
     xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
     xmlns:rescap4="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities/4"
@@ -150,6 +151,8 @@ RESOURCES_XML_TEMPLATE = r"""<?xml version="1.0" encoding="UTF-8" standalone="ye
 </resources>"""
 
 
+# This file is no longer included in our repo, but we keep the logic here for
+# building with older releases. We always .is_file() before using it.
 SCCD_FILENAME = "PC/classicAppCompat.sccd"
 
 SPECIAL_LOOKUP = object()
@@ -208,7 +211,7 @@ def get_packagefamilyname(name, publisher_id):
     result = ctypes.create_unicode_buffer(256)
     result_len = ctypes.c_uint32(256)
     r = ctypes.windll.kernel32.PackageFamilyNameFromId(
-        pid, ctypes.byref(result_len), result
+        ctypes.byref(pid), ctypes.byref(result_len), result
     )
     if r:
         raise OSError(r, "failed to get package family name")

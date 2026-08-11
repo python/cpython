@@ -1,3 +1,4 @@
+import gc
 import os
 import signal
 import subprocess
@@ -58,6 +59,13 @@ class InterProcessSignalTests(unittest.TestCase):
             self.wait_signal(child, 'SIGHUP')
         self.assertEqual(self.got_signals, {'SIGHUP': 1, 'SIGUSR1': 0,
                                             'SIGALRM': 0})
+
+        # gh-110033: Make sure that the subprocess.Popen is deleted before
+        # the next test which raises an exception. Otherwise, the exception
+        # may be raised when Popen.__del__() is executed and so be logged
+        # as "Exception ignored in: <function Popen.__del__ at ...>".
+        child = None
+        gc.collect()
 
         with self.assertRaises(SIGUSR1Exception):
             with self.subprocess_send_signal(pid, "SIGUSR1") as child:

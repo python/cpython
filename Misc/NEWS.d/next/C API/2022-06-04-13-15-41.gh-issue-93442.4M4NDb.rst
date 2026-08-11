@@ -1,3 +1,0 @@
-Add C++ overloads for _Py_CAST_impl() to handle 0/NULL.  This will allow C++
-extensions that pass 0 or NULL to macros using _Py_CAST() to continue to
-compile.
