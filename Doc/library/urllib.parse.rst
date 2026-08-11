@@ -60,11 +60,16 @@ or on combining URL components into a URL string.
    *missing_as_none* is true.
    Not defined component are represented an empty string (by default) or
    ``None`` if *missing_as_none* is true.
-   The components are not broken up
-   into smaller parts (for example, the network location is a single string), and %
-   escapes are not expanded. The delimiters as shown above are not part of the
-   result, except for a leading slash in the *path* component, which is retained if
-   present.  For example:
+   The delimiters as shown above are not part of the result, except for a
+   leading slash in the *path* component, which is retained if present.
+
+   Additionally, the netloc property is broken down into these additional
+   attributes added to the returned object: username, password, hostname, and
+   port.
+
+   Percent-encoded sequences are not decoded.
+
+   For example:
 
    .. doctest::
       :options: +NORMALIZE_WHITESPACE
@@ -217,7 +222,7 @@ or on combining URL components into a URL string.
    .. versionchanged:: 3.12
       Leading WHATWG C0 control and space characters are stripped from the URL.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *missing_as_none* parameter.
 
 .. _WHATWG spec: https://url.spec.whatwg.org/#concept-basic-url-parser
@@ -333,7 +338,7 @@ or on combining URL components into a URL string.
    By default, *keep_empty* is true if *parts* is the result of the
    :func:`urlsplit` call with ``missing_as_none=True``.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *keep_empty* parameter.
 
 
@@ -371,7 +376,7 @@ or on combining URL components into a URL string.
    By default, *keep_empty* is true if *parts* is the result of the
    :func:`urlparse` call with ``missing_as_none=True``.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *keep_empty* parameter.
 
 
@@ -444,7 +449,7 @@ or on combining URL components into a URL string.
    .. versionchanged:: 3.2
       Result is a structured object rather than a simple 2-tuple.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *missing_as_none* parameter.
 
 .. function:: unwrap(url)
@@ -644,8 +649,9 @@ task isn't already covered by the URL parsing functions above.
 
    The optional *encoding* and *errors* parameters specify how to deal with
    non-ASCII characters, as accepted by the :meth:`str.encode` method.
-   *encoding* defaults to ``'utf-8'``.
-   *errors* defaults to ``'strict'``, meaning unsupported characters raise a
+   Although these parameters default to ``None`` in the function signature,
+   when processing :class:`str` inputs, *encoding* effectively defaults to ``'utf-8'``
+   and *errors* to ``'strict'``, meaning unsupported characters raise a
    :class:`UnicodeEncodeError`.
    *encoding* and *errors* must not be supplied if *string* is a
    :class:`bytes`, or a :class:`TypeError` is raised.

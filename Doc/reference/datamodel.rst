@@ -496,7 +496,7 @@ subscript notation ``a[k]`` selects the item indexed by ``k`` from the mapping
 :keyword:`del` statements. The built-in function :func:`len` returns the number
 of items in a mapping.
 
-There is currently a single intrinsic mapping type:
+There are two intrinsic mapping types:
 
 
 Dictionaries
@@ -533,6 +533,20 @@ module.
    Dictionaries did not preserve insertion order in versions of Python before 3.6.
    In CPython 3.6, insertion order was preserved, but it was considered
    an implementation detail at that time rather than a language guarantee.
+
+
+Frozen dictionaries
+^^^^^^^^^^^^^^^^^^^
+
+.. index:: pair: object; frozendict
+
+These represent an immutable dictionary.  They are created by the built-in
+:func:`frozendict` constructor.  A frozendict is :term:`hashable` if all of
+its keys and values are hashable, in which case it can be used as an element
+of a set, or as a key in another mapping.  :class:`!frozendict` is not a
+subclass of :class:`dict`; it inherits directly from :class:`object`.
+
+.. versionadded:: 3.15
 
 
 Callable types
@@ -926,6 +940,7 @@ Attribute assignment updates the module's namespace dictionary, e.g.,
    single: __doc__ (module attribute)
    single: __annotations__ (module attribute)
    single: __annotate__ (module attribute)
+   single: __lazy_modules__ (module attribute)
    pair: module; namespace
 
 .. _import-mod-attrs:
@@ -1027,7 +1042,7 @@ this approach.
       Raise :exc:`DeprecationWarning` instead of :exc:`ImportWarning` when
       falling back to :attr:`!__package__` during import resolution.
 
-   .. deprecated-removed:: 3.13 3.15
+   .. deprecated-removed:: 3.13 3.16
       :attr:`!__package__` will cease to be set or taken into consideration
       by the import system or standard library.
 
@@ -1120,6 +1135,20 @@ the following writable attributes:
    no annotations. See also: :attr:`~object.__annotate__` attributes.
 
    .. versionadded:: 3.14
+
+.. attribute:: module.__lazy_modules__
+
+   A container (an object implementing :meth:`~object.__contains__`) of fully
+   qualified module name strings.  When defined
+   at module scope, any regular :keyword:`import` statement in that module whose
+   target module name appears in this container is treated as a
+   :ref:`lazy import <lazy-imports>`, as if the :keyword:`lazy` keyword had
+   been used.  Imports inside functions, class bodies, or
+   :keyword:`try`/:keyword:`except`/:keyword:`finally` blocks are unaffected.
+
+   See :ref:`lazy-modules-compat` for details and examples.
+
+   .. versionadded:: 3.15
 
 Module dictionaries
 ^^^^^^^^^^^^^^^^^^^
@@ -1401,11 +1430,27 @@ also :func:`os.popen`, :func:`os.fdopen`, and the
 :meth:`~socket.socket.makefile` method of socket objects (and perhaps by
 other functions or methods provided by extension modules).
 
+File objects implement common methods, listed below, to simplify usage in
+generic code. They are expected to be :ref:`context-managers`.
+
 The objects ``sys.stdin``, ``sys.stdout`` and ``sys.stderr`` are
 initialized to file objects corresponding to the interpreter's standard
 input, output and error streams; they are all open in text mode and
 therefore follow the interface defined by the :class:`io.TextIOBase`
 abstract class.
+
+.. method:: file.read(size=-1, /)
+
+   Retrieve up to *size* data from the file. As a convenience if *size* is
+   unspecified or -1 retrieve all data available.
+
+.. method:: file.write(data, /)
+
+   Store *data* to the file.
+
+.. method:: file.close()
+
+   Flush any buffers and close the underlying file.
 
 
 Internal types
@@ -1445,7 +1490,6 @@ indirectly) to mutable objects.
    single: co_filename (code object attribute)
    single: co_firstlineno (code object attribute)
    single: co_flags (code object attribute)
-   single: co_lnotab (code object attribute)
    single: co_name (code object attribute)
    single: co_names (code object attribute)
    single: co_nlocals (code object attribute)
@@ -1517,14 +1561,6 @@ Special read-only attributes
 
    * - .. attribute:: codeobject.co_firstlineno
      - The line number of the first line of the function
-
-   * - .. attribute:: codeobject.co_lnotab
-     - A string encoding the mapping from :term:`bytecode` offsets to line
-       numbers. For details, see the source code of the interpreter.
-
-       .. deprecated:: 3.12
-          This attribute of code objects is deprecated, and may be removed in
-          Python 3.15.
 
    * - .. attribute:: codeobject.co_stacksize
      - The required stack size of the code object
@@ -2161,7 +2197,7 @@ Basic customization
    :data:`!NotImplemented`.  There are no other implied relationships among the
    comparison operators or default implementations; for example, the truth of
    ``(x<y or x==y)`` does not imply ``x<=y``. To automatically generate ordering
-   operations from a single root operation, see :func:`functools.total_ordering`.
+   operations from a single root operation, see :deco:`functools.total_ordering`.
 
    By default, the :class:`object` class provides implementations consistent
    with :ref:`expressions-value-comparisons`: equality compares according to
@@ -2194,12 +2230,12 @@ Basic customization
       pair: built-in function; hash
 
    Called by built-in function :func:`hash` and for operations on members of
-   hashed collections including :class:`set`, :class:`frozenset`, and
-   :class:`dict`.  The ``__hash__()`` method should return an integer. The only required
-   property is that objects which compare equal have the same hash value; it is
-   advised to mix together the hash values of the components of the object that
-   also play a part in comparison of objects by packing them into a tuple and
-   hashing the tuple. Example::
+   hashed collections including :class:`set`, :class:`frozenset`, :class:`dict`,
+   and :class:`frozendict`. The ``__hash__()`` method should return an integer.
+   The only required property is that objects which compare equal have the same
+   hash value; it is advised to mix together the hash values of the components
+   of the object that also play a part in comparison of objects by packing them
+   into a tuple and hashing the tuple. Example::
 
        def __hash__(self):
            return hash((self.name, self.nick, self.color))
@@ -2256,7 +2292,7 @@ Basic customization
       This is intended to provide protection against a denial-of-service caused
       by carefully chosen inputs that exploit the worst case performance of a
       dict insertion, *O*\ (*n*\ :sup:`2`) complexity.  See
-      http://ocert.org/advisories/ocert-2011-003.html for details.
+      https://ocert.org/advisories/ocert-2011-003.html for details.
 
       Changing hash values affects the iteration order of sets.
       Python has never made guarantees about this ordering
@@ -2585,7 +2621,7 @@ implemented as non-data descriptors.  Accordingly, instances can redefine and
 override methods.  This allows individual instances to acquire behaviors that
 differ from other instances of the same class.
 
-The :func:`property` function is implemented as a data descriptor. Accordingly,
+The :deco:`property` decorator is implemented as a data descriptor. Accordingly,
 instances cannot override the behavior of a property.
 
 
@@ -3223,21 +3259,6 @@ through the object's keys; for sequences, it should iterate through the values.
    .. versionadded:: 3.4
 
 
-.. index:: pair: object; slice
-
-.. note::
-
-   Slicing is done exclusively with the following three methods.  A call like ::
-
-      a[1:2] = b
-
-   is translated to ::
-
-      a[slice(1, 2, None)] = b
-
-   and so forth.  Missing slice items are always filled in with ``None``.
-
-
 .. method:: object.__getitem__(self, subscript)
 
    Called to implement *subscription*, that is, ``self[subscript]``.
@@ -3259,6 +3280,22 @@ through the object's keys; for sequences, it should iterate through the values.
    If *subscript* has an inappropriate value, :meth:`!__getitem__`
    should raise an :exc:`LookupError` or one of its subclasses
    (:exc:`IndexError` for sequences; :exc:`KeyError` for mappings).
+
+   .. index:: pair: object; slice
+
+   .. note::
+
+      Slicing is handled by :meth:`!__getitem__`, :meth:`~object.__setitem__`,
+      and :meth:`~object.__delitem__`.
+      A call like ::
+
+         a[1:2] = b
+
+      is translated to ::
+
+         a[slice(1, 2, None)] = b
+
+      and so forth. Missing slice items are always filled in with ``None``.
 
    .. note::
 
@@ -3620,12 +3657,25 @@ implement the protocol in Python.
    provides a convenient way to interpret the flags. The method must return
    a :class:`memoryview` object.
 
+   **Thread safety:** In :term:`free-threaded <free threading>` Python,
+   implementations must manage any internal export counter using atomic
+   operations. The method must be safe to call concurrently from multiple
+   threads, and the returned buffer's underlying data must remain valid
+   until the corresponding :meth:`~object.__release_buffer__` call
+   completes. See :ref:`thread-safety-memoryview` for details.
+
 .. method:: object.__release_buffer__(self, buffer)
 
    Called when a buffer is no longer needed. The *buffer* argument is a
    :class:`memoryview` object that was previously returned by
    :meth:`~object.__buffer__`. The method must release any resources associated
    with the buffer. This method should return ``None``.
+
+   **Thread safety:** In :term:`free-threaded <free threading>` Python,
+   any export counter decrement must use atomic operations. Resource
+   cleanup must be thread-safe, as the final release may race with
+   concurrent releases from other threads.
+
    Buffer objects that do not need to perform any cleanup are not required
    to implement this method.
 
@@ -3817,6 +3867,9 @@ should not directly raise unhandled :exc:`StopIteration` exceptions.
 Coroutines also have the methods listed below, which are analogous to
 those of generators (see :ref:`generator-methods`).  However, unlike
 generators, coroutines do not directly support iteration.
+
+Coroutines are :ref:`generic <generics>` over the types of their yield, send,
+and return values, respectively.
 
 .. versionchanged:: 3.5.2
    It is a :exc:`RuntimeError` to await on a coroutine more than once.

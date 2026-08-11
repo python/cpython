@@ -589,7 +589,7 @@ Snapshot
 
       If *cumulative* is ``True``, cumulate size and count of memory blocks of
       all frames of the traceback of a trace, not only the most recent frame.
-      The cumulative mode can only be used with *key_type* equals to
+      The cumulative mode can only be used with *key_type* equal to
       ``'filename'`` and ``'lineno'``.
 
       The result is sorted from the biggest to the smallest by:
@@ -720,11 +720,10 @@ Traceback
    When a snapshot is taken, tracebacks of traces are limited to
    :func:`get_traceback_limit` frames. See the :func:`take_snapshot` function.
    The original number of frames of the traceback is stored in the
-   :attr:`Traceback.total_nframe` attribute. That allows to know if a traceback
+   :attr:`Traceback.total_nframe` attribute. That allows one to know if a traceback
    has been truncated by the traceback limit.
 
-   The :attr:`Trace.traceback` attribute is an instance of :class:`Traceback`
-   instance.
+   The :attr:`Trace.traceback` attribute is a :class:`Traceback` instance.
 
    .. versionchanged:: 3.7
       Frames are now sorted from the oldest to the most recent, instead of most recent to oldest.

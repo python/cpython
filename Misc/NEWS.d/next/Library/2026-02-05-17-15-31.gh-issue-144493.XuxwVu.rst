@@ -1,1 +1,0 @@
-Improve an exception error message in ``_overlapped.BindLocal()`` that is raised when :meth:`asyncio.loop.sock_connect` is called on a :class:`asyncio.ProactorEventLoop` with a socket that has an invalid address family.

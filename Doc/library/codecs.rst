@@ -4,10 +4,6 @@
 .. module:: codecs
    :synopsis: Encode and decode data and streams.
 
-.. moduleauthor:: Marc-André Lemburg <mal@lemburg.com>
-.. sectionauthor:: Marc-André Lemburg <mal@lemburg.com>
-.. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
-
 **Source code:** :source:`Lib/codecs.py`
 
 .. index::
@@ -1091,6 +1087,18 @@ On Windows, ``cpXXX`` codecs are available for all code pages.
 But only codecs listed in the following table are guaranteed to exist on
 other platforms.
 
+On platforms that provide the C library's :manpage:`iconv(3)` function
+(such as those using the GNU C Library),
+every encoding known to ``iconv`` for which Python has no built-in codec
+is available as well.
+Such an encoding is looked up by its ``iconv`` name (for example ``cp1133``).
+Prefixing the name with ``iconv:`` forces the use of the ``iconv``-based codec
+even when a built-in codec of the same name exists (for example ``iconv:latin1``),
+which is mostly useful for testing.
+
+.. versionchanged:: next
+   Added support for encodings provided by the C library's ``iconv``.
+
 .. impl-detail::
 
    Some common encodings can bypass the codecs lookup machinery to
@@ -1159,7 +1167,7 @@ particular, the following variants typically exist:
 +-----------------+--------------------------------+--------------------------------+
 | cp857           | 857, IBM857                    | Turkish                        |
 +-----------------+--------------------------------+--------------------------------+
-| cp858           | 858, IBM858                    | Western Europe                 |
+| cp858           | 858, IBM00858                  | Western Europe                 |
 +-----------------+--------------------------------+--------------------------------+
 | cp860           | 860, IBM860                    | Portuguese                     |
 +-----------------+--------------------------------+--------------------------------+
@@ -1196,7 +1204,7 @@ particular, the following variants typically exist:
 |                 |                                |                                |
 |                 |                                | .. versionadded:: 3.4          |
 +-----------------+--------------------------------+--------------------------------+
-| cp1140          | ibm1140                        | Western Europe                 |
+| cp1140          | IBM01140                       | Western Europe                 |
 +-----------------+--------------------------------+--------------------------------+
 | cp1250          | windows-1250                   | Central and Eastern Europe     |
 +-----------------+--------------------------------+--------------------------------+
@@ -1403,6 +1411,14 @@ encodings.
 | punycode           |         | Implement :rfc:`3492`.    |
 |                    |         | Stateful codecs are not   |
 |                    |         | supported.                |
+|                    |         |                           |
+|                    |         | .. warning::              |
+|                    |         |                           |
+|                    |         |    The decoding and       |
+|                    |         |    encoding algorithms    |
+|                    |         |    scale poorly, so       |
+|                    |         |    limit the length of    |
+|                    |         |    untrusted input.       |
 +--------------------+---------+---------------------------+
 | raw_unicode_escape |         | Latin-1 encoding with     |
 |                    |         | :samp:`\\u{XXXX}` and     |
@@ -1433,6 +1449,14 @@ encodings.
 |                    |         | Beware that Python source |
 |                    |         | code actually uses UTF-8  |
 |                    |         | by default.               |
++--------------------+---------+---------------------------+
+| utf-7-imap         | mUTF-7  | Modified UTF-7 encoding   |
+|                    |         | of :rfc:`3501` for IMAP4  |
+|                    |         | mailbox names.  Only      |
+|                    |         | ``errors='strict'`` is    |
+|                    |         | supported.                |
+|                    |         |                           |
+|                    |         | .. versionadded:: next    |
 +--------------------+---------+---------------------------+
 
 .. versionchanged:: 3.8
@@ -1551,8 +1575,8 @@ mapping. It is not supported by :meth:`str.encode` (which only produces
    Restoration of the ``rot13`` alias.
 
 
-:mod:`encodings` --- Encodings package
---------------------------------------
+:mod:`!encodings` --- Encodings package
+---------------------------------------
 
 .. module:: encodings
    :synopsis: Encodings package
@@ -1611,12 +1635,11 @@ This module implements the following exception:
    Raised when a codec is invalid or incompatible.
 
 
-:mod:`encodings.idna` --- Internationalized Domain Names in Applications
-------------------------------------------------------------------------
+:mod:`!encodings.idna` --- Internationalized Domain Names in Applications
+-------------------------------------------------------------------------
 
 .. module:: encodings.idna
    :synopsis: Internationalized Domain Names implementation
-.. moduleauthor:: Martin v. Löwis
 
 This module implements :rfc:`3490` (Internationalized Domain Names in
 Applications) and :rfc:`3492` (Nameprep: A Stringprep Profile for
@@ -1654,7 +1677,7 @@ When receiving host names from the wire (such as in reverse name lookup), no
 automatic conversion to Unicode is performed: applications wishing to present
 such host names to the user should decode them to Unicode.
 
-The module :mod:`encodings.idna` also implements the nameprep procedure, which
+The module :mod:`!encodings.idna` also implements the nameprep procedure, which
 performs certain normalizations on host names, to achieve case-insensitivity of
 international domain names, and to unify similar characters. The nameprep
 functions can be used directly if desired.
@@ -1677,8 +1700,8 @@ functions can be used directly if desired.
    Convert a label to Unicode, as specified in :rfc:`3490`.
 
 
-:mod:`encodings.mbcs` --- Windows ANSI codepage
------------------------------------------------
+:mod:`!encodings.mbcs` --- Windows ANSI codepage
+------------------------------------------------
 
 .. module:: encodings.mbcs
    :synopsis: Windows ANSI codepage
@@ -1695,12 +1718,11 @@ This module implements the ANSI codepage (CP_ACP).
    Support any error handler.
 
 
-:mod:`encodings.utf_8_sig` --- UTF-8 codec with BOM signature
--------------------------------------------------------------
+:mod:`!encodings.utf_8_sig` --- UTF-8 codec with BOM signature
+--------------------------------------------------------------
 
 .. module:: encodings.utf_8_sig
    :synopsis: UTF-8 codec with BOM signature
-.. moduleauthor:: Walter Dörwald
 
 This module implements a variant of the UTF-8 codec. On encoding, a UTF-8 encoded
 BOM will be prepended to the UTF-8 encoded bytes. For the stateful encoder this

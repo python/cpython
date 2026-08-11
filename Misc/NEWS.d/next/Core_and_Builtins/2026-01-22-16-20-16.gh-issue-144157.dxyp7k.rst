@@ -1,2 +1,0 @@
-:meth:`bytes.translate` now allows the compiler to unroll its loop more
-usefully for a 2x speedup in the common no-deletions specified case.

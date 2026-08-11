@@ -1,2 +1,0 @@
-Reject C0 control characters within wsgiref.headers.Headers fields, values,
-and parameters.

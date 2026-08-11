@@ -148,6 +148,7 @@ class TestExports(BaseTestCase):
             "template" : 1,
             "SpooledTemporaryFile" : 1,
             "TemporaryDirectory" : 1,
+            "TemporaryFileWrapper" : 1,
         }
 
         unexp = []
@@ -330,17 +331,40 @@ def _mock_candidate_names(*names):
 class TestBadTempdir:
     def test_read_only_directory(self):
         with _inside_empty_temp_dir():
-            oldmode = mode = os.stat(tempfile.tempdir).st_mode
-            mode &= ~(stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
-            os.chmod(tempfile.tempdir, mode)
+            probe = os.path.join(tempfile.tempdir, 'probe')
+            if os.name == 'nt':
+                # Use security identifier *S-1-1-0 instead
+                # of localized "Everyone" to not depend on the locale.
+                cmd = ['icacls', tempfile.tempdir, '/deny', '*S-1-1-0:(W)']
+                stdout = None if support.verbose > 1 else subprocess.DEVNULL
+                subprocess.run(cmd, check=True, stdout=stdout)
+            else:
+                oldmode = mode = os.stat(tempfile.tempdir).st_mode
+                mode &= ~(stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
+                mode = stat.S_IREAD
+                os.chmod(tempfile.tempdir, mode)
             try:
-                if os.access(tempfile.tempdir, os.W_OK):
+                # Check that the directory is read-only.
+                try:
+                    os.mkdir(probe)
+                except PermissionError:
+                    pass
+                else:
+                    os.rmdir(probe)
                     self.skipTest("can't set the directory read-only")
+                # gh-66305: Now it takes a split second, but previously
+                # it took about 10 days on Windows.
                 with self.assertRaises(PermissionError):
                     self.make_temp()
-                self.assertEqual(os.listdir(tempfile.tempdir), [])
             finally:
-                os.chmod(tempfile.tempdir, oldmode)
+                if os.name == 'nt':
+                    # Use security identifier *S-1-1-0 instead
+                    # of localized "Everyone" to not depend on the locale.
+                    cmd = ['icacls', tempfile.tempdir, '/grant:r', '*S-1-1-0:(M)']
+                    subprocess.run(cmd, check=True, stdout=stdout)
+                else:
+                    os.chmod(tempfile.tempdir, oldmode)
+            self.assertEqual(os.listdir(tempfile.tempdir), [])
 
     def test_nonexisting_directory(self):
         with _inside_empty_temp_dir():
@@ -492,6 +516,8 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
         self.assertFalse(retval > 0, "child process reports failure %d"%retval)
 
     @unittest.skipUnless(has_textmode, "text mode not available")
+    @unittest.skipIf(sys.platform == "cygwin",
+                     "truncate text mode is not supported on Cygwin")
     def test_textmode(self):
         # _mkstemp_inner can create files in text mode
 
@@ -955,11 +981,22 @@ class TestNamedTemporaryFile(BaseTestCase):
 
     def test_basic(self):
         # NamedTemporaryFile can create files
-        self.do_create()
+        f = self.do_create()
+        self.assertIsInstance(f, tempfile.TemporaryFileWrapper)
         self.do_create(pre="a")
         self.do_create(suf="b")
         self.do_create(pre="a", suf="b")
         self.do_create(pre="aa", suf=".txt")
+
+    def test_in_all(self):
+        self.assertIn("TemporaryFileWrapper", tempfile.__all__)
+
+    def test_deprecated_TemporaryFileWrapper_alias(self):
+        # gh-152586: _TemporaryFileWrapper is a deprecated alias
+        # for the public TemporaryFileWrapper class.
+        with self.assertWarns(DeprecationWarning):
+            obj = tempfile._TemporaryFileWrapper
+        self.assertIs(obj, tempfile.TemporaryFileWrapper)
 
     def test_method_lookup(self):
         # Issue #18879: Looking up a temporary file method should keep it
@@ -1116,7 +1153,7 @@ class TestNamedTemporaryFile(BaseTestCase):
         try:
             with self.assertWarnsRegex(
                 expected_warning=ResourceWarning,
-                expected_regex=r"Implicitly cleaning up <_TemporaryFileWrapper file=.*>",
+                expected_regex=r"Implicitly cleaning up <TemporaryFileWrapper file=.*>",
             ):
                 tmp_name = my_func(dir)
                 support.gc_collect()
@@ -1160,7 +1197,7 @@ class TestNamedTemporaryFile(BaseTestCase):
     def test_unexpected_error(self):
         dir = tempfile.mkdtemp()
         self.addCleanup(os_helper.rmtree, dir)
-        with mock.patch('tempfile._TemporaryFileWrapper') as mock_ntf, \
+        with mock.patch('tempfile.TemporaryFileWrapper') as mock_ntf, \
              mock.patch('io.open', mock.mock_open()) as mock_open:
             mock_ntf.side_effect = KeyboardInterrupt()
             with self.assertRaises(KeyboardInterrupt):

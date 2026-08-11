@@ -32,6 +32,8 @@ extern PyObject* _PyUnicode_ResizeCompact(
     PyObject *unicode,
     Py_ssize_t length);
 extern PyObject* _PyUnicode_GetEmpty(void);
+PyAPI_FUNC(PyObject*) _PyUnicode_BinarySlice(PyObject *, PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) _PyUnicode_Repeat(PyObject *str, Py_ssize_t len);
 
 
 /* Generic helper macro to convert characters of different types.
@@ -180,6 +182,22 @@ extern int _PyUnicodeWriter_FormatV(
     const char *format,
     va_list vargs);
 
+/* --- iconv Codec -------------------------------------------------------- */
+
+#ifdef HAVE_ICONV
+extern PyObject* _PyUnicode_DecodeIconv(
+    const char *encoding,       /* iconv encoding name */
+    const char *string,         /* encoded string */
+    Py_ssize_t length,          /* size of string */
+    const char *errors,         /* error handling */
+    Py_ssize_t *consumed);      /* bytes consumed, or NULL for non-stateful */
+
+extern PyObject* _PyUnicode_EncodeIconv(
+    const char *encoding,       /* iconv encoding name */
+    PyObject *unicode,          /* Unicode object */
+    const char *errors);        /* error handling */
+#endif
+
 /* --- UTF-7 Codecs ------------------------------------------------------- */
 
 extern PyObject* _PyUnicode_EncodeUTF7(
@@ -325,7 +343,8 @@ extern PyObject* _PyUnicode_XStrip(
 
 
 /* Dedent a string.
-   Behaviour is expected to be an exact match of `textwrap.dedent`.
+   Intended to dedent Python source. Unlike `textwrap.dedent`, this
+   only supports spaces and tabs and doesn't normalize empty lines.
    Return a new reference on success, NULL with exception set on error.
    */
 extern PyObject* _PyUnicode_Dedent(PyObject *unicode);

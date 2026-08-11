@@ -1,2 +1,0 @@
-Fixed :mod:`asyncio` debugging tools to work with new remote debugging API.
-Patch by Bartosz Sławecki.

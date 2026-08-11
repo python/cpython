@@ -120,7 +120,7 @@ the :mod:`glob` module.)
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
-   .. deprecated:: next
+   .. deprecated:: 3.15
       Deprecated in favor of :func:`os.path.commonpath` for path prefixes.
       The :func:`os.path.commonprefix` function is being deprecated due to
       having a misleading name and module. The function is not safe to use for

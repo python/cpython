@@ -4,9 +4,6 @@
 .. module:: locale
    :synopsis: Internationalization services.
 
-.. moduleauthor:: Martin von Löwis <martin@v.loewis.de>
-.. sectionauthor:: Martin von Löwis <martin@v.loewis.de>
-
 **Source code:** :source:`Lib/locale.py`
 
 --------------
@@ -344,6 +341,10 @@ The :mod:`!locale` module defines the following exception and functions:
 
    .. versionchanged:: 3.14
       The function now temporarily sets the ``LC_CTYPE`` locale in some cases.
+
+   .. versionchanged:: next
+      On glibc, the ``LC_TIME`` items (except ``ERA``) are now decoded
+      independently of the ``LC_CTYPE`` encoding.
 
 
 .. function:: getdefaultlocale([envvars])

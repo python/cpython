@@ -12,9 +12,9 @@ fi
 
 # Update this when updating to a new version after verifying that the changes
 # the update brings in are good. These values are used for verifying the SBOM, too.
-expected_libexpat_tag="R_2_7_4"
-expected_libexpat_version="2.7.4"
-expected_libexpat_sha256="461ecc8aa98ab1a68c2db788175665d1a4db640dc05bf0e289b6ea17122144ec"
+expected_libexpat_tag="R_2_8_2"
+expected_libexpat_version="2.8.2"
+expected_libexpat_sha256="ef7d1994f533c9e7343d6c19f31064fc8ebbcbcaa144be3812b4f43052a05f4c"
 
 expat_dir="$(realpath "$(dirname -- "${BASH_SOURCE[0]}")")"
 cd ${expat_dir}
@@ -33,13 +33,16 @@ lib_files=(
   asciitab.h
   expat.h
   expat_external.h
+  fallthrough.h
   iasciitab.h
   internal.h
   latin1tab.h
+  memory_sanitizer.h
   nametab.h
   siphash.h
   utf8tab.h
   winconfig.h
+  xcsinc.c
   xmlparse.c
   xmlrole.c
   xmlrole.h
@@ -64,13 +67,28 @@ This may be due to source changes and will require updating this script" >&2
   exit 1
 fi
 
-echo "
+# Step 4: Skip the Windows rand_s entropy path in xmlparse.c when
+# XML_POOR_ENTROPY is set.
+sed -z -i 's|#if defined(_WIN32)\n#  include "random_rand_s\.h"\n#endif /\* defined(_WIN32) \*/|#if defined(_WIN32) \&\& ! defined(XML_POOR_ENTROPY)\n#  include "random_rand_s.h"\n#endif /* defined(_WIN32) \&\& ! defined(XML_POOR_ENTROPY) */|' xmlparse.c
+sed -z -i 's|#  ifdef _WIN32\n  if (writeRandomBytes_rand_s|#  if defined(_WIN32) \&\& ! defined(XML_POOR_ENTROPY)\n  if (writeRandomBytes_rand_s|' xmlparse.c
+
+if ! grep -q '#if defined(_WIN32) && ! defined(XML_POOR_ENTROPY)' xmlparse.c; then
+  echo "
+Error: rand_s gate not patched in xmlparse.c;
+This may be due to source changes and will require updating this script" >&2
+  exit 1
+fi
+
+echo '
 Updated! next steps:
 - Verify all is okay:
     git diff
     git status
-- Regenerate the sbom file
+- Update the sbom file:
+    Under the package "SPDXRef-PACKAGE-expat", update the "checksumValue",
+    "downloadLocation", "referenceLocator", and "versionInfo" fields.
+- Regenerate the sbom file:
     make regen-sbom
-- Update warning count in Tools/build/.warningignore_macos
+- Update the warning count in Tools/build/.warningignore_macos:
     (use info from CI if not on a Mac)
-"
+'

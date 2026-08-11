@@ -1,7 +1,0 @@
-:meth:`subprocess.Popen.wait`: when ``timeout`` is not ``None``, an efficient
-event-driven mechanism now waits for process termination, if available. Linux
->= 5.3 uses :func:`os.pidfd_open` + :func:`select.poll`. macOS and other BSD
-variants use :func:`select.kqueue` + ``KQ_FILTER_PROC`` + ``KQ_NOTE_EXIT``.
-Windows keeps using ``WaitForSingleObject`` (unchanged). If none of these
-mechanisms are available, the function falls back to the traditional busy loop
-(non-blocking call and short sleeps). Patch by Giampaolo Rodola.
