@@ -128,7 +128,7 @@ decode_str(const char *input, int single, struct tok_state *tok, int preserve_cr
 
 /* Set up tokenizer for string */
 struct tok_state *
-_PyTokenizer_FromString(const char *str, int exec_input, int preserve_crlf, int BARRY_AS_BDFL)
+_PyTokenizer_FromString(const char *str, int exec_input, int preserve_crlf, int barry_as_bdfl)
 {
     struct tok_state *tok = _PyTokenizer_tok_new();
     char *decoded;
@@ -144,6 +144,6 @@ _PyTokenizer_FromString(const char *str, int exec_input, int preserve_crlf, int 
     tok->buf = tok->cur = tok->inp = decoded;
     tok->end = decoded;
     tok->underflow = &tok_underflow_string;
-    tok->BARRY_AS_BDFL = BARRY_AS_BDFL;
+    tok->barry_as_bdfl = barry_as_bdfl;
     return tok;
 }

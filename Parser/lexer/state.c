@@ -63,7 +63,7 @@ _PyTokenizer_tok_new(void)
 #ifdef Py_DEBUG
     tok->debug = _Py_GetConfig()->parser_debug;
 #endif
-    tok->BARRY_AS_BDFL = 0;
+    tok->barry_as_bdfl = 0;
     return tok;
 }
 

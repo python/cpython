@@ -815,13 +815,6 @@ in_bitwise_or[CmpopExprPair*]: 'in' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, I
 isnot_bitwise_or[CmpopExprPair*]: 'is' 'not' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, IsNot, a) }
 is_bitwise_or[CmpopExprPair*]: 'is' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Is, a) }
 
-invalid_noteq:
-    | a='<' b='>' {
-      _PyPegen_tokens_are_adjacent(a, b)
-      ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant '!=' instead of '<>'?")
-      : NULL
-    }
-
 # Bitwise operators
 # -----------------
 
@@ -1666,4 +1659,11 @@ invalid_bitwise_or:
         _PyPegen_tokens_are_adjacent(b, c)
         ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(b, c, "invalid syntax.  Maybe you meant 'or' or '|' instead of '||'?")
         : NULL
+    }
+
+invalid_noteq:
+    | a='<' b='>' {
+      _PyPegen_tokens_are_adjacent(a, b)
+      ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant '!=' instead of '<>'?")
+      : NULL
     }

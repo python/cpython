@@ -221,151 +221,151 @@ static char *soft_keywords[] = {
 #define in_bitwise_or_type 1132
 #define isnot_bitwise_or_type 1133
 #define is_bitwise_or_type 1134
-#define invalid_noteq_type 1135
-#define bitwise_or_type 1136  // Left-recursive
-#define bitwise_xor_type 1137  // Left-recursive
-#define bitwise_and_type 1138  // Left-recursive
-#define shift_expr_type 1139  // Left-recursive
-#define sum_type 1140  // Left-recursive
-#define term_type 1141  // Left-recursive
-#define factor_type 1142
-#define power_type 1143
-#define await_primary_type 1144
-#define primary_type 1145  // Left-recursive
-#define slices_type 1146
-#define slice_type 1147
-#define atom_type 1148
-#define group_type 1149
-#define lambdef_type 1150
-#define lambda_params_type 1151
-#define lambda_parameters_type 1152
-#define lambda_slash_no_default_type 1153
-#define lambda_slash_with_default_type 1154
-#define lambda_star_etc_type 1155
-#define lambda_kwds_type 1156
-#define lambda_param_no_default_type 1157
-#define lambda_param_with_default_type 1158
-#define lambda_param_maybe_default_type 1159
-#define lambda_param_type 1160
-#define fstring_middle_type 1161
-#define fstring_replacement_field_type 1162
-#define fstring_conversion_type 1163
-#define fstring_full_format_spec_type 1164
-#define fstring_format_spec_type 1165
-#define fstring_type 1166
-#define tstring_format_spec_replacement_field_type 1167
-#define tstring_format_spec_type 1168
-#define tstring_full_format_spec_type 1169
-#define tstring_replacement_field_type 1170
-#define tstring_middle_type 1171
-#define tstring_type 1172
-#define string_type 1173
-#define strings_type 1174
-#define list_type 1175
-#define tuple_type 1176
-#define set_type 1177
-#define dict_type 1178
-#define double_starred_kvpairs_type 1179
-#define double_starred_kvpair_type 1180
-#define kvpair_type 1181
-#define for_if_clauses_type 1182
-#define for_if_clause_type 1183
-#define listcomp_type 1184
-#define setcomp_type 1185
-#define genexp_type 1186
-#define dictcomp_type 1187
-#define arguments_type 1188
-#define args_type 1189
-#define kwargs_type 1190
-#define starred_expression_type 1191
-#define kwarg_or_starred_type 1192
-#define kwarg_or_double_starred_type 1193
-#define star_targets_type 1194
-#define star_targets_list_seq_type 1195
-#define star_targets_tuple_seq_type 1196
-#define star_target_type 1197
-#define target_with_star_atom_type 1198
-#define star_atom_type 1199
-#define single_target_type 1200
-#define single_subscript_attribute_target_type 1201
-#define t_primary_type 1202  // Left-recursive
-#define t_lookahead_type 1203
-#define del_targets_type 1204
-#define del_target_type 1205
-#define del_t_atom_type 1206
-#define type_expressions_type 1207
-#define func_type_comment_type 1208
-#define invalid_arguments_type 1209
-#define invalid_kwarg_type 1210
-#define expression_without_invalid_type 1211
-#define invalid_legacy_expression_type 1212
-#define invalid_type_param_type 1213
-#define invalid_expression_type 1214
-#define invalid_if_expression_type 1215
-#define invalid_named_expression_type 1216
-#define invalid_assignment_type 1217
-#define invalid_ann_assign_target_type 1218
-#define invalid_raise_stmt_type 1219
-#define invalid_del_stmt_type 1220
-#define invalid_assert_stmt_type 1221
-#define invalid_block_type 1222
-#define invalid_comprehension_type 1223
-#define invalid_parameters_type 1224
-#define invalid_default_type 1225
-#define invalid_star_etc_type 1226
-#define invalid_kwds_type 1227
-#define invalid_parameters_helper_type 1228
-#define invalid_lambda_parameters_type 1229
-#define invalid_lambda_parameters_helper_type 1230
-#define invalid_lambda_star_etc_type 1231
-#define invalid_lambda_kwds_type 1232
-#define invalid_double_type_comments_type 1233
-#define invalid_with_item_type 1234
-#define invalid_for_if_clause_type 1235
-#define invalid_for_target_type 1236
-#define invalid_group_type 1237
-#define invalid_import_type 1238
-#define invalid_dotted_as_name_type 1239
-#define invalid_import_from_as_name_type 1240
-#define invalid_import_from_type 1241
-#define invalid_import_from_targets_type 1242
-#define invalid_with_stmt_type 1243
-#define invalid_with_stmt_indent_type 1244
-#define invalid_try_stmt_type 1245
-#define invalid_except_stmt_type 1246
-#define invalid_except_star_stmt_type 1247
-#define invalid_finally_stmt_type 1248
-#define invalid_except_stmt_indent_type 1249
-#define invalid_except_star_stmt_indent_type 1250
-#define invalid_match_stmt_type 1251
-#define invalid_case_block_type 1252
-#define invalid_as_pattern_type 1253
-#define invalid_class_pattern_type 1254
-#define invalid_mapping_pattern_type 1255
-#define invalid_class_argument_pattern_type 1256
-#define invalid_if_stmt_type 1257
-#define invalid_elif_stmt_type 1258
-#define invalid_else_stmt_type 1259
-#define invalid_while_stmt_type 1260
-#define invalid_for_stmt_type 1261
-#define invalid_def_raw_type 1262
-#define invalid_class_def_raw_type 1263
-#define invalid_double_starred_kvpairs_type 1264
-#define invalid_kvpair_unpacking_type 1265
-#define invalid_kvpair_type 1266
-#define invalid_starred_expression_unpacking_type 1267
-#define invalid_starred_expression_unpacking_sequence_type 1268
-#define invalid_starred_expression_type 1269
-#define invalid_fstring_replacement_field_type 1270
-#define invalid_fstring_conversion_character_type 1271
-#define invalid_tstring_replacement_field_type 1272
-#define invalid_tstring_conversion_character_type 1273
-#define invalid_string_tstring_concat_type 1274
-#define invalid_arithmetic_type 1275  // Left-recursive
-#define invalid_factor_type 1276
-#define invalid_type_params_type 1277
-#define invalid_bitwise_and_type 1278  // Left-recursive
-#define invalid_bitwise_or_type 1279  // Left-recursive
+#define bitwise_or_type 1135  // Left-recursive
+#define bitwise_xor_type 1136  // Left-recursive
+#define bitwise_and_type 1137  // Left-recursive
+#define shift_expr_type 1138  // Left-recursive
+#define sum_type 1139  // Left-recursive
+#define term_type 1140  // Left-recursive
+#define factor_type 1141
+#define power_type 1142
+#define await_primary_type 1143
+#define primary_type 1144  // Left-recursive
+#define slices_type 1145
+#define slice_type 1146
+#define atom_type 1147
+#define group_type 1148
+#define lambdef_type 1149
+#define lambda_params_type 1150
+#define lambda_parameters_type 1151
+#define lambda_slash_no_default_type 1152
+#define lambda_slash_with_default_type 1153
+#define lambda_star_etc_type 1154
+#define lambda_kwds_type 1155
+#define lambda_param_no_default_type 1156
+#define lambda_param_with_default_type 1157
+#define lambda_param_maybe_default_type 1158
+#define lambda_param_type 1159
+#define fstring_middle_type 1160
+#define fstring_replacement_field_type 1161
+#define fstring_conversion_type 1162
+#define fstring_full_format_spec_type 1163
+#define fstring_format_spec_type 1164
+#define fstring_type 1165
+#define tstring_format_spec_replacement_field_type 1166
+#define tstring_format_spec_type 1167
+#define tstring_full_format_spec_type 1168
+#define tstring_replacement_field_type 1169
+#define tstring_middle_type 1170
+#define tstring_type 1171
+#define string_type 1172
+#define strings_type 1173
+#define list_type 1174
+#define tuple_type 1175
+#define set_type 1176
+#define dict_type 1177
+#define double_starred_kvpairs_type 1178
+#define double_starred_kvpair_type 1179
+#define kvpair_type 1180
+#define for_if_clauses_type 1181
+#define for_if_clause_type 1182
+#define listcomp_type 1183
+#define setcomp_type 1184
+#define genexp_type 1185
+#define dictcomp_type 1186
+#define arguments_type 1187
+#define args_type 1188
+#define kwargs_type 1189
+#define starred_expression_type 1190
+#define kwarg_or_starred_type 1191
+#define kwarg_or_double_starred_type 1192
+#define star_targets_type 1193
+#define star_targets_list_seq_type 1194
+#define star_targets_tuple_seq_type 1195
+#define star_target_type 1196
+#define target_with_star_atom_type 1197
+#define star_atom_type 1198
+#define single_target_type 1199
+#define single_subscript_attribute_target_type 1200
+#define t_primary_type 1201  // Left-recursive
+#define t_lookahead_type 1202
+#define del_targets_type 1203
+#define del_target_type 1204
+#define del_t_atom_type 1205
+#define type_expressions_type 1206
+#define func_type_comment_type 1207
+#define invalid_arguments_type 1208
+#define invalid_kwarg_type 1209
+#define expression_without_invalid_type 1210
+#define invalid_legacy_expression_type 1211
+#define invalid_type_param_type 1212
+#define invalid_expression_type 1213
+#define invalid_if_expression_type 1214
+#define invalid_named_expression_type 1215
+#define invalid_assignment_type 1216
+#define invalid_ann_assign_target_type 1217
+#define invalid_raise_stmt_type 1218
+#define invalid_del_stmt_type 1219
+#define invalid_assert_stmt_type 1220
+#define invalid_block_type 1221
+#define invalid_comprehension_type 1222
+#define invalid_parameters_type 1223
+#define invalid_default_type 1224
+#define invalid_star_etc_type 1225
+#define invalid_kwds_type 1226
+#define invalid_parameters_helper_type 1227
+#define invalid_lambda_parameters_type 1228
+#define invalid_lambda_parameters_helper_type 1229
+#define invalid_lambda_star_etc_type 1230
+#define invalid_lambda_kwds_type 1231
+#define invalid_double_type_comments_type 1232
+#define invalid_with_item_type 1233
+#define invalid_for_if_clause_type 1234
+#define invalid_for_target_type 1235
+#define invalid_group_type 1236
+#define invalid_import_type 1237
+#define invalid_dotted_as_name_type 1238
+#define invalid_import_from_as_name_type 1239
+#define invalid_import_from_type 1240
+#define invalid_import_from_targets_type 1241
+#define invalid_with_stmt_type 1242
+#define invalid_with_stmt_indent_type 1243
+#define invalid_try_stmt_type 1244
+#define invalid_except_stmt_type 1245
+#define invalid_except_star_stmt_type 1246
+#define invalid_finally_stmt_type 1247
+#define invalid_except_stmt_indent_type 1248
+#define invalid_except_star_stmt_indent_type 1249
+#define invalid_match_stmt_type 1250
+#define invalid_case_block_type 1251
+#define invalid_as_pattern_type 1252
+#define invalid_class_pattern_type 1253
+#define invalid_mapping_pattern_type 1254
+#define invalid_class_argument_pattern_type 1255
+#define invalid_if_stmt_type 1256
+#define invalid_elif_stmt_type 1257
+#define invalid_else_stmt_type 1258
+#define invalid_while_stmt_type 1259
+#define invalid_for_stmt_type 1260
+#define invalid_def_raw_type 1261
+#define invalid_class_def_raw_type 1262
+#define invalid_double_starred_kvpairs_type 1263
+#define invalid_kvpair_unpacking_type 1264
+#define invalid_kvpair_type 1265
+#define invalid_starred_expression_unpacking_type 1266
+#define invalid_starred_expression_unpacking_sequence_type 1267
+#define invalid_starred_expression_type 1268
+#define invalid_fstring_replacement_field_type 1269
+#define invalid_fstring_conversion_character_type 1270
+#define invalid_tstring_replacement_field_type 1271
+#define invalid_tstring_conversion_character_type 1272
+#define invalid_string_tstring_concat_type 1273
+#define invalid_arithmetic_type 1274  // Left-recursive
+#define invalid_factor_type 1275
+#define invalid_type_params_type 1276
+#define invalid_bitwise_and_type 1277  // Left-recursive
+#define invalid_bitwise_or_type 1278  // Left-recursive
+#define invalid_noteq_type 1279
 #define _loop0_1_type 1280
 #define _loop1_2_type 1281
 #define _loop0_3_type 1282
@@ -682,7 +682,6 @@ static CmpopExprPair* notin_bitwise_or_rule(Parser *p);
 static CmpopExprPair* in_bitwise_or_rule(Parser *p);
 static CmpopExprPair* isnot_bitwise_or_rule(Parser *p);
 static CmpopExprPair* is_bitwise_or_rule(Parser *p);
-static void *invalid_noteq_rule(Parser *p);
 static expr_ty bitwise_or_rule(Parser *p);
 static expr_ty bitwise_xor_rule(Parser *p);
 static expr_ty bitwise_and_rule(Parser *p);
@@ -827,6 +826,7 @@ static void *invalid_factor_rule(Parser *p);
 static void *invalid_type_params_rule(Parser *p);
 static void *invalid_bitwise_and_rule(Parser *p);
 static void *invalid_bitwise_or_rule(Parser *p);
+static void *invalid_noteq_rule(Parser *p);
 static asdl_seq *_loop0_1_rule(Parser *p);
 static asdl_seq *_loop1_2_rule(Parser *p);
 static asdl_seq *_loop0_3_rule(Parser *p);
@@ -13515,52 +13515,6 @@ is_bitwise_or_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s is_bitwise_or[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'is' bitwise_or"));
-    }
-    _res = NULL;
-  done:
-    p->level--;
-    return _res;
-}
-
-// invalid_noteq: '<' '>'
-static void *
-invalid_noteq_rule(Parser *p)
-{
-    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
-        _Pypegen_stack_overflow(p);
-    }
-    if (p->error_indicator) {
-        p->level--;
-        return NULL;
-    }
-    void * _res = NULL;
-    int _mark = p->mark;
-    { // '<' '>'
-        if (p->error_indicator) {
-            p->level--;
-            return NULL;
-        }
-        D(fprintf(stderr, "%*c> invalid_noteq[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'<' '>'"));
-        Token * a;
-        Token * b;
-        if (
-            (a = _PyPegen_expect_token(p, 20))  // token='<'
-            &&
-            (b = _PyPegen_expect_token(p, 21))  // token='>'
-        )
-        {
-            D(fprintf(stderr, "%*c+ invalid_noteq[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'<' '>'"));
-            _res = _PyPegen_tokens_are_adjacent ( a , b ) ? RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "invalid syntax.  Maybe you meant '!=' instead of '<>'?" ) : NULL;
-            if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
-                p->error_indicator = 1;
-                p->level--;
-                return NULL;
-            }
-            goto done;
-        }
-        p->mark = _mark;
-        D(fprintf(stderr, "%*c%s invalid_noteq[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'<' '>'"));
     }
     _res = NULL;
   done:
@@ -28690,6 +28644,52 @@ invalid_bitwise_or_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_bitwise_or[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "bitwise_or '|' '|'"));
+    }
+    _res = NULL;
+  done:
+    p->level--;
+    return _res;
+}
+
+// invalid_noteq: '<' '>'
+static void *
+invalid_noteq_rule(Parser *p)
+{
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
+        _Pypegen_stack_overflow(p);
+    }
+    if (p->error_indicator) {
+        p->level--;
+        return NULL;
+    }
+    void * _res = NULL;
+    int _mark = p->mark;
+    { // '<' '>'
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> invalid_noteq[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'<' '>'"));
+        Token * a;
+        Token * b;
+        if (
+            (a = _PyPegen_expect_token(p, 20))  // token='<'
+            &&
+            (b = _PyPegen_expect_token(p, 21))  // token='>'
+        )
+        {
+            D(fprintf(stderr, "%*c+ invalid_noteq[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'<' '>'"));
+            _res = _PyPegen_tokens_are_adjacent ( a , b ) ? RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "invalid syntax.  Maybe you meant '!=' instead of '<>'?" ) : NULL;
+            if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s invalid_noteq[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'<' '>'"));
     }
     _res = NULL;
   done:

@@ -372,7 +372,7 @@ tok_underflow_file(struct tok_state *tok)
 struct tok_state *
 _PyTokenizer_FromFile(FILE *fp, const char* enc,
                       const char *ps1, const char *ps2,
-                      int BARRY_AS_BDFL)
+                      int barry_as_bdfl)
 {
     struct tok_state *tok = _PyTokenizer_tok_new();
     if (tok == NULL)
@@ -402,7 +402,7 @@ _PyTokenizer_FromFile(FILE *fp, const char* enc,
         }
         tok->decoding_state = STATE_NORMAL;
     }
-    tok->BARRY_AS_BDFL = BARRY_AS_BDFL;
+    tok->barry_as_bdfl = barry_as_bdfl;
     return tok;
 }
 

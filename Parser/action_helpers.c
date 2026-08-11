@@ -2076,7 +2076,7 @@ _PyPegen_checked_from_import(Parser *p, asdl_seq *dots, expr_ty module_name,
             alias_ty alias = asdl_seq_GET(names, i);
             if (PyUnicode_CompareWithASCIIString(alias->name, "barry_as_FLUFL") == 0) {
                 p->flags |= PyPARSE_BARRY_AS_BDFL;
-                p->tok->BARRY_AS_BDFL = 1;
+                p->tok->barry_as_bdfl = 1;
             }
         }
     }
