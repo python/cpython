@@ -794,8 +794,12 @@ are always available.  They are listed here in alphabetical order.
       1000000.0
       >>> float('-Infinity')
       -inf
+      >>> float(b'3.2e2')
+      320.0
       >>> float(bytearray(b'-2.5'))
       -2.5
+      >>> float(memoryview(b'6.7'))
+      6.7
       >>> import array
       >>> float(array.array('b', [49, 50, 51]))
       123.0
