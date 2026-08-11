@@ -1,3 +1,4 @@
+import errno
 import unittest
 import sys
 from test import support
@@ -795,8 +796,11 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
     def test_abs_errno_handling(self):
         _testcapi = import_helper.import_module('_testcapi')
         z = complex('nan')
-        _testcapi.set_errno(34)
-        self.assertTrue(isnan(abs(z)))
+        _testcapi.set_errno(errno.ERANGE)
+        try:
+            self.assertTrue(isnan(abs(z)))
+        finally:
+            _testcapi.set_errno(0)
 
     def test_repr_str(self):
         def test(v, expected, test_fn=self.assertEqual):
