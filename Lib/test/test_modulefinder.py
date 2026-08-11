@@ -10,9 +10,6 @@ from test import support
 
 import modulefinder
 
-TEST_DIR = tempfile.mkdtemp()
-TEST_PATH = [TEST_DIR, os.path.dirname(tempfile.__file__)]
-
 # Each test description is a list of 5 items:
 #
 # 1. a module name that will be imported by modulefinder
@@ -23,9 +20,9 @@ TEST_PATH = [TEST_DIR, os.path.dirname(tempfile.__file__)]
 #    about because they MAY be not found
 # 5. a string specifying packages to create; the format is obvious imo.
 #
-# Each package will be created in TEST_DIR, and TEST_DIR will be
+# Each package will be created in test_dir, and test_dir will be
 # removed after the tests again.
-# Modulefinder searches in a path that contains TEST_DIR, plus
+# Modulefinder searches in a path that contains test_dir, plus
 # the standard Lib directory.
 
 maybe_test = [
@@ -40,7 +37,8 @@ a/module.py
                                 from c import something
 b/__init__.py
                                 from sys import *
-"""]
+""",
+]
 
 maybe_test_new = [
     "a.module",
@@ -76,6 +74,18 @@ a/c.py
                                 from a.module import x
                                 import mymodule as sillyname
                                 from sys import version_info
+"""]
+
+namespace_package_test = [
+    "module",
+    ["a", "module"],
+    ["a.c", "blahblah"], [],
+    """\
+module.py
+                                import a
+                                import a.c
+                                import blahblah
+a/b.py
 """]
 
 absolute_import_test = [
@@ -218,6 +228,76 @@ bytecode_test = [
     ""
 ]
 
+syntax_error_test = [
+    "a.module",
+    ["a", "a.module", "b"],
+    ["b.module"], [],
+    """\
+a/__init__.py
+a/module.py
+                                import b.module
+b/__init__.py
+b/module.py
+                                ?  # SyntaxError: invalid syntax
+"""]
+
+
+same_name_as_bad_test = [
+    "a.module",
+    ["a", "a.module", "b", "b.c"],
+    ["c"], [],
+    """\
+a/__init__.py
+a/module.py
+                                import c
+                                from b import c
+b/__init__.py
+b/c.py
+"""]
+
+coding_default_utf8_test = [
+    "a_utf8",
+    ["a_utf8", "b_utf8"],
+    [], [],
+    """\
+a_utf8.py
+                                # use the default of utf8
+                                print('Unicode test A code point 2090 \u2090 that is not valid in cp1252')
+                                import b_utf8
+b_utf8.py
+                                # use the default of utf8
+                                print('Unicode test B code point 2090 \u2090 that is not valid in cp1252')
+"""]
+
+coding_explicit_utf8_test = [
+    "a_utf8",
+    ["a_utf8", "b_utf8"],
+    [], [],
+    """\
+a_utf8.py
+                                # coding=utf8
+                                print('Unicode test A code point 2090 \u2090 that is not valid in cp1252')
+                                import b_utf8
+b_utf8.py
+                                # use the default of utf8
+                                print('Unicode test B code point 2090 \u2090 that is not valid in cp1252')
+"""]
+
+coding_explicit_cp1252_test = [
+    "a_cp1252",
+    ["a_cp1252", "b_utf8"],
+    [], [],
+    b"""\
+a_cp1252.py
+                                # coding=cp1252
+                                # 0xe2 is not allowed in utf8
+                                print('CP1252 test P\xe2t\xe9')
+                                import b_utf8
+""" + """\
+b_utf8.py
+                                # use the default of utf8
+                                print('Unicode test A code point 2090 \u2090 that is not valid in cp1252')
+""".encode('utf-8')]
 
 def open_file(path):
     dirname = os.path.dirname(path)
@@ -226,57 +306,67 @@ def open_file(path):
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise
-    return open(path, "w")
+    return open(path, 'wb')
 
 
-def create_package(source):
+def create_package(test_dir, source):
     ofi = None
     try:
         for line in source.splitlines():
-            if line.startswith(" ") or line.startswith("\t"):
-                ofi.write(line.strip() + "\n")
+            if type(line) != bytes:
+                line = line.encode('utf-8')
+            if line.startswith(b' ') or line.startswith(b'\t'):
+                ofi.write(line.strip() + b'\n')
             else:
                 if ofi:
                     ofi.close()
-                ofi = open_file(os.path.join(TEST_DIR, line.strip()))
+                if type(line) == bytes:
+                    line = line.decode('utf-8')
+                ofi = open_file(os.path.join(test_dir, line.strip()))
     finally:
         if ofi:
             ofi.close()
 
-
 class ModuleFinderTest(unittest.TestCase):
-    def _do_test(self, info, report=False, debug=0, replace_paths=[]):
-        import_this, modules, missing, maybe_missing, source = info
-        create_package(source)
-        try:
-            mf = modulefinder.ModuleFinder(path=TEST_PATH, debug=debug,
-                                           replace_paths=replace_paths)
-            mf.import_hook(import_this)
-            if report:
-                mf.report()
-##                # This wouldn't work in general when executed several times:
-##                opath = sys.path[:]
-##                sys.path = TEST_PATH
-##                try:
-##                    __import__(import_this)
-##                except:
-##                    import traceback; traceback.print_exc()
-##                sys.path = opath
-##                return
-            modules = sorted(set(modules))
-            found = sorted(mf.modules)
-            # check if we found what we expected, not more, not less
-            self.assertEqual(found, modules)
+    def setUp(self):
+        self.test_dir = tempfile.mkdtemp()
+        self.test_path = [self.test_dir, os.path.dirname(tempfile.__file__)]
 
-            # check for missing and maybe missing modules
-            bad, maybe = mf.any_missing_maybe()
-            self.assertEqual(bad, missing)
-            self.assertEqual(maybe, maybe_missing)
-        finally:
-            shutil.rmtree(TEST_DIR)
+    def tearDown(self):
+        shutil.rmtree(self.test_dir)
+
+    def _do_test(self, info, report=False, debug=0, replace_paths=[], modulefinder_class=modulefinder.ModuleFinder):
+        import_this, modules, missing, maybe_missing, source = info
+        create_package(self.test_dir, source)
+        mf = modulefinder_class(path=self.test_path, debug=debug,
+                                        replace_paths=replace_paths)
+        mf.import_hook(import_this)
+        if report:
+            mf.report()
+##            # This wouldn't work in general when executed several times:
+##            opath = sys.path[:]
+##            sys.path = self.test_path
+##            try:
+##                __import__(import_this)
+##            except:
+##                import traceback; traceback.print_exc()
+##            sys.path = opath
+##            return
+        modules = sorted(set(modules))
+        found = sorted(mf.modules)
+        # check if we found what we expected, not more, not less
+        self.assertEqual(found, modules)
+
+        # check for missing and maybe missing modules
+        bad, maybe = mf.any_missing_maybe()
+        self.assertEqual(bad, missing)
+        self.assertEqual(maybe, maybe_missing)
 
     def test_package(self):
         self._do_test(package_test)
+
+    def test_namespace_package(self):
+        self._do_test(namespace_package_test)
 
     def test_maybe(self):
         self._do_test(maybe_test)
@@ -299,19 +389,25 @@ class ModuleFinderTest(unittest.TestCase):
     def test_relative_imports_4(self):
         self._do_test(relative_import_test_4)
 
+    def test_syntax_error(self):
+        self._do_test(syntax_error_test)
+
+    def test_same_name_as_bad(self):
+        self._do_test(same_name_as_bad_test)
+
     def test_bytecode(self):
-        base_path = os.path.join(TEST_DIR, 'a')
+        base_path = os.path.join(self.test_dir, 'a')
         source_path = base_path + importlib.machinery.SOURCE_SUFFIXES[0]
         bytecode_path = base_path + importlib.machinery.BYTECODE_SUFFIXES[0]
         with open_file(source_path) as file:
-            file.write('testing_modulefinder = True\n')
+            file.write('testing_modulefinder = True\n'.encode('utf-8'))
         py_compile.compile(source_path, cfile=bytecode_path)
         os.remove(source_path)
         self._do_test(bytecode_test)
 
     def test_replace_paths(self):
-        old_path = os.path.join(TEST_DIR, 'a', 'module.py')
-        new_path = os.path.join(TEST_DIR, 'a', 'spam.py')
+        old_path = os.path.join(self.test_dir, 'a', 'module.py')
+        new_path = os.path.join(self.test_dir, 'a', 'spam.py')
         with support.captured_stdout() as output:
             self._do_test(maybe_test, debug=2,
                           replace_paths=[(old_path, new_path)])
@@ -332,6 +428,26 @@ b.py
 """ % list(range(2**16))]  # 2**16 constants
         self._do_test(extended_opargs_test)
 
+    def test_coding_default_utf8(self):
+        self._do_test(coding_default_utf8_test)
+
+    def test_coding_explicit_utf8(self):
+        self._do_test(coding_explicit_utf8_test)
+
+    def test_coding_explicit_cp1252(self):
+        self._do_test(coding_explicit_cp1252_test)
+
+    def test_load_module_api(self):
+        class CheckLoadModuleApi(modulefinder.ModuleFinder):
+            def __init__(self, *args, **kwds):
+                super().__init__(*args, **kwds)
+
+            def load_module(self, fqname, fp, pathname, file_info):
+                # confirm that the fileinfo is a tuple of 3 elements
+                suffix, mode, type = file_info
+                return super().load_module(fqname, fp, pathname, file_info)
+
+        self._do_test(absolute_import_test, modulefinder_class=CheckLoadModuleApi)
 
 if __name__ == "__main__":
     unittest.main()

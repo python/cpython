@@ -21,7 +21,7 @@ Python's development never completely stops between releases, and a steady flow
 of bug fixes and improvements are always being submitted. A host of minor fixes,
 a few optimizations, additional docstrings, and better error messages went into
 2.0; to list them all would be impossible, but they're certainly significant.
-Consult the publicly-available CVS logs if you want to see the full list.  This
+Consult the publicly available CVS logs if you want to see the full list.  This
 progress is due to the five developers working for  PythonLabs are now getting
 paid to spend their days fixing bugs, and also due to the improved communication
 resulting  from moving to SourceForge.
@@ -108,10 +108,10 @@ usually easy compared to the earlier task of coming up with a good design.
 Discussions of new features can often explode into lengthy mailing list threads,
 making the discussion hard to follow, and no one can read every posting to
 python-dev.  Therefore, a relatively formal process has been set up to write
-Python Enhancement Proposals (PEPs), modelled on the Internet RFC process.  PEPs
+Python Enhancement Proposals (PEPs), modelled on the internet RFC process.  PEPs
 are draft documents that describe a proposed new feature, and are continually
 revised until the community reaches a consensus, either accepting or rejecting
-the proposal.  Quoting from the introduction to PEP 1, "PEP Purpose and
+the proposal.  Quoting from the introduction to :pep:`1`, "PEP Purpose and
 Guidelines":
 
 
@@ -127,11 +127,11 @@ Guidelines":
    that have gone into Python.  The PEP author is responsible for building
    consensus within the community and documenting dissenting opinions.
 
-Read the rest of PEP 1 for the details of the PEP editorial process, style, and
+Read the rest of :pep:`1` for the details of the PEP editorial process, style, and
 format.  PEPs are kept in the Python CVS tree on SourceForge, though they're not
 part of the Python 2.0 distribution, and are also available in HTML form from
-https://www.python.org/dev/peps/.  As of September 2000, there are 25 PEPS, ranging
-from PEP 201, "Lockstep Iteration", to PEP 225, "Elementwise/Objectwise
+https://peps.python.org/.  As of September 2000, there are 25 PEPs, ranging
+from :pep:`201`, "Lockstep Iteration", to PEP 225, "Elementwise/Objectwise
 Operators".
 
 .. ======================================================================
@@ -153,9 +153,9 @@ Lundh.  A detailed explanation of the interface was written up as :pep:`100`,
 significant points about the Unicode interfaces.
 
 In Python source code, Unicode strings are written as ``u"string"``.  Arbitrary
-Unicode characters can be written using a new escape sequence, ``\uHHHH``, where
+Unicode characters can be written using a new escape sequence, :samp:`\\u{HHHH}`, where
 *HHHH* is a 4-digit hexadecimal number from 0000 to FFFF.  The existing
-``\xHHHH`` escape sequence can also be used, and octal escapes can be used for
+:samp:`\\x{HH}` escape sequence can also be used, and octal escapes can be used for
 characters up to U+01FF, which is represented by ``\777``.
 
 Unicode strings, just like regular strings, are an immutable sequence type.
@@ -217,13 +217,13 @@ often use the ``codecs.lookup(encoding)`` function, which returns a
   was consumed.
 
 * *stream_reader* is a class that supports decoding input from a stream.
-  *stream_reader(file_obj)* returns an object that supports the :meth:`read`,
-  :meth:`readline`, and :meth:`readlines` methods.  These methods will all
+  *stream_reader(file_obj)* returns an object that supports the :meth:`!read`,
+  :meth:`!readline`, and :meth:`!readlines` methods.  These methods will all
   translate from the given encoding and return Unicode strings.
 
 * *stream_writer*, similarly, is a class that supports encoding output to a
   stream.  *stream_writer(file_obj)* returns an object that supports the
-  :meth:`write` and :meth:`writelines` methods.  These methods expect Unicode
+  :meth:`!write` and :meth:`!writelines` methods.  These methods expect Unicode
   strings, translating them to the given encoding on output.
 
 For example, the following code writes a Unicode string into a file,  encoding
@@ -284,7 +284,7 @@ write the following to do it::
                      L)
 
 Because of Python's scoping rules, a default argument is used so that the
-anonymous function created by the :keyword:`lambda` statement knows what
+anonymous function created by the :keyword:`lambda` expression knows what
 substring is being searched for.  List comprehensions make this cleaner::
 
    sublist = [ s for s in L if string.find(s, S) != -1 ]
@@ -296,11 +296,11 @@ List comprehensions have the form::
                 for exprN in sequenceN
                 if condition ]
 
-The :keyword:`for`...\ :keyword:`in` clauses contain the sequences to be
+The :keyword:`!for`...\ :keyword:`!in` clauses contain the sequences to be
 iterated over.  The sequences do not have to be the same length, because they
 are *not* iterated over in parallel, but from left to right; this is explained
 more clearly in the following paragraphs.  The elements of the generated list
-will be the successive values of *expression*.  The final :keyword:`if` clause
+will be the successive values of *expression*.  The final :keyword:`!if` clause
 is optional; if present, *expression* is only evaluated and added to the result
 if *condition* is true.
 
@@ -316,7 +316,7 @@ following Python code::
                      # the expression to the
                      # resulting list.
 
-This means that when there are multiple :keyword:`for`...\ :keyword:`in`
+This means that when there are multiple :keyword:`!for`...\ :keyword:`!in`
 clauses, the resulting list will be equal to the product of the lengths of all
 the sequences.  If you have two lists of length 3, the output list is 9 elements
 long::
@@ -356,8 +356,8 @@ variable  ``a`` by 2, equivalent to the slightly lengthier ``a = a + 2``.
 The full list of supported assignment operators is ``+=``, ``-=``, ``*=``,
 ``/=``, ``%=``, ``**=``, ``&=``, ``|=``, ``^=``, ``>>=``, and ``<<=``.  Python
 classes can override the augmented assignment operators by defining methods
-named :meth:`__iadd__`, :meth:`__isub__`, etc.  For example, the following
-:class:`Number` class stores a number and supports using += to create a new
+named :meth:`!__iadd__`, :meth:`!__isub__`, etc.  For example, the following
+:class:`!Number` class stores a number and supports using += to create a new
 instance with an incremented value.
 
 .. The empty groups below prevent conversion to guillemets.
@@ -374,7 +374,7 @@ instance with an incremented value.
    n += 3
    print n.value
 
-The :meth:`__iadd__` special method is called with the value of the increment,
+The :meth:`!__iadd__` special method is called with the value of the increment,
 and should return a new instance with an appropriately modified value; this
 return value is bound as the new value of the variable on the left-hand side.
 
@@ -390,10 +390,10 @@ String Methods
 ==============
 
 Until now string-manipulation functionality was in the :mod:`string` module,
-which was usually a front-end for the :mod:`strop` module written in C.  The
-addition of Unicode posed a difficulty for the :mod:`strop` module, because the
+which was usually a front-end for the :mod:`!strop` module written in C.  The
+addition of Unicode posed a difficulty for the :mod:`!strop` module, because the
 functions would all need to be rewritten in order to accept either 8-bit or
-Unicode strings.  For functions such as :func:`string.replace`, which takes 3
+Unicode strings.  For functions such as :func:`!string.replace`, which takes 3
 string arguments, that means eight possible permutations, and correspondingly
 complicated code.
 
@@ -416,13 +416,13 @@ The old :mod:`string` module is still around for backwards compatibility, but it
 mostly acts as a front-end to the new string methods.
 
 Two methods which have no parallel in pre-2.0 versions, although they did exist
-in JPython for quite some time, are :meth:`startswith` and :meth:`endswith`.
+in JPython for quite some time, are :meth:`!startswith` and :meth:`!endswith`.
 ``s.startswith(t)`` is equivalent to ``s[:len(t)] == t``, while
 ``s.endswith(t)`` is equivalent to ``s[-len(t):] == t``.
 
-One other method which deserves special mention is :meth:`join`.  The
-:meth:`join` method of a string receives one parameter, a sequence of strings,
-and is equivalent to the :func:`string.join` function from the old :mod:`string`
+One other method which deserves special mention is :meth:`!join`.  The
+:meth:`!join` method of a string receives one parameter, a sequence of strings,
+and is equivalent to the :func:`!string.join` function from the old :mod:`string`
 module, with the arguments reversed. In other words, ``s.join(seq)`` is
 equivalent to the old ``string.join(seq, s)``.
 
@@ -503,9 +503,9 @@ Minor Language Changes
 
 A new syntax makes it more convenient to call a given function with a tuple of
 arguments and/or a dictionary of keyword arguments. In Python 1.5 and earlier,
-you'd use the :func:`apply` built-in function: ``apply(f, args, kw)`` calls the
-function :func:`f` with the argument tuple *args* and the keyword arguments in
-the dictionary *kw*.  :func:`apply`  is the same in 2.0, but thanks to a patch
+you'd use the :func:`!apply` built-in function: ``apply(f, args, kw)`` calls the
+function :func:`!f` with the argument tuple *args* and the keyword arguments in
+the dictionary *kw*.  :func:`!apply`  is the same in 2.0, but thanks to a patch
 from Greg Ewing, ``f(*args, **kw)`` is a shorter and clearer way to achieve the
 same effect.  This syntax is symmetrical with the syntax for defining
 functions::
@@ -518,7 +518,7 @@ functions::
 The ``print`` statement can now have its output directed to a file-like
 object by following the ``print`` with  ``>> file``, similar to the
 redirection operator in Unix shells. Previously you'd either have to use the
-:meth:`write` method of the file-like object, which lacks the convenience and
+:meth:`!write` method of the file-like object, which lacks the convenience and
 simplicity of ``print``, or you could assign a new value to
 ``sys.stdout`` and then restore the old value.  For sending output to standard
 error, it's much easier to write this::
@@ -540,9 +540,9 @@ Previously there was no way to implement a class that overrode Python's built-in
 true if *obj* is present in the sequence *seq*; Python computes this by simply
 trying every index of the sequence until either *obj* is found or an
 :exc:`IndexError` is encountered.  Moshe Zadka contributed a patch which adds a
-:meth:`__contains__` magic method for providing a custom implementation for
-:keyword:`in`. Additionally, new built-in objects written in C can define what
-:keyword:`in` means for them via a new slot in the sequence protocol.
+:meth:`!__contains__` magic method for providing a custom implementation for
+:keyword:`!in`. Additionally, new built-in objects written in C can define what
+:keyword:`!in` means for them via a new slot in the sequence protocol.
 
 Earlier versions of Python used a recursive algorithm for deleting objects.
 Deeply nested data structures could cause the interpreter to fill up the C stack
@@ -562,7 +562,7 @@ the python-dev mailing list for the discussion leading up to this
 implementation, and some useful relevant links.    Note that comparisons can now
 also raise exceptions. In earlier versions of Python, a comparison operation
 such as ``cmp(a,b)`` would always produce an answer, even if a user-defined
-:meth:`__cmp__` method encountered an error, since the resulting exception would
+:meth:`!__cmp__` method encountered an error, since the resulting exception would
 simply be silently swallowed.
 
 .. Starting URL:
@@ -572,7 +572,7 @@ Work has been done on porting Python to 64-bit Windows on the Itanium processor,
 mostly by Trent Mick of ActiveState.  (Confusingly, ``sys.platform`` is still
 ``'win32'`` on Win64 because it seems that for ease of porting, MS Visual C++
 treats code as 32 bit on Itanium.) PythonWin also supports Windows CE; see the
-Python CE page at http://pythonce.sourceforge.net/ for more information.
+Python CE page at https://pythonce.sourceforge.net/ for more information.
 
 Another new platform is Darwin/MacOS X; initial support for it is in Python 2.0.
 Dynamic loading works, if you specify "configure --with-dyld --with-suffix=.x".
@@ -607,7 +607,7 @@ seq1, seq2)`` is that :func:`map` pads the sequences with ``None`` if the
 sequences aren't all of the same length, while :func:`zip` truncates the
 returned list to the length of the shortest argument sequence.
 
-The :func:`int` and :func:`long` functions now accept an optional "base"
+The :func:`int` and :func:`!long` functions now accept an optional "base"
 parameter when the first argument is a string. ``int('123', 10)`` returns 123,
 while ``int('123', 16)`` returns 291.  ``int(123, 16)`` raises a
 :exc:`TypeError` exception with the message "can't convert non-string with
@@ -620,8 +620,8 @@ would be ``(2, 0, 1, 'beta', 1)``. *level* is a string such as ``"alpha"``,
 ``"beta"``, or ``"final"`` for a final release.
 
 Dictionaries have an odd new method, ``setdefault(key, default)``, which
-behaves similarly to the existing :meth:`get` method.  However, if the key is
-missing, :meth:`setdefault` both returns the value of *default* as :meth:`get`
+behaves similarly to the existing :meth:`!get` method.  However, if the key is
+missing, :meth:`!setdefault` both returns the value of *default* as :meth:`!get`
 would do, and also inserts it into the dictionary as the value for *key*.  Thus,
 the following lines of code::
 
@@ -656,7 +656,8 @@ break.
 The change which will probably break the most code is tightening up the
 arguments accepted by some methods.  Some methods would take multiple arguments
 and treat them as a tuple, particularly various list methods such as
-:meth:`append` and :meth:`insert`. In earlier versions of Python, if ``L`` is
+:meth:`~list.append` and :meth:`~list.insert`.
+In earlier versions of Python, if ``L`` is
 a list, ``L.append( 1,2 )`` appends the tuple ``(1,2)`` to the list.  In Python
 2.0 this causes a :exc:`TypeError` exception to be raised, with the message:
 'append requires exactly 1 argument; 2 given'.  The fix is to simply add an
@@ -664,16 +665,16 @@ extra set of parentheses to pass both values as a tuple:  ``L.append( (1,2) )``.
 
 The earlier versions of these methods were more forgiving because they used an
 old function in Python's C interface to parse their arguments; 2.0 modernizes
-them to use :func:`PyArg_ParseTuple`, the current argument parsing function,
+them to use :c:func:`PyArg_ParseTuple`, the current argument parsing function,
 which provides more helpful error messages and treats multi-argument calls as
 errors.  If you absolutely must use 2.0 but can't fix your code, you can edit
 :file:`Objects/listobject.c` and define the preprocessor symbol
 ``NO_STRICT_LIST_APPEND`` to preserve the old behaviour; this isn't recommended.
 
 Some of the functions in the :mod:`socket` module are still forgiving in this
-way.  For example, :func:`socket.connect( ('hostname', 25) )` is the correct
-form, passing a tuple representing an IP address, but :func:`socket.connect(
-'hostname', 25 )` also works. :func:`socket.connect_ex` and :func:`socket.bind`
+way.  For example, ``socket.connect( ('hostname', 25) )`` is the correct
+form, passing a tuple representing an IP address, but ``socket.connect('hostname', 25)``
+also works. :meth:`socket.connect_ex <socket.socket.connect_ex>` and :meth:`socket.bind <socket.socket.bind>`
 are similarly easy-going.  2.0alpha1 tightened these functions up, but because
 the documentation actually used the erroneous multiple argument form, many
 people wrote code which would break with the stricter checking.  GvR backed out
@@ -693,7 +694,7 @@ advantage of this fact will break in 2.0.
 
 Some work has been done to make integers and long integers a bit more
 interchangeable.  In 1.5.2, large-file support was added for Solaris, to allow
-reading files larger than 2 GiB; this made the :meth:`tell` method of file
+reading files larger than 2 GiB; this made the :meth:`!tell` method of file
 objects return a long integer instead of a regular integer.  Some code would
 subtract two file offsets and attempt to use the result to multiply a sequence
 or slice a string, but this raised a :exc:`TypeError`.  In 2.0, long integers
@@ -701,7 +702,7 @@ can be used to multiply or slice a sequence, and it'll behave as you'd
 intuitively expect it to; ``3L * 'abc'`` produces 'abcabcabc', and
 ``(0,1,2,3)[2L:4L]`` produces (2,3). Long integers can also be used in various
 contexts where previously only integers were accepted, such as in the
-:meth:`seek` method of file objects, and in the formats supported by the ``%``
+:meth:`!seek` method of file objects, and in the formats supported by the ``%``
 operator (``%d``, ``%i``, ``%x``, etc.).  For example, ``"%d" % 2L**64`` will
 produce the string ``18446744073709551616``.
 
@@ -715,7 +716,7 @@ digit.
 
 Taking the :func:`repr` of a float now uses a different formatting precision
 than :func:`str`.  :func:`repr` uses ``%.17g`` format string for C's
-:func:`sprintf`, while :func:`str` uses ``%.12g`` as before.  The effect is that
+:func:`!sprintf`, while :func:`str` uses ``%.12g`` as before.  The effect is that
 :func:`repr` may occasionally show more decimal places than  :func:`str`, for
 certain numbers.  For example, the number 8.1 can't be represented exactly in
 binary, so ``repr(8.1)`` is ``'8.0999999999999996'``, while str(8.1) is
@@ -723,7 +724,7 @@ binary, so ``repr(8.1)`` is ``'8.0999999999999996'``, while str(8.1) is
 
 The ``-X`` command-line option, which turned all standard exceptions into
 strings instead of classes, has been removed; the standard exceptions will now
-always be classes.  The :mod:`exceptions` module containing the standard
+always be classes.  The :mod:`!exceptions` module containing the standard
 exceptions was translated from Python to a built-in C module, written by Barry
 Warsaw and Fredrik Lundh.
 
@@ -766,9 +767,9 @@ file, :file:`Include/pyport.h`.
 
 Vladimir Marangozov's long-awaited malloc restructuring was completed, to make
 it easy to have the Python interpreter use a custom allocator instead of C's
-standard :func:`malloc`.  For documentation, read the comments in
+standard :c:func:`malloc`.  For documentation, read the comments in
 :file:`Include/pymem.h` and :file:`Include/objimpl.h`.  For the lengthy
-discussions during which the interface was hammered out, see the Web archives of
+discussions during which the interface was hammered out, see the web archives of
 the 'patches' and 'python-dev' lists at python.org.
 
 Recent versions of the GUSI development environment for MacOS support POSIX
@@ -791,18 +792,18 @@ Previously the Python virtual machine used 16-bit numbers in its bytecode,
 limiting the size of source files.  In particular, this affected the maximum
 size of literal lists and dictionaries in Python source; occasionally people who
 are generating Python code would run into this limit.  A patch by Charles G.
-Waldman raises the limit from ``2^16`` to ``2^{32}``.
+Waldman raises the limit from ``2**16`` to ``2**32``.
 
 Three new convenience functions intended for adding constants to a module's
-dictionary at module initialization time were added: :func:`PyModule_AddObject`,
-:func:`PyModule_AddIntConstant`, and :func:`PyModule_AddStringConstant`.  Each
+dictionary at module initialization time were added: :c:func:`PyModule_AddObject`,
+:c:func:`PyModule_AddIntConstant`, and :c:func:`PyModule_AddStringConstant`.  Each
 of these functions takes a module object, a null-terminated C string containing
 the name to be added, and a third argument for the value to be assigned to the
 name.  This third argument is, respectively, a Python object, a C long, or a C
 string.
 
-A wrapper API was added for Unix-style signal handlers. :func:`PyOS_getsig` gets
-a signal handler and :func:`PyOS_setsig` will set a new handler.
+A wrapper API was added for Unix-style signal handlers. :c:func:`PyOS_getsig` gets
+a signal handler and :c:func:`PyOS_setsig` will set a new handler.
 
 .. ======================================================================
 
@@ -820,7 +821,7 @@ packages, which made administering a Python installation something of  a chore.
 
 The SIG for distribution utilities, shepherded by Greg Ward, has created the
 Distutils, a system to make package installation much easier.  They form the
-:mod:`distutils` package, a new part of Python's standard library. In the best
+``distutils`` package, a new part of Python's standard library. In the best
 case, installing a Python module from source will require the same steps: first
 you simply mean unpack the tarball or zip archive, and the run "``python
 setup.py install``".  The platform will be automatically detected, the compiler
@@ -879,11 +880,11 @@ joins the basic set of Python documentation.
 XML Modules
 ===========
 
-Python 1.5.2 included a simple XML parser in the form of the :mod:`xmllib`
+Python 1.5.2 included a simple XML parser in the form of the :mod:`!xmllib`
 module, contributed by Sjoerd Mullender.  Since 1.5.2's release, two different
 interfaces for processing XML have become common: SAX2 (version 2 of the Simple
 API for XML) provides an event-driven interface with some similarities to
-:mod:`xmllib`, and the DOM (Document Object Model) provides a tree-based
+:mod:`!xmllib`, and the DOM (Document Object Model) provides a tree-based
 interface, transforming an XML document into a tree of nodes that can be
 traversed and modified.  Python 2.0 includes a SAX2 interface and a stripped-down
 DOM interface as part of the :mod:`xml` package. Here we will give a brief
@@ -898,9 +899,9 @@ SAX2 Support
 SAX defines an event-driven interface for parsing XML.  To use SAX, you must
 write a SAX handler class.  Handler classes inherit from various classes
 provided by SAX, and override various methods that will then be called by the
-XML parser.  For example, the :meth:`startElement` and :meth:`endElement`
+XML parser.  For example, the :meth:`~xml.sax.handler.ContentHandler.startElement` and :meth:`~xml.sax.handler.ContentHandler.endElement`
 methods are called for every starting and end tag encountered by the parser, the
-:meth:`characters` method is called for every chunk of character data, and so
+:meth:`~xml.sax.handler.ContentHandler.characters` method is called for every chunk of character data, and so
 forth.
 
 The advantage of the event-driven approach is that the whole document doesn't
@@ -933,15 +934,15 @@ using it::
    parser.parse( 'hamlet.xml' )
 
 For more information, consult the Python documentation, or the XML HOWTO at
-http://pyxml.sourceforge.net/topics/howto/xml-howto.html.
+https://pyxml.sourceforge.net/topics/howto/xml-howto.html.
 
 
 DOM Support
 -----------
 
 The Document Object Model is a tree-based representation for an XML document.  A
-top-level :class:`Document` instance is the root of the tree, and has a single
-child which is the top-level :class:`Element` instance. This :class:`Element`
+top-level :class:`!Document` instance is the root of the tree, and has a single
+child which is the top-level :class:`!Element` instance. This :class:`!Element`
 has children nodes representing character data and any sub-elements, which may
 have further children of their own, and so forth.  Using the DOM you can
 traverse the resulting tree any way you like, access element and attribute
@@ -955,18 +956,18 @@ simply writing ``<tag1>``...\ ``</tag1>`` to a file.
 
 The DOM implementation included with Python lives in the :mod:`xml.dom.minidom`
 module.  It's a lightweight implementation of the Level 1 DOM with support for
-XML namespaces.  The  :func:`parse` and :func:`parseString` convenience
+XML namespaces.  The  :func:`!parse` and :func:`!parseString` convenience
 functions are provided for generating a DOM tree::
 
    from xml.dom import minidom
    doc = minidom.parse('hamlet.xml')
 
-``doc`` is a :class:`Document` instance.  :class:`Document`, like all the other
-DOM classes such as :class:`Element` and :class:`Text`, is a subclass of the
-:class:`Node` base class.  All the nodes in a DOM tree therefore support certain
-common methods, such as :meth:`toxml` which returns a string containing the XML
+``doc`` is a :class:`!Document` instance.  :class:`!Document`, like all the other
+DOM classes such as :class:`!Element` and :class:`Text`, is a subclass of the
+:class:`!Node` base class.  All the nodes in a DOM tree therefore support certain
+common methods, such as :meth:`!toxml` which returns a string containing the XML
 representation of the node and its children.  Each class also has special
-methods of its own; for example, :class:`Element` and :class:`Document`
+methods of its own; for example, :class:`!Element` and :class:`!Document`
 instances have a method to find all child elements with a given tag name.
 Continuing from the previous 2-line example::
 
@@ -995,14 +996,14 @@ its children can be easily modified by deleting, adding, or removing nodes::
    root.insertBefore( root.childNodes[0], root.childNodes[20] )
 
 Again, I will refer you to the Python documentation for a complete listing of
-the different :class:`Node` classes and their various methods.
+the different :class:`!Node` classes and their various methods.
 
 
 Relationship to PyXML
 ---------------------
 
 The XML Special Interest Group has been working on XML-related Python code for a
-while.  Its code distribution, called PyXML, is available from the SIG's Web
+while.  Its code distribution, called PyXML, is available from the SIG's web
 pages at https://www.python.org/community/sigs/current/xml-sig. The PyXML distribution also used
 the package name ``xml``.  If you've written programs that used PyXML, you're
 probably wondering about its compatibility with the 2.0 :mod:`xml` package.
@@ -1020,7 +1021,7 @@ features in PyXML include:
 
 * The xmlproc validating parser, written by Lars Marius Garshol.
 
-* The :mod:`sgmlop` parser accelerator module, written by Fredrik Lundh.
+* The :mod:`!sgmlop` parser accelerator module, written by Fredrik Lundh.
 
 .. ======================================================================
 
@@ -1030,25 +1031,26 @@ Module changes
 
 Lots of improvements and bugfixes were made to Python's extensive standard
 library; some of the affected modules include :mod:`readline`,
-:mod:`ConfigParser`, :mod:`cgi`, :mod:`calendar`, :mod:`posix`, :mod:`readline`,
-:mod:`xmllib`, :mod:`aifc`, :mod:`chunk, wave`, :mod:`random`, :mod:`shelve`,
-and :mod:`nntplib`.  Consult the CVS logs for the exact patch-by-patch details.
+:mod:`ConfigParser <configparser>`, :mod:`!cgi`, :mod:`calendar`, :mod:`posix`, :mod:`readline`,
+:mod:`!xmllib`, :mod:`!aifc`, :mod:`!chunk`, :mod:`wave`, :mod:`random`, :mod:`shelve`,
+and :mod:`!nntplib`.  Consult the CVS logs for the exact patch-by-patch details.
 
 Brian Gallew contributed OpenSSL support for the :mod:`socket` module.  OpenSSL
 is an implementation of the Secure Socket Layer, which encrypts the data being
 sent over a socket.  When compiling Python, you can edit :file:`Modules/Setup`
 to include SSL support, which adds an additional function to the :mod:`socket`
 module: ``socket.ssl(socket, keyfile, certfile)``, which takes a socket
-object and returns an SSL socket.  The :mod:`httplib` and :mod:`urllib` modules
+object and returns an SSL socket.  The :mod:`httplib <http>` and :mod:`urllib` modules
 were also changed to support ``https://`` URLs, though no one has implemented
 FTP or SMTP over SSL.
 
-The :mod:`httplib` module has been rewritten by Greg Stein to support HTTP/1.1.
-Backward compatibility with the 1.5 version of :mod:`httplib` is provided,
+The :mod:`httplib <http>` module has been rewritten by Greg Stein to support HTTP/1.1.
+
+Backward compatibility with the 1.5 version of :mod:`!httplib` is provided,
 though using HTTP/1.1 features such as pipelining will require rewriting code to
 use a different set of interfaces.
 
-The :mod:`Tkinter` module now supports Tcl/Tk version 8.1, 8.2, or 8.3, and
+The :mod:`!Tkinter` module now supports Tcl/Tk version 8.1, 8.2, or 8.3, and
 support for the older 7.x versions has been dropped.  The Tkinter module now
 supports displaying Unicode strings in Tk widgets. Also, Fredrik Lundh
 contributed an optimization which makes operations like ``create_line`` and
@@ -1083,11 +1085,11 @@ module.
   calling :func:`atexit.register` with  the function to be called on exit.
   (Contributed by Skip Montanaro.)
 
-* :mod:`codecs`, :mod:`encodings`, :mod:`unicodedata`:  Added as part of the new
+* :mod:`codecs`, :mod:`!encodings`, :mod:`unicodedata`:  Added as part of the new
   Unicode support.
 
-* :mod:`filecmp`: Supersedes the old :mod:`cmp`, :mod:`cmpcache` and
-  :mod:`dircmp` modules, which have now become deprecated. (Contributed by Gordon
+* :mod:`filecmp`: Supersedes the old :mod:`!cmp`, :mod:`!cmpcache` and
+  :mod:`!dircmp` modules, which have now become deprecated. (Contributed by Gordon
   MacMillan and Moshe Zadka.)
 
 * :mod:`gettext`: This module provides internationalization (I18N) and
@@ -1095,8 +1097,8 @@ module.
   GNU gettext message catalog library. (Integrated by Barry Warsaw, from separate
   contributions by Martin  von Löwis, Peter Funk, and James Henstridge.)
 
-* :mod:`linuxaudiodev`: Support for the :file:`/dev/audio` device on Linux, a
-  twin to the existing :mod:`sunaudiodev` module. (Contributed by Peter Bosch,
+* :mod:`!linuxaudiodev`: Support for the :file:`/dev/audio` device on Linux, a
+  twin to the existing :mod:`!sunaudiodev` module. (Contributed by Peter Bosch,
   with fixes by Jeremy Hylton.)
 
 * :mod:`mmap`: An interface to memory-mapped files on both Windows and Unix.  A
@@ -1105,11 +1107,11 @@ module.
   be passed to functions that expect ordinary strings, such as the :mod:`re`
   module. (Contributed by Sam Rushing, with some extensions by A.M. Kuchling.)
 
-* :mod:`pyexpat`: An interface to the Expat XML parser. (Contributed by Paul
+* :mod:`!pyexpat`: An interface to the Expat XML parser. (Contributed by Paul
   Prescod.)
 
-* :mod:`robotparser`: Parse a :file:`robots.txt` file, which is used for writing
-  Web spiders that politely avoid certain areas of a Web site.  The parser accepts
+* :mod:`robotparser <urllib.robotparser>`: Parse a :file:`robots.txt` file, which is used for writing
+  web spiders that politely avoid certain areas of a web site.  The parser accepts
   the contents of a :file:`robots.txt` file, builds a set of rules from it, and
   can then answer questions about the fetchability of a given URL.  (Contributed
   by Skip Montanaro.)
@@ -1117,7 +1119,7 @@ module.
 * :mod:`tabnanny`: A module/script to  check Python source code for ambiguous
   indentation. (Contributed by Tim Peters.)
 
-* :mod:`UserString`: A base class useful for deriving objects that behave like
+* :mod:`!UserString`: A base class useful for deriving objects that behave like
   strings.
 
 * :mod:`webbrowser`: A module that provides a platform independent way to launch
@@ -1129,18 +1131,18 @@ module.
   :file:`Tools/idle/BrowserControl.py`, and adapted for the standard library by
   Fred.)
 
-* :mod:`_winreg`: An interface to the Windows registry.  :mod:`_winreg` is an
+* :mod:`_winreg <winreg>`: An interface to the Windows registry.  :mod:`!_winreg` is an
   adaptation of functions that have been part of PythonWin since 1995, but has now
   been added to the core  distribution, and enhanced to support Unicode.
-  :mod:`_winreg` was written by Bill Tutt and Mark Hammond.
+  :mod:`!_winreg` was written by Bill Tutt and Mark Hammond.
 
 * :mod:`zipfile`: A module for reading and writing ZIP-format archives.  These
   are archives produced by :program:`PKZIP` on DOS/Windows or :program:`zip` on
   Unix, not to be confused with :program:`gzip`\ -format files (which are
   supported by the :mod:`gzip` module) (Contributed by James C. Ahlstrom.)
 
-* :mod:`imputil`: A module that provides a simpler way for writing customized
-  import hooks, in comparison to the existing :mod:`ihooks` module.  (Implemented
+* :mod:`!imputil`: A module that provides a simpler way for writing customized
+  import hooks, in comparison to the existing :mod:`!ihooks` module.  (Implemented
   by Greg Stein, with much discussion on python-dev along the way.)
 
 .. ======================================================================
@@ -1184,13 +1186,13 @@ Deleted and Deprecated Modules
 ==============================
 
 A few modules have been dropped because they're obsolete, or because there are
-now better ways to do the same thing.  The :mod:`stdwin` module is gone; it was
+now better ways to do the same thing.  The :mod:`!stdwin` module is gone; it was
 for a platform-independent windowing toolkit that's no longer developed.
 
 A number of modules have been moved to the :file:`lib-old` subdirectory:
-:mod:`cmp`, :mod:`cmpcache`, :mod:`dircmp`, :mod:`dump`,  :mod:`find`,
-:mod:`grep`, :mod:`packmail`,  :mod:`poly`, :mod:`util`, :mod:`whatsound`,
-:mod:`zmod`.  If you have code which relies on a module  that's been moved to
+:mod:`!cmp`, :mod:`!cmpcache`, :mod:`!dircmp`, :mod:`!dump`,  :mod:`!find`,
+:mod:`!grep`, :mod:`!packmail`,  :mod:`!poly`, :mod:`!util`, :mod:`!whatsound`,
+:mod:`!zmod`.  If you have code which relies on a module  that's been moved to
 :file:`lib-old`, you can simply add that directory to ``sys.path``   to get them
 back, but you're encouraged to update any code that uses these modules.
 

@@ -4,13 +4,25 @@ import unittest
 import gc
 import pickle
 
+# For tuple hashes, we normally only run a test to ensure that we get
+# the same results across platforms in a handful of cases.  If that's
+# so, there's no real point to running more.  Set RUN_ALL_HASH_TESTS to
+# run more anyway.  That's usually of real interest only when analyzing,
+# or changing, the hash algorithm.  In which case it's usually also
+# most useful to set JUST_SHOW_HASH_RESULTS, to see all the results
+# instead of wrestling with test "failures".  See the bottom of the
+# file for extensive notes on what we're testing here and why.
+RUN_ALL_HASH_TESTS = False
+JUST_SHOW_HASH_RESULTS = False # if RUN_ALL_HASH_TESTS, just display
+
 class TupleTest(seq_tests.CommonTest):
     type2test = tuple
 
     def test_getitem_error(self):
+        t = ()
         msg = "tuple indices must be integers or slices"
         with self.assertRaisesRegex(TypeError, msg):
-            ()['a']
+            t['a']
 
     def test_constructors(self):
         super().test_constructors()
@@ -29,6 +41,33 @@ class TupleTest(seq_tests.CommonTest):
     def test_keyword_args(self):
         with self.assertRaisesRegex(TypeError, 'keyword argument'):
             tuple(sequence=())
+
+    def test_keywords_in_subclass(self):
+        class subclass(tuple):
+            pass
+        u = subclass([1, 2])
+        self.assertIs(type(u), subclass)
+        self.assertEqual(list(u), [1, 2])
+        with self.assertRaises(TypeError):
+            subclass(sequence=())
+
+        class subclass_with_init(tuple):
+            def __init__(self, arg, newarg=None):
+                self.newarg = newarg
+        u = subclass_with_init([1, 2], newarg=3)
+        self.assertIs(type(u), subclass_with_init)
+        self.assertEqual(list(u), [1, 2])
+        self.assertEqual(u.newarg, 3)
+
+        class subclass_with_new(tuple):
+            def __new__(cls, arg, newarg=None):
+                self = super().__new__(cls, arg)
+                self.newarg = newarg
+                return self
+        u = subclass_with_new([1, 2], newarg=3)
+        self.assertIs(type(u), subclass_with_new)
+        self.assertEqual(list(u), [1, 2])
+        self.assertEqual(u.newarg, 3)
 
     def test_truth(self):
         super().test_truth()
@@ -62,29 +101,183 @@ class TupleTest(seq_tests.CommonTest):
                 yield i
         self.assertEqual(list(tuple(f())), list(range(1000)))
 
-    def test_hash(self):
-        # See SF bug 942952:  Weakness in tuple hash
-        # The hash should:
-        #      be non-commutative
-        #      should spread-out closely spaced values
-        #      should not exhibit cancellation in tuples like (x,(x,y))
-        #      should be distinct from element hashes:  hash(x)!=hash((x,))
-        # This test exercises those cases.
-        # For a pure random hash and N=50, the expected number of occupied
-        #      buckets when tossing 252,600 balls into 2**32 buckets
-        #      is 252,592.6, or about 7.4 expected collisions.  The
-        #      standard deviation is 2.73.  On a box with 64-bit hash
-        #      codes, no collisions are expected.  Here we accept no
-        #      more than 15 collisions.  Any worse and the hash function
-        #      is sorely suspect.
+    # We expect tuples whose base components have deterministic hashes to
+    # have deterministic hashes too - and, indeed, the same hashes across
+    # platforms with hash codes of the same bit width.
+    def test_hash_exact(self):
+        def check_one_exact(t, e32, e64):
+            got = hash(t)
+            expected = e32 if support.NHASHBITS == 32 else e64
+            if got != expected:
+                msg = f"FAIL hash({t!r}) == {got} != {expected}"
+                self.fail(msg)
 
-        N=50
+        check_one_exact((), 750394483, 5740354900026072187)
+        check_one_exact((0,), 1214856301, -8753497827991233192)
+        check_one_exact((0, 0), -168982784, -8458139203682520985)
+        check_one_exact((0.5,), 2077348973, -408149959306781352)
+        check_one_exact((0.5, (), (-2, 3, (4, 6))), 714642271,
+                        -1845940830829704396)
+
+    # Various tests for hashing of tuples to check that we get few collisions.
+    # Does something only if RUN_ALL_HASH_TESTS is true.
+    #
+    # Earlier versions of the tuple hash algorithm had massive collisions
+    # reported at:
+    # - https://bugs.python.org/issue942952
+    # - https://bugs.python.org/issue34751
+    def test_hash_optional(self):
+        from itertools import product
+
+        if not RUN_ALL_HASH_TESTS:
+            return
+
+        # If specified, `expected` is a 2-tuple of expected
+        # (number_of_collisions, pileup) values, and the test fails if
+        # those aren't the values we get.  Also if specified, the test
+        # fails if z > `zlimit`.
+        def tryone_inner(tag, nbins, hashes, expected=None, zlimit=None):
+            from collections import Counter
+
+            nballs = len(hashes)
+            mean, sdev = support.collision_stats(nbins, nballs)
+            c = Counter(hashes)
+            collisions = nballs - len(c)
+            z = (collisions - mean) / sdev
+            pileup = max(c.values()) - 1
+            del c
+            got = (collisions, pileup)
+            failed = False
+            prefix = ""
+            if zlimit is not None and z > zlimit:
+                failed = True
+                prefix = f"FAIL z > {zlimit}; "
+            if expected is not None and got != expected:
+                failed = True
+                prefix += f"FAIL {got} != {expected}; "
+            if failed or JUST_SHOW_HASH_RESULTS:
+                msg = f"{prefix}{tag}; pileup {pileup:,} mean {mean:.1f} "
+                msg += f"coll {collisions:,} z {z:+.1f}"
+                if JUST_SHOW_HASH_RESULTS:
+                    import sys
+                    print(msg, file=sys.__stdout__)
+                else:
+                    self.fail(msg)
+
+        def tryone(tag, xs,
+                   native32=None, native64=None, hi32=None, lo32=None,
+                   zlimit=None):
+            NHASHBITS = support.NHASHBITS
+            hashes = list(map(hash, xs))
+            tryone_inner(tag + f"; {NHASHBITS}-bit hash codes",
+                         1 << NHASHBITS,
+                         hashes,
+                         native32 if NHASHBITS == 32 else native64,
+                         zlimit)
+
+            if NHASHBITS > 32:
+                shift = NHASHBITS - 32
+                tryone_inner(tag + "; 32-bit upper hash codes",
+                             1 << 32,
+                             [h >> shift for h in hashes],
+                             hi32,
+                             zlimit)
+
+                mask = (1 << 32) - 1
+                tryone_inner(tag + "; 32-bit lower hash codes",
+                             1 << 32,
+                             [h & mask for h in hashes],
+                             lo32,
+                             zlimit)
+
+        # Tuples of smallish positive integers are common - nice if we
+        # get "better than random" for these.
+        tryone("range(100) by 3", list(product(range(100), repeat=3)),
+               (0, 0), (0, 0), (4, 1), (0, 0))
+
+        # A previous hash had systematic problems when mixing integers of
+        # similar magnitude but opposite sign, obscurely related to that
+        # j ^ -2 == -j when j is odd.
+        cands = list(range(-10, -1)) + list(range(9))
+
+        # Note:  -1 is omitted because hash(-1) == hash(-2) == -2, and
+        # there's nothing the tuple hash can do to avoid collisions
+        # inherited from collisions in the tuple components' hashes.
+        tryone("-10 .. 8 by 4", list(product(cands, repeat=4)),
+               (0, 0), (0, 0), (0, 0), (0, 0))
+        del cands
+
+        # The hashes here are a weird mix of values where all the
+        # variation is in the lowest bits and across a single high-order
+        # bit - the middle bits are all zeroes. A decent hash has to
+        # both propagate low bits to the left and high bits to the
+        # right.  This is also complicated a bit in that there are
+        # collisions among the hashes of the integers in L alone.
+        L = [n << 60 for n in range(100)]
+        tryone("0..99 << 60 by 3", list(product(L, repeat=3)),
+               (0, 0), (0, 0), (0, 0), (324, 1))
+        del L
+
+        # Used to suffer a massive number of collisions.
+        tryone("[-3, 3] by 18", list(product([-3, 3], repeat=18)),
+               (7, 1), (0, 0), (7, 1), (6, 1))
+
+        # And even worse.  hash(0.5) has only a single bit set, at the
+        # high end. A decent hash needs to propagate high bits right.
+        tryone("[0, 0.5] by 18", list(product([0, 0.5], repeat=18)),
+               (5, 1), (0, 0), (9, 1), (12, 1))
+
+        # Hashes of ints and floats are the same across platforms.
+        # String hashes vary even on a single platform across runs, due
+        # to hash randomization for strings.  So we can't say exactly
+        # what this should do.  Instead we insist that the # of
+        # collisions is no more than 4 sdevs above the theoretically
+        # random mean.  Even if the tuple hash can't achieve that on its
+        # own, the string hash is trying to be decently pseudo-random
+        # (in all bit positions) on _its_ own.  We can at least test
+        # that the tuple hash doesn't systematically ruin that.
+        tryone("4-char tuples",
+               list(product("abcdefghijklmnopqrstuvwxyz", repeat=4)),
+               zlimit=4.0)
+
+        # The "old tuple test".  See https://bugs.python.org/issue942952.
+        # Ensures, for example, that the hash:
+        #   is non-commutative
+        #   spreads closely spaced values
+        #   doesn't exhibit cancellation in tuples like (x,(x,y))
+        N = 50
         base = list(range(N))
-        xp = [(i, j) for i in base for j in base]
-        inps = base + [(i, j) for i in base for j in xp] + \
-                     [(i, j) for i in xp for j in base] + xp + list(zip(base))
-        collisions = len(inps) - len(set(map(hash, inps)))
-        self.assertTrue(collisions <= 15)
+        xp = list(product(base, repeat=2))
+        inps = base + list(product(base, xp)) + \
+                     list(product(xp, base)) + xp + list(zip(base))
+        tryone("old tuple test", inps,
+               (2, 1), (0, 0), (52, 49), (7, 1))
+        del base, xp, inps
+
+        # The "new tuple test".  See https://bugs.python.org/issue34751.
+        # Even more tortured nesting, and a mix of signed ints of very
+        # small magnitude.
+        n = 5
+        A = [x for x in range(-n, n+1) if x != -1]
+        B = A + [(a,) for a in A]
+        L2 = list(product(A, repeat=2))
+        L3 = L2 + list(product(A, repeat=3))
+        L4 = L3 + list(product(A, repeat=4))
+        # T = list of testcases. These consist of all (possibly nested
+        # at most 2 levels deep) tuples containing at most 4 items from
+        # the set A.
+        T = A
+        T += [(a,) for a in B + L4]
+        T += product(L3, B)
+        T += product(L2, repeat=2)
+        T += product(B, L3)
+        T += product(B, B, L2)
+        T += product(B, L2, B)
+        T += product(L2, B, B)
+        T += product(B, repeat=4)
+        assert len(T) == 345130
+        tryone("new tuple test", T,
+               (9, 1), (0, 0), (21, 5), (6, 1))
 
     def test_repr(self):
         l0 = tuple()
@@ -97,12 +290,18 @@ class TupleTest(seq_tests.CommonTest):
         self.assertEqual(repr(a0), "()")
         self.assertEqual(repr(a2), "(0, 1, 2)")
 
+    # Checks that t is not tracked without any GC collections.
+    def _not_tracked_instantly(self, t):
+        self.assertFalse(gc.is_tracked(t), t)
+
+    # Checks that t is not tracked after GC collection.
     def _not_tracked(self, t):
         # Nested tuples can take several collections to untrack
         gc.collect()
         gc.collect()
         self.assertFalse(gc.is_tracked(t), t)
 
+    # Checks that t continues to be tracked even after GC collection.
     def _tracked(self, t):
         self.assertTrue(gc.is_tracked(t), t)
         gc.collect()
@@ -114,13 +313,19 @@ class TupleTest(seq_tests.CommonTest):
         # Test GC-optimization of tuple literals
         x, y, z = 1.5, "a", []
 
-        self._not_tracked(())
-        self._not_tracked((1,))
-        self._not_tracked((1, 2))
-        self._not_tracked((1, 2, "a"))
-        self._not_tracked((1, 2, (None, True, False, ()), int))
-        self._not_tracked((object(),))
+        # We check that those objects aren't tracked at all.
+        # It's essential for the GC performance, see gh-139951.
+        self._not_tracked_instantly(())
+        self._not_tracked_instantly((1,))
+        self._not_tracked_instantly((1, 2))
+        self._not_tracked_instantly((1, 2, "a"))
+        self._not_tracked_instantly((1, 2) * 5)
+        self._not_tracked_instantly((12, 10**10, 'a_' * 100))
+        self._not_tracked_instantly((object(),))
+
         self._not_tracked(((1, x), y, (2, 3)))
+        self._not_tracked((1, 2, (None, True, False, ()), int))
+        self._not_tracked((object(), ()))
 
         # Tuples with mutable elements are always tracked, even if those
         # elements are not tracked right now.
@@ -149,6 +354,12 @@ class TupleTest(seq_tests.CommonTest):
         self._tracked(tp(obj for obj in [x, y, z]))
         self._tracked(tp(tuple([obj]) for obj in [x, y, z]))
         self._tracked(tuple(tp([obj]) for obj in [x, y, z]))
+
+        t = tp([1, x, y, z])
+        self.assertEqual(type(t), tp)
+        self._tracked(t)
+        self.assertEqual(type(t[:]), tuple)
+        self._tracked(t[:])
 
     @support.cpython_only
     def test_track_dynamic(self):
@@ -222,6 +433,99 @@ class TupleTest(seq_tests.CommonTest):
         c = self.type2test([1, 3])
         self.assertLess(a, b)
         self.assertLess(b, c)
+
+# Notes on testing hash codes.  The primary thing is that Python doesn't
+# care about "random" hash codes.  To the contrary, we like them to be
+# very regular when possible, so that the low-order bits are as evenly
+# distributed as possible.  For integers this is easy: hash(i) == i for
+# all not-huge i except i==-1.
+#
+# For tuples of mixed type there's really no hope of that, so we want
+# "randomish" here instead.  But getting close to pseudo-random in all
+# bit positions is more expensive than we've been willing to pay for.
+#
+# We can tolerate large deviations from random - what we don't want is
+# catastrophic pileups on a relative handful of hash codes.  The dict
+# and set lookup routines remain effective provided that full-width hash
+# codes for not-equal objects are distinct.
+#
+# So we compute various statistics here based on what a "truly random"
+# hash would do, but don't automate "pass or fail" based on those
+# results.  Instead those are viewed as inputs to human judgment, and the
+# automated tests merely ensure we get the _same_ results across
+# platforms.  In fact, we normally don't bother to run them at all -
+# set RUN_ALL_HASH_TESTS to force it.
+#
+# When global JUST_SHOW_HASH_RESULTS is True, the tuple hash statistics
+# are just displayed to stdout.  A typical output line looks like:
+#
+# old tuple test; 32-bit upper hash codes; \
+#             pileup 49 mean 7.4 coll 52 z +16.4
+#
+# "old tuple test" is just a string name for the test being run.
+#
+# "32-bit upper hash codes" means this was run under a 64-bit build and
+# we've shifted away the lower 32 bits of the hash codes.
+#
+# "pileup" is 0 if there were no collisions across those hash codes.
+# It's 1 less than the maximum number of times any single hash code was
+# seen.  So in this case, there was (at least) one hash code that was
+# seen 50 times:  that hash code "piled up" 49 more times than ideal.
+#
+# "mean" is the number of collisions a perfectly random hash function
+# would have yielded, on average.
+#
+# "coll" is the number of collisions actually seen.
+#
+# "z" is "coll - mean" divided by the standard deviation of the number
+# of collisions a perfectly random hash function would suffer.  A
+# positive value is "worse than random", and negative value "better than
+# random".  Anything of magnitude greater than 3 would be highly suspect
+# for a hash function that claimed to be random.  It's essentially
+# impossible that a truly random function would deliver a result 16.4
+# sdevs "worse than random".
+#
+# But we don't care here!  That's why the test isn't coded to fail.
+# Knowing something about how the high-order hash code bits behave
+# provides insight, but is irrelevant to how the dict and set lookup
+# code performs.  The low-order bits are much more important to that,
+# and on the same test those did "just like random":
+#
+# old tuple test; 32-bit lower hash codes; \
+#            pileup 1 mean 7.4 coll 7 z -0.2
+#
+# So there are always tradeoffs to consider.  For another:
+#
+# 0..99 << 60 by 3; 32-bit hash codes; \
+#            pileup 0 mean 116.4 coll 0 z -10.8
+#
+# That was run under a 32-bit build, and is spectacularly "better than
+# random".  On a 64-bit build the wider hash codes are fine too:
+#
+# 0..99 << 60 by 3; 64-bit hash codes; \
+#             pileup 0 mean 0.0 coll 0 z -0.0
+#
+# but their lower 32 bits are poor:
+#
+# 0..99 << 60 by 3; 32-bit lower hash codes; \
+#             pileup 1 mean 116.4 coll 324 z +19.2
+#
+# In a statistical sense that's waaaaay too many collisions, but (a) 324
+# collisions out of a million hash codes isn't anywhere near being a
+# real problem; and, (b) the worst pileup on a single hash code is a measly
+# 1 extra.  It's a relatively poor case for the tuple hash, but still
+# fine for practical use.
+#
+# This isn't, which is what Python 3.7.1 produced for the hashes of
+# itertools.product([0, 0.5], repeat=18).  Even with a fat 64-bit
+# hashcode, the highest pileup was over 16,000 - making a dict/set
+# lookup on one of the colliding values thousands of times slower (on
+# average) than we expect.
+#
+# [0, 0.5] by 18; 64-bit hash codes; \
+#            pileup 16,383 mean 0.0 coll 262,128 z +6073641856.9
+# [0, 0.5] by 18; 32-bit lower hash codes; \
+#            pileup 262,143 mean 8.0 coll 262,143 z +92683.6
 
 if __name__ == "__main__":
     unittest.main()

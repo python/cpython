@@ -54,7 +54,6 @@ class BaseGUITestRunner(object):
     def __init__(self, *args, **kwargs):
         self.currentResult = None
         self.running = 0
-        self.__rollbackImporter = None
         self.__rollbackImporter = RollbackImporter()
         self.test_suite = None
 
