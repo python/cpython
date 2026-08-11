@@ -1,0 +1,10 @@
+<doc>
+   <text>First line&#xD;
+Second line</text>
+   <value>2</value>
+   <compute>value&gt;"0" &amp;&amp; value&lt;"10" ?"valid":"error"</compute>
+   <compute expr="value>&quot;0&quot; &amp;&amp; value&lt;&quot;10&quot; ?&quot;valid&quot;:&quot;error&quot;">valid</compute>
+   <norm attr=" '    &#xD;&#xA;&#x9;   ' "></norm>
+   <normNames attr="A &#xD;&#xA;&#x9; B"></normNames>
+   <normId id="' &#xD;&#xA;&#x9; '"></normId>
+</doc>

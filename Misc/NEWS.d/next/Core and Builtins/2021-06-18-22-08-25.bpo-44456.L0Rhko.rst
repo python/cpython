@@ -1,2 +1,0 @@
-Improve the syntax error when mixing positional and keyword patterns. Patch
-by Pablo Galindo.

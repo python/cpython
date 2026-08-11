@@ -1,3 +1,0 @@
-:mod:`typing` now searches for type parameters in ``types.Union`` objects.
-``get_type_hints`` will also properly resolve annotations with nested
-``types.Union`` objects. Patch provided by Yurii Karabas.
