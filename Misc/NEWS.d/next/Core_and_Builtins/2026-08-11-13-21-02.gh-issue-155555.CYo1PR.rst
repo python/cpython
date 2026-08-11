@@ -1,0 +1,1 @@
+String search is now up to to 20x faster when string and pattern are of the same size.
