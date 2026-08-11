@@ -8,6 +8,12 @@ from idlelib.editor import EditorWindow
 from idlelib import util
 from idlelib.idle_test.mock_idle import Func
 
+# Fail if either tokenize.open and t.detect_encoding does not exist.
+# These are used in loadfile and encode.
+# Also used in pyshell.MI.execfile and runscript.tabnanny.
+from tokenize import open, detect_encoding
+# Remove when we have proper tests that use both.
+
 
 class IOBindingTest(unittest.TestCase):
 
@@ -17,15 +23,14 @@ class IOBindingTest(unittest.TestCase):
         cls.root = Tk()
         cls.root.withdraw()
         cls.editwin = EditorWindow(root=cls.root)
-        cls.io = iomenu.IOBinding(cls.editwin)
+        cls.io = cls.editwin.io
 
     @classmethod
     def tearDownClass(cls):
-        cls.io.close()
         cls.editwin._close()
         del cls.editwin
         cls.root.update_idletasks()
-        for id in cls.root.tk.call('after', 'info'):
+        for id in cls.root.after_info():
             cls.root.after_cancel(id)  # Need for EditorWindow.
         cls.root.destroy()
         del cls.root

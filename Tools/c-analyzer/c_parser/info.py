@@ -206,7 +206,7 @@ class DeclID(namedtuple('DeclID', 'filename funcname name')):
         row = _tables.fix_row(row, **markers)
         return cls(*row)
 
-    # We have to provde _make() becaose we implemented __new__().
+    # We have to provide _make() because we implemented __new__().
 
     @classmethod
     def _make(cls, iterable):

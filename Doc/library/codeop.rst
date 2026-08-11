@@ -1,17 +1,14 @@
-:mod:`codeop` --- Compile Python code
-=====================================
+:mod:`!codeop` --- Compile Python code
+======================================
 
 .. module:: codeop
    :synopsis: Compile (possibly incomplete) Python code.
-
-.. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
-.. sectionauthor:: Michael Hudson <mwh@python.net>
 
 **Source code:** :source:`Lib/codeop.py`
 
 --------------
 
-The :mod:`codeop` module provides utilities upon which the Python
+The :mod:`!codeop` module provides utilities upon which the Python
 read-eval-print loop can be emulated, as is done in the :mod:`code` module.  As
 a result, you probably don't want to use the module directly; if you want to
 include such a loop in your program you probably want to use the :mod:`code`
@@ -25,7 +22,7 @@ There are two parts to this job:
 #. Remembering which future statements the user has entered, so subsequent
    input can be compiled with these in effect.
 
-The :mod:`codeop` module provides a way of doing each of these things, and a way
+The :mod:`!codeop` module provides a way of doing each of these things, and a way
 of doing them both.
 
 To do just the former:
@@ -58,7 +55,7 @@ To do just the former:
 
 .. class:: Compile()
 
-   Instances of this class have :meth:`__call__` methods identical in signature to
+   Instances of this class have :meth:`~object.__call__` methods identical in signature to
    the built-in function :func:`compile`, but with the difference that if the
    instance compiles program text containing a :mod:`__future__` statement, the
    instance 'remembers' and compiles all subsequent program texts with the
@@ -67,7 +64,7 @@ To do just the former:
 
 .. class:: CommandCompiler()
 
-   Instances of this class have :meth:`__call__` methods identical in signature to
+   Instances of this class have :meth:`~object.__call__` methods identical in signature to
    :func:`compile_command`; the difference is that if the instance compiles program
    text containing a :mod:`__future__` statement, the instance 'remembers' and
    compiles all subsequent program texts with the statement in force.

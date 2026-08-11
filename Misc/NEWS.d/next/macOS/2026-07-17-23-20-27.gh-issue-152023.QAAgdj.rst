@@ -1,0 +1,2 @@
+Update macOS installer builds to SQLite 3.53.3. Enable median() and
+percentile() functions.
