@@ -2050,7 +2050,7 @@ class LWPCookieTests(unittest.TestCase):
 
     def test_load_session_cookies(self):
         # curl and Wget write 0 in the expires field for session cookies,
-        # while we write an empty field.  Both should be read (gh-61364).
+        # while we write an empty field.  Both should be read (gh-61366).
         filename = os_helper.TESTFN
         self.addCleanup(os_helper.unlink, filename)
         expires = int(time.time() + 3600)
