@@ -1784,5 +1784,116 @@ class MinidomTest(unittest.TestCase):
         dom2 = parseString(dom1.toprettyxml())
         self.checkWholeText(dom2.getElementsByTagName('node')[0].firstChild, '</data>')
 
+    def testInvalidCharacterErr(self):
+        doc = parseString("<doc/>")
+        impl = getDOMImplementation()
+        for name in ("", "bad name", "1st", "-x", ".x", "a<b", "a&b", "a\tb"):
+            with self.subTest(name=name):
+                self.assertRaises(xml.dom.InvalidCharacterErr,
+                                  doc.createElement, name)
+                self.assertRaises(xml.dom.InvalidCharacterErr,
+                                  doc.createElementNS, None, name)
+                self.assertRaises(xml.dom.InvalidCharacterErr,
+                                  doc.createAttribute, name)
+                self.assertRaises(xml.dom.InvalidCharacterErr,
+                                  doc.createAttributeNS, None, name)
+                self.assertRaises(xml.dom.InvalidCharacterErr,
+                                  doc.createProcessingInstruction, name, "")
+                self.assertRaises(xml.dom.InvalidCharacterErr,
+                                  doc.createEntityReference, name)
+                self.assertRaises(xml.dom.InvalidCharacterErr,
+                                  impl.createDocumentType, name, None, None)
+                self.assertRaises(xml.dom.InvalidCharacterErr,
+                                  doc.documentElement.setAttribute, name, "v")
+                self.assertRaises(xml.dom.InvalidCharacterErr,
+                                  doc.documentElement.setAttributeNS,
+                                  None, name, "v")
+        for name in ("a", "_x", ":x", "a.b-c", "ns:tag", "a1",
+                     "\N{GREEK CAPITAL LETTER OMEGA}", "\N{LINEAR B SYLLABLE B008 A}x"):
+            with self.subTest(name=name):
+                self.assertEqual(doc.createElement(name).tagName, name)
+                self.assertEqual(doc.createAttribute(name).name, name)
+        doc.unlink()
+
+    def testWrongDocumentErr(self):
+        doc = parseString("<doc><child/></doc>")
+        other = parseString("<other/>")
+        elem = doc.documentElement
+        alien = other.createElement("alien")
+        self.assertRaises(xml.dom.WrongDocumentErr, elem.appendChild, alien)
+        self.assertRaises(xml.dom.WrongDocumentErr, elem.insertBefore,
+                          alien, elem.firstChild)
+        self.assertRaises(xml.dom.WrongDocumentErr, elem.replaceChild,
+                          alien, elem.firstChild)
+        self.assertRaises(xml.dom.WrongDocumentErr, doc.appendChild, alien)
+        # the rejected node is left alone
+        self.assertIs(alien.ownerDocument, other)
+        self.assertIsNone(alien.parentNode)
+        # importNode() is the supported way to do this
+        elem.appendChild(doc.importNode(alien, True))
+        self.assertEqual(elem.lastChild.tagName, "alien")
+        doc.unlink()
+        other.unlink()
+
+    def testAncestorLoops(self):
+        doc = parseString("<doc><child><grandchild/></child></doc>")
+        elem = doc.documentElement
+        child = elem.firstChild
+        grandchild = child.firstChild
+        for node in elem, child, grandchild:
+            self.assertRaises(xml.dom.HierarchyRequestErr,
+                              node.appendChild, node)
+        self.assertRaises(xml.dom.HierarchyRequestErr, child.appendChild, elem)
+        self.assertRaises(xml.dom.HierarchyRequestErr,
+                          grandchild.appendChild, elem)
+        self.assertRaises(xml.dom.HierarchyRequestErr,
+                          grandchild.insertBefore, child, None)
+        self.assertRaises(xml.dom.HierarchyRequestErr,
+                          grandchild.replaceChild, elem, None)
+        # the tree is unchanged
+        self.assertIs(child.parentNode, elem)
+        self.assertIs(grandchild.parentNode, child)
+        doc.unlink()
+
+    def testAttrSpecified(self):
+        doc = parseString("<!DOCTYPE doc ["
+                          "  <!ELEMENT doc EMPTY>"
+                          "  <!ATTLIST doc a CDATA 'default' b CDATA #IMPLIED>"
+                          "]><doc b='given'/>")
+        elem = doc.documentElement
+        # attributes defaulted from the DTD are reported too
+        self.assertEqual(sorted(elem.attributes.keys()), ["a", "b"])
+        self.assertEqual(elem.getAttribute("a"), "default")
+        self.assertFalse(elem.getAttributeNode("a").specified)
+        self.assertEqual(elem.getAttribute("b"), "given")
+        self.assertTrue(elem.getAttributeNode("b").specified)
+        doc.unlink()
+
+    def testEntityReference(self):
+        doc = parseString("<doc/>")
+        ref = doc.createEntityReference("ent")
+        self.assertEqual(ref.nodeType, Node.ENTITY_REFERENCE_NODE)
+        self.assertEqual(ref.nodeName, "ent")
+        self.assertIsNone(ref.nodeValue)
+        self.assertIs(ref.ownerDocument, doc)
+        doc.documentElement.appendChild(ref)
+        self.assertEqual(doc.documentElement.toxml(), "<doc>&ent;</doc>")
+        # entity reference nodes are read-only
+        text = doc.createTextNode("x")
+        self.assertRaises(xml.dom.NoModificationAllowedErr,
+                          ref.appendChild, text)
+        self.assertRaises(xml.dom.NoModificationAllowedErr,
+                          ref.insertBefore, text, None)
+        self.assertRaises(xml.dom.NoModificationAllowedErr,
+                          ref.removeChild, text)
+        self.assertRaises(xml.dom.NoModificationAllowedErr,
+                          ref.replaceChild, text, None)
+        self.assertEqual(ref.cloneNode(True).nodeName, "ent")
+        other = parseString("<other/>")
+        self.assertEqual(other.importNode(ref, True).nodeName, "ent")
+        doc.unlink()
+        other.unlink()
+
+
 if __name__ == "__main__":
     unittest.main()

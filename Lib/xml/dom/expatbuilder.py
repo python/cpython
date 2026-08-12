@@ -159,7 +159,6 @@ class ExpatBuilder:
             self._intern_setdefault = self._parser.intern.setdefault
             self._parser.buffer_text = True
             self._parser.ordered_attributes = True
-            self._parser.specified_attributes = True
             self.install(self._parser)
         return self._parser
 
@@ -352,11 +351,13 @@ class ExpatBuilder:
         self.curNode = node
 
         if attributes:
+            specified = self.getParser().GetSpecifiedAttributeCount()
             for i in range(0, len(attributes), 2):
                 a = minidom.Attr(attributes[i], EMPTY_NAMESPACE,
                                  None, EMPTY_PREFIX)
                 value = attributes[i+1]
                 a.value = value
+                a.specified = i < specified
                 a.ownerDocument = self.document
                 _set_attribute_node(node, a)
 
@@ -760,6 +761,7 @@ class Namespaces:
             node._ensure_attributes()
             _attrs = node._attrs
             _attrsNS = node._attrsNS
+            specified = self.getParser().GetSpecifiedAttributeCount()
             for i in range(0, len(attributes), 2):
                 aname = attributes[i]
                 value = attributes[i+1]
@@ -775,6 +777,7 @@ class Namespaces:
                     _attrsNS[(EMPTY_NAMESPACE, aname)] = a
                 a.ownerDocument = self.document
                 a.value = value
+                a.specified = i < specified
                 a.ownerElement = node
 
     if __debug__:
