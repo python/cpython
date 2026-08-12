@@ -2459,8 +2459,8 @@ class URandomTests(unittest.TestCase):
             'data = os.urandom(%s)' % count,
             'sys.stdout.buffer.write(data)',
             'sys.stdout.buffer.flush()'))
-        out = assert_python_ok('-c', code)
-        stdout = out[1]
+        proc = assert_python_ok('-c', code)
+        stdout = proc.out
         self.assertEqual(len(stdout), count)
         return stdout
 
@@ -2636,12 +2636,50 @@ def _execvpe_mockup(defpath=None):
 
 @unittest.skipUnless(hasattr(os, 'execv'),
                      "need os.execv()")
+@unittest.skipIf(support.is_emscripten,
+                 "Emscripten always fails with ENOEXEC")
+@unittest.skipIf(support.is_android,
+                 "PATH contains an inaccessible directory on Android")
 class ExecTests(unittest.TestCase):
-    @unittest.skipIf(USING_LINUXTHREADS,
-                     "avoid triggering a linuxthreads bug: see issue #4970")
+    def _test_bad_program(self, do_exec, exc_type=OSError):
+        bad_filenames = ['nosuchapp', FakePath('nosuchapp')]
+        if os.name != 'nt':
+            # Bytes program names are not supported on Windows.
+            bad_filenames += [b'nosuchapp', FakePath(b'nosuchapp')]
+        for bad_filename in bad_filenames:
+            with self.subTest(bad_filename):
+                with self.assertRaises(exc_type) as ctx:
+                    do_exec(bad_filename)
+                self.assertEqual(ctx.exception.filename,
+                                 os.fspath(bad_filename))
+                self.assertIn('nosuchapp', str(ctx.exception))
+
+    @unittest.skipIf(USING_LINUXTHREADS, "linuxthreads bug: see issue #4970")
+    def test_execv_with_bad_program(self):
+        self._test_bad_program(lambda name: os.execv(name, ['nosuchapp']))
+
+    @unittest.skipIf(USING_LINUXTHREADS, "linuxthreads bug: see issue #4970")
+    def test_execvp_with_bad_program(self):
+        self._test_bad_program(lambda name: os.execvp(name, ['nosuchapp']))
+
+    @unittest.skipIf(USING_LINUXTHREADS, "linuxthreads bug: see issue #4970")
+    def test_execve_with_bad_program(self):
+        self._test_bad_program(lambda name: os.execve(name, ['nosuchapp'], {}))
+
+    @unittest.skipIf(USING_LINUXTHREADS, "linuxthreads bug: see issue #4970")
     def test_execvpe_with_bad_program(self):
-        self.assertRaises(OSError, os.execvpe, 'no such app-',
-                          ['no such app-'], None)
+        self._test_bad_program(lambda name: os.execvpe(name, ['nosuchapp'], {}))
+
+    @unittest.skipUnless(os.name == 'posix', 'POSIX specific test')
+    @unittest.skipIf(USING_LINUXTHREADS, "linuxthreads bug: see issue #4970")
+    def test_execvp_with_bad_path_entry(self):
+        # A regular file in PATH makes the exec fail with ENOTDIR.
+        create_file(os_helper.TESTFN)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with os_helper.EnvironmentVarGuard() as env:
+            env['PATH'] = os.path.abspath(os_helper.TESTFN)
+            self._test_bad_program(lambda name: os.execvp(name, ['nosuchapp']),
+                                   NotADirectoryError)
 
     def test_execv_with_bad_arglist(self):
         self.assertRaises(ValueError, os.execv, 'notepad', ())
@@ -2954,6 +2992,14 @@ class TestInvalidFD(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'lseek'), 'test needs os.lseek()')
     def test_lseek(self):
         self.check(os.lseek, 0, 0)
+
+    @unittest.skipUnless(hasattr(os, 'lseek'), 'test needs os.lseek()')
+    @unittest.skipUnless(hasattr(os, 'pipe'), "need os.pipe()")
+    def test_lseek_on_pipe(self):
+        rfd, wfd = os.pipe()
+        self.addCleanup(os.close, rfd)
+        self.addCleanup(os.close, wfd)
+        self.assertRaises(OSError, os.lseek, rfd, 123, os.SEEK_END)
 
     @unittest.skipUnless(hasattr(os, 'read'), 'test needs os.read()')
     def test_read(self):

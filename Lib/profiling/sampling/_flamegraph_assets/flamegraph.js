@@ -99,11 +99,25 @@ function getDisplayName(moduleName, filename) {
   return filename;
 }
 
-function selectFlamegraphData() {
-  const baseData = isShowingElided ? elidedFlamegraphData : normalData;
+function samplesToMilliseconds(samples, data) {
+  return (samples * data.stats.sample_interval_usec / 1000).toFixed(2);
+}
+
+function selectFlamegraphData(selectedThreadId = null) {
+  let baseData = isShowingElided ? elidedFlamegraphData : normalData;
+
+  if (selectedThreadId !== null) {
+    baseData = filterDataByThread(baseData, selectedThreadId);
+  }
 
   if (!isInverted) {
     return baseData;
+  }
+
+  // Thread-filtered trees have different values, so invert them after filtering
+  // instead of using the cached all-thread tree.
+  if (selectedThreadId !== null) {
+    return generateInvertedFlamegraph(baseData);
   }
 
   if (isShowingElided) {
@@ -120,12 +134,11 @@ function selectFlamegraphData() {
 }
 
 function updateFlamegraphView() {
-  const selectedData = selectFlamegraphData();
   const selectedThreadId = currentThreadFilter !== 'all' ? parseInt(currentThreadFilter, 10) : null;
-  const filteredData = selectedThreadId !== null ? filterDataByThread(selectedData, selectedThreadId) : selectedData;
-  const tooltip = createPythonTooltip(filteredData);
-  const chart = createFlamegraph(tooltip, filteredData.value, filteredData);
-  renderFlamegraph(chart, filteredData);
+  const selectedData = selectFlamegraphData(selectedThreadId);
+  const tooltip = createPythonTooltip(selectedData);
+  const chart = createFlamegraph(tooltip, selectedData.value, selectedData);
+  renderFlamegraph(chart, selectedData);
   populateThreadStats(selectedData, selectedThreadId);
 }
 
@@ -246,12 +259,12 @@ function setupLogos() {
 // Status Bar
 // ============================================================================
 
-function updateStatusBar(nodeData, rootValue) {
+function updateStatusBar(nodeData, rootValue, data) {
   const funcname = resolveString(nodeData.funcname) || resolveString(nodeData.name) || "--";
   const filename = resolveString(nodeData.filename) || "";
   const moduleName = resolveString(nodeData.module) || "";
   const lineno = nodeData.lineno;
-  const timeMs = (nodeData.value / 1000).toFixed(2);
+  const timeMs = samplesToMilliseconds(nodeData.value, data);
   const percent = rootValue > 0 ? ((nodeData.value / rootValue) * 100).toFixed(1) : "0.0";
 
   const brandEl = document.getElementById('status-brand');
@@ -313,9 +326,9 @@ function createPythonTooltip(data) {
         .style("opacity", 0);
     }
 
-    const timeMs = (d.data.value / 1000).toFixed(2);
+    const timeMs = samplesToMilliseconds(d.data.value, data);
     const selfSamples = d.data.self || 0;
-    const selfMs = (selfSamples / 1000).toFixed(2);
+    const selfMs = samplesToMilliseconds(selfSamples, data);
     const percentage = ((d.data.value / data.value) * 100).toFixed(2);
     const relativePercentage = Math.min(100, ((d.data.value / (zoomedNodeValue ?? data.value)) * 100)).toFixed(2);
     const calls = d.data.calls || 0;
@@ -399,9 +412,9 @@ function createPythonTooltip(data) {
     // Differential stats section
     let diffSection = "";
     if (d.data.diff !== undefined && d.data.baseline !== undefined) {
-      const baselineSelf = (d.data.baseline / 1000).toFixed(2);
-      const currentSelf = ((d.data.self_time || 0) / 1000).toFixed(2);
-      const diffMs = (d.data.diff / 1000).toFixed(2);
+      const baselineSelf = samplesToMilliseconds(d.data.baseline, data);
+      const currentSelf = samplesToMilliseconds(d.data.self_time || 0, data);
+      const diffMs = samplesToMilliseconds(d.data.diff, data);
       const diffPct = d.data.diff_pct;
       const sign = d.data.diff >= 0 ? "+" : "";
       const diffClass = d.data.diff > 0 ? "regression" : (d.data.diff < 0 ? "improvement" : "neutral");
@@ -499,7 +512,7 @@ function createPythonTooltip(data) {
       .style("opacity", 1);
 
     // Update status bar
-    updateStatusBar(d.data, data.value);
+    updateStatusBar(d.data, data.value, data);
   };
 
   pythonTooltip.hide = function () {
@@ -937,7 +950,9 @@ function formatDuration(seconds) {
 
 function populateProfileSummary(data) {
   const stats = data.stats || {};
-  const totalSamples = stats.total_samples || data.value || 0;
+  const totalSamples = currentThreadFilter !== 'all'
+    ? (data.value ?? 0)
+    : (stats.total_samples ?? data.value ?? 0);
   const duration = stats.duration_sec || 0;
   const sampleRate = stats.sample_rate || (duration > 0 ? totalSamples / duration : 0);
   const errorRate = stats.error_rate || 0;
@@ -1209,7 +1224,7 @@ function initThreadFilter(data) {
   const threadFilter = document.getElementById('thread-filter');
   const threadSection = document.getElementById('thread-section');
 
-  if (!threadFilter || !data.threads) return;
+  if (!threadFilter || !data.threads || data.stats?.is_differential) return;
 
   threadFilter.innerHTML = '<option value="all">All Threads</option>';
 
@@ -1238,11 +1253,23 @@ function filterByThread() {
 
 function filterDataByThread(data, threadId) {
   function filterNode(node) {
-    if (!node.threads || !node.threads.includes(threadId)) {
+    const threadValues = node.thread_values?.[threadId];
+    if (!threadValues) {
       return null;
     }
 
-    const filteredNode = { ...node, children: [] };
+    const {
+      thread_values: _threadValues,
+      thread_opcodes: threadOpcodes,
+      ...sharedNode
+    } = node;
+    const filteredNode = {
+      ...sharedNode,
+      value: threadValues[0],
+      self: threadValues[1],
+      opcodes: threadOpcodes?.[threadId] ?? {},
+      children: []
+    };
 
     if (node.children && Array.isArray(node.children)) {
       filteredNode.children = node.children
@@ -1253,25 +1280,7 @@ function filterDataByThread(data, threadId) {
     return filteredNode;
   }
 
-  function recalculateValue(node) {
-    if (!node.children || node.children.length === 0) {
-      return node.value || 0;
-    }
-    const childrenValue = node.children.reduce((sum, child) => sum + recalculateValue(child), 0);
-    node.value = Math.max(node.value || 0, childrenValue);
-    return node.value;
-  }
-
-  const filteredRoot = { ...data, children: [] };
-
-  if (data.children && Array.isArray(data.children)) {
-    filteredRoot.children = data.children
-      .map(child => filterNode(child))
-      .filter(child => child !== null);
-  }
-
-  recalculateValue(filteredRoot);
-  return filteredRoot;
+  return filterNode(data);
 }
 
 // ============================================================================
