@@ -75,7 +75,9 @@ class HierarchyTest(unittest.TestCase):
                 continue
             excname, _, errnames = line.partition(' ')
             for errname in filter(None, errnames.strip().split(', ')):
-                if errname == "ENOTCAPABLE" and not hasattr(errno, errname):
+                # These errnos are not available on all platforms.
+                if (errname in ("ENOTCAPABLE", "ETIME")
+                        and not hasattr(errno, errname)):
                     continue
                 _map[getattr(errno, errname)] = getattr(builtins, excname)
         return _map
