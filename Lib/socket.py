@@ -331,8 +331,14 @@ class socket(_socket.socket):
         if buffering is None:
             buffering = -1
         if buffering == 1:
+            if binary:
+                import warnings
+                warnings.warn("line buffering (buffering=1) isn't supported "
+                              "in binary mode, the default buffer size will "
+                              "be used", RuntimeWarning, 2)
+            else:
+                line_buffering = True
             buffering = -1
-            line_buffering = True
         if buffering < 0:
             buffering = io.DEFAULT_BUFFER_SIZE
         if buffering == 0:

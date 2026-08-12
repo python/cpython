@@ -1969,6 +1969,25 @@ class GeneralModuleTests(unittest.TestCase):
                     with sock.makefile(mode, encoding=encoding) as fp:
                         self.assertEqual(fp.mode, mode)
 
+    def test_makefile_line_buffering(self):
+        with socket.socket() as sock:
+            for mode in 'r', 'w':
+                with self.subTest(mode=mode):
+                    with sock.makefile(mode, buffering=1,
+                                       encoding="utf-8") as fp:
+                        self.assertTrue(fp.line_buffering)
+
+    def test_makefile_line_buffering_binary(self):
+        # Line buffering is not supported in binary mode, as in open().
+        with socket.socket() as sock:
+            for mode in 'rb', 'wb':
+                with self.subTest(mode=mode):
+                    with self.assertWarnsRegex(
+                            RuntimeWarning,
+                            "line buffering .* isn't supported in binary "
+                            "mode"):
+                        sock.makefile(mode, buffering=1).close()
+
     def test_makefile_invalid_mode(self):
         for mode in 'rt', 'x', '+', 'a':
             with self.subTest(mode=mode):
