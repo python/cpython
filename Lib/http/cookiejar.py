@@ -2109,7 +2109,9 @@ class MozillaCookieJar(FileCookieJar):
                 if cookie.expires is not None:
                     expires = str(cookie.expires)
                 else:
-                    expires = ""
+                    # curl and Wget use 0 for session cookies, and ignore
+                    # the line if this field is empty.
+                    expires = "0"
                 if cookie.value is None:
                     # cookies.txt regards 'Set-Cookie: foo' as a cookie
                     # with no name, whereas http.cookiejar regards it as a

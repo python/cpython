@@ -1,0 +1,3 @@
+:meth:`!http.cookiejar.MozillaCookieJar.save` now writes ``0`` in the
+expiration time field for session cookies, as curl and Wget do.  Previously
+this field was left empty, and such lines were ignored by curl and Wget.
