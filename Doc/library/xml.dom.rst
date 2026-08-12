@@ -534,7 +534,8 @@ following attributes:
 
 .. attribute:: DocumentType.entities
 
-   This is a :class:`NamedNodeMap` giving the definitions of external entities.
+   This is a :class:`NamedNodeMap` of :class:`Entity` nodes
+   giving the definitions of external entities.
    For entity names defined more than once, only the first definition is provided
    (others are ignored as required by the XML recommendation).  This may be
    ``None`` if the information is not provided by the parser, or if no entities are
@@ -543,7 +544,8 @@ following attributes:
 
 .. attribute:: DocumentType.notations
 
-   This is a :class:`NamedNodeMap` giving the definitions of notations. For
+   This is a :class:`NamedNodeMap` of :class:`Notation` nodes
+   giving the definitions of notations. For
    notation names defined more than once, only the first definition is provided
    (others are ignored as required by the XML recommendation).  This may be
    ``None`` if the information is not provided by the parser, or if no notations
@@ -864,6 +866,14 @@ Attr Objects
    This is a read-only attribute.
 
 
+.. attribute:: Attr.specified
+
+   Whether the value of the attribute was explicitly set in the document,
+   as opposed to being defaulted from the DTD.
+   Always ``False`` in :mod:`xml.dom.minidom`.
+   This is a read-only attribute.
+
+
 .. attribute:: Attr.value
 
    The text value of the attribute.  This is a synonym for the
@@ -1097,6 +1107,70 @@ Represents a processing instruction in the XML document; this inherits from the
 
    The content of the processing instruction following the first whitespace
    character.
+
+
+.. _dom-entity-objects:
+
+Entity Objects
+^^^^^^^^^^^^^^
+
+.. class:: Entity
+   :no-typesetting:
+
+:class:`Entity` represents a parsed or unparsed entity declared in the DTD.
+It is a subclass of :class:`Node`.
+Entity nodes are contained in :attr:`DocumentType.entities`
+and cannot be inserted into the document tree.
+The name of the entity is its :attr:`~Node.nodeName`.
+
+
+.. attribute:: Entity.publicId
+
+   The public identifier of the entity,
+   or ``None`` if it is not specified.
+   This is a read-only attribute.
+
+
+.. attribute:: Entity.systemId
+
+   The system identifier of the entity.
+   This is a read-only attribute.
+
+
+.. attribute:: Entity.notationName
+
+   The name of the notation for an unparsed entity,
+   or ``None`` for a parsed entity.
+   This is a read-only attribute.
+
+
+.. _dom-notation-objects:
+
+Notation Objects
+^^^^^^^^^^^^^^^^
+
+.. class:: Notation
+   :no-typesetting:
+
+:class:`Notation` represents a notation declared in the DTD.
+It is a subclass of :class:`Node` and cannot have child nodes.
+Notation nodes are contained in :attr:`DocumentType.notations`
+and cannot be inserted into the document tree.
+The name of the notation is its :attr:`~Node.nodeName`.
+
+
+.. attribute:: Notation.publicId
+
+   The public identifier of the notation,
+   or ``None`` if it is not specified.
+   This is a read-only attribute.
+
+
+.. attribute:: Notation.systemId
+
+   The system identifier of the notation,
+   or ``None`` if it is not specified.
+   This is a read-only attribute.
 
 
 .. _dom-exceptions:
