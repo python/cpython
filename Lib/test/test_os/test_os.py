@@ -5352,6 +5352,18 @@ class TestScandir(unittest.TestCase):
         with self.check_no_resource_warning():
             del iterator
 
+    def test_no_resource_warning_when_open_fails(self):
+        # gh-152754: a scandir() call that never opened a directory owns
+        # nothing, and must not report an unclosed iterator.
+        self.create_file("file.txt")
+        missing = os.path.join(self.path, "missing")
+        not_a_dir = os.path.join(self.path, "file.txt")
+        for path in (missing, not_a_dir):
+            with self.subTest(path=path):
+                with self.check_no_resource_warning():
+                    with self.assertRaises(OSError):
+                        os.scandir(path)
+
 
 @threading_helper.requires_working_threading()
 class ScandirThreadingTest(unittest.TestCase):

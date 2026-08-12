@@ -21,10 +21,10 @@
 #include "pycore_import.h"        // _PyImport_AcquireLock()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_jit_unwind.h"    // _Py_jit_debug_mutex
+#include "pycore_lock.h"          // _PyMutex_LockTimed()
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_LookupSpecial()
-#include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_LOAD_INT_RELAXED()
 #include "pycore_pylifecycle.h"   // _PyOS_URandom()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_signal.h"        // Py_NSIG
@@ -16952,9 +16952,13 @@ typedef struct {
 #ifdef HAVE_FDOPENDIR
     int fd;
 #endif
-    // Protects the iterator state when an os.scandir() iterator is used from
-    // multiple threads.
-    PyMutex mutex;
+    // Sharing the iterator between threads is subject to race conditions:
+    // which entries each thread receives is unspecified.  It must not
+    // corrupt the iterator or crash.  Since we don't want close() to be
+    // held up by a blocking directory read, we set the 'closed' flag if
+    // there are reads in progress.
+    PyMutex read_mutex;
+    uint8_t closed;
 } ScandirIterator;
 
 #define ScandirIterator_CAST(op)    ((ScandirIterator *)(op))
@@ -16964,19 +16968,21 @@ typedef struct {
 static int
 ScandirIterator_is_closed(ScandirIterator *iterator)
 {
-    PyMutex_Lock(&iterator->mutex);
-    int closed = iterator->handle == INVALID_HANDLE_VALUE;
-    PyMutex_Unlock(&iterator->mutex);
-    return closed;
+    return _Py_atomic_load_uint8(&iterator->closed);
 }
 
 static void
 ScandirIterator_closedir(ScandirIterator *iterator)
 {
-    PyMutex_Lock(&iterator->mutex);
-    HANDLE handle = iterator->handle;
-    iterator->handle = INVALID_HANDLE_VALUE;
-    PyMutex_Unlock(&iterator->mutex);
+    HANDLE handle = INVALID_HANDLE_VALUE;
+
+    _Py_atomic_store_uint8(&iterator->closed, 1);
+    if (_PyMutex_LockTimed(&iterator->read_mutex, 0, 0) == PY_LOCK_ACQUIRED) {
+        // no reads in progress, we can close the handle
+        handle = iterator->handle;
+        iterator->handle = INVALID_HANDLE_VALUE;
+        PyMutex_Unlock(&iterator->read_mutex);
+    }
 
     if (handle != INVALID_HANDLE_VALUE) {
         Py_BEGIN_ALLOW_THREADS
@@ -16994,9 +17000,11 @@ ScandirIterator_iternext(PyObject *op)
     DWORD error = ERROR_SUCCESS;
     int found = 0;
 
-    PyMutex_Lock(&iterator->mutex);
+    PyMutex_Lock(&iterator->read_mutex);
     /* Happens if the iterator is iterated twice, or closed explicitly */
-    while (iterator->handle != INVALID_HANDLE_VALUE) {
+    while (iterator->handle != INVALID_HANDLE_VALUE &&
+           !_Py_atomic_load_uint8_relaxed(&iterator->closed))
+    {
         if (!iterator->first_time) {
             Py_BEGIN_ALLOW_THREADS
             success = FindNextFileW(iterator->handle, &iterator->file_data);
@@ -17021,7 +17029,11 @@ ScandirIterator_iternext(PyObject *op)
 
         /* Loop till we get a non-dot directory or finish iterating */
     }
-    PyMutex_Unlock(&iterator->mutex);
+    PyMutex_Unlock(&iterator->read_mutex);
+
+    if (found && ScandirIterator_is_closed(iterator)) {
+        ScandirIterator_closedir(iterator); // deferred close
+    }
 
     if (found) {
         PyObject *module = PyType_GetModule(Py_TYPE(iterator));
@@ -17045,19 +17057,21 @@ ScandirIterator_iternext(PyObject *op)
 static int
 ScandirIterator_is_closed(ScandirIterator *iterator)
 {
-    PyMutex_Lock(&iterator->mutex);
-    int closed = iterator->dirp == NULL;
-    PyMutex_Unlock(&iterator->mutex);
-    return closed;
+    return _Py_atomic_load_uint8(&iterator->closed);
 }
 
 static void
 ScandirIterator_closedir(ScandirIterator *iterator)
 {
-    PyMutex_Lock(&iterator->mutex);
-    DIR *dirp = iterator->dirp;
-    iterator->dirp = NULL;
-    PyMutex_Unlock(&iterator->mutex);
+    DIR *dirp = NULL;
+
+    _Py_atomic_store_uint8(&iterator->closed, 1);
+    if (_PyMutex_LockTimed(&iterator->read_mutex, 0, 0) == PY_LOCK_ACQUIRED) {
+        // no reads in progress, we can close dirp
+        dirp = iterator->dirp;
+        iterator->dirp = NULL;
+        PyMutex_Unlock(&iterator->read_mutex);
+    }
 
     if (dirp != NULL) {
         Py_BEGIN_ALLOW_THREADS
@@ -17081,15 +17095,18 @@ ScandirIterator_iternext(PyObject *op)
     int found = 0;
     int error = 0;
     int no_memory = 0;
-    char *name = NULL;
+    char namebuf[256];
+    char *name = namebuf;
     ino_t d_ino = 0;
 #ifdef HAVE_DIRENT_D_TYPE
     unsigned char d_type = 0;
 #endif
 
-    PyMutex_Lock(&iterator->mutex);
+    PyMutex_Lock(&iterator->read_mutex);
     /* Happens if the iterator is iterated twice, or closed explicitly */
-    while (iterator->dirp != NULL) {
+    while (iterator->dirp != NULL &&
+           !_Py_atomic_load_uint8_relaxed(&iterator->closed))
+    {
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
         direntp = readdir(iterator->dirp);
@@ -17107,10 +17124,12 @@ ScandirIterator_iternext(PyObject *op)
         is_dot = direntp->d_name[0] == '.' &&
                  (name_len == 1 || (direntp->d_name[1] == '.' && name_len == 2));
         if (!is_dot) {
-            name = PyMem_RawMalloc(name_len + 1);
-            if (name == NULL) {
-                no_memory = 1;
-                break;
+            if ((size_t)name_len >= sizeof(namebuf)) {
+                name = PyMem_RawMalloc(name_len + 1);
+                if (name == NULL) {
+                    no_memory = 1;
+                    break;
+                }
             }
             memcpy(name, direntp->d_name, name_len);
             name[name_len] = '\0';
@@ -17124,7 +17143,11 @@ ScandirIterator_iternext(PyObject *op)
 
         /* Loop till we get a non-dot directory or finish iterating */
     }
-    PyMutex_Unlock(&iterator->mutex);
+    PyMutex_Unlock(&iterator->read_mutex);
+
+    if (found && ScandirIterator_is_closed(iterator)) {
+        ScandirIterator_closedir(iterator); // deferred close
+    }
 
     if (found) {
         PyObject *module = PyType_GetModule(Py_TYPE(iterator));
@@ -17135,7 +17158,9 @@ ScandirIterator_iternext(PyObject *op)
                                                    , d_type
 #endif
                                                   );
-        PyMem_RawFree(name);
+        if (name != namebuf) {
+            PyMem_RawFree(name);
+        }
         if (entry != NULL) {
             return entry;
         }
@@ -17184,9 +17209,11 @@ ScandirIterator_finalize(PyObject *op)
     /* Save the current exception, if any. */
     PyObject *exc = PyErr_GetRaisedException();
 
-    if (!ScandirIterator_is_closed(iterator)) {
-        ScandirIterator_closedir(iterator);
+    int was_closed = ScandirIterator_is_closed(iterator);
 
+    ScandirIterator_closedir(iterator);
+
+    if (!was_closed) {
         if (PyErr_ResourceWarning(op, 1,
                                   "unclosed scandir iterator %R", iterator))
         {
@@ -17284,7 +17311,8 @@ os_scandir_impl(PyObject *module, path_t *path)
     if (!iterator)
         return NULL;
 
-    iterator->mutex = (PyMutex){0};
+    iterator->read_mutex = (PyMutex){0};
+    iterator->closed = 1;
 #ifdef MS_WINDOWS
     iterator->handle = INVALID_HANDLE_VALUE;
 #else
@@ -17357,6 +17385,7 @@ os_scandir_impl(PyObject *module, path_t *path)
     }
 #endif
 
+    iterator->closed = 0;
     return (PyObject *)iterator;
 
 error:
