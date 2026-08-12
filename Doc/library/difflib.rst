@@ -128,7 +128,7 @@ Diff generation
 
    The :class:`Differ` class has this constructor:
 
-   .. method:: __init__(linejunk=None, charjunk=None)
+   .. method:: __init__(linejunk=None, charjunk=None, autojunk=True)
 
       Optional keyword parameters *linejunk* and *charjunk* are for filter functions
       (or ``None``):
@@ -146,6 +146,14 @@ Diff generation
       be ignored.  Read the description of the
       :meth:`~SequenceMatcher.find_longest_match` method's *isjunk*
       parameter for an explanation.
+
+      .. versionchanged:: 3.16
+         Added keyword-only *autojunk* parameter.
+
+      *autojunk*: Setting this option to ``False`` will switch off
+      an :ref:`automatic junk heuristic <difflib-junk>`
+      of :class:`SequenceMatcher`.
+
 
    :class:`Differ` objects are used (deltas generated) via a single method:
 
@@ -195,7 +203,9 @@ Diff generation
       .. versionchanged:: 3.16
          Added keyword-only *autojunk* parameter.
 
-      *autojunk* flag is for setting on/off automatic junk heuristic of :class:`SequenceMatcher`.
+      *autojunk* flag is for setting on/off
+      an :ref:`automatic junk heuristic <difflib-junk>`
+      of :class:`SequenceMatcher`.
 
    The following methods are public:
 
@@ -256,12 +266,6 @@ Diff generation
    For inputs that do not have trailing newlines, set the *lineterm* argument to
    ``""`` so that the output will be uniformly newline free.
 
-   .. versionchanged:: 3.16
-      Added keyword-only *autojunk* parameter.
-
-   Setting the optional *autojunk* argument to ``False`` will turn
-   :ref:`automatic junk heuristic <difflib-junk>` off.
-
    The context diff format normally has a header for filenames and modification
    times.  Any or all of these may be specified using strings for *fromfile*,
    *tofile*, *fromfiledate*, and *tofiledate*.  The modification times are normally
@@ -290,6 +294,12 @@ Diff generation
 
    See :ref:`difflib-interface` for a more detailed example.
 
+   .. versionchanged:: 3.16
+      Added keyword-only *autojunk* parameter.
+
+   Setting the optional *autojunk* argument to ``False`` will turn
+   :ref:`automatic junk heuristic <difflib-junk>` off.
+
 
 .. function:: get_close_matches(word, possibilities, n=3, cutoff=0.6, *, autojunk=True)
 
@@ -307,7 +317,7 @@ Diff generation
       Added keyword-only *autojunk* parameter.
 
    Optional *autojunk* param is a flag for turning on/off
-   an automatic junk heuristic of :class:`SequenceMatcher`.
+   an :ref:`automatic junk heuristic <difflib-junk>` of :class:`SequenceMatcher`.
 
    The best (no more than *n*) matches among the possibilities are returned in a
    list, sorted by similarity score, most similar first.
@@ -347,7 +357,8 @@ Diff generation
    .. versionchanged:: 3.16
       Added keyword-only *autojunk* parameter.
 
-   *autojunk*: An optional parameter for setting on/off automatic junk heuristic
+   *autojunk*: An optional parameter for setting on/off
+   :ref:`automatic junk heuristic <difflib-junk>`
    of :class:`SequenceMatcher`.
 
    Example:
@@ -440,8 +451,8 @@ Diff generation
    .. versionchanged:: 3.16
       Added keyword-only *autojunk* parameter.
 
-   Set *autojunk* to ``False`` in order to disable automatic junk heuristic
-   of underlying :class:`SequenceMatcher`.
+   Set *autojunk* to ``False`` in order to disable
+   an :ref:`automatic junk heuristic <difflib-junk>` of :class:`SequenceMatcher`.
 
 
 .. function:: diff_bytes(dfunc, a, b, fromfile=b'', tofile=b'', fromfiledate=b'', tofiledate=b'', n=3, lineterm=b'\n')
