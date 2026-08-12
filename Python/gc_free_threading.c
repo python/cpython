@@ -2025,7 +2025,7 @@ record_allocation(PyThreadState *tstate)
     if (gc->alloc_count >= LOCAL_ALLOC_COUNT_THRESHOLD) {
         // TODO: Use Py_ssize_t for the generation count.
         GCState *gcstate = &tstate->interp->gc;
-        _Py_atomic_add_int(&gcstate->young.count, (int)gc->alloc_count);
+        _Py_atomic_add_int_relaxed(&gcstate->young.count, (int)gc->alloc_count);
         gc->alloc_count = 0;
 
         if (gc_should_collect(gcstate) &&
