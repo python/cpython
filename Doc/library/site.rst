@@ -451,10 +451,10 @@ Module contents
 
 .. function:: getsitepackages(prefixes=None)
 
-   Return a list containing all global :file:`site-packages` directories.
+   Return a list containing all global site-packages directories.
 
    For each directory present in *prefixes* (or :data:`PREFIXES` if *prefixes*
-   is None), this function will find its :file:`site-packages` subdirectory
+   is ``None``), this function will find its :file:`site-packages` subdirectory
    depending on the system environment, and will return a list of full paths.
 
    .. versionadded:: 3.2
