@@ -923,8 +923,8 @@ class CAPITest(unittest.TestCase):
 
     def test_tp_bases_slot_none(self):
         self.assertRaisesRegex(
-            SystemError,
-            "Py_tp_bases is not a tuple",
+            TypeError,
+            "bases must be types",
             _testcapi.create_heapctype_with_none_bases_slot
         )
 
@@ -1055,13 +1055,13 @@ class TestHeapTypeRelative(unittest.TestCase):
     def test_heaptype_relative_members_errors(self):
         with self.assertRaisesRegex(
                 SystemError,
-                r"With Py_RELATIVE_OFFSET, basicsize must be negative"):
+                r"With Py_RELATIVE_OFFSET, basicsize must be extended"):
             _testlimitedcapi.make_heaptype_with_member(0, 1234, 0, True)
         with self.assertRaisesRegex(
-                SystemError, r"Member offset out of range \(0\.\.-basicsize\)"):
+                SystemError, r"Member offset out of range \(0\.\.extra_basicsize\)"):
             _testlimitedcapi.make_heaptype_with_member(0, -8, 1234, True)
         with self.assertRaisesRegex(
-                SystemError, r"Member offset out of range \(0\.\.-basicsize\)"):
+                SystemError, r"Member offset must not be negative"):
             _testlimitedcapi.make_heaptype_with_member(0, -8, -1, True)
 
         Sub = _testlimitedcapi.make_heaptype_with_member(0, -8, 0, True)
@@ -1078,7 +1078,7 @@ class TestHeapTypeRelative(unittest.TestCase):
             with self.subTest(member_name=member_name):
                 with self.assertRaisesRegex(
                         SystemError,
-                        r"With Py_RELATIVE_OFFSET, basicsize must be negative."):
+                        r"With Py_RELATIVE_OFFSET, basicsize must be extended"):
                     _testlimitedcapi.make_heaptype_with_member(
                         basicsize=sys.getsizeof(object()) + 100,
                         add_relative_flag=True,
@@ -1089,12 +1089,23 @@ class TestHeapTypeRelative(unittest.TestCase):
                         )
                 with self.assertRaisesRegex(
                         SystemError,
-                        r"Member offset out of range \(0\.\.-basicsize\)"):
+                        r"Member offset must not be negative"):
                     _testlimitedcapi.make_heaptype_with_member(
                         basicsize=-8,
                         add_relative_flag=True,
                         member_name=member_name,
                         member_offset=-1,
+                        member_type=_testlimitedcapi.Py_T_PYSSIZET,
+                        member_flags=_testlimitedcapi.Py_READONLY,
+                        )
+                with self.assertRaisesRegex(
+                        SystemError,
+                        r"Member offset out of range \(0\.\.extra_basicsize\)"):
+                    _testlimitedcapi.make_heaptype_with_member(
+                        basicsize=-8,
+                        add_relative_flag=True,
+                        member_name=member_name,
+                        member_offset=1234,
                         member_type=_testlimitedcapi.Py_T_PYSSIZET,
                         member_flags=_testlimitedcapi.Py_READONLY,
                         )
@@ -3032,22 +3043,37 @@ class TestVersions(unittest.TestCase):
 
     def test_pack_full_version_ctypes(self):
         ctypes = import_helper.import_module('ctypes')
-        ctypes_func = ctypes.pythonapi.Py_PACK_FULL_VERSION
-        ctypes_func.restype = ctypes.c_uint32
-        ctypes_func.argtypes = [ctypes.c_int] * 5
+        import ctypes.util  # noqa: F811
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_PACK_FULL_VERSION(
+            x: ctypes.c_int,
+            y: ctypes.c_int,
+            z: ctypes.c_int,
+            level: ctypes.c_int,
+            serial: ctypes.c_int,
+        ) -> ctypes.c_uint32:
+            pass
+
         for *args, expected in self.full_cases:
             with self.subTest(hexversion=hex(expected)):
-                result = ctypes_func(*args)
+                result = Py_PACK_FULL_VERSION(*args)
                 self.assertEqual(result, expected)
 
     def test_pack_version_ctypes(self):
         ctypes = import_helper.import_module('ctypes')
-        ctypes_func = ctypes.pythonapi.Py_PACK_VERSION
-        ctypes_func.restype = ctypes.c_uint32
-        ctypes_func.argtypes = [ctypes.c_int] * 2
+        import ctypes.util  # noqa: F811
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_PACK_VERSION(
+            x: ctypes.c_int,
+            y: ctypes.c_int,
+        ) -> ctypes.c_uint32:
+            pass
+
         for *args, expected in self.xy_cases:
             with self.subTest(hexversion=hex(expected)):
-                result = ctypes_func(*args)
+                result = Py_PACK_VERSION(*args)
                 self.assertEqual(result, expected)
 
 

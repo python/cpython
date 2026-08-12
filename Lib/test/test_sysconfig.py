@@ -457,6 +457,15 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         soabi = sysconfig.get_config_var('SOABI')
         self.assertIn(soabi, _imp.extension_suffixes()[0])
 
+    @unittest.skipIf(not _imp.extension_suffixes(), "stub loader has no suffixes")
+    @unittest.skipIf(sys.platform == "win32", "Does not apply to Windows")
+    @unittest.skipIf(sysconfig.get_config_var('SOABI_PLATFORM') == 0,
+                     "SOABI_PLATFORM is undefined")
+    def test_soabi_platform(self):
+        soabi_platform = sysconfig.get_config_var('SOABI_PLATFORM')
+        soabi = sysconfig.get_config_var('SOABI')
+        self.assertIn(soabi_platform, soabi)
+
     def test_library(self):
         library = sysconfig.get_config_var('LIBRARY')
         ldlibrary = sysconfig.get_config_var('LDLIBRARY')
@@ -575,6 +584,12 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
             else: # 8 byte pointer size
                 expected_suffixes = 'x86_64-linux-gnu.so', 'x86_64-linux-musl.so'
             self.assertEndsWith(suffix, expected_suffixes)
+
+    @unittest.skipIf(sysconfig.get_config_var('PY_BUILTIN_HASHLIB_HASHES') is None,
+                     'PY_BUILTIN_HASHLIB_HASHES required for this test')
+    def test_PY_BUILTIN_HASHLIB_HASHES_in_vars(self):
+        vars = sysconfig.get_config_vars()
+        self.assertFalse(vars['PY_BUILTIN_HASHLIB_HASHES'].startswith('"'))
 
     @unittest.skipUnless(sys.platform == 'android', 'Android-specific test')
     def test_android_ext_suffix(self):

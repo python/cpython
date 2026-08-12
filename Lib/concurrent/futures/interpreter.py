@@ -110,8 +110,8 @@ class InterpreterPoolExecutor(_thread.ThreadPoolExecutor):
         """Initializes a new InterpreterPoolExecutor instance.
 
         Args:
-            max_workers: The maximum number of interpreters that can be used to
-                execute the given calls.
+            max_workers: The maximum number of interpreters that can be used
+                to execute the given calls.
             thread_name_prefix: An optional name prefix to give our threads.
             initializer: A callable or script used to initialize
                 each worker interpreter.

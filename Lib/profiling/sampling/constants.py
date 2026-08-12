@@ -11,6 +11,14 @@ PROFILING_MODE_GIL = 2
 PROFILING_MODE_ALL = 3  # Combines GIL + CPU checks
 PROFILING_MODE_EXCEPTION = 4  # Only samples when thread has an active exception
 
+PROFILING_MODE_NAMES = {
+    PROFILING_MODE_WALL: "wall",
+    PROFILING_MODE_CPU: "cpu",
+    PROFILING_MODE_GIL: "gil",
+    PROFILING_MODE_ALL: "all",
+    PROFILING_MODE_EXCEPTION: "exception",
+}
+
 # Sort mode constants
 SORT_MODE_NSAMPLES = 0
 SORT_MODE_TOTTIME = 1

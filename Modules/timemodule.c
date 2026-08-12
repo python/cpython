@@ -763,6 +763,13 @@ Other codes may be available on your platform.  See documentation for\n\
 the C library strftime function.\n"
 
 #ifdef HAVE_STRFTIME
+// gh-154460: OpenBSD's wcsftime() computes %V incorrectly: it returns 53
+// whenever the ISO 8601 week belongs to a different year than tm_year.
+// strftime() is not affected.
+#ifdef __OpenBSD__
+#  undef HAVE_WCSFTIME
+#endif
+
 #ifdef HAVE_WCSFTIME
 #define time_char wchar_t
 #define format_time wcsftime
@@ -820,12 +827,15 @@ time_strftime1(time_char **outbuf, size_t *bufsize,
             PyErr_NoMemory();
             return NULL;
         }
-        *outbuf = (time_char *)PyMem_Realloc(*outbuf,
-                                             *bufsize*sizeof(time_char));
-        if (*outbuf == NULL) {
+        time_char *tmp = (time_char *)PyMem_Realloc(*outbuf,
+                                                    *bufsize*sizeof(time_char));
+        if (tmp == NULL) {
+            PyMem_Free(*outbuf);
+            *outbuf = NULL;
             PyErr_NoMemory();
             return NULL;
         }
+        *outbuf = tmp;
 #if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
         errno = 0;
 #endif
