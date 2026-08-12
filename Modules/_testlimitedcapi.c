@@ -107,5 +107,8 @@ PyInit__testlimitedcapi(void)
     if (_PyTestLimitedCAPI_Init_Run(mod) < 0) {
         return NULL;
     }
+    if (_PyTestLimitedCAPI_Init_Type(mod) < 0) {
+        return NULL;
+    }
     return mod;
 }
