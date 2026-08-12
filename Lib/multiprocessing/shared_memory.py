@@ -319,7 +319,7 @@ class ShareableList:
                 self._types_mapping[type(item)]
                     if not isinstance(item, (str, bytes))
                     else self._types_mapping[type(item)] % (
-                        self._alignment * (len(self._encode_value(item)) // self._alignment + 1),
+                        self._alignment * ((len(self._encode_value(item)) - 1) // self._alignment + 1),
                     )
                 for item in sequence
             ]
@@ -471,7 +471,7 @@ class ShareableList:
             allocated_length = self._allocated_offsets[position + 1] - item_offset
 
             encoded_value = self._encode_value(value)
-            if len(encoded_value) >= allocated_length:
+            if len(encoded_value) > allocated_length:
                 raise ValueError("bytes/str item exceeds available storage")
             if current_format[-1] == "s":
                 new_format = current_format

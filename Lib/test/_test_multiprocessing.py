@@ -5018,11 +5018,12 @@ class _TestSharedMemory(BaseTestCase):
                                     "exceeds available storage"):
             sl[4] = 'far too many'
         self.assertEqual(sl[4], 'some')
-        sl[0] = 'encodé'
-        self.assertEqual(sl[0], 'encodé')  # no spillage
+        sl[0] = 'éncodé'  # Exactly 8 bytes of UTF-8 data
+        self.assertEqual(sl[0], 'éncodé')
+        self.assertEqual(sl[1], b'HoWdY')  # no spillage
         with self.assertRaisesRegex(ValueError,
                                     "exceeds available storage"):
-            sl[0] = 'encodés'  # Exactly 8 bytes of UTF-8 data
+            sl[0] = 'éncodés'  # Exactly 9 bytes of UTF-8 data
         self.assertEqual(sl[1], b'HoWdY')
         with self.assertRaisesRegex(ValueError,
                                     "exceeds available storage"):
