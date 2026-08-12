@@ -1,0 +1,3 @@
+Fix the signature of :meth:`socket.socket.sendmsg` to expose the *ancdata*
+and *address* defaults as ``()`` and ``None`` instead of
+``<unrepresentable>``.

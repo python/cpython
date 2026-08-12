@@ -12,6 +12,7 @@ import decimal
 import errno
 import fractions
 import gc
+import inspect
 import io
 import itertools
 import math
@@ -944,6 +945,14 @@ def requireSocket(*args):
 ## Begin Tests
 
 class GeneralModuleTests(unittest.TestCase):
+
+    @unittest.skipUnless(hasattr(socket.socket, "sendmsg"),
+                         "sendmsg not supported")
+    def test_sendmsg_signature(self):
+        self.assertEqual(
+            str(inspect.signature(socket.socket.sendmsg)),
+            "(self, buffers, ancdata=(), flags=0, address=None, /)",
+        )
 
     @unittest.skipUnless(_socket is not None, 'need _socket module')
     def test_socket_type(self):
