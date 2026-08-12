@@ -1087,7 +1087,7 @@ class UnicodeData:
         # aliases and named sequences are not in 3.2.0
         if version != '3.2.0':
             self.aliases = []
-            # store aliases in the Private Use Area 15, in range U+F0000..U+F00FF,
+            # store aliases in the Private Use Area 15, in range U+F0000..U+F01FF,
             # in order to take advantage of the compression and lookup
             # algorithms used for the other characters
             pua_index = NAME_ALIASES_START
@@ -1100,7 +1100,7 @@ class UnicodeData:
             assert pua_index - NAME_ALIASES_START == len(self.aliases)
 
             self.named_sequences = []
-            # store named sequences in the PUA 1, in range U+F0100..,
+            # store named sequences in the PUA 1, in range U+F0200..,
             # in order to take advantage of the compression and lookup
             # algorithms used for the other characters.
 

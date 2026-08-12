@@ -176,14 +176,14 @@ class UnicodeNamesTest(unittest.TestCase):
 
     def test_aliases_names_in_pua_range(self):
         # We are storing aliases in the PUA 15, but their names shouldn't leak
-        for cp in range(0xf0000, 0xf0100):
+        for cp in range(0xf0000, 0xf0200):
             with self.assertRaises(ValueError) as cm:
                 unicodedata.name(chr(cp))
             self.assertEqual(str(cm.exception), 'no such name')
 
     def test_named_sequences_names_in_pua_range(self):
         # We are storing named seq in the PUA 15, but their names shouldn't leak
-        for cp in range(0xf0100, 0xf0fff):
+        for cp in range(0xf0200, 0xf0fff):
             with self.assertRaises(ValueError) as cm:
                 unicodedata.name(chr(cp))
             self.assertEqual(str(cm.exception), 'no such name')
