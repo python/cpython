@@ -1,2 +1,4 @@
 Fix a crash when the same :func:`os.scandir` iterator is used concurrently
-from multiple threads on the :term:`free-threaded <free threading>` build.
+from multiple threads.  Iterating and closing the iterator are now serialized
+with a per-iterator lock, so that closing it no longer releases the
+directory handle while another thread is still reading from it.

@@ -24,9 +24,9 @@
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_LookupSpecial()
+#include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_LOAD_INT_RELAXED()
 #include "pycore_pylifecycle.h"   // _PyOS_URandom()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_pyatomic_ft_wrappers.h" // FT_MUTEX_LOCK()
 #include "pycore_signal.h"        // Py_NSIG
 #include "pycore_time.h"          // _PyLong_FromTime_t()
 #include "pycore_tuple.h"         // _PyTuple_FromPairSteal
@@ -16941,11 +16941,6 @@ error:
 
 typedef struct {
     PyObject_HEAD
-#ifdef Py_GIL_DISABLED
-    // Protects scandir iterator state when a os.scandir() iterator is used
-    // from multiple threads.
-    PyMutex mutex;
-#endif
     path_t path;
 #ifdef MS_WINDOWS
     HANDLE handle;
@@ -16957,6 +16952,9 @@ typedef struct {
 #ifdef HAVE_FDOPENDIR
     int fd;
 #endif
+    // Protects the iterator state when an os.scandir() iterator is used from
+    // multiple threads.
+    PyMutex mutex;
 } ScandirIterator;
 
 #define ScandirIterator_CAST(op)    ((ScandirIterator *)(op))
@@ -16966,19 +16964,19 @@ typedef struct {
 static int
 ScandirIterator_is_closed(ScandirIterator *iterator)
 {
-    FT_MUTEX_LOCK(&iterator->mutex);
+    PyMutex_Lock(&iterator->mutex);
     int closed = iterator->handle == INVALID_HANDLE_VALUE;
-    FT_MUTEX_UNLOCK(&iterator->mutex);
+    PyMutex_Unlock(&iterator->mutex);
     return closed;
 }
 
 static void
 ScandirIterator_closedir(ScandirIterator *iterator)
 {
-    FT_MUTEX_LOCK(&iterator->mutex);
+    PyMutex_Lock(&iterator->mutex);
     HANDLE handle = iterator->handle;
     iterator->handle = INVALID_HANDLE_VALUE;
-    FT_MUTEX_UNLOCK(&iterator->mutex);
+    PyMutex_Unlock(&iterator->mutex);
 
     if (handle != INVALID_HANDLE_VALUE) {
         Py_BEGIN_ALLOW_THREADS
@@ -16996,7 +16994,7 @@ ScandirIterator_iternext(PyObject *op)
     DWORD error = ERROR_SUCCESS;
     int found = 0;
 
-    FT_MUTEX_LOCK(&iterator->mutex);
+    PyMutex_Lock(&iterator->mutex);
     /* Happens if the iterator is iterated twice, or closed explicitly */
     while (iterator->handle != INVALID_HANDLE_VALUE) {
         if (!iterator->first_time) {
@@ -17023,7 +17021,7 @@ ScandirIterator_iternext(PyObject *op)
 
         /* Loop till we get a non-dot directory or finish iterating */
     }
-    FT_MUTEX_UNLOCK(&iterator->mutex);
+    PyMutex_Unlock(&iterator->mutex);
 
     if (found) {
         PyObject *module = PyType_GetModule(Py_TYPE(iterator));
@@ -17047,19 +17045,19 @@ ScandirIterator_iternext(PyObject *op)
 static int
 ScandirIterator_is_closed(ScandirIterator *iterator)
 {
-    FT_MUTEX_LOCK(&iterator->mutex);
+    PyMutex_Lock(&iterator->mutex);
     int closed = iterator->dirp == NULL;
-    FT_MUTEX_UNLOCK(&iterator->mutex);
+    PyMutex_Unlock(&iterator->mutex);
     return closed;
 }
 
 static void
 ScandirIterator_closedir(ScandirIterator *iterator)
 {
-    FT_MUTEX_LOCK(&iterator->mutex);
+    PyMutex_Lock(&iterator->mutex);
     DIR *dirp = iterator->dirp;
     iterator->dirp = NULL;
-    FT_MUTEX_UNLOCK(&iterator->mutex);
+    PyMutex_Unlock(&iterator->mutex);
 
     if (dirp != NULL) {
         Py_BEGIN_ALLOW_THREADS
@@ -17089,7 +17087,7 @@ ScandirIterator_iternext(PyObject *op)
     unsigned char d_type = 0;
 #endif
 
-    FT_MUTEX_LOCK(&iterator->mutex);
+    PyMutex_Lock(&iterator->mutex);
     /* Happens if the iterator is iterated twice, or closed explicitly */
     while (iterator->dirp != NULL) {
         Py_BEGIN_ALLOW_THREADS
@@ -17126,7 +17124,7 @@ ScandirIterator_iternext(PyObject *op)
 
         /* Loop till we get a non-dot directory or finish iterating */
     }
-    FT_MUTEX_UNLOCK(&iterator->mutex);
+    PyMutex_Unlock(&iterator->mutex);
 
     if (found) {
         PyObject *module = PyType_GetModule(Py_TYPE(iterator));
@@ -17286,9 +17284,7 @@ os_scandir_impl(PyObject *module, path_t *path)
     if (!iterator)
         return NULL;
 
-#ifdef Py_GIL_DISABLED
     iterator->mutex = (PyMutex){0};
-#endif
 #ifdef MS_WINDOWS
     iterator->handle = INVALID_HANDLE_VALUE;
 #else
