@@ -984,7 +984,7 @@ class AST_Tests(unittest.TestCase):
                 compile(expr, "<test>", "eval")
 
     def test_constant_in_identifier_fields(self):
-        # gh-85270: an identifier field holding a constant name used to
+        # gh-85260: an identifier field holding a constant name used to
         # crash the compiler
         for statement in [
             "def x(): pass",
