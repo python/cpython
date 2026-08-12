@@ -2342,7 +2342,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
         // store the task counter as PyLong in the name
         // for deferred formatting in get_name
 #ifdef Py_GIL_DISABLED
-        unsigned long long counter = _Py_atomic_add_uint64(&state->task_name_counter, 1) + 1;
+        unsigned long long counter = _Py_atomic_add_uint64_relaxed(&state->task_name_counter, 1) + 1;
 #else
         unsigned long long counter = ++state->task_name_counter;
 #endif
