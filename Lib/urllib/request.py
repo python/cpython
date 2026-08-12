@@ -655,8 +655,11 @@ class HTTPRedirectHandler(BaseHandler):
                        origin_req_host=req.origin_req_host,
                        unverifiable=True)
 
+        # Do not send credentials to other origin.  The origin includes
+        # the scheme, so they are not sent if the connection is downgraded
+        # from HTTPS to HTTP either.
         SENSITIVE_HEADERS = ("authorization", "cookie")
-        if newrequest.host != req.host:
+        if (newrequest.type, newrequest.host) != (req.type, req.host):
             newrequest.headers = {k: v for k, v in newrequest.headers.items()
                                   if k.lower() not in SENSITIVE_HEADERS}
 
