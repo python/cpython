@@ -2277,6 +2277,9 @@ class TestArchives(BaseTest, unittest.TestCase):
 
     @unittest.skipIf(sys.platform[:6] == 'cygwin',
                      "This test can't be run on Cygwin (issue #1071513).")
+    @unittest.skipIf(sys.platform == 'win32',
+                     "os.chmod() cannot make a file unreadable on Windows, "
+                     "only read-only (see the os.chmod() docs)")
     @os_helper.skip_if_dac_override
     @os_helper.skip_unless_working_chmod
     def test_unpack_archive_permission_denied(self):
