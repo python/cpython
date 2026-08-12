@@ -314,6 +314,34 @@ All of the components of an XML document are subclasses of :class:`Node`.
    ``None``.  This is a read-only attribute.
 
 
+.. attribute:: Node.ownerDocument
+
+   The :class:`Document` object to which this node belongs, or ``None``
+   for a document itself.
+   This is a read-only attribute.
+
+
+.. method:: Node.isSupported(feature, version)
+
+   Return whether the DOM implementation supports a particular *feature*,
+   as :meth:`DOMImplementation.hasFeature` does.
+
+
+.. method:: Node.setUserData(key, data, handler)
+
+   Associate *data* with *key* on this node and return the data previously
+   associated with *key*, or ``None``.
+   If *data* is ``None``, the association is removed.
+   *handler* is called when the node is cloned, imported, renamed or deleted;
+   pass ``None`` if no notification is needed.
+
+
+.. method:: Node.getUserData(key)
+
+   Return the data associated with *key* on this node
+   by :meth:`~Node.setUserData`, or ``None``.
+
+
 .. attribute:: Node.nodeName
 
    This has a different meaning for each node type; see the DOM specification for
@@ -509,6 +537,46 @@ inherits properties from :class:`Node`.
    The one and only root element of the document.
 
 
+.. attribute:: Document.doctype
+
+   The :class:`DocumentType` node of the document, or ``None``.
+   This is a read-only attribute.
+
+
+.. attribute:: Document.implementation
+
+   The :class:`DOMImplementation` object which created this document.
+   This is a read-only attribute.
+
+
+.. attribute:: Document.strictErrorChecking
+
+   Whether error checking is enforced.
+   Always ``False`` in :mod:`xml.dom.minidom`.
+
+
+.. attribute:: Document.documentURI
+
+   The location of the document, or ``None`` if it is unknown.
+
+
+.. method:: Document.createDocumentFragment()
+
+   Create and return an empty :class:`DocumentFragment` node.
+
+
+.. method:: Document.createCDATASection(data)
+
+   Create and return a :class:`CDATASection` node containing *data*.
+
+
+.. method:: Document.importNode(importedNode, deep)
+
+   Return a copy of *importedNode* which belongs to this document.
+   The original node is not removed from its document.
+   If *deep* is true, the descendants of the node are copied too.
+
+
 .. method:: Document.createElement(tagName)
 
    Create and return a new element node.  The element is not inserted into the
@@ -574,6 +642,18 @@ inherits properties from :class:`Node`.
    namespace after the prefix.
 
 
+.. method:: Document.renameNode(n, namespaceURI, name)
+
+   Rename the element or attribute node *n*
+   and return it.
+   *namespaceURI* is the new namespace URI, or
+   :data:`~xml.dom.EMPTY_NAMESPACE` if the node does not belong to a namespace.
+   *name* is the new qualified name.
+
+   Raise :exc:`WrongDocumentErr` if *n* was created by other document,
+   and :exc:`NotSupportedErr` if it is neither an element nor an attribute.
+
+
 .. _dom-element-objects:
 
 Element Objects
@@ -587,6 +667,25 @@ of that class.
 
    The element type name.  In a namespace-using document it may have colons in it.
    The value is a string.
+
+
+.. method:: Element.setIdAttribute(name)
+
+   Declare that the attribute *name* is of type ID,
+   so that the element is found by :meth:`Document.getElementById`.
+   Raise :exc:`NotFoundErr` if the element has no such attribute.
+
+
+.. method:: Element.setIdAttributeNS(namespaceURI, localName)
+
+   The same as :meth:`~Element.setIdAttribute`,
+   but for an attribute specified by its namespace URI and local name.
+
+
+.. method:: Element.setIdAttributeNode(idAttr)
+
+   The same as :meth:`~Element.setIdAttribute`,
+   but for an already retrieved attribute node.
 
 
 .. method:: Element.getElementsByTagName(tagName)
@@ -705,6 +804,21 @@ Attr Objects
    empty string.
 
 
+.. attribute:: Attr.isId
+
+   Whether this attribute is of type ID,
+   either because it is declared as such in the DTD
+   or because :meth:`Element.setIdAttribute` was used.
+   This is a read-only attribute.
+
+
+.. attribute:: Attr.ownerElement
+
+   The :class:`Element` node to which this attribute belongs,
+   or ``None`` if it is not used.
+   This is a read-only attribute.
+
+
 .. attribute:: Attr.value
 
    The text value of the attribute.  This is a synonym for the
@@ -735,13 +849,63 @@ You can use them or you can use the standardized :meth:`!getAttribute\*` family
 of methods on the :class:`Element` objects.
 
 
+.. _dom-characterdata-objects:
+
+CharacterData Objects
+^^^^^^^^^^^^^^^^^^^^^
+
+:class:`CharacterData` represents text-like data in the XML document.
+It is a subclass of :class:`Node`, and the base class
+of :class:`Text`, :class:`CDATASection` and :class:`Comment`.
+Such nodes cannot have child nodes.
+
+
+.. attribute:: CharacterData.data
+
+   The content of the node as a string.
+
+
+.. attribute:: CharacterData.length
+
+   The number of characters in :attr:`~CharacterData.data`.
+   This is a read-only attribute.
+
+
+.. method:: CharacterData.substringData(offset, count)
+
+   Return the substring of :attr:`~CharacterData.data`
+   of *count* characters starting at *offset*.
+
+
+.. method:: CharacterData.appendData(arg)
+
+   Append the string *arg* to :attr:`~CharacterData.data`.
+
+
+.. method:: CharacterData.insertData(offset, arg)
+
+   Insert the string *arg* into :attr:`~CharacterData.data` at *offset*.
+
+
+.. method:: CharacterData.deleteData(offset, count)
+
+   Remove *count* characters from :attr:`~CharacterData.data`
+   starting at *offset*.
+
+
+.. method:: CharacterData.replaceData(offset, count, arg)
+
+   Replace *count* characters of :attr:`~CharacterData.data`
+   starting at *offset* with the string *arg*.
+
+
 .. _dom-comment-objects:
 
 Comment Objects
 ^^^^^^^^^^^^^^^
 
-:class:`Comment` represents a comment in the XML document.  It is a subclass of
-:class:`Node`, but cannot have child nodes.
+:class:`Comment` represents a comment in the XML document.
+It is a subclass of :class:`CharacterData`.
 
 
 .. attribute:: Comment.data
@@ -762,13 +926,33 @@ enclosed in CDATA marked sections are stored in :class:`CDATASection` objects.
 These two interfaces are identical, but provide different values for the
 :attr:`nodeType` attribute.
 
-These interfaces extend the :class:`Node` interface.  They cannot have child
-nodes.
+These interfaces extend the :class:`CharacterData` interface.
 
 
 .. attribute:: Text.data
 
    The content of the text node as a string.
+
+
+.. attribute:: Text.wholeText
+
+   The text of all :class:`Text` nodes logically adjacent to this node,
+   concatenated in document order.
+   This is a read-only attribute.
+
+
+.. method:: Text.replaceWholeText(content)
+
+   Replace the text of all :class:`Text` nodes logically adjacent
+   to this node with *content*, removing the other nodes.
+   Return this node, or ``None`` if *content* is empty.
+
+
+.. method:: Text.splitText(offset)
+
+   Split this node into two nodes at *offset*,
+   keeping the first part in this node
+   and returning a new sibling node with the rest.
 
 .. note::
 
