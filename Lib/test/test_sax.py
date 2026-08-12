@@ -1216,8 +1216,8 @@ class ExpatReaderTest(XmlTestBase):
 
         self.assertEqual(result.getvalue(), start + b"<doc>text</doc>")
 
-    @unittest.skipIf(pyexpat.version_info < (2, 6, 0),
-                     f'Expat {pyexpat.version_info} does not '
+    @unittest.skipIf(not pyexpat.ParserCreate().GetReparseDeferralEnabled(),
+                     'Python compiled with Expat < 2.6.0 does not '
                      'support reparse deferral')
     def test_flush_reparse_deferral_enabled(self):
         result = BytesIO()

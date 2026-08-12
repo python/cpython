@@ -1095,9 +1095,11 @@ class ExternalEntityParserCreateErrorTest(unittest.TestCase):
 
 
 class ReparseDeferralTest(unittest.TestCase):
+    deferal_supported = expat.ParserCreate().GetReparseDeferralEnabled()
+
     def test_getter_setter_round_trip(self):
         parser = expat.ParserCreate()
-        enabled = (expat.version_info >= (2, 6, 0))
+        enabled = self.deferal_supported
 
         self.assertIs(parser.GetReparseDeferralEnabled(), enabled)
         parser.SetReparseDeferralEnabled(False)
@@ -1106,8 +1108,8 @@ class ReparseDeferralTest(unittest.TestCase):
         self.assertIs(parser.GetReparseDeferralEnabled(), enabled)
 
     def test_reparse_deferral_enabled(self):
-        if expat.version_info < (2, 6, 0):
-            self.skipTest(f'Expat {expat.version_info} does not '
+        if not self.deferal_supported:
+            self.skipTest(f'Expat < 2.6.0 does not '
                           'support reparse deferral')
 
         started = []
@@ -1137,7 +1139,7 @@ class ReparseDeferralTest(unittest.TestCase):
 
         parser = expat.ParserCreate()
         parser.StartElementHandler = start_element
-        if expat.version_info >= (2, 6, 0):
+        if self.deferal_supported:
             parser.SetReparseDeferralEnabled(False)
         self.assertFalse(parser.GetReparseDeferralEnabled())
 
