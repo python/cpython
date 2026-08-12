@@ -194,23 +194,32 @@ class InputWrapper:
         self.input = wsgi_input
 
     def read(self, *args):
-        assert_(len(args) == 1)
+        assert_(len(args) == 1,
+            "wsgi.input.read() takes exactly one argument")
         v = self.input.read(*args)
-        assert_(type(v) is bytes)
+        assert_(type(v) is bytes,
+            "wsgi.input.read() must return bytes, got %s" % type(v))
         return v
 
     def readline(self, *args):
-        assert_(len(args) <= 1)
+        assert_(len(args) <= 1,
+            "wsgi.input.readline() takes at most one argument")
         v = self.input.readline(*args)
-        assert_(type(v) is bytes)
+        assert_(type(v) is bytes,
+            "wsgi.input.readline() must return bytes, got %s" % type(v))
         return v
 
     def readlines(self, *args):
-        assert_(len(args) <= 1)
+        assert_(len(args) <= 1,
+            "wsgi.input.readlines() takes at most one argument")
         lines = self.input.readlines(*args)
-        assert_(type(lines) is list)
+        assert_(type(lines) is list,
+            "wsgi.input.readlines() must return a list, got %s"
+            % type(lines))
         for line in lines:
-            assert_(type(line) is bytes)
+            assert_(type(line) is bytes,
+                "wsgi.input.readlines() must yield bytes, got %s"
+                % type(line))
         return lines
 
     def __iter__(self):
@@ -226,7 +235,9 @@ class ErrorWrapper:
         self.errors = wsgi_errors
 
     def write(self, s):
-        assert_(type(s) is str)
+        assert_(type(s) is str,
+            "wsgi.errors.write() requires a str argument, got %s"
+            % type(s))
         self.errors.write(s)
 
     def flush(self):
@@ -245,7 +256,9 @@ class WriteWrapper:
         self.writer = wsgi_writer
 
     def __call__(self, s):
-        assert_(type(s) is bytes)
+        assert_(type(s) is bytes,
+            "write() argument must be a bytes instance, got %s"
+            % type(s))
         self.writer(s)
 
 class PartialIteratorWrapper:
@@ -391,7 +404,8 @@ def check_headers(headers):
         assert_(type(item) is tuple,
             "Individual headers (%r) must be of type tuple: %r"
             % (item, type(item)))
-        assert_(len(item) == 2)
+        assert_(len(item) == 2,
+            "Individual headers must be 2-item tuples, got %r" % (item,))
         name, value = item
         name = check_string_type(name, "Header name")
         value = check_string_type(value, "Header value")
