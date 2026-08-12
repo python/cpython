@@ -1,0 +1,6 @@
+Fix substitution of :pep:`696` type parameter defaults that refer to earlier
+type parameters in the same type parameter list. ``class Bar[T, S = T]`` now
+resolves ``Bar[int]`` to ``Bar[int, int]`` instead of leaving ``S`` bound to
+the unsubstituted ``T``, which previously made ``class Baz[U](Bar[U])`` raise
+:exc:`TypeError`. A default that refers to a type parameter which is not
+declared before it now raises :exc:`TypeError` when it is used.
