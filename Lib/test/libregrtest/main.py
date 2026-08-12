@@ -558,14 +558,14 @@ class Regrtest:
                 selected,
                 match_tests=self.match_tests,
                 test_dir=self.test_dir)
-            case_groups = []
+            groups = []
             for module_name in selected:
                 cases = cases_by_module.get(module_name)
                 if cases:
-                    case_groups.append((module_name, tuple(cases)))
+                    groups.append((module_name, tuple(cases)))
                 else:
-                    case_groups.append((module_name, (module_name,)))
-            case_groups = tuple(case_groups)
+                    groups.append((module_name, (module_name,)))
+            case_groups = tuple(groups)
             case_ids = tuple(
                 case_id for _, cases in case_groups for case_id in cases
             )
