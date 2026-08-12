@@ -16,7 +16,7 @@ from http.cookiejar import (time2isoz, http2time, iso2time, time2netscape,
      CookieJar, DefaultCookiePolicy, LWPCookieJar, MozillaCookieJar,
      LoadError, lwp_cookie_str, DEFAULT_HTTP_PORT, escape_path,
      reach, is_HDN, domain_match, user_domain_match, request_path,
-     request_port, request_host)
+     request_port, request_host, NETSCAPE_HEADER_TEXT)
 
 mswindows = (sys.platform == "win32")
 
@@ -2049,31 +2049,29 @@ class LWPCookieTests(unittest.TestCase):
         self.assertNotEqual(counter["session_before"], 0)
 
     def test_curl_format(self):
-        # Check compatibility with curl / wget cookiejar format.
-        # See issue 17164
-        filename = test.support.TESTFN
-        try:
-            expires = int(time.time() + 3600)
-            with open(filename, "w") as f:
-                f.write(MozillaCookieJar.header)
-                f.write("www.foo.com\tFALSE\t/\tFALSE\t%u\tfoo1\tbar\n" %
-                        expires)
-                f.write("www.foo.com\tFALSE\t/\tFALSE\t0\tfoo2\tbar\n")
-                f.write("www.foo.com\tFALSE\t/\tFALSE\t\tfoo3\tbar\n")
-            c = MozillaCookieJar()
-            c.revert(filename)
-            self.assertEqual(len(c), 1)
-            c.revert(filename, ignore_discard = True)
-            self.assertEqual(len(c), 3)
-            c.save(filename, ignore_discard = True)
-            with open(filename, "r") as f:
-                for line in f:
-                    if line == '\n' or line.startswith('#'):
-                        continue
-                    self.assertRegex(line.split('\t')[4], '^\d+$')
-        finally:
-            try: os.unlink(filename)
-            except OSError: pass
+        # Check compatibility with the curl and Wget cookie file format,
+        # which uses 0 for session cookies (gh-61364).
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+        expires = int(time.time() + 3600)
+        with open(filename, "w") as f:
+            f.write(NETSCAPE_HEADER_TEXT)
+            f.write("www.foo.com\tFALSE\t/\tFALSE\t%u\tfoo1\tbar\n" % expires)
+            f.write("www.foo.com\tFALSE\t/\tFALSE\t0\tfoo2\tbar\n")
+            f.write("www.foo.com\tFALSE\t/\tFALSE\t\tfoo3\tbar\n")
+
+        c = MozillaCookieJar()
+        c.revert(filename)
+        self.assertEqual(len(c), 1)
+        c.revert(filename, ignore_discard=True)
+        self.assertEqual(len(c), 3)
+
+        # Session cookies are saved with 0, not with an empty field.
+        c.save(filename, ignore_discard=True)
+        with open(filename) as f:
+            for line in f:
+                if line.strip() and not line.startswith('#'):
+                    self.assertRegex(line.split('\t')[4], r'^\d+$')
 
 
 if __name__ == "__main__":
