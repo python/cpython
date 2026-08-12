@@ -1,5 +1,7 @@
 #include "pyconfig.h"   // Py_GIL_DISABLED
-#ifndef Py_GIL_DISABLED
+#ifdef Py_GIL_DISABLED
+#  define Py_TARGET_ABI3T 0x030f0000
+#else
    // Need limited C API 3.14 to test PyLong_AsInt64()
 #  define Py_LIMITED_API 0x030e0000
 #endif
