@@ -53,7 +53,8 @@ def _debug(*args):
 HTTPONLY_ATTR = "HTTPOnly"
 HTTPONLY_PREFIX = "#HttpOnly_"
 DEFAULT_HTTP_PORT = str(http.client.HTTP_PORT)
-NETSCAPE_MAGIC_RGX = re.compile("#( Netscape)? HTTP Cookie File")
+NETSCAPE_MAGIC_RGX = re.compile("#( Netscape)? HTTP Cookie File",
+                                re.IGNORECASE | re.ASCII)
 MISSING_FILENAME_TEXT = ("a filename was not supplied (nor was the CookieJar "
                          "instance initialised with one)")
 NETSCAPE_HEADER_TEXT =  """\
@@ -2055,7 +2056,8 @@ class MozillaCookieJar(FileCookieJar):
                 assert domain_specified == initial_dot
 
                 discard = False
-                if expires == "":
+                # curl and Wget set expires to 0 for session cookies.
+                if expires == "0" or expires == "":
                     expires = None
                     discard = True
 
@@ -2107,7 +2109,9 @@ class MozillaCookieJar(FileCookieJar):
                 if cookie.expires is not None:
                     expires = str(cookie.expires)
                 else:
-                    expires = ""
+                    # curl and Wget use 0 for session cookies, and ignore
+                    # the line if this field is empty.
+                    expires = "0"
                 if cookie.value is None:
                     # cookies.txt regards 'Set-Cookie: foo' as a cookie
                     # with no name, whereas http.cookiejar regards it as a

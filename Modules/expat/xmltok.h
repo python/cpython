@@ -10,7 +10,7 @@
    Copyright (c) 2000      Clark Cooper <coopercc@users.sourceforge.net>
    Copyright (c) 2002      Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
    Copyright (c) 2002-2005 Karl Waclawek <karl@waclawek.net>
-   Copyright (c) 2016-2024 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2016-2026 Sebastian Pipping <sebastian@pipping.org>
    Copyright (c) 2017      Rhodri James <rhodri@wildebeest.org.uk>
    Licensed under the MIT license:
 
@@ -32,10 +32,14 @@
    DAMAGES OR  OTHER LIABILITY, WHETHER  IN AN  ACTION OF CONTRACT,  TORT OR
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+   SPDX-License-Identifier: MIT
 */
 
 #ifndef XmlTok_INCLUDED
 #  define XmlTok_INCLUDED 1
+
+#  include <stdint.h> // uint64_t
 
 #  ifdef __cplusplus
 extern "C" {
@@ -145,8 +149,8 @@ extern "C" {
 
 typedef struct position {
   /* first line and first column are 0 not 1 */
-  XML_Size lineNumber;
-  XML_Size columnNumber;
+  uint64_t lineNumber;
+  uint64_t columnNumber;
 } POSITION;
 
 typedef struct {
