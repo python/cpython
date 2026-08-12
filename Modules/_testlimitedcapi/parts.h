@@ -8,7 +8,7 @@
 
 // Use the limited C API
 #ifdef Py_GIL_DISABLED
-   // FIXME: use the Py_TARGET_ABI3T
+   // Cannot test the limited C API
 #elif !defined(Py_LIMITED_API)
    // Need limited C API version 3.5 for PyModule_AddFunctions()
 #  define Py_LIMITED_API 0x03050000

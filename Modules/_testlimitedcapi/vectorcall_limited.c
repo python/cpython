@@ -2,7 +2,7 @@
 
 #include "pyconfig.h"   // Py_GIL_DISABLED
 #ifdef Py_GIL_DISABLED
-   // FIXME: use the Py_TARGET_ABI3T
+   // Cannot test the limited C API
 #else
    // Need limited C API version 3.12 for PyObject_Vectorcall()
 #  define Py_LIMITED_API 0x030c0000
