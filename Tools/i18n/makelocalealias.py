@@ -98,6 +98,25 @@ def parse_glibc_supported(filename):
         data[locale] = alias
     return data
 
+def apply_x11_locales_patch(data, glibc_data):
+    """Restore glibc UTF-8 defaults that X11 locale.alias overwrote.
+
+    Regeneration updates glibc SUPPORTED first, then X11 locale.alias.
+    X11 still maps several locales that are UTF-8-only in modern glibc to
+    obsolete encodings (for example en_IN -> en_IN.ISO8859-1). Prefer the
+    glibc UTF-8 mapping for those bare keys (gh-151316).
+
+    de_LI is special: glibc only ships de_LI.UTF-8 (no bare SUPPORTED line),
+    so the X11 de_LI.ISO8859-1 mapping would otherwise stick.
+    """
+    for key, value in glibc_data.items():
+        if data.get(key) == value:
+            continue
+        if value.split('@')[0].endswith('.UTF-8'):
+            data[key] = value
+    data['de_li'] = 'de_LI.UTF-8'
+    return data
+
 def pprint(data):
     items = sorted(data.items())
     for k, v in items:
@@ -155,17 +174,7 @@ if __name__ == '__main__':
     # Hardcode 'c.utf8' -> 'C.UTF-8' because 'en_US.UTF-8' does not exist
     # on all platforms.
     data['c.utf8'] = 'C.UTF-8'
-    # Prefer glibc UTF-8 defaults over X11 legacy codesets (gh-151316).
-    # X11 locale.alias still maps several UTF-8-only locales to obsolete
-    # encodings and would otherwise override glibc during regeneration.
-    for key, value in glibc_data.items():
-        if data.get(key) == value:
-            continue
-        if value.split('@')[0].endswith('.UTF-8'):
-            data[key] = value
-    # de_LI is UTF-8-only in glibc as 'de_LI.UTF-8', with no bare SUPPORTED
-    # line, so the X11 'de_LI.ISO8859-1' mapping would otherwise stick.
-    data['de_li'] = 'de_LI.UTF-8'
+    data = apply_x11_locales_patch(data, glibc_data)
     while True:
         # Repeat optimization while the size is decreased.
         n = len(data)

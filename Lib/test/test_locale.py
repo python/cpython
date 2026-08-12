@@ -642,56 +642,51 @@ class TestRealLocales(unittest.TestCase):
         self.assertEqual(locale.getlocale(locale.LC_CTYPE), localetuple)
 
 
-class TestHardcodedLocaleReplacements(unittest.TestCase):
-    """gh-151316: UTF-8 preferences that override X11 legacy codesets.
+# Bare aliases that must stay on UTF-8 after X11 locale.alias regeneration
+# (gh-151316). Keep in sync with apply_x11_locales_patch() in
+# Tools/i18n/makelocalealias.py.
+_UTF8_X11_OVERRIDES = (
+    ('az_az', 'az_AZ.UTF-8'),
+    ('de_li', 'de_LI.UTF-8'),
+    ('en_il', 'en_IL.UTF-8'),
+    ('en_in', 'en_IN.UTF-8'),
+    ('eo', 'eo.UTF-8'),
+    ('es_cu', 'es_CU.UTF-8'),
+    ('hi_in', 'hi_IN.UTF-8'),
+    ('iu_ca', 'iu_CA.UTF-8'),
+    ('lo_la', 'lo_LA.UTF-8'),
+    ('nr_za', 'nr_ZA.UTF-8'),
+    ('nso_za', 'nso_ZA.UTF-8'),
+    ('rw_rw', 'rw_RW.UTF-8'),
+    ('ss_za', 'ss_ZA.UTF-8'),
+    ('ta_in', 'ta_IN.UTF-8'),
+    ('tn_za', 'tn_ZA.UTF-8'),
+    ('ts_za', 'ts_ZA.UTF-8'),
+    ('tt_ru', 'tt_RU.UTF-8'),
+    ('ur_pk', 'ur_PK.UTF-8'),
+    ('vi_vn', 'vi_VN.UTF-8'),
+)
 
-    These bare aliases are UTF-8-only in glibc SUPPORTED, but X11
-    locale.alias still maps them to obsolete encodings. makelocalealias
-    restores the glibc UTF-8 defaults after applying X11 (plus de_li,
-    which has no bare SUPPORTED line).
+
+class TestHardcodedLocaleReplacements(unittest.TestCase):
+    """UTF-8 preferences that override X11 legacy codesets.
+
+    See https://github.com/python/cpython/issues/151316
     """
 
-    REPLACEMENTS = {
-        'az_az': 'az_AZ.UTF-8',
-        'de_li': 'de_LI.UTF-8',
-        'en_il': 'en_IL.UTF-8',
-        'en_in': 'en_IN.UTF-8',
-        'eo': 'eo.UTF-8',
-        'es_cu': 'es_CU.UTF-8',
-        'hi_in': 'hi_IN.UTF-8',
-        'iu_ca': 'iu_CA.UTF-8',
-        'lo_la': 'lo_LA.UTF-8',
-        'nr_za': 'nr_ZA.UTF-8',
-        'nso_za': 'nso_ZA.UTF-8',
-        'rw_rw': 'rw_RW.UTF-8',
-        'ss_za': 'ss_ZA.UTF-8',
-        'ta_in': 'ta_IN.UTF-8',
-        'tn_za': 'tn_ZA.UTF-8',
-        'ts_za': 'ts_ZA.UTF-8',
-        'tt_ru': 'tt_RU.UTF-8',
-        'ur_pk': 'ur_PK.UTF-8',
-        'vi_vn': 'vi_VN.UTF-8',
-    }
+    @support.subTests('key,expected', _UTF8_X11_OVERRIDES)
+    def test_locale_alias_entries(self, key, expected):
+        self.assertEqual(locale.locale_alias[key], expected)
 
-    def test_locale_alias_entries(self):
-        for key, expected in self.REPLACEMENTS.items():
-            with self.subTest(key=key):
-                self.assertEqual(locale.locale_alias[key], expected)
+    @support.subTests('key,expected', _UTF8_X11_OVERRIDES)
+    def test_normalize(self, key, expected):
+        self.assertEqual(locale.normalize(key), expected)
+        self.assertEqual(locale.normalize(key.upper()), expected)
 
-    def test_normalize(self):
-        for key, expected in self.REPLACEMENTS.items():
-            with self.subTest(key=key):
-                self.assertEqual(locale.normalize(key), expected)
-                self.assertEqual(locale.normalize(key.upper()), expected)
-
-    def test_parse_localename(self):
-        for key, expected in self.REPLACEMENTS.items():
-            with self.subTest(key=key):
-                lang, encoding = expected.split('.')
-                self.assertEqual(
-                    locale._parse_localename(key),
-                    (lang, encoding),
-                )
+    @support.subTests('key,expected', _UTF8_X11_OVERRIDES)
+    def test_parse_localename(self, key, expected):
+        lang, encoding = expected.split('.')
+        self.assertEqual(locale._parse_localename(key), (lang, encoding))
 
 
 class TestMiscellaneous(unittest.TestCase):
