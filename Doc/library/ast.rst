@@ -807,6 +807,10 @@ Comprehensions
    comprehensions. ``elt`` (or ``key`` and ``value``) is a single node
    representing the part that will be evaluated for each item.
 
+   For dictionary comprehensions using unpacking, for example
+   ``{**item for item in items}``, the expression to be expanded goes in
+   ``key`` and ``value`` is ``None``.
+
    ``generators`` is a list of :class:`comprehension` nodes.
 
    .. doctest::
@@ -1366,7 +1370,7 @@ Control flow
 
    ``try`` blocks which are followed by ``except*`` clauses. The attributes are the
    same as for :class:`Try` but the :class:`ExceptHandler` nodes in ``handlers``
-   are interpreted as ``except*`` blocks rather then ``except``.
+   are interpreted as ``except*`` blocks rather than ``except``.
 
    .. doctest::
 

@@ -20,6 +20,7 @@ __all__ = ["symtable", "SymbolTableType", "SymbolTable", "Class", "Function", "S
 def symtable(code, filename, compile_type, *, module=None):
     """ Return the toplevel *SymbolTable* for the source code.
 
+    *code* can be a string, a bytes object, or an AST object.
     *filename* is the name of the file with the code
     and *compile_type* is the *compile()* mode argument.
     """

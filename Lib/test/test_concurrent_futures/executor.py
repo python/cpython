@@ -71,21 +71,30 @@ class ExecutorTest:
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_map_exception(self):
-        i = self.executor.map(divmod, [1, 1, 1, 1], [2, 3, 0, 5])
-        self.assertEqual(i.__next__(), (0, 1))
-        self.assertEqual(i.__next__(), (0, 1))
-        with self.assertRaises(ZeroDivisionError):
-            i.__next__()
+        i = self.executor.map(divmod, [5, 5, 5, 5], [2, 3, 0, 5])
+        self.assertEqual(next(i), (2, 1))
+        self.assertEqual(next(i), (1, 2))
+        self.assertRaises(ZeroDivisionError, next, i)
+        self.assertEqual(next(i), (1, 0))
+        self.assertRaises(StopIteration, next, i)
+        self.assertRaises(StopIteration, next, i)
+
+        i = self.executor.map(divmod, [5, 5, 5, 5], [2, 0, 3, 5], chunksize=3)
+        self.assertEqual(next(i), (2, 1))
+        self.assertRaises(ZeroDivisionError, next, i)
+        self.assertEqual(next(i), (1, 2))
+        self.assertEqual(next(i), (1, 0))
+        self.assertRaises(StopIteration, next, i)
+        self.assertRaises(StopIteration, next, i)
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.requires_resource('walltime')
     def test_map_timeout(self):
         results = []
+        i = self.executor.map(time.sleep, [0, 0, 6], timeout=5)
         try:
-            for i in self.executor.map(time.sleep,
-                                       [0, 0, 6],
-                                       timeout=5):
-                results.append(i)
+            for result in i:
+                results.append(result)
         except futures.TimeoutError:
             pass
         else:
@@ -94,6 +103,24 @@ class ExecutorTest:
         # gh-110097: On heavily loaded systems, the launch of the worker may
         # take longer than the specified timeout.
         self.assertIn(results, ([None, None], [None], []))
+
+        # The remaining calls are cancelled, so the iterator is exhausted.
+        self.assertRaises(StopIteration, next, i)
+        self.assertRaises(StopIteration, next, i)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_map_close(self):
+        i = self.executor.map(divmod, [5, 5, 5, 5], [2, 0, 3, 5])
+        self.assertEqual(next(i), (2, 1))
+        i.close()
+        self.assertRaises(StopIteration, next, i)
+        self.assertRaises(StopIteration, next, i)
+
+        i = self.executor.map(divmod, [5, 5, 5, 5], [2, 0, 3, 5], chunksize=3)
+        self.assertEqual(next(i), (2, 1))
+        i.close()
+        self.assertRaises(StopIteration, next, i)
+        self.assertRaises(StopIteration, next, i)
 
     def test_map_buffersize_type_validation(self):
         for buffersize in ("foo", 2.0):
