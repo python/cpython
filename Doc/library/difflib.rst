@@ -186,7 +186,7 @@ Diff generation
    The constructor for this class is:
 
 
-   .. method:: __init__(tabsize=8, wrapcolumn=None, linejunk=None, charjunk=IS_CHARACTER_JUNK, *, autojunk=True):
+   .. method:: __init__(tabsize=8, wrapcolumn=None, linejunk=None, charjunk=IS_CHARACTER_JUNK, *, autojunk=True)
 
       Initializes instance of :class:`HtmlDiff`.
 
