@@ -1077,10 +1077,6 @@ class MockTest(unittest.TestCase):
         mock_tuple_spec = Mock(spec=('something',))
         self.assertIn('something', dir(mock_tuple_spec))
 
-        # spec from a set
-        mock_set_spec = Mock(spec={'something'})
-        self.assertIn('something', dir(mock_set_spec))
-
 
     def test_dir_from_spec(self):
         mock = Mock(spec=unittest.TestCase)

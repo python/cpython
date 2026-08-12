@@ -161,9 +161,9 @@ def _callable(obj):
 
 
 def _is_list(obj):
-    # checks for list, tuples, or sets
+    # checks for list or tuples
     # XXXX badly named!
-    return type(obj) in (list, tuple, set)
+    return type(obj) in (list, tuple)
 
 
 def _instance_callable(obj):

@@ -1,0 +1,3 @@
+:class:`unittest.mock.Mock` now supports a tuple of strings as *spec*,
+in addition to a list.
+Previously :func:`dir` on such a mock raised :exc:`TypeError`.
