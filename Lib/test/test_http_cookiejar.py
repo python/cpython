@@ -2048,30 +2048,33 @@ class LWPCookieTests(unittest.TestCase):
             # we didn't have session cookies in the first place
         self.assertNotEqual(counter["session_before"], 0)
 
-    def test_curl_format(self):
-        # Check compatibility with the curl and Wget cookie file format,
-        # which uses 0 for session cookies (gh-61364).
+    def test_load_session_cookies(self):
+        # curl and Wget write 0 in the expires field for session cookies,
+        # while we write an empty field.  Both should be read (gh-61364).
         filename = os_helper.TESTFN
         self.addCleanup(os_helper.unlink, filename)
         expires = int(time.time() + 3600)
         with open(filename, "w") as f:
             f.write(NETSCAPE_HEADER_TEXT)
-            f.write("www.foo.com\tFALSE\t/\tFALSE\t%u\tfoo1\tbar\n" % expires)
-            f.write("www.foo.com\tFALSE\t/\tFALSE\t0\tfoo2\tbar\n")
-            f.write("www.foo.com\tFALSE\t/\tFALSE\t\tfoo3\tbar\n")
+            f.write("www.foo.com\tFALSE\t/\tFALSE\t%u\tperm\tbar\n" % expires)
+            f.write("www.foo.com\tFALSE\t/\tFALSE\t0\tcurl_session\tbar\n")
+            f.write("www.foo.com\tFALSE\t/\tFALSE\t\tour_session\tbar\n")
 
         c = MozillaCookieJar()
         c.revert(filename)
-        self.assertEqual(len(c), 1)
-        c.revert(filename, ignore_discard=True)
-        self.assertEqual(len(c), 3)
+        self.assertEqual([cookie.name for cookie in c], ["perm"])
 
-        # Session cookies are saved with 0, not with an empty field.
-        c.save(filename, ignore_discard=True)
-        with open(filename) as f:
-            for line in f:
-                if line.strip() and not line.startswith('#'):
-                    self.assertRegex(line.split('\t')[4], r'^\d+$')
+        c = MozillaCookieJar()
+        c.revert(filename, ignore_discard=True)
+        self.assertEqual(sorted(cookie.name for cookie in c),
+                         ["curl_session", "our_session", "perm"])
+        for cookie in c:
+            if cookie.name == "perm":
+                self.assertEqual(cookie.expires, expires)
+                self.assertFalse(cookie.discard)
+            else:
+                self.assertIsNone(cookie.expires)
+                self.assertTrue(cookie.discard)
 
 
 if __name__ == "__main__":

@@ -2109,7 +2109,7 @@ class MozillaCookieJar(FileCookieJar):
                 if cookie.expires is not None:
                     expires = str(cookie.expires)
                 else:
-                    expires = "0"
+                    expires = ""
                 if cookie.value is None:
                     # cookies.txt regards 'Set-Cookie: foo' as a cookie
                     # with no name, whereas http.cookiejar regards it as a
