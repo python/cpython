@@ -1,6 +1,7 @@
 from unittest import mock
 from test import support
 from test.support import socket_helper, control_characters_c0
+from test.support.testcase import ExtraAssertions
 from test.test_httpservers import NoLogRequestHandler
 from unittest import TestCase
 from wsgiref.util import setup_testing_defaults
@@ -122,7 +123,7 @@ def compare_generic_iter(make_it, match):
         raise AssertionError("Too many items from .__next__()", it)
 
 
-class IntegrationTests(TestCase):
+class IntegrationTests(TestCase, ExtraAssertions):
 
     def check_hello(self, out, has_length=True):
         pyver = (python_implementation() + "/" +
@@ -217,51 +218,51 @@ class IntegrationTests(TestCase):
         good_app = input_app("read", 5)
 
         out, err = run_amock(validator(bad_app))
-        self.assertTrue(out.endswith(
+        self.assertEndsWith(out,
              b"A server error occurred.  Please contact the administrator."
-        ))
+        )
 
         self.assertEqual(
             err.splitlines()[-2], "AssertionError"
         )
 
         out, err = run_amock(validator(good_app), b"GET / HTTP/1.0\n\nTest 1\nTest 2\n")
-        self.assertTrue(out.endswith(b"Test "))
+        self.assertEndsWith(out, b"Test ")
 
     def test_wsgi_input_readlines(self):
         bad_app = input_app("readlines", 3, 5)
         good_app = input_app("readlines", 1)
 
         out, err = run_amock(validator(bad_app))
-        self.assertTrue(out.endswith(
+        self.assertEndsWith(out,
             b"A server error occurred.  Please contact the administrator."
-        ))
+        )
         self.assertEqual(
             err.splitlines()[-2], "AssertionError"
         )
         out, err = run_amock(validator(good_app), b"GET / HTTP/1.0\n\nTest Line 1\nTest Line 2\n")
-        self.assertTrue(out.endswith(b"Test Line 1\n"))
+        self.assertEndsWith(out, b"Test Line 1\n")
 
     def test_wsgi_input_readline(self):
         bad_app = input_app("readline", 3, 4)
         good_app = input_app("readline", 2)
 
         out, err = run_amock(validator(bad_app))
-        self.assertTrue(out.endswith(
+        self.assertEndsWith(out,
             b"A server error occurred.  Please contact the administrator."
-        ))
+        )
         self.assertEqual(
             err.splitlines()[-2], "AssertionError"
         )
 
         out, err = run_amock(validator(good_app), b"GET / HTTP/1.0\n\nTest 1\nTest 2\n")
-        self.assertTrue(out.endswith(b"Te"))
+        self.assertEndsWith(out, b"Te")
 
     def test_wsgi_input_close(self):
         app = input_app("close")
         out, err = run_amock(validator(app), b"GET / HTTP/1.0\n\nTest 1\nTest 2\n")
         self.assertEqual(err.splitlines()[-2], 'AssertionError: input.close() must not be called')
-        self.assertTrue(out.endswith(b"A server error occurred.  Please contact the administrator."))
+        self.assertEndsWith(out, b"A server error occurred.  Please contact the administrator.")
 
     def test_wsgi_input_iter(self):
         def app(e,s):
@@ -272,7 +273,7 @@ class IntegrationTests(TestCase):
             return [b';'.join(req)]
 
         out, err = run_amock(validator(app), b"GET / HTTP/1.0\n\nTest 1\nTest 2\n")
-        self.assertTrue(out.endswith(b"Test 1\n;Test 2\n"))
+        self.assertEndsWith(out, b"Test 1\n;Test 2\n")
 
     def test_wsgi_errors_write(self):
         bad_app = errors_app("write", b"Test")
@@ -282,7 +283,7 @@ class IntegrationTests(TestCase):
         self.assertEqual(err.splitlines()[-2], 'AssertionError')
 
         out, err = run_amock(validator(good_app), b"GET / HTTP/1.0\n\n")
-        self.assertTrue(err.startswith("Test"))
+        self.assertStartsWith(err, "Test")
 
     def test_wsgi_errors_writelines(self):
         bad_app = errors_app("writelines", [1, "Test"])
@@ -292,7 +293,7 @@ class IntegrationTests(TestCase):
         self.assertEqual(err.splitlines()[-2], 'AssertionError')
 
         out, err = run_amock(validator(good_app), b"GET / HTTP/1.0\n\n")
-        self.assertTrue(err.startswith("TestTest"))
+        self.assertStartsWith(err, "TestTest")
 
     def test_wsgi_errors_close(self):
         app = errors_app("close")
