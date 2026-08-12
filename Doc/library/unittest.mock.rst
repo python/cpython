@@ -243,7 +243,7 @@ the *new_callable* argument to :func:`patch`.
       allows mocks to pass :func:`isinstance` tests.
 
       .. versionchanged:: next
-         *spec* can now be a tuple of strings.
+         :func:`dir` now works for a mock created with a tuple *spec*.
 
     * *spec_set*: A stricter variant of *spec*. If used, attempting to *set*
       or get an attribute on the mock that isn't on the object passed as
