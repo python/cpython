@@ -1,0 +1,4 @@
+Add the optional *delimiters* parameter in the :class:`csv.Sniffer`
+constructor.  It is used by both :meth:`~csv.Sniffer.sniff` and
+:meth:`~csv.Sniffer.has_header`, and its characters are preferred in the
+given order for breaking ties.
