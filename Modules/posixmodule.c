@@ -4418,7 +4418,7 @@ os_chroot_impl(PyObject *module, path_t *path)
     // rather than returning a permission error.
     if (getuid() != 0) {
         errno = EPERM;
-        return posix_error();
+        return path_error(path);
     }
 #endif
     int res;
