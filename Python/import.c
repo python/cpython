@@ -507,7 +507,7 @@ remove_module(PyThreadState *tstate, PyObject *name)
 Py_ssize_t
 _PyImport_GetNextModuleIndex(void)
 {
-    return _Py_atomic_add_ssize(&LAST_MODULE_INDEX, 1) + 1;
+    return _Py_atomic_add_ssize_relaxed(&LAST_MODULE_INDEX, 1) + 1;
 }
 
 #ifndef NDEBUG
