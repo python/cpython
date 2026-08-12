@@ -9497,9 +9497,7 @@ type_ready(PyTypeObject *type, int initial, int add_subclasses)
 
     stop_readying(type);
 
-    if (add_subclasses) {
-        assert(_PyType_CheckConsistency(type));
-    }
+    assert(_PyType_CheckConsistency(type));
     return 0;
 
 error:
