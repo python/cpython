@@ -1095,17 +1095,6 @@ iterations of the loop.
    where *namei* is the index of name in :attr:`~codeobject.co_names` of the
    :ref:`code object <code-objects>`.
 
-.. opcode:: DELETE_ATTR (namei)
-
-   Implements::
-
-      obj = STACK.pop()
-      del obj.name
-
-   where *namei* is the index of name into :attr:`~codeobject.co_names` of the
-   :ref:`code object <code-objects>`.
-
-
 .. opcode:: STORE_GLOBAL (namei)
 
    Works as :opcode:`STORE_NAME`, but stores the name as a global.
@@ -1910,25 +1899,29 @@ iterations of the loop.
 
    The operand determines which intrinsic function is called:
 
-   +----------------------------------------+-----------------------------------+
-   | Operand                                | Description                       |
-   +========================================+===================================+
-   | ``INTRINSIC_2_INVALID``                | Not valid                         |
-   +----------------------------------------+-----------------------------------+
-   | ``INTRINSIC_PREP_RERAISE_STAR``        | Calculates the                    |
-   |                                        | :exc:`ExceptionGroup` to raise    |
-   |                                        | from a ``try-except*``.           |
-   +----------------------------------------+-----------------------------------+
-   | ``INTRINSIC_TYPEVAR_WITH_BOUND``       | Creates a :class:`typing.TypeVar` |
-   |                                        | with a bound.                     |
-   +----------------------------------------+-----------------------------------+
-   | ``INTRINSIC_TYPEVAR_WITH_CONSTRAINTS`` | Creates a                         |
-   |                                        | :class:`typing.TypeVar` with      |
-   |                                        | constraints.                      |
-   +----------------------------------------+-----------------------------------+
-   | ``INTRINSIC_SET_FUNCTION_TYPE_PARAMS`` | Sets the ``__type_params__``      |
-   |                                        | attribute of a function.          |
-   +----------------------------------------+-----------------------------------+
+   +------------------------------------------+-----------------------------------+
+   | Operand                                  | Description                       |
+   +==========================================+===================================+
+   | ``INTRINSIC_2_INVALID``                  | Not valid                         |
+   +------------------------------------------+-----------------------------------+
+   | ``INTRINSIC_PREP_RERAISE_STAR``          | Calculates the                    |
+   |                                          | :exc:`ExceptionGroup` to raise    |
+   |                                          | from a ``try-except*``.           |
+   +------------------------------------------+-----------------------------------+
+   | ``INTRINSIC_TYPEVAR_WITH_BOUND``         | Creates a :class:`typing.TypeVar` |
+   |                                          | with a bound.                     |
+   +------------------------------------------+-----------------------------------+
+   | ``INTRINSIC_TYPEVAR_WITH_CONSTRAINTS``   | Creates a                         |
+   |                                          | :class:`typing.TypeVar` with      |
+   |                                          | constraints.                      |
+   +------------------------------------------+-----------------------------------+
+   | ``INTRINSIC_SET_FUNCTION_TYPE_PARAMS``   | Sets the ``__type_params__``      |
+   |                                          | attribute of a function.          |
+   +------------------------------------------+-----------------------------------+
+   | ``INTRINSIC_ADD_CONDITIONAL_ANNOTATION`` | Adds an annotation index to the   |
+   |                                          | ``__conditional_annotations__``   |
+   |                                          | set.                              |
+   +------------------------------------------+-----------------------------------+
 
    .. versionadded:: 3.12
 

@@ -2016,6 +2016,8 @@ class HtmlDiff(object):
 
         # change tabs to spaces before it gets more difficult after we insert
         # markup
+        # it also removes trailing newlines, causing some diffs to be missed
+        # see: gh-71896
         fromlines,tolines = self._tab_newline_replace(fromlines,tolines)
 
         # create diffs iterator which generates side by side from/to data
