@@ -4882,6 +4882,9 @@ class TestUopsOptimization(unittest.TestCase):
             for _ in range(n):
                 if not value:
                     return 0
+                # The second check should reuse the exact-int type established by the first guard.
+                if not value:
+                    return 0
             return 1
 
         res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
@@ -4889,24 +4892,9 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_TO_BOOL_INT", uops)
+        self.assertLessEqual(count_ops(ex, "_GUARD_TOS_EXACT_INT"), 1)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 3)
         self.assertIn("_POP_TOP_NOP", uops)
-
-    def test_to_bool_int_guard_elimination(self):
-        def testfunc(loops):
-            num = 0
-            for _ in range(loops):
-                _ = not num
-                a = not num
-            return a
-
-        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
-        self.assertTrue(res)
-        self.assertIsNotNone(ex)
-        to_bool_int_count = [opname for opname in iter_opnames(ex) if opname == "_TO_BOOL_INT"]
-        guard_tos_exact_int_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_TOS_EXACT_INT"]
-        self.assertGreaterEqual(len(to_bool_int_count), 2)
-        self.assertLessEqual(len(guard_tos_exact_int_count), 1)
 
     def test_to_bool_list(self):
         def f(n):
