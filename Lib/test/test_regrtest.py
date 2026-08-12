@@ -28,7 +28,7 @@ from xml.etree import ElementTree
 
 from test.libregrtest.findtests import collect_cases
 from test.libregrtest.filter import set_match_tests
-from test.libregrtest.run_workers import GroupedMultiprocessIterator
+from test.libregrtest.run_workers import MultiprocessIterator
 from test import support
 from test.support import import_helper
 from test.support import os_helper
@@ -2602,36 +2602,36 @@ class FindTestsTestCase(BaseTestCase):
         self.assertIn(testname, skipped)
 
 
-class GroupedMultiprocessIteratorTestCase(unittest.TestCase):
+class MultiprocessIteratorTestCase(unittest.TestCase):
     def test_yields_all_groups_once(self):
         groups = [("mod_a", ("mod_a.A.t1", "mod_a.A.t2")),
                   ("mod_b", ("mod_b.B.t1",))]
-        it = GroupedMultiprocessIterator(iter(groups))
+        it = MultiprocessIterator(iter(groups))
         seen = []
-        while (g := it.next_group()) is not None:
+        while (g := next(it, None)) is not None:
             seen.append(g)
         self.assertEqual(seen, groups)
 
     def test_exhausted_returns_none(self):
-        it = GroupedMultiprocessIterator(iter([]))
-        self.assertIsNone(it.next_group())
+        it = MultiprocessIterator(iter([]))
+        self.assertIsNone(next(it, None))
 
     def test_stop_halts_iteration(self):
         groups = [("mod_a", ("mod_a.A.t1",)), ("mod_b", ("mod_b.B.t1",))]
-        it = GroupedMultiprocessIterator(iter(groups))
-        it.next_group()
+        it = MultiprocessIterator(iter(groups))
+        next(it, None)
         it.stop()
-        self.assertIsNone(it.next_group())
+        self.assertIsNone(next(it, None))
 
     def test_thread_safety_no_duplicate_or_lost_groups(self):
         n = 200
         groups = [(f"mod_{i}", (f"mod_{i}.T.t",)) for i in range(n)]
-        it = GroupedMultiprocessIterator(iter(groups))
+        it = MultiprocessIterator(iter(groups))
         results = []
         results_lock = threading.Lock()
 
         def worker():
-            while (g := it.next_group()) is not None:
+            while (g := next(it, None)) is not None:
                 with results_lock:
                     results.append(g)
 

@@ -93,7 +93,6 @@ def list_cases(tests: TestTuple, *,
                match_tests: TestFilter | None = None,
                test_dir: StrPath | None = None) -> None:
     support.verbose = False
-    set_match_tests(match_tests)
     cases_by_module, skipped = collect_cases(tests, match_tests=match_tests,
                                              test_dir=test_dir)
     for cases in cases_by_module.values():

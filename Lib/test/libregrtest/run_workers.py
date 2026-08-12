@@ -70,27 +70,6 @@ class MultiprocessIterator:
         with self.lock:
             self.tests_iter = None
 
-class GroupedMultiprocessIterator:
-    """Provide test groups safely across multiple worker threads."""
-
-    def __init__(self, groups_iter):
-        self.lock = threading.Lock()
-        self.groups_iter = groups_iter
-
-    def next_group(self):
-        with self.lock:
-            if self.groups_iter is None:
-                return None
-            try:
-                return next(self.groups_iter)
-            except StopIteration:
-                return None
-
-    def stop(self):
-        with self.lock:
-            self.groups_iter = None
-
-
 @dataclasses.dataclass(slots=True, frozen=True)
 class MultiprocessResult:
     result: TestResult
@@ -421,82 +400,40 @@ class WorkerThread(threading.Thread):
         return MultiprocessResult(result, stdout)
 
     def run(self) -> None:
-        if self.runtests.single_process_per_case:
-            self._run_grouped()
-        else:
-            self._run_flat()
-
-    def _run_flat(self) -> None:
-        """Original behavior: one test name (module) per iteration."""
-        assert isinstance(self.pending, MultiprocessIterator)
         fail_fast = self.runtests.fail_fast
         fail_env_changed = self.runtests.fail_env_changed
+        single_process_per_case = self.runtests.single_process_per_case
         try:
-            while not self._stopped:
+            stop = False
+            while not self._stopped and not stop:
                 try:
-                    test_name = next(self.pending)
+                    module_name, case_ids = next(self.pending)
                 except StopIteration:
                     break
 
-                self.start_time = time.monotonic()
-                self.test_name = test_name
-                try:
-                    mp_result = self._runtest(test_name)
-                except WorkerError as exc:
-                    mp_result = exc.mp_result
-                finally:
-                    self.test_name = _NOT_RUNNING
-                mp_result.result.duration = time.monotonic() - self.start_time
-                self.output.put((False, mp_result))
-
-                if mp_result.result.must_stop(fail_fast, fail_env_changed):
-                    break
-        except ExitThread:
-            pass
-        except BaseException:
-            self.output.put((True, traceback.format_exc()))
-        finally:
-            self.output.put(WorkerThreadExited())
-
-    def _run_grouped(self) -> None:
-        """Execute all tests in a group on the same thread before moving on."""
-        assert isinstance(self.pending, GroupedMultiprocessIterator)
-        fail_fast = self.runtests.fail_fast
-        fail_env_changed = self.runtests.fail_env_changed
-        try:
-            while not self._stopped:
-                group = self.pending.next_group()
-                if group is None:
-                    break
-
-                module_name, case_ids = group
-                must_stop = False
+                # All cases of a group run sequentially on this thread
                 for test_name in case_ids:
                     if self._stopped:
                         break
                     self.start_time = time.monotonic()
                     self.test_name = test_name
                     try:
-                        mp_result = self._runtest(test_name, module_name)
+                        mp_result = self._runtest(
+                            test_name,
+                            module_name if single_process_per_case else None)
                     except WorkerError as exc:
                         mp_result = exc.mp_result
                     finally:
                         self.test_name = _NOT_RUNNING
-
-                    mp_result = dataclasses.replace(
-                        mp_result,
-                        result=dataclasses.replace(
-                            mp_result.result,
-                            test_name=test_name,
-                            duration=time.monotonic() - self.start_time))
-
+                    mp_result.result.duration = time.monotonic() - self.start_time
+                    if single_process_per_case:
+                        # Report the test case, not the test module
+                        mp_result.result.test_name = test_name
                     self.output.put((False, mp_result))
-                    if mp_result.result.must_stop(fail_fast, fail_env_changed):
-                        must_stop = True
-                        break
 
-                if must_stop:
-                    break
+                    if mp_result.result.must_stop(fail_fast, fail_env_changed):
+                        stop = True
+                        break
         except ExitThread:
             pass
         except BaseException:
@@ -573,13 +510,7 @@ class RunWorkers:
         self.live_worker_count = 0
 
         self.output: queue.Queue[QueueContent] = queue.Queue()
-        self.pending: MultiprocessIterator | GroupedMultiprocessIterator
-        if runtests.single_process_per_case:
-            groups_iter = runtests.iter_case_groups()
-            self.pending = GroupedMultiprocessIterator(groups_iter)
-        else:
-            tests_iter = runtests.iter_tests()
-            self.pending = MultiprocessIterator(tests_iter)
+        self.pending = MultiprocessIterator(runtests.iter_case_groups())
         self.timeout = runtests.timeout
         if self.timeout is not None:
             # Rely on faulthandler to kill a worker process. This timouet is
