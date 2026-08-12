@@ -2053,7 +2053,8 @@ class MozillaCookieJar(FileCookieJar):
                 assert domain_specified == initial_dot
 
                 discard = False
-                if expires == "":
+                # curl and Wget set expires to 0 for session cookies.
+                if expires == "0" or expires == "":
                     expires = None
                     discard = True
 
