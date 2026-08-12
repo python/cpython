@@ -12,9 +12,16 @@ _winapi = import_helper.import_module('_winapi', required_on=['win'])
 MAXIMUM_WAIT_OBJECTS = 64
 MAXIMUM_BATCHED_WAIT_OBJECTS = (MAXIMUM_WAIT_OBJECTS - 1) ** 2
 
+
+def close_events(events):
+    for handle in events:
+        _winapi.CloseHandle(handle)
+
+
 class WinAPIBatchedWaitForMultipleObjectsTests(unittest.TestCase):
     def _events_waitall_test(self, n):
         evts = [_winapi.CreateEventW(0, False, False, None) for _ in range(n)]
+        self.addCleanup(close_events, evts)
 
         with self.assertRaises(TimeoutError):
             _winapi.BatchedWaitForMultipleObjects(evts, True, 100)
@@ -42,6 +49,7 @@ class WinAPIBatchedWaitForMultipleObjectsTests(unittest.TestCase):
 
     def _events_waitany_test(self, n):
         evts = [_winapi.CreateEventW(0, False, False, None) for _ in range(n)]
+        self.addCleanup(close_events, evts)
 
         with self.assertRaises(TimeoutError):
             _winapi.BatchedWaitForMultipleObjects(evts, False, 100)
@@ -144,7 +152,7 @@ class WinAPITests(unittest.TestCase):
         # Pipe instance is available, so this passes
         _winapi.WaitNamedPipe(pipe_name, 0)
 
-        with open(pipe_name, 'w+b') as pipe2:
+        with open(pipe_name, 'w+b', buffering=0) as pipe2:
             # No instances available, so this times out
             # (WinError 121 does not get mapped to TimeoutError)
             with self.assertRaises(OSError):

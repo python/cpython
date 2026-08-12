@@ -12,7 +12,7 @@
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interpframe.h"   // _PyThreadState_HasStackSpace()
-#include "pycore_object.h"        // _PyType_InitCache(), _Py_ClearImmortal()
+#include "pycore_object.h"        // _Py_ClearImmortal()
 #include "pycore_obmalloc.h"      // _PyMem_obmalloc_state_on_heap()
 #include "pycore_opcode_utils.h"  // NUM_COMMON_CONSTANTS
 #include "pycore_optimizer.h"     // JIT_CLEANUP_THRESHOLD
@@ -420,8 +420,6 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     }
 #endif
 
-    _PyTypes_AfterFork();
-
     _PyThread_AfterFork(&runtime->threads);
 
     return _PyStatus_OK();
@@ -573,7 +571,6 @@ init_interpreter(PyInterpreterState *interp,
     _PyEval_InitState(interp);
     _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
-    _PyType_InitCache(interp);
 #ifdef Py_GIL_DISABLED
     _Py_brc_init_state(interp);
 #endif
@@ -1670,21 +1667,23 @@ new_threadstate(PyInterpreterState *interp, int whence)
         return NULL;
     }
 
-#ifdef Py_GIL_DISABLED
-    Py_ssize_t qsbr_idx = _Py_qsbr_reserve(interp);
-    if (qsbr_idx < 0) {
+#ifdef Py_STATS
+    // The PyStats structure is quite large and is allocated separated from
+    // tstate.
+    if (!_PyStats_ThreadInit(interp, tstate)) {
         free_threadstate(tstate);
         return NULL;
     }
+#endif
+#ifdef Py_GIL_DISABLED
     int32_t tlbc_idx = _Py_ReserveTLBCIndex(interp);
     if (tlbc_idx < 0) {
         free_threadstate(tstate);
         return NULL;
     }
-#endif
-#ifdef Py_STATS
-    // The PyStats structure is quite large and is allocated separated from tstate.
-    if (!_PyStats_ThreadInit(interp, tstate)) {
+    Py_ssize_t qsbr_idx = _Py_qsbr_reserve(interp);
+    if (qsbr_idx < 0) {
+        _Py_UnreserveTLBCIndex(interp, tlbc_idx);
         free_threadstate(tstate);
         return NULL;
     }

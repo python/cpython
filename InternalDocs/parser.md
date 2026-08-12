@@ -545,7 +545,7 @@ by default** except for rules with the special marker `memo` after the rule
 name (and type, if present):
 
 ```
-rule_name[typr] (memo):
+rule_name[return_type] (memo):
   ...
 ```
 
@@ -772,7 +772,7 @@ from them or to perform extra processing on the generated tree.
 > Actions must **never** be used to accept or reject rules. It may be tempting
 > in some situations to write a very generic rule and then check the generated
 > AST to decide whether it is valid or not, but this will render the
-> (official grammar)[https://docs.python.org/3/reference/grammar.html] partially
+> [official grammar](https://docs.python.org/3/reference/grammar.html) partially
 > incorrect (because it does not include actions) and will make it more difficult
 > for other Python implementations to adapt the grammar to their own needs.
 
@@ -860,7 +860,7 @@ $ python -d file_to_test.py
 
 This will print **a lot** of output to `stderr` so it is probably better to dump
 it to a file for further analysis. The output consists of trace lines with the
-following structure::
+following structure:
 
 ```
 <indentation> ('>'|'-'|'+'|'!') <rule_name>[<token_location>]: <alternative> ...
