@@ -1,0 +1,4 @@
+Fix :func:`os.path.splitroot`, :func:`os.path.splitdrive` and
+:func:`os.path.normpath` on Windows raising :exc:`UnicodeDecodeError` for
+:class:`bytes` paths that cannot be decoded with the filesystem encoding.
+Such paths are now split and normalized as bytes, like on other platforms.

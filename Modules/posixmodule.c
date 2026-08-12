@@ -1310,7 +1310,8 @@ get_posix_state(PyObject *module)
  *     yourself!
  *   path.value_error
  *     If nonzero, then suppress_value_error was specified and a ValueError
- *     occurred.
+ *     occurred.  path.wide and path.narrow are NULL in this case, but
+ *     path.object still refers to the original object.
  *   path.length
  *     The length of the path in characters, if specified as
  *     a string.
@@ -1572,12 +1573,12 @@ path_converter(PyObject *o, void *p)
     return Py_CLEANUP_SUPPORTED;
 
  error_exit:
-    Py_XDECREF(o);
     Py_XDECREF(bytes);
     PyMem_Free(wide);
     if (!path->suppress_value_error ||
         !PyErr_ExceptionMatches(PyExc_ValueError))
     {
+        Py_XDECREF(o);
         return 0;
     }
     PyErr_Clear();
@@ -1586,7 +1587,9 @@ path_converter(PyObject *o, void *p)
     path->fd = -1;
     path->value_error = 1;
     path->length = 0;
-    path->object = NULL;
+    /* Keep the original object so that the caller can fall back to another
+       implementation which does not need the converted path. */
+    path->object = o;
     return Py_CLEANUP_SUPPORTED;
 }
 
@@ -6072,10 +6075,34 @@ os__path_isjunction_impl(PyObject *module, path_t *path)
 #endif /* MS_WINDOWS */
 
 
+/* A bytes path which cannot be decoded with the filesystem encoding cannot be
+   handled by the wide character implementations below.  This happens on
+   Windows, where the filesystem error handler is "surrogatepass" rather than
+   "surrogateescape", so bytes which are not valid UTF-8 fail to decode.  Such
+   paths are handled by the pure Python implementation in os.path, which
+   operates on bytes directly. */
+static PyObject *
+path_fallback(const char *attrname, PyObject *path)
+{
+#ifdef MS_WINDOWS
+    const char *modname = "ntpath";
+#else
+    const char *modname = "posixpath";
+#endif
+    PyObject *func = PyImport_ImportModuleAttrString(modname, attrname);
+    if (func == NULL) {
+        return NULL;
+    }
+    PyObject *result = PyObject_CallOneArg(func, path);
+    Py_DECREF(func);
+    return result;
+}
+
+
 /*[clinic input]
 os._path_splitroot_ex
 
-    path: path_t(make_wide=True, nonstrict=True)
+    path: path_t(make_wide=True, nonstrict=True, suppress_value_error=True)
     /
 
 Split a pathname into drive, root and tail.
@@ -6085,10 +6112,14 @@ The tail contains anything after the root.
 
 static PyObject *
 os__path_splitroot_ex_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=4b0072b6cdf4b611 input=012fbfad14888b2b]*/
+/*[clinic end generated code: output=4b0072b6cdf4b611 input=b89b7f547b9ebe09]*/
 {
     Py_ssize_t drvsize, rootsize;
     PyObject *drv = NULL, *root = NULL, *tail = NULL, *result = NULL;
+
+    if (path->value_error) {
+        return path_fallback("_splitroot_fallback", path->object);
+    }
 
     const wchar_t *buffer = path->wide;
     _Py_skiproot(buffer, path->length, &drvsize, &rootsize);
@@ -6131,15 +6162,19 @@ exit:
 /*[clinic input]
 os._path_normpath
 
-    path: path_t(make_wide=True, nonstrict=True)
+    path: path_t(make_wide=True, nonstrict=True, suppress_value_error=True)
 
 Normalize path, eliminating double slashes, etc.
 [clinic start generated code]*/
 
 static PyObject *
 os__path_normpath_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=d353e7ed9410c044 input=3d4ac23b06332dcb]*/
+/*[clinic end generated code: output=d353e7ed9410c044 input=721c48886c26c08b]*/
 {
+    if (path->value_error) {
+        return path_fallback("_normpath_fallback", path->object);
+    }
+
     PyObject *result;
     Py_ssize_t norm_len;
     wchar_t *norm_path = _Py_normpath_and_size((wchar_t *)path->wide,
