@@ -1,0 +1,5 @@
+Add relaxed variants of the _Py_atomic_add functions. The existing add
+operations are sequentially consistent, which is stronger (and on ARM,
+measurably more expensive) than necessary for uses like statistics counters
+and unique ID allocation, where the add must be atomic but does not need to
+order surrounding memory accesses.
