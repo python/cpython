@@ -2048,6 +2048,35 @@ class LWPCookieTests(unittest.TestCase):
             # we didn't have session cookies in the first place
         self.assertNotEqual(counter["session_before"], 0)
 
+    def test_save_session_cookies(self):
+        # Session cookies are saved with 0 in the expiration time field,
+        # as curl and Wget do (gh-61366).
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+        expires = int(time.time() + 3600)
+        c = MozillaCookieJar()
+        c.set_cookie(Cookie(0, "perm", "bar", None, False,
+                            "www.foo.com", True, False, "/", False, False,
+                            expires, False, None, None, {}))
+        c.set_cookie(Cookie(0, "session", "bar", None, False,
+                            "www.foo.com", True, False, "/", False, False,
+                            None, True, None, None, {}))
+        c.save(filename, ignore_discard=True)
+
+        saved = {}
+        with open(filename) as f:
+            for line in f:
+                if line.strip() and not line.startswith("#"):
+                    fields = line.split("\t")
+                    saved[fields[5]] = fields[4]
+        self.assertEqual(saved, {"perm": str(expires), "session": "0"})
+
+        # The saved file can be read back.
+        c = MozillaCookieJar()
+        c.revert(filename, ignore_discard=True)
+        self.assertEqual(sorted(cookie.name for cookie in c),
+                         ["perm", "session"])
+
     def test_load_session_cookies(self):
         # curl and Wget write 0 in the expires field for session cookies,
         # while we write an empty field.  Both should be read (gh-61366).
