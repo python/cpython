@@ -285,7 +285,7 @@ The :mod:`!test.support` module defines the following constants:
    :meth:`~socket.socket.recv` and :meth:`~socket.socket.send` methods of
    :class:`socket.socket`.
 
-   Its default value is 5 seconds.
+   Its default value is 10 seconds.
 
    See also :data:`INTERNET_TIMEOUT`.
 
