@@ -26,14 +26,6 @@ Comparisons are done using a matching algorithm implemented in
 of any type, not just text, so long as the sequence elements are
 :term:`hashable`.
 
-.. versionchanged:: 3.16
-   Exposed *autojunk* parameter of :class:`SequenceMatcher` in public functions
-   and classes of this module (:class:`Differ`, :class:`HtmlDiff`, :func:`ndiff`,
-    :func:`unified_diff`, :func:`context_diff`). For backward compatibility
-   this parameter is set everywhere to be ``True`` by default.
-
-   See :gh:`118150` for motivation and reasons.
-
 
 .. _difflib-junk:
 
