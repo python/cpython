@@ -1,0 +1,423 @@
+.. date: 2025-10-17-01-07-03
+.. gh-issue: 137586
+.. nonce: kVzxvp
+.. release date: 2026-08-12
+.. section: macOS
+
+Invoke :program:`osascript` with absolute path in :mod:`webbrowser` and
+:mod:`!turtledemo`.
+
+..
+
+.. date: 2026-05-13-14-53-23
+.. gh-issue: 149776
+.. nonce: orqgsn
+.. section: Tests
+
+Fix test_socket on Linux kernel 7.1 and newer: skip UDP Lite tests if it's
+not supported. Patch by Victor Stinner.
+
+..
+
+.. date: 2026-08-11-15-24-21
+.. gh-issue: 155558
+.. nonce: yDsXZC
+.. section: Security
+
+Update bundled `libexpat <https://libexpat.github.io/>`_ to version 2.8.3
+for the fix to :cve:`2026-72522`.
+
+..
+
+.. date: 2026-07-04-17-00-00
+.. gh-issue: 153030
+.. nonce: RovkP6
+.. section: Security
+
+Fixed quadratic complexity in incremental parsing of long unterminated
+constructs (such as tags or comments) in :class:`html.parser.HTMLParser`,
+which could be exploited for a denial of service.
+
+..
+
+.. date: 2026-06-30-13-24-13
+.. gh-issue: 152674
+.. nonce: -2QVoL
+.. section: Security
+
+The :class:`xml.etree.ElementTree.Element` methods
+:meth:`~xml.etree.ElementTree.Element.findall`,
+:meth:`~xml.etree.ElementTree.Element.iterfind` and
+:meth:`~xml.etree.ElementTree.Element.find` avoid quadratic behavior when
+using XPath index predicates (``[1]``, ``[last()]``, ``[last()-N]``) on XML
+documents with many same-tag siblings.
+
+..
+
+.. date: 2026-06-25-20-44-20
+.. gh-issue: 152216
+.. nonce: VxiK5y
+.. section: Security
+
+Update bundled `libexpat <https://libexpat.github.io/>`_ to version 2.8.2.
+
+..
+
+.. date: 2026-06-23-14-19-30
+.. gh-issue: 151987
+.. nonce: 8mNIMf
+.. section: Security
+
+The :meth:`tarfile.TarFile.extract` method now applies the given filter when
+it extracts a link target from the archive as a fallback.
+
+..
+
+.. date: 2026-06-23-13-28-16
+.. gh-issue: 151981
+.. nonce: xBHEcU
+.. section: Security
+
+In :mod:`tarfile`, seeking a stream now stops when end of the stream is
+reached.
+
+..
+
+.. date: 2026-06-16-14-58-02
+.. gh-issue: 151544
+.. nonce: _bexVy
+.. section: Security
+
+:file:`Modules/Setup.local` is no longer used as a landmark to discover
+whether Python is running in a source tree, as it could potentially affect
+actual installs. The :file:`pybuilddir.txt` file is now the sole indicator
+of running in a source tree.
+
+..
+
+.. date: 2026-06-10-13-08-19
+.. gh-issue: 151558
+.. nonce: mL74i2
+.. section: Security
+
+Fixed an vulnerability in the :mod:`tarfile` ``data`` and ``tar`` extraction
+filters where crafted archives could create a symlink pointing outside the
+destination directory. This was a bypass of :cve:`2025-4330`.
+
+..
+
+.. date: 2026-05-30-09-36-20
+.. gh-issue: 150599
+.. nonce: nlHqU-
+.. section: Security
+
+Fix a possible stack buffer overflow in :mod:`bz2` when a
+:class:`bz2.BZ2Decompressor` is reused after a decompression error. The
+decompressor now becomes unusable after libbz2 reports an error.
+
+..
+
+.. date: 2026-05-30-00-00-00
+.. gh-issue: 150743
+.. nonce: httpdos
+.. section: Security
+
+:mod:`http.client` now limits the number of chunked-response trailer lines
+it will read to 100, and the number of interim (1xx) responses it will skip
+to 100.  A malicious or broken server could previously stream trailer lines
+or ``100 Continue`` responses forever, hanging the client even when a socket
+timeout was in use. Reported by ``@YLChen-007`` via GHSA-w4q2-g22w-6fr4.
+
+..
+
+.. date: 2026-05-11-21-15-07
+.. gh-issue: 149698
+.. nonce: OudOcW
+.. section: Security
+
+Update bundled `libexpat <https://libexpat.github.io/>`_ to version 2.8.1
+for the fix for :cve:`2026-45186`.
+
+..
+
+.. date: 2026-05-10-18-05-32
+.. gh-issue: 87451
+.. nonce: XkKB6M
+.. section: Security
+
+The :mod:`ftplib` module's undocumented ``ftpcp`` function no longer trusts
+the IPv4 address value returned from the source server in response to the
+``PASV`` command by default, completing the fix for CVE-2021-4189.  As with
+:class:`ftplib.FTP`, the former behavior can be re-enabled by setting the
+``trust_server_pasv_ipv4_address`` attribute on the source
+:class:`ftplib.FTP` instance to ``True``.  Thanks to Qi Deng at Aurascape AI
+for the report.
+
+..
+
+.. date: 2026-05-03-21-00-00
+.. gh-issue: 149486
+.. nonce: tarflt
+.. section: Security
+
+:func:`tarfile.data_filter` now validates link targets using the same
+normalised value that is written to disk, strips trailing separators from
+the member name when resolving a symlink's directory, and rejects link
+members that would replace the destination directory itself. This closes
+several path-traversal bypasses of the ``data`` extraction filter.
+
+..
+
+.. date: 2026-04-27-16-36-11
+.. gh-issue: 149079
+.. nonce: vKl-LM
+.. section: Security
+
+Fix a potential denial of service in :func:`unicodedata.normalize`. The
+canonical ordering step of Unicode normalization used a quadratic-time
+insertion sort for reordering combining characters, which could be exploited
+with crafted input containing many combining characters in non-canonical
+order. Replaced with a linear-time counting sort for long runs.
+
+..
+
+.. date: 2026-04-26-19-30-45
+.. gh-issue: 149018
+.. nonce: a9SqWb
+.. section: Security
+
+Improved protection against XML hash-flooding attacks in
+:mod:`xml.parsers.expat` and :mod:`xml.etree.ElementTree` when Python is
+compiled with libExpat 2.8.0 or later.
+
+..
+
+.. date: 2026-04-26-17-49-58
+.. gh-issue: 149017
+.. nonce: EiVFPo
+.. section: Security
+
+Update bundled `libexpat <https://libexpat.github.io/>`_ to version 2.8.0.
+
+..
+
+.. date: 2026-04-20-15-31-37
+.. gh-issue: 148808
+.. nonce: _Z8JL0
+.. section: Security
+
+Added buffer boundary check when using ``nbytes`` parameter with
+:meth:`!asyncio.AbstractEventLoop.sock_recvfrom_into`. Only relevant for
+Windows and the :class:`asyncio.ProactorEventLoop`.
+
+..
+
+.. date: 2026-04-10-16-28-21
+.. gh-issue: 148395
+.. nonce: kfzm0G
+.. section: Security
+
+Fix a dangling input pointer in :class:`lzma.LZMADecompressor`,
+:class:`bz2.BZ2Decompressor`, and internal :class:`!zlib._ZlibDecompressor`
+when memory allocation fails with :exc:`MemoryError`, which could let a
+subsequent :meth:`!decompress` call read or write through a stale pointer to
+the already-released caller buffer.
+
+..
+
+.. date: 2026-03-31-09-15-51
+.. gh-issue: 148169
+.. nonce: EZJzz2
+.. section: Security
+
+A bypass in :mod:`webbrowser` allowed URLs prefixed with ``%action`` to pass
+the dash-prefix safety check.
+
+..
+
+.. date: 2026-03-29-12-51-33
+.. gh-issue: 146581
+.. nonce: 4vZfB0
+.. section: Security
+
+Fix vulnerability in :func:`shutil.unpack_archive` for ZIP files on Windows
+which allowed to write files outside of the destination tree if the patch in
+the archive contains a Windows drive prefix. Now such invalid paths will be
+skipped. Files containing ".." in the name (like "foo..bar") are no longer
+skipped.
+
+..
+
+.. date: 2026-03-25-00-51-03
+.. gh-issue: 146333
+.. nonce: LqdL__bn
+.. section: Security
+
+Fix quadratic backtracking in :class:`configparser.RawConfigParser` option
+parsing regexes (``OPTCRE`` and ``OPTCRE_NV``). A crafted configuration line
+with many whitespace characters could cause excessive CPU usage.
+
+..
+
+.. date: 2026-03-20-09-29-42
+.. gh-issue: 146211
+.. nonce: PQVbs7
+.. section: Security
+
+Reject CR/LF characters in tunnel request headers for the
+HTTPConnection.set_tunnel() method.
+
+..
+
+.. date: 2026-03-14-17-31-39
+.. gh-issue: 145986
+.. nonce: ifSSr8
+.. section: Security
+
+:mod:`xml.parsers.expat`: Fixed a crash caused by unbounded C recursion when
+converting deeply nested XML content models with
+:meth:`~xml.parsers.expat.xmlparser.ElementDeclHandler`. This addresses
+:cve:`2026-4224`.
+
+..
+
+.. date: 2026-03-06-17-03-38
+.. gh-issue: 145599
+.. nonce: kchwZV
+.. section: Security
+
+Reject control characters in :class:`http.cookies.Morsel`
+:meth:`~http.cookies.Morsel.update` and
+:meth:`~http.cookies.BaseCookie.js_output`. This addresses :cve:`2026-3644`.
+
+..
+
+.. date: 2026-03-04-18-59-17
+.. gh-issue: 145506
+.. nonce: 6hwvEh
+.. section: Security
+
+Fixes :cve:`2026-2297` by ensuring that ``SourcelessFileLoader`` uses
+:func:`io.open_code` when opening ``.pyc`` files.
+
+..
+
+.. date: 2026-01-31-21-56-54
+.. gh-issue: 144370
+.. nonce: fp9m8t
+.. section: Security
+
+Disallow usage of control characters in status in :mod:`wsgiref.handlers` to
+prevent HTTP header injections. Patch by Benedikt Johannes.
+
+..
+
+.. date: 2026-01-16-12-04-49
+.. gh-issue: 143930
+.. nonce: zYC5x3
+.. section: Security
+
+Reject leading dashes in URLs passed to :func:`webbrowser.open`.
+
+..
+
+.. date: 2026-01-16-11-58-19
+.. gh-issue: 143927
+.. nonce: aviFeG
+.. section: Security
+
+Normalize all line endings (CR, CRLF, and LF) to LF+TAB when writing
+multi-line configparser values.
+
+..
+
+.. date: 2026-07-29-11-25-00
+.. gh-issue: 109638
+.. nonce: Vt2Rn9
+.. section: Library
+
+Fix exponential time in :meth:`csv.Sniffer.sniff` for a sample which
+contains many quote characters.  A doubled quote character is now also
+detected in a field which contains the delimiter or a line break.
+
+..
+
+.. date: 2026-07-29-11-20-00
+.. gh-issue: 98820
+.. nonce: Qm7Hs4
+.. section: Library
+
+Fix quadratic time in :meth:`csv.Sniffer.sniff` for a sample which contains
+quoted fields, in particular for a single column of quoted fields.
+
+..
+
+.. date: 2026-05-01-16-45-31
+.. gh-issue: 149231
+.. nonce: x2nBEE
+.. section: Library
+
+In :mod:`tomllib`, the number of parts in TOML keys is now limited.
+
+..
+
+.. date: 2026-03-17-20-52-24
+.. gh-issue: 146083
+.. nonce: NxZa_c
+.. section: Library
+
+Update bundled `libexpat <https://libexpat.github.io/>`_ to version 2.7.5.
+
+..
+
+.. date: 2025-11-18-06-35-53
+.. gh-issue: 141707
+.. nonce: DBmQIy
+.. section: Library
+
+Don't change :class:`tarfile.TarInfo` type from ``AREGTYPE`` to ``DIRTYPE``
+when parsing GNU long name or link headers.
+
+..
+
+.. date: 2025-09-26-18-04-28
+.. gh-issue: 90949
+.. nonce: YHjSzX
+.. section: Library
+
+Add
+:meth:`~xml.parsers.expat.xmlparser.SetBillionLaughsAttackProtectionActivationThreshold`
+and
+:meth:`~xml.parsers.expat.xmlparser.SetBillionLaughsAttackProtectionMaximumAmplification`
+to :ref:`xmlparser <xmlparser-objects>` objects to tune protections against
+`billion laughs <https://en.wikipedia.org/wiki/Billion_laughs_attack>`_
+attacks. Patch by Bénédikt Tran.
+
+..
+
+.. date: 2025-07-01-23-00-58
+.. gh-issue: 136155
+.. nonce: 4siQQO
+.. section: Documentation
+
+We are now checking for fatal errors in EPUB builds in CI.
+
+..
+
+.. date: 2026-05-12-16-47-23
+.. gh-issue: 139808
+.. nonce: iIs7_E
+.. section: Core and Builtins
+
+Add branch protections for AArch64 (BTI/PAC) in assembly code used by
+:option:`-X perf_jit <-X>` (Linux perf profiler integration).
+
+..
+
+.. date: 2026-07-09-22-45-00
+.. gh-issue: 153438
+.. nonce: Qr7N2p
+.. section: Build
+
+Update Windows build and installer tooling and documentation to use the
+current download URL for ``nuget.exe``.
