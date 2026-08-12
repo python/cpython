@@ -100,8 +100,8 @@ The :mod:`!xml.dom` contains the following functions:
    If name is not given, this examines the available implementations to find one
    with the required feature set.  If no implementation can be found, raise an
    :exc:`ImportError`.  The features list must be a sequence of ``(feature,
-   version)`` pairs which are passed to the :meth:`hasFeature` method on available
-   :class:`DOMImplementation` objects.
+   version)`` pairs which are passed to the :meth:`~DOMImplementation.hasFeature`
+   method on available :class:`DOMImplementation` objects.
 
 Some convenience constants are also provided:
 
@@ -109,8 +109,8 @@ Some convenience constants are also provided:
 .. data:: EMPTY_NAMESPACE
 
    The value used to indicate that no namespace is associated with a node in the
-   DOM.  This is typically found as the :attr:`namespaceURI` of a node, or used as
-   the *namespaceURI* parameter to a namespaces-specific method.
+   DOM.  This is typically found as the :attr:`~Node.namespaceURI` of a node, or
+   used as the *namespaceURI* parameter to a namespaces-specific method.
 
 
 .. data:: XML_NAMESPACE
@@ -137,7 +137,7 @@ exception classes.  The :class:`Node` class provided by this module does not
 implement any of the methods or attributes defined by the DOM specification;
 concrete DOM implementations must provide those.  The :class:`Node` class
 provided as part of this module does provide the constants used for the
-:attr:`nodeType` attribute on concrete :class:`Node` objects; they are located
+:attr:`~Node.nodeType` attribute on concrete :class:`Node` objects; they are located
 within the class rather than at the module level to conform with the DOM
 specifications.
 
@@ -245,11 +245,25 @@ All of the components of an XML document are subclasses of :class:`Node`.
 .. attribute:: Node.nodeType
 
    An integer representing the node type.  Symbolic constants for the types are on
-   the :class:`Node` object: :const:`ELEMENT_NODE`, :const:`ATTRIBUTE_NODE`,
-   :const:`TEXT_NODE`, :const:`CDATA_SECTION_NODE`, :const:`ENTITY_NODE`,
-   :const:`PROCESSING_INSTRUCTION_NODE`, :const:`COMMENT_NODE`,
-   :const:`DOCUMENT_NODE`, :const:`DOCUMENT_TYPE_NODE`, :const:`NOTATION_NODE`.
+   the :class:`Node` object.
    This is a read-only attribute.
+
+
+.. data:: Node.ELEMENT_NODE
+          Node.ATTRIBUTE_NODE
+          Node.TEXT_NODE
+          Node.CDATA_SECTION_NODE
+          Node.ENTITY_REFERENCE_NODE
+          Node.ENTITY_NODE
+          Node.PROCESSING_INSTRUCTION_NODE
+          Node.COMMENT_NODE
+          Node.DOCUMENT_NODE
+          Node.DOCUMENT_TYPE_NODE
+          Node.DOCUMENT_FRAGMENT_NODE
+          Node.NOTATION_NODE
+
+   Integer constants for the possible values
+   of the :attr:`~Node.nodeType` attribute.
 
 
 .. attribute:: Node.parentNode
@@ -304,14 +318,14 @@ All of the components of an XML document are subclasses of :class:`Node`.
 
 .. attribute:: Node.localName
 
-   The part of the :attr:`tagName` following the colon if there is one, else the
-   entire :attr:`tagName`.  The value is a string.
+   The part of the :attr:`~Element.tagName` following the colon if there is one,
+   else the entire :attr:`~Element.tagName`.  The value is a string.
 
 
 .. attribute:: Node.prefix
 
-   The part of the :attr:`tagName` preceding the colon if there is one, else the
-   empty string.  The value is a string, or ``None``.
+   The part of the :attr:`~Element.tagName` preceding the colon if there is one,
+   else the empty string.  The value is a string, or ``None``.
 
 
 .. attribute:: Node.namespaceURI
@@ -352,9 +366,10 @@ All of the components of an XML document are subclasses of :class:`Node`.
 
    This has a different meaning for each node type; see the DOM specification for
    details.  You can always get the information you would get here from another
-   property such as the :attr:`tagName` property for elements or the :attr:`name`
-   property for attributes. For all node types, the value of this attribute will be
-   either a string or ``None``.  This is a read-only attribute.
+   property such as the :attr:`~Element.tagName` property for elements or the
+   :attr:`~Attr.name` property for attributes. For all node types, the value of
+   this attribute will be either a string or ``None``.
+   This is a read-only attribute.
 
 
 .. attribute:: Node.nodeValue
@@ -407,7 +422,8 @@ All of the components of an XML document are subclasses of :class:`Node`.
 
    Remove a child node.  *oldChild* must be a child of this node; if not,
    :exc:`ValueError` is raised.  *oldChild* is returned on success.  If *oldChild*
-   will not be used further, its :meth:`unlink` method should be called.
+   will not be used further, its :meth:`~xml.dom.minidom.Node.unlink` method
+   should be called.
 
 
 .. method:: Node.replaceChild(newChild, oldChild)
@@ -439,9 +455,9 @@ NodeList Objects
 
 A :class:`NodeList` represents a sequence of nodes.  These objects are used in
 two ways in the DOM Core recommendation:  an :class:`Element` object provides
-one as its list of child nodes, and the :meth:`getElementsByTagName` and
-:meth:`getElementsByTagNameNS` methods of :class:`Node` return objects with this
-interface to represent query results.
+one as its list of child nodes, and the :meth:`~Element.getElementsByTagName`
+and :meth:`~Element.getElementsByTagNameNS` methods of :class:`Node` return
+objects with this interface to represent query results.
 
 The DOM Level 2 recommendation defines one method and one attribute for these
 objects:
@@ -482,9 +498,9 @@ DocumentType Objects
 Information about the notations and entities declared by a document (including
 the external subset if the parser uses it and can provide the information) is
 available from a :class:`DocumentType` object.  The :class:`DocumentType` for a
-document is available from the :class:`Document` object's :attr:`doctype`
+document is available from the :class:`Document` object's :attr:`~Document.doctype`
 attribute; if there is no ``DOCTYPE`` declaration for the document, the
-document's :attr:`doctype` attribute will be set to ``None`` instead of an
+document's :attr:`~Document.doctype` attribute will be set to ``None`` instead of an
 instance of this interface.
 
 :class:`DocumentType` is a specialization of :class:`Node`, and adds the
@@ -596,7 +612,7 @@ inherits properties from :class:`Node`.
 
    Create and return a new element node.  The element is not inserted into the
    document when it is created.  You need to explicitly insert it with one of the
-   other methods such as :meth:`insertBefore` or :meth:`appendChild`.
+   other methods such as :meth:`~Node.insertBefore` or :meth:`~Node.appendChild`.
 
 
 .. method:: Document.createElementNS(namespaceURI, tagName)
@@ -604,7 +620,7 @@ inherits properties from :class:`Node`.
    Create and return a new element with a namespace.  The *tagName* may have a
    prefix.  The element is not inserted into the document when it is created.  You
    need to explicitly insert it with one of the other methods such as
-   :meth:`insertBefore` or :meth:`appendChild`.
+   :meth:`~Node.insertBefore` or :meth:`~Node.appendChild`.
 
 
 .. method:: Document.createTextNode(data)
@@ -632,15 +648,15 @@ inherits properties from :class:`Node`.
 
    Create and return an attribute node.  This method does not associate the
    attribute node with any particular element.  You must use
-   :meth:`setAttributeNode` on the appropriate :class:`Element` object to use the
-   newly created attribute instance.
+   :meth:`~Element.setAttributeNode` on the appropriate :class:`Element` object
+   to use the newly created attribute instance.
 
 
 .. method:: Document.createAttributeNS(namespaceURI, qualifiedName)
 
    Create and return an attribute node with a namespace.  The *tagName* may have a
    prefix.  This method does not associate the attribute node with any particular
-   element.  You must use :meth:`setAttributeNode` on the appropriate
+   element.  You must use :meth:`~Element.setAttributeNode` on the appropriate
    :class:`Element` object to use the newly created attribute instance.
 
 
@@ -783,17 +799,18 @@ of that class.
 .. method:: Element.setAttributeNode(newAttr)
 
    Add a new attribute node to the element, replacing an existing attribute if
-   necessary if the :attr:`name` attribute matches.  If a replacement occurs, the
-   old attribute node will be returned.  If *newAttr* is already in use,
+   necessary if the :attr:`~Attr.name` attribute matches.  If a replacement
+   occurs, the old attribute node will be returned.  If *newAttr* is already in use,
    :exc:`InuseAttributeErr` will be raised.
 
 
 .. method:: Element.setAttributeNodeNS(newAttr)
 
    Add a new attribute node to the element, replacing an existing attribute if
-   necessary if the :attr:`namespaceURI` and :attr:`localName` attributes match.
-   If a replacement occurs, the old attribute node will be returned.  If *newAttr*
-   is already in use, :exc:`InuseAttributeErr` will be raised.
+   necessary if the :attr:`~Node.namespaceURI` and :attr:`~Attr.localName`
+   attributes match.  If a replacement occurs, the old attribute node will be
+   returned.  If *newAttr* is already in use, :exc:`InuseAttributeErr` will be
+   raised.
 
 
 .. method:: Element.setAttributeNS(namespaceURI, qname, value)
@@ -850,7 +867,7 @@ Attr Objects
 .. attribute:: Attr.value
 
    The text value of the attribute.  This is a synonym for the
-   :attr:`nodeValue` attribute.
+   :attr:`~Node.nodeValue` attribute.
 
 
 .. _dom-attributelist-objects:
@@ -873,7 +890,7 @@ NamedNodeMap Objects
 
    Return an attribute with a particular index.  The order you get the attributes
    in is arbitrary but will be consistent for the life of a DOM.  Each item is an
-   attribute node.  Get its value with the :attr:`value` attribute.
+   attribute node.  Get its value with the :attr:`~Attr.value` attribute.
 
 
 .. method:: NamedNodeMap.getNamedItem(name)
@@ -1019,7 +1036,7 @@ The :class:`Text` interface represents text in the XML document.  If the parser
 and DOM implementation support the DOM's XML extension, portions of the text
 enclosed in CDATA marked sections are stored in :class:`CDATASection` objects.
 These two interfaces are identical, but provide different values for the
-:attr:`nodeType` attribute.
+:attr:`~Node.nodeType` attribute.
 
 These interfaces extend the :class:`CharacterData` interface.
 
@@ -1194,48 +1211,59 @@ attribute.
    .. XXX  how is this different from InvalidCharacterErr?
 
 
+.. exception:: ValidationErr
+
+   Raised when an operation would make the document invalid
+   with respect to partial validity.
+   This is not known to be used in the Python DOM implementations,
+   but may be received from DOM implementations not written in Python.
+
+
 .. exception:: WrongDocumentErr
 
    Raised when a node is inserted in a different document than it currently belongs
    to, and the implementation does not support migrating the node from one document
    to the other.
 
+
 The exception codes defined in the DOM recommendation map to the exceptions
 described above according to this table:
 
-+--------------------------------------+---------------------------------+
-| Constant                             | Exception                       |
-+======================================+=================================+
-| :const:`DOMSTRING_SIZE_ERR`          | :exc:`DomstringSizeErr`         |
-+--------------------------------------+---------------------------------+
-| :const:`HIERARCHY_REQUEST_ERR`       | :exc:`HierarchyRequestErr`      |
-+--------------------------------------+---------------------------------+
-| :const:`INDEX_SIZE_ERR`              | :exc:`IndexSizeErr`             |
-+--------------------------------------+---------------------------------+
-| :const:`INUSE_ATTRIBUTE_ERR`         | :exc:`InuseAttributeErr`        |
-+--------------------------------------+---------------------------------+
-| :const:`INVALID_ACCESS_ERR`          | :exc:`InvalidAccessErr`         |
-+--------------------------------------+---------------------------------+
-| :const:`INVALID_CHARACTER_ERR`       | :exc:`InvalidCharacterErr`      |
-+--------------------------------------+---------------------------------+
-| :const:`INVALID_MODIFICATION_ERR`    | :exc:`InvalidModificationErr`   |
-+--------------------------------------+---------------------------------+
-| :const:`INVALID_STATE_ERR`           | :exc:`InvalidStateErr`          |
-+--------------------------------------+---------------------------------+
-| :const:`NAMESPACE_ERR`               | :exc:`NamespaceErr`             |
-+--------------------------------------+---------------------------------+
-| :const:`NOT_FOUND_ERR`               | :exc:`NotFoundErr`              |
-+--------------------------------------+---------------------------------+
-| :const:`NOT_SUPPORTED_ERR`           | :exc:`NotSupportedErr`          |
-+--------------------------------------+---------------------------------+
-| :const:`NO_DATA_ALLOWED_ERR`         | :exc:`NoDataAllowedErr`         |
-+--------------------------------------+---------------------------------+
-| :const:`NO_MODIFICATION_ALLOWED_ERR` | :exc:`NoModificationAllowedErr` |
-+--------------------------------------+---------------------------------+
-| :const:`SYNTAX_ERR`                  | :exc:`SyntaxErr`                |
-+--------------------------------------+---------------------------------+
-| :const:`WRONG_DOCUMENT_ERR`          | :exc:`WrongDocumentErr`         |
-+--------------------------------------+---------------------------------+
++---------------------------------------+---------------------------------+
+| Constant                              | Exception                       |
++=======================================+=================================+
+| .. data:: DOMSTRING_SIZE_ERR          | :exc:`DomstringSizeErr`         |
++---------------------------------------+---------------------------------+
+| .. data:: HIERARCHY_REQUEST_ERR       | :exc:`HierarchyRequestErr`      |
++---------------------------------------+---------------------------------+
+| .. data:: INDEX_SIZE_ERR              | :exc:`IndexSizeErr`             |
++---------------------------------------+---------------------------------+
+| .. data:: INUSE_ATTRIBUTE_ERR         | :exc:`InuseAttributeErr`        |
++---------------------------------------+---------------------------------+
+| .. data:: INVALID_ACCESS_ERR          | :exc:`InvalidAccessErr`         |
++---------------------------------------+---------------------------------+
+| .. data:: INVALID_CHARACTER_ERR       | :exc:`InvalidCharacterErr`      |
++---------------------------------------+---------------------------------+
+| .. data:: INVALID_MODIFICATION_ERR    | :exc:`InvalidModificationErr`   |
++---------------------------------------+---------------------------------+
+| .. data:: INVALID_STATE_ERR           | :exc:`InvalidStateErr`          |
++---------------------------------------+---------------------------------+
+| .. data:: NAMESPACE_ERR               | :exc:`NamespaceErr`             |
++---------------------------------------+---------------------------------+
+| .. data:: NOT_FOUND_ERR               | :exc:`NotFoundErr`              |
++---------------------------------------+---------------------------------+
+| .. data:: NOT_SUPPORTED_ERR           | :exc:`NotSupportedErr`          |
++---------------------------------------+---------------------------------+
+| .. data:: NO_DATA_ALLOWED_ERR         | :exc:`NoDataAllowedErr`         |
++---------------------------------------+---------------------------------+
+| .. data:: NO_MODIFICATION_ALLOWED_ERR | :exc:`NoModificationAllowedErr` |
++---------------------------------------+---------------------------------+
+| .. data:: SYNTAX_ERR                  | :exc:`SyntaxErr`                |
++---------------------------------------+---------------------------------+
+| .. data:: VALIDATION_ERR              | :exc:`ValidationErr`            |
++---------------------------------------+---------------------------------+
+| .. data:: WRONG_DOCUMENT_ERR          | :exc:`WrongDocumentErr`         |
++---------------------------------------+---------------------------------+
 
 
 .. _dom-conformance:
@@ -1307,6 +1335,6 @@ considered unnecessary since the attributes are accessible directly from Python.
 
 The IDL definitions do not fully embody the requirements of the W3C DOM API,
 such as the notion of certain objects, such as the return value of
-:meth:`getElementsByTagName`, being "live".  The Python DOM API does not require
-implementations to enforce such requirements.
+:meth:`~Element.getElementsByTagName`, being "live".  The Python DOM API does
+not require implementations to enforce such requirements.
 
