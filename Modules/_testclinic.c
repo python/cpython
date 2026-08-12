@@ -1238,6 +1238,24 @@ posonly_poskw_varpos_array_impl(PyObject *module, PyObject *a, PyObject *b,
 
 
 /*[clinic input]
+only_group
+
+    [
+    a: object
+    ]
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+only_group_impl(PyObject *module, int group_right_1, PyObject *a)
+/*[clinic end generated code: output=e92d6c85b72a5897 input=7aca574206712a42]*/
+{
+    return pack_arguments_newref(2, group_right_1 ? Py_True : Py_False, a);
+}
+
+
+/*[clinic input]
 group_and_opt
 
     [
@@ -2553,6 +2571,7 @@ static PyMethodDef tester_methods[] = {
     POSONLY_VARPOS_ARRAY_METHODDEF
     POSONLY_REQ_OPT_VARPOS_ARRAY_METHODDEF
     POSONLY_POSKW_VARPOS_ARRAY_METHODDEF
+    ONLY_GROUP_METHODDEF
     GROUP_AND_OPT_METHODDEF
     GROUP_AND_TWO_OPT_METHODDEF
     TWO_GROUPS_ON_LEFT_METHODDEF

@@ -537,6 +537,11 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(str(cc), 'z')
         self.assertEqual(cc.attr, 0)
         self.assertEqual(cc.pair, 0)
+        # attr never carries the color pair.
+        self.assertEqual(curses.complexchar('A', 0, 1).attr, 0)
+        self.assertEqual(curses.complexchar('A', curses.A_BOLD, 1).attr,
+                         curses.A_BOLD)
+        self.assertEqual(curses.complexchar('A', 0, 1).pair, 1)
         # Immutable rendition.
         self.assertRaises(AttributeError, setattr, cc, 'attr', 1)
         self.assertRaises(AttributeError, setattr, cc, 'pair', 1)
@@ -592,7 +597,7 @@ class TestCurses(unittest.TestCase):
         stdscr.addch(0, 0, curses.complexchar('A', curses.A_BOLD, 1))
         cc = stdscr.in_wch(0, 0)
         self.assertEqual(str(cc), 'A')
-        self.assertTrue(cc.attr & curses.A_BOLD)
+        self.assertEqual(cc.attr, curses.A_BOLD)
         self.assertEqual(cc.pair, 1)
         self.assertEqual(curses.complexchar('A', 0, 1).pair, 1)
 
