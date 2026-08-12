@@ -161,10 +161,10 @@ def decode(ew):
     This function expects exactly such a string (that is, it does not check the
     syntax and may raise errors if the string is not well formed), and returns
     the encoded_string decoded first from its Content Transfer Encoding and
-    then from the resulting bytes into unicode using the specified charset.  If
-    the cte-decoded string does not successfully decode using the specified
+    then from the resulting bytes into a string using the specified charset.
+    If the cte-decoded string does not successfully decode using the specified
     character set, a defect is added to the defects list and the unknown octets
-    are replaced by the unicode 'unknown' character \\uFDFF.
+    are replaced by the Unicode 'unknown' character \\uFDFF.
 
     The specified charset and language are returned.  The default for language,
     which is rarely if ever encountered, is the empty string.
@@ -176,7 +176,7 @@ def decode(ew):
     # Recover the original bytes and do CTE decoding.
     bstring = cte_string.encode('ascii', 'surrogateescape')
     bstring, defects = _cte_decoders[cte](bstring)
-    # Turn the CTE decoded bytes into unicode.
+    # Turn the CTE decoded bytes into a string.
     try:
         string = bstring.decode(charset)
     except UnicodeDecodeError:
