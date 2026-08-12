@@ -1,4 +1,4 @@
-/* 5de44e6750c6cc78818f06ed552f522a1241df0299395250e1792cb339389daf (2.8.2+)
+/* ee5f82c3ffd57c5224394ba46f348dbce466d34d6c925a527ae46b1cfe6adf1d (2.8.3+)
                             __  __            _
                          ___\ \/ /_ __   __ _| |_
                         / _ \\  /| '_ \ / _` | __|
@@ -50,6 +50,7 @@
    Copyright (c) 2026      Nick Begg <nick@stunttruck.net>
    Copyright (c) 2026      Kartik Kenchi <netliomax25@gmail.com>
    Copyright (c) 2026      Haris Hussain <hextheshadow0x@gmail.com>
+   Copyright (c) 2026      Evgeny Kotkov <kotkov@apache.org>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -70,6 +71,8 @@
    DAMAGES OR  OTHER LIABILITY, WHETHER  IN AN  ACTION OF CONTRACT,  TORT OR
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+   SPDX-License-Identifier: MIT
 */
 
 #define XML_BUILDING_EXPAT 1
@@ -93,10 +96,10 @@
 #include <stddef.h>
 #include <string.h> /* memset(), memcpy() */
 #include <assert.h>
-#include <limits.h> /* INT_MAX, LLONG_MAX, LONG_MAX, UINT_MAX */
+#include <limits.h> /* INT_MAX, UINT_MAX */
 #include <stdio.h>  /* fprintf */
 #include <stdlib.h> /* getenv */
-#include <stdint.h> /* SIZE_MAX, uintptr_t */
+#include <stdint.h> /* SIZE_MAX, UINT64_MAX, uint64_t, uintptr_t */
 #include <math.h>   /* isnan */
 #include <errno.h>
 
@@ -209,12 +212,6 @@ typedef char ICHAR;
 #  define XML_T(x) x
 #  define XML_L(x) x
 
-#endif
-
-#ifdef XML_LARGE_SIZE
-#  define XML_INDEX_MAX LLONG_MAX
-#else
-#  define XML_INDEX_MAX LONG_MAX
 #endif
 
 /* Round up n to be a multiple of sz, where sz is a power of 2. */
@@ -719,7 +716,7 @@ struct XML_ParserStruct {
   char *m_bufferEnd;       // past last character to be parsed
   const char *m_bufferLim; // allocated end of m_buffer
 
-  XML_Index m_parseEndByteIndex;
+  uint64_t m_parseEndByteIndex;
   const char *m_parseEndPtr;
   size_t m_partialTokenBytesBefore; /* used in heuristic to avoid O(n^2) */
   XML_Bool m_reparseDeferralEnabled;
@@ -2312,7 +2309,7 @@ XML_Parse(XML_Parser parser, const char *s, int len, int isFinal) {
     int nLeftOver;
     enum XML_Status result;
     /* Detect overflow (a+b > MAX <==> b > MAX-a) */
-    if (len > XML_INDEX_MAX - parser->m_parseEndByteIndex) {
+    if ((uint64_t)len > UINT64_MAX - parser->m_parseEndByteIndex) {
       parser->m_errorCode = XML_ERROR_NO_MEMORY;
       parser->m_eventPtr = parser->m_eventEndPtr = NULL;
       parser->m_processor = errorProcessor;
@@ -2430,7 +2427,7 @@ XML_ParseBuffer(XML_Parser parser, int len, int isFinal) {
   }
 
   // Detect and avoid integer overflow
-  if (len > XML_INDEX_MAX - parser->m_parseEndByteIndex) {
+  if ((uint64_t)len > UINT64_MAX - parser->m_parseEndByteIndex) {
     parser->m_errorCode = XML_ERROR_NO_MEMORY;
     parser->m_eventPtr = parser->m_eventEndPtr = NULL;
     parser->m_processor = errorProcessor;
@@ -2692,9 +2689,15 @@ XML_Index XMLCALL
 XML_GetCurrentByteIndex(XML_Parser parser) {
   if (parser == NULL)
     return -1;
-  if (parser->m_eventPtr)
+  if (parser->m_eventPtr) {
+    // NOTE: XML_Index is known to wrap around for >2 GiB content
+    //       on 32bit machines and 64bit Windows, unless (non-default and
+    //       uncommon) XML_LARGE_SIZE is defined.
+    //       That's a bug and it only lives on because we cannot break
+    //       ABI compatibility of public API.
     return (XML_Index)(parser->m_parseEndByteIndex
                        - (parser->m_parseEndPtr - parser->m_eventPtr));
+  }
   return -1;
 }
 
@@ -2736,7 +2739,12 @@ XML_GetCurrentLineNumber(XML_Parser parser) {
                       parser->m_eventPtr, &parser->m_position);
     parser->m_positionPtr = parser->m_eventPtr;
   }
-  return parser->m_position.lineNumber + 1;
+  // NOTE: XML_Size is known to wrap around for >2 4iB content
+  //       on 32bit machines and 64bit Windows, unless (non-default and
+  //       uncommon) XML_LARGE_SIZE is defined.
+  //       That's a bug and it only lives on because we cannot break
+  //       ABI compatibility of public API.
+  return (XML_Size)(parser->m_position.lineNumber + 1);
 }
 
 XML_Size XMLCALL
@@ -2748,7 +2756,12 @@ XML_GetCurrentColumnNumber(XML_Parser parser) {
                       parser->m_eventPtr, &parser->m_position);
     parser->m_positionPtr = parser->m_eventPtr;
   }
-  return parser->m_position.columnNumber;
+  // NOTE: XML_Size is known to wrap around for >2 4iB content
+  //       on 32bit machines and 64bit Windows, unless (non-default and
+  //       uncommon) XML_LARGE_SIZE is defined.
+  //       That's a bug and it only lives on because we cannot break
+  //       ABI compatibility of public API.
+  return (XML_Size)parser->m_position.columnNumber;
 }
 
 void XMLCALL
@@ -3905,14 +3918,22 @@ storeAtts(XML_Parser parser, const ENCODING *enc, const char *attStr,
     if (! attId)
       return XML_ERROR_NO_MEMORY;
 #ifdef XML_ATTR_INFO
+    // NOTE: XML_Index is known to wrap around for >2 GiB content
+    //       on 32bit machines and 64bit Windows, unless (non-default and
+    //       uncommon) XML_LARGE_SIZE is defined.
+    //       That's a bug and it only lives on because we cannot break
+    //       ABI compatibility of public API.
     currAttInfo->nameStart
-        = parser->m_parseEndByteIndex - (parser->m_parseEndPtr - currAtt->name);
+        = (XML_Index)(parser->m_parseEndByteIndex
+                      - (parser->m_parseEndPtr - currAtt->name));
     currAttInfo->nameEnd
         = currAttInfo->nameStart + XmlNameLength(enc, currAtt->name);
-    currAttInfo->valueStart = parser->m_parseEndByteIndex
-                              - (parser->m_parseEndPtr - currAtt->valuePtr);
-    currAttInfo->valueEnd = parser->m_parseEndByteIndex
-                            - (parser->m_parseEndPtr - currAtt->valueEnd);
+    currAttInfo->valueStart
+        = (XML_Index)(parser->m_parseEndByteIndex
+                      - (parser->m_parseEndPtr - currAtt->valuePtr));
+    currAttInfo->valueEnd
+        = (XML_Index)(parser->m_parseEndByteIndex
+                      - (parser->m_parseEndPtr - currAtt->valueEnd));
 #endif
     /* Detect duplicate attributes by their QNames. This does not work when
        namespace processing is turned on and different prefixes for the same
@@ -6554,11 +6575,12 @@ storeAttributeValue(XML_Parser parser, const ENCODING *enc, XML_Bool isCdata,
         // Check if entity is complete, if not, mark down how much of it is
         // processed. A XML_SUSPENDED check here is not required as
         // appendAttributeValue will never suspend the parser.
-        if (textEnd != nextInEntity) {
+        if (nextInEntity < textEnd) {
           entity->processed
               = (int)(nextInEntity - (const char *)entity->textPtr);
           continue;
         }
+        assert(nextInEntity == textEnd);
 
         // Entity is complete. We cannot close it here since we need to first
         // process its possible inner entities (which are added to the
@@ -8192,7 +8214,7 @@ poolGrow(STRING_POOL *pool) {
       pool->freeBlocks = tem;
       memcpy(pool->blocks->s, pool->start,
              (pool->end - pool->start) * sizeof(XML_Char));
-      pool->ptr = pool->blocks->s + (pool->ptr - pool->start);
+      pool->ptr = pool->blocks->s + EXPAT_SAFE_PTR_DIFF(pool->ptr, pool->start);
       pool->start = pool->blocks->s;
       pool->end = pool->start + pool->blocks->size;
       return XML_TRUE;
@@ -8205,7 +8227,8 @@ poolGrow(STRING_POOL *pool) {
 
     /* NOTE: Needs to be calculated prior to calling `realloc`
              to avoid dangling pointers: */
-    const ptrdiff_t offsetInsideBlock = pool->ptr - pool->start;
+    const ptrdiff_t offsetInsideBlock
+        = EXPAT_SAFE_PTR_DIFF(pool->ptr, pool->start);
 
     if (blockSize < 0) {
       /* This condition traps a situation where either more than
@@ -8268,8 +8291,9 @@ poolGrow(STRING_POOL *pool) {
     tem->next = pool->blocks;
     pool->blocks = tem;
     if (pool->ptr != pool->start)
-      memcpy(tem->s, pool->start, (pool->ptr - pool->start) * sizeof(XML_Char));
-    pool->ptr = tem->s + (pool->ptr - pool->start);
+      memcpy(tem->s, pool->start,
+             EXPAT_SAFE_PTR_DIFF(pool->ptr, pool->start) * sizeof(XML_Char));
+    pool->ptr = tem->s + EXPAT_SAFE_PTR_DIFF(pool->ptr, pool->start);
     pool->start = tem->s;
     pool->end = tem->s + blockSize;
   }
