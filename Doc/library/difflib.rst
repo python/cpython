@@ -150,9 +150,9 @@ Diff generation
       .. versionchanged:: 3.16
          Added keyword-only *autojunk* parameter.
 
-      *autojunk*: Setting this option to ``False`` will switch off
-      an :ref:`automatic junk heuristic <difflib-junk>`
-      of :class:`SequenceMatcher`.
+      Setting the optional *autojunk* argument to ``False`` will turn
+      :ref:`automatic junk heuristic <difflib-junk>` off.
+
 
 
    :class:`Differ` objects are used (deltas generated) via a single method:
@@ -203,9 +203,9 @@ Diff generation
       .. versionchanged:: 3.16
          Added keyword-only *autojunk* parameter.
 
-      *autojunk* flag is for setting on/off
-      an :ref:`automatic junk heuristic <difflib-junk>`
-      of :class:`SequenceMatcher`.
+      Setting the optional *autojunk* argument to ``False`` will turn
+      :ref:`automatic junk heuristic <difflib-junk>` off.
+
 
    The following methods are public:
 
@@ -316,8 +316,8 @@ Diff generation
    .. versionchanged:: 3.16
       Added keyword-only *autojunk* parameter.
 
-   Optional *autojunk* param is a flag for turning on/off
-   an :ref:`automatic junk heuristic <difflib-junk>` of :class:`SequenceMatcher`.
+   Setting the optional *autojunk* argument to ``False`` will turn
+   :ref:`automatic junk heuristic <difflib-junk>` off.
 
    The best (no more than *n*) matches among the possibilities are returned in a
    list, sorted by similarity score, most similar first.
@@ -357,9 +357,8 @@ Diff generation
    .. versionchanged:: 3.16
       Added keyword-only *autojunk* parameter.
 
-   *autojunk*: An optional parameter for setting on/off
-   :ref:`automatic junk heuristic <difflib-junk>`
-   of :class:`SequenceMatcher`.
+   Setting the optional *autojunk* argument to ``False`` will turn
+   :ref:`automatic junk heuristic <difflib-junk>` off.
 
    Example:
 
@@ -451,8 +450,8 @@ Diff generation
    .. versionchanged:: 3.16
       Added keyword-only *autojunk* parameter.
 
-   Set *autojunk* to ``False`` in order to disable
-   an :ref:`automatic junk heuristic <difflib-junk>` of :class:`SequenceMatcher`.
+   Setting the optional *autojunk* argument to ``False`` will turn
+   :ref:`automatic junk heuristic <difflib-junk>` off.
 
 
 .. function:: diff_bytes(dfunc, a, b, fromfile=b'', tofile=b'', fromfiledate=b'', tofiledate=b'', n=3, lineterm=b'\n')
