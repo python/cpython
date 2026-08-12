@@ -993,6 +993,12 @@ class TestSubTests(ExtraAssertions, unittest.TestCase):
     # Running an asyncio event loop needs a working socket.
     @support.requires_working_socket()
     def test_async(self):
+        # Running an event loop sets the event loop policy, which regrtest
+        # reports as a change of the environment.
+        import asyncio.events
+        self.enterContext(
+            support.swap_attr(asyncio.events, '_event_loop_policy', None))
+
         # An asynchronous test must be awaited: a synchronous wrapper would
         # make it silently not run at all.
         ran = []
