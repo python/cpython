@@ -460,6 +460,88 @@ class Test_Csv(unittest.TestCase):
         self._read_test(['1\\.5,\\.5,"\\.5"'], [[1.5, 0.5, ".5"]],
                         quoting=csv.QUOTE_STRINGS, escapechar='\\')
 
+    def test_read_converter(self):
+        def converter(index, field):
+            calls.append((index, field))
+            return types[index](field)
+
+        types = [str, int, complex]
+        calls = []
+        self._read_test(['spam,42,1j'], [['spam', 42, 1j]],
+                        quoting=csv.QUOTE_NONNUMERIC, converter=converter)
+        self.assertEqual(calls, [(0, 'spam'), (1, '42'), (2, '1j')])
+
+        # The index is the position in the record and is reset for each record.
+        types = [int] * 3
+        calls = []
+        self._read_test(['1,2,3', '4,5', '6'], [[1, 2, 3], [4, 5], [6]],
+                        quoting=csv.QUOTE_STRINGS, converter=converter)
+        self.assertEqual([index for index, field in calls],
+                         [0, 1, 2, 0, 1, 0])
+
+        # Quoted and empty fields are not converted.
+        types = [str] * 3
+        calls = []
+        self._read_test(['"spam",,42'], [['spam', '', '42']],
+                        quoting=csv.QUOTE_NONNUMERIC, converter=converter)
+        self.assertEqual(calls, [(2, '42')])
+
+        # Other quoting modes do not convert at all.
+        self._read_test(['1,2'], [['1', '2']],
+                        converter=lambda index, field: int(field))
+        self._read_test(['1,2'], [['1', '2']],
+                        quoting=csv.QUOTE_ALL,
+                        converter=lambda index, field: int(field))
+
+        # None means the default conversion.
+        self._read_test(['1,2'], [[1.0, 2.0]],
+                        quoting=csv.QUOTE_NONNUMERIC, converter=None)
+
+    def test_read_converter_errors(self):
+        with self.assertRaisesRegex(TypeError, 'must be callable or None'):
+            csv.reader([], converter='int')
+        with self.assertRaises(ZeroDivisionError):
+            self._read_test(['1,2'], [], quoting=csv.QUOTE_NONNUMERIC,
+                            converter=lambda index, field: 1/0)
+        # A one-argument callable does not fit.
+        with self.assertRaises(TypeError):
+            self._read_test(['1,2'], [], quoting=csv.QUOTE_NONNUMERIC,
+                            converter=float)
+
+    def test_write_formatter(self):
+        def formatter(index, value):
+            calls.append((index, value))
+            return format(value, '.2f') if index == 2 else str(value)
+
+        calls = []
+        self._write_test(['a', 1, 0.0, 3.14159], 'a,1,0.00,3.14159',
+                         formatter=formatter)
+        self.assertEqual(calls, [(1, 1), (2, 0.0), (3, 3.14159)])
+
+        # Strings and None are not passed to the formatter.
+        calls = []
+        self._write_test([0, 'a', None, 3], '<0>,a,,<3>',
+                         formatter=lambda index, value:
+                            calls.append(value) or f'<{index}>')
+        self.assertEqual(calls, [0, 3])
+
+        # Quoting is decided by the original value, not by the result.
+        self._write_test([1.5, 'a'], '1.50,"a"', quoting=csv.QUOTE_NONNUMERIC,
+                         formatter=lambda index, value: format(value, '.2f'))
+
+        # None means str().
+        self._write_test([1, 2], '1,2', formatter=None)
+
+    def test_write_formatter_errors(self):
+        with self.assertRaisesRegex(TypeError, 'must be callable or None'):
+            csv.writer(StringIO(), formatter='str')
+        with self.assertRaisesRegex(csv.Error, 'must return a string'):
+            self._write_test([1], '', formatter=lambda index, value: index)
+        self._write_error_test(ZeroDivisionError, [1],
+                               formatter=lambda index, value: 1/0)
+        # A one-argument callable does not fit.
+        self._write_error_test(TypeError, [1], formatter=repr)
+
     def test_read_skipinitialspace(self):
         self._read_test(['no space, space,  spaces,\ttab'],
                         [['no space', 'space', 'spaces', '\ttab']],
