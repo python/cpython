@@ -1,1 +1,5 @@
-:meth:`ipaddress.IPv6Address.exploded` now supports IPv6 addresses with a ``scope_id`` (link-local addresses)
+:attr:`ipaddress.IPv6Address.exploded` and
+:attr:`ipaddress.IPv6Interface.exploded` now support addresses with a scope
+ID (link-local addresses).
+Previously the former raised :exc:`~ipaddress.AddressValueError`
+and the latter omitted the scope ID.
