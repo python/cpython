@@ -1,4 +1,4 @@
-This is Python version 3.10.20
+This is Python version 3.10.21
 ==============================
 
 .. image:: https://travis-ci.com/python/cpython.svg?branch=master
