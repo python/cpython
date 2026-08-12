@@ -95,7 +95,7 @@ The :mod:`!xml.dom` contains the following functions:
    module name of a DOM implementation, or ``None``. If it is not ``None``, imports
    the corresponding module and returns a :class:`DOMImplementation` object if the
    import succeeds.  If no name is given, and if the environment variable
-   :envvar:`PYTHON_DOM` is set, this variable is used to find the implementation.
+   :envvar:`!PYTHON_DOM` is set, this variable is used to find the implementation.
 
    If name is not given, this examines the available implementations to find one
    with the required feature set.  If no implementation can be found, raise an
@@ -199,6 +199,9 @@ in Python.
 DOMImplementation Objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. class:: DOMImplementation
+   :no-typesetting:
+
 The :class:`DOMImplementation` interface provides a way for applications to
 determine the availability of particular features in the DOM they are using.
 DOM Level 2 added the ability to create new :class:`Document` and
@@ -232,6 +235,9 @@ DOM Level 2 added the ability to create new :class:`Document` and
 
 Node Objects
 ^^^^^^^^^^^^
+
+.. class:: Node
+   :no-typesetting:
 
 All of the components of an XML document are subclasses of :class:`Node`.
 
@@ -428,6 +434,9 @@ All of the components of an XML document are subclasses of :class:`Node`.
 NodeList Objects
 ^^^^^^^^^^^^^^^^
 
+.. class:: NodeList
+   :no-typesetting:
+
 A :class:`NodeList` represents a sequence of nodes.  These objects are used in
 two ways in the DOM Core recommendation:  an :class:`Element` object provides
 one as its list of child nodes, and the :meth:`getElementsByTagName` and
@@ -466,6 +475,9 @@ If a DOM implementation supports modification of the document, the
 
 DocumentType Objects
 ^^^^^^^^^^^^^^^^^^^^
+
+.. class:: DocumentType
+   :no-typesetting:
 
 Information about the notations and entities declared by a document (including
 the external subset if the parser uses it and can provide the information) is
@@ -526,6 +538,9 @@ following attributes:
 
 Document Objects
 ^^^^^^^^^^^^^^^^
+
+.. class:: Document
+   :no-typesetting:
 
 A :class:`Document` represents an entire XML document, including its constituent
 elements, attributes, processing instructions, comments etc.  Remember that it
@@ -629,6 +644,13 @@ inherits properties from :class:`Node`.
    :class:`Element` object to use the newly created attribute instance.
 
 
+.. method:: Document.getElementById(id)
+
+   Return the element with the given ID, or ``None``.
+   Only attributes declared as being of type ID in the DTD
+   or by :meth:`Element.setIdAttribute` are searched.
+
+
 .. method:: Document.getElementsByTagName(tagName)
 
    Search for all descendants (direct children, children's children, etc.) with a
@@ -658,6 +680,9 @@ inherits properties from :class:`Node`.
 
 Element Objects
 ^^^^^^^^^^^^^^^
+
+.. class:: Element
+   :no-typesetting:
 
 :class:`Element` is a subclass of :class:`Node`, so inherits all the attributes
 of that class.
@@ -782,6 +807,9 @@ of that class.
 Attr Objects
 ^^^^^^^^^^^^
 
+.. class:: Attr
+   :no-typesetting:
+
 :class:`Attr` inherits from :class:`Node`, so inherits all its attributes.
 
 
@@ -830,6 +858,9 @@ Attr Objects
 NamedNodeMap Objects
 ^^^^^^^^^^^^^^^^^^^^
 
+.. class:: NamedNodeMap
+   :no-typesetting:
+
 :class:`NamedNodeMap` does *not* inherit from :class:`Node`.
 
 
@@ -844,15 +875,70 @@ NamedNodeMap Objects
    in is arbitrary but will be consistent for the life of a DOM.  Each item is an
    attribute node.  Get its value with the :attr:`value` attribute.
 
+
+.. method:: NamedNodeMap.getNamedItem(name)
+
+   Return the node with the given :attr:`~Attr.name`,
+   or ``None`` if there is no such node.
+
+
+.. method:: NamedNodeMap.getNamedItemNS(namespaceURI, localName)
+
+   Return the node with the given namespace URI and local name,
+   or ``None`` if there is no such node.
+
+
+.. method:: NamedNodeMap.setNamedItem(node)
+
+   Add *node* to the map, using its :attr:`~Attr.name` as the key.
+   Return the node which it replaces, or ``None`` if it replaces no node.
+
+
+.. method:: NamedNodeMap.setNamedItemNS(node)
+
+   Add *node* to the map,
+   using its namespace URI and local name as the key.
+   Return the node which it replaces, or ``None`` if it replaces no node.
+
+
+.. method:: NamedNodeMap.removeNamedItem(name)
+
+   Remove and return the node with the given :attr:`~Attr.name`.
+   Raise :exc:`NotFoundErr` if there is no such node.
+
+
+.. method:: NamedNodeMap.removeNamedItemNS(namespaceURI, localName)
+
+   Remove and return the node with the given namespace URI and local name.
+   Raise :exc:`NotFoundErr` if there is no such node.
+
 There are also experimental methods that give this class more mapping behavior.
 You can use them or you can use the standardized :meth:`!getAttribute\*` family
 of methods on the :class:`Element` objects.
+
+
+.. _dom-documentfragment-objects:
+
+DocumentFragment Objects
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. class:: DocumentFragment
+   :no-typesetting:
+
+:class:`DocumentFragment` is a lightweight container of nodes.
+It is a subclass of :class:`Node`.
+When it is inserted into the document tree,
+its children are inserted instead of it,
+and it becomes empty.
 
 
 .. _dom-characterdata-objects:
 
 CharacterData Objects
 ^^^^^^^^^^^^^^^^^^^^^
+
+.. class:: CharacterData
+   :no-typesetting:
 
 :class:`CharacterData` represents text-like data in the XML document.
 It is a subclass of :class:`Node`, and the base class
@@ -904,6 +990,9 @@ Such nodes cannot have child nodes.
 Comment Objects
 ^^^^^^^^^^^^^^^
 
+.. class:: Comment
+   :no-typesetting:
+
 :class:`Comment` represents a comment in the XML document.
 It is a subclass of :class:`CharacterData`.
 
@@ -919,6 +1008,12 @@ It is a subclass of :class:`CharacterData`.
 
 Text and CDATASection Objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. class:: Text
+   :no-typesetting:
+
+.. class:: CDATASection
+   :no-typesetting:
 
 The :class:`Text` interface represents text in the XML document.  If the parser
 and DOM implementation support the DOM's XML extension, portions of the text
@@ -967,6 +1062,9 @@ These interfaces extend the :class:`CharacterData` interface.
 
 ProcessingInstruction Objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. class:: ProcessingInstruction
+   :no-typesetting:
 
 Represents a processing instruction in the XML document; this inherits from the
 :class:`Node` interface and cannot have child nodes.
@@ -1186,9 +1284,9 @@ Mapping the IDL declarations ::
    readonly attribute string someValue;
             attribute string anotherValue;
 
-yields three accessor functions:  a "get" method for :attr:`someValue`
-(:meth:`_get_someValue`), and "get" and "set" methods for :attr:`anotherValue`
-(:meth:`_get_anotherValue` and :meth:`_set_anotherValue`).  The mapping, in
+yields three accessor functions:  a "get" method for :attr:`!someValue`
+(:meth:`!_get_someValue`), and "get" and "set" methods for :attr:`!anotherValue`
+(:meth:`!_get_anotherValue` and :meth:`!_set_anotherValue`).  The mapping, in
 particular, does not require that the IDL attributes are accessible as normal
 Python attributes:  ``object.someValue`` is *not* required to work, and may
 raise an :exc:`AttributeError`.
