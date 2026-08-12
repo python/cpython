@@ -172,6 +172,20 @@ XMLParser Objects
    or ``None`` if  :meth:`SetBase` hasn't been called.
 
 
+.. method:: xmlparser.GetSpecifiedAttributeCount()
+
+   Return the index just past the attributes given in the start tag.
+   Attributes defaulted from the DTD follow the specified ones,
+   so attributes at lower indices in the list
+   passed to :attr:`StartElementHandler` were given in the start tag.
+   Each attribute takes two items in that list,
+   its name and its value.
+   Only meaningful inside a :attr:`StartElementHandler` call,
+   and only if :attr:`ordered_attributes` is true.
+
+   .. versionadded:: next
+
+
 .. method:: xmlparser.GetInputContext()
 
    Returns the input data that generated the current event as a string. The data is

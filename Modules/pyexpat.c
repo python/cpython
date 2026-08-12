@@ -1055,6 +1055,25 @@ pyexpat_xmlparser_GetBase_impl(xmlparseobject *self)
 }
 
 /*[clinic input]
+pyexpat.xmlparser.GetSpecifiedAttributeCount
+
+Return the index just past the attributes given in the start tag.
+
+Attributes defaulted from the DTD follow the specified ones, so
+attributes at lower indices in the list passed to
+StartElementHandler were given in the start tag.  Each attribute
+takes two items in that list, its name and its value.  Only
+meaningful inside a StartElementHandler call.
+[clinic start generated code]*/
+
+static PyObject *
+pyexpat_xmlparser_GetSpecifiedAttributeCount_impl(xmlparseobject *self)
+/*[clinic end generated code: output=f96b627de9393c0c input=4981c36cf99ebe9f]*/
+{
+    return PyLong_FromLong(XML_GetSpecifiedAttributeCount(self->itself));
+}
+
+/*[clinic input]
 @permit_long_summary
 pyexpat.xmlparser.GetInputContext
 
@@ -1419,6 +1438,7 @@ static struct PyMethodDef xmlparse_methods[] = {
     PYEXPAT_XMLPARSER_PARSEFILE_METHODDEF
     PYEXPAT_XMLPARSER_SETBASE_METHODDEF
     PYEXPAT_XMLPARSER_GETBASE_METHODDEF
+    PYEXPAT_XMLPARSER_GETSPECIFIEDATTRIBUTECOUNT_METHODDEF
     PYEXPAT_XMLPARSER_GETINPUTCONTEXT_METHODDEF
     PYEXPAT_XMLPARSER_EXTERNALENTITYPARSERCREATE_METHODDEF
     PYEXPAT_XMLPARSER_SETPARAMENTITYPARSING_METHODDEF

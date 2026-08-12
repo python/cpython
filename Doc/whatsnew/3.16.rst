@@ -613,6 +613,12 @@ xml
   instead of failing later, when encountering non-ASCII data.
   (Contributed by Serhiy Storchaka in :gh:`62259`.)
 
+* Add :meth:`!GetSpecifiedAttributeCount` method
+  to the :mod:`XML parser <xml.parsers.expat>` objects.
+  It tells how many of the reported attributes were given in the start tag
+  rather than defaulted from the DTD.
+  (Contributed by Jason Orendorff and Serhiy Storchaka in :gh:`44871`.)
+
 zipfile
 -------
 
