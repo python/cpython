@@ -809,8 +809,7 @@ _PyType_GetSubclasses(PyTypeObject *self)
 
     // The type lock protects tp_subclasses from being mutated while we
     // iterate over it (e.g. by add_subclass() or by remove_subclass() when a
-    // subclass is deallocated).  Note that the lock is not actually acquired
-    // if it is already held by this thread or if the world is stopped.
+    // subclass is deallocated).
     int res;
     BEGIN_TYPE_LOCK();
     res = get_subclasses_unlocked(self, list);
