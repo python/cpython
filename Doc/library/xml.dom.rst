@@ -235,6 +235,11 @@ Node Objects
 
 All of the components of an XML document are subclasses of :class:`Node`.
 
+.. versionchanged:: next
+   Setting a read-only attribute is deprecated.
+   It now emits a :exc:`DeprecationWarning`
+   and will raise :exc:`NoModificationAllowedErr` in a future version of Python.
+
 
 .. attribute:: Node.nodeType
 
@@ -304,8 +309,9 @@ All of the components of an XML document are subclasses of :class:`Node`.
 
 .. attribute:: Node.prefix
 
-   The part of the :attr:`tagName` preceding the colon if there is one, else the
-   empty string.  The value is a string, or ``None``.
+   The part of the :attr:`Element.tagName` preceding the colon if there is one,
+   else the empty string.  The value is a string, or ``None``.
+   This is a read-only attribute.
 
 
 .. attribute:: Node.namespaceURI
@@ -455,12 +461,14 @@ following attributes:
 
    The public identifier for the external subset of the document type definition.
    This will be a string or ``None``.
+   This is a read-only attribute.
 
 
 .. attribute:: DocumentType.systemId
 
    The system identifier for the external subset of the document type definition.
    This will be a URI as a string, or ``None``.
+   This is a read-only attribute.
 
 
 .. attribute:: DocumentType.internalSubset
@@ -474,6 +482,7 @@ following attributes:
 
    The name of the root element as given in the ``DOCTYPE`` declaration, if
    present.
+   This is a read-only attribute.
 
 
 .. attribute:: DocumentType.entities
@@ -587,6 +596,7 @@ of that class.
 
    The element type name.  In a namespace-using document it may have colons in it.
    The value is a string.
+   This is a read-only attribute.
 
 
 .. method:: Element.getElementsByTagName(tagName)
@@ -690,6 +700,7 @@ Attr Objects
 
    The attribute name.
    In a namespace-using document it may include a colon.
+   This is a read-only attribute.
 
 
 .. attribute:: Attr.localName
@@ -703,6 +714,7 @@ Attr Objects
 
    The part of the name preceding the colon if there is one, else the
    empty string.
+   This is a read-only attribute.
 
 
 .. attribute:: Attr.value

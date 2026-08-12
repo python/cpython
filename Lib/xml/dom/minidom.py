@@ -32,13 +32,19 @@ _nodeTypes_with_children = (xml.dom.Node.ELEMENT_NODE,
 
 
 class Node(xml.dom.Node):
-    namespaceURI = None # this is non-null only for elements and attributes
+    _namespaceURI = None # this is non-null only for elements and attributes
     parentNode = None
     ownerDocument = None
     nextSibling = None
     previousSibling = None
 
-    prefix = EMPTY_PREFIX # non-null only for NS elements and attributes
+    _prefix = EMPTY_PREFIX # non-null only for NS elements and attributes
+
+    def _get_namespaceURI(self):
+        return self._namespaceURI
+
+    def _get_prefix(self):
+        return self._prefix
 
     def __bool__(self):
         return True
@@ -277,6 +283,22 @@ class Node(xml.dom.Node):
     def __exit__(self, et, ev, tb):
         self.unlink()
 
+def _node_get_nodeType(self):
+    return self._nodeType
+Node._get_nodeType = _node_get_nodeType
+del _node_get_nodeType
+def _node_get_nodeName(self):
+    return self._nodeName
+Node._get_nodeName = _node_get_nodeName
+del _node_get_nodeName
+
+defdeprecatedproperty(Node, "nodeType", doc="The type of this node.")
+defdeprecatedproperty(Node, "nodeName", doc="The name of this node.")
+defdeprecatedproperty(Node, "namespaceURI",
+                      doc="The namespace URI of this node, or None.")
+defdeprecatedproperty(Node, "prefix",
+                      doc="The namespace prefix of this node, or None.")
+
 defproperty(Node, "firstChild", doc="First child node, or None.")
 defproperty(Node, "lastChild",  doc="Last child node, or None.")
 defproperty(Node, "localName",  doc="Namespace-local name of this node.")
@@ -334,8 +356,8 @@ def _get_elements_by_tagName_ns_helper(parent, nsURI, localName, rc):
     return rc
 
 class DocumentFragment(Node):
-    nodeType = Node.DOCUMENT_FRAGMENT_NODE
-    nodeName = "#document-fragment"
+    _nodeType = Node.DOCUMENT_FRAGMENT_NODE
+    _nodeName = "#document-fragment"
     nodeValue = None
     attributes = None
     parentNode = None
@@ -352,9 +374,9 @@ class DocumentFragment(Node):
 
 
 class Attr(Node):
-    __slots__=('_name', '_value', 'namespaceURI',
+    __slots__=('_name', '_value', '_namespaceURI',
                '_prefix', 'childNodes', '_localName', 'ownerDocument', 'ownerElement')
-    nodeType = Node.ATTRIBUTE_NODE
+    _nodeType = Node.ATTRIBUTE_NODE
     attributes = None
     specified = False
     _is_id = False
@@ -366,7 +388,7 @@ class Attr(Node):
         self.ownerElement = None
         self.ownerDocument = None
         self._name = qName
-        self.namespaceURI = namespaceURI
+        self._namespaceURI = namespaceURI
         self._prefix = prefix
         if localName is not None:
             self._localName = localName
@@ -389,10 +411,16 @@ class Attr(Node):
     def _get_name(self):
         return self._name
 
-    def _set_name(self, value):
+    def _rename(self, value):
         self._name = value
         if self.ownerElement is not None:
             _clear_id_cache(self.ownerElement)
+
+    def _set_name(self, value):
+        import warnings
+        warnings.warn("attempt to modify read-only attribute 'name' "
+                      "is deprecated", DeprecationWarning, stacklevel=2)
+        self._rename(value)
 
     nodeName = name = property(_get_name, _set_name)
 
@@ -411,7 +439,7 @@ class Attr(Node):
     def _get_prefix(self):
         return self._prefix
 
-    def _set_prefix(self, prefix):
+    def _reprefix(self, prefix):
         nsuri = self.namespaceURI
         if prefix == "xmlns":
             if nsuri and nsuri != XMLNS_NAMESPACE:
@@ -424,9 +452,18 @@ class Attr(Node):
             newName = "%s:%s" % (prefix, self.localName)
         if self.ownerElement:
             _clear_id_cache(self.ownerElement)
-        self.name = newName
+        self._rename(newName)
+
+    def _set_prefix(self, prefix):
+        import warnings
+        warnings.warn("attempt to modify read-only attribute 'prefix' "
+                      "is deprecated", DeprecationWarning, stacklevel=2)
+        self._reprefix(prefix)
 
     prefix = property(_get_prefix, _set_prefix)
+
+    def _get_namespaceURI(self):
+        return self._namespaceURI
 
     def unlink(self):
         # This implementation does not call the base implementation
@@ -478,6 +515,8 @@ class Attr(Node):
 defproperty(Attr, "isId",       doc="True if this attribute is an ID.")
 defproperty(Attr, "localName",  doc="Namespace-local name of this attribute.")
 defproperty(Attr, "schemaType", doc="Schema type for this attribute.")
+defdeprecatedproperty(Attr, "namespaceURI",
+                      doc="Namespace URI of this attribute, or None.")
 
 
 class NamedNodeMap(object):
@@ -672,10 +711,10 @@ class TypeInfo(object):
 _no_type = TypeInfo(None, None)
 
 class Element(Node):
-    __slots__=('ownerDocument', 'parentNode', 'tagName', 'nodeName', 'prefix',
-               'namespaceURI', '_localName', 'childNodes', '_attrs', '_attrsNS',
+    __slots__=('ownerDocument', 'parentNode', '_tagName', '_nodeName', '_prefix',
+               '_namespaceURI', '_localName', 'childNodes', '_attrs', '_attrsNS',
                'nextSibling', 'previousSibling')
-    nodeType = Node.ELEMENT_NODE
+    _nodeType = Node.ELEMENT_NODE
     nodeValue = None
     schemaType = _no_type
 
@@ -692,9 +731,9 @@ class Element(Node):
                  localName=None):
         self.ownerDocument = None
         self.parentNode = None
-        self.tagName = self.nodeName = tagName
-        self.prefix = prefix
-        self.namespaceURI = namespaceURI
+        self._tagName = self._nodeName = tagName
+        self._prefix = prefix
+        self._namespaceURI = namespaceURI
         self.childNodes = NodeList()
         self.nextSibling = self.previousSibling = None
 
@@ -781,8 +820,8 @@ class Element(Node):
                 if attr.isId:
                     _clear_id_cache(self)
             if attr.prefix != prefix:
-                attr.prefix = prefix
-                attr.nodeName = qualifiedName
+                attr._prefix = prefix
+                attr._rename(qualifiedName)
 
     def getAttributeNode(self, attrname):
         if self._attrs is None:
@@ -942,6 +981,20 @@ class Element(Node):
             self.ownerDocument._magic_id_count += 1
             _clear_id_cache(self)
 
+def _element_get_tagName(self):
+    return self._tagName
+Element._get_tagName = _element_get_tagName
+del _element_get_tagName
+
+defdeprecatedproperty(Element, "tagName",
+                      doc="Element name.")
+defdeprecatedproperty(Element, "nodeName",
+                      doc="Element name.")
+defdeprecatedproperty(Element, "prefix",
+                      doc="Namespace prefix of this element, or None.")
+defdeprecatedproperty(Element, "namespaceURI",
+                      doc="Namespace URI of this element, or None.")
+
 defproperty(Element, "attributes",
             doc="NamedNodeMap of attributes on the element.")
 defproperty(Element, "localName",
@@ -1001,12 +1054,15 @@ class Childless:
 
 
 class ProcessingInstruction(Childless, Node):
-    nodeType = Node.PROCESSING_INSTRUCTION_NODE
-    __slots__ = ('target', 'data')
+    _nodeType = Node.PROCESSING_INSTRUCTION_NODE
+    __slots__ = ('_target', 'data')
 
     def __init__(self, target, data):
-        self.target = target
+        self._target = target
         self.data = data
+
+    def _get_target(self):
+        return self._target
 
     # nodeValue is an alias for data
     def _get_nodeValue(self):
@@ -1017,13 +1073,22 @@ class ProcessingInstruction(Childless, Node):
 
     # nodeName is an alias for target
     def _get_nodeName(self):
-        return self.target
+        return self._target
+
     def _set_nodeName(self, value):
-        self.target = value
+        import warnings
+        warnings.warn("attempt to modify read-only attribute 'nodeName' "
+                      "is deprecated", DeprecationWarning, stacklevel=2)
+        self._target = value
+
     nodeName = property(_get_nodeName, _set_nodeName)
 
     def writexml(self, writer, indent="", addindent="", newl=""):
         writer.write("%s<?%s %s?>%s" % (indent,self.target, self.data, newl))
+
+
+defdeprecatedproperty(ProcessingInstruction, "target",
+                      doc="The target of this processing instruction.")
 
 
 class CharacterData(Childless, Node):
@@ -1103,8 +1168,8 @@ defproperty(CharacterData, "length", doc="Length of the string data.")
 class Text(CharacterData):
     __slots__ = ()
 
-    nodeType = Node.TEXT_NODE
-    nodeName = "#text"
+    _nodeType = Node.TEXT_NODE
+    _nodeName = "#text"
     attributes = None
 
     def splitText(self, offset):
@@ -1210,8 +1275,8 @@ def _get_containing_entref(node):
 
 
 class Comment(CharacterData):
-    nodeType = Node.COMMENT_NODE
-    nodeName = "#comment"
+    _nodeType = Node.COMMENT_NODE
+    _nodeName = "#comment"
 
     def __init__(self, data):
         CharacterData.__init__(self)
@@ -1226,8 +1291,8 @@ class Comment(CharacterData):
 class CDATASection(Text):
     __slots__ = ()
 
-    nodeType = Node.CDATA_SECTION_NODE
-    nodeName = "#cdata-section"
+    _nodeType = Node.CDATA_SECTION_NODE
+    _nodeName = "#cdata-section"
 
     def writexml(self, writer, indent="", addindent="", newl=""):
         if self.data.find("]]>") >= 0:
@@ -1304,24 +1369,24 @@ defproperty(ReadOnlySequentialNamedNodeMap, "length",
 class Identified:
     """Mix-in class that supports the publicId and systemId attributes."""
 
-    __slots__ = 'publicId', 'systemId'
+    __slots__ = '_publicId', '_systemId'
 
     def _identified_mixin_init(self, publicId, systemId):
-        self.publicId = publicId
-        self.systemId = systemId
+        self._publicId = publicId
+        self._systemId = systemId
 
     def _get_publicId(self):
-        return self.publicId
+        return self._publicId
 
     def _get_systemId(self):
-        return self.systemId
+        return self._systemId
 
 class DocumentType(Identified, Childless, Node):
-    nodeType = Node.DOCUMENT_TYPE_NODE
+    _nodeType = Node.DOCUMENT_TYPE_NODE
     nodeValue = None
-    name = None
-    publicId = None
-    systemId = None
+    _name = None
+    _publicId = None
+    _systemId = None
     internalSubset = None
 
     def __init__(self, qualifiedName):
@@ -1329,8 +1394,14 @@ class DocumentType(Identified, Childless, Node):
         self.notations = ReadOnlySequentialNamedNodeMap()
         if qualifiedName:
             prefix, localname = _nssplit(qualifiedName)
-            self.name = localname
-        self.nodeName = self.name
+            self._name = localname
+        self._nodeName = self._name
+
+    def _get_name(self):
+        return self._name
+
+    def _get_nodeName(self):
+        return self._nodeName
 
     def _get_internalSubset(self):
         return self.internalSubset
@@ -1339,8 +1410,8 @@ class DocumentType(Identified, Childless, Node):
         if self.ownerDocument is None:
             # it's ok
             clone = DocumentType(None)
-            clone.name = self.name
-            clone.nodeName = self.name
+            clone._name = self._name
+            clone._nodeName = self._name
             operation = xml.dom.UserDataHandler.NODE_CLONED
             if deep:
                 clone.entities._seq = []
@@ -1378,7 +1449,7 @@ class DocumentType(Identified, Childless, Node):
 
 class Entity(Identified, Node):
     attributes = None
-    nodeType = Node.ENTITY_NODE
+    _nodeType = Node.ENTITY_NODE
     nodeValue = None
 
     actualEncoding = None
@@ -1386,7 +1457,7 @@ class Entity(Identified, Node):
     version = None
 
     def __init__(self, name, publicId, systemId, notation):
-        self.nodeName = name
+        self._nodeName = name
         self.notationName = notation
         self.childNodes = NodeList()
         self._identified_mixin_init(publicId, systemId)
@@ -1417,12 +1488,24 @@ class Entity(Identified, Node):
             "cannot replace children of an entity node")
 
 class Notation(Identified, Childless, Node):
-    nodeType = Node.NOTATION_NODE
+    _nodeType = Node.NOTATION_NODE
     nodeValue = None
 
     def __init__(self, name, publicId, systemId):
-        self.nodeName = name
+        self._nodeName = name
         self._identified_mixin_init(publicId, systemId)
+
+
+defdeprecatedproperty(DocumentType, "name",
+                      doc="The name of the root element as given in the "
+                          "DOCTYPE declaration.")
+defdeprecatedproperty(DocumentType, "nodeName",
+                      doc="The name of the root element as given in the "
+                          "DOCTYPE declaration.")
+defdeprecatedproperty(Identified, "publicId",
+                      doc="Public identifier, or None.")
+defdeprecatedproperty(Identified, "systemId",
+                      doc="System identifier, or None.")
 
 
 class DOMImplementation(DOMImplementationLS):
@@ -1488,8 +1571,8 @@ class DOMImplementation(DOMImplementationLS):
 
     def createDocumentType(self, qualifiedName, publicId, systemId):
         doctype = DocumentType(qualifiedName)
-        doctype.publicId = publicId
-        doctype.systemId = systemId
+        doctype._publicId = publicId
+        doctype._systemId = systemId
         return doctype
 
     # DOM Level 3 (WD 9 April 2002)
@@ -1561,8 +1644,8 @@ class Document(Node, DocumentLS):
                          Node.COMMENT_NODE, Node.DOCUMENT_TYPE_NODE)
 
     implementation = DOMImplementation()
-    nodeType = Node.DOCUMENT_NODE
-    nodeName = "#document"
+    _nodeType = Node.DOCUMENT_NODE
+    _nodeName = "#document"
     nodeValue = None
     attributes = None
     parentNode = None
@@ -1873,15 +1956,14 @@ class Document(Node, DocumentLS):
                 element.removeAttributeNode(n)
         else:
             element = None
-        n.prefix = prefix
+        n._prefix = prefix
         n._localName = localName
-        n.namespaceURI = namespaceURI
-        n.nodeName = name
+        n._namespaceURI = namespaceURI
         if n.nodeType == Node.ELEMENT_NODE:
-            n.tagName = name
+            n._tagName = n._nodeName = name
         else:
             # attribute node
-            n.name = name
+            n._rename(name)
             if element is not None:
                 element.setAttributeNode(n)
                 if is_id:

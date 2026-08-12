@@ -40,7 +40,8 @@ should not be imported; use xml.dom.minidom instead.
 #                    defproperty() should be used for each version of
 #                    the relevant _get_<property>() function.
 
-__all__ = ["NodeList", "EmptyNodeList", "StringTypes", "defproperty"]
+__all__ = ["NodeList", "EmptyNodeList", "StringTypes", "defproperty",
+           "defdeprecatedproperty"]
 
 import xml.dom
 
@@ -105,5 +106,24 @@ def defproperty(klass, name, doc):
             "attempt to modify read-only attribute " + repr(name))
     assert not hasattr(klass, "_set_" + name), \
            "expected not to find _set_" + name
+    prop = property(get, set, doc=doc)
+    setattr(klass, name, prop)
+
+
+def defdeprecatedproperty(klass, name, doc, private=None):
+    """Define a read-only attribute whose setter is deprecated.
+
+    The value is stored in the *private* attribute ("_" + name by default).
+    Setting the attribute still works, but emits a DeprecationWarning.
+    """
+    if private is None:
+        private = "_" + name
+    def get(self, private=private):
+        return getattr(self, private)
+    def set(self, value, name=name, private=private):
+        import warnings
+        warnings.warn(f"attempt to modify read-only attribute {name!r} "
+                      f"is deprecated", DeprecationWarning, stacklevel=2)
+        setattr(self, private, value)
     prop = property(get, set, doc=doc)
     setattr(klass, name, prop)
