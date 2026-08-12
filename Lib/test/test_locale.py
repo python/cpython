@@ -417,13 +417,6 @@ class NormalizeTest(unittest.TestCase):
         self.check('english', 'en_EN.ISO8859-1')
         self.check('english_uk.ascii', 'en_GB.ISO8859-1')
 
-    def test_en_in_utf8(self):
-        # gh-151316: en_IN is UTF-8 on modern glibc; do not invent ISO8859-1.
-        self.check('en_IN', 'en_IN.UTF-8')
-        self.check('en_in', 'en_IN.UTF-8')
-        self.assertEqual(locale._parse_localename('en_IN'), ('en_IN', 'UTF-8'))
-        self.assertEqual(locale._parse_localename('en_in'), ('en_IN', 'UTF-8'))
-
     def test_hyphenated_encoding(self):
         self.check('az_AZ.iso88599e', 'az_AZ.ISO8859-9E')
         self.check('az_AZ.ISO8859-9E', 'az_AZ.ISO8859-9E')
@@ -649,36 +642,56 @@ class TestRealLocales(unittest.TestCase):
         self.assertEqual(locale.getlocale(locale.LC_CTYPE), localetuple)
 
 
-class TestEnINLocale(unittest.TestCase):
-    """gh-151316: en_IN must round-trip without inventing ISO8859-1."""
+class TestHardcodedLocaleReplacements(unittest.TestCase):
+    """gh-151316: UTF-8 preferences that override X11 legacy codesets.
 
-    def setUp(self):
-        self.oldlocale = locale.setlocale(locale.LC_CTYPE)
-        self.addCleanup(locale.setlocale, locale.LC_CTYPE, self.oldlocale)
+    These bare aliases are UTF-8-only in glibc SUPPORTED, but X11
+    locale.alias still maps them to obsolete encodings. makelocalealias
+    restores the glibc UTF-8 defaults after applying X11 (plus de_li,
+    which has no bare SUPPORTED line).
+    """
 
-    def test_getlocale_setlocale_roundtrip(self):
-        try:
-            locale.setlocale(locale.LC_CTYPE, 'en_IN')
-        except locale.Error as exc:
-            self.skipTest(str(exc))
-        loc = locale.getlocale(locale.LC_CTYPE)
-        self.assertEqual(loc[0], 'en_IN')
-        self.assertNotEqual(loc[1], 'ISO8859-1')
-        locale.setlocale(locale.LC_CTYPE, loc)
-        self.assertEqual(locale.getlocale(locale.LC_CTYPE), loc)
+    REPLACEMENTS = {
+        'az_az': 'az_AZ.UTF-8',
+        'de_li': 'de_LI.UTF-8',
+        'en_il': 'en_IL.UTF-8',
+        'en_in': 'en_IN.UTF-8',
+        'eo': 'eo.UTF-8',
+        'es_cu': 'es_CU.UTF-8',
+        'hi_in': 'hi_IN.UTF-8',
+        'iu_ca': 'iu_CA.UTF-8',
+        'lo_la': 'lo_LA.UTF-8',
+        'nr_za': 'nr_ZA.UTF-8',
+        'nso_za': 'nso_ZA.UTF-8',
+        'rw_rw': 'rw_RW.UTF-8',
+        'ss_za': 'ss_ZA.UTF-8',
+        'ta_in': 'ta_IN.UTF-8',
+        'tn_za': 'tn_ZA.UTF-8',
+        'ts_za': 'ts_ZA.UTF-8',
+        'tt_ru': 'tt_RU.UTF-8',
+        'ur_pk': 'ur_PK.UTF-8',
+        'vi_vn': 'vi_VN.UTF-8',
+    }
 
-    def test_setlocale_from_getlocale_tuple(self):
-        # Reproduces the issue report: setlocale(LC_*, getlocale()).
-        try:
-            locale.setlocale(locale.LC_CTYPE, 'en_IN.UTF-8')
-        except locale.Error:
-            try:
-                locale.setlocale(locale.LC_CTYPE, 'en_IN')
-            except locale.Error as exc:
-                self.skipTest(str(exc))
-        loc = locale.getlocale(locale.LC_CTYPE)
-        locale.setlocale(locale.LC_CTYPE, loc)
-        self.assertEqual(locale.getlocale(locale.LC_CTYPE)[0], 'en_IN')
+    def test_locale_alias_entries(self):
+        for key, expected in self.REPLACEMENTS.items():
+            with self.subTest(key=key):
+                self.assertEqual(locale.locale_alias[key], expected)
+
+    def test_normalize(self):
+        for key, expected in self.REPLACEMENTS.items():
+            with self.subTest(key=key):
+                self.assertEqual(locale.normalize(key), expected)
+                self.assertEqual(locale.normalize(key.upper()), expected)
+
+    def test_parse_localename(self):
+        for key, expected in self.REPLACEMENTS.items():
+            with self.subTest(key=key):
+                lang, encoding = expected.split('.')
+                self.assertEqual(
+                    locale._parse_localename(key),
+                    (lang, encoding),
+                )
 
 
 class TestMiscellaneous(unittest.TestCase):

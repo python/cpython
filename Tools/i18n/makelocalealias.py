@@ -149,14 +149,23 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     data = locale.locale_alias.copy()
-    data.update(parse_glibc_supported(args.glibc_supported))
+    glibc_data = parse_glibc_supported(args.glibc_supported)
+    data.update(glibc_data)
     data.update(parse(args.locale_alias))
     # Hardcode 'c.utf8' -> 'C.UTF-8' because 'en_US.UTF-8' does not exist
     # on all platforms.
     data['c.utf8'] = 'C.UTF-8'
-    # Hardcode 'en_in' -> 'en_IN.UTF-8'.  X11 locale.alias still maps en_IN to
-    # ISO8859-1 and would otherwise override glibc's en_IN/UTF-8 (gh-151316).
-    data['en_in'] = 'en_IN.UTF-8'
+    # Prefer glibc UTF-8 defaults over X11 legacy codesets (gh-151316).
+    # X11 locale.alias still maps several UTF-8-only locales to obsolete
+    # encodings and would otherwise override glibc during regeneration.
+    for key, value in glibc_data.items():
+        if data.get(key) == value:
+            continue
+        if value.split('@')[0].endswith('.UTF-8'):
+            data[key] = value
+    # de_LI is UTF-8-only in glibc as 'de_LI.UTF-8', with no bare SUPPORTED
+    # line, so the X11 'de_LI.ISO8859-1' mapping would otherwise stick.
+    data['de_li'] = 'de_LI.UTF-8'
     while True:
         # Repeat optimization while the size is decreased.
         n = len(data)

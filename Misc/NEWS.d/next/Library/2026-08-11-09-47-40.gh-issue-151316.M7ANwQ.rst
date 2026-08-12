@@ -1,4 +1,5 @@
-:mod:`locale` now maps the ``en_IN`` locale alias to ``en_IN.UTF-8``
-instead of the obsolete X11 ``ISO8859-1`` codeset.  This restores
-``setlocale(getlocale())`` round-trips on modern glibc systems where
-``en_IN`` is UTF-8-only.
+:mod:`locale` now prefers UTF-8 for bare locale aliases that are
+UTF-8-only in glibc (for example ``en_IN``, ``hi_IN``, ``es_CU``)
+instead of obsolete X11 codesets.  This restores
+``setlocale(getlocale())`` round-trips on modern systems where those
+locales have no legacy encoding.
