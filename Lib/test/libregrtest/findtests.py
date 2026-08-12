@@ -105,6 +105,10 @@ def list_cases(tests: TestTuple, *,
         print(count(len(skipped), "test"), "skipped:", file=stderr)
         printlist(skipped, file=stderr)
 
+class _ModuleLoadFailed(Exception):
+    """The test module failed to load; its test cases are unknown."""
+
+
 def collect_cases(tests: TestTuple, *,
                   match_tests: TestFilter | None = None,
                   test_dir: StrPath | None = None
@@ -124,16 +128,23 @@ def collect_cases(tests: TestTuple, *,
         except unittest.SkipTest:
             skipped.append(test_name)
             continue
+        except _ModuleLoadFailed:
+            # The module failed to load. Run it as a whole, so that the
+            # error is reported as in the normal mode.
+            result[test_name] = [test_name]
+            continue
         if cases:
             result[test_name] = cases
     return result, skipped
 
 def _collect_cases(suite: unittest.TestSuite, out: list[str]) -> None:
     for test in suite:
-        if isinstance(test, unittest.loader._FailedTest):  # type: ignore[attr-defined]
-            continue
         if isinstance(test, unittest.TestSuite):
             _collect_cases(test, out)
+        elif isinstance(test, unittest.loader._FailedTest):  # type: ignore[attr-defined]
+            # The test module failed to load. Its test cases are
+            # unknown: let the caller run the whole module.
+            raise _ModuleLoadFailed
         elif isinstance(test, unittest.TestCase):
             if match_test(test):
                 out.append(test.id())

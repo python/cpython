@@ -274,9 +274,7 @@ class WorkerThread(threading.Thread):
                                ) -> WorkerRunTests:
         kwargs: dict[str, Any] = {}
 
-        if module_name is not None:
-            # single_process_per_case mode: run a single test case
-            # (test_name is a case ID) inside its module.
+        if module_name is not None and test_name != module_name:
             tests = (module_name,)
             kwargs['match_tests'] = [(test_name, True)]
         else:
@@ -426,7 +424,7 @@ class WorkerThread(threading.Thread):
                     finally:
                         self.test_name = _NOT_RUNNING
                     mp_result.result.duration = time.monotonic() - self.start_time
-                    if single_process_per_case:
+                    if single_process_per_case and test_name != module_name:
                         # Report the test case, not the test module
                         mp_result.result.test_name = test_name
                     self.output.put((False, mp_result))

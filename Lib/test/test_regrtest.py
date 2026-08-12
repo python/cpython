@@ -2427,6 +2427,26 @@ class ArgsTestCase(BaseTestCase):
         self.assertIn(f'{testname}.Tests.test_pass passed', output)
         self.check_line(output, '1 test OK.', regex=False)
 
+    def test_single_process_per_case_import_error(self):
+        testname = self.create_test(code='raise ImportError("boom")')
+
+        output = self.run_tests('--single-process-per-case', testname,
+                                exitcode=EXITCODE_BAD_TEST)
+        self.check_executed_tests(output, [testname], failed=[testname],
+                                  stats=0)
+        self.assertNotIn('_FailedTest', output)
+
+    def test_single_process_per_case_skipped_module(self):
+        code = textwrap.dedent("""
+            import unittest
+            raise unittest.SkipTest("nope")
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests('--single-process-per-case', testname)
+        self.check_executed_tests(output, [testname],
+                                  skipped=[testname], stats=0)
+
 
     def test_verbose3(self):
         code = textwrap.dedent(r"""
