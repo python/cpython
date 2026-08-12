@@ -48,7 +48,7 @@ SRCDIR = pathlib.Path(__file__).parent.parent.parent.absolute()
 WASMTOOLS = SRCDIR / "Tools" / "wasm"
 BUILDDIR = SRCDIR / "builddir"
 CONFIGURE = SRCDIR / "configure"
-SETUP_LOCAL = SRCDIR / "Modules" / "Setup.local"
+PYBUILDDIR_TXT = SRCDIR / "pybuilddir.txt"
 
 HAS_CCACHE = shutil.which("ccache") is not None
 
@@ -860,8 +860,8 @@ def main():
         builder.clean(all=False)
 
     # hack for WASI
-    if builder.host.is_wasi and not SETUP_LOCAL.exists():
-        SETUP_LOCAL.touch()
+    if builder.host.is_wasi and not PYBUILDDIR_TXT.exists():
+        PYBUILDDIR_TXT.touch()
 
     # auto-build
     if "build" in args.ops:
