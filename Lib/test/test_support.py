@@ -968,7 +968,7 @@ class TestIsolated(unittest.TestCase):
         self.assertEqual(calls, [])
 
 
-class TestSubTests(unittest.TestCase):
+class TestSubTests(ExtraAssertions, unittest.TestCase):
 
     def run_test(self, cls):
         result = unittest.TestResult()
