@@ -2314,9 +2314,9 @@ pyexpat_exec(PyObject *mod)
     capi.SetHashSalt = NULL;
 #endif
 #if XML_COMBINED_VERSION >= 20800
-    capi->SetHashSalt16Bytes = XML_SetHashSalt16Bytes;
+    capi.SetHashSalt16Bytes = XML_SetHashSalt16Bytes;
 #else
-    capi->SetHashSalt16Bytes = NULL;
+    capi.SetHashSalt16Bytes = NULL;
 #endif
 #if XML_COMBINED_VERSION >= 20600
     capi.SetReparseDeferralEnabled = XML_SetReparseDeferralEnabled;
