@@ -267,7 +267,8 @@ Diff generation
    .. versionchanged:: 3.16
       Added keyword-only *autojunk* parameter.
 
-   Optional *autojunk* flag sets on/off automatic junk heuristic of :class:`SequenceMatcher`.
+   Setting the optional *autojunk* argument to ``False`` will turn
+   :ref:`automatic junk heuristic <difflib-junk>` off.
 
    The context diff format normally has a header for filenames and modification
    times.  Any or all of these may be specified using strings for *fromfile*,
