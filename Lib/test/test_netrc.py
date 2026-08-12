@@ -62,6 +62,9 @@ class NetrcTestCase(unittest.TestCase):
             "machine host.domain.com login",
             "machine host.domain.com account",
             "machine host.domain.com password",
+            "machine host.domain.com login \"\"",
+            "machine host.domain.com account \"\"",
+            "machine host.domain.com password \"\"",
             "machine host.domain.com login \"\" account",
             "machine host.domain.com login \"\" password",
             "machine host.domain.com account \"\" password"
@@ -74,6 +77,9 @@ class NetrcTestCase(unittest.TestCase):
             "default login",
             "default account",
             "default password",
+            "default login \"\"",
+            "default account \"\"",
+            "default password \"\"",
             "default login \"\" account",
             "default login \"\" password",
             "default account \"\" password"

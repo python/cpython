@@ -140,22 +140,16 @@ class netrc:
                     if lexer.lineno == prev_lineno:
                         lexer.instream.readline()
                     continue
-                if tt is None or tt in {'machine', 'default', 'macdef'}:
+                if tt in {None, 'machine', 'default', 'macdef'}:
                     self.hosts[entryname] = (login, account, password)
                     lexer.push_token(tt)
                     break
                 elif tt == 'login' or tt == 'user':
-                    login = lexer.get_token()
-                    if login is None:
-                        login = ''
+                    login = lexer.get_token() or ''
                 elif tt == 'account':
-                    account = lexer.get_token()
-                    if account is None:
-                        account = ''
+                    account = lexer.get_token() or ''
                 elif tt == 'password':
-                    password = lexer.get_token()
-                    if password is None:
-                        password = ''
+                    password = lexer.get_token() or ''
                 else:
                     raise NetrcParseError("bad follower token %r" % tt,
                                           file, lexer.lineno)
