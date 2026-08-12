@@ -81,7 +81,7 @@ If you need to add or remove at both ends, consider using a
 
 A :class:`tuple` is an :term:`immutable` sequence. Because a tuple can never
 change, there are no insertion or deletion costs, and making a copy is constant
-time as the same object is returned.
+time (*O*\ (1)) as the same object is returned.
 
 .. list-table::
    :header-rows: 1
