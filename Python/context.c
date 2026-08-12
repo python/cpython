@@ -66,21 +66,6 @@ contextvar_set(PyContextVar *var, PyObject *val);
 static int
 contextvar_del(PyContextVar *var);
 
-
-/* The HAMT held by a context is immutable, but the pointer to it is not:
-   contextvar_set() and contextvar_del() install a new HAMT and drop the
-   reference to the previous one.  Only the thread that entered a context can
-   do that (a context cannot be entered by two threads at once), but any
-   thread can read a context object at any time -- ctx.copy(), len(ctx),
-   ctx.items(), etc.  Such a reader has to acquire its own reference to the
-   HAMT under the context's lock; reading ctx_vars unlocked lets the writer
-   deallocate the HAMT while the reader is walking it.
-
-   With that discipline -- ctx_vars written only by the owning thread, and
-   read by other threads only under the context's lock -- there is no
-   unsynchronized concurrent access, so plain (non-atomic) loads and stores
-   are used.  */
-
 static inline PyHamtObject *
 context_get_vars(PyContext *ctx)
 {
@@ -93,20 +78,18 @@ context_get_vars(PyContext *ctx)
     return vars;
 }
 
-/* Same, but for the context that is current on this thread.  No other thread
-   can have it as its current context, so this thread is the only one that can
-   replace its HAMT: neither the lock nor a new reference is needed here.
-   Returns a borrowed reference.  */
 static inline PyHamtObject *
 context_get_current_vars(PyContext *ctx)
 {
+    // ctx_vars written only by the owning thread, and read by other threads
+    // only under the context's lock, a plain (non-atomic) load is okay
     PyHamtObject *vars = ctx->ctx_vars;
     assert(vars != NULL);
     return vars;
 }
 
-/* Install a new HAMT in a context.  Steals a reference to new_vars.  Must
-   only be called by the thread that has `ctx` as its current context.  */
+// Note: steals a reference to new_vars and must only be called by the thread
+// that has `ctx` as its current context.
 static inline void
 context_set_vars(PyContext *ctx, PyHamtObject *new_vars)
 {
@@ -666,7 +649,6 @@ context_tp_subscript(PyObject *op, PyObject *key)
     PyContext *self = _PyContext_CAST(op);
     PyHamtObject *vars = context_get_vars(self);
     int found = _PyHamt_Find(vars, key, &val);
-    /* `val` is borrowed from `vars`, take a reference before dropping it. */
     Py_XINCREF(val);
     Py_DECREF(vars);
     if (found < 0) {
@@ -719,7 +701,6 @@ _contextvars_Context_get_impl(PyContext *self, PyObject *key,
     PyObject *val = NULL;
     PyHamtObject *vars = context_get_vars(self);
     int found = _PyHamt_Find(vars, key, &val);
-    /* `val` is borrowed from `vars`, take a reference before dropping it. */
     Py_XINCREF(val);
     Py_DECREF(vars);
     if (found < 0) {
