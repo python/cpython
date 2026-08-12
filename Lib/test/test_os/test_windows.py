@@ -445,6 +445,12 @@ class Win32JunctionTests(unittest.TestCase):
         self.assertEqual(os.path.normcase("\\\\?\\" + self.junction_target),
                          os.path.normcase(os.readlink(self.junction)))
 
+    def test_readlink_printname(self):
+        _winapi.CreateJunction(self.junction_target, self.junction)
+        self.assertEqual(os.path.normcase(self.junction_target),
+                         os.path.normcase(os.readlink(self.junction,
+                                                      printname=True)))
+
     def test_unlink_removes_junction(self):
         _winapi.CreateJunction(self.junction_target, self.junction)
         self.assertTrue(os.path.exists(self.junction))

@@ -3282,6 +3282,33 @@ class ReadlinkTests(unittest.TestCase):
         self.assertPathEqual(path, self.filelinkb_target)
         self.assertIsInstance(path, bytes)
 
+    @os_helper.skip_unless_symlink
+    def test_printname(self):
+        # The print name is the target as it was specified, without the
+        # "\\?\" prefix which Windows adds to the substitute name.
+        os.symlink(self.filelink_target, self.filelink)
+        self.addCleanup(os_helper.unlink, self.filelink)
+        self.assertEqual(os.readlink(self.filelink, printname=True),
+                         self.filelink_target)
+        self.assertPathEqual(os.readlink(self.filelink), self.filelink_target)
+
+    @os_helper.skip_unless_symlink
+    def test_printname_bytes(self):
+        os.symlink(self.filelinkb_target, self.filelinkb)
+        self.addCleanup(os_helper.unlink, self.filelinkb)
+        path = os.readlink(self.filelinkb, printname=True)
+        self.assertEqual(path, self.filelinkb_target)
+        self.assertIsInstance(path, bytes)
+
+    @os_helper.skip_unless_symlink
+    def test_printname_relative(self):
+        # A relative target is not converted to the substitute name.
+        os.symlink('relative-target', self.filelink)
+        self.addCleanup(os_helper.unlink, self.filelink)
+        self.assertEqual(os.readlink(self.filelink, printname=True),
+                         'relative-target')
+        self.assertEqual(os.readlink(self.filelink), 'relative-target')
+
 
 @os_helper.skip_unless_symlink
 class NonLocalSymlinkTests(unittest.TestCase):

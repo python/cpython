@@ -10930,6 +10930,7 @@ os.readlink
     path: path_t
     *
     dir_fd: dir_fd(requires='readlinkat') = None
+    printname: bool = False
 
 Return a string representing the path to which the symbolic link points.
 
@@ -10939,11 +10940,17 @@ that directory.
 
 dir_fd may not be implemented on your platform.  If it is unavailable,
 using it will raise a NotImplementedError.
+
+On Windows, if printname is true, return the print name of the link --
+the target path as it was specified when the link was created -- instead
+of the substitute name used by the system to resolve the link.
+
+printname is ignored on non-Windows platforms.
 [clinic start generated code]*/
 
 static PyObject *
-os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
-/*[clinic end generated code: output=d21b732a2e814030 input=03d10130870dbca8]*/
+os_readlink_impl(PyObject *module, path_t *path, int dir_fd, int printname)
+/*[clinic end generated code: output=f4a4454719a32798 input=9877a2bcf1aa0726]*/
 {
 #if defined(HAVE_READLINK)
     char buffer[MAXPATHLEN+1];
@@ -11019,24 +11026,41 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
 
     wchar_t *name = NULL;
     Py_ssize_t nameLen = 0;
+    /* The print name is optional, fall back to the substitute name. */
+    int is_printname = 0;
     if (rdb->ReparseTag == IO_REPARSE_TAG_SYMLINK)
     {
-        name = (wchar_t *)((char*)rdb->SymbolicLinkReparseBuffer.PathBuffer +
-                           rdb->SymbolicLinkReparseBuffer.SubstituteNameOffset);
-        nameLen = rdb->SymbolicLinkReparseBuffer.SubstituteNameLength / sizeof(wchar_t);
+        USHORT offset = rdb->SymbolicLinkReparseBuffer.SubstituteNameOffset;
+        USHORT length = rdb->SymbolicLinkReparseBuffer.SubstituteNameLength;
+        if (printname && rdb->SymbolicLinkReparseBuffer.PrintNameLength) {
+            offset = rdb->SymbolicLinkReparseBuffer.PrintNameOffset;
+            length = rdb->SymbolicLinkReparseBuffer.PrintNameLength;
+            is_printname = 1;
+        }
+        name = (wchar_t *)((char*)rdb->SymbolicLinkReparseBuffer.PathBuffer
+                           + offset);
+        nameLen = length / sizeof(wchar_t);
     }
     else if (rdb->ReparseTag == IO_REPARSE_TAG_MOUNT_POINT)
     {
-        name = (wchar_t *)((char*)rdb->MountPointReparseBuffer.PathBuffer +
-                           rdb->MountPointReparseBuffer.SubstituteNameOffset);
-        nameLen = rdb->MountPointReparseBuffer.SubstituteNameLength / sizeof(wchar_t);
+        USHORT offset = rdb->MountPointReparseBuffer.SubstituteNameOffset;
+        USHORT length = rdb->MountPointReparseBuffer.SubstituteNameLength;
+        if (printname && rdb->MountPointReparseBuffer.PrintNameLength) {
+            offset = rdb->MountPointReparseBuffer.PrintNameOffset;
+            length = rdb->MountPointReparseBuffer.PrintNameLength;
+            is_printname = 1;
+        }
+        name = (wchar_t *)((char*)rdb->MountPointReparseBuffer.PathBuffer
+                           + offset);
+        nameLen = length / sizeof(wchar_t);
     }
     else
     {
         PyErr_SetString(PyExc_ValueError, "not a symbolic link");
     }
     if (name) {
-        if (nameLen > 4 && wcsncmp(name, L"\\??\\", 4) == 0) {
+        /* Only the substitute name is in the NT namespace. */
+        if (!is_printname && nameLen > 4 && wcsncmp(name, L"\\??\\", 4) == 0) {
             /* Our buffer is mutable, so this is okay */
             name[1] = L'\\';
         }

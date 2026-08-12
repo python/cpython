@@ -2002,6 +2002,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(prec));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(preserve_exc));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(print_file_and_line));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(printname));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(priority));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(progress));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(progress_callback));
