@@ -17440,7 +17440,7 @@ os_getrandom_impl(PyObject *module, Py_ssize_t size, unsigned int flags)
 #ifdef HAVE_GETRANDOM
         n = getrandom(data, size, flags);
 #else
-        n = syscall(SYS_getrandom, data, size, flags);
+        n = syscall(__NR_getrandom, data, size, flags);
 #endif
         if (n < 0 && errno == EINTR) {
             if (PyErr_CheckSignals() < 0) {
