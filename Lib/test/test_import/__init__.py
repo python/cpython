@@ -506,6 +506,7 @@ class ImportTests(unittest.TestCase, ExtraAssertions):
                 forget(TESTFN)
                 unlink(source)
                 unlink(pyc)
+                rmtree('__pycache__')
 
         sys.path.insert(0, os.curdir)
         try:
@@ -685,6 +686,7 @@ class ImportTests(unittest.TestCase, ExtraAssertions):
                   import importlib
             sys.argv.insert(0, C())
             """))
+        self.addCleanup(unlink, testfn)
         script_helper.assert_python_ok(testfn)
 
     @skip_if_dont_write_bytecode
@@ -2082,6 +2084,7 @@ class ImportTracebackTests(unittest.TestCase):
         # encode filenames, especially on Windows
         pyname = script_helper.make_script('', TESTFN_UNENCODABLE, 'pass')
         self.addCleanup(unlink, pyname)
+        self.addCleanup(rmtree, '__pycache__')
         name = pyname[:-3]
         script_helper.assert_python_ok("-c", "mod = __import__(%a)" % name,
                                        __isolated=False)
