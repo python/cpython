@@ -1817,6 +1817,35 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
         self._assert_context_options(ctx)
 
+    def test__create_stdlib_context_check_hostname(self):
+        # gh-114905: check_hostname cannot be combined with CERT_NONE,
+        # the default for cert_reqs.
+        msg = "Cannot set verify_mode to CERT_NONE when check_hostname"
+        with self.assertRaisesRegex(ValueError, msg):
+            ssl._create_stdlib_context(check_hostname=True)
+        with self.assertRaisesRegex(ValueError, msg):
+            ssl._create_stdlib_context(cert_reqs=ssl.CERT_NONE,
+                                       check_hostname=True)
+
+        # Accepted before 3.10 with a legacy protocol.
+        if has_tls_protocol('PROTOCOL_TLSv1_2'):
+            with warnings_helper.check_warnings():
+                with self.assertRaisesRegex(ValueError, msg):
+                    ssl._create_stdlib_context(ssl.PROTOCOL_TLSv1_2,
+                                               cert_reqs=ssl.CERT_NONE,
+                                               check_hostname=True)
+
+        # cert_reqs=None leaves PROTOCOL_TLS_CLIENT's CERT_REQUIRED.
+        ctx = ssl._create_stdlib_context(cert_reqs=None, check_hostname=True)
+        self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
+        self.assertTrue(ctx.check_hostname)
+
+        # CERT_REQUIRED is covered by test__create_stdlib_context().
+        ctx = ssl._create_stdlib_context(cert_reqs=ssl.CERT_OPTIONAL,
+                                         check_hostname=True)
+        self.assertEqual(ctx.verify_mode, ssl.CERT_OPTIONAL)
+        self.assertTrue(ctx.check_hostname)
+
     def test_check_hostname(self):
         with warnings_helper.check_warnings():
             ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
