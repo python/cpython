@@ -3165,7 +3165,6 @@ makeuniversal(XMLParserObject* self, const char* string)
            necessary */
 
         PyObject* tag;
-        char* p;
         Py_ssize_t i;
 
         /* look for namespace separator */
@@ -3174,22 +3173,28 @@ makeuniversal(XMLParserObject* self, const char* string)
                 break;
         if (i != size) {
             /* convert to universal name */
-            tag = PyBytes_FromStringAndSize(NULL, size+1);
+            PyBytesWriter *writer = PyBytesWriter_Create(1 + size);
+            if (writer == NULL) {
+                Py_DECREF(key);
+                return NULL;
+            }
+            char *p = PyBytesWriter_GetData(writer);
+            p[0] = '{';
+            memcpy(p+1, string, size);
+            size++;
+
+            tag = PyBytesWriter_Finish(writer);
             if (tag == NULL) {
                 Py_DECREF(key);
                 return NULL;
             }
-            p = PyBytes_AS_STRING(tag);
-            p[0] = '{';
-            memcpy(p+1, string, size);
-            size++;
         } else {
             /* plain name; use key as tag */
             tag = Py_NewRef(key);
         }
 
         /* decode universal name */
-        p = PyBytes_AS_STRING(tag);
+        const char *p = PyBytes_AS_STRING(tag);
         value = PyUnicode_DecodeUTF8(p, size, "strict");
         Py_DECREF(tag);
         if (!value) {
