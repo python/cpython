@@ -6328,6 +6328,25 @@ class TestSignatureDefinitions(unittest.TestCase):
         import signal
         self._test_module_has_signatures(signal)
 
+    def test_socket_module_has_signatures(self):
+        import socket
+        # The socket type has no signature, it is created by socket().
+        no_signature = {'SocketType'}
+        # The C default is NULL and None is not accepted
+        unsupported_signature = {'getservbyname', 'getservbyport'}
+        # Not all functions and methods are available on all platforms.
+        unsupported_signature &= vars(socket).keys()
+        # These cannot be converted to Argument Clinic: their behaviour
+        # depends on the number of the arguments.
+        methods_no_signature = {'ioctl', 'sendto', 'setsockopt'}
+        # These have parameters with unrepresentable default values.
+        methods_unsupported_signature = {'listen', 'sendmsg', 'sendmsg_afalg'}
+        defined = vars(socket.SocketType).keys()
+        self._test_module_has_signatures(socket,
+                no_signature, unsupported_signature,
+                {'SocketType': methods_no_signature & defined},
+                {'SocketType': methods_unsupported_signature & defined})
+
     def test_stat_module_has_signatures(self):
         import stat
         self._test_module_has_signatures(stat)
