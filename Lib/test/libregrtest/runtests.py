@@ -110,7 +110,10 @@ class RunTests:
         return RunTests(**state)
 
     def create_worker_runtests(self, **override) -> WorkerRunTests:
-        state = dataclasses.asdict(self)
+        # Drop the large fields *before* converting: asdict() copies them
+        # deeply, which is expensive when the whole run has many cases.
+        state = dataclasses.asdict(
+            dataclasses.replace(self, tests=(), case_groups=None))
         state.update(override)
         return WorkerRunTests(**state)
 
