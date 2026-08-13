@@ -84,7 +84,7 @@ returns the same object, so is constant time (*O*\ (1)).
 
    * - Operation
      - Complexity
-   * - Copy (``tuple(s)``)
+   * - Copy (``tuple(t)``)
      - *O*\ (1)
    * - Get item (``t[k]``)
      - *O*\ (1)
