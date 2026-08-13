@@ -285,7 +285,7 @@ class _SpoofOut(StringIO):
         return result
 
     def truncate(self, size=None):
-        if size != None:
+        if size is not None:
             self.seek(size)
         StringIO.truncate(self)
 
