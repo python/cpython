@@ -65,7 +65,7 @@ class byte_char_return_converter(CReturnConverter):
         data.declarations.append('char s[1];')
         data.return_value = 's[0]'
         data.return_conversion.append(
-            'return_value = PyBytes_FromStringAndSize(s, 1);\n')
+            f'{data.parser_retval} = PyBytes_FromStringAndSize(s, 1);\n')
 
 class wchar_t_return_converter(CReturnConverter):
     type = 'wchar_t'
@@ -73,9 +73,10 @@ class wchar_t_return_converter(CReturnConverter):
     def render(self, function, data):
         self.declare(data)
         data.return_conversion.append(
-            'return_value = PyUnicode_FromOrdinal(_return_value);\n')
+            f'{data.parser_retval} = '
+            f'PyUnicode_FromOrdinal({data.converter_retval});\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=ff031be44ab3250d]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=ed7a4a045a6d0496]*/
 
 /*[clinic input]
 module msvcrt

@@ -110,7 +110,8 @@ class bool_return_converter(CReturnConverter):
         self.declare(data)
         self.err_occurred_if(f"{data.converter_retval} == -1", data)
         data.return_conversion.append(
-            f'return_value = PyBool_FromLong((long){data.converter_retval});\n'
+            f'{data.parser_retval} = '
+            f'PyBool_FromLong((long){data.converter_retval});\n'
         )
 
 
@@ -124,7 +125,8 @@ class long_return_converter(CReturnConverter):
         self.declare(data)
         self.err_occurred_if(f"{data.converter_retval} == {self.unsigned_cast}-1", data)
         data.return_conversion.append(
-            f'return_value = {self.conversion_fn}({self.cast}{data.converter_retval});\n'
+            f'{data.parser_retval} = '
+            f'{self.conversion_fn}({self.cast}{data.converter_retval});\n'
         )
 
 
@@ -164,7 +166,8 @@ class double_return_converter(CReturnConverter):
         self.declare(data)
         self.err_occurred_if(f"{data.converter_retval} == -1.0", data)
         data.return_conversion.append(
-            f'return_value = PyFloat_FromDouble({self.cast}{data.converter_retval});\n'
+            f'{data.parser_retval} = '
+            f'PyFloat_FromDouble({self.cast}{data.converter_retval});\n'
         )
 
 

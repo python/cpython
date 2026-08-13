@@ -525,6 +525,7 @@ class CLanguage(Language):
         template_dict['cleanup'] = libclinic.format_escape("".join(data.cleanup))
 
         template_dict['return_value'] = data.return_value
+        template_dict['parser_retval'] = data.parser_retval
         template_dict['lock'] = "\n".join(data.lock)
         template_dict['unlock'] = "\n".join(data.unlock)
 

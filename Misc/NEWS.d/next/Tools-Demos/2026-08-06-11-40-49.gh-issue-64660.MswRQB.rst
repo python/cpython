@@ -1,0 +1,3 @@
+Argument Clinic return converters no longer need to hardcode the name of the
+variable returned by the parsing function.
+It is now available as ``data.parser_retval``.
