@@ -5807,7 +5807,9 @@ codegen_annassign(compiler *c, stmt_ty s)
                         ADDOP_NAME(c, loc, LOAD_NAME, &_Py_ID(__conditional_annotations__), names);
                     }
                     ADDOP_LOAD_CONST_NEW(c, loc, conditional_annotation_index);
-                    ADDOP_I(c, loc, SET_ADD, 1);
+                    // gh-154902: change SET_ADD to new INTRINSIC_ADD_CONDITIONAL_ANNOTATION intrinsic
+                    ADDOP_I(c, loc, CALL_INTRINSIC_2,
+                            INTRINSIC_ADD_CONDITIONAL_ANNOTATION);
                     ADDOP(c, loc, POP_TOP);
                 }
             }

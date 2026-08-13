@@ -1729,9 +1729,9 @@ class EventLoopTestsMixin:
                          "Don't support pipes for Windows")
     @unittest.skipUnless(hasattr(os, 'mkfifo'), 'requires os.mkfifo()')
     def test_write_named_fifo_unread_data(self):
-        # gh-145030: on macOS, the write end of a named FIFO polls as
-        # readable while unread data sits in the FIFO, which made the
-        # transport misinterpret the event as the reader hanging up
+        # gh-145030: on macOS and Solaris, the write end of a named FIFO
+        # polls as readable while unread data sits in the FIFO, which made
+        # the transport misinterpret the event as the reader hanging up
         # and close itself.
         path = os_helper.TESTFN
         os.mkfifo(path)
