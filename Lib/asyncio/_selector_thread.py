@@ -15,10 +15,8 @@ Adapted from Tornado 6.5.2
 """
 
 import asyncio
-import atexit
 import contextvars
 import errno
-import functools
 import select
 import socket
 import threading
