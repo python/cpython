@@ -424,7 +424,7 @@ class WorkerThread(threading.Thread):
                     finally:
                         self.test_name = _NOT_RUNNING
                     mp_result.result.duration = time.monotonic() - self.start_time
-                    if single_process_per_case and test_name != module_name:
+                    if single_process_per_case:
                         # Report the test case, not the test module
                         mp_result.result.test_name = test_name
                     self.output.put((False, mp_result))
