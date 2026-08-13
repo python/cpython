@@ -579,6 +579,9 @@
 /* Define this if you have flockfile(), getc_unlocked(), and funlockfile() */
 #undef HAVE_GETC_UNLOCKED
 
+/* Define to 1 if you have the 'getdents64' function. */
+#undef HAVE_GETDENTS64
+
 /* Define to 1 if you have the 'getegid' function. */
 #undef HAVE_GETEGID
 
@@ -713,6 +716,9 @@
 
 /* Define to 1 if you have the 'getspnam' function. */
 #undef HAVE_GETSPNAM
+
+/* Define to 1 if you have the 'gettid' function. */
+#undef HAVE_GETTID
 
 /* Define to 1 if you have the 'getuid' function. */
 #undef HAVE_GETUID
@@ -1045,6 +1051,15 @@
 
 /* Define to 1 if you have the 'pause' function. */
 #undef HAVE_PAUSE
+
+/* Define to 1 if you have the 'pidfd_getfd' function. */
+#undef HAVE_PIDFD_GETFD
+
+/* Define to 1 if you have the 'pidfd_open' function. */
+#undef HAVE_PIDFD_OPEN
+
+/* Define to 1 if you have the 'pidfd_send_signal' function. */
+#undef HAVE_PIDFD_SEND_SIGNAL
 
 /* Define to 1 if you have the 'pipe' function. */
 #undef HAVE_PIPE

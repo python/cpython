@@ -53,6 +53,10 @@
 #  include <pthread.h>
 #endif
 
+#ifdef HAVE_SYS_PIDFD_H
+#  include <sys/pidfd.h>          // pidfd_send_signal()
+#endif
+
 #ifndef SIG_ERR
 #  define SIG_ERR ((PyOS_sighandler_t)(-1))
 #endif
@@ -1300,15 +1304,16 @@ signal_pthread_kill_impl(PyObject *module, unsigned long thread_id,
 
 
 // This system call always crashes on older Android versions.
-#if defined(__linux__) && defined(__NR_pidfd_send_signal) && \
-    !(defined(__ANDROID__) && __ANDROID_API__ < 31)
+#if defined(HAVE_PIDFD_SEND_SIGNAL) \
+    || (defined(__linux__) && defined(__NR_pidfd_send_signal) \
+        && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
 /*[clinic input]
 signal.pidfd_send_signal
 
     pidfd: int
     signalnum: int
     siginfo: object = None
-    flags: int = 0
+    flags: unsigned_int(bitwise=True) = 0
     /
 
 Send a signal to a process referred to by a pid file descriptor.
@@ -1316,15 +1321,20 @@ Send a signal to a process referred to by a pid file descriptor.
 
 static PyObject *
 signal_pidfd_send_signal_impl(PyObject *module, int pidfd, int signalnum,
-                              PyObject *siginfo, int flags)
-/*[clinic end generated code: output=2d59f04a75d9cbdf input=2a6543a1f4ac2000]*/
+                              PyObject *siginfo, unsigned int flags)
+/*[clinic end generated code: output=1804b5a19d269104 input=a6e82a3c264fa19d]*/
 
 {
     if (siginfo != Py_None) {
         PyErr_SetString(PyExc_TypeError, "siginfo must be None");
         return NULL;
     }
-    if (syscall(__NR_pidfd_send_signal, pidfd, signalnum, NULL, flags) < 0) {
+#ifdef HAVE_PIDFD_SEND_SIGNAL
+    int res = pidfd_send_signal(pidfd, signalnum, NULL, flags);
+#else
+    int res = syscall(__NR_pidfd_send_signal, pidfd, signalnum, NULL, flags);
+#endif
+    if (res < 0) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }

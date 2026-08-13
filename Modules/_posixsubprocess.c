@@ -388,20 +388,26 @@ _close_range_except(int start_fd,
     return 0;
 }
 
-#if defined(__linux__) && defined(HAVE_SYS_SYSCALL_H)
+#if defined(HAVE_GETDENTS64) \
+    || (defined(__linux__) && defined(HAVE_SYS_SYSCALL_H))
+
+#ifdef HAVE_GETDENTS64
+#  define py_dirent64 dirent64
+#else
 /* It doesn't matter if d_name has room for NAME_MAX chars; we're using this
  * only to read a directory of short file descriptor number names.  The kernel
  * will return an error if we didn't give it enough space.  Highly Unlikely.
  * This structure is very old and stable: It will not change unless the kernel
  * chooses to break compatibility with all existing binaries.  Highly Unlikely.
  */
-struct linux_dirent64 {
+struct py_dirent64 {
    unsigned long long d_ino;
    long long d_off;
    unsigned short d_reclen;     /* Length of this linux_dirent */
    unsigned char  d_type;
    char           d_name[256];  /* Filename (null-terminated) */
 };
+#endif  // !HAVE_GETDENTS64
 
 static int
 _brute_force_closer(int first, int last)
@@ -441,19 +447,27 @@ _close_open_fds_safe(int start_fd, int *fds_to_keep, Py_ssize_t fds_to_keep_len)
                             _brute_force_closer);
         return;
     } else {
-        char buffer[sizeof(struct linux_dirent64)];
-        int bytes;
-        while ((bytes = syscall(SYS_getdents64, fd_dir_fd,
-                                (struct linux_dirent64 *)buffer,
-                                sizeof(buffer))) > 0) {
-            struct linux_dirent64 *entry;
+        char buffer[sizeof(struct py_dirent64)];
+        Py_ssize_t bytes;
+        while (1) {
+#ifdef HAVE_GETDENTS64
+            bytes = getdents64(fd_dir_fd, buffer, sizeof(buffer));
+#else
+            bytes = syscall(SYS_getdents64, fd_dir_fd,
+                            (struct py_dirent64 *)buffer, sizeof(buffer));
+#endif
+            if (bytes <= 0) {
+                break;
+            }
+
+            struct py_dirent64 *entry;
             int offset;
 #ifdef _Py_MEMORY_SANITIZER
             __msan_unpoison(buffer, bytes);
 #endif
             for (offset = 0; offset < bytes; offset += entry->d_reclen) {
                 int fd;
-                entry = (struct linux_dirent64 *)(buffer + offset);
+                entry = (struct py_dirent64 *)(buffer + offset);
                 if ((fd = _pos_int_from_ascii(entry->d_name)) < 0)
                     continue;  /* Not a number. */
                 if (fd != fd_dir_fd && fd >= start_fd &&
