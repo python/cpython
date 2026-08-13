@@ -37,7 +37,7 @@ PyDoc_STRVAR(_decimal_Context_Etop__doc__,
 "Return a value equal to Emax - prec + 1.\n"
 "\n"
 "This is the maximum exponent if the _clamp field of the context is\n"
-"set to 1 (IEEE clamp mode).  Etop() must not be negative.");
+"set to 1 (IEEE clamp mode).");
 
 #define _DECIMAL_CONTEXT_ETOP_METHODDEF    \
     {"Etop", (PyCFunction)_decimal_Context_Etop, METH_NOARGS, _decimal_Context_Etop__doc__},
@@ -5444,7 +5444,7 @@ PyDoc_STRVAR(_decimal_Context_power__doc__,
 "Compute a**b.\n"
 "\n"
 "If \'a\' is negative, then \'b\' must be integral. The result will be\n"
-"inexact unless \'a\' is integral and the result is finite and can be\n"
+"inexact unless \'b\' is integral and the result is finite and can be\n"
 "expressed exactly in \'precision\' digits.  In the Python version the\n"
 "result is always correctly rounded, in the C version the result is\n"
 "almost always correctly rounded.\n"
@@ -6139,7 +6139,7 @@ PyDoc_STRVAR(_decimal_Context_canonical__doc__,
 "canonical($self, x, /)\n"
 "--\n"
 "\n"
-"Return a new instance of x.");
+"Return x unchanged.");
 
 #define _DECIMAL_CONTEXT_CANONICAL_METHODDEF    \
     {"canonical", _PyCFunction_CAST(_decimal_Context_canonical), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_canonical__doc__},
@@ -7100,4 +7100,4 @@ exit:
 #ifndef _DECIMAL_CONTEXT_APPLY_METHODDEF
     #define _DECIMAL_CONTEXT_APPLY_METHODDEF
 #endif /* !defined(_DECIMAL_CONTEXT_APPLY_METHODDEF) */
-/*[clinic end generated code: output=718b1f6c20412350 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=98b3741f9f7a95fd input=a9049054013a1b77]*/

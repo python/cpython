@@ -940,12 +940,12 @@ _decimal.Context.Etop
 Return a value equal to Emax - prec + 1.
 
 This is the maximum exponent if the _clamp field of the context is
-set to 1 (IEEE clamp mode).  Etop() must not be negative.
+set to 1 (IEEE clamp mode).
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Context_Etop_impl(PyObject *self)
-/*[clinic end generated code: output=f0a3f6e1b829074e input=35b9defc69d5e5d1]*/
+/*[clinic end generated code: output=f0a3f6e1b829074e input=a3e53bbf31ffd330]*/
 {
     return PyLong_FromSsize_t(mpd_etop(CTX(self)));
 }
@@ -6785,7 +6785,7 @@ _decimal.Context.power
 Compute a**b.
 
 If 'a' is negative, then 'b' must be integral. The result will be
-inexact unless 'a' is integral and the result is finite and can be
+inexact unless 'b' is integral and the result is finite and can be
 expressed exactly in 'precision' digits.  In the Python version the
 result is always correctly rounded, in the C version the result is
 almost always correctly rounded.
@@ -6803,7 +6803,7 @@ restrictions hold:
 static PyObject *
 _decimal_Context_power_impl(PyObject *context, PyTypeObject *cls,
                             PyObject *base, PyObject *exp, PyObject *mod)
-/*[clinic end generated code: output=d06d40c37cdd69dc input=178a254468ec189b]*/
+/*[clinic end generated code: output=d06d40c37cdd69dc input=660210a6607ca4b0]*/
 {
     PyObject *a, *b, *c = NULL;
     PyObject *result;
@@ -7063,13 +7063,13 @@ _decimal_Context_apply_impl(PyObject *context, PyTypeObject *cls,
 /*[clinic input]
 _decimal.Context.canonical = _decimal.Context.is_normal
 
-Return a new instance of x.
+Return x unchanged.
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Context_canonical_impl(PyObject *context, PyTypeObject *cls,
                                 PyObject *x)
-/*[clinic end generated code: output=f213e433e2032e5e input=025ecb106ac15bff]*/
+/*[clinic end generated code: output=f213e433e2032e5e input=f8fd49573263a2b6]*/
 {
     decimal_state *state = PyType_GetModuleState(cls);
     if (!PyDec_Check(state, x)) {
