@@ -11,6 +11,7 @@ import stat
 import struct
 import subprocess
 import sys
+import tempfile
 import time
 import unittest
 import unittest.mock as mock
@@ -711,6 +712,30 @@ class Bzip2TestsWithSourceFile(AbstractTestsWithSourceFile,
 class LzmaTestsWithSourceFile(AbstractTestsWithSourceFile,
                               unittest.TestCase):
     compression = zipfile.ZIP_LZMA
+
+    def test_extractall_rejects_huge_lzma_dictionary(self):
+        # A member whose LZMA properties declare a dictionary larger than
+        # liblzma's maximum must fail with LZMAError instead of making
+        # liblzma allocate that memory up front (memory DoS: the
+        # dictionary is allocated from the 5-byte properties header alone,
+        # before any compressed data is decompressed).
+        import lzma
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_LZMA) as zf:
+            zf.writestr("member.txt", b"hello")
+        data = bytearray(buf.getvalue())
+        info = zipfile.ZipFile(io.BytesIO(data)).getinfo("member.txt")
+        # Local header: 30 bytes + name + extra, then the LZMA stream:
+        # [2-byte version][2-byte props size][5-byte props][payload].
+        lzma_stream = (30 + len(info.filename) + len(info.extra)
+                       + info.header_offset + 4)
+        bomb_props = b"\x5d\x00\xfc\x7f\xff"  # ~2 GiB dictionary
+        self.assertEqual(len(bomb_props), 5)
+        data[lzma_stream:lzma_stream + 5] = bomb_props
+        with zipfile.ZipFile(io.BytesIO(bytes(data))) as zf:
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                with self.assertRaises(lzma.LZMAError):
+                    zf.extractall(path=tmp_dir)
 
 @requires_zstd()
 class ZstdTestsWithSourceFile(AbstractTestsWithSourceFile,
