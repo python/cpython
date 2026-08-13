@@ -918,6 +918,22 @@
             break;
         }
 
+        case _GUARD_TOS_AND_NOS_INT: {
+            break;
+        }
+
+        case _GUARD_TOS_AND_NOS_OVERFLOWED: {
+            break;
+        }
+
+        case _GUARD_TOS_AND_NOS_FLOAT: {
+            break;
+        }
+
+        case _GUARD_TOS_AND_NOS_UNICODE: {
+            break;
+        }
+
         case _BINARY_OP_MULTIPLY_FLOAT: {
             JitOptRef right;
             JitOptRef left;
