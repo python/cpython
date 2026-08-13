@@ -1446,7 +1446,8 @@ _PyCodec_SurrogateEscapeUnicodeEncodeError(PyObject *exc)
     }
     Py_DECREF(obj);
 
-    PyObject *res = PyBytesWriter_Finish(writer);  // can be NULL
+    PyObject *res = PyBytesWriter_Finish(writer);
+    // Py_BuildValue() propagates the exception if res is NULL
     return Py_BuildValue("(Nn)", res, end);
 }
 
