@@ -4403,76 +4403,6 @@
             break;
         }
 
-        case _BINARY_OP_SUBTRACT_INT_r03: {
-            CHECK_CURRENT_CACHED_VALUES(0);
-            ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
-            _PyStackRef right;
-            _PyStackRef left;
-            _PyStackRef res;
-            _PyStackRef l;
-            _PyStackRef r;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-            assert(PyLong_CheckExact(left_o));
-            assert(PyLong_CheckExact(right_o));
-            assert(_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
-            STAT_INC(BINARY_OP, hit);
-            res = _PyCompactLong_Subtract((PyLongObject *)left_o, (PyLongObject *)right_o);
-            if (PyStackRef_IsNull(res)) {
-                UOP_STAT_INC(uopcode, miss);
-                SET_CURRENT_CACHED_VALUES(0);
-                JUMP_TO_JUMP_TARGET();
-            }
-            l = left;
-            r = right;
-            _tos_cache2 = r;
-            _tos_cache1 = l;
-            _tos_cache0 = res;
-            SET_CURRENT_CACHED_VALUES(3);
-            stack_pointer += -2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
-            break;
-        }
-
-        case _BINARY_OP_SUBTRACT_INT_r13: {
-            CHECK_CURRENT_CACHED_VALUES(1);
-            ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
-            _PyStackRef right;
-            _PyStackRef left;
-            _PyStackRef res;
-            _PyStackRef l;
-            _PyStackRef r;
-            _PyStackRef _stack_item_0 = _tos_cache0;
-            right = _stack_item_0;
-            left = stack_pointer[-1];
-            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-            assert(PyLong_CheckExact(left_o));
-            assert(PyLong_CheckExact(right_o));
-            assert(_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
-            STAT_INC(BINARY_OP, hit);
-            res = _PyCompactLong_Subtract((PyLongObject *)left_o, (PyLongObject *)right_o);
-            if (PyStackRef_IsNull(res)) {
-                UOP_STAT_INC(uopcode, miss);
-                _tos_cache0 = right;
-                SET_CURRENT_CACHED_VALUES(1);
-                JUMP_TO_JUMP_TARGET();
-            }
-            l = left;
-            r = right;
-            _tos_cache2 = r;
-            _tos_cache1 = l;
-            _tos_cache0 = res;
-            SET_CURRENT_CACHED_VALUES(3);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
-            break;
-        }
-
         case _BINARY_OP_SUBTRACT_INT_r23: {
             CHECK_CURRENT_CACHED_VALUES(2);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
@@ -4487,11 +4417,55 @@
             left = _stack_item_0;
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-            assert(PyLong_CheckExact(left_o));
-            assert(PyLong_CheckExact(right_o));
-            assert(_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
+            if (!PyLong_CheckExact(left_o)) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache1 = right;
+                _tos_cache0 = left;
+                SET_CURRENT_CACHED_VALUES(2);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (!PyLong_CheckExact(right_o)) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache1 = right;
+                _tos_cache0 = left;
+                SET_CURRENT_CACHED_VALUES(2);
+                JUMP_TO_JUMP_TARGET();
+            }
+            bool both_compact = _PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o);
+            bool shrink_pair = false;
+            if (!both_compact) {
+                stack_pointer[0] = left;
+                stack_pointer[1] = right;
+                stack_pointer += 2;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyFrame_StackPointerValidate(frame);
+                shrink_pair = _PyLong_IsShrinkSubtractPair((PyLongObject *)left_o, (PyLongObject *)right_o);
+                _PyFrame_StackPointerInvalidate(frame);
+                stack_pointer += -2;
+            }
+            if (!(both_compact || shrink_pair)) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache1 = right;
+                _tos_cache0 = left;
+                SET_CURRENT_CACHED_VALUES(2);
+                JUMP_TO_JUMP_TARGET();
+            }
             STAT_INC(BINARY_OP, hit);
-            res = _PyCompactLong_Subtract((PyLongObject *)left_o, (PyLongObject *)right_o);
+            if (both_compact) {
+                res = _PyCompactLong_Subtract((PyLongObject *)left_o, (PyLongObject *)right_o);
+            }
+            else {
+                stack_pointer[0] = left;
+                stack_pointer[1] = right;
+                stack_pointer += 2;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyFrame_StackPointerValidate(frame);
+                res = _PyLong_SubtractShrink((PyLongObject *)left_o, (PyLongObject *)right_o);
+                _PyFrame_StackPointerInvalidate(frame);
+                stack_pointer += -2;
+            }
             if (PyStackRef_IsNull(res)) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache1 = right;

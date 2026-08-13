@@ -2396,7 +2396,9 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
             if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
                 break;
             }
-            if (_PyLong_CheckExactAndCompact(lhs) && _PyLong_CheckExactAndCompact(rhs)) {
+            if (PyLong_CheckExact(lhs) && PyLong_CheckExact(rhs) &&
+                (_PyLong_BothAreCompact((PyLongObject *)lhs, (PyLongObject *)rhs) ||
+                 _PyLong_IsShrinkSubtractPair((PyLongObject *)lhs, (PyLongObject *)rhs))) {
                 specialize(instr, BINARY_OP_SUBTRACT_INT);
                 return;
             }

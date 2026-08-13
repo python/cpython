@@ -1340,43 +1340,52 @@
             next_instr += 6;
             INSTRUCTION_STATS(BINARY_OP_SUBTRACT_INT);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
-            _PyStackRef value;
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
             _PyStackRef l;
             _PyStackRef r;
-            // _GUARD_TOS_INT
-            {
-                value = stack_pointer[-1];
-                PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-                if (!_PyLong_CheckExactAndCompact(value_o)) {
-                    UPDATE_MISS_STATS(BINARY_OP);
-                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
-                }
-            }
-            // _GUARD_NOS_INT
-            {
-                left = stack_pointer[-2];
-                PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-                if (!_PyLong_CheckExactAndCompact(left_o)) {
-                    UPDATE_MISS_STATS(BINARY_OP);
-                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
-                }
-            }
+            _PyStackRef value;
             /* Skip 5 cache entries */
             // _BINARY_OP_SUBTRACT_INT
             {
-                right = value;
+                right = stack_pointer[-1];
+                left = stack_pointer[-2];
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
                 PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-                assert(PyLong_CheckExact(left_o));
-                assert(PyLong_CheckExact(right_o));
-                assert(_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
+                if (!PyLong_CheckExact(left_o)) {
+                    UPDATE_MISS_STATS(BINARY_OP);
+                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
+                    JUMP_TO_PREDICTED(BINARY_OP);
+                }
+                if (!PyLong_CheckExact(right_o)) {
+                    UPDATE_MISS_STATS(BINARY_OP);
+                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
+                    JUMP_TO_PREDICTED(BINARY_OP);
+                }
+                bool both_compact = _PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o);
+                bool shrink_pair = false;
+                if (!both_compact) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyFrame_StackPointerValidate(frame);
+                    shrink_pair = _PyLong_IsShrinkSubtractPair((PyLongObject *)left_o, (PyLongObject *)right_o);
+                    _PyFrame_StackPointerInvalidate(frame);
+                }
+                if (!(both_compact || shrink_pair)) {
+                    UPDATE_MISS_STATS(BINARY_OP);
+                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
+                    JUMP_TO_PREDICTED(BINARY_OP);
+                }
                 STAT_INC(BINARY_OP, hit);
-                res = _PyCompactLong_Subtract((PyLongObject *)left_o, (PyLongObject *)right_o);
+                if (both_compact) {
+                    res = _PyCompactLong_Subtract((PyLongObject *)left_o, (PyLongObject *)right_o);
+                }
+                else {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyFrame_StackPointerValidate(frame);
+                    res = _PyLong_SubtractShrink((PyLongObject *)left_o, (PyLongObject *)right_o);
+                    _PyFrame_StackPointerInvalidate(frame);
+                }
                 if (PyStackRef_IsNull(res)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
