@@ -259,7 +259,7 @@ This reflects information in the XML document that is not of general
 utility to most DOM users.
 
 .. versionchanged:: next
-   :class:`EntityReference` is now implemented.
+   :class:`~xml.dom.EntityReference` is now implemented.
    Note that the parser expands entity references,
    so they only occur in a document if created explicitly.
 

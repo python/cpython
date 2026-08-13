@@ -816,8 +816,8 @@ EntityReference Objects
 .. class:: EntityReference
 
    Represents an entity reference in the XML document.
-   It is a subclass of :class:`Node`.
-   The name of the referenced entity is its :attr:`nodeName`.
+   It is a subclass of :class:`!Node`.
+   The name of the referenced entity is its :attr:`Node.nodeName`.
    Its children are the replacement text of the entity,
    and are read-only.
 

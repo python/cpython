@@ -93,7 +93,9 @@ class Node(xml.dom.Node):
         if newChild is self:
             raise xml.dom.HierarchyRequestErr(
                 "%s cannot be child of itself" % repr(self))
-        if _is_ancestor(newChild, self):
+        # A node without children cannot be an ancestor, and testing this
+        # first keeps appending leaf nodes linear in the depth of the tree.
+        if newChild.childNodes and _is_ancestor(newChild, self):
             raise xml.dom.HierarchyRequestErr(
                 "%s is an ancestor of %s" % (repr(newChild), repr(self)))
 
