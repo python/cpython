@@ -82,6 +82,11 @@ __all__ = ["QUOTE_MINIMAL", "QUOTE_ALL", "QUOTE_NONNUMERIC", "QUOTE_NONE",
            "unix_dialect"]
 
 
+_dialect_attributes = frozenset({
+    'delimiter', 'quotechar', 'escapechar', 'doublequote',
+    'skipinitialspace', 'lineterminator', 'quoting', 'strict',
+})
+
 class Dialect:
     """Describe a CSV dialect.
 
@@ -112,6 +117,17 @@ class Dialect:
         except TypeError as e:
             # Re-raise to get a traceback showing more user code.
             raise Error(str(e)) from None
+
+    def __replace__(self, /, **changes):
+        unexpected = changes.keys() - _dialect_attributes
+        if unexpected:
+            raise TypeError(f'__replace__() got an unexpected keyword '
+                            f'argument {min(unexpected)!r}')
+        new = object.__new__(self.__class__)
+        new.__dict__.update(self.__dict__)
+        new.__dict__.update(changes)
+        new._validate()
+        return new
 
 class excel(Dialect):
     """Describe the usual properties of Excel-generated CSV files."""
