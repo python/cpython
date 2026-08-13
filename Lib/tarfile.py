@@ -1036,6 +1036,8 @@ class TarInfo(object):
             result.gname = gname
         return result
 
+    __replace__ = replace
+
     def get_info(self):
         """Return the TarInfo's attributes as a dictionary.
         """
