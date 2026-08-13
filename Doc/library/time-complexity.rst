@@ -4,7 +4,7 @@
 Time complexity of operations on built-in types
 ===============================================
 
-This page documents the time-complexity of various operations on built-in types
+This page documents the time complexity of various operations on built-in types
 in CPython. Other Python implementations may have different performance
 characteristics. Additionally, the listed costs assume exact built-in types, as
 instances of subclasses may have different costs.
@@ -13,10 +13,6 @@ We use |big O notation|_ to describe how the running time of an operation grows
 with the size of its input. Unless stated otherwise, *n* denotes the number of
 elements currently in the container, and *k* is the value of a numeric
 parameter, such as an index or a repeat count.
-
-For a pragmatic approach to assessing time complexity, see Ned Batchelder's
-`Big-O: How Code Slows as Data Grows <https://nedbatchelder.com/text/bigo>`__
-talk and blog post.
 
 .. |big O notation| replace:: Big *O* notation
 .. _big O notation: https://en.wikipedia.org/wiki/Big_O_notation
@@ -37,42 +33,42 @@ If you need to add or remove at both ends, consider using a
 
    * - Operation
      - Complexity
-   * - Copy (``s.copy()``)
+   * - Copy (``l.copy()``)
      - *O*\ (*n*)
-   * - Append (``s.append(x)``) [1]_
+   * - Append (``l.append(x)``) [1]_
      - *O*\ (1)
-   * - Pop (``s.pop(k)``) [1]_ [2]_
+   * - Pop (``l.pop(k)``) [1]_ [2]_
      - *O*\ (*n* - *k*)
-   * - Insert (``s.insert(k, x)``) [1]_ [2]_
+   * - Insert (``l.insert(k, x)``) [1]_ [2]_
      - *O*\ (*n* - *k*)
-   * - Get item (``s[k]``)
+   * - Get item (``l[k]``)
      - *O*\ (1)
-   * - Set item (``s[k] = x``)
+   * - Set item (``l[k] = x``)
      - *O*\ (1)
-   * - Delete item (``del s[k]``) [2]_
+   * - Delete item (``del l[k]``) [2]_
      - *O*\ (*n* - *k*)
    * - Iteration
      - *O*\ (*n*)
-   * - Get slice (``s[i:j]``)
+   * - Get slice (``l[i:j]``)
      - *O*\ (*j* - *i*)
-   * - Set slice (``s[i:j] = t``) [1]_
+   * - Set slice (``l[i:j] = t``) [1]_
      - *O*\ (*j* - *i*) if len(*t*) == *j* - *i*,
        otherwise *O*\ (*n* - *i* + len(*t*))
-   * - Delete slice (``del s[i:j]``)
+   * - Delete slice (``del l[i:j]``)
      - *O*\ (*n* - *i*)
-   * - Extend (``s.extend(t)``) [1]_
+   * - Extend (``l.extend(t)``) [1]_
      - *O*\ (len(*t*))
-   * - Sort (``s.sort()``) [3]_
+   * - Sort (``l.sort()``) [3]_
      - *O*\ (*n* log *n*)
-   * - Concatenate (``s + t``)
-     - *O*\ (len(*s*) + len(*t*))
-   * - Multiply (``s * k``)
+   * - Concatenate (``l1 + l2``)
+     - *O*\ (len(*l1*) + len(*l2*))
+   * - Multiply (``l * k``)
      - *O*\ (*nk*)
-   * - ``x in s``
+   * - ``x in l``
      - *O*\ (*n*)
-   * - ``min(s)``, ``max(s)``
+   * - ``min(l)``, ``max(l)``
      - *O*\ (*n*)
-   * - Get length (``len(s)``) [4]_
+   * - Get length (``len(l)``) [4]_
      - *O*\ (1)
 
 
@@ -80,8 +76,8 @@ If you need to add or remove at both ends, consider using a
 ===============
 
 A :class:`tuple` is an :term:`immutable` sequence. Because a tuple can never
-change, there are no insertion or deletion costs, and making a copy is constant
-time (*O*\ (1)) as the same object is returned.
+change, there are no insertion or deletion costs, and making a copy simply
+returns the same object, so is constant time (*O*\ (1)).
 
 .. list-table::
    :header-rows: 1
@@ -90,21 +86,21 @@ time (*O*\ (1)) as the same object is returned.
      - Complexity
    * - Copy (``tuple(s)``)
      - *O*\ (1)
-   * - Get item (``s[k]``)
+   * - Get item (``t[k]``)
      - *O*\ (1)
-   * - Get slice (``s[i:j]``)
+   * - Get slice (``t[i:j]``)
      - *O*\ (*j* - *i*)
-   * - Concatenate (``s + t``)
-     - *O*\ (len(*s*) + len(*t*))
-   * - Multiply (``s * k``)
+   * - Concatenate (``t1 + t2``)
+     - *O*\ (len(*t1*) + len(*t2*))
+   * - Multiply (``t * k``)
      - *O*\ (*nk*)
    * - Iteration
      - *O*\ (*n*)
-   * - ``x in s``
+   * - ``x in t``
      - *O*\ (*n*)
-   * - ``min(s)``, ``max(s)``
+   * - ``min(t)``, ``max(t)``
      - *O*\ (*n*)
-   * - Get length (``len(s)``) [4]_
+   * - Get length (``len(t)``) [4]_
      - *O*\ (1)
 
 
@@ -113,14 +109,13 @@ time (*O*\ (1)) as the same object is returned.
 
 The times listed for dict objects are average-case times, as they assume the
 hash function for the objects is sufficiently robust to make collisions
-uncommon; they also assume the keys used in parameters are selected uniformly
-at random from the set of all keys. In the worst case, when every key hashes
-to the same value, each of the *O*\ (1) operations below instead takes
-*O*\ (*n*) time. For more detail on the implementation, see
-:ref:`how-are-dictionaries-implemented`.
+uncommon. They also assume the keys are well-distributed among the set of
+possible keys. In the worst case, when every key hashes to the same value,
+each of the *O*\ (1) operations below instead takes *O*\ (*n*) time. For more
+detail on the implementation, see :ref:`how-are-dictionaries-implemented`.
 
 A :class:`frozendict` is immutable, so it does not support setting, deleting,
-or updating items; the other operations below apply to it at the same costs.
+or updating items. The other operations below apply to it at the same costs.
 
 .. list-table::
    :header-rows: 1
@@ -151,10 +146,10 @@ or updating items; the other operations below apply to it at the same costs.
 See :class:`dict` as the :class:`set` and :class:`frozenset` implementations are
 intentionally very similar, and the same hash collision caveat applies.
 In the worst case, *O*\ (1) operations instead take *O*\ (*n*) time,
-and operations that look up every element of an operand degrade accordingly.
+and operations that look up every element degrade accordingly.
 
 A :class:`frozenset` is :term:`immutable`, so it does not support adding,
-discarding, or the in-place update operations; the others below apply to it at
+discarding, or the in-place update operations. The others below apply to it at
 the same costs.
 
 .. list-table::
@@ -255,19 +250,19 @@ A :class:`range` object computes its items on demand from its *start*, *stop* an
 
    * - Operation
      - Complexity
-   * - Get item (``s[k]``)
+   * - Get item (``r[k]``)
      - *O*\ (1)
-   * - Get slice (``s[i:j]``)
+   * - Get slice (``r[i:j]``)
      - *O*\ (1)
-   * - ``x in s`` [11]_
+   * - ``x in r`` [11]_
      - *O*\ (1)
-   * - Index and count (``s.index(x)``, ``s.count(x)``) [11]_
+   * - Index and count (``r.index(x)``, ``r.count(x)``) [11]_
      - *O*\ (1)
    * - Iteration
      - *O*\ (*n*)
-   * - ``min(s)``, ``max(s)``
+   * - ``min(r)``, ``max(r)``
      - *O*\ (*n*)
-   * - Get length (``len(s)``) [4]_
+   * - Get length (``len(r)``) [4]_
      - *O*\ (1)
 
 
