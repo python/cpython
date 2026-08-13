@@ -3904,7 +3904,7 @@ static int object_init(PyObject *, PyObject *, PyObject *);
 static int update_slot(PyTypeObject *, PyObject *, slot_update_t *update);
 static int fixup_slot_dispatchers(PyTypeObject *);
 static int type_ready(PyTypeObject *, int, int);
-static int type_ready_publish(PyTypeObject *, int);
+static int type_ready_publish(PyTypeObject *);
 static int type_new_set_names(PyTypeObject *);
 static int type_new_init_subclass(PyTypeObject *, PyObject *);
 static bool has_slotdef(PyObject *);
@@ -4927,7 +4927,7 @@ type_new_impl(type_new_ctx *ctx)
         res = fixup_slot_dispatchers(type);
     }
     if (res == 0) {
-        res = type_ready_publish(type, 1);
+        res = type_ready_publish(type);
     }
     END_TYPE_LOCK();
     if (res < 0) {
@@ -5700,7 +5700,7 @@ type_from_slots_or_spec(
     if (r == 0) {
         /* The type is only revealed to other threads once it is fully
            initialized. */
-        r = type_ready_publish(type, 1);
+        r = type_ready_publish(type);
     }
     END_TYPE_LOCK();
     if (r < 0) {
@@ -9506,10 +9506,9 @@ error:
 }
 
 static int
-type_ready_publish(PyTypeObject *type, int initial)
+type_ready_publish(PyTypeObject *type)
 {
     ASSERT_TYPE_LOCK_HELD();
-    assert(initial);
     assert(!(type->tp_flags & Py_TPFLAGS_READY));
     assert(!is_readying(type));
 
