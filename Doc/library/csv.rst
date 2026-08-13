@@ -543,6 +543,13 @@ Dialects support the following attributes:
    When ``True``, raise exception :exc:`Error` on bad CSV input.
    The default is ``False``.
 
+Dialects support :func:`copy.replace`,
+which returns a copy of the dialect
+with the specified formatting parameters replaced.
+
+.. versionchanged:: next
+   Added support for :func:`copy.replace`.
+
 .. _reader-objects:
 
 Reader Objects
