@@ -70,7 +70,7 @@ class CollapsedStackCollector(StackTraceCollector):
 class FlamegraphCollector(StackTraceCollector):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.stats = {}
+        self.stats = {"sample_interval_usec": self.sample_interval_usec}
         self._root = {
             "samples": 0,
             "children": {},

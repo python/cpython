@@ -933,6 +933,7 @@ class ElementTreeTest(unittest.TestCase):
             (b"<?xml version='1.0' encoding='ISO-8859-1'?>\n"
              b"<body><tag>\xf8</tag></body>", 'ISO-8859-1', None),
             ('<body><tag>ø</tag></body>', 'unicode', None),
+            (b"\xef\xbb\xbf<body><tag>\xc3\xb8</tag></body>", 'utf-8-sig', None),
 
             # ... xml_declaration = False
             (b"<body><tag>&#248;</tag></body>", None, False),
@@ -940,6 +941,7 @@ class ElementTreeTest(unittest.TestCase):
             (b"<body><tag>&#248;</tag></body>", 'US-ASCII', False),
             (b"<body><tag>\xf8</tag></body>", 'ISO-8859-1', False),
             ("<body><tag>ø</tag></body>", 'unicode', False),
+            (b"\xef\xbb\xbf<body><tag>\xc3\xb8</tag></body>", 'utf-8-sig', False),
 
             # ... xml_declaration = True
             (b"<?xml version='1.0' encoding='us-ascii'?>\n"
@@ -952,6 +954,8 @@ class ElementTreeTest(unittest.TestCase):
              b"<body><tag>\xf8</tag></body>", 'ISO-8859-1', True),
             ("<?xml version='1.0' encoding='utf-8'?>\n"
              "<body><tag>ø</tag></body>", 'unicode', True),
+            (b"\xef\xbb\xbf<?xml version='1.0' encoding='utf-8'?>\n"
+             b"<body><tag>\xc3\xb8</tag></body>", 'utf-8-sig', True),
 
         ]
         for expected_retval, encoding, xml_declaration in TESTCASES:
