@@ -1,1 +1,1 @@
-All synchronize tool classes from the :mod:`multiprocessing` module, as `[R]Lock`, `[Bounded]Semaphore`, `Condition`, `Event` and `Barrier`, include now a reference to their own unique identifier in their representation string.
+All synchronize tool classes from the :mod:`multiprocessing` module, as ``[R]Lock``, ``[Bounded]Semaphore``, ``Condition``, ``Event`` and ``Barrier``, include now a reference to their own unique identifier in their representation string.
