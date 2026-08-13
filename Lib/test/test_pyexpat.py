@@ -19,6 +19,11 @@ from xml.parsers import expat
 from xml.parsers.expat import errors
 
 
+# pyexpat built with expat 2.6.0+ has support for reparse deferral
+# and defaults to enabled
+HAS_REPARSE_DEFERRAL = expat.ParserCreate().GetReparseDeferralEnabled()
+
+
 class SetAttributeTest(unittest.TestCase):
     def setUp(self):
         self.parser = expat.ParserCreate(namespace_separator='!')
@@ -1095,11 +1100,9 @@ class ExternalEntityParserCreateErrorTest(unittest.TestCase):
 
 
 class ReparseDeferralTest(unittest.TestCase):
-    deferal_supported = expat.ParserCreate().GetReparseDeferralEnabled()
-
     def test_getter_setter_round_trip(self):
         parser = expat.ParserCreate()
-        enabled = self.deferal_supported
+        enabled = HAS_REPARSE_DEFERRAL
 
         self.assertIs(parser.GetReparseDeferralEnabled(), enabled)
         parser.SetReparseDeferralEnabled(False)
@@ -1108,7 +1111,7 @@ class ReparseDeferralTest(unittest.TestCase):
         self.assertIs(parser.GetReparseDeferralEnabled(), enabled)
 
     def test_reparse_deferral_enabled(self):
-        if not self.deferal_supported:
+        if not HAS_REPARSE_DEFERRAL:
             self.skipTest(f'Expat < 2.6.0 does not '
                           'support reparse deferral')
 
@@ -1139,7 +1142,7 @@ class ReparseDeferralTest(unittest.TestCase):
 
         parser = expat.ParserCreate()
         parser.StartElementHandler = start_element
-        if self.deferal_supported:
+        if HAS_REPARSE_DEFERRAL:
             parser.SetReparseDeferralEnabled(False)
         self.assertFalse(parser.GetReparseDeferralEnabled())
 
