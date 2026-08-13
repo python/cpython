@@ -2,6 +2,8 @@ import inspect
 import types
 import unittest
 
+from test.support import import_helper
+
 from unittest.mock import (
     call, _Call, create_autospec, MagicMock,
     Mock, ANY, _CallList, patch, PropertyMock, _callable
@@ -928,9 +930,10 @@ class SpecSignatureTest(unittest.TestCase):
 
 
     def test_autospec_on_bound_builtin_function(self):
-        # max() is variadic, therefore it has no signature.
-        meth = types.MethodType(max, [4, 5, 6])
-        self.assertEqual(meth(), 6)
+        _testcapi = import_helper.import_module('_testcapi')
+        # This function is defined without a signature.
+        meth = types.MethodType(_testcapi.docstring_no_signature, object())
+        self.assertIsNone(meth())
         mocked = create_autospec(meth)
 
         # no signature, so no spec to check against
