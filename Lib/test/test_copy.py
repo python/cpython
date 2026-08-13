@@ -70,7 +70,7 @@ class TestCopy(unittest.TestCase):
 
     def test_copy_reduce(self):
         class C(object):
-            def __reduce_ex__(self, proto):
+            def __reduce_ex__(*args):
                 self.fail("shouldn't call this")
             def __reduce__(self):
                 c.append(1)
@@ -345,7 +345,7 @@ class TestCopy(unittest.TestCase):
 
     def test_deepcopy_reduce(self):
         class C(object):
-            def __reduce_ex__(self, proto):
+            def __reduce_ex__(*args):
                 self.fail("shouldn't call this")
             def __reduce__(self):
                 c.append(1)
