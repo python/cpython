@@ -2590,7 +2590,8 @@ expression support in the :mod:`re` module).
 
    Return a list of the words in the string, using *sep* as the delimiter string.
    If *maxsplit* is given, at most *maxsplit* splits are done, the *rightmost*
-   ones.  If *sep* is not specified or ``None``, any whitespace string is a
+   ones.  If *sep* is not specified or ``None``, any
+   :meth:`whitespace <str.isspace>` string is a
    separator.  Except for splitting from the right, :meth:`rsplit` behaves like
    :meth:`split` which is described in detail below.
 
@@ -2651,7 +2652,8 @@ expression support in the :mod:`re` module).
       ['1', '2', '3<4']
 
    If *sep* is not specified or is ``None``, a different splitting algorithm is
-   applied: runs of consecutive whitespace are regarded as a single separator,
+   applied: runs of consecutive :meth:`whitespace <str.isspace>` are regarded
+   as a single separator,
    and the result will contain no empty strings at the start or end if the
    string has leading or trailing whitespace.  Consequently, splitting an empty
    string or a string consisting of just whitespace with a ``None`` separator
@@ -3915,7 +3917,8 @@ produce new objects.
    Return a copy of the sequence with specified leading bytes removed.  The
    *bytes* argument is a binary sequence specifying the set of byte values to
    be removed.  If omitted or ``None``, the *bytes* argument defaults
-   to removing ASCII whitespace.  The *bytes* argument is not a prefix;
+   to removing :meth:`ASCII whitespace <bytes.isspace>`.
+   The *bytes* argument is not a prefix;
    rather, all combinations of its values are stripped::
 
       >>> b'   spacious   '.lstrip()
@@ -3959,7 +3962,8 @@ produce new objects.
    Split the binary sequence into subsequences of the same type, using *sep*
    as the delimiter string. If *maxsplit* is given, at most *maxsplit* splits
    are done, the *rightmost* ones.  If *sep* is not specified or ``None``,
-   any subsequence consisting solely of ASCII whitespace is a separator.
+   any subsequence consisting solely of
+   :meth:`ASCII whitespace <bytes.isspace>` is a separator.
    Except for splitting from the right, :meth:`rsplit` behaves like
    :meth:`split` which is described in detail below.
 
@@ -3970,7 +3974,8 @@ produce new objects.
    Return a copy of the sequence with specified trailing bytes removed.  The
    *bytes* argument is a binary sequence specifying the set of byte values to
    be removed.  If omitted or ``None``, the *bytes* argument defaults to
-   removing ASCII whitespace.  The *bytes* argument is not a suffix; rather,
+   removing :meth:`ASCII whitespace <bytes.isspace>`.
+   The *bytes* argument is not a suffix; rather,
    all combinations of its values are stripped::
 
       >>> b'   spacious   '.rstrip()
@@ -4023,7 +4028,8 @@ produce new objects.
       [b'1', b'2', b'3<4']
 
    If *sep* is not specified or is ``None``, a different splitting algorithm
-   is applied: runs of consecutive ASCII whitespace are regarded as a single
+   is applied: runs of consecutive :meth:`ASCII whitespace <bytes.isspace>`
+   are regarded as a single
    separator, and the result will contain no empty strings at the start or
    end if the sequence has leading or trailing whitespace.  Consequently,
    splitting an empty sequence or a sequence consisting solely of ASCII
@@ -4046,7 +4052,8 @@ produce new objects.
    Return a copy of the sequence with specified leading and trailing bytes
    removed. The *bytes* argument is a binary sequence specifying the set of
    byte values to be removed.  If omitted or ``None``, the *bytes*
-   argument defaults to removing ASCII whitespace. The *bytes* argument is
+   argument defaults to removing :meth:`ASCII whitespace <bytes.isspace>`.
+   The *bytes* argument is
    not a prefix or suffix; rather, all combinations of its values are
    stripped::
 
