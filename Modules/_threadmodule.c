@@ -678,11 +678,17 @@ PyThreadHandleObject_repr(PyObject *op)
                                 Py_TYPE(self)->tp_name, ident);
 }
 
+/*[clinic input]
+@getter
+_thread._ThreadHandle.ident
+[clinic start generated code]*/
+
 static PyObject *
-PyThreadHandleObject_get_ident(PyObject *op, void *Py_UNUSED(closure))
+_thread__ThreadHandle_ident_get_impl(PyObject *self)
+/*[clinic end generated code: output=66d40aa1a624ac23 input=2b3361e34a6ca79d]*/
 {
-    PyThreadHandleObject *self = PyThreadHandleObject_CAST(op);
-    return PyLong_FromUnsignedLongLong(ThreadHandle_ident(self->handle));
+    PyThreadHandleObject *handle = PyThreadHandleObject_CAST(self);
+    return PyLong_FromUnsignedLongLong(ThreadHandle_ident(handle->handle));
 }
 
 /*[clinic input]
@@ -748,7 +754,7 @@ _thread__ThreadHandle__set_done_impl(PyObject *self)
 }
 
 static PyGetSetDef ThreadHandle_getsetlist[] = {
-    {"ident", PyThreadHandleObject_get_ident, NULL, NULL},
+    _THREAD__THREADHANDLE_IDENT_GETSETDEF
     {0},
 };
 
