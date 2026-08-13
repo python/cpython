@@ -588,7 +588,111 @@ _io_FileIO__isatty_open_only(PyObject *self, PyObject *Py_UNUSED(ignored))
     return _io_FileIO__isatty_open_only_impl((fileio *)self);
 }
 
+PyDoc_STRVAR(_io_FileIO_closed__doc__,
+"True if the file is closed.");
+#if defined(_io_FileIO_closed_DOCSTR)
+#   undef _io_FileIO_closed_DOCSTR
+#endif
+#define _io_FileIO_closed_DOCSTR _io_FileIO_closed__doc__
+
+#if !defined(_io_FileIO_closed_DOCSTR)
+#  define _io_FileIO_closed_DOCSTR NULL
+#endif
+#if defined(_IO_FILEIO_CLOSED_GETSETDEF)
+#  undef _IO_FILEIO_CLOSED_GETSETDEF
+#  define _IO_FILEIO_CLOSED_GETSETDEF {"closed", (getter)_io_FileIO_closed_get, (setter)_io_FileIO_closed_set, _io_FileIO_closed_DOCSTR},
+#else
+#  define _IO_FILEIO_CLOSED_GETSETDEF {"closed", (getter)_io_FileIO_closed_get, NULL, _io_FileIO_closed_DOCSTR},
+#endif
+
+static PyObject *
+_io_FileIO_closed_get_impl(fileio *self);
+
+static PyObject *
+_io_FileIO_closed_get(PyObject *self, void *Py_UNUSED(context))
+{
+    return _io_FileIO_closed_get_impl((fileio *)self);
+}
+
+PyDoc_STRVAR(_io_FileIO_closefd__doc__,
+"True if the file descriptor will be closed by close().");
+#if defined(_io_FileIO_closefd_DOCSTR)
+#   undef _io_FileIO_closefd_DOCSTR
+#endif
+#define _io_FileIO_closefd_DOCSTR _io_FileIO_closefd__doc__
+
+#if !defined(_io_FileIO_closefd_DOCSTR)
+#  define _io_FileIO_closefd_DOCSTR NULL
+#endif
+#if defined(_IO_FILEIO_CLOSEFD_GETSETDEF)
+#  undef _IO_FILEIO_CLOSEFD_GETSETDEF
+#  define _IO_FILEIO_CLOSEFD_GETSETDEF {"closefd", (getter)_io_FileIO_closefd_get, (setter)_io_FileIO_closefd_set, _io_FileIO_closefd_DOCSTR},
+#else
+#  define _IO_FILEIO_CLOSEFD_GETSETDEF {"closefd", (getter)_io_FileIO_closefd_get, NULL, _io_FileIO_closefd_DOCSTR},
+#endif
+
+static PyObject *
+_io_FileIO_closefd_get_impl(fileio *self);
+
+static PyObject *
+_io_FileIO_closefd_get(PyObject *self, void *Py_UNUSED(context))
+{
+    return _io_FileIO_closefd_get_impl((fileio *)self);
+}
+
+PyDoc_STRVAR(_io_FileIO_mode__doc__,
+"String giving the file mode.");
+#if defined(_io_FileIO_mode_DOCSTR)
+#   undef _io_FileIO_mode_DOCSTR
+#endif
+#define _io_FileIO_mode_DOCSTR _io_FileIO_mode__doc__
+
+#if !defined(_io_FileIO_mode_DOCSTR)
+#  define _io_FileIO_mode_DOCSTR NULL
+#endif
+#if defined(_IO_FILEIO_MODE_GETSETDEF)
+#  undef _IO_FILEIO_MODE_GETSETDEF
+#  define _IO_FILEIO_MODE_GETSETDEF {"mode", (getter)_io_FileIO_mode_get, (setter)_io_FileIO_mode_set, _io_FileIO_mode_DOCSTR},
+#else
+#  define _IO_FILEIO_MODE_GETSETDEF {"mode", (getter)_io_FileIO_mode_get, NULL, _io_FileIO_mode_DOCSTR},
+#endif
+
+static PyObject *
+_io_FileIO_mode_get_impl(fileio *self);
+
+static PyObject *
+_io_FileIO_mode_get(PyObject *self, void *Py_UNUSED(context))
+{
+    return _io_FileIO_mode_get_impl((fileio *)self);
+}
+
+PyDoc_STRVAR(_io_FileIO__blksize__doc__,
+"Stat st_blksize if available.");
+#if defined(_io_FileIO__blksize_DOCSTR)
+#   undef _io_FileIO__blksize_DOCSTR
+#endif
+#define _io_FileIO__blksize_DOCSTR _io_FileIO__blksize__doc__
+
+#if !defined(_io_FileIO__blksize_DOCSTR)
+#  define _io_FileIO__blksize_DOCSTR NULL
+#endif
+#if defined(_IO_FILEIO__BLKSIZE_GETSETDEF)
+#  undef _IO_FILEIO__BLKSIZE_GETSETDEF
+#  define _IO_FILEIO__BLKSIZE_GETSETDEF {"_blksize", (getter)_io_FileIO__blksize_get, (setter)_io_FileIO__blksize_set, _io_FileIO__blksize_DOCSTR},
+#else
+#  define _IO_FILEIO__BLKSIZE_GETSETDEF {"_blksize", (getter)_io_FileIO__blksize_get, NULL, _io_FileIO__blksize_DOCSTR},
+#endif
+
+static PyObject *
+_io_FileIO__blksize_get_impl(fileio *self);
+
+static PyObject *
+_io_FileIO__blksize_get(PyObject *self, void *Py_UNUSED(context))
+{
+    return _io_FileIO__blksize_get_impl((fileio *)self);
+}
+
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=a4d50af066c7ceb0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=45d4d67aea21cf1b input=a9049054013a1b77]*/

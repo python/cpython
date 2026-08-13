@@ -2505,10 +2505,15 @@ _io_BufferedRWPair_isatty_impl(rwpair *self)
     return _forward_call(self->reader, &_Py_ID(isatty), NULL);
 }
 
+/*[clinic input]
+@getter
+_io.BufferedRWPair.closed
+[clinic start generated code]*/
+
 static PyObject *
-bufferedrwpair_closed_get(PyObject *op, void *Py_UNUSED(dummy))
+_io_BufferedRWPair_closed_get_impl(rwpair *self)
+/*[clinic end generated code: output=4117400c74766f21 input=8248430ac54e5b25]*/
 {
-    rwpair *self = rwpair_CAST(op);
     if (self->writer == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
                 "the BufferedRWPair object is being garbage-collected");
@@ -2748,7 +2753,7 @@ static PyMemberDef bufferedrwpair_members[] = {
 };
 
 static PyGetSetDef bufferedrwpair_getset[] = {
-    {"closed", bufferedrwpair_closed_get, NULL, NULL},
+    _IO_BUFFEREDRWPAIR_CLOSED_GETSETDEF
     {NULL}
 };
 

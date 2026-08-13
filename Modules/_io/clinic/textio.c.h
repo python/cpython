@@ -509,6 +509,25 @@ _io_IncrementalNewlineDecoder_reset(PyObject *self, PyObject *Py_UNUSED(ignored)
     return return_value;
 }
 
+#if !defined(_io_IncrementalNewlineDecoder_newlines_DOCSTR)
+#  define _io_IncrementalNewlineDecoder_newlines_DOCSTR NULL
+#endif
+#if defined(_IO_INCREMENTALNEWLINEDECODER_NEWLINES_GETSETDEF)
+#  undef _IO_INCREMENTALNEWLINEDECODER_NEWLINES_GETSETDEF
+#  define _IO_INCREMENTALNEWLINEDECODER_NEWLINES_GETSETDEF {"newlines", (getter)_io_IncrementalNewlineDecoder_newlines_get, (setter)_io_IncrementalNewlineDecoder_newlines_set, _io_IncrementalNewlineDecoder_newlines_DOCSTR},
+#else
+#  define _IO_INCREMENTALNEWLINEDECODER_NEWLINES_GETSETDEF {"newlines", (getter)_io_IncrementalNewlineDecoder_newlines_get, NULL, _io_IncrementalNewlineDecoder_newlines_DOCSTR},
+#endif
+
+static PyObject *
+_io_IncrementalNewlineDecoder_newlines_get_impl(nldecoder_object *self);
+
+static PyObject *
+_io_IncrementalNewlineDecoder_newlines_get(PyObject *self, void *Py_UNUSED(context))
+{
+    return _io_IncrementalNewlineDecoder_newlines_get_impl((nldecoder_object *)self);
+}
+
 PyDoc_STRVAR(_io_TextIOWrapper___init____doc__,
 "TextIOWrapper(buffer, encoding=None, errors=None, newline=None,\n"
 "              line_buffering=False, write_through=False)\n"
@@ -1356,4 +1375,4 @@ _io_TextIOWrapper_buffer_get(PyObject *self, void *Py_UNUSED(context))
 
     return return_value;
 }
-/*[clinic end generated code: output=e34c75e1d2a12084 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9ed6f17dc7fa30f6 input=a9049054013a1b77]*/

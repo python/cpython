@@ -184,8 +184,16 @@ _io__IOBase_flush_impl(PyObject *self)
     return NULL;
 }
 
+/*[clinic input]
+@getter
+_io._IOBase.closed
+
+True if the file is closed.
+[clinic start generated code]*/
+
 static PyObject *
-iobase_closed_get(PyObject *self, void *context)
+_io__IOBase_closed_get_impl(PyObject *self)
+/*[clinic end generated code: output=cb72a562de7b4082 input=8b68e9a4e2950776]*/
 {
     int closed = iobase_is_closed(self);
     if (closed < 0) {
@@ -902,7 +910,7 @@ static PyMethodDef iobase_methods[] = {
 
 static PyGetSetDef iobase_getset[] = {
     {"__dict__", PyObject_GenericGetDict, NULL, NULL},
-    {"closed", iobase_closed_get, NULL, NULL},
+    _IO__IOBASE_CLOSED_GETSETDEF
     {NULL}
 };
 

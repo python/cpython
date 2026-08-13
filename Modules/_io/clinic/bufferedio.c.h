@@ -1427,6 +1427,25 @@ _io_BufferedRWPair_isatty(PyObject *self, PyObject *Py_UNUSED(ignored))
     return _io_BufferedRWPair_isatty_impl((rwpair *)self);
 }
 
+#if !defined(_io_BufferedRWPair_closed_DOCSTR)
+#  define _io_BufferedRWPair_closed_DOCSTR NULL
+#endif
+#if defined(_IO_BUFFEREDRWPAIR_CLOSED_GETSETDEF)
+#  undef _IO_BUFFEREDRWPAIR_CLOSED_GETSETDEF
+#  define _IO_BUFFEREDRWPAIR_CLOSED_GETSETDEF {"closed", (getter)_io_BufferedRWPair_closed_get, (setter)_io_BufferedRWPair_closed_set, _io_BufferedRWPair_closed_DOCSTR},
+#else
+#  define _IO_BUFFEREDRWPAIR_CLOSED_GETSETDEF {"closed", (getter)_io_BufferedRWPair_closed_get, NULL, _io_BufferedRWPair_closed_DOCSTR},
+#endif
+
+static PyObject *
+_io_BufferedRWPair_closed_get_impl(rwpair *self);
+
+static PyObject *
+_io_BufferedRWPair_closed_get(PyObject *self, void *Py_UNUSED(context))
+{
+    return _io_BufferedRWPair_closed_get_impl((rwpair *)self);
+}
+
 PyDoc_STRVAR(_io_BufferedRandom___init____doc__,
 "BufferedRandom(raw, buffer_size=DEFAULT_BUFFER_SIZE)\n"
 "--\n"
@@ -1506,4 +1525,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=eed4ac9f76174342 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=aa42e059c43be3fd input=a9049054013a1b77]*/

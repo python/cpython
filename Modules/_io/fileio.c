@@ -1288,32 +1288,60 @@ static PyMethodDef fileio_methods[] = {
 
 /* 'closed' and 'mode' are attributes for backwards compatibility reasons. */
 
+/*[clinic input]
+@getter
+_io.FileIO.closed
+
+True if the file is closed.
+[clinic start generated code]*/
+
 static PyObject *
-fileio_get_closed(PyObject *op, void *closure)
+_io_FileIO_closed_get_impl(fileio *self)
+/*[clinic end generated code: output=6605122cc0377bf6 input=4696b7fb11103a0f]*/
 {
-    fileio *self = PyFileIO_CAST(op);
     return PyBool_FromLong((long)(self->fd < 0));
 }
 
+/*[clinic input]
+@getter
+_io.FileIO.closefd
+
+True if the file descriptor will be closed by close().
+[clinic start generated code]*/
+
 static PyObject *
-fileio_get_closefd(PyObject *op, void *closure)
+_io_FileIO_closefd_get_impl(fileio *self)
+/*[clinic end generated code: output=f9932a0320687395 input=fc4d979307a724b6]*/
 {
-    fileio *self = PyFileIO_CAST(op);
     return PyBool_FromLong((long)(self->closefd));
 }
 
+/*[clinic input]
+@getter
+_io.FileIO.mode
+
+String giving the file mode.
+[clinic start generated code]*/
+
 static PyObject *
-fileio_get_mode(PyObject *op, void *closure)
+_io_FileIO_mode_get_impl(fileio *self)
+/*[clinic end generated code: output=d5178215493e2e7e input=300a448fc9b2fea4]*/
 {
-    fileio *self = PyFileIO_CAST(op);
     return PyUnicode_FromString(mode_string(self));
 }
 
+/*[clinic input]
+@getter
+_io.FileIO._blksize
+
+Stat st_blksize if available.
+[clinic start generated code]*/
+
 static PyObject *
-fileio_get_blksize(PyObject *op, void *closure)
+_io_FileIO__blksize_get_impl(fileio *self)
+/*[clinic end generated code: output=885b8dcac7f47ab7 input=0020e9e6a591f2a2]*/
 {
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-    fileio *self = PyFileIO_CAST(op);
     if (self->stat_atopen != NULL && self->stat_atopen->st_blksize > 1) {
         return PyLong_FromLong(self->stat_atopen->st_blksize);
     }
@@ -1322,11 +1350,10 @@ fileio_get_blksize(PyObject *op, void *closure)
 }
 
 static PyGetSetDef fileio_getsetlist[] = {
-    {"closed", fileio_get_closed, NULL, "True if the file is closed"},
-    {"closefd", fileio_get_closefd, NULL,
-        "True if the file descriptor will be closed by close()."},
-    {"mode", fileio_get_mode, NULL, "String giving the file mode"},
-    {"_blksize", fileio_get_blksize, NULL, "Stat st_blksize if available"},
+    _IO_FILEIO_CLOSED_GETSETDEF
+    _IO_FILEIO_CLOSEFD_GETSETDEF
+    _IO_FILEIO_MODE_GETSETDEF
+    _IO_FILEIO__BLKSIZE_GETSETDEF
     {NULL},
 };
 

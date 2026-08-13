@@ -10,6 +10,38 @@ preserve
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
+PyDoc_STRVAR(_io_BytesIO_closed__doc__,
+"True if the file is closed.");
+#if defined(_io_BytesIO_closed_DOCSTR)
+#   undef _io_BytesIO_closed_DOCSTR
+#endif
+#define _io_BytesIO_closed_DOCSTR _io_BytesIO_closed__doc__
+
+#if !defined(_io_BytesIO_closed_DOCSTR)
+#  define _io_BytesIO_closed_DOCSTR NULL
+#endif
+#if defined(_IO_BYTESIO_CLOSED_GETSETDEF)
+#  undef _IO_BYTESIO_CLOSED_GETSETDEF
+#  define _IO_BYTESIO_CLOSED_GETSETDEF {"closed", (getter)_io_BytesIO_closed_get, (setter)_io_BytesIO_closed_set, _io_BytesIO_closed_DOCSTR},
+#else
+#  define _IO_BYTESIO_CLOSED_GETSETDEF {"closed", (getter)_io_BytesIO_closed_get, NULL, _io_BytesIO_closed_DOCSTR},
+#endif
+
+static PyObject *
+_io_BytesIO_closed_get_impl(bytesio *self);
+
+static PyObject *
+_io_BytesIO_closed_get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io_BytesIO_closed_get_impl((bytesio *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_io_BytesIO_readable__doc__,
 "readable($self, /)\n"
 "--\n"
@@ -754,4 +786,4 @@ _io_BytesIO___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     return return_value;
 }
-/*[clinic end generated code: output=65de7170154f6b5c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=62ce36f0c6400579 input=a9049054013a1b77]*/

@@ -295,20 +295,19 @@ write_bytes_lock_held(bytesio *self, PyObject *b)
     return len;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+_io.BytesIO.closed
+
+True if the file is closed.
+[clinic start generated code]*/
+
 static PyObject *
-bytesio_get_closed(PyObject *op, void *Py_UNUSED(closure))
+_io_BytesIO_closed_get_impl(bytesio *self)
+/*[clinic end generated code: output=3210245d480df846 input=53d116fdfe4e7580]*/
 {
-    PyObject *ret;
-    bytesio *self = bytesio_CAST(op);
-    Py_BEGIN_CRITICAL_SECTION(self);
-    if (self->buf == NULL) {
-        ret = Py_True;
-    }
-    else {
-        ret = Py_False;
-    }
-    Py_END_CRITICAL_SECTION();
-    return ret;
+    return PyBool_FromLong(self->buf == NULL);
 }
 
 /*[clinic input]
@@ -1194,8 +1193,7 @@ bytesio_clear(PyObject *op)
 #undef clinic_state
 
 static PyGetSetDef bytesio_getsetlist[] = {
-    {"closed",  bytesio_get_closed, NULL,
-     "True if the file is closed."},
+    _IO_BYTESIO_CLOSED_GETSETDEF
     {NULL},            /* sentinel */
 };
 

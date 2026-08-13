@@ -171,6 +171,32 @@ _io__IOBase_flush(PyObject *self, PyObject *Py_UNUSED(ignored))
     return _io__IOBase_flush_impl(self);
 }
 
+PyDoc_STRVAR(_io__IOBase_closed__doc__,
+"True if the file is closed.");
+#if defined(_io__IOBase_closed_DOCSTR)
+#   undef _io__IOBase_closed_DOCSTR
+#endif
+#define _io__IOBase_closed_DOCSTR _io__IOBase_closed__doc__
+
+#if !defined(_io__IOBase_closed_DOCSTR)
+#  define _io__IOBase_closed_DOCSTR NULL
+#endif
+#if defined(_IO__IOBASE_CLOSED_GETSETDEF)
+#  undef _IO__IOBASE_CLOSED_GETSETDEF
+#  define _IO__IOBASE_CLOSED_GETSETDEF {"closed", (getter)_io__IOBase_closed_get, (setter)_io__IOBase_closed_set, _io__IOBase_closed_DOCSTR},
+#else
+#  define _IO__IOBASE_CLOSED_GETSETDEF {"closed", (getter)_io__IOBase_closed_get, NULL, _io__IOBase_closed_DOCSTR},
+#endif
+
+static PyObject *
+_io__IOBase_closed_get_impl(PyObject *self);
+
+static PyObject *
+_io__IOBase_closed_get(PyObject *self, void *Py_UNUSED(context))
+{
+    return _io__IOBase_closed_get_impl(self);
+}
+
 PyDoc_STRVAR(_io__IOBase__checkClosed__doc__,
 "_checkClosed($self, /)\n"
 "--\n"
@@ -578,4 +604,4 @@ PyDoc_STRVAR(_io__RawIOBase_write__doc__,
 
 #define _IO__RAWIOBASE_WRITE_METHODDEF    \
     {"write", (PyCFunction)_io__RawIOBase_write, METH_O, _io__RawIOBase_write__doc__},
-/*[clinic end generated code: output=a42eede543e39a09 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cdf6f5a0ad8852e0 input=a9049054013a1b77]*/
