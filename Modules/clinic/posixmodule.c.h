@@ -8853,7 +8853,7 @@ exit:
 
 #endif /* (defined(HAVE_PWRITEV) || defined (HAVE_PWRITEV2)) */
 
-#if defined(HAVE_COPY_FILE_RANGE)
+#if defined(_Py_HAVE_COPY_FILE_RANGE)
 
 PyDoc_STRVAR(os_copy_file_range__doc__,
 "copy_file_range($module, /, src, dst, count, offset_src=None,\n"
@@ -8969,7 +8969,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_COPY_FILE_RANGE) */
+#endif /* defined(_Py_HAVE_COPY_FILE_RANGE) */
 
 #if ((defined(HAVE_SPLICE) && !defined(_AIX)))
 
@@ -11547,7 +11547,7 @@ exit:
     return return_value;
 }
 
-#if defined(HAVE_MEMFD_CREATE)
+#if defined(_Py_HAVE_MEMFD_CREATE)
 
 PyDoc_STRVAR(os_memfd_create__doc__,
 "memfd_create($module, /, name, flags=MFD_CLOEXEC)\n"
@@ -11633,7 +11633,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_MEMFD_CREATE) */
+#endif /* defined(_Py_HAVE_MEMFD_CREATE) */
 
 #if (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC))
 
@@ -13746,4 +13746,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=6dc1e061bfd47375 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f77ed566165d51da input=a9049054013a1b77]*/
