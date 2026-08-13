@@ -165,18 +165,18 @@ the same costs.
      - *O*\ (1)
    * - Discard (``s.discard(x)``)
      - *O*\ (1)
-   * - Union (``s | t``) [6]_
-     - *O*\ (len(*s*) + len(*t*))
-   * - Intersection (``s & t``, ``s.intersection(t)``) [6]_ [7]_
-     - *O*\ (min(len(*s*), len(*t*)))
-   * - Difference (``s - t``, ``s.difference(t)``) [6]_ [8]_
-     - *O*\ (len(*s*))
-   * - Difference update (``s.difference_update(t)``) [1]_ [6]_ [7]_
-     - *O*\ (min(len(*s*), len(*t*)))
-   * - Symmetric difference (``s ^ t``) [6]_
-     - *O*\ (len(*s*) + len(*t*))
-   * - Symmetric difference update (``s.symmetric_difference_update(t)``) [1]_ [6]_
-     - *O*\ (len(*t*))
+   * - Union (``s1 | s2``) [6]_
+     - *O*\ (len(*s1*) + len(*s2*))
+   * - Intersection (``s1 & s2``, ``s1.intersection(s2)``) [6]_ [7]_
+     - *O*\ (min(len(*s1*), len(*s2*)))
+   * - Difference (``s1 - s2``, ``s1.difference(s2)``) [6]_ [8]_
+     - *O*\ (len(*s1*))
+   * - Difference update (``s1.difference_update(s2)``) [1]_ [6]_ [7]_
+     - *O*\ (min(len(*s1*), len(*s2*)))
+   * - Symmetric difference (``s1 ^ s2``) [6]_
+     - *O*\ (len(*s1*) + len(*s2*))
+   * - Symmetric difference update (``s1.symmetric_difference_update(s2)``) [1]_ [6]_
+     - *O*\ (len(*s2*))
    * - Get length (``len(s)``) [4]_
      - *O*\ (1)
 
