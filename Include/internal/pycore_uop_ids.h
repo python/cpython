@@ -421,7 +421,6 @@ enum {
 #define _MATCH_SEQUENCE MATCH_SEQUENCE
 #define _NOP NOP
 #define _POP_EXCEPT POP_EXCEPT
-#define _POP_ITER POP_ITER
 #define _POP_TOP POP_TOP
 #define _PUSH_EXC_INFO PUSH_EXC_INFO
 #define _PUSH_NULL PUSH_NULL
@@ -1239,7 +1238,6 @@ enum {
     _NOP_r22,
     _NOP_r33,
     _POP_EXCEPT_r10,
-    _POP_ITER_r20,
     _POP_JUMP_IF_FALSE_r00,
     _POP_JUMP_IF_FALSE_r10,
     _POP_JUMP_IF_FALSE_r21,
@@ -1434,7 +1432,7 @@ enum {
     _WITH_EXCEPT_START_r33,
     _YIELD_VALUE_r11,
 };
-#define MAX_UOP_REGS_ID 1645
+#define MAX_UOP_REGS_ID 1644
 
 #ifdef __cplusplus
 }
