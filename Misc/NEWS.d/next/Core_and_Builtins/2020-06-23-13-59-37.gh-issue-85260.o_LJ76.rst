@@ -1,0 +1,4 @@
+:func:`compile` now raises :exc:`ValueError` instead of crashing on a debug
+build if an identifier field of an AST node (such as the name of a function,
+a class, an imported module or a caught exception) is ``"None"``, ``"True"``
+or ``"False"``.

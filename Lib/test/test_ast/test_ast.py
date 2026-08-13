@@ -983,6 +983,34 @@ class AST_Tests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, f"identifier field can't represent '{constant}' constant"):
                 compile(expr, "<test>", "eval")
 
+    def test_constant_in_identifier_fields(self):
+        # gh-85260: an identifier field holding a constant name used to
+        # crash the compiler
+        for statement in [
+            "def x(): pass",
+            "async def x(): pass",
+            "class x: pass",
+            "from a import x",
+            "from a import b as x",
+            "from a import b, c, d as x",
+            "import x",
+            "import a, b, x",
+            "try: pass\nexcept A as x: pass",
+            "try: pass\nexcept A as b: pass\nexcept B as x: pass\n",
+        ]:
+            for constant in "True", "False", "None":
+                with self.subTest(statement=statement, constant=constant):
+                    tree = ast.parse(statement)
+                    for node in ast.walk(tree):
+                        for field, value in ast.iter_fields(node):
+                            if value == "x":
+                                setattr(node, field, constant)
+                    with self.assertRaisesRegex(
+                            ValueError,
+                            f"identifier field can't represent "
+                            f"'{constant}' constant"):
+                        compile(tree, "<test>", "exec")
+
     def test_constant_as_unicode_name(self):
         constants = [
             ("True", b"Tru\xe1\xb5\x89"),
