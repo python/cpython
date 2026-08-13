@@ -454,6 +454,13 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual("[a\xe9]".translate(str.maketrans({'a': '<\u20ac>'})),
                          "[<\u20ac>\xe9]")
 
+        # with frozendict
+        tbl = self.type2test.maketrans(frozendict({'s': 'S', 'T': 't'}))
+        self.assertEqual(tbl, {ord('s'): 'S', ord('T'): 't'})
+        self.assertEqual('sTan'.translate(tbl), 'Stan')
+        tbl = self.type2test.maketrans(frozendict({'a': None, 'b': '<i>'}))
+        self.checkequalnofix('<i><i><i>c', 'abababc', 'translate', tbl)
+
         # invalid Unicode characters
         invalid_char = 0x10ffff+1
         for before in "a\xe9\u20ac\U0010ffff":
@@ -599,6 +606,21 @@ class StrTest(string_tests.StringLikeTest,
         pattern = 'abc'
         text = 'abc def'
         self.assertIs(text.replace(pattern, pattern), text)
+
+    @support.nomemtest
+    def test_replace_oom(self):
+        # https://github.com/python/cpython/issues/152228
+        s1 = "轘" * 4
+        s2 = "&"
+        s3 = "&amp;"
+        assertion = self.assertRaises(MemoryError)
+        _testcapi.set_nomemory(0, 0)
+        try:
+            # No allocations made in the test itself:
+            with assertion:
+                s1.replace(s2, s3)  # this line used to crash before
+        finally:
+            _testcapi.remove_mem_hooks()
 
     def test_repeat_id_preserving(self):
         a = '123abc1@'

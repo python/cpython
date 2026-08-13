@@ -461,6 +461,7 @@ int RunningOnValgrind(void);
 
 #if DYNAMIC_ANNOTATIONS_ENABLED != 0 && defined(__cplusplus)
 
+extern "C++" {
   /* _Py_ANNOTATE_UNPROTECTED_READ is the preferred way to annotate racey reads.
 
      Instead of doing
@@ -476,6 +477,8 @@ int RunningOnValgrind(void);
     _Py_ANNOTATE_IGNORE_READS_END();
     return res;
   }
+}
+
   /* Apply _Py_ANNOTATE_BENIGN_RACE_SIZED to a static variable. */
 #define _Py_ANNOTATE_BENIGN_RACE_STATIC(static_var, description)        \
     namespace {                                                       \

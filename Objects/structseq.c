@@ -28,7 +28,11 @@ static Py_ssize_t
 get_type_attr_as_size(PyTypeObject *tp, PyObject *name)
 {
     PyObject *v = PyDict_GetItemWithError(_PyType_GetDict(tp), name);
-    if (v == NULL && !PyErr_Occurred()) {
+
+    if (v == NULL) {
+        if (PyErr_Occurred()) {
+            return -1;
+        }
         PyErr_Format(PyExc_TypeError,
                      "Missed attribute '%U' of type %s",
                      name, tp->tp_name);
@@ -445,6 +449,7 @@ structseq_replace(PyObject *op, PyObject *args, PyObject *kwargs)
         }
     }
 
+    _PyObject_GC_TRACK(result);
     return (PyObject *)result;
 
 error:
@@ -515,7 +520,8 @@ initialize_structseq_dict(PyStructSequence_Desc *desc, PyObject* dict,
     }
 
     if (_PyTuple_Resize(&keys, k) == -1) {
-        goto error;
+        assert(keys == NULL);
+        return -1;
     }
 
     if (PyDict_SetItemString(dict, match_args_key, keys) < 0) {

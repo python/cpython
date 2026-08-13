@@ -1,5 +1,0 @@
-Added :c:func:`PyLong_GetNativeLayout`, :c:struct:`PyLongLayout`,
-:c:struct:`PyLongExport`, :c:func:`PyLong_Export`,
-:c:func:`PyLong_FreeExport`, :c:struct:`PyLongWriter`,
-:c:func:`PyLongWriter_Create`, :c:func:`PyLongWriter_Finish` and
-:c:func:`PyLongWriter_Discard` to the limited API.

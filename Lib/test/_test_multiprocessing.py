@@ -161,9 +161,10 @@ PRELOAD = ['__main__', 'test.test_multiprocessing_forkserver']
 #
 
 try:
-    from ctypes import Structure, c_int, c_double, c_longlong
+    from ctypes.util import struct as ctypes_struct
+    from ctypes import c_int, c_double, c_longlong
 except ImportError:
-    Structure = object
+    def ctypes_struct(cls): return cls
     c_int = c_double = c_longlong = None
 
 
@@ -207,10 +208,38 @@ def only_run_in_spawn_testsuite(reason):
     return decorator
 
 
+def only_run_in_forkserver_testsuite(reason):
+    """Returns a decorator: raises SkipTest unless fork is supported
+    and the current start method is forkserver.
+
+    Combines @support.requires_fork() with the single-run semantics of
+    only_run_in_spawn_testsuite(), but uses the forkserver testsuite as
+    the single-run target.  Appropriate for tests that exercise
+    os.fork() directly (raw fork or mp.set_start_method("fork") in a
+    subprocess) and don't vary by start method, since forkserver is
+    only available on platforms that support fork.
+    """
+
+    def decorator(test_item):
+
+        @functools.wraps(test_item)
+        def forkserver_check_wrapper(*args, **kwargs):
+            if not support.has_fork_support:
+                raise unittest.SkipTest("requires working os.fork()")
+            if (start_method := multiprocessing.get_start_method()) != "forkserver":
+                raise unittest.SkipTest(
+                    f"{start_method=}, not 'forkserver'; {reason}")
+            return test_item(*args, **kwargs)
+
+        return forkserver_check_wrapper
+
+    return decorator
+
+
 class TestInternalDecorators(unittest.TestCase):
     """Logic within a test suite that could errantly skip tests? Test it!"""
 
-    @unittest.skipIf(sys.platform == "win32", "test requires that fork exists.")
+    @support.requires_fork()
     def test_only_run_in_spawn_testsuite(self):
         if multiprocessing.get_start_method() != "spawn":
             raise unittest.SkipTest("only run in test_multiprocessing_spawn.")
@@ -229,6 +258,30 @@ class TestInternalDecorators(unittest.TestCase):
             multiprocessing.set_start_method("fork", force=True)
             with self.assertRaises(unittest.SkipTest) as ctx:
                 return_four_if_spawn()
+            self.assertIn("testing this decorator", str(ctx.exception))
+            self.assertIn("start_method=", str(ctx.exception))
+        finally:
+            multiprocessing.set_start_method(orig_start_method, force=True)
+
+    @support.requires_fork()
+    def test_only_run_in_forkserver_testsuite(self):
+        if multiprocessing.get_start_method() != "forkserver":
+            raise unittest.SkipTest("only run in test_multiprocessing_forkserver.")
+
+        try:
+            @only_run_in_forkserver_testsuite("testing this decorator")
+            def return_four_if_forkserver():
+                return 4
+        except Exception as err:
+            self.fail(f"expected decorated `def` not to raise; caught {err}")
+
+        orig_start_method = multiprocessing.get_start_method(allow_none=True)
+        try:
+            multiprocessing.set_start_method("forkserver", force=True)
+            self.assertEqual(return_four_if_forkserver(), 4)
+            multiprocessing.set_start_method("spawn", force=True)
+            with self.assertRaises(unittest.SkipTest) as ctx:
+                return_four_if_forkserver()
             self.assertIn("testing this decorator", str(ctx.exception))
             self.assertIn("start_method=", str(ctx.exception))
         finally:
@@ -2851,11 +2904,13 @@ def exception_throwing_generator(total, when):
 
 class _TestPool(BaseTestCase):
 
+    _POOL_SIZE = 4
+
     @classmethod
     def setUpClass(cls):
         with warnings_helper.ignore_fork_in_thread_deprecation_warnings():
             super().setUpClass()
-            cls.pool = cls.Pool(4)
+            cls.pool = cls.Pool(cls._POOL_SIZE)
 
     @classmethod
     def tearDownClass(cls):
@@ -2969,18 +3024,36 @@ class _TestPool(BaseTestCase):
             p.terminate()
             p.join()
 
-    def test_imap(self):
-        it = self.pool.imap(sqr, list(range(10)))
-        self.assertEqual(list(it), list(map(sqr, list(range(10)))))
-
-        it = self.pool.imap(sqr, list(range(10)))
+    @support.subTests('buffersize', (
+        None,
+        1,
+        _POOL_SIZE,
+        _POOL_SIZE * 2,
+    ))
+    def test_imap(self, buffersize):
+        iterable = range(10)
+        if self.TYPE != "threads":
+            iterable = list(iterable)
+        it = self.pool.imap(sqr, iterable, buffersize=buffersize)
         for i in range(10):
-            self.assertEqual(next(it), i*i)
+            self.assertEqual(next(it), i * i)
+        self.assertRaises(StopIteration, it.__next__)
+        # again, verify that it's truly exhausted
         self.assertRaises(StopIteration, it.__next__)
 
-        it = self.pool.imap(sqr, list(range(1000)), chunksize=100)
+    @support.subTests(('chunksize', 'buffersize'), (
+        (100, None),
+        (100, _POOL_SIZE),
+    ))
+    def test_imap_with_chunksize(self, chunksize, buffersize):
+        iterable = range(1000)
+        if self.TYPE != "threads":
+            iterable = list(iterable)
+        it = self.pool.imap(sqr, iterable, chunksize=chunksize, buffersize=buffersize)
         for i in range(1000):
-            self.assertEqual(next(it), i*i)
+            self.assertEqual(next(it), i * i)
+        self.assertRaises(StopIteration, it.__next__)
+        # again, verify that it's truly exhausted
         self.assertRaises(StopIteration, it.__next__)
 
     def test_imap_handle_iterable_exception(self):
@@ -3009,11 +3082,29 @@ class _TestPool(BaseTestCase):
             self.assertEqual(next(it), i*i)
         self.assertRaises(SayWhenError, it.__next__)
 
-    def test_imap_unordered(self):
-        it = self.pool.imap_unordered(sqr, list(range(10)))
+    @support.subTests('buffersize', (
+        None,
+        1,
+        _POOL_SIZE,
+        _POOL_SIZE * 2,
+    ))
+    def test_imap_unordered(self, buffersize):
+        iterable = range(10)
+        if self.TYPE != "threads":
+            iterable = list(iterable)
+        it = self.pool.imap(sqr, iterable, buffersize=buffersize)
         self.assertEqual(sorted(it), list(map(sqr, list(range(10)))))
 
-        it = self.pool.imap_unordered(sqr, list(range(1000)), chunksize=100)
+    @support.subTests(('chunksize', 'buffersize'), (
+        (100, None),
+        (100, _POOL_SIZE),
+    ))
+    def test_imap_unordered_with_chunksize(self, chunksize, buffersize):
+        iterable = range(1000)
+        if self.TYPE != "threads":
+            iterable = list(iterable)
+        it = self.pool.imap_unordered(sqr, iterable, chunksize=chunksize,
+                                      buffersize=buffersize)
         self.assertEqual(sorted(it), list(map(sqr, list(range(1000)))))
 
     def test_imap_unordered_handle_iterable_exception(self):
@@ -3051,6 +3142,130 @@ class _TestPool(BaseTestCase):
                 value = next(it)
                 self.assertIn(value, expected_values)
                 expected_values.remove(value)
+
+    @support.subTests('method_name', ("imap", "imap_unordered"))
+    @support.subTests(('buffersize', 'expected_exception', 'expected_regex'), (
+        ("foo", TypeError, "buffersize must be an integer or None"),
+        (2.0, TypeError, "buffersize must be an integer or None"),
+        (0, ValueError, "buffersize must be None or > 0"),
+        (-1, ValueError, "buffersize must be None or > 0"),
+    ))
+    def test_imap_and_imap_unordered_with_buffersize_type_validation(
+        self, method_name, buffersize, expected_exception, expected_regex
+    ):
+        method = getattr(self.pool, method_name)
+        with self.assertRaisesRegex(expected_exception, expected_regex):
+            method(str, range(4), buffersize=buffersize)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    @support.subTests('method_name', ("imap", "imap_unordered"))
+    def test_imap_and_imap_unordered_when_buffer_is_full(self, method_name):
+        if self.TYPE != "threads":
+            self.skipTest("test not appropriate for {}".format(self.TYPE))
+
+        processes = 4
+        p = self.Pool(processes)
+        last_produced_task_arg = Value("i")
+
+        def produce_args():
+            for arg in itertools.count(1):
+                last_produced_task_arg.value = arg
+                yield arg
+
+        method = getattr(p, method_name)
+        it = method(functools.partial(sqr, wait=0.2), produce_args())
+
+        time.sleep(0.2)
+        # `iterable` could've been advanced only `processes` times,
+        # but in fact it advances further (`> processes`) because of
+        # not waiting for workers or user code to catch up.
+        self.assertGreater(last_produced_task_arg.value, processes)
+
+        next(it)
+        time.sleep(0.2)
+        self.assertGreater(last_produced_task_arg.value, processes + 1)
+
+        next(it)
+        time.sleep(0.2)
+        self.assertGreater(last_produced_task_arg.value, processes + 2)
+
+        p.terminate()
+        p.join()
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    @support.subTests('method_name', ("imap", "imap_unordered"))
+    def test_imap_and_imap_unordered_with_buffersize_when_buffer_is_full(
+        self, method_name
+    ):
+        if self.TYPE != "threads":
+            self.skipTest("test not appropriate for {}".format(self.TYPE))
+
+        processes = 4
+        p = self.Pool(processes)
+        last_produced_task_arg = Value("i")
+
+        def produce_args():
+            for arg in itertools.count(1):
+                last_produced_task_arg.value = arg
+                yield arg
+
+        method = getattr(p, method_name)
+        it = method(functools.partial(sqr, wait=0.2), produce_args(),
+                    buffersize=processes)
+
+        time.sleep(0.2)
+        self.assertEqual(last_produced_task_arg.value, processes)
+
+        next(it)
+        time.sleep(0.2)
+        self.assertEqual(last_produced_task_arg.value, processes + 1)
+
+        next(it)
+        time.sleep(0.2)
+        self.assertEqual(last_produced_task_arg.value, processes + 2)
+
+        p.terminate()
+        p.join()
+
+    @support.subTests('method_name', ("imap", "imap_unordered"))
+    def test_imap_and_imap_unordered_with_buffersize_on_empty_iterable(
+        self, method_name
+    ):
+        method = getattr(self.pool, method_name)
+        res = method(str, [], buffersize=2)
+        self.assertIsNone(next(res, None))
+        self.assertIsNone(next(res, None))
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_imap_with_buffersize_on_infinite_iterable(self):
+        if self.TYPE != "threads":
+            self.skipTest("test not appropriate for {}".format(self.TYPE))
+
+        p = self.Pool(4)
+        res = p.imap(str, itertools.count(), buffersize=2)
+
+        self.assertEqual(next(res, None), "0")
+        self.assertEqual(next(res, None), "1")
+        self.assertEqual(next(res, None), "2")
+
+        p.terminate()
+        p.join()
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_imap_unordered_with_buffersize_on_infinite_iterable(self):
+        if self.TYPE != "threads":
+            self.skipTest("test not appropriate for {}".format(self.TYPE))
+
+        p = self.Pool(4)
+        res = p.imap_unordered(str, itertools.count(), buffersize=2)
+
+        # (4, 5, ...) can also be submitted to the pool, so assert just 3 unique results
+        first_three_results = [next(res, None) for _ in range(3)]
+        self.assertEqual(len(first_three_results), 3)
+        self.assertEqual(len(set(first_three_results)), 3)
+
+        p.terminate()
+        p.join()
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_make_pool(self):
@@ -3890,6 +4105,19 @@ class _TestConnection(BaseTestCase):
             self.assertRaises(OSError, a.recv)
             self.assertRaises(OSError, b.recv)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_wait_empty(self):
+        if self.TYPE != 'processes':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+        # gh-145587: wait() with empty list should respect timeout
+        timeout = 0.5
+        start = time.monotonic()
+        res = self.connection.wait([], timeout=timeout)
+        duration = time.monotonic() - start
+
+        self.assertEqual(res, [])
+        self.assertGreaterEqual(duration, timeout - 0.1)
+
 class _TestListener(BaseTestCase):
 
     ALLOWED_TYPES = ('processes',)
@@ -4325,12 +4553,11 @@ class _TestHeap(BaseTestCase):
 #
 #
 
-class _Foo(Structure):
-    _fields_ = [
-        ('x', c_int),
-        ('y', c_double),
-        ('z', c_longlong,)
-        ]
+@ctypes_struct
+class _Foo:
+    x: c_int
+    y: c_double
+    z: c_longlong
 
 class _TestSharedCTypes(BaseTestCase):
 
@@ -5992,6 +6219,20 @@ class TestStartMethod(unittest.TestCase):
             process.join()
             self.assertIsNone(multiprocessing.get_start_method(allow_none=True))
 
+    @only_run_in_spawn_testsuite("freeze_support is not start method specific")
+    def test_freeze_support_dont_set_context(self):
+        # gh-140814: freeze_support() should not set the start method
+        # as a side effect, so a later set_start_method() still works.
+        multiprocessing.set_start_method(None, force=True)
+        try:
+            multiprocessing.freeze_support()
+            self.assertIsNone(
+                multiprocessing.get_start_method(allow_none=True))
+            # Should not raise "context has already been set"
+            multiprocessing.set_start_method('spawn')
+        finally:
+            multiprocessing.set_start_method(None, force=True)
+
     def test_context_check_module_types(self):
         try:
             ctx = multiprocessing.get_context('forkserver')
@@ -6064,7 +6305,10 @@ class TestStartMethod(unittest.TestCase):
     @only_run_in_spawn_testsuite("avoids redundant testing.")
     def test_mixed_startmethod(self):
         # Fork-based locks cannot be used with spawned process
-        for process_method in ["spawn", "forkserver"]:
+        test_methods = ["spawn"]
+        if "forkserver" in multiprocessing.get_all_start_methods():
+            test_methods.append("forkserver")
+        for process_method in test_methods:
             queue = multiprocessing.get_context("fork").Queue()
             process_ctx = multiprocessing.get_context(process_method)
             p = process_ctx.Process(target=close_queue, args=(queue,))
@@ -6073,7 +6317,7 @@ class TestStartMethod(unittest.TestCase):
                 p.start()
 
         # non-fork-based locks can be used with all other start methods
-        for queue_method in ["spawn", "forkserver"]:
+        for queue_method in test_methods:
             for process_method in multiprocessing.get_all_start_methods():
                 queue = multiprocessing.get_context(queue_method).Queue()
                 process_ctx = multiprocessing.get_context(process_method)
@@ -6228,6 +6472,8 @@ class TestResourceTracker(unittest.TestCase):
         # Catchable signal (ignored by semaphore tracker)
         self.check_resource_tracker_death(signal.SIGINT, False)
 
+    @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
+                         'need signal.pthread_sigmask')
     def test_resource_tracker_sigterm(self):
         # Catchable signal (ignored by semaphore tracker)
         self.check_resource_tracker_death(signal.SIGTERM, False)
@@ -6242,8 +6488,9 @@ class TestResourceTracker(unittest.TestCase):
     def _is_resource_tracker_reused(conn, pid):
         from multiprocessing.resource_tracker import _resource_tracker
         _resource_tracker.ensure_running()
-        # The pid should be None in the child process, expect for the fork
-        # context. It should not be a new value.
+        # The pid should be None in the child (the at-fork handler clears
+        # it for fork; spawn/forkserver children never had it set).  It
+        # should not be a new value.
         reused = _resource_tracker._pid in (None, pid)
         reused &= _resource_tracker._check_alive()
         conn.send(reused)
@@ -6328,6 +6575,183 @@ class TestResourceTracker(unittest.TestCase):
         finally:
             # restore sigmask to what it was before executing test
             signal.pthread_sigmask(signal.SIG_SETMASK, orig_sigmask)
+
+    @only_run_in_forkserver_testsuite("avoids redundant testing.")
+    def test_resource_tracker_fork_deadlock(self):
+        # gh-146313: ResourceTracker.__del__ used to deadlock if a forked
+        # child still held the pipe's write end open when the parent
+        # exited, because the parent would block in waitpid() waiting for
+        # the tracker to exit, but the tracker would never see EOF.
+        cmd = '''if 1:
+            import os, signal
+            from multiprocessing.resource_tracker import ensure_running
+            ensure_running()
+            if os.fork() == 0:
+                signal.pause()
+                os._exit(0)
+            # parent falls through and exits, triggering __del__
+        '''
+        proc = subprocess.Popen([sys.executable, '-c', cmd],
+                                start_new_session=True)
+        try:
+            try:
+                proc.wait(timeout=support.SHORT_TIMEOUT)
+            except subprocess.TimeoutExpired:
+                self.fail(
+                    "Parent process deadlocked in ResourceTracker.__del__"
+                )
+            self.assertEqual(proc.returncode, 0)
+        finally:
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            proc.wait()
+
+    @only_run_in_forkserver_testsuite("avoids redundant testing.")
+    def test_resource_tracker_mp_fork_reuse_and_prompt_reap(self):
+        # gh-146313 / gh-80849: A child started via multiprocessing.Process
+        # with the 'fork' start method should reuse the parent's resource
+        # tracker (the at-fork handler preserves the inherited pipe fd),
+        # *and* the parent should be able to reap the tracker promptly
+        # after joining the child, without hitting the waitpid timeout.
+        cmd = textwrap.dedent('''
+            import multiprocessing as mp
+            from multiprocessing.resource_tracker import _resource_tracker
+
+            def child(conn):
+                # Prove we can talk to the parent's tracker by registering
+                # and unregistering a dummy resource over the inherited fd.
+                # If the fd were closed, ensure_running would launch a new
+                # tracker and _pid would be non-None.
+                _resource_tracker.register("x", "dummy")
+                _resource_tracker.unregister("x", "dummy")
+                conn.send((_resource_tracker._fd is not None,
+                           _resource_tracker._pid is None,
+                           _resource_tracker._check_alive()))
+
+            if __name__ == "__main__":
+                mp.set_start_method("fork")
+                _resource_tracker.ensure_running()
+                r, w = mp.Pipe(duplex=False)
+                p = mp.Process(target=child, args=(w,))
+                p.start()
+                child_has_fd, child_pid_none, child_alive = r.recv()
+                p.join()
+                w.close(); r.close()
+
+                # Now simulate __del__: the child has exited and released
+                # its fd copy, so the tracker should see EOF and exit
+                # promptly -- no timeout.
+                _resource_tracker._stop(wait_timeout=5.0)
+                print(child_has_fd, child_pid_none, child_alive,
+                      _resource_tracker._waitpid_timed_out,
+                      _resource_tracker._exitcode)
+        ''')
+        rc, out, err = script_helper.assert_python_ok('-c', cmd)
+        parts = out.decode().split()
+        self.assertEqual(parts, ['True', 'True', 'True', 'False', '0'],
+            f"unexpected: {parts!r} stderr={err!r}")
+
+    @only_run_in_forkserver_testsuite("avoids redundant testing.")
+    def test_resource_tracker_raw_fork_prompt_reap(self):
+        # gh-146313: After a raw os.fork() the at-fork handler closes the
+        # child's inherited fd, so the parent can reap the tracker
+        # immediately -- even while the child is still alive -- rather
+        # than waiting out the 1s timeout.
+        cmd = textwrap.dedent('''
+            import os, signal
+            from multiprocessing.resource_tracker import _resource_tracker
+
+            _resource_tracker.ensure_running()
+            r, w = os.pipe()
+            pid = os.fork()
+            if pid == 0:
+                os.close(r)
+                # Report whether our fd was closed by the at-fork handler.
+                os.write(w, b"1" if _resource_tracker._fd is None else b"0")
+                os.close(w)
+                signal.pause()  # stay alive so parent's reap is meaningful
+                os._exit(0)
+            os.close(w)
+            child_fd_closed = os.read(r, 1) == b"1"
+            os.close(r)
+
+            # Child is still alive and paused.  Because it closed its fd
+            # copy, our close below is the last one and the tracker exits.
+            _resource_tracker._stop(wait_timeout=5.0)
+
+            os.kill(pid, signal.SIGKILL)
+            os.waitpid(pid, 0)
+            print(child_fd_closed,
+                  _resource_tracker._waitpid_timed_out,
+                  _resource_tracker._exitcode)
+        ''')
+        rc, out, err = script_helper.assert_python_ok('-c', cmd)
+        parts = out.decode().split()
+        self.assertEqual(parts, ['True', 'False', '0'],
+            f"unexpected: {parts!r} stderr={err!r}")
+
+    @only_run_in_forkserver_testsuite("avoids redundant testing.")
+    def test_resource_tracker_lock_reinit_after_fork(self):
+        # gh-146313: If a parent thread held the tracker's lock at fork
+        # time, the child would inherit the held lock and deadlock on
+        # its next ensure_running().  The at-fork handler reinits it.
+        cmd = textwrap.dedent('''
+            import os, threading
+            from multiprocessing.resource_tracker import _resource_tracker
+
+            held = threading.Event()
+            release = threading.Event()
+            def hold():
+                with _resource_tracker._lock:
+                    held.set()
+                    release.wait()
+            t = threading.Thread(target=hold)
+            t.start()
+            held.wait()
+
+            pid = os.fork()
+            if pid == 0:
+                ok = _resource_tracker._lock.acquire(timeout=5.0)
+                os._exit(0 if ok else 1)
+
+            release.set()
+            t.join()
+            _, status = os.waitpid(pid, 0)
+            print(os.waitstatus_to_exitcode(status))
+        ''')
+        rc, out, err = script_helper.assert_python_ok(
+            '-W', 'ignore::DeprecationWarning', '-c', cmd)
+        self.assertEqual(out.strip(), b'0',
+            f"child failed to acquire lock: stderr={err!r}")
+
+    @only_run_in_forkserver_testsuite("avoids redundant testing.")
+    def test_resource_tracker_safety_net_timeout(self):
+        # gh-146313: When an mp.Process(fork) child holds the preserved
+        # fd and the parent calls _stop() without joining (simulating
+        # abnormal shutdown), the safety-net timeout should fire rather
+        # than deadlocking.
+        cmd = textwrap.dedent('''
+            import multiprocessing as mp
+            import signal
+            from multiprocessing.resource_tracker import _resource_tracker
+
+            if __name__ == "__main__":
+                mp.set_start_method("fork")
+                _resource_tracker.ensure_running()
+                p = mp.Process(target=signal.pause)
+                p.start()
+                # Stop WITHOUT joining -- child still holds preserved fd
+                _resource_tracker._stop(wait_timeout=0.5)
+                print(_resource_tracker._waitpid_timed_out)
+                p.terminate()
+                p.join()
+        ''')
+        rc, out, err = script_helper.assert_python_ok('-c', cmd)
+        self.assertEqual(out.strip(), b'True',
+            f"safety-net timeout did not fire: stderr={err!r}")
+
 
 class TestSimpleQueue(unittest.TestCase):
 
@@ -7103,6 +7527,23 @@ class MiscTestCase(unittest.TestCase):
             f"fun:{expected_argv}",
             f"module:{expected_argv}",
             f"fun:{expected_argv}",
+            '',
+        ])
+
+    @only_run_in_forkserver_testsuite("forkserver specific test.")
+    def test_preload_main_large_sys_argv(self):
+        # gh-144503: a very large parent sys.argv must not prevent the
+        # forkserver from starting (it previously overflowed the OS
+        # per-argument length limit when repr'd into the -c command string).
+        name = os.path.join(os.path.dirname(__file__),
+                            'mp_preload_large_sysargv.py')
+        _, out, err = test.support.script_helper.assert_python_ok(name)
+        self.assertEqual(err, b'')
+
+        out = out.decode().split("\n")
+        self.assertEqual(out, [
+            'preload:5002:sentinel',
+            'worker:5002:sentinel',
             '',
         ])
 

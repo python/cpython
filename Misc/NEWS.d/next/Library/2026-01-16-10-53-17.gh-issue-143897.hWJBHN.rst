@@ -1,3 +1,0 @@
-Remove the :meth:`!isxidstart` and :meth:`!isxidcontinue` methods of
-:data:`unicodedata.ucd_3_2_0`. They are now only exposed as
-:func:`unicodedata.isxidstart` and :func:`unicodedata.isxidcontinue`.

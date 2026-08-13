@@ -16,7 +16,8 @@ PyDoc_STRVAR(select_select__doc__,
 "\n"
 "Wait until one or more file descriptors are ready for some kind of I/O.\n"
 "\n"
-"The first three arguments are iterables of file descriptors to be waited for:\n"
+"The first three arguments are iterables of file descriptors to be waited\n"
+"for:\n"
 "rlist -- wait until ready for reading\n"
 "wlist -- wait until ready for writing\n"
 "xlist -- wait for an \"exceptional condition\"\n"
@@ -29,9 +30,9 @@ PyDoc_STRVAR(select_select__doc__,
 "a non-integer to specify fractions of seconds.  If it is absent\n"
 "or None, the call will never time out.\n"
 "\n"
-"The return value is a tuple of three lists corresponding to the first three\n"
-"arguments; each contains the subset of the corresponding file descriptors\n"
-"that are ready.\n"
+"The return value is a tuple of three lists corresponding to the first\n"
+"three arguments; each contains the subset of the corresponding file\n"
+"descriptors that are ready.\n"
 "\n"
 "*** IMPORTANT NOTICE ***\n"
 "On Windows, only sockets are supported; on Unix, all file\n"
@@ -214,8 +215,8 @@ PyDoc_STRVAR(select_poll_poll__doc__,
 "    The maximum time to wait in milliseconds, or else None (or a negative\n"
 "    value) to wait indefinitely.\n"
 "\n"
-"Returns a list containing any descriptors that have events or errors to\n"
-"report, as a list of (fd, event) 2-tuples.");
+"Returns a list containing any descriptors that have events or errors\n"
+"to report, as a list of (fd, event) 2-tuples.");
 
 #define SELECT_POLL_POLL_METHODDEF    \
     {"poll", _PyCFunction_CAST(select_poll_poll), METH_FASTCALL, select_poll_poll__doc__},
@@ -396,11 +397,11 @@ PyDoc_STRVAR(select_devpoll_poll__doc__,
 "Polls the set of registered file descriptors.\n"
 "\n"
 "  timeout\n"
-"    The maximum time to wait in milliseconds, or else None (or a negative\n"
-"    value) to wait indefinitely.\n"
+"    The maximum time to wait in milliseconds, or else None (or\n"
+"    a negative value) to wait indefinitely.\n"
 "\n"
-"Returns a list containing any descriptors that have events or errors to\n"
-"report, as a list of (fd, event) 2-tuples.");
+"Returns a list containing any descriptors that have events or errors\n"
+"to report, as a list of (fd, event) 2-tuples.");
 
 #define SELECT_DEVPOLL_POLL_METHODDEF    \
     {"poll", _PyCFunction_CAST(select_devpoll_poll), METH_FASTCALL, select_devpoll_poll__doc__},
@@ -498,8 +499,8 @@ PyDoc_STRVAR(select_poll__doc__,
 "\n"
 "Returns a polling object.\n"
 "\n"
-"This object supports registering and unregistering file descriptors, and then\n"
-"polling them for I/O events.");
+"This object supports registering and unregistering file descriptors, and\n"
+"then polling them for I/O events.");
 
 #define SELECT_POLL_METHODDEF    \
     {"poll", (PyCFunction)select_poll, METH_NOARGS, select_poll__doc__},
@@ -523,8 +524,8 @@ PyDoc_STRVAR(select_devpoll__doc__,
 "\n"
 "Returns a polling object.\n"
 "\n"
-"This object supports registering and unregistering file descriptors, and then\n"
-"polling them for I/O events.");
+"This object supports registering and unregistering file descriptors, and\n"
+"then polling them for I/O events.");
 
 #define SELECT_DEVPOLL_METHODDEF    \
     {"devpoll", (PyCFunction)select_devpoll, METH_NOARGS, select_devpoll__doc__},
@@ -978,8 +979,8 @@ PyDoc_STRVAR(select_epoll_poll__doc__,
 "  maxevents\n"
 "    the maximum number of events returned; -1 means no limit\n"
 "\n"
-"Returns a list containing any descriptors that have events to report,\n"
-"as a list of (fd, events) 2-tuples.");
+"Returns a list containing any descriptors that have events to\n"
+"report, as a list of (fd, events) 2-tuples.");
 
 #define SELECT_EPOLL_POLL_METHODDEF    \
     {"poll", _PyCFunction_CAST(select_epoll_poll), METH_FASTCALL|METH_KEYWORDS, select_epoll_poll__doc__},
@@ -1399,4 +1400,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=52e3be5cc66cf1b6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a1ac666294fd14bd input=a9049054013a1b77]*/
