@@ -1747,15 +1747,19 @@ unicodedata_UCD_aliases_impl(PyObject *self, int chr)
         PyErr_SetString(PyExc_SystemError, "failed to create a dict");
         return NULL;
     }
+    const Py_ssize_t final_alias_info_index = (sizeof(alias_infos) /
+                                               sizeof(alias_infos[0])) - 1;
     int current_type_label_codepoint = 0;
     assert(0 < alias_type_labels_start);
     PyObject *aliases_for_current_type;
     Py_ssize_t j = 0; // Index for aliases_for_current_type
     while (true) {
-        bool ac_changed = alias_infos[i].aliased_codepoint != chr;
-        bool type_changed = alias_infos[i].alias_type_label_codepoint != current_type_label_codepoint;
+        bool at_final_index_for_chr = (i > final_alias_info_index) ||
+                                      alias_infos[i].aliased_codepoint != chr;
+        bool type_changed = !at_final_index_for_chr &&
+                            alias_infos[i].alias_type_label_codepoint != current_type_label_codepoint;
         char buffer[NAME_MAXLEN+1];
-        if (ac_changed || type_changed) {
+        if (at_final_index_for_chr || type_changed) {
             // Skip doing this next part for the first time this chunk of code
             // is run.
             if (current_type_label_codepoint != 0) {
@@ -1775,7 +1779,7 @@ unicodedata_UCD_aliases_impl(PyObject *self, int chr)
                 PyDict_SetItemString(dict, buffer, aliases_for_current_type);
             }
 
-            if (ac_changed)
+            if (at_final_index_for_chr)
                 break;
 
             current_type_label_codepoint = alias_infos[i].alias_type_label_codepoint;
