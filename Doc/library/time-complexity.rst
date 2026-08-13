@@ -204,8 +204,10 @@ the buffer instead of moving the remaining bytes, and is amortized *O*\ (1).
      - *O*\ (len(*s*) + len(*t*))
    * - Multiply (``s * k``)
      - *O*\ (*nk*)
-   * - Substring search (``x in s``, ``s.find(x)``, ``s.index(x)``) [10]_
+   * - Substring search (``x in s``, ``s.find(x)``, ``s.index(x)``)
      - *O*\ (*n*)
+   * - Reverse substring search (``s.rfind(x)``, ``s.rindex(x)``) [10]_
+     - *O*\ (*nk*)
    * - Encode or decode
      - *O*\ (*n*)
    * - Iteration
@@ -306,11 +308,12 @@ Notes
    See the :ref:`note on concatenating immutable sequences
    <typesseq-repeated-concatenation>` for alternatives.
 
-.. [10] A naive substring search would need *O*\ (*nk*) comparisons in the
-   worst case, where *k* is the length of the substring searched for, but
-   CPython uses search algorithms with a linear worst case for forward
-   searches. See :source:`Objects/stringlib/stringlib_find_two_way_notes.txt`
-   for details.
+.. [10] *k* is the length of the substring searched for. Forward searches use
+   algorithms with a linear worst case, described in
+   :source:`Objects/stringlib/stringlib_find_two_way_notes.txt`. Reverse
+   searches use a simpler algorithm, which is *O*\ (*n*) on typical input but
+   has no linear worst case. ``s.rpartition(x)`` and ``s.rsplit(x)`` search
+   backwards too.
 
 .. [11] Assuming :class:`int` or :class:`bool` arguments. For other types,
    the range is searched like any other sequence in *O*\ (*n*) time.
