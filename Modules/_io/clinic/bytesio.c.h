@@ -635,7 +635,13 @@ _io_BytesIO___getstate___impl(bytesio *self);
 static PyObject *
 _io_BytesIO___getstate__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_BytesIO___getstate___impl((bytesio *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io_BytesIO___getstate___impl((bytesio *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_io_BytesIO___setstate____doc__,
@@ -654,7 +660,9 @@ _io_BytesIO___setstate__(PyObject *self, PyObject *state)
 {
     PyObject *return_value = NULL;
 
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_BytesIO___setstate___impl((bytesio *)self, state);
+    Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
@@ -738,6 +746,12 @@ _io_BytesIO___sizeof___impl(bytesio *self);
 static PyObject *
 _io_BytesIO___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_BytesIO___sizeof___impl((bytesio *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io_BytesIO___sizeof___impl((bytesio *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
-/*[clinic end generated code: output=37e0318a34125084 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=65de7170154f6b5c input=a9049054013a1b77]*/

@@ -945,60 +945,55 @@ _io_BytesIO_close_impl(bytesio *self)
    function to use the efficient instance representation of PEP 307.
  */
 
- static PyObject *
- bytesio_getstate_lock_held(PyObject *op)
- {
-     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
-
-     bytesio *self = bytesio_CAST(op);
-     PyObject *initvalue = _io_BytesIO_getvalue_impl(self);
-     PyObject *dict;
-     PyObject *state;
-
-     if (initvalue == NULL)
-         return NULL;
-     if (self->dict == NULL) {
-         dict = Py_NewRef(Py_None);
-     }
-     else {
-         dict = PyDict_Copy(self->dict);
-         if (dict == NULL) {
-             Py_DECREF(initvalue);
-             return NULL;
-         }
-     }
-
-     state = Py_BuildValue("(OnN)", initvalue, self->pos, dict);
-     Py_DECREF(initvalue);
-     return state;
-}
 
 /*[clinic input]
+@critical_section
 _io.BytesIO.__getstate__
 [clinic start generated code]*/
 
 static PyObject *
 _io_BytesIO___getstate___impl(bytesio *self)
-/*[clinic end generated code: output=4a776270c8443b85 input=6e3cd9132f0cacdd]*/
+/*[clinic end generated code: output=4a776270c8443b85 input=f41e5bc9731475c4]*/
 {
-    PyObject *op = (PyObject *)self;
-    PyObject *ret;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    ret = bytesio_getstate_lock_held(op);
-    Py_END_CRITICAL_SECTION();
-    return ret;
+    PyObject *initvalue = _io_BytesIO_getvalue_impl(self);
+    PyObject *dict;
+    PyObject *state;
+
+    if (initvalue == NULL)
+        return NULL;
+    if (self->dict == NULL) {
+        dict = Py_NewRef(Py_None);
+    }
+    else {
+        dict = PyDict_Copy(self->dict);
+        if (dict == NULL) {
+            Py_DECREF(initvalue);
+            return NULL;
+        }
+    }
+
+    state = Py_BuildValue("(OnN)", initvalue, self->pos, dict);
+    Py_DECREF(initvalue);
+    return state;
 }
 
-static PyObject *
-bytesio_setstate_lock_held(PyObject *op, PyObject *state)
-{
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
 
+/*[clinic input]
+@critical_section
+_io.BytesIO.__setstate__
+
+    state: object
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_io_BytesIO___setstate___impl(bytesio *self, PyObject *state)
+/*[clinic end generated code: output=3605abdec171bb98 input=82a189599ba75083]*/
+{
     PyObject *result;
     PyObject *position_obj;
     PyObject *dict;
     Py_ssize_t pos;
-    bytesio *self = bytesio_CAST(op);
 
     assert(state != NULL);
 
@@ -1067,25 +1062,6 @@ bytesio_setstate_lock_held(PyObject *op, PyObject *state)
     }
 
     Py_RETURN_NONE;
-}
-
-/*[clinic input]
-_io.BytesIO.__setstate__
-
-    state: object
-    /
-[clinic start generated code]*/
-
-static PyObject *
-_io_BytesIO___setstate___impl(bytesio *self, PyObject *state)
-/*[clinic end generated code: output=3605abdec171bb98 input=7d4339f5be0039ba]*/
-{
-    PyObject *op = (PyObject *)self;
-    PyObject *ret;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    ret = bytesio_setstate_lock_held(op, state);
-    Py_END_CRITICAL_SECTION();
-    return ret;
 }
 
 static void
@@ -1168,12 +1144,18 @@ _io_BytesIO___init___impl(bytesio *self, PyObject *initvalue)
     return 0;
 }
 
-static PyObject *
-bytesio_sizeof_lock_held(PyObject *op)
-{
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
 
-    bytesio *self = bytesio_CAST(op);
+/*[clinic input]
+@critical_section
+_io.BytesIO.__sizeof__
+
+Size of object in memory, in bytes.
+[clinic start generated code]*/
+
+static PyObject *
+_io_BytesIO___sizeof___impl(bytesio *self)
+/*[clinic end generated code: output=f61b601bd055c4de input=6f01c36e6ff64c17]*/
+{
     size_t res = _PyObject_SIZE(Py_TYPE(self));
     if (self->buf && !SHARED_BUF(self)) {
         size_t s = _PySys_GetSizeOf(self->buf);
@@ -1183,24 +1165,6 @@ bytesio_sizeof_lock_held(PyObject *op)
         res += s;
     }
     return PyLong_FromSize_t(res);
-}
-
-/*[clinic input]
-_io.BytesIO.__sizeof__
-
-Size of object in memory, in bytes.
-[clinic start generated code]*/
-
-static PyObject *
-_io_BytesIO___sizeof___impl(bytesio *self)
-/*[clinic end generated code: output=f61b601bd055c4de input=097b24a2755a7b0b]*/
-{
-    PyObject *op = (PyObject *)self;
-    PyObject *ret;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    ret = bytesio_sizeof_lock_held(op);
-    Py_END_CRITICAL_SECTION();
-    return ret;
 }
 
 static int
