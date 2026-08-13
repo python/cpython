@@ -1,3 +1,4 @@
+import copy
 import errno
 import sys
 import os
@@ -3351,12 +3352,12 @@ def root_is_uid_gid_0():
     except ImportError:
         return False
     try:
-        if pwd.getpwuid(0)[0] != 'root':
+        if pwd.getpwuid(0).pw_name != 'root':
             return False
     except KeyError:
         # On Cygwin, there is no root user (uid 0)
         return False
-    if grp.getgrgid(0)[0] != 'root':
+    if grp.getgrgid(0).gr_name != 'root':
         return False
     return True
 
@@ -3523,6 +3524,16 @@ class ReplaceTests(ReadTest, unittest.TestCase):
         member = self.tar.getmember('ustar/regtype')
         with self.assertRaises(TypeError):
             member.replace(offset=123456789)
+
+    def test_copy_replace(self):
+        member = self.tar.getmember('ustar/regtype')
+        replaced = copy.replace(member, name='misc/other', mode=0o644)
+        self.assertEqual(replaced.name, 'misc/other')
+        self.assertEqual(replaced.mode, 0o644)
+        self.assertEqual(replaced.size, member.size)
+        self.assertEqual(member.name, 'ustar/regtype')
+        with self.assertRaises(TypeError):
+            copy.replace(member, offset=123456789)
 
 
 class NoneInfoExtractTests(ReadTest):

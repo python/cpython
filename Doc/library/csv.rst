@@ -324,14 +324,19 @@ The :mod:`!csv` module defines the following classes:
 
       If several combinations fit the sample equally well ---
       for example if both ``','`` and ``';'`` split every row consistently ---
-      the delimiters ``','``, ``'\t'``, ``';'``, ``' '`` and ``':'``
-      are preferred, in this order,
+      the delimiters listed in the :attr:`~Sniffer.preferred` attribute
+      are preferred, in that order,
       no matter how many times each of them occurs.
+
+      The *lineterminator* parameter is deduced separately,
+      by a majority vote among the line endings of the sample.
+      A tie is broken in the order ``'\r\n'``, ``'\n'``, ``'\r'``,
+      so a sample without a complete line gives ``'\r\n'``.
 
       .. versionchanged:: next
          The dialect is now deduced by trial parsing
          and the results may differ from those of earlier Python versions.
-         The *escapechar* parameter can now be detected,
+         The *escapechar* and *lineterminator* parameters can now be detected,
          and the requested *delimiters* are not restricted to ASCII.
 
 
@@ -353,6 +358,15 @@ The :mod:`!csv` module defines the following classes:
 
       This method is a rough heuristic and may produce both false positives and
       negatives.
+
+   The :class:`Sniffer` class has the following attribute:
+
+   .. attribute:: preferred
+
+      The list of the delimiters preferred for breaking ties,
+      in the order of preference.
+      It can be modified.
+      Its initial value is ``[',', '\t', ';', ' ', ':']``.
 
 An example for :class:`Sniffer` use::
 
@@ -377,6 +391,8 @@ The :mod:`!csv` module defines the following constants:
    Instructs :class:`writer` objects to only quote those fields which contain
    special characters such as *delimiter*, *quotechar*, ``'\r'``, ``'\n'``
    or any of the characters in *lineterminator*.
+   If *doublequote* is :const:`False` and *escapechar* is set,
+   the *quotechar* is escaped instead of causing the field to be quoted.
 
 
 .. data:: QUOTE_NONNUMERIC
@@ -481,6 +497,10 @@ Dialects support the following attributes:
    On reading, the *escapechar* removes any special meaning from
    the following character. It defaults to :const:`None`, which disables escaping.
 
+   .. versionchanged:: 3.10
+      Previously the *escapechar* itself was not escaped,
+      which lost it on reading.
+
    .. versionchanged:: 3.11
       An empty *escapechar* is not allowed.
 
@@ -527,6 +547,13 @@ Dialects support the following attributes:
 
    When ``True``, raise exception :exc:`Error` on bad CSV input.
    The default is ``False``.
+
+Dialects support :func:`copy.replace`,
+which returns a copy of the dialect
+with the specified formatting parameters replaced.
+
+.. versionchanged:: next
+   Added support for :func:`copy.replace`.
 
 .. _reader-objects:
 

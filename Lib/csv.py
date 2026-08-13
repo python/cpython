@@ -82,6 +82,11 @@ __all__ = ["QUOTE_MINIMAL", "QUOTE_ALL", "QUOTE_NONNUMERIC", "QUOTE_NONE",
            "unix_dialect"]
 
 
+_dialect_attributes = frozenset({
+    'delimiter', 'quotechar', 'escapechar', 'doublequote',
+    'skipinitialspace', 'lineterminator', 'quoting', 'strict',
+})
+
 class Dialect:
     """Describe a CSV dialect.
 
@@ -112,6 +117,17 @@ class Dialect:
         except TypeError as e:
             # Re-raise to get a traceback showing more user code.
             raise Error(str(e)) from None
+
+    def __replace__(self, /, **changes):
+        unexpected = changes.keys() - _dialect_attributes
+        if unexpected:
+            raise TypeError(f'__replace__() got an unexpected keyword '
+                            f'argument {min(unexpected)!r}')
+        new = object.__new__(self.__class__)
+        new.__dict__.update(self.__dict__)
+        new.__dict__.update(changes)
+        new._validate()
+        return new
 
 class excel(Dialect):
     """Describe the usual properties of Excel-generated CSV files."""
@@ -373,9 +389,9 @@ class Sniffer:
 
         class dialect(Dialect):
             _name = "sniffed"
-            lineterminator = '\r\n'
             quoting = QUOTE_MINIMAL
 
+        dialect.lineterminator = self._detect_lineterminator(lines)
         dialect.delimiter = delimiter
         # _csv.reader won't accept a quotechar of ''
         dialect.quotechar = quotechar or '"'
@@ -597,6 +613,24 @@ class Sniffer:
         first = [kept_row[0] != skipped_row[0]
                  for kept_row, skipped_row in zip(*results)]
         return all(first) or not any(first)
+
+    def _detect_lineterminator(self, lines):
+        """
+        Detect the line terminator by majority vote among the line
+        endings.  A line break inside a quoted field is counted too,
+        but it takes more of them than of the real ones to win the
+        vote.  A tie is broken in the order '\\r\\n', '\\n', '\\r',
+        so a sample without a complete line gives '\\r\\n'.
+        """
+        counts = dict.fromkeys(('\r\n', '\n', '\r'), 0)
+        for line in lines:
+            for lineterminator in counts:
+                if line.endswith(lineterminator):
+                    counts[lineterminator] += 1
+                    break
+        # max() returns the first of equal candidates, and dict
+        # preserves the insertion order.
+        return max(counts, key=counts.get)
 
     def has_header(self, sample):
         # Creates a dictionary of types of data in each column. If any

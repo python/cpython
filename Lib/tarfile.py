@@ -1036,6 +1036,8 @@ class TarInfo(object):
             result.gname = gname
         return result
 
+    __replace__ = replace
+
     def get_info(self):
         """Return the TarInfo's attributes as a dictionary.
         """
@@ -2282,14 +2284,14 @@ class TarFile(object):
         if pwd:
             if tarinfo.uid not in self._unames:
                 try:
-                    self._unames[tarinfo.uid] = pwd.getpwuid(tarinfo.uid)[0]
+                    self._unames[tarinfo.uid] = pwd.getpwuid(tarinfo.uid).pw_name
                 except KeyError:
                     self._unames[tarinfo.uid] = ''
             tarinfo.uname = self._unames[tarinfo.uid]
         if grp:
             if tarinfo.gid not in self._gnames:
                 try:
-                    self._gnames[tarinfo.gid] = grp.getgrgid(tarinfo.gid)[0]
+                    self._gnames[tarinfo.gid] = grp.getgrgid(tarinfo.gid).gr_name
                 except KeyError:
                     self._gnames[tarinfo.gid] = ''
             tarinfo.gname = self._gnames[tarinfo.gid]
@@ -2837,12 +2839,12 @@ class TarFile(object):
             if not numeric_owner:
                 try:
                     if grp and tarinfo.gname:
-                        g = grp.getgrnam(tarinfo.gname)[2]
+                        g = grp.getgrnam(tarinfo.gname).gr_gid
                 except KeyError:
                     pass
                 try:
                     if pwd and tarinfo.uname:
-                        u = pwd.getpwnam(tarinfo.uname)[2]
+                        u = pwd.getpwnam(tarinfo.uname).pw_uid
                 except KeyError:
                     pass
             if g is None:

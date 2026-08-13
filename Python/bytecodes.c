@@ -526,7 +526,7 @@ dummy_func(
         }
 
         macro(TO_BOOL_INT) =
-            _GUARD_TOS_INT + unused/1 + unused/2 + _TO_BOOL_INT + _POP_TOP_INT;
+            _GUARD_TOS_EXACT_INT + unused/1 + unused/2 + _TO_BOOL_INT + _POP_TOP_INT;
 
         op(_GUARD_NOS_LIST, (nos, unused -- nos, unused)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
@@ -641,6 +641,11 @@ dummy_func(
         op(_GUARD_TOS_INT, (value -- value)) {
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             EXIT_IF(!_PyLong_CheckExactAndCompact(value_o));
+        }
+
+        op(_GUARD_TOS_EXACT_INT, (value -- value)) {
+            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
+            EXIT_IF(!PyLong_CheckExact(value_o));
         }
 
         op(_GUARD_NOS_OVERFLOWED, (left, unused -- left, unused)) {
@@ -6262,6 +6267,10 @@ dummy_func(
             if (target->op.code == ENTER_EXECUTOR) {
                 PyCodeObject *code = _PyFrame_GetCode(frame);
                 executor = code->co_executors->executors[target->op.arg];
+                if (executor == _PyExecutor_FromExit(exit)) {
+                    _Py_ExecutorDetach(executor);
+                    GOTO_TIER_ONE(target);
+                }
                 Py_INCREF(executor);
                 assert(tstate->jit_exit == exit);
                 exit->executor = executor;
