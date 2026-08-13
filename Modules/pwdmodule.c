@@ -226,8 +226,7 @@ static PyObject *
 pwd_getpwnam_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=359ce1ddeb7a824f input=a6aeb5e3447fb9e0]*/
 {
-    char *buf = NULL, *buf2 = NULL;
-    char *name_chars;
+    char *buf = NULL, *buf2 = NULL, *name_chars;
     int nomem = 0;
     struct passwd *p;
     PyObject *bytes, *retval = NULL;

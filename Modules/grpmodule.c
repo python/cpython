@@ -216,8 +216,7 @@ static PyObject *
 grp_getgrnam_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=67905086f403c21c input=08ded29affa3c863]*/
 {
-    char *buf = NULL, *buf2 = NULL;
-    char *name_chars;
+    char *buf = NULL, *buf2 = NULL, *name_chars;
     int nomem = 0;
     struct group *p;
     PyObject *bytes, *retval = NULL;
