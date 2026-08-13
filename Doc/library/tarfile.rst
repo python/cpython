@@ -963,6 +963,11 @@ A ``TarInfo`` object has the following public data attributes:
    If *deep* is false, the copy is shallow, i.e. ``pax_headers``
    and any custom attributes are shared with the original ``TarInfo`` object.
 
+   This method is also used by :func:`copy.replace`.
+
+   .. versionchanged:: next
+      Added support for :func:`copy.replace`.
+
 A :class:`TarInfo` object also provides some convenient query methods:
 
 

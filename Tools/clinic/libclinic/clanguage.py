@@ -1,6 +1,5 @@
 from __future__ import annotations
 import itertools
-import sys
 import textwrap
 from typing import TYPE_CHECKING, Literal, Final
 from operator import attrgetter
@@ -12,13 +11,27 @@ from libclinic import (
 from libclinic.codegen import CRenderData, TemplateDict, CodeGen
 from libclinic.language import Language
 from libclinic.function import (
-    Module, Class, Function, Parameter,
+    Module, Class, Function, Parameter, ParamTuple,
     permute_optional_groups,
     GETTER, SETTER, METHOD_INIT)
 from libclinic.converters import self_converter
 from libclinic.parse_args import ParseArgsCodeGen
 if TYPE_CHECKING:
     from libclinic.app import Clinic
+
+
+def count_required(subset: ParamTuple) -> int:
+    """Return the number of arguments which cannot be omitted.
+
+    A parameter in an optional group is passed together with its group,
+    so only trailing parameters with a default value can be omitted.
+    """
+    count = len(subset)
+    for p in reversed(subset):
+        if p.group or not p.is_optional():
+            break
+        count -= 1
+    return count
 
 
 def c_id(name: str) -> str:
@@ -275,44 +288,67 @@ class CLanguage(Language):
         # What if the number of arguments leads us to an ambiguous result?
         # Clinic prefers groups on the left.  So in the above example,
         # five arguments would map to B+C, not C+D.
+        #
+        # A nested group can only be omitted together with the group
+        # containing it, but groups on the same level, like G and H in
+        #
+        # [ G1 G2 ] [ H1 ] I1 I2
+        #
+        # can be omitted independently of each other.
 
         out = []
         parameters = list(f.parameters.values())
         if isinstance(parameters[0].converter, self_converter):
             del parameters[0]
 
+        # Groups are collected into chains of nested groups.  A group which
+        # is not nested in the preceding one starts a new chain.
         group: list[Parameter] | None = None
-        left = []
-        right = []
+        left: list[list[list[Parameter]]] = []
+        right: list[list[list[Parameter]]] = []
         required: list[Parameter] = []
         last: int | Literal[Sentinels.unspecified] = unspecified
+        last_depth = 0
 
         for p in parameters:
             group_id = p.group
             if group_id != last:
                 last = group_id
                 group = []
-                if group_id < 0:
-                    left.append(group)
-                elif group_id == 0:
+                if group_id == 0:
                     group = required
                 else:
-                    right.append(group)
+                    chains = left if group_id < 0 else right
+                    nested = ((p.group_depth < last_depth) if group_id < 0
+                              else (p.group_depth > last_depth))
+                    if chains and nested:
+                        chains[-1].append(group)
+                    else:
+                        chains.append([group])
+                last_depth = p.group_depth
             assert group is not None
             group.append(p)
 
-        count_min = sys.maxsize
-        count_max = -1
+        # Map the number of arguments to the subset which accepts it.
+        subsets: dict[int, ParamTuple] = {}
+        for subset in permute_optional_groups(left, required, right):
+            for count in range(count_required(subset), len(subset) + 1):
+                if count in subsets:
+                    fail(f"Function {f.full_name!r} has an ambiguous group "
+                         f"configuration: a call with {count} argument(s) "
+                         f"can be parsed in more than one way.")
+                subsets[count] = subset
 
         if limited_capi:
             nargs = 'PyTuple_Size(args)'
         else:
             nargs = 'PyTuple_GET_SIZE(args)'
         out.append(f"switch ({nargs}) {{\n")
-        for subset in permute_optional_groups(left, required, right):
-            count = len(subset)
-            count_min = min(count_min, count)
-            count_max = max(count_max, count)
+        for count, subset in sorted(subsets.items()):
+            if count < len(subset):
+                # The omitted parameters are parsed by the following case.
+                out.append(f"    case {count}:\n")
+                continue
 
             if count == 0:
                 out.append("""    case 0:
@@ -320,18 +356,24 @@ class CLanguage(Language):
 """)
                 continue
 
-            group_ids = {p.group for p in subset}  # eliminate duplicates
+            # A set would eliminate duplicates too, but the iteration
+            # order of small negative integers depends on the platform.
+            group_ids = dict.fromkeys(p.group for p in subset)
             d: dict[str, str | int] = {}
             d['count'] = count
             d['name'] = f.name
-            d['format_units'] = "".join(p.converter.format_unit for p in subset)
+            format_units = [p.converter.format_unit for p in subset]
+            n_required = count_required(subset)
+            if n_required < count:
+                format_units.insert(n_required, '|')
+            d['format_units'] = "".join(format_units)
 
             parse_arguments: list[str] = []
             for p in subset:
                 p.converter.parse_argument(parse_arguments)
             d['parse_arguments'] = ", ".join(parse_arguments)
 
-            group_ids.discard(0)
+            group_ids.pop(0, None)
             lines = "\n".join([
                 self.group_to_variable_name(g) + " = 1;"
                 for g in group_ids
@@ -351,7 +393,7 @@ class CLanguage(Language):
 
         out.append("    default:\n")
         s = '        PyErr_SetString(PyExc_TypeError, "{} requires {} to {} arguments");\n'
-        out.append(s.format(f.full_name, count_min, count_max))
+        out.append(s.format(f.full_name, min(subsets), max(subsets)))
         out.append('        goto exit;\n')
         out.append("}")
 
@@ -483,6 +525,7 @@ class CLanguage(Language):
         template_dict['cleanup'] = libclinic.format_escape("".join(data.cleanup))
 
         template_dict['return_value'] = data.return_value
+        template_dict['parser_retval'] = data.parser_retval
         template_dict['lock'] = "\n".join(data.lock)
         template_dict['unlock'] = "\n".join(data.unlock)
 

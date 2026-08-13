@@ -1,6 +1,8 @@
-// Need limited C API version 3.15 for _DuringGC functions
 #include "pyconfig.h"   // Py_GIL_DISABLED
-#if !defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
+#ifdef Py_GIL_DISABLED
+   // Cannot test the limited C API
+#else
+   // Need limited C API version 3.15 for _DuringGC functions
 #  define Py_LIMITED_API 0x030f0000
 #endif
 

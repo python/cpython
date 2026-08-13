@@ -7376,6 +7376,8 @@ case $ac_sys_system in #(
     MULTIARCH="" ;; #(
   FreeBSD*) :
     MULTIARCH="" ;; #(
+  OpenBSD*) :
+    MULTIARCH="" ;; #(
   *) :
     MULTIARCH=$($CC --print-multiarch 2>/dev/null)
  ;;
@@ -20521,6 +20523,12 @@ then :
   printf "%s\n" "#define HAVE_GAI_STRERROR 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "getdents64" "ac_cv_func_getdents64"
+if test "x$ac_cv_func_getdents64" = xyes
+then :
+  printf "%s\n" "#define HAVE_GETDENTS64 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "getegid" "ac_cv_func_getegid"
 if test "x$ac_cv_func_getegid" = xyes
 then :
@@ -20695,6 +20703,12 @@ then :
   printf "%s\n" "#define HAVE_GETSPNAM 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "gettid" "ac_cv_func_gettid"
+if test "x$ac_cv_func_gettid" = xyes
+then :
+  printf "%s\n" "#define HAVE_GETTID 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "getuid" "ac_cv_func_getuid"
 if test "x$ac_cv_func_getuid" = xyes
 then :
@@ -20861,6 +20875,24 @@ ac_fn_c_check_func "$LINENO" "pause" "ac_cv_func_pause"
 if test "x$ac_cv_func_pause" = xyes
 then :
   printf "%s\n" "#define HAVE_PAUSE 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "pidfd_open" "ac_cv_func_pidfd_open"
+if test "x$ac_cv_func_pidfd_open" = xyes
+then :
+  printf "%s\n" "#define HAVE_PIDFD_OPEN 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "pidfd_getfd" "ac_cv_func_pidfd_getfd"
+if test "x$ac_cv_func_pidfd_getfd" = xyes
+then :
+  printf "%s\n" "#define HAVE_PIDFD_GETFD 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "pidfd_send_signal" "ac_cv_func_pidfd_send_signal"
+if test "x$ac_cv_func_pidfd_send_signal" = xyes
+then :
+  printf "%s\n" "#define HAVE_PIDFD_SEND_SIGNAL 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "pipe" "ac_cv_func_pipe"
