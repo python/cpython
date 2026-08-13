@@ -711,6 +711,23 @@ _validate_nonempty_seq(asdl_seq *seq, const char *what, const char *owner)
 #define validate_nonempty_seq(seq, what, owner) _validate_nonempty_seq((asdl_seq*)seq, what, owner)
 
 static int
+validate_import_names(asdl_alias_seq *seq, const char *what, const char *owner)
+{
+    if (!validate_nonempty_seq(seq, what, owner)) {
+        return 0;
+    }
+    Py_ssize_t n = asdl_seq_LEN(seq);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        alias_ty alias = asdl_seq_GET(seq, i);
+        if (!validate_name(alias->name) ||
+            (alias->asname && !validate_name(alias->asname))) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static int
 validate_assignlist(asdl_expr_seq *targets, expr_context_ty ctx)
 {
     assert(!PyErr_Occurred());
@@ -735,6 +752,7 @@ validate_stmt(stmt_ty stmt)
     switch (stmt->kind) {
     case FunctionDef_kind:
         ret = validate_body(stmt->v.FunctionDef.body, "FunctionDef") &&
+            validate_name(stmt->v.FunctionDef.name) &&
             validate_type_params(stmt->v.FunctionDef.type_params) &&
             validate_arguments(stmt->v.FunctionDef.args) &&
             validate_exprs(stmt->v.FunctionDef.decorator_list, Load, 0) &&
@@ -743,6 +761,7 @@ validate_stmt(stmt_ty stmt)
         break;
     case ClassDef_kind:
         ret = validate_body(stmt->v.ClassDef.body, "ClassDef") &&
+            validate_name(stmt->v.ClassDef.name) &&
             validate_type_params(stmt->v.ClassDef.type_params) &&
             validate_exprs(stmt->v.ClassDef.bases, Load, 0) &&
             validate_keywords(stmt->v.ClassDef.keywords) &&
@@ -873,6 +892,8 @@ validate_stmt(stmt_ty stmt)
             VALIDATE_POSITIONS(handler);
             if ((handler->v.ExceptHandler.type &&
                  !validate_expr(handler->v.ExceptHandler.type, Load)) ||
+                (handler->v.ExceptHandler.name &&
+                 !validate_name(handler->v.ExceptHandler.name)) ||
                 !validate_body(handler->v.ExceptHandler.body, "ExceptHandler"))
                 return 0;
         }
@@ -911,14 +932,14 @@ validate_stmt(stmt_ty stmt)
             (!stmt->v.Assert.msg || validate_expr(stmt->v.Assert.msg, Load));
         break;
     case Import_kind:
-        ret = validate_nonempty_seq(stmt->v.Import.names, "names", "Import");
+        ret = validate_import_names(stmt->v.Import.names, "names", "Import");
         break;
     case ImportFrom_kind:
         if (stmt->v.ImportFrom.level < 0) {
             PyErr_SetString(PyExc_ValueError, "Negative ImportFrom level");
             return 0;
         }
-        ret = validate_nonempty_seq(stmt->v.ImportFrom.names, "names", "ImportFrom");
+        ret = validate_import_names(stmt->v.ImportFrom.names, "names", "ImportFrom");
         break;
     case Global_kind:
         ret = validate_nonempty_seq(stmt->v.Global.names, "names", "Global");
@@ -931,6 +952,7 @@ validate_stmt(stmt_ty stmt)
         break;
     case AsyncFunctionDef_kind:
         ret = validate_body(stmt->v.AsyncFunctionDef.body, "AsyncFunctionDef") &&
+            validate_name(stmt->v.AsyncFunctionDef.name) &&
             validate_type_params(stmt->v.AsyncFunctionDef.type_params) &&
             validate_arguments(stmt->v.AsyncFunctionDef.args) &&
             validate_exprs(stmt->v.AsyncFunctionDef.decorator_list, Load, 0) &&
