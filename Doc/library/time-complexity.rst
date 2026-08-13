@@ -207,7 +207,7 @@ the buffer instead of moving the remaining bytes, and is amortized *O*\ (1).
    * - Substring search (``x in s``, ``s.find(x)``, ``s.index(x)``)
      - *O*\ (*n*)
    * - Reverse substring search (``s.rfind(x)``, ``s.rindex(x)``) [10]_
-     - *O*\ (*nk*)
+     - *O*\ (*n* × len(*x*))
    * - Encode or decode
      - *O*\ (*n*)
    * - Iteration
@@ -308,12 +308,12 @@ Notes
    See the :ref:`note on concatenating immutable sequences
    <typesseq-repeated-concatenation>` for alternatives.
 
-.. [10] *k* is the length of the substring searched for. Forward searches use
-   algorithms with a linear worst case, described in
-   :source:`Objects/stringlib/stringlib_find_two_way_notes.txt`. Reverse
-   searches use a simpler algorithm, which is *O*\ (*n*) on typical input but
-   has no linear worst case. ``s.rpartition(x)`` and ``s.rsplit(x)`` search
-   backwards too.
+.. [10] This is the worst case. Reverse searches are *O*\ (*n*) on typical
+   input. Forward searches instead use a more elaborate algorithm with a
+   linear worst case, described in
+   :source:`Objects/stringlib/stringlib_find_two_way_notes.txt`.
+   ``s.rpartition(x)`` and ``s.rsplit(x)`` search backwards too, with the same
+   complexity.
 
 .. [11] Assuming :class:`int` or :class:`bool` arguments. For other types,
    the range is searched like any other sequence in *O*\ (*n*) time.
