@@ -6054,9 +6054,9 @@ class GenericTests(BaseTestCase):
                     with self.assertRaises(TypeError):
                         a[int]
 
-    # gh-155752: GenericAlias parameters are cached before substitution, so
-    # an argument can gain __typing_subst__ after the tuple is calculated.
     def test_parameter_added_after_parameters_cached(self):
+        # gh-155752: GenericAlias parameters are cached before substitution, so
+        # an argument can gain __typing_subst__ after the tuple is calculated.
         class Parameter:
             pass
 
