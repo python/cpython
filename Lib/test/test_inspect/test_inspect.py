@@ -6359,14 +6359,7 @@ class TestSignatureDefinitions(unittest.TestCase):
         self._test_module_has_signatures(_thread, no_signature)
 
     def test_time_module_has_signatures(self):
-        no_signature = {
-            'asctime', 'ctime', 'get_clock_info', 'gmtime', 'localtime',
-            'strftime', 'strptime'
-        }
-        no_signature |= {name for name in
-            ['clock_getres', 'clock_settime', 'clock_settime_ns',
-             'pthread_getcpuclockid']
-            if hasattr(time, name)}
+        no_signature = {'strftime', 'strptime'}
         self._test_module_has_signatures(time, no_signature)
 
     def test_tokenize_module_has_signatures(self):
