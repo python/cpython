@@ -460,7 +460,7 @@ Module contents
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.3
-      Add the optional *prefixes* argument.
+      Added the optional *prefixes* parameter.
 
 
 .. function:: getuserbase()
