@@ -132,7 +132,7 @@ PyAPI_FUNC(int) PyABIInfo_Check(PyABIInfo *info, const char *module_name);
     )                                                       \
     /////////////////////////////////////////////////////////
 
-#define _PyABIInfo_DEFAULT() {                              \
+#define _PyABIInfo_DEFAULT {                                \
         1, 0,                                               \
         PyABIInfo_DEFAULT_FLAGS,                            \
         PY_VERSION_HEX,                                     \

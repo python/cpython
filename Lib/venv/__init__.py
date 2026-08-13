@@ -306,7 +306,6 @@ class EnvBuilder:
             binpath = context.bin_path
             path = context.env_exe
             copier = self.symlink_or_copy
-            dirname = context.python_dir
             copier(context.executable, path)
             if not os.path.islink(path):
                 os.chmod(path, 0o755)
@@ -319,6 +318,14 @@ class EnvBuilder:
                     copier(context.env_exe, path, relative_symlinks_ok=True)
                     if not os.path.islink(path):
                         os.chmod(path, 0o755)
+
+            if not self.symlinks and sys.platform == 'cygwin':
+                # Copy libpython DLL
+                libpython_dll = sysconfig.get_config_var('DLLLIBRARY')
+                if not os.path.exists(os.path.join(binpath, libpython_dll)):
+                    exe_path = os.path.dirname(sys.executable)
+                    shutil.copy(os.path.join(exe_path, libpython_dll),
+                                os.path.join(binpath, libpython_dll))
 
     else:
         def setup_python(self, context):
@@ -359,6 +366,9 @@ class EnvBuilder:
                 exe_t = f'3.{sys.version_info[1]}t'
                 python_exe = os.path.join(dirname, f'python{exe_t}{exe_d}.exe')
                 pythonw_exe = os.path.join(dirname, f'pythonw{exe_t}{exe_d}.exe')
+                if not os.path.isfile(python_exe):
+                    python_exe = os.path.join(dirname, f'python{exe_d}.exe')
+                    pythonw_exe = os.path.join(dirname, f'pythonw{exe_d}.exe')
                 link_sources = {
                     'python.exe': python_exe,
                     f'python{exe_d}.exe': python_exe,
@@ -582,7 +592,7 @@ class EnvBuilder:
                                    'may be binary: %s', srcfile, e)
                     continue
                 if new_data == data:
-                    shutil.copy2(srcfile, dstfile)
+                    shutil.copy(srcfile, dstfile)
                 else:
                     with open(dstfile, 'wb') as f:
                         f.write(new_data)
@@ -619,7 +629,6 @@ def main(args=None):
                                             'activate it, e.g. by '
                                             'sourcing an activate script '
                                             'in its bin directory.',
-                                     color=True,
                                      )
     parser.add_argument('dirs', metavar='ENV_DIR', nargs='+',
                         help='A directory to create the environment in.')

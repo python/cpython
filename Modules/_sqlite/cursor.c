@@ -99,28 +99,6 @@ class _sqlite3.Cursor "pysqlite_Cursor *" "clinic_state()->CursorType"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=3c5b8115c5cf30f1]*/
 
-/*
- * Registers a cursor with the connection.
- *
- * 0 => error; 1 => ok
- */
-static int
-register_cursor(pysqlite_Connection *connection, PyObject *cursor)
-{
-    PyObject *weakref = PyWeakref_NewRef((PyObject *)cursor, NULL);
-    if (weakref == NULL) {
-        return 0;
-    }
-
-    if (PyList_Append(connection->cursors, weakref) < 0) {
-        Py_CLEAR(weakref);
-        return 0;
-    }
-
-    Py_DECREF(weakref);
-    return 1;
-}
-
 /*[clinic input]
 _sqlite3.Cursor.__init__ as pysqlite_cursor_init
 
@@ -157,10 +135,6 @@ pysqlite_cursor_init_impl(pysqlite_Cursor *self,
     Py_XSETREF(self->row_factory, Py_None);
 
     if (!pysqlite_check_thread(self->connection)) {
-        return -1;
-    }
-
-    if (!register_cursor(connection, (PyObject *)self)) {
         return -1;
     }
 

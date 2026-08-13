@@ -15,10 +15,10 @@ function deactivate  -d "Exit virtual environment and return to normal shell env
     if test -n "$_OLD_FISH_PROMPT_OVERRIDE"
         set -e _OLD_FISH_PROMPT_OVERRIDE
         # prevents error when using nested fish instances (Issue #93858)
-        if functions -q _old_fish_prompt
-            functions -e fish_prompt
-            functions -c _old_fish_prompt fish_prompt
-            functions -e _old_fish_prompt
+        if builtin functions -q _old_fish_prompt
+            builtin functions -e fish_prompt
+            builtin functions -c _old_fish_prompt fish_prompt
+            builtin functions -e _old_fish_prompt
         end
     end
 
@@ -26,7 +26,7 @@ function deactivate  -d "Exit virtual environment and return to normal shell env
     set -e VIRTUAL_ENV_PROMPT
     if test "$argv[1]" != "nondestructive"
         # Self-destruct!
-        functions -e deactivate
+        builtin functions -e deactivate
     end
 end
 
@@ -34,6 +34,9 @@ end
 deactivate nondestructive
 
 set -gx VIRTUAL_ENV __VENV_DIR__
+if string match -qr 'CYGWIN|MSYS|MINGW' (uname)
+    set -gx VIRTUAL_ENV (cygpath -u $VIRTUAL_ENV)
+end
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/"__VENV_BIN_NAME__ $PATH
@@ -49,18 +52,21 @@ if test -z "$VIRTUAL_ENV_DISABLE_PROMPT"
     # fish uses a function instead of an env var to generate the prompt.
 
     # Save the current fish_prompt function as the function _old_fish_prompt.
-    functions -c fish_prompt _old_fish_prompt
+    builtin functions -c fish_prompt _old_fish_prompt
 
     # With the original prompt function renamed, we can override with our own.
+    # Call every builtin through `builtin` so a user function that shadows
+    # `printf`, `set_color`, `echo`, or `source`/`.` cannot hijack the prompt
+    # (Issue #140006).
     function fish_prompt
         # Save the return status of the last command.
         set -l old_status $status
 
         # Output the venv prompt; color taken from the blue of the Python logo.
-        printf "%s(%s)%s " (set_color 4B8BBE) __VENV_PROMPT__ (set_color normal)
+        builtin printf "%s(%s)%s " (builtin set_color 4B8BBE) __VENV_PROMPT__ (builtin set_color normal)
 
         # Restore the return status of the previous command.
-        echo "exit $old_status" | .
+        builtin echo "exit $old_status" | builtin source -
         # Output the original/"old" prompt.
         _old_fish_prompt
     end

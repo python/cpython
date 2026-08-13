@@ -496,7 +496,7 @@ PyAPI_FUNC(int) PyUnicodeWriter_WriteWideChar(
     Py_ssize_t size);
 PyAPI_FUNC(int) PyUnicodeWriter_WriteUCS4(
     PyUnicodeWriter *writer,
-    Py_UCS4 *str,
+    const Py_UCS4 *str,
     Py_ssize_t size);
 
 PyAPI_FUNC(int) PyUnicodeWriter_WriteStr(
@@ -778,4 +778,4 @@ static inline int Py_UNICODE_ISALNUM(Py_UCS4 ch) {
 
 // Return an interned Unicode object for an Identifier; may fail if there is no
 // memory.
-PyAPI_FUNC(PyObject*) _PyUnicode_FromId(_Py_Identifier*);
+Py_DEPRECATED(3.15) PyAPI_FUNC(PyObject*) _PyUnicode_FromId(_Py_Identifier*);

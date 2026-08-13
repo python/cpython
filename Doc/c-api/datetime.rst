@@ -30,6 +30,10 @@ macros.
 
       This is not compatible with subinterpreters.
 
+   .. versionchanged:: 3.15
+
+      This macro is now thread safe.
+
 .. c:type:: PyDateTime_CAPI
 
    Structure containing the fields for the datetime C API.
@@ -43,6 +47,11 @@ macros.
    Dynamically allocated object containing the datetime C API.
 
    This variable is only available once :c:macro:`PyDateTime_IMPORT` succeeds.
+
+   .. versionchanged:: 3.15
+
+      This variable should not be accessed directly as direct access is not thread-safe.
+      Use :c:func:`PyDateTime_IMPORT` instead.
 
 .. c:type:: PyDateTime_Date
 

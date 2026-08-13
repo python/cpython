@@ -577,6 +577,23 @@ class OpenerDirectorTests(unittest.TestCase):
         self.assertRaises(TypeError,
                           OpenerDirector().add_handler, NonHandler())
 
+    def test_no_protocol_methods(self):
+        # test the case that methods starts with handler type without the protocol
+        # like open*() or _open*().
+        # These methods should be ignored
+
+        o = OpenerDirector()
+        meth_spec = [
+            ["open"],
+            ["_open"],
+            ["error"]
+        ]
+
+        add_ordered_mock_handlers(o, meth_spec)
+
+        self.assertEqual(len(o.handle_open), 0)
+        self.assertEqual(len(o.handle_error), 0)
+
     def test_badly_named_methods(self):
         # test work-around for three methods that accidentally follow the
         # naming conventions for handler methods
@@ -962,6 +979,35 @@ class HandlerTests(unittest.TestCase):
             self.assertEqual(req.unredirected_hdrs["Content-type"], "bar")
             self.assertEqual(req.unredirected_hdrs["Host"], "baz")
             self.assertEqual(req.unredirected_hdrs["Spam"], "foo")
+
+    def test_http_header_priority(self):
+        # gh-47005: regular headers set via add_header() must override
+        # unredirected headers with the same name in do_open(), consistent
+        # with get_header() and header_items().
+        cases = [
+            ("Content-Type", "application/json", "application/x-www-form-urlencoded"),
+            ("Content-Length", "99", "0"),
+            ("Host", "override.example.com", "internal.example.com"),
+            ("Authorization", "Bearer user-token", "Basic stale="),
+            ("Cookie", "a=1", "b=2"),
+            ("User-Agent", "MyApp/1.0", "Python-urllib/test"),
+        ]
+        h = urllib.request.AbstractHTTPHandler()
+        h.parent = MockOpener()
+
+        for key, regular, unredirected in cases:
+            req = Request("http://example.com/", headers={key: regular})
+            req.timeout = None
+            req.add_unredirected_header(key, unredirected)
+
+            http = MockHTTPClass()
+            h.do_open(http, req)
+
+            sent_headers = dict(http.req_headers)
+            self.assertEqual(sent_headers[key], regular)
+            # key is capitalized by add_header() and add_unredirected_header() calls
+            self.assertEqual(req.get_header(key.capitalize()), regular)
+            self.assertEqual(dict(req.header_items())[key.capitalize()], regular)
 
     def test_http_body_file(self):
         # A regular file - chunked encoding is used unless Content Length is

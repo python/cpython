@@ -1182,6 +1182,47 @@ class CommandLineTestCases:
         self.assertEqual(cm.exception.code, 2)
         self.assertIn("error: Incorrect number of arguments", mock_err.getvalue())
 
+    @mock.patch.object(sys, "argv",
+                       ["", "-u", "uuid3", "-n", "@dns", "-N", "python.org"])
+    def test_cli_uuid3_outputted_with_valid_namespace_and_name(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+
+        output = stdout.getvalue().strip()
+        uuid_output = self.uuid.UUID(output)
+
+        # Output should be in the form of uuid3
+        self.assertEqual(output, str(uuid_output))
+        self.assertEqual(uuid_output.version, 3)
+
+    @mock.patch.object(sys, "argv",
+                       ["", "-u", "uuid3", "-n",
+                        "0d6a16cc-34a7-47d8-b660-214d0ae184d2",
+                        "-N", "some.user"])
+    def test_cli_uuid3_outputted_with_custom_namespace_and_name(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+
+        output = stdout.getvalue().strip()
+        uuid_output = self.uuid.UUID(output)
+
+        # Output should be in the form of uuid3
+        self.assertEqual(output, str(uuid_output))
+        self.assertEqual(uuid_output.version, 3)
+
+    @mock.patch.object(sys, "argv",
+                       ["", "-u", "uuid3", "-n", "any UUID", "-N", "python.org"])
+    @mock.patch('sys.stderr', new_callable=io.StringIO)
+    def test_cli_uuid3_with_invalid_namespace(self, mock_err):
+        with self.assertRaises(SystemExit) as cm:
+            self.uuid.main()
+        # Check that exception code is the same as argparse.ArgumentParser.error
+        self.assertEqual(cm.exception.code, 2)
+        self.assertIn("error: badly formed hexadecimal UUID string",
+                      mock_err.getvalue())
+
     @mock.patch.object(sys, "argv", [""])
     def test_cli_uuid4_outputted_with_no_args(self):
         stdout = io.StringIO()
@@ -1210,22 +1251,8 @@ class CommandLineTestCases:
             self.assertEqual(uuid_output.version, 4)
 
     @mock.patch.object(sys, "argv",
-                       ["", "-u", "uuid3", "-n", "@dns", "-N", "python.org"])
-    def test_cli_uuid3_ouputted_with_valid_namespace_and_name(self):
-        stdout = io.StringIO()
-        with contextlib.redirect_stdout(stdout):
-            self.uuid.main()
-
-        output = stdout.getvalue().strip()
-        uuid_output = self.uuid.UUID(output)
-
-        # Output should be in the form of uuid5
-        self.assertEqual(output, str(uuid_output))
-        self.assertEqual(uuid_output.version, 3)
-
-    @mock.patch.object(sys, "argv",
                        ["", "-u", "uuid5", "-n", "@dns", "-N", "python.org"])
-    def test_cli_uuid5_ouputted_with_valid_namespace_and_name(self):
+    def test_cli_uuid5_outputted_with_valid_namespace_and_name(self):
         stdout = io.StringIO()
         with contextlib.redirect_stdout(stdout):
             self.uuid.main()
@@ -1236,6 +1263,33 @@ class CommandLineTestCases:
         # Output should be in the form of uuid5
         self.assertEqual(output, str(uuid_output))
         self.assertEqual(uuid_output.version, 5)
+
+    @mock.patch.object(sys, "argv",
+                       ["", "-u", "uuid5", "-n",
+                        "0d6a16cc-34a7-47d8-b660-214d0ae184d2",
+                        "-N", "some.user"])
+    def test_cli_uuid5_ouputted_with_custom_namespace_and_name(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+
+        output = stdout.getvalue().strip()
+        uuid_output = self.uuid.UUID(output)
+
+        # Output should be in the form of uuid5
+        self.assertEqual(output, str(uuid_output))
+        self.assertEqual(uuid_output.version, 5)
+
+    @mock.patch.object(sys, "argv",
+                       ["", "-u", "uuid5", "-n", "any UUID", "-N", "python.org"])
+    @mock.patch('sys.stderr', new_callable=io.StringIO)
+    def test_cli_uuid5_with_invalid_namespace(self, mock_err):
+        with self.assertRaises(SystemExit) as cm:
+            self.uuid.main()
+        # Check that exception code is the same as argparse.ArgumentParser.error
+        self.assertEqual(cm.exception.code, 2)
+        self.assertIn("error: badly formed hexadecimal UUID string",
+                      mock_err.getvalue())
 
     @mock.patch.object(sys, "argv", ["", "-u", "uuid6"])
     def test_cli_uuid6(self):
