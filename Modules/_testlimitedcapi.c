@@ -91,6 +91,9 @@ module_exec(PyObject *mod)
     if (_PyTestLimitedCAPI_Init_Run(mod) < 0) {
         return -1;
     }
+    if (_PyTestLimitedCAPI_Init_Type(mod) < 0) {
+        return -1;
+    }
     return 0;
 }
 
