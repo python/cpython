@@ -1,5 +1,4 @@
 import inspect
-import time
 import types
 import unittest
 
@@ -929,8 +928,9 @@ class SpecSignatureTest(unittest.TestCase):
 
 
     def test_autospec_on_bound_builtin_function(self):
-        meth = types.MethodType(time.ctime, time.time())
-        self.assertIsInstance(meth(), str)
+        # max() is variadic, therefore it has no signature.
+        meth = types.MethodType(max, [4, 5, 6])
+        self.assertEqual(meth(), 6)
         mocked = create_autospec(meth)
 
         # no signature, so no spec to check against
