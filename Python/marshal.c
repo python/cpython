@@ -1308,17 +1308,12 @@ r_object(RFILE *p)
                 }
                 break;
             }
-            PyBytesWriter *writer = PyBytesWriter_Create(n);
-            if (writer == NULL) {
-                break;
-            }
             ptr = r_string(n, p);
             if (ptr == NULL) {
-                PyBytesWriter_Discard(writer);
                 break;
             }
-            memcpy(PyBytesWriter_GetData(writer), ptr, n);
-            retval = PyBytesWriter_Finish(writer);  // can be NULL
+
+            retval = PyBytes_FromStringAndSize(ptr, n);  // can be NULL
             R_REF(retval);
             break;
         }
