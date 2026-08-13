@@ -3484,3 +3484,11 @@ def check_immutable_type(testcase, type):
     regex = r'cannot set .* attribute of immutable type'
     with testcase.assertRaisesRegex(TypeError, regex):
         setattr(type, 'custom_attr', 123)
+
+    try:
+        from _testlimitedcapi import type_getflags, Py_TPFLAGS_IMMUTABLETYPE
+    except ImportError:
+        pass
+    else:
+        flags = type_getflags(type)
+        testcase.assertTrue(flags & Py_TPFLAGS_IMMUTABLETYPE)
