@@ -21,6 +21,7 @@
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include "pycore_unicodectype.h"  // _PyUnicode_IsXidStart()
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>               // offsetof()
 
@@ -1747,8 +1748,7 @@ unicodedata_UCD_aliases_impl(PyObject *self, int chr)
         return NULL;
     }
     int current_type_label_codepoint = 0;
-    static_assert(0 < alias_type_labels_start,
-                  "bad initial value for current_type_label");
+    assert(0 < alias_type_labels_start);
     PyObject *aliases_for_current_type;
     Py_ssize_t j = 0; // Index for aliases_for_current_type
     while (true) {
