@@ -268,9 +268,9 @@ PyDoc_STRVAR(int_to_bytes__doc__,
 "  byteorder\n"
 "    The byte order used to represent the integer.  If byteorder is\n"
 "    \'big\', the most significant byte is at the beginning of the byte\n"
-"    array.  If byteorder is \'little\', the most significant byte is at\n"
-"    the end of the byte array.  To request the native byte order of\n"
-"    the host system, use sys.byteorder as the byte order value.\n"
+"    array.  If byteorder is \'little\', the most significant byte is\n"
+"    at the end of the byte array.  To request the native byte order\n"
+"    of the host system, use sys.byteorder as the byte order value.\n"
 "    Default is to use \'big\'.\n"
 "  signed\n"
 "    Determines whether two\'s complement is used to represent the\n"
@@ -385,14 +385,14 @@ PyDoc_STRVAR(int_from_bytes__doc__,
 "  bytes\n"
 "    Holds the array of bytes to convert.  The argument must either\n"
 "    support the buffer protocol or be an iterable object producing\n"
-"    bytes.  Bytes and bytearray are examples of built-in objects that\n"
-"    support the buffer protocol.\n"
+"    bytes.  Bytes and bytearray are examples of built-in objects\n"
+"    that support the buffer protocol.\n"
 "  byteorder\n"
 "    The byte order used to represent the integer.  If byteorder is\n"
 "    \'big\', the most significant byte is at the beginning of the byte\n"
-"    array.  If byteorder is \'little\', the most significant byte is at\n"
-"    the end of the byte array.  To request the native byte order of\n"
-"    the host system, use sys.byteorder as the byte order value.\n"
+"    array.  If byteorder is \'little\', the most significant byte is\n"
+"    at the end of the byte array.  To request the native byte order\n"
+"    of the host system, use sys.byteorder as the byte order value.\n"
 "    Default is to use \'big\'.\n"
 "  signed\n"
 "    Indicates whether two\'s complement is used to represent the\n"
@@ -493,4 +493,4 @@ int_is_integer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return int_is_integer_impl(self);
 }
-/*[clinic end generated code: output=d95766fb7ff46963 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=447dd48eaf0c6bf1 input=a9049054013a1b77]*/

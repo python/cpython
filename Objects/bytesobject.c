@@ -1855,7 +1855,8 @@ bytes.split
     sep: object = None
         The delimiter according which to split the bytes.
         None (the default value) means split on ASCII whitespace
-        characters (space, tab, return, newline, formfeed, vertical tab).
+        characters (space, tab, return, newline, formfeed,
+        vertical tab).
     maxsplit: Py_ssize_t = -1
         Maximum number of splits to do.
         -1 (the default value) means no limit.
@@ -1865,7 +1866,7 @@ Return a list of the sections in the bytes, using sep as the delimiter.
 
 static PyObject *
 bytes_split_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t maxsplit)
-/*[clinic end generated code: output=52126b5844c1d8ef input=330ff95d92544b05]*/
+/*[clinic end generated code: output=52126b5844c1d8ef input=5696b84d8fb109f9]*/
 {
     Py_ssize_t len = PyBytes_GET_SIZE(self), n;
     const char *s = PyBytes_AS_STRING(self), *sub;

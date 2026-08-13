@@ -102,7 +102,8 @@ gc.set_debug
           DEBUG_COLLECTABLE - Print collectable objects found.
           DEBUG_UNCOLLECTABLE - Print unreachable but uncollectable objects
             found.
-          DEBUG_SAVEALL - Save objects to gc.garbage rather than freeing them.
+          DEBUG_SAVEALL - Save objects to gc.garbage rather than
+            freeing them.
           DEBUG_LEAK - Debug leaking programs (everything but STATS).
     /
 
@@ -113,7 +114,7 @@ Debugging information is written to sys.stderr.
 
 static PyObject *
 gc_set_debug_impl(PyObject *module, int flags)
-/*[clinic end generated code: output=7c8366575486b228 input=5e5ce15e84fbed15]*/
+/*[clinic end generated code: output=7c8366575486b228 input=e7c3321830e0abe3]*/
 {
     GCState *gcstate = get_gc_state();
     gcstate->debug = flags;

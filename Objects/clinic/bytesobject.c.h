@@ -36,7 +36,8 @@ PyDoc_STRVAR(bytes_split__doc__,
 "  sep\n"
 "    The delimiter according which to split the bytes.\n"
 "    None (the default value) means split on ASCII whitespace\n"
-"    characters (space, tab, return, newline, formfeed, vertical tab).\n"
+"    characters (space, tab, return, newline, formfeed,\n"
+"    vertical tab).\n"
 "  maxsplit\n"
 "    Maximum number of splits to do.\n"
 "    -1 (the default value) means no limit.");
@@ -204,7 +205,8 @@ PyDoc_STRVAR(bytes_rsplit__doc__,
 "  sep\n"
 "    The delimiter according which to split the bytes.\n"
 "    None (the default value) means split on ASCII whitespace\n"
-"    characters (space, tab, return, newline, formfeed, vertical tab).\n"
+"    characters (space, tab, return, newline, formfeed,\n"
+"    vertical tab).\n"
 "  maxsplit\n"
 "    Maximum number of splits to do.\n"
 "    -1 (the default value) means no limit.\n"
@@ -1455,4 +1457,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c20458db7a2123db input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c1914771783c124c input=a9049054013a1b77]*/

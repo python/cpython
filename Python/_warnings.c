@@ -1150,14 +1150,15 @@ warn as warnings_warn
     category: object = None
       The Warning category subclass. Defaults to UserWarning.
     stacklevel: Py_ssize_t = 1
-      How far up the call stack to make this warning appear. A value of 2 for
-      example attributes the warning to the caller of the code calling warn().
+      How far up the call stack to make this warning appear. A value of 2
+      for example attributes the warning to the caller of the code calling
+      warn().
     source: object = None
       If supplied, the destroyed object which emitted a ResourceWarning
     *
     skip_file_prefixes: object(type='PyTupleObject *', subclass_of='&PyTuple_Type') = NULL
-      An optional tuple of module filename prefixes indicating frames to skip
-      during stacklevel computations for stack frame attribution.
+      An optional tuple of module filename prefixes indicating frames to
+      skip during stacklevel computations for stack frame attribution.
 
 Issue a warning, or maybe ignore it or raise an exception.
 [clinic start generated code]*/
@@ -1166,7 +1167,7 @@ static PyObject *
 warnings_warn_impl(PyObject *module, PyObject *message, PyObject *category,
                    Py_ssize_t stacklevel, PyObject *source,
                    PyTupleObject *skip_file_prefixes)
-/*[clinic end generated code: output=a68e0f6906c65f80 input=eb37c6a18bec4ea1]*/
+/*[clinic end generated code: output=a68e0f6906c65f80 input=cc690f3ad09042a8]*/
 {
     category = get_category(message, category);
     if (category == NULL)

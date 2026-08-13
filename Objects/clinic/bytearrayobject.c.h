@@ -640,7 +640,8 @@ PyDoc_STRVAR(bytearray_take_bytes__doc__,
 "Take *n* bytes from the bytearray and return them as a bytes object.\n"
 "\n"
 "  n\n"
-"    Bytes to take, negative indexes from end. None indicates all bytes.");
+"    Bytes to take, negative indexes from end.\n"
+"    None indicates all bytes.");
 
 #define BYTEARRAY_TAKE_BYTES_METHODDEF    \
     {"take_bytes", _PyCFunction_CAST(bytearray_take_bytes), METH_FASTCALL, bytearray_take_bytes__doc__},
@@ -903,7 +904,8 @@ PyDoc_STRVAR(bytearray_split__doc__,
 "  sep\n"
 "    The delimiter according which to split the bytearray.\n"
 "    None (the default value) means split on ASCII whitespace\n"
-"    characters (space, tab, return, newline, formfeed, vertical tab).\n"
+"    characters (space, tab, return, newline, formfeed,\n"
+"    vertical tab).\n"
 "  maxsplit\n"
 "    Maximum number of splits to do.\n"
 "    -1 (the default value) means no limit.");
@@ -1060,7 +1062,8 @@ PyDoc_STRVAR(bytearray_rsplit__doc__,
 "  sep\n"
 "    The delimiter according which to split the bytearray.\n"
 "    None (the default value) means split on ASCII whitespace\n"
-"    characters (space, tab, return, newline, formfeed, vertical tab).\n"
+"    characters (space, tab, return, newline, formfeed,\n"
+"    vertical tab).\n"
 "  maxsplit\n"
 "    Maximum number of splits to do.\n"
 "    -1 (the default value) means no limit.\n"
@@ -1882,4 +1885,4 @@ bytearray_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl((PyByteArrayObject *)self);
 }
-/*[clinic end generated code: output=6dc315d35de3e670 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=430e4855ba3f7af4 input=a9049054013a1b77]*/

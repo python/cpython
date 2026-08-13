@@ -6373,9 +6373,9 @@ int.to_bytes
     byteorder: unicode(c_default="NULL") = "big"
         The byte order used to represent the integer.  If byteorder is
         'big', the most significant byte is at the beginning of the byte
-        array.  If byteorder is 'little', the most significant byte is at
-        the end of the byte array.  To request the native byte order of
-        the host system, use sys.byteorder as the byte order value.
+        array.  If byteorder is 'little', the most significant byte is
+        at the end of the byte array.  To request the native byte order
+        of the host system, use sys.byteorder as the byte order value.
         Default is to use 'big'.
     *
     signed as is_signed: bool = False
@@ -6389,7 +6389,7 @@ Return an array of bytes representing an integer.
 static PyObject *
 int_to_bytes_impl(PyObject *self, Py_ssize_t length, PyObject *byteorder,
                   int is_signed)
-/*[clinic end generated code: output=89c801df114050a3 input=c74a93c07b2f6526]*/
+/*[clinic end generated code: output=89c801df114050a3 input=55c648698a882302]*/
 {
     int little_endian;
     if (byteorder == NULL)
@@ -6426,14 +6426,14 @@ int.from_bytes
     bytes as bytes_obj: object
         Holds the array of bytes to convert.  The argument must either
         support the buffer protocol or be an iterable object producing
-        bytes.  Bytes and bytearray are examples of built-in objects that
-        support the buffer protocol.
+        bytes.  Bytes and bytearray are examples of built-in objects
+        that support the buffer protocol.
     byteorder: unicode(c_default="NULL") = "big"
         The byte order used to represent the integer.  If byteorder is
         'big', the most significant byte is at the beginning of the byte
-        array.  If byteorder is 'little', the most significant byte is at
-        the end of the byte array.  To request the native byte order of
-        the host system, use sys.byteorder as the byte order value.
+        array.  If byteorder is 'little', the most significant byte is
+        at the end of the byte array.  To request the native byte order
+        of the host system, use sys.byteorder as the byte order value.
         Default is to use 'big'.
     *
     signed as is_signed: bool = False
@@ -6446,7 +6446,7 @@ Return the integer represented by the given array of bytes.
 static PyObject *
 int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
                     PyObject *byteorder, int is_signed)
-/*[clinic end generated code: output=efc5d68e31f9314f input=95801e50b942e164]*/
+/*[clinic end generated code: output=efc5d68e31f9314f input=2e87fb52a6c4f41a]*/
 {
     int little_endian;
     PyObject *long_obj, *bytes;

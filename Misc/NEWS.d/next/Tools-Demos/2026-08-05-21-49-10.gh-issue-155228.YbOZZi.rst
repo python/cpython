@@ -1,0 +1,3 @@
+Argument Clinic now checks the length of parameter descriptions, which were
+previously left out of the docstring line width check.  Too long parameter
+descriptions of 30 functions were rewrapped.

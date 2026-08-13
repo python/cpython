@@ -1556,14 +1556,15 @@ bytearray_resize_impl(PyByteArrayObject *self, Py_ssize_t size)
 @critical_section
 bytearray.take_bytes
     n: object = None
-        Bytes to take, negative indexes from end. None indicates all bytes.
+        Bytes to take, negative indexes from end.
+        None indicates all bytes.
     /
 Take *n* bytes from the bytearray and return them as a bytes object.
 [clinic start generated code]*/
 
 static PyObject *
 bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n)
-/*[clinic end generated code: output=3147fbc0bbbe8d94 input=b15b5172cdc6deda]*/
+/*[clinic end generated code: output=3147fbc0bbbe8d94 input=d171cf2075fbd6ba]*/
 {
     Py_ssize_t to_take;
     Py_ssize_t size = Py_SIZE(self);
@@ -1813,7 +1814,8 @@ bytearray.split
     sep: object = None
         The delimiter according which to split the bytearray.
         None (the default value) means split on ASCII whitespace
-        characters (space, tab, return, newline, formfeed, vertical tab).
+        characters (space, tab, return, newline, formfeed,
+        vertical tab).
     maxsplit: Py_ssize_t = -1
         Maximum number of splits to do.
         -1 (the default value) means no limit.
@@ -1824,7 +1826,7 @@ Return a list of the sections in the bytearray, using sep as the delimiter.
 static PyObject *
 bytearray_split_impl(PyByteArrayObject *self, PyObject *sep,
                      Py_ssize_t maxsplit)
-/*[clinic end generated code: output=833e2cf385d9a04d input=45605178023b52ac]*/
+/*[clinic end generated code: output=833e2cf385d9a04d input=ca467495c4370fb3]*/
 {
     PyObject *list = NULL;
 

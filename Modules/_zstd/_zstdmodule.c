@@ -342,7 +342,8 @@ _zstd.finalize_dict
     dict_size: Py_ssize_t
         The size of the dictionary.
     compression_level: int
-        Optimize for a specific Zstandard compression level, 0 means default.
+        Optimize for a specific Zstandard compression level,
+        0 means default.
     /
 
 Finalize a Zstandard dictionary.
@@ -353,7 +354,7 @@ _zstd_finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
                          PyBytesObject *samples_bytes,
                          PyObject *samples_sizes, Py_ssize_t dict_size,
                          int compression_level)
-/*[clinic end generated code: output=f91821ba5ae85bda input=3c7e2480aa08fb56]*/
+/*[clinic end generated code: output=f91821ba5ae85bda input=954d58d6f20c85c2]*/
 {
     Py_ssize_t chunks_number;
     size_t *chunk_sizes = NULL;

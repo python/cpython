@@ -2191,8 +2191,9 @@ PyDoc_STRVAR(_winapi_RegisterEventSource__doc__,
 "Retrieves a registered handle to the specified event log.\n"
 "\n"
 "  unc_server_name\n"
-"    The UNC name of the server on which the event source should be registered.\n"
-"    If None, registers the event source on the local computer.\n"
+"    The UNC name of the server on which the event source should be\n"
+"    registered.  If None, registers the event source on the local\n"
+"    computer.\n"
 "  source_name\n"
 "    The name of the event source to register.");
 
@@ -2379,4 +2380,4 @@ _winapi_GetTickCount64(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _WINAPI_GETSHORTPATHNAME_METHODDEF
     #define _WINAPI_GETSHORTPATHNAME_METHODDEF
 #endif /* !defined(_WINAPI_GETSHORTPATHNAME_METHODDEF) */
-/*[clinic end generated code: output=713a8ce97185b017 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=54e30e2214214ed4 input=a9049054013a1b77]*/

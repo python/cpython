@@ -81,7 +81,8 @@ PyDoc_STRVAR(select_poll_register__doc__,
 "Register a file descriptor with the polling object.\n"
 "\n"
 "  fd\n"
-"    either an integer, or an object with a fileno() method returning an int\n"
+"    either an integer, or an object with a fileno() method\n"
+"    returning an int\n"
 "  eventmask\n"
 "    an optional bitmask describing the type of events to check for");
 
@@ -212,8 +213,8 @@ PyDoc_STRVAR(select_poll_poll__doc__,
 "Polls the set of registered file descriptors.\n"
 "\n"
 "  timeout\n"
-"    The maximum time to wait in milliseconds, or else None (or a negative\n"
-"    value) to wait indefinitely.\n"
+"    The maximum time to wait in milliseconds, or else None (or a\n"
+"    negative value) to wait indefinitely.\n"
 "\n"
 "Returns a list containing any descriptors that have events or errors\n"
 "to report, as a list of (fd, event) 2-tuples.");
@@ -550,13 +551,14 @@ PyDoc_STRVAR(select_epoll__doc__,
 "Returns an epolling object.\n"
 "\n"
 "  sizehint\n"
-"    The expected number of events to be registered.  It must be positive,\n"
-"    or -1 to use the default.  It is only used on older systems where\n"
-"    epoll_create1() is not available; otherwise it has no effect (though its\n"
-"    value is still checked).\n"
+"    The expected number of events to be registered.  It must be\n"
+"    positive, or -1 to use the default.  It is only used on older\n"
+"    systems where epoll_create1() is not available; otherwise it has no\n"
+"    effect (though its value is still checked).\n"
 "  flags\n"
-"    Deprecated and completely ignored.  However, when supplied, its value\n"
-"    must be 0 or select.EPOLL_CLOEXEC, otherwise OSError is raised.");
+"    Deprecated and completely ignored.  However, when supplied, its\n"
+"    value must be 0 or select.EPOLL_CLOEXEC, otherwise OSError is\n"
+"    raised.");
 
 static PyObject *
 select_epoll_impl(PyTypeObject *type, int sizehint, int flags);
@@ -1257,13 +1259,13 @@ PyDoc_STRVAR(select_kqueue_control__doc__,
 "Calls the kernel kevent function.\n"
 "\n"
 "  changelist\n"
-"    Must be an iterable of kevent objects describing the changes to be made\n"
-"    to the kernel\'s watch list or None.\n"
+"    Must be an iterable of kevent objects describing the changes to\n"
+"    be made to the kernel\'s watch list or None.\n"
 "  maxevents\n"
 "    The maximum number of events that the kernel will return.\n"
 "  timeout\n"
-"    The maximum time to wait in seconds, or else None to wait forever.\n"
-"    This accepts non-integers for smaller timeouts, too.");
+"    The maximum time to wait in seconds, or else None to wait\n"
+"    forever.  This accepts non-integers for smaller timeouts, too.");
 
 #define SELECT_KQUEUE_CONTROL_METHODDEF    \
     {"control", _PyCFunction_CAST(select_kqueue_control), METH_FASTCALL, select_kqueue_control__doc__},
@@ -1400,4 +1402,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=a1ac666294fd14bd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c264b5fa0dca38e1 input=a9049054013a1b77]*/

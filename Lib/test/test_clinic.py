@@ -1066,6 +1066,18 @@ class ClinicParserTest(TestCase):
         self.assertEqual(dedent(expected).strip(),
                          fn.docstring.strip())
 
+    def parse_warnings(self, block):
+        """Parse a block and return what Argument Clinic warned about."""
+        with support.captured_stdout() as stdout:
+            self.parse(block)
+        return stdout.getvalue()
+
+    def too_long_warning(self, full_name, max_width):
+        """The warning emitted for a too long docstring body line."""
+        return (f"Warning in file {'clinic_tests'!r}:\n"
+                f"Docstring lines for {full_name!r} are too long!\n"
+                f"Lines should be no longer than {max_width} characters.\n\n")
+
     def test_trivial(self):
         parser = DSLParser(_make_clinic())
         block = Block("""
@@ -2498,6 +2510,126 @@ class ClinicParserTest(TestCase):
             And now for something completely different!
             (Note the added newline)
         """)
+
+    def test_long_summary_line(self):
+        # The summary line must fit in 72 characters for a function.
+        block = f"""
+            module m
+            m.f
+            {'x' * 73}
+        """
+        err = ("Summary line for 'm.f' is too long!\n"
+               "The summary line must be no longer than 72 characters.")
+        self.expect_failure(block, err)
+
+    def test_long_summary_line_permitted(self):
+        block = f"""
+            @permit_long_summary
+            module m
+            m.f
+            {'x' * 73}
+        """
+        self.assertEqual(self.parse_warnings(block), "")
+
+    def test_long_parameter_docstring(self):
+        # gh-155228: a parameter description is part of the docstring body,
+        # even though it is only substituted for the {parameters} marker
+        # after the width check.  Descriptions are indented by 4 spaces.
+        expected = self.too_long_warning('m.f', 72)
+        for length, warning in (68, ""), (69, expected):
+            with self.subTest(length=length):
+                block = f"""
+                    module m
+                    m.f
+                        a: int
+                            {'x' * length}
+                    The summary line.
+                """
+                self.assertEqual(self.parse_warnings(block), warning)
+
+    def test_long_parameter_docstring_method(self):
+        # Methods get 4 characters less than functions.
+        expected = self.too_long_warning('m.C.f', 68)
+        for length, warning in (64, ""), (65, expected):
+            with self.subTest(length=length):
+                block = f"""
+                    module m
+                    class m.C "void *" ""
+                    m.C.f
+                        a: int
+                            {'x' * length}
+                    The summary line.
+                """
+                self.assertEqual(self.parse_warnings(block), warning)
+
+    def test_long_parameter_docstring_indented_marker(self):
+        # linear_format() indents the substituted parameters by the
+        # indentation of the {parameters} marker line, which counts
+        # towards the width as well.
+        expected = self.too_long_warning('m.f', 72)
+        for length, warning in (66, ""), (67, expected):
+            with self.subTest(length=length):
+                block = f"""
+                    module m
+                    m.f
+                        a: int
+                            {'x' * length}
+                    The summary line.
+
+                      {{parameters}}
+                """
+                self.assertEqual(self.parse_warnings(block), warning)
+
+    def test_long_parameter_docstring_permitted(self):
+        block = f"""
+            @permit_long_docstring_body
+            module m
+            m.f
+                a: int
+                    {'x' * 69}
+            The summary line.
+        """
+        self.assertEqual(self.parse_warnings(block), "")
+
+    def test_permit_long_docstring_body_not_needed(self):
+        block = f"""
+            @permit_long_docstring_body
+            module m
+            m.f
+                a: int
+                    {'x' * 68}
+            The summary line.
+        """
+        expected = (
+            f"Warning in file {'clinic_tests'!r}:\n"
+            "Remove the @permit_long_docstring_body decorator from 'm.f'!\n\n\n"
+        )
+        self.assertEqual(self.parse_warnings(block), expected)
+
+    def test_long_parameter_docstring_cloned(self):
+        # gh-155228: a clone inherits the parameter descriptions of the
+        # function it clones, so it must be reported as well.
+        # The clone lives in its own block, as it does in the source tree.
+        blocks = (
+            f"""
+                module m
+                m.f
+                    a: int
+                        {'x' * 69}
+                The summary line.
+            """,
+            """
+                m.g = m.f
+                The other summary line.
+            """,
+        )
+        parser = DSLParser(_make_clinic())
+        with support.captured_stdout() as stdout:
+            for text in blocks:
+                parser.parse(Block(text))
+        expected = "".join(self.too_long_warning(f'm.{name}', 72)
+                           for name in ("f", "g"))
+        self.assertEqual(stdout.getvalue(), expected)
 
     def test_indent_stack_no_tabs(self):
         block = """
