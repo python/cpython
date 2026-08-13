@@ -1,0 +1,4 @@
+Fix :class:`sqlite3.Blob` slice assignment with a step.
+It patched the bytes object read from the blob,
+which for a single byte is an immortal singleton,
+so that the value of that byte was changed in the whole process.
