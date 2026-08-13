@@ -135,6 +135,11 @@ csv
   The results may differ from those of earlier Python versions.
   (Contributed by Serhiy Storchaka in :gh:`83273`.)
 
+* :meth:`csv.Sniffer.sniff` now detects the *lineterminator* parameter
+  by a majority vote among the line endings of the sample,
+  instead of always returning ``'\r\n'``.
+  (Contributed by Serhiy Storchaka in :gh:`75008`.)
+
 curses
 ------
 
