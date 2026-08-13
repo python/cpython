@@ -830,6 +830,12 @@ class Values:
         else:
             return NotImplemented
 
+    def __replace__(self, /, **changes):
+        new = self.__class__()
+        new.__dict__.update(self.__dict__)
+        new.__dict__.update(changes)
+        return new
+
     def _update_careful(self, dict):
         """
         Update the option values from an arbitrary dictionary, but only
