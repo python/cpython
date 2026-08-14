@@ -1009,6 +1009,57 @@ _asyncio_Task__log_destroy_pending_set(PyObject *self, PyObject *value, void *Py
     return return_value;
 }
 
+#if !defined(_asyncio_Task__reraise_base_exceptions_DOCSTR)
+#  define _asyncio_Task__reraise_base_exceptions_DOCSTR NULL
+#endif
+#if defined(_ASYNCIO_TASK__RERAISE_BASE_EXCEPTIONS_GETSETDEF)
+#  undef _ASYNCIO_TASK__RERAISE_BASE_EXCEPTIONS_GETSETDEF
+#  define _ASYNCIO_TASK__RERAISE_BASE_EXCEPTIONS_GETSETDEF {"_reraise_base_exceptions", (getter)_asyncio_Task__reraise_base_exceptions_get, (setter)_asyncio_Task__reraise_base_exceptions_set, _asyncio_Task__reraise_base_exceptions_DOCSTR},
+#else
+#  define _ASYNCIO_TASK__RERAISE_BASE_EXCEPTIONS_GETSETDEF {"_reraise_base_exceptions", (getter)_asyncio_Task__reraise_base_exceptions_get, NULL, _asyncio_Task__reraise_base_exceptions_DOCSTR},
+#endif
+
+static PyObject *
+_asyncio_Task__reraise_base_exceptions_get_impl(TaskObj *self);
+
+static PyObject *
+_asyncio_Task__reraise_base_exceptions_get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _asyncio_Task__reraise_base_exceptions_get_impl((TaskObj *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if !defined(_asyncio_Task__reraise_base_exceptions_DOCSTR)
+#  define _asyncio_Task__reraise_base_exceptions_DOCSTR NULL
+#endif
+#if defined(_ASYNCIO_TASK__RERAISE_BASE_EXCEPTIONS_GETSETDEF)
+#  undef _ASYNCIO_TASK__RERAISE_BASE_EXCEPTIONS_GETSETDEF
+#  define _ASYNCIO_TASK__RERAISE_BASE_EXCEPTIONS_GETSETDEF {"_reraise_base_exceptions", (getter)_asyncio_Task__reraise_base_exceptions_get, (setter)_asyncio_Task__reraise_base_exceptions_set, _asyncio_Task__reraise_base_exceptions_DOCSTR},
+#else
+#  define _ASYNCIO_TASK__RERAISE_BASE_EXCEPTIONS_GETSETDEF {"_reraise_base_exceptions", NULL, (setter)_asyncio_Task__reraise_base_exceptions_set, NULL},
+#endif
+
+static int
+_asyncio_Task__reraise_base_exceptions_set_impl(TaskObj *self,
+                                                PyObject *value);
+
+static int
+_asyncio_Task__reraise_base_exceptions_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _asyncio_Task__reraise_base_exceptions_set_impl((TaskObj *)self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 #if !defined(_asyncio_Task__must_cancel_DOCSTR)
 #  define _asyncio_Task__must_cancel_DOCSTR NULL
 #endif
@@ -2234,4 +2285,4 @@ _asyncio_future_discard_from_awaited_by(PyObject *module, PyObject *const *args,
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=22e74568ff49f81f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5e0ec48d1dad2a42 input=a9049054013a1b77]*/

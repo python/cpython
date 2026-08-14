@@ -61,6 +61,7 @@ typedef struct TaskObj {
     FutureObj_HEAD(task)
     unsigned task_must_cancel: 1;
     unsigned task_log_destroy_pending: 1;
+    unsigned task_reraise_base_exceptions: 1;
     int task_num_cancels_requested;
     PyObject *task_fut_waiter;
     PyObject *task_coro;
@@ -2334,6 +2335,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
 #endif
     self->task_must_cancel = 0;
     self->task_log_destroy_pending = 1;
+    self->task_reraise_base_exceptions = 1;
     self->task_num_cancels_requested = 0;
     set_task_coro(self, coro);
 
@@ -2459,6 +2461,47 @@ _asyncio_Task__log_destroy_pending_set_impl(TaskObj *self, PyObject *value)
         return -1;
     }
     self->task_log_destroy_pending = is_true;
+    return 0;
+}
+
+/*[clinic input]
+@critical_section
+@getter
+_asyncio.Task._reraise_base_exceptions
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_Task__reraise_base_exceptions_get_impl(TaskObj *self)
+/*[clinic end generated code: output=ca3e80a29c03c0fa input=ef5a02100f61548c]*/
+{
+    if (self->task_reraise_base_exceptions) {
+        Py_RETURN_TRUE;
+    }
+    else {
+        Py_RETURN_FALSE;
+    }
+}
+
+/*[clinic input]
+@critical_section
+@setter
+_asyncio.Task._reraise_base_exceptions
+[clinic start generated code]*/
+
+static int
+_asyncio_Task__reraise_base_exceptions_set_impl(TaskObj *self,
+                                                PyObject *value)
+/*[clinic end generated code: output=7373ae0cc01caeb8 input=5e777a0452e204ad]*/
+{
+    if (value == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
+        return -1;
+    }
+    int is_true = PyObject_IsTrue(value);
+    if (is_true < 0) {
+        return -1;
+    }
+    self->task_reraise_base_exceptions = is_true;
     return 0;
 }
 
@@ -2932,6 +2975,7 @@ static PyMethodDef TaskType_methods[] = {
 
 static PyGetSetDef TaskType_getsetlist[] = {
     _ASYNCIO_TASK__LOG_DESTROY_PENDING_GETSETDEF
+    _ASYNCIO_TASK__RERAISE_BASE_EXCEPTIONS_GETSETDEF
     _ASYNCIO_TASK__MUST_CANCEL_GETSETDEF
     _ASYNCIO_TASK__CORO_GETSETDEF
     _ASYNCIO_TASK__FUT_WAITER_GETSETDEF
@@ -3156,10 +3200,11 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
         assert(o == Py_None);
         Py_DECREF(o);
 
-        if (PyErr_GivenExceptionMatches(exc, PyExc_KeyboardInterrupt) ||
-            PyErr_GivenExceptionMatches(exc, PyExc_SystemExit))
+        if (task->task_reraise_base_exceptions &&
+            (PyErr_GivenExceptionMatches(exc, PyExc_KeyboardInterrupt) ||
+             PyErr_GivenExceptionMatches(exc, PyExc_SystemExit)))
         {
-            /* We've got a KeyboardInterrupt or a SystemError; re-raise it */
+            /* We've got a KeyboardInterrupt or a SystemExit; re-raise it */
             PyErr_SetRaisedException(exc);
             goto fail;
         }
