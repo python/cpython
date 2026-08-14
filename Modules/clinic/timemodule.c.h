@@ -358,7 +358,7 @@ exit:
 }
 
 PyDoc_STRVAR(time_asctime__doc__,
-"asctime($module, time_tuple=None, /)\n"
+"asctime($module, time_tuple=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Convert a time tuple to a string, e.g. \'Sat Jun 06 16:26:11 1998\'.\n"
@@ -376,7 +376,7 @@ static PyObject *
 time_asctime(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *tup = Py_None;
+    PyObject *tup = NULL;
 
     if (!_PyArg_CheckPositional("asctime", nargs, 0, 1)) {
         goto exit;
@@ -398,8 +398,8 @@ PyDoc_STRVAR(time_ctime__doc__,
 "\n"
 "Convert a time in seconds since the Epoch to a string in local time.\n"
 "\n"
-"This is equivalent to asctime(localtime(seconds)).  When the time tuple\n"
-"is not present, current time as returned by localtime() is used.");
+"This is equivalent to asctime(localtime(seconds)).  When \'seconds\' is\n"
+"not passed in, convert the current time instead.");
 
 #define TIME_CTIME_METHODDEF    \
     {"ctime", _PyCFunction_CAST(time_ctime), METH_FASTCALL, time_ctime__doc__},
@@ -751,4 +751,4 @@ exit:
 #ifndef TIME_THREAD_TIME_NS_METHODDEF
     #define TIME_THREAD_TIME_NS_METHODDEF
 #endif /* !defined(TIME_THREAD_TIME_NS_METHODDEF) */
-/*[clinic end generated code: output=e1a38728f085edbd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=75f2a96aa9a21a15 input=a9049054013a1b77]*/

@@ -6360,7 +6360,9 @@ class TestSignatureDefinitions(unittest.TestCase):
 
     def test_time_module_has_signatures(self):
         no_signature = {'strftime', 'strptime'}
-        self._test_module_has_signatures(time, no_signature)
+        unsupported_signature = {'asctime'}
+        self._test_module_has_signatures(time, no_signature,
+                                         unsupported_signature)
 
     def test_tokenize_module_has_signatures(self):
         import tokenize

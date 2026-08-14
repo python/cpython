@@ -509,8 +509,8 @@ tmtotuple(time_module_state *state, struct tm *p
     return v;
 }
 
-/* Parse arg tuple that can contain an optional float-or-None value;
-   format needs to be "|O:name".
+/* Convert a number of seconds since the Epoch, or None which means the
+   current time, to time_t.
    Returns non-zero on success (parallels PyArg_ParseTuple).
 */
 static int
@@ -1051,7 +1051,7 @@ _asctime(struct tm *timeptr)
 /*[clinic input]
 time.asctime
 
-    time_tuple as tup: object = None
+    time_tuple as tup: object = NULL
     /
 
 Convert a time tuple to a string, e.g. 'Sat Jun 06 16:26:11 1998'.
@@ -1062,12 +1062,12 @@ localtime() is used.
 
 static PyObject *
 time_asctime_impl(PyObject *module, PyObject *tup)
-/*[clinic end generated code: output=a1bc45f84a00fb55 input=38a2a45e233a2a95]*/
+/*[clinic end generated code: output=a1bc45f84a00fb55 input=083c132f3cb23f1e]*/
 {
     struct tm buf;
 
     time_module_state *state = get_time_state(module);
-    if (tup == Py_None) {
+    if (tup == NULL) {
         time_t tt = time(NULL);
         if (_PyTime_localtime(tt, &buf) != 0)
             return NULL;
@@ -1089,13 +1089,13 @@ time.ctime
 
 Convert a time in seconds since the Epoch to a string in local time.
 
-This is equivalent to asctime(localtime(seconds)).  When the time tuple
-is not present, current time as returned by localtime() is used.
+This is equivalent to asctime(localtime(seconds)).  When 'seconds' is
+not passed in, convert the current time instead.
 [clinic start generated code]*/
 
 static PyObject *
 time_ctime_impl(PyObject *module, PyObject *ot)
-/*[clinic end generated code: output=c3a028f5c6931cbc input=7a4cf111320a727b]*/
+/*[clinic end generated code: output=c3a028f5c6931cbc input=ee744f25ce87d1ae]*/
 {
     time_t tt;
     struct tm buf;
