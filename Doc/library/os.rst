@@ -452,7 +452,7 @@ process and user.
    process.  For most purposes, it is more useful to use
    :func:`getpass.getuser` since the latter checks the environment variables
    :envvar:`LOGNAME` or :envvar:`USERNAME` to find out who the user is, and
-   falls back to ``pwd.getpwuid(os.getuid())[0]`` to get the login name of the
+   falls back to ``pwd.getpwuid(os.getuid()).pw_name`` to get the login name of the
    current real user id.
 
    .. availability:: Unix, Windows, not WASI.
@@ -1011,9 +1011,13 @@ as internal buffering of data.
       It will always copy no bytes and return 0 as if the file was empty
       because of a known Linux kernel issue.
 
-   .. availability:: Linux >= 4.5 with glibc >= 2.27.
+   .. availability:: Linux >= 4.5.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.16
+      The function is now also available when Python is built against a libc
+      that lacks ``copy_file_range()``, such as glibc older than 2.27.
 
 
 .. function:: device_encoding(fd)
@@ -4400,9 +4404,13 @@ The following flags are used in :attr:`statvfs_result.f_flag`.
    the file descriptor, and as such multiple files can have the same name
    without any side effects.
 
-   .. availability:: Linux >= 3.17 with glibc >= 2.27.
+   .. availability:: Linux >= 3.17.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.16
+      The function is now also available when Python is built against a libc
+      that lacks ``memfd_create()``, such as glibc older than 2.27.
 
 
 .. data:: MFD_CLOEXEC
