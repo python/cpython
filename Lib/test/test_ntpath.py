@@ -31,19 +31,29 @@ else:
     HAVE_GETFINALPATHNAME = True
 
 try:
-    import ctypes
+    import ctypes.util
+    import ctypes.wintypes
 except ImportError:
     HAVE_GETSHORTPATHNAME = False
 else:
     HAVE_GETSHORTPATHNAME = True
     def _getshortpathname(path):
-        GSPN = ctypes.WinDLL("kernel32", use_last_error=True).GetShortPathNameW
-        GSPN.argtypes = [ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint32]
-        GSPN.restype = ctypes.c_uint32
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+
+        @ctypes.util.wrap_dll_function(kernel32)
+        def GetShortPathNameW(
+            lpszLongPath: ctypes.c_wchar_p,
+            lpszShortPath: ctypes.c_wchar_p,
+            cchBuffer: ctypes.wintypes.DWORD,
+        ) -> ctypes.wintypes.DWORD:
+            pass
+        GSPN = GetShortPathNameW
+
         result_len = GSPN(path, None, 0)
         if not result_len:
             raise OSError("failed to get short path name 0x{:08X}"
                           .format(ctypes.get_last_error()))
+
         result = ctypes.create_unicode_buffer(result_len)
         result_len = GSPN(path, result, result_len)
         return result[:result_len]

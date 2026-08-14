@@ -377,6 +377,7 @@ class TestCopy(unittest.TestCase):
         self.assertIsNot(x, y)
         self.assertIsNot(x[0], y[0])
 
+    @support.skip_if_huge_c_stack()
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def test_deepcopy_reflexive_list(self):
@@ -406,6 +407,7 @@ class TestCopy(unittest.TestCase):
         y = copy.deepcopy(x)
         self.assertIs(x, y)
 
+    @support.skip_if_huge_c_stack()
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def test_deepcopy_reflexive_tuple(self):
@@ -449,6 +451,7 @@ class TestCopy(unittest.TestCase):
         self.assertIsNot(x[0], y[0])
         self.assertIs(y[0]['foo'], y)
 
+    @support.skip_if_huge_c_stack()
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def test_deepcopy_reflexive_dict(self):
@@ -609,6 +612,7 @@ class TestCopy(unittest.TestCase):
         self.assertIsNot(y, x)
         self.assertIsNot(y.foo, x.foo)
 
+    @support.skip_if_huge_c_stack()
     def test_deepcopy_reflexive_inst(self):
         class C:
             pass
@@ -671,6 +675,7 @@ class TestCopy(unittest.TestCase):
         self.assertEqual(y, x)
         self.assertIsNot(y.foo, x.foo)
 
+    @support.skip_if_huge_c_stack()
     def test_reconstruct_reflexive(self):
         class C(object):
             pass

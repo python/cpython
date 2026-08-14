@@ -163,7 +163,7 @@ typedef struct {
     PyObject *iscoroutine_typecache;
 
     /* Imports from asyncio.events. */
-    PyObject *asyncio_get_event_loop_policy;
+    PyObject *asyncio_get_event_loop;
 
     /* Imports from asyncio.base_futures. */
     PyObject *asyncio_future_repr_func;
@@ -343,7 +343,6 @@ static PyObject *
 get_event_loop(asyncio_state *state)
 {
     PyObject *loop;
-    PyObject *policy;
 
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
     loop = Py_XNewRef(ts->asyncio_running_loop);
@@ -352,14 +351,7 @@ get_event_loop(asyncio_state *state)
         return loop;
     }
 
-    policy = PyObject_CallNoArgs(state->asyncio_get_event_loop_policy);
-    if (policy == NULL) {
-        return NULL;
-    }
-
-    loop = PyObject_CallMethodNoArgs(policy, &_Py_ID(get_event_loop));
-    Py_DECREF(policy);
-    return loop;
+    return PyObject_CallNoArgs(state->asyncio_get_event_loop);
 }
 
 
@@ -777,7 +769,6 @@ future_get_result(asyncio_state *state, FutureObj *fut, PyObject **result)
             return -1;
         }
         *result = Py_NewRef(fut->fut_exception);
-        Py_CLEAR(fut->fut_exception_tb);
         return 1;
     }
 
@@ -2372,7 +2363,9 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     _PyObject_SetMaybeWeakref((PyObject *)self);
 #endif
     if (eager_start) {
-        PyObject *res = PyObject_CallMethodNoArgs(loop, &_Py_ID(is_running));
+        // gh-154695: loop may be None here, future_init() resolved it into task_loop.
+        PyObject *res = PyObject_CallMethodNoArgs(self->task_loop,
+                                                  &_Py_ID(is_running));
         if (res == NULL) {
             return -1;
         }
@@ -2793,7 +2786,11 @@ static PyObject *
 _asyncio_Task_get_context_impl(TaskObj *self)
 /*[clinic end generated code: output=6996f53d3dc01aef input=87c0b209b8fceeeb]*/
 {
-    return Py_NewRef(self->task_context);
+    if (self->task_context) {
+        return Py_NewRef(self->task_context);
+    }
+
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -2974,13 +2971,17 @@ TaskObj_dealloc(PyObject *self)
     if (PyObject_CallFinalizerFromDealloc(self) < 0) {
         return; // resurrected
     }
+    // Untrack the object before unregistering the task, since the
+    // latter can cause a stop-the-world pause, after which another
+    // thread might call the GC and reach the object while it is
+    // semi-deallocated but still tracked
+    PyObject_GC_UnTrack(self);
+
     // unregister the task after finalization so that
     // if the task gets resurrected, it remains registered
     unregister_task((TaskObj *)self);
 
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject_GC_UnTrack(self);
-
     PyObject_ClearWeakRefs(self);
 
     (void)TaskObj_clear(self);
@@ -3638,12 +3639,13 @@ call_soon or similar API), this function will always return the
 running event loop.
 
 If there is no running event loop set, the function will return
-the result of `get_event_loop_policy().get_event_loop()` call.
+the loop set by `set_event_loop()`, or raise a RuntimeError if
+no loop has been set.
 [clinic start generated code]*/
 
 static PyObject *
 _asyncio_get_event_loop_impl(PyObject *module)
-/*[clinic end generated code: output=2a2d8b2f824c648b input=9364bf2916c8655d]*/
+/*[clinic end generated code: output=2a2d8b2f824c648b input=fa104f00dc7995dc]*/
 {
     asyncio_state *state = get_asyncio_state(module);
     return get_event_loop(state);
@@ -4192,7 +4194,7 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->asyncio_mod);
     Py_VISIT(state->traceback_extract_stack);
     Py_VISIT(state->asyncio_future_repr_func);
-    Py_VISIT(state->asyncio_get_event_loop_policy);
+    Py_VISIT(state->asyncio_get_event_loop);
     Py_VISIT(state->asyncio_iscoroutine_func);
     Py_VISIT(state->asyncio_task_get_stack_func);
     Py_VISIT(state->asyncio_task_print_stack_func);
@@ -4222,7 +4224,7 @@ module_clear(PyObject *mod)
     Py_CLEAR(state->asyncio_mod);
     Py_CLEAR(state->traceback_extract_stack);
     Py_CLEAR(state->asyncio_future_repr_func);
-    Py_CLEAR(state->asyncio_get_event_loop_policy);
+    Py_CLEAR(state->asyncio_get_event_loop);
     Py_CLEAR(state->asyncio_iscoroutine_func);
     Py_CLEAR(state->asyncio_task_get_stack_func);
     Py_CLEAR(state->asyncio_task_print_stack_func);
@@ -4285,7 +4287,7 @@ module_init(asyncio_state *state)
     }
 
     WITH_MOD("asyncio.events")
-    GET_MOD_ATTR(state->asyncio_get_event_loop_policy, "_get_event_loop_policy")
+    GET_MOD_ATTR(state->asyncio_get_event_loop, "_get_event_loop")
 
     WITH_MOD("asyncio.base_futures")
     GET_MOD_ATTR(state->asyncio_future_repr_func, "_future_repr")

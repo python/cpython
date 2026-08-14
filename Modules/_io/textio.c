@@ -3424,6 +3424,19 @@ _io_TextIOWrapper__CHUNK_SIZE_set_impl(textio *self, PyObject *value)
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+_io.TextIOWrapper.buffer
+[clinic start generated code]*/
+
+static PyObject *
+_io_TextIOWrapper_buffer_get_impl(textio *self)
+/*[clinic end generated code: output=d265a34555aa5d4b input=5951cfa148f7350a]*/
+{
+    return Py_XNewRef(buffer_access_safe(self));
+}
+
 static PyMethodDef incrementalnewlinedecoder_methods[] = {
     _IO_INCREMENTALNEWLINEDECODER_DECODE_METHODDEF
     _IO_INCREMENTALNEWLINEDECODER_GETSTATE_METHODDEF
@@ -3482,7 +3495,6 @@ static PyMethodDef textiowrapper_methods[] = {
 
 static PyMemberDef textiowrapper_members[] = {
     {"encoding", _Py_T_OBJECT, offsetof(textio, encoding), Py_READONLY},
-    {"buffer", _Py_T_OBJECT, offsetof(textio, buffer), Py_READONLY},
     {"line_buffering", Py_T_BOOL, offsetof(textio, line_buffering), Py_READONLY},
     {"write_through", Py_T_BOOL, offsetof(textio, write_through), Py_READONLY},
     {"_finalizing", Py_T_BOOL, offsetof(textio, finalizing), 0},
@@ -3497,6 +3509,7 @@ static PyGetSetDef textiowrapper_getset[] = {
     _IO_TEXTIOWRAPPER_NEWLINES_GETSETDEF
     _IO_TEXTIOWRAPPER_ERRORS_GETSETDEF
     _IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF
+    _IO_TEXTIOWRAPPER_BUFFER_GETSETDEF
     {NULL}
 };
 

@@ -1720,7 +1720,11 @@ category.
 |                          |  :meth:`str.strip`                        |  :meth:`bytes.strip`                              |
 |                          +--------------------+----------------------+----------------------+----------------------------+
 |                          | :meth:`str.lstrip` | :meth:`str.rstrip`   | :meth:`bytes.lstrip` | :meth:`bytes.rstrip`       |
-+--------------------------+--------------------+----------------------+----------------------+----------------------------+
+|                          +--------------------+----------------------+----------------------+----------------------------+
+|                          |  :meth:`str.removeprefix`                 |  :meth:`bytes.removeprefix`                       |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.removesuffix`                 |  :meth:`bytes.removesuffix`                       |
++--------------------------+-------------------------------------------+---------------------------------------------------+
 | Translation and Encoding |  :meth:`str.translate`                    |  :meth:`bytes.translate`                          |
 |                          +-------------------------------------------+---------------------------------------------------+
 |                          |  :meth:`str.maketrans`                    |  :meth:`bytes.maketrans`                          |
@@ -2586,7 +2590,8 @@ expression support in the :mod:`re` module).
 
    Return a list of the words in the string, using *sep* as the delimiter string.
    If *maxsplit* is given, at most *maxsplit* splits are done, the *rightmost*
-   ones.  If *sep* is not specified or ``None``, any whitespace string is a
+   ones.  If *sep* is not specified or ``None``, any
+   :meth:`whitespace <str.isspace>` string is a
    separator.  Except for splitting from the right, :meth:`rsplit` behaves like
    :meth:`split` which is described in detail below.
 
@@ -2647,7 +2652,8 @@ expression support in the :mod:`re` module).
       ['1', '2', '3<4']
 
    If *sep* is not specified or is ``None``, a different splitting algorithm is
-   applied: runs of consecutive whitespace are regarded as a single separator,
+   applied: runs of consecutive :meth:`whitespace <str.isspace>` are regarded
+   as a single separator,
    and the result will contain no empty strings at the start or end if the
    string has leading or trailing whitespace.  Consequently, splitting an empty
    string or a string consisting of just whitespace with a ``None`` separator
@@ -3911,7 +3917,8 @@ produce new objects.
    Return a copy of the sequence with specified leading bytes removed.  The
    *bytes* argument is a binary sequence specifying the set of byte values to
    be removed.  If omitted or ``None``, the *bytes* argument defaults
-   to removing ASCII whitespace.  The *bytes* argument is not a prefix;
+   to removing :meth:`ASCII whitespace <bytes.isspace>`.
+   The *bytes* argument is not a prefix;
    rather, all combinations of its values are stripped::
 
       >>> b'   spacious   '.lstrip()
@@ -3955,7 +3962,8 @@ produce new objects.
    Split the binary sequence into subsequences of the same type, using *sep*
    as the delimiter string. If *maxsplit* is given, at most *maxsplit* splits
    are done, the *rightmost* ones.  If *sep* is not specified or ``None``,
-   any subsequence consisting solely of ASCII whitespace is a separator.
+   any subsequence consisting solely of
+   :meth:`ASCII whitespace <bytes.isspace>` is a separator.
    Except for splitting from the right, :meth:`rsplit` behaves like
    :meth:`split` which is described in detail below.
 
@@ -3966,7 +3974,8 @@ produce new objects.
    Return a copy of the sequence with specified trailing bytes removed.  The
    *bytes* argument is a binary sequence specifying the set of byte values to
    be removed.  If omitted or ``None``, the *bytes* argument defaults to
-   removing ASCII whitespace.  The *bytes* argument is not a suffix; rather,
+   removing :meth:`ASCII whitespace <bytes.isspace>`.
+   The *bytes* argument is not a suffix; rather,
    all combinations of its values are stripped::
 
       >>> b'   spacious   '.rstrip()
@@ -4019,7 +4028,8 @@ produce new objects.
       [b'1', b'2', b'3<4']
 
    If *sep* is not specified or is ``None``, a different splitting algorithm
-   is applied: runs of consecutive ASCII whitespace are regarded as a single
+   is applied: runs of consecutive :meth:`ASCII whitespace <bytes.isspace>`
+   are regarded as a single
    separator, and the result will contain no empty strings at the start or
    end if the sequence has leading or trailing whitespace.  Consequently,
    splitting an empty sequence or a sequence consisting solely of ASCII
@@ -4042,7 +4052,8 @@ produce new objects.
    Return a copy of the sequence with specified leading and trailing bytes
    removed. The *bytes* argument is a binary sequence specifying the set of
    byte values to be removed.  If omitted or ``None``, the *bytes*
-   argument defaults to removing ASCII whitespace. The *bytes* argument is
+   argument defaults to removing :meth:`ASCII whitespace <bytes.isspace>`.
+   The *bytes* argument is
    not a prefix or suffix; rather, all combinations of its values are
    stripped::
 
@@ -4867,13 +4878,20 @@ copying.
       .. versionadded:: 3.2
 
    .. method:: cast(format, /)
-               cast(format, shape, /)
+               cast(format, shape, /, *, order='C')
 
       Cast a memoryview to a new format or shape. *shape* defaults to
       ``[byte_length//new_itemsize]``, which means that the result view
       will be one-dimensional. The return value is a new memoryview, but
-      the buffer itself is not copied. Supported casts are 1D -> C-:term:`contiguous`
-      and C-contiguous -> 1D.
+      the buffer itself is not copied. Supported casts are
+      1D -> C-:term:`contiguous`, C-contiguous -> 1D, and
+      F-contiguous -> 1D.
+
+      With a multidimensional *shape*, *order* selects the memory layout of
+      the result: ``'C'`` for C-contiguous (row-major, the default) or ``'F'``
+      for Fortran-contiguous (column-major).  The buffer is still not copied,
+      so ``order='F'`` gives a zero-copy view over a buffer holding
+      column-major data.
 
       The destination format is restricted to a single element native format in
       :mod:`struct` syntax. One of the formats must be a byte format
@@ -4960,6 +4978,10 @@ copying.
       .. versionchanged:: 3.5
          The source format is no longer restricted when casting to a byte view.
 
+      .. versionchanged:: next
+         Casting a multi-dimensional F-contiguous view to a one-dimensional
+         view is now supported.
+
    .. method:: count(value, /)
 
       Count the number of occurrences of *value*.
@@ -5022,7 +5044,19 @@ copying.
          >>> y.nbytes
          96
 
+      Interpret a flat buffer as a Fortran-contiguous (column-major) array::
+
+         >>> buf = bytes(range(6))
+         >>> y = memoryview(buf).cast('B', shape=[3, 2], order='F')
+         >>> y.f_contiguous
+         True
+         >>> y.tolist()
+         [[0, 3], [1, 4], [2, 5]]
+
       .. versionadded:: 3.3
+
+      .. versionchanged:: next
+         Added the *order* parameter.
 
    .. attribute:: readonly
 
@@ -5756,6 +5790,13 @@ Frozen dictionaries
 
    Like dictionaries, frozendicts are :ref:`generic <generics>` over two types,
    signifying (respectively) the types of the frozendict's keys and values.
+
+   .. classmethod:: fromkeys(iterable, value=None, /)
+
+      Similar to :meth:`dict.fromkeys`, but call again the type constructor
+      with an initialized :class:`frozendict` if the type is a
+      :class:`frozendict` subclass or if the constructor returned a
+      :class:`frozendict`.
 
    .. versionadded:: 3.15
 

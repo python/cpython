@@ -54,14 +54,6 @@ class BaseEventQueue:
         """
         return not self.events
 
-    def flush_buf(self) -> bytearray:
-        """
-        Flushes the buffer and returns its contents.
-        """
-        old = self.buf
-        self.buf = bytearray()
-        return old
-
     def insert(self, event: Event) -> None:
         """
         Inserts an event into the queue.
@@ -87,7 +79,7 @@ class BaseEventQueue:
             if isinstance(k, dict):
                 self.keymap = k
             else:
-                self.insert(Event('key', k, bytes(self.flush_buf())))
+                self.insert(Event('key', k, self.buf.take_bytes()))  # type: ignore[attr-defined]
                 self.keymap = self.compiled_keymap
 
         elif self.buf and self.buf[0] == 27:  # escape
@@ -97,14 +89,14 @@ class BaseEventQueue:
             trace('unrecognized escape sequence, propagating...')
             self.keymap = self.compiled_keymap
             self.insert(Event('key', '\033', b'\033'))
-            for _c in self.flush_buf()[1:]:
+            for _c in self.buf.take_bytes()[1:]:  # type: ignore[attr-defined]
                 self.push(_c)
 
         else:
             try:
-                decoded = bytes(self.buf).decode(self.encoding)
+                decoded = self.buf.decode(self.encoding)
             except UnicodeError:
                 return
             else:
-                self.insert(Event('key', decoded, bytes(self.flush_buf())))
+                self.insert(Event('key', decoded, self.buf.take_bytes()))  # type: ignore[attr-defined]
             self.keymap = self.compiled_keymap

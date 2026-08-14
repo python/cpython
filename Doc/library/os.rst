@@ -452,7 +452,7 @@ process and user.
    process.  For most purposes, it is more useful to use
    :func:`getpass.getuser` since the latter checks the environment variables
    :envvar:`LOGNAME` or :envvar:`USERNAME` to find out who the user is, and
-   falls back to ``pwd.getpwuid(os.getuid())[0]`` to get the login name of the
+   falls back to ``pwd.getpwuid(os.getuid()).pw_name`` to get the login name of the
    current real user id.
 
    .. availability:: Unix, Windows, not WASI.
@@ -802,9 +802,9 @@ process and user.
    Returns information identifying the current operating system.
    The return value is a :class:`uname_result`.
 
-   On macOS, iOS and Android, this returns the *kernel* name and version (i.e.,
+   On macOS, iOS and Android, this returns the *kernel* name and release (i.e.,
    ``'Darwin'`` on macOS and iOS; ``'Linux'`` on Android). :func:`platform.uname`
-   can be used to get the user-facing operating system name and version on iOS and
+   can be used to get the user-facing operating system name and release on iOS and
    Android.
 
    .. seealso::
@@ -1011,9 +1011,13 @@ as internal buffering of data.
       It will always copy no bytes and return 0 as if the file was empty
       because of a known Linux kernel issue.
 
-   .. availability:: Linux >= 4.5 with glibc >= 2.27.
+   .. availability:: Linux >= 4.5.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.16
+      The function is now also available when Python is built against a libc
+      that lacks ``copy_file_range()``, such as glibc older than 2.27.
 
 
 .. function:: device_encoding(fd)
@@ -1448,7 +1452,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Return a pair of file descriptors ``(r, w)`` usable for reading and writing,
    respectively.
 
-   .. availability:: Unix, not WASI, not macOS, not iOS.
+   .. availability:: Unix, macOS >= 27.0, not WASI, not iOS.
 
    .. versionadded:: 3.3
 
@@ -1642,6 +1646,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    - :data:`RWF_APPEND`
    - :data:`RWF_DONTCACHE`
    - :data:`RWF_ATOMIC`
+   - :data:`RWF_NOSIGNAL`
 
    Return the total number of bytes actually written.
 
@@ -1689,6 +1694,16 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. availability:: Linux >= 4.16.
 
    .. versionadded:: 3.10
+
+
+.. data:: RWF_NOSIGNAL
+
+   Prevent pipe and socket writes from raising :const:`~signal.SIGPIPE`.
+   This flag is meaningful only for :func:`os.pwritev`.
+
+   .. availability:: Linux >= 6.18.
+
+   .. versionadded:: 3.16
 
 
 .. function:: read(fd, n, /)
@@ -2179,6 +2194,11 @@ features:
    :exc:`FileNotFoundError`, :exc:`PermissionError`, and :exc:`NotADirectoryError`.
 
    .. audit-event:: os.chdir path os.chdir
+
+   .. seealso::
+
+      The :func:`contextlib.chdir` context manager, which changes the current
+      working directory on entering and restores the previous one on exit.
 
    .. versionchanged:: 3.3
       Added support for specifying *path* as a file descriptor
@@ -3032,10 +3052,16 @@ features:
 
    .. attribute:: path
 
-      The entry's full path name: equivalent to ``os.path.join(scandir_path,
-      entry.name)`` where *scandir_path* is the :func:`scandir` *path*
-      argument.  The path is only absolute if the :func:`scandir` *path*
-      argument was absolute.  If the :func:`scandir` *path*
+      The entry's path name: equivalent to ``os.path.join(scandir_path,
+      entry.name)`` where *scandir_path* is the original :func:`scandir`
+      *path* argument.  Apart from the filename, the path preserves the
+      original :func:`scandir` argument.  If the :func:`scandir` *path*
+      argument was relative, the :attr:`path` attribute is also relative.
+      Changing the current working directory after creating the
+      :func:`scandir` iterator may cause later uses of :attr:`path` to resolve
+      differently.  On some platforms, the constructed path may not be valid
+      if the original :func:`scandir` argument was usable for enumeration but
+      not for joining with the entry name.  If the :func:`scandir` *path*
       argument was a :ref:`file descriptor <path_fd>`, the :attr:`path`
       attribute is the same as the :attr:`name` attribute.
 
@@ -4378,9 +4404,13 @@ The following flags are used in :attr:`statvfs_result.f_flag`.
    the file descriptor, and as such multiple files can have the same name
    without any side effects.
 
-   .. availability:: Linux >= 3.17 with glibc >= 2.27.
+   .. availability:: Linux >= 3.17.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.16
+      The function is now also available when Python is built against a libc
+      that lacks ``memfd_create()``, such as glibc older than 2.27.
 
 
 .. data:: MFD_CLOEXEC

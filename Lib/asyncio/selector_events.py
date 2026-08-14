@@ -206,6 +206,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                                     protocol_factory, sock, sslcontext, server,
                                     backlog, ssl_handshake_timeout,
                                     ssl_shutdown_timeout, context)
+                    return
                 else:
                     raise  # The event loop will catch, log and ignore it.
             else:
@@ -585,14 +586,10 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             pos[0] = start
 
     async def sock_sendto(self, sock, data, address):
-        """Send data to the socket.
+        """Send a datagram from sock to address.
 
-        The socket must be connected to a remote socket.  This method
-        continues to send data from data until either all data has been
-        sent or an error occurs.  None is returned on success.  On error,
-        an exception is raised, and there is no way to determine how much
-        data, if any, was successfully processed by the receiving end of
-        the connection.
+        The socket does not have to be connected. This method sends the
+        whole datagram in a single call. Return the number of bytes sent.
         """
         base_events._check_ssl_socket(sock)
         if self._debug and sock.gettimeout() != 0:
@@ -717,6 +714,9 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         return await fut
 
     def _sock_accept(self, fut, sock):
+        # gh-153761: _sock_accept must not scheduled with already cancelled future
+        if fut.done():
+            return
         fd = sock.fileno()
         try:
             conn, address = sock.accept()
