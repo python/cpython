@@ -466,6 +466,13 @@ shlex
   a string, even if it is already safe for a shell without being quoted.
   (Contributed by Jay Berry in :gh:`148846`.)
 
+sqlite3
+-------
+
+* :class:`sqlite3.Blob` now supports negative-step slices for reading and
+  writing (e.g. ``blob[9:0:-2]``).  Previously, such slices would raise
+  :exc:`SystemError` or :exc:`ValueError`.
+  (Contributed by Jiseok CHOI in :gh:`150449`.)
 
 symtable
 --------
@@ -869,6 +876,18 @@ Build changes
   excludes the modules from the build.
 
   (Contributed by Serhiy Storchaka in :gh:`136687`.)
+
+* Add the :option:`--with-zlib` and :option:`--with-bzip2` :program:`configure`
+  options to select the zlib and bzip2 implementations used to build the
+  :mod:`zlib` and :mod:`bz2` modules. In addition to the default system
+  libraries, they can build against `zlib-rs
+  <https://github.com/trifectatechfoundation/zlib-rs/>`__ and `libbzip2-rs
+  <https://github.com/trifectatechfoundation/libbzip2-rs>`__, and
+  ``--with-zlib=zlib-ng`` verifies that the detected zlib is `zlib-ng
+  <https://github.com/zlib-ng/zlib-ng>`__. :option:`--without-zlib` and
+  :option:`--without-bzip2` exclude the modules from the build.
+
+  (Contributed by Stan Ulbrych in :gh:`139314`.)
 
 
 C API changes
