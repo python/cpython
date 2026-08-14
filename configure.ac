@@ -7872,7 +7872,7 @@ AC_LINK_IFELSE(
     #include <stddef.h>
     #include <unistd.h>
     #include <sys/syscall.h>
-    #include <linux/random.h>
+    #include <linux/random.h>  // GRND_NONBLOCK
 
     #if !defined(SYS_getrandom) && defined(__NR_getrandom)
     #  define SYS_getrandom __NR_getrandom
