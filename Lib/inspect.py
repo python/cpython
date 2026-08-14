@@ -930,6 +930,14 @@ def getmodule(object, _filename=None):
     """Return the module an object was defined in, or None if not found."""
     if ismodule(object):
         return object
+    if istraceback(object):
+        object = object.tb_frame
+    if isframe(object):
+        object_globals = object.f_globals
+        module = sys.modules.get(object_globals.get('__name__'))
+        if module is not None and module.__dict__ is object_globals:
+            return module
+        return None
     if hasattr(object, '__module__'):
         return sys.modules.get(object.__module__)
 

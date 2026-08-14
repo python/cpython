@@ -831,6 +831,22 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertEqual(inspect.getmodule(str), sys.modules["builtins"])
         # Check filename override
         self.assertEqual(inspect.getmodule(None, modfile), mod)
+        # Check frame and traceback objects
+        self.assertIs(inspect.getmodule(inspect.currentframe()),
+                      sys.modules[__name__])
+        try:
+            1 / 0
+        except ZeroDivisionError as error:
+            self.assertIs(inspect.getmodule(error.__traceback__),
+                          sys.modules[__name__])
+
+    def test_getmodule_unregistered_exec_frame(self):
+        namespace = {"inspect": inspect, "__name__": "not_registered"}
+        exec(compile("frame = inspect.currentframe()", modfile, "exec"),
+             namespace)
+        # The frame globals are authoritative, even though the code filename
+        # happens to match an imported module.
+        self.assertIsNone(inspect.getmodule(namespace["frame"]))
 
     def test_getmodule_file_not_found(self):
         # See bpo-45406

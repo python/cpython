@@ -1,0 +1,1 @@
+Improve :func:`inspect.getmodule` performance for frame and traceback objects by resolving their module directly from the frame globals.
