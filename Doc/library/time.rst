@@ -215,7 +215,7 @@ Functions
    .. versionadded:: 3.7
 
 
-.. function:: ctime([seconds])
+.. function:: ctime(seconds=None, /)
 
    Convert a time expressed in seconds since the epoch_ to a string of a form:
    ``'Sun Jun 20 23:21:05 1993'`` representing local time. The day field
@@ -256,7 +256,7 @@ Functions
    .. versionadded:: 3.3
 
 
-.. function:: gmtime([seconds])
+.. function:: gmtime(seconds=None, /)
 
    Convert a time expressed in seconds since the epoch_ to a :class:`struct_time` in
    UTC in which the dst flag is always zero.  If *seconds* is not provided or
@@ -269,7 +269,7 @@ Functions
       Accepts any real number, not only integer or float.
 
 
-.. function:: localtime([seconds])
+.. function:: localtime(seconds=None, /)
 
    Like :func:`gmtime` but converts to local time.  If *seconds* is not
    provided or :const:`None`, the current time as returned by :func:`.time`
@@ -285,7 +285,7 @@ Functions
       Accepts any real number, not only integer or float.
 
 
-.. function:: mktime(time_tuple)
+.. function:: mktime(time_tuple, /)
 
    This is the inverse function of :func:`localtime`.  Its argument is the
    :class:`struct_time` or full 9-tuple (since the dst flag is needed; use ``-1``
@@ -392,7 +392,7 @@ Functions
 
    .. versionadded:: 3.7
 
-.. function:: sleep(seconds)
+.. function:: sleep(seconds, /)
 
    Suspend execution of the calling thread for the given number of seconds.
    The argument may be a non-integer to indicate a more precise sleep time.
