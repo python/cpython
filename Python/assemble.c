@@ -54,8 +54,8 @@ struct assembler {
     int a_except_table_off;    /* offset into exception table */
     /* Location Info */
     int a_lineno;          /* lineno of last emitted instruction */
-    PyBytesWriter *a_linetable; /* bytes writer containing location info */
-    PyObject *a_linetable_obj; /* bytes object containing location info */
+    PyBytesWriter *a_linetable_writer; /* writer containing location info */
+    PyObject *a_linetable; /* bytes object containing location info */
     int a_location_off;    /* offset of last written location info frame */
 };
 
@@ -68,8 +68,8 @@ assemble_init(struct assembler *a, int firstlineno)
     if (a->a_bytecode == NULL) {
         goto error;
     }
-    a->a_linetable = PyBytesWriter_Create(DEFAULT_CNOTAB_SIZE);
-    if (a->a_linetable == NULL) {
+    a->a_linetable_writer = PyBytesWriter_Create(DEFAULT_CNOTAB_SIZE);
+    if (a->a_linetable_writer == NULL) {
         goto error;
     }
     a->a_except_table = PyBytes_FromStringAndSize(NULL, DEFAULT_LNOTAB_SIZE);
@@ -79,7 +79,7 @@ assemble_init(struct assembler *a, int firstlineno)
     return SUCCESS;
 error:
     Py_CLEAR(a->a_bytecode);
-    PyBytesWriter_Discard(a->a_linetable);
+    PyBytesWriter_Discard(a->a_linetable_writer);
     Py_CLEAR(a->a_except_table);
     return ERROR;
 }
@@ -88,8 +88,8 @@ static void
 assemble_free(struct assembler *a)
 {
     Py_XDECREF(a->a_bytecode);
-    PyBytesWriter_Discard(a->a_linetable);
-    Py_XDECREF(a->a_linetable_obj);
+    PyBytesWriter_Discard(a->a_linetable_writer);
+    Py_XDECREF(a->a_linetable);
     Py_XDECREF(a->a_except_table);
 }
 
@@ -194,8 +194,8 @@ assemble_exception_table(struct assembler *a, instr_sequence *instrs)
 static void
 write_location_byte(struct assembler* a, int val)
 {
-    uint8_t *a_linetable = PyBytesWriter_GetData(a->a_linetable);
-    a_linetable[a->a_location_off] = val & 255;
+    uint8_t *linetable = PyBytesWriter_GetData(a->a_linetable_writer);
+    linetable[a->a_location_off] = val & 255;
     a->a_location_off++;
 }
 
@@ -203,8 +203,8 @@ write_location_byte(struct assembler* a, int val)
 static uint8_t *
 location_pointer(struct assembler* a)
 {
-    uint8_t *a_linetable = PyBytesWriter_GetData(a->a_linetable);
-    return a_linetable + a->a_location_off;
+    uint8_t *linetable = PyBytesWriter_GetData(a->a_linetable_writer);
+    return linetable + a->a_location_off;
 }
 
 static void
@@ -285,10 +285,10 @@ write_location_info_no_column(struct assembler* a, int length, int line_delta)
 static int
 write_location_info_entry(struct assembler* a, location loc, int isize)
 {
-    Py_ssize_t len = PyBytesWriter_GetSize(a->a_linetable);
+    Py_ssize_t len = PyBytesWriter_GetSize(a->a_linetable_writer);
     if (a->a_location_off + THEORETICAL_MAX_ENTRY_SIZE >= len) {
         assert(len > THEORETICAL_MAX_ENTRY_SIZE);
-        RETURN_IF_ERROR(PyBytesWriter_Resize(a->a_linetable, len * 2));
+        RETURN_IF_ERROR(PyBytesWriter_Resize(a->a_linetable_writer, len * 2));
     }
     if (loc.lineno == NO_LOCATION.lineno) {
         write_location_info_none(a, isize);
@@ -447,13 +447,13 @@ assemble_emit(struct assembler *a, instr_sequence *instrs,
     RETURN_IF_ERROR(_PyBytes_Resize(&a->a_except_table, a->a_except_table_off));
     RETURN_IF_ERROR(_PyCompile_ConstCacheMergeOne(const_cache, &a->a_except_table));
 
-    a->a_linetable_obj = PyBytesWriter_FinishWithSize(a->a_linetable,
+    a->a_linetable = PyBytesWriter_FinishWithSize(a->a_linetable_writer,
                                                       a->a_location_off);
-    a->a_linetable = NULL;
-    if (a->a_linetable_obj == NULL) {
+    a->a_linetable_writer = NULL;
+    if (a->a_linetable == NULL) {
         return ERROR;
     }
-    RETURN_IF_ERROR(_PyCompile_ConstCacheMergeOne(const_cache, &a->a_linetable_obj));
+    RETURN_IF_ERROR(_PyCompile_ConstCacheMergeOne(const_cache, &a->a_linetable));
 
     RETURN_IF_ERROR(_PyBytes_Resize(&a->a_bytecode, a->a_offset * sizeof(_Py_CODEUNIT)));
     RETURN_IF_ERROR(_PyCompile_ConstCacheMergeOne(const_cache, &a->a_bytecode));
@@ -634,7 +634,7 @@ makecode(_PyCompile_CodeUnitMetadata *umd, struct assembler *a, PyObject *const_
 
         .code = a->a_bytecode,
         .firstlineno = umd->u_firstlineno,
-        .linetable = a->a_linetable_obj,
+        .linetable = a->a_linetable,
 
         .consts = consts,
         .names = names,
