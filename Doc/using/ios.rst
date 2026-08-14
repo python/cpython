@@ -272,7 +272,7 @@ be used as a testbed project for running your Python library's test suite on iOS
 
 After building or obtaining an iOS XCFramework (see :source:`Platforms/Apple/iOS/README.md`
 for details), create a clone of the Python iOS testbed project. If you used the
-``Apple`` build script to build the XCframework, you can run:
+``Platforms/Apple`` build script to build the XCframework, you can run:
 
 .. code-block:: bash
 
