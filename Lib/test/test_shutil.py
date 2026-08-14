@@ -32,6 +32,7 @@ except ImportError:
 from test import support
 from test.support import os_helper, socket_helper
 from test.support.os_helper import TESTFN, FakePath
+from test.support.import_helper import ensure_lazy_imports
 
 TESTFN2 = TESTFN + "2"
 TESTFN_SRC = TESTFN + "_SRC"
@@ -1999,8 +2000,8 @@ class TestArchives(BaseTest, unittest.TestCase):
         # testing make_archive with owner and group, with various combinations
         # this works even if there's not gid/uid support
         if UID_GID_SUPPORT:
-            group = grp.getgrgid(0)[0]
-            owner = pwd.getpwuid(0)[0]
+            group = grp.getgrgid(0).gr_name
+            owner = pwd.getpwuid(0).pw_name
         else:
             group = owner = 'root'
 
@@ -2027,8 +2028,8 @@ class TestArchives(BaseTest, unittest.TestCase):
     def test_tarfile_root_owner(self):
         root_dir, base_dir = self._create_files()
         base_name = os.path.join(self.mkdtemp(), 'archive')
-        group = grp.getgrgid(0)[0]
-        owner = pwd.getpwuid(0)[0]
+        group = grp.getgrgid(0).gr_name
+        owner = pwd.getpwuid(0).pw_name
         with os_helper.change_cwd(root_dir), no_chdir:
             archive_name = make_archive(base_name, 'gztar', root_dir, 'dist',
                                         owner=owner, group=group)
@@ -2362,6 +2363,14 @@ class TestArchives(BaseTest, unittest.TestCase):
         unregister_unpack_format('Boo2')
         self.assertEqual(get_unpack_formats(), formats)
 
+    def test_compression_wrappers_not_imported_by_shutil(self):
+        # gh-154904: Importing shutil must not pull in the compression
+        # wrappers: they are only needed once an archive is actually created
+        # or extracted, and importing them measurably slows down every
+        # process that uses shutil.
+        ensure_lazy_imports("shutil",
+                            {"bz2", "lzma", "compression", "compression.zstd"})
+
 
 class TestMisc(BaseTest, unittest.TestCase):
 
@@ -2433,8 +2442,8 @@ class TestMisc(BaseTest, unittest.TestCase):
         check_chown(dirname, gid=gid)
 
         try:
-            user = pwd.getpwuid(uid)[0]
-            group = grp.getgrgid(gid)[0]
+            user = pwd.getpwuid(uid).pw_name
+            group = grp.getgrgid(gid).gr_name
         except KeyError:
             # On some systems uid/gid cannot be resolved.
             pass
