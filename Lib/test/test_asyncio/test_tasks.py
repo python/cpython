@@ -2148,7 +2148,7 @@ class BaseTaskTests:
 
         task = self.new_task(self.loop, coro())
         self.loop.run_until_complete(task)
-        self.assertEqual(0, 0 if inner._asyncio_awaited_by is None else len(inner._asyncio_awaited_by))
+        self.assertFalse(inner._asyncio_awaited_by)
         self.assertTrue({f for f, _ctx in inner._callbacks or []} <= {asyncio.tasks._log_on_exception})
 
     def test_shield_duplicate_log_once(self):
