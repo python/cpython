@@ -1,1 +1,1 @@
-Improve :func:`inspect.getmodule` performance for frame and traceback objects by resolving their module directly from the frame globals.
+Improve :func:`inspect.getmodule` performance for frame and traceback objects by resolving registered modules directly from frame globals. Frames executing in unregistered globals now return ``None`` instead of being associated with a module solely by filename.

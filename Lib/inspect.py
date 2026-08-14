@@ -930,16 +930,22 @@ def getmodule(object, _filename=None):
     """Return the module an object was defined in, or None if not found."""
     if ismodule(object):
         return object
+    if hasattr(object, '__module__'):
+        return sys.modules.get(object.__module__)
     if istraceback(object):
         object = object.tb_frame
     if isframe(object):
-        object_globals = object.f_globals
-        module = sys.modules.get(object_globals.get('__name__'))
-        if module is not None and module.__dict__ is object_globals:
-            return module
-        return None
-    if hasattr(object, '__module__'):
-        return sys.modules.get(object.__module__)
+        # Frame globals identify the execution namespace directly. Preserve
+        # the private filename override when it names a different file.
+        if _filename is None or _filename == object.f_code.co_filename:
+            object_globals = object.f_globals
+            module_name = object_globals.get('__name__')
+            if not isinstance(module_name, str):
+                return None
+            module = sys.modules.get(module_name)
+            if ismodule(module) and module.__dict__ is object_globals:
+                return module
+            return None
 
     # Try the filename to modulename cache
     if _filename is not None and _filename in modulesbyfile:
