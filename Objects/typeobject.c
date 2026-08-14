@@ -12038,6 +12038,7 @@ fixup_slot_dispatchers(PyTypeObject *type)
         int rv = update_one_slot(type, p, &p, NULL);
         // always returns 0 if queued_updates == NULL
         assert (rv == 0);
+        (void)rv;
     }
 }
 
