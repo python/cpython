@@ -1,0 +1,1 @@
+Fall back to the kernel-provided __NR_getrandom in configure checks, os.getrandom(), and interpreter entropy handling when libc SYS_getrandom is not available.
