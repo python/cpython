@@ -1760,6 +1760,10 @@ Blob objects
 
    .. versionadded:: 3.11
 
+   .. versionchanged:: next
+      :class:`Blob` now supports negative-step slices
+      (e.g. ``blob[9:0:-2]``) for both reading and writing.
+
    A :class:`Blob` instance is a :term:`file-like object`
    that can read and write data in an SQLite :abbr:`BLOB (Binary Large OBject)`.
    Call :func:`len(blob) <len>` to get the size (number of bytes) of the blob.
