@@ -170,7 +170,7 @@ helpful.
 To add Python to an iOS Xcode project:
 
 1. Build or obtain a Python ``XCFramework``. See the instructions in
-   :source:`Apple/iOS/README.md` (in the CPython source distribution) for details on
+   :source:`Platforms/Apple/iOS/README.md` (in the CPython source distribution) for details on
    how to build a Python ``XCFramework``. At a minimum, you will need a build
    that supports ``arm64-apple-ios``, plus one of either
    ``arm64-apple-ios-simulator`` or ``x86_64-apple-ios-simulator``.
@@ -266,13 +266,13 @@ modules in your app, some additional steps will be required:
 Testing a Python package
 ------------------------
 
-The CPython source tree contains :source:`a testbed project <Apple/iOS/testbed>` that
+The CPython source tree contains :source:`a testbed project <Platforms/Apple/testbed>` that
 is used to run the CPython test suite on the iOS simulator. This testbed can also
 be used as a testbed project for running your Python library's test suite on iOS.
 
-After building or obtaining an iOS XCFramework (see :source:`Apple/iOS/README.md`
+After building or obtaining an iOS XCFramework (see :source:`Platforms/Apple/iOS/README.md`
 for details), create a clone of the Python iOS testbed project. If you used the
-``Apple`` build script to build the XCframework, you can run:
+``Platforms/Apple`` build script to build the XCframework, you can run:
 
 .. code-block:: bash
 
@@ -282,7 +282,7 @@ Or, if you've sourced your own XCframework, by running:
 
 .. code-block:: bash
 
-    $ python Apple/testbed clone --platform iOS --framework <path/to/Python.xcframework> --app <path/to/module1> --app <path/to/module2> app-testbed
+    $ python Platforms/Apple/testbed clone --platform iOS --framework <path/to/Python.xcframework> --app <path/to/module1> --app <path/to/module2> app-testbed
 
 Any folders specified with the ``--app`` flag will be copied into the cloned
 testbed project. The resulting testbed will be created in the ``app-testbed``

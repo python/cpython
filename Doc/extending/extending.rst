@@ -1106,7 +1106,7 @@ Finally it should be mentioned that Capsules offer additional functionality,
 which is especially useful for memory allocation and deallocation of the pointer
 stored in a Capsule. The details are described in the Python/C API Reference
 Manual in the section :ref:`capsules` and in the implementation of Capsules (files
-:file:`Include/pycapsule.h` and :file:`Objects/pycapsule.c` in the Python source
+:file:`Include/pycapsule.h` and :file:`Objects/capsule.c` in the Python source
 code distribution).
 
 .. rubric:: Footnotes
