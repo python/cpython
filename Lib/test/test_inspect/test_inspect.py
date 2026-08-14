@@ -6340,7 +6340,7 @@ class TestSignatureDefinitions(unittest.TestCase):
         # depends on the number of the arguments.
         methods_no_signature = {'ioctl', 'sendto', 'setsockopt'}
         # These have parameters with unrepresentable default values.
-        methods_unsupported_signature = {'listen', 'sendmsg', 'sendmsg_afalg'}
+        methods_unsupported_signature = {'listen', 'sendmsg_afalg'}
         defined = vars(socket.SocketType).keys()
         self._test_module_has_signatures(socket,
                 no_signature, unsupported_signature,
