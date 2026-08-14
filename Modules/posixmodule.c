@@ -160,6 +160,9 @@
 #ifdef HAVE_SYS_SYSCALL_H
 #  include <sys/syscall.h>        // syscall(), __NR_xxx syscall numbers
 #endif
+#if !defined(SYS_getrandom) && defined(__NR_getrandom)
+#  define SYS_getrandom __NR_getrandom
+#endif
 
 #ifdef HAVE_POSIX_SPAWN
 #  include <spawn.h>              // posix_spawn()
@@ -17440,7 +17443,7 @@ os_getrandom_impl(PyObject *module, Py_ssize_t size, unsigned int flags)
 #ifdef HAVE_GETRANDOM
         n = getrandom(data, size, flags);
 #else
-        n = syscall(__NR_getrandom, data, size, flags);
+        n = syscall(SYS_getrandom, data, size, flags);
 #endif
         if (n < 0 && errno == EINTR) {
             if (PyErr_CheckSignals() < 0) {

@@ -23,7 +23,10 @@
 #    include <sys/random.h>       // getrandom()
 #  endif
 #  if !defined(HAVE_GETRANDOM) && defined(HAVE_GETRANDOM_SYSCALL)
-#    include <sys/syscall.h>      // __NR_getrandom
+#    include <sys/syscall.h>      // __NR_getrandom, SYS_getrandom
+#    if !defined(SYS_getrandom) && defined(__NR_getrandom)
+#      define SYS_getrandom __NR_getrandom
+#    endif
 #  endif
 #endif
 
@@ -128,11 +131,11 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
 #else
         if (raise) {
             Py_BEGIN_ALLOW_THREADS
-            n = syscall(__NR_getrandom, dest, n, flags);
+            n = syscall(SYS_getrandom, dest, n, flags);
             Py_END_ALLOW_THREADS
         }
         else {
-            n = syscall(__NR_getrandom, dest, n, flags);
+            n = syscall(SYS_getrandom, dest, n, flags);
         }
 #  ifdef _Py_MEMORY_SANITIZER
         if (n > 0) {

@@ -7807,12 +7807,16 @@ AC_LINK_IFELSE(
     #include <sys/syscall.h>
     #include <linux/random.h>
 
+    #if !defined(SYS_getrandom) && defined(__NR_getrandom)
+    #  define SYS_getrandom __NR_getrandom
+    #endif
+
     int main(void) {
         char buffer[1];
         const size_t buflen = sizeof(buffer);
         const int flags = GRND_NONBLOCK;
         /* ignore the result, Python checks for ENOSYS and EAGAIN at runtime */
-        (void)syscall(__NR_getrandom, buffer, buflen, flags);
+        (void)syscall(SYS_getrandom, buffer, buflen, flags);
         return 0;
     }
   ]])
