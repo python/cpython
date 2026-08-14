@@ -3094,6 +3094,9 @@ class TestCEval(unittest.TestCase):
         self.assertEqual(lines.count("DESTROY list"), 2)
 
 
+# _Py_CheckSingletons() is only built if the NDEBUG macro is not defined
+@unittest.skipUnless(support.built_with_c_assertions(),
+                     'Python built without C assertions')
 class TestCheckSingleton(unittest.TestCase):
     # Test _Py_CheckSingletons() which is called by gc.collect()
     #

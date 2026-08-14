@@ -3626,7 +3626,7 @@ _Py_CheckSingletons(void)
 
     for (ival=0; ival <= 255; ival++) {
         obj = (PyObject*)&_Py_SINGLETON(bytes_characters)[ival];
-        check_singleton_bytes(obj, 1, ival);
+        check_singleton_bytes(obj, 1, (unsigned char)ival);
     }
 
     // Empty Unicode string ('')
