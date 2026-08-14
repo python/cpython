@@ -448,7 +448,7 @@ assemble_emit(struct assembler *a, instr_sequence *instrs,
     RETURN_IF_ERROR(_PyCompile_ConstCacheMergeOne(const_cache, &a->a_except_table));
 
     a->a_linetable = PyBytesWriter_FinishWithSize(a->a_linetable_writer,
-                                                      a->a_location_off);
+                                                  a->a_location_off);
     a->a_linetable_writer = NULL;
     if (a->a_linetable == NULL) {
         return ERROR;
