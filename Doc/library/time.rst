@@ -128,7 +128,7 @@ Functions
    :func:`gmtime` or :func:`localtime` to a string of the following
    form: ``'Sun Jun 20 23:21:05 1993'``. The day field is two characters long
    and is space padded if the day is a single digit,
-   e.g.: ``'Wed Jun  9 04:26:40 1993'``.
+   for example: ``'Wed Jun  9 04:26:40 1993'``.
 
    If *time_tuple* is not provided,
    the current time as returned by :func:`localtime` is used.
