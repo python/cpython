@@ -3497,7 +3497,6 @@ def check_immutable_type(testcase, type):
 def built_with_c_assertions():
     # Check if Python was built in debug mode or using --with-assertions
     if MS_WINDOWS:
-        Py_DEBUG = hasattr(sys, 'gettotalrefcount')
         return Py_DEBUG
 
     PY_CFLAGS = sysconfig.get_config_var('PY_CFLAGS')
