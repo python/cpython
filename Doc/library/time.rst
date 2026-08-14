@@ -139,7 +139,7 @@ Functions
       Unlike the C function of the same name, :func:`asctime` does not add a
       trailing newline.
 
-.. function:: pthread_getcpuclockid(thread_id)
+.. function:: pthread_getcpuclockid(thread_id, /)
 
    Return the *clk_id* of the thread-specific CPU-time clock for the specified *thread_id*.
 
@@ -158,7 +158,7 @@ Functions
 
    .. versionadded:: 3.7
 
-.. function:: clock_getres(clk_id)
+.. function:: clock_getres(clk_id, /)
 
    Return the resolution (precision) of the specified clock *clk_id*.  Refer to
    :ref:`time-clock-id-constants` for a list of accepted values for *clk_id*.
@@ -168,7 +168,7 @@ Functions
    .. versionadded:: 3.3
 
 
-.. function:: clock_gettime(clk_id) -> float
+.. function:: clock_gettime(clk_id, /) -> float
 
    Return the time of the specified clock *clk_id*.  Refer to
    :ref:`time-clock-id-constants` for a list of accepted values for *clk_id*.
@@ -181,7 +181,7 @@ Functions
    .. versionadded:: 3.3
 
 
-.. function:: clock_gettime_ns(clk_id) -> int
+.. function:: clock_gettime_ns(clk_id, /) -> int
 
    Similar to :func:`clock_gettime` but return time as nanoseconds.
 
@@ -190,7 +190,7 @@ Functions
    .. versionadded:: 3.7
 
 
-.. function:: clock_settime(clk_id, time)
+.. function:: clock_settime(clk_id, time, /)
 
    Set the time of the specified clock *clk_id*.  Currently,
    :data:`CLOCK_REALTIME` is the only accepted value for *clk_id*.
@@ -206,7 +206,7 @@ Functions
       Accepts any real number as *time*, not only integer or float.
 
 
-.. function:: clock_settime_ns(clk_id, time: int)
+.. function:: clock_settime_ns(clk_id, time: int, /)
 
    Similar to :func:`clock_settime` but set time with nanoseconds.
 
@@ -231,7 +231,7 @@ Functions
       Accepts any real number, not only integer or float.
 
 
-.. function:: get_clock_info(name)
+.. function:: get_clock_info(name, /)
 
    Get information on the specified clock as a namespace object.
    Supported clock names and the corresponding functions to read their value
