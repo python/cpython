@@ -706,6 +706,14 @@ class ErrorHandlingTests(LazyImportTestCase):
         """)
         assert_python_ok("-c", code)
 
+    def test_non_package_lazily_imported_as(self):
+        """Doing a dotted lazy import as still works"""
+        code = textwrap.dedent("""
+            lazy import math.pi as pi
+            pi
+        """)
+        assert_python_ok("-c", code)
+
     def test_missing_attribute_raises_import_error(self):
         """Accessing a nonexistent lazy name via from import raises ImportError."""
         code = textwrap.dedent("""
