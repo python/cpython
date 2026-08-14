@@ -199,6 +199,10 @@ class _Extra:
     FIELD_STRUCT = struct.Struct('<HH')
 
     @classmethod
+    def _handle_bad_field(cls, xid, xlen):
+        raise BadZipFile("Corrupt extra field %04x (size=%d)" % (xid, xlen))
+
+    @classmethod
     def iter(cls, data, validate=False):
         """Iter through and yield each (field, id)."""
         # early return for empty extra data
@@ -213,8 +217,7 @@ class _Extra:
                 xid, xlen = None, 0
             else:
                 if validate and pos + 4 + xlen > data_len:
-                    raise BadZipFile(
-                        "Corrupt extra field %04x (size=%d)" % (xid, xlen))
+                    cls._handle_bad_field(xid, xlen)
             yield data[pos:pos + 4 + xlen], xid
             pos += 4 + xlen
 
