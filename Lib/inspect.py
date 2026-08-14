@@ -943,7 +943,22 @@ def getmodule(object, _filename=None):
             if not isinstance(module_name, str):
                 return None
             module = sys.modules.get(module_name)
-            if ismodule(module) and module.__dict__ is object_globals:
+            if not (ismodule(module) and module.__dict__ is object_globals):
+                return None
+            module_file = getattr(module, '__file__', None)
+            if module_file is None:
+                return None
+            try:
+                file = getabsfile(object, _filename)
+            except (TypeError, FileNotFoundError):
+                return None
+            if object.f_code.co_filename == module_file:
+                return module
+            try:
+                module_file = getabsfile(module)
+            except (TypeError, FileNotFoundError):
+                return None
+            if file == module_file or file == os.path.realpath(module_file):
                 return module
             return None
 
