@@ -3940,19 +3940,6 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
         goto error;
     }
 
-    Py_ssize_t dot = -1;
-    int full = 0;
-    if (lz->lz_attr != NULL) {
-        full = 1;
-    }
-    if (!full) {
-        dot = PyUnicode_FindChar(lz->lz_from, '.', 0,
-                                 PyUnicode_GET_LENGTH(lz->lz_from), 1);
-    }
-    if (dot < 0) {
-        full = 1;
-    }
-
     if (lz->lz_attr != NULL) {
         if (PyUnicode_Check(lz->lz_attr)) {
             fromlist = PyTuple_New(1);
@@ -3978,23 +3965,10 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
         PyErr_SetString(PyExc_ImportError, "__import__ not found");
         goto error;
     }
-    if (full) {
-        obj = _PyEval_ImportNameWithImport(
-            tstate, import_func, globals, globals,
-            lz->lz_from, fromlist, _PyLong_GetZero()
-        );
-    }
-    else {
-        PyObject *name = PyUnicode_Substring(lz->lz_from, 0, dot);
-        if (name == NULL) {
-            goto error;
-        }
-        obj = _PyEval_ImportNameWithImport(
-            tstate, import_func, globals, globals,
-            name, fromlist, _PyLong_GetZero()
-        );
-        Py_DECREF(name);
-    }
+    obj = _PyEval_ImportNameWithImport(
+        tstate, import_func, globals, globals,
+        lz->lz_from, fromlist, _PyLong_GetZero()
+    );
     if (obj == NULL) {
         goto error;
     }

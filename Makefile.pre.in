@@ -2690,6 +2690,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_lazy_import/data/pkg \
 		test/test_lazy_import/data/badsyntax \
 		test/test_lazy_import/data/circular_import_pkg \
+		test/test_lazy_import/data/lazypkg \
 		test/test_lazy_import/data/metasyntactic \
 		test/test_lazy_import/data/metasyntactic/foo \
 		test/test_lazy_import/data/metasyntactic/foo/ack \
