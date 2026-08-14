@@ -157,6 +157,8 @@ w_reserve(WFILE *p, Py_ssize_t needed)
     }
     size += delta;
     if (PyBytesWriter_Resize(p->writer, size) != 0) {
+        PyBytesWriter_Discard(p->writer);
+        p->writer = NULL;
         p->end = p->ptr = p->buf = NULL;
         return 0;
     }
@@ -1919,13 +1921,18 @@ _PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code)
     }
     w_object(x, &wf);
     w_clear_refs(&wf);
+
     if (wf.writer != NULL) {
+        assert(wf.ptr != NULL);
         const char *base = PyBytesWriter_GetData(wf.writer);
         if (PyBytesWriter_Resize(wf.writer, (Py_ssize_t)(wf.ptr - base)) < 0) {
             PyBytesWriter_Discard(wf.writer);
+            // PyBytesWriter_Resize() sets an exception
+            assert(PyErr_Occurred());
             return NULL;
         }
     }
+
     if (wf.error != WFERR_OK) {
         PyBytesWriter_Discard(wf.writer);
         switch (wf.error) {
@@ -1948,6 +1955,13 @@ _PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code)
         }
         return NULL;
     }
+
+    if (wf.writer == NULL) {
+        // In w_reserve(), PyBytesWriter_Resize() failed with an exception set
+        assert(PyErr_Occurred());
+        return NULL;
+    }
+
     return PyBytesWriter_Finish(wf.writer);
 }
 
