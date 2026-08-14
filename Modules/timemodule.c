@@ -995,7 +995,7 @@ error:
 #undef time_char
 #undef format_time
 PyDoc_STRVAR(strftime_doc,
-"strftime(format[, tuple]) -> string\n\
+"strftime(format[, time_tuple]) -> string\n\
 \n\
 Convert a time tuple to a string according to a format specification.\n\
 See the library reference manual for formatting codes. When the time tuple\n\
@@ -1020,7 +1020,7 @@ time_strptime(PyObject *self, PyObject *args)
 
 
 PyDoc_STRVAR(strptime_doc,
-"strptime(string, format) -> struct_time\n\
+"strptime(string[, format]) -> struct_time\n\
 \n\
 Parse a string to a time tuple according to a format specification.\n\
 See the library reference manual for formatting codes (same as\n\

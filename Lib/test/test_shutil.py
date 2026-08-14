@@ -32,6 +32,7 @@ except ImportError:
 from test import support
 from test.support import os_helper, socket_helper
 from test.support.os_helper import TESTFN, FakePath
+from test.support.import_helper import ensure_lazy_imports
 
 TESTFN2 = TESTFN + "2"
 TESTFN_SRC = TESTFN + "_SRC"
@@ -2361,6 +2362,14 @@ class TestArchives(BaseTest, unittest.TestCase):
         # let's leave a clean state
         unregister_unpack_format('Boo2')
         self.assertEqual(get_unpack_formats(), formats)
+
+    def test_compression_wrappers_not_imported_by_shutil(self):
+        # gh-154904: Importing shutil must not pull in the compression
+        # wrappers: they are only needed once an archive is actually created
+        # or extracted, and importing them measurably slows down every
+        # process that uses shutil.
+        ensure_lazy_imports("shutil",
+                            {"bz2", "lzma", "compression", "compression.zstd"})
 
 
 class TestMisc(BaseTest, unittest.TestCase):
