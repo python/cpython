@@ -1142,6 +1142,8 @@ with_c_locale_coercion
 with_valgrind
 with_dtrace
 enable_epoll
+with_zlib
+with_bzip2
 with_libm
 with_libc
 enable_big_digits
@@ -1964,6 +1966,12 @@ Optional Packages:
                           (default is yes)
   --with-valgrind         enable Valgrind support (default is no)
   --with-dtrace           enable DTrace support (default is no)
+  --with(out)-zlib[=zlib|zlib-ng|zlib-rs|no]
+                          select the zlib implementation to link against, or
+                          disable zlib support (default: auto)
+  --with(out)-bzip2[=bzip2|bzip2-rs|no]
+                          select the bzip2 implementation to link against, or
+                          disable bzip2 support (default: auto)
   --with-libm=STRING      override libm math library to STRING (default is
                           system-dependent)
   --with-libc=STRING      override libc C library to STRING (default is
@@ -22837,6 +22845,30 @@ fi
 
 
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-zlib" >&5
+printf %s "checking for --with-zlib... " >&6; }
+
+# Check whether --with-zlib was given.
+if test ${with_zlib+y}
+then :
+  withval=$with_zlib; case $with_zlib in #(
+  yes|auto) :
+    with_zlib=auto ;; #(
+  zlib|zlib-ng|zlib-rs|no) :
+     ;; #(
+  *) :
+    as_fn_error $? "proper usage is --with(out)-zlib[=zlib|zlib-ng|zlib-rs|no]" "$LINENO" 5 ;;
+esac
+else case e in #(
+  e) with_zlib=auto ;;
+esac
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_zlib" >&5
+printf "%s\n" "$with_zlib" >&6; }
+
+case $with_zlib in #(
+  auto|zlib) :
 
 
 
@@ -22849,23 +22881,47 @@ then :
 fi
 
 
+ ;; #(
+  *) :
+     ;;
+esac
 
+if test "x$with_zlib" = xzlib-rs
+then :
 
+  zlib_name="libz_rs"
+  zlib_version="0.6.0"
+  zlib_libname="z_rs"
+
+else case e in #(
+  e)
+  zlib_name="zlib"
+  zlib_version="1.2.2.1"
+  zlib_libname="z"
+ ;;
+esac
+fi
+
+if test "x$with_zlib" = xno
+then :
+  have_zlib=no
+else case e in #(
+  e)
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for zlib >= 1.2.2.1" >&5
-printf %s "checking for zlib >= 1.2.2.1... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $zlib_name >= $zlib_version" >&5
+printf %s "checking for $zlib_name >= $zlib_version... " >&6; }
 
 if test -n "$ZLIB_CFLAGS"; then
     pkg_cv_ZLIB_CFLAGS="$ZLIB_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"zlib >= 1.2.2.1\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "zlib >= 1.2.2.1") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"\$zlib_name >= \$zlib_version\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "$zlib_name >= $zlib_version") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_ZLIB_CFLAGS=`$PKG_CONFIG --cflags "zlib >= 1.2.2.1" 2>/dev/null`
+  pkg_cv_ZLIB_CFLAGS=`$PKG_CONFIG --cflags "$zlib_name >= $zlib_version" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -22877,12 +22933,12 @@ if test -n "$ZLIB_LIBS"; then
     pkg_cv_ZLIB_LIBS="$ZLIB_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"zlib >= 1.2.2.1\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "zlib >= 1.2.2.1") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"\$zlib_name >= \$zlib_version\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "$zlib_name >= $zlib_version") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_ZLIB_LIBS=`$PKG_CONFIG --libs "zlib >= 1.2.2.1" 2>/dev/null`
+  pkg_cv_ZLIB_LIBS=`$PKG_CONFIG --libs "$zlib_name >= $zlib_version" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -22903,9 +22959,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-                ZLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "zlib >= 1.2.2.1" 2>&1`
+                ZLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "$zlib_name >= $zlib_version" 2>&1`
         else
-                ZLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "zlib >= 1.2.2.1" 2>&1`
+                ZLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "$zlib_name >= $zlib_version" 2>&1`
         fi
         # Put the nasty error message in config.log where it belongs
         echo "$ZLIB_PKG_ERRORS" >&5
@@ -22927,14 +22983,15 @@ then :
   printf "%s\n" "#define HAVE_ZLIB_H 1" >>confdefs.h
 
       py_check_lib_save_LIBS=$LIBS
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
-printf %s "checking for gzread in -lz... " >&6; }
-if test ${ac_cv_lib_z_gzread+y}
+as_ac_Lib=`printf "%s\n" "ac_cv_lib_$zlib_libname""_gzread" | sed "$as_sed_sh"`
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gzread in -l$zlib_libname" >&5
+printf %s "checking for gzread in -l$zlib_libname... " >&6; }
+if eval test \${$as_ac_Lib+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-lz  $LIBS"
+LIBS="-l$zlib_libname  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -22958,9 +23015,9 @@ return gzread ();
 _ACEOF
 if ac_fn_c_try_link "$LINENO"
 then :
-  ac_cv_lib_z_gzread=yes
+  eval "$as_ac_Lib=yes"
 else case e in #(
-  e) ac_cv_lib_z_gzread=no ;;
+  e) eval "$as_ac_Lib=no" ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
@@ -22968,9 +23025,10 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
 LIBS=$ac_check_lib_save_LIBS ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_gzread" >&5
-printf "%s\n" "$ac_cv_lib_z_gzread" >&6; }
-if test "x$ac_cv_lib_z_gzread" = xyes
+eval ac_res=\$$as_ac_Lib
+	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+printf "%s\n" "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"
 then :
   have_zlib=yes
 else case e in #(
@@ -22991,16 +23049,17 @@ done
 then :
 
       ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
-      ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
+      ZLIB_LIBS=${ZLIB_LIBS-"-l$zlib_libname"}
       py_check_lib_save_LIBS=$LIBS
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
-printf %s "checking for inflateCopy in -lz... " >&6; }
-if test ${ac_cv_lib_z_inflateCopy+y}
+as_ac_Lib=`printf "%s\n" "ac_cv_lib_$zlib_libname""_inflateCopy" | sed "$as_sed_sh"`
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -l$zlib_libname" >&5
+printf %s "checking for inflateCopy in -l$zlib_libname... " >&6; }
+if eval test \${$as_ac_Lib+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-lz  $LIBS"
+LIBS="-l$zlib_libname  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -23024,9 +23083,9 @@ return inflateCopy ();
 _ACEOF
 if ac_fn_c_try_link "$LINENO"
 then :
-  ac_cv_lib_z_inflateCopy=yes
+  eval "$as_ac_Lib=yes"
 else case e in #(
-  e) ac_cv_lib_z_inflateCopy=no ;;
+  e) eval "$as_ac_Lib=no" ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
@@ -23034,9 +23093,10 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
 LIBS=$ac_check_lib_save_LIBS ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_inflateCopy" >&5
-printf "%s\n" "$ac_cv_lib_z_inflateCopy" >&6; }
-if test "x$ac_cv_lib_z_inflateCopy" = xyes
+eval ac_res=\$$as_ac_Lib
+	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+printf "%s\n" "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"
 then :
   printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
 
@@ -23074,14 +23134,15 @@ then :
   printf "%s\n" "#define HAVE_ZLIB_H 1" >>confdefs.h
 
       py_check_lib_save_LIBS=$LIBS
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
-printf %s "checking for gzread in -lz... " >&6; }
-if test ${ac_cv_lib_z_gzread+y}
+as_ac_Lib=`printf "%s\n" "ac_cv_lib_$zlib_libname""_gzread" | sed "$as_sed_sh"`
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gzread in -l$zlib_libname" >&5
+printf %s "checking for gzread in -l$zlib_libname... " >&6; }
+if eval test \${$as_ac_Lib+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-lz  $LIBS"
+LIBS="-l$zlib_libname  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -23105,9 +23166,9 @@ return gzread ();
 _ACEOF
 if ac_fn_c_try_link "$LINENO"
 then :
-  ac_cv_lib_z_gzread=yes
+  eval "$as_ac_Lib=yes"
 else case e in #(
-  e) ac_cv_lib_z_gzread=no ;;
+  e) eval "$as_ac_Lib=no" ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
@@ -23115,9 +23176,10 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
 LIBS=$ac_check_lib_save_LIBS ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_gzread" >&5
-printf "%s\n" "$ac_cv_lib_z_gzread" >&6; }
-if test "x$ac_cv_lib_z_gzread" = xyes
+eval ac_res=\$$as_ac_Lib
+	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+printf "%s\n" "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"
 then :
   have_zlib=yes
 else case e in #(
@@ -23138,16 +23200,17 @@ done
 then :
 
       ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
-      ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
+      ZLIB_LIBS=${ZLIB_LIBS-"-l$zlib_libname"}
       py_check_lib_save_LIBS=$LIBS
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
-printf %s "checking for inflateCopy in -lz... " >&6; }
-if test ${ac_cv_lib_z_inflateCopy+y}
+as_ac_Lib=`printf "%s\n" "ac_cv_lib_$zlib_libname""_inflateCopy" | sed "$as_sed_sh"`
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -l$zlib_libname" >&5
+printf %s "checking for inflateCopy in -l$zlib_libname... " >&6; }
+if eval test \${$as_ac_Lib+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-lz  $LIBS"
+LIBS="-l$zlib_libname  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -23171,9 +23234,9 @@ return inflateCopy ();
 _ACEOF
 if ac_fn_c_try_link "$LINENO"
 then :
-  ac_cv_lib_z_inflateCopy=yes
+  eval "$as_ac_Lib=yes"
 else case e in #(
-  e) ac_cv_lib_z_inflateCopy=no ;;
+  e) eval "$as_ac_Lib=no" ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
@@ -23181,9 +23244,10 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
 LIBS=$ac_check_lib_save_LIBS ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_inflateCopy" >&5
-printf "%s\n" "$ac_cv_lib_z_inflateCopy" >&6; }
-if test "x$ac_cv_lib_z_inflateCopy" = xyes
+eval ac_res=\$$as_ac_Lib
+	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+printf "%s\n" "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"
 then :
   printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
 
@@ -23212,6 +23276,51 @@ printf "%s\n" "yes" >&6; }
 
 
 fi
+ ;;
+esac
+fi
+
+if test "x$with_zlib" = xzlib-ng
+then :
+  if test "x$have_zlib" = xyes
+then :
+
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
+    ac_fn_check_decl "$LINENO" "ZLIBNG_VERSION" "ac_cv_have_decl_ZLIBNG_VERSION" "#include <zlib.h>
+" "$ac_c_undeclared_builtin_options" "CFLAGS"
+if test "x$ac_cv_have_decl_ZLIBNG_VERSION" = xyes
+then :
+
+else case e in #(
+  e) as_fn_error $? "--with-zlib=zlib-ng: the detected zlib library is not zlib-ng" "$LINENO" 5 ;;
+esac
+fi
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
+fi
+fi
+
+case $with_zlib in #(
+  auto|no) :
+     ;; #(
+  *) :
+    if test "x$have_zlib" = xno
+then :
+  as_fn_error $? "--with-zlib=$with_zlib requested but $zlib_name was not found" "$LINENO" 5
+fi ;;
+esac
 
 if test "x$have_zlib" = xyes
 then :
@@ -23221,6 +23330,30 @@ then :
 
 fi
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-bzip2" >&5
+printf %s "checking for --with-bzip2... " >&6; }
+
+# Check whether --with-bzip2 was given.
+if test ${with_bzip2+y}
+then :
+  withval=$with_bzip2; case $with_bzip2 in #(
+  yes|auto) :
+    with_bzip2=auto ;; #(
+  bzip2|bzip2-rs|no) :
+     ;; #(
+  *) :
+    as_fn_error $? "proper usage is --with(out)-bzip2[=bzip2|bzip2-rs|no]" "$LINENO" 5 ;;
+esac
+else case e in #(
+  e) with_bzip2=auto ;;
+esac
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_bzip2" >&5
+printf "%s\n" "$with_bzip2" >&6; }
+
+case $with_bzip2 in #(
+  auto|bzip2) :
 
 
 
@@ -23233,23 +23366,45 @@ then :
 fi
 
 
+ ;; #(
+  *) :
+     ;;
+esac
 
+if test "x$with_bzip2" = xbzip2-rs
+then :
 
+  bzip2_name="libbz2_rs"
+  bzip2_libname="bz2_rs"
+
+else case e in #(
+  e)
+  bzip2_name="bzip2"
+  bzip2_libname="bz2"
+ ;;
+esac
+fi
+
+if test "x$with_bzip2" = xno
+then :
+  have_bzip2=no
+else case e in #(
+  e)
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for bzip2" >&5
-printf %s "checking for bzip2... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $bzip2_name" >&5
+printf %s "checking for $bzip2_name... " >&6; }
 
 if test -n "$BZIP2_CFLAGS"; then
     pkg_cv_BZIP2_CFLAGS="$BZIP2_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"bzip2\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "bzip2") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"\$bzip2_name\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "$bzip2_name") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_BZIP2_CFLAGS=`$PKG_CONFIG --cflags "bzip2" 2>/dev/null`
+  pkg_cv_BZIP2_CFLAGS=`$PKG_CONFIG --cflags "$bzip2_name" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -23261,12 +23416,12 @@ if test -n "$BZIP2_LIBS"; then
     pkg_cv_BZIP2_LIBS="$BZIP2_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"bzip2\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "bzip2") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"\$bzip2_name\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "$bzip2_name") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_BZIP2_LIBS=`$PKG_CONFIG --libs "bzip2" 2>/dev/null`
+  pkg_cv_BZIP2_LIBS=`$PKG_CONFIG --libs "$bzip2_name" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -23287,9 +23442,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-                BZIP2_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "bzip2" 2>&1`
+                BZIP2_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "$bzip2_name" 2>&1`
         else
-                BZIP2_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "bzip2" 2>&1`
+                BZIP2_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "$bzip2_name" 2>&1`
         fi
         # Put the nasty error message in config.log where it belongs
         echo "$BZIP2_PKG_ERRORS" >&5
@@ -23310,14 +23465,15 @@ if test "x$ac_cv_header_bzlib_h" = xyes
 then :
   printf "%s\n" "#define HAVE_BZLIB_H 1" >>confdefs.h
 
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for BZ2_bzCompress in -lbz2" >&5
-printf %s "checking for BZ2_bzCompress in -lbz2... " >&6; }
-if test ${ac_cv_lib_bz2_BZ2_bzCompress+y}
+      as_ac_Lib=`printf "%s\n" "ac_cv_lib_$bzip2_libname""_BZ2_bzCompress" | sed "$as_sed_sh"`
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for BZ2_bzCompress in -l$bzip2_libname" >&5
+printf %s "checking for BZ2_bzCompress in -l$bzip2_libname... " >&6; }
+if eval test \${$as_ac_Lib+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-lbz2  $LIBS"
+LIBS="-l$bzip2_libname  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -23341,9 +23497,9 @@ return BZ2_bzCompress ();
 _ACEOF
 if ac_fn_c_try_link "$LINENO"
 then :
-  ac_cv_lib_bz2_BZ2_bzCompress=yes
+  eval "$as_ac_Lib=yes"
 else case e in #(
-  e) ac_cv_lib_bz2_BZ2_bzCompress=no ;;
+  e) eval "$as_ac_Lib=no" ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
@@ -23351,9 +23507,10 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
 LIBS=$ac_check_lib_save_LIBS ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_bz2_BZ2_bzCompress" >&5
-printf "%s\n" "$ac_cv_lib_bz2_BZ2_bzCompress" >&6; }
-if test "x$ac_cv_lib_bz2_BZ2_bzCompress" = xyes
+eval ac_res=\$$as_ac_Lib
+	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+printf "%s\n" "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"
 then :
   have_bzip2=yes
 else case e in #(
@@ -23372,7 +23529,7 @@ done
 then :
 
       BZIP2_CFLAGS=${BZIP2_CFLAGS-""}
-      BZIP2_LIBS=${BZIP2_LIBS-"-lbz2"}
+      BZIP2_LIBS=${BZIP2_LIBS-"-l$bzip2_libname"}
 
 fi
 
@@ -23402,14 +23559,15 @@ if test "x$ac_cv_header_bzlib_h" = xyes
 then :
   printf "%s\n" "#define HAVE_BZLIB_H 1" >>confdefs.h
 
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for BZ2_bzCompress in -lbz2" >&5
-printf %s "checking for BZ2_bzCompress in -lbz2... " >&6; }
-if test ${ac_cv_lib_bz2_BZ2_bzCompress+y}
+      as_ac_Lib=`printf "%s\n" "ac_cv_lib_$bzip2_libname""_BZ2_bzCompress" | sed "$as_sed_sh"`
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for BZ2_bzCompress in -l$bzip2_libname" >&5
+printf %s "checking for BZ2_bzCompress in -l$bzip2_libname... " >&6; }
+if eval test \${$as_ac_Lib+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-lbz2  $LIBS"
+LIBS="-l$bzip2_libname  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -23433,9 +23591,9 @@ return BZ2_bzCompress ();
 _ACEOF
 if ac_fn_c_try_link "$LINENO"
 then :
-  ac_cv_lib_bz2_BZ2_bzCompress=yes
+  eval "$as_ac_Lib=yes"
 else case e in #(
-  e) ac_cv_lib_bz2_BZ2_bzCompress=no ;;
+  e) eval "$as_ac_Lib=no" ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
@@ -23443,9 +23601,10 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
 LIBS=$ac_check_lib_save_LIBS ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_bz2_BZ2_bzCompress" >&5
-printf "%s\n" "$ac_cv_lib_bz2_BZ2_bzCompress" >&6; }
-if test "x$ac_cv_lib_bz2_BZ2_bzCompress" = xyes
+eval ac_res=\$$as_ac_Lib
+	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+printf "%s\n" "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"
 then :
   have_bzip2=yes
 else case e in #(
@@ -23464,7 +23623,7 @@ done
 then :
 
       BZIP2_CFLAGS=${BZIP2_CFLAGS-""}
-      BZIP2_LIBS=${BZIP2_LIBS-"-lbz2"}
+      BZIP2_LIBS=${BZIP2_LIBS-"-l$bzip2_libname"}
 
 fi
 
@@ -23482,6 +23641,19 @@ else
 printf "%s\n" "yes" >&6; }
         have_bzip2=yes
 fi
+ ;;
+esac
+fi
+
+case $with_bzip2 in #(
+  auto|no) :
+     ;; #(
+  *) :
+    if test "x$have_bzip2" = xno
+then :
+  as_fn_error $? "--with-bzip2=$with_bzip2 requested but $bzip2_name was not found" "$LINENO" 5
+fi ;;
+esac
 
 
 pkg_failed=no
