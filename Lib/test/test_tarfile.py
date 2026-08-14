@@ -1503,6 +1503,31 @@ class PaxReadTest(LongnameTest, ReadTest, unittest.TestCase):
         finally:
             tar.close()
 
+    def test_offset_after_global_header(self):
+        # gh-83869: a global header is a member of its own, the member which
+        # follows it keeps the offset of its own header.
+        rec = b"30 comment=global header here\n"
+        glob = tarfile.TarInfo("././@PaxHeader")
+        glob.type = tarfile.XGLTYPE
+        glob.size = len(rec)
+        buf = glob.tobuf(tarfile.USTAR_FORMAT)
+        buf += rec + b"\0" * (-len(rec) % tarfile.BLOCKSIZE)
+
+        member = tarfile.TarInfo("member")
+        data = b"hello\n"
+        member.size = len(data)
+        offset = len(buf)
+        buf += member.tobuf(tarfile.USTAR_FORMAT)
+        buf += data + b"\0" * (-len(data) % tarfile.BLOCKSIZE)
+        buf += b"\0" * (tarfile.BLOCKSIZE * 2)
+
+        with tarfile.open(fileobj=io.BytesIO(buf)) as tar:
+            tarinfo = tar.getmember("member")
+            self.assertEqual(tarinfo.offset, offset)
+            self.assertEqual(tarinfo.pax_headers.get("comment"),
+                             "global header here")
+            self.assertEqual(tar.extractfile(tarinfo).read(), data)
+
     def test_pax_number_fields(self):
         # All following number fields are read from the pax header.
         tar = tarfile.open(tarname, encoding="iso8859-1")

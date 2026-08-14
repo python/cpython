@@ -1625,7 +1625,7 @@ class TarInfo(object):
                     offset += next._block(size)
                 tarfile.offset = offset
 
-        next.offset = self.offset
+            next.offset = self.offset
 
         return next
 
