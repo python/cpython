@@ -1811,7 +1811,7 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
    (in particular, numeric IP addresses). */
 struct maybe_idna {
     PyObject *obj;
-    char *buf;
+    const char *buf;
 };
 
 static void
