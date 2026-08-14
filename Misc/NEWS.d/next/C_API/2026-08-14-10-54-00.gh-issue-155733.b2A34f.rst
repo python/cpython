@@ -1,0 +1,1 @@
+Validate keyword argument keys in ``operator.methodcaller`` and ``functools.partial`` to raise ``TypeError`` instead of crashing when non-string keys are passed.
