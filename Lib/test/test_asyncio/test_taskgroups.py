@@ -608,6 +608,39 @@ class BaseTestTaskGroup:
             get_error_types(cm.exception), {MyBaseExc, ZeroDivisionError}
         )
 
+    async def test_taskgroup_20b(self):
+        # Same setup as test_taskgroup_20 (a KeyboardInterrupt from the
+        # "async with" body itself, alongside a sibling task's exception):
+        # raising self._base_error out of _aexit() discards self._errors
+        # silently. The sibling's exception can't be raised alongside
+        # the KeyboardInterrupt (only one exception can propagate), but
+        # it must be reported via the loop's exception handler instead
+        # of being discarded silently. See gh-135736.
+        async def crash_soon():
+            await asyncio.sleep(0.1)
+            1 / 0
+
+        async def nested():
+            try:
+                await asyncio.sleep(10)
+            finally:
+                raise KeyboardInterrupt
+
+        async def runner():
+            async with taskgroups.TaskGroup() as g:
+                g.create_task(crash_soon())
+                await nested()
+
+        contexts = []
+        loop = asyncio.get_running_loop()
+        loop.set_exception_handler(lambda loop, context: contexts.append(context))
+
+        with self.assertRaises(KeyboardInterrupt):
+            await runner()
+
+        self.assertEqual(len(contexts), 1)
+        self.assertIsInstance(contexts[0]['exception'], ZeroDivisionError)
+
     async def _test_taskgroup_21(self):
         # This test doesn't work as asyncio, currently, doesn't
         # correctly propagate KeyboardInterrupt (or SystemExit) --

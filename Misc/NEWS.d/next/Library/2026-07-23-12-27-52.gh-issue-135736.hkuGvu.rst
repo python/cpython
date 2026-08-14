@@ -1,0 +1,5 @@
+Fix :class:`asyncio.TaskGroup` silently discarding errors from sibling
+tasks whenever the ``async with`` block exits with a :exc:`SystemExit` or
+:exc:`KeyboardInterrupt`. These errors are now reported via
+:meth:`loop.call_exception_handler() <asyncio.loop.call_exception_handler>`
+instead of being lost.
