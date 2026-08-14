@@ -351,12 +351,25 @@ error:
 }
 
 
+static PyObject *
+corrupt_bytes_singleton(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
+{
+    PyObject *obj = PyBytes_FromStringAndSize("a", 1);
+    assert(obj != NULL);
+    PyBytes_AS_STRING(obj)[0] = 'A';
+
+    PyGC_Collect();
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef test_methods[] = {
     {"bytes_resize", bytes_resize, METH_VARARGS},
     {"bytes_join", bytes_join, METH_VARARGS},
     {"byteswriter_abc", byteswriter_abc, METH_NOARGS},
     {"byteswriter_resize", byteswriter_resize, METH_NOARGS},
     {"byteswriter_highlevel", byteswriter_highlevel, METH_NOARGS},
+    {"corrupt_bytes_singleton", corrupt_bytes_singleton, METH_NOARGS},
     {NULL},
 };
 

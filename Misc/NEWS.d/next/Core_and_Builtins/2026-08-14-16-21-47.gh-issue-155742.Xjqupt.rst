@@ -1,0 +1,3 @@
+If Python is built in debug mode or with assertions, the garbage collector
+now checks singletons consistencty to detect data corruption in C extension.
+Patch by Victor Stinner.

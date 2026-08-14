@@ -1037,6 +1037,10 @@ static inline Py_ALWAYS_INLINE void _Py_INCREF_MORTAL(PyObject *op)
  * references. */
 PyAPI_FUNC(int) _PyObject_VisitType(PyObject *op, visitproc visit, void *arg);
 
+#ifndef NDEBUG
+extern void _Py_CheckSingletons(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

@@ -2313,6 +2313,12 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         invoke_gc_callback(tstate, "stop", generation, m, n, state.candidates, duration);
     }
 
+#ifndef NDEBUG
+    // Checking singletons consistency is unrelated to a garbage collection.
+    // Using a garbage collection to trigger this function is just convenient.
+    _Py_CheckSingletons();
+#endif
+
     assert(!_PyErr_Occurred(tstate));
     gcstate->frame = NULL;
     _Py_atomic_store_int(&gcstate->collecting, 0);
