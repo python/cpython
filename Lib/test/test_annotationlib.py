@@ -1714,7 +1714,7 @@ class TestCallAnnotateFunction(unittest.TestCase):
                 annotationlib.call_annotate_function(annotate, format=fmt)
 
     def test_generated_annotate_non_bool_compare_result(self):
-        class NonBool:
+        class NonBool(int):
             def __gt__(self, other):
                 return None
 
@@ -1723,7 +1723,7 @@ class TestCallAnnotateFunction(unittest.TestCase):
             pass
 
         self.assertEqual(
-            func.__annotate__(NonBool()),
+            func.__annotate__(NonBool(1)),
             {"x": int},
         )
 
@@ -1732,7 +1732,7 @@ class TestCallAnnotateFunction(unittest.TestCase):
             y: int
 
         self.assertEqual(
-            C.__annotate__(NonBool()),
+            C.__annotate__(NonBool(1)),
             {"y": int},
         )
 
@@ -1741,7 +1741,7 @@ class TestCallAnnotateFunction(unittest.TestCase):
         exec("z: int", ns)
 
         self.assertEqual(
-            ns["__annotate__"](NonBool()),
+            ns["__annotate__"](NonBool(1)),
             {"z": int},
         )
 
