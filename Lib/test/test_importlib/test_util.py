@@ -124,12 +124,6 @@ class ModuleFromSpecTests:
         module = self.util.module_from_spec(spec)
         self.assertEqual(module.__file__, spec.origin)
 
-    def test___cached__(self):
-        spec = self.machinery.ModuleSpec('test', object())
-        spec.cached = 'some/path'
-        spec.has_location = True
-        module = self.util.module_from_spec(spec)
-        self.assertEqual(module.__cached__, spec.cached)
 
 (Frozen_ModuleFromSpecTests,
  Source_ModuleFromSpecTests
@@ -334,6 +328,17 @@ class PEP3147Tests:
 
     tag = sys.implementation.cache_tag
 
+    def setUp(self):
+        # Most of these tests assume the default (unset) pycache prefix, so
+        # clear it for the duration of the test (e.g. when the test suite is
+        # run with PYTHONPYCACHEPREFIX set).  Tests that need a specific prefix
+        # set their own via util.temporary_pycache_prefix().
+        self._orig_pycache_prefix = sys.pycache_prefix
+        sys.pycache_prefix = None
+
+    def tearDown(self):
+        sys.pycache_prefix = self._orig_pycache_prefix
+
     @unittest.skipIf(sys.implementation.cache_tag is None,
                      'requires sys.implementation.cache_tag not be None')
     def test_cache_from_source(self):
@@ -351,6 +356,8 @@ class PEP3147Tests:
             with self.assertRaises(NotImplementedError):
                 self.util.cache_from_source('whatever.py')
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_cache_from_source_no_dot(self):
         # Directory with a dot, filename without dot.
         path = os.path.join('foo.bar', 'file')
@@ -359,47 +366,16 @@ class PEP3147Tests:
         self.assertEqual(self.util.cache_from_source(path, optimization=''),
                          expect)
 
-    def test_cache_from_source_debug_override(self):
-        # Given the path to a .py file, return the path to its PEP 3147/PEP 488
-        # defined .pyc file (i.e. under __pycache__).
-        path = os.path.join('foo', 'bar', 'baz', 'qux.py')
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            self.assertEqual(self.util.cache_from_source(path, False),
-                             self.util.cache_from_source(path, optimization=1))
-            self.assertEqual(self.util.cache_from_source(path, True),
-                             self.util.cache_from_source(path, optimization=''))
-        with warnings.catch_warnings():
-            warnings.simplefilter('error')
-            with self.assertRaises(DeprecationWarning):
-                self.util.cache_from_source(path, False)
-            with self.assertRaises(DeprecationWarning):
-                self.util.cache_from_source(path, True)
-
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_cache_from_source_cwd(self):
         path = 'foo.py'
         expect = os.path.join('__pycache__', 'foo.{}.pyc'.format(self.tag))
         self.assertEqual(self.util.cache_from_source(path, optimization=''),
                          expect)
 
-    def test_cache_from_source_override(self):
-        # When debug_override is not None, it can be any true-ish or false-ish
-        # value.
-        path = os.path.join('foo', 'bar', 'baz.py')
-        # However if the bool-ishness can't be determined, the exception
-        # propagates.
-        class Bearish:
-            def __bool__(self): raise RuntimeError
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            self.assertEqual(self.util.cache_from_source(path, []),
-                             self.util.cache_from_source(path, optimization=1))
-            self.assertEqual(self.util.cache_from_source(path, [17]),
-                             self.util.cache_from_source(path, optimization=''))
-            with self.assertRaises(RuntimeError):
-                self.util.cache_from_source('/foo/bar/baz.py', Bearish())
-
-
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_cache_from_source_optimization_empty_string(self):
         # Setting 'optimization' to '' leads to no optimization tag (PEP 488).
         path = 'foo.py'
@@ -407,6 +383,8 @@ class PEP3147Tests:
         self.assertEqual(self.util.cache_from_source(path, optimization=''),
                          expect)
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_cache_from_source_optimization_None(self):
         # Setting 'optimization' to None uses the interpreter's optimization.
         # (PEP 488)
@@ -423,6 +401,8 @@ class PEP3147Tests:
         self.assertEqual(self.util.cache_from_source(path, optimization=None),
                          expect)
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_cache_from_source_optimization_set(self):
         # The 'optimization' parameter accepts anything that has a string repr
         # that passes str.alnum().
@@ -440,6 +420,8 @@ class PEP3147Tests:
         with self.assertRaises(ValueError):
             self.util.cache_from_source(path, optimization='path/is/bad')
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_cache_from_source_debug_override_optimization_both_set(self):
         # Can only set one of the optimization-related parameters.
         with warnings.catch_warnings():
@@ -449,6 +431,8 @@ class PEP3147Tests:
 
     @unittest.skipUnless(os.sep == '\\' and os.altsep == '/',
                      'test meaningful only where os.altsep is defined')
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_sep_altsep_and_sep_cache_from_source(self):
         # Windows path and PEP 3147 where sep is right of altsep.
         self.assertEqual(
@@ -481,44 +465,60 @@ class PEP3147Tests:
             with self.assertRaises(NotImplementedError):
                 self.util.source_from_cache(path)
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_source_from_cache_bad_path(self):
         # When the path to a pyc file is not in PEP 3147 format, a ValueError
         # is raised.
         self.assertRaises(
             ValueError, self.util.source_from_cache, '/foo/bar/bazqux.pyc')
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_source_from_cache_no_slash(self):
         # No slashes at all in path -> ValueError
         self.assertRaises(
             ValueError, self.util.source_from_cache, 'foo.cpython-32.pyc')
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_source_from_cache_too_few_dots(self):
         # Too few dots in final path component -> ValueError
         self.assertRaises(
             ValueError, self.util.source_from_cache, '__pycache__/foo.pyc')
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_source_from_cache_too_many_dots(self):
         with self.assertRaises(ValueError):
             self.util.source_from_cache(
                     '__pycache__/foo.cpython-32.opt-1.foo.pyc')
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_source_from_cache_not_opt(self):
         # Non-`opt-` path component -> ValueError
         self.assertRaises(
             ValueError, self.util.source_from_cache,
             '__pycache__/foo.cpython-32.foo.pyc')
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_source_from_cache_no__pycache__(self):
         # Another problem with the path -> ValueError
         self.assertRaises(
             ValueError, self.util.source_from_cache,
             '/foo/bar/foo.cpython-32.foo.pyc')
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_source_from_cache_optimized_bytecode(self):
         # Optimized bytecode is not an issue.
         path = os.path.join('__pycache__', 'foo.{}.opt-1.pyc'.format(self.tag))
         self.assertEqual(self.util.source_from_cache(path), 'foo.py')
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_source_from_cache_missing_optimization(self):
         # An empty optimization level is a no-no.
         path = os.path.join('__pycache__', 'foo.{}.opt-.pyc'.format(self.tag))
@@ -633,7 +633,7 @@ class MagicNumberTests(unittest.TestCase):
         'only applies to candidate or final python release levels'
     )
     def test_magic_number(self):
-        # Each python minor release should generally have a MAGIC_NUMBER
+        # Each Python feature release should generally have a MAGIC_NUMBER
         # that does not change once the release reaches candidate status.
 
         # Once a release reaches candidate status, the value of the constant
@@ -643,11 +643,11 @@ class MagicNumberTests(unittest.TestCase):
 
         # In exceptional cases, it may be required to change the MAGIC_NUMBER
         # for a maintenance release. In this case the change should be
-        # discussed in python-dev. If a change is required, community
+        # discussed in on Discourse. If a change is required, community
         # stakeholders such as OS package maintainers must be notified
         # in advance. Such exceptional releases will then require an
         # adjustment to this test case.
-        EXPECTED_MAGIC_NUMBER = 3625
+        EXPECTED_MAGIC_NUMBER = 3666
         actual = int.from_bytes(importlib.util.MAGIC_NUMBER[:2], 'little')
 
         msg = (
@@ -659,7 +659,7 @@ class MagicNumberTests(unittest.TestCase):
             "magic number in this test to the current MAGIC_NUMBER to "
             "continue with the release.\n\n"
             "Changing the MAGIC_NUMBER for a maintenance release "
-            "requires discussion in python-dev and notification of "
+            "requires discussion on Discourse and notification of "
             "community stakeholders."
         )
         self.assertEqual(EXPECTED_MAGIC_NUMBER, actual, msg)

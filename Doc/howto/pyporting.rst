@@ -6,8 +6,6 @@
 How to port Python 2 Code to Python 3
 *************************************
 
-:author: Brett Cannon
-
 Python 2 reached its official end-of-life at the start of 2020. This means
 that no new bug reports, fixes, or changes will be made to Python 2 - it's
 no longer supported: see :pep:`373` and

@@ -608,8 +608,8 @@ struct mi_heap_s {
 
 #if (MI_DEBUG)
 // use our own assertion to print without memory allocation
-mi_decl_noreturn mi_decl_cold mi_decl_throw
-void _mi_assert_fail(const char* assertion, const char* fname, unsigned int line, const char* func);
+mi_decl_noreturn mi_decl_cold
+void _mi_assert_fail(const char* assertion, const char* fname, unsigned int line, const char* func) mi_decl_throw;
 #define mi_assert(expr)     ((expr) ? (void)0 : _mi_assert_fail(#expr,__FILE__,__LINE__,__func__))
 #else
 #define mi_assert(x)

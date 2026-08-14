@@ -920,17 +920,11 @@ class _Pickler:
                     # Write data in-band
                     # XXX The C implementation avoids a copy here
                     buf = m.tobytes()
-                    in_memo = id(buf) in self.memo
                     if m.readonly:
-                        if in_memo:
-                            self._save_bytes_no_memo(buf)
-                        else:
-                            self.save_bytes(buf)
+                        self._save_bytes_no_memo(buf)
                     else:
-                        if in_memo:
-                            self._save_bytearray_no_memo(buf)
-                        else:
-                            self.save_bytearray(buf)
+                        self._save_bytearray_no_memo(buf)
+                    self.memoize(obj)
                 else:
                     # Write data out-of-band
                     self.write(NEXT_BUFFER)
@@ -1169,12 +1163,22 @@ class _Pickler:
 
     def save_global(self, obj, name=None):
         write = self.write
-        memo = self.memo
 
         if name is None:
             name = getattr(obj, '__qualname__', None)
             if name is None:
                 name = obj.__name__
+
+        if '.__' in name:
+            # Mangle names of private attributes.
+            dotted_path = name.split('.')
+            for i, subpath in enumerate(dotted_path):
+                if i and subpath.startswith('__') and not subpath.endswith('__'):
+                    prev = prev.lstrip('_')
+                    if prev:
+                        dotted_path[i] = f"_{prev.lstrip('_')}{subpath}"
+                prev = subpath
+            name = '.'.join(dotted_path)
 
         module_name = whichmodule(obj, name)
         if self.proto >= 2:
@@ -1756,7 +1760,7 @@ class _Unpickler:
         i = self.read(1)[0]
         try:
             self.append(self.memo[i])
-        except KeyError as exc:
+        except KeyError:
             msg = f'Memo value not found at index {i}'
             raise UnpicklingError(msg) from None
     dispatch[BINGET[0]] = load_binget
@@ -1765,7 +1769,7 @@ class _Unpickler:
         i, = unpack('<I', self.read(4))
         try:
             self.append(self.memo[i])
-        except KeyError as exc:
+        except KeyError:
             msg = f'Memo value not found at index {i}'
             raise UnpicklingError(msg) from None
     dispatch[LONG_BINGET[0]] = load_long_binget
@@ -1933,7 +1937,6 @@ def _main(args=None):
     import pprint
     parser = argparse.ArgumentParser(
         description='display contents of the pickle files',
-        color=True,
     )
     parser.add_argument(
         'pickle_file',

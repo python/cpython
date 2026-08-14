@@ -1,6 +1,7 @@
 """Abstract base classes related to import."""
 from . import _bootstrap_external
 from . import machinery
+
 try:
     import _frozen_importlib
 except ImportError as exc:
@@ -11,9 +12,11 @@ try:
     import _frozen_importlib_external
 except ImportError:
     _frozen_importlib_external = _bootstrap_external
-from ._abc import Loader
 import abc
 
+
+# Public API
+from ._abc import Loader
 
 __all__ = [
     'Loader', 'MetaPathFinder', 'PathEntryFinder',
@@ -45,6 +48,16 @@ class MetaPathFinder(metaclass=abc.ABCMeta):
         This method is used by importlib.invalidate_caches().
         """
 
+    def discover(self, parent=None):
+        """An optional method which searches for possible specs with given *parent*
+        module spec. If *parent* is *None*, MetaPathFinder.discover will search
+        for top-level modules.
+
+        Returns an iterable of possible specs.
+        """
+        return ()
+
+
 _register(MetaPathFinder, machinery.BuiltinImporter, machinery.FrozenImporter,
           machinery.PathFinder, machinery.WindowsRegistryFinder)
 
@@ -57,6 +70,15 @@ class PathEntryFinder(metaclass=abc.ABCMeta):
         """An optional method for clearing the finder's cache, if any.
         This method is used by PathFinder.invalidate_caches().
         """
+
+    def discover(self, parent=None):
+        """An optional method which searches for possible specs with given
+        *parent* module spec. If *parent* is *None*, PathEntryFinder.discover
+        will search for top-level modules.
+
+        Returns an iterable of possible specs.
+        """
+        return ()
 
 _register(PathEntryFinder, machinery.FileFinder)
 
@@ -128,7 +150,6 @@ class InspectLoader(Loader):
         return compile(data, path, 'exec', dont_inherit=True, module=fullname)
 
     exec_module = _bootstrap_external._LoaderBasics.exec_module
-    load_module = _bootstrap_external._LoaderBasics.load_module
 
 _register(InspectLoader, machinery.BuiltinImporter, machinery.FrozenImporter, machinery.NamespaceLoader)
 

@@ -1,1 +1,0 @@
-Fixed the :c:macro:`PyABIInfo_VAR` macro.

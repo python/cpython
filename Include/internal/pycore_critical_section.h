@@ -50,6 +50,15 @@ extern "C" {
 // Asserts that the mutex for the given object is locked. The mutex must
 // be held by the top-most critical section otherwise there's the
 // possibility that the mutex would be swalled out in some code paths.
+//
+// NOTE: We use Py_REFCNT(op) != 1 instead of
+// !PyUnstable_Object_IsUniquelyReferenced(op) because the free threading
+// GC can change an object's ob_tid (it overwrites ob_tid and later
+// restores it from the mimalloc segment).  This means
+// PyUnstable_Object_IsUniquelyReferenced() may spuriously return false
+// after a GC collection, even though the thread may still have exclusive
+// access to the object.  The refcount check is a looser but still catches
+// most misuses.
 #ifdef Py_DEBUG
 
 # define _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op)                           \
@@ -187,10 +196,9 @@ _PyCriticalSection2_Begin(PyThreadState *tstate, PyCriticalSection2 *c, PyObject
 static inline void
 _PyCriticalSection2_End(PyThreadState *tstate, PyCriticalSection2 *c)
 {
-    // if mutex1 is NULL, we used the fast path in
-    // _PyCriticalSection_BeginSlow for mutexes that are already held,
-    // which should only happen when mutex1 and mutex2 were the same mutex,
-    // and mutex2 should also be NULL.
+    // if mutex1 is NULL, we used the fast path in either
+    // _PyCriticalSection_BeginSlow or _PyCriticalSection2_BeginSlow for mutexes
+    // that are already held, and mutex2 should also be NULL.
     if (c->_cs_base._cs_mutex == NULL) {
         assert(c->_cs_mutex2 == NULL);
         return;

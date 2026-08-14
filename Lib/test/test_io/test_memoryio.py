@@ -457,7 +457,6 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         # raises a BufferError.
         self.assertRaises(BufferError, memio.write, b'x' * 100)
         self.assertRaises(BufferError, memio.truncate)
-        self.assertRaises(BufferError, memio.close)
         self.assertFalse(memio.closed)
         # Mutating the buffer updates the BytesIO
         buf[3:6] = b"abc"
@@ -470,6 +469,33 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         memio.truncate()
         memio.close()
         self.assertRaises(ValueError, memio.getbuffer)
+
+    def test_getbuffer_delete(self):
+        # gh-111330, gh-111331: .close() works and the buffer stays working
+        memio = self.ioclass(b"1234567890")
+        buf = memio.getbuffer()
+        self.assertEqual(bytes(buf), b"1234567890")
+        memio.close()
+        self.assertTrue(memio.closed)
+        self.assertEqual(bytes(buf), b"1234567890")
+        buf[3:6] = b"abc"
+        self.assertEqual(bytes(buf), b"123abc7890")
+        self.assertRaises(ValueError, memio.getbuffer)
+        self.assertRaises(ValueError, memio.getvalue)
+        del buf
+        support.gc_collect()
+        memio.close()
+
+    def test_getbuffer_del(self):
+        # gh-111330, gh-111331: deleting the BytesIO which has an exported
+        # buffer does not emit an unraisable exception.
+        memio = self.ioclass(b"1234567890")
+        buf = memio.getbuffer()
+        with support.catch_unraisable_exception() as cm:
+            del memio
+            support.gc_collect()
+            self.assertIsNone(cm.unraisable)
+        self.assertEqual(bytes(buf), b"1234567890")
 
     def test_getbuffer_empty(self):
         memio = self.ioclass()
@@ -493,14 +519,14 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         # Create a reference loop.
         a = [buf]
         a.append(a)
-        # The Python implementation emits an unraisable exception.
-        with support.catch_unraisable_exception():
+
+        # gh-111330, gh-111331: no unraisable exception is emitted.
+        with support.catch_unraisable_exception() as cm:
             del memio
-        del buf
-        del a
-        # The C implementation emits an unraisable exception.
-        with support.catch_unraisable_exception():
+            del buf
+            del a
             gc.collect()
+            self.assertIsNone(cm.unraisable)
         self.assertIsNone(memiowr())
         self.assertIsNone(bufwr())
 
@@ -566,6 +592,77 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         buf = bytearray(2)
         self.assertEqual(0, memio.readinto(buf))
 
+    def test_peek(self):
+        buf = self.buftype("1234567890")
+        with self.ioclass(buf) as memio:
+            self.assertEqual(memio.tell(), 0)
+            self.assertEqual(memio.peek(1), buf[:1])
+            self.assertEqual(memio.peek(1), buf[:1])
+            self.assertEqual(memio.peek(), buf)
+            self.assertEqual(memio.peek(3), buf[:3])
+            self.assertEqual(memio.peek(5), buf[:5])
+            self.assertEqual(memio.peek(0), buf)
+            self.assertEqual(memio.peek(len(buf) + 100), buf)
+            self.assertEqual(memio.peek(-1), buf)
+            self.assertEqual(memio.tell(), 0)
+
+            memio.read(1)
+            self.assertEqual(memio.tell(), 1)
+            self.assertEqual(memio.peek(1), buf[1:2])
+            self.assertEqual(memio.peek(), buf[1:])
+            self.assertEqual(memio.peek(3), buf[1:4])
+            self.assertEqual(memio.peek(5), buf[1:6])
+            self.assertEqual(memio.peek(0), buf[1:])
+            self.assertEqual(memio.peek(len(buf) + 100), buf[1:])
+            self.assertEqual(memio.peek(-1), buf[1:])
+            self.assertEqual(memio.tell(), 1)
+
+            memio.read()
+            self.assertEqual(memio.tell(), len(buf))
+            self.assertEqual(memio.peek(1), self.EOF)
+            self.assertEqual(memio.peek(3), self.EOF)
+            self.assertEqual(memio.peek(5), self.EOF)
+            self.assertEqual(memio.peek(0), b"")
+            self.assertEqual(memio.tell(), len(buf))
+
+            # Peeking works after writing
+            abc = self.buftype("abc")
+            memio.write(abc)
+            self.assertEqual(memio.peek(), self.EOF)
+            memio.seek(len(buf))
+            self.assertEqual(memio.peek(), abc)
+            self.assertEqual(memio.peek(-1), abc)
+            self.assertEqual(memio.peek(len(abc) + 100), abc)
+            self.assertEqual(memio.tell(), len(buf))
+
+        with self.ioclass(buf) as memio:
+            memio.seek(len(buf))
+            self.assertEqual(memio.peek(), self.EOF)
+
+        # Length greater than DEFAULT_BUFFER_SIZE
+        buf = self.buftype("1234567890" * io.DEFAULT_BUFFER_SIZE)
+        with self.ioclass(buf) as memio:
+            self.assertEqual(memio.peek(), buf[:io.DEFAULT_BUFFER_SIZE])
+            self.assertEqual(memio.peek(0), buf[:io.DEFAULT_BUFFER_SIZE])
+            self.assertEqual(memio.peek(-1), buf[:io.DEFAULT_BUFFER_SIZE])
+            self.assertEqual(memio.peek(io.DEFAULT_BUFFER_SIZE + 100),
+                             buf[:io.DEFAULT_BUFFER_SIZE + 100])
+            self.assertEqual(memio.peek(io.DEFAULT_BUFFER_SIZE * 100), buf)
+
+        # Current position beyond buffer end
+        with self.ioclass(buf) as memio:
+            memio.seek(len(buf) + 100)
+            self.assertEqual(memio.peek(), self.EOF)
+        with self.ioclass(buf) as memio:
+            memio.read()
+            memio.truncate(0)
+            self.assertEqual(memio.tell(), len(buf))
+            self.assertEqual(memio.peek(), self.EOF)
+
+
+        # Peek after close raises
+        self.assertRaises(ValueError, memio.peek)
+
     def test_unicode(self):
         memio = self.ioclass()
 
@@ -586,6 +683,70 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         buf = self.buftype("1234567890")
         self.ioclass(initial_bytes=buf)
         self.assertRaises(TypeError, self.ioclass, buf, foo=None)
+
+    def test_write_concurrent_close(self):
+        class B:
+            def __buffer__(self, flags):
+                memio.close()
+                return memoryview(b"A")
+
+        memio = self.ioclass()
+        self.assertRaises(ValueError, memio.write, B())
+
+    # Prevent crashes when memio.write() or memio.writelines()
+    # concurrently mutates (e.g., closes or exports) 'memio'.
+    # See: https://github.com/python/cpython/issues/143378.
+
+    def test_writelines_concurrent_close(self):
+        class B:
+            def __buffer__(self, flags):
+                memio.close()
+                return memoryview(b"A")
+
+        memio = self.ioclass()
+        self.assertRaises(ValueError, memio.writelines, [B()])
+
+    def test_write_concurrent_export(self):
+        class B:
+            buf = None
+            def __buffer__(self, flags):
+                self.buf = memio.getbuffer()
+                return memoryview(b"A")
+
+        memio = self.ioclass()
+        self.assertRaises(BufferError, memio.write, B())
+
+    def test_writelines_concurrent_export(self):
+        class B:
+            buf = None
+            def __buffer__(self, flags):
+                self.buf = memio.getbuffer()
+                return memoryview(b"A")
+
+        memio = self.ioclass()
+        self.assertRaises(BufferError, memio.writelines, [B()])
+
+    def test_write_mutating_buffer(self):
+        # Test that buffer is exported only once during write().
+        # See: https://github.com/python/cpython/issues/143602.
+        class B:
+            count = 0
+            def __buffer__(self, flags):
+                self.count += 1
+                if self.count == 1:
+                    return memoryview(b"AAA")
+                else:
+                    return memoryview(b"BBBBBBBBB")
+
+        memio = self.ioclass(b'0123456789')
+        memio.seek(2)
+        b = B()
+        n = memio.write(b)
+
+        self.assertEqual(b.count, 1)
+        self.assertEqual(n, 3)
+        self.assertEqual(memio.getvalue(), b"01AAA56789")
+        self.assertEqual(memio.tell(), 5)
 
 
 class TextIOTestMixin:
@@ -804,7 +965,10 @@ class CBytesIOTest(PyBytesIOTest):
 
     @support.cpython_only
     def test_sizeof(self):
-        basesize = support.calcobjsize('P2n2Pn')
+        if support.Py_GIL_DISABLED:
+            basesize = support.calcobjsize('P2n2Pni')
+        else:
+            basesize = support.calcobjsize('P2n2Pn')
         check = self.check_sizeof
         self.assertEqual(object.__sizeof__(io.BytesIO()), basesize)
         check(io.BytesIO(), basesize )
@@ -902,6 +1066,25 @@ class CStringIOTest(PyStringIOTest):
         self.assertRaises(TypeError, memio.__setstate__, 0)
         memio.close()
         self.assertRaises(ValueError, memio.__setstate__, ("closed", "", 0, None))
+
+    def test_write_str_subclass(self):
+        # Writing a str subclass should use the subclass's unicode data
+        # directly, not call __str__ on it (which may return a different
+        # value).  gh-149047
+        class MyStr(str):
+            def __str__(self):
+                return "WRONG"
+
+        s = MyStr("correct")
+        memio = self.ioclass()
+        memio.write(s)
+        self.assertEqual(memio.getvalue(), "correct")
+
+        # Also test the fast path where pos == string_size (STATE_ACCUMULATING)
+        memio2 = self.ioclass()
+        memio2.write(MyStr("hello "))
+        memio2.write(MyStr("world"))
+        self.assertEqual(memio2.getvalue(), "hello world")
 
 
 class CStringIOPickleTest(PyStringIOPickleTest):

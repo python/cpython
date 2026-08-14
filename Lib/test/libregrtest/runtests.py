@@ -96,11 +96,13 @@ class RunTests:
     coverage: bool
     memory_limit: str | None
     gc_threshold: int | None
-    use_resources: tuple[str, ...]
+    use_resources: dict[str, str | None]
     python_cmd: tuple[str, ...] | None
     randomize: bool
     random_seed: int | str
     parallel_threads: int | None
+    single_process_per_case: bool
+    case_groups: tuple[tuple[TestName, tuple[TestName, ...]], ...] | None
 
     def copy(self, **override) -> 'RunTests':
         state = dataclasses.asdict(self)
@@ -108,7 +110,10 @@ class RunTests:
         return RunTests(**state)
 
     def create_worker_runtests(self, **override) -> WorkerRunTests:
-        state = dataclasses.asdict(self)
+        # Drop the large fields *before* converting: asdict() copies them
+        # deeply, which is expensive when the whole run has many cases.
+        state = dataclasses.asdict(
+            dataclasses.replace(self, tests=(), case_groups=None))
         state.update(override)
         return WorkerRunTests(**state)
 
@@ -131,6 +136,20 @@ class RunTests:
                 yield from self.tests
         else:
             yield from self.tests
+
+    def iter_case_groups(self) -> Iterator[tuple[TestName, tuple[TestName, ...]]]:
+        """
+        Yield (module_name, case_ids) pairs. All case_ids in a group
+        must run sequentially on the same worker thread.
+        """
+        if self.case_groups is None:
+            for name in self.iter_tests():
+                yield (name, (name,))
+        elif self.forever:
+            while True:
+                yield from self.case_groups
+        else:
+            yield from self.case_groups
 
     def json_file_use_stdout(self) -> bool:
         # Use STDOUT in two cases:
@@ -159,7 +178,7 @@ class RunTests:
         if '-u' not in python_opts:
             cmd.append('-u')  # Unbuffered stdout and stderr
         if self.coverage:
-            cmd.append("-Xpresite=test.cov")
+            cmd.append("-Xpresite=test.cov:enable")
         return cmd
 
     def bisect_cmd_args(self) -> list[str]:
@@ -179,7 +198,14 @@ class RunTests:
         if self.gc_threshold:
             args.append(f"--threshold={self.gc_threshold}")
         if self.use_resources:
-            args.extend(("-u", ','.join(self.use_resources)))
+            simple = ','.join(resource
+                              for resource, value in self.use_resources.items()
+                              if value is None)
+            if simple:
+                args.extend(("-u", simple))
+            for resource, value in self.use_resources.items():
+                if value is not None:
+                    args.extend(("-u", f"{resource}={value}"))
         if self.python_cmd:
             cmd = shlex.join(self.python_cmd)
             args.extend(("--python", cmd))
