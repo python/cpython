@@ -99,17 +99,20 @@ module_exec(PyObject *mod)
 
 PyABIInfo_VAR(abi_info);
 
-static PySlot _testlimitedcapimodule_slots[] = {
-    PySlot_DATA(Py_mod_abi, &abi_info),
-    PySlot_STATIC_DATA(Py_mod_name, "_testlimitedcapi"),
-    PySlot_SIZE(Py_mod_state_size, 0),
-    PySlot_FUNC(Py_mod_exec, module_exec),
-    PySlot_SIZE(Py_mod_gil, Py_MOD_GIL_NOT_USED),
-    PySlot_END
+static struct PyModuleDef _testlimitedcapimodule_def = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_testlimitedcapi",
+    .m_size = 0,
+    .m_slots = (PyModuleDef_Slot[]){
+        {Py_mod_abi, &abi_info},
+        {Py_mod_exec, module_exec},
+        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+        {0}
+    }
 };
 
-PyMODEXPORT_FUNC
-PyModExport__testlimitedcapi(void)
+PyMODINIT_FUNC
+PyInit__testlimitedcapi(void)
 {
-    return _testlimitedcapimodule_slots;
+    return PyModuleDef_Init(&_testlimitedcapimodule_def);
 }
