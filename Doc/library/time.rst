@@ -130,9 +130,9 @@ Functions
    and is space padded if the day is a single digit,
    e.g.: ``'Wed Jun  9 04:26:40 1993'``.
 
-   If *time_tuple* is not provided, the current time as returned by
-   :func:`localtime` is used. Locale information is not used by
-   :func:`asctime`.
+   If *time_tuple* is not provided,
+   the current time as returned by :func:`localtime` is used.
+   Locale information is not used by :func:`asctime`.
 
    .. note::
 
@@ -271,9 +271,10 @@ Functions
 
 .. function:: localtime(seconds=None, /)
 
-   Like :func:`gmtime` but converts to local time.  If *seconds* is not
-   provided or :const:`None`, the current time as returned by :func:`.time`
-   is used.  The dst flag is set to ``1`` when DST applies to the given time.
+   Like :func:`gmtime` but converts to local time.
+   If *seconds* is not provided or :const:`None`,
+   the current time as returned by :func:`.time` is used.
+   The dst flag is set to ``1`` when DST applies to the given time.
 
    :func:`localtime` may raise :exc:`OverflowError`, if the timestamp is
    outside the range of values supported by the platform C :c:func:`localtime`
@@ -405,14 +406,16 @@ Functions
 
    .. rubric:: Windows implementation
 
-   On Windows, if *seconds* is zero, the thread relinquishes the remainder of
-   its time slice to any other thread that is ready to run. If there are no
-   other threads ready to run, the function returns immediately, and the thread
-   continues execution.  On Windows 10 and newer the implementation uses
+   On Windows, if *seconds* is zero,
+   the thread relinquishes the remainder of its time slice
+   to any other thread that is ready to run.
+   If there are no other threads ready to run,
+   the function returns immediately, and the thread continues execution.
+   On Windows 10 and newer the implementation uses
    a `high-resolution timer
    <https://learn.microsoft.com/windows/win32/api/synchapi/nf-synchapi-createwaitabletimerexw>`_
-   which provides resolution of 100 nanoseconds. If *seconds* is zero,
-   ``Sleep(0)`` is used.
+   which provides resolution of 100 nanoseconds.
+   If *seconds* is zero, ``Sleep(0)`` is used.
 
    .. rubric:: Unix implementation
 
@@ -430,9 +433,10 @@ Functions
    .. audit-event:: time.sleep seconds
 
    .. versionchanged:: 3.5
-      The function now sleeps at least *seconds* even if the sleep is
-      interrupted by a signal, except if the signal handler raises an
-      exception (see :pep:`475` for the rationale).
+      The function now sleeps at least *seconds*
+      even if the sleep is interrupted by a signal,
+      except if the signal handler raises an exception
+      (see :pep:`475` for the rationale).
 
    .. versionchanged:: 3.11
       On Unix, the ``clock_nanosleep()`` and ``nanosleep()`` functions are now
