@@ -3601,7 +3601,6 @@ _Py_CheckSingletons(void)
     assert(!PyErr_Occurred());
     PyObject *obj;
     long ival;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     // None
     obj = Py_None;
