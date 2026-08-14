@@ -1005,6 +1005,7 @@ cmath_phase_impl(PyObject *module, Py_complex z)
     double phi;
 
     phi = atan2(z.imag, z.real); /* should not cause any exception */
+    /* gh-153144: Ignore atan2() errno on purpose. */
     return PyFloat_FromDouble(phi);
 }
 

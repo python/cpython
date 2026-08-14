@@ -1078,7 +1078,7 @@ math_2ne(PyObject *const *args, Py_ssize_t nargs,
     if (y == -1.0 && PyErr_Occurred()) {
         return NULL;
     }
-    r = (*func)(x, y);
+    r = (*func)(x, y);  // Ignore errno on purpose.
     return PyFloat_FromDouble(r);
 }
 
@@ -1149,11 +1149,11 @@ FUNC1(atan, atan, 0,
       "atan($module, x, /)\n--\n\n"
       "Return the arc tangent (measured in radians) of x.\n\n"
       "The result is between -pi/2 and pi/2.")
-FUNC2NE(atan2, atan2,
+FUNC2NE(atan2, atan2,  // gh-153144: Ignore atan2() errno on purpose.
       "atan2($module, y, x, /)\n--\n\n"
       "Return the arc tangent (measured in radians) of y/x.\n\n"
       "Unlike atan(y/x), the signs of both x and y are considered.")
-FUNC2NE(atan2pi, m_atan2pi,
+FUNC2NE(atan2pi, m_atan2pi,  // gh-153144: Ignore atan2pi() errno on purpose.
       "atan2pi($module, y, x, /)\n--\n\n"
       "Return the arc tangent (measured in half-turns) of y/x.\n\n"
       "Unlike atanpi(y/x), the signs of both x and y are considered.")
