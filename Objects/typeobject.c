@@ -81,23 +81,13 @@ types_world_is_stopped(void)
 #endif
 
 // Checks that the type has not yet been revealed (exposed) to other
-// threads.  The _Py_TYPE_REVEALED_FLAG flag is set by type_ready_publish(),
-// just before the type is added to the subclasses of its bases.  That is the
-// point where other threads can find it.  The flag only exists on 64-bit
-// platforms (we only have ob_flags there) and in debug builds.
-//
-// The flag is set with the type lock held and it is never cleared.  A thread
-// that can see the type has either found it through the subclasses of its
-// bases, which requires the type lock, or the world is stopped.  So, plain
-// loads and stores are enough here.
-#if defined(Py_DEBUG) && SIZEOF_VOID_P > 4
-#define TYPE_IS_REVEALED(tp) \
-    ((((PyObject *)(tp))->ob_flags & _Py_TYPE_REVEALED_FLAG) != 0)
-#define TYPE_SET_REVEALED(tp) \
-    ((void)(((PyObject *)(tp))->ob_flags |= _Py_TYPE_REVEALED_FLAG))
+// threads.  The _Py_TYPE_REVEALED_FLAG flag is set by type_new() and
+// PyType_FromMetaclass() to indicate that a newly initialized type might be
+// revealed.  We only have ob_flags on 64-bit platforms.
+#if SIZEOF_VOID_P > 4
+#define TYPE_IS_REVEALED(tp) ((((PyObject *)(tp))->ob_flags & _Py_TYPE_REVEALED_FLAG) != 0)
 #else
 #define TYPE_IS_REVEALED(tp) 0
-#define TYPE_SET_REVEALED(tp) ((void)0)
 #endif
 
 #ifdef Py_DEBUG
@@ -183,7 +173,6 @@ type_lock_allow_release(void)
 #define END_TYPE_DICT_LOCK()
 #define ASSERT_TYPE_LOCK_HELD()
 #define TYPE_IS_REVEALED(tp) 0
-#define TYPE_SET_REVEALED(tp) ((void)0)
 #define ASSERT_WORLD_STOPPED_OR_NEW_TYPE(tp)
 #define ASSERT_NEW_TYPE_OR_LOCKED(tp)
 #define types_world_is_stopped() 1
@@ -3902,9 +3891,9 @@ static void object_dealloc(PyObject *);
 static PyObject *object_new(PyTypeObject *, PyObject *, PyObject *);
 static int object_init(PyObject *, PyObject *, PyObject *);
 static int update_slot(PyTypeObject *, PyObject *, slot_update_t *update);
-static int fixup_slot_dispatchers(PyTypeObject *);
+static void fixup_slot_dispatchers(PyTypeObject *);
 static int type_ready(PyTypeObject *, int, int);
-static int type_ready_publish(PyTypeObject *);
+static int type_ready_publish(PyTypeObject *, int);
 static int type_new_set_names(PyTypeObject *);
 static int type_new_init_subclass(PyTypeObject *, PyObject *);
 static bool has_slotdef(PyObject *);
@@ -4910,27 +4899,8 @@ type_new_impl(type_new_ctx *ctx)
         goto error;
     }
 
-    /* Initialize the rest, put the proper slots in place and only then
-       publish the type as a subclass of its bases.  Since the type is not
-       reachable by other threads before it is published, the slots can be
-       updated without stopping the world.
-
-       All of it is done with the type lock held.  Otherwise a thread that
-       assigns to a special method of a base could look for the subclasses to
-       update after we have looked up the special methods in the bases but
-       before the type is published, and the type would be left with a stale
-       slot. */
-    int res;
-    BEGIN_TYPE_LOCK();
-    res = type_ready(type, 1, 0);
-    if (res == 0) {
-        res = fixup_slot_dispatchers(type);
-    }
-    if (res == 0) {
-        res = type_ready_publish(type);
-    }
-    END_TYPE_LOCK();
-    if (res < 0) {
+    /* Initialize the rest */
+    if (type_ready_publish(type, 1) < 0) {
         goto error;
     }
 
@@ -5694,16 +5664,7 @@ type_from_slots_or_spec(
      * After this call we should generally only touch up what's
      * accessible to Python code, like __dict__.
      */
-
-    BEGIN_TYPE_LOCK();
-    r = type_ready(type, 1, 0);
-    if (r == 0) {
-        /* The type is only revealed to other threads once it is fully
-           initialized. */
-        r = type_ready_publish(type);
-    }
-    END_TYPE_LOCK();
-    if (r < 0) {
+    if (type_ready_publish(type, 0) < 0) {
         goto finally;
     }
 
@@ -9506,28 +9467,43 @@ error:
 }
 
 static int
-type_ready_publish(PyTypeObject *type)
+type_ready_publish(PyTypeObject *type, int fix_slots)
 {
-    ASSERT_TYPE_LOCK_HELD();
-    assert(!(type->tp_flags & Py_TPFLAGS_READY));
-    assert(!is_readying(type));
+    int res;
+    BEGIN_TYPE_LOCK();
+    res = type_ready(type, 1, 0);
+    if (res == 0) {
+        assert(!(type->tp_flags & Py_TPFLAGS_READY));
+        assert(!is_readying(type));
 
-    /* Set the ready flag before revealing the type since type_add_flags()
-       may only be used on types that are not yet revealed. */
-    type_add_flags(type, Py_TPFLAGS_READY);
+        if (fix_slots) {
+            // Put the proper slots in place and only then publish the type as
+            // a subclass of its bases.  Since the type is not reachable by
+            // other threads before it is published, the slots can be updated
+            // without stopping the world.  This step is skipped for
+            // type_from_slots_or_spec().
+            fixup_slot_dispatchers(type);
+        }
 
-    /* Mark the type as revealed while still holding the type lock.  Threads
-       can only find the type through the subclasses of its bases, which is
-       done below with the lock held.  So, they cannot see the type before
-       the flag is set. */
-    TYPE_SET_REVEALED(type);
+        // Set the ready flag before revealing the type since type_add_flags()
+        // may only be used on types that are not yet revealed.
+        type_add_flags(type, Py_TPFLAGS_READY);
 
-    if (type_ready_add_subclasses(type) < 0) {
-        return -1;
+#if defined(Py_GIL_DISABLED) && defined(Py_DEBUG) && SIZEOF_VOID_P > 4
+        // Mark the type as revealed while still holding the type lock.
+        // Threads can only find the type through the subclasses of its bases,
+        // which is done below with the lock held.  So, they cannot see the
+        // type before the flag is set.
+        ((PyObject*)type)->ob_flags |= _Py_TYPE_REVEALED_FLAG;
+#endif
+
+        res = type_ready_add_subclasses(type);
+        if (res == 0) {
+            assert(_PyType_CheckConsistency(type));
+        }
     }
-
-    assert(_PyType_CheckConsistency(type));
-    return 0;
+    END_TYPE_LOCK();
+    return res;
 }
 
 int
@@ -12052,18 +12028,17 @@ update_slot(PyTypeObject *type, PyObject *name, slot_update_t *queued_updates)
    definition time, based upon which operations the class overrides in its
    dict.  The type must not be revealed to other threads yet, so that the
    slots can be updated directly rather than with the world stopped. */
-static int
+static void
 fixup_slot_dispatchers(PyTypeObject *type)
 {
     ASSERT_TYPE_LOCK_HELD();
     ASSERT_WORLD_STOPPED_OR_NEW_TYPE(type);
     assert(!PyErr_Occurred());
     for (pytype_slotdef *p = slotdefs; p->name; ) {
-        if (update_one_slot(type, p, &p, NULL) < 0) {
-            return -1;
-        }
+        int rv = update_one_slot(type, p, &p, NULL);
+        // always returns 0 if queued_updates == NULL
+        assert (rv == 0);
     }
-    return 0;
 }
 
 #ifdef Py_GIL_DISABLED
