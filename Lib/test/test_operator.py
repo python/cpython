@@ -511,6 +511,11 @@ class OperatorTestCase:
         f = operator.methodcaller('return_arguments', *many_positional_arguments, **many_kw_arguments)
         self.assertEqual(f(a), (many_positional_arguments, many_kw_arguments))
 
+    def test_non_string_keywords(self):
+        operator = self.module
+        with self.assertRaisesRegex(TypeError, "keywords must be strings"):
+            operator.methodcaller('x', **{1: 'x'})
+
     def test_inplace(self):
         operator = self.module
         class C(object):

@@ -190,11 +190,16 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
-    /* keyword Placeholder prohibition */
+    /* keyword Placeholder prohibition and key type validation */
     if (kw != NULL) {
         PyObject *key, *val;
         Py_ssize_t pos = 0;
         while (PyDict_Next(kw, &pos, &key, &val)) {
+            if (!PyUnicode_Check(key)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "keywords must be strings");
+                return NULL;
+            }
             if (val == phold) {
                 PyErr_SetString(PyExc_TypeError,
                                 "Placeholder cannot be passed as a keyword argument");
@@ -493,18 +498,27 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
             PyTuple_SET_ITEM(tot_kwnames, pto_nkwds + i, key);
         }
 
-        /* Copy pto_keywords with overlapping call keywords merged
-         * Note, tail is already coppied. */
         Py_ssize_t pos = 0, i = 0;
         PyObject *keyword_dict = n_merges ? pto_kw_merged : pto->kw;
+        int valid_keys = 1;
         Py_BEGIN_CRITICAL_SECTION(keyword_dict);
         while (PyDict_Next(keyword_dict, &pos, &key, &val)) {
+            if (!PyUnicode_Check(key)) {
+                valid_keys = 0;
+                break;
+            }
             assert(i < pto_nkwds);
             PyTuple_SET_ITEM(tot_kwnames, i, Py_NewRef(key));
             stack[tot_nargs + i] = val;
             i++;
         }
         Py_END_CRITICAL_SECTION();
+        if (!valid_keys) {
+            PyErr_SetString(PyExc_TypeError, "keywords must be strings");
+            Py_XDECREF(pto_kw_merged);
+            Py_DECREF(tot_kwnames);
+            goto error;
+        }
         assert(i == pto_nkwds);
         Py_XDECREF(pto_kw_merged);
 

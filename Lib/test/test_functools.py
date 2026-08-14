@@ -160,6 +160,14 @@ class TestPartial:
             empty, got = p(x=None)
             self.assertTrue(expected == got and empty == ())
 
+    def test_non_string_keywords(self):
+        with self.assertRaisesRegex(TypeError, "keywords must be strings"):
+            self.partial(capture, **{1: 'x'})
+        p = self.partial(capture)
+        p.keywords[1] = 'x'
+        with self.assertRaisesRegex(TypeError, "keywords must be strings"):
+            p()
+
     def test_no_side_effects(self):
         # make sure there are no side effects that affect subsequent calls
         p = self.partial(capture, 0, a=1)
