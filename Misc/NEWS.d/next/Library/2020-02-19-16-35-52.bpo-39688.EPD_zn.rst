@@ -1,2 +1,0 @@
-Compute next header offset using pax size for sparse file instead of the
-sparse real size (expended size).

@@ -1399,6 +1399,37 @@ class GNUReadTest(LongnameTest, ReadTest, unittest.TestCase):
     def test_sparse_file_10(self):
         self._test_sparse_file("gnu/sparse-1.0")
 
+    def test_sparse_file_10_pax_size(self):
+        # gh-83869: when the pax header replaces the size field, the offset
+        # of the next header must be computed from the size of the data in
+        # the archive, not from the apparent size of the sparse file.
+        data = b"payload!" * 4
+        realsize = 1 << 20
+        smap = b"1\n%d\n%d\n" % (realsize - len(data), len(data))
+        smap += b"\0" * (-len(smap) % tarfile.BLOCKSIZE)
+
+        sparse = tarfile.TarInfo("sparse")
+        sparse.size = len(smap) + len(data)
+        sparse.pax_headers = {
+            "GNU.sparse.major": "1",
+            "GNU.sparse.minor": "0",
+            "GNU.sparse.name": "sparse",
+            "GNU.sparse.realsize": str(realsize),
+            "size": str(sparse.size),
+        }
+        buf = sparse.tobuf(tarfile.PAX_FORMAT)
+        buf += smap + data + b"\0" * (-len(data) % tarfile.BLOCKSIZE)
+
+        last = tarfile.TarInfo("last")
+        last.size = len(data)
+        buf += last.tobuf(tarfile.PAX_FORMAT)
+        buf += data + b"\0" * (-len(data) % tarfile.BLOCKSIZE)
+        buf += b"\0" * (tarfile.BLOCKSIZE * 2)
+
+        with tarfile.open(fileobj=io.BytesIO(buf)) as tar:
+            self.assertEqual(tar.getnames(), ["sparse", "last"])
+            self.assertEqual(tar.extractfile("last").read(), data)
+
     @staticmethod
     def _fs_supports_holes():
         # Return True if the platform knows the st_blocks stat attribute and
