@@ -318,6 +318,7 @@ WASI = Platform(
             "wasmtime run "
             "--wasm max-wasm-stack=8388608 "
             "--wasi preview2 "
+            "--argv0 /{relbuilddir}/python.wasm "
             "--dir {srcdir}::/ "
             "--env PYTHONPATH=/{relbuilddir}/build/lib.wasi-wasm32-{version}:/Lib"
         ),
