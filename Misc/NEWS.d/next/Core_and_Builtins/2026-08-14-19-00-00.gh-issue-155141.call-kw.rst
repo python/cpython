@@ -1,0 +1,2 @@
+Improve the compiler's stack-use estimate for calls with keyword arguments,
+allowing more calls to use the faster ``CALL_KW`` instruction.
