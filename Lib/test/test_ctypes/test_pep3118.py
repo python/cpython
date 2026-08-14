@@ -76,7 +76,7 @@ class Test(unittest.TestCase):
 
         v = _testbuffer.ndarray(ob, getbuf=_testbuffer.PyBUF_STRIDES)
         self.assertEqual(v.shape, (2, 3))
-        self.assertEqual(v.strides, (12, 4))
+        self.assertEqual(v.strides, (3 * sizeof(c_int), sizeof(c_int)))
 
     def test_fortran_contiguous(self):
         # A multidimensional array is C contiguous, but not Fortran
@@ -228,12 +228,16 @@ native_types = [
 
     ## arrays and pointers
 
-    (c_double * 4,              "<d",                   (4,), (8,),           c_double),
-    (c_double * 0,              "<d",                   (0,), (8,),           c_double),
-    (c_float * 4 * 3 * 2,       "<f",                   (2,3,4), (48, 16, 4),        c_float),
-    (c_float * 4 * 0 * 2,       "<f",                   (2,0,4), (0, 16, 4),        c_float),
-    (POINTER(c_short) * 2,      "&<" + s_short,         (2,), (8,),           POINTER(c_short)),
-    (POINTER(c_short) * 2 * 3,  "&<" + s_short,         (3,2,), (16, 8),         POINTER(c_short)),
+    (c_double * 4,              "<d",                   (4,), (sizeof(c_double),), c_double),
+    (c_double * 0,              "<d",                   (0,), (sizeof(c_double),), c_double),
+    (c_float * 4 * 3 * 2,       "<f",                   (2,3,4),
+     (12 * sizeof(c_float), 4 * sizeof(c_float), sizeof(c_float)), c_float),
+    (c_float * 4 * 0 * 2,       "<f",                   (2,0,4),
+     (0, 4 * sizeof(c_float), sizeof(c_float)), c_float),
+    (POINTER(c_short) * 2,      "&<" + s_short,         (2,),
+     (sizeof(POINTER(c_short)),), POINTER(c_short)),
+    (POINTER(c_short) * 2 * 3,  "&<" + s_short,         (3,2,),
+     (2 * sizeof(POINTER(c_short)), sizeof(POINTER(c_short))), POINTER(c_short)),
     (POINTER(c_short * 2),      "&(2)<" + s_short,      (), (),             POINTER(c_short)),
 
     ## structures and unions
@@ -250,7 +254,8 @@ native_types = [
     (aUnion,                    "B",                                   (), (),  aUnion),
     # structure with sub-arrays
     (StructWithArrays, "T{(2,3)<l:x:(4)T{<l:x:<l:y:}:y:}".replace('l', s_long), (), (), StructWithArrays),
-    (StructWithArrays * 3, "T{(2,3)<l:x:(4)T{<l:x:<l:y:}:y:}".replace('l', s_long), (3,), (112,), StructWithArrays),
+    (StructWithArrays * 3, "T{(2,3)<l:x:(4)T{<l:x:<l:y:}:y:}".replace('l', s_long), (3,),
+     (sizeof(StructWithArrays),), StructWithArrays),
 
     ## pointer to incomplete structure
     (Incomplete,                "B",                    (), (),           Incomplete),
@@ -281,7 +286,8 @@ class LEPoint(LittleEndianStructure):
 # and little endian machines.
 endian_types = [
     (BEPoint, "T{>l:x:>l:y:}".replace('l', s_long), (), (), BEPoint),
-    (LEPoint * 1, "T{<l:x:<l:y:}".replace('l', s_long), (1,), (16,), LEPoint),
+    (LEPoint * 1, "T{<l:x:<l:y:}".replace('l', s_long), (1,),
+     (sizeof(LEPoint),), LEPoint),
     (POINTER(BEPoint), "&T{>l:x:>l:y:}".replace('l', s_long), (), (), POINTER(BEPoint)),
     (POINTER(LEPoint), "&T{<l:x:<l:y:}".replace('l', s_long), (), (), POINTER(LEPoint)),
     ]
