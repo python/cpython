@@ -21,14 +21,15 @@ from tempfile import TemporaryFile
 from random import randint, random, randbytes
 
 from test import archiver_tests
-from test.support import script_helper, os_helper
+from test.support import script_helper
 from test.support import (
     findfile, requires_zlib, requires_bz2, requires_lzma,
     requires_zstd, captured_stdout, captured_stderr, requires_subprocess,
     cpython_only
 )
 from test.support.os_helper import (
-    TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count, FakePath
+    TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count, FakePath,
+    with_source_date_epoch, without_source_date_epoch,
 )
 from test.support.import_helper import ensure_lazy_imports
 
@@ -1883,29 +1884,24 @@ class OtherTests(unittest.TestCase):
                 zinfo.flag_bits |= zipfile._MASK_USE_DATA_DESCRIPTOR  # Include an extended local header.
                 orig_zip.writestr(zinfo, data)
 
+    @with_source_date_epoch(epoch=1735715999)
     def test_write_with_source_date_epoch(self):
-        with os_helper.EnvironmentVarGuard() as env:
-            # Set the SOURCE_DATE_EPOCH environment variable to a specific timestamp
-            env['SOURCE_DATE_EPOCH'] = "1735715999"
+        with zipfile.ZipFile(TESTFN, "w") as zf:
+            zf.writestr("test_source_date_epoch.txt", "Testing SOURCE_DATE_EPOCH")
 
-            with zipfile.ZipFile(TESTFN, "w") as zf:
-                zf.writestr("test_source_date_epoch.txt", "Testing SOURCE_DATE_EPOCH")
+        with zipfile.ZipFile(TESTFN, "r") as zf:
+            zip_info = zf.getinfo("test_source_date_epoch.txt")
+            expected_utc = (2025, 1, 1, 7, 19, 58)
+            self.assertEqual(zip_info.date_time, expected_utc)
 
-            with zipfile.ZipFile(TESTFN, "r") as zf:
-                zip_info = zf.getinfo("test_source_date_epoch.txt")
-                expected_utc = (2025, 1, 1, 7, 19, 58)
-                self.assertEqual(zip_info.date_time, expected_utc)
-
+    @without_source_date_epoch
     def test_write_without_source_date_epoch(self):
-        with os_helper.EnvironmentVarGuard() as env:
-            del env['SOURCE_DATE_EPOCH']
+        with zipfile.ZipFile(TESTFN, "w") as zf:
+            zf.writestr("test_no_source_date_epoch.txt", "Testing without SOURCE_DATE_EPOCH")
 
-            with zipfile.ZipFile(TESTFN, "w") as zf:
-                zf.writestr("test_no_source_date_epoch.txt", "Testing without SOURCE_DATE_EPOCH")
-
-            with zipfile.ZipFile(TESTFN, "r") as zf:
-                zip_info = zf.getinfo("test_no_source_date_epoch.txt")
-                self.assertTimestampAlmostEqual(time.localtime(), zip_info.date_time, tolerance=2)
+        with zipfile.ZipFile(TESTFN, "r") as zf:
+            zip_info = zf.getinfo("test_no_source_date_epoch.txt")
+            self.assertTimestampAlmostEqual(time.localtime(), zip_info.date_time, tolerance=2)
 
     def assertTimestampAlmostEqual(self, time1, time2, tolerance):
         import datetime
