@@ -3399,12 +3399,13 @@ _io_TextIOWrapper__CHUNK_SIZE_get_impl(textio *self)
 /*[clinic input]
 @critical_section
 @setter
+@deleter
 _io.TextIOWrapper._CHUNK_SIZE
 [clinic start generated code]*/
 
 static int
 _io_TextIOWrapper__CHUNK_SIZE_set_impl(textio *self, PyObject *value)
-/*[clinic end generated code: output=edb86d2db660a5ab input=32fc99861db02a0a]*/
+/*[clinic end generated code: output=edb86d2db660a5ab input=e7c44a734efeddc3]*/
 {
     Py_ssize_t n;
     CHECK_ATTACHED_INT(self);

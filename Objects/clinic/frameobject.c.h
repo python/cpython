@@ -265,6 +265,12 @@ frame_trace_opcodes_set(PyObject *self, PyObject *value, void *Py_UNUSED(context
 {
     int return_value;
 
+    if (value == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute 'f_trace_opcodes' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = frame_trace_opcodes_set_impl((PyFrameObject *)self, value);
     Py_END_CRITICAL_SECTION();
@@ -433,4 +439,4 @@ frame___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     return return_value;
 }
-/*[clinic end generated code: output=74abf652547c0c11 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a35726b44114286a input=a9049054013a1b77]*/
