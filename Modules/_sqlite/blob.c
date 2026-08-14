@@ -139,26 +139,35 @@ read_single(pysqlite_Blob *self, Py_ssize_t offset)
     return PyLong_FromUnsignedLong((unsigned long)buf);
 }
 
-static PyObject *
-read_multiple(pysqlite_Blob *self, Py_ssize_t length, Py_ssize_t offset)
+static int
+inner_read(pysqlite_Blob *self, char *buf, Py_ssize_t length,
+           Py_ssize_t offset)
 {
     assert(length <= sqlite3_blob_bytes(self->blob));
     assert(offset < sqlite3_blob_bytes(self->blob));
 
+    int rc;
+    Py_BEGIN_ALLOW_THREADS
+    rc = sqlite3_blob_read(self->blob, buf, (int)length, (int)offset);
+    Py_END_ALLOW_THREADS
+
+    if (rc != SQLITE_OK) {
+        blob_seterror(self, rc);
+        return -1;
+    }
+    return 0;
+}
+
+static PyObject *
+read_multiple(pysqlite_Blob *self, Py_ssize_t length, Py_ssize_t offset)
+{
     PyBytesWriter *writer = PyBytesWriter_Create(length);
     if (writer == NULL) {
         return NULL;
     }
-    char *raw_buffer = PyBytesWriter_GetData(writer);
 
-    int rc;
-    Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_blob_read(self->blob, raw_buffer, (int)length, (int)offset);
-    Py_END_ALLOW_THREADS
-
-    if (rc != SQLITE_OK) {
+    if (inner_read(self, PyBytesWriter_GetData(writer), length, offset) < 0) {
         PyBytesWriter_Discard(writer);
-        blob_seterror(self, rc);
         return NULL;
     }
     return PyBytesWriter_Finish(writer);
@@ -445,7 +454,14 @@ subscript_slice(pysqlite_Blob *self, PyObject *item)
         return read_multiple(self, len, start);
     }
 
-    PyObject *blob = read_multiple(self, stop - start, start);
+    // Compute the contiguous blob region covering all slice elements, then
+    // copy each element using the standard size_t-cursor pattern that handles
+    // both positive and negative steps via unsigned arithmetic.
+    Py_ssize_t last = start + (len - 1) * step;
+    Py_ssize_t read_offset = Py_MIN(start, last);
+    Py_ssize_t read_length = Py_ABS(start - last) + 1;
+
+    PyObject *blob = read_multiple(self, read_length, read_offset);
     if (blob == NULL) {
         return NULL;
     }
@@ -456,10 +472,12 @@ subscript_slice(pysqlite_Blob *self, PyObject *item)
         return NULL;
     }
     char *res_buf = PyBytesWriter_GetData(writer);
-
     char *blob_buf = PyBytes_AS_STRING(blob);
-    for (Py_ssize_t i = 0, j = 0; i < len; i++, j += step) {
-        res_buf[i] = blob_buf[j];
+
+    size_t cur;
+    Py_ssize_t i;
+    for (cur = (size_t)start, i = 0; i < len; cur += (size_t)step, i++) {
+        res_buf[i] = blob_buf[(Py_ssize_t)cur - read_offset];
     }
     Py_DECREF(blob);
     return PyBytesWriter_Finish(writer);
@@ -553,14 +571,31 @@ ass_subscript_slice(pysqlite_Blob *self, PyObject *item, PyObject *value)
         rc = inner_write(self, vbuf.buf, len, start);
     }
     else {
-        PyObject *blob_bytes = read_multiple(self, stop - start, start);
-        if (blob_bytes != NULL) {
-            char *blob_buf = PyBytes_AS_STRING(blob_bytes);
-            for (Py_ssize_t i = 0, j = 0; i < len; i++, j += step) {
-                blob_buf[j] = ((char *)vbuf.buf)[i];
+        /* Compute the contiguous blob region covering all slice elements,
+           read it, patch each element and write it back.  The object
+           returned by read_multiple() cannot be used as the buffer, because
+           for a single byte it is an immortal singleton. */
+        Py_ssize_t last = start + (len - 1) * step;
+        Py_ssize_t write_offset = Py_MIN(start, last);
+        Py_ssize_t write_length = Py_ABS(start - last) + 1;
+        char *buf = PyMem_Malloc(write_length);
+        if (buf == NULL) {
+            PyErr_NoMemory();
+        }
+        else {
+            if (inner_read(self, buf, write_length, write_offset) == 0) {
+                /* The size_t cursor handles both positive and negative steps
+                   via unsigned arithmetic. */
+                size_t cur;
+                Py_ssize_t i;
+                for (cur = (size_t)start, i = 0; i < len;
+                     cur += (size_t)step, i++) {
+                    buf[(Py_ssize_t)cur - write_offset] =
+                        ((char *)vbuf.buf)[i];
+                }
+                rc = inner_write(self, buf, write_length, write_offset);
             }
-            rc = inner_write(self, blob_buf, stop - start, start);
-            Py_DECREF(blob_bytes);
+            PyMem_Free(buf);
         }
     }
     PyBuffer_Release(&vbuf);

@@ -285,6 +285,7 @@ DIST=		$(DISTFILES) $(DISTDIRS)
 LIBRARY=	@LIBRARY@
 LDLIBRARY=      @LDLIBRARY@
 BLDLIBRARY=     @BLDLIBRARY@
+MODULE_LDFLAGS_SHARED=$(if $(LIBPYTHON),$(BLDLIBRARY))
 PY3LIBRARY=     @PY3LIBRARY@
 DLLLIBRARY=	@DLLLIBRARY@
 LDLIBRARYDIR=   @LDLIBRARYDIR@
@@ -511,6 +512,7 @@ PYTHON_OBJS=	\
 		Python/thread.o \
 		Python/traceback.o \
 		Python/tracemalloc.o \
+		Python/typecache.o \
 		Python/uniqueid.o \
 		Python/getopt.o \
 		Python/pystrcmp.o \
@@ -1419,6 +1421,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_tracemalloc.h \
 		$(srcdir)/Include/internal/pycore_tstate.h \
 		$(srcdir)/Include/internal/pycore_tuple.h \
+		$(srcdir)/Include/internal/pycore_typecache.h \
 		$(srcdir)/Include/internal/pycore_typedefs.h \
 		$(srcdir)/Include/internal/pycore_typeobject.h \
 		$(srcdir)/Include/internal/pycore_typevarobject.h \

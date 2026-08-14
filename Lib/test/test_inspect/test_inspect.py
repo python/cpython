@@ -781,6 +781,22 @@ class TestRetrievingSourceCode(GetSourceBase):
             with self.subTest(i=i):
                 self.assertEqual(func(input), expected)
 
+    def test_cleandoc_no_dedent(self):
+        func = inspect.cleandoc
+        self.assertEqual(func('An\n  indented\n   docstring.', dedent=False),
+                         'An\n  indented\n   docstring.')
+        # Everything else that cleandoc() does still applies.
+        self.assertEqual(func('  An\n\n\tindented\n\n', dedent=False),
+                         'An\n\n        indented')
+
+    def test_getdoc_no_dedent(self):
+        class C:
+            pass
+        # Written as a docstring, it would be dedented by the compiler.
+        C.__doc__ = 'Summary.\n\n  param\n    description'
+        self.assertEqual(inspect.getdoc(C, dedent=False), C.__doc__)
+        self.assertEqual(inspect.getdoc(C), 'Summary.\n\nparam\n  description')
+
     @cpython_only
     def test_c_cleandoc(self):
         try:
@@ -6311,6 +6327,25 @@ class TestSignatureDefinitions(unittest.TestCase):
     def test_signal_module_has_signatures(self):
         import signal
         self._test_module_has_signatures(signal)
+
+    def test_socket_module_has_signatures(self):
+        import socket
+        # The socket type has no signature, it is created by socket().
+        no_signature = {'SocketType'}
+        # The C default is NULL and None is not accepted
+        unsupported_signature = {'getservbyname', 'getservbyport'}
+        # Not all functions and methods are available on all platforms.
+        unsupported_signature &= vars(socket).keys()
+        # These cannot be converted to Argument Clinic: their behaviour
+        # depends on the number of the arguments.
+        methods_no_signature = {'ioctl', 'sendto', 'setsockopt'}
+        # These have parameters with unrepresentable default values.
+        methods_unsupported_signature = {'listen', 'sendmsg', 'sendmsg_afalg'}
+        defined = vars(socket.SocketType).keys()
+        self._test_module_has_signatures(socket,
+                no_signature, unsupported_signature,
+                {'SocketType': methods_no_signature & defined},
+                {'SocketType': methods_unsupported_signature & defined})
 
     def test_stat_module_has_signatures(self):
         import stat

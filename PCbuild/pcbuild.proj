@@ -63,10 +63,6 @@
     <Projects Include="python3dll.vcxproj" />
     <!-- python3t.dll -->
     <Projects Include="python3tdll.vcxproj" />
-    <!-- py[w].exe -->
-    <Projects Include="pylauncher.vcxproj;pywlauncher.vcxproj" />
-    <!-- pyshellext.dll -->
-    <Projects Include="pyshellext.vcxproj" />
     <!-- Extension modules -->
     <ExtensionModules Include="_asyncio;_decimal;_elementtree;_multiprocessing;_overlapped;pyexpat;_queue;_remote_debugging;select;unicodedata;winsound;_uuid;_wmi;_zoneinfo" />
     <ExtensionModules Include="_ctypes" Condition="$(IncludeCTypes)" />
