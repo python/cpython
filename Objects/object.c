@@ -3601,14 +3601,18 @@ _Py_CheckSingletons(void)
     assert(!PyErr_Occurred());
     PyObject *obj;
     long ival;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     // None
     obj = Py_None;
     check_singleton(obj, &_PyNone_Type);
 
-    // Ellipsis (...)
+    // Ellipsis (...), Py_NotImplemented
     obj = Py_Ellipsis;
     check_singleton(obj, &PyEllipsis_Type);
+
+    obj = Py_NotImplemented;
+    check_singleton(obj, &_PyNotImplemented_Type);
 
     // False, True
     check_singleton_long(Py_False, 0, 1);
@@ -3624,6 +3628,7 @@ _Py_CheckSingletons(void)
     obj = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     check_singleton_bytes(obj, 0, '\0');
 
+    // 1-character bytes strings
     for (ival=0; ival <= 255; ival++) {
         obj = (PyObject*)&_Py_SINGLETON(bytes_characters)[ival];
         check_singleton_bytes(obj, 1, (unsigned char)ival);
@@ -3633,6 +3638,9 @@ _Py_CheckSingletons(void)
     obj = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     check_singleton_unicode(obj, 0, 0);
 
+    // Do not tests _Py_STR() strings since there is no API to list them
+
+    // 1-character Unicode strings
     for (ival=0; ival <= 255; ival++) {
         obj = _Py_LATIN1_CHR(ival);
         check_singleton_unicode(obj, 1, ival);
@@ -3643,6 +3651,15 @@ _Py_CheckSingletons(void)
     check_singleton(obj, &PyTuple_Type);
     _PyObject_ASSERT(obj, PyTuple_GET_SIZE(obj) == 0);
     _PyObject_ASSERT(obj, ((PyTupleObject*)obj)->ob_hash == _PyTuple_HASH_EMPTY);
+
+    // Do not test less commoly used singletons to reduce the overhead
+    // of calling _Py_CheckSingletons():
+    //
+    // - PyDateTime_TimeZone_UTC
+    // - context_token_missing
+    // - hamt_bitmap_node_empty
+    // - interp hamt_empty
+    // - interp last_resort_memory_error
 
     assert(!PyErr_Occurred());
 }
