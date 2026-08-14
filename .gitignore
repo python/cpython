@@ -133,6 +133,7 @@ PCbuild/obj/
 PCbuild/win32/
 PCbuild/win32t/
 Tools/unicode/data/
+/.venv-pre-commit/
 /autom4te.cache
 /build/
 /builddir/
