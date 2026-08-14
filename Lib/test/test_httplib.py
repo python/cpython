@@ -528,6 +528,34 @@ class HttpMethodTests(TestCase):
                 conn.sock = FakeSocket(None)
                 conn.request(method=method, url="/")
 
+    def test_query_request(self):
+        # QUERY (RFC 10008) is sent with a body, like PUT/POST/PATCH.
+        conn = client.HTTPConnection('example.com')
+        conn.sock = FakeSocket(None)
+        conn.request('QUERY', '/contacts', body='name=python',
+                     headers={'Content-Type': 'application/x-www-form-urlencoded'})
+        self.assertEqual(conn.sock.data,
+                         b'QUERY /contacts HTTP/1.1\r\n'
+                         b'Host: example.com\r\n'
+                         b'Accept-Encoding: identity\r\n'
+                         b'Content-Length: 11\r\n'
+                         b'Content-Type: application/x-www-form-urlencoded\r\n'
+                         b'\r\n'
+                         b'name=python')
+
+    def test_query_request_no_body(self):
+        # A QUERY without a body still gets Content-Length: 0, since some
+        # servers respond with 411 otherwise.
+        conn = client.HTTPConnection('example.com')
+        conn.sock = FakeSocket(None)
+        conn.request('QUERY', '/contacts')
+        self.assertEqual(conn.sock.data,
+                         b'QUERY /contacts HTTP/1.1\r\n'
+                         b'Host: example.com\r\n'
+                         b'Accept-Encoding: identity\r\n'
+                         b'Content-Length: 0\r\n'
+                         b'\r\n')
+
 
 class TransferEncodingTest(TestCase):
     expected_body = b"It's just a flesh wound"
