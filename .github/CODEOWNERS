@@ -171,9 +171,6 @@ Mac/                          @python/macos-team
 Lib/_osx_support.py           @python/macos-team
 Lib/test/test__osx_support.py @python/macos-team
 
-# WebAssembly
-Tools/wasm/README.md          @brettcannon @freakboy3742 @emmatyping
-
 # WebAssembly (Emscripten)
 Platforms/emscripten          @freakboy3742 @emmatyping
 Tools/wasm/emscripten         @freakboy3742 @emmatyping
@@ -335,7 +332,6 @@ Modules/_remote_debugging/          @pablogsal
 
 # Sub-Interpreters
 **/*crossinterp*                          @ericsnowcurrently
-**/*interpreteridobject.*                 @ericsnowcurrently
 Doc/library/concurrent.interpreters.rst   @ericsnowcurrently
 Lib/concurrent/futures/interpreter.py     @ericsnowcurrently
 Lib/concurrent/interpreters/              @ericsnowcurrently
@@ -646,3 +642,6 @@ Modules/**/clinic/
 Objects/**/clinic/
 PC/**/clinic/
 Python/**/clinic/
+
+# Exclude HTML IDs list
+Doc/tools/removed-ids.txt

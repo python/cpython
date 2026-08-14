@@ -1,0 +1,2 @@
+Fixed a crash in :meth:`asyncio.Task.get_context`
+when called on an uninitialized task.

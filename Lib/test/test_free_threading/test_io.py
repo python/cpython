@@ -124,6 +124,34 @@ class CBytesIOTest(ThreadSafetyMixin, TestCase):
 
     @threading_helper.requires_working_threading()
     @threading_helper.reap_threads
+    def test_concurrent_setstate_and_method_call(self):
+        # gh-153290: __setstate__() installed the instance __dict__ with a
+        # plain store, racing the lock-free LOAD_ATTR method fast path that
+        # reads the dict slot with an atomic acquire load.
+        states = [(b"A" * 64, 0, {}), (b"B" * 128, 32, {}), (b"C" * 256, 0, {})]
+        nreaders = 4
+        for _ in range(25):
+            shared = self.ioclass(b"initial payload")
+            barrier = threading.Barrier(1 + nreaders)
+
+            def setter():
+                barrier.wait()
+                for state in states:
+                    shared.__setstate__(state)
+
+            def reader():
+                barrier.wait()
+                for _ in range(100):
+                    shared.read(8)
+
+            threads = [threading.Thread(target=setter)]
+            threads += [threading.Thread(target=reader)
+                        for _ in range(nreaders)]
+            with threading_helper.start_threads(threads):
+                pass
+
+    @threading_helper.requires_working_threading()
+    @threading_helper.reap_threads
     def test_concurrent_whole_buffer_read_and_resize(self):
         shared = self.ioclass(b"x" * 64)
         writers = 2
@@ -204,3 +232,23 @@ class IncrementalNewlineDecoderTest(TestCase):
                 decoder.reset()
 
         run_concurrently([decode_worker] * 2 + [reset_worker] * 2)
+
+
+class TextIOWrapperTest(TestCase):
+    def test_buffer_detach_race(self):
+        make = lambda: io.TextIOWrapper(io.BytesIO())
+        slot = [make()]
+
+        def reader():
+            for _ in range(1000):
+                try:
+                    slot[0].buffer
+                except ValueError:
+                    pass
+
+        def detacher():
+            for _ in range(1000):
+                slot[0] = make()
+                slot[0].detach()
+
+        run_concurrently([reader, detacher])

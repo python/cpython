@@ -1227,6 +1227,72 @@ class BaseTestTaskGroup:
         self.assertEqual(await race(fn_1, fn_2, fn_3), 1)
         self.assertListEqual(record, ["1 started", "2 started", "3 started", "1 finished"])
 
+    async def test_taskgroup_generator_exit_01(self):
+        # GeneratorExit in a TaskGroup should be fine
+        async def gen():
+            yield 1
+
+        async def fn():
+            async with asyncio.TaskGroup() as tg:
+                async for n in gen():
+                    yield n
+
+        g = fn()
+        await g.asend(None)
+        await g.aclose()
+
+    async def test_taskgroup_generator_exit_02(self):
+        # A lone GeneratorExit in a task should still give an ExceptionGroup
+        async def t():
+            raise GeneratorExit
+
+        async def fn():
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(t())
+
+        with self.assertRaises(BaseExceptionGroup) as cm:
+            await fn()
+        self.assertEqual(get_error_types(cm.exception), {GeneratorExit})
+
+    async def test_taskgroup_generator_exit_03(self):
+        # A GeneratorExit in one task and an error in another should
+        # still give an ExceptionGroup
+        async def t1():
+            raise GeneratorExit
+
+        async def t2():
+            raise AssertionError('t2 failed')
+
+        async def fn():
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(t1())
+                tg.create_task(t2())
+
+        with self.assertRaises(BaseExceptionGroup) as cm:
+            await fn()
+
+        self.assertEqual(get_error_types(cm.exception), {GeneratorExit, AssertionError})
+
+    async def test_taskgroup_generator_exit_04(self):
+        event = asyncio.Event()
+        async def t():
+            event.set()
+            raise AssertionError('t failed')
+
+        async def fn():
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(t())
+                yield 1
+
+        g = fn()
+        await g.asend(None)
+        await event.wait()  # wait for t() to run
+
+        with self.assertRaises(BaseExceptionGroup) as cm:
+            await g.aclose()
+
+        self.assertEqual(get_error_types(cm.exception), {GeneratorExit, AssertionError})
+
 
 class TestTaskGroup(BaseTestTaskGroup, unittest.IsolatedAsyncioTestCase):
     loop_factory = asyncio.EventLoop

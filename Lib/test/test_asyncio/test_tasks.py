@@ -2733,6 +2733,18 @@ class BaseTaskTests:
             self.assertEqual(name, "example")
             await t
 
+    def test_eager_start_true_no_loop(self):
+        # gh-154695: eager_start must use the resolved loop, not loop=None.
+        async def asyncfn():
+            return 42
+
+        async def main():
+            t = self.__class__.Task(asyncfn(), eager_start=True)
+            self.assertTrue(t.done())
+            self.assertEqual(await t, 42)
+
+        asyncio.run(main(), loop_factory=asyncio.EventLoop)
+
     def test_eager_start_false(self):
         name = None
 
@@ -2911,6 +2923,16 @@ class CTask_CFuture_Tests(BaseTaskTests, SetMethodsTest,
         self.loop.run_until_complete(task)
         with self.assertRaises(AttributeError):
             del task._log_destroy_pending
+
+    def test_get_context_uninitialized_segfault(self):
+        # https://github.com/python/cpython/issues/154871
+
+        class UninitializedTask(self.Task):
+            def __init__(self, *args, **kwargs):
+                pass
+
+        task = UninitializedTask()
+        self.assertIsNone(task.get_context())
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture') and

@@ -245,6 +245,12 @@ jobs:
       os: ${{ matrix.os }}
       test-opts: ${{ matrix.test-opts || '' }}
 
+  build-ubuntu-installed:
+    name: 'Ubuntu (installed)'
+    needs: build-context
+    if: needs.build-context.outputs.run-ubuntu == 'true'
+    uses: ./.github/workflows/reusable-install.yml
+
   build-ubuntu-ssltests:
     name: 'Ubuntu SSL tests'
     runs-on: ${{ matrix.os }}
@@ -338,7 +344,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Build and test
-        run: JAVA_HOME="${JAVA_HOME_21_X64:-$JAVA_HOME_21_arm64}" python3 Platforms/Android ci --fast-ci ${{ matrix.arch }}-linux-android
+        run: python3 Platforms/Android ci --fast-ci ${{ matrix.arch }}-linux-android
 
   build-ios:
     name: iOS
@@ -636,6 +642,7 @@ jobs:
     - build-windows
     - build-macos
     - build-ubuntu
+    - build-ubuntu-installed
     - build-ubuntu-ssltests
     - build-ios
     - build-emscripten
@@ -685,6 +692,7 @@ jobs:
             !fromJSON(needs.build-context.outputs.run-ubuntu)
             && '
             build-ubuntu,
+            build-ubuntu-installed,
             build-ubuntu-ssltests,
             test-hypothesis,
             build-asan,
