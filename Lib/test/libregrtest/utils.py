@@ -128,7 +128,8 @@ def printlist(x, width=70, indent=4, file=None):
     blanks = ' ' * indent
     # Print the sorted list: 'x' may be a '--random' list or a set()
     print(textwrap.fill(' '.join(str(elt) for elt in sorted(x)), width,
-                        initial_indent=blanks, subsequent_indent=blanks),
+                        initial_indent=blanks, subsequent_indent=blanks,
+                        break_long_words=False, break_on_hyphens=False),
           file=file)
 
 

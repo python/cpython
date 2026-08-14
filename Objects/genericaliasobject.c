@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
+#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"
 #include "pycore_typevarobject.h" // _Py_typing_type_repr
@@ -579,18 +580,23 @@ PyDoc_STRVAR(genericalias__doc__,
 "is (int,).");
 
 static PyObject *
+ga_parameters_lock_held(PyObject *self);
+
+static PyObject *
 ga_getitem(PyObject *self, PyObject *item)
 {
     gaobject *alias = (gaobject *)self;
     // Populate __parameters__ if needed.
-    if (alias->parameters == NULL) {
-        alias->parameters = _Py_make_parameters(alias->args);
-        if (alias->parameters == NULL) {
-            return NULL;
-        }
+    PyObject *parameters;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    parameters = ga_parameters_lock_held(self);
+    Py_END_CRITICAL_SECTION();
+    if (parameters == NULL) {
+        return NULL;
     }
 
-    PyObject *newargs = _Py_subs_parameters(self, alias->args, alias->parameters, item);
+    PyObject *newargs = _Py_subs_parameters(self, alias->args, parameters, item);
+    Py_DECREF(parameters);
     if (newargs == NULL) {
         return NULL;
     }
@@ -846,6 +852,7 @@ static PyMemberDef ga_members[] = {
 static PyObject *
 ga_parameters_lock_held(PyObject *self)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     gaobject *alias = (gaobject *)self;
     if (alias->parameters == NULL) {
         alias->parameters = _Py_make_parameters(alias->args);
@@ -942,12 +949,11 @@ static PyObject *
 ga_iternext(PyObject *op)
 {
     gaiterobject *gi = (gaiterobject*)op;
-#ifdef Py_GIL_DISABLED
-    PyObject *obj = _Py_atomic_exchange_ptr(&gi->obj, NULL);
-#else
-    PyObject* obj = gi->obj;
+    PyObject *obj;
+    Py_BEGIN_CRITICAL_SECTION(gi);
+    obj = gi->obj;
     gi->obj = NULL;
-#endif
+    Py_END_CRITICAL_SECTION();
     if (obj == NULL) {
         PyErr_SetNone(PyExc_StopIteration);
         return NULL;
@@ -997,10 +1003,19 @@ ga_iter_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
      * call must be before access of iterator pointers.
      * see issue #101765 */
 
-    if (gi->obj)
-        return Py_BuildValue("N(O)", iter, gi->obj);
-    else
+    PyObject *obj;
+    Py_BEGIN_CRITICAL_SECTION(gi);
+    obj = Py_XNewRef(gi->obj);
+    Py_END_CRITICAL_SECTION();
+
+    if (obj) {
+        PyObject *result = Py_BuildValue("N(O)", iter, obj);
+        Py_DECREF(obj);
+        return result;
+    }
+    else {
         return Py_BuildValue("N(())", iter);
+    }
 }
 
 static PyMethodDef ga_iter_methods[] = {
