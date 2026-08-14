@@ -1481,7 +1481,7 @@ expr_ty _PyPegen_decoded_constant_from_token(Parser* p, Token* tok) {
 }
 
 expr_ty _PyPegen_constant_from_token(Parser* p, Token* tok) {
-    char* bstr = PyBytes_AsString(tok->bytes);
+    const char* bstr = PyBytes_AsString(tok->bytes);
     if (bstr == NULL) {
         return NULL;
     }
@@ -1499,7 +1499,7 @@ expr_ty _PyPegen_constant_from_token(Parser* p, Token* tok) {
 }
 
 expr_ty _PyPegen_constant_from_string(Parser* p, Token* tok) {
-    char* the_str = PyBytes_AsString(tok->bytes);
+    const char* the_str = PyBytes_AsString(tok->bytes);
     if (the_str == NULL) {
         return NULL;
     }

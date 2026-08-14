@@ -472,7 +472,7 @@ subscript_slice(pysqlite_Blob *self, PyObject *item)
         return NULL;
     }
     char *res_buf = PyBytesWriter_GetData(writer);
-    char *blob_buf = PyBytes_AS_STRING(blob);
+    const char *blob_buf = PyBytes_AS_STRING(blob);
 
     size_t cur;
     Py_ssize_t i;
