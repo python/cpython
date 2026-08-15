@@ -1582,10 +1582,14 @@ Borders and lines
    | *br*      | Bottom-right corner | :const:`ACS_LRCORNER` |
    +-----------+---------------------+-----------------------+
 
+   If any parameter is a byte character or an integer other than ``0``, the
+   border is drawn from byte characters, and every string character must be
+   encodable as a single byte.
+
    .. versionchanged:: next
       Wide and combining characters, and :class:`complexchar` cells, are now
       accepted.  A single call cannot mix
-      them with integer or byte characters.
+      :class:`complexchar` cells with integer or byte characters.
 
 .. method:: window.box([vertch, horch])
 
@@ -1595,7 +1599,7 @@ Borders and lines
    .. versionchanged:: next
       Wide and combining characters, and :class:`complexchar` cells, are now
       accepted.  A single call cannot mix
-      them with integer or byte characters.
+      :class:`complexchar` cells with integer or byte characters.
 
 .. method:: window.hline(ch, n[, attr])
             window.hline(y, x, ch, n[, attr])
