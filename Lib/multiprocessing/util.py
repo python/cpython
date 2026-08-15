@@ -173,6 +173,7 @@ _SUN_PATH_LEN_RESERVED = (
     len(os.path.sep) + _TMPPYMP_PREFIXLEN + _TMPPYMP_SUFFIXLEN +
     len(os.path.sep) + _TMPSOCK_PREFIXLEN + _TMPSOCK_SUFFIXLEN
 )
+assert _SUN_PATH_LEN_RESERVED < _SUN_PATH_MAX
 
 
 def _remove_temp_dir(rmtree, tempdir):
@@ -183,6 +184,7 @@ def _remove_temp_dir(rmtree, tempdir):
     # late during Python finalization
     if current_process is not None:
         current_process._config['tempdir'] = None
+
 
 def _get_base_temp_dir(tempfile):
     """Get a temporary directory where socket files will be created.
@@ -231,6 +233,7 @@ def _get_base_temp_dir(tempfile):
     # The following assertion must be satisfied with the chosen constants.
     assert len(base_system_tempdir) + _SUN_PATH_LEN_RESERVED < _SUN_PATH_MAX
     return base_system_tempdir
+
 
 def get_temp_dir():
     # get name of a temp directory which will be automatically cleaned up
