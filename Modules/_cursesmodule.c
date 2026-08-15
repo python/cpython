@@ -5303,8 +5303,8 @@ static PyObject *
 PyCursesScreen_use(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     PyCursesScreenObject *so = _PyCursesScreenObject_CAST(self);
+    cursesmodule_state *state = get_cursesmodule_state_by_cls(Py_TYPE(self));
     if (so->screen == NULL) {
-        cursesmodule_state *state = get_cursesmodule_state_by_cls(Py_TYPE(self));
         PyErr_SetString(state->error, "the screen has been deleted");
         return NULL;
     }
@@ -5313,7 +5313,10 @@ PyCursesScreen_use(PyObject *self, PyObject *args, PyObject *kwargs)
         return NULL;
     }
     curses_use_data data = {self, func, extra, kwargs, NULL};
+    PyObject *prev = state->topscreen;
+    state->topscreen = Py_NewRef(self);
     use_screen(so->screen, curses_use_screen_cb, &data);
+    Py_SETREF(state->topscreen, prev);
     Py_DECREF(extra);
     return data.result;
 }
