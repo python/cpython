@@ -11,7 +11,12 @@ through a dual-thread architecture:
 A single "token" (semaphore permit) ping-pongs between the two threads,
 so exactly one of them touches the event loop at any moment.
 
-Inspired by Trio's guest mode (trio.lowlevel.start_guest_run).
+Inspired by Trio's guest mode (trio.lowlevel.start_guest_run).  The
+asyncio-guest project, which this implementation grew out of, has
+runnable examples for Tkinter, Qt, GTK, pygame, Win32 and Tornado
+hosts:
+
+    https://github.com/congzhangzh/asyncio-guest
 """
 
 __all__ = ('start_guest_run',)

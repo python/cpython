@@ -44,6 +44,17 @@ See :source:`Doc/includes/asyncio_guest_tkinter.py` for a complete Tkinter
 example that embeds asyncio inside ``tkinter.mainloop()`` using
 :func:`start_guest_run`.
 
+.. seealso::
+
+   The `asyncio-guest <https://github.com/congzhangzh/asyncio-guest>`__
+   project — the proof of concept this feature is based on — has runnable
+   examples for many more hosts: Tkinter, Qt (PyQt5/PySide6), GTK,
+   pygame, Win32 and Tornado.
+
+   `Trio's guest mode
+   <https://trio.readthedocs.io/en/stable/reference-lowlevel.html#using-guest-mode-to-run-trio-on-top-of-other-event-loops>`__,
+   which pioneered this approach.
+
 .. rubric:: API
 
 .. function:: start_guest_run(async_fn, *args, run_sync_soon_threadsafe, done_callback)
