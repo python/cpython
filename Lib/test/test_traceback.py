@@ -206,7 +206,7 @@ class TracebackCases(unittest.TestCase):
                 sys.setrecursionlimit(15)
 
                 def f():
-                    ref(lambda: 0, [])
+                    ref(lambda: 0, ord)
                     f()
 
                 try:
@@ -1815,6 +1815,18 @@ class TestKeywordTypoSuggestions(unittest.TestCase):
         ("[x for x\nin range(3)\nof x]", "if"),
         ("[123 fur x\nin range(3)\nif x]", "for"),
         ("for x im n:\n  pass", "in"),
+        ("mach x:", "match"),
+        ("math x:", "match"),
+        ("match 1:\n  cse 1:", "case"),
+        ("typ x = int", "type"),
+        ("typed x = int", "type"),
+        ("lazi import x", "lazy"),
+        ("lezi import x", "lazy"),
+        ("switch x:\n case:", "match"),
+        ("delete x", "del"),
+        ("function f():", "def"),
+        ("func f():", "def"),
+        ("void f():", "def"),
     ]
 
     def test_keyword_suggestions_from_file(self):
@@ -4637,6 +4649,9 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
             (frozenset, 'remove', "Did you mean to use a 'set' object?"),
             (frozenset, 'update', "Did you mean to use a 'set' object?"),
             (frozendict, 'update', "Did you mean to use a 'dict' object?"),
+            (tuple, 'clear', "Did you mean to use a 'list' object?"),
+            (frozenset, 'clear', "Did you mean to use a 'set' object?"),
+            (frozendict, 'clear', "Did you mean to use a 'dict' object?"),
         ]
         for test_type, attr, expected in cases:
             with self.subTest(type=test_type.__name__, attr=attr):
@@ -5596,11 +5611,11 @@ class TestLazyImportSuggestions(unittest.TestCase):
 
     def test_attribute_error_does_not_reify_lazy_imports(self):
         """Printing an AttributeError should not trigger lazy import reification."""
-        # pkg.bar prints "BAR_MODULE_LOADED" when imported.
+        # lazypkg.bar prints "BAR_MODULE_LOADED" when imported.
         # If lazy import is reified during suggestion computation, we'll see it.
         code = textwrap.dedent("""
-            lazy import test.test_lazy_import.data.pkg.bar
-            test.test_lazy_import.data.pkg.nonexistent
+            lazy import test.test_lazy_import.data.lazypkg
+            test.test_lazy_import.data.lazypkg.nonexistent
         """)
         rc, stdout, stderr = assert_python_failure('-c', code)
         self.assertNotIn(b"BAR_MODULE_LOADED", stdout)
@@ -5609,9 +5624,9 @@ class TestLazyImportSuggestions(unittest.TestCase):
         """Formatting a traceback should not trigger lazy import reification."""
         code = textwrap.dedent("""
             import traceback
-            lazy import test.test_lazy_import.data.pkg.bar
+            lazy import test.test_lazy_import.data.lazypkg
             try:
-                test.test_lazy_import.data.pkg.nonexistent
+                test.test_lazy_import.data.lazypkg.nonexistent
             except AttributeError:
                 traceback.format_exc()
             print("OK")
@@ -5623,9 +5638,9 @@ class TestLazyImportSuggestions(unittest.TestCase):
     def test_suggestion_still_works_for_non_lazy_attributes(self):
         """Suggestions should still work for non-lazy module attributes."""
         code = textwrap.dedent("""
-            lazy import test.test_lazy_import.data.pkg.bar
+            lazy import test.test_lazy_import.data.lazypkg
             # Typo for __name__
-            test.test_lazy_import.data.pkg.__nme__
+            test.test_lazy_import.data.lazypkg.__nme__
         """)
         rc, stdout, stderr = assert_python_failure('-c', code)
         self.assertIn(b"__name__", stderr)

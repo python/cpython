@@ -53,6 +53,8 @@
    DAMAGES OR  OTHER LIABILITY, WHETHER  IN AN  ACTION OF CONTRACT,  TORT OR
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+   SPDX-License-Identifier: MIT
 */
 
 #if defined(__GNUC__) && defined(__i386__) && ! defined(__MINGW32__)
@@ -123,20 +125,11 @@
 #    define EXPAT_FMT_SIZE_T(midpart) "%" midpart "u"
 #  endif
 #else
+#  include <inttypes.h> // PRIdPTR, PRIuPTR
 #  define EXPAT_FMT_LLX(midpart) "%" midpart "llx"
 #  define EXPAT_FMT_ULL(midpart) "%" midpart "llu"
-#  if ! defined(ULONG_MAX)
-#    error Compiler did not define ULONG_MAX for us
-#  elif ULONG_MAX == 18446744073709551615u // 2^64-1
-#    define EXPAT_FMT_PTRDIFF_T(midpart) "%" midpart "ld"
-#    define EXPAT_FMT_SIZE_T(midpart) "%" midpart "lu"
-#  elif defined(__wasm32__) // 32bit mode Emscripten or WASI SDK
-#    define EXPAT_FMT_PTRDIFF_T(midpart) "%" midpart "ld"
-#    define EXPAT_FMT_SIZE_T(midpart) "%" midpart "zu"
-#  else
-#    define EXPAT_FMT_PTRDIFF_T(midpart) "%" midpart "d"
-#    define EXPAT_FMT_SIZE_T(midpart) "%" midpart "u"
-#  endif
+#  define EXPAT_FMT_PTRDIFF_T(midpart) "%" midpart PRIdPTR
+#  define EXPAT_FMT_SIZE_T(midpart) "%" midpart PRIuPTR
 #endif
 
 #ifndef UNUSED_P

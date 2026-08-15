@@ -21,7 +21,7 @@ that work tightly with the python syntax (template engines for example).
 :license: Python License.
 """
 from _ast import *
-
+lazy import warnings
 
 def parse(source, filename='<unknown>', mode='exec', *,
           type_comments=False, feature_version=None, optimize=-1, module=None):
@@ -630,9 +630,11 @@ if not hasattr(Tuple, 'dims'):
 
     def _dims_getter(self):
         """Deprecated. Use elts instead."""
+        warnings._deprecated(f"ast.Tuple.dims", remove=(3, 21))
         return self.elts
 
     def _dims_setter(self, value):
+        warnings._deprecated(f"ast.Tuple.dims", remove=(3, 21))
         self.elts = value
 
     Tuple.dims = property(_dims_getter, _dims_setter)
@@ -713,6 +715,24 @@ def main(args=None):
     print(dump(tree, include_attributes=args.include_attributes,
                color=can_colorize(file=sys.stdout),
                indent=args.indent, show_empty=args.show_empty))
+
+_deprecated = {
+        'slice': globals().pop("slice"),
+        'Index': globals().pop("Index"),
+        'ExtSlice': globals().pop("ExtSlice"),
+        'Suite': globals().pop("Suite"),
+        'AugLoad': globals().pop("AugLoad"),
+        'AugStore': globals().pop("AugStore"),
+        'Param': globals().pop("Param")
+}
+
+def __getattr__(attr):
+    try:
+        val = _deprecated[attr]
+    except KeyError:
+        raise AttributeError(f"module 'ast' has no attribute {attr!r}") from None
+    warnings._deprecated(f"ast.{attr}", remove=(3, 21))
+    return val
 
 if __name__ == '__main__':
     main()

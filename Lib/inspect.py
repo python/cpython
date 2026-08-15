@@ -196,18 +196,18 @@ def ispackage(object):
 def ismethoddescriptor(object):
     """Return true if the object is a method descriptor.
 
-    But not if ismethod() or isclass() or isfunction() are true.
+    But not if ismethod(), isclass() or isfunction() is true.
 
-    This is new in Python 2.2, and, for example, is true of int.__add__.
-    An object passing this test has a __get__ attribute, but not a
-    __set__ attribute or a __delete__ attribute. Beyond that, the set
-    of attributes varies; __name__ is usually sensible, and __doc__
-    often is.
+    An object passing this test (for example, int.__add__) has a __get__
+    attribute, but not a __set__ attribute or a __delete__ attribute.
+    Beyond that, the set of attributes varies; __name__ is usually
+    sensible, and __doc__ often is.
 
     Methods implemented via descriptors that also pass one of the other
-    tests return false from the ismethoddescriptor() test, simply because
-    the other tests promise more -- you can, e.g., count on having the
-    __func__ attribute (etc) when an object passes ismethod()."""
+    tests (ismethod(), isclass(), isfunction()) make this function return
+    false, simply because those other tests promise more -- you can, for
+    example, count on having the __func__ attribute when an object passes
+    ismethod()."""
     if isclass(object) or ismethod(object) or isfunction(object):
         # mutual exclusion
         return False
@@ -219,8 +219,13 @@ def ismethoddescriptor(object):
 def isdatadescriptor(object):
     """Return true if the object is a data descriptor.
 
+    But not if ismethod(), isclass() or isfunction() is true.
+
     Data descriptors have a __set__ or a __delete__ attribute.  Examples are
-    properties (defined in Python) and getsets and members (defined in C).
+    properties, getsets, and members.  For the latter two (defined only in C
+    extension modules) more specific tests are available as well:
+    isgetsetdescriptor() and ismemberdescriptor(), respectively.
+
     Typically, data descriptors will also have __name__ and __doc__ attributes
     (properties, getsets, and members have both of these attributes), but this
     is not guaranteed."""
@@ -788,12 +793,14 @@ def _getowndoc(obj):
     except AttributeError:
         return None
 
-def getdoc(object, *, fallback_to_class_doc=True, inherit_class_doc=True):
+def getdoc(object, *, fallback_to_class_doc=True, inherit_class_doc=True,
+           dedent=True):
     """Get the documentation string for an object.
 
     All tabs are expanded to spaces.  To clean up docstrings that are
     indented to line up with blocks of code, any whitespace than can be
-    uniformly removed from the second line onwards is removed."""
+    uniformly removed from the second line onwards is removed, unless
+    dedent is false."""
     if fallback_to_class_doc:
         try:
             doc = object.__doc__
@@ -808,22 +815,23 @@ def getdoc(object, *, fallback_to_class_doc=True, inherit_class_doc=True):
             return None
     if not isinstance(doc, str):
         return None
-    return cleandoc(doc)
+    return cleandoc(doc, dedent=dedent)
 
-def cleandoc(doc):
+def cleandoc(doc, *, dedent=True):
     """Clean up indentation from docstrings.
 
     Any whitespace that can be uniformly removed from the second line
-    onwards is removed."""
+    onwards is removed, unless dedent is false."""
     lines = doc.expandtabs().split('\n')
 
     # Find minimum indentation of any non-blank lines after first line.
     margin = sys.maxsize
-    for line in lines[1:]:
-        content = len(line.lstrip(' '))
-        if content:
-            indent = len(line) - content
-            margin = min(margin, indent)
+    if dedent:
+        for line in lines[1:]:
+            content = len(line.lstrip(' '))
+            if content:
+                indent = len(line) - content
+                margin = min(margin, indent)
     # Remove indentation.
     if lines:
         lines[0] = lines[0].lstrip(' ')
@@ -1709,9 +1717,13 @@ def _check_instance(obj, attr):
 
 
 def _check_class(klass, attr):
+    last_meta = None
     for entry in _static_getmro(klass):
-        if _shadowed_dict(type(entry)) is _sentinel and attr in entry.__dict__:
-            return entry.__dict__[attr]
+        meta = type(entry)
+        if meta is last_meta or _shadowed_dict(meta) is _sentinel:
+            last_meta = meta
+            if attr in entry.__dict__:
+                return entry.__dict__[attr]
     return _sentinel
 
 
@@ -1743,6 +1755,9 @@ def _shadowed_dict(klass):
     # destroyed, and the dynamically created classes happen to be the only
     # objects that hold strong references to other objects that take up a
     # significant amount of memory.
+    # Fast path: `type` is the dominant caller; result is always _sentinel.
+    if klass is type:
+        return _sentinel
     return _shadowed_dict_from_weakref_mro_tuple(
         *[make_weakref(entry) for entry in _static_getmro(klass)]
     )
@@ -2200,7 +2215,8 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
             except NameError:
                 raise ValueError
 
-        if isinstance(value, (str, int, float, bytes, bool, type(None))):
+        if isinstance(value, (str, int, float, bytes, bool, type(None),
+                              sentinel)):
             return ast.Constant(value)
         raise ValueError
 

@@ -42,9 +42,12 @@ VERSION = "3.3"
 # The Unicode Database
 # --------------------
 # When changing UCD version please update
-#   * Doc/library/stdtypes.rst, and
+#   * Doc/library/stdtypes.rst (four occurrences)
 #   * Doc/library/unicodedata.rst
+#   * Doc/library/re.rst
 #   * Doc/reference/lexical_analysis.rst (three occurrences)
+# and optionally (comments)
+#   * Lib/re/_properties.py (three occurrences)
 UNIDATA_VERSION = "17.0.0"
 UNICODE_DATA = "UnicodeData%s.txt"
 COMPOSITION_EXCLUSIONS = "CompositionExclusions%s.txt"
@@ -342,15 +345,21 @@ def makeunicodedata(unicode, trace):
         fprint("#define TOTAL_FIRST",total_first)
         fprint("#define TOTAL_LAST",total_last)
         fprint("struct reindex{int start;short count,index;};")
+        # The reindex tables are read only by find_nfc_index(), which scans
+        # forward while .start <= code.  The trailing sentinel's .start must
+        # exceed every codepoint (so the scan stops with a single comparison)
+        # and fit the signed int .start field.
+        nfc_sentinel = 0x7fffffff
+        assert sys.maxunicode < nfc_sentinel <= 0x7fffffff
         fprint("static struct reindex nfc_first[] = {")
         for start,end in comp_first_ranges:
             fprint("    { %d, %d, %d}," % (start,end-start,comp_first[start]))
-        fprint("    {0,0,0}")
+        fprint("    {0x%x, 0, 0}" % nfc_sentinel)
         fprint("};\n")
         fprint("static struct reindex nfc_last[] = {")
         for start,end in comp_last_ranges:
             fprint("  { %d, %d, %d}," % (start,end-start,comp_last[start]))
-        fprint("  {0,0,0}")
+        fprint("  {0x%x, 0, 0}" % nfc_sentinel)
         fprint("};\n")
 
         # FIXME: <fl> the following tables could be made static, and

@@ -16,6 +16,8 @@ from .module_utils import extract_module_name, get_python_path_info
 
 
 class StackTraceCollector(Collector):
+    aggregating = True
+
     def __init__(self, sample_interval_usec, *, skip_idle=False):
         self.sample_interval_usec = sample_interval_usec
         self.skip_idle = skip_idle
@@ -62,13 +64,20 @@ class CollapsedStackCollector(StackTraceCollector):
             for stack, count in lines:
                 f.write(f"{stack} {count}\n")
         print(f"Collapsed stack output written to {filename}")
+        return True
 
 
 class FlamegraphCollector(StackTraceCollector):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.stats = {}
-        self._root = {"samples": 0, "children": {}, "threads": set()}
+        self.stats = {"sample_interval_usec": self.sample_interval_usec}
+        self._root = {
+            "samples": 0,
+            "children": {},
+            "threads": set(),
+            "thread_samples": collections.Counter(),
+            "thread_self": collections.Counter(),
+        }
         self._total_samples = 0
         self._sample_count = 0  # Track actual number of samples (not thread traces)
         self._func_intern = {}
@@ -159,7 +168,7 @@ class FlamegraphCollector(StackTraceCollector):
             print(
                 "Warning: No functions found in profiling data. Check if sampling captured any data."
             )
-            return
+            return False
 
         html_content = self._create_flamegraph_html(flamegraph_data)
 
@@ -167,6 +176,7 @@ class FlamegraphCollector(StackTraceCollector):
             f.write(html_content)
 
         print(f"Flamegraph saved to: {filename}")
+        return True
 
     @staticmethod
     @functools.lru_cache(maxsize=None)
@@ -216,7 +226,18 @@ class FlamegraphCollector(StackTraceCollector):
             out = []
             for func, node in children.items():
                 samples = node["samples"]
-                if samples < min_samples:
+                significant_for_thread = any(
+                    thread_samples >= max(
+                        1,
+                        int(
+                            self._root["thread_samples"][thread_id]
+                            * 0.001
+                        ),
+                    )
+                    for thread_id, thread_samples
+                    in node["thread_samples"].items()
+                )
+                if samples < min_samples and not significant_for_thread:
                     continue
 
                 # Intern all string components for maximum efficiency
@@ -239,6 +260,15 @@ class FlamegraphCollector(StackTraceCollector):
                     "lineno": func[1],
                     "funcname": funcname_idx,
                     "threads": sorted(list(node.get("threads", set()))),
+                    "thread_values": {
+                        thread_id: [
+                            samples,
+                            node["thread_self"].get(thread_id, 0),
+                        ]
+                        for thread_id, samples in sorted(
+                            node["thread_samples"].items()
+                        )
+                    },
                 }
 
                 source = self._get_source_lines(func)
@@ -251,6 +281,14 @@ class FlamegraphCollector(StackTraceCollector):
                 opcodes = node.get("opcodes", {})
                 if opcodes:
                     child_entry["opcodes"] = dict(opcodes)
+                thread_opcodes = node.get("thread_opcodes")
+                if thread_opcodes:
+                    child_entry["thread_opcodes"] = {
+                        thread_id: dict(counts)
+                        for thread_id, counts in sorted(
+                            thread_opcodes.items()
+                        )
+                    }
 
                 # Recurse
                 child_entry["children"] = convert_children(
@@ -307,7 +345,25 @@ class FlamegraphCollector(StackTraceCollector):
         opcode_mapping = get_opcode_mapping()
 
         # If we only have one root child, make it the root to avoid redundant level
-        if len(root_children) == 1:
+        root_thread_values = {
+            thread_id: [samples, 0]
+            for thread_id, samples in sorted(
+                self._root["thread_samples"].items()
+            )
+        }
+        sole_root_covers_profile = (
+            len(root_children) == 1
+            and root_children[0]["value"] == total_samples
+            and {
+                thread_id: values[0]
+                for thread_id, values
+                in root_children[0]["thread_values"].items()
+            } == {
+                thread_id: values[0]
+                for thread_id, values in root_thread_values.items()
+            }
+        )
+        if sole_root_covers_profile:
             main_child = root_children[0]
             # Update name and label to indicate it's the program root
             old_name = self._string_table.get_string(main_child["name"])
@@ -336,6 +392,7 @@ class FlamegraphCollector(StackTraceCollector):
                 "per_thread_stats": per_thread_stats_with_pct
             },
             "threads": sorted(list(self._all_threads)),
+            "thread_values": root_thread_values,
             "strings": self._string_table.get_strings(),
             "opcode_mapping": opcode_mapping
         }
@@ -352,6 +409,7 @@ class FlamegraphCollector(StackTraceCollector):
         """
         # Reverse to root->leaf order for tree building
         self._root["samples"] += weight
+        self._root["thread_samples"][thread_id] += weight
         self._total_samples += weight
         self._root["threads"].add(thread_id)
         self._all_threads.add(thread_id)
@@ -364,18 +422,32 @@ class FlamegraphCollector(StackTraceCollector):
 
             node = current["children"].get(func)
             if node is None:
-                node = {"samples": 0, "children": {}, "threads": set(), "opcodes": collections.Counter(), "self": 0}
+                node = {
+                    "samples": 0,
+                    "children": {},
+                    "threads": set(),
+                    "thread_samples": collections.Counter(),
+                    "thread_self": collections.Counter(),
+                    "opcodes": collections.Counter(),
+                    "self": 0,
+                }
                 current["children"][func] = node
             node["samples"] += weight
+            node["thread_samples"][thread_id] += weight
             node["threads"].add(thread_id)
 
             if opcode is not None:
                 node["opcodes"][opcode] += weight
+                thread_opcodes = node.setdefault("thread_opcodes", {})
+                thread_opcodes.setdefault(
+                    thread_id, collections.Counter()
+                )[opcode] += weight
 
             current = node
 
         if current is not self._root:
             current["self"] += weight
+            current["thread_self"][thread_id] += weight
 
     def _get_source_lines(self, func):
         filename, lineno, _ = func
@@ -698,6 +770,8 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         func_key = self._extract_func_key(node, self._baseline_collector._string_table)
         current_path = path + (func_key,) if func_key else path
 
+        baseline_self = 0
+        baseline_total = 0
         if func_key and current_path in baseline_stats:
             baseline_data = baseline_stats[current_path]
             baseline_self = baseline_data["self"] * scale

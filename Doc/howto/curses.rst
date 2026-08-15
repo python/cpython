@@ -6,9 +6,6 @@
 
 .. currentmodule:: curses
 
-:Author: A.M. Kuchling, Eric S. Raymond
-:Release: 2.04
-
 
 .. topic:: Abstract
 
@@ -55,8 +52,8 @@ code, all the functions described here will probably be available.  The older
 versions of curses carried by some proprietary Unixes may not support
 everything, though.
 
-The Windows version of Python doesn't include the :mod:`curses`
-module.  A ported version called :pypi:`UniCurses` is available.
+The Windows version of Python doesn't include the :mod:`curses` module.
+The third-party :pypi:`windows-curses` package provides the same interface on Windows.
 
 
 The Python curses module

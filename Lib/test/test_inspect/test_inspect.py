@@ -7,6 +7,7 @@ import datetime
 import functools
 import gc
 import importlib
+import importlib.util
 import inspect
 import io
 import linecache
@@ -779,6 +780,22 @@ class TestRetrievingSourceCode(GetSourceBase):
             expected = expected.strip('\n')
             with self.subTest(i=i):
                 self.assertEqual(func(input), expected)
+
+    def test_cleandoc_no_dedent(self):
+        func = inspect.cleandoc
+        self.assertEqual(func('An\n  indented\n   docstring.', dedent=False),
+                         'An\n  indented\n   docstring.')
+        # Everything else that cleandoc() does still applies.
+        self.assertEqual(func('  An\n\n\tindented\n\n', dedent=False),
+                         'An\n\n        indented')
+
+    def test_getdoc_no_dedent(self):
+        class C:
+            pass
+        # Written as a docstring, it would be dedented by the compiler.
+        C.__doc__ = 'Summary.\n\n  param\n    description'
+        self.assertEqual(inspect.getdoc(C, dedent=False), C.__doc__)
+        self.assertEqual(inspect.getdoc(C), 'Summary.\n\nparam\n  description')
 
     @cpython_only
     def test_c_cleandoc(self):
@@ -2988,7 +3005,7 @@ class TestGetAsyncGenState(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        asyncio.events._set_event_loop_policy(None)
+        asyncio.set_event_loop(None)
 
     def _asyncgenstate(self):
         return inspect.getasyncgenstate(self.asyncgen)
@@ -6255,8 +6272,7 @@ class TestSignatureDefinitions(unittest.TestCase):
         self._test_module_has_signatures(faulthandler, unsupported_signature=unsupported_signature)
 
     def test_functools_module_has_signatures(self):
-        unsupported_signature = {"reduce"}
-        self._test_module_has_signatures(functools, unsupported_signature=unsupported_signature)
+        self._test_module_has_signatures(functools)
 
     def test_gc_module_has_signatures(self):
         import gc
@@ -6311,6 +6327,25 @@ class TestSignatureDefinitions(unittest.TestCase):
     def test_signal_module_has_signatures(self):
         import signal
         self._test_module_has_signatures(signal)
+
+    def test_socket_module_has_signatures(self):
+        import socket
+        # The socket type has no signature, it is created by socket().
+        no_signature = {'SocketType'}
+        # The C default is NULL and None is not accepted
+        unsupported_signature = {'getservbyname', 'getservbyport'}
+        # Not all functions and methods are available on all platforms.
+        unsupported_signature &= vars(socket).keys()
+        # These cannot be converted to Argument Clinic: their behaviour
+        # depends on the number of the arguments.
+        methods_no_signature = {'ioctl', 'sendto', 'setsockopt'}
+        # These have parameters with unrepresentable default values.
+        methods_unsupported_signature = {'listen', 'sendmsg_afalg'}
+        defined = vars(socket.SocketType).keys()
+        self._test_module_has_signatures(socket,
+                no_signature, unsupported_signature,
+                {'SocketType': methods_no_signature & defined},
+                {'SocketType': methods_unsupported_signature & defined})
 
     def test_stat_module_has_signatures(self):
         import stat
@@ -6520,6 +6555,19 @@ class TestModuleCLI(unittest.TestCase):
     NO_SOURCE_ERROR = "No source code available for defining module"
     NO_SOURCE_TARGET_ERROR = "Failed to retrieve source code for given target"
 
+    @staticmethod
+    def _expected_cached(module):
+        # assert_python_ok() runs the subprocess in isolated mode (-I), which
+        # ignores PYTHONPYCACHEPREFIX, so compute the expected cached path the
+        # same way (i.e. without any pycache prefix) to stay independent of the
+        # environment the test suite is run in.  Modules without a cached path
+        # (e.g. frozen modules such as ntpath/importlib.machinery on Windows)
+        # report None, so preserve that.
+        if module.__spec__.cached is None:
+            return None
+        with support.swap_attr(sys, 'pycache_prefix', None):
+            return importlib.util.cache_from_source(module.__spec__.origin)
+
     def test_only_source(self):
         module = importlib.import_module('unittest')
         rc, out, err = assert_python_ok('-m', 'inspect',
@@ -6577,12 +6625,13 @@ class TestModuleCLI(unittest.TestCase):
         args = support.optim_args_from_interpreter_flags()
         rc, out, err = assert_python_ok(*args, '-m', 'inspect',
                                         module_name, '--details')
+        cached = self._expected_cached(module)
         # Full rendering check on the expected output
         expected_lines = [
             f"Target: {module.__name__}",  # No aliasing
             f"Origin: {module.__spec__.origin}",
             f"Source: {module.__file__}",
-            f"Cached: {module.__spec__.cached}",  # None is still displayed
+            f"Cached: {cached}",  # None is still displayed
             f"Loader: {_clean_object_ids(repr(module.__spec__.loader))}",
             f"Submodule search paths: {module.__path__}",
             "",
@@ -6620,13 +6669,14 @@ class TestModuleCLI(unittest.TestCase):
         args = support.optim_args_from_interpreter_flags()
         rc, out, err = assert_python_ok(*args, '-m', 'inspect',
                                         cli_target, '--details')
+        cached = self._expected_cached(module)
         # Full rendering check on the expected output
         # The error is only informational when reading source details
         expected_lines = [
             f"Target: {cli_target}",  # No aliasing
             f"Origin: {module.__spec__.origin}",
             f"Source: {module.__file__}",
-            f"Cached: {module.__spec__.cached}",  # None is still displayed
+            f"Cached: {cached}",  # None is still displayed
             self.NO_SOURCE_TARGET_ERROR,
             "",
         ]
@@ -6645,12 +6695,13 @@ class TestModuleCLI(unittest.TestCase):
         args = support.optim_args_from_interpreter_flags()
         rc, out, err = assert_python_ok(*args, '-m', 'inspect',
                                         cli_target, '--details')
+        cached = self._expected_cached(module)
         # Full rendering check on the expected output
         expected_lines = [
             f'Target: {defining_target} (looked up as "{cli_target}")',
             f"Origin: {module.__spec__.origin}",
             f"Source: {module.__file__}",
-            f"Cached: {module.__spec__.cached}",  # None is still displayed
+            f"Cached: {cached}",  # None is still displayed
             f"Line: {inspect.findsource(target)[1]}",
             "",
         ]

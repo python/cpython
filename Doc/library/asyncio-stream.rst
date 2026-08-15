@@ -171,7 +171,8 @@ and work with streams:
 .. function:: start_unix_server(client_connected_cb, path=None, \
                  *, limit=None, sock=None, backlog=100, ssl=None, \
                  ssl_handshake_timeout=None, \
-                 ssl_shutdown_timeout=None, start_serving=True, cleanup_socket=True)
+                 ssl_shutdown_timeout=None, start_serving=True, \
+                 cleanup_socket=True, mode=None)
    :async:
 
    Start a Unix socket server.
@@ -181,6 +182,9 @@ and work with streams:
    If *cleanup_socket* is true then the Unix socket will automatically
    be removed from the filesystem when the server is closed, unless the
    socket has been replaced after the server has been created.
+
+   If *mode* is not ``None``, the permissions of the Unix socket file
+   are set to *mode* before the server starts accepting connections.
 
    See also the documentation of :meth:`loop.create_unix_server`.
 
@@ -204,6 +208,9 @@ and work with streams:
 
    .. versionchanged:: 3.13
       Added the *cleanup_socket* parameter.
+
+   .. versionchanged:: 3.16
+      Added the *mode* parameter.
 
 
 StreamReader
@@ -381,6 +388,16 @@ StreamWriter
       buffer is drained down to the low watermark and writing can
       be resumed.  When there is nothing to wait for, the :meth:`drain`
       returns immediately.
+
+      .. note::
+
+         When the write buffer is below the high watermark,
+         :meth:`drain` returns immediately without yielding to
+         the event loop.  As a result, code which repeatedly calls
+         ``write()`` followed by ``await drain()`` may prevent other
+         tasks from running.  To prevent blocking behavior, yield
+         to the event loop explicitly with ``await asyncio.sleep(0)``
+         (see :func:`asyncio.sleep`).
 
    .. method:: start_tls(sslcontext, *, server_hostname=None, \
                          ssl_handshake_timeout=None, ssl_shutdown_timeout=None)

@@ -215,6 +215,8 @@ MACOSX_DEPLOYMENT_TARGET=@CONFIGURE_MACOSX_DEPLOYMENT_TARGET@
 # the build, and is only listed here so it will be included in sysconfigdata.
 IPHONEOS_DEPLOYMENT_TARGET=@IPHONEOS_DEPLOYMENT_TARGET@
 
+BUILD_DETAILS=@BUILD_DETAILS@
+
 # Option to install to strip binaries
 STRIPFLAG=-s
 
@@ -231,7 +233,6 @@ RUNSHARED=       @RUNSHARED@
 ENSUREPIP=      @ENSUREPIP@
 
 # Internal static libraries
-LIBMPDEC_A= Modules/_decimal/libmpdec/libmpdec.a
 LIBEXPAT_A= Modules/expat/libexpat.a
 
 # HACL* build configuration
@@ -284,6 +285,7 @@ DIST=		$(DISTFILES) $(DISTDIRS)
 LIBRARY=	@LIBRARY@
 LDLIBRARY=      @LDLIBRARY@
 BLDLIBRARY=     @BLDLIBRARY@
+MODULE_LDFLAGS_SHARED=$(if $(LIBPYTHON),$(BLDLIBRARY))
 PY3LIBRARY=     @PY3LIBRARY@
 DLLLIBRARY=	@DLLLIBRARY@
 LDLIBRARYDIR=   @LDLIBRARYDIR@
@@ -394,7 +396,9 @@ PEGEN_OBJS=		\
 TOKENIZER_OBJS=		\
 		Parser/lexer/buffer.o \
 		Parser/lexer/lexer.o \
+		Parser/lexer/number.o \
 		Parser/lexer/state.o \
+		Parser/lexer/string.o \
 		Parser/tokenizer/file_tokenizer.o \
 		Parser/tokenizer/readline_tokenizer.o \
 		Parser/tokenizer/string_tokenizer.o \
@@ -409,6 +413,7 @@ PEGEN_HEADERS= \
 TOKENIZER_HEADERS= \
 		Parser/lexer/buffer.h \
 		Parser/lexer/lexer.h \
+		Parser/lexer/lexer_internal.h \
 		Parser/lexer/state.h \
 		Parser/tokenizer/tokenizer.h \
 		Parser/tokenizer/helpers.h
@@ -507,6 +512,7 @@ PYTHON_OBJS=	\
 		Python/thread.o \
 		Python/traceback.o \
 		Python/tracemalloc.o \
+		Python/typecache.o \
 		Python/uniqueid.o \
 		Python/getopt.o \
 		Python/pystrcmp.o \
@@ -607,45 +613,6 @@ DTRACE_DEPS = \
 	Python/ceval.o Python/gc.o Python/import.o Python/sysmodule.o
 
 ##########################################################################
-# decimal's libmpdec
-
-LIBMPDEC_OBJS= \
-		Modules/_decimal/libmpdec/basearith.o \
-		Modules/_decimal/libmpdec/constants.o \
-		Modules/_decimal/libmpdec/context.o \
-		Modules/_decimal/libmpdec/convolute.o \
-		Modules/_decimal/libmpdec/crt.o \
-		Modules/_decimal/libmpdec/difradix2.o \
-		Modules/_decimal/libmpdec/fnt.o \
-		Modules/_decimal/libmpdec/fourstep.o \
-		Modules/_decimal/libmpdec/io.o \
-		Modules/_decimal/libmpdec/mpalloc.o \
-		Modules/_decimal/libmpdec/mpdecimal.o \
-		Modules/_decimal/libmpdec/numbertheory.o \
-		Modules/_decimal/libmpdec/sixstep.o \
-		Modules/_decimal/libmpdec/transpose.o
-		# _decimal does not use signaling API
-		# Modules/_decimal/libmpdec/mpsignal.o
-
-LIBMPDEC_HEADERS= \
-		$(srcdir)/Modules/_decimal/libmpdec/basearith.h \
-		$(srcdir)/Modules/_decimal/libmpdec/bits.h \
-		$(srcdir)/Modules/_decimal/libmpdec/constants.h \
-		$(srcdir)/Modules/_decimal/libmpdec/convolute.h \
-		$(srcdir)/Modules/_decimal/libmpdec/crt.h \
-		$(srcdir)/Modules/_decimal/libmpdec/difradix2.h \
-		$(srcdir)/Modules/_decimal/libmpdec/fnt.h \
-		$(srcdir)/Modules/_decimal/libmpdec/fourstep.h \
-		$(srcdir)/Modules/_decimal/libmpdec/io.h \
-		$(srcdir)/Modules/_decimal/libmpdec/mpalloc.h \
-		$(srcdir)/Modules/_decimal/libmpdec/mpdecimal.h \
-		$(srcdir)/Modules/_decimal/libmpdec/numbertheory.h \
-		$(srcdir)/Modules/_decimal/libmpdec/sixstep.h \
-		$(srcdir)/Modules/_decimal/libmpdec/transpose.h \
-		$(srcdir)/Modules/_decimal/libmpdec/typearith.h \
-		$(srcdir)/Modules/_decimal/libmpdec/umodarith.h
-
-##########################################################################
 # pyexpat's expat library
 
 LIBEXPAT_OBJS= \
@@ -659,13 +626,16 @@ LIBEXPAT_HEADERS= \
 		Modules/expat/expat.h \
 		Modules/expat/expat_config.h \
 		Modules/expat/expat_external.h \
+		Modules/expat/fallthrough.h \
 		Modules/expat/iasciitab.h \
 		Modules/expat/internal.h \
 		Modules/expat/latin1tab.h \
+		Modules/expat/memory_sanitizer.h \
 		Modules/expat/nametab.h \
 		Modules/expat/pyexpatns.h \
 		Modules/expat/siphash.h \
 		Modules/expat/utf8tab.h \
+		Modules/expat/xcsinc.c \
 		Modules/expat/xmlrole.h \
 		Modules/expat/xmltok.h \
 		Modules/expat/xmltok_impl.h \
@@ -814,11 +784,11 @@ list-targets:
 
 .PHONY: build_all
 build_all:	check-clean-src check-app-store-compliance $(BUILDPYTHON) platform sharedmods \
-		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil build-details.json
+		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil $(BUILD_DETAILS)
 
 .PHONY: build_wasm
 build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
-		python-config checksharedmods build-details.json
+		python-config checksharedmods $(BUILD_DETAILS)
 
 .PHONY: build_emscripten
 build_emscripten: build_wasm web_example web_example_pyrepl_jspi
@@ -835,7 +805,7 @@ check-clean-src:
 		echo "Building Python out of the source tree (in $(abs_builddir)) requires a clean source tree ($(abs_srcdir))" ; \
 		echo "Build artifacts such as .o files, executables, and Python/frozen_modules/*.h must not exist within $(srcdir)." ; \
 		echo "Try to run:" ; \
-		echo "  (cd \"$(srcdir)\" && make clean || git clean -fdx -e Doc/venv)" ; \
+		echo "  (cd \"$(srcdir)\" && make distclean || git clean -fdx -e Doc/venv)" ; \
 		exit 1; \
 	fi
 
@@ -962,7 +932,6 @@ coverage-lcov:
 	@lcov $(COVERAGE_LCOV_OPTIONS) --remove $(COVERAGE_INFO) \
 	    '*/Modules/_hacl/*' \
 	    '*/Modules/_ctypes/libffi*/*' \
-	    '*/Modules/_decimal/libmpdec/*' \
 	    '*/Modules/expat/*' \
 	    '*/Modules/xx*.c' \
 	    '*/Python/pyfpe.c' \
@@ -1020,8 +989,8 @@ pybuilddir.txt: $(PYTHON_FOR_BUILD_DEPS)
 		exit 1 ; \
 	fi
 
-build-details.json: pybuilddir.txt
-	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/generate-build-details.py `cat pybuilddir.txt`/build-details.json
+$(BUILD_DETAILS): pybuilddir.txt
+	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/generate-build-details.py `cat pybuilddir.txt`/$(BUILD_DETAILS)
 
 # Build static library
 $(LIBRARY): $(LIBRARY_OBJS)
@@ -1452,6 +1421,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_tracemalloc.h \
 		$(srcdir)/Include/internal/pycore_tstate.h \
 		$(srcdir)/Include/internal/pycore_tuple.h \
+		$(srcdir)/Include/internal/pycore_typecache.h \
 		$(srcdir)/Include/internal/pycore_typedefs.h \
 		$(srcdir)/Include/internal/pycore_typeobject.h \
 		$(srcdir)/Include/internal/pycore_typevarobject.h \
@@ -1470,60 +1440,6 @@ PYTHON_HEADERS= \
 		@PLATFORM_HEADERS@ \
 		\
 		$(srcdir)/Python/stdlib_module_names.h
-
-##########################################################################
-# Build static libmpdec.a
-LIBMPDEC_CFLAGS=@LIBMPDEC_CFLAGS@ $(PY_STDMODULE_CFLAGS) $(CCSHARED)
-
-# "%.o: %c" is not portable
-Modules/_decimal/libmpdec/basearith.o: $(srcdir)/Modules/_decimal/libmpdec/basearith.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/basearith.c
-
-Modules/_decimal/libmpdec/constants.o: $(srcdir)/Modules/_decimal/libmpdec/constants.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/constants.c
-
-Modules/_decimal/libmpdec/context.o: $(srcdir)/Modules/_decimal/libmpdec/context.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/context.c
-
-Modules/_decimal/libmpdec/convolute.o: $(srcdir)/Modules/_decimal/libmpdec/convolute.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/convolute.c
-
-Modules/_decimal/libmpdec/crt.o: $(srcdir)/Modules/_decimal/libmpdec/crt.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/crt.c
-
-Modules/_decimal/libmpdec/difradix2.o: $(srcdir)/Modules/_decimal/libmpdec/difradix2.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/difradix2.c
-
-Modules/_decimal/libmpdec/fnt.o: $(srcdir)/Modules/_decimal/libmpdec/fnt.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/fnt.c
-
-Modules/_decimal/libmpdec/fourstep.o: $(srcdir)/Modules/_decimal/libmpdec/fourstep.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/fourstep.c
-
-Modules/_decimal/libmpdec/io.o: $(srcdir)/Modules/_decimal/libmpdec/io.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/io.c
-
-Modules/_decimal/libmpdec/mpalloc.o: $(srcdir)/Modules/_decimal/libmpdec/mpalloc.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/mpalloc.c
-
-Modules/_decimal/libmpdec/mpdecimal.o: $(srcdir)/Modules/_decimal/libmpdec/mpdecimal.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/mpdecimal.c
-
-Modules/_decimal/libmpdec/mpsignal.o: $(srcdir)/Modules/_decimal/libmpdec/mpsignal.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/mpsignal.c
-
-Modules/_decimal/libmpdec/numbertheory.o: $(srcdir)/Modules/_decimal/libmpdec/numbertheory.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/numbertheory.c
-
-Modules/_decimal/libmpdec/sixstep.o: $(srcdir)/Modules/_decimal/libmpdec/sixstep.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/sixstep.c
-
-Modules/_decimal/libmpdec/transpose.o: $(srcdir)/Modules/_decimal/libmpdec/transpose.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/transpose.c
-
-$(LIBMPDEC_A): $(LIBMPDEC_OBJS)
-	-rm -f $@
-	$(AR) $(ARFLAGS) $@ $(LIBMPDEC_OBJS)
 
 ##########################################################################
 # Build static libexpat.a
@@ -1709,6 +1625,8 @@ Programs/_bootstrap_python.o: Programs/_bootstrap_python.c $(BOOTSTRAP_HEADERS) 
 _bootstrap_python: $(LIBRARY_OBJS_OMIT_FROZEN) Programs/_bootstrap_python.o Modules/getpath.o Modules/Setup.local
 	$(LINKCC) $(PY_LDFLAGS_NOLTO) -o $@ $(LIBRARY_OBJS_OMIT_FROZEN) \
 		Programs/_bootstrap_python.o Modules/getpath.o $(LIBS) $(MODLIBS) $(SYSLIBS)
+	# Dummy pybuilddir.txt  is needed for _bootstrap_python to be runnable
+	@echo "none" > ./pybuilddir.txt
 
 
 ############################################################################
@@ -1747,6 +1665,7 @@ FROZEN_FILES_IN = \
 		Lib/encodings/aliases.py \
 		Lib/encodings/utf_8.py \
 		Lib/encodings/_win_cp_codecs.py \
+		Lib/encodings/_iconv_codecs.py \
 		Lib/io.py \
 		Lib/_collections_abc.py \
 		Lib/_sitebuiltins.py \
@@ -1777,6 +1696,7 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/encodings.aliases.h \
 		Python/frozen_modules/encodings.utf_8.h \
 		Python/frozen_modules/encodings._win_cp_codecs.h \
+		Python/frozen_modules/encodings._iconv_codecs.h \
 		Python/frozen_modules/io.h \
 		Python/frozen_modules/_collections_abc.h \
 		Python/frozen_modules/_sitebuiltins.h \
@@ -1837,6 +1757,9 @@ Python/frozen_modules/encodings.utf_8.h: Lib/encodings/utf_8.py $(FREEZE_MODULE_
 
 Python/frozen_modules/encodings._win_cp_codecs.h: Lib/encodings/_win_cp_codecs.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) encodings._win_cp_codecs $(srcdir)/Lib/encodings/_win_cp_codecs.py Python/frozen_modules/encodings._win_cp_codecs.h
+
+Python/frozen_modules/encodings._iconv_codecs.h: Lib/encodings/_iconv_codecs.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) encodings._iconv_codecs $(srcdir)/Lib/encodings/_iconv_codecs.py Python/frozen_modules/encodings._iconv_codecs.h
 
 Python/frozen_modules/io.h: Lib/io.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) io $(srcdir)/Lib/io.py Python/frozen_modules/io.h
@@ -2444,7 +2367,7 @@ multissltest: all
 # Only the main install gets a build-details.json.
 .PHONY: install
 install: @FRAMEWORKINSTALLFIRST@ @INSTALLTARGETS@ @FRAMEWORKINSTALLLAST@
-	$(INSTALL_DATA) `cat pybuilddir.txt`/build-details.json $(DESTDIR)$(LIBDEST); \
+	$(INSTALL_DATA) `cat pybuilddir.txt`/$(BUILD_DETAILS) $(DESTDIR)$(LIBDEST); \
 	if test "x$(ENSUREPIP)" != "xno"  ; then \
 		case $(ENSUREPIP) in \
 			upgrade) ensurepip="--upgrade" ;; \
@@ -2766,6 +2689,21 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_lazy_import/data \
 		test/test_lazy_import/data/pkg \
 		test/test_lazy_import/data/badsyntax \
+		test/test_lazy_import/data/circular_import_pkg \
+		test/test_lazy_import/data/lazypkg \
+		test/test_lazy_import/data/metasyntactic \
+		test/test_lazy_import/data/metasyntactic/foo \
+		test/test_lazy_import/data/metasyntactic/foo/ack \
+		test/test_lazy_import/data/metasyntactic/foo/bar \
+		test/test_lazy_import/data/metasyntactic/foo/bar/baz \
+		test/test_lazy_import/data/metasyntactic/foo/bar/baz/qux \
+		test/test_lazy_import/data/metasyntactic/foo/bar/thud \
+		test/test_lazy_import/data/metasyntactic/plugh \
+		test/test_lazy_import/data/metasyntactic/waldo \
+		test/test_lazy_import/data/metasyntactic/waldo/fred \
+		test/test_lazy_import/data/module_same_name_var_order1 \
+		test/test_lazy_import/data/module_same_name_var_order2 \
+		test/test_lazy_import/data/versioned \
 		test/test_module \
 		test/test_multiprocessing_fork \
 		test/test_multiprocessing_forkserver \
@@ -3206,12 +3144,33 @@ config.status:	$(srcdir)/configure
 
 .PRECIOUS: config.status $(BUILDPYTHON) Makefile Makefile.pre
 
-Python/asm_trampoline.o: $(srcdir)/Python/asm_trampoline.S
+Python/asm_trampoline_x86_64.o: $(srcdir)/Python/asm_trampoline_x86_64.S
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
+
+Python/asm_trampoline_aarch64.o: $(srcdir)/Python/asm_trampoline_aarch64.S
+	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
+
+Python/asm_trampoline_riscv64.o: $(srcdir)/Python/asm_trampoline_riscv64.S
+	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
+
+# On macOS universal2 builds, $(PY_CORE_CFLAGS) contains "-arch arm64 -arch x86_64",
+# which would produce fat .o files containing both architectures for each .S input.
+# lipo -create then refuses to combine them because they share architectures.
+# Build each per-arch object with a single -arch flag before merging with lipo.
+Python/asm_trampoline_universal2.o: $(srcdir)/Python/asm_trampoline_aarch64.S $(srcdir)/Python/asm_trampoline_x86_64.S
+	$(CC) -c $(filter-out -arch arm64 x86_64,$(PY_CORE_CFLAGS)) -arch arm64 \
+		-o Python/asm_trampoline_arm64-apple-darwin.o $(srcdir)/Python/asm_trampoline_aarch64.S
+	$(CC) -c $(filter-out -arch arm64 x86_64,$(PY_CORE_CFLAGS)) -arch x86_64 \
+		-o Python/asm_trampoline_x86_64-apple-darwin.o $(srcdir)/Python/asm_trampoline_x86_64.S
+	lipo -create -output $@ \
+		Python/asm_trampoline_arm64-apple-darwin.o \
+		Python/asm_trampoline_x86_64-apple-darwin.o
+	rm -f Python/asm_trampoline_arm64-apple-darwin.o \
+	  Python/asm_trampoline_x86_64-apple-darwin.o
 
 Python/emscripten_trampoline_inner.wasm: $(srcdir)/Python/emscripten_trampoline_inner.c
 	# emcc has a path that ends with emsdk/upstream/emscripten/emcc, we're looking for emsdk/upstream/bin/clang.
-	$$(dirname $$(dirname $(CC)))/bin/clang -o $@ $< -mgc -O2 -Wl,--no-entry -Wl,--import-table -Wl,--import-memory -target wasm32-unknown-unknown -nostdlib
+	$$(em-config LLVM_ROOT)/clang -o $@ $< -mgc -O2 -Wl,--no-entry -Wl,--import-table -Wl,--import-memory -target wasm32-unknown-unknown -nostdlib
 
 Python/emscripten_trampoline_wasm.c: Python/emscripten_trampoline_inner.wasm
 	$(PYTHON_FOR_REGEN) $(srcdir)/Platforms/emscripten/prepare_external_wasm.py $< $@ getWasmTrampolineModule
@@ -3501,7 +3460,6 @@ MODULE_UNICODEDATA_DEPS=$(srcdir)/Modules/unicodedata_db.h $(srcdir)/Modules/uni
 MODULE__CTYPES_DEPS=$(srcdir)/Modules/_ctypes/ctypes.h
 MODULE__CTYPES_TEST_DEPS=$(srcdir)/Modules/_ctypes/_ctypes_test_generated.c.h
 MODULE__CTYPES_MALLOC_CLOSURE=@MODULE__CTYPES_MALLOC_CLOSURE@
-MODULE__DECIMAL_DEPS=@LIBMPDEC_INTERNAL@
 MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c @LIBEXPAT_INTERNAL@
 MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h

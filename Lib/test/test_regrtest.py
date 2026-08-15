@@ -20,11 +20,15 @@ import subprocess
 import sys
 import sysconfig
 import tempfile
+import threading
 import textwrap
 import unittest
 import unittest.mock
 from xml.etree import ElementTree
 
+from test.libregrtest.findtests import collect_cases
+from test.libregrtest.filter import set_match_tests
+from test.libregrtest.run_workers import MultiprocessIterator
 from test import support
 from test.support import import_helper
 from test.support import os_helper
@@ -32,7 +36,7 @@ from test.libregrtest import cmdline
 from test.libregrtest import main
 from test.libregrtest import setup
 from test.libregrtest import utils
-from test.libregrtest.filter import get_match_tests, set_match_tests, match_test
+from test.libregrtest.filter import get_match_tests, match_test
 from test.libregrtest.result import TestStats
 from test.libregrtest.utils import normalize_test_name
 
@@ -41,7 +45,11 @@ if not support.has_subprocess_support:
 
 ROOT_DIR = os.path.join(os.path.dirname(__file__), '..', '..')
 ROOT_DIR = os.path.abspath(os.path.normpath(ROOT_DIR))
-LOG_PREFIX = r'[0-9]+:[0-9]+:[0-9]+ (?:load avg: [0-9]+\.[0-9]{2} )?'
+LOG_PREFIX = (
+    r'[0-9]+:[0-9]+:[0-9]+ '
+    r'(?:load avg: [0-9]+\.[0-9]{2} )?'
+    r'(?:mem: [0-9]+\.[0-9] (?:MiB|GiB) )?'
+)
 RESULT_REGEX = (
     'passed',
     'failed',
@@ -166,21 +174,20 @@ class ParseArgsTestCase(unittest.TestCase):
                 ns = self.parse_args([opt])
                 self.assertTrue(ns.randomize)
 
-        with os_helper.EnvironmentVarGuard() as env:
-            # with SOURCE_DATE_EPOCH
-            env['SOURCE_DATE_EPOCH'] = '1697839080'
-            ns = self.parse_args(['--randomize'])
-            regrtest = main.Regrtest(ns)
-            self.assertFalse(regrtest.randomize)
-            self.assertIsInstance(regrtest.random_seed, str)
-            self.assertEqual(regrtest.random_seed, '1697839080')
+    @os_helper.with_source_date_epoch(epoch=1697839080)
+    def test_randomize_with_source_date_epoch(self):
+        ns = self.parse_args(['--randomize'])
+        regrtest = main.Regrtest(ns)
+        self.assertFalse(regrtest.randomize)
+        self.assertIsInstance(regrtest.random_seed, str)
+        self.assertEqual(regrtest.random_seed, '1697839080')
 
-            # without SOURCE_DATE_EPOCH
-            del env['SOURCE_DATE_EPOCH']
-            ns = self.parse_args(['--randomize'])
-            regrtest = main.Regrtest(ns)
-            self.assertTrue(regrtest.randomize)
-            self.assertIsInstance(regrtest.random_seed, int)
+    @os_helper.without_source_date_epoch
+    def test_randomize_without_source_date_epoch(self):
+        ns = self.parse_args(['--randomize'])
+        regrtest = main.Regrtest(ns)
+        self.assertTrue(regrtest.randomize)
+        self.assertIsInstance(regrtest.random_seed, int)
 
     def test_no_randomize(self):
         ns = self.parse_args([])
@@ -570,6 +577,30 @@ class ParseArgsTestCase(unittest.TestCase):
             regrtest = self.create_regrtest(args)
         self.assertEqual(regrtest.num_workers, 0)
         self.assertTrue(regrtest.single_process)
+
+    def test_single_process_per_case(self):
+        ns = self.parse_args(['--single-process-per-case'])
+        self.assertTrue(ns.single_process_per_case)
+
+        # No -j given: default to one worker
+        regrtest = self.create_regrtest(['--single-process-per-case'])
+        self.assertEqual(regrtest.num_workers, 1)
+
+        # Explicit -j2 is respected
+        regrtest = self.create_regrtest(['-j2', '--single-process-per-case'])
+        self.assertEqual(regrtest.num_workers, 2)
+
+    def test_single_process_per_case_conflicts(self):
+        # --single-process-per-case doesn't compose with options that
+        # re-run or restrict test selection after collection (gh-109817)
+        self.checkError(['--single-process-per-case', '--rerun'],
+                        "don't go together")
+        self.checkError(['--single-process-per-case', '--single-process'],
+                        "don't go together")
+        self.checkError(['--single-process-per-case', '--pgo'],
+                        "don't go together")
+        self.checkError(['--single-process-per-case', '--fast-ci'],
+                        "don't go together")
 
     def test_pythoninfo(self):
         ns = self.parse_args([])
@@ -2283,7 +2314,8 @@ class ArgsTestCase(BaseTestCase):
         proc = subprocess.run(cmd,
                               stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT,
-                              text=True)
+                              text=True,
+                              env=support.make_clean_env())
         self.assertEqual(proc.returncode, 0, proc)
 
     def test_add_python_opts(self):
@@ -2327,6 +2359,94 @@ class ArgsTestCase(BaseTestCase):
             exitcode = -int(signal.SIGSEGV)
             self.assertIn(f"Exit code {exitcode} (SIGSEGV)", output)
         self.check_line(output, "just before crash!", full=True, regex=False)
+
+    def test_single_process_per_case(self):
+        code = textwrap.dedent("""
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_one(self):
+                    pass
+                def test_two(self):
+                    pass
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests('--single-process-per-case', '-v', testname)
+        # Each case is reported individually (progress lines have a
+        # timestamp prefix, so match mid-line with assertIn)
+        self.assertIn(f'{testname}.Tests.test_one passed', output)
+        self.assertIn(f'{testname}.Tests.test_two passed', output)
+        self.check_line(output, 'All 2 tests OK.', regex=False)
+
+    def test_single_process_per_case_order_independence(self):
+        # A module where test_b only passes if it runs in isolation.
+        # This simulates the real order-dependency bugs this feature
+        # is meant to catch (gh-109817): running each case in its own
+        # process means test_b can never observe state left behind
+        # by test_a.
+        code = textwrap.dedent("""
+            import unittest
+
+            counter = {'n': 0}
+
+            class Tests(unittest.TestCase):
+                def test_a(self):
+                    counter['n'] += 1
+                def test_b(self):
+                    self.assertEqual(counter['n'], 0)
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests('--single-process-per-case', '-v', testname)
+        self.assertIn(f'{testname}.Tests.test_a passed', output)
+        self.assertIn(f'{testname}.Tests.test_b passed', output)
+        self.check_line(output, 'All 2 tests OK.', regex=False)
+
+    def test_single_process_per_case_failure_isolated(self):
+        # One failing case must not abort or contaminate sibling
+        # cases in the same module.
+        code = textwrap.dedent("""
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_pass(self):
+                    pass
+                def test_fail(self):
+                    self.fail("expected failure")
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests('--single-process-per-case', testname,
+                                 exitcode=EXITCODE_BAD_TEST)
+        # The failing case is reported by its case ID...
+        self.assertIn(f'{testname}.Tests.test_fail failed', output)
+        self.check_line(output, '1 test failed:', regex=False)
+        self.assertIn(f'    {testname}.Tests.test_fail', output)
+        # ...and the sibling case in the same module still ran and passed
+        self.assertIn(f'{testname}.Tests.test_pass passed', output)
+        self.check_line(output, '1 test OK.', regex=False)
+
+    def test_single_process_per_case_import_error(self):
+        testname = self.create_test(code='raise ImportError("boom")')
+
+        output = self.run_tests('--single-process-per-case', testname,
+                                exitcode=EXITCODE_BAD_TEST)
+        self.check_executed_tests(output, [testname], failed=[testname],
+                                  stats=0)
+        self.assertNotIn('_FailedTest', output)
+
+    def test_single_process_per_case_skipped_module(self):
+        code = textwrap.dedent("""
+            import unittest
+            raise unittest.SkipTest("nope")
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests('--single-process-per-case', testname)
+        self.check_executed_tests(output, [testname],
+                                  skipped=[testname], stats=0)
+
 
     def test_verbose3(self):
         code = textwrap.dedent(r"""
@@ -2436,6 +2556,113 @@ class ArgsTestCase(BaseTestCase):
         testname = self.create_test()
         output = self.run_tests('--pythoninfo', testname)
         self.assertIn("Python build information", output)
+
+
+class FindTestsTestCase(BaseTestCase):
+    def test_collect_cases_groups_by_module(self):
+        code = textwrap.dedent("""
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_one(self):
+                    pass
+                def test_two(self):
+                    pass
+        """)
+        testname = self.create_test(code=code)
+        sys.path.insert(0, self.tmptestdir)
+        self.addCleanup(sys.path.remove, self.tmptestdir)
+        self.addCleanup(sys.modules.pop, testname, None)
+        self.addCleanup(set_match_tests, None)
+
+        cases_by_module, skipped = collect_cases((testname,),
+                                                   test_dir=self.tmptestdir)
+        self.assertIn(testname, cases_by_module)
+        self.assertEqual(len(cases_by_module[testname]), 2)
+        self.assertEqual(skipped, [])
+
+    def test_collect_cases_match_tests_filters(self):
+        code = textwrap.dedent("""
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_keep(self):
+                    pass
+                def test_drop(self):
+                    pass
+        """)
+        testname = self.create_test(code=code)
+        sys.path.insert(0, self.tmptestdir)
+        self.addCleanup(sys.path.remove, self.tmptestdir)
+        self.addCleanup(sys.modules.pop, testname, None)
+        self.addCleanup(set_match_tests, None)
+
+        cases_by_module, _ = collect_cases(
+            (testname,),
+            match_tests=[('*test_keep*', True)],
+            test_dir=self.tmptestdir)
+        case_ids = cases_by_module.get(testname, [])
+        self.assertTrue(any('test_keep' in c for c in case_ids))
+        self.assertFalse(any('test_drop' in c for c in case_ids))
+
+    def test_collect_cases_skiptest(self):
+        code = textwrap.dedent("""
+            import unittest
+            raise unittest.SkipTest("module-level skip")
+        """)
+        testname = self.create_test(code=code)
+        sys.path.insert(0, self.tmptestdir)
+        self.addCleanup(sys.path.remove, self.tmptestdir)
+        self.addCleanup(sys.modules.pop, testname, None)
+        self.addCleanup(set_match_tests, None)
+
+        cases_by_module, skipped = collect_cases((testname,),
+                                                   test_dir=self.tmptestdir)
+        self.assertEqual(cases_by_module, {})
+        self.assertIn(testname, skipped)
+
+
+class MultiprocessIteratorTestCase(unittest.TestCase):
+    def test_yields_all_groups_once(self):
+        groups = [("mod_a", ("mod_a.A.t1", "mod_a.A.t2")),
+                  ("mod_b", ("mod_b.B.t1",))]
+        it = MultiprocessIterator(iter(groups))
+        seen = []
+        while (g := next(it, None)) is not None:
+            seen.append(g)
+        self.assertEqual(seen, groups)
+
+    def test_exhausted_returns_none(self):
+        it = MultiprocessIterator(iter([]))
+        self.assertIsNone(next(it, None))
+
+    def test_stop_halts_iteration(self):
+        groups = [("mod_a", ("mod_a.A.t1",)), ("mod_b", ("mod_b.B.t1",))]
+        it = MultiprocessIterator(iter(groups))
+        next(it, None)
+        it.stop()
+        self.assertIsNone(next(it, None))
+
+    def test_thread_safety_no_duplicate_or_lost_groups(self):
+        n = 200
+        groups = [(f"mod_{i}", (f"mod_{i}.T.t",)) for i in range(n)]
+        it = MultiprocessIterator(iter(groups))
+        results = []
+        results_lock = threading.Lock()
+
+        def worker():
+            while (g := next(it, None)) is not None:
+                with results_lock:
+                    results.append(g)
+
+        threads = [threading.Thread(target=worker) for _ in range(8)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        self.assertEqual(sorted(results), sorted(groups))
+        self.assertEqual(len(results), n)
 
 
 class TestUtils(unittest.TestCase):

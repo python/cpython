@@ -1299,6 +1299,34 @@ _PyModule_IsPossiblyShadowing(PyObject *origin)
     return result;
 }
 
+static PyObject *
+try_load_lazy_submodule(PyModuleObject *m, PyObject *name)
+{
+    PyObject *mod_name;
+    int rc = PyDict_GetItemRef(m->md_dict, &_Py_ID(__name__), &mod_name);
+    if (rc <= 0) {
+        return NULL;
+    }
+    if (!PyUnicode_Check(mod_name)) {
+        Py_DECREF(mod_name);
+        return NULL;
+    }
+    PyObject *result = NULL;
+    _PyLazySubmoduleImportResult status =
+        _PyImport_TryLoadLazySubmodule(mod_name, name, &result);
+    Py_DECREF(mod_name);
+    if (status != _Py_LAZY_SUBMODULE_LOADED) {
+        assert(status == _Py_LAZY_SUBMODULE_ERROR ||
+               status == _Py_LAZY_SUBMODULE_NOT_FOUND);
+        return NULL;
+    }
+    if (PyDict_SetItem(m->md_dict, name, result) < 0) {
+        Py_DECREF(result);
+        return NULL;
+    }
+    return result;
+}
+
 PyObject*
 _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
 {
@@ -1307,6 +1335,25 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     attr = _PyObject_GenericGetAttrWithDict((PyObject *)m, name, NULL, suppress);
     if (attr) {
         if (PyLazyImport_CheckExact(attr)) {
+            // gh-144957: Module __getattr__ should get a chance to provide
+            // the attribute before resolving a lazy import placeholder.
+            if (PyDict_GetItemRef(m->md_dict, &_Py_ID(__getattr__), &getattr) < 0) {
+                Py_DECREF(attr);
+                return NULL;
+            }
+            if (getattr) {
+                PyObject *result = PyObject_CallOneArg(getattr, name);
+                Py_DECREF(getattr);
+                if (result != NULL) {
+                    Py_DECREF(attr);
+                    return result;
+                }
+                if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                    Py_DECREF(attr);
+                    return NULL;
+                }
+                PyErr_Clear();
+            }
             PyObject *new_value = _PyImport_LoadLazyImportTstate(
                 PyThreadState_GET(), attr);
             if (new_value == NULL) {
@@ -1344,6 +1391,13 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
         PyErr_Clear();
     }
     assert(m->md_dict != NULL);
+    attr = try_load_lazy_submodule(m, name);
+    if (attr != NULL) {
+        return attr;
+    }
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
     if (PyDict_GetItemRef(m->md_dict, &_Py_ID(__getattr__), &getattr) < 0) {
         return NULL;
     }
