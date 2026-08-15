@@ -2763,6 +2763,14 @@ class IpaddrUnitTest(unittest.TestCase):
                     '2.0.0.0.1.0.0.0.0.0.0.0.1.2.3.4.'
                     'ip6.arpa'
                 )
+             ),
+            # a scope id is not part of the pointer name
+            (
+                'fe80::1%eth0', (
+                    '1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.'
+                    '0.0.0.0.0.0.0.0.0.0.0.0.0.8.e.f.'
+                    'ip6.arpa'
+                )
              )
         ]:
             with self.subTest('ipv6_reverse_pointer', addr=addr_v6):

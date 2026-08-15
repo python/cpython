@@ -1930,7 +1930,11 @@ class _BaseV6:
         This implements the method described in RFC3596 2.5.
 
         """
-        reverse_chars = self.exploded[::-1].replace(':', '')
+        exploded = self.exploded
+        scope_id = getattr(self, '_scope_id', None)
+        if scope_id:
+            exploded = exploded.replace('%' + scope_id, '', 1)
+        reverse_chars = exploded[::-1].replace(':', '')
         return '.'.join(reverse_chars) + '.ip6.arpa'
 
     @staticmethod
