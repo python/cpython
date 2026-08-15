@@ -1,0 +1,6 @@
+Fix :mod:`tarfile` reading an archive with a GNU sparse 1.0 member whose
+size is set in the pax extended header.
+The offset of the next header was computed from the offset of the data,
+which is already past the sparse map, and from the size of the member,
+which can be the apparent size of the sparse file.
+All following members were unreachable.
