@@ -167,6 +167,9 @@ class TestPartial:
         p.keywords[1] = 'x'
         with self.assertRaisesRegex(TypeError, "keywords must be strings"):
             p()
+        p2 = self.partial(capture)
+        with self.assertRaisesRegex(TypeError, "keywords must be strings"):
+            p2.__setstate__((capture, (), {1: 'x'}, None))
 
     def test_no_side_effects(self):
         # make sure there are no side effects that affect subsequent calls

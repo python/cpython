@@ -830,6 +830,16 @@ partial_setstate(PyObject *self, PyObject *state)
         PyErr_SetString(PyExc_TypeError, "invalid partial state");
         return NULL;
     }
+    if (kw != Py_None) {
+        Py_ssize_t pos = 0;
+        PyObject *key, *val;
+        while (PyDict_Next(kw, &pos, &key, &val)) {
+            if (!PyUnicode_Check(key)) {
+                PyErr_SetString(PyExc_TypeError, "keywords must be strings");
+                return NULL;
+            }
+        }
+    }
 
     Py_ssize_t nargs = PyTuple_GET_SIZE(fnargs);
     if (nargs && PyTuple_GET_ITEM(fnargs, nargs - 1) == pto->placeholder) {
