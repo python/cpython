@@ -46,6 +46,13 @@ class object "PyObject *" "&PyBaseObject_Type"
 #define NEXT_VERSION_TAG(interp) \
     (interp)->types.next_version_tag
 
+// Storage for the mutexes saved by type_lock_prevent_release().  Defined for
+// both builds so the call sites don't need to be conditionally compiled.
+typedef struct {
+    PyMutex *mutex1;
+    PyMutex *mutex2;
+} pinned_mutexes_t;
+
 #ifdef Py_GIL_DISABLED
 
 // There's a global lock for types that ensures that tp_version_tag and
@@ -124,44 +131,54 @@ types_start_world(void)
     assert(!types_world_is_stopped());
 }
 
-// This is used to temporarily prevent the TYPE_LOCK from being suspended
-// when held by the topmost critical section.
+// Temporarily prevent the mutexes held by the topmost critical section from
+// being released when the current thread blocks (blocking detaches the thread,
+// which suspends its critical sections and releases the mutexes they hold).
+//
+// All of the mutexes held by the critical section are pinned, not just
+// TYPE_LOCK.  If only TYPE_LOCK was pinned then _PyCriticalSection_Resume()
+// would have to re-acquire the other mutex while TYPE_LOCK is held.  That
+// deadlocks against a thread that holds that mutex and is waiting for
+// TYPE_LOCK, which is exactly what BEGIN_TYPE_DICT_LOCK() does: the type dict
+// mutex is on the heap and TYPE_LOCK is in _PyRuntime, so the address ordering
+// used by two-mutex critical sections usually acquires the dict mutex first.
+// By pinning both mutexes there is nothing to re-acquire on resume.
+//
+// Holding the mutexes while blocked does not prevent the world from being
+// stopped: a thread waiting on either of them parks with _PY_LOCK_DETACH and
+// so is detached while it waits.
 static void
-type_lock_prevent_release(void)
+type_lock_prevent_release(pinned_mutexes_t *pinned)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    uintptr_t *tagptr = &tstate->critical_section;
-    PyCriticalSection *c = (PyCriticalSection *)(*tagptr & ~_Py_CRITICAL_SECTION_MASK);
-    if (!(*tagptr & _Py_CRITICAL_SECTION_TWO_MUTEXES)) {
-        assert(c->_cs_mutex == TYPE_LOCK);
-        c->_cs_mutex = NULL;
-    }
-    else {
+    uintptr_t tag = tstate->critical_section;
+    PyCriticalSection *c = (PyCriticalSection *)(tag & ~_Py_CRITICAL_SECTION_MASK);
+    pinned->mutex1 = c->_cs_mutex;
+    pinned->mutex2 = NULL;
+    c->_cs_mutex = NULL;
+    if ((tag & _Py_CRITICAL_SECTION_TWO_MUTEXES) != 0) {
         PyCriticalSection2 *c2 = (PyCriticalSection2 *)c;
-        if (c->_cs_mutex == TYPE_LOCK) {
-            c->_cs_mutex = c2->_cs_mutex2;
-            c2->_cs_mutex2 = NULL;
-        } else {
-            assert(c2->_cs_mutex2 == TYPE_LOCK);
-            c2->_cs_mutex2 = NULL;
-        }
+        pinned->mutex2 = c2->_cs_mutex2;
+        c2->_cs_mutex2 = NULL;
     }
+    assert(pinned->mutex1 == TYPE_LOCK || pinned->mutex2 == TYPE_LOCK);
 }
 
 static void
-type_lock_allow_release(void)
+type_lock_allow_release(pinned_mutexes_t *pinned)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    uintptr_t *tagptr = &tstate->critical_section;
-    PyCriticalSection *c = (PyCriticalSection *)(*tagptr & ~_Py_CRITICAL_SECTION_MASK);
-    if (!(*tagptr & _Py_CRITICAL_SECTION_TWO_MUTEXES)) {
-        assert(c->_cs_mutex == NULL);
-        c->_cs_mutex = TYPE_LOCK;
-    }
-    else {
+    uintptr_t tag = tstate->critical_section;
+    PyCriticalSection *c = (PyCriticalSection *)(tag & ~_Py_CRITICAL_SECTION_MASK);
+    assert(c->_cs_mutex == NULL);
+    c->_cs_mutex = pinned->mutex1;
+    if ((tag & _Py_CRITICAL_SECTION_TWO_MUTEXES) != 0) {
         PyCriticalSection2 *c2 = (PyCriticalSection2 *)c;
         assert(c2->_cs_mutex2 == NULL);
-        c2->_cs_mutex2 = TYPE_LOCK;
+        c2->_cs_mutex2 = pinned->mutex2;
+    }
+    else {
+        assert(pinned->mutex2 == NULL);
     }
 }
 
@@ -178,8 +195,8 @@ type_lock_allow_release(void)
 #define types_world_is_stopped() 1
 #define types_stop_world()
 #define types_start_world()
-#define type_lock_prevent_release()
-#define type_lock_allow_release()
+#define type_lock_prevent_release(pinned) ((void)(pinned))
+#define type_lock_allow_release(pinned) ((void)(pinned))
 
 #endif
 
@@ -650,14 +667,15 @@ set_tp_mro(PyTypeObject *self, PyObject *mro, int initial)
             PyUnstable_Object_EnableDeferredRefcount(mro);
         }
     }
+    pinned_mutexes_t pinned;
     if (!initial) {
-        type_lock_prevent_release();
+        type_lock_prevent_release(&pinned);
         types_stop_world();
     }
     self->tp_mro = mro;
     if (!initial) {
         types_start_world();
-        type_lock_allow_release();
+        type_lock_allow_release(&pinned);
     }
 }
 
@@ -1882,13 +1900,14 @@ type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases, PyTypeObject *b
     PyObject *old_bases = lookup_tp_bases(type);
     assert(old_bases != NULL);
     PyTypeObject *old_base = type->tp_base;
+    pinned_mutexes_t pinned;
 
-    type_lock_prevent_release();
+    type_lock_prevent_release(&pinned);
     types_stop_world();
     set_tp_bases(type, Py_NewRef(new_bases), 0);
     type->tp_base = (PyTypeObject *)Py_NewRef(best_base);
     types_start_world();
-    type_lock_allow_release();
+    type_lock_allow_release(&pinned);
 
     PyObject *temp = PyList_New(0);
     if (temp == NULL) {
@@ -1949,12 +1968,12 @@ type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases, PyTypeObject *b
     if (lookup_tp_bases(type) == new_bases) {
         assert(type->tp_base == best_base);
 
-        type_lock_prevent_release();
+        type_lock_prevent_release(&pinned);
         types_stop_world();
         set_tp_bases(type, old_bases, 0);
         type->tp_base = old_base;
         types_start_world();
-        type_lock_allow_release();
+        type_lock_allow_release(&pinned);
 
         Py_DECREF(new_bases);
         Py_DECREF(best_base);
@@ -3862,16 +3881,22 @@ apply_type_slot_updates(slot_update_t *updates)
     // to update the dict.  That's because TYPE_LOCK was acquired using a
     // critical section.
     //
-    // The type_lock_prevent_release() call prevents the TYPE_LOCK mutex from
-    // being released even if we block on the STM mutex.  We need to take care
-    // that we do not deadlock because of that.  It is safe because we always
-    // acquire locks in the same order: first the TYPE_LOCK mutex and then the
-    // STM mutex.
-    type_lock_prevent_release();
+    // The type_lock_prevent_release() call prevents the mutexes held by the
+    // critical section (TYPE_LOCK and the type dict mutex) from being released
+    // even if we block on the STW mutex.  We need to take care that we do not
+    // deadlock because of that.  It is safe because a thread waiting for either
+    // of those mutexes detaches while it waits and so does not hold up the
+    // stop-the-world.  Pinning both mutexes rather than only TYPE_LOCK is what
+    // makes this safe: otherwise the dict mutex would be released when we
+    // block and _PyCriticalSection_Resume() would have to re-acquire it while
+    // holding TYPE_LOCK, deadlocking with a thread that holds the dict mutex
+    // and is waiting for TYPE_LOCK.
+    pinned_mutexes_t pinned;
+    type_lock_prevent_release(&pinned);
     types_stop_world();
     apply_slot_updates(updates);
     types_start_world();
-    type_lock_allow_release();
+    type_lock_allow_release(&pinned);
 }
 
 #else
@@ -6364,11 +6389,12 @@ _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask, unsigned long 
     }
     /* Keep TYPE_LOCK held while waiting for stop-the-world so no thread
        can reassign a version tag before the flag update. */
-    type_lock_prevent_release();
+    pinned_mutexes_t pinned;
+    type_lock_prevent_release(&pinned);
     types_stop_world();
     set_flags_recursive(self, mask, flags);
     types_start_world();
-    type_lock_allow_release();
+    type_lock_allow_release(&pinned);
     END_TYPE_LOCK();
 }
 
