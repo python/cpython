@@ -1340,7 +1340,7 @@ cast_to_1D(PyMemoryViewObject *mv, PyObject *format)
         goto out;
     }
 
-    view->format = (char *)get_native_fmtstr(PyBytes_AS_STRING(asciifmt));
+    view->format = get_native_fmtstr(PyBytes_AS_STRING(asciifmt));
     if (view->format == NULL) {
         /* NOT_REACHED: get_native_fmtchar() already validates the format. */
         PyErr_SetString(PyExc_RuntimeError,

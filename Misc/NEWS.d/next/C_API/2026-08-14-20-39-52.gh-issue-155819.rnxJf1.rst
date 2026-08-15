@@ -1,0 +1,3 @@
+The member ``format`` of ``Py_buffer`` is now of type ``const char *``
+rather than of type ``char *``.  Contributed by High Performance Kernels
+LLC.

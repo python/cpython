@@ -2907,7 +2907,7 @@ array_buffer_getbuf(PyObject *op, Py_buffer *view, int flags)
     view->format = NULL;
     view->internal = NULL;
     if ((flags & PyBUF_FORMAT) == PyBUF_FORMAT) {
-        view->format = (char *)self->ob_descr->typecode;
+        view->format = self->ob_descr->typecode;
     }
 
     self->ob_exports++;
