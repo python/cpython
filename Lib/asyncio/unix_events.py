@@ -55,7 +55,8 @@ def waitstatus_to_exitcode(status):
 class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     """Unix event loop.
 
-    Adds signal handling and UNIX Domain Socket support to SelectorEventLoop.
+    Adds signal handling and UNIX Domain Socket support to
+    SelectorEventLoop.
     """
 
     def __init__(self, selector=None):
@@ -221,13 +222,13 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             raise
         except BaseException:
             transp.close()
-            await transp._wait()
+            await tasks.shield(transp._wait())
             raise
 
         return transp
 
     def _child_watcher_callback(self, pid, returncode, transp):
-        self.call_soon_threadsafe(transp._process_exited, returncode)
+        transp._process_exited(returncode)
 
     async def create_unix_connection(
             self, protocol_factory, path=None, *,
@@ -284,7 +285,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             sock=None, backlog=100, ssl=None,
             ssl_handshake_timeout=None,
             ssl_shutdown_timeout=None,
-            start_serving=True, cleanup_socket=True):
+            start_serving=True, cleanup_socket=True, mode=None):
         if isinstance(ssl, bool):
             raise TypeError('ssl argument must be an SSLContext or None')
 
@@ -302,6 +303,9 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                     'path and sock can not be specified at the same time')
 
             path = os.fspath(path)
+            if mode is not None and path and path[0] in (0, '\x00'):
+                raise ValueError(
+                    'mode is not supported for abstract sockets')
             sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 
             # Check for abstract socket. `str` and `bytes` paths are supported.
@@ -330,10 +334,25 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             except:
                 sock.close()
                 raise
+
+            if mode is not None:
+                # The socket cannot accept connections until listen() is
+                # called, which happens later in Server._start_serving(),
+                # so no connection can be accepted while the socket still
+                # has the default permissions.
+                try:
+                    os.chmod(path, mode)
+                except:
+                    sock.close()
+                    raise
         else:
             if sock is None:
                 raise ValueError(
                     'path was not specified, and no sock specified')
+
+            if mode is not None:
+                raise ValueError(
+                    'mode is only meaningful with path')
 
             if (sock.family != socket.AF_UNIX or
                     sock.type != socket.SOCK_STREAM):
@@ -648,7 +667,8 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
         self._conn_lost = 0
         self._closing = False  # Set when close() or write_eof() called.
 
-        mode = os.fstat(self._fileno).st_mode
+        pipe_stat = os.fstat(self._fileno)
+        mode = pipe_stat.st_mode
         is_char = stat.S_ISCHR(mode)
         is_fifo = stat.S_ISFIFO(mode)
         is_socket = stat.S_ISSOCK(mode)
@@ -665,7 +685,19 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
         # On AIX, the reader trick (to be notified when the read end of the
         # socket is closed) only works for sockets. On other platforms it
         # works for pipes and sockets. (Exception: OS X 10.4?  Issue #19294.)
-        if is_socket or (is_fifo and not sys.platform.startswith("aix")):
+        # On macOS and Solaris, the trick misfires for named FIFOs (but not for
+        # pipes created with os.pipe(), which have st_nlink == 0): the write
+        # end polls as readable whenever unread data sits in the FIFO, and no
+        # event is delivered when the read end is closed, so it can only
+        # ever report a false disconnection (gh-145030). The same XNU
+        # behaviour applies on iOS/tvOS/watchOS (sys.platform is not
+        # "darwin" there).
+        is_named_fifo_without_close_event = (
+            sys.platform in {"darwin", "ios", "tvos", "watchos", "sunos5"}
+            and is_fifo and pipe_stat.st_nlink > 0)
+        if is_socket or (is_fifo
+                         and not sys.platform.startswith("aix")
+                         and not is_named_fifo_without_close_event):
             # only start reading when connection_made() has been called
             self._loop.call_soon(self._loop._add_reader,
                                  self._fileno, self._read_ready)
@@ -897,8 +929,8 @@ class _PidfdChildWatcher:
                 pid)
         else:
             returncode = waitstatus_to_exitcode(status)
-
-        os.close(pidfd)
+        finally:
+            os.close(pidfd)
         callback(pid, returncode, *args)
 
 class _ThreadedChildWatcher:
@@ -938,6 +970,49 @@ class _ThreadedChildWatcher:
     def _do_waitpid(self, loop, expected_pid, callback, args):
         assert expected_pid > 0
 
+        if hasattr(os, 'waitid'):
+            # Wait for the child process using waitid() on platforms which support it.
+            # WNOWAIT is used to avoid reaping the child process, allowing the event loop to
+            # reap the child process with waitpid() later in event loop thread.
+            # This makes the reaping of the child and notification of the return code
+            # atomic with respect to the event loop thread.
+            try:
+                os.waitid(os.P_PID, expected_pid, os.WEXITED | os.WNOWAIT)
+            except ChildProcessError:
+                # The child process is already reaped
+                pass
+            if loop.is_closed():
+                # loop is already closed, reap the zombie here so that it is not leaked.
+                pid, _ = self._reap(loop, expected_pid)
+                logger.warning("Loop %r that handles pid %r is closed",
+                               loop, pid)
+            else:
+                try:
+                    loop.call_soon_threadsafe(
+                        self._reap_and_notify, loop, expected_pid,
+                        callback, args)
+                except RuntimeError:
+                    # The event loop was closed concurrently.
+                    pid, _ = self._reap(loop, expected_pid)
+                    logger.warning("Loop %r that handles pid %r is closed",
+                                   loop, pid)
+        else:
+            # Fallback for platforms that don't support waitid(): we have to
+            # reap the child here, which is racy with respect to send_signal()
+            pid, returncode = self._reap(loop, expected_pid)
+            if loop.is_closed():
+                logger.warning("Loop %r that handles pid %r is closed",
+                               loop, pid)
+            else:
+                loop.call_soon_threadsafe(callback, pid, returncode, *args)
+
+        self._threads.pop(expected_pid)
+
+    def _reap_and_notify(self, loop, expected_pid, callback, args):
+        pid, returncode = self._reap(loop, expected_pid)
+        callback(pid, returncode, *args)
+
+    def _reap(self, loop, expected_pid):
         try:
             pid, status = os.waitpid(expected_pid, 0)
         except ChildProcessError:
@@ -953,13 +1028,7 @@ class _ThreadedChildWatcher:
             if loop.get_debug():
                 logger.debug('process %s exited with returncode %s',
                              expected_pid, returncode)
-
-        if loop.is_closed():
-            logger.warning("Loop %r that handles pid %r is closed", loop, pid)
-        else:
-            loop.call_soon_threadsafe(callback, pid, returncode, *args)
-
-        self._threads.pop(expected_pid)
+        return pid, returncode
 
 def can_use_pidfd():
     if not hasattr(os, 'pidfd_open'):
@@ -973,11 +1042,5 @@ def can_use_pidfd():
     return True
 
 
-class _UnixDefaultEventLoopPolicy(events._BaseDefaultEventLoopPolicy):
-    """UNIX event loop policy"""
-    _loop_factory = _UnixSelectorEventLoop
-
-
 SelectorEventLoop = _UnixSelectorEventLoop
-_DefaultEventLoopPolicy = _UnixDefaultEventLoopPolicy
 EventLoop = SelectorEventLoop

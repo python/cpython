@@ -152,10 +152,11 @@ Alpha, beta and release candidate versions have an additional suffix:
 In other words, all versions labeled *2.0aN* precede the versions labeled
 *2.0bN*, which precede versions labeled *2.0rcN*, and *those* precede 2.0.
 
-You may also find version numbers with a "+" suffix, e.g. "2.2+".  These are
-unreleased versions, built directly from the CPython development repository.  In
-practice, after a final minor release is made, the version is incremented to the
-next minor version, which becomes the "a0" version, e.g. "2.4a0".
+You may also find version numbers with a "+dev" suffix, such as "3.15.0b3+dev".
+These are unreleased versions, built directly from the CPython development
+repository. After the first beta release is made, the version is
+incremented to the next feature version, which becomes the "a0" version,
+such as "3.16.0a0".
 
 See the `Developer's Guide
 <https://devguide.python.org/developer-workflow/development-cycle/>`__

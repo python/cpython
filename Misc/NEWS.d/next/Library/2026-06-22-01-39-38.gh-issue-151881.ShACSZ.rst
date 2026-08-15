@@ -1,0 +1,4 @@
+Add the :meth:`tkinter.Menu.postcascade` method and the
+:meth:`!tkinter.Misc.tk_scaling` and :meth:`!tkinter.Misc.tk_inactive`
+methods, wrapping the ``postcascade``, ``tk scaling`` and ``tk inactive``
+Tk commands.

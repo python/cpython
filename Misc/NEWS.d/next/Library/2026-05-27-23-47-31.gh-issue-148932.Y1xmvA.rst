@@ -1,0 +1,1 @@
+Fix ``profiling.sampling`` on Windows virtual environments to resolve the actual Python PID from a virtual environment shim.

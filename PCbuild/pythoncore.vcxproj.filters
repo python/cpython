@@ -327,6 +327,9 @@
     <ClInclude Include="..\Parser\lexer\state.h">
       <Filter>Parser</Filter>
     </ClInclude>
+    <ClInclude Include="..\Parser\lexer\lexer_internal.h">
+      <Filter>Parser</Filter>
+    </ClInclude>
     <ClInclude Include="..\Parser\lexer\buffer.h">
       <Filter>Parser</Filter>
     </ClInclude>
@@ -894,6 +897,9 @@
     <ClInclude Include="..\Include\internal\pycore_tuple.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_typecache.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_typedefs.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -1331,6 +1337,12 @@
     <ClCompile Include="..\Parser\lexer\lexer.c">
       <Filter>Parser</Filter>
     </ClCompile>
+    <ClCompile Include="..\Parser\lexer\number.c">
+      <Filter>Parser</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Parser\lexer\string.c">
+      <Filter>Parser</Filter>
+    </ClCompile>
     <ClCompile Include="..\Parser\lexer\state.c">
       <Filter>Parser</Filter>
     </ClCompile>
@@ -1611,6 +1623,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\tracemalloc.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\typecache.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\uniqueid.c">
