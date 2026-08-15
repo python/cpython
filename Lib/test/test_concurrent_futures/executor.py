@@ -29,6 +29,13 @@ def raiser(exception, msg='std'):
     raise exception(msg)
 
 
+# Used in test_map_timeout_from_callable
+def timeout_on_one(x):
+    if x == 1:
+        raise TimeoutError
+    return x
+
+
 class FalseyBoolException(Exception):
     def __bool__(self):
         return False
@@ -85,6 +92,18 @@ class ExecutorTest:
         self.assertEqual(next(i), (1, 2))
         self.assertEqual(next(i), (1, 0))
         self.assertRaises(StopIteration, next, i)
+        self.assertRaises(StopIteration, next, i)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_map_timeout_from_callable(self):
+        # A TimeoutError raised by the mapped callable must not be treated as a
+        # map() timeout: the remaining calls keep running, like any other
+        # exception.
+        i = self.executor.map(timeout_on_one, [0, 1, 2, 3])
+        self.assertEqual(next(i), 0)
+        self.assertRaises(TimeoutError, next, i)
+        self.assertEqual(next(i), 2)
+        self.assertEqual(next(i), 3)
         self.assertRaises(StopIteration, next, i)
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()

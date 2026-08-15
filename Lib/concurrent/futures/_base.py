@@ -310,7 +310,11 @@ def _result_or_cancel(fut, timeout=None):
     try:
         try:
             return (fut.result(timeout), None)
-        except TimeoutError:
+        except TimeoutError as exc:
+            if fut.done():
+                # The future already finished, so this is the callable's own
+                # TimeoutError, not the map() timeout waiting for the future.
+                return (None, exc)
             raise
         except BaseException as exc:
             return (None, exc)
