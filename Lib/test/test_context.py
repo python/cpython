@@ -586,6 +586,99 @@ class ContextTest(unittest.TestCase):
         ctx2.run(var.set, ReentrantHash())
         ctx1 == ctx2
 
+    def test_context_depth_increases_on_run(self):
+        # Entering a copied context reports a depth one greater than the
+        # context it was copied from; the depth is restored after the run.
+        from _contextvars import _current_context_depth as depth
+        base = depth()
+        got = []
+        contextvars.copy_context().run(lambda: got.append(depth()))
+        self.assertEqual(got, [base + 1])
+        self.assertEqual(depth(), base)
+
+    def test_context_depth_nested_run(self):
+        # Nested copied contexts increase the depth by one per level.
+        from _contextvars import _current_context_depth as depth
+        base = depth()
+        got = []
+
+        def outer():
+            got.append(depth())
+            contextvars.copy_context().run(
+                lambda: got.append(depth()))
+        contextvars.copy_context().run(outer)
+        self.assertEqual(got, [base + 1, base + 2])
+
+    def test_context_depth_reenter_same_context(self):
+        # The depth is fixed when the context is created, so running the
+        # same context object again reports the same depth.
+        from _contextvars import _current_context_depth as depth
+        ctx = contextvars.copy_context()
+        got = []
+        ctx.run(lambda: got.append(depth()))
+        ctx.run(lambda: got.append(depth()))
+        self.assertEqual(got[0], got[1])
+
+    def test_context_depth_copy_method(self):
+        # Context.copy() produces a context one level deeper than its source.
+        from _contextvars import _current_context_depth as depth
+        base = depth()
+        # copy_context() -> depth base+1; .copy() of that -> depth base+2,
+        # regardless of where it is entered (depth is a creation property).
+        ctx = contextvars.copy_context().copy()
+        got = []
+        ctx.run(lambda: got.append(depth()))
+        self.assertEqual(got, [base + 2])
+
+    def test_context_depth_empty_context_is_zero(self):
+        # A freshly created (empty) Context has depth 0 and reports it
+        # independently of the context it is entered from.
+        from _contextvars import _current_context_depth as depth
+        got = []
+        contextvars.Context().run(lambda: got.append(depth()))
+        # Entered from within a deeper context, still its own depth (0).
+        contextvars.copy_context().run(
+            lambda: contextvars.Context().run(
+                lambda: got.append(depth())))
+        self.assertEqual(got, [0, 0])
+
+    def test_context_depth_inherited_value_is_shared(self):
+        # A value set before copying is inherited by the copied context as
+        # the same object, while the depth differs -- this is the signal a
+        # mutable value (e.g. a decimal context) uses to copy for isolation.
+        from _contextvars import _current_context_depth as depth
+        v = contextvars.ContextVar('v')
+        sentinel = object()
+        v.set(sentinel)
+        base = depth()
+        ctx = contextvars.copy_context()
+
+        def check():
+            self.assertEqual(depth(), base + 1)
+            self.assertIs(v.get(), sentinel)
+        ctx.run(check)
+
+    @threading_helper.requires_working_threading()
+    def test_context_depth_with_threads(self):
+        # A thread running a copied context sees a deeper context than the
+        # parent, and each thread's depth is independent.
+        import threading
+        from _contextvars import _current_context_depth as depth
+        base = depth()
+        results = {}
+
+        def thread_func(name):
+            results[name] = depth()
+
+        t1 = threading.Thread(target=contextvars.copy_context().run,
+                              args=(lambda: thread_func('t1'),))
+        t2 = threading.Thread(target=contextvars.copy_context().run,
+                              args=(lambda: thread_func('t2'),))
+        t1.start(); t2.start()
+        t1.join(); t2.join()
+        self.assertEqual(results['t1'], base + 1)
+        self.assertEqual(results['t2'], base + 1)
+
 
 # HAMT Tests
 
