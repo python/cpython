@@ -6356,7 +6356,7 @@ class TestStartMethod(unittest.TestCase):
         # there is no synchronization in the test.
         self.assertSetEqual(set(results), set([2, 1]))
 
-    @unittest.skipIf(os.name != "nt", "requires POSIX")
+    @unittest.skipIf(os.name == "nt", "requires POSIX")
     @support.subTests("mode", [
         os.R_OK,  # read-only directory
         os.R_OK | os.X_OK, # read-only directory
