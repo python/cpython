@@ -989,8 +989,8 @@ These methods are available on :class:`HTTPPasswordMgr` and
    *passwd* must be strings. This causes ``(user, passwd)`` to be used as
    authentication tokens when authentication for *realm* and a super-URI of any
    of the given URIs is given. If a URI includes a scheme, its credentials only
-   match authentication URIs with the same scheme. A URI without a scheme
-   matches authentication URIs with any scheme.
+   match authentication URIs with the same scheme or no scheme. A URI without a
+   scheme matches authentication URIs with any scheme.
 
    .. versionchanged:: next
       Authentication credentials for URIs with a scheme are now scoped by
