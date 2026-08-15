@@ -570,6 +570,7 @@ def collect_sysconfig(info_add):
 
     for name in (
         'ABIFLAGS',
+        'ALT_SOABI',
         'ANDROID_API_LEVEL',
         'CC',
         'CCSHARED',
@@ -595,6 +596,7 @@ def collect_sysconfig(info_add):
         'Py_REMOTE_DEBUG',
         'SHELL',
         'SOABI',
+        'SOABI_PLATFORM',
         'TEST_MODULES',
         'VAPTH',
         'abs_builddir',
@@ -995,7 +997,7 @@ def collect_windows(info_add):
     # windows.RtlAreLongPathsEnabled: RtlAreLongPathsEnabled()
     # windows.is_admin: IsUserAnAdmin()
     try:
-        import ctypes
+        import ctypes.util
         if not hasattr(ctypes, 'WinDLL'):
             raise ImportError
     except ImportError:
@@ -1004,20 +1006,19 @@ def collect_windows(info_add):
         ntdll = ctypes.WinDLL('ntdll')
         BOOLEAN = ctypes.c_ubyte
         try:
-            RtlAreLongPathsEnabled = ntdll.RtlAreLongPathsEnabled
+            @ctypes.util.wrap_dll_function(ntdll)
+            def RtlAreLongPathsEnabled() -> BOOLEAN:
+                pass
         except AttributeError:
             res = '<function not available>'
         else:
-            RtlAreLongPathsEnabled.restype = BOOLEAN
-            RtlAreLongPathsEnabled.argtypes = ()
             res = bool(RtlAreLongPathsEnabled())
         info_add('windows.RtlAreLongPathsEnabled', res)
 
-        shell32 = ctypes.windll.shell32
-        IsUserAnAdmin = shell32.IsUserAnAdmin
-        IsUserAnAdmin.restype = BOOLEAN
-        IsUserAnAdmin.argtypes = ()
-        info_add('windows.is_admin', IsUserAnAdmin())
+        @ctypes.util.wrap_dll_function(ctypes.windll.shell32)
+        def IsUserAnAdmin() -> BOOLEAN:
+            pass
+        info_add('windows.is_admin', bool(IsUserAnAdmin()))
 
     try:
         import _winapi
@@ -1316,6 +1317,12 @@ def collect_system(info_add):
             info_add('system.hardware', hardware)
 
 
+def collect_importlib(info_add):
+    import importlib.machinery
+    info_add('importlib.extension_suffixes',
+             importlib.machinery.EXTENSION_SUFFIXES)
+
+
 def collect_info(info):
     error = False
     info_add = info.add
@@ -1358,6 +1365,7 @@ def collect_info(info):
         collect_zstd,
         collect_libregrtest_utils,
         collect_system,
+        collect_importlib,
 
         # Collecting from tests should be last as they have side effects.
         collect_test_socket,

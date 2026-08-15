@@ -1,3 +1,4 @@
+import copy
 import errno
 import sys
 import os
@@ -1141,6 +1142,38 @@ class LzmaDetectReadTest(LzmaTest, DetectReadTest):
 class ZstdDetectReadTest(ZstdTest, DetectReadTest):
     pass
 
+
+@support.requires_zstd()
+class ZstdOpenTest(unittest.TestCase):
+    """
+    See: https://github.com/python/cpython/issues/150077
+    """
+    def test_zstopen_closes_fileobj_on_base_exception(self):
+        path = os_helper.TESTFN + ".tar.zst"
+        self.addCleanup(os_helper.unlink, path)
+        with tarfile.open(path, "w:zst"):
+            pass
+
+        opened = []
+        real_ZstdFile = zstd.ZstdFile
+
+        def tracking_ZstdFile(*args, **kwargs):
+            fileobj = real_ZstdFile(*args, **kwargs)
+            opened.append(fileobj)
+            return fileobj
+
+        with (
+            unittest.mock.patch("compression.zstd.ZstdFile", tracking_ZstdFile),
+            unittest.mock.patch.object(
+                tarfile.TarFile, "taropen", side_effect=KeyboardInterrupt),
+            self.assertRaises(KeyboardInterrupt),
+        ):
+            tarfile.TarFile.zstopen(path)
+
+        self.assertEqual(len(opened), 1)
+        self.assertTrue(opened[0].closed)
+
+
 class GzipBrokenHeaderCorrectException(GzipTest, unittest.TestCase):
     """
     See: https://github.com/python/cpython/issues/107396
@@ -1663,6 +1696,22 @@ class WriteTest(WriteTestBase, unittest.TestCase):
             try:
                 tarinfo = tar.gettarinfo(path)
                 self.assertEqual(tarinfo.size, 0)
+            finally:
+                tar.close()
+        finally:
+            os_helper.unlink(path)
+
+    @os_helper.skip_unless_symlink
+    def test_symlink_target_normalization(self):
+        # Test for gh-151669.
+        path = os.path.join(TEMPDIR, "symlink")
+        target = "subdir/link/target"
+        os.symlink(target.replace("/", os.sep), path)
+        try:
+            tar = tarfile.open(tmpname, self.mode)
+            try:
+                tarinfo = tar.gettarinfo(path)
+                self.assertEqual(tarinfo.linkname, target)
             finally:
                 tar.close()
         finally:
@@ -3303,12 +3352,12 @@ def root_is_uid_gid_0():
     except ImportError:
         return False
     try:
-        if pwd.getpwuid(0)[0] != 'root':
+        if pwd.getpwuid(0).pw_name != 'root':
             return False
     except KeyError:
         # On Cygwin, there is no root user (uid 0)
         return False
-    if grp.getgrgid(0)[0] != 'root':
+    if grp.getgrgid(0).gr_name != 'root':
         return False
     return True
 
@@ -3475,6 +3524,16 @@ class ReplaceTests(ReadTest, unittest.TestCase):
         member = self.tar.getmember('ustar/regtype')
         with self.assertRaises(TypeError):
             member.replace(offset=123456789)
+
+    def test_copy_replace(self):
+        member = self.tar.getmember('ustar/regtype')
+        replaced = copy.replace(member, name='misc/other', mode=0o644)
+        self.assertEqual(replaced.name, 'misc/other')
+        self.assertEqual(replaced.mode, 0o644)
+        self.assertEqual(replaced.size, member.size)
+        self.assertEqual(member.name, 'ustar/regtype')
+        with self.assertRaises(TypeError):
+            copy.replace(member, offset=123456789)
 
 
 class NoneInfoExtractTests(ReadTest):

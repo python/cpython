@@ -41,7 +41,6 @@ extern PyStatus _PyTypes_InitTypes(PyInterpreterState *);
 extern void _PyTypes_FiniTypes(PyInterpreterState *);
 extern void _PyTypes_FiniExtTypes(PyInterpreterState *interp);
 extern void _PyTypes_Fini(PyInterpreterState *);
-extern void _PyTypes_AfterFork(void);
 extern void _PyTypes_FiniCachedDescriptors(PyInterpreterState *);
 
 static inline PyObject **

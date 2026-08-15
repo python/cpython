@@ -28,7 +28,7 @@ extern const char* _Py_SourceAsString(
     PyCompilerFlags *cf,
     PyObject **cmd_copy);
 
-extern PyObject * _Py_CompileStringObjectWithModule(
+extern PyObject * _Py_CompileString(
     const char *str,
     PyObject *filename, int start,
     PyCompilerFlags *flags, int optimize,

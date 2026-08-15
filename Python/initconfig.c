@@ -1813,44 +1813,29 @@ config_get_env_dup(PyConfig *config,
 static void
 config_get_global_vars(PyConfig *config)
 {
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     if (config->_config_init != _PyConfig_INIT_COMPAT) {
         /* Python and Isolated configuration ignore global variables */
         return;
     }
 
-#define COPY_FLAG(ATTR, VALUE) \
-        if (config->ATTR == -1) { \
-            config->ATTR = VALUE; \
+    const PyConfigSpec *spec = PYCONFIG_SPEC;
+    for (; spec->name != NULL; spec++) {
+        if (spec->global_var.ptr == NULL) {
+            continue;
         }
-#define COPY_NOT_FLAG(ATTR, VALUE) \
-        if (config->ATTR == -1) { \
-            config->ATTR = !(VALUE); \
+        assert(spec->type == PyConfig_MEMBER_INT
+               || spec->type == PyConfig_MEMBER_UINT
+               || spec->type == PyConfig_MEMBER_BOOL);
+        int *member = config_get_spec_member(config, spec);
+        if (*member != -1) {
+            continue;
         }
-
-    COPY_FLAG(isolated, Py_IsolatedFlag);
-    COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
-    COPY_FLAG(bytes_warning, Py_BytesWarningFlag);
-    COPY_FLAG(inspect, Py_InspectFlag);
-    COPY_FLAG(interactive, Py_InteractiveFlag);
-    COPY_FLAG(optimization_level, Py_OptimizeFlag);
-    COPY_FLAG(parser_debug, Py_DebugFlag);
-    COPY_FLAG(verbose, Py_VerboseFlag);
-    COPY_FLAG(quiet, Py_QuietFlag);
-#ifdef MS_WINDOWS
-    COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
-#endif
-    COPY_NOT_FLAG(pathconfig_warnings, Py_FrozenFlag);
-
-    COPY_NOT_FLAG(buffered_stdio, Py_UnbufferedStdioFlag);
-    COPY_NOT_FLAG(site_import, Py_NoSiteFlag);
-    COPY_NOT_FLAG(write_bytecode, Py_DontWriteBytecodeFlag);
-    COPY_NOT_FLAG(user_site_directory, Py_NoUserSiteDirectory);
-
-#undef COPY_FLAG
-#undef COPY_NOT_FLAG
-_Py_COMP_DIAG_POP
+        int value = *spec->global_var.ptr;
+        if (spec->global_var.not) {
+            value = !value;
+        }
+        *member = value;
+    }
 }
 
 
@@ -1858,42 +1843,30 @@ _Py_COMP_DIAG_POP
 static void
 config_set_global_vars(const PyConfig *config)
 {
+    const PyConfigSpec *spec = PYCONFIG_SPEC;
+    for (; spec->name != NULL; spec++) {
+        if (spec->global_var.ptr == NULL) {
+            continue;
+        }
+        assert(spec->type == PyConfig_MEMBER_INT
+               || spec->type == PyConfig_MEMBER_UINT
+               || spec->type == PyConfig_MEMBER_BOOL);
+        int *member = config_get_spec_member(config, spec);
+        int value = *member;
+        if (value == -1) {
+            continue;
+        }
+        if (spec->global_var.not) {
+            value = !value;
+        }
+        *spec->global_var.ptr = value;
+    }
+
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-#define COPY_FLAG(ATTR, VAR) \
-        if (config->ATTR != -1) { \
-            VAR = config->ATTR; \
-        }
-#define COPY_NOT_FLAG(ATTR, VAR) \
-        if (config->ATTR != -1) { \
-            VAR = !config->ATTR; \
-        }
-
-    COPY_FLAG(isolated, Py_IsolatedFlag);
-    COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
-    COPY_FLAG(bytes_warning, Py_BytesWarningFlag);
-    COPY_FLAG(inspect, Py_InspectFlag);
-    COPY_FLAG(interactive, Py_InteractiveFlag);
-    COPY_FLAG(optimization_level, Py_OptimizeFlag);
-    COPY_FLAG(parser_debug, Py_DebugFlag);
-    COPY_FLAG(verbose, Py_VerboseFlag);
-    COPY_FLAG(quiet, Py_QuietFlag);
-#ifdef MS_WINDOWS
-    COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
-#endif
-    COPY_NOT_FLAG(pathconfig_warnings, Py_FrozenFlag);
-
-    COPY_NOT_FLAG(buffered_stdio, Py_UnbufferedStdioFlag);
-    COPY_NOT_FLAG(site_import, Py_NoSiteFlag);
-    COPY_NOT_FLAG(write_bytecode, Py_DontWriteBytecodeFlag);
-    COPY_NOT_FLAG(user_site_directory, Py_NoUserSiteDirectory);
-
     /* Random or non-zero hash seed */
     Py_HashRandomizationFlag = (config->use_hash_seed == 0 ||
                                 config->hash_seed != 0);
-
-#undef COPY_FLAG
-#undef COPY_NOT_FLAG
 _Py_COMP_DIAG_POP
 }
 

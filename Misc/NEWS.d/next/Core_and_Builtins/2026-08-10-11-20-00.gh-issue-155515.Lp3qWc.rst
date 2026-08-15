@@ -1,0 +1,4 @@
+Track the internal HAMT iterators, which back iteration over a
+:class:`contextvars.Context`, with the garbage collector.  A reference cycle
+running through such an iterator was never collected, leaking the whole
+context it iterated over.
