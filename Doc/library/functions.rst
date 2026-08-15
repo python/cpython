@@ -1147,10 +1147,9 @@ are always available.  They are listed here in alphabetical order.
 
    Return an :term:`iterator` object.  The first argument is interpreted very
    differently depending on the presence of the second argument. Without a
-   second argument, the single argument must be a collection object which supports the
-   :term:`iterable` protocol (the :meth:`~object.__iter__` method),
-   or it must support
-   the sequence protocol (the :meth:`~object.__getitem__` method with integer arguments
+   second argument, the single argument must be an object that supports the
+   :term:`iterable` protocol (the :meth:`~object.__iter__` method) or the
+   :term:`sequence` protocol (the :meth:`~object.__getitem__` method with integer arguments
    starting at ``0``).  If it does not support either of those protocols,
    :exc:`TypeError` is raised. If the second argument, *sentinel*, is given,
    then the first argument must be a callable object.  The iterator created in this case
