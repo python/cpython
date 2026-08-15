@@ -69,7 +69,9 @@ async def _check_tool_version(
     name: str, llvm_version: str, *, echo: bool = False
 ) -> bool:
     output = await _run(name, ["--version"], echo=echo)
-    _llvm_version_pattern = re.compile(rf"version\s+{llvm_version}\.\d+\.\d+\S*\s+")
+    _llvm_version_pattern = re.compile(
+        rf"(?<!Apple )(LLVM|clang) version\s+{llvm_version}\.\d+\.\d+\S*\s+"
+    )
     return bool(output and _llvm_version_pattern.search(output))
 
 

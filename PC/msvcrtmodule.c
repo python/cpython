@@ -65,7 +65,7 @@ class byte_char_return_converter(CReturnConverter):
         data.declarations.append('char s[1];')
         data.return_value = 's[0]'
         data.return_conversion.append(
-            'return_value = PyBytes_FromStringAndSize(s, 1);\n')
+            f'{data.parser_retval} = PyBytes_FromStringAndSize(s, 1);\n')
 
 class wchar_t_return_converter(CReturnConverter):
     type = 'wchar_t'
@@ -73,9 +73,10 @@ class wchar_t_return_converter(CReturnConverter):
     def render(self, function, data):
         self.declare(data)
         data.return_conversion.append(
-            'return_value = PyUnicode_FromOrdinal(_return_value);\n')
+            f'{data.parser_retval} = '
+            f'PyUnicode_FromOrdinal({data.converter_retval});\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=ff031be44ab3250d]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=ed7a4a045a6d0496]*/
 
 /*[clinic input]
 module msvcrt
@@ -317,6 +318,22 @@ msvcrt_getwche_impl(PyObject *module)
 
 #endif /* MS_WINDOWS_DESKTOP */
 
+/* Raise an OSError for a failed _putch()/_putwch() call.
+
+   These functions fail, for example, when the process has no console
+   attached, but the CRT reports the failure without setting errno (and
+   without setting the Windows last error either), so fall back to a
+   generic error message in that case. */
+static PyObject *
+set_console_write_error(void)
+{
+    if (errno != 0) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    PyErr_SetString(PyExc_OSError, "write to console failed");
+    return NULL;
+}
+
 /*[clinic input]
 msvcrt.putch
 
@@ -330,9 +347,16 @@ static PyObject *
 msvcrt_putch_impl(PyObject *module, char char_value)
 /*[clinic end generated code: output=92ec9b81012d8f60 input=ec078dd10cb054d6]*/
 {
+    int res;
+
     _Py_BEGIN_SUPPRESS_IPH
-    _putch(char_value);
+    errno = 0;
+    res = _putch(char_value);
     _Py_END_SUPPRESS_IPH
+
+    if (res == EOF) {
+        return set_console_write_error();
+    }
     Py_RETURN_NONE;
 }
 
@@ -351,11 +375,17 @@ static PyObject *
 msvcrt_putwch_impl(PyObject *module, int unicode_char)
 /*[clinic end generated code: output=a3bd1a8951d28eee input=996ccd0bbcbac4c3]*/
 {
-    _Py_BEGIN_SUPPRESS_IPH
-    _putwch(unicode_char);
-    _Py_END_SUPPRESS_IPH
-    Py_RETURN_NONE;
+    wint_t res;
 
+    _Py_BEGIN_SUPPRESS_IPH
+    errno = 0;
+    res = _putwch(unicode_char);
+    _Py_END_SUPPRESS_IPH
+
+    if (res == WEOF) {
+        return set_console_write_error();
+    }
+    Py_RETURN_NONE;
 }
 
 #endif /* MS_WINDOWS_DESKTOP */

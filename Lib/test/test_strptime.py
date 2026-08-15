@@ -19,6 +19,13 @@ if libc_ver[0] == 'glibc':
 else:
     glibc_ver = None
 
+def skip_cygwin_locale():
+    if sys.platform != 'cygwin':
+        return
+    loc = locale.getlocale(locale.LC_TIME)[0]
+    if loc in ('my_MM', 'or_IN'):
+        raise unittest.SkipTest('test fails on Cygwin')
+
 
 class getlang_Tests(unittest.TestCase):
     """Test _getlang"""
@@ -509,6 +516,8 @@ class StrptimeTests(unittest.TestCase):
                       'my_MM', 'or_IN', 'shn_MM', 'az_IR',
                       'byn_ER', 'wal_ET', 'lzh_TW')
     def test_date_time_locale(self):
+        skip_cygwin_locale()
+
         # Test %c directive
         loc = locale.getlocale(locale.LC_TIME)[0]
         if glibc_ver and glibc_ver < (2, 31) and loc == 'br_FR':
@@ -536,6 +545,8 @@ class StrptimeTests(unittest.TestCase):
                       'csb_PL', 'br_FR', 'gez_ET', 'brx_IN',
                       'my_MM', 'shn_MM')
     def test_date_time_locale2(self):
+        skip_cygwin_locale()
+
         # Test %c directive
         loc = locale.getlocale(locale.LC_TIME)[0]
         if sys.platform.startswith('sunos'):
@@ -550,6 +561,8 @@ class StrptimeTests(unittest.TestCase):
                       'he_IL', 'eu_ES', 'ar_AE',
                       'az_IR', 'my_MM', 'or_IN', 'shn_MM', 'lzh_TW')
     def test_date_locale(self):
+        skip_cygwin_locale()
+
         # Test %x directive
         now = time.time()
         self.roundtrip('%x', slice(0, 3), time.localtime(now))
@@ -567,6 +580,8 @@ class StrptimeTests(unittest.TestCase):
     @run_with_locales('LC_TIME', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
                       'eu_ES', 'ar_AE', 'my_MM', 'shn_MM', 'lzh_TW')
     def test_date_locale2(self):
+        skip_cygwin_locale()
+
         # Test %x directive
         loc = locale.getlocale(locale.LC_TIME)[0]
         if sys.platform.startswith(('sunos', 'aix')):
@@ -587,6 +602,8 @@ class StrptimeTests(unittest.TestCase):
                       'ti_ET', 'tig_ER', 'wal_ET', 'lzh_TW',
                       'ar_SA', 'bg_BG')
     def test_time_locale(self):
+        skip_cygwin_locale()
+
         # Test %X directive
         loc = locale.getlocale(locale.LC_TIME)[0]
         pos = slice(3, 6)

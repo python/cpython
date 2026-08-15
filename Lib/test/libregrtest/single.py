@@ -145,7 +145,7 @@ def regrtest_runner(result: TestResult, test_func, runtests: RunTests) -> None:
 
 
 # Storage of uncollectable GC objects (gc.garbage)
-GC_GARBAGE = []
+GC_GARBAGE: list[object] = []
 
 
 def _load_run_test(result: TestResult, runtests: RunTests) -> None:

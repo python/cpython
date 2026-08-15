@@ -3,11 +3,10 @@ import itertools
 import threading
 import unittest
 from threading import Barrier
-from unittest import TestCase
 import random
 import time
 
-from test.support import threading_helper, Py_GIL_DISABLED
+from test.support import threading_helper
 
 threading_helper.requires_working_threading(module=True)
 
@@ -32,8 +31,7 @@ def set_gen_qualname(g, b):
     return g.__qualname__
 
 
-@unittest.skipUnless(Py_GIL_DISABLED, "Enable only in FT build")
-class TestFTGenerators(TestCase):
+class TestFTGenerators(unittest.TestCase):
     NUM_THREADS = 4
 
     def concurrent_write_with_func(self, func):

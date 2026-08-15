@@ -240,9 +240,33 @@ their completion.
       Note, that the data read is buffered in memory, so do not use
       this method if the data size is large or unlimited.
 
+      If this coroutine is cancelled (for example, when a timeout is
+      set with :func:`~asyncio.wait_for`), the output that was already
+      read is not lost: call :meth:`!communicate` again to read the
+      remaining output and get the complete data::
+
+         try:
+             stdout, stderr = await asyncio.wait_for(
+                 proc.communicate(), timeout=5.0)
+         except TimeoutError:
+             proc.kill()
+             stdout, stderr = await proc.communicate()
+
+      Passing *input* after a previous :meth:`!communicate` call was
+      cancelled raises :exc:`ValueError`; pass ``input=None`` to
+      continue the communication, the original *input* is used.
+
       .. versionchanged:: 3.12
 
          *stdin* gets closed when ``input=None`` too.
+
+      .. versionchanged:: next
+
+         If :meth:`!communicate` is cancelled, the output that was
+         already read is now preserved and returned by a subsequent
+         :meth:`!communicate` call.  Passing *input* to a
+         :meth:`!communicate` call following a cancelled one now raises
+         :exc:`ValueError`.
 
    .. method:: send_signal(signal)
 

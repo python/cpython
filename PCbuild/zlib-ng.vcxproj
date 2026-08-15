@@ -219,13 +219,15 @@
     <PropertyGroup>
       <Text>$([System.IO.File]::ReadAllText('$(zlibNgDir)\zlib.h.in').Replace('@ZLIB_SYMBOL_PREFIX@', ''))</Text>
     </PropertyGroup>
-    <WriteLinesToFile File="$(IntDir)zlib.h" Lines="$(Text)" />
+    <MakeDir Directories="$(GeneratedZlibNgDir)" />
+    <WriteLinesToFile File="$(GeneratedZlibNgDir)zlib.h" Lines="$(Text)" />
   </Target>
   <Target Name="_EnsureZlibNgH" Inputs="$(zlibNgDir)\zlib-ng.h.in" Outputs="$(IntDir)zlib-ng.h">
     <PropertyGroup>
       <Text>$([System.IO.File]::ReadAllText('$(zlibNgDir)\zlib-ng.h.in').Replace('@ZLIB_SYMBOL_PREFIX@', ''))</Text>
     </PropertyGroup>
-    <WriteLinesToFile File="$(IntDir)zlib-ng.h" Lines="$(Text)" />
+    <MakeDir Directories="$(GeneratedZlibNgDir)" />
+    <WriteLinesToFile File="$(GeneratedZlibNgDir)zlib-ng.h" Lines="$(Text)" />
   </Target>
 
   <Target Name="_EnsureZlibNgHeaders" BeforeTargets="PrepareForBuild"

@@ -140,6 +140,18 @@ class TaskGroup:
         assert not self._tasks
 
         if self._base_error is not None:
+            # self._base_error (SystemExit or KeyboardInterrupt) is about
+            # to propagate out of this method, which discards any other
+            # collected task errors silently.  Report them instead of
+            # losing them.  See gh-135736.
+            for suppressed_exc in self._errors:
+                self._loop.call_exception_handler({
+                    'message': 'TaskGroup task exception was not '
+                               'propagated because the TaskGroup body '
+                               'is being closed with a BaseException',
+                    'exception': suppressed_exc,
+                    'task_group': self,
+                })
             try:
                 raise self._base_error
             finally:
@@ -174,10 +186,23 @@ class TaskGroup:
                 self._parent_task.uncancel()
                 self._parent_task.cancel()
             try:
-                raise BaseExceptionGroup(
-                    'unhandled errors in a TaskGroup',
-                    self._errors,
-                ) from None
+                # If the *only* error is a GeneratorExit from the body
+                # of the group, then instead of raising an
+                # ExceptionGroup we raise GeneratorExit. This ensures
+                # that async generators that use TaskGroup properly
+                # swallow the exception on `aclose()` while ensuring
+                # that no exceptions from subtasks are swallowed.
+                if (
+                    et is not None
+                    and issubclass(et, GeneratorExit)
+                    and len(self._errors) == 1
+                ):
+                    raise exc
+                else:
+                    raise BaseExceptionGroup(
+                        'unhandled errors in a TaskGroup',
+                        self._errors,
+                    ) from None
             finally:
                 exc = None
 
@@ -289,14 +314,14 @@ class TaskGroup:
         """Cancel the task group
 
         `cancel()` will be called on any tasks in the group that aren't yet
-        done, as well as the parent (body) of the group.  This will cause the
-        task group context manager to exit *without* `asyncio.CancelledError`
-        being raised.
+        done, as well as the parent (body) of the group.  This will cause
+        the task group context manager to exit *without*
+        `asyncio.CancelledError` being raised.
 
-        If `cancel()` is called before entering the task group, the group will be
-        cancelled upon entry.  This is useful for patterns where one piece of
-        code passes an unused TaskGroup instance to another in order to have
-        the ability to cancel anything run within the group.
+        If `cancel()` is called before entering the task group, the group
+        will be cancelled upon entry.  This is useful for patterns where
+        one piece of code passes an unused TaskGroup instance to another in
+        order to have the ability to cancel anything run within the group.
 
         `cancel()` is idempotent and may be called after the task group has
         already exited.

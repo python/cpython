@@ -9,6 +9,7 @@
     <OutDir Condition="!HasTrailingSlash($(OutDir))">$(OutDir)\</OutDir>
     <Py_IntDir Condition="'$(Py_IntDir)' == ''">$(MSBuildThisFileDirectory)obj\</Py_IntDir>
     <IntDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)$(ArchName)_$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="$(DisableGil) == 'true'">$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)$(ArchName)t_$(Configuration)\$(ProjectName)\</IntDir>
     <IntDir>$(IntDir.Replace(`\\`, `\`))</IntDir>
     <GeneratedFrozenModulesDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)_frozen\</GeneratedFrozenModulesDir>
     <GeneratedZlibNgDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)$(ArchName)_$(Configuration)\zlib-ng\</GeneratedZlibNgDir>
@@ -42,6 +43,10 @@
   </PropertyGroup>
 
   <PropertyGroup>
+    <!--
+    We conditionally define preprocessor definitions here, and then include all
+    the properties *unconditionally* in the <PreprocessorDefinition> field below
+    -->
     <_DebugPreprocessorDefinition>NDEBUG;</_DebugPreprocessorDefinition>
     <_DebugPreprocessorDefinition Condition="$(Configuration) == 'Debug'">_DEBUG;</_DebugPreprocessorDefinition>
     <_PyStatsPreprocessorDefinition>PyStats;</_PyStatsPreprocessorDefinition>
@@ -49,15 +54,14 @@
     <_PlatformPreprocessorDefinition>_WIN32;</_PlatformPreprocessorDefinition>
     <_PlatformPreprocessorDefinition Condition="$(Platform) == 'x64'">_WIN64;</_PlatformPreprocessorDefinition>
     <_PlatformPreprocessorDefinition Condition="$(Platform) == 'x64' and $(PlatformToolset) != 'ClangCL'">_M_X64;$(_PlatformPreprocessorDefinition)</_PlatformPreprocessorDefinition>
-    <_Py3NamePreprocessorDefinition>PY3_DLLNAME=L"$(Py3DllName)$(PyDebugExt)";</_Py3NamePreprocessorDefinition>
     <_FreeThreadedPreprocessorDefinition Condition="$(DisableGil) == 'true'">Py_GIL_DISABLED=1;</_FreeThreadedPreprocessorDefinition>
     <_PymallocHugepagesPreprocessorDefinition Condition="$(UsePymallocHugepages) == 'true'">PYMALLOC_USE_HUGEPAGES=1;</_PymallocHugepagesPreprocessorDefinition>
+    <_PyUsingPgoPreprocessorDefinition Condition="'$(SupportPGO)' and ($(Configuration) == 'PGInstrument' or $(Configuration) == 'PGUpdate')">_Py_USING_PGO=1;</_PyUsingPgoPreprocessorDefinition>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(PySourcePath)Include;$(PySourcePath)Include\internal;$(PySourcePath)Include\internal\mimalloc;$(PySourcePath)PC;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;$(_Py3NamePreprocessorDefinition)$(_PlatformPreprocessorDefinition)$(_DebugPreprocessorDefinition)$(_PyStatsPreprocessorDefinition)$(_PydPreprocessorDefinition)$(_FreeThreadedPreprocessorDefinition)$(_PymallocHugepagesPreprocessorDefinition)%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(SupportPGO)' and ($(Configuration) == 'PGInstrument' or $(Configuration) == 'PGUpdate')">_Py_USING_PGO=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;$(_PlatformPreprocessorDefinition)$(_DebugPreprocessorDefinition)$(_PyStatsPreprocessorDefinition)$(_PydPreprocessorDefinition)$(_FreeThreadedPreprocessorDefinition)$(_PymallocHugepagesPreprocessorDefinition)$(_PyUsingPgoPreprocessorDefinition)%(PreprocessorDefinitions)</PreprocessorDefinitions>
 
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>

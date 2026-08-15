@@ -496,7 +496,7 @@ subscript notation ``a[k]`` selects the item indexed by ``k`` from the mapping
 :keyword:`del` statements. The built-in function :func:`len` returns the number
 of items in a mapping.
 
-There is currently a single intrinsic mapping type:
+There are two intrinsic mapping types:
 
 
 Dictionaries
@@ -533,6 +533,20 @@ module.
    Dictionaries did not preserve insertion order in versions of Python before 3.6.
    In CPython 3.6, insertion order was preserved, but it was considered
    an implementation detail at that time rather than a language guarantee.
+
+
+Frozen dictionaries
+^^^^^^^^^^^^^^^^^^^
+
+.. index:: pair: object; frozendict
+
+These represent an immutable dictionary.  They are created by the built-in
+:func:`frozendict` constructor.  A frozendict is :term:`hashable` if all of
+its keys and values are hashable, in which case it can be used as an element
+of a set, or as a key in another mapping.  :class:`!frozendict` is not a
+subclass of :class:`dict`; it inherits directly from :class:`object`.
+
+.. versionadded:: 3.15
 
 
 Callable types
@@ -1028,7 +1042,7 @@ this approach.
       Raise :exc:`DeprecationWarning` instead of :exc:`ImportWarning` when
       falling back to :attr:`!__package__` during import resolution.
 
-   .. deprecated-removed:: 3.13 3.15
+   .. deprecated-removed:: 3.13 3.16
       :attr:`!__package__` will cease to be set or taken into consideration
       by the import system or standard library.
 
@@ -2183,7 +2197,7 @@ Basic customization
    :data:`!NotImplemented`.  There are no other implied relationships among the
    comparison operators or default implementations; for example, the truth of
    ``(x<y or x==y)`` does not imply ``x<=y``. To automatically generate ordering
-   operations from a single root operation, see :func:`functools.total_ordering`.
+   operations from a single root operation, see :deco:`functools.total_ordering`.
 
    By default, the :class:`object` class provides implementations consistent
    with :ref:`expressions-value-comparisons`: equality compares according to
@@ -2216,12 +2230,12 @@ Basic customization
       pair: built-in function; hash
 
    Called by built-in function :func:`hash` and for operations on members of
-   hashed collections including :class:`set`, :class:`frozenset`, and
-   :class:`dict`.  The ``__hash__()`` method should return an integer. The only required
-   property is that objects which compare equal have the same hash value; it is
-   advised to mix together the hash values of the components of the object that
-   also play a part in comparison of objects by packing them into a tuple and
-   hashing the tuple. Example::
+   hashed collections including :class:`set`, :class:`frozenset`, :class:`dict`,
+   and :class:`frozendict`. The ``__hash__()`` method should return an integer.
+   The only required property is that objects which compare equal have the same
+   hash value; it is advised to mix together the hash values of the components
+   of the object that also play a part in comparison of objects by packing them
+   into a tuple and hashing the tuple. Example::
 
        def __hash__(self):
            return hash((self.name, self.nick, self.color))
@@ -2607,7 +2621,7 @@ implemented as non-data descriptors.  Accordingly, instances can redefine and
 override methods.  This allows individual instances to acquire behaviors that
 differ from other instances of the same class.
 
-The :func:`property` function is implemented as a data descriptor. Accordingly,
+The :deco:`property` decorator is implemented as a data descriptor. Accordingly,
 instances cannot override the behavior of a property.
 
 
@@ -3853,6 +3867,9 @@ should not directly raise unhandled :exc:`StopIteration` exceptions.
 Coroutines also have the methods listed below, which are analogous to
 those of generators (see :ref:`generator-methods`).  However, unlike
 generators, coroutines do not directly support iteration.
+
+Coroutines are :ref:`generic <generics>` over the types of their yield, send,
+and return values, respectively.
 
 .. versionchanged:: 3.5.2
    It is a :exc:`RuntimeError` to await on a coroutine more than once.
