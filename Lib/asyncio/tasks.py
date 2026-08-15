@@ -997,6 +997,9 @@ def shield(arg):
             # Keep only one callback to log on cancel
             inner.remove_done_callback(_log_on_exception)
             inner.add_done_callback(_log_on_exception)
+            if cur_task is not None:
+                inner.remove_done_callback(_clear_awaited_by_callback)
+                futures.future_discard_from_awaited_by(inner, cur_task)
 
     if cur_task is not None:
         inner.add_done_callback(_clear_awaited_by_callback)
