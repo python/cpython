@@ -1,0 +1,2 @@
+Deeply nested ``map()`` iterators now raise ``RecursionError`` instead of
+causing a stack overflow.
