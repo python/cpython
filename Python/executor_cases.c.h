@@ -23678,9 +23678,8 @@
                 executor = code->co_executors->executors[target->op.arg];
                 if (executor == _PyExecutor_FromExit(exit)) {
                     _PyFrame_SetStackPointer(frame, stack_pointer);
-                    _PyFrame_StackPointerValidate(frame);
                     _Py_ExecutorDetach(executor);
-                    _PyFrame_StackPointerInvalidate(frame);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
                     SET_CURRENT_CACHED_VALUES(0);
                     GOTO_TIER_ONE(target);
                 }
