@@ -23873,7 +23873,7 @@
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
                 PyCodeObject *code = _PyFrame_GetCode(frame);
-                executor = code->co_executors->executors[target->op.arg];
+                executor = _PyExecutorArray_EXECUTORS(code->co_executors)[target->op.arg];
                 if (executor == _PyExecutor_FromExit(exit)) {
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _PyFrame_StackPointerValidate(frame);
