@@ -14,8 +14,8 @@ from _curses import *
 import os as _os
 import sys as _sys
 
-# Some constants, most notably the ACS_* ones, are only added to the C
-# _curses module's dictionary after initscr() is called.  (Some
+# Some constants, most notably the ACS_* and WACS_* ones, are only added
+# to the C _curses module's dictionary after initscr() is called.  (Some
 # versions of SGI's curses don't define values for those constants
 # until initscr() has been called.)  This wrapper function calls the
 # underlying C initscr(), and then copies the constants from the
@@ -30,13 +30,13 @@ def initscr():
               fd=_sys.__stdout__.fileno())
     stdscr = _curses.initscr()
     for key, value in _curses.__dict__.items():
-        if key.startswith('ACS_') or key in ('LINES', 'COLS'):
+        if key.startswith(('ACS_', 'WACS_')) or key in ('LINES', 'COLS'):
             setattr(curses, key, value)
     return stdscr
 
-# newterm() is wrapped for the same reason as initscr(): the ACS_* constants
-# and LINES/COLS only become available once a terminal is initialized, and are
-# then copied to the curses package's dictionary.
+# newterm() is wrapped for the same reason as initscr(): the ACS_* and WACS_*
+# constants and LINES/COLS only become available once a terminal is
+# initialized, and are then copied to the curses package's dictionary.
 
 try:
     newterm
@@ -47,7 +47,7 @@ else:
         import _curses, curses
         screen = _curses.newterm(type, fd, infd)
         for key, value in _curses.__dict__.items():
-            if key.startswith('ACS_') or key in ('LINES', 'COLS'):
+            if key.startswith(('ACS_', 'WACS_')) or key in ('LINES', 'COLS'):
                 setattr(curses, key, value)
         return screen
 
