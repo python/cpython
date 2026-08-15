@@ -1,0 +1,7 @@
+On macOS, :func:`webbrowser.open` no longer forces custom (non-``file``,
+non-``http``/``https``) URI schemes such as ``vscode://`` or ``slack://``
+through the default web browser. It now lets the OS resolve the scheme's
+own registered handler application, restoring the behavior from Python
+3.13 and earlier. This undoes an unintended side effect of the fix in
+gh-130535, which addressed :func:`webbrowser.open` mishandling ``file://``
+URLs.
