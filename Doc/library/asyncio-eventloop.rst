@@ -210,27 +210,40 @@ Running and stopping the loop
 Decomposing event loop iteration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following methods decompose a single :meth:`~asyncio.BaseEventLoop._run_once`
-iteration into independently callable steps.  They are used internally by
-:func:`asyncio.start_guest_run`; see :ref:`asyncio-guest` for full documentation.
+The following methods decompose a single iteration of the event loop
+into independently callable steps.  They are used internally by
+:func:`asyncio.start_guest_run`; see :ref:`asyncio-guest` for full
+documentation.
 
 .. method:: loop.poll_events()
 
-   Poll for I/O events and return the raw event list.
+   Poll for I/O events without processing them.
 
-   .. versionadded:: 3.15
+   Cleans up cancelled scheduled handles, computes an appropriate
+   timeout from the scheduled callbacks, and calls the underlying
+   selector.  Returns the raw event list.
+
+   .. versionadded:: 3.16
 
 .. method:: loop.process_events(event_list)
 
    Process I/O events returned by :meth:`poll_events`.
 
-   .. versionadded:: 3.15
+   Delegates to the selector-specific event processing that turns raw
+   selector events into ready callbacks.
+
+   .. versionadded:: 3.16
 
 .. method:: loop.process_ready()
 
    Process expired timers and execute ready callbacks.
 
-   .. versionadded:: 3.15
+   Moves scheduled callbacks whose deadline has passed into the ready
+   queue, then runs all callbacks that were ready at call time.
+   Callbacks enqueued *by* running callbacks are left for the next
+   iteration.
+
+   .. versionadded:: 3.16
 
 Scheduling callbacks
 ^^^^^^^^^^^^^^^^^^^^

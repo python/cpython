@@ -22,9 +22,11 @@ replacing the host loop, asyncio piggybacks on it:
   When I/O events arrive it hands them back to the host thread via a
   thread-safe callback.  The thread is not a daemon thread; it is joined
   when the guest run finishes.
-* The host thread then runs :meth:`~asyncio.BaseEventLoop.process_events`
-  and :meth:`~asyncio.BaseEventLoop.process_ready` to advance the asyncio
-  event loop by one step, then signals the I/O thread to poll again.
+* The host thread then runs
+  :meth:`loop.process_events() <asyncio.loop.process_events>` and
+  :meth:`loop.process_ready() <asyncio.loop.process_ready>` to advance
+  the asyncio event loop by one step, then signals the I/O thread to
+  poll again.
 
 Exactly one of the two threads touches the event loop at any moment, so
 neither the host loop nor the asyncio loop starves the other.
@@ -74,7 +76,7 @@ example that embeds asyncio inside ``tkinter.mainloop()`` using
    This wakes the I/O thread from its selector wait so cancellation is
    processed promptly.
 
-   .. versionadded:: 3.15
+   .. versionadded:: 3.16
 
 .. _asyncio-guest-lifecycle:
 
@@ -128,40 +130,10 @@ Host Requirements
 
 .. rubric:: Low-level Event Loop Methods
 
-The following three methods on :class:`BaseEventLoop` are used internally by
-:func:`start_guest_run`.  They decompose :meth:`~BaseEventLoop._run_once`
-into independently callable steps and are documented here for completeness.
-
-.. method:: loop.poll_events()
-
-   Poll for I/O events without processing them.
-
-   Cleans up cancelled scheduled handles, computes an appropriate timeout
-   from the scheduled callbacks, and calls the underlying selector.  Returns
-   the raw event list.
-
-   Together with :meth:`~BaseEventLoop.process_events` and
-   :meth:`~BaseEventLoop.process_ready`, this method decomposes
-   :meth:`~BaseEventLoop._run_once` into independently callable steps so that
-   an external event loop can drive asyncio (see :func:`start_guest_run`).
-
-   .. versionadded:: 3.15
-
-.. method:: loop.process_events(event_list)
-
-   Process I/O events returned by :meth:`~BaseEventLoop.poll_events`.
-
-   Delegates to the selector-specific ``_process_events`` implementation
-   which turns raw selector events into ready callbacks.
-
-   .. versionadded:: 3.15
-
-.. method:: loop.process_ready()
-
-   Process expired timers and execute ready callbacks.
-
-   Moves scheduled callbacks whose deadline has passed into the ready queue,
-   then runs all callbacks that were ready at call time.  Callbacks enqueued
-   *by* running callbacks are left for the next iteration.
-
-   .. versionadded:: 3.15
+:func:`start_guest_run` drives the loop through three low-level methods
+-- :meth:`loop.poll_events() <asyncio.loop.poll_events>`,
+:meth:`loop.process_events() <asyncio.loop.process_events>`, and
+:meth:`loop.process_ready() <asyncio.loop.process_ready>` -- which
+decompose a single iteration of the event loop into independently
+callable steps.  See :ref:`asyncio-event-loop` for their reference
+documentation.

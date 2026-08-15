@@ -15,7 +15,7 @@ threading_helper.requires_working_threading(module=True)
 
 
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class MockHost:

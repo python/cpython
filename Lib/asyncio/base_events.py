@@ -2005,7 +2005,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         independently callable steps so that an external event loop can
         drive asyncio (see :func:`asyncio.start_guest_run`).
 
-        .. versionadded:: 3.15
+        .. versionadded:: 3.16
         """
         sched_count = len(self._scheduled)
         if (sched_count > _MIN_SCHEDULED_TIMER_HANDLES and
@@ -2050,7 +2050,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         implementation which turns raw selector events into ready
         callbacks.
 
-        .. versionadded:: 3.15
+        .. versionadded:: 3.16
         """
         self._process_events(event_list)
 
@@ -2062,7 +2062,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         time.  Callbacks enqueued *by* running callbacks are left for
         the next iteration.
 
-        .. versionadded:: 3.15
+        .. versionadded:: 3.16
         """
         # Handle 'later' callbacks that are ready.
         now = self.time()

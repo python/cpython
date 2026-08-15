@@ -3,10 +3,10 @@ inside a host event loop (e.g. Tkinter, Qt, GTK). The host loop retains
 control of its thread while asyncio I/O polling runs in a background
 non-daemon thread that is joined when the run finishes. In guest mode the
 host owns signal handling: the loop never touches
-:func:`signal.set_wakeup_fd` and :meth:`loop.add_signal_handler` raises
-:exc:`RuntimeError`. Also adds three low-level
-:class:`~asyncio.BaseEventLoop` methods --
-:meth:`~asyncio.BaseEventLoop.poll_events`,
-:meth:`~asyncio.BaseEventLoop.process_events`, and
-:meth:`~asyncio.BaseEventLoop.process_ready` -- that decompose
-:meth:`~asyncio.BaseEventLoop._run_once` into independently callable steps.
+:func:`signal.set_wakeup_fd` and :meth:`loop.add_signal_handler
+<asyncio.loop.add_signal_handler>` raises :exc:`RuntimeError`. Also adds
+three low-level event loop methods -- :meth:`loop.poll_events
+<asyncio.loop.poll_events>`, :meth:`loop.process_events
+<asyncio.loop.process_events>`, and :meth:`loop.process_ready
+<asyncio.loop.process_ready>` -- that decompose a single iteration of the
+event loop into independently callable steps.
