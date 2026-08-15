@@ -229,8 +229,8 @@ def get_temp_dir():
 
 
 def _has_writeable_tempdir():
-    # 'forkserver' requires writeable temporary files. This function must
-    # is called for defining the default context's start method.
+    # 'forkserver' requires writeable temporary files. This function is
+    # called to determine the default context's start method.
     #
     # See: https://github.com/python/cpython/issues/155717.
 
