@@ -2150,6 +2150,19 @@ class BaseTaskTests:
         test_utils.run_briefly(self.loop)
         mock_handler.assert_called_once()
 
+    def test_shield_discards_awaited_by_on_outer_cancel(self):
+        # gh-155854: a cancelled waiter must not stay in inner's await-graph
+        async def coro():
+            inner = self.new_future(self.loop)
+            for _ in range(3):
+                asyncio.shield(inner).cancel()
+                await asyncio.sleep(0)
+            self.assertFalse(inner._asyncio_awaited_by)
+            self.assertEqual(1, len(inner._callbacks))
+            inner.cancel()
+
+        self.loop.run_until_complete(self.new_task(self.loop, coro()))
+
     def test_shield_shortcut(self):
         fut = self.new_future(self.loop)
         fut.set_result(42)

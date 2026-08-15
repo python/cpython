@@ -1,0 +1,2 @@
+Fix :func:`asyncio.shield` keeping cancelled waiters alive via
+``awaited_by``.
