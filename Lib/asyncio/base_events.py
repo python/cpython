@@ -432,6 +432,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         # Identifier of the thread running the event loop, or None if the
         # event loop is not running
         self._thread_id = None
+        # True while the loop is driven as a guest inside a host event
+        # loop (see asyncio.start_guest_run); signal handling is then
+        # delegated to the host.
+        self._guest_mode = False
         self._clock_resolution = time.get_clock_info('monotonic').resolution
         self._exception_handler = None
         self.set_debug(coroutines._is_debug_mode())
