@@ -4086,18 +4086,24 @@ class OldTestFlag(unittest.TestCase):
         class OperatorMixin:
             def __or__(self, other):
                 return 'mixin-or'
+            def __ror__(self, other):
+                return 'mixin-ror'
             def __invert__(self):
                 return 'mixin-invert'
         class MixedFlag(OperatorMixin, Flag):
             A = 1
             B = 2
         self.assertIs(MixedFlag.__or__, OperatorMixin.__or__)
+        self.assertIs(MixedFlag.__ror__, OperatorMixin.__ror__)
         self.assertIs(MixedFlag.__invert__, OperatorMixin.__invert__)
         self.assertEqual(MixedFlag.A | MixedFlag.B, 'mixin-or')
+        self.assertEqual(1 | MixedFlag.A, 'mixin-ror')
         self.assertEqual(~MixedFlag.A, 'mixin-invert')
         # dunders the mixin didn't override still get Flag's own
         self.assertIs(MixedFlag.__and__, Flag.__and__)
         self.assertIs(MixedFlag.__xor__, Flag.__xor__)
+        self.assertIs(MixedFlag.__rand__, Flag.__rand__)
+        self.assertIs(MixedFlag.__rxor__, Flag.__rxor__)
         self.assertEqual(MixedFlag.A & MixedFlag.B, MixedFlag(0))
         #
         # a plain (non-mixin) Flag subclass is unaffected
