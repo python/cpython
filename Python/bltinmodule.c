@@ -1572,10 +1572,15 @@ map_next(PyObject *self)
 {
     mapobject *lz = _mapobject_CAST(self);
     Py_ssize_t i;
+    Py_ssize_t nargs = 0;
     PyObject *small_stack[_PY_FASTCALL_SMALL_STACK];
-    PyObject **stack;
+    PyObject **stack = NULL;
     PyObject *result = NULL;
     PyThreadState *tstate = _PyThreadState_GET();
+
+    if (_Py_EnterRecursiveCallTstate(tstate, " while calling map()")) {
+        return NULL;
+    }
 
     const Py_ssize_t niters = PyTuple_GET_SIZE(lz->iters);
     if (niters <= (Py_ssize_t)Py_ARRAY_LENGTH(small_stack)) {
@@ -1585,11 +1590,9 @@ map_next(PyObject *self)
         stack = PyMem_Malloc(niters * sizeof(stack[0]));
         if (stack == NULL) {
             _PyErr_NoMemory(tstate);
-            return NULL;
+            goto exit;
         }
     }
-
-    Py_ssize_t nargs = 0;
     for (i = 0; i < niters; i++) {
         PyObject *it = PyTuple_GET_ITEM(lz->iters, i);
         PyObject *val = Py_TYPE(it)->tp_iternext(it);
@@ -1652,9 +1655,10 @@ exit:
     for (i = 0; i < nargs; i++) {
         Py_DECREF(stack[i]);
     }
-    if (stack != small_stack) {
+    if (stack != NULL && stack != small_stack) {
         PyMem_Free(stack);
     }
+    _Py_LeaveRecursiveCallTstate(tstate);
     return result;
 }
 

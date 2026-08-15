@@ -1432,6 +1432,14 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             raise RuntimeError
         self.assertRaises(RuntimeError, list, map(badfunc, range(5)))
 
+        it = []
+        for _ in range(100_000):
+            it = map(int, it)
+        with self.assertRaisesRegex(
+            RecursionError, r"Stack overflow .* while iterating"
+        ):
+            list(it)
+
     def test_map_pickle(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             m1 = map(map_char, "Is this the real life?")
