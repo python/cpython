@@ -260,9 +260,7 @@ class ArrayReconstructorTest(unittest.TestCase):
             (UTF32_LE, "UTF-32-LE"),
             (UTF32_BE, "UTF-32-BE")
         )
-        # An even and an odd number of code points: the reconstructor's
-        # slow-path length check used a wrong item size for UTF-16/UTF-32,
-        # which rejected odd-length input.
+        # An even and an odd length; odd lengths were wrongly rejected.
         for teststr in ("Bonne Journ\xe9e \U0002030a\U00020347",
                         "Bonne Journ\xe9e \U0002030a\U00020347!"):
             for testcase in testcases:
