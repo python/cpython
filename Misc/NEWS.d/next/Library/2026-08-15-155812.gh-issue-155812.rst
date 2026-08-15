@@ -1,0 +1,1 @@
+Add sort_dicts parameter to reprlib.Repr to allow preserving dictionary insertion order.
