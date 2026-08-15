@@ -28,10 +28,12 @@ class TestForkServerConfiguration(unittest.TestCase):
         self.assertEqual(len(res), 2)
 
         temp_pymp = res[0]
+        self.assertLess(len(temp_pymp), _SUN_PATH_MAX)
         temp_pymp_regex = os.path.join(re.escape(root), r"pymp-\w{8}")
         self.assertRegex(temp_pymp, temp_pymp_regex)
 
         temp_sock = res[1]
+        self.assertLess(len(temp_sock), _SUN_PATH_MAX)
         temp_sock_regex = os.path.join(temp_pymp_regex, r"sock-[0-9a-fA-F]{12}")
         self.assertRegex(temp_sock, temp_sock_regex)
 
