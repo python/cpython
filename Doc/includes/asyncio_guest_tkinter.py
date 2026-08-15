@@ -64,7 +64,7 @@ async def count(progress, root):
     progress.configure(maximum=MAX_COUNT)
 
     task = asyncio.current_task()
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
 
     # Wire the Cancel button and window close to task.cancel().
     # Use call_soon_threadsafe so the I/O thread's selector is woken.
