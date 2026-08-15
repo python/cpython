@@ -1531,7 +1531,7 @@ _PyOpcode_macro_expansion[256] = {
     [TO_BOOL] = { .nuops = 1, .uops = { { _TO_BOOL, OPARG_SIMPLE, 2 } } },
     [TO_BOOL_ALWAYS_TRUE] = { .nuops = 4, .uops = { { _RECORD_TOS_TYPE, OPARG_SIMPLE, 1 }, { _GUARD_TYPE_VERSION, 2, 1 }, { _REPLACE_WITH_TRUE, OPARG_SIMPLE, 3 }, { _POP_TOP, OPARG_SIMPLE, 3 } } },
     [TO_BOOL_BOOL] = { .nuops = 1, .uops = { { _TO_BOOL_BOOL, OPARG_SIMPLE, 3 } } },
-    [TO_BOOL_INT] = { .nuops = 3, .uops = { { _GUARD_TOS_INT, OPARG_SIMPLE, 0 }, { _TO_BOOL_INT, OPARG_SIMPLE, 3 }, { _POP_TOP_INT, OPARG_SIMPLE, 3 } } },
+    [TO_BOOL_INT] = { .nuops = 3, .uops = { { _GUARD_TOS_EXACT_INT, OPARG_SIMPLE, 0 }, { _TO_BOOL_INT, OPARG_SIMPLE, 3 }, { _POP_TOP_INT, OPARG_SIMPLE, 3 } } },
     [TO_BOOL_LIST] = { .nuops = 3, .uops = { { _GUARD_TOS_LIST, OPARG_SIMPLE, 0 }, { _TO_BOOL_LIST, OPARG_SIMPLE, 3 }, { _POP_TOP, OPARG_SIMPLE, 3 } } },
     [TO_BOOL_NONE] = { .nuops = 1, .uops = { { _TO_BOOL_NONE, OPARG_SIMPLE, 3 } } },
     [TO_BOOL_STR] = { .nuops = 3, .uops = { { _GUARD_TOS_UNICODE, OPARG_SIMPLE, 0 }, { _TO_BOOL_STR, OPARG_SIMPLE, 3 }, { _POP_TOP_UNICODE, OPARG_SIMPLE, 3 } } },
