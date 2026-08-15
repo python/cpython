@@ -696,8 +696,14 @@ Miscellaneous options
      to, by default, use a copy of context of the caller of
      ``Thread.start()`` when starting.  Otherwise, threads will start
      with an empty context.  If unset, the value of this option defaults
-     to ``1`` on free-threaded builds and to ``0`` otherwise.  See also
-     :envvar:`PYTHON_THREAD_INHERIT_CONTEXT`.
+     to ``1`` on free-threaded builds and to ``0`` otherwise.  On GIL-enabled
+     builds, leaving the option and :envvar:`PYTHON_THREAD_INHERIT_CONTEXT`
+     unset can cause an implicitly empty thread context to emit a
+     :exc:`DeprecationWarning` when a context variable lookup would differ
+     under inheritance.  In a future release, this option will default to
+     ``1`` on all builds.  Setting either configuration option, or passing an explicit
+     ``context=`` to :class:`~threading.Thread`, selects the behavior without a
+     warning.
 
      .. versionadded:: 3.14
 

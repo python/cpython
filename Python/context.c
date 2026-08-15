@@ -80,6 +80,33 @@ PyContext_New(void)
 
 
 PyObject *
+_PyContext_NewForThread(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (!interp->thread_inherit_context_warn) {
+        return PyContext_New();
+    }
+
+    PyThreadState *ts = _PyThreadState_GET();
+    assert(ts != NULL);
+    PyContext *starter_ctx = (PyContext *)ts->context;
+    if (starter_ctx == NULL || _PyHamt_Len(starter_ctx->ctx_vars) == 0) {
+        // No variable is set in the starter context so no lookup in the new
+        // thread can differ from the inheriting behavior; a snapshot would
+        // only add overhead to ContextVar.get() misses.
+        return PyContext_New();
+    }
+
+    PyContext *ctx = context_new_empty();
+    if (ctx == NULL) {
+        return NULL;
+    }
+    ctx->ctx_starter_vars = (PyHamtObject*)Py_NewRef(starter_ctx->ctx_vars);
+    return (PyObject *)ctx;
+}
+
+
+PyObject *
 PyContext_Copy(PyObject * octx)
 {
     ENSURE_Context(octx, NULL)
@@ -298,7 +325,8 @@ PyContextVar_Get(PyObject *ovar, PyObject *def, PyObject **val)
 #endif
 
     assert(PyContext_CheckExact(ts->context));
-    PyHamtObject *vars = ((PyContext *)ts->context)->ctx_vars;
+    PyContext *ctx = (PyContext *)ts->context;
+    PyHamtObject *vars = ctx->ctx_vars;
 
     PyObject *found = NULL;
     int res = _PyHamt_Find(vars, (PyObject*)var, &found);
@@ -315,6 +343,27 @@ PyContextVar_Get(PyObject *ovar, PyObject *def, PyObject **val)
 
         *val = found;
         goto found;
+    }
+
+    if (ctx->ctx_starter_vars != NULL) {
+        res = _PyHamt_Find(ctx->ctx_starter_vars, (PyObject *)var, &found);
+        if (res < 0) {
+            goto error;
+        }
+        if (res == 1) {
+            // Detach before warning so that warning machinery using context
+            // variables cannot recursively warn.  This also means we warn
+            // once per thread.
+            Py_CLEAR(ctx->ctx_starter_vars);
+            if (PyErr_WarnEx(
+                    PyExc_DeprecationWarning,
+                    "threads will inherit context by default in a future "
+                    "Python release",
+                    1) < 0)
+            {
+                goto error;
+            }
+        }
     }
 
 not_found:
@@ -437,6 +486,7 @@ _context_alloc(void)
 
     ctx->ctx_vars = NULL;
     ctx->ctx_prev = NULL;
+    ctx->ctx_starter_vars = NULL;
     ctx->ctx_entered = 0;
     ctx->ctx_weakreflist = NULL;
 
@@ -523,6 +573,7 @@ context_tp_clear(PyObject *op)
     PyContext *self = _PyContext_CAST(op);
     Py_CLEAR(self->ctx_prev);
     Py_CLEAR(self->ctx_vars);
+    Py_CLEAR(self->ctx_starter_vars);
     return 0;
 }
 
@@ -532,6 +583,7 @@ context_tp_traverse(PyObject *op, visitproc visit, void *arg)
     PyContext *self = _PyContext_CAST(op);
     Py_VISIT(self->ctx_prev);
     Py_VISIT(self->ctx_vars);
+    Py_VISIT(self->ctx_starter_vars);
     return 0;
 }
 

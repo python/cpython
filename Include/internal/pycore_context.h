@@ -26,6 +26,8 @@ struct _pycontextobject {
     PyHamtObject *ctx_vars;
     PyObject *ctx_weakreflist;
     int ctx_entered;
+    // used to emit warnings about thread_inherit_context
+    PyHamtObject *ctx_starter_vars;
 };
 
 
@@ -54,6 +56,7 @@ struct _pycontexttokenobject {
 // _testinternalcapi.hamt() used by tests.
 // Export for '_testcapi' shared extension
 PyAPI_FUNC(PyObject*) _PyContext_NewHamtForTests(void);
+PyAPI_FUNC(PyObject*) _PyContext_NewForThread(void);
 
 PyAPI_FUNC(int) _PyContext_Enter(PyThreadState *ts, PyObject *octx);
 PyAPI_FUNC(int) _PyContext_Exit(PyThreadState *ts, PyObject *octx);

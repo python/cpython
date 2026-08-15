@@ -1133,8 +1133,10 @@ class Thread:
                 # start with a copy of the context of the caller
                 self._context = _contextvars.copy_context()
             else:
-                # start with an empty context
-                self._context = _contextvars.Context()
+                # Start with an empty context while retaining the context that
+                # would be inherited.  This retained context is used to warn
+                # about the future default setting of thread_inherit_context.
+                self._context = _contextvars._thread_start_context()
 
         try:
             # Start joinable thread
@@ -1218,6 +1220,9 @@ class Thread:
                 self._context.run(self.run)
             except:
                 self._invoke_excepthook(self)
+            finally:
+                # Free context, we don't need it anymore.
+                self._context = None
         finally:
             self._delete()
 

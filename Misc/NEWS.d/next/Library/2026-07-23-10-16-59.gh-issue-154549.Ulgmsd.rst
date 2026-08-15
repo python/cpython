@@ -1,0 +1,5 @@
+On GIL-enabled builds, emit a :exc:`DeprecationWarning` when the default
+implicitly empty :class:`threading.Thread` context causes a context variable
+lookup to differ from the context that a future release will inherit by
+default.  Setting ``thread_inherit_context`` selects the desired behavior
+without a warning.
