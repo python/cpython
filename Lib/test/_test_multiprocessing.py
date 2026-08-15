@@ -6382,7 +6382,6 @@ class TestStartMethod(unittest.TestCase):
         '''
 
         with support.os_helper.temp_dir() as root:
-            # read-only directory
             TMPDIR = pathlib.Path(root, "TMPDIR")
             TMPDIR.mkdir(mode=mode)
             file = pathlib.Path(TMPDIR, "file")
