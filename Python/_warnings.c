@@ -768,7 +768,9 @@ call_show_warning(PyThreadState *tstate, PyObject *category,
     }
 
     msg = PyObject_CallFunctionObjArgs(warnmsg_cls, message, category,
-            filename, lineno_obj, Py_None, Py_None, source,
+            filename, lineno_obj, Py_None,
+            sourceline ? sourceline : Py_None,
+            source,
             NULL);
     Py_DECREF(warnmsg_cls);
     if (msg == NULL)
@@ -1269,8 +1271,11 @@ get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno
     }
 
     /* Get the source line. */
-    source_line = PyList_GetItem(source_list, lineno-1);
-    Py_XINCREF(source_line);
+    if (lineno < 1 || lineno > PyList_GET_SIZE(source_list)) {
+        Py_DECREF(source_list);
+        return NULL;
+    }
+    source_line = Py_NewRef(PyList_GET_ITEM(source_list, lineno-1));
     Py_DECREF(source_list);
     return source_line;
 }
