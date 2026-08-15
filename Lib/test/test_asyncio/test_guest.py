@@ -2,9 +2,20 @@
 
 import asyncio
 import queue
+import signal
+import socket
+import sys
 import threading
 import time
 import unittest
+from test.support import threading_helper
+from test.support.script_helper import assert_python_ok
+
+threading_helper.requires_working_threading(module=True)
+
+
+def tearDownModule():
+    asyncio.events._set_event_loop_policy(None)
 
 
 class MockHost:
@@ -48,8 +59,13 @@ class MockHost:
         return self._task
 
 
-class TestGuestRun(unittest.TestCase):
-    """Test asyncio.start_guest_run with a mock host loop."""
+class GuestTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self._thread_key = threading_helper.threading_setup()
+
+    def tearDown(self):
+        threading_helper.threading_cleanup(*self._thread_key)
 
     def _run_guest(self, async_fn, *args, timeout=10.0):
         """Helper: run *async_fn* in guest mode and return the completed task."""
@@ -60,6 +76,10 @@ class TestGuestRun(unittest.TestCase):
             done_callback=host.done_callback,
         )
         return host.run(timeout=timeout)
+
+
+class TestGuestRun(GuestTestCase):
+    """Test asyncio.start_guest_run with a mock host loop."""
 
     # -- basic lifecycle -----------------------------------------------
 
@@ -84,6 +104,20 @@ class TestGuestRun(unittest.TestCase):
 
         task = self._run_guest(add, 3, 7)
         self.assertEqual(task.result(), 10)
+
+    def test_early_sync_completion(self):
+        # The task can already be done when the I/O thread starts.
+        async def coro():
+            return 'early'
+
+        host = MockHost()
+        task = asyncio.start_guest_run(
+            coro,
+            run_sync_soon_threadsafe=host.run_sync_soon_threadsafe,
+            done_callback=host.done_callback,
+        )
+        self.assertIs(host.run(), task)
+        self.assertEqual(task.result(), 'early')
 
     # -- exception propagation -----------------------------------------
 
@@ -124,14 +158,13 @@ class TestGuestRun(unittest.TestCase):
 
     def test_sleep(self):
         async def coro():
-            t0 = asyncio.get_event_loop().time()
+            loop = asyncio.get_running_loop()
+            t0 = loop.time()
             await asyncio.sleep(0.1)
-            elapsed = asyncio.get_event_loop().time() - t0
-            return elapsed
+            return loop.time() - t0
 
         task = self._run_guest(coro)
-        elapsed = task.result()
-        self.assertGreaterEqual(elapsed, 0.05)
+        self.assertGreaterEqual(task.result(), 0.05)
 
     def test_create_task(self):
         async def helper():
@@ -140,8 +173,7 @@ class TestGuestRun(unittest.TestCase):
 
         async def coro():
             t = asyncio.ensure_future(helper())
-            result = await t
-            return result
+            return await t
 
         task = self._run_guest(coro)
         self.assertEqual(task.result(), "helper")
@@ -152,17 +184,14 @@ class TestGuestRun(unittest.TestCase):
             return n
 
         async def coro():
-            results = await asyncio.gather(
-                sleeper(1), sleeper(2), sleeper(3)
-            )
-            return results
+            return await asyncio.gather(sleeper(1), sleeper(2), sleeper(3))
 
         task = self._run_guest(coro)
         self.assertEqual(task.result(), [1, 2, 3])
 
     def test_call_later(self):
         async def coro():
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             fut = loop.create_future()
             loop.call_later(0.05, fut.set_result, "later")
             return await fut
@@ -171,20 +200,213 @@ class TestGuestRun(unittest.TestCase):
         self.assertEqual(task.result(), "later")
 
     def test_call_soon_threadsafe(self):
+        timer = None
+
         async def coro():
-            loop = asyncio.get_event_loop()
+            nonlocal timer
+            loop = asyncio.get_running_loop()
             fut = loop.create_future()
 
             def setter():
                 loop.call_soon_threadsafe(fut.set_result, "safe")
-            threading.Timer(0.05, setter).start()
+            timer = threading.Timer(0.05, setter)
+            timer.start()
             return await fut
 
         task = self._run_guest(coro)
         self.assertEqual(task.result(), "safe")
+        timer.join()
+
+    # -- thread lifecycle ----------------------------------------------
+
+    def test_io_thread_nondaemon_and_joined(self):
+        seen = {}
+
+        async def coro():
+            # The I/O thread is started after the initial batch; a sleep
+            # guarantees it is up and polling by the time we look.
+            await asyncio.sleep(0.01)
+            for thread in threading.enumerate():
+                if thread.name == 'asyncio-guest-io':
+                    seen['thread'] = thread
+
+        task = self._run_guest(coro)
+        self.assertIsNone(task.exception())
+        self.assertIn('thread', seen)
+        self.assertFalse(seen['thread'].daemon)
+        self.assertFalse(seen['thread'].is_alive())
+
+    def test_interpreter_exit_with_pending_run(self):
+        # Exiting with an unfinished guest run must not hang: the atexit
+        # hook wakes the non-daemon I/O thread out of its selector wait
+        # and joins it.
+        code = (
+            'import asyncio, collections\n'
+            'q = collections.deque()\n'
+            'async def coro():\n'
+            '    await asyncio.sleep(3600)\n'
+            'asyncio.start_guest_run(\n'
+            '    coro,\n'
+            '    run_sync_soon_threadsafe=q.append,\n'
+            '    done_callback=lambda task: None,\n'
+            ')\n'
+        )
+        assert_python_ok('-c', code)
+
+    # -- running-loop semantics ----------------------------------------
+
+    def test_is_running_inside(self):
+        async def coro():
+            return asyncio.get_running_loop().is_running()
+
+        task = self._run_guest(coro)
+        self.assertTrue(task.result())
+
+    def test_nested_run_raises(self):
+        test = self
+
+        async def coro():
+            loop = asyncio.get_running_loop()
+            inner = asyncio.sleep(0)
+            try:
+                with test.assertRaises(RuntimeError):
+                    loop.run_until_complete(inner)
+            finally:
+                inner.close()
+            inner = asyncio.sleep(0)
+            try:
+                with test.assertRaises(RuntimeError):
+                    asyncio.run(inner)
+            finally:
+                inner.close()
+
+        task = self._run_guest(coro)
+        self.assertIsNone(task.exception())
+
+    def test_state_restored_after_run(self):
+        old_hooks = sys.get_asyncgen_hooks()
+
+        async def coro():
+            pass
+
+        task = self._run_guest(coro)
+        self.assertEqual(sys.get_asyncgen_hooks(), old_hooks)
+        self.assertIsNone(asyncio._get_running_loop())
+        self.assertFalse(task.get_loop().is_running())
+
+    # -- signal handling -----------------------------------------------
+
+    @unittest.skipUnless(hasattr(signal, 'SIGUSR1'),
+                         'requires UNIX signal handling')
+    def test_add_signal_handler_raises(self):
+        async def coro():
+            loop = asyncio.get_running_loop()
+            loop.add_signal_handler(signal.SIGUSR1, lambda: None)
+
+        task = self._run_guest(coro)
+        with self.assertRaisesRegex(RuntimeError, 'guest mode'):
+            task.result()
+
+    @unittest.skipUnless(hasattr(signal, 'SIGUSR1'),
+                         'requires UNIX signal handling')
+    def test_remove_signal_handler_raises(self):
+        async def coro():
+            loop = asyncio.get_running_loop()
+            loop.remove_signal_handler(signal.SIGUSR1)
+
+        task = self._run_guest(coro)
+        with self.assertRaisesRegex(RuntimeError, 'guest mode'):
+            task.result()
+
+    @unittest.skipUnless(hasattr(signal, 'set_wakeup_fd'),
+                         'requires signal.set_wakeup_fd')
+    def test_wakeup_fd_preserved(self):
+        if threading.current_thread() is not threading.main_thread():
+            self.skipTest('requires the main thread')
+        rsock, wsock = socket.socketpair()
+        self.addCleanup(rsock.close)
+        self.addCleanup(wsock.close)
+        wsock.setblocking(False)
+        old_fd = signal.set_wakeup_fd(wsock.fileno())
+        self.addCleanup(signal.set_wakeup_fd, old_fd)
+
+        async def coro():
+            await asyncio.sleep(0.01)
+
+        self._run_guest(coro)
+
+        fd = signal.set_wakeup_fd(-1)
+        if fd != -1:
+            signal.set_wakeup_fd(fd)
+        self.assertEqual(fd, wsock.fileno())
+
+    # -- final cleanup matches asyncio.run() ---------------------------
+
+    def test_background_task_cancelled_on_finish(self):
+        state = {}
+
+        async def background():
+            await asyncio.sleep(3600)
+
+        async def coro():
+            state['bg'] = asyncio.get_running_loop().create_task(background())
+            await asyncio.sleep(0.01)
+
+        task = self._run_guest(coro)
+        self.assertIsNone(task.exception())
+        self.assertTrue(state['bg'].cancelled())
+
+    def test_abandoned_asyncgen_finalized(self):
+        finalized = False
+        holder = []
+
+        async def agen():
+            nonlocal finalized
+            try:
+                yield 1
+            finally:
+                finalized = True
+
+        async def coro():
+            it = agen()
+            holder.append(it)  # keep it alive until shutdown_asyncgens()
+            await anext(it)
+
+        task = self._run_guest(coro)
+        self.assertIsNone(task.exception())
+        self.assertTrue(finalized)
+
+    def test_loop_closed_in_done_callback(self):
+        # Cleanup (cancel remaining tasks, close the loop) happens
+        # before done_callback, like asyncio.run().
+        seen = {}
+        host = MockHost()
+        original = host.done_callback
+
+        def done_callback(task):
+            seen['closed'] = task.get_loop().is_closed()
+            original(task)
+
+        async def coro():
+            pass
+
+        asyncio.start_guest_run(
+            coro,
+            run_sync_soon_threadsafe=host.run_sync_soon_threadsafe,
+            done_callback=done_callback,
+        )
+        host.run()
+        self.assertTrue(seen['closed'])
+
+    def test_loop_closed_after_run(self):
+        async def coro():
+            pass
+
+        task = self._run_guest(coro)
+        self.assertTrue(task.get_loop().is_closed())
 
 
-class TestBaseEventLoopDecomposition(unittest.TestCase):
+class TestBaseEventLoopDecomposition(GuestTestCase):
     """Verify that poll_events / process_events / process_ready exist
     and compose correctly (i.e. _run_once still works)."""
 
