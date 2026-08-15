@@ -4596,12 +4596,7 @@ class OldTestIntFlag(unittest.TestCase):
         # fix for gh-121291 must still override `int`'s raw operators with
         # Flag's (returning IntFlag instances, not plain ints), while still
         # respecting a genuine, separate mixin's override.
-        class Color(IntFlag):
-            BLACK = 0
-            RED = 1
-            GREEN = 2
-            BLUE = 4
-            PURPLE = RED | BLUE
+        Color = self.Color
         combined = Color.RED | Color.BLUE
         self.assertIs(type(combined), Color)
         self.assertEqual(combined, Color.PURPLE)
