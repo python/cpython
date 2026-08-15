@@ -583,6 +583,14 @@ class Message:
             # add_header()'s historical behavior (__setitem__ would store None).
             self[_name] = '' if _value is None else _value
             return
+        if _value is not None and not isinstance(_value, str):
+            # Combining a non-str value (e.g. a Header instance) with
+            # parameters isn't supported: raise a clear error instead of
+            # failing inside SEMISPACE.join() below.
+            raise TypeError(
+                f'add_header() value must be a str when parameters are '
+                f'given, not {type(_value).__name__}; pass a str, or omit '
+                f'the parameters and set the header with msg[name] = value')
         parts = []
         for k, v in _params.items():
             if v is None:

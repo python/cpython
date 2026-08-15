@@ -856,6 +856,15 @@ class TestMessageAPI(TestEmailBase):
         ref[name] = value
         self.assertEqual(msg.as_bytes(), ref.as_bytes())
 
+    def test_add_header_with_Header_value_and_params_raises_clear_error(self):
+        # gh-151454: a Header combined with params isn't supported (the
+        # params would have no defined meaning for it), so this should raise
+        # a clear TypeError rather than fail inside SEMISPACE.join().
+        msg = Message()
+        header = Header('spam \xff report', charset='unknown-8bit')
+        with self.assertRaisesRegex(TypeError, 'must be a str'):
+            msg.add_header('X-Ham-Report', header, foo='bar')
+
     # Issue 5871: reject an attempt to embed a header inside a header value
     # (header injection attack).
     def test_embedded_header_via_Header_rejected(self):
