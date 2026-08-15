@@ -2509,8 +2509,43 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ("LOAD_CONST", 0, 14),
             ("RETURN_VALUE", None, 15),
         ]
-        self.cfg_optimization_test(before, after, consts=[None],
-                                   expected_consts=[None, frozenset({1, 2, 3})])
+        self.cfg_optimization_test(before, after, consts=["test"],
+                                   expected_consts=["test", frozenset({1, 2, 3})])
+
+    def test_fold_constant_list_to_tuple_for_iter(self):
+        INTRINSIC_LIST_TO_TUPLE = 6
+        before = [
+            ("BUILD_LIST", 0, 1),
+            ("LOAD_SMALL_INT", 1, 2), ("LIST_APPEND", 1, 3),
+            ("LOAD_SMALL_INT", 2, 4), ("LIST_APPEND", 1, 5),
+            ("LOAD_SMALL_INT", 3, 6), ("LIST_APPEND", 1, 7),
+            ("CALL_INTRINSIC_1", INTRINSIC_LIST_TO_TUPLE, 8),
+            ("GET_ITER", 0, 9),
+            top := self.Label(),
+            ("FOR_ITER", end := self.Label(), 10),
+            ("STORE_FAST", 0, 11),
+            ("JUMP", top, 12),
+            end,
+            ("END_FOR", None, 13),
+            ("POP_ITER", None, 14),
+            ("LOAD_CONST", 0, 15),
+            ("RETURN_VALUE", None, 16),
+        ]
+        after = [
+            ("LOAD_CONST", 1, 8),
+            ("GET_ITER", 0, 9),
+            top := self.Label(),
+            ("FOR_ITER", end := self.Label(), 10),
+            ("STORE_FAST", 0, 11),
+            ("JUMP", top, 12),
+            end,
+            ("END_FOR", None, 13),
+            ("POP_ITER", None, 14),
+            ("LOAD_CONST", 0, 15),
+            ("RETURN_VALUE", None, 16),
+        ]
+        self.cfg_optimization_test(before, after, consts=["test"],
+                                   expected_consts=["test", (1, 2, 3)])
 
     def test_fold_constant_big_list_contains_op(self):
         # x in [c1, c2, ..., cN] (N > 30) should fold to LOAD_CONST tuple
@@ -2569,7 +2604,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ("LOAD_CONST", 0, 14),
             ("RETURN_VALUE", None, 15),
         ]
-        self.cfg_optimization_test(same, same, consts=[None])
+        self.cfg_optimization_test(same, same, consts=["test"])
 
 
 class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):

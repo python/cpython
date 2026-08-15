@@ -2530,11 +2530,9 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts,
                 break;
             case CALL_INTRINSIC_1:
                 if (oparg == INTRINSIC_LIST_TO_TUPLE) {
-                    if (nextop == GET_ITER) {
+                    RETURN_IF_ERROR(fold_constant_seq_into_load_const(bb, i, consts, const_cache, consts_index));
+                    if (inst->i_opcode == CALL_INTRINSIC_1 && nextop == GET_ITER) {
                         INSTR_SET_OP0(inst, NOP);
-                    }
-                    else {
-                        RETURN_IF_ERROR(fold_constant_seq_into_load_const(bb, i, consts, const_cache, consts_index));
                     }
                 }
                 else if (oparg == INTRINSIC_UNARY_POSITIVE) {
