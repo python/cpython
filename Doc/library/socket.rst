@@ -1738,15 +1738,22 @@ Socket Objects
 
    .. method:: listen([backlog])
 
-      Enable a server to accept connections.  If *backlog* is specified, it must
-      be at least 0 (if it is lower, it is set to 0); it specifies the number of
-      unaccepted connections that the system will allow before refusing new
-      connections. If not specified, a default reasonable value is chosen.
+      Enable a server to accept connections.  If *backlog* is specified, it
+      specifies the number of unaccepted connections that the system will allow
+      before refusing new connections.  If not specified, a default reasonable
+      value is chosen.  The value is passed on to the system, which may adjust
+      it; the meaning of a value less than or equal to 0 is system dependent.
+      POSIX specifies that a negative value is treated as 0, but on Linux,
+      macOS and FreeBSD it selects the system maximum instead.
 
       .. availability:: not WASI.
 
       .. versionchanged:: 3.5
          The *backlog* parameter is now optional.
+
+      .. versionchanged:: next
+         A negative *backlog* is now passed on to the system instead of being
+         clamped to 0.
 
 
    .. method:: makefile(mode='r', buffering=None, *, encoding=None, \
