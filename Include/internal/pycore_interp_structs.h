@@ -69,7 +69,7 @@ struct code_arena_st;
 struct trampoline_api_st {
     void* (*init_state)(void);
     void (*write_state)(void* state, const void *code_addr,
-                        unsigned int code_size, PyCodeObject* code);
+                        size_t code_size, PyCodeObject* code);
     int (*free_state)(void* state);
     void *state;
     Py_ssize_t code_padding;
@@ -181,31 +181,18 @@ struct gc_generation {
 struct gc_generation_stats {
     PyTime_t ts_start;
     PyTime_t ts_stop;
-
-    /* heap_size on the start of the collection */
-    Py_ssize_t heap_size;
-
-    /* work_to_do on the start of the collection */
-    Py_ssize_t work_to_do;
-
     /* total number of collections */
     Py_ssize_t collections;
-
-    /* total number of visited objects */
-    Py_ssize_t object_visits;
-
     /* total number of collected objects */
     Py_ssize_t collected;
     /* total number of uncollectable objects (put into gc.garbage) */
     Py_ssize_t uncollectable;
     // Total number of objects considered for collection and traversed:
     Py_ssize_t candidates;
-
-    Py_ssize_t objects_transitively_reachable;
-    Py_ssize_t objects_not_transitively_reachable;
-
     // Total duration of the collection in seconds:
     double duration;
+    /* heap_size on the start of the collection */
+    Py_ssize_t heap_size;
 };
 
 #ifdef Py_GIL_DISABLED
@@ -225,11 +212,6 @@ struct gc_old_stats_buffer {
     int8_t index;
 };
 
-enum _GCPhase {
-    GC_PHASE_MARK = 0,
-    GC_PHASE_COLLECT = 1
-};
-
 /* If we change this, we need to change the default value in the
    signature of gc.collect and change the size of PyStats.gc_stats */
 #define NUM_GENERATIONS 3
@@ -244,11 +226,21 @@ struct _gc_runtime_state {
     int enabled;
     int debug;
     /* linked lists of container objects */
+#ifndef Py_GIL_DISABLED
+    struct gc_generation generations[NUM_GENERATIONS];
+#else
     struct gc_generation young;
     struct gc_generation old[2];
+#endif
     /* a permanent generation which won't be collected */
     struct gc_generation permanent_generation;
     struct gc_stats *generation_stats;
+#ifdef Py_GIL_DISABLED
+    /* Protects generation_stats between gc_get_stats_impl() (reader) and
+       gc_collect_main() (writer); both resolve the stats slot (buffer index)
+       under this lock so they agree on which slot to touch (gh-151646). */
+    PyMutex stats_mutex;
+#endif
     /* true if we are currently running the collector */
     int collecting;
     // The frame that started the current collection. It might be NULL even when
@@ -259,13 +251,9 @@ struct _gc_runtime_state {
     /* a list of callbacks to be invoked when collection is performed */
     PyObject *callbacks;
 
+    /* The number of live objects. */
     Py_ssize_t heap_size;
-    Py_ssize_t work_to_do;
-    /* Which of the old spaces is the visited space */
-    int visited_space;
-    int phase;
 
-#ifdef Py_GIL_DISABLED
     /* This is the number of objects that survived the last full
        collection. It approximates the number of long lived objects
        tracked by the GC.
@@ -278,20 +266,30 @@ struct _gc_runtime_state {
        the first time. */
     Py_ssize_t long_lived_pending;
 
+#ifdef Py_GIL_DISABLED
     /* True if gc.freeze() has been used. */
     int freeze_active;
-
-    /* Memory usage of the process (RSS + swap) after last GC. */
-    Py_ssize_t last_mem;
-
-    /* This accumulates the new object count whenever collection is deferred
-       due to the RSS increase condition not being meet.  Reset on collection. */
-    Py_ssize_t deferred_count;
-
-    /* Mutex held for gc_should_collect_mem_usage(). */
-    PyMutex mutex;
+#else
+    PyGC_Head *generation0;
 #endif
 };
+
+#ifndef Py_GIL_DISABLED
+#define GC_GENERATION_INIT \
+    .generations = { \
+        { .threshold = 2000, }, \
+        { .threshold = 10, }, \
+        { .threshold = 10, }, \
+    }, \
+    .heap_size = 0,
+#else
+#define GC_GENERATION_INIT \
+    .young = { .threshold = 2000, }, \
+    .old = { \
+        { .threshold = 10, }, \
+        { .threshold = 10, }, \
+    },
+#endif
 
 #include "pycore_gil.h"           // struct _gil_runtime_state
 
@@ -316,8 +314,6 @@ struct _import_runtime_state {
            Modules are added there and looked up in _imp.find_extension(). */
         struct _Py_hashtable_t *hashtable;
     } extensions;
-    /* Package context -- the full module name for package imports */
-    const char * pkgcontext;
 };
 
 struct _import_state {
@@ -357,7 +353,15 @@ struct _import_state {
     int lazy_imports_mode;
     PyObject *lazy_imports_filter;
     PyObject *lazy_importing_modules;
+    // The set stored in sys.lazy_modules if values that have been
+    // lazily imported. This value is only for debugging/introspection
+    // purposes and is not used by the runtime.
     PyObject *lazy_modules;
+    // A dict mapping package names to a set of submodule names that
+    // have been imported lazily from packages which have been imported
+    // lazily. When the package is reified we need to add a
+    // LazyImportObject which refers to the submodule on the module.
+    PyObject *lazy_pending_submodules;
 #ifdef Py_GIL_DISABLED
     PyMutex lazy_mutex;
 #endif
@@ -530,8 +534,13 @@ struct _py_func_state {
 /****** type state *********/
 
 /* For now we hard-code this to a value for which we are confident
-   all the static builtin types will fit (for all builds). */
-#define _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES 202
+   all the static builtin types will fit (for all builds).
+   If you add a new static type to the standard library, you may have to
+   update one of these numbers.
+   */
+#define _Py_NUM_MANAGED_PREINITIALIZED_TYPES 120
+#define _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES \
+    (_Py_NUM_MANAGED_PREINITIALIZED_TYPES + 83)
 #define _Py_MAX_MANAGED_STATIC_EXT_TYPES 10
 #define _Py_MAX_MANAGED_STATIC_TYPES \
     (_Py_MAX_MANAGED_STATIC_BUILTIN_TYPES + _Py_MAX_MANAGED_STATIC_EXT_TYPES)
@@ -551,23 +560,6 @@ struct _types_runtime_state {
 };
 
 
-// Type attribute lookup cache: speed up attribute and method lookups,
-// see _PyType_Lookup().
-struct type_cache_entry {
-    unsigned int version;  // initialized from type->tp_version_tag
-#ifdef Py_GIL_DISABLED
-   _PySeqLock sequence;
-#endif
-    PyObject *name;        // reference to exactly a str or None
-    PyObject *value;       // borrowed reference or NULL
-};
-
-#define MCACHE_SIZE_EXP 12
-
-struct type_cache {
-    struct type_cache_entry hashtable[1 << MCACHE_SIZE_EXP];
-};
-
 typedef struct {
     PyTypeObject *type;
     int isbuiltin;
@@ -582,6 +574,10 @@ typedef struct {
        are also some diagnostic uses for the list of weakrefs,
        so we still keep it. */
     PyObject *tp_weaklist;
+    /* Per-interpreter attribute lookup cache (struct type_cache *).
+       For static builtin types the cache must be per-interpreter
+       because tp_dict and the values it stores are per-interpreter. */
+    void *_tp_cache;
 } managed_static_type_state;
 
 #define TYPE_VERSION_CACHE_SIZE (1<<12)  /* Must be a power of 2 */
@@ -591,8 +587,6 @@ struct types_state {
        It starts at _Py_MAX_GLOBAL_TYPE_VERSION_TAG + 1,
        where all those lower numbers are used for core static types. */
     unsigned int next_version_tag;
-
-    struct type_cache type_cache;
 
     /* Every static builtin type is initialized for each interpreter
        during its own initialization, including for the main interpreter
@@ -827,6 +821,8 @@ struct _Py_unique_id_pool {
 
 typedef _Py_CODEUNIT *(*_PyJitEntryFuncPtr)(struct _PyExecutorObject *exec, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate);
 
+#define _PyInterpreterGuard_GUARDS_NOT_ALLOWED UINTPTR_MAX
+
 /* PyInterpreterState holds the global state for one of the runtime's
    interpreters.  Typically the initial (main) interpreter is the only one.
 
@@ -1002,7 +998,7 @@ struct _is {
     struct ast_state ast;
     struct types_state types;
     struct callable_cache callable_cache;
-    PyObject *common_consts[NUM_COMMON_CONSTANTS];
+    _PyStackRef common_consts[NUM_COMMON_CONSTANTS];
     bool jit;
     bool compiling;
 
@@ -1052,6 +1048,11 @@ struct _is {
     PyMutex pystats_mutex;
 #endif
 #endif
+
+    // The number of remaining finalization guards.
+    // If this is _PyInterpreterGuard_GUARDS_NOT_ALLOWED, then finalization
+    // guards can no longer be created.
+    uintptr_t finalization_guards;
 
     /* the initial PyInterpreterState.threads.head */
     _PyThreadStateImpl _initial_thread;

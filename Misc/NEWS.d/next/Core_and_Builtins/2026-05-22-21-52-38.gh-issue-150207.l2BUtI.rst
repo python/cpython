@@ -1,0 +1,1 @@
+Fix a crash when a memory allocation fails during tokenizer initialization. A proper :exc:`MemoryError` is now raised instead.

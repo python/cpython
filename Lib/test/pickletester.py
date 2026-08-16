@@ -1246,6 +1246,48 @@ class AbstractUnpickleTests:
         #   15: .    STOP
         self.assertEqual(self.loads(pickled), 42)
 
+    def test_frame_ends_at_opcode_boundary(self):
+        # A frame may end exactly between two opcodes; the following opcodes
+        # are then read from outside the frame.
+        for pickled in [
+            b'\x80\x04\x95\x01\x00\x00\x00\x00\x00\x00\x00N.',  # FRAME 1, NONE, STOP
+            b'\x80\x04\x95\x00\x00\x00\x00\x00\x00\x00\x00N.',  # empty FRAME, NONE, STOP
+        ]:
+            with self.subTest(pickled=pickled):
+                self.assertIsNone(self.loads(pickled))
+
+    def test_frame_does_not_straddle_boundary(self):
+        # An opcode or its argument must not cross a frame boundary
+        # (PEP 3154).  Such a pickle must be rejected rather than silently
+        # reading past the declared frame length, which would make the
+        # meaning of the pickle diverge from its pickletools disassembly.
+        # See gh-154848.
+        for pickled in [
+            # FRAME 6; UNICODE argument read by readline() straddles the frame.
+            b'\x80\x04\x95\x06\x00\x00\x00\x00\x00\x00\x00Vhelloworld\n.',
+            # FRAME 6; BINUNICODE argument straddles the frame.
+            b'\x80\x04\x95\x06\x00\x00\x00\x00\x00\x00\x00'
+            b'X\x0a\x00\x00\x00helloworld.',
+            # FRAME 3; SHORT_BINBYTES argument straddles the frame.
+            b'\x80\x04\x95\x03\x00\x00\x00\x00\x00\x00\x00C\x0ahelloworld.',
+            # FRAME 9; GLOBAL argument (second line) straddles the frame.
+            b'\x80\x04\x95\x09\x00\x00\x00\x00\x00\x00\x00cbuiltins\nprint\n.',
+        ]:
+            self.check_unpickling_error(self.truncated_errors, pickled)
+
+    def test_nested_frame(self):
+        # A new frame must not begin before the current one has ended: here
+        # the outer frame still has data left after the inner frame header.
+        pickled = (b'\x80\x04\x95\x0c\x00\x00\x00\x00\x00\x00\x00'
+                   b'N\x95\x00\x00\x00\x00\x00\x00\x00\x00NN.')
+        self.check_unpickling_error(self.truncated_errors, pickled)
+
+        # But the inner frame header may lie inside the outer frame as long as
+        # it exactly consumes it.
+        pickled = (b'\x80\x04\x95\x0a\x00\x00\x00\x00\x00\x00\x00'
+                   b'N\x95\x00\x00\x00\x00\x00\x00\x00\x00N.')
+        self.assertIsNone(self.loads(pickled))
+
     def test_compat_unpickle(self):
         # xrange(1, 7)
         pickled = b'\x80\x02c__builtin__\nxrange\nK\x01K\x07K\x01\x87R.'
@@ -3100,6 +3142,51 @@ class AbstractPickleTests:
                         self.assertIsNot(b2a, b2b)
                         self.assert_is_copy(b2a, b2b)
 
+    def test_picklebuffer_memoization(self):
+        if self.py_version < (3, 8):
+            self.skipTest('not supported in Python < 3.8')
+        array_types = [bytes, bytearray]
+        for proto in range(5, pickle.HIGHEST_PROTOCOL + 1):
+            for array_type in array_types:
+                for s in b'', b'xyz', b'xyz'*100:
+                    with self.subTest(proto=proto, array_type=array_type, s=s, independent=False):
+                        b = pickle.PickleBuffer(array_type(s))
+                        p = self.dumps((b, b), proto)
+                        b1, b2 = self.loads(p)
+                        self.assertIs(b1, b2)
+
+                    with self.subTest(proto=proto, array_type=array_type, s=s, independent=True):
+                        b = array_type(s)
+                        b1a = pickle.PickleBuffer(b)
+                        b2a = pickle.PickleBuffer(b)
+                        p = self.dumps((b1a, b2a), proto)
+                        b1b, b2b = self.loads(p)
+                        if array_type is not bytes:
+                            self.assertIsNot(b1b, b2b)
+                        self.assert_is_copy(b1b, b)
+                        self.assert_is_copy(b2b, b)
+
+    def test_empty_picklebuffer_memoization(self):
+        # gh-148914: Empty writable PickleBuffer memoized an empty bytearray
+        # with the id of b'' (a singleton in CPython).
+        if self.py_version < (3, 8):
+            self.skipTest('not supported in Python < 3.8')
+        for proto in range(5, pickle.HIGHEST_PROTOCOL + 1):
+            for readonly in False, True:
+                with self.subTest(proto=proto, readonly=readonly):
+                    b = b''
+                    ba = bytearray()
+                    buf = pickle.PickleBuffer(b if readonly else ba)
+                    p = self.dumps((buf, b, ba), proto)
+                    buf, b, ba = self.loads(p)
+                    array_type = bytes if readonly else bytearray
+                    self.assertIsInstance(buf, array_type)
+                    self.assertIsInstance(b, bytes)
+                    self.assertIsInstance(ba, bytearray)
+                    self.assertEqual(buf, b'')
+                    self.assertEqual(b, b'')
+                    self.assertEqual(ba, b'')
+
     def test_ints(self):
         for proto in protocols:
             n = sys.maxsize
@@ -3244,6 +3331,7 @@ class AbstractPickleTests:
             'BuiltinImporter': (3, 3),
             'str': (3, 4),  # not interoperable with Python < 3.4
             'frozendict': (3, 15),
+            'sentinel': (3, 15),
         }
         for t in builtins.__dict__.values():
             if isinstance(t, type) and not issubclass(t, BaseException):

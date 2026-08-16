@@ -879,7 +879,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. versionchanged:: 3.6
       Windows is no longer guaranteed to return ``'mbcs'``. See :pep:`529`
-      and :func:`_enablelegacywindowsfsencoding` for more information.
+      for more information.
 
    .. versionchanged:: 3.7
       Return ``'utf-8'`` if the :ref:`Python UTF-8 Mode <utf8-mode>` is
@@ -919,8 +919,6 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    * ``"normal"``: Only imports explicitly marked with the ``lazy`` keyword
      are lazy
    * ``"all"``: All top-level imports are potentially lazy
-   * ``"none"``: All lazy imports are suppressed (even explicitly marked
-     ones)
 
    See also :func:`set_lazy_imports` and :pep:`810`.
 
@@ -1483,6 +1481,21 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    They hold the legacy representation of ``sys.last_exc``, as returned
    from :func:`exc_info` above.
 
+
+.. data:: lazy_modules
+
+   A :class:`set` of fully qualified module name strings that have been lazily
+   imported in the current interpreter but not yet loaded.  When a
+   lazily imported module is accessed for the first time, its name is removed
+   from this set.
+
+   This attribute is intended for debugging and introspection.
+
+   See also :func:`set_lazy_imports` and :pep:`810`.
+
+   .. versionadded:: 3.15
+
+
 .. data:: maxsize
 
    An integer giving the maximum value a variable of type :c:type:`Py_ssize_t` can
@@ -1757,8 +1770,6 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    * ``"normal"``: Only imports explicitly marked with the ``lazy`` keyword
      are lazy
    * ``"all"``: All top-level imports become potentially lazy
-   * ``"none"``: All lazy imports are suppressed (even explicitly marked
-     ones)
 
    This function is intended for advanced users who need to control lazy
    imports across their entire application. Library developers should
@@ -1779,13 +1790,13 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    callable or ``None`` to clear the filter.
 
    The filter function is called for every potentially lazy import to
-   determine whether it should actually be lazy. It must have the following
+   determine whether it should actually be lazy. It should have the following
    signature::
 
       def filter(importing_module: str, imported_module: str,
                  fromlist: tuple[str, ...] | None) -> bool
 
-   Where:
+   The function is called with three positional arguments:
 
    * *importing_module* is the name of the module doing the import
    * *imported_module* is the resolved name of the module being imported
@@ -1930,7 +1941,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       The interpreter is about to execute a new line of code or re-execute the
       condition of a loop.  The local trace function is called; *arg* is
       ``None``; the return value specifies the new local trace function.  See
-      :file:`Objects/lnotab_notes.txt` for a detailed explanation of how this
+      :source:`InternalDocs/code_objects.md` for a detailed explanation of how this
       works.
       Per-line events may be disabled for a frame by setting
       :attr:`~frame.f_trace_lines` to :const:`False` on that
@@ -2107,31 +2118,6 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       See :pep:`768` for more details.
 
 
-.. function:: _enablelegacywindowsfsencoding()
-
-   Changes the :term:`filesystem encoding and error handler` to 'mbcs' and
-   'replace' respectively, for consistency with versions of Python prior to
-   3.6.
-
-   This is equivalent to defining the :envvar:`PYTHONLEGACYWINDOWSFSENCODING`
-   environment variable before launching Python.
-
-   See also :func:`sys.getfilesystemencoding` and
-   :func:`sys.getfilesystemencodeerrors`.
-
-   .. availability:: Windows.
-
-   .. note::
-      Changing the filesystem encoding after Python startup is risky because
-      the old fsencoding or paths encoded by the old fsencoding may be cached
-      somewhere. Use :envvar:`PYTHONLEGACYWINDOWSFSENCODING` instead.
-
-   .. versionadded:: 3.6
-      See :pep:`529` for more details.
-
-   .. deprecated-removed:: 3.13 3.16
-      Use :envvar:`PYTHONLEGACYWINDOWSFSENCODING` instead.
-
 .. data:: stdin
           stdout
           stderr
@@ -2149,7 +2135,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    returned by the :func:`open` function.  Their parameters are chosen as
    follows:
 
-   * The encoding and error handling are is initialized from
+   * The encoding and error handling are initialized from
      :c:member:`PyConfig.stdio_encoding` and :c:member:`PyConfig.stdio_errors`.
 
      On Windows, UTF-8 is used for the console device.  Non-character
@@ -2254,8 +2240,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
       The name of the lock implementation:
 
-      * ``"semaphore"``: a lock uses a semaphore
-      * ``"mutex+cond"``: a lock uses a mutex and a condition variable
+      * ``"semaphore"``: a lock uses a semaphore (Python 3.14 and older)
+      * ``"mutex+cond"``: a lock uses a mutex and a condition variable (Python 3.14 and older)
+      * ``"pymutex"``: a lock uses the :c:type:`PyMutex` implementation (Python 3.15 and newer)
       * ``None`` if this information is unknown
 
    .. attribute:: thread_info.version

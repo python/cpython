@@ -135,7 +135,7 @@ PyDoc_STRVAR(lazy_import_doc,
 "lazy_import(builtins, name, fromlist=None, /)\n"
 "--\n"
 "\n"
-"Represents a deferred import that will be resolved on first use.\n"
+"Represents a lazy import that will be resolved on first use.\n"
 "\n"
 "Instances of this object accessed from the global scope will be\n"
 "automatically imported based upon their name and then replaced with\n"

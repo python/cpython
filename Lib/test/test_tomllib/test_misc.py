@@ -9,8 +9,10 @@ import importlib
 from pathlib import Path
 import sys
 import tempfile
+import textwrap
 import unittest
 from test import support
+from test.support.script_helper import assert_python_ok
 
 from . import tomllib
 
@@ -117,6 +119,19 @@ class TestMiscellaneous(unittest.TestCase):
                 recursive_table_toml = nest_count * "key = {" + nest_count * "}"
                 tomllib.loads(recursive_table_toml)
 
+    def test_key_recursion_limit(self):
+        nest_count = tomllib._parser.MAX_KEY_PARTS - 2
+        nested_key_toml = "a." * nest_count + "a = 1"
+        tomllib.loads(nested_key_toml)
+
+        nest_count = tomllib._parser.MAX_KEY_PARTS + 2
+        nested_key_toml = "a." * nest_count + "a = 1"
+        with self.assertRaisesRegex(
+            RecursionError,
+            r"TOML key has more than the allowed [0-9]+ parts",
+        ):
+            tomllib.loads(nested_key_toml)
+
     def test_types_import(self):
         """Test that `_types` module runs.
 
@@ -124,3 +139,20 @@ class TestMiscellaneous(unittest.TestCase):
         never imported by tests.
         """
         importlib.import_module(f"{tomllib.__name__}._types")
+
+    def test_lazy_import(self):
+        # Test the TOML file can be parsed without importing regular
+        # expressions (tomllib._re)
+        code = textwrap.dedent("""
+            import sys, tomllib, textwrap
+            document = textwrap.dedent('''
+                [metadata]
+                key = "text"
+                array = ["array", "of", "text"]
+                booleans = [true, false]
+            ''')
+            tomllib.loads(document)
+            print("lazy import?", 'tomllib._re' not in sys.modules)
+        """)
+        proc = assert_python_ok("-c", code)
+        self.assertIn(b"lazy import? True", proc.out)

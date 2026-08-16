@@ -2297,6 +2297,10 @@ elementiter_next(PyObject *op)
             return NULL;
         }
         if (it->gettext) {
+            if (elem->tag != Py_None && !PyUnicode_Check(elem->tag)) {
+                Py_DECREF(elem);
+                continue;
+            }
             text = element_get_text(elem);
             goto gettext;
         }
@@ -2570,6 +2574,7 @@ treebuilder_dealloc(PyObject *self)
 /* helpers for handling of arbitrary element-like objects */
 
 /*[clinic input]
+@permit_long_summary
 _elementtree._set_factories
 
     comment_factory: object
@@ -2584,7 +2589,7 @@ For internal use only.
 static PyObject *
 _elementtree__set_factories_impl(PyObject *module, PyObject *comment_factory,
                                  PyObject *pi_factory)
-/*[clinic end generated code: output=813b408adee26535 input=99d17627aea7fb3b]*/
+/*[clinic end generated code: output=813b408adee26535 input=0f415cb6b821f768]*/
 {
     elementtreestate *st = get_elementtree_state(module);
     PyObject *old;
@@ -3735,8 +3740,12 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
         PyErr_NoMemory();
         return -1;
     }
-    /* expat < 2.1.0 has no XML_SetHashSalt() */
-    if (EXPAT(st, SetHashSalt) != NULL) {
+    // Prefer 16-byte entropy, only expat >= 2.8.0. See gh-149018
+    if (EXPAT(st, SetHashSalt16Bytes) != NULL) {
+        EXPAT(st, SetHashSalt16Bytes)(self->parser,
+                                      _Py_HashSecret.expat.hashsalt16);
+    }
+    else if (EXPAT(st, SetHashSalt) != NULL) {
         EXPAT(st, SetHashSalt)(self->parser,
                            (unsigned long)_Py_HashSecret.expat.hashsalt);
     }

@@ -218,13 +218,15 @@ Thread State and GIL APIs
 Python provides a set of functions and macros to manage thread state and the
 GIL, such as:
 
+* :c:func:`PyThreadState_Ensure`, :c:func:`PyThreadState_EnsureFromView`,
+  and :c:func:`PyThreadState_Release`
 * :c:func:`PyGILState_Ensure` and :c:func:`PyGILState_Release`
 * :c:func:`PyEval_SaveThread` and :c:func:`PyEval_RestoreThread`
 * :c:macro:`Py_BEGIN_ALLOW_THREADS` and :c:macro:`Py_END_ALLOW_THREADS`
 
 These functions should still be used in the free-threaded build to manage
 thread state even when the :term:`GIL` is disabled.  For example, if you
-create a thread outside of Python, you must call :c:func:`PyGILState_Ensure`
+create a thread outside of Python, you must call :c:func:`PyThreadState_Ensure`
 before calling into the Python API to ensure that the thread has a valid
 Python thread state.
 
