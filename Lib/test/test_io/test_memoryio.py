@@ -596,6 +596,11 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         buf = self.buftype("1234567890")
         with self.ioclass(buf) as memio:
             self.assertEqual(memio.tell(), 0)
+            # bytearray(b'1') == b'1', so the type has to be asserted separately.
+            self.assertIsInstance(memio.peek(), bytes)
+            self.assertIsInstance(memio.peek(1), bytes)
+            self.assertEqual(memio.peek(IntLike(3)), buf[:3])
+            self.assertRaises(TypeError, memio.peek, 1.5)
             self.assertEqual(memio.peek(1), buf[:1])
             self.assertEqual(memio.peek(1), buf[:1])
             self.assertEqual(memio.peek(), buf)
