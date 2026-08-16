@@ -14,7 +14,7 @@
 typedef struct {
     PyObject_HEAD
     BinaryWriter *writer;
-    uint32_t cached_total_samples;  /* Preserved after finalize */
+    uint64_t cached_total_samples;  /* Preserved after finalize */
 } BinaryWriterObject;
 
 typedef struct {
@@ -1916,9 +1916,9 @@ BinaryWriter_get_total_samples(PyObject *op, void *closure)
     BinaryWriterObject *self = BinaryWriter_CAST(op);
     if (!self->writer) {
         /* Use cached value after finalize/close */
-        return PyLong_FromUnsignedLong(self->cached_total_samples);
+        return PyLong_FromUnsignedLongLong(self->cached_total_samples);
     }
-    return PyLong_FromUnsignedLong(self->writer->total_samples);
+    return PyLong_FromUnsignedLongLong(self->writer->total_samples);
 }
 
 static PyGetSetDef BinaryWriter_getset[] = {
@@ -2141,7 +2141,7 @@ BinaryReader_get_sample_count(BinaryReaderObject *self, void *closure)
     if (!self->reader) {
         return PyLong_FromLong(0);
     }
-    return PyLong_FromUnsignedLong(self->reader->sample_count);
+    return PyLong_FromUnsignedLongLong(self->reader->sample_count);
 }
 
 static PyObject *

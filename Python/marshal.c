@@ -1,8 +1,8 @@
 
 /* Write Python objects to files and read them back.
    This is primarily intended for writing and reading compiled Python code,
-   even though dicts, lists, sets and frozensets, not commonly seen in
-   code objects, are supported.
+   even though dicts and frozendicts, lists, sets and frozensets,
+   not commonly seen in code objects, are supported.
    Version 3 of this protocol properly supports circular links
    and sharing. */
 
@@ -1471,6 +1471,9 @@ r_object(RFILE *p)
         }
         if (type == TYPE_DICT) {
             R_REF(v);
+            if (v == NULL) {
+                break;
+            }
         }
         else {
             idx = r_ref_reserve(flag, p);

@@ -457,7 +457,6 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         # raises a BufferError.
         self.assertRaises(BufferError, memio.write, b'x' * 100)
         self.assertRaises(BufferError, memio.truncate)
-        self.assertRaises(BufferError, memio.close)
         self.assertFalse(memio.closed)
         # Mutating the buffer updates the BytesIO
         buf[3:6] = b"abc"
@@ -470,6 +469,33 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         memio.truncate()
         memio.close()
         self.assertRaises(ValueError, memio.getbuffer)
+
+    def test_getbuffer_delete(self):
+        # gh-111330, gh-111331: .close() works and the buffer stays working
+        memio = self.ioclass(b"1234567890")
+        buf = memio.getbuffer()
+        self.assertEqual(bytes(buf), b"1234567890")
+        memio.close()
+        self.assertTrue(memio.closed)
+        self.assertEqual(bytes(buf), b"1234567890")
+        buf[3:6] = b"abc"
+        self.assertEqual(bytes(buf), b"123abc7890")
+        self.assertRaises(ValueError, memio.getbuffer)
+        self.assertRaises(ValueError, memio.getvalue)
+        del buf
+        support.gc_collect()
+        memio.close()
+
+    def test_getbuffer_del(self):
+        # gh-111330, gh-111331: deleting the BytesIO which has an exported
+        # buffer does not emit an unraisable exception.
+        memio = self.ioclass(b"1234567890")
+        buf = memio.getbuffer()
+        with support.catch_unraisable_exception() as cm:
+            del memio
+            support.gc_collect()
+            self.assertIsNone(cm.unraisable)
+        self.assertEqual(bytes(buf), b"1234567890")
 
     def test_getbuffer_empty(self):
         memio = self.ioclass()
@@ -493,14 +519,14 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         # Create a reference loop.
         a = [buf]
         a.append(a)
-        # The Python implementation emits an unraisable exception.
-        with support.catch_unraisable_exception():
+
+        # gh-111330, gh-111331: no unraisable exception is emitted.
+        with support.catch_unraisable_exception() as cm:
             del memio
-        del buf
-        del a
-        # The C implementation emits an unraisable exception.
-        with support.catch_unraisable_exception():
+            del buf
+            del a
             gc.collect()
+            self.assertIsNone(cm.unraisable)
         self.assertIsNone(memiowr())
         self.assertIsNone(bufwr())
 
@@ -570,6 +596,11 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         buf = self.buftype("1234567890")
         with self.ioclass(buf) as memio:
             self.assertEqual(memio.tell(), 0)
+            # bytearray(b'1') == b'1', so the type has to be asserted separately.
+            self.assertIsInstance(memio.peek(), bytes)
+            self.assertIsInstance(memio.peek(1), bytes)
+            self.assertEqual(memio.peek(IntLike(3)), buf[:3])
+            self.assertRaises(TypeError, memio.peek, 1.5)
             self.assertEqual(memio.peek(1), buf[:1])
             self.assertEqual(memio.peek(1), buf[:1])
             self.assertEqual(memio.peek(), buf)
@@ -939,7 +970,10 @@ class CBytesIOTest(PyBytesIOTest):
 
     @support.cpython_only
     def test_sizeof(self):
-        basesize = support.calcobjsize('P2n2Pn')
+        if support.Py_GIL_DISABLED:
+            basesize = support.calcobjsize('P2n2Pni')
+        else:
+            basesize = support.calcobjsize('P2n2Pn')
         check = self.check_sizeof
         self.assertEqual(object.__sizeof__(io.BytesIO()), basesize)
         check(io.BytesIO(), basesize )

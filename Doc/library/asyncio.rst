@@ -47,6 +47,13 @@ asyncio provides a set of **high-level** APIs to:
 
 * :ref:`synchronize <asyncio-sync>` concurrent code;
 
+For **introspection**, asyncio provides APIs and tools for:
+
+* inspecting the :ref:`async call graph <asyncio-graph>` of tasks and futures;
+
+* inspecting tasks in another running Python process with
+  :ref:`command-line tools <asyncio-introspection-tools>`;
+
 Additionally, there are **low-level** APIs for
 *library and framework developers* to:
 
@@ -108,7 +115,13 @@ for full functionality and the latest features.
    asyncio-subprocess.rst
    asyncio-queue.rst
    asyncio-exceptions.rst
+
+.. toctree::
+   :caption: Introspection APIs
+   :maxdepth: 1
+
    asyncio-graph.rst
+   asyncio-tools.rst
 
 .. toctree::
    :caption: Low-level APIs

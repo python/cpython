@@ -1434,6 +1434,11 @@ class GCCallbackTests(unittest.TestCase):
         import subprocess
         code = textwrap.dedent('''
             from test.support import gc_collect, SuppressCrashReport
+            import ctypes.util
+
+            @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+            def Py_DecRef(o: ctypes.py_object) -> None:
+                pass
 
             a = [1, 2, 3]
             b = [a, a]
@@ -1445,8 +1450,7 @@ class GCCallbackTests(unittest.TestCase):
             # Simulate the refcount of "a" being too low (compared to the
             # references held on it by live data), but keeping it above zero
             # (to avoid deallocating it):
-            import ctypes
-            ctypes.pythonapi.Py_DecRef(ctypes.py_object(a))
+            Py_DecRef(a)
             del a
             del b
 

@@ -560,6 +560,11 @@ class CalendarTestCase(unittest.TestCase):
             "The 'January' attribute is deprecated, use 'JANUARY' instead"
         ):
             calendar.January
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "The 'February' attribute is deprecated, use 'FEBRUARY' instead"
+        ):
+            calendar.February
 
     def test_isleap(self):
         # Make sure that the return is right for a few years, and
@@ -1109,7 +1114,8 @@ class CommandLineTestCase(unittest.TestCase):
         return stdout.buffer.read()
 
     def run_cmd_ok(self, *args):
-        return assert_python_ok('-m', 'calendar', *args)[1]
+        proc = assert_python_ok('-m', 'calendar', *args)
+        return proc.out
 
     def assertCLIFails(self, *args):
         with self.captured_stderr_with_buffer() as stderr:

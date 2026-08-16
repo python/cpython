@@ -1,0 +1,3 @@
+:c:func:`PyConfig_Set()` now also set global configuration variables. For
+example, ``PyConfig_Set("inspect", value)`` now also sets
+:c:var:`Py_InspectFlag`. Patch by Victor Stinner.

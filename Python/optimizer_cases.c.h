@@ -581,6 +581,16 @@
             break;
         }
 
+        case _GUARD_TOS_EXACT_INT: {
+            JitOptRef value;
+            value = stack_pointer[-1];
+            if (sym_matches_type(value, &PyLong_Type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            sym_set_type(value, &PyLong_Type);
+            break;
+        }
+
         case _GUARD_NOS_OVERFLOWED: {
             break;
         }
@@ -2145,13 +2155,6 @@
         case _STORE_ATTR: {
             CHECK_STACK_BOUNDS(-2);
             stack_pointer += -2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _DELETE_ATTR: {
-            CHECK_STACK_BOUNDS(-1);
-            stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
@@ -3926,10 +3929,6 @@
             stack_pointer[0] = new_exc;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _GUARD_KEYS_VERSION: {
             break;
         }
 

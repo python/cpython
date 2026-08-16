@@ -22,6 +22,9 @@ typedef struct {
     PyObject *dict;
     PyObject *weakreflist;
     Py_ssize_t exports;
+#ifdef Py_GIL_DISABLED
+    int buf_shared;
+#endif
 } bytesio;
 
 #define bytesio_CAST(op)    ((bytesio *)(op))
@@ -37,7 +40,8 @@ typedef struct {
   * Py_REFCNT(buf) == 1, exports == 0.
   * Py_REFCNT(buf) > 1.  exports == 0,
     first modification or export causes the internal buffer copying.
-  * exports > 0.  Py_REFCNT(buf) == 1, any modifications are forbidden.
+  * exports > 0.  Any modifications are forbidden.  Every exported buffer
+    keeps a reference to buf, so it outlives closing of the bytesio object.
 */
 
 static int
@@ -71,7 +75,45 @@ check_exports(bytesio *self)
         return NULL; \
     }
 
+#ifdef Py_GIL_DISABLED
+#define SHARED_BUF(self) ((self)->buf_shared || !_PyObject_IsUniquelyReferenced((self)->buf))
+#else
 #define SHARED_BUF(self) (!_PyObject_IsUniquelyReferenced((self)->buf))
+#endif
+
+static inline void
+set_shared_buf(bytesio *self)
+{
+#ifdef Py_GIL_DISABLED
+    self->buf_shared = 1;
+#endif
+}
+
+static inline void
+clear_shared_buf(bytesio *self)
+{
+#ifdef Py_GIL_DISABLED
+    self->buf_shared = 0;
+#endif
+}
+
+static int
+resize_unshared_buffer_lock_held(bytesio *self, Py_ssize_t size)
+{
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+
+#ifdef Py_GIL_DISABLED
+    /* If the internal bytes object escaped via a zero-copy getvalue(), read(),
+       or peek(), resizing it would mutate an object visible to Python code.
+       Callers must detach first. */
+    assert(!self->buf_shared);
+#endif
+    int ret = _PyBytes_Resize(&self->buf, size);
+    if (ret == 0) {
+        clear_shared_buf(self);
+    }
+    return ret;
+}
 
 
 /* Internal routine to get a line from the buffer of a BytesIO
@@ -128,6 +170,7 @@ unshare_buffer_lock_held(bytesio *self, size_t size)
     memcpy(PyBytes_AS_STRING(new_buf), PyBytes_AS_STRING(self->buf),
            self->string_size);
     Py_SETREF(self->buf, new_buf);
+    clear_shared_buf(self);
     return 0;
 }
 
@@ -173,7 +216,7 @@ resize_buffer_lock_held(bytesio *self, size_t size)
             return -1;
     }
     else {
-        if (_PyBytes_Resize(&self->buf, alloc) < 0)
+        if (resize_unshared_buffer_lock_held(self, alloc) < 0)
             return -1;
     }
 
@@ -381,10 +424,11 @@ _io_BytesIO_getvalue_impl(bytesio *self)
                 return NULL;
         }
         else {
-            if (_PyBytes_Resize(&self->buf, self->string_size) < 0)
+            if (resize_unshared_buffer_lock_held(self, self->string_size) < 0)
                 return NULL;
         }
     }
+    set_shared_buf(self);
     return Py_NewRef(self->buf);
 }
 
@@ -433,6 +477,7 @@ peek_bytes_lock_held(bytesio *self, Py_ssize_t size)
     if (size > 1 &&
         self->pos == 0 && size == PyBytes_GET_SIZE(self->buf) &&
         FT_ATOMIC_LOAD_SSIZE_RELAXED(self->exports) == 0) {
+        set_shared_buf(self);
         return Py_NewRef(self->buf);
     }
 
@@ -881,7 +926,7 @@ static PyObject *
 _io_BytesIO_close_impl(bytesio *self)
 /*[clinic end generated code: output=1471bb9411af84a0 input=34ce76d8bd17a23b]*/
 {
-    CHECK_EXPORTS(self);
+    /* The exported buffers keep the internal buffer alive. */
     Py_CLEAR(self->buf);
     Py_RETURN_NONE;
 }
@@ -1010,7 +1055,9 @@ bytesio_setstate_lock_held(PyObject *op, PyObject *state)
                 return NULL;
         }
         else {
-            self->dict = Py_NewRef(dict);
+            /* The LOAD_ATTR specializations read the dict slot lock-free
+               with an acquire load, so pair it with a release store. */
+            FT_ATOMIC_STORE_PTR_RELEASE(self->dict, Py_NewRef(dict));
         }
     }
 
@@ -1091,6 +1138,7 @@ _io_BytesIO___init___impl(bytesio *self, PyObject *initvalue)
     if (initvalue && initvalue != Py_None) {
         if (PyBytes_CheckExact(initvalue)) {
             Py_XSETREF(self->buf, Py_NewRef(initvalue));
+            clear_shared_buf(self);
             self->string_size = PyBytes_GET_SIZE(initvalue);
         }
         else {
@@ -1234,6 +1282,9 @@ bytesiobuf_getbuffer_lock_held(PyObject *op, Py_buffer *view, int flags)
 
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(b);
 
+    if (check_closed(b)) {
+        return -1;
+    }
     if (FT_ATOMIC_LOAD_SSIZE_RELAXED(b->exports) == 0 && SHARED_BUF(b)) {
         if (unshare_buffer_lock_held(b, b->string_size) < 0)
             return -1;
@@ -1243,6 +1294,9 @@ bytesiobuf_getbuffer_lock_held(PyObject *op, Py_buffer *view, int flags)
     (void)PyBuffer_FillInfo(view, op,
                             PyBytes_AS_STRING(b->buf), b->string_size,
                             0, flags);
+    /* Keep the internal buffer alive: the bytesio object can be closed
+       while the buffer is exported. */
+    view->internal = Py_NewRef(b->buf);
     FT_ATOMIC_ADD_SSIZE(b->exports, 1);
     return 0;
 }
@@ -1264,11 +1318,12 @@ bytesiobuf_getbuffer(PyObject *op, Py_buffer *view, int flags)
 }
 
 static void
-bytesiobuf_releasebuffer(PyObject *op, Py_buffer *Py_UNUSED(view))
+bytesiobuf_releasebuffer(PyObject *op, Py_buffer *view)
 {
     bytesiobuf *obj = bytesiobuf_CAST(op);
     bytesio *b = bytesio_CAST(obj->source);
     FT_ATOMIC_ADD_SSIZE(b->exports, -1);
+    Py_CLEAR(view->internal);
 }
 
 static int
