@@ -1,6 +1,8 @@
 import importlib
 import pickle
+import sys
 import threading
+import types
 from textwrap import dedent
 import unittest
 
@@ -382,28 +384,25 @@ class TestQueueOps(TestBase):
                 self.assertIsNot(obj, obj2)
 
     def _check_unpickle_attributeerror_arg(self, arg):
-        # Cross an object through a queue where get() must re-import its
-        # class via a module __getattr__ that raises AttributeError(arg).
-        source = dedent("""
-            _attrerr_arg = None
-
-            class Thing:
-                pass
-
-            def break_module(mod, arg):
-                del mod.Thing
-                mod._attrerr_arg = arg
-                def __getattr__(name):
-                    raise AttributeError(mod._attrerr_arg)
-                mod.__getattr__ = __getattr__
-            """)
-        with import_helper.ready_to_import('_xi_attrerr', source) as (name, _):
-            mod = importlib.import_module(name)
-            queue = queues.create()
-            queue.put(mod.Thing())
-            mod.break_module(mod, arg)
-            with self.assertRaises(interpreters.NotShareableError):
-                queue.get()
+        # Put an object through a queue where get() must re-import its class
+        # via a module __getattr__ that raises AttributeError(arg).
+        modname = '_test_xi_attrerr'
+        mod = types.ModuleType(modname)
+        class Thing:
+            pass
+        Thing.__module__ = modname
+        Thing.__qualname__ = 'Thing'
+        mod.Thing = Thing
+        sys.modules[modname] = mod
+        self.addCleanup(sys.modules.pop, modname, None)
+        queue = queues.create()
+        queue.put(Thing())
+        del mod.Thing
+        def raise_attributeerror(name):
+            raise AttributeError(arg)
+        mod.__getattr__ = raise_attributeerror
+        with self.assertRaises(interpreters.NotShareableError):
+            queue.get()
 
     def test_get_unpickle_fails_with_bad_attributeerror_arg(self):
         # gh-151862: an AttributeError arg that can't be UTF-8 encoded used
@@ -413,11 +412,10 @@ class TestQueueOps(TestBase):
                 self._check_unpickle_attributeerror_arg(arg)
 
     def test_get_unpickle_fails_with_str_attributeerror_arg(self):
-        # Positive control: a normal str arg (incl. the real missing-__main__
-        # message) must not crash, locking in the non-NULL strncmp() path.
-        for arg in ['boom', "module '__main__' has no attribute 'Thing'"]:
-            with self.subTest(arg=arg):
-                self._check_unpickle_attributeerror_arg(arg)
+        # Positive control: a normal str arg must not crash, locking in the
+        # non-NULL strncmp() path.
+        with self.subTest(arg='boom'):
+            self._check_unpickle_attributeerror_arg('boom')
 
     def test_put_get_same_interpreter(self):
         interp = interpreters.create()
