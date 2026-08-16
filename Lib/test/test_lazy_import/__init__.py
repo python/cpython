@@ -277,6 +277,23 @@ class LazyImportTypeTests(LazyImportTestCase):
         proc = assert_python_ok("-c", code)
         self.assertIn(b"<built-in method resolve of lazy_import object at", proc.out)
 
+    @support.requires_subprocess()
+    def test_lazy_import_type_attribute_error_message(self):
+        """Check that LazyImportType attribute error message is helpful."""
+        code = textwrap.dedent("""
+            lazy import asyncio
+            try:
+                globals()["asyncio"].Task
+            except AttributeError as exc:
+                assert str(exc) == (
+                    "cannot access attribute 'Task' "
+                    "on unresolved lazy import 'asyncio'"
+                ), repr(str(exc))
+            else:
+                assert False, 'AttributeError is not raised'
+        """)
+        assert_python_ok("-c", code)
+
 
 class SyntaxRestrictionTests(LazyImportTestCase):
     """Tests for syntax restrictions on lazy imports."""
