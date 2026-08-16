@@ -345,7 +345,7 @@ def _isreservedname(name):
 def expanduser(path):
     """Expand ~ and ~user constructs.
 
-    If user or $HOME is unknown, do nothing."""
+    If user or home directory is unknown, do nothing."""
     path = os.fspath(path)
     if isinstance(path, bytes):
         seps = b'\\/'

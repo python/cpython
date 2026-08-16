@@ -197,6 +197,10 @@ loops that truncate the stream.
           for iterable in iterables:
               yield from iterable
 
+   Note that :ref:`unpacking in comprehensions <unpacking-comprehensions>`
+   provides similar functionality so that ``list(chain(p, q))`` could be
+   written as ``[*s for s in (p, q)]``.
+
 
 .. classmethod:: chain.from_iterable(iterable)
 
@@ -207,6 +211,10 @@ loops that truncate the stream.
           # chain.from_iterable(['ABC', 'DEF']) → A B C D E F
           for iterable in iterables:
               yield from iterable
+
+   Note that :ref:`unpacking in comprehensions <unpacking-comprehensions>`
+   provides similar functionality so that ``list(chain.from_iterable(iterables))``
+   could be written as ``[*s for s in iterables]``.
 
 
 .. function:: combinations(iterable, r)

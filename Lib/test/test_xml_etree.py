@@ -933,6 +933,7 @@ class ElementTreeTest(unittest.TestCase):
             (b"<?xml version='1.0' encoding='ISO-8859-1'?>\n"
              b"<body><tag>\xf8</tag></body>", 'ISO-8859-1', None),
             ('<body><tag>ø</tag></body>', 'unicode', None),
+            (b"\xef\xbb\xbf<body><tag>\xc3\xb8</tag></body>", 'utf-8-sig', None),
 
             # ... xml_declaration = False
             (b"<body><tag>&#248;</tag></body>", None, False),
@@ -940,6 +941,7 @@ class ElementTreeTest(unittest.TestCase):
             (b"<body><tag>&#248;</tag></body>", 'US-ASCII', False),
             (b"<body><tag>\xf8</tag></body>", 'ISO-8859-1', False),
             ("<body><tag>ø</tag></body>", 'unicode', False),
+            (b"\xef\xbb\xbf<body><tag>\xc3\xb8</tag></body>", 'utf-8-sig', False),
 
             # ... xml_declaration = True
             (b"<?xml version='1.0' encoding='us-ascii'?>\n"
@@ -952,6 +954,8 @@ class ElementTreeTest(unittest.TestCase):
              b"<body><tag>\xf8</tag></body>", 'ISO-8859-1', True),
             ("<?xml version='1.0' encoding='utf-8'?>\n"
              "<body><tag>ø</tag></body>", 'unicode', True),
+            (b"\xef\xbb\xbf<?xml version='1.0' encoding='utf-8'?>\n"
+             b"<body><tag>\xc3\xb8</tag></body>", 'utf-8-sig', True),
 
         ]
         for expected_retval, encoding, xml_declaration in TESTCASES:
@@ -3246,7 +3250,7 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         self.assertEqual([c.tag for c in children[3:]],
                          [a.tag, b.tag, a.tag, b.tag])
 
-    @support.skip_if_unlimited_stack_size
+    @support.run_with_limited_c_stack(500_000)
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def test_deeply_nested_deepcopy(self):
@@ -3476,6 +3480,37 @@ class ElementFindTest(unittest.TestCase):
         self.assertRaisesRegex(SyntaxError, 'XPath', e.find, './tag[-1]')
         self.assertRaisesRegex(SyntaxError, 'XPath', e.find, './tag[last()-0]')
         self.assertRaisesRegex(SyntaxError, 'XPath', e.find, './tag[last()+1]')
+
+    def test_find_xpath_index_no_quadratic_complexity(self):
+        class CountingElement(ET.Element):
+            findall_calls = 0
+            def findall(self, *args, **kwargs):
+                type(self).findall_calls += 1
+                return super().findall(*args, **kwargs)
+
+        def work(n, pattern):
+            root = CountingElement("root")
+            for _ in range(n):
+                ET.SubElement(root, "a")
+            CountingElement.findall_calls = 0
+            root.findall(pattern)
+            return CountingElement.findall_calls
+
+        for pattern in [".//a[1]", ".//a[last()]"]:
+            w1 = work(1024, pattern)
+            w2 = work(2048, pattern)
+            w3 = work(4096, pattern)
+
+            self.assertGreater(w1, 0)
+            r1 = w2 / w1
+            r2 = w3 / w2
+            # Doubling N must not ~double the parent.findall calls.
+            # Linear-in-N call counts indicate the cache is missing.
+            self.assertLess(
+                max(r1, r2), 1.5,
+                msg=f"Possible quadratic behavior on {pattern!r}: "
+                    f"calls={w1, w2, w3} ratios={r1, r2}",
+            )
 
     def test_findall(self):
         e = ET.XML(SAMPLE_XML)

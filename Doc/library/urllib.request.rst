@@ -1486,7 +1486,8 @@ some point in the future.
 .. function:: urlcleanup()
 
    Cleans up temporary files that may have been left behind by previous
-   calls to :func:`urlretrieve`.
+   calls to :func:`urlretrieve`.  It also resets the default global opener
+   installed by :func:`install_opener`.
 
 
 :mod:`!urllib.request` Restrictions

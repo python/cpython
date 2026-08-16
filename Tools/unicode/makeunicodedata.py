@@ -42,9 +42,12 @@ VERSION = "3.3"
 # The Unicode Database
 # --------------------
 # When changing UCD version please update
-#   * Doc/library/stdtypes.rst, and
+#   * Doc/library/stdtypes.rst (four occurrences)
 #   * Doc/library/unicodedata.rst
+#   * Doc/library/re.rst
 #   * Doc/reference/lexical_analysis.rst (three occurrences)
+# and optionally (comments)
+#   * Lib/re/_properties.py (three occurrences)
 UNIDATA_VERSION = "17.0.0"
 UNICODE_DATA = "UnicodeData%s.txt"
 COMPOSITION_EXCLUSIONS = "CompositionExclusions%s.txt"
