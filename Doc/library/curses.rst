@@ -31,6 +31,19 @@ Linux and the BSD variants of Unix.
    Whenever the documentation mentions a *character string* it can be specified
    as a Unicode string or a byte string.
 
+.. note::
+
+   Whether curses may be used from several threads
+   depends on the underlying library and how it was built.
+   In many implementations, including the default build of ncurses,
+   the screen state is shared and not thread-safe;
+   since the blocking and refresh methods
+   (such as :meth:`~window.getch` and :meth:`~window.refresh`)
+   release the :term:`GIL`,
+   unsynchronized use from several threads can then crash the interpreter.
+   Serialize the calls,
+   or wrap them in :meth:`window.use` and :meth:`screen.use`.
+
 .. seealso::
 
    Module :mod:`curses.ascii`
@@ -129,6 +142,8 @@ Initialization and termination
    and return the previously current screen.
    Returns ``None`` if the previous screen was the one created by
    :func:`initscr`.
+   Raises :exc:`error` if *screen* has no terminal,
+   as is the case for a screen returned by :func:`new_prescr`.
 
    .. versionadded:: next
 
@@ -1321,6 +1336,8 @@ Reading window contents
    The bottom 8 bits are the character proper and the upper bits are the attributes;
    extract them with the :data:`A_CHARTEXT` and :data:`A_ATTRIBUTES` bit-masks,
    and the color pair with :func:`pair_number`.
+   The character byte is the locale-encoded byte of the cell's character,
+   consistent with :meth:`instr`.
    It cannot represent a cell holding combining characters, a character that does
    not fit in a single byte, or a color pair outside the :func:`color_pair`
    range; use :meth:`in_wch` for those, which returns it as a :class:`complexchar`.

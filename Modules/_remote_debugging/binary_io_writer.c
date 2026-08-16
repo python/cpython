@@ -924,12 +924,6 @@ static int
 process_thread_sample(BinaryWriter *writer, PyObject *thread_info,
                       uint32_t interpreter_id, uint64_t timestamp_us)
 {
-    if (writer->total_samples >= UINT32_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-            "too many samples for binary format");
-        return -1;
-    }
-
     PyObject *thread_id_obj = PyStructSequence_GET_ITEM(thread_info, 0);
     PyObject *status_obj = PyStructSequence_GET_ITEM(thread_info, 1);
     PyObject *frame_list = PyStructSequence_GET_ITEM(thread_info, 2);

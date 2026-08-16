@@ -769,7 +769,6 @@ future_get_result(asyncio_state *state, FutureObj *fut, PyObject **result)
             return -1;
         }
         *result = Py_NewRef(fut->fut_exception);
-        Py_CLEAR(fut->fut_exception_tb);
         return 1;
     }
 
@@ -2364,7 +2363,9 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     _PyObject_SetMaybeWeakref((PyObject *)self);
 #endif
     if (eager_start) {
-        PyObject *res = PyObject_CallMethodNoArgs(loop, &_Py_ID(is_running));
+        // gh-154695: loop may be None here, future_init() resolved it into task_loop.
+        PyObject *res = PyObject_CallMethodNoArgs(self->task_loop,
+                                                  &_Py_ID(is_running));
         if (res == NULL) {
             return -1;
         }
@@ -2785,7 +2786,11 @@ static PyObject *
 _asyncio_Task_get_context_impl(TaskObj *self)
 /*[clinic end generated code: output=6996f53d3dc01aef input=87c0b209b8fceeeb]*/
 {
-    return Py_NewRef(self->task_context);
+    if (self->task_context) {
+        return Py_NewRef(self->task_context);
+    }
+
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -2966,13 +2971,17 @@ TaskObj_dealloc(PyObject *self)
     if (PyObject_CallFinalizerFromDealloc(self) < 0) {
         return; // resurrected
     }
+    // Untrack the object before unregistering the task, since the
+    // latter can cause a stop-the-world pause, after which another
+    // thread might call the GC and reach the object while it is
+    // semi-deallocated but still tracked
+    PyObject_GC_UnTrack(self);
+
     // unregister the task after finalization so that
     // if the task gets resurrected, it remains registered
     unregister_task((TaskObj *)self);
 
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject_GC_UnTrack(self);
-
     PyObject_ClearWeakRefs(self);
 
     (void)TaskObj_clear(self);

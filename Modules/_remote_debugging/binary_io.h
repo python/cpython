@@ -50,7 +50,7 @@ extern "C" {
 #define HDR_OFF_INTERVAL     (HDR_OFF_START_TIME + HDR_SIZE_START_TIME)
 #define HDR_SIZE_INTERVAL    8
 #define HDR_OFF_SAMPLES      (HDR_OFF_INTERVAL + HDR_SIZE_INTERVAL)
-#define HDR_SIZE_SAMPLES     4
+#define HDR_SIZE_SAMPLES     8
 #define HDR_OFF_THREADS      (HDR_OFF_SAMPLES + HDR_SIZE_SAMPLES)
 #define HDR_SIZE_THREADS     4
 #define HDR_OFF_STR_TABLE    (HDR_OFF_THREADS + HDR_SIZE_THREADS)
@@ -260,7 +260,7 @@ typedef struct {
     /* Metadata */
     uint64_t start_time_us;
     uint64_t sample_interval_us;
-    uint32_t total_samples;
+    uint64_t total_samples;
 
     /* String hash table: PyObject* -> uint32_t index */
     _Py_hashtable_t *string_hash;
@@ -326,7 +326,7 @@ typedef struct {
     int needs_swap;  /* Non-zero if file was written on different-endian system */
     uint64_t start_time_us;
     uint64_t sample_interval_us;
-    uint32_t sample_count;
+    uint64_t sample_count;
     uint32_t thread_count;
     uint64_t string_table_offset;
     uint64_t frame_table_offset;

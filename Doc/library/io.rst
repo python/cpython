@@ -763,9 +763,12 @@ than raw I/O does.
 
       .. note::
          As long as the view exists, the :class:`BytesIO` object cannot be
-         resized or closed.
+         resized.  Closing it does not invalidate the view.
 
       .. versionadded:: 3.2
+
+      .. versionchanged:: next
+         The :class:`BytesIO` object can now be closed while the view exists.
 
    .. method:: getvalue()
 

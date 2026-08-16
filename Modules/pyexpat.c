@@ -1118,6 +1118,7 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
     new_parser->specified_attributes = self->specified_attributes;
     new_parser->in_callback = 0;
     new_parser->ns_prefixes = self->ns_prefixes;
+    new_parser->reparse_deferral_enabled = self->reparse_deferral_enabled;
     new_parser->itself = XML_ExternalEntityParserCreate(self->itself, context,
                                                         encoding);
     // The new subparser will make use of the parent XML_Parser inside of Expat.

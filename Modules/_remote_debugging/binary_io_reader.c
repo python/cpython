@@ -83,7 +83,8 @@ reader_parse_header(BinaryReader *reader, const uint8_t *data, size_t file_size)
 
     /* Read header fields with byte-swapping if needed */
     uint64_t start_time_us, sample_interval_us, string_table_offset, frame_table_offset;
-    uint32_t sample_count, thread_count, compression_type;
+    uint64_t sample_count;
+    uint32_t thread_count, compression_type;
 
     memcpy(&start_time_us, &data[HDR_OFF_START_TIME], HDR_SIZE_START_TIME);
     memcpy(&sample_interval_us, &data[HDR_OFF_INTERVAL], HDR_SIZE_INTERVAL);
@@ -95,7 +96,7 @@ reader_parse_header(BinaryReader *reader, const uint8_t *data, size_t file_size)
 
     reader->start_time_us = SWAP64_IF(reader->needs_swap, start_time_us);
     reader->sample_interval_us = SWAP64_IF(reader->needs_swap, sample_interval_us);
-    reader->sample_count = SWAP32_IF(reader->needs_swap, sample_count);
+    reader->sample_count = SWAP64_IF(reader->needs_swap, sample_count);
     reader->thread_count = SWAP32_IF(reader->needs_swap, thread_count);
     reader->string_table_offset = SWAP64_IF(reader->needs_swap, string_table_offset);
     reader->frame_table_offset = SWAP64_IF(reader->needs_swap, frame_table_offset);
@@ -993,10 +994,10 @@ emit_batch(RemoteDebuggingState *state, PyObject *collector,
 
 /* Helper to invoke progress callback, returns -1 on error */
 static inline int
-invoke_progress_callback(PyObject *callback, Py_ssize_t current, uint32_t total)
+invoke_progress_callback(PyObject *callback, Py_ssize_t current, uint64_t total)
 {
     if (callback && callback != Py_None) {
-        PyObject *result = PyObject_CallFunction(callback, "nI", current, total);
+        PyObject *result = PyObject_CallFunction(callback, "nK", current, (unsigned long long)total);
         if (result) {
             Py_DECREF(result);
         } else {
@@ -1248,8 +1249,8 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
 
     if ((uint64_t)replayed != reader->sample_count) {
         PyErr_Format(PyExc_ValueError,
-            "Sample count mismatch: header declares %u samples but replay decoded %zd",
-            reader->sample_count, replayed);
+            "Sample count mismatch: header declares %llu samples but replay decoded %zd",
+            (unsigned long long)reader->sample_count, replayed);
         return -1;
     }
 
@@ -1270,7 +1271,7 @@ binary_reader_get_info(BinaryReader *reader)
         return NULL;
     }
     return Py_BuildValue(
-        "{s:I, s:N, s:K, s:K, s:I, s:I, s:I, s:I, s:i}",
+        "{s:I, s:N, s:K, s:K, s:K, s:I, s:I, s:I, s:i}",
         "version", BINARY_FORMAT_VERSION,
         "python_version", py_version,
         "start_time_us", reader->start_time_us,
