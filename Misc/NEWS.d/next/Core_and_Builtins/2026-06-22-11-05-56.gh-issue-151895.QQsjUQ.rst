@@ -1,0 +1,2 @@
+Fixed a crash in :func:`marshal.loads` when an allocation failed while
+loading a reference-tracked dictionary; it now raises :exc:`MemoryError`.
