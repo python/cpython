@@ -81,6 +81,8 @@ class BinaryCollector(Collector):
             timestamp_us: Optional timestamp in microseconds. If not provided,
                           uses time.monotonic() to generate one.
         """
+        if not self.running:
+            return
         if timestamp_us is None:
             timestamp_us = int(time.monotonic() * 1_000_000)
         try:

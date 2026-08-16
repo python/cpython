@@ -145,6 +145,12 @@ def samples_to_by_thread(samples):
 class BinaryFormatTestBase(unittest.TestCase):
     """Base class with common setup/teardown for binary format tests."""
 
+    HDR_OFF_SAMPLES = 28
+    HDR_OFF_THREADS = 36
+    HDR_OFF_STR_TABLE = 40
+    HDR_OFF_FRAME_TABLE = 48
+    FILE_HEADER_PLACEHOLDER_SIZE = 64
+
     def setUp(self):
         self.temp_files = []
 
@@ -1035,11 +1041,13 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
         collector.export(None)
 
         with open(filename, "rb") as f:
-            header = f.read(32)
+            header = f.read(self.FILE_HEADER_PLACEHOLDER_SIZE)
         magic, version = struct.unpack_from("=II", header, 0)
         self.assertEqual(magic, 0x54414348)  # "TACH"
         self.assertEqual(version, 1)
-        (sample_count,) = struct.unpack_from("=I", header, 28)
+        (sample_count,) = struct.unpack_from(
+            "=Q", header, self.HDR_OFF_SAMPLES
+        )
         self.assertEqual(sample_count, 3)
 
         reader_collector = RawCollector()
@@ -1077,11 +1085,6 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
 class TestBinaryFormatValidation(BinaryFormatTestBase):
     """Tests for malformed binary files."""
 
-    HDR_OFF_SAMPLES = 28
-    HDR_OFF_THREADS = 36
-    HDR_OFF_STR_TABLE = 40
-    HDR_OFF_FRAME_TABLE = 48
-    FILE_HEADER_PLACEHOLDER_SIZE = 64
     FILE_FOOTER_SIZE = 32
     FTR_OFF_STRINGS = 0
     FTR_OFF_FRAMES = 4
