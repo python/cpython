@@ -403,6 +403,11 @@ class Pool(object):
                 enumerated_iter = iter(enumerate(iterable))
                 while True:
                     sema.acquire()
+                    if self._state != RUN:
+                        # The pool is closing or terminating; stop submitting
+                        # the still-throttled tasks so the task handler can
+                        # finish instead of blocking here forever.
+                        break
                     try:
                         i, x = next(enumerated_iter)
                     except StopIteration:
@@ -661,6 +666,10 @@ class Pool(object):
             self._state = CLOSE
             self._worker_handler._state = CLOSE
             self._change_notifier.put(None)
+            # Wake any task generator throttled on a buffersize semaphore so
+            # it observes the CLOSE state and stops submitting.
+            for sema in list(self._taskqueue_buffersize_semaphores):
+                sema.release()
 
     def terminate(self):
         util.debug('terminating pool')
