@@ -1,0 +1,4 @@
+The pure-Python :mod:`pickle` unpickler no longer replaces a :exc:`TypeError`
+raised by an old-style instance constructor with a new one carrying the
+traceback object in its ``args``. The original error now propagates, as it
+already did in the C implementation.
