@@ -561,6 +561,10 @@ PyCurses_ConvertToWideCell(PyObject *obj, wchar_t *wch)
        setcchar() would silently drop a trailing spacing character, or fail
        with a generic error for a control-character base. */
     if (nch > 1) {
+        if (wmemchr(wch, L'\0', nch) != NULL) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            return -1;
+        }
         int bad = wcwidth(wch[0]) < 0;
         for (Py_ssize_t i = 1; !bad && i < nch; i++) {
             bad = wcwidth(wch[i]) != 0;
@@ -835,6 +839,10 @@ static int
 curses_cell_pack(cursesmodule_state *state, curses_cell_t *cell,
                  PyObject *text, attr_t attr, int pair, const char *funcname)
 {
+    if (PyUnicode_FindChar(text, 0, 0, PyUnicode_GET_LENGTH(text), 1) >= 0) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        return -1;
+    }
 #ifdef HAVE_NCURSESW
     wchar_t wstr[CCHARW_MAX + 1];
     if (PyCurses_ConvertToWideCell(text, wstr) < 0) {
@@ -1318,6 +1326,10 @@ static PyObject *
 complexstr_from_string(cursesmodule_state *state, PyObject *str,
                        attr_t attr, int pair)
 {
+    if (PyUnicode_FindChar(str, 0, 0, PyUnicode_GET_LENGTH(str), 1) >= 0) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        return NULL;
+    }
 #ifdef HAVE_NCURSESW
     Py_ssize_t n;
     wchar_t *wbuf = PyUnicode_AsWideCharString(str, &n);

@@ -895,6 +895,25 @@ class TestCurses(unittest.TestCase):
                 self.assertRaises(ValueError, stdscr.insstr, arg)
                 self.assertRaises(ValueError, stdscr.insnstr, arg, 1)
 
+    def test_cell_embedded_null_chars(self):
+        # A cell cannot hold a NUL: setcchar() keeps only the text before it,
+        # so reject it instead of silently truncating the cell.
+        stdscr = self.stdscr
+        for text in ['a\0', '\0', 'a\0\u0301', 'a\0b']:
+            with self.subTest(text=text):
+                self.assertRaises(ValueError, curses.complexchar, text)
+                self.assertRaises(ValueError, curses.complexstr, text)
+                self.assertRaises(ValueError, curses.complexstr, [text])
+        if WIDE_BUILD:
+            self.assertRaises(ValueError, stdscr.addch, 'a\0\u0301')
+        # A lone NUL is still written as a character, like addch(0).
+        stdscr.erase()
+        stdscr.addch(0, 0, 0)
+        expected = stdscr.instr(0, 0, 4)
+        stdscr.erase()
+        stdscr.addch(0, 0, '\0')
+        self.assertEqual(stdscr.instr(0, 0, 4), expected)
+
     def test_add_string_behavior(self):
         # addstr() advances the cursor past the written text; addnstr()
         # writes at most n characters.
