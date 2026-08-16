@@ -7314,7 +7314,7 @@ unicode_encode_ucs1(PyObject *unicode,
                     writer->overallocate = (newpos < size);
                 }
 
-                char *rep_str;
+                const char *rep_str;
                 Py_ssize_t rep_len;
                 if (PyBytes_Check(rep)) {
                     /* Directly copy bytes result to output. */
@@ -8279,7 +8279,10 @@ _PyUnicode_DecodeIconv(const char *encoding,
         char *outptr = (char *)chunk;
         size_t outleft = sizeof(chunk);
 
-        size_t ret = iconv(cd, &inptr, &inleft, &outptr, &outleft);
+        /* Cast the input buffer through void*: iconv() declares its second
+           argument as "char **" on most systems but "const char **" on some
+           (e.g. illumos), and void* converts to either without a warning. */
+        size_t ret = iconv(cd, (void *)&inptr, &inleft, &outptr, &outleft);
         int err = errno;
         in = inptr;
 
@@ -8452,12 +8455,16 @@ _PyUnicode_EncodeIconv(const char *encoding, PyObject *unicode,
         size_t outleft = (size_t)(outend - out);
         /* When the whole string is converted, a final iconv() call with a
            NULL input flushes any pending shift sequence (e.g. ISO-2022). */
-        size_t ret = iconv(cd, flushing ? NULL : &inptr, &inleft, &out, &outleft);
+        /* See the note above on the void* cast of the iconv() input buffer. */
+        size_t ret = iconv(cd, flushing ? NULL : (void *)&inptr, &inleft, &out, &outleft);
         if (!flushing) {
             up = inptr;
         }
 
         if (ret != (size_t)-1) {
+            if (flushing) {
+                break;
+            }
             /* A positive result counts nonreversible conversions: iconv()
                substituted an unencodable character instead of failing with
                EILSEQ (musl and *BSD citrus do this).  Treat it as unencodable
@@ -8474,9 +8481,6 @@ _PyUnicode_EncodeIconv(const char *encoding, PyObject *unicode,
                 /* This code point was substituted; drop it and report it. */
                 out = out_before;
                 up -= unit;
-            }
-            else if (flushing) {
-                break;
             }
             else if (careful && up < uend) {
                 continue;
@@ -8516,11 +8520,19 @@ _PyUnicode_EncodeIconv(const char *encoding, PyObject *unicode,
             replen = PyBytes_GET_SIZE(rep);
         }
         else {
-            /* A str replacement is encoded through the same codec. */
+            /* A str replacement is encoded through the same codec, but
+               strictly: handling its errors in turn could never terminate. */
             assert(PyUnicode_Check(rep));
-            repbytes = _PyUnicode_EncodeIconv(encoding, rep, errors);
+            repbytes = _PyUnicode_EncodeIconv(encoding, rep, NULL);
             Py_DECREF(rep);
             if (repbytes == NULL) {
+                if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError)) {
+                    /* Report the input the caller knows about, not the
+                       replacement. */
+                    PyErr_Clear();
+                    raise_encode_exception(&exc, encoding, unicode, pos, pos + 1,
+                            "unable to encode error handler result");
+                }
                 goto done;
             }
             repdata = PyBytes_AS_STRING(repbytes);
@@ -14722,7 +14734,16 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
     }
 #endif
 
-    FT_MUTEX_LOCK(INTERN_MUTEX);
+    // Why _Py_LOCK_DONT_DETACH is used here: waiting for the interned mutex
+    // must not detach the thread state. Extension code is expected to
+    // detach before blocking on opaque external synchronization. However,
+    // the lock used for C++ static initialization is hidden, making
+    // that difficult, and it is common for C++ extensions to call
+    // PyUnicode_InternFromString() from static initializers. Detaching here
+    // can therefore deadlock: a stop-the-world pause may prevent the lock
+    // owner from reattaching while the pause waits for another attached
+    // thread blocked on the hidden lock.
+    FT_MUTEX_LOCK_FLAGS(INTERN_MUTEX, _Py_LOCK_DONT_DETACH);
     PyObject *t;
     {
         int res = PyDict_SetDefaultRef(interned, s, s, &t);

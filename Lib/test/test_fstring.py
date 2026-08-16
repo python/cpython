@@ -709,6 +709,16 @@ except Exception:
                             ["f'{ {{}} }'", # dict in a set
                              ])
 
+    def test_double_brace_ast_location_covers_both_source_braces(self):
+        value = ast.parse('f"a{{"').body[0].value.values[0]
+        self.assertIsInstance(value, ast.Constant)
+        self.assertEqual(value.value, "a{")
+        self.assertEqual(
+            (value.lineno, value.col_offset, value.end_lineno,
+             value.end_col_offset),
+            (1, 2, 1, 5),
+        )
+
     def test_compile_time_concat(self):
         x = 'def'
         self.assertEqual('abc' f'## {x}ghi', 'abc## defghi')

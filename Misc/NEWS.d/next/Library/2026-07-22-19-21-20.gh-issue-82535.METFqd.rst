@@ -1,0 +1,3 @@
+:class:`logging.handlers.SysLogHandler` no longer fails
+if the address cannot be resolved when the handler is created.
+The address is resolved again when a record is emitted.
