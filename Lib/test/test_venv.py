@@ -133,6 +133,31 @@ class BasicTest(BaseTest):
         self.run_with_capture(venv.create, FakePath(self.env_dir))
         self._check_output_of_default_create()
 
+    def test_envbuilder_symlinks(self):
+        for kwargs, expected in (
+            ({}, os.name != 'nt'),
+            ({'symlinks': None}, os.name != 'nt'),
+            ({'symlinks': True}, True),
+            ({'symlinks': False}, False),
+        ):
+            with self.subTest(kwargs=kwargs):
+                builder = venv.EnvBuilder(**kwargs)
+                self.assertIs(builder.symlinks, expected)
+
+    def test_create_symlinks(self):
+        for kwargs, expected in (
+            ({}, os.name != 'nt'),
+            ({'symlinks': None}, os.name != 'nt'),
+            ({'symlinks': True}, True),
+            ({'symlinks': False}, False),
+        ):
+            with self.subTest(kwargs=kwargs):
+                with patch.object(venv.EnvBuilder, 'create', autospec=True) as create:
+                    venv.create(self.env_dir, **kwargs)
+                builder, env_dir = create.call_args.args
+                self.assertIs(builder.symlinks, expected)
+                self.assertEqual(env_dir, self.env_dir)
+
     def _check_output_of_default_create(self):
         self.isdir(self.bindir)
         self.isdir(self.include)
@@ -146,8 +171,7 @@ class BasicTest(BaseTest):
         self.assertIn('home = %s' % path, data)
         self.assertIn('executable = %s' %
                       os.path.realpath(sys.executable), data)
-        copies = '' if os.name=='nt' else ' --copies'
-        cmd = (f'command = {sys.executable} -m venv{copies} --without-pip '
+        cmd = (f'command = {sys.executable} -m venv --without-pip '
                f'--without-scm-ignore-files {self.env_dir}')
         self.assertIn(cmd, data)
         fn = self.get_env_file(self.bindir, self.exe)
@@ -156,6 +180,7 @@ class BasicTest(BaseTest):
             print('Contents of %r:' % bd)
             print('    %r' % os.listdir(bd))
         self.assertTrue(os.path.exists(fn), 'File %r should exist.' % fn)
+        self.assertEqual(os.path.islink(fn), os.name != 'nt' and can_symlink())
 
     def test_config_file_command_key(self):
         options = [
