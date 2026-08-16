@@ -3818,10 +3818,14 @@ class Win32ProcessTestCase(BaseTestCase):
     # CREATE_NEW_CONSOLE creates a "popup" window.
     @support.requires_resource('gui')
     def test_creationflags(self):
+        # creationflags argument
+        CREATE_NEW_CONSOLE = 16
         sys.stderr.write("    a DOS box should flash briefly ...\n")
-        subprocess.call(sys.executable +
-                        ' -c "import time; time.sleep(0.25)"',
-                        creationflags=subprocess.CREATE_NEW_CONSOLE)
+        rc = subprocess.call(sys.executable +
+                             ' -c "import time; time.sleep(0.25)"',
+                             creationflags=CREATE_NEW_CONSOLE)
+        support.skip_on_low_desktop_heap_memory_subprocess(rc)
+        self.assertEqual(rc, 0)
 
     def test_force_hide(self):
         if ctypes:
@@ -3834,10 +3838,6 @@ class Win32ProcessTestCase(BaseTestCase):
         else:
             script = 'import sys; sys.exit(0)'
         rc = subprocess.call([sys.executable, '-c', script], force_hide=True)
-        rc = subprocess.call(sys.executable +
-                             ' -c "import time; time.sleep(0.25)"',
-                             creationflags=CREATE_NEW_CONSOLE)
-        support.skip_on_low_desktop_heap_memory_subprocess(rc)
         self.assertEqual(rc, 0)
 
     def test_invalid_args(self):
