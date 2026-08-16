@@ -6144,8 +6144,8 @@ PyDoc_STRVAR(_decimal_Context_canonical__doc__,
 "As we do not have different encodings for the same number, the\n"
 "received object already is in its canonical form.\n"
 "\n"
-"    >>> ExtendedContext.canonical(Decimal(\'2.50\'))\n"
-"    Decimal(\'2.50\')");
+">>> ExtendedContext.canonical(Decimal(\'2.50\'))\n"
+"Decimal(\'2.50\')");
 
 #define _DECIMAL_CONTEXT_CANONICAL_METHODDEF    \
     {"canonical", _PyCFunction_CAST(_decimal_Context_canonical), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_canonical__doc__},
@@ -7106,4 +7106,4 @@ exit:
 #ifndef _DECIMAL_CONTEXT_APPLY_METHODDEF
     #define _DECIMAL_CONTEXT_APPLY_METHODDEF
 #endif /* !defined(_DECIMAL_CONTEXT_APPLY_METHODDEF) */
-/*[clinic end generated code: output=24a2345f1ce03ca1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d56f7a18603f50c6 input=a9049054013a1b77]*/

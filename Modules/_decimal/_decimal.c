@@ -7068,14 +7068,14 @@ Returns the same Decimal object.
 As we do not have different encodings for the same number, the
 received object already is in its canonical form.
 
-    >>> ExtendedContext.canonical(Decimal('2.50'))
-    Decimal('2.50')
+>>> ExtendedContext.canonical(Decimal('2.50'))
+Decimal('2.50')
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Context_canonical_impl(PyObject *context, PyTypeObject *cls,
                                 PyObject *x)
-/*[clinic end generated code: output=f213e433e2032e5e input=12735851b2e36f1c]*/
+/*[clinic end generated code: output=f213e433e2032e5e input=d9f19ee3e7ed9433]*/
 {
     decimal_state *state = PyType_GetModuleState(cls);
     if (!PyDec_Check(state, x)) {
