@@ -668,7 +668,7 @@ class Pool(object):
             self._change_notifier.put(None)
             # Wake any task generator throttled on a buffersize semaphore so
             # it observes the CLOSE state and stops submitting.
-            for sema in tuple(self._taskqueue_buffersize_semaphores):
+            for sema in list(self._taskqueue_buffersize_semaphores):
                 sema.release()
 
     def terminate(self):

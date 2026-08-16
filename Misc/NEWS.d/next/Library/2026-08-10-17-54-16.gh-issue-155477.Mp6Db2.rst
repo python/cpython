@@ -1,3 +1,0 @@
-Fix a deadlock when ``multiprocessing.pool.Pool.close()`` is followed by
-``join()`` after only partially consuming an ``imap()`` or ``imap_unordered()``
-iterator that was created with a *buffersize*. Patch by tonghuaroot.
