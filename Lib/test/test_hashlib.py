@@ -1472,28 +1472,28 @@ class TestTSAN(unittest.TestCase):
         self.check_attribute(update, partial(read, obj), read(obj))
 
     @requires_md5
-    @support.subTests("attrname", ['digest_size', 'block_size'])
+    @support.subTests("attrname", ["block_size", "digest_size"])
     def test_HACL_md5_attributes(self, attrname):
         self.check_HACL_attribute(_md5, "md5", attrname)
 
     @requires_sha1
-    @support.subTests("attrname", ['digest_size', 'block_size'])
+    @support.subTests("attrname", ["block_size", "digest_size"])
     def test_HACL_sha1_attributes(self, attrname):
         self.check_HACL_attribute(_sha1, "sha1", attrname)
 
     @requires_sha2
-    @support.subTests("attrname", ['digest_size', 'block_size'])
     @support.subTests("size", [224, 256, 384, 512])
-    def test_HACL_sha2_attributes(self, attrname, size):
+    @support.subTests("attrname", ["block_size", "digest_size"])
+    def test_HACL_sha2_attributes(self, size, attrname):
         self.check_HACL_attribute(_sha2, f"sha{size}", attrname)
 
     @requires_sha3
+    @support.subTests("size", [224, 256, 384, 512])
     @support.subTests(
         "attrname",
-        ['digest_size', 'block_size', '_capacity_bits', '_rate_bits'],
+        ["block_size", "digest_size", "_capacity_bits", "_rate_bits"],
     )
-    @support.subTests("size", [224, 256, 384, 512])
-    def test_HACL_sha3_attributes(self, attrname, size):
+    def test_HACL_sha3_attributes(self, size, attrname):
         self.check_HACL_attribute(_sha3, f"sha3_{size}", attrname)
 
 
