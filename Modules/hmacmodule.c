@@ -865,7 +865,7 @@ static PyObject *
 _hmac_HMAC_copy_impl(HMACObject *self, PyTypeObject *cls)
 /*[clinic end generated code: output=a955bfa55b65b215 input=17b2c0ad0b147e36]*/
 {
-    HMACObject *copy = hmac_new_object(Py_TYPE(self));
+    HMACObject *copy = hmac_new_object(cls);
     if (copy == NULL) {
         return NULL;
     }
