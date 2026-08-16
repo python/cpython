@@ -1452,7 +1452,7 @@ class TestTSAN(unittest.TestCase):
     @support.subTests("version", ["blake2s", "blake2b"])
     @support.subTests("attrname", ["block_size", "digest_size"])
     def test_HACL_blake2_attributes(self, version, attrname):
-        self.check_HACL_attribute(module, version, attrname)
+        self.check_HACL_attribute(_blake2, version, attrname)
 
 
 if __name__ == "__main__":
