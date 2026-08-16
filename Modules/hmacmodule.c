@@ -271,14 +271,6 @@ get_hmacmodule_state(PyObject *module)
     return (hmacmodule_state *)state;
 }
 
-static inline hmacmodule_state *
-get_hmacmodule_state_by_cls(PyTypeObject *cls)
-{
-    void *state = PyType_GetModuleState(cls);
-    assert(state != NULL);
-    return (hmacmodule_state *)state;
-}
-
 // --- HMAC Object ------------------------------------------------------------
 
 typedef Hacl_Streaming_HMAC_agile_state HACL_HMAC_state;
