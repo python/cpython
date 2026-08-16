@@ -1,0 +1,3 @@
+:c:func:`PyMarshal_ReadObjectFromFile` and other functions reading marshalled
+data from a :c:expr:`FILE*` now raise :exc:`OSError` for I/O errors and
+:exc:`KeyboardInterrupt` for interrupted reading, instead of :exc:`EOFError`.

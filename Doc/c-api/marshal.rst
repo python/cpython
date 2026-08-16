@@ -52,8 +52,7 @@ The following functions allow marshalled values to be read back in.
    for reading.  Only a 32-bit value can be read in using this function,
    regardless of the native size of :c:expr:`long`.
 
-   On error, sets the appropriate exception (:exc:`EOFError`) and returns
-   ``-1``.
+   On error, sets the appropriate exception and returns ``-1``.
 
 
 .. c:function:: int PyMarshal_ReadShortFromFile(FILE *file)
@@ -62,8 +61,7 @@ The following functions allow marshalled values to be read back in.
    for reading.  Only a 16-bit value can be read in using this function,
    regardless of the native size of :c:expr:`short`.
 
-   On error, sets the appropriate exception (:exc:`EOFError`) and returns
-   ``-1``.
+   On error, sets the appropriate exception and returns ``-1``.
 
 
 .. c:function:: PyObject* PyMarshal_ReadObjectFromFile(FILE *file)
@@ -71,8 +69,7 @@ The following functions allow marshalled values to be read back in.
    Return a Python object from the data stream in a :c:expr:`FILE*` opened for
    reading.
 
-   On error, sets the appropriate exception (:exc:`EOFError`, :exc:`ValueError`
-   or :exc:`TypeError`) and returns ``NULL``.
+   On error, sets the appropriate exception and returns ``NULL``.
 
 
 .. c:function:: PyObject* PyMarshal_ReadLastObjectFromFile(FILE *file)
@@ -85,8 +82,7 @@ The following functions allow marshalled values to be read back in.
    file.  Only use this variant if you are certain that you won't be reading
    anything else from the file.
 
-   On error, sets the appropriate exception (:exc:`EOFError`, :exc:`ValueError`
-   or :exc:`TypeError`) and returns ``NULL``.
+   On error, sets the appropriate exception and returns ``NULL``.
 
 
 .. c:function:: PyObject* PyMarshal_ReadObjectFromString(const char *data, Py_ssize_t len)
@@ -94,6 +90,5 @@ The following functions allow marshalled values to be read back in.
    Return a Python object from the data stream in a byte buffer
    containing *len* bytes pointed to by *data*.
 
-   On error, sets the appropriate exception (:exc:`EOFError`, :exc:`ValueError`
-   or :exc:`TypeError`) and returns ``NULL``.
+   On error, sets the appropriate exception and returns ``NULL``.
 

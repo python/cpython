@@ -784,6 +784,19 @@ class SliceTestCase(unittest.TestCase, HelperMixin):
 @unittest.skipUnless(_testcapi, 'requires _testcapi')
 class CAPI_TestCase(unittest.TestCase, HelperMixin):
 
+    def test_read_from_file_error(self):
+        # A read error is reported as OSError, not EOFError.
+        # A directory cannot be read (on some platforms it cannot even
+        # be opened, which is reported as OSError as well).
+        os.mkdir(os_helper.TESTFN)
+        self.addCleanup(os_helper.rmdir, os_helper.TESTFN)
+        for func in (_testcapi.pymarshal_read_short_from_file,
+                     _testcapi.pymarshal_read_long_from_file,
+                     _testcapi.pymarshal_read_object_from_file,
+                     _testcapi.pymarshal_read_last_object_from_file):
+            with self.subTest(func=func.__name__):
+                self.assertRaises(OSError, func, os_helper.TESTFN)
+
     def test_write_long_to_file(self):
         for v in range(marshal.version + 1):
             _testcapi.pymarshal_write_long_to_file(0x12345678, os_helper.TESTFN, v)

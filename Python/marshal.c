@@ -872,6 +872,12 @@ r_string(Py_ssize_t n, RFILE *p)
     if (!p->readable) {
         assert(p->fp != NULL);
         read = fread(p->buf, 1, n, p->fp);
+        if (read != n) {
+            assert(read < n);
+            if (!PyErr_CheckSignals() && ferror(p->fp)) {
+                PyErr_SetFromErrno(PyExc_OSError);
+            }
+        }
     }
     else {
         PyObject *res, *mview;
@@ -884,21 +890,23 @@ r_string(Py_ssize_t n, RFILE *p)
             return NULL;
 
         res = _PyObject_CallMethod(p->readable, &_Py_ID(readinto), "N", mview);
-        if (res != NULL) {
-            read = PyNumber_AsSsize_t(res, PyExc_ValueError);
-            Py_DECREF(res);
+        if (res == NULL) {
+            return NULL;
+        }
+        read = PyNumber_AsSsize_t(res, PyExc_ValueError);
+        Py_DECREF(res);
+        if (read > n) {
+            PyErr_Format(PyExc_ValueError,
+                         "read() returned too much data: "
+                         "%zd bytes requested, %zd returned",
+                         n, read);
+            return NULL;
         }
     }
     if (read != n) {
         if (!PyErr_Occurred()) {
-            if (read > n)
-                PyErr_Format(PyExc_ValueError,
-                             "read() returned too much data: "
-                             "%zd bytes requested, %zd returned",
-                             n, read);
-            else
-                PyErr_SetString(PyExc_EOFError,
-                                "EOF read where not expected");
+            PyErr_SetString(PyExc_EOFError,
+                            "EOF read where not expected");
         }
         return NULL;
     }
@@ -918,6 +926,10 @@ r_byte(RFILE *p)
         int c = getc(p->fp);
         if (c != EOF) {
             return c;
+        }
+        if (!PyErr_CheckSignals() && ferror(p->fp)) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            return EOF;
         }
     }
     else {
@@ -1841,8 +1853,16 @@ PyMarshal_ReadLastObjectFromFile(FILE *fp)
     if (filesize > 0 && filesize <= REASONABLE_FILE_LIMIT) {
         char* pBuf = (char *)PyMem_Malloc(filesize);
         if (pBuf != NULL) {
+            PyObject *v = NULL;
             size_t n = fread(pBuf, 1, (size_t)filesize, fp);
-            PyObject* v = PyMarshal_ReadObjectFromString(pBuf, n);
+            if (!PyErr_CheckSignals()) {
+                if (ferror(fp)) {
+                    PyErr_SetFromErrno(PyExc_OSError);
+                }
+                else {
+                    v = PyMarshal_ReadObjectFromString(pBuf, n);
+                }
+            }
             PyMem_Free(pBuf);
             return v;
         }
