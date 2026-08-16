@@ -159,6 +159,8 @@ typedef struct {
     PyTypeObject *complexstr_type;  // _curses.complexstr
     PyObject *topscreen;            // owned ref to the current screen object,
                                     // or NULL for the initscr() screen
+    PyObject *prescreen;            // owned ref to the pending new_prescr() screen,
+                                    // or NULL if there is no pending pre-screen
 } cursesmodule_state;
 
 static inline cursesmodule_state *
@@ -6619,13 +6621,21 @@ _curses_initscr_impl(PyObject *module)
         return NULL;
     }
 
+    cursesmodule_state *state = get_cursesmodule_state(module);
+    if (state->prescreen != NULL) {
+        PyCursesScreenObject *prescreen =
+            _PyCursesScreenObject_CAST(state->prescreen);
+        assert(prescreen->screen != NULL);
+        prescreen->screen = NULL;
+        Py_CLEAR(state->prescreen);
+    }
+
     curses_initscr_called = curses_setupterm_called = TRUE;
 
     if (curses_init_dict(module) < 0) {
         return NULL;
     }
 
-    cursesmodule_state *state = get_cursesmodule_state(module);
     PyObject *winobj = PyCursesWindow_New(state, win, NULL, NULL, NULL);
     if (winobj == NULL) {
         return NULL;
@@ -6801,6 +6811,13 @@ _curses_newterm_impl(PyObject *module, const char *type, PyObject *fd,
     cursesmodule_state *state = get_cursesmodule_state(module);
     /* The screen object owns the SCREEN and the streams; deleting it (when it
        is no longer referenced) calls delscreen() and closes the streams. */
+    if (state->prescreen != NULL) {
+        PyCursesScreenObject *prescreen =
+            _PyCursesScreenObject_CAST(state->prescreen);
+        assert(prescreen->screen == screen);
+        prescreen->screen = NULL;
+        Py_CLEAR(state->prescreen);
+    }
     PyObject *screenobj = PyCursesScreen_New(state, screen, outfp, infp, NULL);
     if (screenobj == NULL) {
         delscreen(screen);
@@ -6898,7 +6915,13 @@ _curses_new_prescr_impl(PyObject *module)
         return NULL;
     }
     cursesmodule_state *state = get_cursesmodule_state(module);
-    return PyCursesScreen_New(state, screen, NULL, NULL, NULL);
+    PyObject *screenobj = PyCursesScreen_New(state, screen, NULL, NULL, NULL);
+    if (screenobj == NULL) {
+        delscreen(screen);
+        return NULL;
+    }
+    Py_XSETREF(state->prescreen, Py_NewRef(screenobj));
+    return screenobj;
 }
 #endif /* HAVE_CURSES_NEW_PRESCR */
 
@@ -8894,6 +8917,7 @@ cursesmodule_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->complexchar_type);
     Py_VISIT(state->complexstr_type);
     Py_VISIT(state->topscreen);
+    Py_VISIT(state->prescreen);
     return 0;
 }
 
@@ -8907,6 +8931,7 @@ cursesmodule_clear(PyObject *mod)
     Py_CLEAR(state->complexchar_type);
     Py_CLEAR(state->complexstr_type);
     Py_CLEAR(state->topscreen);
+    Py_CLEAR(state->prescreen);
     return 0;
 }
 

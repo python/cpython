@@ -3166,6 +3166,31 @@ class ScreenTests(NewtermTestBase):
         # The current screen is unchanged.
         screen.stdscr.refresh()
 
+    @unittest.skipUnless(hasattr(curses, 'new_prescr'),
+                         'requires curses.new_prescr()')
+    def test_newterm_after_new_prescr_keeps_screen_alive(self):
+        # newterm() adopts the SCREEN created by new_prescr().  Dropping the
+        # pre-screen wrapper must not delete the live screen.
+        s = self.make_pty()
+        pre = curses.new_prescr()
+        screen = curses.newterm('xterm', s, s)
+        del pre
+        gc_collect()
+        screen.stdscr.addstr(0, 0, 'x')
+        screen.stdscr.refresh()
+
+    @unittest.skipUnless(hasattr(curses, 'new_prescr'),
+                         'requires curses.new_prescr()')
+    def test_initscr_after_new_prescr_keeps_screen_alive(self):
+        # initscr() adopts the SCREEN created by new_prescr().  Dropping the
+        # pre-screen wrapper must not delete the live screen.
+        pre = curses.new_prescr()
+        stdscr = curses.initscr()
+        del pre
+        gc_collect()
+        stdscr.addstr(0, 0, 'x')
+        stdscr.refresh()
+
     def test_initscr_after_newterm_keeps_screen_alive(self):
         # initscr() called while a newterm() screen is current returns that
         # screen's own standard window, so the window keeps the screen alive.
