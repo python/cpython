@@ -18,6 +18,8 @@ import sysconfig
 import tempfile
 import threading
 import unittest
+from functools import partial
+from operator import attrgetter
 from test import support
 from test.support import _4G, bigmemtest
 from test.support import hashlib_helper
@@ -56,14 +58,12 @@ try:
     import _blake2
 except ImportError:
     _blake2 = None
-
 requires_blake2 = unittest.skipUnless(_blake2, 'requires _blake2')
 
 try:
     import _sha3
 except ImportError:
     _sha3 = None
-
 requires_sha3 = unittest.skipUnless(_sha3, 'requires _sha3')
 
 
@@ -1416,6 +1416,43 @@ class TestScrypt(unittest.TestCase):
         self.assertRaises(ValueError, scrypt, dklen=0)
         MAX_DKLEN = ((1 << 32) - 1) * 32  # see RFC 7914
         self.assertRaises(numeric_exc_types, scrypt, dklen=MAX_DKLEN + 1)
+
+
+@threading_helper.requires_working_threading()
+class TestTSAN(unittest.TestCase):
+
+    @threading_helper.reap_threads
+    def check_attribute(self, write, read, expected, nthreads=8):
+        ready = threading.Event()
+        barrier = threading.Barrier(nthreads)
+
+        def writer():
+            barrier.wait()
+            while not ready.is_set():
+                write()
+
+        def reader():
+            barrier.wait()
+            while not ready.is_set():
+                self.assertEqual(read(), expected)
+
+        targets = [writer if i % 2 else reader for i in range(nthreads)]
+        workers = [threading.Thread(target=target) for target in targets]
+        with threading_helper.start_threads(workers, unlock=ready.set):
+            pass
+
+    def check_HACL_attribute(self, module, version, attrname):
+        blob = b"A" * 65536
+        obj = getattr(module, version)()
+        update = partial(obj.update, blob)
+        read = attrgetter(attrname)
+        self.check_attribute(update, partial(read, obj), read(obj))
+
+    @requires_blake2
+    @support.subTests("version", ["blake2s", "blake2b"])
+    @support.subTests("attrname", ["block_size", "digest_size"])
+    def test_HACL_blake2_attributes(self, version, attrname):
+        self.check_HACL_attribute(module, version, attrname)
 
 
 if __name__ == "__main__":
