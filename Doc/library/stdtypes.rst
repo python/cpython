@@ -706,7 +706,7 @@ A hexadecimal string takes the form::
 
    [sign] ['0x'] integer ['.' fraction] ['p' exponent]
 
-where the optional ``sign`` may by either ``+`` or ``-``, ``integer``
+where the optional ``sign`` may be either ``+`` or ``-``, ``integer``
 and ``fraction`` are strings of hexadecimal digits, and ``exponent``
 is a decimal integer with an optional leading sign.  Case is not
 significant, and there must be at least one hexadecimal digit in
