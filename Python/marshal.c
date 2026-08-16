@@ -417,7 +417,9 @@ w_ref(PyObject *v, char *flag, WFILE *p)
         }
         // Corresponding code should call w_complete() after
         // writing the object.
-        if (PyCode_Check(v) || PySlice_Check(v) || PyFrozenDict_CheckExact(v)) {
+        if (PyTuple_CheckExact(v) || PyCode_Check(v) || PySlice_Check(v) ||
+            PyFrozenDict_CheckExact(v))
+        {
             w |= 0x80000000LU;
         }
         if (_Py_hashtable_set(p->hashtable, Py_NewRef(v),
@@ -596,6 +598,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         for (i = 0; i < n; i++) {
             w_object(PyTuple_GET_ITEM(v, i), p);
         }
+        w_complete(v, p);
     }
     else if (PyList_CheckExact(v)) {
         W_TYPE(TYPE_LIST, p);
@@ -1417,8 +1420,10 @@ r_object(RFILE *p)
             break;
         }
     _read_tuple:
+        idx = r_ref_reserve(flag, p);
+        if (idx < 0)
+            break;
         v = PyTuple_New(n);
-        R_REF(v);
         if (v == NULL)
             break;
 
@@ -1433,7 +1438,7 @@ r_object(RFILE *p)
             }
             PyTuple_SET_ITEM(v, i, v2);
         }
-        retval = v;
+        retval = r_ref_insert(v, idx, flag, p);
         break;
 
     case TYPE_LIST:
