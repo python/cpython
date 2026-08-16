@@ -130,9 +130,12 @@ def pathdirs():
     return dirs
 
 def _getdoc(object):
+    # Docstrings written in the source are dedented by the compiler; the
+    # indentation of generated docstrings is meaningful.
     return inspect.getdoc(object,
                           fallback_to_class_doc=False,
-                          inherit_class_doc=False)
+                          inherit_class_doc=False,
+                          dedent=False)
 
 def getdoc(object):
     """Get the doc string or comments for an object."""
@@ -881,9 +884,10 @@ class HTMLDoc(Doc):
         if data:
             contents = []
             for key, value in data:
-                contents.append(self.document(value, key))
+                contents.append(
+                    f'<dl class="doc"><dt>{self.document(value, key)}</dt></dl>')
             result = result + self.bigsection(
-                'Data', 'data', '<br>\n'.join(contents))
+                'Data', 'data', '\n'.join(contents))
         if hasattr(object, '__author__'):
             contents = self.markup(str(object.__author__), self.preformat)
             result = result + self.bigsection('Author', 'author', contents)
