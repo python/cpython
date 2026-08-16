@@ -594,6 +594,12 @@ _curses_panel_panel_replace_impl(PyCursesPanelObject *self,
         return NULL;
     }
 
+    if (win->win == NULL) {
+        _curses_panel_state *state = get_curses_panel_state_by_panel(self);
+        PyErr_SetString(state->error, "the window has been detached");
+        return NULL;
+    }
+
     int rtn = replace_panel(self->pan, win->win);
     if (rtn == ERR) {
         curses_panel_panel_set_error(self, "replace_panel", "replace");
