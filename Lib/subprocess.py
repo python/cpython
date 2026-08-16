@@ -1696,7 +1696,7 @@ class Popen:
                     # the ones in the handle_list
                     close_fds = False
 
-            if force_hide or shell:
+            if force_hide or (shell and not (startupinfo.dwFlags & _winapi.STARTF_USESHOWWINDOW)):
                 # We pass SW_HIDE to the process so that it will not display any
                 # window even if it normally would.
                 startupinfo.dwFlags |= _winapi.STARTF_USESHOWWINDOW
@@ -1713,9 +1713,6 @@ class Popen:
                 creationflags |= _winapi.CREATE_NEW_CONSOLE
 
             if shell:
-                if not startupinfo.dwFlags & _winapi.STARTF_USESHOWWINDOW:
-                    startupinfo.dwFlags |= _winapi.STARTF_USESHOWWINDOW
-                    startupinfo.wShowWindow = _winapi.SW_HIDE
                 if not executable:
                     # gh-101283: without a fully-qualified path, before Windows
                     # checks the system directories, it first looks in the
