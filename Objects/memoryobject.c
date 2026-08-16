@@ -699,7 +699,7 @@ mbuf_add_view(_PyManagedBufferObject *mbuf, const Py_buffer *src)
     init_flags(mv);
 
     mv->mbuf = (_PyManagedBufferObject*)Py_NewRef(mbuf);
-    mbuf->exports++;
+    FT_ATOMIC_ADD_SSIZE(mbuf->exports, 1);
 
     return (PyObject *)mv;
 }
@@ -729,7 +729,7 @@ mbuf_add_incomplete_view(_PyManagedBufferObject *mbuf, const Py_buffer *src,
     init_shared_values(dest, src);
 
     mv->mbuf = (_PyManagedBufferObject*)Py_NewRef(mbuf);
-    mbuf->exports++;
+    FT_ATOMIC_ADD_SSIZE(mbuf->exports, 1);
 
     return (PyObject *)mv;
 }
