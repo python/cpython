@@ -37,7 +37,7 @@ PyDoc_STRVAR(_decimal_Context_Etop__doc__,
 "Return a value equal to Emax - prec + 1.\n"
 "\n"
 "This is the maximum exponent if the _clamp field of the context is\n"
-"set to 1 (IEEE clamp mode).");
+"set to 1 (IEEE clamp mode).  Etop() must not be negative.");
 
 #define _DECIMAL_CONTEXT_ETOP_METHODDEF    \
     {"Etop", (PyCFunction)_decimal_Context_Etop, METH_NOARGS, _decimal_Context_Etop__doc__},
@@ -6139,7 +6139,13 @@ PyDoc_STRVAR(_decimal_Context_canonical__doc__,
 "canonical($self, x, /)\n"
 "--\n"
 "\n"
-"Return x unchanged.");
+"Returns the same Decimal object.\n"
+"\n"
+"As we do not have different encodings for the same number, the\n"
+"received object already is in its canonical form.\n"
+"\n"
+"    >>> ExtendedContext.canonical(Decimal(\'2.50\'))\n"
+"    Decimal(\'2.50\')");
 
 #define _DECIMAL_CONTEXT_CANONICAL_METHODDEF    \
     {"canonical", _PyCFunction_CAST(_decimal_Context_canonical), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_canonical__doc__},
@@ -7100,4 +7106,4 @@ exit:
 #ifndef _DECIMAL_CONTEXT_APPLY_METHODDEF
     #define _DECIMAL_CONTEXT_APPLY_METHODDEF
 #endif /* !defined(_DECIMAL_CONTEXT_APPLY_METHODDEF) */
-/*[clinic end generated code: output=98b3741f9f7a95fd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=24a2345f1ce03ca1 input=a9049054013a1b77]*/

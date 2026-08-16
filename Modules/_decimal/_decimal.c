@@ -940,12 +940,12 @@ _decimal.Context.Etop
 Return a value equal to Emax - prec + 1.
 
 This is the maximum exponent if the _clamp field of the context is
-set to 1 (IEEE clamp mode).
+set to 1 (IEEE clamp mode).  Etop() must not be negative.
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Context_Etop_impl(PyObject *self)
-/*[clinic end generated code: output=f0a3f6e1b829074e input=a3e53bbf31ffd330]*/
+/*[clinic end generated code: output=f0a3f6e1b829074e input=35b9defc69d5e5d1]*/
 {
     return PyLong_FromSsize_t(mpd_etop(CTX(self)));
 }
@@ -7063,13 +7063,19 @@ _decimal_Context_apply_impl(PyObject *context, PyTypeObject *cls,
 /*[clinic input]
 _decimal.Context.canonical = _decimal.Context.is_normal
 
-Return x unchanged.
+Returns the same Decimal object.
+
+As we do not have different encodings for the same number, the
+received object already is in its canonical form.
+
+    >>> ExtendedContext.canonical(Decimal('2.50'))
+    Decimal('2.50')
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Context_canonical_impl(PyObject *context, PyTypeObject *cls,
                                 PyObject *x)
-/*[clinic end generated code: output=f213e433e2032e5e input=f8fd49573263a2b6]*/
+/*[clinic end generated code: output=f213e433e2032e5e input=12735851b2e36f1c]*/
 {
     decimal_state *state = PyType_GetModuleState(cls);
     if (!PyDec_Check(state, x)) {
