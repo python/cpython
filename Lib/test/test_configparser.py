@@ -1334,6 +1334,30 @@ class ConfigParserTestCaseExtendedInterpolation(BasicTestCase, unittest.TestCase
         with self.assertRaises(ValueError):
             cf['interpolation fail']['case6'] = "BLACK $ABBATH"
 
+    def test_get_with_vars_nested(self):
+        # gh-70999: caller-supplied ``vars`` must be honoured at every level
+        # of a same-section interpolation chain, not just the first.
+        cf = self.fromstring(textwrap.dedent("""
+            [section]
+            a = ${b}
+            b = ${c}
+            c = default
+
+            [cross]
+            via = ${section:c}
+        """).strip())
+
+        eq = self.assertEqual
+        # Directly referencing the overridden option already worked.
+        eq(cf.get('section', 'b', vars={'c': 'OVERRIDE'}), 'OVERRIDE')
+        # Reaching it through another same-section option must too.
+        eq(cf.get('section', 'a', vars={'c': 'OVERRIDE'}), 'OVERRIDE')
+        # Without an override the configured value is still used.
+        eq(cf.get('section', 'a'), 'default')
+        # ``vars`` are scoped to the requested section and must not leak
+        # into a different section reached via ``${section:option}``.
+        eq(cf.get('cross', 'via', vars={'c': 'OVERRIDE'}), 'default')
+
 
 class ConfigParserTestCaseNoValue(ConfigParserTestCase):
     allow_no_value = True
