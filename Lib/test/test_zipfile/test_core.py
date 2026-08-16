@@ -2389,6 +2389,18 @@ class AbstractRepackTests(RepackHelperMixin):
         m_repack.assert_not_called()
 
     @mock.patch.object(zipfile, '_ZipRepacker')
+    def test_repack_reading(self, m_repack):
+        self._prepare_zip_from_test_files(TESTFN, self.test_files)
+        with zipfile.ZipFile(TESTFN, 'a') as zh:
+            with zh.open(self.test_files[0][0]):
+                with self.assertRaises(ValueError):
+                    zh.repack()
+            m_repack.assert_not_called()
+            # Allowed once the reading handle is closed.
+            zh.repack()
+        m_repack.assert_called_once()
+
+    @mock.patch.object(zipfile, '_ZipRepacker')
     def test_repack_mode_r(self, m_repack):
         self._prepare_zip_from_test_files(TESTFN, self.test_files)
         with zipfile.ZipFile(TESTFN, 'r') as zh:
