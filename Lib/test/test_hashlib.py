@@ -1496,6 +1496,15 @@ class TestTSAN(unittest.TestCase):
     def test_HACL_sha3_attributes(self, size, attrname):
         self.check_HACL_attribute(_sha3, f"sha3_{size}", attrname)
 
+    @requires_sha3
+    @support.subTests("size", [128, 256])
+    @support.subTests(
+        "attrname",
+        ["block_size", "digest_size", "_capacity_bits", "_rate_bits"],
+    )
+    def test_HACL_shake_attributes(self, size, attrname):
+        self.check_HACL_attribute(_sha3, f"shake_{size}", attrname)
+
 
 if __name__ == "__main__":
     unittest.main()
