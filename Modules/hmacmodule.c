@@ -681,7 +681,7 @@ hmac_new_object(PyTypeObject *tp)
         return NULL;
     }
     HASHLIB_INIT_MUTEX(self);
-    // tp_alloc initialize the memory to zero but the unknown kind must be -1
+    // tp_alloc initialize the memory to zero but the unknown kind is -1
     self->kind = Py_hmac_kind_hash_unknown;
     return self;
 }
