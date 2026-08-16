@@ -309,15 +309,21 @@ def wait(fs, timeout=None, return_when=ALL_COMPLETED):
 def _result_or_cancel(fut, timeout=None):
     try:
         try:
-            return (fut.result(timeout), None)
-        except TimeoutError as exc:
-            if fut.done():
-                # The future already finished, so this is the callable's own
-                # TimeoutError, not the map() timeout waiting for the future.
+            if timeout is not None:
+                # Wait out the timeout separately from retrieving the result, so
+                # that a TimeoutError raised by the call is not mistaken for the
+                # map() timeout.  Future.exception() raises TimeoutError only
+                # when the wait itself times out, never for the call's own.
+                try:
+                    fut.exception(timeout)
+                except TimeoutError:
+                    raise
+                except CancelledError:
+                    pass
+            try:
+                return (fut.result(), None)
+            except BaseException as exc:
                 return (None, exc)
-            raise
-        except BaseException as exc:
-            return (None, exc)
         finally:
             fut.cancel()
     finally:
