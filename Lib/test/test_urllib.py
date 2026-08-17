@@ -514,6 +514,25 @@ Connection: close
             finally:
                 self.unfakehttp()
 
+    def test_http_error_attribute_values(self):
+        hdrs = {
+            "Authorization": "Bearer foobar",
+            "Accept": "application/json"
+        }
+        err = urllib.error.HTTPError("http://something", 404, "foo", hdrs, None)
+        self.assertEqual(err.filename, "http://something")
+        self.assertEqual(err.code, 404)
+        self.assertEqual(err.msg, "foo")
+        self.assertEqual(err.reason, "foo")
+        self.assertEqual(err.hdrs, hdrs)
+        self.assertEqual(err.headers, hdrs)
+        err.close()
+
+    def test_http_error_default_fp(self):
+        err = urllib.error.HTTPError("http://something", 404, "foo", {}, None)
+        self.assertIsInstance(err.fp, io.BytesIO)
+        err.close()
+
     def test_empty_socket(self):
         # urlopen() raises OSError if the underlying socket does not send any
         # data. (#1680230)
@@ -565,6 +584,11 @@ Connection: close
             urlopen('ftp://localhost')
         finally:
             self.unfakeftp()
+
+    def test_url_error_stringified(self):
+        reason = 'sixseven'
+        err = urllib.error.URLError(reason)
+        self.assertEqual(str(err), f'<urlopen error {reason}>')
 
     def test_userpass_inurl(self):
         self.fakehttp(b"HTTP/1.0 200 OK\r\n\r\nHello!")
