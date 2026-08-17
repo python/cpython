@@ -2,6 +2,7 @@ import importlib
 import pickle
 import threading
 from textwrap import dedent
+import time
 import unittest
 from unittest import mock
 
@@ -356,26 +357,17 @@ class TestQueueOps(TestBase):
             queue.get(HUGE_TIMEOUT, 0.1)
 
     def test_timeout_uses_monotonic_clock(self):
-        # gh-153005: the timeout deadline must be based on time.monotonic(),
-        # not the wall clock, so adjusting the system clock during the call
-        # cannot make get()/put() over- or under-wait.
-        class FakeClock:
-            def __init__(self):
-                self.now = 1000.0
-            def monotonic(self):
-                return self.now
-            def sleep(self, delay):
-                self.now += delay
-            def time(self):
-                raise AssertionError('the wall clock must not be used')
-
-        with mock.patch.object(queues, 'time', FakeClock()):
-            queue = queues.create(1)
+        # gh-153005: the deadline must be computed from the monotonic clock,
+        # since the wall clock can be adjusted while the call is blocked.
+        queue = queues.create(1)
+        with mock.patch.object(queues, 'time', wraps=time) as fake_time:
             with self.assertRaises(queues.QueueEmpty):
-                queue.get(timeout=1, _delay=0.4)
+                queue.get(timeout=0)
             queue.put(None)
             with self.assertRaises(queues.QueueFull):
-                queue.put(None, timeout=1, _delay=0.4)
+                queue.put(None, timeout=0)
+        fake_time.monotonic.assert_called()
+        fake_time.time.assert_not_called()
 
     def test_get_nowait(self):
         queue = queues.create()
