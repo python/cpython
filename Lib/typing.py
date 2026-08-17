@@ -25,6 +25,7 @@ from collections import defaultdict
 import collections.abc
 import copyreg
 import functools
+import keyword
 import operator
 import sys
 import types
@@ -998,8 +999,12 @@ def _make_forward_ref(code, *, parent_fwdref=None, **kwargs):
         if parent_fwdref.__owner__ is not None:
             kwargs['owner'] = parent_fwdref.__owner__
     forward_ref = annotationlib.ForwardRef(code, **kwargs)
-    # For compatibility, eagerly compile the forwardref's code.
-    forward_ref.__forward_code__
+    # For compatibility, eagerly compile the forwardref's code so that any
+    # SyntaxError is raised immediately rather than when the forward
+    # reference is evaluated. Similar to 'ForwardRef.evaluate()', we only compile
+    # it if necessary:
+    if not (code.isidentifier() and not keyword.iskeyword(code)):
+        forward_ref.__forward_code__
     return forward_ref
 
 

@@ -324,5 +324,63 @@ class TestType(TestCase):
         for reader in readers:
             reader.join()
 
+    def test_concurrent_setattr_deadlock(self):
+        # gh-155400: two threads assigning to a special method of the same
+        # class could deadlock.  One thread held the type lock and waited for
+        # the type dict mutex, which its critical section had released when it
+        # blocked on the stop-the-world mutex, while the other held the type
+        # dict mutex and waited for the type lock.
+        # This is fairly difficult to trigger the race but this N seems to do
+        # it at least sometimes.
+        N = 200
+        done = False
+
+        class Base:
+            pass
+
+        def setter():
+            func = lambda self: "x"
+            barrier.wait()
+            while not done:
+                Base.__repr__ = func
+                try:
+                    del Base.__repr__
+                except AttributeError:
+                    pass
+
+        def subclasser():
+            barrier.wait()
+            while not done:
+                type('Sub', (Base,), {})()
+
+        def lister():
+            barrier.wait()
+            while not done:
+                Base.__subclasses__()
+
+        def basesetter():
+            nonlocal done
+            barrier.wait()
+            for _ in range(N):
+                class A:
+                    pass
+                class C:
+                    pass
+                class B(A):
+                    pass
+                B.__bases__ = (C,)
+            done = True
+
+        # The setter threads are the ones that deadlock.  The others are there
+        # to keep the type lock and the stop-the-world mutex contended, which
+        # is what gets the setters into the window where it happens.
+        targets = (setter, setter, subclasser, subclasser,
+                   lister, lister, basesetter)
+        barrier = threading.Barrier(len(targets))
+        threads = [Thread(target=target) for target in targets]
+        with threading_helper.start_threads(threads):
+            pass
+
+
 if __name__ == "__main__":
     unittest.main()

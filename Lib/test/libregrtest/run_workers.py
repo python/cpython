@@ -70,7 +70,6 @@ class MultiprocessIterator:
         with self.lock:
             self.tests_iter = None
 
-
 @dataclasses.dataclass(slots=True, frozen=True)
 class MultiprocessResult:
     result: TestResult
@@ -269,16 +268,22 @@ class WorkerThread(threading.Thread):
                 json_file = JsonFile(json_fd, JsonFileType.UNIX_FD)
         return (json_file, json_tmpfile)
 
-    def create_worker_runtests(self, test_name: TestName, json_file: JsonFile) -> WorkerRunTests:
-        tests = (test_name,)
-        if self.runtests.rerun:
-            match_tests = self.runtests.get_match_tests(test_name)
-        else:
-            match_tests = None
-
+    def create_worker_runtests(self, test_name: TestName,
+                               json_file: JsonFile,
+                               module_name: TestName | None = None,
+                               ) -> WorkerRunTests:
         kwargs: dict[str, Any] = {}
-        if match_tests:
-            kwargs['match_tests'] = [(test, True) for test in match_tests]
+
+        if module_name is not None and test_name != module_name:
+            tests = (module_name,)
+            kwargs['match_tests'] = [(test_name, True)]
+        else:
+            tests = (test_name,)
+            if self.runtests.rerun:
+                match_tests = self.runtests.get_match_tests(test_name)
+                if match_tests:
+                    kwargs['match_tests'] = [(test, True) for test in match_tests]
+
         if self.runtests.output_on_failure:
             kwargs['verbose'] = True
             kwargs['output_on_failure'] = False
@@ -356,11 +361,13 @@ class WorkerThread(threading.Thread):
 
         return (result, stdout)
 
-    def _runtest(self, test_name: TestName) -> MultiprocessResult:
+    def _runtest(self, test_name: TestName,
+                 module_name: TestName | None = None) -> MultiprocessResult:
         with contextlib.ExitStack() as stack:
             stdout_file = self.create_stdout(stack)
             json_file, json_tmpfile = self.create_json_file(stack)
-            worker_runtests = self.create_worker_runtests(test_name, json_file)
+            worker_runtests = self.create_worker_runtests(
+                test_name, json_file, module_name=module_name)
 
             retcode: str | int | None
             retcode, tmp_files = self.run_tmp_files(worker_runtests,
@@ -393,26 +400,38 @@ class WorkerThread(threading.Thread):
     def run(self) -> None:
         fail_fast = self.runtests.fail_fast
         fail_env_changed = self.runtests.fail_env_changed
+        single_process_per_case = self.runtests.single_process_per_case
         try:
-            while not self._stopped:
+            stop = False
+            while not self._stopped and not stop:
                 try:
-                    test_name = next(self.pending)
+                    module_name, case_ids = next(self.pending)
                 except StopIteration:
                     break
 
-                self.start_time = time.monotonic()
-                self.test_name = test_name
-                try:
-                    mp_result = self._runtest(test_name)
-                except WorkerError as exc:
-                    mp_result = exc.mp_result
-                finally:
-                    self.test_name = _NOT_RUNNING
-                mp_result.result.duration = time.monotonic() - self.start_time
-                self.output.put((False, mp_result))
+                # All cases of a group run sequentially on this thread
+                for test_name in case_ids:
+                    if self._stopped:
+                        break
+                    self.start_time = time.monotonic()
+                    self.test_name = test_name
+                    try:
+                        mp_result = self._runtest(
+                            test_name,
+                            module_name if single_process_per_case else None)
+                    except WorkerError as exc:
+                        mp_result = exc.mp_result
+                    finally:
+                        self.test_name = _NOT_RUNNING
+                    mp_result.result.duration = time.monotonic() - self.start_time
+                    if single_process_per_case:
+                        # Report the test case, not the test module
+                        mp_result.result.test_name = test_name
+                    self.output.put((False, mp_result))
 
-                if mp_result.result.must_stop(fail_fast, fail_env_changed):
-                    break
+                    if mp_result.result.must_stop(fail_fast, fail_env_changed):
+                        stop = True
+                        break
         except ExitThread:
             pass
         except BaseException:
@@ -489,8 +508,7 @@ class RunWorkers:
         self.live_worker_count = 0
 
         self.output: queue.Queue[QueueContent] = queue.Queue()
-        tests_iter = runtests.iter_tests()
-        self.pending = MultiprocessIterator(tests_iter)
+        self.pending = MultiprocessIterator(runtests.iter_case_groups())
         self.timeout = runtests.timeout
         if self.timeout is not None:
             # Rely on faulthandler to kill a worker process. This timouet is
