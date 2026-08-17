@@ -1131,17 +1131,17 @@ class SMTPHandler(logging.Handler):
                 if self.username:
                     if self.secure is not None:
                         import ssl
-    
+
                         try:
                             keyfile = self.secure[0]
                         except IndexError:
                             keyfile = None
-    
+
                         try:
                             certfile = self.secure[1]
                         except IndexError:
                             certfile = None
-    
+
                         context = ssl._create_stdlib_context(
                             certfile=certfile, keyfile=keyfile
                         )
