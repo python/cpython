@@ -205,7 +205,7 @@ _PyLocals_GetKind(PyObject *kinds, int i)
 {
     assert(PyBytes_Check(kinds));
     assert(0 <= i && i < PyBytes_GET_SIZE(kinds));
-    char *ptr = PyBytes_AS_STRING(kinds);
+    const char *ptr = PyBytes_AS_STRING(kinds);
     return (_PyLocals_Kind)(ptr[i]);
 }
 
@@ -539,7 +539,8 @@ typedef struct {
 
 PyAPI_FUNC(int) _Py_Instrument(PyCodeObject *co, PyInterpreterState *interp);
 
-extern _Py_CODEUNIT _Py_GetBaseCodeUnit(PyCodeObject *code, int offset);
+// Export for '_testinternalcapi' shared extension
+PyAPI_FUNC(_Py_CODEUNIT) _Py_GetBaseCodeUnit(PyCodeObject *code, int offset);
 
 extern int _PyInstruction_GetLength(PyCodeObject *code, int offset);
 
@@ -580,6 +581,10 @@ PyAPI_FUNC(_Py_CODEUNIT *) _PyCode_GetTLBC(PyCodeObject *co);
 //
 // Returns the reserved index or -1 on error.
 extern int32_t _Py_ReserveTLBCIndex(PyInterpreterState *interp);
+
+// Release an index returned by _Py_ReserveTLBCIndex() that was never stored
+// in a PyThreadState.
+extern void _Py_UnreserveTLBCIndex(PyInterpreterState *interp, int32_t index);
 
 // Release the current thread's index into thread-local bytecode arrays
 extern void _Py_ClearTLBCIndex(_PyThreadStateImpl *tstate);

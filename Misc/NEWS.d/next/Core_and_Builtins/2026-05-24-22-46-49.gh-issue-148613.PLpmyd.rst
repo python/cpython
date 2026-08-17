@@ -1,0 +1,2 @@
+Fix a data race in the free-threaded build between :func:`gc.set_threshold`
+and garbage collection scheduling during object allocation.

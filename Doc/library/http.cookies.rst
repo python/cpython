@@ -25,10 +25,8 @@ The character set, :data:`string.ascii_letters`, :data:`string.digits` and
 in a cookie name (as :attr:`~Morsel.key`).
 
 .. versionchanged:: 3.3
-   Allowed '``:``' as a valid cookie name character.
+   Allowed ':' as a valid cookie name character.
 
-.. versionchanged:: 3.15
-   Allowed '``"``' as a valid cookie value character.
 
 .. note::
 
@@ -108,6 +106,12 @@ Cookie Objects
    supports JavaScript, will act the same as if the HTTP headers was sent.
 
    The meaning for *attrs* is the same as in :meth:`output`.
+
+   .. deprecated-removed:: 3.15 3.19
+      This method generates a JavaScript snippet to set cookies in the browser,
+      which is no longer considered a standard or recommended approach.
+      Use :meth:`~http.cookies.BaseCookie.output` instead to generate HTTP
+      headers.
 
 
 .. method:: BaseCookie.load(rawdata)
@@ -225,6 +229,12 @@ Morsel Objects
 
    The meaning for *attrs* is the same as in :meth:`output`.
 
+   .. deprecated-removed:: 3.15 3.19
+      This method generates a JavaScript snippet to set cookies in the browser,
+      which is no longer considered a standard or recommended approach.
+      Use :meth:`~http.cookies.Morsel.output` instead to generate HTTP
+      headers.
+
 
 .. method:: Morsel.OutputString(attrs=None)
 
@@ -313,10 +323,3 @@ The following example demonstrates how to use the :mod:`!http.cookies` module.
    >>> print(C)
    Set-Cookie: number=7
    Set-Cookie: string=seven
-   >>> import json
-   >>> C = cookies.SimpleCookie()
-   >>> C.load(f'cookies=7; mixins="{json.dumps({"chips": "dark chocolate"})}"; state=gooey')
-   >>> print(C)
-   Set-Cookie: cookies=7
-   Set-Cookie: mixins="{"chips": "dark chocolate"}"
-   Set-Cookie: state=gooey

@@ -1670,7 +1670,6 @@ float___getnewargs___impl(PyObject *self)
 
 
 /*[clinic input]
-@permit_long_docstring_body
 @classmethod
 float.__getformat__
 
@@ -1683,13 +1682,13 @@ You probably don't want to use this function.
 It exists mainly to be used in Python's test suite.
 
 This function returns whichever of 'IEEE, big-endian' or 'IEEE,
-little-endian' best describes the format of floating-point numbers used by the
-C type named by typestr.
+little-endian' best describes the format of floating-point numbers
+used by the C type named by typestr.
 [clinic start generated code]*/
 
 static PyObject *
 float___getformat___impl(PyTypeObject *type, const char *typestr)
-/*[clinic end generated code: output=2bfb987228cc9628 input=0ae1ba35d192f704]*/
+/*[clinic end generated code: output=2bfb987228cc9628 input=eb1cf45e9bddab72]*/
 {
     if (strcmp(typestr, "double") != 0 && strcmp(typestr, "float") != 0) {
         PyErr_SetString(PyExc_ValueError,

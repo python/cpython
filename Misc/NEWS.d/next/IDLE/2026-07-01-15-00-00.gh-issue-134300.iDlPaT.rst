@@ -1,0 +1,3 @@
+Do not add the ``idlelib`` directory to the path of the IDLE user process.
+User code run in IDLE can no longer import ``idlelib`` submodules as
+top-level modules, such as ``import help``.

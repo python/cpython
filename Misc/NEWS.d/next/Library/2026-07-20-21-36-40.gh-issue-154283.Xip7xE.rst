@@ -1,0 +1,2 @@
+On DragonFly BSD, :func:`threading.get_native_id` now returns a value that is
+unique across processes, matching the other platforms.

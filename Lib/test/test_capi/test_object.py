@@ -1,5 +1,6 @@
 import enum
 import os
+import pickle
 import sys
 import textwrap
 import unittest
@@ -61,6 +62,35 @@ class GetConstantTest(unittest.TestCase):
 
     def test_get_constant_borrowed(self):
         self.check_get_constant(_testlimitedcapi.get_constant_borrowed)
+
+
+class SentinelTest(unittest.TestCase):
+
+    def test_pysentinel_new(self):
+        marker = _testcapi.pysentinel_new("CAPI_SENTINEL", __name__)
+        self.assertIs(type(marker), sentinel)
+        self.assertTrue(_testcapi.pysentinel_check(marker))
+        self.assertFalse(_testcapi.pysentinel_check(object()))
+        self.assertTrue(_testcapi.pysentinel_checkexact(marker))
+        self.assertFalse(_testcapi.pysentinel_checkexact(object()))
+        self.assertEqual(marker.__name__, "CAPI_SENTINEL")
+        self.assertEqual(marker.__module__, __name__)
+        self.assertEqual(repr(marker), "CAPI_SENTINEL")
+
+        no_module = _testcapi.pysentinel_new("NO_MODULE")
+        self.assertIs(type(no_module), sentinel)
+        self.assertEqual(no_module.__name__, "NO_MODULE")
+        self.assertIs(no_module.__module__, None)
+
+        with_repr = _testcapi.pysentinel_new("WITH_REPR", __name__, "custom repr")
+        self.assertIs(type(with_repr), sentinel)
+        self.assertEqual(with_repr.__name__, "WITH_REPR")
+        self.assertEqual(with_repr.__module__, __name__)
+        self.assertEqual(repr(with_repr), "custom repr")
+
+        globals()["CAPI_SENTINEL"] = marker
+        self.addCleanup(globals().pop, "CAPI_SENTINEL", None)
+        self.assertIs(pickle.loads(pickle.dumps(marker)), marker)
 
 
 class PrintTest(unittest.TestCase):
@@ -148,10 +178,16 @@ class EnableDeferredRefcountingTest(unittest.TestCase):
     @support.requires_resource("cpu")
     def test_enable_deferred_refcount(self):
         from threading import Thread
+        import gc
 
         self.assertEqual(_testcapi.pyobject_enable_deferred_refcount("not tracked"), 0)
         foo = []
         self.assertEqual(_testcapi.pyobject_enable_deferred_refcount(foo), int(support.Py_GIL_DISABLED))
+
+        # The object must be tracked by the GC
+        not_gc_tracked = tuple([1, 2])
+        self.assertFalse(gc.is_tracked(not_gc_tracked))
+        self.assertEqual(_testcapi.pyobject_enable_deferred_refcount(not_gc_tracked), 0)
 
         # Make sure reference counting works on foo now
         self.assertEqual(foo, [])
