@@ -68,7 +68,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
             # If it asks for something else, let the real one handle it
             # (though normally _check_system_limits only asks for SC_SEM_NSEMS_MAX)
             return os_sysconf_orig(name)
-            
+
         os_sysconf_orig = os.sysconf
         with unittest.mock.patch('os.sysconf', side_effect=mock_sysconf):
             # Should construct without raising PermissionError
