@@ -2395,15 +2395,16 @@ class ZipFile:
         truncation."""
         if self.mode != 'a':
             raise ValueError("repack() requires mode 'a'")
-        if not self.fp:
-            raise ValueError(
-                "Attempt to write to ZIP archive that was already closed")
-        if self._writing:
-            raise ValueError(
-                "Can't write to ZIP archive while an open writing handle exists"
-            )
 
         with self._lock:
+            if not self.fp:
+                raise ValueError(
+                    "Attempt to write to ZIP archive that was already closed")
+            if self._writing or self._fileRefCnt > 1:
+                raise ValueError(
+                    "Can't repack ZIP archive while an open handle exists"
+                )
+
             self._writing = True
             try:
                 repacker = _ZipRepacker(
