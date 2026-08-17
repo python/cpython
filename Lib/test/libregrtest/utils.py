@@ -12,7 +12,17 @@ import sys
 import sysconfig
 import tempfile
 import textwrap
+import types
 from collections.abc import Callable
+_winapi: types.ModuleType | None
+try:
+    import _winapi
+except ImportError:
+    _winapi = None
+try:
+    from _testcapi import get_process_memory_usage as _get_process_memory_usage
+except ImportError:
+    _get_process_memory_usage = None
 
 from test import support
 from test.support import os_helper
@@ -118,7 +128,8 @@ def printlist(x, width=70, indent=4, file=None):
     blanks = ' ' * indent
     # Print the sorted list: 'x' may be a '--random' list or a set()
     print(textwrap.fill(' '.join(str(elt) for elt in sorted(x)), width,
-                        initial_indent=blanks, subsequent_indent=blanks),
+                        initial_indent=blanks, subsequent_indent=blanks,
+                        break_long_words=False, break_on_hyphens=False),
           file=file)
 
 
@@ -150,7 +161,7 @@ def setup_unraisable_hook() -> None:
     sys.unraisablehook = regrtest_unraisable_hook
 
 
-orig_threading_excepthook: Callable[..., None] | None = None
+orig_threading_excepthook: Callable[..., object] | None = None
 
 
 def regrtest_threading_excepthook(args) -> None:
@@ -262,8 +273,7 @@ def clear_caches():
     except KeyError:
         pass
     else:
-        for f in typing._cleanups:
-            f()
+        typing._clear_caches()
 
         import inspect
         abs_classes = filter(inspect.isabstract, typing.__dict__.values())
@@ -452,12 +462,6 @@ def get_temp_dir(tmp_dir: StrPath | None = None) -> StrPath:
                         f"unexpectedly returned {tmp_dir!r} on WASI"
                     )
                 tmp_dir = os.path.join(tmp_dir, 'build')
-
-                # When get_temp_dir() is called in a worker process,
-                # get_temp_dir() path is different than in the parent process
-                # which is not a WASI process. So the parent does not create
-                # the same "tmp_dir" than the test worker process.
-                os.makedirs(tmp_dir, exist_ok=True)
         else:
             tmp_dir = tempfile.gettempdir()
 
@@ -752,3 +756,61 @@ def _sanitize_xml_replace(regs):
 
 def sanitize_xml(text: str) -> str:
     return ILLEGAL_XML_CHARS_RE.sub(_sanitize_xml_replace, text)
+
+
+def display_title(title):
+    print(title)
+    print("#" * len(title))
+    print(flush=True)
+
+
+def _get_process_memory_usage_linux(pid: int) -> int | None:
+    # Linux implementation: read the private memory in bytes from
+    # /proc/pid/smaps.
+    try:
+        fp = open(f"/proc/{pid}/smaps", "rb")
+    except OSError:
+        return None
+
+    try:
+        total = 0
+        with fp:
+            for line in fp:
+                # Include both Private_Clean and Private_Dirty sections.
+                line = line.rstrip()
+                if line.startswith(b"Private_") and line.endswith(b'kB'):
+                    parts = line.split()
+                    total += int(parts[1]) * 1024
+        return total
+    except ProcessLookupError:
+        return None
+
+
+def _get_process_memory_usage_windows(pid: int) -> int | None:
+    assert _winapi is not None  # to make mypy happy
+    try:
+        handle = _winapi.OpenProcess(_winapi.PROCESS_QUERY_LIMITED_INFORMATION,
+                                     False, pid)
+    except OSError:
+        return None
+    try:
+        mem_info = _winapi.GetProcessMemoryInfo(handle)
+    finally:
+        _winapi.CloseHandle(handle)
+    return mem_info['WorkingSetSize']
+
+
+if _get_process_memory_usage is not None:
+    def get_process_memory_usage(pid: int) -> int | None:
+        try:
+            return _get_process_memory_usage(pid)
+        except ProcessLookupError:
+            return None
+elif _winapi is not None:
+    get_process_memory_usage = _get_process_memory_usage_windows
+elif sys.platform == 'linux':
+    get_process_memory_usage = _get_process_memory_usage_linux
+else:
+    def get_process_memory_usage(pid: int) -> int | None:
+        return None
+get_process_memory_usage.__doc__ = "Get process memory usage in bytes."

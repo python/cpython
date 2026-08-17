@@ -78,9 +78,10 @@ def do_check(baseline, checked, excluded, *, verbose_print):
         try:
             checked_ids = checked[name]
         except KeyError:
-            successful = False
-            print(f'{name}: (page missing)')
-            print()
+            if (name, '(page missing)') not in excluded:
+                successful = False
+                print(f'{name}: (page missing)')
+                print()
         else:
             missing_ids = set(baseline_ids) - set(checked_ids)
             if missing_ids:
@@ -175,6 +176,7 @@ def main(argv):
             )
             if args.exclude_file:
                 print(f'Alternatively, add them to {args.exclude_file}.')
+            sys.exit(1)
 
 
 if __name__ == '__main__':

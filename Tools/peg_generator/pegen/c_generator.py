@@ -739,7 +739,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
     def emit_action(self, node: Alt, cleanup_code: str | None = None) -> None:
         self.print(f"_res = {node.action};")
 
-        self.print("if (_res == NULL && PyErr_Occurred()) {")
+        self.print("if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {")
         with self.indent():
             self.print("p->error_indicator = 1;")
             if cleanup_code:

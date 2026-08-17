@@ -1,1 +1,0 @@
-Fix a crash in fork child process when perf support is enabled.

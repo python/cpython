@@ -1,5 +1,6 @@
 # Test the support for SSL and sockets
 
+import contextlib
 import sys
 import unittest
 import unittest.mock
@@ -47,20 +48,21 @@ Py_DEBUG_WIN32 = support.Py_DEBUG and sys.platform == 'win32'
 
 PROTOCOLS = sorted(ssl._PROTOCOL_NAMES)
 HOST = socket_helper.HOST
+IS_AWS_LC = "AWS-LC" in ssl.OPENSSL_VERSION
+IS_LIBRESSL = "LibreSSL" in ssl.OPENSSL_VERSION
 IS_OPENSSL_3_0_0 = ssl.OPENSSL_VERSION_INFO >= (3, 0, 0)
 CAN_GET_SELECTED_OPENSSL_GROUP = ssl.OPENSSL_VERSION_INFO >= (3, 2)
 CAN_IGNORE_UNKNOWN_OPENSSL_GROUPS = ssl.OPENSSL_VERSION_INFO >= (3, 3)
 CAN_GET_AVAILABLE_OPENSSL_GROUPS = ssl.OPENSSL_VERSION_INFO >= (3, 5)
 CAN_GET_AVAILABLE_OPENSSL_SIGALGS = ssl.OPENSSL_VERSION_INFO >= (3, 4)
-CAN_SET_CLIENT_SIGALGS = "AWS-LC" not in ssl.OPENSSL_VERSION
+# LibreSSL does not provide SSL_CTX_set1_(client_)sigalgs_list().
+CAN_SET_CLIENT_SIGALGS = not IS_AWS_LC and not IS_LIBRESSL
+CAN_SET_SERVER_SIGALGS = not IS_LIBRESSL
 CAN_IGNORE_UNKNOWN_OPENSSL_SIGALGS = ssl.OPENSSL_VERSION_INFO >= (3, 3)
 CAN_GET_SELECTED_OPENSSL_SIGALG = ssl.OPENSSL_VERSION_INFO >= (3, 5)
 PY_SSL_DEFAULT_CIPHERS = sysconfig.get_config_var('PY_SSL_DEFAULT_CIPHERS')
 
-HAS_KEYLOG = hasattr(ssl.SSLContext, 'keylog_filename')
-requires_keylog = unittest.skipUnless(
-    HAS_KEYLOG, 'test requires OpenSSL 1.1.1 with keylog callback')
-CAN_SET_KEYLOG = HAS_KEYLOG and os.name != "nt"
+CAN_SET_KEYLOG = (os.name != "nt")
 requires_keylog_setter = unittest.skipUnless(
     CAN_SET_KEYLOG,
     "cannot set 'keylog_filename' on Windows"
@@ -383,6 +385,20 @@ def testing_context(server_cert=SIGNED_CERTFILE, *, server_chain=True,
     return client_context, server_context, hostname
 
 
+def do_ssl_object_handshake(sslobject, outgoing, max_retry=25):
+    """Call do_handshake() on the sslobject and return the sent data.
+
+    If do_handshake() fails more than *max_retry* times, return None.
+    """
+    data, attempt = None, 0
+    while not data and attempt < max_retry:
+        with contextlib.suppress(ssl.SSLWantReadError):
+            sslobject.do_handshake()
+        data = outgoing.read()
+        attempt += 1
+    return data
+
+
 class BasicSocketTests(unittest.TestCase):
 
     def test_constants(self):
@@ -395,7 +411,7 @@ class BasicSocketTests(unittest.TestCase):
         ssl.OP_NO_COMPRESSION
         self.assertEqual(ssl.HAS_SNI, True)
         self.assertEqual(ssl.HAS_ECDH, True)
-        self.assertEqual(ssl.HAS_TLSv1_2, True)
+        self.assertIsInstance(ssl.HAS_TLSv1_2, bool)
         self.assertEqual(ssl.HAS_TLSv1_3, True)
         ssl.OP_NO_SSLv2
         ssl.OP_NO_SSLv3
@@ -586,11 +602,11 @@ class BasicSocketTests(unittest.TestCase):
         # Some sanity checks follow
         # >= 1.1.1
         self.assertGreaterEqual(n, 0x10101000)
-        # < 4.0
-        self.assertLess(n, 0x40000000)
+        # < 5.0
+        self.assertLess(n, 0x50000000)
         major, minor, fix, patch, status = t
         self.assertGreaterEqual(major, 1)
-        self.assertLess(major, 4)
+        self.assertLess(major, 5)
         self.assertGreaterEqual(minor, 0)
         self.assertLess(minor, 256)
         self.assertGreaterEqual(fix, 0)
@@ -622,6 +638,7 @@ class BasicSocketTests(unittest.TestCase):
             del ss
         self.assertEqual(wr(), None)
 
+    @unittest.skipIf(sys.platform == 'cygwin', 'test hangs on Cygwin')
     def test_wrapped_unconnected(self):
         # Methods on an unconnected SSLSocket propagate the original
         # OSError raise by the underlying socket object.
@@ -656,12 +673,14 @@ class BasicSocketTests(unittest.TestCase):
             ssl.OP_NO_TLSv1_2,
             ssl.OP_NO_TLSv1_3
         ]
-        protocols = [
-            ssl.PROTOCOL_TLSv1,
-            ssl.PROTOCOL_TLSv1_1,
-            ssl.PROTOCOL_TLSv1_2,
-            ssl.PROTOCOL_TLS
-        ]
+        protocols = []
+        if hasattr(ssl, 'PROTOCOL_TLSv1'):
+            protocols.append(ssl.PROTOCOL_TLSv1)
+        if hasattr(ssl, 'PROTOCOL_TLSv1_1'):
+            protocols.append(ssl.PROTOCOL_TLSv1_1)
+        if hasattr(ssl, 'PROTOCOL_TLSv1_2'):
+            protocols.append(ssl.PROTOCOL_TLSv1_2)
+        protocols.append(ssl.PROTOCOL_TLS)
         versions = [
             ssl.TLSVersion.SSLv3,
             ssl.TLSVersion.TLSv1,
@@ -1064,6 +1083,8 @@ class ContextTests(unittest.TestCase):
         if CAN_IGNORE_UNKNOWN_OPENSSL_SIGALGS:
             self.assertIsNone(ctx.set_client_sigalgs('rsa_pss_rsae_sha256:?foo'))
 
+    @unittest.skipUnless(CAN_SET_SERVER_SIGALGS,
+                         "SSL library doesn't support setting server sigalgs")
     def test_set_server_sigalgs(self):
         ctx = ssl.create_default_context()
 
@@ -1205,6 +1226,7 @@ class ContextTests(unittest.TestCase):
                 ssl.TLSVersion.TLSv1,
                 ssl.TLSVersion.TLSv1_1,
                 ssl.TLSVersion.TLSv1_2,
+                ssl.TLSVersion.TLSv1_3,
                 ssl.TLSVersion.SSLv3,
             }
         )
@@ -1218,7 +1240,7 @@ class ContextTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             ctx.minimum_version = 42
 
-        if has_tls_protocol(ssl.PROTOCOL_TLSv1_1):
+        if has_tls_protocol('PROTOCOL_TLSv1_1'):
             ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1_1)
 
             self.assertIn(
@@ -1532,6 +1554,49 @@ class ContextTests(unittest.TestCase):
         ctx.set_servername_callback(None)
         ctx.set_servername_callback(dummycallback)
 
+    def test_sni_callback_on_dead_references(self):
+        # See https://github.com/python/cpython/issues/146080.
+        c_ctx = make_test_context()
+        c_inc, c_out = ssl.MemoryBIO(), ssl.MemoryBIO()
+        client = c_ctx.wrap_bio(c_inc, c_out, server_hostname=SIGNED_CERTFILE_HOSTNAME)
+
+        def sni_callback(sock, servername, ctx): pass
+        sni_callback = unittest.mock.Mock(wraps=sni_callback)
+        s_ctx = make_test_context(server_side=True, certfile=SIGNED_CERTFILE)
+        s_ctx.set_servername_callback(sni_callback)
+
+        s_inc, s_out = ssl.MemoryBIO(), ssl.MemoryBIO()
+        server = s_ctx.wrap_bio(s_inc, s_out, server_side=True)
+        server_impl = server._sslobj
+
+        # Perform the handshake on the client side first.
+        data = do_ssl_object_handshake(client, c_out)
+        sni_callback.assert_not_called()
+        if data is None:
+            self.skipTest("cannot establish a handshake from the client")
+        s_inc.write(data)
+        sni_callback.assert_not_called()
+        # Delete the server object before it starts doing its handshake
+        # and ensure that we did not call the SNI callback yet.
+        del server
+        gc.collect()
+        # Try to continue the server's handshake by directly using
+        # the internal SSL object. The latter is a weak reference
+        # stored in the server context and has now a dead owner.
+        with self.assertRaises(ssl.SSLError) as cm:
+            server_impl.do_handshake()
+        # The SNI C callback raised an exception before calling our callback.
+        sni_callback.assert_not_called()
+
+        # In AWS-LC, any handshake failures reports SSL_R_PARSE_TLSEXT,
+        # while OpenSSL uses SSL_R_CALLBACK_FAILED on SNI callback failures.
+        if IS_AWS_LC:
+            libssl_error_reason = "PARSE_TLSEXT"
+        else:
+            libssl_error_reason = "callback failed"
+        self.assertIn(libssl_error_reason, str(cm.exception))
+        self.assertEqual(cm.exception.errno, ssl.SSL_ERROR_SSL)
+
     def test_sni_callback_refcycle(self):
         # Reference cycles through the servername callback are detected
         # and cleared.
@@ -1543,6 +1608,59 @@ class ContextTests(unittest.TestCase):
         del ctx, dummycallback
         gc.collect()
         self.assertIs(wr(), None)
+
+    @support.skip_if_sanitizer("gh-150191: OpenSSL has an internal data race "
+                               "when the SNI callback is replaced during a "
+                               "handshake", thread=True)
+    @threading_helper.requires_working_threading()
+    def test_sni_callback_race(self):
+        # Replacing sni_callback while a handshake is in-flight must not
+        # crash (use-after-free on the callback in free-threaded builds).
+        #
+        # Use a single handshake thread: OpenSSL has internal data races
+        # on shared SSL_CTX state when multiple handshakes run
+        # concurrently against the same context (gh-150191). Concurrency
+        # on the *setter* is what exercises the fix from gh-149816, so
+        # multiple toggler threads race against each other and against
+        # the one handshake worker.
+        client_ctx, server_ctx, hostname = testing_context()
+
+        server_ctx.sni_callback = lambda *a: None
+        deadline = time.monotonic() + 0.1
+
+        def do_handshakes():
+            while time.monotonic() < deadline:
+                c_in = ssl.MemoryBIO()
+                c_out = ssl.MemoryBIO()
+                s_in = ssl.MemoryBIO()
+                s_out = ssl.MemoryBIO()
+                client = client_ctx.wrap_bio(
+                    c_in, c_out, server_hostname=hostname)
+                server = server_ctx.wrap_bio(s_in, s_out, server_side=True)
+                for _ in range(50):
+                    try:
+                        client.do_handshake()
+                    except ssl.SSLWantReadError:
+                        pass
+                    except ssl.SSLError:
+                        break
+                    if c_out.pending:
+                        s_in.write(c_out.read())
+                    try:
+                        server.do_handshake()
+                    except ssl.SSLWantReadError:
+                        pass
+                    except ssl.SSLError:
+                        break
+                    if s_out.pending:
+                        c_in.write(s_out.read())
+
+        def toggle_callback():
+            while time.monotonic() < deadline:
+                server_ctx.sni_callback = lambda *a: None
+                server_ctx.sni_callback = None
+
+        threading_helper.run_concurrently([do_handshakes] + 4 * [toggle_callback])
 
     def test_cert_store_stats(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -1675,28 +1793,58 @@ class ContextTests(unittest.TestCase):
         self.assertFalse(ctx.check_hostname)
         self._assert_context_options(ctx)
 
-        if has_tls_protocol(ssl.PROTOCOL_TLSv1):
+        if has_tls_protocol('PROTOCOL_TLSv1'):
             with warnings_helper.check_warnings():
                 ctx = ssl._create_stdlib_context(ssl.PROTOCOL_TLSv1)
             self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1)
             self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
             self._assert_context_options(ctx)
 
-        with warnings_helper.check_warnings():
-            ctx = ssl._create_stdlib_context(
-                ssl.PROTOCOL_TLSv1_2,
-                cert_reqs=ssl.CERT_REQUIRED,
-                check_hostname=True
-            )
-        self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1_2)
-        self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
-        self.assertTrue(ctx.check_hostname)
-        self._assert_context_options(ctx)
+        if has_tls_protocol('PROTOCOL_TLSv1_2'):
+            with warnings_helper.check_warnings():
+                ctx = ssl._create_stdlib_context(
+                    ssl.PROTOCOL_TLSv1_2,
+                    cert_reqs=ssl.CERT_REQUIRED,
+                    check_hostname=True
+                )
+            self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1_2)
+            self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
+            self.assertTrue(ctx.check_hostname)
+            self._assert_context_options(ctx)
 
         ctx = ssl._create_stdlib_context(purpose=ssl.Purpose.CLIENT_AUTH)
         self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLS_SERVER)
         self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
         self._assert_context_options(ctx)
+
+    def test__create_stdlib_context_check_hostname(self):
+        # gh-114905: check_hostname cannot be combined with CERT_NONE,
+        # the default for cert_reqs.
+        msg = "Cannot set verify_mode to CERT_NONE when check_hostname"
+        with self.assertRaisesRegex(ValueError, msg):
+            ssl._create_stdlib_context(check_hostname=True)
+        with self.assertRaisesRegex(ValueError, msg):
+            ssl._create_stdlib_context(cert_reqs=ssl.CERT_NONE,
+                                       check_hostname=True)
+
+        # Accepted before 3.10 with a legacy protocol.
+        if has_tls_protocol('PROTOCOL_TLSv1_2'):
+            with warnings_helper.check_warnings():
+                with self.assertRaisesRegex(ValueError, msg):
+                    ssl._create_stdlib_context(ssl.PROTOCOL_TLSv1_2,
+                                               cert_reqs=ssl.CERT_NONE,
+                                               check_hostname=True)
+
+        # cert_reqs=None leaves PROTOCOL_TLS_CLIENT's CERT_REQUIRED.
+        ctx = ssl._create_stdlib_context(cert_reqs=None, check_hostname=True)
+        self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
+        self.assertTrue(ctx.check_hostname)
+
+        # CERT_REQUIRED is covered by test__create_stdlib_context().
+        ctx = ssl._create_stdlib_context(cert_reqs=ssl.CERT_OPTIONAL,
+                                         check_hostname=True)
+        self.assertEqual(ctx.verify_mode, ssl.CERT_OPTIONAL)
+        self.assertTrue(ctx.check_hostname)
 
     def test_check_hostname(self):
         with warnings_helper.check_warnings():
@@ -2780,6 +2928,36 @@ class ThreadedEchoServer(threading.Thread):
     def stop(self):
         self.active = False
 
+class TestEOFServer(threading.Thread):
+    def __init__(self):
+        super().__init__()
+        self.listening = threading.Event()
+        self.address = None
+
+    def run(self):
+        context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        context.load_cert_chain(CERTFILE)
+        server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        with server_sock:
+            server_sock.settimeout(support.SHORT_TIMEOUT)
+            server_sock.bind((HOST, 0))
+            server_sock.listen(5)
+
+            self.address = server_sock.getsockname()
+            self.listening.set()
+
+            sock, addr = server_sock.accept()
+            sslconn = context.wrap_socket(sock, server_side=True)
+            with sslconn:
+                request = b''
+                while chunk := sslconn.recv(1024):
+                    request += chunk
+                    if b'\n' in chunk:
+                        break
+
+                sslconn.sendall(b'server\n')
+                sslconn.shutdown(socket.SHUT_WR)
+
 class AsyncoreEchoServer(threading.Thread):
 
     # this one's based on asyncore.dispatcher
@@ -3485,7 +3663,7 @@ class ThreadedTests(unittest.TestCase):
                 OSError,
                 'alert unknown ca|EOF occurred|TLSV1_ALERT_UNKNOWN_CA|'
                 'closed by the remote host|Connection reset by peer|'
-                'Broken pipe'
+                'Broken pipe|Software caused connection abort'
             ):
                 # TLS 1.3 perform client cert exchange after handshake
                 s.write(b'data')
@@ -3654,10 +3832,10 @@ class ThreadedTests(unittest.TestCase):
                            client_options=ssl.OP_NO_TLSv1_2)
 
         try_protocol_combo(ssl.PROTOCOL_TLS, ssl.PROTOCOL_TLSv1_2, 'TLSv1.2')
-        if has_tls_protocol(ssl.PROTOCOL_TLSv1):
+        if has_tls_protocol('PROTOCOL_TLSv1'):
             try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_TLSv1, False)
             try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLSv1_2, False)
-        if has_tls_protocol(ssl.PROTOCOL_TLSv1_1):
+        if has_tls_protocol('PROTOCOL_TLSv1_1'):
             try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_TLSv1_1, False)
             try_protocol_combo(ssl.PROTOCOL_TLSv1_1, ssl.PROTOCOL_TLSv1_2, False)
 
@@ -4439,6 +4617,8 @@ class ThreadedTests(unittest.TestCase):
             ssl.SSLError,
             # On handshake failures, some systems raise a ConnectionResetError.
             ConnectionResetError,
+            # On handshake failures, Cygwin raises ConnectionAbortedError.
+            ConnectionAbortedError,
             # On handshake failures, macOS may raise a BrokenPipeError.
             # See https://github.com/python/cpython/issues/139504.
             BrokenPipeError,
@@ -4447,6 +4627,8 @@ class ThreadedTests(unittest.TestCase):
                                chatty=True, connectionchatty=True,
                                sni_name=hostname)
 
+    @unittest.skipUnless(CAN_SET_SERVER_SIGALGS,
+                         "SSL library doesn't support setting server sigalgs")
     def test_server_sigalgs(self):
         # server rsa_pss_rsae_sha384, client auto
         sigalg = "rsa_pss_rsae_sha384"
@@ -4467,6 +4649,8 @@ class ThreadedTests(unittest.TestCase):
         if CAN_GET_SELECTED_OPENSSL_SIGALG:
             self.assertEqual(stats['server_sigalg'], sigalg)
 
+    @unittest.skipUnless(CAN_SET_SERVER_SIGALGS,
+                         "SSL library doesn't support setting server sigalgs")
     def test_server_sigalgs_mismatch(self):
         client_context, server_context, hostname = testing_context()
         client_context.set_server_sigalgs("rsa_pss_rsae_sha256")
@@ -4611,7 +4795,9 @@ class ThreadedTests(unittest.TestCase):
                                            sni_name='supermessage')
 
             # Allow for flexible libssl error messages.
-            regex = "(SSLV3_ALERT_HANDSHAKE_FAILURE|NO_PRIVATE_VALUE)"
+            regex = ("(TLS_ALERT_HANDSHAKE_FAILURE"
+                     "|SSLV3_ALERT_HANDSHAKE_FAILURE"
+                     "|NO_PRIVATE_VALUE)")
             self.assertRegex(cm.exception.reason, regex)
             self.assertEqual(catch.unraisable.exc_type, ZeroDivisionError)
 
@@ -4900,6 +5086,9 @@ class ThreadedTests(unittest.TestCase):
             with client_context.wrap_socket(socket.socket()) as s:
                 s.connect((HOST, server.port))
 
+    @support.skip_if_sanitizer("gh-150191: OpenSSL races on SSL->rwstate and "
+                               "the socket BIO flags with concurrent read "
+                               "and write", thread=True)
     def test_thread_recv_while_main_thread_sends(self):
         # GH-137583: Locking was added to calls to send() and recv() on SSL
         # socket objects. This seemed fine at the surface level because those
@@ -4935,6 +5124,50 @@ class ThreadedTests(unittest.TestCase):
                     thread.join()
                     if cm.exc_value is not None:
                         raise cm.exc_value
+
+    def test_got_eof(self):
+        # gh-148292: Test that _ssl._SSLSocket behaves the same on all OpenSSL
+        # versions on calling methods after EOF (after the first SSLEOFError).
+
+        server = TestEOFServer()
+        server.start()
+        if not server.listening.wait(support.SHORT_TIMEOUT):
+            raise RuntimeError("server took too long")
+        self.addCleanup(server.join)
+
+        context = ssl.create_default_context(cafile=CERTFILE)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(support.SHORT_TIMEOUT)
+        sock.connect(server.address)
+        sslsock = context.wrap_socket(sock, server_hostname='localhost')
+        with sslsock:
+            sslsock.sendall(b'client\n')
+            # test the _ssl._SSLSocket object, not ssl.SSLSocket
+            sslobj = sslsock._sslobj
+
+            data = sslobj.read(1024)
+            self.assertEqual(data, b'server\n')
+
+            # The second read gets EOF error and sets got_eof_error to 1
+            with self.assertRaises(ssl.SSLEOFError):
+                sslobj.read(1024)
+
+            # Following read(), sendfile(), write() and do_handshake() calls
+            # must raise SSLEOFError
+            with self.assertRaises(ssl.SSLEOFError):
+                # The _SSLSocket remembers the previous EOF error
+                # and raises again SSLEOFError
+                sslobj.read(1024)
+            if hasattr(sslobj, 'sendfile'):
+                with open(__file__, "rb") as fp:
+                    with self.assertRaises(ssl.SSLEOFError):
+                        sslobj.sendfile(fp.fileno(), 0, 1)
+            with self.assertRaises(ssl.SSLEOFError):
+                sslobj.write(b'client2\n')
+            with self.assertRaises(ssl.SSLEOFError):
+                sslsock.do_handshake()
+
+            self.assertEqual(sslsock.pending(), 0)
 
 
 @unittest.skipUnless(has_tls_version('TLSv1_3') and ssl.HAS_PHA,
@@ -5258,7 +5491,6 @@ class TestSSLDebug(unittest.TestCase):
         with open(fname) as f:
             return len(list(f))
 
-    @requires_keylog
     def test_keylog_defaults(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -5286,7 +5518,6 @@ class TestSSLDebug(unittest.TestCase):
         with self.assertRaises(TypeError):
             ctx.keylog_filename = 1
 
-    @requires_keylog
     def test_keylog_filename(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         client_context, server_context, hostname = testing_context()
@@ -5327,7 +5558,6 @@ class TestSSLDebug(unittest.TestCase):
         client_context.keylog_filename = None
         server_context.keylog_filename = None
 
-    @requires_keylog
     @unittest.skipIf(sys.flags.ignore_environment,
                      "test is not compatible with ignore_environment")
     def test_keylog_env(self):
@@ -5501,17 +5731,29 @@ class TestPreHandshakeClose(unittest.TestCase):
     def non_linux_skip_if_other_okay_error(self, err):
         if sys.platform in ("linux", "android"):
             return  # Expect the full test setup to always work on Linux.
-        if (isinstance(err, ConnectionResetError) or
+        if (isinstance(err, (ConnectionResetError, ConnectionAbortedError)) or
             (isinstance(err, OSError) and err.errno == errno.EINVAL) or
-            re.search('wrong.version.number', str(getattr(err, "reason", "")), re.I)):
+            re.search(
+                # Matches the following error messages:
+                # '[SSL: WRONG_VERSION_NUMBER] wrong version number (_ssl.c:1123)'
+                # '[SSL: RECORD_LAYER_FAILURE] record layer failure (_ssl.c:1109)'
+                # '[SSL: HTTP_REQUEST] http request (_ssl.c:1143)'
+                r'wrong.version.number|record.layer.failure|http.request',
+                str(getattr(err, "reason", "")),
+                re.IGNORECASE,
+            )
+        ):
             # On Windows the TCP RST leads to a ConnectionResetError
             # (ECONNRESET) which Linux doesn't appear to surface to userspace.
             # If wrap_socket() winds up on the "if connected:" path and doing
-            # the actual wrapping... we get an SSLError from OpenSSL. Typically
-            # WRONG_VERSION_NUMBER. While appropriate, neither is the scenario
-            # we're specifically trying to test. The way this test is written
-            # is known to work on Linux. We'll skip it anywhere else that it
-            # does not present as doing so.
+            # the actual wrapping... we get an SSLError from OpenSSL. This is
+            # typically WRONG_VERSION_NUMBER. The same happens on iOS, but
+            # RECORD_LAYER_FAILURE or HTTP_REQUEST is the error.
+            #
+            # While appropriate, these scenarios aren't what we're specifically
+            # trying to test. The way this test is written is known to work on
+            # Linux. We'll skip it anywhere else that it does not present as
+            # doing so.
             try:
                 self.skipTest(f"Could not recreate conditions on {sys.platform}:"
                               f" {err=}")

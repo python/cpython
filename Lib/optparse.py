@@ -407,10 +407,12 @@ def _parse_num(val, type):
 def _parse_int(val):
     return _parse_num(val, int)
 
-_builtin_cvt = { "int" : (_parse_int, _("integer")),
-                 "long" : (_parse_int, _("integer")),
-                 "float" : (float, _("floating-point")),
-                 "complex" : (complex, _("complex")) }
+_builtin_cvt = frozendict({
+    "int": (_parse_int, _("integer")),
+    "long": (_parse_int, _("integer")),
+    "float": (float, _("floating-point")),
+    "complex": (complex, _("complex")),
+})
 
 def check_builtin(option, opt, value):
     (cvt, what) = _builtin_cvt[option.type]
@@ -827,6 +829,12 @@ class Values:
             return self.__dict__ == other
         else:
             return NotImplemented
+
+    def __replace__(self, /, **changes):
+        new = self.__class__()
+        new.__dict__.update(self.__dict__)
+        new.__dict__.update(changes)
+        return new
 
     def _update_careful(self, dict):
         """

@@ -9,6 +9,66 @@ preserve
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
+PyDoc_STRVAR(Struct__doc__,
+"Struct(format)\n"
+"--\n"
+"\n"
+"Create a compiled struct object.\n"
+"\n"
+"Return a new Struct object which writes and reads binary data according\n"
+"to the format string.  See help(struct) for more on format strings.");
+
+static PyObject *
+Struct_impl(PyTypeObject *type, PyObject *format);
+
+static PyObject *
+Struct(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(format), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"format", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "Struct",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    PyObject *format;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    format = fastargs[0];
+    return_value = Struct_impl(type, format);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(Struct___init____doc__,
 "Struct(format)\n"
 "--\n"
@@ -113,8 +173,8 @@ PyDoc_STRVAR(Struct_unpack_from__doc__,
 "\n"
 "Values are unpacked according to the struct format string.  The\n"
 "buffer\'s size in bytes, starting at position offset, must be at\n"
-"least the struct size.  See help(struct) for more on format\n"
-"strings.");
+"least the struct size.  A negative offset counts from the end of\n"
+"the buffer.  See help(struct) for more on format strings.");
 
 #define STRUCT_UNPACK_FROM_METHODDEF    \
     {"unpack_from", _PyCFunction_CAST(Struct_unpack_from), METH_FASTCALL|METH_KEYWORDS, Struct_unpack_from__doc__},
@@ -259,8 +319,9 @@ PyDoc_STRVAR(Struct_pack_into__doc__,
 "\n"
 "Pack the provided values according to the struct format string\n"
 "and write the packed bytes into the writable buffer starting at\n"
-"offset.  Note that the offset is a required argument.  See\n"
-"help(struct) for more on format strings.");
+"offset.  Note that the offset is a required argument.  A negative\n"
+"offset counts from the end of the buffer.  See help(struct) for\n"
+"more on format strings.");
 
 #define STRUCT_PACK_INTO_METHODDEF    \
     {"pack_into", _PyCFunction_CAST(Struct_pack_into), METH_FASTCALL, Struct_pack_into__doc__},
@@ -430,8 +491,8 @@ PyDoc_STRVAR(pack_into__doc__,
 "\n"
 "Pack the provided values according to the format string and write the\n"
 "packed bytes into the writable buffer starting at offset.  Note that the\n"
-"offset is a required argument.  See help(struct) for more on format\n"
-"strings.");
+"offset is a required argument.  A negative offset counts from the end of\n"
+"the buffer.  See help(struct) for more on format strings.");
 
 #define PACK_INTO_METHODDEF    \
     {"pack_into", _PyCFunction_CAST(pack_into), METH_FASTCALL, pack_into__doc__},
@@ -538,7 +599,8 @@ PyDoc_STRVAR(unpack_from__doc__,
 "\n"
 "Return a tuple containing values unpacked according to the format string.\n"
 "\n"
-"The buffer\'s size, minus offset, must be at least calcsize(format).  See\n"
+"The buffer must contain at least calcsize(format) bytes starting at\n"
+"offset.  A negative offset counts from the end of the buffer.  See\n"
 "help(struct) for more on format strings.");
 
 #define UNPACK_FROM_METHODDEF    \
@@ -664,4 +726,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=09ee4ac45b7e709b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=021b89d2d3c3c225 input=a9049054013a1b77]*/

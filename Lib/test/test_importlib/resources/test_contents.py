@@ -1,5 +1,5 @@
+import importlib.resources as resources
 import unittest
-from importlib import resources
 
 from . import util
 

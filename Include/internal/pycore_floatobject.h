@@ -12,7 +12,6 @@ extern "C" {
 
 /* runtime lifecycle */
 
-extern void _PyFloat_InitState(PyInterpreterState *);
 extern PyStatus _PyFloat_InitTypes(PyInterpreterState *);
 extern void _PyFloat_FiniType(PyInterpreterState *);
 
@@ -42,6 +41,15 @@ extern double _Py_parse_inf_or_nan(const char *p, char **endptr);
 
 extern int _Py_convert_int_to_double(PyObject **v, double *dbl);
 
+/* Should match endianness of the platform in most (all?) cases. */
+
+#ifdef DOUBLE_IS_BIG_ENDIAN_IEEE754
+#  define _PY_FLOAT_BIG_ENDIAN 1
+#  define _PY_FLOAT_LITTLE_ENDIAN 0
+#else
+#  define _PY_FLOAT_BIG_ENDIAN 0
+#  define _PY_FLOAT_LITTLE_ENDIAN 1
+#endif
 
 #ifdef __cplusplus
 }

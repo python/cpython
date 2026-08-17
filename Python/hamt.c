@@ -4,6 +4,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _PyLong_Format()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 
 #include <stddef.h>               // offsetof()
 
@@ -701,6 +702,7 @@ hamt_node_bitmap_assoc(PyHamtNode_Bitmap *self,
 
             PyHamtNode_Bitmap *ret = hamt_node_bitmap_clone(self);
             if (ret == NULL) {
+                Py_DECREF(sub_node);
                 return NULL;
             }
             Py_SETREF(ret->b_array[val_idx], (PyObject*)sub_node);
@@ -993,6 +995,7 @@ hamt_node_bitmap_without(PyHamtNode_Bitmap *self,
 
                 PyHamtNode_Bitmap *clone = hamt_node_bitmap_clone(self);
                 if (clone == NULL) {
+                    Py_DECREF(sub_node);
                     return W_ERROR;
                 }
 
@@ -2448,6 +2451,10 @@ hamt_baseiter_tp_clear(PyObject *op)
 {
     PyHamtIterator *it = (PyHamtIterator*)op;
     Py_CLEAR(it->hi_obj);
+    /* i_nodes holds borrowed pointers into the tree that hi_obj was keeping
+       alive, so the cursor must not be used again.  A negative i_level makes
+       hamt_iterator_next() report I_END without touching i_nodes. */
+    it->hi_iter.i_level = -1;
     return 0;
 }
 
@@ -2494,6 +2501,10 @@ static Py_ssize_t
 hamt_baseiter_tp_len(PyObject *op)
 {
     PyHamtIterator *it = (PyHamtIterator*)op;
+    if (it->hi_obj == NULL) {
+        /* tp_clear() ran on this iterator. */
+        return 0;
+    }
     return it->hi_obj->h_count;
 }
 
@@ -2514,6 +2525,7 @@ hamt_baseiter_new(PyTypeObject *type, binaryfunc yield, PyHamtObject *o)
 
     hamt_iterator_init(&it->hi_iter, o->h_root);
 
+    PyObject_GC_Track(it);
     return (PyObject*)it;
 }
 
@@ -2542,7 +2554,7 @@ PyTypeObject _PyHamtItems_Type = {
 static PyObject *
 hamt_iter_yield_items(PyObject *key, PyObject *val)
 {
-    return PyTuple_Pack(2, key, val);
+    return _PyTuple_FromPair(key, val);
 }
 
 PyObject *

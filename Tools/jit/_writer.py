@@ -1,9 +1,9 @@
-"""Utilities for writing StencilGroups out to a C header file."""
+"""Utilities for writing JIT build artifacts out to C header files."""
 
-import itertools
 import typing
 import math
 
+import _dwarf
 import _stencils
 
 
@@ -23,12 +23,8 @@ def _dump_footer(
     yield "    symbol_mask got_mask;"
     yield "} StencilGroup;"
     yield ""
-    yield f"static const StencilGroup shim = {groups['shim'].as_c('shim')};"
-    yield ""
     yield "static const StencilGroup stencil_groups[MAX_UOP_REGS_ID + 1] = {"
     for opname, group in sorted(groups.items()):
-        if opname == "shim":
-            continue
         yield f"    [{opname}] = {group.as_c(opname)},"
     yield "};"
     yield ""
@@ -61,15 +57,8 @@ def _dump_stencil(opname: str, group: _stencils.StencilGroup) -> typing.Iterator
     for part, stencil in [("data", group.data), ("code", group.code)]:
         if stencil.body.rstrip(b"\x00"):
             yield f"    memcpy({part}, {part}_body, sizeof({part}_body));"
-        skip = False
         stencil.holes.sort(key=lambda hole: hole.offset)
-        for hole, pair in itertools.zip_longest(stencil.holes, stencil.holes[1:]):
-            if skip:
-                skip = False
-                continue
-            if pair and (folded := hole.fold(pair, stencil.body)):
-                skip = True
-                hole = folded
+        for hole in stencil.holes:
             yield f"    {hole.as_c(part)}"
     yield "}"
     yield ""
@@ -82,3 +71,26 @@ def dump(
     for opname, group in groups.items():
         yield from _dump_stencil(opname, group)
     yield from _dump_footer(groups, symbols)
+
+
+def dump_unwind_info(
+    unwind_info: _dwarf.UnwindInfo | None,
+) -> typing.Iterator[str]:
+    """Yield JIT unwind information line-by-line as a C header file."""
+    if unwind_info is None:
+        yield "#define JIT_UNWIND_INFO_SUPPORTED 0"
+        return
+
+    yield "#define JIT_UNWIND_INFO_SUPPORTED 1"
+    fields = [
+        ("JIT_UNWIND_CODE_ALIGNMENT_FACTOR", unwind_info.code_alignment_factor),
+        ("JIT_UNWIND_DATA_ALIGNMENT_FACTOR", unwind_info.data_alignment_factor),
+        ("JIT_UNWIND_RA_REG", unwind_info.return_address_register),
+        ("JIT_UNWIND_CFA_REG", unwind_info.cfa_register),
+        ("JIT_UNWIND_CFA_OFFSET", unwind_info.cfa_offset),
+        ("JIT_UNWIND_FP_REG", unwind_info.frame_pointer_register),
+        ("JIT_UNWIND_FP_OFFSET", unwind_info.frame_pointer_offset),
+        ("JIT_UNWIND_RA_OFFSET", unwind_info.return_address_offset),
+    ]
+    for name, value in fields:
+        yield f"#define {name} {value}"

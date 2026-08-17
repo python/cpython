@@ -254,6 +254,7 @@ get_module_state(PyObject *module)
     }
     else {
         module_state *state = (module_state*)PyModule_GetState(module);
+        assert(state == PyModule_GetState_DuringGC(module));
         assert(state != NULL);
         return state;
     }

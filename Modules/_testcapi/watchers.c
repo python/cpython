@@ -9,6 +9,7 @@
 #include "pycore_function.h"      // FUNC_MAX_WATCHERS
 #include "pycore_interp_structs.h" // CODE_MAX_WATCHERS
 #include "pycore_context.h"       // CONTEXT_MAX_WATCHERS
+#include "pycore_lock.h"          // _PyOnceFlag
 
 /*[clinic input]
 module _testcapi
@@ -18,6 +19,14 @@ module _testcapi
 // Test dict watching
 static PyObject *g_dict_watch_events = NULL;
 static int g_dict_watchers_installed = 0;
+static _PyOnceFlag g_dict_watch_once = {0};
+
+static int
+_init_dict_watch_events(void *arg)
+{
+    g_dict_watch_events = PyList_New(0);
+    return g_dict_watch_events ? 0 : -1;
+}
 
 static int
 dict_watch_callback(PyDict_WatchEvent event,
@@ -106,13 +115,10 @@ add_dict_watcher(PyObject *self, PyObject *kind)
     if (watcher_id < 0) {
         return NULL;
     }
-    if (!g_dict_watchers_installed) {
-        assert(!g_dict_watch_events);
-        if (!(g_dict_watch_events = PyList_New(0))) {
-            return NULL;
-        }
+    if (_PyOnceFlag_CallOnce(&g_dict_watch_once, _init_dict_watch_events, NULL) < 0) {
+        return NULL;
     }
-    g_dict_watchers_installed++;
+    _Py_atomic_add_int(&g_dict_watchers_installed, 1);
     return PyLong_FromLong(watcher_id);
 }
 
@@ -122,10 +128,8 @@ clear_dict_watcher(PyObject *self, PyObject *watcher_id)
     if (PyDict_ClearWatcher(PyLong_AsLong(watcher_id))) {
         return NULL;
     }
-    g_dict_watchers_installed--;
-    if (!g_dict_watchers_installed) {
-        assert(g_dict_watch_events);
-        Py_CLEAR(g_dict_watch_events);
+    if (_Py_atomic_add_int(&g_dict_watchers_installed, -1) == 1) {
+        PyList_Clear(g_dict_watch_events);
     }
     Py_RETURN_NONE;
 }
@@ -164,7 +168,7 @@ _testcapi_unwatch_dict_impl(PyObject *module, int watcher_id, PyObject *dict)
 static PyObject *
 get_dict_watcher_events(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    if (!g_dict_watch_events) {
+    if (_Py_atomic_load_int(&g_dict_watchers_installed) <= 0) {
         PyErr_SetString(PyExc_RuntimeError, "no watchers active");
         return NULL;
     }
@@ -212,13 +216,32 @@ type_modified_callback_error(PyTypeObject *type)
     return -1;
 }
 
+static int
+type_modified_callback_name(PyTypeObject *type)
+{
+    assert(PyList_Check(g_type_modified_events));
+    PyObject *name = PyUnicode_FromString(type->tp_name);
+    if (name == NULL) {
+        return -1;
+    }
+    if (PyList_Append(g_type_modified_events, name) < 0) {
+        Py_DECREF(name);
+        return -1;
+    }
+    Py_DECREF(name);
+    return 0;
+}
+
 static PyObject *
 add_type_watcher(PyObject *self, PyObject *kind)
 {
     int watcher_id;
     assert(PyLong_Check(kind));
     long kind_l = PyLong_AsLong(kind);
-    if (kind_l == 2) {
+    if (kind_l == 3) {
+        watcher_id = PyType_AddWatcher(type_modified_callback_name);
+    }
+    else if (kind_l == 2) {
         watcher_id = PyType_AddWatcher(type_modified_callback_wrap);
     }
     else if (kind_l == 1) {
@@ -364,7 +387,7 @@ add_code_watcher(PyObject *self, PyObject *which_watcher)
         watcher_id = PyCode_AddWatcher(error_code_event_handler);
     }
     else {
-        PyErr_Format(PyExc_ValueError, "invalid watcher %d", which_l);
+        PyErr_Format(PyExc_ValueError, "invalid watcher %ld", which_l);
         return NULL;
     }
     if (watcher_id < 0) {
@@ -673,7 +696,7 @@ add_context_watcher(PyObject *self, PyObject *which_watcher)
     assert(PyLong_Check(which_watcher));
     long which_l = PyLong_AsLong(which_watcher);
     if (which_l < 0 || which_l >= (long)Py_ARRAY_LENGTH(callbacks)) {
-        PyErr_Format(PyExc_ValueError, "invalid watcher %d", which_l);
+        PyErr_Format(PyExc_ValueError, "invalid watcher %ld", which_l);
         return NULL;
     }
     int watcher_id = PyContext_AddWatcher(callbacks[which_l]);

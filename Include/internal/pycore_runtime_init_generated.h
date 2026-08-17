@@ -1542,6 +1542,7 @@ extern "C" {
     INIT_ID(_filters), \
     INIT_ID(_finalizing), \
     INIT_ID(_find_and_load), \
+    INIT_ID(_find_and_load_lazy_submodule), \
     INIT_ID(_fix_up_module), \
     INIT_ID(_flags_), \
     INIT_ID(_get_sourcefile), \
@@ -1580,8 +1581,10 @@ extern "C" {
     INIT_ID(alias), \
     INIT_ID(align), \
     INIT_ID(all), \
+    INIT_ID(all_interpreters), \
     INIT_ID(all_threads), \
     INIT_ID(allow_code), \
+    INIT_ID(alphabet), \
     INIT_ID(any), \
     INIT_ID(append), \
     INIT_ID(arg), \
@@ -1591,8 +1594,10 @@ extern "C" {
     INIT_ID(argv), \
     INIT_ID(as_integer_ratio), \
     INIT_ID(asend), \
+    INIT_ID(assoclen), \
     INIT_ID(ast), \
     INIT_ID(athrow), \
+    INIT_ID(attr), \
     INIT_ID(attribute), \
     INIT_ID(autocommit), \
     INIT_ID(backtick), \
@@ -1633,6 +1638,7 @@ extern "C" {
     INIT_ID(callable), \
     INIT_ID(callback), \
     INIT_ID(cancel), \
+    INIT_ID(canonical), \
     INIT_ID(capath), \
     INIT_ID(capitals), \
     INIT_ID(category), \
@@ -1788,7 +1794,6 @@ extern "C" {
     INIT_ID(generation), \
     INIT_ID(get), \
     INIT_ID(get_debug), \
-    INIT_ID(get_event_loop), \
     INIT_ID(get_loop), \
     INIT_ID(get_source), \
     INIT_ID(getattr), \
@@ -1805,6 +1810,7 @@ extern "C" {
     INIT_ID(headers), \
     INIT_ID(hi), \
     INIT_ID(hook), \
+    INIT_ID(host), \
     INIT_ID(hour), \
     INIT_ID(hours), \
     INIT_ID(id), \
@@ -1853,6 +1859,7 @@ extern "C" {
     INIT_ID(iter), \
     INIT_ID(iterable), \
     INIT_ID(iterations), \
+    INIT_ID(iv), \
     INIT_ID(join), \
     INIT_ID(jump), \
     INIT_ID(keepends), \
@@ -1893,6 +1900,7 @@ extern "C" {
     INIT_ID(mask), \
     INIT_ID(match), \
     INIT_ID(max_length), \
+    INIT_ID(max_threads), \
     INIT_ID(maxdigits), \
     INIT_ID(maxevents), \
     INIT_ID(maxlen), \
@@ -1930,6 +1938,7 @@ extern "C" {
     INIT_ID(namespace_separator), \
     INIT_ID(namespaces), \
     INIT_ID(native), \
+    INIT_ID(nbytes), \
     INIT_ID(ndigits), \
     INIT_ID(nested), \
     INIT_ID(new_file_name), \
@@ -1954,6 +1963,7 @@ extern "C" {
     INIT_ID(onceregistry), \
     INIT_ID(only_active_thread), \
     INIT_ID(only_keys), \
+    INIT_ID(op), \
     INIT_ID(oparg), \
     INIT_ID(opcode), \
     INIT_ID(opcodes), \
@@ -1971,7 +1981,9 @@ extern "C" {
     INIT_ID(overlapped), \
     INIT_ID(owner), \
     INIT_ID(pad), \
+    INIT_ID(padded), \
     INIT_ID(pages), \
+    INIT_ID(pair), \
     INIT_ID(parameter), \
     INIT_ID(parent), \
     INIT_ID(password), \
@@ -1983,8 +1995,10 @@ extern "C" {
     INIT_ID(person), \
     INIT_ID(pi_factory), \
     INIT_ID(pid), \
+    INIT_ID(pidfd), \
     INIT_ID(pointer_bits), \
     INIT_ID(policy), \
+    INIT_ID(port), \
     INIT_ID(pos), \
     INIT_ID(pos1), \
     INIT_ID(pos2), \
@@ -2024,6 +2038,7 @@ extern "C" {
     INIT_ID(repeat), \
     INIT_ID(repl), \
     INIT_ID(replace), \
+    INIT_ID(repr), \
     INIT_ID(reqrefs), \
     INIT_ID(require_ready), \
     INIT_ID(reserved), \
@@ -2101,6 +2116,7 @@ extern "C" {
     INIT_ID(take_bytes), \
     INIT_ID(target), \
     INIT_ID(target_is_directory), \
+    INIT_ID(targetfd), \
     INIT_ID(task), \
     INIT_ID(tb_frame), \
     INIT_ID(tb_lasti), \
@@ -2143,6 +2159,7 @@ extern "C" {
     INIT_ID(updates), \
     INIT_ID(uri), \
     INIT_ID(usedforsecurity), \
+    INIT_ID(utcoffset), \
     INIT_ID(value), \
     INIT_ID(values), \
     INIT_ID(version), \

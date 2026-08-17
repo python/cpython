@@ -2,7 +2,7 @@ r"""plistlib.py -- a tool to generate and parse MacOSX .plist files.
 
 The property list (.plist) file format is a simple XML pickle supporting
 basic object types, like dictionaries, lists, numbers and strings.
-Usually the top level object is a dictionary.
+Usually the top level object is a dictionary or a frozen dictionary.
 
 To write out a plist file, use the dump(value, file)
 function. 'value' is the top level object, 'file' is
@@ -21,7 +21,7 @@ datetime.datetime objects.
 
 Generate Plist example:
 
-    import datetime
+    import datetime as dt
     import plistlib
 
     pl = dict(
@@ -37,7 +37,7 @@ Generate Plist example:
         ),
         someData = b"<binary gunk>",
         someMoreData = b"<lots of binary gunk>" * 10,
-        aDate = datetime.datetime.now()
+        aDate = dt.datetime.now()
     )
     print(plistlib.dumps(pl).decode())
 
@@ -357,7 +357,7 @@ class _PlistWriter(_DumbXMLWriter):
         elif isinstance(value, float):
             self.simple_element("real", repr(value))
 
-        elif isinstance(value, dict):
+        elif isinstance(value, (dict, frozendict)):
             self.write_dict(value)
 
         elif isinstance(value, (bytes, bytearray)):
@@ -453,7 +453,7 @@ class InvalidFileException (ValueError):
     def __init__(self, message="Invalid file"):
         ValueError.__init__(self, message)
 
-_BINARY_FORMAT = {1: 'B', 2: 'H', 4: 'L', 8: 'Q'}
+_BINARY_FORMAT = frozendict({1: 'B', 2: 'H', 4: 'L', 8: 'Q'})
 
 _undefined = object()
 
@@ -715,7 +715,7 @@ class _BinaryPlistWriter (object):
             self._objidtable[id(value)] = refnum
 
         # And finally recurse into containers
-        if isinstance(value, dict):
+        if isinstance(value, (dict, frozendict)):
             keys = []
             values = []
             items = value.items()
@@ -836,7 +836,7 @@ class _BinaryPlistWriter (object):
             self._write_size(0xA0, s)
             self._fp.write(struct.pack('>' + self._ref_format * s, *refs))
 
-        elif isinstance(value, dict):
+        elif isinstance(value, (dict, frozendict)):
             keyRefs, valRefs = [], []
 
             if self._sort_keys:
@@ -869,18 +869,18 @@ def _is_fmt_binary(header):
 # Generic bits
 #
 
-_FORMATS={
-    FMT_XML: dict(
+_FORMATS=frozendict({
+    FMT_XML: frozendict(
         detect=_is_fmt_xml,
         parser=_PlistParser,
         writer=_PlistWriter,
     ),
-    FMT_BINARY: dict(
+    FMT_BINARY: frozendict(
         detect=_is_fmt_binary,
         parser=_BinaryPlistParser,
         writer=_BinaryPlistWriter,
     )
-}
+})
 
 
 def load(fp, *, fmt=None, dict_type=dict, aware_datetime=False):

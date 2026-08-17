@@ -1,1 +1,0 @@
-Fix a crash in :func:`!_interpchannels.list_all` after closing a channel.

@@ -11,6 +11,14 @@ PROFILING_MODE_GIL = 2
 PROFILING_MODE_ALL = 3  # Combines GIL + CPU checks
 PROFILING_MODE_EXCEPTION = 4  # Only samples when thread has an active exception
 
+PROFILING_MODE_NAMES = {
+    PROFILING_MODE_WALL: "wall",
+    PROFILING_MODE_CPU: "cpu",
+    PROFILING_MODE_GIL: "gil",
+    PROFILING_MODE_ALL: "all",
+    PROFILING_MODE_EXCEPTION: "exception",
+}
+
 # Sort mode constants
 SORT_MODE_NSAMPLES = 0
 SORT_MODE_TOTTIME = 1
@@ -37,6 +45,7 @@ try:
         THREAD_STATUS_UNKNOWN,
         THREAD_STATUS_GIL_REQUESTED,
         THREAD_STATUS_HAS_EXCEPTION,
+        THREAD_STATUS_MAIN_THREAD,
     )
 except ImportError:
     # Fallback for tests or when module is not available
@@ -45,3 +54,4 @@ except ImportError:
     THREAD_STATUS_UNKNOWN = (1 << 2)
     THREAD_STATUS_GIL_REQUESTED = (1 << 3)
     THREAD_STATUS_HAS_EXCEPTION = (1 << 4)
+    THREAD_STATUS_MAIN_THREAD = (1 << 5)

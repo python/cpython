@@ -47,6 +47,7 @@ _SLOTS = (
     "__cell__",
     "__owner__",
     "__stringifier_dict__",
+    "__resolved_str_cache__",
 )
 
 
@@ -94,6 +95,7 @@ class ForwardRef:
         # value later.
         self.__code__ = None
         self.__ast_node__ = None
+        self.__resolved_str_cache__ = None
 
     def __init_subclass__(cls, /, *args, **kwds):
         raise TypeError("Cannot subclass ForwardRef")
@@ -113,7 +115,7 @@ class ForwardRef:
         """
         match format:
             case Format.STRING:
-                return self.__forward_arg__
+                return self.__resolved_str__
             case Format.VALUE:
                 is_forwardref_format = False
             case Format.FORWARDREF:
@@ -224,29 +226,6 @@ class ForwardRef:
                 new_locals.transmogrify(self.__cell__)
                 return result
 
-    def _evaluate(self, globalns, localns, type_params=_sentinel, *, recursive_guard):
-        import typing
-        import warnings
-
-        if type_params is _sentinel:
-            typing._deprecation_warning_for_no_type_params_passed(
-                "typing.ForwardRef._evaluate"
-            )
-            type_params = ()
-        warnings._deprecated(
-            "ForwardRef._evaluate",
-            "{name} is a private API and is retained for compatibility, but will be removed"
-            " in Python 3.16. Use ForwardRef.evaluate() or typing.evaluate_forward_ref() instead.",
-            remove=(3, 16),
-        )
-        return typing.evaluate_forward_ref(
-            self,
-            globals=globalns,
-            locals=localns,
-            type_params=type_params,
-            _recursive_guard=recursive_guard,
-        )
-
     @property
     def __forward_arg__(self):
         if self.__arg__ is not None:
@@ -257,6 +236,24 @@ class ForwardRef:
         raise AssertionError(
             "Attempted to access '__forward_arg__' on an uninitialized ForwardRef"
         )
+
+    @property
+    def __resolved_str__(self):
+        # __forward_arg__ with any names from __extra_names__ replaced
+        # with the type_repr of the value they represent
+        if self.__resolved_str_cache__ is None:
+            resolved_str = self.__forward_arg__
+            names = self.__extra_names__
+
+            if names:
+                visitor = _ExtraNameFixer(names)
+                ast_expr = ast.parse(resolved_str, mode="eval").body
+                node = visitor.visit(ast_expr)
+                resolved_str = ast.unparse(node)
+
+            self.__resolved_str_cache__ = resolved_str
+
+        return self.__resolved_str_cache__
 
     @property
     def __forward_code__(self):
@@ -321,7 +318,7 @@ class ForwardRef:
             extra.append(", is_class=True")
         if self.__owner__ is not None:
             extra.append(f", owner={self.__owner__!r}")
-        return f"ForwardRef({self.__forward_arg__!r}{''.join(extra)})"
+        return f"ForwardRef({self.__resolved_str__!r}{''.join(extra)})"
 
 
 _Template = type(t"")
@@ -357,6 +354,7 @@ class _Stringifier:
         self.__cell__ = cell
         self.__owner__ = owner
         self.__stringifier_dict__ = stringifier_dict
+        self.__resolved_str_cache__ = None  # Needed for ForwardRef
 
     def __convert_to_ast(self, other):
         if isinstance(other, _Stringifier):
@@ -919,7 +917,7 @@ def get_annotations(
     does not exist, the __annotate__ function is called. The
     FORWARDREF format uses __annotations__ if it exists and can be
     evaluated, and otherwise falls back to calling the __annotate__ function.
-    The SOURCE format tries __annotate__ first, and falls back to
+    The STRING format tries __annotate__ first, and falls back to
     using __annotations__, stringified using annotations_to_string().
 
     This function handles several details for you:
@@ -1037,13 +1035,26 @@ def get_annotations(
             obj_globals = obj_locals = unwrap = None
 
         if unwrap is not None:
+            # Use an id-based visited set to detect cycles in the __wrapped__
+            # and functools.partial.func chain (e.g. f.__wrapped__ = f).
+            # On cycle detection we stop and use whatever __globals__ we have
+            # found so far, mirroring the approach of inspect.unwrap().
+            _seen_ids = {id(unwrap)}
             while True:
                 if hasattr(unwrap, "__wrapped__"):
-                    unwrap = unwrap.__wrapped__
+                    candidate = unwrap.__wrapped__
+                    if id(candidate) in _seen_ids:
+                        break
+                    _seen_ids.add(id(candidate))
+                    unwrap = candidate
                     continue
                 if functools := sys.modules.get("functools"):
                     if isinstance(unwrap, functools.partial):
-                        unwrap = unwrap.func
+                        candidate = unwrap.func
+                        if id(candidate) in _seen_ids:
+                            break
+                        _seen_ids.add(id(candidate))
+                        unwrap = candidate
                         continue
                 break
             if hasattr(unwrap, "__globals__"):
@@ -1150,3 +1161,14 @@ def _get_dunder_annotations(obj):
     if not isinstance(ann, dict):
         raise ValueError(f"{obj!r}.__annotations__ is neither a dict nor None")
     return ann
+
+
+class _ExtraNameFixer(ast.NodeTransformer):
+    """Fixer for __extra_names__ items in ForwardRef __repr__ and string evaluation"""
+    def __init__(self, extra_names):
+        self.extra_names = extra_names
+
+    def visit_Name(self, node: ast.Name):
+        if (new_name := self.extra_names.get(node.id, _sentinel)) is not _sentinel:
+            node = ast.Name(id=type_repr(new_name))
+        return node
