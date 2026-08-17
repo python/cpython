@@ -1,1 +1,2 @@
-Fix SMTPHandler to close the SMTP connection when sending an email fails.
+:mod:`logging`: ensure that :class:`logging.handlesr.SMTPHandler`
+correctly releases resources on SMTP connection failures.
