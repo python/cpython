@@ -10,6 +10,7 @@
 
 #include "Python.h"
 #include "pycore_bytesobject.h"   // _PyBytesWriter
+#include "pycore_call.h"          // _PyObject_Call_Prepend()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_dict.h"          // _PyDict_SetItem_Take2()
@@ -6343,19 +6344,8 @@ load_newobj(PickleState *state, UnpicklerObject *self, int use_kwargs)
         if (func == NULL) {
             goto error;
         }
-        Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-        PyObject *newargs = PyTuple_New(nargs + 1);
-        if (newargs == NULL) {
-            Py_DECREF(func);
-            goto error;
-        }
-        PyTuple_SET_ITEM(newargs, 0, Py_NewRef(cls));
-        for (Py_ssize_t i = 0; i < nargs; i++) {
-            PyTuple_SET_ITEM(newargs, i + 1,
-                             Py_NewRef(PyTuple_GET_ITEM(args, i)));
-        }
-        obj = PyObject_Call(func, newargs, kwargs);
-        Py_DECREF(newargs);
+        PyThreadState *tstate = _PyThreadState_GET();
+        obj = _PyObject_Call_Prepend(tstate, func, cls, args, kwargs);
         Py_DECREF(func);
     }
     if (obj == NULL) {
