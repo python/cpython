@@ -896,7 +896,9 @@ C API changes
 New features
 ------------
 
-* TODO
+* Add a new way to efficitly create :class:`frozendict` instance
+  from existing :class:`dict` instances: :c:func:`PyDict_AsFrozenDictAndClear`.
+
 
 Porting to Python 3.16
 ----------------------
