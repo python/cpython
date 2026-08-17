@@ -1891,7 +1891,7 @@ def _get_protocol_attrs(cls):
             continue
         try:
             annotations = base.__annotations__
-        except Exception:
+        except (AttributeError, NameError):
             # Only go through annotationlib to handle deferred annotations if we need to
             annotations = annotationlib.get_annotations(
                 base, format=annotationlib.Format.FORWARDREF
@@ -2141,7 +2141,7 @@ def _proto_hook(cls, other):
                 # cases it should be unnecessary.
                 try:
                     annos = base.__annotations__
-                except Exception:
+                except (AttributeError, NameError):
                     annos = annotationlib.get_annotations(
                         base, format=annotationlib.Format.FORWARDREF
                     )

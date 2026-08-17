@@ -1,0 +1,4 @@
+Narrow the ``except Exception`` in ``typing._get_protocol_attrs`` and
+``typing._proto_hook`` to ``except (AttributeError, NameError)``, so that
+unrelated errors raised while accessing ``__annotations__`` are no longer
+silently swallowed.

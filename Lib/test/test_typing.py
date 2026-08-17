@@ -4823,6 +4823,66 @@ class ProtocolTests(BaseTestCase):
             {'x': 'DoesNotExist'}
         )
 
+    def test_get_protocol_attrs_reraises_unrelated_errors(self):
+        class BrokenAnnotationsMeta(type):
+            def __getattribute__(cls, name):
+                if name == '__annotations__':
+                    raise RuntimeError('boom')
+                return super().__getattribute__(name)
+
+        class Base(metaclass=BrokenAnnotationsMeta):
+            pass
+
+        with self.assertRaises(RuntimeError):
+            typing._get_protocol_attrs(Base)
+
+    def test_proto_hook_reraises_unrelated_errors(self):
+        @runtime_checkable
+        class P(Protocol):
+            def meth(self): ...
+
+        class Other(Protocol):
+            pass
+
+        orig_getattribute = type(Other).__getattribute__
+
+        def broken_getattribute(cls, name):
+            if cls is Other and name == '__annotations__':
+                raise RuntimeError('boom')
+            return orig_getattribute(cls, name)
+
+        with patch.object(type(Other), '__getattribute__', broken_getattribute):
+            with self.assertRaises(RuntimeError):
+                issubclass(Other, P)
+
+    def test_get_protocol_attrs_falls_back_on_attribute_error(self):
+        class BrokenAnnotationsMeta(type):
+            def __getattribute__(cls, name):
+                if name == '__annotations__':
+                    raise AttributeError('simulated missing annotations')
+                return super().__getattribute__(name)
+
+        class Base(metaclass=BrokenAnnotationsMeta):
+            x: int
+
+        self.assertEqual(typing._get_protocol_attrs(Base), {'x'})
+
+    def test_proto_hook_falls_back_on_attribute_error(self):
+        class BrokenAnnotationsMeta(typing._ProtocolMeta):
+            def __getattribute__(cls, name):
+                if name == '__annotations__':
+                    raise AttributeError('simulated missing annotations')
+                return super().__getattribute__(name)
+
+        @runtime_checkable
+        class P(Protocol):
+            def meth(self): ...
+
+        class SubProtocol(P, Protocol, metaclass=BrokenAnnotationsMeta):
+            meth: int  # override with annotation to route through _proto_hook's __annotations__ check
+
+        self.assertIsSubclass(SubProtocol, P)
+
 
 class GenericTests(BaseTestCase):
 
