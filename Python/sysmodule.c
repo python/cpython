@@ -527,8 +527,8 @@ sys_addaudithook_impl(PyObject *module, PyObject *hook)
 
     /* Invoke existing audit hooks to allow them an opportunity to abort. */
     if (_PySys_Audit(tstate, "sys.addaudithook", NULL) < 0) {
-        if (_PyErr_ExceptionMatches(tstate, PyExc_Exception)) {
-            /* We do not report errors derived from Exception */
+        if (_PyErr_ExceptionMatches(tstate, PyExc_RuntimeError)) {
+            /* We do not report errors derived from RuntimeError */
             _PyErr_Clear(tstate);
             Py_RETURN_NONE;
         }

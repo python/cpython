@@ -63,11 +63,14 @@ exposed by the :mod:`!weakref` module for the benefit of advanced uses.
 Not all objects can be weakly referenced. Objects which support weak references
 include class instances, functions written in Python (but not in C), instance methods,
 sets, frozensets, some :term:`file objects <file object>`, :term:`generators <generator>`,
-type objects, sockets, arrays, deques, regular expression pattern objects, and code
-objects.
+type objects, sockets, arrays, deques, regular expression pattern objects, code
+objects, and frame objects.
 
 .. versionchanged:: 3.2
    Added support for thread.lock, threading.Lock, and code objects.
+
+.. versionchanged:: 3.16
+   Added support for frame objects.
 
 Several built-in types such as :class:`list` and :class:`dict` do not directly
 support weak references but can add support through subclassing::

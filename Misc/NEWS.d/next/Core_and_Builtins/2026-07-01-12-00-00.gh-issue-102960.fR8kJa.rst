@@ -1,0 +1,2 @@
+:ref:`Frame objects <frame-objects>` now support :mod:`weak references
+<weakref>`.  Patch by Łukasz Langa.

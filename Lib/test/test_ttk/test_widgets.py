@@ -351,6 +351,19 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
     def create(self, **kwargs):
         return ttk.Entry(self.root, **kwargs)
 
+    def _arrow_x(self, widget, y, arrow):
+        # Return an x coordinate on the up/down *arrow* element in row y,
+        # found by scanning inward from the right edge of the widget.  A
+        # fixed inset such as width - 5 lands in the arrow element's
+        # right-hand border, which scales with the display scaling, so at a
+        # high DPI identify() there returns 'field' instead of the arrow.
+        self.assertTrue(wait_until_mapped(widget, full_size=True))
+        width = widget.winfo_width()
+        for x in range(width - 1, width // 2, -1):
+            if widget.identify(x, y).endswith(arrow):
+                return x
+        self.fail(f'no {arrow} found in row {y}')
+
     def test_configure_invalidcommand(self):
         widget = self.create()
         self.checkCommandParam(widget, 'invalidcommand')
@@ -385,7 +398,12 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
         # Identifying the element under a point requires the widget to be
         # mapped with a real size; the rest of the checks do not.
         if wait_until_mapped(self.entry):
-            self.assertIn(self.entry.identify(5, 5), self.IDENTIFY_AS)
+            # Probe the centre of the widget: a fixed pixel such as (5, 5)
+            # lands in the field at a normal scaling but in the surrounding
+            # padding at a high DPI.
+            x = self.entry.winfo_width() // 2
+            y = self.entry.winfo_height() // 2
+            self.assertIn(self.entry.identify(x, y), self.IDENTIFY_AS)
         self.assertEqual(self.entry.identify(-1, -1), "")
 
         self.assertRaises(tkinter.TclError, self.entry.identify, None, 5)
@@ -486,10 +504,11 @@ class ComboboxTest(EntryTest, unittest.TestCase):
         self.checkParams(widget, 'height', 100, 101.2, 102.6, -100, 0, '1i')
 
     def _show_drop_down_listbox(self):
-        width = self.combo.winfo_width()
-        x, y = width - 5, 5
+        y = 5
         if sys.platform != 'darwin':  # there's no down arrow on macOS
-            self.assertRegex(self.combo.identify(x, y), r'.*downarrow\z')
+            x = self._arrow_x(self.combo, y, 'downarrow')
+        else:
+            x = self.combo.winfo_width() - 5
         self.combo.event_generate('<Button-1>', x=x, y=y)
         self.combo.event_generate('<ButtonRelease-1>', x=x, y=y)
 
@@ -1062,21 +1081,15 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
 
         self.nb.pack()
         self.nb.update()
-        if sys.platform == 'darwin':
-            tb_idx = "@20,5"
-        else:
-            tb_idx = "@5,5"
-        self.assertEqual(self.nb.tab(tb_idx), self.nb.tab('current'))
+        # Address a tab by a point taken from Tk's own geometry rather than a
+        # fixed pixel, which can land on a different tab or miss the tabs
+        # entirely (e.g. on Aqua the tabs are inset) as the display scaling
+        # changes.
+        x, y = self._tab_point(self.nb.index('current'))
+        self.assertEqual(self.nb.tab(f'@{x},{y}'), self.nb.tab('current'))
 
-        for i in range(5, 100, 5):
-            try:
-                if self.nb.tab('@%d, 5' % i, text=None) == 'a':
-                    break
-            except tkinter.TclError:
-                pass
-
-        else:
-            self.fail("Tab with text 'a' not found")
+        x, y = self._tab_point(self.nb.index(self.child1))
+        self.assertEqual(self.nb.tab(f'@{x},{y}', text=None), 'a')
 
     def test_add_and_hidden(self):
         self.assertRaises(tkinter.TclError, self.nb.hide, -1)
@@ -1206,23 +1219,43 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
 
         self.assertEqual(self.nb.tabs(), ())
 
+    def _tab_point(self, index):
+        # Return a window coordinate that really lies on tab *index*, taken
+        # from Tk's own geometry (ttk::notebook index @x,y), so that it is
+        # correct regardless of the theme, platform and display scaling.  A
+        # fixed pixel such as (5, 5) can land on a different tab element
+        # depending on the DPI, or miss the tabs entirely (e.g. on Aqua the
+        # tabs are inset), which would make a click there test nothing.
+        self.assertTrue(wait_until_mapped(self.nb, full_size=True))
+        w, h = self.nb.winfo_width(), self.nb.winfo_height()
+        # The selected pane fills the widget except for the tab strip, so skip
+        # that large tab-free region instead of querying every pixel in it.
+        pane = self.nb.nametowidget(self.nb.select())
+        px, py = pane.winfo_x(), pane.winfo_y()
+        pw, ph = pane.winfo_width(), pane.winfo_height()
+        for y in range(h):
+            inside_y = py <= y < py + ph
+            for x in range(w):
+                if inside_y and px <= x < px + pw:
+                    continue
+                try:
+                    if self.nb.index(f'@{x},{y}') == index:
+                        return x, y
+                except TclError:
+                    continue
+        self.fail(f'no point found on tab {index}')
+
     def test_traversal(self):
         self.nb.pack()
         self.nb.update()
 
-        self.nb.select(0)
+        # A mouse click selects the tab it lands on.
+        self.nb.select(1)
+        self.assertEqual(self.nb.select(), str(self.child2))
+        simulate_mouse_click(self.nb, *self._tab_point(0))
+        self.assertEqual(self.nb.select(), str(self.child1))
 
-        if sys.platform == 'darwin':
-            focus_identify_as = ''
-        elif sys.platform == 'win32':
-            focus_identify_as = 'focus'
-        else:
-            focus_identify_as = 'focus' if tk_version < (8, 7) else 'padding'
-        # identify() at (5, 5) needs the tab realized there; under focus
-        # contention the mapped size can lag, so wait for the full size.
-        if wait_until_mapped(self.nb, full_size=True):
-            self.assertEqual(self.nb.identify(5, 5), focus_identify_as)
-        simulate_mouse_click(self.nb, 5, 5)
+        # Control-Tab and Shift-Control-Tab traverse the tabs.
         self.nb.focus_force()
         self.nb.event_generate('<Control-Tab>')
         self.assertEqual(self.nb.select(), str(self.child2))
@@ -1237,21 +1270,25 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         self.nb.tab(self.child2, text='e', underline=0)
         self.nb.enable_traversal()
         self.nb.focus_force()
-        if wait_until_mapped(self.nb, full_size=True):
-            self.assertEqual(self.nb.identify(5, 5), focus_identify_as)
-        simulate_mouse_click(self.nb, 5, 5)
-        # on macOS Emacs-style keyboard shortcuts are region-dependent;
-        # let's use the regular arrow keys instead
+
+        # A click still selects the tab it lands on after enable_traversal().
+        self.nb.select(1)
+        self.assertEqual(self.nb.select(), str(self.child2))
+        simulate_mouse_click(self.nb, *self._tab_point(0))
+        self.assertEqual(self.nb.select(), str(self.child1))
+
+        # Mnemonics traverse the tabs (macOS uses region-dependent
+        # Emacs-style shortcuts, so use the regular arrow keys there).
         if sys.platform == 'darwin':
             begin = '<Left>'
             end = '<Right>'
         else:
             begin = '<Alt-a>'
             end = '<Alt-e>'
-        self.nb.event_generate(begin)
-        self.assertEqual(self.nb.select(), str(self.child1))
         self.nb.event_generate(end)
         self.assertEqual(self.nb.select(), str(self.child2))
+        self.nb.event_generate(begin)
+        self.assertEqual(self.nb.select(), str(self.child1))
 
 
 @add_configure_tests(IntegerSizeTests, StandardTtkOptionsTests)
@@ -1277,22 +1314,16 @@ class SpinboxTest(EntryTest, unittest.TestCase):
 
     def _click_increment_arrow(self):
         self.require_mapped(self.spin)
-        width = self.spin.winfo_width()
-        height = self.spin.winfo_height()
-        x = width - 5
-        y = height//2 - 5
-        self.assertRegex(self.spin.identify(x, y), r'.*uparrow\z')
+        y = self.spin.winfo_height()//2 - 5
+        x = self._arrow_x(self.spin, y, 'uparrow')
         self.spin.event_generate('<ButtonPress-1>', x=x, y=y)
         self.spin.event_generate('<ButtonRelease-1>', x=x, y=y)
         self.spin.update_idletasks()
 
     def _click_decrement_arrow(self):
         self.require_mapped(self.spin)
-        width = self.spin.winfo_width()
-        height = self.spin.winfo_height()
-        x = width - 5
-        y = height//2 + 4
-        self.assertRegex(self.spin.identify(x, y), r'.*downarrow\z')
+        y = self.spin.winfo_height()//2 + 4
+        x = self._arrow_x(self.spin, y, 'downarrow')
         self.spin.event_generate('<ButtonPress-1>', x=x, y=y)
         self.spin.event_generate('<ButtonRelease-1>', x=x, y=y)
         self.spin.update_idletasks()
@@ -2062,14 +2093,17 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.tv.pack()
         self.tv.update()
 
+        # Find the y coordinate of each item.  Scan the whole height of the
+        # widget rather than a fixed pixel range, since the row height grows
+        # with the display scaling.
         pos_y = set()
         found = set()
-        for i in range(0, 100, 10):
+        for y in range(self.tv.winfo_height()):
             if len(found) == 2: # item1 and item2 already found
                 break
-            item_id = self.tv.identify_row(i)
+            item_id = self.tv.identify_row(y)
             if item_id and item_id not in found:
-                pos_y.add(i)
+                pos_y.add(y)
                 found.add(item_id)
 
         self.assertEqual(len(pos_y), 2) # item1 and item2 y pos
