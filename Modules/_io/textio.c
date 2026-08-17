@@ -2875,7 +2875,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
 
     assert (PyBytes_Check(next_input));
 
-    /* Own next_input: a reentrant seek in the decoder can drop self->snapshot. */
+    /* Own next_input: a reentrant or concurrent seek can drop the snapshot. */
     Py_INCREF(next_input);
 
     cookie.start_pos -= PyBytes_GET_SIZE(next_input);
