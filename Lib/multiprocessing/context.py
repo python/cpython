@@ -4,6 +4,7 @@ import threading
 
 from . import process
 from . import reduction
+from . import util
 
 __all__ = ()
 
@@ -326,12 +327,19 @@ if sys.platform != 'win32':
     _concrete_contexts = {
         'fork': ForkContext(),
         'spawn': SpawnContext(),
-        'forkserver': ForkServerContext(),
     }
+    if reduction.HAVE_SEND_HANDLE:
+        _concrete_contexts['forkserver'] = ForkServerContext()
+
     # bpo-33725: running arbitrary code after fork() is no longer reliable
     # on macOS since macOS 10.14 (Mojave). Use spawn by default instead.
     # gh-84559: We changed everyones default to a thread safeish one in 3.14.
-    if reduction.HAVE_SEND_HANDLE and sys.platform != 'darwin':
+    if (
+        reduction.HAVE_SEND_HANDLE
+        and sys.platform != 'darwin'
+        # gh-155717: forkserver requires to write temporary files
+        and util._has_writeable_tempdir()
+    ):
         _default_context = DefaultContext(_concrete_contexts['forkserver'])
     else:
         _default_context = DefaultContext(_concrete_contexts['spawn'])

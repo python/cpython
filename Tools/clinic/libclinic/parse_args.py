@@ -303,6 +303,7 @@ class ParseArgsCodeGen:
     def use_meth_o(self) -> bool:
         return (len(self.parameters) == 1
                 and self.parameters[0].is_positional_only()
+                and not self.has_option_groups()
                 and not self.converters[0].is_optional()
                 and not self.varpos
                 and not self.requires_defining_class
@@ -319,7 +320,7 @@ class ParseArgsCodeGen:
         self.docstring_prototype = ''
         self.docstring_definition = ''
         self.methoddef_define = METHODDEF_PROTOTYPE_DEFINE
-        self.return_value_declaration = "PyObject *return_value = NULL;"
+        self.return_value_declaration = "PyObject *{parser_retval} = NULL;"
 
         if self.is_new_or_init() and not self.func.docstring:
             pass
@@ -330,7 +331,7 @@ class ParseArgsCodeGen:
         elif self.func.kind is SETTER:
             if self.func.docstring:
                 fail("docstrings are only supported for @getter, not @setter")
-            self.return_value_declaration = "int {return_value};"
+            self.return_value_declaration = "int {parser_retval};"
             self.methoddef_define = SETTERDEF_PROTOTYPE_DEFINE
         else:
             self.docstring_prototype = DOCSTRING_PROTOTYPE_VAR
@@ -371,7 +372,7 @@ class ParseArgsCodeGen:
 
             {exit_label}
                 {cleanup}
-                return return_value;
+                return {parser_retval};
             }}
         """)
         for field in preamble, *fields, finale:
@@ -860,7 +861,7 @@ class ParseArgsCodeGen:
         if self.func.kind is METHOD_NEW:
             self.parser_prototype = PARSER_PROTOTYPE_KEYWORD
         else:
-            self.return_value_declaration = "int return_value = -1;"
+            self.return_value_declaration = "int {parser_retval} = -1;"
             self.parser_prototype = PARSER_PROTOTYPE_KEYWORD___INIT__
 
         fields: list[str] = list(self.parser_body_fields)

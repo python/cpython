@@ -1,0 +1,2 @@
+:mod:`sqlite3`: Disallow removing ``row_factory`` and ``text_factory`` attributes
+of a connection to prevent a crash on a query.

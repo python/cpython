@@ -1,0 +1,3 @@
+Cross-language keyword suggestions are now shown for :exc:`SyntaxError` messages.
+For example, ``switch x:`` suggests ``match``, ``delete x`` suggests ``del``,
+``function f():`` suggests ``def``. Contributed by Zang Langyan.

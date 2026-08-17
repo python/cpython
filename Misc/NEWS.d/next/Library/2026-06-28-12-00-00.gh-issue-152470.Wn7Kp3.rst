@@ -1,0 +1,9 @@
+The wide-character :mod:`curses` functions and methods
+:meth:`curses.window.get_wch`, :meth:`curses.window.get_wstr`,
+:func:`curses.unget_wch`, :func:`curses.erasewchar`, :func:`curses.killwchar`
+and :func:`curses.wunctrl` now also work when Python is not built against a
+wide-character-aware curses library, on an 8-bit locale, where each character
+is a single byte in the relevant encoding.  :func:`curses.ungetch` now also
+accepts a one-character string, like :func:`curses.unget_wch`; on a
+wide-character build it can be any character (previously a multibyte character
+raised :exc:`OverflowError`).

@@ -1,2 +1,0 @@
-Hardened :mod:`!_remote_debugging` by validating remote debug offset tables
-before using them to size memory reads or interpret remote layouts.

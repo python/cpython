@@ -71,7 +71,8 @@ Dependencies to build optional modules are:
    * - Dependency
      - Minimum version
      - Python module
-   * - `libbz2 <https://sourceware.org/bzip2/>`_
+   * - `libbz2 <https://sourceware.org/bzip2/>`_ or
+       `libbzip2-rs <https://github.com/trifectatechfoundation/libbzip2-rs>`_ [1]_
      -
      - :mod:`bz2`
    * - `libffi <https://sourceware.org/libffi/>`_
@@ -82,48 +83,54 @@ Dependencies to build optional modules are:
      - :mod:`lzma`
    * - `libmpdec <https://www.bytereef.org/mpdecimal/doc/libmpdec/>`_
      - 2.5.0
-     - :mod:`decimal` [1]_
+     - :mod:`decimal` [2]_
    * - `libreadline <https://tiswww.case.edu/php/chet/readline/rltop.html>`_ or
-       `libedit <https://www.thrysoee.dk/editline/>`_ [2]_
+       `libedit <https://www.thrysoee.dk/editline/>`_ [3]_
      -
      - :mod:`readline`
    * - `libuuid <https://linux.die.net/man/3/libuuid>`_
      -
-     - ``_uuid`` [3]_
-   * - `ncurses <https://gnu.org/software/ncurses/ncurses.html>`_ [4]_
+     - ``_uuid`` [4]_
+   * - `ncurses <https://gnu.org/software/ncurses/ncurses.html>`_ [5]_
      -
      - :mod:`curses`
    * - `OpenSSL <https://openssl-library.org/>`_
      - | 3.0.18 recommended
        | (1.1.1 minimum)
-     - :mod:`ssl`, :mod:`hashlib` [5]_
+     - :mod:`ssl`, :mod:`hashlib` [6]_
    * - `SQLite <https://sqlite.org/>`_
      - 3.15.2
      - :mod:`sqlite3`
    * - `Tcl/Tk <https://www.tcl-lang.org/>`_
      - 8.5.12
      - :mod:`tkinter`, :ref:`IDLE <idle>`, :mod:`turtle`
-   * - `zlib <https://www.zlib.net>`_
-     - 1.2.2.1
+   * - `zlib <https://www.zlib.net>`_,
+       `zlib-ng <https://github.com/zlib-ng/zlib-ng>`_, or
+       `zlib-rs <https://github.com/trifectatechfoundation/zlib-rs/>`_ [7]_
+     - | 1.2.2.1 (zlib, zlib-ng)
+       | 0.6.0 (zlib-rs)
      - :mod:`zlib`, :mod:`gzip`, :mod:`ensurepip`
    * - `zstd <https://facebook.github.io/zstd/>`_
      - 1.4.5
      - :mod:`compression.zstd`
 
-.. [1] If *libmpdec* is not available, the :mod:`decimal` module will use
+.. [1] See :option:`--with-bzip2` for choosing the backend for the
+   :mod:`bz2` module.
+.. [2] If *libmpdec* is not available, the :mod:`decimal` module will use
    a pure-Python implementation.
-   See :option:`--with-system-libmpdec` for details.
-.. [2] See :option:`--with-readline` for choosing the backend for the
+.. [3] See :option:`--with-readline` for choosing the backend for the
    :mod:`readline` module.
-.. [3] The :mod:`uuid` module uses ``_uuid`` to generate "safe" UUIDs.
+.. [4] The :mod:`uuid` module uses ``_uuid`` to generate "safe" UUIDs.
    See the module documentation for details.
-.. [4] The :mod:`curses` module requires the ``libncurses`` or ``libncursesw``
+.. [5] The :mod:`curses` module requires the ``libncurses`` or ``libncursesw``
    library.
    The :mod:`curses.panel` module additionally requires the ``libpanel`` or
    ``libpanelw`` library.
-.. [5] If OpenSSL is not available, the :mod:`hashlib` module will use
+.. [6] If OpenSSL is not available, the :mod:`hashlib` module will use
    bundled implementations of several hash functions.
    See :option:`--with-builtin-hashlib-hashes` for *forcing* usage of OpenSSL.
+.. [7] See :option:`--with-zlib` for choosing the backend for the
+   :mod:`zlib` module.
 
 Note that the table does not include all optional modules; in particular,
 platform-specific modules like :mod:`winreg` are not listed here.
@@ -474,6 +481,15 @@ General Options
 
    .. versionadded:: 3.15
 
+.. option:: --with-build-details-suffix=[yes|SUFFIX]
+
+   Rename ``build-details.json`` to permit multiple co-located Python
+   installs. If a custom ``SUFFIX`` is supplied it is used verbatim,
+   otherwise one will be generated from the ``MULTIARCH`` tag with
+   ``-free-threading`` and ``-debug``, as appropriate.
+
+   .. versionadded:: 3.16
+
 
 C compiler options
 ------------------
@@ -552,11 +568,6 @@ Options for third-party dependencies
 
    C compiler and linker flags for ``libmpdec``, used by :mod:`decimal` module,
    overriding ``pkg-config``.
-
-   .. note::
-
-      These environment variables have no effect unless
-      :option:`--with-system-libmpdec` is specified.
 
 .. option:: LIBLZMA_CFLAGS
 .. option:: LIBLZMA_LIBS
@@ -779,6 +790,33 @@ also be used to improve performance.
    calling convention. For example, Clang 19 and newer supports this feature.
 
    .. versionadded:: 3.14
+
+.. option:: --without-frame-pointers
+
+   Disable frame pointers, which are enabled by default (see :pep:`831`).
+
+   By default, the build appends flags to generate frame or backchain
+   pointers to ``BASECFLAGS``:
+
+   - ``-fno-omit-frame-pointer`` and/or ``-mno-omit-leaf-frame-pointer``
+     are added when the compiler supports them.
+   - ``-marm`` and/or ``-mno-thumb`` is added on 32-bit ARM when supported,
+   - on s390x platforms, when supported, ``-mbackchain`` is added *instead*.
+     of the above frame pointer flags.
+   - on ppc64le platforms, no compiler flags is needed since the power ABI
+     requires that compilers maintain a back chain by default.
+
+   Frame pointers enable profilers, debuggers, and system tracing tools
+   (``perf``, ``eBPF``, ``dtrace``, ``gdb``) to walk the C call stack
+   without DWARF metadata. The flags propagate to third-party C
+   extensions through :mod:`sysconfig`. On compilers that do not
+   understand them, the build silently skips them.
+
+   Downstream packagers and authors of native libraries built with
+   custom build systems should set the same flags so the unwind chain
+   stays unbroken across all native frames.
+
+   .. versionadded:: 3.15
 
 .. option:: --without-mimalloc
 
@@ -1025,7 +1063,7 @@ Linker options
    The default (when ``-enable-shared`` is used) is to link the Python
    interpreter against the built shared library.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 Libraries options
@@ -1039,29 +1077,6 @@ Libraries options
 
    Build the :mod:`!pyexpat` module using an installed ``expat`` library
    (default is no).
-
-.. option:: --with-system-libmpdec
-
-   Build the ``_decimal`` extension module using an installed ``mpdecimal``
-   library, see the :mod:`decimal` module (default is yes).
-
-   .. versionadded:: 3.3
-
-   .. versionchanged:: 3.13
-      Default to using the installed ``mpdecimal`` library.
-
-   .. versionchanged:: 3.15
-
-      A bundled copy of the library will no longer be selected
-      implicitly if an installed ``mpdecimal`` library is not found.
-      In Python 3.15 only, it can still be selected explicitly using
-      ``--with-system-libmpdec=no`` or ``--without-system-libmpdec``.
-
-   .. deprecated-removed:: 3.13 3.16
-      A copy of the ``mpdecimal`` library sources will no longer be distributed
-      with Python 3.16.
-
-   .. seealso:: :option:`LIBMPDEC_CFLAGS` and :option:`LIBMPDEC_LIBS`.
 
 .. option:: --with-readline=readline|editline
 
@@ -1079,6 +1094,80 @@ Libraries options
    Don't define the ``HAVE_LIBREADLINE`` macro.
 
    .. versionadded:: 3.10
+
+.. option:: --with-curses=ncursesw|ncurses|curses
+
+   Designate a backend library for the :mod:`curses` and :mod:`curses.panel`
+   modules.
+
+   * ``ncursesw``: Use the wide-character ``libncursesw`` (and ``libpanelw``),
+     found via ``pkg-config``.
+   * ``ncurses``: Use ``libncurses`` (and ``libpanel``), found via
+     ``pkg-config``.
+   * ``curses``: Use the system's native ``libcurses`` (and ``libpanel``), such
+     as on NetBSD or Solaris.  It is built with wide-character support when the
+     library provides it.
+
+   Without this option (or with ``--with-curses=auto``, the default), Python
+   tries ``ncursesw`` and then ``ncurses``; the native ``curses`` is used only
+   when requested explicitly.
+
+   .. versionadded:: next
+
+.. option:: --without-curses
+
+   Don't build the :mod:`curses` and :mod:`curses.panel` modules, even when a
+   curses library is present (built by default when one is found).
+
+   .. versionadded:: next
+
+.. option:: --with-zlib=zlib|zlib-ng|zlib-rs
+
+   Designate the zlib implementation to build the :mod:`zlib` module against.
+
+   * ``zlib``: Use the system zlib library, found via ``pkg-config`` or as
+     ``libz``.
+   * ``zlib-ng``: Same detection as ``zlib``, but fail unless the detected
+     library is `zlib-ng <https://github.com/zlib-ng/zlib-ng>`__.
+   * ``zlib-rs``: Use `zlib-rs
+     <https://github.com/trifectatechfoundation/zlib-rs/>`__, found via
+     ``pkg-config`` as ``libz_rs``.
+
+   Without this option (or with ``--with-zlib=auto``, the default), the system
+   zlib is used when found; configure only fails when an implementation was
+   requested explicitly but cannot be found.
+
+   .. versionadded:: next
+
+.. option:: --without-zlib
+
+   Don't build the :mod:`zlib` module, even when a zlib library is present
+   (built by default when one is found).
+
+   .. versionadded:: next
+
+.. option:: --with-bzip2=bzip2|bzip2-rs
+
+   Designate the bzip2 implementation to build the :mod:`bz2` module against.
+
+   * ``bzip2``: Use the system bzip2 library, found via ``pkg-config`` or as
+     ``libbz2``.
+   * ``bzip2-rs``: Use `libbzip2-rs
+     <https://github.com/trifectatechfoundation/libbzip2-rs>`__, found via
+     ``pkg-config`` as ``libbz2_rs``.
+
+   Without this option (or with ``--with-bzip2=auto``, the default), the
+   system bzip2 is used when found; configure only fails when an
+   implementation was requested explicitly but cannot be found.
+
+   .. versionadded:: next
+
+.. option:: --without-bzip2
+
+   Don't build the :mod:`bz2` module, even when a bzip2 library is present
+   (built by default when one is found).
+
+   .. versionadded:: next
 
 .. option:: --with-libm=STRING
 
@@ -1242,7 +1331,7 @@ See :source:`Mac/README.rst`.
 iOS Options
 -----------
 
-See :source:`iOS/README.rst`.
+See :source:`Platforms/Apple/iOS/README.md`.
 
 .. option:: --enable-framework=INSTALLDIR
 

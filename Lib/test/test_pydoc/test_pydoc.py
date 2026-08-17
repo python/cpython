@@ -369,7 +369,7 @@ def html2text(html):
 
     Tailored for pydoc tests only.
     """
-    html = html.replace("<dd>", "\n")
+    html = re.sub(r"<dd\b[^>]*>", "\n", html)
     html = html.replace("<hr>", "-"*70)
     html = re.sub("<.*?>", "", html)
     html = pydoc.replace(html, "&nbsp;", " ", "&gt;", ">", "&lt;", "<")
@@ -1245,6 +1245,71 @@ function_with_really_long_name_so_annotations_can_be_rather_small(
 <lambda> lambda very_long_parameter_name_that_should_not_fit_into_a_single_line, second_very_long_parameter_name
 ''' % __name__)
 
+    @requires_docstrings
+    def test_long_summaries(self):
+        from . import longsummary
+        doc = pydoc.render_doc(longsummary)
+        doc = clean_text(doc)
+        self.assertEqual(doc, '''Python Library Documentation: module test.test_pydoc.longsummary in test.test_pydoc
+
+NAME
+    test.test_pydoc.longsummary
+
+CLASSES
+    builtins.object
+        C
+
+    class C(builtins.object)
+     |  This is a class summary that consists of a very long single line,
+     |  exceeding the recommended PEP 8 limit.
+     |
+     |  The rest of the docstring body, separated from the summary by a blank line, can also contain very long lines.
+     |
+     |  Methods defined here:
+     |
+     |  meth(self)
+     |      This is a method summary that consists of a very long single line,
+     |      exceeding the recommended PEP 8 limit.
+     |
+     |      The rest of the docstring body, separated from the summary by a blank line, can also contain very long lines.
+     |
+     |  ----------------------------------------------------------------------
+     |  Readonly properties defined here:
+     |
+     |  prop
+     |      This is a property summary that consists of a very long single line,
+     |      exceeding the recommended PEP 8 limit.
+     |
+     |      The rest of the docstring body, separated from the summary by a blank line, can also contain very long lines.
+     |
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |
+     |  __dict__
+     |      dictionary for instance variables
+     |
+     |  __weakref__
+     |      list of weak references to the object
+
+FUNCTIONS
+    func(self)
+        This is a function summary that consists of a very long single line,
+        exceeding the recommended PEP 8 limit.
+
+        The rest of the docstring body, separated from the summary by a blank line, can also contain very long lines.
+
+DATA
+    data = <test.test_pydoc.longsummary.C object>
+        This is a data summary that consists of a very long single line,
+        exceeding the recommended PEP 8 limit.
+
+        The rest of the docstring body, separated from the summary by a blank line, can also contain very long lines.
+
+FILE
+    %s
+
+''' % inspect.getabsfile(longsummary))
+
     def test__future__imports(self):
         # __future__ features are excluded from module help,
         # except when it's the __future__ module itself
@@ -1848,7 +1913,7 @@ foo
 
         html = pydoc.HTMLDoc().document(coro_function)
         self.assertIn(
-            'async <a name="-coro_function"><strong>coro_function',
+            'async <a id="-coro_function"><strong>coro_function',
             html)
 
     def test_async_generator_annotation(self):
@@ -1860,7 +1925,7 @@ foo
 
         html = pydoc.HTMLDoc().document(an_async_generator)
         self.assertIn(
-            'async <a name="-an_async_generator"><strong>an_async_generator',
+            'async <a id="-an_async_generator"><strong>an_async_generator',
             html)
 
     @requires_docstrings
@@ -2026,7 +2091,7 @@ class PydocFodderTest(unittest.TestCase):
         doc = pydoc.HTMLDoc()
         result = doc.docmodule(pydocfodder)
         result = html2text(result)
-        lines = self.getsection(result, ' Functions', None)
+        lines = self.getsection(result, 'Functions', None)
         # function alias
         self.assertIn(' global_func_alias = global_func(x, y)', lines)
         self.assertIn(' A_staticmethod(x, y)', lines)
@@ -2172,7 +2237,7 @@ class TestHelper(unittest.TestCase):
 
     def test_keywords(self):
         self.assertEqual(sorted(pydoc.Helper.keywords),
-                         sorted(keyword.kwlist))
+                         sorted(keyword.kwlist + ['case', 'match', 'lazy']))
 
     def test_interact_empty_line_continues(self):
         # gh-138568: test pressing Enter without input should continue in help session
