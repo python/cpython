@@ -1,0 +1,1 @@
+Improve performance of ``csv`` reader by using ``_PyList_AppendTakeRef`` internally.

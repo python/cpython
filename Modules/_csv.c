@@ -15,6 +15,7 @@ module instead.
 
 #include "Python.h"
 #include "pycore_pyatomic_ft_wrappers.h"
+#include "pycore_list.h"
 
 #include <stddef.h>               // offsetof()
 #include <stdbool.h>
@@ -685,11 +686,9 @@ parse_save_field(ReaderObj *self)
         }
         self->field_len = 0;
     }
-    if (PyList_Append(self->fields, field) < 0) {
-        Py_DECREF(field);
+    if (_PyList_AppendTakeRef((PyListObject *)self->fields, field) < 0) {
         return -1;
     }
-    Py_DECREF(field);
     return 0;
 }
 
