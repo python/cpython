@@ -843,9 +843,6 @@ Timeouts
    Wait for the *fut* :ref:`awaitable <asyncio-awaitables>`
    to complete with a timeout.
 
-   If *fut* is a coroutine, it is awaited directly rather than being wrapped
-   in a :class:`Task`, unless *timeout* is zero or negative.
-
    *timeout* can either be ``None`` or a float or int number of seconds
    to wait for.  If *timeout* is ``None``, block until the future
    completes.

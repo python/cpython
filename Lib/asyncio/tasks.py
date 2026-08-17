@@ -440,9 +440,6 @@ def _release_waiter(waiter, *args):
 async def wait_for(fut, timeout):
     """Wait for the single Future or coroutine to complete, with timeout.
 
-    A coroutine is awaited directly rather than being wrapped in a Task,
-    unless timeout is zero or negative.
-
     Returns result of the Future or coroutine.  When a timeout occurs,
     it cancels fut and raises TimeoutError.  To prevent fut from being
     cancelled, wrap it in shield().
