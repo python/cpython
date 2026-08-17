@@ -1,0 +1,1 @@
+:func:`xml.dom.getDOMImplementation` no longer masks genuine errors raised by a well-known implementation's factory during fallback discovery. Only :exc:`ImportError` and :exc:`AttributeError` are treated as "implementation not available".
