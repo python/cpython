@@ -1,3 +1,0 @@
-Fix :meth:`concurrent.futures.Executor.map` cancelling the remaining calls when
-the mapped callable raises :exc:`TimeoutError`; such an exception is now
-propagated like any other, without stopping the iteration.
