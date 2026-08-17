@@ -1,0 +1,4 @@
+Speed up :meth:`str.split`, :meth:`str.rsplit` and :meth:`str.splitlines`
+(and the corresponding :class:`bytes` and :class:`bytearray` methods) by
+appending result items to the output list without an extra reference-count
+round-trip.
