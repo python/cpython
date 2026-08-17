@@ -1502,10 +1502,6 @@ r_object(RFILE *p)
         }
         if (type == TYPE_FROZENDICT && v != NULL) {
             Py_SETREF(v, PyFrozenDict_New(v));
-            /* frozendicts use delayed reference registration (like
-             * frozensets), so fill the slot reserved above now that the
-             * object exists; otherwise a later TYPE_REF to a shared
-             * frozendict resolves to an empty slot. */
             v = r_ref_insert(v, idx, flag, p);
         }
         retval = v;
