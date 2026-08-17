@@ -528,7 +528,7 @@ Module contents
 
 .. data:: MISSING
 
-   A :class:`sentinel` object signifying a missing default or default_factory.
+   A :class:`sentinel` object signifying a missing default or *default_factory*.
 
    .. versionchanged:: 3.15
       :const:`!MISSING` is now a :class:`sentinel` object.
