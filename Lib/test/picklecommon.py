@@ -290,6 +290,40 @@ class MyIntWithNew2(MyIntWithNew):
     __new__ = int.__new__
 
 
+# For test_newobj_metaclass_lookup
+metaclass_new_lookups = []
+
+class LookupLoggingMeta(type):
+    def __getattribute__(cls, name):
+        if name == '__new__':
+            metaclass_new_lookups.append(name)
+        return super().__getattribute__(name)
+
+class NewInheriting(metaclass=LookupLoggingMeta):
+    # __new__ is inherited from object, so tp_new is a C slot function.
+    def __init__(self, value=None):
+        self.value = value
+
+class NewDefining(metaclass=LookupLoggingMeta):
+    # __new__ is defined in Python, so tp_new is slot_tp_new, which
+    # performs its own __new__ lookup through the metaclass.
+    def __new__(cls, *args):
+        return super().__new__(cls)
+
+    def __init__(self, value=None):
+        self.value = value
+
+class NewInheritingEx(dict, metaclass=LookupLoggingMeta):
+    # Like NewInheriting, but pickled with NEWOBJ_EX (protocol 4+):
+    # non-empty kwargs force the NEWOBJ_EX opcode, and dict's C tp_new
+    # accepts them while __new__ stays inherited.
+    def __init__(self, value=None):
+        self.value = value
+
+    def __getnewargs_ex__(self):
+        return (), {'ignored': True}
+
+
 # For test_newobj_list_slots
 class SlotList(MyList):
     __slots__ = ["foo"]

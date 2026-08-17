@@ -3599,6 +3599,21 @@ class AbstractPickleTests:
                 self.assertEqual(int(y), 1)
                 self.assertEqual(y.foo, 42)
 
+    def test_newobj_metaclass_lookup(self):
+        # gh-105250: NEWOBJ and NEWOBJ_EX look __new__ up on the class,
+        # so a custom metaclass __getattribute__ hook observes the lookup.
+        for cls, min_proto in ((NewInheriting, 2),
+                               (NewDefining, 2),
+                               (NewInheritingEx, 4)):
+            for proto in protocols[min_proto:]:
+                with self.subTest(cls=cls, proto=proto):
+                    s = self.dumps(cls(42), proto)
+                    metaclass_new_lookups.clear()
+                    y = self.loads(s)
+                    self.assertIs(type(y), cls)
+                    self.assertEqual(y.value, 42)
+                    self.assertIn('__new__', metaclass_new_lookups)
+
     def test_newobj_not_class(self):
         # Issue 24552
         if self.py_version < (3, 4):

@@ -6328,7 +6328,36 @@ load_newobj(PickleState *state, UnpicklerObject *self, int use_kwargs)
         goto error;
     }
 
-    obj = ((PyTypeObject *)cls)->tp_new((PyTypeObject *)cls, args, kwargs);
+    if (Py_TYPE(cls) == &PyType_Type) {
+        /* Fast path: with the default metaclass, an attribute lookup of
+           cls.__new__ is not observable, so tp_new can be called
+           directly. */
+        obj = ((PyTypeObject *)cls)->tp_new((PyTypeObject *)cls, args,
+                                            kwargs);
+    }
+    else {
+        /* Look __new__ up on the class so that a custom metaclass
+           __getattribute__ observes the lookup, as in the Python
+           implementation. */
+        PyObject *func = PyObject_GetAttr(cls, &_Py_ID(__new__));
+        if (func == NULL) {
+            goto error;
+        }
+        Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+        PyObject *newargs = PyTuple_New(nargs + 1);
+        if (newargs == NULL) {
+            Py_DECREF(func);
+            goto error;
+        }
+        PyTuple_SET_ITEM(newargs, 0, Py_NewRef(cls));
+        for (Py_ssize_t i = 0; i < nargs; i++) {
+            PyTuple_SET_ITEM(newargs, i + 1,
+                             Py_NewRef(PyTuple_GET_ITEM(args, i)));
+        }
+        obj = PyObject_Call(func, newargs, kwargs);
+        Py_DECREF(newargs);
+        Py_DECREF(func);
+    }
     if (obj == NULL) {
         goto error;
     }
