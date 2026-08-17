@@ -1,0 +1,1 @@
+Fix SMTPHandler to close the SMTP connection when sending an email fails.
