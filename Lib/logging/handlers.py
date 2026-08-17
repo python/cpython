@@ -1121,13 +1121,13 @@ class SMTPHandler(logging.Handler):
             if not port:
                 port = smtplib.SMTP_PORT
             smtp = smtplib.SMTP(self.mailhost, port, timeout=self.timeout)
+            msg = EmailMessage()
+            msg['From'] = self.fromaddr
+            msg['To'] = ','.join(self.toaddrs)
+            msg['Subject'] = self.getSubject(record)
+            msg['Date'] = email.utils.localtime()
+            msg.set_content(self.format(record))
             try:
-                msg = EmailMessage()
-                msg['From'] = self.fromaddr
-                msg['To'] = ','.join(self.toaddrs)
-                msg['Subject'] = self.getSubject(record)
-                msg['Date'] = email.utils.localtime()
-                msg.set_content(self.format(record))
                 if self.username:
                     if self.secure is not None:
                         import ssl
