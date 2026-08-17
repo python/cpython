@@ -141,14 +141,14 @@ _testmultiphase.StateAccessType.get_defining_module
 
 Return the module of the defining class.
 
-Also tests that result of PyType_GetModuleByDef matches defining_class's
-module.
+Also tests that result of PyType_GetModuleByDef matches
+defining_class's module.
 [clinic start generated code]*/
 
 static PyObject *
 _testmultiphase_StateAccessType_get_defining_module_impl(StateAccessTypeObject *self,
                                                          PyTypeObject *cls)
-/*[clinic end generated code: output=ba2a14284a5d0921 input=d2c7245c8a9d06f8]*/
+/*[clinic end generated code: output=ba2a14284a5d0921 input=903e7f66555d65ae]*/
 {
     PyObject *retval;
     retval = PyType_GetModule(cls);

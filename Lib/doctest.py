@@ -285,7 +285,8 @@ class _SpoofOut(StringIO):
         return result
 
     def truncate(self, size=None):
-        self.seek(size)
+        if size is not None:
+            self.seek(size)
         StringIO.truncate(self)
 
 # Worst-case linear-time ellipsis matching.
@@ -922,7 +923,7 @@ class DocTestFinder:
         # given object's docstring.
         try:
             file = inspect.getsourcefile(obj)
-        except TypeError:
+        except (TypeError, OSError):
             source_lines = None
         else:
             if not file:
@@ -1768,7 +1769,7 @@ class OutputChecker:
                           '', want)
             # If a line in got contains only spaces, then remove the
             # spaces.
-            got = re.sub(r'(?m)^[^\S\n]+$', '', got)
+            got = re.sub(r'(?m)^[\s--\n]+$', '', got)
             if got == want:
                 return True
 

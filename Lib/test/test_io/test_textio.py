@@ -1560,6 +1560,56 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
         wrapper = self.TextIOWrapper(raw)
         wrapper.close()  # should not crash
 
+    def test_reentrant_detach_during_flush(self):
+        # gh-143008: Reentrant detach() during flush should not crash.
+
+        class DetachOnce(self.BufferedRandom):
+            wrapper = None
+
+            def detach_once(self):
+                original = self.wrapper
+                self.wrapper = None
+                if original is not None:
+                    original.detach()
+                    original.flush()
+
+        class DetachOnFlush(DetachOnce):
+            def flush(self):
+                self.detach_once()
+
+        class DetachOnWrite(DetachOnce):
+            def write(self, b):
+                self.detach_once()
+                return len(b)
+
+        # Separate reference for after detach_once.
+        wrapper = None
+
+        def make_text(buffer):
+            nonlocal wrapper
+            buffer.wrapper = self.TextIOWrapper(buffer, encoding='utf-8')
+            wrapper = buffer.wrapper
+
+        # Many calls could result in the same null self->buffer crash.
+        tests = [
+            ('truncate', lambda: wrapper.truncate(0)),
+            ('close', lambda: wrapper.close()),
+            ('detach', lambda: wrapper.detach()),
+            ('seek', lambda: wrapper.seek(0)),
+            ('tell', lambda: wrapper.tell()),
+            ('reconfigure', lambda: wrapper.reconfigure(line_buffering=True)),
+        ]
+        for name, method in tests:
+            with self.subTest(name):
+                make_text(DetachOnFlush(self.MockRawIO()))
+                self.assertRaisesRegex(ValueError, "detached", method)
+
+        # Should not crash.
+        with self.subTest('read via writeflush'):
+            make_text(DetachOnWrite(self.MockRawIO()))
+            wrapper.write('x')
+            self.assertRaisesRegex(ValueError, "detached", wrapper.read)
+
 
 class PyTextIOWrapperTest(TextIOWrapperTest, PyTestCase):
     shutdown_error = "LookupError: unknown encoding: ascii"
