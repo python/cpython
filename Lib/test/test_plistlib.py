@@ -857,6 +857,12 @@ class TestPlistlib(unittest.TestCase):
             self.assertRaises(ValueError, plistlib.loads,
                               ("<plist><array>%s</array></plist>"%i).encode())
 
+    def test_invalidkey(self):
+        for xml in (b"<plist><key>x</key></plist>",
+                    b'<?xml version="1.0"?><key>x</key>',
+                    b"<plist><array><key>x</key></array></plist>"):
+            self.assertRaises(ValueError, plistlib.loads, xml)
+
     def test_invaliddict(self):
         for i in ["<key><true/>k</key><string>compound key</string>",
                   "<key>single key</key>",
@@ -875,12 +881,6 @@ class TestPlistlib(unittest.TestCase):
     def test_invalidreal(self):
         self.assertRaises(ValueError, plistlib.loads,
                           b"<plist><integer>not real</integer></plist>")
-
-    def test_invalidkey(self):
-        for xml in (b"<plist><key>x</key></plist>",
-                    b'<?xml version="1.0"?><key>x</key>',
-                    b"<plist><array><key>x</key></array></plist>"):
-            self.assertRaises(ValueError, plistlib.loads, xml)
 
     def test_integer_notations(self):
         pl = b"<plist><integer>456</integer></plist>"
