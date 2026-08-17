@@ -260,6 +260,7 @@ class Dis(ThemeSection):
 
         return self.reset
 
+@dataclass(frozen=True, kw_only=True)
 class FancyCompleter(ThemeSection):
     # functions and methods
     function: builtins.str = ANSIColors.BOLD_BLUE
