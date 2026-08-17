@@ -1878,7 +1878,7 @@ make_sreplacement(PyObject *object)
     if (timestamp == NULL) {
         return NULL;
     }
-    
+
     PyObject *math = PyImport_ImportModule("math");
     if (math == NULL) {
         Py_DECREF(timestamp);
