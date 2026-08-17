@@ -1,3 +1,0 @@
-Speed up :func:`re.split` by appending result items to the output list
-without an extra reference-count round-trip (using the internal
-reference-stealing list append helper).
