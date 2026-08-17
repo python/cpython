@@ -58,6 +58,24 @@ class ProcessPoolExecutorTest(ExecutorTest):
                                     "max_workers must be <= 61"):
             futures.ProcessPoolExecutor(max_workers=62)
 
+    @unittest.skipUnless(hasattr(os, 'sysconf'), 'requires os.sysconf')
+    def test_sysconf_permission_error(self):
+        # Issue 155912: ProcessPoolExecutor should handle PermissionError
+        # from os.sysconf("SC_SEM_NSEMS_MAX") when running under a strict sandbox.
+        def mock_sysconf(name):
+            if name == "SC_SEM_NSEMS_MAX":
+                raise PermissionError(1, "Operation not permitted")
+            # If it asks for something else, let the real one handle it
+            # (though normally _check_system_limits only asks for SC_SEM_NSEMS_MAX)
+            return os_sysconf_orig(name)
+            
+        os_sysconf_orig = os.sysconf
+        with unittest.mock.patch('os.sysconf', side_effect=mock_sysconf):
+            # Should construct without raising PermissionError
+            with futures.ProcessPoolExecutor(max_workers=1) as executor:
+                pass
+
+
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_killed_child(self):
         # When a child process is abruptly terminated, the whole pool gets
