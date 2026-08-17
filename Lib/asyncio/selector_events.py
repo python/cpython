@@ -1183,7 +1183,11 @@ class _SelectorSocketTransport(_SelectorTransport):
             self._conn_lost += 1
             return
 
-        self._buffer.extend([memoryview(data) for data in list_of_data])
+        # gh-155888: an empty chunk can never be drained, so never buffer it
+        self._buffer.extend(
+            [memoryview(data) for data in list_of_data if data])
+        if not self._buffer:
+            return
         self._write_ready()
         # If the entire buffer couldn't be written, register a write handler
         if self._buffer:

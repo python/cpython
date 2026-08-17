@@ -560,6 +560,19 @@ class EventLoopTestsMixin:
         r.close()
         self.assertEqual(read, data)
 
+    def test_writelines_empty_chunk(self):
+        # gh-155888: an empty chunk can never be drained, so never buffer it
+        rsock, wsock = socket.socketpair()
+        self.addCleanup(rsock.close)
+
+        async def main():
+            reader, writer = await asyncio.open_connection(sock=wsock)
+            writer.writelines([b'data', b''])
+            writer.close()
+            await asyncio.wait_for(writer.wait_closed(), support.SHORT_TIMEOUT)
+
+        self.loop.run_until_complete(main())
+
     @unittest.skipUnless(hasattr(signal, 'SIGKILL'), 'No SIGKILL')
     def test_add_signal_handler(self):
         caught = 0
