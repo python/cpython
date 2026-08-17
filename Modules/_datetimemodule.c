@@ -1885,7 +1885,7 @@ make_sreplacement(PyObject *object)
         return NULL;
     }
 
-    PyObject *temp = PyObject_CallMethodObjArgs(math, &_Py_ID(floor), timestamp, NULL);
+    PyObject *temp = PyObject_CallMethod(math, "floor", "O", timestamp);
     Py_DECREF(math);
     Py_DECREF(timestamp);
     if (temp == NULL) {
