@@ -3608,11 +3608,11 @@ class AbstractPickleTests:
             for proto in protocols[min_proto:]:
                 with self.subTest(cls=cls, proto=proto):
                     s = self.dumps(cls(42), proto)
-                    metaclass_new_lookups.clear()
+                    before = LookupLoggingMeta.new_lookup_count
                     y = self.loads(s)
                     self.assertIs(type(y), cls)
                     self.assertEqual(y.value, 42)
-                    self.assertIn('__new__', metaclass_new_lookups)
+                    self.assertGreater(LookupLoggingMeta.new_lookup_count, before)
 
     def test_newobj_not_class(self):
         # Issue 24552

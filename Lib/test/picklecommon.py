@@ -291,12 +291,12 @@ class MyIntWithNew2(MyIntWithNew):
 
 
 # For test_newobj_metaclass_lookup
-metaclass_new_lookups = []
-
 class LookupLoggingMeta(type):
+    new_lookup_count = 0
+
     def __getattribute__(cls, name):
         if name == '__new__':
-            metaclass_new_lookups.append(name)
+            LookupLoggingMeta.new_lookup_count += 1
         return super().__getattribute__(name)
 
 class NewInheriting(metaclass=LookupLoggingMeta):
