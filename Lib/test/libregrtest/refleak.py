@@ -208,13 +208,13 @@ def runtest_refleak(test_name, test_func,
         return any(deltas)
 
     failed = False
-    for deltas, item_name, checker in [
+    for raw_deltas, item_name, checker in [
         (rc_deltas, 'references', check_rc_deltas),
         (alloc_deltas, 'memory blocks', check_rc_deltas),
         (fd_deltas, 'file descriptors', check_fd_deltas)
     ]:
         # ignore warmup runs; convert to a list for reporting
-        deltas = list(deltas[warmups:])
+        deltas = list(raw_deltas[warmups:])
         failing = checker(deltas)
         suspicious = any(deltas)
         if failing or suspicious:
