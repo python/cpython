@@ -330,9 +330,13 @@ static PyObject *
 msvcrt_putch_impl(PyObject *module, char char_value)
 /*[clinic end generated code: output=92ec9b81012d8f60 input=ec078dd10cb054d6]*/
 {
+    int res;
     _Py_BEGIN_SUPPRESS_IPH
-    _putch(char_value);
+    res = _putch(char_value);
     _Py_END_SUPPRESS_IPH
+    if (res == EOF) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
     Py_RETURN_NONE;
 }
 
@@ -351,9 +355,13 @@ static PyObject *
 msvcrt_putwch_impl(PyObject *module, int unicode_char)
 /*[clinic end generated code: output=a3bd1a8951d28eee input=996ccd0bbcbac4c3]*/
 {
+    wint_t res;
     _Py_BEGIN_SUPPRESS_IPH
-    _putwch(unicode_char);
+    res = _putwch(unicode_char);
     _Py_END_SUPPRESS_IPH
+    if (res == WEOF) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
     Py_RETURN_NONE;
 
 }
