@@ -532,7 +532,7 @@ Module contents
 
    .. versionchanged:: 3.15
       :const:`!MISSING` is now a :class:`sentinel` object.  In earlier versions
-      it was an instance of a private class and had a different :func:`repr`.
+      it was an instance of a private class.
 
 .. data:: KW_ONLY
 
@@ -563,7 +563,7 @@ Module contents
 
    .. versionchanged:: 3.15
       :const:`!KW_ONLY` is now a :class:`sentinel` object.  In earlier versions
-      it was an instance of a private class and had a different :func:`repr`.
+      it was an instance of a private class.
 
 .. exception:: FrozenInstanceError
 
