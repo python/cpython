@@ -1872,7 +1872,7 @@ pysqlite_connection_call(PyObject *op, PyObject *args, PyObject *kwargs)
 _sqlite3.Connection.execute as pysqlite_connection_execute
 
     sql: unicode
-    parameters: object = NULL
+    parameters: object(c_default = 'NULL') = ()
     /
 
 Executes an SQL statement.
@@ -1881,7 +1881,7 @@ Executes an SQL statement.
 static PyObject *
 pysqlite_connection_execute_impl(pysqlite_Connection *self, PyObject *sql,
                                  PyObject *parameters)
-/*[clinic end generated code: output=5be05ae01ee17ee4 input=27aa7792681ddba2]*/
+/*[clinic end generated code: output=5be05ae01ee17ee4 input=847390a17de45cc7]*/
 {
     PyObject* result = 0;
 
