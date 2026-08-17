@@ -1157,7 +1157,7 @@ class SMTPHandler(logging.Handler):
                 except Exception:
                     pass
                 raise
-        except Exception:    
+        except Exception:
             self.handleError(record)
 
 class NTEventLogHandler(logging.Handler):
