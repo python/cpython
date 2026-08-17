@@ -2704,6 +2704,9 @@ convenience.
 |           | (empty string if the object is | +06:34:15,             |       |
 |           | naive).                        | -03:07:12.345216       |       |
 +-----------+--------------------------------+------------------------+-------+
+| ``%s``    | UNIX timestamp (the number of  | 1404212722             | \(11) |
+|           | seconds since the Epoch).      |                        |       |
++-----------+--------------------------------+------------------------+-------+
 
 The full set of format codes supported varies across platforms, because Python
 calls the platform C library's :c:func:`strftime` function, and platform
@@ -2923,6 +2926,12 @@ Notes:
    .. deprecated-removed:: 3.15 3.17
       :meth:`~.datetime.strptime` calls using a format string containing
       ``%e`` without a year now emit a :exc:`DeprecationWarning`.
+
+(11)
+   .. versionadded:: 3.15
+      ``%s`` format code support is added for only :meth:`~.datetime.strftime`
+      and :meth:`~.date.strftime`. In previous versions, ``%s`` format code
+      behavior was undefined and varied across platforms.
 
 .. rubric:: Footnotes
 
