@@ -533,15 +533,16 @@ bypass:
                         dsg = dsgcache;
                 else {
                     for (dsg = CONFIG_DESIGNATIONS;
-                         dsg->mark != charset
-#ifdef Py_DEBUG
-                            && dsg->mark != '\0'
-#endif
-                         ; dsg++)
+                         dsg->mark != charset && dsg->mark != '\0';
+                         dsg++)
                     {
                         /* noop */
                     }
-                    assert(dsg->mark != '\0');
+                    if (dsg->mark == '\0') {
+                        /* Unknown charset designation from a corrupt
+                           setstate(); no width to trust, report one byte. */
+                        return 1;
+                    }
                     dsgcache = dsg;
                 }
 
