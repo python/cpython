@@ -1,0 +1,3 @@
+Fix a connection leak in :class:`logging.handlers.SMTPHandler`: ``emit()``
+now closes the SMTP connection when sending the record fails, instead of
+leaving the cleanup to the garbage collector.

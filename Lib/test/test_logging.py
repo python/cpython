@@ -1175,6 +1175,19 @@ class SMTPHandlerTest(BaseTest):
         self.messages.append(args)
         self.handled.set()
 
+    @patch('smtplib.SMTP')
+    def test_connection_closed_on_error(self, mock_smtp):
+        # gh-155946: the connection must be closed even if sending fails.
+        instance_mock_smtp = mock_smtp.return_value
+        instance_mock_smtp.send_message.side_effect = OSError('sending failed')
+        h = logging.handlers.SMTPHandler('localhost', 'me', 'you', 'Log')
+        h.handleError = Mock()
+        r = logging.makeLogRecord({'msg': 'Hello'})
+        h.emit(r)
+        instance_mock_smtp.close.assert_called()
+        h.handleError.assert_called_with(r)
+        h.close()
+
 class MemoryHandlerTest(BaseTest):
 
     """Tests for the MemoryHandler."""

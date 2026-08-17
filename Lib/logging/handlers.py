@@ -1121,35 +1121,38 @@ class SMTPHandler(logging.Handler):
             if not port:
                 port = smtplib.SMTP_PORT
             smtp = smtplib.SMTP(self.mailhost, port, timeout=self.timeout)
-            msg = EmailMessage()
-            msg['From'] = self.fromaddr
-            msg['To'] = ','.join(self.toaddrs)
-            msg['Subject'] = self.getSubject(record)
-            msg['Date'] = email.utils.localtime()
-            msg.set_content(self.format(record))
-            if self.username:
-                if self.secure is not None:
-                    import ssl
+            try:
+                msg = EmailMessage()
+                msg['From'] = self.fromaddr
+                msg['To'] = ','.join(self.toaddrs)
+                msg['Subject'] = self.getSubject(record)
+                msg['Date'] = email.utils.localtime()
+                msg.set_content(self.format(record))
+                if self.username:
+                    if self.secure is not None:
+                        import ssl
 
-                    try:
-                        keyfile = self.secure[0]
-                    except IndexError:
-                        keyfile = None
+                        try:
+                            keyfile = self.secure[0]
+                        except IndexError:
+                            keyfile = None
 
-                    try:
-                        certfile = self.secure[1]
-                    except IndexError:
-                        certfile = None
+                        try:
+                            certfile = self.secure[1]
+                        except IndexError:
+                            certfile = None
 
-                    context = ssl._create_stdlib_context(
-                        certfile=certfile, keyfile=keyfile
-                    )
-                    smtp.ehlo()
-                    smtp.starttls(context=context)
-                    smtp.ehlo()
-                smtp.login(self.username, self.password)
-            smtp.send_message(msg)
-            smtp.quit()
+                        context = ssl._create_stdlib_context(
+                            certfile=certfile, keyfile=keyfile
+                        )
+                        smtp.ehlo()
+                        smtp.starttls(context=context)
+                        smtp.ehlo()
+                    smtp.login(self.username, self.password)
+                smtp.send_message(msg)
+                smtp.quit()
+            finally:
+                smtp.close()
         except Exception:
             self.handleError(record)
 
