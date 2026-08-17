@@ -531,8 +531,7 @@ Module contents
    A :class:`sentinel` object signifying a missing default or default_factory.
 
    .. versionchanged:: 3.15
-      :const:`!MISSING` is now a :class:`sentinel` object.  In earlier versions
-      it was an instance of a private class.
+      :const:`!MISSING` is now a :class:`sentinel` object.
 
 .. data:: KW_ONLY
 
@@ -562,8 +561,7 @@ Module contents
    .. versionadded:: 3.10
 
    .. versionchanged:: 3.15
-      :const:`!KW_ONLY` is now a :class:`sentinel` object.  In earlier versions
-      it was an instance of a private class.
+      :const:`!KW_ONLY` is now a :class:`sentinel` object.
 
 .. exception:: FrozenInstanceError
 
