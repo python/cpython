@@ -1,1 +1,1 @@
-Handle :exc:`PermissionError` from :func:`os.sysconf` in `concurrent.futures.ProcessPoolExecutor` when running under a strict sandbox.
+Handle :exc:`PermissionError` from :func:`os.sysconf` in ``concurrent.futures.ProcessPoolExecutor`` when running under a strict sandbox.
