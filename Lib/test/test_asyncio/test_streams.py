@@ -889,6 +889,22 @@ class StreamTests(test_utils.TestCase):
         self.assertIs(reader._transport, new_transport)
         self.assertTrue(protocol._over_ssl)
 
+    def test_sync_client_cb_closes_transport_on_error(self):
+        reader = asyncio.StreamReader(loop=self.loop)
+
+        def client_connected_cb(reader, writer):
+            raise RuntimeError('test')
+
+        protocol = asyncio.StreamReaderProtocol(
+            reader, client_connected_cb, loop=self.loop)
+        transport = mock.Mock()
+        transport.get_extra_info.return_value = None
+
+        with self.assertRaisesRegex(RuntimeError, 'test'):
+            protocol.connection_made(transport)
+
+        transport.close.assert_called_once_with()
+
     def test_streamreader_constructor_without_loop(self):
         with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
             asyncio.StreamReader()

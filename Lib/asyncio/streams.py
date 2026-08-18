@@ -239,7 +239,13 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         self._over_ssl = transport.get_extra_info('sslcontext') is not None
         if self._client_connected_cb is not None:
             writer = StreamWriter(transport, self, reader, self._loop)
-            res = self._client_connected_cb(reader, writer)
+            try:
+                res = self._client_connected_cb(reader, writer)
+            except BaseException:
+                transport.close()
+                raise
+            finally:
+                self._strong_reader = None
             if coroutines.iscoroutine(res):
                 def callback(task):
                     if task.cancelled():
@@ -256,8 +262,6 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
 
                 self._task = self._loop.create_task(res)
                 self._task.add_done_callback(callback)
-
-            self._strong_reader = None
 
     def connection_lost(self, exc):
         reader = self._stream_reader

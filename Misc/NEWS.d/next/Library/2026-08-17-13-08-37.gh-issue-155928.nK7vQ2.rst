@@ -1,0 +1,3 @@
+Close the transport when a synchronous callback passed to
+:func:`asyncio.start_server` or :func:`asyncio.start_unix_server` raises an
+exception.
