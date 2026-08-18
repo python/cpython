@@ -1558,6 +1558,22 @@ class ReTests(unittest.TestCase):
         self.assertEqual(w.filename, __file__)
         self.assertEqual(re.findall(r'[~~1]', s), list('1~'))
 
+    def test_difference_not_fused_with_locale_ignorecase(self):
+        # IN_LOC_IGNORE tests the whole set once per locale case, so a fused
+        # difference, which relies on an embedded NEGATE, cannot be used.
+        IL = re.IGNORECASE | re.LOCALE
+        # [b] matches b'B' under these flags, so the lookbehind must reject it.
+        self.assertTrue(re.fullmatch(rb'[b]', b'B', IL))
+        self.assertIsNone(re.fullmatch(rb'\w(?<!b)', b'B', IL))
+        # IGNORECASE may also be scoped to the group.
+        self.assertIsNone(re.fullmatch(rb'(?i:\w(?<!b))', b'B', re.LOCALE))
+        # [0-m] matches b'N', so the difference operator must exclude it.
+        self.assertTrue(re.fullmatch(rb'[0-m]', b'N', IL))
+        self.assertIsNone(re.fullmatch(rb'[A-z--[0-m]]', b'N', IL))
+        # Without both flags the fusion is still applied.
+        self.assertTrue(re.fullmatch(rb'\w(?<!b)', b'B'))
+        self.assertTrue(re.fullmatch(rb'[a-c--[b]]', b'a'))
+
     def test_search_coverage(self):
         self.assertEqual(re.search(r"\s(b)", " b").group(1), "b")
         self.assertEqual(re.search(r"a\s", "a ").group(0), "a ")
