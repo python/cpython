@@ -177,12 +177,13 @@ tb_lineno_get(PyObject *op, void *Py_UNUSED(_))
 /*[clinic input]
 @critical_section
 @setter
+@deleter
 traceback.tb_next
 [clinic start generated code]*/
 
 static int
 traceback_tb_next_set_impl(PyTracebackObject *self, PyObject *value)
-/*[clinic end generated code: output=d4868cbc48f2adac input=ce66367f85e3c443]*/
+/*[clinic end generated code: output=d4868cbc48f2adac input=936201ff689c5700]*/
 {
     if (!value) {
         PyErr_Format(PyExc_TypeError, "can't delete tb_next attribute");
