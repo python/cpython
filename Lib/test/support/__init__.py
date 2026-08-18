@@ -1098,16 +1098,29 @@ def subTests(arg_names, arg_values, /, *, _do_cleanups=False):
     def decorator(func):
         if isinstance(func, type):
             raise TypeError('subTests() can only decorate methods, not classes')
-        @functools.wraps(func)
-        def wrapper(self, /, *args, **kwargs):
+
+        def iter_subtest_kwargs():
             for values in arg_values:
-                if single_param:
-                    values = (values,)
-                subtest_kwargs = dict(zip(arg_names, values))
-                with self.subTest(**subtest_kwargs):
-                    func(self, *args, **kwargs, **subtest_kwargs)
-                if _do_cleanups:
-                    self.doCleanups()
+                yield dict(zip(arg_names, (values,) if single_param else values))
+
+        # A synchronous wrapper would discard the coroutine without awaiting
+        # it, so an asynchronous test would not run at all.
+        if inspect.iscoroutinefunction(func):
+            @functools.wraps(func)
+            async def wrapper(self, /, *args, **kwargs):
+                for subtest_kwargs in iter_subtest_kwargs():
+                    with self.subTest(**subtest_kwargs):
+                        await func(self, *args, **kwargs, **subtest_kwargs)
+                    if _do_cleanups:
+                        self.doCleanups()
+        else:
+            @functools.wraps(func)
+            def wrapper(self, /, *args, **kwargs):
+                for subtest_kwargs in iter_subtest_kwargs():
+                    with self.subTest(**subtest_kwargs):
+                        func(self, *args, **kwargs, **subtest_kwargs)
+                    if _do_cleanups:
+                        self.doCleanups()
         return wrapper
     return decorator
 
@@ -1552,14 +1565,25 @@ print_warning.orig_stderr = sys.stderr
 # to cleanup threads.
 environment_altered = False
 
+# Short descriptions of what was altered, e.g. "unraisable exception".
+# They are reported by regrtest together with the name of the test.
+environment_altered_reasons = []
+
+
+def set_environment_altered(reason):
+    """Set the environment_altered flag and record why it was set."""
+    global environment_altered
+    environment_altered = True
+    if reason not in environment_altered_reasons:
+        environment_altered_reasons.append(reason)
+
+
 def reap_children():
     """Use this function at the end of test_main() whenever sub-processes
     are started.  This will help ensure that no extra children (zombies)
     stick around to hog resources and create problems when looking
     for refleaks.
     """
-    global environment_altered
-
     # Need os.waitpid(-1, os.WNOHANG): Windows is not supported
     if not (hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG')):
         return
@@ -1579,7 +1603,7 @@ def reap_children():
             break
 
         print_warning(f"reap_children() reaped child process {pid}")
-        environment_altered = True
+        set_environment_altered("reaped child process")
 
 
 @contextlib.contextmanager
@@ -1942,7 +1966,8 @@ class SuppressCrashReport:
 
             self.old_value = msvcrt.GetErrorMode()
 
-            msvcrt.SetErrorMode(self.old_value | msvcrt.SEM_NOGPFAULTERRORBOX)
+            msvcrt.SetErrorMode(self.old_value | msvcrt.SEM_NOGPFAULTERRORBOX
+                                               | msvcrt.SEM_FAILCRITICALERRORS)
 
             # bpo-23314: Suppress assert dialogs in debug builds.
             # CrtSetReportMode() is only available in debug build.
@@ -3466,3 +3491,17 @@ def skip_on_low_desktop_heap_memory_subprocess(returncode):
     if returncode == STATUS_DLL_INIT_FAILED:
         raise unittest.SkipTest('gh-150436: DLL init failed, likely because '
                                 'of low desktop heap memory')
+
+
+def check_immutable_type(testcase, type):
+    regex = r'cannot set .* attribute of immutable type'
+    with testcase.assertRaisesRegex(TypeError, regex):
+        setattr(type, 'custom_attr', 123)
+
+    try:
+        from _testlimitedcapi import type_getflags, Py_TPFLAGS_IMMUTABLETYPE
+    except ImportError:
+        pass
+    else:
+        flags = type_getflags(type)
+        testcase.assertTrue(flags & Py_TPFLAGS_IMMUTABLETYPE)
