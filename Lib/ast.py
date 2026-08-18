@@ -123,29 +123,6 @@ def _convert_literal(node, omit_validation=False):
             return left + right
         else:
             return left - right
-    if (isinstance(node, Compare)
-        and isinstance(node.left, Constant)
-        and type(left := _convert_literal(node.left)) in (int, float, str)
-        and len(node.ops) == 1
-        and isinstance(op := node.ops[0], (Eq, NotEq, Lt, LtE, Gt, GtE))
-        and len(node.comparators) == 1
-        and isinstance(node.comparators[0], Constant)
-        and type(right := node.comparators[0].value) in (int, float, str)
-        and (type(left) == type(right) or str not in [type(left), type(right)])
-    ):
-        if isinstance(op, Eq):
-            return left == right
-        elif isinstance(op, NotEq):
-            return left != right
-        elif isinstance(op, Lt):
-            return left < right
-        elif isinstance(op, LtE):
-            return left <= right
-        elif isinstance(op, Gt):
-            return left > right
-        else:
-            return left >= right
-
     msg = "malformed node or string"
     if lno := getattr(node, 'lineno', None):
         msg += f' on line {lno}'
