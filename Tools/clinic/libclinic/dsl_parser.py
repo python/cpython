@@ -18,7 +18,7 @@ from libclinic.function import (
     Module, Class, Function, Parameter,
     FunctionKind,
     CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW,
-    GETTER, SETTER)
+    ACCESSORS, SETTERS)
 from libclinic.converter import (
     converters, legacy_converters)
 from libclinic.converters import (
@@ -112,8 +112,8 @@ ConverterArgs = dict[str, Any]
 class ParamState(enum.IntEnum):
     """Parameter parsing state.
 
-     [ [ a, b, ] c, ] d, e, f=3, [ g, h, [ i ] ]   <- line
-    01   2          3       4    5           6     <- state transitions
+     [ [ a, b, ] c, ] [ d, ] e, f=3, [ g, h, [ i ] ] [ j ]   <- line
+    01   2          3 12   3     4   5           6   5     6 <- state transitions
     """
     # Before we've seen anything.
     # Legal transitions: to LEFT_SQUARE_BEFORE or REQUIRED
@@ -251,7 +251,8 @@ class DSLParser:
     positional_only: bool
     deprecated_positional: VersionTuple | None
     deprecated_keyword: VersionTuple | None
-    group: int
+    group_stack: list[int]
+    group_count: int
     parameter_state: ParamState
     indent: IndentStack
     kind: FunctionKind
@@ -291,7 +292,8 @@ class DSLParser:
         self.positional_only = False
         self.deprecated_positional = None
         self.deprecated_keyword = None
-        self.group = 0
+        self.group_stack = []
+        self.group_count = 0
         self.parameter_state: ParamState = ParamState.START
         self.indent = IndentStack()
         self.kind = CALLABLE
@@ -445,21 +447,31 @@ class DSLParser:
 
     def at_getter(self) -> None:
         match self.kind:
+            case FunctionKind.CALLABLE:
+                self.kind = FunctionKind.GETTER
             case FunctionKind.GETTER:
                 fail("Cannot apply @getter twice to the same function!")
-            case FunctionKind.SETTER:
-                fail("Cannot apply both @getter and @setter to the same function!")
             case _:
-                self.kind = FunctionKind.GETTER
+                fail("Can't set @getter, function is not a normal callable")
 
     def at_setter(self) -> None:
         match self.kind:
-            case FunctionKind.SETTER:
-                fail("Cannot apply @setter twice to the same function!")
-            case FunctionKind.GETTER:
-                fail("Cannot apply both @getter and @setter to the same function!")
-            case _:
+            case FunctionKind.CALLABLE:
                 self.kind = FunctionKind.SETTER
+            case FunctionKind.SETTER | FunctionKind.SETTER_AND_DELETER:
+                fail("Cannot apply @setter twice to the same function!")
+            case _:
+                fail("Can't set @setter, function is not a normal callable")
+
+    def at_deleter(self) -> None:
+        match self.kind:
+            case FunctionKind.SETTER:
+                # The setter is called with NULL to delete the attribute.
+                self.kind = FunctionKind.SETTER_AND_DELETER
+            case FunctionKind.SETTER_AND_DELETER:
+                fail("Cannot apply @deleter twice to the same function!")
+            case _:
+                fail("Can't set @deleter, @setter is not applied")
 
     def at_staticmethod(self) -> None:
         if self.kind is not CALLABLE:
@@ -590,7 +602,7 @@ class DSLParser:
             fail(f"{name!r} must be a normal method; got '{self.kind}'!")
         if name == '__new__' and (self.kind is not CLASS_METHOD or not cls):
             fail("'__new__' must be a class method!")
-        if self.kind in {GETTER, SETTER} and not cls:
+        if self.kind in ACCESSORS and not cls:
             fail("@getter and @setter must be methods")
 
         # Normalise self.kind.
@@ -603,8 +615,8 @@ class DSLParser:
         self, full_name: str, forced_converter: str
     ) -> CReturnConverter:
         if forced_converter:
-            if self.kind in {GETTER, SETTER}:
-                fail(f"@{self.kind.name.lower()} method cannot define a return type")
+            if self.kind in ACCESSORS:
+                fail("@getter and @setter methods cannot define a return type")
             if self.kind is METHOD_INIT:
                 fail("__init__ methods cannot define a return type")
             ast_input = f"def x() -> {forced_converter}: pass"
@@ -624,7 +636,7 @@ class DSLParser:
             except ValueError:
                 fail(f"Badly formed annotation for {full_name!r}: {forced_converter!r}")
 
-        if self.kind in {METHOD_INIT, SETTER}:
+        if self.kind in {METHOD_INIT} | SETTERS:
             return int_return_converter()
         return CReturnConverter()
 
@@ -730,6 +742,22 @@ class DSLParser:
         self.next(self.state_parameters_start)
 
     def add_function(self, func: Function) -> None:
+        if func.kind in ACCESSORS:
+            # The accessors of the same attribute are rendered into a single
+            # PyGetSetDef entry, which is identified by the C basename, so
+            # they must share it.
+            for other in (func.cls or func.module).functions:
+                if (other.kind in ACCESSORS
+                        and other.full_name == func.full_name):
+                    if (other.kind is func.kind
+                            or {other.kind, func.kind} <= SETTERS):
+                        kind = 'setter' if func.kind in SETTERS else 'getter'
+                        fail(f"Cannot apply @{kind} to "
+                             f"{func.full_name!r} twice")
+                    if other.c_basename != func.c_basename:
+                        fail(f"The accessors of {func.full_name!r} "
+                             f"must have the same C basename")
+
         # Insert a self converter automatically.
         tp, name = correct_name_for_self(func)
         if func.cls and tp == "PyObject *":
@@ -812,9 +840,8 @@ class DSLParser:
             return self.next(self.state_function_docstring, line)
 
         assert self.function is not None
-        if self.function.kind in {GETTER, SETTER}:
-            getset = self.function.kind.name.lower()
-            fail(f"@{getset} methods cannot define parameters")
+        if self.function.kind in ACCESSORS:
+            fail("@getter and @setter methods cannot define parameters")
 
         self.parameter_continuation = ''
         return self.next(self.state_parameter, line)
@@ -829,6 +856,7 @@ class DSLParser:
             assert self.function is not None
             for p in self.function.parameters.values():
                 p.group = -p.group
+            self.group_count = 0
 
     def state_parameter(self, line: str) -> None:
         assert isinstance(self.function, Function)
@@ -888,7 +916,7 @@ class DSLParser:
             case ParamState.LEFT_SQUARE_BEFORE:
                 self.parameter_state = ParamState.GROUP_BEFORE
             case ParamState.GROUP_BEFORE:
-                if not self.group:
+                if not self.group_stack:
                     self.to_required()
             case ParamState.GROUP_AFTER | ParamState.OPTIONAL:
                 pass
@@ -1082,7 +1110,7 @@ class DSLParser:
 
         if isinstance(converter, self_converter):
             if len(self.function.parameters) == 1:
-                if self.group:
+                if self.group_stack:
                     fail("A 'self' parameter cannot be in an optional group.")
                 assert self.parameter_state is ParamState.REQUIRED
                 assert value is unspecified
@@ -1096,7 +1124,7 @@ class DSLParser:
         if isinstance(converter, defining_class_converter):
             _lp = len(self.function.parameters)
             if _lp == 1:
-                if self.group:
+                if self.group_stack:
                     fail("A 'defining_class' parameter cannot be in an optional group.")
                 if self.function.cls is None:
                     fail("A 'defining_class' parameter cannot be defined at module level.")
@@ -1110,7 +1138,9 @@ class DSLParser:
 
 
         p = Parameter(parameter_name, kind, function=self.function,
-                      converter=converter, default=value, group=self.group,
+                      converter=converter, default=value,
+                      group=self.group_stack[-1] if self.group_stack else 0,
+                      group_depth=len(self.group_stack),
                       deprecated_positional=self.deprecated_positional)
 
         names = [k.name for k in self.function.parameters.values()]
@@ -1189,26 +1219,34 @@ class DSLParser:
 
     def parse_opening_square_bracket(self, function: Function) -> None:
         """Parse opening parameter group symbol '['."""
+        # A group can only be nested in a group which does not contain
+        # parameters yet, but two groups on the same nesting level can
+        # follow each other.
         match self.parameter_state:
             case ParamState.START | ParamState.LEFT_SQUARE_BEFORE:
                 self.parameter_state = ParamState.LEFT_SQUARE_BEFORE
+            case ParamState.GROUP_BEFORE if not self.group_stack:
+                self.parameter_state = ParamState.LEFT_SQUARE_BEFORE
             case ParamState.REQUIRED | ParamState.GROUP_AFTER:
+                self.parameter_state = ParamState.GROUP_AFTER
+            case ParamState.RIGHT_SQUARE_AFTER if not self.group_stack:
                 self.parameter_state = ParamState.GROUP_AFTER
             case st:
                 fail(f"Function {function.name!r} "
                      f"has an unsupported group configuration. "
                      f"(Unexpected state {st}.b)")
-        self.group += 1
+        self.group_count += 1
+        self.group_stack.append(self.group_count)
         function.docstring_only = True
 
     def parse_closing_square_bracket(self, function: Function) -> None:
         """Parse closing parameter group symbol ']'."""
-        if not self.group:
+        if not self.group_stack:
             fail(f"Function {function.name!r} has a ']' without a matching '['.")
-        if not any(p.group == self.group for p in function.parameters.values()):
+        group = self.group_stack.pop()
+        if not any(p.group == group for p in function.parameters.values()):
             fail(f"Function {function.name!r} has an empty group. "
                  "All groups must contain at least one parameter.")
-        self.group -= 1
         match self.parameter_state:
             case ParamState.LEFT_SQUARE_BEFORE | ParamState.GROUP_BEFORE:
                 self.parameter_state = ParamState.GROUP_BEFORE
@@ -1268,7 +1306,7 @@ class DSLParser:
             ParamState.RIGHT_SQUARE_AFTER,
             ParamState.GROUP_BEFORE,
         }
-        if (self.parameter_state not in allowed) or self.group:
+        if (self.parameter_state not in allowed) or self.group_stack:
             fail(f"Function {function.name!r} has an unsupported group configuration. "
                  f"(Unexpected state {self.parameter_state}.d)")
         # fixup preceding parameters
@@ -1329,7 +1367,7 @@ class DSLParser:
     def state_function_docstring(self, line: str) -> None:
         assert self.function is not None
 
-        if self.group:
+        if self.group_stack:
             fail(f"Function {self.function.name!r} has a ']' without a matching '['.")
 
         if not self.valid_line(line):
@@ -1345,7 +1383,7 @@ class DSLParser:
         lines.append(f.displayname)
         if f.forced_text_signature:
             lines.append(f.forced_text_signature)
-        elif f.kind in {GETTER, SETTER}:
+        elif f.kind in ACCESSORS:
             # @getter and @setter do not need signatures like a method or a function.
             return ''
         else:
@@ -1364,16 +1402,25 @@ class DSLParser:
                 else:
                     assert positional_only
                 if positional_only:
-                    p.right_bracket_count = abs(p.group)
+                    p.right_bracket_count = p.group_depth
                 else:
                     # don't put any right brackets around non-positional-only parameters, ever.
                     p.right_bracket_count = 0
 
             right_bracket_count = 0
+            last_group = 0
 
-            def fix_right_bracket_count(desired: int) -> str:
-                nonlocal right_bracket_count
+            def fix_right_bracket_count(desired: int, group: int = 0) -> str:
+                nonlocal right_bracket_count, last_group
                 s = ''
+                if (group != last_group and right_bracket_count and
+                    ((desired >= right_bracket_count) if group < 0 else
+                     (desired <= right_bracket_count))):
+                    # The group is not nested in the previous group,
+                    # close the brackets of the latter first.
+                    s += ']' * right_bracket_count
+                    right_bracket_count = 0
+                last_group = group
                 while right_bracket_count < desired:
                     s += '['
                     right_bracket_count += 1
@@ -1441,7 +1488,8 @@ class DSLParser:
                     added_star = True
                     add_parameter('*,')
 
-                p_lines = [fix_right_bracket_count(p.right_bracket_count)]
+                p_lines = [fix_right_bracket_count(p.right_bracket_count,
+                                                   p.group)]
 
                 if isinstance(p.converter, self_converter):
                     # annotate first parameter as being a "self".
@@ -1518,7 +1566,7 @@ class DSLParser:
         assert self.function is not None
         f = self.function
         # For the following special cases, it does not make sense to render a docstring.
-        if f.kind in {METHOD_INIT, METHOD_NEW, GETTER, SETTER} and not f.docstring:
+        if f.kind in {METHOD_INIT, METHOD_NEW} | ACCESSORS and not f.docstring:
             return f.docstring
 
         # Enforce the summary line!
