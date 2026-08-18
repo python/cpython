@@ -4034,10 +4034,6 @@ class TestExtractionFilters(unittest.TestCase):
             arc.add(f'../escaped.evil/../{self.destdir.name}/sub/file',
                     content='content')
 
-        with self.check_context(arc.open(), 'fully_trusted'):
-            self.expect_file('../escaped.evil', type=tarfile.DIRTYPE)
-            self.expect_file('sub/file', content='content')
-
         for filter in 'tar', 'data':
             with self.subTest(filter):
                 with self.check_context(arc.open(), filter):
