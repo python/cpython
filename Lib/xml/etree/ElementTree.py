@@ -732,6 +732,8 @@ class ElementTree:
         if not encoding:
             encoding = "us-ascii"
         with _get_writer(file_or_filename, encoding) as (write, declared_encoding):
+            if declared_encoding.lower() == "utf-8-sig":
+                declared_encoding = "utf-8"
             if method == "xml" and (xml_declaration or
                     (xml_declaration is None and
                      encoding.lower() != "unicode" and

@@ -18,23 +18,28 @@ try:
 except ImportError:
     _ZLIB_SUPPORTED = False
 
+# bz2, lzma and compression.zstd are pure Python wrappers whose only
+# importable dependency that may be missing is the extension module they
+# wrap.  Probe those extensions directly instead: it gives the same answer
+# without executing the wrappers, which shutil only needs when an archive
+# is actually created or extracted.
 try:
-    import bz2
-    del bz2
+    import _bz2
+    del _bz2
     _BZ2_SUPPORTED = True
 except ImportError:
     _BZ2_SUPPORTED = False
 
 try:
-    import lzma
-    del lzma
+    import _lzma
+    del _lzma
     _LZMA_SUPPORTED = True
 except ImportError:
     _LZMA_SUPPORTED = False
 
 try:
-    from compression import zstd
-    del zstd
+    import _zstd
+    del _zstd
     _ZSTD_SUPPORTED = True
 except ImportError:
     _ZSTD_SUPPORTED = False
