@@ -1,0 +1,1 @@
+Fix an issue where :func:`curses.set_term` did not update :const:`curses.COLORS` and :const:`curses.COLOR_PAIRS` when switching terminal screens.
