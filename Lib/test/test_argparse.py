@@ -2,6 +2,7 @@
 
 import _colorize
 import contextlib
+import copy
 import functools
 import io
 import operator
@@ -78,6 +79,24 @@ class StdStreamTest(unittest.TestCase):
             ):
                 func()
                 self.assertRegex(mocked_stderr.getvalue(), r'usage:')
+
+    def test_invalid_file_only(self):
+        parser = argparse.ArgumentParser()
+        for func in (parser.print_usage, parser.print_help):
+            for invalid_f in ("invalid file", "", 0):
+                with (
+                    self.subTest(func=func, invalid_f=invalid_f),
+                    self.assertRaises(AttributeError),
+                ):
+                    func(file=invalid_f)
+
+    def test_exit_when_stderr_oserror(self):
+        parser = argparse.ArgumentParser()
+        with (mock.patch('argparse._sys.stderr.write',
+                         side_effect=OSError('not raise this')),
+              self.assertRaises(SystemExit),
+              ):
+            parser.exit(status=0, message='foo')
 
 
 class TestLazyImports(unittest.TestCase):
@@ -6267,6 +6286,19 @@ class TestNamespace(TestCase):
         self.assertIs(ns.__eq__(None), NotImplemented)
         self.assertIs(ns.__ne__(None), NotImplemented)
 
+    def test_replace(self):
+        ns = argparse.Namespace(a=1, b=2)
+        new = copy.replace(ns, b=3, c=4)
+        self.assertIsInstance(new, argparse.Namespace)
+        self.assertEqual(new, argparse.Namespace(a=1, b=3, c=4))
+        self.assertEqual(ns, argparse.Namespace(a=1, b=2))
+
+        class MyNamespace(argparse.Namespace):
+            pass
+        new = copy.replace(MyNamespace(a=1), a=2)
+        self.assertIsInstance(new, MyNamespace)
+        self.assertEqual(new.a, 2)
+
 
 # ===================
 # File encoding tests
@@ -7350,6 +7382,9 @@ class TestProgName(TestCase):
         basename = 'module' + os_helper.FS_NONASCII
         modulename = f'{self.dirname}.{basename}'
         self.make_script(self.dirname, basename)
+        # The filesystem encoding may be non-UTF-8,
+        # but the runner runs in UTF-8 mode
+        modulename = os.fsencode(modulename).decode("utf-8", "surrogateescape")
         runner_source = textwrap.dedent(f'''\
             import runpy
             runpy._run_module_as_main({modulename!r}, alter_argv=False)

@@ -285,7 +285,7 @@ The :mod:`!test.support` module defines the following constants:
    :meth:`~socket.socket.recv` and :meth:`~socket.socket.send` methods of
    :class:`socket.socket`.
 
-   Its default value is 5 seconds.
+   Its default value is 10 seconds.
 
    See also :data:`INTERNET_TIMEOUT`.
 
@@ -1654,6 +1654,32 @@ The :mod:`!test.support.os_helper` module provides support for os tests.
    Call :func:`os.unlink` on *filename*.  As with :func:`rmdir`,
    on Windows platforms, this is
    wrapped with a wait loop that checks for the existence of the file.
+
+
+.. decorator:: with_source_date_epoch(*, epoch=123456789)
+
+   A decorator for running tests with the :envvar:`SOURCE_DATE_EPOCH`
+   environment variable set to *epoch*.
+
+
+.. decorator:: without_source_date_epoch
+
+   A decorator for running tests with the :envvar:`SOURCE_DATE_EPOCH`
+   environment variable unset.
+
+
+.. class:: SourceDateEpochTestMeta
+
+   Metaclass wrapping all test methods of the class with
+   :func:`with_source_date_epoch` if the *source_date_epoch* keyword class
+   argument is true, or with :func:`without_source_date_epoch` otherwise.
+   For example::
+
+      class TestsWithSourceEpoch(Tests,
+                                 metaclass=SourceDateEpochTestMeta,
+                                 source_date_epoch=True):
+          pass
+
 
 
 :mod:`!test.support.import_helper` --- Utilities for import tests

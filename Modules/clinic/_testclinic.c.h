@@ -3477,6 +3477,41 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(only_group__doc__,
+"only_group([a])");
+
+#define ONLY_GROUP_METHODDEF    \
+    {"only_group", (PyCFunction)only_group, METH_VARARGS, only_group__doc__},
+
+static PyObject *
+only_group_impl(PyObject *module, int group_right_1, PyObject *a);
+
+static PyObject *
+only_group(PyObject *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int group_right_1 = 0;
+    PyObject *a = NULL;
+
+    switch (PyTuple_GET_SIZE(args)) {
+        case 0:
+            break;
+        case 1:
+            if (!PyArg_ParseTuple(args, "O:only_group", &a)) {
+                goto exit;
+            }
+            group_right_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "only_group requires 0 to 1 arguments");
+            goto exit;
+    }
+    return_value = only_group_impl(module, group_right_1, a);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(group_and_opt__doc__,
 "group_and_opt([a, b,] c=None)");
 
@@ -4804,4 +4839,4 @@ _testclinic_TestClass_posonly_poskw_varpos_array_no_fastcall(PyObject *type, PyO
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d9d4091b2f2ed359 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=15e6c430697bd384 input=a9049054013a1b77]*/

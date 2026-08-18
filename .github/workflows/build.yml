@@ -245,6 +245,12 @@ jobs:
       os: ${{ matrix.os }}
       test-opts: ${{ matrix.test-opts || '' }}
 
+  build-ubuntu-installed:
+    name: 'Ubuntu (installed)'
+    needs: build-context
+    if: needs.build-context.outputs.run-ubuntu == 'true'
+    uses: ./.github/workflows/reusable-install.yml
+
   build-ubuntu-ssltests:
     name: 'Ubuntu SSL tests'
     runs-on: ${{ matrix.os }}
@@ -636,6 +642,7 @@ jobs:
     - build-windows
     - build-macos
     - build-ubuntu
+    - build-ubuntu-installed
     - build-ubuntu-ssltests
     - build-ios
     - build-emscripten
@@ -685,6 +692,7 @@ jobs:
             !fromJSON(needs.build-context.outputs.run-ubuntu)
             && '
             build-ubuntu,
+            build-ubuntu-installed,
             build-ubuntu-ssltests,
             test-hypothesis,
             build-asan,

@@ -11,13 +11,15 @@ try:
 except ImportError:
     _clear_type_cache = None
 
-# Skip this test if the _testcapi module isn't available.
+# Skip this test if the _testcapi modules are not available.
 _testcapi = import_helper.import_module("_testcapi")
+_testlimitedcapi = import_helper.import_module("_testlimitedcapi")
 _testinternalcapi = import_helper.import_module("_testinternalcapi")
+
 type_get_version = _testcapi.type_get_version
 type_assign_specific_version_unsafe = _testinternalcapi.type_assign_specific_version_unsafe
 type_assign_version = _testcapi.type_assign_version
-type_modified = _testcapi.type_modified
+type_modified = _testlimitedcapi.type_modified
 
 def clear_type_cache():
     with warnings.catch_warnings():

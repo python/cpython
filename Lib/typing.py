@@ -25,6 +25,7 @@ from collections import defaultdict
 import collections.abc
 import copyreg
 import functools
+import keyword
 import operator
 import sys
 import types
@@ -494,7 +495,7 @@ def _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset()
         if isinstance(t, GenericAlias):
             return _rebuild_generic_alias(t, ev_args)
         if isinstance(t, Union):
-            return functools.reduce(operator.or_, ev_args)
+            return Union[ev_args]
         else:
             return t.copy_with(ev_args)
     return t
@@ -998,8 +999,12 @@ def _make_forward_ref(code, *, parent_fwdref=None, **kwargs):
         if parent_fwdref.__owner__ is not None:
             kwargs['owner'] = parent_fwdref.__owner__
     forward_ref = annotationlib.ForwardRef(code, **kwargs)
-    # For compatibility, eagerly compile the forwardref's code.
-    forward_ref.__forward_code__
+    # For compatibility, eagerly compile the forwardref's code so that any
+    # SyntaxError is raised immediately rather than when the forward
+    # reference is evaluated. Similar to 'ForwardRef.evaluate()', we only compile
+    # it if necessary:
+    if not (code.isidentifier() and not keyword.iskeyword(code)):
+        forward_ref.__forward_code__
     return forward_ref
 
 
@@ -2546,7 +2551,7 @@ def _strip_annotations(t):
         stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
         if stripped_args == t.__args__:
             return t
-        return functools.reduce(operator.or_, stripped_args)
+        return Union[stripped_args]
 
     return t
 
