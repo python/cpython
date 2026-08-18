@@ -3406,7 +3406,7 @@ create_tlbc_lock_held(PyInterpreterState *interp, PyCodeObject *co, Py_ssize_t i
     }
     copy_code(interp, (_Py_CODEUNIT *) bc, co);
     assert(tlbc->entries[idx] == NULL);
-    tlbc->entries[idx] = bc;
+    _Py_atomic_store_ptr_release(&tlbc->entries[idx], bc);
     return (_Py_CODEUNIT *) bc;
 }
 
