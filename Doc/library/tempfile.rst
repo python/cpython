@@ -348,8 +348,14 @@ The module defines the following user-callable items:
 
    #. A platform-specific location:
 
-      * On Windows, the directories :file:`C:\\TEMP`, :file:`C:\\TMP`,
-        :file:`\\TEMP`, and :file:`\\TMP`, in that order.
+      * On Windows, the following directories, in that order:
+
+        - :file:`%USERPROFILE%\\AppData\\Local\\Temp`
+        - :file:`%SYSTEMROOT%\\Temp`
+        - :file:`C:\\TEMP`
+        - :file:`C:\\TMP`
+        - :file:`\\TEMP`
+        - :file:`\\TMP`
 
       * On all other platforms, the directories :file:`/tmp`, :file:`/var/tmp`, and
         :file:`/usr/tmp`, in that order.
@@ -358,6 +364,11 @@ The module defines the following user-callable items:
 
    The result of this search is cached, see the description of
    :data:`tempdir` below.
+
+   .. versionchanged:: 3.6
+      On Windows, :file:`%USERPROFILE%\\AppData\\Local\\Temp` and
+      :file:`%SYSTEMROOT%\\Temp` are now checked before the hardcoded
+      directory paths.
 
    .. versionchanged:: 3.10
 
