@@ -5,7 +5,8 @@ import libclinic
 from libclinic import fail, warn
 from libclinic.function import (
     Function, Parameter,
-    GETTER, SETTER, METHOD_NEW)
+    GETTER, SETTER, METHOD_NEW,
+    ACCESSORS, SETTERS)
 from libclinic.converter import CConverter
 from libclinic.converters import (
     defining_class_converter, object_converter, self_converter)
@@ -188,6 +189,21 @@ METHODDEF_PROTOTYPE_IFNDEF: Final[str] = libclinic.normalize_snippet("""
         #define {methoddef_name}
     #endif /* !defined({methoddef_name}) */
 """)
+GETSETDEF_PROTOTYPE_IFNDEF: Final[str] = libclinic.normalize_snippet("""
+    #ifndef {getset_name}_GETSETDEF
+        #define {getset_name}_GETSETDEF
+    #endif /* !defined({getset_name}_GETSETDEF) */
+""")
+# The setter is called with NULL to delete the attribute.  Unless @deleter is
+# applied to it, deletion is rejected before the implementation is called.
+SETTER_PREAMBLE: Final[str] = libclinic.normalize_snippet("""
+    if (value == NULL) {{
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '{name}' of '%.100s' objects cannot be deleted",
+                     Py_TYPE({self_name})->tp_name);
+        return -1;
+    }}
+""", indent=4)
 
 
 class ParseArgsCodeGen:
@@ -328,7 +344,7 @@ class ParseArgsCodeGen:
             self.methoddef_define = GETTERDEF_PROTOTYPE_DEFINE
             if self.func.docstring:
                 self.docstring_definition = GETSET_DOCSTRING_PROTOTYPE_STRVAR
-        elif self.func.kind is SETTER:
+        elif self.func.kind in SETTERS:
             if self.func.docstring:
                 fail("docstrings are only supported for @getter, not @setter")
             self.return_value_declaration = "int {parser_retval};"
@@ -387,9 +403,12 @@ class ParseArgsCodeGen:
         if self.func.kind is GETTER:
             self.parser_prototype = PARSER_PROTOTYPE_GETTER
             parser_code = []
-        elif self.func.kind is SETTER:
+        elif self.func.kind in SETTERS:
             self.parser_prototype = PARSER_PROTOTYPE_SETTER
-            parser_code = []
+            if self.func.kind is SETTER:
+                parser_code = [SETTER_PREAMBLE]
+            else:
+                parser_code = []
         elif not self.requires_defining_class:
             # no self.parameters, METH_NOARGS
             self.flags = "METH_NOARGS"
@@ -921,7 +940,10 @@ class ParseArgsCodeGen:
             self.cpp_endif = "#endif /* " + conditional + " */"
 
             if self.methoddef_define and self.codegen.add_ifndef_symbol(self.func.full_name):
-                self.methoddef_ifndef = METHODDEF_PROTOTYPE_IFNDEF
+                if self.func.kind in ACCESSORS:
+                    self.methoddef_ifndef = GETSETDEF_PROTOTYPE_IFNDEF
+                else:
+                    self.methoddef_ifndef = METHODDEF_PROTOTYPE_IFNDEF
 
     def finalize(self, clang: CLanguage) -> None:
         # add ';' to the end of self.parser_prototype and self.impl_prototype
