@@ -7,7 +7,7 @@ Cell Objects
 
 "Cell" objects are used to implement variables referenced by multiple scopes.
 For each such variable, a cell object is created to store the value; the local
-variables of each stack frame that references the value contains a reference to
+variables of each stack frame that references the value contain a reference to
 the cells from outer scopes which also use that variable.  When the value is
 accessed, the value contained in the cell is used instead of the cell object
 itself.  This de-referencing of the cell object requires support from the

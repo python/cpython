@@ -48,7 +48,7 @@ Note that traceback objects don't store all this information -- they store the s
 number, for backward compatibility, and the "last instruction" value.
 The rest can be computed from the last instruction (`tb_lasti`) with the help of the
 locations table. For Python code, there is a convenience method
-(`codeobject.co_positions`)[https://docs.python.org/dev/reference/datamodel.html#codeobject.co_positions]
+[`codeobject.co_positions`](https://docs.python.org/dev/reference/datamodel.html#codeobject.co_positions)
 which returns an iterator of `({line}, {endline}, {column}, {endcolumn})` tuples,
 one per instruction.
 There is also `co_lines()` which returns an iterator of `({start}, {end}, {line})` tuples,
@@ -69,14 +69,6 @@ line number is cached in the ``_co_linearray`` field.
 The `co_linetable` bytes object of code objects contains a compact
 representation of the source code positions of instructions, which are
 returned by the `co_positions()` iterator.
-
-> [!NOTE]
-> `co_linetable` is not to be confused with `co_lnotab`.
-> For backwards compatibility, `co_lnotab` exposes the format
-> as it existed in Python 3.10 and lower: this older format
-> stores only the start line for each instruction.
-> It is lazily created from `co_linetable` when accessed.
-> See [`Objects/lnotab_notes.txt`](../Objects/lnotab_notes.txt) for more details.
 
 `co_linetable` consists of a sequence of location entries.
 Each entry starts with a byte with the most significant bit set, followed by

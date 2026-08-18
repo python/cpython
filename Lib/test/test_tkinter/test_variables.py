@@ -6,6 +6,7 @@ import tkinter
 from tkinter import (Variable, StringVar, IntVar, DoubleVar, BooleanVar, Tcl,
                      TclError)
 from test.support import ALWAYS_EQ
+from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import AbstractDefaultRootTest, tcl_version
 
 
@@ -110,6 +111,7 @@ class TestVariable(TestBase):
         self.assertFalse(v.side_effect)
         v.set("value")
         self.assertTrue(v.side_effect)
+        self.assertEqual(Variable.initialize, Variable.set)
 
     def test_trace_old(self):
         if tcl_version >= (9, 0):
@@ -117,6 +119,7 @@ class TestVariable(TestBase):
         # Old interface
         v = Variable(self.root)
         vname = str(v)
+        self.assertEqual(v.trace, v.trace_variable)
         trace = []
         def read_tracer(*args):
             trace.append(('read',) + args)
@@ -327,6 +330,7 @@ class TestBooleanVar(TestBase):
         self.assertEqual(self.root.globalgetvar("name"), false)
         v.set("on")
         self.assertEqual(self.root.globalgetvar("name"), true)
+        self.assertEqual(BooleanVar.initialize, BooleanVar.set)
 
     def test_invalid_value_domain(self):
         false = 0 if self.root.wantobjects() else "0"

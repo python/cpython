@@ -7,7 +7,7 @@ import re
 import shlex
 import sys
 from collections.abc import Callable
-from types import FunctionType, NoneType
+from types import FunctionType
 from typing import TYPE_CHECKING, Any, NamedTuple
 
 import libclinic
@@ -112,8 +112,8 @@ ConverterArgs = dict[str, Any]
 class ParamState(enum.IntEnum):
     """Parameter parsing state.
 
-     [ [ a, b, ] c, ] d, e, f=3, [ g, h, [ i ] ]   <- line
-    01   2          3       4    5           6     <- state transitions
+     [ [ a, b, ] c, ] [ d, ] e, f=3, [ g, h, [ i ] ] [ j ]   <- line
+    01   2          3 12   3     4   5           6   5     6 <- state transitions
     """
     # Before we've seen anything.
     # Legal transitions: to LEFT_SQUARE_BEFORE or REQUIRED
@@ -246,11 +246,13 @@ class IndentStack:
 class DSLParser:
     function: Function | None
     state: StateKeeper
+    expecting_parameters: bool
     keyword_only: bool
     positional_only: bool
     deprecated_positional: VersionTuple | None
     deprecated_keyword: VersionTuple | None
-    group: int
+    group_stack: list[int]
+    group_count: int
     parameter_state: ParamState
     indent: IndentStack
     kind: FunctionKind
@@ -285,11 +287,13 @@ class DSLParser:
     def reset(self) -> None:
         self.function = None
         self.state = self.state_dsl_start
+        self.expecting_parameters = True
         self.keyword_only = False
         self.positional_only = False
         self.deprecated_positional = None
         self.deprecated_keyword = None
-        self.group = 0
+        self.group_stack = []
+        self.group_count = 0
         self.parameter_state: ParamState = ParamState.START
         self.indent = IndentStack()
         self.kind = CALLABLE
@@ -827,6 +831,7 @@ class DSLParser:
             assert self.function is not None
             for p in self.function.parameters.values():
                 p.group = -p.group
+            self.group_count = 0
 
     def state_parameter(self, line: str) -> None:
         assert isinstance(self.function, Function)
@@ -876,13 +881,17 @@ class DSLParser:
     def parse_parameter(self, line: str) -> None:
         assert self.function is not None
 
+        if not self.expecting_parameters:
+            fail('Encountered parameter line when not expecting '
+                 f'parameters: {line}')
+
         match self.parameter_state:
             case ParamState.START | ParamState.REQUIRED:
                 self.to_required()
             case ParamState.LEFT_SQUARE_BEFORE:
                 self.parameter_state = ParamState.GROUP_BEFORE
             case ParamState.GROUP_BEFORE:
-                if not self.group:
+                if not self.group_stack:
                     self.to_required()
             case ParamState.GROUP_AFTER | ParamState.OPTIONAL:
                 pass
@@ -909,35 +918,49 @@ class DSLParser:
         if len(function_args.args) > 1:
             fail(f"Function {self.function.name!r} has an "
                  f"invalid parameter declaration (comma?): {line!r}")
-        if function_args.kwarg:
-            fail(f"Function {self.function.name!r} has an "
-                 f"invalid parameter declaration (**kwargs?): {line!r}")
 
+        is_vararg = is_var_keyword = False
         if function_args.vararg:
             self.check_previous_star()
             self.check_remaining_star()
             is_vararg = True
             parameter = function_args.vararg
+        elif function_args.kwarg:
+            # If the existing parameters are all positional only or ``*args``
+            # (var-positional), then we allow ``**kwds`` (var-keyword).
+            # Currently, pos-or-keyword or keyword-only arguments are not
+            # allowed with the ``**kwds`` converter.
+            has_non_positional_param = any(
+                p.is_positional_or_keyword() or p.is_keyword_only()
+                for p in self.function.parameters.values()
+            )
+            if has_non_positional_param:
+                fail(f"Function {self.function.name!r} has an "
+                     f"invalid parameter declaration (**kwargs?): {line!r}")
+            is_var_keyword = True
+            parameter = function_args.kwarg
         else:
-            is_vararg = False
             parameter = function_args.args[0]
 
         parameter_name = parameter.arg
         name, legacy, kwargs = self.parse_converter(parameter.annotation)
         if is_vararg:
-            name = 'varpos_' + name
+            name = f'varpos_{name}'
+        elif is_var_keyword:
+            name = f'var_keyword_{name}'
 
         value: object
+        has_c_default = 'c_default' in kwargs
         if not function_args.defaults:
-            if is_vararg:
-                value = NULL
-            else:
-                if self.parameter_state is ParamState.OPTIONAL:
-                    fail(f"Can't have a parameter without a default ({parameter_name!r}) "
-                          "after a parameter with a default!")
-                value = unspecified
+            value = unspecified
+            if (not is_vararg and not is_var_keyword
+                    and self.parameter_state is ParamState.OPTIONAL):
+                fail(f"Can't have a parameter without a default ({parameter_name!r}) "
+                     "after a parameter with a default!")
             if 'py_default' in kwargs:
                 fail("You can't specify py_default without specifying a default value!")
+            if has_c_default:
+                fail("You can't specify c_default without specifying a default value!")
         else:
             expr = function_args.defaults[0]
             default = ast_input[expr.col_offset: expr.end_col_offset].strip()
@@ -946,7 +969,7 @@ class DSLParser:
                 self.parameter_state = ParamState.OPTIONAL
             bad = False
             try:
-                if 'c_default' not in kwargs:
+                if not has_c_default:
                     # we can only represent very simple data values in C.
                     # detect whether default is okay, via a denylist
                     # of disallowed ast nodes.
@@ -992,18 +1015,15 @@ class DSLParser:
                     fail(f"Unsupported expression as default value: {default!r}")
 
                 # mild hack: explicitly support NULL as a default value
-                c_default: str | None
                 if isinstance(expr, ast.Name) and expr.id == 'NULL':
                     value = NULL
                     py_default = '<unrepresentable>'
-                    c_default = "NULL"
                 elif (isinstance(expr, ast.BinOp) or
                     (isinstance(expr, ast.UnaryOp) and
                      not (isinstance(expr.operand, ast.Constant) and
                           type(expr.operand.value) in {int, float, complex})
                     )):
-                    c_default = kwargs.get("c_default")
-                    if not (isinstance(c_default, str) and c_default):
+                    if not has_c_default:
                         fail(f"When you specify an expression ({default!r}) "
                              f"as your default value, "
                              f"you MUST specify a valid c_default.",
@@ -1022,8 +1042,7 @@ class DSLParser:
                     a.append(n.id)
                     py_default = ".".join(reversed(a))
 
-                    c_default = kwargs.get("c_default")
-                    if not (isinstance(c_default, str) and c_default):
+                    if not has_c_default:
                         fail(f"When you specify a named constant ({py_default!r}) "
                              "as your default value, "
                              "you MUST specify a valid c_default.")
@@ -1035,23 +1054,15 @@ class DSLParser:
                 else:
                     value = ast.literal_eval(expr)
                     py_default = repr(value)
-                    if isinstance(value, (bool, NoneType)):
-                        c_default = "Py_" + py_default
-                    elif isinstance(value, str):
-                        c_default = libclinic.c_repr(value)
-                    else:
-                        c_default = py_default
 
             except (ValueError, AttributeError):
                 value = unknown
-                c_default = kwargs.get("c_default")
                 py_default = default
-                if not (isinstance(c_default, str) and c_default):
+                if not has_c_default:
                     fail("When you specify a named constant "
                          f"({py_default!r}) as your default value, "
                          "you MUST specify a valid c_default.")
 
-            kwargs.setdefault('c_default', c_default)
             kwargs.setdefault('py_default', py_default)
 
         dict = legacy_converters if legacy else converters
@@ -1065,6 +1076,8 @@ class DSLParser:
         kind: inspect._ParameterKind
         if is_vararg:
             kind = inspect.Parameter.VAR_POSITIONAL
+        elif is_var_keyword:
+            kind = inspect.Parameter.VAR_KEYWORD
         elif self.keyword_only:
             kind = inspect.Parameter.KEYWORD_ONLY
         else:
@@ -1072,12 +1085,10 @@ class DSLParser:
 
         if isinstance(converter, self_converter):
             if len(self.function.parameters) == 1:
-                if self.parameter_state is not ParamState.REQUIRED:
-                    fail("A 'self' parameter cannot be marked optional.")
-                if value is not unspecified:
-                    fail("A 'self' parameter cannot have a default value.")
-                if self.group:
+                if self.group_stack:
                     fail("A 'self' parameter cannot be in an optional group.")
+                assert self.parameter_state is ParamState.REQUIRED
+                assert value is unspecified
                 kind = inspect.Parameter.POSITIONAL_ONLY
                 self.parameter_state = ParamState.START
                 self.function.parameters.clear()
@@ -1088,14 +1099,12 @@ class DSLParser:
         if isinstance(converter, defining_class_converter):
             _lp = len(self.function.parameters)
             if _lp == 1:
-                if self.parameter_state is not ParamState.REQUIRED:
-                    fail("A 'defining_class' parameter cannot be marked optional.")
-                if value is not unspecified:
-                    fail("A 'defining_class' parameter cannot have a default value.")
-                if self.group:
+                if self.group_stack:
                     fail("A 'defining_class' parameter cannot be in an optional group.")
                 if self.function.cls is None:
                     fail("A 'defining_class' parameter cannot be defined at module level.")
+                assert self.parameter_state is ParamState.REQUIRED
+                assert value is unspecified
                 kind = inspect.Parameter.POSITIONAL_ONLY
             else:
                 fail("A 'defining_class' parameter, if specified, must either "
@@ -1104,7 +1113,9 @@ class DSLParser:
 
 
         p = Parameter(parameter_name, kind, function=self.function,
-                      converter=converter, default=value, group=self.group,
+                      converter=converter, default=value,
+                      group=self.group_stack[-1] if self.group_stack else 0,
+                      group_depth=len(self.group_stack),
                       deprecated_positional=self.deprecated_positional)
 
         names = [k.name for k in self.function.parameters.values()]
@@ -1118,6 +1129,8 @@ class DSLParser:
 
         if is_vararg:
             self.keyword_only = True
+        if is_var_keyword:
+            self.expecting_parameters = False
 
     @staticmethod
     def parse_converter(
@@ -1159,6 +1172,9 @@ class DSLParser:
         The 'version' parameter signifies the future version from which
         the marker will take effect (None means it is already in effect).
         """
+        if not self.expecting_parameters:
+            fail("Encountered '*' when not expecting parameters")
+
         if version is None:
             self.check_previous_star()
             self.check_remaining_star()
@@ -1178,26 +1194,34 @@ class DSLParser:
 
     def parse_opening_square_bracket(self, function: Function) -> None:
         """Parse opening parameter group symbol '['."""
+        # A group can only be nested in a group which does not contain
+        # parameters yet, but two groups on the same nesting level can
+        # follow each other.
         match self.parameter_state:
             case ParamState.START | ParamState.LEFT_SQUARE_BEFORE:
                 self.parameter_state = ParamState.LEFT_SQUARE_BEFORE
+            case ParamState.GROUP_BEFORE if not self.group_stack:
+                self.parameter_state = ParamState.LEFT_SQUARE_BEFORE
             case ParamState.REQUIRED | ParamState.GROUP_AFTER:
+                self.parameter_state = ParamState.GROUP_AFTER
+            case ParamState.RIGHT_SQUARE_AFTER if not self.group_stack:
                 self.parameter_state = ParamState.GROUP_AFTER
             case st:
                 fail(f"Function {function.name!r} "
                      f"has an unsupported group configuration. "
                      f"(Unexpected state {st}.b)")
-        self.group += 1
+        self.group_count += 1
+        self.group_stack.append(self.group_count)
         function.docstring_only = True
 
     def parse_closing_square_bracket(self, function: Function) -> None:
         """Parse closing parameter group symbol ']'."""
-        if not self.group:
+        if not self.group_stack:
             fail(f"Function {function.name!r} has a ']' without a matching '['.")
-        if not any(p.group == self.group for p in function.parameters.values()):
+        group = self.group_stack.pop()
+        if not any(p.group == group for p in function.parameters.values()):
             fail(f"Function {function.name!r} has an empty group. "
                  "All groups must contain at least one parameter.")
-        self.group -= 1
         match self.parameter_state:
             case ParamState.LEFT_SQUARE_BEFORE | ParamState.GROUP_BEFORE:
                 self.parameter_state = ParamState.GROUP_BEFORE
@@ -1214,6 +1238,9 @@ class DSLParser:
         The 'version' parameter signifies the future version from which
         the marker will take effect (None means it is already in effect).
         """
+        if not self.expecting_parameters:
+            fail("Encountered '/' when not expecting parameters")
+
         if version is None:
             if self.deprecated_keyword:
                 fail(f"Function {function.name!r}: '/' must precede '/ [from ...]'")
@@ -1254,7 +1281,7 @@ class DSLParser:
             ParamState.RIGHT_SQUARE_AFTER,
             ParamState.GROUP_BEFORE,
         }
-        if (self.parameter_state not in allowed) or self.group:
+        if (self.parameter_state not in allowed) or self.group_stack:
             fail(f"Function {function.name!r} has an unsupported group configuration. "
                  f"(Unexpected state {self.parameter_state}.d)")
         # fixup preceding parameters
@@ -1315,7 +1342,7 @@ class DSLParser:
     def state_function_docstring(self, line: str) -> None:
         assert self.function is not None
 
-        if self.group:
+        if self.group_stack:
             fail(f"Function {self.function.name!r} has a ']' without a matching '['.")
 
         if not self.valid_line(line):
@@ -1350,16 +1377,25 @@ class DSLParser:
                 else:
                     assert positional_only
                 if positional_only:
-                    p.right_bracket_count = abs(p.group)
+                    p.right_bracket_count = p.group_depth
                 else:
                     # don't put any right brackets around non-positional-only parameters, ever.
                     p.right_bracket_count = 0
 
             right_bracket_count = 0
+            last_group = 0
 
-            def fix_right_bracket_count(desired: int) -> str:
-                nonlocal right_bracket_count
+            def fix_right_bracket_count(desired: int, group: int = 0) -> str:
+                nonlocal right_bracket_count, last_group
                 s = ''
+                if (group != last_group and right_bracket_count and
+                    ((desired >= right_bracket_count) if group < 0 else
+                     (desired <= right_bracket_count))):
+                    # The group is not nested in the previous group,
+                    # close the brackets of the latter first.
+                    s += ']' * right_bracket_count
+                    right_bracket_count = 0
+                last_group = group
                 while right_bracket_count < desired:
                     s += '['
                     right_bracket_count += 1
@@ -1427,7 +1463,8 @@ class DSLParser:
                     added_star = True
                     add_parameter('*,')
 
-                p_lines = [fix_right_bracket_count(p.right_bracket_count)]
+                p_lines = [fix_right_bracket_count(p.right_bracket_count,
+                                                   p.group)]
 
                 if isinstance(p.converter, self_converter):
                     # annotate first parameter as being a "self".
@@ -1450,11 +1487,13 @@ class DSLParser:
                 if p.is_vararg():
                     p_lines.append("*")
                     added_star = True
+                if p.is_var_keyword():
+                    p_lines.append("**")
 
                 name = p.converter.signature_name or p.name
                 p_lines.append(name)
 
-                if not p.is_vararg() and p.converter.is_optional():
+                if not p.is_variable_length() and p.converter.is_optional():
                     p_lines.append('=')
                     value = p.converter.py_default
                     if not value:
@@ -1583,8 +1622,11 @@ class DSLParser:
 
         for p in reversed(self.function.parameters.values()):
             if self.keyword_only:
-                if (p.kind == inspect.Parameter.KEYWORD_ONLY or
-                    p.kind == inspect.Parameter.VAR_POSITIONAL):
+                if p.kind in {
+                    inspect.Parameter.KEYWORD_ONLY,
+                    inspect.Parameter.VAR_POSITIONAL,
+                    inspect.Parameter.VAR_KEYWORD
+                }:
                     return
             elif self.deprecated_positional:
                 if p.deprecated_positional == self.deprecated_positional:

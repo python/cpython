@@ -1,5 +1,0 @@
-Reflect recent :pep:`750` change.
-
-Disallow concatenation of ``string.templatelib.Template`` and :class:`str`.
-Also, disallow implicit concatenation of t-string literals with string or
-f-string literals.

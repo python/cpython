@@ -340,7 +340,7 @@ deque_index(PyObject *deque, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *v;
     Py_ssize_t start = 0;
-    Py_ssize_t stop = Py_SIZE(deque);
+    Py_ssize_t stop = PY_SSIZE_T_MAX;
 
     if (!_PyArg_CheckPositional("index", nargs, 1, 3)) {
         goto exit;
@@ -632,4 +632,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b9d4d647c221cb9f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f5a388add99d3d15 input=a9049054013a1b77]*/

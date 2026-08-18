@@ -1,0 +1,5 @@
+Fix :class:`asyncio.Future` (C implementation) losing the initial exception
+traceback frames when ``Future.result()`` is called more than once. Previously,
+the C implementation cleared the stored traceback after the first call, causing
+subsequent raises to omit the original raise site. The pure-Python
+implementation was unaffected.

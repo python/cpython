@@ -24,7 +24,6 @@ enum _frameowner {
     FRAME_OWNED_BY_GENERATOR = 1,
     FRAME_OWNED_BY_FRAME_OBJECT = 2,
     FRAME_OWNED_BY_INTERPRETER = 3,
-    FRAME_OWNED_BY_CSTACK = 4,
 };
 
 struct _PyInterpreterFrame {
@@ -45,7 +44,8 @@ struct _PyInterpreterFrame {
     char owner;
 #ifdef Py_DEBUG
     uint8_t visited:1;
-    uint8_t lltrace:7;
+    uint8_t stackpointer_valid:1;
+    uint8_t lltrace:6;
 #else
     uint8_t visited;
 #endif

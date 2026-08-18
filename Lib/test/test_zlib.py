@@ -1090,7 +1090,7 @@ class ZlibDecompressorTest(unittest.TestCase):
         self.assertRaises(EOFError, zlibd.decompress, b"")
 
     @support.skip_if_pgo_task
-    @bigmemtest(size=_4G + 100, memuse=3.3)
+    @bigmemtest(size=_4G + 100, memuse=4.5)
     def testDecompress4G(self, size):
         # "Test zlib._ZlibDecompressor.decompress() with >4GiB input"
         blocksize = min(10 * 1024 * 1024, size)
@@ -1220,6 +1220,16 @@ class ZlibDecompressorTest(unittest.TestCase):
 class CustomInt:
     def __index__(self):
         return 100
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+                DeprecationWarning,
+                "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(zlib, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == "__main__":

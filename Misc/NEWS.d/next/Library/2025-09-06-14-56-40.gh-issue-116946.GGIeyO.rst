@@ -1,2 +1,0 @@
-:mod:`curses.panel`: the type of :func:`curses.panel.new_panel` is now
-immutable. Patch by Bénédikt Tran.

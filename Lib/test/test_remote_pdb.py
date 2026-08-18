@@ -8,6 +8,7 @@ import socket
 import subprocess
 import sys
 import textwrap
+import threading
 import unittest
 import unittest.mock
 from contextlib import closing, contextmanager, redirect_stdout, redirect_stderr, ExitStack
@@ -17,6 +18,11 @@ from typing import List
 
 import pdb
 from pdb import _PdbServer, _PdbClient
+
+try:
+    import pty
+except ImportError:
+    pty = None
 
 
 if not sys.is_remote_debug_enabled():
@@ -1090,6 +1096,45 @@ class PdbConnectTestCase(unittest.TestCase):
 
         return process, client_file
 
+    def _connect_and_get_client_file_via_pty(self):
+        """Like _connect_and_get_client_file, but run the target under a pty.
+
+        With a real terminal on stdin/stdout, PyREPL is available *inside the
+        target process*, which is the condition that exercises pdb's PyREPL
+        input handling in the remote server.
+        """
+        controller, worker = pty.openpty()
+        self.addCleanup(os.close, controller)
+        env = dict(os.environ, TERM="xterm-256color")
+        env.pop("PYTHON_BASIC_REPL", None)  # don't opt out of PyREPL
+        process = subprocess.Popen(
+            [sys.executable, self.script_path],
+            stdin=worker, stdout=worker, stderr=worker, env=env, close_fds=True,
+        )
+        os.close(worker)  # only the child keeps the worker end open
+
+        # Continuously drain the terminal so the child never blocks on a write.
+        drainer = threading.Thread(
+            target=self._drain_until_eof, args=(controller,), daemon=True
+        )
+        drainer.start()
+        self.addCleanup(drainer.join, SHORT_TIMEOUT)
+
+        client_sock, _ = self.server_sock.accept()
+        client_file = client_sock.makefile('rwb')
+        self.addCleanup(client_file.close)
+        self.addCleanup(client_sock.close)
+
+        return process, client_file
+
+    @staticmethod
+    def _drain_until_eof(fd):
+        try:
+            while os.read(fd, 1024):
+                pass
+        except OSError:
+            pass  # controller closed, or the pty went away with the child
+
     def _read_until_prompt(self, client_file):
         """Helper to read messages until a prompt is received."""
         messages = []
@@ -1292,6 +1337,32 @@ class PdbConnectTestCase(unittest.TestCase):
             self.assertEqual(process.returncode, 0)
             self.assertEqual(stderr, "")
 
+    @unittest.skipUnless(pty, "requires pty")
+    def test_prompt_with_interactive_terminal(self):
+        """The server must send "(Pdb) " even when the target owns a terminal.
+
+        The remote server transmits its prompt string to the client, which
+        displays it. When the target process has an interactive terminal,
+        PyREPL is enabled inside it; the base pdb machinery then blanks
+        ``self.prompt`` (a local PyREPL would draw the prompt itself). The
+        remote server has no local PyREPL -- it reads input from the socket --
+        so it must keep the real prompt rather than transmit an empty one.
+        Regression test for gh-154467, where attaching with ``pdb -p`` to a
+        process running at an interactive prompt showed a blank prompt.
+        """
+        self._create_script()
+        process, client_file = self._connect_and_get_client_file_via_pty()
+
+        with kill_on_error(process):
+            messages = self._read_until_prompt(client_file)
+            # The message that ended the read is the prompt request.
+            self.assertEqual(messages[-1], {"prompt": "(Pdb) ", "state": "pdb"})
+
+            # Let the target run to completion so nothing is left attached.
+            self._send_command(client_file, "c")
+            process.wait(timeout=SHORT_TIMEOUT)
+            self.assertEqual(process.returncode, 0)
+
     def test_protocol_version(self):
         """Test that incompatible protocol versions are properly detected."""
         # Create a script using an incompatible protocol version
@@ -1439,6 +1510,34 @@ class PdbConnectTestCase(unittest.TestCase):
 
             stdout, stderr = process.communicate(timeout=SHORT_TIMEOUT)
             self.assertIn("Function returned: 42", stdout)
+            self.assertEqual(process.returncode, 0)
+
+    def test_exec_in_closure_result_uses_pdb_stdout(self):
+        """
+        Expression results executed via _exec_in_closure() should be written
+        to the debugger output stream (pdb stdout), not to sys.stdout.
+        """
+        self._create_script()
+        process, client_file = self._connect_and_get_client_file()
+
+        with kill_on_error(process):
+            self._read_until_prompt(client_file)
+
+            self._send_command(client_file, "(lambda: 123)()")
+            messages = self._read_until_prompt(client_file)
+            result_msg = "".join(msg.get("message", "") for msg in messages)
+            self.assertIn("123", result_msg)
+
+            self._send_command(client_file, "sum(i for i in (1, 2, 3))")
+            messages = self._read_until_prompt(client_file)
+            result_msg = "".join(msg.get("message", "") for msg in messages)
+            self.assertIn("6", result_msg)
+
+            self._send_command(client_file, "c")
+            stdout, _ = process.communicate(timeout=SHORT_TIMEOUT)
+
+            self.assertNotIn("\n123\n", stdout)
+            self.assertNotIn("\n6\n", stdout)
             self.assertEqual(process.returncode, 0)
 
 
@@ -1589,6 +1688,18 @@ class PdbAttachTestCase(unittest.TestCase):
         self.assertIn("\x1b", output["client"]["stdout"])
         self.assertNotIn("while x == 1", output["client"]["stdout"])
         self.assertIn("while x == 1", re.sub("\x1b[^m]*m", "", output["client"]["stdout"]))
+
+    def test_attach_to_non_existent_process(self):
+        with force_color(False):
+            result = subprocess.run([sys.executable, "-m", "pdb", "-p", "999999"], text=True, capture_output=True)
+        self.assertNotEqual(result.returncode, 0)
+        if sys.platform == "darwin":
+            # On MacOS, attaching to a non-existent process gives PermissionError
+            error = "The specified process cannot be attached to due to insufficient permissions"
+        else:
+            error = "Cannot attach to pid 999999, please make sure that the process exists"
+        self.assertIn(error, result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()
