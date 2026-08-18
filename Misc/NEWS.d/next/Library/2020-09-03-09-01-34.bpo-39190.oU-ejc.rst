@@ -1,0 +1,1 @@
+Fix deadlock when pool.apply_async's and pool.map_async's callbacks raise exception
