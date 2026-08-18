@@ -517,7 +517,9 @@ try:
 
 except ImportError: # not running on Windows - mock up something sensible
     def _strip_dots_and_spaces(path):
-        # As the Windows path normalization does.
+        # Imitate the trailing dot and space stripping performed by the
+        # Windows path normalization.  This is a best effort, not a
+        # specification.
         if isinstance(path, bytes):
             sep = b'\\'
             dot = b'.'

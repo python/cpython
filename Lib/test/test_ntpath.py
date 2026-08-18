@@ -1213,6 +1213,7 @@ class TestNtpath(NtpathTestCase):
     def test_abspath_dots_and_spaces(self):
         # gh-85681: trailing dots and spaces are stripped from the last
         # component, and a single trailing dot from other components.
+        # This is the observed Windows behavior, not a specification.
         tester('ntpath.abspath("C:/spam. . .")', "C:\\spam")
         tester('ntpath.abspath("C:/spam.")', "C:\\spam")
         tester('ntpath.abspath("C:/spam ")', "C:\\spam")
