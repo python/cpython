@@ -80,14 +80,20 @@ class SqliteInteractiveConsole(InteractiveConsole):
                     self.write(f'{t.type}Error{t.reset}: {t.message}unknown '
                                f'command: "{unknown}"{t.reset}\n')
         else:
-            try:
-                complete = sqlite3.complete_statement(source)
-            # NUL -> ValueError, lone surrogate -> UnicodeEncodeError; keep
-            # narrow so real bugs still surface.
-            except (ValueError, UnicodeEncodeError) as e:
+            error = None
+            if "\0" in source:
+                # A NUL makes complete_statement() raise a broad ValueError;
+                # pre-check it so ValueError from other code still surfaces.
+                error = ValueError("embedded null character")
+            else:
+                try:
+                    complete = sqlite3.complete_statement(source)
+                except UnicodeEncodeError as e:  # a lone surrogate
+                    error = e
+            if error is not None:
                 t = theme.traceback
-                self.write(f"{t.type}{type(e).__name__}{t.reset}: "
-                           f"{t.message}{e}{t.reset}\n")
+                self.write(f"{t.type}{type(error).__name__}{t.reset}: "
+                           f"{t.message}{error}{t.reset}\n")
                 return False
             if not complete:
                 return True
