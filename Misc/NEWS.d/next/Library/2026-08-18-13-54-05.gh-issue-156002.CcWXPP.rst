@@ -1,3 +1,4 @@
-In :mod:`zipfile`, bound the amount of data that's decompressed at once
-using bzip2, LZMA and Zstandard to avoid allocating excessive memory if the
-archive declares a large uncompressed size.
+Bound the amount of data :mod:`zipfile` decompresses per read for members
+compressed with bzip2, LZMA, or Zstandard, matching the existing limit for
+deflate. A small archive member could previously expand into an unbounded
+allocation even when read in small chunks.
