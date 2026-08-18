@@ -668,12 +668,12 @@ Eager task factory
 Shielding from cancellation
 ===========================
 
-.. awaitablefunction:: shield(aw)
+.. awaitablefunction:: shield(arg)
 
    Protect an :ref:`awaitable object <asyncio-awaitables>`
    from being :meth:`cancelled <Task.cancel>`.
 
-   If *aw* is a coroutine it is automatically scheduled as a Task.
+   If *arg* is a coroutine it is automatically scheduled as a Task.
 
    The statement::
 
@@ -714,7 +714,7 @@ Shielding from cancellation
       Removed the *loop* parameter.
 
    .. deprecated:: 3.10
-      Deprecation warning is emitted if *aw* is not Future-like object
+      Deprecation warning is emitted if *arg* is not Future-like object
       and there is no running event loop.
 
 
@@ -837,13 +837,13 @@ Timeouts
 
    .. versionadded:: 3.11
 
-.. function:: wait_for(aw, timeout)
+.. function:: wait_for(fut, timeout)
    :async:
 
-   Wait for the *aw* :ref:`awaitable <asyncio-awaitables>`
+   Wait for the *fut* :ref:`awaitable <asyncio-awaitables>`
    to complete with a timeout.
 
-   If *aw* is a coroutine it is automatically scheduled as a Task.
+   If *fut* is a coroutine it is automatically scheduled as a Task.
 
    *timeout* can either be ``None`` or a float or int number of seconds
    to wait for.  If *timeout* is ``None``, block until the future
@@ -859,7 +859,7 @@ Timeouts
    so the total wait time may exceed the *timeout*. If an exception
    happens during cancellation, it is propagated.
 
-   If the wait is cancelled, the future *aw* is also cancelled.
+   If the wait is cancelled, the future *fut* is also cancelled.
 
    .. _asyncio_example_waitfor:
 
@@ -884,8 +884,8 @@ Timeouts
        #     timeout!
 
    .. versionchanged:: 3.7
-      When *aw* is cancelled due to a timeout, ``wait_for`` waits
-      for *aw* to be cancelled.  Previously, it raised
+      When *fut* is cancelled due to a timeout, ``wait_for`` waits
+      for *fut* to be cancelled.  Previously, it raised
       :exc:`TimeoutError` immediately.
 
    .. versionchanged:: 3.10
@@ -898,20 +898,20 @@ Timeouts
 Waiting primitives
 ==================
 
-.. function:: wait(aws, *, timeout=None, return_when=ALL_COMPLETED)
+.. function:: wait(fs, *, timeout=None, return_when=ALL_COMPLETED)
    :async:
 
-   Run :class:`~asyncio.Future` and :class:`~asyncio.Task` instances in the *aws*
+   Run :class:`~asyncio.Future` and :class:`~asyncio.Task` instances in the *fs*
    iterable concurrently and block until the condition specified
    by *return_when*.
 
-   The *aws* iterable must not be empty.
+   The *fs* iterable must not be empty.
 
    Returns two sets of Tasks/Futures: ``(done, pending)``.
 
    Usage::
 
-        done, pending = await asyncio.wait(aws)
+        done, pending = await asyncio.wait(fs)
 
    *timeout* (a float or int), if specified, can be used to control
    the maximum number of seconds to wait before returning.
@@ -943,7 +943,7 @@ Waiting primitives
    Unlike :func:`~asyncio.wait_for`, ``wait()`` does not cancel the
    futures when a timeout occurs.
 
-   If ``wait()`` is cancelled, the futures in *aws* are not cancelled
+   If ``wait()`` is cancelled, the futures in *fs* are not cancelled
    and continue to run.
 
    .. versionchanged:: 3.10
@@ -956,9 +956,9 @@ Waiting primitives
       Added support for generators yielding tasks.
 
 
-.. function:: as_completed(aws, *, timeout=None)
+.. function:: as_completed(fs, *, timeout=None)
 
-   Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws* iterable
+   Run :ref:`awaitable objects <asyncio-awaitables>` in the *fs* iterable
    concurrently. The returned object can be iterated to obtain the results
    of the awaitables as they finish.
 
@@ -1011,7 +1011,7 @@ Waiting primitives
       Removed the *loop* parameter.
 
    .. deprecated:: 3.10
-      Deprecation warning is emitted if not all awaitable objects in the *aws*
+      Deprecation warning is emitted if not all awaitable objects in the *fs*
       iterable are Future-like objects and there is no running event loop.
 
    .. versionchanged:: 3.12

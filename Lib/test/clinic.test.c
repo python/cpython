@@ -5431,6 +5431,12 @@ Test_property_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
 {
     int return_value;
 
+    if (value == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute 'property' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
     return_value = Test_property_set_impl((TestObj *)self, value);
 
     return return_value;
@@ -5438,7 +5444,40 @@ Test_property_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
 
 static int
 Test_property_set_impl(TestObj *self, PyObject *value)
-/*[clinic end generated code: output=49f925ab2a33b637 input=3bc3f46a23c83a88]*/
+/*[clinic end generated code: output=ec103a151cf51d25 input=3bc3f46a23c83a88]*/
+
+/*[clinic input]
+@setter
+@deleter
+Test.settable_and_deletable
+[clinic start generated code]*/
+
+#if !defined(Test_settable_and_deletable_DOCSTR)
+#  define Test_settable_and_deletable_DOCSTR NULL
+#endif
+#if defined(TEST_SETTABLE_AND_DELETABLE_GETSETDEF)
+#  undef TEST_SETTABLE_AND_DELETABLE_GETSETDEF
+#  define TEST_SETTABLE_AND_DELETABLE_GETSETDEF {"settable_and_deletable", (getter)Test_settable_and_deletable_get, (setter)Test_settable_and_deletable_set, Test_settable_and_deletable_DOCSTR},
+#else
+#  define TEST_SETTABLE_AND_DELETABLE_GETSETDEF {"settable_and_deletable", NULL, (setter)Test_settable_and_deletable_set, NULL},
+#endif
+
+static int
+Test_settable_and_deletable_set_impl(TestObj *self, PyObject *value);
+
+static int
+Test_settable_and_deletable_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    return_value = Test_settable_and_deletable_set_impl((TestObj *)self, value);
+
+    return return_value;
+}
+
+static int
+Test_settable_and_deletable_set_impl(TestObj *self, PyObject *value)
+/*[clinic end generated code: output=479986d499b2f56d input=f5647f3511b9daea]*/
 
 /*[clinic input]
 @setter
@@ -5463,6 +5502,12 @@ Test_setter_first_with_docstr_set(PyObject *self, PyObject *value, void *Py_UNUS
 {
     int return_value;
 
+    if (value == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute 'setter_first_with_docstr' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
     return_value = Test_setter_first_with_docstr_set_impl((TestObj *)self, value);
 
     return return_value;
@@ -5470,7 +5515,7 @@ Test_setter_first_with_docstr_set(PyObject *self, PyObject *value, void *Py_UNUS
 
 static int
 Test_setter_first_with_docstr_set_impl(TestObj *self, PyObject *value)
-/*[clinic end generated code: output=5aaf44373c0af545 input=31a045ce11bbe961]*/
+/*[clinic end generated code: output=eac8bafcaa50aa51 input=31a045ce11bbe961]*/
 
 /*[clinic input]
 @getter
@@ -5767,6 +5812,56 @@ static int
 Test___init___impl(TestObj *self, PyObject *a, int group_right_1,
                    PyObject *b)
 /*[clinic end generated code: output=2bbb8ea60e8f57a6 input=10f5d0f1e8e466ef]*/
+
+
+/*[clinic input]
+only_optional_group
+    [
+    a: object
+    ]
+    /
+The only parameter is in an optional group.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(only_optional_group__doc__,
+"only_optional_group([a])\n"
+"The only parameter is in an optional group.");
+
+#define ONLY_OPTIONAL_GROUP_METHODDEF    \
+    {"only_optional_group", (PyCFunction)only_optional_group, METH_VARARGS, only_optional_group__doc__},
+
+static PyObject *
+only_optional_group_impl(PyObject *module, int group_right_1, PyObject *a);
+
+static PyObject *
+only_optional_group(PyObject *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int group_right_1 = 0;
+    PyObject *a = NULL;
+
+    switch (PyTuple_GET_SIZE(args)) {
+        case 0:
+            break;
+        case 1:
+            if (!PyArg_ParseTuple(args, "O:only_optional_group", &a)) {
+                goto exit;
+            }
+            group_right_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "only_optional_group requires 0 to 1 arguments");
+            goto exit;
+    }
+    return_value = only_optional_group_impl(module, group_right_1, a);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+only_optional_group_impl(PyObject *module, int group_right_1, PyObject *a)
+/*[clinic end generated code: output=e7546b9441793d7d input=426c64055af7bcab]*/
 
 
 /*[clinic input]
