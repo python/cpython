@@ -281,6 +281,15 @@ ctypes
   (Contributed by Peter Bierma in :gh:`153903`.)
 
 
+dis
+---
+
+* :func:`dis.dis` supports colored output by default, which can also be
+  :ref:`controlled <using-on-controlling-color>` through ``NO_COLOR=1``
+  environment variable.
+  (Contributed by Abduaziz Ziyodov in :gh:`144207`.)
+
+
 concurrent.futures
 ------------------
 
