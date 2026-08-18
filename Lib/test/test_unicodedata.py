@@ -321,7 +321,7 @@ class BaseUnicodeFunctionsTest:
         self.assertRaises(TypeError, self.db.category, 'xx')
 
     def test_bidirectional(self):
-        self.assertEqual(self.db.bidirectional('\uFFFE'), 'BN')
+        self.assertEqual(self.db.bidirectional('\uFFFE'), '' if self.old else 'BN')
         self.assertEqual(self.db.bidirectional(' '), 'WS')
         self.assertEqual(self.db.bidirectional('A'), 'L')
         self.assertEqual(self.db.bidirectional('\U00020000'), 'L')
@@ -350,15 +350,13 @@ class BaseUnicodeFunctionsTest:
         self.assertRaises(TypeError, self.db.bidirectional, 'xx')
 
     def test_bidirectional_unassigned(self):
-        if self.old:
-            return
-        self.assertEqual(self.db.bidirectional('\u0378'), 'L')
-        self.assertEqual(self.db.bidirectional('\u077F'), 'AL')
-        self.assertEqual(self.db.bidirectional('\u20CF'), 'ET')
-        self.assertEqual(self.db.bidirectional('\u0590'), 'R')
-        self.assertEqual(self.db.bidirectional('\uFFFF'), 'BN')
-        self.assertEqual(self.db.bidirectional('\U0001FFFE'), 'BN')
-        self.assertEqual(self.db.bidirectional('\U00010D01'), 'AL')
+        self.assertEqual(self.db.bidirectional('\u0378'), '' if self.old else 'L')
+        self.assertEqual(self.db.bidirectional('\u077F'), '' if self.old else 'AL')
+        self.assertEqual(self.db.bidirectional('\u20CF'), '' if self.old else 'ET')
+        self.assertEqual(self.db.bidirectional('\u0590'), '' if self.old else 'R')
+        self.assertEqual(self.db.bidirectional('\uFFFF'), '' if self.old else 'BN')
+        self.assertEqual(self.db.bidirectional('\U0001FFFE'), '' if self.old else 'BN')
+        self.assertEqual(self.db.bidirectional('\U00010D01'), '' if self.old else 'AL')
 
     def test_decomposition(self):
         self.assertEqual(self.db.decomposition('\uFFFE'),'')
@@ -1104,9 +1102,9 @@ class UnicodeFunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
 class Unicode_3_2_0_FunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
     db = unicodedata.ucd_3_2_0
     old = True
-    expectedchecksum = ('cb5bbbd1f55b67371e18222b90a8e21c87f16b72'
+    expectedchecksum = ('883824cb6c0ccf994e4451ebf281e2d6d479af47'
                         if quicktest else
-                        '74936dffe949d99203a47e6a66565b2fc337bae7')
+                        '68cd01e2c680b851c1fcab012efb5635b2229c2b')
 
 
 class UnicodeMiscTest(unittest.TestCase):
