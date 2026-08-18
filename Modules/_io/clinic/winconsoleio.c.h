@@ -428,6 +428,96 @@ _io__WindowsConsoleIO_isatty(PyObject *self, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
 
+#if defined(HAVE_WINDOWS_CONSOLE_IO)
+
+PyDoc_STRVAR(_io__WindowsConsoleIO_closed__doc__,
+"True if the file is closed.");
+#if defined(_io__WindowsConsoleIO_closed_DOCSTR)
+#   undef _io__WindowsConsoleIO_closed_DOCSTR
+#endif
+#define _io__WindowsConsoleIO_closed_DOCSTR _io__WindowsConsoleIO_closed__doc__
+
+#if !defined(_io__WindowsConsoleIO_closed_DOCSTR)
+#  define _io__WindowsConsoleIO_closed_DOCSTR NULL
+#endif
+#if defined(_IO__WINDOWSCONSOLEIO_CLOSED_GETSETDEF)
+#  undef _IO__WINDOWSCONSOLEIO_CLOSED_GETSETDEF
+#  define _IO__WINDOWSCONSOLEIO_CLOSED_GETSETDEF {"closed", (getter)_io__WindowsConsoleIO_closed_get, (setter)_io__WindowsConsoleIO_closed_set, _io__WindowsConsoleIO_closed_DOCSTR},
+#else
+#  define _IO__WINDOWSCONSOLEIO_CLOSED_GETSETDEF {"closed", (getter)_io__WindowsConsoleIO_closed_get, NULL, _io__WindowsConsoleIO_closed_DOCSTR},
+#endif
+
+static PyObject *
+_io__WindowsConsoleIO_closed_get_impl(winconsoleio *self);
+
+static PyObject *
+_io__WindowsConsoleIO_closed_get(PyObject *self, void *Py_UNUSED(context))
+{
+    return _io__WindowsConsoleIO_closed_get_impl((winconsoleio *)self);
+}
+
+#endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
+
+#if defined(HAVE_WINDOWS_CONSOLE_IO)
+
+PyDoc_STRVAR(_io__WindowsConsoleIO_closefd__doc__,
+"True if the file descriptor will be closed by close().");
+#if defined(_io__WindowsConsoleIO_closefd_DOCSTR)
+#   undef _io__WindowsConsoleIO_closefd_DOCSTR
+#endif
+#define _io__WindowsConsoleIO_closefd_DOCSTR _io__WindowsConsoleIO_closefd__doc__
+
+#if !defined(_io__WindowsConsoleIO_closefd_DOCSTR)
+#  define _io__WindowsConsoleIO_closefd_DOCSTR NULL
+#endif
+#if defined(_IO__WINDOWSCONSOLEIO_CLOSEFD_GETSETDEF)
+#  undef _IO__WINDOWSCONSOLEIO_CLOSEFD_GETSETDEF
+#  define _IO__WINDOWSCONSOLEIO_CLOSEFD_GETSETDEF {"closefd", (getter)_io__WindowsConsoleIO_closefd_get, (setter)_io__WindowsConsoleIO_closefd_set, _io__WindowsConsoleIO_closefd_DOCSTR},
+#else
+#  define _IO__WINDOWSCONSOLEIO_CLOSEFD_GETSETDEF {"closefd", (getter)_io__WindowsConsoleIO_closefd_get, NULL, _io__WindowsConsoleIO_closefd_DOCSTR},
+#endif
+
+static PyObject *
+_io__WindowsConsoleIO_closefd_get_impl(winconsoleio *self);
+
+static PyObject *
+_io__WindowsConsoleIO_closefd_get(PyObject *self, void *Py_UNUSED(context))
+{
+    return _io__WindowsConsoleIO_closefd_get_impl((winconsoleio *)self);
+}
+
+#endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
+
+#if defined(HAVE_WINDOWS_CONSOLE_IO)
+
+PyDoc_STRVAR(_io__WindowsConsoleIO_mode__doc__,
+"String giving the file mode.");
+#if defined(_io__WindowsConsoleIO_mode_DOCSTR)
+#   undef _io__WindowsConsoleIO_mode_DOCSTR
+#endif
+#define _io__WindowsConsoleIO_mode_DOCSTR _io__WindowsConsoleIO_mode__doc__
+
+#if !defined(_io__WindowsConsoleIO_mode_DOCSTR)
+#  define _io__WindowsConsoleIO_mode_DOCSTR NULL
+#endif
+#if defined(_IO__WINDOWSCONSOLEIO_MODE_GETSETDEF)
+#  undef _IO__WINDOWSCONSOLEIO_MODE_GETSETDEF
+#  define _IO__WINDOWSCONSOLEIO_MODE_GETSETDEF {"mode", (getter)_io__WindowsConsoleIO_mode_get, (setter)_io__WindowsConsoleIO_mode_set, _io__WindowsConsoleIO_mode_DOCSTR},
+#else
+#  define _IO__WINDOWSCONSOLEIO_MODE_GETSETDEF {"mode", (getter)_io__WindowsConsoleIO_mode_get, NULL, _io__WindowsConsoleIO_mode_DOCSTR},
+#endif
+
+static PyObject *
+_io__WindowsConsoleIO_mode_get_impl(winconsoleio *self);
+
+static PyObject *
+_io__WindowsConsoleIO_mode_get(PyObject *self, void *Py_UNUSED(context))
+{
+    return _io__WindowsConsoleIO_mode_get_impl((winconsoleio *)self);
+}
+
+#endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
+
 #ifndef _IO__WINDOWSCONSOLEIO_CLOSE_METHODDEF
     #define _IO__WINDOWSCONSOLEIO_CLOSE_METHODDEF
 #endif /* !defined(_IO__WINDOWSCONSOLEIO_CLOSE_METHODDEF) */
@@ -463,4 +553,16 @@ _io__WindowsConsoleIO_isatty(PyObject *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
     #define _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
 #endif /* !defined(_IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF) */
-/*[clinic end generated code: output=dfe49dd71f4f4b1d input=a9049054013a1b77]*/
+
+#ifndef _IO__WINDOWSCONSOLEIO_CLOSED_GETSETDEF
+    #define _IO__WINDOWSCONSOLEIO_CLOSED_GETSETDEF
+#endif /* !defined(_IO__WINDOWSCONSOLEIO_CLOSED_GETSETDEF) */
+
+#ifndef _IO__WINDOWSCONSOLEIO_CLOSEFD_GETSETDEF
+    #define _IO__WINDOWSCONSOLEIO_CLOSEFD_GETSETDEF
+#endif /* !defined(_IO__WINDOWSCONSOLEIO_CLOSEFD_GETSETDEF) */
+
+#ifndef _IO__WINDOWSCONSOLEIO_MODE_GETSETDEF
+    #define _IO__WINDOWSCONSOLEIO_MODE_GETSETDEF
+#endif /* !defined(_IO__WINDOWSCONSOLEIO_MODE_GETSETDEF) */
+/*[clinic end generated code: output=3e08c046ba0e6765 input=a9049054013a1b77]*/
