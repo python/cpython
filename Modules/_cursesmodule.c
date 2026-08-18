@@ -7557,6 +7557,32 @@ update_lines_cols(PyObject *private_module)
         goto error;
     }
     Py_DECREF(o);
+
+    if (curses_start_color_called) {
+        o = PyLong_FromUnsignedLongLong((unsigned long long)COLORS);
+        if (o == NULL) {
+            goto error;
+        }
+        if (PyDict_SetItemString(exposed_module_dict, "COLORS", o) < 0) {
+            goto error;
+        }
+        if (PyDict_SetItemString(private_module_dict, "COLORS", o) < 0) {
+            goto error;
+        }
+        Py_DECREF(o);
+
+        o = PyLong_FromUnsignedLongLong((unsigned long long)COLOR_PAIRS);
+        if (o == NULL) {
+            goto error;
+        }
+        if (PyDict_SetItemString(exposed_module_dict, "COLOR_PAIRS", o) < 0) {
+            goto error;
+        }
+        if (PyDict_SetItemString(private_module_dict, "COLOR_PAIRS", o) < 0) {
+            goto error;
+        }
+        Py_DECREF(o);
+    }
     Py_DECREF(exposed_module);
     return 1;
 
