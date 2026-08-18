@@ -26,7 +26,7 @@ jobs:
     env:
       EXCLUDE_FILE: Lib/test/lazy_imports_all_exclude.txt
     steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       with:
         persist-credentials: false
     - name: Register gcc problem matcher
@@ -47,7 +47,7 @@ jobs:
         ./python -m test --list-tests > all_tests.txt
         # Strip comments/blank lines from the exclusion file, then drop those
         # exact test names (whole-line, fixed-string match) from the run list.
-        grep -vE '^\s*(#.*)?$' "$EXCLUDE_FILE" > exclude_tests.txt
+        grep -vE '^\s*(#.*)?$' "$EXCLUDE_FILE" > exclude_tests.txt || true
         grep -vxF -f exclude_tests.txt all_tests.txt > run_tests.txt
         # Fail loudly if any exclusion entry matched nothing: a stale or
         # mistyped name (or a change in `--list-tests` output) would otherwise
@@ -60,9 +60,8 @@ jobs:
         fi
         echo "Excluding $(wc -l < exclude_tests.txt) module(s); running $(wc -l < run_tests.txt) of $(wc -l < all_tests.txt)."
     - name: Run tests with lazy imports
-      run: xvfb-run xargs ./python -X lazy_imports=all -m test --fast-ci --timeout=900 < run_tests.txt
+      run: xvfb-run xargs -a run_tests.txt ./python -X lazy_imports=all -m test --fast-ci --timeout=900 < /dev/null
     - name: Verify excluded tests still need exclusion
-      if: success()
       run: |
         set -euo pipefail
         unexpected_passes=()

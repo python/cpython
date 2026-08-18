@@ -712,4 +712,5 @@ jobs:
           ${{ !fromJSON(needs.build-context.outputs.run-ios) && 'build-ios,' || '' }}
           ${{ !fromJSON(needs.build-context.outputs.run-emscripten) && 'build-emscripten,' || '' }}
           ${{ !fromJSON(needs.build-context.outputs.run-wasi) && 'build-wasi,' || '' }}
+          ${{ !fromJSON(needs.build-context.outputs.run-tests) && 'test-lazy-imports-all,' || '' }}
         jobs: ${{ toJSON(needs) }}
