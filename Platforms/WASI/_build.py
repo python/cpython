@@ -129,7 +129,22 @@ def call(command, *, context=None, quiet=False, **kwargs):
         stderr = subprocess.STDOUT
         _shared.log("📝", f"Logging output to {stdout.name} (--quiet)...")
 
-    subprocess.check_call(command, **kwargs, stdout=stdout, stderr=stderr)
+    try:
+        subprocess.check_call(command, **kwargs, stdout=stdout, stderr=stderr)
+    except subprocess.CalledProcessError as error:
+        if quiet:
+            _shared.log(
+                "❌",
+                f"Exit code {error.returncode}"
+            )
+            separator()
+            with open(stdout.name, "r", encoding="utf-8") as file:
+                lines = file.readlines()
+                # Inefficient, but the log shouldn't be dramatically large.
+                print("".join(lines[-10:]), end="")
+                if not lines[-1].endswith("\n"):
+                    print()
+        sys.exit(error.returncode)
 
 
 @subdir("build_python_path", clean_ok=True)
