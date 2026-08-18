@@ -1468,14 +1468,25 @@ print_warning.orig_stderr = sys.stderr
 # to cleanup threads.
 environment_altered = False
 
+# Short descriptions of what was altered, e.g. "unraisable exception".
+# They are reported by regrtest together with the name of the test.
+environment_altered_reasons = []
+
+
+def set_environment_altered(reason):
+    """Set the environment_altered flag and record why it was set."""
+    global environment_altered
+    environment_altered = True
+    if reason not in environment_altered_reasons:
+        environment_altered_reasons.append(reason)
+
+
 def reap_children():
     """Use this function at the end of test_main() whenever sub-processes
     are started.  This will help ensure that no extra children (zombies)
     stick around to hog resources and create problems when looking
     for refleaks.
     """
-    global environment_altered
-
     # Need os.waitpid(-1, os.WNOHANG): Windows is not supported
     if not (hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG')):
         return
@@ -1495,7 +1506,7 @@ def reap_children():
             break
 
         print_warning(f"reap_children() reaped child process {pid}")
-        environment_altered = True
+        set_environment_altered("reaped child process")
 
 
 @contextlib.contextmanager
