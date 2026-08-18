@@ -351,8 +351,14 @@ _sqlite3_Cursor_arraysize_set(pysqlite_Cursor *self, PyObject *value, void *Py_U
 {
     int return_value;
 
+    if (value == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute 'arraysize' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
     return_value = _sqlite3_Cursor_arraysize_set_impl(self, value);
 
     return return_value;
 }
-/*[clinic end generated code: output=332c298249ae57b0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b08f9d3f49ccee9f input=a9049054013a1b77]*/
