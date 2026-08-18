@@ -21,7 +21,7 @@ env:
 jobs:
   test-lazy-imports-all:
     name: 'Run Tests with lazy_imports=all'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     env:
       EXCLUDE_FILE: Lib/test/lazy_imports_all_exclude.txt
