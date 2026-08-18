@@ -1646,6 +1646,59 @@ class BootstrapTest(unittest.TestCase):
             assert_python_ok('-c', 'pass', '-W', 'always', PYTHONPATH=cwd)
 
 
+class WarnExplicitMainTests(BaseTest):
+    # gh-123011: warn_explicit() with module globals of the __main__ module,
+    # no matter how it is executed.
+    code = ('import warnings\n'
+            'warnings.warn_explicit("eggs", UserWarning, "bar", 1,\n'
+            '                       module_globals=globals())\n')
+
+    def prepare_code(self):
+        """Make the subprocess use the tested implementation."""
+        if self.module is py_warnings:
+            return ("import sys\n"
+                    "sys.modules['_warnings'] = None\n") + self.code
+        return self.code
+
+    def check(self, err):
+        lines = err.decode().splitlines()
+        # Only the Python implementation adds the source line.
+        if len(lines) > 1 and lines[1].startswith('  '):
+            del lines[1]
+        self.assertEqual(lines, ['bar:1: UserWarning: eggs'])
+
+    def make_script(self, dirname):
+        filename = os.path.join(dirname, 'spam.py')
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(self.prepare_code())
+        return filename
+
+    def test_script(self):
+        # __main__ has __spec__ set to None.
+        with os_helper.temp_dir() as dirname:
+            filename = self.make_script(dirname)
+            rc, out, err = assert_python_ok(filename)
+            self.check(err)
+
+    def test_module(self):
+        # __main__ has __spec__ of the module executed with -m.
+        with os_helper.temp_dir() as dirname:
+            self.make_script(dirname)
+            rc, out, err = assert_python_ok('-m', 'spam', PYTHONPATH=dirname)
+            self.check(err)
+
+    def test_command(self):
+        # __main__ has the built-in importer as a loader.
+        rc, out, err = assert_python_ok('-c', self.prepare_code())
+        self.check(err)
+
+class CWarnExplicitMainTests(WarnExplicitMainTests, unittest.TestCase):
+    module = c_warnings
+
+class PyWarnExplicitMainTests(WarnExplicitMainTests, unittest.TestCase):
+    module = py_warnings
+
+
 class FinalizationTest(unittest.TestCase):
     def test_finalization(self):
         # Issue #19421: warnings.warn() should not crash
