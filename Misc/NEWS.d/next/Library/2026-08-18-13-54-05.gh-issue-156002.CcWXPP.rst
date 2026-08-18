@@ -1,0 +1,3 @@
+In :mod:`zipfile`, bound the amount of data that's decompressed at once
+using bzip2, LZMA and Zstandard to avoid allocating excessive memory if the
+archive declares a large uncompressed size.
