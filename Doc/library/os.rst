@@ -4608,7 +4608,7 @@ Naturally, they are all only available on Linux.
    .. versionadded:: 3.13
 
 
-.. function:: timerfd_settime(fd, /, *, flags=flags, initial=0.0, interval=0.0)
+.. function:: timerfd_settime(fd, /, *, flags=0, initial=0.0, interval=0.0)
 
    Alter a timer file descriptor's internal timer.
    This function operates the same interval timer as :func:`timerfd_settime_ns`.
