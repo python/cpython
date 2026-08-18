@@ -133,10 +133,7 @@ def call(command, *, context=None, quiet=False, **kwargs):
         subprocess.check_call(command, **kwargs, stdout=stdout, stderr=stderr)
     except subprocess.CalledProcessError as error:
         if quiet:
-            _shared.log(
-                "❌",
-                f"Exit code {error.returncode}"
-            )
+            _shared.log("❌", f"Exit code {error.returncode}")
             separator()
             with open(stdout.name, "r", encoding="utf-8") as file:
                 lines = file.readlines()
