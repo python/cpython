@@ -48,6 +48,7 @@ class ANSIColors:
     BACKGROUND_BLUE = "\x1b[44m"
     BACKGROUND_CYAN = "\x1b[46m"
     BACKGROUND_GREEN = "\x1b[42m"
+    BACKGROUND_GREY = "\x1b[48;5;236m"
     BACKGROUND_MAGENTA = "\x1b[45m"
     BACKGROUND_RED = "\x1b[41m"
     BACKGROUND_WHITE = "\x1b[47m"
@@ -219,6 +220,9 @@ class Difflib(ThemeSection):
 
 @dataclass(frozen=True, kw_only=True)
 class Dis(ThemeSection):
+    alt_block_first_bg:str = ANSIColors.BACKGROUND_GREY
+    alt_block_second_bg:str = ANSIColors.RESET # mb black bg ? but what about light mode ?
+
     label_bg: str = ANSIColors.BACKGROUND_CYAN
     label_fg: str = ANSIColors.BLACK
 
