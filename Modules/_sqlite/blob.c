@@ -441,6 +441,12 @@ subscript_slice(pysqlite_Blob *self, PyObject *item)
         return PyBytes_FromStringAndSize(NULL, 0);
     }
 
+    if (step < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Blob doesn't support slices with a negative step");
+        return NULL;
+    }
+
     if (step == 1) {
         return read_multiple(self, len, start);
     }
@@ -546,6 +552,13 @@ ass_subscript_slice(pysqlite_Blob *self, PyObject *item, PyObject *value)
     if (len == 0) {
         PyBuffer_Release(&vbuf);
         return 0;
+    }
+
+    if (step < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Blob doesn't support slices with a negative step");
+        PyBuffer_Release(&vbuf);
+        return -1;
     }
 
     int rc = -1;

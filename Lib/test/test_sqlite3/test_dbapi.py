@@ -1396,6 +1396,19 @@ class BlobTests(unittest.TestCase):
         actual = self.cx.execute("select b from test").fetchone()[0]
         self.assertEqual(actual, expected)
 
+    def test_blob_slice_with_negative_step(self):
+        # gh-150449: this used to raise SystemError
+        for sl in (slice(9, 0, -2), slice(None, None, -1), slice(9, None, -2)):
+            with self.subTest(slice=sl):
+                with self.assertRaises(ValueError):
+                    self.blob[sl]
+                with self.assertRaises(ValueError):
+                    self.blob[sl] = b"1" * len(self.data[sl])
+        # an empty slice selects nothing and is still allowed
+        self.assertEqual(self.blob[3:8:-1], b"")
+        self.blob[3:8:-1] = b""
+        self.assertEqual(self.blob[:], self.data)
+
     def test_blob_set_empty_slice(self):
         self.blob[0:0] = b""
         self.assertEqual(self.blob[:], self.data)
