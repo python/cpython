@@ -866,6 +866,7 @@ def _disassemble_recursive(co, *, file=None, depth=None, show_caches=False, adap
     if depth is None or depth > 0:
         if depth is not None:
             depth = depth - 1
+        theme = _get_dis_theme()
         for x in co.co_consts:
             if hasattr(x, 'co_code'):
                 print(file=file)

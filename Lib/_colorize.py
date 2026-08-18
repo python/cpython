@@ -225,10 +225,10 @@ class Dis(ThemeSection):
     exception_label: str = ANSIColors.CYAN
     argument_detail: str = ANSIColors.CYAN
 
-    op_load: str = ANSIColors.BOLD_BLUE
-    op_pop: str = ANSIColors.BOLD_MAGENTA
-    op_call_return: str = ANSIColors.BOLD_YELLOW
-    op_control_flow: str = ANSIColors.BOLD_GREEN
+    op_load: str = ANSIColors.BLUE
+    op_pop: str = ANSIColors.MAGENTA
+    op_call_return: str = ANSIColors.YELLOW
+    op_control_flow: str = ANSIColors.GREEN
 
     reset: str = ANSIColors.RESET
 
