@@ -1818,6 +1818,10 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         b = bytearray(b'x' * 100)
         b.extend(Evil(lambda: b.__delitem__(slice(30, None))))
         self.assertEqual(b, b'x' * 30 + b'ABCDEFGH')
+        # grow during __buffer__: the data lands at the original end.
+        b = bytearray(b'x' * 10)
+        b.extend(Evil(lambda: b.extend(b'y' * 100)))
+        self.assertEqual(b, b'x' * 10 + b'ABCDEFGH' + b'y' * 100)
 
     def test_iconcat(self):
         b = bytearray(b"abc")
