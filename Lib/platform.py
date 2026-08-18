@@ -427,11 +427,16 @@ def _win32_ver(version, csd, ptype):
 
     winver = getwindowsversion()
     is_client = (getattr(winver, 'product_type', 1) == 1)
-    try:
-        version = _syscmd_ver()[2]
-        major, minor, build = map(int, version.split('.'))
-    except ValueError:
-        major, minor, build = winver.platform_version or winver[:3]
+
+    if winver.device_family == "Desktop":
+        try:
+            version = _syscmd_ver()[2]
+            major, minor, build = map(int, version.split('.'))
+        except ValueError:
+            major, minor, build = winver.platform_version or winver[:3]
+            version = '{0}.{1}.{2}'.format(major, minor, build)
+    else:
+        major, minor, build = winver[:3]
         version = '{0}.{1}.{2}'.format(major, minor, build)
 
     # getwindowsversion() reflect the compatibility mode Python is
