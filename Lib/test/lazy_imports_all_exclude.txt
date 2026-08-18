@@ -25,7 +25,6 @@ test_crossinterp
 test_datetime
 test_generated_cases
 test_heapq
-test_idle
 test_import
 test_importlib
 test_json
@@ -39,4 +38,3 @@ test_tools
 test_trace
 test_type_annotations
 test_unittest
-test_zoneinfo
