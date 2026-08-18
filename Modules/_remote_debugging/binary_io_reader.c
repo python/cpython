@@ -28,7 +28,7 @@
 /* Progress callback frequency */
 #define PROGRESS_CALLBACK_INTERVAL 1000
 
-/* Cap per-batch RLE samples to bound the timestamp list (gh-152089) */
+/* Cap per-batch RLE samples to bound the timestamp list (gh-151378) */
 #define MAX_RLE_BATCH_SAMPLES 8192
 
 /* ============================================================================
@@ -950,21 +950,6 @@ emit_sample(RemoteDebuggingState *state, PyObject *collector,
     return 0;
 }
 
-/* Helper to trim timestamp list and emit batch. Returns 0 on success, -1 on error. */
-static int
-emit_batch(RemoteDebuggingState *state, PyObject *collector,
-           uint64_t thread_id, uint32_t interpreter_id, uint8_t status,
-           const uint32_t *frame_indices, size_t stack_depth,
-           BinaryReader *reader, PyObject *timestamps_list, Py_ssize_t actual_size)
-{
-    /* Trim list to actual size */
-    if (PyList_SetSlice(timestamps_list, actual_size, PyList_GET_SIZE(timestamps_list), NULL) < 0) {
-        return -1;
-    }
-    return emit_sample(state, collector, thread_id, interpreter_id, status,
-                       frame_indices, stack_depth, reader, timestamps_list);
-}
-
 /* Helper to invoke progress callback, returns -1 on error */
 static inline int
 invoke_progress_callback(PyObject *callback, Py_ssize_t current, uint32_t total)
@@ -1101,15 +1086,14 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
                 if (i == 0 || status != batch_status
                         || batch_idx >= MAX_RLE_BATCH_SAMPLES) {
                     if (timestamps_list) {
-                        int rc = emit_batch(state, collector, thread_id, interpreter_id,
-                                            batch_status, ts->current_stack, ts->current_stack_depth,
-                                            reader, timestamps_list, batch_idx);
+                        int rc = emit_sample(state, collector, thread_id, interpreter_id,
+                                             batch_status, ts->current_stack, ts->current_stack_depth,
+                                             reader, timestamps_list);
                         Py_DECREF(timestamps_list);
                         if (rc < 0) {
                             return -1;
                         }
                     }
-                    /* Append per element; the old alloc(count - i) + trim per batch was O(count^2). */
                     timestamps_list = PyList_New(0);
                     if (!timestamps_list) {
                         return -1;
@@ -1134,9 +1118,9 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
 
             /* Emit final batch */
             if (timestamps_list) {
-                int rc = emit_batch(state, collector, thread_id, interpreter_id,
-                                    batch_status, ts->current_stack, ts->current_stack_depth,
-                                    reader, timestamps_list, batch_idx);
+                int rc = emit_sample(state, collector, thread_id, interpreter_id,
+                                     batch_status, ts->current_stack, ts->current_stack_depth,
+                                     reader, timestamps_list);
                 Py_DECREF(timestamps_list);
                 if (rc < 0) {
                     return -1;
