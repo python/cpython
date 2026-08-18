@@ -62,6 +62,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
         self._closing = False  # Set when close() called.
         self._called_connection_lost = False
         self._eof_written = False
+        self._empty_waiter = None
         if self._server is not None:
             self._server._attach(self)
         self._loop.call_soon(self._protocol.connection_made, self)
@@ -331,10 +332,6 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
 
     _start_tls_compatible = True
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
-        self._empty_waiter = None
-
     def write(self, data):
         if not isinstance(data, (bytes, bytearray, memoryview)):
             raise TypeError(
@@ -460,10 +457,11 @@ class _ProactorWritePipeTransport(_ProactorBaseWritePipeTransport):
 class _ProactorDatagramTransport(_ProactorBasePipeTransport,
                                  transports.DatagramTransport):
     max_size = 256 * 1024
+    _header_size = 8
+
     def __init__(self, loop, sock, protocol, address=None,
                  waiter=None, extra=None):
         self._address = address
-        self._empty_waiter = None
         self._buffer_size = 0
         # We don't need to call _protocol.connection_made() since our base
         # constructor does it for us.
@@ -499,7 +497,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
 
         # Ensure that what we buffer is immutable.
         self._buffer.append((bytes(data), addr))
-        self._buffer_size += len(data) + 8  # include header bytes
+        self._buffer_size += len(data) + self._header_size
 
         if self._write_fut is None:
             # No current write operations are active, kick one off
@@ -526,7 +524,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
                 return
 
             data, addr = self._buffer.popleft()
-            self._buffer_size -= len(data)
+            self._buffer_size -= len(data) + self._header_size
             if self._address is not None:
                 self._write_fut = self._loop._proactor.send(self._sock,
                                                             data)
@@ -640,7 +638,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
             signal.set_wakeup_fd(self._csock.fileno())
 
     def _make_socket_transport(self, sock, protocol, waiter=None,
-                               extra=None, server=None):
+                               extra=None, server=None, context=None):
         return _ProactorSocketTransport(self, sock, protocol, waiter,
                                         extra, server)
 
@@ -649,7 +647,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
             *, server_side=False, server_hostname=None,
             extra=None, server=None,
             ssl_handshake_timeout=None,
-            ssl_shutdown_timeout=None):
+            ssl_shutdown_timeout=None, context=None):
         ssl_protocol = sslproto.SSLProtocol(
                 self, protocol, sslcontext, waiter,
                 server_side, server_hostname,
@@ -731,7 +729,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
     async def _sock_sendfile_native(self, sock, file, offset, count):
         try:
             fileno = file.fileno()
-        except (AttributeError, io.UnsupportedOperation) as err:
+        except (AttributeError, io.UnsupportedOperation):
             raise exceptions.SendfileNotAvailableError("not a regular file")
         try:
             fsize = os.fstat(fileno).st_size
@@ -754,8 +752,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                 offset += blocksize
                 total_sent += blocksize
         finally:
-            if total_sent > 0:
-                file.seek(offset)
+            file.seek(offset)
 
     async def _sendfile_native(self, transp, file, offset, count):
         resume_reading = transp.is_reading()
@@ -835,7 +832,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
     def _start_serving(self, protocol_factory, sock,
                        sslcontext=None, server=None, backlog=100,
                        ssl_handshake_timeout=None,
-                       ssl_shutdown_timeout=None):
+                       ssl_shutdown_timeout=None, context=None):
 
         def loop(f=None):
             try:

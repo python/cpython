@@ -1,3 +1,0 @@
-If the current working directory cannot be determined due to permissions,
-then import will no longer raise :exc:`PermissionError`. Patch by Alex
-Willmer.

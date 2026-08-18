@@ -6,15 +6,16 @@ import unittest
 import textwrap
 
 from test import support
-from test.support import import_helper
+from test.support import import_helper, force_not_colorized
 from test.support.os_helper import TESTFN, TESTFN_UNDECODABLE
 from test.support.script_helper import assert_python_failure, assert_python_ok
 from test.support.testcase import ExceptionIsLikeMixin
 
 from .test_misc import decode_stderr
 
-# Skip this test if the _testcapi module isn't available.
+# Skip this test if the _testcapi or _testinternalcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')
+_testinternalcapi = import_helper.import_module('_testinternalcapi')
 
 NULL = None
 
@@ -85,9 +86,7 @@ class Test_Exceptions(unittest.TestCase):
         warnings = proc.err.splitlines()
         self.assertEqual(warnings, [
             b'<string>:6: RuntimeWarning: Testing PyErr_WarnEx',
-            b'  foo()  # line 6',
             b'<string>:9: RuntimeWarning: Testing PyErr_WarnEx',
-            b'  foo()  # line 9',
         ])
 
     def test_warn_during_finalization(self):
@@ -109,6 +108,26 @@ class Test_Exceptions(unittest.TestCase):
         self.assertEqual(warnings, [
             b'<string>:7: RuntimeWarning: Testing PyErr_WarnEx',
         ])
+
+    def test__pyerr_setkeyerror(self):
+        # Test _PyErr_SetKeyError()
+        _pyerr_setkeyerror = _testinternalcapi._pyerr_setkeyerror
+        for arg in (
+            "key",
+            # check that a tuple argument is not unpacked
+            (1, 2, 3),
+            # PyErr_SetObject(exc_type, exc_value) uses exc_value if it's
+            # already an exception, but _PyErr_SetKeyError() always creates a
+            # new KeyError.
+            KeyError('arg'),
+        ):
+            with self.subTest(arg=arg):
+                with self.assertRaises(KeyError) as cm:
+                    # Test calling _PyErr_SetKeyError() with an exception set
+                    # to check that the function overrides the current
+                    # exception.
+                    _pyerr_setkeyerror(arg)
+                self.assertEqual(cm.exception.args, (arg,))
 
 
 class Test_FatalError(unittest.TestCase):
@@ -339,6 +358,10 @@ class Test_ErrSetAndRestore(unittest.TestCase):
             self.assertIsNone(cm.unraisable.err_msg)
             self.assertIsNone(cm.unraisable.object)
 
+    @force_not_colorized
+    def test_err_writeunraisable_lines(self):
+        writeunraisable = _testcapi.err_writeunraisable
+
         with (support.swap_attr(sys, 'unraisablehook', None),
               support.captured_stderr() as stderr):
             writeunraisable(CustomError('oops!'), hex)
@@ -388,6 +411,10 @@ class Test_ErrSetAndRestore(unittest.TestCase):
                              firstline + 24)
             self.assertIsNone(cm.unraisable.err_msg)
             self.assertIsNone(cm.unraisable.object)
+
+    @force_not_colorized
+    def test_err_formatunraisable_lines(self):
+        formatunraisable = _testcapi.err_formatunraisable
 
         with (support.swap_attr(sys, 'unraisablehook', None),
               support.captured_stderr() as stderr):

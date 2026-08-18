@@ -1282,12 +1282,20 @@ class TestOutputBuffering(unittest.TestCase):
         suite(result)
         expected_out = '\nStdout:\ndo cleanup2\ndo cleanup1\n'
         self.assertEqual(stdout.getvalue(), expected_out)
-        self.assertEqual(len(result.errors), 1)
+        self.assertEqual(len(result.errors), 2)
         description = 'tearDownModule (Module)'
         test_case, formatted_exc = result.errors[0]
         self.assertEqual(test_case.description, description)
         self.assertIn('ValueError: bad cleanup2', formatted_exc)
+        self.assertNotIn('ExceptionGroup', formatted_exc)
         self.assertNotIn('TypeError', formatted_exc)
+        self.assertIn(expected_out, formatted_exc)
+
+        test_case, formatted_exc = result.errors[1]
+        self.assertEqual(test_case.description, description)
+        self.assertIn('TypeError: bad cleanup1', formatted_exc)
+        self.assertNotIn('ExceptionGroup', formatted_exc)
+        self.assertNotIn('ValueError', formatted_exc)
         self.assertIn(expected_out, formatted_exc)
 
     def testBufferSetUpModule_DoModuleCleanups(self):
@@ -1313,20 +1321,32 @@ class TestOutputBuffering(unittest.TestCase):
         suite(result)
         expected_out = '\nStdout:\nset up module\ndo cleanup2\ndo cleanup1\n'
         self.assertEqual(stdout.getvalue(), expected_out)
-        self.assertEqual(len(result.errors), 2)
+        self.assertEqual(len(result.errors), 3)
         description = 'setUpModule (Module)'
         test_case, formatted_exc = result.errors[0]
         self.assertEqual(test_case.description, description)
         self.assertIn('ZeroDivisionError: division by zero', formatted_exc)
+        self.assertNotIn('ExceptionGroup', formatted_exc)
         self.assertNotIn('ValueError', formatted_exc)
         self.assertNotIn('TypeError', formatted_exc)
         self.assertIn('\nStdout:\nset up module\n', formatted_exc)
+
         test_case, formatted_exc = result.errors[1]
         self.assertIn(expected_out, formatted_exc)
         self.assertEqual(test_case.description, description)
         self.assertIn('ValueError: bad cleanup2', formatted_exc)
+        self.assertNotIn('ExceptionGroup', formatted_exc)
         self.assertNotIn('ZeroDivisionError', formatted_exc)
         self.assertNotIn('TypeError', formatted_exc)
+        self.assertIn(expected_out, formatted_exc)
+
+        test_case, formatted_exc = result.errors[2]
+        self.assertIn(expected_out, formatted_exc)
+        self.assertEqual(test_case.description, description)
+        self.assertIn('TypeError: bad cleanup1', formatted_exc)
+        self.assertNotIn('ExceptionGroup', formatted_exc)
+        self.assertNotIn('ZeroDivisionError', formatted_exc)
+        self.assertNotIn('ValueError', formatted_exc)
         self.assertIn(expected_out, formatted_exc)
 
     def testBufferTearDownModule_DoModuleCleanups(self):
@@ -1355,19 +1375,30 @@ class TestOutputBuffering(unittest.TestCase):
         suite(result)
         expected_out = '\nStdout:\ntear down module\ndo cleanup2\ndo cleanup1\n'
         self.assertEqual(stdout.getvalue(), expected_out)
-        self.assertEqual(len(result.errors), 2)
+        self.assertEqual(len(result.errors), 3)
         description = 'tearDownModule (Module)'
         test_case, formatted_exc = result.errors[0]
         self.assertEqual(test_case.description, description)
         self.assertIn('ZeroDivisionError: division by zero', formatted_exc)
+        self.assertNotIn('ExceptionGroup', formatted_exc)
         self.assertNotIn('ValueError', formatted_exc)
         self.assertNotIn('TypeError', formatted_exc)
         self.assertIn('\nStdout:\ntear down module\n', formatted_exc)
+
         test_case, formatted_exc = result.errors[1]
         self.assertEqual(test_case.description, description)
         self.assertIn('ValueError: bad cleanup2', formatted_exc)
+        self.assertNotIn('ExceptionGroup', formatted_exc)
         self.assertNotIn('ZeroDivisionError', formatted_exc)
         self.assertNotIn('TypeError', formatted_exc)
+        self.assertIn(expected_out, formatted_exc)
+
+        test_case, formatted_exc = result.errors[2]
+        self.assertEqual(test_case.description, description)
+        self.assertIn('TypeError: bad cleanup1', formatted_exc)
+        self.assertNotIn('ExceptionGroup', formatted_exc)
+        self.assertNotIn('ZeroDivisionError', formatted_exc)
+        self.assertNotIn('ValueError', formatted_exc)
         self.assertIn(expected_out, formatted_exc)
 
 

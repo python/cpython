@@ -21,8 +21,9 @@ from sysconfig import (
 # Regexes needed for parsing Makefile (and similar syntaxes,
 # like old-style Setup files).
 _variable_rx = r"([a-zA-Z][a-zA-Z0-9_]+)\s*=\s*(.*)"
-_findvar1_rx = r"\$\(([A-Za-z][A-Za-z0-9_]*)\)"
-_findvar2_rx = r"\${([A-Za-z][A-Za-z0-9_]*)}"
+_findvar_rx = (r"\$(\([A-Za-z][A-Za-z0-9_]*\)"
+                 r"|\{[A-Za-z][A-Za-z0-9_]*\}"
+                 r"|\$?)")
 
 
 def _parse_makefile(filename, vars=None, keep_unresolved=True):
@@ -49,26 +50,7 @@ def _parse_makefile(filename, vars=None, keep_unresolved=True):
         m = re.match(_variable_rx, line)
         if m:
             n, v = m.group(1, 2)
-            v = v.strip()
-            # `$$' is a literal `$' in make
-            tmpv = v.replace('$$', '')
-
-            if "$" in tmpv:
-                notdone[n] = v
-            else:
-                try:
-                    if n in _ALWAYS_STR:
-                        raise ValueError
-
-                    v = int(v)
-                except ValueError:
-                    # insert literal `$'
-                    done[n] = v.replace('$$', '$')
-                else:
-                    done[n] = v
-
-    # do variable interpolation here
-    variables = list(notdone.keys())
+            notdone[n] = v.strip()
 
     # Variables with a 'PY_' prefix in the makefile. These need to
     # be made available without that prefix through sysconfig.
@@ -76,72 +58,64 @@ def _parse_makefile(filename, vars=None, keep_unresolved=True):
     # if the expansion uses the name without a prefix.
     renamed_variables = ('CFLAGS', 'LDFLAGS', 'CPPFLAGS')
 
-    while len(variables) > 0:
-        for name in tuple(variables):
-            value = notdone[name]
-            m1 = re.search(_findvar1_rx, value)
-            m2 = re.search(_findvar2_rx, value)
-            if m1 and m2:
-                m = m1 if m1.start() < m2.start() else m2
-            else:
-                m = m1 if m1 else m2
-            if m is not None:
-                n = m.group(1)
-                found = True
-                if n in done:
-                    item = str(done[n])
-                elif n in notdone:
-                    # get it on a subsequent round
-                    found = False
-                elif n in os.environ:
-                    # do it like make: fall back to environment
-                    item = os.environ[n]
-
-                elif n in renamed_variables:
-                    if (name.startswith('PY_') and
-                        name[3:] in renamed_variables):
-                        item = ""
-
-                    elif 'PY_' + n in notdone:
-                        found = False
-
-                    else:
-                        item = str(done['PY_' + n])
-
-                else:
-                    done[n] = item = ""
-
-                if found:
-                    after = value[m.end():]
-                    value = value[:m.start()] + item + after
-                    if "$" in after:
-                        notdone[name] = value
-                    else:
-                        try:
-                            if name in _ALWAYS_STR:
-                                raise ValueError
-                            value = int(value)
-                        except ValueError:
-                            done[name] = value.strip()
-                        else:
-                            done[name] = value
-                        variables.remove(name)
-
-                        if name.startswith('PY_') \
-                        and name[3:] in renamed_variables:
-
-                            name = name[3:]
-                            if name not in done:
-                                done[name] = value
-
-            else:
-                # Adds unresolved variables to the done dict.
-                # This is disabled when called from distutils.sysconfig
+    def resolve_var(name):
+        def repl(m):
+            n = m[1]
+            if n == '$':
+                return '$'
+            elif n == '':
+                # bogus variable reference (e.g. "prefix=$/opt/python")
                 if keep_unresolved:
-                    done[name] = value
-                # bogus variable reference (e.g. "prefix=$/opt/python");
-                # just drop it since we can't deal
-                variables.remove(name)
+                    return m[0]
+                raise ValueError
+            elif n[0] == '(' and n[-1] == ')':
+                n = n[1:-1]
+            elif n[0] == '{' and n[-1] == '}':
+                n = n[1:-1]
+
+            if n in done:
+                return str(done[n])
+            elif n in notdone:
+                return str(resolve_var(n))
+            elif n in os.environ:
+                # do it like make: fall back to environment
+                return os.environ[n]
+            elif n in renamed_variables:
+                if name.startswith('PY_') and name[3:] in renamed_variables:
+                    return ""
+                n = 'PY_' + n
+                if n in notdone:
+                    return str(resolve_var(n))
+                else:
+                    assert n not in done
+                    return ""
+            else:
+                done[n] = ""
+                return ""
+
+        assert name not in done
+        done[name] = ""
+        try:
+            value = re.sub(_findvar_rx, repl, notdone[name])
+        except ValueError:
+            del done[name]
+            return ""
+        value = value.strip()
+        if name not in _ALWAYS_STR:
+            try:
+                value = int(value)
+            except ValueError:
+                pass
+        done[name] = value
+        if name.startswith('PY_') and name[3:] in renamed_variables:
+            name = name[3:]
+            if name not in done:
+                done[name] = value
+        return value
+
+    for n in notdone:
+        if n not in done:
+            resolve_var(n)
 
     # strip spurious spaces
     for k, v in done.items():

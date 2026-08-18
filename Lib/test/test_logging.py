@@ -25,6 +25,7 @@ import logging.config
 
 import codecs
 import configparser
+import contextlib
 import copy
 import datetime
 import pathlib
@@ -61,7 +62,7 @@ import warnings
 import weakref
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from unittest.mock import patch
+from unittest.mock import call, Mock, patch
 from urllib.parse import urlparse, parse_qs
 from socketserver import (ThreadingUDPServer, DatagramRequestHandler,
                           ThreadingTCPServer, StreamRequestHandler)
@@ -403,6 +404,20 @@ class BasicFilterTest(BaseTest):
         r = logging.makeLogRecord({'name': 'spam.eggs'})
         self.assertTrue(f.filter(r))
 
+    def test_filter_repr(self):
+        f = logging.Filter('myapp')
+        self.assertEqual(repr(f), '<Filter (myapp)>')
+
+    def test_filter_repr_empty(self):
+        f = logging.Filter()
+        self.assertEqual(repr(f), '<Filter ()>')
+
+    def test_filter_repr_subclass(self):
+        class MyFilter(logging.Filter):
+            pass
+        f = MyFilter('myapp')
+        self.assertEqual(repr(f), '<MyFilter (myapp)>')
+
 #
 #   First, we define our levels. There can be as many as you want - the only
 #     limitations are that they should be integers, the lowest should be > 0 and
@@ -730,6 +745,7 @@ class HandlerTest(BaseTest):
     # based on os.fork existing because that is what users and this test use.
     # This helps ensure that when fork exists (the important concept) that the
     # register_at_fork mechanism is also present and used.
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.requires_fork()
     @threading_helper.requires_working_threading()
     @skip_if_asan_fork
@@ -797,6 +813,23 @@ class HandlerTest(BaseTest):
             lock_holder_thread.join()
 
             support.wait_process(pid, exitcode=0)
+
+    def test_remove_handler_while_emitting(self):
+        # Removing a handler while callHandlers() iterates over the handlers
+        # should not cause the following handlers to be skipped (gh-79366).
+        logger = logging.Logger('test_remove_handler_while_emitting')
+        calls = []
+        class RemovingHandler(logging.Handler):
+            def emit(self, record):
+                calls.append('removing')
+                logger.removeHandler(self)
+        class CountingHandler(logging.Handler):
+            def emit(self, record):
+                calls.append('counting')
+        logger.addHandler(RemovingHandler())
+        logger.addHandler(CountingHandler())
+        logger.error('spam')
+        self.assertEqual(calls, ['removing', 'counting'])
 
 
 class BadStream(object):
@@ -1036,7 +1069,7 @@ class TestTCPServer(ControlMixin, ThreadingTCPServer):
     """
 
     allow_reuse_address = True
-    allow_reuse_port = True
+    allow_reuse_port = False
 
     def __init__(self, addr, handler, poll_interval=0.5,
                  bind_and_activate=True):
@@ -2122,6 +2155,45 @@ class UnixSysLogHandlerTest(SysLogHandlerTest):
         self.addCleanup(os_helper.unlink, self.address)
         SysLogHandlerTest.setUp(self)
 
+    def test_bytes_address(self):
+        # The Unix socket address can also be specified as bytes.
+        if self.server_exception:
+            self.skipTest(self.server_exception)
+        hdlr = logging.handlers.SysLogHandler(os.fsencode(self.address))
+        self.addCleanup(hdlr.close)
+        self.assertTrue(hdlr.unixsocket)
+        logger = logging.getLogger("slh-bytes")
+        logger.addHandler(hdlr)
+        self.addCleanup(logger.removeHandler, hdlr)
+        logger.error("sp\xe4m")
+        self.handled.wait(support.LONG_TIMEOUT)
+        self.assertEqual(self.log_output, b'<11>sp\xc3\xa4m\x00')
+
+@unittest.skipUnless(sys.platform in ('linux', 'android'),
+                     'Linux specific test')
+class AbstractNamespaceSysLogHandlerTest(BaseTest):
+
+    """Test for SysLogHandler with a socket in the abstract namespace."""
+
+    def check(self, address):
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+        self.addCleanup(sock.close)
+        sock.bind(address)
+        sock.settimeout(support.LONG_TIMEOUT)
+        hdlr = logging.handlers.SysLogHandler(address)
+        self.addCleanup(hdlr.close)
+        self.assertTrue(hdlr.unixsocket)
+        hdlr.emit(logging.makeLogRecord({'msg': 'sp\xe4m'}))
+        self.assertEqual(sock.recv(1024), b'<12>sp\xc3\xa4m\x00')
+
+    def test_str_address(self):
+        # A str address is encoded with the filesystem encoding.
+        self.check('\0' + os_helper.TESTFN)
+
+    def test_bytes_address(self):
+        # The name is an arbitrary byte sequence, it need not be decodable.
+        self.check(b'\0test_logging_%d_\xff\xfe' % os.getpid())
+
 @unittest.skipUnless(socket_helper.IPV6_ENABLED,
                      'IPv6 support required for this test.')
 class IPv6SysLogHandlerTest(SysLogHandlerTest):
@@ -2138,6 +2210,24 @@ class IPv6SysLogHandlerTest(SysLogHandlerTest):
     def tearDown(self):
         self.server_class.address_family = socket.AF_INET
         super(IPv6SysLogHandlerTest, self).tearDown()
+
+@support.requires_working_socket()
+class UnresolvableSysLogAddressTest(BaseTest):
+
+    """Test for SysLogHandler with a temporarily unresolvable address."""
+
+    @patch('socket.getaddrinfo')
+    def test_unresolvable_address(self, mock_getaddrinfo):
+        # The address can be unresolvable when the handler is created.
+        mock_getaddrinfo.side_effect = socket.gaierror
+        hdlr = logging.handlers.SysLogHandler(('localhost', 514))
+        self.addCleanup(hdlr.close)
+        self.assertIsNone(hdlr.socket)
+        # It is resolved again when a record is emitted.
+        calls = mock_getaddrinfo.call_count
+        with support.captured_stderr():
+            hdlr.emit(logging.makeLogRecord({'msg': 'sp\xe4m'}))
+        self.assertGreater(mock_getaddrinfo.call_count, calls)
 
 @support.requires_working_socket()
 @threading_helper.requires_working_threading()
@@ -3281,6 +3371,36 @@ class ConfigDictTest(BaseTest):
         }
     }
 
+    class StrmHandler(logging.StreamHandler):
+        def __init__(self, strm=None):
+            super().__init__(stream=strm)
+
+    config_custom_handler_with_removed_strm_arg = {
+        "version": 1,
+        "formatters": {
+            "form1": {
+                "format": "%(levelname)s ++ %(message)s",
+            },
+        },
+        "handlers": {
+            "hand1": {
+                "class": StrmHandler,
+                "formatter": "form1",
+                "level": "NOTSET",
+                "stream": "ext://sys.stdout",
+            },
+        },
+        "loggers": {
+            "compiler.parser": {
+                "level": "DEBUG",
+                "handlers": ["hand1"],
+            },
+        },
+        "root": {
+            "level": "WARNING",
+        },
+    }
+
     def apply_config(self, conf):
         logging.config.dictConfig(conf)
 
@@ -3369,6 +3489,10 @@ class ConfigDictTest(BaseTest):
     def test_config5_ok(self):
         self.test_config1_ok(config=self.config5)
         self.check_handler('hand1', CustomHandler)
+
+    def test_removed_strm_arg(self):
+        with self.assertRaisesRegex(ValueError, 'hand1'):
+            self.apply_config(self.config_custom_handler_with_removed_strm_arg)
 
     def test_config6_failure(self):
         self.assertRaises(Exception, self.apply_config, self.config6)
@@ -3593,14 +3717,14 @@ class ConfigDictTest(BaseTest):
         # Ask for a randomly assigned port (by using port 0)
         t = logging.config.listen(0, verify)
         t.start()
-        t.ready.wait()
+        self.assertTrue(t.ready.wait(support.LONG_TIMEOUT),
+                        msg='the listener did not start')
         # Now get the port allocated
         port = t.port
         t.ready.clear()
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(2.0)
-            sock.connect(('localhost', port))
+            # The server can listen on IPv6, so do not force a family.
+            sock = socket.create_connection(('localhost', port), timeout=2.0)
 
             slen = struct.pack('>L', len(text))
             s = slen + text
@@ -3714,6 +3838,18 @@ class ConfigDictTest(BaseTest):
             ('INFO', '1'),
             ('ERROR', '2'),
         ], pat=r"^[\w.]+ -> (\w+): (\d+)$")
+
+    @support.requires_working_socket()
+    def test_listen_server_error(self):
+        # The "ready" event should be set even if the server fails to start.
+        t = logging.config.listen(-1)
+        t.daemon = True
+        with threading_helper.catch_threading_exception() as cm:
+            t.start()
+            self.assertTrue(t.ready.wait(support.SHORT_TIMEOUT),
+                            msg='the listener did not report the failure')
+            threading_helper.join_thread(t)
+            self.assertIs(cm.exc_type, OverflowError)
 
     def test_bad_format(self):
         self.assertRaises(ValueError, self.apply_config, self.bad_format)
@@ -4005,6 +4141,7 @@ class ConfigDictTest(BaseTest):
                 self._apply_simple_queue_listener_configuration(qspec)
                 manager.assert_not_called()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @skip_if_tsan_fork
     @support.requires_subprocess()
     @unittest.skipUnless(support.Py_DEBUG, "requires a debug build for testing"
@@ -4014,11 +4151,7 @@ class ConfigDictTest(BaseTest):
         # and thus cannot be used as a queue-like object (gh-124653)
 
         import multiprocessing
-
-        if support.MS_WINDOWS:
-            start_methods = ['spawn']
-        else:
-            start_methods = ['spawn', 'fork', 'forkserver']
+        start_methods = multiprocessing.get_all_start_methods()
 
         for start_method in start_methods:
             with self.subTest(start_method=start_method):
@@ -4027,16 +4160,15 @@ class ConfigDictTest(BaseTest):
                 with self.assertRaises(ValueError):
                     self._apply_simple_queue_listener_configuration(qspec)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @skip_if_tsan_fork
     @support.requires_subprocess()
     @unittest.skipUnless(support.Py_DEBUG, "requires a debug build for testing"
                                            " assertions in multiprocessing")
     def test_config_queue_handler_multiprocessing_context(self):
         # regression test for gh-121723
-        if support.MS_WINDOWS:
-            start_methods = ['spawn']
-        else:
-            start_methods = ['spawn', 'fork', 'forkserver']
+        import multiprocessing
+        start_methods = multiprocessing.get_all_start_methods()
         for start_method in start_methods:
             with self.subTest(start_method=start_method):
                 ctx = multiprocessing.get_context(start_method)
@@ -4067,6 +4199,7 @@ class ConfigDictTest(BaseTest):
         # log a message (this creates a record put in the queue)
         logging.getLogger().info(message_to_log)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @skip_if_tsan_fork
     @support.requires_subprocess()
     def test_multiprocessing_queues(self):
@@ -4125,6 +4258,30 @@ class ConfigDictTest(BaseTest):
         self.apply_config(config)
         # Logger should be enabled, since explicitly mentioned
         self.assertFalse(logger.disabled)
+
+    def test_disable_existing_loggers_preserves_children(self):
+        parent = logging.getLogger('many')
+        child = logging.getLogger('many.child')
+        child.setLevel(logging.CRITICAL)
+        self.assertFalse(child.isEnabledFor(logging.INFO))
+        cousin = logging.getLogger('many-child')
+        for i in range(20):
+            logging.getLogger(f'many-sibling-{i}')
+
+        self.apply_config({
+            'version': 1,
+            'loggers': {
+                'many': {
+                    'level': 'INFO',
+                },
+            },
+        })
+
+        self.assertFalse(parent.disabled)
+        self.assertFalse(child.disabled)
+        self.assertEqual(child.level, logging.NOTSET)
+        self.assertTrue(child.isEnabledFor(logging.INFO))
+        self.assertTrue(cousin.disabled)
 
     def test_111615(self):
         # See gh-111615
@@ -4197,6 +4354,43 @@ class ManagerTest(BaseTest):
         expected = object()
         man.setLogRecordFactory(expected)
         self.assertEqual(man.logRecordFactory, expected)
+
+    @threading_helper.requires_working_threading()
+    def test_getLogger_fast_path_never_returns_unwired_logger(self):
+        # getLogger()'s lock-free fast path returns a logger straight out of
+        # loggerDict, so a logger must be published there only after
+        # _fixupParents() has set its parent; otherwise a concurrent caller
+        # observes it detached from the hierarchy (gh-150818 follow-up).
+        manager = logging.Manager(logging.RootLogger(logging.WARNING))
+        name = 'a.b.c'
+
+        paused = threading.Event()
+        seen = []
+        real_fixup = manager._fixupParents
+
+        # Pause the creating thread between publishing rv and wiring its
+        # parent, then read loggerDict the way the fast path does and snapshot
+        # the parent at that instant (rv is wired in place soon after).
+        def fixup(alogger):
+            paused.set()
+            reader.join()
+            real_fixup(alogger)
+
+        def read():
+            paused.wait()
+            rv = manager.loggerDict.get(name)
+            if rv is not None and not isinstance(rv, logging.PlaceHolder):
+                seen.append(rv.parent)
+
+        reader = threading.Thread(target=read)
+        manager._fixupParents = fixup
+        try:
+            reader.start()
+            manager.getLogger(name)
+        finally:
+            manager._fixupParents = real_fixup
+
+        self.assertNotIn(None, seen)
 
 class ChildLoggerTest(BaseTest):
     def test_child_loggers(self):
@@ -4311,8 +4505,6 @@ class QueueHandlerTest(BaseTest):
         self.assertEqual(formatted_msg, log_record.msg)
         self.assertEqual(formatted_msg, log_record.message)
 
-    @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
-                         'logging.handlers.QueueListener required for this test')
     def test_queue_listener(self):
         handler = TestHandler(support.Matcher())
         listener = logging.handlers.QueueListener(self.queue, handler)
@@ -4347,8 +4539,28 @@ class QueueHandlerTest(BaseTest):
         self.assertTrue(handler.matches(levelno=logging.CRITICAL, message='6'))
         handler.close()
 
-    @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
-                         'logging.handlers.QueueListener required for this test')
+    def test_queue_listener_context_manager(self):
+        handler = TestHandler(support.Matcher())
+        with logging.handlers.QueueListener(self.queue, handler) as listener:
+            self.assertIsInstance(listener, logging.handlers.QueueListener)
+            self.assertIsNotNone(listener._thread)
+        self.assertIsNone(listener._thread)
+
+        # doesn't hurt to call stop() more than once.
+        listener.stop()
+        self.assertIsNone(listener._thread)
+
+    def test_queue_listener_multi_start(self):
+        handler = TestHandler(support.Matcher())
+        with logging.handlers.QueueListener(self.queue, handler) as listener:
+            self.assertRaises(RuntimeError, listener.start)
+
+        with listener:
+            self.assertRaises(RuntimeError, listener.start)
+
+        listener.start()
+        listener.stop()
+
     def test_queue_listener_with_StreamHandler(self):
         # Test that traceback and stack-info only appends once (bpo-34334, bpo-46755).
         listener = logging.handlers.QueueListener(self.queue, self.root_hdlr)
@@ -4363,8 +4575,6 @@ class QueueHandlerTest(BaseTest):
         self.assertEqual(self.stream.getvalue().strip().count('Traceback'), 1)
         self.assertEqual(self.stream.getvalue().strip().count('Stack'), 1)
 
-    @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
-                         'logging.handlers.QueueListener required for this test')
     def test_queue_listener_with_multiple_handlers(self):
         # Test that queue handler format doesn't affect other handler formats (bpo-35726).
         self.que_hdlr.setFormatter(self.root_formatter)
@@ -4853,6 +5063,20 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
                 # After PR gh-102412, precision (places) increases from 3 to 7
                 self.assertAlmostEqual(relativeCreated, offset_ns / 1e6, places=7)
 
+    def test_formatter_repr(self):
+        f = logging.Formatter('%(message)s')
+        self.assertEqual(repr(f), '<Formatter (%(message)s)>')
+
+    def test_formatter_repr_default(self):
+        f = logging.Formatter()
+        self.assertEqual(repr(f), '<Formatter (%(message)s)>')
+
+    def test_formatter_repr_subclass(self):
+        class MyFormatter(logging.Formatter):
+            pass
+        f = MyFormatter('%(message)s')
+        self.assertEqual(repr(f), '<MyFormatter (%(message)s)>')
+
 
 class TestBufferingFormatter(logging.BufferingFormatter):
     def formatHeader(self, records):
@@ -5281,6 +5505,7 @@ class LogRecordTest(BaseTest):
         else:
             return results
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @skip_if_tsan_fork
     def test_multiprocessing(self):
         support.skip_if_broken_multiprocessing_synchronize()
@@ -5365,7 +5590,7 @@ class LogRecordTest(BaseTest):
                 logging.logAsyncioTasks = False
                 runner.run(make_record(self.assertIsNone))
         finally:
-            asyncio._set_event_loop_policy(None)
+            asyncio.set_event_loop(None)
 
     @support.requires_working_socket()
     def test_taskName_without_asyncio_imported(self):
@@ -5377,7 +5602,7 @@ class LogRecordTest(BaseTest):
                 logging.logAsyncioTasks = False
                 runner.run(make_record(self.assertIsNone))
         finally:
-            asyncio._set_event_loop_policy(None)
+            asyncio.set_event_loop(None)
 
 
 class BasicConfigTest(unittest.TestCase):
@@ -5516,12 +5741,19 @@ class BasicConfigTest(unittest.TestCase):
         assertRaises = self.assertRaises
         handlers = [logging.StreamHandler()]
         stream = sys.stderr
+        formatter = logging.Formatter()
         assertRaises(ValueError, logging.basicConfig, filename='test.log',
                                                       stream=stream)
         assertRaises(ValueError, logging.basicConfig, filename='test.log',
                                                       handlers=handlers)
         assertRaises(ValueError, logging.basicConfig, stream=stream,
                                                       handlers=handlers)
+        assertRaises(ValueError, logging.basicConfig, formatter=formatter,
+                                                      format='%(message)s')
+        assertRaises(ValueError, logging.basicConfig, formatter=formatter,
+                                                      datefmt='%H:%M:%S')
+        assertRaises(ValueError, logging.basicConfig, formatter=formatter,
+                                                      style='%')
         # Issue 23207: test for invalid kwargs
         assertRaises(ValueError, logging.basicConfig, loglevel=logging.INFO)
         # Should pop both filename and filemode even if filename is None
@@ -5656,6 +5888,20 @@ class BasicConfigTest(unittest.TestCase):
             # didn't write anything due to the encoding error
             self.assertEqual(data, r'')
 
+    def test_formatter_given(self):
+        mock_formatter = Mock()
+        mock_handler = Mock(formatter=None)
+        with patch("logging.Formatter") as mock_formatter_init:
+            logging.basicConfig(formatter=mock_formatter, handlers=[mock_handler])
+        self.assertEqual(mock_handler.setFormatter.call_args_list, [call(mock_formatter)])
+        self.assertEqual(mock_formatter_init.call_count, 0)
+
+    def test_formatter_not_given(self):
+        mock_handler = Mock(formatter=None)
+        with patch("logging.Formatter") as mock_formatter_init:
+            logging.basicConfig(handlers=[mock_handler])
+        self.assertEqual(mock_formatter_init.call_count, 1)
+
     @support.requires_working_socket()
     def test_log_taskName(self):
         async def log_record():
@@ -5681,7 +5927,7 @@ class BasicConfigTest(unittest.TestCase):
                 data = f.read().strip()
             self.assertRegex(data, r'Task-\d+ - hello world')
         finally:
-            asyncio._set_event_loop_policy(None)
+            asyncio.set_event_loop(None)
             if handler:
                 handler.close()
 
@@ -5744,7 +5990,7 @@ class LoggerAdapterTest(unittest.TestCase):
 
         self.addCleanup(cleanup)
         self.addCleanup(logging.shutdown)
-        self.adapter = logging.LoggerAdapter(logger=self.logger, extra=None)
+        self.adapter = logging.LoggerAdapter(logger=self.logger)
 
     def test_exception(self):
         msg = 'testing exception: %r'
@@ -5915,6 +6161,18 @@ class LoggerAdapterTest(unittest.TestCase):
         self.assertEqual(record.foo, '1')
         self.assertEqual(record.bar, '2')
 
+        self.adapter.critical('no extra')  # should not fail
+        self.assertEqual(len(self.recording.records), 2)
+        record = self.recording.records[-1]
+        self.assertEqual(record.foo, '1')
+        self.assertNotHasAttr(record, 'bar')
+
+        self.adapter.critical('none extra', extra=None)  # should not fail
+        self.assertEqual(len(self.recording.records), 3)
+        record = self.recording.records[-1]
+        self.assertEqual(record.foo, '1')
+        self.assertNotHasAttr(record, 'bar')
+
     def test_extra_merged_log_call_has_precedence(self):
         self.adapter = logging.LoggerAdapter(logger=self.logger,
                                              extra={'foo': '1'},
@@ -5925,6 +6183,25 @@ class LoggerAdapterTest(unittest.TestCase):
         record = self.recording.records[0]
         self.assertHasAttr(record, 'foo')
         self.assertEqual(record.foo, '2')
+
+    def test_extra_merged_without_extra(self):
+        self.adapter = logging.LoggerAdapter(logger=self.logger,
+                                             merge_extra=True)
+
+        self.adapter.critical('foo should be here', extra={'foo': '1'})
+        self.assertEqual(len(self.recording.records), 1)
+        record = self.recording.records[-1]
+        self.assertEqual(record.foo, '1')
+
+        self.adapter.critical('no extra')  # should not fail
+        self.assertEqual(len(self.recording.records), 2)
+        record = self.recording.records[-1]
+        self.assertNotHasAttr(record, 'foo')
+
+        self.adapter.critical('none extra', extra=None)  # should not fail
+        self.assertEqual(len(self.recording.records), 3)
+        record = self.recording.records[-1]
+        self.assertNotHasAttr(record, 'foo')
 
 
 class PrefixAdapter(logging.LoggerAdapter):
@@ -6187,11 +6464,12 @@ class BaseFileTest(BaseTest):
         self.rmfiles = []
 
     def tearDown(self):
-        for fn in self.rmfiles:
-            os.unlink(fn)
-        if os.path.exists(self.fn):
-            os.unlink(self.fn)
-        BaseTest.tearDown(self)
+        try:
+            for fn in self.rmfiles:
+                os_helper.unlink(fn)
+            os_helper.unlink(self.fn)
+        finally:
+            BaseTest.tearDown(self)
 
     def assertLogFile(self, filename):
         "Assert a log file is there and register it for deletion"
@@ -6255,6 +6533,32 @@ class RotatingFileHandlerTest(BaseFileTest):
                 os.devnull, encoding="utf-8", maxBytes=1)
         self.assertFalse(rh.shouldRollover(self.next_rec()))
         rh.close()
+
+    @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
+    def test_should_not_rollover_named_pipe(self):
+        # gh-143237 - test with non-seekable special file (named pipe)
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+        try:
+            os.mkfifo(filename)
+        except PermissionError as e:
+            self.skipTest('os.mkfifo(): %s' % e)
+
+        data = 'not read'
+        def other_side():
+            nonlocal data
+            with open(filename, 'rb') as f:
+                data = f.read()
+
+        thread = threading.Thread(target=other_side)
+        with threading_helper.start_threads([thread]):
+            rh = logging.handlers.RotatingFileHandler(
+                    filename, encoding="utf-8", maxBytes=1)
+            with contextlib.closing(rh):
+                m = self.next_rec()
+                self.assertFalse(rh.shouldRollover(m))
+                rh.emit(m)
+        self.assertEqual(data.decode(), m.msg + os.linesep)
 
     def test_should_rollover(self):
         with open(self.fn, 'wb') as f:
@@ -6435,22 +6739,78 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
                     print(tf.read())
         self.assertTrue(found, msg=msg)
 
-    def test_rollover_at_midnight(self, weekly=False):
-        os_helper.unlink(self.fn)
+    @unittest.skipUnless(hasattr(os.stat_result, 'st_birthtime') or hasattr(os, 'statx'),
+        "st_birthtime and statx() not available or supported by Python on this OS")
+    @support.requires_resource('walltime')
+    def test_rollover_based_on_st_birthtime_only(self):
+        def add_record(message: str) -> None:
+            fh = logging.handlers.TimedRotatingFileHandler(
+                    self.fn, when='S', interval=4, encoding="utf-8", backupCount=1)
+            fmt = logging.Formatter('%(asctime)s %(message)s')
+            fh.setFormatter(fmt)
+            record = logging.makeLogRecord({'msg': message})
+            fh.emit(record)
+            fh.close()
+
+        add_record('testing - initial')
+        self.assertLogFile(self.fn)
+        # Sleep a little over the half of rollover time - and this value
+        # must be over 2 seconds, since this is the mtime resolution on
+        # FAT32 filesystems.
+        time.sleep(2.1)
+        add_record('testing - update before rollover to renew the st_mtime')
+        time.sleep(2.1)    # a little over the half of rollover time
+        add_record('testing - new record supposedly in the new file after rollover')
+
+        # At this point, the log file should be rotated if the rotation
+        # is based on creation time but should be not if it's based on
+        # modification time.
+        found = False
         now = datetime.datetime.now()
-        atTime = now.time()
-        if not 0.1 < atTime.microsecond/1e6 < 0.9:
-            # The test requires all records to be emitted within
-            # the range of the same whole second.
-            time.sleep((0.1 - atTime.microsecond/1e6) % 1.0)
+        GO_BACK = 5 # seconds
+        for secs in range(GO_BACK + 1):
+            prev = now - datetime.timedelta(seconds=secs)
+            fn = self.fn + prev.strftime(".%Y-%m-%d_%H-%M-%S")
+            found = os.path.exists(fn)
+            if found:
+                self.rmfiles.append(fn)
+                break
+        msg = 'No rotated files found, went back %d seconds' % GO_BACK
+        if not found:
+            # print additional diagnostics
+            dn, fn = os.path.split(self.fn)
+            files = [f for f in os.listdir(dn) if f.startswith(fn)]
+            print('Test time: %s' % now.strftime("%Y-%m-%d %H-%M-%S"), file=sys.stderr)
+            print('The only matching files are: %s' % files, file=sys.stderr)
+            for f in files:
+                print('Contents of %s:' % f)
+                path = os.path.join(dn, f)
+                print(os.stat(path))
+                with open(path, 'r') as tf:
+                    print(tf.read())
+        self.assertTrue(found, msg=msg)
+
+    def test_rollover_at_midnight(self, weekly=False):
+        # Create the log file in a fresh directory under a never used name:
+        # on Windows, NTFS file tunneling restores the original creation time
+        # of a file recreated with the same name.
+        os_helper.unlink(self.fn)
+        dirname = tempfile.mkdtemp()
+        self.addCleanup(os_helper.rmtree, dirname)
+        self.fn = os.path.join(dirname, 'test_rollover.log')
+
+        # Emit the first records a little after the beginning of a whole
+        # second, so that their file times fall inside that second and not the
+        # previous one, which would cause an unwanted rollover.
+        now = datetime.datetime.now()
+        if not 0.1 < now.microsecond/1e6 < 0.9:
+            time.sleep((0.1 - now.microsecond/1e6) % 1.0)
             now = datetime.datetime.now()
-            atTime = now.time()
-        atTime = atTime.replace(microsecond=0)
         fmt = logging.Formatter('%(asctime)s %(message)s')
         when = f'W{now.weekday()}' if weekly else 'MIDNIGHT'
         for i in range(3):
             fh = logging.handlers.TimedRotatingFileHandler(
-                self.fn, encoding="utf-8", when=when, atTime=atTime)
+                self.fn, encoding="utf-8", when=when, atTime=now.time())
             fh.setFormatter(fmt)
             r2 = logging.makeLogRecord({'msg': f'testing1 {i}'})
             fh.emit(r2)
@@ -6460,7 +6820,30 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
             for i, line in enumerate(f):
                 self.assertIn(f'testing1 {i}', line)
 
-        os.utime(self.fn, (now.timestamp() - 1,)*2)
+        # The creation time, used to compute the rollover time, cannot be
+        # changed, so the rollover cannot be forced by back-dating the file.
+        # Wait until the clock reaches a rollover time set one second ahead.
+        rollover = int(time.time()) + 1
+        if rollover - time.time() < 0.1:
+            # Leave time to emit a record before the rollover time.
+            rollover += 1
+        atTime = datetime.datetime.fromtimestamp(rollover).time()
+        rolloverDate = (datetime.datetime.fromtimestamp(rollover)
+                        - datetime.timedelta(days=7 if weekly else 1))
+        otherfn = f'{self.fn}.{rolloverDate:%Y-%m-%d}'
+
+        # A record emitted before the rollover time is not rolled over.
+        fh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, encoding="utf-8", when=when, atTime=atTime)
+        fh.setFormatter(fmt)
+        r2 = logging.makeLogRecord({'msg': 'testing1 3'})
+        fh.emit(r2)
+        fh.close()
+        self.assertFalse(os.path.exists(otherfn),
+                         msg=f'{otherfn} was rolled over too early')
+
+        while time.time() < rollover:
+            time.sleep(rollover - time.time())
         for i in range(2):
             fh = logging.handlers.TimedRotatingFileHandler(
                 self.fn, encoding="utf-8", when=when, atTime=atTime)
@@ -6468,8 +6851,6 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
             r2 = logging.makeLogRecord({'msg': f'testing2 {i}'})
             fh.emit(r2)
             fh.close()
-        rolloverDate = now - datetime.timedelta(days=7 if weekly else 1)
-        otherfn = f'{self.fn}.{rolloverDate:%Y-%m-%d}'
         self.assertLogFile(otherfn)
         with open(self.fn, encoding="utf-8") as f:
             for i, line in enumerate(f):
@@ -6684,7 +7065,7 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
             rotator = rotators[i]
             candidates = rotator.getFilesToDelete()
             self.assertEqual(len(candidates), n_files - backupCount, candidates)
-            matcher = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\Z")
+            matcher = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\z")
             for c in candidates:
                 d, fn = os.path.split(c)
                 self.assertStartsWith(fn, prefix+'.')
@@ -7108,8 +7489,8 @@ for when, exp in (('S', 1),
         setattr(TimedRotatingFileHandlerTest, name, test_compute_rollover)
 
 
-@unittest.skipUnless(win32evtlog, 'win32evtlog/win32evtlogutil/pywintypes required for this test.')
 class NTEventLogHandlerTest(BaseTest):
+    @unittest.skipUnless(win32evtlog, 'win32evtlog/win32evtlogutil/pywintypes required for this test.')
     def test_basic(self):
         logtype = 'Application'
         elh = win32evtlog.OpenEventLog(None, logtype)
@@ -7143,6 +7524,17 @@ class NTEventLogHandlerTest(BaseTest):
         msg = 'Record not found in event log, went back %d records' % GO_BACK
         self.assertTrue(found, msg=msg)
 
+    @unittest.skipUnless(sys.platform == "win32", "Windows required for this test")
+    def test_without_pywin32(self):
+        h = logging.handlers.NTEventLogHandler('python_test')
+        self.addCleanup(h.close)
+
+        # Verify that the handler uses _winapi module
+        self.assertIsNotNone(h._winapi, "_winapi module should be available")
+
+        r = logging.makeLogRecord({'msg': 'Hello!'})
+        h.emit(r)
+
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
@@ -7152,6 +7544,16 @@ class MiscTestCase(unittest.TestCase):
             'Filterer', 'PlaceHolder', 'Manager', 'RootLogger', 'root',
             'threading', 'logAsyncioTasks'}
         support.check__all__(self, logging, not_exported=not_exported)
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__and__date__(self):
+        msg = "is deprecated and slated for removal in Python 3.20"
+        for attr in ("__version__", "__date__"):
+            with self.subTest(attr=attr):
+                with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
+                    getattr(logging, attr)
+                self.assertEqual(cm.filename, __file__)
 
 
 # Set the locale to the platform-dependent default.  I have no idea

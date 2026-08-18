@@ -17,6 +17,7 @@ from .runtests import RunTests
 from .save_env import saved_test_environment
 from .setup import setup_tests
 from .testresult import get_test_runner
+from .parallel_case import ParallelTestCase
 from .utils import (
     TestName,
     clear_caches, remove_testfn, abs_module_name, print_warning)
@@ -27,14 +28,17 @@ from .utils import (
 PROGRESS_MIN_TIME = 30.0   # seconds
 
 
-def run_unittest(test_mod):
+def run_unittest(test_mod, runtests: RunTests):
     loader = unittest.TestLoader()
     tests = loader.loadTestsFromModule(test_mod)
+
     for error in loader.errors:
         print(error, file=sys.stderr)
     if loader.errors:
         raise Exception("errors while loading tests")
     _filter_suite(tests, match_test)
+    if runtests.parallel_threads:
+        _parallelize_tests(tests, runtests.parallel_threads)
     return _run_suite(tests)
 
 def _filter_suite(suite, pred):
@@ -47,6 +51,28 @@ def _filter_suite(suite, pred):
         else:
             if pred(test):
                 newtests.append(test)
+    suite._tests = newtests
+
+def _parallelize_tests(suite, parallel_threads: int):
+    def is_thread_unsafe(test):
+        test_method = getattr(test, test._testMethodName)
+        instance = test_method.__self__
+        return (getattr(test_method, "__unittest_thread_unsafe__", False) or
+                getattr(instance, "__unittest_thread_unsafe__", False))
+
+    newtests: list[object] = []
+    for test in suite._tests:
+        if isinstance(test, unittest.TestSuite):
+            _parallelize_tests(test, parallel_threads)
+            newtests.append(test)
+            continue
+
+        if is_thread_unsafe(test):
+            # Don't parallelize thread-unsafe tests
+            newtests.append(test)
+            continue
+
+        newtests.append(ParallelTestCase(test, parallel_threads))
     suite._tests = newtests
 
 def _run_suite(suite):
@@ -119,7 +145,7 @@ def regrtest_runner(result: TestResult, test_func, runtests: RunTests) -> None:
 
 
 # Storage of uncollectable GC objects (gc.garbage)
-GC_GARBAGE = []
+GC_GARBAGE: list[object] = []
 
 
 def _load_run_test(result: TestResult, runtests: RunTests) -> None:
@@ -133,7 +159,7 @@ def _load_run_test(result: TestResult, runtests: RunTests) -> None:
         raise Exception(f"Module {test_name} defines test_main() which "
                         f"is no longer supported by regrtest")
     def test_func():
-        return run_unittest(test_mod)
+        return run_unittest(test_mod, runtests)
 
     try:
         regrtest_runner(result, test_func, runtests)
@@ -147,7 +173,8 @@ def _load_run_test(result: TestResult, runtests: RunTests) -> None:
         remove_testfn(test_name, runtests.verbose)
 
     if gc.garbage:
-        support.environment_altered = True
+        support.set_environment_altered(
+            f"{len(gc.garbage)} uncollectable object(s)")
         print_warning(f"{test_name} created {len(gc.garbage)} "
                       f"uncollectable object(s)")
 
@@ -168,6 +195,7 @@ def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
     # Reset the environment_altered flag to detect if a test altered
     # the environment
     support.environment_altered = False
+    support.environment_altered_reasons.clear()
 
     pgo = runtests.pgo
     if pgo:
@@ -235,7 +263,7 @@ def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
         return
 
     if support.environment_altered:
-        result.set_env_changed()
+        result.set_env_changed(*support.environment_altered_reasons)
     # Don't override the state if it was already set (REFLEAK or ENV_CHANGED)
     if result.state is None:
         result.state = State.PASSED
@@ -257,7 +285,7 @@ def _runtest(result: TestResult, runtests: RunTests) -> None:
     try:
         setup_tests(runtests)
 
-        if output_on_failure:
+        if output_on_failure or runtests.pgo:
             support.verbose = True
 
             stream = io.StringIO()

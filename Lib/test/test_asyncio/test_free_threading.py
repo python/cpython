@@ -3,7 +3,8 @@ import threading
 import unittest
 from threading import Thread
 from unittest import TestCase
-
+import weakref
+from test import support
 from test.support import threading_helper
 
 threading_helper.requires_working_threading(module=True)
@@ -14,7 +15,7 @@ class MyException(Exception):
 
 
 def tearDownModule():
-    asyncio._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class TestFreeThreading:
@@ -32,14 +33,14 @@ class TestFreeThreading:
                 for _ in range(100):
                     tasks.add(tg.create_task(coro()))
 
-                all_tasks = self.all_tasks(loop)
+                all_tasks = asyncio.all_tasks(loop)
                 self.assertEqual(len(all_tasks), 101)
 
                 for task in all_tasks:
                     self.assertEqual(task.get_loop(), loop)
                     self.assertFalse(task.done())
 
-                current = self.current_task()
+                current = asyncio.current_task()
                 self.assertEqual(current.get_loop(), loop)
                 self.assertSetEqual(all_tasks, tasks | {current})
                 future.set_result(None)
@@ -76,7 +77,7 @@ class TestFreeThreading:
             for i in range(1000):
                 with lock:
                     asyncio.create_task(coro())
-                    tasks = self.all_tasks(loop)
+                    tasks = asyncio.all_tasks(loop)
             done.wait()
 
         runner = threading.Thread(target=lambda: asyncio.run(main()))
@@ -84,7 +85,7 @@ class TestFreeThreading:
         def check():
             started.wait()
             with lock:
-                self.assertSetEqual(tasks & self.all_tasks(loop), tasks)
+                self.assertSetEqual(tasks & asyncio.all_tasks(loop), tasks)
 
         threads = [threading.Thread(target=check) for _ in range(10)]
         runner.start()
@@ -94,6 +95,26 @@ class TestFreeThreading:
 
         done.set()
         runner.join()
+
+    def test_task_different_thread_finalized(self) -> None:
+        task = None
+        async def func():
+            nonlocal task
+            task = asyncio.current_task()
+        def runner():
+            with asyncio.Runner() as runner:
+                loop = runner.get_loop()
+                loop.set_task_factory(self.factory)
+                runner.run(func())
+        thread = Thread(target=runner)
+        thread.start()
+        thread.join()
+        wr = weakref.ref(task)
+        del thread
+        del task
+        # task finalization in different thread shouldn't crash
+        support.gc_collect()
+        self.assertIsNone(wr())
 
     def test_run_coroutine_threadsafe(self) -> None:
         results = []
@@ -144,10 +165,65 @@ class TestFreeThreading:
             loop.set_task_factory(self.factory)
             r.run(main())
 
+    def test_all_tasks_from_other_thread_includes_eager_tasks(self):
+        # gh-152020: all_tasks() called from another thread used to drop
+        # eager-started tasks on free-threaded builds.
+        loop = asyncio.new_event_loop()
+
+        async def wait_forever():
+            await asyncio.Event().wait()
+
+        def eager_factory(loop, coro, **kwargs):
+            return self.factory(loop, coro, eager_start=True, **kwargs)
+
+        async def setup():
+            loop.set_task_factory(eager_factory)
+            eager = loop.create_task(wait_forever(), name="EAGER")
+            loop.set_task_factory(None)
+            normal = loop.create_task(wait_forever(), name="NORMAL")
+            return eager, normal
+
+        async def teardown():
+            tasks = [t for t in asyncio.all_tasks()
+                     if t is not asyncio.current_task()]
+            for t in tasks:
+                t.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+
+        thread = threading.Thread(target=loop.run_forever)
+        thread.start()
+        try:
+            held = asyncio.run_coroutine_threadsafe(setup(), loop).result()
+            names = {t.get_name() for t in asyncio.all_tasks(loop)}
+            self.assertIn("NORMAL", names)
+            self.assertIn("EAGER", names)
+            del held
+        finally:
+            asyncio.run_coroutine_threadsafe(teardown(), loop).result()
+            loop.call_soon_threadsafe(loop.stop)
+            thread.join()
+            loop.close()
+
 
 class TestPyFreeThreading(TestFreeThreading, TestCase):
-    all_tasks = staticmethod(asyncio.tasks._py_all_tasks)
-    current_task = staticmethod(asyncio.tasks._py_current_task)
+
+    def setUp(self):
+        self._old_current_task = asyncio.current_task
+        asyncio.current_task = asyncio.tasks.current_task = asyncio.tasks._py_current_task
+        self._old_all_tasks = asyncio.all_tasks
+        asyncio.all_tasks = asyncio.tasks.all_tasks = asyncio.tasks._py_all_tasks
+        self._old_Task = asyncio.Task
+        asyncio.Task = asyncio.tasks.Task = asyncio.tasks._PyTask
+        self._old_Future = asyncio.Future
+        asyncio.Future = asyncio.futures.Future = asyncio.futures._PyFuture
+        return super().setUp()
+
+    def tearDown(self):
+        asyncio.current_task = asyncio.tasks.current_task = self._old_current_task
+        asyncio.all_tasks = asyncio.tasks.all_tasks = self._old_all_tasks
+        asyncio.Task = asyncio.tasks.Task = self._old_Task
+        asyncio.Future = asyncio.tasks.Future = self._old_Future
+        return super().tearDown()
 
     def factory(self, loop, coro, **kwargs):
         return asyncio.tasks._PyTask(coro, loop=loop, **kwargs)
@@ -155,8 +231,25 @@ class TestPyFreeThreading(TestFreeThreading, TestCase):
 
 @unittest.skipUnless(hasattr(asyncio.tasks, "_c_all_tasks"), "requires _asyncio")
 class TestCFreeThreading(TestFreeThreading, TestCase):
-    all_tasks = staticmethod(getattr(asyncio.tasks, "_c_all_tasks", None))
-    current_task = staticmethod(getattr(asyncio.tasks, "_c_current_task", None))
+
+    def setUp(self):
+        self._old_current_task = asyncio.current_task
+        asyncio.current_task = asyncio.tasks.current_task = asyncio.tasks._c_current_task
+        self._old_all_tasks = asyncio.all_tasks
+        asyncio.all_tasks = asyncio.tasks.all_tasks = asyncio.tasks._c_all_tasks
+        self._old_Task = asyncio.Task
+        asyncio.Task = asyncio.tasks.Task = asyncio.tasks._CTask
+        self._old_Future = asyncio.Future
+        asyncio.Future = asyncio.futures.Future = asyncio.futures._CFuture
+        return super().setUp()
+
+    def tearDown(self):
+        asyncio.current_task = asyncio.tasks.current_task = self._old_current_task
+        asyncio.all_tasks = asyncio.tasks.all_tasks = self._old_all_tasks
+        asyncio.Task = asyncio.tasks.Task = self._old_Task
+        asyncio.Future = asyncio.futures.Future = self._old_Future
+        return super().tearDown()
+
 
     def factory(self, loop, coro, **kwargs):
         return asyncio.tasks._CTask(coro, loop=loop, **kwargs)

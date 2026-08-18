@@ -6,7 +6,31 @@
 // Always enable assertions
 #undef NDEBUG
 
+#ifdef TEST_INTERNAL_C_API
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
+#include "datetime.h"
+
+#ifdef TEST_INTERNAL_C_API
+   // gh-135906: Check for compiler warnings in the internal C API
+   // - Cython uses pycore_critical_section.h, pycore_frame.h and
+   //   pycore_template.h.
+   // - greenlet uses pycore_frame.h, pycore_interpframe_structs.h and
+   //   pycore_interpframe.h.
+#  include "internal/pycore_frame.h"
+#  include "internal/pycore_interpframe_structs.h"
+#  include "internal/pycore_template.h"
+
+   // mimalloc emits compiler warnings on Windows.
+#  if !defined(MS_WINDOWS)
+#    include "internal/pycore_backoff.h"
+#    include "internal/pycore_cell.h"
+#    include "internal/pycore_critical_section.h"
+#    include "internal/pycore_interpframe.h"
+#  endif
+#endif
 
 #ifndef MODULE_NAME
 #  error "MODULE_NAME macro must be defined"
@@ -161,10 +185,23 @@ private:
 
 int VirtualPyObject::instance_count = 0;
 
+// Converting from function pointer to void* has undefined behavior, but
+// works on all known platforms, and CPython's module and type slots currently
+// need it.
+// (GCC doesn't have a narrower category for this than -Wpedantic.)
+_Py_COMP_DIAG_PUSH
+#if defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wpedantic"
+#elif defined(__clang__)
+#pragma clang diagnostic ignored "-Wpedantic"
+#endif
+
 PyType_Slot VirtualPyObject_Slots[] = {
     {Py_tp_free, (void*)VirtualPyObject::dealloc},
     {0, _Py_NULL},
 };
+
+_Py_COMP_DIAG_POP
 
 PyType_Spec VirtualPyObject_Spec = {
     /* .name */ STR(MODULE_NAME) ".VirtualPyObject",
@@ -201,11 +238,26 @@ test_virtual_object(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_datetime(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
+{
+    // datetime.h is excluded from the limited C API
+#ifndef Py_LIMITED_API
+    PyDateTime_IMPORT;
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+#endif
+
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef _testcppext_methods[] = {
     {"add", _testcppext_add, METH_VARARGS, _testcppext_add_doc},
     {"test_api_casts", test_api_casts, METH_NOARGS, _Py_NULL},
     {"test_unicode", test_unicode, METH_NOARGS, _Py_NULL},
     {"test_virtual_object", test_virtual_object, METH_NOARGS, _Py_NULL},
+    {"test_datetime", test_datetime, METH_NOARGS, _Py_NULL},
     // Note: _testcppext_exec currently runs all test functions directly.
     // When adding a new one, add a call there.
 
@@ -234,6 +286,10 @@ _testcppext_exec(PyObject *module)
     if (!result) return -1;
     Py_DECREF(result);
 
+    result = PyObject_CallMethod(module, "test_datetime", "");
+    if (!result) return -1;
+    Py_DECREF(result);
+
     // test Py_BUILD_ASSERT() and Py_BUILD_ASSERT_EXPR()
     Py_BUILD_ASSERT(sizeof(int) == sizeof(unsigned int));
     assert(Py_BUILD_ASSERT_EXPR(sizeof(int) == sizeof(unsigned int)) == 0);
@@ -241,11 +297,20 @@ _testcppext_exec(PyObject *module)
     return 0;
 }
 
+// Need to ignore "-Wpedantic" warnings; see VirtualPyObject_Slots above
+_Py_COMP_DIAG_PUSH
+#if defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wpedantic"
+#elif defined(__clang__)
+#pragma clang diagnostic ignored "-Wpedantic"
+#endif
+
 static PyModuleDef_Slot _testcppext_slots[] = {
     {Py_mod_exec, reinterpret_cast<void*>(_testcppext_exec)},
     {0, _Py_NULL}
 };
 
+_Py_COMP_DIAG_POP
 
 PyDoc_STRVAR(_testcppext_doc, "C++ test extension.");
 

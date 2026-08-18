@@ -37,6 +37,7 @@ class TaskGroup:
         self._errors = []
         self._base_error = None
         self._on_completed_fut = None
+        self._cancel_on_enter = False
 
     def __repr__(self):
         info = ['']
@@ -63,6 +64,8 @@ class TaskGroup:
             raise RuntimeError(
                 f'TaskGroup {self!r} cannot determine the parent task')
         self._entered = True
+        if self._cancel_on_enter:
+            self.cancel()
 
         return self
 
@@ -137,6 +140,18 @@ class TaskGroup:
         assert not self._tasks
 
         if self._base_error is not None:
+            # self._base_error (SystemExit or KeyboardInterrupt) is about
+            # to propagate out of this method, which discards any other
+            # collected task errors silently.  Report them instead of
+            # losing them.  See gh-135736.
+            for suppressed_exc in self._errors:
+                self._loop.call_exception_handler({
+                    'message': 'TaskGroup task exception was not '
+                               'propagated because the TaskGroup body '
+                               'is being closed with a BaseException',
+                    'exception': suppressed_exc,
+                    'task_group': self,
+                })
             try:
                 raise self._base_error
             finally:
@@ -171,15 +186,31 @@ class TaskGroup:
                 self._parent_task.uncancel()
                 self._parent_task.cancel()
             try:
-                raise BaseExceptionGroup(
-                    'unhandled errors in a TaskGroup',
-                    self._errors,
-                ) from None
+                # If the *only* error is a GeneratorExit from the body
+                # of the group, then instead of raising an
+                # ExceptionGroup we raise GeneratorExit. This ensures
+                # that async generators that use TaskGroup properly
+                # swallow the exception on `aclose()` while ensuring
+                # that no exceptions from subtasks are swallowed.
+                if (
+                    et is not None
+                    and issubclass(et, GeneratorExit)
+                    and len(self._errors) == 1
+                ):
+                    raise exc
+                else:
+                    raise BaseExceptionGroup(
+                        'unhandled errors in a TaskGroup',
+                        self._errors,
+                    ) from None
             finally:
                 exc = None
 
+        # Suppress any remaining exception (exceptions deserving to be raised
+        # were raised above).
+        return True
 
-    def create_task(self, coro, *, name=None, context=None):
+    def create_task(self, coro, **kwargs):
         """Create a new task in this group and return it.
 
         Similar to `asyncio.create_task`.
@@ -193,10 +224,7 @@ class TaskGroup:
         if self._aborting:
             coro.close()
             raise RuntimeError(f"TaskGroup {self!r} is shutting down")
-        if context is None:
-            task = self._loop.create_task(coro, name=name)
-        else:
-            task = self._loop.create_task(coro, name=name, context=context)
+        task = self._loop.create_task(coro, **kwargs)
 
         futures.future_add_to_awaited_by(task, self._parent_task)
 
@@ -281,3 +309,30 @@ class TaskGroup:
             self._abort()
             self._parent_cancel_requested = True
             self._parent_task.cancel()
+
+    def cancel(self):
+        """Cancel the task group
+
+        `cancel()` will be called on any tasks in the group that aren't yet
+        done, as well as the parent (body) of the group.  This will cause
+        the task group context manager to exit *without*
+        `asyncio.CancelledError` being raised.
+
+        If `cancel()` is called before entering the task group, the group
+        will be cancelled upon entry.  This is useful for patterns where
+        one piece of code passes an unused TaskGroup instance to another in
+        order to have the ability to cancel anything run within the group.
+
+        `cancel()` is idempotent and may be called after the task group has
+        already exited.
+        """
+        if not self._entered:
+            self._cancel_on_enter = True
+            return
+        if self._exiting and not self._tasks:
+            return
+        if not self._aborting:
+            self._abort()
+            if self._parent_task and not self._parent_cancel_requested:
+                self._parent_cancel_requested = True
+                self._parent_task.cancel()

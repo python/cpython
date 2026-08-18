@@ -14,13 +14,13 @@ STR_RGX_REPR = (
     r'(, value:\d)?'
     r'(, waiters:\d+)?'
     r'(, waiters:\d+\/\d+)?' # barrier
-    r')\]>\Z'
+    r')\]>\z'
 )
 RGX_REPR = re.compile(STR_RGX_REPR)
 
 
 def tearDownModule():
-    asyncio._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class LockTests(unittest.IsolatedAsyncioTestCase):

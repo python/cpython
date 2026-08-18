@@ -9,6 +9,8 @@ from test import support
 import time
 import unittest
 
+from test.support import warnings_helper
+
 if not hasattr(select, "kqueue"):
     raise unittest.SkipTest("test works only on BSD")
 
@@ -20,6 +22,20 @@ class TestKQueue(unittest.TestCase):
         kq.close()
         self.assertTrue(kq.closed)
         self.assertRaises(ValueError, kq.fileno)
+
+    def test_control_overflowing_timeout(self):
+        # gh-154836: out-of-range timeouts must raise OverflowError,
+        # not a (misleading) TypeError, like select(), poll() and
+        # epoll() do.
+        kq = select.kqueue()
+        self.addCleanup(kq.close)
+        for timeout in (1e300, float('inf'), 2**200):
+            with self.subTest(timeout=timeout):
+                with self.assertRaises(OverflowError):
+                    kq.control(None, 0, timeout)
+        # Non-numbers still raise TypeError.
+        with self.assertRaises(TypeError):
+            kq.control(None, 0, "0.1")
 
     def test_create_event(self):
         from operator import lt, le, gt, ge
@@ -252,11 +268,21 @@ class TestKQueue(unittest.TestCase):
         # operations must fail with ValueError("I/O operation on closed ...")
         self.assertRaises(ValueError, kqueue.control, None, 4)
 
+    def test_close_error(self):
+        # gh-146205: close() should raise OSError if underlying fd is invalid
+        kqueue = select.kqueue()
+        fd = kqueue.fileno()
+        os.close(fd)
+        with self.assertRaises(OSError) as cm:
+            kqueue.close()
+        self.assertEqual(cm.exception.errno, errno.EBADF)
+
     def test_fd_non_inheritable(self):
         kqueue = select.kqueue()
         self.addCleanup(kqueue.close)
         self.assertEqual(os.get_inheritable(kqueue.fileno()), False)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.requires_fork()
     def test_fork(self):
         # gh-110395: kqueue objects must be closed after fork

@@ -484,6 +484,7 @@ error:
 #define COLLECTION_FLAGS (Py_TPFLAGS_SEQUENCE | Py_TPFLAGS_MAPPING)
 
 /*[clinic input]
+@permit_long_summary
 _abc._abc_init
 
     self: object
@@ -494,7 +495,7 @@ Internal ABC helper for class set-up. Should be never used outside abc module.
 
 static PyObject *
 _abc__abc_init(PyObject *module, PyObject *self)
-/*[clinic end generated code: output=594757375714cda1 input=8d7fe470ff77f029]*/
+/*[clinic end generated code: output=594757375714cda1 input=0b3513f947736d39]*/
 {
     _abcmodule_state *state = get_abc_state(module);
     PyObject *data;
@@ -543,6 +544,7 @@ _abc__abc_init(PyObject *module, PyObject *self)
 }
 
 /*[clinic input]
+@permit_long_summary
 _abc._abc_register
 
     self: object
@@ -554,7 +556,7 @@ Internal ABC helper for subclasss registration. Should be never used outside abc
 
 static PyObject *
 _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
-/*[clinic end generated code: output=7851e7668c963524 input=ca589f8c3080e67f]*/
+/*[clinic end generated code: output=7851e7668c963524 input=135ab13a581b4414]*/
 {
     if (!PyType_Check(subclass)) {
         PyErr_SetString(PyExc_TypeError, "Can only register classes");
@@ -606,6 +608,7 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
 
 
 /*[clinic input]
+@permit_long_summary
 _abc._abc_instancecheck
 
     self: object
@@ -618,7 +621,7 @@ Internal ABC helper for instance checks. Should be never used outside abc module
 static PyObject *
 _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
                              PyObject *instance)
-/*[clinic end generated code: output=b8b5148f63b6b56f input=a4f4525679261084]*/
+/*[clinic end generated code: output=b8b5148f63b6b56f input=0bbc8da0ea346719]*/
 {
     PyObject *subtype, *result = NULL, *subclass = NULL;
     _abc_data *impl = _get_impl(module, self);
@@ -692,6 +695,7 @@ static int subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
                                         PyObject **result);
 
 /*[clinic input]
+@permit_long_summary
 _abc._abc_subclasscheck
 
     self: object
@@ -704,7 +708,7 @@ Internal ABC helper for subclasss checks. Should be never used outside abc modul
 static PyObject *
 _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
                              PyObject *subclass)
-/*[clinic end generated code: output=b56c9e4a530e3894 input=1d947243409d10b8]*/
+/*[clinic end generated code: output=b56c9e4a530e3894 input=5bf1ef712f5d3610]*/
 {
     if (!PyType_Check(subclass)) {
         PyErr_SetString(PyExc_TypeError, "issubclass() arg 1 must be a class");
@@ -911,14 +915,14 @@ _abc.get_cache_token
 
 Returns the current ABC cache token.
 
-The token is an opaque object (supporting equality testing) identifying the
-current version of the ABC cache for virtual subclasses. The token changes
-with every call to register() on any ABC.
+The token is an opaque object (supporting equality testing) identifying
+the current version of the ABC cache for virtual subclasses.  The token
+changes with every call to register() on any ABC.
 [clinic start generated code]*/
 
 static PyObject *
 _abc_get_cache_token_impl(PyObject *module)
-/*[clinic end generated code: output=c7d87841e033dacc input=70413d1c423ad9f9]*/
+/*[clinic end generated code: output=c7d87841e033dacc input=d87acc04492f6bf3]*/
 {
     _abcmodule_state *state = get_abc_state(module);
     return PyLong_FromUnsignedLongLong(get_invalidation_counter(state));
@@ -972,6 +976,7 @@ _abcmodule_free(void *module)
 }
 
 static PyModuleDef_Slot _abcmodule_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _abcmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

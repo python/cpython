@@ -1,3 +1,0 @@
-Do not attempt to set ``SO_REUSEPORT`` on sockets of address families
-other than ``AF_INET`` and ``AF_INET6``, as it is meaningless with these
-address families, and the call with fail with Linux kernel 6.12.9 and newer.

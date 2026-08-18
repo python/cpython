@@ -2,7 +2,7 @@
 
 
 ====================
-Coroutines and Tasks
+Coroutines and tasks
 ====================
 
 This section outlines high-level asyncio APIs to work with coroutines
@@ -231,24 +231,30 @@ A good example of a low-level function that returns a Future object
 is :meth:`loop.run_in_executor`.
 
 
-Creating Tasks
+Creating tasks
 ==============
 
 **Source code:** :source:`Lib/asyncio/tasks.py`
 
 -----------------------------------------------
 
-.. function:: create_task(coro, *, name=None, context=None)
+.. function:: create_task(coro, *, name=None, context=None, eager_start=None, **kwargs)
 
    Wrap the *coro* :ref:`coroutine <coroutine>` into a :class:`Task`
    and schedule its execution.  Return the Task object.
 
-   If *name* is not ``None``, it is set as the name of the task using
-   :meth:`Task.set_name`.
+   The full function signature is largely the same as that of the
+   :class:`Task` constructor (or factory) - all of the keyword arguments to
+   this function are passed through to that interface.
 
    An optional keyword-only *context* argument allows specifying a
    custom :class:`contextvars.Context` for the *coro* to run in.
    The current context copy is created when no *context* is provided.
+
+   An optional keyword-only *eager_start* argument allows specifying
+   if the task should execute eagerly during the call to create_task,
+   or be scheduled later. If *eager_start* is not passed the mode set
+   by :meth:`loop.set_task_factory` will be used.
 
    The task is executed in the loop returned by :func:`get_running_loop`,
    :exc:`RuntimeError` is raised if there is no running loop in
@@ -282,6 +288,17 @@ Creating Tasks
               # completion:
               task.add_done_callback(background_tasks.discard)
 
+      Note that this approach never awaits the tasks, so if a task
+      fails, its exception is never retrieved and asyncio logs a
+      "Task exception was never retrieved" message when the task is
+      garbage collected.  To avoid this, use :class:`asyncio.TaskGroup`
+      which keeps a strong reference to each task, awaits them and
+      propagates their exceptions::
+
+          async with asyncio.TaskGroup() as tg:
+              for i in range(10):
+                  tg.create_task(some_coro(param=i))
+
    .. versionadded:: 3.7
 
    .. versionchanged:: 3.8
@@ -290,8 +307,11 @@ Creating Tasks
    .. versionchanged:: 3.11
       Added the *context* parameter.
 
+   .. versionchanged:: 3.14
+      Added the *eager_start* parameter by passing on all *kwargs*.
 
-Task Cancellation
+
+Task cancellation
 =================
 
 Tasks can easily and safely be cancelled.
@@ -315,7 +335,7 @@ remove the cancellation state.
 
 .. _taskgroups:
 
-Task Groups
+Task groups
 ===========
 
 Task groups combine a task creation API with a convenient
@@ -330,7 +350,7 @@ and reliable way to wait for all tasks in the group to finish.
 
    .. versionadded:: 3.11
 
-   .. method:: create_task(coro, *, name=None, context=None)
+   .. method:: create_task(coro, *, name=None, context=None, eager_start=None, **kwargs)
 
       Create a task in this task group.
       The signature matches that of :func:`asyncio.create_task`.
@@ -341,6 +361,38 @@ and reliable way to wait for all tasks in the group to finish.
       .. versionchanged:: 3.13
 
          Close the given coroutine if the task group is not active.
+
+      .. versionchanged:: 3.14
+
+         Passes on all *kwargs* to :meth:`loop.create_task`
+
+   .. method:: cancel()
+
+      Cancel the task group.  This is a non-exceptional, early exit of the
+      task group's lifetime -- useful once the group's goal has been met or
+      its services no longer needed.
+
+      :meth:`~asyncio.Task.cancel` will be called on any tasks in the group that
+      aren't yet done, as well as the parent (body) of the group.  The task group
+      context manager will exit *without* :exc:`asyncio.CancelledError` being raised.
+
+      If :meth:`cancel` is called before entering the task group, the group will be
+      cancelled upon entry.  This is useful for patterns where one piece of
+      code passes an unused :class:`asyncio.TaskGroup` instance to another in order to have
+      the ability to cancel anything run within the group.
+
+      :meth:`cancel` is idempotent and may be called after the task group has
+      already exited.
+
+      Some ways to use :meth:`cancel`:
+
+      * call it from the task group body based on some condition or event
+      * pass the task group instance to child tasks via :meth:`create_task`, allowing a child
+        task to conditionally cancel the entire group
+      * pass the task group instance or bound :meth:`cancel` method to some other task *before*
+        opening the task group, allowing remote cancellation
+
+      .. versionadded:: 3.15
 
 Example::
 
@@ -353,7 +405,8 @@ Example::
 The ``async with`` statement will wait for all tasks in the group to finish.
 While waiting, new tasks may still be added to the group
 (for example, by passing ``tg`` into one of the coroutines
-and calling ``tg.create_task()`` in that coroutine).
+and calling ``tg.create_task()`` in that coroutine).  There is also opportunity to
+request termination of the entire task group with ``tg.cancel()``, based on some condition.
 Once the last task has finished and the ``async with`` block is exited,
 no new tasks may be added to the group.
 
@@ -391,6 +444,10 @@ unless it is :exc:`asyncio.CancelledError`,
 is also included in the exception group.
 The same special case is made for
 :exc:`KeyboardInterrupt` and :exc:`SystemExit` as in the previous paragraph.
+There is an additional special case made only for the body of the
+``async with``: if it raises :exc:`GeneratorExit` and none of the
+other tasks raise exceptions that would be reported, then the
+:exc:`GeneratorExit` is reraised.
 
 Task groups are careful not to mix up the internal cancellation used to
 "wake up" their :meth:`~object.__aexit__` with cancellation requests
@@ -414,57 +471,15 @@ reported by :meth:`asyncio.Task.cancelling`.
    Improved handling of simultaneous internal and external cancellations
    and correct preservation of cancellation counts.
 
-Terminating a Task Group
-------------------------
+.. versionchanged:: 3.15
 
-While terminating a task group is not natively supported by the standard
-library, termination can be achieved by adding an exception-raising task
-to the task group and ignoring the raised exception:
-
-.. code-block:: python
-
-   import asyncio
-   from asyncio import TaskGroup
-
-   class TerminateTaskGroup(Exception):
-       """Exception raised to terminate a task group."""
-
-   async def force_terminate_task_group():
-       """Used to force termination of a task group."""
-       raise TerminateTaskGroup()
-
-   async def job(task_id, sleep_time):
-       print(f'Task {task_id}: start')
-       await asyncio.sleep(sleep_time)
-       print(f'Task {task_id}: done')
-
-   async def main():
-       try:
-           async with TaskGroup() as group:
-               # spawn some tasks
-               group.create_task(job(1, 0.5))
-               group.create_task(job(2, 1.5))
-               # sleep for 1 second
-               await asyncio.sleep(1)
-               # add an exception-raising task to force the group to terminate
-               group.create_task(force_terminate_task_group())
-       except* TerminateTaskGroup:
-           pass
-
-   asyncio.run(main())
-
-Expected output:
-
-.. code-block:: text
-
-   Task 1: start
-   Task 2: start
-   Task 1: done
+   Addition of the special case for :exc:`GeneratorExit`.
 
 Sleeping
 ========
 
-.. coroutinefunction:: sleep(delay, result=None)
+.. function:: sleep(delay, result=None)
+   :async:
 
    Block for *delay* seconds.
 
@@ -484,13 +499,13 @@ Sleeping
    for 5 seconds::
 
     import asyncio
-    import datetime
+    import datetime as dt
 
     async def display_date():
         loop = asyncio.get_running_loop()
         end_time = loop.time() + 5.0
         while True:
-            print(datetime.datetime.now())
+            print(dt.datetime.now())
             if (loop.time() + 1.0) >= end_time:
                 break
             await asyncio.sleep(1)
@@ -505,7 +520,7 @@ Sleeping
       Raises :exc:`ValueError` if *delay* is :data:`~math.nan`.
 
 
-Running Tasks Concurrently
+Running tasks concurrently
 ==========================
 
 .. awaitablefunction:: gather(*aws, return_exceptions=False)
@@ -543,7 +558,7 @@ Running Tasks Concurrently
       provides stronger safety guarantees than *gather* for scheduling a nesting of subtasks:
       if a task (or a subtask, a task scheduled by a task)
       raises an exception, *TaskGroup* will, while *gather* will not,
-      cancel the remaining scheduled tasks).
+      cancel the remaining scheduled tasks.
 
    .. _asyncio_example_gather:
 
@@ -607,7 +622,7 @@ Running Tasks Concurrently
 
 .. _eager-task-factory:
 
-Eager Task Factory
+Eager task factory
 ==================
 
 .. function:: eager_task_factory(loop, coro, *, name=None, context=None)
@@ -650,15 +665,15 @@ Eager Task Factory
     .. versionadded:: 3.12
 
 
-Shielding From Cancellation
+Shielding from cancellation
 ===========================
 
-.. awaitablefunction:: shield(aw)
+.. awaitablefunction:: shield(arg)
 
    Protect an :ref:`awaitable object <asyncio-awaitables>`
    from being :meth:`cancelled <Task.cancel>`.
 
-   If *aw* is a coroutine it is automatically scheduled as a Task.
+   If *arg* is a coroutine it is automatically scheduled as a Task.
 
    The statement::
 
@@ -699,7 +714,7 @@ Shielding From Cancellation
       Removed the *loop* parameter.
 
    .. deprecated:: 3.10
-      Deprecation warning is emitted if *aw* is not Future-like object
+      Deprecation warning is emitted if *arg* is not Future-like object
       and there is no running event loop.
 
 
@@ -756,6 +771,9 @@ Timeouts
 
        An :ref:`asynchronous context manager <async-context-managers>`
        for cancelling overdue coroutines.
+
+       Prefer using :func:`asyncio.timeout` or :func:`asyncio.timeout_at`
+       rather than instantiating :class:`!Timeout` directly.
 
        ``when`` should be an absolute time at which the context should time out,
        as measured by the event loop's clock:
@@ -819,12 +837,13 @@ Timeouts
 
    .. versionadded:: 3.11
 
-.. coroutinefunction:: wait_for(aw, timeout)
+.. function:: wait_for(fut, timeout)
+   :async:
 
-   Wait for the *aw* :ref:`awaitable <asyncio-awaitables>`
+   Wait for the *fut* :ref:`awaitable <asyncio-awaitables>`
    to complete with a timeout.
 
-   If *aw* is a coroutine it is automatically scheduled as a Task.
+   If *fut* is a coroutine it is automatically scheduled as a Task.
 
    *timeout* can either be ``None`` or a float or int number of seconds
    to wait for.  If *timeout* is ``None``, block until the future
@@ -840,7 +859,7 @@ Timeouts
    so the total wait time may exceed the *timeout*. If an exception
    happens during cancellation, it is propagated.
 
-   If the wait is cancelled, the future *aw* is also cancelled.
+   If the wait is cancelled, the future *fut* is also cancelled.
 
    .. _asyncio_example_waitfor:
 
@@ -865,8 +884,8 @@ Timeouts
        #     timeout!
 
    .. versionchanged:: 3.7
-      When *aw* is cancelled due to a timeout, ``wait_for`` waits
-      for *aw* to be cancelled.  Previously, it raised
+      When *fut* is cancelled due to a timeout, ``wait_for`` waits
+      for *fut* to be cancelled.  Previously, it raised
       :exc:`TimeoutError` immediately.
 
    .. versionchanged:: 3.10
@@ -876,22 +895,23 @@ Timeouts
       Raises :exc:`TimeoutError` instead of :exc:`asyncio.TimeoutError`.
 
 
-Waiting Primitives
+Waiting primitives
 ==================
 
-.. coroutinefunction:: wait(aws, *, timeout=None, return_when=ALL_COMPLETED)
+.. function:: wait(fs, *, timeout=None, return_when=ALL_COMPLETED)
+   :async:
 
-   Run :class:`~asyncio.Future` and :class:`~asyncio.Task` instances in the *aws*
+   Run :class:`~asyncio.Future` and :class:`~asyncio.Task` instances in the *fs*
    iterable concurrently and block until the condition specified
    by *return_when*.
 
-   The *aws* iterable must not be empty.
+   The *fs* iterable must not be empty.
 
    Returns two sets of Tasks/Futures: ``(done, pending)``.
 
    Usage::
 
-        done, pending = await asyncio.wait(aws)
+        done, pending = await asyncio.wait(fs)
 
    *timeout* (a float or int), if specified, can be used to control
    the maximum number of seconds to wait before returning.
@@ -923,6 +943,9 @@ Waiting Primitives
    Unlike :func:`~asyncio.wait_for`, ``wait()`` does not cancel the
    futures when a timeout occurs.
 
+   If ``wait()`` is cancelled, the futures in *fs* are not cancelled
+   and continue to run.
+
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
 
@@ -933,9 +956,9 @@ Waiting Primitives
       Added support for generators yielding tasks.
 
 
-.. function:: as_completed(aws, *, timeout=None)
+.. function:: as_completed(fs, *, timeout=None)
 
-   Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws* iterable
+   Run :ref:`awaitable objects <asyncio-awaitables>` in the *fs* iterable
    concurrently. The returned object can be iterated to obtain the results
    of the awaitables as they finish.
 
@@ -980,11 +1003,15 @@ Waiting Primitives
    are done. This is raised by the ``async for`` loop during asynchronous
    iteration or by the coroutines yielded during plain iteration.
 
+   ``as_completed()`` does not cancel the tasks running the supplied
+   awaitables: if a timeout occurs or the iteration is cancelled, the
+   remaining tasks continue to run.
+
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
 
    .. deprecated:: 3.10
-      Deprecation warning is emitted if not all awaitable objects in the *aws*
+      Deprecation warning is emitted if not all awaitable objects in the *fs*
       iterable are Future-like objects and there is no running event loop.
 
    .. versionchanged:: 3.12
@@ -995,10 +1022,11 @@ Waiting Primitives
       or as a plain :term:`iterator` (previously it was only a plain iterator).
 
 
-Running in Threads
+Running in threads
 ==================
 
-.. coroutinefunction:: to_thread(func, /, *args, **kwargs)
+.. function:: to_thread(func, /, *args, **kwargs)
+   :async:
 
    Asynchronously run function *func* in a separate thread.
 
@@ -1054,7 +1082,7 @@ Running in Threads
    .. versionadded:: 3.9
 
 
-Scheduling From Other Threads
+Scheduling from other threads
 =============================
 
 .. function:: run_coroutine_threadsafe(coro, loop)
@@ -1176,8 +1204,9 @@ Introspection
 
    .. versionadded:: 3.4
 
+.. _asyncio-task-obj:
 
-Task Object
+Task object
 ===========
 
 .. class:: Task(coro, *, loop=None, name=None, context=None, eager_start=False)
@@ -1203,8 +1232,8 @@ Task Object
 
    To cancel a running Task use the :meth:`cancel` method.  Calling it
    will cause the Task to throw a :exc:`CancelledError` exception into
-   the wrapped coroutine.  If a coroutine is awaiting on a Future
-   object during cancellation, the Future object will be cancelled.
+   the wrapped coroutine.  If a coroutine is awaiting on a future-like
+   object during cancellation, the awaited object will be cancelled.
 
    :meth:`cancelled` can be used to check if the Task was cancelled.
    The method returns ``True`` if the wrapped coroutine did not
@@ -1226,6 +1255,9 @@ Task Object
    executing the coroutine immediately, until the first time the coroutine
    blocks. If the coroutine returns or raises without blocking, the task
    will be finished eagerly and will skip scheduling to the event loop.
+
+   Tasks are :ref:`generic <generics>` over the return type of their wrapped
+   coroutines.
 
    .. versionchanged:: 3.7
       Added support for the :mod:`contextvars` module.
@@ -1377,7 +1409,10 @@ Task Object
 
       Request the Task to be cancelled.
 
-      This arranges for a :exc:`CancelledError` exception to be thrown
+      If the Task is already *done* or *cancelled*, return ``False``,
+      otherwise, return ``True``.
+
+      The method arranges for a :exc:`CancelledError` exception to be thrown
       into the wrapped coroutine on the next cycle of the event loop.
 
       The coroutine then has a chance to clean up or even deny the
@@ -1389,6 +1424,10 @@ Task Object
       discouraged.  Should the coroutine nevertheless decide to suppress
       the cancellation, it needs to call :meth:`Task.uncancel` in addition
       to catching the exception.
+
+      If the Task being cancelled is currently awaiting on a future-like
+      object, that awaited object will also be cancelled. This cancellation
+      propagates down the entire chain of awaited objects.
 
       .. versionchanged:: 3.9
          Added the *msg* parameter.

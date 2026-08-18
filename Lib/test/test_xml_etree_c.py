@@ -57,7 +57,8 @@ class MiscTests(unittest.TestCase):
             del element.attrib
         self.assertEqual(element.attrib, {'A': 'B', 'C': 'D'})
 
-    @unittest.skipIf(support.is_emscripten, "segfaults")
+    @support.skip_wasi_stack_overflow()
+    @support.skip_emscripten_stack_overflow()
     def test_trashcan(self):
         # If this test fails, it will most likely die via segfault.
         e = root = cET.Element('root')
@@ -193,8 +194,7 @@ class MiscTests(unittest.TestCase):
         )
         for tp in dataset:
             with self.subTest(tp=tp):
-                with self.assertRaisesRegex(TypeError, "immutable"):
-                    tp.foo = 1
+                support.check_immutable_type(self, tp)
 
     @support.cpython_only
     def test_disallow_instantiation(self):

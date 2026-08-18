@@ -1,2 +1,0 @@
-Fix PyREPL failure when :data:`os.environ` is overwritten with an invalid
-value.
