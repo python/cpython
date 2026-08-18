@@ -3229,6 +3229,27 @@ class _TestPool(BaseTestCase):
         p.terminate()
         p.join()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    @support.subTests('method_name', ("imap", "imap_unordered"))
+    def test_imap_with_buffersize_close_after_partial_consumption(
+        self, method_name
+    ):
+        # close()/join() must not deadlock when a buffersize iterator is
+        # only partially consumed (the throttled task generator must stop).
+        p = self.Pool(2)
+        method = getattr(p, method_name)
+        it = method(sqr, range(1000), buffersize=2)
+        next(it)
+        finished = threading.Event()
+        def finalize():
+            p.close()
+            p.join()
+            finished.set()
+        t = threading.Thread(target=finalize)
+        t.start()
+        t.join(support.SHORT_TIMEOUT)
+        self.assertTrue(finished.is_set(), "close()/join() deadlocked")
+
     @support.subTests('method_name', ("imap", "imap_unordered"))
     def test_imap_and_imap_unordered_with_buffersize_on_empty_iterable(
         self, method_name
@@ -6357,6 +6378,7 @@ class TestStartMethod(unittest.TestCase):
         self.assertSetEqual(set(results), set([2, 1]))
 
     @unittest.skipIf(os.name == "nt", "requires POSIX")
+    @support.requires_non_root_user
     @support.subTests("mode", [
         os.R_OK,  # read-only directory
         os.R_OK | os.X_OK, # read-only directory
