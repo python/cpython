@@ -2248,7 +2248,7 @@ tanpi20001 tanpi inf -> nan invalid
 tanpi20002 tanpi -inf -> nan invalid
 tanpi20003 tanpi nan -> nan
 
-tanpi30050 tanpi 0.5 -> inf invalid
-tanpi30055 tanpi -0.5 -> inf invalid
-tanpi30115 tanpi 1.5 -> inf invalid
-tanpi30118 tanpi -1.5 -> inf invalid
+tanpi30001 tanpi 0.5 -> inf invalid
+tanpi30002 tanpi -0.5 -> -inf invalid
+tanpi30003 tanpi 1.5 -> -inf invalid
+tanpi30004 tanpi -1.5 -> inf invalid
