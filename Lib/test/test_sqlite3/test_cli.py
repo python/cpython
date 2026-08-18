@@ -69,6 +69,16 @@ class CommandLineInterface(unittest.TestCase):
         stderr = self.expect_failure(":memory:", "sel")
         self.assertIn("OperationalError (SQLITE_ERROR)", stderr)
 
+    def test_cli_execute_null_byte(self):
+        stderr = self.expect_failure(":memory:", "SELECT '\0';")
+        self.assertNotIn("Traceback (most recent call last)", stderr)
+        self.assertIn("ValueError: ", stderr)
+
+    def test_cli_execute_lone_surrogate(self):
+        stderr = self.expect_failure(":memory:", "SELECT '\udc80';")
+        self.assertNotIn("Traceback (most recent call last)", stderr)
+        self.assertIn("UnicodeEncodeError: ", stderr)
+
     def test_cli_on_disk_db(self):
         self.addCleanup(unlink, TESTFN)
         out = self.expect_success(TESTFN, "create table t(t)")

@@ -24,18 +24,25 @@ def execute(c, sql, suppress_errors=True, theme=theme_no_color):
     'sql' is the SQL string to execute.
     """
 
-    try:
-        for row in c.execute(sql):
-            print(row)
-    except sqlite3.Error as e:
-        t = theme.traceback
-        tp = type(e).__name__
+    error = None
+    if "\0" in sql:
+        # A NUL makes c.execute() raise a broad ValueError; pre-check it.
+        error = ValueError("embedded null character")
+    else:
         try:
-            tp += f" ({e.sqlite_errorname})"
+            for row in c.execute(sql):
+                print(row)
+        except (sqlite3.Error, UnicodeEncodeError) as e:  # or a lone surrogate
+            error = e
+    if error is not None:
+        t = theme.traceback
+        tp = type(error).__name__
+        try:
+            tp += f" ({error.sqlite_errorname})"
         except AttributeError:
             pass
         print(
-            f"{t.type}{tp}{t.reset}: {t.message}{e}{t.reset}", file=sys.stderr
+            f"{t.type}{tp}{t.reset}: {t.message}{error}{t.reset}", file=sys.stderr
         )
         if not suppress_errors:
             sys.exit(1)
