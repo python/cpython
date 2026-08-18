@@ -963,6 +963,11 @@ A ``TarInfo`` object has the following public data attributes:
    If *deep* is false, the copy is shallow, i.e. ``pax_headers``
    and any custom attributes are shared with the original ``TarInfo`` object.
 
+   This method is also used by :func:`copy.replace`.
+
+   .. versionchanged:: next
+      Added support for :func:`copy.replace`.
+
 A :class:`TarInfo` object also provides some convenient query methods:
 
 
@@ -1195,6 +1200,8 @@ Here is an incomplete list of things to consider:
 * Check filenames against an allow-list of characters
   (to filter out control characters, confusables, foreign path separators,
   and so on).
+* Check for platform-specific filename semantics. For example, on Windows
+  some names can have reserved meanings.
 * Check that filenames have expected extensions (discouraging files that
   execute when you “click on them”, or extension-less files like Windows
   special device names).

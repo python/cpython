@@ -85,119 +85,138 @@ typedef struct {
 } PyConfigSysSpec;
 
 typedef struct {
+    int *ptr;
+    int not;
+} PyConfigGlobalVar;
+
+typedef struct {
     const char *name;
     size_t offset;
     PyConfigMemberType type;
     PyConfigMemberVisibility visibility;
     PyConfigSysSpec sys;
+    PyConfigGlobalVar global_var;
 } PyConfigSpec;
 
-#define SPEC(MEMBER, TYPE, VISIBILITY, sys) \
+#define SPEC(MEMBER, TYPE, VISIBILITY, sys, global_var) \
     {#MEMBER, offsetof(PyConfig, MEMBER), \
-     PyConfig_MEMBER_##TYPE, PyConfig_MEMBER_##VISIBILITY, sys}
+     PyConfig_MEMBER_##TYPE, PyConfig_MEMBER_##VISIBILITY, sys, global_var}
 
 #define SYS_ATTR(name) {name, -1, NULL}
 #define SYS_FLAG_SETTER(index, setter) {NULL, index, setter}
 #define SYS_FLAG(index) SYS_FLAG_SETTER(index, NULL)
 #define NO_SYS SYS_ATTR(NULL)
 
+#define GLOBAL(ptr, not) {ptr, not}
+#define NO_GLOBAL GLOBAL(NULL, 0)
+
+// Ignore deprecations on global variables such as Py_IsolatedFlag
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+
 // Update _test_embed_set_config when adding new members
 static const PyConfigSpec PYCONFIG_SPEC[] = {
     // --- Public options -----------
 
-    SPEC(argv, WSTR_LIST, PUBLIC, SYS_ATTR("argv")),
-    SPEC(base_exec_prefix, WSTR_OPT, PUBLIC, SYS_ATTR("base_exec_prefix")),
-    SPEC(base_executable, WSTR_OPT, PUBLIC, SYS_ATTR("_base_executable")),
-    SPEC(base_prefix, WSTR_OPT, PUBLIC, SYS_ATTR("base_prefix")),
-    SPEC(bytes_warning, UINT, PUBLIC, SYS_FLAG(9)),
-    SPEC(cpu_count, INT, PUBLIC, NO_SYS),
-    SPEC(lazy_imports, INT, PUBLIC, NO_SYS),
-    SPEC(exec_prefix, WSTR_OPT, PUBLIC, SYS_ATTR("exec_prefix")),
-    SPEC(executable, WSTR_OPT, PUBLIC, SYS_ATTR("executable")),
-    SPEC(inspect, BOOL, PUBLIC, SYS_FLAG(1)),
-    SPEC(int_max_str_digits, UINT, PUBLIC, NO_SYS),
-    SPEC(interactive, BOOL, PUBLIC, SYS_FLAG(2)),
-    SPEC(module_search_paths, WSTR_LIST, PUBLIC, SYS_ATTR("path")),
-    SPEC(optimization_level, UINT, PUBLIC, SYS_FLAG(3)),
-    SPEC(parser_debug, BOOL, PUBLIC, SYS_FLAG(0)),
-    SPEC(platlibdir, WSTR, PUBLIC, SYS_ATTR("platlibdir")),
-    SPEC(prefix, WSTR_OPT, PUBLIC, SYS_ATTR("prefix")),
-    SPEC(pycache_prefix, WSTR_OPT, PUBLIC, SYS_ATTR("pycache_prefix")),
-    SPEC(quiet, BOOL, PUBLIC, SYS_FLAG(10)),
-    SPEC(stdlib_dir, WSTR_OPT, PUBLIC, SYS_ATTR("_stdlib_dir")),
-    SPEC(use_environment, BOOL, PUBLIC, SYS_FLAG_SETTER(7, config_sys_flag_not)),
-    SPEC(verbose, UINT, PUBLIC, SYS_FLAG(8)),
-    SPEC(warnoptions, WSTR_LIST, PUBLIC, SYS_ATTR("warnoptions")),
-    SPEC(write_bytecode, BOOL, PUBLIC, SYS_FLAG_SETTER(4, config_sys_flag_not)),
-    SPEC(xoptions, WSTR_LIST, PUBLIC, SYS_ATTR("_xoptions")),
+    SPEC(argv, WSTR_LIST, PUBLIC, SYS_ATTR("argv"), NO_GLOBAL),
+    SPEC(base_exec_prefix, WSTR_OPT, PUBLIC, SYS_ATTR("base_exec_prefix"), NO_GLOBAL),
+    SPEC(base_executable, WSTR_OPT, PUBLIC, SYS_ATTR("_base_executable"), NO_GLOBAL),
+    SPEC(base_prefix, WSTR_OPT, PUBLIC, SYS_ATTR("base_prefix"), NO_GLOBAL),
+    SPEC(bytes_warning, UINT, PUBLIC, SYS_FLAG(9), GLOBAL(&Py_BytesWarningFlag, 0)),
+    SPEC(cpu_count, INT, PUBLIC, NO_SYS, NO_GLOBAL),
+    SPEC(lazy_imports, INT, PUBLIC, NO_SYS, NO_GLOBAL),
+    SPEC(exec_prefix, WSTR_OPT, PUBLIC, SYS_ATTR("exec_prefix"), NO_GLOBAL),
+    SPEC(executable, WSTR_OPT, PUBLIC, SYS_ATTR("executable"), NO_GLOBAL),
+    SPEC(inspect, BOOL, PUBLIC, SYS_FLAG(1), GLOBAL(&Py_InspectFlag, 0)),
+    SPEC(int_max_str_digits, UINT, PUBLIC, NO_SYS, NO_GLOBAL),
+    SPEC(interactive, BOOL, PUBLIC, SYS_FLAG(2), GLOBAL(&Py_InteractiveFlag, 0)),
+    SPEC(module_search_paths, WSTR_LIST, PUBLIC, SYS_ATTR("path"), NO_GLOBAL),
+    SPEC(optimization_level, UINT, PUBLIC, SYS_FLAG(3), GLOBAL(&Py_OptimizeFlag, 0)),
+    SPEC(parser_debug, BOOL, PUBLIC, SYS_FLAG(0), GLOBAL(&Py_DebugFlag, 0)),
+    SPEC(platlibdir, WSTR, PUBLIC, SYS_ATTR("platlibdir"), NO_GLOBAL),
+    SPEC(prefix, WSTR_OPT, PUBLIC, SYS_ATTR("prefix"), NO_GLOBAL),
+    SPEC(pycache_prefix, WSTR_OPT, PUBLIC, SYS_ATTR("pycache_prefix"), NO_GLOBAL),
+    SPEC(quiet, BOOL, PUBLIC, SYS_FLAG(10), GLOBAL(&Py_QuietFlag, 0)),
+    SPEC(stdlib_dir, WSTR_OPT, PUBLIC, SYS_ATTR("_stdlib_dir"), NO_GLOBAL),
+    SPEC(use_environment, BOOL, PUBLIC,
+         SYS_FLAG_SETTER(7, config_sys_flag_not), GLOBAL(&Py_IgnoreEnvironmentFlag, 1)),
+    SPEC(verbose, UINT, PUBLIC, SYS_FLAG(8), GLOBAL(&Py_VerboseFlag, 0)),
+    SPEC(warnoptions, WSTR_LIST, PUBLIC, SYS_ATTR("warnoptions"), NO_GLOBAL),
+    SPEC(write_bytecode, BOOL, PUBLIC, SYS_FLAG_SETTER(4, config_sys_flag_not),
+         GLOBAL(&Py_DontWriteBytecodeFlag, 1)),
+    SPEC(xoptions, WSTR_LIST, PUBLIC, SYS_ATTR("_xoptions"), NO_GLOBAL),
 
     // --- Read-only options -----------
 
 #ifdef Py_STATS
-    SPEC(_pystats, BOOL, READ_ONLY, NO_SYS),
+    SPEC(_pystats, BOOL, READ_ONLY, NO_SYS, NO_GLOBAL),
 #endif
-    SPEC(buffered_stdio, BOOL, READ_ONLY, NO_SYS),
-    SPEC(check_hash_pycs_mode, WSTR, READ_ONLY, NO_SYS),
-    SPEC(code_debug_ranges, BOOL, READ_ONLY, NO_SYS),
-    SPEC(configure_c_stdio, BOOL, READ_ONLY, NO_SYS),
-    SPEC(dev_mode, BOOL, READ_ONLY, NO_SYS),  // sys.flags.dev_mode
-    SPEC(dump_refs, BOOL, READ_ONLY, NO_SYS),
-    SPEC(dump_refs_file, WSTR_OPT, READ_ONLY, NO_SYS),
+    SPEC(buffered_stdio, BOOL, READ_ONLY, NO_SYS,
+         GLOBAL(&Py_UnbufferedStdioFlag, 1)),
+    SPEC(check_hash_pycs_mode, WSTR, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(code_debug_ranges, BOOL, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(configure_c_stdio, BOOL, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(dev_mode, BOOL, READ_ONLY, NO_SYS, NO_GLOBAL),  // sys.flags.dev_mode
+    SPEC(dump_refs, BOOL, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(dump_refs_file, WSTR_OPT, READ_ONLY, NO_SYS, NO_GLOBAL),
 #ifdef Py_GIL_DISABLED
-    SPEC(enable_gil, INT, READ_ONLY, NO_SYS),
-    SPEC(tlbc_enabled, INT, READ_ONLY, NO_SYS),
+    SPEC(enable_gil, INT, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(tlbc_enabled, INT, READ_ONLY, NO_SYS, NO_GLOBAL),
 #endif
-    SPEC(faulthandler, BOOL, READ_ONLY, NO_SYS),
-    SPEC(filesystem_encoding, WSTR, READ_ONLY, NO_SYS),
-    SPEC(filesystem_errors, WSTR, READ_ONLY, NO_SYS),
-    SPEC(hash_seed, ULONG, READ_ONLY, NO_SYS),
-    SPEC(home, WSTR_OPT, READ_ONLY, NO_SYS),
-    SPEC(thread_inherit_context, INT, READ_ONLY, NO_SYS),
-    SPEC(context_aware_warnings, INT, READ_ONLY, NO_SYS),
-    SPEC(import_time, UINT, READ_ONLY, NO_SYS),
-    SPEC(install_signal_handlers, BOOL, READ_ONLY, NO_SYS),
-    SPEC(isolated, BOOL, READ_ONLY, NO_SYS),  // sys.flags.isolated
+    SPEC(faulthandler, BOOL, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(filesystem_encoding, WSTR, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(filesystem_errors, WSTR, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(hash_seed, ULONG, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(home, WSTR_OPT, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(thread_inherit_context, INT, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(context_aware_warnings, INT, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(import_time, UINT, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(install_signal_handlers, BOOL, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(isolated, BOOL, READ_ONLY, NO_SYS, GLOBAL(&Py_IsolatedFlag, 0)),  // sys.flags.isolated
 #ifdef MS_WINDOWS
-    SPEC(legacy_windows_stdio, BOOL, READ_ONLY, NO_SYS),
+    SPEC(legacy_windows_stdio, BOOL, READ_ONLY, NO_SYS,
+         GLOBAL(&Py_LegacyWindowsStdioFlag, 0)),
 #endif
-    SPEC(malloc_stats, BOOL, READ_ONLY, NO_SYS),
-    SPEC(pymalloc_hugepages, BOOL, READ_ONLY, NO_SYS),
-    SPEC(orig_argv, WSTR_LIST, READ_ONLY, SYS_ATTR("orig_argv")),
-    SPEC(parse_argv, BOOL, READ_ONLY, NO_SYS),
-    SPEC(pathconfig_warnings, BOOL, READ_ONLY, NO_SYS),
-    SPEC(perf_profiling, UINT, READ_ONLY, NO_SYS),
-    SPEC(remote_debug, BOOL, READ_ONLY, NO_SYS),
-    SPEC(program_name, WSTR, READ_ONLY, NO_SYS),
-    SPEC(run_command, WSTR_OPT, READ_ONLY, NO_SYS),
-    SPEC(run_filename, WSTR_OPT, READ_ONLY, NO_SYS),
-    SPEC(run_module, WSTR_OPT, READ_ONLY, NO_SYS),
+    SPEC(malloc_stats, BOOL, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(pymalloc_hugepages, BOOL, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(orig_argv, WSTR_LIST, READ_ONLY, SYS_ATTR("orig_argv"), NO_GLOBAL),
+    SPEC(parse_argv, BOOL, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(pathconfig_warnings, BOOL, READ_ONLY, NO_SYS,
+         GLOBAL(&Py_FrozenFlag, 1)),
+    SPEC(perf_profiling, UINT, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(remote_debug, BOOL, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(program_name, WSTR, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(run_command, WSTR_OPT, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(run_filename, WSTR_OPT, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(run_module, WSTR_OPT, READ_ONLY, NO_SYS, NO_GLOBAL),
 #ifdef Py_DEBUG
-    SPEC(run_presite, WSTR_OPT, READ_ONLY, NO_SYS),
+    SPEC(run_presite, WSTR_OPT, READ_ONLY, NO_SYS, NO_GLOBAL),
 #endif
-    SPEC(safe_path, BOOL, READ_ONLY, NO_SYS),
-    SPEC(show_ref_count, BOOL, READ_ONLY, NO_SYS),
-    SPEC(site_import, BOOL, READ_ONLY, NO_SYS),  // sys.flags.no_site
-    SPEC(skip_source_first_line, BOOL, READ_ONLY, NO_SYS),
-    SPEC(stdio_encoding, WSTR, READ_ONLY, NO_SYS),
-    SPEC(stdio_errors, WSTR, READ_ONLY, NO_SYS),
-    SPEC(tracemalloc, UINT, READ_ONLY, NO_SYS),
-    SPEC(use_frozen_modules, BOOL, READ_ONLY, NO_SYS),
-    SPEC(use_hash_seed, BOOL, READ_ONLY, NO_SYS),
+    SPEC(safe_path, BOOL, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(show_ref_count, BOOL, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(site_import, BOOL, READ_ONLY, NO_SYS, GLOBAL(&Py_NoSiteFlag, 1)),  // sys.flags.no_site
+    SPEC(skip_source_first_line, BOOL, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(stdio_encoding, WSTR, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(stdio_errors, WSTR, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(tracemalloc, UINT, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(use_frozen_modules, BOOL, READ_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(use_hash_seed, BOOL, READ_ONLY, NO_SYS, NO_GLOBAL),
 #ifdef __APPLE__
-    SPEC(use_system_logger, BOOL, READ_ONLY, NO_SYS),
+    SPEC(use_system_logger, BOOL, READ_ONLY, NO_SYS, NO_GLOBAL),
 #endif
-    SPEC(user_site_directory, BOOL, READ_ONLY, NO_SYS),  // sys.flags.no_user_site
-    SPEC(warn_default_encoding, BOOL, READ_ONLY, NO_SYS),
+    SPEC(user_site_directory, BOOL, READ_ONLY, NO_SYS,
+         GLOBAL(&Py_NoUserSiteDirectory, 1)),  // sys.flags.no_user_site
+    SPEC(warn_default_encoding, BOOL, READ_ONLY, NO_SYS, NO_GLOBAL),
 
     // --- Init-only options -----------
 
-    SPEC(_config_init, UINT, INIT_ONLY, NO_SYS),
-    SPEC(_init_main, BOOL, INIT_ONLY, NO_SYS),
-    SPEC(_install_importlib, BOOL, INIT_ONLY, NO_SYS),
-    SPEC(_is_python_build, BOOL, INIT_ONLY, NO_SYS),
-    SPEC(module_search_paths_set, BOOL, INIT_ONLY, NO_SYS),
-    SPEC(pythonpath_env, WSTR_OPT, INIT_ONLY, NO_SYS),
-    SPEC(sys_path_0, WSTR_OPT, INIT_ONLY, NO_SYS),
+    SPEC(_config_init, UINT, INIT_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(_init_main, BOOL, INIT_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(_install_importlib, BOOL, INIT_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(_is_python_build, BOOL, INIT_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(module_search_paths_set, BOOL, INIT_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(pythonpath_env, WSTR_OPT, INIT_ONLY, NO_SYS, NO_GLOBAL),
+    SPEC(sys_path_0, WSTR_OPT, INIT_ONLY, NO_SYS, NO_GLOBAL),
 
     // Array terminator
     {NULL, 0, 0, 0, NO_SYS},
@@ -233,11 +252,16 @@ static const PyConfigSpec PYPRECONFIG_SPEC[] = {
     {NULL, 0, 0, 0, NO_SYS},
 };
 
+// End of ignoring deprecations on global variables
+_Py_COMP_DIAG_POP
+
 #undef SPEC
 #undef SYS_ATTR
 #undef SYS_FLAG_SETTER
 #undef SYS_FLAG
 #undef NO_SYS
+#undef GLOBAL
+#undef NO_GLOBAL
 
 
 // Forward declarations
@@ -1789,44 +1813,29 @@ config_get_env_dup(PyConfig *config,
 static void
 config_get_global_vars(PyConfig *config)
 {
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     if (config->_config_init != _PyConfig_INIT_COMPAT) {
         /* Python and Isolated configuration ignore global variables */
         return;
     }
 
-#define COPY_FLAG(ATTR, VALUE) \
-        if (config->ATTR == -1) { \
-            config->ATTR = VALUE; \
+    const PyConfigSpec *spec = PYCONFIG_SPEC;
+    for (; spec->name != NULL; spec++) {
+        if (spec->global_var.ptr == NULL) {
+            continue;
         }
-#define COPY_NOT_FLAG(ATTR, VALUE) \
-        if (config->ATTR == -1) { \
-            config->ATTR = !(VALUE); \
+        assert(spec->type == PyConfig_MEMBER_INT
+               || spec->type == PyConfig_MEMBER_UINT
+               || spec->type == PyConfig_MEMBER_BOOL);
+        int *member = config_get_spec_member(config, spec);
+        if (*member != -1) {
+            continue;
         }
-
-    COPY_FLAG(isolated, Py_IsolatedFlag);
-    COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
-    COPY_FLAG(bytes_warning, Py_BytesWarningFlag);
-    COPY_FLAG(inspect, Py_InspectFlag);
-    COPY_FLAG(interactive, Py_InteractiveFlag);
-    COPY_FLAG(optimization_level, Py_OptimizeFlag);
-    COPY_FLAG(parser_debug, Py_DebugFlag);
-    COPY_FLAG(verbose, Py_VerboseFlag);
-    COPY_FLAG(quiet, Py_QuietFlag);
-#ifdef MS_WINDOWS
-    COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
-#endif
-    COPY_NOT_FLAG(pathconfig_warnings, Py_FrozenFlag);
-
-    COPY_NOT_FLAG(buffered_stdio, Py_UnbufferedStdioFlag);
-    COPY_NOT_FLAG(site_import, Py_NoSiteFlag);
-    COPY_NOT_FLAG(write_bytecode, Py_DontWriteBytecodeFlag);
-    COPY_NOT_FLAG(user_site_directory, Py_NoUserSiteDirectory);
-
-#undef COPY_FLAG
-#undef COPY_NOT_FLAG
-_Py_COMP_DIAG_POP
+        int value = *spec->global_var.ptr;
+        if (spec->global_var.not) {
+            value = !value;
+        }
+        *member = value;
+    }
 }
 
 
@@ -1834,42 +1843,30 @@ _Py_COMP_DIAG_POP
 static void
 config_set_global_vars(const PyConfig *config)
 {
+    const PyConfigSpec *spec = PYCONFIG_SPEC;
+    for (; spec->name != NULL; spec++) {
+        if (spec->global_var.ptr == NULL) {
+            continue;
+        }
+        assert(spec->type == PyConfig_MEMBER_INT
+               || spec->type == PyConfig_MEMBER_UINT
+               || spec->type == PyConfig_MEMBER_BOOL);
+        int *member = config_get_spec_member(config, spec);
+        int value = *member;
+        if (value == -1) {
+            continue;
+        }
+        if (spec->global_var.not) {
+            value = !value;
+        }
+        *spec->global_var.ptr = value;
+    }
+
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-#define COPY_FLAG(ATTR, VAR) \
-        if (config->ATTR != -1) { \
-            VAR = config->ATTR; \
-        }
-#define COPY_NOT_FLAG(ATTR, VAR) \
-        if (config->ATTR != -1) { \
-            VAR = !config->ATTR; \
-        }
-
-    COPY_FLAG(isolated, Py_IsolatedFlag);
-    COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
-    COPY_FLAG(bytes_warning, Py_BytesWarningFlag);
-    COPY_FLAG(inspect, Py_InspectFlag);
-    COPY_FLAG(interactive, Py_InteractiveFlag);
-    COPY_FLAG(optimization_level, Py_OptimizeFlag);
-    COPY_FLAG(parser_debug, Py_DebugFlag);
-    COPY_FLAG(verbose, Py_VerboseFlag);
-    COPY_FLAG(quiet, Py_QuietFlag);
-#ifdef MS_WINDOWS
-    COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
-#endif
-    COPY_NOT_FLAG(pathconfig_warnings, Py_FrozenFlag);
-
-    COPY_NOT_FLAG(buffered_stdio, Py_UnbufferedStdioFlag);
-    COPY_NOT_FLAG(site_import, Py_NoSiteFlag);
-    COPY_NOT_FLAG(write_bytecode, Py_DontWriteBytecodeFlag);
-    COPY_NOT_FLAG(user_site_directory, Py_NoUserSiteDirectory);
-
     /* Random or non-zero hash seed */
     Py_HashRandomizationFlag = (config->use_hash_seed == 0 ||
                                 config->hash_seed != 0);
-
-#undef COPY_FLAG
-#undef COPY_NOT_FLAG
 _Py_COMP_DIAG_POP
 }
 
@@ -4994,6 +4991,16 @@ PyConfig_Set(const char *name, PyObject *value)
 
     default:
         Py_UNREACHABLE();
+    }
+
+    // Set the global variable
+    if (spec->global_var.ptr != NULL) {
+        assert(has_int_value);
+        int value = int_value;
+        if (spec->global_var.not) {
+            value = !value;
+        }
+        *spec->global_var.ptr = value;
     }
 
     if (spec->sys.attr != NULL) {

@@ -2236,6 +2236,13 @@ class InvalidPythonTests(TestCase):
         self.assertEqual(tokens, expected_tokens)
 
 class CTokenizeTest(TestCase):
+    @staticmethod
+    def _get_tokens(source, *, extra_tokens=False):
+        return list(tokenize._generate_tokens_from_c_tokenizer(
+            StringIO(source).readline,
+            extra_tokens=extra_tokens,
+        ))
+
     def check_tokenize(self, s, expected):
         # Format the tokens in s in a table format.
         # The ENDMARKER and final NEWLINE are omitted.
@@ -2265,6 +2272,159 @@ class CTokenizeTest(TestCase):
                     encoding=encoding,
                 ))
                 self.assertEqual(tokens, expected)
+
+    def test_extra_tokens_relaxes_lexer_errors(self):
+        cases = [
+            (
+                "2sin(x)",
+                ("invalid decimal literal", (1, 1)),
+                [
+                    (token.NUMBER, "2", (1, 0), (1, 1)),
+                    (token.NAME, "sin", (1, 1), (1, 4)),
+                    (token.OP, "(", (1, 4), (1, 5)),
+                    (token.NAME, "x", (1, 5), (1, 6)),
+                    (token.OP, ")", (1, 6), (1, 7)),
+                ],
+            ),
+            (
+                "01234",
+                (
+                    "leading zeros in decimal integer literals are not permitted; "
+                    "use an 0o prefix for octal integers",
+                    (1, 1),
+                ),
+                [(token.NUMBER, "01234", (1, 0), (1, 5))],
+            ),
+            (
+                ")",
+                ("unmatched ')'", (1, 1)),
+                [(token.OP, ")", (1, 0), (1, 1))],
+            ),
+            (
+                "(]",
+                (
+                    "closing parenthesis ']' does not match opening parenthesis '('",
+                    (1, 2),
+                ),
+                [
+                    (token.OP, "(", (1, 0), (1, 1)),
+                    (token.OP, "]", (1, 1), (1, 2)),
+                ],
+            ),
+            (
+                "a☃b",
+                ("invalid character '☃' (U+2603)", (1, 2)),
+                [(token.NAME, "a☃b", (1, 0), (1, 3))],
+            ),
+        ]
+
+        for source, error, expected in cases:
+            with self.subTest(source=source):
+                with self.assertRaises(tokenize.TokenError) as caught:
+                    self._get_tokens(source)
+                self.assertEqual(caught.exception.args, error)
+
+                tokens = self._get_tokens(source, extra_tokens=True)
+                self.assertEqual(
+                    [(tok.type, tok.string, tok.start, tok.end)
+                     for tok in tokens[:-2]],
+                    expected,
+                )
+
+    def test_extra_tokens_emits_comments_and_real_indent_locations(self):
+        source = "if x:\n  # c\n  y\nz\n"
+        kinds = {token.COMMENT, token.NL, token.INDENT, token.DEDENT}
+
+        parser_tokens = self._get_tokens(source)
+        self.assertEqual(
+            [(tok.type, tok.string, tok.start, tok.end)
+             for tok in parser_tokens if tok.type in kinds],
+            [
+                (token.INDENT, "", (3, -1), (3, -1)),
+                (token.DEDENT, "", (4, -1), (4, -1)),
+            ],
+        )
+
+        tolerant_tokens = self._get_tokens(source, extra_tokens=True)
+        self.assertEqual(
+            [(tok.type, tok.string, tok.start, tok.end)
+             for tok in tolerant_tokens if tok.type in kinds],
+            [
+                (token.COMMENT, "# c", (2, 2), (2, 5)),
+                (token.NL, "\n", (2, 5), (2, 6)),
+                (token.INDENT, "  ", (3, 0), (3, 2)),
+                (token.DEDENT, "", (4, 0), (4, 0)),
+            ],
+        )
+
+    def test_printable_invalid_operator_streams_in_both_modes(self):
+        for extra_tokens in (False, True):
+            with self.subTest(extra_tokens=extra_tokens):
+                first = self._get_tokens(
+                    "1 $ 2",
+                    extra_tokens=extra_tokens,
+                )[1]
+                self.assertEqual(
+                    (first.type, first.string, first.start, first.end),
+                    (token.OP, "$", (1, 2), (1, 3)),
+                )
+
+    def test_degraded_fstring_format_spec(self):
+        tokens = self._get_tokens('f"{1:{2}{{3}}}"')
+        self.assertEqual(
+            [(tok.string, tok.start, tok.end)
+             for tok in tokens if tok.type == token.FSTRING_MIDDLE],
+            [
+                ("{", (1, 8), (1, 9)),
+                ("3", (1, 10), (1, 11)),
+                ("}", (1, 12), (1, 13)),
+            ],
+        )
+
+        tokens = self._get_tokens('f"{x:{y}}"')
+        self.assertEqual(
+            [(tok.string, tok.start, tok.end)
+             for tok in tokens if tok.type == token.FSTRING_MIDDLE],
+            [("", (1, 8), (1, 8))],
+        )
+
+        with self.assertRaises(tokenize.TokenError) as caught:
+            self._get_tokens('f"{1:{2}x}}y"')
+        self.assertEqual(
+            caught.exception.args,
+            ("f-string: single '}' is not allowed", (1, 11)),
+        )
+
+    def test_escaped_fstring_brace_has_a_position_gap(self):
+        tokens = self._get_tokens('f"a{{"', extra_tokens=True)
+        self.assertEqual(
+            [(tok.type, tok.string, tok.start, tok.end)
+             for tok in tokens
+             if tok.type in {token.FSTRING_MIDDLE, token.FSTRING_END}],
+            [
+                (token.FSTRING_MIDDLE, "a{", (1, 2), (1, 4)),
+                (token.FSTRING_END, '"', (1, 5), (1, 6)),
+            ],
+        )
+
+    def test_tolerant_incompatible_prefix_position_after_non_ascii(self):
+        with self.assertRaises(tokenize.TokenError) as caught:
+            self._get_tokens('bé )tf"2 ', extra_tokens=True)
+        self.assertEqual(
+            caught.exception.args,
+            ("'f' and 't' prefixes are incompatible", (1, 6)),
+        )
+
+    def test_tolerant_fstring_closer_at_expression_entry_depth(self):
+        source = "f'1:{]]{}}r}''"
+        for extra_tokens, position in ((False, (1, 6)), (True, (1, 7))):
+            with self.subTest(extra_tokens=extra_tokens):
+                with self.assertRaises(tokenize.TokenError) as caught:
+                    self._get_tokens(source, extra_tokens=extra_tokens)
+                self.assertEqual(
+                    caught.exception.args,
+                    ("f-string: unmatched ']'", position),
+                )
 
     def test_int(self):
 

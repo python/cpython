@@ -41,13 +41,18 @@ class TestAndroidOutput(unittest.TestCase):
 
         try:
             from ctypes import CDLL, c_char_p, c_int
-            android_log_write = getattr(CDLL("liblog.so"), "__android_log_write")
-            android_log_write.argtypes = (c_int, c_char_p, c_char_p)
-            ANDROID_LOG_INFO = 4
+            from ctypes.util import wrap_dll_function
+            liblog = CDLL("liblog.so")
+
+            @wrap_dll_function(liblog)
+            def __android_log_write(prio: c_int, tag: c_char_p,
+                                    text: c_char_p) -> c_int:
+                pass
 
             # Separate tests using a marker line with a different tag.
+            ANDROID_LOG_INFO = 4
             tag, message = "python.test", f"{self.id()} {time()}"
-            android_log_write(
+            __android_log_write(
                 ANDROID_LOG_INFO, tag.encode("UTF-8"), message.encode("UTF-8"))
             self.assert_log("I", tag, message, skip=True)
         except:
