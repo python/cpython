@@ -1643,19 +1643,14 @@ static bool frame_is_suspended(PyFrameObject *frame)
 /*[clinic input]
 @critical_section
 @setter
-@deleter
 frame.f_lineno as frame_lineno
 [clinic start generated code]*/
 
 static int
 frame_lineno_set_impl(PyFrameObject *self, PyObject *value)
-/*[clinic end generated code: output=e64c86ff6be64292 input=c814c375c6bd16ba]*/
+/*[clinic end generated code: output=e64c86ff6be64292 input=36ed3c896b27fb91]*/
 {
     PyCodeObject *code = _PyFrame_GetCode(self->f_frame);
-    if (value == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
-        return -1;
-    }
     /* f_lineno must be an integer. */
     if (!PyLong_CheckExact(value)) {
         PyErr_SetString(PyExc_ValueError,

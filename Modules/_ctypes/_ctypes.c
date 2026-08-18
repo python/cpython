@@ -1481,22 +1481,17 @@ class _ctypes.PyCArrayType_Type "CDataObject *" "clinic_state()->PyCArrayType_Ty
 /*[clinic input]
 @critical_section
 @setter
-@deleter
 _ctypes.PyCArrayType_Type.raw
 [clinic start generated code]*/
 
 static int
 _ctypes_PyCArrayType_Type_raw_set_impl(CDataObject *self, PyObject *value)
-/*[clinic end generated code: output=cf9b2a9fd92e9ecb input=13881e1662127207]*/
+/*[clinic end generated code: output=cf9b2a9fd92e9ecb input=a3717561efc45efd]*/
 {
     char *ptr;
     Py_ssize_t size;
     Py_buffer view;
 
-    if (value == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
-        return -1;
-    }
     if (PyObject_GetBuffer(value, &view, PyBUF_SIMPLE) < 0)
         return -1;
     size = view.len;
