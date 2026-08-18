@@ -453,7 +453,7 @@ class Regrtest:
 
     def get_state(self) -> str:
         state = self.results.get_state(self.fail_env_changed)
-        if self.first_state:
+        if self.first_state and self.first_state != state:
             state = f'{self.first_state} then {state}'
         return state
 
