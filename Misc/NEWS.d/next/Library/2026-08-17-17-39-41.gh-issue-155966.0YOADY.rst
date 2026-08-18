@@ -1,2 +1,2 @@
-:func:`math.atanpi` now raises :exc:`ValueError` for half-integer values
-(e.g., ``atanpi(1.5)``), as these are poles of the function.
+:func:`math.tanpi` now raises :exc:`ValueError` for half-integer values
+(e.g., ``tanpi(1.5)``), as these are poles of the function.
