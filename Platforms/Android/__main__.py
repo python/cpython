@@ -158,7 +158,7 @@ def android_env(host):
         f"PREFIX={prefix}; "
         f". {ENV_SCRIPT}; "
         f"export",
-        check=True, shell=True, capture_output=True, encoding='utf-8',
+        check=True, shell=True, stdout=subprocess.PIPE, encoding='utf-8',
     ).stdout
 
     env = {}
@@ -207,6 +207,11 @@ def make_build_python(context):
     run(["make", "-j", str(os.cpu_count())])
 
 
+def pythoninfo_build_python(context):
+    os.chdir(subdir("build"))
+    run(["make", "pythoninfo"])
+
+
 # To create new builds of these dependencies, usually all that's necessary is to
 # push a tag to the cpython-android-source-deps repository, and GitHub Actions
 # will do the rest.
@@ -219,8 +224,8 @@ def unpack_deps(host, prefix_dir, cache_dir):
     for name_ver in [
         "bzip2-1.0.8-3",
         "libffi-3.4.4-3",
-        "openssl-3.5.6-0",
-        "sqlite-3.50.4-0",
+        "openssl-3.5.7-0",
+        "sqlite-3.53.2-0",
         "xz-5.4.6-1",
         "zstd-1.5.7-2"
     ]:
@@ -308,6 +313,7 @@ def build_targets(context):
     if context.target in {"all", "build"}:
         configure_build_python(context)
         make_build_python(context)
+        pythoninfo_build_python(context)
 
     for host in HOSTS:
         if context.target in {"all", "hosts", host}:
@@ -387,10 +393,10 @@ def setup_testbed():
     if all((TESTBED_DIR / path).exists() for path in paths):
         return
 
-    # The wrapper version isn't important, as any version of the wrapper can
-    # download any version of Gradle. The Gradle version actually used for the
-    # build is specified in testbed/gradle/wrapper/gradle-wrapper.properties.
-    version = "8.9.0"
+    # Any version of the wrapper can run any reasonably close version of Gradle, so this
+    # doesn't need to match the Gradle version used for the build, which is specified in
+    # testbed/gradle/wrapper/gradle-wrapper.properties.
+    version = "9.5.0"
 
     for path in paths:
         out_path = TESTBED_DIR / path
@@ -619,7 +625,8 @@ async def read_logcat(stream):
     except ValueError:
         priority = LogPriority.UNKNOWN
 
-    payload_fields = (await read_bytes(payload_len - 1)).split(b"\0")
+    payload = await read_bytes(payload_len - 1)
+    payload_fields = payload.split(b"\0")
     if len(payload_fields) < 2:
         raise ValueError(
             f"payload {payload!r} does not contain at least 2 "
@@ -819,6 +826,7 @@ def ci(context):
     for step in [
         configure_build_python,
         make_build_python,
+        pythoninfo_build_python,
         configure_host_python,
         make_host_python,
         package,
@@ -903,6 +911,8 @@ def parse_args():
         "configure-build", help="Run `configure` for the build Python")
     add_parser(
         "make-build", help="Run `make` for the build Python")
+    add_parser(
+        "pythoninfo-build", help="Display build info of the build Python")
     configure_host = add_parser(
         "configure-host", help="Run `configure` for Android")
     make_host = add_parser(
@@ -1019,6 +1029,7 @@ def main():
     dispatch = {
         "configure-build": configure_build_python,
         "make-build": make_build_python,
+        "pythoninfo-build": pythoninfo_build_python,
         "configure-host": configure_host_python,
         "make-host": make_host_python,
         "build": build_targets,

@@ -1,0 +1,4 @@
+A :class:`tkinter.font.Font` created from a named font,
+including by :meth:`~tkinter.font.Font.copy`,
+now copies its configured options rather than the options resolved by Tcl's ``font actual``,
+preserving a size specified in pixels (a negative size).
