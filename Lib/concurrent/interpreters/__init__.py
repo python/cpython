@@ -68,8 +68,14 @@ def create():
 
 def list_all():
     """Return all existing interpreters."""
-    return [Interpreter(id, _whence=whence)
-            for id, whence in _interpreters.list_all(require_ready=True)]
+    interps = []
+    for id, whence in _interpreters.list_all(require_ready=True):
+        try:
+            interps.append(Interpreter(id, _whence=whence))
+        except InterpreterNotFoundError:
+            # It was destroyed after it was listed.
+            pass
+    return interps
 
 
 def get_current():
