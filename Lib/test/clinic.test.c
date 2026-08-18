@@ -5303,6 +5303,12 @@ Test_property_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
 {
     int return_value;
 
+    if (value == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute 'property' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
     return_value = Test_property_set_impl((TestObj *)self, value);
 
     return return_value;
@@ -5310,7 +5316,40 @@ Test_property_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
 
 static int
 Test_property_set_impl(TestObj *self, PyObject *value)
-/*[clinic end generated code: output=49f925ab2a33b637 input=3bc3f46a23c83a88]*/
+/*[clinic end generated code: output=ec103a151cf51d25 input=3bc3f46a23c83a88]*/
+
+/*[clinic input]
+@setter
+@deleter
+Test.settable_and_deletable
+[clinic start generated code]*/
+
+#if !defined(Test_settable_and_deletable_DOCSTR)
+#  define Test_settable_and_deletable_DOCSTR NULL
+#endif
+#if defined(TEST_SETTABLE_AND_DELETABLE_GETSETDEF)
+#  undef TEST_SETTABLE_AND_DELETABLE_GETSETDEF
+#  define TEST_SETTABLE_AND_DELETABLE_GETSETDEF {"settable_and_deletable", (getter)Test_settable_and_deletable_get, (setter)Test_settable_and_deletable_set, Test_settable_and_deletable_DOCSTR},
+#else
+#  define TEST_SETTABLE_AND_DELETABLE_GETSETDEF {"settable_and_deletable", NULL, (setter)Test_settable_and_deletable_set, NULL},
+#endif
+
+static int
+Test_settable_and_deletable_set_impl(TestObj *self, PyObject *value);
+
+static int
+Test_settable_and_deletable_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    return_value = Test_settable_and_deletable_set_impl((TestObj *)self, value);
+
+    return return_value;
+}
+
+static int
+Test_settable_and_deletable_set_impl(TestObj *self, PyObject *value)
+/*[clinic end generated code: output=479986d499b2f56d input=f5647f3511b9daea]*/
 
 /*[clinic input]
 @setter
@@ -5335,6 +5374,12 @@ Test_setter_first_with_docstr_set(PyObject *self, PyObject *value, void *Py_UNUS
 {
     int return_value;
 
+    if (value == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute 'setter_first_with_docstr' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
     return_value = Test_setter_first_with_docstr_set_impl((TestObj *)self, value);
 
     return return_value;
@@ -5342,7 +5387,7 @@ Test_setter_first_with_docstr_set(PyObject *self, PyObject *value, void *Py_UNUS
 
 static int
 Test_setter_first_with_docstr_set_impl(TestObj *self, PyObject *value)
-/*[clinic end generated code: output=5aaf44373c0af545 input=31a045ce11bbe961]*/
+/*[clinic end generated code: output=eac8bafcaa50aa51 input=31a045ce11bbe961]*/
 
 /*[clinic input]
 @getter

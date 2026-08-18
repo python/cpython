@@ -13,7 +13,8 @@ from libclinic.language import Language
 from libclinic.function import (
     Module, Class, Function, Parameter, ParamTuple,
     permute_optional_groups,
-    GETTER, SETTER, METHOD_INIT)
+    GETTER, METHOD_INIT,
+    ACCESSORS, SETTERS)
 from libclinic.converters import self_converter
 from libclinic.parse_args import ParseArgsCodeGen
 if TYPE_CHECKING:
@@ -463,12 +464,12 @@ class CLanguage(Language):
         full_name = f.full_name
         template_dict = {'full_name': full_name}
         template_dict['name'] = f.displayname
-        if f.kind in {GETTER, SETTER}:
+        if f.kind in ACCESSORS:
             template_dict['getset_name'] = f.c_basename.upper()
             template_dict['getset_basename'] = f.c_basename
             if f.kind is GETTER:
                 template_dict['c_basename'] = f.c_basename + "_get"
-            elif f.kind is SETTER:
+            else:
                 template_dict['c_basename'] = f.c_basename + "_set"
                 # Implicitly add the setter value parameter.
                 data.impl_parameters.append("PyObject *value")
@@ -483,7 +484,7 @@ class CLanguage(Language):
         for converter in converters:
             converter.set_template_dict(template_dict)
 
-        if f.kind not in {SETTER, METHOD_INIT}:
+        if f.kind not in SETTERS | {METHOD_INIT}:
             f.return_converter.render(f, data)
         template_dict['impl_return_type'] = f.return_converter.type
 
