@@ -140,6 +140,18 @@ class TaskGroup:
         assert not self._tasks
 
         if self._base_error is not None:
+            # self._base_error (SystemExit or KeyboardInterrupt) is about
+            # to propagate out of this method, which discards any other
+            # collected task errors silently.  Report them instead of
+            # losing them.  See gh-135736.
+            for suppressed_exc in self._errors:
+                self._loop.call_exception_handler({
+                    'message': 'TaskGroup task exception was not '
+                               'propagated because the TaskGroup body '
+                               'is being closed with a BaseException',
+                    'exception': suppressed_exc,
+                    'task_group': self,
+                })
             try:
                 raise self._base_error
             finally:
