@@ -489,7 +489,7 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                     self.assertComplexesAreIdentical(c**-2, complex(-0.0, -y/x))
 
         # Test that zeroes has the same sign as small non-zero values.
-        eps = 1e-8
+        eps = 1e-11
         pairs = [(complex(x, y), complex(x, copysign(0.0, y)))
                  for x in [+1, -1] for y in [+eps, -eps]]
         pairs += [(complex(y, x), complex(copysign(0.0, y), x))
