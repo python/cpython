@@ -1,0 +1,3 @@
+Fix an out-of-bounds write in :meth:`bytearray.extend` when the bytearray is
+resized while the argument's :meth:`~object.__buffer__` is being acquired, for
+example by another thread. Patch by tonghuaroot.
