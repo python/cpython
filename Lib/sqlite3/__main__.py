@@ -41,9 +41,8 @@ def execute(c, sql, suppress_errors=True, theme=theme_no_color):
             tp += f" ({error.sqlite_errorname})"
         except AttributeError:
             pass
-        print(
-            f"{t.type}{tp}{t.reset}: {t.message}{error}{t.reset}", file=sys.stderr
-        )
+        print(f"{t.type}{tp}{t.reset}: {t.message}{error}{t.reset}",
+              file=sys.stderr)
         if not suppress_errors:
             sys.exit(1)
 
