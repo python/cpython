@@ -1231,17 +1231,28 @@ class TestIsolated(unittest.TestCase):
         self.assertEqual(len(result.errors), 1)
         self.assertIn(f'within {TIMEOUT} seconds', result.errors[0][1])
 
+    @support.requires_subprocess()
+    def test_bigmemtest_isolates_a_real_run(self):
+        # A dummy run (no -M) stays in this process, a real run does not.
+        for memlimit in (0, support._1G):
+            with self.subTest(real_max_memuse=memlimit):
+                with support.swap_attr(support, 'real_max_memuse', memlimit):
+                    result = self._run('BigmemSample')
+                self.assertEqual(result.testsRun, 1)
+                self.assertEqual(self._names(result.failures), [])
+                self.assertEqual(self._names(result.errors), [])
+
     def test_skipped_without_subprocess_support(self):
         # On a platform without subprocess support the test is skipped in the
         # parent, before any subprocess is spawned.
         calls = []
-        orig = isolation._run_in_subprocess
+        orig = isolation._start_test
         with support.swap_attr(support, 'has_subprocess_support', False):
-            isolation._run_in_subprocess = lambda *a, **k: calls.append(a)
+            isolation._start_test = lambda *a, **k: calls.append(a)
             try:
                 result = self._run('MethodSample.test_pass')
             finally:
-                isolation._run_in_subprocess = orig
+                isolation._start_test = orig
         self.assertEqual(result.testsRun, 1)
         self.assertEqual(len(result.skipped), 1)
         self.assertEqual(calls, [])
