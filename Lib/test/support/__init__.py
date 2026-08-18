@@ -1276,14 +1276,19 @@ def _limit_address_space(nbytes):
     A test which uses much more memory than it declares then fails with a
     MemoryError instead of making the machine swap.
     """
+    if check_sanitizer(address=True):
+        # AddressSanitizer reserves terabytes of address space for its shadow
+        # memory, so any limit stops the interpreter from starting.
+        return
     try:
         import resource
         rlimit = resource.RLIMIT_AS
     except (ImportError, AttributeError):
         return
     # The margin does not grow with the declared size: the interpreter itself
-    # reserves about 250 MiB, whatever the test asks for.
-    limit = int(nbytes) + 512 * _1M
+    # reserves about 250 MiB, whatever the test asks for.  macOS reserves more.
+    margin = _1G if sys.platform == 'darwin' else 512 * _1M
+    limit = int(nbytes) + margin
     soft, hard = resource.getrlimit(rlimit)
     for current in soft, hard:
         if current != resource.RLIM_INFINITY:
