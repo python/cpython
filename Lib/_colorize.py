@@ -223,7 +223,7 @@ class Dis(ThemeSection):
     label_fg: str = ANSIColors.BLACK
 
     exception_label: str = ANSIColors.CYAN
-    argument_detail: str = ANSIColors.CYAN
+    argument_detail: str = "\x1B[3m"
 
     op_load: str = ANSIColors.BLUE
     op_pop: str = ANSIColors.MAGENTA
@@ -256,7 +256,6 @@ class Dis(ThemeSection):
             "CLEANUP_THROW",
         ):
             return self.op_control_flow
-
 
         return self.reset
 
