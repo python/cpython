@@ -1311,45 +1311,45 @@ atan2pi20000 atan2pi inf 0 -> 0.5
 atan2pi20001 atan2pi -inf 0 -> -0.5
 atan2pi20002 atan2pi nan 0 -> nan
 
-atan2pi21000 atan2pi inf -0 -> 0.5
-atan2pi21001 atan2pi -inf -0 -> -0.5
-atan2pi21002 atan2pi nan -0 -> nan
+atan2pi20000 atan2pi inf -0 -> 0.5
+atan2pi20001 atan2pi -inf -0 -> -0.5
+atan2pi20002 atan2pi nan -0 -> nan
 
-atan2pi22003 atan2pi inf 1 -> 0.5
-atan2pi22004 atan2pi -inf 1 -> -0.5
-atan2pi22005 atan2pi nan 1 -> nan
+atan2pi20003 atan2pi inf 1 -> 0.5
+atan2pi20004 atan2pi -inf 1 -> -0.5
+atan2pi20005 atan2pi nan 1 -> nan
 
-atan2pi23006 atan2pi inf -1 -> 0.5
-atan2pi23007 atan2pi -inf -1 -> -0.5
-atan2pi23008 atan2pi nan -1 -> nan
+atan2pi20006 atan2pi inf -1 -> 0.5
+atan2pi20007 atan2pi -inf -1 -> -0.5
+atan2pi20008 atan2pi nan -1 -> nan
 
-atan2pi24009 atan2pi inf inf -> 0.25
-atan2pi24010 atan2pi -inf inf -> -0.25
-atan2pi24011 atan2pi nan inf -> nan
+atan2pi20009 atan2pi inf inf -> 0.25
+atan2pi20010 atan2pi -inf inf -> -0.25
+atan2pi20011 atan2pi nan inf -> nan
 
-atan2pi25012 atan2pi inf -inf -> .75
-atan2pi25013 atan2pi -inf -inf -> -.75
-atan2pi25014 atan2pi nan -inf -> nan
+atan2pi20012 atan2pi inf -inf -> .75
+atan2pi20013 atan2pi -inf -inf -> -.75
+atan2pi20014 atan2pi nan -inf -> nan
 
-atan2pi26015 atan2pi inf nan -> nan
-atan2pi26016 atan2pi -inf nan -> nan
-atan2pi26017 atan2pi nan nan -> nan
+atan2pi20015 atan2pi inf nan -> nan
+atan2pi20016 atan2pi -inf nan -> nan
+atan2pi20017 atan2pi nan nan -> nan
 
 atan2pi30000 atan2pi 0 inf -> 0.0
 atan2pi30001 atan2pi 0 -inf -> 1.0
 atan2pi30002 atan2pi 0 nan -> nan
 
-atan2pi31000 atan2pi -0 inf -> -0.0
-atan2pi31001 atan2pi -0 -inf -> -1.0
-atan2pi31002 atan2pi -0 nan -> nan
+atan2pi30000 atan2pi -0 inf -> -0.0
+atan2pi30001 atan2pi -0 -inf -> -1.0
+atan2pi30002 atan2pi -0 nan -> nan
 
-atan2pi32003 atan2pi 1 inf -> 0.0
-atan2pi32004 atan2pi 1 -inf -> 1.0
-atan2pi32005 atan2pi 1 nan -> nan
+atan2pi30003 atan2pi 1 inf -> 0.0
+atan2pi30004 atan2pi 1 -inf -> 1.0
+atan2pi30005 atan2pi 1 nan -> nan
 
-atan2pi33006 atan2pi -1 inf -> -0.0
-atan2pi33007 atan2pi -1 -inf -> -1.0
-atan2pi33008 atan2pi -1 nan -> nan
+atan2pi30006 atan2pi -1 inf -> -0.0
+atan2pi30007 atan2pi -1 -inf -> -1.0
+atan2pi30008 atan2pi -1 nan -> nan
 
 -----------
 -- cospi --
