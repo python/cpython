@@ -10,6 +10,7 @@ import os
 import sys
 import time
 import unittest
+from test import support
 from test.support import isolation
 
 # DurationSample sleeps this long in the subprocess; a parent-reported duration
@@ -178,3 +179,12 @@ class TimeoutSample(unittest.TestCase):
     @isolation.runInSubprocess(timeout=TIMEOUT)
     def test_hang(self):
         time.sleep(TIMEOUT_HANG)
+
+
+class BigmemSample(unittest.TestCase):
+
+    @support.bigmemtest(size=1024, memuse=1)
+    def test_where_it_runs(self, size):
+        # A real run is isolated by bigmemtest() itself, a dummy run is not.
+        self.assertEqual(isolation.runningInSubprocess,
+                         bool(support.real_max_memuse))

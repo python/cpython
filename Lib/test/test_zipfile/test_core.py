@@ -22,16 +22,18 @@ from tempfile import TemporaryFile
 from random import randint, random, randbytes
 
 from test import archiver_tests
-from test.support import script_helper, os_helper
+from test.support import script_helper
 from test.support import (
     findfile, requires_zlib, requires_bz2, requires_lzma,
     requires_zstd, captured_stdout, captured_stderr, requires_subprocess,
-    cpython_only
+    cpython_only, gc_collect
 )
 from test.support.os_helper import (
-    TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count, FakePath
+    TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count, FakePath,
+    with_source_date_epoch, without_source_date_epoch,
 )
 from test.support.import_helper import ensure_lazy_imports
+from test.support.warnings_helper import check_no_resource_warning
 
 
 TESTFN2 = TESTFN + "2"
@@ -498,7 +500,7 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
         self.make_test_archive(f, compression)
         with zipfile.ZipFile(f, "r") as zipfp:
             zinfo = zipfp.getinfo('strfile')
-            self.assertEqual(zinfo.external_attr, 0o600 << 16)
+            self.assertEqual(zinfo.external_attr, 0o100600 << 16)
 
             zinfo2 = zipfp.getinfo('written-open-w')
             self.assertEqual(zinfo2.external_attr, 0o600 << 16)
@@ -1960,6 +1962,7 @@ class AbstractRepackTests(RepackHelperMixin):
                 with zipfile.ZipFile(TESTFN) as zh:
                     self.assertIsNone(zh.testzip())
 
+    @without_source_date_epoch  # SOURCE_DATE_EPOCH would bypass the time mock below
     @mock.patch.object(time, 'time', new=lambda: 315590400)  # fix time for ZipFile.writestr()
     def test_repack_bytes_before_removed_files(self):
         """Should preserve if there are bytes before stale local file entries."""
@@ -2004,6 +2007,7 @@ class AbstractRepackTests(RepackHelperMixin):
                 with zipfile.ZipFile(TESTFN) as zh:
                     self.assertIsNone(zh.testzip())
 
+    @without_source_date_epoch  # SOURCE_DATE_EPOCH would bypass the time mock below
     @mock.patch.object(time, 'time', new=lambda: 315590400)  # fix time for ZipFile.writestr()
     def test_repack_bytes_after_removed_files(self):
         """Should keep extra bytes if there are bytes after stale local file entries."""
@@ -2047,6 +2051,7 @@ class AbstractRepackTests(RepackHelperMixin):
                 with zipfile.ZipFile(TESTFN) as zh:
                     self.assertIsNone(zh.testzip())
 
+    @without_source_date_epoch  # SOURCE_DATE_EPOCH would bypass the time mock below
     @mock.patch.object(time, 'time', new=lambda: 315590400)  # fix time for ZipFile.writestr()
     def test_repack_bytes_between_removed_files(self):
         """Should strip only local file entries before random bytes."""
@@ -2251,6 +2256,7 @@ class AbstractRepackTests(RepackHelperMixin):
                 with zipfile.ZipFile(TESTFN) as zh:
                     self.assertIsNone(zh.testzip())
 
+    @without_source_date_epoch  # SOURCE_DATE_EPOCH would bypass the time mock below
     @mock.patch.object(time, 'time', new=lambda: 315590400)  # fix time for ZipFile.writestr()
     def test_repack_removed_bytes_between_files(self):
         """Should not remove bytes between local file entries."""
@@ -2381,6 +2387,18 @@ class AbstractRepackTests(RepackHelperMixin):
                 with self.assertRaises(ValueError):
                     zh.repack()
         m_repack.assert_not_called()
+
+    @mock.patch.object(zipfile, '_ZipRepacker')
+    def test_repack_reading(self, m_repack):
+        self._prepare_zip_from_test_files(TESTFN, self.test_files)
+        with zipfile.ZipFile(TESTFN, 'a') as zh:
+            with zh.open(self.test_files[0][0]):
+                with self.assertRaises(ValueError):
+                    zh.repack()
+            m_repack.assert_not_called()
+            # Allowed once the reading handle is closed.
+            zh.repack()
+        m_repack.assert_called_once()
 
     @mock.patch.object(zipfile, '_ZipRepacker')
     def test_repack_mode_r(self, m_repack):
@@ -4003,29 +4021,24 @@ class OtherTests(unittest.TestCase):
                 zinfo.flag_bits |= zipfile._MASK_USE_DATA_DESCRIPTOR  # Include an extended local header.
                 orig_zip.writestr(zinfo, data)
 
+    @with_source_date_epoch(epoch=1735715999)
     def test_write_with_source_date_epoch(self):
-        with os_helper.EnvironmentVarGuard() as env:
-            # Set the SOURCE_DATE_EPOCH environment variable to a specific timestamp
-            env['SOURCE_DATE_EPOCH'] = "1735715999"
+        with zipfile.ZipFile(TESTFN, "w") as zf:
+            zf.writestr("test_source_date_epoch.txt", "Testing SOURCE_DATE_EPOCH")
 
-            with zipfile.ZipFile(TESTFN, "w") as zf:
-                zf.writestr("test_source_date_epoch.txt", "Testing SOURCE_DATE_EPOCH")
+        with zipfile.ZipFile(TESTFN, "r") as zf:
+            zip_info = zf.getinfo("test_source_date_epoch.txt")
+            expected_utc = (2025, 1, 1, 7, 19, 58)
+            self.assertEqual(zip_info.date_time, expected_utc)
 
-            with zipfile.ZipFile(TESTFN, "r") as zf:
-                zip_info = zf.getinfo("test_source_date_epoch.txt")
-                expected_utc = (2025, 1, 1, 7, 19, 58)
-                self.assertEqual(zip_info.date_time, expected_utc)
-
+    @without_source_date_epoch
     def test_write_without_source_date_epoch(self):
-        with os_helper.EnvironmentVarGuard() as env:
-            del env['SOURCE_DATE_EPOCH']
+        with zipfile.ZipFile(TESTFN, "w") as zf:
+            zf.writestr("test_no_source_date_epoch.txt", "Testing without SOURCE_DATE_EPOCH")
 
-            with zipfile.ZipFile(TESTFN, "w") as zf:
-                zf.writestr("test_no_source_date_epoch.txt", "Testing without SOURCE_DATE_EPOCH")
-
-            with zipfile.ZipFile(TESTFN, "r") as zf:
-                zip_info = zf.getinfo("test_no_source_date_epoch.txt")
-                self.assertTimestampAlmostEqual(time.localtime(), zip_info.date_time, tolerance=2)
+        with zipfile.ZipFile(TESTFN, "r") as zf:
+            zip_info = zf.getinfo("test_no_source_date_epoch.txt")
+            self.assertTimestampAlmostEqual(time.localtime(), zip_info.date_time, tolerance=2)
 
     def assertTimestampAlmostEqual(self, time1, time2, tolerance):
         import datetime
@@ -4057,6 +4070,28 @@ class OtherTests(unittest.TestCase):
                 raise zipfile.BadZipFile()
         except zipfile.BadZipFile:
             self.assertIsNone(zipfp2.fp, 'zipfp is not closed')
+
+    def test_garbage_collection(self):
+        # gh-81954: Warn if a writable zipfile is closed by GC.
+        with self.assertWarns(ResourceWarning):
+            zipfile.ZipFile(io.BytesIO(), "w")
+            gc_collect()
+
+        # Only warn if there is possible data loss.
+        # Properly closed via context manager.
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("f.txt", b"data")
+
+        with check_no_resource_warning(self):
+            # Read mode: No possible data loss.
+            zipfile.ZipFile(buf, "r")
+
+            # Write with manual explicit close: No pending data.
+            zf = zipfile.ZipFile(io.BytesIO(), "w")
+            zf.writestr("f.txt", b"data")
+            zf.close()
+            del zf
 
     def test_unsupported_version(self):
         # File has an extract_version of 120
@@ -4490,8 +4525,8 @@ class OtherTests(unittest.TestCase):
             zi = zipfile.ZipInfo(base_filename)._for_archive(zf)
             self.assertEqual(zi.compress_level, 1)
             self.assertEqual(zi.compress_type, zipfile.ZIP_STORED)
-            # ?rw- --- ---
-            filemode = stat.S_IRUSR | stat.S_IWUSR
+            # - rw- --- ---
+            filemode = stat.S_IFREG | stat.S_IRUSR | stat.S_IWUSR
             # filemode is stored as the highest 16 bits of external_attr
             self.assertEqual(zi.external_attr >> 16, filemode)
             self.assertEqual(zi.external_attr & 0xFF, 0)  # no MS-DOS flag
@@ -5510,10 +5545,10 @@ class TestWithDirectory(unittest.TestCase):
         the zip file, this is a strange behavior, but we should support it.
         """
         in_memory_file = io.BytesIO()
-        zf = zipfile.ZipFile(in_memory_file, "w")
-        zf.mkdir('/')
-        zf.writestr('./a.txt', 'aaa')
-        zf.extractall(TESTFN2)
+        with zipfile.ZipFile(in_memory_file, "w") as zf:
+            zf.mkdir('/')
+            zf.writestr('./a.txt', 'aaa')
+            zf.extractall(TESTFN2)
 
     def tearDown(self):
         rmtree(TESTFN2)
