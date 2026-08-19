@@ -644,7 +644,7 @@ Objects/**/clinic/
 PC/**/clinic/
 Python/**/clinic/
 
-# Exclude Lazy Imports CI workflow carve out file
+# Exclude Lazy Imports CI carve out file
 Lib/test/lazy_imports_all_exclude.txt
 
 # Exclude HTML IDs list
