@@ -18,6 +18,7 @@ from libclinic import VersionTuple, unspecified
 ClassDict = dict[str, "Class"]
 ModuleDict = dict[str, "Module"]
 ParamDict = dict[str, "Parameter"]
+PropertyDict = dict[str, "Property"]
 
 
 @dc.dataclass(repr=False)
@@ -47,9 +48,41 @@ class Class:
         self.parent = self.cls or self.module
         self.classes: ClassDict = {}
         self.functions: list[Function] = []
+        self.properties: PropertyDict = {}
 
     def __repr__(self) -> str:
         return "<clinic.Class " + repr(self.name) + " at " + str(id(self)) + ">"
+
+
+@dc.dataclass(repr=False)
+class Property:
+    """An attribute implemented by accessors, rendered into a PyGetSetDef entry.
+
+    A slot can contain several implementations if they are guarded by
+    preprocessor conditions.
+    """
+    name: str
+    full_name: str
+    cls: Class
+
+    def __post_init__(self) -> None:
+        self.getter: list[Function] = []
+        self.setter: list[Function] = []
+        self.rendered = False
+
+    def __repr__(self) -> str:
+        return "<clinic.Property " + repr(self.name) + " at " + str(id(self)) + ">"
+
+    @property
+    def is_plain(self) -> bool:
+        """Can the entry be composed without the help of the preprocessor?"""
+        return all(len(funcs) <= 1 and not (funcs and funcs[0].condition)
+                   for funcs in (self.getter, self.setter))
+
+    @property
+    def getset_name(self) -> str:
+        """The prefix of the names of the macros of the entry."""
+        return self.full_name.replace('.', '_').upper()
 
 
 class FunctionKind(enum.Enum):
@@ -122,7 +155,19 @@ class Function:
     def __post_init__(self) -> None:
         self.parent = self.cls or self.module
         self.self_converter: self_converter | None = None
+        # The attribute implemented by an accessor, and the preprocessor
+        # condition under which it is compiled.
+        self.property: Property | None = None
+        self.condition: str = ''
         self.__render_parameters__: list[Parameter] | None = None
+
+    @functools.cached_property
+    def accessor_basename(self) -> str:
+        """The name of the C function which implements this accessor."""
+        assert self.kind in ACCESSORS
+        if self.kind is GETTER:
+            return self.c_basename + "_get"
+        return self.c_basename + "_set"
 
     @functools.cached_property
     def displayname(self) -> str:

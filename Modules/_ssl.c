@@ -3973,12 +3973,12 @@ _ssl__SSLContext__set_alpn_protocols_impl(PySSLContext *self,
 /*[clinic input]
 @critical_section
 @getter
-_ssl._SSLContext.verify_mode
+_ssl._SSLContext.verify_mode -> int
 [clinic start generated code]*/
 
-static PyObject *
+static int
 _ssl__SSLContext_verify_mode_get_impl(PySSLContext *self)
-/*[clinic end generated code: output=3e788736cc7229bc input=7e3c7f4454121d0a]*/
+/*[clinic end generated code: output=f588c0dc5c0bc414 input=9f74370037133ac3]*/
 {
     /* ignore SSL_VERIFY_CLIENT_ONCE and SSL_VERIFY_POST_HANDSHAKE */
     int mask = (SSL_VERIFY_NONE | SSL_VERIFY_PEER |
@@ -3986,72 +3986,69 @@ _ssl__SSLContext_verify_mode_get_impl(PySSLContext *self)
     int verify_mode = SSL_CTX_get_verify_mode(self->ctx);
     switch (verify_mode & mask) {
     case SSL_VERIFY_NONE:
-        return PyLong_FromLong(PY_SSL_CERT_NONE);
+        return PY_SSL_CERT_NONE;
     case SSL_VERIFY_PEER:
-        return PyLong_FromLong(PY_SSL_CERT_OPTIONAL);
+        return PY_SSL_CERT_OPTIONAL;
     case SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT:
-        return PyLong_FromLong(PY_SSL_CERT_REQUIRED);
+        return PY_SSL_CERT_REQUIRED;
     }
     PyErr_SetString(get_state_ctx(self)->PySSLErrorObject,
                     "invalid return value from SSL_CTX_get_verify_mode");
-    return NULL;
+    return -1;
 }
 
 /*[clinic input]
 @critical_section
 @setter
 _ssl._SSLContext.verify_mode
+    value: int
 [clinic start generated code]*/
 
 static int
-_ssl__SSLContext_verify_mode_set_impl(PySSLContext *self, PyObject *value)
-/*[clinic end generated code: output=d698e16c58db3118 input=3ee60057c3a22378]*/
+_ssl__SSLContext_verify_mode_set_impl(PySSLContext *self, int value)
+/*[clinic end generated code: output=5ca6ec88aa4faed0 input=cb53415e79047735]*/
 {
-    int n;
-    if (!PyArg_Parse(value, "i", &n))
-        return -1;
-    if (n == PY_SSL_CERT_NONE && self->check_hostname) {
+    if (value == PY_SSL_CERT_NONE && self->check_hostname) {
         PyErr_SetString(PyExc_ValueError,
                         "Cannot set verify_mode to CERT_NONE when "
                         "check_hostname is enabled.");
         return -1;
     }
-    return _set_verify_mode(self, n);
+    return _set_verify_mode(self, value);
 }
 
 /*[clinic input]
 @critical_section
 @getter
-_ssl._SSLContext.verify_flags
+_ssl._SSLContext.verify_flags -> unsigned_long
 [clinic start generated code]*/
 
-static PyObject *
+static unsigned long
 _ssl__SSLContext_verify_flags_get_impl(PySSLContext *self)
-/*[clinic end generated code: output=fbbf8ba28ad6e56e input=c1ec36d610b3f391]*/
+/*[clinic end generated code: output=65df79ad8808f85d input=8a60274c619c3d29]*/
 {
     X509_VERIFY_PARAM *ssl_verification_params;
-    unsigned long flags;
 
     ssl_verification_params = SSL_CTX_get0_param(self->ctx);
-    flags = X509_VERIFY_PARAM_get_flags(ssl_verification_params);
-    return PyLong_FromUnsignedLong(flags);
+    return X509_VERIFY_PARAM_get_flags(ssl_verification_params);
 }
 
 /*[clinic input]
 @critical_section
 @setter
 _ssl._SSLContext.verify_flags
+    value: unsigned_long(bitwise=True)
 [clinic start generated code]*/
 
 static int
-_ssl__SSLContext_verify_flags_set_impl(PySSLContext *self, PyObject *value)
-/*[clinic end generated code: output=a3e3b2a0ce6c2e99 input=b2a0c42583d4f34e]*/
+_ssl__SSLContext_verify_flags_set_impl(PySSLContext *self,
+                                       unsigned long value)
+/*[clinic end generated code: output=3a0dc3da11d16fc0 input=45ca63f1bfe14386]*/
 {
     X509_VERIFY_PARAM *ssl_verification_params;
-    unsigned long new_flags, flags, set, clear;
+    unsigned long new_flags = value;
+    unsigned long flags, set, clear;
 
-    if (!PyArg_Parse(value, "k", &new_flags))
-        return -1;
     ssl_verification_params = SSL_CTX_get0_param(self->ctx);
     flags = X509_VERIFY_PARAM_get_flags(ssl_verification_params);
     clear = flags & ~new_flags;
@@ -4241,15 +4238,14 @@ _ssl__SSLContext_num_tickets_get_impl(PySSLContext *self)
 @critical_section
 @setter
 _ssl._SSLContext.num_tickets
+    value: long
 [clinic start generated code]*/
 
 static int
-_ssl__SSLContext_num_tickets_set_impl(PySSLContext *self, PyObject *value)
-/*[clinic end generated code: output=ced81b46f3beab09 input=6ef8067ac55607e7]*/
+_ssl__SSLContext_num_tickets_set_impl(PySSLContext *self, long value)
+/*[clinic end generated code: output=c2c97071a729b0ff input=6f7531a9d9cd4570]*/
 {
-    long num;
-    if (!PyArg_Parse(value, "l", &num))
-        return -1;
+    long num = value;
     if (num < 0) {
         PyErr_SetString(PyExc_ValueError, "value must be non-negative");
         return -1;
@@ -4301,11 +4297,13 @@ _ssl__SSLContext_options_get_impl(PySSLContext *self)
 @critical_section
 @setter
 _ssl._SSLContext.options
+    value: unsigned_long_long
 [clinic start generated code]*/
 
 static int
-_ssl__SSLContext_options_set_impl(PySSLContext *self, PyObject *value)
-/*[clinic end generated code: output=92ca34731ece5dbb input=2b94bf789e9ae5dd]*/
+_ssl__SSLContext_options_set_impl(PySSLContext *self,
+                                  unsigned long long value)
+/*[clinic end generated code: output=9bf1e7bf9ab9c49b input=143105581d4dfc86]*/
 {
     unsigned long long new_opts_arg;
     uint64_t new_opts, opts, clear, set;
@@ -4314,9 +4312,7 @@ _ssl__SSLContext_options_set_impl(PySSLContext *self, PyObject *value)
         SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2 | SSL_OP_NO_TLSv1_3
     );
 
-    if (!PyArg_Parse(value, "O&", _PyLong_UnsignedLongLong_Converter, &new_opts_arg)) {
-        return -1;
-    }
+    new_opts_arg = value;
     Py_BUILD_ASSERT(sizeof(new_opts) >= sizeof(new_opts_arg));
     new_opts = (uint64_t)new_opts_arg;
 
@@ -4342,36 +4338,32 @@ _ssl__SSLContext_options_set_impl(PySSLContext *self, PyObject *value)
 /*[clinic input]
 @critical_section
 @getter
-_ssl._SSLContext._host_flags
+_ssl._SSLContext._host_flags -> unsigned_int
 [clinic start generated code]*/
 
-static PyObject *
+static unsigned int
 _ssl__SSLContext__host_flags_get_impl(PySSLContext *self)
-/*[clinic end generated code: output=0f9db6654ce32582 input=8e3c49499eefd0e5]*/
+/*[clinic end generated code: output=86ddaf5eeea5f355 input=1ccf5ae9b37de139]*/
 {
     X509_VERIFY_PARAM *ssl_verification_params;
-    unsigned int host_flags;
 
     ssl_verification_params = SSL_CTX_get0_param(self->ctx);
-    host_flags = X509_VERIFY_PARAM_get_hostflags(ssl_verification_params);
-    return PyLong_FromUnsignedLong(host_flags);
+    return X509_VERIFY_PARAM_get_hostflags(ssl_verification_params);
 }
 
 /*[clinic input]
 @critical_section
 @setter
 _ssl._SSLContext._host_flags
+    value: unsigned_int(bitwise=True)
 [clinic start generated code]*/
 
 static int
-_ssl__SSLContext__host_flags_set_impl(PySSLContext *self, PyObject *value)
-/*[clinic end generated code: output=1ed6f4027aaf2e3e input=28caf1fb9c32f6cb]*/
+_ssl__SSLContext__host_flags_set_impl(PySSLContext *self, unsigned int value)
+/*[clinic end generated code: output=9986c48e63e6ba3e input=36d1b89df2884d81]*/
 {
     X509_VERIFY_PARAM *ssl_verification_params;
-    unsigned int new_flags = 0;
-
-    if (!PyArg_Parse(value, "I", &new_flags))
-        return -1;
+    unsigned int new_flags = value;
 
     ssl_verification_params = SSL_CTX_get0_param(self->ctx);
     X509_VERIFY_PARAM_set_hostflags(ssl_verification_params, new_flags);
@@ -4381,29 +4373,28 @@ _ssl__SSLContext__host_flags_set_impl(PySSLContext *self, PyObject *value)
 /*[clinic input]
 @critical_section
 @getter
-_ssl._SSLContext.check_hostname
+_ssl._SSLContext.check_hostname -> bool
 [clinic start generated code]*/
 
-static PyObject *
+static int
 _ssl__SSLContext_check_hostname_get_impl(PySSLContext *self)
-/*[clinic end generated code: output=e046d6eeefc76063 input=1b8341e705f9ecf5]*/
+/*[clinic end generated code: output=a5772c7e90e32c1d input=d5ae97abc5e0fb0b]*/
 {
-    return PyBool_FromLong(self->check_hostname);
+    return self->check_hostname;
 }
 
 /*[clinic input]
 @critical_section
 @setter
 _ssl._SSLContext.check_hostname
+    value: bool
 [clinic start generated code]*/
 
 static int
-_ssl__SSLContext_check_hostname_set_impl(PySSLContext *self, PyObject *value)
-/*[clinic end generated code: output=0e767b4784e7dc3f input=e6a771cb5919f74d]*/
+_ssl__SSLContext_check_hostname_set_impl(PySSLContext *self, int value)
+/*[clinic end generated code: output=323bb94d7b54d471 input=9134aa868194a6c3]*/
 {
-    int check_hostname;
-    if (!PyArg_Parse(value, "p", &check_hostname))
-        return -1;
+    int check_hostname = value;
     int verify_mode = check_hostname ? SSL_CTX_get_verify_mode(self->ctx) : 0;
     if (check_hostname &&
             verify_mode == SSL_VERIFY_NONE) {

@@ -11,12 +11,14 @@ from libclinic import (
 from libclinic.codegen import CRenderData, TemplateDict, CodeGen
 from libclinic.language import Language
 from libclinic.function import (
-    Module, Class, Function, Parameter, ParamTuple,
+    Module, Class, Property, Function, Parameter, ParamTuple,
     permute_optional_groups,
-    GETTER, METHOD_INIT,
+    METHOD_INIT,
     ACCESSORS, SETTERS)
 from libclinic.converters import self_converter
-from libclinic.parse_args import ParseArgsCodeGen
+from libclinic.parse_args import (
+    ParseArgsCodeGen,
+    GETSETDEF_PROTOTYPE_COMBINE, GETSETDEF_PROTOTYPE_DEFINE)
 if TYPE_CHECKING:
     from libclinic.app import Clinic
 
@@ -95,6 +97,61 @@ class CLanguage(Language):
                     fail("You may specify at most one function per block.\nFound a block containing at least two:\n\t" + repr(function) + " and " + repr(o))
                 function = o
         return self.render_function(clinic, function)
+
+    def render_properties(self, clinic: Clinic) -> None:
+        """Compose the PyGetSetDef entry of every attribute not composed yet.
+
+        All accessors of an attribute are only known when all blocks of the
+        file are rendered or the destination is dumped.
+        """
+        destination = clinic.destination_buffers['methoddef_ifndef']
+        for prop in clinic.properties:
+            if prop.rendered:
+                continue
+            prop.rendered = True
+            s = self.render_property(prop) + '\n'
+            if clinic.line_prefix:
+                s = libclinic.indent_all_lines(s, clinic.line_prefix)
+            if clinic.line_suffix:
+                s = libclinic.suffix_all_lines(s, clinic.line_suffix)
+            destination.append(s)
+
+    def render_property(self, prop: Property) -> str:
+        getset_name = prop.getset_name
+        template_dict = {
+            'name': prop.name,
+            'getset_name': getset_name,
+        }
+        parts: list[str] = []
+        if prop.is_plain:
+            getter = prop.getter[0] if prop.getter else None
+            setter = prop.setter[0] if prop.setter else None
+            template_dict['getter'] = (getter.accessor_basename if getter
+                                       else 'NULL')
+            template_dict['setter'] = (setter.accessor_basename if setter
+                                       else 'NULL')
+            template_dict['docstr'] = (f'{getter.c_basename}__doc__'
+                                       if getter and getter.docstring
+                                       else 'NULL')
+            parts.append(GETSETDEF_PROTOTYPE_DEFINE.format_map(template_dict)
+                         + '\n')
+        else:
+            # Which of the conditionally compiled accessors are compiled is
+            # only known to the preprocessor.  They announce themselves, so
+            # only the unconditional ones are announced here.
+            for suffix, funcs in (('GETTER', prop.getter),
+                                  ('SETTER', prop.setter)):
+                for func in funcs:
+                    if func.condition:
+                        continue
+                    parts.append(f"#define {getset_name}_{suffix} "
+                                 f"{func.accessor_basename}\n")
+                    if suffix == 'GETTER' and func.docstring:
+                        parts.append(f"#define {getset_name}_DOCSTR "
+                                     f"{func.c_basename}__doc__\n")
+            parts.append(GETSETDEF_PROTOTYPE_COMBINE.format_map(template_dict)
+                         + '\n')
+        return ''.join(parts)
 
     def compiler_deprecated_warning(
         self,
@@ -480,15 +537,12 @@ class CLanguage(Language):
         template_dict = {'full_name': full_name}
         template_dict['name'] = f.displayname
         if f.kind in ACCESSORS:
-            template_dict['getset_name'] = f.c_basename.upper()
+            # The accessors of the same attribute are rendered into a single
+            # PyGetSetDef entry, which is identified by the Python name.
+            assert f.property is not None
+            template_dict['getset_name'] = f.property.getset_name
             template_dict['getset_basename'] = f.c_basename
-            if f.kind is GETTER:
-                template_dict['c_basename'] = f.c_basename + "_get"
-            else:
-                template_dict['c_basename'] = f.c_basename + "_set"
-                # Implicitly add the setter value parameter.
-                data.impl_parameters.append("PyObject *value")
-                data.impl_arguments.append("value")
+            template_dict['c_basename'] = f.accessor_basename
         else:
             template_dict['methoddef_name'] = f.c_basename.upper() + "_METHODDEF"
             template_dict['c_basename'] = f.c_basename

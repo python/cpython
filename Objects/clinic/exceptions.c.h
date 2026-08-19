@@ -106,16 +106,6 @@ exit:
     return return_value;
 }
 
-#if !defined(BaseException_args_DOCSTR)
-#  define BaseException_args_DOCSTR NULL
-#endif
-#if defined(BASEEXCEPTION_ARGS_GETSETDEF)
-#  undef BASEEXCEPTION_ARGS_GETSETDEF
-#  define BASEEXCEPTION_ARGS_GETSETDEF {"args", (getter)BaseException_args_get, (setter)BaseException_args_set, BaseException_args_DOCSTR},
-#else
-#  define BASEEXCEPTION_ARGS_GETSETDEF {"args", (getter)BaseException_args_get, NULL, BaseException_args_DOCSTR},
-#endif
-
 static PyObject *
 BaseException_args_get_impl(PyBaseExceptionObject *self);
 
@@ -131,40 +121,24 @@ BaseException_args_get(PyObject *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if !defined(BaseException_args_DOCSTR)
-#  define BaseException_args_DOCSTR NULL
-#endif
-#if defined(BASEEXCEPTION_ARGS_GETSETDEF)
-#  undef BASEEXCEPTION_ARGS_GETSETDEF
-#  define BASEEXCEPTION_ARGS_GETSETDEF {"args", (getter)BaseException_args_get, (setter)BaseException_args_set, BaseException_args_DOCSTR},
-#else
-#  define BASEEXCEPTION_ARGS_GETSETDEF {"args", NULL, (setter)BaseException_args_set, NULL},
-#endif
-
 static int
 BaseException_args_set_impl(PyBaseExceptionObject *self, PyObject *value);
 
 static int
-BaseException_args_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+BaseException_args_set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
 {
-    int return_value;
+    int return_value = -1;
+    PyObject *value = NULL;
 
+    if (arg != NULL) {
+        value = arg;
+    }
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = BaseException_args_set_impl((PyBaseExceptionObject *)self, value);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
-
-#if !defined(BaseException___traceback___DOCSTR)
-#  define BaseException___traceback___DOCSTR NULL
-#endif
-#if defined(BASEEXCEPTION___TRACEBACK___GETSETDEF)
-#  undef BASEEXCEPTION___TRACEBACK___GETSETDEF
-#  define BASEEXCEPTION___TRACEBACK___GETSETDEF {"__traceback__", (getter)BaseException___traceback___get, (setter)BaseException___traceback___set, BaseException___traceback___DOCSTR},
-#else
-#  define BASEEXCEPTION___TRACEBACK___GETSETDEF {"__traceback__", (getter)BaseException___traceback___get, NULL, BaseException___traceback___DOCSTR},
-#endif
 
 static PyObject *
 BaseException___traceback___get_impl(PyBaseExceptionObject *self);
@@ -181,41 +155,25 @@ BaseException___traceback___get(PyObject *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if !defined(BaseException___traceback___DOCSTR)
-#  define BaseException___traceback___DOCSTR NULL
-#endif
-#if defined(BASEEXCEPTION___TRACEBACK___GETSETDEF)
-#  undef BASEEXCEPTION___TRACEBACK___GETSETDEF
-#  define BASEEXCEPTION___TRACEBACK___GETSETDEF {"__traceback__", (getter)BaseException___traceback___get, (setter)BaseException___traceback___set, BaseException___traceback___DOCSTR},
-#else
-#  define BASEEXCEPTION___TRACEBACK___GETSETDEF {"__traceback__", NULL, (setter)BaseException___traceback___set, NULL},
-#endif
-
 static int
 BaseException___traceback___set_impl(PyBaseExceptionObject *self,
                                      PyObject *value);
 
 static int
-BaseException___traceback___set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+BaseException___traceback___set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
 {
-    int return_value;
+    int return_value = -1;
+    PyObject *value = NULL;
 
+    if (arg != NULL) {
+        value = arg;
+    }
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = BaseException___traceback___set_impl((PyBaseExceptionObject *)self, value);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
-
-#if !defined(BaseException___context___DOCSTR)
-#  define BaseException___context___DOCSTR NULL
-#endif
-#if defined(BASEEXCEPTION___CONTEXT___GETSETDEF)
-#  undef BASEEXCEPTION___CONTEXT___GETSETDEF
-#  define BASEEXCEPTION___CONTEXT___GETSETDEF {"__context__", (getter)BaseException___context___get, (setter)BaseException___context___set, BaseException___context___DOCSTR},
-#else
-#  define BASEEXCEPTION___CONTEXT___GETSETDEF {"__context__", (getter)BaseException___context___get, NULL, BaseException___context___DOCSTR},
-#endif
 
 static PyObject *
 BaseException___context___get_impl(PyBaseExceptionObject *self);
@@ -232,41 +190,25 @@ BaseException___context___get(PyObject *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if !defined(BaseException___context___DOCSTR)
-#  define BaseException___context___DOCSTR NULL
-#endif
-#if defined(BASEEXCEPTION___CONTEXT___GETSETDEF)
-#  undef BASEEXCEPTION___CONTEXT___GETSETDEF
-#  define BASEEXCEPTION___CONTEXT___GETSETDEF {"__context__", (getter)BaseException___context___get, (setter)BaseException___context___set, BaseException___context___DOCSTR},
-#else
-#  define BASEEXCEPTION___CONTEXT___GETSETDEF {"__context__", NULL, (setter)BaseException___context___set, NULL},
-#endif
-
 static int
 BaseException___context___set_impl(PyBaseExceptionObject *self,
                                    PyObject *value);
 
 static int
-BaseException___context___set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+BaseException___context___set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
 {
-    int return_value;
+    int return_value = -1;
+    PyObject *value = NULL;
 
+    if (arg != NULL) {
+        value = arg;
+    }
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = BaseException___context___set_impl((PyBaseExceptionObject *)self, value);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
-
-#if !defined(BaseException___cause___DOCSTR)
-#  define BaseException___cause___DOCSTR NULL
-#endif
-#if defined(BASEEXCEPTION___CAUSE___GETSETDEF)
-#  undef BASEEXCEPTION___CAUSE___GETSETDEF
-#  define BASEEXCEPTION___CAUSE___GETSETDEF {"__cause__", (getter)BaseException___cause___get, (setter)BaseException___cause___set, BaseException___cause___DOCSTR},
-#else
-#  define BASEEXCEPTION___CAUSE___GETSETDEF {"__cause__", (getter)BaseException___cause___get, NULL, BaseException___cause___DOCSTR},
-#endif
 
 static PyObject *
 BaseException___cause___get_impl(PyBaseExceptionObject *self);
@@ -283,25 +225,19 @@ BaseException___cause___get(PyObject *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if !defined(BaseException___cause___DOCSTR)
-#  define BaseException___cause___DOCSTR NULL
-#endif
-#if defined(BASEEXCEPTION___CAUSE___GETSETDEF)
-#  undef BASEEXCEPTION___CAUSE___GETSETDEF
-#  define BASEEXCEPTION___CAUSE___GETSETDEF {"__cause__", (getter)BaseException___cause___get, (setter)BaseException___cause___set, BaseException___cause___DOCSTR},
-#else
-#  define BASEEXCEPTION___CAUSE___GETSETDEF {"__cause__", NULL, (setter)BaseException___cause___set, NULL},
-#endif
-
 static int
 BaseException___cause___set_impl(PyBaseExceptionObject *self,
                                  PyObject *value);
 
 static int
-BaseException___cause___set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+BaseException___cause___set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
 {
-    int return_value;
+    int return_value = -1;
+    PyObject *value = NULL;
 
+    if (arg != NULL) {
+        value = arg;
+    }
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = BaseException___cause___set_impl((PyBaseExceptionObject *)self, value);
     Py_END_CRITICAL_SECTION();
@@ -380,4 +316,12 @@ BaseExceptionGroup_subgroup(PyObject *self, PyObject *matcher_value)
 
     return return_value;
 }
-/*[clinic end generated code: output=e63b88d0443b4f92 input=a9049054013a1b77]*/
+#define BASEEXCEPTION_ARGS_GETSETDEF {"args", (getter)BaseException_args_get, (setter)BaseException_args_set, NULL},
+
+#define BASEEXCEPTION___TRACEBACK___GETSETDEF {"__traceback__", (getter)BaseException___traceback___get, (setter)BaseException___traceback___set, NULL},
+
+#define BASEEXCEPTION___CONTEXT___GETSETDEF {"__context__", (getter)BaseException___context___get, (setter)BaseException___context___set, NULL},
+
+#define BASEEXCEPTION___CAUSE___GETSETDEF {"__cause__", (getter)BaseException___cause___get, (setter)BaseException___cause___set, NULL},
+
+/*[clinic end generated code: output=783fc5863a1eac1f input=a9049054013a1b77]*/

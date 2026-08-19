@@ -20,7 +20,8 @@ test_tools.skip_if_missing('clinic')
 with test_tools.imports_under_tool('clinic'):
     import libclinic
     from libclinic import ClinicError, unspecified, NULL, fail
-    from libclinic.converters import int_converter, str_converter, self_converter
+    from libclinic.converters import (
+        int_converter, object_converter, str_converter, self_converter)
     from libclinic.function import (
         Module, Class, Function, FunctionKind, Parameter,
         permute_optional_groups, permute_right_option_groups,
@@ -794,10 +795,22 @@ class ClinicWholeFileTest(TestCase):
             """)
             self.clinic.parse(raw)
 
+    def test_var_keyword_non_dict(self):
+        err = "'var_keyword_object' is not a valid converter"
+        block = """
+            /*[clinic input]
+            my_test_func
+
+                **kwds: object
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=4)
+
     def test_getset_in_ifdef(self):
         block = """
             /*[clinic input]
             output everything block
+            output methoddef_ifndef buffer
             class Foo "FooObject *" "&Foo_Type"
             [clinic start generated code]*/
             #ifdef CONDITION
@@ -808,54 +821,117 @@ class ClinicWholeFileTest(TestCase):
             /*[clinic input]
             @setter
             Foo.property
+                value: object
             [clinic start generated code]*/
             #endif
+            /*[clinic input]
+            dump buffer
+            [clinic start generated code]*/
         """
         generated = self.clinic.parse(dedent(block))
         self.assertIn("#if defined(CONDITION)", generated)
         # The getset is undefined if the condition is false.
-        self.assertIn("#ifndef FOO_PROPERTY_GETSETDEF\n"
-                      "    #define FOO_PROPERTY_GETSETDEF\n"
-                      "#endif /* !defined(FOO_PROPERTY_GETSETDEF) */",
+        self.assertIn("#else\n"
+                      "#  define FOO_PROPERTY_GETSETDEF\n"
+                      "#endif",
                       generated)
 
-    def test_getset_duplicate(self):
-        for annotation in "@getter", "@setter":
-            with self.subTest(annotation=annotation):
-                self.clinic = _make_clinic(filename="test.c")
-                block = f"""
-                    /*[clinic input]
-                    class Foo "FooObject *" "&Foo_Type"
-                    [clinic start generated code]*/
-                    /*[clinic input]
-                    {annotation}
-                    Foo.property
-                    [clinic start generated code]*/
-                    /*[clinic input]
-                    {annotation}
-                    Foo.property
-                    [clinic start generated code]*/
-                """
-                kind = 'setter' if annotation == '@setter' else 'getter'
-                err = f"Cannot apply @{kind} to 'Foo.property' twice"
-                self.expect_failure(block, err, lineno=10)
-
-    def test_getset_different_c_basename(self):
+    def test_getset_partially_in_ifdef(self):
         block = """
             /*[clinic input]
+            output everything block
+            output methoddef_ifndef buffer
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            #ifdef CONDITION
+            /*[clinic input]
+            @getter
+            Foo.property
+            [clinic start generated code]*/
+            #endif
+            /*[clinic input]
+            @setter
+            Foo.property
+                value: object
+            [clinic start generated code]*/
+            /*[clinic input]
+            dump buffer
+            [clinic start generated code]*/
+        """
+        generated = self.clinic.parse(dedent(block))
+        # Only the conditional getter announces itself.
+        self.assertIn("#if defined(CONDITION)\n"
+                      "\n"
+                      "#define FOO_PROPERTY_GETTER Foo_property_get\n",
+                      generated)
+        self.assertIn("#define FOO_PROPERTY_SETTER Foo_property_set\n"
+                      "#if defined(FOO_PROPERTY_GETTER) "
+                      "|| defined(FOO_PROPERTY_SETTER)",
+                      generated)
+        self.assertIn('#  define FOO_PROPERTY_GETSETDEF {"property", '
+                      '(getter)FOO_PROPERTY_GETTER, '
+                      '(setter)FOO_PROPERTY_SETTER, FOO_PROPERTY_DOCSTR},',
+                      generated)
+
+    def test_getset_several_implementations(self):
+        block = """
+            /*[clinic input]
+            output everything block
+            output methoddef_ifndef buffer
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            #ifdef CONDITION
+            /*[clinic input]
+            @getter
+            Foo.property as foo_property_special
+            [clinic start generated code]*/
+            #else
+            /*[clinic input]
+            @getter
+            Foo.property as foo_property_generic
+            [clinic start generated code]*/
+            #endif
+            /*[clinic input]
+            dump buffer
+            [clinic start generated code]*/
+        """
+        # Implementations guarded by preprocessor conditions can share the
+        # entry; which of them is compiled is only known to the preprocessor.
+        generated = self.clinic.parse(dedent(block))
+        self.assertIn("#if defined(CONDITION)\n"
+                      "\n"
+                      "#define FOO_PROPERTY_GETTER "
+                      "foo_property_special_get\n",
+                      generated)
+        self.assertIn("#if !defined(CONDITION)\n"
+                      "\n"
+                      "#define FOO_PROPERTY_GETTER "
+                      "foo_property_generic_get\n",
+                      generated)
+
+    def test_getset_after_dump(self):
+        block = """
+            /*[clinic input]
+            output everything block
+            output methoddef_ifndef buffer
             class Foo "FooObject *" "&Foo_Type"
             [clinic start generated code]*/
             /*[clinic input]
             @getter
-            Foo.property as foo_get
+            Foo.property
+            [clinic start generated code]*/
+            /*[clinic input]
+            dump buffer
             [clinic start generated code]*/
             /*[clinic input]
             @setter
-            Foo.property as foo_set
+            Foo.property
+                value: object
             [clinic start generated code]*/
         """
-        err = "The accessors of 'Foo.property' must have the same C basename"
-        self.expect_failure(block, err, lineno=10)
+        err = ("All accessors of 'Foo.property' must be defined before "
+               "its PyGetSetDef entry is dumped")
+        self.expect_failure(block, err, lineno=15)
 
     def test_setter_deletion_check(self):
         block = """
@@ -866,10 +942,11 @@ class ClinicWholeFileTest(TestCase):
             /*[clinic input]
             @setter
             Foo.property
+                value: object
             [clinic start generated code]*/
         """
         generated = self.clinic.parse(dedent(block))
-        self.assertIn("if (value == NULL) {", generated)
+        self.assertIn("if (arg == NULL) {", generated)
         self.assertIn("\"attribute 'property' of '%.100s' objects "
                       "cannot be deleted\"", generated)
 
@@ -885,21 +962,65 @@ class ClinicWholeFileTest(TestCase):
             @setter
             @deleter
             Foo.property
+                value: object = NULL
             [clinic start generated code]*/
         """
         generated = self.clinic.parse(dedent(block))
-        self.assertNotIn("if (value == NULL) {", generated)
+        self.assertNotIn("if (arg == NULL) {", generated)
 
-    def test_var_keyword_non_dict(self):
-        err = "'var_keyword_object' is not a valid converter"
+    def test_getset_duplicate(self):
+        # Only a setter defines the new value.
+        for annotation, parameter, err in (
+            ("@getter", "", "Cannot apply @getter to 'Foo.property' twice"),
+            ("@setter", "value: object",
+             "The setter of 'Foo.property' is already defined"),
+        ):
+            with self.subTest(annotation=annotation):
+                self.clinic = _make_clinic(filename="test.c")
+                block = f"""
+                    /*[clinic input]
+                    class Foo "FooObject *" "&Foo_Type"
+                    [clinic start generated code]*/
+                    /*[clinic input]
+                    {annotation}
+                    Foo.property
+                        {parameter}
+                    [clinic start generated code]*/
+                    /*[clinic input]
+                    {annotation}
+                    Foo.property
+                        {parameter}
+                    [clinic start generated code]*/
+                """
+                self.expect_failure(block, err, lineno=11)
+
+    def test_getset_different_c_basename(self):
         block = """
             /*[clinic input]
-            my_test_func
-
-                **kwds: object
+            output everything block
+            output methoddef_ifndef buffer
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            /*[clinic input]
+            @getter
+            Foo.property as foo_get
+            [clinic start generated code]*/
+            /*[clinic input]
+            @setter
+            Foo.property as foo_set
+                value: object
+            [clinic start generated code]*/
+            /*[clinic input]
+            dump buffer
             [clinic start generated code]*/
         """
-        self.expect_failure(block, err, lineno=4)
+        # The accessors are identified by the Python name, not by the
+        # C basename.
+        generated = self.clinic.parse(dedent(block))
+        self.assertIn('#define FOO_PROPERTY_GETSETDEF {"property", '
+                      '(getter)foo_get_get, (setter)foo_set_set, NULL},',
+                      generated)
+
 
 class ParseFileUnitTest(TestCase):
     def expect_parsing_failure(
@@ -2758,28 +2879,119 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, expected_error, lineno=1)
 
     def test_invalid_getset(self):
-        annotations = ["@getter", "@setter"]
-        for annotation in annotations:
-            with self.subTest(annotation=annotation):
-                block = f"""
-                    module foo
-                    class Foo "" ""
-                    {annotation}
-                    Foo.property -> int
-                """
-                expected_error = "@getter and @setter methods cannot define a return type"
-                self.expect_failure(block, expected_error, lineno=3)
+        block = """
+            module foo
+            class Foo "" ""
+            @setter
+            Foo.property -> int
+        """
+        expected_error = "@setter methods cannot define a return type"
+        self.expect_failure(block, expected_error, lineno=3)
 
+        block = """
+           module foo
+           class Foo "" ""
+           @getter
+           Foo.property
+               obj: int
+               /
+        """
+        expected_error = "@getter methods cannot define parameters"
+        self.expect_failure(block, expected_error)
+
+        block = """
+           module foo
+           class Foo "" ""
+           @setter
+           Foo.property
+               obj: int
+               value: int
+               /
+        """
+        expected_error = "@setter methods must define exactly one parameter"
+        self.expect_failure(block, expected_error)
+
+    def test_setter_value_default(self):
+        block = """
+            module m
+            class Foo "" ""
+            @setter
+            Foo.property
+                value: object = None
+        """
+        expected_error = "the value of @setter cannot have a default value"
+        self.expect_failure(block, expected_error)
+
+        block = """
+            module m
+            class Foo "" ""
+            @setter
+            @deleter
+            Foo.property
+                value: object
+        """
+        expected_error = ("the value of @setter with @deleter must have "
+                          "a default value, used to delete the attribute")
+        self.expect_failure(block, expected_error)
+
+    def test_setter_value_kind(self):
+        expected_error = "the value of @setter must be a positional parameter"
+        block = """
+            module m
+            class Foo "" ""
+            @setter
+            Foo.property
+
+                *
+                value: object
+        """
+        self.expect_failure(block, expected_error)
+
+        for parameter in "*args: tuple", "**kwargs: dict":
+            with self.subTest(parameter=parameter):
                 block = f"""
-                   module foo
-                   class Foo "" ""
-                   {annotation}
-                   Foo.property
-                       obj: int
-                       /
+                    module m
+                    class Foo "" ""
+                    @setter
+                    Foo.property
+
+                        {parameter}
                 """
-                expected_error = "@getter and @setter methods cannot define parameters"
                 self.expect_failure(block, expected_error)
+
+    def test_setter_implicit_parameter(self):
+        function = self.parse_function("""
+            module foo
+            class Foo "" ""
+            @setter
+            Foo.property
+        """, signatures_in_block=3, function_index=2)
+        self.assertEqual(function.kind, FunctionKind.SETTER)
+        value = function.parameters['value']
+        self.assertIsInstance(value.converter, object_converter)
+        self.assertIs(value.default, unspecified)
+
+    def test_setter_and_deleter_implicit_parameter(self):
+        function = self.parse_function("""
+            module foo
+            class Foo "" ""
+            @setter
+            @deleter
+            Foo.property
+        """, signatures_in_block=3, function_index=2)
+        self.assertEqual(function.kind, FunctionKind.SETTER_AND_DELETER)
+        value = function.parameters['value']
+        self.assertIsInstance(value.converter, object_converter)
+        self.assertIs(value.default, NULL)
+
+    def test_getter_return_converter(self):
+        function = self.parse_function("""
+            module foo
+            class Foo "" ""
+            @getter
+            Foo.property -> int
+        """, signatures_in_block=3, function_index=2)
+        self.assertEqual(function.return_converter.type, "int")
 
     def test_setter_docstring(self):
         block = """
@@ -2793,7 +3005,7 @@ class ClinicParserTest(TestCase):
             bar
             [clinic start generated code]*/
         """
-        expected_error = "docstrings are only supported for @getter, not @setter"
+        expected_error = "docstrings are only supported for @getter"
         self.expect_failure(block, expected_error)
 
     def test_duplicate_getset(self):
@@ -2821,8 +3033,8 @@ class ClinicParserTest(TestCase):
                     {dup[1]}
                     Foo.property -> int
                 """
-                expected_error = (f"Can't set {dup[1]}, "
-                                  f"function is not a normal callable")
+                expected_error = (f"Can't set {dup[1]}, function is not "
+                                  f"a normal callable")
                 self.expect_failure(block, expected_error, lineno=3)
 
     def test_deleter_without_setter(self):
@@ -2855,16 +3067,6 @@ class ClinicParserTest(TestCase):
         """
         expected_error = "Cannot apply @deleter twice to the same function!"
         self.expect_failure(block, expected_error, lineno=4)
-
-    def test_setter_and_deleter(self):
-        function = self.parse_function("""
-            module foo
-            class Foo "" ""
-            @setter
-            @deleter
-            Foo.property
-        """, signatures_in_block=3, function_index=2)
-        self.assertEqual(function.kind, FunctionKind.SETTER_AND_DELETER)
 
     def test_getset_no_class(self):
         for annotation in "@getter", "@setter":
