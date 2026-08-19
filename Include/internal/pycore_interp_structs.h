@@ -560,23 +560,6 @@ struct _types_runtime_state {
 };
 
 
-// Type attribute lookup cache: speed up attribute and method lookups,
-// see _PyType_Lookup().
-struct type_cache_entry {
-    unsigned int version;  // initialized from type->tp_version_tag
-#ifdef Py_GIL_DISABLED
-   _PySeqLock sequence;
-#endif
-    PyObject *name;        // reference to exactly a str or None
-    PyObject *value;       // borrowed reference or NULL
-};
-
-#define MCACHE_SIZE_EXP 12
-
-struct type_cache {
-    struct type_cache_entry hashtable[1 << MCACHE_SIZE_EXP];
-};
-
 typedef struct {
     PyTypeObject *type;
     int isbuiltin;
@@ -591,6 +574,10 @@ typedef struct {
        are also some diagnostic uses for the list of weakrefs,
        so we still keep it. */
     PyObject *tp_weaklist;
+    /* Per-interpreter attribute lookup cache (struct type_cache *).
+       For static builtin types the cache must be per-interpreter
+       because tp_dict and the values it stores are per-interpreter. */
+    void *_tp_cache;
 } managed_static_type_state;
 
 #define TYPE_VERSION_CACHE_SIZE (1<<12)  /* Must be a power of 2 */
@@ -600,8 +587,6 @@ struct types_state {
        It starts at _Py_MAX_GLOBAL_TYPE_VERSION_TAG + 1,
        where all those lower numbers are used for core static types. */
     unsigned int next_version_tag;
-
-    struct type_cache type_cache;
 
     /* Every static builtin type is initialized for each interpreter
        during its own initialization, including for the main interpreter
