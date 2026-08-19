@@ -290,7 +290,7 @@ Tools/jit/                    @brandtbucher @savannahostrowski @diegorusso
 InternalDocs/jit.md           @brandtbucher @savannahostrowski @diegorusso @AA-Turner
 
 # Lazy imports (PEP 810)
-.github/workflows/reusable-test-lazy-imports-all.yml    @yhg1s @DinoV @pablogsal @brittanyrey
+.github/workflows/reusable-test-lazy-imports-all.yml    @yhg1s @DinoV @pablogsal
 Objects/lazyimportobject.c                              @yhg1s @DinoV @pablogsal
 Include/internal/pycore_lazyimportobject.h              @yhg1s @DinoV @pablogsal
 Lib/test/test_lazy_import                               @yhg1s @DinoV @pablogsal
