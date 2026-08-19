@@ -9,6 +9,10 @@
 # Keep this version in sync with ``Doc/conf.py``.
 sphinx<9.0.0
 
+# Temporary direct requirement, pending release of Pygments > 2.20.0
+# https://github.com/pygments/pygments/discussions/3145
+pygments @ https://github.com/pygments/pygments/archive/2cad2642058441b59782a6a18f03c98c42d081f1.tar.gz
+
 blurb
 
 sphinxext-opengraph~=0.13.0

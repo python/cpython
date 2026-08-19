@@ -11,11 +11,10 @@ import tkinter as tk
 from idlelib.idle_test.tkinter_testing_utils import run_in_tk_mainloop
 
 from idlelib.delegator import Delegator
-from idlelib.editor import fixwordbreaks
 from idlelib.percolator import Percolator
 import idlelib.pyshell
-from idlelib.pyshell import fix_x11_paste, PyShell, PyShellFileList
-from idlelib.run import fix_scaling
+from idlelib.pyshell import PyShell, PyShellFileList
+from idlelib.util import fix_scaling, fix_word_breaks, fix_x11_paste
 import idlelib.sidebar
 from idlelib.sidebar import get_end_linenumber, get_lineno
 
@@ -403,7 +402,7 @@ class ShellSidebarTest(unittest.TestCase):
         root.withdraw()
 
         fix_scaling(root)
-        fixwordbreaks(root)
+        fix_word_breaks(root)
         fix_x11_paste(root)
 
         cls.flist = flist = PyShellFileList(root)
@@ -690,11 +689,15 @@ class ShellSidebarTest(unittest.TestCase):
         last_lineno = get_end_linenumber(text)
         self.assertIsNotNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
 
-        # Delta for <MouseWheel>, whose meaning is platform-dependent.
+        # Simulate a mouse wheel notch.  Tk 8.7 replaced the X11
+        # <Button-4>/<Button-5> wheel events with <MouseWheel> (whose delta is
+        # platform-dependent); older Tk on X11 still uses the button events.
+        x11_buttons = (sidebar.canvas._windowingsystem == 'x11'
+                       and tk.TkVersion < 8.7)
         delta = 1 if sidebar.canvas._windowingsystem == 'aqua' else 120
 
         # Scroll up.
-        if sidebar.canvas._windowingsystem == 'x11':
+        if x11_buttons:
             sidebar.canvas.event_generate('<Button-4>', x=0, y=0)
         else:
             sidebar.canvas.event_generate('<MouseWheel>', x=0, y=0, delta=delta)
@@ -702,7 +705,7 @@ class ShellSidebarTest(unittest.TestCase):
         self.assertIsNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
 
         # Scroll back down.
-        if sidebar.canvas._windowingsystem == 'x11':
+        if x11_buttons:
             sidebar.canvas.event_generate('<Button-5>', x=0, y=0)
         else:
             sidebar.canvas.event_generate('<MouseWheel>', x=0, y=0, delta=-delta)

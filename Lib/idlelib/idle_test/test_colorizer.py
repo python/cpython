@@ -260,7 +260,7 @@ class ColorDelegatorTest(unittest.TestCase):
 
         # Colorizing already scheduled.
         save_id = color.after_id
-        eq(self.root.tk.call('after', 'info', save_id)[1], 'timer')
+        eq(self.root.after_info(save_id)[1], 'timer')
         self.assertFalse(color.colorizing)
         self.assertFalse(color.stop_colorizing)
         self.assertTrue(color.allow_colorizing)
@@ -277,7 +277,7 @@ class ColorDelegatorTest(unittest.TestCase):
         color.notify_range('1.0', '1.0+3c')
         self.assertTrue(color.stop_colorizing)
         self.assertIsNotNone(color.after_id)
-        eq(self.root.tk.call('after', 'info', color.after_id)[1], 'timer')
+        eq(self.root.after_info(color.after_id)[1], 'timer')
         # New event scheduled.
         self.assertNotEqual(color.after_id, save_id)
 
@@ -297,7 +297,7 @@ class ColorDelegatorTest(unittest.TestCase):
         self.assertFalse(color.colorizing)
         self.assertFalse(color.stop_colorizing)
         self.assertTrue(color.allow_colorizing)
-        eq(self.root.tk.call('after', 'info', color.after_id)[1], 'timer')
+        eq(self.root.after_info(color.after_id)[1], 'timer')
 
         # Toggle colorizing off.
         color.toggle_colorize_event()
@@ -324,7 +324,7 @@ class ColorDelegatorTest(unittest.TestCase):
         # Toggle on while colorizing not in progress.
         color.colorizing = False
         color.toggle_colorize_event()
-        eq(self.root.tk.call('after', 'info', color.after_id)[1], 'timer')
+        eq(self.root.after_info(color.after_id)[1], 'timer')
         self.assertFalse(color.colorizing)
         self.assertTrue(color.stop_colorizing)
         self.assertTrue(color.allow_colorizing)
@@ -363,7 +363,7 @@ class ColorDelegatorTest(unittest.TestCase):
         mock_recmain.assert_called()
         eq(mock_recmain.call_count, 1)
         # Rescheduled when TODO tag still exists.
-        eq(self.root.tk.call('after', 'info', color.after_id)[1], 'timer')
+        eq(self.root.after_info(color.after_id)[1], 'timer')
 
         # No changes to text, so no scheduling added.
         text.tag_remove('TODO', '1.0', 'end')
@@ -542,7 +542,7 @@ class ColorDelegatorTest(unittest.TestCase):
         self._assert_highlighting('case _:', {'KEYWORD': [('1.0', '1.4'),
                                                           ('1.5', '1.6')]})
 
-    def test_lazy_soft_keyword(self):
+    def test_lazy_soft_keyword(self):  # lazy new in 3.15.
         # lazy followed by import
         self._assert_highlighting('lazy import foo',
                                   {'KEYWORD': [('1.0', '1.4'),

@@ -334,7 +334,9 @@ PyDoc_STRVAR(slice_doc,
 "slice(stop)\n\
 slice(start, stop[, step])\n\
 \n\
-Create a slice object.  This is used for extended slicing (e.g. a[0:10:2]).");
+Create a slice object.\n\
+\n\
+This is used for extended slicing (e.g. a[0:10:2]).");
 
 static void
 slice_dealloc(PyObject *op)
@@ -562,7 +564,8 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 static PyMethodDef slice_methods[] = {
     {"indices", slice_indices, METH_O, slice_indices_doc},
     {"__reduce__", slice_reduce, METH_NOARGS, reduce_doc},
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, "See PEP 585"},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+     "slices are generic over the types of their start, end, and step values"},
     {NULL, NULL}
 };
 

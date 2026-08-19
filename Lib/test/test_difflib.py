@@ -284,6 +284,29 @@ class TestSFpatches(unittest.TestCase):
         self.assertIn('charset="us-ascii"', output)
         self.assertIn('&#305;mpl&#305;c&#305;t', output)
 
+    def test_strip_trailing_newlines_before_diff(self):
+        # characterization test for the current buggy behavior
+        # see: gh-71896
+        html_diff = difflib.HtmlDiff()
+        from_lines = [
+            "Line 1: no newline after",
+            "Line 2: one newline after\n",
+            "Line 3: several newlines after\n\n\n\n\n",
+        ]
+        to_lines = [
+            "Line 1: no newline after",
+            "Line 2: one newline after",  # actually no \n
+            "Line 3: several newlines after",  # actually no \n
+        ]
+        output = html_diff.make_table(from_lines, to_lines)
+        # we (currently) expect no line change, so all equal
+        self.assertNotIn('class="diff_add"', output)
+        self.assertNotIn('class="diff_chg"', output)
+        self.assertNotIn('class="diff_sub"', output)
+        self.assertEqual(output.count('>Line&nbsp;1:&nbsp;no&nbsp;newline&nbsp;after<'), 2)
+        self.assertEqual(output.count('>Line&nbsp;2:&nbsp;one&nbsp;newline&nbsp;after<'), 2)
+        self.assertEqual(output.count('>Line&nbsp;3:&nbsp;several&nbsp;newlines&nbsp;after<'), 2)
+
 class TestDiffer(unittest.TestCase):
     def test_close_matches_aligned(self):
         # Of the 4 closely matching pairs, we want 1 to match with 3,

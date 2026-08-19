@@ -1,0 +1,2 @@
+The :mod:`json` C accelerator now correctly reports an unterminated string for a
+``\uXXXX`` escape at the end of the input.

@@ -50,8 +50,8 @@ additional methods of invocation:
 * When called with ``-c command``, it executes the Python statement(s) given as
   *command*.  Here *command* may contain multiple statements separated by
   newlines.
-* When called with ``-m module-name``, the given module is located on the
-  Python module path and executed as a script.
+* When called with ``-m module-name``, the given module is located using the standard
+  import mechanism and executed as a script.
 
 In non-interactive mode, the entire input is parsed before it is executed.
 
@@ -78,8 +78,8 @@ source.
 
 .. option:: -m <module-name>
 
-   Search :data:`sys.path` for the named module and execute its contents as
-   the :mod:`__main__` module.
+   Locate the module using the standard import mechanism and execute its contents
+   as the :mod:`__main__` module.
 
    Since the argument is a *module* name, you must not give a file extension
    (``.py``).  The module name should be a valid absolute Python module name, but
@@ -519,7 +519,25 @@ Miscellaneous options
 .. option:: -x
 
    Skip the first line of the source, allowing use of non-Unix forms of
-   ``#!cmd``.  This is intended for a DOS specific hack only.
+   ``#!cmd``.
+
+   This can be used to turn a Python script into a Windows batch file.
+   Similarly to adding a shebang line and setting the executable bit on Unix,
+   the extension of the Python script can be changed to ``.bat`` and the
+   following line can be added at the start of the script:
+
+   .. code-block:: batch
+
+      @py -x "%~f0" %* & exit /b
+
+   Or, to specify the path to the Python interpreter explicitly:
+
+   .. code-block:: batch
+
+      @"C:\Path\to\python.exe" -x "%~f0" %* & exit /b
+
+   Unlike a shebang line which is a Python comment, this line is not valid
+   Python syntax, and the :option:`-x` option is needed to skip it.
 
 
 .. option:: -X

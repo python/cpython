@@ -894,7 +894,7 @@ def _quartic_invcdf_estimate(p):
 
 @register('quartic', 'biweight')
 def quartic_kernel():
-    pdf = lambda t: 15/16 * (1.0 - t * t) ** 2
+    pdf = lambda t: 15/16 * (u := 1.0 - t * t) * u
     cdf = lambda t: sumprod((3/16, -5/8, 15/16, 1/2),
                             (t**5, t**3, t, 1.0))
     invcdf = _newton_raphson(_quartic_invcdf_estimate, f=cdf, f_prime=pdf)
@@ -1495,15 +1495,13 @@ def _sum(data):
     """
     count = 0
     types = set()
-    types_add = types.add
     partials = {}
-    partials_get = partials.get
 
     for typ, values in groupby(data, type):
-        types_add(typ)
+        types.add(typ)
         for n, d in map(_exact_ratio, values):
             count += 1
-            partials[d] = partials_get(d, 0) + n
+            partials[d] = partials.get(d, 0) + n
 
     if None in partials:
         # The sum will be a NAN or INF. We can ignore all the finite
@@ -1533,12 +1531,11 @@ def _ss(data, c=None):
 
     count = 0
     types = set()
-    types_add = types.add
     sx_partials = defaultdict(int)
     sxx_partials = defaultdict(int)
 
     for typ, values in groupby(data, type):
-        types_add(typ)
+        types.add(typ)
         for n, d in map(_exact_ratio, values):
             count += 1
             sx_partials[d] += n
