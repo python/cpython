@@ -1181,12 +1181,9 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
         self->ttinfo_before = &(self->_ttinfos[0]);
     }
 
-    int has_tz_str = 0;
-    if (tz_str != Py_None) {
-        has_tz_str = PyObject_IsTrue(tz_str);
-        if (has_tz_str < 0) {
-            goto error;
-        }
+    int has_tz_str = PyObject_IsTrue(tz_str);
+    if (has_tz_str < 0) {
+        goto error;
     }
 
     if (has_tz_str) {
