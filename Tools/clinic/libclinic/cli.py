@@ -92,9 +92,14 @@ def parse_file(
                     filename=filename,
                     limited_capi=limited_capi,
                     writer=writer)
+    index = len(writer.files)
     cooked = clinic.parse(raw)
-
     writer.write(output, cooked)
+
+    files = writer.files[index:]
+    writer.update_times(output,
+                        [fn for fn, _ in files if fn != output],
+                        any(changed for _, changed in files))
     return clinic
 
 
