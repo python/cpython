@@ -3981,6 +3981,20 @@ class TestExtractionFilters(unittest.TestCase):
                         tarfile.AbsolutePathError,
                         """['"].*escaped.evil['"] has an absolute path""")
 
+    def test_parent_dir_out_and_back(self):
+        # Test a member that leaves the destination and comes back.
+        # The containment check looks at the resolved path, which stays
+        # inside, but the intermediate directories are created from the
+        # name as given, which does not.
+        with ArchiveMaker() as arc:
+            arc.add(f'../escaped.evil/../{self.destdir.name}/sub/file',
+                    content='content')
+
+        for filter in 'tar', 'data':
+            with self.subTest(filter):
+                with self.check_context(arc.open(), filter):
+                    self.expect_file('sub/file', content='content')
+
     @symlink_test
     def test_parent_symlink(self):
         # Test interplaying symlinks
