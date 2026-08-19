@@ -183,7 +183,7 @@ _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address
 typedef int (*section_validator_t)(proc_handle_t *handle, uintptr_t address);
 
 // Validate that a candidate address starts with _Py_Debug_Cookie.
-static int
+UNUSED static int
 _Py_RemoteDebug_ValidatePyRuntimeCookie(proc_handle_t *handle, uintptr_t address)
 {
     if (address == 0) {
