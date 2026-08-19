@@ -1790,13 +1790,13 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    callable or ``None`` to clear the filter.
 
    The filter function is called for every potentially lazy import to
-   determine whether it should actually be lazy. It must have the following
+   determine whether it should actually be lazy. It should have the following
    signature::
 
       def filter(importing_module: str, imported_module: str,
                  fromlist: tuple[str, ...] | None) -> bool
 
-   Where:
+   The function is called with three positional arguments:
 
    * *importing_module* is the name of the module doing the import
    * *imported_module* is the resolved name of the module being imported
@@ -1941,7 +1941,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       The interpreter is about to execute a new line of code or re-execute the
       condition of a loop.  The local trace function is called; *arg* is
       ``None``; the return value specifies the new local trace function.  See
-      :file:`Objects/lnotab_notes.txt` for a detailed explanation of how this
+      :source:`InternalDocs/code_objects.md` for a detailed explanation of how this
       works.
       Per-line events may be disabled for a frame by setting
       :attr:`~frame.f_trace_lines` to :const:`False` on that

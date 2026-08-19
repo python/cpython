@@ -871,11 +871,8 @@ case $ac_sys_system/$ac_sys_release in
   # Marc Recht
   NetBSD/1.5 | NetBSD/1.5.* | NetBSD/1.6 | NetBSD/1.6.* | NetBSD/1.6@<:@A-S@:>@)
     define_xopen_source=no;;
-  # From the perspective of Solaris, _XOPEN_SOURCE is not so much a
-  # request to enable features supported by the standard as a request
-  # to disable features not supported by the standard.  The best way
-  # for Python to use Solaris is simply to leave _XOPEN_SOURCE out
-  # entirely and define __EXTENSIONS__ instead.
+  # On Solaris, _XOPEN_SOURCE=800 hides platform specific features.
+  # A lower level is defined below.
   SunOS/*)
     define_xopen_source=no;;
   # On UnixWare 7, u_long is never defined with _XOPEN_SOURCE,
@@ -941,6 +938,14 @@ then
   # with -std=c11.  Defining _ISOC23_SOURCE makes them visible again.
   AC_DEFINE([_ISOC23_SOURCE], [1],
             [Define to activate ISO C23 library declarations])
+elif test "$ac_sys_system" = "SunOS"
+then
+  # On illumos the socket ancillary-data API (CMSG_*, sendmsg(), recvmsg())
+  # is declared only with _XOPEN_SOURCE >= 600; Solaris declares it anyway.
+  # __EXTENSIONS__ keeps the platform specific features which _XOPEN_SOURCE
+  # would otherwise hide.  See gh-57208.
+  AC_DEFINE([_XOPEN_SOURCE], [600],
+            [Define to the level of X/Open that your system supports])
 fi
 
 # On HP-UX mbstate_t requires _INCLUDE__STDC_A1_SOURCE
@@ -1197,6 +1202,7 @@ AS_CASE([$ac_sys_system],
   [Darwin*], [MULTIARCH=""],
   [iOS], [MULTIARCH=""],
   [FreeBSD*], [MULTIARCH=""],
+  [OpenBSD*], [MULTIARCH=""],
   [MULTIARCH=$($CC --print-multiarch 2>/dev/null)]
 )
 AC_SUBST([MULTIARCH])
@@ -1220,6 +1226,10 @@ AS_CASE([$ac_sys_system],
   [iOS], [SOABI_PLATFORM=`echo "$PLATFORM_TRIPLET" | cut -d '-' -f2`],
   [SOABI_PLATFORM=$PLATFORM_TRIPLET]
 )
+
+if test x$SOABI_PLATFORM != x; then
+    AC_DEFINE_UNQUOTED([SOABI_PLATFORM], ["${SOABI_PLATFORM}"], [Platform tag, used in binary module extension filenames.])
+fi
 
 if test x$MULTIARCH != x; then
   MULTIARCH_CPPFLAGS="-DMULTIARCH=\\\"$MULTIARCH\\\""
@@ -5412,6 +5422,9 @@ DLINCLDIR=.
 # platforms have dlopen(), but don't want to use it.
 AC_CHECK_FUNCS([dlopen])
 
+# Used by ctypes.util.dllist().
+AC_CHECK_FUNCS([dl_iterate_phdr])
+
 # DYNLOADFILE specifies which dynload_*.o file we will use for dynamic
 # loading of modules.
 AC_SUBST([DYNLOADFILE])
@@ -5484,13 +5497,14 @@ AC_CHECK_FUNCS([ \
   copy_file_range ctermid dladdr dup execv explicit_bzero explicit_memset \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
-  gai_strerror getegid geteuid getgid getgrent getgrgid getgrgid_r \
+  gai_strerror getdents64 getegid geteuid getgid getgrent getgrgid getgrgid_r \
   getgrnam_r getgrouplist gethostname getitimer getloadavg getlogin getlogin_r \
   getpeername getpgid getpid getppid getpriority _getpty \
   getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid getspent \
-  getspnam getuid getwd grantpt if_nameindex initgroups kill killpg lchown linkat \
+  getspnam gettid getuid getwd grantpt if_nameindex initgroups kill killpg lchown linkat \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
-  mknod mknodat mktime mmap mremap nice openat opendir pathconf pause pipe \
+  mknod mknodat mktime mmap mremap nice openat opendir pathconf pause \
+  pidfd_open pidfd_getfd pidfd_send_signal pipe \
   plock poll ppoll posix_fadvise posix_fallocate posix_openpt posix_spawn posix_spawnp \
   posix_spawn_file_actions_addclosefrom_np \
   pread preadv preadv2 process_vm_readv \
@@ -5692,10 +5706,34 @@ fi
 dnl Check for compression libraries
 AH_TEMPLATE([HAVE_ZLIB_COPY], [Define if the zlib library has inflateCopy])
 
-dnl detect zlib from Emscripten emport
-PY_CHECK_EMSCRIPTEN_PORT([ZLIB], [-sUSE_ZLIB])
+AC_MSG_CHECKING([for --with-zlib])
+AC_ARG_WITH(
+  [zlib],
+  [AS_HELP_STRING([--with(out)-zlib@<:@=zlib|zlib-ng|zlib-rs|no@:>@],
+                  [select the zlib implementation to link against, or disable
+                   zlib support (default: auto)])],
+  [AS_CASE([$with_zlib],
+     [yes|auto], [with_zlib=auto],
+     [zlib|zlib-ng|zlib-rs|no], [],
+     [AC_MSG_ERROR([proper usage is --with(out)-zlib@<:@=zlib|zlib-ng|zlib-rs|no@:>@])])],
+  [with_zlib=auto])
+AC_MSG_RESULT([$with_zlib])
 
-PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.2.1], [
+dnl detect zlib from Emscripten emport
+AS_CASE([$with_zlib], [auto|zlib], [PY_CHECK_EMSCRIPTEN_PORT([ZLIB], [-sUSE_ZLIB])])
+
+AS_VAR_IF([with_zlib], [zlib-rs], [
+  AS_VAR_SET([zlib_name], ["libz_rs"])
+  AS_VAR_SET([zlib_version], ["0.6.0"])
+  AS_VAR_SET([zlib_libname], ["z_rs"])
+], [
+  AS_VAR_SET([zlib_name], ["zlib"])
+  AS_VAR_SET([zlib_version], ["1.2.2.1"])
+  AS_VAR_SET([zlib_libname], ["z"])
+])
+
+AS_VAR_IF([with_zlib], [no], [have_zlib=no], [
+PKG_CHECK_MODULES([ZLIB], [$zlib_name >= $zlib_version], [
   have_zlib=yes
   dnl zlib 1.2.0 (2003) added inflateCopy
   AC_DEFINE([HAVE_ZLIB_COPY], [1])
@@ -5704,15 +5742,30 @@ PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.2.1], [
     CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
     LIBS="$LIBS $ZLIB_LIBS"
     AC_CHECK_HEADERS([zlib.h], [
-      PY_CHECK_LIB([z], [gzread], [have_zlib=yes], [have_zlib=no])
+      PY_CHECK_LIB([$zlib_libname], [gzread], [have_zlib=yes], [have_zlib=no])
     ], [have_zlib=no])
     AS_VAR_IF([have_zlib], [yes], [
       ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
-      ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
-      PY_CHECK_LIB([z], [inflateCopy], [AC_DEFINE([HAVE_ZLIB_COPY], [1])])
+      ZLIB_LIBS=${ZLIB_LIBS-"-l$zlib_libname"}
+      PY_CHECK_LIB([$zlib_libname], [inflateCopy], [AC_DEFINE([HAVE_ZLIB_COPY], [1])])
     ])
   ])
 ])
+])
+
+AS_VAR_IF([with_zlib], [zlib-ng], [AS_VAR_IF([have_zlib], [yes], [
+  WITH_SAVE_ENV([
+    CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
+    AC_CHECK_DECL([ZLIBNG_VERSION], [],
+      [AC_MSG_ERROR([--with-zlib=zlib-ng: the detected zlib library is not zlib-ng])],
+      [@%:@include <zlib.h>])
+  ])
+])])
+
+AS_CASE([$with_zlib],
+  [auto|no], [],
+  [AS_VAR_IF([have_zlib], [no],
+    [AC_MSG_ERROR([--with-zlib=$with_zlib requested but $zlib_name was not found])])])
 
 dnl binascii can use zlib for optimized crc32.
 AS_VAR_IF([have_zlib], [yes], [
@@ -5720,22 +5773,50 @@ AS_VAR_IF([have_zlib], [yes], [
   BINASCII_LIBS="$ZLIB_LIBS"
 ])
 
-dnl detect bzip2 from Emscripten emport
-PY_CHECK_EMSCRIPTEN_PORT([BZIP2], [-sUSE_BZIP2])
+AC_MSG_CHECKING([for --with-bzip2])
+AC_ARG_WITH(
+  [bzip2],
+  [AS_HELP_STRING([--with(out)-bzip2@<:@=bzip2|bzip2-rs|no@:>@],
+                  [select the bzip2 implementation to link against, or disable
+                   bzip2 support (default: auto)])],
+  [AS_CASE([$with_bzip2],
+     [yes|auto], [with_bzip2=auto],
+     [bzip2|bzip2-rs|no], [],
+     [AC_MSG_ERROR([proper usage is --with(out)-bzip2@<:@=bzip2|bzip2-rs|no@:>@])])],
+  [with_bzip2=auto])
+AC_MSG_RESULT([$with_bzip2])
 
-PKG_CHECK_MODULES([BZIP2], [bzip2], [have_bzip2=yes], [
+dnl detect bzip2 from Emscripten emport
+AS_CASE([$with_bzip2], [auto|bzip2], [PY_CHECK_EMSCRIPTEN_PORT([BZIP2], [-sUSE_BZIP2])])
+
+AS_VAR_IF([with_bzip2], [bzip2-rs], [
+  AS_VAR_SET([bzip2_name], ["libbz2_rs"])
+  AS_VAR_SET([bzip2_libname], ["bz2_rs"])
+], [
+  AS_VAR_SET([bzip2_name], ["bzip2"])
+  AS_VAR_SET([bzip2_libname], ["bz2"])
+])
+
+AS_VAR_IF([with_bzip2], [no], [have_bzip2=no], [
+PKG_CHECK_MODULES([BZIP2], [$bzip2_name], [have_bzip2=yes], [
   WITH_SAVE_ENV([
     CPPFLAGS="$CPPFLAGS $BZIP2_CFLAGS"
     LIBS="$LIBS $BZIP2_LIBS"
     AC_CHECK_HEADERS([bzlib.h], [
-      AC_CHECK_LIB([bz2], [BZ2_bzCompress], [have_bzip2=yes], [have_bzip2=no])
+      AC_CHECK_LIB([$bzip2_libname], [BZ2_bzCompress], [have_bzip2=yes], [have_bzip2=no])
     ], [have_bzip2=no])
     AS_VAR_IF([have_bzip2], [yes], [
       BZIP2_CFLAGS=${BZIP2_CFLAGS-""}
-      BZIP2_LIBS=${BZIP2_LIBS-"-lbz2"}
+      BZIP2_LIBS=${BZIP2_LIBS-"-l$bzip2_libname"}
     ])
   ])
 ])
+])
+
+AS_CASE([$with_bzip2],
+  [auto|no], [],
+  [AS_VAR_IF([have_bzip2], [no],
+    [AC_MSG_ERROR([--with-bzip2=$with_bzip2 requested but $bzip2_name was not found])])])
 
 PKG_CHECK_MODULES([LIBLZMA], [liblzma], [have_liblzma=yes], [
   WITH_SAVE_ENV([
@@ -6657,18 +6738,21 @@ LDVERSION='$(VERSION)$(ABIFLAGS)'
 AC_MSG_RESULT([$LDVERSION])
 
 # Configure the flags and dependencies used when compiling shared modules.
-# Do not rename LIBPYTHON - it's accessed via sysconfig by package build
-# systems (e.g. Meson) to decide whether to link extension modules against
-# libpython.
 AC_SUBST([MODULE_DEPS_SHARED])
 AC_SUBST([LIBPYTHON])
 MODULE_DEPS_SHARED='$(MODULE_DEPS_STATIC) $(EXPORTSYMS)'
+
+# On most platforms, extension modules aren't linked against libpython, so
+# LIBPYTHON must be empty.
 LIBPYTHON=''
 
 # On Android and Cygwin the shared libraries must be linked with libpython.
+# LIBPYTHON is used by python-config, python3.pc, the commands for building the
+# stdlib's own extension modules, and external package build systems via
+# sysconfig, so its value must be suitable for all those contexts.
 if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MACHDEP" = "cygwin"); then
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(LDLIBRARY)"
-  LIBPYTHON="\$(BLDLIBRARY)"
+  LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
 fi
 
 # On iOS the shared libraries must be linked with the Python framework
@@ -7248,12 +7332,18 @@ AS_VAR_IF([ac_sys_system], [Darwin], [
 dnl pyconfig.h defines _XOPEN_SOURCE=700
 PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
-dnl Native curses ("curses") may be wide-character capable (e.g. on NetBSD)
-dnl even though it is not ncursesw.  Probe for the wide API; if present, build
-dnl the module against it like ncursesw by defining HAVE_NCURSESW.  ncursesw
-dnl already defines HAVE_NCURSESW, and ncurses must stay narrow, so only the
-dnl native backend is probed here.
-AS_VAR_IF([with_curses], [curses], [
+dnl A curses that is not named "ncursesw" can still be wide-character capable:
+dnl the system curses of NetBSD, or an ncurses built with --enable-widec that
+dnl keeps the plain name (pkgsrc, macOS).  Probe for the wide API and, if
+dnl present, build the module wide by defining HAVE_NCURSESW.  The "ncursesw"
+dnl backend already defines it, so only the other backends are probed.
+AS_CASE([$with_curses], [ncursesw|no], [], [
+  dnl Use the adjusted CURSES_CFLAGS (e.g. macOS's -D_XOPEN_SOURCE_EXTENDED)
+  dnl so the wide-character declarations are visible to the probe.  This runs
+  dnl inside an outer WITH_SAVE_ENV, whose single CPPFLAGS save slot is not
+  dnl reentrant, so save and restore CPPFLAGS with a dedicated variable here.
+  save_curses_cppflags=$CPPFLAGS
+  AS_VAR_APPEND([CPPFLAGS], [" $CURSES_CFLAGS"])
   AC_CACHE_CHECK([whether curses supports wide characters],
     [ac_cv_curses_wide],
     [AC_LINK_IFELSE(
@@ -7264,6 +7354,7 @@ AS_VAR_IF([with_curses], [curses], [
       ]])],
       [ac_cv_curses_wide=yes],
       [ac_cv_curses_wide=no])])
+  CPPFLAGS=$save_curses_cppflags
   dnl HAVE_NCURSESW marks the wide (cchar_t) curses API; its template comes
   dnl from the ncursesw pkg-config check above, so no description here.
   AS_VAR_IF([ac_cv_curses_wide], [yes], [AC_DEFINE([HAVE_NCURSESW], [1])])

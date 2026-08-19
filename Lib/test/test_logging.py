@@ -814,6 +814,23 @@ class HandlerTest(BaseTest):
 
             support.wait_process(pid, exitcode=0)
 
+    def test_remove_handler_while_emitting(self):
+        # Removing a handler while callHandlers() iterates over the handlers
+        # should not cause the following handlers to be skipped (gh-79366).
+        logger = logging.Logger('test_remove_handler_while_emitting')
+        calls = []
+        class RemovingHandler(logging.Handler):
+            def emit(self, record):
+                calls.append('removing')
+                logger.removeHandler(self)
+        class CountingHandler(logging.Handler):
+            def emit(self, record):
+                calls.append('counting')
+        logger.addHandler(RemovingHandler())
+        logger.addHandler(CountingHandler())
+        logger.error('spam')
+        self.assertEqual(calls, ['removing', 'counting'])
+
 
 class BadStream(object):
     def write(self, data):
@@ -2193,6 +2210,24 @@ class IPv6SysLogHandlerTest(SysLogHandlerTest):
     def tearDown(self):
         self.server_class.address_family = socket.AF_INET
         super(IPv6SysLogHandlerTest, self).tearDown()
+
+@support.requires_working_socket()
+class UnresolvableSysLogAddressTest(BaseTest):
+
+    """Test for SysLogHandler with a temporarily unresolvable address."""
+
+    @patch('socket.getaddrinfo')
+    def test_unresolvable_address(self, mock_getaddrinfo):
+        # The address can be unresolvable when the handler is created.
+        mock_getaddrinfo.side_effect = socket.gaierror
+        hdlr = logging.handlers.SysLogHandler(('localhost', 514))
+        self.addCleanup(hdlr.close)
+        self.assertIsNone(hdlr.socket)
+        # It is resolved again when a record is emitted.
+        calls = mock_getaddrinfo.call_count
+        with support.captured_stderr():
+            hdlr.emit(logging.makeLogRecord({'msg': 'sp\xe4m'}))
+        self.assertGreater(mock_getaddrinfo.call_count, calls)
 
 @support.requires_working_socket()
 @threading_helper.requires_working_threading()
@@ -6429,11 +6464,12 @@ class BaseFileTest(BaseTest):
         self.rmfiles = []
 
     def tearDown(self):
-        for fn in self.rmfiles:
-            os.unlink(fn)
-        if os.path.exists(self.fn):
-            os.unlink(self.fn)
-        BaseTest.tearDown(self)
+        try:
+            for fn in self.rmfiles:
+                os_helper.unlink(fn)
+            os_helper.unlink(self.fn)
+        finally:
+            BaseTest.tearDown(self)
 
     def assertLogFile(self, filename):
         "Assert a log file is there and register it for deletion"

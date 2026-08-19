@@ -578,7 +578,6 @@ init_interpreter(PyInterpreterState *interp,
     llist_init(&interp->mem_free_queue.head);
     llist_init(&interp->asyncio_tasks_head);
     interp->asyncio_tasks_lock = (PyMutex){0};
-    interp->audit_hooks_mutex = (PyMutex){0};
     for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         interp->monitors.tools[i] = 0;
     }
@@ -1509,6 +1508,8 @@ alloc_threadstate(PyInterpreterState *interp)
         }
         reset_threadstate(tstate);
     }
+    // Set the interpreter before any later initialization can fail.
+    tstate->base.interp = interp;
     return tstate;
 }
 
@@ -1668,21 +1669,23 @@ new_threadstate(PyInterpreterState *interp, int whence)
         return NULL;
     }
 
-#ifdef Py_GIL_DISABLED
-    Py_ssize_t qsbr_idx = _Py_qsbr_reserve(interp);
-    if (qsbr_idx < 0) {
+#ifdef Py_STATS
+    // The PyStats structure is quite large and is allocated separated from
+    // tstate.
+    if (!_PyStats_ThreadInit(interp, tstate)) {
         free_threadstate(tstate);
         return NULL;
     }
+#endif
+#ifdef Py_GIL_DISABLED
     int32_t tlbc_idx = _Py_ReserveTLBCIndex(interp);
     if (tlbc_idx < 0) {
         free_threadstate(tstate);
         return NULL;
     }
-#endif
-#ifdef Py_STATS
-    // The PyStats structure is quite large and is allocated separated from tstate.
-    if (!_PyStats_ThreadInit(interp, tstate)) {
+    Py_ssize_t qsbr_idx = _Py_qsbr_reserve(interp);
+    if (qsbr_idx < 0) {
+        _Py_UnreserveTLBCIndex(interp, tlbc_idx);
         free_threadstate(tstate);
         return NULL;
     }

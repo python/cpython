@@ -236,7 +236,7 @@ should_audit(PyInterpreterState *interp)
         return 0;
     }
     return (interp->runtime->audit_hooks.head
-            || FT_ATOMIC_LOAD_PTR_ACQUIRE(interp->audit_hooks)
+            || interp->audit_hooks
             || PyDTrace_AUDIT_ENABLED());
 }
 
@@ -306,14 +306,13 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
     }
 
     /* Call interpreter hooks */
-    PyObject *audit_hooks = FT_ATOMIC_LOAD_PTR_ACQUIRE(is->audit_hooks);
-    if (audit_hooks) {
+    if (is->audit_hooks) {
         eventName = PyUnicode_FromString(event);
         if (!eventName) {
             goto exit;
         }
 
-        hooks = PyObject_GetIter(audit_hooks);
+        hooks = PyObject_GetIter(is->audit_hooks);
         if (!hooks) {
             goto exit;
         }
@@ -528,8 +527,8 @@ sys_addaudithook_impl(PyObject *module, PyObject *hook)
 
     /* Invoke existing audit hooks to allow them an opportunity to abort. */
     if (_PySys_Audit(tstate, "sys.addaudithook", NULL) < 0) {
-        if (_PyErr_ExceptionMatches(tstate, PyExc_Exception)) {
-            /* We do not report errors derived from Exception */
+        if (_PyErr_ExceptionMatches(tstate, PyExc_RuntimeError)) {
+            /* We do not report errors derived from RuntimeError */
             _PyErr_Clear(tstate);
             Py_RETURN_NONE;
         }
@@ -537,29 +536,20 @@ sys_addaudithook_impl(PyObject *module, PyObject *hook)
     }
 
     PyInterpreterState *interp = tstate->interp;
-    PyMutex mutex = interp->audit_hooks_mutex;
-    PyMutex_Lock(&mutex);
-
     if (interp->audit_hooks == NULL) {
-        PyObject *new_list = PyList_New(0);
-        if (new_list == NULL) {
-            goto error;
+        interp->audit_hooks = PyList_New(0);
+        if (interp->audit_hooks == NULL) {
+            return NULL;
         }
         /* Avoid having our list of hooks show up in the GC module */
-        PyObject_GC_UnTrack(new_list);
-        FT_ATOMIC_STORE_PTR_RELEASE(interp->audit_hooks, new_list);
+        PyObject_GC_UnTrack(interp->audit_hooks);
     }
 
     if (PyList_Append(interp->audit_hooks, hook) < 0) {
-        goto error;
+        return NULL;
     }
 
-    PyMutex_Unlock(&mutex);
     Py_RETURN_NONE;
-
-error:
-    PyMutex_Unlock(&mutex);
-    return NULL;
 }
 
 /*[clinic input]
@@ -1643,6 +1633,7 @@ static PyStructSequence_Field windows_version_fields[] = {
     {"suite_mask", "Bit mask identifying available product suites"},
     {"product_type", "System product type"},
     {"platform_version", "Diagnostic version number"},
+    {"device_family", "'Desktop', 'Xbox' or 'UWP'"},
     {0}
 };
 
@@ -1655,13 +1646,10 @@ static PyStructSequence_Desc windows_version_desc = {
                                       via indexing, the rest are name only */
 };
 
+#ifdef MS_WINDOWS_DESKTOP
 static PyObject *
 _sys_getwindowsversion_from_kernel32(void)
 {
-#ifndef MS_WINDOWS_DESKTOP
-    PyErr_SetString(PyExc_OSError, "cannot read version info on this platform");
-    return NULL;
-#else
     HANDLE hKernel32;
     wchar_t kernel32_path[MAX_PATH];
     LPVOID verblock;
@@ -1698,8 +1686,8 @@ _sys_getwindowsversion_from_kernel32(void)
     realBuild = HIWORD(ffi->dwProductVersionLS);
     PyMem_RawFree(verblock);
     return Py_BuildValue("(kkk)", realMajor, realMinor, realBuild);
-#endif /* !MS_WINDOWS_DESKTOP */
 }
+#endif /* MS_WINDOWS_DESKTOP */
 
 /* Disable deprecation warnings about GetVersionEx as the result is
    being passed straight through to the caller, who is responsible for
@@ -1729,7 +1717,6 @@ sys_getwindowsversion_impl(PyObject *module)
 {
     PyObject *version;
     int pos = 0;
-    OSVERSIONINFOEXW ver;
 
     if (PyObject_GetOptionalAttrString(module, "_cached_windows_version", &version) < 0) {
         return NULL;
@@ -1739,6 +1726,8 @@ sys_getwindowsversion_impl(PyObject *module)
     }
     Py_XDECREF(version);
 
+    OSVERSIONINFOEXW ver;
+    ZeroMemory(&ver, sizeof(ver));
     ver.dwOSVersionInfoSize = sizeof(ver);
     if (!GetVersionExW((OSVERSIONINFOW*) &ver))
         return PyErr_SetFromWindowsErr(0);
@@ -1766,6 +1755,7 @@ sys_getwindowsversion_impl(PyObject *module)
     SET_VERSION_INFO(PyLong_FromLong(ver.wSuiteMask));
     SET_VERSION_INFO(PyLong_FromLong(ver.wProductType));
 
+#if defined(MS_WINDOWS_DESKTOP)
     // GetVersion will lie if we are running in a compatibility mode.
     // We need to read the version info from a system file resource
     // to accurately identify the OS version. If we fail for any reason,
@@ -1785,6 +1775,14 @@ sys_getwindowsversion_impl(PyObject *module)
     }
 
     SET_VERSION_INFO(realVersion);
+    SET_VERSION_INFO(PyUnicode_FromString("Desktop"));
+#elif defined(MS_WINDOWS_GAMES)
+    SET_VERSION_INFO(Py_BuildValue("(kkk)", ver.dwMajorVersion, ver.dwMinorVersion, ver.dwBuildNumber));
+    SET_VERSION_INFO(PyUnicode_FromString("Xbox"));
+#else
+    SET_VERSION_INFO(Py_BuildValue("(kkk)", ver.dwMajorVersion, ver.dwMinorVersion, ver.dwBuildNumber));
+    SET_VERSION_INFO(PyUnicode_FromString("UWP"));
+#endif
 
 #undef SET_VERSION_INFO
 

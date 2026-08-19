@@ -79,6 +79,12 @@ Other language changes
   F-contiguous view to a one-dimensional view.
   (Contributed by Jaemin Park in :gh:`91484`.)
 
+* :meth:`memoryview.cast` now accepts an *order* parameter.  With
+  ``order='F'`` it returns a zero-copy Fortran-contiguous (column-major)
+  view of a flat buffer, which is useful for interfacing with column-major
+  libraries.
+  (Contributed by Serhiy Storchaka in :gh:`78959`.)
+
 * :ref:`Frame objects <frame-objects>` now support :mod:`weak references
   <weakref>`.  This allows associating extra data with active frames,
   for example in debuggers, without keeping the frames (and everything
@@ -94,6 +100,15 @@ New modules
 
 Improved modules
 ================
+
+asyncio
+-------
+
+* Add the *mode* parameter to :meth:`asyncio.loop.create_unix_server` and
+  :func:`asyncio.start_unix_server` to set the permissions of the Unix
+  socket file created for *path*.
+  (Contributed by Sam Bull in :gh:`94984`.)
+
 
 codecs
 ------
@@ -119,6 +134,11 @@ csv
   and no longer takes quadratic time on quoted samples.
   The results may differ from those of earlier Python versions.
   (Contributed by Serhiy Storchaka in :gh:`83273`.)
+
+* :meth:`csv.Sniffer.sniff` now detects the *lineterminator* parameter
+  by a majority vote among the line endings of the sample,
+  instead of always returning ``'\r\n'``.
+  (Contributed by Serhiy Storchaka in :gh:`75008`.)
 
 curses
 ------
@@ -261,6 +281,15 @@ ctypes
   (Contributed by Peter Bierma in :gh:`153903`.)
 
 
+concurrent.futures
+------------------
+
+* The iterator returned by :meth:`concurrent.futures.Executor.map` is no longer
+  automatically closed if a function call raises an exception.
+  Use method :meth:`!close` to explicitly close the iterator.
+  (Contributed by xzmeng and Serhiy Storchaka in :gh:`108518`.)
+
+
 encodings
 ---------
 
@@ -376,6 +405,22 @@ math
   (Contributed by Jeff Epler in :gh:`150534`.)
 
 
+multiprocessing
+---------------
+
+* Add the optional ``buffersize`` parameter to
+  :meth:`multiprocessing.pool.Pool.imap` and
+  :meth:`multiprocessing.pool.Pool.imap_unordered` to limit the number of
+  submitted tasks whose results have not yet been yielded. If the buffer is
+  full, iteration over the *iterables* pauses until a result is yielded from
+  the buffer. To fully utilize pool's capacity when using this feature, set
+  *buffersize* at least to the number of processes in pool (to consume
+  *iterable* as you go), or even higher (to prefetch the next
+  ``N=buffersize-processes`` arguments).
+
+  (Contributed by Oleksandr Baltian in :gh:`136871`.)
+
+
 os
 --
 
@@ -421,6 +466,13 @@ shlex
   a string, even if it is already safe for a shell without being quoted.
   (Contributed by Jay Berry in :gh:`148846`.)
 
+sqlite3
+-------
+
+* :class:`sqlite3.Blob` now supports negative-step slices for reading and
+  writing (e.g. ``blob[9:0:-2]``).  Previously, such slices would raise
+  :exc:`SystemError` or :exc:`ValueError`.
+  (Contributed by Jiseok CHOI in :gh:`150449`.)
 
 symtable
 --------
@@ -606,7 +658,7 @@ module_name
 
 
 Removed
-=======
+========
 
 annotationlib
 -------------
@@ -696,6 +748,17 @@ tarfile
 * The undocumented and unused :attr:`!tarfile.TarFile.tarfile` attribute
   has been deprecated since Python 3.13.
 
+xml.etree.ElementTree
+---------------------
+
+* The undocumented :meth:`!xml.etree.ElementTree.ElementTree.write_c14n` method
+  and the support of ``method="c14n"`` in
+  :meth:`~xml.etree.ElementTree.ElementTree.write` and
+  :func:`~xml.etree.ElementTree.tostring`.
+  They never worked and always raised :exc:`ValueError`.
+  Use :func:`xml.etree.ElementTree.canonicalize` instead.
+  (Contributed by Daniel Hillier in :gh:`118318`.)
+
 .. Add removals above alphabetically, not here at the end.
 
 
@@ -777,6 +840,13 @@ that may require changes to your code.
   :exc:`TypeError`.
   (Contributed by Serhiy Storchaka in :gh:`152587`.)
 
+* On Windows, seeking a pipe now fails instead of silently appearing to
+  succeed: :func:`os.lseek` and :meth:`~io.IOBase.seek` raise :exc:`OSError`,
+  and :meth:`~io.IOBase.seekable` returns ``False``.  As a consequence,
+  opening a pipe in a read-write binary mode (``'r+b'`` or ``'w+b'``) now
+  raises :exc:`io.UnsupportedOperation` unless buffering is disabled.
+  (Contributed by An Long in :gh:`86768`.)
+
 
 Build changes
 =============
@@ -806,6 +876,18 @@ Build changes
   excludes the modules from the build.
 
   (Contributed by Serhiy Storchaka in :gh:`136687`.)
+
+* Add the :option:`--with-zlib` and :option:`--with-bzip2` :program:`configure`
+  options to select the zlib and bzip2 implementations used to build the
+  :mod:`zlib` and :mod:`bz2` modules. In addition to the default system
+  libraries, they can build against `zlib-rs
+  <https://github.com/trifectatechfoundation/zlib-rs/>`__ and `libbzip2-rs
+  <https://github.com/trifectatechfoundation/libbzip2-rs>`__, and
+  ``--with-zlib=zlib-ng`` verifies that the detected zlib is `zlib-ng
+  <https://github.com/zlib-ng/zlib-ng>`__. :option:`--without-zlib` and
+  :option:`--without-bzip2` exclude the modules from the build.
+
+  (Contributed by Stan Ulbrych in :gh:`139314`.)
 
 
 C API changes
@@ -846,3 +928,12 @@ Removed C APIs
   :c:type:`wchar_t` deprecated by :pep:`393` since Python 3.3 and at runtime
   since Python 3.13.  Use :c:type:`wchar_t` instead.
   (Contributed by Vyron Vasileiadis in :gh:`154757`.)
+
+* The :c:var:`!PyUnstable_ExecutableKinds` array, as well as the macros
+  :c:macro:`!PyUnstable_EXECUTABLE_KIND_SKIP`,
+  :c:macro:`!PyUnstable_EXECUTABLE_KIND_PY_FUNCTION`,
+  :c:macro:`!PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION`,
+  :c:macro:`!PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR` and
+  :c:macro:`!PyUnstable_EXECUTABLE_KINDS`, were removed.
+
+  (Contributed by Peters Bierma and Viktorin in :gh:`152105`.)

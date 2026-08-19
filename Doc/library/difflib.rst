@@ -13,49 +13,86 @@
 
 --------------
 
-This module provides classes and functions for comparing sequences. It
-can be used for example, for comparing files, and can produce information
-about file differences in various formats, including HTML and context and unified
-diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
+This module provides classes and functions for comparing sequences.
+Most of them compare sequences of text lines (for example lists of strings,
+or :term:`file objects <file object>`) and
+produce :dfn:`diffs` -- reports on the differences.
+Diffs can be produced in in various formats, including HTML and context
+and unified diffs -- formats produced by tools like
+:manpage:`diff <diff(1)>` and :manpage:`git diff <git-diff(1)>`.
+
+Comparisons are done using a matching algorithm implemented in
+:class:`SequenceMatcher` -- a flexible class for comparing pairs of sequences
+of any type, not just text, so long as the sequence elements are
+:term:`hashable`.
 
 
-.. class:: SequenceMatcher
-   :noindex:
+.. _difflib-junk:
 
-   This is a flexible class for comparing pairs of sequences of any type, so long
-   as the sequence elements are :term:`hashable`.  The basic algorithm predates, and is a
-   little fancier than, an algorithm published in the late 1980's by Ratcliff and
-   Obershelp under the hyperbolic name "gestalt pattern matching."  The idea is to
-   find the longest contiguous matching subsequence that contains no "junk"
-   elements; these "junk" elements are ones that are uninteresting in some
-   sense, such as blank lines or whitespace.  (Handling junk is an
-   extension to the Ratcliff and Obershelp algorithm.) The same
-   idea is then applied recursively to the pieces of the sequences to the left and
-   to the right of the matching subsequence.  This does not yield minimal edit
-   sequences, but does tend to yield matches that "look right" to people.
+Junk heuristic
+--------------
 
-   **Timing:** The basic Ratcliff-Obershelp algorithm is cubic time in the worst
-   case and quadratic time in the expected case. :class:`SequenceMatcher` is
-   quadratic time for the worst case and has expected-case behavior dependent in a
-   complicated way on how many elements the sequences have in common; best case
-   time is linear.
+:mod:`!difflib` uses a :dfn:`junk` heuristic: some items are deemed to be
+:dfn:`junk`, and ignored when searching for similarities.
+Ideally, these are uninteresting or common items, such as blank lines
+or whitespace.
 
-   **Junk**: :class:`SequenceMatcher` accepts an ``isjunk`` predicate and an
-   ``autojunk`` flag. Items that are considered as junk will not be considered
-   to find similar content blocks. This can produce better results for humans
-   (typically breaking on whitespace) and faster (because it reduces the number
-   of possible combinations). But it can also cause pathological cases where
-   too many items considered junk cause an unexpectedly large (but correct)
-   diff result.
-   You should consider tuning them or turning them off depending on your data.
-   Moreover, only the second sequence is inspected for junk. This causes the diff
-   output to not be symmetrical.
-   When ``autojunk=True``, it will consider as junk the items that account for more
-   than 1% of the sequence, if it is at least 200 items long.
+This heuristic can speed the algorithm up (because it reduces the number of
+possible combinations) and it can produce results that are more understandable
+for humans (typically breaking on whitespace).
+But it can also cause pathological cases:
 
-   .. versionchanged:: 3.2
-      Added the *autojunk* parameter.
+- Inappropriately chosen junk items can cause an unexpectedly **large** (but
+  still correct) result.
+- The default heuristic is **asymmetric**: only the second sequence is
+  inspected when determining what is considered junk, so comparing A to B can
+  give different results than comparing B to A and reversing the result.
 
+By default, if the second input sequence is at least 200 items long, items
+that account for more than 1% it are considered *junk*.
+
+Depending on your data, you should consider turning this heuristic off
+(setting :class:`~difflib.SequenceMatcher`'s *autojunk* argument to  to ``False``)
+or tuning it (using the *isjunk* argument, perhaps to one of the
+:ref:`predefined functions <difflib-isjunk-functions>`).
+
+
+The :mod:`!difflib` algorithm
+-----------------------------
+
+The algorithm used in :class:`SequenceMatcher` predates, and is a little
+fancier than, an algorithm published in the late 1980s by Ratcliff and
+Obershelp under the hyperbolic name "gestalt pattern matching."
+The idea is to find the longest contiguous subsequence common to both inputs,
+then recursively handle the pieces of the sequences to the left and to the
+right of the matching subsequence.
+
+.. seealso::
+
+   `Pattern Matching: The Gestalt Approach <https://jacobfilipp.com/DrDobbs/articles/DDJ/1988/8807/8807c/8807c.htm>`_
+      Discussion of a similar algorithm by John W. Ratcliff and D. E. Metzener. This
+      was published in Dr. Dobb's Journal in July, 1988.
+
+As an extension to the Ratcliff and Obershelp algorithm, :mod:`!difflib`
+searches for the longest *junk-free* contiguous subsequence.
+See the :ref:`difflib-junk` section for details.
+
+.. impl-detail:: Timing
+
+   The basic Ratcliff-Obershelp algorithm is cubic time in the worst
+   case and quadratic time in the expected case.
+   :mod:`difflib`'s algorithm is quadratic time for the worst case and has
+   expected-case behavior dependent in a complicated way on how many elements
+   the sequences have in common;
+   best case time is linear.
+
+
+.. _difflib-diff-generation:
+
+Diff generation
+---------------
+
+.. _differ-objects:
 
 .. class:: Differ
 
@@ -82,6 +119,47 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    and were not present in either input sequence. These lines can be confusing if
    the sequences contain whitespace characters, such as spaces, tabs or line breaks.
 
+   Note that :class:`Differ`\ -generated deltas make no claim to be **minimal**
+   diffs. To the contrary, minimal diffs are often counter-intuitive for humans,
+   because they synch up anywhere possible, sometimes at accidental matches
+   100 pages apart.
+   Restricting synch points to contiguous matches preserves some notion of
+   locality, at the occasional cost of producing a longer diff.
+
+   The :class:`Differ` class has this constructor:
+
+   .. method:: __init__(linejunk=None, charjunk=None)
+
+      Optional keyword parameters *linejunk* and *charjunk* are for filter functions
+      (or ``None``):
+
+      *linejunk*: A function that accepts a single string argument, and returns true
+      if the string is junk.  The default is ``None``, meaning that no line is
+      considered junk.
+
+      *charjunk*: A function that accepts a single character argument (a string of
+      length 1), and returns true if the character is junk. The default is ``None``,
+      meaning that no character is considered junk.
+
+      These junk-filtering functions speed up matching to find
+      differences and do not cause any differing lines or characters to
+      be ignored.  Read the description of the
+      :meth:`~SequenceMatcher.find_longest_match` method's *isjunk*
+      parameter for an explanation.
+
+   :class:`Differ` objects are used (deltas generated) via a single method:
+
+
+   .. method:: Differ.compare(a, b)
+
+      Compare two sequences of lines, and generate the delta (a sequence of lines).
+
+      Each sequence must contain individual single-line strings ending with
+      newlines.  Such sequences can be obtained from the
+      :meth:`~io.IOBase.readlines` method of file-like objects.  The generated
+      delta also consists of newline-terminated strings, ready to be
+      printed as-is via the :meth:`~io.IOBase.writelines` method of a
+      file-like object.
 
 .. class:: HtmlDiff
 
@@ -349,6 +427,12 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
    .. versionadded:: 3.5
 
+
+.. _difflib-isjunk-functions:
+
+Junk definition functions
+-------------------------
+
 .. function:: IS_LINE_JUNK(line)
 
    Return ``True`` for ignorable lines.  The line *line* is ignorable if *line* is
@@ -363,20 +447,10 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    parameter *charjunk* in :func:`ndiff`.
 
 
-.. seealso::
-
-   `Pattern Matching: The Gestalt Approach <https://jacobfilipp.com/DrDobbs/articles/DDJ/1988/8807/8807c/8807c.htm>`_
-      Discussion of a similar algorithm by John W. Ratcliff and D. E. Metzener. This
-      was published in Dr. Dobb's Journal in July, 1988.
-
-
 .. _sequence-matcher:
 
 SequenceMatcher objects
 -----------------------
-
-The :class:`SequenceMatcher` class has this constructor:
-
 
 .. class:: SequenceMatcher(isjunk=None, a='', b='', autojunk=True)
 
@@ -588,10 +662,13 @@ are always at least as large as :meth:`~SequenceMatcher.ratio`:
    1.0
 
 
+Examples
+--------
+
 .. _sequencematcher-examples:
 
 SequenceMatcher examples
-------------------------
+........................
 
 This example compares two strings, considering blanks to be "junk":
 
@@ -639,59 +716,10 @@ If you want to know how to change the first sequence into the second, use
      built with :class:`SequenceMatcher`.
 
 
-.. _differ-objects:
-
-Differ objects
---------------
-
-Note that :class:`Differ`\ -generated deltas make no claim to be **minimal**
-diffs. To the contrary, minimal diffs are often counter-intuitive, because they
-synch up anywhere possible, sometimes accidental matches 100 pages apart.
-Restricting synch points to contiguous matches preserves some notion of
-locality, at the occasional cost of producing a longer diff.
-
-The :class:`Differ` class has this constructor:
-
-
-.. class:: Differ(linejunk=None, charjunk=None)
-   :noindex:
-
-   Optional keyword parameters *linejunk* and *charjunk* are for filter functions
-   (or ``None``):
-
-   *linejunk*: A function that accepts a single string argument, and returns true
-   if the string is junk.  The default is ``None``, meaning that no line is
-   considered junk.
-
-   *charjunk*: A function that accepts a single character argument (a string of
-   length 1), and returns true if the character is junk. The default is ``None``,
-   meaning that no character is considered junk.
-
-   These junk-filtering functions speed up matching to find
-   differences and do not cause any differing lines or characters to
-   be ignored.  Read the description of the
-   :meth:`~SequenceMatcher.find_longest_match` method's *isjunk*
-   parameter for an explanation.
-
-   :class:`Differ` objects are used (deltas generated) via a single method:
-
-
-   .. method:: Differ.compare(a, b)
-
-      Compare two sequences of lines, and generate the delta (a sequence of lines).
-
-      Each sequence must contain individual single-line strings ending with
-      newlines.  Such sequences can be obtained from the
-      :meth:`~io.IOBase.readlines` method of file-like objects.  The delta
-      generated also consists of newline-terminated strings, ready to be
-      printed as-is via the :meth:`~io.IOBase.writelines` method of a
-      file-like object.
-
-
 .. _differ-examples:
 
 Differ example
---------------
+..............
 
 This example compares two texts. First we set up the texts, sequences of
 individual single-line strings ending with newlines (such sequences can also be
@@ -758,14 +786,14 @@ As a single multi-line string it looks like this::
 .. _difflib-interface:
 
 A command-line interface to difflib
------------------------------------
+...................................
 
 This example shows how to use difflib to create a ``diff``-like utility.
 
 .. literalinclude:: ../includes/diff.py
 
 ndiff example
--------------
+.............
 
 This example shows how to use :func:`difflib.ndiff`.
 
