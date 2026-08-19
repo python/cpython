@@ -4572,7 +4572,7 @@ Naturally, they are all only available on Linux.
    - :const:`time.CLOCK_BOOTTIME` (Since Linux 3.15 for timerfd_create)
 
    If *clockid* is :const:`time.CLOCK_REALTIME`, a settable system-wide
-   real-time clock is used. If system clock is changed, timer setting need
+   real-time clock is used. If system clock is changed, timer setting needs
    to be updated. To cancel timer when system clock is changed, see
    :const:`TFD_TIMER_CANCEL_ON_SET`.
 
@@ -4592,8 +4592,8 @@ Naturally, they are all only available on Linux.
 
    If :const:`TFD_NONBLOCK` is not set as a flag, :func:`read` blocks until
    the timer expires. If it is set as a flag, :func:`read` doesn't block, but
-   If there hasn't been an expiration since the last call to read,
-   :func:`read` raises :class:`OSError` with ``errno`` is set to
+   if there hasn't been an expiration since the last call to read,
+   :func:`read` raises :class:`OSError` with ``errno`` set to
    :const:`errno.EAGAIN`.
 
    :const:`TFD_CLOEXEC` is always set by Python automatically.
@@ -4623,12 +4623,11 @@ Naturally, they are all only available on Linux.
    - :const:`TFD_TIMER_CANCEL_ON_SET`
 
    The timer is disabled by setting *initial* to zero (``0``).
-   If *initial* is equal to or greater than zero, the timer is enabled.
+   If *initial* is greater than zero, the timer is enabled.
    If *initial* is less than zero, it raises an :class:`OSError` exception
-   with ``errno`` set to :const:`errno.EINVAL`
+   with ``errno`` set to :const:`errno.EINVAL`.
 
    By default the timer will fire when *initial* seconds have elapsed.
-   (If *initial* is zero, timer will fire immediately.)
 
    However, if the :const:`TFD_TIMER_ABSTIME` flag is set,
    the timer will fire when the timer's clock
@@ -4639,7 +4638,7 @@ Naturally, they are all only available on Linux.
    If *interval* is greater than zero, the timer fires every time *interval*
    seconds have elapsed since the previous expiration.
    If *interval* is less than zero, it raises :class:`OSError` with ``errno``
-   set to :const:`errno.EINVAL`
+   set to :const:`errno.EINVAL`.
 
    If the :const:`TFD_TIMER_CANCEL_ON_SET` flag is set along with
    :const:`TFD_TIMER_ABSTIME` and the clock for this timer is

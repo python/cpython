@@ -7076,9 +7076,9 @@ PyDoc_STRVAR(os_timerfd_settime_ns__doc__,
 "  flags\n"
 "    0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.\n"
 "  initial\n"
-"    initial expiration timing in seconds.\n"
+"    initial expiration timing in nanoseconds.\n"
 "  interval\n"
-"    interval for the timer in seconds.");
+"    interval for the timer in nanoseconds.");
 
 #define OS_TIMERFD_SETTIME_NS_METHODDEF    \
     {"timerfd_settime_ns", _PyCFunction_CAST(os_timerfd_settime_ns), METH_FASTCALL|METH_KEYWORDS, os_timerfd_settime_ns__doc__},
@@ -13746,4 +13746,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=f77ed566165d51da input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b72b502cc7d06dde input=a9049054013a1b77]*/
