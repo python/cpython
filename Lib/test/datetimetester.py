@@ -2116,7 +2116,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             '2020123',          # 7 chars: day slice reads a 1-character tail
             '9999121',          # 7 chars: day slice reads a 1-character tail
             '2020-W2',          # 1-digit week number
-            '٢025-03-09'        # Unicode characters
+            '٢025-03-09',       # Unicode characters
             '2009\ud80002\ud80028',     # Separators are surrogate codepoints
         ]
 
@@ -3768,6 +3768,9 @@ class TestDateTime(TestDate):
             '2009-04-19T12:30:45-00:90:00', # Time zone field out from range
             '2009-04-19T12:30:45-00:00:90', # Time zone field out from range
             '2020-2020',                    # Ambiguous 9-char date portion
+            '2009-04-19T12:30:4٥',          # Unicode digit in the seconds
+            '20201212T0102٣٤',              # Unicode digits in the time (gh-152204)
+            '2009-04-19T12:30:45+0٥:00',    # Unicode digit in the timezone
         ]
 
         for bad_str in bad_strs:
