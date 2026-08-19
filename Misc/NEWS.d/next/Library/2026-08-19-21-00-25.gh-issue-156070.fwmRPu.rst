@@ -1,0 +1,3 @@
+Fix :func:`multiprocessing.connection.wait` on Windows with more than 60
+handles: the batched wait used ``&`` where ``and`` was meant when removing
+already signalled handles from the remaining list.
