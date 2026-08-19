@@ -673,7 +673,7 @@ A hexadecimal string takes the form::
 
    [sign] ['0x'] integer ['.' fraction] ['p' exponent]
 
-where the optional ``sign`` may by either ``+`` or ``-``, ``integer``
+where the optional ``sign`` may be either ``+`` or ``-``, ``integer``
 and ``fraction`` are strings of hexadecimal digits, and ``exponent``
 is a decimal integer with an optional leading sign.  Case is not
 significant, and there must be at least one hexadecimal digit in
@@ -1293,7 +1293,7 @@ Mutable sequence types also support the following methods:
    :no-typesetting:
 .. method:: sequence.pop(index=-1, /)
 
-   Retrieve the item at *index* and also removes it from *sequence*.
+   Retrieve the item at *index* and also remove it from *sequence*.
    By default, the last item in *sequence* is removed and returned.
 
 .. method:: bytearray.remove(value, /)
@@ -1965,7 +1965,7 @@ expression support in the :mod:`re` module).
    one character, ``False`` otherwise.  Alphabetic characters are those characters defined
    in the Unicode character database as "Letter", i.e., those with general category
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
-   from the `Alphabetic property defined in the section 4.10 'Letters, Alphabetic, and
+   from the `Alphabetic property defined in section 4.10 'Letters, Alphabetic, and
    Ideographic' of the Unicode Standard
    <https://www.unicode.org/versions/Unicode15.1.0/ch04.pdf>`_.
    For example:
@@ -3265,7 +3265,7 @@ objects.
 
    .. classmethod:: fromhex(string, /)
 
-      This :class:`bytearray` class method returns bytearray object, decoding
+      This :class:`bytearray` class method returns a bytearray object, decoding
       the given string object.  The string must contain two hexadecimal digits
       per byte, with ASCII whitespace being ignored.
 
@@ -4160,7 +4160,7 @@ the ``%`` operator (modulo).
 This is also known as the bytes *formatting* or *interpolation* operator.
 Given ``format % values`` (where *format* is a bytes object), ``%`` conversion
 specifications in *format* are replaced with zero or more elements of *values*.
-The effect is similar to using the :c:func:`sprintf` in the C language.
+The effect is similar to using the :c:func:`sprintf` function in the C language.
 
 If *format* requires a single argument, *values* may be a single non-tuple
 object. [5]_  Otherwise, *values* must be a tuple with exactly the number of
@@ -4358,7 +4358,7 @@ copying.
    byte, but other types such as :class:`array.array` may have bigger elements.
 
    ``len(view)`` is equal to the length of :class:`~memoryview.tolist`, which
-   is the nested list representation of the view. If ``view.ndim = 1``,
+   is the nested list representation of the view. If ``view.ndim == 1``,
    this is equal to the number of elements in the view.
 
    .. versionchanged:: 3.12
@@ -4443,7 +4443,7 @@ copying.
       :class:`collections.abc.Sequence`
 
    .. versionchanged:: 3.5
-      memoryviews can now be indexed with tuple of integers.
+      memoryviews can now be indexed with a tuple of integers.
 
    :class:`memoryview` has several methods:
 
@@ -5809,7 +5809,7 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
 
    .. note::
 
-      The ``|`` operand cannot be used at runtime to define unions where one or
+      The ``|`` operator cannot be used at runtime to define unions where one or
       more members is a forward reference. For example, ``int | "Foo"``, where
       ``"Foo"`` is a reference to a class not yet defined, will fail at
       runtime. For unions which include forward references, present the
@@ -5963,7 +5963,7 @@ Methods
 Methods are functions that are called using the attribute notation.
 There are two flavors: :ref:`built-in methods <builtin-methods>`
 (such as :meth:`~list.append` on lists)
-and :ref:`class instance method <instance-methods>`.
+and :ref:`class instance methods <instance-methods>`.
 Built-in methods are described with the types that support them.
 
 If you access a method (a function defined in a class namespace) through an
