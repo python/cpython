@@ -360,9 +360,11 @@ def _parse_isoformat_date(dtstr):
     # see the comment on Modules/_datetimemodule.c:_find_isoformat_datetime_separator
     if len(dtstr) not in (7, 8, 10):
         raise ValueError("Invalid isoformat string")
+    if not dtstr.isascii():
+        raise ValueError(f"Invalid isoformat string: {dtstr!r}")
     def _read(s, n):
-        # Require exactly n ASCII digits, as the C parse_digits() does.
-        if len(s) != n or not all(map(_is_ascii_digit, s)):
+        # dtstr is ASCII, so isdigit() matches only ASCII digits.
+        if len(s) != n or not s.isdigit():
             raise ValueError(f"Invalid isoformat string: {dtstr!r}")
         return int(s)
 
