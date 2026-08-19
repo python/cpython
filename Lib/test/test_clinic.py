@@ -794,6 +794,102 @@ class ClinicWholeFileTest(TestCase):
             """)
             self.clinic.parse(raw)
 
+    def test_getset_in_ifdef(self):
+        block = """
+            /*[clinic input]
+            output everything block
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            #ifdef CONDITION
+            /*[clinic input]
+            @getter
+            Foo.property
+            [clinic start generated code]*/
+            /*[clinic input]
+            @setter
+            Foo.property
+            [clinic start generated code]*/
+            #endif
+        """
+        generated = self.clinic.parse(dedent(block))
+        self.assertIn("#if defined(CONDITION)", generated)
+        # The getset is undefined if the condition is false.
+        self.assertIn("#ifndef FOO_PROPERTY_GETSETDEF\n"
+                      "    #define FOO_PROPERTY_GETSETDEF\n"
+                      "#endif /* !defined(FOO_PROPERTY_GETSETDEF) */",
+                      generated)
+
+    def test_getset_duplicate(self):
+        for annotation in "@getter", "@setter":
+            with self.subTest(annotation=annotation):
+                self.clinic = _make_clinic(filename="test.c")
+                block = f"""
+                    /*[clinic input]
+                    class Foo "FooObject *" "&Foo_Type"
+                    [clinic start generated code]*/
+                    /*[clinic input]
+                    {annotation}
+                    Foo.property
+                    [clinic start generated code]*/
+                    /*[clinic input]
+                    {annotation}
+                    Foo.property
+                    [clinic start generated code]*/
+                """
+                kind = 'setter' if annotation == '@setter' else 'getter'
+                err = f"Cannot apply @{kind} to 'Foo.property' twice"
+                self.expect_failure(block, err, lineno=10)
+
+    def test_getset_different_c_basename(self):
+        block = """
+            /*[clinic input]
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            /*[clinic input]
+            @getter
+            Foo.property as foo_get
+            [clinic start generated code]*/
+            /*[clinic input]
+            @setter
+            Foo.property as foo_set
+            [clinic start generated code]*/
+        """
+        err = "The accessors of 'Foo.property' must have the same C basename"
+        self.expect_failure(block, err, lineno=10)
+
+    def test_setter_deletion_check(self):
+        block = """
+            /*[clinic input]
+            output everything block
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            /*[clinic input]
+            @setter
+            Foo.property
+            [clinic start generated code]*/
+        """
+        generated = self.clinic.parse(dedent(block))
+        self.assertIn("if (value == NULL) {", generated)
+        self.assertIn("\"attribute 'property' of '%.100s' objects "
+                      "cannot be deleted\"", generated)
+
+    def test_deleter(self):
+        # @deleter means that the setter is called with NULL to delete
+        # the attribute, so it checks the value itself.
+        block = """
+            /*[clinic input]
+            output everything block
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            /*[clinic input]
+            @setter
+            @deleter
+            Foo.property
+            [clinic start generated code]*/
+        """
+        generated = self.clinic.parse(dedent(block))
+        self.assertNotIn("if (value == NULL) {", generated)
+
     def test_var_keyword_non_dict(self):
         err = "'var_keyword_object' is not a valid converter"
         block = """
@@ -2671,7 +2767,7 @@ class ClinicParserTest(TestCase):
                     {annotation}
                     Foo.property -> int
                 """
-                expected_error = f"{annotation} method cannot define a return type"
+                expected_error = "@getter and @setter methods cannot define a return type"
                 self.expect_failure(block, expected_error, lineno=3)
 
                 block = f"""
@@ -2682,7 +2778,7 @@ class ClinicParserTest(TestCase):
                        obj: int
                        /
                 """
-                expected_error = f"{annotation} methods cannot define parameters"
+                expected_error = "@getter and @setter methods cannot define parameters"
                 self.expect_failure(block, expected_error)
 
     def test_setter_docstring(self):
@@ -2725,8 +2821,50 @@ class ClinicParserTest(TestCase):
                     {dup[1]}
                     Foo.property -> int
                 """
-                expected_error = "Cannot apply both @getter and @setter to the same function!"
+                expected_error = (f"Can't set {dup[1]}, "
+                                  f"function is not a normal callable")
                 self.expect_failure(block, expected_error, lineno=3)
+
+    def test_deleter_without_setter(self):
+        block = """
+            module foo
+            class Foo "" ""
+            @deleter
+            Foo.property
+        """
+        expected_error = "Can't set @deleter, @setter is not applied"
+        self.expect_failure(block, expected_error, lineno=2)
+
+        block = """
+            module foo
+            class Foo "" ""
+            @deleter
+            @setter
+            Foo.property
+        """
+        self.expect_failure(block, expected_error, lineno=2)
+
+    def test_deleter_twice(self):
+        block = """
+            module foo
+            class Foo "" ""
+            @setter
+            @deleter
+            @deleter
+            Foo.property
+        """
+        expected_error = "Cannot apply @deleter twice to the same function!"
+        self.expect_failure(block, expected_error, lineno=4)
+
+    def test_setter_and_deleter(self):
+        function = self.parse_function("""
+            module foo
+            class Foo "" ""
+            @setter
+            @deleter
+            Foo.property
+        """, signatures_in_block=3, function_index=2)
+        self.assertEqual(function.kind, FunctionKind.SETTER_AND_DELETER)
 
     def test_getset_no_class(self):
         for annotation in "@getter", "@setter":
@@ -3075,6 +3213,64 @@ class ClinicExternalTest(TestCase):
         # Don't change the file modification time
         # if the content does not change
         self.assertEqual(pre_mtime, post_mtime)
+
+    TOUCH_CODE = dedent("""
+        /*[clinic input]
+        module m
+        [clinic start generated code]*/
+
+        /*[clinic input]
+        output everything file
+        m.func
+            a: int
+            /
+
+        Docstring.
+        [clinic start generated code]*/
+    """)
+
+    def test_touch_source(self):
+        # gh-64595: The build system does not know that the source file
+        # depends on the file generated from it, so the modification
+        # times are updated to force the recompilation.
+        def mtimes():
+            return os.stat(fn).st_mtime_ns, os.stat(dest).st_mtime_ns
+
+        def set_mtimes(source, generated):
+            os.utime(fn, ns=(source, source))
+            os.utime(dest, ns=(generated, generated))
+
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write(self.TOUCH_CODE)
+            dest = self.dest_file(fn)
+            self.expect_success(fn)
+            source_mtime, generated_mtime = mtimes()
+            self.assertGreaterEqual(generated_mtime, source_mtime)
+
+            # The generated file is changed, so both files are touched.
+            os.unlink(dest)
+            old = source_mtime - 10**10
+            os.utime(fn, ns=(old, old))
+            self.expect_success(fn)
+            source_mtime, generated_mtime = mtimes()
+            self.assertGreater(source_mtime, old)
+            self.assertGreaterEqual(generated_mtime, source_mtime)
+
+            # Nothing is changed, but the source file is newer, so only
+            # the generated file is touched.
+            set_mtimes(source_mtime - 10**10, source_mtime - 2 * 10**10)
+            old_source_mtime = os.stat(fn).st_mtime_ns
+            self.expect_success(fn)
+            source_mtime, generated_mtime = mtimes()
+            self.assertEqual(source_mtime, old_source_mtime)
+            self.assertGreaterEqual(generated_mtime, source_mtime)
+
+            # Nothing is changed and the generated file is newer,
+            # so no file is touched.
+            self.expect_success(fn)
+            self.assertEqual(mtimes(), (source_mtime, generated_mtime))
 
     def test_cli_force(self):
         invalid_input = dedent("""
