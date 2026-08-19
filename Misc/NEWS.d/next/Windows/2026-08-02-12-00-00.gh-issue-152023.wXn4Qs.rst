@@ -1,0 +1,2 @@
+Update Windows builds to SQLite 3.53.4. Additionally, enable the ``median()``
+and ``percentile()`` functions.
