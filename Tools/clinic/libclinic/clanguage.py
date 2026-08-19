@@ -92,7 +92,10 @@ class CLanguage(Language):
         for o in signatures:
             if isinstance(o, Function):
                 if function:
-                    fail("You may specify at most one function per block.\nFound a block containing at least two:\n\t" + repr(function) + " and " + repr(o))
+                    fail("You may specify at most one function per block.\n"
+                         "Found a block containing at least two:\n\t"
+                         + repr(function) + " and " + repr(o),
+                         line_number=o.line_number)
                 function = o
         return self.render_function(clinic, function)
 
@@ -337,7 +340,8 @@ class CLanguage(Language):
                 if count in subsets:
                     fail(f"Function {f.full_name!r} has an ambiguous group "
                          f"configuration: a call with {count} argument(s) "
-                         f"can be parsed in more than one way.")
+                         f"can be parsed in more than one way.",
+                         line_number=f.line_number)
                 subsets[count] = subset
 
         if limited_capi:
@@ -462,7 +466,8 @@ class CLanguage(Language):
 
         if has_option_groups and (not positional):
             fail("You cannot use optional groups ('[' and ']') "
-                 "unless all parameters are positional-only ('/').")
+                 "unless all parameters are positional-only ('/').",
+                 line_number=f.line_number)
 
         # HACK
         # when we're METH_O, but have a custom return converter,

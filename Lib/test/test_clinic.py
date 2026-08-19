@@ -347,7 +347,7 @@ class ClinicWholeFileTest(TestCase):
                 /
             [clinic start generated code]*/
         """
-        self.expect_failure(block, err)
+        self.expect_failure(block, err, lineno=2)
 
     def test_star_after_vararg(self):
         err = "'my_test_func' uses '*' more than once."
@@ -3063,8 +3063,21 @@ class ClinicParserTest(TestCase):
             m.func
             docstring1
             docstring2
+            docstring3
         """
+        # The line which should have been left blank.
         self.expect_failure(block, err, lineno=3)
+
+    def test_state_func_docstring_long_summary(self):
+        err = "Summary line for 'm.func' is too long!"
+        block = f"""
+            module m
+            m.func
+            {'x' * 100}
+
+            Body.
+        """
+        self.expect_failure(block, err, lineno=2)
 
     def test_state_func_docstring_only_one_param_template(self):
         err = "You may not specify {parameters} more than once in a docstring!"
@@ -3077,6 +3090,7 @@ class ClinicParserTest(TestCase):
                 {parameters}
             these are the params again:
                 {parameters}
+            and this is the end of the docstring
         """
         self.expect_failure(block, err, lineno=7)
 
