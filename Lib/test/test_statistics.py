@@ -2663,12 +2663,13 @@ class TestQuantiles(unittest.TestCase):
                   float.fromhex('0x1.fffffffffffffp+1023'),  # near max float
                   sys.float_info.min, # smallest normal
                   ):
-            for n in range(2, 20):
-                result = quantiles([x, x], n=n, method='exclusive')
-                self.assertEqual(result, sorted(result),
-                                 msg=f'x={x}, n={n}')
-                self.assertTrue(all(v == x for v in result),
-                                msg=f'x={x}, n={n}')
+            for method in ('exclusive', 'inclusive'):
+                for n in range(2, 20):
+                    result = quantiles([x, x], n=n, method=method)
+                    self.assertEqual(result, sorted(result),
+                                     msg=f'x={x}, n={n}, method={method!r}')
+                    self.assertTrue(all(v == x for v in result),
+                                    msg=f'x={x}, n={n}, method={method!r}')
 
     def test_equal_sized_groups(self):
         quantiles = statistics.quantiles
