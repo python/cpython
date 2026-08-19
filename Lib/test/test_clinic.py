@@ -3681,6 +3681,163 @@ class ClinicExternalTest(TestCase):
                 f.write("/*[clinic input]\n[clinic start generated code]*/\n")
             self.assertEqual(self.expect_success("--converters", fn), "")
 
+    LIST_CODE = dedent("""
+        /*[clinic input]
+        func
+            a: int
+            /
+
+        Docstring.
+        [clinic start generated code]*/
+
+        /*[clinic input]
+        cloned = func
+        [clinic start generated code]*/
+
+        /*[clinic input]
+        module m
+        class m.C "void *" ""
+        class m.C.D "void *" ""
+        [clinic start generated code]*/
+
+        /*[clinic input]
+        m.C.meth
+            self: self(type="void *")
+            a: object
+            [
+            b: object
+            ]
+            /
+
+        Docstring.
+        [clinic start generated code]*/
+
+        /*[clinic input]
+        @classmethod
+        m.C.__new__
+            a: object
+
+        Docstring.
+        [clinic start generated code]*/
+
+        /*[clinic input]
+        @getter
+        m.C.prop
+        [clinic start generated code]*/
+
+        /*[clinic input]
+        @setter
+        m.C.prop
+        [clinic start generated code]*/
+
+        /*[clinic input]
+        m.C.D.meth
+            self: self(type="void *")
+
+        Docstring.
+        [clinic start generated code]*/
+    """)
+
+    def make_list_file(self, tmp_dir):
+        fn = os.path.join(tmp_dir, "test.c")
+        with open(fn, "w", encoding="utf-8") as f:
+            f.write(self.LIST_CODE)
+        return fn
+
+    LIST_OUTPUT = [
+        "  func($module, a, /)",
+        "  cloned($module, a, /)",
+        "  module m",
+        "    class m.C",
+        # A signature with an option group is only for the docstring.
+        "      m.C.meth(a, [b])",
+        "      m.C(a)",
+        "      getter m.C.prop",
+        "      setter m.C.prop",
+        "      class m.C.D",
+        "        m.C.D.meth($self, /)",
+    ]
+
+    def test_cli_list(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = self.make_list_file(tmp_dir)
+            pre_mtime = os.stat(fn).st_mtime_ns
+            out = self.expect_success("--list", fn)
+            self.assertEqual(out.splitlines(), [fn] + self.LIST_OUTPUT)
+            # Nothing is written.
+            with open(fn, encoding="utf-8") as f:
+                self.assertEqual(f.read(), self.LIST_CODE)
+            self.assertEqual(os.stat(fn).st_mtime_ns, pre_mtime)
+            self.assertEqual(os.listdir(tmp_dir), ["test.c"])
+
+    def test_cli_list_no_clinic_block(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write("int x;\n")
+            self.assertEqual(self.expect_success("--list", fn), "")
+
+    def test_cli_list_no_definitions(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write("/*[clinic input]\n[clinic start generated code]*/\n")
+            self.assertEqual(self.expect_success("--list", fn), "")
+
+    def test_cli_list_make(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = self.make_list_file(tmp_dir)
+            out = self.expect_success("--list", "--make", "--srcdir", tmp_dir)
+            self.assertEqual(out.splitlines(), [fn] + self.LIST_OUTPUT)
+            self.assertEqual(os.listdir(tmp_dir), ["test.c"])
+
+    def test_cli_list_verbose(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = self.make_list_file(tmp_dir)
+            # The progress does not mix with the report.
+            out, err, code = self.run_clinic("-v", "--list", fn)
+            self.assertEqual(code, 0)
+            self.assertEqual(err.splitlines(), [fn])
+            self.assertEqual(out.splitlines(), [fn] + self.LIST_OUTPUT)
+
+    def test_cli_list_checksum_mismatch(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = self.make_list_file(tmp_dir)
+            with open(fn, "a", encoding="utf-8") as f:
+                f.write("/*[clinic end generated code: "
+                        "output=0123456789abcdef input=fedcba9876543210]*/\n")
+            _, err = self.expect_failure("--list", fn)
+            self.assertIn("Checksum mismatch!", err)
+            # The check is skipped with --force.
+            out = self.expect_success("-f", "--list", fn)
+            self.assertEqual(out.splitlines(), [fn] + self.LIST_OUTPUT)
+            self.assertEqual(os.listdir(tmp_dir), ["test.c"])
+
+    def test_cli_list_external(self):
+        # A file which uses getters, setters and nested classes.
+        source = support.findfile('clinic.test.c')
+        out = self.expect_success("--list", source)
+        lines = out.splitlines()
+        self.assertEqual(lines[0], source)
+        for line in ("  class Test",
+                     "    getter Test.property",
+                     "    setter Test.property",
+                     "    Test.class_method($type, /)",
+                     "  module m",
+                     "    class m.T"):
+            with self.subTest(line=line):
+                self.assertIn(line, lines)
+
+    def test_cli_fail_list_and_dry_run(self):
+        for opt in "--dry-run", "--diff":
+            with self.subTest(opt=opt):
+                _, err = self.expect_failure("--list", opt, "test.c")
+                self.assertIn("can't use --dry-run or --diff with --list", err)
+
+    def test_cli_fail_list_and_converters(self):
+        _, err = self.expect_failure("--list", "--converters", "test.c")
+        self.assertIn("can't use --converters with --list", err)
+
     def test_cli_fail_directory(self):
         with os_helper.temp_dir() as tmp_dir:
             subdir = os.path.join(tmp_dir, "test.c")
