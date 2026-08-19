@@ -4060,6 +4060,14 @@ class TestExtractionFilters(unittest.TestCase):
         self.reraise_exception = False
         return self.raised_exception
 
+    def _make_drive_relative_path(self, name):
+        dest_drive = os.path.splitdrive(os.path.realpath(
+            self.destdir, strict=os.path.ALLOW_MISSING))[0]
+        for drive in "ZYXWVUTSRQPONMLKJIHGFEDCBA":
+            if drive.upper() != dest_drive.rstrip(":").upper():
+                return f"{drive}:{name}"
+        raise AssertionError("could not find a different drive")
+
     def test_benign_file(self):
         with ArchiveMaker() as arc:
             arc.add('benign.txt')
@@ -4091,6 +4099,26 @@ class TestExtractionFilters(unittest.TestCase):
                     self.expect_exception(
                         tarfile.AbsolutePathError,
                         """['"].*escaped.evil['"] has an absolute path""")
+
+    @unittest.skipIf(os.name != 'nt', 'Windows-specific drive-relative path')
+    def test_drive_relative_member_path(self):
+        # Drive-relative paths such as "Z:evil" are not absolute, but
+        # ntpath.commonpath() raises ValueError for them.
+        member_name = self._make_drive_relative_path('evil')
+        with ArchiveMaker() as arc:
+            arc.add('before')
+            arc.add(member_name)
+            arc.add('after')
+
+        for filter in 'tar', 'data':
+            with self.subTest(filter=filter, errorlevel=1):
+                with self.check_context(arc.open(errorlevel=1), filter):
+                    self.expect_exception(tarfile.OutsideDestinationError)
+
+            with self.subTest(filter=filter, errorlevel=0):
+                with self.check_context(arc.open(errorlevel=0), filter):
+                    self.expect_file('before')
+                    self.expect_file('after')
 
     @symlink_test
     def test_parent_symlink(self):
@@ -4347,6 +4375,28 @@ class TestExtractionFilters(unittest.TestCase):
             self.expect_exception(
                 tarfile.AbsoluteLinkError,
                 "'parent' is a link to an absolute path")
+
+    @unittest.skipIf(os.name != 'nt', 'Windows-specific drive-relative path')
+    @support.subTests('link_type', (tarfile.SYMTYPE, tarfile.LNKTYPE))
+    def test_data_filter_drive_relative_link_path(self, link_type):
+        linkname = self._make_drive_relative_path('evil')
+        link_kwargs = {}
+        if link_type == tarfile.SYMTYPE:
+            link_kwargs['symlink_to'] = linkname
+        else:
+            link_kwargs['hardlink_to'] = linkname
+
+        with ArchiveMaker() as arc:
+            arc.add('before')
+            arc.add('link', **link_kwargs)
+            arc.add('after')
+
+        with self.check_context(arc.open(errorlevel=1), 'data'):
+            self.expect_exception(tarfile.LinkOutsideDestinationError)
+
+        with self.check_context(arc.open(errorlevel=0), 'data'):
+            self.expect_file('before')
+            self.expect_file('after')
 
     @symlink_test
     def test_sly_relative0(self):

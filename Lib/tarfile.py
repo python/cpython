@@ -835,7 +835,13 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
     # Ensure we stay in the destination
     target_path = os.path.realpath(os.path.join(dest_path, name),
                                    strict=os.path.ALLOW_MISSING)
-    if os.path.commonpath([target_path, dest_path]) != dest_path:
+    try:
+        outside_destination = (os.path.commonpath([target_path, dest_path])
+                               != dest_path)
+    except ValueError:
+        # commonpath() raises for paths on different drives on Windows.
+        outside_destination = True
+    if outside_destination:
         raise OutsideDestinationError(member, target_path)
     # Limit permissions (no high bits, and go-w)
     mode = member.mode
@@ -890,7 +896,13 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
                 target_path = os.path.join(dest_path, normalized)
             target_path = os.path.realpath(target_path,
                                            strict=os.path.ALLOW_MISSING)
-            if os.path.commonpath([target_path, dest_path]) != dest_path:
+            try:
+                outside_destination = (
+                    os.path.commonpath([target_path, dest_path]) != dest_path)
+            except ValueError:
+                # commonpath() raises for paths on different drives on Windows.
+                outside_destination = True
+            if outside_destination:
                 raise LinkOutsideDestinationError(member, target_path)
     return new_attrs
 
