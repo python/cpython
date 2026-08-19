@@ -3380,6 +3380,7 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
         Py_DECREF(v);
         return (*pv == NULL) ? -1 : 0;
     }
+    assert(v != bytes_get_empty());
 
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(v);

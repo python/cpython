@@ -1,7 +1,7 @@
 # Security Policy
 
 Python [provides a security policy and threat model](https://devguide.python.org/security/policy/)
-in the Python Development Guide documenting what bugs are vulnerabilities,
+in the Python Developer's Guide documenting what bugs are vulnerabilities,
 how to structure reports, and what versions of Python accept reports.
 
 Python Security Response Team (PSRT) members

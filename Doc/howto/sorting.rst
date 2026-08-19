@@ -3,9 +3,6 @@
 Sorting Techniques
 ******************
 
-:Author: Andrew Dalke and Raymond Hettinger
-
-
 Python lists have a built-in :meth:`list.sort` method that modifies the list
 in-place.  There is also a :func:`sorted` built-in function that builds a new
 sorted list from an iterable.

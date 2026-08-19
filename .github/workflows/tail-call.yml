@@ -32,11 +32,11 @@ jobs:
       matrix:
         include:
           - target: x86_64-apple-darwin/clang
-            runner: macos-15-intel
+            runner: macos-26-intel
           - target: aarch64-apple-darwin/clang
-            runner: macos-15
+            runner: macos-26
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -66,16 +66,16 @@ jobs:
       matrix:
         include:
           - target: x86_64-unknown-linux-gnu/gcc
-            runner: ubuntu-24.04
+            runner: ubuntu-26.04
             configure_flags: --with-pydebug
           - target: x86_64-unknown-linux-gnu/gcc-free-threading
-            runner: ubuntu-24.04
+            runner: ubuntu-26.04
             configure_flags: --disable-gil
           - target: aarch64-unknown-linux-gnu/gcc
-            runner: ubuntu-24.04-arm
+            runner: ubuntu-26.04-arm
             configure_flags: --with-pydebug
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -83,8 +83,7 @@ jobs:
           python-version: '3.11'
       - name: Build
         run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ env.LLVM_VERSION }}
-          export PATH="$(llvm-config-${{ env.LLVM_VERSION }} --bindir):$PATH"
+          # On ubuntu-26.04 image, clang is clang-21 by default
           CC=clang-${{ env.LLVM_VERSION }} ./configure --with-tail-call-interp ${{ matrix.configure_flags }}
           make all --jobs 4
       - name: Test

@@ -3,7 +3,6 @@ import sys
 import textwrap
 from test import list_tests, support
 from test.support import cpython_only
-from test.support.import_helper import import_module
 from test.support.script_helper import assert_python_failure, assert_python_ok
 import pickle
 import unittest
@@ -326,10 +325,9 @@ class ListTest(list_tests.CommonTest):
             a.append(4)
             self.assertEqual(list(it), [])
 
-    @support.cpython_only
+    @support.nomemtest
     def test_no_memory(self):
         # gh-118331: Make sure we don't crash if list allocation fails
-        import_module("_testcapi")
         code = textwrap.dedent("""
         import _testcapi, sys
         # Prime the freelist

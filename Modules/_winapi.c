@@ -1194,8 +1194,10 @@ gethandlelist(PyObject *mapping, const char *name, Py_ssize_t *size)
     }
 
     ret = PyMem_Malloc(*size);
-    if (ret == NULL)
+    if (ret == NULL) {
+        PyErr_NoMemory();
         goto cleanup;
+    }
 
     for (i = 0; i < PySequence_Fast_GET_SIZE(value_fast); i++) {
         ret[i] = PYNUM_TO_HANDLE(PySequence_Fast_GET_ITEM(value_fast, i));
@@ -1278,6 +1280,7 @@ getattributelist(PyObject *obj, const char *name, AttributeList *attribute_list)
     attribute_list->attribute_list = PyMem_Malloc(attribute_list_size);
     if (attribute_list->attribute_list == NULL) {
         ret = -1;
+        PyErr_NoMemory();
         goto cleanup;
     }
 
@@ -1681,6 +1684,9 @@ _winapi_GetShortPathName_impl(PyObject *module, LPCWSTR path)
             }
             PyMem_Free((void *)buffer);
         }
+        else {
+            PyErr_NoMemory();
+        }
     } else {
         PyErr_SetFromWindowsErr(0);
     }
@@ -1733,7 +1739,19 @@ _winapi_GetVersion_impl(PyObject *module)
 #pragma warning(disable:4996)
 
 {
+#ifdef MS_WINDOWS_DESKTOP
     return GetVersion();
+#else
+    OSVERSIONINFOW version_info;
+    ZeroMemory(&version_info, sizeof(version_info));
+    version_info.dwOSVersionInfoSize = sizeof(version_info);
+    if (GetVersionExW(&version_info)) {
+        return version_info.dwMinorVersion |
+            (version_info.dwMajorVersion << 8) |
+            (version_info.dwBuildNumber << 16);
+    }
+    return 0;
+#endif
 }
 
 #pragma warning(pop)
@@ -2391,6 +2409,7 @@ _winapi_BatchedWaitForMultipleObjects_impl(PyObject *module,
     while (i < nhandles) {
         BatchedWaitData *data = (BatchedWaitData*)PyMem_Malloc(sizeof(BatchedWaitData));
         if (!data) {
+            PyErr_NoMemory();
             goto error;
         }
         thread_data[thread_count++] = data;
@@ -3142,6 +3161,21 @@ error:
 }
 
 
+/*[clinic input]
+_winapi.GetTickCount64
+
+Number of milliseconds that have elapsed since the system was started.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_GetTickCount64_impl(PyObject *module)
+/*[clinic end generated code: output=cb33c0568f0b3ed1 input=77ed6539ac7d6590]*/
+{
+    ULONGLONG ticks = GetTickCount64();
+    return PyLong_FromUnsignedLongLong(ticks);
+}
+
+
 static PyMethodDef winapi_functions[] = {
     _WINAPI_CLOSEHANDLE_METHODDEF
     _WINAPI_CONNECTNAMEDPIPE_METHODDEF
@@ -3193,6 +3227,7 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_NEEDCURRENTDIRECTORYFOREXEPATH_METHODDEF
     _WINAPI_COPYFILE2_METHODDEF
     _WINAPI_GETPROCESSMEMORYINFO_METHODDEF
+    _WINAPI_GETTICKCOUNT64_METHODDEF
     {NULL, NULL}
 };
 

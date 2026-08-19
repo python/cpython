@@ -1,6 +1,9 @@
 """Tests for blocking mode sampling profiler."""
 
 import io
+import os
+import subprocess
+import sys
 import textwrap
 import unittest
 from unittest import mock
@@ -15,7 +18,11 @@ except ImportError:
         "Test only runs when _remote_debugging is available"
     )
 
-from test.support import requires_remote_subprocess_debugging
+from test.support import (
+    SHORT_TIMEOUT,
+    os_helper,
+    requires_remote_subprocess_debugging,
+)
 
 from .helpers import test_subprocess
 
@@ -158,3 +165,51 @@ class TestBlockingModeStackAccuracy(unittest.TestCase):
             f"fibonacci_generator appears in the stack when consume_generator "
             f"is the leaf frame on an arithmetic line. This indicates "
             f"torn/inconsistent stack traces are being captured.")
+
+
+@requires_remote_subprocess_debugging()
+@unittest.skipUnless(sys.platform == "win32", "Windows only")
+class TestBlockingModeCLI(unittest.TestCase):
+    def test_run_blocking_exits_after_target_process_exits(self):
+        script = 'print("done")\n'
+
+        tmpdir = os.path.abspath(os_helper.TESTFN + "_profiling_blocking")
+        with os_helper.temp_dir(tmpdir) as tmpdir:
+            script_path = os.path.join(tmpdir, "tiny_target.py")
+            profile_path = os.path.join(tmpdir, "blocking.bin")
+            with open(script_path, "w", encoding="utf-8") as file:
+                file.write(script)
+
+            cmd = [
+                sys.executable, "-m", "profiling.sampling", "run",
+                "--binary", "-o", profile_path,
+                "--mode=cpu", "--blocking", "-r", "100",
+                script_path,
+            ]
+            result = subprocess.run(
+                cmd,
+                cwd=tmpdir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=SHORT_TIMEOUT,
+            )
+
+            self.assertEqual(
+                result.returncode, 0,
+                f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}",
+            )
+            self.assertGreater(os.path.getsize(profile_path), 0)
+
+            replay = subprocess.run(
+                [sys.executable, "-m", "profiling.sampling", "replay",
+                 profile_path],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=SHORT_TIMEOUT,
+            )
+            self.assertEqual(
+                replay.returncode, 0,
+                f"stdout:\n{replay.stdout}\nstderr:\n{replay.stderr}",
+            )
