@@ -1,0 +1,4 @@
+``test_httpservers`` no longer leaves a default opener installed in
+:mod:`urllib.request`. The plain HTTP cases fetched URLs through
+:func:`urllib.request.urlopen` without an SSL context, which sets the module
+global, so the rest of the test run saw it instead of a fresh opener.
