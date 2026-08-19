@@ -1276,9 +1276,9 @@ class Path(PurePath):
 
         Returns the new Path instance pointing to the target path.
         """
-        os.rename(self, target)
         if not hasattr(target, 'with_segments'):
             target = self.with_segments(target)
+        os.rename(self, target)
         return target
 
     def replace(self, target):
@@ -1291,9 +1291,9 @@ class Path(PurePath):
 
         Returns the new Path instance pointing to the target path.
         """
-        os.replace(self, target)
         if not hasattr(target, 'with_segments'):
             target = self.with_segments(target)
+        os.replace(self, target)
         return target
 
     def copy(self, target, **kwargs):
