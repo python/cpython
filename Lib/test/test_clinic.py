@@ -3337,6 +3337,64 @@ class ClinicExternalTest(TestCase):
         # if the content does not change
         self.assertEqual(pre_mtime, post_mtime)
 
+    TOUCH_CODE = dedent("""
+        /*[clinic input]
+        module m
+        [clinic start generated code]*/
+
+        /*[clinic input]
+        output everything file
+        m.func
+            a: int
+            /
+
+        Docstring.
+        [clinic start generated code]*/
+    """)
+
+    def test_touch_source(self):
+        # gh-64595: The build system does not know that the source file
+        # depends on the file generated from it, so the modification
+        # times are updated to force the recompilation.
+        def mtimes():
+            return os.stat(fn).st_mtime_ns, os.stat(dest).st_mtime_ns
+
+        def set_mtimes(source, generated):
+            os.utime(fn, ns=(source, source))
+            os.utime(dest, ns=(generated, generated))
+
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write(self.TOUCH_CODE)
+            dest = self.dest_file(fn)
+            self.expect_success(fn)
+            source_mtime, generated_mtime = mtimes()
+            self.assertGreaterEqual(generated_mtime, source_mtime)
+
+            # The generated file is changed, so both files are touched.
+            os.unlink(dest)
+            old = source_mtime - 10**10
+            os.utime(fn, ns=(old, old))
+            self.expect_success(fn)
+            source_mtime, generated_mtime = mtimes()
+            self.assertGreater(source_mtime, old)
+            self.assertGreaterEqual(generated_mtime, source_mtime)
+
+            # Nothing is changed, but the source file is newer, so only
+            # the generated file is touched.
+            set_mtimes(source_mtime - 10**10, source_mtime - 2 * 10**10)
+            old_source_mtime = os.stat(fn).st_mtime_ns
+            self.expect_success(fn)
+            source_mtime, generated_mtime = mtimes()
+            self.assertEqual(source_mtime, old_source_mtime)
+            self.assertGreaterEqual(generated_mtime, source_mtime)
+
+            # Nothing is changed and the generated file is newer,
+            # so no file is touched.
+            self.expect_success(fn)
+            self.assertEqual(mtimes(), (source_mtime, generated_mtime))
+
     def test_cli_force(self):
         invalid_input = dedent("""
             /*[clinic input]
