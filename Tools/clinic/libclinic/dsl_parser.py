@@ -263,6 +263,8 @@ class DSLParser:
     critical_section: bool
     target_critical_section: list[str]
     disable_fastcall: bool
+    # Line of the file which is being parsed.
+    line_number: int | None
     from_version_re = re.compile(r'([*/]) +\[from +(.+)\]')
     permit_long_summary = False
     permit_long_docstring_body = False
@@ -286,6 +288,7 @@ class DSLParser:
 
     def reset(self) -> None:
         self.function = None
+        self.line_number = None
         self.state = self.state_dsl_start
         self.expecting_parameters = True
         self.keyword_only = False
@@ -509,6 +512,7 @@ class DSLParser:
             if '\t' in line:
                 fail(f'Tab characters are illegal in the Clinic DSL: {line!r}',
                      line_number=block_start)
+            self.line_number = line_number
             try:
                 self.state(line)
             except ClinicError as exc:
@@ -517,7 +521,14 @@ class DSLParser:
                 raise
 
         self.do_post_block_processing_cleanup(line_number)
-        block.output.extend(self.clinic.language.render(self.clinic, block.signatures))
+        try:
+            block.output.extend(
+                self.clinic.language.render(self.clinic, block.signatures))
+        except ClinicError as exc:
+            if exc.lineno is None:
+                exc.lineno = line_number
+            exc.filename = self.clinic.filename
+            raise
 
         if self.preserve_output:
             if block.output:
@@ -666,6 +677,8 @@ class DSLParser:
             "cls": cls,
             "c_basename": c_basename,
             "docstring": "",
+            "docstring_line_number": None,
+            "line_number": self.line_number,
         }
         if not (existing_function.kind is self.kind and
                 existing_function.coexist == self.coexist):
@@ -735,7 +748,8 @@ class DSLParser:
             critical_section=self.critical_section,
             disable_fastcall=self.disable_fastcall,
             target_critical_section=self.target_critical_section,
-            forced_text_signature=self.forced_text_signature
+            forced_text_signature=self.forced_text_signature,
+            line_number=self.line_number,
         )
         self.add_function(func)
 
@@ -1141,7 +1155,8 @@ class DSLParser:
                       converter=converter, default=value,
                       group=self.group_stack[-1] if self.group_stack else 0,
                       group_depth=len(self.group_stack),
-                      deprecated_positional=self.deprecated_positional)
+                      deprecated_positional=self.deprecated_positional,
+                      line_number=self.line_number)
 
         names = [k.name for k in self.function.parameters.values()]
         if parameter_name in names[1:]:
@@ -1338,6 +1353,8 @@ class DSLParser:
         docstring = obj.docstring
         if docstring:
             docstring += "\n"
+        elif isinstance(obj, Function) and line.rstrip():
+            obj.docstring_line_number = self.line_number
         if stripped := line.rstrip():
             docstring += self.indent.dedent(stripped)
         obj.docstring = docstring
@@ -1581,12 +1598,19 @@ class DSLParser:
         # Guido said Clinic should enforce this:
         # http://mail.python.org/pipermail/python-dev/2013-June/127110.html
 
+        def docstring_line(index: int) -> int | None:
+            """Return the line of the file which holds the index-th line."""
+            if f.docstring_line_number is None:
+                return None
+            return f.docstring_line_number + index
+
         lines = f.docstring.split('\n')
         if len(lines) >= 2:
             if lines[1]:
                 fail(f"Docstring for {f.full_name!r} does not have a summary line!\n"
                      "Every non-blank function docstring must start with "
-                     "a single line summary followed by an empty line.")
+                     "a single line summary followed by an empty line.",
+                     line_number=docstring_line(1))
         elif len(lines) == 1:
             # the docstring is only one line right now--the summary line.
             # add an empty line after the summary line so we have space
@@ -1598,28 +1622,36 @@ class DSLParser:
         # Existing violations are recorded in OVERLONG_{SUMMARY,BODY}.
         max_width = f.docstring_line_width
         summary_len = len(lines[0])
-        max_body = max(map(len, lines[1:]))
+        long_body = [i for i, line in enumerate(lines)
+                     if i and len(line) > max_width]
         if summary_len > max_width:
             if not self.permit_long_summary:
                 fail(f"Summary line for {f.full_name!r} is too long!\n"
-                     f"The summary line must be no longer than {max_width} characters.")
+                     f"The summary line must be no longer than {max_width} characters.",
+                     line_number=docstring_line(0))
         else:
             if self.permit_long_summary:
                 warn("Remove the @permit_long_summary decorator from "
-                     f"{f.full_name!r}!\n")
+                     f"{f.full_name!r}!\n", filename=self.clinic.filename,
+                     line_number=f.line_number)
 
-        if max_body > max_width:
+        if long_body:
             if not self.permit_long_docstring_body:
                 warn(f"Docstring lines for {f.full_name!r} are too long!\n"
-                     f"Lines should be no longer than {max_width} characters.")
+                     f"Lines should be no longer than {max_width} characters.",
+                     filename=self.clinic.filename,
+                     line_number=docstring_line(long_body[0]))
         else:
             if self.permit_long_docstring_body:
                 warn("Remove the @permit_long_docstring_body decorator from "
-                     f"{f.full_name!r}!\n")
+                     f"{f.full_name!r}!\n", filename=self.clinic.filename,
+                     line_number=f.line_number)
 
+        markers = [i for i, line in enumerate(lines) if '{parameters}' in line]
         parameters_marker_count = len(f.docstring.split('{parameters}')) - 1
         if parameters_marker_count > 1:
-            fail('You may not specify {parameters} more than once in a docstring!')
+            fail('You may not specify {parameters} more than once in a docstring!',
+                 line_number=docstring_line(markers[-1]))
 
         # insert signature at front and params after the summary line
         if not parameters_marker_count:
@@ -1679,6 +1711,7 @@ class DSLParser:
         try:
             self.function.docstring = self.format_docstring()
         except ClinicError as exc:
-            exc.lineno = lineno
+            if exc.lineno is None:
+                exc.lineno = lineno
             exc.filename = self.clinic.filename
             raise

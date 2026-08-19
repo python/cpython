@@ -118,6 +118,10 @@ class Function:
     critical_section: bool = False
     disable_fastcall: bool = False
     target_critical_section: list[str] = dc.field(default_factory=list)
+    # Line of the file on which the function is declared.
+    line_number: int | None = None
+    # Line on which the docstring starts (`None` if there is no docstring).
+    docstring_line_number: int | None = None
 
     def __post_init__(self) -> None:
         self.parent = self.cls or self.module
@@ -220,6 +224,8 @@ class Parameter:
     # (`None` signifies that there is no deprecation)
     deprecated_positional: VersionTuple | None = None
     deprecated_keyword: VersionTuple | None = None
+    # Line of the file on which the parameter is declared.
+    line_number: int | None = None
     right_bracket_count: int = dc.field(init=False, default=0)
 
     def __repr__(self) -> str:
