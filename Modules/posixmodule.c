@@ -11558,12 +11558,12 @@ os.timerfd_gettime
         A timer file descriptor.
     /
 
-Return a tuple of a timer file descriptor's (interval, next expiration) in float seconds.
+Return a tuple of a timer file descriptor's (next expiration, interval) in float seconds.
 [clinic start generated code]*/
 
 static PyObject *
 os_timerfd_gettime_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=ec5a94a66cfe6ab4 input=05f7d568a4820dc6]*/
+/*[clinic end generated code: output=ec5a94a66cfe6ab4 input=7b0a7cc61ea9e31a]*/
 {
     struct itimerspec curr_value;
     int result;
@@ -11585,12 +11585,12 @@ os.timerfd_gettime_ns
         A timer file descriptor.
     /
 
-Return a tuple of a timer file descriptor's (interval, next expiration) in nanoseconds.
+Return a tuple of a timer file descriptor's (next expiration, interval) in nanoseconds.
 [clinic start generated code]*/
 
 static PyObject *
 os_timerfd_gettime_ns_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=580633a4465f39fe input=d0de95b9782179c5]*/
+/*[clinic end generated code: output=580633a4465f39fe input=89702268455fa93b]*/
 {
     struct itimerspec curr_value;
     int result;

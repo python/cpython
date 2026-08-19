@@ -7174,7 +7174,7 @@ PyDoc_STRVAR(os_timerfd_gettime__doc__,
 "timerfd_gettime($module, fd, /)\n"
 "--\n"
 "\n"
-"Return a tuple of a timer file descriptor\'s (interval, next expiration) in float seconds.\n"
+"Return a tuple of a timer file descriptor\'s (next expiration, interval) in float seconds.\n"
 "\n"
 "  fd\n"
 "    A timer file descriptor.");
@@ -7209,7 +7209,7 @@ PyDoc_STRVAR(os_timerfd_gettime_ns__doc__,
 "timerfd_gettime_ns($module, fd, /)\n"
 "--\n"
 "\n"
-"Return a tuple of a timer file descriptor\'s (interval, next expiration) in nanoseconds.\n"
+"Return a tuple of a timer file descriptor\'s (next expiration, interval) in nanoseconds.\n"
 "\n"
 "  fd\n"
 "    A timer file descriptor.");
@@ -13746,4 +13746,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=b72b502cc7d06dde input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d04c7c420e12abbc input=a9049054013a1b77]*/
