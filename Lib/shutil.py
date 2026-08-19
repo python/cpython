@@ -1082,7 +1082,8 @@ def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
     return archive_name
 
 def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0,
-                  logger=None, owner=None, group=None, root_dir=None):
+                  logger=None, owner=None, group=None, root_dir=None,
+                  strict_timestamps=True):
     """Create a zip file from all the files under 'base_dir'.
 
     The output zip file will be named 'base_name' + ".zip".  Returns the
@@ -1105,7 +1106,8 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0,
 
     if not dry_run:
         with zipfile.ZipFile(zip_filename, "w",
-                             compression=zipfile.ZIP_DEFLATED) as zf:
+                             compression=zipfile.ZIP_DEFLATED,
+                             strict_timestamps=strict_timestamps) as zf:
             arcname = os.path.normpath(base_dir)
             if root_dir is not None:
                 base_dir = os.path.join(root_dir, base_dir)
@@ -1202,7 +1204,8 @@ def unregister_archive_format(name):
     del _ARCHIVE_FORMATS[name]
 
 def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
-                 dry_run=0, owner=None, group=None, logger=None):
+                 dry_run=0, owner=None, group=None, strict_timestamps=True,
+                 logger=None):
     """Create an archive file (eg. zip or tar).
 
     'base_name' is the name of the file to create, minus any format-specific
@@ -1218,6 +1221,10 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
 
     'owner' and 'group' are used when creating a tar archive. By default,
     uses the current owner and group.
+
+    'strict_timestamps' is used to when creating a zip archive. When set
+    to False, allows for zipping of files with timestamps before 1980-01-01
+    or after 2107-12-31.
     """
     sys.audit("shutil.make_archive", base_name, format, root_dir, base_dir)
     try:
@@ -1231,6 +1238,9 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
     func = format_info[0]
     for arg, val in format_info[1]:
         kwargs[arg] = val
+
+    if format == 'zip':
+        kwargs['strict_timestamps'] = strict_timestamps
 
     base_name = os.fspath(base_name)
 

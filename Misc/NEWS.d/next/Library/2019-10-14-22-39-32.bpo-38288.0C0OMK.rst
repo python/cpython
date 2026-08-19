@@ -1,0 +1,1 @@
+Adding optional keyword argument ``strict_timestamps`` to :func:`shutil.make_archive`.
