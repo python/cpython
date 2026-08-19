@@ -346,7 +346,8 @@ class ParseArgsCodeGen:
                 self.docstring_definition = GETSET_DOCSTRING_PROTOTYPE_STRVAR
         elif self.func.kind in SETTERS:
             if self.func.docstring:
-                fail("docstrings are only supported for @getter, not @setter")
+                fail("docstrings are only supported for @getter, not @setter",
+                     line_number=self.func.line_number)
             self.return_value_declaration = "int {parser_retval};"
             self.methoddef_define = SETTERDEF_PROTOTYPE_DEFINE
         else:
