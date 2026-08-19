@@ -72,7 +72,7 @@ def print_list(extracted_list, file=None):
     extract_stack() as a formatted stack trace to the given file."""
     if file is None:
         file = sys.stderr
-    for item in format_list(extracted_list):
+    for item in StackSummary.from_list(extracted_list).format():
         print(item, file=file, end="")
 
 def format_list(extracted_list):
