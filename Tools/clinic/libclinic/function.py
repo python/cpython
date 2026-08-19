@@ -118,6 +118,10 @@ class Function:
     critical_section: bool = False
     disable_fastcall: bool = False
     target_critical_section: list[str] = dc.field(default_factory=list)
+    # Line of the file on which the function is declared.
+    line_number: int | None = None
+    # Line on which the docstring starts (`None` if there is no docstring).
+    docstring_line_number: int | None = None
 
     def __post_init__(self) -> None:
         self.parent = self.cls or self.module
@@ -220,6 +224,8 @@ class Parameter:
     # (`None` signifies that there is no deprecation)
     deprecated_positional: VersionTuple | None = None
     deprecated_keyword: VersionTuple | None = None
+    # Line of the file on which the parameter is declared.
+    line_number: int | None = None
     right_bracket_count: int = dc.field(init=False, default=0)
 
     def __repr__(self) -> str:
@@ -275,6 +281,36 @@ class Parameter:
 
 
 ParamTuple = tuple["Parameter", ...]
+
+Definition = Module | Class | Function
+
+
+def walk_definitions(
+    parent: Clinic | Module | Class,
+    prefix: str = '',
+    depth: int = 0,
+) -> Iterator[tuple[int, str, Definition]]:
+    """Yield (depth, dotted name, definition) for every nested definition.
+
+    The name of a module is already fully qualified, but the name of
+    a class is not, hence the prefix.
+    """
+    for function in parent.functions:
+        if function.kind.new_or_init:
+            # __new__() and __init__() are called as the class itself.
+            name = prefix
+        else:
+            name = f'{prefix}.{function.name}' if prefix else function.name
+        yield depth, name, function
+    for cls in parent.classes.values():
+        name = f'{prefix}.{cls.name}' if prefix else cls.name
+        yield depth, name, cls
+        yield from walk_definitions(cls, name, depth + 1)
+    if not isinstance(parent, Class):
+        # Only a module can contain modules.
+        for module in parent.modules.values():
+            yield depth, module.name, module
+            yield from walk_definitions(module, module.name, depth + 1)
 
 
 def permute_left_option_groups(
