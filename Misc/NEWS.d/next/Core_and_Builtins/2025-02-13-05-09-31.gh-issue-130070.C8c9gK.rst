@@ -1,1 +1,0 @@
-Fixed an assertion error for :func:`exec` passed a string ``source`` and a non-``None`` ``closure``. Patch by Bartosz Sławecki.

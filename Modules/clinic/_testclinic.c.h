@@ -9,7 +9,7 @@ preserve
 #include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_runtime.h"       // _Py_ID()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
 
 PyDoc_STRVAR(test_empty_function__doc__,
 "test_empty_function($module, /)\n"
@@ -273,19 +273,19 @@ char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     char a = 'A';
-    char b = '\x07';
-    char c = '\x08';
+    char b = '\a';
+    char c = '\b';
     char d = '\t';
     char e = '\n';
-    char f = '\x0b';
-    char g = '\x0c';
+    char f = '\v';
+    char g = '\f';
     char h = '\r';
     char i = '"';
     char j = '\'';
     char k = '?';
     char l = '\\';
-    char m = '\x00';
-    char n = '\xff';
+    char m = '\0';
+    char n = '\377';
 
     if (!_PyArg_CheckPositional("char_converter", nargs, 0, 14)) {
         goto exit;
@@ -746,12 +746,19 @@ unsigned_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t narg
         goto skip_optional;
     }
     {
-        unsigned long ival = PyLong_AsUnsignedLongMask(args[2]);
-        if (ival == (unsigned long)-1 && PyErr_Occurred()) {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[2], &c, sizeof(unsigned char),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
             goto exit;
         }
-        else {
-            c = (unsigned char) ival;
+        if ((size_t)_bytes > sizeof(unsigned char)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
         }
     }
 skip_optional:
@@ -848,9 +855,21 @@ unsigned_short_converter(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 3) {
         goto skip_optional;
     }
-    c = (unsigned short)PyLong_AsUnsignedLongMask(args[2]);
-    if (c == (unsigned short)-1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[2], &c, sizeof(unsigned short),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned short)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
 skip_optional:
     return_value = unsigned_short_converter_impl(module, a, b, c);
@@ -860,7 +879,7 @@ exit:
 }
 
 PyDoc_STRVAR(int_converter__doc__,
-"int_converter($module, a=12, b=34, c=45, /)\n"
+"int_converter($module, a=12, b=34, c=\'-\', /)\n"
 "--\n"
 "\n");
 
@@ -876,7 +895,7 @@ int_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     int a = 12;
     int b = 34;
-    int c = 45;
+    int c = '-';
 
     if (!_PyArg_CheckPositional("int_converter", nargs, 0, 3)) {
         goto exit;
@@ -955,9 +974,21 @@ unsigned_int_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     if (nargs < 3) {
         goto skip_optional;
     }
-    c = (unsigned int)PyLong_AsUnsignedLongMask(args[2]);
-    if (c == (unsigned int)-1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[2], &c, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
 skip_optional:
     return_value = unsigned_int_converter_impl(module, a, b, c);
@@ -1042,7 +1073,22 @@ unsigned_long_converter(PyObject *module, PyObject *const *args, Py_ssize_t narg
         _PyArg_BadArgument("unsigned_long_converter", "argument 3", "int", args[2]);
         goto exit;
     }
-    c = PyLong_AsUnsignedLongMask(args[2]);
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[2], &c, sizeof(unsigned long),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned long)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
+    }
 skip_optional:
     return_value = unsigned_long_converter_impl(module, a, b, c);
 
@@ -1126,7 +1172,22 @@ unsigned_long_long_converter(PyObject *module, PyObject *const *args, Py_ssize_t
         _PyArg_BadArgument("unsigned_long_long_converter", "argument 3", "int", args[2]);
         goto exit;
     }
-    c = PyLong_AsUnsignedLongLongMask(args[2]);
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[2], &c, sizeof(unsigned long long),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned long long)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
+    }
 skip_optional:
     return_value = unsigned_long_long_converter_impl(module, a, b, c);
 
@@ -1135,7 +1196,8 @@ exit:
 }
 
 PyDoc_STRVAR(py_ssize_t_converter__doc__,
-"py_ssize_t_converter($module, a=12, b=34, c=56, /)\n"
+"py_ssize_t_converter($module, a=12, b=34, c=56, d=78, e=90, f=-12,\n"
+"                     g=-34, /)\n"
 "--\n"
 "\n");
 
@@ -1144,7 +1206,8 @@ PyDoc_STRVAR(py_ssize_t_converter__doc__,
 
 static PyObject *
 py_ssize_t_converter_impl(PyObject *module, Py_ssize_t a, Py_ssize_t b,
-                          Py_ssize_t c);
+                          Py_ssize_t c, Py_ssize_t d, Py_ssize_t e,
+                          Py_ssize_t f, Py_ssize_t g);
 
 static PyObject *
 py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -1153,8 +1216,12 @@ py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_ssize_t a = 12;
     Py_ssize_t b = 34;
     Py_ssize_t c = 56;
+    Py_ssize_t d = 78;
+    Py_ssize_t e = 90;
+    Py_ssize_t f = -12;
+    Py_ssize_t g = -34;
 
-    if (!_PyArg_CheckPositional("py_ssize_t_converter", nargs, 0, 3)) {
+    if (!_PyArg_CheckPositional("py_ssize_t_converter", nargs, 0, 7)) {
         goto exit;
     }
     if (nargs < 1) {
@@ -1193,8 +1260,60 @@ py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_Py_convert_optional_to_ssize_t(args[2], &c)) {
         goto exit;
     }
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[3]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        d = ival;
+        if (d < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "d cannot be negative");
+            goto exit;
+        }
+    }
+    if (nargs < 5) {
+        goto skip_optional;
+    }
+    if (!_Py_convert_optional_to_non_negative_ssize_t(args[4], &e)) {
+        goto exit;
+    }
+    if (nargs < 6) {
+        goto skip_optional;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[5]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        f = ival;
+        if (f < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "f cannot be negative");
+            goto exit;
+        }
+    }
+    if (nargs < 7) {
+        goto skip_optional;
+    }
+    if (!_Py_convert_optional_to_non_negative_ssize_t(args[6], &g)) {
+        goto exit;
+    }
 skip_optional:
-    return_value = py_ssize_t_converter_impl(module, a, b, c);
+    return_value = py_ssize_t_converter_impl(module, a, b, c, d, e, f, g);
 
 exit:
     return return_value;
@@ -2645,7 +2764,7 @@ varpos(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *__clinic_args = NULL;
 
-    __clinic_args = _PyTuple_FromArray(args, nargs);
+    __clinic_args = PyTuple_FromArray(args, nargs);
     if (__clinic_args == NULL) {
         goto exit;
     }
@@ -2683,7 +2802,7 @@ posonly_varpos(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     a = args[0];
     b = args[1];
-    __clinic_args = _PyTuple_FromArray(args + 2, nargs - 2);
+    __clinic_args = PyTuple_FromArray(args + 2, nargs - 2);
     if (__clinic_args == NULL) {
         goto exit;
     }
@@ -2726,7 +2845,7 @@ posonly_req_opt_varpos(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     b = args[1];
 skip_optional:
     __clinic_args = nargs > 2
-        ? _PyTuple_FromArray(args + 2, nargs - 2)
+        ? PyTuple_FromArray(args + 2, nargs - 2)
         : PyTuple_New(0);
     if (__clinic_args == NULL) {
         goto exit;
@@ -2797,7 +2916,7 @@ posonly_poskw_varpos(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     a = fastargs[0];
     b = fastargs[1];
     __clinic_args = nargs > 2
-        ? _PyTuple_FromArray(args + 2, nargs - 2)
+        ? PyTuple_FromArray(args + 2, nargs - 2)
         : PyTuple_New(0);
     if (__clinic_args == NULL) {
         goto exit;
@@ -2865,7 +2984,7 @@ poskw_varpos(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     }
     a = fastargs[0];
     __clinic_args = nargs > 1
-        ? _PyTuple_FromArray(args + 1, nargs - 1)
+        ? PyTuple_FromArray(args + 1, nargs - 1)
         : PyTuple_New(0);
     if (__clinic_args == NULL) {
         goto exit;
@@ -2944,7 +3063,7 @@ poskw_varpos_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t narg
     }
 skip_optional_kwonly:
     __clinic_args = nargs > 1
-        ? _PyTuple_FromArray(args + 1, nargs - 1)
+        ? PyTuple_FromArray(args + 1, nargs - 1)
         : PyTuple_New(0);
     if (__clinic_args == NULL) {
         goto exit;
@@ -3027,7 +3146,7 @@ poskw_varpos_kwonly_opt2(PyObject *module, PyObject *const *args, Py_ssize_t nar
     c = fastargs[2];
 skip_optional_kwonly:
     __clinic_args = nargs > 1
-        ? _PyTuple_FromArray(args + 1, nargs - 1)
+        ? PyTuple_FromArray(args + 1, nargs - 1)
         : PyTuple_New(0);
     if (__clinic_args == NULL) {
         goto exit;
@@ -3099,7 +3218,7 @@ varpos_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     }
     b = fastargs[0];
 skip_optional_kwonly:
-    __clinic_args = _PyTuple_FromArray(args, nargs);
+    __clinic_args = PyTuple_FromArray(args, nargs);
     if (__clinic_args == NULL) {
         goto exit;
     }
@@ -3180,7 +3299,7 @@ varpos_kwonly_req_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     }
     c = fastargs[2];
 skip_optional_kwonly:
-    __clinic_args = _PyTuple_FromArray(args, nargs);
+    __clinic_args = PyTuple_FromArray(args, nargs);
     if (__clinic_args == NULL) {
         goto exit;
     }
@@ -3358,6 +3477,245 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(only_group__doc__,
+"only_group([a])");
+
+#define ONLY_GROUP_METHODDEF    \
+    {"only_group", (PyCFunction)only_group, METH_VARARGS, only_group__doc__},
+
+static PyObject *
+only_group_impl(PyObject *module, int group_right_1, PyObject *a);
+
+static PyObject *
+only_group(PyObject *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int group_right_1 = 0;
+    PyObject *a = NULL;
+
+    switch (PyTuple_GET_SIZE(args)) {
+        case 0:
+            break;
+        case 1:
+            if (!PyArg_ParseTuple(args, "O:only_group", &a)) {
+                goto exit;
+            }
+            group_right_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "only_group requires 0 to 1 arguments");
+            goto exit;
+    }
+    return_value = only_group_impl(module, group_right_1, a);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(group_and_opt__doc__,
+"group_and_opt([a, b,] c=None)");
+
+#define GROUP_AND_OPT_METHODDEF    \
+    {"group_and_opt", (PyCFunction)group_and_opt, METH_VARARGS, group_and_opt__doc__},
+
+static PyObject *
+group_and_opt_impl(PyObject *module, int group_left_1, PyObject *a,
+                   PyObject *b, PyObject *c);
+
+static PyObject *
+group_and_opt(PyObject *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int group_left_1 = 0;
+    PyObject *a = NULL;
+    PyObject *b = NULL;
+    PyObject *c = Py_None;
+
+    switch (PyTuple_GET_SIZE(args)) {
+        case 0:
+        case 1:
+            if (!PyArg_ParseTuple(args, "|O:group_and_opt", &c)) {
+                goto exit;
+            }
+            break;
+        case 2:
+        case 3:
+            if (!PyArg_ParseTuple(args, "OO|O:group_and_opt", &a, &b, &c)) {
+                goto exit;
+            }
+            group_left_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "group_and_opt requires 0 to 3 arguments");
+            goto exit;
+    }
+    return_value = group_and_opt_impl(module, group_left_1, a, b, c);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(two_groups_on_left__doc__,
+"two_groups_on_left([a, b,] [c,] d)");
+
+#define TWO_GROUPS_ON_LEFT_METHODDEF    \
+    {"two_groups_on_left", (PyCFunction)two_groups_on_left, METH_VARARGS, two_groups_on_left__doc__},
+
+static PyObject *
+two_groups_on_left_impl(PyObject *module, int group_left_1, PyObject *a,
+                        PyObject *b, int group_left_2, PyObject *c,
+                        PyObject *d);
+
+static PyObject *
+two_groups_on_left(PyObject *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int group_left_1 = 0;
+    PyObject *a = NULL;
+    PyObject *b = NULL;
+    int group_left_2 = 0;
+    PyObject *c = NULL;
+    PyObject *d;
+
+    switch (PyTuple_GET_SIZE(args)) {
+        case 1:
+            if (!PyArg_ParseTuple(args, "O:two_groups_on_left", &d)) {
+                goto exit;
+            }
+            break;
+        case 2:
+            if (!PyArg_ParseTuple(args, "OO:two_groups_on_left", &c, &d)) {
+                goto exit;
+            }
+            group_left_2 = 1;
+            break;
+        case 3:
+            if (!PyArg_ParseTuple(args, "OOO:two_groups_on_left", &a, &b, &d)) {
+                goto exit;
+            }
+            group_left_1 = 1;
+            break;
+        case 4:
+            if (!PyArg_ParseTuple(args, "OOOO:two_groups_on_left", &a, &b, &c, &d)) {
+                goto exit;
+            }
+            group_left_1 = 1;
+            group_left_2 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "two_groups_on_left requires 1 to 4 arguments");
+            goto exit;
+    }
+    return_value = two_groups_on_left_impl(module, group_left_1, a, b, group_left_2, c, d);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(two_groups_on_right__doc__,
+"two_groups_on_right(a, [b,] [c, d])");
+
+#define TWO_GROUPS_ON_RIGHT_METHODDEF    \
+    {"two_groups_on_right", (PyCFunction)two_groups_on_right, METH_VARARGS, two_groups_on_right__doc__},
+
+static PyObject *
+two_groups_on_right_impl(PyObject *module, PyObject *a, int group_right_1,
+                         PyObject *b, int group_right_2, PyObject *c,
+                         PyObject *d);
+
+static PyObject *
+two_groups_on_right(PyObject *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+    int group_right_1 = 0;
+    PyObject *b = NULL;
+    int group_right_2 = 0;
+    PyObject *c = NULL;
+    PyObject *d = NULL;
+
+    switch (PyTuple_GET_SIZE(args)) {
+        case 1:
+            if (!PyArg_ParseTuple(args, "O:two_groups_on_right", &a)) {
+                goto exit;
+            }
+            break;
+        case 2:
+            if (!PyArg_ParseTuple(args, "OO:two_groups_on_right", &a, &b)) {
+                goto exit;
+            }
+            group_right_1 = 1;
+            break;
+        case 3:
+            if (!PyArg_ParseTuple(args, "OOO:two_groups_on_right", &a, &c, &d)) {
+                goto exit;
+            }
+            group_right_2 = 1;
+            break;
+        case 4:
+            if (!PyArg_ParseTuple(args, "OOOO:two_groups_on_right", &a, &b, &c, &d)) {
+                goto exit;
+            }
+            group_right_1 = 1;
+            group_right_2 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "two_groups_on_right requires 1 to 4 arguments");
+            goto exit;
+    }
+    return_value = two_groups_on_right_impl(module, a, group_right_1, b, group_right_2, c, d);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(group_and_two_opt__doc__,
+"group_and_two_opt([a, b, c,] d=None, e=None)");
+
+#define GROUP_AND_TWO_OPT_METHODDEF    \
+    {"group_and_two_opt", (PyCFunction)group_and_two_opt, METH_VARARGS, group_and_two_opt__doc__},
+
+static PyObject *
+group_and_two_opt_impl(PyObject *module, int group_left_1, PyObject *a,
+                       PyObject *b, PyObject *c, PyObject *d, PyObject *e);
+
+static PyObject *
+group_and_two_opt(PyObject *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int group_left_1 = 0;
+    PyObject *a = NULL;
+    PyObject *b = NULL;
+    PyObject *c = NULL;
+    PyObject *d = Py_None;
+    PyObject *e = Py_None;
+
+    switch (PyTuple_GET_SIZE(args)) {
+        case 0:
+        case 1:
+        case 2:
+            if (!PyArg_ParseTuple(args, "|OO:group_and_two_opt", &d, &e)) {
+                goto exit;
+            }
+            break;
+        case 3:
+        case 4:
+        case 5:
+            if (!PyArg_ParseTuple(args, "OOO|OO:group_and_two_opt", &a, &b, &c, &d, &e)) {
+                goto exit;
+            }
+            group_left_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "group_and_two_opt requires 0 to 5 arguments");
+            goto exit;
+    }
+    return_value = group_and_two_opt_impl(module, group_left_1, a, b, c, d, e);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(gh_32092_oob__doc__,
 "gh_32092_oob($module, /, pos1, pos2, *varargs, kw1=None, kw2=None)\n"
 "--\n"
@@ -3430,7 +3788,7 @@ gh_32092_oob(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     kw2 = fastargs[3];
 skip_optional_kwonly:
     varargs = nargs > 2
-        ? _PyTuple_FromArray(args + 2, nargs - 2)
+        ? PyTuple_FromArray(args + 2, nargs - 2)
         : PyTuple_New(0);
     if (varargs == NULL) {
         goto exit;
@@ -3507,7 +3865,7 @@ gh_32092_kw_pass(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     kw = fastargs[1];
 skip_optional_kwonly:
     __clinic_args = nargs > 1
-        ? _PyTuple_FromArray(args + 1, nargs - 1)
+        ? PyTuple_FromArray(args + 1, nargs - 1)
         : PyTuple_New(0);
     if (__clinic_args == NULL) {
         goto exit;
@@ -3539,7 +3897,7 @@ gh_99233_refcount(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *__clinic_args = NULL;
 
-    __clinic_args = _PyTuple_FromArray(args, nargs);
+    __clinic_args = PyTuple_FromArray(args, nargs);
     if (__clinic_args == NULL) {
         goto exit;
     }
@@ -3652,7 +4010,7 @@ null_or_tuple_for_varargs(PyObject *module, PyObject *const *args, Py_ssize_t na
     }
 skip_optional_kwonly:
     constraints = nargs > 1
-        ? _PyTuple_FromArray(args + 1, nargs - 1)
+        ? PyTuple_FromArray(args + 1, nargs - 1)
         : PyTuple_New(0);
     if (constraints == NULL) {
         goto exit;
@@ -4055,7 +4413,7 @@ _testclinic_TestClass_defclass_varpos(PyObject *self, PyTypeObject *cls, PyObjec
     if (!fastargs) {
         goto exit;
     }
-    __clinic_args = _PyTuple_FromArray(args, nargs);
+    __clinic_args = PyTuple_FromArray(args, nargs);
     if (__clinic_args == NULL) {
         goto exit;
     }
@@ -4112,7 +4470,7 @@ _testclinic_TestClass_defclass_posonly_varpos(PyObject *self, PyTypeObject *cls,
     }
     a = fastargs[0];
     b = fastargs[1];
-    __clinic_args = _PyTuple_FromArray(args + 2, nargs - 2);
+    __clinic_args = PyTuple_FromArray(args + 2, nargs - 2);
     if (__clinic_args == NULL) {
         goto exit;
     }
@@ -4481,4 +4839,4 @@ _testclinic_TestClass_posonly_poskw_varpos_array_no_fastcall(PyObject *type, PyO
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=84ffc31f27215baa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=15e6c430697bd384 input=a9049054013a1b77]*/

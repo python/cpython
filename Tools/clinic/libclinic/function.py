@@ -60,6 +60,7 @@ class FunctionKind(enum.Enum):
     METHOD_NEW      = enum.auto()
     GETTER          = enum.auto()
     SETTER          = enum.auto()
+    SETTER_AND_DELETER  = enum.auto()
 
     @functools.cached_property
     def new_or_init(self) -> bool:
@@ -76,6 +77,12 @@ METHOD_INIT: Final = FunctionKind.METHOD_INIT
 METHOD_NEW: Final = FunctionKind.METHOD_NEW
 GETTER: Final = FunctionKind.GETTER
 SETTER: Final = FunctionKind.SETTER
+SETTER_AND_DELETER: Final = FunctionKind.SETTER_AND_DELETER
+
+# The kinds which implement the setter of an entry of PyGetSetDef.
+SETTERS: Final = frozenset({SETTER, SETTER_AND_DELETER})
+# The kinds which implement an entry of PyGetSetDef.
+ACCESSORS: Final = SETTERS | {GETTER}
 
 
 @dc.dataclass(repr=False)
@@ -111,6 +118,10 @@ class Function:
     critical_section: bool = False
     disable_fastcall: bool = False
     target_critical_section: list[str] = dc.field(default_factory=list)
+    # Line of the file on which the function is declared.
+    line_number: int | None = None
+    # Line on which the docstring starts (`None` if there is no docstring).
+    docstring_line_number: int | None = None
 
     def __post_init__(self) -> None:
         self.parent = self.cls or self.module
@@ -161,11 +172,24 @@ class Function:
             case FunctionKind.STATIC_METHOD:
                 flags.append('METH_STATIC')
             case _ as kind:
-                acceptable_kinds = {FunctionKind.CALLABLE, FunctionKind.GETTER, FunctionKind.SETTER}
+                acceptable_kinds = {FunctionKind.CALLABLE} | ACCESSORS
                 assert kind in acceptable_kinds, f"unknown kind: {kind!r}"
         if self.coexist:
             flags.append('METH_COEXIST')
         return '|'.join(flags)
+
+    @property
+    def docstring_line_width(self) -> int:
+        """Return the maximum line width for docstring lines.
+
+        Pydoc adds indentation when displaying functions and methods.
+        To keep the total width of within 80 characters, we use a
+        maximum of 72 characters for global functions and classes,
+        and 68 characters for methods.
+        """
+        if self.cls is not None and not self.kind.new_or_init:
+            return 68
+        return 72
 
     def __repr__(self) -> str:
         return f'<clinic.Function {self.name!r}>'
@@ -192,10 +216,16 @@ class Parameter:
     converter: CConverter
     annotation: object = inspect.Parameter.empty
     docstring: str = ''
+    # Identifier of the optional group containing the parameter (0 if none).
+    # It is negative for groups before the required parameters.
     group: int = 0
+    # Nesting level of that group (0 if none).
+    group_depth: int = 0
     # (`None` signifies that there is no deprecation)
     deprecated_positional: VersionTuple | None = None
     deprecated_keyword: VersionTuple | None = None
+    # Line of the file on which the parameter is declared.
+    line_number: int | None = None
     right_bracket_count: int = dc.field(init=False, default=0)
 
     def __repr__(self) -> str:
@@ -207,8 +237,17 @@ class Parameter:
     def is_positional_only(self) -> bool:
         return self.kind == inspect.Parameter.POSITIONAL_ONLY
 
+    def is_positional_or_keyword(self) -> bool:
+        return self.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD
+
     def is_vararg(self) -> bool:
         return self.kind == inspect.Parameter.VAR_POSITIONAL
+
+    def is_var_keyword(self) -> bool:
+        return self.kind == inspect.Parameter.VAR_KEYWORD
+
+    def is_variable_length(self) -> bool:
+        return self.is_vararg() or self.is_var_keyword()
 
     def is_optional(self) -> bool:
         return not self.is_vararg() and (self.default is not unspecified)
@@ -242,6 +281,36 @@ class Parameter:
 
 
 ParamTuple = tuple["Parameter", ...]
+
+Definition = Module | Class | Function
+
+
+def walk_definitions(
+    parent: Clinic | Module | Class,
+    prefix: str = '',
+    depth: int = 0,
+) -> Iterator[tuple[int, str, Definition]]:
+    """Yield (depth, dotted name, definition) for every nested definition.
+
+    The name of a module is already fully qualified, but the name of
+    a class is not, hence the prefix.
+    """
+    for function in parent.functions:
+        if function.kind.new_or_init:
+            # __new__() and __init__() are called as the class itself.
+            name = prefix
+        else:
+            name = f'{prefix}.{function.name}' if prefix else function.name
+        yield depth, name, function
+    for cls in parent.classes.values():
+        name = f'{prefix}.{cls.name}' if prefix else cls.name
+        yield depth, name, cls
+        yield from walk_definitions(cls, name, depth + 1)
+    if not isinstance(parent, Class):
+        # Only a module can contain modules.
+        for module in parent.modules.values():
+            yield depth, module.name, module
+            yield from walk_definitions(module, module.name, depth + 1)
 
 
 def permute_left_option_groups(
@@ -279,14 +348,17 @@ def permute_right_option_groups(
 
 
 def permute_optional_groups(
-    left: Sequence[Iterable[Parameter]],
+    left: Sequence[Sequence[Iterable[Parameter]]],
     required: Iterable[Parameter],
-    right: Sequence[Iterable[Parameter]]
+    right: Sequence[Sequence[Iterable[Parameter]]]
 ) -> tuple[ParamTuple, ...]:
     """
     Generator function that computes the set of acceptable
     argument lists for the provided iterables of
     argument groups.  (Actually it generates a tuple of tuples.)
+
+    "left" and "right" are sequences of chains of nested groups.
+    Groups of different chains are independent of each other.
 
     Algorithm: prefer left options over right options.
 
@@ -297,10 +369,21 @@ def permute_optional_groups(
         if left:
             raise ValueError("required is empty but left is not")
 
+    left_options: list[ParamTuple] = [()]
+    for chain in left:
+        left_options = [option + t
+                        for option in left_options
+                        for t in permute_left_option_groups(chain)]
+    right_options: list[ParamTuple] = [()]
+    for chain in reversed(right):
+        right_options = [t + option
+                         for option in right_options
+                         for t in permute_right_option_groups(chain)]
+
     accumulator: list[ParamTuple] = []
     counts = set()
-    for r in permute_right_option_groups(right):
-        for l in permute_left_option_groups(left):
+    for r in right_options:
+        for l in left_options:
             t = l + required + r
             if len(t) in counts:
                 continue

@@ -415,6 +415,8 @@ class OpenerDirector:
                 continue
 
             i = meth.find("_")
+            if i < 1:
+                continue
             protocol = meth[:i]
             condition = meth[i+1:]
 
@@ -813,16 +815,17 @@ class HTTPPasswordMgr:
             self.passwd[realm] = {}
         for default_port in True, False:
             reduced_uri = tuple(
-                self.reduce_uri(u, default_port) for u in uri)
+                self._reduce_uri_with_scheme(u, default_port) for u in uri)
             self.passwd[realm][reduced_uri] = (user, passwd)
 
     def find_user_password(self, realm, authuri):
         domains = self.passwd.get(realm, {})
         for default_port in True, False:
-            reduced_authuri = self.reduce_uri(authuri, default_port)
+            reduced_authuri = self._reduce_uri_with_scheme(
+                authuri, default_port)
             for uris, authinfo in domains.items():
                 for uri in uris:
-                    if self.is_suburi(uri, reduced_authuri):
+                    if self._is_suburi_with_scheme(uri, reduced_authuri):
                         return authinfo
         return None, None
 
@@ -848,6 +851,17 @@ class HTTPPasswordMgr:
             if dport is not None:
                 authority = "%s:%d" % (host, dport)
         return authority, path
+
+    def _reduce_uri_with_scheme(self, uri, default_port=True):
+        parts = urlsplit(uri)
+        scheme = parts[0] if parts[1] else None
+        return (scheme or None, *self.reduce_uri(uri, default_port))
+
+    def _is_suburi_with_scheme(self, base, test):
+        if (base[0] is not None and test[0] is not None and
+                base[0] != test[0]):
+            return False
+        return self.is_suburi(base[1:], test[1:])
 
     def is_suburi(self, base, test):
         """Check if test is below base in a URI tree
@@ -894,14 +908,15 @@ class HTTPPasswordMgrWithPriorAuth(HTTPPasswordMgrWithDefaultRealm):
 
         for default_port in True, False:
             for u in uri:
-                reduced_uri = self.reduce_uri(u, default_port)
+                reduced_uri = self._reduce_uri_with_scheme(u, default_port)
                 self.authenticated[reduced_uri] = is_authenticated
 
     def is_authenticated(self, authuri):
         for default_port in True, False:
-            reduced_authuri = self.reduce_uri(authuri, default_port)
+            reduced_authuri = self._reduce_uri_with_scheme(
+                authuri, default_port)
             for uri in self.authenticated:
-                if self.is_suburi(uri, reduced_authuri):
+                if self._is_suburi_with_scheme(uri, reduced_authuri):
                     return self.authenticated[uri]
 
 
@@ -1291,8 +1306,7 @@ class AbstractHTTPHandler(BaseHandler):
         h.set_debuglevel(self._debuglevel)
 
         headers = dict(req.unredirected_hdrs)
-        headers.update({k: v for k, v in req.headers.items()
-                        if k not in headers})
+        headers.update(req.headers)
 
         # TODO(jhylton): Should this be redesigned to handle
         # persistent connections?
@@ -1466,7 +1480,7 @@ class FileHandler(BaseHandler):
     def open_local_file(self, req):
         import email.utils
         import mimetypes
-        localfile = url2pathname(req.full_url, require_scheme=True)
+        localfile = url2pathname(req.full_url, require_scheme=True, resolve_host=True)
         try:
             stats = os.stat(localfile)
             size = stats.st_size
@@ -1482,7 +1496,7 @@ class FileHandler(BaseHandler):
 
     file_open = open_local_file
 
-def _is_local_authority(authority):
+def _is_local_authority(authority, resolve):
     # Compare hostnames
     if not authority or authority == 'localhost':
         return True
@@ -1494,9 +1508,11 @@ def _is_local_authority(authority):
         if authority == hostname:
             return True
     # Compare IP addresses
+    if not resolve:
+        return False
     try:
         address = socket.gethostbyname(authority)
-    except (socket.gaierror, AttributeError):
+    except (socket.gaierror, AttributeError, UnicodeEncodeError):
         return False
     return address in FileHandler().get_names()
 
@@ -1533,6 +1549,7 @@ class FTPHandler(BaseHandler):
         dirs, file = dirs[:-1], dirs[-1]
         if dirs and not dirs[0]:
             dirs = dirs[1:]
+        fw = None
         try:
             fw = self.connect_ftp(user, passwd, host, port, dirs, req.timeout)
             type = file and 'I' or 'D'
@@ -1550,8 +1567,12 @@ class FTPHandler(BaseHandler):
                 headers += "Content-length: %d\n" % retrlen
             headers = email.message_from_string(headers)
             return addinfourl(fp, headers, req.full_url)
-        except ftplib.all_errors as exp:
-            raise URLError(f"ftp error: {exp}") from exp
+        except Exception as exp:
+            if fw is not None and not fw.keepalive:
+                fw.close()
+            if isinstance(exp, ftplib.all_errors):
+                raise URLError(f"ftp error: {exp}") from exp
+            raise
 
     def connect_ftp(self, user, passwd, host, port, dirs, timeout):
         return ftpwrapper(user, passwd, host, port, dirs, timeout,
@@ -1575,14 +1596,15 @@ class CacheFTPHandler(FTPHandler):
 
     def connect_ftp(self, user, passwd, host, port, dirs, timeout):
         key = user, host, port, '/'.join(dirs), timeout
-        if key in self.cache:
-            self.timeout[key] = time.time() + self.delay
-        else:
-            self.cache[key] = ftpwrapper(user, passwd, host, port,
-                                         dirs, timeout)
-            self.timeout[key] = time.time() + self.delay
+        conn = self.cache.get(key)
+        if conn is None or not conn.keepalive:
+            if conn is not None:
+                conn.close()
+            conn = self.cache[key] = ftpwrapper(user, passwd, host, port,
+                                                dirs, timeout)
+        self.timeout[key] = time.time() + self.delay
         self.check_cache()
-        return self.cache[key]
+        return conn
 
     def check_cache(self):
         # first check for old ones
@@ -1626,6 +1648,11 @@ class DataHandler(BaseHandler):
         scheme, data = url.split(":",1)
         mediatype, data = data.split(",",1)
 
+        # Disallow control characters within mediatype.
+        if re.search(r"[\x00-\x1F\x7F]", mediatype):
+            raise ValueError(
+                "Control characters not allowed in data: mediatype")
+
         # even base64 encoded data URLs might be quoted so unquote in any case:
         data = unquote_to_bytes(data)
         if mediatype.endswith(";base64"):
@@ -1641,21 +1668,27 @@ class DataHandler(BaseHandler):
         return addinfourl(io.BytesIO(data), headers, url)
 
 
-# Code move from the old urllib module
+# Code moved from the old urllib module
 
-def url2pathname(url, *, require_scheme=False):
+def url2pathname(url, *, require_scheme=False, resolve_host=False):
     """Convert the given file URL to a local file system path.
 
     The 'file:' scheme prefix must be omitted unless *require_scheme*
     is set to true.
+
+    The URL authority may be resolved with gethostbyname() if
+    *resolve_host* is set to true.
     """
-    if require_scheme:
-        scheme, url = _splittype(url)
-        if scheme != 'file':
-            raise URLError("URL is missing a 'file:' scheme")
-    authority, url = _splithost(url)
+    if not require_scheme:
+        url = 'file:' + url
+    scheme, authority, url = urlsplit(url)[:3]  # Discard query and fragment.
+    if scheme != 'file':
+        raise URLError("URL is missing a 'file:' scheme")
     if os.name == 'nt':
-        if not _is_local_authority(authority):
+        if authority[1:2] == ':':
+            # e.g. file://c:/file.txt
+            url = authority + url
+        elif not _is_local_authority(authority, resolve_host):
             # e.g. file://server/share/file.txt
             url = '//' + authority + url
         elif url[:3] == '///':
@@ -1669,7 +1702,7 @@ def url2pathname(url, *, require_scheme=False):
                 # Older URLs use a pipe after a drive letter
                 url = url[:1] + ':' + url[2:]
         url = url.replace('/', '\\')
-    elif not _is_local_authority(authority):
+    elif not _is_local_authority(authority, resolve_host):
         raise URLError("file:// scheme is supported only on localhost")
     encoding = sys.getfilesystemencoding()
     errors = sys.getfilesystemencodeerrors()

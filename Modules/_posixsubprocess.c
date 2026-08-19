@@ -63,7 +63,7 @@
 # endif
 #endif
 
-#if defined(__FreeBSD__) || (defined(__APPLE__) && defined(__MACH__)) || defined(__DragonFly__)
+#if defined(__CYGWIN__) || defined(__FreeBSD__) || (defined(__APPLE__) && defined(__MACH__)) || defined(__DragonFly__)
 # define FD_DIR "/dev/fd"
 #else
 # define FD_DIR "/proc/self/fd"
@@ -388,20 +388,26 @@ _close_range_except(int start_fd,
     return 0;
 }
 
-#if defined(__linux__) && defined(HAVE_SYS_SYSCALL_H)
+#if defined(HAVE_GETDENTS64) \
+    || (defined(__linux__) && defined(HAVE_SYS_SYSCALL_H))
+
+#ifdef HAVE_GETDENTS64
+#  define py_dirent64 dirent64
+#else
 /* It doesn't matter if d_name has room for NAME_MAX chars; we're using this
  * only to read a directory of short file descriptor number names.  The kernel
  * will return an error if we didn't give it enough space.  Highly Unlikely.
  * This structure is very old and stable: It will not change unless the kernel
  * chooses to break compatibility with all existing binaries.  Highly Unlikely.
  */
-struct linux_dirent64 {
+struct py_dirent64 {
    unsigned long long d_ino;
    long long d_off;
    unsigned short d_reclen;     /* Length of this linux_dirent */
    unsigned char  d_type;
    char           d_name[256];  /* Filename (null-terminated) */
 };
+#endif  // !HAVE_GETDENTS64
 
 static int
 _brute_force_closer(int first, int last)
@@ -441,19 +447,27 @@ _close_open_fds_safe(int start_fd, int *fds_to_keep, Py_ssize_t fds_to_keep_len)
                             _brute_force_closer);
         return;
     } else {
-        char buffer[sizeof(struct linux_dirent64)];
-        int bytes;
-        while ((bytes = syscall(SYS_getdents64, fd_dir_fd,
-                                (struct linux_dirent64 *)buffer,
-                                sizeof(buffer))) > 0) {
-            struct linux_dirent64 *entry;
+        char buffer[sizeof(struct py_dirent64)];
+        Py_ssize_t bytes;
+        while (1) {
+#ifdef HAVE_GETDENTS64
+            bytes = getdents64(fd_dir_fd, buffer, sizeof(buffer));
+#else
+            bytes = syscall(SYS_getdents64, fd_dir_fd,
+                            (struct py_dirent64 *)buffer, sizeof(buffer));
+#endif
+            if (bytes <= 0) {
+                break;
+            }
+
+            struct py_dirent64 *entry;
             int offset;
 #ifdef _Py_MEMORY_SANITIZER
             __msan_unpoison(buffer, bytes);
 #endif
             for (offset = 0; offset < bytes; offset += entry->d_reclen) {
                 int fd;
-                entry = (struct linux_dirent64 *)(buffer + offset);
+                entry = (struct py_dirent64 *)(buffer + offset);
                 if ((fd = _pos_int_from_ascii(entry->d_name)) < 0)
                     continue;  /* Not a number. */
                 if (fd != fd_dir_fd && fd >= start_fd &&
@@ -514,7 +528,13 @@ _close_open_fds_maybe_unsafe(int start_fd, int *fds_to_keep,
         proc_fd_dir = NULL;
     else
 #endif
+#if defined(_AIX)
+        char fd_path[PATH_MAX];
+        snprintf(fd_path, sizeof(fd_path), "/proc/%ld/fd", (long)getpid());
+        proc_fd_dir = opendir(fd_path);
+#else
         proc_fd_dir = opendir(FD_DIR);
+#endif
     if (!proc_fd_dir) {
         /* No way to get a list of open fds. */
         _close_range_except(start_fd, -1, fds_to_keep, fds_to_keep_len,
@@ -630,7 +650,7 @@ reset_signal_handlers(const sigset_t *child_sigmask)
  * (v)fork to set things up and call exec().
  *
  * All of the code in this function must only use async-signal-safe functions,
- * listed at `man 7 signal` or
+ * listed at `man 7 signal-safety` or
  * http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_04.html.
  *
  * This restriction is documented at
@@ -983,15 +1003,15 @@ _posixsubprocess.fork_exec as subprocess_fork_exec
 
 Spawn a fresh new child process.
 
-Fork a child process, close parent file descriptors as appropriate in the
-child and duplicate the few that are needed before calling exec() in the
-child process.
+Fork a child process, close parent file descriptors as appropriate in
+the child and duplicate the few that are needed before calling exec() in
+the child process.
 
-If close_fds is True, close file descriptors 3 and higher, except those listed
-in the sorted tuple pass_fds.
+If close_fds is True, close file descriptors 3 and higher, except those
+listed in the sorted tuple pass_fds.
 
-The preexec_fn, if supplied, will be called immediately before closing file
-descriptors and exec.
+The preexec_fn, if supplied, will be called immediately before closing
+file descriptors and exec.
 
 WARNING: preexec_fn is NOT SAFE if your application uses threads.
          It may trigger infrequent, difficult to debug deadlocks.
@@ -1016,7 +1036,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
                           PyObject *extra_groups_packed,
                           PyObject *uid_object, int child_umask,
                           PyObject *preexec_fn)
-/*[clinic end generated code: output=288464dc56e373c7 input=f311c3bcb5dd55c8]*/
+/*[clinic end generated code: output=288464dc56e373c7 input=5e56eac3e036e349]*/
 {
     PyObject *converted_args = NULL, *fast_args = NULL;
     PyObject *preexec_fn_args_tuple = NULL;
@@ -1084,8 +1104,14 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
                 goto cleanup;
             }
             borrowed_arg = PySequence_Fast_GET_ITEM(fast_args, arg_num);
-            if (PyUnicode_FSConverter(borrowed_arg, &converted_arg) == 0)
+            /* borrowed_arg is only borrowed; its __fspath__() may run Python
+               that drops fast_args' last reference to it. */
+            Py_INCREF(borrowed_arg);
+            if (PyUnicode_FSConverter(borrowed_arg, &converted_arg) == 0) {
+                Py_DECREF(borrowed_arg);
                 goto cleanup;
+            }
+            Py_DECREF(borrowed_arg);
             PyTuple_SET_ITEM(converted_args, arg_num, converted_arg);
         }
 
@@ -1330,6 +1356,7 @@ static PyMethodDef module_methods[] = {
 };
 
 static PyModuleDef_Slot _posixsubprocess_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}

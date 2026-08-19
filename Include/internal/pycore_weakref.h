@@ -29,6 +29,12 @@ extern "C" {
     PyMutex_LockFlags(wr->weakrefs_lock, _Py_LOCK_DONT_DETACH)
 #define UNLOCK_WEAKREFS_FOR_WR(wr) PyMutex_Unlock(wr->weakrefs_lock)
 
+#define FT_CLEAR_WEAKREFS(obj, weakref_list)    \
+    do {                                        \
+        assert(Py_REFCNT(obj) == 0);            \
+        PyObject_ClearWeakRefs(obj);            \
+    } while (0)
+
 #else
 
 #define LOCK_WEAKREFS(obj)
@@ -36,6 +42,14 @@ extern "C" {
 
 #define LOCK_WEAKREFS_FOR_WR(wr)
 #define UNLOCK_WEAKREFS_FOR_WR(wr)
+
+#define FT_CLEAR_WEAKREFS(obj, weakref_list)        \
+    do {                                            \
+        assert(Py_REFCNT(obj) == 0);                \
+        if (weakref_list != NULL) {                 \
+            PyObject_ClearWeakRefs(obj);            \
+        }                                           \
+    } while (0)
 
 #endif
 

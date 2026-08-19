@@ -1,2 +1,0 @@
-As part of the builtin help intro text, show the keyboard shortcuts for the
-new, non-basic REPL (F1, F2, and F3).

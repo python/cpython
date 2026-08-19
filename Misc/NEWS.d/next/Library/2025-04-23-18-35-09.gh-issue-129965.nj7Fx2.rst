@@ -1,3 +1,0 @@
-Add MIME types for ``.7z``, ``.apk``, ``.deb``, ``.glb``, ``.gltf``,
-``.gz``, ``.m4v``, ``.php``, ``.rar``, ``.rpm``, ``.stl`` and ``.wmv``.
-Patch by Hugo van Kemenade.

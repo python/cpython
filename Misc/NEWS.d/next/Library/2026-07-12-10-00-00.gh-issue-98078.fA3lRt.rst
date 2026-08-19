@@ -1,0 +1,6 @@
+Fix :mod:`asyncio` SSL transports not sending the fatal TLS alert to the
+peer when the TLS handshake fails or when receiving corrupted data, and
+not sending the ``close_notify`` alert to the peer when the TLS shutdown
+fails. The peer can now tell why the connection was dropped (for example,
+certificate verification failure or no TLS version in common) instead of
+seeing the connection abruptly closed.

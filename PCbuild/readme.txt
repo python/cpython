@@ -6,7 +6,7 @@ Quick Start Guide
 1a. Optionally install Python 3.10 or later.  If not installed,
     get_externals.bat (via build.bat) will download and use Python via
     NuGet.
-2.  Run "build.bat" to build Python in 32-bit Release configuration.
+2.  Run "build.bat" to build Python in 64-bit Release configuration.
 3.  (Optional, but recommended) Run the test suite with "rt.bat -q".
 
 
@@ -23,7 +23,7 @@ external dependencies. To build, simply run the "build.bat" script without
 any arguments. After this succeeds, you can open the "pcbuild.sln"
 solution in Visual Studio to continue development.
 
-To build an installer package, refer to the README in the Tools/msi folder.
+To build an installer package, refer to PC/layout.
 
 The solution currently supports two platforms.  The Win32 platform is
 used to build standard x86-compatible 32-bit binaries, output into the
@@ -140,12 +140,6 @@ CPython in different ways:
 pythonw
     pythonw.exe, a variant of python.exe that doesn't open a Command
     Prompt window
-pylauncher
-    py.exe, the Python Launcher for Windows, see
-        https://docs.python.org/3/using/windows.html#launcher
-pywlauncher
-    pyw.exe, a variant of py.exe that doesn't open a Command Prompt
-    window
 _testembed
     _testembed.exe, a small program that embeds Python for testing
     purposes, used by test_capi.py
@@ -156,16 +150,19 @@ _freeze_module
     _freeze_module.exe, used to regenerate frozen modules in Python
     after changes have been made to the corresponding source files
     (e.g. Lib\importlib\_bootstrap.py).
-pyshellext
-    pyshellext.dll, the shell extension deployed with the launcher
 python3dll
     python3.dll, the PEP 384 Stable ABI dll
+    (not installed on free-threaded builds)
+python3tdll
+    python3t.dll, the PEP 803 free-threading Stable ABI dll
+    (built from the same source as python3.dll)
 xxlimited
     builds an example module that makes use of the PEP 384 Stable ABI,
     see Modules\xxlimited.c
 xxlimited_35
-    ditto for testing the Python 3.5 stable ABI, see
-    Modules\xxlimited_35.c
+xxlimited_3_13
+    ditto for testing older Limited API, see
+    Modules\xxlimited_*.c
 
 The following sub-projects are for individual modules of the standard
 library which are implemented in C; each one builds a DLL (renamed to
@@ -173,24 +170,27 @@ library which are implemented in C; each one builds a DLL (renamed to
  * _asyncio
  * _ctypes
  * _ctypes_test
- * _zoneinfo
  * _decimal
  * _elementtree
  * _hashlib
  * _multiprocessing
  * _overlapped
+ * _queue
+ * _remote_debugging
  * _socket
  * _testbuffer
  * _testcapi
- * _testlimitedcapi
- * _testinternalcapi
  * _testclinic
  * _testclinic_limited
  * _testconsole
  * _testimportmultiple
+ * _testinternalcapi
+ * _testlimitedcapi
  * _testmultiphase
  * _testsinglephase
- * _tkinter
+ * _uuid
+ * _wmi
+ * _zoneinfo
  * pyexpat
  * select
  * unicodedata
@@ -202,18 +202,22 @@ interpreter, but they do implement several major features.  See the
 "Getting External Sources" section below for additional information
 about getting the source for building these libraries.  The sub-projects
 are:
+
 _bz2
     Python wrapper for version 1.0.8 of the libbzip2 compression library
     Homepage:
         http://www.bzip.org/
+
 _lzma
-    Python wrapper for version 5.2.2 of the liblzma compression library
+    Python wrapper for version 5.2.2 of the liblzma compression library,
+    which is itself built by liblzma.vcxproj.
     Homepage:
         https://tukaani.org/xz/
+
 _ssl
-    Python wrapper for version 3.0.15 of the OpenSSL secure sockets
-    library, which is downloaded from our binaries repository at
-    https://github.com/python/cpython-bin-deps.
+    Python wrapper for version 3.5 of the OpenSSL secure sockets
+    library, which is itself downloaded from our binaries repository at
+    https://github.com/python/cpython-bin-deps and built by openssl.vcxproj.
 
     Homepage:
         https://www.openssl.org/
@@ -230,11 +234,12 @@ _ssl
     again when building.
 
 _sqlite3
-    Wraps SQLite 3.49.1, which is itself built by sqlite3.vcxproj
+    Wraps SQLite 3.53.4, which is itself built by sqlite3.vcxproj
     Homepage:
         https://www.sqlite.org/
+
 _tkinter
-    Wraps version 8.6.15 of the Tk windowing system, which is downloaded
+    Wraps version 9.0.4 of the Tk windowing system, which is downloaded
     from our binaries repository at
     https://github.com/python/cpython-bin-deps.
 
@@ -245,13 +250,20 @@ _tkinter
     PCbuild\prepare_tcltk.bat. This will retrieve the version of the
     sources matched to the current commit from the Tcl and Tk branches
     in our source repository at
-    https://github.com/python/cpython-source-deps.
+    https://github.com/python/cpython-source-deps and build them via the
+    tcl.vcxproj and tk.vcxproj sub-projects.
 
     The two projects install their respective components in a
     directory alongside the source directories called "tcltk" on
     Win32 and "tcltk64" on x64.  They also copy the Tcl and Tk DLLs
     into the current output directory, which should ensure that Tkinter
     is able to load Tcl/Tk without having to change your PATH.
+
+_zstd
+    Python wrapper for version 1.5.7 of the zstd compression library
+    Homepage:
+        https://facebook.github.io/zstd/
+
 zlib-ng
     Compiles zlib-ng as a static library, which is later included by
     pythoncore.vcxproj. This was generated using CMake against zlib-ng
@@ -262,6 +274,10 @@ zlib-ng
 
     Sources for zlib-ng are imported unmodified into our source
     repository at https://github.com/python/cpython-source-deps.
+_zstd
+    Python wrapper for version 1.5.7 of the Zstandard compression library
+    Homepage:
+        https://facebook.github.io/zstd/
 
 
 Getting External Sources
@@ -340,6 +356,11 @@ Supported flags are:
 * WITH_COMPUTED_GOTOS: build the interpreter using "computed gotos".
   Currently only supported by clang-cl.
 
+* UsePymallocHugepages: enable huge page support for pymalloc arenas.
+  When enabled, the arena size on 64-bit platforms is increased to 2 MiB
+  and arena allocation uses MEM_LARGE_PAGES with automatic fallback to
+  regular pages. Can also be enabled via `--pymalloc-hugepages` flag.
+
 
 Static library
 --------------
@@ -391,8 +412,6 @@ _testclinic_limited extension, the file Modules/_testclinic_limited.c:
 * Save and exit Visual Studio.
 * Add `;_testclinic_limited` to `<TestModules Include="...">` in
   PCbuild\pcbuild.proj.
-* Update "exts" in Tools\msi\lib\lib_files.wxs file or in
-  Tools\msi\test\test_files.wxs file (for tests).
 * PC\layout\main.py needs updating if you add a test-only extension whose name
   doesn't start with "_test".
 * Add the extension to PCbuild\readme.txt (this file).

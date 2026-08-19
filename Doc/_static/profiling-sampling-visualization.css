@@ -1,0 +1,570 @@
+/**
+ * Sampling Profiler Visualization - Scoped CSS
+ */
+
+.sampling-profiler-viz {
+  /* Match docs background colors */
+  --bg-page: #ffffff;
+  --bg-panel: #ffffff;
+  --bg-subtle: #f8f8f8;
+  --bg-code: #f8f8f8;
+
+  /* Match docs border style */
+  --border-color: #e1e4e8;
+  --border-accent: #3776ab;
+
+  /* Match docs text colors */
+  --text-primary: #0d0d0d;
+  --text-secondary: #505050;
+  --text-muted: #6e6e6e;
+  --text-code: #333333;
+
+  /* Accent colors */
+  --color-python-blue: #306998;
+  --color-green: #388e3c;
+  --color-orange: #e65100;
+  --color-purple: #7b1fa2;
+  --color-red: #c62828;
+  --color-teal: #00897b;
+  --color-yellow: #d4a910;
+  --color-highlight: #fff9e6;
+
+  --radius-lg: 8px;
+  --radius-md: 6px;
+  --radius-sm: 4px;
+
+  /* Lighter shadows to match docs style */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+
+  --container-height: 520px;
+  --code-panel-width: 320px;
+
+  /* Reset for isolation */
+  font-family: var(--font-ui);
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--text-primary);
+  background-color: var(--bg-page);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Layout */
+  position: relative;
+  width: 100%;
+  max-width: 920px;
+  height: var(--container-height);
+  display: grid;
+  grid-template-columns: var(--code-panel-width) 1fr;
+  margin: 24px auto;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border-color);
+  background: var(--bg-panel);
+  /* Prevent any DOM changes inside from affecting page scroll */
+  contain: strict;
+}
+
+.sampling-profiler-viz * {
+  box-sizing: border-box;
+}
+
+/* Code Panel - Left Column */
+.sampling-profiler-viz #code-panel {
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border-color);
+  overflow-y: auto;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+}
+
+.sampling-profiler-viz #code-panel .code-panel-title {
+  padding: 12px 16px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-code);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  flex-shrink: 0;
+}
+
+.sampling-profiler-viz #code-panel .code-container {
+  margin: 0;
+  padding: 12px 0;
+  overflow-x: auto;
+  flex: 1;
+}
+
+.sampling-profiler-viz #code-panel .line {
+  display: flex;
+  padding: 1px 0;
+  min-height: 20px;
+  transition: background-color 0.1s ease;
+}
+
+.sampling-profiler-viz #code-panel .line-number {
+  color: var(--text-muted);
+  min-width: 40px;
+  text-align: right;
+  padding-right: 12px;
+  padding-left: 12px;
+  user-select: none;
+  flex-shrink: 0;
+  font-size: 11px;
+}
+
+.sampling-profiler-viz #code-panel .line-content {
+  flex: 1;
+  color: var(--text-code);
+  padding-right: 12px;
+  white-space: pre;
+}
+
+.sampling-profiler-viz #code-panel .line.highlighted {
+  background: var(--color-highlight);
+  border-left: 3px solid var(--color-yellow);
+}
+
+.sampling-profiler-viz #code-panel .line.highlighted .line-number {
+  color: var(--color-yellow);
+  padding-left: 9px;
+}
+
+.sampling-profiler-viz #code-panel .line.highlighted .line-content {
+  font-weight: 600;
+}
+
+/* Python Syntax Highlighting */
+.sampling-profiler-viz #code-panel .keyword {
+  color: var(--color-red);
+  font-weight: 600;
+}
+
+.sampling-profiler-viz #code-panel .function {
+  color: var(--color-purple);
+  font-weight: 600;
+}
+
+.sampling-profiler-viz #code-panel .number {
+  color: var(--color-python-blue);
+}
+
+.sampling-profiler-viz #code-panel .string {
+  color: #032f62;
+}
+
+.sampling-profiler-viz #code-panel .comment {
+  color: #6a737d;
+  font-style: italic;
+}
+
+.sampling-profiler-viz #code-panel .builtin {
+  color: var(--color-python-blue);
+}
+
+/* Visualization Column - Right Side */
+.sampling-profiler-viz .viz-column {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-subtle);
+  overflow: hidden;
+}
+
+/* Stack Section */
+.sampling-profiler-viz .stack-section {
+  padding: 12px 16px;
+  flex: 1;
+  min-height: 150px;
+  overflow-y: auto;
+}
+
+.sampling-profiler-viz .stack-section-title {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+.sampling-profiler-viz .stack-visualization {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 80px;
+}
+
+/* Stack Frames - Vertical Layout */
+.sampling-profiler-viz .stack-frame {
+  position: relative;
+  width: 100%;
+  height: 32px;
+  cursor: pointer;
+  contain: layout style paint;
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.sampling-profiler-viz .stack-frame.visible {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+
+.sampling-profiler-viz .stack-frame-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-sm);
+  transition: opacity 0.15s;
+}
+
+.sampling-profiler-viz .stack-frame-text {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font: 500 11px var(--font-mono);
+  color: white;
+  pointer-events: none;
+}
+
+.sampling-profiler-viz .stack-frame-flash {
+  position: absolute;
+  inset: 0;
+  background: white;
+  border-radius: var(--radius-sm);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sampling-profiler-viz .stack-frame:hover .stack-frame-bg {
+  opacity: 0.85;
+}
+
+/* Flying frames */
+.sampling-profiler-viz .stack-frame.flying {
+  pointer-events: none;
+  z-index: 1000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: auto;
+  height: 32px;
+  opacity: 1;
+}
+
+/* Flying stack clone */
+.stack-visualization.flying-clone {
+  transform-origin: center center;
+  will-change: transform, opacity;
+}
+
+/* Sampling Panel */
+.sampling-profiler-viz .sampling-panel {
+  margin: 0 16px 12px 16px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  height: 200px;
+  /* Lock font size to prevent Sphinx responsive scaling */
+  font-size: 12px;
+}
+
+.sampling-profiler-viz .sampling-header {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.sampling-profiler-viz .sampling-title {
+  font: 600 10px var(--font-mono);
+  color: var(--text-primary);
+  margin: 0 0 3px 0;
+}
+
+.sampling-profiler-viz .sampling-stats {
+  font: 400 9px var(--font-mono);
+  color: var(--text-secondary);
+  display: flex;
+  gap: 12px;
+}
+
+.sampling-profiler-viz .sampling-stats .missed {
+  color: var(--color-red);
+}
+
+.sampling-profiler-viz .sampling-bars {
+  flex: 1;
+  padding: 10px 12px;
+  overflow-y: auto;
+}
+
+.sampling-profiler-viz .sampling-bar-row {
+  display: flex;
+  align-items: center;
+  height: 22px;
+  gap: 8px;
+}
+
+.sampling-profiler-viz .bar-label {
+  font: 500 8px var(--font-mono);
+  color: var(--text-primary);
+  flex-shrink: 0;
+  width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sampling-profiler-viz .bar-container {
+  flex: 1;
+  height: 12px;
+  background: var(--border-color);
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+}
+
+.sampling-profiler-viz .bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.2s ease;
+  min-width: 2px;
+}
+
+.sampling-profiler-viz .bar-percent {
+  font: 500 8px var(--font-mono);
+  color: var(--text-secondary);
+  width: 36px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* Impact effect circle */
+.impact-circle {
+  position: fixed;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--color-teal);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 2000;
+}
+
+/* Control Panel - Integrated */
+.sampling-profiler-viz #control-panel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.sampling-profiler-viz .control-group {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.sampling-profiler-viz .control-group label {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.sampling-profiler-viz .control-btn {
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sampling-profiler-viz .control-btn:hover {
+  background: var(--bg-subtle);
+  border-color: var(--text-muted);
+}
+
+.sampling-profiler-viz .control-btn:active {
+  transform: scale(0.98);
+}
+
+.sampling-profiler-viz .control-btn.active {
+  background: var(--color-python-blue);
+  color: white;
+  border-color: var(--color-python-blue);
+}
+
+.sampling-profiler-viz .control-btn.active:hover {
+  background: #2f6493;
+}
+
+/* Timeline Scrubber */
+.sampling-profiler-viz .timeline-scrubber {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 160px;
+}
+
+.sampling-profiler-viz #timeline-scrubber {
+  flex: 1;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--border-color);
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  min-width: 60px;
+}
+
+.sampling-profiler-viz #timeline-scrubber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-python-blue);
+  cursor: pointer;
+  transition: transform 0.15s;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.sampling-profiler-viz #timeline-scrubber::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.sampling-profiler-viz #timeline-scrubber::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-python-blue);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.sampling-profiler-viz #time-display {
+  font: 500 10px var(--font-mono);
+  color: var(--text-secondary);
+  min-width: 90px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sample Interval Slider */
+.sampling-profiler-viz #sample-interval {
+  width: 80px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border-color);
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.sampling-profiler-viz #sample-interval::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-teal);
+  cursor: pointer;
+  transition: transform 0.15s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.sampling-profiler-viz #sample-interval::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.sampling-profiler-viz #sample-interval::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-teal);
+  cursor: pointer;
+  border: none;
+}
+
+.sampling-profiler-viz #interval-display {
+  font: 500 9px var(--font-mono);
+  color: var(--text-secondary);
+  min-width: 40px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Flash overlay */
+.sampling-profiler-viz .flash-overlay {
+  position: absolute;
+  inset: 0;
+  background: white;
+  pointer-events: none;
+  opacity: 0;
+}
+
+/* Performance optimizations */
+.sampling-profiler-viz .stack-frame,
+.sampling-profiler-viz .flying-frame,
+.sampling-profiler-viz .sampling-bar-row {
+  will-change: transform, opacity;
+  contain: layout style paint;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .sampling-profiler-viz .stack-frame,
+  .sampling-profiler-viz .flying-frame,
+  .sampling-profiler-viz .sampling-bar-row,
+  .impact-circle {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Responsive adjustments for narrower viewports */
+@media (max-width: 800px) {
+  .sampling-profiler-viz {
+    grid-template-columns: 280px 1fr;
+    --container-height: 550px;
+  }
+
+  .sampling-profiler-viz #code-panel {
+    font-size: 11px;
+  }
+
+  .sampling-profiler-viz .control-btn {
+    padding: 5px 8px;
+    font-size: 10px;
+  }
+}

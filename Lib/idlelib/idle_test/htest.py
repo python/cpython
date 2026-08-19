@@ -216,9 +216,9 @@ _module_browser_spec = {
     'file': 'browser',
     'kwds': {},
     'msg': textwrap.dedent("""
-        "Inspect names of module, class(with superclass if applicable),
-        "methods and functions.  Toggle nested items.  Double clicking
-        "on items prints a traceback for an exception that is ignored.""")
+        Inspect names of module, class(with superclass if applicable),
+        methods and functions.  Toggle nested items.  Double clicking
+        on items prints a traceback for an exception that is ignored.""")
     }
 
 _multistatus_bar_spec = {
@@ -337,7 +337,7 @@ _tree_widget_spec = {
     'file': 'tree',
     'kwds': {},
     'msg': "The canvas is scrollable.\n"
-           "Click on folders up to to the lowest level."
+           "Click on folders up to the lowest level."
     }
 
 _undo_delegator_spec = {

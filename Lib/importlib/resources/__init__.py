@@ -8,12 +8,11 @@ for more detail.
 """
 
 from ._common import (
+    Anchor,
+    Package,
     as_file,
     files,
-    Package,
-    Anchor,
 )
-
 from ._functional import (
     contents,
     is_resource,
@@ -23,9 +22,7 @@ from ._functional import (
     read_binary,
     read_text,
 )
-
 from .abc import ResourceReader
-
 
 __all__ = [
     'Package',

@@ -3,13 +3,24 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_parser.h"        // _PYPEGEN_NSTATISTICS
 #include "pycore_pyerrors.h"      // PyExc_IncompleteInputError
-#include "pycore_runtime.h"     // _PyRuntime
+#include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal
 #include <errcode.h>
 
 #include "lexer/lexer.h"
 #include "tokenizer/tokenizer.h"
+#include "tokenizer/helpers.h"
 #include "pegen.h"
+
+#define IDENTIFIER_CACHE_SIZE 2048  // Must be a power of two.
+#define IDENTIFIER_CACHE_MAX_PROBES 8
+
+struct _identifier_cache_entry {
+    const char *key;   // Borrowed from arena-owned token bytes.
+    Py_ssize_t len;
+    Py_hash_t hash;
+    PyObject *value;   // Borrowed from an arena-owned identifier.
+};
 
 // Internal parser functions
 
@@ -89,6 +100,7 @@ _PyPegen_insert_memo(Parser *p, int mark, int type, void *node)
     m->mark = p->mark;
     m->next = p->tokens[mark]->memo;
     p->tokens[mark]->memo = m;
+    p->tokens[mark]->memo_mask |= 1ULL << (type & 63);
     return 0;
 }
 
@@ -299,22 +311,14 @@ error:
 #define NSTATISTICS _PYPEGEN_NSTATISTICS
 #define memo_statistics _PyRuntime.parser.memo_statistics
 
-#ifdef Py_GIL_DISABLED
-#define MUTEX_LOCK() PyMutex_Lock(&_PyRuntime.parser.mutex)
-#define MUTEX_UNLOCK() PyMutex_Unlock(&_PyRuntime.parser.mutex)
-#else
-#define MUTEX_LOCK()
-#define MUTEX_UNLOCK()
-#endif
-
 void
 _PyPegen_clear_memo_statistics(void)
 {
-    MUTEX_LOCK();
+    PyMutex_Lock(&_PyRuntime.parser.mutex);
     for (int i = 0; i < NSTATISTICS; i++) {
         memo_statistics[i] = 0;
     }
-    MUTEX_UNLOCK();
+    PyMutex_Unlock(&_PyRuntime.parser.mutex);
 }
 
 PyObject *
@@ -325,22 +329,22 @@ _PyPegen_get_memo_statistics(void)
         return NULL;
     }
 
-    MUTEX_LOCK();
+    PyMutex_Lock(&_PyRuntime.parser.mutex);
     for (int i = 0; i < NSTATISTICS; i++) {
         PyObject *value = PyLong_FromLong(memo_statistics[i]);
         if (value == NULL) {
-            MUTEX_UNLOCK();
+            PyMutex_Unlock(&_PyRuntime.parser.mutex);
             Py_DECREF(ret);
             return NULL;
         }
         // PyList_SetItem borrows a reference to value.
         if (PyList_SetItem(ret, i, value) < 0) {
-            MUTEX_UNLOCK();
+            PyMutex_Unlock(&_PyRuntime.parser.mutex);
             Py_DECREF(ret);
             return NULL;
         }
     }
-    MUTEX_UNLOCK();
+    PyMutex_Unlock(&_PyRuntime.parser.mutex);
     return ret;
 }
 #endif
@@ -357,6 +361,10 @@ _PyPegen_is_memoized(Parser *p, int type, void *pres)
 
     Token *t = p->tokens[p->mark];
 
+    if (!(t->memo_mask & (1ULL << (type & 63)))) {
+        return 0;
+    }
+
     for (Memo *m = t->memo; m != NULL; m = m->next) {
         if (m->type == type) {
 #if defined(Py_DEBUG)
@@ -366,9 +374,9 @@ _PyPegen_is_memoized(Parser *p, int type, void *pres)
                 if (count <= 0) {
                     count = 1;
                 }
-                MUTEX_LOCK();
+                PyMutex_Lock(&_PyRuntime.parser.mutex);
                 memo_statistics[type] += count;
-                MUTEX_UNLOCK();
+                PyMutex_Unlock(&_PyRuntime.parser.mutex);
             }
 #endif
             p->mark = m->mark;
@@ -379,44 +387,34 @@ _PyPegen_is_memoized(Parser *p, int type, void *pres)
     return 0;
 }
 
-int
-_PyPegen_lookahead_with_name(int positive, expr_ty (func)(Parser *), Parser *p)
-{
-    int mark = p->mark;
-    void *res = func(p);
-    p->mark = mark;
-    return (res != NULL) == positive;
-}
+#define LOOKAHEAD1(NAME, RES_TYPE)                                  \
+    int                                                             \
+    NAME (int positive, RES_TYPE (func)(Parser *), Parser *p)       \
+    {                                                               \
+        int mark = p->mark;                                         \
+        void *res = func(p);                                        \
+        p->mark = mark;                                             \
+        return (res != NULL) == positive;                           \
+    }
 
-int
-_PyPegen_lookahead_with_string(int positive, expr_ty (func)(Parser *, const char*), Parser *p, const char* arg)
-{
-    int mark = p->mark;
-    void *res = func(p, arg);
-    p->mark = mark;
-    return (res != NULL) == positive;
-}
+LOOKAHEAD1(_PyPegen_lookahead, void *)
+LOOKAHEAD1(_PyPegen_lookahead_for_expr, expr_ty)
+LOOKAHEAD1(_PyPegen_lookahead_for_stmt, stmt_ty)
+#undef LOOKAHEAD1
 
-int
-_PyPegen_lookahead_with_int(int positive, Token *(func)(Parser *, int), Parser *p, int arg)
-{
-    int mark = p->mark;
-    void *res = func(p, arg);
-    p->mark = mark;
-    return (res != NULL) == positive;
-}
+#define LOOKAHEAD2(NAME, RES_TYPE, T)                                   \
+    int                                                                 \
+    NAME (int positive, RES_TYPE (func)(Parser *, T), Parser *p, T arg) \
+    {                                                                   \
+        int mark = p->mark;                                             \
+        void *res = func(p, arg);                                       \
+        p->mark = mark;                                                 \
+        return (res != NULL) == positive;                               \
+    }
 
-// gh-111178: Use _Py_NO_SANITIZE_UNDEFINED to disable sanitizer checks on
-// undefined behavior (UBsan) in this function, rather than changing 'func'
-// callback API.
-int _Py_NO_SANITIZE_UNDEFINED
-_PyPegen_lookahead(int positive, void *(func)(Parser *), Parser *p)
-{
-    int mark = p->mark;
-    void *res = func(p);
-    p->mark = mark;
-    return (res != NULL) == positive;
-}
+LOOKAHEAD2(_PyPegen_lookahead_with_int, Token *, int)
+LOOKAHEAD2(_PyPegen_lookahead_with_string, expr_ty, const char *)
+#undef LOOKAHEAD2
 
 Token *
 _PyPegen_expect_token(Parser *p, int type)
@@ -549,6 +547,21 @@ _PyPegen_new_identifier(Parser *p, const char *n)
         }
         id = id2;
     }
+    static const char * const forbidden[] = {
+        "None",
+        "True",
+        "False",
+        NULL
+    };
+    for (int i = 0; forbidden[i] != NULL; i++) {
+        if (_PyUnicode_EqualToASCIIString(id, forbidden[i])) {
+            PyErr_Format(PyExc_ValueError,
+                         "identifier field can't represent '%s' constant",
+                         forbidden[i]);
+            Py_DECREF(id);
+            goto error;
+        }
+    }
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyUnicode_InternImmortal(interp, &id);
     if (_PyArena_AddPyObject(p->arena, id) < 0)
@@ -574,10 +587,43 @@ _PyPegen_name_from_token(Parser *p, Token* t)
         p->error_indicator = 1;
         return NULL;
     }
+    // Identifiers repeat constantly; a small span-keyed cache skips the
+    // UTF-8 decode + intern for repeated occurrences. Keys point into
+    // arena-owned token bytes and values are arena-owned interned strings,
+    // so borrowed references are valid for the lifetime of the parse
+    // (including the second error pass, which reuses parser and arena).
+    Py_ssize_t len = PyBytes_GET_SIZE(t->bytes);
+    Py_hash_t hash = PyObject_Hash(t->bytes);
+    if (hash == -1) {
+        p->error_indicator = 1;
+        return NULL;
+    }
+    IdentifierCacheEntry *free_slot = NULL;
+    size_t idx = (size_t)hash & (IDENTIFIER_CACHE_SIZE - 1);
+    for (int probe = 0; probe < IDENTIFIER_CACHE_MAX_PROBES; probe++) {
+        IdentifierCacheEntry *entry = &p->identifier_cache[
+            (idx + probe) & (IDENTIFIER_CACHE_SIZE - 1)];
+        if (entry->key == NULL) {
+            free_slot = entry;
+            break;
+        }
+        if (entry->hash == hash && entry->len == len &&
+            memcmp(entry->key, s, len) == 0)
+        {
+            return _PyAST_Name(entry->value, Load, t->lineno, t->col_offset,
+                               t->end_lineno, t->end_col_offset, p->arena);
+        }
+    }
     PyObject *id = _PyPegen_new_identifier(p, s);
     if (id == NULL) {
         p->error_indicator = 1;
         return NULL;
+    }
+    if (free_slot != NULL) {
+        free_slot->key = s;
+        free_slot->len = len;
+        free_slot->hash = hash;
+        free_slot->value = id;
     }
     return _PyAST_Name(id, Load, t->lineno, t->col_offset, t->end_lineno,
                        t->end_col_offset, p->arena);
@@ -605,7 +651,8 @@ expr_ty _PyPegen_soft_keyword_token(Parser *p) {
     Py_ssize_t size;
     PyBytes_AsStringAndSize(t->bytes, &the_token, &size);
     for (char **keyword = p->soft_keywords; *keyword != NULL; keyword++) {
-        if (strncmp(*keyword, the_token, (size_t)size) == 0) {
+        if (strlen(*keyword) == (size_t)size &&
+            strncmp(*keyword, the_token, (size_t)size) == 0) {
             return _PyPegen_name_from_token(p, t);
         }
     }
@@ -845,6 +892,15 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->flags = flags;
     p->feature_version = feature_version;
     p->known_err_token = NULL;
+    p->identifier_cache = PyMem_Calloc(
+        IDENTIFIER_CACHE_SIZE, sizeof(*p->identifier_cache));
+    if (p->identifier_cache == NULL) {
+        growable_comment_array_deallocate(&p->type_ignore_comments);
+        PyMem_Free(p->tokens[0]);
+        PyMem_Free(p->tokens);
+        PyMem_Free(p);
+        return (Parser *) PyErr_NoMemory();
+    }
     p->level = 0;
     p->call_invalid_rules = 0;
     p->last_stmt_location.lineno = 0;
@@ -860,6 +916,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
 void
 _PyPegen_Parser_Free(Parser *p)
 {
+    PyMem_Free(p->identifier_cache);
     Py_XDECREF(p->normalize);
     for (int i = 0; i < p->size; i++) {
         PyMem_Free(p->tokens[i]);
@@ -926,7 +983,6 @@ _PyPegen_set_syntax_error_metadata(Parser *p) {
         the_source // N gives ownership to metadata
     );
     if (!metadata) {
-        Py_DECREF(the_source);
         PyErr_Clear();
         return;
     }
@@ -942,6 +998,11 @@ _PyPegen_run_parser(Parser *p)
 {
     void *res = _PyPegen_parse(p);
     assert(p->level == 0);
+    if (res != NULL && PyErr_Occurred()) {
+        // Discard a result returned with an exception still pending
+        // (e.g. a MemoryError from a recovered-from allocation failure).
+        return NULL;
+    }
     if (res == NULL) {
         if ((p->flags & PyPARSE_ALLOW_INCOMPLETE_INPUT) &&  _is_end_of_source(p)) {
             PyErr_Clear();
@@ -996,8 +1057,11 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
     struct tok_state *tok = _PyTokenizer_FromFile(fp, enc, ps1, ps2);
     if (tok == NULL) {
         if (PyErr_Occurred()) {
-            _PyPegen_raise_tokenizer_init_error(filename_ob);
-            return NULL;
+            _PyTokenizer_raise_init_error(filename_ob);
+        }
+        else {
+            // The only silent tokenizer init failure is a failed allocation.
+            PyErr_NoMemory();
         }
         return NULL;
     }
@@ -1011,6 +1075,11 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
     // From here on we need to clean up even if there's an error
     mod_ty result = NULL;
 
+    tok->module = PyUnicode_FromString("__main__");
+    if (tok->module == NULL) {
+        goto error;
+    }
+
     int parser_flags = compute_parser_flags(flags);
     Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, PY_MINOR_VERSION,
                                     errcode, NULL, arena);
@@ -1023,8 +1092,8 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
 
     if (tok->fp_interactive && tok->interactive_src_start && result && interactive_src != NULL) {
         *interactive_src = PyUnicode_FromString(tok->interactive_src_start);
-        if (!interactive_src || _PyArena_AddPyObject(arena, *interactive_src) < 0) {
-            Py_XDECREF(interactive_src);
+        if (!*interactive_src || _PyArena_AddPyObject(arena, *interactive_src) < 0) {
+            Py_XDECREF(*interactive_src);
             result = NULL;
             goto error;
         }
@@ -1037,7 +1106,7 @@ error:
 
 mod_ty
 _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filename_ob,
-                       PyCompilerFlags *flags, PyArena *arena)
+                       PyCompilerFlags *flags, PyArena *arena, PyObject *module)
 {
     int exec_input = start_rule == Py_file_input;
 
@@ -1049,12 +1118,17 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
     }
     if (tok == NULL) {
         if (PyErr_Occurred()) {
-            _PyPegen_raise_tokenizer_init_error(filename_ob);
+            _PyTokenizer_raise_init_error(filename_ob);
+        }
+        else {
+            // The only silent tokenizer init failure is a failed allocation.
+            PyErr_NoMemory();
         }
         return NULL;
     }
     // This transfers the ownership to the tokenizer
     tok->filename = Py_NewRef(filename_ob);
+    tok->module = Py_XNewRef(module);
 
     // We need to clear up from here on
     mod_ty result = NULL;

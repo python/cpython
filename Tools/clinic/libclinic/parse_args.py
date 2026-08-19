@@ -5,7 +5,8 @@ import libclinic
 from libclinic import fail, warn
 from libclinic.function import (
     Function, Parameter,
-    GETTER, SETTER, METHOD_NEW)
+    GETTER, SETTER, METHOD_NEW,
+    ACCESSORS, SETTERS)
 from libclinic.converter import CConverter
 from libclinic.converters import (
     defining_class_converter, object_converter, self_converter)
@@ -36,7 +37,7 @@ def declare_parser(
 
     num_keywords = len([
         p for p in f.parameters.values()
-        if not p.is_positional_only() and not p.is_vararg()
+        if p.is_positional_or_keyword() or p.is_keyword_only()
     ])
 
     condition = '#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)'
@@ -188,6 +189,21 @@ METHODDEF_PROTOTYPE_IFNDEF: Final[str] = libclinic.normalize_snippet("""
         #define {methoddef_name}
     #endif /* !defined({methoddef_name}) */
 """)
+GETSETDEF_PROTOTYPE_IFNDEF: Final[str] = libclinic.normalize_snippet("""
+    #ifndef {getset_name}_GETSETDEF
+        #define {getset_name}_GETSETDEF
+    #endif /* !defined({getset_name}_GETSETDEF) */
+""")
+# The setter is called with NULL to delete the attribute.  Unless @deleter is
+# applied to it, deletion is rejected before the implementation is called.
+SETTER_PREAMBLE: Final[str] = libclinic.normalize_snippet("""
+    if (value == NULL) {{
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '{name}' of '%.100s' objects cannot be deleted",
+                     Py_TYPE({self_name})->tp_name);
+        return -1;
+    }}
+""", indent=4)
 
 
 class ParseArgsCodeGen:
@@ -220,6 +236,7 @@ class ParseArgsCodeGen:
     max_pos: int = 0
     min_kw_only: int = 0
     varpos: Parameter | None = None
+    var_keyword: Parameter | None = None
 
     docstring_prototype: str
     docstring_definition: str
@@ -255,12 +272,23 @@ class ParseArgsCodeGen:
                 del self.parameters[i]
                 break
 
+        for i, p in enumerate(self.parameters):
+            if p.is_var_keyword():
+                self.var_keyword = p
+                del self.parameters[i]
+                break
+
         self.converters = [p.converter for p in self.parameters]
 
         if self.func.critical_section:
             self.codegen.add_include('pycore_critical_section.h',
                                      'Py_BEGIN_CRITICAL_SECTION()')
+
+        # Use fastcall if not disabled, except if in a __new__ or
+        # __init__ method, or if there is a **kwargs parameter.
         if self.func.disable_fastcall:
+            self.fastcall = False
+        elif self.var_keyword is not None:
             self.fastcall = False
         else:
             self.fastcall = not self.is_new_or_init()
@@ -291,6 +319,7 @@ class ParseArgsCodeGen:
     def use_meth_o(self) -> bool:
         return (len(self.parameters) == 1
                 and self.parameters[0].is_positional_only()
+                and not self.has_option_groups()
                 and not self.converters[0].is_optional()
                 and not self.varpos
                 and not self.requires_defining_class
@@ -307,7 +336,7 @@ class ParseArgsCodeGen:
         self.docstring_prototype = ''
         self.docstring_definition = ''
         self.methoddef_define = METHODDEF_PROTOTYPE_DEFINE
-        self.return_value_declaration = "PyObject *return_value = NULL;"
+        self.return_value_declaration = "PyObject *{parser_retval} = NULL;"
 
         if self.is_new_or_init() and not self.func.docstring:
             pass
@@ -315,10 +344,11 @@ class ParseArgsCodeGen:
             self.methoddef_define = GETTERDEF_PROTOTYPE_DEFINE
             if self.func.docstring:
                 self.docstring_definition = GETSET_DOCSTRING_PROTOTYPE_STRVAR
-        elif self.func.kind is SETTER:
+        elif self.func.kind in SETTERS:
             if self.func.docstring:
-                fail("docstrings are only supported for @getter, not @setter")
-            self.return_value_declaration = "int {return_value};"
+                fail("docstrings are only supported for @getter, not @setter",
+                     line_number=self.func.line_number)
+            self.return_value_declaration = "int {parser_retval};"
             self.methoddef_define = SETTERDEF_PROTOTYPE_DEFINE
         else:
             self.docstring_prototype = DOCSTRING_PROTOTYPE_VAR
@@ -359,7 +389,7 @@ class ParseArgsCodeGen:
 
             {exit_label}
                 {cleanup}
-                return return_value;
+                return {parser_retval};
             }}
         """)
         for field in preamble, *fields, finale:
@@ -374,9 +404,12 @@ class ParseArgsCodeGen:
         if self.func.kind is GETTER:
             self.parser_prototype = PARSER_PROTOTYPE_GETTER
             parser_code = []
-        elif self.func.kind is SETTER:
+        elif self.func.kind in SETTERS:
             self.parser_prototype = PARSER_PROTOTYPE_SETTER
-            parser_code = []
+            if self.func.kind is SETTER:
+                parser_code = [SETTER_PREAMBLE]
+            else:
+                parser_code = []
         elif not self.requires_defining_class:
             # no self.parameters, METH_NOARGS
             self.flags = "METH_NOARGS"
@@ -468,6 +501,12 @@ class ParseArgsCodeGen:
                               max_pos=self.max_pos,
                               fastcall=self.fastcall,
                               limited_capi=self.limited_capi)
+
+    def _parse_kwarg(self) -> str:
+        assert self.var_keyword is not None
+        c = self.var_keyword.converter
+        assert isinstance(c, libclinic.converters.VarKeywordCConverter)
+        return c.parse_var_keyword()
 
     def parse_pos_only(self) -> None:
         if self.fastcall:
@@ -564,6 +603,8 @@ class ParseArgsCodeGen:
                 parser_code.append("skip_optional:")
             if self.varpos:
                 parser_code.append(libclinic.normalize_snippet(self._parse_vararg(), indent=4))
+            elif self.var_keyword:
+                parser_code.append(libclinic.normalize_snippet(self._parse_kwarg(), indent=4))
         else:
             for parameter in self.parameters:
                 parameter.converter.use_converter()
@@ -588,6 +629,45 @@ class ParseArgsCodeGen:
                         goto exit;
                     }}
                     """, indent=4)]
+        self.parser_body(*parser_code)
+
+    def parse_var_keyword(self) -> None:
+        self.flags = "METH_VARARGS|METH_KEYWORDS"
+        self.parser_prototype = PARSER_PROTOTYPE_KEYWORD
+        nargs = 'PyTuple_GET_SIZE(args)'
+
+        parser_code = []
+        max_args = NO_VARARG if self.varpos else self.max_pos
+        if self.varpos is None and self.min_pos == self.max_pos == 0:
+            self.codegen.add_include('pycore_modsupport.h',
+                                     '_PyArg_NoPositional()')
+            parser_code.append(libclinic.normalize_snippet("""
+                if (!_PyArg_NoPositional("{name}", args)) {{
+                    goto exit;
+                }}
+                """, indent=4))
+        elif self.min_pos or max_args != NO_VARARG:
+            self.codegen.add_include('pycore_modsupport.h',
+                                     '_PyArg_CheckPositional()')
+            parser_code.append(libclinic.normalize_snippet(f"""
+                if (!_PyArg_CheckPositional("{{name}}", {nargs}, {self.min_pos}, {max_args})) {{{{
+                    goto exit;
+                }}}}
+                """, indent=4))
+
+        for i, p in enumerate(self.parameters):
+            parse_arg = p.converter.parse_arg(
+                f'PyTuple_GET_ITEM(args, {i})',
+                p.get_displayname(i+1),
+                limited_capi=self.limited_capi,
+            )
+            assert parse_arg is not None
+            parser_code.append(libclinic.normalize_snippet(parse_arg, indent=4))
+
+        if self.varpos:
+            parser_code.append(libclinic.normalize_snippet(self._parse_vararg(), indent=4))
+        if self.var_keyword:
+            parser_code.append(libclinic.normalize_snippet(self._parse_kwarg(), indent=4))
         self.parser_body(*parser_code)
 
     def parse_general(self, clang: CLanguage) -> None:
@@ -801,7 +881,7 @@ class ParseArgsCodeGen:
         if self.func.kind is METHOD_NEW:
             self.parser_prototype = PARSER_PROTOTYPE_KEYWORD
         else:
-            self.return_value_declaration = "int return_value = -1;"
+            self.return_value_declaration = "int {parser_retval} = -1;"
             self.parser_prototype = PARSER_PROTOTYPE_KEYWORD___INIT__
 
         fields: list[str] = list(self.parser_body_fields)
@@ -861,7 +941,10 @@ class ParseArgsCodeGen:
             self.cpp_endif = "#endif /* " + conditional + " */"
 
             if self.methoddef_define and self.codegen.add_ifndef_symbol(self.func.full_name):
-                self.methoddef_ifndef = METHODDEF_PROTOTYPE_IFNDEF
+                if self.func.kind in ACCESSORS:
+                    self.methoddef_ifndef = GETSETDEF_PROTOTYPE_IFNDEF
+                else:
+                    self.methoddef_ifndef = METHODDEF_PROTOTYPE_IFNDEF
 
     def finalize(self, clang: CLanguage) -> None:
         # add ';' to the end of self.parser_prototype and self.impl_prototype
@@ -921,12 +1004,14 @@ class ParseArgsCodeGen:
         # previous call to parser_body. this is used for an awful hack.
         self.parser_body_fields: tuple[str, ...] = ()
 
-        if not self.parameters and not self.varpos:
+        if not self.parameters and not self.varpos and not self.var_keyword:
             self.parse_no_args()
         elif self.use_meth_o():
             self.parse_one_arg()
         elif self.has_option_groups():
             self.parse_option_groups()
+        elif self.var_keyword is not None:
+            self.parse_var_keyword()
         elif (not self.requires_defining_class
               and self.pos_only == len(self.parameters)):
             self.parse_pos_only()

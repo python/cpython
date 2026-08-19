@@ -34,7 +34,7 @@
     <ClCompile Include="..\Python\ast.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\ast_opt.c">
+    <ClCompile Include="..\Python\ast_preprocess.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\ast_unparse.c">
@@ -160,9 +160,6 @@
     <ClCompile Include="..\Python\flowgraph.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\formatter_unicode.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\Python\frame.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -268,6 +265,12 @@
     <ClCompile Include="..\Python\jit.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\jit_publish.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Objects\lazyimportobject.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\listobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -370,6 +373,9 @@
     <ClCompile Include="..\Python\pystate.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\pystats.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\pystrcmp.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -397,6 +403,9 @@
     <ClCompile Include="..\Objects\rangeobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Objects\sentinelobject.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\setobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -407,6 +416,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\remote_debugging.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\slots.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\slots_generated.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\specialize.c">
@@ -448,6 +463,12 @@
     <ClCompile Include="..\Parser\lexer\lexer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Parser\lexer\number.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Parser\lexer\string.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Parser\lexer\buffer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -475,6 +496,9 @@
     <ClCompile Include="..\Python\tracemalloc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\typecache.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\uniqueid.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -484,7 +508,16 @@
     <ClCompile Include="..\Objects\typeobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Objects\unicode_format.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\unicodectype.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Objects\unicode_formatter.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Objects\unicode_writer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\unicodeobject.c">
@@ -525,6 +558,21 @@
     <None Include="..\Lib\codecs.py">
       <Filter>Python Files</Filter>
     </None>
+    <None Include="..\Lib\encodings\__init__.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\aliases.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\utf_8.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\_win_cp_codecs.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\_iconv_codecs.py">
+      <Filter>Python Files</Filter>
+    </None>
     <None Include="..\Lib\io.py">
       <Filter>Python Files</Filter>
     </None>
@@ -550,6 +598,9 @@
       <Filter>Python Files</Filter>
     </None>
     <None Include="..\Lib\stat.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\linecache.py">
       <Filter>Python Files</Filter>
     </None>
     <None Include="..\Lib\importlib\util.py">

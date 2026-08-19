@@ -2,6 +2,14 @@ import unittest
 import string
 from string import Template
 import types
+from test.support import cpython_only
+from test.support.import_helper import ensure_lazy_imports
+
+
+class LazyImportTest(unittest.TestCase):
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("base64", {"re", "collections"})
 
 
 class ModuleTest(unittest.TestCase):
@@ -290,6 +298,20 @@ class TestTemplate(unittest.TestCase):
            'tim likes ham for ${meal}')
         eq(s.safe_substitute(dict(who='tim', what='ham', meal='dinner')),
            'tim likes ham for dinner')
+
+    def test_precompiled_pattern(self):
+        # A subclass may supply an already-compiled pattern; it must be reused,
+        # not recompiled (re.compile() rejects flags on a compiled pattern).
+        import re
+        compiled = re.compile(
+            r'\$(?:(?P<escaped>\$)|(?P<named>[a-z]+)|'
+            r'\{(?P<braced>[a-z]+)\}|(?P<invalid>))')
+        class MyTemplate(Template):
+            pattern = compiled
+        self.assertIs(MyTemplate.pattern, compiled)
+        self.assertEqual(
+            MyTemplate('$who likes $what').substitute(who='tim', what='ham'),
+            'tim likes ham')
 
     def test_invalid_placeholders(self):
         raises = self.assertRaises

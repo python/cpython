@@ -2,13 +2,15 @@
 # to ensure the Queue locks remain stable.
 import itertools
 import random
+import struct
 import threading
 import time
 import unittest
 import weakref
-from test.support import gc_collect
+from test.support import gc_collect, bigmemtest
 from test.support import import_helper
 from test.support import threading_helper
+from test import support
 
 # queue module depends on threading primitives
 threading_helper.requires_working_threading(module=True)
@@ -963,33 +965,33 @@ class BaseSimpleQueueTest:
         # One producer, one consumer => results appended in well-defined order
         self.assertEqual(results, inputs)
 
-    def test_many_threads(self):
+    @bigmemtest(size=50, memuse=100*2**20, dry_run=False)
+    def test_many_threads(self, size):
         # Test multiple concurrent put() and get()
-        N = 50
         q = self.q
         inputs = list(range(10000))
-        results = self.run_threads(N, q, inputs, self.feed, self.consume)
+        results = self.run_threads(size, q, inputs, self.feed, self.consume)
 
         # Multiple consumers without synchronization append the
         # results in random order
         self.assertEqual(sorted(results), inputs)
 
-    def test_many_threads_nonblock(self):
+    @bigmemtest(size=50, memuse=100*2**20, dry_run=False)
+    def test_many_threads_nonblock(self, size):
         # Test multiple concurrent put() and get(block=False)
-        N = 50
         q = self.q
         inputs = list(range(10000))
-        results = self.run_threads(N, q, inputs,
+        results = self.run_threads(size, q, inputs,
                                    self.feed, self.consume_nonblock)
 
         self.assertEqual(sorted(results), inputs)
 
-    def test_many_threads_timeout(self):
+    @bigmemtest(size=50, memuse=100*2**20, dry_run=False)
+    def test_many_threads_timeout(self, size):
         # Test multiple concurrent put() and get(timeout=...)
-        N = 50
         q = self.q
         inputs = list(range(1000))
-        results = self.run_threads(N, q, inputs,
+        results = self.run_threads(size, q, inputs,
                                    self.feed, self.consume_timeout)
 
         self.assertEqual(sorted(results), inputs)
@@ -1030,6 +1032,14 @@ class CSimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
     def test_is_default(self):
         self.assertIs(self.type2test, self.queue.SimpleQueue)
         self.assertIs(self.type2test, self.queue.SimpleQueue)
+
+    def test_simplequeue_sizeof(self):
+        q = self.type2test()
+        basesize = support.calcobjsize('?nnPnnP')
+        support.check_sizeof(self, q, basesize + struct.calcsize(8 * 'P'))
+        for _ in range(1000):
+            q.put(object())
+        support.check_sizeof(self, q, basesize + struct.calcsize(1024 * 'P'))
 
     def test_reentrancy(self):
         # bpo-14976: put() may be called reentrantly in an asynchronous

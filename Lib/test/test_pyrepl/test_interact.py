@@ -1,7 +1,7 @@
 import contextlib
 import io
-import unittest
 import warnings
+import unittest
 from unittest.mock import patch
 from textwrap import dedent
 
@@ -113,7 +113,7 @@ class TestSimpleInteract(unittest.TestCase):
         r = """
     def f(x, x): ...
              ^
-SyntaxError: duplicate argument 'x' in function definition"""
+SyntaxError: duplicate parameter 'x' in function definition"""
         self.assertIn(r, f.getvalue())
 
     def test_runsource_shows_syntax_error_for_failed_compilation(self):
@@ -293,7 +293,7 @@ class TestWarnings(unittest.TestCase):
         """)
 
         with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("default")
+            warnings.simplefilter("always")
             console.runsource(code)
 
         count = sum("'return' in a 'finally' block" in str(w.message)

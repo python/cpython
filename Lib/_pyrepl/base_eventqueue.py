@@ -54,14 +54,6 @@ class BaseEventQueue:
         """
         return not self.events
 
-    def flush_buf(self) -> bytearray:
-        """
-        Flushes the buffer and returns its contents.
-        """
-        old = self.buf
-        self.buf = bytearray()
-        return old
-
     def insert(self, event: Event) -> None:
         """
         Inserts an event into the queue.
@@ -69,18 +61,14 @@ class BaseEventQueue:
         trace('added event {event}', event=event)
         self.events.append(event)
 
-    def push(self, char: int | bytes | str) -> None:
+    def push(self, char: int | bytes) -> None:
         """
         Processes a character by updating the buffer and handling special key mappings.
         """
+        assert isinstance(char, (int, bytes))
         ord_char = char if isinstance(char, int) else ord(char)
-        if ord_char > 255:
-            assert isinstance(char, str)
-            char = bytes(char.encode(self.encoding, "replace"))
-            self.buf.extend(char)
-        else:
-            char = bytes(bytearray((ord_char,)))
-            self.buf.append(ord_char)
+        char = ord_char.to_bytes()
+        self.buf.append(ord_char)
 
         if char in self.keymap:
             if self.keymap is self.compiled_keymap:
@@ -91,7 +79,7 @@ class BaseEventQueue:
             if isinstance(k, dict):
                 self.keymap = k
             else:
-                self.insert(Event('key', k, self.flush_buf()))
+                self.insert(Event('key', k, self.buf.take_bytes()))  # type: ignore[attr-defined]
                 self.keymap = self.compiled_keymap
 
         elif self.buf and self.buf[0] == 27:  # escape
@@ -100,15 +88,15 @@ class BaseEventQueue:
             # the docstring in keymap.py
             trace('unrecognized escape sequence, propagating...')
             self.keymap = self.compiled_keymap
-            self.insert(Event('key', '\033', bytearray(b'\033')))
-            for _c in self.flush_buf()[1:]:
+            self.insert(Event('key', '\033', b'\033'))
+            for _c in self.buf.take_bytes()[1:]:  # type: ignore[attr-defined]
                 self.push(_c)
 
         else:
             try:
-                decoded = bytes(self.buf).decode(self.encoding)
+                decoded = self.buf.decode(self.encoding)
             except UnicodeError:
                 return
             else:
-                self.insert(Event('key', decoded, self.flush_buf()))
+                self.insert(Event('key', decoded, self.buf.take_bytes()))  # type: ignore[attr-defined]
             self.keymap = self.compiled_keymap
