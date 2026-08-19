@@ -48,6 +48,7 @@ class TestUtils(TestCase):
         self.assertEqual(wlen('a\N{ZERO WIDTH JOINER}b'), 2)
 
         # Backspace decreases cursor position, and cannot move before column 0.
+        self.assertEqual(wlen('\b'), 0)
         self.assertEqual(wlen('Question? _\b'), 10)
         self.assertEqual(wlen('ab\b'), 1)
         self.assertEqual(wlen('ab\b\b'), 0)
