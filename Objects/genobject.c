@@ -781,8 +781,8 @@ gen_iternext(PyObject *self)
  *
  * Returns 0 if StopIteration is set and -1 if any other exception is set.
  */
-int
-_PyAnyGen_SetStopIterationValue(PyObject *exc_class, PyObject *value)
+static int
+set_stop_iteration_value(PyObject *exc_class, PyObject *value)
 {
     assert(exc_class != NULL);
     assert(PyType_Check(exc_class));
@@ -806,13 +806,13 @@ _PyAnyGen_SetStopIterationValue(PyObject *exc_class, PyObject *value)
 int
 _PyGen_SetStopIterationValue(PyObject *value)
 {
-    return _PyAnyGen_SetStopIterationValue(PyExc_StopIteration, value);
+    return set_stop_iteration_value(PyExc_StopIteration, value);
 }
 
 int
 _PyAsyncGen_SetStopIterationValue(PyObject *value)
 {
-    return _PyAnyGen_SetStopIterationValue(PyExc_StopAsyncIteration, value);
+    return set_stop_iteration_value(PyExc_StopAsyncIteration, value);
 }
 
 /*
