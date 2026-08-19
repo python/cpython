@@ -868,8 +868,7 @@ class ClinicWholeFileTest(TestCase):
                       "#define FOO_PROPERTY_GETTER Foo_property_get\n",
                       generated)
         self.assertIn("#define FOO_PROPERTY_SETTER Foo_property_set\n"
-                      "#if defined(FOO_PROPERTY_GETTER) "
-                      "|| defined(FOO_PROPERTY_SETTER)",
+                      "#if defined(FOO_PROPERTY_SETTER)",
                       generated)
         self.assertIn('#  define FOO_PROPERTY_GETSETDEF {"property", '
                       '(getter)FOO_PROPERTY_GETTER, '
@@ -962,8 +961,8 @@ class ClinicWholeFileTest(TestCase):
             class Foo "FooObject *" "&Foo_Type"
             [clinic start generated code]*/
             /*[clinic input]
-            @setter
             @deleter
+            @setter
             Foo.property
                 value: object = NULL
             [clinic start generated code]*/
@@ -971,12 +970,67 @@ class ClinicWholeFileTest(TestCase):
         generated = self.clinic.parse(dedent(block))
         self.assertNotIn("if (arg == NULL) {", generated)
 
+    def test_standalone_deleter(self):
+        block = """
+            /*[clinic input]
+            output everything block
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            /*[clinic input]
+            @deleter
+            Foo.property
+            [clinic start generated code]*/
+        """
+        generated = self.clinic.parse(dedent(block))
+        # The deleter fills the setter slot and rejects assignment.
+        self.assertIn('#define FOO_PROPERTY_GETSETDEF {"property", '
+                      '(getter)NULL, (setter)Foo_property_del, NULL},',
+                      generated)
+        self.assertIn("if (arg != NULL) {", generated)
+        self.assertIn("Foo_property_del_impl((FooObject *)self)", generated)
+
+    def test_setter_and_standalone_deleter(self):
+        block = """
+            /*[clinic input]
+            output everything block
+            output methoddef_ifndef buffer
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            /*[clinic input]
+            @setter
+            Foo.property
+
+                value: object
+            [clinic start generated code]*/
+            /*[clinic input]
+            @deleter
+            Foo.property
+            [clinic start generated code]*/
+            /*[clinic input]
+            dump buffer
+            [clinic start generated code]*/
+        """
+        generated = self.clinic.parse(dedent(block))
+        # The setter slot is filled with a function which dispatches
+        # to the setter or to the deleter.
+        self.assertIn("        return ((setter)Foo_property_del)"
+                      "(self, value, context);\n"
+                      "    }\n"
+                      "    return ((setter)Foo_property_set)"
+                      "(self, value, context);",
+                      generated)
+        self.assertIn('#define FOO_PROPERTY_GETSETDEF {"property", '
+                      '(getter)NULL, (setter)Foo_property_set_or_del, NULL},',
+                      generated)
+
     def test_getset_duplicate(self):
         # Only a setter defines the new value.
         for annotation, parameter, err in (
             ("@getter", "", "Cannot apply @getter to 'Foo.property' twice"),
             ("@setter", "value: object",
              "The setter of 'Foo.property' is already defined"),
+            ("@deleter", "",
+             "The deleter of 'Foo.property' is already defined"),
         ):
             with self.subTest(annotation=annotation):
                 self.clinic = _make_clinic(filename="test.c")
@@ -996,6 +1050,26 @@ class ClinicWholeFileTest(TestCase):
                     [clinic start generated code]*/
                 """
                 self.expect_failure(block, err, lineno=11)
+
+    def test_deleter_and_standalone_deleter(self):
+        block = """
+            /*[clinic input]
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            /*[clinic input]
+            @setter
+            @deleter
+            Foo.property
+
+                value: object = NULL
+            [clinic start generated code]*/
+            /*[clinic input]
+            @deleter
+            Foo.property
+            [clinic start generated code]*/
+        """
+        err = "The deleter of 'Foo.property' is already defined"
+        self.expect_failure(block, err, lineno=13)
 
     def test_getset_different_c_basename(self):
         block = """
@@ -3004,25 +3078,30 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, expected_error, lineno=1)
 
     def test_invalid_getset(self):
-        block = """
-            module foo
-            class Foo "" ""
-            @setter
-            Foo.property -> int
-        """
-        expected_error = "@setter methods cannot define a return type"
-        self.expect_failure(block, expected_error, lineno=3)
+        for annotation in ("@setter", "@deleter"):
+            with self.subTest(annotation=annotation):
+                block = f"""
+                    module foo
+                    class Foo "" ""
+                    {annotation}
+                    Foo.property -> int
+                """
+                expected_error = ("@setter and @deleter methods cannot "
+                                  "define a return type")
+                self.expect_failure(block, expected_error, lineno=3)
 
-        block = """
-           module foo
-           class Foo "" ""
-           @getter
-           Foo.property
-               obj: int
-               /
-        """
-        expected_error = "@getter methods cannot define parameters"
-        self.expect_failure(block, expected_error)
+        for annotation in ("@getter", "@deleter"):
+            with self.subTest(annotation=annotation):
+                block = f"""
+                   module foo
+                   class Foo "" ""
+                   {annotation}
+                   Foo.property
+                       obj: int
+                       /
+                """
+                expected_error = f"{annotation} methods cannot define parameters"
+                self.expect_failure(block, expected_error)
 
         block = """
            module foo
@@ -3050,8 +3129,8 @@ class ClinicParserTest(TestCase):
         block = """
             module m
             class Foo "" ""
-            @setter
             @deleter
+            @setter
             Foo.property
                 value: object
         """
@@ -3174,46 +3253,43 @@ class ClinicParserTest(TestCase):
                                   f"a normal callable")
                 self.expect_failure(block, expected_error, lineno=3)
 
-    def test_deleter_without_setter(self):
+    def test_getter_and_deleter_disallowed_on_same_function(self):
+        dup_annotations = [("@getter", "@deleter"), ("@deleter", "@getter")]
+        for dup in dup_annotations:
+            with self.subTest(dup=dup):
+                block = f"""
+                    module foo
+                    class Foo "" ""
+                    {dup[0]}
+                    {dup[1]}
+                    Foo.property
+                """
+                expected_error = (f"Can't set {dup[1]}, function is not "
+                                  f"a normal callable")
+                self.expect_failure(block, expected_error, lineno=3)
+
+    def test_duplicate_deleter(self):
         block = """
-            module foo
+            module m
             class Foo "" ""
             @deleter
-            Foo.property
-        """
-        expected_error = "Can't set @deleter, @setter is not applied"
-        self.expect_failure(block, expected_error, lineno=2)
-
-        block = """
-            module foo
-            class Foo "" ""
             @deleter
             @setter
-            Foo.property
-        """
-        self.expect_failure(block, expected_error, lineno=2)
-
-    def test_deleter_twice(self):
-        block = """
-            module foo
-            class Foo "" ""
-            @setter
-            @deleter
-            @deleter
             Foo.property
         """
         expected_error = "Cannot apply @deleter twice to the same function!"
-        self.expect_failure(block, expected_error, lineno=4)
+        self.expect_failure(block, expected_error, lineno=3)
 
     def test_getset_no_class(self):
-        for annotation in "@getter", "@setter":
+        for annotation in "@getter", "@setter", "@deleter":
             with self.subTest(annotation=annotation):
                 block = f"""
                     module m
                     {annotation}
                     m.func
                 """
-                expected_error = "@getter and @setter must be methods"
+                expected_error = ("@getter, @setter and @deleter "
+                                  "must be methods")
                 self.expect_failure(block, expected_error, lineno=2)
 
     def test_duplicate_coexist(self):

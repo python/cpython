@@ -18,7 +18,7 @@ from libclinic.function import (
     Module, Class, Property, Function, Parameter,
     FunctionKind,
     CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW,
-    GETTER, SETTER, SETTER_AND_DELETER,
+    GETTER, SETTER, DELETER, SETTER_AND_DELETER,
     ACCESSORS, SETTERS)
 from libclinic.converter import (
     converters, legacy_converters)
@@ -468,6 +468,9 @@ class DSLParser:
         match self.kind:
             case FunctionKind.CALLABLE:
                 self.kind = FunctionKind.SETTER
+            case FunctionKind.DELETER:
+                # The setter is called with NULL to delete the attribute.
+                self.kind = FunctionKind.SETTER_AND_DELETER
             case FunctionKind.SETTER | FunctionKind.SETTER_AND_DELETER:
                 fail("Cannot apply @setter twice to the same function!")
             case _:
@@ -475,13 +478,16 @@ class DSLParser:
 
     def at_deleter(self) -> None:
         match self.kind:
+            case FunctionKind.CALLABLE:
+                # @deleter alone defines a separate deletion function.
+                self.kind = FunctionKind.DELETER
             case FunctionKind.SETTER:
                 # The setter is called with NULL to delete the attribute.
                 self.kind = FunctionKind.SETTER_AND_DELETER
-            case FunctionKind.SETTER_AND_DELETER:
+            case FunctionKind.DELETER | FunctionKind.SETTER_AND_DELETER:
                 fail("Cannot apply @deleter twice to the same function!")
             case _:
-                fail("Can't set @deleter, @setter is not applied")
+                fail("Can't set @deleter, function is not a normal callable")
 
     def at_staticmethod(self) -> None:
         if self.kind is not CALLABLE:
@@ -626,7 +632,7 @@ class DSLParser:
         if name == '__new__' and (self.kind is not CLASS_METHOD or not cls):
             fail("'__new__' must be a class method!")
         if self.kind in ACCESSORS and not cls:
-            fail("@getter and @setter must be methods")
+            fail("@getter, @setter and @deleter must be methods")
 
         # Normalise self.kind.
         if name == '__new__':
@@ -650,7 +656,7 @@ class DSLParser:
     ) -> CReturnConverter:
         if forced_converter:
             if self.kind in SETTERS:
-                fail("@setter methods cannot define a return type")
+                fail("@setter and @deleter methods cannot define a return type")
             if self.kind is METHOD_INIT:
                 fail("__init__ methods cannot define a return type")
             ast_input = f"def x() -> {forced_converter}: pass"
@@ -817,14 +823,23 @@ class DSLParser:
             func.cls.properties[func.name] = prop
             self.clinic.properties.append(prop)
         func.property = prop
-        slot = prop.getter if func.kind is GETTER else prop.setter
+        if func.kind is GETTER:
+            self.fill_accessor_slot(prop.getter, func, 'getter')
+        else:
+            if func.kind is not DELETER:
+                self.fill_accessor_slot(prop.setter, func, 'setter')
+            if func.kind is not SETTER:
+                self.fill_accessor_slot(prop.deleter, func, 'deleter')
+
+    def fill_accessor_slot(self, slot: list[Function], func: Function,
+                           name: str) -> None:
         # Several implementations of the same accessor can share the slot if
         # each of them is compiled under its own preprocessor condition.
         if slot and (not func.condition
                      or any(not other.condition for other in slot)):
-            if func.kind is GETTER:
+            if name == 'getter':
                 fail(f"Cannot apply @getter to {func.full_name!r} twice")
-            fail(f"The setter of {func.full_name!r} is already defined")
+            fail(f"The {name} of {func.full_name!r} is already defined")
         slot.append(func)
 
     # Now entering the parameters section.  The rules, formally stated:
@@ -891,8 +906,9 @@ class DSLParser:
             return self.next(self.state_function_docstring, line)
 
         assert self.function is not None
-        if self.function.kind is GETTER:
-            fail("@getter methods cannot define parameters")
+        if self.function.kind is GETTER or self.function.kind is DELETER:
+            kind = self.function.kind.name.lower()
+            fail(f"@{kind} methods cannot define parameters")
 
         self.parameter_continuation = ''
         return self.next(self.state_parameter, line)

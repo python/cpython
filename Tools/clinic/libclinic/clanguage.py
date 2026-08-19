@@ -17,7 +17,7 @@ from libclinic.function import (
 from libclinic.converters import self_converter
 from libclinic.parse_args import (
     ParseArgsCodeGen,
-    GETSETDEF_PROTOTYPE_COMBINE, GETSETDEF_PROTOTYPE_DEFINE)
+    GETSETDEF_PROTOTYPE_COMBINE, GETSETDEF_PROTOTYPE_DEFINE, SETDEL_DISPATCHER)
 if TYPE_CHECKING:
     from libclinic.app import Clinic
 
@@ -109,18 +109,33 @@ class CLanguage(Language):
         template_dict = {
             'name': prop.name,
             'getset_name': getset_name,
+            'setdel_basename': prop.setdel_basename,
         }
         parts: list[str] = []
         if prop.is_plain:
             getter = prop.getter[0] if prop.getter else None
             setter = prop.setter[0] if prop.setter else None
+            deleter = prop.deleter[0] if prop.deleter else None
             template_dict['getter'] = (getter.accessor_basename if getter
-                                       else 'NULL')
-            template_dict['setter'] = (setter.accessor_basename if setter
                                        else 'NULL')
             template_dict['docstr'] = (f'{getter.c_basename}__doc__'
                                        if getter and getter.docstring
                                        else 'NULL')
+            if setter is None:
+                # The deleter alone fills the setter slot of the entry.
+                setter, deleter = deleter, None
+            elif setter is deleter:
+                # The setter is called with NULL to delete the attribute.
+                deleter = None
+            template_dict['setter'] = (setter.accessor_basename if setter
+                                       else 'NULL')
+            if deleter is not None:
+                # Setting and deleting are implemented by different
+                # functions, so an intermediate function dispatches to one of
+                # them.
+                template_dict['deleter'] = deleter.accessor_basename
+                parts.append(SETDEL_DISPATCHER.format_map(template_dict) + '\n')
+                template_dict['setter'] = prop.setdel_basename
             parts.append(GETSETDEF_PROTOTYPE_DEFINE.format_map(template_dict)
                          + '\n')
         else:
@@ -128,9 +143,14 @@ class CLanguage(Language):
             # only known to the preprocessor.  They announce themselves, so
             # only the unconditional ones are announced here.
             for suffix, funcs in (('GETTER', prop.getter),
-                                  ('SETTER', prop.setter)):
+                                  ('SETTER', prop.setter),
+                                  ('DELETER', prop.deleter)):
                 for func in funcs:
                     if func.condition:
+                        continue
+                    if suffix == 'DELETER' and func in prop.setter:
+                        # The setter is called with NULL to delete the
+                        # attribute, so it does not need a deleter.
                         continue
                     parts.append(f"#define {getset_name}_{suffix} "
                                  f"{func.accessor_basename}\n")
