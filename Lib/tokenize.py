@@ -199,7 +199,7 @@ class Untokenizer:
 
         newline = '\r\n' if self.prev_line.endswith('\r\n') else '\n'
         line = self.prev_line.rstrip('\\\r\n')
-        ws = ''.join(_itertools.takewhile(str.isspace, reversed(line)))
+        ws = line[len(line.rstrip()):]
         self.tokens.append(ws + f"\\{newline}" * row_offset)
         self.prev_col = 0
 
