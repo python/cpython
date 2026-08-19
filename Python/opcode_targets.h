@@ -210,6 +210,7 @@ static void *opcode_targets_table[256] = {
     &&TARGET_STORE_ATTR_WITH_HINT,
     &&TARGET_STORE_SUBSCR_DICT,
     &&TARGET_STORE_SUBSCR_LIST_INT,
+    &&TARGET_STORE_SUBSCR_PY_DUNDER,
     &&TARGET_TO_BOOL_ALWAYS_TRUE,
     &&TARGET_TO_BOOL_BOOL,
     &&TARGET_TO_BOOL_INT,
@@ -219,7 +220,6 @@ static void *opcode_targets_table[256] = {
     &&TARGET_UNPACK_SEQUENCE_LIST,
     &&TARGET_UNPACK_SEQUENCE_TUPLE,
     &&TARGET_UNPACK_SEQUENCE_TWO_TUPLE,
-    &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
@@ -478,7 +478,7 @@ static void *opcode_tracing_targets_table[256] = {
     &&TARGET_TRACE_RECORD,
     &&TARGET_TRACE_RECORD,
     &&TARGET_TRACE_RECORD,
-    &&_unknown_opcode,
+    &&TARGET_TRACE_RECORD,
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
@@ -743,6 +743,7 @@ static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_STORE_SLICE(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_STORE_SUBSCR(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_STORE_SUBSCR_DICT(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_STORE_SUBSCR_LIST_INT(TAIL_CALL_PARAMS);
+static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_STORE_SUBSCR_PY_DUNDER(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_SWAP(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_TO_BOOL(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_TO_BOOL_ALWAYS_TRUE(TAIL_CALL_PARAMS);
@@ -986,6 +987,7 @@ static py_tail_call_funcptr instruction_funcptr_handler_table[256] = {
     [STORE_SUBSCR] = _TAIL_CALL_STORE_SUBSCR,
     [STORE_SUBSCR_DICT] = _TAIL_CALL_STORE_SUBSCR_DICT,
     [STORE_SUBSCR_LIST_INT] = _TAIL_CALL_STORE_SUBSCR_LIST_INT,
+    [STORE_SUBSCR_PY_DUNDER] = _TAIL_CALL_STORE_SUBSCR_PY_DUNDER,
     [SWAP] = _TAIL_CALL_SWAP,
     [TO_BOOL] = _TAIL_CALL_TO_BOOL,
     [TO_BOOL_ALWAYS_TRUE] = _TAIL_CALL_TO_BOOL_ALWAYS_TRUE,
@@ -1016,7 +1018,6 @@ static py_tail_call_funcptr instruction_funcptr_handler_table[256] = {
     [125] = _TAIL_CALL_UNKNOWN_OPCODE,
     [126] = _TAIL_CALL_UNKNOWN_OPCODE,
     [127] = _TAIL_CALL_UNKNOWN_OPCODE,
-    [219] = _TAIL_CALL_UNKNOWN_OPCODE,
     [220] = _TAIL_CALL_UNKNOWN_OPCODE,
     [221] = _TAIL_CALL_UNKNOWN_OPCODE,
     [222] = _TAIL_CALL_UNKNOWN_OPCODE,
@@ -1244,6 +1245,7 @@ static py_tail_call_funcptr instruction_funcptr_tracing_table[256] = {
     [STORE_SUBSCR] = _TAIL_CALL_TRACE_RECORD,
     [STORE_SUBSCR_DICT] = _TAIL_CALL_TRACE_RECORD,
     [STORE_SUBSCR_LIST_INT] = _TAIL_CALL_TRACE_RECORD,
+    [STORE_SUBSCR_PY_DUNDER] = _TAIL_CALL_TRACE_RECORD,
     [SWAP] = _TAIL_CALL_TRACE_RECORD,
     [TO_BOOL] = _TAIL_CALL_TRACE_RECORD,
     [TO_BOOL_ALWAYS_TRUE] = _TAIL_CALL_TRACE_RECORD,
@@ -1274,7 +1276,6 @@ static py_tail_call_funcptr instruction_funcptr_tracing_table[256] = {
     [125] = _TAIL_CALL_UNKNOWN_OPCODE,
     [126] = _TAIL_CALL_UNKNOWN_OPCODE,
     [127] = _TAIL_CALL_UNKNOWN_OPCODE,
-    [219] = _TAIL_CALL_UNKNOWN_OPCODE,
     [220] = _TAIL_CALL_UNKNOWN_OPCODE,
     [221] = _TAIL_CALL_UNKNOWN_OPCODE,
     [222] = _TAIL_CALL_UNKNOWN_OPCODE,

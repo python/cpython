@@ -12602,10 +12602,10 @@
             (void)(opcode);
             #endif
             frame->instr_ptr = next_instr;
-            next_instr += 2;
+            next_instr += 4;
             INSTRUCTION_STATS(STORE_SUBSCR);
             PREDICTED_STORE_SUBSCR:;
-            _Py_CODEUNIT* const this_instr = next_instr - 2;
+            _Py_CODEUNIT* const this_instr = next_instr - 4;
             (void)this_instr;
             _PyStackRef container;
             _PyStackRef sub;
@@ -12629,6 +12629,7 @@
                 ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
+            /* Skip 2 cache entries */
             // _STORE_SUBSCR
             {
                 v = stack_pointer[-3];
@@ -12674,9 +12675,9 @@
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
-            next_instr += 2;
+            next_instr += 4;
             INSTRUCTION_STATS(STORE_SUBSCR_DICT);
-            static_assert(INLINE_CACHE_ENTRIES_STORE_SUBSCR == 1, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_STORE_SUBSCR == 3, "incorrect cache size");
             _PyStackRef nos;
             _PyStackRef value;
             _PyStackRef dict_st;
@@ -12697,7 +12698,7 @@
                     JUMP_TO_PREDICTED(STORE_SUBSCR);
                 }
             }
-            /* Skip 1 cache entry */
+            /* Skip 3 cache entries */
             // _STORE_SUBSCR_DICT
             {
                 sub = stack_pointer[-1];
@@ -12744,9 +12745,9 @@
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
-            next_instr += 2;
+            next_instr += 4;
             INSTRUCTION_STATS(STORE_SUBSCR_LIST_INT);
-            static_assert(INLINE_CACHE_ENTRIES_STORE_SUBSCR == 1, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_STORE_SUBSCR == 3, "incorrect cache size");
             _PyStackRef value;
             _PyStackRef nos;
             _PyStackRef list_st;
@@ -12773,7 +12774,7 @@
                     JUMP_TO_PREDICTED(STORE_SUBSCR);
                 }
             }
-            /* Skip 1 cache entry */
+            /* Skip 3 cache entries */
             // _STORE_SUBSCR_LIST_INT
             {
                 sub_st = value;
@@ -12833,6 +12834,77 @@
                 _PyFrame_StackPointerValidate(frame);
                 PyStackRef_XCLOSE(value);
                 _PyFrame_StackPointerInvalidate(frame);
+            }
+            DISPATCH();
+        }
+
+        TARGET(STORE_SUBSCR_PY_DUNDER) {
+            #if _Py_TAIL_CALL_INTERP
+            int opcode = STORE_SUBSCR_PY_DUNDER;
+            (void)(opcode);
+            #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
+            frame->instr_ptr = next_instr;
+            next_instr += 4;
+            INSTRUCTION_STATS(STORE_SUBSCR_PY_DUNDER);
+            static_assert(INLINE_CACHE_ENTRIES_STORE_SUBSCR == 3, "incorrect cache size");
+            _PyStackRef v;
+            _PyStackRef container;
+            _PyStackRef sub;
+            /* Skip 1 cache entry */
+            sub = stack_pointer[-1];
+            container = stack_pointer[-2];
+            v = stack_pointer[-3];
+            uint32_t version = read_u32(&this_instr[2].cache);
+            PyObject *container_o = PyStackRef_AsPyObjectBorrow(container);
+            PyTypeObject *tp = Py_TYPE(container_o);
+            if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != version) {
+                UPDATE_MISS_STATS(STORE_SUBSCR);
+                assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
+                JUMP_TO_PREDICTED(STORE_SUBSCR);
+            }
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
+            PyObject *setitem = _PyType_Lookup(tp, &_Py_ID(__setitem__));
+            _PyFrame_StackPointerInvalidate(frame);
+            if (setitem == NULL || !PyFunction_Check(setitem)) {
+                UPDATE_MISS_STATS(STORE_SUBSCR);
+                assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
+                JUMP_TO_PREDICTED(STORE_SUBSCR);
+            }
+            STAT_INC(STORE_SUBSCR, hit);
+            assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+            _PyFrame_StackPointerValidate(frame);
+            int err = _PyObject_CallSetItemDunder(tstate, setitem, container_o,
+                PyStackRef_AsPyObjectBorrow(sub),
+                PyStackRef_AsPyObjectBorrow(v));
+            _PyFrame_StackPointerInvalidate(frame);
+            assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+            _PyFrame_StackPointerValidate(frame);
+            _PyStackRef tmp = sub;
+            sub = PyStackRef_NULL;
+            stack_pointer[-1] = sub;
+            PyStackRef_CLOSE(tmp);
+            _PyFrame_StackPointerInvalidate(frame);
+            assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+            _PyFrame_StackPointerValidate(frame);
+            tmp = container;
+            container = PyStackRef_NULL;
+            stack_pointer[-2] = container;
+            PyStackRef_CLOSE(tmp);
+            _PyFrame_StackPointerInvalidate(frame);
+            assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+            _PyFrame_StackPointerValidate(frame);
+            tmp = v;
+            v = PyStackRef_NULL;
+            stack_pointer[-3] = v;
+            PyStackRef_CLOSE(tmp);
+            _PyFrame_StackPointerInvalidate(frame);
+            stack_pointer += -3;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            if (err) {
+                JUMP_TO_LABEL(error);
             }
             DISPATCH();
         }

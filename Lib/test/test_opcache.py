@@ -692,6 +692,36 @@ class TestRacesDoNotCrash(TestBase):
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
     @requires_specialization
+    def test_store_subscr_py_dunder(self):
+        def get_items():
+            class C:
+                __setitem__ = lambda self, item, value: None
+
+            items = []
+            for _ in range(self.ITEMS):
+                item = C()
+                items.append(item)
+            return items
+
+        def read(items):
+            for item in items:
+                try:
+                    item[None] = None
+                except TypeError:
+                    pass
+
+        def write(items):
+            for item in items:
+                try:
+                    del item.__setitem__
+                except AttributeError:
+                    pass
+                type(item).__setitem__ = lambda self, item, value: None
+
+        opname = "STORE_SUBSCR_PY_DUNDER"
+        self.assert_races_do_not_crash(opname, get_items, read, write)
+
+    @requires_specialization
     def test_binary_subscr_list_int(self):
         def get_items():
             items = []

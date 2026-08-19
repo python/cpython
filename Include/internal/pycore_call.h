@@ -39,6 +39,13 @@ extern PyObject* _PyObject_Call_Prepend(
     PyObject *args,
     PyObject *kwargs);
 
+PyAPI_FUNC(int) _PyObject_CallSetItemDunder(
+    PyThreadState *tstate,
+    PyObject *func,
+    PyObject *self,
+    PyObject *key,
+    PyObject *value);
+
 extern PyObject* _PyObject_VectorcallDictTstate(
     PyThreadState *tstate,
     PyObject *callable,

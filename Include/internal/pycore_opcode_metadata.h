@@ -482,6 +482,8 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 3;
         case STORE_SUBSCR_LIST_INT:
             return 3;
+        case STORE_SUBSCR_PY_DUNDER:
+            return 3;
         case SWAP:
             return 2 + (oparg-2);
         case TO_BOOL:
@@ -977,6 +979,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 0;
         case STORE_SUBSCR_LIST_INT:
             return 0;
+        case STORE_SUBSCR_PY_DUNDER:
+            return 0;
         case SWAP:
             return 2 + (oparg-2);
         case TO_BOOL:
@@ -1309,9 +1313,10 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
     [STORE_GLOBAL] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [STORE_NAME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [STORE_SLICE] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [STORE_SUBSCR] = { true, INSTR_FMT_IXC, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [STORE_SUBSCR_DICT] = { true, INSTR_FMT_IXC, HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG | HAS_RECORDS_VALUE_FLAG },
-    [STORE_SUBSCR_LIST_INT] = { true, INSTR_FMT_IXC, HAS_DEOPT_FLAG | HAS_EXIT_FLAG | HAS_ESCAPES_FLAG },
+    [STORE_SUBSCR] = { true, INSTR_FMT_IXC00, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
+    [STORE_SUBSCR_DICT] = { true, INSTR_FMT_IXC00, HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG | HAS_RECORDS_VALUE_FLAG },
+    [STORE_SUBSCR_LIST_INT] = { true, INSTR_FMT_IXC00, HAS_DEOPT_FLAG | HAS_EXIT_FLAG | HAS_ESCAPES_FLAG },
+    [STORE_SUBSCR_PY_DUNDER] = { true, INSTR_FMT_IXC00, HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [SWAP] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_PURE_FLAG },
     [TO_BOOL] = { true, INSTR_FMT_IXC00, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [TO_BOOL_ALWAYS_TRUE] = { true, INSTR_FMT_IXC00, HAS_EXIT_FLAG | HAS_ESCAPES_FLAG | HAS_RECORDS_VALUE_FLAG },
@@ -1524,9 +1529,10 @@ _PyOpcode_macro_expansion[256] = {
     [STORE_GLOBAL] = { .nuops = 1, .uops = { { _STORE_GLOBAL, OPARG_SIMPLE, 0 } } },
     [STORE_NAME] = { .nuops = 1, .uops = { { _STORE_NAME, OPARG_SIMPLE, 0 } } },
     [STORE_SLICE] = { .nuops = 1, .uops = { { _STORE_SLICE, OPARG_SIMPLE, 0 } } },
-    [STORE_SUBSCR] = { .nuops = 1, .uops = { { _STORE_SUBSCR, OPARG_SIMPLE, 0 } } },
-    [STORE_SUBSCR_DICT] = { .nuops = 4, .uops = { { _RECORD_NOS_TYPE, OPARG_SIMPLE, 0 }, { _GUARD_NOS_DICT_STORE_SUBSCRIPT, OPARG_SIMPLE, 0 }, { _STORE_SUBSCR_DICT, OPARG_SIMPLE, 1 }, { _POP_TOP, OPARG_SIMPLE, 1 } } },
-    [STORE_SUBSCR_LIST_INT] = { .nuops = 5, .uops = { { _GUARD_TOS_INT, OPARG_SIMPLE, 0 }, { _GUARD_NOS_LIST, OPARG_SIMPLE, 0 }, { _STORE_SUBSCR_LIST_INT, OPARG_SIMPLE, 1 }, { _POP_TOP_INT, OPARG_SIMPLE, 1 }, { _POP_TOP, OPARG_SIMPLE, 1 } } },
+    [STORE_SUBSCR] = { .nuops = 1, .uops = { { _STORE_SUBSCR, OPARG_SIMPLE, 2 } } },
+    [STORE_SUBSCR_DICT] = { .nuops = 4, .uops = { { _RECORD_NOS_TYPE, OPARG_SIMPLE, 0 }, { _GUARD_NOS_DICT_STORE_SUBSCRIPT, OPARG_SIMPLE, 0 }, { _STORE_SUBSCR_DICT, OPARG_SIMPLE, 3 }, { _POP_TOP, OPARG_SIMPLE, 3 } } },
+    [STORE_SUBSCR_LIST_INT] = { .nuops = 5, .uops = { { _GUARD_TOS_INT, OPARG_SIMPLE, 0 }, { _GUARD_NOS_LIST, OPARG_SIMPLE, 0 }, { _STORE_SUBSCR_LIST_INT, OPARG_SIMPLE, 3 }, { _POP_TOP_INT, OPARG_SIMPLE, 3 }, { _POP_TOP, OPARG_SIMPLE, 3 } } },
+    [STORE_SUBSCR_PY_DUNDER] = { .nuops = 1, .uops = { { _STORE_SUBSCR_PY_DUNDER, 2, 1 } } },
     [SWAP] = { .nuops = 1, .uops = { { _SWAP, OPARG_SIMPLE, 0 } } },
     [TO_BOOL] = { .nuops = 1, .uops = { { _TO_BOOL, OPARG_SIMPLE, 2 } } },
     [TO_BOOL_ALWAYS_TRUE] = { .nuops = 4, .uops = { { _RECORD_TOS_TYPE, OPARG_SIMPLE, 1 }, { _GUARD_TYPE_VERSION, 2, 1 }, { _REPLACE_WITH_TRUE, OPARG_SIMPLE, 3 }, { _POP_TOP, OPARG_SIMPLE, 3 } } },
@@ -1774,6 +1780,7 @@ const char *_PyOpcode_OpName[267] = {
     [STORE_SUBSCR] = "STORE_SUBSCR",
     [STORE_SUBSCR_DICT] = "STORE_SUBSCR_DICT",
     [STORE_SUBSCR_LIST_INT] = "STORE_SUBSCR_LIST_INT",
+    [STORE_SUBSCR_PY_DUNDER] = "STORE_SUBSCR_PY_DUNDER",
     [SWAP] = "SWAP",
     [TO_BOOL] = "TO_BOOL",
     [TO_BOOL_ALWAYS_TRUE] = "TO_BOOL_ALWAYS_TRUE",
@@ -1801,7 +1808,7 @@ PyAPI_DATA(const uint8_t) _PyOpcode_Caches[256];
 const uint8_t _PyOpcode_Caches[256] = {
     [RESUME] = 1,
     [TO_BOOL] = 3,
-    [STORE_SUBSCR] = 1,
+    [STORE_SUBSCR] = 3,
     [SEND] = 1,
     [FOR_ITER] = 1,
     [UNPACK_SEQUENCE] = 1,
@@ -1838,7 +1845,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [125] = 125,
     [126] = 126,
     [127] = 127,
-    [219] = 219,
     [220] = 220,
     [221] = 221,
     [222] = 222,
@@ -2064,6 +2070,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [STORE_SUBSCR] = STORE_SUBSCR,
     [STORE_SUBSCR_DICT] = STORE_SUBSCR,
     [STORE_SUBSCR_LIST_INT] = STORE_SUBSCR,
+    [STORE_SUBSCR_PY_DUNDER] = STORE_SUBSCR,
     [SWAP] = SWAP,
     [TO_BOOL] = TO_BOOL,
     [TO_BOOL_ALWAYS_TRUE] = TO_BOOL,
@@ -2099,7 +2106,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     case 125: \
     case 126: \
     case 127: \
-    case 219: \
     case 220: \
     case 221: \
     case 222: \

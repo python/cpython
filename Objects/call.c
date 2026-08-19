@@ -396,6 +396,20 @@ PyObject_CallOneArg(PyObject *func, PyObject *arg)
 }
 
 
+int
+_PyObject_CallSetItemDunder(PyThreadState *tstate, PyObject *func,
+                            PyObject *self, PyObject *key, PyObject *value)
+{
+    PyObject *args[3] = {self, key, value};
+    PyObject *res = _PyObject_VectorcallTstate(tstate, func, args, 3, NULL);
+    if (res == NULL) {
+        return -1;
+    }
+    Py_DECREF(res);
+    return 0;
+}
+
+
 /* --- PyFunction call functions ---------------------------------- */
 
 PyObject *

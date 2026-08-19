@@ -1729,6 +1729,13 @@
             break;
         }
 
+        case _STORE_SUBSCR_PY_DUNDER: {
+            CHECK_STACK_BOUNDS(-3);
+            stack_pointer += -3;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
         case _STORE_SUBSCR_LIST_INT: {
             JitOptRef sub_st;
             JitOptRef list_st;

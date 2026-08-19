@@ -1393,6 +1393,7 @@ dummy_func(
         family(STORE_SUBSCR, INLINE_CACHE_ENTRIES_STORE_SUBSCR) = {
             STORE_SUBSCR_DICT,
             STORE_SUBSCR_LIST_INT,
+            STORE_SUBSCR_PY_DUNDER,
         };
 
         specializing op(_SPECIALIZE_STORE_SUBSCR, (counter/1, container, sub -- container, sub)) {
@@ -1414,10 +1415,27 @@ dummy_func(
             ERROR_IF(err);
         }
 
-        macro(STORE_SUBSCR) = _SPECIALIZE_STORE_SUBSCR + _STORE_SUBSCR;
+        macro(STORE_SUBSCR) = _SPECIALIZE_STORE_SUBSCR + unused/2 + _STORE_SUBSCR;
 
         macro(STORE_SUBSCR_LIST_INT) =
-            _GUARD_TOS_INT + _GUARD_NOS_LIST + unused/1 + _STORE_SUBSCR_LIST_INT + _POP_TOP_INT + POP_TOP;
+            _GUARD_TOS_INT + _GUARD_NOS_LIST + unused/3 + _STORE_SUBSCR_LIST_INT + _POP_TOP_INT + POP_TOP;
+
+        op(_STORE_SUBSCR_PY_DUNDER, (version/2, v, container, sub -- )) {
+            PyObject *container_o = PyStackRef_AsPyObjectBorrow(container);
+            PyTypeObject *tp = Py_TYPE(container_o);
+            DEOPT_IF(FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != version);
+            PyObject *setitem = _PyType_Lookup(tp, &_Py_ID(__setitem__));
+            DEOPT_IF(setitem == NULL || !PyFunction_Check(setitem));
+            STAT_INC(STORE_SUBSCR, hit);
+            int err = _PyObject_CallSetItemDunder(tstate, setitem, container_o,
+                                                  PyStackRef_AsPyObjectBorrow(sub),
+                                                  PyStackRef_AsPyObjectBorrow(v));
+            DECREF_INPUTS();
+            ERROR_IF(err);
+        }
+
+        macro(STORE_SUBSCR_PY_DUNDER) =
+            unused/1 + _STORE_SUBSCR_PY_DUNDER;
 
         op(_STORE_SUBSCR_LIST_INT, (value, list_st, sub_st -- ls, ss)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
@@ -1452,7 +1470,7 @@ dummy_func(
 
         macro(STORE_SUBSCR_DICT) =
             _RECORD_NOS_TYPE +
-            _GUARD_NOS_DICT_STORE_SUBSCRIPT + unused/1 + _STORE_SUBSCR_DICT + POP_TOP;
+            _GUARD_NOS_DICT_STORE_SUBSCRIPT + unused/3 + _STORE_SUBSCR_DICT + POP_TOP;
 
         op(_STORE_SUBSCR_DICT, (value, dict_st, sub -- st)) {
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);

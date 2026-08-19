@@ -1619,6 +1619,26 @@ _Py_Specialize_StoreSubscr(_PyStackRef container_st, _PyStackRef sub_st, _Py_COD
         specialize(instr, STORE_SUBSCR_DICT);
         return;
     }
+    {
+        unsigned int tp_version;
+        PyObject *descr = _PyType_LookupRefAndVersion(container_type,
+                                                      &_Py_ID(__setitem__), &tp_version);
+        if (descr != NULL && Py_IS_TYPE(descr, &PyFunction_Type) && tp_version != 0) {
+            PyCodeObject *fcode = (PyCodeObject *)((PyFunctionObject *)descr)->func_code;
+            if ((fcode->co_flags & (CO_VARKEYWORDS | CO_VARARGS)) == 0 &&
+                fcode->co_kwonlyargcount == 0 &&
+                (fcode->co_flags & CO_OPTIMIZED) &&
+                fcode->co_argcount == 3)
+            {
+                _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)(instr + 1);
+                write_u32(cache->version, tp_version);
+                specialize(instr, STORE_SUBSCR_PY_DUNDER);
+                Py_DECREF(descr);
+                return;
+            }
+        }
+        Py_XDECREF(descr);
+    }
     SPECIALIZATION_FAIL(STORE_SUBSCR, store_subscr_fail_kind(container, sub));
     unspecialize(instr);
 }

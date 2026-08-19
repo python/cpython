@@ -1,0 +1,4 @@
+Specialize :opcode:`STORE_SUBSCR` for container objects whose type defines
+``__setitem__`` as a simple Python function.  The new ``STORE_SUBSCR_PY_DUNDER``
+specialization guards on the container's type version and calls the dunder
+directly, skipping the generic ``PyObject_SetItem`` slot dispatch.
