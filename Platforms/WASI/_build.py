@@ -135,7 +135,7 @@ def call(command, *, context=None, quiet=False, **kwargs):
         if quiet:
             _shared.log("❌", f"Exit code {error.returncode}")
             separator()
-            with open(stdout.name, "r", encoding="utf-8") as file:
+            with open(stdout.name, encoding="utf-8") as file:
                 lines = file.readlines()
                 # Inefficient, but the log shouldn't be dramatically large.
                 print("".join(lines[-10:]), end="")
@@ -175,8 +175,7 @@ def make_build_python(context, _working_dir):
     cmd = [
         binary,
         "-c",
-        "import sys; "
-        "print(f'{sys.version_info.major}.{sys.version_info.minor}')",
+        "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')",
     ]
     version = subprocess.check_output(cmd, encoding="utf-8").strip()
 
