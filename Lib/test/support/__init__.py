@@ -1271,15 +1271,20 @@ def set_memlimit(limit: str) -> None:
 
 
 def _memory_watchdog(pid):
-    """Return a function printing the memory usage of process *pid*."""
+    """Return a function printing the memory usage of process *pid*.
+
+    The largest value it saw is kept in its ``peak`` attribute.
+    """
     # Imported here: test.support does not depend on test.libregrtest.
     from test.libregrtest.utils import get_process_memory_usage
 
     def watch():
         mem = get_process_memory_usage(pid)
         if mem is not None:
+            watch.peak = max(watch.peak, mem)
             print(f" ... process data size: {mem / (1024 ** 3):.1f} GiB",
                   flush=True)
+    watch.peak = 0
     return watch
 
 
@@ -1333,7 +1338,23 @@ def bigmemtest(size, memuse, dry_run=True):
                 qualname = f'{cls.__qualname__}.{f.__name__}'
                 proc = isolation._start_test(cls.__module__, qualname)
                 watchdog = _memory_watchdog(proc.pid) if verbose else None
-                isolation._replay_test(self, *proc.wait(tick=watchdog))
+                payload, output, returncode = proc.wait(tick=watchdog)
+                if watchdog:
+                    # The subprocess measures its own peak exactly.  What the
+                    # parent sampled is only a lower bound.
+                    maxrss = payload and payload.get('maxrss')
+                    peak = maxrss or watchdog.peak
+                    if peak:
+                        print(f" ... peak memory use: "
+                              f"{peak / (1024 ** 3):.1f} GiB"
+                              f"{'' if maxrss else ' or more'}", flush=True)
+                    majflt = payload and payload.get('majflt')
+                    if majflt:
+                        # The test did not fit in memory, so its timing means
+                        # little.
+                        print(f" ... {majflt} major page faults: the test "
+                              f"waited for the disk", flush=True)
+                isolation._replay_test(self, payload, output, returncode)
                 return
 
             return f(self, maxsize)
