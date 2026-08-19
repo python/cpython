@@ -6330,7 +6330,7 @@ os_wait(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(HAVE_WAIT) */
 
-#if (defined(__linux__) && defined(__NR_pidfd_open) && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
+#if (defined(HAVE_PIDFD_OPEN) || (defined(__linux__) && defined(__NR_pidfd_open) && !(defined(__ANDROID__) && __ANDROID_API__ < 31)))
 
 PyDoc_STRVAR(os_pidfd_open__doc__,
 "pidfd_open($module, /, pid, flags=0)\n"
@@ -6405,9 +6405,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(__linux__) && defined(__NR_pidfd_open) && !(defined(__ANDROID__) && __ANDROID_API__ < 31)) */
+#endif /* (defined(HAVE_PIDFD_OPEN) || (defined(__linux__) && defined(__NR_pidfd_open) && !(defined(__ANDROID__) && __ANDROID_API__ < 31))) */
 
-#if (defined(__linux__) && defined(__NR_pidfd_getfd) && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
+#if (defined(HAVE_PIDFD_GETFD) || (defined(__linux__) && defined(__NR_pidfd_getfd) && !(defined(__ANDROID__) && __ANDROID_API__ < 31)))
 
 PyDoc_STRVAR(os_pidfd_getfd__doc__,
 "pidfd_getfd($module, /, pidfd, targetfd, *, flags=0)\n"
@@ -6492,7 +6492,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(__linux__) && defined(__NR_pidfd_getfd) && !(defined(__ANDROID__) && __ANDROID_API__ < 31)) */
+#endif /* (defined(HAVE_PIDFD_GETFD) || (defined(__linux__) && defined(__NR_pidfd_getfd) && !(defined(__ANDROID__) && __ANDROID_API__ < 31))) */
 
 #if defined(HAVE_SETNS)
 
@@ -8853,7 +8853,7 @@ exit:
 
 #endif /* (defined(HAVE_PWRITEV) || defined (HAVE_PWRITEV2)) */
 
-#if defined(HAVE_COPY_FILE_RANGE)
+#if defined(_Py_HAVE_COPY_FILE_RANGE)
 
 PyDoc_STRVAR(os_copy_file_range__doc__,
 "copy_file_range($module, /, src, dst, count, offset_src=None,\n"
@@ -8969,7 +8969,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_COPY_FILE_RANGE) */
+#endif /* defined(_Py_HAVE_COPY_FILE_RANGE) */
 
 #if ((defined(HAVE_SPLICE) && !defined(_AIX)))
 
@@ -11547,7 +11547,7 @@ exit:
     return return_value;
 }
 
-#if defined(HAVE_MEMFD_CREATE)
+#if defined(_Py_HAVE_MEMFD_CREATE)
 
 PyDoc_STRVAR(os_memfd_create__doc__,
 "memfd_create($module, /, name, flags=MFD_CLOEXEC)\n"
@@ -11633,7 +11633,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_MEMFD_CREATE) */
+#endif /* defined(_Py_HAVE_MEMFD_CREATE) */
 
 #if (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC))
 
@@ -12578,7 +12578,7 @@ exit:
     return return_value;
 }
 
-#if defined(HAVE_GETRANDOM_SYSCALL)
+#if (defined(HAVE_GETRANDOM) || defined(HAVE_GETRANDOM_SYSCALL))
 
 PyDoc_STRVAR(os_getrandom__doc__,
 "getrandom($module, /, size, flags=0)\n"
@@ -12590,7 +12590,7 @@ PyDoc_STRVAR(os_getrandom__doc__,
     {"getrandom", _PyCFunction_CAST(os_getrandom), METH_FASTCALL|METH_KEYWORDS, os_getrandom__doc__},
 
 static PyObject *
-os_getrandom_impl(PyObject *module, Py_ssize_t size, int flags);
+os_getrandom_impl(PyObject *module, Py_ssize_t size, unsigned int flags);
 
 static PyObject *
 os_getrandom(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -12626,7 +12626,7 @@ os_getrandom(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_ssize_t size;
-    int flags = 0;
+    unsigned int flags = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -12648,9 +12648,21 @@ os_getrandom(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    flags = PyLong_AsInt(args[1]);
-    if (flags == -1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[1], &flags, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
 skip_optional_pos:
     return_value = os_getrandom_impl(module, size, flags);
@@ -12659,7 +12671,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_GETRANDOM_SYSCALL) */
+#endif /* (defined(HAVE_GETRANDOM) || defined(HAVE_GETRANDOM_SYSCALL)) */
 
 #if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM))
 
@@ -13734,4 +13746,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=d641f02a97057666 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f77ed566165d51da input=a9049054013a1b77]*/

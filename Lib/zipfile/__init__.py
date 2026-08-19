@@ -689,7 +689,7 @@ class ZipInfo:
             self.external_attr = 0o40775 << 16  # drwxrwxr-x
             self.external_attr |= 0x10  # MS-DOS directory flag
         else:
-            self.external_attr = 0o600 << 16  # ?rw-------
+            self.external_attr = 0o100600 << 16  # -rw-------
         return self
 
     def is_dir(self):
@@ -2395,15 +2395,16 @@ class ZipFile:
         truncation."""
         if self.mode != 'a':
             raise ValueError("repack() requires mode 'a'")
-        if not self.fp:
-            raise ValueError(
-                "Attempt to write to ZIP archive that was already closed")
-        if self._writing:
-            raise ValueError(
-                "Can't write to ZIP archive while an open writing handle exists"
-            )
 
         with self._lock:
+            if not self.fp:
+                raise ValueError(
+                    "Attempt to write to ZIP archive that was already closed")
+            if self._writing or self._fileRefCnt > 1:
+                raise ValueError(
+                    "Can't repack ZIP archive while an open handle exists"
+                )
+
             self._writing = True
             try:
                 repacker = _ZipRepacker(

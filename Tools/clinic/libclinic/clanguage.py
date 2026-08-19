@@ -13,7 +13,8 @@ from libclinic.language import Language
 from libclinic.function import (
     Module, Class, Function, Parameter, ParamTuple,
     permute_optional_groups,
-    GETTER, SETTER, METHOD_INIT)
+    GETTER, METHOD_INIT,
+    ACCESSORS, SETTERS)
 from libclinic.converters import self_converter
 from libclinic.parse_args import ParseArgsCodeGen
 if TYPE_CHECKING:
@@ -91,7 +92,10 @@ class CLanguage(Language):
         for o in signatures:
             if isinstance(o, Function):
                 if function:
-                    fail("You may specify at most one function per block.\nFound a block containing at least two:\n\t" + repr(function) + " and " + repr(o))
+                    fail("You may specify at most one function per block.\n"
+                         "Found a block containing at least two:\n\t"
+                         + repr(function) + " and " + repr(o),
+                         line_number=o.line_number)
                 function = o
         return self.render_function(clinic, function)
 
@@ -336,7 +340,8 @@ class CLanguage(Language):
                 if count in subsets:
                     fail(f"Function {f.full_name!r} has an ambiguous group "
                          f"configuration: a call with {count} argument(s) "
-                         f"can be parsed in more than one way.")
+                         f"can be parsed in more than one way.",
+                         line_number=f.line_number)
                 subsets[count] = subset
 
         if limited_capi:
@@ -461,7 +466,8 @@ class CLanguage(Language):
 
         if has_option_groups and (not positional):
             fail("You cannot use optional groups ('[' and ']') "
-                 "unless all parameters are positional-only ('/').")
+                 "unless all parameters are positional-only ('/').",
+                 line_number=f.line_number)
 
         # HACK
         # when we're METH_O, but have a custom return converter,
@@ -478,12 +484,12 @@ class CLanguage(Language):
         full_name = f.full_name
         template_dict = {'full_name': full_name}
         template_dict['name'] = f.displayname
-        if f.kind in {GETTER, SETTER}:
+        if f.kind in ACCESSORS:
             template_dict['getset_name'] = f.c_basename.upper()
             template_dict['getset_basename'] = f.c_basename
             if f.kind is GETTER:
                 template_dict['c_basename'] = f.c_basename + "_get"
-            elif f.kind is SETTER:
+            else:
                 template_dict['c_basename'] = f.c_basename + "_set"
                 # Implicitly add the setter value parameter.
                 data.impl_parameters.append("PyObject *value")
@@ -498,7 +504,7 @@ class CLanguage(Language):
         for converter in converters:
             converter.set_template_dict(template_dict)
 
-        if f.kind not in {SETTER, METHOD_INIT}:
+        if f.kind not in SETTERS | {METHOD_INIT}:
             f.return_converter.render(f, data)
         template_dict['impl_return_type'] = f.return_converter.type
 
@@ -525,6 +531,7 @@ class CLanguage(Language):
         template_dict['cleanup'] = libclinic.format_escape("".join(data.cleanup))
 
         template_dict['return_value'] = data.return_value
+        template_dict['parser_retval'] = data.parser_retval
         template_dict['lock'] = "\n".join(data.lock)
         template_dict['unlock'] = "\n".join(data.unlock)
 
