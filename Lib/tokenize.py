@@ -173,7 +173,7 @@ class Untokenizer:
         self.prev_line = ""
         self.encoding = None
 
-    def add_whitespace(self, start):
+    def add_whitespace(self, start, line=""):
         row, col = start
         if row < self.prev_row or row == self.prev_row and col < self.prev_col:
             raise ValueError("start ({},{}) precedes previous end ({},{})"

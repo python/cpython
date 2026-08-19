@@ -1974,6 +1974,21 @@ class UntokenizeTest(TestCase):
         self.assertEqual(u.encoding, 'utf-8')
         self.assertEqual(tokenize.untokenize(iter(tokens)), b'Hello ')
 
+    def test_preserve_token_gap(self):
+        for ws in ("\t", "\f", " ", "\t \f"):
+            with self.subTest(whitespace=ws):
+                u = tokenize.Untokenizer()
+                u.prev_col = 2
+                u.add_whitespace((1, 2 + len(ws)), f"a,{ws}b = 1, 2")
+                self.assertEqual(u.tokens, [ws])
+
+    def test_preserve_backslash_whitespace(self):
+        for ws in ("\t", "\f", " ", "\t \f"):
+            with self.subTest(whitespace=ws):
+                u = tokenize.Untokenizer()
+                u.prev_line = "x = 1 + \\\n"
+                u.add_whitespace((2, len(ws)), f"{ws}y\n")
+                self.assertEqual(u.tokens, [' \\\n', ws])
 
 def contains_ambiguous_backslash(source):
     """Return `True` if the source contains a backslash on a
@@ -2206,6 +2221,21 @@ if 1:
         self.assertEqual(codelines[1], codelines[2])
         self.check_roundtrip(code)
 
+    def test_whitespace_between_tokens(self):
+        for whitespace in ("\t", "\f", " ", "\t \f"):
+            with self.subTest(whitespace=whitespace):
+                self.check_roundtrip(f"x{whitespace}={whitespace}1\n")
+
+    def test_whitespace_after_indent(self):
+        for indent in ("\t", "    "):
+            with self.subTest(indent=indent):
+                code = f"if False:\n{indent}print(\n{indent}{indent}'hello'\n{indent})"
+                self.check_roundtrip(code)
+
+    def test_whitespace_after_backslash(self):
+        for whitespace in ("\t", "\f", " ", "\t \f"):
+            with self.subTest(whitespace=whitespace):
+                self.check_roundtrip(f"x = 1 + \\\n{whitespace}y\n")
 
 class InvalidPythonTests(TestCase):
     def test_number_followed_by_name(self):
