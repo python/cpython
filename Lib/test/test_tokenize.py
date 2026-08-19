@@ -1990,6 +1990,13 @@ class UntokenizeTest(TestCase):
                 u.add_whitespace((2, len(ws)), f"{ws}y\n")
                 self.assertEqual(u.tokens, [' \\\n', ws])
 
+    def test_preserve_pre_continuation_whitespace_order(self):
+        u = tokenize.Untokenizer()
+        u.prev_line = "x = 1 +\t \f\\\n"
+        u.add_whitespace((2, 0), "y\n")
+        self.assertEqual(u.tokens, ['\t \f\\\n'])
+
+
 def contains_ambiguous_backslash(source):
     """Return `True` if the source contains a backslash on a
     line by itself. For example:
@@ -2236,6 +2243,10 @@ if 1:
         for whitespace in ("\t", "\f", " ", "\t \f"):
             with self.subTest(whitespace=whitespace):
                 self.check_roundtrip(f"x = 1 + \\\n{whitespace}y\n")
+
+    def test_whitespace_before_backslash(self):
+        self.check_roundtrip("x = 1 +\t \f\\\ny\n")
+
 
 class InvalidPythonTests(TestCase):
     def test_number_followed_by_name(self):
