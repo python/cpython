@@ -40,6 +40,7 @@ __all__ = [
     "has_fork_support", "requires_fork",
     "has_subprocess_support", "requires_subprocess",
     "has_socket_support", "requires_working_socket",
+    "exclusive", "requires_exclusive",
     "has_remote_subprocess_debugging", "requires_remote_subprocess_debugging",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_if_buggy_ucrt_strfptime",
@@ -336,6 +337,120 @@ def get_resource_value(resource):
         return None
     return use_resources.get(resource)
 
+# Resources which are machine-wide: two tests using one of them at the same
+# time interfere with each other.
+EXCLUSIVE_RESOURCES = frozenset({'audio', 'console', 'curses', 'gui'})
+
+# The environment variable naming the directory in which the test runner keeps
+# the lock files.  It is set only when tests are run in parallel.
+EXCLUSIVE_ENV = '_PYTHON_TEST_EXCLUSIVE_DIR'
+
+# Resources locked for the lifetime of this process: resource -> file descriptor.
+_exclusive_locks = {}
+
+
+def _lock_file(fd):
+    try:
+        import fcntl
+    except ImportError:
+        import msvcrt
+        import time
+        while True:
+            try:
+                msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+            except OSError:
+                # LK_LOCK gives up after ten seconds, so retry ourselves.
+                time.sleep(0.1)
+            else:
+                return
+    else:
+        fcntl.flock(fd, fcntl.LOCK_EX)
+
+
+def _open_exclusive_lock(resource):
+    """Open and lock the file of *resource*, or return None if not applicable."""
+    from test.support import isolation
+    if isolation.runningInSubprocess:
+        # The process which started this one holds the lock already.
+        return None
+    directory = os.environ.get(EXCLUSIVE_ENV)
+    if not directory:
+        # The tests are not run in parallel, so there is nothing to exclude.
+        return None
+    try:
+        fd = os.open(os.path.join(directory, f'exclusive-{resource}.lock'),
+                     os.O_WRONLY | os.O_CREAT, 0o600)
+    except OSError:
+        return None
+    try:
+        _lock_file(fd)
+    except OSError:
+        os.close(fd)
+        return None
+    return fd
+
+
+def requires_exclusive(resource):
+    """Run no other test using *resource* until this process ends.
+
+    For a resource which the whole test file needs, next to requires().
+    """
+    if resource not in _exclusive_locks:
+        fd = _open_exclusive_lock(resource)
+        if fd is not None:
+            _exclusive_locks[resource] = fd
+
+
+@contextlib.contextmanager
+def _exclusive_resource(resource):
+    """Run no other test using *resource* until the end of the block."""
+    if resource in _exclusive_locks:
+        # This process holds it already.
+        yield
+        return
+    fd = _open_exclusive_lock(resource)
+    if fd is None:
+        yield
+        return
+    _exclusive_locks[resource] = fd
+    try:
+        yield
+    finally:
+        del _exclusive_locks[resource]
+        os.close(fd)
+
+
+def exclusive(resource):
+    """Decorator to run no other test using *resource* while this one runs.
+
+    It can decorate a test method or a whole TestCase subclass.
+    """
+    def decorator(obj):
+        if isinstance(obj, type):
+            # Call the function itself, not the method bound to this class,
+            # so that a subclass gets its own class.
+            setup = obj.setUpClass.__func__
+            @classmethod
+            @functools.wraps(setup)
+            def setUpClass(cls):
+                cls.enterClassContext(_exclusive_resource(resource))
+                setup(cls)
+            obj.setUpClass = setUpClass
+            return obj
+        if inspect.iscoroutinefunction(obj):
+            @functools.wraps(obj)
+            async def wrapper(*args, **kwargs):
+                with _exclusive_resource(resource):
+                    return await obj(*args, **kwargs)
+        else:
+            @functools.wraps(obj)
+            def wrapper(*args, **kwargs):
+                with _exclusive_resource(resource):
+                    return obj(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
 def requires(resource, msg=None):
     """Raise ResourceDenied if the specified resource is not available."""
     if not is_resource_enabled(resource):
@@ -346,6 +461,8 @@ def requires(resource, msg=None):
         raise ResourceDenied("No socket support")
     if resource == 'gui' and not _is_gui_available():
         raise ResourceDenied(_is_gui_available.reason)
+    if resource in EXCLUSIVE_RESOURCES:
+        requires_exclusive(resource)
 
 def _requires_unix_version(sysname, min_version):
     """Decorator raising SkipTest if the OS is `sysname` and the version is less
@@ -1336,25 +1453,28 @@ def bigmemtest(size, memuse, dry_run=True):
                 # Watch it from here: the output of the subprocess is captured.
                 cls = type(self)
                 qualname = f'{cls.__qualname__}.{f.__name__}'
-                proc = isolation._start_test(cls.__module__, qualname)
-                watchdog = _memory_watchdog(proc.pid) if verbose else None
-                payload, output, returncode = proc.wait(tick=watchdog)
-                if watchdog:
-                    # The subprocess measures its own peak exactly.  What the
-                    # parent sampled is only a lower bound.
-                    maxrss = payload and payload.get('maxrss')
-                    peak = maxrss or watchdog.peak
-                    if peak:
-                        print(f" ... peak memory use: "
-                              f"{peak / (1024 ** 3):.1f} GiB"
-                              f"{'' if maxrss else ' or more'}", flush=True)
-                    majflt = payload and payload.get('majflt')
-                    if majflt:
-                        # The test did not fit in memory, so its timing means
-                        # little.
-                        print(f" ... {majflt} major page faults: the test "
-                              f"waited for the disk", flush=True)
-                isolation._replay_test(self, payload, output, returncode)
+                # A real run allocates most of the memory of the machine.
+                with _exclusive_resource('memory'):
+                    proc = isolation._start_test(cls.__module__, qualname)
+                    watchdog = _memory_watchdog(proc.pid) if verbose else None
+                    payload, output, returncode = proc.wait(tick=watchdog)
+                    if watchdog:
+                        # The subprocess measures its own peak exactly.
+                        # What the parent sampled is only a lower bound.
+                        maxrss = payload and payload.get('maxrss')
+                        peak = maxrss or watchdog.peak
+                        if peak:
+                            print(f" ... peak memory use: "
+                                  f"{peak / (1024 ** 3):.1f} GiB"
+                                  f"{'' if maxrss else ' or more'}",
+                                  flush=True)
+                        majflt = payload and payload.get('majflt')
+                        if majflt:
+                            # The test did not fit in memory, so its
+                            # timing means little.
+                            print(f" ... {majflt} major page faults: the test "
+                                  f"waited for the disk", flush=True)
+                    isolation._replay_test(self, payload, output, returncode)
                 return
 
             return f(self, maxsize)
@@ -1406,6 +1526,8 @@ def requires_resource(resource):
     if resource == 'gui' and not _is_gui_available():
         return unittest.skip(_is_gui_available.reason)
     if is_resource_enabled(resource):
+        if resource in EXCLUSIVE_RESOURCES:
+            return exclusive(resource)
         return _id
     else:
         return unittest.skip("resource {0!r} is not enabled".format(resource))
