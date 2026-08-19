@@ -181,7 +181,10 @@ class Untokenizer:
         self.add_backslash_continuation(start)
         col_offset = col - self.prev_col
         if col_offset:
-            self.tokens.append(" " * col_offset)
+            if line:
+                self.tokens.append(line[self.prev_col:col])
+            else:
+                self.tokens.append(" " * col_offset)
 
     def add_backslash_continuation(self, start):
         """Add backslash continuation characters if the row has increased
@@ -260,7 +263,7 @@ class Untokenizer:
                     extra_chars = last_line.count("{{") + last_line.count("}}")
                     end = (end_line, end_col + extra_chars)
 
-            self.add_whitespace(start)
+            self.add_whitespace(start, line)
             self.tokens.append(token)
             self.prev_row, self.prev_col = end
             if tok_type in (NEWLINE, NL):
