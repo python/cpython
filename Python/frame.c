@@ -69,7 +69,11 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
      * observes the new f_frame pointer also sees owner = FRAME_OWNED_BY_FRAME_OBJECT,
      * causing _PyFrame_IsIncomplete() to short-circuit to false. */
     new_frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
-    f->f_frame = new_frame;
+    /* Publish f_frame with a release store so that any concurrent reader
+     * doing an acquire load of f_frame is guaranteed to also observe
+     * new_frame->owner == FRAME_OWNED_BY_FRAME_OBJECT (written above),
+     * satisfying the C11 happens-before relationship. */
+    _Py_atomic_store_ptr_release(&f->f_frame, new_frame);
     assert(!_PyFrame_IsIncomplete(new_frame));
     assert(f->f_back == NULL);
     _PyInterpreterFrame *prev = _PyFrame_GetFirstComplete(frame->previous);

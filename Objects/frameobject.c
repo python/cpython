@@ -2399,10 +2399,15 @@ PyFrameObject*
 PyFrame_GetBack(PyFrameObject *frame)
 {
     assert(frame != NULL);
-    assert(!_PyFrame_IsIncomplete(frame->f_frame));
+    /* Use an acquire load so that if we observe the new f_frame pointer
+     * published by take_ownership()'s release store, we also observe
+     * new_frame->owner == FRAME_OWNED_BY_FRAME_OBJECT. */
+    _PyInterpreterFrame *f_frame =
+        (_PyInterpreterFrame *)_Py_atomic_load_ptr_acquire(&frame->f_frame);
+    assert(!_PyFrame_IsIncomplete(f_frame));
     PyFrameObject *back = frame->f_back;
     if (back == NULL) {
-        _PyInterpreterFrame *prev = frame->f_frame->previous;
+        _PyInterpreterFrame *prev = f_frame->previous;
         prev = _PyFrame_GetFirstComplete(prev);
         if (prev) {
             back = _PyFrame_GetFrameObject(prev);
