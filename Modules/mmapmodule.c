@@ -969,10 +969,13 @@ mmap_mmap_resize_impl(mmap_object *self, Py_ssize_t new_size)
 #ifdef UNIX
         void *newmap;
 
-#ifdef __linux__
+#if defined(__linux__) || defined(__NetBSD__)
+        // Linux mremap() refuses to grow a shared anonymous mapping, and
+        // NetBSD mremap() returns a mapping whose grown region is not backed,
+        // so accessing it crashes.  Reject it here in both cases.
         if (self->fd == -1 && !(self->flags & MAP_PRIVATE) && new_size > self->size) {
             PyErr_Format(PyExc_ValueError,
-                "mmap: can't expand a shared anonymous mapping on Linux");
+                "mmap: can't expand a shared anonymous mapping");
             return NULL;
         }
 #endif
@@ -2081,9 +2084,6 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
         fh = _Py_get_osfhandle(fileno);
         if (fh == INVALID_HANDLE_VALUE)
             return NULL;
-
-        /* Win9x appears to need us seeked to zero */
-        lseek(fileno, 0, SEEK_SET);
     }
 
     m_obj = (mmap_object *)type->tp_alloc(type, 0);

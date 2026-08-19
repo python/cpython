@@ -897,6 +897,9 @@
     <ClInclude Include="..\Include\internal\pycore_tuple.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_typecache.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_typedefs.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -1620,6 +1623,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\tracemalloc.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\typecache.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\uniqueid.c">

@@ -714,6 +714,9 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         return await fut
 
     def _sock_accept(self, fut, sock):
+        # gh-153761: _sock_accept must not scheduled with already cancelled future
+        if fut.done():
+            return
         fd = sock.fileno()
         try:
             conn, address = sock.accept()
@@ -1195,8 +1198,13 @@ class _SelectorSocketTransport(_SelectorTransport):
             return
 
         for data in list_of_data:
+            # gh-155888: an empty chunk can never be drained, so never buffer it
+            if not data:
+                continue
             self._buffer.append(memoryview(data))
             self._buffer_size += len(data)
+        if not self._buffer:
+            return
         self._write_ready()
         # If the entire buffer couldn't be written, register a write handler
         if self._buffer:
