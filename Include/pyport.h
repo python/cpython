@@ -556,7 +556,7 @@ extern "C" {
 #      define _Py_MSAN_UNPOISON(PTR, SIZE)  (__msan_unpoison(PTR, SIZE))
 #    endif
 #  endif
-#  if __has_feature(address_sanitizer)
+#  if __has_feature(address_sanitizer) || __has_feature(hwaddress_sanitizer)
 #    if !defined(_Py_ADDRESS_SANITIZER)
 #      define _Py_ADDRESS_SANITIZER
 #      define _Py_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
@@ -569,7 +569,7 @@ extern "C" {
 #    endif
 #  endif
 #elif defined(__GNUC__)
-#  if defined(__SANITIZE_ADDRESS__)
+#  if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_HWADDRESS__)
 #    define _Py_ADDRESS_SANITIZER
 #    define _Py_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
 #  endif

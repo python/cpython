@@ -463,6 +463,7 @@ def check_sanitizer(*, address=False, memory=False, ub=False, thread=False,
     )
     address_sanitizer = (
         '-fsanitize=address' in cflags or
+        '-fsanitize=hwaddress' in cflags or
         '--with-address-sanitizer' in config_args
     )
     ub_sanitizer = (
