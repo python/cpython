@@ -5076,8 +5076,8 @@ class Context(object):
         """Returns an indication of the class of the operand.
 
         The class is one of the following strings:
-          -sNaN
-          -NaN
+          sNaN
+          NaN
           -Infinity
           -Normal
           -Subnormal
@@ -5586,8 +5586,9 @@ class Context(object):
         When the operand has a negative exponent, the result is the same
         as using the quantize() operation using the given operand as the
         left-hand-operand, 1E+0 as the right-hand-operand, and the precision
-        of the operand as the precision setting, except that no flags will
-        be set.  The rounding mode is taken from the context.
+        of the operand as the precision setting, except that the Inexact and
+        Rounded flags will not be set.  The rounding mode is taken from the
+        context.
 
         >>> ExtendedContext.to_integral_value(Decimal('2.1'))
         Decimal('2')
