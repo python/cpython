@@ -5,7 +5,7 @@ import unittest
 import doctest
 
 from test.support import import_helper
-from unittest import TestCase, skipUnless
+from unittest import TestCase, mock, skipUnless
 from operator import itemgetter
 
 py_heapq = import_helper.import_fresh_module('heapq', blocked=['_heapq'])
@@ -17,6 +17,8 @@ func_names = ['heapify', 'heappop', 'heappush', 'heappushpop', 'heapreplace']
 # Add max-heap variants
 func_names += [func + '_max' for func in func_names]
 
+class_names = ['MinHeap', 'MaxHeap']
+
 class TestModules(TestCase):
     def test_py_functions(self):
         for fname in func_names:
@@ -26,6 +28,15 @@ class TestModules(TestCase):
     def test_c_functions(self):
         for fname in func_names:
             self.assertEqual(getattr(c_heapq, fname).__module__, '_heapq', fname)
+
+    def test_py_classes(self):
+        # MinHeap and MaxHeap are only implemented in pure Python; there is no
+        # C accelerator for them.  They rely on the module-level functions,
+        # which are the C versions when _heapq is available.
+        for cname in class_names:
+            self.assertEqual(getattr(py_heapq, cname).__module__, 'heapq')
+            if c_heapq is not None:
+                self.assertEqual(getattr(c_heapq, cname).__module__, 'heapq')
 
 
 def load_tests(loader, tests, ignore):
@@ -635,6 +646,214 @@ class TestErrorHandlingPython(TestErrorHandling, TestCase):
 @skipUnless(c_heapq, 'requires _heapq')
 class TestErrorHandlingC(TestErrorHandling, TestCase):
     module = c_heapq
+
+
+#==============================================================================
+# Object-oriented interface: MinHeap and MaxHeap.
+#
+# The classes add no new heap algorithm; they are thin wrappers that delegate
+# to the module-level functions.  They are tested in two ways:
+#
+# * Functional "sanity check" tests, run against both the pure-Python and the
+#   C classes (like the rest of this file).  They are end-to-end, so a
+#   mis-wired method (say, a MaxHeap that pushed with the min-heap routine)
+#   changes the observable output and is caught even for the C class.
+#
+# * Delegation tests that patch the module-level functions and check that each
+#   method forwards to the right one.  These only apply to the pure-Python
+#   class, since the C class calls the underlying routines directly and cannot
+#   be intercepted; its wiring is covered by the functional tests instead.
+
+
+class HeapClassSanityTest:
+    """Functional sanity checks shared by the MinHeap/MaxHeap test cases.
+
+    Subclasses set:
+
+    * *cls* -- the heap class under test (e.g. ``py_heapq.MinHeap``)
+    * *ordered* -- a small list already satisfying the heap invariant
+    * *reverse* -- ``True`` for max-heaps (the order ``pop()`` yields items in)
+    """
+
+    def in_heap_order(self, data):
+        return sorted(data, reverse=self.reverse)
+
+    def test_construct_empty(self):
+        h = self.cls()
+        self.assertEqual(len(h), 0)
+        self.assertFalse(h)
+
+    def test_construct_from_iterable(self):
+        data = [random.randrange(1000) for _ in range(100)]
+        # Accept any iterable, not just a sequence.
+        h = self.cls(iter(data))
+        self.assertEqual(len(h), len(data))
+        drained = [h.pop() for _ in range(len(data))]
+        self.assertEqual(drained, self.in_heap_order(data))
+
+    def test_push_then_pop_sorts(self):
+        data = [random.randrange(1000) for _ in range(100)]
+        h = self.cls()
+        for item in data:
+            self.assertIsNone(h.push(item))
+        self.assertEqual(len(h), len(data))
+        drained = [h.pop() for _ in range(len(data))]
+        self.assertEqual(drained, self.in_heap_order(data))
+
+    def test_len_and_bool(self):
+        h = self.cls()
+        self.assertEqual(len(h), 0)
+        self.assertFalse(h)
+        h.push(1)
+        self.assertEqual(len(h), 1)
+        self.assertTrue(h)
+
+    def test_construct_non_iterable_raises(self):
+        self.assertRaises(TypeError, self.cls, 10)
+
+    def test_pop_empty_raises(self):
+        h = self.cls()
+        self.assertRaises(IndexError, h.pop)
+
+    def test_pushpop(self):
+        h = self.cls(self.ordered)
+        result = h.pushpop(2)
+        expected = self.in_heap_order(list(self.ordered) + [2])[0]
+        self.assertEqual(result, expected)
+        self.assertEqual(len(h), len(self.ordered))
+
+    def test_replace(self):
+        h = self.cls(self.ordered)
+        expected = self.in_heap_order(self.ordered)[0]
+        new_item = -1000 if self.reverse else 1000
+        self.assertEqual(h.replace(new_item), expected)
+        self.assertEqual(len(h), len(self.ordered))
+
+    def test_nsmallest(self):
+        data = [random.randrange(1000) for _ in range(100)]
+        h = self.cls(data)
+        self.assertEqual(h.nsmallest(10), sorted(data)[:10])
+        # the heap is not modified
+        self.assertEqual(len(h), len(data))
+
+    def test_nlargest(self):
+        data = [random.randrange(1000) for _ in range(100)]
+        h = self.cls(data)
+        self.assertEqual(h.nlargest(10), sorted(data, reverse=True)[:10])
+        # the heap is not modified
+        self.assertEqual(len(h), len(data))
+
+    def test_nsmallest_nlargest_with_key(self):
+        data = ['a', 'ee', 'ddd', 'bbbb', 'ccccc']
+        h = self.cls(data)
+        self.assertEqual(h.nsmallest(2, key=len), ['a', 'ee'])
+        self.assertEqual(h.nlargest(2, key=len), ['ccccc', 'bbbb'])
+
+    def test_repr(self):
+        h = self.cls(self.ordered)
+        self.assertEqual(repr(h), f'{self.cls.__name__}({self.ordered!r})')
+
+
+class TestMinHeapPython(HeapClassSanityTest, TestCase):
+    cls = py_heapq.MinHeap
+    ordered = [1, 2, 3]
+    reverse = False
+
+
+@skipUnless(c_heapq, 'requires _heapq')
+class TestMinHeapC(HeapClassSanityTest, TestCase):
+    cls = c_heapq.MinHeap if c_heapq else None
+    ordered = [1, 2, 3]
+    reverse = False
+
+
+class TestMaxHeapPython(HeapClassSanityTest, TestCase):
+    cls = py_heapq.MaxHeap
+    ordered = [3, 2, 1]
+    reverse = True
+
+
+@skipUnless(c_heapq, 'requires _heapq')
+class TestMaxHeapC(HeapClassSanityTest, TestCase):
+    cls = c_heapq.MaxHeap if c_heapq else None
+    ordered = [3, 2, 1]
+    reverse = True
+
+
+class HeapClassDelegationTest:
+    """Check that each method forwards to the right module-level function.
+
+    Delegation only makes sense for the pure-Python class, so these tests
+    always patch ``py_heapq``.
+
+    Subclasses set *cls* and the names of the functions each method is
+    expected to forward to (*heapify_func*, *push_func*, *pop_func*,
+    *pushpop_func* and *replace_func*).
+    """
+
+    def test_init_delegates_to_heapify(self):
+        with mock.patch.object(py_heapq, self.heapify_func) as m:
+            h = self.cls([3, 1, 2])
+        m.assert_called_once_with(h._queue)
+
+    def test_init_empty_does_not_heapify(self):
+        with mock.patch.object(py_heapq, self.heapify_func) as m:
+            self.cls()
+        m.assert_not_called()
+
+    def test_push_delegates(self):
+        h = self.cls()
+        with mock.patch.object(py_heapq, self.push_func) as m:
+            h.push(42)
+        m.assert_called_once_with(h._queue, 42)
+
+    def test_pop_delegates(self):
+        h = self.cls([1, 2, 3])
+        with mock.patch.object(py_heapq, self.pop_func) as m:
+            h.pop()
+        m.assert_called_once_with(h._queue)
+
+    def test_pushpop_delegates(self):
+        h = self.cls([1, 2, 3])
+        with mock.patch.object(py_heapq, self.pushpop_func) as m:
+            h.pushpop(42)
+        m.assert_called_once_with(h._queue, 42)
+
+    def test_replace_delegates(self):
+        h = self.cls([1, 2, 3])
+        with mock.patch.object(py_heapq, self.replace_func) as m:
+            h.replace(42)
+        m.assert_called_once_with(h._queue, 42)
+
+    def test_nsmallest_delegates(self):
+        h = self.cls([1, 2, 3])
+        with mock.patch.object(py_heapq, 'nsmallest') as m:
+            h.nsmallest(2, key=str)
+        m.assert_called_once_with(2, h._queue, key=str)
+
+    def test_nlargest_delegates(self):
+        h = self.cls([1, 2, 3])
+        with mock.patch.object(py_heapq, 'nlargest') as m:
+            h.nlargest(2, key=str)
+        m.assert_called_once_with(2, h._queue, key=str)
+
+
+class TestMinHeapDelegation(HeapClassDelegationTest, TestCase):
+    cls = py_heapq.MinHeap
+    heapify_func = 'heapify'
+    push_func = 'heappush'
+    pop_func = 'heappop'
+    pushpop_func = 'heappushpop'
+    replace_func = 'heapreplace'
+
+
+class TestMaxHeapDelegation(HeapClassDelegationTest, TestCase):
+    cls = py_heapq.MaxHeap
+    heapify_func = 'heapify_max'
+    push_func = 'heappush_max'
+    pop_func = 'heappop_max'
+    pushpop_func = 'heappushpop_max'
+    replace_func = 'heapreplace_max'
 
 
 if __name__ == "__main__":

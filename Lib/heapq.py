@@ -128,7 +128,8 @@ From all times, sorting has always been a Great Art! :-)
 
 __all__ = ['heappush', 'heappop', 'heapify', 'heapreplace', 'heappushpop',
            'heappush_max', 'heappop_max', 'heapify_max', 'heapreplace_max',
-           'heappushpop_max', 'nlargest', 'nsmallest', 'merge']
+           'heappushpop_max', 'nlargest', 'nsmallest', 'merge',
+           'MinHeap', 'MaxHeap']
 
 def heappush(heap, item):
     """Push item onto heap, maintaining the heap invariant."""
@@ -591,6 +592,159 @@ def nlargest(n, iterable, key=None):
             order -= 1
     result.sort(reverse=True)
     return [elem for (k, order, elem) in result]
+
+
+class MinHeap:
+    """Min-heap: a priority queue that serves its smallest item first.
+
+    Only the ``<`` operator is used to compare items.
+
+    If *iterable* is given, the heap is initialized from its items in linear
+    time; otherwise it starts empty.
+
+    >>> h = MinHeap([3, 1, 2])
+    >>> h.push(0)
+    >>> [h.pop() for _ in range(len(h))]
+    [0, 1, 2, 3]
+    """
+
+    def __init__(self, iterable=None):
+        if iterable is None:
+            self._queue = []
+        else:
+            self._queue = list(iterable)
+            heapify(self._queue)
+
+    def push(self, item):
+        """Push item onto the heap, maintaining the heap invariant."""
+        heappush(self._queue, item)
+
+    def pop(self):
+        """Pop and return the smallest item, maintaining the heap invariant.
+
+        Raises IndexError if the heap is empty.
+        """
+        return heappop(self._queue)
+
+    def pushpop(self, item):
+        """Push item on the heap, then pop and return the smallest item.
+
+        The combined action runs more efficiently than a push() followed by
+        a separate call to pop().
+        """
+        return heappushpop(self._queue, item)
+
+    def replace(self, item):
+        """Pop and return the smallest item, and also push the new item.
+
+        The heap size doesn't change.  Raises IndexError if the heap is
+        empty.  This is more efficient than a pop() followed by a push(),
+        and can be more appropriate when using a fixed-size heap.  Note that
+        the value returned may be larger than item.
+        """
+        return heapreplace(self._queue, item)
+
+    def nsmallest(self, n, key=None):
+        """Return a list of the n smallest items, smallest first.
+
+        The heap is left unchanged.  If *key* is given, it is applied to
+        each item to determine the ordering.
+        """
+        return nsmallest(n, self._queue, key=key)
+
+    def nlargest(self, n, key=None):
+        """Return a list of the n largest items, largest first.
+
+        The heap is left unchanged.  If *key* is given, it is applied to
+        each item to determine the ordering.
+        """
+        return nlargest(n, self._queue, key=key)
+
+    def __len__(self):
+        return len(self._queue)
+
+    def __bool__(self):
+        return bool(self._queue)
+
+    def __repr__(self):
+        return f'{type(self).__name__}({self._queue!r})'
+
+
+class MaxHeap:
+    """Max-heap: a priority queue that serves its largest item first.
+
+    Only the ``<`` operator is used to compare items.
+
+    If *iterable* is given, the heap is initialized from its items in linear
+    time; otherwise it starts empty.
+
+    >>> h = MaxHeap([1, 3, 2])
+    >>> h.push(4)
+    >>> [h.pop() for _ in range(len(h))]
+    [4, 3, 2, 1]
+    """
+
+    def __init__(self, iterable=None):
+        if iterable is None:
+            self._queue = []
+        else:
+            self._queue = list(iterable)
+            heapify_max(self._queue)
+
+    def push(self, item):
+        """Push item onto the heap, maintaining the heap invariant."""
+        heappush_max(self._queue, item)
+
+    def pop(self):
+        """Pop and return the largest item, maintaining the heap invariant.
+
+        Raises IndexError if the heap is empty.
+        """
+        return heappop_max(self._queue)
+
+    def pushpop(self, item):
+        """Push item on the heap, then pop and return the largest item.
+
+        The combined action runs more efficiently than a push() followed by
+        a separate call to pop().
+        """
+        return heappushpop_max(self._queue, item)
+
+    def replace(self, item):
+        """Pop and return the largest item, and also push the new item.
+
+        The heap size doesn't change.  Raises IndexError if the heap is
+        empty.  This is more efficient than a pop() followed by a push(),
+        and can be more appropriate when using a fixed-size heap.  Note that
+        the value returned may be smaller than item.
+        """
+        return heapreplace_max(self._queue, item)
+
+    def nsmallest(self, n, key=None):
+        """Return a list of the n smallest items, smallest first.
+
+        The heap is left unchanged.  If *key* is given, it is applied to
+        each item to determine the ordering.
+        """
+        return nsmallest(n, self._queue, key=key)
+
+    def nlargest(self, n, key=None):
+        """Return a list of the n largest items, largest first.
+
+        The heap is left unchanged.  If *key* is given, it is applied to
+        each item to determine the ordering.
+        """
+        return nlargest(n, self._queue, key=key)
+
+    def __len__(self):
+        return len(self._queue)
+
+    def __bool__(self):
+        return bool(self._queue)
+
+    def __repr__(self):
+        return f'{type(self).__name__}({self._queue!r})'
+
 
 # If available, use C implementation
 try:
