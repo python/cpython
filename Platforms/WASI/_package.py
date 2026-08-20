@@ -4,6 +4,7 @@ __lazy_modules__ = [
     "pathlib",
     "shutil",
     "subprocess",
+    "sys",
     "_shared",
 ]
 
@@ -12,6 +13,7 @@ import os
 import pathlib
 import shutil
 import subprocess
+import sys
 
 import _shared
 
@@ -376,45 +378,53 @@ def archive(context):
             int(source_date_epoch), datetime.UTC
         ).strftime(mtime_format)
     else:
-        mtime = subprocess.run(
+        try:
+            mtime = subprocess.run(
+                [
+                    "git",
+                    "log",
+                    "-1",
+                    "--format=tformat:%cd",
+                    f"--date=format:{mtime_format}",
+                    os.fsdecode(context.checkout),
+                ],
+                env={"TZ": "UTC0"},
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout.strip()
+        except subprocess.CalledProcessError as error:
+            print(error.output)
+            sys.exit(error.returncode)
+
+    try:
+        subprocess.run(
             [
-                "git",
-                "log",
-                "-1",
-                "--format=tformat:%cd",
-                f"--date=format:{mtime_format}",
-                os.fsdecode(context.checkout),
+                "tar",
+                "-c",
+                "-f",
+                os.fsdecode(file_path),
+                "--sort=name",
+                "--mtime",
+                mtime,
+                "--clamp-mtime",
+                "--owner=0",
+                "--group=0",
+                "--numeric-owner",
+                "--pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime",
+                "--mode=go+u,go-w",
+                # Explicitly using `-T` because if you don't compress with threads you can't
+                # uncompress with them and the size difference is negligible when using
+                # single-threaded compression.
+                "--use-compress-program",
+                "xz -T 0",
+                to_compress.name,
             ],
-            env={"TZ": "UTC0"},
+            cwd=to_compress.parent,
             capture_output=True,
             text=True,
             check=True,
-        ).stdout.strip()
-
-    subprocess.run(
-        [
-            "tar",
-            "-c",
-            "-f",
-            os.fsdecode(file_path),
-            "--sort=name",
-            "--mtime",
-            mtime,
-            "--clamp-mtime",
-            "--owner=0",
-            "--group=0",
-            "--numeric-owner",
-            "--pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime",
-            "--mode=go+u,go-w",
-            # Explicitly using `-T` because if you don't compress with threads you can't
-            # uncompress with them and the size difference is negligible when using
-            # single-threaded compression.
-            "--use-compress-program",
-            "xz -T 0",
-            to_compress.name,
-        ],
-        cwd=to_compress.parent,
-        capture_output=True,
-        text=True,
-        check=True,
-    )
+        )
+    except subprocess.CalledProcessError as error:
+        print(error.output)
+        sys.exit(error.returncode)
