@@ -396,10 +396,12 @@ class AutocommitAttribute(unittest.TestCase):
 
     def test_autocommit_delete(self):
         with memory_database() as cx:
+            cx.autocommit = False
             with self.assertRaisesRegex(AttributeError,
                                         "cannot delete autocommit attribute"):
                 del cx.autocommit
-            self.assertEqual(cx.autocommit, sqlite.LEGACY_TRANSACTION_CONTROL)
+            # a failed deletion does not change the value
+            self.assertIs(cx.autocommit, False)
 
     def test_autocommit_disabled(self):
         expected = [
