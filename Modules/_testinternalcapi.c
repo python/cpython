@@ -1514,6 +1514,44 @@ iframe_getlasti(PyObject *self, PyObject *frame)
     return PyLong_FromLong(PyUnstable_InterpreterFrame_GetLasti(f));
 }
 
+// Reads the locals of the Python frame that called this C function using
+// PyUnstable_InterpreterFrame_GetLocals and returns them as a name -> value
+// dict, skipping NULL (unset or hidden) slots.
+static PyObject *
+get_frame_locals(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyInterpreterFrame *frame = _PyThreadState_GetFrame(tstate);
+    if (frame == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "no caller frame");
+        return NULL;
+    }
+    PyCodeObject *co = _PyFrame_GetCode(frame);
+    Py_ssize_t n = co->co_nlocalsplus;
+    PyObject *dict = PyDict_New();
+    if (dict == NULL) {
+        return NULL;
+    }
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *value = PyUnstable_InterpreterFrame_GetLocal(frame, i);
+        if (value == NULL) {
+            if (PyErr_Occurred()) {
+                Py_DECREF(dict);
+                return NULL;
+            }
+            continue;  // unset or hidden slot
+        }
+        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+        int err = PyDict_SetItem(dict, name, value);
+        Py_DECREF(value);
+        if (err < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+    }
+    return dict;
+}
+
 static PyObject *
 code_returns_only_none(PyObject *self, PyObject *arg)
 {
@@ -3305,6 +3343,7 @@ static PyMethodDef module_functions[] = {
     {"iframe_getcode", iframe_getcode, METH_O, NULL},
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
+    {"get_frame_locals", get_frame_locals, METH_NOARGS, NULL},
     {"code_returns_only_none", code_returns_only_none, METH_O, NULL},
     {"get_co_framesize", get_co_framesize, METH_O, NULL},
     {"get_co_localskinds", get_co_localskinds, METH_O, NULL},
