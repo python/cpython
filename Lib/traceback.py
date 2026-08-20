@@ -1467,11 +1467,11 @@ class TracebackException:
             for token in tokenize.generate_tokens(io.StringIO(error_code).readline):
                 if token.type != tokenize.NAME:
                     continue
+                if keyword.iskeyword(token.string):
+                    continue
                 # Only consider NAME tokens on the same line as the error
                 the_end = end_line if line == 0 else end_line + 1
                 if token.start[0] + line != the_end:
-                    continue
-                if keyword.iskeyword(token.string):
                     continue
                 rank = abs(offset - token.end[1])
                 heapq.heappush(tokens, (rank, token))
