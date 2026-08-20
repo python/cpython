@@ -1078,6 +1078,8 @@ class CursorTests(unittest.TestCase):
         self.assertRaises(TypeError, setter, 1.0)
         self.assertRaises(ValueError, setter, -3)
         self.assertRaises(OverflowError, setter, UINT32_MAX + 1)
+        # a failed assignment does not change the value
+        self.assertEqual(self.cu.arraysize, 1)
 
     def test_fetchmany(self):
         # no active SQL statement
