@@ -48,7 +48,7 @@ Python/ceval*.h               @markshannon
 Python/codegen.c              @markshannon @iritkatriel
 Python/compile.c              @markshannon @iritkatriel
 Python/assemble.c             @markshannon @iritkatriel
-Python/flowgraph.c            @markshannon @iritkatriel
+Python/flowgraph.c            @markshannon @iritkatriel @eclips4
 Python/instruction_sequence.c @iritkatriel
 Python/bytecodes.c            @markshannon
 Python/optimizer*.c           @markshannon

@@ -10859,8 +10859,21 @@
             _PyStackRef v;
             v = stack_pointer[-1];
             set = stack_pointer[-2 - (oparg-1)];
+            PyObject *set_o = PyStackRef_AsPyObjectBorrow(set);
+            if (!PySet_CheckExact(set_o)) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyErr_Format(tstate, PyExc_TypeError,
+                              "'%T' object is not a set", set_o);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_CLOSE(v);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                JUMP_TO_LABEL(error);
+            }
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            int err = _PySet_AddTakeRef((PySetObject *)PyStackRef_AsPyObjectBorrow(set),
+            int err = _PySet_AddTakeRef((PySetObject *)set_o,
                                         PyStackRef_AsPyObjectSteal(v));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err) {

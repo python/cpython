@@ -1678,7 +1678,7 @@ are always available.  They are listed here in alphabetical order.
 
    If given, *doc* will be the docstring of the property attribute. Otherwise, the
    property will copy *fget*'s docstring (if it exists).  This makes it possible to
-   create read-only properties easily using :func:`property` as a :term:`decorator`::
+   create read-only properties easily using :deco:`property` as a :term:`decorator`::
 
       class Parrot:
           def __init__(self):
@@ -1919,7 +1919,7 @@ are always available.  They are listed here in alphabetical order.
    be used in the class definition (such as ``f()``).
 
    Static methods in Python are similar to those found in Java or C++. Also, see
-   :func:`classmethod` for a variant that is useful for creating alternate class
+   :deco:`classmethod` for a variant that is useful for creating alternate class
    constructors.
 
    Like all decorators, it is also possible to call ``staticmethod`` as
@@ -2109,6 +2109,11 @@ are always available.  They are listed here in alphabetical order.
    appropriate metaclass machinery (usually :meth:`~object.__init_subclass__`)
    in the same way that keywords in a class
    definition (besides *metaclass*) would.
+
+   Unlike a :keyword:`class` statement, the three argument form does not
+   call the metaclass ``__prepare__`` method (see :ref:`prepare`).  Use
+   :func:`types.new_class` to dynamically create a class using the
+   appropriate metaclass.
 
    See also :ref:`class-customization`.
 

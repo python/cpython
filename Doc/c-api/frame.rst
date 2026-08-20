@@ -269,29 +269,8 @@ Unless using :pep:`523`, you will not need this.
       * - .. c:macro:: PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR
         - The frame corresponds to a method on a class instance.
 
-   However, Python's C API lacks a function to read the executable kind from
-   a frame. Instead, use this recipe:
-
-   .. code-block:: c
-
-      int
-      get_executable_kind(PyFrameObject *frame)
-      {
-         _PyInterpreterFrame *f = frame->f_frame;
-         PyObject *exec = PyStackRef_AsPyObjectBorrow(f->f_executable);
-
-         if (PyCode_Check(exec)) {
-            return PyUnstable_EXECUTABLE_KIND_PY_FUNCTION;
-         }
-         if (PyMethod_Check(exec)) {
-            return PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION;
-         }
-         if (Py_IS_TYPE(exec, &PyMethodDescr_Type)) {
-            return PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR;
-         }
-
-         return PyUnstable_EXECUTABLE_KIND_SKIP;
-      }
+   Note that reading the executable kind from a frame is currently only
+   possible with undocumented internal APIs.
 
    .. versionadded:: 3.13
 

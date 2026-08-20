@@ -40,7 +40,7 @@ jobs:
         .\\PCbuild\\build.bat
         -e -d -v
         -p "${ARCH}"
-        ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
+        ${{ inputs.free-threading && '--disable-gil' || '' }}
       shell: bash
     - name: Display build info
       run: .\\python.bat -m test.pythoninfo
@@ -49,5 +49,5 @@ jobs:
         .\\PCbuild\\rt.bat
         -p "${ARCH}"
         -d -q --fast-ci
-        ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
+        ${{ inputs.free-threading && '--disable-gil' || '' }}
       shell: bash

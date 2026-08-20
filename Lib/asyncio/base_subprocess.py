@@ -22,7 +22,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         self._proc = None
         self._pid = None
         self._returncode = None
-        self._exit_waiters = []
+        self._exit_waiters = set()
         self._pending_calls = collections.deque()
         self._pipes = {}
         self._finished = False
@@ -211,6 +211,14 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         except (SystemExit, KeyboardInterrupt):
             raise
         except BaseException as exc:
+            # Close any pipes that were already connected before the
+            # error/cancellation to avoid leaking file descriptors.
+            for proto in self._pipes.values():
+                if proto is not None:
+                    proto.pipe.close()
+            for raw_pipe in (proc.stdin, proc.stdout, proc.stderr):
+                if raw_pipe is not None:
+                    raw_pipe.close()
             if waiter is not None and not waiter.cancelled():
                 waiter.set_exception(exc)
         else:
@@ -260,8 +268,12 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
             return self._returncode
 
         waiter = self._loop.create_future()
-        self._exit_waiters.append(waiter)
-        return await waiter
+        self._exit_waiters.add(waiter)
+        try:
+            return await waiter
+        finally:
+            if self._exit_waiters is not None:
+                self._exit_waiters.discard(waiter)
 
     def _try_finish(self):
         assert not self._finished

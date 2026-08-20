@@ -30,6 +30,9 @@ read_memory(proc_handle_t *handle, uintptr_t remote_address, size_t len, void* d
 static int
 write_memory_fallback(proc_handle_t *handle, uintptr_t remote_address, size_t len, const void* src)
 {
+    if (len == 0) {
+        return 0;
+    }
     if (handle->memfd == -1) {
         if (open_proc_mem_fd(handle) < 0) {
             return -1;
@@ -47,10 +50,19 @@ write_memory_fallback(proc_handle_t *handle, uintptr_t remote_address, size_t le
 
         written = pwritev(handle->memfd, local, 1, offset);
         if (written < 0) {
+            int err = errno;
+            errno = err;
             PyErr_SetFromErrno(PyExc_OSError);
             return -1;
         }
 
+        if (written == 0) {
+            PyErr_Format(PyExc_OSError,
+                "pwritev wrote 0 bytes for PID %d at address 0x%lx "
+                "(size %zu, partial write %zd bytes)",
+                handle->pid, remote_address + result, len - result, result);
+            return -1;
+        }
         result += written;
     } while ((size_t)written != local[0].iov_len);
     return 0;
@@ -60,12 +72,27 @@ write_memory_fallback(proc_handle_t *handle, uintptr_t remote_address, size_t le
 static int
 write_memory(proc_handle_t *handle, uintptr_t remote_address, size_t len, const void* src)
 {
+    if (len == 0) {
+        return 0;
+    }
 #ifdef MS_WINDOWS
     SIZE_T written = 0;
     SIZE_T result = 0;
     do {
         if (!WriteProcessMemory(handle->hProcess, (LPVOID)(remote_address + result), (const char*)src + result, len - result, &written)) {
-            PyErr_SetFromWindowsErr(0);
+            DWORD error = GetLastError();
+            PyErr_SetFromWindowsErr(error);
+            _set_debug_exception_cause(PyExc_OSError,
+                "WriteProcessMemory failed for PID %d at address 0x%lx "
+                "(size %zu, partial write %zu bytes): Windows error %lu",
+                handle->pid, remote_address + result, len - result, result, error);
+            return -1;
+        }
+        if (written == 0) {
+            PyErr_Format(PyExc_OSError,
+                "WriteProcessMemory wrote 0 bytes for PID %d at address 0x%lx "
+                "(size %zu, partial write %zu bytes)",
+                handle->pid, remote_address + result, len - result, result);
             return -1;
         }
         result += written;
@@ -88,13 +115,26 @@ write_memory(proc_handle_t *handle, uintptr_t remote_address, size_t len, const 
 
         written = process_vm_writev(handle->pid, local, 1, remote, 1, 0);
         if (written < 0) {
-            if (errno == ENOSYS) {
+            int err = errno;
+            if (err == ENOSYS) {
                 return write_memory_fallback(handle, remote_address, len, src);
             }
+            errno = err;
             PyErr_SetFromErrno(PyExc_OSError);
+            _set_debug_exception_cause(PyExc_OSError,
+                "process_vm_writev failed for PID %d at address 0x%lx "
+                "(size %zu, partial write %zd bytes): %s",
+                handle->pid, remote_address + result, len - result, result, strerror(err));
             return -1;
         }
 
+        if (written == 0) {
+            PyErr_Format(PyExc_OSError,
+                "process_vm_writev wrote 0 bytes for PID %d at address 0x%lx "
+                "(size %zu, partial write %zd bytes)",
+                handle->pid, remote_address + result, len - result, result);
+            return -1;
+        }
         result += written;
     } while ((size_t)written != local[0].iov_len);
     return 0;
@@ -398,4 +438,3 @@ _PySysRemoteDebug_SendExec(int pid, int tid, const char *debugger_script_path)
     return rc;
 #endif
 }
-

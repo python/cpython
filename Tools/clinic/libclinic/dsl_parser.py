@@ -18,7 +18,7 @@ from libclinic.function import (
     Module, Class, Function, Parameter,
     FunctionKind,
     CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW,
-    GETTER, SETTER)
+    ACCESSORS, SETTERS)
 from libclinic.converter import (
     converters, legacy_converters)
 from libclinic.converters import (
@@ -439,21 +439,31 @@ class DSLParser:
 
     def at_getter(self) -> None:
         match self.kind:
+            case FunctionKind.CALLABLE:
+                self.kind = FunctionKind.GETTER
             case FunctionKind.GETTER:
                 fail("Cannot apply @getter twice to the same function!")
-            case FunctionKind.SETTER:
-                fail("Cannot apply both @getter and @setter to the same function!")
             case _:
-                self.kind = FunctionKind.GETTER
+                fail("Can't set @getter, function is not a normal callable")
 
     def at_setter(self) -> None:
         match self.kind:
-            case FunctionKind.SETTER:
-                fail("Cannot apply @setter twice to the same function!")
-            case FunctionKind.GETTER:
-                fail("Cannot apply both @getter and @setter to the same function!")
-            case _:
+            case FunctionKind.CALLABLE:
                 self.kind = FunctionKind.SETTER
+            case FunctionKind.SETTER | FunctionKind.SETTER_AND_DELETER:
+                fail("Cannot apply @setter twice to the same function!")
+            case _:
+                fail("Can't set @setter, function is not a normal callable")
+
+    def at_deleter(self) -> None:
+        match self.kind:
+            case FunctionKind.SETTER:
+                # The setter is called with NULL to delete the attribute.
+                self.kind = FunctionKind.SETTER_AND_DELETER
+            case FunctionKind.SETTER_AND_DELETER:
+                fail("Cannot apply @deleter twice to the same function!")
+            case _:
+                fail("Can't set @deleter, @setter is not applied")
 
     def at_staticmethod(self) -> None:
         if self.kind is not CALLABLE:
@@ -574,7 +584,7 @@ class DSLParser:
             fail(f"{name!r} must be a normal method; got '{self.kind}'!")
         if name == '__new__' and (self.kind is not CLASS_METHOD or not cls):
             fail("'__new__' must be a class method!")
-        if self.kind in {GETTER, SETTER} and not cls:
+        if self.kind in ACCESSORS and not cls:
             fail("@getter and @setter must be methods")
 
         # Normalise self.kind.
@@ -587,8 +597,8 @@ class DSLParser:
         self, full_name: str, forced_converter: str
     ) -> CReturnConverter:
         if forced_converter:
-            if self.kind in {GETTER, SETTER}:
-                fail(f"@{self.kind.name.lower()} method cannot define a return type")
+            if self.kind in ACCESSORS:
+                fail("@getter and @setter methods cannot define a return type")
             if self.kind is METHOD_INIT:
                 fail("__init__ methods cannot define a return type")
             ast_input = f"def x() -> {forced_converter}: pass"
@@ -608,7 +618,7 @@ class DSLParser:
             except ValueError:
                 fail(f"Badly formed annotation for {full_name!r}: {forced_converter!r}")
 
-        if self.kind in {METHOD_INIT, SETTER}:
+        if self.kind in {METHOD_INIT} | SETTERS:
             return int_return_converter()
         return CReturnConverter()
 
@@ -714,6 +724,22 @@ class DSLParser:
         self.next(self.state_parameters_start)
 
     def add_function(self, func: Function) -> None:
+        if func.kind in ACCESSORS:
+            # The accessors of the same attribute are rendered into a single
+            # PyGetSetDef entry, which is identified by the C basename, so
+            # they must share it.
+            for other in (func.cls or func.module).functions:
+                if (other.kind in ACCESSORS
+                        and other.full_name == func.full_name):
+                    if (other.kind is func.kind
+                            or {other.kind, func.kind} <= SETTERS):
+                        kind = 'setter' if func.kind in SETTERS else 'getter'
+                        fail(f"Cannot apply @{kind} to "
+                             f"{func.full_name!r} twice")
+                    if other.c_basename != func.c_basename:
+                        fail(f"The accessors of {func.full_name!r} "
+                             f"must have the same C basename")
+
         # Insert a self converter automatically.
         tp, name = correct_name_for_self(func)
         if func.cls and tp == "PyObject *":
@@ -796,9 +822,8 @@ class DSLParser:
             return self.next(self.state_function_docstring, line)
 
         assert self.function is not None
-        if self.function.kind in {GETTER, SETTER}:
-            getset = self.function.kind.name.lower()
-            fail(f"@{getset} methods cannot define parameters")
+        if self.function.kind in ACCESSORS:
+            fail("@getter and @setter methods cannot define parameters")
 
         self.parameter_continuation = ''
         return self.next(self.state_parameter, line)
@@ -1302,7 +1327,7 @@ class DSLParser:
         lines.append(f.displayname)
         if f.forced_text_signature:
             lines.append(f.forced_text_signature)
-        elif f.kind in {GETTER, SETTER}:
+        elif f.kind in ACCESSORS:
             # @getter and @setter do not need signatures like a method or a function.
             return ''
         else:
@@ -1473,7 +1498,7 @@ class DSLParser:
         assert self.function is not None
         f = self.function
         # For the following special cases, it does not make sense to render a docstring.
-        if f.kind in {METHOD_INIT, METHOD_NEW, GETTER, SETTER} and not f.docstring:
+        if f.kind in {METHOD_INIT, METHOD_NEW} | ACCESSORS and not f.docstring:
             return f.docstring
 
         # Enforce the summary line!

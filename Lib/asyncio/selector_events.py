@@ -582,14 +582,10 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             pos[0] = start
 
     async def sock_sendto(self, sock, data, address):
-        """Send data to the socket.
+        """Send a datagram from sock to address.
 
-        The socket must be connected to a remote socket.  This method
-        continues to send data from data until either all data has been
-        sent or an error occurs.  None is returned on success.  On error,
-        an exception is raised, and there is no way to determine how much
-        data, if any, was successfully processed by the receiving end of
-        the connection.
+        The socket does not have to be connected. This method sends the
+        whole datagram in a single call. Return the number of bytes sent.
         """
         base_events._check_ssl_socket(sock)
         if self._debug and sock.gettimeout() != 0:
@@ -1187,7 +1183,11 @@ class _SelectorSocketTransport(_SelectorTransport):
             self._conn_lost += 1
             return
 
-        self._buffer.extend([memoryview(data) for data in list_of_data])
+        # gh-155888: an empty chunk can never be drained, so never buffer it
+        self._buffer.extend(
+            [memoryview(data) for data in list_of_data if data])
+        if not self._buffer:
+            return
         self._write_ready()
         # If the entire buffer couldn't be written, register a write handler
         if self._buffer:

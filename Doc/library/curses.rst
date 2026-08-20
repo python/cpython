@@ -34,6 +34,18 @@ Linux and the BSD variants of Unix.
    Whenever the documentation mentions a *character string* it can be specified
    as a Unicode string or a byte string.
 
+.. note::
+
+   Whether curses may be used from several threads
+   depends on the underlying library and how it was built.
+   In many implementations, including the default build of ncurses,
+   the screen state is shared and not thread-safe;
+   since the blocking and refresh methods
+   (such as :meth:`~window.getch` and :meth:`~window.refresh`)
+   release the :term:`GIL`,
+   unsynchronized use from several threads can then crash the interpreter.
+   Serialize the calls.
+
 .. seealso::
 
    Module :mod:`curses.ascii`
@@ -1084,6 +1096,9 @@ Window objects
    and the color pair with :func:`pair_number`.
    The character byte is the locale-encoded byte of the cell's character,
    consistent with :meth:`instr`.
+   On a wide-character build, a character that does not fit in a single byte
+   in the current locale has a character byte of ``0``;
+   use :meth:`instr` to read such characters.
 
 
 .. method:: window.insch(ch[, attr])

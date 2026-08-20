@@ -1601,6 +1601,37 @@ class _DeprecatedTest(BaseTest, unittest.TestCase):
                                             _version=version)
 
 
+class WarnExplicitSourceTests(BaseTest):
+    # gh-155319: the source line is taken from the loader of the module
+    # whose globals are passed as module_globals, if the file which name
+    # is passed as filename cannot be read.
+
+    def warn_explicit(self, lineno):
+        with support.captured_stderr() as stderr:
+            with self.module.catch_warnings():
+                self.module.simplefilter("always")
+                self.module.warn_explicit(
+                    'eggs', UserWarning, 'nonexistent', lineno,
+                    module_globals=warning_tests.__dict__)
+        return stderr.getvalue()
+
+    def test_source_line(self):
+        source = warning_tests.__loader__.get_source(warning_tests.__name__)
+        expected = source.splitlines()[0].strip()
+        self.assertEqual(self.warn_explicit(1),
+                         f'nonexistent:1: UserWarning: eggs\n  {expected}\n')
+
+    def test_source_line_out_of_range(self):
+        self.assertEqual(self.warn_explicit(1000),
+                         'nonexistent:1000: UserWarning: eggs\n')
+
+class CWarnExplicitSourceTests(WarnExplicitSourceTests, unittest.TestCase):
+    module = c_warnings
+
+class PyWarnExplicitSourceTests(WarnExplicitSourceTests, unittest.TestCase):
+    module = py_warnings
+
+
 class BootstrapTest(unittest.TestCase):
 
     def test_issue_8766(self):
@@ -1613,6 +1644,59 @@ class BootstrapTest(unittest.TestCase):
 
             # Use -W to load warnings module at startup
             assert_python_ok('-c', 'pass', '-W', 'always', PYTHONPATH=cwd)
+
+
+class WarnExplicitMainTests(BaseTest):
+    # gh-123011: warn_explicit() with module globals of the __main__ module,
+    # no matter how it is executed.
+    code = ('import warnings\n'
+            'warnings.warn_explicit("eggs", UserWarning, "bar", 1,\n'
+            '                       module_globals=globals())\n')
+
+    def prepare_code(self):
+        """Make the subprocess use the tested implementation."""
+        if self.module is py_warnings:
+            return ("import sys\n"
+                    "sys.modules['_warnings'] = None\n") + self.code
+        return self.code
+
+    def check(self, err):
+        lines = err.decode().splitlines()
+        # Only the Python implementation adds the source line.
+        if len(lines) > 1 and lines[1].startswith('  '):
+            del lines[1]
+        self.assertEqual(lines, ['bar:1: UserWarning: eggs'])
+
+    def make_script(self, dirname):
+        filename = os.path.join(dirname, 'spam.py')
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(self.prepare_code())
+        return filename
+
+    def test_script(self):
+        # __main__ has __spec__ set to None.
+        with os_helper.temp_dir() as dirname:
+            filename = self.make_script(dirname)
+            rc, out, err = assert_python_ok(filename)
+            self.check(err)
+
+    def test_module(self):
+        # __main__ has __spec__ of the module executed with -m.
+        with os_helper.temp_dir() as dirname:
+            self.make_script(dirname)
+            rc, out, err = assert_python_ok('-m', 'spam', PYTHONPATH=dirname)
+            self.check(err)
+
+    def test_command(self):
+        # __main__ has the built-in importer as a loader.
+        rc, out, err = assert_python_ok('-c', self.prepare_code())
+        self.check(err)
+
+class CWarnExplicitMainTests(WarnExplicitMainTests, unittest.TestCase):
+    module = c_warnings
+
+class PyWarnExplicitMainTests(WarnExplicitMainTests, unittest.TestCase):
+    module = py_warnings
 
 
 class FinalizationTest(unittest.TestCase):

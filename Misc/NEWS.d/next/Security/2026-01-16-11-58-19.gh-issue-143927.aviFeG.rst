@@ -1,2 +1,0 @@
-Normalize all line endings (CR, CRLF, and LF) to LF+TAB when writing
-multi-line configparser values.

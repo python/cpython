@@ -314,6 +314,11 @@ The :mod:`!csv` module defines the following classes:
       is given, it is interpreted as a string containing possible valid
       delimiter characters.
 
+      If several delimiters fit the sample equally well ---
+      for example if both ``','`` and ``';'`` split every row consistently ---
+      the delimiters listed in the :attr:`~Sniffer.preferred` attribute
+      are preferred, in that order,
+      no matter how many times each of them occurs.
 
    .. method:: has_header(sample)
 
@@ -333,6 +338,15 @@ The :mod:`!csv` module defines the following classes:
 
       This method is a rough heuristic and may produce both false positives and
       negatives.
+
+   The :class:`Sniffer` class has the following attribute:
+
+   .. attribute:: preferred
+
+      The list of the delimiters preferred for breaking ties,
+      in the order of preference.
+      It can be modified.
+      Its initial value is ``[',', '\t', ';', ' ', ':']``.
 
 An example for :class:`Sniffer` use::
 
@@ -357,6 +371,8 @@ The :mod:`!csv` module defines the following constants:
    Instructs :class:`writer` objects to only quote those fields which contain
    special characters such as *delimiter*, *quotechar*, ``'\r'``, ``'\n'``
    or any of the characters in *lineterminator*.
+   If *doublequote* is :const:`False` and *escapechar* is set,
+   the *quotechar* is escaped instead of causing the field to be quoted.
 
 
 .. data:: QUOTE_NONNUMERIC
@@ -460,6 +476,10 @@ Dialects support the following attributes:
 
    On reading, the *escapechar* removes any special meaning from
    the following character. It defaults to :const:`None`, which disables escaping.
+
+   .. versionchanged:: 3.10
+      Previously the *escapechar* itself was not escaped,
+      which lost it on reading.
 
    .. versionchanged:: 3.11
       An empty *escapechar* is not allowed.

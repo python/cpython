@@ -1884,6 +1884,12 @@ Do not instantiate the :class:`Server` class directly.
       Wait until the :meth:`close` method completes and all active
       connections have finished.
 
+      .. versionchanged:: 3.12
+         ``wait_closed()`` now waits until the server is closed and
+         all active connections have finished.  Previously, it returned
+         immediately if the server was already closed, even if
+         connections were still active.
+
    .. attribute:: sockets
 
       List of socket-like objects, ``asyncio.trsock.TransportSocket``, which

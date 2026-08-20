@@ -799,6 +799,23 @@ class HandlerTest(BaseTest):
 
             support.wait_process(pid, exitcode=0)
 
+    def test_remove_handler_while_emitting(self):
+        # Removing a handler while callHandlers() iterates over the handlers
+        # should not cause the following handlers to be skipped (gh-79366).
+        logger = logging.Logger('test_remove_handler_while_emitting')
+        calls = []
+        class RemovingHandler(logging.Handler):
+            def emit(self, record):
+                calls.append('removing')
+                logger.removeHandler(self)
+        class CountingHandler(logging.Handler):
+            def emit(self, record):
+                calls.append('counting')
+        logger.addHandler(RemovingHandler())
+        logger.addHandler(CountingHandler())
+        logger.error('spam')
+        self.assertEqual(calls, ['removing', 'counting'])
+
 
 class BadStream(object):
     def write(self, data):
@@ -3634,14 +3651,14 @@ class ConfigDictTest(BaseTest):
         # Ask for a randomly assigned port (by using port 0)
         t = logging.config.listen(0, verify)
         t.start()
-        t.ready.wait()
+        self.assertTrue(t.ready.wait(support.LONG_TIMEOUT),
+                        msg='the listener did not start')
         # Now get the port allocated
         port = t.port
         t.ready.clear()
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(2.0)
-            sock.connect(('localhost', port))
+            # The server can listen on IPv6, so do not force a family.
+            sock = socket.create_connection(('localhost', port), timeout=2.0)
 
             slen = struct.pack('>L', len(text))
             s = slen + text
@@ -3755,6 +3772,18 @@ class ConfigDictTest(BaseTest):
             ('INFO', '1'),
             ('ERROR', '2'),
         ], pat=r"^[\w.]+ -> (\w+): (\d+)$")
+
+    @support.requires_working_socket()
+    def test_listen_server_error(self):
+        # The "ready" event should be set even if the server fails to start.
+        t = logging.config.listen(-1)
+        t.daemon = True
+        with threading_helper.catch_threading_exception() as cm:
+            t.start()
+            self.assertTrue(t.ready.wait(support.SHORT_TIMEOUT),
+                            msg='the listener did not report the failure')
+            threading_helper.join_thread(t)
+            self.assertIs(cm.exc_type, OverflowError)
 
     def test_bad_format(self):
         self.assertRaises(ValueError, self.apply_config, self.bad_format)
@@ -6275,11 +6304,12 @@ class BaseFileTest(BaseTest):
         self.rmfiles = []
 
     def tearDown(self):
-        for fn in self.rmfiles:
-            os.unlink(fn)
-        if os.path.exists(self.fn):
-            os.unlink(self.fn)
-        BaseTest.tearDown(self)
+        try:
+            for fn in self.rmfiles:
+                os_helper.unlink(fn)
+            os_helper.unlink(self.fn)
+        finally:
+            BaseTest.tearDown(self)
 
     def assertLogFile(self, filename):
         "Assert a log file is there and register it for deletion"

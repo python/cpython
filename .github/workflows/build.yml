@@ -52,6 +52,7 @@ jobs:
   check-abi:
     name: 'Check if the ABI has changed'
     runs-on: ubuntu-22.04  # 24.04 causes spurious errors
+    timeout-minutes: 30
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     steps:
@@ -187,9 +188,14 @@ jobs:
       - name: Check for unsupported C global variables
         if: github.event_name == 'pull_request'  # $GITHUB_EVENT_NAME
         run: make check-c-globals
-      - name: Check for undocumented C APIs
-        run: make check-c-api-docs
 
+  check-c-api-docs:
+    name: C API Docs
+    needs: build-context
+    if: >-
+      needs.build-context.outputs.run-tests == 'true'
+      || needs.build-context.outputs.run-docs == 'true'
+    uses: ./.github/workflows/reusable-check-c-api-docs.yml
 
   build-windows:
     name: >-
@@ -290,6 +296,12 @@ jobs:
       free-threading: ${{ matrix.free-threading }}
       os: ${{ matrix.os }}
 
+  build-ubuntu-installed:
+    name: 'Ubuntu (installed)'
+    needs: build-context
+    if: needs.build-context.outputs.run-ubuntu == 'true'
+    uses: ./.github/workflows/reusable-install.yml
+
   build-ubuntu-ssltests:
     name: 'Ubuntu SSL tests'
     runs-on: ${{ matrix.os }}
@@ -380,7 +392,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Build and test
-        run: JAVA_HOME="${JAVA_HOME_21_X64:-$JAVA_HOME_21_arm64}" ./Android/android.py ci --fast-ci ${{ matrix.arch }}-linux-android
+        run: ./Android/android.py ci --fast-ci ${{ matrix.arch }}-linux-android
 
   build-ios:
     name: iOS
@@ -674,10 +686,12 @@ jobs:
     - check-docs
     - check-autoconf-regen
     - check-generated-files
+    - check-c-api-docs
     - build-windows
     - build-windows-msi
     - build-macos
     - build-ubuntu
+    - build-ubuntu-installed
     - build-ubuntu-ssltests
     - build-ios
     - build-emscripten
@@ -710,6 +724,12 @@ jobs:
             '
             || ''
           }}
+          ${{
+            !fromJSON(needs.build-context.outputs.run-tests)
+            && !fromJSON(needs.build-context.outputs.run-docs)
+            && 'check-c-api-docs,'
+            || ''
+          }}
           ${{ !fromJSON(needs.build-context.outputs.run-windows-tests) && 'build-windows,' || '' }}
           ${{
             !fromJSON(needs.build-context.outputs.run-ci-fuzz)
@@ -722,6 +742,7 @@ jobs:
             !fromJSON(needs.build-context.outputs.run-ubuntu)
             && '
             build-ubuntu,
+            build-ubuntu-installed,
             build-ubuntu-ssltests,
             test-hypothesis,
             build-asan,

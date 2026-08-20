@@ -861,6 +861,34 @@ class StreamTests(test_utils.TestCase):
         self.loop.run_until_complete(run_test())
         self.assertEqual(messages, [])
 
+    def test_streamwriter_start_tls_updates_reader_transport(self):
+        reader = asyncio.StreamReader(loop=self.loop)
+        protocol = asyncio.StreamReaderProtocol(reader, loop=self.loop)
+        old_transport = mock.Mock()
+        old_transport.get_extra_info.return_value = None
+        old_transport.is_closing.return_value = False
+        protocol.connection_made(old_transport)
+
+        writer = asyncio.StreamWriter(old_transport, protocol, reader, self.loop)
+
+        ssl_context = mock.sentinel.ssl_context
+        new_transport = mock.Mock()
+        new_transport.get_extra_info.return_value = ssl_context
+        self.loop.start_tls = mock.AsyncMock(return_value=new_transport)
+
+        self.loop.run_until_complete(writer.start_tls(ssl_context))
+
+        self.loop.start_tls.assert_awaited_once_with(
+            old_transport, protocol, ssl_context,
+            server_side=False, server_hostname=None,
+            ssl_handshake_timeout=None,
+            ssl_shutdown_timeout=None,
+        )
+        self.assertIs(writer.transport, new_transport)
+        self.assertIs(protocol._transport, new_transport)
+        self.assertIs(reader._transport, new_transport)
+        self.assertTrue(protocol._over_ssl)
+
     def test_streamreader_constructor_without_loop(self):
         with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
             asyncio.StreamReader()
