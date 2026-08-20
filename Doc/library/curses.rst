@@ -31,6 +31,19 @@ Linux and the BSD variants of Unix.
    Whenever the documentation mentions a *character string* it can be specified
    as a Unicode string or a byte string.
 
+.. note::
+
+   Whether curses may be used from several threads
+   depends on the underlying library and how it was built.
+   In many implementations, including the default build of ncurses,
+   the screen state is shared and not thread-safe;
+   since the blocking and refresh methods
+   (such as :meth:`~window.getch` and :meth:`~window.refresh`)
+   release the :term:`GIL`,
+   unsynchronized use from several threads can then crash the interpreter.
+   Serialize the calls,
+   or wrap them in :meth:`window.use` and :meth:`screen.use`.
+
 .. seealso::
 
    Module :mod:`curses.ascii`
