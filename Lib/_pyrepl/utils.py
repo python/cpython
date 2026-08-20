@@ -24,6 +24,8 @@ ZERO_WIDTH_TRANS = str.maketrans({"\x01": "", "\x02": ""})
 IDENTIFIERS_AFTER = frozenset({"def", "class"})
 KEYWORD_CONSTANTS = frozenset({"True", "False", "None"})
 BUILTINS = frozenset({str(name) for name in dir(builtins) if not name.startswith('_')})
+# Keep this in sync with _pyrepl.simple_interact.REPL_COMMANDS
+COMMANDS = frozenset({"exit", "quit", "copyright", "help", "clear"})
 
 
 def THEME(**kwargs):
@@ -244,6 +246,13 @@ def gen_colors_from_token_stream(
                     span = Span.from_token(token, line_lengths)
                     yield ColorSpan(span, "soft_keyword")
                 elif (
+                    token.string in COMMANDS
+                    and (not prev_token or prev_token.type == T.INDENT)
+                    and (not next_token or next_token.type == T.NEWLINE)
+                ):
+                    span = Span.from_token(token, line_lengths)
+                    yield ColorSpan(span, "command")
+                elif (
                     token.string in BUILTINS
                     and not (prev_token and prev_token.exact_type == T.DOT)
                 ):
@@ -267,7 +276,7 @@ def is_soft_keyword_used(*tokens: TI | None) -> bool:
             None | TI(T.NEWLINE) | TI(T.INDENT) | TI(string=":"),
             TI(string="match"),
             TI(T.NUMBER | T.STRING | T.FSTRING_START | T.TSTRING_START)
-            | TI(T.OP, string="(" | "*" | "[" | "{" | "~" | "...")
+            | TI(T.OP, string="(" | "*" | "-" | "+" | "[" | "{" | "~" | "...")
         ):
             return True
         case (
@@ -282,7 +291,7 @@ def is_soft_keyword_used(*tokens: TI | None) -> bool:
             None | TI(T.NEWLINE) | TI(T.INDENT) | TI(T.DEDENT) | TI(string=":"),
             TI(string="case"),
             TI(T.NUMBER | T.STRING | T.FSTRING_START | T.TSTRING_START)
-            | TI(T.OP, string="(" | "*" | "-" | "[" | "{")
+            | TI(T.OP, string="(" | "*" | "-" | "+" | "[" | "{")
         ):
             return True
         case (

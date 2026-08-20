@@ -22,7 +22,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pylifecycle.h"   // _Py_FdIsInteractive()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_pythonrun.h"     // export _PyRun_InteractiveLoopObject()
+#include "pycore_pythonrun.h"     // export _PyRun_AnyFile()
 #include "pycore_sysmodule.h"     // _PySys_SetAttr()
 #include "pycore_traceback.h"     // _PyTraceBack_Print()
 #include "pycore_unicodeobject.h" // _PyUnicode_Equal()
@@ -41,50 +41,61 @@
 #  include "windows.h"
 #endif
 
-/* Forward */
+/* Forward declarations */
 static void flush_io(void);
 static PyObject *run_mod(mod_ty, PyObject *, PyObject *, PyObject *,
                           PyCompilerFlags *, PyArena *, PyObject*, int);
 static PyObject *run_pyc_file(FILE *, PyObject *, PyObject *,
                               PyCompilerFlags *);
-static int PyRun_InteractiveOneObjectEx(FILE *, PyObject *, PyCompilerFlags *);
-static PyObject* pyrun_file(FILE *fp, PyObject *filename, int start,
-                            PyObject *globals, PyObject *locals, int closeit,
-                            PyCompilerFlags *flags);
 static PyObject *
-_PyRun_StringFlagsWithName(const char *str, PyObject* name, int start,
-                           PyObject *globals, PyObject *locals, PyCompilerFlags *flags,
-                           int generate_new_source);
+_PyRun_String(const char *str, PyObject* name, int start,
+              PyObject *globals, PyObject *locals, PyCompilerFlags *flags,
+              int generate_new_source);
+static PyObject*
+_PyRun_InteractiveLoop(FILE *fp, PyObject *filename, PyCompilerFlags *flags);
+static int
+_PyRun_InteractiveOne(FILE *fp, PyObject *filename, PyCompilerFlags *flags);
+static PyObject *
+_PyRun_File(FILE *fp, PyObject *filename, int start, PyObject *globals,
+            PyObject *locals, int closeit, PyCompilerFlags *flags);
 
-int
-_PyRun_AnyFileObject(FILE *fp, PyObject *filename, int closeit,
-                     PyCompilerFlags *flags)
+
+// See also pymain_error()
+static void
+pyrun_error(const char *msg)
+{
+    PySys_FormatStderr("python: %s\n", msg);
+}
+
+
+PyObject*
+_PyRun_AnyFile(FILE *fp, PyObject *filename, int closeit,
+               PyCompilerFlags *flags)
 {
     int decref_filename = 0;
     if (filename == NULL) {
         filename = PyUnicode_FromString("???");
         if (filename == NULL) {
-            PyErr_Print();
-            return -1;
+            return NULL;
         }
         decref_filename = 1;
     }
 
-    int res;
+    PyObject *result;
     if (_Py_FdIsInteractive(fp, filename)) {
-        res = _PyRun_InteractiveLoopObject(fp, filename, flags);
+        result = _PyRun_InteractiveLoop(fp, filename, flags);
         if (closeit) {
             fclose(fp);
         }
     }
     else {
-        res = _PyRun_SimpleFileObject(fp, filename, closeit, flags);
+        result = _PyRun_SimpleFile(fp, filename, closeit, flags);
     }
 
     if (decref_filename) {
         Py_DECREF(filename);
     }
-    return res;
+    return result;
 }
 
 int
@@ -99,14 +110,20 @@ PyRun_AnyFileExFlags(FILE *fp, const char *filename, int closeit,
             return -1;
         }
     }
-    int res = _PyRun_AnyFileObject(fp, filename_obj, closeit, flags);
+
+    PyObject *result = _PyRun_AnyFile(fp, filename_obj, closeit, flags);
     Py_XDECREF(filename_obj);
-    return res;
+    if (result == NULL) {
+        PyErr_Print();
+        return -1;
+    }
+    Py_DECREF(result);
+    return 0;
 }
 
 
-int
-_PyRun_InteractiveLoopObject(FILE *fp, PyObject *filename, PyCompilerFlags *flags)
+static PyObject*
+_PyRun_InteractiveLoop(FILE *fp, PyObject *filename, PyCompilerFlags *flags)
 {
     PyCompilerFlags local_flags = _PyCompilerFlags_INIT;
     if (flags == NULL) {
@@ -115,8 +132,7 @@ _PyRun_InteractiveLoopObject(FILE *fp, PyObject *filename, PyCompilerFlags *flag
 
     PyObject *v;
     if (PySys_GetOptionalAttr(&_Py_ID(ps1), &v) < 0) {
-        PyErr_Print();
-        return -1;
+        return NULL;
     }
     if (v == NULL) {
         v = PyUnicode_FromString(">>> ");
@@ -129,8 +145,7 @@ _PyRun_InteractiveLoopObject(FILE *fp, PyObject *filename, PyCompilerFlags *flag
     }
     Py_XDECREF(v);
     if (PySys_GetOptionalAttr(&_Py_ID(ps2), &v) < 0) {
-        PyErr_Print();
-        return -1;
+        return NULL;
     }
     if (v == NULL) {
         v = PyUnicode_FromString("... ");
@@ -146,36 +161,41 @@ _PyRun_InteractiveLoopObject(FILE *fp, PyObject *filename, PyCompilerFlags *flag
 #ifdef Py_REF_DEBUG
     int show_ref_count = _Py_GetConfig()->show_ref_count;
 #endif
-    int err = 0;
-    int ret;
     int nomem_count = 0;
+    int ret;
     do {
-        ret = PyRun_InteractiveOneObjectEx(fp, filename, flags);
+        ret = _PyRun_InteractiveOne(fp, filename, flags);
         if (ret == -1 && PyErr_Occurred()) {
             /* Prevent an endless loop after multiple consecutive MemoryErrors
              * while still allowing an interactive command to fail with a
              * MemoryError. */
             if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
                 if (++nomem_count > 16) {
-                    PyErr_Clear();
-                    err = -1;
-                    break;
+                    return NULL;
                 }
             } else {
                 nomem_count = 0;
             }
+
+            int inspect = _Py_GetConfig()->inspect;
+            if (!inspect && PyErr_ExceptionMatches(PyExc_SystemExit)) {
+                return NULL;
+            }
+
             PyErr_Print();
-            flush_io();
-        } else {
+        }
+        else {
             nomem_count = 0;
         }
+
 #ifdef Py_REF_DEBUG
         if (show_ref_count) {
             _PyDebug_PrintTotalRefs();
         }
 #endif
     } while (ret != E_EOF);
-    return err;
+
+    Py_RETURN_NONE;
 }
 
 
@@ -188,10 +208,14 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename, PyCompilerFlags *flag
         return -1;
     }
 
-    int err = _PyRun_InteractiveLoopObject(fp, filename_obj, flags);
+    PyObject *result = _PyRun_InteractiveLoop(fp, filename_obj, flags);
     Py_DECREF(filename_obj);
-    return err;
-
+    if (result == NULL) {
+        PyErr_Print();
+        return -1;
+    }
+    Py_DECREF(result);
+    return 0;
 }
 
 
@@ -287,9 +311,14 @@ pyrun_one_parse_ast(FILE *fp, PyObject *filename,
 /* A PyRun_InteractiveOneObject() auxiliary function that does not print the
  * error on failure. */
 static int
-PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
-                             PyCompilerFlags *flags)
+_PyRun_InteractiveOne(FILE *fp, PyObject *filename, PyCompilerFlags *flags)
 {
+    if (!PyUnicode_Check(filename)) {
+        PyErr_Format(PyExc_TypeError, "expect str for filename, got %T",
+                     filename);
+        return -1;
+    }
+
     PyArena *arena = _PyArena_New();
     if (arena == NULL) {
         return -1;
@@ -356,9 +385,7 @@ error:
 int
 PyRun_InteractiveOneObject(FILE *fp, PyObject *filename, PyCompilerFlags *flags)
 {
-    int res;
-
-    res = PyRun_InteractiveOneObjectEx(fp, filename, flags);
+    int res = _PyRun_InteractiveOne(fp, filename, flags);
     if (res == -1) {
         PyErr_Print();
         flush_io();
@@ -458,24 +485,26 @@ set_main_loader(PyObject *d, PyObject *filename, const char *loader_name)
 }
 
 
-int
-_PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
-                        PyCompilerFlags *flags)
+PyObject*
+_PyRun_SimpleFile(FILE *fp, PyObject *filename, int closeit,
+                  PyCompilerFlags *flags)
 {
-    int ret = -1;
+    PyObject *res = NULL;
+    int set_file_name = 0;
 
     PyObject *main_module = PyImport_AddModuleRef("__main__");
-    if (main_module == NULL)
-        return -1;
+    if (main_module == NULL) {
+        goto done;
+    }
     PyObject *dict = PyModule_GetDict(main_module);  // borrowed ref
 
-    int set_file_name = 0;
     int has_file = PyDict_ContainsString(dict, "__file__");
     if (has_file < 0) {
         goto done;
     }
     if (!has_file) {
         if (PyDict_SetItemString(dict, "__file__", filename) < 0) {
+            pyrun_error("failed to set __main__.__file__");
             goto done;
         }
         set_file_name = 1;
@@ -486,7 +515,6 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
         goto done;
     }
 
-    PyObject *v;
     if (pyc) {
         FILE *pyc_fp;
         /* Try to run a pyc file. First, re-open in binary */
@@ -496,45 +524,37 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
 
         pyc_fp = Py_fopen(filename, "rb");
         if (pyc_fp == NULL) {
-            fprintf(stderr, "python: Can't reopen .pyc file\n");
+            pyrun_error("Can't reopen .pyc file");
             goto done;
         }
 
         if (set_main_loader(dict, filename, "SourcelessFileLoader") < 0) {
-            fprintf(stderr, "python: failed to set __main__.__loader__\n");
-            ret = -1;
+            pyrun_error("failed to set __main__.__loader__");
             fclose(pyc_fp);
             goto done;
         }
-        v = run_pyc_file(pyc_fp, dict, dict, flags);
+        res = run_pyc_file(pyc_fp, dict, dict, flags);
     } else {
         /* When running from stdin, leave __main__.__loader__ alone */
         if ((!PyUnicode_Check(filename) || !PyUnicode_EqualToUTF8(filename, "<stdin>")) &&
             set_main_loader(dict, filename, "SourceFileLoader") < 0) {
-            fprintf(stderr, "python: failed to set __main__.__loader__\n");
-            ret = -1;
+            pyrun_error("failed to set __main__.__loader__");
             goto done;
         }
-        v = pyrun_file(fp, filename, Py_file_input, dict, dict,
-                       closeit, flags);
+        res = _PyRun_File(fp, filename, Py_file_input, dict, dict,
+                          closeit, flags);
     }
     flush_io();
-    if (v == NULL) {
-        Py_CLEAR(main_module);
-        PyErr_Print();
-        goto done;
-    }
-    Py_DECREF(v);
-    ret = 0;
 
   done:
     if (set_file_name) {
         if (PyDict_PopString(dict, "__file__", NULL) < 0) {
-            PyErr_Print();
+            pyrun_error("failed to delete __main__.__file__");
+            Py_CLEAR(res);
         }
     }
     Py_XDECREF(main_module);
-    return ret;
+    return res;
 }
 
 
@@ -544,49 +564,45 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
 {
     PyObject *filename_obj = PyUnicode_DecodeFSDefault(filename);
     if (filename_obj == NULL) {
-        return -1;
-    }
-    int res = _PyRun_SimpleFileObject(fp, filename_obj, closeit, flags);
-    Py_DECREF(filename_obj);
-    return res;
-}
-
-
-int
-_PyRun_SimpleStringFlagsWithName(const char *command, const char* name, PyCompilerFlags *flags) {
-    PyObject *main_module = PyImport_AddModuleRef("__main__");
-    if (main_module == NULL) {
-        return -1;
-    }
-    PyObject *dict = PyModule_GetDict(main_module);  // borrowed ref
-
-    PyObject *res = NULL;
-    if (name == NULL) {
-        res = PyRun_StringFlags(command, Py_file_input, dict, dict, flags);
-    } else {
-        PyObject* the_name = PyUnicode_FromString(name);
-        if (!the_name) {
-            PyErr_Print();
-            Py_DECREF(main_module);
-            return -1;
-        }
-        res = _PyRun_StringFlagsWithName(command, the_name, Py_file_input, dict, dict, flags, 0);
-        Py_DECREF(the_name);
-    }
-    Py_DECREF(main_module);
-    if (res == NULL) {
         PyErr_Print();
         return -1;
     }
-
-    Py_DECREF(res);
+    PyObject *result = _PyRun_SimpleFile(fp, filename_obj, closeit, flags);
+    Py_DECREF(filename_obj);
+    if (result == NULL) {
+        PyErr_Print();
+        return -1;
+    }
     return 0;
+}
+
+
+PyObject*
+_PyRun_SimpleString(const char *command, PyObject* name,
+                    PyCompilerFlags *flags)
+{
+    PyObject *main_module = PyImport_AddModuleRef("__main__");
+    if (main_module == NULL) {
+        return NULL;
+    }
+    PyObject *dict = PyModule_GetDict(main_module);  // borrowed ref
+
+    PyObject *res = _PyRun_String(command, name, Py_file_input,
+                                  dict, dict, flags, 0);
+    Py_DECREF(main_module);
+    return res;
 }
 
 int
 PyRun_SimpleStringFlags(const char *command, PyCompilerFlags *flags)
 {
-    return _PyRun_SimpleStringFlagsWithName(command, NULL, flags);
+    PyObject *res = _PyRun_SimpleString(command, NULL, flags);
+    if (res == NULL) {
+        PyErr_Print();
+        return -1;
+    }
+    Py_DECREF(res);
+    return 0;
 }
 
 static int
@@ -1224,11 +1240,27 @@ void PyErr_DisplayException(PyObject *exc)
     PyErr_Display(NULL, exc, NULL);
 }
 
-static PyObject *
-_PyRun_StringFlagsWithName(const char *str, PyObject* name, int start,
-                           PyObject *globals, PyObject *locals, PyCompilerFlags *flags,
-                           int generate_new_source)
+static int
+check_start(int start)
 {
+    if (start == Py_single_input || start == Py_file_input
+        || start == Py_eval_input || start == Py_func_type_input)
+    {
+        return 0;
+    }
+    PyErr_SetString(PyExc_ValueError, "invalid start argument");
+    return -1;
+}
+
+static PyObject *
+_PyRun_String(const char *str, PyObject* name, int start,
+              PyObject *globals, PyObject *locals, PyCompilerFlags *flags,
+              int generate_new_source)
+{
+    if (check_start(start) < 0) {
+        return NULL;
+    }
+
     PyObject *ret = NULL;
     mod_ty mod;
     PyArena *arena;
@@ -1271,13 +1303,17 @@ PyObject *
 PyRun_StringFlags(const char *str, int start, PyObject *globals,
                      PyObject *locals, PyCompilerFlags *flags) {
 
-    return _PyRun_StringFlagsWithName(str, NULL, start, globals, locals, flags, 0);
+    return _PyRun_String(str, NULL, start, globals, locals, flags, 0);
 }
 
 static PyObject *
-pyrun_file(FILE *fp, PyObject *filename, int start, PyObject *globals,
-           PyObject *locals, int closeit, PyCompilerFlags *flags)
+_PyRun_File(FILE *fp, PyObject *filename, int start, PyObject *globals,
+            PyObject *locals, int closeit, PyCompilerFlags *flags)
 {
+    if (check_start(start) < 0) {
+        return NULL;
+    }
+
     PyArena *arena = _PyArena_New();
     if (arena == NULL) {
         return NULL;
@@ -1310,11 +1346,12 @@ PyRun_FileExFlags(FILE *fp, const char *filename, int start, PyObject *globals,
 {
     PyObject *filename_obj = PyUnicode_DecodeFSDefault(filename);
     if (filename_obj == NULL) {
+        PyErr_Print();
         return NULL;
     }
 
-    PyObject *res = pyrun_file(fp, filename_obj, start, globals,
-                               locals, closeit, flags);
+    PyObject *res = _PyRun_File(fp, filename_obj, start, globals,
+                                locals, closeit, flags);
     Py_DECREF(filename_obj);
     return res;
 
@@ -1521,14 +1558,17 @@ PyObject *
 Py_CompileStringObject(const char *str, PyObject *filename, int start,
                        PyCompilerFlags *flags, int optimize)
 {
-    return _Py_CompileStringObjectWithModule(str, filename, start,
-                                             flags, optimize, NULL);
+    return _Py_CompileString(str, filename, start, flags, optimize, NULL);
 }
 
 PyObject *
-_Py_CompileStringObjectWithModule(const char *str, PyObject *filename, int start,
-                       PyCompilerFlags *flags, int optimize, PyObject *module)
+_Py_CompileString(const char *str, PyObject *filename, int start,
+                  PyCompilerFlags *flags, int optimize, PyObject *module)
 {
+    if (check_start(start) < 0) {
+        return NULL;
+    }
+
     PyCodeObject *co;
     mod_ty mod;
     PyArena *arena = _PyArena_New();
@@ -1737,7 +1777,7 @@ Py_CompileString(const char *str, const char *p, int s)
 }
 
 #undef Py_CompileStringFlags
-PyAPI_FUNC(PyObject *)
+PyObject*
 Py_CompileStringFlags(const char *str, const char *p, int s,
                       PyCompilerFlags *flags)
 {

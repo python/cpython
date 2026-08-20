@@ -222,10 +222,10 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(decodeescape(br'x\xa\xy', 'replace'), b'x??y')
         self.assertEqual(decodeescape(br'x\xa\xy', 'ignore'), b'xy')
         self.assertRaises(ValueError, decodeescape, b'\\', 'spam')
-        self.assertEqual(decodeescape(NULL), b'')
         self.assertRaises(OverflowError, decodeescape, b'abc', NULL, PY_SSIZE_T_MAX)
         self.assertRaises(OverflowError, decodeescape, NULL, NULL, PY_SSIZE_T_MAX)
 
+        # INVALID decodeescape(NULL)
         # CRASHES decodeescape(b'abc', NULL, -1)
         # CRASHES decodeescape(NULL, NULL, 1)
 
@@ -315,9 +315,15 @@ class BytesWriterTest(unittest.TestCase):
         self.assertEqual(writer.get_size(), 3)
         self.assertEqual(writer.finish(), self.result_type(b'abc'))
 
+    def test_finish_with_size(self):
+        # Test PyBytesWriter_FinishWithSize()
         writer = self.create_writer(10, b'abc')
         self.assertEqual(writer.get_size(), 10)
         self.assertEqual(writer.finish_with_size(3), self.result_type(b'abc'))
+
+        writer = self.create_writer(3, b'abc')
+        with self.assertRaises(SystemError):
+            writer.finish_with_size(-3)
 
     def test_write_bytes(self):
          # Test PyBytesWriter_WriteBytes()

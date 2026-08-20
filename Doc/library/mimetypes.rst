@@ -39,8 +39,8 @@ the information :func:`init` sets up.
    (e.g. :program:`compress` or :program:`gzip`). The encoding is suitable for use
    as a :mailheader:`Content-Encoding` header, **not** as a
    :mailheader:`Content-Transfer-Encoding` header. The mappings are table driven.
-   Encoding suffixes are case sensitive; type suffixes are first tried case
-   sensitively, then case insensitively.
+   Encoding suffixes are case-sensitive. Suffix mappings and type suffixes are
+   first tried case-sensitively, then case-insensitively.
 
    The optional *strict* argument is a flag specifying whether the list of known MIME types
    is limited to only the official types `registered with IANA
@@ -116,12 +116,13 @@ behavior of the module.
       Previously, Windows registry settings were ignored.
 
 
-.. function:: read_mime_types(filename)
+.. function:: read_mime_types(file)
 
-   Load the type map given in the file *filename*, if it exists.  The type map is
-   returned as a dictionary mapping filename extensions, including the leading dot
-   (``'.'``), to strings of the form ``'type/subtype'``.  If the file *filename*
-   does not exist or cannot be read, ``None`` is returned.
+   Load the type map given in the file named by *file*, if it exists.  *file*
+   must be a string specifying the name of the file to read.  The type map is
+   returned as a dictionary mapping file extensions, including the leading dot
+   (``'.'``), to strings of the form ``'type/subtype'``.  If the file does not
+   exist or cannot be read, ``None`` is returned.
 
 
 .. function:: add_type(type, ext, strict=True)
@@ -130,6 +131,8 @@ behavior of the module.
    extension is already known, the new type will replace the old one. When the type
    is already known the extension will be added to the list of known extensions.
    Valid extensions are empty or start with a ``'.'``.
+
+   Registered lower-case extensions are matched case-insensitively.
 
    When *strict* is ``True`` (the default), the mapping will be added to the
    official MIME types, otherwise to the non-standard ones.
@@ -311,6 +314,8 @@ than one MIME-type database; it provides an interface similar to the one of the
       Valid extensions start with a '.' or are empty. When the
       extension is already known, the new type will replace the old one. When the type
       is already known the extension will be added to the list of known extensions.
+
+      Registered lower-case extensions are matched case-insensitively.
 
       When *strict* is ``True`` (the default), the mapping will be added to the
       official MIME types, otherwise to the non-standard ones.

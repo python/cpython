@@ -1,0 +1,2 @@
+Fix error handling in :func:`socket.gethostbyaddr` and
+:func:`socket.gethostbyname_ex` when hostname resolution fails.

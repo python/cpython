@@ -277,10 +277,13 @@ enum_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
     enumobject *en = _enumobject_CAST(op);
     PyObject *result;
     Py_BEGIN_CRITICAL_SECTION(en);
-    if (en->en_longindex != NULL)
+    if (en->en_longindex != NULL) {
         result = Py_BuildValue("O(OO)", Py_TYPE(en), en->en_sit, en->en_longindex);
-    else
-        result = Py_BuildValue("O(On)", Py_TYPE(en), en->en_sit, en->en_index);
+    }
+    else {
+        Py_ssize_t en_index = FT_ATOMIC_LOAD_SSIZE_RELAXED(en->en_index);
+        result = Py_BuildValue("O(On)", Py_TYPE(en), en->en_sit, en_index);
+    }
     Py_END_CRITICAL_SECTION();
     return result;
 }
@@ -290,7 +293,7 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 static PyMethodDef enum_methods[] = {
     {"__reduce__", enum_reduce, METH_NOARGS, reduce_doc},
     {"__class_getitem__",    Py_GenericAlias,
-    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    METH_O|METH_CLASS,       PyDoc_STR("'enumerate' objects are generic over the type of their values")},
     {NULL,              NULL}           /* sentinel */
 };
 
