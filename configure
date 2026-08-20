@@ -4898,8 +4898,15 @@ esac
 case $ac_sys_system in #(
   iOS) :
 
-    as_fn_append CFLAGS " -mios-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"
-    as_fn_append LDFLAGS " -mios-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"
+            if test "x$_host_device" = "xsimulator"
+then :
+  _ios_version_min_flag=-mios-simulator-version-min
+else case e in #(
+  e) _ios_version_min_flag=-mios-version-min ;;
+esac
+fi
+    as_fn_append CFLAGS " ${_ios_version_min_flag}=${IPHONEOS_DEPLOYMENT_TARGET}"
+    as_fn_append LDFLAGS " ${_ios_version_min_flag}=${IPHONEOS_DEPLOYMENT_TARGET}"
    ;; #(
   *) :
      ;;

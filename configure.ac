@@ -1008,8 +1008,13 @@ AS_CASE([$host],
 dnl Add the compiler flag for the iOS minimum supported OS version.
 AS_CASE([$ac_sys_system],
   [iOS], [
-    AS_VAR_APPEND([CFLAGS], [" -mios-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"])
-    AS_VAR_APPEND([LDFLAGS], [" -mios-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"])
+    dnl -mios-version-min names the device platform; against the simulator SDK it
+    dnl makes the linker reject every dylib it resolves there.
+    AS_IF([test "x$_host_device" = "xsimulator"],
+      [_ios_version_min_flag=-mios-simulator-version-min],
+      [_ios_version_min_flag=-mios-version-min])
+    AS_VAR_APPEND([CFLAGS], [" ${_ios_version_min_flag}=${IPHONEOS_DEPLOYMENT_TARGET}"])
+    AS_VAR_APPEND([LDFLAGS], [" ${_ios_version_min_flag}=${IPHONEOS_DEPLOYMENT_TARGET}"])
   ],
 )
 
