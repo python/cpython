@@ -5918,6 +5918,25 @@ class TestWait(unittest.TestCase):
         a.close()
         b.close()
 
+    @unittest.skipUnless(WIN32, "skipped on non-Windows platforms")
+    def test_exhaustive_wait_more_than_60_handles(self):
+        import _winapi
+        from multiprocessing.connection import _exhaustive_wait
+
+        # More than 60 handles takes the batched path.
+        events = [_winapi.CreateEventW(0, True, False, None)
+                  for _ in range(70)]
+        self.addCleanup(lambda: [_winapi.CloseHandle(e) for e in events])
+
+        # Spread the signalled events out so they do not all land in the
+        # first batch, and leave index 0 unsignalled.
+        chosen = [3, 17, 42, 68]
+        for i in chosen:
+            _winapi.SetEvent(events[i])
+
+        ready = _exhaustive_wait(events, 0)
+        self.assertEqual(sorted(ready), sorted(events[i] for i in chosen))
+
 #
 # Issue 14151: Test invalid family on invalid environment
 #
