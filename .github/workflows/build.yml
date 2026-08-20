@@ -46,6 +46,7 @@ jobs:
   check-abi:
     name: 'Check if the ABI has changed'
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     steps:
