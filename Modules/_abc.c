@@ -383,10 +383,14 @@ compute_abstract_methods(PyObject *self)
     }
     assert(PyList_Check(items));
     for (Py_ssize_t pos = 0; pos < PyList_GET_SIZE(items); pos++) {
-        PyObject *it = PySequence_Fast(
-                PyList_GET_ITEM(items, pos),
-                "items() returned non-iterable");
+        PyObject *item_obj = PyList_GET_ITEM(items, pos);
+        PyObject *it = PySequence_Fast(item_obj, NULL);
         if (!it) {
+            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+                PyErr_Format(PyExc_TypeError,
+                             "items() returned non-iterable (type %.200s)",
+                             Py_TYPE(item_obj)->tp_name);
+            }
             goto error;
         }
         if (PySequence_Fast_GET_SIZE(it) != 2) {
