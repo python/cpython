@@ -487,6 +487,13 @@ class ConnectionTests(unittest.TestCase):
                     cx.isolation_level = level
                     self.assertEqual(cx.isolation_level, level)
 
+    def test_connection_delete_isolation_level(self):
+        with memory_database() as cx:
+            with self.assertRaisesRegex(AttributeError,
+                                        "cannot delete attribute"):
+                del cx.isolation_level
+            self.assertEqual(cx.isolation_level, "")
+
     def test_connection_reinit(self):
         with memory_database() as cx:
             cx.text_factory = bytes
@@ -1078,6 +1085,8 @@ class CursorTests(unittest.TestCase):
         self.assertRaises(TypeError, setter, 1.0)
         self.assertRaises(ValueError, setter, -3)
         self.assertRaises(OverflowError, setter, UINT32_MAX + 1)
+        self.assertRaisesRegex(AttributeError, 'cannot be deleted',
+                               delattr, self.cu, 'arraysize')
 
     def test_fetchmany(self):
         # no active SQL statement

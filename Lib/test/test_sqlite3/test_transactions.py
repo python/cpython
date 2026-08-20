@@ -393,6 +393,9 @@ class AutocommitAttribute(unittest.TestCase):
             with self.subTest(mode=mode):
                 with self.assertRaisesRegex(ValueError, msg):
                     sqlite.connect(":memory:", autocommit=mode)
+                with memory_database() as cx:
+                    with self.assertRaisesRegex(ValueError, msg):
+                        cx.autocommit = mode
 
     def test_autocommit_disabled(self):
         expected = [
