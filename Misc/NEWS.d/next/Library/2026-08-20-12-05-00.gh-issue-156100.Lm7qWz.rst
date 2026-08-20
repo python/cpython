@@ -1,0 +1,3 @@
+Fix a crash when deleting the :attr:`~sqlite3.Connection.autocommit`
+attribute of :class:`sqlite3.Connection`.
+It now raises :exc:`AttributeError`.

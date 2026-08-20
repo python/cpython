@@ -2621,6 +2621,11 @@ static int
 set_autocommit(PyObject *op, PyObject *val, void *Py_UNUSED(closure))
 {
     pysqlite_Connection *self = _pysqlite_Connection_CAST(op);
+    if (val == NULL) {
+        PyErr_SetString(PyExc_AttributeError,
+                        "cannot delete autocommit attribute");
+        return -1;
+    }
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return -1;
     }
