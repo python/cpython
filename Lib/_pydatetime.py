@@ -413,9 +413,6 @@ def _parse_hh_mm_ss_ff(tstr):
     time_comps = [0, 0, 0, 0]
     pos = 0
     for comp in range(0, 3):
-        if (len_str - pos) < 2:
-            raise ValueError("Incomplete time component")
-
         time_comps[comp] = _read_isoformat_component(tstr[pos:pos+2], 2)
 
         pos += 2
@@ -437,7 +434,7 @@ def _parse_hh_mm_ss_ff(tstr):
             raise ValueError("Invalid microsecond separator")
         else:
             pos += 1
-            if not all(map(_is_ascii_digit, tstr[pos:])):
+            if not tstr[pos:].isdigit():
                 raise ValueError("Non-digit values in fraction")
 
             len_remainder = len_str - pos
