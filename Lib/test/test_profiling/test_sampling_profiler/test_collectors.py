@@ -584,7 +584,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
                 [MockThreadInfo(
                     1,
                     [MockFrameInfo("test.py", 1, "root"),
-                     MockFrameInfo("test.py", 2, '</script><b>')]
+                     MockFrameInfo("test.py", 2, '</script><b>&')]
                 )],
             )
         ]
@@ -599,7 +599,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
         # The funcname's </script> must be escaped in the embedded data so it
         # cannot close the inline <script> block; the raw form must be absent.
-        self.assertIn(r"\u003c/script\u003e\u003cb\u003e", content)
+        self.assertIn(r"\u003c/script\u003e\u003cb\u003e\u0026", content)
         self.assertNotIn("</script><b>", content)
 
     def test_flamegraph_collector_empty_export_fails(self):
