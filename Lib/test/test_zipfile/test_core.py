@@ -5520,6 +5520,9 @@ class TestWithDirectory(unittest.TestCase):
             zf.extractall(target)
             self.assertEqual(set(os.listdir(target)), {"directory", "directory2", "directory3", "directory4"})
 
+        with self.assertRaises(ValueError):
+            zf.mkdir("closed")
+
     def test_create_directory_with_write(self):
         with zipfile.ZipFile(TESTFN, "w") as zf:
             zf.writestr(zipfile.ZipInfo('directory/'), '')

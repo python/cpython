@@ -2596,6 +2596,9 @@ class ZipFile:
         else:
             raise TypeError("Expected type str or ZipInfo")
 
+        if not self.fp:
+            raise ValueError(
+                "Attempt to write to ZIP archive that was already closed")
         if self._writing:
             raise ValueError(
                 "Can't write to ZIP archive while an open writing handle exists."
