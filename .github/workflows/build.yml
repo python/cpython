@@ -52,6 +52,7 @@ jobs:
   check-abi:
     name: 'Check if the ABI has changed'
     runs-on: ubuntu-22.04  # 24.04 causes spurious errors
+    timeout-minutes: 30
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     steps:
