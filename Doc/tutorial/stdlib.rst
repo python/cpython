@@ -36,7 +36,7 @@ aids for working with large modules like :mod:`os`::
    <returns an extensive manual page created from the module's docstrings>
 
 For daily file and directory management tasks, the :mod:`shutil` module provides
-a higher level interface that is easier to use::
+a higher-level interface that is easier to use::
 
    >>> import shutil
    >>> shutil.copyfile('data.db', 'archive.db')
@@ -63,7 +63,7 @@ wildcard searches::
 Command-line arguments
 ======================
 
-Common utility scripts often need to process command line arguments. These
+Common utility scripts often need to process command-line arguments. These
 arguments are stored in the :mod:`sys` module's *argv* attribute as a list.  For
 instance, let's take the following :file:`demo.py` file::
 
@@ -77,7 +77,7 @@ line::
    ['demo.py', 'one', 'two', 'three']
 
 The :mod:`argparse` module provides a more sophisticated mechanism to process
-command line arguments.  The following script extracts one or more filenames
+command-line arguments.  The following script extracts one or more filenames
 and an optional number of lines to be displayed::
 
     import argparse
