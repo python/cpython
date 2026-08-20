@@ -21,7 +21,7 @@
 #include "pycore_import.h"        // _PyImport_AcquireLock()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_jit_unwind.h"    // _Py_jit_debug_mutex
-#include "pycore_lock.h"          // _PyMutex_LockTimed()
+#include "pycore_lock.h"          // PyMutex_LockFast()
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_LookupSpecial()
@@ -16977,7 +16977,7 @@ ScandirIterator_closedir(ScandirIterator *iterator)
     HANDLE handle = INVALID_HANDLE_VALUE;
 
     _Py_atomic_store_uint8(&iterator->closed, 1);
-    if (_PyMutex_LockTimed(&iterator->read_mutex, 0, 0) == PY_LOCK_ACQUIRED) {
+    if (PyMutex_LockFast(&iterator->read_mutex)) {
         // no reads in progress, we can close the handle
         handle = iterator->handle;
         iterator->handle = INVALID_HANDLE_VALUE;
@@ -17066,7 +17066,7 @@ ScandirIterator_closedir(ScandirIterator *iterator)
     DIR *dirp = NULL;
 
     _Py_atomic_store_uint8(&iterator->closed, 1);
-    if (_PyMutex_LockTimed(&iterator->read_mutex, 0, 0) == PY_LOCK_ACQUIRED) {
+    if (PyMutex_LockFast(&iterator->read_mutex)) {
         // no reads in progress, we can close dirp
         dirp = iterator->dirp;
         iterator->dirp = NULL;
