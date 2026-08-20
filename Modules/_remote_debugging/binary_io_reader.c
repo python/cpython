@@ -83,7 +83,8 @@ reader_parse_header(BinaryReader *reader, const uint8_t *data, size_t file_size)
 
     /* Read header fields with byte-swapping if needed */
     uint64_t start_time_us, sample_interval_us, string_table_offset, frame_table_offset;
-    uint32_t sample_count, thread_count, compression_type;
+    uint64_t sample_count;
+    uint32_t thread_count, compression_type;
 
     memcpy(&start_time_us, &data[HDR_OFF_START_TIME], HDR_SIZE_START_TIME);
     memcpy(&sample_interval_us, &data[HDR_OFF_INTERVAL], HDR_SIZE_INTERVAL);
@@ -95,7 +96,7 @@ reader_parse_header(BinaryReader *reader, const uint8_t *data, size_t file_size)
 
     reader->start_time_us = SWAP64_IF(reader->needs_swap, start_time_us);
     reader->sample_interval_us = SWAP64_IF(reader->needs_swap, sample_interval_us);
-    reader->sample_count = SWAP32_IF(reader->needs_swap, sample_count);
+    reader->sample_count = SWAP64_IF(reader->needs_swap, sample_count);
     reader->thread_count = SWAP32_IF(reader->needs_swap, thread_count);
     reader->string_table_offset = SWAP64_IF(reader->needs_swap, string_table_offset);
     reader->frame_table_offset = SWAP64_IF(reader->needs_swap, frame_table_offset);
@@ -237,9 +238,32 @@ reader_decompress_samples(BinaryReader *reader, const uint8_t *data)
 }
 #endif
 
+/* Reject a table/run count whose entries cannot fit in the bytes still
+ * available; a malicious file could otherwise drive a huge allocation.
+ * Each entry occupies at least min_entry_size bytes. */
+static int
+reader_validate_count(const char *what, uint32_t count,
+                      size_t available_bytes, size_t min_entry_size)
+{
+    size_t max_possible = available_bytes / min_entry_size;
+    if (count > max_possible) {
+        PyErr_Format(PyExc_ValueError,
+            "Invalid %s count %u exceeds maximum possible %zu",
+            what, count, max_possible);
+        return -1;
+    }
+    return 0;
+}
+
 static inline int
 reader_parse_string_table(BinaryReader *reader, const uint8_t *data, size_t file_size)
 {
+    if (reader_validate_count("string", reader->strings_count,
+                              file_size - reader->string_table_offset,
+                              MIN_STRING_ENTRY_SIZE) < 0) {
+        return -1;
+    }
+
     reader->strings = PyMem_Calloc(reader->strings_count, sizeof(PyObject *));
     if (!reader->strings && reader->strings_count > 0) {
         PyErr_NoMemory();
@@ -279,6 +303,12 @@ reader_parse_frame_table(BinaryReader *reader, const uint8_t *data, size_t file_
         return -1;
     }
 #endif
+
+    if (reader_validate_count("frame", reader->frames_count,
+                              file_size - reader->frame_table_offset,
+                              MIN_FRAME_ENTRY_SIZE) < 0) {
+        return -1;
+    }
 
     size_t alloc_size = (size_t)reader->frames_count * sizeof(FrameEntry);
     reader->frames = PyMem_Malloc(alloc_size);
@@ -964,10 +994,10 @@ emit_batch(RemoteDebuggingState *state, PyObject *collector,
 
 /* Helper to invoke progress callback, returns -1 on error */
 static inline int
-invoke_progress_callback(PyObject *callback, Py_ssize_t current, uint32_t total)
+invoke_progress_callback(PyObject *callback, Py_ssize_t current, uint64_t total)
 {
     if (callback && callback != Py_None) {
-        PyObject *result = PyObject_CallFunction(callback, "nI", current, total);
+        PyObject *result = PyObject_CallFunction(callback, "nK", current, (unsigned long long)total);
         if (result) {
             Py_DECREF(result);
         } else {
@@ -1053,15 +1083,10 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
                 return -1;
             }
 
-            /* Validate RLE count to prevent DoS from malicious files.
-             * Each RLE sample needs at least 2 bytes (1 byte min varint + 1 status byte).
-             * Also reject absurdly large counts that would exhaust memory. */
-            size_t remaining_data = reader->sample_data_size - offset;
-            size_t max_possible_samples = remaining_data / 2;
-            if (count > max_possible_samples) {
-                PyErr_Format(PyExc_ValueError,
-                    "Invalid RLE count %u exceeds maximum possible %zu for remaining data",
-                    count, max_possible_samples);
+            /* Reject a count larger than the remaining bytes can hold; each
+             * RLE sample needs at least 2 bytes (1-byte min varint + status). */
+            if (reader_validate_count("RLE", count,
+                                      reader->sample_data_size - offset, 2) < 0) {
                 return -1;
             }
             if ((uint64_t)count > (uint64_t)PY_SSIZE_T_MAX - (uint64_t)replayed) {
@@ -1224,8 +1249,8 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
 
     if ((uint64_t)replayed != reader->sample_count) {
         PyErr_Format(PyExc_ValueError,
-            "Sample count mismatch: header declares %u samples but replay decoded %zd",
-            reader->sample_count, replayed);
+            "Sample count mismatch: header declares %llu samples but replay decoded %zd",
+            (unsigned long long)reader->sample_count, replayed);
         return -1;
     }
 
@@ -1246,7 +1271,7 @@ binary_reader_get_info(BinaryReader *reader)
         return NULL;
     }
     return Py_BuildValue(
-        "{s:I, s:N, s:K, s:K, s:I, s:I, s:I, s:I, s:i}",
+        "{s:I, s:N, s:K, s:K, s:K, s:I, s:I, s:I, s:i}",
         "version", BINARY_FORMAT_VERSION,
         "python_version", py_version,
         "start_time_us", reader->start_time_us,

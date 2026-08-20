@@ -594,6 +594,12 @@ _curses_panel_panel_replace_impl(PyCursesPanelObject *self,
         return NULL;
     }
 
+    if (win->win == NULL) {
+        _curses_panel_state *state = get_curses_panel_state_by_panel(self);
+        PyErr_SetString(state->error, "the window has been detached");
+        return NULL;
+    }
+
     int rtn = replace_panel(self->pan, win->win);
     if (rtn == ERR) {
         curses_panel_panel_set_error(self, "replace_panel", "replace");
@@ -687,7 +693,7 @@ static PyType_Slot PyCursesPanel_Type_slots[] = {
 };
 
 static PyType_Spec PyCursesPanel_Type_spec = {
-    .name = "_curses_panel.panel",
+    .name = "curses.panel.panel",
     .basicsize = sizeof(PyCursesPanelObject),
     .flags = (
         Py_TPFLAGS_DEFAULT
@@ -826,9 +832,9 @@ _curses_panel_exec(PyObject *mod)
         return -1;
     }
 
-    /* For exception _curses_panel.error */
+    /* For exception curses.panel.error */
     state->error = PyErr_NewExceptionWithDoc(
-        "_curses_panel.error",
+        "curses.panel.error",
         "Exception raised when a curses panel library function returns an error.",
         NULL, NULL);
 

@@ -319,12 +319,15 @@ _PyThreadState_GetFrame(PyThreadState *tstate)
 // This avoids corrupting the cache when transient frames (called and returned
 // between profiler samples) update last_profiled_frame to addresses the
 // profiler never saw.
+// The sequence distinguishes this anchor from a later frame that reuses the
+// same _PyInterpreterFrame address.
 #define _PyThreadState_UpdateLastProfiledFrame(tstate, frame, previous) \
     do { \
         PyThreadState *tstate_ = (tstate); \
         _PyInterpreterFrame *frame_ = (frame); \
         if (tstate_->last_profiled_frame == frame_) { \
             tstate_->last_profiled_frame = (previous); \
+            tstate_->last_profiled_frame_seq++; \
         } \
     } while (0)
 

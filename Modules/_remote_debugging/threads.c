@@ -503,7 +503,8 @@ unwind_stack_for_thread(
         goto error;
     }
 
-    // In cache mode, copying stack chunks is more expensive than direct memory reads
+    // Cache mode skips this for full hits, but cache misses copy chunks before
+    // walking so newly stored cache entries come from a stable stack snapshot.
     if (!unwinder->cache_frames) {
         if (copy_stack_chunks(unwinder, *current_tstate, &chunks) < 0) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to copy stack chunks");
@@ -528,18 +529,17 @@ unwind_stack_for_thread(
 
     if (unwinder->cache_frames) {
         // Use cache to avoid re-reading unchanged parent frames
-        ctx.last_profiled_frame = GET_MEMBER(uintptr_t, ts,
+        ctx.last_profiled.frame = GET_MEMBER(uintptr_t, ts,
             unwinder->debug_offsets.thread_state.last_profiled_frame);
+        ctx.last_profiled.seq = GET_MEMBER(uintptr_t, ts,
+            unwinder->debug_offsets.thread_state.last_profiled_frame_seq);
         if (collect_frames_with_cache(unwinder, &ctx, tid) < 0) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to collect frames");
             goto error;
         }
         // Update last_profiled_frame for next sample if it changed
-        if (frame_addr != ctx.last_profiled_frame) {
-            uintptr_t lpf_addr =
-                *current_tstate + (uintptr_t)unwinder->debug_offsets.thread_state.last_profiled_frame;
-            if (_Py_RemoteDebug_WriteRemoteMemory(&unwinder->handle, lpf_addr,
-                                                  sizeof(uintptr_t), &frame_addr) < 0) {
+        if (frame_addr != ctx.last_profiled.frame) {
+            if (set_last_profiled_frame(unwinder, *current_tstate, frame_addr) < 0) {
                 PyErr_Clear();  // Non-fatal
             }
         }
@@ -860,6 +860,12 @@ _Py_RemoteDebug_StopAllThreads(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_T
         st->suspended = 1;
         _Py_RemoteDebug_ClearCache(&unwinder->handle);
         return 0;
+    }
+
+    if (!is_process_alive(unwinder->handle.hProcess)) {
+        PyErr_Format(PyExc_ProcessLookupError,
+            "Process %d has terminated", unwinder->handle.pid);
+        return -1;
     }
 
     PyErr_Format(PyExc_RuntimeError, "NtSuspendProcess failed: 0x%lx", status);

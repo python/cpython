@@ -198,57 +198,67 @@ getpath_isdir(PyObject *Py_UNUSED(self), PyObject *args)
 static PyObject *
 getpath_isfile(PyObject *Py_UNUSED(self), PyObject *args)
 {
-    PyObject *r = NULL;
     PyObject *pathobj;
-    const wchar_t *path;
     if (!PyArg_ParseTuple(args, "U", &pathobj)) {
         return NULL;
     }
-    path = PyUnicode_AsWideCharString(pathobj, NULL);
-    if (path) {
+
+    int isfile;
 #ifdef MS_WINDOWS
-        DWORD attr = GetFileAttributesW(path);
-        r = (attr != INVALID_FILE_ATTRIBUTES) &&
-            !(attr & FILE_ATTRIBUTE_DIRECTORY) ? Py_True : Py_False;
-#else
-        struct stat st;
-        r = (_Py_wstat(path, &st) == 0) && S_ISREG(st.st_mode) ? Py_True : Py_False;
-#endif
-        PyMem_Free((void *)path);
+    wchar_t *path = PyUnicode_AsWideCharString(pathobj, NULL);
+    if (path == NULL) {
+        return NULL;
     }
-    return Py_XNewRef(r);
+
+    DWORD attr = GetFileAttributesW(path);
+    PyMem_Free(path);
+    isfile = ((attr != INVALID_FILE_ATTRIBUTES)
+               && !(attr & FILE_ATTRIBUTE_DIRECTORY));
+#else
+    struct stat st;
+    int res = _Py_stat(pathobj, &st);
+    if (res == -2) {
+        return NULL;
+    }
+    isfile = ((res == 0) && S_ISREG(st.st_mode));
+#endif
+    return PyBool_FromLong(isfile);
 }
 
 
 static PyObject *
 getpath_isxfile(PyObject *Py_UNUSED(self), PyObject *args)
 {
-    PyObject *r = NULL;
     PyObject *pathobj;
-    const wchar_t *path;
-    Py_ssize_t cchPath;
     if (!PyArg_ParseTuple(args, "U", &pathobj)) {
         return NULL;
     }
-    path = PyUnicode_AsWideCharString(pathobj, &cchPath);
-    if (path) {
+
+    int isxfile;
 #ifdef MS_WINDOWS
-        DWORD attr = GetFileAttributesW(path);
-        r = (attr != INVALID_FILE_ATTRIBUTES) &&
-            !(attr & FILE_ATTRIBUTE_DIRECTORY) &&
-            (cchPath >= 4) &&
-            (CompareStringOrdinal(path + cchPath - 4, -1, L".exe", -1, 1 /* ignore case */) == CSTR_EQUAL)
-            ? Py_True : Py_False;
-#else
-        struct stat st;
-        r = (_Py_wstat(path, &st) == 0) &&
-            S_ISREG(st.st_mode) &&
-            (st.st_mode & 0111)
-            ? Py_True : Py_False;
-#endif
-        PyMem_Free((void *)path);
+    Py_ssize_t cchPath;
+    wchar_t *path = PyUnicode_AsWideCharString(pathobj, &cchPath);
+    if (path == NULL) {
+        return NULL;
     }
-    return Py_XNewRef(r);
+
+    DWORD attr = GetFileAttributesW(path);
+    PyMem_Free(path);
+    isxfile = (attr != INVALID_FILE_ATTRIBUTES) &&
+              !(attr & FILE_ATTRIBUTE_DIRECTORY) &&
+              (cchPath >= 4) &&
+              (CompareStringOrdinal(path + cchPath - 4, -1, L".exe", -1, 1 /* ignore case */) == CSTR_EQUAL);
+#else
+    struct stat st;
+    int res = _Py_stat(pathobj, &st);
+    if (res == -2) {
+        return NULL;
+    }
+    isxfile = ((res == 0)
+               && S_ISREG(st.st_mode)
+               && (st.st_mode & 0111));
+#endif
+    return PyBool_FromLong(isxfile);
 }
 
 
@@ -340,25 +350,16 @@ getpath_joinpath(PyObject *Py_UNUSED(self), PyObject *args)
 static PyObject *
 getpath_readlines(PyObject *Py_UNUSED(self), PyObject *args)
 {
-    PyObject *r = NULL;
     PyObject *pathobj;
-    const wchar_t *path;
     if (!PyArg_ParseTuple(args, "U", &pathobj)) {
         return NULL;
     }
-    path = PyUnicode_AsWideCharString(pathobj, NULL);
-    if (!path) {
-        return NULL;
-    }
-    FILE *fp = _Py_wfopen(path, L"rb");
+    FILE *fp = Py_fopen(pathobj, "rb");
     if (!fp) {
-        PyErr_SetFromErrno(PyExc_OSError);
-        PyMem_Free((void *)path);
         return NULL;
     }
-    PyMem_Free((void *)path);
 
-    r = PyList_New(0);
+    PyObject *r = PyList_New(0);
     if (!r) {
         fclose(fp);
         return NULL;

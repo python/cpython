@@ -16,21 +16,22 @@ a single application, within the same window or between windows. To enable an
 object to be dragged, you must create an event binding for it that starts the
 drag-and-drop process. Typically, you bind a ButtonPress event to a callback
 function that you write (see :ref:`Bindings-and-Events`). The function should
-call :func:`dnd_start`, where 'source' is the object to be dragged, and 'event'
+call :func:`dnd_start`, where *source* is the object to be dragged, and *event*
 is the event that invoked the call (the argument to your callback function).
 
 Selection of a target object occurs as follows:
 
-#. Top-down search of area under mouse for target widget
+#. Top-down search of the area under the mouse for a target widget:
 
- * Target widget should have a callable *dnd_accept* attribute
- * If *dnd_accept* is not present or returns ``None``, search moves to parent widget
- * If no target widget is found, then the target object is ``None``
+   * the target widget should have a callable *dnd_accept* attribute;
+   * if *dnd_accept* is not present or returns ``None``,
+     the search moves to the parent widget;
+   * if no target widget is found, the target object is ``None``.
 
-2. Call to *<old_target>.dnd_leave(source, event)*
-#. Call to *<new_target>.dnd_enter(source, event)*
-#. Call to *<target>.dnd_commit(source, event)* to notify of drop
-#. Call to *<source>.dnd_end(target, event)* to signal end of drag-and-drop
+#. Call to ``<old_target>.dnd_leave(source, event)``.
+#. Call to ``<new_target>.dnd_enter(source, event)``.
+#. Call to ``<target>.dnd_commit(source, event)`` to notify of the drop.
+#. Call to ``<source>.dnd_end(target, event)`` to signal the end of drag-and-drop.
 
 
 .. class:: DndHandler(source, event)

@@ -182,14 +182,17 @@ static int
 _PySSLContext_set_keylog_filename(PyObject *op, PyObject *arg,
                                   void *Py_UNUSED(closure))
 {
-    PySSLContext *self = PySSLContext_CAST(op);
-    FILE *fp;
-
-#if defined(MS_WINDOWS) && defined(Py_DEBUG)
+#if defined(MS_WINDOWS_APP) && !defined(MS_WINDOWS_DESKTOP)
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "set_keylog_filename: unavailable on UWP build");
+    return -1;
+#elif defined(MS_WINDOWS) && defined(Py_DEBUG)
     PyErr_SetString(PyExc_NotImplementedError,
                     "set_keylog_filename: unavailable on Windows debug build");
     return -1;
-#endif
+#else
+    PySSLContext* self = PySSLContext_CAST(op);
+    FILE* fp;
 
     /* Reset variables and callback first */
     SSL_CTX_set_keylog_callback(self->ctx, NULL);
@@ -231,4 +234,5 @@ _PySSLContext_set_keylog_filename(PyObject *op, PyObject *arg,
     PySSL_END_ALLOW_THREADS(self)
     SSL_CTX_set_keylog_callback(self->ctx, _PySSL_keylog_callback);
     return 0;
+#endif
 }

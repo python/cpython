@@ -1034,7 +1034,16 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
             has_separator = (c == ':');
         }
 
-        if (p >= p_end) {
+        if (c == '.' || c == ',') {
+            if (i < 2) {
+                return -3;  // Decimal mark on hour or minute
+            }
+            if (p >= p_end) {
+                return -3;  // Decimal mark not followed by any digit
+            }
+            break;
+        }
+        else if (p >= p_end) {
             return c != '\0';
         }
         else if (has_separator && (c == ':')) {
@@ -1043,14 +1052,10 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
             }
             continue;
         }
-        else if (c == '.' || c == ',') {
-            if (i < 2) {
-                return -3; // Decimal mark on hour or minute
-            }
-            break;
-        } else if (!has_separator) {
+        else if (!has_separator) {
             --p;
-        } else {
+        }
+        else {
             return -4;  // Malformed time separator
         }
     }

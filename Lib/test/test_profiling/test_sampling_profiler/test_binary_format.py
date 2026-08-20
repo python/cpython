@@ -932,6 +932,29 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
         self.assertEqual(writer_collector.total_samples, len(samples))
         self.assertEqual(writer_collector.total_samples, replayed)
 
+    def test_rle_buffer_flushes_before_finalize(self):
+        """RLE buffer flushes before the writer is destroyed during finalize()."""
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+
+        frame = make_frame("rle_boundary.py", 1, "hot")
+        sample = [make_interpreter(0, [make_thread(1, [frame])])]
+
+        writer = _remote_debugging.BinaryWriter(filename, 1000, 0, compression=0)
+        for i in range(10_000):
+            writer.write_sample(sample, i * 1000)
+        self.assertGreater(writer.get_stats()["repeat_records"], 0)
+
+        writer.finalize()
+
+        reader_collector = RawCollector()
+        with BinaryReader(filename) as reader:
+            replayed = reader.replay_samples(reader_collector)
+
+        self.assertEqual(replayed, 10_000)
+        self.assertEqual(writer.total_samples, 10_000)
+
     def test_writer_total_samples_after_context_manager_matches_reader(self):
         """total_samples after `with BinaryWriter(...)` matches the reader's count.
 
@@ -976,10 +999,13 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
     """Tests for malformed binary files."""
 
     HDR_OFF_SAMPLES = 28
-    HDR_OFF_THREADS = 32
-    HDR_OFF_STR_TABLE = 36
-    HDR_OFF_FRAME_TABLE = 44
+    HDR_OFF_THREADS = 36
+    HDR_OFF_STR_TABLE = 40
+    HDR_OFF_FRAME_TABLE = 48
     FILE_HEADER_PLACEHOLDER_SIZE = 64
+    FILE_FOOTER_SIZE = 32
+    FTR_OFF_STRINGS = 0
+    FTR_OFF_FRAMES = 4
 
     def test_replay_rejects_more_threads_than_declared(self):
         """Replay rejects files with more unique threads than the header declares."""
@@ -1013,7 +1039,7 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
 
         with open(filename, "r+b") as raw:
             raw.seek(self.HDR_OFF_SAMPLES)
-            raw.write(struct.pack("=I", 2))
+            raw.write(struct.pack("=Q", 2))
 
         with BinaryReader(filename) as reader:
             self.assertEqual(reader.get_info()["sample_count"], 2)
@@ -1040,6 +1066,113 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
             with self.assertRaises(ValueError) as cm:
                 reader.replay_samples(RawCollector())
             self.assertEqual(str(cm.exception), "Truncated sample data: 1 trailing bytes")
+
+    # Minimum on-disk size of one table entry (see binary_io.h).
+    MIN_STRING_ENTRY_SIZE = 1
+    MIN_FRAME_ENTRY_SIZE = 7
+
+    def _read_offset(self, filename, hdr_off):
+        with open(filename, "rb") as raw:
+            raw.seek(hdr_off)
+            return struct.unpack("=Q", raw.read(8))[0]
+
+    def _patch_footer_count(self, filename, ftr_off, value):
+        size = os.path.getsize(filename)
+        with open(filename, "r+b") as raw:
+            raw.seek(size - self.FILE_FOOTER_SIZE + ftr_off)
+            raw.write(struct.pack("=I", value))
+
+    def test_open_rejects_string_count_larger_than_file(self):
+        """Open rejects a footer string count larger than the file."""
+        samples = [[make_interpreter(0, [
+            make_thread(1, [make_frame("s.py", 10, "s")])
+        ])]]
+        filename = self.create_binary_file(samples, compression="none")
+        size = os.path.getsize(filename)
+        str_off = self._read_offset(filename, self.HDR_OFF_STR_TABLE)
+        max_strings = (size - str_off) // self.MIN_STRING_ENTRY_SIZE
+        self._patch_footer_count(filename, self.FTR_OFF_STRINGS, 0xFFFFFFFF)
+
+        with self.assertRaises(ValueError) as cm:
+            with BinaryReader(filename):
+                pass
+        self.assertEqual(
+            str(cm.exception),
+            f"Invalid string count 4294967295 exceeds maximum "
+            f"possible {max_strings}",
+        )
+
+    def test_open_rejects_frame_count_larger_than_file(self):
+        """Open rejects a footer frame count larger than the file."""
+        samples = [[make_interpreter(0, [
+            make_thread(1, [make_frame("f.py", 10, "f")])
+        ])]]
+        filename = self.create_binary_file(samples, compression="none")
+        size = os.path.getsize(filename)
+        frame_off = self._read_offset(filename, self.HDR_OFF_FRAME_TABLE)
+        max_frames = (size - frame_off) // self.MIN_FRAME_ENTRY_SIZE
+        self._patch_footer_count(filename, self.FTR_OFF_FRAMES, 0xFFFFFFFF)
+
+        # On a 32-bit build this count overflows the allocation size, so the
+        # size_t overflow guard (OverflowError) fires before the count check.
+        with self.assertRaises((ValueError, OverflowError)) as cm:
+            with BinaryReader(filename):
+                pass
+        if isinstance(cm.exception, ValueError):
+            self.assertEqual(
+                str(cm.exception),
+                f"Invalid frame count 4294967295 exceeds maximum "
+                f"possible {max_frames}",
+            )
+
+    def test_open_accepts_frame_count_at_capacity_boundary(self):
+        """A frame count at the file-size cap opens; one more is rejected."""
+        samples = [[make_interpreter(0, [
+            make_thread(1, [make_frame("f.py", 10, "f")])
+        ])]]
+        filename = self.create_binary_file(samples, compression="none")
+        size = os.path.getsize(filename)
+        frame_off = self._read_offset(filename, self.HDR_OFF_FRAME_TABLE)
+        max_frames = (size - frame_off) // self.MIN_FRAME_ENTRY_SIZE
+
+        self._patch_footer_count(filename, self.FTR_OFF_FRAMES, max_frames)
+        with BinaryReader(filename):
+            pass
+
+        self._patch_footer_count(filename, self.FTR_OFF_FRAMES, max_frames + 1)
+        with self.assertRaises(ValueError) as cm:
+            with BinaryReader(filename):
+                pass
+        self.assertEqual(
+            str(cm.exception),
+            f"Invalid frame count {max_frames + 1} exceeds maximum "
+            f"possible {max_frames}",
+        )
+
+    def test_sample_count_reads_full_64_bits(self):
+        """sample_count values requiring the upper 32 bits decode correctly."""
+        filename = self.create_binary_file([], compression="none")
+        big_count = 0x1_0002_0003
+
+        with open(filename, "r+b") as raw:
+            raw.seek(self.HDR_OFF_SAMPLES)
+            raw.write(struct.pack("=Q", big_count))
+
+        with BinaryReader(filename) as reader:
+            self.assertEqual(reader.get_info()["sample_count"], big_count)
+
+    def test_sample_count_boundary_values(self):
+        """Values above the old u32 ceiling decode fine."""
+        filename = self.create_binary_file([], compression="none")
+
+        for value in (0xFFFFFFFF - 1, 0xFFFFFFFF, 0xFFFFFFFF + 1):
+            with self.subTest(value=value):
+                with open(filename, "r+b") as raw:
+                    raw.seek(self.HDR_OFF_SAMPLES)
+                    raw.write(struct.pack("=Q", value))
+
+                with BinaryReader(filename) as reader:
+                    self.assertEqual(reader.get_info()["sample_count"], value)
 
 
 class TestBinaryEncodings(BinaryFormatTestBase):

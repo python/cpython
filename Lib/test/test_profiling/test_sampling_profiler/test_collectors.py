@@ -40,7 +40,16 @@ except ImportError:
 
 from test.support import captured_stdout, captured_stderr
 
-from .mocks import MockFrameInfo, MockThreadInfo, MockInterpreterInfo, LocationInfo, make_diff_collector_with_mock_baseline
+from .mocks import (
+    MockAwaitedInfo,
+    MockCoroInfo,
+    MockFrameInfo,
+    MockInterpreterInfo,
+    MockTaskInfo,
+    MockThreadInfo,
+    LocationInfo,
+    make_diff_collector_with_mock_baseline,
+)
 from .helpers import close_and_unlink, jsonl_tables
 
 
@@ -496,6 +505,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn("func1 (file.py:10)", resolve_name(child, strings))
         self.assertEqual(child["value"], 1)
         self.assertEqual(child["self"], 1)  # leaf: all time is self
+        self.assertEqual(data["stats"]["sample_interval_usec"], 1000)
 
     def test_flamegraph_collector_export(self):
         """Test flamegraph HTML export functionality."""
@@ -504,7 +514,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         )
         self.addCleanup(close_and_unlink, flamegraph_out)
 
-        collector = FlamegraphCollector(1000)
+        collector = FlamegraphCollector(10000)
 
         # Create some test data (use Interpreter/Thread objects like runtime)
         test_frames1 = [
@@ -539,9 +549,10 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
         # Export flamegraph
         with captured_stdout(), captured_stderr():
-            collector.export(flamegraph_out.name)
+            export_ok = collector.export(flamegraph_out.name)
 
         # Verify file was created and contains valid data
+        self.assertTrue(export_ok)
         self.assertTrue(os.path.exists(flamegraph_out.name))
         self.assertGreater(os.path.getsize(flamegraph_out.name), 0)
 
@@ -559,6 +570,23 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn('"name":', content)
         self.assertIn('"value":', content)
         self.assertIn('"children":', content)
+        self.assertIn('"sample_interval_usec": 10000', content)
+        self.assertIn("samples * data.stats.sample_interval_usec / 1000", content)
+
+    def test_flamegraph_collector_empty_export_fails(self):
+        """Test empty flamegraph export reports no output."""
+        flamegraph_out = tempfile.NamedTemporaryFile(
+            suffix=".html", delete=False
+        )
+        self.addCleanup(close_and_unlink, flamegraph_out)
+
+        collector = FlamegraphCollector(1000)
+
+        with captured_stdout(), captured_stderr():
+            export_ok = collector.export(flamegraph_out.name)
+
+        self.assertFalse(export_ok)
+        self.assertEqual(os.path.getsize(flamegraph_out.name), 0)
 
     def test_gecko_collector_basic(self):
         """Test basic GeckoCollector functionality."""
@@ -656,6 +684,48 @@ class TestSampleProfilerComponents(unittest.TestCase):
         stack_table = thread_data["stackTable"]
         self.assertGreater(stack_table["length"], 0)
         self.assertGreater(len(stack_table["frame"]), 0)
+
+    def test_gecko_collector_async_aware(self):
+        collector = GeckoCollector(1000)
+
+        parent = MockTaskInfo(
+            task_id=1,
+            task_name="Parent",
+            coroutine_stack=[
+                MockCoroInfo(
+                    task_name="Parent",
+                    call_stack=[MockFrameInfo("parent.py", 10, "parent_fn")],
+                )
+            ],
+        )
+        child = MockTaskInfo(
+            task_id=2,
+            task_name="Child",
+            coroutine_stack=[
+                MockCoroInfo(
+                    task_name="Child",
+                    call_stack=[MockFrameInfo("child.py", 20, "child_fn")],
+                )
+            ],
+            awaited_by=[MockCoroInfo(task_name=1, call_stack=[])],
+        )
+
+        collector.collect(
+            [MockAwaitedInfo(thread_id=100, awaited_by=[parent, child])],
+            timestamps_us=[1000, 2000],
+        )
+        profile_data = collector._build_profile()
+
+        self.assertEqual(len(profile_data["threads"]), 1)
+        thread_data = profile_data["threads"][0]
+        self.assertEqual(thread_data["samples"]["length"], 2)
+
+        string_array = profile_data["shared"]["stringArray"]
+        self.assertIn("parent_fn", string_array)
+        self.assertIn("child_fn", string_array)
+        self.assertIn("Parent", string_array)
+        self.assertIn("Child", string_array)
+        self.assertEqual(thread_data["markers"]["length"], 0)
 
     @unittest.skipIf(is_emscripten, "threads not available")
     def test_gecko_collector_export(self):
@@ -1269,6 +1339,87 @@ class TestSampleProfilerComponents(unittest.TestCase):
             self.assertIn("gc_pct", thread_data)
             self.assertIn("total", thread_data)
 
+    def test_flamegraph_nodes_include_per_thread_values(self):
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+        root = MockFrameInfo("app.py", 1, "main")
+        collector.process_frames(
+            [MockFrameInfo("app.py", 10, "worker_a"), root],
+            thread_id=1,
+            weight=2,
+        )
+        collector.process_frames(
+            [MockFrameInfo("app.py", 20, "worker_b"), root],
+            thread_id=2,
+            weight=3,
+        )
+
+        data = collector._convert_to_flamegraph_format()
+
+        self.assertEqual(data["thread_values"], {1: [2, 0], 2: [3, 0]})
+        children_by_line = {child["lineno"]: child for child in data["children"]}
+        self.assertEqual(children_by_line[10]["thread_values"], {1: [2, 2]})
+        self.assertEqual(children_by_line[20]["thread_values"], {2: [3, 3]})
+
+    def test_flamegraph_pruning_preserves_low_volume_thread(self):
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+        collector.process_frames(
+            [MockFrameInfo("app.py", 10, "busy")],
+            thread_id=1,
+            weight=1999,
+        )
+        collector.process_frames(
+            [MockFrameInfo("app.py", 20, "rare")],
+            thread_id=2,
+        )
+
+        data = collector._convert_to_flamegraph_format()
+
+        self.assertEqual(data["thread_values"], {1: [1999, 0], 2: [1, 0]})
+        children_by_line = {child["lineno"]: child for child in data["children"]}
+        self.assertEqual(children_by_line[10]["thread_values"], {1: [1999, 1999]})
+        self.assertEqual(children_by_line[20]["thread_values"], {2: [1, 1]})
+
+    def test_flamegraph_does_not_promote_incomplete_root(self):
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+        collector.process_frames(
+            [MockFrameInfo("app.py", 1, "busy")],
+            thread_id=1,
+            weight=2000,
+        )
+        for line in range(2, 2002):
+            collector.process_frames(
+                [MockFrameInfo("app.py", line, f"fragment_{line}")],
+                thread_id=2,
+            )
+
+        data = collector._convert_to_flamegraph_format()
+
+        self.assertNotIn("filename", data)
+        self.assertEqual(data["thread_values"], {1: [2000, 0], 2: [2000, 0]})
+        self.assertEqual(len(data["children"]), 1)
+        self.assertEqual(data["children"][0]["thread_values"], {1: [2000, 2000]})
+
+    def test_flamegraph_nodes_include_per_thread_opcodes(self):
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+        collector.process_frames(
+            [MockFrameInfo("app.py", 10, "worker", opcode=100)],
+            thread_id=1,
+            weight=2,
+        )
+        collector.process_frames(
+            [MockFrameInfo("app.py", 10, "worker", opcode=101)],
+            thread_id=2,
+            weight=3,
+        )
+
+        data = collector._convert_to_flamegraph_format()
+
+        self.assertEqual(data["opcodes"], {100: 2, 101: 3})
+        self.assertEqual(
+            data["thread_opcodes"],
+            {1: {100: 2}, 2: {101: 3}},
+        )
+
     def test_flamegraph_collector_per_thread_gc_percentage(self):
         """Test that per-thread GC percentage uses total samples as denominator."""
         collector = FlamegraphCollector(sample_interval_usec=1000)
@@ -1666,8 +1817,9 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.addCleanup(close_and_unlink, flamegraph_out)
 
         with captured_stdout(), captured_stderr():
-            diff.export(flamegraph_out.name)
+            export_ok = diff.export(flamegraph_out.name)
 
+        self.assertTrue(export_ok)
         self.assertTrue(os.path.exists(flamegraph_out.name))
         self.assertGreater(os.path.getsize(flamegraph_out.name), 0)
 

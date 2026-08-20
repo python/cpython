@@ -216,9 +216,9 @@ _module_browser_spec = {
     'file': 'browser',
     'kwds': {},
     'msg': textwrap.dedent("""
-        "Inspect names of module, class(with superclass if applicable),
-        "methods and functions.  Toggle nested items.  Double clicking
-        "on items prints a traceback for an exception that is ignored.""")
+        Inspect names of module, class(with superclass if applicable),
+        methods and functions.  Toggle nested items.  Double clicking
+        on items prints a traceback for an exception that is ignored.""")
     }
 
 _multistatus_bar_spec = {
