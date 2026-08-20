@@ -389,10 +389,16 @@ class AutocommitAttribute(unittest.TestCase):
 
     def test_autocommit_setget_invalid(self):
         msg = "autocommit must be True, False, or.*LEGACY"
-        for mode in "a", 12, (), None:
+        for mode in "a", 12, (), None, 2**1000, -2**1000:
             with self.subTest(mode=mode):
                 with self.assertRaisesRegex(ValueError, msg):
                     sqlite.connect(":memory:", autocommit=mode)
+                with memory_database() as cx:
+                    with self.assertRaisesRegex(ValueError, msg):
+                        cx.autocommit = mode
+                    # a failed assignment does not change the value
+                    self.assertEqual(cx.autocommit,
+                                     sqlite.LEGACY_TRANSACTION_CONTROL)
 
     def test_autocommit_delete(self):
         with memory_database() as cx:
