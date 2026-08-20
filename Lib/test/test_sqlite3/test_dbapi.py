@@ -1075,11 +1075,13 @@ class CursorTests(unittest.TestCase):
         UINT32_MAX = (1 << 32) - 1
         setter = functools.partial(setattr, self.cu, 'arraysize')
 
+        self.cu.arraysize = 2
         self.assertRaises(TypeError, setter, 1.0)
         self.assertRaises(ValueError, setter, -3)
         self.assertRaises(OverflowError, setter, UINT32_MAX + 1)
+        self.assertRaises(ValueError, setter, -(UINT32_MAX + 1))
         # a failed assignment does not change the value
-        self.assertEqual(self.cu.arraysize, 1)
+        self.assertEqual(self.cu.arraysize, 2)
 
     def test_fetchmany(self):
         # no active SQL statement
