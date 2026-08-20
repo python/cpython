@@ -156,6 +156,35 @@ class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
         with self.assertRaises(AttributeError):
             del self.con.text_factory
 
+    def test_uninitialized_connection_factories(self):
+        # gh-152817: skipping __init__() should still result in initialized factories (None not Null)
+        con = sqlite.Connection.__new__(sqlite.Connection)
+        self.assertIsNone(con.row_factory)
+        self.assertIs(con.text_factory, str)
+
+    def test_uninitialized_cursor_row_factory(self):
+        # gh-152817: skipping __init__() should still result in initialized factories (None not Null)
+        # __init__ must not crash.
+        cur = sqlite.Cursor.__new__(sqlite.Cursor)
+        self.assertIsNone(cur.row_factory)
+
+    def test_subclass_skipping_super_init(self):
+        # gh-152817: forgetting to call super().__init__() shouldn't leave a NULL {row,text}_factory
+        class Connection(sqlite.Connection):
+            def __init__(self, *args, **kwargs):
+                pass
+
+        class Cursor(sqlite.Cursor):
+            def __init__(self, *args, **kwargs):
+                pass
+
+        con = Connection(":memory:")
+        self.assertIsNone(con.row_factory)
+        self.assertIs(con.text_factory, str)
+
+        cur = Cursor(self.con)
+        self.assertIsNone(cur.row_factory)
+
     def test_sqlite_row_index_unicode(self):
         row = self.con.execute("select 1 as \xff").fetchone()
         self.assertEqual(row["\xff"], 1)
