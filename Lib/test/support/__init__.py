@@ -1307,9 +1307,9 @@ def _limit_address_space(nbytes):
 def _memory_watchdog(proc, limit):
     """Return a function watching the memory used by the test in *proc*.
 
-    It reports the usage in verbose mode, and kills the test if it uses more
-    than *limit* bytes.  This is the only limit where the address space cannot
-    be limited.
+    It reports the usage in verbose mode, keeps the largest value it saw in
+    its ``peak`` attribute, and kills the test if it uses more than *limit*
+    bytes.  This is the only limit where the address space cannot be limited.
     """
     # Imported here: test.support does not depend on test.libregrtest.
     from test.libregrtest.utils import get_process_memory_usage
@@ -1318,12 +1318,14 @@ def _memory_watchdog(proc, limit):
         mem = get_process_memory_usage(proc.pid)
         if mem is None:
             return
+        watch.peak = max(watch.peak, mem)
         if verbose:
             print(f" ... process data size: {mem / (1024 ** 3):.1f} GiB",
                   flush=True)
         if limit is not None and mem > limit:
             watch.exceeded = mem
             proc.kill()
+    watch.peak = 0
     watch.exceeded = None
     return watch
 
@@ -1393,6 +1395,22 @@ def bigmemtest(size, memuse, dry_run=True, *, limit_address_space=True):
                         f'the test used {watchdog.exceeded / _1G:.1f} GiB, '
                         f'more than the {size * memuse / _1G:.1f} GiB '
                         f'it declares')
+                if verbose:
+                    # The subprocess measures its own peak exactly.  What the
+                    # parent sampled is only a lower bound.
+                    maxrss = payload and payload.get('maxrss')
+                    peak = maxrss or watchdog.peak
+                    if peak:
+                        print(f" ... peak memory use: "
+                              f"{peak / (1024 ** 3):.1f} GiB"
+                              f"{'' if maxrss else ' or more'}",
+                              flush=True)
+                    majflt = payload and payload.get('majflt')
+                    if majflt:
+                        # The test did not fit in memory, so its
+                        # timing means little.
+                        print(f" ... {majflt} major page faults: the test "
+                              f"waited for the disk", flush=True)
                 isolation._replay_test(self, payload, output, returncode)
                 return
 
