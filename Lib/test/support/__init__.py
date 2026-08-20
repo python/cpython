@@ -1270,8 +1270,16 @@ def set_memlimit(limit: str) -> None:
     max_memuse = memlimit
 
 
+def _memory_limit(nbytes):
+    """How much memory a test declaring *nbytes* may use.
+
+    The interpreter itself reserves about 250 MiB, whatever the test asks for.
+    """
+    return int(nbytes) + 512 * _1M
+
+
 def _limit_address_space(nbytes):
-    """Limit the address space of this process to *nbytes* plus a margin.
+    """Limit the address space of this process to what a test may use.
 
     A test which uses much more memory than it declares then fails with a
     MemoryError instead of making the machine swap.
@@ -1280,15 +1288,15 @@ def _limit_address_space(nbytes):
         # AddressSanitizer reserves terabytes of address space for its shadow
         # memory, so any limit stops the interpreter from starting.
         return
+    if sys.platform == 'darwin':
+        # macOS reserves much more address space than it uses.
+        return
     try:
         import resource
         rlimit = resource.RLIMIT_AS
     except (ImportError, AttributeError):
         return
-    # The margin does not grow with the declared size: the interpreter itself
-    # reserves about 250 MiB, whatever the test asks for.  macOS reserves more.
-    margin = _1G if sys.platform == 'darwin' else 512 * _1M
-    limit = int(nbytes) + margin
+    limit = _memory_limit(nbytes)
     soft, hard = resource.getrlimit(rlimit)
     for current in soft, hard:
         if current != resource.RLIM_INFINITY:
@@ -1296,16 +1304,27 @@ def _limit_address_space(nbytes):
     resource.setrlimit(rlimit, (limit, hard))
 
 
-def _memory_watchdog(pid):
-    """Return a function printing the memory usage of process *pid*."""
+def _memory_watchdog(proc, limit):
+    """Return a function watching the memory used by the test in *proc*.
+
+    It reports the usage in verbose mode, and kills the test if it uses more
+    than *limit* bytes.  This is the only limit where the address space cannot
+    be limited.
+    """
     # Imported here: test.support does not depend on test.libregrtest.
     from test.libregrtest.utils import get_process_memory_usage
 
     def watch():
-        mem = get_process_memory_usage(pid)
-        if mem is not None:
+        mem = get_process_memory_usage(proc.pid)
+        if mem is None:
+            return
+        if verbose:
             print(f" ... process data size: {mem / (1024 ** 3):.1f} GiB",
                   flush=True)
+        if limit is not None and mem > limit:
+            watch.exceeded = mem
+            proc.kill()
+    watch.exceeded = None
     return watch
 
 
@@ -1364,8 +1383,17 @@ def bigmemtest(size, memuse, dry_run=True, *, limit_address_space=True):
                 cls = type(self)
                 qualname = f'{cls.__qualname__}.{f.__name__}'
                 proc = isolation._start_test(cls.__module__, qualname)
-                watchdog = _memory_watchdog(proc.pid) if verbose else None
-                isolation._replay_test(self, *proc.wait(tick=watchdog))
+                # Watched even if the address space is not limited: this
+                # counts the memory really used.
+                watchdog = _memory_watchdog(proc,
+                                            _memory_limit(size * memuse))
+                payload, output, returncode = proc.wait(tick=watchdog)
+                if watchdog.exceeded:
+                    raise AssertionError(
+                        f'the test used {watchdog.exceeded / _1G:.1f} GiB, '
+                        f'more than the {size * memuse / _1G:.1f} GiB '
+                        f'it declares')
+                isolation._replay_test(self, payload, output, returncode)
                 return
 
             if (real_max_memuse and limit_address_space
