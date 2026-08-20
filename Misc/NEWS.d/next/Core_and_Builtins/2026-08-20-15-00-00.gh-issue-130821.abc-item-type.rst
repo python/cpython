@@ -1,0 +1,3 @@
+Include the type name in the :exc:`TypeError` raised when an item yielded by
+``items()`` is not iterable during abstract method computation in
+:mod:`abc`. Patch by Jason Mak.

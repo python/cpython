@@ -383,10 +383,17 @@ compute_abstract_methods(PyObject *self)
     }
     assert(PyList_Check(items));
     for (Py_ssize_t pos = 0; pos < PyList_GET_SIZE(items); pos++) {
+        PyObject *item = PyList_GET_ITEM(items, pos);
         PyObject *it = PySequence_Fast(
-                PyList_GET_ITEM(items, pos),
+                item,
                 "items() returned non-iterable");
         if (!it) {
+            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+                PyErr_Format(PyExc_TypeError,
+                             "items() must yield iterable (key, value) "
+                             "pairs, not %T",
+                             item);
+            }
             goto error;
         }
         if (PySequence_Fast_GET_SIZE(it) != 2) {
