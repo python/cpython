@@ -88,6 +88,7 @@ jobs:
   check_abi:
     name: 'Check if the ABI has changed'
     runs-on: ubuntu-22.04  # 24.04 causes spurious errors
+    timeout-minutes: 30
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
