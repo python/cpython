@@ -2,6 +2,7 @@
 #include "pycore_long.h"
 #include "pycore_opcode_utils.h"
 #include "pycore_optimizer.h"
+#include "pycore_stackref.h"
 #include "pycore_typeobject.h"
 #include "pycore_uops.h"
 #include "pycore_uop_ids.h"
@@ -214,6 +215,13 @@ dummy_func(void) {
             }
             sym_set_compact_int(value);
         }
+    }
+
+    op(_GUARD_TOS_EXACT_INT, (value -- value)) {
+        if (sym_matches_type(value, &PyLong_Type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        sym_set_type(value, &PyLong_Type);
     }
 
     op(_GUARD_NOS_INT, (left, unused -- left, unused)) {
@@ -870,15 +878,11 @@ dummy_func(void) {
 
     op(_LOAD_COMMON_CONSTANT, (-- value)) {
         assert(oparg < NUM_COMMON_CONSTANTS);
-        PyObject *val = _PyInterpreterState_GET()->common_consts[oparg];
-        if (_Py_IsImmortal(val)) {
-            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
-            value = PyJitRef_Borrow(sym_new_const(ctx, val));
-        }
-        else {
-            ADD_OP(_LOAD_CONST_INLINE, 0, (uintptr_t)val);
-            value = sym_new_const(ctx, val);
-        }
+        PyObject *val = PyStackRef_AsPyObjectBorrow(
+            _PyInterpreterState_GET()->common_consts[oparg]);
+        assert(_Py_IsImmortal(val));
+        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
+        value = PyJitRef_Borrow(sym_new_const(ctx, val));
     }
 
     op(_LOAD_SMALL_INT, (-- value)) {

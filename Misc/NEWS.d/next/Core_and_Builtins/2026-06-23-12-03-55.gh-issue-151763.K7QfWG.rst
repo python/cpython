@@ -1,0 +1,3 @@
+Fix a potential crash in :func:`compile`, :func:`exec`, :func:`eval` and
+:func:`ast.parse` when an allocation fails: the parser or compiler could
+return without setting an exception.

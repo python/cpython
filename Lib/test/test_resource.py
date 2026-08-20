@@ -99,6 +99,11 @@ class ResourceTest(unittest.TestCase):
             # silently converted the limit value to RLIM_INFINITY.
             if sys.maxsize < 2**32 <= cur <= resource.RLIM_INFINITY:
                 return [(resource.RLIM_INFINITY, max), (cur, max)]
+            # Solaris silently converts limits that do not fit in a signed
+            # 64-bit integer to RLIM_INFINITY.
+            if cur >= 2**63-1:
+                return [(resource.RLIM_INFINITY, max),
+                        (min(cur, resource.RLIM_INFINITY), max)]
             return [(min(cur, resource.RLIM_INFINITY), max)]
 
         resource.setrlimit(resource.RLIMIT_FSIZE, (2**31-5, max))

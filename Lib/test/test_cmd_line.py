@@ -2,6 +2,7 @@
 # Most tests are executed with environment variables ignored
 # See test_cmd_line_script.py for testing of script execution
 
+import locale
 import os
 import re
 import subprocess
@@ -314,7 +315,7 @@ class CmdLineTest(unittest.TestCase):
             # decodable from ASCII) and run_command() failed on
             # PyUnicode_AsUTF8String(). This is the expected behaviour on
             # Linux.
-            pattern = b"Unable to decode the command from the command line:"
+            pattern = b"python: Unable to decode the command from the command line:"
         elif p.returncode == 0:
             # _Py_char2wchar() decoded b'\xff' as '\xff' even if the locale is
             # C and the locale encoding is ASCII. It occurs on FreeBSD, Solaris
@@ -369,9 +370,27 @@ class CmdLineTest(unittest.TestCase):
         )
         test_args = [valid_utf8, invalid_utf8]
 
-        for run_cmd in (run_default, run_c_locale, run_utf8_mode,
-                        run_no_utf8_mode):
-            with self.subTest(run_cmd=run_cmd):
+        for run_cmd, encoding in (
+            (run_default, sys.getfilesystemencoding()),
+            (run_c_locale, None),
+            (run_utf8_mode, None),
+            (run_no_utf8_mode, locale.getencoding())
+        ):
+            with self.subTest(run_cmd=run_cmd.__name__):
+                # Arbitrary bytes round-trip through surrogateescape only in
+                # UTF-8 and single-byte encodings, not in a multibyte encoding
+                # such as EUC-JP.
+                if encoding is not None:
+                    try:
+                        lossless = len(bytes(range(256)).decode(
+                            encoding, 'surrogateescape')) == 256
+                    except UnicodeError:
+                        lossless = False
+                else:
+                    lossless = True
+                if not lossless:
+                    self.skipTest(f'{encoding} cannot losslessly '
+                                  f'round-trip arbitrary bytes')
                 for arg in test_args:
                     proc = run_cmd(arg)
                     self.assertEqual(proc.stdout.rstrip(), ascii(arg))
@@ -1036,6 +1055,7 @@ class CmdLineTest(unittest.TestCase):
         p = subprocess.run([sys.executable, "-c", code],
                            creationflags=subprocess.CREATE_NEW_CONSOLE,
                            env=env)
+        support.skip_on_low_desktop_heap_memory_subprocess(p.returncode)
         self.assertEqual(p.returncode, 0)
 
         # Then test that FIleIO is used when PYTHONLEGACYWINDOWSSTDIO is set.
@@ -1044,6 +1064,7 @@ class CmdLineTest(unittest.TestCase):
         p = subprocess.run([sys.executable, "-c", code],
                            creationflags=subprocess.CREATE_NEW_CONSOLE,
                            env=env)
+        support.skip_on_low_desktop_heap_memory_subprocess(p.returncode)
         self.assertEqual(p.returncode, 0)
 
     @unittest.skipIf("-fsanitize" in sysconfig.get_config_vars().get('PY_CFLAGS', ()),
@@ -1311,6 +1332,17 @@ class CmdLineTest(unittest.TestCase):
         entrypoint = "test.test_cmd_line:presite.attr.func"
         proc = assert_python_ok("-X", f"presite={entrypoint}", "-c", "pass")
         self.assertEqual(proc.out.rstrip(), b"presite func")
+
+    def test_dump_path_config(self):
+        # gh-151253: At the first import (import encodings) during Python
+        # startup, if the import fails, dump the Python path configuration.
+        nonexistent = '/nonexistent-python-path'
+        # Use -X frozen_modules=off to disable frozen encodings module
+        # on release build.
+        cmd = ["-X", "frozen_modules=off", "-c", "pass"]
+        proc = assert_python_failure(*cmd, PYTHONHOME=nonexistent)
+        self.assertIn(b'Python path configuration:', proc.err)
+        self.assertIn(f"PYTHONHOME = '{nonexistent}'".encode(), proc.err)
 
 
 @unittest.skipIf(interpreter_requires_environment(),

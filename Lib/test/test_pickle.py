@@ -524,7 +524,7 @@ if has_c_implementation:
                 0)  # Write buffer is cleared after every dump().
 
         def test_unpickler(self):
-            basesize = support.calcobjsize('2P2n3P 2P2n2i5P 2P3n8P2n3i')
+            basesize = support.calcobjsize('2P2n3P 2P2n2i5P 2P5n8P2n3i')
             unpickler = _pickle.Unpickler
             P = struct.calcsize('P')  # Size of memo table entry.
             n = struct.calcsize('n')  # Size of mark table entry.
@@ -786,7 +786,11 @@ class CommandLineTest(unittest.TestCase):
             'b': ('character string', b'byte string'),
             'c': 'string'
         }
-        expect = "{'a': [1, 2.0, (3+4j)], 'b': ('character string', b'byte string'), 'c': 'string'}"
+        expect = '''
+            {'a': [1, 2.0, (3+4j)],
+             'b': ('character string', b'byte string'),
+             'c': 'string'}
+        '''
         self.set_pickle_data(data)
 
         with self.subTest(data=data):

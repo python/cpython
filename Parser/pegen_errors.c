@@ -10,53 +10,6 @@
 
 // TOKENIZER ERRORS
 
-void
-_PyPegen_raise_tokenizer_init_error(PyObject *filename)
-{
-    if (!(PyErr_ExceptionMatches(PyExc_LookupError)
-          || PyErr_ExceptionMatches(PyExc_SyntaxError)
-          || PyErr_ExceptionMatches(PyExc_ValueError)
-          || PyErr_ExceptionMatches(PyExc_UnicodeDecodeError))) {
-        return;
-    }
-    PyObject *errstr = NULL;
-    PyObject *tuple = NULL;
-    PyObject *type;
-    PyObject *value;
-    PyObject *tback;
-    PyErr_Fetch(&type, &value, &tback);
-    if (PyErr_GivenExceptionMatches(value, PyExc_SyntaxError)) {
-        if (PyObject_SetAttr(value, &_Py_ID(filename), filename)) {
-            goto error;
-        }
-        PyErr_Restore(type, value, tback);
-        return;
-    }
-    errstr = PyObject_Str(value);
-    if (!errstr) {
-        goto error;
-    }
-
-    PyObject *tmp = Py_BuildValue("(OiiO)", filename, 0, -1, Py_None);
-    if (!tmp) {
-        goto error;
-    }
-
-    tuple = _PyTuple_FromPair(errstr, tmp);
-    Py_DECREF(tmp);
-    if (!tuple) {
-        goto error;
-    }
-    PyErr_SetObject(PyExc_SyntaxError, tuple);
-
-error:
-    Py_XDECREF(type);
-    Py_XDECREF(value);
-    Py_XDECREF(tback);
-    Py_XDECREF(errstr);
-    Py_XDECREF(tuple);
-}
-
 static inline void
 raise_unclosed_parentheses_error(Parser *p) {
        int error_lineno = p->tok->parenlinenostack[p->tok->level-1];
