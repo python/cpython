@@ -105,11 +105,15 @@ static int
 traceback_tb_next_set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
 {
     int return_value = -1;
-    PyObject *value = NULL;
+    PyObject *value;
 
-    if (arg != NULL) {
-        value = arg;
+    if (arg == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute 'tb_next' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
     }
+    value = arg;
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = traceback_tb_next_set_impl((PyTracebackObject *)self, value);
     Py_END_CRITICAL_SECTION();
@@ -118,4 +122,4 @@ traceback_tb_next_set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
 }
 #define TRACEBACK_TB_NEXT_GETSETDEF {"tb_next", (getter)traceback_tb_next_get, (setter)traceback_tb_next_set, NULL},
 
-/*[clinic end generated code: output=29ce9385d58eac46 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0f7bb7a58d9f8d65 input=a9049054013a1b77]*/

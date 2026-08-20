@@ -512,15 +512,19 @@ static int
 _ctypes_PyCArrayType_Type_value_set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
 {
     int return_value = -1;
-    PyBytesObject *value = NULL;
+    PyBytesObject *value;
 
-    if (arg != NULL) {
-        if (!PyBytes_Check(arg)) {
-            PyErr_Format(PyExc_TypeError, "attribute 'value' must be bytes, not %T", arg);
-            goto exit;
-        }
-        value = (PyBytesObject *)arg;
+    if (arg == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute 'value' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
     }
+    if (!PyBytes_Check(arg)) {
+        PyErr_Format(PyExc_TypeError, "attribute 'value' must be bytes, not %T", arg);
+        goto exit;
+    }
+    value = (PyBytesObject *)arg;
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _ctypes_PyCArrayType_Type_value_set_impl((CDataObject *)self, value);
     Py_END_CRITICAL_SECTION();
@@ -899,11 +903,15 @@ static int
 _ctypes_Simple_value_set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
 {
     int return_value = -1;
-    PyObject *value = NULL;
+    PyObject *value;
 
-    if (arg != NULL) {
-        value = arg;
+    if (arg == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute 'value' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
     }
+    value = arg;
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _ctypes_Simple_value_set_impl((CDataObject *)self, value);
     Py_END_CRITICAL_SECTION();
@@ -960,4 +968,4 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
 
 #define _CTYPES_SIMPLE_VALUE_GETSETDEF {"value", (getter)_ctypes_Simple_value_get, (setter)_ctypes_Simple_value_set, NULL},
 
-/*[clinic end generated code: output=eaeb783d3d700160 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1d322c90c81649fd input=a9049054013a1b77]*/

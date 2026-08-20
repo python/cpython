@@ -1533,22 +1533,15 @@ _ctypes_PyCArrayType_Type_value_get_impl(CDataObject *self)
 /*[clinic input]
 @critical_section
 @setter
-@deleter
 _ctypes.PyCArrayType_Type.value
-    value: object(subclass_of='&PyBytes_Type', type='PyBytesObject *') = NULL
+    value: object(subclass_of='&PyBytes_Type', type='PyBytesObject *')
 [clinic start generated code]*/
 
 static int
 _ctypes_PyCArrayType_Type_value_set_impl(CDataObject *self,
                                          PyBytesObject *value)
-/*[clinic end generated code: output=21cbd436230dc33e input=d35228bbfb2f5228]*/
+/*[clinic end generated code: output=21cbd436230dc33e input=47d40501c4ecae23]*/
 {
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "can't delete attribute");
-        return -1;
-    }
-
     Py_ssize_t size = PyBytes_GET_SIZE(value);
     if (size > self->b_size) {
         PyErr_SetString(PyExc_ValueError,
@@ -5388,21 +5381,14 @@ class _ctypes.Simple "CDataObject *" "clinic_state()->Simple_Type"
 /*[clinic input]
 @critical_section
 @setter
-@deleter
 _ctypes.Simple.value
 [clinic start generated code]*/
 
 static int
 _ctypes_Simple_value_set_impl(CDataObject *self, PyObject *value)
-/*[clinic end generated code: output=f267186118939863 input=4e6c1143d17c2c3f]*/
+/*[clinic end generated code: output=f267186118939863 input=977af9dc9e71e857]*/
 {
     PyObject *result;
-
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "can't delete attribute");
-        return -1;
-    }
 
     ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
     StgInfo *info;

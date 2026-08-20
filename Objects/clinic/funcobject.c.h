@@ -34,11 +34,15 @@ static int
 function___annotate___set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
 {
     int return_value = -1;
-    PyObject *value = NULL;
+    PyObject *value;
 
-    if (arg != NULL) {
-        value = arg;
+    if (arg == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '__annotate__' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
     }
+    value = arg;
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = function___annotate___set_impl((PyFunctionObject *)self, value);
     Py_END_CRITICAL_SECTION();
@@ -108,15 +112,19 @@ static int
 function___type_params___set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
 {
     int return_value = -1;
-    PyObject *value = NULL;
+    PyObject *value;
 
-    if (arg != NULL) {
-        if (!PyTuple_Check(arg)) {
-            PyErr_Format(PyExc_TypeError, "attribute '__type_params__' must be tuple, not %T", arg);
-            goto exit;
-        }
-        value = arg;
+    if (arg == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '__type_params__' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
     }
+    if (!PyTuple_Check(arg)) {
+        PyErr_Format(PyExc_TypeError, "attribute '__type_params__' must be tuple, not %T", arg);
+        goto exit;
+    }
+    value = arg;
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = function___type_params___set_impl((PyFunctionObject *)self, value);
     Py_END_CRITICAL_SECTION();
@@ -241,4 +249,4 @@ exit:
 
 #define FUNCTION___TYPE_PARAMS___GETSETDEF {"__type_params__", (getter)function___type_params___get, (setter)function___type_params___set, function___type_params____doc__},
 
-/*[clinic end generated code: output=ab11c6500888e337 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b722bea4e9d8b8be input=a9049054013a1b77]*/

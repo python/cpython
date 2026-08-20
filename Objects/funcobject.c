@@ -926,19 +926,13 @@ function___annotate___get_impl(PyFunctionObject *self)
 /*[clinic input]
 @critical_section
 @setter
-@deleter
 function.__annotate__
 [clinic start generated code]*/
 
 static int
 function___annotate___set_impl(PyFunctionObject *self, PyObject *value)
-/*[clinic end generated code: output=05b7dfc07ada66cd input=4bcfad0bdcfec768]*/
+/*[clinic end generated code: output=05b7dfc07ada66cd input=eb6225e358d97448]*/
 {
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-            "__annotate__ cannot be deleted");
-        return -1;
-    }
     if (Py_IsNone(value)) {
         Py_XSETREF(self->func_annotate, Py_NewRef(value));
         return 0;
@@ -1027,21 +1021,14 @@ function___type_params___get_impl(PyFunctionObject *self)
 /*[clinic input]
 @critical_section
 @setter
-@deleter
 function.__type_params__
-    value: object(subclass_of='&PyTuple_Type') = NULL
+    value: object(subclass_of='&PyTuple_Type')
 [clinic start generated code]*/
 
 static int
 function___type_params___set_impl(PyFunctionObject *self, PyObject *value)
-/*[clinic end generated code: output=038b4cda220e56fb input=62240698386aa632]*/
+/*[clinic end generated code: output=038b4cda220e56fb input=e848b79ec6fec497]*/
 {
-    /* Not legal to del f.__type_params__. */
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "__type_params__ must be set to a tuple");
-        return -1;
-    }
     Py_XSETREF(self->func_typeparams, Py_NewRef(value));
     return 0;
 }

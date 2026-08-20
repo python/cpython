@@ -128,11 +128,15 @@ static int
 BaseException_args_set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
 {
     int return_value = -1;
-    PyObject *value = NULL;
+    PyObject *value;
 
-    if (arg != NULL) {
-        value = arg;
+    if (arg == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute 'args' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
     }
+    value = arg;
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = BaseException_args_set_impl((PyBaseExceptionObject *)self, value);
     Py_END_CRITICAL_SECTION();
@@ -163,11 +167,15 @@ static int
 BaseException___traceback___set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
 {
     int return_value = -1;
-    PyObject *value = NULL;
+    PyObject *value;
 
-    if (arg != NULL) {
-        value = arg;
+    if (arg == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '__traceback__' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
     }
+    value = arg;
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = BaseException___traceback___set_impl((PyBaseExceptionObject *)self, value);
     Py_END_CRITICAL_SECTION();
@@ -198,11 +206,15 @@ static int
 BaseException___context___set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
 {
     int return_value = -1;
-    PyObject *value = NULL;
+    PyObject *value;
 
-    if (arg != NULL) {
-        value = arg;
+    if (arg == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '__context__' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
     }
+    value = arg;
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = BaseException___context___set_impl((PyBaseExceptionObject *)self, value);
     Py_END_CRITICAL_SECTION();
@@ -233,11 +245,15 @@ static int
 BaseException___cause___set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
 {
     int return_value = -1;
-    PyObject *value = NULL;
+    PyObject *value;
 
-    if (arg != NULL) {
-        value = arg;
+    if (arg == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '__cause__' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
     }
+    value = arg;
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = BaseException___cause___set_impl((PyBaseExceptionObject *)self, value);
     Py_END_CRITICAL_SECTION();
@@ -324,4 +340,4 @@ BaseExceptionGroup_subgroup(PyObject *self, PyObject *matcher_value)
 
 #define BASEEXCEPTION___CAUSE___GETSETDEF {"__cause__", (getter)BaseException___cause___get, (setter)BaseException___cause___set, NULL},
 
-/*[clinic end generated code: output=783fc5863a1eac1f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b14d57bb5ad3be0d input=a9049054013a1b77]*/
