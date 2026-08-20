@@ -399,6 +399,10 @@ if has_c_implementation:
                     with self.assertRaises(TypeError):
                         setattr(pickler, name, 'x')
                     with self.assertRaises(OverflowError):
+                        setattr(pickler, name, sys.maxsize + 1)
+                    with self.assertRaises(OverflowError):
+                        setattr(pickler, name, -sys.maxsize - 2)
+                    with self.assertRaises(OverflowError):
                         setattr(pickler, name, 2**1000)
                     with self.assertRaises(OverflowError):
                         setattr(pickler, name, -2**1000)

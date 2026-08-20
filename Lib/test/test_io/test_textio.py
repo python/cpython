@@ -1459,6 +1459,10 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
         with self.assertRaises(TypeError):
             t._CHUNK_SIZE = 'x'
         with self.assertRaises(ValueError):
+            t._CHUNK_SIZE = sys.maxsize + 1
+        with self.assertRaises(ValueError):
+            t._CHUNK_SIZE = -sys.maxsize - 2
+        with self.assertRaises(ValueError):
             t._CHUNK_SIZE = 2**1000
         with self.assertRaises(ValueError):
             t._CHUNK_SIZE = -2**1000
