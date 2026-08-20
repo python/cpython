@@ -1,0 +1,1 @@
+Include the type name in the :exc:`TypeError` raised when ``items()`` returns a non-iterable during abstract method computation in :mod:`abc`. Patch by Jason Mak.
