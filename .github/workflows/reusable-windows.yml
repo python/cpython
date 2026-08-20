@@ -27,7 +27,7 @@ jobs:
   build:
     name: Build and test (${{ inputs.arch }}, ${{ inputs.interpreter }})
     runs-on: ${{ inputs.arch == 'arm64' && 'windows-11-arm' || 'windows-2025' }}
-    timeout-minutes: 60
+    timeout-minutes: ${{ inputs.free-threading && 60 || 40 }}
     env:
       ARCH: ${{ inputs.arch }}
     steps:

@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-slim
     permissions:
       pull-requests: read
-    timeout-minutes: 10
+    timeout-minutes: 2
 
     steps:
       - name: Check there's no DO-NOT-MERGE
@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-slim
     permissions:
       pull-requests: read
-    timeout-minutes: 10
+    timeout-minutes: 2
 
     steps:
       # Check that the PR is not awaiting changes from the author due to previous review.

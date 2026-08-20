@@ -50,7 +50,7 @@ jobs:
   mypy:
     name: Run mypy on ${{ matrix.target }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     strategy:
       fail-fast: false
       matrix:
