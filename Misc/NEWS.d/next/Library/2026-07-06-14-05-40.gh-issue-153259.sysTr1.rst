@@ -1,0 +1,4 @@
+Added the :mod:`tkinter.systray` module which provides the
+:class:`~tkinter.systray.SysTrayIcon` class as an interface to the system
+tray icon and the :func:`~tkinter.systray.notify` function which sends a
+desktop notification.  They require Tk 8.7/9.0 or newer.

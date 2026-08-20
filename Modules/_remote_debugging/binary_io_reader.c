@@ -23,14 +23,10 @@
  * ============================================================================ */
 
 /* File structure sizes */
-#define FILE_FOOTER_SIZE 32
 #define MIN_DECOMPRESS_BUFFER_SIZE (64 * 1024)  /* Minimum decompression buffer */
 
 /* Progress callback frequency */
 #define PROGRESS_CALLBACK_INTERVAL 1000
-
-/* Maximum decompression size limit (1GB) */
-#define MAX_DECOMPRESS_SIZE (1ULL << 30)
 
 /* ============================================================================
  * BINARY READER IMPLEMENTATION
@@ -47,8 +43,8 @@ reader_parse_header(BinaryReader *reader, const uint8_t *data, size_t file_size)
     /* Use memcpy to avoid strict aliasing violations and unaligned access */
     uint32_t magic;
     uint32_t version;
-    memcpy(&magic, &data[0], sizeof(magic));
-    memcpy(&version, &data[4], sizeof(version));
+    memcpy(&magic, &data[HDR_OFF_MAGIC], HDR_SIZE_MAGIC);
+    memcpy(&version, &data[HDR_OFF_VERSION], HDR_SIZE_VERSION);
 
     /* Detect endianness from magic number */
     if (magic == BINARY_FORMAT_MAGIC) {
@@ -87,7 +83,8 @@ reader_parse_header(BinaryReader *reader, const uint8_t *data, size_t file_size)
 
     /* Read header fields with byte-swapping if needed */
     uint64_t start_time_us, sample_interval_us, string_table_offset, frame_table_offset;
-    uint32_t sample_count, thread_count, compression_type;
+    uint64_t sample_count;
+    uint32_t thread_count, compression_type;
 
     memcpy(&start_time_us, &data[HDR_OFF_START_TIME], HDR_SIZE_START_TIME);
     memcpy(&sample_interval_us, &data[HDR_OFF_INTERVAL], HDR_SIZE_INTERVAL);
@@ -99,7 +96,7 @@ reader_parse_header(BinaryReader *reader, const uint8_t *data, size_t file_size)
 
     reader->start_time_us = SWAP64_IF(reader->needs_swap, start_time_us);
     reader->sample_interval_us = SWAP64_IF(reader->needs_swap, sample_interval_us);
-    reader->sample_count = SWAP32_IF(reader->needs_swap, sample_count);
+    reader->sample_count = SWAP64_IF(reader->needs_swap, sample_count);
     reader->thread_count = SWAP32_IF(reader->needs_swap, thread_count);
     reader->string_table_offset = SWAP64_IF(reader->needs_swap, string_table_offset);
     reader->frame_table_offset = SWAP64_IF(reader->needs_swap, frame_table_offset);
@@ -119,8 +116,8 @@ reader_parse_footer(BinaryReader *reader, const uint8_t *data, size_t file_size)
     const uint8_t *footer = data + file_size - FILE_FOOTER_SIZE;
     /* Use memcpy to avoid strict aliasing violations */
     uint32_t strings_count, frames_count;
-    memcpy(&strings_count, &footer[0], sizeof(strings_count));
-    memcpy(&frames_count, &footer[4], sizeof(frames_count));
+    memcpy(&strings_count, &footer[FTR_OFF_STRINGS], FTR_SIZE_STRINGS);
+    memcpy(&frames_count, &footer[FTR_OFF_FRAMES], FTR_SIZE_FRAMES);
 
     reader->strings_count = SWAP32_IF(reader->needs_swap, strings_count);
     reader->frames_count = SWAP32_IF(reader->needs_swap, frames_count);
@@ -241,9 +238,32 @@ reader_decompress_samples(BinaryReader *reader, const uint8_t *data)
 }
 #endif
 
+/* Reject a table/run count whose entries cannot fit in the bytes still
+ * available; a malicious file could otherwise drive a huge allocation.
+ * Each entry occupies at least min_entry_size bytes. */
+static int
+reader_validate_count(const char *what, uint32_t count,
+                      size_t available_bytes, size_t min_entry_size)
+{
+    size_t max_possible = available_bytes / min_entry_size;
+    if (count > max_possible) {
+        PyErr_Format(PyExc_ValueError,
+            "Invalid %s count %u exceeds maximum possible %zu",
+            what, count, max_possible);
+        return -1;
+    }
+    return 0;
+}
+
 static inline int
 reader_parse_string_table(BinaryReader *reader, const uint8_t *data, size_t file_size)
 {
+    if (reader_validate_count("string", reader->strings_count,
+                              file_size - reader->string_table_offset,
+                              MIN_STRING_ENTRY_SIZE) < 0) {
+        return -1;
+    }
+
     reader->strings = PyMem_Calloc(reader->strings_count, sizeof(PyObject *));
     if (!reader->strings && reader->strings_count > 0) {
         PyErr_NoMemory();
@@ -258,7 +278,7 @@ reader_parse_string_table(BinaryReader *reader, const uint8_t *data, size_t file
             PyErr_SetString(PyExc_ValueError, "Malformed varint in string table");
             return -1;
         }
-        if (offset + str_len > file_size) {
+        if (offset > file_size || str_len > file_size - offset) {
             PyErr_SetString(PyExc_ValueError, "String table overflow");
             return -1;
         }
@@ -276,54 +296,99 @@ reader_parse_string_table(BinaryReader *reader, const uint8_t *data, size_t file
 static inline int
 reader_parse_frame_table(BinaryReader *reader, const uint8_t *data, size_t file_size)
 {
-    /* Check for integer overflow in allocation size calculation.
-       Only needed on 32-bit where SIZE_MAX can be exceeded by uint32_t * 12. */
+    /* Check for integer overflow in allocation size calculation. */
 #if SIZEOF_SIZE_T < 8
-    if (reader->frames_count > SIZE_MAX / (3 * sizeof(uint32_t))) {
+    if (reader->frames_count > SIZE_MAX / sizeof(FrameEntry)) {
         PyErr_SetString(PyExc_OverflowError, "Frame count too large for allocation");
         return -1;
     }
 #endif
 
-    size_t alloc_size = (size_t)reader->frames_count * 3 * sizeof(uint32_t);
-    reader->frame_data = PyMem_Malloc(alloc_size);
-    if (!reader->frame_data && reader->frames_count > 0) {
+    if (reader_validate_count("frame", reader->frames_count,
+                              file_size - reader->frame_table_offset,
+                              MIN_FRAME_ENTRY_SIZE) < 0) {
+        return -1;
+    }
+
+    size_t alloc_size = (size_t)reader->frames_count * sizeof(FrameEntry);
+    reader->frames = PyMem_Malloc(alloc_size);
+    if (!reader->frames && reader->frames_count > 0) {
         PyErr_NoMemory();
         return -1;
     }
 
     size_t offset = reader->frame_table_offset;
     for (uint32_t i = 0; i < reader->frames_count; i++) {
-        size_t base = (size_t)i * 3;
+        FrameEntry *frame = &reader->frames[i];
         size_t prev_offset;
 
         prev_offset = offset;
-        reader->frame_data[base] = decode_varint_u32(data, &offset, file_size);
+        frame->filename_idx = decode_varint_u32(data, &offset, file_size);
         if (offset == prev_offset) {
             PyErr_SetString(PyExc_ValueError, "Malformed varint in frame table (filename)");
             return -1;
         }
 
         prev_offset = offset;
-        reader->frame_data[base + 1] = decode_varint_u32(data, &offset, file_size);
+        frame->funcname_idx = decode_varint_u32(data, &offset, file_size);
         if (offset == prev_offset) {
             PyErr_SetString(PyExc_ValueError, "Malformed varint in frame table (funcname)");
             return -1;
         }
 
         prev_offset = offset;
-        reader->frame_data[base + 2] = (uint32_t)decode_varint_i32(data, &offset, file_size);
+        frame->lineno = decode_varint_i32(data, &offset, file_size);
         if (offset == prev_offset) {
             PyErr_SetString(PyExc_ValueError, "Malformed varint in frame table (lineno)");
             return -1;
         }
+
+        prev_offset = offset;
+        int32_t end_lineno_delta = decode_varint_i32(data, &offset, file_size);
+        if (offset == prev_offset) {
+            PyErr_SetString(PyExc_ValueError, "Malformed varint in frame table (end_lineno_delta)");
+            return -1;
+        }
+        /* Reconstruct end_lineno from delta. If lineno is -1, result is -1. */
+        if (frame->lineno == LOCATION_NOT_AVAILABLE) {
+            frame->end_lineno = LOCATION_NOT_AVAILABLE;
+        } else {
+            frame->end_lineno = frame->lineno + end_lineno_delta;
+        }
+
+        prev_offset = offset;
+        frame->column = decode_varint_i32(data, &offset, file_size);
+        if (offset == prev_offset) {
+            PyErr_SetString(PyExc_ValueError, "Malformed varint in frame table (column)");
+            return -1;
+        }
+
+        prev_offset = offset;
+        int32_t end_column_delta = decode_varint_i32(data, &offset, file_size);
+        if (offset == prev_offset) {
+            PyErr_SetString(PyExc_ValueError, "Malformed varint in frame table (end_column_delta)");
+            return -1;
+        }
+        /* Reconstruct end_column from delta. If column is -1, result is -1. */
+        if (frame->column == LOCATION_NOT_AVAILABLE) {
+            frame->end_column = LOCATION_NOT_AVAILABLE;
+        } else {
+            frame->end_column = frame->column + end_column_delta;
+        }
+
+        /* Read opcode byte */
+        if (offset >= file_size) {
+            PyErr_SetString(PyExc_ValueError, "Unexpected end of frame table (opcode)");
+            return -1;
+        }
+        frame->opcode = data[offset++];
     }
 
     return 0;
 }
 
 BinaryReader *
-binary_reader_open(const char *filename)
+binary_reader_open(PyObject *path)
 {
     BinaryReader *reader = PyMem_Calloc(1, sizeof(BinaryReader));
     if (!reader) {
@@ -332,31 +397,35 @@ binary_reader_open(const char *filename)
     }
 
 #if USE_MMAP
-    reader->fd = -1;  /* Explicit initialization for cleanup safety */
-#endif
-
-    reader->filename = PyMem_Malloc(strlen(filename) + 1);
-    if (!reader->filename) {
-        PyMem_Free(reader);
-        PyErr_NoMemory();
-        return NULL;
-    }
-    strcpy(reader->filename, filename);
-
-#if USE_MMAP
     /* Open with mmap on Unix */
-    reader->fd = open(filename, O_RDONLY);
-    if (reader->fd < 0) {
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, filename);
+    FILE *fp = Py_fopen(path, "rb");
+    if (!fp) {
         goto error;
     }
+    int fd = fileno(fp);
 
     struct stat st;
-    if (fstat(reader->fd, &st) < 0) {
+    if (fstat(fd, &st) < 0) {
         PyErr_SetFromErrno(PyExc_IOError);
+        Py_fclose(fp);
+        goto error;
+    }
+    if (st.st_size < 0) {
+        PyErr_SetString(PyExc_IOError, "Invalid negative file size");
+        Py_fclose(fp);
+        goto error;
+    }
+    if ((uintmax_t)st.st_size > SIZE_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "File is too large to map");
+        Py_fclose(fp);
         goto error;
     }
     reader->mapped_size = st.st_size;
+    if (reader->mapped_size == 0) {
+        PyErr_SetString(PyExc_ValueError, "File too small for header");
+        Py_fclose(fp);
+        goto error;
+    }
 
     /* Map the file into memory.
      * MAP_POPULATE (Linux-only) pre-faults all pages at mmap time, which:
@@ -365,14 +434,15 @@ binary_reader_open(const char *filename)
      */
 #ifdef __linux__
     reader->mapped_data = mmap(NULL, reader->mapped_size, PROT_READ,
-                               MAP_PRIVATE | MAP_POPULATE, reader->fd, 0);
+                               MAP_PRIVATE | MAP_POPULATE, fd, 0);
 #else
     reader->mapped_data = mmap(NULL, reader->mapped_size, PROT_READ,
-                               MAP_PRIVATE, reader->fd, 0);
+                               MAP_PRIVATE, fd, 0);
 #endif
     if (reader->mapped_data == MAP_FAILED) {
         reader->mapped_data = NULL;
         PyErr_SetFromErrno(PyExc_IOError);
+        Py_fclose(fp);
         goto error;
     }
 
@@ -393,19 +463,23 @@ binary_reader_open(const char *filename)
 
     /* Add file descriptor-level hints for better kernel I/O scheduling */
 #if defined(__linux__) && defined(POSIX_FADV_SEQUENTIAL)
-    (void)posix_fadvise(reader->fd, 0, 0, POSIX_FADV_SEQUENTIAL);
+    (void)posix_fadvise(fd, 0, 0, POSIX_FADV_SEQUENTIAL);
     if (reader->mapped_size > (64 * 1024 * 1024)) {
-        (void)posix_fadvise(reader->fd, 0, 0, POSIX_FADV_WILLNEED);
+        (void)posix_fadvise(fd, 0, 0, POSIX_FADV_WILLNEED);
     }
 #endif
+
+    if (Py_fclose(fp) != 0) {
+        PyErr_SetFromErrno(PyExc_IOError);
+        goto error;
+    }
 
     uint8_t *data = reader->mapped_data;
     size_t file_size = reader->mapped_size;
 #else
     /* Use stdio on Windows */
-    reader->fp = fopen(filename, "rb");
+    reader->fp = Py_fopen(path, "rb");
     if (!reader->fp) {
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, filename);
         goto error;
     }
 
@@ -418,7 +492,15 @@ binary_reader_open(const char *filename)
         PyErr_SetFromErrno(PyExc_IOError);
         goto error;
     }
+    if ((uint64_t)file_size_off > SIZE_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "File is too large to read");
+        goto error;
+    }
     reader->file_size = (size_t)file_size_off;
+    if (reader->file_size == 0) {
+        PyErr_SetString(PyExc_ValueError, "File too small for header");
+        goto error;
+    }
     if (FSEEK64(reader->fp, 0, SEEK_SET) != 0) {
         PyErr_SetFromErrno(PyExc_IOError);
         goto error;
@@ -430,8 +512,18 @@ binary_reader_open(const char *filename)
         goto error;
     }
 
-    if (fread(reader->file_data, 1, reader->file_size, reader->fp) != reader->file_size) {
-        PyErr_SetFromErrno(PyExc_IOError);
+    size_t nread = fread(reader->file_data, 1, reader->file_size, reader->fp);
+    if (nread != reader->file_size) {
+        int err = errno;
+        if (ferror(reader->fp) && err != 0) {
+            errno = err;
+            PyErr_SetFromErrno(PyExc_IOError);
+        }
+        else {
+            PyErr_Format(PyExc_ValueError,
+                "Unexpected end of file: read %zu of %zu bytes",
+                nread, reader->file_size);
+        }
         goto error;
     }
 
@@ -524,6 +616,14 @@ reader_get_or_create_thread_state(BinaryReader *reader, uint64_t thread_id,
         }
     }
 
+    if (reader->thread_state_count >= reader->thread_count) {
+        PyErr_Format(PyExc_ValueError,
+            "Invalid thread count: sample data contains more unique threads than declared in header "
+            "(declared %u, found at least %zu)",
+            reader->thread_count, reader->thread_state_count + 1);
+        return NULL;
+    }
+
     if (!reader->thread_states) {
         reader->thread_state_capacity = 16;
         reader->thread_states = PyMem_Calloc(reader->thread_state_capacity, sizeof(ReaderThreadState));
@@ -532,15 +632,16 @@ reader_get_or_create_thread_state(BinaryReader *reader, uint64_t thread_id,
             return NULL;
         }
     } else if (reader->thread_state_count >= reader->thread_state_capacity) {
-        reader->thread_states = grow_array(reader->thread_states,
-                                           &reader->thread_state_capacity,
-                                           sizeof(ReaderThreadState));
-        if (!reader->thread_states) {
+        ReaderThreadState *new_states = grow_array(reader->thread_states,
+                                                   &reader->thread_state_capacity,
+                                                   sizeof(ReaderThreadState));
+        if (!new_states) {
             return NULL;
         }
+        reader->thread_states = new_states;
     }
 
-    ReaderThreadState *ts = &reader->thread_states[reader->thread_state_count++];
+    ReaderThreadState *ts = &reader->thread_states[reader->thread_state_count];
     memset(ts, 0, sizeof(ReaderThreadState));
     ts->thread_id = thread_id;
     ts->interpreter_id = interpreter_id;
@@ -551,12 +652,29 @@ reader_get_or_create_thread_state(BinaryReader *reader, uint64_t thread_id,
         PyErr_NoMemory();
         return NULL;
     }
+    // Increment count only after successful allocation to avoid
+    // leaving a half-initialized entry visible to future lookups
+    reader->thread_state_count++;
     return ts;
 }
 
 /* ============================================================================
  * STACK DECODING HELPERS
  * ============================================================================ */
+
+/* Validate that final_depth fits in the stack buffer.
+ * Uses uint64_t to prevent overflow on 32-bit platforms. */
+static inline int
+validate_stack_depth(ReaderThreadState *ts, uint64_t final_depth)
+{
+    if (final_depth > ts->current_stack_capacity) {
+        PyErr_Format(PyExc_ValueError,
+            "Final stack depth %llu exceeds capacity %zu",
+            (unsigned long long)final_depth, ts->current_stack_capacity);
+        return -1;
+    }
+    return 0;
+}
 
 /* Decode a full stack from sample data.
  * Updates ts->current_stack and ts->current_stack_depth.
@@ -565,7 +683,11 @@ static inline int
 decode_stack_full(ReaderThreadState *ts, const uint8_t *data,
                   size_t *offset, size_t max_size)
 {
+    size_t prev_offset = *offset;
     uint32_t depth = decode_varint_u32(data, offset, max_size);
+    if (*offset == prev_offset) {
+        return -1;
+    }
 
     /* Validate depth against capacity to prevent buffer overflow */
     if (depth > ts->current_stack_capacity) {
@@ -576,7 +698,11 @@ decode_stack_full(ReaderThreadState *ts, const uint8_t *data,
 
     ts->current_stack_depth = depth;
     for (uint32_t i = 0; i < depth; i++) {
+        size_t prev_offset = *offset;
         ts->current_stack[i] = decode_varint_u32(data, offset, max_size);
+        if (*offset == prev_offset) {
+            return -1;
+        }
     }
     return 0;
 }
@@ -588,8 +714,16 @@ static inline int
 decode_stack_suffix(ReaderThreadState *ts, const uint8_t *data,
                     size_t *offset, size_t max_size)
 {
+    size_t prev_offset = *offset;
     uint32_t shared = decode_varint_u32(data, offset, max_size);
+    if (*offset == prev_offset) {
+        return -1;
+    }
+    prev_offset = *offset;
     uint32_t new_count = decode_varint_u32(data, offset, max_size);
+    if (*offset == prev_offset) {
+        return -1;
+    }
 
     /* Validate shared doesn't exceed current stack depth */
     if (shared > ts->current_stack_depth) {
@@ -599,12 +733,9 @@ decode_stack_suffix(ReaderThreadState *ts, const uint8_t *data,
         return -1;
     }
 
-    /* Validate final depth doesn't exceed capacity */
-    size_t final_depth = (size_t)shared + new_count;
-    if (final_depth > ts->current_stack_capacity) {
-        PyErr_Format(PyExc_ValueError,
-            "Final stack depth %zu exceeds capacity %zu",
-            final_depth, ts->current_stack_capacity);
+    /* Use uint64_t to prevent overflow on 32-bit platforms */
+    uint64_t final_depth = (uint64_t)shared + new_count;
+    if (validate_stack_depth(ts, final_depth) < 0) {
         return -1;
     }
 
@@ -625,7 +756,11 @@ decode_stack_suffix(ReaderThreadState *ts, const uint8_t *data,
     }
 
     for (uint32_t i = 0; i < new_count; i++) {
+        size_t prev_offset = *offset;
         ts->current_stack[i] = decode_varint_u32(data, offset, max_size);
+        if (*offset == prev_offset) {
+            return -1;
+        }
     }
     ts->current_stack_depth = final_depth;
     return 0;
@@ -638,16 +773,21 @@ static inline int
 decode_stack_pop_push(ReaderThreadState *ts, const uint8_t *data,
                       size_t *offset, size_t max_size)
 {
+    size_t prev_offset = *offset;
     uint32_t pop = decode_varint_u32(data, offset, max_size);
+    if (*offset == prev_offset) {
+        return -1;
+    }
+    prev_offset = *offset;
     uint32_t push = decode_varint_u32(data, offset, max_size);
+    if (*offset == prev_offset) {
+        return -1;
+    }
     size_t keep = (ts->current_stack_depth > pop) ? ts->current_stack_depth - pop : 0;
 
-    /* Validate final depth doesn't exceed capacity */
-    size_t final_depth = keep + push;
-    if (final_depth > ts->current_stack_capacity) {
-        PyErr_Format(PyExc_ValueError,
-            "Final stack depth %zu exceeds capacity %zu",
-            final_depth, ts->current_stack_capacity);
+    /* Use uint64_t to prevent overflow on 32-bit platforms */
+    uint64_t final_depth = (uint64_t)keep + push;
+    if (validate_stack_depth(ts, final_depth) < 0) {
         return -1;
     }
 
@@ -660,7 +800,12 @@ decode_stack_pop_push(ReaderThreadState *ts, const uint8_t *data,
     }
 
     for (uint32_t i = 0; i < push; i++) {
+        size_t prev_offset = *offset;
         ts->current_stack[i] = decode_varint_u32(data, offset, max_size);
+        /* If offset didn't advance, varint decoding failed */
+        if (*offset == prev_offset) {
+            return -1;
+        }
     }
     ts->current_stack_depth = final_depth;
     return 0;
@@ -683,13 +828,10 @@ build_frame_list(RemoteDebuggingState *state, BinaryReader *reader,
             goto error;
         }
 
-        size_t base = frame_idx * 3;
-        uint32_t filename_idx = reader->frame_data[base];
-        uint32_t funcname_idx = reader->frame_data[base + 1];
-        int32_t lineno = (int32_t)reader->frame_data[base + 2];
+        FrameEntry *frame = &reader->frames[frame_idx];
 
-        if (filename_idx >= reader->strings_count ||
-            funcname_idx >= reader->strings_count) {
+        if (frame->filename_idx >= reader->strings_count ||
+            frame->funcname_idx >= reader->strings_count) {
             PyErr_SetString(PyExc_ValueError, "Invalid string index in frame");
             goto error;
         }
@@ -699,9 +841,14 @@ build_frame_list(RemoteDebuggingState *state, BinaryReader *reader,
             goto error;
         }
 
+        /* Build location tuple with full position info */
         PyObject *location;
-        if (lineno > 0) {
-            location = Py_BuildValue("(iiii)", lineno, lineno, 0, 0);
+        if (frame->lineno != LOCATION_NOT_AVAILABLE) {
+            location = Py_BuildValue("(iiii)",
+                frame->lineno,
+                frame->end_lineno,
+                frame->column,
+                frame->end_column);
             if (!location) {
                 Py_DECREF(frame_info);
                 goto error;
@@ -711,10 +858,24 @@ build_frame_list(RemoteDebuggingState *state, BinaryReader *reader,
             location = Py_NewRef(Py_None);
         }
 
-        PyStructSequence_SetItem(frame_info, 0, Py_NewRef(reader->strings[filename_idx]));
+        /* Build opcode object */
+        PyObject *opcode_obj;
+        if (frame->opcode != OPCODE_NONE) {
+            opcode_obj = PyLong_FromLong(frame->opcode);
+            if (!opcode_obj) {
+                Py_DECREF(location);
+                Py_DECREF(frame_info);
+                goto error;
+            }
+        }
+        else {
+            opcode_obj = Py_NewRef(Py_None);
+        }
+
+        PyStructSequence_SetItem(frame_info, 0, Py_NewRef(reader->strings[frame->filename_idx]));
         PyStructSequence_SetItem(frame_info, 1, location);
-        PyStructSequence_SetItem(frame_info, 2, Py_NewRef(reader->strings[funcname_idx]));
-        PyStructSequence_SetItem(frame_info, 3, Py_NewRef(Py_None));
+        PyStructSequence_SetItem(frame_info, 2, Py_NewRef(reader->strings[frame->funcname_idx]));
+        PyStructSequence_SetItem(frame_info, 3, opcode_obj);
         PyList_SET_ITEM(frame_list, k, frame_info);
     }
 
@@ -833,10 +994,10 @@ emit_batch(RemoteDebuggingState *state, PyObject *collector,
 
 /* Helper to invoke progress callback, returns -1 on error */
 static inline int
-invoke_progress_callback(PyObject *callback, Py_ssize_t current, uint32_t total)
+invoke_progress_callback(PyObject *callback, Py_ssize_t current, uint64_t total)
 {
     if (callback && callback != Py_None) {
-        PyObject *result = PyObject_CallFunction(callback, "nI", current, total);
+        PyObject *result = PyObject_CallFunction(callback, "nK", current, (unsigned long long)total);
         if (result) {
             Py_DECREF(result);
         } else {
@@ -849,10 +1010,16 @@ invoke_progress_callback(PyObject *callback, Py_ssize_t current, uint32_t total)
 Py_ssize_t
 binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progress_callback)
 {
-    if (!PyObject_HasAttrString(collector, "collect")) {
+    PyObject *collect_method;
+    int has_collect = PyObject_GetOptionalAttrString(collector, "collect", &collect_method);
+    if (has_collect < 0) {
+        return -1;
+    }
+    if (has_collect == 0) {
         PyErr_SetString(PyExc_TypeError, "Collector must have a collect() method");
         return -1;
     }
+    Py_DECREF(collect_method);
 
     /* Get module state for struct sequence types */
     PyObject *module = PyImport_ImportModule("_remote_debugging");
@@ -876,19 +1043,22 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
     }
 
     while (offset < reader->sample_data_size) {
-        /* Read thread_id (8 bytes) + interpreter_id (4 bytes) */
-        if (offset + 13 > reader->sample_data_size) {
-            break;  /* End of data */
+        /* Read thread_id (8 bytes) + interpreter_id (4 bytes) + encoding byte */
+        if (reader->sample_data_size - offset < SAMPLE_HEADER_FIXED_SIZE) {
+            PyErr_Format(PyExc_ValueError,
+                "Truncated sample data: %zu trailing bytes",
+                reader->sample_data_size - offset);
+            return -1;
         }
 
         /* Use memcpy to avoid strict aliasing violations, then byte-swap if needed */
         uint64_t thread_id_raw;
         uint32_t interpreter_id_raw;
-        memcpy(&thread_id_raw, &reader->sample_data[offset], sizeof(thread_id_raw));
-        offset += 8;
+        memcpy(&thread_id_raw, &reader->sample_data[offset], SMP_SIZE_THREAD_ID);
+        offset += SMP_SIZE_THREAD_ID;
 
-        memcpy(&interpreter_id_raw, &reader->sample_data[offset], sizeof(interpreter_id_raw));
-        offset += 4;
+        memcpy(&interpreter_id_raw, &reader->sample_data[offset], SMP_SIZE_INTERPRETER_ID);
+        offset += SMP_SIZE_INTERPRETER_ID;
 
         uint64_t thread_id = SWAP64_IF(reader->needs_swap, thread_id_raw);
         uint32_t interpreter_id = SWAP32_IF(reader->needs_swap, interpreter_id_raw);
@@ -913,15 +1083,15 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
                 return -1;
             }
 
-            /* Validate RLE count to prevent DoS from malicious files.
-             * Each RLE sample needs at least 2 bytes (1 byte min varint + 1 status byte).
-             * Also reject absurdly large counts that would exhaust memory. */
-            size_t remaining_data = reader->sample_data_size - offset;
-            size_t max_possible_samples = remaining_data / 2;
-            if (count > max_possible_samples) {
-                PyErr_Format(PyExc_ValueError,
-                    "Invalid RLE count %u exceeds maximum possible %zu for remaining data",
-                    count, max_possible_samples);
+            /* Reject a count larger than the remaining bytes can hold; each
+             * RLE sample needs at least 2 bytes (1-byte min varint + status). */
+            if (reader_validate_count("RLE", count,
+                                      reader->sample_data_size - offset, 2) < 0) {
+                return -1;
+            }
+            if ((uint64_t)count > (uint64_t)PY_SSIZE_T_MAX - (uint64_t)replayed) {
+                PyErr_SetString(PyExc_OverflowError,
+                    "Sample count exceeds Py_ssize_t maximum");
                 return -1;
             }
 
@@ -1054,6 +1224,11 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
                 return -1;
             }
             Py_DECREF(timestamps_list);
+            if (replayed == PY_SSIZE_T_MAX) {
+                PyErr_SetString(PyExc_OverflowError,
+                    "Sample count exceeds Py_ssize_t maximum");
+                return -1;
+            }
             replayed++;
             reader->stats.total_samples++;
             break;
@@ -1070,6 +1245,13 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
                 return -1;
             }
         }
+    }
+
+    if ((uint64_t)replayed != reader->sample_count) {
+        PyErr_Format(PyExc_ValueError,
+            "Sample count mismatch: header declares %llu samples but replay decoded %zd",
+            (unsigned long long)reader->sample_count, replayed);
+        return -1;
     }
 
     /* Final progress callback at 100% */
@@ -1089,7 +1271,7 @@ binary_reader_get_info(BinaryReader *reader)
         return NULL;
     }
     return Py_BuildValue(
-        "{s:I, s:N, s:K, s:K, s:I, s:I, s:I, s:I, s:i}",
+        "{s:I, s:N, s:K, s:K, s:K, s:I, s:I, s:I, s:i}",
         "version", BINARY_FORMAT_VERSION,
         "python_version", py_version,
         "start_time_us", reader->start_time_us,
@@ -1159,21 +1341,18 @@ binary_reader_close(BinaryReader *reader)
         return;
     }
 
-    PyMem_Free(reader->filename);
-
 #if USE_MMAP
     if (reader->mapped_data) {
         munmap(reader->mapped_data, reader->mapped_size);
         reader->mapped_data = NULL;  /* Prevent use-after-free */
         reader->mapped_size = 0;
     }
-    if (reader->fd >= 0) {
-        close(reader->fd);
-        reader->fd = -1;  /* Mark as closed */
-    }
+    /* Clear sample_data which may point into the now-unmapped region */
+    reader->sample_data = NULL;
+    reader->sample_data_size = 0;
 #else
     if (reader->fp) {
-        fclose(reader->fp);
+        Py_fclose(reader->fp);
         reader->fp = NULL;
     }
     if (reader->file_data) {
@@ -1192,7 +1371,7 @@ binary_reader_close(BinaryReader *reader)
         PyMem_Free(reader->strings);
     }
 
-    PyMem_Free(reader->frame_data);
+    PyMem_Free(reader->frames);
 
     if (reader->thread_states) {
         for (size_t i = 0; i < reader->thread_state_count; i++) {

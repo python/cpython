@@ -1,1 +1,0 @@
-Add missing terminator in certain cases when tracing in the new JIT compiler.

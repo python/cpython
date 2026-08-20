@@ -25,6 +25,10 @@ extern "C" {
 #define BINARY_FORMAT_MAGIC_SWAPPED 0x48434154  /* Byte-swapped magic for endianness detection */
 #define BINARY_FORMAT_VERSION   1
 
+/* Sentinel values for optional frame fields */
+#define OPCODE_NONE             255  /* No opcode captured (u8 sentinel) */
+#define LOCATION_NOT_AVAILABLE  (-1) /* lineno/column not available (zigzag sentinel) */
+
 /* Conditional byte-swap macros for cross-endian file reading.
  * Uses Python's optimized byte-swap functions from pycore_bitutils.h */
 #define SWAP16_IF(swap, x) ((swap) ? _Py_bswap16(x) : (x))
@@ -46,7 +50,7 @@ extern "C" {
 #define HDR_OFF_INTERVAL     (HDR_OFF_START_TIME + HDR_SIZE_START_TIME)
 #define HDR_SIZE_INTERVAL    8
 #define HDR_OFF_SAMPLES      (HDR_OFF_INTERVAL + HDR_SIZE_INTERVAL)
-#define HDR_SIZE_SAMPLES     4
+#define HDR_SIZE_SAMPLES     8
 #define HDR_OFF_THREADS      (HDR_OFF_SAMPLES + HDR_SIZE_SAMPLES)
 #define HDR_SIZE_THREADS     4
 #define HDR_OFF_STR_TABLE    (HDR_OFF_THREADS + HDR_SIZE_THREADS)
@@ -60,6 +64,36 @@ extern "C" {
 
 static_assert(FILE_HEADER_SIZE <= FILE_HEADER_PLACEHOLDER_SIZE,
               "FILE_HEADER_SIZE exceeds FILE_HEADER_PLACEHOLDER_SIZE");
+
+/* Sample header field offsets and sizes */
+#define SMP_OFF_THREAD_ID        0
+#define SMP_SIZE_THREAD_ID       sizeof(uint64_t)
+#define SMP_OFF_INTERPRETER_ID   (SMP_OFF_THREAD_ID + SMP_SIZE_THREAD_ID)
+#define SMP_SIZE_INTERPRETER_ID  sizeof(uint32_t)
+#define SMP_OFF_ENCODING         (SMP_OFF_INTERPRETER_ID + SMP_SIZE_INTERPRETER_ID)
+#define SMP_SIZE_ENCODING        sizeof(uint8_t)
+#define SAMPLE_HEADER_FIXED_SIZE (SMP_OFF_ENCODING + SMP_SIZE_ENCODING)
+
+static_assert(SAMPLE_HEADER_FIXED_SIZE == 13,
+             "SAMPLE_HEADER_FIXED_SIZE must remain 13");
+
+/* Footer field offsets and sizes */
+#define FTR_OFF_STRINGS       0
+#define FTR_SIZE_STRINGS      sizeof(uint32_t)
+#define FTR_OFF_FRAMES        (FTR_OFF_STRINGS + FTR_SIZE_STRINGS)
+#define FTR_SIZE_FRAMES       sizeof(uint32_t)
+#define FTR_OFF_FILE_SIZE     (FTR_OFF_FRAMES + FTR_SIZE_FRAMES)
+#define FTR_SIZE_FILE_SIZE    sizeof(uint64_t)
+#define FTR_OFF_CHECKSUM      (FTR_OFF_FILE_SIZE + FTR_SIZE_FILE_SIZE)
+#define FTR_SIZE_CHECKSUM     (2 * sizeof(uint64_t))
+#define FILE_FOOTER_SIZE      (FTR_OFF_CHECKSUM + FTR_SIZE_CHECKSUM)
+
+static_assert(FILE_FOOTER_SIZE == 32,
+             "FILE_FOOTER_SIZE must remain 32");
+
+/* Minimum on-disk bytes of a string (1) and frame (7) table entry. */
+#define MIN_STRING_ENTRY_SIZE 1
+#define MIN_FRAME_ENTRY_SIZE  7
 
 /* Buffer sizes: 512KB balances syscall amortization against memory use,
  * and aligns well with filesystem block sizes and zstd dictionary windows */
@@ -78,9 +112,6 @@ static_assert(FILE_HEADER_SIZE <= FILE_HEADER_PLACEHOLDER_SIZE,
 
 /* Maximum stack depth we'll buffer for delta encoding */
 #define MAX_STACK_DEPTH         256
-
-/* Initial capacity for RLE pending buffer */
-#define INITIAL_RLE_CAPACITY    64
 
 /* Initial capacities for dynamic arrays - sized to reduce reallocations */
 #define INITIAL_STRING_CAPACITY 4096
@@ -172,25 +203,29 @@ typedef struct {
     size_t compressed_buffer_size;
 } ZstdCompressor;
 
-/* Frame entry - combines all frame data for better cache locality */
+/* Frame entry - combines all frame data for better cache locality.
+ * Stores full source position (line, end_line, column, end_column) and opcode.
+ * Delta values are computed during serialization for efficiency. */
 typedef struct {
     uint32_t filename_idx;
     uint32_t funcname_idx;
-    int32_t lineno;
+    int32_t lineno;         /* Start line number (-1 for synthetic frames) */
+    int32_t end_lineno;     /* End line number (-1 if not available) */
+    int32_t column;         /* Start column in UTF-8 bytes (-1 if not available) */
+    int32_t end_column;     /* End column in UTF-8 bytes (-1 if not available) */
+    uint8_t opcode;         /* Python opcode (0-254) or OPCODE_NONE (255) */
 } FrameEntry;
 
-/* Frame key for hash table lookup */
+/* Frame key for hash table lookup - includes all fields for proper deduplication */
 typedef struct {
     uint32_t filename_idx;
     uint32_t funcname_idx;
     int32_t lineno;
+    int32_t end_lineno;
+    int32_t column;
+    int32_t end_column;
+    uint8_t opcode;
 } FrameKey;
-
-/* Pending RLE sample - buffered for run-length encoding */
-typedef struct {
-    uint64_t timestamp_delta;
-    uint8_t status;
-} PendingRLESample;
 
 /* Thread entry - tracks per-thread state for delta encoding */
 typedef struct {
@@ -204,16 +239,14 @@ typedef struct {
     size_t prev_stack_capacity;
 
     /* RLE pending buffer - samples waiting to be written as a repeat group */
-    PendingRLESample *pending_rle;
-    size_t pending_rle_count;
-    size_t pending_rle_capacity;
-    int has_pending_rle;  /* Flag: do we have buffered repeats? */
+    uint8_t *pending_rle;
+    size_t pending_rle_bytes;
+    size_t pending_rle_samples;
 } ThreadEntry;
 
 /* Main binary writer structure */
 typedef struct {
     FILE *fp;
-    char *filename;
 
     /* Write buffer for batched I/O */
     uint8_t *write_buffer;
@@ -227,7 +260,7 @@ typedef struct {
     /* Metadata */
     uint64_t start_time_us;
     uint64_t sample_interval_us;
-    uint32_t total_samples;
+    uint64_t total_samples;
 
     /* String hash table: PyObject* -> uint32_t index */
     _Py_hashtable_t *string_hash;
@@ -271,10 +304,7 @@ typedef struct {
 
 /* Main binary reader structure */
 typedef struct {
-    char *filename;
-
 #if USE_MMAP
-    int fd;
     uint8_t *mapped_data;
     size_t mapped_size;
 #else
@@ -296,7 +326,7 @@ typedef struct {
     int needs_swap;  /* Non-zero if file was written on different-endian system */
     uint64_t start_time_us;
     uint64_t sample_interval_us;
-    uint32_t sample_count;
+    uint64_t sample_count;
     uint32_t thread_count;
     uint64_t string_table_offset;
     uint64_t frame_table_offset;
@@ -305,8 +335,8 @@ typedef struct {
     PyObject **strings;
     uint32_t strings_count;
 
-    /* Parsed frame table: packed as [filename_idx, funcname_idx, lineno] */
-    uint32_t *frame_data;
+    /* Parsed frame table: array of FrameEntry structures */
+    FrameEntry *frames;
     uint32_t frames_count;
 
     /* Sample data region */
@@ -401,8 +431,8 @@ decode_varint_u32(const uint8_t *data, size_t *offset, size_t max_size)
 {
     size_t saved_offset = *offset;
     uint64_t value = decode_varint_u64(data, offset, max_size);
-    if (PyErr_Occurred()) {
-        return 0;
+    if (*offset == saved_offset) {
+        return 0;  /* decode_varint_u64 already set PyErr */
     }
     if (UNLIKELY(value > UINT32_MAX)) {
         *offset = saved_offset;
@@ -416,9 +446,10 @@ decode_varint_u32(const uint8_t *data, size_t *offset, size_t max_size)
 static inline int32_t
 decode_varint_i32(const uint8_t *data, size_t *offset, size_t max_size)
 {
+    size_t saved_offset = *offset;
     uint32_t zigzag = decode_varint_u32(data, offset, max_size);
-    if (PyErr_Occurred()) {
-        return 0;
+    if (*offset == saved_offset) {
+        return 0;  /* decode_varint_u32 already set PyErr */
     }
     return (int32_t)((zigzag >> 1) ^ -(int32_t)(zigzag & 1));
 }
@@ -481,7 +512,7 @@ grow_array_inplace(void **ptr_addr, size_t count, size_t *capacity, size_t elem_
  * Create a new binary writer.
  *
  * Arguments:
- *   filename: Path to output file
+ *   path: Path to output file
  *   sample_interval_us: Sampling interval in microseconds
  *   compression_type: COMPRESSION_NONE or COMPRESSION_ZSTD
  *   start_time_us: Start timestamp in microseconds (from time.monotonic() * 1e6)
@@ -490,7 +521,7 @@ grow_array_inplace(void **ptr_addr, size_t count, size_t *capacity, size_t elem_
  *   New BinaryWriter* on success, NULL on failure (PyErr set)
  */
 BinaryWriter *binary_writer_create(
-    const char *filename,
+    PyObject *path,
     uint64_t sample_interval_us,
     int compression_type,
     uint64_t start_time_us
@@ -542,12 +573,12 @@ void binary_writer_destroy(BinaryWriter *writer);
  * Open a binary file for reading.
  *
  * Arguments:
- *   filename: Path to input file
+ *   path: Path to input file
  *
  * Returns:
  *   New BinaryReader* on success, NULL on failure (PyErr set)
  */
-BinaryReader *binary_reader_open(const char *filename);
+BinaryReader *binary_reader_open(PyObject *path);
 
 /*
  * Replay samples from binary file through a collector.

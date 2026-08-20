@@ -73,7 +73,7 @@ Reading and writing compressed files
    argument is not None, a :exc:`!TypeError` will be raised.
 
    When writing, the *options* argument can be a dictionary
-   providing advanced decompression parameters; see
+   providing advanced compression parameters; see
    :class:`CompressionParameter` for detailed information about supported
    parameters. The *level* argument is the compression level to use when
    writing compressed data. Only one of *level* or *options* may be non-None.
@@ -117,7 +117,7 @@ Reading and writing compressed files
    argument is not None, a :exc:`!TypeError` will be raised.
 
    When writing, the *options* argument can be a dictionary
-   providing advanced decompression parameters; see
+   providing advanced compression parameters; see
    :class:`CompressionParameter` for detailed information about supported
    parameters. The *level* argument is the compression level to use when
    writing compressed data. Only one of *level* or *options* may be passed. The
@@ -331,10 +331,14 @@ Compressing and decompressing data in memory
 
       If *max_length* is non-negative, the method returns at most *max_length*
       bytes of decompressed data. If this limit is reached and further
-      output can be produced, the :attr:`~.needs_input` attribute will
-      be set to ``False``. In this case, the next call to
+      output can be produced (or EOF is reached), the :attr:`~.needs_input`
+      attribute will be set to ``False``. In this case, the next call to
       :meth:`~.decompress` may provide *data* as ``b''`` to obtain
-      more of the output.
+      more of the output. The full content can thus be read like::
+
+        process_output(d.decompress(data, max_length))
+        while not d.eof and not d.needs_input:
+            process_output(d.decompress(b"", max_length))
 
       If all of the input data was decompressed and returned (either
       because this was less than *max_length* bytes, or because
@@ -342,7 +346,7 @@ Compressing and decompressing data in memory
       will be set to ``True``.
 
       Attempting to decompress data after the end of a frame will raise a
-      :exc:`ZstdError`. Any data found after the end of the frame is ignored
+      :exc:`EOFError`. Any data found after the end of the frame is ignored
       and saved in the :attr:`~.unused_data` attribute.
 
    .. attribute:: eof
@@ -499,7 +503,7 @@ Advanced parameter control
    The :meth:`~.bounds` method can be used on any attribute to get the valid
    values for that parameter.
 
-   Parameters are optional; any omitted parameter will have it's value selected
+   Parameters are optional; any omitted parameter will have its value selected
    automatically.
 
    Example getting the lower and upper bound of :attr:`~.compression_level`::
@@ -728,7 +732,7 @@ Advanced parameter control
 
    An :class:`~enum.IntEnum` containing the advanced decompression parameter
    keys that can be used when decompressing data. Parameters are optional; any
-   omitted parameter will have it's value selected automatically.
+   omitted parameter will have its value selected automatically.
 
    The :meth:`~.bounds` method can be used on any attribute to get the valid
    values for that parameter.

@@ -127,7 +127,7 @@ default value of ``1`` for the ``length`` argument.
 .. bpo: 44219
 .. date: 2021-09-09-10-32-33
 .. nonce: WiYyjz
-.. section: Core and Builtins
+.. section: Library
 
 Release the GIL while performing ``isatty`` system calls on arbitrary file
 descriptors. In particular, this affects :func:`os.isatty`,
@@ -149,7 +149,7 @@ Added fallback to extension modules with '.sl' suffix on HP-UX
 .. bpo: 45121
 .. date: 2021-09-07-17-10-16
 .. nonce: iG-Hsf
-.. section: Core and Builtins
+.. section: Library
 
 Fix issue where ``Protocol.__init__`` raises ``RecursionError`` when it's
 called directly or via ``super()``. Patch provided by Yurii Karabas.
@@ -269,7 +269,7 @@ it's running out of the source tree).
 .. bpo: 45012
 .. date: 2021-08-31-11-09-52
 .. nonce: ueeOcx
-.. section: Core and Builtins
+.. section: Library
 
 In :mod:`posix`, release GIL during ``stat()``, ``lstat()``, and
 ``fstatat()`` syscalls made by :func:`os.DirEntry.stat`. Patch by Stanisław
@@ -309,7 +309,7 @@ objects. Patch by Pablo Galindo.
 .. bpo: 44962
 .. date: 2021-08-23-19-55-08
 .. nonce: J00ftt
-.. section: Core and Builtins
+.. section: Library
 
 Fix a race in WeakKeyDictionary, WeakValueDictionary and WeakSet when two
 threads attempt to commit the last pending removal. This fixes
@@ -379,7 +379,7 @@ new instructions:
 .. bpo: 44929
 .. date: 2021-08-16-23-16-17
 .. nonce: qpMEky
-.. section: Core and Builtins
+.. section: Library
 
 Fix some edge cases of ``enum.Flag`` string representation in the REPL.
 Patch by Pablo Galindo.
@@ -728,7 +728,7 @@ Collapse union of equal types. E.g. the result of ``int | int`` is now
 .. bpo: 44611
 .. date: 2021-07-16-01-01-11
 .. nonce: LcfHN-
-.. section: Core and Builtins
+.. section: Library
 
 On Windows, :func:`os.urandom`: uses BCryptGenRandom API instead of
 CryptGenRandom API which is deprecated from Microsoft Windows API. Patch by
@@ -840,7 +840,7 @@ from dynload_shlib.c.
 .. bpo: 44490
 .. date: 2021-07-06-22-22-15
 .. nonce: BJxPbZ
-.. section: Core and Builtins
+.. section: Library
 
 :mod:`typing` now searches for type parameters in ``types.Union`` objects.
 ``get_type_hints`` will also properly resolve annotations with nested
@@ -875,7 +875,7 @@ Remove uses of :c:func:`PyObject_GC_Del` in error path when initializing
 .. bpo: 41486
 .. date: 2021-07-04-17-41-47
 .. nonce: DiM24a
-.. section: Core and Builtins
+.. section: Library
 
 Fix a memory consumption and copying performance regression in earlier 3.10
 beta releases if someone used an output buffer larger than 4GiB with
@@ -1116,7 +1116,7 @@ Improve tokenizer error with improved locations. Patch by Pablo Galindo.
 .. bpo: 44304
 .. date: 2021-06-05-02-34-57
 .. nonce: _MAoPc
-.. section: Core and Builtins
+.. section: Library
 
 Fix a crash in the :mod:`sqlite3` module that happened when the garbage
 collector clears :class:`sqlite.Statement` objects. Patch by Pablo Galindo

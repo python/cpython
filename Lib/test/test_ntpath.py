@@ -10,6 +10,7 @@ import warnings
 from ntpath import ALL_BUT_LAST, ALLOW_MISSING
 from test import support
 from test.support import os_helper
+from test.support import warnings_helper
 from test.support.os_helper import FakePath
 from test import test_genericpath
 from tempfile import TemporaryFile
@@ -30,19 +31,29 @@ else:
     HAVE_GETFINALPATHNAME = True
 
 try:
-    import ctypes
+    import ctypes.util
+    import ctypes.wintypes
 except ImportError:
     HAVE_GETSHORTPATHNAME = False
 else:
     HAVE_GETSHORTPATHNAME = True
     def _getshortpathname(path):
-        GSPN = ctypes.WinDLL("kernel32", use_last_error=True).GetShortPathNameW
-        GSPN.argtypes = [ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint32]
-        GSPN.restype = ctypes.c_uint32
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+
+        @ctypes.util.wrap_dll_function(kernel32)
+        def GetShortPathNameW(
+            lpszLongPath: ctypes.c_wchar_p,
+            lpszShortPath: ctypes.c_wchar_p,
+            cchBuffer: ctypes.wintypes.DWORD,
+        ) -> ctypes.wintypes.DWORD:
+            pass
+        GSPN = GetShortPathNameW
+
         result_len = GSPN(path, None, 0)
         if not result_len:
             raise OSError("failed to get short path name 0x{:08X}"
                           .format(ctypes.get_last_error()))
+
         result = ctypes.create_unicode_buffer(result_len)
         result_len = GSPN(path, result, result_len)
         return result[:result_len]
@@ -298,6 +309,10 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.isabs("\\\\.\\C:")', 1)
 
     def test_commonprefix(self):
+        with warnings_helper.check_warnings((".*commonpath().*", DeprecationWarning)):
+            self.do_test_commonprefix()
+
+    def do_test_commonprefix(self):
         tester('ntpath.commonprefix(["/home/swenson/spam", "/home/swen/spam"])',
                "/home/swen")
         tester('ntpath.commonprefix(["\\home\\swen\\spam", "\\home\\swen\\eggs"])',

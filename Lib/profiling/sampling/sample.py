@@ -6,12 +6,8 @@ import sys
 import sysconfig
 import time
 from collections import deque
-from _colorize import ANSIColors
+lazy from _colorize import ANSIColors
 
-from .pstats_collector import PstatsCollector
-from .stack_collector import CollapsedStackCollector, FlamegraphCollector
-from .heatmap_collector import HeatmapCollector
-from .gecko_collector import GeckoCollector
 from .binary_collector import BinaryCollector
 
 
@@ -43,10 +39,45 @@ except ImportError:
 
 _FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
 
+# Minimum number of samples required before showing the TUI
+# If fewer samples are collected, we skip the TUI and just print a message
+MIN_SAMPLES_FOR_TUI = 200
+
+# Maximum number of consecutive identical samples to keep before flushing.
+MAX_PENDING_SAMPLES = 8192
+
+
+def _resolve_python_pid(pid):
+    """On Windows, if pid is a venvlauncher process, return the child Python PID.
+
+    The venvlauncher (used as python.exe in venvs) spawns the real Python
+    interpreter as a child process via CreateProcessW. The RemoteUnwinder
+    needs the child's PID, not the launcher's.
+
+    Returns the original pid if not on Windows, not a venv launcher,
+    or no child process is found.
+    """
+    if os.name != "nt" or sys.prefix == sys.base_prefix:
+        return pid
+    try:
+        children = _remote_debugging.get_child_pids(pid, recursive=False)
+        python_children = [
+            child for child in children
+            if _remote_debugging.is_python_process(child)
+        ]
+        if len(python_children) == 1:
+            return python_children[0]
+    except (OSError, RuntimeError) as err:
+        raise SystemExit(
+            f"Failed to initialize profiler from virtualenv: {err}\n"
+            f"Try running with the base interpreter: {sys._base_executable}"
+        ) from err
+    return pid
+
 
 class SampleProfiler:
     def __init__(self, pid, sample_interval_usec, all_threads, *, mode=PROFILING_MODE_WALL, native=False, gc=True, opcodes=False, skip_non_matching_threads=True, collect_stats=False, blocking=False):
-        self.pid = pid
+        self.pid = _resolve_python_pid(pid)
         self.sample_interval_usec = sample_interval_usec
         self.all_threads = all_threads
         self.mode = mode  # Store mode for later use
@@ -62,53 +93,95 @@ class SampleProfiler:
         self.realtime_stats = False
 
     def _new_unwinder(self, native, gc, opcodes, skip_non_matching_threads):
-        if _FREE_THREADED_BUILD:
-            unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, all_threads=self.all_threads, mode=self.mode, native=native, gc=gc,
-                opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
-                cache_frames=True, stats=self.collect_stats
-            )
+        kwargs = {}
+        if _FREE_THREADED_BUILD or self.all_threads:
+            kwargs['all_threads'] = self.all_threads
         else:
-            unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, only_active_thread=bool(self.all_threads), mode=self.mode, native=native, gc=gc,
-                opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
-                cache_frames=True, stats=self.collect_stats
-            )
-        return unwinder
+            kwargs['only_active_thread'] = bool(self.all_threads)
 
-    def sample(self, collector, duration_sec=10, *, async_aware=False):
+        return _remote_debugging.RemoteUnwinder(
+            self.pid,
+            mode=self.mode,
+            native=native,
+            gc=gc,
+            opcodes=opcodes,
+            skip_non_matching_threads=skip_non_matching_threads,
+            cache_frames=True,
+            stats=self.collect_stats,
+            **kwargs
+        )
+
+    def _get_stack_trace(self, async_aware=None):
+        with _pause_threads(self.unwinder, self.blocking):
+            if async_aware == "all":
+                return self.unwinder.get_all_awaited_by()
+            if async_aware == "running":
+                return self.unwinder.get_async_stack_trace()
+            return self.unwinder.get_stack_trace()
+
+    def dump_stack(self, *, async_aware=None):
+        """Return a single stack snapshot from the target process."""
+        return self._get_stack_trace(async_aware=async_aware)
+
+    def sample(self, collector, duration_sec=None, *, async_aware=False):
         sample_interval_sec = self.sample_interval_usec / 1_000_000
-        running_time = 0
         num_samples = 0
         errors = 0
         interrupted = False
+        running_time_sec = 0
         start_time = next_time = time.perf_counter()
         last_sample_time = start_time
         realtime_update_interval = 1.0  # Update every second
         last_realtime_update = start_time
+        aggregating = getattr(collector, 'aggregating', False) is True
+        prev_stack = None
+        pending_count = 0
+        pending_timestamps = [] if aggregating else None
+
+        def flush_pending():
+            nonlocal pending_count, pending_timestamps
+            if pending_count == 0:
+                return
+            pending_count = 0
+            ts = pending_timestamps
+            pending_timestamps = []
+            collector.collect(prev_stack, timestamps_us=ts)
+
         try:
-            while running_time < duration_sec:
+            while duration_sec is None or running_time_sec < duration_sec:
                 # Check if live collector wants to stop
                 if hasattr(collector, 'running') and not collector.running:
                     break
 
                 current_time = time.perf_counter()
-                if next_time < current_time:
+                current_time_us = int(current_time * 1_000_000)
+                if next_time > current_time:
+                    sleep_time = (next_time - current_time) * 0.9
+                    if sleep_time > 0.0001:
+                        time.sleep(sleep_time)
+                elif next_time < current_time:
                     try:
-                        with _pause_threads(self.unwinder, self.blocking):
-                            if async_aware == "all":
-                                stack_frames = self.unwinder.get_all_awaited_by()
-                            elif async_aware == "running":
-                                stack_frames = self.unwinder.get_async_stack_trace()
-                            else:
-                                stack_frames = self.unwinder.get_stack_trace()
+                        stack_frames = self._get_stack_trace(
+                            async_aware=async_aware
+                        )
+                        if aggregating:
+                            if stack_frames != prev_stack:
+                                flush_pending()
+                                prev_stack = stack_frames
+                            pending_count += 1
+                            pending_timestamps.append(current_time_us)
+                            if pending_count >= MAX_PENDING_SAMPLES:
+                                flush_pending()
+                        else:
                             collector.collect(stack_frames)
                     except ProcessLookupError as e:
-                        duration_sec = current_time - start_time
+                        running_time_sec = current_time - start_time
                         break
                     except (RuntimeError, UnicodeDecodeError, MemoryError, OSError):
+                        flush_pending()
                         collector.collect_failed_sample()
                         errors += 1
+                        prev_stack = None
                     except Exception as e:
                         if not _is_process_running(self.pid):
                             break
@@ -135,25 +208,28 @@ class SampleProfiler:
                     num_samples += 1
                     next_time += sample_interval_sec
 
-                running_time = time.perf_counter() - start_time
+                running_time_sec = time.perf_counter() - start_time
         except KeyboardInterrupt:
             interrupted = True
-            running_time = time.perf_counter() - start_time
+            running_time_sec = time.perf_counter() - start_time
             print("Interrupted by user.")
+        finally:
+            flush_pending()
 
         # Clear real-time stats line if it was being displayed
         if self.realtime_stats and len(self.sample_intervals) > 0:
             print()  # Add newline after real-time stats
 
-        sample_rate = num_samples / running_time if running_time > 0 else 0
+        sample_rate = num_samples / running_time_sec if running_time_sec > 0 else 0
         error_rate = (errors / num_samples) * 100 if num_samples > 0 else 0
-        expected_samples = int(duration_sec / sample_interval_sec)
+        expected_samples = int(running_time_sec / sample_interval_sec)
         missed_samples = (expected_samples - num_samples) / expected_samples * 100 if expected_samples > 0 else 0
 
         # Don't print stats for live mode (curses is handling display)
         is_live_mode = LiveStatsCollector is not None and isinstance(collector, LiveStatsCollector)
         if not is_live_mode:
-            print(f"Captured {num_samples:n} samples in {fmt(running_time, 2)} seconds")
+            s = "" if num_samples == 1 else "s"
+            print(f"Captured {num_samples:n} sample{s} in {fmt(running_time_sec, 2)} seconds")
             print(f"Sample rate: {fmt(sample_rate, 2)} samples/sec")
             print(f"Error rate: {fmt(error_rate, 2)}")
 
@@ -166,7 +242,7 @@ class SampleProfiler:
 
         # Pass stats to flamegraph collector if it's the right type
         if hasattr(collector, 'set_stats'):
-            collector.set_stats(self.sample_interval_usec, running_time, sample_rate, error_rate, missed_samples, mode=self.mode)
+            collector.set_stats(self.sample_interval_usec, running_time_sec, sample_rate, error_rate, missed_samples, mode=self.mode)
 
         if num_samples < expected_samples and not is_live_mode and not interrupted:
             print(
@@ -272,6 +348,33 @@ class SampleProfiler:
         print(f"    Hits:             {code_hits:n} ({ANSIColors.GREEN}{fmt(code_hits_pct)}%{ANSIColors.RESET})")
         print(f"    Misses:           {code_misses:n} ({ANSIColors.RED}{fmt(code_misses_pct)}%{ANSIColors.RESET})")
 
+        batched_attempts = stats.get('batched_read_attempts', 0)
+        batched_successes = stats.get('batched_read_successes', 0)
+        batched_misses = stats.get('batched_read_misses', 0)
+        segments_requested = stats.get('batched_read_segments_requested', 0)
+        segments_completed = stats.get('batched_read_segments_completed', 0)
+        if batched_attempts > 0:
+            batched_success_rate = stats.get('batched_read_success_rate', 0.0)
+            batched_miss_rate = 100.0 - batched_success_rate
+            segment_completion_rate = stats.get(
+                'batched_read_segment_completion_rate', 0.0
+            )
+
+            print(f"  {ANSIColors.CYAN}Batched Reads:{ANSIColors.RESET}")
+            print(f"    Attempts:         {batched_attempts:n}")
+            print(
+                f"    Successes:        {batched_successes:n} "
+                f"({ANSIColors.GREEN}{fmt(batched_success_rate)}%{ANSIColors.RESET})"
+            )
+            print(
+                f"    Misses:           {batched_misses:n} "
+                f"({ANSIColors.RED}{fmt(batched_miss_rate)}%{ANSIColors.RESET})"
+            )
+            print(
+                f"    Segments read:    {segments_completed:n}/{segments_requested:n} "
+                f"({ANSIColors.GREEN}{fmt(segment_completion_rate)}%{ANSIColors.RESET})"
+            )
+
         # Memory operations
         memory_reads = stats.get('memory_reads', 0)
         memory_bytes = stats.get('memory_bytes_read', 0)
@@ -363,7 +466,7 @@ def sample(
     pid,
     collector,
     *,
-    duration_sec=10,
+    duration_sec=None,
     all_threads=False,
     realtime_stats=False,
     mode=PROFILING_MODE_WALL,
@@ -378,7 +481,8 @@ def sample(
     Args:
         pid: Process ID to sample
         collector: Collector instance to use for gathering samples
-        duration_sec: How long to sample for (seconds)
+        duration_sec: How long to sample for (seconds), or None to run until
+            the process exits or interrupted
         all_threads: Whether to sample all threads
         realtime_stats: Whether to print real-time sampling statistics
         mode: Profiling mode - WALL (all samples), CPU (only when on CPU),
@@ -423,11 +527,42 @@ def sample(
     return collector
 
 
+def dump_stack(
+    pid,
+    *,
+    all_threads=False,
+    mode=PROFILING_MODE_ALL,
+    async_aware=None,
+    native=False,
+    gc=True,
+    opcodes=False,
+    blocking=False,
+):
+    """Return a single stack snapshot from a process."""
+    if mode == PROFILING_MODE_ALL:
+        skip_non_matching_threads = False
+    else:
+        skip_non_matching_threads = True
+
+    profiler = SampleProfiler(
+        pid,
+        sample_interval_usec=1,
+        all_threads=all_threads,
+        mode=mode,
+        native=native,
+        gc=gc,
+        opcodes=opcodes,
+        skip_non_matching_threads=skip_non_matching_threads,
+        blocking=blocking,
+    )
+    return profiler.dump_stack(async_aware=async_aware)
+
+
 def sample_live(
     pid,
     collector,
     *,
-    duration_sec=10,
+    duration_sec=None,
     all_threads=False,
     realtime_stats=False,
     mode=PROFILING_MODE_WALL,
@@ -458,6 +593,11 @@ def sample_live(
     """
     import curses
 
+    # Check if process is alive before doing any heavy initialization
+    if not _is_process_running(pid):
+        print(f"No samples collected - process {pid} exited before profiling could begin.", file=sys.stderr)
+        return collector
+
     # Get sample interval from collector
     sample_interval_usec = collector.sample_interval_usec
 
@@ -485,6 +625,12 @@ def sample_live(
         collector.init_curses(stdscr)
         try:
             profiler.sample(collector, duration_sec, async_aware=async_aware)
+            # If too few samples were collected, exit cleanly without showing TUI
+            if collector.successful_samples < MIN_SAMPLES_FOR_TUI:
+                # Clear screen before exiting to avoid visual artifacts
+                stdscr.clear()
+                stdscr.refresh()
+                return
             # Mark as finished and keep the TUI running until user presses 'q'
             collector.mark_finished()
             # Keep processing input until user quits
@@ -498,5 +644,12 @@ def sample_live(
         curses.wrapper(curses_wrapper_func)
     except KeyboardInterrupt:
         pass
+
+    # If too few samples were collected, print a message
+    if collector.successful_samples < MIN_SAMPLES_FOR_TUI:
+        if collector.successful_samples == 0:
+            print(f"No samples collected - process {pid} exited before profiling could begin.", file=sys.stderr)
+        else:
+            print(f"Only {collector.successful_samples} sample(s) collected (minimum {MIN_SAMPLES_FOR_TUI} required for TUI) - process {pid} exited too quickly.", file=sys.stderr)
 
     return collector
