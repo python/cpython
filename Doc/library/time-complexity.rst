@@ -312,8 +312,6 @@ Notes
    input. Forward searches instead use a more elaborate algorithm with a
    linear worst case, described in
    :source:`Objects/stringlib/stringlib_find_two_way_notes.txt`.
-   ``s.rpartition(x)`` and ``s.rsplit(x)`` search backwards too, with the same
-   complexity.
 
 .. [11] Assuming :class:`int` or :class:`bool` arguments. For other types,
    the range is searched like any other sequence in *O*\ (*n*) time.
