@@ -1170,9 +1170,10 @@ class BaseTestTaskGroup:
 
         task = asyncio.create_task(body())
         await asyncio.sleep(0.01)
-        task.cancel()
-        with self.assertRaises(asyncio.CancelledError):
+        task.cancel('message')
+        with self.assertRaises(asyncio.CancelledError) as cm:
             await task
+        self.assertEqual('message', cm.exception.args[0])
 
     async def test_taskgroup_cancel_before_exception(self):
         async def raise_exc(parent_tg: asyncio.TaskGroup):
