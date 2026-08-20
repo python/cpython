@@ -2934,6 +2934,18 @@ class ClinicParserTest(TestCase):
                           "a default value, used to delete the attribute")
         self.expect_failure(block, expected_error)
 
+        block = """
+            module m
+            class Foo "" ""
+            @setter
+            @deleter
+            Foo.property
+                value: object = None
+        """
+        expected_error = ("the value of @setter with @deleter can only have "
+                          "NULL as a default value")
+        self.expect_failure(block, expected_error)
+
     def test_setter_value_kind(self):
         expected_error = "the value of @setter must be a positional parameter"
         block = """

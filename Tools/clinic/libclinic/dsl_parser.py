@@ -1556,8 +1556,8 @@ class DSLParser:
         func = self.function
         if func.kind in (SETTER, SETTER_AND_DELETER):
             # The new value is the only parameter of a setter.  The setter
-            # of a deletable attribute is also called to delete it, hence the
-            # default value.
+            # of a deletable attribute is also called with NULL to delete it,
+            # hence the default value.
             optional = func.kind is SETTER_AND_DELETER
             if len(func.parameters) == 1:
                 # It is optional to declare the value, which is usually
@@ -1577,6 +1577,9 @@ class DSLParser:
                              "a default value, used to delete the attribute")
                     else:
                         fail("the value of @setter cannot have a default value")
+                if optional and p.default is not NULL:
+                    fail("the value of @setter with @deleter can only have "
+                         "NULL as a default value")
 
         self.check_remaining_star(lineno)
         try:
