@@ -880,6 +880,14 @@ Other language changes
   other, as regular dynamic extensions do.
   (Contributed by Stefano Rivera in :gh:`122931`.)
 
+* The ``__cached__`` attribute on modules, which was deprecated since version
+  3.13, is no longer set or taken into consideration by the import system or
+  standard library.
+  Use :attr:`__spec__.cached <importlib.machinery.ModuleSpec.cached>` instead.
+  (Contributed by Brett Cannon in :gh:`97879`)
+
+  Note that the :attr:`~module.__loader__` and :attr:`~module.__package__`
+  attributes are also deprecated and scheduled for removal.
 
 
 Default interactive shell

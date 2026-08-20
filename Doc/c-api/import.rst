@@ -146,7 +146,7 @@ Importing Modules
       alternatives.
 
    .. versionchanged:: 3.15
-      ``__cached__`` is no longer set.
+      The ``__cached__`` attribute is no longer set.
 
 
 .. c:function:: PyObject* PyImport_ExecCodeModuleEx(const char *name, PyObject *co, const char *pathname)
@@ -170,7 +170,7 @@ Importing Modules
       :class:`~importlib.machinery.ModuleSpec` for alternatives.
 
    .. versionchanged:: 3.15
-      ``__cached__`` no longer set.
+      The ``__cached__`` attribute no longer set.
 
 
 .. c:function:: PyObject* PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co, const char *pathname, const char *cpathname)
