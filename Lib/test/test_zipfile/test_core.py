@@ -4599,6 +4599,8 @@ class OtherTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     zipf.write(__file__, 'file')
                 with self.assertRaises(ValueError):
+                    zipf.mkdir('directory')
+                with self.assertRaises(ValueError):
                     zipf.close()
                 w1.write(msg2)
             with zipf.open('baz', mode='w') as w2:

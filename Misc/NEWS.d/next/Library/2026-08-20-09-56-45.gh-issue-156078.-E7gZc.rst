@@ -1,0 +1,3 @@
+Fix :meth:`zipfile.ZipFile.mkdir` to raise :exc:`ValueError` when called
+while a writable member handle is open, preventing corruption of the ZIP
+archive.

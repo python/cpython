@@ -2596,6 +2596,11 @@ class ZipFile:
         else:
             raise TypeError("Expected type str or ZipInfo")
 
+        if self._writing:
+            raise ValueError(
+                "Can't write to ZIP archive while an open writing handle exists."
+            )
+
         with self._lock:
             if self._seekable:
                 self.fp.seek(self.start_dir)
