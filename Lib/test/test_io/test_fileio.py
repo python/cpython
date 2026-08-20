@@ -520,6 +520,9 @@ class CAutoFileTests(AutoFileTests, unittest.TestCase):
         with self.assertRaisesRegex(TypeError,
                                     "can't delete numeric/char attribute"):
             del self.f._finalizing
+        # closing a file which is being finalized emits a ResourceWarning
+        self.f._finalizing = False
+
 
 class PyAutoFileTests(AutoFileTests, unittest.TestCase):
     FileIO = _pyio.FileIO
