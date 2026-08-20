@@ -173,7 +173,8 @@ def _load_run_test(result: TestResult, runtests: RunTests) -> None:
         remove_testfn(test_name, runtests.verbose)
 
     if gc.garbage:
-        support.environment_altered = True
+        support.set_environment_altered(
+            f"{len(gc.garbage)} uncollectable object(s)")
         print_warning(f"{test_name} created {len(gc.garbage)} "
                       f"uncollectable object(s)")
 
@@ -194,6 +195,7 @@ def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
     # Reset the environment_altered flag to detect if a test altered
     # the environment
     support.environment_altered = False
+    support.environment_altered_reasons.clear()
 
     pgo = runtests.pgo
     if pgo:
@@ -261,7 +263,7 @@ def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
         return
 
     if support.environment_altered:
-        result.set_env_changed()
+        result.set_env_changed(*support.environment_altered_reasons)
     # Don't override the state if it was already set (REFLEAK or ENV_CHANGED)
     if result.state is None:
         result.state = State.PASSED
