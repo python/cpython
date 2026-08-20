@@ -388,7 +388,7 @@ compute_abstract_methods(PyObject *self)
         if (!it) {
             if (PyErr_ExceptionMatches(PyExc_TypeError)) {
                 PyErr_Format(PyExc_TypeError,
-                             "items() returned non-iterable (type %T)",S
+                             "items() returned non-iterable (type %T)",
                              item_obj);
             }
             goto error;
