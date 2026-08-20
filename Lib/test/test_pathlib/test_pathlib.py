@@ -2321,6 +2321,15 @@ class PathTest(PurePathTest):
                 self.assertTrue(source.exists())
                 self.assertFalse(target.exists())
 
+    def test_rename_preserves_target(self):
+        P = self.cls(self.base)
+        source = P / 'fileA'
+        target = str(P / 'dirA' / 'fileAA') + self.parser.sep
+        with mock.patch.object(os, 'rename') as rename:
+            renamed = source.rename(target)
+        rename.assert_called_once_with(source, target)
+        self.assertEqual(renamed, self.cls(target))
+
     def test_replace(self):
         P = self.cls(self.base)
         p = P / 'fileA'
@@ -2349,6 +2358,15 @@ class PathTest(PurePathTest):
                     source.replace(target_arg)
                 self.assertTrue(source.exists())
                 self.assertFalse(target.exists())
+
+    def test_replace_preserves_target(self):
+        P = self.cls(self.base)
+        source = P / 'fileA'
+        target = str(P / 'dirA' / 'fileAA') + self.parser.sep
+        with mock.patch.object(os, 'replace') as replace:
+            replaced = source.replace(target)
+        replace.assert_called_once_with(source, target)
+        self.assertEqual(replaced, self.cls(target))
 
     def test_touch_common(self):
         P = self.cls(self.base)
