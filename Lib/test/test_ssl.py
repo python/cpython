@@ -1773,6 +1773,32 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(ctx.verify_mode, ssl.CERT_OPTIONAL)
         self.assertTrue(ctx.check_hostname)
 
+    def test_delete_sslobject_attributes(self):
+        # None of the attributes of _ssl._SSLSocket can be deleted.
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        sslobj = ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO())._sslobj
+        for name in 'context', 'owner', 'session', 'session_reused':
+            with self.subTest(name=name):
+                value = getattr(sslobj, name)
+                with self.assertRaises(AttributeError):
+                    delattr(sslobj, name)
+                self.assertEqual(getattr(sslobj, name), value)
+
+    def test_delete_attributes(self):
+        # None of the attributes implemented in C can be deleted.
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        names = ['check_hostname', 'verify_mode', 'verify_flags', 'options',
+                 'minimum_version', 'maximum_version', 'sni_callback',
+                 '_host_flags', 'security_level', 'post_handshake_auth']
+        if hasattr(ctx, 'num_tickets'):
+            names.append('num_tickets')
+        for name in names:
+            with self.subTest(name=name):
+                value = getattr(ctx, name)
+                with self.assertRaises(AttributeError):
+                    delattr(ctx, name)
+                self.assertEqual(getattr(ctx, name), value)
+
     def test_check_hostname(self):
         with warnings_helper.check_warnings():
             ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
