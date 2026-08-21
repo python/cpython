@@ -4,6 +4,10 @@ Configure Python
 
 .. highlight:: sh
 
+.. anchormap::
+
+   cmdoption-with-system-libmpdec: :ref:`_ <rem-bundled-libmpdec>`
+
 
 .. _build-requirements:
 
