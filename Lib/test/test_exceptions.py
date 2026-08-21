@@ -2778,8 +2778,11 @@ class TestInvalidExceptionMatcher(unittest.TestCase):
             except (ValueError, 42):
                 pass
 
+    @cpython_only
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_given_exception_matches_deeply_nested_tuple(self):
-        import ctypes
+        ctypes = import_module('ctypes')
         lib = ctypes.pythonapi
         lib.PyErr_GivenExceptionMatches.argtypes = [ctypes.py_object, ctypes.py_object]
         lib.PyErr_GivenExceptionMatches.restype = ctypes.c_int
