@@ -105,11 +105,16 @@ autocommit_converter(PyObject *val, enum autocommit_mode *result)
         *result = AUTOCOMMIT_DISABLED;
         return 1;
     }
-    if (PyLong_Check(val) &&
-        PyLong_AsLong(val) == LEGACY_TRANSACTION_CONTROL)
-    {
-        *result = AUTOCOMMIT_LEGACY;
-        return 1;
+    if (PyLong_Check(val)) {
+        int overflow;
+        long value = PyLong_AsLongAndOverflow(val, &overflow);
+        if (value == -1 && PyErr_Occurred()) {
+            return 0;
+        }
+        if (!overflow && value == LEGACY_TRANSACTION_CONTROL) {
+            *result = AUTOCOMMIT_LEGACY;
+            return 1;
+        }
     }
 
     PyErr_SetString(PyExc_ValueError,
@@ -2633,6 +2638,11 @@ get_autocommit(pysqlite_Connection *self, void *Py_UNUSED(ctx))
 static int
 set_autocommit(pysqlite_Connection *self, PyObject *val, void *Py_UNUSED(ctx))
 {
+    if (val == NULL) {
+        PyErr_SetString(PyExc_AttributeError,
+                        "cannot delete autocommit attribute");
+        return -1;
+    }
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return -1;
     }
