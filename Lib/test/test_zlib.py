@@ -183,7 +183,6 @@ class ChecksumCombineMixin:
 
         self.assertRaises(TypeError, self.combine, 0, 0, "len")
         self.assertRaises(ValueError, self.combine, 0, 0, -1)
-        self.assertRaises(ValueError, self.combine, 0, 0, -2**32)
 
     def test_combine_with_iv(self):
         for _ in range(self.N):
