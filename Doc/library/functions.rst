@@ -778,7 +778,7 @@ are always available.  They are listed here in alphabetical order.
       single: NaN
       single: Infinity
 
-   Return a floating-point number constructed from a string, number, or bytes-like object, if possible.
+   Return a floating-point number constructed from a number, a string, or a bytes-like object.
 
    Examples:
 
