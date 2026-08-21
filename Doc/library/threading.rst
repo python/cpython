@@ -223,12 +223,28 @@ This module defines the following functions:
 .. function:: run(func, /, *args, **kwargs)
               run_daemon(func, /, *args, **kwargs)
 
-   Run `func(*args, **kwargs)` in a thread and return the corresponding
+   Run ``func(*args, **kwargs)`` in a thread and return the corresponding
    :class:`Thread` object.  The thread is started automatically.
 
-   With :func:`run_daemon` the thread is set as daemonic.
+   With :func:`run_daemon`, the thread is set as daemonic.
 
-   .. versionadded:: 3.16
+   Example:
+
+   .. code-block:: python
+
+      import threading, urllib
+
+      def fetch(url, data=None):
+          response = urllib.request.urlopen(url, data)
+          # further processing...
+
+      t1 = threading.run(fetch, 'https://example.com/')
+      t2 = threading.run(fetch, 'https://example.com/post', data=payload)
+
+      t1.join()
+      t2.join()
+
+   .. versionadded:: next
 
 
 .. function:: settrace(func)
