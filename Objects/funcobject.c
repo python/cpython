@@ -1029,15 +1029,15 @@ function___type_params___get_impl(PyFunctionObject *self)
 @setter
 @deleter
 function.__type_params__
+    value: object(subclass_of='&PyTuple_Type') = NULL
 [clinic start generated code]*/
 
 static int
 function___type_params___set_impl(PyFunctionObject *self, PyObject *value)
-/*[clinic end generated code: output=038b4cda220e56fb input=c0e33abc5901a2f5]*/
+/*[clinic end generated code: output=038b4cda220e56fb input=62240698386aa632]*/
 {
-    /* Not legal to del f.__type_params__ or to set it to anything
-     * other than a tuple object. */
-    if (value == NULL || !PyTuple_Check(value)) {
+    /* Not legal to del f.__type_params__. */
+    if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,
                         "__type_params__ must be set to a tuple");
         return -1;
