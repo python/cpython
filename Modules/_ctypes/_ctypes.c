@@ -5206,13 +5206,20 @@ Array_ass_item_lock_held(PyObject *myself, Py_ssize_t index, PyObject *value)
     }
     assert(stginfo); /* Cannot be NULL for array object instances */
 
-    if (index < 0 || index >= stginfo->length) {
-        PyErr_SetString(PyExc_IndexError,
-                        "invalid index");
+    if (stginfo->length == 0) {
+        PyErr_SetString(PyExc_IndexError, "invalid index");
         return -1;
     }
     size = stginfo->size / stginfo->length;
     offset = index * size;
+
+    /* Guard against out-of-bounds access when __class__ has been swapped
+       to a type with a larger declared size than the actual buffer.
+       The actual allocation size is tracked in self->b_size. */
+    if (index < 0 || offset + size > self->b_size) {
+        PyErr_SetString(PyExc_IndexError, "invalid index");
+        return -1;
+    }
     ptr = self->b_ptr + offset;
 
     return PyCData_set(st, myself, stginfo->proto, stginfo->setfunc, value,
