@@ -505,6 +505,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn("func1 (file.py:10)", resolve_name(child, strings))
         self.assertEqual(child["value"], 1)
         self.assertEqual(child["self"], 1)  # leaf: all time is self
+        self.assertEqual(data["stats"]["sample_interval_usec"], 1000)
 
     def test_flamegraph_collector_export(self):
         """Test flamegraph HTML export functionality."""
@@ -513,7 +514,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         )
         self.addCleanup(close_and_unlink, flamegraph_out)
 
-        collector = FlamegraphCollector(1000)
+        collector = FlamegraphCollector(10000)
 
         # Create some test data (use Interpreter/Thread objects like runtime)
         test_frames1 = [
@@ -569,6 +570,8 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn('"name":', content)
         self.assertIn('"value":', content)
         self.assertIn('"children":', content)
+        self.assertIn('"sample_interval_usec": 10000', content)
+        self.assertIn("samples * data.stats.sample_interval_usec / 1000", content)
 
     def test_flamegraph_collector_empty_export_fails(self):
         """Test empty flamegraph export reports no output."""

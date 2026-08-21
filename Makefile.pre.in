@@ -2772,6 +2772,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_lazy_import/data \
 		test/test_lazy_import/data/pkg \
 		test/test_lazy_import/data/badsyntax \
+		test/test_lazy_import/data/lazypkg \
 		test/test_module \
 		test/test_multiprocessing_fork \
 		test/test_multiprocessing_forkserver \

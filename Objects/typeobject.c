@@ -60,6 +60,13 @@ class object "PyObject *" "&PyBaseObject_Type"
 #define NEXT_VERSION_TAG(interp) \
     (interp)->types.next_version_tag
 
+// Storage for the mutexes saved by type_lock_prevent_release().  Defined for
+// both builds so the call sites don't need to be conditionally compiled.
+typedef struct {
+    PyMutex *mutex1;
+    PyMutex *mutex2;
+} pinned_mutexes_t;
+
 #ifdef Py_GIL_DISABLED
 
 // There's a global lock for types that ensures that tp_version_tag and
@@ -138,44 +145,54 @@ types_start_world(void)
     assert(!types_world_is_stopped());
 }
 
-// This is used to temporarily prevent the TYPE_LOCK from being suspended
-// when held by the topmost critical section.
+// Temporarily prevent the mutexes held by the topmost critical section from
+// being released when the current thread blocks (blocking detaches the thread,
+// which suspends its critical sections and releases the mutexes they hold).
+//
+// All of the mutexes held by the critical section are pinned, not just
+// TYPE_LOCK.  If only TYPE_LOCK was pinned then _PyCriticalSection_Resume()
+// would have to re-acquire the other mutex while TYPE_LOCK is held.  That
+// deadlocks against a thread that holds that mutex and is waiting for
+// TYPE_LOCK, which is exactly what BEGIN_TYPE_DICT_LOCK() does: the type dict
+// mutex is on the heap and TYPE_LOCK is in _PyRuntime, so the address ordering
+// used by two-mutex critical sections usually acquires the dict mutex first.
+// By pinning both mutexes there is nothing to re-acquire on resume.
+//
+// Holding the mutexes while blocked does not prevent the world from being
+// stopped: a thread waiting on either of them parks with _PY_LOCK_DETACH and
+// so is detached while it waits.
 static void
-type_lock_prevent_release(void)
+type_lock_prevent_release(pinned_mutexes_t *pinned)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    uintptr_t *tagptr = &tstate->critical_section;
-    PyCriticalSection *c = (PyCriticalSection *)(*tagptr & ~_Py_CRITICAL_SECTION_MASK);
-    if (!(*tagptr & _Py_CRITICAL_SECTION_TWO_MUTEXES)) {
-        assert(c->_cs_mutex == TYPE_LOCK);
-        c->_cs_mutex = NULL;
-    }
-    else {
+    uintptr_t tag = tstate->critical_section;
+    PyCriticalSection *c = (PyCriticalSection *)(tag & ~_Py_CRITICAL_SECTION_MASK);
+    pinned->mutex1 = c->_cs_mutex;
+    pinned->mutex2 = NULL;
+    c->_cs_mutex = NULL;
+    if ((tag & _Py_CRITICAL_SECTION_TWO_MUTEXES) != 0) {
         PyCriticalSection2 *c2 = (PyCriticalSection2 *)c;
-        if (c->_cs_mutex == TYPE_LOCK) {
-            c->_cs_mutex = c2->_cs_mutex2;
-            c2->_cs_mutex2 = NULL;
-        } else {
-            assert(c2->_cs_mutex2 == TYPE_LOCK);
-            c2->_cs_mutex2 = NULL;
-        }
+        pinned->mutex2 = c2->_cs_mutex2;
+        c2->_cs_mutex2 = NULL;
     }
+    assert(pinned->mutex1 == TYPE_LOCK || pinned->mutex2 == TYPE_LOCK);
 }
 
 static void
-type_lock_allow_release(void)
+type_lock_allow_release(pinned_mutexes_t *pinned)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    uintptr_t *tagptr = &tstate->critical_section;
-    PyCriticalSection *c = (PyCriticalSection *)(*tagptr & ~_Py_CRITICAL_SECTION_MASK);
-    if (!(*tagptr & _Py_CRITICAL_SECTION_TWO_MUTEXES)) {
-        assert(c->_cs_mutex == NULL);
-        c->_cs_mutex = TYPE_LOCK;
-    }
-    else {
+    uintptr_t tag = tstate->critical_section;
+    PyCriticalSection *c = (PyCriticalSection *)(tag & ~_Py_CRITICAL_SECTION_MASK);
+    assert(c->_cs_mutex == NULL);
+    c->_cs_mutex = pinned->mutex1;
+    if ((tag & _Py_CRITICAL_SECTION_TWO_MUTEXES) != 0) {
         PyCriticalSection2 *c2 = (PyCriticalSection2 *)c;
         assert(c2->_cs_mutex2 == NULL);
-        c2->_cs_mutex2 = TYPE_LOCK;
+        c2->_cs_mutex2 = pinned->mutex2;
+    }
+    else {
+        assert(pinned->mutex2 == NULL);
     }
 }
 
@@ -192,8 +209,8 @@ type_lock_allow_release(void)
 #define types_world_is_stopped() 1
 #define types_stop_world()
 #define types_start_world()
-#define type_lock_prevent_release()
-#define type_lock_allow_release()
+#define type_lock_prevent_release(pinned) ((void)(pinned))
+#define type_lock_allow_release(pinned) ((void)(pinned))
 
 #endif
 
@@ -664,14 +681,15 @@ set_tp_mro(PyTypeObject *self, PyObject *mro, int initial)
             PyUnstable_Object_EnableDeferredRefcount(mro);
         }
     }
+    pinned_mutexes_t pinned;
     if (!initial) {
-        type_lock_prevent_release();
+        type_lock_prevent_release(&pinned);
         types_stop_world();
     }
     self->tp_mro = mro;
     if (!initial) {
         types_start_world();
-        type_lock_allow_release();
+        type_lock_allow_release(&pinned);
     }
 }
 
@@ -772,17 +790,14 @@ _PyType_HasSubclasses(PyTypeObject *self)
     return 1;
 }
 
-PyObject*
-_PyType_GetSubclasses(PyTypeObject *self)
+static int
+get_subclasses_unlocked(PyTypeObject *self, PyObject *list)
 {
-    PyObject *list = PyList_New(0);
-    if (list == NULL) {
-        return NULL;
-    }
+    ASSERT_TYPE_LOCK_HELD();
 
     PyObject *subclasses = lookup_tp_subclasses(self);  // borrowed ref
     if (subclasses == NULL) {
-        return list;
+        return 0;
     }
     assert(PyDict_CheckExact(subclasses));
     // The loop cannot modify tp_subclasses, there is no need
@@ -796,12 +811,33 @@ _PyType_GetSubclasses(PyTypeObject *self)
             continue;
         }
 
-        if (PyList_Append(list, _PyObject_CAST(subclass)) < 0) {
-            Py_DECREF(list);
-            Py_DECREF(subclass);
-            return NULL;
-        }
+        int res = PyList_Append(list, _PyObject_CAST(subclass));
         Py_DECREF(subclass);
+        if (res < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+PyObject*
+_PyType_GetSubclasses(PyTypeObject *self)
+{
+    PyObject *list = PyList_New(0);
+    if (list == NULL) {
+        return NULL;
+    }
+
+    // The type lock protects tp_subclasses from being mutated while we
+    // iterate over it (e.g. by add_subclass() or by remove_subclass() when a
+    // subclass is deallocated).
+    int res;
+    BEGIN_TYPE_LOCK();
+    res = get_subclasses_unlocked(self, list);
+    END_TYPE_LOCK();
+
+    if (res < 0) {
+        Py_CLEAR(list);
     }
     return list;
 }
@@ -1934,13 +1970,14 @@ type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases, PyTypeObject *b
     PyObject *old_bases = lookup_tp_bases(type);
     assert(old_bases != NULL);
     PyTypeObject *old_base = type->tp_base;
+    pinned_mutexes_t pinned;
 
-    type_lock_prevent_release();
+    type_lock_prevent_release(&pinned);
     types_stop_world();
     set_tp_bases(type, Py_NewRef(new_bases), 0);
     type->tp_base = (PyTypeObject *)Py_NewRef(best_base);
     types_start_world();
-    type_lock_allow_release();
+    type_lock_allow_release(&pinned);
 
     PyObject *temp = PyList_New(0);
     if (temp == NULL) {
@@ -2001,12 +2038,12 @@ type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases, PyTypeObject *b
     if (lookup_tp_bases(type) == new_bases) {
         assert(type->tp_base == best_base);
 
-        type_lock_prevent_release();
+        type_lock_prevent_release(&pinned);
         types_stop_world();
         set_tp_bases(type, old_bases, 0);
         type->tp_base = old_base;
         types_start_world();
-        type_lock_allow_release();
+        type_lock_allow_release(&pinned);
 
         Py_DECREF(new_bases);
         Py_DECREF(best_base);
@@ -3914,16 +3951,22 @@ apply_type_slot_updates(slot_update_t *updates)
     // to update the dict.  That's because TYPE_LOCK was acquired using a
     // critical section.
     //
-    // The type_lock_prevent_release() call prevents the TYPE_LOCK mutex from
-    // being released even if we block on the STM mutex.  We need to take care
-    // that we do not deadlock because of that.  It is safe because we always
-    // acquire locks in the same order: first the TYPE_LOCK mutex and then the
-    // STM mutex.
-    type_lock_prevent_release();
+    // The type_lock_prevent_release() call prevents the mutexes held by the
+    // critical section (TYPE_LOCK and the type dict mutex) from being released
+    // even if we block on the STW mutex.  We need to take care that we do not
+    // deadlock because of that.  It is safe because a thread waiting for either
+    // of those mutexes detaches while it waits and so does not hold up the
+    // stop-the-world.  Pinning both mutexes rather than only TYPE_LOCK is what
+    // makes this safe: otherwise the dict mutex would be released when we
+    // block and _PyCriticalSection_Resume() would have to re-acquire it while
+    // holding TYPE_LOCK, deadlocking with a thread that holds the dict mutex
+    // and is waiting for TYPE_LOCK.
+    pinned_mutexes_t pinned;
+    type_lock_prevent_release(&pinned);
     types_stop_world();
     apply_slot_updates(updates);
     types_start_world();
-    type_lock_allow_release();
+    type_lock_allow_release(&pinned);
 }
 
 #else
@@ -3944,6 +3987,8 @@ static PyObject *object_new(PyTypeObject *, PyObject *, PyObject *);
 static int object_init(PyObject *, PyObject *, PyObject *);
 static int update_slot(PyTypeObject *, PyObject *, slot_update_t *update);
 static void fixup_slot_dispatchers(PyTypeObject *);
+static int type_ready(PyTypeObject *, int, int);
+static int type_ready_publish(PyTypeObject *, int);
 static int type_new_set_names(PyTypeObject *);
 static int type_new_init_subclass(PyTypeObject *, PyObject *);
 static bool has_slotdef(PyObject *);
@@ -4950,12 +4995,9 @@ type_new_impl(type_new_ctx *ctx)
     }
 
     /* Initialize the rest */
-    if (PyType_Ready(type) < 0) {
+    if (type_ready_publish(type, 1) < 0) {
         goto error;
     }
-
-    // Put the proper slots in place
-    fixup_slot_dispatchers(type);
 
     if (!_PyDict_HasOnlyStringKeys(type->tp_dict)) {
         if (PyErr_WarnFormat(
@@ -4977,10 +5019,6 @@ type_new_impl(type_new_ctx *ctx)
     }
 
     assert(_PyType_CheckConsistency(type));
-#if defined(Py_GIL_DISABLED) && defined(Py_DEBUG) && SIZEOF_VOID_P > 4
-    // After this point, other threads can potentally use this type.
-    ((PyObject*)type)->ob_flags |= _Py_TYPE_REVEALED_FLAG;
-#endif
 
     return (PyObject *)type;
 
@@ -5721,8 +5759,7 @@ type_from_slots_or_spec(
      * After this call we should generally only touch up what's
      * accessible to Python code, like __dict__.
      */
-
-    if (PyType_Ready(type) < 0) {
+    if (type_ready_publish(type, 0) < 0) {
         goto finally;
     }
 
@@ -5782,10 +5819,6 @@ type_from_slots_or_spec(
     }
 
     assert(_PyType_CheckConsistency(type));
-#if defined(Py_GIL_DISABLED) && defined(Py_DEBUG) && SIZEOF_VOID_P > 4
-    // After this point, other threads can potentally use this type.
-    ((PyObject*)type)->ob_flags |= _Py_TYPE_REVEALED_FLAG;
-#endif
 
 finally:
     if (PyErr_Occurred()) {
@@ -6518,11 +6551,12 @@ _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask, unsigned long 
     }
     /* Keep TYPE_LOCK held while waiting for stop-the-world so no thread
        can reassign a version tag before the flag update. */
-    type_lock_prevent_release();
+    pinned_mutexes_t pinned;
+    type_lock_prevent_release(&pinned);
     types_stop_world();
     set_flags_recursive(self, mask, flags);
     types_start_world();
-    type_lock_allow_release();
+    type_lock_allow_release(&pinned);
     END_TYPE_LOCK();
 }
 
@@ -6851,7 +6885,9 @@ type_dealloc_common(PyTypeObject *type)
     PyObject *bases = lookup_tp_bases(type);
     if (bases != NULL) {
         PyObject *exc = PyErr_GetRaisedException();
+        BEGIN_TYPE_LOCK();
         remove_all_subclasses(type, bases);
+        END_TYPE_LOCK();
         PyErr_SetRaisedException(exc);
     }
 }
@@ -9525,7 +9561,7 @@ type_ready_post_checks(PyTypeObject *type)
 
 
 static int
-type_ready(PyTypeObject *type, int initial)
+type_ready(PyTypeObject *type, int initial, int add_subclasses)
 {
     ASSERT_TYPE_LOCK_HELD();
 
@@ -9578,8 +9614,10 @@ type_ready(PyTypeObject *type, int initial)
     if (type_ready_set_hash(type) < 0) {
         goto error;
     }
-    if (type_ready_add_subclasses(type) < 0) {
-        goto error;
+    if (add_subclasses) {
+        if (type_ready_add_subclasses(type) < 0) {
+            goto error;
+        }
     }
     if (initial) {
         if (type_ready_managed_dict(type) < 0) {
@@ -9590,11 +9628,13 @@ type_ready(PyTypeObject *type, int initial)
         }
     }
 
-    /* All done -- set the ready flag */
-    if (initial) {
-        type_add_flags(type, Py_TPFLAGS_READY);
-    } else {
-        assert(type->tp_flags & Py_TPFLAGS_READY);
+    if (add_subclasses) {
+        /* All done -- set the ready flag */
+        if (initial) {
+            type_add_flags(type, Py_TPFLAGS_READY);
+        } else {
+            assert(type->tp_flags & Py_TPFLAGS_READY);
+        }
     }
 
     stop_readying(type);
@@ -9605,6 +9645,46 @@ type_ready(PyTypeObject *type, int initial)
 error:
     stop_readying(type);
     return -1;
+}
+
+static int
+type_ready_publish(PyTypeObject *type, int fix_slots)
+{
+    int res;
+    BEGIN_TYPE_LOCK();
+    res = type_ready(type, 1, 0);
+    if (res == 0) {
+        assert(!(type->tp_flags & Py_TPFLAGS_READY));
+        assert(!is_readying(type));
+
+        if (fix_slots) {
+            // Put the proper slots in place and only then publish the type as
+            // a subclass of its bases.  Since the type is not reachable by
+            // other threads before it is published, the slots can be updated
+            // without stopping the world.  This step is skipped for
+            // type_from_slots_or_spec().
+            fixup_slot_dispatchers(type);
+        }
+
+        // Set the ready flag before revealing the type since type_add_flags()
+        // may only be used on types that are not yet revealed.
+        type_add_flags(type, Py_TPFLAGS_READY);
+
+#if defined(Py_GIL_DISABLED) && defined(Py_DEBUG) && SIZEOF_VOID_P > 4
+        // Mark the type as revealed while still holding the type lock.
+        // Threads can only find the type through the subclasses of its bases,
+        // which is done below with the lock held.  So, they cannot see the
+        // type before the flag is set.
+        ((PyObject*)type)->ob_flags |= _Py_TYPE_REVEALED_FLAG;
+#endif
+
+        res = type_ready_add_subclasses(type);
+        if (res == 0) {
+            assert(_PyType_CheckConsistency(type));
+        }
+    }
+    END_TYPE_LOCK();
+    return res;
 }
 
 int
@@ -9626,7 +9706,7 @@ PyType_Ready(PyTypeObject *type)
     int res;
     BEGIN_TYPE_LOCK();
     if (!(type->tp_flags & Py_TPFLAGS_READY)) {
-        res = type_ready(type, 1);
+        res = type_ready(type, 1, 1);
     } else {
         res = 0;
         assert(_PyType_CheckConsistency(type));
@@ -9667,7 +9747,7 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
 
     int res;
     BEGIN_TYPE_LOCK();
-    res = type_ready(self, initial);
+    res = type_ready(self, initial, 1);
     END_TYPE_LOCK();
     if (res < 0) {
         _PyStaticType_ClearWeakRefs(interp, self);
@@ -12126,13 +12206,19 @@ update_slot(PyTypeObject *type, PyObject *name, slot_update_t *queued_updates)
 
 /* Store the proper functions in the slot dispatches at class (type)
    definition time, based upon which operations the class overrides in its
-   dict. */
+   dict.  The type must not be revealed to other threads yet, so that the
+   slots can be updated directly rather than with the world stopped. */
 static void
 fixup_slot_dispatchers(PyTypeObject *type)
 {
+    ASSERT_TYPE_LOCK_HELD();
+    ASSERT_WORLD_STOPPED_OR_NEW_TYPE(type);
     assert(!PyErr_Occurred());
     for (pytype_slotdef *p = slotdefs; p->name; ) {
-        update_one_slot(type, p, &p, NULL);
+        int rv = update_one_slot(type, p, &p, NULL);
+        // always returns 0 if queued_updates == NULL
+        assert (rv == 0);
+        (void)rv;
     }
 }
 
