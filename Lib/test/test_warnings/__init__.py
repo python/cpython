@@ -243,6 +243,16 @@ class FilterTests(BaseTest):
                                     42)
             self.assertEqual(len(w), 0)
 
+    def test_once_after_filter_change(self):
+        with self.module.catch_warnings(record=True) as w:
+            self.module.resetwarnings()
+            message = "FilterTests.test_once_after_filter_change"
+            self.module.filterwarnings("once", message, UserWarning)
+            self.module.warn(message, UserWarning)
+            self.module.filterwarnings("ignore", "unrelated")
+            self.module.warn(message, UserWarning)
+            self.assertEqual(len(w), 1)
+
     def test_filter_module(self):
         MS_WINDOWS = (sys.platform == 'win32')
         with self.module.catch_warnings(record=True) as w:
