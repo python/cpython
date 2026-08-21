@@ -59,7 +59,9 @@ extern "C" {
 #define HDR_SIZE_FRAME_TABLE 8
 #define HDR_OFF_COMPRESSION  (HDR_OFF_FRAME_TABLE + HDR_SIZE_FRAME_TABLE)
 #define HDR_SIZE_COMPRESSION 4
-#define FILE_HEADER_SIZE     (HDR_OFF_COMPRESSION + HDR_SIZE_COMPRESSION)
+#define HDR_OFF_MODE         (HDR_OFF_COMPRESSION + HDR_SIZE_COMPRESSION)
+#define HDR_SIZE_MODE        4
+#define FILE_HEADER_SIZE     (HDR_OFF_MODE + HDR_SIZE_MODE)
 #define FILE_HEADER_PLACEHOLDER_SIZE 64
 
 static_assert(FILE_HEADER_SIZE <= FILE_HEADER_PLACEHOLDER_SIZE,
@@ -261,6 +263,7 @@ typedef struct {
     uint64_t start_time_us;
     uint64_t sample_interval_us;
     uint64_t total_samples;
+    int profiling_mode;
 
     /* String hash table: PyObject* -> uint32_t index */
     _Py_hashtable_t *string_hash;
@@ -330,6 +333,7 @@ typedef struct {
     uint32_t thread_count;
     uint64_t string_table_offset;
     uint64_t frame_table_offset;
+    int profiling_mode;
 
     /* Parsed string table: array of Python string objects */
     PyObject **strings;
@@ -516,6 +520,7 @@ grow_array_inplace(void **ptr_addr, size_t count, size_t *capacity, size_t elem_
  *   sample_interval_us: Sampling interval in microseconds
  *   compression_type: COMPRESSION_NONE or COMPRESSION_ZSTD
  *   start_time_us: Start timestamp in microseconds (from time.monotonic() * 1e6)
+ *   profiling_mode: PROFILING_MODE_* value, or -1 if unknown
  *
  * Returns:
  *   New BinaryWriter* on success, NULL on failure (PyErr set)
@@ -524,7 +529,8 @@ BinaryWriter *binary_writer_create(
     PyObject *path,
     uint64_t sample_interval_us,
     int compression_type,
-    uint64_t start_time_us
+    uint64_t start_time_us,
+    int profiling_mode
 );
 
 /*

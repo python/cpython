@@ -727,7 +727,7 @@ write_sample_with_encoding(BinaryWriter *writer, ThreadEntry *entry,
 
 BinaryWriter *
 binary_writer_create(PyObject *path, uint64_t sample_interval_us, int compression_type,
-                     uint64_t start_time_us)
+                     uint64_t start_time_us, int profiling_mode)
 {
     BinaryWriter *writer = PyMem_Calloc(1, sizeof(BinaryWriter));
     if (!writer) {
@@ -738,6 +738,7 @@ binary_writer_create(PyObject *path, uint64_t sample_interval_us, int compressio
     writer->start_time_us = start_time_us;
     writer->sample_interval_us = sample_interval_us;
     writer->compression_type = compression_type;
+    writer->profiling_mode = profiling_mode;
 
     writer->write_buffer = PyMem_Malloc(WRITE_BUFFER_SIZE);
     if (!writer->write_buffer) {
@@ -1177,6 +1178,7 @@ binary_writer_finalize(BinaryWriter *writer)
     uint64_t frame_table_offset_u64 = (uint64_t)frame_table_offset;
     uint32_t thread_count_u32 = (uint32_t)writer->thread_count;
     uint32_t compression_type_u32 = (uint32_t)writer->compression_type;
+    uint32_t profiling_mode_u32 = (uint32_t)(writer->profiling_mode + 1);
 
     uint8_t header[FILE_HEADER_SIZE] = {0};
     uint32_t magic = BINARY_FORMAT_MAGIC;
@@ -1193,6 +1195,7 @@ binary_writer_finalize(BinaryWriter *writer)
     memcpy(header + HDR_OFF_STR_TABLE, &string_table_offset_u64, HDR_SIZE_STR_TABLE);
     memcpy(header + HDR_OFF_FRAME_TABLE, &frame_table_offset_u64, HDR_SIZE_FRAME_TABLE);
     memcpy(header + HDR_OFF_COMPRESSION, &compression_type_u32, HDR_SIZE_COMPRESSION);
+    memcpy(header + HDR_OFF_MODE, &profiling_mode_u32, HDR_SIZE_MODE);
     if (fwrite_checked_allow_threads(header, FILE_HEADER_SIZE, writer->fp) < 0) {
         return -1;
     }
