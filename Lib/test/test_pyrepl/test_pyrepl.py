@@ -1771,17 +1771,13 @@ class TestPyReplModuleCompleter(TestCase):
     def test_find_attributes_uses_all(self):
         """Test that _find_attributes respects __all__ when available."""
         completer = ModuleCompleter()
-        
         # json module has __all__ defined
         attrs, module, _ = completer._find_attributes('json', '')
-        
         # Should match __all__ contents, not dir() which includes methods
         expected = sorted(json.__all__)
         self.assertEqual(sorted(attrs), expected)
-        
         # Should NOT contain __all__
         self.assertNotIn('__all__', attrs)
-        
         # Verify we got the actual module object
         self.assertIs(module, sys.modules.get('json'))
 
