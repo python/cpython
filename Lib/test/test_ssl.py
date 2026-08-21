@@ -5266,6 +5266,18 @@ class TestSSLDebug(unittest.TestCase):
         with self.assertRaises(TypeError):
             client_context._msg_callback = object()
 
+        # the attribute of the underlying C type accepts only a callable
+        # and cannot be deleted
+        descr = _ssl._SSLContext.__dict__['_msg_callback']
+        with self.assertRaises(TypeError):
+            descr.__set__(client_context, object())
+        # a failed assignment does not change the value
+        self.assertIs(client_context._msg_callback, msg_cb)
+        with self.assertRaisesRegex(AttributeError, 'cannot be deleted'):
+            descr.__delete__(client_context)
+        # a failed deletion does not change the value
+        self.assertIs(client_context._msg_callback, msg_cb)
+
     def test_msg_callback_tls12(self):
         client_context, server_context, hostname = testing_context()
         client_context.maximum_version = ssl.TLSVersion.TLSv1_2
