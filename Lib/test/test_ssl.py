@@ -5544,6 +5544,12 @@ class TestSSLDebug(unittest.TestCase):
         with self.assertRaises(TypeError):
             ctx.keylog_filename = 1
 
+        ctx.keylog_filename = os_helper.TESTFN
+        with self.assertRaisesRegex(AttributeError, 'cannot be deleted'):
+            del ctx.keylog_filename
+        # a failed deletion does not change the value
+        self.assertEqual(ctx.keylog_filename, os_helper.TESTFN)
+
     def test_keylog_filename(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         client_context, server_context, hostname = testing_context()
