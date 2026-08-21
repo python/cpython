@@ -4,7 +4,6 @@ import argparse
 import pprint
 import sys
 
-from pegen.build import build_parser
 from pegen.grammar import (
     Alt,
     Cut,
@@ -132,6 +131,8 @@ class FirstSetCalculator(GrammarVisitor):
 
 
 def main() -> None:
+    from pegen.build import build_parser
+
     args = argparser.parse_args()
 
     try:
