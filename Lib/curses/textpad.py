@@ -204,10 +204,8 @@ class Textbox:
             stop = self._end_of_line(y)
             if stop == 0 and self.stripspaces:
                 continue
-            for x in range(self.maxx+1):
-                if self.stripspaces and x > stop:
-                    break
-                result = result + str(self.win.in_wch(y, x))
+            count = stop+1 if self.stripspaces else self.maxx+1
+            result = result + str(self.win.in_wchstr(y, 0, count))
             if self.maxy > 0:
                 result = result + "\n"
         return result
