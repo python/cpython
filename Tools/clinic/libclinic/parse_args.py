@@ -1126,14 +1126,15 @@ class ParseArgsCodeGen:
         return d2
 
     def _vectorcall_type_check(self) -> list[str]:
-        """Assert the slot was entered through the type it is installed on.
+        """Assert `type` is the one type this vectorcall was generated for.
 
-        tp_vectorcall is not inherited, so a subclass is constructed through
-        tp_new / tp_init and never arrives here.  __init__ generation relies
-        on that: it allocates with tp_alloc instead of calling tp_new.
+        The generated code is only correct for that type: __init__ allocates
+        with tp_alloc rather than calling tp_new.  tp_vectorcall is not
+        inherited, so subclasses never reach it; the assert catches C code
+        installing the function on a second type.
         """
-        # Both are enforced where @vectorcall is validated in the DSL parser.
         func = self.func
+        # The DSL parser rejects @vectorcall without a class and type object.
         assert func.cls is not None
         assert func.cls.type_object
         return [libclinic.normalize_snippet(f"""
