@@ -1405,16 +1405,16 @@ static struct PyMemberDef cursor_members[] =
 };
 
 static PyObject *
-cursor_get_row_factory(PyObject *op, void *closure)
+cursor_get_row_factory(PyObject *op, void *Py_UNUSED(closure))
 {
-    pysqlite_Cursor *self = (pysqlite_Cursor *)op;
+    pysqlite_Cursor *self = _pysqlite_Cursor_CAST(op);
     return Py_NewRef(self->row_factory);
 }
 
 static int
-cursor_set_row_factory(PyObject *op, PyObject *value, void *closure)
+cursor_set_row_factory(PyObject *op, PyObject *value, void *Py_UNUSED(closure))
 {
-    pysqlite_Cursor *self = (pysqlite_Cursor *)op;
+    pysqlite_Cursor *self = _pysqlite_Cursor_CAST(op);
     if (value == NULL) {
         PyErr_SetString(PyExc_AttributeError,
                         "cannot delete row_factory attribute");
