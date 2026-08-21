@@ -299,12 +299,9 @@ pysqlite_build_row_cast_map(pysqlite_Cursor* self)
             }
         }
 
-        if (!converter) {
-            converter = Py_NewRef(Py_None);
-        }
-
-        int rc = PyList_Append(self->row_cast_map, converter);
-        Py_DECREF(converter);
+        int rc = PyList_Append(self->row_cast_map,
+                               converter ? converter : Py_None);
+        Py_XDECREF(converter);
         if (rc != 0) {
             Py_CLEAR(self->row_cast_map);
             return -1;
