@@ -1,0 +1,2 @@
+Fix a crash in compiler-generated ``__annotate__`` functions when the
+annotation format comparison returned a non-boolean result.
