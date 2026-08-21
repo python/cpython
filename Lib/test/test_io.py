@@ -4065,6 +4065,29 @@ class CTextIOWrapperTest(TextIOWrapperTest):
     io = io
     shutdown_error = "LookupError: unknown encoding: ascii"
 
+    def test_chunk_size(self):
+        t = self.TextIOWrapper(self.BytesIO(), encoding="utf-8")
+        self.assertGreater(t._CHUNK_SIZE, 0)
+        t._CHUNK_SIZE = 1024
+        self.assertEqual(t._CHUNK_SIZE, 1024)
+        with self.assertRaisesRegex(ValueError,
+                                    'a strictly positive integer is required'):
+            t._CHUNK_SIZE = 0
+        with self.assertRaises(TypeError):
+            t._CHUNK_SIZE = 'x'
+        with self.assertRaises(ValueError):
+            t._CHUNK_SIZE = sys.maxsize + 1
+        with self.assertRaises(ValueError):
+            t._CHUNK_SIZE = -sys.maxsize - 2
+        with self.assertRaises(ValueError):
+            t._CHUNK_SIZE = 2**1000
+        with self.assertRaises(ValueError):
+            t._CHUNK_SIZE = -2**1000
+        with self.assertRaisesRegex(AttributeError, 'cannot be deleted'):
+            del t._CHUNK_SIZE
+        # a failed assignment does not change the value
+        self.assertEqual(t._CHUNK_SIZE, 1024)
+
     def test_reentrant_seek_during_tell(self):
         # gh-153539: reading short of _CHUNK_SIZE leaves residual bytes in the
         # snapshot, so tell() re-decodes and calls the decoder's getstate(); a
