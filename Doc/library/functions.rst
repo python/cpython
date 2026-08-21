@@ -810,10 +810,6 @@ are always available.  They are listed here in alphabetical order.
    produced.  The argument may also be a string representing a NaN
    (not-a-number), or positive or negative infinity.
 
-   If the argument is a bytes-like object, its contents are parsed as a decimal
-   string.  Therefore, the bytes-like object must contain a valid representation
-   of a floating-point number, otherwise :exc:`ValueError` is raised.
-
    More precisely, the input must conform to the :token:`~float:floatvalue`
    production rule in the following grammar, after leading and trailing
    whitespace characters are removed:
@@ -832,6 +828,9 @@ are always available.  They are listed here in alphabetical order.
 
    Case is not significant, so, for example, "inf", "Inf", "INFINITY", and
    "iNfINity" are all acceptable spellings for positive infinity.
+
+   If the argument is a bytes-like object, it must contain only ASCII characters
+   that conform to the :token:`~float:floatvalue` rule, otherwise :exc:`ValueError` is raised.
 
    Otherwise, if the argument is an integer or a floating-point number, a
    floating-point number with the same value (within Python's floating-point
