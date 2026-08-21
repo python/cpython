@@ -757,10 +757,7 @@ exit:
 }
 
 PyDoc_STRVAR(_curses_window_border__doc__,
-"border($self, ls=_curses.ACS_VLINE, rs=_curses.ACS_VLINE,\n"
-"       ts=_curses.ACS_HLINE, bs=_curses.ACS_HLINE,\n"
-"       tl=_curses.ACS_ULCORNER, tr=_curses.ACS_URCORNER,\n"
-"       bl=_curses.ACS_LLCORNER, br=_curses.ACS_LRCORNER, /)\n"
+"border($self, ls=0, rs=0, ts=0, bs=0, tl=0, tr=0, bl=0, br=0, /)\n"
 "--\n"
 "\n"
 "Draw a border around the edges of the window.\n"
@@ -6585,4 +6582,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=680f621e7c1f101b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4e98ddbfb69f2c04 input=a9049054013a1b77]*/
