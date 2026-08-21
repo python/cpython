@@ -28,6 +28,7 @@
 
 import dataclasses
 import os
+import subprocess
 import sys
 import re
 import zipfile
@@ -42,9 +43,12 @@ VERSION = "3.3"
 # The Unicode Database
 # --------------------
 # When changing UCD version please update
-#   * Doc/library/stdtypes.rst, and
+#   * Doc/library/stdtypes.rst (four occurrences)
 #   * Doc/library/unicodedata.rst
+#   * Doc/library/re.rst
 #   * Doc/reference/lexical_analysis.rst (three occurrences)
+# and optionally (comments)
+#   * Lib/re/_properties.py (three occurrences)
 UNIDATA_VERSION = "17.0.0"
 UNICODE_DATA = "UnicodeData%s.txt"
 COMPOSITION_EXCLUSIONS = "CompositionExclusions%s.txt"
@@ -166,6 +170,7 @@ def maketables(trace=0):
     makeunicodename(unicode, trace)
     makeunicodedata(unicode, trace)
     makeunicodetype(unicode, trace)
+    makestringprep()
 
 
 # --------------------------------------------------------------------
@@ -807,6 +812,19 @@ def makeunicodename(unicode, trace):
             fprint('    "%s",' % prefix)
         fprint('};')
 
+
+def makestringprep():
+    FILE = "Lib/stringprep.py"
+
+    print("--- Preparing", FILE, "...")
+
+    MKSTRINGPREP = "Tools/unicode/mkstringprep.py"
+
+    with open(FILE, "w") as f:
+        f.truncate()
+        subprocess.check_call([sys.executable, MKSTRINGPREP], stdout=f)
+
+
 def merge_old_version(version, new, old):
     # Changes to exclusion file not implemented yet
     if old.exclusions != new.exclusions:
@@ -828,6 +846,10 @@ def merge_old_version(version, new, old):
             # Characters unassigned in the new version ought to
             # be unassigned in the old one
             assert old.table[i] is None
+            # Without a change record the old view would fall
+            # through to the new default, so record the old value
+            if old.bidi_classes[i] != new.bidi_classes[i]:
+                bidir_changes[i] = BIDIRECTIONAL_NAMES.index(old.bidi_classes[i] or '')
             continue
         # check characters unassigned in the old version
         if old.table[i] is None:

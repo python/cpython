@@ -982,6 +982,7 @@ def _venv(state):
     if candidate_conf:
         virtual_conf = candidate_conf
         system_site = "true"
+        version, version_info = None, None
         # Issue 25185: Use UTF-8, as that's what the venv module uses when
         # writing the file.
         with open(virtual_conf, encoding='utf-8') as f:
@@ -994,6 +995,35 @@ def _venv(state):
                         system_site = value.lower()
                     elif key == 'home':
                         sys._home = value
+                    elif key == 'version':
+                        version = value
+                    elif key == 'version_info':
+                        version_info = value
+
+        for field_name, field_value in [
+            ('version',version), ('version_info',version_info)
+        ]:
+            if field_value is not None:
+                try:
+                    major, minor = map(int, field_value.split(".")[:2])
+                except (ValueError, AttributeError):
+                    _warn(
+                        f"Malformed {field_name} string in pyvenv.cfg: {field_value!r}",
+                        RuntimeWarning,
+                    )
+                else:
+                    if (
+                        major == sys.version_info.major
+                        and minor != sys.version_info.minor
+                    ):
+                        _warn(
+                            f"This virtual environment was created for Python {major}.{minor}, "
+                            f"but the current interpreter is Python "
+                            f"{sys.version_info.major}.{sys.version_info.minor}. "
+                            "Consider running `python -m venv --upgrade` to update the environment.",
+                            RuntimeWarning,
+                        )
+                        break
 
         if sys.prefix != site_prefix:
             _warn(

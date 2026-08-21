@@ -8,14 +8,14 @@ Migrating to Stable ABI for free threading (``abi3t``)
 
 Starting with the 3.15 release, CPython supports a variant of the Stable ABI
 that supports :term:`free-threaded <free threading>` Python:
-Stable ABI for Free-Threaded Builds, or ``abi3t`` for short.
+the Stable ABI for Free-Threaded Builds, or ``abi3t`` for short.
 This document describes how to adapt C API extensions to support free threading.
 
 Why do this
 ===========
 
-The typical reason to use Stable ABI is to reduce the number of artifacts that
-you need to build and distribute for each version of your library.
+The typical reason to use the Stable ABI is to reduce the number of artifacts
+that you need to build and distribute for each version of your library.
 
 Without the Stable ABI, you must build a separate shared library, and typically
 a *wheel* distribution, for each feature version of CPython you wish
@@ -87,16 +87,16 @@ builds; even the 3.15+ ones that this table "attributes" to ``abi3t``.)
 Why *not* do this
 -----------------
 
-There are two main downsides to Stable ABI.
+There are two main downsides to the Stable ABI.
 
-First, you extension may become slower, since Stable ABI prioritizes
+First, your extension may become slower, since the Stable ABI prioritizes
 compatibility over performance.
 The difference is usually not noticeable, and often can be mitigated by
 using the same source to build both a Stable ABI build and a few
 version-specific ones for "tier 1" CPython versions.
 
 Second, not all of the C API is available.
-Extensions need to be ported to build for Stable ABI, which may be difficult
+Extensions need to be ported to build for the Stable ABI, which may be difficult
 or, in rare cases, impossible.
 
 Specifically, ``abi3t`` requires APIs added in CPython 3.15.
@@ -127,7 +127,7 @@ Prerequisites
 This guide assumes that you have an extension written directly in C (or C++),
 which you want to port to ``abi3t``.
 
-If your extenstion uses a code generator (like Cython) or language binding
+If your extension uses a code generator (like Cython) or language binding
 (like PyO3), it's best to wait until that tool has support for ``abi3t``.
 If you maintain such a tool, you might be able to adapt the instructions
 here for your tool.
@@ -135,7 +135,7 @@ here for your tool.
 Non-free-threaded Stable ABI
 ----------------------------
 
-Your extension should support the Stable ABI (``abi3t``).
+Your extension should support the non-free-threaded Stable ABI (``abi3``).
 If not, either port it first, or follow this guide but be prepared to fix
 issues it does not mention.
 
@@ -183,7 +183,7 @@ following just after ``#include <Python.h>``::
    #error "abi3t define is not set!"
    #endif
 
-This should result in a different error than "``abt3t`` define is not set".
+This should result in a different error than "``abi3t`` define is not set".
 
 .. note::
 
@@ -209,6 +209,8 @@ After each one, verify that your extension still builds in the original
 versions you support.
 This will ensure that nothing breaks as you are porting.
 
+
+.. _abi3t-howto-modexport:
 
 Module export hook
 ==================
@@ -289,6 +291,104 @@ and substitute your own values.
 
 See the :c:type:`PySlot` and :c:ref:`export hook <extension-export-hook>`
 documentation for details on this API.
+
+As in the example, your ``PyModExport_`` function should *only* return a
+pointer to static data.
+If you cannot avoid additional code, refer to the
+:ref:`caveats in PyModExport documentation <pymodexport-api-caveats>`.
+
+
+Existing slots
+--------------
+
+If you have a ``Py_mod_slots`` slot, check the array it refers to.
+It should be a :c:type:`PyModuleDef_Slot` array like the following:
+
+.. code-block::
+   :class: bad
+
+   static PyObject *create_module(PyObject *spec, PyModuleDef *def) { ... }
+   static int my_first_module_exec(PyObject *module) { ... }
+   static int my_second_module_exec(PyObject *module) { ... }
+
+   static PyModuleDef_Slot my_slots[] = {
+      {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+      {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+      {Py_mod_create, my_module_create},
+      {Py_mod_exec, my_first_module_exec},
+      {Py_mod_exec, my_second_module_exec},
+      {0, NULL}
+   };
+
+``py_mod_create``
+.................
+
+
+If you have a :c:macro:`Py_mod_create` entry, make sure the function can be
+called with ``NULL`` as its second argument (instead of the
+:c:type:`PyModuleDef`, which you are removing).
+Often, this argument isn't used at all; you can check by renaming it:
+
+.. code-block::
+   :class: good
+
+   static PyObject *create_module(PyObject *spec, PyModuleDef *_unused) { ... }
+
+If the argument is used, find a different way to pass in the data.
+Commonly, the information is static and you can refer to it directly.
+(If you're reusing a single function for several different modules, consider
+defining several functions instead.)
+
+
+Multiple ``py_mod_exec``
+........................
+
+If you have *more than one* :c:macro:`Py_mod_exec` entry, consolidate them:
+create a new function that calls the others, and replace existing slots
+with it.
+
+.. code-block::
+   :class: good
+
+   static int my_module_exec(PyObject *module) {
+      if (my_first_module_exec(module) < 0) return -1;
+      if (my_second_module_exec(module) < 0) return -1;
+   }
+
+   static PyModuleDef_Slot my_slots[] = {
+      ...
+      /* (remove other Py_mod_exec slots) */
+      ...
+      {Py_mod_exec, my_module_exec},
+      {0, NULL}
+   };
+
+If the functions aren't used elsewhere, you can combine their bodies instead.
+
+
+Merging slot arrays
+...................
+
+Optionally, when you break compatibility with Python 3.14, you may clean up
+the code by moving slots into the :c:type:`PySlot` array, and converting the
+definitions to :c:macro:`PySlot_DATA` and :c:macro:`PySlot_FUNC`:
+
+.. code-block::
+   :class: good
+
+   static PySlot my_slot_array[] = {
+       ...
+       PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
+       PySlot_DATA(Py_mod_multiple_interpreters,
+            Py_MOD_PER_INTERPRETER_GIL_SUPPORTED)
+       PySlot_FUNC(Py_mod_create, my_module_create),
+       PySlot_FUNC(Py_mod_exec, my_module_exec),
+       PySlot_END
+   };
+
+If you do this, delete the original :c:type:`PyModuleDef_Slot` array and
+its ``Py_mod_slots`` entry.
+
 
 Associated ``PyModuleDef``
 --------------------------
@@ -483,7 +583,7 @@ For example, if a user makes a subclass like this:
    class Sub(YourCustomClass):
       __slots__ = ('a', 'b')
 
-then ``Py_TYPE(obj)`` is ``YourCustomClass``, and the underlying memory may
+then ``Py_TYPE(obj)`` is ``Sub``, and the underlying memory may
 look like this:
 
 .. code-block:: text
@@ -605,7 +705,7 @@ Testing
 Note that when you build an extension compatible with multiple versions of
 CPython, you should always *test* it with each version it supports (for
 example, 3.15, 3.16, and so on).
-Stable ABI only guarantees *ABI* compatibility; there may also be behavior
+The Stable ABI only guarantees *ABI* compatibility; there may also be behavior
 changes -- both intentional ones (covered by :pep:`387`) and bugs.
 
 Be sure to run tests on both free-threaded and non-free-threaded builds

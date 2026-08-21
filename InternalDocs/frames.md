@@ -142,22 +142,26 @@ since the frame chain may have been in an inconsistent state due to concurrent u
 
 ### Remote Profiling Frame Cache
 
-The `last_profiled_frame` field in `PyThreadState` supports an optimization for
-remote profilers that sample call stacks from external processes. When a remote
-profiler reads the call stack, it writes the current frame address to this field.
-The eval loop then keeps this pointer valid by updating it to the parent frame
-whenever a frame returns (in `_PyEval_FrameClearAndPop`).
+The `last_profiled_frame` and `last_profiled_frame_seq` fields in
+`PyThreadState` support an optimization for remote profilers that sample call
+stacks from external processes. When a remote profiler reads the call stack, it
+writes the current frame address to `last_profiled_frame`. The eval loop then
+keeps this pointer valid by updating it to the parent frame whenever a frame
+returns (in `_PyEval_FrameClearAndPop`) and increments the sequence.
 
 This creates a "high-water mark" that always points to a frame still on the stack.
 On subsequent samples, the profiler can walk from `current_frame` until it reaches
-`last_profiled_frame`, knowing that frames from that point downward are unchanged
-and can be retrieved from a cache. This significantly reduces the amount of remote
-memory reads needed when call stacks are deep and stable at their base.
+`last_profiled_frame`, then validate the pointer and sequence before using cached
+callers. This prevents a later frame that reuses the same `_PyInterpreterFrame`
+address from being mistaken for the sampled frame. The cache significantly
+reduces the amount of remote memory reads needed when call stacks are deep and
+stable at their base.
 
-The update in `_PyEval_FrameClearAndPop` is guarded: it only writes when
-`last_profiled_frame` is non-NULL AND matches the frame being popped. This
-prevents transient frames (called and returned between profiler samples) from
-corrupting the cache pointer, while avoiding any overhead when profiling is inactive.
+The update in `_PyEval_FrameClearAndPop` is guarded: it only advances the
+pointer and sequence when `last_profiled_frame` is non-NULL AND matches the
+frame being popped. This prevents transient frames (called and returned between
+profiler samples) from corrupting the cache anchor, while avoiding any overhead
+when profiling is inactive.
 
 
 ### The Instruction Pointer

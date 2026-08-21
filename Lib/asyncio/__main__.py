@@ -99,7 +99,7 @@ class REPLThread(threading.Thread):
 
                 console.write(banner)
 
-            if not sys.flags.isolated and (startup_path := os.getenv("PYTHONSTARTUP")):
+            if not sys.flags.ignore_environment and (startup_path := os.getenv("PYTHONSTARTUP")):
                 sys.audit("cpython.run_startup", startup_path)
                 try:
                     import tokenize
@@ -200,7 +200,7 @@ if __name__ == '__main__':
 
     sys.audit("cpython.run_stdin")
 
-    if os.getenv('PYTHON_BASIC_REPL'):
+    if not sys.flags.ignore_environment and os.getenv('PYTHON_BASIC_REPL'):
         CAN_USE_PYREPL = False
     else:
         try:
@@ -212,11 +212,14 @@ if __name__ == '__main__':
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
-    repl_locals = {'asyncio': asyncio}
-    for key in {'__name__', '__package__',
-                '__loader__', '__spec__',
-                '__builtins__', '__file__'}:
-        repl_locals[key] = locals()[key]
+    repl_locals = {
+        'asyncio': asyncio,
+        '__name__': __name__,
+        '__package__': None,
+        '__loader__': __loader__,
+        '__spec__': None,
+        '__builtins__': __builtins__,
+    }
 
     console = AsyncIOInteractiveConsole(repl_locals, loop)
 
