@@ -1605,12 +1605,14 @@ missing_arguments(PyThreadState *tstate, PyCodeObject *co,
 static void
 too_many_positional(PyThreadState *tstate, PyCodeObject *co,
                     Py_ssize_t given, PyObject *defaults,
-                    _PyStackRef *localsplus, PyObject *qualname)
+                    _PyStackRef *localsplus, PyObject *qualname,
+                    int should_suggest_missing_self)
 {
     int plural;
     Py_ssize_t kwonly_given = 0;
     Py_ssize_t i;
     PyObject *sig, *kwonly_sig;
+    const char *self_hint = "";
     Py_ssize_t co_argcount = co->co_argcount;
 
     assert((co->co_flags & CO_VARARGS) == 0);
@@ -1648,16 +1650,55 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
         kwonly_sig = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
         assert(kwonly_sig != NULL);
     }
+    if (should_suggest_missing_self) {
+        self_hint = ". Did you forget the 'self' parameter "
+                    "in the function definition?";
+    }
     _PyErr_Format(tstate, PyExc_TypeError,
-                  "%U() takes %U positional argument%s but %zd%U %s given",
+                  "%U() takes %U positional argument%s but %zd%U %s given%s",
                   qualname,
                   sig,
                   plural ? "s" : "",
                   given,
                   kwonly_sig,
-                  given == 1 && !kwonly_given ? "was" : "were");
+                  given == 1 && !kwonly_given ? "was" : "were",
+                  self_hint
+                );
     Py_DECREF(sig);
     Py_DECREF(kwonly_sig);
+}
+
+static int
+suggest_missing_self(PyFunctionObject *func, PyCodeObject *co,
+                     _PyStackRef const *args, Py_ssize_t argcount)
+{
+    /* Missing self shows up as exactly one extra positional argument. */
+    if ((co->co_argcount + 1) != argcount || argcount == 0) {
+        return 0;
+    }
+
+    PyObject *first_argument = PyStackRef_AsPyObjectBorrow(args[0]);
+    if (first_argument == NULL || PyType_Check(first_argument)) {
+        // When first arg is NULL, it's not really about self
+        // If its a type object, then its a classmethod.
+        return 0;
+    }
+
+    if (co->co_argcount > 0) {
+        // don't confuse the user when they've already declared a common convention of cls/self
+        PyObject *first_parameter_name = PyTuple_GET_ITEM(co->co_localsplusnames, 0);
+        /* If the receiver parameter is already declared, another hint would be misleading. */
+        if (PyUnicode_CompareWithASCIIString(first_parameter_name, "self") == 0 ||
+            PyUnicode_CompareWithASCIIString(first_parameter_name, "cls") == 0)
+        {
+            return 0;
+        }
+    }
+    // If the current function matches on the type, its likely worth adding the hint
+    PyTypeObject *self_cls = Py_TYPE(first_argument);
+    PyFunctionObject *possibly_current_function =
+        (PyFunctionObject *)_PyType_Lookup(self_cls, co->co_name);
+    return possibly_current_function == func;
 }
 
 static int
@@ -1752,6 +1793,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
 
     /* Copy all positional arguments into local variables */
     Py_ssize_t j, n;
+    int missing_self_hint = suggest_missing_self(func, co, args, argcount);
     if (argcount > co->co_argcount) {
         n = co->co_argcount;
     }
@@ -1895,7 +1937,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
     /* Check the number of positional arguments */
     if ((argcount > co->co_argcount) && !(co->co_flags & CO_VARARGS)) {
         too_many_positional(tstate, co, argcount, func->func_defaults, localsplus,
-                            func->func_qualname);
+                            func->func_qualname, missing_self_hint);
         goto fail_post_args;
     }
 

@@ -91,6 +91,11 @@ Other language changes
   they reference) alive indefinitely.
   (Contributed by Łukasz Langa in :gh:`102960`.)
 
+* :exc:`TypeError` messages for some instance methods called with too many
+  positional arguments now suggest checking whether the method definition is
+  missing the ``self`` parameter. (Contributed by Suren Nihalani in
+  :gh:`152315`.)
+
 
 New modules
 ===========
