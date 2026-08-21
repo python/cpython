@@ -2778,6 +2778,22 @@ class TestInvalidExceptionMatcher(unittest.TestCase):
             except (ValueError, 42):
                 pass
 
+    def test_given_exception_matches_deeply_nested_tuple(self):
+        import ctypes
+        lib = ctypes.pythonapi
+        lib.PyErr_GivenExceptionMatches.argtypes = [ctypes.py_object, ctypes.py_object]
+        lib.PyErr_GivenExceptionMatches.restype = ctypes.c_int
+
+        tup = (1, ValueError)
+        for _ in range(50_000):
+            tup = (1, tup)
+
+        # PyErr_GivenExceptionMatches should handle deep recursion safely without SIGSEGV
+        res = lib.PyErr_GivenExceptionMatches(TypeError(), tup)
+        self.assertEqual(res, 0)
+        if lib.PyErr_Occurred():
+            lib.PyErr_Clear()
+
 
 class PEP626Tests(unittest.TestCase):
 

@@ -1,0 +1,3 @@
+Fix unhandled recursion in :c:func:`PyErr_GivenExceptionMatches` when
+evaluating deeply nested exception tuples, preventing crashes caused by
+stack exhaustion.
