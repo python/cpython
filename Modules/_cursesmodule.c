@@ -2699,21 +2699,21 @@ _curses_window_bkgdset_impl(PyCursesWindowObject *self, PyObject *ch,
 /*[clinic input]
 _curses.window.border
 
-    ls: object(c_default="NULL") = _curses.ACS_VLINE
+    ls: object(c_default="NULL") = 0
         Left side.
-    rs: object(c_default="NULL") = _curses.ACS_VLINE
+    rs: object(c_default="NULL") = 0
         Right side.
-    ts: object(c_default="NULL") = _curses.ACS_HLINE
+    ts: object(c_default="NULL") = 0
         Top side.
-    bs: object(c_default="NULL") = _curses.ACS_HLINE
+    bs: object(c_default="NULL") = 0
         Bottom side.
-    tl: object(c_default="NULL") = _curses.ACS_ULCORNER
+    tl: object(c_default="NULL") = 0
         Upper-left corner.
-    tr: object(c_default="NULL") = _curses.ACS_URCORNER
+    tr: object(c_default="NULL") = 0
         Upper-right corner.
-    bl: object(c_default="NULL") = _curses.ACS_LLCORNER
+    bl: object(c_default="NULL") = 0
         Bottom-left corner.
-    br: object(c_default="NULL") = _curses.ACS_LRCORNER
+    br: object(c_default="NULL") = 0
         Bottom-right corner.
     /
 
@@ -2730,7 +2730,7 @@ _curses_window_border_impl(PyCursesWindowObject *self, PyObject *ls,
                            PyObject *rs, PyObject *ts, PyObject *bs,
                            PyObject *tl, PyObject *tr, PyObject *bl,
                            PyObject *br)
-/*[clinic end generated code: output=670ef38d3d7c2aa3 input=42568c1458221d24]*/
+/*[clinic end generated code: output=670ef38d3d7c2aa3 input=d826ce9d6335479a]*/
 {
     chtype ch[8];
     int i, rtn;
@@ -2743,36 +2743,49 @@ _curses_window_border_impl(PyCursesWindowObject *self, PyObject *ls,
 #ifdef HAVE_NCURSESW
     cchar_t wch[8];
     const cchar_t *wch_p[8];
-    int use_wide = 0;
-    int types[8];
+    /* Only wborder_set() draws a complexchar and only wborder() an integer
+       or bytes character; a string character suits both, and so does the
+       integer 0, which asks for the default character. */
+    int has_narrow = 0, has_str = 0, has_cchar = 0;
     for (i = 0; i < 8; i++) {
-        types[i] = 0;
+        wch_p[i] = NULL;  /* use the default character */
         if (objs[i] != NULL) {
-            types[i] = PyCurses_ConvertToCell(self, objs[i], A_NORMAL, 0,
+            int type = PyCurses_ConvertToCell(self, objs[i], A_NORMAL, 0,
                                               "border", &ch[i], &wch[i]);
-            if (types[i] == 0) {
+            if (type == 0) {
                 return NULL;
             }
-            if (types[i] == 2) {
-                use_wide = 1;
+            if (type == 2) {
+                wch_p[i] = &wch[i];
+                if (PyUnicode_Check(objs[i])) {
+                    has_str = 1;
+                }
+                else {
+                    has_cchar = 1;
+                }
+            }
+            else if (!PyLong_CheckExact(objs[i]) || ch[i] != 0) {
+                has_narrow = 1;  /* b'\0' is a byte character, not the 0 */
             }
         }
     }
-    if (use_wide) {
+    if (has_narrow) {
+        if (has_cchar) {
+            PyErr_SetString(PyExc_TypeError,
+                            "border() cannot mix complexchar characters "
+                            "with integer or bytes characters");
+            return NULL;
+        }
+        /* Narrow the string characters. */
         for (i = 0; i < 8; i++) {
-            if (objs[i] == NULL) {
-                wch_p[i] = NULL;  /* use the default character */
-            }
-            else if (types[i] == 2) {
-                wch_p[i] = &wch[i];
-            }
-            else {
-                PyErr_SetString(PyExc_TypeError,
-                                "border() cannot mix integer or bytes "
-                                "characters with wide string characters");
+            if (objs[i] != NULL && PyUnicode_Check(objs[i]) &&
+                !PyCurses_ConvertToChtype(self, objs[i], &ch[i]))
+            {
                 return NULL;
             }
         }
+    }
+    else if (has_str || has_cchar) {
         rtn = wborder_set(self->win,
                           wch_p[0], wch_p[1], wch_p[2], wch_p[3],
                           wch_p[4], wch_p[5], wch_p[6], wch_p[7]);
@@ -2815,42 +2828,67 @@ _curses_window_box_impl(PyCursesWindowObject *self, int group_right_1,
                         PyObject *verch, PyObject *horch)
 /*[clinic end generated code: output=f3fcb038bb287192 input=e11acb7dbf6790b6]*/
 {
-    chtype ch1 = 0, ch2 = 0;
+    chtype ch[2] = {0, 0};
+    PyObject *objs[2] = {verch, horch};
+    int i;
 #ifdef HAVE_NCURSESW
-    cchar_t wch1, wch2;
-    int t1 = 0, t2 = 0;
+    cchar_t wch[2];
+    const cchar_t *wch_p[2] = {NULL, NULL};
+    int has_narrow = 0, has_str = 0, has_cchar = 0;
     if (group_right_1) {
-        t1 = PyCurses_ConvertToCell(self, verch, A_NORMAL, 0, "box", &ch1, &wch1);
-        if (t1 == 0) {
-            return NULL;
-        }
-        t2 = PyCurses_ConvertToCell(self, horch, A_NORMAL, 0, "box", &ch2, &wch2);
-        if (t2 == 0) {
-            return NULL;
+        for (i = 0; i < 2; i++) {
+            int type = PyCurses_ConvertToCell(self, objs[i], A_NORMAL, 0,
+                                              "box", &ch[i], &wch[i]);
+            if (type == 0) {
+                return NULL;
+            }
+            if (type == 2) {
+                wch_p[i] = &wch[i];
+                if (PyUnicode_Check(objs[i])) {
+                    has_str = 1;
+                }
+                else {
+                    has_cchar = 1;
+                }
+            }
+            else if (!PyLong_CheckExact(objs[i]) || ch[i] != 0) {
+                has_narrow = 1;  /* b'\0' is a byte character, not the 0 */
+            }
         }
     }
-    if (t1 == 2 || t2 == 2) {
-        if (t1 != 2 || t2 != 2) {
+    if (has_narrow) {
+        if (has_cchar) {
             PyErr_SetString(PyExc_TypeError,
-                            "box() cannot mix integer or bytes characters "
-                            "with wide string characters");
+                            "box() cannot mix complexchar characters "
+                            "with integer or bytes characters");
             return NULL;
         }
-        int rtn = wborder_set(self->win, &wch1, &wch1, &wch2, &wch2,
-                              NULL, NULL, NULL, NULL);
-        return curses_window_check_err(self, rtn, "wborder_set", "box");
+        /* Narrow the string characters. */
+        for (i = 0; i < 2; i++) {
+            if (PyUnicode_Check(objs[i]) &&
+                !PyCurses_ConvertToChtype(self, objs[i], &ch[i]))
+            {
+                return NULL;
+            }
+        }
+    }
+    else if (has_str || has_cchar) {
+        int rtn = box_set(self->win, wch_p[0], wch_p[1]);
+        return curses_window_check_err(self, rtn, "box_set", "box");
     }
 #else
     if (group_right_1) {
-        if (!PyCurses_ConvertToCell(self, verch, A_NORMAL, 0, "box", &ch1)) {
-            return NULL;
-        }
-        if (!PyCurses_ConvertToCell(self, horch, A_NORMAL, 0, "box", &ch2)) {
-            return NULL;
+        for (i = 0; i < 2; i++) {
+            if (!PyCurses_ConvertToCell(self, objs[i], A_NORMAL, 0, "box",
+                                        &ch[i]))
+            {
+                return NULL;
+            }
         }
     }
 #endif
-    return curses_window_check_err(self, box(self->win, ch1, ch2), "box", NULL);
+    return curses_window_check_err(self, box(self->win, ch[0], ch[1]),
+                                   "box", NULL);
 }
 
 #if defined(HAVE_NCURSES_H) || defined(MVWDELCH_IS_EXPRESSION)

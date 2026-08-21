@@ -484,8 +484,76 @@ class TestCurses(unittest.TestCase):
         if self._encodable(vline + hline):
             stdscr.border(vline, vline, hline, hline)
             stdscr.box(vline, hline)
-        # border() and box() cannot mix integer and wide-string characters.
-        self.assertRaises(TypeError, stdscr.box, vline, ord('-'))
+        # border() and box() cannot mix a complexchar with an integer
+        # character; a wide string character is narrowed instead, which only
+        # works if it is a single byte.
+        self.assertRaises(TypeError, stdscr.box,
+                          curses.complexchar(vline), ord('-'))
+
+    @requires_wide_build
+    def test_border_default_characters(self):
+        # 0 requests the default character, as an omitted argument does,
+        # even in a border drawn with wide characters.
+        win = curses.newwin(5, 10, 5, 2)
+        maxy, maxx = win.getmaxyx()
+        corners = [(0, 0), (0, maxx-1), (maxy-1, 0), (maxy-1, maxx-1)]
+        win.border('|', '|', '-', '-', 0, 0, 0, 0)
+        with_zeros = [win.in_wch(y, x) for y, x in corners]
+        win.erase()
+        win.border('|', '|', '-', '-')
+        self.assertEqual([win.in_wch(y, x) for y, x in corners], with_zeros)
+        win.border(0, '|', 0, '-', 0, 0, 0, 0)
+        vline = curses.complexchar('|')
+        hline = curses.complexchar('-')
+        win.border(vline, vline, hline, hline, 0, 0, 0, 0)
+        # box() takes 0 for either side, and draws the same default
+        # characters as an omitted border() argument.
+        win.erase()
+        win.border('|', '|')
+        default_corner = win.in_wch(0, 0)
+        default_hline = win.in_wch(0, 1)
+        win.erase()
+        win.border(0, 0, '-', '-')
+        default_vline = win.in_wch(1, 0)
+        win.erase()
+        win.box('|', 0)
+        self.assertEqual(win.in_wch(0, 0), default_corner)
+        self.assertEqual(win.in_wch(0, 1), default_hline)
+        win.erase()
+        win.box(0, '-')
+        self.assertEqual(win.in_wch(1, 0), default_vline)
+        win.box(vline, 0)
+
+    @requires_wide_build
+    def test_border_mixed_characters(self):
+        # Integer and bytes characters other than 0 are only drawn by the
+        # narrow function, which draws string characters as single bytes.
+        win = curses.newwin(5, 10, 5, 2)
+        win.border('|', '|', '-', '-', 65, 66, 67, 68)
+        self.assertEqual(win.instr(0, 0), b'A--------B')
+        self.assertEqual(win.instr(1, 0), b'|        |')
+        self.assertEqual(win.instr(4, 0), b'C--------D')
+        win.border('|', b'!')
+        self.assertEqual(win.instr(1, 0), b'|        !')
+        # b'\0' is a byte character, not the sentinel, but the narrow function
+        # draws a zero character as the default one.
+        win.border('|', b'\0')
+        # A complexchar cannot be drawn as a byte.
+        cc = curses.complexchar('|')
+        self.assertRaises(TypeError, win.border, cc, 65)
+        self.assertRaises(TypeError, win.border, cc, b'!')
+        # Neither can a string character that is not a single byte.
+        vline = '\u2502'
+        if len(vline.encode(win.encoding, 'replace')) != 1:
+            self.assertRaises(OverflowError, win.border, vline, 65)
+        # box() follows the same rules.
+        win.box('|', 45)
+        self.assertEqual(win.instr(1, 0), b'|        |')
+        win.box(b'|', '-')
+        self.assertRaises(TypeError, win.box, cc, 45)
+        self.assertRaises(TypeError, win.box, cc, b'-')
+        if len(vline.encode(win.encoding, 'replace')) != 1:
+            self.assertRaises(OverflowError, win.box, vline, 45)
 
     @requires_wide_build
     def test_wacs_constants(self):
