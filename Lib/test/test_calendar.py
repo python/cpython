@@ -650,6 +650,33 @@ class CalendarTestCase(unittest.TestCase):
             self.assertListEqual(list(calendar.month_abbr),
                                  list(calendar.standalone_month_abbr))
 
+    def test_standalone_month_name_survives_lazy_OB_failure(self):
+        # gh-155245: some platforms accept '%OB'/'%Ob' when a
+        # _localized_month object is constructed, but the underlying
+        # strftime() call -- which only happens lazily, inside set() --
+        # can still raise ValueError once it actually runs (e.g. under
+        # Wine). Reloading the calendar module used to let that
+        # ValueError propagate instead of falling back to
+        # month_name/month_abbr.
+        import importlib
+
+        real_date = datetime.date
+
+        class FakeDate(real_date):
+            def strftime(self, fmt):
+                if '%O' in fmt:
+                    raise ValueError('Invalid format string')
+                return super().strftime(fmt)
+
+        datetime.date = FakeDate
+        try:
+            importlib.reload(calendar)
+        finally:
+            datetime.date = real_date
+            importlib.reload(calendar)
+
+        self.assertEqual(calendar.standalone_month_name[1], calendar.month_name[1])
+
     def test_locale_text_calendar(self):
         try:
             cal = calendar.LocaleTextCalendar(locale='')
