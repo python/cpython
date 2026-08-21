@@ -55,8 +55,9 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     // _PyFrame_Copy takes the reference to the executable,
     // so we need to restore it.
     new_frame->f_executable = PyStackRef_DUP(new_frame->f_executable);
-    f->f_frame = new_frame;
-    new_frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
+    /* Fix instr_ptr BEFORE setting owner = FRAME_OWNED_BY_FRAME_OBJECT,
+     * since _PyFrame_IsIncomplete() short-circuits to false for that owner.
+     * The original owner (FRAME_OWNED_BY_THREAD) is used for the check. */
     if (_PyFrame_IsIncomplete(new_frame)) {
         // This may be a newly-created generator or coroutine frame. Since it's
         // dead anyways, just pretend that the first RESUME ran:
@@ -64,6 +65,15 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
         new_frame->instr_ptr =
             _PyFrame_GetBytecode(new_frame) + code->_co_firsttraceable + 1;
     }
+    /* Set owner BEFORE updating f->f_frame so any concurrent reader that
+     * observes the new f_frame pointer also sees owner = FRAME_OWNED_BY_FRAME_OBJECT,
+     * causing _PyFrame_IsIncomplete() to short-circuit to false. */
+    new_frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
+    /* Publish f_frame with a release store so that any concurrent reader
+     * doing an acquire load of f_frame is guaranteed to also observe
+     * new_frame->owner == FRAME_OWNED_BY_FRAME_OBJECT (written above),
+     * satisfying the C11 happens-before relationship. */
+    _Py_atomic_store_ptr_release(&f->f_frame, new_frame);
     assert(!_PyFrame_IsIncomplete(new_frame));
     assert(f->f_back == NULL);
     _PyInterpreterFrame *prev = _PyFrame_GetFirstComplete(frame->previous);
