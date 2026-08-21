@@ -1324,6 +1324,16 @@ static PyObject *
 complexstr_from_string(cursesmodule_state *state, PyObject *str,
                        attr_t attr, int pair)
 {
+    /* A NUL cell ends a batch write and a cell array read (add_wchnstr(3X)),
+       so a string of cells cannot hold one, as addstr() cannot either. */
+    Py_ssize_t nul = PyUnicode_FindChar(str, 0, 0, PyUnicode_GET_LENGTH(str), 1);
+    if (nul < -1) {
+        return NULL;
+    }
+    if (nul >= 0) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        return NULL;
+    }
 #ifdef HAVE_NCURSESW
     Py_ssize_t n;
     wchar_t *wbuf = PyUnicode_AsWideCharString(str, &n);
@@ -1340,9 +1350,7 @@ complexstr_from_string(cursesmodule_state *state, PyObject *str,
         wchar_t cell[CCHARW_MAX + 1];
         Py_ssize_t k = 0;
         cell[k++] = wbuf[i++];
-        while (i < n && k < CCHARW_MAX && wbuf[i] != L'\0' &&
-               wcwidth(wbuf[i]) == 0)
-        {
+        while (i < n && k < CCHARW_MAX && wcwidth(wbuf[i]) == 0) {
             cell[k++] = wbuf[i++];
         }
         cell[k] = L'\0';
@@ -1351,7 +1359,7 @@ complexstr_from_string(cursesmodule_state *state, PyObject *str,
            control character (wcwidth < 0) may stand alone but cannot carry
            combining marks. */
         int width = wcwidth(cell[0]);
-        if ((width == 0 && cell[0] != L'\0') || (k > 1 && width < 0)) {
+        if (width == 0 || (k > 1 && width < 0)) {
             PyErr_Format(PyExc_ValueError,
                          "a character cell must be a single spacing character "
                          "optionally followed by up to %d combining characters",

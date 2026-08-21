@@ -1044,9 +1044,9 @@ class TestCurses(unittest.TestCase):
         win = curses.newwin(3, 8, 0, 0)
         win.insch(0, 0, '\0')
         self.assertEqual(win.in_wch(0, 0), cell)
-        # complexstr() splits a NUL into a cell of its own.
-        self.assertEqual(len(curses.complexstr('a\0b')), 3)
-        self.assertEqual(curses.complexstr('\0')[0], cell)
+        # A string of cells cannot hold a NUL: it would end a batch write.
+        self.assertRaises(ValueError, curses.complexstr, 'a\0b')
+        self.assertRaises(ValueError, curses.complexstr, '\0')
 
     def test_add_string_behavior(self):
         # addstr() advances the cursor past the written text; addnstr()
