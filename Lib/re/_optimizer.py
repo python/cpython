@@ -467,10 +467,12 @@ def _fuse_branch(av):
             items += cs
     return items if tail is None else items + tail
 
-def _fuse_difference(data):
+def _fuse_difference(data, flags):
     # Replace  <flat charset A> (?<![B1]) (?<![B2]) ...  with the single charset
     # [NEGATE] B1 B2 ... [NEGATE] A.  Each negative lookbehind over a flat
     # charset subtracts its set from the character A matches.
+    if flags & SRE_FLAG_IGNORECASE and flags & SRE_FLAG_LOCALE:
+        return
     out = []
     head = None        # _flat_items(A) for the fused difference now at out[-1]
     subtrahend = None  # its accumulated B items, or None when not fusing
@@ -493,17 +495,20 @@ def _fuse_difference(data):
         out.append((op, av))
     data[:] = out
 
-def _walk(seq):
+def _walk(seq, flags):
     for i, (op, av) in enumerate(seq):
+        subflags = flags
+        if op is SUBPATTERN:
+            subflags = _combine_flags(flags, av[1], av[2])
         for sub in _subpatterns(op, av):
-            _walk(sub.data)
+            _walk(sub.data, subflags)
         if op is BRANCH:
             items = _fuse_branch(av)
             if items is not None:
                 seq[i] = (IN, items)
-    _fuse_difference(seq)
+    _fuse_difference(seq, flags)
 
-def optimize(pattern):
+def optimize(pattern, flags):
     """Rewrite a parsed pattern in place and return it."""
-    _walk(pattern.data)
+    _walk(pattern.data, flags)
     return pattern
