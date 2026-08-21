@@ -2,4 +2,4 @@ Wrap the underlying compression library's exception in :exc:`tarfile.ReadError`
 when a member's compressed data is corrupt past its header, for all of
 :mod:`tarfile`'s supported compression formats (gzip, bzip2, lzma, zstd).
 Previously the raw exception (e.g. :exc:`zlib.error`) could leak through
-:meth:`TarFile.extractfile`. Patch by Jason Mak.
+:meth:`tarfile.TarFile.extractfile`. Patch by Jason Mak.
