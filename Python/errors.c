@@ -338,19 +338,17 @@ PyErr_GivenExceptionMatches(PyObject *err, PyObject *exc)
         if (Py_EnterRecursiveCall(" in PyErr_GivenExceptionMatches")) {
             return 0;
         }
-        Py_ssize_t i, n;
-        n = PyTuple_GET_SIZE(exc);
-        for (i = 0; i < n; i++) {
+        int res = 0;
+        Py_ssize_t n = PyTuple_GET_SIZE(exc);
+        for (Py_ssize_t i = 0; i < n; i++) {
             /* Test recursively */
-            if (PyErr_GivenExceptionMatches(
-                err, PyTuple_GET_ITEM(exc, i)))
-            {
-                Py_LeaveRecursiveCall();
-                return 1;
+            if (PyErr_GivenExceptionMatches(err, PyTuple_GET_ITEM(exc, i))) {
+                res = 1;
+                break;
             }
         }
         Py_LeaveRecursiveCall();
-        return 0;
+        return res;
     }
     /* err might be an instance, so check its class. */
     if (PyExceptionInstance_Check(err))

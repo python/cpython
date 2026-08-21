@@ -486,6 +486,13 @@ Querying the error indicator
    of a subclass.  If *exc* is a tuple, all exception types in the tuple (and
    recursively in subtuples) are searched for a match.
 
+   If the subtuples are nested deeply enough to risk exhausting the C stack,
+   the search is abandoned, a :exc:`RecursionError` is set, and the function
+   returns false.
+
+   .. versionchanged:: next
+      Deeply nested subtuples previously crashed the interpreter.
+
 
 .. c:function:: PyObject *PyErr_GetRaisedException(void)
 
