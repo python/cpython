@@ -251,9 +251,10 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         break;
     }
     case Py_T_LONG:{
-        *(long*)addr = PyLong_AsLong(v);
-        if ((*(long*)addr == -1) && PyErr_Occurred())
+        long long_val = PyLong_AsLong(v);
+        if ((long_val == -1) && PyErr_Occurred())
             return -1;
+        *(long*)addr = long_val;
         break;
         }
     case Py_T_ULONG: {
@@ -283,10 +284,10 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         break;
     }
     case Py_T_PYSSIZET:{
-        *(Py_ssize_t*)addr = PyLong_AsSsize_t(v);
-        if ((*(Py_ssize_t*)addr == (Py_ssize_t)-1)
-            && PyErr_Occurred())
-                        return -1;
+        Py_ssize_t ssize_val = PyLong_AsSsize_t(v);
+        if ((ssize_val == (Py_ssize_t)-1) && PyErr_Occurred())
+            return -1;
+        *(Py_ssize_t*)addr = ssize_val;
         break;
         }
     case Py_T_FLOAT:{
@@ -296,11 +297,13 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         *(float*)addr = (float)double_val;
         break;
         }
-    case Py_T_DOUBLE:
-        *(double*)addr = PyFloat_AsDouble(v);
-        if ((*(double*)addr == -1) && PyErr_Occurred())
+    case Py_T_DOUBLE:{
+        double double_val = PyFloat_AsDouble(v);
+        if ((double_val == -1) && PyErr_Occurred())
             return -1;
+        *(double*)addr = double_val;
         break;
+        }
     case _Py_T_OBJECT:
     case Py_T_OBJECT_EX:
         Py_BEGIN_CRITICAL_SECTION(obj);
@@ -326,10 +329,10 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         PyErr_SetString(PyExc_TypeError, "readonly attribute");
         return -1;
     case Py_T_LONGLONG:{
-        long long value;
-        *(long long*)addr = value = PyLong_AsLongLong(v);
+        long long value = PyLong_AsLongLong(v);
         if ((value == -1) && PyErr_Occurred())
             return -1;
+        *(long long*)addr = value;
         break;
         }
     case Py_T_ULONGLONG: {
