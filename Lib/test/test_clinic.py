@@ -2931,7 +2931,6 @@ class ClinicParserTest(TestCase):
         func = self.parse_function(block, signatures_in_block=3,
                                    function_index=2)
         self.assertTrue(func.vectorcall)
-        self.assertFalse(func.vectorcall.exact_only)
 
     def test_vectorcall_on_new(self):
         block = """
@@ -2946,31 +2945,26 @@ class ClinicParserTest(TestCase):
         func = self.parse_function(block, signatures_in_block=3,
                                    function_index=2)
         self.assertTrue(func.vectorcall)
-        self.assertFalse(func.vectorcall.exact_only)
 
-    def test_vectorcall_exact_only(self):
+    def test_vectorcall_takes_no_arguments(self):
+        err = "at_vectorcall() takes 1 positional argument but 2 were given"
         block = """
             module m
             class Foo "FooObject *" "Foo_Type"
-            @vectorcall exact_only
-            Foo.__init__
-                iterable: object = NULL
-                /
-        """
-        func = self.parse_function(block, signatures_in_block=3,
-                                   function_index=2)
-        self.assertTrue(func.vectorcall)
-        self.assertTrue(func.vectorcall.exact_only)
-
-    def test_vectorcall_invalid_kwarg(self):
-        err = "unknown argument"
-        block = """
-            module m
-            class Foo "FooObject *" ""
             @vectorcall bogus=True
             Foo.__init__
         """
         self.expect_failure(block, err, lineno=2)
+
+    def test_vectorcall_without_type_object(self):
+        err = "@vectorcall requires the type object of 'Foo'"
+        block = """
+            module m
+            class Foo "FooObject *" ""
+            @vectorcall
+            Foo.__init__
+        """
+        self.expect_failure(block, err, lineno=3)
 
     def test_vectorcall_unsupported_converter(self):
         # str(encoding=...) has no parse_arg() implementation.
@@ -5130,20 +5124,23 @@ class VectorcallFunctionalTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             ac_tester.VcInit(a=1)
 
-    def test_vc_new_exact(self):
-        self.assertIsInstance(ac_tester.VcNewExact(1), ac_tester.VcNewExact)
-        self.assertIsInstance(ac_tester.VcNewExact(1, 2), ac_tester.VcNewExact)
+    def test_vc_new_base(self):
+        self.assertIsInstance(ac_tester.VcNewBase(1), ac_tester.VcNewBase)
+        self.assertIsInstance(ac_tester.VcNewBase(1, 2), ac_tester.VcNewBase)
+        self.assertIsInstance(ac_tester.VcNewBase(1, b=2), ac_tester.VcNewBase)
 
-    def test_vc_new_exact_missing_required(self):
+    def test_vc_new_base_missing_required(self):
         with self.assertRaises(TypeError):
-            ac_tester.VcNewExact()
+            ac_tester.VcNewBase()
 
-    def test_vc_new_exact_subclass(self):
-        # exact_only: subclass goes through non-vectorcall (tp_new) path
-        Sub = type('Sub', (ac_tester.VcNewExact,), {})
+    def test_vc_new_base_subclass(self):
+        # tp_vectorcall is not inherited, so the subclass is constructed
+        # through tp_new.  The generated vectorcall asserts on that, so a
+        # debug build aborts here if that ever stops holding.
+        Sub = type('Sub', (ac_tester.VcNewBase,), {})
         obj = Sub(1)
         self.assertIsInstance(obj, Sub)
-        self.assertIsInstance(obj, ac_tester.VcNewExact)
+        self.assertIsInstance(obj, ac_tester.VcNewBase)
 
     def test_vc_kwonly(self):
         # keyword-only 'b': vectorcall has no kwnames==NULL fast path,

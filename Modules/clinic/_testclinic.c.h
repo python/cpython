@@ -6,7 +6,6 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
-#include "pycore_call.h"          // _PyObject_MakeTpCall()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
@@ -4915,6 +4914,7 @@ vc_plain_vectorcall(PyObject *type, PyObject *const *args,
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     PyObject *a = Py_None;
 
+    assert(Py_Is(_PyType_CAST(type), &VcNew_Type));
     if (kwnames != NULL) {
         return vc_plain_new_parse_args(_PyType_CAST(type), args, nargs,
             PyTuple_GET_SIZE(kwnames),
@@ -5014,7 +5014,9 @@ vc_posorkw_vectorcall(PyObject *type, PyObject *const *args,
     PyObject *a;
     PyObject *b = Py_None;
 
+    assert(Py_Is(_PyType_CAST(type), &VcInit_Type));
     if (kwnames != NULL) {
+        assert(_PyType_CAST(type)->tp_new == PyType_GenericNew);
         self = _PyType_CAST(type)->tp_alloc(
             _PyType_CAST(type), 0);
         if (self == NULL) {
@@ -5038,6 +5040,7 @@ vc_posorkw_vectorcall(PyObject *type, PyObject *const *args,
     }
     b = args[1];
 skip_optional:
+    assert(_PyType_CAST(type)->tp_new == PyType_GenericNew);
     self = _PyType_CAST(type)->tp_alloc(
         _PyType_CAST(type), 0);
     if (self == NULL) {
@@ -5057,10 +5060,10 @@ exit:
 }
 
 static PyObject *
-vc_exact_new_impl(PyTypeObject *type, PyObject *a, PyObject *b);
+vc_base_new_impl(PyTypeObject *type, PyObject *a, PyObject *b);
 
 static PyObject *
-vc_exact_new_parse_args(PyTypeObject *type, PyObject *const *args,
+vc_base_new_parse_args(PyTypeObject *type, PyObject *const *args,
     Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
@@ -5087,7 +5090,7 @@ vc_exact_new_parse_args(PyTypeObject *type, PyObject *const *args,
     static const char * const _keywords[] = {"", "b", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .fname = "VcNewExact",
+        .fname = "VcNewBase",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
@@ -5108,23 +5111,23 @@ vc_exact_new_parse_args(PyTypeObject *type, PyObject *const *args,
     }
     b = fastargs[1];
 skip_optional_pos:
-    return_value = vc_exact_new_impl(type, a, b);
+    return_value = vc_base_new_impl(type, a, b);
 
 exit:
     return return_value;
 }
 
 static PyObject *
-vc_exact_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+vc_base_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    return vc_exact_new_parse_args(type, _PyTuple_CAST(args)->ob_item,
+    return vc_base_new_parse_args(type, _PyTuple_CAST(args)->ob_item,
         PyTuple_GET_SIZE(args),
         kwargs ? PyDict_GET_SIZE(kwargs) : 0,
         kwargs, NULL);
 }
 
 static PyObject *
-vc_exact_vectorcall(PyObject *type, PyObject *const *args,
+vc_base_vectorcall(PyObject *type, PyObject *const *args,
     size_t nargsf, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
@@ -5132,17 +5135,13 @@ vc_exact_vectorcall(PyObject *type, PyObject *const *args,
     PyObject *a;
     PyObject *b = Py_None;
 
-    if (_PyType_CAST(type) != &VcNewExact_Type) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        return _PyObject_MakeTpCall(tstate, type, args,
-                                    nargs, kwnames);
-    }
+    assert(Py_Is(_PyType_CAST(type), &VcNewBase_Type));
     if (kwnames != NULL) {
-        return vc_exact_new_parse_args(_PyType_CAST(type), args, nargs,
+        return vc_base_new_parse_args(_PyType_CAST(type), args, nargs,
             PyTuple_GET_SIZE(kwnames),
             NULL, kwnames);
     }
-    if (!_PyArg_CheckPositional("VcNewExact", nargs, 1, 2)) {
+    if (!_PyArg_CheckPositional("VcNewBase", nargs, 1, 2)) {
         goto exit;
     }
     a = args[0];
@@ -5151,7 +5150,7 @@ vc_exact_vectorcall(PyObject *type, PyObject *const *args,
     }
     b = args[1];
 skip_optional:
-    return_value = vc_exact_new_impl(_PyType_CAST(type), a, b);
+    return_value = vc_base_new_impl(_PyType_CAST(type), a, b);
 
 exit:
     return return_value;
@@ -5230,8 +5229,9 @@ vc_kwonly_vectorcall(PyObject *type, PyObject *const *args,
 {
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
 
+    assert(Py_Is(_PyType_CAST(type), &VcKwOnly_Type));
     return vc_kwonly_new_parse_args(_PyType_CAST(type), args, nargs,
         kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
         NULL, kwnames);
 }
-/*[clinic end generated code: output=716e3f38f51dac84 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c3684934050317f4 input=a9049054013a1b77]*/

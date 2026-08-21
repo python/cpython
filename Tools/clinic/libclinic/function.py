@@ -85,11 +85,6 @@ SETTERS: Final = frozenset({SETTER, SETTER_AND_DELETER})
 ACCESSORS: Final = SETTERS | {GETTER}
 
 
-@dc.dataclass
-class VectorcallOptions:
-    exact_only: bool = False
-
-
 @dc.dataclass(repr=False)
 class Function:
     """
@@ -123,7 +118,7 @@ class Function:
     critical_section: bool = False
     disable_fastcall: bool = False
     target_critical_section: list[str] = dc.field(default_factory=list)
-    vectorcall: VectorcallOptions | None = None
+    vectorcall: bool = False
     # Line of the file on which the function is declared.
     line_number: int | None = None
     # Line on which the docstring starts (`None` if there is no docstring).

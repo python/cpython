@@ -240,6 +240,7 @@ VECTORCALL_FINALE_MARKERS_NEW: Final[dict[str, str]] = {
 VECTORCALL_FINALE_MARKERS_INIT: Final[dict[str, str]] = {
     "init_declarations": "PyObject *self;\nint _result;",
     "self_alloc": libclinic.normalize_snippet("""
+        assert(_PyType_CAST(type)->tp_new == PyType_GenericNew);
         self = _PyType_CAST(type)->tp_alloc(
             _PyType_CAST(type), 0);
         if (self == NULL) {{
@@ -273,6 +274,7 @@ VECTORCALL_DELEGATE_MARKERS_NEW: Final[dict[str, str]] = {
 }
 VECTORCALL_DELEGATE_MARKERS_INIT: Final[dict[str, str]] = {
     "self_alloc": libclinic.normalize_snippet("""
+        assert(_PyType_CAST(type)->tp_new == PyType_GenericNew);
         self = _PyType_CAST(type)->tp_alloc(
             _PyType_CAST(type), 0);
         if (self == NULL) {{
@@ -1123,23 +1125,19 @@ class ParseArgsCodeGen:
             d2[name] = value
         return d2
 
-    def _vectorcall_exact_check(self) -> list[str]:
-        """If not an exact type match delegate to the regular constructor."""
+    def _vectorcall_type_check(self) -> list[str]:
+        """Assert the slot was entered through the type it is installed on.
+
+        tp_vectorcall is not inherited, so a subclass is constructed through
+        tp_new / tp_init and never arrives here.  __init__ generation relies
+        on that: it allocates with tp_alloc instead of calling tp_new.
+        """
+        # Both are enforced where @vectorcall is validated in the DSL parser.
         func = self.func
-        assert func.vectorcall is not None
-        if not func.vectorcall.exact_only:
-            return []
-        # The DSL parser only allows @vectorcall on __init__/__new__,
-        # which are required to be class methods.
         assert func.cls is not None
-        type_obj = func.cls.type_object
-        self.codegen.add_include('pycore_call.h', '_PyObject_MakeTpCall()')
+        assert func.cls.type_object
         return [libclinic.normalize_snippet(f"""
-            if (_PyType_CAST(type) != {type_obj}) {{{{
-                PyThreadState *tstate = _PyThreadState_GET();
-                return _PyObject_MakeTpCall(tstate, type, args,
-                                            nargs, kwnames);
-            }}}}
+            assert(Py_Is(_PyType_CAST(type), {func.cls.type_object}));
             """, indent=4)]
 
     def _vectorcall_positional(self) -> list[str]:
@@ -1188,7 +1186,7 @@ class ParseArgsCodeGen:
 
     def parse_vectorcall_no_args(self) -> None:
         """No positional or keyword arguments."""
-        parser_code = self._vectorcall_exact_check()
+        parser_code = self._vectorcall_type_check()
         self.codegen.add_include('pycore_modsupport.h',
                                  '_PyArg_NoKwnames()')
         parser_code.append(libclinic.normalize_snippet("""
@@ -1208,7 +1206,7 @@ class ParseArgsCodeGen:
 
     def parse_vectorcall_pos_only(self) -> None:
         """All positional sometimes optional arguments."""
-        parser_code = self._vectorcall_exact_check()
+        parser_code = self._vectorcall_type_check()
         self.codegen.add_include('pycore_modsupport.h',
                                  '_PyArg_NoKwnames()')
         parser_code.append(libclinic.normalize_snippet("""
@@ -1234,7 +1232,7 @@ class ParseArgsCodeGen:
 
     def parse_vectorcall_kw_required(self) -> None:
         """Required keyword arguemnts; always delegate to helper."""
-        parser_code = self._vectorcall_exact_check()
+        parser_code = self._vectorcall_type_check()
         parser_code.append(self._vectorcall_delegate_to_helper(
             'kwnames ? PyTuple_GET_SIZE(kwnames) : 0'))
         preamble = libclinic.normalize_snippet("""
@@ -1249,7 +1247,7 @@ class ParseArgsCodeGen:
 
         Delegate to helper if keywords present.
         """
-        parser_code = self._vectorcall_exact_check()
+        parser_code = self._vectorcall_type_check()
         delegate = self._vectorcall_delegate_to_helper(
             'PyTuple_GET_SIZE(kwnames)')
         parser_code.append(libclinic.normalize_snippet("""

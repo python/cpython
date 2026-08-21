@@ -25,7 +25,7 @@ custom_converter(PyObject *obj, custom_t *val)
  * clinic/_testclinic.c.h is included before the type definitions. */
 static PyTypeObject VcNew_Type;
 static PyTypeObject VcInit_Type;
-static PyTypeObject VcNewExact_Type;
+static PyTypeObject VcNewBase_Type;
 static PyTypeObject VcKwOnly_Type;
 #include "clinic/_testclinic.c.h"
 
@@ -2498,32 +2498,34 @@ static PyTypeObject VcInit_Type = {
 };
 
 
-/* VcNewExact: __new__ with exact_only; subclasses fall back to tp_new */
+/* VcNewBase: __new__ with a required positional-only argument, and the one
+ * subclassable vectorcall type.  tp_vectorcall is not inherited, so a subclass
+ * is constructed through tp_new, never reaching vc_base_vectorcall. */
 
 /*[clinic input]
-class _testclinic.VcNewExact "PyObject *" "&VcNewExact_Type"
+class _testclinic.VcNewBase "PyObject *" "&VcNewBase_Type"
 @classmethod
-@vectorcall exact_only
-_testclinic.VcNewExact.__new__ as vc_exact_new
+@vectorcall
+_testclinic.VcNewBase.__new__ as vc_base_new
     a: object
     /
     b: object = None
 [clinic start generated code]*/
 
 static PyObject *
-vc_exact_new_impl(PyTypeObject *type, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=e88217e36443b698 input=ea86a1ab634c93a6]*/
+vc_base_new_impl(PyTypeObject *type, PyObject *a, PyObject *b)
+/*[clinic end generated code: output=e4ca5a11e7fb1148 input=c204ca773dc608bf]*/
 {
     return type->tp_alloc(type, 0);
 }
 
-static PyTypeObject VcNewExact_Type = {
+static PyTypeObject VcNewBase_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "_testclinic.VcNewExact",
+    .tp_name = "_testclinic.VcNewBase",
     .tp_basicsize = sizeof(PyObject),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    .tp_new = vc_exact_new,
-    .tp_vectorcall = vc_exact_vectorcall,
+    .tp_new = vc_base_new,
+    .tp_vectorcall = vc_base_vectorcall,
 };
 
 
@@ -2790,7 +2792,7 @@ PyInit__testclinic(void)
     if (PyModule_AddType(m, &VcInit_Type) < 0) {
         goto error;
     }
-    if (PyModule_AddType(m, &VcNewExact_Type) < 0) {
+    if (PyModule_AddType(m, &VcNewBase_Type) < 0) {
         goto error;
     }
     if (PyModule_AddType(m, &VcKwOnly_Type) < 0) {
