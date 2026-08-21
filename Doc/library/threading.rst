@@ -220,6 +220,17 @@ This module defines the following functions:
    .. versionadded:: 3.4
 
 
+.. function:: run(func, /, *args, **kwargs)
+              run_daemon(func, /, *args, **kwargs)
+
+   Run `func(*args, **kwargs)` in a thread and return the corresponding
+   :class:`Thread` object.  The thread is started automatically.
+
+   With :func:`run_daemon` the thread is set as daemonic.
+
+   .. versionadded:: 3.16
+
+
 .. function:: settrace(func)
 
    .. index:: single: trace function

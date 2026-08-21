@@ -30,7 +30,8 @@ __all__ = ['get_ident', 'active_count', 'Condition', 'current_thread',
            'setprofile', 'settrace', 'local', 'stack_size',
            'excepthook', 'ExceptHookArgs', 'gettrace', 'getprofile',
            'serialize_iterator', 'synchronized_iterator', 'concurrent_tee',
-           'setprofile_all_threads','settrace_all_threads']
+           'setprofile_all_threads','settrace_all_threads',
+           'run', 'run_daemon']
 
 # Rename some stuff so "from threading import *" is safe
 _start_joinable_thread = _thread.start_joinable_thread
@@ -1663,6 +1664,19 @@ def enumerate():
     """
     with _active_limbo_lock:
         return list(_active.values()) + list(_limbo.values())
+
+def run(func, /, *args, **kwargs):
+    """Return a running Thread object of func(*args, **kwargs)."""
+    thread = Thread(target=func, name=func.__name__, args=args, kwargs=kwargs)
+    thread.start()
+    return thread
+
+def run_daemon(func, /, *args, **kwargs):
+    """Return a running daemonic Thread object of func(*args, **kwargs)."""
+    thread = Thread(target=func, name=func.__name__, args=args, kwargs=kwargs)
+    thread.daemon = True
+    thread.start()
+    return thread
 
 
 _threading_atexits = []
