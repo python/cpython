@@ -798,11 +798,6 @@ are always available.  They are listed here in alphabetical order.
       320.0
       >>> float(bytearray(b'-2.5'))
       -2.5
-      >>> float(memoryview(b'6.7'))
-      6.7
-      >>> import array
-      >>> float(array.array('b', [49, 50, 51]))
-      123.0
 
    If the argument is a string, it should contain a decimal number, optionally
    preceded by a sign, and optionally embedded in whitespace.  The optional
