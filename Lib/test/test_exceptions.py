@@ -682,6 +682,44 @@ class ExceptionTests(unittest.TestCase):
         msg = "exception context must be None or derive from BaseException"
         self.assertRaisesRegex(TE, msg, setattr, exc, '__context__', 1)
 
+    def test_object_attributes(self):
+        # These attributes are implemented as plain object members:
+        # they accept any object and are reset to None when deleted.
+        cases = [
+            (SyntaxError('msgStr'), 'msg'),
+            (SyntaxError('msgStr'), 'filename'),
+            (SyntaxError('msgStr'), 'lineno'),
+            (SyntaxError('msgStr'), 'offset'),
+            (SyntaxError('msgStr'), 'end_lineno'),
+            (SyntaxError('msgStr'), 'end_offset'),
+            (SyntaxError('msgStr'), 'text'),
+            (SyntaxError('msgStr'), 'print_file_and_line'),
+            (SyntaxError('msgStr'), '_metadata'),
+            (ImportError('msgStr'), 'msg'),
+            (ImportError('msgStr'), 'name'),
+            (ImportError('msgStr'), 'path'),
+            (ImportError('msgStr'), 'name_from'),
+            (SystemExit(1), 'code'),
+            (StopIteration(), 'value'),
+            (NameError('msgStr'), 'name'),
+            (AttributeError('msgStr'), 'name'),
+            (AttributeError('msgStr'), 'obj'),
+            (OSError(2, 'msgStr'), 'errno'),
+            (OSError(2, 'msgStr'), 'strerror'),
+            (OSError(2, 'msgStr'), 'filename'),
+            (OSError(2, 'msgStr'), 'filename2'),
+            (UnicodeDecodeError('utf-8', b'\xff', 0, 1, 'reasonStr'), 'reason'),
+        ]
+        if sys.platform == 'win32':
+            cases.append((OSError(2, 'msgStr'), 'winerror'))
+        for exc, name in cases:
+            with self.subTest(exc=type(exc).__name__, name=name):
+                for value in 'strValue', 42, [1, 2], None:
+                    setattr(exc, name, value)
+                    self.assertEqual(getattr(exc, name), value)
+                delattr(exc, name)
+                self.assertIsNone(getattr(exc, name))
+
     def test_invalid_delattr(self):
         TE = TypeError
         try:
@@ -738,6 +776,13 @@ class ExceptionTests(unittest.TestCase):
         self.assertIsNone(e.__cause__)
         self.assertTrue(e.__suppress_context__)
         e.__suppress_context__ = False
+        self.assertFalse(e.__suppress_context__)
+        with self.assertRaisesRegex(TypeError,
+                                    'attribute value type must be bool'):
+            e.__suppress_context__ = 1
+        with self.assertRaisesRegex(TypeError,
+                                    "can't delete numeric/char attribute"):
+            del e.__suppress_context__
         self.assertFalse(e.__suppress_context__)
 
     def testKeywordArgs(self):
