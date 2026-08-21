@@ -537,6 +537,11 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(str(cc), 'z')
         self.assertEqual(cc.attr, 0)
         self.assertEqual(cc.pair, 0)
+        # attr never carries the color pair.
+        self.assertEqual(curses.complexchar('A', 0, 1).attr, 0)
+        self.assertEqual(curses.complexchar('A', curses.A_BOLD, 1).attr,
+                         curses.A_BOLD)
+        self.assertEqual(curses.complexchar('A', 0, 1).pair, 1)
         # Immutable rendition.
         self.assertRaises(AttributeError, setattr, cc, 'attr', 1)
         self.assertRaises(AttributeError, setattr, cc, 'pair', 1)
@@ -592,7 +597,7 @@ class TestCurses(unittest.TestCase):
         stdscr.addch(0, 0, curses.complexchar('A', curses.A_BOLD, 1))
         cc = stdscr.in_wch(0, 0)
         self.assertEqual(str(cc), 'A')
-        self.assertTrue(cc.attr & curses.A_BOLD)
+        self.assertEqual(cc.attr, curses.A_BOLD)
         self.assertEqual(cc.pair, 1)
         self.assertEqual(curses.complexchar('A', 0, 1).pair, 1)
 
@@ -889,6 +894,21 @@ class TestCurses(unittest.TestCase):
                 self.assertRaises(ValueError, stdscr.addnstr, arg, 1)
                 self.assertRaises(ValueError, stdscr.insstr, arg)
                 self.assertRaises(ValueError, stdscr.insnstr, arg, 1)
+
+    def test_output_string_attr_restored(self):
+        # A write with an attr restores the window rendition afterwards,
+        # whether it succeeded or failed.
+        win = curses.newwin(2, 10, 0, 0)
+        for func, args in [(win.addstr, ('x',)), (win.addnstr, ('x', 1)),
+                           (win.insstr, ('x',)), (win.insnstr, ('x', 1))]:
+            with self.subTest(func.__qualname__):
+                win.attrset(curses.A_UNDERLINE)
+                # y=100 is outside the window, so the write fails.
+                self.assertRaises(curses.error, func, 100, 0, *args,
+                                  curses.A_BOLD)
+                self.assertEqual(win.getattrs(), curses.A_UNDERLINE)
+                func(0, 0, *args, curses.A_BOLD)
+                self.assertEqual(win.getattrs(), curses.A_UNDERLINE)
 
     def test_add_string_behavior(self):
         # addstr() advances the cursor past the written text; addnstr()
@@ -3051,6 +3071,33 @@ class ScreenTests(NewtermTestBase):
         win.addstr(0, 0, 'still alive')
         win.refresh()
 
+    @unittest.skipUnless(hasattr(curses.screen, 'use'),
+                         'requires curses.screen.use()')
+    def test_window_made_in_use_keeps_its_screen_alive(self):
+        # use() makes its screen current for the callback, so a window created
+        # there belongs to that screen and must keep it alive, not the screen
+        # that was current before.
+        s = self.make_pty()
+        s2 = self.make_pty()
+        a = curses.newterm('xterm', s, s)
+        b = curses.newterm('xterm', s2, s2)   # current screen is b
+        win = a.use(lambda scr: curses.newwin(3, 3))
+        del a
+        gc_collect()
+        win.addstr(0, 0, 'x')
+        b.stdscr.refresh()
+
+    @unittest.skipUnless(hasattr(curses.screen, 'use'),
+                         'requires curses.screen.use()')
+    def test_initscr_in_use_returns_its_screen(self):
+        # initscr() returns the standard window of the current screen, and
+        # inside use() that is the used screen.
+        s = self.make_pty()
+        s2 = self.make_pty()
+        a = curses.newterm('xterm', s, s)
+        b = curses.newterm('xterm', s2, s2)   # current screen is b
+        self.assertIs(a.use(lambda scr: curses.initscr()), a.stdscr)
+
     def test_screen_freed(self):
         # Dropping all references to a (non-current) screen and its windows
         # frees it without error.
@@ -3073,6 +3120,22 @@ class ScreenTests(NewtermTestBase):
         self.assertRaises(curses.error, win.addstr, 0, 0, 'x')
         # close() is idempotent.
         screen.close()
+
+    @requires_curses_func('panel')
+    def test_close_then_panel_replace(self):
+        # A detached window has no underlying curses window, so replace()
+        # must reject it.  It used to be accepted, and the panel then
+        # crashed inside curses on its next use.
+        s = self.make_pty()
+        screen = curses.newterm('xterm', s, s)
+        win = screen.stdscr
+        panel = curses.panel.new_panel(curses.newwin(3, 6, 0, 0))
+        # Drop the panel from the global stack before later tests inspect it.
+        self.addCleanup(gc_collect)
+        screen.close()
+        self.assertRaises(curses.panel.error, panel.replace, win)
+        # The panel kept its own window, so it still works.
+        panel.move(1, 1)
 
     @unittest.skipUnless(hasattr(curses, 'new_prescr'),
                          'requires curses.new_prescr()')
