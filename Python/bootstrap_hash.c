@@ -23,7 +23,10 @@
 #    include <sys/random.h>       // getrandom()
 #  endif
 #  if !defined(HAVE_GETRANDOM) && defined(HAVE_GETRANDOM_SYSCALL)
-#    include <sys/syscall.h>      // SYS_getrandom
+#    include <sys/syscall.h>      // __NR_getrandom, SYS_getrandom
+#    if !defined(SYS_getrandom) && defined(__NR_getrandom)
+#      define SYS_getrandom __NR_getrandom
+#    endif
 #  endif
 #endif
 
