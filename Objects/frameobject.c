@@ -1651,10 +1651,6 @@ frame_lineno_set_impl(PyFrameObject *self, PyObject *value)
 /*[clinic end generated code: output=e64c86ff6be64292 input=36ed3c896b27fb91]*/
 {
     PyCodeObject *code = _PyFrame_GetCode(self->f_frame);
-    if (value == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
-        return -1;
-    }
     /* f_lineno must be an integer. */
     if (!PyLong_CheckExact(value)) {
         PyErr_SetString(PyExc_ValueError,
@@ -1868,12 +1864,13 @@ frame_trace_get_impl(PyFrameObject *self)
 @permit_long_summary
 @critical_section
 @setter
+@deleter
 frame.f_trace as frame_trace
 [clinic start generated code]*/
 
 static int
 frame_trace_set_impl(PyFrameObject *self, PyObject *value)
-/*[clinic end generated code: output=d6fe08335cf76ae4 input=e57380734815dac5]*/
+/*[clinic end generated code: output=d6fe08335cf76ae4 input=9fb7a5805196eae2]*/
 {
     if (value == Py_None) {
         value = NULL;

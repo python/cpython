@@ -2,6 +2,7 @@ import unittest
 
 import threading
 from threading import Thread
+import time
 from unittest import TestCase
 import gc
 
@@ -94,6 +95,26 @@ class TestGC(TestCase):
         thread.start()
         thread.join()
 
+    def test_gc_callbacks_race_with_mutation(self):
+        def collect():
+            b.wait()
+            while not stop.is_set():
+                gc.collect()
+
+        def mutate():
+            b.wait()
+            while not stop.is_set():
+                gc.callbacks[:] = [lambda *_: _ for _ in range(16)]
+                time.sleep(0)
+                gc.callbacks.clear()
+
+        threads = [threading.Thread(target=f) for f in (collect, mutate) * 4]
+        b = threading.Barrier(len(threads) + 1)
+        stop = threading.Event()
+
+        with threading_helper.start_threads(threads, stop.set):
+            b.wait()
+            time.sleep(0.2)
     def test_set_threshold(self):
         # GH-148613: Setting the GC threshold from another thread could cause a
         # race between the `gc_should_collect` and `gc_set_threshold` functions.

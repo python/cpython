@@ -2109,6 +2109,8 @@ class BaseTaskTests:
         test_utils.run_briefly(self.loop)
         self.assertTrue(outer.cancelled())
         self.assertEqual(0, 0 if outer._callbacks is None else len(outer._callbacks))
+        self.assertFalse(inner._asyncio_awaited_by)
+        self.assertTrue({f for f, _ctx in inner._callbacks or []} <= {asyncio.tasks._log_on_exception})
 
     def test_shield_cancel_outer_result(self):
         mock_handler = mock.Mock()
@@ -2133,6 +2135,21 @@ class BaseTaskTests:
         inner.set_exception(Exception('foo'))
         test_utils.run_briefly(self.loop)
         mock_handler.assert_called_once()
+
+    def test_shield_cancel_outer_in_task(self):
+        inner = self.new_future(self.loop)
+
+        async def coro():
+            outer = asyncio.shield(inner)
+            self.assertNotEqual(0, len(inner._callbacks))
+            outer.cancel()
+            await asyncio.sleep(0)
+            self.assertTrue(outer.cancelled())
+
+        task = self.new_task(self.loop, coro())
+        self.loop.run_until_complete(task)
+        self.assertFalse(inner._asyncio_awaited_by)
+        self.assertTrue({f for f, _ctx in inner._callbacks or []} <= {asyncio.tasks._log_on_exception})
 
     def test_shield_duplicate_log_once(self):
         mock_handler = mock.Mock()
