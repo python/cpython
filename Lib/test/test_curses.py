@@ -910,6 +910,30 @@ class TestCurses(unittest.TestCase):
                 func(0, 0, *args, curses.A_BOLD)
                 self.assertEqual(win.getattrs(), curses.A_UNDERLINE)
 
+    @requires_colors
+    @requires_curses_window_meth('color_set')
+    @requires_curses_window_meth('attr_get')
+    def test_output_string_pair_restored(self):
+        # The rendition put back after a write includes the color pair, also
+        # when it is larger than the A_COLOR field of a chtype holds.
+        pairs = [7]
+        if curses.has_extended_color_support() and curses.COLOR_PAIRS > 300:
+            pairs.append(300)
+        win = curses.newwin(2, 10, 0, 0)
+        for pair in pairs:
+            curses.init_pair(pair, curses.COLOR_RED, curses.COLOR_BLACK)
+            for func, args in [(win.addstr, ('x',)), (win.addnstr, ('x', 1)),
+                               (win.insstr, ('x',)), (win.insnstr, ('x', 1))]:
+                with self.subTest(func.__qualname__, pair=pair):
+                    win.color_set(pair)
+                    func(0, 0, *args, curses.A_BOLD)
+                    self.assertEqual(win.attr_get()[1], pair)
+                    win.color_set(pair)
+                    # y=100 is outside the window, so the write fails.
+                    self.assertRaises(curses.error, func, 100, 0, *args,
+                                      curses.A_BOLD)
+                    self.assertEqual(win.attr_get()[1], pair)
+
     def test_add_string_behavior(self):
         # addstr() advances the cursor past the written text; addnstr()
         # writes at most n characters.

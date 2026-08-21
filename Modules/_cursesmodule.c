@@ -2161,6 +2161,56 @@ curses_wattrset(PyCursesWindowObject *self, attr_t attr, const char *funcname)
     return 0;
 }
 
+/* Read the rendition a write with an *attr* argument has to put back.  The
+   color pair is read apart from the attributes because the A_COLOR field of a
+   chtype holds only pairs 0 to 255, while a window can use a larger one. */
+static int
+curses_wattr_save(PyCursesWindowObject *self, attr_t *attrs, int *pair,
+                  const char *funcname)
+{
+#if defined(HAVE_CURSES_WATTR_GET) && defined(HAVE_CURSES_WATTR_SET)
+    int rtn;
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+    short legacy_pair;
+    rtn = wattr_get(self->win, attrs, &legacy_pair, pair);
+#else
+    short spair;
+    rtn = wattr_get(self->win, attrs, &spair, NULL);
+    *pair = spair;
+#endif
+    if (rtn == ERR) {
+        curses_window_set_error(self, "wattr_get", funcname);
+        return -1;
+    }
+#else
+    *attrs = getattrs(self->win);
+    *pair = 0;
+#endif
+    return 0;
+}
+
+/* Put the rendition back.  The name of the curses function used is
+   _CURSES_WATTR_RESTORE_FUNC, for the caller to name it in an error. */
+#if defined(HAVE_CURSES_WATTR_GET) && defined(HAVE_CURSES_WATTR_SET)
+#define _CURSES_WATTR_RESTORE_FUNC      "wattr_set"
+#else
+#define _CURSES_WATTR_RESTORE_FUNC      "wattrset"
+#endif
+
+static int
+curses_wattr_restore(PyCursesWindowObject *self, attr_t attrs, int pair)
+{
+#if defined(HAVE_CURSES_WATTR_GET) && defined(HAVE_CURSES_WATTR_SET)
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+    return wattr_set(self->win, attrs, 0, &pair);
+#else
+    return wattr_set(self->win, attrs, (short)pair, NULL);
+#endif
+#else
+    return wattrset(self->win, attrs);
+#endif
+}
+
 /*[clinic input]
 _curses.window.addstr
 
@@ -2201,6 +2251,7 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
     wchar_t *wstr = NULL;
 #endif
     attr_t attr_old = A_NORMAL;
+    int pair_old = 0;
     int use_xy = group_left_1, use_attr = group_right_1;
     const char *funcname;
 
@@ -2225,8 +2276,9 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
         return NULL;
     }
     if (use_attr) {
-        attr_old = getattrs(self->win);
-        if (curses_wattrset(self, attr, "addstr") < 0) {
+        if (curses_wattr_save(self, &attr_old, &pair_old, "addstr") < 0 ||
+            curses_wattrset(self, attr, "addstr") < 0)
+        {
             curses_release_wstr(strtype, wstr);
             Py_XDECREF(bytesobj);
             return NULL;
@@ -2263,10 +2315,10 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
         Py_DECREF(bytesobj);
     }
     if (use_attr) {
-        int attr_rtn = wattrset(self->win, attr_old);
+        int attr_rtn = curses_wattr_restore(self, attr_old, pair_old);
         if (rtn != ERR) {
             rtn = attr_rtn;
-            funcname = "wattrset";
+            funcname = _CURSES_WATTR_RESTORE_FUNC;
         }
     }
     return curses_window_check_err(self, rtn, funcname, "addstr");
@@ -2315,6 +2367,7 @@ _curses_window_addnstr_impl(PyCursesWindowObject *self, int group_left_1,
     wchar_t *wstr = NULL;
 #endif
     attr_t attr_old = A_NORMAL;
+    int pair_old = 0;
     int use_xy = group_left_1, use_attr = group_right_1;
     const char *funcname;
 
@@ -2339,8 +2392,9 @@ _curses_window_addnstr_impl(PyCursesWindowObject *self, int group_left_1,
         return NULL;
 
     if (use_attr) {
-        attr_old = getattrs(self->win);
-        if (curses_wattrset(self, attr, "addnstr") < 0) {
+        if (curses_wattr_save(self, &attr_old, &pair_old, "addnstr") < 0 ||
+            curses_wattrset(self, attr, "addnstr") < 0)
+        {
             curses_release_wstr(strtype, wstr);
             Py_XDECREF(bytesobj);
             return NULL;
@@ -2373,10 +2427,10 @@ _curses_window_addnstr_impl(PyCursesWindowObject *self, int group_left_1,
         Py_DECREF(bytesobj);
     }
     if (use_attr) {
-        int attr_rtn = wattrset(self->win, attr_old);
+        int attr_rtn = curses_wattr_restore(self, attr_old, pair_old);
         if (rtn != ERR) {
             rtn = attr_rtn;
-            funcname = "wattrset";
+            funcname = _CURSES_WATTR_RESTORE_FUNC;
         }
     }
     return curses_window_check_err(self, rtn, funcname, "addnstr");
@@ -4035,6 +4089,7 @@ _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
     wchar_t *wstr = NULL;
 #endif
     attr_t attr_old = A_NORMAL;
+    int pair_old = 0;
     int use_xy = group_left_1, use_attr = group_right_1;
     const char *funcname;
 
@@ -4059,8 +4114,9 @@ _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
         return NULL;
 
     if (use_attr) {
-        attr_old = getattrs(self->win);
-        if (curses_wattrset(self, attr, "insstr") < 0) {
+        if (curses_wattr_save(self, &attr_old, &pair_old, "insstr") < 0 ||
+            curses_wattrset(self, attr, "insstr") < 0)
+        {
             curses_release_wstr(strtype, wstr);
             Py_XDECREF(bytesobj);
             return NULL;
@@ -4093,10 +4149,10 @@ _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
         Py_DECREF(bytesobj);
     }
     if (use_attr) {
-        int attr_rtn = wattrset(self->win, attr_old);
+        int attr_rtn = curses_wattr_restore(self, attr_old, pair_old);
         if (rtn != ERR) {
             rtn = attr_rtn;
-            funcname = "wattrset";
+            funcname = _CURSES_WATTR_RESTORE_FUNC;
         }
     }
     return curses_window_check_err(self, rtn, funcname, "insstr");
@@ -4147,6 +4203,7 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
     wchar_t *wstr = NULL;
 #endif
     attr_t attr_old = A_NORMAL;
+    int pair_old = 0;
     int use_xy = group_left_1, use_attr = group_right_1;
     const char *funcname;
 
@@ -4171,8 +4228,9 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
         return NULL;
 
     if (use_attr) {
-        attr_old = getattrs(self->win);
-        if (curses_wattrset(self, attr, "insnstr") < 0) {
+        if (curses_wattr_save(self, &attr_old, &pair_old, "insnstr") < 0 ||
+            curses_wattrset(self, attr, "insnstr") < 0)
+        {
             curses_release_wstr(strtype, wstr);
             return NULL;
         }
@@ -4204,10 +4262,10 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
         Py_DECREF(bytesobj);
     }
     if (use_attr) {
-        int attr_rtn = wattrset(self->win, attr_old);
+        int attr_rtn = curses_wattr_restore(self, attr_old, pair_old);
         if (rtn != ERR) {
             rtn = attr_rtn;
-            funcname = "wattrset";
+            funcname = _CURSES_WATTR_RESTORE_FUNC;
         }
     }
     return curses_window_check_err(self, rtn, funcname, "insnstr");
