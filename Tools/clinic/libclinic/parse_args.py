@@ -5,7 +5,8 @@ import libclinic
 from libclinic import fail, warn
 from libclinic.function import (
     Function, Parameter,
-    GETTER, SETTER, METHOD_INIT)
+    GETTER, SETTER, METHOD_INIT,
+    ACCESSORS, SETTERS)
 from libclinic.converter import CConverter
 from libclinic.converters import (
     defining_class_converter, object_converter, self_converter)
@@ -194,6 +195,21 @@ METHODDEF_PROTOTYPE_IFNDEF: Final[str] = libclinic.normalize_snippet("""
         #define {methoddef_name}
     #endif /* !defined({methoddef_name}) */
 """)
+GETSETDEF_PROTOTYPE_IFNDEF: Final[str] = libclinic.normalize_snippet("""
+    #ifndef {getset_name}_GETSETDEF
+        #define {getset_name}_GETSETDEF
+    #endif /* !defined({getset_name}_GETSETDEF) */
+""")
+# The setter is called with NULL to delete the attribute.  Unless @deleter is
+# applied to it, deletion is rejected before the implementation is called.
+SETTER_PREAMBLE: Final[str] = libclinic.normalize_snippet("""
+    if (value == NULL) {{
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '{name}' of '%.100s' objects cannot be deleted",
+                     Py_TYPE({self_name})->tp_name);
+        return -1;
+    }}
+""", indent=4)
 # Every parser body ends with this shape; parser_body() and
 # _assemble_vectorcall() fill the assembly-time markers.
 PARSER_FINALE_SKELETON: Final[str] = libclinic.normalize_snippet("""
@@ -208,7 +224,7 @@ PARSER_FINALE_SKELETON: Final[str] = libclinic.normalize_snippet("""
 
     {exit_label}
         {cleanup}
-        return return_value;
+        return {parser_retval};
     }}
 """)
 VECTORCALL_FINALE_MARKERS_NEW: Final[dict[str, str]] = {
@@ -236,7 +252,7 @@ VECTORCALL_FINALE_MARKERS_INIT: Final[dict[str, str]] = {
             Py_DECREF(self);
             goto exit;
         }}
-        return_value = self;
+        {parser_retval} = self;
     """),
 }
 # Filled by _vectorcall_delegate_to_helper(); %(nkw)s is the C expression for the
@@ -392,6 +408,7 @@ class ParseArgsCodeGen:
     def use_meth_o(self) -> bool:
         return (len(self.parameters) == 1
                 and self.parameters[0].is_positional_only()
+                and not self.has_option_groups()
                 and not self.converters[0].is_optional()
                 and not self.varpos
                 and not self.requires_defining_class
@@ -408,7 +425,7 @@ class ParseArgsCodeGen:
         self.docstring_prototype = ''
         self.docstring_definition = ''
         self.methoddef_define = METHODDEF_PROTOTYPE_DEFINE
-        self.return_value_declaration = "PyObject *return_value = NULL;"
+        self.return_value_declaration = "PyObject *{parser_retval} = NULL;"
 
         if self.is_new_or_init() and not self.func.docstring:
             pass
@@ -416,10 +433,11 @@ class ParseArgsCodeGen:
             self.methoddef_define = GETTERDEF_PROTOTYPE_DEFINE
             if self.func.docstring:
                 self.docstring_definition = GETSET_DOCSTRING_PROTOTYPE_STRVAR
-        elif self.func.kind is SETTER:
+        elif self.func.kind in SETTERS:
             if self.func.docstring:
-                fail("docstrings are only supported for @getter, not @setter")
-            self.return_value_declaration = "int {return_value};"
+                fail("docstrings are only supported for @getter, not @setter",
+                     line_number=self.func.line_number)
+            self.return_value_declaration = "int {parser_retval};"
             self.methoddef_define = SETTERDEF_PROTOTYPE_DEFINE
         else:
             self.docstring_prototype = DOCSTRING_PROTOTYPE_VAR
@@ -463,9 +481,12 @@ class ParseArgsCodeGen:
         if self.func.kind is GETTER:
             self.parser_prototype = PARSER_PROTOTYPE_GETTER
             parser_code = []
-        elif self.func.kind is SETTER:
+        elif self.func.kind in SETTERS:
             self.parser_prototype = PARSER_PROTOTYPE_SETTER
-            parser_code = []
+            if self.func.kind is SETTER:
+                parser_code = [SETTER_PREAMBLE]
+            else:
+                parser_code = []
         elif not self.requires_defining_class:
             # no self.parameters, METH_NOARGS
             self.flags = "METH_NOARGS"
@@ -961,7 +982,7 @@ class ParseArgsCodeGen:
         self.methoddef_define = ''
 
         if self.func.kind is METHOD_INIT:
-            self.return_value_declaration = "int return_value = -1;"
+            self.return_value_declaration = "int {parser_retval} = -1;"
 
         if self.func.vectorcall and 'METH_KEYWORDS' in self.flags:
             self._new_or_init_delegate_to_helper()
@@ -1049,7 +1070,10 @@ class ParseArgsCodeGen:
             self.cpp_endif = "#endif /* " + conditional + " */"
 
             if self.methoddef_define and self.codegen.add_ifndef_symbol(self.func.full_name):
-                self.methoddef_ifndef = METHODDEF_PROTOTYPE_IFNDEF
+                if self.func.kind in ACCESSORS:
+                    self.methoddef_ifndef = GETSETDEF_PROTOTYPE_IFNDEF
+                else:
+                    self.methoddef_ifndef = METHODDEF_PROTOTYPE_IFNDEF
 
     def finalize(self, clang: CLanguage) -> None:
         # add ';' to the end of self.parser_prototype and self.impl_prototype
@@ -1154,7 +1178,7 @@ class ParseArgsCodeGen:
         """
         preamble = libclinic.normalize_snippet("""
             {{
-                PyObject *return_value = NULL;
+                PyObject *{parser_retval} = NULL;
                 Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
                 {init_declarations}
                 {declarations}

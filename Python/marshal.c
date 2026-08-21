@@ -1,8 +1,8 @@
 
 /* Write Python objects to files and read them back.
    This is primarily intended for writing and reading compiled Python code,
-   even though dicts, lists, sets and frozensets, not commonly seen in
-   code objects, are supported.
+   even though dicts and frozendicts, lists, sets and frozensets,
+   not commonly seen in code objects, are supported.
    Version 3 of this protocol properly supports circular links
    and sharing. */
 
@@ -1471,6 +1471,9 @@ r_object(RFILE *p)
         }
         if (type == TYPE_DICT) {
             R_REF(v);
+            if (v == NULL) {
+                break;
+            }
         }
         else {
             idx = r_ref_reserve(flag, p);
@@ -1502,6 +1505,7 @@ r_object(RFILE *p)
         }
         if (type == TYPE_FROZENDICT && v != NULL) {
             Py_SETREF(v, PyFrozenDict_New(v));
+            v = r_ref_insert(v, idx, flag, p);
         }
         retval = v;
         break;
@@ -2061,7 +2065,6 @@ marshal_load_impl(PyObject *module, PyObject *file, int allow_code)
 
 /*[clinic input]
 @permit_long_summary
-@permit_long_docstring_body
 marshal.dumps
 
     value: object
@@ -2075,14 +2078,14 @@ marshal.dumps
 
 Return the bytes object that would be written to a file by dump(value, file).
 
-Raise a ValueError exception if value has (or contains an object that has) an
-unsupported type.
+Raise a ValueError exception if value has (or contains an object that
+has) an unsupported type.
 [clinic start generated code]*/
 
 static PyObject *
 marshal_dumps_impl(PyObject *module, PyObject *value, int version,
                    int allow_code)
-/*[clinic end generated code: output=115f90da518d1d49 input=80cd3f30c1637ade]*/
+/*[clinic end generated code: output=115f90da518d1d49 input=dc1edcafd43124c5]*/
 {
     return _PyMarshal_WriteObjectToString(value, version, allow_code);
 }
@@ -2098,13 +2101,13 @@ marshal.loads
 
 Convert the bytes-like object to a value.
 
-If no valid value is found, raise EOFError, ValueError or TypeError.  Extra
-bytes in the input are ignored.
+If no valid value is found, raise EOFError, ValueError or TypeError.
+Extra bytes in the input are ignored.
 [clinic start generated code]*/
 
 static PyObject *
 marshal_loads_impl(PyObject *module, Py_buffer *bytes, int allow_code)
-/*[clinic end generated code: output=62c0c538d3edc31f input=14de68965b45aaa7]*/
+/*[clinic end generated code: output=62c0c538d3edc31f input=286f1dbd6811d2ad]*/
 {
     RFILE rf;
     char *s = bytes->buf;

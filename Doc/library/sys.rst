@@ -233,14 +233,14 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
 .. function:: _clear_type_cache()
 
-   Clear the internal type cache. The type cache is used to speed up attribute
-   and method lookups. Use the function *only* to drop unnecessary references
-   during reference leak debugging.
-
-   This function should be used for internal and specialized purposes only.
+   This function is a no-op. It used to clear the internal type cache, which
+   is now implemented per-type.
 
    .. deprecated:: 3.13
       Use the more general :func:`_clear_internal_caches` function instead.
+
+   .. versionchanged:: 3.16
+      This function is now a no-op.
 
 
 .. function:: _clear_internal_caches()
@@ -249,6 +249,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    release unnecessary references and memory blocks when hunting for leaks.
 
    .. versionadded:: 3.13
+
+   .. versionchanged:: 3.16
+      The type cache is no longer cleared, as it is now implemented per-type.
 
 
 .. function:: _current_frames()
@@ -1481,6 +1484,21 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    They hold the legacy representation of ``sys.last_exc``, as returned
    from :func:`exc_info` above.
 
+
+.. data:: lazy_modules
+
+   A :class:`set` of fully qualified module name strings that have been lazily
+   imported in the current interpreter but not yet loaded.  When a
+   lazily imported module is accessed for the first time, its name is removed
+   from this set.
+
+   This attribute is intended for debugging and introspection.
+
+   See also :func:`set_lazy_imports` and :pep:`810`.
+
+   .. versionadded:: 3.15
+
+
 .. data:: maxsize
 
    An integer giving the maximum value a variable of type :c:type:`Py_ssize_t` can
@@ -1775,13 +1793,13 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    callable or ``None`` to clear the filter.
 
    The filter function is called for every potentially lazy import to
-   determine whether it should actually be lazy. It must have the following
+   determine whether it should actually be lazy. It should have the following
    signature::
 
       def filter(importing_module: str, imported_module: str,
                  fromlist: tuple[str, ...] | None) -> bool
 
-   Where:
+   The function is called with three positional arguments:
 
    * *importing_module* is the name of the module doing the import
    * *imported_module* is the resolved name of the module being imported
@@ -1926,7 +1944,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       The interpreter is about to execute a new line of code or re-execute the
       condition of a loop.  The local trace function is called; *arg* is
       ``None``; the return value specifies the new local trace function.  See
-      :file:`Objects/lnotab_notes.txt` for a detailed explanation of how this
+      :source:`InternalDocs/code_objects.md` for a detailed explanation of how this
       works.
       Per-line events may be disabled for a frame by setting
       :attr:`~frame.f_trace_lines` to :const:`False` on that
@@ -2120,7 +2138,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    returned by the :func:`open` function.  Their parameters are chosen as
    follows:
 
-   * The encoding and error handling are is initialized from
+   * The encoding and error handling are initialized from
      :c:member:`PyConfig.stdio_encoding` and :c:member:`PyConfig.stdio_errors`.
 
      On Windows, UTF-8 is used for the console device.  Non-character
@@ -2225,8 +2243,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
       The name of the lock implementation:
 
-      * ``"semaphore"``: a lock uses a semaphore
-      * ``"mutex+cond"``: a lock uses a mutex and a condition variable
+      * ``"semaphore"``: a lock uses a semaphore (Python 3.14 and older)
+      * ``"mutex+cond"``: a lock uses a mutex and a condition variable (Python 3.14 and older)
+      * ``"pymutex"``: a lock uses the :c:type:`PyMutex` implementation (Python 3.15 and newer)
       * ``None`` if this information is unknown
 
    .. attribute:: thread_info.version

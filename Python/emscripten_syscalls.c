@@ -23,24 +23,27 @@ int __syscall_getuid32(void) {
     return __syscall_getuid32_js();
 }
 
-EM_JS(int, __syscall_umask_js, (int mask), {
-    // If we're in node and we can, call native process.umask()
+// Emscripten's syscall layer tracks the umask in SYSCALLS.currentUmask and
+// applies it itself when creating files and directories. We mount the real
+// filesystem via NODEFS, which applies proces.umask() to everything as well. To
+// avoid masking the mode twice, read and zero out process umask at startup,
+// and store it as emscripten's umask.
+EM_JS(void, __syscall_init_umask_js, (void), {
     if (ENVIRONMENT_IS_NODE) {
         try {
-            return process.umask(mask);
-        } catch(e) {
-            // oops...
-            // NodeJS docs: "In Worker threads, process.umask(mask) will throw an exception."
-            // umask docs: "This system call always succeeds"
-            return 0;
+            // process.umask(0) returns the previous umask and sets it to 0.
+            SYSCALLS.currentUmask = process.umask(0);
+        } catch (e) {
+            // NodeJS docs: "In Worker threads, process.umask(mask) will throw an
+            // exception." In that case just keep emscripten's default umask.
         }
     }
-    // Fall back to the stub case of returning 0.
-    return 0;
 })
 
-int __syscall_umask(int mask) {
-    return __syscall_umask_js(mask);
+EM_JS_DEPS(__syscall_init_umask, "$SYSCALLS");
+
+__attribute__((constructor)) void __syscall_init_umask(void) {
+    __syscall_init_umask_js();
 }
 
 #include <wasi/api.h>

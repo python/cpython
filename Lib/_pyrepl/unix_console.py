@@ -34,7 +34,9 @@ import platform
 from collections.abc import Callable
 from dataclasses import dataclass
 from fcntl import ioctl
-from typing import TYPE_CHECKING, cast, overload
+from typing import TYPE_CHECKING, overload
+
+from _colorize import ANSIColors
 
 from . import terminfo
 from .console import Console, Event
@@ -517,6 +519,7 @@ class UnixConsole(Console):
         Restore the console to the default state
         """
         trace("unix.restore")
+        self.__write(ANSIColors.RESET)
         self.__disable_bracketed_paste()
         self.__maybe_write_code(self._rmkx)
         self.flushoutput()
@@ -654,6 +657,7 @@ class UnixConsole(Console):
         while y >= 0 and not rendered_lines[y].text:
             y -= 1
         self.__move(0, min(y, self.height + self.__offset - 1))
+        self.__write(ANSIColors.RESET)
         self.__write("\n\r")
         self.flushoutput()
 

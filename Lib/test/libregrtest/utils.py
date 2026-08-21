@@ -12,7 +12,17 @@ import sys
 import sysconfig
 import tempfile
 import textwrap
+import types
 from collections.abc import Callable
+_winapi: types.ModuleType | None
+try:
+    import _winapi
+except ImportError:
+    _winapi = None
+try:
+    from _testcapi import get_process_memory_usage as _get_process_memory_usage
+except ImportError:
+    _get_process_memory_usage = None
 
 from test import support
 from test.support import os_helper
@@ -118,7 +128,8 @@ def printlist(x, width=70, indent=4, file=None):
     blanks = ' ' * indent
     # Print the sorted list: 'x' may be a '--random' list or a set()
     print(textwrap.fill(' '.join(str(elt) for elt in sorted(x)), width,
-                        initial_indent=blanks, subsequent_indent=blanks),
+                        initial_indent=blanks, subsequent_indent=blanks,
+                        break_long_words=False, break_on_hyphens=False),
           file=file)
 
 
@@ -131,7 +142,8 @@ orig_unraisablehook: Callable[..., None] | None = None
 
 def regrtest_unraisable_hook(unraisable) -> None:
     global orig_unraisablehook
-    support.environment_altered = True
+    support.set_environment_altered(
+        f"unraisable exception ({unraisable.exc_type.__name__})")
     support.print_warning("Unraisable exception")
     old_stderr = sys.stderr
     try:
@@ -155,7 +167,8 @@ orig_threading_excepthook: Callable[..., object] | None = None
 
 def regrtest_threading_excepthook(args) -> None:
     global orig_threading_excepthook
-    support.environment_altered = True
+    support.set_environment_altered(
+        f"uncaught thread exception ({args.exc_type.__name__})")
     support.print_warning(f"Uncaught thread exception: {args.exc_type.__name__}")
     old_stderr = sys.stderr
     try:
@@ -262,8 +275,7 @@ def clear_caches():
     except KeyError:
         pass
     else:
-        for f in typing._cleanups:
-            f()
+        typing._clear_caches()
 
         import inspect
         abs_classes = filter(inspect.isabstract, typing.__dict__.values())
@@ -515,7 +527,7 @@ def remove_testfn(test_name: TestName, verbose: int) -> None:
 
     if verbose:
         print_warning(f"{test_name} left behind {kind} {name!r}")
-        support.environment_altered = True
+        support.set_environment_altered(f"left behind {kind} {name!r}")
 
     try:
         import stat
@@ -752,3 +764,55 @@ def display_title(title):
     print(title)
     print("#" * len(title))
     print(flush=True)
+
+
+def _get_process_memory_usage_linux(pid: int) -> int | None:
+    # Linux implementation: read the private memory in bytes from
+    # /proc/pid/smaps.
+    try:
+        fp = open(f"/proc/{pid}/smaps", "rb")
+    except OSError:
+        return None
+
+    try:
+        total = 0
+        with fp:
+            for line in fp:
+                # Include both Private_Clean and Private_Dirty sections.
+                line = line.rstrip()
+                if line.startswith(b"Private_") and line.endswith(b'kB'):
+                    parts = line.split()
+                    total += int(parts[1]) * 1024
+        return total
+    except ProcessLookupError:
+        return None
+
+
+def _get_process_memory_usage_windows(pid: int) -> int | None:
+    assert _winapi is not None  # to make mypy happy
+    try:
+        handle = _winapi.OpenProcess(_winapi.PROCESS_QUERY_LIMITED_INFORMATION,
+                                     False, pid)
+    except OSError:
+        return None
+    try:
+        mem_info = _winapi.GetProcessMemoryInfo(handle)
+    finally:
+        _winapi.CloseHandle(handle)
+    return mem_info['WorkingSetSize']
+
+
+if _get_process_memory_usage is not None:
+    def get_process_memory_usage(pid: int) -> int | None:
+        try:
+            return _get_process_memory_usage(pid)
+        except ProcessLookupError:
+            return None
+elif _winapi is not None:
+    get_process_memory_usage = _get_process_memory_usage_windows
+elif sys.platform == 'linux':
+    get_process_memory_usage = _get_process_memory_usage_linux
+else:
+    def get_process_memory_usage(pid: int) -> int | None:
+        return None
+get_process_memory_usage.__doc__ = "Get process memory usage in bytes."

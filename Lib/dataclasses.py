@@ -1250,6 +1250,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
 # classes with slots.  These could be slightly more performant if we generated
 # the code instead of iterating over fields.  But that can be a project for
 # another day, if performance becomes an issue.
+
 def _dataclass_getstate(self):
     return [getattr(self, f.name) for f in fields(self)]
 

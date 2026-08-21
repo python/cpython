@@ -16,7 +16,7 @@
 This module defines three classes, :class:`IMAP4`, :class:`IMAP4_SSL` and
 :class:`IMAP4_stream`, which encapsulate a connection to an IMAP4 server and
 implement a large subset of the IMAP4rev1 client protocol as defined in
-:rfc:`2060`. It is backward compatible with IMAP4 (:rfc:`1730`) servers, but
+:rfc:`3501`. It is backward compatible with IMAP4 (:rfc:`1730`) servers, but
 note that the ``STATUS`` command is not supported in IMAP4.
 
 .. include:: ../includes/wasm-notavail.rst
@@ -89,6 +89,13 @@ There's also a subclass for secure connections:
    (potentially long-lived) structure.  Please read :ref:`ssl-security` for
    best practices.
 
+   .. note::
+
+      With the default *ssl_context*, the connection is encrypted but the
+      server certificate and hostname are not verified.
+      To verify them, pass a context created by
+      :func:`ssl.create_default_context`.
+
    The optional *timeout* parameter specifies a timeout in seconds for the
    connection attempt. If timeout is not given or is ``None``, the global default
    socket timeout is used.
@@ -120,11 +127,11 @@ The second subclass allows for connections created by a child process:
 The following utility functions are defined:
 
 
-.. function:: Internaldate2tuple(datestr)
+.. function:: Internaldate2tuple(resp)
 
-   Parse an IMAP4 ``INTERNALDATE`` string and return corresponding local
-   time.  The return value is a :class:`time.struct_time` tuple or
-   ``None`` if the string has wrong format.
+   Parse a :term:`bytes-like object` containing an IMAP4 ``INTERNALDATE``
+   response and return the corresponding local time.  The return value is a
+   :class:`time.struct_time` tuple or ``None`` if the input has wrong format.
 
 .. function:: Int2AP(num)
 
@@ -132,9 +139,11 @@ The following utility functions are defined:
    [``A`` .. ``P``].
 
 
-.. function:: ParseFlags(flagstr)
+.. function:: ParseFlags(resp)
 
-   Converts an IMAP4 ``FLAGS`` response to a tuple of individual flags.
+   Converts a :term:`bytes-like object` containing an IMAP4 ``FLAGS`` response
+   to a tuple of individual flags as :class:`bytes`.  The return value is an
+   empty tuple if the input has wrong format.
 
 
 .. function:: Time2Internaldate(date_time)
@@ -179,6 +188,23 @@ enclosed with either parentheses or double quotes) each string is quoted.
 However, the *password* argument to the ``LOGIN`` command is always quoted. If
 you want to avoid having an argument string quoted (eg: the *flags* argument to
 ``STORE``) then enclose the string in parentheses (eg: ``r'(\Deleted)'``).
+Or you can quote the string yourself;
+an argument that is already enclosed in double quotes is left unchanged.
+In general, however, it is better to pass arguments unquoted
+and let the module quote them as needed.
+
+Mailbox names are encoded as modified UTF-7 (:rfc:`3501`, section 5.1.3),
+so a mailbox name containing non-ASCII characters can be passed as an
+ordinary :class:`str`.
+A :class:`str` that is already valid modified UTF-7 is left unchanged,
+so that a name obtained from :meth:`~IMAP4.list` (raw ``bytes`` decoded to
+text) round-trips; pass :class:`bytes` to send the exact bytes with no
+encoding.
+When ``UTF8=ACCEPT`` is enabled (see :meth:`~IMAP4.enable`), mailbox names
+are sent as UTF-8 instead.
+
+.. versionchanged:: next
+   Non-ASCII mailbox names are automatically encoded as modified UTF-7.
 
 Most commands return a tuple: ``(type, [data, ...])`` where *type* is usually
 ``'OK'`` or ``'NO'``, and *data* is either the text from the command response,
@@ -186,16 +212,75 @@ or mandated results from the command. Each *data* is either a ``bytes``, or a
 tuple. If a tuple, then the first part is the header of the response, and the
 second part contains the data (ie: 'literal' value).
 
-The *message_set* options to commands below is a string specifying one or more
-messages to be acted upon.  It may be a simple message number (``'1'``), a range
-of message numbers (``'2:4'``), or a group of non-contiguous ranges separated by
-commas (``'1:3,6:9'``).  A range can contain an asterisk to indicate an infinite
-upper bound (``'3:*'``).
+The *message_set* options to the commands below can be a string specifying
+one or more messages to be acted upon.
+It may be a simple message number (``'1'``),
+a range of message numbers (``'2:4'``),
+or a group of non-contiguous ranges separated by commas (``'1:3,6:9'``).
+A range can contain an asterisk
+to indicate an infinite upper bound (``'3:*'``).
+
+Alternatively it can be specified using integers and :class:`range` objects.
+It may be a single message number or a sequence.
+The sequence items may be integers, ``(start, stop)`` tuples
+(where ``None`` or ``'*'`` stands for the last message),
+or :class:`range` objects.
+For example, ``[1, (3, 5), 8]`` and ``[range(1, 6), 8]``
+are both equivalent to ``'1,3:5,8'``.
+
+.. versionchanged:: next
+   Added support for the structured *message_set*.
+
+Command arguments that are parenthesized lists of atoms ---
+such as the *flag_list* argument of :meth:`~IMAP4.store` and the *flags*
+argument of :meth:`~IMAP4.append`,
+the *names* argument of :meth:`~IMAP4.status`,
+the *sort_criteria* argument of :meth:`~IMAP4.sort`,
+or the *message_parts* argument of :meth:`~IMAP4.fetch` ---
+can be passed as a sequence of strings instead of a single preformatted string.
+For example, ``[r'\Seen', r'\Answered']``
+is equivalent to ``(\Seen \Answered)``.
+
+.. versionchanged:: next
+   Added support for passing these arguments as a sequence.
+
+.. _imap4-params:
+
+The value-bearing arguments of the search and fetch commands
+can be quoted by hand, but this is error prone.
+Instead, they may contain ``?`` placeholders that are substituted, and quoted
+as required, from a *params* keyword argument,
+in the manner of :mod:`sqlite3` parameter substitution::
+
+   # SEARCH FROM me@example.com SUBJECT "trip report"
+   M.search(None, 'FROM ? SUBJECT ?', params=['me@example.com', 'trip report'])
+
+   # FETCH 1:5 (FLAGS BODY[HEADER.FIELDS (DATE FROM)])
+   M.fetch('1:5', 'FLAGS BODY[HEADER.FIELDS ?]', params=[['DATE', 'FROM']])
+
+The placeholders are:
+
+* ``?`` --- an ``astring``: a string (which will be quoted if necessary),
+  an integer, or a list of integers and/or strings
+  (which will be sent as a parenthesized list);
+* ``?f`` --- a flag or a list of flags, sent verbatim without quoting;
+* ``?s`` --- a *message_set* in the structured form described above.
+
+``??`` stands for a literal ``?``.
+
+Substitution is only performed when *params* is given;
+if no *params* are given, an argument containing a literal ``?`` is unchanged.
+The *params* keyword is accepted by :meth:`~IMAP4.search`,
+:meth:`~IMAP4.fetch`, :meth:`~IMAP4.sort`, :meth:`~IMAP4.thread` and
+:meth:`~IMAP4.uid`.
+
+.. versionadded:: next
+   The *params* keyword argument.
 
 An :class:`IMAP4` instance has the following methods:
 
 
-.. method:: IMAP4.append(mailbox, flags, date_time, message)
+.. method:: IMAP4.append(mailbox, flags, date_time, message, *, translate_line_endings=True)
 
    Append *message* to named mailbox.
 
@@ -203,6 +288,17 @@ An :class:`IMAP4` instance has the following methods:
    flags are separated by spaces, for example ``r'\Seen \Answered'``.
    If *flags* is not already enclosed in parentheses, parentheses are
    added automatically.
+
+   If *translate_line_endings* is true (the default),
+   line endings in *message* are translated to CRLF.
+   Pass ``False`` to send the message literal exactly as given,
+   which is required to preserve messages that contain bare CR or LF.
+   In that case *message* must already use CRLF line endings as required
+   by :rfc:`3501`; for example, serialize :mod:`email` messages using
+   :class:`email.policy.SMTP`.
+
+   .. versionchanged:: next
+      Added the *translate_line_endings* parameter.
 
 
 .. method:: IMAP4.authenticate(mechanism, authobject)
@@ -237,9 +333,15 @@ An :class:`IMAP4` instance has the following methods:
    mailbox. This is the recommended command before ``LOGOUT``.
 
 
-.. method:: IMAP4.copy(message_set, new_mailbox)
+.. method:: IMAP4.copy(message_set, new_mailbox, *, uid=False)
 
    Copy *message_set* messages onto end of *new_mailbox*.
+
+   If *uid* is true, *message_set* is a set of UIDs and the ``UID COPY``
+   command is used instead of ``COPY``.
+
+   .. versionchanged:: next
+      Added the *uid* parameter.
 
 
 .. method:: IMAP4.create(mailbox)
@@ -267,18 +369,35 @@ An :class:`IMAP4` instance has the following methods:
       The :meth:`enable` method itself, and :RFC:`6855` support.
 
 
-.. method:: IMAP4.expunge()
+.. method:: IMAP4.expunge(message_set=None, *, uid=False)
 
    Permanently remove deleted items from selected mailbox. Generates an ``EXPUNGE``
    response for each deleted message. Returned data contains a list of ``EXPUNGE``
    message numbers in order received.
 
+   If *uid* is true, the ``UID EXPUNGE`` command (:rfc:`4315`) is used to remove
+   only the messages that both are marked as deleted and have a UID in
+   *message_set*.  *message_set* is required in this case, and must be omitted
+   otherwise.
 
-.. method:: IMAP4.fetch(message_set, message_parts)
+   .. versionchanged:: next
+      Added the *message_set* and *uid* parameters.
+
+
+.. method:: IMAP4.fetch(message_set, message_parts, *, uid=False, params=None)
 
    Fetch (parts of) messages.  *message_parts* should be a string of message part
    names enclosed within parentheses, eg: ``"(UID BODY[TEXT])"``.  Returned data
    are tuples of message part envelope and data.
+
+   If *uid* is true, *message_set* is a set of UIDs and the message numbers in
+   the response are UIDs (``UID FETCH``).
+
+   If *params* is given, ``?`` placeholders in *message_parts* are substituted
+   with the quoted parameters (see :ref:`the placeholders <imap4-params>`).
+
+   .. versionchanged:: next
+      Added the *params* and *uid* parameters.
 
 
 .. method:: IMAP4.getacl(mailbox)
@@ -303,6 +422,19 @@ An :class:`IMAP4` instance has the following methods:
 
    Get the list of ``quota`` ``roots`` for the named *mailbox*. This method is part
    of the IMAP4 QUOTA extension defined in rfc2087.
+
+
+.. method:: IMAP4.id(fields=None)
+
+   Send client identification information to the server
+   and return the identification information sent back by the server
+   (the ``ID`` command, defined in :rfc:`2971`).
+   *fields* is a mapping of field names to values
+   (for example, ``{'name': 'myclient', 'version': '1.0'}``);
+   a value can be ``None``.
+   The server must support the ``ID`` capability.
+
+   .. versionadded:: next
 
 
 .. method:: IMAP4.idle(duration=None)
@@ -392,7 +524,7 @@ An :class:`IMAP4` instance has the following methods:
    .. versionadded:: 3.14
 
 
-.. method:: IMAP4.list([directory[, pattern]])
+.. method:: IMAP4.list(directory='', pattern='*')
 
    List mailbox names in *directory* matching *pattern*.  *directory* defaults to
    the top-level mail folder, and *pattern* defaults to match anything.  Returned
@@ -407,11 +539,28 @@ An :class:`IMAP4` instance has the following methods:
 .. method:: IMAP4.login_cram_md5(user, password)
 
    Force use of ``CRAM-MD5`` authentication when identifying the client to protect
-   the password.  Will only work if the server ``CAPABILITY`` response includes the
-   phrase ``AUTH=CRAM-MD5``.
+   the password. It will only work if the server ``CAPABILITY`` response includes
+   the phrase ``AUTH=CRAM-MD5``.
 
    .. versionchanged:: 3.15
       An :exc:`IMAP4.error` is raised if MD5 support is not available.
+
+
+.. method:: IMAP4.login_plain(user, password)
+
+   Authenticate using the ``PLAIN`` SASL mechanism (:rfc:`4616`).
+
+   This is a plaintext authentication mechanism that can be used instead
+   of :meth:`login` when UTF-8 support is required (see :rfc:`6855`).
+   Since the credentials are only base64-encoded, not encrypted, this
+   method should only be used over a TLS-protected connection, such as
+   :class:`IMAP4_SSL` or after :meth:`starttls`.
+
+   It will only work if the server supports the ``PLAIN`` mechanism,
+   which it need not advertise as ``AUTH=PLAIN`` in its ``CAPABILITY``
+   response.
+
+   .. versionadded:: next
 
 
 .. method:: IMAP4.logout()
@@ -422,11 +571,23 @@ An :class:`IMAP4` instance has the following methods:
       The method no longer ignores silently arbitrary exceptions.
 
 
-.. method:: IMAP4.lsub(directory='""', pattern='*')
+.. method:: IMAP4.lsub(directory='', pattern='*')
 
    List subscribed mailbox names in directory matching pattern. *directory*
    defaults to the top level directory and *pattern* defaults to match any mailbox.
    Returned data are tuples of message part envelope and data.
+
+
+.. method:: IMAP4.move(message_set, new_mailbox, *, uid=False)
+
+   Move *message_set* messages onto end of *new_mailbox*.
+
+   The server must support the ``MOVE`` capability (:rfc:`6851`).
+
+   If *uid* is true, *message_set* is a set of UIDs and the ``UID MOVE``
+   command is used instead of ``MOVE``.
+
+   .. versionadded:: next
 
 
 .. method:: IMAP4.myrights(mailbox)
@@ -500,7 +661,7 @@ An :class:`IMAP4` instance has the following methods:
    code, instead of the usual type.
 
 
-.. method:: IMAP4.search(charset, criterion[, ...])
+.. method:: IMAP4.search(charset, criterion[, ...], *, uid=False, params=None)
 
    Search mailbox for matching messages.  *charset* may be ``None``, in which case
    no ``CHARSET`` will be specified in the request to the server.  The IMAP
@@ -509,13 +670,33 @@ An :class:`IMAP4` instance has the following methods:
    the ``UTF8=ACCEPT`` capability was enabled using the :meth:`enable`
    command.
 
+   If *uid* is true, the message numbers in the response are UIDs
+   (``UID SEARCH``).
+
+   A criterion passed as :class:`str` is encoded to *charset*
+   (which must name a codec known to Python);
+   pass :class:`bytes` to send a criterion that is already encoded,
+   for example when *charset* is one that Python does not support.
+   When *charset* is ``None`` (as it must be under ``UTF8=ACCEPT``),
+   the criterion is sent using the connection's encoding instead.
+
+   If *params* is given, ``?`` placeholders in the criteria are substituted
+   with the quoted parameters (see :ref:`the placeholders <imap4-params>`).
+
    Example::
 
       # M is a connected IMAP4 instance...
-      typ, msgnums = M.search(None, 'FROM', '"LDJ"')
+      typ, msgnums = M.search(None, 'FROM', '"John Smith"')
 
       # or:
-      typ, msgnums = M.search(None, '(FROM "LDJ")')
+      typ, msgnums = M.search(None, '(FROM "John Smith")')
+
+      # or, letting the module quote the value (this is recommended):
+      typ, msgnums = M.search(None, 'FROM ?', params=['John Smith'])
+
+   .. versionchanged:: next
+      Added the *params* and *uid* parameters.
+      ``str`` search criteria are encoded to *charset*.
 
 
 .. method:: IMAP4.select(mailbox='INBOX', readonly=False)
@@ -561,7 +742,7 @@ An :class:`IMAP4` instance has the following methods:
    Returns socket instance used to connect to server.
 
 
-.. method:: IMAP4.sort(sort_criteria, charset, search_criterion[, ...])
+.. method:: IMAP4.sort(sort_criteria, charset, search_criterion[, ...], *, uid=False, params=None)
 
    The ``sort`` command is a variant of ``search`` with sorting semantics for the
    results.  Returned data contains a space separated list of matching message
@@ -576,7 +757,20 @@ An :class:`IMAP4` instance has the following methods:
    the interpretation of strings in the searching criteria.  It then returns the
    numbers of matching messages.
 
+   If *uid* is true, the message numbers in the response are UIDs (``UID SORT``).
+
+   As with :meth:`search`,
+   a *search_criterion* passed as :class:`str` is encoded to *charset*;
+   pass :class:`bytes` to send one already encoded.
+
+   If *params* is given, ``?`` placeholders in the search criteria are
+   substituted with the quoted parameters (see :ref:`the placeholders <imap4-params>`).
+
    This is an ``IMAP4rev1`` extension command.
+
+   .. versionchanged:: next
+      Added the *params* and *uid* parameters.
+      ``str`` search criteria are encoded to *charset*.
 
 
 .. method:: IMAP4.starttls(ssl_context=None)
@@ -585,6 +779,13 @@ An :class:`IMAP4` instance has the following methods:
    and should be a :class:`ssl.SSLContext` object.  This will enable
    encryption on the IMAP connection.  Please read :ref:`ssl-security` for
    best practices.
+
+   .. note::
+
+      With the default *ssl_context*, the connection is encrypted but the
+      server certificate and hostname are not verified.
+      To verify them, pass a context created by
+      :func:`ssl.create_default_context`.
 
    .. versionadded:: 3.2
 
@@ -599,37 +800,43 @@ An :class:`IMAP4` instance has the following methods:
    Request named status conditions for *mailbox*.
 
 
-.. method:: IMAP4.store(message_set, command, flag_list)
+.. method:: IMAP4.store(message_set, command, flag_list, *, uid=False)
 
    Alters flag dispositions for messages in mailbox.  *command* is specified by
-   section 6.4.6 of :rfc:`2060` as being one of "FLAGS", "+FLAGS", or "-FLAGS",
+   section 6.4.6 of :rfc:`3501` as being one of "FLAGS", "+FLAGS", or "-FLAGS",
    optionally with a suffix of ".SILENT".
+
+   If *uid* is true, *message_set* is a set of UIDs and the ``UID STORE``
+   command is used instead of ``STORE``.
 
    For example, to set the delete flag on all messages::
 
       typ, data = M.search(None, 'ALL')
       for num in data[0].split():
-         M.store(num, '+FLAGS', '\\Deleted')
+         M.store(num, '+FLAGS', r'\Deleted')
       M.expunge()
 
    .. note::
 
       Creating flags containing ']' (for example: "[test]") violates
       :rfc:`3501` (the IMAP protocol).  However, imaplib has historically
-      allowed creation of such tags, and popular IMAP servers, such as Gmail,
+      allowed creation of such flags, and popular IMAP servers, such as Gmail,
       accept and produce such flags.  There are non-Python programs which also
-      create such tags.  Although it is an RFC violation and IMAP clients and
+      create such flags.  Although it is an RFC violation and IMAP clients and
       servers are supposed to be strict, imaplib still continues to allow
-      such tags to be created for backward compatibility reasons, and as of
+      such flags to be created for backward compatibility reasons, and as of
       Python 3.6, handles them if they are sent from the server, since this
       improves real-world compatibility.
+
+   .. versionchanged:: next
+      Added the *uid* parameter.
 
 .. method:: IMAP4.subscribe(mailbox)
 
    Subscribe to new mailbox.
 
 
-.. method:: IMAP4.thread(threading_algorithm, charset, search_criterion[, ...])
+.. method:: IMAP4.thread(threading_algorithm, charset, search_criterion[, ...], *, uid=False, params=None)
 
    The ``thread`` command is a variant of ``search`` with threading semantics for
    the results.  Returned data contains a space separated list of thread members.
@@ -647,15 +854,36 @@ An :class:`IMAP4` instance has the following methods:
    returns the matching messages threaded according to the specified threading
    algorithm.
 
+   If *uid* is true, the message numbers in the response are UIDs
+   (``UID THREAD``).
+
+   As with :meth:`search`,
+   a *search_criterion* passed as :class:`str` is encoded to *charset*;
+   pass :class:`bytes` to send one already encoded.
+
+   If *params* is given, ``?`` placeholders in the search criteria are
+   substituted with the quoted parameters (see :ref:`the placeholders <imap4-params>`).
+
    This is an ``IMAP4rev1`` extension command.
 
+   .. versionchanged:: next
+      Added the *params* and *uid* parameters.
+      ``str`` search criteria are encoded to *charset*.
 
-.. method:: IMAP4.uid(command, arg[, ...])
+
+.. method:: IMAP4.uid(command, arg[, ...], *, params=None)
 
    Execute command args with messages identified by UID, rather than message
    number.  Returns response appropriate to command.  At least one argument must be
    supplied; if none are provided, the server will return an error and an exception
    will be raised.
+
+   If *params* is given, ``?`` placeholders in the ``SEARCH``, ``SORT`` and
+   ``THREAD`` criteria or in the ``FETCH`` parts are substituted with the quoted
+   parameters (see :ref:`the placeholders <imap4-params>`).
+
+   .. versionchanged:: next
+      Added the *params* parameter.
 
 
 .. method:: IMAP4.unsubscribe(mailbox)
@@ -729,4 +957,11 @@ retrieves and prints all messages::
        print('Message %s\n%s\n' % (num, data[0][1]))
    M.close()
    M.logout()
+
+.. note::
+
+   A ``FETCH`` response may contain additional or unsolicited data
+   (see :rfc:`3501`, section 7.4.2),
+   so production code should inspect the whole response
+   rather than rely on ``data[0][1]``.
 

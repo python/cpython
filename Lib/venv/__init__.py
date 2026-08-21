@@ -27,16 +27,15 @@ class EnvBuilder:
     By default, the builder makes the system (global) site-packages dir
     *un*available to the created environment.
 
-    If invoked using the Python -m option, the default is to use copying
-    on Windows platforms but symlinks elsewhere. If instantiated some
-    other way, the default is to *not* use symlinks.
+    By default, the builder uses copying on Windows platforms but symlinks
+    elsewhere, matching the behaviour when invoked using the Python -m option.
 
     :param system_site_packages: If True, the system (global) site-packages
                                  dir is available to created environments.
     :param clear: If True, delete the contents of the environment directory if
                   it already exists, before environment creation.
     :param symlinks: If True, attempt to symlink rather than copy files into
-                     virtual environment.
+                     virtual environment. If None, use the platform default.
     :param upgrade: If True, upgrade an existing virtual environment.
     :param with_pip: If True, ensure pip is installed in the virtual
                      environment
@@ -47,11 +46,11 @@ class EnvBuilder:
     """
 
     def __init__(self, system_site_packages=False, clear=False,
-                 symlinks=False, upgrade=False, with_pip=False, prompt=None,
+                 symlinks=None, upgrade=False, with_pip=False, prompt=None,
                  upgrade_deps=False, *, scm_ignore_files=frozenset()):
         self.system_site_packages = system_site_packages
         self.clear = clear
-        self.symlinks = symlinks
+        self.symlinks = os.name != 'nt' if symlinks is None else symlinks
         self.upgrade = upgrade
         self.with_pip = with_pip
         self.orig_prompt = prompt
@@ -318,6 +317,14 @@ class EnvBuilder:
                     copier(context.env_exe, path, relative_symlinks_ok=True)
                     if not os.path.islink(path):
                         os.chmod(path, 0o755)
+
+            if not self.symlinks and sys.platform == 'cygwin':
+                # Copy libpython DLL
+                libpython_dll = sysconfig.get_config_var('DLLLIBRARY')
+                if not os.path.exists(os.path.join(binpath, libpython_dll)):
+                    exe_path = os.path.dirname(sys.executable)
+                    shutil.copy(os.path.join(exe_path, libpython_dll),
+                                os.path.join(binpath, libpython_dll))
 
     else:
         def setup_python(self, context):
@@ -599,7 +606,7 @@ class EnvBuilder:
 
 
 def create(env_dir, system_site_packages=False, clear=False,
-           symlinks=False, with_pip=False, prompt=None, upgrade_deps=False,
+           symlinks=None, with_pip=False, prompt=None, upgrade_deps=False,
            *, scm_ignore_files=frozenset()):
     """Create a virtual environment in a directory."""
     builder = EnvBuilder(system_site_packages=system_site_packages,
