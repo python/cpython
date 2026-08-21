@@ -1017,6 +1017,37 @@ class TestCurses(unittest.TestCase):
                                       curses.A_BOLD)
                     self.assertEqual(win.attr_get()[1], pair)
 
+    def test_cell_embedded_null_chars(self):
+        # A NUL cannot share a cell with another character: setcchar() takes a
+        # NUL-terminated string, so the rest of the cell would be dropped.
+        for text in ['a\0', 'a\0\u0301', 'a\0b', '\0a']:
+            with self.subTest(text=text):
+                self.assertRaises(ValueError, curses.complexchar, text)
+                if WIDE_BUILD:
+                    self.assertRaises(ValueError, self.stdscr.addch, text)
+
+    def test_cell_null_char(self):
+        # A lone NUL is a character like any other, as addch(0) always was.
+        stdscr = self.stdscr
+        cell = curses.complexchar('\0')
+        self.assertEqual(str(cell), '\0')
+        self.assertEqual(eval(repr(cell), {'curses': curses}), cell)
+        stdscr.erase()
+        stdscr.addch(0, 0, 0)
+        expected = stdscr.instr(0, 0, 4)
+        for ch in ['\0', cell]:
+            with self.subTest(ch=ch):
+                stdscr.erase()
+                stdscr.addch(0, 0, ch)
+                self.assertEqual(stdscr.instr(0, 0, 4), expected)
+        # A cell holding a NUL reads back as the cell that writes it.
+        win = curses.newwin(3, 8, 0, 0)
+        win.insch(0, 0, '\0')
+        self.assertEqual(win.in_wch(0, 0), cell)
+        # complexstr() splits a NUL into a cell of its own.
+        self.assertEqual(len(curses.complexstr('a\0b')), 3)
+        self.assertEqual(curses.complexstr('\0')[0], cell)
+
     def test_add_string_behavior(self):
         # addstr() advances the cursor past the written text; addnstr()
         # writes at most n characters.

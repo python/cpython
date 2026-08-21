@@ -561,6 +561,10 @@ PyCurses_ConvertToWideCell(PyObject *obj, wchar_t *wch)
        setcchar() would silently drop a trailing spacing character, or fail
        with a generic error for a control-character base. */
     if (nch > 1) {
+        if (wmemchr(wch, L'\0', nch) != NULL) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            return -1;
+        }
         int bad = wcwidth(wch[0]) < 0;
         for (Py_ssize_t i = 1; !bad && i < nch; i++) {
             bad = wcwidth(wch[i]) != 0;
@@ -908,7 +912,9 @@ curses_cell_text(cursesmodule_state *state, const curses_cell_t *cell)
         PyErr_SetString(state->error, "getcchar() returned ERR");
         return NULL;
     }
-    return PyUnicode_FromWideChar(wstr, -1);
+    /* setcchar() stores no text for a NUL (it takes a NUL-terminated string),
+       so an empty cell holds a NUL character, as on a narrow build. */
+    return PyUnicode_FromWideChar(wstr, wstr[0] == L'\0' ? 1 : -1);
 #else
     char ch = (char)(*cell & A_CHARTEXT);
     return PyUnicode_Decode(&ch, 1, curses_screen_encoding, NULL);
@@ -1334,7 +1340,9 @@ complexstr_from_string(cursesmodule_state *state, PyObject *str,
         wchar_t cell[CCHARW_MAX + 1];
         Py_ssize_t k = 0;
         cell[k++] = wbuf[i++];
-        while (i < n && k < CCHARW_MAX && wcwidth(wbuf[i]) == 0) {
+        while (i < n && k < CCHARW_MAX && wbuf[i] != L'\0' &&
+               wcwidth(wbuf[i]) == 0)
+        {
             cell[k++] = wbuf[i++];
         }
         cell[k] = L'\0';
@@ -1343,7 +1351,7 @@ complexstr_from_string(cursesmodule_state *state, PyObject *str,
            control character (wcwidth < 0) may stand alone but cannot carry
            combining marks. */
         int width = wcwidth(cell[0]);
-        if (width == 0 || (k > 1 && width < 0)) {
+        if ((width == 0 && cell[0] != L'\0') || (k > 1 && width < 0)) {
             PyErr_Format(PyExc_ValueError,
                          "a character cell must be a single spacing character "
                          "optionally followed by up to %d combining characters",
