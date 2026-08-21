@@ -219,6 +219,14 @@ class FrameAttrsTest(unittest.TestCase):
         self.assertEqual(outer.f_locals, {})
         self.assertEqual(inner.f_locals, {})
 
+    def test_f_trace_opcodes_del(self):
+        f, _, _ = self.make_frames()
+        f.f_trace_opcodes = True
+        with self.assertRaisesRegex(AttributeError, 'cannot delete attribute'):
+            del f.f_trace_opcodes
+        # a failed deletion does not change the value
+        self.assertIs(f.f_trace_opcodes, True)
+
     def test_f_lineno_del_segfault(self):
         f, _, _ = self.make_frames()
         with self.assertRaises(AttributeError):
