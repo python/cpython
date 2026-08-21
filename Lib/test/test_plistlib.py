@@ -916,6 +916,20 @@ class TestPlistlib(unittest.TestCase):
         with self.assertRaises(plistlib.InvalidFileException):
             plistlib.loads(b"these are not plist file contents")
 
+    def test_xml_plist_not_well_formed(self):
+        # gh-155397: a not-well-formed XML plist must raise the documented
+        # InvalidFileException, not a raw xml.parsers.expat.ExpatError.
+        with self.assertRaises(plistlib.InvalidFileException):
+            plistlib.loads(b"<plist><foo></bar></plist>", fmt=plistlib.FMT_XML)
+
+    def test_xml_plist_unknown_encoding(self):
+        # gh-155397: an <?xml ... ?> declaration naming an encoding that
+        # Python does not know must raise the documented InvalidFileException,
+        # not a raw LookupError.
+        data = b'<?xml version="1.0" encoding="BogusEncoding"?><plist></plist>'
+        with self.assertRaises(plistlib.InvalidFileException):
+            plistlib.loads(data, fmt=plistlib.FMT_XML)
+
     def test_modified_uid_negative(self):
         neg_uid = UID(1)
         neg_uid.data = -1  # dodge the negative check in the constructor
