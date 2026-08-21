@@ -505,13 +505,15 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
             PyTuple_SET_ITEM(tot_kwnames, pto_nkwds + i, key);
         }
 
+        /* Copy pto_keywords with overlapping call keywords merged.
+         * Note, tail is already copied. */
         Py_ssize_t pos = 0, i = 0;
         PyObject *keyword_dict = n_merges ? pto_kw_merged : partial_keywords;
-        int valid_keys = 1;
+        int valid_kwargs = 1;
         Py_BEGIN_CRITICAL_SECTION(keyword_dict);
         while (PyDict_Next(keyword_dict, &pos, &key, &val)) {
             if (!PyUnicode_Check(key)) {
-                valid_keys = 0;
+                valid_kwargs = 0;
                 break;
             }
             assert(i < pto_nkwds);
@@ -520,7 +522,7 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
             i++;
         }
         Py_END_CRITICAL_SECTION();
-        if (!valid_keys) {
+        if (!valid_kwargs) {
             PyErr_SetString(PyExc_TypeError, "keywords must be strings");
             Py_XDECREF(pto_kw_merged);
             Py_DECREF(tot_kwnames);
