@@ -236,11 +236,12 @@ VECTORCALL_FINALE_MARKERS_NEW: Final[dict[str, str]] = {
 }
 # METHOD_INIT: tp_alloc self, let the int-returning impl initialize it, and
 # return it.  The locals are declared up front so a label can precede
-# {self_alloc} (C11).
+# {self_alloc} (C11).  Skipping tp_new requires it be PyType_GenericNew, which
+# cannot be asserted: a Windows extension module sees a different address for
+# a dllimport function in a static initializer than in a comparison.
 VECTORCALL_FINALE_MARKERS_INIT: Final[dict[str, str]] = {
     "init_declarations": "PyObject *self;\nint _result;",
     "self_alloc": libclinic.normalize_snippet("""
-        assert(_PyType_CAST(type)->tp_new == PyType_GenericNew);
         self = _PyType_CAST(type)->tp_alloc(
             _PyType_CAST(type), 0);
         if (self == NULL) {{
@@ -274,7 +275,6 @@ VECTORCALL_DELEGATE_MARKERS_NEW: Final[dict[str, str]] = {
 }
 VECTORCALL_DELEGATE_MARKERS_INIT: Final[dict[str, str]] = {
     "self_alloc": libclinic.normalize_snippet("""
-        assert(_PyType_CAST(type)->tp_new == PyType_GenericNew);
         self = _PyType_CAST(type)->tp_alloc(
             _PyType_CAST(type), 0);
         if (self == NULL) {{

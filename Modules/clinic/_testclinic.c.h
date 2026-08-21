@@ -5016,7 +5016,6 @@ vc_posorkw_vectorcall(PyObject *type, PyObject *const *args,
 
     assert(Py_Is(_PyType_CAST(type), &VcInit_Type));
     if (kwnames != NULL) {
-        assert(_PyType_CAST(type)->tp_new == PyType_GenericNew);
         self = _PyType_CAST(type)->tp_alloc(
             _PyType_CAST(type), 0);
         if (self == NULL) {
@@ -5040,7 +5039,6 @@ vc_posorkw_vectorcall(PyObject *type, PyObject *const *args,
     }
     b = args[1];
 skip_optional:
-    assert(_PyType_CAST(type)->tp_new == PyType_GenericNew);
     self = _PyType_CAST(type)->tp_alloc(
         _PyType_CAST(type), 0);
     if (self == NULL) {
@@ -5234,4 +5232,4 @@ vc_kwonly_vectorcall(PyObject *type, PyObject *const *args,
         kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
         NULL, kwnames);
 }
-/*[clinic end generated code: output=c3684934050317f4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=927d115514848dd6 input=a9049054013a1b77]*/
