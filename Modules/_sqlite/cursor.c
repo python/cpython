@@ -1321,7 +1321,12 @@ static int
 _sqlite3_Cursor_arraysize_set_impl(pysqlite_Cursor *self, PyObject *value)
 /*[clinic end generated code: output=af59a6b09f8cce6e input=ace48cb114e26060]*/
 {
-    return PyLong_AsUInt32(value, &self->arraysize);
+    uint32_t arraysize;
+    if (PyLong_AsUInt32(value, &arraysize) < 0) {
+        return -1;
+    }
+    self->arraysize = arraysize;
+    return 0;
 }
 
 static PyMethodDef cursor_methods[] = {
