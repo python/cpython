@@ -1,0 +1,3 @@
+:func:`zlib.crc32_combine` and :func:`zlib.adler32_combine` now raise
+:exc:`ValueError` if the *len2* argument is negative, instead of hanging
+indefinitely or returning rubbish, respectively.

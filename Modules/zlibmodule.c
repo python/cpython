@@ -1951,6 +1951,10 @@ zlib_adler32_combine_impl(PyObject *module, unsigned int adler1,
     if (PyErr_Occurred()) {
         return (unsigned int)-1;
     }
+    if (len < 0) {
+        PyErr_SetString(PyExc_ValueError, "len2 must be non-negative");
+        return (unsigned int)-1;
+    }
     return adler32_combine(adler1, adler2, len);
 }
 
@@ -2034,6 +2038,10 @@ zlib_crc32_combine_impl(PyObject *module, unsigned int crc1,
     z_off_t len = convert_to_z_off_t(len2);
 #endif
     if (PyErr_Occurred()) {
+        return (unsigned int)-1;
+    }
+    if (len < 0) {
+        PyErr_SetString(PyExc_ValueError, "len2 must be non-negative");
         return (unsigned int)-1;
     }
     return crc32_combine(crc1, crc2, len);
