@@ -1191,6 +1191,72 @@ class GzipBrokenHeaderCorrectException(GzipTest, unittest.TestCase):
             tarfile.open(fileobj=f, mode='r|gz')
 
 
+class FileInFileExceptionWrappingTest(unittest.TestCase):
+    """
+    See: https://github.com/python/cpython/issues/156057
+
+    _FileInFile.read() must wrap whatever exception type its
+    underlying fileobj.read() raises for corrupt compressed data,
+    using the exception class attribute each TarFile.*open()
+    classmethod configures, in tarfile.ReadError -- and must not
+    swallow an exception of an unconfigured type.
+    """
+
+    class _FakeFileobj:
+        def __init__(self, exc):
+            self.exc = exc
+
+        def seek(self, position):
+            pass
+
+        def read(self, size):
+            raise self.exc
+
+    def test_wraps_configured_exception_type(self):
+        class Boom(Exception):
+            pass
+
+        fif = tarfile._FileInFile(
+            self._FakeFileobj(Boom("simulated corrupt compressed data")),
+            offset=0, size=10, name="member", exception=Boom)
+        with self.assertRaises(tarfile.ReadError):
+            fif.read()
+
+    def test_does_not_wrap_unconfigured_exception_type(self):
+        class Boom(Exception):
+            pass
+
+        class Unrelated(Exception):
+            pass
+
+        fif = tarfile._FileInFile(
+            self._FakeFileobj(Unrelated("not the configured exception type")),
+            offset=0, size=10, name="member", exception=Boom)
+        with self.assertRaises(Unrelated):
+            fif.read()
+
+
+@support.requires_gzip()
+class GzipExtractfileWrapsCompressionErrorTest(unittest.TestCase):
+    """
+    See: https://github.com/python/cpython/issues/156057
+
+    Confirms the real gzopen() -> ExFileObject -> _FileInFile wiring:
+    a zlib.error raised while reading a member's compressed data past
+    the header surfaces as tarfile.ReadError, not the raw zlib.error.
+    """
+
+    def test_extractfile_read_wraps_zlib_error(self):
+        with tarfile.open(gzipname, mode='r:gz') as tar:
+            tarinfo = tar.getmember("ustar/regtype")
+            with tar.extractfile(tarinfo) as fobj:
+                with unittest.mock.patch.object(
+                        tar.fileobj, "read",
+                        side_effect=zlib.error("simulated corrupt data")):
+                    with self.assertRaises(tarfile.ReadError):
+                        fobj.read()
+
+
 class MemberReadTest(ReadTest, unittest.TestCase):
 
     def _test_member(self, tarinfo, chksum=None, **kwargs):
