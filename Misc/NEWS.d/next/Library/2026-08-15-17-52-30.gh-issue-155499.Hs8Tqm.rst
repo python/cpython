@@ -1,4 +1,0 @@
-:meth:`curses.window.border` and :meth:`curses.window.box` accept again ``0``
-as the request for the default character, and no longer reject a string
-character passed together with an integer or byte character.  Only a
-:class:`curses.complexchar` cannot be mixed with the latter.
