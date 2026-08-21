@@ -223,8 +223,11 @@ _pysqlite_get_converter(pysqlite_state *state, const char *keystr,
         return NULL;
     }
 
-    retval = PyDict_GetItemWithError(state->converters, upcase_key);
+    int rc = PyDict_GetItemRef(state->converters, upcase_key, &retval);
     Py_DECREF(upcase_key);
+    if (rc < 0) {
+        return NULL;
+    }
 
     return retval;
 }
@@ -296,11 +299,10 @@ pysqlite_build_row_cast_map(pysqlite_Cursor* self)
             }
         }
 
-        if (!converter) {
-            converter = Py_None;
-        }
-
-        if (PyList_Append(self->row_cast_map, converter) != 0) {
+        int rc = PyList_Append(self->row_cast_map,
+                               converter ? converter : Py_None);
+        Py_XDECREF(converter);
+        if (rc != 0) {
             Py_CLEAR(self->row_cast_map);
             return -1;
         }
