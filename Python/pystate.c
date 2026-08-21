@@ -159,6 +159,8 @@ static void bind_gilstate_tstate(PyThreadState *);
 static void unbind_gilstate_tstate(PyThreadState *);
 
 static void tstate_mimalloc_bind(PyThreadState *);
+static void add_threadstate(PyInterpreterState *interp, PyThreadState *tstate,
+                            PyThreadState *next);
 
 static void
 bind_tstate(PyThreadState *tstate)
@@ -190,6 +192,18 @@ bind_tstate(PyThreadState *tstate)
     tstate_mimalloc_bind(tstate);
 
     tstate->_status.bound = 1;
+
+    // Publish the thread state to the interpreter's thread list only now
+    // that it is fully initialized, so that readers of the list never see
+    // a partially initialized thread state.
+    PyInterpreterState *interp = tstate->interp;
+    HEAD_LOCK(interp->runtime);
+    if (interp->stoptheworld.requested || _PyRuntime.stoptheworld.requested) {
+        // Start in the suspended state if there is an ongoing stop-the-world.
+        tstate->state = _Py_THREAD_SUSPENDED;
+    }
+    add_threadstate(interp, tstate, interp->threads.head);
+    HEAD_UNLOCK(interp->runtime);
 }
 
 static void
@@ -1638,10 +1652,6 @@ init_threadstate(_PyThreadStateImpl *_tstate,
 
     llist_init(&_tstate->mem_free_queue);
     llist_init(&_tstate->asyncio_tasks_head);
-    if (interp->stoptheworld.requested || _PyRuntime.stoptheworld.requested) {
-        // Start in the suspended state if there is an ongoing stop-the-world.
-        tstate->state = _Py_THREAD_SUSPENDED;
-    }
 
     tstate->_status.initialized = 1;
 }
@@ -1698,10 +1708,6 @@ new_threadstate(PyInterpreterState *interp, int whence)
     interp->threads.next_unique_id += 1;
     uint64_t id = interp->threads.next_unique_id;
     init_threadstate(tstate, interp, id, whence);
-
-    // Add the new thread state to the interpreter.
-    PyThreadState *old_head = interp->threads.head;
-    add_threadstate(interp, (PyThreadState *)tstate, old_head);
 
     HEAD_UNLOCK(interp->runtime);
 
@@ -1930,24 +1936,33 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
     _PyRuntimeState *runtime = interp->runtime;
 
     HEAD_LOCK(runtime);
-    if (tstate->prev) {
-        tstate->prev->next = tstate->next;
+    if (tstate->_status.bound) {
+        if (tstate->prev) {
+            tstate->prev->next = tstate->next;
+        }
+        else {
+            interp->threads.head = tstate->next;
+        }
+        if (tstate->next) {
+            tstate->next->prev = tstate->prev;
+        }
+        if (tstate->state != _Py_THREAD_SUSPENDED) {
+            // Any ongoing stop-the-world request should not wait for us
+            // because our thread is getting deleted.
+            if (interp->stoptheworld.requested) {
+                decrement_stoptheworld_countdown(&interp->stoptheworld);
+            }
+            if (runtime->stoptheworld.requested) {
+                decrement_stoptheworld_countdown(&runtime->stoptheworld);
+            }
+        }
     }
     else {
-        interp->threads.head = tstate->next;
-    }
-    if (tstate->next) {
-        tstate->next->prev = tstate->prev;
-    }
-    if (tstate->state != _Py_THREAD_SUSPENDED) {
-        // Any ongoing stop-the-world request should not wait for us because
-        // our thread is getting deleted.
-        if (interp->stoptheworld.requested) {
-            decrement_stoptheworld_countdown(&interp->stoptheworld);
-        }
-        if (runtime->stoptheworld.requested) {
-            decrement_stoptheworld_countdown(&runtime->stoptheworld);
-        }
+        // The thread state was never bound, so it was never added to the
+        // interpreter's thread list and no stop-the-world request is
+        // waiting on it.
+        assert(tstate->prev == NULL && tstate->next == NULL);
+        assert(interp->threads.head != tstate);
     }
 
 #if defined(Py_REF_DEBUG) && defined(Py_GIL_DISABLED)
