@@ -561,6 +561,10 @@ PyCurses_ConvertToWideCell(PyObject *obj, wchar_t *wch)
        setcchar() would silently drop a trailing spacing character, or fail
        with a generic error for a control-character base. */
     if (nch > 1) {
+        if (wmemchr(wch, L'\0', nch) != NULL) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            return -1;
+        }
         int bad = wcwidth(wch[0]) < 0;
         for (Py_ssize_t i = 1; !bad && i < nch; i++) {
             bad = wcwidth(wch[i]) != 0;
@@ -908,7 +912,9 @@ curses_cell_text(cursesmodule_state *state, const curses_cell_t *cell)
         PyErr_SetString(state->error, "getcchar() returned ERR");
         return NULL;
     }
-    return PyUnicode_FromWideChar(wstr, -1);
+    /* setcchar() stores no text for a NUL (it takes a NUL-terminated string),
+       so an empty cell holds a NUL character, as on a narrow build. */
+    return PyUnicode_FromWideChar(wstr, wstr[0] == L'\0' ? 1 : -1);
 #else
     char ch = (char)(*cell & A_CHARTEXT);
     return PyUnicode_Decode(&ch, 1, curses_screen_encoding, NULL);
@@ -1318,6 +1324,16 @@ static PyObject *
 complexstr_from_string(cursesmodule_state *state, PyObject *str,
                        attr_t attr, int pair)
 {
+    /* A NUL cell ends a batch write and a cell array read (add_wchnstr(3X)),
+       so a string of cells cannot hold one, as addstr() cannot either. */
+    Py_ssize_t nul = PyUnicode_FindChar(str, 0, 0, PyUnicode_GET_LENGTH(str), 1);
+    if (nul < -1) {
+        return NULL;
+    }
+    if (nul >= 0) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        return NULL;
+    }
 #ifdef HAVE_NCURSESW
     Py_ssize_t n;
     wchar_t *wbuf = PyUnicode_AsWideCharString(str, &n);
