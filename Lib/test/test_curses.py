@@ -57,6 +57,23 @@ def requires_wide_build(test):
     return wrapped
 
 
+# The WACS_* double-line and thick-line character cells, without the common
+# prefix, paired with the alternate name spelling out their four sides
+# (blank, double or thick, clockwise from the top).
+WACS_LINE_ALIASES = [
+    ('D_ULCORNER', 'BDDB'), ('D_LLCORNER', 'DDBB'),
+    ('D_URCORNER', 'BBDD'), ('D_LRCORNER', 'DBBD'),
+    ('D_LTEE', 'DDDB'), ('D_RTEE', 'DBDD'),
+    ('D_BTEE', 'DDBD'), ('D_TTEE', 'BDDD'),
+    ('D_HLINE', 'BDBD'), ('D_VLINE', 'DBDB'), ('D_PLUS', 'DDDD'),
+    ('T_ULCORNER', 'BTTB'), ('T_LLCORNER', 'TTBB'),
+    ('T_URCORNER', 'BBTT'), ('T_LRCORNER', 'TBBT'),
+    ('T_LTEE', 'TTTB'), ('T_RTEE', 'TBTT'),
+    ('T_BTEE', 'TTBT'), ('T_TTEE', 'BTTT'),
+    ('T_HLINE', 'BTBT'), ('T_VLINE', 'TBTB'), ('T_PLUS', 'TTTT'),
+]
+
+
 def requires_colors(test):
     @functools.wraps(test)
     def wrapped(self, *args, **kwargs):
@@ -469,6 +486,72 @@ class TestCurses(unittest.TestCase):
             stdscr.box(vline, hline)
         # border() and box() cannot mix integer and wide-string characters.
         self.assertRaises(TypeError, stdscr.box, vline, ord('-'))
+
+    @requires_wide_build
+    def test_wacs_constants(self):
+        # Every ACS_* code has a WACS_* character cell counterpart, plus the
+        # double-line and thick-line codes, which have no ACS_* counterpart.
+        acs = {name.removeprefix('ACS_')
+               for name in dir(curses) if name.startswith('ACS_')}
+        wacs = {name.removeprefix('WACS_')
+                for name in dir(curses) if name.startswith('WACS_')}
+        extra = {name for pair in WACS_LINE_ALIASES for name in pair}
+        self.assertEqual(wacs - extra, acs)
+        for name in sorted(wacs):
+            with self.subTest(name=name):
+                self.assertIsInstance(getattr(curses, 'WACS_' + name),
+                                      curses.complexchar)
+        # The alternate names refer to the same cells.
+        self.assertEqual(curses.WACS_BSSB, curses.WACS_ULCORNER)
+        self.assertEqual(curses.WACS_BSBS, curses.WACS_HLINE)
+        self.assertEqual(curses.WACS_SBSB, curses.WACS_VLINE)
+        self.assertEqual(curses.WACS_SSSS, curses.WACS_PLUS)
+
+    @requires_wide_build
+    def test_wacs_line_constants(self):
+        # The double-line and thick-line codes are optional, but a supporting
+        # implementation provides the whole family under both names.
+        present = [name for name, alias in WACS_LINE_ALIASES
+                   if hasattr(curses, 'WACS_' + name)]
+        if not present:
+            self.skipTest('requires double-line and thick-line characters')
+        self.assertEqual(len(present), len(WACS_LINE_ALIASES))
+        for name, alias in WACS_LINE_ALIASES:
+            with self.subTest(name=name):
+                cell = getattr(curses, 'WACS_' + name)
+                self.assertIsInstance(cell, curses.complexchar)
+                self.assertEqual(getattr(curses, 'WACS_' + alias), cell)
+        # They are distinct from the single-line characters.
+        self.assertNotEqual(curses.WACS_D_HLINE, curses.WACS_HLINE)
+        self.assertNotEqual(curses.WACS_T_HLINE, curses.WACS_HLINE)
+        self.assertNotEqual(curses.WACS_D_HLINE, curses.WACS_T_HLINE)
+        stdscr = self.stdscr
+        stdscr.border(curses.WACS_D_VLINE, curses.WACS_D_VLINE,
+                      curses.WACS_D_HLINE, curses.WACS_D_HLINE,
+                      curses.WACS_D_ULCORNER, curses.WACS_D_URCORNER,
+                      curses.WACS_D_LLCORNER, curses.WACS_D_LRCORNER)
+        self.assertEqual(stdscr.in_wch(0, 0), curses.WACS_D_ULCORNER)
+        self.assertEqual(stdscr.in_wch(0, 1), curses.WACS_D_HLINE)
+
+    @requires_wide_build
+    def test_wacs_in_cell_methods(self):
+        # A WACS_* cell can be used wherever a character cell is accepted.
+        stdscr = self.stdscr
+        stdscr.addch(0, 0, curses.WACS_ULCORNER)
+        self.assertEqual(stdscr.in_wch(0, 0), curses.WACS_ULCORNER)
+        stdscr.insch(1, 0, curses.WACS_DIAMOND)
+        self.assertEqual(stdscr.in_wch(1, 0), curses.WACS_DIAMOND)
+        stdscr.hline(2, 0, curses.WACS_HLINE, 5)
+        self.assertEqual(stdscr.in_wch(2, 4), curses.WACS_HLINE)
+        stdscr.vline(3, 0, curses.WACS_VLINE, 3)
+        self.assertEqual(stdscr.in_wch(5, 0), curses.WACS_VLINE)
+        stdscr.border(curses.WACS_VLINE, curses.WACS_VLINE,
+                      curses.WACS_HLINE, curses.WACS_HLINE,
+                      curses.WACS_ULCORNER, curses.WACS_URCORNER,
+                      curses.WACS_LLCORNER, curses.WACS_LRCORNER)
+        self.assertEqual(stdscr.in_wch(0, 0), curses.WACS_ULCORNER)
+        stdscr.box(curses.WACS_VLINE, curses.WACS_HLINE)
+        self.assertEqual(stdscr.in_wch(0, 1), curses.WACS_HLINE)
 
     def test_complexchar_in_cell_methods(self):
         # Every single-character-cell method also accepts a complexchar, whose

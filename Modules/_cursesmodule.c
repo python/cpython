@@ -6612,6 +6612,179 @@ curses_init_dict(PyObject *module)
     SetDictInt("ACS_STERLING",      (ACS_STERLING));
 #endif
 
+#ifdef HAVE_NCURSESW
+    /* The same graphic symbols as character cells, for the methods that take
+       a complexchar.  Unlike the ACS_* codes, these are not restricted to the
+       8-bit alternate character set. */
+    cursesmodule_state *state = get_cursesmodule_state(module);
+#define SetDictWACS(NAME, VALUE)                                    \
+    do {                                                            \
+        PyObject *value = PyCursesComplexChar_New(state, (VALUE));  \
+        if (value == NULL) {                                        \
+            return -1;                                              \
+        }                                                           \
+        int rc = PyDict_SetItemString(module_dict, (NAME), value);  \
+        Py_DECREF(value);                                           \
+        if (rc < 0) {                                               \
+            return -1;                                              \
+        }                                                           \
+    } while (0)
+
+    SetDictWACS("WACS_ULCORNER",    WACS_ULCORNER);
+    SetDictWACS("WACS_LLCORNER",    WACS_LLCORNER);
+    SetDictWACS("WACS_URCORNER",    WACS_URCORNER);
+    SetDictWACS("WACS_LRCORNER",    WACS_LRCORNER);
+    SetDictWACS("WACS_LTEE",        WACS_LTEE);
+    SetDictWACS("WACS_RTEE",        WACS_RTEE);
+    SetDictWACS("WACS_BTEE",        WACS_BTEE);
+    SetDictWACS("WACS_TTEE",        WACS_TTEE);
+    SetDictWACS("WACS_HLINE",       WACS_HLINE);
+    SetDictWACS("WACS_VLINE",       WACS_VLINE);
+    SetDictWACS("WACS_PLUS",        WACS_PLUS);
+    SetDictWACS("WACS_S1",          WACS_S1);
+    SetDictWACS("WACS_S9",          WACS_S9);
+    SetDictWACS("WACS_DIAMOND",     WACS_DIAMOND);
+    SetDictWACS("WACS_CKBOARD",     WACS_CKBOARD);
+    SetDictWACS("WACS_DEGREE",      WACS_DEGREE);
+    SetDictWACS("WACS_PLMINUS",     WACS_PLMINUS);
+    SetDictWACS("WACS_BULLET",      WACS_BULLET);
+    SetDictWACS("WACS_LARROW",      WACS_LARROW);
+    SetDictWACS("WACS_RARROW",      WACS_RARROW);
+    SetDictWACS("WACS_DARROW",      WACS_DARROW);
+    SetDictWACS("WACS_UARROW",      WACS_UARROW);
+    SetDictWACS("WACS_BOARD",       WACS_BOARD);
+    SetDictWACS("WACS_LANTERN",     WACS_LANTERN);
+    SetDictWACS("WACS_BLOCK",       WACS_BLOCK);
+
+    SetDictWACS("WACS_BSSB",        WACS_ULCORNER);
+    SetDictWACS("WACS_SSBB",        WACS_LLCORNER);
+    SetDictWACS("WACS_BBSS",        WACS_URCORNER);
+    SetDictWACS("WACS_SBBS",        WACS_LRCORNER);
+    SetDictWACS("WACS_SBSS",        WACS_RTEE);
+    SetDictWACS("WACS_SSSB",        WACS_LTEE);
+    SetDictWACS("WACS_SSBS",        WACS_BTEE);
+    SetDictWACS("WACS_BSSS",        WACS_TTEE);
+    SetDictWACS("WACS_BSBS",        WACS_HLINE);
+    SetDictWACS("WACS_SBSB",        WACS_VLINE);
+    SetDictWACS("WACS_SSSS",        WACS_PLUS);
+
+    /* The following are never available with strict SYSV curses */
+#ifdef WACS_S3
+    SetDictWACS("WACS_S3",          WACS_S3);
+#endif
+#ifdef WACS_S7
+    SetDictWACS("WACS_S7",          WACS_S7);
+#endif
+#ifdef WACS_LEQUAL
+    SetDictWACS("WACS_LEQUAL",      WACS_LEQUAL);
+#endif
+#ifdef WACS_GEQUAL
+    SetDictWACS("WACS_GEQUAL",      WACS_GEQUAL);
+#endif
+#ifdef WACS_PI
+    SetDictWACS("WACS_PI",          WACS_PI);
+#endif
+#ifdef WACS_NEQUAL
+    SetDictWACS("WACS_NEQUAL",      WACS_NEQUAL);
+#endif
+#ifdef WACS_STERLING
+    SetDictWACS("WACS_STERLING",    WACS_STERLING);
+#endif
+
+    /* Double-line and thick-line symbols have no ACS_* counterpart, and are
+       only provided by some implementations. */
+#ifdef WACS_D_ULCORNER
+    SetDictWACS("WACS_D_ULCORNER",  WACS_D_ULCORNER);
+    SetDictWACS("WACS_BDDB",        WACS_D_ULCORNER);
+#endif
+#ifdef WACS_D_LLCORNER
+    SetDictWACS("WACS_D_LLCORNER",  WACS_D_LLCORNER);
+    SetDictWACS("WACS_DDBB",        WACS_D_LLCORNER);
+#endif
+#ifdef WACS_D_URCORNER
+    SetDictWACS("WACS_D_URCORNER",  WACS_D_URCORNER);
+    SetDictWACS("WACS_BBDD",        WACS_D_URCORNER);
+#endif
+#ifdef WACS_D_LRCORNER
+    SetDictWACS("WACS_D_LRCORNER",  WACS_D_LRCORNER);
+    SetDictWACS("WACS_DBBD",        WACS_D_LRCORNER);
+#endif
+#ifdef WACS_D_LTEE
+    SetDictWACS("WACS_D_LTEE",      WACS_D_LTEE);
+    SetDictWACS("WACS_DDDB",        WACS_D_LTEE);
+#endif
+#ifdef WACS_D_RTEE
+    SetDictWACS("WACS_D_RTEE",      WACS_D_RTEE);
+    SetDictWACS("WACS_DBDD",        WACS_D_RTEE);
+#endif
+#ifdef WACS_D_BTEE
+    SetDictWACS("WACS_D_BTEE",      WACS_D_BTEE);
+    SetDictWACS("WACS_DDBD",        WACS_D_BTEE);
+#endif
+#ifdef WACS_D_TTEE
+    SetDictWACS("WACS_D_TTEE",      WACS_D_TTEE);
+    SetDictWACS("WACS_BDDD",        WACS_D_TTEE);
+#endif
+#ifdef WACS_D_HLINE
+    SetDictWACS("WACS_D_HLINE",     WACS_D_HLINE);
+    SetDictWACS("WACS_BDBD",        WACS_D_HLINE);
+#endif
+#ifdef WACS_D_VLINE
+    SetDictWACS("WACS_D_VLINE",     WACS_D_VLINE);
+    SetDictWACS("WACS_DBDB",        WACS_D_VLINE);
+#endif
+#ifdef WACS_D_PLUS
+    SetDictWACS("WACS_D_PLUS",      WACS_D_PLUS);
+    SetDictWACS("WACS_DDDD",        WACS_D_PLUS);
+#endif
+
+#ifdef WACS_T_ULCORNER
+    SetDictWACS("WACS_T_ULCORNER",  WACS_T_ULCORNER);
+    SetDictWACS("WACS_BTTB",        WACS_T_ULCORNER);
+#endif
+#ifdef WACS_T_LLCORNER
+    SetDictWACS("WACS_T_LLCORNER",  WACS_T_LLCORNER);
+    SetDictWACS("WACS_TTBB",        WACS_T_LLCORNER);
+#endif
+#ifdef WACS_T_URCORNER
+    SetDictWACS("WACS_T_URCORNER",  WACS_T_URCORNER);
+    SetDictWACS("WACS_BBTT",        WACS_T_URCORNER);
+#endif
+#ifdef WACS_T_LRCORNER
+    SetDictWACS("WACS_T_LRCORNER",  WACS_T_LRCORNER);
+    SetDictWACS("WACS_TBBT",        WACS_T_LRCORNER);
+#endif
+#ifdef WACS_T_LTEE
+    SetDictWACS("WACS_T_LTEE",      WACS_T_LTEE);
+    SetDictWACS("WACS_TTTB",        WACS_T_LTEE);
+#endif
+#ifdef WACS_T_RTEE
+    SetDictWACS("WACS_T_RTEE",      WACS_T_RTEE);
+    SetDictWACS("WACS_TBTT",        WACS_T_RTEE);
+#endif
+#ifdef WACS_T_BTEE
+    SetDictWACS("WACS_T_BTEE",      WACS_T_BTEE);
+    SetDictWACS("WACS_TTBT",        WACS_T_BTEE);
+#endif
+#ifdef WACS_T_TTEE
+    SetDictWACS("WACS_T_TTEE",      WACS_T_TTEE);
+    SetDictWACS("WACS_BTTT",        WACS_T_TTEE);
+#endif
+#ifdef WACS_T_HLINE
+    SetDictWACS("WACS_T_HLINE",     WACS_T_HLINE);
+    SetDictWACS("WACS_BTBT",        WACS_T_HLINE);
+#endif
+#ifdef WACS_T_VLINE
+    SetDictWACS("WACS_T_VLINE",     WACS_T_VLINE);
+    SetDictWACS("WACS_TBTB",        WACS_T_VLINE);
+#endif
+#ifdef WACS_T_PLUS
+    SetDictWACS("WACS_T_PLUS",      WACS_T_PLUS);
+    SetDictWACS("WACS_TTTT",        WACS_T_PLUS);
+#endif
+#undef SetDictWACS
+#endif /* HAVE_NCURSESW */
+
     SetDictInt("LINES", LINES);
     SetDictInt("COLS", COLS);
 #undef SetDictInt

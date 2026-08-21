@@ -216,6 +216,11 @@ curses
   counterpart of :func:`curses.termattrs`.
   (Contributed by Serhiy Storchaka in :gh:`152332`.)
 
+* Add the ``WACS_*`` constants to the :mod:`curses` module, the counterparts of
+  the :ref:`ACS_* <curses-acs-codes>` line-drawing codes as
+  :class:`curses.complexchar` cells.
+  (Contributed by Serhiy Storchaka in :gh:`155863`.)
+
 * Add the :mod:`curses` functions :func:`curses.alloc_pair`,
   :func:`curses.find_pair`, :func:`curses.free_pair` and
   :func:`curses.reset_color_pairs` for dynamic color-pair management,
