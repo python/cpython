@@ -182,6 +182,12 @@ static int
 _PySSLContext_set_keylog_filename(PyObject *op, PyObject *arg,
                                   void *Py_UNUSED(closure))
 {
+    if (arg == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute 'keylog_filename' of '%.100s' objects "
+                     "cannot be deleted", Py_TYPE(op)->tp_name);
+        return -1;
+    }
 #if defined(MS_WINDOWS_APP) && !defined(MS_WINDOWS_DESKTOP)
     PyErr_SetString(PyExc_NotImplementedError,
                     "set_keylog_filename: unavailable on UWP build");
