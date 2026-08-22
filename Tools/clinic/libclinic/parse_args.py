@@ -655,6 +655,7 @@ class ParseArgsCodeGen:
                 }}}}
                 """, indent=4))
 
+        has_optional = False
         for i, p in enumerate(self.parameters):
             parse_arg = p.converter.parse_arg(
                 f'PyTuple_GET_ITEM(args, {i})',
@@ -662,7 +663,16 @@ class ParseArgsCodeGen:
                 limited_capi=self.limited_capi,
             )
             assert parse_arg is not None
+            if has_optional or p.is_optional():
+                has_optional = True
+                parser_code.append(libclinic.normalize_snippet("""
+                    if (%s < %d) {{
+                        goto skip_optional;
+                    }}
+                    """, indent=4) % (nargs, i + 1))
             parser_code.append(libclinic.normalize_snippet(parse_arg, indent=4))
+        if has_optional:
+            parser_code.append("skip_optional:")
 
         if self.varpos:
             parser_code.append(libclinic.normalize_snippet(self._parse_vararg(), indent=4))
