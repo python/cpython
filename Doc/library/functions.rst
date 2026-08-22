@@ -825,7 +825,7 @@ are always available.  They are listed here in alphabetical order.
    "iNfINity" are all acceptable spellings for positive infinity.
 
    If the argument is a bytes-like object, it must contain only ASCII characters
-   that conform to the :token:`~float:floatvalue` rule, otherwise :exc:`ValueError` is raised.
+   that conform to the :token:`~float:floatvalue` rule.
 
    Otherwise, if the argument is an integer or a floating-point number, a
    floating-point number with the same value (within Python's floating-point
