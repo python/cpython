@@ -916,10 +916,11 @@ class ProcessPoolExecutor(_base.Executor):
             if self._broken:
                 raise BrokenProcessPool(self._broken)
             if self._shutdown_thread:
-                raise RuntimeError('cannot schedule new futures after shutdown')
+                raise _base.ExecutorShutdownError(
+                    'cannot schedule new futures after shutdown')
             if _global_shutdown:
-                raise RuntimeError('cannot schedule new futures after '
-                                   'interpreter shutdown')
+                raise _base.ExecutorShutdownError(
+                    'cannot schedule new futures after interpreter shutdown')
 
             f = _base.Future()
             w = _WorkItem(f, fn, args, kwargs)
