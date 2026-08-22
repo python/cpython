@@ -520,14 +520,43 @@ def warn(message, category=None, stacklevel=1, source=None,
     )
 
 
+def _match_filename(pattern, filename, *, MS_WINDOWS=(sys.platform == 'win32')):
+    if not filename:
+        return pattern.match('<unknown>') is not None
+    if filename[0] == '<' and filename[-1] == '>':
+        return pattern.match(filename) is not None
+
+    is_py = (filename[-3:].lower() == '.py'
+             if MS_WINDOWS else
+             filename.endswith('.py'))
+    if is_py:
+        filename = filename[:-3]
+    if pattern.match(filename):  # for backward compatibility
+        return True
+    if MS_WINDOWS:
+        if not is_py and filename[-4:].lower() == '.pyw':
+            filename = filename[:-4]
+            is_py = True
+        if is_py and filename[-9:].lower() in (r'\__init__', '/__init__'):
+            filename = filename[:-9]
+        filename = filename.replace('\\', '/')
+    else:
+        if is_py and filename.endswith('/__init__'):
+            filename = filename[:-9]
+    filename = filename.replace('/', '.')
+    i = 0
+    while True:
+        if pattern.match(filename, i):
+            return True
+        i = filename.find('.', i) + 1
+        if not i:
+            return False
+
+
 def warn_explicit(message, category, filename, lineno,
                   module=None, registry=None, module_globals=None,
                   source=None):
     lineno = int(lineno)
-    if module is None:
-        module = filename or "<unknown>"
-        if module[-3:].lower() == ".py":
-            module = module[:-3] # XXX What about leading pathname?
     if isinstance(message, Warning):
         text = str(message)
         category = message.__class__
@@ -549,9 +578,11 @@ def warn_explicit(message, category, filename, lineno,
             action, msg, cat, mod, ln = item
             if ((msg is None or msg.match(text)) and
                 issubclass(category, cat) and
-                (mod is None or mod.match(module)) and
-                (ln == 0 or lineno == ln)):
-                break
+                (ln == 0 or lineno == ln) and
+                (mod is None or (_match_filename(mod, filename)
+                                 if module is None else
+                                 mod.match(module)))):
+                    break
         else:
             action = _wm.defaultaction
         # Early exit actions
@@ -589,17 +620,18 @@ def warn_explicit(message, category, filename, lineno,
     linecache.getlines(filename, module_globals)
 
     # Print message and context
-    msg = _wm.WarningMessage(message, category, filename, lineno, source=source)
+    msg = _wm.WarningMessage(message, category, filename, lineno,
+                             module=module, source=source)
     _wm._showwarnmsg(msg)
 
 
 class WarningMessage(object):
 
     _WARNING_DETAILS = ("message", "category", "filename", "lineno", "file",
-                        "line", "source")
+                        "line", "source", "module")
 
     def __init__(self, message, category, filename, lineno, file=None,
-                 line=None, source=None):
+                 line=None, source=None, module=None):
         self.message = message
         self.category = category
         self.filename = filename
@@ -607,12 +639,17 @@ class WarningMessage(object):
         self.file = file
         self.line = line
         self.source = source
+        self.module = module
         self._category_name = category.__name__ if category else None
 
     def __str__(self):
-        return ("{message : %r, category : %r, filename : %r, lineno : %s, "
-                    "line : %r}" % (self.message, self._category_name,
-                                    self.filename, self.lineno, self.line))
+        return ("{message : %r, category : %r, module : %r, "
+                "filename : %r, lineno : %s, line : %r}" % (
+                    self.message, self._category_name, self.module,
+                    self.filename, self.lineno, self.line))
+
+    def __repr__(self):
+        return f'<{type(self).__qualname__} {self}>'
 
 
 class catch_warnings(object):
@@ -669,8 +706,8 @@ class catch_warnings(object):
                 context = None
                 self._filters = self._module.filters
                 self._module.filters = self._filters[:]
-                self._showwarning = self._module.showwarning
                 self._showwarnmsg_impl = self._module._showwarnmsg_impl
+            self._showwarning = self._module.showwarning
             self._module._filters_mutated_lock_held()
             if self._record:
                 if _use_context:
@@ -678,9 +715,9 @@ class catch_warnings(object):
                 else:
                     log = []
                     self._module._showwarnmsg_impl = log.append
-                    # Reset showwarning() to the default implementation to make sure
-                    # that _showwarnmsg() calls _showwarnmsg_impl()
-                    self._module.showwarning = self._module._showwarning_orig
+                # Reset showwarning() to the default implementation to make sure
+                # that _showwarnmsg() calls _showwarnmsg_impl()
+                self._module.showwarning = self._module._showwarning_orig
             else:
                 log = None
         if self._filter is not None:
@@ -695,8 +732,8 @@ class catch_warnings(object):
                 self._module._warnings_context.set(self._saved_context)
             else:
                 self._module.filters = self._filters
-                self._module.showwarning = self._showwarning
                 self._module._showwarnmsg_impl = self._showwarnmsg_impl
+            self._module.showwarning = self._showwarning
             self._module._filters_mutated_lock_held()
 
 

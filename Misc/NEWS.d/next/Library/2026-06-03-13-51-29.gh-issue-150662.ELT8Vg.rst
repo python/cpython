@@ -1,0 +1,4 @@
+Fix the ``--gecko`` collector in :mod:`profiling.sampling` that kept every
+sample in memory. It now writes sample and marker data to temporary files
+and reads them back, ultimately building the output file at the end. Patch
+by Pablo Galindo and Maurycy Pawłowski-Wieroński.

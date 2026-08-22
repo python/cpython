@@ -1,1 +1,0 @@
-Fix segmentation faults in the :mod:`ctypes` module due to invalid :attr:`~ctypes._CFuncPtr.argtypes`. Patch by Dung Nguyen.

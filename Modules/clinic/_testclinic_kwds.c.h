@@ -9,7 +9,7 @@ preserve
 #include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_runtime.h"       // _Py_ID()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
 
 PyDoc_STRVAR(lone_kwds__doc__,
 "lone_kwds($module, /, **kwds)\n"
@@ -84,6 +84,53 @@ kwds_with_pos_only(PyObject *module, PyObject *args, PyObject *kwargs)
         __clinic_kwds = Py_NewRef(kwargs);
     }
     return_value = kwds_with_pos_only_impl(module, a, b, __clinic_kwds);
+
+exit:
+    /* Cleanup for kwds */
+    Py_XDECREF(__clinic_kwds);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(kwds_with_optional_pos_only__doc__,
+"kwds_with_optional_pos_only($module, a, b=None, /, **kwds)\n"
+"--\n"
+"\n");
+
+#define KWDS_WITH_OPTIONAL_POS_ONLY_METHODDEF    \
+    {"kwds_with_optional_pos_only", _PyCFunction_CAST(kwds_with_optional_pos_only), METH_VARARGS|METH_KEYWORDS, kwds_with_optional_pos_only__doc__},
+
+static PyObject *
+kwds_with_optional_pos_only_impl(PyObject *module, PyObject *a, PyObject *b,
+                                 PyObject *kwds);
+
+static PyObject *
+kwds_with_optional_pos_only(PyObject *module, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+    PyObject *b = Py_None;
+    PyObject *__clinic_kwds = NULL;
+
+    if (!_PyArg_CheckPositional("kwds_with_optional_pos_only", PyTuple_GET_SIZE(args), 1, 2)) {
+        goto exit;
+    }
+    a = PyTuple_GET_ITEM(args, 0);
+    if (PyTuple_GET_SIZE(args) < 2) {
+        goto skip_optional;
+    }
+    b = PyTuple_GET_ITEM(args, 1);
+skip_optional:
+    if (kwargs == NULL) {
+        __clinic_kwds = PyDict_New();
+        if (__clinic_kwds == NULL) {
+            goto exit;
+        }
+    }
+    else {
+        __clinic_kwds = Py_NewRef(kwargs);
+    }
+    return_value = kwds_with_optional_pos_only_impl(module, a, b, __clinic_kwds);
 
 exit:
     /* Cleanup for kwds */
@@ -181,4 +228,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=e4dea1070e003f5d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d4e257c529010ae1 input=a9049054013a1b77]*/

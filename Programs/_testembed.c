@@ -10,6 +10,7 @@
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_lock.h"          // PyEvent
 #include "pycore_pythread.h"      // PyThread_start_joinable_thread()
+#include "pycore_pystate.h"       // _PyInterpreterState_GuardCountdown
 #include "pycore_import.h"        // _PyImport_FrozenBootstrap
 #include <inttypes.h>
 #include <stdio.h>
@@ -40,8 +41,13 @@ char **main_argv;
 #define PROGRAM "test_embed"
 
 /* Use path starting with "./" avoids a search along the PATH */
-#define PROGRAM_NAME L"./_testembed"
-#define PROGRAM_NAME_UTF8 "./_testembed"
+#ifdef __CYGWIN__
+#  define PROGRAM_NAME L"./_testembed.exe"
+#  define PROGRAM_NAME_UTF8 "./_testembed.exe"
+#else
+#  define PROGRAM_NAME L"./_testembed"
+#  define PROGRAM_NAME_UTF8 "./_testembed"
+#endif
 
 #define INIT_LOOPS 4
 
@@ -55,6 +61,53 @@ static void error(const char *msg)
 {
     fprintf(stderr, "ERROR: %s\n", msg);
     fflush(stderr);
+}
+
+
+static void error_fmt(const char *format, ...)
+{
+    va_list vargs;
+    va_start(vargs, format);
+    fprintf(stderr, "ERROR: ");
+    vfprintf(stderr, format, vargs);
+    fprintf(stderr, "\n");
+    va_end(vargs);
+    fflush(stderr);
+}
+
+
+static wchar_t* py_getenv(const char *name)
+{
+    const char *env = getenv(name);
+    if (env == NULL) {
+        error_fmt("need %s env var", name);
+        return NULL;
+    }
+
+    wchar_t *result = Py_DecodeLocale(env, NULL);
+    if (result == NULL) {
+        error("Py_DecodeLocale() failed");
+        return NULL;
+    }
+    return result;
+}
+
+
+static wchar_t* get_cmdline_arg(const char *arg_name)
+{
+    if (main_argc < 3) {
+        const char *test = main_argv[1];
+        fprintf(stderr, "usage: %s %s %s\n", PROGRAM, test, arg_name);
+        return NULL;
+    }
+    const char *arg = main_argv[2];
+
+    wchar_t *result = Py_DecodeLocale(arg, NULL);
+    if (result == NULL) {
+        error_fmt("failed to decode %s command line argument", arg_name);
+        return NULL;
+    }
+    return result;
 }
 
 
@@ -166,6 +219,8 @@ static PyModuleDef embedded_ext = {
 static PyObject*
 PyInit_embedded_ext(void)
 {
+    // keep this as a single-phase initialization module;
+    // see test_create_module_from_initfunc
     return PyModule_Create(&embedded_ext);
 }
 
@@ -340,8 +395,18 @@ static int test_pre_initialization_sys_options(void)
     size_t xoption_len = wcslen(static_xoption);
     wchar_t *dynamic_once_warnoption = \
              (wchar_t *) calloc(warnoption_len+1, sizeof(wchar_t));
+    if (dynamic_once_warnoption == NULL) {
+        error("out of memory allocating warnoption");
+        return 1;
+    }
     wchar_t *dynamic_xoption = \
              (wchar_t *) calloc(xoption_len+1, sizeof(wchar_t));
+    if (dynamic_xoption == NULL) {
+        free(dynamic_once_warnoption);
+        error("out of memory allocating xoption");
+        return 1;
+    }
+
     wcsncpy(dynamic_once_warnoption, static_warnoption, warnoption_len+1);
     wcsncpy(dynamic_xoption, static_xoption, xoption_len+1);
 
@@ -627,6 +692,7 @@ static int test_init_from_config(void)
 
     putenv("PYTHONMALLOCSTATS=0");
     config.malloc_stats = 1;
+    config.pymalloc_hugepages = 1;
 
     putenv("PYTHONPYCACHEPREFIX=env_pycache_prefix");
     config_set_string(&config, &config.pycache_prefix, L"conf_pycache_prefix");
@@ -783,6 +849,7 @@ static void set_most_env_vars(void)
     putenv("PYTHONPROFILEIMPORTTIME=1");
     putenv("PYTHONNODEBUGRANGES=1");
     putenv("PYTHONMALLOCSTATS=1");
+    putenv("PYTHON_PYMALLOC_HUGEPAGES=1");
     putenv("PYTHONUTF8=1");
     putenv("PYTHONVERBOSE=1");
     putenv("PYTHONINSPECT=1");
@@ -1496,44 +1563,6 @@ static int test_audit_run_stdin(void)
     return run_audit_run_test(Py_ARRAY_LENGTH(argv), argv, &test);
 }
 
-static int test_init_read_set(void)
-{
-    PyStatus status;
-    PyConfig config;
-    PyConfig_InitPythonConfig(&config);
-
-    config_set_string(&config, &config.program_name, L"./init_read_set");
-
-    status = PyConfig_Read(&config);
-    if (PyStatus_Exception(status)) {
-        goto fail;
-    }
-
-    status = PyWideStringList_Insert(&config.module_search_paths,
-                                     1, L"test_path_insert1");
-    if (PyStatus_Exception(status)) {
-        goto fail;
-    }
-
-    status = PyWideStringList_Append(&config.module_search_paths,
-                                     L"test_path_append");
-    if (PyStatus_Exception(status)) {
-        goto fail;
-    }
-
-    /* override executable computed by PyConfig_Read() */
-    config_set_string(&config, &config.executable, L"my_executable");
-    init_from_config_clear(&config);
-
-    dump_config();
-    Py_Finalize();
-    return 0;
-
-fail:
-    PyConfig_Clear(&config);
-    Py_ExitStatusException(status);
-}
-
 
 static int test_init_sys_add(void)
 {
@@ -1582,14 +1611,8 @@ fail:
 
 static int test_init_setpath(void)
 {
-    char *env = getenv("TESTPATH");
-    if (!env) {
-        error("missing TESTPATH env var");
-        return 1;
-    }
-    wchar_t *path = Py_DecodeLocale(env, NULL);
+    wchar_t *path = py_getenv("TESTPATH");
     if (path == NULL) {
-        error("failed to decode TESTPATH");
         return 1;
     }
     Py_SetPath(path);
@@ -1615,14 +1638,8 @@ static int test_init_setpath_config(void)
         Py_ExitStatusException(status);
     }
 
-    char *env = getenv("TESTPATH");
-    if (!env) {
-        error("missing TESTPATH env var");
-        return 1;
-    }
-    wchar_t *path = Py_DecodeLocale(env, NULL);
+    wchar_t *path = py_getenv("TESTPATH");
     if (path == NULL) {
-        error("failed to decode TESTPATH");
         return 1;
     }
     Py_SetPath(path);
@@ -1644,14 +1661,8 @@ static int test_init_setpath_config(void)
 
 static int test_init_setpythonhome(void)
 {
-    char *env = getenv("TESTHOME");
-    if (!env) {
-        error("missing TESTHOME env var");
-        return 1;
-    }
-    wchar_t *home = Py_DecodeLocale(env, NULL);
+    wchar_t *home = py_getenv("TESTHOME");
     if (home == NULL) {
-        error("failed to decode TESTHOME");
         return 1;
     }
     Py_SetPythonHome(home);
@@ -1669,14 +1680,8 @@ static int test_init_is_python_build(void)
 {
     // gh-91985: in-tree builds fail to check for build directory landmarks
     // under the effect of 'home' or PYTHONHOME environment variable.
-    char *env = getenv("TESTHOME");
-    if (!env) {
-        error("missing TESTHOME env var");
-        return 1;
-    }
-    wchar_t *home = Py_DecodeLocale(env, NULL);
+    wchar_t *home = py_getenv("TESTHOME");
     if (home == NULL) {
-        error("failed to decode TESTHOME");
         return 1;
     }
 
@@ -1690,7 +1695,7 @@ static int test_init_is_python_build(void)
     // Use an impossible value so we can detect whether it isn't updated
     // during initialization.
     config._is_python_build = INT_MAX;
-    env = getenv("NEGATIVE_ISPYTHONBUILD");
+    char *env = getenv("NEGATIVE_ISPYTHONBUILD");
     if (env && strcmp(env, "0") != 0) {
         config._is_python_build = INT_MIN;
     }
@@ -1922,8 +1927,16 @@ static int test_initconfig_exit(void)
 }
 
 
+int
+extension_module_exec(PyObject *mod)
+{
+    return PyModule_AddStringConstant(mod, "exec_slot_ran", "yes");
+}
+
+
 static PyModuleDef_Slot extension_slots[] = {
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {Py_mod_exec, extension_module_exec},
     {0, NULL}
 };
 
@@ -2007,6 +2020,111 @@ static int test_init_run_main(void)
 }
 
 
+static int test_init_run_main_exitcode(Py_ssize_t argc, wchar_t * const *argv)
+{
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+
+    config.parse_argv = 1;
+    config_set_argv(&config, argc, argv);
+    config_set_string(&config, &config.program_name, L"./python3");
+
+    init_from_config_clear(&config);
+
+    int exitcode = Py_RunMain();
+    if (exitcode != 123) {
+        error_fmt("Py_RunMain() returned %i, expected 123", exitcode);
+        return 1;
+    }
+
+    // If Py_RunMain() calls Py_Exit(), this message is not written to stdout
+    printf("ok! Py_RunMain() returned 123\n");
+
+    return 0;
+}
+
+
+static int test_init_run_main_script_exitcode(void)
+{
+    wchar_t *filename = get_cmdline_arg("FILENAME");
+    if (filename == NULL) {
+        return 1;
+    }
+
+    wchar_t* argv[] = {L"python3", filename};
+    int res = test_init_run_main_exitcode(Py_ARRAY_LENGTH(argv), argv);
+    PyMem_RawFree(filename);
+
+    return res;
+}
+
+
+static int test_init_run_main_module_exitcode(void)
+{
+    wchar_t *module = get_cmdline_arg("MODULE");
+    if (module == NULL) {
+        return 1;
+    }
+
+    wchar_t* argv[] = {L"python3", L"-m", module};
+    int res = test_init_run_main_exitcode(Py_ARRAY_LENGTH(argv), argv);
+    PyMem_RawFree(module);
+
+    return res;
+}
+
+
+static int test_init_run_main_interactive_exitcode(void)
+{
+    wchar_t* argv[] = {L"python3", L"-i"};
+    return test_init_run_main_exitcode(Py_ARRAY_LENGTH(argv), argv);
+}
+
+
+static int test_init_run_main_code_exitcode(void)
+{
+    wchar_t *code = get_cmdline_arg("CODE");
+    if (code == NULL) {
+        return 1;
+    }
+
+    wchar_t* argv[] = {L"python3", L"-c", code};
+    int res = test_init_run_main_exitcode(Py_ARRAY_LENGTH(argv), argv);
+    PyMem_RawFree(code);
+
+    return res;
+}
+
+
+static int test_init_main(void)
+{
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+
+    configure_init_main(&config);
+    config._init_main = 0;
+    init_from_config_clear(&config);
+
+    assert(Py_IsInitialized() == 0);
+
+    /* sys.stdout don't exist yet: it is created by _Py_InitializeMain() */
+    int res = PyRun_SimpleString(
+        "import sys; "
+        "print('Run Python code before _Py_InitializeMain', "
+               "file=sys.stderr)");
+    if (res < 0) {
+        exit(1);
+    }
+
+    PyStatus status = _Py_InitializeMain();
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    return Py_RunMain();
+}
+
+
 static int test_run_main(void)
 {
     PyConfig config;
@@ -2081,15 +2199,20 @@ static int check_use_frozen_modules(const char *rawval)
     if (rawval == NULL) {
         wcscpy(optval, L"frozen_modules");
     }
-    else if (swprintf(optval, 100,
-#if defined(_MSC_VER)
-        L"frozen_modules=%S",
-#else
-        L"frozen_modules=%s",
-#endif
-        rawval) < 0) {
-        error("rawval is too long");
-        return -1;
+    else {
+        wchar_t *val = Py_DecodeLocale(rawval, NULL);
+        if (val == NULL) {
+            error("unable to decode TESTFROZEN");
+            return -1;
+        }
+        wcscpy(optval, L"frozen_modules=");
+        if ((wcslen(optval) + wcslen(val)) >= Py_ARRAY_LENGTH(optval)) {
+            error("TESTFROZEN is too long");
+            PyMem_RawFree(val);
+            return -1;
+        }
+        wcscat(optval, val);
+        PyMem_RawFree(val);
     }
 
     PyConfig config;
@@ -2187,6 +2310,52 @@ static int test_init_in_background_thread(void)
     return PyThread_join_thread(handle);
 }
 
+/* gh-146302: Py_IsInitialized() must not return true during site import. */
+static int _initialized_during_site_import = -1;  /* -1 = not observed */
+
+static int hook_check_initialized_on_site_import(
+    const char *event, PyObject *args, void *userData)
+{
+    if (strcmp(event, "import") == 0 && args != NULL) {
+        PyObject *name = PyTuple_GetItem(args, 0);
+        if (name != NULL && PyUnicode_Check(name)
+            && PyUnicode_CompareWithASCIIString(name, "site") == 0
+            && _initialized_during_site_import == -1)
+        {
+            _initialized_during_site_import = Py_IsInitialized();
+        }
+    }
+    return 0;
+}
+
+static int test_isinitialized_false_during_site_import(void)
+{
+    _initialized_during_site_import = -1;
+
+    /* Register audit hook before initialization */
+    PySys_AddAuditHook(hook_check_initialized_on_site_import, NULL);
+
+    _testembed_initialize();
+
+    if (_initialized_during_site_import == -1) {
+        error("audit hook never observed site import");
+        Py_Finalize();
+        return 1;
+    }
+    if (_initialized_during_site_import != 0) {
+        error("Py_IsInitialized() was true during site import");
+        Py_Finalize();
+        return 1;
+    }
+    if (!Py_IsInitialized()) {
+        error("Py_IsInitialized() was false after Py_Initialize()");
+        return 1;
+    }
+
+    Py_Finalize();
+    return 0;
+}
+
 
 #ifndef MS_WINDOWS
 #include "test_frozenmain.h"      // M_test_frozenmain
@@ -2239,6 +2408,277 @@ static int test_repeated_init_and_inittab(void)
         }
     }
     return 0;
+}
+
+static PyObject*
+create_module(PyObject* self, PyObject* spec)
+{
+    PyObject *name = PyObject_GetAttrString(spec, "name");
+    if (!name) {
+        return NULL;
+    }
+    if (PyUnicode_EqualToUTF8(name, "my_test_extension")) {
+        Py_DECREF(name);
+        return PyImport_CreateModuleFromInitfunc(spec, init_my_test_extension);
+    }
+    if (PyUnicode_EqualToUTF8(name, "embedded_ext")) {
+        Py_DECREF(name);
+        return PyImport_CreateModuleFromInitfunc(spec, PyInit_embedded_ext);
+    }
+    PyErr_Format(PyExc_LookupError, "static module %R not found", name);
+    Py_DECREF(name);
+    return NULL;
+}
+
+static PyObject*
+exec_module(PyObject* self, PyObject* mod)
+{
+    if (PyModule_Exec(mod) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyMethodDef create_static_module_methods[] = {
+    {"create_module", create_module, METH_O, NULL},
+    {"exec_module", exec_module, METH_O, NULL},
+    {NULL}
+};
+
+static struct PyModuleDef create_static_module_def = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "create_static_module",
+    .m_size = 0,
+    .m_methods = create_static_module_methods,
+    .m_slots = extension_slots,
+};
+
+PyMODINIT_FUNC PyInit_create_static_module(void) {
+    return PyModuleDef_Init(&create_static_module_def);
+}
+
+static int
+test_create_module_from_initfunc(void)
+{
+    wchar_t* argv[] = {
+        PROGRAM_NAME,
+        L"-c",
+        // Multi-phase initialization
+        L"import my_test_extension;"
+        L"print(my_test_extension);"
+        L"print(f'{my_test_extension.executed=}');"
+        L"print(f'{my_test_extension.exec_slot_ran=}');"
+        // Single-phase initialization
+        L"import embedded_ext;"
+        L"print(embedded_ext);"
+        L"print(f'{embedded_ext.executed=}');"
+    };
+    PyConfig config;
+    if (PyImport_AppendInittab("create_static_module",
+                               &PyInit_create_static_module) != 0) {
+        fprintf(stderr, "PyImport_AppendInittab() failed\n");
+        return 1;
+    }
+    PyConfig_InitPythonConfig(&config);
+    config.isolated = 1;
+    config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
+    init_from_config_clear(&config);
+    int result = PyRun_SimpleString(
+        "import sys\n"
+        "from importlib.util import spec_from_loader\n"
+        "import create_static_module\n"
+        "class StaticExtensionImporter:\n"
+        "   _ORIGIN = \"static-extension\"\n"
+        "   @classmethod\n"
+        "   def find_spec(cls, fullname, path, target=None):\n"
+        "       if fullname in {'my_test_extension', 'embedded_ext'}:\n"
+        "           return spec_from_loader(fullname, cls, origin=cls._ORIGIN)\n"
+        "       return None\n"
+        "   @staticmethod\n"
+        "   def create_module(spec):\n"
+        "       return create_static_module.create_module(spec)\n"
+        "   @staticmethod\n"
+        "   def exec_module(module):\n"
+        "       create_static_module.exec_module(module)\n"
+        "       module.executed = 'yes'\n"
+        "sys.meta_path.append(StaticExtensionImporter)\n"
+    );
+    if (result < 0) {
+        fprintf(stderr, "PyRun_SimpleString() failed\n");
+        return 1;
+    }
+    return Py_RunMain();
+}
+
+/// Multi-phase initialization package & submodule ///
+
+int
+mp_pkg_exec(PyObject *mod)
+{
+    // make this a namespace package
+    // empty list = namespace package
+    if (PyModule_Add(mod, "__path__", PyList_New(0)) < 0) {
+        return -1;
+    }
+    if (PyModule_AddStringConstant(mod, "mp_pkg_exec_slot_ran", "yes") < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static PyModuleDef_Slot mp_pkg_slots[] = {
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {Py_mod_exec, mp_pkg_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef mp_pkg_def = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "mp_pkg",
+    .m_size = 0,
+    .m_slots = mp_pkg_slots,
+};
+
+PyMODINIT_FUNC
+PyInit_mp_pkg(void)
+{
+    return PyModuleDef_Init(&mp_pkg_def);
+}
+
+static PyObject *
+submod_greet(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return PyUnicode_FromString("Hello from sub-module");
+}
+
+static PyMethodDef submod_methods[] = {
+    {"greet", submod_greet, METH_NOARGS, NULL},
+    {NULL},
+};
+
+int
+mp_submod_exec(PyObject *mod)
+{
+    return PyModule_AddStringConstant(mod, "mp_submod_exec_slot_ran", "yes");
+}
+
+static PyModuleDef_Slot mp_submod_slots[] = {
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {Py_mod_exec, mp_submod_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef mp_submod_def = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "mp_pkg.mp_submod",
+    .m_size = 0,
+    .m_methods = submod_methods,
+    .m_slots = mp_submod_slots,
+};
+
+PyMODINIT_FUNC
+PyInit_mp_submod(void)
+{
+    return PyModuleDef_Init(&mp_submod_def);
+}
+
+static int
+test_inittab_submodule_multiphase(void)
+{
+    wchar_t* argv[] = {
+        PROGRAM_NAME,
+        L"-c",
+        L"import sys;"
+        L"import mp_pkg.mp_submod;"
+        L"print(mp_pkg.mp_submod);"
+        L"print(sys.modules['mp_pkg.mp_submod']);"
+        L"print(mp_pkg.mp_submod.greet());"
+        L"print(f'{mp_pkg.mp_submod.mp_submod_exec_slot_ran=}');"
+        L"print(f'{mp_pkg.mp_pkg_exec_slot_ran=}');"
+    };
+    PyConfig config;
+    if (PyImport_AppendInittab("mp_pkg",
+                               &PyInit_mp_pkg) != 0) {
+        fprintf(stderr, "PyImport_AppendInittab() failed\n");
+        return 1;
+    }
+    if (PyImport_AppendInittab("mp_pkg.mp_submod",
+                               &PyInit_mp_submod) != 0) {
+        fprintf(stderr, "PyImport_AppendInittab() failed\n");
+        return 1;
+    }
+    PyConfig_InitPythonConfig(&config);
+    config.isolated = 1;
+    config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
+    init_from_config_clear(&config);
+    return Py_RunMain();
+}
+
+/// Single-phase initialization package & submodule ///
+
+static struct PyModuleDef sp_pkg_def = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "sp_pkg",
+    .m_size = 0,
+};
+
+PyMODINIT_FUNC
+PyInit_sp_pkg(void)
+{
+    PyObject *mod = PyModule_Create(&sp_pkg_def);
+    if (mod == NULL) {
+        return NULL;
+    }
+    // make this a namespace package
+    // empty list = namespace package
+    if (PyModule_Add(mod, "__path__", PyList_New(0)) < 0) {
+        Py_DECREF(mod);
+        return NULL;
+    }
+    return mod;
+}
+
+static struct PyModuleDef sp_submod_def = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "sp_pkg.sp_submod",
+    .m_size = 0,
+    .m_methods = submod_methods,
+};
+
+PyMODINIT_FUNC
+PyInit_sp_submod(void)
+{
+    return PyModule_Create(&sp_submod_def);
+}
+
+static int
+test_inittab_submodule_singlephase(void)
+{
+    wchar_t* argv[] = {
+        PROGRAM_NAME,
+        L"-c",
+        L"import sys;"
+        L"import sp_pkg.sp_submod;"
+        L"print(sp_pkg.sp_submod);"
+        L"print(sys.modules['sp_pkg.sp_submod']);"
+        L"print(sp_pkg.sp_submod.greet());"
+    };
+    PyConfig config;
+    if (PyImport_AppendInittab("sp_pkg",
+                               &PyInit_sp_pkg) != 0) {
+        fprintf(stderr, "PyImport_AppendInittab() failed\n");
+        return 1;
+    }
+    if (PyImport_AppendInittab("sp_pkg.sp_submod",
+                               &PyInit_sp_submod) != 0) {
+        fprintf(stderr, "PyImport_AppendInittab() failed\n");
+        return 1;
+    }
+    PyConfig_InitPythonConfig(&config);
+    config.isolated = 1;
+    config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
+    init_from_config_clear(&config);
+    return Py_RunMain();
 }
 
 static void wrap_allocator(PyMemAllocatorEx *allocator);
@@ -2335,6 +2775,214 @@ test_gilstate_after_finalization(void)
     return PyThread_detach_thread(handle);
 }
 
+
+const char *THREAD_CODE = \
+    "import time\n"
+    "time.sleep(0.2)\n"
+    "def fib(n):\n"
+    "  if n <= 1:\n"
+    "    return n\n"
+    "  else:\n"
+    "    return fib(n - 1) + fib(n - 2)\n"
+    "fib(10)";
+
+typedef struct {
+    void *argument;
+    int done;
+    PyEvent event;
+} ThreadData;
+
+static void
+do_tstate_ensure(void *arg)
+{
+    ThreadData *data = (ThreadData *)arg;
+    PyThreadStateToken *tokens[4];
+    PyInterpreterGuard *guard = data->argument;
+    tokens[0] = PyThreadState_Ensure(guard);
+    tokens[1] = PyThreadState_Ensure(guard);
+    tokens[2] = PyThreadState_Ensure(guard);
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    tokens[3] = PyThreadState_Ensure(guard);
+    assert(tokens[0] != NULL);
+    assert(tokens[1] != NULL);
+    assert(tokens[2] != NULL);
+    assert(tokens[3] != NULL);
+    int res = PyRun_SimpleString(THREAD_CODE);
+    assert(res == 0);
+    PyThreadState_Release(tokens[3]);
+    PyGILState_Release(gstate);
+    PyThreadState_Release(tokens[2]);
+    PyThreadState_Release(tokens[1]);
+    PyThreadState_Release(tokens[0]);
+    _Py_atomic_store_int(&data->done, 1);
+    PyInterpreterGuard_Close(guard);
+}
+
+static int
+test_thread_state_ensure(void)
+{
+    _testembed_initialize();
+    assert(_PyInterpreterState_GuardCountdown(_PyInterpreterState_GET()) == 0);
+    PyThread_handle_t handle;
+    PyThread_ident_t ident;
+    PyInterpreterGuard *guard = PyInterpreterGuard_FromCurrent();
+    assert(guard != NULL);
+    ThreadData data = { guard };
+    if (PyThread_start_joinable_thread(do_tstate_ensure, &data,
+                                       &ident, &handle) < 0) {
+        PyInterpreterGuard_Close(guard);
+        return -1;
+    }
+    // We hold an interpreter guard, so we don't
+    // have to worry about the interpreter shutting down before
+    // we finalize.
+    Py_Finalize();
+    assert(_Py_atomic_load_int(&data.done) == 1);
+    PyThread_join_thread(handle);
+    return 0;
+}
+
+static int
+test_main_interpreter_view(void)
+{
+    PyInterpreterView *view = PyInterpreterView_FromMain();
+    assert(view != NULL);
+    // These should fail -- the main interpreter is not available yet.
+    assert(PyInterpreterGuard_FromView(view) == NULL);
+    assert(PyThreadState_EnsureFromView(view) == NULL);
+
+    _testembed_initialize();
+    assert(_PyInterpreterState_GuardCountdown(_PyInterpreterState_GET()) == 0);
+    // Main interpreter is initialized and ready at this point.
+
+    PyInterpreterGuard *guard = PyInterpreterGuard_FromView(view);
+    assert(guard != NULL);
+    PyInterpreterGuard_Close(guard);
+
+    Py_Finalize();
+
+    // We shouldn't be able to get locks for the interpreter now
+    guard = PyInterpreterGuard_FromView(view);
+    assert(guard == NULL);
+
+    PyInterpreterView_Close(view);
+
+    return 0;
+}
+
+static void
+do_tstate_ensure_from_view(void *arg)
+{
+    ThreadData *data = (ThreadData *)arg;
+    PyInterpreterView *view = data->argument;
+    assert(view != NULL);
+    PyThreadStateToken *token = PyThreadState_EnsureFromView(view);
+    assert(token != NULL);
+    _PyEvent_Notify(&data->event);
+    int res = PyRun_SimpleString(THREAD_CODE);
+    assert(res == 0);
+    _Py_atomic_store_int(&data->done, 1);
+    PyThreadState_Release(token);
+}
+
+static int
+test_thread_state_ensure_from_view(void)
+{
+    _testembed_initialize();
+    assert(_PyInterpreterState_GuardCountdown(_PyInterpreterState_GET()) == 0);
+    PyThread_handle_t handle;
+    PyThread_ident_t ident;
+    PyInterpreterView *view = PyInterpreterView_FromCurrent();
+    assert(view != NULL);
+
+    ThreadData data = { view };
+    if (PyThread_start_joinable_thread(do_tstate_ensure_from_view, &data,
+                                       &ident, &handle) < 0) {
+        PyInterpreterView_Close(view);
+        return -1;
+    }
+
+    PyEvent_Wait(&data.event);
+    Py_Finalize();
+    assert(_Py_atomic_load_int(&data.done) == 1);
+    PyThread_join_thread(handle);
+    return 0;
+}
+
+#define NUM_THREADS 4
+
+static void
+stress_func(void *arg)
+{
+    PyInterpreterGuard *guard = (PyInterpreterGuard *)arg;
+
+    for (int i = 0; i < 1000; ++i) {
+        assert(guard != NULL);
+        PyThreadStateToken *token = PyThreadState_Ensure(guard);
+        assert(token != NULL);
+
+        PyGILState_STATE gstate = PyGILState_Ensure();
+
+        PyInterpreterView *view = PyInterpreterView_FromCurrent();
+        assert(view != NULL);
+
+        PyThreadStateToken *token2 = PyThreadState_EnsureFromView(view);
+        assert(token2 != NULL);
+        PyThreadState_Release(token2);
+
+        PyGILState_Release(gstate);
+
+        PyThreadState_Release(token);
+
+        PyInterpreterGuard_Close(guard);
+
+        guard = PyInterpreterGuard_FromView(view);
+        PyInterpreterView_Close(view);
+
+        if (guard == NULL) {
+            // The interpreter is shutting down. Bail out now.
+            return;
+        }
+    }
+
+    PyInterpreterGuard_Close(guard);
+}
+
+static int
+test_concurrent_finalization_stress(void)
+{
+    for (int j = 0; j < 50; ++j) {
+        _testembed_initialize();
+        assert(_PyInterpreterState_GuardCountdown(_PyInterpreterState_GET()) == 0);
+        PyThread_handle_t handles[NUM_THREADS];
+        PyThread_ident_t idents[NUM_THREADS];
+        PyInterpreterGuard *guards[NUM_THREADS];
+
+        for (int i = 0; i < NUM_THREADS; ++i) {
+            guards[i] = PyInterpreterGuard_FromCurrent();
+            assert(guards[i] != NULL);
+            if (PyThread_start_joinable_thread(stress_func, guards[i], &idents[i], &handles[i]) < 0) {
+                for (int x = 0; x < i; ++x) {
+                    PyInterpreterGuard_Close(guards[x]);
+                    PyThread_detach_thread(handles[x]);
+                }
+                return -1;
+            }
+        }
+
+        Py_Finalize();
+
+        for (int i = 0; i < NUM_THREADS; ++i) {
+            PyThread_join_thread(handles[i]);
+        }
+    }
+
+    return 0;
+}
+
+#undef NUM_THREADS
+
+
 /* *********************************************************
  * List of test cases and the function that implements it.
  *
@@ -2388,8 +3036,12 @@ static struct TestCase TestCases[] = {
     {"test_preinit_isolated2", test_preinit_isolated2},
     {"test_preinit_parse_argv", test_preinit_parse_argv},
     {"test_preinit_dont_parse_argv", test_preinit_dont_parse_argv},
-    {"test_init_read_set", test_init_read_set},
     {"test_init_run_main", test_init_run_main},
+    {"test_init_run_main_code_exitcode", test_init_run_main_code_exitcode},
+    {"test_init_run_main_script_exitcode", test_init_run_main_script_exitcode},
+    {"test_init_run_main_module_exitcode", test_init_run_main_module_exitcode},
+    {"test_init_run_main_interactive_exitcode", test_init_run_main_interactive_exitcode},
+    {"test_init_main", test_init_main},
     {"test_init_sys_add", test_init_sys_add},
     {"test_init_setpath", test_init_setpath},
     {"test_init_setpath_config", test_init_setpath_config},
@@ -2406,6 +3058,7 @@ static struct TestCase TestCases[] = {
     {"test_init_use_frozen_modules", test_init_use_frozen_modules},
     {"test_init_main_interpreter_settings", test_init_main_interpreter_settings},
     {"test_init_in_background_thread", test_init_in_background_thread},
+    {"test_isinitialized_false_during_site_import", test_isinitialized_false_during_site_import},
 
     // Audit
     {"test_open_code_hook", test_open_code_hook},
@@ -2425,6 +3078,13 @@ static struct TestCase TestCases[] = {
 #endif
     {"test_get_incomplete_frame", test_get_incomplete_frame},
     {"test_gilstate_after_finalization", test_gilstate_after_finalization},
+    {"test_create_module_from_initfunc", test_create_module_from_initfunc},
+    {"test_inittab_submodule_multiphase", test_inittab_submodule_multiphase},
+    {"test_inittab_submodule_singlephase", test_inittab_submodule_singlephase},
+    {"test_thread_state_ensure", test_thread_state_ensure},
+    {"test_main_interpreter_view", test_main_interpreter_view},
+    {"test_thread_state_ensure_from_view", test_thread_state_ensure_from_view},
+    {"test_concurrent_finalization_stress", test_concurrent_finalization_stress},
     {NULL, NULL}
 };
 

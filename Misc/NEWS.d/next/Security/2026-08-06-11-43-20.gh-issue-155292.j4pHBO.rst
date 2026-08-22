@@ -1,0 +1,2 @@
+Change the :mod:`stringprep` module and :mod:`encodings.idna` codec to not
+consider Unicode codepoint attributes beyond those defined in :rfc:`3454`.

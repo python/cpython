@@ -21,7 +21,7 @@ by Apache's log4j system.
 
 Copyright (C) 2001-2022 Vinay Sajip. All Rights Reserved.
 
-To use, simply 'import logging' and log away!
+To use, simply 'import logging.config' and log away!
 """
 
 import errno
@@ -32,10 +32,12 @@ import logging.handlers
 import os
 import queue
 import re
+import socket
 import struct
 import threading
 import traceback
 
+from bisect import bisect_left
 from socketserver import ThreadingTCPServer, StreamRequestHandler
 
 
@@ -186,9 +188,8 @@ def _handle_existing_loggers(existing, child_loggers, disable_existing):
     what was intended by the user. Also, allow existing loggers to NOT be
     disabled if disable_existing is false.
     """
-    root = logging.root
     for log in existing:
-        logger = root.manager.loggerDict[log]
+        logger = logging.root.manager.loggerDict[log]
         if log in child_loggers:
             if not isinstance(logger, logging.PlaceHolder):
                 logger.setLevel(logging.NOTSET)
@@ -196,6 +197,20 @@ def _handle_existing_loggers(existing, child_loggers, disable_existing):
                 logger.propagate = True
         else:
             logger.disabled = disable_existing
+
+def _forget_existing_logger(name, existing, existing_set, child_loggers):
+    """Forget a configured logger and record its existing children."""
+    prefixed = name + "."
+    i = bisect_left(existing, prefixed)
+    num_existing = len(existing)
+    while i < num_existing:
+        child = existing[i]
+        if not child.startswith(prefixed):
+            break
+        if child in existing_set:
+            child_loggers[child] = None
+        i += 1
+    existing_set.remove(name)
 
 def _install_loggers(cp, handlers, disable_existing):
     """Create and install loggers"""
@@ -235,25 +250,18 @@ def _install_loggers(cp, handlers, disable_existing):
     #named loggers. With a sorted list it is easier
     #to find the child loggers.
     existing.sort()
+    existing_set = set(existing)
     #We'll keep the list of existing loggers
     #which are children of named loggers here...
-    child_loggers = []
+    child_loggers = {}
     #now set up the new ones...
     for log in llist:
         section = cp["logger_%s" % log]
         qn = section["qualname"]
         propagate = section.getint("propagate", fallback=1)
         logger = logging.getLogger(qn)
-        if qn in existing:
-            i = existing.index(qn) + 1 # start with the entry after qn
-            prefixed = qn + "."
-            pflen = len(prefixed)
-            num_existing = len(existing)
-            while i < num_existing:
-                if existing[i][:pflen] == prefixed:
-                    child_loggers.append(existing[i])
-                i += 1
-            existing.remove(qn)
+        if qn in existing_set:
+            _forget_existing_logger(qn, existing, existing_set, child_loggers)
         if "level" in section:
             level = section["level"]
             logger.setLevel(level)
@@ -281,6 +289,7 @@ def _install_loggers(cp, handlers, disable_existing):
     #        logger.propagate = 1
     #    elif disable_existing_loggers:
     #        logger.disabled = 1
+    existing = [name for name in existing if name in existing_set]
     _handle_existing_loggers(existing, child_loggers, disable_existing)
 
 
@@ -638,22 +647,16 @@ class DictConfigurator(BaseConfigurator):
                 #named loggers. With a sorted list it is easier
                 #to find the child loggers.
                 existing.sort()
+                existing_set = set(existing)
                 #We'll keep the list of existing loggers
                 #which are children of named loggers here...
-                child_loggers = []
+                child_loggers = {}
                 #now set up the new ones...
                 loggers = config.get('loggers', EMPTY_DICT)
                 for name in loggers:
-                    if name in existing:
-                        i = existing.index(name) + 1 # look after name
-                        prefixed = name + "."
-                        pflen = len(prefixed)
-                        num_existing = len(existing)
-                        while i < num_existing:
-                            if existing[i][:pflen] == prefixed:
-                                child_loggers.append(existing[i])
-                            i += 1
-                        existing.remove(name)
+                    if name in existing_set:
+                        _forget_existing_logger(name, existing, existing_set,
+                                                child_loggers)
                     try:
                         self.configure_logger(name, loggers[name])
                     except Exception as e:
@@ -673,6 +676,7 @@ class DictConfigurator(BaseConfigurator):
                 #        logger.propagate = True
                 #    elif disable_existing:
                 #        logger.disabled = True
+                existing = [name for name in existing if name in existing_set]
                 _handle_existing_loggers(existing, child_loggers,
                                          disable_existing)
 
@@ -865,28 +869,7 @@ class DictConfigurator(BaseConfigurator):
             else:
                 factory = klass
         kwargs = {k: config[k] for k in config if (k != '.' and valid_ident(k))}
-        # When deprecation ends for using the 'strm' parameter, remove the
-        # "except TypeError ..."
-        try:
-            result = factory(**kwargs)
-        except TypeError as te:
-            if "'stream'" not in str(te):
-                raise
-            #The argument name changed from strm to stream
-            #Retry with old name.
-            #This is so that code can be used with older Python versions
-            #(e.g. by Django)
-            kwargs['strm'] = kwargs.pop('stream')
-            result = factory(**kwargs)
-
-            import warnings
-            warnings.warn(
-                "Support for custom logging handlers with the 'strm' argument "
-                "is deprecated and scheduled for removal in Python 3.16. "
-                "Define handlers with the 'stream' argument instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
+        result = factory(**kwargs)
         if formatter:
             result.setFormatter(formatter)
         if level is not None:
@@ -951,8 +934,9 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
     Start up a socket server on the specified port, and listen for new
     configurations.
 
-    These will be sent as a file suitable for processing by fileConfig().
-    Returns a Thread object on which you can call start() to start the server,
+    These will be sent as a file suitable for processing by dictConfig() or
+    fileConfig(). Returns a Thread object on which you can call start() to
+    start the server,
     and which you can join() when appropriate. To stop the server, call
     stopListening().
 
@@ -970,8 +954,8 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
         """
         Handler for a logging configuration request.
 
-        It expects a completely new logging configuration and uses fileConfig
-        to install it.
+        It expects a completely new logging configuration and uses dictConfig
+        or fileConfig to install it.
         """
         def handle(self):
             """
@@ -979,7 +963,7 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
 
             Each request is expected to be a 4-byte length, packed using
             struct.pack(">L", n), followed by the config file.
-            Uses fileConfig() to do the grunt work.
+            Uses dictConfig() or fileConfig() to do the grunt work.
             """
             try:
                 conn = self.connection
@@ -1022,6 +1006,15 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
 
         def __init__(self, host='localhost', port=DEFAULT_LOGGING_CONFIG_PORT,
                      handler=None, ready=None, verify=None):
+            # The host can have no IPv4 address, for example if "localhost"
+            # is only aliased to ::1.  Leave resolution errors to the server.
+            try:
+                infos = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
+            except OSError:
+                pass
+            else:
+                if not any(info[0] == socket.AF_INET for info in infos):
+                    self.address_family = infos[0][0]
             ThreadingTCPServer.__init__(self, (host, port), handler)
             with logging._lock:
                 self.abort = 0
@@ -1053,9 +1046,14 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
             self.ready = threading.Event()
 
         def run(self):
-            server = self.rcvr(port=self.port, handler=self.hdlr,
-                               ready=self.ready,
-                               verify=self.verify)
+            try:
+                server = self.rcvr(port=self.port, handler=self.hdlr,
+                                   ready=self.ready,
+                                   verify=self.verify)
+            except BaseException:
+                # Do not leave the caller waiting for ready forever.
+                self.ready.set()
+                raise
             if self.port == 0:
                 self.port = server.server_address[1]
             self.ready.set()
