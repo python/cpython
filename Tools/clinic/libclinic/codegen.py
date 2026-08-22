@@ -38,6 +38,11 @@ class CRenderData:
         # Should be individual strings that will get
         self.format_units: list[str] = []
 
+        # Whether the keyword-only parameters start as required,
+        # and whether the optional ones already started.
+        self.kwonly_required = False
+        self.kwonly_optional = False
+
         # The varargs arguments for PyArg_ParseTuple.
         self.parse_arguments: list[str] = []
 
