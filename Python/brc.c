@@ -104,6 +104,9 @@ merge_queued_objects(_PyObjectStack *to_merge)
 {
     PyObject *ob;
     while ((ob = _PyObjectStack_Pop(to_merge)) != NULL) {
+        if (_Py_IsImmortal(ob)) {
+            continue;
+        }
         // Subtract one when merging because the queue had a reference.
         Py_ssize_t refcount = _Py_ExplicitMergeRefcount(ob, -1);
         if (refcount == 0) {
