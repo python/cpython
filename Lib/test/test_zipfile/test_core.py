@@ -1,6 +1,7 @@
 import _pyio
 import array
 import contextlib
+import copy
 import errno
 import importlib.util
 import io
@@ -5600,6 +5601,42 @@ class ZipInfoTests(unittest.TestCase):
         zinfo.compress_level = 8
         self.assertEqual(zinfo.compress_level, 8)
         self.assertEqual(zinfo._compresslevel, 8)
+
+    def test_replace(self):
+        zinfo = zipfile.ZipInfo('name.txt', (2020, 1, 2, 3, 4, 5))
+        zinfo.file_size = 100
+        zinfo.CRC = 42
+        new = copy.replace(zinfo, filename='other.txt',
+                           compress_type=zipfile.ZIP_DEFLATED)
+        self.assertIsInstance(new, zipfile.ZipInfo)
+        self.assertEqual(new.filename, 'other.txt')
+        self.assertEqual(new.orig_filename, 'other.txt')
+        self.assertEqual(new.compress_type, zipfile.ZIP_DEFLATED)
+        # Not replaced attributes are inherited from the original object.
+        self.assertEqual(new.date_time, (2020, 1, 2, 3, 4, 5))
+        self.assertEqual(new.file_size, 100)
+        self.assertEqual(new.CRC, 42)
+        # The original object is left unchanged.
+        self.assertEqual(zinfo.filename, 'name.txt')
+        self.assertEqual(zinfo.compress_type, zipfile.ZIP_STORED)
+
+        new = copy.replace(zinfo, date_time=(1980, 1, 1, 0, 0, 0))
+        self.assertEqual(new.date_time, (1980, 1, 1, 0, 0, 0))
+        with self.assertRaises(ValueError):
+            copy.replace(zinfo, date_time=(1979, 12, 31, 0, 0, 0))
+        with self.assertRaisesRegex(TypeError, "'filenam'"):
+            copy.replace(zinfo, filenam='other.txt')
+        with self.assertRaisesRegex(TypeError, "'orig_filename'"):
+            copy.replace(zinfo, orig_filename='other.txt')
+
+    def test_replace_unset_attributes(self):
+        # header_offset and CRC are only set when the object is written
+        # to or read from an archive.
+        zinfo = zipfile.ZipInfo('name.txt')
+        new = copy.replace(zinfo, file_size=5)
+        self.assertEqual(new.file_size, 5)
+        self.assertFalse(hasattr(new, 'header_offset'))
+        self.assertFalse(hasattr(new, 'CRC'))
 
 
 class CommandLineTest(unittest.TestCase):
