@@ -1397,6 +1397,10 @@ class _ZipWriteFile(io.BufferedIOBase):
                 self._fileobj.seek(self._zipfile.start_dir)
 
             # Successfully written: Add file to our caches
+            if self._zipfile._max_entries is not None:
+                if self._zipfile._entry_count >= self._zipfile._max_entries:
+                    raise BadZipFile("max_entries reached")
+                self._zipfile._entry_count += 1
             self._zipfile.filelist.append(self._zinfo)
             self._zipfile.NameToInfo[self._zinfo.filename] = self._zinfo
         finally:
@@ -1896,7 +1900,8 @@ class ZipFile:
     _ignore_invalid_names = False
 
     def __init__(self, file, mode="r", compression=ZIP_STORED, allowZip64=True,
-                 compresslevel=None, *, strict_timestamps=True, metadata_encoding=None):
+                 compresslevel=None, *, strict_timestamps=True, metadata_encoding=None,
+                 max_entries=None):
         """Open the ZIP file with mode read 'r', write 'w', exclusive create
         'x', or append 'a'."""
         if mode not in ('r', 'w', 'x', 'a'):
@@ -1909,6 +1914,8 @@ class ZipFile:
         self.debug = 0  # Level of printing: 0 through 3
         self.NameToInfo = {}    # Find file info given name
         self.filelist = []      # List of ZipInfo instances for archive
+        self._entry_count = None
+        self._max_entries = max_entries
         self.compression = compression  # Method of compression
         self.compresslevel = compresslevel
         self.mode = mode
@@ -1916,6 +1923,16 @@ class ZipFile:
         self._comment = b''
         self._strict_timestamps = strict_timestamps
         self.metadata_encoding = metadata_encoding
+
+        if self._max_entries is not None:
+            if not isinstance(self._max_entries, int):
+                raise TypeError(
+                    "max_entries: expected int, got %s"
+                    % type(max_entries).__name__
+                )
+            if self._max_entries < 0:
+                raise ValueError("max_entries cannot be negative")
+            self._entry_count = 0
 
         # Check that we don't try to write with nonconforming codecs
         if self.metadata_encoding and mode != 'r':
@@ -2072,6 +2089,10 @@ class ZipFile:
                             t>>11, (t>>5)&0x3F, (t&0x1F) * 2 )
             x._decodeExtra(orig_filename_crc)
             x.header_offset = x.header_offset + concat
+            if self._max_entries is not None:
+                if self._entry_count >= self._max_entries:
+                    raise BadZipFile("max_entries reached")
+                self._entry_count += 1
             self.filelist.append(x)
             self.NameToInfo[x.filename] = x
 
@@ -2365,6 +2386,8 @@ class ZipFile:
 
             try:
                 self.filelist.remove(zinfo)
+                if self._max_entries is not None:
+                    self._entry_count -= 1
             except ValueError:
                 raise KeyError('There is no item %r in the archive' % zinfo) from None
 
@@ -2607,6 +2630,10 @@ class ZipFile:
             self._writecheck(zinfo)
             self._didModify = True
 
+            if self._max_entries is not None:
+                if self._entry_count >= self._max_entries:
+                    raise BadZipFile("max_entries reached")
+                self._entry_count += 1
             self.filelist.append(zinfo)
             self.NameToInfo[zinfo.filename] = zinfo
             self.fp.write(zinfo.FileHeader(False))
