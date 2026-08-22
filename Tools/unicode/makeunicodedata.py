@@ -657,24 +657,48 @@ def makeunicodetype(unicode, trace):
         Array("index1", index1).dump(fp, trace)
         Array("index2", index2).dump(fp, trace)
 
-        # Generate code for _PyUnicode_ToNumeric()
+        # Generate sorted parallel tables and code for _PyUnicode_ToNumeric().
         numeric_items = sorted(numeric.items())
+        numeric_by_codepoint = sorted(
+            (codepoint, value_index)
+            for value_index, (_, codepoints) in enumerate(numeric_items)
+            for codepoint in codepoints
+        )
+        fprint('/* Sorted code points and parallel indexes into numeric_values. */')
+        Array("numeric_codepoints",
+              [item[0] for item in numeric_by_codepoint]).dump(fp, trace)
+        Array("numeric_value_indices",
+              [item[1] for item in numeric_by_codepoint]).dump(fp, trace)
+
+        fprint('static const double numeric_values[] = {')
+        for value, _ in numeric_items:
+            # Turn text into float literals
+            parts = value.split('/')
+            parts = [repr(float(part)) for part in parts]
+            value = '/'.join(parts)
+            fprint('    %s,' % value)
+        fprint('};')
+        fprint()
+
         fprint('/* Returns the numeric value as double for Unicode characters')
         fprint(' * having this property, -1.0 otherwise.')
         fprint(' */')
         fprint('double _PyUnicode_ToNumeric(Py_UCS4 ch)')
         fprint('{')
-        fprint('    switch (ch) {')
-        for value, codepoints in numeric_items:
-            # Turn text into float literals
-            parts = value.split('/')
-            parts = [repr(float(part)) for part in parts]
-            value = '/'.join(parts)
-
-            codepoints.sort()
-            for codepoint in codepoints:
-                fprint('    case 0x%04X:' % (codepoint,))
-            fprint('        return (double) %s;' % (value,))
+        fprint('    size_t lo = 0;')
+        fprint('    size_t hi = Py_ARRAY_LENGTH(numeric_codepoints);')
+        fprint('    while (lo < hi) {')
+        fprint('        size_t mid = lo + (hi - lo) / 2;')
+        fprint('        Py_UCS4 codepoint = numeric_codepoints[mid];')
+        fprint('        if (ch < codepoint) {')
+        fprint('            hi = mid;')
+        fprint('        }')
+        fprint('        else if (ch > codepoint) {')
+        fprint('            lo = mid + 1;')
+        fprint('        }')
+        fprint('        else {')
+        fprint('            return numeric_values[numeric_value_indices[mid]];')
+        fprint('        }')
         fprint('    }')
         fprint('    return -1.0;')
         fprint('}')
