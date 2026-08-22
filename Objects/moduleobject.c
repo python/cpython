@@ -975,7 +975,7 @@ PyModule_GetFilename(PyObject *m)
 }
 
 Py_ssize_t
-_PyModule_GetFilenameUTF8(PyObject *mod, char *buffer, Py_ssize_t maxlen)
+_PyModule_GetFilename(PyObject *mod, char *buffer, Py_ssize_t maxlen)
 {
     // We "return" an empty string for an invalid module
     // and for a missing, empty, or invalid filename.
@@ -991,8 +991,15 @@ _PyModule_GetFilenameUTF8(PyObject *mod, char *buffer, Py_ssize_t maxlen)
         size = 0;
     }
     else {
-        const char *filename = PyUnicode_AsUTF8AndSize(filenameobj, &size);
-        assert(size >= 0);
+        char *filename;
+        PyObject *bytes = PyUnicode_EncodeFSDefault(filenameobj);
+        if (bytes == NULL) {
+            goto exit;
+        }
+        if (PyBytes_AsStringAndSize(bytes, &filename, &size) < 0) {
+            Py_DECREF(bytes);
+            goto exit;
+        }
         if (size > maxlen) {
             size = -1;
             PyErr_SetString(PyExc_ValueError, "__file__ too long");
@@ -1000,7 +1007,9 @@ _PyModule_GetFilenameUTF8(PyObject *mod, char *buffer, Py_ssize_t maxlen)
         else {
             (void)strcpy(buffer, filename);
         }
+        Py_DECREF(bytes);
     }
+exit:
     Py_DECREF(filenameobj);
     return size;
 }

@@ -1873,6 +1873,13 @@ class TestInterpreterCall(TestBase):
             t.join()
         self.assertIsNotNone(ctx.caught)
 
+    def test_call_with_surrogate_in_main_filename(self):
+        # https://github.com/python/cpython/issues/156122
+        import __main__
+        __main__.__file__ = "bad\ud800.py"
+
+        interp = interpreters.create()
+        interp.call(lambda x: x, [1])
 
 class TestIsShareable(TestBase):
 
