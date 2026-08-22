@@ -3535,6 +3535,31 @@ _curses_window_get_wch_impl(PyCursesWindowObject *self, int group_right_1,
 #endif
 }
 
+/* How much one cell can contribute to a read: it holds at most CCHARW_MAX
+   characters, each of at most MB_CUR_MAX bytes. */
+#ifdef HAVE_NCURSESW
+#define CURSES_CELL_CHARS       CCHARW_MAX
+#else
+#define CURSES_CELL_CHARS       1
+#endif
+
+/* The most a read starting at (y, x) can return: the columns left on the line,
+   in the unit the function counts (cells, characters or bytes). */
+static unsigned int
+curses_window_read_limit(PyCursesWindowObject *self, int use_xy, int x,
+                         unsigned int per_cell)
+{
+    int col = use_xy ? x : getcurx(self->win);
+    int maxx = getmaxx(self->win);
+    if (col < 0) {
+        col = 0;
+    }
+    if (col > maxx) {
+        return 0;
+    }
+    return ((unsigned int)(maxx - col) + 1) * per_cell;
+}
+
 /* Read user input into a new bytes object (empty on ERR), with primitive line
    editing.  Shared by getstr() and, without the wide library, by get_wstr(). */
 static PyObject *
@@ -3828,15 +3853,15 @@ _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
    with attributes and color stripped.  Shared by instr() and, without the wide
    library, by in_wstr(). */
 static PyObject *
-curses_window_instr_bytes(PyCursesWindowObject *self, int use_xy,
+curses_window_instr_bytes(PyCursesWindowObject *self, int use_xy, int use_n,
                           int y, int x, unsigned int n)
 {
     int rtn;
-    unsigned int max_buf_size = 2048;
-
-    n = Py_MIN(n, max_buf_size - 1 - CURSES_STR_EXTRA);
-    n += CURSES_STR_EXTRA;
-    PyBytesWriter *writer = PyBytesWriter_Create(n + 1);
+    unsigned int limit = curses_window_read_limit(self, use_xy, x,
+                                                  CURSES_CELL_CHARS
+                                                  * (unsigned int)MB_CUR_MAX);
+    unsigned int nread = use_n ? Py_MIN(n, limit) : limit;
+    PyBytesWriter *writer = PyBytesWriter_Create(nread + CURSES_STR_EXTRA + 1);
     if (writer == NULL) {
         return NULL;
     }
@@ -3844,14 +3869,14 @@ curses_window_instr_bytes(PyCursesWindowObject *self, int use_xy,
 
     /* Read again if the library stored more than asked: truncating could
        split a multibyte character. */
-    for (unsigned int want = n - CURSES_STR_EXTRA; ; n = want) {
+    for (unsigned int ask = nread + CURSES_STR_EXTRA; ; ask = nread) {
         if (use_xy) {
-            rtn = mvwinnstr(self->win, y, x, buf, n);
+            rtn = mvwinnstr(self->win, y, x, buf, ask);
         }
         else {
-            rtn = winnstr(self->win, buf, n);
+            rtn = winnstr(self->win, buf, ask);
         }
-        if (rtn == ERR || (unsigned int)rtn <= want) {
+        if (rtn == ERR || (unsigned int)rtn <= nread) {
             break;
         }
     }
@@ -3872,8 +3897,10 @@ _curses.window.instr
     x: int
         X-coordinate.
     ]
-    n: unsigned_int = 2047
-        Maximal number of bytes.
+    [
+    n: unsigned_int
+        Maximal number of bytes.  The rest of the line by default.
+    ]
     /
 
 Return the text of the window as a bytes object.
@@ -3885,11 +3912,12 @@ bytes are read.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_window_instr_impl(PyCursesWindowObject *self, int group_left_1,
-                          int y, int x, unsigned int n)
-/*[clinic end generated code: output=40081f67070132da input=4ece6af75b09346f]*/
+_curses_window_instr_impl(PyCursesWindowObject *self, int group_right_1,
+                          int y, int x, int group_right_2, unsigned int n)
+/*[clinic end generated code: output=2428948b44ad10c7 input=c3612f8328d5bca8]*/
 {
-    return curses_window_instr_bytes(self, group_left_1, y, x, n);
+    return curses_window_instr_bytes(self, group_right_1, group_right_2,
+                                     y, x, n);
 }
 
 /*[clinic input]
@@ -3987,8 +4015,10 @@ _curses.window.in_wstr
     x: int
         X-coordinate.
     ]
-    n: unsigned_int = 2047
-        Maximal number of characters.
+    [
+    n: unsigned_int
+        Maximal number of characters.  The rest of the line by default.
+    ]
     /
 
 Return the text of the window as a str.
@@ -4000,31 +4030,30 @@ characters are read.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_window_in_wstr_impl(PyCursesWindowObject *self, int group_left_1,
-                            int y, int x, unsigned int n)
-/*[clinic end generated code: output=e3db72a1f10b9875 input=436737264c54d8d3]*/
+_curses_window_in_wstr_impl(PyCursesWindowObject *self, int group_right_1,
+                            int y, int x, int group_right_2, unsigned int n)
+/*[clinic end generated code: output=d8c8bcfe8a26f519 input=7b3b1822c120bfcb]*/
 {
 #ifdef HAVE_NCURSESW
     int rtn;
-    unsigned int max_buf_size = 2048;
-
-    n = Py_MIN(n, max_buf_size - 1 - CURSES_STR_EXTRA);
-    n += CURSES_STR_EXTRA;
-    wchar_t *buf = PyMem_New(wchar_t, n + 1);
+    unsigned int limit = curses_window_read_limit(self, group_right_1, x,
+                                                  CURSES_CELL_CHARS);
+    unsigned int nread = group_right_2 ? Py_MIN(n, limit) : limit;
+    wchar_t *buf = PyMem_New(wchar_t, nread + CURSES_STR_EXTRA + 1);
     if (buf == NULL) {
         return PyErr_NoMemory();
     }
 
     /* Read again if the library stored more than asked: truncating could
        separate a combining character from its base. */
-    for (unsigned int want = n - CURSES_STR_EXTRA; ; n = want) {
-        if (group_left_1) {
-            rtn = mvwinnwstr(self->win, y, x, buf, n);
+    for (unsigned int ask = nread + CURSES_STR_EXTRA; ; ask = nread) {
+        if (group_right_1) {
+            rtn = mvwinnwstr(self->win, y, x, buf, ask);
         }
         else {
-            rtn = winnwstr(self->win, buf, n);
+            rtn = winnwstr(self->win, buf, ask);
         }
-        if (rtn == ERR || (unsigned int)rtn <= want) {
+        if (rtn == ERR || (unsigned int)rtn <= nread) {
             break;
         }
     }
@@ -4039,7 +4068,8 @@ _curses_window_in_wstr_impl(PyCursesWindowObject *self, int group_left_1,
 #else
     /* Without the wide library, read the bytes as instr() does and decode them
        with the window's encoding. */
-    PyObject *bytes = curses_window_instr_bytes(self, group_left_1, y, x, n);
+    PyObject *bytes = curses_window_instr_bytes(self, group_right_1,
+                                               group_right_2, y, x, n);
     if (bytes == NULL) {
         return NULL;
     }
@@ -4060,8 +4090,10 @@ _curses.window.in_wchstr
     x: int
         X-coordinate.
     ]
-    n: unsigned_int = 2047
-        Maximal number of cells.
+    [
+    n: unsigned_int
+        Maximal number of cells.  The rest of the line by default.
+    ]
     /
 
 Return the styled cells of the window as a complexstr.
@@ -4073,30 +4105,30 @@ unchanged with addstr().  At most n cells are read.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_window_in_wchstr_impl(PyCursesWindowObject *self, int group_left_1,
-                              int y, int x, unsigned int n)
-/*[clinic end generated code: output=7fb5216f2088835b input=8104e661c3cb7fea]*/
+_curses_window_in_wchstr_impl(PyCursesWindowObject *self, int group_right_1,
+                              int y, int x, int group_right_2,
+                              unsigned int n)
+/*[clinic end generated code: output=3807a62d51efd44f input=c9a1cc21bde40060]*/
 {
     int rtn;
-    unsigned int max_buf_size = 2048;
-
-    n = Py_MIN(n, max_buf_size - 1 - CURSES_STR_EXTRA);
-    n += CURSES_STR_EXTRA;
+    unsigned int limit = curses_window_read_limit(self, group_right_1, x, 1);
+    unsigned int nread = group_right_2 ? Py_MIN(n, limit) : limit;
+    unsigned int ask = nread + CURSES_STR_EXTRA;
     cursesmodule_state *state = get_cursesmodule_state_by_win(self);
     /* Zero the cells: reading a cell back through getcchar() relies on the
        cchar_t text array being NUL-terminated, which some curses libraries
        only guarantee for the characters they actually write. */
-    curses_cell_t *buf = PyMem_Calloc(n + 1, sizeof(curses_cell_t));
+    curses_cell_t *buf = PyMem_Calloc(ask + 1, sizeof(curses_cell_t));
     if (buf == NULL) {
         return PyErr_NoMemory();
     }
 
 #ifdef HAVE_NCURSESW
-    if (group_left_1) {
-        rtn = mvwin_wchnstr(self->win, y, x, buf, n);
+    if (group_right_1) {
+        rtn = mvwin_wchnstr(self->win, y, x, buf, ask);
     }
     else {
-        rtn = win_wchnstr(self->win, buf, n);
+        rtn = win_wchnstr(self->win, buf, ask);
     }
 
     if (rtn == ERR) {
@@ -4104,12 +4136,11 @@ _curses_window_in_wchstr_impl(PyCursesWindowObject *self, int group_left_1,
         return PyCursesComplexStr_New(state, NULL, 0);
     }
 
-    n -= CURSES_STR_EXTRA;
-    /* win_wchnstr() stores at most n cells and zero-terminates the array at
-       the actual count; every real cell holds at least a space, so the first
+    /* win_wchnstr() stores at most nread cells and zero-terminates the array
+       at the actual count; every real cell holds at least a space, so the first
        empty cell marks the end of the run. */
     Py_ssize_t count = 0;
-    while (count < (Py_ssize_t)n) {
+    while (count < (Py_ssize_t)nread) {
         wchar_t wstr[CCHARW_MAX + 1];
         attr_t attrs;
         int pair;
@@ -4124,12 +4155,12 @@ _curses_window_in_wchstr_impl(PyCursesWindowObject *self, int group_left_1,
     /* winchnstr() is not guaranteed (SVr4) to terminate the array, so pre-zero
        it and stop at the first empty cell; a painted cell always holds at least
        a space, never 0. */
-    memset(buf, 0, ((size_t)n + 1) * sizeof(curses_cell_t));
-    if (group_left_1) {
-        rtn = mvwinchnstr(self->win, y, x, buf, n);
+    memset(buf, 0, ((size_t)ask + 1) * sizeof(curses_cell_t));
+    if (group_right_1) {
+        rtn = mvwinchnstr(self->win, y, x, buf, ask);
     }
     else {
-        rtn = winchnstr(self->win, buf, n);
+        rtn = winchnstr(self->win, buf, ask);
     }
 
     if (rtn == ERR) {
@@ -4137,9 +4168,8 @@ _curses_window_in_wchstr_impl(PyCursesWindowObject *self, int group_left_1,
         return PyCursesComplexStr_New(state, NULL, 0);
     }
 
-    n -= CURSES_STR_EXTRA;
     Py_ssize_t count = 0;
-    while (count < (Py_ssize_t)n && buf[count] != 0) {
+    while (count < (Py_ssize_t)nread && buf[count] != 0) {
         count++;
     }
 #endif

@@ -1408,12 +1408,15 @@ Reading window contents
    and return it as a bytes object, in the encoding of the current locale.
    Attributes and color pairs are stripped;
    use :meth:`in_wchstr` to read them too.
-   At most *n* bytes are read; *n* defaults to and cannot exceed 2047.
+   At most *n* bytes are read.
    A character not representable in the encoding cannot be returned;
    use :meth:`in_wstr` for those.
 
    .. versionchanged:: 3.14
       The maximum value for *n* was increased from 1023 to 2047.
+
+   .. versionchanged:: next
+      *n* is no longer limited to 2047.
 
 .. method:: window.in_wstr([n])
             window.in_wstr(y, x[, n])
@@ -1423,7 +1426,7 @@ Reading window contents
    and return it as a :class:`str`.
    Attributes and color pairs are stripped;
    use :meth:`in_wchstr` to read them too.
-   At most *n* characters are read; *n* defaults to and cannot exceed 2047.
+   At most *n* characters are read.
 
    This is the wide-character variant of :meth:`instr`.
 
@@ -1438,7 +1441,7 @@ Reading window contents
    Unlike :meth:`instr` and :meth:`in_wstr`, each cell keeps its attributes
    and color pair, so the result can be written back unchanged
    with :meth:`addstr`.
-   At most *n* cells are read; *n* defaults to and cannot exceed 2047.
+   At most *n* cells are read.
 
    .. versionadded:: next
 
