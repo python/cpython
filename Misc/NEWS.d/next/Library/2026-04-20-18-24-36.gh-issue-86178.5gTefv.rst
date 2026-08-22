@@ -1,0 +1,1 @@
+Add the CGI and WSGI variables specified in :pep:`3333` to :data:`wsgiref.types.WSGIEnvironment`.
