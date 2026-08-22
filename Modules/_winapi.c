@@ -1214,6 +1214,7 @@ cleanup:
     return ret;
 }
 
+#ifdef MS_WINDOWS_DESKTOP
 typedef struct {
     LPPROC_THREAD_ATTRIBUTE_LIST attribute_list;
     LPHANDLE handle_list;
@@ -1325,6 +1326,7 @@ cleanup:
 
     return ret;
 }
+#endif
 
 /*[clinic input]
 _winapi.CreateProcess
@@ -1358,6 +1360,9 @@ _winapi_CreateProcess_impl(PyObject *module, const wchar_t *application_name,
                            PyObject *startup_info)
 /*[clinic end generated code: output=a25c8e49ea1d6427 input=42ac293eaea03fc4]*/
 {
+#ifndef MS_WINDOWS_DESKTOP
+    return NULL;
+#else
     PyObject *ret = NULL;
     BOOL result;
     PROCESS_INFORMATION pi;
@@ -1439,6 +1444,7 @@ cleanup:
     freeattributelist(&attribute_list);
 
     return ret;
+#endif
 }
 
 /*[clinic input]
@@ -2594,7 +2600,9 @@ error:
     while (--thread_count >= 0) {
         HANDLE t = thread_data[thread_count]->thread;
         if (t) {
+#ifdef MS_WINDOWS_DESKTOP
             TerminateThread(t, WAIT_ABANDONED_0);
+#endif
             CloseHandle(t);
         }
         PyMem_Free((void *)thread_data[thread_count]);
@@ -2788,7 +2796,11 @@ static PyObject *
 _winapi_GetOEMCP_impl(PyObject *module)
 /*[clinic end generated code: output=4def5b07a8be1b3b input=e8caf4353a28e28e]*/
 {
+#ifndef MS_WINDOWS_DESKTOP
+    return NULL;
+#else
     return PyLong_FromUnsignedLong(GetOEMCP());
+#endif
 }
 
 /*[clinic input]
