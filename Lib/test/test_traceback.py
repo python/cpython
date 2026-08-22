@@ -587,6 +587,18 @@ class TracebackCases(unittest.TestCase):
         output = traceback.format_exception_only(Exception("projector"))
         self.assertEqual(output, ["Exception: projector\n"])
 
+    def test_format_syntax_error_msg(self):
+        exc = SyntaxError(NotImplemented)
+        lines = traceback.format_exception_only(type(exc), exc)
+        result = "".join(lines)
+        self.assertIn("NotImplemented", result)
+
+        exc = SyntaxError("invalid syntax")
+        lines = traceback.format_exception_only(type(exc), exc)
+        result = "".join(lines)
+        self.assertIn("SyntaxError", result)
+        self.assertIn("invalid syntax", result)
+
     def test_exception_is_None(self):
         NONE_EXC_STRING = 'NoneType: None\n'
         excfile = StringIO()
