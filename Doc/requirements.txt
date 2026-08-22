@@ -9,6 +9,8 @@
 # Keep this version in sync with ``Doc/conf.py``.
 sphinx<9.0.0
 
+pygments>=2.21
+
 blurb
 
 sphinxext-opengraph~=0.13.0

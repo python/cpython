@@ -97,6 +97,10 @@ typedef struct {
     int lastmark;
     int lastindex;
     const void** mark;
+    int save_marks; /* if nonzero, save and restore mark values on
+                       backtracking instead of only rewinding the lastmark
+                       index; counts enclosing repeat contexts and
+                       possessive bodies */
     /* dynamically allocated stuff */
     char* data_stack;
     size_t data_stack_size;
