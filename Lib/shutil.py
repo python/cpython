@@ -593,7 +593,7 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
                     copystat(srcobj, dstname, follow_symlinks=not symlinks)
                 else:
                     # ignore dangling symlink if the flag is on
-                    if not os.path.exists(linkto) and ignore_dangling_symlinks:
+                    if not os.path.exists(srcname) and ignore_dangling_symlinks:
                         continue
                     # otherwise let the copy occur. copy2 will raise an error
                     if srcentry.is_dir():
