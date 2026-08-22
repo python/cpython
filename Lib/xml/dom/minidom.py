@@ -37,6 +37,7 @@ class Node(xml.dom.Node):
     ownerDocument = None
     nextSibling = None
     previousSibling = None
+    nodeValue = None
 
     prefix = EMPTY_PREFIX # non-null only for NS elements and attributes
 
