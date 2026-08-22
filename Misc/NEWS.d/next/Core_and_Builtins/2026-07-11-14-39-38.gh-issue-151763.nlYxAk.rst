@@ -1,0 +1,2 @@
+Fixed a bug in free-threaded builds where the active exception could be
+unexpectedly cleared during subtype deallocation in ``subtype_dealloc()``.
