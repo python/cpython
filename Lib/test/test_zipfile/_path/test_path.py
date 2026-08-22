@@ -549,6 +549,18 @@ class TestPath(unittest.TestCase):
         assert root.joinpath('n.txt').is_symlink()
 
     @pass_alpharep
+    def test_is_symlink_missing(self, alpharep):
+        """
+        is_symlink returns False for entries missing from the archive
+        (including the root and implied directories) rather than
+        raising KeyError.
+        """
+        root = zipfile.Path(alpharep)
+        assert not root.is_symlink()
+        assert not root.joinpath('b').is_symlink()
+        assert not root.joinpath('missing.txt').is_symlink()
+
+    @pass_alpharep
     def test_relative_to(self, alpharep):
         root = zipfile.Path(alpharep)
         relative = root.joinpath("b", "c.txt").relative_to(root / "b")
