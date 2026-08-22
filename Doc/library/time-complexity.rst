@@ -144,7 +144,7 @@ or updating items. The other operations below apply to it at the same costs.
 ==================================
 
 See :class:`dict` as the :class:`set` and :class:`frozenset` implementations are
-intentionally very similar, and the same hash collision caveat applies.
+similar, and the same hash collision caveat applies.
 In the worst case, *O*\ (1) operations instead take *O*\ (*n*) time,
 and operations that look up every element degrade accordingly.
 
