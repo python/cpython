@@ -377,7 +377,7 @@ class ClinicWholeFileTest(TestCase):
         """
         self.expect_failure(block, err, lineno=6)
 
-    def test_double_star_after_var_keyword(self):
+    def test_parameter_after_var_keyword(self):
         err = "parameters cannot follow var-keyword parameter: 'invalid_arg: object'"
         block = """
             /*[clinic input]
@@ -385,6 +385,18 @@ class ClinicWholeFileTest(TestCase):
 
                 **kwds: dict
                 invalid_arg: object
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=5)
+
+    def test_double_star_without_name(self):
+        err = "Function 'my_test_func' has an invalid parameter declaration: '**'"
+        block = """
+            /*[clinic input]
+            my_test_func
+
+                pos_arg: object
+                **
             [clinic start generated code]*/
         """
         self.expect_failure(block, err, lineno=5)
@@ -2401,6 +2413,17 @@ class ClinicParserTest(TestCase):
                 ]
         """
         err = "parameters cannot follow var-keyword parameter: ']'"
+        self.expect_failure(block, err)
+
+    def test_group_with_var_positional(self):
+        block = """
+            with_varpos
+                [
+                *args: tuple
+                ]
+        """
+        err = ("You cannot use optional groups ('[' and ']') unless all "
+               "parameters are positional-only ('/')")
         self.expect_failure(block, err)
 
     def test_depr_star_must_come_after_slash(self):
