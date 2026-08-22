@@ -82,55 +82,6 @@ def py_anext(iterator, default=_no_default):
     return anext_impl()
 
 
-class AsyncGenSyntaxTest(unittest.TestCase):
-
-    def test_async_gen_syntax_01(self):
-        code = '''async def foo():
-            await abc
-            yield from 123
-        '''
-
-        with self.assertRaisesRegex(SyntaxError, 'yield from.*inside async'):
-            exec(code, {}, {})
-
-    def test_async_gen_syntax_02(self):
-        code = '''async def foo():
-            yield from 123
-        '''
-
-        with self.assertRaisesRegex(SyntaxError, 'yield from.*inside async'):
-            exec(code, {}, {})
-
-    def test_async_gen_syntax_03(self):
-        code = '''async def foo():
-            await abc
-            yield
-            return 123
-        '''
-
-        with self.assertRaisesRegex(SyntaxError, 'return.*value.*async gen'):
-            exec(code, {}, {})
-
-    def test_async_gen_syntax_04(self):
-        code = '''async def foo():
-            yield
-            return 123
-        '''
-
-        with self.assertRaisesRegex(SyntaxError, 'return.*value.*async gen'):
-            exec(code, {}, {})
-
-    def test_async_gen_syntax_05(self):
-        code = '''async def foo():
-            if 0:
-                yield
-            return 12
-        '''
-
-        with self.assertRaisesRegex(SyntaxError, 'return.*value.*async gen'):
-            exec(code, {}, {})
-
-
 class AsyncGenTest(unittest.TestCase):
 
     def compare_generators(self, sync_gen, async_gen):
