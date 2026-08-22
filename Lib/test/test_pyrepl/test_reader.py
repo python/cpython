@@ -431,6 +431,41 @@ class TestReader(ScreenEqualMixin, TestCase):
         reader.setpos_from_xy(8, 0)
         self.assertEqual(reader.pos, 7)
 
+    def test_bow_ws_stops_at_whitespace(self):
+        # See https://github.com/python/cpython/issues/146044.
+        reader = prepare_reader(prepare_console([]))
+        reader.buffer = list("foo.bar baz")
+        reader.pos = len(reader.buffer)
+        self.assertEqual(reader.bow_ws(), 8)
+
+    def test_bow_ws_includes_punctuation_in_word(self):
+        reader = prepare_reader(prepare_console([]))
+        buf = "foo.bar(baz) qux"
+        reader.buffer = list(buf)
+        reader.pos = buf.index(")") + 1
+        self.assertEqual(reader.bow_ws(), 0)
+
+    def test_bow_vs_bow_ws(self):
+        reader = prepare_reader(prepare_console([]))
+        reader.buffer = list("foo.bar")
+        reader.pos = len(reader.buffer)
+        # bow() stops at '.' so we return the index of 'b' in "bar"
+        self.assertEqual(reader.bow(), 4)
+        # bow_ws() treats entire "foo.bar" as one word
+        self.assertEqual(reader.bow_ws(), 0)
+
+    def test_bow_ws_with_tabs(self):
+        reader = prepare_reader(prepare_console([]))
+        reader.buffer = list("foo\tbar")
+        reader.pos = len(reader.buffer)
+        self.assertEqual(reader.bow_ws(), 4)
+
+    def test_bow_ws_with_newlines(self):
+        reader = prepare_reader(prepare_console([]))
+        reader.buffer = list("foo\nbar")
+        reader.pos = len(reader.buffer)
+        self.assertEqual(reader.bow_ws(), 4)
+
 @force_colorized_test_class
 class TestReaderInColor(ScreenEqualMixin, TestCase):
     def test_syntax_highlighting_basic(self):
