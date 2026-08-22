@@ -491,7 +491,7 @@ extern "C" {
 #ifdef WITH_THREAD
 #  ifdef thread_local
 #    define _Py_thread_local thread_local
-#  elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_THREADS__)
+#  elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_THREADS__)
 #    define _Py_thread_local _Thread_local
 #  elif defined(_MSC_VER)  /* AKA NT_THREADS */
 #    define _Py_thread_local __declspec(thread)
