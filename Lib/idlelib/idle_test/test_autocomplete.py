@@ -277,6 +277,15 @@ class AutoCompleteTest(unittest.TestCase):
             self.assertEqual(s, ['monty', 'python'])
             self.assertEqual(b, ['.hidden', 'monty', 'python'])
 
+    def test_fetch_completions_bad_all(self):
+        # gh-153506: a non-iterable __main__.__all__ must not abort
+        # module-name completion at an empty prefix.
+        acp = self.autocomplete
+        with patch.dict('__main__.__dict__', {'__all__': None}):
+            self.assertEqual(acp.fetch_completions('', ac.ATTRS), ([], []))
+        # A valid namespace still yields real completions.
+        self.assertIn('__name__', acp.fetch_completions('', ac.ATTRS)[1])
+
     def test_get_entity(self):
         # Test that a name is in the namespace of sys.modules and
         # __main__.__dict__.
