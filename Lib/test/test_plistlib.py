@@ -930,6 +930,22 @@ class TestPlistlib(unittest.TestCase):
         with self.assertRaises(plistlib.InvalidFileException):
             plistlib.loads(data, fmt=plistlib.FMT_XML)
 
+    def test_xml_plist_dict_type_lookup_error_propagates(self):
+        # gh-155397: a KeyError/IndexError raised by caller-supplied code (here
+        # a custom dict_type) is a LookupError subclass but signals a bug in the
+        # caller, not a malformed file.  It must propagate unchanged rather than
+        # be masked as InvalidFileException, matching the pre-fix behaviour and
+        # the binary parser.  Only a plain codec-registry LookupError (unknown
+        # declared encoding) is translated.
+        class RaisingDict(dict):
+            def __setitem__(self, key, value):
+                raise KeyError("boom from caller code")
+
+        data = (b'<?xml version="1.0"?><plist><dict>'
+                b'<key>a</key><string>b</string></dict></plist>')
+        with self.assertRaises(KeyError):
+            plistlib.loads(data, fmt=plistlib.FMT_XML, dict_type=RaisingDict)
+
     def test_modified_uid_negative(self):
         neg_uid = UID(1)
         neg_uid.data = -1  # dodge the negative check in the constructor

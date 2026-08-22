@@ -191,7 +191,13 @@ class _PlistParser:
             raise InvalidFileException(str(e)) from e
         except LookupError as e:
             # An <?xml ... ?> declaration naming an encoding that Python's
-            # codec registry does not know raises LookupError from expat.
+            # codec registry does not know raises a plain LookupError.  A
+            # KeyError or IndexError from caller-provided code (e.g. a custom
+            # dict_type or file object) is a LookupError subclass and must not
+            # be masked as a malformed-file error, so only translate the exact
+            # LookupError type and let subclasses propagate unchanged.
+            if type(e) is not LookupError:
+                raise
             raise InvalidFileException(str(e)) from e
         return self.root
 
