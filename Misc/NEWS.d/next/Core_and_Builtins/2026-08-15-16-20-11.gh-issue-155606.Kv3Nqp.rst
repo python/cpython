@@ -1,0 +1,5 @@
+Fix a data race on free-threaded builds where slicing a shared
+:class:`memoryview` from several threads could release the underlying buffer
+while views were still alive, raising ``ValueError: operation forbidden on
+released memoryview object``. The managed buffer's export count is now
+incremented atomically.
