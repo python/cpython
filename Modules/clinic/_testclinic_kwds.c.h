@@ -93,6 +93,53 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(kwds_with_optional_pos_only__doc__,
+"kwds_with_optional_pos_only($module, a, b=None, /, **kwds)\n"
+"--\n"
+"\n");
+
+#define KWDS_WITH_OPTIONAL_POS_ONLY_METHODDEF    \
+    {"kwds_with_optional_pos_only", _PyCFunction_CAST(kwds_with_optional_pos_only), METH_VARARGS|METH_KEYWORDS, kwds_with_optional_pos_only__doc__},
+
+static PyObject *
+kwds_with_optional_pos_only_impl(PyObject *module, PyObject *a, PyObject *b,
+                                 PyObject *kwds);
+
+static PyObject *
+kwds_with_optional_pos_only(PyObject *module, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+    PyObject *b = Py_None;
+    PyObject *__clinic_kwds = NULL;
+
+    if (!_PyArg_CheckPositional("kwds_with_optional_pos_only", PyTuple_GET_SIZE(args), 1, 2)) {
+        goto exit;
+    }
+    a = PyTuple_GET_ITEM(args, 0);
+    if (PyTuple_GET_SIZE(args) < 2) {
+        goto skip_optional;
+    }
+    b = PyTuple_GET_ITEM(args, 1);
+skip_optional:
+    if (kwargs == NULL) {
+        __clinic_kwds = PyDict_New();
+        if (__clinic_kwds == NULL) {
+            goto exit;
+        }
+    }
+    else {
+        __clinic_kwds = Py_NewRef(kwargs);
+    }
+    return_value = kwds_with_optional_pos_only_impl(module, a, b, __clinic_kwds);
+
+exit:
+    /* Cleanup for kwds */
+    Py_XDECREF(__clinic_kwds);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(kwds_with_stararg__doc__,
 "kwds_with_stararg($module, /, *args, **kwds)\n"
 "--\n"
@@ -182,4 +229,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=9eab7b4af8d60b7e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=62804c41a11bbd73 input=a9049054013a1b77]*/
