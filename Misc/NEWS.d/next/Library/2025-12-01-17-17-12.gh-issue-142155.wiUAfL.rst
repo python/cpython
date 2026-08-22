@@ -1,0 +1,1 @@
+Fix infinite recursion crash in :func:`shutil.copytree` when a cycle involving a directory junction is present on Windows.
