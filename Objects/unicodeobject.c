@@ -15209,9 +15209,14 @@ init_stdio_encoding(PyInterpreterState *interp)
 {
     /* Update the stdio encoding to the normalized Python codec name. */
     PyConfig *config = (PyConfig*)_PyInterpreterState_GetConfig(interp);
-    if (config_get_codec_name(&config->stdio_encoding) < 0) {
-        return _PyStatus_ERR("failed to get the Python codec name "
-                             "of the stdio encoding");
+    wchar_t **encodings[] = {&config->stdin_encoding,
+                             &config->stdout_encoding,
+                             &config->stderr_encoding};
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(encodings); i++) {
+        if (config_get_codec_name(encodings[i]) < 0) {
+            return _PyStatus_ERR("failed to get the Python codec name "
+                                 "of the stdio encoding");
+        }
     }
     return _PyStatus_OK();
 }

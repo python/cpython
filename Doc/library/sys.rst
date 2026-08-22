@@ -2139,7 +2139,8 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    follows:
 
    * The encoding and error handling are initialized from
-     :c:member:`PyConfig.stdio_encoding` and :c:member:`PyConfig.stdio_errors`.
+     :c:member:`PyConfig.stdin_encoding`, :c:member:`PyConfig.stdout_encoding`,
+     :c:member:`PyConfig.stderr_encoding` and :c:member:`PyConfig.stdio_errors`.
 
      On Windows, UTF-8 is used for the console device.  Non-character
      devices such as disk files and pipes use the system locale

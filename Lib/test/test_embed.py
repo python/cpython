@@ -767,7 +767,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'configure_c_stdio': False,
         'buffered_stdio': True,
 
-        'stdio_encoding': GET_DEFAULT_CONFIG,
+        'stdin_encoding': GET_DEFAULT_CONFIG,
+        'stdout_encoding': GET_DEFAULT_CONFIG,
+        'stderr_encoding': GET_DEFAULT_CONFIG,
         'stdio_errors': GET_DEFAULT_CONFIG,
 
         'skip_source_first_line': False,
@@ -934,7 +936,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             # there is no easy way to get the locale encoding before
             # setlocale(LC_CTYPE, "") is called: don't test encodings
             for key in ('filesystem_encoding', 'filesystem_errors',
-                        'stdio_encoding', 'stdio_errors'):
+                        'stdin_encoding', 'stdout_encoding',
+                        'stderr_encoding', 'stdio_errors'):
                 expected[key] = self.IGNORE_CONFIG
 
         if expected_preconfig['utf8_mode'] == 1:
@@ -942,8 +945,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 expected['filesystem_encoding'] = 'utf-8'
             if expected['filesystem_errors'] is self.GET_DEFAULT_CONFIG:
                 expected['filesystem_errors'] = self.UTF8_MODE_ERRORS
-            if expected['stdio_encoding'] is self.GET_DEFAULT_CONFIG:
-                expected['stdio_encoding'] = 'utf-8'
+            for key in ('stdin_encoding', 'stdout_encoding',
+                        'stderr_encoding'):
+                if expected[key] is self.GET_DEFAULT_CONFIG:
+                    expected[key] = 'utf-8'
             if expected['stdio_errors'] is self.GET_DEFAULT_CONFIG:
                 expected['stdio_errors'] = 'surrogateescape'
 
@@ -1133,7 +1138,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'malloc_stats': True,
             'pymalloc_hugepages': True,
 
-            'stdio_encoding': 'iso8859-1',
+            'stdin_encoding': 'iso8859-1',
+            'stdout_encoding': 'iso8859-1',
+            'stderr_encoding': 'iso8859-1',
             'stdio_errors': 'replace',
 
             'pycache_prefix': 'conf_pycache_prefix',
@@ -1205,7 +1212,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'write_bytecode': False,
             'verbose': 1,
             'buffered_stdio': False,
-            'stdio_encoding': 'iso8859-1',
+            'stdin_encoding': 'iso8859-1',
+            'stdout_encoding': 'iso8859-1',
+            'stderr_encoding': 'iso8859-1',
             'stdio_errors': 'replace',
             'user_site_directory': False,
             'faulthandler': True,
@@ -1242,7 +1251,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'write_bytecode': False,
             'verbose': 1,
             'buffered_stdio': False,
-            'stdio_encoding': 'iso8859-1',
+            'stdin_encoding': 'iso8859-1',
+            'stdout_encoding': 'iso8859-1',
+            'stderr_encoding': 'iso8859-1',
             'stdio_errors': 'replace',
             'user_site_directory': False,
             'faulthandler': True,
