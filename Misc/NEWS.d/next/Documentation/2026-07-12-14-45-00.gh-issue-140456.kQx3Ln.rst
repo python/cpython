@@ -1,0 +1,3 @@
+Clarify in the :mod:`traceback` documentation and docstrings which source
+line is displayed for a frame, and document that multiline ranges are only
+shown when an end line number is available.

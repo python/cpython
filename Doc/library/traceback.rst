@@ -171,9 +171,12 @@ Module-Level Functions
    Given a list of tuples or :class:`FrameSummary` objects as returned by
    :func:`extract_tb` or :func:`extract_stack`, return a list of strings ready
    for printing.  Each string in the resulting list corresponds to the item with
-   the same index in the argument list.  Each string ends in a newline; the
-   strings may contain internal newlines as well, for those items whose source
-   text line is not ``None``.
+   the same index in the argument list.  Each string ends in a newline and may
+   contain internal newlines.  When an item's source text spans multiple
+   physical lines, every line is displayed only if the item has both column
+   position information and an end line number greater than its line number;
+   otherwise just the first physical line is displayed.  Old-style tuples never
+   have column position information.
 
 
 .. function:: format_exception_only(exc, /[, value], *, show_group=False)
@@ -471,14 +474,21 @@ the module-level functions described above.
       :class:`FrameSummary` objects or old-style list of tuples.  Each tuple
       should be a 4-tuple with *filename*, *lineno*, *name*, *line* as the
       elements.
+      Old-style tuples do not have column position information, so only the
+      first physical line of *line* is displayed when they are formatted.  The
+      same applies to :class:`FrameSummary` objects without column position
+      information.
 
    .. method:: format()
 
       Returns a list of strings ready for printing.  Each string in the
       resulting list corresponds to a single :ref:`frame <frame-objects>` from
       the stack.
-      Each string ends in a newline; the strings may contain internal
-      newlines as well, for those items with source text lines.
+      Each string ends in a newline and may contain internal newlines.  When a
+      frame's source text spans multiple physical lines, every line is displayed
+      only if the frame has both column position information and an end line
+      number greater than its line number; otherwise just the first physical
+      line is displayed.
 
       For long sequences of the same frame and line, the first few
       repetitions are shown, followed by a summary line stating the exact
@@ -540,7 +550,7 @@ in a :ref:`traceback <traceback-objects>`.
 
    .. attribute:: FrameSummary.line
 
-      A string representing the source code for this frame, with leading and
+      The first physical line of source code for this frame, with leading and
       trailing whitespace stripped.
       If the source is not available, it is ``None``.
 
