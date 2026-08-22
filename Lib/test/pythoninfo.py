@@ -1354,6 +1354,7 @@ def collect_info(info):
         collect_urandom,
 
         collect_builtins,
+        collect_bz2,
         collect_cc,
         collect_curses,
         collect_datetime,
@@ -1364,6 +1365,7 @@ def collect_info(info):
         collect_gdbm,
         collect_get_config,
         collect_locale,
+        collect_lzma,
         collect_os,
         collect_platform,
         collect_pwd,

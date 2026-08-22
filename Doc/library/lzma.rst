@@ -351,7 +351,9 @@ the following constants:
 
 .. data:: lzma_version_info
 
-   A named tuple containing the lzma library version actually loaded by the interpreter.
+   A named tuple containing the version of the lzma library
+   actually loaded by the interpreter,
+   with the same fields as :const:`LZMA_VERSION_INFO`.
 
    .. versionadded:: next
 

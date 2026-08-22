@@ -1244,7 +1244,9 @@ class MiscTests(unittest.TestCase):
         self.assertGreaterEqual(v.minor, 0)
         self.assertGreaterEqual(v.patch, 0)
 
-        self.assertEqual(bz2.bzlib_version.split(',')[0], '%d.%d.%d' % v)
+        # The version string can have a suffix, e.g. "1.0.8, 13-Jul-2019"
+        # for bzip2 or "1.1.0-libbz2-rs-sys-0.2.5" for libbz2-rs.
+        self.assertStartsWith(bz2.bzlib_version, '%d.%d.%d' % v)
 
 
 def tearDownModule():

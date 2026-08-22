@@ -1525,8 +1525,8 @@ static PyStructSequence_Field lzma_version_fields[] = {
 
 static PyStructSequence_Desc lzma_version_desc = {
     "_lzma.lzma_version_info",   /* name */
-    lzma_version__doc__,    /* doc */
-    lzma_version_fields,    /* fields */
+    lzma_version__doc__,         /* doc */
+    lzma_version_fields,         /* fields */
     4
 };
 

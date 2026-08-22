@@ -2112,7 +2112,7 @@ make_zlib_version(PyTypeObject *type, const char *string)
 
 #ifdef ZLIBNG_VERSION
 PyDoc_STRVAR(zlibng_version__doc__,
-             "zlib.zlibng_version_info\n\
+"zlib.zlibng_version_info\n\
 \n\
 Zlib-ng version information as a named tuple.");
 
@@ -2144,7 +2144,7 @@ make_zlibng_version(PyTypeObject *type, const char *string)
         return NULL;
     }
 
-    #define SetIntItem(VALUE) \
+#define SetIntItem(VALUE) \
     PyStructSequence_SET_ITEM(version, pos++, PyLong_FromUnsignedLong(VALUE)); \
     if (PyErr_Occurred()) { \
         Py_DECREF(version); \
@@ -2154,7 +2154,7 @@ make_zlibng_version(PyTypeObject *type, const char *string)
     SetIntItem(major)
     SetIntItem(minor)
     SetIntItem(revision)
-    #undef SetIntItem
+#undef SetIntItem
 
     return version;
 }

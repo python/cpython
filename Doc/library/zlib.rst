@@ -483,13 +483,15 @@ the following constants:
 
 
 .. data:: ZLIB_RUNTIME_VERSION
-.. data:: zlib_version
+          zlib_version
 
    The version string of the zlib library actually loaded by the interpreter.
 
    .. versionadded:: 3.3
-   .. versionchanged:: next
-      Added alias :const:`!zlib_version`.
+      The :const:`!ZLIB_RUNTIME_VERSION` constant.
+
+   .. versionadded:: next
+      The :const:`!zlib_version` alias.
 
 
 .. data:: ZLIB_VERSION_INFO
@@ -498,7 +500,6 @@ the following constants:
    version that was used for building the module:
    *major*, *minor*, *revision*, and *subversion*.
    All values are integers.
-   The components can also be accessed by name, so ``zlib.VERSION_INFO[0]``
    The components can also be accessed by name, so ``zlib.ZLIB_VERSION_INFO[0]``
    is equivalent to ``zlib.ZLIB_VERSION_INFO.major`` and so on.
    This may be different from the zlib library actually used at runtime, which
@@ -509,7 +510,9 @@ the following constants:
 
 .. data:: zlib_version_info
 
-   A named tuple containing the zlib library version actually loaded by the interpreter.
+   A named tuple containing the version of the zlib library
+   actually loaded by the interpreter,
+   with the same fields as :const:`ZLIB_VERSION_INFO`.
 
    .. versionadded:: next
 
@@ -529,8 +532,9 @@ the module:
 
 .. data:: ZLIBNG_VERSION_INFO
 
-   A named tuple containing the version of the zlib-ng library that was
-   used for building the module if zlib-ng was used.
+   A named tuple containing the three components of the zlib-ng library
+   version that was used for building the module:
+   *major*, *minor*, and *revision*.  All values are integers.
 
    .. versionadded:: next
 

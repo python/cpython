@@ -860,7 +860,9 @@ the following constants:
 
 .. data:: zstd_version_info
 
-   A named tuple containing the zstd library version actually loaded by the interpreter.
+   A named tuple containing the version of the zstd library
+   actually loaded by the interpreter,
+   with the same fields as :const:`ZSTD_VERSION_INFO`.
 
    .. versionchanged:: next
       It is now a named tuple.

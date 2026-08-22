@@ -1536,7 +1536,7 @@ class MiscellaneousTestCase(unittest.TestCase):
         if v.stability == 'stable':
             self.assertEqual(string, '%d.%d.%d' % v[:3])
         else:
-            self.assertTrue(string.startswith('%d.%d.%d%s' % v))
+            self.assertStartsWith(string, '%d.%d.%d%s' % v)
 
     def test_lzma_version(self):
         if support.verbose:

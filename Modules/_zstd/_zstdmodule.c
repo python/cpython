@@ -572,7 +572,7 @@ static PyMethodDef _zstd_methods[] = {
 };
 
 PyDoc_STRVAR(zstd_version__doc__,
-             "_zstd.zstd_version_info\n\
+"_zstd.zstd_version_info\n\
 \n\
 Zstd version information as a named tuple.");
 
@@ -585,8 +585,8 @@ static PyStructSequence_Field zstd_version_fields[] = {
 
 static PyStructSequence_Desc zstd_version_desc = {
     "_zstd.zstd_version_info",   /* name */
-    zstd_version__doc__,    /* doc */
-    zstd_version_fields,    /* fields */
+    zstd_version__doc__,         /* doc */
+    zstd_version_fields,         /* fields */
     3
 };
 
@@ -604,17 +604,17 @@ make_zstd_version(PyTypeObject *type, unsigned int number)
         return NULL;
     }
 
-    #define SetItem(VALUE) \
-    PyStructSequence_SET_ITEM(version, pos++, VALUE); \
+#define SetIntItem(VALUE) \
+    PyStructSequence_SET_ITEM(version, pos++, PyLong_FromUnsignedLong(VALUE)); \
     if (PyErr_Occurred()) { \
         Py_DECREF(version); \
         return NULL; \
     }
 
-    SetItem(PyLong_FromUnsignedLong(major))
-    SetItem(PyLong_FromUnsignedLong(minor))
-    SetItem(PyLong_FromUnsignedLong(patch))
-    #undef SetItem
+    SetIntItem(major)
+    SetIntItem(minor)
+    SetIntItem(patch)
+#undef SetIntItem
 
     return version;
 }

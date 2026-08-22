@@ -100,9 +100,11 @@ class VersionTestCase(unittest.TestCase):
             print(f'ZLIB_VERSION_INFO = {zlib.ZLIB_VERSION_INFO}', flush=True)
             print(f'zlib_version_info = {zlib.zlib_version_info}', flush=True)
         self._test_zlib_version(zlib.ZLIB_VERSION_INFO)
-        self.assertEqual(zlib.ZLIB_VERSION_INFO, _parse_version(zlib.ZLIB_VERSION))
+        self.assertEqual(zlib.ZLIB_VERSION_INFO,
+                         _parse_version(zlib.ZLIB_VERSION))
         self._test_zlib_version(zlib.zlib_version_info)
-        self.assertEqual(zlib.zlib_version_info, _parse_version(zlib.zlib_version))
+        self.assertEqual(zlib.zlib_version_info,
+                         _parse_version(zlib.zlib_version))
         self.assertEqual(zlib.ZLIB_RUNTIME_VERSION, zlib.zlib_version)
 
     def _test_zlibng_version(self, v):
@@ -125,9 +127,11 @@ class VersionTestCase(unittest.TestCase):
     def test_zlibng_version(self):
         if support.verbose:
             print(f'ZLIBNG_VERSION = {zlib.ZLIBNG_VERSION}', flush=True)
-            print(f'ZLIBNG_VERSION_INFO = {zlib.ZLIBNG_VERSION_INFO}', flush=True)
+            print(f'ZLIBNG_VERSION_INFO = {zlib.ZLIBNG_VERSION_INFO}',
+                  flush=True)
         self._test_zlibng_version(zlib.ZLIBNG_VERSION_INFO)
-        self.assertEqual(zlib.ZLIBNG_VERSION, '%d.%d.%d' % zlib.ZLIBNG_VERSION_INFO)
+        self.assertEqual(zlib.ZLIBNG_VERSION,
+                         '%d.%d.%d' % zlib.ZLIBNG_VERSION_INFO)
 
 
 class ChecksumTestCase(unittest.TestCase):
