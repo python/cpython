@@ -5505,9 +5505,6 @@ class TestWithDirectory(unittest.TestCase):
 
             old_zinfo = zipfile.ZipInfo("directory4/")
             old_zinfo.external_attr = (0o40777 << 16) | 0x10
-            old_zinfo.CRC = 0
-            old_zinfo.file_size = 0
-            old_zinfo.compress_size = 0
             zf.mkdir(old_zinfo)
             new_zinfo = zf.filelist[3]
             self.assertEqual(old_zinfo.filename, "directory4/")
@@ -5517,6 +5514,32 @@ class TestWithDirectory(unittest.TestCase):
             os.mkdir(target)
             zf.extractall(target)
             self.assertEqual(set(os.listdir(target)), {"directory", "directory2", "directory3", "directory4"})
+
+    def test_mkdir_zipinfo_preserves_metadata(self):
+        zinfo = zipfile.ZipInfo("directory/", (2001, 2, 3, 4, 5, 6))
+        zinfo.compress_type = zipfile.ZIP_STORED
+        zinfo.compress_level = 1
+        zinfo.comment = b"comment"
+        zinfo.extra = b"\x99\x99\x00\x00"
+        zinfo.external_attr = (0o40700 << 16) | 0x10
+        zinfo.file_size = 1
+        zinfo.compress_size = 2
+
+        archive = io.BytesIO()
+        with zipfile.ZipFile(archive, "w") as zf:
+            zf.mkdir(zinfo)
+            self.assertEqual(zinfo.compress_level, 1)
+
+        self.assertEqual(zinfo.CRC, 0)
+        self.assertEqual(zinfo.file_size, 0)
+        self.assertEqual(zinfo.compress_size, 0)
+        with zipfile.ZipFile(archive) as zf:
+            written = zf.getinfo("directory/")
+        self.assertEqual(written.date_time, (2001, 2, 3, 4, 5, 6))
+        self.assertEqual(written.compress_type, zipfile.ZIP_STORED)
+        self.assertEqual(written.comment, b"comment")
+        self.assertEqual(written.extra, b"\x99\x99\x00\x00")
+        self.assertEqual(written.external_attr, (0o40700 << 16) | 0x10)
 
     def test_create_directory_with_write(self):
         with zipfile.ZipFile(TESTFN, "w") as zf:

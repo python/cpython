@@ -2527,8 +2527,6 @@ class ZipFile:
                                   strict_timestamps=self._strict_timestamps)
 
         if zinfo.is_dir():
-            zinfo.compress_size = 0
-            zinfo.CRC = 0
             self.mkdir(zinfo)
         else:
             if compress_type is not None:
@@ -2588,13 +2586,12 @@ class ZipFile:
             if not directory_name.endswith("/"):
                 directory_name += "/"
             zinfo = ZipInfo(directory_name)
-            zinfo.compress_size = 0
-            zinfo.CRC = 0
             zinfo.external_attr = ((0o40000 | mode) & 0xFFFF) << 16
-            zinfo.file_size = 0
             zinfo.external_attr |= 0x10
         else:
             raise TypeError("Expected type str or ZipInfo")
+
+        zinfo.CRC = zinfo.compress_size = zinfo.file_size = 0
 
         with self._lock:
             if self._seekable:
