@@ -4,12 +4,14 @@
 // Operations are sequentially consistent unless they have a suffix indicating
 // otherwise. If in doubt, prefer the sequentially consistent operations.
 //
-// The "_relaxed" suffix for load and store operations indicates the "relaxed"
-// memory order. They don't provide synchronization, but (roughly speaking)
-// guarantee somewhat sane behavior for races instead of undefined behavior.
-// In practice, they correspond to "normal" hardware load and store
+// The "_relaxed" suffix indicates the "relaxed" memory order. Relaxed
+// operations don't provide synchronization, but (roughly speaking) guarantee
+// somewhat sane behavior for races instead of undefined behavior. In practice,
+// relaxed loads and stores correspond to "normal" hardware load and store
 // instructions, so they are almost as inexpensive as plain loads and stores
-// in C.
+// in C. Relaxed read-modify-write operations, such as
+// _Py_atomic_add_*_relaxed, are still atomic, but do not order surrounding
+// memory accesses.
 //
 // Note that atomic read-modify-write operations like _Py_atomic_add_* return
 // the previous value of the atomic variable, not the new value.
@@ -51,6 +53,12 @@
 //
 //   def _Py_atomic_add(obj, value):
 //       # sequential consistency
+//       old_obj = obj
+//       obj += value
+//       return old_obj
+//
+//   def _Py_atomic_add_relaxed(obj, value):
+//       # relaxed consistency
 //       old_obj = obj
 //       obj += value
 //       return old_obj
@@ -128,6 +136,50 @@ _Py_atomic_add_uintptr(uintptr_t *obj, uintptr_t value);
 
 static inline Py_ssize_t
 _Py_atomic_add_ssize(Py_ssize_t *obj, Py_ssize_t value);
+
+
+// --- _Py_atomic_add_relaxed ------------------------------------------------
+// Atomically adds `value` to `obj` and returns the previous value
+// (relaxed consistency, i.e., no ordering)
+
+static inline int
+_Py_atomic_add_int_relaxed(int *obj, int value);
+
+static inline int8_t
+_Py_atomic_add_int8_relaxed(int8_t *obj, int8_t value);
+
+static inline int16_t
+_Py_atomic_add_int16_relaxed(int16_t *obj, int16_t value);
+
+static inline int32_t
+_Py_atomic_add_int32_relaxed(int32_t *obj, int32_t value);
+
+static inline int64_t
+_Py_atomic_add_int64_relaxed(int64_t *obj, int64_t value);
+
+static inline intptr_t
+_Py_atomic_add_intptr_relaxed(intptr_t *obj, intptr_t value);
+
+static inline unsigned int
+_Py_atomic_add_uint_relaxed(unsigned int *obj, unsigned int value);
+
+static inline uint8_t
+_Py_atomic_add_uint8_relaxed(uint8_t *obj, uint8_t value);
+
+static inline uint16_t
+_Py_atomic_add_uint16_relaxed(uint16_t *obj, uint16_t value);
+
+static inline uint32_t
+_Py_atomic_add_uint32_relaxed(uint32_t *obj, uint32_t value);
+
+static inline uint64_t
+_Py_atomic_add_uint64_relaxed(uint64_t *obj, uint64_t value);
+
+static inline uintptr_t
+_Py_atomic_add_uintptr_relaxed(uintptr_t *obj, uintptr_t value);
+
+static inline Py_ssize_t
+_Py_atomic_add_ssize_relaxed(Py_ssize_t *obj, Py_ssize_t value);
 
 
 // --- _Py_atomic_compare_exchange -------------------------------------------

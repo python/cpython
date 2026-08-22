@@ -1299,7 +1299,7 @@ uncached_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
 {
     PyObject *result;
 
-    FT_ATOMIC_ADD_SSIZE(self->misses, 1);
+    FT_ATOMIC_ADD_SSIZE_RELAXED(self->misses, 1);
     result = PyObject_Call(self->func, args, kwds);
     if (!result)
         return NULL;
@@ -1321,7 +1321,7 @@ infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
     }
     int res = _PyDict_GetItemRef_KnownHash((PyDictObject *)self->cache, key, hash, &result);
     if (res > 0) {
-        FT_ATOMIC_ADD_SSIZE(self->hits, 1);
+        FT_ATOMIC_ADD_SSIZE_RELAXED(self->hits, 1);
         Py_DECREF(key);
         return result;
     }
@@ -1329,7 +1329,7 @@ infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
         Py_DECREF(key);
         return NULL;
     }
-    FT_ATOMIC_ADD_SSIZE(self->misses, 1);
+    FT_ATOMIC_ADD_SSIZE_RELAXED(self->misses, 1);
     result = PyObject_Call(self->func, args, kwds);
     if (!result) {
         Py_DECREF(key);
@@ -1425,7 +1425,7 @@ bounded_lru_cache_get_lock_held(lru_cache_object *self, PyObject *args, PyObject
         lru_cache_extract_link(link);
         lru_cache_append_link(self, link);
         *result = link->result;
-        FT_ATOMIC_ADD_SSIZE(self->hits, 1);
+        FT_ATOMIC_ADD_SSIZE_RELAXED(self->hits, 1);
         Py_INCREF(link->result);
         Py_DECREF(link);
         Py_DECREF(key_);
@@ -1435,7 +1435,7 @@ bounded_lru_cache_get_lock_held(lru_cache_object *self, PyObject *args, PyObject
         Py_DECREF(key_);
         return -1;
     }
-    FT_ATOMIC_ADD_SSIZE(self->misses, 1);
+    FT_ATOMIC_ADD_SSIZE_RELAXED(self->misses, 1);
     return 0;
 }
 
