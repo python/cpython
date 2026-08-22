@@ -89,7 +89,8 @@ SRE(at)(SRE_STATE* state, const SRE_CHAR* ptr, SRE_CODE at)
 }
 
 LOCAL(int)
-SRE(charset)(SRE_STATE* state, const SRE_CODE* set, SRE_CODE ch)
+SRE(charset)(SRE_STATE* state, const SRE_CODE* set, SRE_CODE ch,
+             SRE_CODE original_ch)
 {
     /* check if character is a member of the given set */
 
@@ -110,7 +111,9 @@ SRE(charset)(SRE_STATE* state, const SRE_CODE* set, SRE_CODE ch)
 
         case SRE_OP_CATEGORY:
             /* <CATEGORY> <code> */
-            if (sre_category(set[0], (int) ch))
+            /* Unicode property categories are not case-folded. */
+            if (sre_category(set[0], (int) (set[0] >= SRE_CATEGORY_ALPHA ?
+                                            original_ch : ch)))
                 return ok;
             set++;
             break;
@@ -180,11 +183,11 @@ SRE(charset_loc_ignore)(SRE_STATE* state, const SRE_CODE* set, SRE_CODE ch)
 {
     SRE_CODE lo, up;
     lo = sre_lower_locale(ch);
-    if (SRE(charset)(state, set, lo))
+    if (SRE(charset)(state, set, lo, ch))
        return 1;
 
     up = sre_upper_locale(ch);
-    return up != lo && SRE(charset)(state, set, up);
+    return up != lo && SRE(charset)(state, set, up, ch);
 }
 
 LOCAL(Py_ssize_t) SRE(match)(SRE_STATE* state, const SRE_CODE* pattern, int toplevel);
@@ -209,7 +212,7 @@ SRE(count)(SRE_STATE* state, const SRE_CODE* pattern, Py_ssize_t maxcount)
     case SRE_OP_IN:
         /* repeated set */
         TRACE(("|%p|%p|COUNT IN\n", pattern, ptr));
-        while (ptr < end && SRE(charset)(state, pattern + 2, *ptr))
+        while (ptr < end && SRE(charset)(state, pattern + 2, *ptr, *ptr))
             ptr++;
         break;
 
@@ -754,7 +757,7 @@ dispatch:
             /* <IN> <skip> <set> */
             TRACE(("|%p|%p|IN\n", pattern, ptr));
             if (ptr >= end ||
-                !SRE(charset)(state, pattern + 1, *ptr))
+                !SRE(charset)(state, pattern + 1, *ptr, *ptr))
                 RETURN_FAILURE;
             pattern += pattern[0];
             ptr++;
@@ -824,7 +827,7 @@ dispatch:
             TRACE(("|%p|%p|IN_IGNORE\n", pattern, ptr));
             if (ptr >= end
                 || !SRE(charset)(state, pattern+1,
-                                 (SRE_CODE)sre_lower_ascii(*ptr)))
+                                 (SRE_CODE)sre_lower_ascii(*ptr), *ptr))
                 RETURN_FAILURE;
             pattern += pattern[0];
             ptr++;
@@ -834,7 +837,7 @@ dispatch:
             TRACE(("|%p|%p|IN_UNI_IGNORE\n", pattern, ptr));
             if (ptr >= end
                 || !SRE(charset)(state, pattern+1,
-                                 (SRE_CODE)sre_lower_unicode(*ptr)))
+                                 (SRE_CODE)sre_lower_unicode(*ptr), *ptr))
                 RETURN_FAILURE;
             pattern += pattern[0];
             ptr++;
@@ -873,7 +876,7 @@ dispatch:
                 if (pattern[1] == SRE_OP_IN &&
                     (ptr >= end ||
                      !SRE(charset)(state, pattern + 3,
-                                   (SRE_CODE) *ptr)))
+                                   (SRE_CODE) *ptr, (SRE_CODE) *ptr)))
                     continue;
                 state->ptr = ptr;
                 DO_JUMP(JUMP_BRANCH, jump_branch, pattern+1);
@@ -1833,7 +1836,7 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
         end = (SRE_CHAR *)state->end;
         state->must_advance = 0;
         for (;;) {
-            while (ptr < end && !SRE(charset)(state, charset, *ptr))
+            while (ptr < end && !SRE(charset)(state, charset, *ptr, *ptr))
                 ptr++;
             if (ptr >= end)
                 return 0;

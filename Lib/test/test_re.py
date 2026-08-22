@@ -977,6 +977,20 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.fullmatch(r'[\p{Lu}\p{Nd}]+', 'AB12'))
         self.assertIsNone(re.fullmatch(r'[\p{Lu}\p{Nd}]+', 'ab'))
 
+        # IGNORECASE applies to cased literals in a character class, but
+        # Unicode property category predicates are evaluated against the
+        # original input character.
+        self.assertEqual(re.findall(r'[\p{Lu}a]', 'AaBb1', re.I),
+                         list('AaB'))
+        self.assertEqual(re.findall(r'[\P{Lu}a]', 'AaBb1', re.I),
+                         list('Aab1'))
+        self.assertTrue(re.fullmatch(r'[a||\p{Lu}]', 'B', re.I))
+        self.assertEqual(re.findall(r'[a--\p{Lu}]', 'AaB', re.I),
+                         list('a'))
+        self.assertTrue(re.fullmatch(r'(?:\p{Lu}|a)', 'B', re.I))
+        self.assertTrue(re.fullmatch(r'(?i:[\p{Lu}a])', 'B'))
+        self.assertIsNone(re.fullmatch(r'(?-i:[\p{Lu}a])', 'b', re.I))
+
         # XID_Start and XID_Continue.
         self.assertTrue(re.fullmatch(r'\p{XID_Start}+', 'fo\xf6Д'))
         self.assertIsNone(re.fullmatch(r'\p{XID_Start}', '1'))
