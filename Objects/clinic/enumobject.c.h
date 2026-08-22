@@ -100,14 +100,9 @@ enum_vectorcall(PyObject *type, PyObject *const *args,
     PyObject *start = 0;
 
     assert(Py_Is(_PyType_CAST(type), &PyEnum_Type));
-    if (kwnames != NULL) {
+    if (kwnames != NULL || nargs < 1 || nargs > 2) {
         return enum_new_parse_args(_PyType_CAST(type), args, nargs,
-            PyTuple_GET_SIZE(kwnames),
-            NULL, kwnames);
-    }
-    if (nargs < 1 || nargs > 2) {
-        return enum_new_parse_args(_PyType_CAST(type), args, nargs,
-            0,
+            kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
             NULL, kwnames);
     }
     iterable = args[0];
@@ -172,4 +167,4 @@ reversed_vectorcall(PyObject *type, PyObject *const *args,
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=58c5cf4abf7a0f01 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0ef73f3adedaa5dc input=a9049054013a1b77]*/

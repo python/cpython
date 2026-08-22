@@ -4915,14 +4915,9 @@ vc_plain_vectorcall(PyObject *type, PyObject *const *args,
     PyObject *a = Py_None;
 
     assert(Py_Is(_PyType_CAST(type), &VcNew_Type));
-    if (kwnames != NULL) {
+    if (kwnames != NULL || nargs > 1) {
         return vc_plain_new_parse_args(_PyType_CAST(type), args, nargs,
-            PyTuple_GET_SIZE(kwnames),
-            NULL, kwnames);
-    }
-    if (nargs > 1) {
-        return vc_plain_new_parse_args(_PyType_CAST(type), args, nargs,
-            0,
+            kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
             NULL, kwnames);
     }
     if (nargs < 1) {
@@ -5016,29 +5011,14 @@ vc_posorkw_vectorcall(PyObject *type, PyObject *const *args,
     PyObject *b = Py_None;
 
     assert(Py_Is(_PyType_CAST(type), &VcInit_Type));
-    if (kwnames != NULL) {
+    if (kwnames != NULL || nargs < 1 || nargs > 2) {
         self = _PyType_CAST(type)->tp_alloc(
             _PyType_CAST(type), 0);
         if (self == NULL) {
             return NULL;
         }
         _result = vc_posorkw_init_parse_args(self, args, nargs,
-            PyTuple_GET_SIZE(kwnames),
-            NULL, kwnames);
-        if (_result != 0) {
-            Py_DECREF(self);
-            return NULL;
-        }
-        return self;
-    }
-    if (nargs < 1 || nargs > 2) {
-        self = _PyType_CAST(type)->tp_alloc(
-            _PyType_CAST(type), 0);
-        if (self == NULL) {
-            return NULL;
-        }
-        _result = vc_posorkw_init_parse_args(self, args, nargs,
-            0,
+            kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
             NULL, kwnames);
         if (_result != 0) {
             Py_DECREF(self);
@@ -5147,14 +5127,9 @@ vc_base_vectorcall(PyObject *type, PyObject *const *args,
     PyObject *b = Py_None;
 
     assert(Py_Is(_PyType_CAST(type), &VcNewBase_Type));
-    if (kwnames != NULL) {
+    if (kwnames != NULL || nargs < 1 || nargs > 2) {
         return vc_base_new_parse_args(_PyType_CAST(type), args, nargs,
-            PyTuple_GET_SIZE(kwnames),
-            NULL, kwnames);
-    }
-    if (nargs < 1 || nargs > 2) {
-        return vc_base_new_parse_args(_PyType_CAST(type), args, nargs,
-            0,
+            kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
             NULL, kwnames);
     }
     a = args[0];
@@ -5246,4 +5221,4 @@ vc_kwonly_vectorcall(PyObject *type, PyObject *const *args,
         kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
         NULL, kwnames);
 }
-/*[clinic end generated code: output=ea3ea1853d2dec1c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5f0af4dbd548e22a input=a9049054013a1b77]*/

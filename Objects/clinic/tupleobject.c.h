@@ -123,9 +123,6 @@ tuple_vectorcall(PyObject *type, PyObject *const *args,
     if (!_PyArg_NoKwnames("tuple", kwnames)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("tuple", nargs, 0, 1)) {
-        goto exit;
-    }
     if (nargs < 1) {
         goto skip_optional;
     }
@@ -153,4 +150,4 @@ tuple___getnewargs__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return tuple___getnewargs___impl((PyTupleObject *)self);
 }
-/*[clinic end generated code: output=9baf9b4c006e85f5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=86afc9e6207b880e input=a9049054013a1b77]*/

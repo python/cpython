@@ -1152,32 +1152,20 @@ class ParseArgsCodeGen:
             """, indent=4)]
 
     def _vectorcall_positional(self, *,
-                               arity_delegate: bool = False) -> list[str]:
+                               arity_checked: bool = False) -> list[str]:
         """Positional argument parsing for vectorcall.
 
-        arity_delegate: report out-of-range positional count through the
-        {c_basename}_parse_args helper rather than _PyArg_CheckPositional(),
-        so this entry point and the slot report the same error message.
+        arity_checked: Already have a number of arguments check.
         """
         pos_code = self._parse_positional_args(
             argname_fmt='args[%d]', nargs='nargs', limited_capi=False)
         # Converter support was validated when @vectorcall was parsed.
         assert pos_code is not None
-        max_args = NO_VARARG if self.varpos else self.max_pos
-        if not self.min_pos and max_args == NO_VARARG:
+        if arity_checked:
             return pos_code
-        if arity_delegate:
-            checks = []
-            if self.min_pos:
-                checks.append(f"nargs < {self.min_pos}")
-            if max_args != NO_VARARG:
-                checks.append(f"nargs > {max_args}")
-            # kwnames is NULL here, so there are no keyword arguments.
-            check = [self._vectorcall_guarded_delegate(
-                " || ".join(checks), '0')]
-        else:
-            check = [self._check_positional('nargs', indent=4)]
-        return [*check, *pos_code]
+        if self.min_pos or self.varpos:
+            return [self._check_positional('nargs', indent=4), *pos_code]
+        return pos_code
 
     def _assemble_vectorcall(self, preamble: str, fields: tuple[str, ...],
                              finale: str) -> None:
@@ -1286,10 +1274,16 @@ class ParseArgsCodeGen:
         Delegate to the helper if keywords present or if position count is out
         of range. Position count so the error messages match the non-vectorcall.
         """
+        assert not self.varpos
+        checks = ['kwnames != NULL']
+        if self.min_pos:
+            checks.append(f"nargs < {self.min_pos}")
+        checks.append(f"nargs > {self.max_pos}")
+
         parser_code = self._vectorcall_type_check()
         parser_code.append(self._vectorcall_guarded_delegate(
-            'kwnames != NULL', 'PyTuple_GET_SIZE(kwnames)'))
-        parser_code.extend(self._vectorcall_positional(arity_delegate=True))
+            " || ".join(checks), 'kwnames ? PyTuple_GET_SIZE(kwnames) : 0'))
+        parser_code.extend(self._vectorcall_positional(arity_checked=True))
         self.vectorcall_body(*parser_code)
 
     def parse_vectorcall(self) -> None:
