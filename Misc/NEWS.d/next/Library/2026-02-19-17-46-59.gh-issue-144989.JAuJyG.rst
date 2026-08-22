@@ -1,0 +1,1 @@
+Expose ``_PyObject_LookupSpecial`` as :func:`types.lookup_special`.
