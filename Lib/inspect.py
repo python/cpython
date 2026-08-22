@@ -932,6 +932,35 @@ def getmodule(object, _filename=None):
         return object
     if hasattr(object, '__module__'):
         return sys.modules.get(object.__module__)
+    if istraceback(object):
+        object = object.tb_frame
+    if isframe(object):
+        # Frame globals identify the execution namespace directly. Preserve
+        # the private filename override when it names a different file.
+        if _filename is None or _filename == object.f_code.co_filename:
+            object_globals = object.f_globals
+            module_name = object_globals.get('__name__')
+            if not isinstance(module_name, str):
+                return None
+            module = sys.modules.get(module_name)
+            if not (ismodule(module) and module.__dict__ is object_globals):
+                return None
+            module_file = getattr(module, '__file__', None)
+            if module_file is None:
+                return None
+            try:
+                file = getabsfile(object, _filename)
+            except (TypeError, FileNotFoundError):
+                return None
+            if object.f_code.co_filename == module_file:
+                return module
+            try:
+                module_file = getabsfile(module)
+            except (TypeError, FileNotFoundError):
+                return None
+            if file == module_file or file == os.path.realpath(module_file):
+                return module
+            return None
 
     # Try the filename to modulename cache
     if _filename is not None and _filename in modulesbyfile:

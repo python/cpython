@@ -831,6 +831,85 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertEqual(inspect.getmodule(str), sys.modules["builtins"])
         # Check filename override
         self.assertEqual(inspect.getmodule(None, modfile), mod)
+        self.assertEqual(
+            inspect.getmodule(inspect.currentframe(), modfile), mod)
+        # Check code, frame, and traceback objects
+        self.assertIs(inspect.getmodule(mod.eggs.__code__), mod)
+        self.assertIs(inspect.getmodule(inspect.currentframe()),
+                      sys.modules[__name__])
+        try:
+            1 / 0
+        except ZeroDivisionError as error:
+            self.assertIs(inspect.getmodule(error.__traceback__),
+                          sys.modules[__name__])
+
+    def test_getmodule_unregistered_exec_frame(self):
+        def exec_namespace(namespace):
+            exec(compile(textwrap.dedent("""
+                frame = inspect.currentframe()
+                try:
+                    1 / 0
+                except ZeroDivisionError as error:
+                    traceback = error.__traceback__
+            """), modfile, "exec"), namespace)
+            self.assertIsNone(inspect.getmodule(namespace["frame"]))
+            self.assertIsNone(inspect.getmodule(namespace["traceback"]))
+
+        # Missing and invalid module names identify no registered namespace.
+        exec_namespace({"inspect": inspect})
+        exec_namespace({"inspect": inspect, "__name__": []})
+
+        module_name = f"{__name__}.not_registered"
+        for module in (None, object(), types.ModuleType(module_name)):
+            with self.subTest(module=module):
+                sys.modules[module_name] = module
+                try:
+                    exec_namespace({
+                        "inspect": inspect,
+                        "__name__": module_name,
+                    })
+                finally:
+                    del sys.modules[module_name]
+
+    def test_getmodule_registered_exec_frame(self):
+        def exec_module(module, filename):
+            module.inspect = inspect
+            exec(compile(textwrap.dedent("""
+                frame = inspect.currentframe()
+                try:
+                    1 / 0
+                except ZeroDivisionError as error:
+                    traceback = error.__traceback__
+            """), filename, "exec"), module.__dict__)
+
+        module_name = f"{__name__}.registered"
+        module = types.ModuleType(module_name)
+        sys.modules[module_name] = module
+        try:
+            with temp_cwd() as cwd:
+                filename = os.path.join(cwd, "registered.py")
+                with open(filename, "w"):
+                    pass
+                module.__file__ = filename
+
+                exec_module(module, filename)
+                self.assertIs(inspect.getmodule(module.frame), module)
+                self.assertIs(inspect.getmodule(module.traceback), module)
+
+                # Globals identity is insufficient when the code came from a
+                # different origin than the registered module.
+                exec_module(module, filename + ".other")
+                self.assertIsNone(inspect.getmodule(module.frame))
+                self.assertIsNone(inspect.getmodule(module.traceback))
+
+                # Preserve the existing result for fileless modules while
+                # avoiding a scan of sys.modules.
+                del module.__file__
+                exec_module(module, "<fileless>")
+                self.assertIsNone(inspect.getmodule(module.frame))
+                self.assertIsNone(inspect.getmodule(module.traceback))
+        finally:
+            del sys.modules[module_name]
 
     def test_getmodule_file_not_found(self):
         # See bpo-45406
