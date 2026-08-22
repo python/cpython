@@ -346,6 +346,13 @@ class WaveLowLevelTest(unittest.TestCase):
         with self.assertRaisesRegex(wave.Error, 'bad sample width'):
             wave.open(io.BytesIO(b))
 
+    def test_read_truncated_fmt_chunk(self):
+        b = b'RIFF' + struct.pack('<L', 24) + b'WAVE'
+        b += b'fmt ' + struct.pack('<L', 16)
+        b += struct.pack('<HHLLH', 1, 1, 11025, 11025, 1)
+        with self.assertRaisesRegex(wave.Error, 'fmt chunk is truncated'):
+            wave.open(io.BytesIO(b))
+
     def test_open_in_write_raises(self):
         # gh-136523: Wave_write.__del__ should not throw
         with support.catch_unraisable_exception() as cm:
