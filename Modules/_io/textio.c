@@ -635,10 +635,15 @@ _io_IncrementalNewlineDecoder_reset_impl(nldecoder_object *self)
         Py_RETURN_NONE;
 }
 
+/*[clinic input]
+@getter
+_io.IncrementalNewlineDecoder.newlines
+[clinic start generated code]*/
+
 static PyObject *
-incrementalnewlinedecoder_newlines_get(PyObject *op, void *Py_UNUSED(context))
+_io_IncrementalNewlineDecoder_newlines_get_impl(nldecoder_object *self)
+/*[clinic end generated code: output=4370cf5202a83d08 input=040f9a26aef317a8]*/
 {
-    nldecoder_object *self = nldecoder_object_CAST(op);
     CHECK_INITIALIZED_DECODER(self);
 
     switch (self->seennl) {
@@ -3448,7 +3453,7 @@ static PyMethodDef incrementalnewlinedecoder_methods[] = {
 };
 
 static PyGetSetDef incrementalnewlinedecoder_getset[] = {
-    {"newlines", incrementalnewlinedecoder_newlines_get, NULL, NULL},
+    _IO_INCREMENTALNEWLINEDECODER_NEWLINES_GETSETDEF
     {NULL}
 };
 
