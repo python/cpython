@@ -587,15 +587,23 @@ class ParseArgsCodeGen:
         assert isinstance(c, libclinic.converters.VarKeywordCConverter)
         return c.parse_var_keyword()
 
-    def _check_positional(self, nargs: str, *, indent: int = 4) -> str:
+    def _check_positional(self, nargs: str, *,
+                          indent: int = 4) -> list[str]:
+        """Emit an argument count check when needed.
+
+        Varpos functions have no upper bound but still need a check when a
+        minimum number of positional arguments are required.
+        """
+        max_args = NO_VARARG if self.varpos else self.max_pos
+        if not self.min_pos and max_args == NO_VARARG:
+            return []
         self.codegen.add_include('pycore_modsupport.h',
                                  '_PyArg_CheckPositional()')
-        max_args = NO_VARARG if self.varpos else self.max_pos
-        return libclinic.normalize_snippet(f"""
+        return [libclinic.normalize_snippet(f"""
             if (!_PyArg_CheckPositional("{{name}}", {nargs}, {self.min_pos}, {max_args})) {{{{
                 goto exit;
             }}}}
-            """, indent=indent)
+            """, indent=indent)]
 
     def _parse_positional_args(
         self,
@@ -694,8 +702,8 @@ class ParseArgsCodeGen:
                         }}}}
                         """,
                     indent=4))
-        elif self.min_pos or max_args != NO_VARARG:
-            parser_code.append(self._check_positional(nargs))
+        else:
+            parser_code.extend(self._check_positional(nargs))
 
         pos_code = self._parse_positional_args(
             argname_fmt=argname_fmt, nargs=nargs,
@@ -734,7 +742,6 @@ class ParseArgsCodeGen:
         nargs = 'PyTuple_GET_SIZE(args)'
 
         parser_code = []
-        max_args = NO_VARARG if self.varpos else self.max_pos
         if self.varpos is None and self.min_pos == self.max_pos == 0:
             self.codegen.add_include('pycore_modsupport.h',
                                      '_PyArg_NoPositional()')
@@ -743,8 +750,8 @@ class ParseArgsCodeGen:
                     goto exit;
                 }}
                 """, indent=4))
-        elif self.min_pos or max_args != NO_VARARG:
-            parser_code.append(self._check_positional(nargs))
+        else:
+            parser_code.extend(self._check_positional(nargs))
 
         has_optional = False
         for i, p in enumerate(self.parameters):
@@ -1163,10 +1170,7 @@ class ParseArgsCodeGen:
         assert pos_code is not None
         if arity_checked:
             return pos_code
-        # varpos allows arbitrary length; still needs a check if there is a min.
-        if self.min_pos or not self.varpos:
-            return [self._check_positional('nargs', indent=4), *pos_code]
-        return pos_code
+        return [*self._check_positional('nargs'), *pos_code]
 
     def _assemble_vectorcall(self, preamble: str, fields: tuple[str, ...],
                              finale: str) -> None:
