@@ -847,7 +847,7 @@ the following constants:
 
 .. data:: ZSTD_VERSION_INFO
 
-   A named tuple containing the four components of the zstd library
+   A named tuple containing the three components of the zstd library
    version that was used for building the module:
    *major*, *minor*, and *patch*.  All values are integers.
    The components can also be accessed by name, so ``zstd.ZSTD_VERSION_INFO[0]``

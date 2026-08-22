@@ -760,7 +760,7 @@ static PyStructSequence_Field bzlib_version_fields[] = {
     {0}
 };
 
-static PyStructSequence_Desc zlib_version_desc = {
+static PyStructSequence_Desc bzlib_version_desc = {
     "_bz2.bzlib_version_info",    /* name */
     bzlib_version__doc__,    /* doc */
     bzlib_version_fields,    /* fields */
@@ -828,7 +828,7 @@ _bz2_exec(PyObject *module)
         return -1;
     }
     PyTypeObject *version_type;
-    version_type = PyStructSequence_NewType(&zlib_version_desc);
+    version_type = PyStructSequence_NewType(&bzlib_version_desc);
     if (version_type == NULL) {
         return -1;
     }

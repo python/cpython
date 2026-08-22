@@ -150,7 +150,7 @@ class FunctionsTestCase(unittest.TestCase):
 
         self.assertEqual(string, '%d.%d.%d' % v)
 
-    def test_lzma_version(self):
+    def test_zstd_version(self):
         if support.verbose:
             print(f'ZSTD_VERSION = {zstd.ZSTD_VERSION}', flush=True)
             print(f'zstd_version = {zstd.zstd_version}', flush=True)

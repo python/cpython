@@ -499,7 +499,8 @@ the following constants:
    *major*, *minor*, *revision*, and *subversion*.
    All values are integers.
    The components can also be accessed by name, so ``zlib.VERSION_INFO[0]``
-   is equivalent to ``zlib.VERSION_INFO.major`` and so on.
+   The components can also be accessed by name, so ``zlib.ZLIB_VERSION_INFO[0]``
+   is equivalent to ``zlib.ZLIB_VERSION_INFO.major`` and so on.
    This may be different from the zlib library actually used at runtime, which
    is available as :const:`zlib_version_info`.
 
