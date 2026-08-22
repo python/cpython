@@ -1980,6 +1980,51 @@ class ClinicParserTest(TestCase):
         err = "Function 'empty_group' has a ']' without a matching '['"
         self.expect_failure(block, err)
 
+    def test_disallowed_grouping__parameter_after_group(self):
+        # Only positional-only parameters can follow an optional group.
+        group_err = ("You cannot use optional groups ('[' and ']') unless all "
+                     "parameters are positional-only ('/')")
+        kwds_err = ("Function 'bar' uses a var-keyword parameter and other "
+                    "non-positional parameters, which Argument Clinic does "
+                    "not currently support: '**kwds: dict'")
+        dataset = (("""
+            module foo
+            foo.bar
+                [
+                a: int
+                b: int
+                ]
+                y: int
+        """, group_err), ("""
+            module foo
+            foo.bar
+                [
+                a: int
+                b: int
+                ]
+                *
+                y: int
+        """, group_err), ("""
+            module foo
+            foo.bar
+                [
+                a: int
+                b: int
+                ]
+                *args: tuple
+        """, group_err), ("""
+            module foo
+            foo.bar
+                [
+                a: int
+                b: int
+                ]
+                **kwds: dict
+        """, kwds_err))
+        for block, err in dataset:
+            with self.subTest(block=block):
+                self.expect_failure(block, err)
+
     def test_disallowed_grouping__must_be_position_only(self):
         dataset = ("""
             with_kwds
