@@ -1,0 +1,2 @@
+Fix :func:`unittest.mock.patch` with ``autospec``, ``spec``, or ``spec_set``
+when used with lazy-imported objects.
