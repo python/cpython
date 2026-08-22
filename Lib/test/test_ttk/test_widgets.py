@@ -2024,19 +2024,23 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
                      lambda e: selects.append(self.tv.selection()))
         self.tv.bind('<<TreeviewOpen>>', lambda e: opens.append(self.tv.focus()))
         self.tv.bind('<<TreeviewClose>>', lambda e: closes.append(self.tv.focus()))
-        self.tv.focus_force()
         self.tv.focus(parent)
         self.tv.selection_set(parent)
         self.tv.update()
 
+        # Force the focus right before generating the event: the window
+        # manager can take it back while the events are processed.
+        self.tv.focus_force()
         self.tv.event_generate('<Right>')  # Open the focused parent.
         self.tv.update()
         self.assertEqual(opens, [parent])
 
+        self.tv.focus_force()
         self.tv.event_generate('<Left>')  # Close it again.
         self.tv.update()
         self.assertEqual(closes, [parent])
 
+        self.tv.focus_force()
         self.tv.event_generate('<Down>')  # Move the selection.
         self.tv.update()
         self.assertEqual(self.tv.selection(), (item2,))

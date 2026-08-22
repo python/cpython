@@ -17,7 +17,8 @@ from test.support.script_helper import assert_python_ok
 from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import (AbstractTkTest, AbstractDefaultRootTest,
                                        requires_tk, get_tk_patchlevel,
-                                       tcl_version, tk_version)
+                                       tcl_version, tk_version,
+                                       wait_until_mapped)
 
 support.requires('gui')
 
@@ -1321,7 +1322,8 @@ class WmTest(AbstractTkTest, unittest.TestCase):
         t2 = tkinter.Toplevel(self.root)
         t1.deiconify()
         t2.deiconify()
-        self.root.update()
+        wait_until_mapped(t1)
+        wait_until_mapped(t2)
         t1.lift(t2)  # Raise t1 above t2.
         self.root.update()
         order = self.root.wm_stackorder()
