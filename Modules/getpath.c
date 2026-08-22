@@ -58,17 +58,30 @@
 #endif
 
 
+/*[clinic input]
+module getpath
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b425aa3ea7292100]*/
+
+#include "clinic/getpath.c.h"
+
 /* HELPER FUNCTIONS for getpath.py */
 
+/*[clinic input]
+getpath.abspath
+
+    path as pathobj: unicode
+    /
+
+Return the absolute path.
+[clinic start generated code]*/
+
 static PyObject *
-getpath_abspath(PyObject *Py_UNUSED(self), PyObject *args)
+getpath_abspath_impl(PyObject *module, PyObject *pathobj)
+/*[clinic end generated code: output=a307fc0d5d82eb2e input=2f8179427a1a31a6]*/
 {
     PyObject *r = NULL;
-    PyObject *pathobj;
     wchar_t *path;
-    if (!PyArg_ParseTuple(args, "U", &pathobj)) {
-        return NULL;
-    }
     Py_ssize_t len;
     path = PyUnicode_AsWideCharString(pathobj, &len);
     if (path) {
@@ -85,13 +98,19 @@ getpath_abspath(PyObject *Py_UNUSED(self), PyObject *args)
 }
 
 
+/*[clinic input]
+getpath.basename
+
+    path: unicode
+    /
+
+Return the final component of the path.
+[clinic start generated code]*/
+
 static PyObject *
-getpath_basename(PyObject *Py_UNUSED(self), PyObject *args)
+getpath_basename_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=d383d3b34842236e input=0de5b71fc78bbad8]*/
 {
-    PyObject *path;
-    if (!PyArg_ParseTuple(args, "U", &path)) {
-        return NULL;
-    }
     Py_ssize_t end = PyUnicode_GET_LENGTH(path);
     Py_ssize_t pos = PyUnicode_FindChar(path, SEP, 0, end, -1);
     if (pos < 0) {
@@ -101,13 +120,19 @@ getpath_basename(PyObject *Py_UNUSED(self), PyObject *args)
 }
 
 
+/*[clinic input]
+getpath.dirname
+
+    path: unicode
+    /
+
+Return the directory component of the path.
+[clinic start generated code]*/
+
 static PyObject *
-getpath_dirname(PyObject *Py_UNUSED(self), PyObject *args)
+getpath_dirname_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=6887a025f5f6784c input=0c33269fe28957fb]*/
 {
-    PyObject *path;
-    if (!PyArg_ParseTuple(args, "U", &path)) {
-        return NULL;
-    }
     Py_ssize_t end = PyUnicode_GET_LENGTH(path);
     Py_ssize_t pos = PyUnicode_FindChar(path, SEP, 0, end, -1);
     if (pos < 0) {
@@ -117,15 +142,21 @@ getpath_dirname(PyObject *Py_UNUSED(self), PyObject *args)
 }
 
 
+/*[clinic input]
+getpath.isabs
+
+    path as pathobj: unicode
+    /
+
+Return True if the path is absolute.
+[clinic start generated code]*/
+
 static PyObject *
-getpath_isabs(PyObject *Py_UNUSED(self), PyObject *args)
+getpath_isabs_impl(PyObject *module, PyObject *pathobj)
+/*[clinic end generated code: output=7f5c62037d0b2c86 input=e49d90a186348140]*/
 {
     PyObject *r = NULL;
-    PyObject *pathobj;
     const wchar_t *path;
-    if (!PyArg_ParseTuple(args, "U", &pathobj)) {
-        return NULL;
-    }
     path = PyUnicode_AsWideCharString(pathobj, NULL);
     if (path) {
         r = _Py_isabs(path) ? Py_True : Py_False;
@@ -135,17 +166,24 @@ getpath_isabs(PyObject *Py_UNUSED(self), PyObject *args)
 }
 
 
+/*[clinic input]
+getpath.hassuffix
+
+    path as pathobj: unicode
+    suffix as suffixobj: unicode
+    /
+
+Return True if the path ends with the suffix, ignoring the case.
+[clinic start generated code]*/
+
 static PyObject *
-getpath_hassuffix(PyObject *Py_UNUSED(self), PyObject *args)
+getpath_hassuffix_impl(PyObject *module, PyObject *pathobj,
+                       PyObject *suffixobj)
+/*[clinic end generated code: output=40e52a2ebe497e47 input=dffaf0ddc9d63647]*/
 {
     PyObject *r = NULL;
-    PyObject *pathobj;
-    PyObject *suffixobj;
     const wchar_t *path;
     const wchar_t *suffix;
-    if (!PyArg_ParseTuple(args, "UU", &pathobj, &suffixobj)) {
-        return NULL;
-    }
     Py_ssize_t len, suffixLen;
     path = PyUnicode_AsWideCharString(pathobj, &len);
     if (path) {
@@ -170,15 +208,21 @@ getpath_hassuffix(PyObject *Py_UNUSED(self), PyObject *args)
 }
 
 
+/*[clinic input]
+getpath.isdir
+
+    path as pathobj: unicode
+    /
+
+Return True if the path is a directory.
+[clinic start generated code]*/
+
 static PyObject *
-getpath_isdir(PyObject *Py_UNUSED(self), PyObject *args)
+getpath_isdir_impl(PyObject *module, PyObject *pathobj)
+/*[clinic end generated code: output=5af217f29e968e1b input=d1d4c4d74d2e37f1]*/
 {
     PyObject *r = NULL;
-    PyObject *pathobj;
     const wchar_t *path;
-    if (!PyArg_ParseTuple(args, "U", &pathobj)) {
-        return NULL;
-    }
     path = PyUnicode_AsWideCharString(pathobj, NULL);
     if (path) {
 #ifdef MS_WINDOWS
@@ -195,13 +239,19 @@ getpath_isdir(PyObject *Py_UNUSED(self), PyObject *args)
 }
 
 
+/*[clinic input]
+getpath.isfile
+
+    path as pathobj: unicode
+    /
+
+Return True if the path is a regular file.
+[clinic start generated code]*/
+
 static PyObject *
-getpath_isfile(PyObject *Py_UNUSED(self), PyObject *args)
+getpath_isfile_impl(PyObject *module, PyObject *pathobj)
+/*[clinic end generated code: output=0060d782bd507740 input=71831c61d25e3f9e]*/
 {
-    PyObject *pathobj;
-    if (!PyArg_ParseTuple(args, "U", &pathobj)) {
-        return NULL;
-    }
 
     int isfile;
 #ifdef MS_WINDOWS
@@ -226,13 +276,19 @@ getpath_isfile(PyObject *Py_UNUSED(self), PyObject *args)
 }
 
 
+/*[clinic input]
+getpath.isxfile
+
+    path as pathobj: unicode
+    /
+
+Return True if the path is an executable file.
+[clinic start generated code]*/
+
 static PyObject *
-getpath_isxfile(PyObject *Py_UNUSED(self), PyObject *args)
+getpath_isxfile_impl(PyObject *module, PyObject *pathobj)
+/*[clinic end generated code: output=67348f84968ac985 input=4b272be4846d89a2]*/
 {
-    PyObject *pathobj;
-    if (!PyArg_ParseTuple(args, "U", &pathobj)) {
-        return NULL;
-    }
 
     int isxfile;
 #ifdef MS_WINDOWS
@@ -262,13 +318,18 @@ getpath_isxfile(PyObject *Py_UNUSED(self), PyObject *args)
 }
 
 
+/*[clinic input]
+getpath.joinpath
+
+    *args: tuple
+
+Join the path components.
+[clinic start generated code]*/
+
 static PyObject *
-getpath_joinpath(PyObject *Py_UNUSED(self), PyObject *args)
+getpath_joinpath_impl(PyObject *module, PyObject *args)
+/*[clinic end generated code: output=0044d429b32e5f5a input=5c67eeca4a6d1413]*/
 {
-    if (!PyTuple_Check(args)) {
-        PyErr_SetString(PyExc_TypeError, "requires tuple of arguments");
-        return NULL;
-    }
     Py_ssize_t n = PyTuple_GET_SIZE(args);
     if (n == 0) {
         return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
@@ -347,13 +408,19 @@ getpath_joinpath(PyObject *Py_UNUSED(self), PyObject *args)
 }
 
 
+/*[clinic input]
+getpath.readlines
+
+    path as pathobj: unicode
+    /
+
+Return the lines of the file.
+[clinic start generated code]*/
+
 static PyObject *
-getpath_readlines(PyObject *Py_UNUSED(self), PyObject *args)
+getpath_readlines_impl(PyObject *module, PyObject *pathobj)
+/*[clinic end generated code: output=6a7c1a1d2bb23046 input=6f54150f72789b78]*/
 {
-    PyObject *pathobj;
-    if (!PyArg_ParseTuple(args, "U", &pathobj)) {
-        return NULL;
-    }
     FILE *fp = Py_fopen(pathobj, "rb");
     if (!fp) {
         return NULL;
@@ -423,13 +490,19 @@ getpath_readlines(PyObject *Py_UNUSED(self), PyObject *args)
 }
 
 
+/*[clinic input]
+getpath.realpath
+
+    path as pathobj: unicode
+    /
+
+Resolve a symlinked file.
+[clinic start generated code]*/
+
 static PyObject *
-getpath_realpath(PyObject *Py_UNUSED(self) , PyObject *args)
+getpath_realpath_impl(PyObject *module, PyObject *pathobj)
+/*[clinic end generated code: output=8559260e3786874e input=d3c5eee0ddd2c3e2]*/
 {
-    PyObject *pathobj;
-    if (!PyArg_ParseTuple(args, "U", &pathobj)) {
-        return NULL;
-    }
 #if defined(HAVE_READLINK)
     /* This readlink calculation only resolves a symlinked file, and
        does not resolve any path segments. This is consistent with
@@ -566,17 +639,17 @@ done:
 
 
 static PyMethodDef getpath_methods[] = {
-    {"abspath", getpath_abspath, METH_VARARGS, NULL},
-    {"basename", getpath_basename, METH_VARARGS, NULL},
-    {"dirname", getpath_dirname, METH_VARARGS, NULL},
-    {"hassuffix", getpath_hassuffix, METH_VARARGS, NULL},
-    {"isabs", getpath_isabs, METH_VARARGS, NULL},
-    {"isdir", getpath_isdir, METH_VARARGS, NULL},
-    {"isfile", getpath_isfile, METH_VARARGS, NULL},
-    {"isxfile", getpath_isxfile, METH_VARARGS, NULL},
-    {"joinpath", getpath_joinpath, METH_VARARGS, NULL},
-    {"readlines", getpath_readlines, METH_VARARGS, NULL},
-    {"realpath", getpath_realpath, METH_VARARGS, NULL},
+    GETPATH_ABSPATH_METHODDEF
+    GETPATH_BASENAME_METHODDEF
+    GETPATH_DIRNAME_METHODDEF
+    GETPATH_HASSUFFIX_METHODDEF
+    GETPATH_ISABS_METHODDEF
+    GETPATH_ISDIR_METHODDEF
+    GETPATH_ISFILE_METHODDEF
+    GETPATH_ISXFILE_METHODDEF
+    GETPATH_JOINPATH_METHODDEF
+    GETPATH_READLINES_METHODDEF
+    GETPATH_REALPATH_METHODDEF
     {NULL, NULL, 0, NULL}
 };
 
