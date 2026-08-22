@@ -67,6 +67,15 @@ PyDoc_STRVAR(math_integer_isqrt__doc__,
 #define MATH_INTEGER_ISQRT_METHODDEF    \
     {"isqrt", (PyCFunction)math_integer_isqrt, METH_O, math_integer_isqrt__doc__},
 
+PyDoc_STRVAR(math_integer_isqrt_rem__doc__,
+"isqrt_rem($module, n, /)\n"
+"--\n"
+"\n"
+"Return a pair of values (s,t) such that s=isqrt(n) and t=n-s*s.");
+
+#define MATH_INTEGER_ISQRT_REM_METHODDEF    \
+    {"isqrt_rem", (PyCFunction)math_integer_isqrt_rem, METH_O, math_integer_isqrt_rem__doc__},
+
 PyDoc_STRVAR(math_integer_factorial__doc__,
 "factorial($module, n, /)\n"
 "--\n"
@@ -156,4 +165,4 @@ math_integer_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=34697570c923a3af input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ec462d7c95cb54a8 input=a9049054013a1b77]*/
