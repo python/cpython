@@ -1,0 +1,1 @@
+Preserve trailing spaces on headers for :mod:`email` for signing
