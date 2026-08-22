@@ -837,6 +837,21 @@ Porting to Python 3.16
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
+* :class:`html.parser.HTMLParser` now handles CDATA sections and RAWTEXT
+  and RCDATA elements depending on the foreign content context by
+  default, in accordance with the HTML5 standard.
+  In HTML content, ``<![CDATA[...]]>`` is now parsed as a bogus comment
+  which ends at the first ``>`` and is passed to
+  :meth:`~html.parser.HTMLParser.handle_comment` instead of
+  :meth:`~html.parser.HTMLParser.unknown_decl`.
+  In the content of ``svg`` and ``math`` elements, RAWTEXT and RCDATA
+  elements (such as ``script``, ``style``, ``title`` or ``textarea``)
+  are now parsed as normal elements.
+  Pass ``support_cdata=True`` to the constructor to restore the previous
+  behavior for XML-like input (CDATA sections recognized in any context),
+  or ``support_cdata=False`` to never recognize CDATA sections.
+  (Contributed by Serhiy Storchaka in :gh:`135661`.)
+
 * In :mod:`tkinter`, the *name* parameter of the
   :meth:`~tkinter.Misc.wait_variable`, :meth:`~tkinter.Misc.setvar` and
   :meth:`~tkinter.Misc.getvar` methods and the *value* parameter of
