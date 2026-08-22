@@ -786,6 +786,43 @@ class TestBasicOps(unittest.TestCase):
         items = list(grouper_iter)
         self.assertEqual(len(items), 1)
 
+    @threading_helper.requires_working_threading()
+    def test_groupby_concurrent_next_does_not_crash(self):
+        # regression test for gh-150791
+        # Concurrent next calls on a shared groupby object should
+        # not race / corrupt state.
+        class K:
+            __slots__ = ("v",)
+            def __init__(self, v):
+                self.v = v
+            def __eq__(self, other):
+                if not isinstance(other, K):
+                    return NotImplemented
+                return self.v == other.v
+            def __hash__(self):
+                return hash(self.v)
+
+        keys = [K(i) for i in range(5_000)]
+        g = itertools.groupby(keys)
+        errors = []
+
+        def consume():
+            try:
+                while True:
+                    _, _ = next(g)
+            except StopIteration:
+                pass
+            except Exception as e:
+                errors.append(e)
+
+        threads = [threading.Thread(target=consume) for _ in range(8)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        self.assertEqual(errors, [])  # must pass with ThreadSanitizer
+
     def test_filter(self):
         self.assertEqual(list(filter(isEven, range(6))), [0,2,4])
         self.assertEqual(list(filter(None, [0,1,0,2,0])), [1,2])
