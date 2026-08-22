@@ -209,6 +209,30 @@ class InteractiveSession(unittest.TestCase):
                           '\x1b[35mnear "sel": syntax error\x1b[0m', err)
 
 
+class Completer(unittest.TestCase):
+
+    def test_schema_name_with_double_quote(self):
+        from sqlite3._completer import _complete
+
+        con = sqlite3.connect(":memory:")
+        self.addCleanup(con.close)
+        con.execute("ATTACH ? AS ?", (":memory:", 'double"quote'))
+        con.execute('CREATE TABLE [double"quote].table_match(value)')
+        self.assertEqual(_complete(con, "table_", 0), "table_match ")
+
+    @unittest.skipIf(sqlite3.sqlite_version_info < (3, 16, 0),
+                     "PRAGMA table-valued function is not available until "
+                     "SQLite 3.16.0")
+    def test_schema_name_with_single_quote(self):
+        from sqlite3._completer import _complete
+
+        con = sqlite3.connect(":memory:")
+        self.addCleanup(con.close)
+        con.execute("ATTACH ? AS ?", (":memory:", "single'quote"))
+        con.execute("CREATE TABLE [single'quote].other(column_match)")
+        self.assertEqual(_complete(con, "column_", 0), "column_match ")
+
+
 @requires_subprocess()
 @force_not_colorized_test_class
 class Completion(unittest.TestCase):
