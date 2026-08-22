@@ -114,6 +114,10 @@ DOMEventStream Objects
    .. versionchanged:: 3.11
       Support for :meth:`~object.__getitem__` method has been removed.
 
+   .. versionchanged:: next
+      :class:`DOMEventStream` now supports the :term:`context manager`
+      protocol. File handles opened by :func:`parse` are closed on exit.
+
    .. method:: getEvent()
 
       Return a tuple containing *event* and the current *node* as
@@ -141,3 +145,11 @@ DOMEventStream Objects
                   print(node.toxml())
 
    .. method:: DOMEventStream.reset()
+
+   .. method:: DOMEventStream.close()
+
+      Close the underlying stream if it was opened by :func:`parse`.
+      Has no effect if the stream was provided by the caller or is already
+      closed. It is safe to call this method more than once.
+
+      .. versionadded:: next
