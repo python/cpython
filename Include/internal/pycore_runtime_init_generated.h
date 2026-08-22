@@ -1722,6 +1722,7 @@ extern "C" {
     INIT_ID(dont_inherit), \
     INIT_ID(dst), \
     INIT_ID(dst_dir_fd), \
+    INIT_ID(duration_sec), \
     INIT_ID(eager_start), \
     INIT_ID(effective_ids), \
     INIT_ID(element_factory), \
@@ -2051,6 +2052,7 @@ extern "C" {
     INIT_ID(rounding), \
     INIT_ID(salt), \
     INIT_ID(sample_interval_us), \
+    INIT_ID(sample_rate), \
     INIT_ID(sched_priority), \
     INIT_ID(scheduler), \
     INIT_ID(script), \

@@ -91,6 +91,26 @@ static_assert(SAMPLE_HEADER_FIXED_SIZE == 13,
 static_assert(FILE_FOOTER_SIZE == 32,
              "FILE_FOOTER_SIZE must remain 32");
 
+/* Optional profiling statistics immediately precede the footer.  The
+ * signature and size live at the end so readers can discover extensions
+ * without changing the fixed header or moving streamed sample data. */
+#define PROFILE_STATS_MAGIC       "TACHSTAT"
+#define PROFILE_STATS_MAGIC_SIZE  8
+#define PROFILE_STATS_VERSION     1
+#define PST_OFF_DURATION          0
+#define PST_SIZE_DURATION         8
+#define PST_OFF_SAMPLE_RATE       (PST_OFF_DURATION + PST_SIZE_DURATION)
+#define PST_SIZE_SAMPLE_RATE      8
+#define PST_OFF_MAGIC             (PST_OFF_SAMPLE_RATE + PST_SIZE_SAMPLE_RATE)
+#define PST_OFF_VERSION           (PST_OFF_MAGIC + PROFILE_STATS_MAGIC_SIZE)
+#define PST_SIZE_VERSION          4
+#define PST_OFF_SIZE              (PST_OFF_VERSION + PST_SIZE_VERSION)
+#define PST_SIZE_SIZE             4
+#define PROFILE_STATS_SIZE        (PST_OFF_SIZE + PST_SIZE_SIZE)
+
+static_assert(PROFILE_STATS_SIZE == 32,
+              "PROFILE_STATS_SIZE must remain 32");
+
 /* Minimum on-disk bytes of a string (1) and frame (7) table entry. */
 #define MIN_STRING_ENTRY_SIZE 1
 #define MIN_FRAME_ENTRY_SIZE  7
@@ -261,6 +281,9 @@ typedef struct {
     uint64_t start_time_us;
     uint64_t sample_interval_us;
     uint64_t total_samples;
+    double duration_sec;
+    double sample_rate;
+    int has_profile_stats;
 
     /* String hash table: PyObject* -> uint32_t index */
     _Py_hashtable_t *string_hash;
@@ -328,6 +351,9 @@ typedef struct {
     uint64_t sample_interval_us;
     uint64_t sample_count;
     uint32_t thread_count;
+    double duration_sec;
+    double sample_rate;
+    int has_profile_stats;
     uint64_t string_table_offset;
     uint64_t frame_table_offset;
 
@@ -555,6 +581,13 @@ int binary_writer_write_sample(
  *   0 on success, -1 on failure (PyErr set)
  */
 int binary_writer_finalize(BinaryWriter *writer);
+
+/* Store measured statistics to write during finalization. */
+int binary_writer_set_stats(
+    BinaryWriter *writer,
+    double duration_sec,
+    double sample_rate
+);
 
 /*
  * Destroy a binary writer and free all resources.
