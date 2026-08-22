@@ -1,0 +1,3 @@
+Standardized non-zero-padded numeric formatting for dates and times in
+:func:`datetime.datetime.strftime` and :func:`datetime.date.strftime` across
+all platforms.
