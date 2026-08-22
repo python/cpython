@@ -235,8 +235,12 @@ should_audit(PyInterpreterState *interp)
     if (!interp) {
         return 0;
     }
+    // interp->audit_hooks can only ever be NULL very early during initialization
+    // or very late during finalization.
+    int interp_has_audit_hooks = (interp->audit_hooks != NULL
+                                  && PyList_GET_SIZE(interp->audit_hooks) > 0);
     return (interp->runtime->audit_hooks.head
-            || interp->audit_hooks
+            || interp_has_audit_hooks
             || PyDTrace_AUDIT_ENABLED());
 }
 
@@ -306,7 +310,9 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
     }
 
     /* Call interpreter hooks */
-    if (is->audit_hooks) {
+    PyObject *audit_hooks = is->audit_hooks;
+    assert(audit_hooks != NULL);
+    if (PyList_GET_SIZE(audit_hooks) > 0) {
         eventName = PyUnicode_FromString(event);
         if (!eventName) {
             goto exit;
@@ -447,6 +453,8 @@ _PySys_ClearAuditHooks(PyThreadState *ts)
         PyMem_RawFree(e);
         e = n;
     }
+
+    Py_CLEAR(ts->interp->audit_hooks);
 }
 
 static void
@@ -536,15 +544,7 @@ sys_addaudithook_impl(PyObject *module, PyObject *hook)
     }
 
     PyInterpreterState *interp = tstate->interp;
-    if (interp->audit_hooks == NULL) {
-        interp->audit_hooks = PyList_New(0);
-        if (interp->audit_hooks == NULL) {
-            return NULL;
-        }
-        /* Avoid having our list of hooks show up in the GC module */
-        PyObject_GC_UnTrack(interp->audit_hooks);
-    }
-
+    assert(interp->audit_hooks != NULL);
     if (PyList_Append(interp->audit_hooks, hook) < 0) {
         return NULL;
     }
@@ -4320,6 +4320,13 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
     assert(!_PyErr_Occurred(tstate));
 
     PyInterpreterState *interp = tstate->interp;
+
+    PyObject *audit_hooks = PyList_New(0);
+    if (audit_hooks == NULL) {
+        goto error;
+    }
+    _PyObject_GC_UNTRACK(audit_hooks);
+    interp->audit_hooks = audit_hooks;
 
     PyObject *modules = _PyImport_InitModules(interp);
     if (modules == NULL) {
