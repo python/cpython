@@ -1,0 +1,2 @@
+Clarify that a directory or zipfile passed as the script argument remains on
+:data:`sys.path` in safe-path and isolated modes.
