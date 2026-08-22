@@ -1,0 +1,3 @@
+Clarify that :meth:`symtable.SymbolTable.is_nested` returns ``True`` only when
+the block is nested (directly or indirectly) within a function, and not when it
+is nested merely within another block such as a class.
