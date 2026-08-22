@@ -3080,6 +3080,14 @@ class TestDateTime(TestDate):
         with self.assertRaises(ValueError): strptime("-000", "%z")
         with self.assertRaises(ValueError): strptime("z", "%z")
 
+        # test only ascii is allowed
+        with self.assertRaises(ValueError): strptime('٢025-02-2٢', '%Y-%m-%d')
+        with self.assertRaises(ValueError): strptime('1٢:0٢:0٢', '%H:%M:%S')
+        with self.assertRaises(ValueError): strptime('٢5', '%y')
+        with self.assertRaises(ValueError): strptime('٢555 1٢ 1', '%G %V %u')
+        with self.assertRaises(ValueError): strptime('1٢/٢5 02AM', '%j/%y %I%p')
+        with self.assertRaises(ValueError): strptime('1٢', '%U')
+
     def test_strptime_ampm(self):
         dt = datetime(1999, 3, 17, 0, 44, 55, 2)
         for hour in range(0, 24):
@@ -4291,7 +4299,7 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(strptime("UTC", "%Z").tzinfo, None)
 
     def test_strptime_errors(self):
-        for tzstr in ("-2400", "-000", "z", "24:00"):
+        for tzstr in ("-2400", "-000", "z", "24:00", "+0٢:00"):
             with self.assertRaises(ValueError):
                 self.theclass.strptime(tzstr, "%z")
             with self.assertRaises(ValueError):
