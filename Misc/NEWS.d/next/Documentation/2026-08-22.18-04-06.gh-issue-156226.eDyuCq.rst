@@ -1,1 +1,0 @@
-Remove a doubled word ("in in") in the :mod:`difflib` documentation.
