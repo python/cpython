@@ -54,18 +54,18 @@ def _hash_algorithm(numerator, denominator):
     return -2 if result == -1 else result
 
 _RATIONAL_FORMAT = re.compile(r"""
-    \A\s*                                  # optional whitespace at the start,
-    (?P<sign>[-+]?)                        # an optional sign, then
-    (?=\d|\.\d)                            # lookahead for digit or .digit
-    (?P<num>\d*|\d+(_\d+)*)                # numerator (possibly empty)
-    (?:                                    # followed by
-       (?:\s*/\s*(?P<denom>\d+(_\d+)*))?   # an optional denominator
-    |                                      # or
-       (?:\.(?P<decimal>\d*|\d+(_\d+)*))?  # an optional fractional part
-       (?:E(?P<exp>[-+]?\d+(_\d+)*))?      # and optional exponent
+    \A\s*+                                       # optional whitespace at the start,
+    (?P<sign>[-+]?+)                             # an optional sign, then
+    (?=\d|\.\d)                                  # lookahead for digit or .digit
+    (?P<num>(?:\d++(?:_\d++)*+)?+)               # numerator (possibly empty)
+    (?:                                          # followed by
+        \s*+/\s*+(?P<denom>\d++(?:_\d++)*+)      # a denominator
+      |                                          # or
+        (?:\.(?P<decimal>(?:\d++(?:_\d++)*+)?+))?+  # an optional fractional part
+        (?:[eE](?P<exp>[-+]?+\d++(?:_\d++)*+))?+    # and optional exponent
     )
-    \s*\z                                  # and optional whitespace to finish
-""", re.VERBOSE | re.IGNORECASE)
+    \s*+\z                                       # and optional whitespace to finish
+""", re.VERBOSE)
 
 
 # Helpers for formatting
@@ -255,26 +255,24 @@ class Fraction(numbers.Rational):
                 if m is None:
                     raise ValueError('Invalid literal for Fraction: %r' %
                                      numerator)
-                numerator = int(m.group('num') or '0')
-                denom = m.group('denom')
+                sign, num, denom, decimal, exp = m.groups()
+                numerator = int(num) if num else 0
                 if denom:
                     denominator = int(denom)
                 else:
                     denominator = 1
-                    decimal = m.group('decimal')
                     if decimal:
                         decimal = decimal.replace('_', '')
                         scale = 10**len(decimal)
                         numerator = numerator * scale + int(decimal)
-                        denominator *= scale
-                    exp = m.group('exp')
+                        denominator = scale
                     if exp:
                         exp = int(exp)
                         if exp >= 0:
                             numerator *= 10**exp
                         else:
                             denominator *= 10**-exp
-                if m.group('sign') == '-':
+                if sign == '-':
                     numerator = -numerator
 
             elif isinstance(numerator, numbers.Rational):
