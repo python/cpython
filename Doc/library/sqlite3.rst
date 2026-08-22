@@ -699,7 +699,7 @@ Connection objects
       :meth:`~Cursor.executescript` on it with the given *sql_script*.
       Return the new cursor object.
 
-   .. method:: create_function(name, narg, func, /, *, deterministic=False)
+   .. method:: create_function(name, narg, func, /, *, deterministic=False, innocuous=False, directonly=False)
 
       Create or remove a user-defined SQL function.
 
@@ -722,11 +722,30 @@ Connection objects
           `deterministic <https://sqlite.org/deterministic.html>`_,
           which allows SQLite to perform additional optimizations.
 
+      :param bool innocuous:
+          If ``True``, the created SQL function is marked as
+          `innocuous <https://sqlite.org/c3ref/c_deterministic.html#sqliteinnocuous>`__,
+          making it usable in views, triggers and schema structures even when
+          the ``trusted_schema`` pragma is disabled.
+
+      :param bool directonly:
+          If ``True``, the created SQL function is marked as
+          `directonly <https://sqlite.org/c3ref/c_deterministic.html#sqlitedirectonly>`__,
+          restricting its use to top-level SQL statements regardless of the
+          value of the ``trusted_schema`` pragma.
+
+      :raises NotSupportedError:
+          If called with *innocuous* or *directonly* equal to True on a version
+          of SQLite older than 3.31.0.
+
       .. versionchanged:: 3.8
          Added the *deterministic* parameter.
 
       .. versionchanged:: 3.15
          The first three parameters are now positional-only.
+
+      .. versionchanged:: next
+         Added the *innocuous* and *directonly* parameters.
 
       Example:
 
@@ -743,7 +762,7 @@ Connection objects
          >>> con.close()
 
 
-   .. method:: create_aggregate(name, n_arg, aggregate_class, /)
+   .. method:: create_aggregate(name, n_arg, aggregate_class, /, *, deterministic=False, innocuous=False, directonly=False)
 
       Create or remove a user-defined SQL aggregate function.
 
@@ -767,8 +786,32 @@ Connection objects
           Set to ``None`` to remove an existing SQL aggregate function.
       :type aggregate_class: :term:`class` | None
 
+      :param bool deterministic:
+          If ``True``, the created SQL function is marked as
+          `deterministic <https://sqlite.org/deterministic.html>`__,
+          which allows SQLite to perform additional optimizations.
+
+      :param bool innocuous:
+          If ``True``, the created SQL function is marked as
+          `innocuous <https://sqlite.org/c3ref/c_deterministic.html#sqliteinnocuous>`__,
+          making it usable in views, triggers and schema structures even when
+          the ``trusted_schema`` pragma is disabled.
+
+      :param bool directonly:
+          If ``True``, the created SQL function is marked as
+          `directonly <https://sqlite.org/c3ref/c_deterministic.html#sqlitedirectonly>`__,
+          restricting its use to top-level SQL statements regardless of the
+          value of the ``trusted_schema`` pragma.
+
+      :raises NotSupportedError:
+          If called with *innocuous* or *directonly* equal to True on a version
+          of SQLite older than 3.31.0.
+
       .. versionchanged:: 3.15
          All three parameters are now positional-only.
+
+      .. versionchanged:: next
+         Added the *deterministic*, *innocuous* and *directonly* parameters.
 
       Example:
 
@@ -800,7 +843,7 @@ Connection objects
          3
 
 
-   .. method:: create_window_function(name, num_params, aggregate_class, /)
+   .. method:: create_window_function(name, num_params, aggregate_class, /, *, deterministic=False, innocuous=False, directonly=False)
 
       Create or remove a user-defined aggregate window function.
 
@@ -825,13 +868,37 @@ Connection objects
 
           Set to ``None`` to remove an existing SQL aggregate window function.
 
+      :param bool deterministic:
+          If ``True``, the created SQL function is marked as
+          `deterministic <https://sqlite.org/deterministic.html>`__,
+          which allows SQLite to perform additional optimizations.
+
+      :param bool innocuous:
+          If ``True``, the created SQL function is marked as
+          `innocuous <https://sqlite.org/c3ref/c_deterministic.html#sqliteinnocuous>`__,
+          making it usable in views, triggers and schema structures even when
+          the ``trusted_schema`` pragma is disabled.
+
+      :param bool directonly:
+          If ``True``, the created SQL function is marked as
+          `directonly <https://sqlite.org/c3ref/c_deterministic.html#sqlitedirectonly>`__,
+          restricting its use to top-level SQL statements regardless of the
+          value of the ``trusted_schema`` pragma.
+
       :raises NotSupportedError:
           If used with a version of SQLite older than 3.25.0,
           which does not support aggregate window functions.
 
+      :raises NotSupportedError:
+          If called with *innocuous* or *directonly* equal to True on a version
+          of SQLite older than 3.31.0.
+
       :type aggregate_class: :term:`class` | None
 
       .. versionadded:: 3.11
+
+      .. versionchanged:: next
+         Added the *deterministic*, *innocuous* and *directonly* parameters.
 
       Example:
 
