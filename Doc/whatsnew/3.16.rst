@@ -901,7 +901,9 @@ C API changes
 New features
 ------------
 
-* TODO
+* Add :c:func:`PyUnstable_InterpreterFrame_GetLocal` to read a local variable
+  of an internal interpreter frame by its localsplus index.
+  (Contributed by Guilherme Leobas in :gh:`156133`.)
 
 Porting to Python 3.16
 ----------------------
