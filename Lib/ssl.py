@@ -50,17 +50,14 @@ CERT_OPTIONAL - certificates are not required, but if provided will be
 CERT_REQUIRED - certificates are required, and will be validated, and
                 if validation fails, the connection will also fail
 
-The following constants identify various SSL protocol variants:
+The following constants identify various SSL protocol variants. Some legacy,
+version-specific protocol constants are only available when supported by the
+linked OpenSSL library:
 
-PROTOCOL_SSLv2
-PROTOCOL_SSLv3
 PROTOCOL_SSLv23
 PROTOCOL_TLS
 PROTOCOL_TLS_CLIENT
 PROTOCOL_TLS_SERVER
-PROTOCOL_TLSv1
-PROTOCOL_TLSv1_1
-PROTOCOL_TLSv1_2
 
 The following constants identify various SSL alert message descriptions as per
 http://www.iana.org/assignments/tls-parameters/tls-parameters.xml#tls-parameters-6
