@@ -10,7 +10,9 @@ from _testcapi import (_test_structmembersType_OldAPI,
     INT_MAX, INT_MIN, UINT_MAX,
     LONG_MAX, LONG_MIN, ULONG_MAX,
     LLONG_MAX, LLONG_MIN, ULLONG_MAX,
-    PY_SSIZE_T_MAX, PY_SSIZE_T_MIN,
+    PY_SSIZE_T_MAX, PY_SSIZE_T_MIN, SIZE_MAX,
+    SIZEOF_INTMAX_T, SIZEOF_INTPTR_T, SIZEOF_PTRDIFF_T, SIZEOF_OFF_T,
+    SIZEOF_PID_T, SIZEOF_INT,
     )
 
 
@@ -19,6 +21,8 @@ class Index:
         self.value = value
     def __index__(self):
         return self.value
+    def __repr__(self):
+        return f'Index({self.value!r})'
 
 # There are two classes: one using <structmember.h> and another using
 # `Py_`-prefixed API. They should behave the same in Python
@@ -60,22 +64,22 @@ class ReadWriteTests:
         if expected is not None:
             self.assertEqual(getattr(ts, name), expected)
 
-    def _test_overflow(self, name, value):
+    def _test_overflow(self, name, value, error=OverflowError):
         ts = self.ts
-        self.assertRaises(OverflowError, setattr, ts, name, value)
+        self.assertRaises(error, setattr, ts, name, value)
 
     def _test_int_range(self, name, minval, maxval, *, hardlimit=None,
-                        indexlimit=None):
+                        indexlimit=None, negvalueerror=OverflowError, wrap=False):
         if hardlimit is None:
             hardlimit = (minval, maxval)
         ts = self.ts
         self._test_write(name, minval)
-        self._test_write(name, maxval)
+        self._test_write(name, maxval, -1 if wrap else maxval)
         hardminval, hardmaxval = hardlimit
-        self._test_overflow(name, hardminval-1)
+        self._test_overflow(name, hardminval-1, error=negvalueerror)
         self._test_overflow(name, hardmaxval+1)
         self._test_overflow(name, 2**1000)
-        self._test_overflow(name, -2**1000)
+        self._test_overflow(name, -2**1000, error=negvalueerror)
         if hardminval < minval:
             self._test_warn(name, hardminval)
             self._test_warn(name, minval-1, maxval)
@@ -88,11 +92,11 @@ class ReadWriteTests:
             self.assertRaises(TypeError, setattr, ts, name, Index(maxval))
         else:
             self._test_write(name, Index(minval), minval)
-            self._test_write(name, Index(maxval), maxval)
-            self._test_overflow(name, Index(hardminval-1))
+            self._test_write(name, Index(maxval), -1 if wrap else maxval)
+            self._test_overflow(name, Index(hardminval-1), error=negvalueerror)
             self._test_overflow(name, Index(hardmaxval+1))
             self._test_overflow(name, Index(2**1000))
-            self._test_overflow(name, Index(-2**1000))
+            self._test_overflow(name, Index(-2**1000), error=negvalueerror)
             if hardminval < minval:
                 self._test_warn(name, Index(hardminval))
                 self._test_warn(name, Index(minval-1), maxval)
@@ -180,6 +184,42 @@ class ReadWriteTests_OldAPI(ReadWriteTests, unittest.TestCase):
 
 class ReadWriteTests_NewAPI(ReadWriteTests, unittest.TestCase):
     cls = _test_structmembersType_NewAPI
+
+    def test_size(self):
+        self._test_int_range('T_SIZE', 0, SIZE_MAX, negvalueerror=ValueError)
+
+    def test_int8(self):
+        self._test_int_range('T_INT8', -2**7, 2**7-1)
+        self._test_int_range('T_UINT8', 0, 2**8-1, negvalueerror=ValueError)
+        self._test_int_range('T_XINT8', -2**7, 2**8-1, wrap=True)
+
+    def test_int16(self):
+        self._test_int_range('T_INT16', -2**15, 2**15-1)
+        self._test_int_range('T_UINT16', 0, 2**16-1, negvalueerror=ValueError)
+        self._test_int_range('T_XINT16', -2**15, 2**16-1, wrap=True)
+
+    def test_int32(self):
+        self._test_int_range('T_INT32', -2**31, 2**31-1)
+        self._test_int_range('T_UINT32', 0, 2**32-1, negvalueerror=ValueError)
+        self._test_int_range('T_XINT32', -2**31, 2**32-1, wrap=True)
+
+    def test_int64(self):
+        self._test_int_range('T_INT64', -2**63, 2**63-1)
+        self._test_int_range('T_UINT64', 0, 2**64-1, negvalueerror=ValueError)
+        self._test_int_range('T_XINT64', -2**63, 2**64-1, wrap=True)
+
+    def test_intptr(self):
+        bits = 8*SIZEOF_INTPTR_T
+        self._test_int_range('T_INTPTR', -2**(bits-1), 2**(bits-1)-1)
+        self._test_int_range('T_UINTPTR', 0, 2**bits-1, negvalueerror=ValueError)
+
+    def test_off(self):
+        bits = 8*SIZEOF_OFF_T
+        self._test_int_range('T_OFF', -2**(bits-1), 2**(bits-1)-1)
+
+    def test_pid(self):
+        bits = 8*SIZEOF_PID_T
+        self._test_int_range('T_PID', -2**(bits-1), 2**(bits-1)-1)
 
 
 if __name__ == "__main__":
