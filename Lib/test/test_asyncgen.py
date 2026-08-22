@@ -266,6 +266,22 @@ class AsyncGenTest(unittest.TestCase):
                                     'async generator.*StopIteration'):
             to_list(gen())
 
+    def test_async_gen_athrow_stopiteration_not_started(self):
+        # gh-152685: StopIteration and StopAsyncIteration thrown into an
+        # async generator that hasn't started yet are wrapped in a
+        # RuntimeError, like for a started one.
+        async def gen():
+            yield 123
+
+        for exc, msg in [
+            (StopIteration, 'async generator raised StopIteration'),
+            (StopAsyncIteration, 'async generator raised StopAsyncIteration'),
+        ]:
+            with self.subTest(exc=exc):
+                agen = gen()
+                with self.assertRaisesRegex(RuntimeError, msg):
+                    agen.athrow(exc).send(None)
+
     def test_async_gen_exception_07(self):
         def sync_gen():
             try:
