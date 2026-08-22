@@ -1000,7 +1000,7 @@ _PyModule_GetFilename(PyObject *mod, char *buffer, Py_ssize_t maxlen)
             Py_DECREF(bytes);
             goto exit;
         }
-        if (size > maxlen) {
+        if (size >= maxlen) {
             size = -1;
             PyErr_SetString(PyExc_ValueError, "__file__ too long");
         }
