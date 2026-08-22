@@ -6,6 +6,8 @@ from importlib.resources._adapters import (
     wrap_spec,
 )
 
+from test.support import warnings_helper
+
 from . import util
 
 
@@ -79,6 +81,37 @@ class CompatibilityFilesTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             CompatibilityFiles.OrphanPath()
 
+    def test_spec_path_joinpath_no_descendants(self):
+        files = self.files
+        assert files.joinpath() is files
+
+    def test_child_path_joinpath_no_descendants(self):
+        child = self.files / 'a'
+        assert child.joinpath() is child
+
+    def test_orphan_path_joinpath_no_descendants(self):
+        orphan = self.files / 'a' / 'b'
+        assert orphan.joinpath() is orphan
+
+    def test_joinpath_multiple_descendants(self):
+        # Several descendants at once give the same result as applying them
+        # one at a time, as documented for Traversable.joinpath().
+        files = self.files
+        for path, expected in (
+            (files.joinpath('a', 'b'), files / 'a' / 'b'),
+            ((files / 'a').joinpath('b', 'c'), files / 'a' / 'b' / 'c'),
+            ((files / 'a' / 'b').joinpath('c', 'd'), files / 'a' / 'b' / 'c' / 'd'),
+        ):
+            assert isinstance(path, CompatibilityFiles.OrphanPath)
+            assert path._path == expected._path
+
+    def test_functional_api_without_path_names(self):
+        # gh-127337: these call joinpath() with no descendants at all.
+        package = self.package
+        with warnings_helper.check_warnings((".*contents.*", DeprecationWarning)):
+            assert sorted(resources.contents(package)) == ['a', 'b', 'c']
+        assert not resources.is_resource(package)
+
     def test_wrap_spec(self):
         spec = wrap_spec(self.package)
         assert isinstance(spec.loader.get_resource_reader(None), CompatibilityFiles)
@@ -95,3 +128,14 @@ class CompatibilityFilesNoReaderTests(unittest.TestCase):
 
     def test_spec_path_joinpath(self):
         assert isinstance(self.files / 'a', CompatibilityFiles.OrphanPath)
+
+    def test_spec_path_joinpath_no_descendants(self):
+        # Returns self rather than an OrphanPath with no parts, which would
+        # be rejected by OrphanPath.__init__().
+        files = self.files
+        assert files.joinpath() is files
+
+    def test_spec_path_joinpath_multiple_descendants(self):
+        path = self.files.joinpath('a', 'b')
+        assert isinstance(path, CompatibilityFiles.OrphanPath)
+        assert path._path == (self.files / 'a' / 'b')._path
