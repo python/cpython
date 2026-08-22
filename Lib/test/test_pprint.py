@@ -1147,6 +1147,52 @@ frozenset2({0,
             formatted = pprint.pformat([special] * 2, width=width)
             self.assertEqual(eval(formatted), [special] * 2)
 
+    def test_unencodable(self):
+        # with encoding and buffer
+        with io.BytesIO() as bio, \
+             io.TextIOWrapper(bio, encoding='latin1',
+                              newline='') as stream:
+            stream.write('\xab')
+            pprint.pprint('\xa3\u20ac', stream)
+            stream.flush()
+            self.assertEqual(bio.getvalue(), b"\xab'\xa3\\u20ac'\n")
+            stream.write('\xbb')
+            stream.flush()
+            self.assertEqual(bio.getvalue(), b"\xab'\xa3\\u20ac'\n\xbb")
+        # with encoding but without buffer
+        class MockWriter(list):
+            encoding = 'latin1'
+            errors = 'strict'
+            write = list.append
+        stream = MockWriter()
+        stream.write('\xab')
+        pprint.pprint('\xa3\u20ac', stream)
+        self.assertEqual(''.join(stream), "\xab'\xa3\\u20ac'\n")
+        # without encoding
+        with io.StringIO() as stream:
+            stream.write('\xab')
+            pprint.pprint('\xa3\u20ac', stream)
+            self.assertEqual(stream.getvalue(), "\xab'\xa3\u20ac'\n")
+        # the error handler of the stream is used if it is not strict
+        with io.BytesIO() as bio, \
+             io.TextIOWrapper(bio, encoding='latin1', errors='replace',
+                              newline='') as stream:
+            pprint.pprint('\u20ac', stream)
+            stream.flush()
+            self.assertEqual(bio.getvalue(), b"'?'\n")
+
+    def test_unencodable_repr(self):
+        class Surrogate:
+            def __repr__(self):
+                return '\udcff'
+
+        with io.BytesIO() as bio, \
+             io.TextIOWrapper(bio, encoding='utf-8',
+                              newline='') as stream:
+            pprint.pprint(Surrogate(), stream)
+            stream.flush()
+            self.assertEqual(bio.getvalue(), b"\\udcff\n")
+
     def test_compact(self):
         o = ([list(range(i * i)) for i in range(5)] +
              [list(range(i)) for i in range(6)])
