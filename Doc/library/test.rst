@@ -513,6 +513,8 @@ The :mod:`!test.support` module defines the following functions:
    ``True`` if called by a function whose ``__name__`` is ``'__main__'``.
    Used when tests are executed by :mod:`test.regrtest`.
 
+   If called at the top level, sets label "requires\_\ *resource*" on the module.
+
 
 .. function:: sortdict(dict)
 
@@ -527,6 +529,29 @@ The :mod:`!test.support` module defines the following functions:
 
    Setting *subdir* indicates a relative path to use to find the file
    rather than looking directly in the path directories.
+
+
+.. function:: mark(label, value=True, /)
+
+   Add a label to a test.  Use ``@mark('label')`` as a decorator of a test
+   method or class.
+
+   The optional *value* (``True`` by default) is matched on the command line
+   by ``--label label=value``, whereas ``--label label`` matches any value.
+
+   Many :mod:`test.support` decorators like :func:`requires_resource`,
+   :func:`~test.support.cpython_only` or :func:`bigmemtest` add labels
+   automatically.
+
+
+.. function:: mark_module(label, value=True, /, *, globals=None)
+
+   Add a label to every test of a module.  Call it at the module level::
+
+      test.support.mark_module('pickletest')
+
+   The module is the caller, unless its :func:`globals` dict is passed as the
+   *globals* argument.
 
 
 .. function:: get_pagesize()
@@ -773,26 +798,31 @@ The :mod:`!test.support` module defines the following functions:
 .. decorator:: requires_zlib
 
    Decorator for skipping tests if :mod:`zlib` doesn't exist.
+   Adds label "requires_zlib".
 
 
 .. decorator:: requires_gzip
 
    Decorator for skipping tests if :mod:`gzip` doesn't exist.
+   Adds label "requires_gzip".
 
 
 .. decorator:: requires_bz2
 
    Decorator for skipping tests if :mod:`bz2` doesn't exist.
+   Adds label "requires_bz2".
 
 
 .. decorator:: requires_lzma
 
    Decorator for skipping tests if :mod:`lzma` doesn't exist.
+   Adds label "requires_lzma".
 
 
 .. decorator:: requires_resource(resource)
 
    Decorator for skipping tests if *resource* is not available.
+   Adds label "requires\_\ *resource*".
 
 
 .. decorator:: requires_docstrings
@@ -809,12 +839,17 @@ The :mod:`!test.support` module defines the following functions:
 .. decorator:: cpython_only
 
    Decorator for tests only applicable to CPython.
+   Adds label "impl_detail_cpython".
 
 
 .. decorator:: impl_detail(msg=None, **guards)
 
    Decorator for invoking :func:`check_impl_detail` on *guards*.  If that
    returns ``False``, then uses *msg* as the reason for skipping the test.
+   For every keyword argument *name* adds a label
+   "impl_detail\_\ *name*" if its value is true or
+   "impl_detail_no\_\ *name*" otherwise.
+
 
 .. decorator:: thread_unsafe(reason=None)
 
@@ -849,10 +884,13 @@ The :mod:`!test.support` module defines the following functions:
    method may be less than the requested value.  If *dry_run* is ``False``, it
    means the test doesn't support dummy runs when ``-M`` is not specified.
 
+   Adds label "bigmemtest".
+
 
 .. decorator:: bigaddrspacetest
 
    Decorator for tests that fill the address space.
+   Adds label "bigaddrspacetest".
 
 
 .. function:: linked_to_musl()
@@ -1745,6 +1783,8 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
    if *deprecated* is ``True``.  If a module is required on a platform but
    optional for others, set *required_on* to an iterable of platform prefixes
    which will be compared against :data:`sys.platform`.
+
+   If called at the top level, sets label "requires\_\ *name*" on the module.
 
    .. versionadded:: 3.1
 
