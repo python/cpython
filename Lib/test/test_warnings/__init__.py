@@ -411,13 +411,16 @@ class FilterTests(BaseTest):
             self.assertEqual(w, [])
 
     def test_mutate_filter_list(self):
-        class X:
-            def match(self, a, start=0):
-                L[:] = []
-
-        L = [("default",X(),UserWarning,X(),0) for i in range(2)]
         with self.module.catch_warnings(record=True) as w:
-            self.module.filters = L
+            # In context-aware mode the active filter list is the current
+            # context's own list, not warnings.filters, so mutate that list
+            # directly.  (Assigning warnings.filters would leave the ambient
+            # filters -- e.g. an "error" filter from -W error -- in effect.)
+            L = self.module._get_filters()
+            class X:
+                def match(self, a, start=0):
+                    L[:] = []
+            L[:] = [("default",X(),UserWarning,X(),0) for i in range(2)]
             self.module.warn_explicit(UserWarning("b"), None, "f.py", 42)
             self.assertEqual(str(w[-1].message), "b")
 
@@ -1815,7 +1818,21 @@ class AsyncTests(BaseTest):
 
     def setUp(self):
         super().setUp()
+        # Reset the filters for this test, but restore the module's filter list
+        # in tearDown.  These tests exercise the C 'warnings' module, whose
+        # filters list is the interpreter-global one that regrtest checks for
+        # modification; leaving it cleared triggers a spurious "env changed".
+        # Save and restore the list contents directly rather than using
+        # catch_warnings(): that manipulates the warnings context variable and,
+        # combined with the threads/tasks these tests spawn, can leave a stale
+        # context active for later tests.
+        self._saved_filters = self.module.filters[:]
         self.module.resetwarnings()
+
+    def tearDown(self):
+        self.module.filters[:] = self._saved_filters
+        self.module._filters_mutated()
+        super().tearDown()
 
     @unittest.skipIf(not sys.flags.context_aware_warnings,
                      "requires context aware warnings")
@@ -1911,7 +1928,14 @@ class ThreadTests(BaseTest):
 
     def setUp(self):
         super().setUp()
+        self._saved_filters = self.module.filters[:]
         self.module.resetwarnings()
+
+    def tearDown(self):
+        # Restore module filters after test run to ensure a clean global state
+        self.module.filters[:] = self._saved_filters
+        self.module._filters_mutated()
+        super().tearDown()
 
     @unittest.skipIf(not ENABLE_THREAD_TESTS,
                      "requires thread-safe warnings flags")
