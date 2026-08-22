@@ -367,7 +367,7 @@ c_powi(Py_complex x, long n)
 double
 _Py_c_abs(Py_complex z)
 {
-    /* sets errno = ERANGE on overflow;  otherwise errno = 0 */
+    /* sets errno = ERANGE on overflow */
     double result;
 
     if (!isfinite(z.real) || !isfinite(z.imag)) {
@@ -376,12 +376,10 @@ _Py_c_abs(Py_complex z)
            NaN. */
         if (isinf(z.real)) {
             result = fabs(z.real);
-            errno = 0;
             return result;
         }
         if (isinf(z.imag)) {
             result = fabs(z.imag);
-            errno = 0;
             return result;
         }
         /* either the real or imaginary part is a NaN,
@@ -389,10 +387,9 @@ _Py_c_abs(Py_complex z)
         return Py_NAN;
     }
     result = hypot(z.real, z.imag);
-    if (!isfinite(result))
+    if (!isfinite(result)) {
         errno = ERANGE;
-    else
-        errno = 0;
+    }
     return result;
 }
 
@@ -796,7 +793,10 @@ static PyObject *
 complex_abs(PyObject *op)
 {
     PyComplexObject *v = _PyComplexObject_CAST(op);
-    double result = _Py_c_abs(v->cval);
+    double result;
+
+    errno = 0;
+    result = _Py_c_abs(v->cval);
     if (errno == ERANGE) {
         PyErr_SetString(PyExc_OverflowError,
                         "absolute value too large");
