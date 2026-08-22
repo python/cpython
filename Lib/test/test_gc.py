@@ -91,6 +91,82 @@ else:
 ###############################################################################
 
 class GCTests(unittest.TestCase):
+    @staticmethod
+    def total_collections():
+        return sum(stats["collections"] for stats in gc.get_stats())
+
+    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
+    def test_defer_automatic_collection(self):
+        was_enabled = gc.isenabled()
+        gc.enable()
+        try:
+            with gc_threshold(1, 0, 0):
+                _testinternalcapi.defer_automatic_gc()
+                try:
+                    before = self.total_collections()
+                    objects = [[] for _ in range(10_000)]
+                    self.assertEqual(self.total_collections(), before)
+                    self.assertTrue(gc.isenabled())
+
+                    gc.collect()
+                    self.assertEqual(self.total_collections(), before + 1)
+                finally:
+                    _testinternalcapi.resume_automatic_gc()
+        finally:
+            if not was_enabled:
+                gc.disable()
+
+    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
+    def test_defer_automatic_collection_nested(self):
+        was_enabled = gc.isenabled()
+        gc.enable()
+        try:
+            with gc_threshold(1, 0, 0):
+                _testinternalcapi.defer_automatic_gc()
+                try:
+                    _testinternalcapi.defer_automatic_gc()
+                    try:
+                        before = self.total_collections()
+                        objects = [[] for _ in range(10_000)]
+                        self.assertEqual(self.total_collections(), before)
+                    finally:
+                        _testinternalcapi.resume_automatic_gc()
+
+                    objects.extend([] for _ in range(10_000))
+                    self.assertEqual(self.total_collections(), before)
+                finally:
+                    _testinternalcapi.resume_automatic_gc()
+
+                objects.extend([] for _ in range(10_000))
+                self.assertGreater(self.total_collections(), before)
+        finally:
+            if not was_enabled:
+                gc.disable()
+
+    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
+    @threading_helper.requires_working_threading()
+    def test_defer_automatic_collection_across_threads(self):
+        was_enabled = gc.isenabled()
+        gc.enable()
+        try:
+            with gc_threshold(1, 0, 0):
+                _testinternalcapi.defer_automatic_gc()
+                try:
+                    before = self.total_collections()
+                    objects = []
+                    thread = threading.Thread(
+                        target=lambda: objects.extend(
+                            [] for _ in range(10_000)))
+                    thread.start()
+                    thread.join()
+                    self.assertEqual(len(objects), 10_000)
+                    self.assertEqual(self.total_collections(), before)
+                finally:
+                    _testinternalcapi.resume_automatic_gc()
+        finally:
+            if not was_enabled:
+                gc.disable()
+
     def test_list(self):
         l = []
         l.append(l)

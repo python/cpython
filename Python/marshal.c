@@ -9,6 +9,7 @@
 #include "Python.h"
 #include "pycore_call.h"             // _PyObject_CallNoArgs()
 #include "pycore_code.h"             // _PyCode_New()
+#include "pycore_gc.h"               // _PyGC_DeferAutomaticCollection()
 #include "pycore_hashtable.h"        // _Py_hashtable_t
 #include "pycore_long.h"             // _PyLong_IsZero()
 #include "pycore_object.h"           // _PyObject_IsUniquelyReferenced
@@ -1764,11 +1765,12 @@ static PyObject *
 read_object(RFILE *p)
 {
     PyObject *v;
+    int from_memory = p->ptr && p->end;
     if (PyErr_Occurred()) {
         fprintf(stderr, "XXX readobject called with exception set\n");
         return NULL;
     }
-    if (p->ptr && p->end) {
+    if (from_memory) {
         if (PySys_Audit("marshal.loads", "y#", p->ptr, (Py_ssize_t)(p->end - p->ptr)) < 0) {
             return NULL;
         }
@@ -1777,7 +1779,15 @@ read_object(RFILE *p)
             return NULL;
         }
     }
+    PyThreadState *tstate;
+    if (from_memory) {
+        tstate = _PyThreadState_GET();
+        _PyGC_DeferAutomaticCollection(tstate);
+    }
     v = r_object(p);
+    if (from_memory) {
+        _PyGC_ResumeAutomaticCollection(tstate);
+    }
     if (v == NULL && !PyErr_Occurred())
         PyErr_SetString(PyExc_TypeError, "NULL object in marshal data for object");
     return v;
