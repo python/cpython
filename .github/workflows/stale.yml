@@ -14,7 +14,7 @@ jobs:
     permissions:
       actions: write
       pull-requests: write
-    timeout-minutes: 10
+    timeout-minutes: 5
 
     steps:
     - name: "Check PRs"

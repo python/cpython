@@ -56,7 +56,7 @@ jobs:
     runs-on: ubuntu-26.04
     container:
       image: ghcr.io/python/autoconf:2025.01.02.12581854023
-    timeout-minutes: 60
+    timeout-minutes: 5
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     steps:
@@ -97,7 +97,7 @@ jobs:
     # Don't use ubuntu-latest but a specific version to make the job
     # reproducible: to get the same tools versions (autoconf, aclocal, ...)
     runs-on: ubuntu-26.04
-    timeout-minutes: 60
+    timeout-minutes: 30
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     steps:
@@ -254,7 +254,7 @@ jobs:
   build-ubuntu-ssltests:
     name: 'Ubuntu SSL tests'
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
+    timeout-minutes: 10
     needs: build-context
     if: needs.build-context.outputs.run-ubuntu == 'true'
     strategy:
@@ -328,7 +328,7 @@ jobs:
     name: Android (${{ matrix.arch }})
     needs: build-context
     if: needs.build-context.outputs.run-android == 'true'
-    timeout-minutes: 60
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -350,7 +350,7 @@ jobs:
     name: iOS
     needs: build-context
     if: needs.build-context.outputs.run-ios == 'true'
-    timeout-minutes: 60
+    timeout-minutes: 40
     runs-on: macos-26
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -375,7 +375,7 @@ jobs:
   test-hypothesis:
     name: "Hypothesis tests on Ubuntu"
     runs-on: ubuntu-26.04
-    timeout-minutes: 60
+    timeout-minutes: 30
     needs: build-context
     if: needs.build-context.outputs.run-ubuntu == 'true'
     env:
@@ -479,7 +479,7 @@ jobs:
   build-asan:
     name: 'Address sanitizer'
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
+    timeout-minutes: 30
     needs: build-context
     if: needs.build-context.outputs.run-ubuntu == 'true'
     strategy:
@@ -550,7 +550,7 @@ jobs:
   cross-build-linux:
     name: Cross build Linux
     runs-on: ubuntu-26.04
-    timeout-minutes: 60
+    timeout-minutes: 30
     needs: build-context
     if: needs.build-context.outputs.run-ubuntu == 'true'
     steps:
@@ -632,7 +632,7 @@ jobs:
   all-required-green:  # This job does nothing and is only used for the branch protection
     name: All required checks pass
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 2
     needs:
     - build-context  # Transitive dependency, needed to access `run-tests` value
     - check-docs

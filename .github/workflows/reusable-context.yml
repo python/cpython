@@ -58,7 +58,7 @@ jobs:
   compute-changes:
     name: Create context from changed files
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     outputs:
       run-android: ${{ steps.changes.outputs.run-android }}
       run-ci-fuzz: ${{ steps.changes.outputs.run-ci-fuzz }}

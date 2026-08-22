@@ -13,7 +13,7 @@ jobs:
   build-install-test:
     name: build, install and test
     runs-on: ubuntu-26.04-arm
-    timeout-minutes: 60
+    timeout-minutes: 30
     env:
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:

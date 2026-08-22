@@ -22,7 +22,7 @@ jobs:
   build-macos:
     name: build and test (${{ inputs.os }})
     runs-on: ${{ inputs.os }}
-    timeout-minutes: 60
+    timeout-minutes: 30
     env:
       HOMEBREW_NO_ANALYTICS: 1
       HOMEBREW_NO_AUTO_UPDATE: 1

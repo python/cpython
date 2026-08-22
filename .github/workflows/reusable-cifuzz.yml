@@ -20,7 +20,7 @@ jobs:
   cifuzz:
     name: ${{ inputs.oss-fuzz-project-name }} (${{ inputs.sanitizer }})
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 40
     steps:
       - name: Build fuzzers (${{ inputs.sanitizer }})
         id: build

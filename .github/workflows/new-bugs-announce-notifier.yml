@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-slim
     permissions:
       issues: read
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:

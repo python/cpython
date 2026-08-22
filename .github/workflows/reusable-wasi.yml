@@ -13,7 +13,7 @@ jobs:
   build-wasi-reusable:
     name: 'build and test'
     runs-on: ubuntu-26.04-arm
-    timeout-minutes: 60
+    timeout-minutes: 30
     env:
       WASMTIME_VERSION: 38.0.3
       CROSS_BUILD_WASI: cross-build/wasm32-wasip1

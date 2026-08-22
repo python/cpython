@@ -33,7 +33,7 @@ jobs:
   build-ubuntu-reusable:
     name: build and test (${{ inputs.os }})
     runs-on: ${{ inputs.os }}
-    timeout-minutes: 60
+    timeout-minutes: 30
     env:
       OPENSSL_VER: 3.5.7
       PYTHONSTRICTEXTENSIONBUILD: 1
