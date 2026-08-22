@@ -3430,6 +3430,25 @@ class POSIXProcessTestCase(BaseTestCase):
         else:
             self.assertNotIn(ident, [id(o) for o in subprocess._active])
 
+    def test_internal_poll_reraises_unexpected_oserror(self):
+        # An unexpected OSError from waitpid() (i.e. not ECHILD, and not
+        # during the __del__/_deadstate path) must not be silently swallowed
+        # by poll(); doing so would leave returncode as None and mask a real
+        # failure.
+        p = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(3)"])
+        self.addCleanup(p.wait)
+        self.addCleanup(p.kill)
+
+        def unexpected_waitpid(pid, flags):
+            raise OSError(errno.EINVAL, "simulated unexpected error")
+
+        with mock.patch.object(subprocess._del_safe, "waitpid",
+                               unexpected_waitpid):
+            with self.assertRaises(OSError) as cm:
+                p.poll()
+        self.assertEqual(cm.exception.errno, errno.EINVAL)
+        self.assertIsNone(p.returncode)
+
     def test_close_fds_after_preexec(self):
         fd_status = support.findfile("fd_status.py", subdir="subprocessdata")
 

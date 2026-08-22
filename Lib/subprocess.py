@@ -2198,6 +2198,13 @@ class Popen:
                         # can't get the status.
                         # http://bugs.python.org/issue15756
                         self.returncode = 0
+                    else:
+                        # An unexpected error (e.g. EINVAL) must not be
+                        # silently swallowed, leaving returncode as None:
+                        # surface it to the caller.  This branch is never
+                        # reached from __del__, which always passes a
+                        # non-None _deadstate.
+                        raise
                 finally:
                     self._waitpid_lock.release()
             return self.returncode
