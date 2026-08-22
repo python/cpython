@@ -19,6 +19,7 @@
 #include "Python.h"
 #include "pycore_object.h"        // _PyObject_VisitType()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
+#include "pycore_unicodedata_re.h" // _PyUnicode_RE_CAPI
 #include "pycore_unicodectype.h"  // _PyUnicode_IsXidStart()
 
 #include <stdbool.h>
@@ -1627,6 +1628,113 @@ capi_getcode(const char* name, int namelen, Py_UCS4* code,
     return _check_alias_and_seq(code, with_named_seq);
 }
 
+/* -------------------------------------------------------------------- */
+/* re \p{...} property-index interface (see pycore_unicodedata_re.h) */
+
+static int
+ucd_re_property(int prop, Py_UCS4 ch)
+{
+    const _PyUnicode_DatabaseRecord *record = _getrecord_ex(ch);
+    switch (prop) {
+    case _Py_UCD_RE_BC:       return record->bidirectional;
+    case _Py_UCD_RE_EA:       return record->east_asian_width;
+    case _Py_UCD_RE_GCB:      return record->grapheme_cluster_break;
+    case _Py_UCD_RE_INCB:     return record->incb;
+    }
+    return -1;
+}
+
+static PyObject *
+unicodedata_create_re_capi(void)
+{
+    static _PyUnicode_RE_CAPI capi = {
+        .property = ucd_re_property,
+    };
+    return PyCapsule_New(&capi, PyUnicodeData_RE_CAPSULE_NAME, NULL);
+}
+
+/* Build a tuple of value-name strings from a names array, stopping at the end
+   of the array or at a trailing NULL entry (some arrays are NULL-terminated). */
+static PyObject *
+ucd_re_names(const char * const *names, Py_ssize_t maxlen)
+{
+    Py_ssize_t count = 0;
+    while (count < maxlen && names[count] != NULL) {
+        count++;
+    }
+    PyObject *tuple = PyTuple_New(count);
+    if (tuple == NULL) {
+        return NULL;
+    }
+    for (Py_ssize_t i = 0; i < count; i++) {
+        PyObject *s = PyUnicode_FromString(names[i]);
+        if (s == NULL) {
+            Py_DECREF(tuple);
+            return NULL;
+        }
+        PyTuple_SET_ITEM(tuple, i, s);
+    }
+    return tuple;
+}
+
+/* Add one property entry {key: (prop, names)} to the info dict.  Steals
+   names; a NULL names (a failed constructor) is propagated as an error. */
+static int
+ucd_re_add(PyObject *info, const char *key, int prop, PyObject *names)
+{
+    if (names == NULL) {
+        return -1;
+    }
+    PyObject *value = Py_BuildValue("(iN)", prop, names);
+    if (value == NULL) {
+        return -1;
+    }
+    int rc = PyDict_SetItemString(info, key, value);
+    Py_DECREF(value);
+    return rc;
+}
+
+/* Private helper for re._properties: returns
+   {prop_key: (prop_id, value_names_tuple_or_None)}; the names tuple maps
+   each value index to its name. */
+static PyObject *
+unicodedata_ucd_re_info(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *info = PyDict_New();
+    if (info == NULL) {
+        return NULL;
+    }
+    static const struct {
+        const char *key;
+        int prop;
+        const char * const *names;
+        Py_ssize_t maxlen;
+    } enumerated[] = {
+        {"bc", _Py_UCD_RE_BC, _PyUnicode_BidirectionalNames,
+         Py_ARRAY_LENGTH(_PyUnicode_BidirectionalNames)},
+        {"ea", _Py_UCD_RE_EA, _PyUnicode_EastAsianWidthNames,
+         Py_ARRAY_LENGTH(_PyUnicode_EastAsianWidthNames)},
+        {"gcb", _Py_UCD_RE_GCB, _PyUnicode_GraphemeBreakNames,
+         Py_ARRAY_LENGTH(_PyUnicode_GraphemeBreakNames)},
+        {"incb", _Py_UCD_RE_INCB, _PyUnicode_IndicConjunctBreakNames,
+         Py_ARRAY_LENGTH(_PyUnicode_IndicConjunctBreakNames)},
+    };
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(enumerated); i++) {
+        if (ucd_re_add(info, enumerated[i].key, enumerated[i].prop,
+                       ucd_re_names(enumerated[i].names,
+                                    enumerated[i].maxlen)) < 0) {
+            goto error;
+        }
+    }
+
+    return info;
+error:
+    Py_DECREF(info);
+    return NULL;
+}
+
+/* -------------------------------------------------------------------- */
+
 static PyObject *
 unicodedata_create_capi(void)
 {
@@ -2236,6 +2344,10 @@ unicodedata_extended_pictographic_impl(PyObject *module, int chr)
 // an UCD instance.
 static PyMethodDef unicodedata_functions[] = {
     // Module only functions.
+    {"_ucd_re_info", unicodedata_ucd_re_info, METH_NOARGS,
+     PyDoc_STR("_ucd_re_info()\n--\n\n"
+               "Private helper for re: property selectors and value names "
+               "for the _ucd_re_CAPI capsule.")},
     UNICODEDATA_BLOCK_METHODDEF
     UNICODEDATA_GRAPHEME_CLUSTER_BREAK_METHODDEF
     UNICODEDATA_INDIC_CONJUNCT_BREAK_METHODDEF
@@ -2366,6 +2478,9 @@ unicodedata_exec(PyObject *module)
 
     /* Export C API */
     if (PyModule_Add(module, "_ucnhash_CAPI", unicodedata_create_capi()) < 0) {
+        return -1;
+    }
+    if (PyModule_Add(module, "_ucd_re_CAPI", unicodedata_create_re_capi()) < 0) {
         return -1;
     }
     return 0;
