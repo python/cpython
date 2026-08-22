@@ -1525,6 +1525,12 @@ class PyMiscellaneousTests(unittest.TestCase):
         finally:
             cache.pop('foo')
 
+    @hashlib_helper.requires_hashdigest("md5")
+    def test_hmac_digest_reject_memoryview_for_key(self):
+        hmac = import_fresh_module("hmac", blocked=["_hashlib", "_hmac"])
+        with self.assertRaises(TypeError):
+            hmac.digest(memoryview(b"small"), b"world", "md5")
+
     @hashlib_helper.requires_openssl_hashdigest("md5")
     @bigmemtest(size=_4G + 5, memuse=2, dry_run=False)
     def test_hmac_digest_overflow_error_openssl_only(self, size):
