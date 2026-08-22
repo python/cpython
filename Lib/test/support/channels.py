@@ -10,7 +10,7 @@ from _interpchannels import (
     ChannelEmptyError, ChannelNotEmptyError,  # noqa: F401
 )
 from concurrent.interpreters._crossinterp import (
-    UNBOUND_ERROR, UNBOUND_REMOVE,
+    UNBOUND, UNBOUND_ERROR, UNBOUND_REMOVE,
 )
 
 
@@ -26,9 +26,6 @@ __all__ = [
 class ItemInterpreterDestroyed(ChannelError,
                                _crossinterp.ItemInterpreterDestroyed):
     """Raised from get() and get_nowait()."""
-
-
-UNBOUND = _crossinterp.UnboundItem.singleton('queue', __name__)
 
 
 def _serialize_unbound(unbound):
