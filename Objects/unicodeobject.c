@@ -55,6 +55,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_pyhash.h"        // _Py_HashSecret_t
 #include "pycore_pylifecycle.h"   // _Py_SetFileSystemEncoding()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_*()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include "pycore_unicodectype.h"  // _PyUnicode_IsXidStart
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
@@ -14968,21 +14969,30 @@ unicodeiter_next(PyObject *op)
     PyObject *seq;
 
     assert(it != NULL);
+#ifdef Py_GIL_DISABLED
+    seq = _Py_atomic_load_ptr(&it->it_seq);
+#else
     seq = it->it_seq;
+#endif
     if (seq == NULL)
         return NULL;
     assert(_PyUnicode_CHECK(seq));
 
-    if (it->it_index < PyUnicode_GET_LENGTH(seq)) {
+    Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
+    if (index < PyUnicode_GET_LENGTH(seq)) {
         int kind = PyUnicode_KIND(seq);
         const void *data = PyUnicode_DATA(seq);
-        Py_UCS4 chr = PyUnicode_READ(kind, data, it->it_index);
-        it->it_index++;
+        Py_UCS4 chr = PyUnicode_READ(kind, data, index);
+        FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, index + 1);
         return unicode_char(chr);
     }
 
+#ifdef Py_GIL_DISABLED
+    seq = _Py_atomic_exchange_ptr(&it->it_seq, NULL);
+#else
     it->it_seq = NULL;
-    Py_DECREF(seq);
+#endif
+    Py_XDECREF(seq);
     return NULL;
 }
 
@@ -14991,21 +15001,32 @@ unicode_ascii_iter_next(PyObject *op)
 {
     unicodeiterobject *it = (unicodeiterobject *)op;
     assert(it != NULL);
+#ifdef Py_GIL_DISABLED
+    PyObject *seq = _Py_atomic_load_ptr(&it->it_seq);
+#else
     PyObject *seq = it->it_seq;
+#endif
     if (seq == NULL) {
         return NULL;
     }
     assert(_PyUnicode_CHECK(seq));
     assert(PyUnicode_IS_COMPACT_ASCII(seq));
-    if (it->it_index < PyUnicode_GET_LENGTH(seq)) {
+
+    Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
+    if (index < PyUnicode_GET_LENGTH(seq)) {
         const void *data = ((void*)(_PyASCIIObject_CAST(seq) + 1));
-        Py_UCS1 chr = (Py_UCS1)PyUnicode_READ(PyUnicode_1BYTE_KIND,
-                                              data, it->it_index);
-        it->it_index++;
+        Py_UCS1 chr = (Py_UCS1)PyUnicode_READ(
+            PyUnicode_1BYTE_KIND, data, index);
+        FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, index + 1);
         return (PyObject*)&_Py_SINGLETON(strings).ascii[chr];
     }
+
+#ifdef Py_GIL_DISABLED
+    seq = _Py_atomic_exchange_ptr(&it->it_seq, NULL);
+#else
     it->it_seq = NULL;
-    Py_DECREF(seq);
+#endif
+    Py_XDECREF(seq);
     return NULL;
 }
 
@@ -15014,8 +15035,22 @@ unicodeiter_len(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     unicodeiterobject *it = (unicodeiterobject *)op;
     Py_ssize_t len = 0;
+#ifdef Py_GIL_DISABLED
+    PyObject *seq;
+    Py_BEGIN_CRITICAL_SECTION(it);
+    seq = Py_XNewRef(it->it_seq);
+    Py_END_CRITICAL_SECTION();
+    if (seq != NULL) {
+        Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
+        Py_ssize_t seq_len = PyUnicode_GET_LENGTH(seq);
+        if (index < seq_len)
+            len = seq_len - index;
+        Py_DECREF(seq);
+    }
+#else
     if (it->it_seq)
         len = PyUnicode_GET_LENGTH(it->it_seq) - it->it_index;
+#endif
     return PyLong_FromSsize_t(len);
 }
 
@@ -15031,16 +15066,34 @@ unicodeiter_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
      * call must be before access of iterator pointers.
      * see issue #101765 */
 
+#ifdef Py_GIL_DISABLED
+    PyObject *seq;
+    Py_ssize_t index;
+    Py_BEGIN_CRITICAL_SECTION(it);
+    seq = Py_XNewRef(it->it_seq);
+    index = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
+    Py_END_CRITICAL_SECTION();
+
+    if (seq != NULL) {
+        if (index < PyUnicode_GET_LENGTH(seq)) {
+            PyObject *result = Py_BuildValue("N(O)n", iter, seq, index);
+            Py_DECREF(seq);
+            return result;
+        }
+        Py_DECREF(seq);
+    }
+#else
     if (it->it_seq != NULL) {
         return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
-    } else {
-        PyObject *u = _PyUnicode_GetEmpty();
-        if (u == NULL) {
-            Py_XDECREF(iter);
-            return NULL;
-        }
-        return Py_BuildValue("N(N)", iter, u);
     }
+#endif
+
+    PyObject *u = _PyUnicode_GetEmpty();
+    if (u == NULL) {
+        Py_XDECREF(iter);
+        return NULL;
+    }
+    return Py_BuildValue("N(N)", iter, u);
 }
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
@@ -15057,7 +15110,7 @@ unicodeiter_setstate(PyObject *op, PyObject *state)
             index = 0;
         else if (index > PyUnicode_GET_LENGTH(it->it_seq))
             index = PyUnicode_GET_LENGTH(it->it_seq); /* iterator truncated */
-        it->it_index = index;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, index);
     }
     Py_RETURN_NONE;
 }

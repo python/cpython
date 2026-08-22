@@ -125,3 +125,46 @@ class ContendedRangeIterationTest(ContendedTupleIterationTest):
         extra_items = set(results) - set(expected)
         for item in extra_items:
             self.assertEqual((item - expected.start) % expected.step, 0)
+
+class ContendedStringIterationTest(ContendedTupleIterationTest):
+    def make_testdata(self, n):
+        return "A" * n
+
+    def test_shared_iterator(self):
+        """Test iteration over a shared string iterator"""
+        seq = self.make_testdata(NUMITEMS)
+        it = iter(seq)
+        results = []
+        start = threading.Barrier(NUMTHREADS)
+
+        def worker():
+            items = []
+            start.wait()
+            for item in it:
+                items.append(item)
+            results.extend(items)
+
+        threads = self.run_threads(worker)
+        for t in threads:
+            t.join()
+
+        self.assert_iterator_results(results, seq)
+
+    def test_shared_iterator_exhaustion(self):
+        """Test concurrent exhaustion of a shared string iterator"""
+        for _ in range(100):
+            seq = self.make_testdata(NUMITEMS)
+            it = iter(seq)
+            start = threading.Barrier(NUMTHREADS)
+
+            def worker():
+                start.wait()
+                while True:
+                    try:
+                        next(it)
+                    except StopIteration:
+                        return
+
+            threads = self.run_threads(worker)
+            for t in threads:
+                t.join()
