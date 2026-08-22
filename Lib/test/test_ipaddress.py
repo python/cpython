@@ -2472,12 +2472,13 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(False, ipaddress.ip_network('fbff:ffff::').is_private)
         self.assertEqual(False, ipaddress.ip_network('fe00::').is_private)
 
-        self.assertEqual(True, ipaddress.ip_network('fea0::').is_link_local)
-        self.assertEqual(True, ipaddress.ip_network(
-                'febf:ffff::').is_link_local)
+        self.assertEqual(False, ipaddress.ip_network('fea0::').is_link_local)
+        self.assertEqual(False, ipaddress.ip_network('febf:ffff::').is_link_local)
         self.assertEqual(False, ipaddress.ip_network(
                 'fe7f:ffff::').is_link_local)
         self.assertEqual(False, ipaddress.ip_network('fec0::').is_link_local)
+        self.assertEqual(True, ipaddress.ip_network('fe80::').is_link_local)
+        self.assertEqual(False, ipaddress.ip_network('fe80:6666:6666:6666:6666:6666:6666:6666').is_link_local)
 
         self.assertEqual(True, ipaddress.ip_interface('0:0::0:01').is_loopback)
         self.assertEqual(False, ipaddress.ip_interface('::1/127').is_loopback)
@@ -2511,12 +2512,13 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(False, ipaddress.ip_address('fbff:ffff::').is_private)
         self.assertEqual(False, ipaddress.ip_address('fe00::').is_private)
 
-        self.assertEqual(True, ipaddress.ip_address('fea0::').is_link_local)
-        self.assertEqual(True, ipaddress.ip_address(
-                'febf:ffff::').is_link_local)
+        self.assertEqual(False, ipaddress.ip_address('fea0::').is_link_local)
+        self.assertEqual(False, ipaddress.ip_address('febf:ffff::').is_link_local)
         self.assertEqual(False, ipaddress.ip_address(
                 'fe7f:ffff::').is_link_local)
         self.assertEqual(False, ipaddress.ip_address('fec0::').is_link_local)
+        self.assertEqual(True, ipaddress.ip_address('fe80::').is_link_local)
+        self.assertEqual(False, ipaddress.ip_address('fe80:6666:6666:6666:6666:6666:6666:6666').is_link_local)
 
         self.assertEqual(True, ipaddress.ip_address('0:0::0:01').is_loopback)
         self.assertEqual(True, ipaddress.ip_address('::1').is_loopback)
