@@ -10,6 +10,7 @@
 #include "pycore_object_deferred.h" // _PyObject_SetDeferredRefcount()
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_SetCurrent()
+#include "pycore_structseq.h"     // _PyStructSequence_NewType()
 #include "pycore_time.h"          // _PyTime_FromSeconds()
 #include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
@@ -2755,7 +2756,7 @@ thread_module_exec(PyObject *module)
     }
 
     // _ExceptHookArgs type
-    state->excepthook_type = PyStructSequence_NewType(&ExceptHookArgs_desc);
+    state->excepthook_type = _PyStructSequence_NewType(&ExceptHookArgs_desc, 0, 1);
     if (state->excepthook_type == NULL) {
         return -1;
     }

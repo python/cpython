@@ -9,6 +9,7 @@
 #include "pycore_crossinterp.h"   // _PyXIData_t
 #include "pycore_interp.h"        // _PyInterpreterState_LookUpID()
 #include "pycore_pystate.h"       // _PyInterpreterState_GetIDObject()
+#include "pycore_structseq.h"     // _PyStructSequence_NewType()
 
 #ifdef MS_WINDOWS
 #ifndef WIN32_LEAN_AND_MEAN
@@ -3576,7 +3577,7 @@ module_exec(PyObject *mod)
     /* Add other types */
 
     // ChannelInfo
-    state->ChannelInfoType = PyStructSequence_NewType(&channel_info_desc);
+    state->ChannelInfoType = _PyStructSequence_NewType(&channel_info_desc, 0, 1);
     if (state->ChannelInfoType == NULL) {
         goto error;
     }

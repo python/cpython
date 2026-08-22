@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "posixmodule.h"
+#include "pycore_structseq.h"     // _PyStructSequence_NewType()
 
 #include <errno.h>                // ERANGE
 #include <pwd.h>                  // getpwuid()
@@ -361,7 +362,7 @@ pwdmodule_exec(PyObject *module)
 {
     pwdmodulestate *state = get_pwd_state(module);
 
-    state->StructPwdType = PyStructSequence_NewType(&struct_pwd_type_desc);
+    state->StructPwdType = _PyStructSequence_NewType(&struct_pwd_type_desc, 0, 1);
     if (state->StructPwdType == NULL) {
         return -1;
     }

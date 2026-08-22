@@ -2025,7 +2025,7 @@ class Helper:
         return self._output or sys.stdout
 
     def __repr__(self):
-        if inspect.stack()[1][3] == '?':
+        if inspect.stack()[1].function == '?':
             self()
             return ''
         return '<%s.%s instance>' % (self.__class__.__module__,

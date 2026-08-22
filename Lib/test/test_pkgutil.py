@@ -180,7 +180,7 @@ class PkgutilTests(unittest.TestCase):
             'test_walkpackages_filesys.sub',
             'test_walkpackages_filesys.sub.mod',
         ]
-        actual= [e[1] for e in pkgutil.walk_packages([self.dirname])]
+        actual= [e.name for e in pkgutil.walk_packages([self.dirname])]
         self.assertEqual(actual, expected)
 
         for pkg in expected:
@@ -214,7 +214,7 @@ class PkgutilTests(unittest.TestCase):
             'test_walkpackages_zipfile.sub',
             'test_walkpackages_zipfile.sub.mod',
         ]
-        actual= [e[1] for e in pkgutil.walk_packages([zip_file])]
+        actual= [e.name for e in pkgutil.walk_packages([zip_file])]
         self.assertEqual(actual, expected)
         del sys.path[0]
 

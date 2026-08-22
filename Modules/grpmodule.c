@@ -6,6 +6,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_structseq.h"     // _PyStructSequence_NewType()
 #include "posixmodule.h"
 
 #include <errno.h>                // ERANGE
@@ -359,7 +360,7 @@ grpmodule_exec(PyObject *module)
 {
     grpmodulestate *state = get_grp_state(module);
 
-    state->StructGrpType = PyStructSequence_NewType(&struct_group_type_desc);
+    state->StructGrpType = _PyStructSequence_NewType(&struct_group_type_desc, 0, 1);
     if (state->StructGrpType == NULL) {
         return -1;
     }

@@ -274,7 +274,7 @@ def request_host(request):
 
     """
     url = request.full_url
-    host = urlparse(url)[1]
+    host = urlparse(url).netloc
     if host == "":
         host = request.get_header("Host", "")
 
@@ -833,11 +833,11 @@ class HTTPPasswordMgr:
         """Accept authority or URI and extract only the authority and path."""
         # note HTTP URLs do not have a userinfo component
         parts = urlsplit(uri)
-        if parts[1]:
+        if parts.netloc:
             # URI
-            scheme = parts[0]
-            authority = parts[1]
-            path = parts[2] or '/'
+            scheme = parts.scheme
+            authority = parts.netloc
+            path = parts.path or '/'
         else:
             # host or host:port
             scheme = None
@@ -1222,7 +1222,7 @@ class HTTPDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
     handler_order = 490  # before Basic auth
 
     def http_error_401(self, req, fp, code, msg, headers):
-        host = urlparse(req.full_url)[1]
+        host = urlparse(req.full_url).netloc
         retry = self.http_error_auth_reqed('www-authenticate',
                                            host, req, headers)
         self.reset_retry_count()
@@ -1681,7 +1681,9 @@ def url2pathname(url, *, require_scheme=False, resolve_host=False):
     """
     if not require_scheme:
         url = 'file:' + url
-    scheme, authority, url = urlsplit(url)[:3]  # Discard query and fragment.
+    parts = urlsplit(url)
+    # Discard query and fragment.
+    scheme, authority, url = parts.scheme, parts.netloc, parts.path
     if scheme != 'file':
         raise URLError("URL is missing a 'file:' scheme")
     if os.name == 'nt':

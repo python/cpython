@@ -3,6 +3,8 @@
 #endif
 
 #include "Python.h"
+#include "pycore_structseq.h"     // _PyStructSequence_NewType()
+
 #include <errno.h>                // errno
 #include <string.h>
 #include <sys/resource.h>         // getrusage()
@@ -405,7 +407,7 @@ resource_exec(PyObject *module)
         return -1;
     }
 
-    state->StructRUsageType = PyStructSequence_NewType(&struct_rusage_desc);
+    state->StructRUsageType = _PyStructSequence_NewType(&struct_rusage_desc, 0, 1);
     if (state->StructRUsageType == NULL) {
         return -1;
     }

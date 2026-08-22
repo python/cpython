@@ -28,6 +28,7 @@
 #include "pycore_pylifecycle.h"   // _PyOS_URandom()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_signal.h"        // Py_NSIG
+#include "pycore_structseq.h"     // _PyStructSequence_NewType()
 #include "pycore_time.h"          // _PyLong_FromTime_t()
 #include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 #include "pycore_typeobject.h"    // _PyType_AddMethod()
@@ -19062,7 +19063,7 @@ posixmodule_exec(PyObject *m)
     }
 
 #if defined(HAVE_WAITID)
-    state->WaitidResultType = (PyObject *)PyStructSequence_NewType(&waitid_result_desc);
+    state->WaitidResultType = (PyObject *)_PyStructSequence_NewType(&waitid_result_desc, 0, 1);
     if (PyModule_AddObjectRef(m, "waitid_result", state->WaitidResultType) < 0) {
         return -1;
     }
@@ -19071,20 +19072,20 @@ posixmodule_exec(PyObject *m)
     stat_result_desc.fields[7].name = PyStructSequence_UnnamedField;
     stat_result_desc.fields[8].name = PyStructSequence_UnnamedField;
     stat_result_desc.fields[9].name = PyStructSequence_UnnamedField;
-    state->StatResultType = (PyObject *)PyStructSequence_NewType(&stat_result_desc);
+    state->StatResultType = (PyObject *)_PyStructSequence_NewType(&stat_result_desc, 0, 1);
     if (PyModule_AddObjectRef(m, "stat_result", state->StatResultType) < 0) {
         return -1;
     }
     state->statresult_new_orig = ((PyTypeObject *)state->StatResultType)->tp_new;
     ((PyTypeObject *)state->StatResultType)->tp_new = statresult_new;
 
-    state->StatVFSResultType = (PyObject *)PyStructSequence_NewType(&statvfs_result_desc);
+    state->StatVFSResultType = (PyObject *)_PyStructSequence_NewType(&statvfs_result_desc, 0, 1);
     if (PyModule_AddObjectRef(m, "statvfs_result", state->StatVFSResultType) < 0) {
         return -1;
     }
 
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
-    state->SchedParamType = (PyObject *)PyStructSequence_NewType(&sched_param_desc);
+    state->SchedParamType = (PyObject *)_PyStructSequence_NewType(&sched_param_desc, 0, 1);
     if (PyModule_AddObjectRef(m, "sched_param", state->SchedParamType) < 0) {
         return -1;
     }
@@ -19115,12 +19116,12 @@ posixmodule_exec(PyObject *m)
         return -1;
     }
 
-    state->TimesResultType = (PyObject *)PyStructSequence_NewType(&times_result_desc);
+    state->TimesResultType = (PyObject *)_PyStructSequence_NewType(&times_result_desc, 0, 1);
     if (PyModule_AddObjectRef(m, "times_result", state->TimesResultType) < 0) {
         return -1;
     }
 
-    state->UnameResultType = (PyObject *)PyStructSequence_NewType(&uname_result_desc);
+    state->UnameResultType = (PyObject *)_PyStructSequence_NewType(&uname_result_desc, 0, 1);
     if (PyModule_AddObjectRef(m, "uname_result", state->UnameResultType) < 0) {
         return -1;
     }

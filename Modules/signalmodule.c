@@ -13,6 +13,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_signal.h"        // _Py_RestoreSignals()
+#include "pycore_structseq.h"     // _PyStructSequence_NewType()
 #include "pycore_time.h"          // _PyTime_FromSecondsObject()
 #include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 
@@ -1657,7 +1658,7 @@ signal_module_exec(PyObject *m)
 #endif
 
 #if defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
-    modstate->siginfo_type = PyStructSequence_NewType(&struct_siginfo_desc);
+    modstate->siginfo_type = _PyStructSequence_NewType(&struct_siginfo_desc, 0, 1);
     if (modstate->siginfo_type == NULL) {
         return -1;
     }

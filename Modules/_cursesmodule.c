@@ -9312,7 +9312,8 @@ cursesmodule_exec(PyObject *module)
     /* ncurses_version */
     PyTypeObject *version_type;
     version_type = _PyStructSequence_NewType(&ncurses_version_desc,
-                                             Py_TPFLAGS_DISALLOW_INSTANTIATION);
+                                             Py_TPFLAGS_DISALLOW_INSTANTIATION,
+                                             0);
     if (version_type == NULL) {
         return -1;
     }

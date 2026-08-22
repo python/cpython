@@ -741,12 +741,54 @@ _PyStructSequence_FiniBuiltin(PyInterpreterState *interp, PyTypeObject *type)
 }
 
 
+static int
+structseq_deprecation(void)
+{
+    return PyErr_WarnEx(PyExc_DeprecationWarning,
+                        "tuple API is deprecated, use named attributes",
+                        1);
+}
+
+
+static Py_ssize_t
+structseq_length(PyObject *self)
+{
+    if (structseq_deprecation() < 0) {
+        return -1;
+    }
+
+    return PyTuple_Type.tp_as_sequence->sq_length(self);
+}
+
+
+static PyObject *
+structseq_item(PyObject *op, Py_ssize_t i)
+{
+    if (structseq_deprecation() < 0) {
+        return NULL;
+    }
+
+    return PyTuple_Type.tp_as_sequence->sq_item(op, i);
+}
+
+
+static PyObject *
+structseq_subscript(PyObject *op, PyObject *item)
+{
+    if (structseq_deprecation() < 0) {
+        return NULL;
+    }
+
+    return PyTuple_Type.tp_as_mapping->mp_subscript(op, item);
+}
+
+
 PyTypeObject *
-_PyStructSequence_NewType(PyStructSequence_Desc *desc, unsigned long tp_flags)
+_PyStructSequence_NewType(PyStructSequence_Desc *desc, unsigned long tp_flags,
+                          int deprecate_tuple_api)
 {
     PyMemberDef *members;
     PyTypeObject *type;
-    PyType_Slot slots[8];
     PyType_Spec spec;
     Py_ssize_t n_members, n_unnamed_members;
 
@@ -758,6 +800,7 @@ _PyStructSequence_NewType(PyStructSequence_Desc *desc, unsigned long tp_flags)
     }
 
     /* Initialize Slots */
+    PyType_Slot slots[11];
     slots[0] = (PyType_Slot){Py_tp_dealloc, structseq_dealloc};
     slots[1] = (PyType_Slot){Py_tp_repr, structseq_repr};
     slots[2] = (PyType_Slot){Py_tp_doc, (void *)desc->doc};
@@ -765,7 +808,16 @@ _PyStructSequence_NewType(PyStructSequence_Desc *desc, unsigned long tp_flags)
     slots[4] = (PyType_Slot){Py_tp_new, structseq_new};
     slots[5] = (PyType_Slot){Py_tp_members, members};
     slots[6] = (PyType_Slot){Py_tp_traverse, structseq_traverse};
-    slots[7] = (PyType_Slot){0, 0};
+    if (deprecate_tuple_api) {
+        slots[7] = (PyType_Slot){Py_sq_item, structseq_item};
+        slots[8] = (PyType_Slot){Py_mp_subscript, structseq_subscript};
+        slots[9] = (PyType_Slot){Py_sq_length, structseq_length};
+        slots[10] = (PyType_Slot){0, 0};
+    }
+    else {
+        slots[7] = (PyType_Slot){0, 0};
+        // following slots are ignored
+    }
 
     /* Initialize Spec */
     /* The name in this PyType_Spec is statically allocated so it is */
@@ -796,5 +848,5 @@ _PyStructSequence_NewType(PyStructSequence_Desc *desc, unsigned long tp_flags)
 PyTypeObject *
 PyStructSequence_NewType(PyStructSequence_Desc *desc)
 {
-    return _PyStructSequence_NewType(desc, 0);
+    return _PyStructSequence_NewType(desc, 0, 0);
 }

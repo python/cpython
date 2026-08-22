@@ -47,7 +47,10 @@ def extract_lineno(location):
         return 0
     if isinstance(location, int):
         return location
-    return location[0]
+    try:
+        return location[0]
+    except DeprecationWarning as exc:
+        raise Exception(type(location)) from exc
 
 def _is_internal_frame(frame):
     if isinstance(frame, tuple):

@@ -823,6 +823,17 @@ typedef _Py_CODEUNIT *(*_PyJitEntryFuncPtr)(struct _PyExecutorObject *exec, _PyI
 
 #define _PyInterpreterGuard_GUARDS_NOT_ALLOWED UINTPTR_MAX
 
+typedef struct {
+    PyTypeObject *async_gen_hooks_type;
+    PyTypeObject *flags_type;
+#if defined(MS_WINDOWS)
+    PyTypeObject *windows_version_type;
+#endif
+#ifdef __EMSCRIPTEN__
+    PyTypeObject *emscripten_info_type;
+#endif
+} _PySys_State;
+
 /* PyInterpreterState holds the global state for one of the runtime's
    interpreters.  Typically the initial (main) interpreter is the only one.
 
@@ -899,6 +910,7 @@ struct _is {
 
     // Dictionary of the sys module
     PyObject *sysdict;
+    _PySys_State sys_state;
 
     // Dictionary of the builtins module
     PyObject *builtins;

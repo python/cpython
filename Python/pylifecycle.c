@@ -2072,7 +2072,6 @@ finalize_interp_types(PyInterpreterState *interp)
 {
     _PyTypes_FiniExtTypes(interp);
     _PyUnicode_FiniTypes(interp);
-    _PySys_FiniTypes(interp);
     _PyXI_FiniTypes(interp);
     _PyExc_Fini(interp);
     _PyFloat_FiniType(interp);
@@ -2112,14 +2111,16 @@ finalize_interp_types(PyInterpreterState *interp)
 static void
 finalize_interp_clear(PyThreadState *tstate)
 {
-    int is_main_interp = _Py_IsMainInterpreter(tstate->interp);
+    PyInterpreterState *interp = tstate->interp;
+    int is_main_interp = _Py_IsMainInterpreter(interp);
 
-    _PyXI_Fini(tstate->interp);
-    _PyExc_ClearExceptionGroupType(tstate->interp);
-    _Py_clear_generic_types(tstate->interp);
-    _PyTypes_FiniCachedDescriptors(tstate->interp);
+    _PyXI_Fini(interp);
+    _PyExc_ClearExceptionGroupType(interp);
+    _Py_clear_generic_types(interp);
+    _PyTypes_FiniCachedDescriptors(interp);
+    _PySys_Fini(interp);
 
-    /* Clear interpreter state and all thread states */
+    /* Clear interpreter state and all thread states: last GC collection! */
     _PyInterpreterState_Clear(tstate);
 
     /* Clear all loghooks */
@@ -2136,13 +2137,13 @@ finalize_interp_clear(PyThreadState *tstate)
         _PyPerfTrampoline_Fini();
     }
 
-    finalize_interp_types(tstate->interp);
+    finalize_interp_types(interp);
 
     /* Finalize dtoa at last so that finalizers calling repr of float doesn't crash */
-    _PyDtoa_Fini(tstate->interp);
+    _PyDtoa_Fini(interp);
 
     /* Free any delayed free requests immediately */
-    _PyMem_FiniDelayed(tstate->interp);
+    _PyMem_FiniDelayed(interp);
 
     /* finalize_interp_types may allocate Python objects so we may need to
        abandon mimalloc segments again */

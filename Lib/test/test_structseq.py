@@ -6,6 +6,7 @@ import re
 import textwrap
 import time
 import unittest
+import warnings
 from test.support import script_helper
 
 
@@ -228,7 +229,9 @@ class StructSeqTest(unittest.TestCase):
         self.assertEqual(r2.st_mode, r.st_mode)
         self.assertEqual(r2.st_atime, r.st_atime)
         self.assertEqual(r2.st_atime_ns, r.st_atime_ns)
-        self.assertIs(r2[0], r[0])
+        with warnings.catch_warnings(category=DeprecationWarning):
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            self.assertIs(r2[0], r[0])
         self.assertIs(r2.st_mode, r.st_mode)
         self.assertIs(r2.st_atime, r.st_atime)
         self.assertIs(r2.st_atime_ns, r.st_atime_ns)
@@ -239,7 +242,9 @@ class StructSeqTest(unittest.TestCase):
         self.assertEqual(r3.st_mode, r.st_mode)
         self.assertEqual(r3.st_atime, r.st_atime)
         self.assertEqual(r3.st_atime_ns, r.st_atime_ns)
-        self.assertIsNot(r3[0], r[0])
+        with warnings.catch_warnings(category=DeprecationWarning):
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            self.assertIsNot(r3[0], r[0])
         self.assertIsNot(r3.st_mode, r.st_mode)
         self.assertIsNot(r3.st_atime, r.st_atime)
         self.assertIsNot(r3.st_atime_ns, r.st_atime_ns)
@@ -276,9 +281,11 @@ class StructSeqTest(unittest.TestCase):
         # visible fields
         self.assertEqual(copy.replace(t), t)
         self.assertIsInstance(copy.replace(t), os.times_result)
-        self.assertEqual(copy.replace(t, user=1.5), (1.5, *t[1:]))
-        self.assertEqual(copy.replace(t, system=2.5), (t[0], 2.5, *t[2:]))
-        self.assertEqual(copy.replace(t, user=1.5, system=2.5), (1.5, 2.5, *t[2:]))
+        with warnings.catch_warnings(category=DeprecationWarning):
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            self.assertEqual(copy.replace(t, user=1.5), (1.5, *t[1:]))
+            self.assertEqual(copy.replace(t, system=2.5), (t[0], 2.5, *t[2:]))
+            self.assertEqual(copy.replace(t, user=1.5, system=2.5), (1.5, 2.5, *t[2:]))
 
         # unknown fields
         with self.assertRaisesRegex(TypeError, 'unexpected field name'):

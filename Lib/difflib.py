@@ -617,7 +617,7 @@ class SequenceMatcher:
         1.0
         """
 
-        matches = sum(triple[-1] for triple in self.get_matching_blocks())
+        matches = sum(triple.size for triple in self.get_matching_blocks())
         return _calculate_ratio(matches, len(self.a) + len(self.b))
 
     def quick_ratio(self):

@@ -8368,7 +8368,9 @@ class NamedTupleTests(BaseTestCase):
 
     def test_annotation_usage_with_methods(self):
         self.assertEqual(XMeth(1).double(), 2)
-        self.assertEqual(XMeth(42).x, XMeth(42)[0])
+        with warnings.catch_warnings(category=DeprecationWarning):
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            self.assertEqual(XMeth(42).x, XMeth(42)[0])
         self.assertEqual(str(XRepr(42)), '42 -> 1')
         self.assertEqual(XRepr(1, 2) + XRepr(3), 0)
 

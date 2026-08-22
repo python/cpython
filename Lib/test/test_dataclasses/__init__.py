@@ -16,6 +16,7 @@ import traceback
 import sys
 import textwrap
 import unittest
+import warnings
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol, DefaultDict
 from typing import get_type_hints
@@ -1779,7 +1780,9 @@ class TestCase(unittest.TestCase):
 
         # Make sure that the returned dicts are actually OrderedDicts.
         self.assertIs(type(d), OrderedDict)
-        self.assertIs(type(d['y'][1]), OrderedDict)
+        with warnings.catch_warnings(category=DeprecationWarning):
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            self.assertIs(type(d['y'][1]), OrderedDict)
 
     def test_helper_asdict_namedtuple_key(self):
         # Ensure that a field that contains a dict which has a

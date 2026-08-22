@@ -4,6 +4,7 @@ import random
 import string
 import sys
 import unittest
+import warnings
 from test.support import import_helper
 
 
@@ -14,15 +15,18 @@ class GroupDatabaseTestCase(unittest.TestCase):
     def check_value(self, value):
         # check that a grp tuple has the entries and
         # attributes promised by the docs
-        self.assertEqual(len(value), 4)
-        self.assertEqual(value[0], value.gr_name)
         self.assertIsInstance(value.gr_name, str)
-        self.assertEqual(value[1], value.gr_passwd)
         self.assertIsInstance(value.gr_passwd, str)
-        self.assertEqual(value[2], value.gr_gid)
         self.assertIsInstance(value.gr_gid, int)
-        self.assertEqual(value[3], value.gr_mem)
         self.assertIsInstance(value.gr_mem, list)
+
+        with warnings.catch_warnings(category=DeprecationWarning):
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            self.assertEqual(len(value), 4)
+            self.assertEqual(value[0], value.gr_name)
+            self.assertEqual(value[1], value.gr_passwd)
+            self.assertEqual(value[2], value.gr_gid)
+            self.assertEqual(value[3], value.gr_mem)
 
     def test_values(self):
         entries = grp.getgrall()

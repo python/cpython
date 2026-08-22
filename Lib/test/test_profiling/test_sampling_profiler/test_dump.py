@@ -37,14 +37,17 @@ except ImportError:
 StructseqInterpreterInfo = namedtuple(
     "StructseqInterpreterInfo",
     ["interpreter_id", "threads"],
+    deprecate_tuple_api=False,
 )
 StructseqThreadInfo = namedtuple(
     "StructseqThreadInfo",
     ["thread_id", "status", "frame_info"],
+    deprecate_tuple_api=False,
 )
 StructseqFrameInfo = namedtuple(
     "StructseqFrameInfo",
     ["filename", "location", "funcname", "opcode"],
+    deprecate_tuple_api=False,
 )
 
 

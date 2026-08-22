@@ -540,7 +540,7 @@ def getmembers_static(object, predicate=None):
     """
     return _getmembers(object, predicate, getattr_static)
 
-Attribute = namedtuple('Attribute', 'name kind defining_class object')
+Attribute = namedtuple('Attribute', 'name kind defining_class object', deprecate_tuple_api=False)
 
 def classify_class_attrs(cls):
     """Return list of attribute-descriptor tuples.
@@ -1646,7 +1646,7 @@ def getlineno(frame):
     """Get the line number from a frame object, allowing for optimization."""
     return frame.f_lineno
 
-_FrameInfo = namedtuple('_FrameInfo', ('frame',) + Traceback._fields)
+_FrameInfo = namedtuple('_FrameInfo', ('frame',) + Traceback._fields, deprecate_tuple_api=False)
 class FrameInfo(_FrameInfo):
     def __new__(cls, frame, filename, lineno, function, code_context, index, *, positions=None):
         instance = super().__new__(cls, frame, filename, lineno, function, code_context, index)

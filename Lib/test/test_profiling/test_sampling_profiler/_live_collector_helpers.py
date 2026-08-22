@@ -9,7 +9,9 @@ from profiling.sampling.constants import (
 
 
 # Matches the C structseq LocationInfo from _remote_debugging
-LocationInfo = namedtuple('LocationInfo', ['lineno', 'end_lineno', 'col_offset', 'end_col_offset'])
+LocationInfo = namedtuple('LocationInfo',
+    ['lineno', 'end_lineno', 'col_offset', 'end_col_offset'],
+    deprecate_tuple_api=False)
 
 
 class MockFrameInfo:
