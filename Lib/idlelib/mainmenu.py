@@ -97,6 +97,11 @@ menudefs = [
    ('!_Auto-open Stack Viewer', '<<toggle-jit-stack-viewer>>'),
    ]),
 
+ ('browse', [
+   ('_Token Browser', '<<open-token-browser>>'),
+   ('_AST Browser', '<<open-ast-browser>>'),
+   ]),
+
  ('options', [
    ('Configure _IDLE', '<<open-config-dialog>>'),
    None,

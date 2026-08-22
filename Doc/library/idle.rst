@@ -295,6 +295,32 @@ Stack Viewer
 Auto-open Stack Viewer
    Toggle automatically opening the stack viewer on an unhandled exception.
 
+Browse menu (Shell and Editor)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Token Browser
+   Open a window listing the Python tokens of the editor content
+   (or, in the Shell, the current input),
+   or of the selection if there is one.
+   Token type names are colored as by ``python -m tokenize``.
+   Selecting rows highlights the matching regions in the editor
+   and moves the cursor there;
+   selecting text or moving the cursor in the editor
+   selects the matching rows.
+   Double-click a row, or press :kbd:`Escape`,
+   to hide the browser and return to the editor at the token.
+
+AST Browser
+   Open a window showing the abstract syntax tree of the editor content
+   (or, in the Shell, the current input),
+   or of the selection if there is one.
+   Selecting a node highlights the matching region in the editor
+   and moves the cursor there;
+   selecting text or moving the cursor in the editor
+   selects the innermost enclosing node.
+   Double-click a node, or press :kbd:`Escape`,
+   to hide the browser and return to the editor at the node.
+
 Options menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
