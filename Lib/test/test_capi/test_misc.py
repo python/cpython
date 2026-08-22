@@ -3094,5 +3094,61 @@ class TestCEval(unittest.TestCase):
         self.assertEqual(lines.count("DESTROY list"), 2)
 
 
+# _Py_CheckSingletons() is only built if the NDEBUG macro is not defined
+@unittest.skipUnless(support.built_with_c_assertions(),
+                     'Python built without C assertions')
+class TestCheckSingleton(unittest.TestCase):
+    # Test _Py_CheckSingletons() which is called by gc.collect()
+    #
+    # Corrupt some singleton objects and make sure that the data corruption
+    # is detected.
+
+    def check(self, func):
+        code = f"""if 1:
+            import _testcapi
+            from test import support
+            support.SuppressCrashReport().__enter__()
+            _testcapi.{func}()
+        """
+        proc = assert_python_failure("-c", code)
+        return proc.err
+
+    def test_corrupt_bytes_singleton(self):
+        stderr = self.check("corrupt_bytes_singleton")
+
+        # In fact, it's the character b'a' which is corrupted
+        self.assertIn(b"object repr     : b'A'", stderr)
+        self.assertIn((b'check_singleton_bytes: '
+                       b'Assertion "str[0] == ch" failed'),
+                      stderr)
+
+    def test_corrupt_unicode_singleton(self):
+        stderr = self.check("corrupt_unicode_singleton")
+
+        # In fact, it's the character b'a' which is corrupted
+        self.assertIn(b"object repr     : 'A'", stderr)
+        self.assertIn((b'check_singleton_unicode: Assertion '
+                       b'"PyUnicode_READ_CHAR(((PyObject*)((obj))), (0))'
+                       b' == ch" failed'),
+                      stderr)
+
+    def test_corrupt_bool_singleton(self):
+        stderr = self.check("corrupt_bool_singleton")
+
+        self.assertIn(b"object repr     : True", stderr)
+        self.assertIn((b'check_singleton_long: '
+                       b'Assertion "compact == value" failed'),
+                      stderr)
+
+    def test_corrupt_long_singleton(self):
+        stderr = self.check("corrupt_long_singleton")
+
+        # In fact, it's the number 5 which is corrupted
+        self.assertIn(b"object repr     : 42", stderr)
+        self.assertIn((b'check_singleton_long: '
+                       b'Assertion "compact == value" failed'),
+                      stderr)
+
+
 if __name__ == "__main__":
     unittest.main()

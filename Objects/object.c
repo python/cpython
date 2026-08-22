@@ -3526,3 +3526,140 @@ Py_ssize_t Py_REFCNT(PyObject *ob) { return _Py_REFCNT(ob); }
 Py_ssize_t Py_SIZE(PyObject *o) { return _Py_SIZE_impl(o); }
 int Py_IS_TYPE(PyObject *o, PyTypeObject *t) { return _Py_IS_TYPE_impl(o, t); }
 void Py_SET_SIZE(PyVarObject *o, Py_ssize_t s) { _Py_SET_SIZE_impl(o, s); }
+
+
+#ifndef NDEBUG
+static void
+check_singleton(PyObject *obj, PyTypeObject *type)
+{
+    // Check PyObject.ob_refcnt
+    _PyObject_ASSERT(obj, _Py_IsImmortal(obj));
+
+    // Check PyObject.ob_type
+    _PyObject_ASSERT(obj, Py_TYPE(obj) == type);
+}
+
+
+static void
+check_singleton_long(PyObject *obj, long value, int is_bool)
+{
+    PyTypeObject *type = is_bool ? &PyBool_Type : &PyLong_Type;
+    check_singleton(obj, type);
+
+    // Check _PyLong_CompactValue()
+    Py_ssize_t compact = _PyLong_CompactValue((const PyLongObject *)obj);
+    _PyObject_ASSERT(obj, compact == value);
+
+    // Check tv_tag and ob_digit[0]
+    _PyLongValue *long_value = &((PyLongObject*)obj)->long_value;
+    int sign = (value == 0) ? 0 : ((value < 0) ? -1 : 1);
+    uintptr_t lv_tag = TAG_FROM_SIGN_AND_SIZE(sign, (value == 0) ? 0 : 1);
+    if (!is_bool) {
+        lv_tag |= IMMORTALITY_BIT_MASK;
+    }
+    _PyObject_ASSERT(obj, long_value->lv_tag == lv_tag);
+    _PyObject_ASSERT(obj, long_value->ob_digit[0] == Py_ABS(value));
+}
+
+
+static void
+check_singleton_bytes(PyObject *obj, Py_ssize_t size, unsigned char ch)
+{
+    check_singleton(obj, &PyBytes_Type);
+    _PyObject_ASSERT(obj, PyBytes_GET_SIZE(obj) == size);
+    const unsigned char *str = (const unsigned char *)PyBytes_AS_STRING(obj);
+    _PyObject_ASSERT(obj, str[0] == ch);
+    if (size > 0) {
+        _PyObject_ASSERT(obj, str[1] == 0);
+    }
+}
+
+
+static void
+check_singleton_unicode(PyObject *obj, Py_ssize_t length, Py_UCS4 ch)
+{
+    check_singleton(obj, &PyUnicode_Type);
+    _PyObject_ASSERT(obj, _PyUnicode_CheckConsistency(obj, 1));
+
+    _PyObject_ASSERT(obj, PyUnicode_GET_LENGTH(obj) == length);
+
+    _PyObject_ASSERT(obj, PyUnicode_READ_CHAR(obj, 0) == ch);
+    if (length > 0) {
+        _PyObject_ASSERT(obj, PyUnicode_READ_CHAR(obj, 1) == 0);
+    }
+}
+
+
+// Check singletons consistency: try to detect if a C extension modified a
+// singleton by mistake.
+//
+// Since the hash is computed lazily, don't check the hash, except for empty
+// tuple.
+void
+_Py_CheckSingletons(void)
+{
+    assert(!PyErr_Occurred());
+    PyObject *obj;
+    long ival;
+
+    // None
+    obj = Py_None;
+    check_singleton(obj, &_PyNone_Type);
+
+    // Ellipsis (...), Py_NotImplemented
+    obj = Py_Ellipsis;
+    check_singleton(obj, &PyEllipsis_Type);
+
+    obj = Py_NotImplemented;
+    check_singleton(obj, &_PyNotImplemented_Type);
+
+    // False, True
+    check_singleton_long(Py_False, 0, 1);
+    check_singleton_long(Py_True, 1, 1);
+
+    // Small integers
+    for (ival=-_PY_NSMALLNEGINTS; ival < _PY_NSMALLPOSINTS; ival++) {
+        obj = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + ival];
+        check_singleton_long(obj, ival, 0);
+    }
+
+    // Empty bytes string (b'')
+    obj = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    check_singleton_bytes(obj, 0, '\0');
+
+    // 1-character bytes strings
+    for (ival=0; ival <= 255; ival++) {
+        obj = (PyObject*)&_Py_SINGLETON(bytes_characters)[ival];
+        check_singleton_bytes(obj, 1, (unsigned char)ival);
+    }
+
+    // Empty Unicode string ('')
+    obj = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
+    check_singleton_unicode(obj, 0, 0);
+
+    // Do not tests _Py_STR() strings since there is no API to list them
+
+    // 1-character Unicode strings
+    for (ival=0; ival <= 255; ival++) {
+        obj = _Py_LATIN1_CHR(ival);
+        check_singleton_unicode(obj, 1, ival);
+    }
+
+    // Empty tuple (())
+    obj = Py_GetConstant(Py_CONSTANT_EMPTY_TUPLE);
+    check_singleton(obj, &PyTuple_Type);
+    _PyObject_ASSERT(obj, PyTuple_GET_SIZE(obj) == 0);
+    _PyObject_ASSERT(obj, ((PyTupleObject*)obj)->ob_hash == _PyTuple_HASH_EMPTY);
+
+    // Do not test less commoly used singletons to reduce the overhead
+    // of calling _Py_CheckSingletons():
+    //
+    // - PyDateTime_TimeZone_UTC
+    // - context_token_missing
+    // - hamt_bitmap_node_empty
+    // - interp hamt_empty
+    // - interp last_resort_memory_error
+
+    assert(!PyErr_Occurred());
+}
+#endif
