@@ -17,7 +17,7 @@ This module provides classes and functions for comparing sequences.
 Most of them compare sequences of text lines (for example lists of strings,
 or :term:`file objects <file object>`) and
 produce :dfn:`diffs` -- reports on the differences.
-Diffs can be produced in in various formats, including HTML and context
+Diffs can be produced in various formats, including HTML and context
 and unified diffs -- formats produced by tools like
 :manpage:`diff <diff(1)>` and :manpage:`git diff <git-diff(1)>`.
 

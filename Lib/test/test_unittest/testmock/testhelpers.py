@@ -687,7 +687,7 @@ class SpecSignatureTest(unittest.TestCase):
         self.assertRaises(TypeError, instance_mock.a, 'foo', 'bar')
         self.assertRaises(AttributeError, getattr, instance_mock, 'b')
 
-        # The return value isn't isn't callable
+        # The return value isn't callable
         self.assertRaises(TypeError, instance_mock)
 
         instance_mock.Bar.f(6)
