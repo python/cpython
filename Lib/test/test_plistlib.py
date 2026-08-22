@@ -818,12 +818,25 @@ class TestPlistlib(unittest.TestCase):
             if i >= 32 or c in "\r\n\t":
                 # \r, \n and \t are the only legal control chars in XML
                 data = plistlib.dumps(testString, fmt=plistlib.FMT_XML)
-                if c != "\r":
-                    self.assertEqual(plistlib.loads(data), testString)
+                self.assertEqual(plistlib.loads(data), testString)
             else:
                 with self.assertRaises(ValueError):
                     plistlib.dumps(testString, fmt=plistlib.FMT_XML)
             plistlib.dumps(testString, fmt=plistlib.FMT_BINARY)
+
+    def test_cr_newline_roundtrip(self):
+        # gh-139423: Carriage returns should survive XML plist round-trip.
+        test_cases = [
+            "hello\rworld",        # standalone CR
+            "hello\r\nworld",      # CRLF
+            "a\rb\nc\r\nd",        # mixed newlines
+            "\r",                   # bare CR
+            "\r\n",                 # bare CRLF
+        ]
+        for s in test_cases:
+            with self.subTest(s=s):
+                data = plistlib.dumps(s, fmt=plistlib.FMT_XML)
+                self.assertEqual(plistlib.loads(data), s)
 
     def test_non_bmp_characters(self):
         pl = {'python': '\U0001f40d'}
