@@ -835,7 +835,7 @@ The :mod:`!test.support` module defines the following functions:
    the trace function.
 
 
-.. decorator:: bigmemtest(size, memuse, dry_run=True)
+.. decorator:: bigmemtest(size, memuse, dry_run=True, *, limit_address_space=True)
 
    Decorator for bigmem tests.
 
@@ -848,6 +848,12 @@ The :mod:`!test.support` module defines the following functions:
    extra argument.  If *dry_run* is ``True``, the value passed to the test
    method may be less than the requested value.  If *dry_run* is ``False``, it
    means the test doesn't support dummy runs when ``-M`` is not specified.
+
+   A test which really allocates the memory it asks for runs in a separate
+   process, whose address space is limited to what the test declares plus a
+   margin.
+   Set *limit_address_space* to ``False`` for a test which reserves much more
+   address space than it uses, for example one which starts many threads.
 
 
 .. decorator:: bigaddrspacetest
