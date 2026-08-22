@@ -1,3 +1,4 @@
+from test.support.warnings_helper import ignore_warnings
 from test.support import (gc_collect, bigmemtest, _2G,
                           cpython_only, captured_stdout,
                           check_disallow_instantiation, linked_to_musl,
@@ -823,10 +824,12 @@ class ReTests(unittest.TestCase):
                                    b"abcd abc bcd bx").group(1), b"bx")
         self.assertEqual(re.search(br"\B(b.)\B",
                                    b"abc bcd bc abxd").group(1), b"bx")
-        self.assertEqual(re.search(br"\b(b.)\b",
-                                   b"abcd abc bcd bx", re.LOCALE).group(1), b"bx")
-        self.assertEqual(re.search(br"\B(b.)\B",
-                                   b"abc bcd bc abxd", re.LOCALE).group(1), b"bx")
+        with warnings.catch_warnings(action='ignore',
+                                      category=DeprecationWarning):
+            self.assertEqual(re.search(br"\b(b.)\b",
+                                       b"abcd abc bcd bx", re.LOCALE).group(1), b"bx")
+            self.assertEqual(re.search(br"\B(b.)\B",
+                                       b"abc bcd bc abxd", re.LOCALE).group(1), b"bx")
         self.assertEqual(re.search(br"^abc$", b"\nabc\n", re.M).group(0), b"abc")
         self.assertEqual(re.search(br"^\Aabc\z$", b"abc", re.M).group(0), b"abc")
         self.assertIsNone(re.search(br"^\Aabc\z$", b"\nabc\n", re.M))
@@ -838,8 +841,10 @@ class ReTests(unittest.TestCase):
                                    b"1aa! a").group(0), b"1aa! a")
         self.assertEqual(re.search(r"\d\D\w\W\s\S",
                                    "1aa! a", re.ASCII).group(0), "1aa! a")
-        self.assertEqual(re.search(br"\d\D\w\W\s\S",
-                                   b"1aa! a", re.LOCALE).group(0), b"1aa! a")
+        with warnings.catch_warnings(action='ignore',
+                                      category=DeprecationWarning):
+            self.assertEqual(re.search(br"\d\D\w\W\s\S",
+                                       b"1aa! a", re.LOCALE).group(0), b"1aa! a")
 
     def test_other_escapes(self):
         self.checkPatternError("\\", 'bad escape (end of pattern)', 0)
@@ -1091,129 +1096,171 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.search(r"\b(abc)\b", "abc").group(1), "abc")
         self.assertEqual(re.search(r"\b(abc)\b", "abc", re.ASCII).group(1), "abc")
         self.assertEqual(re.search(br"\b(abc)\b", b"abc").group(1), b"abc")
-        self.assertEqual(re.search(br"\b(abc)\b", b"abc", re.LOCALE).group(1), b"abc")
+        with warnings.catch_warnings(action='ignore',
+                                      category=DeprecationWarning):
+            self.assertEqual(re.search(br"\b(abc)\b", b"abc", re.LOCALE).group(1), b"abc")
         self.assertEqual(re.search(r"\b(ьюя)\b", "ьюя").group(1), "ьюя")
         self.assertIsNone(re.search(r"\b(ьюя)\b", "ьюя", re.ASCII))
         # There's a word boundary between a word and a non-word.
         self.assertTrue(re.match(r".\b", "a="))
         self.assertTrue(re.match(r".\b", "a=", re.ASCII))
         self.assertTrue(re.match(br".\b", b"a="))
-        self.assertTrue(re.match(br".\b", b"a=", re.LOCALE))
+        with warnings.catch_warnings(action='ignore',
+                                      category=DeprecationWarning):
+            self.assertTrue(re.match(br".\b", b"a=", re.LOCALE))
         self.assertTrue(re.match(r".\b", "я="))
         self.assertIsNone(re.match(r".\b", "я=", re.ASCII))
         # There's a word boundary between a non-word and a word.
         self.assertTrue(re.match(r".\b", "=a"))
         self.assertTrue(re.match(r".\b", "=a", re.ASCII))
         self.assertTrue(re.match(br".\b", b"=a"))
-        self.assertTrue(re.match(br".\b", b"=a", re.LOCALE))
+        with warnings.catch_warnings(action='ignore',
+                                      category=DeprecationWarning):
+            self.assertTrue(re.match(br".\b", b"=a", re.LOCALE))
         self.assertTrue(re.match(r".\b", "=я"))
         self.assertIsNone(re.match(r".\b", "=я", re.ASCII))
         # There is no word boundary inside a word.
         self.assertIsNone(re.match(r".\b", "ab"))
         self.assertIsNone(re.match(r".\b", "ab", re.ASCII))
         self.assertIsNone(re.match(br".\b", b"ab"))
-        self.assertIsNone(re.match(br".\b", b"ab", re.LOCALE))
+        with warnings.catch_warnings(action='ignore',
+                                      category=DeprecationWarning):
+            self.assertIsNone(re.match(br".\b", b"ab", re.LOCALE))
         self.assertIsNone(re.match(r".\b", "юя"))
         self.assertIsNone(re.match(r".\b", "юя", re.ASCII))
         # There is no word boundary between a non-word characters.
         self.assertIsNone(re.match(r".\b", "=-"))
         self.assertIsNone(re.match(r".\b", "=-", re.ASCII))
         self.assertIsNone(re.match(br".\b", b"=-"))
-        self.assertIsNone(re.match(br".\b", b"=-", re.LOCALE))
+        with warnings.catch_warnings(action='ignore',
+                                      category=DeprecationWarning):
+            self.assertIsNone(re.match(br".\b", b"=-", re.LOCALE))
         # There is no non-boundary match between a word and a non-word.
         self.assertIsNone(re.match(r".\B", "a="))
         self.assertIsNone(re.match(r".\B", "a=", re.ASCII))
         self.assertIsNone(re.match(br".\B", b"a="))
-        self.assertIsNone(re.match(br".\B", b"a=", re.LOCALE))
+        with warnings.catch_warnings(action='ignore',
+                                      category=DeprecationWarning):
+            self.assertIsNone(re.match(br".\B", b"a=", re.LOCALE))
         self.assertIsNone(re.match(r".\B", "я="))
         self.assertTrue(re.match(r".\B", "я=", re.ASCII))
         # There is no non-boundary match between a non-word and a word.
         self.assertIsNone(re.match(r".\B", "=a"))
         self.assertIsNone(re.match(r".\B", "=a", re.ASCII))
         self.assertIsNone(re.match(br".\B", b"=a"))
-        self.assertIsNone(re.match(br".\B", b"=a", re.LOCALE))
+        with warnings.catch_warnings(action='ignore',
+                                      category=DeprecationWarning):
+            self.assertIsNone(re.match(br".\B", b"=a", re.LOCALE))
         self.assertIsNone(re.match(r".\B", "=я"))
         self.assertTrue(re.match(r".\B", "=я", re.ASCII))
         # There's a non-boundary match inside a word.
         self.assertTrue(re.match(r".\B", "ab"))
         self.assertTrue(re.match(r".\B", "ab", re.ASCII))
         self.assertTrue(re.match(br".\B", b"ab"))
-        self.assertTrue(re.match(br".\B", b"ab", re.LOCALE))
+        with warnings.catch_warnings(action='ignore',
+                                      category=DeprecationWarning):
+            self.assertTrue(re.match(br".\B", b"ab", re.LOCALE))
         self.assertTrue(re.match(r".\B", "юя"))
         self.assertTrue(re.match(r".\B", "юя", re.ASCII))
         # There's a non-boundary match between a non-word characters.
         self.assertTrue(re.match(r".\B", "=-"))
         self.assertTrue(re.match(r".\B", "=-", re.ASCII))
         self.assertTrue(re.match(br".\B", b"=-"))
-        self.assertTrue(re.match(br".\B", b"=-", re.LOCALE))
+        with warnings.catch_warnings(action='ignore',
+                                      category=DeprecationWarning):
+            self.assertTrue(re.match(br".\B", b"=-", re.LOCALE))
         # There's a word boundary at the start of a string.
         self.assertTrue(re.match(r"\b", "abc"))
         self.assertTrue(re.match(r"\b", "abc", re.ASCII))
         self.assertTrue(re.match(br"\b", b"abc"))
-        self.assertTrue(re.match(br"\b", b"abc", re.LOCALE))
+        with warnings.catch_warnings(action='ignore',
+                                      category=DeprecationWarning):
+            self.assertTrue(re.match(br"\b", b"abc", re.LOCALE))
         self.assertTrue(re.match(r"\b", "ьюя"))
         self.assertIsNone(re.match(r"\b", "ьюя", re.ASCII))
         # There's a word boundary at the end of a string.
         self.assertTrue(re.fullmatch(r".+\b", "abc"))
         self.assertTrue(re.fullmatch(r".+\b", "abc", re.ASCII))
         self.assertTrue(re.fullmatch(br".+\b", b"abc"))
-        self.assertTrue(re.fullmatch(br".+\b", b"abc", re.LOCALE))
+        with warnings.catch_warnings(action='ignore',
+                                      category=DeprecationWarning):
+            self.assertTrue(re.fullmatch(br".+\b", b"abc", re.LOCALE))
         self.assertTrue(re.fullmatch(r".+\b", "ьюя"))
         self.assertIsNone(re.search(r"\b", "ьюя", re.ASCII))
         # A non-empty string includes a non-boundary zero-length match.
         self.assertEqual(re.search(r"\B", "abc").span(), (1, 1))
         self.assertEqual(re.search(r"\B", "abc", re.ASCII).span(), (1, 1))
         self.assertEqual(re.search(br"\B", b"abc").span(), (1, 1))
-        self.assertEqual(re.search(br"\B", b"abc", re.LOCALE).span(), (1, 1))
+        with warnings.catch_warnings(action='ignore',
+                                      category=DeprecationWarning):
+            self.assertEqual(re.search(br"\B", b"abc", re.LOCALE).span(), (1, 1))
         self.assertEqual(re.search(r"\B", "ьюя").span(), (1, 1))
         self.assertEqual(re.search(r"\B", "ьюя", re.ASCII).span(), (0, 0))
         # There is no non-boundary match at the start of a string.
         self.assertIsNone(re.match(r"\B", "abc"))
         self.assertIsNone(re.match(r"\B", "abc", re.ASCII))
         self.assertIsNone(re.match(br"\B", b"abc"))
-        self.assertIsNone(re.match(br"\B", b"abc", re.LOCALE))
+        with warnings.catch_warnings(action='ignore',
+                                      category=DeprecationWarning):
+            self.assertIsNone(re.match(br"\B", b"abc", re.LOCALE))
         self.assertIsNone(re.match(r"\B", "ьюя"))
         self.assertTrue(re.match(r"\B", "ьюя", re.ASCII))
         # There is no non-boundary match at the end of a string.
         self.assertIsNone(re.fullmatch(r".+\B", "abc"))
         self.assertIsNone(re.fullmatch(r".+\B", "abc", re.ASCII))
         self.assertIsNone(re.fullmatch(br".+\B", b"abc"))
-        self.assertIsNone(re.fullmatch(br".+\B", b"abc", re.LOCALE))
+        with warnings.catch_warnings(action='ignore',
+                                      category=DeprecationWarning):
+            self.assertIsNone(re.fullmatch(br".+\B", b"abc", re.LOCALE))
         self.assertIsNone(re.fullmatch(r".+\B", "ьюя"))
         self.assertTrue(re.fullmatch(r".+\B", "ьюя", re.ASCII))
         # However, an empty string contains no word boundaries.
         self.assertIsNone(re.search(r"\b", ""))
         self.assertIsNone(re.search(r"\b", "", re.ASCII))
         self.assertIsNone(re.search(br"\b", b""))
-        self.assertIsNone(re.search(br"\b", b"", re.LOCALE))
+        with warnings.catch_warnings(action='ignore',
+                                      category=DeprecationWarning):
+            self.assertIsNone(re.search(br"\b", b"", re.LOCALE))
         self.assertTrue(re.search(r"\B", ""))
         self.assertTrue(re.search(r"\B", "", re.ASCII))
         self.assertTrue(re.search(br"\B", b""))
-        self.assertTrue(re.search(br"\B", b"", re.LOCALE))
+        with warnings.catch_warnings(action='ignore',
+                                      category=DeprecationWarning):
+            self.assertTrue(re.search(br"\B", b"", re.LOCALE))
         # A single word-character string has two boundaries, but no
         # non-boundary gaps.
         self.assertEqual(len(re.findall(r"\b", "a")), 2)
         self.assertEqual(len(re.findall(r"\b", "a", re.ASCII)), 2)
         self.assertEqual(len(re.findall(br"\b", b"a")), 2)
-        self.assertEqual(len(re.findall(br"\b", b"a", re.LOCALE)), 2)
+        with warnings.catch_warnings(action='ignore',
+                                      category=DeprecationWarning):
+            self.assertEqual(len(re.findall(br"\b", b"a", re.LOCALE)), 2)
         self.assertEqual(len(re.findall(r"\B", "a")), 0)
         self.assertEqual(len(re.findall(r"\B", "a", re.ASCII)), 0)
         self.assertEqual(len(re.findall(br"\B", b"a")), 0)
-        self.assertEqual(len(re.findall(br"\B", b"a", re.LOCALE)), 0)
+        with warnings.catch_warnings(action='ignore',
+                                      category=DeprecationWarning):
+            self.assertEqual(len(re.findall(br"\B", b"a", re.LOCALE)), 0)
         # If there are no words, there are no boundaries
         self.assertEqual(len(re.findall(r"\b", " ")), 0)
         self.assertEqual(len(re.findall(r"\b", " ", re.ASCII)), 0)
         self.assertEqual(len(re.findall(br"\b", b" ")), 0)
-        self.assertEqual(len(re.findall(br"\b", b" ", re.LOCALE)), 0)
+        with warnings.catch_warnings(action='ignore',
+                                      category=DeprecationWarning):
+            self.assertEqual(len(re.findall(br"\b", b" ", re.LOCALE)), 0)
         self.assertEqual(len(re.findall(r"\b", "   ")), 0)
         self.assertEqual(len(re.findall(r"\b", "   ", re.ASCII)), 0)
         self.assertEqual(len(re.findall(br"\b", b"   ")), 0)
-        self.assertEqual(len(re.findall(br"\b", b"   ", re.LOCALE)), 0)
+        with warnings.catch_warnings(action='ignore',
+                                      category=DeprecationWarning):
+            self.assertEqual(len(re.findall(br"\b", b"   ", re.LOCALE)), 0)
         # Can match around the whitespace.
         self.assertEqual(len(re.findall(r"\B", " ")), 2)
         self.assertEqual(len(re.findall(r"\B", " ", re.ASCII)), 2)
         self.assertEqual(len(re.findall(br"\B", b" ")), 2)
-        self.assertEqual(len(re.findall(br"\B", b" ", re.LOCALE)), 2)
+        with warnings.catch_warnings(action='ignore',
+                                      category=DeprecationWarning):
+            self.assertEqual(len(re.findall(br"\B", b" ", re.LOCALE)), 2)
 
     def test_bigcharset(self):
         self.assertEqual(re.match("([\u2222\u2223])",
@@ -1649,8 +1696,11 @@ class ReTests(unittest.TestCase):
     def test_flags(self):
         for flag in [re.I, re.M, re.X, re.S, re.A, re.U]:
             self.assertTrue(re.compile('^pattern$', flag))
-        for flag in [re.I, re.M, re.X, re.S, re.A, re.L]:
+        for flag in [re.I, re.M, re.X, re.S, re.A]:
             self.assertTrue(re.compile(b'^pattern$', flag))
+        with warnings.catch_warnings(action='ignore',
+                                      category=DeprecationWarning):
+            self.assertTrue(re.compile(b'^pattern$', re.L))
 
     def test_sre_character_literals(self):
         for i in [0, 8, 16, 32, 64, 127, 128, 255, 256, 0xFFFF, 0x10000, 0x10FFFF]:
@@ -2100,6 +2150,7 @@ class ReTests(unittest.TestCase):
         self.assertRaises(ValueError, re.compile, r'(?a)\w', re.UNICODE)
         self.assertRaises(re.PatternError, re.compile, r'(?au)\w')
 
+    @ignore_warnings(category=DeprecationWarning)
     def test_locale_flag(self):
         enc = locale.getpreferredencoding()
         # Search non-ASCII letter
@@ -2423,6 +2474,7 @@ class ReTests(unittest.TestCase):
         self.check_en_US_utf8()
         self.check_en_US_iso88591()
 
+    @ignore_warnings(category=DeprecationWarning)
     def check_en_US_iso88591(self):
         locale.setlocale(locale.LC_CTYPE, 'en_US.iso88591')
         self.assertTrue(re.match(b'\xc5\xe5', b'\xc5\xe5', re.L|re.I))
@@ -2432,6 +2484,7 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.match(b'(?Li)\xc5', b'\xe5'))
         self.assertTrue(re.match(b'(?Li)\xe5', b'\xc5'))
 
+    @ignore_warnings(category=DeprecationWarning)
     def check_en_US_utf8(self):
         locale.setlocale(locale.LC_CTYPE, 'en_US.utf8')
         self.assertTrue(re.match(b'\xc5\xe5', b'\xc5\xe5', re.L|re.I))
@@ -2441,9 +2494,38 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.match(b'(?Li)\xc5', b'\xe5'))
         self.assertIsNone(re.match(b'(?Li)\xe5', b'\xc5'))
 
+    def test_locale_deprecated(self):
+        # The warning is emitted when the pattern is actually compiled,
+        # so drop cached patterns first.
+        for pattern, flags in [(b'x', re.LOCALE), (b'(?L)x', 0),
+                               (b'(?L:x)y', 0)]:
+            with self.subTest(pattern=pattern):
+                re.purge()
+                with self.assertWarns(DeprecationWarning) as cm:
+                    re.compile(pattern, flags)
+                self.assertEqual(cm.filename, __file__)
+        # The warning points at the caller for all module-level functions.
+        for func, args, kwargs in [
+            (re.compile, (b'x', re.LOCALE), {}),
+            (re.search, (b'x', b'y', re.LOCALE), {}),
+            (re.match, (b'x', b'y', re.LOCALE), {}),
+            (re.fullmatch, (b'x', b'y', re.LOCALE), {}),
+            (re.findall, (b'x', b'y', re.LOCALE), {}),
+            (re.finditer, (b'x', b'y', re.LOCALE), {}),
+            (re.split, (b'x', b'y', 0, re.LOCALE), {}),
+            (re.sub, (b'x', b'', b'y'), {'flags': re.LOCALE}),
+            (re.subn, (b'x', b'', b'y'), {'flags': re.LOCALE}),
+        ]:
+            with self.subTest(func=func.__name__):
+                re.purge()
+                with self.assertWarns(DeprecationWarning) as cm:
+                    func(*args, **kwargs)
+                self.assertEqual(cm.filename, __file__)
+
     @unittest.skipIf(linked_to_musl(), "musl libc issue, bpo-46390")
     @unittest.skipIf(sys.platform.startswith("sunos"),
                      "test doesn't work on Solaris, gh-91214")
+    @ignore_warnings(category=DeprecationWarning)
     def test_locale_compiled(self):
         oldlocale = locale.setlocale(locale.LC_CTYPE)
         self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)
@@ -3087,6 +3169,7 @@ class PatternReprTests(unittest.TestCase):
         self.check_flags(b'bytes pattern', re.A,
                          "re.compile(b'bytes pattern', re.ASCII)")
 
+    @ignore_warnings(category=DeprecationWarning)
     def test_locale(self):
         self.check_flags(b'bytes pattern', re.L,
                          "re.compile(b'bytes pattern', re.LOCALE)")
@@ -3319,7 +3402,9 @@ class ExternalTests(unittest.TestCase):
                     # Try the match with LOCALE enabled, and check that it
                     # still succeeds.
                     with self.subTest('locale-sensitive match'):
-                        obj = re.compile(bpat, re.LOCALE)
+                        with warnings.catch_warnings(action='ignore',
+                                                      category=DeprecationWarning):
+                            obj = re.compile(bpat, re.LOCALE)
                         result = obj.search(bs)
                         if result is None:
                             print('=== Fails on locale-sensitive match', t)

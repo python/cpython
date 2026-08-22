@@ -881,6 +881,10 @@ Flags
       no longer depend on the locale at compile time.
       Only the locale at matching time affects the result of matching.
 
+   .. deprecated-removed:: next 3.18
+      The flag and the inline flag ``(?L)`` are deprecated.
+      Decode the input and match str patterns instead.
+
 
 .. data:: M
           MULTILINE
