@@ -265,7 +265,7 @@ class up(MotionCommand):
                     r.select_item(r.historyi - 1)
                     return
                 r.pos = 0
-                r.error("start of buffer")
+                r.debug("start of buffer")
                 return
 
             if (
@@ -297,7 +297,7 @@ class down(MotionCommand):
                     r.pos = r.eol(0)
                     return
                 r.pos = len(b)
-                r.error("end of buffer")
+                r.debug("end of buffer")
                 return
 
             if (
@@ -323,7 +323,7 @@ class left(MotionCommand):
             if p >= 0:
                 r.pos = p
             else:
-                self.reader.error("start of buffer")
+                self.reader.debug("start of buffer")
 
 
 class right(MotionCommand):
@@ -335,7 +335,7 @@ class right(MotionCommand):
             if p <= len(b):
                 r.pos = p
             else:
-                self.reader.error("end of buffer")
+                self.reader.debug("end of buffer")
 
 
 class beginning_of_line(MotionCommand):
@@ -399,7 +399,7 @@ class transpose_characters(EditCommand):
         b = r.buffer
         s = r.pos - 1
         if s < 0:
-            r.error("cannot transpose at start of buffer")
+            r.debug("cannot transpose at start of buffer")
         else:
             if s == len(b):
                 s -= 1
@@ -422,7 +422,7 @@ class backspace(EditCommand):
                 del b[r.pos]
                 changed_from = r.pos if changed_from is None else min(changed_from, r.pos)
             else:
-                self.reader.error("can't backspace at start")
+                self.reader.debug("can't backspace at start")
         if changed_from is not None:
             r.invalidate_buffer(changed_from)
 
@@ -448,7 +448,7 @@ class delete(EditCommand):
                 del b[r.pos]
                 changed_from = r.pos if changed_from is None else min(changed_from, r.pos)
             else:
-                self.reader.error("end of buffer")
+                self.reader.debug("end of buffer")
         if changed_from is not None:
             r.invalidate_buffer(changed_from)
 
@@ -469,15 +469,13 @@ class help(Command):
 
 class invalid_key(Command):
     def do(self) -> None:
-        pending = self.reader.console.getpending()
-        s = "".join(self.event) + pending.data
-        self.reader.error("`%r' not bound" % s)
+        self.reader.console.getpending()
+        self.reader.error("no command is bound to this key")
 
 
 class invalid_command(Command):
     def do(self) -> None:
-        s = self.event_name
-        self.reader.error("command `%s' not known" % s)
+        self.reader.error(f"command {self.event_name!r} is not implemented")
 
 
 class show_history(Command):
