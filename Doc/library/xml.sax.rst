@@ -34,10 +34,10 @@ The convenience functions are:
 .. function:: make_parser(parser_list=[])
 
    Create and return a SAX :class:`~xml.sax.xmlreader.XMLReader` object.  The
-   first parser found will
-   be used.  If *parser_list* is provided, it must be an iterable of strings which
-   name modules that have a function named :func:`create_parser`.  Modules listed
-   in *parser_list* will be used before modules in the default list of parsers.
+   first parser found will be used.  If *parser_list* is provided, it must be
+   an iterable of strings which name modules that have a function named
+   :ref:`create_parser <sax-parser-modules>`.  Modules listed in *parser_list*
+   will be used before modules in the default list of parsers.
 
    .. versionchanged:: 3.8
       The *parser_list* argument can be any iterable, not just a list.
@@ -79,13 +79,12 @@ instantiated by the application itself.  Since Python does not have an explicit
 notion of interface, they are formally introduced as classes, but applications
 may use implementations which do not inherit from the provided classes.  The
 :class:`~xml.sax.xmlreader.InputSource`, :class:`~xml.sax.xmlreader.Locator`,
-:class:`~xml.sax.xmlreader.Attributes`, :class:`~xml.sax.xmlreader.AttributesNS`,
-and :class:`~xml.sax.xmlreader.XMLReader` interfaces are defined in the
-module :mod:`xml.sax.xmlreader`.  The handler interfaces are defined in
-:mod:`xml.sax.handler`.  For convenience,
-:class:`~xml.sax.xmlreader.InputSource` (which is often
-instantiated directly) and the handler classes are also available from
-:mod:`!xml.sax`.  These interfaces are described below.
+:ref:`Attributes <attributes-objects>`, :ref:`AttributesNS <attributes-ns-objects>`,
+and :class:`~xml.sax.xmlreader.XMLReader` interfaces are defined in the module
+:mod:`xml.sax.xmlreader`.  The handler interfaces are defined in
+:mod:`xml.sax.handler`.  For convenience, :class:`~xml.sax.xmlreader.InputSource`
+(which is often instantiated directly) and the handler classes are also available
+from :mod:`!xml.sax`.  These interfaces are described below.
 
 In addition to these classes, :mod:`!xml.sax` provides the following exception
 classes.
