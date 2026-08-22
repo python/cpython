@@ -1,0 +1,3 @@
+Speed up :func:`json.loads` for documents without leading or trailing
+whitespace by skipping the whitespace scan in that common case. Patch by Bernát
+Gábor.
