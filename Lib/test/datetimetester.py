@@ -3214,6 +3214,31 @@ class TestDateTime(TestDate):
         self.assertEqual(t.strftime('\0%c\0%B'), f'\0{s1}\0{s2}')
         self.assertEqual(t.strftime('%c\0%B\0'), f'{s1}\0{s2}\0')
 
+    @support.run_with_tz('EST+05EDT,M3.2.0,M11.1.0')
+    def test_strftime_naive_s(self):
+        t = self.theclass(1970, 1, 1)
+        self.assertEqual(t.strftime('%s'), '18000')
+        t = self.theclass(1970, 1, 1, 1, 2, 3, 4)
+        self.assertEqual(t.strftime('%s'),
+                         str(18000 + 3600 + 2*60 + 3))
+
+    def test_strftime_respect_timezone_s(self):
+        t = self.theclass(1970, 1, 1, 0, 0, 0, 0, tzinfo=timezone.utc)
+        self.assertEqual(t.strftime('%s'), '0')
+
+        t = self.theclass(1970, 1, 1, 1, 2, 3, 600000, tzinfo=timezone.utc)
+        self.assertEqual(t.strftime('%s'),
+                         str(3600 + 2*60 + 3))
+
+        t = self.theclass(1970, 1, 1, 1, 2, 3, 400000,
+                          tzinfo=timezone(timedelta(hours=-5), 'EST'))
+        self.assertEqual(t.strftime('%s'),
+                         str(18000 + 3600 + 2*60 + 3))
+
+        t = self.theclass(1969, 1, 1, 0, 0, 0, 700000,
+                          tzinfo=timezone.utc)
+        self.assertEqual(t.strftime('%s'), '-31536000')
+
     def test_extract(self):
         dt = self.theclass(2002, 3, 4, 18, 45, 3, 1234)
         self.assertEqual(dt.date(), date(2002, 3, 4))

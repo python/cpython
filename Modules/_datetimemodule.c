@@ -1871,6 +1871,32 @@ make_freplacement(PyObject *object)
     return PyUnicode_FromString(freplacement);
 }
 
+static PyObject *
+make_sreplacement(PyObject *object)
+{
+    PyObject *timestamp = PyObject_CallMethodNoArgs(object, &_Py_ID(timestamp));
+    if (timestamp == NULL) {
+        return NULL;
+    }
+
+    PyObject *math = PyImport_ImportModule("math");
+    if (math == NULL) {
+        Py_DECREF(timestamp);
+        return NULL;
+    }
+
+    PyObject *temp = PyObject_CallMethod(math, "floor", "O", timestamp);
+    Py_DECREF(math);
+    Py_DECREF(timestamp);
+    if (temp == NULL) {
+        return NULL;
+    }
+
+    PyObject *sreplacement = PyObject_Str(temp);
+    Py_DECREF(temp);
+    return sreplacement;
+}
+
 /* I sure don't want to reproduce the strftime code from the time module,
  * so this imports the module and calls it.  All the hair is due to
  * giving special meanings to the %z, %:z, %Z and %f format codes via a
@@ -1888,6 +1914,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     PyObject *colonzreplacement = NULL; /* py string, replacement for %:z */
     PyObject *Zreplacement = NULL;      /* py string, replacement for %Z */
     PyObject *freplacement = NULL;      /* py string, replacement for %f */
+    PyObject *sreplacement = NULL;      /* py string, replacement for %s */
 
     assert(object && format && timetuple);
     assert(PyUnicode_Check(format));
@@ -1963,6 +1990,15 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                     goto Error;
             }
             replacement = freplacement;
+        }
+        else if (ch == 's' && PyDateTime_Check(object)) {
+            /* format timestamp */
+            if (sreplacement == NULL) {
+                sreplacement = make_sreplacement(object);
+                if (sreplacement == NULL)
+                    goto Error;
+            }
+            replacement = sreplacement;
         }
         else if (normalize_century()
                  && (ch == 'Y' || ch == 'G' || ch == 'F' || ch == 'C'))
@@ -2055,6 +2091,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     Py_XDECREF(zreplacement);
     Py_XDECREF(colonzreplacement);
     Py_XDECREF(Zreplacement);
+    Py_XDECREF(sreplacement);
     Py_XDECREF(strftime);
     return result;
 
