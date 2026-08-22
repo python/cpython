@@ -1,0 +1,3 @@
+:mod:`tarfile` now raises ``InvalidHeaderError`` instead of a bare
+:exc:`ValueError` when a pax extended header contains a malformed GNU sparse
+number, matching the existing handling of the GNU sparse 0.0 format.

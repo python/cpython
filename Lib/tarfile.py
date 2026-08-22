@@ -1661,7 +1661,10 @@ class TarInfo(object):
     def _proc_gnusparse_01(self, next, pax_headers):
         """Process a GNU tar extended sparse header, version 0.1.
         """
-        sparse = [int(x) for x in pax_headers["GNU.sparse.map"].split(",")]
+        try:
+            sparse = [int(x) for x in pax_headers["GNU.sparse.map"].split(",")]
+        except ValueError:
+            raise InvalidHeaderError("invalid header")
         next.sparse = list(zip(sparse[::2], sparse[1::2]))
 
     def _proc_gnusparse_10(self, next, pax_headers, tarfile):
@@ -1671,12 +1674,18 @@ class TarInfo(object):
         sparse = []
         buf = tarfile.fileobj.read(BLOCKSIZE)
         fields, buf = buf.split(b"\n", 1)
-        fields = int(fields)
+        try:
+            fields = int(fields)
+        except ValueError:
+            raise InvalidHeaderError("invalid header")
         while len(sparse) < fields * 2:
             if b"\n" not in buf:
                 buf += tarfile.fileobj.read(BLOCKSIZE)
             number, buf = buf.split(b"\n", 1)
-            sparse.append(int(number))
+            try:
+                sparse.append(int(number))
+            except ValueError:
+                raise InvalidHeaderError("invalid header")
         next.offset_data = tarfile.fileobj.tell()
         next.sparse = list(zip(sparse[::2], sparse[1::2]))
 
@@ -1688,9 +1697,15 @@ class TarInfo(object):
             if keyword == "GNU.sparse.name":
                 setattr(self, "path", value)
             elif keyword == "GNU.sparse.size":
-                setattr(self, "size", int(value))
+                try:
+                    setattr(self, "size", int(value))
+                except ValueError:
+                    raise InvalidHeaderError("invalid header")
             elif keyword == "GNU.sparse.realsize":
-                setattr(self, "size", int(value))
+                try:
+                    setattr(self, "size", int(value))
+                except ValueError:
+                    raise InvalidHeaderError("invalid header")
             elif keyword in PAX_FIELDS:
                 if keyword in PAX_NUMBER_FIELDS:
                     try:
