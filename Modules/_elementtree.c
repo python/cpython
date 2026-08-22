@@ -3348,9 +3348,7 @@ expat_start_handler(void *op, const XML_Char *tag_in,
                 Py_DECREF(tag);
                 return;
             }
-            ok = PyDict_SetItem(attrib, key, value);
-            Py_DECREF(value);
-            Py_DECREF(key);
+            ok = _PyDict_SetItem_Take2((PyDictObject *)attrib, key, value);
             if (ok < 0) {
                 Py_DECREF(attrib);
                 Py_DECREF(tag);
