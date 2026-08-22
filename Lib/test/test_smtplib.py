@@ -5,10 +5,12 @@ from email.base64mime import body_encode as encode_base64
 import email.utils
 import hashlib
 import hmac
+import os
 import socket
 import smtplib
 import io
 import re
+import struct
 import sys
 import time
 import select
@@ -1398,6 +1400,119 @@ class SMTPSimTests(unittest.TestCase):
 
         self.assertIn(['mail from:<John> size=14'], self.serv._SMTPchannel.all_received_lines)
         self.assertIn(['rcpt to:<Sally>'], self.serv._SMTPchannel.all_received_lines)
+
+
+SUPPORTS_SMTP_SSL = hasattr(smtplib, 'SMTP_SSL')
+if SUPPORTS_SMTP_SSL:
+    import ssl
+
+    CERTFILE = os.path.join(
+        os.path.dirname(__file__) or os.curdir, "certdata", "keycert3.pem")
+
+
+@unittest.skipUnless(SUPPORTS_SMTP_SSL, 'SSL not supported')
+class SMTPSSLRsetAfterDataErrorTests(unittest.TestCase):
+    # gh-43311 (bpo-1481032): a server that rejects DATA and then tears
+    # down the TLS connection used to have the automatic rset() inside
+    # sendmail()'s except-block raise its own error, masking the original
+    # SMTPDataError from the caller. Fixed as a side effect of gh-17498
+    # (all three sendmail() error paths now go through _rset(), and
+    # ssl.SSLError has subclassed OSError since then, so send()/getreply()
+    # already normalize a dead-connection SSLError into
+    # SMTPServerDisconnected instead of leaking a raw ssl error). No
+    # regression test previously covered the TLS-specific case --
+    # test__rest_from_mail_cmd above only exercises a plaintext
+    # disconnect.
+
+    def setUp(self):
+        self.thread_key = threading_helper.threading_setup()
+        self.server_ready = threading.Event()
+        self.port_holder = []
+        self.thread = threading.Thread(target=self._run_server, daemon=True)
+        self.thread.start()
+        self.server_ready.wait(support.LOOPBACK_TIMEOUT)
+
+    def tearDown(self):
+        threading_helper.join_thread(self.thread)
+        threading_helper.threading_cleanup(*self.thread_key)
+
+    def _run_server(self):
+        listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.addCleanup(listener.close)
+        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        listener.bind((HOST, 0))
+        listener.listen(1)
+        self.port_holder.append(listener.getsockname()[1])
+        self.server_ready.set()
+        listener.settimeout(support.LOOPBACK_TIMEOUT)
+        try:
+            raw_conn, _ = listener.accept()
+        except socket.timeout:
+            return
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ctx.load_cert_chain(CERTFILE)
+        try:
+            conn = ctx.wrap_socket(raw_conn, server_side=True)
+        except ssl.SSLError:
+            return
+        try:
+            self._serve_one_rejected_transaction(conn)
+        except OSError:
+            pass
+        finally:
+            conn.close()
+
+    def _serve_one_rejected_transaction(self, conn):
+        def read_line():
+            data = b""
+            while not data.endswith(b"\r\n"):
+                chunk = conn.recv(1)
+                if not chunk:
+                    return data
+                data += chunk
+            return data
+
+        conn.sendall(b"220 localhost testing TLS DATA rejection\r\n")
+        read_line()  # EHLO/HELO
+        conn.sendall(b"250 localhost\r\n")
+        read_line()  # MAIL FROM
+        conn.sendall(b"250 OK\r\n")
+        read_line()  # RCPT TO
+        conn.sendall(b"250 OK\r\n")
+        read_line()  # DATA
+        # Must accept with 354 here: a non-354 response makes data()
+        # raise SMTPDataError *directly*, before sendmail() ever reaches
+        # its own self._rset() call. The path this test targets only
+        # exists when the message body is accepted for transfer and the
+        # *final* response (after the end-of-data terminator) is the
+        # rejection -- that's the sendmail() branch that calls
+        # self._rset() before raising.
+        conn.sendall(b"354 go ahead\r\n")
+        received = b""
+        while not received.endswith(b"\r\n.\r\n"):
+            chunk = conn.recv(4096)
+            if not chunk:
+                break
+            received += chunk
+        conn.sendall(b"554 Transaction failed\r\n")
+        # Tear the connection down hard (RST, not a clean TLS
+        # close_notify) so the client's automatic rset() -- called from
+        # sendmail()'s except-block for the SMTPDataError above -- hits a
+        # genuinely dead socket instead of a graceful close.
+        conn.setsockopt(
+            socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0))
+
+    def test_original_error_not_masked_by_ssl_rset_failure(self):
+        port = self.port_holder[0]
+        client_ctx = ssl._create_unverified_context()
+        smtp = smtplib.SMTP_SSL(
+            HOST, port, context=client_ctx, timeout=support.LOOPBACK_TIMEOUT)
+        self.addCleanup(smtp.close)
+        with self.assertRaises(smtplib.SMTPDataError) as caught:
+            smtp.sendmail(
+                'sender@example.com', ['recipient@example.com'],
+                'Subject: hi\r\n\r\nbody')
+        self.assertEqual(caught.exception.smtp_code, 554)
 
 
 class SimSMTPUTF8Server(SimSMTPServer):
