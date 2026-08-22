@@ -4,6 +4,7 @@ import copy
 import pickle
 import io
 from test import support
+from test.support import warnings_helper
 import unittest
 
 import xml.dom.minidom
@@ -777,7 +778,9 @@ class MinidomTest(unittest.TestCase):
         self._testCloneElementCopiesAttributes(
             root, clone, "testCloneElement" + (deep and "Deep" or "Shallow"))
         # mutilate the original so shared data is detected
-        root.tagName = root.nodeName = "MODIFIED"
+        with warnings_helper.check_warnings(
+                ('', DeprecationWarning), quiet=True):
+            root.tagName = root.nodeName = "MODIFIED"
         root.setAttribute("attr", "NEW VALUE")
         root.setAttribute("added", "VALUE")
         return dom, clone
@@ -1324,6 +1327,38 @@ class MinidomTest(unittest.TestCase):
         doc2 = parseString("<doc/>")
         self.assertRaises(xml.dom.WrongDocumentErr, doc2.renameNode, node,
                           xml.dom.EMPTY_NAMESPACE, "foo")
+
+    def test_readonly_attributes(self):
+        # These attributes are read-only in the DOM, and setting them
+        # is deprecated (gh-57336).
+        doc = parseString('<!DOCTYPE doc PUBLIC "p" "s">'
+                          '<doc a="v">text<!--c--><?pi d?><![CDATA[x]]></doc>')
+        elem = doc.documentElement
+        attr = elem.attributes["a"]
+        text, comment, pi, cdata = elem.childNodes
+        for node, name in [
+            (doc, "nodeType"), (doc, "nodeName"),
+            (doc.doctype, "name"), (doc.doctype, "nodeName"),
+            (doc.doctype, "publicId"), (doc.doctype, "systemId"),
+            (elem, "nodeType"),
+            (elem, "tagName"), (elem, "nodeName"),
+            (elem, "prefix"), (elem, "namespaceURI"),
+            (attr, "name"), (attr, "nodeName"),
+            (attr, "prefix"), (attr, "namespaceURI"),
+            (text, "nodeName"), (comment, "nodeName"), (cdata, "nodeName"),
+            (pi, "nodeName"), (pi, "target"),
+        ]:
+            with self.subTest(node=type(node).__name__, name=name):
+                value = getattr(node, name)
+                with self.assertWarns(DeprecationWarning):
+                    setattr(node, name, value)
+                self.assertEqual(getattr(node, name), value)
+
+        # These are writable.
+        attr.value = "other"
+        text.data = "other"
+        self.assertEqual(attr.value, "other")
+        self.assertEqual(text.data, "other")
 
     def testRenameAttribute(self):
         doc = parseString("<doc a='v'/>")
