@@ -1,0 +1,2 @@
+Include the raw libzstd error code in all :exc:`ZstdError` messages, making
+it easier for users to diagnose compression and decompression failures.
