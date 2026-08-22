@@ -816,6 +816,14 @@ New deprecations
     open them one by one instead.
     (Contributed by Serhiy Storchaka in :gh:`152638`.)
 
+* :mod:`urllib`:
+
+  * Providing anything but a string, bytes object, or ``None`` to
+    :mod:`urllib.parse` functions expecting strings or bytes now raises
+    :exc:`DeprecationWarning` if the value tests false, or :exc:`TypeError` if
+    it tests true.
+    (Contributed by Jacob Walls in :issue:`19094`.)
+
 .. Add deprecations above alphabetically, not here at the end.
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
