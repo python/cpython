@@ -403,8 +403,10 @@ _Py_DecRefSharedIsDead(PyObject *o, const char *filename, int lineno)
             _Py_NegativeRefcount(filename, lineno, o);
         }
 #endif
-    } while (!_Py_atomic_compare_exchange_ssize(&o->ob_ref_shared,
-                                                &shared, new_shared));
+        // Publish accesses through this reference and acquire prior releases
+        // if this is the last reference and the object will be deallocated.
+    } while (!_Py_atomic_compare_exchange_ssize_acq_rel(
+        &o->ob_ref_shared, &shared, new_shared));
 
     if (should_queue) {
 #ifdef Py_REF_DEBUG
