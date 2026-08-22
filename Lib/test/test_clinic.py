@@ -5157,6 +5157,44 @@ class VectorcallFunctionalTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             ac_tester.VcKwOnly()
 
+    def test_parse_errors_match_slot(self):
+        # tp_vectorcall and tp_new/tp_init slot should match in argument parsing
+        # error messages. Explicit calls to __new__ and __init__, as well as
+        # subtype calls, will not hit the vectorcall slot. Test errors match.
+        def error(func, args, kwargs):
+            try:
+                func(*args, **kwargs)
+            except TypeError as exc:
+                return str(exc)
+            return None
+
+        def through_new(cls):
+            return cls, partial(cls.__new__, cls)
+
+        def through_init(cls):
+            # Not subclassable, and tp_new is PyType_GenericNew, so reach
+            # tp_init through the __init__ slot wrapper on an instance.
+            return cls, partial(cls.__init__, cls(1))
+
+        entry_points = [
+            through_new(enumerate),   # the only non-test @vectorcall function
+            through_new(ac_tester.VcNew),
+            through_new(ac_tester.VcNewBase),
+            through_new(ac_tester.VcKwOnly),
+            through_init(ac_tester.VcInit),
+        ]
+        invalid_calls = [
+            ((), {}),           # too few positional arguments
+            ((1, 2, 3), {}),    # too many positional arguments
+            ((), {'zz': 1}),    # unknown keyword argument
+        ]
+
+        for direct, slot in entry_points:
+            for args, kwargs in invalid_calls:
+                with self.subTest(cls=direct, args=args, kwargs=kwargs):
+                    self.assertEqual(error(direct, args, kwargs),
+                                     error(slot, args, kwargs))
+
 
 class LimitedCAPIOutputTests(unittest.TestCase):
 
