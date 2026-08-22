@@ -3,27 +3,23 @@
 #
 #                        All Rights Reserved
 """Colorful tab completion for Python prompt"""
-from __future__ import annotations
-
 from _colorize import ANSIColors, get_colors, get_theme
 import rlcompleter
 import keyword
 import types
 
-TYPE_CHECKING = False
-
-if TYPE_CHECKING:
-    from typing import Any
-    from _colorize import Theme
+lazy from typing import Any
+lazy from _colorize import Theme
 
 
-def safe_getattr(obj, name):
+def safe_getattr(obj: object, name: str) -> object:
     # Mirror rlcompleter's safeguards so completion does not
     # call properties or reify lazy module attributes.
     if isinstance(getattr(type(obj), name, None), property):
         return None
     if (isinstance(obj, types.ModuleType)
-        and isinstance(obj.__dict__.get(name), types.LazyImportType)
+        # TODO: Should be resolved once mypy upgrades typeshed
+        and isinstance(obj.__dict__.get(name), types.LazyImportType)  # type: ignore[attr-defined]
     ):
         return obj.__dict__.get(name)
     return getattr(obj, name, None)
@@ -35,7 +31,7 @@ def colorize_matches(names: list[str], values: list[Any], theme: Theme) -> list[
         for name, obj in zip(names, values)
     ]
 
-def _color_for_obj(name: str, value: Any, theme: Theme) -> str:
+def _color_for_obj(name: str, value: object, theme: Theme) -> str:
     t = type(value)
     color = _color_by_type(t, theme)
     return f"{color}{name}{ANSIColors.RESET}"
