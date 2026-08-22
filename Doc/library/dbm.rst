@@ -100,7 +100,8 @@ The :meth:`!setdefault` method requires two arguments.
 
 Key and values are always stored as :class:`bytes`. This means that when
 strings are used they are implicitly converted to the default encoding before
-being stored.
+being stored. For detailed information about accepted types, see
+:ref:`dbm-key-value-types`.
 
 These objects also support being used in a :keyword:`with` statement, which
 will automatically close them when done.
@@ -119,6 +120,40 @@ will automatically close them when done.
 
 .. versionchanged:: 3.13
    :meth:`!clear` methods are now available for all :mod:`!dbm` backends.
+
+
+.. _dbm-key-value-types:
+
+Key and Value Types
+-------------------
+
+The accepted types for keys and values vary by backend. Keys and values are
+handled identically:
+
+* **Traditional backends**:
+
+  * :mod:`dbm.gnu` and :mod:`dbm.ndbm`: Accept :class:`str` and :class:`bytes` objects.
+  * :mod:`dbm.dumb`: Accepts :class:`str` and :class:`bytes` objects; :class:`bytearray` is acceptable as a value, but not as a key.
+* **SQLite backend** (:mod:`dbm.sqlite3`): Accepts :class:`str`, :class:`bytes`,
+  :class:`int`, :class:`float`, :class:`bool`, :class:`bytearray`,
+  :class:`memoryview`, and :class:`array.array` objects.
+
+**Storage Format:**
+
+All keys and values are stored as :class:`bytes` objects in the database.
+When retrieving, you'll always get bytes back, regardless of the original
+type stored.
+
+**Type Conversion Examples:**
+
+* ``db['key'] = 'string'`` stored as ``b'string'``
+* ``db['key'] = bytearray(b'data')`` stored as ``b'data'`` (:mod:`dbm.dumb` and :mod:`dbm.sqlite3` only)
+* ``db['key'] = 42`` stored as ``b'42'`` (:mod:`dbm.sqlite3` only)
+* ``db['key'] = 3.14`` stored as ``b'3.14'`` (:mod:`dbm.sqlite3` only)
+* ``db['key'] = True`` stored as ``b'1'`` (:mod:`dbm.sqlite3` only)
+* ``db['key'] = False`` stored as ``b'0'`` (:mod:`dbm.sqlite3` only)
+* ``db['key'] = memoryview(b'data')`` stored as ``b'data'`` (:mod:`dbm.sqlite3` only)
+* ``db['key'] = array.array('i', [1, 2, 3])`` stored as bytes (e.g. on little-endian: ``b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00'``) (:mod:`dbm.sqlite3` only)
 
 
 The following example records some hostnames and a corresponding title,  and
@@ -142,8 +177,9 @@ then prints out the contents of the database::
        # Often-used methods of the dict interface work too.
        print(db.get('python.org', b'not present'))
 
-       # Storing a non-string key or value will raise an exception (most
-       # likely a TypeError).
+       # Storing a non-string key or value behavior depends on the backend:
+       # - Traditional backends (ndbm, gnu, dumb) will raise a TypeError
+       # - The sqlite3 backend accepts it and converts to bytes
        db['www.yahoo.com'] = 4
 
    # db is automatically closed when leaving the with statement.
