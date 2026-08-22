@@ -1,0 +1,3 @@
+Fix :meth:`asyncio.Barrier.wait` reusing the numeric index of a task that
+was cancelled while the barrier was still filling, which could cause two
+tasks in the same successful release to receive the same index.

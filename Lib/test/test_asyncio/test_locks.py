@@ -1527,6 +1527,39 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(barrier.n_waiting, 0)
         self.assertFalse(barrier.broken)
 
+    async def test_filling_tasks_cancel_one_index_not_reused(self):
+        # See gh-155233: a task cancelled while the barrier is still
+        # filling used to leave its index available for reuse, so a
+        # later arrival could be assigned the same index as an
+        # already-waiting task from the same round.
+        self.N = 3
+        barrier = asyncio.Barrier(self.N)
+        results = []
+
+        async def coro():
+            i = await barrier.wait()
+            results.append(i)
+
+        t1 = asyncio.create_task(coro())
+        t2 = asyncio.create_task(coro())
+        await asyncio.sleep(0)
+        await asyncio.sleep(0)
+        self.assertEqual(barrier.n_waiting, 2)
+
+        t1.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            await t1
+        await asyncio.sleep(0)
+        self.assertEqual(barrier.n_waiting, 1)
+
+        t3 = asyncio.create_task(coro())
+        t4 = asyncio.create_task(coro())
+        await asyncio.gather(t2, t3, t4)
+
+        self.assertEqual(sorted(results), list(range(self.N)))
+        self.assertEqual(barrier.n_waiting, 0)
+        self.assertFalse(barrier.broken)
+
     async def test_reset_barrier(self):
         barrier = asyncio.Barrier(1)
 
@@ -1576,7 +1609,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
                 results1.append(True)
             else:
                 # here drained task outside the barrier
-                if rest_of_tasks == barrier._count:
+                if rest_of_tasks == len(barrier._present):
                     # tasks outside the barrier
                     await barrier.reset()
 
