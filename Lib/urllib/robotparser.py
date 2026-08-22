@@ -191,7 +191,11 @@ class RobotFileParser:
             return False
         # TODO: The private API is used in order to preserve an empty query.
         # This is temporary until the public API starts supporting this feature.
-        parsed_url = urllib.parse._urlsplit(url, '')
+        try:
+            parsed_url = urllib.parse._urlsplit(url, '')
+        except ValueError:
+            # A malformed URL matches no rule.
+            return True
         url = urllib.parse._urlunsplit(None, None, *parsed_url[2:])
         url = normalize_uri(url)
         if not url:
