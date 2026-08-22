@@ -615,6 +615,16 @@ tkinter
   with no unit suffix to :class:`int` or :class:`float`.
   (Contributed by Serhiy Storchaka in :gh:`153513`.)
 
+urllib.request
+--------------
+
+* Add :class:`~urllib.request.HTTPGzipHandler`, an opt-in handler that
+  requests gzip-compressed responses (by adding an ``Accept-Encoding: gzip``
+  header) and transparently decodes them.  It is not installed by
+  :func:`~urllib.request.build_opener` by default; add it explicitly to opt
+  in.
+  (Contributed by Julian Soreavis in :gh:`43521`.)
+
 xml
 ---
 
