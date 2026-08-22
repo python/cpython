@@ -1,0 +1,3 @@
+Fix the :mod:`profile` command-line interface to execute scripts in the actual
+``__main__`` module namespace. This fixes profiling dataclasses that use
+deferred :class:`~dataclasses.InitVar` annotations.

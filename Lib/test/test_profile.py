@@ -120,6 +120,28 @@ class ProfileTest(unittest.TestCase):
         assert_python_ok('-m', self.profilermodule.__name__,
                          '-m', 'timeit', '-n', '1')
 
+    def test_script_with_deferred_dataclass_annotations(self):
+        # gh-88580: the profiled script must be available as __main__ so
+        # dataclasses can resolve string annotations in its global namespace.
+        with temp_dir() as tmpdir:
+            script = os.path.join(tmpdir, 'profile_dataclass.py')
+            with open(script, 'w', encoding='utf-8') as f:
+                f.write("""\
+from __future__ import annotations
+from dataclasses import dataclass, InitVar
+
+@dataclass
+class C:
+    value: InitVar[int]
+
+    def __post_init__(self, value):
+        assert value == 42
+
+C(42)
+""")
+
+            assert_python_ok('-m', self.profilermodule.__name__, script)
+
     def test_output_file_when_changing_directory(self):
         with temp_dir() as tmpdir, change_cwd(tmpdir):
             os.mkdir('dest')
