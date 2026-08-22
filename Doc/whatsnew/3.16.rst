@@ -433,6 +433,14 @@ os
   process via a pidfd.  Available on Linux 5.6+.
   (Contributed by Maurycy Pawłowski-Wieroński in :gh:`149464`.)
 
+* The following functions are now available on Android:
+  :func:`os.chroot`, :func:`os.initgroups`, :func:`os.setegid`,
+  :func:`os.seteuid`, :func:`os.setgid`, :func:`os.setregid`,
+  :func:`os.setresgid`, :func:`os.setresuid`, :func:`os.setreuid`,
+  and :func:`os.setuid`. Calling them without sufficient privileges
+  now raises :exc:`PermissionError` instead of the functions being unavailable.
+  (Contributed by Md Arif in :gh:`152936`.)
+
 
 pydoc
 -----
@@ -478,6 +486,15 @@ sqlite3
   writing (e.g. ``blob[9:0:-2]``).  Previously, such slices would raise
   :exc:`SystemError` or :exc:`ValueError`.
   (Contributed by Jiseok CHOI in :gh:`150449`.)
+
+socket
+------
+
+* The :func:`socket.sethostname` function is now available on Android.
+  Calling it without sufficient privileges now raises :exc:`PermissionError`
+  instead of the function being unavailable.
+  (Contributed by Md Arif in :gh:`152936`.)
+
 
 symtable
 --------
