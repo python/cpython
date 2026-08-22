@@ -2050,7 +2050,12 @@ class ZipFile:
             flags = centdir[_CD_FLAG_BITS]
             if flags & _MASK_UTF_FILENAME:
                 # UTF-8 file names extension
-                filename = filename.decode('utf-8')
+                try:
+                    filename = filename.decode('utf-8')
+                except UnicodeDecodeError as exc:
+                    raise BadZipFile(
+                        f"File name {filename!r} is marked as UTF-8 "
+                        f"but is not valid UTF-8") from exc
             else:
                 # Historical ZIP filename encoding
                 filename = filename.decode(self.metadata_encoding or 'cp437')
@@ -2230,7 +2235,12 @@ class ZipFile:
 
             if fheader[_FH_GENERAL_PURPOSE_FLAG_BITS] & _MASK_UTF_FILENAME:
                 # UTF-8 filename
-                fname_str = fname.decode("utf-8")
+                try:
+                    fname_str = fname.decode("utf-8")
+                except UnicodeDecodeError as exc:
+                    raise BadZipFile(
+                        f"File name {fname!r} is marked as UTF-8 "
+                        f"but is not valid UTF-8") from exc
             else:
                 fname_str = fname.decode(self.metadata_encoding or "cp437")
 
