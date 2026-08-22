@@ -1,0 +1,3 @@
+:meth:`!RemoteUnwinder.get_async_stack_trace` no longer crashes when the
+target process presents a deeply nested or concurrently-mutated ``awaited_by``
+graph; a :exc:`RuntimeError` is now raised instead.
