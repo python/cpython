@@ -4,6 +4,12 @@ Released on 2026-10-01
 =========================
 
 
+gh-152940: Add a Unicode character browser to IDLE.  It appears on the
+Edit menu as "Character Browser" and can browse Unicode blocks, search
+for characters by name or code point, insert a character into the
+window, and copy a character to the clipboard.  Patch by Serhiy
+Storchaka.
+
 gh-152745:  When "Run... Customized" with "Restart shell" unchecked
 while Shell is running code, including waiting for an input('prompt:')
 response, just report that the shell is executing instead of

@@ -58,6 +58,8 @@ menudefs = [
    ('E_xpand Word', '<<expand-word>>'),
    ('Show C_all Tip', '<<force-open-calltip>>'),
    ('Show Surrounding P_arens', '<<flash-paren>>'),
+   None,
+   ('Character _Browser', '<<open-character-browser>>'),
    ]),
 
  ('format', [
