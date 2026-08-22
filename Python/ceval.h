@@ -248,7 +248,7 @@ static void
 lltrace_resume_frame(_PyInterpreterFrame *frame)
 {
     PyObject *fobj = PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
-    if (!PyStackRef_CodeCheck(frame->f_executable) ||
+    if (!PyCode_Check(frame->f_executable) ||
         fobj == NULL ||
         !PyFunction_Check(fobj)
     ) {

@@ -1,0 +1,2 @@
+Avoid reference counting of :class:`code` objects when creating and destroying
+frames by having functions retain a list of all past :class:`code` objects.

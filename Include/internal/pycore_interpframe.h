@@ -18,10 +18,9 @@ extern "C" {
     ((int)((IF)->instr_ptr - _PyFrame_GetBytecode((IF))))
 
 static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
-    assert(!PyStackRef_IsNull(f->f_executable));
-    PyObject *executable = PyStackRef_AsPyObjectBorrow(f->f_executable);
-    assert(PyCode_Check(executable));
-    return (PyCodeObject *)executable;
+    assert(f->f_executable != NULL);
+    assert(PyCode_Check(f->f_executable));
+    return (PyCodeObject *)f->f_executable;
 }
 
 // Similar to _PyFrame_GetCode(), but return NULL if the frame is invalid or
@@ -36,7 +35,7 @@ _PyFrame_SafeGetCode(_PyInterpreterFrame *f)
         return NULL;
     }
 
-    if (PyStackRef_IsNull(f->f_executable)) {
+    if (f->f_executable == NULL) {
         return NULL;
     }
     void *ptr;
@@ -44,7 +43,7 @@ _PyFrame_SafeGetCode(_PyInterpreterFrame *f)
     if (_PyMem_IsPtrFreed(ptr)) {
         return NULL;
     }
-    PyObject *executable = PyStackRef_AsPyObjectBorrow(f->f_executable);
+    PyObject *executable = f->f_executable;
     if (_PyObject_IsFreed(executable)) {
         return NULL;
     }
@@ -132,7 +131,7 @@ _PyFrame_NumSlotsForCodeObject(PyCodeObject *code)
 
 static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
 {
-    dest->f_executable = PyStackRef_MakeHeapSafe(src->f_executable);
+    dest->f_executable = src->f_executable;
     // Don't leave a dangling pointer to the old frame when creating generators
     // and coroutines:
     dest->previous = NULL;
@@ -191,7 +190,7 @@ _PyFrame_Initialize(
 {
     frame->previous = previous;
     frame->f_funcobj = func;
-    frame->f_executable = PyStackRef_FromPyObjectNew(code);
+    frame->f_executable = (PyObject *)code;
     PyFunctionObject *func_obj = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(func);
     frame->f_builtins = func_obj->func_builtins;
     frame->f_globals = func_obj->func_globals;
@@ -424,7 +423,7 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     assert(tstate->datastack_top < tstate->datastack_limit);
     frame->previous = previous;
     frame->f_funcobj = PyStackRef_None;
-    frame->f_executable = PyStackRef_FromPyObjectNew(code);
+    frame->f_executable = (PyObject *)code;
 #ifdef Py_DEBUG
     frame->f_builtins = NULL;
     frame->f_globals = NULL;

@@ -254,8 +254,6 @@ frame_disable_deferred_refcounting(_PyInterpreterFrame *frame)
     assert(frame->owner == FRAME_OWNED_BY_FRAME_OBJECT ||
            frame->owner == FRAME_OWNED_BY_GENERATOR);
 
-    frame->f_executable = PyStackRef_AsStrongReference(frame->f_executable);
-
     if (frame->owner == FRAME_OWNED_BY_GENERATOR) {
         PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
         if (gen->gi_frame_state == FRAME_CLEARED) {
@@ -468,7 +466,6 @@ gc_visit_thread_stacks(PyInterpreterState *interp, struct collection_state *stat
                 continue;
             }
 
-            gc_visit_stackref(f->f_executable);
             while (top != f->localsplus) {
                 --top;
                 gc_visit_stackref(*top);
@@ -864,7 +861,7 @@ gc_visit_thread_stacks_mark_alive(PyInterpreterState *interp, gc_mark_args_t *ar
             }
 
             _PyStackRef *top = f->stackpointer;
-            if (gc_visit_stackref_mark_alive(args, f->f_executable) < 0) {
+            if (gc_mark_enqueue(f->f_executable, args) < 0) {
                 err = -1;
                 goto exit;
             }
