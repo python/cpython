@@ -1163,7 +1163,8 @@ class ParseArgsCodeGen:
         assert pos_code is not None
         if arity_checked:
             return pos_code
-        if self.min_pos or self.varpos:
+        # varpos allows arbitrary length; still needs a check if there is a min.
+        if self.min_pos or not self.varpos:
             return [self._check_positional('nargs', indent=4), *pos_code]
         return pos_code
 
