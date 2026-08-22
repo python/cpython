@@ -462,31 +462,31 @@ def decodebytes(s):
 # Usable as a script...
 def main():
     """Small main program"""
-    import sys, getopt
-    usage = f"""usage: {sys.argv[0]} [-h|-d|-e|-u] [file|-]
-        -h: print this help message and exit
-        -d, -u: decode
-        -e: encode (default)"""
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hdeu')
-    except getopt.error as msg:
-        sys.stdout = sys.stderr
-        print(msg)
-        print(usage)
-        sys.exit(2)
-    func = encode
-    for o, a in opts:
-        if o == '-e': func = encode
-        if o == '-d': func = decode
-        if o == '-u': func = decode
-        if o == '-h': print(usage); return
-    if args and args[0] != '-':
-        with open(args[0], 'rb') as f:
+    import argparse
+    import sys
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-d", "-u", "--decode", action="store_true", help="decode data"
+    )
+    parser.add_argument(
+        "-e", "--encode", action="store_true", help="encode data (default)"
+    )
+    parser.add_argument("infile", nargs="?", default="-", help="the file to decode or encode")
+    args = parser.parse_args()
+    if args.decode:
+        func = decode
+    else:
+        func = encode
+
+    if args.infile != "-":
+        with open(args.infile, "rb") as f:
             func(f, sys.stdout.buffer)
     else:
         if sys.stdin.isatty():
             # gh-138775: read terminal input data all at once to detect EOF
             import io
+
             data = sys.stdin.buffer.read()
             buffer = io.BytesIO(data)
         else:
