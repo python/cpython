@@ -2274,7 +2274,7 @@ def Time2Internaldate(date_time):
         if date_time.tzinfo is None:
             raise ValueError("date_time must be aware")
         dt = date_time
-    elif isinstance(date_time, str) and (date_time[0],date_time[-1]) == ('"','"'):
+    elif isinstance(date_time, str) and date_time.startswith('"') and date_time.endswith('"'):
         return date_time        # Assume in correct format
     else:
         raise ValueError("date_time not of a known type")
