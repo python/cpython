@@ -1,0 +1,1 @@
+Use a more simple way to forbidden the builtins name suggestion in deleting
