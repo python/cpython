@@ -120,7 +120,6 @@
        Return ``True`` if self is a file.
 
     .. method:: joinpath(*pathsegments)
-       :abstractmethod:
 
        Traverse directories according to *pathsegments* and return
        the result as :class:`!Traversable`.
@@ -146,7 +145,6 @@
           Previously, only a single *child* argument was accepted.
 
     .. method:: __truediv__(child)
-       :abstractmethod:
 
        Return Traversable child in self.
        Equivalent to ``joinpath(child)``.
