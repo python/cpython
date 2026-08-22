@@ -1,0 +1,3 @@
+Fix a crash in the C implementation of :mod:`decimal` when a value's
+``__bool__`` deallocates the owning context while it is assigned to, or
+compared against, ``Context.flags``. Patch by tonghuaroot.
