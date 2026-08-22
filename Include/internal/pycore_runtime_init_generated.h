@@ -1328,6 +1328,30 @@ extern "C" {
     INIT_STR(list_err, "list index out of range"), \
     INIT_STR(native, "<native>"), \
     INIT_STR(str_replace_inf, "1e309"), \
+    INIT_STR(token_amperequal, "&="), \
+    INIT_STR(token_atequal, "@="), \
+    INIT_STR(token_circumflexequal, "^="), \
+    INIT_STR(token_colonequal, ":="), \
+    INIT_STR(token_double_slash, "//"), \
+    INIT_STR(token_double_slashequal, "//="), \
+    INIT_STR(token_doublestar, "**"), \
+    INIT_STR(token_doublestarequal, "**="), \
+    INIT_STR(token_ellipsis, "..."), \
+    INIT_STR(token_eqequal, "=="), \
+    INIT_STR(token_greaterequal, ">="), \
+    INIT_STR(token_leftshift, "<<"), \
+    INIT_STR(token_leftshiftequal, "<<="), \
+    INIT_STR(token_lessequal, "<="), \
+    INIT_STR(token_minequal, "-="), \
+    INIT_STR(token_notequal, "!="), \
+    INIT_STR(token_percentequal, "%="), \
+    INIT_STR(token_plusequal, "+="), \
+    INIT_STR(token_rarrow, "->"), \
+    INIT_STR(token_rightshift, ">>"), \
+    INIT_STR(token_rightshiftequal, ">>="), \
+    INIT_STR(token_slashequal, "/="), \
+    INIT_STR(token_starequal, "*="), \
+    INIT_STR(token_vbarequal, "|="), \
     INIT_STR(type_params, ".type_params"), \
     INIT_STR(utf_8, "utf-8"), \
 }
