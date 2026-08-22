@@ -2658,6 +2658,19 @@ class BugsTest(unittest.TestCase):
 
 class BasicElementTest(ElementTestCase, unittest.TestCase):
 
+    def test_reinit_releases_children(self):
+        # gh-153537: re-init should release the previous children.
+        e = ET.Element('a', {'k': 'v'})
+        children = [ET.SubElement(e, 'b') for _ in range(3)]
+        refs = [weakref.ref(c) for c in children]
+        del children
+        self.assertEqual(len(e), 3)
+        e.__init__('a')
+        gc_collect()
+        self.assertEqual(len(e), 0)
+        self.assertEqual(e.attrib, {})
+        self.assertTrue(all(ref() is None for ref in refs))
+
     def test___init__(self):
         tag = "foo"
         attrib = { "zix": "wyp" }
