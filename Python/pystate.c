@@ -1575,8 +1575,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
 
     assert(interp != NULL);
     tstate->interp = interp;
-    tstate->eval_breaker =
-        _Py_atomic_load_uintptr_relaxed(&interp->ceval.instrumentation_version);
+    // eval_breaker is set in add_threadstate().
 
     // next/prev are set in add_threadstate().
     assert(tstate->next == NULL);
@@ -1661,6 +1660,11 @@ add_threadstate(PyInterpreterState *interp, PyThreadState *tstate,
                 PyThreadState *next)
 {
     assert(interp->threads.head != tstate);
+    // Set the instrumentation version, which in the free-threaded build is
+    // broadcast to the thread states on the interpreter's thread list.
+    uintptr_t version = _Py_atomic_load_uintptr_relaxed(
+        &interp->ceval.instrumentation_version);
+    _Py_atomic_or_uintptr(&tstate->eval_breaker, version);
     if (next != NULL) {
         assert(next->prev == NULL || next->prev == tstate);
         next->prev = tstate;
