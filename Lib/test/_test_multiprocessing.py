@@ -4628,6 +4628,25 @@ class _TestSharedCTypes(BaseTestCase):
     def test_synchronize(self):
         self.test_sharedctypes(lock=True)
 
+    def test_synchronized_wrapper_default_context(self):
+        # gh-156062: SynchronizedBase used to call get_context() with an
+        # unexpected argument when neither a lock nor a context was given,
+        # so the wrapper classes could not be instantiated directly.
+        from multiprocessing.sharedctypes import (
+            RawValue, RawArray,
+            Synchronized, SynchronizedArray, SynchronizedString,
+        )
+        for wrapper, obj in [
+            (Synchronized, RawValue('i', 7)),
+            (SynchronizedArray, RawArray('d', [1.0, 2.0])),
+            (SynchronizedString, RawArray('c', 8)),
+        ]:
+            with self.subTest(wrapper=wrapper.__name__):
+                wrapped = wrapper(obj)
+                self.assertIs(wrapped.get_obj(), obj)
+                with wrapped:
+                    pass
+
     def test_copy(self):
         foo = _Foo(2, 5.0, 2 ** 33)
         bar = copy(foo)
