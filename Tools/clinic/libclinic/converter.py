@@ -278,11 +278,18 @@ class CConverter(metaclass=CConverterAutoRegister):
     def c_default_init(self) -> None:
         return
 
+    # An alternative name of a preceding parameter: they share
+    # the same C variable.
+    alias_of: Parameter | None = None
+
     def is_optional(self) -> bool:
         return (self.default is not unspecified)
 
     def _render_self(self, parameter: Parameter, data: CRenderData) -> None:
         self.parameter = parameter
+        if self.alias_of is not None:
+            # Everything is rendered for the aliased parameter.
+            return
         name = self.parser_name
 
         # impl_arguments
@@ -303,6 +310,13 @@ class CConverter(metaclass=CConverterAutoRegister):
     ) -> None:
         self.parameter = parameter
         name = self.name
+
+        if self.alias_of is not None:
+            # Only the keyword is new, the rest is rendered for the
+            # aliased parameter.
+            data.keywords.append(parameter.name)
+            data.format_units.append(self.format_unit)
+            return
 
         # declarations
         d = self.declaration(in_parser=True)

@@ -1518,6 +1518,40 @@ clone_with_conv_f2_impl(PyObject *module, custom_t path)
 
 
 /*[clinic input]
+alias_pos
+
+    a: object = None
+    *
+    b as a: object = None
+
+[clinic start generated code]*/
+
+static PyObject *
+alias_pos_impl(PyObject *module, PyObject *a)
+/*[clinic end generated code: output=f6cd3c7f098a894d input=8018ee6c26e3f435]*/
+{
+    return Py_NewRef(a);
+}
+
+
+/*[clinic input]
+alias_kwonly
+
+    *
+    a: object = None
+    b as a: object = None
+
+[clinic start generated code]*/
+
+static PyObject *
+alias_kwonly_impl(PyObject *module, PyObject *a)
+/*[clinic end generated code: output=9a6d4202ba972f46 input=8ad2d6c0f326571d]*/
+{
+    return Py_NewRef(a);
+}
+
+
+/*[clinic input]
 class _testclinic.TestClass "PyObject *" "&PyBaseObject_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=c991635bb3c91f1a]*/
@@ -2394,6 +2428,40 @@ depr_kwd_multi_impl(PyObject *module, PyObject *a, PyObject *b, PyObject *c,
 
 
 /*[clinic input]
+depr_alias
+    a: object = None
+    *
+    [until 3.14] b as a: object = None
+[clinic start generated code]*/
+
+static PyObject *
+depr_alias_impl(PyObject *module, PyObject *a)
+/*[clinic end generated code: output=85e89838716d9423 input=92efd3f244c2ec3f]*/
+{
+    return Py_NewRef(a);
+}
+
+
+/*[clinic input]
+depr_param
+    a: object = None
+    [until 3.14] b: object = None
+    [until 3.14] c: object = None
+    /
+    *
+    [until 3.14] d: object = None
+[clinic start generated code]*/
+
+static PyObject *
+depr_param_impl(PyObject *module, PyObject *a, PyObject *b, PyObject *c,
+                PyObject *d)
+/*[clinic end generated code: output=5a42b461851c467b input=f689a85166408359]*/
+{
+    return pack_arguments_newref(4, a, b, c, d);
+}
+
+
+/*[clinic input]
 depr_multi
     a: object
     /
@@ -2588,6 +2656,9 @@ static PyMethodDef tester_methods[] = {
     CLONE_WITH_CONV_F1_METHODDEF
     CLONE_WITH_CONV_F2_METHODDEF
 
+    ALIAS_POS_METHODDEF
+    ALIAS_KWONLY_METHODDEF
+
     DEPR_STAR_POS0_LEN1_METHODDEF
     DEPR_STAR_POS0_LEN2_METHODDEF
     DEPR_STAR_POS0_LEN3_WITH_KWD_METHODDEF
@@ -2608,6 +2679,8 @@ static PyMethodDef tester_methods[] = {
     DEPR_KWD_NOINLINE_METHODDEF
     DEPR_KWD_MULTI_METHODDEF
     DEPR_MULTI_METHODDEF
+    DEPR_ALIAS_METHODDEF
+    DEPR_PARAM_METHODDEF
 
     LONE_KWDS_METHODDEF
     KWDS_WITH_POS_ONLY_METHODDEF
