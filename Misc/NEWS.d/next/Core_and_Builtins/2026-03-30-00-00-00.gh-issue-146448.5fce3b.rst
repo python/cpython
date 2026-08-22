@@ -1,0 +1,2 @@
+Fix template string parser incorrectly truncating the ``Interpolation.str``
+attribute when the expression contains ``!=`` followed by a format spec.
