@@ -531,6 +531,14 @@ inherits properties from :class:`Node`.
    tree.
 
 
+.. method:: Document.createEntityReference(name)
+
+   Create and return a new entity reference node.
+   The node is not inserted into the document when it is created.
+
+   .. versionadded:: next
+
+
 .. method:: Document.createComment(data)
 
    Create and return a comment node containing the data passed as a parameter.  As
@@ -798,6 +806,25 @@ Represents a processing instruction in the XML document; this inherits from the
 
    The content of the processing instruction following the first whitespace
    character.
+
+
+.. _dom-entityreference-objects:
+
+EntityReference Objects
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. class:: EntityReference
+
+   Represents an entity reference in the XML document.
+   It is a subclass of :class:`!Node`.
+   The name of the referenced entity is its :attr:`Node.nodeName`.
+   Its children are the replacement text of the entity,
+   and are read-only.
+
+   Parsers may expand entity references,
+   so such a node only occurs in a document if it was created explicitly.
+
+   .. versionadded:: next
 
 
 .. _dom-exceptions:

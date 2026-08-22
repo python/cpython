@@ -1,0 +1,12 @@
+:mod:`xml.dom.minidom` now conforms closer to the DOM Level 1 specification.
+The factory methods now raise :exc:`~xml.dom.InvalidCharacterErr`
+if the name is not a valid XML name.
+Inserting a node created by other document
+now raises :exc:`~xml.dom.WrongDocumentErr`,
+and inserting a node into itself or its descendant
+now raises :exc:`~xml.dom.HierarchyRequestErr`.
+Attributes defaulted in the DTD are no longer omitted when parsing,
+and :attr:`!Attr.specified` now reports
+whether the attribute was given in the start tag.
+:class:`!EntityReference` nodes
+and :meth:`!Document.createEntityReference` are now implemented.

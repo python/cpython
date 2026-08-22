@@ -630,6 +630,22 @@ xml
   instead of failing later, when encountering non-ASCII data.
   (Contributed by Serhiy Storchaka in :gh:`62259`.)
 
+* :mod:`xml.dom.minidom` now conforms closer to the DOM Level 1 specification.
+  It checks names passed to the factory methods,
+  rejects inserting a node created by other document
+  or making a node a descendant of itself,
+  reports attributes defaulted in the DTD
+  and whether an attribute was given in the start tag,
+  and implements :class:`!EntityReference` nodes
+  and :meth:`!Document.createEntityReference`.
+  (Contributed by Jason Orendorff and Serhiy Storchaka in :gh:`44871`.)
+
+* Add :meth:`!GetSpecifiedAttributeCount` method
+  to the :mod:`XML parser <xml.parsers.expat>` objects.
+  It tells how many of the reported attributes were given in the start tag
+  rather than defaulted from the DTD.
+  (Contributed by Jason Orendorff and Serhiy Storchaka in :gh:`44871`.)
+
 zipfile
 -------
 
@@ -844,6 +860,17 @@ that may require changes to your code.
   them, which formerly defaulted to ``'PY_VAR'`` and ``'1'``, now raises
   :exc:`TypeError`.
   (Contributed by Serhiy Storchaka in :gh:`152587`.)
+
+* :mod:`xml.dom.minidom` now raises :exc:`~xml.dom.InvalidCharacterErr`
+  for a name which is not a valid XML name,
+  :exc:`~xml.dom.WrongDocumentErr`
+  for inserting a node created by other document,
+  and :exc:`~xml.dom.HierarchyRequestErr` for inserting a node into itself
+  or its descendant.
+  Such operations formerly succeeded
+  and produced an invalid document or an endless loop.
+  Attributes defaulted in the DTD are no longer omitted when parsing.
+  (Contributed by Jason Orendorff and Serhiy Storchaka in :gh:`44871`.)
 
 * On Windows, seeking a pipe now fails instead of silently appearing to
   succeed: :func:`os.lseek` and :meth:`~io.IOBase.seek` raise :exc:`OSError`,
