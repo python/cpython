@@ -128,8 +128,11 @@ class PullDOMTestCase(unittest.TestCase):
         next(items) # Skip character data
         evt, node = next(items)
         self.assertEqual(node.tagName, "html")
-        with self.assertRaises(StopIteration):
-            next(items)
+        remaining = list(items)
+        self.assertTrue(
+            any(evt == pulldom.END_DOCUMENT for evt, _ in remaining),
+            "Expected END_DOCUMENT in remaining events"
+        )
         items.clear()
         self.assertIsNone(items.parser)
         self.assertIsNone(items.stream)
@@ -144,9 +147,8 @@ class PullDOMTestCase(unittest.TestCase):
         else:
             self.fail("No comment was encountered")
 
-    @unittest.expectedFailure
     def test_end_document(self):
-        """PullDOM does not receive "end-document" events."""
+        """PullDOM receives end-document events."""
         items = pulldom.parseString(SMALL_SAMPLE)
         # Read all of the nodes up to and including </html>:
         for evt, node in items:
