@@ -2076,6 +2076,7 @@ _validate_charset(SRE_CODE *code, SRE_CODE *end)
         switch (op) {
 
         case SRE_OP_NEGATE:
+        case SRE_OP_INVERT:
             break;
 
         case SRE_OP_LITERAL:
