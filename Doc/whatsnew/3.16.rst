@@ -717,6 +717,8 @@ mimetypes
 * Valid extensions start with a '.' or are empty for
   :meth:`mimetypes.MimeTypes.add_type`.
   Undotted extensions now raise a :exc:`ValueError`.
+* Add more MIME types.
+  (Contributed by Charlie Lin in :gh:`146341`.)
 
 shutil
 ------
