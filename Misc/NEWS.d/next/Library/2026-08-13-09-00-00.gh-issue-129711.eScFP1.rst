@@ -1,0 +1,1 @@
+Speed up :func:`json.dump` for strings that need no escaping.
