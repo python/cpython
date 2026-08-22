@@ -64,12 +64,14 @@ read_py_str(
     }
 
     Py_ssize_t len = GET_MEMBER(Py_ssize_t, unicode_obj, unwinder->debug_offsets.unicode_object.length);
-    if (len < 0 || len > max_len) {
+    if (len < 0) {
         PyErr_Format(PyExc_RuntimeError,
                      "Invalid string length (%zd) at 0x%lx", len, address);
         set_exception_cause(unwinder, PyExc_RuntimeError, "Invalid string length in remote Unicode object");
         return NULL;
     }
+    Py_ssize_t read_len = Py_MIN(len, max_len);
+    int truncated = read_len != len;
 
     // Inspect state to pick the right data offset and character width.
     // We rely on the remote process sharing this Python version's
@@ -111,51 +113,54 @@ read_py_str(
         ? (size_t)unwinder->debug_offsets.unicode_object.asciiobject_size
         : (size_t)unwinder->debug_offsets.unicode_object.compactunicodeobject_size;
 
-    // len * kind is bounded by max_len * 4 (kind <= 4, len <= max_len), so
+    // read_len * kind is bounded by max_len * 4 (kind <= 4, len <= max_len), so
     // the multiplication can't overflow for any caller-sane max_len, but the
     // explicit cap here keeps a corrupted remote `length` from later turning
     // into a giant allocation.
-    size_t nbytes = (size_t)len * (size_t)kind;
-    if ((size_t)len > (SIZE_MAX / 4) || nbytes > (size_t)max_len * 4) {
-        PyErr_Format(PyExc_RuntimeError,
-                     "Implausible Unicode byte size %zu at 0x%lx", nbytes, address);
-        set_exception_cause(unwinder, PyExc_RuntimeError,
-                            "Garbage byte size in remote Unicode object");
-        return NULL;
-    }
+    size_t nbytes = (size_t)read_len * (size_t)kind;
 
-    PyObject *result = PyUnicode_New(len, max_char);
+    PyObject *result = PyUnicode_New(read_len, max_char);
     if (result == NULL) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to allocate PyUnicode for remote string");
         return NULL;
     }
-    if (nbytes == 0) {
-        return result;
+
+    if (nbytes > 0) {
+        void *data = PyUnicode_DATA(result);
+
+        // Reuse data already present in the header read; only round-trip for
+        // whatever spills past it.
+        size_t inline_avail = (header_size < SIZEOF_UNICODE_OBJ)
+            ? SIZEOF_UNICODE_OBJ - header_size
+            : 0;
+        size_t inline_bytes = nbytes < inline_avail ? nbytes : inline_avail;
+        if (inline_bytes > 0) {
+            memcpy(data, unicode_obj + header_size, inline_bytes);
+        }
+
+        if (nbytes > inline_bytes) {
+            res = _Py_RemoteDebug_PagedReadRemoteMemory(
+                &unwinder->handle,
+                address + header_size + inline_bytes,
+                nbytes - inline_bytes,
+                (char *)data + inline_bytes);
+            if (res < 0) {
+                Py_DECREF(result);
+                set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read string data from remote memory");
+                return NULL;
+            }
+        }
     }
 
-    void *data = PyUnicode_DATA(result);
-
-    // Reuse data already present in the header read; only round-trip for
-    // whatever spills past it.
-    size_t inline_avail = (header_size < SIZEOF_UNICODE_OBJ)
-        ? SIZEOF_UNICODE_OBJ - header_size
-        : 0;
-    size_t inline_bytes = nbytes < inline_avail ? nbytes : inline_avail;
-    if (inline_bytes > 0) {
-        memcpy(data, unicode_obj + header_size, inline_bytes);
-    }
-
-    if (nbytes > inline_bytes) {
-        res = _Py_RemoteDebug_PagedReadRemoteMemory(
-            &unwinder->handle,
-            address + header_size + inline_bytes,
-            nbytes - inline_bytes,
-            (char *)data + inline_bytes);
-        if (res < 0) {
-            Py_DECREF(result);
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read string data from remote memory");
+    if (truncated) {
+        PyObject *truncated_result = PyUnicode_FromFormat(
+            "%U(len=%zd)", result, len);
+        Py_DECREF(result);
+        if (truncated_result == NULL) {
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append truncation marker to remote string");
             return NULL;
         }
+        return truncated_result;
     }
 
     return result;
