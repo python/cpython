@@ -205,9 +205,42 @@ static PyMemberDef ste_memberlist[] = {
     {"symbols",  _Py_T_OBJECT, OFF(ste_symbols), Py_READONLY},
     {"varnames", _Py_T_OBJECT, OFF(ste_varnames), Py_READONLY},
     {"children", _Py_T_OBJECT, OFF(ste_children), Py_READONLY},
+    {"annotation_block", _Py_T_OBJECT, OFF(ste_annotation_block), Py_READONLY},
     {"nested",   Py_T_INT,    OFF(ste_nested), Py_READONLY},
     {"type",     Py_T_INT,    OFF(ste_type), Py_READONLY},
     {"lineno",   Py_T_INT,    OFF(ste_loc.lineno), Py_READONLY},
+    {NULL}
+};
+
+/* The flag fields are C bitfields, which PyMemberDef cannot describe;
+   expose them through getters. */
+#define STE_BOOL_GETTER(FIELD) \
+static PyObject * \
+ste_get_ ## FIELD(PyObject *op, void *Py_UNUSED(closure)) \
+{ \
+    PySTEntryObject *ste = (PySTEntryObject *)op; \
+    return PyBool_FromLong(ste->ste_ ## FIELD); \
+}
+
+STE_BOOL_GETTER(generator)
+STE_BOOL_GETTER(coroutine)
+STE_BOOL_GETTER(annotations_used)
+STE_BOOL_GETTER(needs_class_closure)
+STE_BOOL_GETTER(needs_classdict)
+STE_BOOL_GETTER(can_see_class_scope)
+STE_BOOL_GETTER(has_conditional_annotations)
+
+#undef STE_BOOL_GETTER
+
+static PyGetSetDef ste_getsetlist[] = {
+    {"is_generator", ste_get_generator, NULL, NULL, NULL},
+    {"is_coroutine", ste_get_coroutine, NULL, NULL, NULL},
+    {"has_annotations", ste_get_annotations_used, NULL, NULL, NULL},
+    {"needs_class_closure", ste_get_needs_class_closure, NULL, NULL, NULL},
+    {"needs_classdict", ste_get_needs_classdict, NULL, NULL, NULL},
+    {"can_see_class_scope", ste_get_can_see_class_scope, NULL, NULL, NULL},
+    {"has_conditional_annotations", ste_get_has_conditional_annotations,
+     NULL, NULL, NULL},
     {NULL}
 };
 
@@ -241,7 +274,7 @@ PyTypeObject PySTEntry_Type = {
     0,                                          /* tp_iternext */
     0,                                          /* tp_methods */
     ste_memberlist,                             /* tp_members */
-    0,                                          /* tp_getset */
+    ste_getsetlist,                             /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
     0,                                          /* tp_descr_get */
