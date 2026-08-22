@@ -22,6 +22,11 @@ on:
         required: false
         type: string
         default: ''
+      upload-install-hashes:
+        description: Install Python and upload the result artifact
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -35,6 +40,12 @@ jobs:
     runs-on: ${{ inputs.os }}
     timeout-minutes: 60
     env:
+      INSTALL_HASHES_FILE: >-
+        install-hashes-${{
+          inputs.os
+        }}-${{
+          case(inputs.free-threading, 't', '')
+        }}d.json.gz
       OPENSSL_VER: 3.5.7
       PYTHONSTRICTEXTENSIONBUILD: 1
       TERM: linux
@@ -52,6 +63,8 @@ jobs:
         # On ubuntu-26.04 image, LLVM is LLVM-21 by default
         sudo apt-get install --no-install-recommends bolt-21
         echo PATH="$(llvm-config-21 --bindir):$PATH" >> $GITHUB_ENV
+    - name: Reproducible install timestamps
+      run: echo "SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)" >> $GITHUB_ENV
     - name: Configure OpenSSL env vars
       run: |
         echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
@@ -90,6 +103,7 @@ jobs:
         --with-openssl="$OPENSSL_DIR"
         ${{ inputs.free-threading && '--disable-gil' || '' }}
         ${{ inputs.bolt-optimizations && '--enable-bolt' || '' }}
+        ${{ inputs.upload-install-hashes && '--prefix=/usr --libdir=/usr/lib/$(gcc --print-multiarch) --with-build-details-suffix' || '' }}
     - name: Build CPython out-of-tree
       if: inputs.free-threading
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
@@ -119,3 +133,42 @@ jobs:
       run: xvfb-run make ci EXTRATESTOPTS="${TEST_OPTS}"
       env:
         TEST_OPTS: ${{ inputs.test-opts }}
+    - name: Install Python
+      if: inputs.upload-install-hashes
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      run: make install DESTDIR=install
+    - name: Install test C extension
+      if: inputs.upload-install-hashes
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      env:
+        CPYTHON_TEST_EXT_NAME: c_mod
+      run: install/usr/bin/python3 -m pip install ../cpython-ro-srcdir/Lib/test/test_cext
+    - name: Install test stable ABI extension
+      if: inputs.upload-install-hashes && !inputs.free-threading
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      env:
+        CPYTHON_TEST_EXT_NAME: abi3_mod
+        CPYTHON_TEST_LIMITED: 1
+      run: install/usr/bin/python3 -m pip install ../cpython-ro-srcdir/Lib/test/test_cext
+    - name: Install test free-threaded stable ABI extension
+      if: inputs.upload-install-hashes
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      env:
+        CPYTHON_TEST_EXT_NAME: abi3t_mod
+        CPYTHON_TEST_ABI3T: 1
+      run: install/usr/bin/python3 -m pip install ../cpython-ro-srcdir/Lib/test/test_cext
+    - name: Hash the installed Python
+      if: inputs.upload-install-hashes
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      run: >-
+        install/usr/bin/python3
+        ../cpython-ro-srcdir/Tools/coinstall-check/hash-r.py
+        install -o "$INSTALL_HASHES_FILE"
+    - name: Upload the installed Python hashes
+      if: inputs.upload-install-hashes
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+      with:
+        name: ${{ env.INSTALL_HASHES_FILE }}
+        path: ${{ env.CPYTHON_BUILDDIR }}/${{ env.INSTALL_HASHES_FILE }}
+        archive: false
+        retention-days: 1

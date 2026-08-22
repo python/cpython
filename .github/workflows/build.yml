@@ -244,6 +244,7 @@ jobs:
       free-threading: ${{ matrix.free-threading }}
       os: ${{ matrix.os }}
       test-opts: ${{ matrix.test-opts || '' }}
+      upload-install-hashes: ${{ !matrix.bolt }}
 
   build-ubuntu-installed:
     name: 'Ubuntu (installed)'
@@ -585,6 +586,11 @@ jobs:
         run: |
           "$BUILD_DIR/cross-python/bin/python3" -m test test_sysconfig test_site test_embed
 
+  linux-install-compare:
+    name: Ubuntu co-install comparison
+    uses: ./.github/workflows/reusable-linux-install-compare.yml
+    needs: build-ubuntu
+
   cifuzz:
     # ${{ '' } is a hack to nest jobs under the same sidebar category.
     name: CIFuzz${{ '' }}  # zizmor: ignore[obfuscation]
@@ -652,6 +658,7 @@ jobs:
     - build-san
     - cross-build-linux
     - cifuzz
+    - linux-install-compare
     if: always()
 
     steps:
@@ -698,6 +705,7 @@ jobs:
             build-asan,
             build-san,
             cross-build-linux,
+            linux-install-compare,
             '
             || ''
           }}
