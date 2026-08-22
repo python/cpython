@@ -693,6 +693,12 @@ be finalized; only the internally used file object will be closed. See the
    :const:`None` the :class:`TarInfo` object will be excluded from the
    archive. See :ref:`tar-examples` for an example.
 
+   The file's last modification time is stored in the archive member's
+   :attr:`~TarInfo.mtime` as seconds since the epoch, without conversion to
+   local time.  Changing the process's time zone therefore does not itself
+   change the stored member timestamp, although the result can still vary if
+   the filesystem reports time-zone-dependent timestamps.
+
    .. versionchanged:: 3.2
       Added the *filter* parameter.
 
