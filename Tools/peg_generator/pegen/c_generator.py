@@ -572,11 +572,15 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             self.print("}")
             self.print("int _mark = p->mark;")
             self.print("int _resmark = p->mark;")
+            self.print(f"Memo *_memo = _PyPegen_insert_memo_direct(p, _mark, {node.name}_type);")
+            self.print("if (_memo == NULL) {")
+            with self.indent():
+                self.add_return("NULL")
+            self.print("}")
             self.print("while (1) {")
             with self.indent():
-                self.call_with_errorcheck_return(
-                    f"_PyPegen_update_memo(p, _mark, {node.name}_type, _res)", "_res"
-                )
+                self.print("_memo->node = _res;")
+                self.print("_memo->mark = p->mark;")
                 self.print("p->mark = _mark;")
                 self.print(f"void *_raw = {node.name}_raw(p);")
                 self.print("if (p->error_indicator) {")
