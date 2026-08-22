@@ -1474,6 +1474,20 @@ class GNUReadTest(LongnameTest, ReadTest, unittest.TestCase):
 
         self.assertEqual(names, ["b" * 20, "a" * 120])
 
+    def test_gnu_atime_not_used_as_ustar_prefix(self):
+        # gh-155629: in an old-GNU header, bytes 345:357 hold the member's
+        # atime rather than a ustar path prefix. The atime must not be
+        # prepended to the member name.
+        member = tarfile.TarInfo("victim")
+        header = bytearray(member.tobuf(format=tarfile.GNU_FORMAT))
+        header[345:357] = b"00000000001\0"
+        header[148:156] = b" " * 8
+        header[148:156] = f"{sum(header):06o}\0 ".encode("ascii")
+
+        buf = io.BytesIO(bytes(header) + b"\0" * 1024)
+        with tarfile.open(fileobj=buf, mode="r:") as tar:
+            self.assertEqual(tar.getnames(), ["victim"])
+
 
 class PaxReadTest(LongnameTest, ReadTest, unittest.TestCase):
 
