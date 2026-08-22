@@ -469,12 +469,33 @@ static Py_ssize_t
 count_members(PyStructSequence_Desc *desc, Py_ssize_t *n_unnamed_members) {
     Py_ssize_t i;
 
+    if (desc->n_in_sequence < 0) {
+        PyErr_Format(PyExc_SystemError,
+            "%s: n_in_sequence=%d is negative", desc->name, desc->n_in_sequence);
+        return -1;
+    }
     *n_unnamed_members = 0;
     for (i = 0; desc->fields[i].name != NULL; ++i) {
         if (desc->fields[i].name == PyStructSequence_UnnamedField) {
+            // Unnamed fields must be visible sequence fields.
+            if (i >= desc->n_in_sequence) {
+                PyErr_Format(PyExc_SystemError,
+                    "%s: unnamed field %zd is not a visible sequence field "
+                    "(n_in_sequence=%d)",
+                    desc->name, i, desc->n_in_sequence);
+                return -1;
+            }
             (*n_unnamed_members)++;
         }
     }
+    if (desc->n_in_sequence > i) {
+        PyErr_Format(PyExc_SystemError,
+            "%s: n_in_sequence=%d exceeds the total number of fields %zd",
+            desc->name, desc->n_in_sequence, i);
+        return -1;
+    }
+    // Implied by the per-field check above: unnamed fields are all visible.
+    assert(*n_unnamed_members <= desc->n_in_sequence);
     return i;
 }
 
@@ -621,6 +642,9 @@ _PyStructSequence_InitBuiltinWithFlags(PyInterpreterState *interp,
     }
     Py_ssize_t n_unnamed_members;
     Py_ssize_t n_members = count_members(desc, &n_unnamed_members);
+    if (n_members < 0) {
+        return -1;
+    }
     PyMemberDef *members = NULL;
 
     if ((type->tp_flags & Py_TPFLAGS_READY) == 0) {
@@ -691,6 +715,9 @@ PyStructSequence_InitType2(PyTypeObject *type, PyStructSequence_Desc *desc)
     }
 
     n_members = count_members(desc, &n_unnamed_members);
+    if (n_members < 0) {
+        return -1;
+    }
     members = initialize_members(desc, n_members, n_unnamed_members);
     if (members == NULL) {
         return -1;
@@ -752,6 +779,9 @@ _PyStructSequence_NewType(PyStructSequence_Desc *desc, unsigned long tp_flags)
 
     /* Initialize MemberDefs */
     n_members = count_members(desc, &n_unnamed_members);
+    if (n_members < 0) {
+        return NULL;
+    }
     members = initialize_members(desc, n_members, n_unnamed_members);
     if (members == NULL) {
         return NULL;
