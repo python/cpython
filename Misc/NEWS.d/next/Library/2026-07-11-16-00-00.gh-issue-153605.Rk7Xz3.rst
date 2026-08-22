@@ -1,0 +1,2 @@
+Fix :class:`gettext.GNUTranslations` raising :exc:`struct.error` instead of
+:exc:`OSError` when reading a malformed ``.mo`` file. Patch by tonghuaroot.
