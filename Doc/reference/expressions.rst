@@ -136,12 +136,12 @@ exception.
 
 .. _private-name-mangling:
 
+Private name mangling
+^^^^^^^^^^^^^^^^^^^^^
+
 .. index::
    pair: name; mangling
    pair: private; names
-
-Private name mangling
-^^^^^^^^^^^^^^^^^^^^^
 
 When an identifier that textually occurs in a class definition begins with two
 or more underscore characters and does not end in two or more underscores, it
@@ -2669,12 +2669,12 @@ expression. (To create an empty tuple, use an empty pair of parentheses:
 
 .. _iterable-unpacking:
 
+Iterable unpacking
+------------------
+
 .. index::
    pair: iterable; unpacking
    single: * (asterisk); in expression lists
-
-Iterable unpacking
-------------------
 
 In an expression list or tuple, list or set display, any expression
 may be prefixed with an asterisk (``*``).
