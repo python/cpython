@@ -1,3 +1,4 @@
+import functools
 import inspect
 import time
 import types
@@ -952,6 +953,45 @@ class SpecSignatureTest(unittest.TestCase):
         proxy = Foo()
         autospec = create_autospec(proxy)
         self.assertNotHasAttr(autospec, '__name__')
+
+
+    def test_autospec_partial_function_signature_enforced(self):
+        # A mock created from a functools.partial object enforces the
+        # partial's effective, post-partial-application signature: "method"
+        # is already bound to "POST", so only "url" and "payload" remain.
+        def send_request(method, url, payload=None):
+            return method, url, payload
+
+        send_post_request = partial(send_request, "POST")
+        send_post_request("https://example.com")
+        send_post_request("https://example.com", payload="data")
+
+        mocked = create_autospec(send_post_request)
+        mocked("https://example.com")
+        mocked("https://example.com", payload="data")
+        self.assertRaises(TypeError, mocked)
+        self.assertRaises(TypeError, mocked, "a", "b", "c")
+        self.assertRaises(TypeError, mocked, "https://example.com", foo="lish")
+
+
+    def test_autospec_partialmethod_self_skipped(self):
+        # _must_skip() didn't recognize functools.partialmethod class
+        # attributes, so `self` was never dropped from the enforced
+        # signature when autospeccing a whole class.
+        class Foo:
+            def method(self, a, b, c=3):
+                return a, b, c
+            partial_method = functools.partialmethod(method, 1)
+
+        real = Foo()
+        real.partial_method(2, 3)
+
+        mocked = create_autospec(Foo)
+        instance = mocked()
+        instance.partial_method(2)
+        instance.partial_method(2, c=4)
+        self.assertRaises(TypeError, instance.partial_method)
+        self.assertRaises(TypeError, instance.partial_method, 2, 3, 4)
 
 
     def test_autospec_signature_staticmethod(self):
