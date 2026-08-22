@@ -2577,7 +2577,7 @@ class ZipFile:
             with self.open(zinfo, mode='w') as dest:
                 dest.write(data)
 
-    def mkdir(self, zinfo_or_directory_name, mode=511):
+    def mkdir(self, zinfo_or_directory_name, mode=0o777):
         """Creates a directory inside the zip archive."""
         if isinstance(zinfo_or_directory_name, ZipInfo):
             zinfo = zinfo_or_directory_name
@@ -2590,7 +2590,7 @@ class ZipFile:
             zinfo = ZipInfo(directory_name)
             zinfo.compress_size = 0
             zinfo.CRC = 0
-            zinfo.external_attr = ((0o40000 | mode) & 0xFFFF) << 16
+            zinfo.external_attr = (0o40000 | (mode & 0o7777)) << 16
             zinfo.file_size = 0
             zinfo.external_attr |= 0x10
         else:
