@@ -224,6 +224,28 @@ ascii_escape_unicode_and_size(const void *input, int kind, Py_ssize_t input_char
 }
 
 static PyObject *
+quote_unescaped_unicode(PyObject *pystr)
+{
+    Py_ssize_t len = PyUnicode_GET_LENGTH(pystr);
+    PyObject *rval = PyUnicode_New(len + 2, PyUnicode_MAX_CHAR_VALUE(pystr));
+    if (rval == NULL) {
+        return NULL;
+    }
+    int kind = PyUnicode_KIND(rval);
+    void *data = PyUnicode_DATA(rval);
+    PyUnicode_WRITE(kind, data, 0, '"');
+    if (PyUnicode_CopyCharacters(rval, 1, pystr, 0, len) < 0) {
+        Py_DECREF(rval);
+        return NULL;
+    }
+    PyUnicode_WRITE(kind, data, len + 1, '"');
+#ifdef Py_DEBUG
+    assert(_PyUnicode_CheckConsistency(rval, 1));
+#endif
+    return rval;
+}
+
+static PyObject *
 ascii_escape_unicode(PyObject *pystr)
 {
     /* Take a PyUnicode pystr and return a new ASCII-only escaped PyUnicode */
@@ -234,6 +256,10 @@ ascii_escape_unicode(PyObject *pystr)
     Py_ssize_t output_size = ascii_escape_size(input, kind, input_chars);
     if (output_size < 0) {
         return NULL;
+    }
+
+    if (output_size == input_chars + 2) {
+        return quote_unescaped_unicode(pystr);
     }
 
     return ascii_escape_unicode_and_size(input, kind, input_chars, output_size);
@@ -381,6 +407,10 @@ escape_unicode(PyObject *pystr)
     Py_ssize_t output_size = escape_size(input, kind, input_chars);
     if (output_size < 0) {
         return NULL;
+    }
+
+    if (output_size == input_chars + 2) {
+        return quote_unescaped_unicode(pystr);
     }
 
     return escape_unicode_and_size(input, kind, maxchar, input_chars, output_size);
