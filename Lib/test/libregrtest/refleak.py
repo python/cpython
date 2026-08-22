@@ -118,12 +118,15 @@ def runtest_refleak(test_name, test_func,
     rc_deltas = [0] * repcount
     alloc_deltas = [0] * repcount
     fd_deltas = [0] * repcount
+    handle_deltas = [0] * repcount
     getallocatedblocks = sys.getallocatedblocks
     gettotalrefcount = sys.gettotalrefcount
     getunicodeinternedsize = sys.getunicodeinternedsize
     fd_count = os_helper.fd_count
+    handle_count = os_helper.handle_count
     # initialize variables to make pyflakes quiet
     rc_before = alloc_before = fd_before = interned_immortal_before = 0
+    handle_before = 0
 
     if not quiet:
         print("beginning", repcount, "repetitions. Showing number of leaks "
@@ -160,14 +163,17 @@ def runtest_refleak(test_name, test_func,
         alloc_after = getallocatedblocks() - interned_immortal_after
         rc_after = gettotalrefcount()
         fd_after = fd_count()
+        handle_after = handle_count()
 
         rc_deltas[i] = get_pooled_int(rc_after - rc_before)
         alloc_deltas[i] = get_pooled_int(alloc_after - alloc_before)
         fd_deltas[i] = get_pooled_int(fd_after - fd_before)
+        handle_deltas[i] = get_pooled_int(handle_after - handle_before)
 
         if not quiet:
             # use max, not sum, so total_leaks is one of the pooled ints
-            total_leaks = max(rc_deltas[i], alloc_deltas[i], fd_deltas[i])
+            total_leaks = max(rc_deltas[i], alloc_deltas[i],
+                              fd_deltas[i], handle_deltas[i])
             if total_leaks <= 0:
                 symbol = '.'
             elif total_leaks < 10:
@@ -185,6 +191,7 @@ def runtest_refleak(test_name, test_func,
         alloc_before = alloc_after
         rc_before = rc_after
         fd_before = fd_after
+        handle_before = handle_after
         interned_immortal_before = interned_immortal_after
 
         restore_support_xml(xml_filename)
@@ -215,7 +222,8 @@ def runtest_refleak(test_name, test_func,
     for deltas, item_name, checker in [
         (rc_deltas, 'references', check_rc_deltas),
         (alloc_deltas, 'memory blocks', check_rc_deltas),
-        (fd_deltas, 'file descriptors', check_fd_deltas)
+        (fd_deltas, 'file descriptors', check_fd_deltas),
+        (handle_deltas, 'handles', check_rc_deltas),
     ]:
         # ignore warmup runs
         deltas = deltas[warmups:]

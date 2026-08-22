@@ -1414,6 +1414,35 @@ class ArgsTestCase(BaseTestCase):
         """)
         self.check_leak(code, 'file descriptors')
 
+    @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
+    @unittest.skipUnless(support.MS_WINDOWS, 'test specific to Windows')
+    def test_huntrleaks_handle_leak(self):
+        # test --huntrleaks for Windows handle leak
+        code = textwrap.dedent("""
+            import unittest
+            import _winapi
+
+            handle = None
+
+            class HandleLeakTest(unittest.TestCase):
+                def test_leak(self):
+                    global handle
+                    if handle is None:
+                        handle = _winapi.CreateFile(
+                                        __file__, _winapi.GENERIC_READ,
+                                        0, _winapi.NULL,
+                                        _winapi.OPEN_EXISTING,
+                                        0, _winapi.NULL)
+                    else:
+                        hproc = _winapi.GetCurrentProcess()
+                        copy = _winapi.DuplicateHandle(
+                                    hproc, handle,
+                                    hproc, 0, False,
+                                    _winapi.DUPLICATE_SAME_ACCESS)
+                    # bug! the new handle is never closed
+        """)
+        self.check_leak(code, 'handles')
+
     def test_list_tests(self):
         # test --list-tests
         tests = [self.create_test() for i in range(5)]
