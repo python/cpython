@@ -1,0 +1,2 @@
+Allow :file:`Python.h` to be included after system headers that define
+``_POSIX_C_SOURCE`` without causing a macro redefinition diagnostic.
