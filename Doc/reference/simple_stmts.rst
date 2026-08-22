@@ -286,11 +286,15 @@ symbols.)
 An augmented assignment evaluates the target (which, unlike normal assignment
 statements, cannot be an unpacking) and the expression list, performs the binary
 operation specific to the type of assignment on the two operands, and assigns
-the result to the original target.  The target is only evaluated once.
+the result to the original target.  Subexpressions of the target are only
+evaluated once.
 
 An augmented assignment statement like ``x += 1`` can be rewritten as ``x = x +
 1`` to achieve a similar, but not exactly equal effect. In the augmented
-version, ``x`` is only evaluated once. Also, when possible, the actual operation
+version, subexpressions of ``x`` are only evaluated once: for a target of the
+form ``y[k]``, ``y`` and ``k`` are each evaluated only once, but the
+subscription may be performed twice, once to fetch the old value and once to
+store the result. Also, when possible, the actual operation
 is performed *in-place*, meaning that rather than creating a new object and
 assigning that to the target, the old object is modified instead.
 
