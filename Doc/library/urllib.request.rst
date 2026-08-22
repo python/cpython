@@ -138,8 +138,9 @@ The :mod:`!urllib.request` module defines the following functions:
    If the Python installation has SSL support (i.e., if the :mod:`ssl` module
    can be imported), :class:`HTTPSHandler` will also be added.
 
-   A :class:`BaseHandler` subclass may also change its :attr:`handler_order`
-   attribute to modify its position in the handlers list.
+   A :class:`BaseHandler` subclass may also change its
+   :attr:`~BaseHandler.handler_order` attribute to modify its position in the
+   handlers list.
 
 
 .. function:: pathname2url(path, *, add_scheme=False)
@@ -358,10 +359,12 @@ The following classes are provided:
 
    To disable autodetected proxy pass an empty dictionary.
 
-   The :envvar:`no_proxy` environment variable can be used to specify hosts
-   which shouldn't be reached via proxy; if set, it should be a comma-separated
-   list of hostname suffixes, optionally with ``:port`` appended, for example
-   ``cern.ch,ncsa.uiuc.edu,some.host:8080``.
+   .. envvar:: no_proxy
+
+      This variable can be used to specify hosts which shouldn't be reached via
+      proxy; if set, it should be a comma-separated list of hostname suffixes,
+      optionally with ``:port`` appended, for example
+      ``cern.ch,ncsa.uiuc.edu,some.host:8080``.
 
    .. note::
 
@@ -514,7 +517,7 @@ The following classes are provided:
 
 .. _request-objects:
 
-Request Objects
+Request objects
 ---------------
 
 The following methods describe :class:`Request`'s public interface,
@@ -656,7 +659,7 @@ request.
 
 .. _opener-director-objects:
 
-OpenerDirector Objects
+OpenerDirector objects
 ----------------------
 
 :class:`OpenerDirector` instances have the following methods:
@@ -667,9 +670,9 @@ OpenerDirector Objects
    *handler* should be an instance of :class:`BaseHandler`.  The following methods
    are searched, and added to the possible chains (note that HTTP errors are a
    special case).  Note that, in the following, *protocol* should be replaced
-   with the actual protocol to handle, for example :meth:`http_response` would
+   with the actual protocol to handle, for example :meth:`!http_response` would
    be the HTTP protocol response handler.  Also *type* should be replaced with
-   the actual HTTP code, for example :meth:`http_error_404` would handle HTTP
+   the actual HTTP code, for example :meth:`!http_error_404` would handle HTTP
    404 errors.
 
    * :meth:`!<protocol>_open` --- signal that the handler knows how to open *protocol*
@@ -695,10 +698,10 @@ OpenerDirector Objects
 
      See |protocol_response|_ for more information.
 
-.. |protocol_open| replace:: :meth:`BaseHandler.<protocol>_open`
-.. |http_error_nnn| replace:: :meth:`BaseHandler.http_error_\<nnn\>`
-.. |protocol_request| replace:: :meth:`BaseHandler.<protocol>_request`
-.. |protocol_response| replace:: :meth:`BaseHandler.<protocol>_response`
+.. |protocol_open| replace:: :meth:`!BaseHandler.<protocol>_open`
+.. |http_error_nnn| replace:: :meth:`!BaseHandler.http_error_\<nnn\>`
+.. |protocol_request| replace:: :meth:`!BaseHandler.<protocol>_request`
+.. |protocol_response| replace:: :meth:`!BaseHandler.<protocol>_response`
 
 .. method:: OpenerDirector.open(url, data=None[, timeout])
 
@@ -751,7 +754,7 @@ sorting the handler instances.
 
 .. _base-handler-objects:
 
-BaseHandler Objects
+BaseHandler objects
 -------------------
 
 :class:`BaseHandler` objects provide a couple of methods that are directly
@@ -782,6 +785,11 @@ The following attribute and methods should only be used by classes derived from
 
    A valid :class:`OpenerDirector`, which can be used to open using a different
    protocol, or handle errors.
+
+
+.. attribute:: BaseHandler.handler_order
+
+   The order in which the handler is called within an opener chain.
 
 
 .. method:: BaseHandler.default_open(req)
@@ -881,7 +889,7 @@ The following attribute and methods should only be used by classes derived from
 
 .. _http-redirect-handler:
 
-HTTPRedirectHandler Objects
+HTTPRedirectHandler objects
 ---------------------------
 
 .. note::
@@ -948,7 +956,7 @@ HTTPRedirectHandler Objects
 
 .. _http-cookie-processor:
 
-HTTPCookieProcessor Objects
+HTTPCookieProcessor objects
 ---------------------------
 
 :class:`HTTPCookieProcessor` instances have one attribute:
@@ -960,7 +968,7 @@ HTTPCookieProcessor Objects
 
 .. _proxy-handler:
 
-ProxyHandler Objects
+ProxyHandler objects
 --------------------
 
 
@@ -976,7 +984,7 @@ ProxyHandler Objects
 
 .. _http-password-mgr:
 
-HTTPPasswordMgr Objects
+HTTPPasswordMgr objects
 -----------------------
 
 These methods are available on :class:`HTTPPasswordMgr` and
@@ -1008,7 +1016,7 @@ These methods are available on :class:`HTTPPasswordMgr` and
 
 .. _http-password-mgr-with-prior-auth:
 
-HTTPPasswordMgrWithPriorAuth Objects
+HTTPPasswordMgrWithPriorAuth objects
 ------------------------------------
 
 This password manager extends :class:`HTTPPasswordMgrWithDefaultRealm` to support
@@ -1044,7 +1052,7 @@ tracking URIs for which authentication credentials should always be sent.
 
 .. _abstract-basic-auth-handler:
 
-AbstractBasicAuthHandler Objects
+AbstractBasicAuthHandler objects
 --------------------------------
 
 
@@ -1064,7 +1072,7 @@ AbstractBasicAuthHandler Objects
 
 .. _http-basic-auth-handler:
 
-HTTPBasicAuthHandler Objects
+HTTPBasicAuthHandler objects
 ----------------------------
 
 
@@ -1075,7 +1083,7 @@ HTTPBasicAuthHandler Objects
 
 .. _proxy-basic-auth-handler:
 
-ProxyBasicAuthHandler Objects
+ProxyBasicAuthHandler objects
 -----------------------------
 
 
@@ -1086,7 +1094,7 @@ ProxyBasicAuthHandler Objects
 
 .. _abstract-digest-auth-handler:
 
-AbstractDigestAuthHandler Objects
+AbstractDigestAuthHandler objects
 ---------------------------------
 
 
@@ -1100,7 +1108,7 @@ AbstractDigestAuthHandler Objects
 
 .. _http-digest-auth-handler:
 
-HTTPDigestAuthHandler Objects
+HTTPDigestAuthHandler objects
 -----------------------------
 
 
@@ -1111,7 +1119,7 @@ HTTPDigestAuthHandler Objects
 
 .. _proxy-digest-auth-handler:
 
-ProxyDigestAuthHandler Objects
+ProxyDigestAuthHandler objects
 ------------------------------
 
 
@@ -1122,7 +1130,7 @@ ProxyDigestAuthHandler Objects
 
 .. _http-handler-objects:
 
-HTTPHandler Objects
+HTTPHandler objects
 -------------------
 
 
@@ -1134,7 +1142,7 @@ HTTPHandler Objects
 
 .. _https-handler-objects:
 
-HTTPSHandler Objects
+HTTPSHandler objects
 --------------------
 
 
@@ -1146,7 +1154,7 @@ HTTPSHandler Objects
 
 .. _file-handler-objects:
 
-FileHandler Objects
+FileHandler objects
 -------------------
 
 
@@ -1162,7 +1170,7 @@ FileHandler Objects
 
 .. _data-handler-objects:
 
-DataHandler Objects
+DataHandler objects
 -------------------
 
 .. method:: DataHandler.data_open(req)
@@ -1177,7 +1185,7 @@ DataHandler Objects
 
 .. _ftp-handler-objects:
 
-FTPHandler Objects
+FTPHandler objects
 ------------------
 
 
@@ -1189,7 +1197,7 @@ FTPHandler Objects
 
 .. _cacheftp-handler-objects:
 
-CacheFTPHandler Objects
+CacheFTPHandler objects
 -----------------------
 
 :class:`CacheFTPHandler` objects are :class:`FTPHandler` objects with the
@@ -1208,7 +1216,7 @@ following additional methods:
 
 .. _unknown-handler-objects:
 
-UnknownHandler Objects
+UnknownHandler objects
 ----------------------
 
 
@@ -1219,7 +1227,7 @@ UnknownHandler Objects
 
 .. _http-error-processor-objects:
 
-HTTPErrorProcessor Objects
+HTTPErrorProcessor objects
 --------------------------
 
 .. method:: HTTPErrorProcessor.http_response(request, response)
@@ -1496,7 +1504,7 @@ some point in the future.
    installed by :func:`install_opener`.
 
 
-:mod:`!urllib.request` Restrictions
+:mod:`!urllib.request` restrictions
 -----------------------------------
 
 .. index::
