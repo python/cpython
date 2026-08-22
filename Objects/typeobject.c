@@ -12653,6 +12653,12 @@ supercheck(PyTypeObject *type, PyObject *obj)
        This will allow using super() with a proxy for obj.
     */
 
+    if (type == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "super object has no type");
+        return NULL;
+    }
+
     /* Check for first bullet above (special case) */
     if (PyType_Check(obj) && PyType_IsSubtype((PyTypeObject *)obj, type)) {
         return (PyTypeObject *)Py_NewRef(obj);
@@ -12733,8 +12739,7 @@ super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
         PyTypeObject *obj_type = supercheck(su->type, obj);
         if (obj_type == NULL)
             return NULL;
-        newobj = (superobject *)PySuper_Type.tp_new(&PySuper_Type,
-                                                 NULL, NULL);
+        newobj = (superobject *)PySuper_Type.tp_alloc(&PySuper_Type, 0);
         if (newobj == NULL) {
             Py_DECREF(obj_type);
             return NULL;
