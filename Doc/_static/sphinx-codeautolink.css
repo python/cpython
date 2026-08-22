@@ -1,0 +1,12 @@
+/*
+Style autolinks from Python example code to reference documentation
+(https://sphinx-codeautolink.readthedocs.io/en/latest/examples.html#custom-link-styles)
+*/
+
+.sphinx-codeautolink-a {
+    text-decoration-style: solid !important;
+    text-decoration-color: #aaa;
+}
+.sphinx-codeautolink-a:hover {
+    text-decoration-color: black;
+}
