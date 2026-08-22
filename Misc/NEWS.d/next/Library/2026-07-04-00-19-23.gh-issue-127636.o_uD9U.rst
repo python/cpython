@@ -1,0 +1,3 @@
+Fix :meth:`tarfile.TarFile.extract` to accept archive member names with a
+trailing forward slash, including those returned by
+:meth:`tarfile.TarFile.getnames`. Contributed by Xiao Yuan.

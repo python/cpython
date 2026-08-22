@@ -2188,7 +2188,9 @@ class TarFile(object):
            than once in the archive, its last occurrence is assumed to be the
            most up-to-date version.
         """
-        tarinfo = self._getmember(name.rstrip('/'))
+        tarinfo = self._getmember(name)
+        if tarinfo is None and name.endswith('/'):
+            tarinfo = self._getmember(name.rstrip('/'))
         if tarinfo is None:
             raise KeyError("filename %r not found" % name)
         return tarinfo
