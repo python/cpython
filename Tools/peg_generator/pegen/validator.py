@@ -39,10 +39,14 @@ class RaiseRuleValidator(GrammarValidator):
         if self.rulename and self.rulename.startswith('invalid'):
             # raising is allowed in invalid rules
             return
+        if node.invalid:
+            # and in the alternatives inserted by a rule extension
+            return
         if node.action and 'RAISE_SYNTAX_ERROR' in node.action:
             raise ValidationError(
                 f"In {self.rulename!r} there is an alternative that contains "
-                f"RAISE_SYNTAX_ERROR; this is only allowed in invalid_ rules"
+                f"RAISE_SYNTAX_ERROR; this is only allowed in invalid_ rules "
+                f"and in the alternatives inserted by a rule extension"
             )
 
 

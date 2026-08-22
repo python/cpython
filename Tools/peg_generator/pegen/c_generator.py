@@ -311,7 +311,10 @@ class CCallMakerVisitor(GrammarVisitor):
         return_type: str | None = None,
     ) -> FunctionCall:
         node_str = f"{node}"
-        key = f"{prefix}_{node_str}"
+        # str() ignores actions and variable names, so it cannot be
+        # used as a part of the key: two groups with the same syntax,
+        # but different actions must produce different artificial rules.
+        key = f"{prefix}_{node!r}"
         if key in self.cache:
             name = self.cache[key]
         else:
@@ -797,8 +800,20 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             else:
                 self.emit_default_action(is_gather, node)
 
-            # As the current option has parsed correctly, do not continue with the rest.
-            self.print("goto done;")
+            if node.invalid and node.action:
+                # The action of an alternative inserted by a rule
+                # extension can return NULL without setting an error
+                # (a conditional action which only sometimes reports
+                # the error); the alternative fails then, like an
+                # alternative which references an invalid_* rule
+                # returning NULL.
+                self.print("if (_res != NULL) {")
+                with self.indent():
+                    self.print("goto done;")
+                self.print("}")
+            else:
+                # As the current option has parsed correctly, do not continue with the rest.
+                self.print("goto done;")
         self.print("}")
 
     def handle_alt_loop(self, node: Alt, is_gather: bool, rulename: str | None) -> None:
@@ -835,7 +850,9 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
     def visit_Alt(
         self, node: Alt, is_loop: bool, is_gather: bool, rulename: str | None
     ) -> None:
-        if len(node.items) == 1 and str(node.items[0]).startswith("invalid_"):
+        if node.invalid or (
+            len(node.items) == 1 and str(node.items[0]).startswith("invalid_")
+        ):
             self.print(f"if (p->call_invalid_rules) {{ // {node}")
         else:
             self.print(f"{{ // {node}")

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <_PegenSources Include="$(PySourcePath)Grammar\python.gram;$(PySourcePath)Grammar\Tokens" />
+    <_PegenSources Include="$(PySourcePath)Grammar\python.gram;$(PySourcePath)Grammar\python_errors.gram;$(PySourcePath)Grammar\Tokens" />
     <_PegenOutputs Include="$(PySourcePath)Parser\parser.c" />
     <_ASTSources Include="$(PySourcePath)Parser\Python.asdl" />
     <_ASTOutputs Include="$(PySourcePath)Include\internal\pycore_ast.h">
@@ -26,7 +26,7 @@
     <_TokenOutputs Include="$(PySourcePath)Lib\token.py">
       <Format>py</Format>
     </_TokenOutputs>
-    <_KeywordSources Include="$(PySourcePath)Grammar\python.gram;$(PySourcePath)Grammar\Tokens" />
+    <_KeywordSources Include="$(PySourcePath)Grammar\python.gram;$(PySourcePath)Grammar\python_errors.gram;$(PySourcePath)Grammar\Tokens" />
     <_KeywordOutputs Include="$(PySourcePath)Lib\keyword.py" />
     <!-- Taken from _Target._compute_digest in Tools\jit\_targets.py: -->
     <_JITSources Include="$(PySourcePath)Python\executor_cases.c.h;$(PySourcePath)PC\pyconfig.h;$(PySourcePath)Tools\jit\**"/>
@@ -57,7 +57,7 @@
           DependsOnTargets="FindPythonForBuild">
     <Message Text="Regenerate @(_PegenOutputs->'%(Filename)%(Extension)',' ')" Importance="high" />
     <!-- Specify python.gram with POSIX-like path because the argument gets written into the file verbatim -->
-    <Exec Command="set PYTHONPATH=Tools\peg_generator%0D%0A$(PythonForBuild) -m pegen -q c ./Grammar/python.gram Grammar\Tokens -o Parser\parser.c"
+    <Exec Command="set PYTHONPATH=Tools\peg_generator%0D%0A$(PythonForBuild) -m pegen -q c ./Grammar/python.gram ./Grammar/python_errors.gram Grammar\Tokens -o Parser\parser.c"
           WorkingDirectory="$(PySourcePath)" />
   </Target>
 
@@ -82,7 +82,7 @@
           Inputs="@(_KeywordSources)" Outputs="@(_KeywordOutputs)"
           DependsOnTargets="FindPythonForBuild">
     <Message Text="Regenerate @(_KeywordOutputs->'%(Filename)%(Extension)',' ')" Importance="high" />
-    <Exec Command="set PYTHONPATH=Tools\peg_generator%0D%0A$(PythonForBuild) -m pegen.keywordgen Grammar\python.gram Grammar\Tokens Lib\keyword.py"
+    <Exec Command="set PYTHONPATH=Tools\peg_generator%0D%0A$(PythonForBuild) -m pegen.keywordgen Grammar\python.gram Grammar\python_errors.gram Grammar\Tokens Lib\keyword.py"
           WorkingDirectory="$(PySourcePath)" />
   </Target>
 

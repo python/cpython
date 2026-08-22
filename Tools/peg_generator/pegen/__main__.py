@@ -28,7 +28,7 @@ def generate_c_code(
     verbose_parser = verbose == 2 or verbose >= 4
     try:
         grammar, parser, tokenizer, gen = build_c_parser_and_generator(
-            args.grammar_filename,
+            args.grammar_filenames,
             args.tokens_filename,
             args.output,
             args.compile_extension,
@@ -57,7 +57,7 @@ def generate_python_code(
     verbose_parser = verbose == 2 or verbose >= 4
     try:
         grammar, parser, tokenizer, gen = build_python_parser_and_generator(
-            args.grammar_filename,
+            args.grammar_filenames,
             args.output,
             verbose_tokenizer,
             verbose_parser,
@@ -87,7 +87,7 @@ subparsers = argparser.add_subparsers(help="target language for the generated co
 
 c_parser = subparsers.add_parser("c", help="Generate C code for inclusion into CPython")
 c_parser.set_defaults(func=generate_c_code)
-c_parser.add_argument("grammar_filename", help="Grammar description")
+c_parser.add_argument("grammar_filenames", nargs="+", help="Grammar description(s)")
 c_parser.add_argument("tokens_filename", help="Tokens description")
 c_parser.add_argument(
     "-o", "--output", metavar="OUT", default="parse.c", help="Where to write the generated parser"
@@ -111,7 +111,7 @@ python_parser = subparsers.add_parser(
     help="Generate Python code, needs grammar definition with Python actions",
 )
 python_parser.set_defaults(func=generate_python_code)
-python_parser.add_argument("grammar_filename", help="Grammar description")
+python_parser.add_argument("grammar_filenames", nargs="+", help="Grammar description(s)")
 python_parser.add_argument(
     "-o",
     "--output",
