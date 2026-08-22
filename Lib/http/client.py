@@ -167,7 +167,7 @@ _contains_disallowed_method_pchar_re = re.compile('[\x00-\x1f]')
 
 # We always set the Content-Length header for these methods because some
 # servers will otherwise respond with a 411
-_METHODS_EXPECTING_BODY = {'PATCH', 'POST', 'PUT'}
+_METHODS_EXPECTING_BODY = {'PATCH', 'POST', 'PUT', 'QUERY'}
 
 
 def _encode(data, name='data'):
