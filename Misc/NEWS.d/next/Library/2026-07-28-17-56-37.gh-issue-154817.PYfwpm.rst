@@ -1,0 +1,4 @@
+Fix a crash in collections.OrderedDict.pop() when a key's __eq__
+implementation returns inconsistent results across repeated comparisons.
+OrderedDict.pop() now raises KeyError instead of crashing when no default
+value is provided.
