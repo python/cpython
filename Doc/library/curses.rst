@@ -1562,30 +1562,37 @@ Borders and lines
       that parameter.  Keyword parameters can *not* be used.  The defaults are listed
       in this table:
 
-   +-----------+---------------------+-----------------------+
-   | Parameter | Description         | Default value         |
-   +===========+=====================+=======================+
-   | *ls*      | Left side           | :const:`ACS_VLINE`    |
-   +-----------+---------------------+-----------------------+
-   | *rs*      | Right side          | :const:`ACS_VLINE`    |
-   +-----------+---------------------+-----------------------+
-   | *ts*      | Top                 | :const:`ACS_HLINE`    |
-   +-----------+---------------------+-----------------------+
-   | *bs*      | Bottom              | :const:`ACS_HLINE`    |
-   +-----------+---------------------+-----------------------+
-   | *tl*      | Upper-left corner   | :const:`ACS_ULCORNER` |
-   +-----------+---------------------+-----------------------+
-   | *tr*      | Upper-right corner  | :const:`ACS_URCORNER` |
-   +-----------+---------------------+-----------------------+
-   | *bl*      | Bottom-left corner  | :const:`ACS_LLCORNER` |
-   +-----------+---------------------+-----------------------+
-   | *br*      | Bottom-right corner | :const:`ACS_LRCORNER` |
-   +-----------+---------------------+-----------------------+
+   +-----------+---------------------+-----------------------+------------------------+
+   | Parameter | Description         | Default value         | Wide default value     |
+   +===========+=====================+=======================+========================+
+   | *ls*      | Left side           | :const:`ACS_VLINE`    | :const:`WACS_VLINE`    |
+   +-----------+---------------------+-----------------------+------------------------+
+   | *rs*      | Right side          | :const:`ACS_VLINE`    | :const:`WACS_VLINE`    |
+   +-----------+---------------------+-----------------------+------------------------+
+   | *ts*      | Top                 | :const:`ACS_HLINE`    | :const:`WACS_HLINE`    |
+   +-----------+---------------------+-----------------------+------------------------+
+   | *bs*      | Bottom              | :const:`ACS_HLINE`    | :const:`WACS_HLINE`    |
+   +-----------+---------------------+-----------------------+------------------------+
+   | *tl*      | Upper-left corner   | :const:`ACS_ULCORNER` | :const:`WACS_ULCORNER` |
+   +-----------+---------------------+-----------------------+------------------------+
+   | *tr*      | Upper-right corner  | :const:`ACS_URCORNER` | :const:`WACS_URCORNER` |
+   +-----------+---------------------+-----------------------+------------------------+
+   | *bl*      | Bottom-left corner  | :const:`ACS_LLCORNER` | :const:`WACS_LLCORNER` |
+   +-----------+---------------------+-----------------------+------------------------+
+   | *br*      | Bottom-right corner | :const:`ACS_LRCORNER` | :const:`WACS_LRCORNER` |
+   +-----------+---------------------+-----------------------+------------------------+
+
+   The wide default value is used when the border is drawn from string
+   characters or :class:`complexchar` cells.
+
+   If any parameter is a byte character or an integer other than ``0``, the
+   border is drawn from byte characters, and every string character must be
+   encodable as a single byte.
 
    .. versionchanged:: next
       Wide and combining characters, and :class:`complexchar` cells, are now
       accepted.  A single call cannot mix
-      them with integer or byte characters.
+      :class:`complexchar` cells with integer or byte characters.
 
 .. method:: window.box([vertch, horch])
 
@@ -1595,7 +1602,7 @@ Borders and lines
    .. versionchanged:: next
       Wide and combining characters, and :class:`complexchar` cells, are now
       accepted.  A single call cannot mix
-      them with integer or byte characters.
+      :class:`complexchar` cells with integer or byte characters.
 
 .. method:: window.hline(ch, n[, attr])
             window.hline(y, x, ch, n[, attr])
@@ -2255,62 +2262,58 @@ Attributes
 Some constants are available to specify character cell attributes.
 The exact constants available are system dependent.
 
-+------------------------+-------------------------------+
-| Attribute              | Meaning                       |
-+========================+===============================+
-| .. data:: A_ALTCHARSET | Alternate character set mode  |
-+------------------------+-------------------------------+
-| .. data:: A_BLINK      | Blink mode                    |
-+------------------------+-------------------------------+
-| .. data:: A_BOLD       | Bold mode                     |
-+------------------------+-------------------------------+
-| .. data:: A_DIM        | Dim mode                      |
-+------------------------+-------------------------------+
-| .. data:: A_INVIS      | Invisible or blank mode       |
-+------------------------+-------------------------------+
-| .. data:: A_ITALIC     | Italic mode                   |
-+------------------------+-------------------------------+
-| .. data:: A_NORMAL     | Normal attribute              |
-+------------------------+-------------------------------+
-| .. data:: A_PROTECT    | Protected mode                |
-+------------------------+-------------------------------+
-| .. data:: A_REVERSE    | Reverse background and        |
-|                        | foreground colors             |
-+------------------------+-------------------------------+
-| .. data:: A_STANDOUT   | Standout mode                 |
-+------------------------+-------------------------------+
-| .. data:: A_UNDERLINE  | Underline mode                |
-+------------------------+-------------------------------+
-| .. data:: A_HORIZONTAL | Horizontal highlight          |
-+------------------------+-------------------------------+
-| .. data:: A_LEFT       | Left highlight                |
-+------------------------+-------------------------------+
-| .. data:: A_LOW        | Low highlight                 |
-+------------------------+-------------------------------+
-| .. data:: A_RIGHT      | Right highlight               |
-+------------------------+-------------------------------+
-| .. data:: A_TOP        | Top highlight                 |
-+------------------------+-------------------------------+
-| .. data:: A_VERTICAL   | Vertical highlight            |
-+------------------------+-------------------------------+
+.. _curses-wa-constants:
+
++------------------------+-------------------------+------------------------------------------+
+| Attribute              | Wide attribute          | Meaning                                  |
++========================+=========================+==========================================+
+| .. data:: A_ALTCHARSET | .. data:: WA_ALTCHARSET | Alternate character set mode             |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: A_BLINK      | .. data:: WA_BLINK      | Blink mode                               |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: A_BOLD       | .. data:: WA_BOLD       | Bold mode                                |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: A_DIM        | .. data:: WA_DIM        | Dim mode                                 |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: A_INVIS      | .. data:: WA_INVIS      | Invisible or blank mode                  |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: A_ITALIC     | .. data:: WA_ITALIC     | Italic mode                              |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: A_NORMAL     | .. data:: WA_NORMAL     | Normal attribute                         |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: A_PROTECT    | .. data:: WA_PROTECT    | Protected mode                           |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: A_REVERSE    | .. data:: WA_REVERSE    | Reverse background and foreground colors |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: A_STANDOUT   | .. data:: WA_STANDOUT   | Standout mode                            |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: A_UNDERLINE  | .. data:: WA_UNDERLINE  | Underline mode                           |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: A_HORIZONTAL | .. data:: WA_HORIZONTAL | Horizontal highlight                     |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: A_LEFT       | .. data:: WA_LEFT       | Left highlight                           |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: A_LOW        | .. data:: WA_LOW        | Low highlight                            |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: A_RIGHT      | .. data:: WA_RIGHT      | Right highlight                          |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: A_TOP        | .. data:: WA_TOP        | Top highlight                            |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: A_VERTICAL   | .. data:: WA_VERTICAL   | Vertical highlight                       |
++------------------------+-------------------------+------------------------------------------+
 
 .. versionadded:: 3.7
    ``A_ITALIC`` was added.
 
-.. _curses-wa-constants:
-
 The :meth:`~window.attr_get`, :meth:`~window.attr_set`, :meth:`~window.attr_on`
-and :meth:`~window.attr_off` methods use a parallel set of ``WA_*`` constants.
-These have the same meaning as the corresponding ``A_*`` attributes above
-(``WA_BOLD`` like :const:`A_BOLD`, and so on), but belong to the ``attr_t`` type
-rather than being packed into a character.  In ncurses the two sets share the
-same values, but other curses implementations may give them different ones, so
-use the ``WA_*`` constants with the ``attr_*`` methods.  The available names are
-``WA_ATTRIBUTES``, ``WA_NORMAL``, ``WA_STANDOUT``, ``WA_UNDERLINE``,
-``WA_REVERSE``, ``WA_BLINK``, ``WA_DIM``, ``WA_BOLD``, ``WA_ALTCHARSET``,
-``WA_INVIS``, ``WA_PROTECT``, ``WA_HORIZONTAL``, ``WA_LEFT``, ``WA_LOW``,
-``WA_RIGHT``, ``WA_TOP``, ``WA_VERTICAL`` and ``WA_ITALIC`` (each available only
-where the platform defines it).
+and :meth:`~window.attr_off` methods use the parallel set of ``WA_*`` constants
+listed above.
+Each has the same meaning as the corresponding ``A_*`` attribute
+(:const:`WA_BOLD` like :const:`A_BOLD`, and so on), but belongs to the
+``attr_t`` type rather than being packed into a character.
+In ncurses the two sets share the same values, but other curses implementations
+may give them different ones, so use the ``WA_*`` constants with the ``attr_*``
+methods.
 
 .. versionadded:: next
    The ``WA_*`` constants were added.
@@ -2318,18 +2321,15 @@ where the platform defines it).
 Several constants are available to extract corresponding attributes returned
 by some methods.
 
-+-------------------------+-------------------------------+
-| Bit-mask                | Meaning                       |
-+=========================+===============================+
-|  .. data:: A_ATTRIBUTES | Bit-mask to extract           |
-|                         | attributes                    |
-+-------------------------+-------------------------------+
-|  .. data:: A_CHARTEXT   | Bit-mask to extract a         |
-|                         | character                     |
-+-------------------------+-------------------------------+
-|  .. data:: A_COLOR      | Bit-mask to extract           |
-|                         | color-pair field information  |
-+-------------------------+-------------------------------+
++-------------------------+--------------------------+--------------------------------------------------+
+| Bit-mask                | Wide bit-mask            | Meaning                                          |
++=========================+==========================+==================================================+
+| .. data:: A_ATTRIBUTES  | .. data:: WA_ATTRIBUTES  | Bit-mask to extract attributes                   |
++-------------------------+--------------------------+--------------------------------------------------+
+| .. data:: A_CHARTEXT    |                          | Bit-mask to extract a character                  |
++-------------------------+--------------------------+--------------------------------------------------+
+| .. data:: A_COLOR       |                          | Bit-mask to extract color-pair field information |
++-------------------------+--------------------------+--------------------------------------------------+
 
 Keys
 ~~~~
@@ -2564,99 +2564,165 @@ inherited from the VT100 terminal, and will generally be  available on software
 emulations such as X terminals.  When there is no graphic available, curses
 falls back on a crude printable ASCII approximation.
 
+Every character has two names.
+The ``ACS_*`` code is an integer character, restricted to the 8-bit
+alternate character set of the terminal.
+The ``WACS_*`` code is the same character as a :class:`complexchar` cell,
+which is not restricted to the alternate character set.
+
 .. note::
 
    These are available only after :func:`initscr` has  been called.
+   The ``WACS_*`` codes are only available if Python is built with
+   wide character support.
 
-+------------------------+------------------------------------------+
-| ACS code               | Meaning                                  |
-+========================+==========================================+
-| .. data:: ACS_BBSS     | alternate name for upper-right corner    |
-+------------------------+------------------------------------------+
-| .. data:: ACS_BLOCK    | solid square block                       |
-+------------------------+------------------------------------------+
-| .. data:: ACS_BOARD    | board of squares                         |
-+------------------------+------------------------------------------+
-| .. data:: ACS_BSBS     | alternate name for horizontal line       |
-+------------------------+------------------------------------------+
-| .. data:: ACS_BSSB     | alternate name for upper-left corner     |
-+------------------------+------------------------------------------+
-| .. data:: ACS_BSSS     | alternate name for top tee               |
-+------------------------+------------------------------------------+
-| .. data:: ACS_BTEE     | bottom tee                               |
-+------------------------+------------------------------------------+
-| .. data:: ACS_BULLET   | bullet                                   |
-+------------------------+------------------------------------------+
-| .. data:: ACS_CKBOARD  | checker board (stipple)                  |
-+------------------------+------------------------------------------+
-| .. data:: ACS_DARROW   | arrow pointing down                      |
-+------------------------+------------------------------------------+
-| .. data:: ACS_DEGREE   | degree symbol                            |
-+------------------------+------------------------------------------+
-| .. data:: ACS_DIAMOND  | diamond                                  |
-+------------------------+------------------------------------------+
-| .. data:: ACS_GEQUAL   | greater-than-or-equal-to                 |
-+------------------------+------------------------------------------+
-| .. data:: ACS_HLINE    | horizontal line                          |
-+------------------------+------------------------------------------+
-| .. data:: ACS_LANTERN  | lantern symbol                           |
-+------------------------+------------------------------------------+
-| .. data:: ACS_LARROW   | left arrow                               |
-+------------------------+------------------------------------------+
-| .. data:: ACS_LEQUAL   | less-than-or-equal-to                    |
-+------------------------+------------------------------------------+
-| .. data:: ACS_LLCORNER | lower-left corner                        |
-+------------------------+------------------------------------------+
-| .. data:: ACS_LRCORNER | lower-right corner                       |
-+------------------------+------------------------------------------+
-| .. data:: ACS_LTEE     | left tee                                 |
-+------------------------+------------------------------------------+
-| .. data:: ACS_NEQUAL   | not-equal sign                           |
-+------------------------+------------------------------------------+
-| .. data:: ACS_PI       | letter pi                                |
-+------------------------+------------------------------------------+
-| .. data:: ACS_PLMINUS  | plus-or-minus sign                       |
-+------------------------+------------------------------------------+
-| .. data:: ACS_PLUS     | big plus sign                            |
-+------------------------+------------------------------------------+
-| .. data:: ACS_RARROW   | right arrow                              |
-+------------------------+------------------------------------------+
-| .. data:: ACS_RTEE     | right tee                                |
-+------------------------+------------------------------------------+
-| .. data:: ACS_S1       | scan line 1                              |
-+------------------------+------------------------------------------+
-| .. data:: ACS_S3       | scan line 3                              |
-+------------------------+------------------------------------------+
-| .. data:: ACS_S7       | scan line 7                              |
-+------------------------+------------------------------------------+
-| .. data:: ACS_S9       | scan line 9                              |
-+------------------------+------------------------------------------+
-| .. data:: ACS_SBBS     | alternate name for lower-right corner    |
-+------------------------+------------------------------------------+
-| .. data:: ACS_SBSB     | alternate name for vertical line         |
-+------------------------+------------------------------------------+
-| .. data:: ACS_SBSS     | alternate name for right tee             |
-+------------------------+------------------------------------------+
-| .. data:: ACS_SSBB     | alternate name for lower-left corner     |
-+------------------------+------------------------------------------+
-| .. data:: ACS_SSBS     | alternate name for bottom tee            |
-+------------------------+------------------------------------------+
-| .. data:: ACS_SSSB     | alternate name for left tee              |
-+------------------------+------------------------------------------+
-| .. data:: ACS_SSSS     | alternate name for crossover or big plus |
-+------------------------+------------------------------------------+
-| .. data:: ACS_STERLING | pound sterling                           |
-+------------------------+------------------------------------------+
-| .. data:: ACS_TTEE     | top tee                                  |
-+------------------------+------------------------------------------+
-| .. data:: ACS_UARROW   | up arrow                                 |
-+------------------------+------------------------------------------+
-| .. data:: ACS_ULCORNER | upper-left corner                        |
-+------------------------+------------------------------------------+
-| .. data:: ACS_URCORNER | upper-right corner                       |
-+------------------------+------------------------------------------+
-| .. data:: ACS_VLINE    | vertical line                            |
-+------------------------+------------------------------------------+
+.. versionadded:: next
+   The ``WACS_*`` codes.
+
++------------------------+-------------------------+------------------------------------------+
+| ACS code               | WACS code               | Meaning                                  |
++========================+=========================+==========================================+
+| .. data:: ACS_BBSS     | .. data:: WACS_BBSS     | alternate name for upper-right corner    |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_BLOCK    | .. data:: WACS_BLOCK    | solid square block                       |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_BOARD    | .. data:: WACS_BOARD    | board of squares                         |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_BSBS     | .. data:: WACS_BSBS     | alternate name for horizontal line       |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_BSSB     | .. data:: WACS_BSSB     | alternate name for upper-left corner     |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_BSSS     | .. data:: WACS_BSSS     | alternate name for top tee               |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_BTEE     | .. data:: WACS_BTEE     | bottom tee                               |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_BULLET   | .. data:: WACS_BULLET   | bullet                                   |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_CKBOARD  | .. data:: WACS_CKBOARD  | checker board (stipple)                  |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_DARROW   | .. data:: WACS_DARROW   | arrow pointing down                      |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_DEGREE   | .. data:: WACS_DEGREE   | degree symbol                            |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_DIAMOND  | .. data:: WACS_DIAMOND  | diamond                                  |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_GEQUAL   | .. data:: WACS_GEQUAL   | greater-than-or-equal-to                 |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_HLINE    | .. data:: WACS_HLINE    | horizontal line                          |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_LANTERN  | .. data:: WACS_LANTERN  | lantern symbol                           |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_LARROW   | .. data:: WACS_LARROW   | left arrow                               |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_LEQUAL   | .. data:: WACS_LEQUAL   | less-than-or-equal-to                    |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_LLCORNER | .. data:: WACS_LLCORNER | lower-left corner                        |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_LRCORNER | .. data:: WACS_LRCORNER | lower-right corner                       |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_LTEE     | .. data:: WACS_LTEE     | left tee                                 |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_NEQUAL   | .. data:: WACS_NEQUAL   | not-equal sign                           |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_PI       | .. data:: WACS_PI       | letter pi                                |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_PLMINUS  | .. data:: WACS_PLMINUS  | plus-or-minus sign                       |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_PLUS     | .. data:: WACS_PLUS     | big plus sign                            |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_RARROW   | .. data:: WACS_RARROW   | right arrow                              |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_RTEE     | .. data:: WACS_RTEE     | right tee                                |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_S1       | .. data:: WACS_S1       | scan line 1                              |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_S3       | .. data:: WACS_S3       | scan line 3                              |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_S7       | .. data:: WACS_S7       | scan line 7                              |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_S9       | .. data:: WACS_S9       | scan line 9                              |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_SBBS     | .. data:: WACS_SBBS     | alternate name for lower-right corner    |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_SBSB     | .. data:: WACS_SBSB     | alternate name for vertical line         |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_SBSS     | .. data:: WACS_SBSS     | alternate name for right tee             |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_SSBB     | .. data:: WACS_SSBB     | alternate name for lower-left corner     |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_SSBS     | .. data:: WACS_SSBS     | alternate name for bottom tee            |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_SSSB     | .. data:: WACS_SSSB     | alternate name for left tee              |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_SSSS     | .. data:: WACS_SSSS     | alternate name for crossover or big plus |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_STERLING | .. data:: WACS_STERLING | pound sterling                           |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_TTEE     | .. data:: WACS_TTEE     | top tee                                  |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_UARROW   | .. data:: WACS_UARROW   | up arrow                                 |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_ULCORNER | .. data:: WACS_ULCORNER | upper-left corner                        |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_URCORNER | .. data:: WACS_URCORNER | upper-right corner                       |
++------------------------+-------------------------+------------------------------------------+
+| .. data:: ACS_VLINE    | .. data:: WACS_VLINE    | vertical line                            |
++------------------------+-------------------------+------------------------------------------+
+
+The following table lists the double-line and thick-line characters.
+They have no ``ACS_*`` counterpart, and are not provided by every implementation.
+As in the table above, the alternate name spells out the four sides of the
+character, clockwise from the top:
+``B`` for a blank side, ``S`` for a single line, ``D`` for a double line and
+``T`` for a thick line.
+
++---------------------------+---------------------+--------------------------------+
+| WACS code                 | Alternate name      | Meaning                        |
++===========================+=====================+================================+
+| .. data:: WACS_D_BTEE     | .. data:: WACS_DDBD | double-line bottom tee         |
++---------------------------+---------------------+--------------------------------+
+| .. data:: WACS_D_HLINE    | .. data:: WACS_BDBD | double-line horizontal line    |
++---------------------------+---------------------+--------------------------------+
+| .. data:: WACS_D_LLCORNER | .. data:: WACS_DDBB | double-line lower-left corner  |
++---------------------------+---------------------+--------------------------------+
+| .. data:: WACS_D_LRCORNER | .. data:: WACS_DBBD | double-line lower-right corner |
++---------------------------+---------------------+--------------------------------+
+| .. data:: WACS_D_LTEE     | .. data:: WACS_DDDB | double-line left tee           |
++---------------------------+---------------------+--------------------------------+
+| .. data:: WACS_D_PLUS     | .. data:: WACS_DDDD | double-line big plus sign      |
++---------------------------+---------------------+--------------------------------+
+| .. data:: WACS_D_RTEE     | .. data:: WACS_DBDD | double-line right tee          |
++---------------------------+---------------------+--------------------------------+
+| .. data:: WACS_D_TTEE     | .. data:: WACS_BDDD | double-line top tee            |
++---------------------------+---------------------+--------------------------------+
+| .. data:: WACS_D_ULCORNER | .. data:: WACS_BDDB | double-line upper-left corner  |
++---------------------------+---------------------+--------------------------------+
+| .. data:: WACS_D_URCORNER | .. data:: WACS_BBDD | double-line upper-right corner |
++---------------------------+---------------------+--------------------------------+
+| .. data:: WACS_D_VLINE    | .. data:: WACS_DBDB | double-line vertical line      |
++---------------------------+---------------------+--------------------------------+
+| .. data:: WACS_T_BTEE     | .. data:: WACS_TTBT | thick-line bottom tee          |
++---------------------------+---------------------+--------------------------------+
+| .. data:: WACS_T_HLINE    | .. data:: WACS_BTBT | thick-line horizontal line     |
++---------------------------+---------------------+--------------------------------+
+| .. data:: WACS_T_LLCORNER | .. data:: WACS_TTBB | thick-line lower-left corner   |
++---------------------------+---------------------+--------------------------------+
+| .. data:: WACS_T_LRCORNER | .. data:: WACS_TBBT | thick-line lower-right corner  |
++---------------------------+---------------------+--------------------------------+
+| .. data:: WACS_T_LTEE     | .. data:: WACS_TTTB | thick-line left tee            |
++---------------------------+---------------------+--------------------------------+
+| .. data:: WACS_T_PLUS     | .. data:: WACS_TTTT | thick-line big plus sign       |
++---------------------------+---------------------+--------------------------------+
+| .. data:: WACS_T_RTEE     | .. data:: WACS_TBTT | thick-line right tee           |
++---------------------------+---------------------+--------------------------------+
+| .. data:: WACS_T_TTEE     | .. data:: WACS_BTTT | thick-line top tee             |
++---------------------------+---------------------+--------------------------------+
+| .. data:: WACS_T_ULCORNER | .. data:: WACS_BTTB | thick-line upper-left corner   |
++---------------------------+---------------------+--------------------------------+
+| .. data:: WACS_T_URCORNER | .. data:: WACS_BBTT | thick-line upper-right corner  |
++---------------------------+---------------------+--------------------------------+
+| .. data:: WACS_T_VLINE    | .. data:: WACS_TBTB | thick-line vertical line       |
++---------------------------+---------------------+--------------------------------+
 
 Mouse buttons
 ~~~~~~~~~~~~~
