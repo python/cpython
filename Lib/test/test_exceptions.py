@@ -279,14 +279,14 @@ class ExceptionTests(unittest.TestCase):
         check('try:\n  pass\nexcept*:\n  pass\nexcept* ValueError:\n  pass', 3, 8)
 
         # Errors thrown by the tokenizer
-        check('(0x+1)', 1, 3)
-        check('x = 0xI', 1, 6)
+        check('(0x+1)', 1, 4)
+        check('x = 0xI', 1, 7)
         check('0010 + 2', 1, 1)
         check('x = 32e-+4', 1, 8)
         check('x = 0o9', 1, 7)
-        check('\u03b1 = 0xI', 1, 6)
-        check(b'\xce\xb1 = 0xI', 1, 6)
-        check(b'# -*- coding: iso8859-7 -*-\n\xe1 = 0xI', 2, 6,
+        check('\u03b1 = 0xI', 1, 7)
+        check(b'\xce\xb1 = 0xI', 1, 7)
+        check(b'# -*- coding: iso8859-7 -*-\n\xe1 = 0xI', 2, 7,
               encoding='iso8859-7')
         check(b"""if 1:
             def foo():
