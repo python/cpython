@@ -7036,16 +7036,24 @@ _socket_getaddrinfo_impl(PyObject *module, PyObject *hobj, PyObject *pobj,
     const char *hptr, *pptr;
     int error;
     PyObject *all = (PyObject *)NULL;
-    PyObject *idna = NULL;
+    PyObject *hbytes = NULL;
+    Py_ssize_t colon;
 
     if (hobj == Py_None) {
         hptr = NULL;
     } else if (PyUnicode_Check(hobj)) {
-        idna = PyUnicode_AsEncodedString(hobj, "idna", NULL);
-        if (!idna)
+        colon = PyUnicode_FindChar(hobj, ':', 0, PyUnicode_GET_LENGTH(hobj), 1);
+        if (colon == -2)
             return NULL;
-        assert(PyBytes_Check(idna));
-        hptr = PyBytes_AS_STRING(idna);
+        if(colon != -1){ // IPv6 address
+            hbytes = PyUnicode_EncodeFSDefault(hobj);
+        } else {
+            hbytes = PyUnicode_AsEncodedString(hobj, "idna", NULL);
+        }
+        if (!hbytes)
+            return NULL;
+        assert(PyBytes_Check(hbytes));
+        hptr = PyBytes_AS_STRING(hbytes);
     } else if (PyBytes_Check(hobj)) {
         hptr = PyBytes_AsString(hobj);
     } else {
@@ -7130,14 +7138,14 @@ _socket_getaddrinfo_impl(PyObject *module, PyObject *hobj, PyObject *pobj,
         }
         Py_DECREF(single);
     }
-    Py_XDECREF(idna);
+    Py_XDECREF(hbytes);
     Py_XDECREF(pstr);
     if (res0)
         freeaddrinfo(res0);
     return all;
  err:
     Py_XDECREF(all);
-    Py_XDECREF(idna);
+    Py_XDECREF(hbytes);
     Py_XDECREF(pstr);
     if (res0)
         freeaddrinfo(res0);
