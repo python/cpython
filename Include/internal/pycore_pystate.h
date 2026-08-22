@@ -21,13 +21,13 @@ extern "C" {
 // interpreter at the same time. Only the "bound" thread may perform the
 // transitions between "attached" and "detached" on its own PyThreadState.
 //
-// The "suspended" state is used to implement stop-the-world pauses, such as
-// for cyclic garbage collection. It is only used in `--disable-gil` builds.
-// The "suspended" state is similar to the "detached" state in that in both
-// states the thread is not allowed to call most Python APIs. However, unlike
-// the "detached" state, a thread may not transition itself out from the
-// "suspended" state. Only the thread performing a stop-the-world pause may
-// transition a thread from the "suspended" state back to the "detached" state.
+// The "suspended" states are used to implement stop-the-world pauses, such as
+// for cyclic garbage collection. They are only used in `--disable-gil` builds.
+// They are similar to the "detached" state in that the thread is not allowed
+// to call most Python APIs. However, unlike the "detached" state, a thread may
+// not transition itself out from a "suspended" state. Only the thread
+// performing a stop-the-world pause may transition a thread from a "suspended"
+// state back to the "detached" state.
 //
 // The "shutting down" state is used when the interpreter is being finalized.
 // Threads in this state can't do anything other than block the OS thread.
@@ -36,9 +36,9 @@ extern "C" {
 // State transition diagram:
 //
 //            (bound thread)        (stop-the-world thread)
-// [attached]       <->       [detached]       <->       [suspended]
+// [attached]       <->       [detached]       <->       [suspended-detached]
 //   |                                                        ^
-//   +---------------------------->---------------------------+
+//   +----------------------> [suspended] ---------------------+
 //                          (bound thread)
 //
 // The (bound thread) and (stop-the-world thread) labels indicate which thread
@@ -46,7 +46,8 @@ extern "C" {
 #define _Py_THREAD_DETACHED         0
 #define _Py_THREAD_ATTACHED         1
 #define _Py_THREAD_SUSPENDED        2
-#define _Py_THREAD_SHUTTING_DOWN    3
+#define _Py_THREAD_SUSPENDED_DETACHED  3
+#define _Py_THREAD_SHUTTING_DOWN    4
 
 
 /* Check if the current thread is the main thread.
