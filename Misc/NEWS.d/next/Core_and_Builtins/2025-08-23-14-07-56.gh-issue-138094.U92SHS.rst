@@ -1,0 +1,2 @@
+Removed potentially-misleading suggestions from the interactive :func:`help`
+prompt.  Patch by Adam Hartz.
