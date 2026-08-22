@@ -17,6 +17,7 @@ and the literal/charset prefix info block (:func:`_compile_info`).
 
 import _sre
 from . import _parser
+from ._casefix import _EXTRA_CASES
 from ._constants import *
 
 _CHARSET_ALL = [(NEGATE, None)]
@@ -428,6 +429,330 @@ def _compile_info(code, pattern, flags):
         _compile_charset(charset, flags, code)
     code[skip] = len(code) - skip
 
+
+# --- Auto-possessification pass ---------------------------------------------
+
+_REPEAT_CODES = frozenset({MIN_REPEAT, MAX_REPEAT, POSSESSIVE_REPEAT})
+_POSSESSIFY_UNITS = frozenset({LITERAL, NOT_LITERAL, ANY, ANY_ALL, IN, CATEGORY})
+
+# \d, \w, \s and the line break category as unions of disjoint "atoms":
+# d=digit, l=word non-digit, b=line break, s=space non-line-break, o=other.
+# digit<=word, linebreak<=space and word disjoint from space hold for both
+# ASCII and Unicode, so disjoint atom sets mean really disjoint categories.
+_CAT_UNIVERSE = frozenset('dlbso')
+_CAT_ATOMS = {
+    CATEGORY_DIGIT:     frozenset('d'),
+    CATEGORY_WORD:      frozenset('dl'),
+    CATEGORY_SPACE:     frozenset('bs'),
+    CATEGORY_LINEBREAK: frozenset('b'),
+}
+_CAT_ATOMS.update({
+    CATEGORY_NOT_DIGIT:     _CAT_UNIVERSE - _CAT_ATOMS[CATEGORY_DIGIT],
+    CATEGORY_NOT_WORD:      _CAT_UNIVERSE - _CAT_ATOMS[CATEGORY_WORD],
+    CATEGORY_NOT_SPACE:     _CAT_UNIVERSE - _CAT_ATOMS[CATEGORY_SPACE],
+    CATEGORY_NOT_LINEBREAK: _CAT_UNIVERSE - _CAT_ATOMS[CATEGORY_LINEBREAK],
+})
+
+_ASCII_SPACE = frozenset(b' \t\n\r\f\v')
+_ASCII_WORD = frozenset(b'_') | frozenset(
+    range(0x30, 0x3a)) | frozenset(range(0x41, 0x5b)) | frozenset(range(0x61, 0x7b))
+_PROBE_LIMIT = 64  # cap on the size of a finite atom used as a witness set
+_FOLLOW_LIMIT = 64  # cap on a follower set: an empty branch alternative
+                    # re-appends the continuation, exponential for (|)(|)...
+_DEPTH_LIMIT = 100  # cap on the follower-scan recursion: one level per group
+
+def _tolower(c, flags):
+    if flags & SRE_FLAG_UNICODE:
+        return _sre.unicode_tolower(c)
+    return _sre.ascii_tolower(c)
+
+def _fold_set(c, flags):
+    # Code points witnessing what LITERAL c matches: tolower() of any match
+    # lies here and each element is itself a match (simple tolower plus
+    # _EXTRA_CASES, like the IGNORECASE matcher).
+    if not (flags & SRE_FLAG_IGNORECASE) or flags & SRE_FLAG_LOCALE:
+        return (c,)
+    lo = _tolower(c, flags)
+    if flags & SRE_FLAG_UNICODE:
+        extra = _EXTRA_CASES.get(lo)
+        if extra:
+            return (lo, *extra)
+    return (lo,)
+
+def _lit_matches(d, c, flags):
+    # Whether LITERAL d matches input code point c.
+    if not (flags & SRE_FLAG_IGNORECASE) or flags & SRE_FLAG_LOCALE:
+        return c == d
+    return _tolower(c, flags) in _fold_set(d, flags)
+
+# Categories whose membership is invariant under case folding (verified over
+# the full range); the others cannot be decided under IGNORECASE, where a
+# charset member is matched against the lowercased character.
+_FOLD_CLOSED = frozenset({
+    CATEGORY_DIGIT, CATEGORY_WORD, CATEGORY_SPACE, CATEGORY_LINEBREAK,
+    CATEGORY_NUMERIC, CATEGORY_PRINTABLE, CATEGORY_N, CATEGORY_LM,
+    CATEGORY_NL, CATEGORY_NO, CATEGORY_CF, CATEGORY_Z, CATEGORY_ZS,
+    CATEGORY_C, CATEGORY_CN, CATEGORY_XID_CONTINUE, CATEGORY_ASSIGNED,
+    CATEGORY_BLANK, CATEGORY_GRAPH, CATEGORY_PRINT, CATEGORY_CASED,
+})
+_FOLD_CLOSED |= frozenset(CH_NEGATE[cat] for cat in _FOLD_CLOSED)
+
+def _cat_matches(cat, c, flags):
+    # Whether category cat matches code point c, decided by the engine's own
+    # predicate; None if it depends on the runtime locale or on case folding.
+    if flags & SRE_FLAG_LOCALE:
+        return None
+    if flags & SRE_FLAG_IGNORECASE and cat not in _FOLD_CLOSED:
+        return None
+    if flags & SRE_FLAG_UNICODE:
+        cat = CH_UNICODE[cat]
+    return _sre.category_matches(cat, c)
+
+def _member_matches(op, av, c, flags):
+    # Whether a charset member (op, av) matches code point c.  None if unknown.
+    if op is LITERAL:
+        return _lit_matches(av, c, flags)
+    if op is RANGE:
+        lo, hi = av
+        if lo <= c <= hi:
+            return True
+        if not (flags & SRE_FLAG_IGNORECASE) or flags & SRE_FLAG_LOCALE:
+            return False
+        if lo <= _tolower(c, flags) <= hi or any(lo <= x <= hi
+                                                 for x in _fold_set(c, flags)):
+            return True
+        return None  # case folding into the range can't be ruled out cheaply
+    if op is CATEGORY:
+        return _cat_matches(av, c, flags)
+    return None
+
+def _atom_matches(op, av, c, flags):
+    # Whether the one-character atom (op, av) matches code point c.
+    # Returns None when it cannot be decided (callers treat that as "maybe").
+    if op is LITERAL:
+        return _lit_matches(av, c, flags)
+    if op is NOT_LITERAL:
+        return not _lit_matches(av, c, flags)
+    if op is CATEGORY:
+        return _cat_matches(av, c, flags)
+    if op is ANY:
+        return True if flags & SRE_FLAG_DOTALL else c != 0x0a
+    if op is ANY_ALL:
+        return True
+    if op is IN:
+        # Evaluate the charset the way the engine's charset() walk does:
+        # NEGATE toggles the polarity, a member hit returns the current
+        # polarity, and the end returns the complement of the final one
+        # (this also covers difference-fused charsets, see _fuse_difference).
+        ok = True
+        results = set()
+        for iop, iav in av:
+            if iop is NEGATE:
+                ok = not ok
+                continue
+            r = _member_matches(iop, iav, c, flags)
+            if r:
+                results.add(ok)
+                break
+            if r is None:
+                results.add(ok)     # may or may not hit this member
+        else:
+            results.add(not ok)
+        if len(results) == 1:
+            return results.pop()
+        return None
+    return None
+
+def _finite_set(op, av, flags):
+    # The set of code points the atom matches, if finite and small; else None.
+    if op is LITERAL:
+        return set(_fold_set(av, flags))
+    if op is IN:
+        if av and av[0] == (NEGATE, None):
+            return None
+        out = set()
+        for iop, iav in av:
+            if iop is LITERAL:
+                out.update(_fold_set(iav, flags))
+            elif iop is RANGE:
+                if iav[1] - iav[0] >= _PROBE_LIMIT:
+                    return None
+                for x in range(iav[0], iav[1] + 1):
+                    out.update(_fold_set(x, flags))
+            elif iop is CATEGORY:
+                if flags & SRE_FLAG_LOCALE or flags & SRE_FLAG_UNICODE:
+                    return None  # Unicode/locale categories are not small
+                if iav is CATEGORY_DIGIT:
+                    out.update(range(0x30, 0x3a))
+                elif iav is CATEGORY_WORD:
+                    out.update(_ASCII_WORD)
+                elif iav is CATEGORY_SPACE:
+                    out.update(_ASCII_SPACE)
+                elif iav is CATEGORY_LINEBREAK:
+                    out.add(0x0a)
+                else:
+                    return None  # a negated ASCII category is not small
+            else:
+                return None
+            if len(out) > _PROBE_LIMIT:
+                return None
+        return out
+    return None
+
+def _cat_atom_set(op, av):
+    # The dlbso atom set the atom matches, if it is a bare category or a
+    # charset of categories (the first member claiming an atom decides it
+    # with the current NEGATE polarity, the end claims the rest).
+    if op is CATEGORY:
+        return _CAT_ATOMS.get(av)
+    if op is not IN:
+        return None
+    ok = True
+    decided = set()
+    matched = set()
+    for iop, iav in av:
+        if iop is NEGATE:
+            ok = not ok
+            continue
+        if iop is not CATEGORY:
+            if not ok:
+                # a non-category member of a fail segment only narrows the
+                # set; ignoring it over-approximates, which stays sound
+                continue
+            return None
+        atoms = _CAT_ATOMS.get(iav)
+        if atoms is None:
+            return None
+        if ok:
+            matched |= atoms - decided
+        decided |= atoms
+    if not ok:
+        matched |= _CAT_UNIVERSE - decided
+    return matched
+
+def _as_single_category(op, av):
+    # The category code if the atom is a bare category or a single-category
+    # class, else None.
+    if op is CATEGORY:
+        return av
+    if op is IN and len(av) == 1 and av[0][0] is CATEGORY:
+        return av[0][1]
+    return None
+
+def _disjoint(atom, other, flags):
+    # True only if atom and other provably cannot match a common character.
+    if flags & SRE_FLAG_LOCALE and flags & SRE_FLAG_IGNORECASE:
+        # case folding is decided by the runtime locale; prove nothing
+        return False
+    ca = _as_single_category(*atom)
+    if ca is not None:
+        cb = _as_single_category(*other)
+        # A category and its complement are disjoint whatever they mean --
+        # but only within one flag context (unicode \w and ascii \W
+        # overlap), which holds because the walk never compares atoms
+        # across a flag-scoping boundary.
+        if cb is not None and cb == CH_NEGATE[ca]:
+            return True
+    if not (flags & SRE_FLAG_LOCALE):
+        a1 = _cat_atom_set(*atom)
+        if a1 is not None:
+            a2 = _cat_atom_set(*other)
+            if a2 is not None and a1.isdisjoint(a2):
+                return True
+    fa = _finite_set(*atom, flags)
+    fb = _finite_set(*other, flags)
+    if fa is not None and fb is not None:
+        return fa.isdisjoint(fb)
+    if fa is not None:
+        return not any(_atom_matches(*other, c, flags) is not False for c in fa)
+    if fb is not None:
+        return not any(_atom_matches(*atom, c, flags) is not False for c in fb)
+    return False
+
+def _leading_atom(data):
+    # The leading atom of a rigid body -- a concatenation of single-character
+    # atoms with no internal choice.  A repeat of it gives back only whole
+    # iterations, so its leading atom is all the follower must avoid.
+    lead = None
+    for op, av in data:
+        if op is SUBPATTERN and not av[1] and not av[2]:
+            a = _leading_atom(av[3].data)
+        elif op is ATOMIC_GROUP:
+            a = _leading_atom(av.data)
+        elif op in _POSSESSIFY_UNITS:
+            a = (op, av)
+        else:
+            return None
+        if a is None:
+            return None
+        if lead is None:
+            lead = a
+    return lead
+
+def _first_consumers(seq, i, flags, cont, depth=0):
+    # Atoms for every character that could be consumed at position i of seq;
+    # cont is the same for what follows seq.  None if it can't be analyzed.
+    if depth >= _DEPTH_LIMIT:
+        return None
+    depth += 1
+    acc = []
+    n = len(seq)
+    while i < n:
+        op, av = seq[i]
+        if op in _POSSESSIFY_UNITS:
+            acc.append((op, av))
+            return acc
+        if op is SUBPATTERN:
+            if av[1] or av[2]:
+                return None  # flag-scoping group: atoms can't carry their flags
+            after = _first_consumers(seq, i + 1, flags, cont, depth)
+            if after is None:
+                return None
+            inner = _first_consumers(av[3].data, 0, flags, after, depth)
+            return None if inner is None else acc + inner
+        if op is ATOMIC_GROUP:
+            after = _first_consumers(seq, i + 1, flags, cont, depth)
+            if after is None:
+                return None
+            inner = _first_consumers(av.data, 0, flags, after, depth)
+            return None if inner is None else acc + inner
+        if op is BRANCH:
+            after = _first_consumers(seq, i + 1, flags, cont, depth)
+            if after is None:
+                return None
+            for alt in av[1]:
+                a = _first_consumers(alt.data, 0, flags, after, depth)
+                if a is None or len(acc) + len(a) > _FOLLOW_LIMIT:
+                    return None
+                acc += a
+            return acc
+        if op in _REPEAT_CODES:
+            mn, mx, p = av
+            sub = _first_consumers(p.data, 0, flags, None, depth)
+            if sub is None or len(acc) + len(sub) > _FOLLOW_LIMIT:
+                return None
+            acc += sub
+            if mn == 0:
+                i += 1
+                continue
+            return acc
+        if op is AT and av is AT_END_STRING:
+            # \z matches only at the very end; backtracking the repeat moves
+            # earlier and can never satisfy it, so nothing need be disjoint.
+            return acc
+        if op is AT and av is AT_END:
+            # $ is like \z but also matches before a '\n'.  Only MULTILINE
+            # exposes an interior one to backtracking, and then only if the
+            # repeat can match '\n'.
+            if flags & SRE_FLAG_MULTILINE:
+                return acc + [(LITERAL, 0x0a)]
+            return acc
+        return None  # assertion, anchor, group reference, ... -> give up
+    if cont is None or len(acc) + len(cont) > _FOLLOW_LIMIT:
+        return None
+    return acc + cont
+
+
 # Difference-fusion peephole: rewrite [A--B]-style A(?<![B]) into a single
 # charset (see the engine's NEGATE polarity toggle).
 def _subpatterns(op, av):
@@ -493,17 +818,45 @@ def _fuse_difference(data):
         out.append((op, av))
     data[:] = out
 
-def _walk(seq):
+def _walk(seq, flags, cont):
+    # Rewrite the sequence in place: fuse set-operation charsets (see
+    # _fuse_branch and _fuse_difference) and turn greedy repeats possessive
+    # where the repeated atom and every possible follower are disjoint.
     for i, (op, av) in enumerate(seq):
-        for sub in _subpatterns(op, av):
-            _walk(sub.data)
-        if op is BRANCH:
+        if op is SUBPATTERN:
+            if av[1] or av[2]:
+                # flag-scoping group: optimize inside it, but its boundary is
+                # opaque since atoms there match under different flags
+                _walk(av[3].data, _combine_flags(flags, av[1], av[2]), None)
+            else:
+                _walk(av[3].data, flags,
+                      _first_consumers(seq, i + 1, flags, cont))
+        elif op is BRANCH:
+            after = _first_consumers(seq, i + 1, flags, cont)
+            for alt in av[1]:
+                _walk(alt.data, flags, after)
             items = _fuse_branch(av)
             if items is not None:
                 seq[i] = (IN, items)
+        else:
+            # ATOMIC_GROUP / ASSERT(_NOT) / GROUPREF_EXISTS / repeat body have an
+            # opaque boundary -- optimize inside with no follower context.
+            for sub in _subpatterns(op, av):
+                _walk(sub.data, flags, None)
+            if op is MAX_REPEAT:
+                atom = _leading_atom(av[2].data)
+                if atom is not None:
+                    follow = _first_consumers(seq, i + 1, flags, cont)
+                    if follow is not None and \
+                            all(_disjoint(atom, f, flags) for f in follow):
+                        seq[i] = (POSSESSIVE_REPEAT, av)
     _fuse_difference(seq)
 
-def optimize(pattern):
+def optimize(pattern, flags):
     """Rewrite a parsed pattern in place and return it."""
-    _walk(pattern.data)
+    try:
+        _walk(pattern.data, flags, [])
+    except RecursionError:
+        # A backstop for _DEPTH_LIMIT; the rewrites already applied are sound.
+        pass
     return pattern
