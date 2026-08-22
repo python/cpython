@@ -5919,6 +5919,71 @@ class TestWait(unittest.TestCase):
         b.close()
 
 #
+# Issue 154208: handles duplicated for a child process must not leak in the
+# parent if the child dies before it can make use of them
+#
+
+@unittest.skipUnless(WIN32, "skipped on non-Windows platforms")
+class TestWindowsHandleLeak(unittest.TestCase):
+
+    @staticmethod
+    def handle_count():
+        import ctypes
+        from ctypes import wintypes
+
+        kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
+        kernel32.GetCurrentProcess.argtypes = ()
+        kernel32.GetCurrentProcess.restype = wintypes.HANDLE
+        kernel32.GetProcessHandleCount.argtypes = (wintypes.HANDLE,
+                                                  wintypes.LPDWORD)
+        kernel32.GetProcessHandleCount.restype = wintypes.BOOL
+
+        # Pseudo-handle: it must not be closed
+        hproc = kernel32.GetCurrentProcess()
+        count = wintypes.DWORD()
+        if not kernel32.GetProcessHandleCount(hproc, ctypes.byref(count)):
+            raise ctypes.WinError(ctypes.get_last_error())
+        return count.value
+
+    @staticmethod
+    def _sleep(conn):
+        time.sleep(support.LONG_TIMEOUT)
+
+    def spawn_and_terminate(self):
+        # Kill the child before it gets a chance to unpickle its arguments:
+        # the handles duplicated for it are then never claimed.
+        reader, writer = multiprocessing.Pipe(duplex=False)
+        try:
+            proc = multiprocessing.Process(target=self._sleep, args=(reader,))
+            proc.start()
+            try:
+                proc.terminate()
+                proc.join()
+            finally:
+                proc.close()
+        finally:
+            reader.close()
+            writer.close()
+
+    def test_no_handle_leak_if_child_is_terminated(self):
+        # Warm up: the first iterations import modules and populate caches,
+        # which opens handles that are unrelated to this test.
+        for _ in range(3):
+            self.spawn_and_terminate()
+        gc.collect()
+
+        before = self.handle_count()
+        for _ in range(10):
+            self.spawn_and_terminate()
+        gc.collect()
+        leaked = self.handle_count() - before
+
+        # Before the fix, each iteration leaked the handle duplicated for
+        # the child, so the count grew without bound.
+        self.assertLessEqual(leaked, 4)
+
+
+#
 # Issue 14151: Test invalid family on invalid environment
 #
 
