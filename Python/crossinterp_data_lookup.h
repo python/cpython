@@ -100,6 +100,7 @@ _PyXI_UnwrapNotShareableError(PyThreadState * tstate, _PyXI_failure *failure)
     if (failure != NULL) {
         _PyXI_errcode code = _PyXI_ERR_NOT_SHAREABLE;
         if (_PyXI_InitFailure(failure, code, exc) < 0) {
+            Py_DECREF(exc);
             return -1;
         }
     }
