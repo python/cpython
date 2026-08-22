@@ -1,0 +1,3 @@
+iOS builds may now be configured with ``--disable-framework`` when combined with
+``--disable-shared``, producing a static ``libpython`` for embedding in an app
+binary. A shared iOS build must still be a framework build.

@@ -4442,7 +4442,6 @@ then :
 	case $enableval in
 	no)
 		case $ac_sys_system in
-			iOS) as_fn_error $? "iOS builds must use --enable-framework" "$LINENO" 5 ;;
 			*)
 				PYTHONFRAMEWORK=
 				PYTHONFRAMEWORKDIR=no-framework
@@ -4559,7 +4558,7 @@ then :
 else case e in #(
   e)
 	case $ac_sys_system in
-		iOS) as_fn_error $? "iOS builds must use --enable-framework" "$LINENO" 5 ;;
+		iOS) as_fn_error $? "iOS builds must use --enable-framework, or --disable-framework with --disable-shared to build a static libpython" "$LINENO" 5 ;;
 		*)
 			PYTHONFRAMEWORK=
 			PYTHONFRAMEWORKDIR=no-framework
@@ -8042,6 +8041,10 @@ else # shared is disabled
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $LDLIBRARY" >&5
 printf "%s\n" "$LDLIBRARY" >&6; }
+
+if test "$ac_sys_system" = "iOS" && test "$PY_ENABLE_SHARED" = 1 && test -z "$PYTHONFRAMEWORK"; then
+  as_fn_error $? "iOS builds must use --enable-framework, or --disable-framework with --disable-shared to build a static libpython" "$LINENO" 5
+fi
 
 # HOSTRUNNER - Program to run CPython for the host platform
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking HOSTRUNNER" >&5
@@ -14536,7 +14539,11 @@ printf "%s\n" "#define THREAD_STACK_SIZE 0x$stack_size" >>confdefs.h
 			fi
 			LINKFORSHARED="$LINKFORSHARED"
 		elif test $ac_sys_system = "iOS"; then
-			LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)'
+			LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED"
+
+			if test "$enable_framework"; then
+				LINKFORSHARED="$LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)'
+			fi
 		fi
 		;;
 	OpenUNIX*|UnixWare*) LINKFORSHARED="-Wl,-Bexport";;
@@ -28216,8 +28223,9 @@ if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MA
   LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
 fi
 
-# On iOS the shared libraries must be linked with the Python framework
-if test "$ac_sys_system" = "iOS"; then
+# On iOS the shared libraries must be linked with the Python framework, when one
+# is being built
+if test "$ac_sys_system" = "iOS" && test "$enable_framework"; then
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(PYTHONFRAMEWORKDIR)/\$(PYTHONFRAMEWORK)"
 fi
 
