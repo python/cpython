@@ -26,6 +26,7 @@ else:
 
 class LocalPathGround:
     can_symlink = can_symlink
+    seps = os.path.sep + (os.path.altsep or '')
 
     def __init__(self, path_cls):
         self.path_cls = path_cls
