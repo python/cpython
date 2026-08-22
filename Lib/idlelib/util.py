@@ -13,13 +13,14 @@ TODO:
     * warning stuff (pyshell, run).
 """
 import sys
+import tkinter  # This module requires gui to run (import).
 
 # .pyw is for Windows; .pyi is for typing stub files.
 # The extension order is needed for iomenu open/save dialogs.
 py_extensions = ('.py', '.pyw', '.pyi')
 
 
-# fix_x functions seem only needed once per process.
+# fix_x functions seem needed only once per process.
 
 def fix_scaling(root):  # Called in filelist _test, pyshell, and run.
     """Scale fonts on HiDPI displays, once per process."""
@@ -45,6 +46,7 @@ if sys.platform == 'win32':  # pragma: no cover
         except (ImportError, AttributeError, OSError):
             pass
 
+
 def fix_word_breaks(root):  # Called in editor htest, filelist _test, pyshell.
     # On Windows, tcl/tk breaks 'words' only on spaces, as in Command Prompt.
     # We want Motif style everywhere. See #21474, msg218992 and followup.
@@ -63,6 +65,36 @@ def fix_x11_paste(root):
                 '<<Paste>>',
                 'catch {%W delete sel.first sel.last}\n' +
                         root.bind_class(cls, '<<Paste>>'))
+
+
+# On X11, Tk 8.6- signals mouse wheel rotations with <Button-4> and
+# <Button-5> events.  With 8.7+, it generates <Mousewheel events
+# as on other systems.  Used here, editor, tree, and test_sidebar.
+root = tkinter.Tk()  # Use this as process root?
+root.withdraw()
+x11_buttons = root._windowingsystem == 'x11' and tkinter.TkVersion <= 8.6
+root.destroy()
+
+def wheel_event(event, widget=None):  # Bound in editor and tree.
+    """Handle scrollwheel event.
+
+    For MouseWheel up events, event.delta is generally= 120*n, but -1*n
+    on darwin (or just Aqua?), where n can be > 1 if one scrolls fast.
+    Macs use wheel down (delta = 1*n) to scroll up, so positive
+    delta means to scroll up on both systems.
+
+    When x11_buttons is True, Button-4,5 events signal up and down.
+
+    The widget parameter is needed in tree so browser events can be
+    passed to the underlying canvas vertical scrollbar.  If tree is
+    replaced by ttk.Treeview, 'widget' can go.
+    """
+    up = event.num == 4 if x11_buttons else event.delta > 0
+    # The following works, though +-4*n might be more standard,
+    lines = -5 if up else 5
+    widget = event.widget if widget is None else widget
+    widget.yview('scroll', lines, 'units')
+    return 'break'
 
 
 if __name__ == '__main__':
