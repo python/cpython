@@ -5340,7 +5340,7 @@ class BasicSocketPairTest(SocketPairTest):
 
     def _check_defaults(self, sock):
         self.assertIsInstance(sock, socket.socket)
-        if hasattr(socket, 'AF_UNIX'):
+        if sys.platform != 'win32' and hasattr(socket, 'AF_UNIX'):
             self.assertEqual(sock.family, socket.AF_UNIX)
         else:
             self.assertEqual(sock.family, socket.AF_INET)
@@ -6412,9 +6412,19 @@ class TestUnixDomain(unittest.TestCase):
             else:
                 raise
 
+    @unittest.skipIf(sys.platform == 'win32',
+                     'getsockname() raises OSError on an unbound socket on '
+                     'Windows')
     def testUnbound(self):
         # Issue #30205 (note getsockname() can return None on OS X)
         self.assertIn(self.sock.getsockname(), ('', None))
+
+    @unittest.skipUnless(sys.platform == 'win32',
+                         'Windows-specific behavior')
+    def test_unbound_on_windows(self):
+        with self.assertRaises(OSError) as cm:
+            self.sock.getsockname()
+        self.assertEqual(cm.exception.winerror, errno.WSAEINVAL)
 
     def testStrAddr(self):
         # Test binding to and retrieving a normal string pathname.
@@ -6430,6 +6440,10 @@ class TestUnixDomain(unittest.TestCase):
         self.addCleanup(os_helper.unlink, path)
         self.assertEqual(self.sock.getsockname(), path)
 
+    @unittest.skipIf(sys.platform == 'win32',
+                     'Windows replaces invalid UTF-8 sequences in the path '
+                     'with U+FFFD, so the socket file is created under a '
+                     'different name')
     def testSurrogateescapeBind(self):
         # Test binding to a valid non-ASCII pathname, with the
         # non-ASCII bytes supplied using surrogateescape encoding.
@@ -6439,6 +6453,10 @@ class TestUnixDomain(unittest.TestCase):
         self.addCleanup(os_helper.unlink, path)
         self.assertEqual(self.sock.getsockname(), path)
 
+    @unittest.skipIf(sys.platform == 'win32',
+                     'Windows replaces invalid UTF-8 sequences in the path '
+                     'with U+FFFD, so the socket file is created under a '
+                     'different name')
     def testUnencodableAddr(self):
         # Test binding to a pathname that cannot be encoded in the
         # file system encoding.
@@ -6451,9 +6469,17 @@ class TestUnixDomain(unittest.TestCase):
 
     @unittest.skipIf(sys.platform in ('linux', 'android'),
                      'Linux behavior is tested by TestLinuxAbstractNamespace')
+    @unittest.skipIf(sys.platform == 'win32',
+                     'Windows allows binding to an empty path')
     def testEmptyAddress(self):
         # Test that binding empty address fails.
         self.assertRaises(OSError, self.sock.bind, "")
+
+    @unittest.skipUnless(sys.platform == 'win32',
+                         'Windows-specific behavior')
+    def test_empty_address_on_windows(self):
+        self.sock.bind('')
+        self.assertEqual(self.sock.getsockname(), '')
 
 
 class BufferIOTest(SocketConnectedTest):
