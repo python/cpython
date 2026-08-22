@@ -929,6 +929,11 @@ Deprecated C APIs
 Removed C APIs
 --------------
 
+* Remove the deprecated :c:type:`!Py_UNICODE` type, a typedef to
+  :c:type:`wchar_t` deprecated by :pep:`393` since Python 3.3 and at runtime
+  since Python 3.13.  Use :c:type:`wchar_t` instead.
+  (Contributed by Vyron Vasileiadis in :gh:`154757`.)
+
 * The :c:var:`!PyUnstable_ExecutableKinds` array, as well as the macros
   :c:macro:`!PyUnstable_EXECUTABLE_KIND_SKIP`,
   :c:macro:`!PyUnstable_EXECUTABLE_KIND_PY_FUNCTION`,

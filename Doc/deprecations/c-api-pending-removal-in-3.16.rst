@@ -83,5 +83,3 @@ Pending removal in Python 3.16
   The :c:func:`Py_InitializeFromConfig` API should be used with
   :c:type:`PyConfig` to set these options. Or :c:func:`PyConfig_Get` can be
   used to get these options at runtime.
-
-* :c:type:`Py_UNICODE` which was deprecated by :pep:`393`.
