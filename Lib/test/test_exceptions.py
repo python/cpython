@@ -2778,6 +2778,30 @@ class TestInvalidExceptionMatcher(unittest.TestCase):
             except (ValueError, 42):
                 pass
 
+    @cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_given_exception_matches_nested_tuple(self):
+        # Nested tuples are searched recursively.
+        self.assertTrue(
+            _testcapi.err_givenexceptionmatches(ValueError(), ((ValueError,),)))
+        self.assertFalse(
+            _testcapi.err_givenexceptionmatches(TypeError(), ((ValueError,),)))
+
+    @cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
+    @support.run_with_limited_c_stack(depth=500_000)
+    def test_given_exception_matches_deeply_nested_tuple(self):
+        # gh-156204: PyErr_GivenExceptionMatches() used to exhaust the C stack
+        # and crash the interpreter on deeply nested tuples of exception types.
+        tup = (ValueError,)
+        for _ in range(500_000):
+            tup = (tup,)
+
+        with self.assertRaises(RecursionError):
+            _testcapi.err_givenexceptionmatches(TypeError(), tup)
+
 
 class PEP626Tests(unittest.TestCase):
 
