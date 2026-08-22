@@ -5,16 +5,16 @@ Function get_close_matches(word, possibilities, n=3, cutoff=0.6):
     Use SequenceMatcher to return list of the best "good enough" matches.
 
 Function context_diff(a, b):
-    For two lists of strings, return a delta in context diff format.
+    For two sequences of strings, return a delta in context diff format.
 
 Function ndiff(a, b):
-    Return a delta: the difference between `a` and `b` (lists of strings).
+    Return a delta: the difference between `a` and `b` (sequences of strings).
 
 Function restore(delta, which):
     Return one of the two sequences that generated an ndiff delta.
 
 Function unified_diff(a, b):
-    For two lists of strings, return a delta in unified diff format.
+    For two sequences of strings, return a delta in unified diff format.
 
 Class SequenceMatcher:
     A flexible class for comparing pairs of sequences of any type.
@@ -310,7 +310,8 @@ class SequenceMatcher:
 
         If isjunk is not defined:
 
-        Return (i,j,k) such that a[i:i+k] is equal to b[j:j+k], where
+        Return a Match named tuple (i, j, k) such that a[i:i+k] is equal to
+        b[j:j+k], where
             alo <= i <= i+k <= ahi
             blo <= j <= j+k <= bhi
         and for all (i',j',k') meeting those conditions,
@@ -342,7 +343,7 @@ class SequenceMatcher:
         >>> s.find_longest_match(0, 5, 0, 9)
         Match(a=1, b=0, size=4)
 
-        If no blocks match, return (alo, blo, 0).
+        If no blocks match, return Match(alo, blo, 0).
 
         >>> s = SequenceMatcher(None, "ab", "c")
         >>> s.find_longest_match(0, 2, 0, 1)
@@ -420,7 +421,7 @@ class SequenceMatcher:
         return Match(besti, bestj, bestsize)
 
     def get_matching_blocks(self):
-        """Return list of triples describing matching subsequences.
+        """Return list of Match triples describing matching subsequences.
 
         Each triple is of the form (i, j, n), and means that
         a[i:i+n] == b[j:j+n].  The triples are monotonically increasing in
@@ -1323,7 +1324,7 @@ def diff_bytes(dfunc, a, b, fromfile=b'', tofile=b'',
 
 def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK):
     r"""
-    Compare `a` and `b` (lists of strings); return a `Differ`-style delta.
+    Compare `a` and `b` (sequences of strings); return a `Differ`-style delta.
 
     Optional keyword parameters `linejunk` and `charjunk` are for filter
     functions, or can be None:
