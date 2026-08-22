@@ -124,6 +124,7 @@ As a consequence of this, split keys have a maximum size of 16.
 #include "pycore_dict.h"          // export _PyDict_SizeOf()
 #include "pycore_freelist.h"      // _PyFreeListState_GET()
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"        // _PyObject_GC_TRACK(), _PyDebugAllocatorStats()
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_SSIZE_RELAXED
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
@@ -301,7 +302,7 @@ load_keys_nentries(PyDictObject *mp)
 #ifndef NDEBUG
 // Check if it's possible to modify a dictionary.
 // Usage: assert(can_modify_dict(mp)).
-static inline int
+static int
 can_modify_dict(PyDictObject *mp)
 {
     if (PyFrozenDict_Check(mp)) {
@@ -312,6 +313,9 @@ can_modify_dict(PyDictObject *mp)
         // No locking required to modify a newly created frozendict
         // since it's only accessible from the current thread.
         assert(PyUnstable_Object_IsUniquelyReferenced(_PyObject_CAST(mp)));
+
+        // The empty frozendict singleton must not be modified!
+        assert((PyObject*)mp != _PyInterpreterState_GET()->dict_state.empty_frozendict);
     }
     else {
         // Locking is only required if the dictionary is not
@@ -320,7 +324,7 @@ can_modify_dict(PyDictObject *mp)
     }
     return 1;
 }
-#endif
+#endif  // !NDEBUG
 
 #define _PyAnyDict_CAST(op) \
     (assert(PyAnyDict_Check(op)), _Py_CAST(PyDictObject*, op))
@@ -451,6 +455,30 @@ unicode_get_hash(PyObject *o)
 {
     return PyUnstable_Unicode_GET_CACHED_HASH(o);
 }
+
+
+static PyObject*
+frozendict_get_empty(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyObject *empty = interp->dict_state.empty_frozendict;
+    // The assertion fails if an empty frozendict was created
+    // before _PyDict_Init() or after _PyDict_Fini().
+    assert(empty != NULL);
+    assert(_Py_IsImmortal(empty));
+    assert(!_PyObject_GC_IS_TRACKED(empty));
+    return empty;  // borrowed ref since it's immortal
+}
+
+
+// Check if a fresh frozendict is empty and so can be replaced with the empty
+// frozendict singleton.
+static inline int
+replace_with_empty_frozendict(PyObject *d)
+{
+    return (PyFrozenDict_CheckExact(d) && GET_USED((PyDictObject *)d) == 0);
+}
+
 
 /* Print summary info about the state of the optimized allocator */
 void
@@ -999,6 +1027,9 @@ static PyObject*
 new_frozendict_untracked(PyDictKeysObject *keys, PyDictValues *values,
                          Py_ssize_t used, int free_values_on_failure)
 {
+    // If used == 0, it means that frozendict_get_empty() could be used
+    assert(used >= 1);
+
     PyDictObject *mp = PyObject_GC_New(PyDictObject, &PyFrozenDict_Type);
     return new_dict_impl(mp, keys, values, used, free_values_on_failure, 1, 0);
 }
@@ -3478,12 +3509,16 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
 
     // gh-151722: If cls constructor returns a frozendict which is tracked by
     // the GC, create a frozendict copy which is not tracked by the GC.
+    // A copy is also needed if the constructor returned the empty frozendict
+    // singleton (which is no tracked by the GC).
     //
     // At the function exit, return cls(fd) where fd is a frozendict.
     //
     // Untracking the frozendict requires tracking again the frozendict on
     // error which is more complicated. It's easier to work on a copy.
-    if (PyFrozenDict_Check(d) && _PyObject_GC_IS_TRACKED(d)) {
+    if (PyFrozenDict_Check(d)
+        && (_PyObject_GC_IS_TRACKED(d) || (d == frozendict_get_empty())))
+    {
         need_copy = 1;
 
         PyObject *copy = frozendict_new_untracked(&PyFrozenDict_Type);
@@ -3635,6 +3670,11 @@ Done:
     if (need_copy) {
         PyObject *copy = _PyObject_CallOneArg(cls, d);
         Py_SETREF(d, copy);
+    }
+    else if (replace_with_empty_frozendict(d)) {
+        // iterable was empty
+        Py_DECREF(d);
+        d = frozendict_get_empty();
     }
     else if (!_PyObject_GC_IS_TRACKED(d)) {
         _PyObject_GC_TRACK(d);
@@ -4552,10 +4592,10 @@ copy_lock_held_untracked(PyObject *o, int as_frozendict)
         }
         PyDictObject *new;
         if (as_frozendict) {
-            new = (PyDictObject *)new_frozendict_untracked(keys, NULL, 0, 0);
+            new = (PyDictObject *)new_frozendict_untracked(keys, NULL, mp->ma_used, 0);
         }
         else {
-            new = (PyDictObject *)new_dict_untracked(keys, NULL, 0, 0);
+            new = (PyDictObject *)new_dict_untracked(keys, NULL, mp->ma_used, 0);
         }
         if (new == NULL) {
             /* In case of an error, new_dict()/new_frozendict() takes care of
@@ -4563,7 +4603,7 @@ copy_lock_held_untracked(PyObject *o, int as_frozendict)
             return NULL;
         }
 
-        new->ma_used = mp->ma_used;
+        assert(new->ma_used == mp->ma_used);
         ASSERT_CONSISTENT(new);
         assert(!_PyObject_GC_IS_TRACKED(new));
         return (PyObject *)new;
@@ -5210,14 +5250,14 @@ static PyObject *
 frozendict_or(PyObject *self, PyObject *other)
 {
     if (PyFrozenDict_CheckExact(self)) {
-        // frozendict() | frozendict(...) => frozendict(...)
+        // empty frozendict | frozendict(...) => frozendict(...)
         if (GET_USED((PyDictObject *)self) == 0
             && PyFrozenDict_CheckExact(other))
         {
             return Py_NewRef(other);
         }
 
-        // frozendict(...) | frozendict() => frozendict(...)
+        // frozendict(...) | empty frozendict => frozendict(...)
         if (PyAnyDict_CheckExact(other)
             && GET_USED((PyDictObject *)other) == 0)
         {
@@ -5225,7 +5265,18 @@ frozendict_or(PyObject *self, PyObject *other)
         }
     }
 
-    return _PyDict_Or(self, other);
+    if (PyFrozenDict_Check(self) && GET_USED((PyDictObject *)self) == 0
+        && PyAnyDict_Check(other) && GET_USED((PyDictObject *)other) == 0)
+    {
+        // empty frozendict | empty dict => empty frozendict singleton
+        return frozendict_get_empty();
+    }
+
+    PyObject *new = _PyDict_Or(self, other);
+    if (new != NULL) {
+        assert(!replace_with_empty_frozendict(new));
+    }
+    return new;
 }
 
 
@@ -5440,13 +5491,20 @@ frozendict_vectorcall(PyObject *type, PyObject * const*args,
     if (!_PyArg_CheckPositional("frozendict", nargs, 0, 1)) {
         return NULL;
     }
+    int no_kwnames = (kwnames == NULL || PyTuple_GET_SIZE(kwnames) == 0);
 
-    if (nargs == 1 && kwnames == NULL
-        && PyFrozenDict_CheckExact(args[0])
-        && Py_Is((PyTypeObject*)type, &PyFrozenDict_Type))
-    {
-        // frozendict(frozendict) returns the same object unmodified
-        return Py_NewRef(args[0]);
+    if (Py_Is((PyTypeObject*)type, &PyFrozenDict_Type)) {
+        if (nargs == 0 && no_kwnames) {
+            // frozendict() => empty frozendict singleton
+            return frozendict_get_empty();
+        }
+
+        if (nargs == 1 && no_kwnames
+            && PyFrozenDict_CheckExact(args[0]))
+        {
+            // frozendict(frozendict) returns the same object unmodified
+            return Py_NewRef(args[0]);
+        }
     }
 
     /* gh-151722: Keep the frozendict untracked until it is fully built,
@@ -5470,6 +5528,12 @@ frozendict_vectorcall(PyObject *type, PyObject * const*args,
                 return NULL;
             }
         }
+    }
+
+    if (replace_with_empty_frozendict(self)) {
+        // the positional argument was an empty dictionary or an empty iterator
+        Py_DECREF(self);
+        return frozendict_get_empty();
     }
 
     _PyObject_GC_TRACK(self);
@@ -8505,19 +8569,26 @@ frozendict_new_untracked(PyTypeObject *type)
 static PyObject *
 frozendict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
+    if ((args == NULL || PyTuple_GET_SIZE(args) == 0)
+        && (kwds == NULL || PyDict_GET_SIZE(kwds) == 0))
+    {
+        return frozendict_get_empty();
+    }
+
     PyObject *d = frozendict_new_untracked(type);
     if (d == NULL) {
         return NULL;
     }
 
-    if (args != NULL) {
-        if (dict_update_common(d, args, kwds, "frozendict") < 0) {
-            Py_DECREF(d);
-            return NULL;
-        }
+    if (dict_update_common(d, args, kwds, "frozendict") < 0) {
+        Py_DECREF(d);
+        return NULL;
     }
-    else {
-        assert(kwds == NULL);
+
+    if (replace_with_empty_frozendict(d)) {
+        // the positional argument was an empty dictionary or an empty iterator
+        Py_DECREF(d);
+        return frozendict_get_empty();
     }
 
     _PyObject_GC_TRACK(d);
@@ -8543,8 +8614,7 @@ PyFrozenDict_New(PyObject *iterable)
         return frozendict;
     }
     else {
-        PyObject *args = Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_TUPLE);
-        return frozendict_new(&PyFrozenDict_Type, args, NULL);
+        return frozendict_new(&PyFrozenDict_Type, NULL, NULL);
     }
 }
 
@@ -8566,6 +8636,7 @@ frozendict_copy_impl(PyFrozenDictObject *self)
 
     PyObject *copy = anydict_copy_untracked((PyObject*)self);
     if (copy != NULL) {
+        assert(!replace_with_empty_frozendict(copy));
         _PyObject_GC_TRACK(copy);
     }
     return copy;
@@ -8598,3 +8669,32 @@ PyTypeObject PyFrozenDict_Type = {
     .tp_vectorcall = frozendict_vectorcall,
     .tp_version_tag = _Py_TYPE_VERSION_FROZENDICT,
 };
+
+
+PyStatus
+_PyDict_Init(PyInterpreterState *interp)
+{
+    PyObject *empty = anydict_new_untracked(&PyFrozenDict_Type);
+    if (empty == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
+    _PyFrozenDictObject_CAST(empty)->ma_hash = -1;
+    // Do not track the empty frozendict singleton in the GC
+    assert(!_PyObject_GC_IS_TRACKED(empty));
+
+    _Py_SetImmortal(empty);
+
+    interp->dict_state.empty_frozendict = empty;
+    return _PyStatus_OK();
+}
+
+
+void
+_PyDict_Fini(PyInterpreterState *interp)
+{
+    PyObject *empty = interp->dict_state.empty_frozendict;
+    interp->dict_state.empty_frozendict = NULL;
+    if (empty != NULL) {
+        _Py_ClearImmortal(empty);
+    }
+}

@@ -1886,14 +1886,50 @@ class FrozenDictTests(unittest.TestCase):
         self.assertIs(frozendict() | fd, fd)
 
         fd = FrozenDict(x=1, y=2)
-        self.assertEqual(fd | frozendict(), fd)
-        self.assertEqual(fd | {}, fd)
-        self.assertEqual(frozendict() | fd, fd)
+        merge = fd | frozendict()
+        self.assertEqual(type(merge), frozendict)
+        self.assertEqual(merge, fd)
+        merged = fd | {}
+        self.assertEqual(type(merge), frozendict)
+        self.assertEqual(merge, fd)
+        merge = frozendict() | fd
+        self.assertEqual(type(merge), frozendict)
+        self.assertEqual(merge, fd)
 
         # gh-149676: Test hash(frozendict | frozendict)
         a = frozendict({"a": 1})
         b = frozendict({"b": 2})
         self.assertEqual(hash(a | b), hash(frozendict({"a": 1, "b": 2})))
+
+    @support.cpython_only
+    def test_empty_singleton(self):
+        singleton = frozendict()
+        self.assertFalse(gc.is_tracked(singleton))
+        self.assertTrue(sys._is_immortal(singleton))
+
+        # test constructor
+        self.assertIs(frozendict(), singleton)
+        self.assertIs(frozendict(singleton), singleton)
+        self.assertIs(frozendict({}), singleton)
+        self.assertIs(frozendict([]), singleton)
+        self.assertIs(frozendict((x for x in ())), singleton)
+
+        # test merge
+        for dict_type in (dict, frozendict, FrozenDict):
+            empty = dict_type()
+            self.assertIs(singleton | empty, singleton)
+            self.assertIs(FrozenDict() | empty, singleton)
+
+        # test .copy()
+        self.assertIs(singleton.copy(), singleton)
+
+        # test .fromkeys()
+        self.assertIs(frozendict.fromkeys([]), singleton)
+
+        # test pickle (protocol 0 and 1 don't support frozendict)
+        for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
+            fd = pickle.loads(pickle.dumps(singleton, proto))
+            self.assertIs(fd, singleton)
 
     def test_update(self):
         # test "a |= b" operator
@@ -1957,6 +1993,8 @@ class FrozenDictTests(unittest.TestCase):
     def test_fromkeys(self):
         self.assertEqual(frozendict.fromkeys('abc'),
                          frozendict(a=None, b=None, c=None))
+        self.assertEqual(frozendict.fromkeys([]),
+                         frozendict())
 
         # Subclass which overrides the constructor
         created = frozendict(x=1)
@@ -1992,12 +2030,13 @@ class FrozenDictTests(unittest.TestCase):
         self.assertEqual(created, frozendict(x=1))
 
         # Subclass which doesn't override the constructor
-        class FrozenDictSubclass2(frozendict):
-            pass
-
-        fd = FrozenDictSubclass2.fromkeys("abc")
+        fd = FrozenDict.fromkeys("abc")
         self.assertEqual(fd, frozendict(a=None, b=None, c=None))
-        self.assertEqual(type(fd), FrozenDictSubclass2)
+        self.assertEqual(type(fd), FrozenDict)
+
+        fd = FrozenDict.fromkeys("")
+        self.assertEqual(fd, frozendict())
+        self.assertEqual(type(fd), FrozenDict)
 
     def test_pickle(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):

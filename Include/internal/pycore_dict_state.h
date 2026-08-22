@@ -16,6 +16,7 @@ struct _Py_dict_state {
     PyMutex watcher_mutex;          // Protects the watchers array (free-threaded builds)
     _PyOnceFlag watcher_setup_once; // One-time optimizer watcher setup
     PyDict_WatchCallback watchers[DICT_MAX_WATCHERS];
+    PyObject *empty_frozendict;
 };
 
 #define _dict_state_INIT \

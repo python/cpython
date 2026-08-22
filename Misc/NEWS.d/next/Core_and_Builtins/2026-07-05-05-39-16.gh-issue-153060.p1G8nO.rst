@@ -1,0 +1,1 @@
+Add an empty :class:`frozendict` singleton. Patch by Victor Stinner.
