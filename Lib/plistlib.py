@@ -388,15 +388,14 @@ class _PlistWriter(_DumbXMLWriter):
     def write_dict(self, d):
         if d:
             self.begin_element("dict")
+            items = d.items()
+            if self._skipkeys:
+                items = [(k, v) for k, v in items if isinstance(k, str)]
             if self._sort_keys:
-                items = sorted(d.items())
-            else:
-                items = d.items()
+                items = sorted(items)
 
             for key, value in items:
                 if not isinstance(key, str):
-                    if self._skipkeys:
-                        continue
                     raise TypeError("keys must be strings")
                 self.simple_element("key", key)
                 self.write_value(value)
@@ -719,13 +718,13 @@ class _BinaryPlistWriter (object):
             keys = []
             values = []
             items = value.items()
+            if self._skipkeys:
+                items = [(k, v) for k, v in items if isinstance(k, str)]
             if self._sort_keys:
                 items = sorted(items)
 
             for k, v in items:
                 if not isinstance(k, str):
-                    if self._skipkeys:
-                        continue
                     raise TypeError("keys must be strings")
                 keys.append(k)
                 values.append(v)
@@ -839,15 +838,15 @@ class _BinaryPlistWriter (object):
         elif isinstance(value, (dict, frozendict)):
             keyRefs, valRefs = [], []
 
+            rootItems = value.items()
+            if self._skipkeys:
+                rootItems = [(k, v) for k, v in rootItems
+                             if isinstance(k, str)]
             if self._sort_keys:
-                rootItems = sorted(value.items())
-            else:
-                rootItems = value.items()
+                rootItems = sorted(rootItems)
 
             for k, v in rootItems:
                 if not isinstance(k, str):
-                    if self._skipkeys:
-                        continue
                     raise TypeError("keys must be strings")
                 keyRefs.append(self._getrefnum(k))
                 valRefs.append(self._getrefnum(v))
