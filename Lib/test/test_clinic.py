@@ -2303,6 +2303,36 @@ class ClinicParserTest(TestCase):
         err = "Function 'bar': '/ [from 3.14]' must precede '/ [from 3.15]'"
         self.expect_failure(block, err, lineno=5)
 
+    def test_required_keyword_only_after_optional(self):
+        function = self.parse_function("""
+            module foo
+            foo.bar
+                a: int
+                b: int = 0
+                *
+                c: int
+                d: int = 0
+            Docstring.
+        """)
+        _, a, b, c, d = function.parameters.values()
+        self.assertFalse(a.converter.is_optional())
+        self.assertTrue(b.converter.is_optional())
+        self.assertFalse(c.converter.is_optional())
+        self.assertTrue(d.converter.is_optional())
+
+    def test_optional_before_required_keyword_only(self):
+        block = """
+            module foo
+            foo.bar
+                *
+                a: int = 0
+                b: int
+            Docstring.
+        """
+        err = ("Can't have a parameter without a default ('b') "
+               "after a parameter with a default!")
+        self.expect_failure(block, err, lineno=4)
+
     def test_single_slash(self):
         block = """
             module foo
@@ -5031,6 +5061,41 @@ class LimitedCAPIOutputTests(unittest.TestCase):
         self.assertIn("float f;", generated)
         self.assertIn("f = (float) PyFloat_AsDouble", generated)
 
+    def test_limited_capi_required_keyword_only(self):
+        block = self.wrap_clinic_input("""
+            func
+                a: object
+                b: object = None
+                *
+                c: object
+                d: object = None
+        """)
+        generated = self.clinic.parse(block)
+        # '$' cannot express this, only '%' can.
+        self.assertIn('"O|O%O|O:func"', generated)
+
+    def test_limited_capi_optional_after_required_keyword_only(self):
+        block = self.wrap_clinic_input("""
+            func
+                a: object
+                *
+                b: object
+                c: object = None
+        """)
+        generated = self.clinic.parse(block)
+        self.assertIn('"O%O|O:func"', generated)
+
+    def test_limited_capi_keyword_only(self):
+        # '$' is still used if it can express the signature.
+        block = self.wrap_clinic_input("""
+            func
+                a: object
+                *
+                b: object
+        """)
+        generated = self.clinic.parse(block)
+        self.assertIn('"O$O:func"', generated)
+
     def test_limited_capi_double(self):
         block = self.wrap_clinic_input("""
             func
@@ -5086,6 +5151,18 @@ class LimitedCAPIFunctionalTest(unittest.TestCase):
                     func(1)
                 with self.assertRaises(TypeError):
                     func(1., "2")
+
+    def test_required_kwonly(self):
+        # test a required keyword-only parameter after an optional one
+        func = _testclinic_limited.required_kwonly
+        self.assertEqual(func(1, 2, c=3, d=4), (1, 2, 3, 4))
+        self.assertEqual(func(1, c=3), (1, None, 3, None))
+        with self.assertRaisesRegex(TypeError, "argument 'c'"):
+            func(1, 2)
+        with self.assertRaisesRegex(TypeError, "argument 'c'"):
+            func(1, 2, d=4)
+        with self.assertRaises(TypeError):
+            func(1, 2, 3)
 
     def test_get_file_descriptor(self):
         # test 'file descriptor' converter: call PyObject_AsFileDescriptor()
