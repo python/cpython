@@ -37,6 +37,9 @@ from ctypes.wintypes import (
     SHORT,
 )
 from ctypes import Structure, POINTER, Union
+
+from _colorize import ANSIColors
+
 from .console import Event, Console
 from .trace import trace
 from .utils import wlen
@@ -363,6 +366,7 @@ class WindowsConsole(Console):
 
     def restore(self) -> None:
         if self.__vt_support:
+            self.__write(ANSIColors.RESET)
             # Recover to original mode before running REPL
             self._disable_bracketed_paste()
             SetConsoleMode(InHandle, self.__original_input_mode)
@@ -519,6 +523,7 @@ class WindowsConsole(Console):
         while y >= 0 and not self.screen[y]:
             y -= 1
         self._move_relative(0, min(y, self.height + self.__offset - 1))
+        self.__write(ANSIColors.RESET)
         self.__write("\r\n")
 
     def flushoutput(self) -> None:
