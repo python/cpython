@@ -359,7 +359,7 @@ class ResourceTracker(object):
         # With json.dump(..., ensure_ascii=True) every non-ASCII byte becomes a 6-char
         # escape like \uDC80.
         # As we want the overall message to be kept atomic and therefore smaller than 512,
-        # we encode the raw name bytes with URL-safe Base64 - so a 255 long name
+        # we encode encode the raw name bytes with URL-safe Base64 - so a 255 long name
         # will not exceed 340 bytes.
         b = name.encode('utf-8', 'surrogateescape')
         if len(b) > 255:
