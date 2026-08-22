@@ -2224,7 +2224,9 @@ _ssl__SSLSocket_group_impl(PySSLSocket *self)
 #if OPENSSL_VERSION_NUMBER >= 0x30200000L
     const char *group_name;
 
-    if (self->ssl == NULL) {
+    // OpenSSL issue: SSL_get0_group_name(...) crashes if no session exists.
+    // See https://github.com/openssl/openssl/issues/32379.
+    if (self->ssl == NULL || SSL_get_session(self->ssl) == NULL) {
         Py_RETURN_NONE;
     }
     group_name = SSL_get0_group_name(self->ssl);
