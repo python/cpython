@@ -1,0 +1,2 @@
+Bound :mod:`zipfile` member reads so a forged compressed size cannot make
+``ZipExtFile`` request multi-gigabyte reads from the underlying file object.

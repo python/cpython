@@ -978,6 +978,10 @@ class ZipExtFile(io.BufferedIOBase):
     # Read from compressed files in 4k blocks.
     MIN_READ_SIZE = 4096
 
+    # Max chunk size to read from the underlying file object when its
+    # remaining size is unknown.
+    MAX_READ_SIZE = 1 << 24
+
     # Chunk size to read during seek
     MAX_SEEK_READ = 1 << 24
 
@@ -1016,6 +1020,11 @@ class ZipExtFile(io.BufferedIOBase):
                 self._orig_file_size = zipinfo.file_size
                 self._orig_start_crc = self._running_crc
                 self._orig_crc = self._expected_crc
+                try:
+                    fileobj.seek(0, os.SEEK_END)
+                    self._compress_end = fileobj.tell()
+                finally:
+                    fileobj.seek(self._orig_compress_start)
                 self._seekable = True
         except AttributeError:
             pass
@@ -1215,7 +1224,9 @@ class ZipExtFile(io.BufferedIOBase):
             return b''
 
         n = max(n, self.MIN_READ_SIZE)
-        n = min(n, self._compress_left)
+        n = min(n, self._compress_left, self.MAX_READ_SIZE)
+        if self._seekable:
+            n = min(n, max(0, self._compress_end - self._fileobj.tell()))
 
         data = self._fileobj.read(n)
         self._compress_left -= len(data)
