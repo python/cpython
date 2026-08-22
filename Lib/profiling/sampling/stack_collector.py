@@ -469,7 +469,10 @@ class FlamegraphCollector(StackTraceCollector):
             return None
 
     def _create_flamegraph_html(self, data):
-        data_json = json.dumps(data)
+        data_json = (json.dumps(data)
+                     .replace("<", "\\u003c")
+                     .replace(">", "\\u003e")
+                     .replace("&", "\\u0026"))
 
         template_dir = importlib.resources.files(__package__)
         vendor_dir = template_dir / "_vendor"
