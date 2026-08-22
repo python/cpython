@@ -314,6 +314,8 @@ are always available.  They are listed here in alphabetical order.
    consists of a single expression, or ``'single'`` if it consists of a single
    interactive statement (in the latter case, expression statements that
    evaluate to something other than ``None`` will be printed).
+   It can also be ``'func_type'`` if *source* consists of a single :pep:`484`
+   signature type comment; see :func:`ast.parse` for more information.
 
    The optional arguments *flags* and *dont_inherit* control which
    :ref:`compiler options <ast-compiler-flags>` should be activated
