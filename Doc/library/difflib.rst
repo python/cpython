@@ -52,7 +52,7 @@ By default, if the second input sequence is at least 200 items long, items
 that account for more than 1% it are considered *junk*.
 
 Depending on your data, you should consider turning this heuristic off
-(setting :class:`~difflib.SequenceMatcher`'s *autojunk* argument to  to ``False``)
+(setting :class:`~difflib.SequenceMatcher`'s *autojunk* argument to ``False``)
 or tuning it (using the *isjunk* argument, perhaps to one of the
 :ref:`predefined functions <difflib-isjunk-functions>`).
 
