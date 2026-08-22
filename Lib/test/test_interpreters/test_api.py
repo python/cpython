@@ -1875,11 +1875,18 @@ class TestInterpreterCall(TestBase):
 
     def test_call_with_surrogate_in_main_filename(self):
         # https://github.com/python/cpython/issues/156122
-        import __main__
-        __main__.__file__ = "bad\ud800.py"
+        script = dedent(r"""
+            import __main__
+            from concurrent import interpreters
 
-        interp = interpreters.create()
-        interp.call(lambda x: x, [1])
+            __main__.__file__ = "bad\ud800.py"
+            interp = interpreters.create()
+            interp.call(lambda x: x, [1])
+        """)
+        with os_helper.temp_dir() as tempdir:
+            filename = script_helper.make_script(tempdir, 'my-script', script)
+            res = script_helper.assert_python_ok(filename)
+            self.assertEqual(res.out, b'')
 
 class TestIsShareable(TestBase):
 
