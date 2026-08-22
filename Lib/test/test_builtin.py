@@ -1226,6 +1226,10 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertRaises(AttributeError, getattr, sys, chr(sys.maxunicode))
         # unicode surrogates are not encodable to the default encoding (utf8)
         self.assertRaises(AttributeError, getattr, 1, "\uDAD1\uD51E")
+        with self.assertRaises(AttributeError) as cm:
+            getattr(object(), "a'b")
+        self.assertEqual(str(cm.exception),
+                         ''''object' object has no attribute "a'b"''')
 
     def test_hasattr(self):
         self.assertTrue(hasattr(sys, 'stdout'))
@@ -2154,6 +2158,15 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertRaises(TypeError, setattr, sys, 'spam')
         msg = r"^attribute name must be string, not 'int'$"
         self.assertRaisesRegex(TypeError, msg, setattr, sys, 1, 'spam')
+
+        class A:
+            __slots__ = ()
+
+        with self.assertRaises(AttributeError) as cm:
+            setattr(object(), "a'b", 1)
+        self.assertEqual(str(cm.exception),
+                         """'object' object has no attribute "a'b" """
+                         "and no __dict__ for setting new attributes")
 
     # test_str(): see test_str.py and test_bytes.py for str() tests.
 
