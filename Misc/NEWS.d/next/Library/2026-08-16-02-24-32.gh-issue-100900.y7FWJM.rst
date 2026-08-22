@@ -1,0 +1,4 @@
+Fix :func:`email.utils.formataddr` failing to quote a non-ASCII display name
+that contains special characters when the charset is configured not to
+RFC 2047-encode it, which broke round-tripping through
+:func:`~email.utils.getaddresses`.  Patch by Nikolaus Schuetz.
