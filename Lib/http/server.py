@@ -796,8 +796,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             if not parts.path.endswith(('/', '%2f', '%2F')):
                 # redirect browser - doing basically what apache does
                 self.send_response(HTTPStatus.MOVED_PERMANENTLY)
-                new_parts = (parts[0], parts[1], parts[2] + '/',
-                             parts[3], parts[4])
+                new_parts = (parts.scheme, parts.netloc, parts.path + '/',
+                             parts.query, parts.fragment)
                 new_url = urllib.parse.urlunsplit(new_parts)
                 self.send_header("Location", new_url)
                 self.send_header("Content-Length", "0")
