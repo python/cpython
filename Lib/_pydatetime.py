@@ -2448,7 +2448,7 @@ class timezone(tzinfo):
     __slots__ = '_offset', '_name'
 
     # Sentinel value to disallow None
-    _Omitted = object()
+    _Omitted = sentinel("timezone._Omitted", repr="<omitted>")
     def __new__(cls, offset, name=_Omitted):
         if not isinstance(offset, timedelta):
             raise TypeError("offset must be a timedelta")
