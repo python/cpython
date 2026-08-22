@@ -1,0 +1,4 @@
+Rebuild the IDLE query dialogs (used for Open Module, custom Run, and new
+config-section names) on ``tkinter.simpledialog.Dialog``.  They gain its
+standard keyboard behavior: ``Return``, ``Escape``, and Alt-underlined-letter
+button accelerators.
