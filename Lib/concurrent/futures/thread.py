@@ -233,8 +233,8 @@ class ThreadPoolExecutor(_base.Executor):
             t = threading.Thread(name=thread_name, target=_worker,
                                  args=(weakref.ref(self, weakref_cb),
                                        self._create_worker_context(),
-                                       self._work_queue))
-            t.start()
+                                       self._work_queue),
+                                 start=True)
             self._threads.add(t)
             _threads_queues[t] = self._work_queue
 

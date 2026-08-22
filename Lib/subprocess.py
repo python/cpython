@@ -1793,16 +1793,14 @@ class Popen:
                 self._stdout_buff = []
                 self.stdout_thread = \
                         threading.Thread(target=self._readerthread,
-                                         args=(self.stdout, self._stdout_buff))
-                self.stdout_thread.daemon = True
-                self.stdout_thread.start()
+                                         args=(self.stdout, self._stdout_buff),
+                                         daemon=True, start=True)
             if self.stderr and not hasattr(self, "_stderr_buff"):
                 self._stderr_buff = []
                 self.stderr_thread = \
                         threading.Thread(target=self._readerthread,
-                                         args=(self.stderr, self._stderr_buff))
-                self.stderr_thread.daemon = True
-                self.stderr_thread.start()
+                                         args=(self.stderr, self._stderr_buff),
+                                         daemon=True, start=True)
 
             # Start writer thread to send input to stdin, unless already
             # started.  The thread writes input and closes stdin when done,
@@ -1810,9 +1808,8 @@ class Popen:
             if self.stdin and not hasattr(self, "_stdin_thread"):
                 self._stdin_thread = \
                         threading.Thread(target=self._writerthread,
-                                         args=(input,))
-                self._stdin_thread.daemon = True
-                self._stdin_thread.start()
+                                         args=(input,),
+                                         daemon=True, start=True)
 
             # Wait for the writer thread, or time out.  If we time out, the
             # thread remains writing and the fd left open in case the user

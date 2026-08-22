@@ -543,7 +543,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.rpcclt.remotecall("exec", "interrupt_the_server", (), {})
 
     def interrupt_subprocess(self):
-        threading.Thread(target=self.__request_interrupt).start()
+        threading.Thread(target=self.__request_interrupt, start=True)
 
     def kill_subprocess(self):
         if self._afterid is not None:

@@ -158,7 +158,7 @@ def main(del_exitfunc=False):
                      name='SockThread',
                      args=((LOCALHOST, port),),
                      daemon=True,
-                    ).start()
+                     start=True)
 
     while True:
         try:

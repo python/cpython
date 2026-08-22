@@ -1519,6 +1519,15 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(err, b"")
         self.assertEqual(out.strip(), b"Exiting...")
 
+    def test_threading_start(self):
+        # Test start=True parameter of Thread
+        def noop():
+            pass
+
+        t = threading.Thread(target=noop, start=True)
+        t.join()
+
+
 class ThreadJoinOnShutdown(BaseTestCase):
 
     def _run_and_join(self, script):
