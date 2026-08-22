@@ -7281,8 +7281,9 @@ WITH_SAVE_ENV([
     ]))])
 
   # Check that we're able to link with crucial curses/panel functions. This
-  # also serves as a fallback in case pkg-config failed.
-  AS_VAR_APPEND([LIBS], [" $CURSES_LIBS $PANEL_LIBS"])
+  # also serves as a fallback in case pkg-config failed. Extension modules are
+  # not linked with LIBS, so exclude it to get the required libraries.
+  LIBS="$CURSES_LIBS $PANEL_LIBS"
   AC_SEARCH_LIBS([initscr], [$curses_libs],
     [AS_VAR_IF([have_curses], [no],
       [AS_VAR_SET([have_curses], [yes])
