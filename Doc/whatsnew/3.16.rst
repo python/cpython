@@ -295,6 +295,16 @@ concurrent.futures
   (Contributed by xzmeng and Serhiy Storchaka in :gh:`108518`.)
 
 
+difflib
+-------
+
+* Expose optional ``autojunk`` parameter from :class:`difflib.SequenceMatcher`
+  to public functions and class methods in :mod:`difflib`,
+  allowing to modify behavior of automatic junk heuristic in this module
+  in higher public class methods and functions.
+  (Contributed by Tomasz Kazimierczak in :gh:`118150`)
+
+
 encodings
 ---------
 
