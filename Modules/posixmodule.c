@@ -2146,7 +2146,7 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
         flags |= FILE_FLAG_OPEN_REPARSE_POINT;
     }
 
-    hFile = CreateFileW(path, access, 0, NULL, OPEN_EXISTING, flags, NULL);
+    hFile = _Py_WinCreateFile(path, access, 0, NULL, OPEN_EXISTING, flags, NULL);
     if (hFile == INVALID_HANDLE_VALUE) {
         /* Either the path doesn't exist, or the caller lacks access. */
         error = GetLastError();
@@ -2181,7 +2181,7 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
 
         case ERROR_INVALID_PARAMETER:
             /* \\.\con requires read or write access. */
-            hFile = CreateFileW(path, access | GENERIC_READ,
+            hFile = _Py_WinCreateFile(path, access | GENERIC_READ,
                         FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
                         OPEN_EXISTING, flags, NULL);
             if (hFile == INVALID_HANDLE_VALUE) {
@@ -2195,7 +2195,7 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
             if (traverse) {
                 traverse = FALSE;
                 isUnhandledTag = TRUE;
-                hFile = CreateFileW(path, access, 0, NULL, OPEN_EXISTING,
+                hFile = _Py_WinCreateFile(path, access, 0, NULL, OPEN_EXISTING,
                             flags | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
             }
             if (hFile == INVALID_HANDLE_VALUE) {
@@ -4125,7 +4125,7 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
         result = win32_fchmod(path->fd, mode);
     }
     else if (follow_symlinks) {
-        HANDLE hfile = CreateFileW(path->wide,
+        HANDLE hfile = _Py_WinCreateFile(path->wide,
                                    FILE_READ_ATTRIBUTES|FILE_WRITE_ATTRIBUTES,
                                    0, NULL,
                                    OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
@@ -5402,7 +5402,7 @@ os__path_isdevdrive_impl(PyObject *module, path_t *path)
         /* only care about local dev drives */
         r = Py_False;
     } else {
-        HANDLE hVolume = CreateFileW(
+        HANDLE hVolume = _Py_WinCreateFile(
             volume,
             FILE_READ_ATTRIBUTES,
             FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -5550,7 +5550,7 @@ os__getfinalpathname_impl(PyObject *module, path_t *path)
     PyObject *result;
 
     Py_BEGIN_ALLOW_THREADS
-    hFile = CreateFileW(
+    hFile = _Py_WinCreateFile(
         path->wide,
         0, /* desired access */
         0, /* share mode */
@@ -5825,7 +5825,7 @@ _testFileTypeByName(LPCWSTR path, int testedType)
     if (testedType != PY_IFREG && testedType != PY_IFDIR) {
         flags |= FILE_FLAG_OPEN_REPARSE_POINT;
     }
-    HANDLE hfile = CreateFileW(path, FILE_READ_ATTRIBUTES, 0, NULL,
+    HANDLE hfile = _Py_WinCreateFile(path, FILE_READ_ATTRIBUTES, 0, NULL,
                                OPEN_EXISTING, flags, NULL);
     if (hfile != INVALID_HANDLE_VALUE) {
         BOOL result = _testFileTypeByHandle(hfile, testedType, FALSE);
@@ -5881,7 +5881,7 @@ _testFileExistsByName(LPCWSTR path, BOOL followLinks)
     if (!followLinks) {
         flags |= FILE_FLAG_OPEN_REPARSE_POINT;
     }
-    HANDLE hfile = CreateFileW(path, FILE_READ_ATTRIBUTES, 0, NULL,
+    HANDLE hfile = _Py_WinCreateFile(path, FILE_READ_ATTRIBUTES, 0, NULL,
                                OPEN_EXISTING, flags, NULL);
     if (hfile != INVALID_HANDLE_VALUE) {
         if (followLinks) {
@@ -5894,7 +5894,7 @@ _testFileExistsByName(LPCWSTR path, BOOL followLinks)
         if (!result) {
             return TRUE;
         }
-        hfile = CreateFileW(path, FILE_READ_ATTRIBUTES, 0, NULL, OPEN_EXISTING,
+        hfile = _Py_WinCreateFile(path, FILE_READ_ATTRIBUTES, 0, NULL, OPEN_EXISTING,
                             FILE_FLAG_BACKUP_SEMANTICS, NULL);
         if (hfile != INVALID_HANDLE_VALUE) {
             CloseHandle(hfile);
@@ -7190,7 +7190,7 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
 
 #ifdef MS_WINDOWS
     Py_BEGIN_ALLOW_THREADS
-    hFile = CreateFileW(path->wide, FILE_WRITE_ATTRIBUTES, 0,
+    hFile = _Py_WinCreateFile(path->wide, FILE_WRITE_ATTRIBUTES, 0,
                         NULL, OPEN_EXISTING,
                         FILE_FLAG_BACKUP_SEMANTICS, NULL);
     Py_END_ALLOW_THREADS
@@ -11006,7 +11006,7 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
 
     /* First get a handle to the reparse point */
     Py_BEGIN_ALLOW_THREADS
-    reparse_point_handle = CreateFileW(
+    reparse_point_handle = _Py_WinCreateFile(
         path->wide,
         0,
         0,

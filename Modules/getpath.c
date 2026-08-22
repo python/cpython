@@ -14,6 +14,7 @@
 #ifdef MS_WINDOWS
 #  include <windows.h>            // GetFullPathNameW(), MAX_PATH
 #  include <pathcch.h>
+#  include "internal/pycore_fileutils_windows.h"
 #endif
 
 #ifdef __APPLE__
@@ -528,7 +529,7 @@ done:
     }
 
     Py_BEGIN_ALLOW_THREADS
-    hFile = CreateFileW(path, 0, 0, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    hFile = _Py_WinCreateFile(path, 0, 0, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
     if (hFile != INVALID_HANDLE_VALUE) {
         len = GetFinalPathNameByHandleW(hFile, resolved, MAXPATHLEN, VOLUME_NAME_DOS);
         err = len ? 0 : GetLastError();
