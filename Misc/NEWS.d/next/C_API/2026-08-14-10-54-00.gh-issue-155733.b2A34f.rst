@@ -1,0 +1,1 @@
+Validate keyword arguments to :func:`operator.methodcaller` and :func:`functools.partial` to raise a :exc:`TypeError` instead of crashing with non-string keys.
