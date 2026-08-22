@@ -519,6 +519,50 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(unicodedata_UCD_aliases__doc__,
+"aliases($self, chr, /)\n"
+"--\n"
+"\n"
+"Returns a frozendict of character name aliases for chr.\n"
+"\n"
+"Each of the frozen dictionary\'s keys will be a string that\n"
+"represents a type of alias (for example, \"correction\" or\n"
+"\"abbreviation\"). If the character has no aliases of a particular\n"
+"type, then the key for that type will be omitted. The value for each\n"
+"key will be a tuple that contains one string for each alias of the\n"
+"given type. If chr has no character name aliases, then an empty\n"
+"frozen dictionary will be returned.");
+
+#define UNICODEDATA_UCD_ALIASES_METHODDEF    \
+    {"aliases", (PyCFunction)unicodedata_UCD_aliases, METH_O, unicodedata_UCD_aliases__doc__},
+
+static PyObject *
+unicodedata_UCD_aliases_impl(PyObject *self, int chr);
+
+static PyObject *
+unicodedata_UCD_aliases(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int chr;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("aliases", "argument", "a unicode character", arg);
+        goto exit;
+    }
+    if (PyUnicode_GET_LENGTH(arg) != 1) {
+        PyErr_Format(PyExc_TypeError,
+            "aliases(): argument must be a unicode character, "
+            "not a string of length %zd",
+            PyUnicode_GET_LENGTH(arg));
+        goto exit;
+    }
+    chr = PyUnicode_READ_CHAR(arg, 0);
+    return_value = unicodedata_UCD_aliases_impl(self, chr);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(unicodedata_isxidstart__doc__,
 "isxidstart($module, chr, /)\n"
 "--\n"
@@ -834,4 +878,4 @@ unicodedata_extended_pictographic(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=482a87df218f07c1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ce601da206632ce4 input=a9049054013a1b77]*/
