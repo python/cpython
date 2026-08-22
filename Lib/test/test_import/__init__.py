@@ -364,6 +364,15 @@ class ImportTests(unittest.TestCase):
         with self.assertRaises(ModuleNotFoundError):
             import something_that_should_not_exist_anywhere
 
+    def test_import_null_byte_in_name_raises_ModuleNotFoundError(self):
+        # gh-150633: module names containing null bytes should not
+        # lead to duplicates in sys.modules
+        before = set(sys.modules)
+        with self.assertRaises(ModuleNotFoundError):
+            __import__('zipimport\x00junk')
+
+        self.assertEqual(set(sys.modules), before)
+
     def test_from_import_missing_module_raises_ModuleNotFoundError(self):
         with self.assertRaises(ModuleNotFoundError):
             from something_that_should_not_exist_anywhere import blah
@@ -481,6 +490,7 @@ class ImportTests(unittest.TestCase):
                 forget(TESTFN)
                 unlink(source)
                 unlink(pyc)
+                rmtree('__pycache__')
 
         sys.path.insert(0, os.curdir)
         try:
@@ -659,6 +669,7 @@ class ImportTests(unittest.TestCase):
                   import importlib
             sys.argv.insert(0, C())
             """))
+        self.addCleanup(unlink, testfn)
         script_helper.assert_python_ok(testfn)
 
     @skip_if_dont_write_bytecode
@@ -1660,6 +1671,11 @@ class PycacheTests(unittest.TestCase):
         unlink(self.source)
 
     def setUp(self):
+        # These tests assume bytecode is written next to the source in a
+        # local __pycache__ directory, so neutralize any pycache prefix (e.g.
+        # when the test suite is run with PYTHONPYCACHEPREFIX set).
+        self._orig_pycache_prefix = sys.pycache_prefix
+        sys.pycache_prefix = None
         self.source = TESTFN + '.py'
         self._clean()
         with open(self.source, 'w', encoding='utf-8') as fp:
@@ -1671,6 +1687,7 @@ class PycacheTests(unittest.TestCase):
         assert sys.path[0] == os.curdir, 'Unexpected sys.path[0]'
         del sys.path[0]
         self._clean()
+        sys.pycache_prefix = self._orig_pycache_prefix
 
     @skip_if_dont_write_bytecode
     def test_import_pyc_path(self):
@@ -2018,6 +2035,7 @@ class ImportTracebackTests(unittest.TestCase):
         # encode filenames, especially on Windows
         pyname = script_helper.make_script('', TESTFN_UNENCODABLE, 'pass')
         self.addCleanup(unlink, pyname)
+        self.addCleanup(rmtree, '__pycache__')
         name = pyname[:-3]
         script_helper.assert_python_ok("-c", "mod = __import__(%a)" % name,
                                        __isolated=False)

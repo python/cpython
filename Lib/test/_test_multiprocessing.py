@@ -26,6 +26,7 @@ import subprocess
 import struct
 import tempfile
 import operator
+import pathlib
 import pickle
 import weakref
 import warnings
@@ -161,9 +162,10 @@ PRELOAD = ['__main__', 'test.test_multiprocessing_forkserver']
 #
 
 try:
-    from ctypes import Structure, c_int, c_double, c_longlong
+    from ctypes.util import struct as ctypes_struct
+    from ctypes import c_int, c_double, c_longlong
 except ImportError:
-    Structure = object
+    def ctypes_struct(cls): return cls
     c_int = c_double = c_longlong = None
 
 
@@ -1594,6 +1596,7 @@ class _TestLock(BaseTestCase):
         event.wait()
         self.assertEqual(f'<Lock(owner=SomeOtherProcess)>', repr(lock))
         p.terminate()
+        p.join()
 
     def test_lock(self):
         lock = self.Lock()
@@ -2903,11 +2906,13 @@ def exception_throwing_generator(total, when):
 
 class _TestPool(BaseTestCase):
 
+    _POOL_SIZE = 4
+
     @classmethod
     def setUpClass(cls):
         with warnings_helper.ignore_fork_in_thread_deprecation_warnings():
             super().setUpClass()
-            cls.pool = cls.Pool(4)
+            cls.pool = cls.Pool(cls._POOL_SIZE)
 
     @classmethod
     def tearDownClass(cls):
@@ -3021,18 +3026,36 @@ class _TestPool(BaseTestCase):
             p.terminate()
             p.join()
 
-    def test_imap(self):
-        it = self.pool.imap(sqr, list(range(10)))
-        self.assertEqual(list(it), list(map(sqr, list(range(10)))))
-
-        it = self.pool.imap(sqr, list(range(10)))
+    @support.subTests('buffersize', (
+        None,
+        1,
+        _POOL_SIZE,
+        _POOL_SIZE * 2,
+    ))
+    def test_imap(self, buffersize):
+        iterable = range(10)
+        if self.TYPE != "threads":
+            iterable = list(iterable)
+        it = self.pool.imap(sqr, iterable, buffersize=buffersize)
         for i in range(10):
-            self.assertEqual(next(it), i*i)
+            self.assertEqual(next(it), i * i)
+        self.assertRaises(StopIteration, it.__next__)
+        # again, verify that it's truly exhausted
         self.assertRaises(StopIteration, it.__next__)
 
-        it = self.pool.imap(sqr, list(range(1000)), chunksize=100)
+    @support.subTests(('chunksize', 'buffersize'), (
+        (100, None),
+        (100, _POOL_SIZE),
+    ))
+    def test_imap_with_chunksize(self, chunksize, buffersize):
+        iterable = range(1000)
+        if self.TYPE != "threads":
+            iterable = list(iterable)
+        it = self.pool.imap(sqr, iterable, chunksize=chunksize, buffersize=buffersize)
         for i in range(1000):
-            self.assertEqual(next(it), i*i)
+            self.assertEqual(next(it), i * i)
+        self.assertRaises(StopIteration, it.__next__)
+        # again, verify that it's truly exhausted
         self.assertRaises(StopIteration, it.__next__)
 
     def test_imap_handle_iterable_exception(self):
@@ -3061,11 +3084,29 @@ class _TestPool(BaseTestCase):
             self.assertEqual(next(it), i*i)
         self.assertRaises(SayWhenError, it.__next__)
 
-    def test_imap_unordered(self):
-        it = self.pool.imap_unordered(sqr, list(range(10)))
+    @support.subTests('buffersize', (
+        None,
+        1,
+        _POOL_SIZE,
+        _POOL_SIZE * 2,
+    ))
+    def test_imap_unordered(self, buffersize):
+        iterable = range(10)
+        if self.TYPE != "threads":
+            iterable = list(iterable)
+        it = self.pool.imap(sqr, iterable, buffersize=buffersize)
         self.assertEqual(sorted(it), list(map(sqr, list(range(10)))))
 
-        it = self.pool.imap_unordered(sqr, list(range(1000)), chunksize=100)
+    @support.subTests(('chunksize', 'buffersize'), (
+        (100, None),
+        (100, _POOL_SIZE),
+    ))
+    def test_imap_unordered_with_chunksize(self, chunksize, buffersize):
+        iterable = range(1000)
+        if self.TYPE != "threads":
+            iterable = list(iterable)
+        it = self.pool.imap_unordered(sqr, iterable, chunksize=chunksize,
+                                      buffersize=buffersize)
         self.assertEqual(sorted(it), list(map(sqr, list(range(1000)))))
 
     def test_imap_unordered_handle_iterable_exception(self):
@@ -3103,6 +3144,151 @@ class _TestPool(BaseTestCase):
                 value = next(it)
                 self.assertIn(value, expected_values)
                 expected_values.remove(value)
+
+    @support.subTests('method_name', ("imap", "imap_unordered"))
+    @support.subTests(('buffersize', 'expected_exception', 'expected_regex'), (
+        ("foo", TypeError, "buffersize must be an integer or None"),
+        (2.0, TypeError, "buffersize must be an integer or None"),
+        (0, ValueError, "buffersize must be None or > 0"),
+        (-1, ValueError, "buffersize must be None or > 0"),
+    ))
+    def test_imap_and_imap_unordered_with_buffersize_type_validation(
+        self, method_name, buffersize, expected_exception, expected_regex
+    ):
+        method = getattr(self.pool, method_name)
+        with self.assertRaisesRegex(expected_exception, expected_regex):
+            method(str, range(4), buffersize=buffersize)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    @support.subTests('method_name', ("imap", "imap_unordered"))
+    def test_imap_and_imap_unordered_when_buffer_is_full(self, method_name):
+        if self.TYPE != "threads":
+            self.skipTest("test not appropriate for {}".format(self.TYPE))
+
+        processes = 4
+        p = self.Pool(processes)
+        last_produced_task_arg = Value("i")
+
+        def produce_args():
+            for arg in itertools.count(1):
+                last_produced_task_arg.value = arg
+                yield arg
+
+        method = getattr(p, method_name)
+        it = method(functools.partial(sqr, wait=0.2), produce_args())
+
+        time.sleep(0.2)
+        # `iterable` could've been advanced only `processes` times,
+        # but in fact it advances further (`> processes`) because of
+        # not waiting for workers or user code to catch up.
+        self.assertGreater(last_produced_task_arg.value, processes)
+
+        next(it)
+        time.sleep(0.2)
+        self.assertGreater(last_produced_task_arg.value, processes + 1)
+
+        next(it)
+        time.sleep(0.2)
+        self.assertGreater(last_produced_task_arg.value, processes + 2)
+
+        p.terminate()
+        p.join()
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    @support.subTests('method_name', ("imap", "imap_unordered"))
+    def test_imap_and_imap_unordered_with_buffersize_when_buffer_is_full(
+        self, method_name
+    ):
+        if self.TYPE != "threads":
+            self.skipTest("test not appropriate for {}".format(self.TYPE))
+
+        processes = 4
+        p = self.Pool(processes)
+        last_produced_task_arg = Value("i")
+
+        def produce_args():
+            for arg in itertools.count(1):
+                last_produced_task_arg.value = arg
+                yield arg
+
+        method = getattr(p, method_name)
+        it = method(functools.partial(sqr, wait=0.2), produce_args(),
+                    buffersize=processes)
+
+        time.sleep(0.2)
+        self.assertEqual(last_produced_task_arg.value, processes)
+
+        next(it)
+        time.sleep(0.2)
+        self.assertEqual(last_produced_task_arg.value, processes + 1)
+
+        next(it)
+        time.sleep(0.2)
+        self.assertEqual(last_produced_task_arg.value, processes + 2)
+
+        p.terminate()
+        p.join()
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    @support.subTests('method_name', ("imap", "imap_unordered"))
+    def test_imap_with_buffersize_close_after_partial_consumption(
+        self, method_name
+    ):
+        # close()/join() must not deadlock when a buffersize iterator is
+        # only partially consumed (the throttled task generator must stop).
+        p = self.Pool(2)
+        method = getattr(p, method_name)
+        it = method(sqr, range(1000), buffersize=2)
+        next(it)
+        finished = threading.Event()
+        def finalize():
+            p.close()
+            p.join()
+            finished.set()
+        t = threading.Thread(target=finalize)
+        t.start()
+        t.join(support.SHORT_TIMEOUT)
+        self.assertTrue(finished.is_set(), "close()/join() deadlocked")
+
+    @support.subTests('method_name', ("imap", "imap_unordered"))
+    def test_imap_and_imap_unordered_with_buffersize_on_empty_iterable(
+        self, method_name
+    ):
+        method = getattr(self.pool, method_name)
+        res = method(str, [], buffersize=2)
+        self.assertIsNone(next(res, None))
+        self.assertIsNone(next(res, None))
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_imap_with_buffersize_on_infinite_iterable(self):
+        if self.TYPE != "threads":
+            self.skipTest("test not appropriate for {}".format(self.TYPE))
+
+        p = self.Pool(4)
+        res = p.imap(str, itertools.count(), buffersize=2)
+
+        self.assertEqual(next(res, None), "0")
+        self.assertEqual(next(res, None), "1")
+        self.assertEqual(next(res, None), "2")
+
+        p.terminate()
+        p.join()
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_imap_unordered_with_buffersize_on_infinite_iterable(self):
+        if self.TYPE != "threads":
+            self.skipTest("test not appropriate for {}".format(self.TYPE))
+
+        p = self.Pool(4)
+        res = p.imap_unordered(str, itertools.count(), buffersize=2)
+
+        # (4, 5, ...) can also be submitted to the pool, so assert just 3 unique results
+        first_three_results = [next(res, None) for _ in range(3)]
+        self.assertEqual(len(first_three_results), 3)
+        self.assertEqual(len(set(first_three_results)), 3)
+
+        p.terminate()
+        p.join()
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_make_pool(self):
@@ -4390,12 +4576,11 @@ class _TestHeap(BaseTestCase):
 #
 #
 
-class _Foo(Structure):
-    _fields_ = [
-        ('x', c_int),
-        ('y', c_double),
-        ('z', c_longlong,)
-        ]
+@ctypes_struct
+class _Foo:
+    x: c_int
+    y: c_double
+    z: c_longlong
 
 class _TestSharedCTypes(BaseTestCase):
 
@@ -6143,7 +6328,10 @@ class TestStartMethod(unittest.TestCase):
     @only_run_in_spawn_testsuite("avoids redundant testing.")
     def test_mixed_startmethod(self):
         # Fork-based locks cannot be used with spawned process
-        for process_method in ["spawn", "forkserver"]:
+        test_methods = ["spawn"]
+        if "forkserver" in multiprocessing.get_all_start_methods():
+            test_methods.append("forkserver")
+        for process_method in test_methods:
             queue = multiprocessing.get_context("fork").Queue()
             process_ctx = multiprocessing.get_context(process_method)
             p = process_ctx.Process(target=close_queue, args=(queue,))
@@ -6152,7 +6340,7 @@ class TestStartMethod(unittest.TestCase):
                 p.start()
 
         # non-fork-based locks can be used with all other start methods
-        for queue_method in ["spawn", "forkserver"]:
+        for queue_method in test_methods:
             for process_method in multiprocessing.get_all_start_methods():
                 queue = multiprocessing.get_context(queue_method).Queue()
                 process_ctx = multiprocessing.get_context(process_method)
@@ -6188,6 +6376,41 @@ class TestStartMethod(unittest.TestCase):
         # gh-109706: queue.put(1) can write into the queue before queue.put(2),
         # there is no synchronization in the test.
         self.assertSetEqual(set(results), set([2, 1]))
+
+    @unittest.skipIf(os.name == "nt", "requires POSIX")
+    @support.requires_non_root_user
+    @support.subTests("mode", [
+        os.R_OK,  # read-only directory
+        os.R_OK | os.X_OK, # read-only directory
+        os.W_OK # write-only directory _without_ permissions for creating files
+    ])
+    def test_forkserver_requires_writeable_tempdir(self, mode):
+        # Regression test to ensure that the defualt start method is
+        # not 'forkserver' when the temporary directory is not writeable.
+        #
+        # See https://github.com/python/cpython/issues/155717.
+
+        cmd = '''if 1:
+            import os, tempfile
+            # We fake the read-onlyiness of /tmp (which is a fallback when
+            # the user-defined TMPDIR is not acceptable) by hardcoding the
+            # temporary directory for this specific test.
+            tempfile.tempdir = os.environ["TMPDIR"]
+
+            # Imported after patching 'tempfile' so that the default start
+            # method is deduced according to the permissions of TMPDIR.
+            import multiprocessing
+            if __name__ == "__main__":
+                print(multiprocessing.get_start_method())
+        '''
+
+        with support.os_helper.temp_dir() as root:
+            TMPDIR = pathlib.Path(root, "TMPDIR")
+            TMPDIR.mkdir(mode=mode)
+            file = pathlib.Path(TMPDIR, "file")
+            self.assertRaises(OSError, file.touch)
+            _, out, err = script_helper.assert_python_ok('-c', cmd, TMPDIR=TMPDIR)
+        self.assertEqual(out.decode().strip(), "spawn")
 
 
 @unittest.skipIf(sys.platform == "win32",
@@ -6307,6 +6530,8 @@ class TestResourceTracker(unittest.TestCase):
         # Catchable signal (ignored by semaphore tracker)
         self.check_resource_tracker_death(signal.SIGINT, False)
 
+    @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
+                         'need signal.pthread_sigmask')
     def test_resource_tracker_sigterm(self):
         # Catchable signal (ignored by semaphore tracker)
         self.check_resource_tracker_death(signal.SIGTERM, False)

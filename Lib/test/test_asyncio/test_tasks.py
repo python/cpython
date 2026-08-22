@@ -11,6 +11,7 @@ import sys
 import traceback
 import types
 import unittest
+import inspect
 from unittest import mock
 from types import GenericAlias
 
@@ -20,11 +21,10 @@ from asyncio import tasks
 from test.test_asyncio import utils as test_utils
 from test import support
 from test.support.script_helper import assert_python_ok
-from test.support.warnings_helper import ignore_warnings
 
 
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 async def coroutine_function():
@@ -1218,6 +1218,19 @@ class BaseTaskTests:
         loop.advance_time(10)
         loop.run_until_complete(asyncio.wait([a, b]))
 
+    def test_wait_discards_awaited_by_for_pending(self):
+        # gh-152569: wait() must remove itself from the await-graph of every
+        # future once it returns, including futures that never resolved.
+        async def coro():
+            immortal = self.loop.create_future()
+            done = self.new_task(self.loop, asyncio.sleep(0))
+            await asyncio.wait({done, immortal},
+                               return_when=asyncio.FIRST_COMPLETED)
+            self.assertFalse(immortal._asyncio_awaited_by)
+            immortal.cancel()
+
+        self.loop.run_until_complete(self.new_task(self.loop, coro()))
+
     def test_wait_really_done(self):
         # there is possibility that some tasks in the pending list
         # became done but their callbacks haven't all been called yet
@@ -1940,30 +1953,11 @@ class BaseTaskTests:
         self.assertFalse(task.cancelled())
         self.assertIs(task.exception(), base_exc)
 
-    @ignore_warnings(category=DeprecationWarning)
-    def test_iscoroutinefunction(self):
-        def fn():
-            pass
-
-        self.assertFalse(asyncio.iscoroutinefunction(fn))
-
-        def fn1():
-            yield
-        self.assertFalse(asyncio.iscoroutinefunction(fn1))
-
-        async def fn2():
-            pass
-        self.assertTrue(asyncio.iscoroutinefunction(fn2))
-
-        self.assertFalse(asyncio.iscoroutinefunction(mock.Mock()))
-        self.assertTrue(asyncio.iscoroutinefunction(mock.AsyncMock()))
-
-    @ignore_warnings(category=DeprecationWarning)
     def test_coroutine_non_gen_function(self):
         async def func():
             return 'test'
 
-        self.assertTrue(asyncio.iscoroutinefunction(func))
+        self.assertTrue(inspect.iscoroutinefunction(func))
 
         coro = func()
         self.assertTrue(asyncio.iscoroutine(coro))
@@ -2115,6 +2109,8 @@ class BaseTaskTests:
         test_utils.run_briefly(self.loop)
         self.assertTrue(outer.cancelled())
         self.assertEqual(0, 0 if outer._callbacks is None else len(outer._callbacks))
+        self.assertFalse(inner._asyncio_awaited_by)
+        self.assertTrue({f for f, _ctx in inner._callbacks or []} <= {asyncio.tasks._log_on_exception})
 
     def test_shield_cancel_outer_result(self):
         mock_handler = mock.Mock()
@@ -2139,6 +2135,21 @@ class BaseTaskTests:
         inner.set_exception(Exception('foo'))
         test_utils.run_briefly(self.loop)
         mock_handler.assert_called_once()
+
+    def test_shield_cancel_outer_in_task(self):
+        inner = self.new_future(self.loop)
+
+        async def coro():
+            outer = asyncio.shield(inner)
+            self.assertNotEqual(0, len(inner._callbacks))
+            outer.cancel()
+            await asyncio.sleep(0)
+            self.assertTrue(outer.cancelled())
+
+        task = self.new_task(self.loop, coro())
+        self.loop.run_until_complete(task)
+        self.assertFalse(inner._asyncio_awaited_by)
+        self.assertTrue({f for f, _ctx in inner._callbacks or []} <= {asyncio.tasks._log_on_exception})
 
     def test_shield_duplicate_log_once(self):
         mock_handler = mock.Mock()
@@ -2739,6 +2750,18 @@ class BaseTaskTests:
             self.assertEqual(name, "example")
             await t
 
+    def test_eager_start_true_no_loop(self):
+        # gh-154695: eager_start must use the resolved loop, not loop=None.
+        async def asyncfn():
+            return 42
+
+        async def main():
+            t = self.__class__.Task(asyncfn(), eager_start=True)
+            self.assertTrue(t.done())
+            self.assertEqual(await t, 42)
+
+        asyncio.run(main(), loop_factory=asyncio.EventLoop)
+
     def test_eager_start_false(self):
         name = None
 
@@ -2917,6 +2940,16 @@ class CTask_CFuture_Tests(BaseTaskTests, SetMethodsTest,
         self.loop.run_until_complete(task)
         with self.assertRaises(AttributeError):
             del task._log_destroy_pending
+
+    def test_get_context_uninitialized_segfault(self):
+        # https://github.com/python/cpython/issues/154871
+
+        class UninitializedTask(self.Task):
+            def __init__(self, *args, **kwargs):
+                pass
+
+        task = UninitializedTask()
+        self.assertIsNone(task.get_context())
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture') and

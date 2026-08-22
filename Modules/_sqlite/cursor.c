@@ -223,8 +223,11 @@ _pysqlite_get_converter(pysqlite_state *state, const char *keystr,
         return NULL;
     }
 
-    retval = PyDict_GetItemWithError(state->converters, upcase_key);
+    int rc = PyDict_GetItemRef(state->converters, upcase_key, &retval);
     Py_DECREF(upcase_key);
+    if (rc < 0) {
+        return NULL;
+    }
 
     return retval;
 }
@@ -296,11 +299,10 @@ pysqlite_build_row_cast_map(pysqlite_Cursor* self)
             }
         }
 
-        if (!converter) {
-            converter = Py_None;
-        }
-
-        if (PyList_Append(self->row_cast_map, converter) != 0) {
+        int rc = PyList_Append(self->row_cast_map,
+                               converter ? converter : Py_None);
+        Py_XDECREF(converter);
+        if (rc != 0) {
             Py_CLEAR(self->row_cast_map);
             return -1;
         }
@@ -1378,7 +1380,12 @@ static int
 _sqlite3_Cursor_arraysize_set_impl(pysqlite_Cursor *self, PyObject *value)
 /*[clinic end generated code: output=af59a6b09f8cce6e input=ace48cb114e26060]*/
 {
-    return PyLong_AsUInt32(value, &self->arraysize);
+    uint32_t arraysize;
+    if (PyLong_AsUInt32(value, &arraysize) < 0) {
+        return -1;
+    }
+    self->arraysize = arraysize;
+    return 0;
 }
 
 static PyMethodDef cursor_methods[] = {
@@ -1400,13 +1407,33 @@ static struct PyMemberDef cursor_members[] =
     {"description", _Py_T_OBJECT, offsetof(pysqlite_Cursor, description), Py_READONLY},
     {"lastrowid", _Py_T_OBJECT, offsetof(pysqlite_Cursor, lastrowid), Py_READONLY},
     {"rowcount", Py_T_LONG, offsetof(pysqlite_Cursor, rowcount), Py_READONLY},
-    {"row_factory", _Py_T_OBJECT, offsetof(pysqlite_Cursor, row_factory), 0},
     {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(pysqlite_Cursor, in_weakreflist), Py_READONLY},
     {NULL}
 };
 
+static PyObject *
+cursor_get_row_factory(PyObject *op, void *Py_UNUSED(closure))
+{
+    pysqlite_Cursor *self = _pysqlite_Cursor_CAST(op);
+    return Py_NewRef(self->row_factory);
+}
+
+static int
+cursor_set_row_factory(PyObject *op, PyObject *value, void *Py_UNUSED(closure))
+{
+    pysqlite_Cursor *self = _pysqlite_Cursor_CAST(op);
+    if (value == NULL) {
+        PyErr_SetString(PyExc_AttributeError,
+                        "cannot delete row_factory attribute");
+        return -1;
+    }
+    Py_XSETREF(self->row_factory, Py_NewRef(value));
+    return 0;
+}
+
 static struct PyGetSetDef cursor_getsets[] = {
     _SQLITE3_CURSOR_ARRAYSIZE_GETSETDEF
+    {"row_factory", cursor_get_row_factory, cursor_set_row_factory},
     {NULL},
 };
 
