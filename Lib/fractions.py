@@ -167,12 +167,12 @@ _FLOAT_FORMAT_SPECIFICATION_MATCHER = re.compile(r"""
     (?P<alt>\#)?
     # A '0' that's *not* followed by another digit is parsed as a minimum width
     # rather than a zeropad flag.
-    (?P<zeropad>0(?=[0-9]))?
-    (?P<minimumwidth>[0-9]+)?
+    (?P<zeropad>0(?=\d))?
+    (?P<minimumwidth>\d+)?
     (?P<thousands_sep>[,_])?
     (?:\.
-        (?=[,_0-9])  # lookahead for digit or separator
-        (?P<precision>[0-9]+)?
+        (?=[\d,_])  # lookahead for digit or separator
+        (?P<precision>\d+)?
         (?P<frac_separators>[,_])?
     )?
     (?P<presentation_type>[eEfFgG%])
