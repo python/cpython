@@ -1,0 +1,4 @@
+Fixed small nonnegative integer powers for complex numbers with special values
+(``±0.0``, infinities or nan's) in components.  Negative powers of infinite
+numbers now evaluate to zero instead of NaN.  Powers of infinite numbers no
+longer raise :exc:`OverflowError`.
