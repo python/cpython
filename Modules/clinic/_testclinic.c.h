@@ -4920,8 +4920,10 @@ vc_plain_vectorcall(PyObject *type, PyObject *const *args,
             PyTuple_GET_SIZE(kwnames),
             NULL, kwnames);
     }
-    if (!_PyArg_CheckPositional("VcNew", nargs, 0, 1)) {
-        goto exit;
+    if (nargs > 1) {
+        return vc_plain_new_parse_args(_PyType_CAST(type), args, nargs,
+            0,
+            NULL, kwnames);
     }
     if (nargs < 1) {
         goto skip_optional;
@@ -4930,7 +4932,6 @@ vc_plain_vectorcall(PyObject *type, PyObject *const *args,
 skip_optional:
     return_value = vc_plain_new_impl(_PyType_CAST(type), a);
 
-exit:
     return return_value;
 }
 
@@ -5030,8 +5031,20 @@ vc_posorkw_vectorcall(PyObject *type, PyObject *const *args,
         }
         return self;
     }
-    if (!_PyArg_CheckPositional("VcInit", nargs, 1, 2)) {
-        goto exit;
+    if (nargs < 1 || nargs > 2) {
+        self = _PyType_CAST(type)->tp_alloc(
+            _PyType_CAST(type), 0);
+        if (self == NULL) {
+            return NULL;
+        }
+        _result = vc_posorkw_init_parse_args(self, args, nargs,
+            0,
+            NULL, kwnames);
+        if (_result != 0) {
+            Py_DECREF(self);
+            return NULL;
+        }
+        return self;
     }
     a = args[0];
     if (nargs < 2) {
@@ -5139,8 +5152,10 @@ vc_base_vectorcall(PyObject *type, PyObject *const *args,
             PyTuple_GET_SIZE(kwnames),
             NULL, kwnames);
     }
-    if (!_PyArg_CheckPositional("VcNewBase", nargs, 1, 2)) {
-        goto exit;
+    if (nargs < 1 || nargs > 2) {
+        return vc_base_new_parse_args(_PyType_CAST(type), args, nargs,
+            0,
+            NULL, kwnames);
     }
     a = args[0];
     if (nargs < 2) {
@@ -5150,7 +5165,6 @@ vc_base_vectorcall(PyObject *type, PyObject *const *args,
 skip_optional:
     return_value = vc_base_new_impl(_PyType_CAST(type), a, b);
 
-exit:
     return return_value;
 }
 
@@ -5232,4 +5246,4 @@ vc_kwonly_vectorcall(PyObject *type, PyObject *const *args,
         kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
         NULL, kwnames);
 }
-/*[clinic end generated code: output=927d115514848dd6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ea3ea1853d2dec1c input=a9049054013a1b77]*/

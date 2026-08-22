@@ -1141,16 +1141,33 @@ class ParseArgsCodeGen:
             assert(Py_Is(_PyType_CAST(type), {func.cls.type_object}));
             """, indent=4)]
 
-    def _vectorcall_positional(self) -> list[str]:
-        """Positional argument parsing for vectorcall."""
+    def _vectorcall_positional(self, *,
+                               arity_delegate: bool = False) -> list[str]:
+        """Positional argument parsing for vectorcall.
+
+        arity_delegate: report out-of-range positional count through the
+        {c_basename}_parse_args helper rather than _PyArg_CheckPositional(),
+        so this entry point and the slot report the same error message.
+        """
         pos_code = self._parse_positional_args(
             argname_fmt='args[%d]', nargs='nargs', limited_capi=False)
         # Converter support was validated when @vectorcall was parsed.
         assert pos_code is not None
         max_args = NO_VARARG if self.varpos else self.max_pos
-        if self.min_pos or max_args != NO_VARARG:
-            return [self._check_positional('nargs', indent=4), *pos_code]
-        return pos_code
+        if not self.min_pos and max_args == NO_VARARG:
+            return pos_code
+        if arity_delegate:
+            checks = []
+            if self.min_pos:
+                checks.append(f"nargs < {self.min_pos}")
+            if max_args != NO_VARARG:
+                checks.append(f"nargs > {max_args}")
+            # kwnames is NULL here, so there are no keyword arguments.
+            check = [self._vectorcall_guarded_delegate(
+                " || ".join(checks), '0')]
+        else:
+            check = [self._check_positional('nargs', indent=4)]
+        return [*check, *pos_code]
 
     def _assemble_vectorcall(self, preamble: str, fields: tuple[str, ...],
                              finale: str) -> None:
@@ -1219,6 +1236,16 @@ class ParseArgsCodeGen:
         parser_code.extend(self._vectorcall_positional())
         self.vectorcall_body(*parser_code)
 
+    def _vectorcall_guarded_delegate(self, condition: str, nkw: str) -> str:
+        """Emit `if (condition) { <delegate to helper> }`."""
+        return libclinic.linear_format(
+            libclinic.normalize_snippet(f"""
+                if ({condition}) {{{{
+                {{delegate}}
+                }}}}
+                """, indent=4),
+            delegate=self._vectorcall_delegate_to_helper(nkw))
+
     def _vectorcall_delegate_to_helper(self, nkw: str) -> str:
         """Hand off to the {c_basename}_parse_args helper and return.
 
@@ -1246,19 +1273,13 @@ class ParseArgsCodeGen:
     def parse_vectorcall_pos_or_kw(self) -> None:
         """Optional positional and keyword argument vectorcall.
 
-        Delegate to helper if keywords present.
+        Delegate to the helper if keywords present or if position count is out
+        of range. Position count so the error messages match the non-vectorcall.
         """
         parser_code = self._vectorcall_type_check()
-        delegate = self._vectorcall_delegate_to_helper(
-            'PyTuple_GET_SIZE(kwnames)')
-        parser_code.append(libclinic.normalize_snippet("""
-            if (kwnames != NULL) {{
-            """, indent=4))
-        parser_code.append(libclinic.normalize_snippet(delegate, indent=8))
-        parser_code.append(libclinic.normalize_snippet("""
-            }}
-            """, indent=4))
-        parser_code.extend(self._vectorcall_positional())
+        parser_code.append(self._vectorcall_guarded_delegate(
+            'kwnames != NULL', 'PyTuple_GET_SIZE(kwnames)'))
+        parser_code.extend(self._vectorcall_positional(arity_delegate=True))
         self.vectorcall_body(*parser_code)
 
     def parse_vectorcall(self) -> None:
