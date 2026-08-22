@@ -275,6 +275,13 @@ class TestMoreLines(unittest.TestCase):
         console = InteractiveColoredConsole(namespace, filename="<stdin>")
         self.assertTrue(_more_lines(console, code))
 
+    def test_system_error_during_compilation(self):
+        namespace = {}
+        console = InteractiveColoredConsole(namespace, filename="<stdin>")
+        with patch.object(console, "compile", side_effect=SystemError("compiler bug")):
+            result = _more_lines(console, "some code")
+        self.assertFalse(result)
+
 
 class TestWarnings(unittest.TestCase):
     def test_pep_765_warning(self):

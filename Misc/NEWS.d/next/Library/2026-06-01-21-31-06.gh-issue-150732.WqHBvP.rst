@@ -1,0 +1,1 @@
+Handle :exc:`SystemError` from the compiler in ``PyREPL``, :mod:`code`, and :mod:`codeop`. Patch by Bartosz Sławecki.
