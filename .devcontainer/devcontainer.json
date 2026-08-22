@@ -6,7 +6,9 @@
         "install",
         "-y",
         // For umask fix below.
-        "/usr/bin/setfacl"
+        "/usr/bin/setfacl",
+        // To run make regen-configure
+        "/usr/bin/docker"
     ],
     "updateContentCommand": {
         // Using the shell for `nproc` usage.
