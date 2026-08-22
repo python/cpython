@@ -1241,6 +1241,16 @@ func_repr(PyObject *self)
                                 op->func_qualname, op);
 }
 
+static PyObject *
+func_getitem(PyObject *self, PyObject *item)
+{
+    return Py_GenericAlias(self, item);
+}
+
+static PyMappingMethods func_as_mapping = {
+    .mp_subscript = func_getitem,
+};
+
 static int
 func_traverse(PyObject *self, visitproc visit, void *arg)
 {
@@ -1285,7 +1295,7 @@ PyTypeObject PyFunction_Type = {
     func_repr,                                  /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
+    &func_as_mapping,                           /* tp_as_mapping */
     0,                                          /* tp_hash */
     PyVectorcall_Call,                          /* tp_call */
     0,                                          /* tp_str */
