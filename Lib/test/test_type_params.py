@@ -1076,18 +1076,22 @@ class TypeParamsTypeVarTest(unittest.TestCase):
 
 class TypeParamsTypeVarTupleTest(unittest.TestCase):
     def test_typevartuple_01(self):
-        code = """def func1[*A: str](): pass"""
-        check_syntax_error(self, code, "cannot use bound with TypeVarTuple")
-        code = """def func1[*A: (int, str)](): pass"""
-        check_syntax_error(self, code, "cannot use constraints with TypeVarTuple")
-        code = """class X[*A: str]: pass"""
-        check_syntax_error(self, code, "cannot use bound with TypeVarTuple")
-        code = """class X[*A: (int, str)]: pass"""
-        check_syntax_error(self, code, "cannot use constraints with TypeVarTuple")
-        code = """type X[*A: str] = int"""
-        check_syntax_error(self, code, "cannot use bound with TypeVarTuple")
-        code = """type X[*A: (int, str)] = int"""
-        check_syntax_error(self, code, "cannot use constraints with TypeVarTuple")
+        def func1[*A: str, *B: str | int]():
+            return A, B
+
+        a, b = func1()
+
+        self.assertIsInstance(a, TypeVarTuple)
+        self.assertEqual(a.__bound__, str)
+        self.assertTrue(a.__infer_variance__)
+        self.assertFalse(a.__covariant__)
+        self.assertFalse(a.__contravariant__)
+
+        self.assertIsInstance(b, TypeVarTuple)
+        self.assertEqual(b.__bound__, str | int)
+        self.assertTrue(b.__infer_variance__)
+        self.assertFalse(b.__covariant__)
+        self.assertFalse(b.__contravariant__)
 
     def test_typevartuple_02(self):
         def func1[*A]():
@@ -1095,22 +1099,83 @@ class TypeParamsTypeVarTupleTest(unittest.TestCase):
 
         a = func1()
         self.assertIsInstance(a, TypeVarTuple)
+        self.assertIsNone(a.__bound__)
+        self.assertIsNone(a.evaluate_bound)
+
+    def test_typevartuple_starred_bound(self):
+        # A type variable tuple bound is a star_expression, like its default.
+        def func1[*A: *tuple[int, str]]():
+            return A
+
+        a = func1()
+        self.assertEqual(a.__bound__, (*tuple[int, str],)[0])
+        self.assertEqual(repr(a.__bound__), "*tuple[int, str]")
+
+    def test_typevartuple_bound_is_lazily_evaluated(self):
+        # The bound must not be evaluated when the type parameter is created.
+        def func1[*A: Undefined]():
+            return A
+
+        a = func1()
+        with self.assertRaises(NameError):
+            a.__bound__
+
+        global Undefined
+        Undefined = int
+        try:
+            self.assertIs(a.__bound__, int)
+            # The evaluated bound is cached.
+            self.assertIs(a.__bound__, int)
+        finally:
+            del Undefined
+
+    def test_typevartuple_bound_in_class_and_alias(self):
+        class Cls[*A: int]: ...
+        a, = Cls.__type_params__
+        self.assertIs(a.__bound__, int)
+
+        type Alias[*B: int] = int
+        b, = Alias.__type_params__
+        self.assertIs(b.__bound__, int)
+
+    def test_typevartuple_bound_scope(self):
+        # The bound is evaluated in an annotation scope nested inside the
+        # scope of the type parameter list, so it can see earlier type params.
+        def func1[T, *A: T]():
+            return T, A
+
+        t, a = func1()
+        self.assertIs(a.__bound__, t)
+
+    def test_typevartuple_bound_and_default_have_separate_scopes(self):
+        # Regression guard: the bound and the default must not share a key,
+        # or a comprehension in both would collide.
+        def func1[*A: [x for x in (int,)][0] = [y for y in (str,)][0]]():
+            return A
+
+        a = func1()
+        self.assertIs(a.__bound__, int)
+        self.assertIs(a.__default__, str)
 
 
 class TypeParamsTypeVarParamSpecTest(unittest.TestCase):
     def test_paramspec_01(self):
-        code = """def func1[**A: str](): pass"""
-        check_syntax_error(self, code, "cannot use bound with ParamSpec")
-        code = """def func1[**A: (int, str)](): pass"""
-        check_syntax_error(self, code, "cannot use constraints with ParamSpec")
-        code = """class X[**A: str]: pass"""
-        check_syntax_error(self, code, "cannot use bound with ParamSpec")
-        code = """class X[**A: (int, str)]: pass"""
-        check_syntax_error(self, code, "cannot use constraints with ParamSpec")
-        code = """type X[**A: str] = int"""
-        check_syntax_error(self, code, "cannot use bound with ParamSpec")
-        code = """type X[**A: (int, str)] = int"""
-        check_syntax_error(self, code, "cannot use constraints with ParamSpec")
+        def func1[**A: [str], **B: [str | int]]():
+            return A, B
+
+        a, b = func1()
+
+        self.assertIsInstance(a, ParamSpec)
+        self.assertEqual(a.__bound__, [str])
+        self.assertTrue(a.__infer_variance__)
+        self.assertFalse(a.__covariant__)
+        self.assertFalse(a.__contravariant__)
+
+        self.assertIsInstance(b, ParamSpec)
+        self.assertEqual(b.__bound__, [str | int])
+        self.assertTrue(b.__infer_variance__)
+        self.assertFalse(b.__covariant__)
+        self.assertFalse(b.__contravariant__)
 
     def test_paramspec_02(self):
         def func1[**A]():
@@ -1118,9 +1183,57 @@ class TypeParamsTypeVarParamSpecTest(unittest.TestCase):
 
         a = func1()
         self.assertIsInstance(a, ParamSpec)
+        self.assertIsNone(a.__bound__)
+        self.assertIsNone(a.evaluate_bound)
         self.assertTrue(a.__infer_variance__)
         self.assertFalse(a.__covariant__)
         self.assertFalse(a.__contravariant__)
+
+    def test_paramspec_constructor_no_bound(self):
+        # gh-148945: previously this was types.NoneType, unlike TypeVar and
+        # TypeVarTuple.
+        self.assertIsNone(ParamSpec("P").__bound__)
+        self.assertIsNone(ParamSpec("P", bound=None).__bound__)
+
+    def test_paramspec_bound_is_lazily_evaluated(self):
+        def func1[**A: [Undefined]]():
+            return A
+
+        a = func1()
+        with self.assertRaises(NameError):
+            a.__bound__
+
+        global Undefined
+        Undefined = int
+        try:
+            self.assertEqual(a.__bound__, [int])
+            self.assertEqual(a.__bound__, [int])
+        finally:
+            del Undefined
+
+    def test_paramspec_bound_in_class_and_alias(self):
+        class Cls[**A: [int]]: ...
+        a, = Cls.__type_params__
+        self.assertEqual(a.__bound__, [int])
+
+        type Alias[**B: [int]] = int
+        b, = Alias.__type_params__
+        self.assertEqual(b.__bound__, [int])
+
+    def test_paramspec_bound_scope(self):
+        def func1[T, **A: [T]]():
+            return T, A
+
+        t, a = func1()
+        self.assertEqual(a.__bound__, [t])
+
+    def test_paramspec_bound_and_default_have_separate_scopes(self):
+        def func1[**A: [x for x in (int,)] = [y for y in (str,)]]():
+            return A
+
+        a = func1()
+        self.assertEqual(a.__bound__, [int])
+        self.assertEqual(a.__default__, [str])
 
 
 class TypeParamsTypeParamsDunder(unittest.TestCase):
@@ -1265,7 +1378,7 @@ class TypeParamsWeakRefTest(unittest.TestCase):
             P,
             P.args,
             P.kwargs,
-            TypeVarTuple('Ts'),
+            TypeVarTuple('Ts', bound=int),
             OldStyle,
             OldStyle[int],
             OldStyle(),
@@ -1423,29 +1536,38 @@ class TestEvaluateFunctions(unittest.TestCase):
     def test_general(self):
         type Alias = int
         Alias2 = TypeAliasType("Alias2", int)
-        def f[T: int = int, **P = int, *Ts = int](): pass
-        T, P, Ts = f.__type_params__
+        def f[T: int = int, *Ts: int = int, **P: [int] = int](): pass
+        T, Ts, P = f.__type_params__
         T2 = TypeVar("T2", bound=int, default=int)
-        P2 = ParamSpec("P2", default=int)
-        Ts2 = TypeVarTuple("Ts2", default=int)
+        Ts2 = TypeVarTuple("Ts2", bound=int, default=int)
+        P2 = ParamSpec("P2", bound=[int], default=int)
+        # A ParamSpec bound is a parameter list, so it evaluates to a list
+        # rather than to a bare type.
         cases = [
-            Alias.evaluate_value,
-            Alias2.evaluate_value,
-            T.evaluate_bound,
-            T.evaluate_default,
-            P.evaluate_default,
-            Ts.evaluate_default,
-            T2.evaluate_bound,
-            T2.evaluate_default,
-            P2.evaluate_default,
-            Ts2.evaluate_default,
+            (Alias.evaluate_value, int, 'int'),
+            (Alias2.evaluate_value, int, 'int'),
+            (T.evaluate_bound, int, 'int'),
+            (T.evaluate_default, int, 'int'),
+            (Ts.evaluate_bound, int, 'int'),
+            (Ts.evaluate_default, int, 'int'),
+            (P.evaluate_bound, [int], '[int]'),
+            (P.evaluate_default, int, 'int'),
+            (T2.evaluate_bound, int, 'int'),
+            (T2.evaluate_default, int, 'int'),
+            (Ts2.evaluate_bound, int, 'int'),
+            (Ts2.evaluate_default, int, 'int'),
+            # A constevaluator does not recurse into containers, so the
+            # STRING format falls back to repr() (as it already does for
+            # ParamSpec defaults such as ParamSpec("P", default=[int])).
+            (P2.evaluate_bound, [int], "[<class 'int'>]"),
+            (P2.evaluate_default, int, 'int'),
         ]
-        for case in cases:
+        for case, value, string in cases:
             with self.subTest(case=case):
-                self.assertIs(case(1), int)
-                self.assertIs(annotationlib.call_evaluate_function(case, annotationlib.Format.VALUE), int)
-                self.assertIs(annotationlib.call_evaluate_function(case, annotationlib.Format.FORWARDREF), int)
-                self.assertEqual(annotationlib.call_evaluate_function(case, annotationlib.Format.STRING), 'int')
+                self.assertEqual(case(1), value)
+                self.assertEqual(annotationlib.call_evaluate_function(case, annotationlib.Format.VALUE), value)
+                self.assertEqual(annotationlib.call_evaluate_function(case, annotationlib.Format.FORWARDREF), value)
+                self.assertEqual(annotationlib.call_evaluate_function(case, annotationlib.Format.STRING), string)
 
     def test_signature(self):
         # gh-151665: the ".format" parameter of compiler-generated evaluators

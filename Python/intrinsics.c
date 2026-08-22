@@ -271,6 +271,22 @@ make_typevar_with_constraints(PyThreadState* Py_UNUSED(ignored), PyObject *name,
 }
 
 static PyObject *
+make_typevartuple_with_bound(PyThreadState* Py_UNUSED(ignored), PyObject *name,
+                             PyObject *evaluate_bound)
+{
+    assert(PyUnicode_Check(name));
+    return _Py_make_typevartuple_with_bound(name, evaluate_bound);
+}
+
+static PyObject *
+make_paramspec_with_bound(PyThreadState* Py_UNUSED(ignored), PyObject *name,
+                          PyObject *evaluate_bound)
+{
+    assert(PyUnicode_Check(name));
+    return _Py_make_paramspec_with_bound(name, evaluate_bound);
+}
+
+static PyObject *
 add_conditional_annotation(PyThreadState* tstate, PyObject *conditional_annotations,
                            PyObject *index)
 {
@@ -296,6 +312,8 @@ _PyIntrinsics_BinaryFunctions[] = {
     INTRINSIC_FUNC_ENTRY(INTRINSIC_SET_FUNCTION_TYPE_PARAMS, _Py_set_function_type_params)
     INTRINSIC_FUNC_ENTRY(INTRINSIC_SET_TYPEPARAM_DEFAULT, _Py_set_typeparam_default)
     INTRINSIC_FUNC_ENTRY(INTRINSIC_ADD_CONDITIONAL_ANNOTATION, add_conditional_annotation)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_TYPEVARTUPLE_WITH_BOUND, make_typevartuple_with_bound)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_PARAMSPEC_WITH_BOUND, make_paramspec_with_bound)
 };
 
 #undef INTRINSIC_FUNC_ENTRY

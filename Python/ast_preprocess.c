@@ -958,9 +958,11 @@ astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTPreprocessState *st
             CALL_OPT(astfold_expr, expr_ty, node_->v.TypeVar.default_value);
             break;
         case ParamSpec_kind:
+            CALL_OPT(astfold_expr, expr_ty, node_->v.ParamSpec.bound);
             CALL_OPT(astfold_expr, expr_ty, node_->v.ParamSpec.default_value);
             break;
         case TypeVarTuple_kind:
+            CALL_OPT(astfold_expr, expr_ty, node_->v.TypeVarTuple.bound);
             CALL_OPT(astfold_expr, expr_ty, node_->v.TypeVarTuple.default_value);
             break;
     }

@@ -1041,11 +1041,15 @@ validate_typeparam(type_param_ty tp)
             break;
         case ParamSpec_kind:
             ret = validate_name(tp->v.ParamSpec.name) &&
+                (!tp->v.ParamSpec.bound ||
+                 validate_expr(tp->v.ParamSpec.bound, Load)) &&
                 (!tp->v.ParamSpec.default_value ||
                  validate_expr(tp->v.ParamSpec.default_value, Load));
             break;
         case TypeVarTuple_kind:
             ret = validate_name(tp->v.TypeVarTuple.name) &&
+                (!tp->v.TypeVarTuple.bound ||
+                 validate_expr(tp->v.TypeVarTuple.bound, Load)) &&
                 (!tp->v.TypeVarTuple.default_value ||
                  validate_expr(tp->v.TypeVarTuple.default_value, Load));
             break;

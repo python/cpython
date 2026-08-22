@@ -1337,12 +1337,21 @@ codegen_type_params(compiler *c, asdl_type_param_seq *type_params)
             break;
         case TypeVarTuple_kind:
             ADDOP_LOAD_CONST(c, loc, typeparam->v.TypeVarTuple.name);
-            ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_TYPEVARTUPLE);
+            if (typeparam->v.TypeVarTuple.bound) {
+                expr_ty bound = typeparam->v.TypeVarTuple.bound;
+                RETURN_IF_ERROR(
+                    codegen_type_param_bound_or_default(c, bound, typeparam->v.TypeVarTuple.name,
+                                                        (void *)typeparam, true));
+                ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_TYPEVARTUPLE_WITH_BOUND);
+            }
+            else {
+                ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_TYPEVARTUPLE);
+            }
             if (typeparam->v.TypeVarTuple.default_value) {
                 expr_ty default_ = typeparam->v.TypeVarTuple.default_value;
                 RETURN_IF_ERROR(
                     codegen_type_param_bound_or_default(c, default_, typeparam->v.TypeVarTuple.name,
-                                                        (void *)typeparam, true));
+                                                        (void *)((uintptr_t)typeparam + 1), true));
                 ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_TYPEPARAM_DEFAULT);
                 seen_default = true;
             }
@@ -1356,12 +1365,21 @@ codegen_type_params(compiler *c, asdl_type_param_seq *type_params)
             break;
         case ParamSpec_kind:
             ADDOP_LOAD_CONST(c, loc, typeparam->v.ParamSpec.name);
-            ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_PARAMSPEC);
+            if (typeparam->v.ParamSpec.bound) {
+                expr_ty bound = typeparam->v.ParamSpec.bound;
+                RETURN_IF_ERROR(
+                    codegen_type_param_bound_or_default(c, bound, typeparam->v.ParamSpec.name,
+                                                        (void *)typeparam, false));
+                ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_PARAMSPEC_WITH_BOUND);
+            }
+            else {
+                ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_PARAMSPEC);
+            }
             if (typeparam->v.ParamSpec.default_value) {
                 expr_ty default_ = typeparam->v.ParamSpec.default_value;
                 RETURN_IF_ERROR(
                     codegen_type_param_bound_or_default(c, default_, typeparam->v.ParamSpec.name,
-                                                        (void *)typeparam, false));
+                                                        (void *)((uintptr_t)typeparam + 1), false));
                 ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_TYPEPARAM_DEFAULT);
                 seen_default = true;
             }
