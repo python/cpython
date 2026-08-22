@@ -2475,6 +2475,23 @@ kwds_with_pos_only_impl(PyObject *module, PyObject *a, PyObject *b,
 
 
 /*[clinic input]
+kwds_with_optional_pos_only
+    a: object
+    b: object = None
+    /
+    **kwds: dict
+[clinic start generated code]*/
+
+static PyObject *
+kwds_with_optional_pos_only_impl(PyObject *module, PyObject *a, PyObject *b,
+                                 PyObject *kwds)
+/*[clinic end generated code: output=25a8458f5acc1a07 input=0b18b9e1670904ec]*/
+{
+    return pack_arguments_newref(3, a, b, kwds);
+}
+
+
+/*[clinic input]
 kwds_with_stararg
     *args: tuple
     **kwds: dict
@@ -2611,6 +2628,7 @@ static PyMethodDef tester_methods[] = {
 
     LONE_KWDS_METHODDEF
     KWDS_WITH_POS_ONLY_METHODDEF
+    KWDS_WITH_OPTIONAL_POS_ONLY_METHODDEF
     KWDS_WITH_STARARG_METHODDEF
     KWDS_WITH_POS_ONLY_AND_STARARG_METHODDEF
 

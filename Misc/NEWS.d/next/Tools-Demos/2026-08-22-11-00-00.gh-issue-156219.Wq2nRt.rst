@@ -1,0 +1,2 @@
+Fix Argument Clinic generating code which reads an optional positional
+argument which was not passed, if the function has a ``**kwds`` parameter.

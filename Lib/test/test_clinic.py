@@ -4981,6 +4981,18 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(ac_tester.kwds_with_pos_only(1, 2, y='y', z='z'), (1, 2, kwds))
         self.assertEqual(ac_tester.kwds_with_pos_only(1, 2, **kwds), (1, 2, kwds))
 
+    def test_kwds_with_optional_pos_only(self):
+        with self.assertRaises(TypeError):
+            ac_tester.kwds_with_optional_pos_only()
+        with self.assertRaises(TypeError):
+            ac_tester.kwds_with_optional_pos_only(y='y')
+        self.assertEqual(ac_tester.kwds_with_optional_pos_only(1), (1, None, {}))
+        self.assertEqual(ac_tester.kwds_with_optional_pos_only(1, 2), (1, 2, {}))
+        self.assertEqual(ac_tester.kwds_with_optional_pos_only(1, y='y'),
+                         (1, None, {'y': 'y'}))
+        self.assertEqual(ac_tester.kwds_with_optional_pos_only(1, 2, y='y'),
+                         (1, 2, {'y': 'y'}))
+
     def test_kwds_with_stararg(self):
         self.assertEqual(ac_tester.kwds_with_stararg(), ((), {}))
         self.assertEqual(ac_tester.kwds_with_stararg(1, 2), ((1, 2), {}))
