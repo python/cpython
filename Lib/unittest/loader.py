@@ -2,7 +2,6 @@
 
 import inspect
 import os
-import re
 import sys
 import traceback
 import types
@@ -17,7 +16,11 @@ __unittest = True
 # what about .pyc (etc)
 # we would need to avoid loading the same tests multiple times
 # from '.py', *and* '.pyc'
-VALID_MODULE_NAME = re.compile(r'[_a-z]\w*\.py$', re.IGNORECASE)
+def _valid_module_name(path):
+    # gh-68451: use str.isidentifier() to support Unicode module names,
+    # rather than a restrictive ASCII-only regex.
+    root, ext = os.path.splitext(path)
+    return ext.lower() == '.py' and root.isidentifier()
 
 
 class _FailedTest(case.TestCase):
@@ -422,7 +425,7 @@ class TestLoader(object):
         """
         basename = os.path.basename(full_path)
         if os.path.isfile(full_path):
-            if not VALID_MODULE_NAME.match(basename):
+            if not _valid_module_name(basename):
                 # valid Python identifiers only
                 return None, False
             if not self._match_path(basename, full_path, pattern):
@@ -456,6 +459,8 @@ class TestLoader(object):
                         msg % (mod_name, module_dir, expected_dir))
                 return self.loadTestsFromModule(module, pattern=pattern), False
         elif os.path.isdir(full_path):
+            if not os.path.basename(full_path).isidentifier():
+                return None, False
             if (not namespace and
                 not os.path.isfile(os.path.join(full_path, '__init__.py'))):
                 return None, False
