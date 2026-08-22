@@ -1,0 +1,5 @@
+Clarify that equality comparisons (``==``) between set-like dictionary views
+(:meth:`dict.keys` and :meth:`dict.items`) and non-set iterables such as
+:class:`list` or :class:`tuple` always return ``False``, unlike other
+set-like operators (``&``, ``|``, ``^``) which accept any iterable as the
+other operand.
