@@ -17,7 +17,7 @@ This module provides classes and functions for comparing sequences.
 Most of them compare sequences of text lines (for example lists of strings,
 or :term:`file objects <file object>`) and
 produce :dfn:`diffs` -- reports on the differences.
-Diffs can be produced in in various formats, including HTML and context
+Diffs can be produced in various formats, including HTML and context
 and unified diffs -- formats produced by tools like
 :manpage:`diff <diff(1)>` and :manpage:`git diff <git-diff(1)>`.
 
@@ -52,7 +52,7 @@ By default, if the second input sequence is at least 200 items long, items
 that account for more than 1% it are considered *junk*.
 
 Depending on your data, you should consider turning this heuristic off
-(setting :class:`~difflib.SequenceMatcher`'s *autojunk* argument to  to ``False``)
+(setting :class:`~difflib.SequenceMatcher`'s *autojunk* argument to ``False``)
 or tuning it (using the *isjunk* argument, perhaps to one of the
 :ref:`predefined functions <difflib-isjunk-functions>`).
 
