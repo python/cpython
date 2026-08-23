@@ -7,10 +7,11 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_time.h"          // _PyTime_FromSecondsObject()
 
 static int
 pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
-                              double timeout, int detect_types,
+                              PyTime_t timeout, int detect_types,
                               const char *isolation_level,
                               int check_same_thread, PyObject *factory,
                               int cache_size, int uri,
@@ -52,7 +53,7 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
     PyObject *database;
-    double timeout = 5.0;
+    PyTime_t timeout = _PyTime_FromSeconds(5);
     int detect_types = 0;
     const char *isolation_level = "";
     int check_same_thread = 1;
@@ -71,15 +72,8 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
         goto skip_optional_kwonly;
     }
     if (fastargs[1]) {
-        if (PyFloat_CheckExact(fastargs[1])) {
-            timeout = PyFloat_AS_DOUBLE(fastargs[1]);
-        }
-        else
-        {
-            timeout = PyFloat_AsDouble(fastargs[1]);
-            if (timeout == -1.0 && PyErr_Occurred()) {
-                goto exit;
-            }
+        if (_PyTime_FromSecondsObject(&timeout, fastargs[1], _PyTime_ROUND_TIMEOUT) < 0) {
+            goto exit;
         }
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -1725,4 +1719,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=11ccc746e9223121 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=55fa2dffee650a3e input=a9049054013a1b77]*/

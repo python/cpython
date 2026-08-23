@@ -480,6 +480,75 @@ pytime_object_to_denominator(PyObject *obj, time_t *sec, long *numerator,
 }
 
 
+/* Converters for the "duration" Argument Clinic converter.  The "OrNone"
+   variants convert None to -1, which usually means "no timeout". */
+
+#define DURATION_CONVERTER(NAME, FROMOBJECT, ROUND, ALLOW_NONE)          \
+int                                                                      \
+NAME(PyObject *obj, void *ptr)                                           \
+{                                                                        \
+    if (ALLOW_NONE && obj == Py_None) {                                  \
+        *(PyTime_t *)ptr = -1;                                           \
+        return 1;                                                        \
+    }                                                                    \
+    return FROMOBJECT((PyTime_t *)ptr, obj, ROUND) < 0 ? 0 : 1;          \
+}
+
+DURATION_CONVERTER(_PyTime_Duration_Seconds_Converter,
+                   _PyTime_FromSecondsObject, _PyTime_ROUND_TIMEOUT, 0)
+DURATION_CONVERTER(_PyTime_DurationOrNone_Seconds_Converter,
+                   _PyTime_FromSecondsObject, _PyTime_ROUND_TIMEOUT, 1)
+DURATION_CONVERTER(_PyTime_Duration_SecondsCeil_Converter,
+                   _PyTime_FromSecondsObject, _PyTime_ROUND_CEILING, 0)
+DURATION_CONVERTER(_PyTime_DurationOrNone_SecondsCeil_Converter,
+                   _PyTime_FromSecondsObject, _PyTime_ROUND_CEILING, 1)
+DURATION_CONVERTER(_PyTime_Duration_Milliseconds_Converter,
+                   _PyTime_FromMillisecondsObject, _PyTime_ROUND_TIMEOUT, 0)
+DURATION_CONVERTER(_PyTime_DurationOrNone_Milliseconds_Converter,
+                   _PyTime_FromMillisecondsObject, _PyTime_ROUND_TIMEOUT, 1)
+
+#undef DURATION_CONVERTER
+
+
+#ifndef MS_WINDOWS
+/* Converters producing a struct timeval for the "duration" Argument Clinic
+   converter with out='timeval'. */
+
+#define TIMEVAL_CONVERTER(NAME, ROUND)                                   \
+int                                                                      \
+NAME(PyObject *obj, void *ptr)                                           \
+{                                                                        \
+    PyTime_t t;                                                          \
+    if (_PyTime_FromSecondsObject(&t, obj, ROUND) < 0) {                 \
+        return 0;                                                        \
+    }                                                                    \
+    return _PyTime_AsTimeval(t, (struct timeval *)ptr, ROUND) < 0 ? 0 : 1; \
+}
+
+TIMEVAL_CONVERTER(_PyTime_Duration_Timeval_Converter, _PyTime_ROUND_TIMEOUT)
+TIMEVAL_CONVERTER(_PyTime_Duration_TimevalCeil_Converter, _PyTime_ROUND_CEILING)
+
+#undef TIMEVAL_CONVERTER
+#endif
+
+
+/* Converters for the "timestamp" Argument Clinic converter. */
+
+int
+_PyTime_Timestamp_Time_t_Converter(PyObject *obj, void *ptr)
+{
+    return _PyTime_ObjectToTime_t(obj, (time_t *)ptr,
+                                  _PyTime_ROUND_FLOOR) < 0 ? 0 : 1;
+}
+
+int
+_PyTime_Timestamp_Converter(PyObject *obj, void *ptr)
+{
+    return _PyTime_FromSecondsObject((PyTime_t *)ptr, obj,
+                                     _PyTime_ROUND_FLOOR) < 0 ? 0 : 1;
+}
+
+
 int
 _PyTime_ObjectToTime_t(PyObject *obj, time_t *sec, _PyTime_round_t round)
 {

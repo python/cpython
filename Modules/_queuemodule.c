@@ -357,7 +357,7 @@ _queue.SimpleQueue.get
     cls: defining_class
     /
     block: bool = True
-    timeout as timeout_obj: object = None
+    timeout: duration(round='ceiling', accept={float, NoneType}, allow_negative=False) = None
 
 Remove and return an item from the queue.
 
@@ -374,25 +374,13 @@ in that case).
 
 static PyObject *
 _queue_SimpleQueue_get_impl(simplequeueobject *self, PyTypeObject *cls,
-                            int block, PyObject *timeout_obj)
-/*[clinic end generated code: output=5c2cca914cd1e55b input=afa0889bbc6b4761]*/
+                            int block, PyTime_t timeout)
+/*[clinic end generated code: output=08940a9800530258 input=4274501b8112609f]*/
 {
     PyTime_t endtime = 0;
 
-    // XXX Use PyThread_ParseTimeoutArg().
-
-    if (block != 0 && !Py_IsNone(timeout_obj)) {
+    if (block != 0 && timeout >= 0) {
         /* With timeout */
-        PyTime_t timeout;
-        if (_PyTime_FromSecondsObject(&timeout,
-                                      timeout_obj, _PyTime_ROUND_CEILING) < 0) {
-            return NULL;
-        }
-        if (timeout < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "'timeout' must be a non-negative number");
-            return NULL;
-        }
         endtime = _PyDeadline_Init(timeout);
     }
 
@@ -467,7 +455,7 @@ _queue_SimpleQueue_get_nowait_impl(simplequeueobject *self,
                                    PyTypeObject *cls)
 /*[clinic end generated code: output=620c58e2750f8b8a input=d48be63633fefae9]*/
 {
-    return _queue_SimpleQueue_get_impl(self, cls, 0, Py_None);
+    return _queue_SimpleQueue_get_impl(self, cls, 0, -1);
 }
 
 /*[clinic input]

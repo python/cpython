@@ -9,6 +9,7 @@ preserve
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_long.h"          // _PyLong_UInt16_Converter()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_time.h"          // _PyTime_FromSecondsObject()
 
 #if (defined(HAVE_ACCEPT) || defined(HAVE_ACCEPT4))
 
@@ -100,15 +101,27 @@ PyDoc_STRVAR(_socket_socket_settimeout__doc__,
     {"settimeout", (PyCFunction)_socket_socket_settimeout, METH_O, _socket_socket_settimeout__doc__},
 
 static PyObject *
-_socket_socket_settimeout_impl(PySocketSockObject *s, PyObject *arg);
+_socket_socket_settimeout_impl(PySocketSockObject *s, PyTime_t timeout);
 
 static PyObject *
 _socket_socket_settimeout(PyObject *s, PyObject *arg)
 {
     PyObject *return_value = NULL;
+    PyTime_t timeout = -1;
 
-    return_value = _socket_socket_settimeout_impl((PySocketSockObject *)s, arg);
+    if (arg != Py_None) {
+        if (_PyTime_FromSecondsObject(&timeout, arg, _PyTime_ROUND_TIMEOUT) < 0) {
+            goto exit;
+        }
+        if (timeout < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "timeout must be non-negative");
+            goto exit;
+        }
+    }
+    return_value = _socket_socket_settimeout_impl((PySocketSockObject *)s, timeout);
 
+exit:
     return return_value;
 }
 
@@ -2159,6 +2172,31 @@ PyDoc_STRVAR(_socket_setdefaulttimeout__doc__,
 #define _SOCKET_SETDEFAULTTIMEOUT_METHODDEF    \
     {"setdefaulttimeout", (PyCFunction)_socket_setdefaulttimeout, METH_O, _socket_setdefaulttimeout__doc__},
 
+static PyObject *
+_socket_setdefaulttimeout_impl(PyObject *module, PyTime_t timeout);
+
+static PyObject *
+_socket_setdefaulttimeout(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyTime_t timeout = -1;
+
+    if (arg != Py_None) {
+        if (_PyTime_FromSecondsObject(&timeout, arg, _PyTime_ROUND_TIMEOUT) < 0) {
+            goto exit;
+        }
+        if (timeout < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "timeout must be non-negative");
+            goto exit;
+        }
+    }
+    return_value = _socket_setdefaulttimeout_impl(module, timeout);
+
+exit:
+    return return_value;
+}
+
 #if (defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS))
 
 PyDoc_STRVAR(_socket_if_nameindex__doc__,
@@ -2478,4 +2516,4 @@ exit:
 #ifndef _SOCKET_CMSG_SPACE_METHODDEF
     #define _SOCKET_CMSG_SPACE_METHODDEF
 #endif /* !defined(_SOCKET_CMSG_SPACE_METHODDEF) */
-/*[clinic end generated code: output=acc30d6fdeb54e90 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=260f1d042fa906ca input=a9049054013a1b77]*/

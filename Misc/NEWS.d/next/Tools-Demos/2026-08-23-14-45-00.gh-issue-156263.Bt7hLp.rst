@@ -1,0 +1,4 @@
+Argument Clinic: add the ``duration`` converter, which converts a number of
+seconds or milliseconds to :c:type:`PyTime_t` or ``struct timeval``, and the
+``timestamp`` converter, which converts a number of seconds since the epoch
+to :c:type:`time_t` or :c:type:`PyTime_t`.

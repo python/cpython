@@ -83,14 +83,11 @@ static PF_SET_THREAD_DESCRIPTION pSetThreadDescription = NULL;
 
 /*[clinic input]
 module _thread
+class _thread._ThreadHandle "PyThreadHandleObject *" "clinic_state()->thread_handle_type"
 class _thread.lock "lockobject *" "clinic_state()->lock_type"
 class _thread.RLock "rlockobject *" "clinic_state()->rlock_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=c5a0f8c492a0c263]*/
-
-#define clinic_state() get_thread_state_by_cls(type)
-#include "clinic/_threadmodule.c.h"
-#undef clinic_state
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=64b6ce6e1cea56df]*/
 
 // _ThreadHandle type
 
@@ -631,6 +628,10 @@ typedef struct {
 
 #define PyThreadHandleObject_CAST(op)   ((PyThreadHandleObject *)(op))
 
+#define clinic_state() get_thread_state_by_cls(type)
+#include "clinic/_threadmodule.c.h"
+#undef clinic_state
+
 static PyThreadHandleObject *
 PyThreadHandleObject_new(PyTypeObject *type)
 {
@@ -684,25 +685,20 @@ PyThreadHandleObject_get_ident(PyObject *op, void *Py_UNUSED(closure))
     return PyLong_FromUnsignedLongLong(ThreadHandle_ident(self->handle));
 }
 
+/*[clinic input]
+_thread._ThreadHandle.join
+
+    timeout: duration(accept={float, NoneType}) = None
+    /
+
+Wait until the thread finishes or the timeout expires.
+[clinic start generated code]*/
+
 static PyObject *
-PyThreadHandleObject_join(PyObject *op, PyObject *args)
+_thread__ThreadHandle_join_impl(PyThreadHandleObject *self, PyTime_t timeout)
+/*[clinic end generated code: output=7bfa7df9549cded2 input=08ea86bbe8d01f1f]*/
 {
-    PyThreadHandleObject *self = PyThreadHandleObject_CAST(op);
-
-    PyObject *timeout_obj = NULL;
-    if (!PyArg_ParseTuple(args, "|O:join", &timeout_obj)) {
-        return NULL;
-    }
-
-    PyTime_t timeout_ns = -1;
-    if (timeout_obj != NULL && timeout_obj != Py_None) {
-        if (_PyTime_FromSecondsObject(&timeout_ns, timeout_obj,
-                                      _PyTime_ROUND_TIMEOUT) < 0) {
-            return NULL;
-        }
-    }
-
-    if (ThreadHandle_join(self->handle, timeout_ns) < 0) {
+    if (ThreadHandle_join(self->handle, timeout) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -739,7 +735,7 @@ static PyGetSetDef ThreadHandle_getsetlist[] = {
 };
 
 static PyMethodDef ThreadHandle_methods[] = {
-    {"join", PyThreadHandleObject_join, METH_VARARGS, NULL},
+    _THREAD__THREADHANDLE_JOIN_METHODDEF
     {"_set_done", PyThreadHandleObject_set_done, METH_NOARGS, NULL},
     {"is_done", PyThreadHandleObject_is_done, METH_NOARGS, NULL},
     {0, 0}
@@ -777,17 +773,11 @@ lock_dealloc(PyObject *self)
 
 
 static int
-lock_acquire_parse_timeout(PyObject *timeout_obj, int blocking, PyTime_t *timeout)
+lock_acquire_check_timeout(int blocking, PyTime_t *timeout)
 {
     // XXX Use PyThread_ParseTimeoutArg().
 
     const PyTime_t unset_timeout = _PyTime_FromSeconds(-1);
-    *timeout = unset_timeout;
-
-    if (timeout_obj
-        && _PyTime_FromSecondsObject(timeout,
-                                     timeout_obj, _PyTime_ROUND_TIMEOUT) < 0)
-        return -1;
 
     if (!blocking && *timeout != unset_timeout ) {
         PyErr_SetString(PyExc_ValueError,
@@ -816,7 +806,7 @@ lock_acquire_parse_timeout(PyObject *timeout_obj, int blocking, PyTime_t *timeou
 /*[clinic input]
 _thread.lock.acquire
     blocking: bool = True
-    timeout as timeoutobj: object(py_default="-1") = NULL
+    timeout: duration(c_default='_PyTime_FromSeconds(-1)') = -1
 
 Lock the lock.
 
@@ -829,13 +819,10 @@ The blocking operation is interruptible.
 [clinic start generated code]*/
 
 static PyObject *
-_thread_lock_acquire_impl(lockobject *self, int blocking,
-                          PyObject *timeoutobj)
-/*[clinic end generated code: output=569d6b25d508bf6f input=73e75b3d2ec32677]*/
+_thread_lock_acquire_impl(lockobject *self, int blocking, PyTime_t timeout)
+/*[clinic end generated code: output=6dd3b3f1d7dc3fa7 input=9f0d15a879c16859]*/
 {
-    PyTime_t timeout;
-
-    if (lock_acquire_parse_timeout(timeoutobj, blocking, &timeout) < 0) {
+    if (lock_acquire_check_timeout(blocking, &timeout) < 0) {
         return NULL;
     }
 
@@ -861,10 +848,10 @@ An obsolete synonym of acquire().
 
 static PyObject *
 _thread_lock_acquire_lock_impl(lockobject *self, int blocking,
-                               PyObject *timeoutobj)
-/*[clinic end generated code: output=ea6c87ea13b56694 input=5e65bd56327ebe85]*/
+                               PyTime_t timeout)
+/*[clinic end generated code: output=cfb5c193e6c84191 input=5e65bd56327ebe85]*/
 {
-    return _thread_lock_acquire_impl(self, blocking, timeoutobj);
+    return _thread_lock_acquire_impl(self, blocking, timeout);
 }
 
 /*[clinic input]
@@ -913,7 +900,7 @@ static PyObject *
 _thread_lock___enter___impl(lockobject *self)
 /*[clinic end generated code: output=f27725de751ae064 input=8f982991608d38e7]*/
 {
-    return _thread_lock_acquire_impl(self, 1, NULL);
+    return _thread_lock_acquire_impl(self, 1, _PyTime_FromSeconds(-1));
 }
 
 /*[clinic input]
@@ -1070,7 +1057,7 @@ rlock_dealloc(PyObject *self)
 /*[clinic input]
 _thread.RLock.acquire
     blocking: bool = True
-    timeout as timeoutobj: object(py_default="-1") = NULL
+    timeout: duration(c_default='_PyTime_FromSeconds(-1)') = -1
 
 Lock the lock.
 
@@ -1089,13 +1076,10 @@ the lock is taken and its internal counter initialized to 1.
 [clinic start generated code]*/
 
 static PyObject *
-_thread_RLock_acquire_impl(rlockobject *self, int blocking,
-                           PyObject *timeoutobj)
-/*[clinic end generated code: output=73df5af6f67c1513 input=d55a0f5014522a8d]*/
+_thread_RLock_acquire_impl(rlockobject *self, int blocking, PyTime_t timeout)
+/*[clinic end generated code: output=d9ed7a3a364ccf23 input=b2742a15f03a7248]*/
 {
-    PyTime_t timeout;
-
-    if (lock_acquire_parse_timeout(timeoutobj, blocking, &timeout) < 0) {
+    if (lock_acquire_check_timeout(blocking, &timeout) < 0) {
         return NULL;
     }
 
@@ -1123,7 +1107,7 @@ static PyObject *
 _thread_RLock___enter___impl(rlockobject *self)
 /*[clinic end generated code: output=63135898476bf89f input=33be37f459dca390]*/
 {
-    return _thread_RLock_acquire_impl(self, 1, NULL);
+    return _thread_RLock_acquire_impl(self, 1, _PyTime_FromSeconds(-1));
 }
 
 /*[clinic input]

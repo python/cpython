@@ -1,0 +1,7 @@
+The timeout arguments in the :mod:`select`, :mod:`signal`, :mod:`faulthandler`,
+:mod:`queue`, :mod:`_thread`, :mod:`multiprocessing`, :mod:`socket` and
+:mod:`sqlite3` modules are now converted by Argument Clinic.  As a result,
+they are validated even if blocking is false,
+:meth:`socket.socket.settimeout` and :func:`socket.setdefaulttimeout` raise
+:exc:`ValueError` with a different message for a negative timeout, and
+:func:`sqlite3.connect` raises :exc:`OverflowError` for a too large timeout.

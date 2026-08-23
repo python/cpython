@@ -220,7 +220,7 @@ _sqlite3.Connection.__init__ as pysqlite_connection_init
 
     database: object
     *
-    timeout: double = 5.0
+    timeout: duration(c_default='_PyTime_FromSeconds(5)') = 5.0
     detect_types: int = 0
     isolation_level: IsolationLevel = ""
     check_same_thread: bool = True
@@ -232,12 +232,12 @@ _sqlite3.Connection.__init__ as pysqlite_connection_init
 
 static int
 pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
-                              double timeout, int detect_types,
+                              PyTime_t timeout, int detect_types,
                               const char *isolation_level,
                               int check_same_thread, PyObject *factory,
                               int cache_size, int uri,
                               enum autocommit_mode autocommit)
-/*[clinic end generated code: output=cba057313ea7712f input=5ca4883d8747a49b]*/
+/*[clinic end generated code: output=603e0ce0ba280cc7 input=c5059221250a1d12]*/
 {
     if (PySys_Audit("sqlite3.connect", "O", database) < 0) {
         return -1;
@@ -261,12 +261,14 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
     // Create and configure SQLite database object.
     sqlite3 *db;
     int rc;
+    PyTime_t msecs = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_TIMEOUT);
+    int busy_timeout = (int)Py_MIN(msecs, (PyTime_t)INT_MAX);
     Py_BEGIN_ALLOW_THREADS
     rc = sqlite3_open_v2(PyBytes_AS_STRING(bytes), &db,
                          SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE |
                          (uri ? SQLITE_OPEN_URI : 0), NULL);
     if (rc == SQLITE_OK) {
-        (void)sqlite3_busy_timeout(db, (int)(timeout*1000));
+        (void)sqlite3_busy_timeout(db, busy_timeout);
     }
     Py_END_ALLOW_THREADS
 

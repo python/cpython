@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_time.h"          // _PyTime_FromSecondsObject()
 
 PyDoc_STRVAR(pysqlite_connect__doc__,
 "connect($module, /, database, *, timeout=5.0, detect_types=0,\n"
@@ -22,4 +23,4 @@ PyDoc_STRVAR(pysqlite_connect__doc__,
 
 #define PYSQLITE_CONNECT_METHODDEF    \
     {"connect", _PyCFunction_CAST(pysqlite_connect), METH_FASTCALL|METH_KEYWORDS, pysqlite_connect__doc__},
-/*[clinic end generated code: output=3d83139ba65e0bb5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d8ca9f8d7afe7301 input=a9049054013a1b77]*/

@@ -8,6 +8,7 @@ preserve
 #endif
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_time.h"          // _PyTime_FromSecondsObject()
 
 #if defined(HAVE_MP_SEMAPHORE) && defined(MS_WINDOWS)
 
@@ -22,7 +23,7 @@ PyDoc_STRVAR(_multiprocessing_SemLock_acquire__doc__,
 
 static PyObject *
 _multiprocessing_SemLock_acquire_impl(SemLockObject *self, int blocking,
-                                      PyObject *timeout_obj);
+                                      PyTime_t timeout);
 
 static PyObject *
 _multiprocessing_SemLock_acquire(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -58,7 +59,7 @@ _multiprocessing_SemLock_acquire(PyObject *self, PyObject *const *args, Py_ssize
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int blocking = 1;
-    PyObject *timeout_obj = Py_None;
+    PyTime_t timeout = PyTime_MIN;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -77,10 +78,14 @@ _multiprocessing_SemLock_acquire(PyObject *self, PyObject *const *args, Py_ssize
             goto skip_optional_pos;
         }
     }
-    timeout_obj = args[1];
+    if (args[1] != Py_None) {
+        if (_PyTime_FromSecondsObject(&timeout, args[1], _PyTime_ROUND_TIMEOUT) < 0) {
+            goto exit;
+        }
+    }
 skip_optional_pos:
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _multiprocessing_SemLock_acquire_impl((SemLockObject *)self, blocking, timeout_obj);
+    return_value = _multiprocessing_SemLock_acquire_impl((SemLockObject *)self, blocking, timeout);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -130,7 +135,7 @@ PyDoc_STRVAR(_multiprocessing_SemLock_acquire__doc__,
 
 static PyObject *
 _multiprocessing_SemLock_acquire_impl(SemLockObject *self, int blocking,
-                                      PyObject *timeout_obj);
+                                      PyTime_t timeout);
 
 static PyObject *
 _multiprocessing_SemLock_acquire(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -166,7 +171,7 @@ _multiprocessing_SemLock_acquire(PyObject *self, PyObject *const *args, Py_ssize
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int blocking = 1;
-    PyObject *timeout_obj = Py_None;
+    PyTime_t timeout = PyTime_MIN;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -185,10 +190,14 @@ _multiprocessing_SemLock_acquire(PyObject *self, PyObject *const *args, Py_ssize
             goto skip_optional_pos;
         }
     }
-    timeout_obj = args[1];
+    if (args[1] != Py_None) {
+        if (_PyTime_FromSecondsObject(&timeout, args[1], _PyTime_ROUND_TIMEOUT) < 0) {
+            goto exit;
+        }
+    }
 skip_optional_pos:
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _multiprocessing_SemLock_acquire_impl((SemLockObject *)self, blocking, timeout_obj);
+    return_value = _multiprocessing_SemLock_acquire_impl((SemLockObject *)self, blocking, timeout);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -582,4 +591,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
     #define _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF) */
-/*[clinic end generated code: output=d1e349d4ee3d4bbf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=137c7fdfb58f161c input=a9049054013a1b77]*/
