@@ -266,6 +266,41 @@ class FunctionPropertiesTest(FuncAttrsTest):
             self.fail("__code__ with different numbers of free vars should "
                       "not be possible")
 
+    def test___kwdefaults__(self):
+        def func(a=1, *, b=2, c=3):
+            return a, b, c
+        self.assertEqual(func.__kwdefaults__, {'b': 2, 'c': 3})
+        func.__kwdefaults__ = {'b': 4}
+        self.assertEqual(func.__kwdefaults__, {'b': 4})
+        self.assertEqual(func(c=5), (1, 4, 5))
+        func.__kwdefaults__ = None
+        self.assertIsNone(func.__kwdefaults__)
+        self.assertRaises(TypeError, func)
+        with self.assertRaisesRegex(TypeError,
+                                    '__kwdefaults__ must be set to a dict object'):
+            func.__kwdefaults__ = [('b', 4)]
+        del func.__kwdefaults__
+        self.assertIsNone(func.__kwdefaults__)
+
+    def test_invalid___code___deletion(self):
+        def func(): pass
+        with self.assertRaisesRegex(TypeError,
+                                    '__code__ must be set to a code object'):
+            func.__code__ = None
+        with self.assertRaisesRegex(TypeError,
+                                    '__code__ must be set to a code object'):
+            del func.__code__
+
+    def test___doc__(self):
+        def func():
+            "docstring"
+        self.assertEqual(func.__doc__, 'docstring')
+        for value in 'other', 42, None:
+            func.__doc__ = value
+            self.assertEqual(func.__doc__, value)
+        del func.__doc__
+        self.assertIsNone(func.__doc__)
+
     def test_blank_func_defaults(self):
         self.assertEqual(self.b.__defaults__, None)
         del self.b.__defaults__
