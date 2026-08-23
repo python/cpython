@@ -1,0 +1,2 @@
+Fix :meth:`curses.window.instr`, :meth:`curses.window.in_wstr` and :meth:`curses.window.in_wchstr` silently truncating at 2047. The count is
+now bounded by the window, so a pad wider than 2047 columns is read in full, and *n* defaults to ``-1``, meaning the rest of the line.
