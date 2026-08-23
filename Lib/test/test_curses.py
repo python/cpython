@@ -672,6 +672,11 @@ class TestCurses(unittest.TestCase):
         stdscr.addstr(0, 0, 'abz')
         self.assertEqual(stdscr.in_wstr(0, 0, 0), '')
         self.assertEqual(stdscr.in_wstr(0), '')
+        self.assertEqual(stdscr.in_wstr(0, 0, 2**31), stdscr.in_wstr(0, 0))
+        self.assertRaises(OverflowError, stdscr.in_wstr, 2**1000)
+        self.assertRaises(ValueError, stdscr.in_wstr, -2)
+        self.assertRaises(ValueError, stdscr.in_wstr, 0, 2, -2)
+        self.assertRaises(ValueError, stdscr.in_wstr, -2**1000)
 
     def test_complexchar(self):
         # A complexchar is a styled wide-character cell: str() is its text,
@@ -871,6 +876,11 @@ class TestCurses(unittest.TestCase):
         # The count is optional and reads to the end of the line by default.
         stdscr.move(0, 0)
         self.assertEqual(str(stdscr.in_wchstr())[:3], 'AbC')
+        self.assertEqual(stdscr.in_wchstr(0, 0, 2**31), stdscr.in_wchstr(0, 0))
+        self.assertRaises(OverflowError, stdscr.in_wchstr, 2**1000)
+        self.assertRaises(ValueError, stdscr.in_wchstr, -2)
+        self.assertRaises(ValueError, stdscr.in_wchstr, 0, 2, -2)
+        self.assertRaises(ValueError, stdscr.in_wchstr, -2**1000)
 
     def test_complexstr_in_write_methods(self):
         # addstr/addnstr/insstr/insnstr also accept a complexstr, written via
@@ -1188,8 +1198,13 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(stdscr.instr(3)[:6], b' AB')
         self.assertEqual(stdscr.instr(0, 2)[:4], b'BCD ')
         self.assertEqual(stdscr.instr(0, 2, 4), b'BCD ')
+        # A huge count is bounded by the line, and is not used to size the
+        # read buffer.
+        self.assertEqual(stdscr.instr(0, 0, 2**31), stdscr.instr(0, 0))
+        self.assertRaises(OverflowError, stdscr.instr, 2**1000)
         self.assertRaises(ValueError, stdscr.instr, -2)
         self.assertRaises(ValueError, stdscr.instr, 0, 2, -2)
+        self.assertRaises(ValueError, stdscr.instr, -2**1000)
         # instr(y, x, 1) reads a single cell byte, so only a character that the
         # window encoding maps to one byte is checked.  inch() returns the cell
         # value, which is the locale byte.
@@ -1205,6 +1220,25 @@ class TestCurses(unittest.TestCase):
                 stdscr.addstr(2, 0, ch)
                 self.assertEqual(stdscr.instr(2, 0, 1), b)
                 self.assertEqual(stdscr.inch(2, 0), v)
+
+    def test_read_long_line(self):
+        # A pad line can be longer than a window, and a character can be
+        # encoded with several bytes, so instr() can read more bytes than
+        # there are cells.  See _encodable for the character set.
+        width = 3000
+        pad = curses.newpad(1, width)
+        for ch in ['z', '\u00e9', '\u20ac', '\u0434', '\uff71']:
+            if not self._storable(ch):
+                continue
+            pad.addstr(0, 0, ch)
+            if pad.getyx()[1] != 1:
+                continue        # a wide character occupies two cells
+            with self.subTest(ch=ch):
+                line = ch * (width - 1) + ' '   # the last cell is left blank
+                pad.addstr(0, 0, line[:-1])
+                self.assertEqual(pad.instr(0, 0), line.encode(pad.encoding))
+                self.assertEqual(pad.in_wstr(0, 0), line)
+                self.assertEqual(str(pad.in_wchstr(0, 0)), line)
 
     def test_coordinate_errors(self):
         # Addressing a cell outside the window raises curses.error.
