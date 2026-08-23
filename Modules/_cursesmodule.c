@@ -5303,7 +5303,8 @@ static PyMethodDef PyCursesWindow_methods[] = {
     {"standout", PyCursesWindow_wstandout, METH_NOARGS,
      "standout($self, /)\n--\n\n"
      "Turn on the A_STANDOUT attribute."},
-    {"subpad",          _curses_window_subwin, METH_VARARGS, _curses_window_subwin__doc__},
+    {"subpad", _PyCFunction_CAST(_curses_window_subwin), METH_FASTCALL,
+     _curses_window_subwin__doc__},
     _CURSES_WINDOW_SUBWIN_METHODDEF
     {"syncdown", PyCursesWindow_wsyncdown, METH_NOARGS,
      "syncdown($self, /)\n--\n\n"
