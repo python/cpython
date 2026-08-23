@@ -1277,6 +1277,13 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
 
     ENTER_ZLIB(self);
 
+    /* A previous flush() already reached the end of the stream and freed the
+       decompression state, so there is nothing left to process. */
+    if (!self->is_initialised) {
+        LEAVE_ZLIB(self);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    }
+
     if (PyObject_GetBuffer(self->unconsumed_tail, &data, PyBUF_SIMPLE) == -1) {
         LEAVE_ZLIB(self);
         return NULL;
@@ -1333,6 +1340,10 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
             zlib_error(state, self->zst, err, "while finishing decompression");
             goto abort;
         }
+    }
+    else if (err != Z_OK && err != Z_BUF_ERROR) {
+        zlib_error(state, self->zst, err, "while decompressing data");
+        goto abort;
     }
 
     return_value = OutputBuffer_WindowFinish(&buffer, &window, self->zst.avail_out);
