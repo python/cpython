@@ -33,42 +33,42 @@ If you need to add or remove at both ends, consider using a
 
    * - Operation
      - Complexity
-   * - Copy (``L.copy()``)
+   * - Copy (``l.copy()``)
      - *O*\ (*n*)
-   * - Append (``L.append(x)``) [1]_
+   * - Append (``l.append(x)``) [1]_
      - *O*\ (1)
-   * - Pop (``L.pop(k)``) [1]_ [2]_
+   * - Pop (``l.pop(k)``) [1]_ [2]_
      - *O*\ (*n* - *k*)
-   * - Insert (``L.insert(k, x)``) [1]_ [2]_
+   * - Insert (``l.insert(k, x)``) [1]_ [2]_
      - *O*\ (*n* - *k*)
-   * - Get item (``L[k]``)
+   * - Get item (``l[k]``)
      - *O*\ (1)
-   * - Set item (``L[k] = x``)
+   * - Set item (``l[k] = x``)
      - *O*\ (1)
-   * - Delete item (``del L[k]``) [2]_
+   * - Delete item (``del l[k]``) [2]_
      - *O*\ (*n* - *k*)
    * - Iteration
      - *O*\ (*n*)
-   * - Get slice (``L[i:j]``)
+   * - Get slice (``l[i:j]``)
      - *O*\ (*j* - *i*)
-   * - Set slice (``L[i:j] = t``) [1]_
+   * - Set slice (``l[i:j] = t``) [1]_
      - *O*\ (*j* - *i*) if len(*t*) == *j* - *i*,
        otherwise *O*\ (*n* - *i* + len(*t*))
-   * - Delete slice (``del L[i:j]``)
+   * - Delete slice (``del l[i:j]``)
      - *O*\ (*n* - *i*)
-   * - Extend (``L.extend(t)``) [1]_ [3]_
+   * - Extend (``l.extend(t)``) [1]_ [3]_
      - *O*\ (len(*t*))
-   * - Sort (``L.sort()``) [4]_
+   * - Sort (``l.sort()``) [4]_
      - *O*\ (*n* log *n*)
-   * - Concatenate (``L1 + L2``)
-     - *O*\ (len(*L1*) + len(*L2*))
-   * - Multiply (``L * k``)
+   * - Concatenate (``l1 + l2``)
+     - *O*\ (len(*l1*) + len(*l2*))
+   * - Multiply (``l * k``)
      - *O*\ (*nk*)
-   * - ``x in L``
+   * - ``x in l``
      - *O*\ (*n*)
-   * - ``min(L)``, ``max(L)``
+   * - ``min(l)``, ``max(l)``
      - *O*\ (*n*)
-   * - Get length (``len(L)``) [5]_
+   * - Get length (``len(l)``) [5]_
      - *O*\ (1)
 
 
