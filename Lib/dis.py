@@ -525,7 +525,8 @@ class Formatter:
         # Column: Label
         if instr.label is not None:
             lbl = f"L{instr.label}:"
-            fields.append(f"{lbl:>{label_width}}")
+            padded = f"{lbl:>{label_width}}"
+            fields.append(f"{theme.jump_target}{padded}{theme.reset}")
         else:
             fields.append(' ' * label_width)
         # Column: Instruction offset from start of code sequence
@@ -537,17 +538,18 @@ class Formatter:
         else:
             fields.append('   ')
         # Column: Opcode name
-        fields.append(f"{theme.color_by_opname(instr.opname)}{instr.opname.ljust(_OPNAME_WIDTH)}{theme.reset}")
+        opname_color = theme.opname_with_label if instr.label is not None else theme.opname
+        fields.append(f"{opname_color}{instr.opname.ljust(_OPNAME_WIDTH)}{theme.reset}")
         # Column: Opcode argument
         if instr.arg is not None:
             # If opname is longer than _OPNAME_WIDTH, we allow it to overflow into
             # the space reserved for oparg. This results in fewer misaligned opargs
             # in the disassembly output.
             opname_excess = max(0, len(instr.opname) - _OPNAME_WIDTH)
-            fields.append(repr(instr.arg).rjust(_OPARG_WIDTH - opname_excess))
+            fields.append(f"{theme.arg}{repr(instr.arg)}{theme.reset}".rjust(_OPARG_WIDTH - opname_excess))
             # Column: Opcode argument details
             if instr.argrepr:
-                fields.append(f'{theme.argument_detail}(' + instr.argrepr + f'){theme.reset}')
+                fields.append('(' + instr.argrepr + ')')
         print(' '.join(fields).rstrip(), file=self.file)
 
     def print_exception_table(self, exception_entries):
@@ -591,6 +593,7 @@ class ArgResolver:
         return self.labels_map.get(offset, None)
 
     def get_argval_argrepr(self, op, arg, offset):
+        theme = _get_dis_theme()
         get_name = None if self.names is None else self.names.__getitem__
         argval = None
         argrepr = ''
@@ -629,7 +632,7 @@ class ArgResolver:
                 lbl = self.get_label_for_offset(argval)
                 assert lbl is not None
                 preposition = "from" if deop == END_ASYNC_FOR else "to"
-                argrepr = f"{preposition} L{lbl}"
+                argrepr = f"{preposition} {theme.jump_target}L{lbl}{theme.reset}"
             elif deop in (LOAD_FAST_LOAD_FAST, LOAD_FAST_BORROW_LOAD_FAST_BORROW, STORE_FAST_LOAD_FAST, STORE_FAST_STORE_FAST):
                 arg1 = arg >> 4
                 arg2 = arg & 15
@@ -870,7 +873,7 @@ def _disassemble_recursive(co, *, file=None, depth=None, show_caches=False, adap
         for x in co.co_consts:
             if hasattr(x, 'co_code'):
                 print(file=file)
-                print(f"{theme.label_bg}{theme.label_fg}Disassembly of {x!r}:{theme.reset}", file=file)
+                print(f"Disassembly of {theme.disassembly_header}{x!r}{theme.reset}:", file=file)
                 _disassemble_recursive(
                     x, file=file, depth=depth, show_caches=show_caches,
                     adaptive=adaptive, show_offsets=show_offsets,

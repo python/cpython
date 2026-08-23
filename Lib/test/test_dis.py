@@ -2680,6 +2680,7 @@ class TestDisCLI(unittest.TestCase):
         for flag in ['-S', '--specialized']:
             self.check_output(source, expect, flag)
 
+
 @force_colorized_test_class
 class DisColoredTests(unittest.TestCase):
     def get_colored_output(self, func):
@@ -2690,55 +2691,132 @@ class DisColoredTests(unittest.TestCase):
 
         return output.getvalue()
 
-    def assertOpColored(self, output, opname, color):
-        self.assertIn(
-            f"{color}{opname}", output,
-            f"{opname} should be colored with {color!r}"
-        )
+    def _check_colored(self, output, opname, color, as_not_colored):
+        # allow spaces, ANSI colors etc.
+        inter_word_pattern = r"(?:\s|\x1b\[[0-9;]*m)*"
 
-    def test_load_ops_colored(self):
+        tokens = opname.split()
+        escaped_tokens = [re.escape(token) for token in tokens]
+        joined_opname = inter_word_pattern.join(escaped_tokens)
+
+        pattern = re.escape(color) + inter_word_pattern + joined_opname
+
+        if as_not_colored:
+            self.assertNotRegex(
+                output,
+                pattern,
+                f"{opname} should NOT be colored with {color!r}",
+            )
+        else:
+            self.assertRegex(
+                output, pattern, f"{opname} should be colored with {color!r}"
+            )
+
+    def assertOpColoredAs(self, output, opname, color):
+        self._check_colored(output, opname, color, as_not_colored=False)
+
+    def assertOpNotColoredAs(self, output, opname, wrong_color):
+        self._check_colored(output, opname, wrong_color, as_not_colored=True)
+
+    def test_opname_and_arg_colored(self):
         def f(a):
             return a
-        out = self.get_colored_output(f)
-        self.assertOpColored(out, "LOAD_FAST", theme.op_load)
 
-    def test_call_return_ops_colored(self):
-        def f():
-            return 1
         out = self.get_colored_output(f)
-        self.assertOpColored(out, "RETURN_VALUE", theme.op_call_return)
-        self.assertOpColored(out, "RESUME", theme.op_call_return)
-
-    def test_pop_ops_colored(self):
-        def f(a):
-            print(a)
-        out = self.get_colored_output(f)
-        self.assertOpColored(out, "POP_TOP", theme.op_pop)
+        self.assertOpColoredAs(out, "LOAD_FAST_BORROW", theme.opname)
+        self.assertOpColoredAs(out, "RETURN_VALUE", theme.opname)
+        self.assertOpColoredAs(out, "0", theme.arg)
 
     def test_control_flow_ops_colored(self):
         def f(a):
             for _ in a:
                 pass
-        out = self.get_colored_output(f)
-        self.assertOpColored(out, "FOR_ITER", theme.op_control_flow)
-        self.assertOpColored(out, "JUMP_BACKWARD", theme.op_control_flow)
 
-    def test_argrepr_colored(self):
+        out = self.get_colored_output(f)
+
+        self.assertOpNotColoredAs(out, "FOR_ITER", theme.opname)
+        self.assertOpNotColoredAs(out, "END_FOR", theme.opname)
+
+        self.assertOpColoredAs(out, "FOR_ITER", theme.opname_with_label)
+        self.assertOpColoredAs(out, "END_FOR", theme.opname_with_label)
+
+        opnames = (
+            "RESUME",
+            "LOAD_FAST",
+            "GET_ITER",
+            "STORE_FAST",
+            "JUMP_BACKWARD",
+            "POP_ITER",
+            "LOAD_COMMON_CONSTANT",
+            "RETURN_VALUE",
+        )
+
+        for opname in opnames:
+            self.assertOpColoredAs(out, opname, theme.opname)
+
+    def test_jump_targets_colored(self):
+        # sample code from:
+        # https://github.com/python/cpython/pull/144208#issuecomment-5375286176
+        def f(a, c):
+            _t2.d if (
+                _t2 := (
+                    _t1
+                    if (_t1 := a.b if a is not None else None) is not None
+                    else c
+                )
+            ) is not None else None
+
+        out = self.get_colored_output(f)
+
+        for n in range(1, 6):
+            self.assertOpColoredAs(out, f"L{n}:", theme.jump_target)
+            self.assertIn(f"(to {theme.jump_target}L{n}{theme.reset})", out)
+
+        cases = (
+            "L1: LOAD_COMMON_CONSTANT",
+            "L2: COPY",
+            "L3: LOAD_FAST",
+            "L4: COPY",
+            "L5: LOAD_COMMON_CONSTANT",
+        )
+
+        for part in cases:
+            self.assertOpColoredAs(out, part, theme.jump_target)
+
+    def test_exception_table_colored(self):
         def f(a):
-            print(a)
-        out = self.get_colored_output(f)
-        self.assertIn(f"{theme.argument_detail}(", out)
+            try:
+                a
+            except Exception:
+                pass
+            else:
+                return a
 
-    def test_color_by_opname_coverage(self):
-        self.assertEqual(theme.color_by_opname("LOAD_FAST"), theme.op_load)
-        self.assertEqual(theme.color_by_opname("LOAD_GLOBAL"), theme.op_load)
-        self.assertEqual(theme.color_by_opname("POP_TOP"), theme.op_pop)
-        self.assertEqual(theme.color_by_opname("CALL"), theme.op_call_return)
-        self.assertEqual(theme.color_by_opname("RETURN_VALUE"), theme.op_call_return)
-        self.assertEqual(theme.color_by_opname("RESUME"), theme.op_call_return)
-        self.assertEqual(theme.color_by_opname("FOR_ITER"), theme.op_control_flow)
-        self.assertEqual(theme.color_by_opname("JUMP_BACKWARD"), theme.op_control_flow)
-        self.assertEqual(theme.color_by_opname("BINARY_OP"), theme.reset)  # uncolored
+        out = self.get_colored_output(f)
+
+        cases = (
+            ("L1", "L2", "L3"),
+            ("L3", "L4", "L8"),
+            ("L5", "L6", "L8"),
+            ("L7", "L8", "L8"),
+        )
+
+        def assertExceptionTableRow(pairs, out):
+            p1, p2, p3 = pairs
+            part = f"{theme.jump_target}{p1}{theme.reset} to {theme.jump_target}{p2}{theme.reset} -> {theme.jump_target}{p3}{theme.reset}"
+            self.assertIn(part, out)
+
+        for pairs in cases:
+            assertExceptionTableRow(pairs, out)
+
+        cases = (
+            "L3: PUSH_EXC_INFO",
+            "L6: POP_EXCEPT",
+            "L7: RERAISE",
+        )
+
+        for part in cases:
+            self.assertOpColoredAs(out, part, theme.jump_target)
 
 if __name__ == "__main__":
     unittest.main()

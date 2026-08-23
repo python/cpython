@@ -219,45 +219,18 @@ class Difflib(ThemeSection):
 
 @dataclass(frozen=True, kw_only=True)
 class Dis(ThemeSection):
-    label_bg: str = ANSIColors.BACKGROUND_CYAN
-    label_fg: str = ANSIColors.BLACK
+    disassembly_header: str = ANSIColors.GREEN
 
-    exception_label: str = ANSIColors.CYAN
-    argument_detail: str = "\x1B[3m"
+    jump_target: str = ANSIColors.GREEN
+    exception_label: str = ANSIColors.GREEN
 
-    op_load: str = ANSIColors.BLUE
-    op_pop: str = ANSIColors.MAGENTA
-    op_call_return: str = ANSIColors.YELLOW
-    op_control_flow: str = ANSIColors.GREEN
+    opname: str = ANSIColors.BLUE
+    opname_with_label: str = ANSIColors.GREEN
+
+    arg: str = ANSIColors.YELLOW
 
     reset: str = ANSIColors.RESET
 
-    def color_by_opname(self, opname: str) -> str:
-        if opname.startswith("LOAD_"):
-            return self.op_load
-
-        if opname.startswith("POP_"):
-            return self.op_pop
-
-        if opname.startswith(("CALL", "RETURN")) or opname in (
-            "YIELD_VALUE",
-            "MAKE_FUNCTION",
-            "SET_FUNCTION_ATTRIBUTE",
-            "RESUME",
-        ):
-            return self.op_call_return
-
-        if opname.startswith(("JUMP_", "POP_JUMP_", "FOR_ITER")) or opname in (
-            "SEND",
-            "GET_AWAITABLE",
-            "GET_AITER",
-            "GET_ANEXT",
-            "END_ASYNC_FOR",
-            "CLEANUP_THROW",
-        ):
-            return self.op_control_flow
-
-        return self.reset
 
 @dataclass(frozen=True, kw_only=True)
 class FancyCompleter(ThemeSection):
