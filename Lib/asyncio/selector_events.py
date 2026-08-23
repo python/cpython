@@ -225,6 +225,16 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         protocol = None
         transport = None
         try:
+            # gh-109564: create_task() defers this coroutine's first
+            # step by at least one loop iteration, so the server can
+            # legitimately close() in the gap between "connection
+            # accepted" and "this task actually runs". Attaching to an
+            # already-closed server crashes deep inside transport
+            # construction (Server._attach()'s assert); check up front
+            # instead and drop the already-accepted connection cleanly.
+            if server is not None and server._sockets is None:
+                conn.close()
+                return
             protocol = protocol_factory()
             waiter = self.create_future()
             if sslcontext:
