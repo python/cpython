@@ -748,27 +748,32 @@ static PyType_Spec bz2_decompressor_type_spec = {
 };
 
 
-PyDoc_STRVAR(bzlib_version__doc__,
+PyDoc_STRVAR(bzlib_version_info__doc__,
 "_bz2.bzlib_version_info\n\
 \n\
 Bzlib version information as a named tuple.");
 
-static PyStructSequence_Field bzlib_version_fields[] = {
+static PyStructSequence_Field bzlib_version_info_fields[] = {
     {"major", "Major release number"},
     {"minor", "Minor release number"},
     {"patch", "Patch release number"},
     {0}
 };
 
-static PyStructSequence_Desc bzlib_version_desc = {
-    "_bz2.bzlib_version_info",   /* name */
-    bzlib_version__doc__,        /* doc */
-    bzlib_version_fields,        /* fields */
+static PyStructSequence_Desc bzlib_version_info_desc = {
+    "_bz2.bzlib_version_info",        /* name */
+    bzlib_version_info__doc__,        /* doc */
+    bzlib_version_info_fields,        /* fields */
     3
 };
 
+/* BZ2_bzlibVersion() returns a string with a trailing suffix, for example
+   "1.0.8, 13-Jul-2019" for bzip2 or "1.1.0-libbz2-rs-sys-0.2.5" for
+   libbz2-rs.  sscanf() stops at the suffix; components which were not
+   parsed are left zero.  This is deliberate -- a zero is more useful
+   here than a hard error. */
 static PyObject *
-make_bzlib_version(PyTypeObject *type, const char *string)
+make_bzlib_version_info(PyTypeObject *type, const char *string)
 {
     PyObject *version;
     int pos = 0;
@@ -828,12 +833,12 @@ _bz2_exec(PyObject *module)
         return -1;
     }
     PyTypeObject *version_type;
-    version_type = PyStructSequence_NewType(&bzlib_version_desc);
+    version_type = PyStructSequence_NewType(&bzlib_version_info_desc);
     if (version_type == NULL) {
         return -1;
     }
     if (PyModule_Add(module, "bzlib_version_info",
-            make_bzlib_version(version_type, BZ2_bzlibVersion())) < 0)
+            make_bzlib_version_info(version_type, BZ2_bzlibVersion())) < 0)
     {
         Py_DECREF(version_type);
         return -1;

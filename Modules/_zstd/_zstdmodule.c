@@ -571,27 +571,27 @@ static PyMethodDef _zstd_methods[] = {
     {NULL, NULL}
 };
 
-PyDoc_STRVAR(zstd_version__doc__,
+PyDoc_STRVAR(zstd_version_info__doc__,
 "_zstd.zstd_version_info\n\
 \n\
 Zstd version information as a named tuple.");
 
-static PyStructSequence_Field zstd_version_fields[] = {
+static PyStructSequence_Field zstd_version_info_fields[] = {
     {"major", "Major release number"},
     {"minor", "Minor release number"},
     {"patch", "Patch release number"},
     {0}
 };
 
-static PyStructSequence_Desc zstd_version_desc = {
-    "_zstd.zstd_version_info",   /* name */
-    zstd_version__doc__,         /* doc */
-    zstd_version_fields,         /* fields */
+static PyStructSequence_Desc zstd_version_info_desc = {
+    "_zstd.zstd_version_info",        /* name */
+    zstd_version_info__doc__,         /* doc */
+    zstd_version_info_fields,         /* fields */
     3
 };
 
 static PyObject *
-make_zstd_version(PyTypeObject *type, unsigned int number)
+make_zstd_version_info(PyTypeObject *type, unsigned int number)
 {
     PyObject *version;
     int pos = 0;
@@ -681,18 +681,18 @@ do {                                                                         \
         return -1;
     }
     PyTypeObject *version_type;
-    version_type = PyStructSequence_NewType(&zstd_version_desc);
+    version_type = PyStructSequence_NewType(&zstd_version_info_desc);
     if (version_type == NULL) {
         return -1;
     }
     if (PyModule_Add(m, "ZSTD_VERSION_INFO",
-        make_zstd_version(version_type, ZSTD_VERSION_NUMBER)) < 0)
+        make_zstd_version_info(version_type, ZSTD_VERSION_NUMBER)) < 0)
     {
         Py_DECREF(version_type);
         return -1;
     }
     if (PyModule_Add(m, "zstd_version_info",
-        make_zstd_version(version_type, ZSTD_versionNumber())) < 0)
+        make_zstd_version_info(version_type, ZSTD_versionNumber())) < 0)
     {
         Py_DECREF(version_type);
         return -1;

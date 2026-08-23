@@ -1510,12 +1510,12 @@ _lzma__decode_filter_properties_impl(PyObject *module, lzma_vli filter_id,
 }
 
 
-PyDoc_STRVAR(lzma_version__doc__,
+PyDoc_STRVAR(lzma_version_info__doc__,
 "_lzma.lzma_version_info\n\
 \n\
 Lzma version information as a named tuple.");
 
-static PyStructSequence_Field lzma_version_fields[] = {
+static PyStructSequence_Field lzma_version_info_fields[] = {
     {"major", "Major release number"},
     {"minor", "Minor release number"},
     {"patch", "Patch release number"},
@@ -1523,15 +1523,15 @@ static PyStructSequence_Field lzma_version_fields[] = {
     {0}
 };
 
-static PyStructSequence_Desc lzma_version_desc = {
-    "_lzma.lzma_version_info",   /* name */
-    lzma_version__doc__,         /* doc */
-    lzma_version_fields,         /* fields */
+static PyStructSequence_Desc lzma_version_info_desc = {
+    "_lzma.lzma_version_info",        /* name */
+    lzma_version_info__doc__,         /* doc */
+    lzma_version_info_fields,         /* fields */
     4
 };
 
 static PyObject *
-make_lzma_version(PyTypeObject *type, unsigned int number)
+make_lzma_version_info(PyTypeObject *type, unsigned int number)
 {
     PyObject *version;
     int pos = 0;
@@ -1669,18 +1669,18 @@ lzma_exec(PyObject *module)
         return -1;
     }
     PyTypeObject *version_type;
-    version_type = PyStructSequence_NewType(&lzma_version_desc);
+    version_type = PyStructSequence_NewType(&lzma_version_info_desc);
     if (version_type == NULL) {
         return -1;
     }
     if (PyModule_Add(module, "LZMA_VERSION_INFO",
-            make_lzma_version(version_type, LZMA_VERSION)) < 0)
+            make_lzma_version_info(version_type, LZMA_VERSION)) < 0)
     {
         Py_DECREF(version_type);
         return -1;
     }
     if (PyModule_Add(module, "lzma_version_info",
-            make_lzma_version(version_type, lzma_version_number())) < 0)
+            make_lzma_version_info(version_type, lzma_version_number())) < 0)
     {
         Py_DECREF(version_type);
         return -1;

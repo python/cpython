@@ -2060,12 +2060,12 @@ zlib_getattr(PyObject *self, PyObject *args)
     return NULL;
 }
 
-PyDoc_STRVAR(zlib_version__doc__,
+PyDoc_STRVAR(zlib_version_info__doc__,
 "zlib.zlib_version_info\n\
 \n\
 Zlib version information as a named tuple.");
 
-static PyStructSequence_Field zlib_version_fields[] = {
+static PyStructSequence_Field zlib_version_info_fields[] = {
     {"major", "Major release number"},
     {"minor", "Minor release number"},
     {"revision", "Revision release number"},
@@ -2073,92 +2073,62 @@ static PyStructSequence_Field zlib_version_fields[] = {
     {0}
 };
 
-static PyStructSequence_Desc zlib_version_desc = {
-    "zlib.zlib_version_info",   /* name */
-    zlib_version__doc__,        /* doc */
-    zlib_version_fields,        /* fields */
+static PyStructSequence_Desc zlib_version_info_desc = {
+    "zlib.zlib_version_info",        /* name */
+    zlib_version_info__doc__,        /* doc */
+    zlib_version_info_fields,        /* fields */
     4
 };
 
-static PyObject *
-make_zlib_version(PyTypeObject *type, const char *string)
-{
-    PyObject *version;
-    int pos = 0;
-    unsigned int major = 0, minor = 0, revision = 0, subversion = 0;
-
-    sscanf(string, "%u.%u.%u.%u", &major, &minor, &revision, &subversion);
-
-    version = PyStructSequence_New(type);
-    if (version == NULL) {
-        return NULL;
-    }
-
-#define SetIntItem(VALUE) \
-    PyStructSequence_SET_ITEM(version, pos++, PyLong_FromUnsignedLong(VALUE)); \
-    if (PyErr_Occurred()) { \
-        Py_DECREF(version); \
-        return NULL; \
-    }
-
-    SetIntItem(major)
-    SetIntItem(minor)
-    SetIntItem(revision)
-    SetIntItem(subversion)
-#undef SetIntItem
-
-    return version;
-}
-
 #ifdef ZLIBNG_VERSION
-PyDoc_STRVAR(zlibng_version__doc__,
+PyDoc_STRVAR(zlibng_version_info__doc__,
 "zlib.zlibng_version_info\n\
 \n\
 Zlib-ng version information as a named tuple.");
 
-static PyStructSequence_Field zlibng_version_fields[] = {
+static PyStructSequence_Field zlibng_version_info_fields[] = {
     {"major", "Major release number"},
     {"minor", "Minor release number"},
     {"revision", "Revision release number"},
     {0}
 };
 
-static PyStructSequence_Desc zlibng_version_desc = {
-    "zlib.zlibng_version_info",   /* name */
-    zlibng_version__doc__,        /* doc */
-    zlibng_version_fields,        /* fields */
+static PyStructSequence_Desc zlibng_version_info_desc = {
+    "zlib.zlibng_version_info",        /* name */
+    zlibng_version_info__doc__,        /* doc */
+    zlibng_version_info_fields,        /* fields */
     3
 };
+#endif // ZLIBNG_VERSION
 
+/* Create a named tuple from the first *size* components of a version string
+   like "1.2.11" or "1.2.11.1".  sscanf() is expected to fail on trailing
+   garbage and on versions with fewer components (for example "1.2.0.f" or
+   "1.3.1.zlib-ng"); the components which were not parsed are left zero.
+   This is deliberate -- a zero is more useful here than a hard error. */
 static PyObject *
-make_zlibng_version(PyTypeObject *type, const char *string)
+make_version_info(PyTypeObject *type, const char *string, Py_ssize_t size)
 {
-    PyObject *version;
-    int pos = 0;
-    unsigned int major = 0, minor = 0, revision = 0;
+    unsigned int components[4] = {0, 0, 0, 0};
+    assert(size <= (Py_ssize_t)Py_ARRAY_LENGTH(components));
 
-    sscanf(string, "%u.%u.%u", &major, &minor, &revision);
+    sscanf(string, "%u.%u.%u.%u",
+           &components[0], &components[1], &components[2], &components[3]);
 
-    version = PyStructSequence_New(type);
+    PyObject *version = PyStructSequence_New(type);
     if (version == NULL) {
         return NULL;
     }
-
-#define SetIntItem(VALUE) \
-    PyStructSequence_SET_ITEM(version, pos++, PyLong_FromUnsignedLong(VALUE)); \
-    if (PyErr_Occurred()) { \
-        Py_DECREF(version); \
-        return NULL; \
+    for (Py_ssize_t i = 0; i < size; i++) {
+        PyObject *item = PyLong_FromUnsignedLong(components[i]);
+        if (item == NULL) {
+            Py_DECREF(version);
+            return NULL;
+        }
+        PyStructSequence_SET_ITEM(version, i, item);
     }
-
-    SetIntItem(major)
-    SetIntItem(minor)
-    SetIntItem(revision)
-#undef SetIntItem
-
     return version;
 }
-#endif // ZLIBNG_VERSION
 
 
 static PyMethodDef zlib_methods[] =
@@ -2377,30 +2347,30 @@ zlib_exec(PyObject *mod)
     }
 #endif
     PyTypeObject *version_type;
-    version_type = PyStructSequence_NewType(&zlib_version_desc);
+    version_type = PyStructSequence_NewType(&zlib_version_info_desc);
     if (version_type == NULL) {
         return -1;
     }
     if (PyModule_Add(mod, "ZLIB_VERSION_INFO",
-            make_zlib_version(version_type, ZLIB_VERSION)) < 0)
+            make_version_info(version_type, ZLIB_VERSION, 4)) < 0)
     {
         Py_DECREF(version_type);
         return -1;
     }
     if (PyModule_Add(mod, "zlib_version_info",
-            make_zlib_version(version_type, zlibVersion())) < 0)
+            make_version_info(version_type, zlibVersion(), 4)) < 0)
     {
         Py_DECREF(version_type);
         return -1;
     }
     Py_DECREF(version_type);
 #ifdef ZLIBNG_VERSION
-    version_type = PyStructSequence_NewType(&zlibng_version_desc);
+    version_type = PyStructSequence_NewType(&zlibng_version_info_desc);
     if (version_type == NULL) {
         return -1;
     }
     if (PyModule_Add(mod, "ZLIBNG_VERSION_INFO",
-            make_zlibng_version(version_type, ZLIBNG_VERSION)) < 0)
+            make_version_info(version_type, ZLIBNG_VERSION, 3)) < 0)
     {
         Py_DECREF(version_type);
         return -1;
