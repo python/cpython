@@ -52,7 +52,7 @@ DATA_DIR = os.path.join('Tools', 'unicode', 'data')
 #   * Doc/reference/lexical_analysis.rst (three occurrences)
 # and optionally (comments)
 #   * Lib/re/_properties.py (three occurrences)
-UNIDATA_VERSION = "17.0.0"
+UNIDATA_VERSION = "18.0.0"
 UNICODE_DATA = "UnicodeData%s.txt"
 COMPOSITION_EXCLUSIONS = "CompositionExclusions%s.txt"
 EASTASIAN_WIDTH = "EastAsianWidth%s.txt"
@@ -1289,7 +1289,7 @@ class UnicodeData:
                     ext_picts[char] = True
             self.ext_picts = ext_picts
 
-            # See https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G64189
+            # See https://www.unicode.org/versions/Unicode18.0.0/core-spec/chapter-3/#G64189
             self.blocks = []
             for record in UcdFile(BLOCKS, version).records():
                 start_end, name = record

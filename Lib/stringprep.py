@@ -9,7 +9,7 @@ and mappings, for which a mapping function is provided.
 # when unicodedata is modified to ensure conformant behavior.
 import unicodedata
 
-assert unicodedata.unidata_version == '17.0.0'
+assert unicodedata.unidata_version == '18.0.0'
 
 from unicodedata import ucd_3_2_0 as unicodedata_320
 
