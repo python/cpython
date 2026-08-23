@@ -121,7 +121,7 @@ error:
 /*[clinic input]
 pwd.getpwuid
 
-    uidobj: object
+    uidobj as uid: uid_t
     /
 
 Return the password database entry for the given numeric user ID.
@@ -130,21 +130,14 @@ See `help(pwd)` for more on password database entries.
 [clinic start generated code]*/
 
 static PyObject *
-pwd_getpwuid(PyObject *module, PyObject *uidobj)
-/*[clinic end generated code: output=c4ee1d4d429b86c4 input=ae64d507a1c6d3e8]*/
+pwd_getpwuid_impl(PyObject *module, uid_t uid)
+/*[clinic end generated code: output=631bad376fa670c3 input=506d3a592ef19799]*/
 {
     PyObject *retval = NULL;
-    uid_t uid;
     int nomem = 0;
     struct passwd *p;
     char *buf = NULL, *buf2 = NULL;
 
-    if (!_Py_Uid_Converter(uidobj, &uid)) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError))
-            PyErr_Format(PyExc_KeyError,
-                         "getpwuid(): uid not found");
-        return NULL;
-    }
 #ifdef HAVE_GETPWUID_R
     int status;
     Py_ssize_t bufsize;

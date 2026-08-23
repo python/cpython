@@ -117,7 +117,7 @@ mkgrent(PyObject *module, struct group *p)
 /*[clinic input]
 grp.getgrgid
 
-    id: object
+    id as gid: gid_t
 
 Return the group database entry for the given numeric group ID.
 
@@ -125,18 +125,14 @@ If id is not valid, raise KeyError.
 [clinic start generated code]*/
 
 static PyObject *
-grp_getgrgid_impl(PyObject *module, PyObject *id)
-/*[clinic end generated code: output=30797c289504a1ba input=15fa0e2ccf5cda25]*/
+grp_getgrgid_impl(PyObject *module, gid_t gid)
+/*[clinic end generated code: output=a9e7385cd6df08da input=fca15128dd772588]*/
 {
     PyObject *retval = NULL;
     int nomem = 0;
     char *buf = NULL, *buf2 = NULL;
-    gid_t gid;
     struct group *p;
 
-    if (!_Py_Gid_Converter(id, &gid)) {
-        return NULL;
-    }
 #ifdef HAVE_GETGRGID_R
     int status;
     Py_ssize_t bufsize;
