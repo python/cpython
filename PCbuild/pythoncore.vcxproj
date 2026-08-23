@@ -276,6 +276,7 @@
     <ClInclude Include="..\Include\internal\pycore_interpframe_structs.h" />
     <ClInclude Include="..\Include\internal\pycore_interpolation.h" />
     <ClInclude Include="..\Include\internal\pycore_intrinsics.h" />
+    <ClInclude Include="..\Include\internal\pycore_iterobject.h" />
     <ClInclude Include="..\Include\internal\pycore_jit.h" />
     <ClInclude Include="..\Include\internal\pycore_lazyimportobject.h" />
     <ClInclude Include="..\Include\internal\pycore_list.h" />

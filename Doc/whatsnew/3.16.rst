@@ -75,6 +75,13 @@ New features
 Other language changes
 ======================
 
+* The :func:`iter` function now accepts the *stop_exception* parameter.
+  The created iterator stops when the callable raises the specified exception.
+  The second parameter is now named *stop_value* and can be passed by keyword.
+  :func:`aiter` now accepts the same *stop_value* and *stop_exception*
+  parameters, calling an asynchronous callable and awaiting the result.
+  (Contributed by Serhiy Storchaka in :gh:`64862`.)
+
 * :meth:`memoryview.cast` now allows casting a multidimensional
   F-contiguous view to a one-dimensional view.
   (Contributed by Jaemin Park in :gh:`91484`.)

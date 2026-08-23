@@ -6171,10 +6171,12 @@ class TestSignatureDefinitions(unittest.TestCase):
                         'dict', 'frozendict', 'int', 'str'}
         # These need PEP 457 groups
         needs_groups = {"range", "slice", "dir", "getattr",
-                        "next", "iter", "vars"}
+                        "next", "vars"}
         no_signature |= needs_groups
         # These have unrepresentable parameter default values of NULL
         unsupported_signature = {"anext"}
+        # These have text signatures with PEP 457 groups
+        unsupported_signature |= {"aiter", "iter"}
         # These need *args support in Argument Clinic
         needs_varargs = {"min", "max", "__build_class__"}
         no_signature |= needs_varargs
