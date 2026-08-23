@@ -233,14 +233,14 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
 .. function:: _clear_type_cache()
 
-   Clear the internal type cache. The type cache is used to speed up attribute
-   and method lookups. Use the function *only* to drop unnecessary references
-   during reference leak debugging.
-
-   This function should be used for internal and specialized purposes only.
+   This function is a no-op. It used to clear the internal type cache, which
+   is now implemented per-type.
 
    .. deprecated:: 3.13
       Use the more general :func:`_clear_internal_caches` function instead.
+
+   .. versionchanged:: 3.16
+      This function is now a no-op.
 
 
 .. function:: _clear_internal_caches()
@@ -249,6 +249,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    release unnecessary references and memory blocks when hunting for leaks.
 
    .. versionadded:: 3.13
+
+   .. versionchanged:: 3.16
+      The type cache is no longer cleared, as it is now implemented per-type.
 
 
 .. function:: _current_frames()

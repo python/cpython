@@ -253,7 +253,9 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         except (SystemExit, KeyboardInterrupt):
             raise
         except BaseException as exc:
-            if self._debug:
+            if transport is None:
+                conn.close()
+            if transport is None or self._debug:
                 context = {
                     'message':
                         'Error on transport creation for incoming connection',

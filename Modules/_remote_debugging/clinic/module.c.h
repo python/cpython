@@ -56,7 +56,7 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder___init____doc__,
 
 static int
 _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
-                                               int pid, int all_threads,
+                                               pid_t pid, int all_threads,
                                                int only_active_thread,
                                                int mode, int debug,
                                                int skip_non_matching_threads,
@@ -99,7 +99,7 @@ _remote_debugging_RemoteUnwinder___init__(PyObject *self, PyObject *args, PyObje
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
-    int pid;
+    pid_t pid;
     int all_threads = 0;
     int only_active_thread = 0;
     int mode = 0;
@@ -116,8 +116,8 @@ _remote_debugging_RemoteUnwinder___init__(PyObject *self, PyObject *args, PyObje
     if (!fastargs) {
         goto exit;
     }
-    pid = PyLong_AsInt(fastargs[0]);
-    if (pid == -1 && PyErr_Occurred()) {
+    pid = PyLong_AsPid(fastargs[0]);
+    if (pid == (pid_t)(-1) && PyErr_Occurred()) {
         goto exit;
     }
     if (!noptargs) {
@@ -559,7 +559,7 @@ PyDoc_STRVAR(_remote_debugging_GCMonitor___init____doc__,
 "        target process");
 
 static int
-_remote_debugging_GCMonitor___init___impl(GCMonitorObject *self, int pid,
+_remote_debugging_GCMonitor___init___impl(GCMonitorObject *self, pid_t pid,
                                           int debug);
 
 static int
@@ -597,7 +597,7 @@ _remote_debugging_GCMonitor___init__(PyObject *self, PyObject *args, PyObject *k
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
-    int pid;
+    pid_t pid;
     int debug = 0;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
@@ -605,8 +605,8 @@ _remote_debugging_GCMonitor___init__(PyObject *self, PyObject *args, PyObject *k
     if (!fastargs) {
         goto exit;
     }
-    pid = PyLong_AsInt(fastargs[0]);
-    if (pid == -1 && PyErr_Occurred()) {
+    pid = PyLong_AsPid(fastargs[0]);
+    if (pid == (pid_t)(-1) && PyErr_Occurred()) {
         goto exit;
     }
     if (!noptargs) {
@@ -1374,7 +1374,7 @@ PyDoc_STRVAR(_remote_debugging_get_child_pids__doc__,
     {"get_child_pids", _PyCFunction_CAST(_remote_debugging_get_child_pids), METH_FASTCALL|METH_KEYWORDS, _remote_debugging_get_child_pids__doc__},
 
 static PyObject *
-_remote_debugging_get_child_pids_impl(PyObject *module, int pid,
+_remote_debugging_get_child_pids_impl(PyObject *module, pid_t pid,
                                       int recursive);
 
 static PyObject *
@@ -1410,7 +1410,7 @@ _remote_debugging_get_child_pids(PyObject *module, PyObject *const *args, Py_ssi
     #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    int pid;
+    pid_t pid;
     int recursive = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -1418,8 +1418,8 @@ _remote_debugging_get_child_pids(PyObject *module, PyObject *const *args, Py_ssi
     if (!args) {
         goto exit;
     }
-    pid = PyLong_AsInt(args[0]);
-    if (pid == -1 && PyErr_Occurred()) {
+    pid = PyLong_AsPid(args[0]);
+    if (pid == (pid_t)(-1) && PyErr_Occurred()) {
         goto exit;
     }
     if (!noptargs) {
@@ -1446,7 +1446,7 @@ PyDoc_STRVAR(_remote_debugging_is_python_process__doc__,
     {"is_python_process", _PyCFunction_CAST(_remote_debugging_is_python_process), METH_FASTCALL|METH_KEYWORDS, _remote_debugging_is_python_process__doc__},
 
 static PyObject *
-_remote_debugging_is_python_process_impl(PyObject *module, int pid);
+_remote_debugging_is_python_process_impl(PyObject *module, pid_t pid);
 
 static PyObject *
 _remote_debugging_is_python_process(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1480,15 +1480,15 @@ _remote_debugging_is_python_process(PyObject *module, PyObject *const *args, Py_
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    int pid;
+    pid_t pid;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    pid = PyLong_AsInt(args[0]);
-    if (pid == -1 && PyErr_Occurred()) {
+    pid = PyLong_AsPid(args[0]);
+    if (pid == (pid_t)(-1) && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _remote_debugging_is_python_process_impl(module, pid);
@@ -1527,7 +1527,7 @@ PyDoc_STRVAR(_remote_debugging_get_gc_stats__doc__,
     {"get_gc_stats", _PyCFunction_CAST(_remote_debugging_get_gc_stats), METH_FASTCALL|METH_KEYWORDS, _remote_debugging_get_gc_stats__doc__},
 
 static PyObject *
-_remote_debugging_get_gc_stats_impl(PyObject *module, int pid,
+_remote_debugging_get_gc_stats_impl(PyObject *module, pid_t pid,
                                     int all_interpreters);
 
 static PyObject *
@@ -1563,7 +1563,7 @@ _remote_debugging_get_gc_stats(PyObject *module, PyObject *const *args, Py_ssize
     #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    int pid;
+    pid_t pid;
     int all_interpreters = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -1571,8 +1571,8 @@ _remote_debugging_get_gc_stats(PyObject *module, PyObject *const *args, Py_ssize
     if (!args) {
         goto exit;
     }
-    pid = PyLong_AsInt(args[0]);
-    if (pid == -1 && PyErr_Occurred()) {
+    pid = PyLong_AsPid(args[0]);
+    if (pid == (pid_t)(-1) && PyErr_Occurred()) {
         goto exit;
     }
     if (!noptargs) {
@@ -1588,4 +1588,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a3df14a6ab7f2998 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=22511c10d9224b28 input=a9049054013a1b77]*/
