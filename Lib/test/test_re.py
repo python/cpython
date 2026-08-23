@@ -2251,7 +2251,7 @@ class ReTests(unittest.TestCase):
 
     # The huge memuse is because of re.sub() using a list and a join()
     # to create the replacement result.
-    @bigmemtest(size=_2G, memuse=16 + 2)
+    @bigmemtest(size=_2G, memuse=16 + 3)
     def test_large_subn(self, size):
         # Issue #10182: indices were 32-bit-truncated.
         s = 'a' * size

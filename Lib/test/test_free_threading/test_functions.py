@@ -58,6 +58,12 @@ class TestFTFunctionAttributes(TestCase):
     def test_type_params(self):
         self.stress_attribute("__type_params__", lambda: (random_string(),))
 
+    def test_doc(self):
+        self.stress_attribute("__doc__", random_string)
+
+    def test_module(self):
+        self.stress_attribute("__module__", random_string)
+
     def test_annotations_and_annotate(self):
         # The __annotations__ and __annotate__ setters clear each other.
         def target(): pass

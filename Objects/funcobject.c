@@ -628,9 +628,7 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
 
 static PyMemberDef func_memberlist[] = {
     {"__closure__",   _Py_T_OBJECT,     OFF(func_closure), Py_READONLY},
-    {"__doc__",       _Py_T_OBJECT,     OFF(func_doc), 0},
     {"__globals__",   _Py_T_OBJECT,     OFF(func_globals), Py_READONLY},
-    {"__module__",    _Py_T_OBJECT,     OFF(func_module), 0},
     {"__builtins__",  _Py_T_OBJECT,     OFF(func_builtins), Py_READONLY},
     {NULL}  /* Sentinel */
 };
@@ -763,6 +761,56 @@ func_set_qualname(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
+func_get_doc(PyObject *self, void *Py_UNUSED(ignored))
+{
+    PyFunctionObject *op = _PyFunction_CAST(self);
+    PyObject *doc = op->func_doc;
+    if (doc == NULL) {
+        doc = Py_None;
+    }
+    return Py_NewRef(doc);
+}
+
+static int
+func_set_doc(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
+{
+    /* Legal to del f.__doc__ or to set it to any object. */
+    PyFunctionObject *op = _PyFunction_CAST(self);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    PyObject *old_doc = op->func_doc;
+    op->func_doc = Py_XNewRef(value);
+    _PyEval_StartTheWorld(interp);
+    Py_XDECREF(old_doc);
+    return 0;
+}
+
+static PyObject *
+func_get_module(PyObject *self, void *Py_UNUSED(ignored))
+{
+    PyFunctionObject *op = _PyFunction_CAST(self);
+    PyObject *module = op->func_module;
+    if (module == NULL) {
+        module = Py_None;
+    }
+    return Py_NewRef(module);
+}
+
+static int
+func_set_module(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
+{
+    /* Legal to del f.__module__ or to set it to any object. */
+    PyFunctionObject *op = _PyFunction_CAST(self);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    PyObject *old_module = op->func_module;
+    op->func_module = Py_XNewRef(value);
+    _PyEval_StartTheWorld(interp);
+    Py_XDECREF(old_module);
+    return 0;
+}
+
+static PyObject *
 func_get_defaults(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
@@ -878,12 +926,13 @@ function___annotate___get_impl(PyFunctionObject *self)
 /*[clinic input]
 @critical_section
 @setter
+@deleter
 function.__annotate__
 [clinic start generated code]*/
 
 static int
 function___annotate___set_impl(PyFunctionObject *self, PyObject *value)
-/*[clinic end generated code: output=05b7dfc07ada66cd input=eb6225e358d97448]*/
+/*[clinic end generated code: output=05b7dfc07ada66cd input=4bcfad0bdcfec768]*/
 {
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,
@@ -891,24 +940,12 @@ function___annotate___set_impl(PyFunctionObject *self, PyObject *value)
         return -1;
     }
     if (Py_IsNone(value)) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        _PyEval_StopTheWorld(interp);
-        PyObject *old_annotate = self->func_annotate;
-        self->func_annotate = Py_NewRef(value);
-        _PyEval_StartTheWorld(interp);
-        Py_XDECREF(old_annotate);
+        Py_XSETREF(self->func_annotate, Py_NewRef(value));
         return 0;
     }
     else if (PyCallable_Check(value)) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        _PyEval_StopTheWorld(interp);
-        PyObject *old_annotate = self->func_annotate;
-        self->func_annotate = Py_NewRef(value);
-        PyObject *old_annotations = self->func_annotations;
-        self->func_annotations = NULL;
-        _PyEval_StartTheWorld(interp);
-        Py_XDECREF(old_annotate);
-        Py_XDECREF(old_annotations);
+        Py_XSETREF(self->func_annotate, Py_NewRef(value));
+        Py_CLEAR(self->func_annotations);
         return 0;
     }
     else {
@@ -944,12 +981,13 @@ function___annotations___get_impl(PyFunctionObject *self)
 /*[clinic input]
 @critical_section
 @setter
+@deleter
 function.__annotations__
 [clinic start generated code]*/
 
 static int
 function___annotations___set_impl(PyFunctionObject *self, PyObject *value)
-/*[clinic end generated code: output=a61795d4a95eede4 input=5302641f686f0463]*/
+/*[clinic end generated code: output=a61795d4a95eede4 input=71f6a58c00ac6745]*/
 {
     if (value == Py_None)
         value = NULL;
@@ -961,15 +999,8 @@ function___annotations___set_impl(PyFunctionObject *self, PyObject *value)
             "__annotations__ must be set to a dict object");
         return -1;
     }
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyEval_StopTheWorld(interp);
-    PyObject *old_annotations = self->func_annotations;
-    self->func_annotations = Py_XNewRef(value);
-    PyObject *old_annotate = self->func_annotate;
-    self->func_annotate = NULL;
-    _PyEval_StartTheWorld(interp);
-    Py_XDECREF(old_annotations);
-    Py_XDECREF(old_annotate);
+    Py_XSETREF(self->func_annotations, Py_XNewRef(value));
+    Py_CLEAR(self->func_annotate);
     return 0;
 }
 
@@ -996,12 +1027,13 @@ function___type_params___get_impl(PyFunctionObject *self)
 /*[clinic input]
 @critical_section
 @setter
+@deleter
 function.__type_params__
 [clinic start generated code]*/
 
 static int
 function___type_params___set_impl(PyFunctionObject *self, PyObject *value)
-/*[clinic end generated code: output=038b4cda220e56fb input=3862fbd4db2b70e8]*/
+/*[clinic end generated code: output=038b4cda220e56fb input=c0e33abc5901a2f5]*/
 {
     /* Not legal to del f.__type_params__ or to set it to anything
      * other than a tuple object. */
@@ -1010,12 +1042,7 @@ function___type_params___set_impl(PyFunctionObject *self, PyObject *value)
                         "__type_params__ must be set to a tuple");
         return -1;
     }
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyEval_StopTheWorld(interp);
-    PyObject *old_typeparams = self->func_typeparams;
-    self->func_typeparams = Py_NewRef(value);
-    _PyEval_StartTheWorld(interp);
-    Py_XDECREF(old_typeparams);
+    Py_XSETREF(self->func_typeparams, Py_NewRef(value));
     return 0;
 }
 
@@ -1037,6 +1064,8 @@ static PyGetSetDef func_getsetlist[] = {
     FUNCTION___ANNOTATIONS___GETSETDEF
     FUNCTION___ANNOTATE___GETSETDEF
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
+    {"__doc__", func_get_doc, func_set_doc},
+    {"__module__", func_get_module, func_set_module},
     {"__name__", func_get_name, func_set_name},
     {"__qualname__", func_get_qualname, func_set_qualname},
     FUNCTION___TYPE_PARAMS___GETSETDEF

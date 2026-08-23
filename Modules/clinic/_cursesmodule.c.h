@@ -247,8 +247,8 @@ _curses_window_addch(PyObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOO&:addch", &y, &x, &ch, attr_converter, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.addch requires 1 to 4 arguments");
@@ -319,8 +319,8 @@ _curses_window_addstr(PyObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOO&:addstr", &y, &x, &str, attr_converter, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.addstr requires 1 to 4 arguments");
@@ -394,8 +394,8 @@ _curses_window_addnstr(PyObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOiO&:addnstr", &y, &x, &str, &n, attr_converter, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.addnstr requires 2 to 5 arguments");
@@ -757,10 +757,7 @@ exit:
 }
 
 PyDoc_STRVAR(_curses_window_border__doc__,
-"border($self, ls=_curses.ACS_VLINE, rs=_curses.ACS_VLINE,\n"
-"       ts=_curses.ACS_HLINE, bs=_curses.ACS_HLINE,\n"
-"       tl=_curses.ACS_ULCORNER, tr=_curses.ACS_URCORNER,\n"
-"       bl=_curses.ACS_LLCORNER, br=_curses.ACS_LRCORNER, /)\n"
+"border($self, ls=0, rs=0, ts=0, bs=0, tl=0, tr=0, bl=0, br=0, /)\n"
 "--\n"
 "\n"
 "Draw a border around the edges of the window.\n"
@@ -897,6 +894,83 @@ _curses_window_box(PyObject *self, PyObject *args)
 exit:
     return return_value;
 }
+
+#if defined(HAVE_CURSES_WCHGAT)
+
+PyDoc_STRVAR(_curses_window_chgat__doc__,
+"chgat([y, x,] [n=-1,] attr)\n"
+"Set the attributes of characters.\n"
+"\n"
+"  y\n"
+"    Y-coordinate.\n"
+"  x\n"
+"    X-coordinate.\n"
+"  n\n"
+"    Number of characters.\n"
+"  attr\n"
+"    Attributes for characters.\n"
+"\n"
+"Set the attributes of n characters at the current cursor position,\n"
+"or at position (y, x) if supplied.  If no value of n is given or\n"
+"n = -1, the attribute will be set on all the characters to the end\n"
+"of the line.  This function does not move the cursor.  The changed\n"
+"line will be touched using the touchline() method so that the\n"
+"contents will be redisplayed by the next window refresh.");
+
+#define _CURSES_WINDOW_CHGAT_METHODDEF    \
+    {"chgat", (PyCFunction)_curses_window_chgat, METH_VARARGS, _curses_window_chgat__doc__},
+
+static PyObject *
+_curses_window_chgat_impl(PyCursesWindowObject *self, int group_left_1,
+                          int y, int x, int group_left_2, int n, attr_t attr);
+
+static PyObject *
+_curses_window_chgat(PyObject *self, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int group_left_1 = 0;
+    int y = 0;
+    int x = 0;
+    int group_left_2 = 0;
+    int n = -1;
+    attr_t attr;
+
+    switch (PyTuple_GET_SIZE(args)) {
+        case 1:
+            if (!PyArg_ParseTuple(args, "O&:chgat", attr_converter, &attr)) {
+                goto exit;
+            }
+            break;
+        case 2:
+            if (!PyArg_ParseTuple(args, "iO&:chgat", &n, attr_converter, &attr)) {
+                goto exit;
+            }
+            group_left_2 = 1;
+            break;
+        case 3:
+            if (!PyArg_ParseTuple(args, "iiO&:chgat", &y, &x, attr_converter, &attr)) {
+                goto exit;
+            }
+            group_left_1 = 1;
+            break;
+        case 4:
+            if (!PyArg_ParseTuple(args, "iiiO&:chgat", &y, &x, &n, attr_converter, &attr)) {
+                goto exit;
+            }
+            group_left_1 = 1;
+            group_left_2 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "_curses.window.chgat requires 1 to 4 arguments");
+            goto exit;
+    }
+    return_value = _curses_window_chgat_impl((PyCursesWindowObject *)self, group_left_1, y, x, group_left_2, n, attr);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_CURSES_WCHGAT) */
 
 PyDoc_STRVAR(_curses_window_delch__doc__,
 "delch([y, x])\n"
@@ -1254,17 +1328,24 @@ _curses_window_getbkgrnd(PyObject *self, PyObject *Py_UNUSED(ignored))
 
 PyDoc_STRVAR(_curses_window_getch__doc__,
 "getch([y, x])\n"
-"Get a character code from terminal keyboard.\n"
+"Read a key press and return it as an integer.\n"
 "\n"
 "  y\n"
 "    Y-coordinate.\n"
 "  x\n"
 "    X-coordinate.\n"
 "\n"
-"The integer returned does not have to be in ASCII range: function\n"
-"keys, keypad keys and so on return numbers higher than 256.  In\n"
-"no-delay mode, -1 is returned if there is no input, else getch()\n"
-"waits until a key is pressed.");
+"Wait until a key is pressed, or return -1 if the read is\n"
+"non-blocking or times out.\n"
+"\n"
+"An ordinary key is returned as the code of a single byte of its\n"
+"encoding in the current locale, so a character encoded with several\n"
+"bytes takes several calls.  Use get_wch() to read it as a single\n"
+"character.\n"
+"\n"
+"In keypad mode function keys and other special keys are returned as\n"
+"one of the KEY_* constants, which cannot be mistaken for an ordinary\n"
+"key.  Otherwise their bytes are returned one at a time.");
 
 #define _CURSES_WINDOW_GETCH_METHODDEF    \
     {"getch", (PyCFunction)_curses_window_getch, METH_VARARGS, _curses_window_getch__doc__},
@@ -1302,17 +1383,17 @@ exit:
 
 PyDoc_STRVAR(_curses_window_getkey__doc__,
 "getkey([y, x])\n"
-"Get a character (string) from terminal keyboard.\n"
+"Read a key press and return it as a str.\n"
 "\n"
 "  y\n"
 "    Y-coordinate.\n"
 "  x\n"
 "    X-coordinate.\n"
 "\n"
-"Returning a string instead of an integer, as getch() does.  Function\n"
-"keys, keypad keys and other special keys return a multibyte string\n"
-"containing the key name.  In no-delay mode, an exception is raised\n"
-"if there is no input.");
+"Read as getch() does, but return an ordinary key as a one-character\n"
+"string, the byte decoded as Latin-1, and a special key as its name,\n"
+"such as \'KEY_UP\'.  Raise curses.error instead of returning -1 if\n"
+"there is no input.");
 
 #define _CURSES_WINDOW_GETKEY_METHODDEF    \
     {"getkey", (PyCFunction)_curses_window_getkey, METH_VARARGS, _curses_window_getkey__doc__},
@@ -1350,15 +1431,19 @@ exit:
 
 PyDoc_STRVAR(_curses_window_get_wch__doc__,
 "get_wch([y, x])\n"
-"Get a wide character from terminal keyboard.\n"
+"Read a key press and return it as a one-character str.\n"
 "\n"
 "  y\n"
 "    Y-coordinate.\n"
 "  x\n"
 "    X-coordinate.\n"
 "\n"
-"Return a character for most keys, or an integer for function keys,\n"
-"keypad keys, and other special keys.");
+"Wait until a key is pressed, or raise curses.error if the read is\n"
+"non-blocking or times out.\n"
+"\n"
+"In keypad mode function keys and other special keys are returned as\n"
+"one of the KEY_* constants, an integer.  Otherwise their characters\n"
+"are returned one at a time.");
 
 #define _CURSES_WINDOW_GET_WCH_METHODDEF    \
     {"get_wch", (PyCFunction)_curses_window_get_wch, METH_VARARGS, _curses_window_get_wch__doc__},
@@ -1389,6 +1474,61 @@ _curses_window_get_wch(PyObject *self, PyObject *args)
             goto exit;
     }
     return_value = _curses_window_get_wch_impl((PyCursesWindowObject *)self, group_right_1, y, x);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_window_getstr__doc__,
+"getstr([y, x,] n=2047)\n"
+"Read a line of input and return it as a bytes object.\n"
+"\n"
+"  y\n"
+"    Y-coordinate.\n"
+"  x\n"
+"    X-coordinate.\n"
+"  n\n"
+"    Maximal number of bytes.\n"
+"\n"
+"The input is read with primitive line editing capacity, encoded in\n"
+"the current locale, and does not include the terminating newline.\n"
+"At most n bytes are read.");
+
+#define _CURSES_WINDOW_GETSTR_METHODDEF    \
+    {"getstr", (PyCFunction)_curses_window_getstr, METH_VARARGS, _curses_window_getstr__doc__},
+
+static PyObject *
+_curses_window_getstr_impl(PyCursesWindowObject *self, int group_left_1,
+                           int y, int x, unsigned int n);
+
+static PyObject *
+_curses_window_getstr(PyObject *self, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int group_left_1 = 0;
+    int y = 0;
+    int x = 0;
+    unsigned int n = 2047;
+
+    switch (PyTuple_GET_SIZE(args)) {
+        case 0:
+        case 1:
+            if (!PyArg_ParseTuple(args, "|O&:getstr", _PyLong_UnsignedInt_Converter, &n)) {
+                goto exit;
+            }
+            break;
+        case 2:
+        case 3:
+            if (!PyArg_ParseTuple(args, "ii|O&:getstr", &y, &x, _PyLong_UnsignedInt_Converter, &n)) {
+                goto exit;
+            }
+            group_left_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "_curses.window.getstr requires 0 to 3 arguments");
+            goto exit;
+    }
+    return_value = _curses_window_getstr_impl((PyCursesWindowObject *)self, group_left_1, y, x, n);
 
 exit:
     return return_value;
@@ -1451,8 +1591,8 @@ _curses_window_hline(PyObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOiO&:hline", &y, &x, &ch, &n, attr_converter, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.hline requires 2 to 5 arguments");
@@ -1521,8 +1661,8 @@ _curses_window_insch(PyObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOO&:insch", &y, &x, &ch, attr_converter, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.insch requires 1 to 4 arguments");
@@ -1575,6 +1715,229 @@ _curses_window_inch(PyObject *self, PyObject *args)
             goto exit;
     }
     return_value = _curses_window_inch_impl((PyCursesWindowObject *)self, group_right_1, y, x);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_window_instr__doc__,
+"instr([y, x,] n=2047)\n"
+"Return the text of the window as a bytes object.\n"
+"\n"
+"  y\n"
+"    Y-coordinate.\n"
+"  x\n"
+"    X-coordinate.\n"
+"  n\n"
+"    Maximal number of bytes.\n"
+"\n"
+"Read from the current cursor position, or from y, x if specified, to\n"
+"the end of the line, and return the text in the encoding of the\n"
+"current locale, with attributes and color pairs stripped.  At most n\n"
+"bytes are read.");
+
+#define _CURSES_WINDOW_INSTR_METHODDEF    \
+    {"instr", (PyCFunction)_curses_window_instr, METH_VARARGS, _curses_window_instr__doc__},
+
+static PyObject *
+_curses_window_instr_impl(PyCursesWindowObject *self, int group_left_1,
+                          int y, int x, unsigned int n);
+
+static PyObject *
+_curses_window_instr(PyObject *self, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int group_left_1 = 0;
+    int y = 0;
+    int x = 0;
+    unsigned int n = 2047;
+
+    switch (PyTuple_GET_SIZE(args)) {
+        case 0:
+        case 1:
+            if (!PyArg_ParseTuple(args, "|O&:instr", _PyLong_UnsignedInt_Converter, &n)) {
+                goto exit;
+            }
+            break;
+        case 2:
+        case 3:
+            if (!PyArg_ParseTuple(args, "ii|O&:instr", &y, &x, _PyLong_UnsignedInt_Converter, &n)) {
+                goto exit;
+            }
+            group_left_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "_curses.window.instr requires 0 to 3 arguments");
+            goto exit;
+    }
+    return_value = _curses_window_instr_impl((PyCursesWindowObject *)self, group_left_1, y, x, n);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_window_get_wstr__doc__,
+"get_wstr([y, x,] n=2047)\n"
+"Read a line of input and return it as a str.\n"
+"\n"
+"  y\n"
+"    Y-coordinate.\n"
+"  x\n"
+"    X-coordinate.\n"
+"  n\n"
+"    Maximal number of characters.\n"
+"\n"
+"This is the wide-character variant of getstr().  The input is read\n"
+"with primitive line editing capacity and does not include the\n"
+"terminating newline.  At most n characters are read.");
+
+#define _CURSES_WINDOW_GET_WSTR_METHODDEF    \
+    {"get_wstr", (PyCFunction)_curses_window_get_wstr, METH_VARARGS, _curses_window_get_wstr__doc__},
+
+static PyObject *
+_curses_window_get_wstr_impl(PyCursesWindowObject *self, int group_left_1,
+                             int y, int x, unsigned int n);
+
+static PyObject *
+_curses_window_get_wstr(PyObject *self, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int group_left_1 = 0;
+    int y = 0;
+    int x = 0;
+    unsigned int n = 2047;
+
+    switch (PyTuple_GET_SIZE(args)) {
+        case 0:
+        case 1:
+            if (!PyArg_ParseTuple(args, "|O&:get_wstr", _PyLong_UnsignedInt_Converter, &n)) {
+                goto exit;
+            }
+            break;
+        case 2:
+        case 3:
+            if (!PyArg_ParseTuple(args, "ii|O&:get_wstr", &y, &x, _PyLong_UnsignedInt_Converter, &n)) {
+                goto exit;
+            }
+            group_left_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "_curses.window.get_wstr requires 0 to 3 arguments");
+            goto exit;
+    }
+    return_value = _curses_window_get_wstr_impl((PyCursesWindowObject *)self, group_left_1, y, x, n);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_window_in_wstr__doc__,
+"in_wstr([y, x,] n=2047)\n"
+"Return the text of the window as a str.\n"
+"\n"
+"  y\n"
+"    Y-coordinate.\n"
+"  x\n"
+"    X-coordinate.\n"
+"  n\n"
+"    Maximal number of characters.\n"
+"\n"
+"This is the wide-character variant of instr().  Read from the\n"
+"current cursor position, or from y, x if specified, to the end of\n"
+"the line, with attributes and color pairs stripped.  At most n\n"
+"characters are read.");
+
+#define _CURSES_WINDOW_IN_WSTR_METHODDEF    \
+    {"in_wstr", (PyCFunction)_curses_window_in_wstr, METH_VARARGS, _curses_window_in_wstr__doc__},
+
+static PyObject *
+_curses_window_in_wstr_impl(PyCursesWindowObject *self, int group_left_1,
+                            int y, int x, unsigned int n);
+
+static PyObject *
+_curses_window_in_wstr(PyObject *self, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int group_left_1 = 0;
+    int y = 0;
+    int x = 0;
+    unsigned int n = 2047;
+
+    switch (PyTuple_GET_SIZE(args)) {
+        case 0:
+        case 1:
+            if (!PyArg_ParseTuple(args, "|O&:in_wstr", _PyLong_UnsignedInt_Converter, &n)) {
+                goto exit;
+            }
+            break;
+        case 2:
+        case 3:
+            if (!PyArg_ParseTuple(args, "ii|O&:in_wstr", &y, &x, _PyLong_UnsignedInt_Converter, &n)) {
+                goto exit;
+            }
+            group_left_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "_curses.window.in_wstr requires 0 to 3 arguments");
+            goto exit;
+    }
+    return_value = _curses_window_in_wstr_impl((PyCursesWindowObject *)self, group_left_1, y, x, n);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_window_in_wchstr__doc__,
+"in_wchstr([y, x,] n=2047)\n"
+"Return the styled cells of the window as a complexstr.\n"
+"\n"
+"  y\n"
+"    Y-coordinate.\n"
+"  x\n"
+"    X-coordinate.\n"
+"  n\n"
+"    Maximal number of cells.\n"
+"\n"
+"Read from the current cursor position, or from y, x if specified, to\n"
+"the end of the line.  Unlike instr() and in_wstr(), each cell keeps\n"
+"its attributes and color pair, so the result can be written back\n"
+"unchanged with addstr().  At most n cells are read.");
+
+#define _CURSES_WINDOW_IN_WCHSTR_METHODDEF    \
+    {"in_wchstr", (PyCFunction)_curses_window_in_wchstr, METH_VARARGS, _curses_window_in_wchstr__doc__},
+
+static PyObject *
+_curses_window_in_wchstr_impl(PyCursesWindowObject *self, int group_left_1,
+                              int y, int x, unsigned int n);
+
+static PyObject *
+_curses_window_in_wchstr(PyObject *self, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int group_left_1 = 0;
+    int y = 0;
+    int x = 0;
+    unsigned int n = 2047;
+
+    switch (PyTuple_GET_SIZE(args)) {
+        case 0:
+        case 1:
+            if (!PyArg_ParseTuple(args, "|O&:in_wchstr", _PyLong_UnsignedInt_Converter, &n)) {
+                goto exit;
+            }
+            break;
+        case 2:
+        case 3:
+            if (!PyArg_ParseTuple(args, "ii|O&:in_wchstr", &y, &x, _PyLong_UnsignedInt_Converter, &n)) {
+                goto exit;
+            }
+            group_left_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "_curses.window.in_wchstr requires 0 to 3 arguments");
+            goto exit;
+    }
+    return_value = _curses_window_in_wchstr_impl((PyCursesWindowObject *)self, group_left_1, y, x, n);
 
 exit:
     return return_value;
@@ -1640,8 +2003,8 @@ _curses_window_insstr(PyObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOO&:insstr", &y, &x, &str, attr_converter, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.insstr requires 1 to 4 arguments");
@@ -1717,8 +2080,8 @@ _curses_window_insnstr(PyObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOiO&:insnstr", &y, &x, &str, &n, attr_converter, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.insnstr requires 2 to 5 arguments");
@@ -2328,8 +2691,8 @@ _curses_window_vline(PyObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOiO&:vline", &y, &x, &ch, &n, attr_converter, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.vline requires 2 to 5 arguments");
@@ -4684,16 +5047,15 @@ PyDoc_STRVAR(_curses_pair_number__doc__,
     {"pair_number", (PyCFunction)_curses_pair_number, METH_O, _curses_pair_number__doc__},
 
 static PyObject *
-_curses_pair_number_impl(PyObject *module, int attr);
+_curses_pair_number_impl(PyObject *module, attr_t attr);
 
 static PyObject *
 _curses_pair_number(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    int attr;
+    attr_t attr;
 
-    attr = PyLong_AsInt(arg);
-    if (attr == -1 && PyErr_Occurred()) {
+    if (!attr_converter(arg, &attr)) {
         goto exit;
     }
     return_value = _curses_pair_number_impl(module, attr);
@@ -5411,10 +5773,12 @@ PyDoc_STRVAR(_curses_unctrl__doc__,
 "unctrl($module, ch, /)\n"
 "--\n"
 "\n"
-"Return a string which is a printable representation of the character ch.\n"
+"Return a bytes object which is a printable representation of ch.\n"
 "\n"
-"Control characters are displayed as a caret followed by the character,\n"
-"for example as ^C.  Printing characters are left as they are.");
+"Control characters are displayed as a caret followed by the\n"
+"character, for example as ^C.  Printing characters are left as they\n"
+"are.  Any attributes and color pair are ignored.  ch must fit in a\n"
+"single byte; use wunctrl() for other characters.");
 
 #define _CURSES_UNCTRL_METHODDEF    \
     {"unctrl", (PyCFunction)_curses_unctrl, METH_O, _curses_unctrl__doc__},
@@ -5675,16 +6039,15 @@ PyDoc_STRVAR(_curses_slk_attron__doc__,
     {"slk_attron", (PyCFunction)_curses_slk_attron, METH_O, _curses_slk_attron__doc__},
 
 static PyObject *
-_curses_slk_attron_impl(PyObject *module, long attr);
+_curses_slk_attron_impl(PyObject *module, attr_t attr);
 
 static PyObject *
 _curses_slk_attron(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    long attr;
+    attr_t attr;
 
-    attr = PyLong_AsLong(arg);
-    if (attr == -1 && PyErr_Occurred()) {
+    if (!attr_converter(arg, &attr)) {
         goto exit;
     }
     return_value = _curses_slk_attron_impl(module, attr);
@@ -5703,16 +6066,15 @@ PyDoc_STRVAR(_curses_slk_attroff__doc__,
     {"slk_attroff", (PyCFunction)_curses_slk_attroff, METH_O, _curses_slk_attroff__doc__},
 
 static PyObject *
-_curses_slk_attroff_impl(PyObject *module, long attr);
+_curses_slk_attroff_impl(PyObject *module, attr_t attr);
 
 static PyObject *
 _curses_slk_attroff(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    long attr;
+    attr_t attr;
 
-    attr = PyLong_AsLong(arg);
-    if (attr == -1 && PyErr_Occurred()) {
+    if (!attr_converter(arg, &attr)) {
         goto exit;
     }
     return_value = _curses_slk_attroff_impl(module, attr);
@@ -5731,16 +6093,15 @@ PyDoc_STRVAR(_curses_slk_attrset__doc__,
     {"slk_attrset", (PyCFunction)_curses_slk_attrset, METH_O, _curses_slk_attrset__doc__},
 
 static PyObject *
-_curses_slk_attrset_impl(PyObject *module, long attr);
+_curses_slk_attrset_impl(PyObject *module, attr_t attr);
 
 static PyObject *
 _curses_slk_attrset(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    long attr;
+    attr_t attr;
 
-    attr = PyLong_AsLong(arg);
-    if (attr == -1 && PyErr_Occurred()) {
+    if (!attr_converter(arg, &attr)) {
         goto exit;
     }
     return_value = _curses_slk_attrset_impl(module, attr);
@@ -6055,6 +6416,10 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_WINDOW_COLOR_SET_METHODDEF
 #endif /* !defined(_CURSES_WINDOW_COLOR_SET_METHODDEF) */
 
+#ifndef _CURSES_WINDOW_CHGAT_METHODDEF
+    #define _CURSES_WINDOW_CHGAT_METHODDEF
+#endif /* !defined(_CURSES_WINDOW_CHGAT_METHODDEF) */
+
 #ifndef _CURSES_WINDOW_ENCLOSE_METHODDEF
     #define _CURSES_WINDOW_ENCLOSE_METHODDEF
 #endif /* !defined(_CURSES_WINDOW_ENCLOSE_METHODDEF) */
@@ -6238,4 +6603,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=ae1359964feefd64 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5616d0371c2240be input=a9049054013a1b77]*/

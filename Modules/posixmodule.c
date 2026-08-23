@@ -21,6 +21,7 @@
 #include "pycore_import.h"        // _PyImport_AcquireLock()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_jit_unwind.h"    // _Py_jit_debug_mutex
+#include "pycore_lock.h"          // PyMutex_LockFast()
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_LookupSpecial()
@@ -66,6 +67,10 @@
 
 #ifdef __EMSCRIPTEN__
 #  include "emscripten.h"         // emscripten_debugger()
+#endif
+
+#ifdef HAVE_SYS_RANDOM_H
+#  include <sys/random.h>         // getrandom()
 #endif
 
 #ifdef HAVE_SYS_UIO_H
@@ -153,8 +158,8 @@
 #ifdef HAVE_LINUX_RANDOM_H
 #  include <linux/random.h>       // GRND_RANDOM
 #endif
-#ifdef HAVE_GETRANDOM_SYSCALL
-#  include <sys/syscall.h>        // syscall()
+#ifdef HAVE_SYS_SYSCALL_H
+#  include <sys/syscall.h>        // syscall(), __NR_xxx syscall numbers
 #endif
 
 #ifdef HAVE_POSIX_SPAWN
@@ -504,6 +509,8 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #  define HAVE_MKFIFOAT_RUNTIME __builtin_available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 #  define HAVE_MKNODAT_RUNTIME __builtin_available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 #  define HAVE_PTSNAME_R_RUNTIME __builtin_available(macOS 10.13.4, iOS 11.3, tvOS 11.3, watchOS 4.3, *)
+#  define HAVE_DUP3_RUNTIME __builtin_available(macOS 27.0, *)
+#  define HAVE_PIPE2_RUNTIME __builtin_available(macOS 27.0, *)
 
 #  define HAVE_POSIX_SPAWN_SETSID_RUNTIME __builtin_available(macOS 10.15, *)
 
@@ -589,6 +596,14 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #    define HAVE_PTSNAME_R_RUNTIME (ptsname_r != NULL)
 #  endif
 
+#  ifdef HAVE_DUP3
+#    define HAVE_DUP3_RUNTIME (dup3 != NULL)
+#  endif
+
+#  ifdef HAVE_PIPE2
+#    define HAVE_PIPE2_RUNTIME (pipe2 != NULL)
+#  endif
+
 #endif
 
 #ifdef HAVE_FUTIMESAT
@@ -619,6 +634,8 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #  define HAVE_MKFIFOAT_RUNTIME 1
 #  define HAVE_MKNODAT_RUNTIME 1
 #  define HAVE_PTSNAME_R_RUNTIME 1
+#  define HAVE_DUP3_RUNTIME 1
+#  define HAVE_PIPE2_RUNTIME 1
 #endif
 
 
@@ -7508,7 +7525,7 @@ os_execv_impl(PyObject *module, path_t *path, PyObject *argv)
 
     /* If we get here it's definitely an error */
 
-    posix_error();
+    posix_path_error(path);
     free_string_array(argvlist, argc);
     return NULL;
 }
@@ -10798,8 +10815,9 @@ os_wait_impl(PyObject *module)
 
 
 // This system call always crashes on older Android versions.
-#if defined(__linux__) && defined(__NR_pidfd_open) && \
-    !(defined(__ANDROID__) && __ANDROID_API__ < 31)
+#if defined(HAVE_PIDFD_OPEN) \
+    || (defined(__linux__) && defined(__NR_pidfd_open) \
+        && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
 /*[clinic input]
 os.pidfd_open
   pid: pid_t
@@ -10815,7 +10833,11 @@ static PyObject *
 os_pidfd_open_impl(PyObject *module, pid_t pid, unsigned int flags)
 /*[clinic end generated code: output=5c7252698947dc41 input=03058b32c389f874]*/
 {
+#ifdef HAVE_PIDFD_OPEN
+    int fd = pidfd_open(pid, flags);
+#else
     int fd = syscall(__NR_pidfd_open, pid, flags);
+#endif
     if (fd < 0) {
         return posix_error();
     }
@@ -10824,8 +10846,9 @@ os_pidfd_open_impl(PyObject *module, pid_t pid, unsigned int flags)
 #endif
 
 
-#if defined(__linux__) && defined(__NR_pidfd_getfd) && \
-    !(defined(__ANDROID__) && __ANDROID_API__ < 31)
+#if defined(HAVE_PIDFD_GETFD) \
+    || (defined(__linux__) && defined(__NR_pidfd_getfd) \
+        && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
 /*[clinic input]
 os.pidfd_getfd
   pidfd: int
@@ -10844,7 +10867,11 @@ os_pidfd_getfd_impl(PyObject *module, int pidfd, int targetfd,
                     unsigned int flags)
 /*[clinic end generated code: output=e1a1415a13c7137f input=ef6417fb10deb1cc]*/
 {
+#ifdef HAVE_PIDFD_GETFD
+    int fd = pidfd_getfd(pidfd, targetfd, flags);
+#else
     int fd = syscall(__NR_pidfd_getfd, pidfd, targetfd, flags);
+#endif
     if (fd < 0) {
         return posix_error();
     }
@@ -11866,11 +11893,16 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
 /*[clinic end generated code: output=bc059d34a73404d1 input=c3cddda8922b038d]*/
 {
     int res = 0;
-#if defined(HAVE_DUP3) && \
-    !(defined(HAVE_FCNTL_H) && defined(F_DUP2FD_CLOEXEC))
-    /* dup3() is available on Linux 2.6.27+ and glibc 2.9 */
-    static int dup3_works = -1;
-#endif
+
+    /* dup3() is available on Linux 2.6.27+ and glibc 2.9 and macOS 27.0;
+     * it needs runtime detection for the case of running on older kernels.
+     * Values: -1: unknown; 0: doesn't work; 1: works
+     * For thread safety, use a process-global with one read & one store,
+     * both relaxed. (It's fine if two threads race and do the detection
+     * simultaneously; they should get the same result.)
+     */
+    static int dup3_works_atomic = -1;
+    (void) dup3_works_atomic;  // unused on some platforms
 
     /* dup2() can fail with EINTR if the target FD is already open, because it
      * then has to be closed. See os_close_impl() for why we don't handle EINTR
@@ -11909,17 +11941,26 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
 #else
 
 #ifdef HAVE_DUP3
+    int dup3_works = FT_ATOMIC_LOAD_INT_RELAXED(dup3_works_atomic);
     if (!inheritable && dup3_works != 0) {
-        Py_BEGIN_ALLOW_THREADS
-        res = dup3(fd, fd2, O_CLOEXEC);
-        Py_END_ALLOW_THREADS
-        if (res < 0) {
-            if (dup3_works == -1)
-                dup3_works = (errno != ENOSYS);
-            if (dup3_works) {
-                posix_error();
-                return -1;
+        if (HAVE_DUP3_RUNTIME) {
+            Py_BEGIN_ALLOW_THREADS
+            res = dup3(fd, fd2, O_CLOEXEC);
+            Py_END_ALLOW_THREADS
+            if (res < 0) {
+                if (dup3_works == -1) {
+                    dup3_works = (errno != ENOSYS);
+                    FT_ATOMIC_STORE_INT_RELAXED(dup3_works_atomic, dup3_works);
+                }
+                if (dup3_works) {
+                    posix_error();
+                    return -1;
+                }
             }
+        }
+        else {
+            dup3_works = 0;
+            FT_ATOMIC_STORE_INT_RELAXED(dup3_works_atomic, dup3_works);
         }
     }
 
@@ -12011,7 +12052,7 @@ static Py_off_t
 os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how)
 /*[clinic end generated code: output=971e1efb6b30bd2f input=32ea0788da7cb44b]*/
 {
-    Py_off_t result;
+    Py_off_t result = -1;
 
 #ifdef SEEK_SET
     /* Turn 0, 1, 2 into SEEK_{SET,CUR,END} */
@@ -12025,14 +12066,21 @@ os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how)
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
-    result = _lseeki64(fd, position, how);
+    HANDLE h = (HANDLE)_get_osfhandle(fd);
+    if (h != INVALID_HANDLE_VALUE && GetFileType(h) == FILE_TYPE_PIPE) {
+        errno = ESPIPE;
+    }
+    else {
+        result = _lseeki64(fd, position, how);
+    }
 #else
     result = lseek(fd, position, how);
 #endif
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
-    if (result < 0)
+    if (result < 0) {
         posix_error();
+    }
 
     return result;
 }
@@ -12761,7 +12809,13 @@ os_pipe_impl(PyObject *module)
     SECURITY_ATTRIBUTES attr;
     BOOL ok;
 #else
-    int res;
+    int res = -1;
+
+    /* pipe2() is available on some newer linux/glibc & macOS;
+     * use the same runtime detection as for dup3 above.
+     */
+    static int pipe2_works_atomic = -1;
+    (void) pipe2_works_atomic;  // unused on some platforms
 #endif
 
 #ifdef MS_WINDOWS
@@ -12787,11 +12841,30 @@ os_pipe_impl(PyObject *module)
 #else
 
 #ifdef HAVE_PIPE2
-    Py_BEGIN_ALLOW_THREADS
-    res = pipe2(fds, O_CLOEXEC);
-    Py_END_ALLOW_THREADS
+    int pipe2_works = FT_ATOMIC_LOAD_INT_RELAXED(pipe2_works_atomic);
+    if (pipe2_works != 0) {
+        if (HAVE_PIPE2_RUNTIME) {
+            Py_BEGIN_ALLOW_THREADS
+            res = pipe2(fds, O_CLOEXEC);
+            Py_END_ALLOW_THREADS
+            if (pipe2_works == -1) {
+                if (res != 0 && errno == ENOSYS) {
+                    pipe2_works = 0;
+                }
+                else {
+                    // pipe2 is present but this call failed
+                    pipe2_works = 1;
+                }
+                FT_ATOMIC_STORE_INT_RELAXED(pipe2_works_atomic, pipe2_works);
+            }
+        }
+        else {
+            pipe2_works = 0;
+            FT_ATOMIC_STORE_INT_RELAXED(pipe2_works_atomic, pipe2_works);
+        }
+    }
 
-    if (res != 0 && errno == ENOSYS)
+    if (pipe2_works == 0)
     {
 #endif
         Py_BEGIN_ALLOW_THREADS
@@ -12814,8 +12887,9 @@ os_pipe_impl(PyObject *module)
     }
 #endif
 
-    if (res != 0)
+    if (res != 0) {
         return PyErr_SetFromErrno(PyExc_OSError);
+    }
 #endif /* !MS_WINDOWS */
     return Py_BuildValue("(ii)", fds[0], fds[1]);
 }
@@ -12845,9 +12919,17 @@ os_pipe2_impl(PyObject *module, int flags)
     int fds[2];
     int res;
 
-    res = pipe2(fds, flags);
-    if (res != 0)
+    if (HAVE_PIPE2_RUNTIME) {
+        res = pipe2(fds, flags);
+    }
+    else {
+        res = -1;
+        errno = ENOSYS;
+    }
+    if (res != 0) {
         return posix_error();
+    }
+
     return Py_BuildValue("(ii)", fds[0], fds[1]);
 }
 #endif /* HAVE_PIPE2 */
@@ -13052,7 +13134,12 @@ os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
 }
 #endif /* HAVE_PWRITEV */
 
-#ifdef HAVE_COPY_FILE_RANGE
+#if defined(HAVE_COPY_FILE_RANGE) || \
+    (defined(__linux__) && defined(__NR_copy_file_range))
+#  define _Py_HAVE_COPY_FILE_RANGE
+#endif
+
+#ifdef _Py_HAVE_COPY_FILE_RANGE
 /*[clinic input]
 
 os.copy_file_range
@@ -13104,7 +13191,13 @@ os_copy_file_range_impl(PyObject *module, int src, int dst, Py_ssize_t count,
 
     do {
         Py_BEGIN_ALLOW_THREADS
+#ifdef HAVE_COPY_FILE_RANGE
         ret = copy_file_range(src, p_offset_src, dst, p_offset_dst, count, flags);
+#else
+        /* Largefile support makes off_t 64-bit, as the kernel expects. */
+        ret = syscall(__NR_copy_file_range, src, p_offset_src, dst, p_offset_dst,
+                      count, flags);
+#endif
         Py_END_ALLOW_THREADS
     } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 
@@ -13114,7 +13207,7 @@ os_copy_file_range_impl(PyObject *module, int src, int dst, Py_ssize_t count,
 
     return PyLong_FromSsize_t(ret);
 }
-#endif /* HAVE_COPY_FILE_RANGE*/
+#endif /* _Py_HAVE_COPY_FILE_RANGE */
 
 #if (defined(HAVE_SPLICE) && !defined(_AIX))
 /*[clinic input]
@@ -15816,7 +15909,12 @@ os_urandom_impl(PyObject *module, Py_ssize_t size)
     return PyBytesWriter_Finish(writer);
 }
 
-#ifdef HAVE_MEMFD_CREATE
+#if defined(HAVE_MEMFD_CREATE) || \
+    (defined(__linux__) && defined(__NR_memfd_create) && defined(MFD_CLOEXEC))
+#  define _Py_HAVE_MEMFD_CREATE
+#endif
+
+#ifdef _Py_HAVE_MEMFD_CREATE
 /*[clinic input]
 os.memfd_create
 
@@ -15832,7 +15930,11 @@ os_memfd_create_impl(PyObject *module, PyObject *name, unsigned int flags)
     int fd;
     const char *bytes = PyBytes_AS_STRING(name);
     Py_BEGIN_ALLOW_THREADS
+#ifdef HAVE_MEMFD_CREATE
     fd = memfd_create(bytes, flags);
+#else
+    fd = syscall(__NR_memfd_create, bytes, flags);
+#endif
     Py_END_ALLOW_THREADS
     if (fd == -1) {
         return PyErr_SetFromErrno(PyExc_OSError);
@@ -15971,6 +16073,13 @@ os_get_terminal_size_impl(PyObject *module, int fd)
 
 #ifdef TERMSIZE_USE_IOCTL
     {
+        // On Android, stdout is probably not connected, and calling TIOCGWINSZ
+        // on an invalid file descriptor causes a log message "avc:  denied  {
+        // ioctl }". Some common tools such as pytest call get_terminal_size
+        // very often, so check it's a TTY first to avoid cluttering the log.
+        if (!isatty(fd))
+            return PyErr_SetFromErrno(PyExc_OSError);
+
         struct winsize w;
         if (ioctl(fd, TIOCGWINSZ, &w))
             return PyErr_SetFromErrno(PyExc_OSError);
@@ -16877,6 +16986,13 @@ typedef struct {
 #ifdef HAVE_FDOPENDIR
     int fd;
 #endif
+    // Sharing the iterator between threads is subject to race conditions:
+    // which entries each thread receives is unspecified.  It must not
+    // corrupt the iterator or crash.  Since we don't want close() to be
+    // held up by a blocking directory read, we set the 'closed' flag if
+    // there are reads in progress.
+    PyMutex read_mutex;
+    uint8_t closed;
 } ScandirIterator;
 
 #define ScandirIterator_CAST(op)    ((ScandirIterator *)(op))
@@ -16886,61 +17002,83 @@ typedef struct {
 static int
 ScandirIterator_is_closed(ScandirIterator *iterator)
 {
-    return iterator->handle == INVALID_HANDLE_VALUE;
+    return _Py_atomic_load_uint8(&iterator->closed);
 }
 
 static void
 ScandirIterator_closedir(ScandirIterator *iterator)
 {
-    HANDLE handle = iterator->handle;
+    HANDLE handle = INVALID_HANDLE_VALUE;
 
-    if (handle == INVALID_HANDLE_VALUE)
-        return;
+    _Py_atomic_store_uint8(&iterator->closed, 1);
+    if (PyMutex_LockFast(&iterator->read_mutex)) {
+        // no reads in progress, we can close the handle
+        handle = iterator->handle;
+        iterator->handle = INVALID_HANDLE_VALUE;
+        PyMutex_Unlock(&iterator->read_mutex);
+    }
 
-    iterator->handle = INVALID_HANDLE_VALUE;
-    Py_BEGIN_ALLOW_THREADS
-    FindClose(handle);
-    Py_END_ALLOW_THREADS
+    if (handle != INVALID_HANDLE_VALUE) {
+        Py_BEGIN_ALLOW_THREADS
+        FindClose(handle);
+        Py_END_ALLOW_THREADS
+    }
 }
 
 static PyObject *
 ScandirIterator_iternext(PyObject *op)
 {
     ScandirIterator *iterator = ScandirIterator_CAST(op);
-    WIN32_FIND_DATAW *file_data = &iterator->file_data;
+    WIN32_FIND_DATAW file_data;
     BOOL success;
-    PyObject *entry;
+    DWORD error = ERROR_SUCCESS;
+    int found = 0;
 
+    PyMutex_Lock(&iterator->read_mutex);
     /* Happens if the iterator is iterated twice, or closed explicitly */
-    if (iterator->handle == INVALID_HANDLE_VALUE)
-        return NULL;
-
-    while (1) {
+    while (iterator->handle != INVALID_HANDLE_VALUE &&
+           !_Py_atomic_load_uint8_relaxed(&iterator->closed))
+    {
         if (!iterator->first_time) {
             Py_BEGIN_ALLOW_THREADS
-            success = FindNextFileW(iterator->handle, file_data);
+            success = FindNextFileW(iterator->handle, &iterator->file_data);
+            if (!success) {
+                error = GetLastError();
+            }
             Py_END_ALLOW_THREADS
             if (!success) {
-                /* Error or no more files */
-                if (GetLastError() != ERROR_NO_MORE_FILES)
-                    path_error(&iterator->path);
                 break;
             }
         }
         iterator->first_time = 0;
 
         /* Skip over . and .. */
-        if (wcscmp(file_data->cFileName, L".") != 0 &&
-            wcscmp(file_data->cFileName, L"..") != 0)
+        if (wcscmp(iterator->file_data.cFileName, L".") != 0 &&
+            wcscmp(iterator->file_data.cFileName, L"..") != 0)
         {
-            PyObject *module = PyType_GetModule(Py_TYPE(iterator));
-            entry = DirEntry_from_find_data(module, &iterator->path, file_data);
-            if (!entry)
-                break;
-            return entry;
+            file_data = iterator->file_data;
+            found = 1;
+            break;
         }
 
         /* Loop till we get a non-dot directory or finish iterating */
+    }
+    PyMutex_Unlock(&iterator->read_mutex);
+
+    if (found && ScandirIterator_is_closed(iterator)) {
+        ScandirIterator_closedir(iterator); // deferred close
+    }
+
+    if (found) {
+        PyObject *module = PyType_GetModule(Py_TYPE(iterator));
+        PyObject *entry = DirEntry_from_find_data(module, &iterator->path, &file_data);
+        if (entry != NULL) {
+            return entry;
+        }
+    }
+    else if (error != ERROR_SUCCESS && error != ERROR_NO_MORE_FILES) {
+        SetLastError(error);
+        path_error(&iterator->path);
     }
 
     /* Error or no more files */
@@ -16953,27 +17091,32 @@ ScandirIterator_iternext(PyObject *op)
 static int
 ScandirIterator_is_closed(ScandirIterator *iterator)
 {
-    return !iterator->dirp;
+    return _Py_atomic_load_uint8(&iterator->closed);
 }
 
 static void
 ScandirIterator_closedir(ScandirIterator *iterator)
 {
-    DIR *dirp = iterator->dirp;
+    DIR *dirp = NULL;
 
-    if (!dirp)
-        return;
-
-    iterator->dirp = NULL;
-    Py_BEGIN_ALLOW_THREADS
-#ifdef HAVE_FDOPENDIR
-    if (iterator->path.is_fd) {
-        rewinddir(dirp);
+    _Py_atomic_store_uint8(&iterator->closed, 1);
+    if (PyMutex_LockFast(&iterator->read_mutex)) {
+        // no reads in progress, we can close dirp
+        dirp = iterator->dirp;
+        iterator->dirp = NULL;
+        PyMutex_Unlock(&iterator->read_mutex);
     }
+
+    if (dirp != NULL) {
+        Py_BEGIN_ALLOW_THREADS
+#ifdef HAVE_FDOPENDIR
+        if (iterator->path.is_fd) {
+            rewinddir(dirp);
+        }
 #endif
-    closedir(dirp);
-    Py_END_ALLOW_THREADS
-    return;
+        closedir(dirp);
+        Py_END_ALLOW_THREADS
+    }
 }
 
 static PyObject *
@@ -16981,24 +17124,32 @@ ScandirIterator_iternext(PyObject *op)
 {
     ScandirIterator *iterator = ScandirIterator_CAST(op);
     struct dirent *direntp;
-    Py_ssize_t name_len;
+    Py_ssize_t name_len = 0;
     int is_dot;
-    PyObject *entry;
+    int found = 0;
+    int error = 0;
+    int no_memory = 0;
+    char namebuf[256];
+    char *name = namebuf;
+    ino_t d_ino = 0;
+#ifdef HAVE_DIRENT_D_TYPE
+    unsigned char d_type = 0;
+#endif
 
+    PyMutex_Lock(&iterator->read_mutex);
     /* Happens if the iterator is iterated twice, or closed explicitly */
-    if (!iterator->dirp)
-        return NULL;
-
-    while (1) {
-        errno = 0;
+    while (iterator->dirp != NULL &&
+           !_Py_atomic_load_uint8_relaxed(&iterator->closed))
+    {
         Py_BEGIN_ALLOW_THREADS
+        errno = 0;
         direntp = readdir(iterator->dirp);
+        if (direntp == NULL) {
+            error = errno;
+        }
         Py_END_ALLOW_THREADS
 
         if (!direntp) {
-            /* Error or no more files */
-            if (errno != 0)
-                path_error(&iterator->path);
             break;
         }
 
@@ -17007,20 +17158,53 @@ ScandirIterator_iternext(PyObject *op)
         is_dot = direntp->d_name[0] == '.' &&
                  (name_len == 1 || (direntp->d_name[1] == '.' && name_len == 2));
         if (!is_dot) {
-            PyObject *module = PyType_GetModule(Py_TYPE(iterator));
-            entry = DirEntry_from_posix_info(module,
-                                             &iterator->path, direntp->d_name,
-                                             name_len, direntp->d_ino
+            if ((size_t)name_len >= sizeof(namebuf)) {
+                name = PyMem_RawMalloc(name_len + 1);
+                if (name == NULL) {
+                    no_memory = 1;
+                    break;
+                }
+            }
+            memcpy(name, direntp->d_name, name_len);
+            name[name_len] = '\0';
+            d_ino = direntp->d_ino;
 #ifdef HAVE_DIRENT_D_TYPE
-                                             , direntp->d_type
+            d_type = direntp->d_type;
 #endif
-                                            );
-            if (!entry)
-                break;
-            return entry;
+            found = 1;
+            break;
         }
 
         /* Loop till we get a non-dot directory or finish iterating */
+    }
+    PyMutex_Unlock(&iterator->read_mutex);
+
+    if (found && ScandirIterator_is_closed(iterator)) {
+        ScandirIterator_closedir(iterator); // deferred close
+    }
+
+    if (found) {
+        PyObject *module = PyType_GetModule(Py_TYPE(iterator));
+        PyObject *entry = DirEntry_from_posix_info(module,
+                                                   &iterator->path, name,
+                                                   name_len, d_ino
+#ifdef HAVE_DIRENT_D_TYPE
+                                                   , d_type
+#endif
+                                                  );
+        if (name != namebuf) {
+            PyMem_RawFree(name);
+        }
+        if (entry != NULL) {
+            return entry;
+        }
+    }
+    else if (no_memory) {
+        PyErr_NoMemory();
+    }
+    else if (error != 0) {
+        errno = error;
+        path_error(&iterator->path);
     }
 
     /* Error or no more files */
@@ -17059,9 +17243,11 @@ ScandirIterator_finalize(PyObject *op)
     /* Save the current exception, if any. */
     PyObject *exc = PyErr_GetRaisedException();
 
-    if (!ScandirIterator_is_closed(iterator)) {
-        ScandirIterator_closedir(iterator);
+    int was_closed = ScandirIterator_is_closed(iterator);
 
+    ScandirIterator_closedir(iterator);
+
+    if (!was_closed) {
         if (PyErr_ResourceWarning(op, 1,
                                   "unclosed scandir iterator %R", iterator))
         {
@@ -17159,6 +17345,8 @@ os_scandir_impl(PyObject *module, path_t *path)
     if (!iterator)
         return NULL;
 
+    iterator->read_mutex = (PyMutex){0};
+    iterator->closed = 1;
 #ifdef MS_WINDOWS
     iterator->handle = INVALID_HANDLE_VALUE;
 #else
@@ -17231,6 +17419,7 @@ os_scandir_impl(PyObject *module, path_t *path)
     }
 #endif
 
+    iterator->closed = 0;
     return (PyObject *)iterator;
 
 error:
@@ -17302,19 +17491,19 @@ os_fspath_impl(PyObject *module, PyObject *path)
     return PyOS_FSPath(path);
 }
 
-#ifdef HAVE_GETRANDOM_SYSCALL
+#if defined(HAVE_GETRANDOM) || defined(HAVE_GETRANDOM_SYSCALL)
 /*[clinic input]
 os.getrandom
 
     size: Py_ssize_t
-    flags: int=0
+    flags: unsigned_int(bitwise=True) = 0
 
 Obtain a series of random bytes.
 [clinic start generated code]*/
 
 static PyObject *
-os_getrandom_impl(PyObject *module, Py_ssize_t size, int flags)
-/*[clinic end generated code: output=b3a618196a61409c input=59bafac39c594947]*/
+os_getrandom_impl(PyObject *module, Py_ssize_t size, unsigned int flags)
+/*[clinic end generated code: output=c2163c05f0e1d0a1 input=e0174983f5703f82]*/
 {
     if (size < 0) {
         errno = EINVAL;
@@ -17329,7 +17518,11 @@ os_getrandom_impl(PyObject *module, Py_ssize_t size, int flags)
 
     Py_ssize_t n;
     while (1) {
+#ifdef HAVE_GETRANDOM
+        n = getrandom(data, size, flags);
+#else
         n = syscall(SYS_getrandom, data, size, flags);
+#endif
         if (n < 0 && errno == EINTR) {
             if (PyErr_CheckSignals() < 0) {
                 goto error;
@@ -18437,11 +18630,11 @@ all_ins(PyObject *m)
     if (PyModule_AddIntMacro(m, RTLD_MEMBER)) return -1;
 #endif
 
-#ifdef HAVE_GETRANDOM_SYSCALL
+#if defined(HAVE_GETRANDOM) || defined(HAVE_GETRANDOM_SYSCALL)
     if (PyModule_AddIntMacro(m, GRND_RANDOM)) return -1;
     if (PyModule_AddIntMacro(m, GRND_NONBLOCK)) return -1;
 #endif
-#ifdef HAVE_MEMFD_CREATE
+#ifdef _Py_HAVE_MEMFD_CREATE
     if (PyModule_AddIntMacro(m, MFD_CLOEXEC)) return -1;
     if (PyModule_AddIntMacro(m, MFD_ALLOW_SEALING)) return -1;
 #ifdef MFD_HUGETLB
@@ -18489,7 +18682,7 @@ all_ins(PyObject *m)
 #ifdef MFD_HUGE_16GB
     if (PyModule_AddIntMacro(m, MFD_HUGE_16GB)) return -1;
 #endif
-#endif /* HAVE_MEMFD_CREATE */
+#endif /* _Py_HAVE_MEMFD_CREATE */
 
 #if defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC)
     if (PyModule_AddIntMacro(m, EFD_CLOEXEC)) return -1;
@@ -18745,7 +18938,7 @@ static const struct have_function {
     { "HAVE_LUTIMES", NULL },
 #endif
 
-#ifdef HAVE_MEMFD_CREATE
+#ifdef _Py_HAVE_MEMFD_CREATE
     { "HAVE_MEMFD_CREATE", NULL },
 #endif
 
@@ -18832,6 +19025,22 @@ posixmodule_exec(PyObject *m)
     else {
         state->StatxResultType = PyType_FromModuleAndSpec(m, &pystatx_result_spec, NULL);
         if (PyModule_AddObjectRef(m, "statx_result", state->StatxResultType) < 0) {
+            return -1;
+        }
+    }
+#endif
+
+#if HAVE_PIPE2
+    if (HAVE_PIPE2_RUNTIME) {
+        // Do nothing. (`__builtin_available` doesn't allow `!`; see
+        // "using negations" in a comment above.)
+    }
+    else {
+        PyObject* dct = PyModule_GetDict(m);
+        if (dct == NULL) {
+            return -1;
+        }
+        if (PyDict_PopString(dct, "pipe2", NULL) < 0) {
             return -1;
         }
     }
