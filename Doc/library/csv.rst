@@ -314,8 +314,8 @@ The :mod:`!csv` module defines the following classes:
 
       If several delimiters fit the sample equally well ---
       for example if both ``','`` and ``';'`` split every row consistently ---
-      the delimiters ``','``, ``'\t'``, ``';'``, ``' '`` and ``':'``
-      are preferred, in this order,
+      the delimiters listed in the :attr:`~Sniffer.preferred` attribute
+      are preferred, in that order,
       no matter how many times each of them occurs.
 
    .. method:: has_header(sample)
@@ -336,6 +336,15 @@ The :mod:`!csv` module defines the following classes:
 
       This method is a rough heuristic and may produce both false positives and
       negatives.
+
+   The :class:`Sniffer` class has the following attribute:
+
+   .. attribute:: preferred
+
+      The list of the delimiters preferred for breaking ties,
+      in the order of preference.
+      It can be modified.
+      Its initial value is ``[',', '\t', ';', ' ', ':']``.
 
 An example for :class:`Sniffer` use::
 
