@@ -2723,7 +2723,7 @@ class DisColoredTests(unittest.TestCase):
             return a
 
         out = self.get_colored_output(f)
-        self.assertOpColoredAs(out, "LOAD_FAST_BORROW", theme.opname)
+        self.assertOpColoredAs(out, "LOAD_FAST_BORROW", theme.load_opname)
         self.assertOpColoredAs(out, "RETURN_VALUE", theme.opname)
         self.assertOpColoredAs(out, "0", theme.arg)
 
@@ -2740,19 +2740,19 @@ class DisColoredTests(unittest.TestCase):
         self.assertOpColoredAs(out, "FOR_ITER", theme.opname_with_label)
         self.assertOpColoredAs(out, "END_FOR", theme.opname_with_label)
 
-        opnames = (
-            "RESUME",
-            "LOAD_FAST",
-            "GET_ITER",
-            "STORE_FAST",
-            "JUMP_BACKWARD",
-            "POP_ITER",
-            "LOAD_COMMON_CONSTANT",
-            "RETURN_VALUE",
+        cases = (
+            ("RESUME", theme.opname),
+            ("LOAD_FAST", theme.load_opname),
+            ("GET_ITER", theme.opname),
+            ("STORE_FAST", theme.opname),
+            ("JUMP_BACKWARD", theme.opname),
+            ("POP_ITER", theme.pop_opname),
+            ("LOAD_COMMON_CONSTANT", theme.load_opname),
+            ("RETURN_VALUE", theme.opname),
         )
 
-        for opname in opnames:
-            self.assertOpColoredAs(out, opname, theme.opname)
+        for opname, expected_color in cases:
+            self.assertOpColoredAs(out, opname, expected_color)
 
     def test_jump_targets_colored(self):
         # sample code from:

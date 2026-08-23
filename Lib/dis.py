@@ -538,7 +538,11 @@ class Formatter:
         else:
             fields.append('   ')
         # Column: Opcode name
-        opname_color = theme.opname_with_label if instr.label is not None else theme.opname
+        if (instr.label is not None) and (theme.opname_with_label is not None):
+            opname_color = theme.opname_with_label
+        else:
+            opname_color = theme.color_from_opname(instr.opname)
+
         fields.append(f"{opname_color}{instr.opname.ljust(_OPNAME_WIDTH)}{theme.reset}")
         # Column: Opcode argument
         if instr.arg is not None:

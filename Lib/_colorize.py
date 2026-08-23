@@ -224,13 +224,24 @@ class Dis(ThemeSection):
     jump_target: str = ANSIColors.GREEN
     exception_label: str = ANSIColors.GREEN
 
-    opname: str = ANSIColors.BLUE
-    opname_with_label: str = ANSIColors.GREEN
+    opname: str | None = ANSIColors.BLUE
+    opname_with_label: str | None = ANSIColors.GREEN
 
     arg: str = ANSIColors.YELLOW
 
+    load_opname: str = ANSIColors.BLUE
+    pop_opname: str = ANSIColors.BLUE
+
     reset: str = ANSIColors.RESET
 
+    def color_from_opname(self, opname: str) -> str:
+        if opname.startswith("LOAD_"):
+            return self.load_opname
+
+        if opname.startswith("POP_"):
+            return self.pop_opname
+
+        return self.opname or self.reset
 
 @dataclass(frozen=True, kw_only=True)
 class FancyCompleter(ThemeSection):
