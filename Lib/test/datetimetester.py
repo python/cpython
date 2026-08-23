@@ -2111,7 +2111,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             '2020 12',          # space in a basic-format field
             '+020-06-15',       # leading sign in the year
             '202012+9',         # '+' in the day field
-            '2020-W 5',         # space in the week day-of-week field
+            '2020-W 5',         # space in the week number
             '2020061',          # 7 chars: day slice reads a 1-character tail
             '2020-W2',          # 1-digit week number
             '٢025-03-09',       # Unicode characters
