@@ -921,13 +921,16 @@ class TestSSL(test_utils.TestCase):
         async def run():
             server = await asyncio.start_server(
                 serve, '127.0.0.1', 0, ssl=test_utils.simple_server_sslcontext())
-            self.addCleanup(server.close)
-            done = self.loop.create_future()
-            await self.loop.create_connection(
-                lambda: ClientProto(done),
-                *server.sockets[0].getsockname()[:2],
-                ssl=test_utils.simple_client_sslcontext())
-            self.assertEqual(await done, b''.join(CHUNKS))
+            try:
+                done = self.loop.create_future()
+                await self.loop.create_connection(
+                    lambda: ClientProto(done),
+                    *server.sockets[0].getsockname()[:2],
+                    ssl=test_utils.simple_client_sslcontext())
+                self.assertEqual(await done, b''.join(CHUNKS))
+            finally:
+                self.loop.call_soon(server.close)
+                await server.wait_closed()
 
         self.loop.run_until_complete(asyncio.wait_for(run(), timeout=self.TIMEOUT))
 
