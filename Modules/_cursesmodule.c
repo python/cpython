@@ -185,6 +185,14 @@ static int initialisedcolors = FALSE;
    while these functions are still in use. */
 static char *screen_encoding = NULL;
 
+/* ncurses and PDCurses store n characters and add a terminator; NetBSD
+   curses counts the terminator in n.  Ask an unknown library for one more. */
+#if defined(NCURSES_VERSION) || defined(PDCURSES)
+#  define CURSES_STR_EXTRA  0
+#else
+#  define CURSES_STR_EXTRA  1
+#endif
+
 /* Utility Macros */
 #define PyCursesSetupTermCalled                                         \
     if (initialised_setupterm != TRUE) {                                \
@@ -1839,13 +1847,13 @@ bytes are read.
 static PyObject *
 PyCursesWindow_InStr(PyCursesWindowObject *self, PyObject *args)
 {
-    int x, y, n;
+    int x = 0, y = 0, n;
     char rtn[1024]; /* This should be big enough.. I hope */
-    int rtn2;
+    int rtn2, use_xy = 0;
 
     switch (PyTuple_Size(args)) {
     case 0:
-        rtn2 = winnstr(self->win,rtn, 1023);
+        n = 1023;
         break;
     case 1:
         if (!PyArg_ParseTuple(args,"i;n", &n))
@@ -1854,12 +1862,13 @@ PyCursesWindow_InStr(PyCursesWindowObject *self, PyObject *args)
             PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
             return NULL;
         }
-        rtn2 = winnstr(self->win, rtn, Py_MIN(n, 1023));
+        n = Py_MIN(n, 1023);
         break;
     case 2:
         if (!PyArg_ParseTuple(args,"ii;y,x",&y,&x))
             return NULL;
-        rtn2 = mvwinnstr(self->win,y,x,rtn,1023);
+        n = 1023;
+        use_xy = 1;
         break;
     case 3:
         if (!PyArg_ParseTuple(args, "iii;y,x,n", &y, &x, &n))
@@ -1868,15 +1877,31 @@ PyCursesWindow_InStr(PyCursesWindowObject *self, PyObject *args)
             PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
             return NULL;
         }
-        rtn2 = mvwinnstr(self->win, y, x, rtn, Py_MIN(n,1023));
+        n = Py_MIN(n, 1023);
+        use_xy = 1;
         break;
     default:
         PyErr_SetString(PyExc_TypeError, "instr requires 0 or 3 arguments");
         return NULL;
     }
+
+    /* Read again if the library stored more than asked: truncating could
+       split a multibyte character. */
+    for (int ask = n + CURSES_STR_EXTRA; ; ask = n) {
+        if (use_xy) {
+            rtn2 = mvwinnstr(self->win, y, x, rtn, ask);
+        }
+        else {
+            rtn2 = winnstr(self->win, rtn, ask);
+        }
+        if (rtn2 == ERR || rtn2 <= n) {
+            break;
+        }
+    }
+
     if (rtn2 == ERR)
-        rtn[0] = 0;
-    return PyBytes_FromString(rtn);
+        return PyBytes_FromStringAndSize(NULL, 0);
+    return PyBytes_FromStringAndSize(rtn, rtn2);
 }
 
 /*[clinic input]
