@@ -313,6 +313,25 @@ def walk_definitions(
             yield from walk_definitions(module, module.name, depth + 1)
 
 
+def group_to_variable_name(group: int) -> str:
+    adjective = "left_" if group < 0 else "right_"
+    return "group_" + adjective + str(abs(group))
+
+
+def count_required(subset: ParamTuple) -> int:
+    """Return the number of arguments which cannot be omitted.
+
+    A parameter in an optional group is passed together with its group,
+    so only trailing parameters with a default value can be omitted.
+    """
+    count = len(subset)
+    for p in reversed(subset):
+        if p.group or not p.is_optional():
+            break
+        count -= 1
+    return count
+
+
 def permute_left_option_groups(
     l: Sequence[Iterable[Parameter]]
 ) -> Iterator[ParamTuple]:
