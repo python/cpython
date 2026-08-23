@@ -10,7 +10,7 @@ characteristics. Additionally, the listed costs assume exact built-in types, as
 instances of subclasses may have different costs.
 
 We use |big O notation|_ to describe how the running time of an operation grows
-with the size of its input. Unless stated otherwise, *n* denotes the number of
+with the size of its inputs. Unless stated otherwise, *n* denotes the number of
 elements currently in the container, and *k* is the value of a numeric
 parameter, such as an index or a repeat count.
 
@@ -33,42 +33,42 @@ If you need to add or remove at both ends, consider using a
 
    * - Operation
      - Complexity
-   * - Copy (``l.copy()``)
+   * - Copy (``L.copy()``)
      - *O*\ (*n*)
-   * - Append (``l.append(x)``) [1]_
+   * - Append (``L.append(x)``) [1]_
      - *O*\ (1)
-   * - Pop (``l.pop(k)``) [1]_ [2]_
+   * - Pop (``L.pop(k)``) [1]_ [2]_
      - *O*\ (*n* - *k*)
-   * - Insert (``l.insert(k, x)``) [1]_ [2]_
+   * - Insert (``L.insert(k, x)``) [1]_ [2]_
      - *O*\ (*n* - *k*)
-   * - Get item (``l[k]``)
+   * - Get item (``L[k]``)
      - *O*\ (1)
-   * - Set item (``l[k] = x``)
+   * - Set item (``L[k] = x``)
      - *O*\ (1)
-   * - Delete item (``del l[k]``) [2]_
+   * - Delete item (``del L[k]``) [2]_
      - *O*\ (*n* - *k*)
    * - Iteration
      - *O*\ (*n*)
-   * - Get slice (``l[i:j]``)
+   * - Get slice (``L[i:j]``)
      - *O*\ (*j* - *i*)
-   * - Set slice (``l[i:j] = t``) [1]_
+   * - Set slice (``L[i:j] = t``) [1]_
      - *O*\ (*j* - *i*) if len(*t*) == *j* - *i*,
        otherwise *O*\ (*n* - *i* + len(*t*))
-   * - Delete slice (``del l[i:j]``)
+   * - Delete slice (``del L[i:j]``)
      - *O*\ (*n* - *i*)
-   * - Extend (``l.extend(t)``) [1]_
+   * - Extend (``L.extend(t)``) [1]_ [3]_
      - *O*\ (len(*t*))
-   * - Sort (``l.sort()``) [3]_
+   * - Sort (``L.sort()``) [4]_
      - *O*\ (*n* log *n*)
-   * - Concatenate (``l1 + l2``)
-     - *O*\ (len(*l1*) + len(*l2*))
-   * - Multiply (``l * k``)
+   * - Concatenate (``L1 + L2``)
+     - *O*\ (len(*L1*) + len(*L2*))
+   * - Multiply (``L * k``)
      - *O*\ (*nk*)
-   * - ``x in l``
+   * - ``x in L``
      - *O*\ (*n*)
-   * - ``min(l)``, ``max(l)``
+   * - ``min(L)``, ``max(L)``
      - *O*\ (*n*)
-   * - Get length (``len(l)``) [4]_
+   * - Get length (``len(L)``) [5]_
      - *O*\ (1)
 
 
@@ -100,7 +100,7 @@ returns the same object, so is constant time (*O*\ (1)).
      - *O*\ (*n*)
    * - ``min(t)``, ``max(t)``
      - *O*\ (*n*)
-   * - Get length (``len(t)``) [4]_
+   * - Get length (``len(t)``) [5]_
      - *O*\ (1)
 
 
@@ -111,8 +111,9 @@ The times listed for dict objects are average-case times, as they assume the
 hash function for the objects is sufficiently robust to make collisions
 uncommon. They also assume the keys are well-distributed among the set of
 possible keys. In the worst case, when every key hashes to the same value,
-each of the *O*\ (1) operations below instead takes *O*\ (*n*) time. For more
-detail on the implementation, see :ref:`how-are-dictionaries-implemented`.
+each of the *O*\ (1) operations below instead takes *O*\ (*n*) time. They also
+assume that hashing and comparing a key is *O*\ (1). For more detail on the
+implementation, see :ref:`how-are-dictionaries-implemented`.
 
 A :class:`frozendict` is immutable, so it does not support setting, deleting,
 or updating items. The other operations below apply to it at the same costs.
@@ -124,19 +125,19 @@ or updating items. The other operations below apply to it at the same costs.
      - Complexity
    * - ``key in d``
      - *O*\ (1)
-   * - Copy (``d.copy()``) [5]_ [6]_
+   * - Copy (``d.copy()``) [6]_ [7]_
      - *O*\ (*n*)
-   * - Get item (``d[key]``)
+   * - Get item (``d[key]``, ``d.get(key)``)
      - *O*\ (1)
    * - Set item (``d[key] = value``) [1]_
      - *O*\ (1)
-   * - Delete item (``del d[key]``)
+   * - Delete item (``del d[key]``, ``d.pop(key)``)
      - *O*\ (1)
-   * - Update (``d.update(t)``) [1]_ [6]_
+   * - Update (``d.update(t)``, ``d |= t``) [1]_ [3]_ [7]_
      - *O*\ (len(*t*))
-   * - Iteration [6]_
+   * - Iteration [7]_
      - *O*\ (*n*)
-   * - Get length (``len(d)``) [4]_
+   * - Get length (``len(d)``) [5]_
      - *O*\ (1)
 
 
@@ -144,7 +145,7 @@ or updating items. The other operations below apply to it at the same costs.
 ==================================
 
 See :class:`dict` as the :class:`set` and :class:`frozenset` implementations are
-similar, and the same hash collision caveat applies.
+similar, and the same caveats apply.
 In the worst case, *O*\ (1) operations instead take *O*\ (*n*) time,
 and operations that look up every element degrade accordingly.
 
@@ -159,25 +160,29 @@ the same costs.
      - Complexity
    * - ``x in s``
      - *O*\ (1)
-   * - Copy (``s.copy()``) [5]_ [6]_
+   * - Copy (``s.copy()``) [6]_ [7]_
      - *O*\ (*n*)
    * - Add (``s.add(x)``) [1]_
      - *O*\ (1)
-   * - Discard (``s.discard(x)``)
+   * - Discard (``s.discard(x)``, ``s.remove(x)``)
      - *O*\ (1)
-   * - Union (``s1 | s2``) [6]_
+   * - Union (``s1 | s2``, ``s1.union(s2)``) [7]_
      - *O*\ (len(*s1*) + len(*s2*))
-   * - Intersection (``s1 & s2``, ``s1.intersection(s2)``) [6]_ [7]_
-     - *O*\ (min(len(*s1*), len(*s2*)))
-   * - Difference (``s1 - s2``, ``s1.difference(s2)``) [6]_ [8]_
-     - *O*\ (len(*s1*))
-   * - Difference update (``s1.difference_update(s2)``) [1]_ [6]_ [7]_
-     - *O*\ (min(len(*s1*), len(*s2*)))
-   * - Symmetric difference (``s1 ^ s2``) [6]_
-     - *O*\ (len(*s1*) + len(*s2*))
-   * - Symmetric difference update (``s1.symmetric_difference_update(s2)``) [1]_ [6]_
+   * - Update (``s1 |= s2``, ``s1.update(s2)``) [1]_ [7]_
      - *O*\ (len(*s2*))
-   * - Get length (``len(s)``) [4]_
+   * - Intersection (``s1 & s2``, ``s1.intersection(s2)``) [7]_ [8]_
+     - *O*\ (min(len(*s1*), len(*s2*)))
+   * - Intersection update (``s1 &= s2``, ``s1.intersection_update(s2)``) [1]_ [7]_ [8]_
+     - *O*\ (min(len(*s1*), len(*s2*)))
+   * - Difference (``s1 - s2``, ``s1.difference(s2)``) [7]_ [9]_
+     - *O*\ (len(*s1*))
+   * - Difference update (``s1 -= s2``, ``s1.difference_update(s2)``) [1]_ [7]_ [8]_
+     - *O*\ (min(len(*s1*), len(*s2*)))
+   * - Symmetric difference (``s1 ^ s2``, ``s1.symmetric_difference(s2)``) [7]_
+     - *O*\ (len(*s1*) + len(*s2*))
+   * - Symmetric difference update (``s1 ^= s2``, ``s1.symmetric_difference_update(s2)``) [1]_ [7]_
+     - *O*\ (len(*s2*))
+   * - Get length (``len(s)``) [5]_
      - *O*\ (1)
 
 
@@ -200,19 +205,19 @@ the buffer instead of moving the remaining bytes, and is amortized *O*\ (1).
      - *O*\ (1)
    * - Get slice (``s[i:j]``)
      - *O*\ (*j* - *i*)
-   * - Concatenate (``s + t``) [9]_
+   * - Concatenate (``s + t``) [10]_
      - *O*\ (len(*s*) + len(*t*))
    * - Multiply (``s * k``)
      - *O*\ (*nk*)
-   * - Substring search (``x in s``, ``s.find(x)``, ``s.index(x)``)
+   * - Substring search (``x in s``, ``s.find(x)``, ``s.index(x)``) [11]_
      - *O*\ (*n*)
-   * - Reverse substring search (``s.rfind(x)``, ``s.rindex(x)``) [10]_
+   * - Reverse substring search (``s.rfind(x)``, ``s.rindex(x)``) [11]_ [12]_
      - *O*\ (*n* × len(*x*))
-   * - Encode or decode
+   * - Encode or decode [13]_
      - *O*\ (*n*)
    * - Iteration
      - *O*\ (*n*)
-   * - Get length (``len(s)``) [4]_
+   * - Get length (``len(s)``) [5]_
      - *O*\ (1)
 
 
@@ -235,9 +240,13 @@ buffer.
      - *O*\ (1)
    * - Get slice (``v[i:j]``)
      - *O*\ (1)
+   * - Index (``v.index(x)``) [11]_ [14]_
+     - *O*\ (*n*)
+   * - Count (``v.count(x)``) [14]_
+     - *O*\ (*n*)
    * - Convert to bytes (``v.tobytes()``, ``bytes(v)``)
      - *O*\ (*n*)
-   * - Get length (``len(v)``) [4]_
+   * - Get length (``len(v)``) [5]_
      - *O*\ (1)
 
 
@@ -256,15 +265,15 @@ A :class:`range` object computes its items on demand from its *start*, *stop* an
      - *O*\ (1)
    * - Get slice (``r[i:j]``)
      - *O*\ (1)
-   * - ``x in r`` [11]_
+   * - ``x in r`` [15]_
      - *O*\ (1)
-   * - Index and count (``r.index(x)``, ``r.count(x)``) [11]_
+   * - Index and count (``r.index(x)``, ``r.count(x)``) [15]_
      - *O*\ (1)
    * - Iteration
      - *O*\ (*n*)
    * - ``min(r)``, ``max(r)``
      - *O*\ (*n*)
-   * - Get length (``len(r)``) [4]_
+   * - Get length (``len(r)``) [5]_
      - *O*\ (1)
 
 
@@ -284,34 +293,45 @@ Notes
    operations; and operating at the end of the list moves nothing and is
    *O*\ (1).
 
-.. [3] This is the worst case scenario. Sorting is adaptive and input that is
+.. [3] Plus the cost of iterating over *t*, which may be expensive for an
+   arbitrary iterable.
+
+.. [4] This is the worst case scenario. Sorting is adaptive and input that is
    already sorted or reverse-sorted takes only *O*\ (*n*) comparisons.
    See :source:`Objects/listsort.txt` for more information.
 
-.. [4] The number of elements is stored in the object, so ``len()`` does
+.. [5] The number of elements is stored in the object, so ``len()`` does
    not need to count them.
 
-.. [5] Copying a :class:`frozendict` or a :class:`frozenset` is *O*\ (1) as it
+.. [6] Copying a :class:`frozendict` or a :class:`frozenset` is *O*\ (1) as it
    returns the original object.
 
-.. [6] These operations scan the container's internal hash table, which is
+.. [7] These operations scan the container's internal hash table, which is
    not shrunk when elements are removed. After removing most elements, they
    still take time proportional to the container's former size, until a
    later insertion triggers a resize.
 
-.. [7] *O*\ (len(*t*)) if *t* is not a set.
+.. [8] *O*\ (len(*t*)) if *t* is not a set.
 
-.. [8] *O*\ (len(*s*) + len(*t*)) if *t* is not a set.
+.. [9] *O*\ (len(*s*) + len(*t*)) if *t* is not a set.
 
-.. [9] Each concatenation builds a new object, so building a string by
+.. [10] Each concatenation builds a new object, so building a string by
    concatenating many pieces in a loop is quadratic in the total length.
    See the :ref:`note on concatenating immutable sequences
    <typesseq-repeated-concatenation>` for alternatives.
 
-.. [10] This is the worst case. Reverse searches are *O*\ (*n*) on typical
+.. [11] With *start* and *end* arguments, *n* is the length of the region
+   searched rather than of *s*, and unlike slicing nothing is copied.
+
+.. [12] This is the worst case. Reverse searches are *O*\ (*n*) on typical
    input. Forward searches instead use a more elaborate algorithm with a
    linear worst case, described in
    :source:`Objects/stringlib/stringlib_find_two_way_notes.txt`.
 
-.. [11] Assuming :class:`int` or :class:`bool` arguments. For other types,
+.. [13] This assumes a codec that does a constant amount of work per character.
+
+.. [14] These unpack and compare each element individually, so they are much
+   slower than the equivalent :class:`bytes` methods.
+
+.. [15] Assuming :class:`int` or :class:`bool` arguments. For other types,
    the range is searched like any other sequence in *O*\ (*n*) time.
