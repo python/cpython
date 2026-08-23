@@ -1299,6 +1299,8 @@ Reading input
    Read a bytes object from the user, with primitive line editing capacity.
    At most *n* characters are read;
    *n* defaults to and cannot exceed 2047.
+   Unlike the window readers such as :meth:`instr`, this limit is on keyboard
+   input and is not derived from the window geometry.
    A multibyte character is returned as its encoded bytes; use :meth:`get_wstr`
    to read the input as a :class:`str`.
 
@@ -1357,23 +1359,30 @@ Reading window contents
    Return a bytes object of characters, extracted from the window starting at the
    current cursor position, or at *y*, *x* if specified, and stopping at the end
    of the line. Attributes and color information are stripped
-   from the characters.  If *n* is specified, :meth:`instr` returns a string
-   at most *n* characters long (exclusive of the trailing NUL).
-   The maximum value for *n* is 2047.
+   from the characters.  If *n* is specified and nonnegative, :meth:`instr`
+   returns a string at most *n* characters long (exclusive of the trailing NUL);
+   by default, or if *n* is negative, the rest of the line is returned.
    A character not representable in the window's encoding cannot be returned;
    use :meth:`in_wstr` for those.
 
    .. versionchanged:: 3.14
       The maximum value for *n* was increased from 1023 to 2047.
 
+   .. versionchanged:: next
+      The 2047 limit was removed: the read is bounded by the window, so a line
+      longer than 2047 characters is no longer silently truncated.  *n* now
+      defaults to ``-1``, meaning the rest of the line.
+
 .. method:: window.in_wstr([n])
             window.in_wstr(y, x[, n])
 
    Return a string of characters, extracted from the window starting at the
-   current cursor position, or at *y*, *x* if specified.  Unlike :meth:`instr`,
-   it can return characters that are not representable in the window's encoding.
-   Attributes and color information are stripped from the characters.  The
-   maximum value for *n* is 2047.
+   current cursor position, or at *y*, *x* if specified, and stopping at the end
+   of the line.  Unlike :meth:`instr`, it can return characters that are not
+   representable in the window's encoding. Attributes and color information are
+   stripped from the characters.  If *n* is specified and nonnegative, at most *n*
+   characters are returned; by default, or if *n* is negative, the rest of the line
+   is returned.
 
    .. versionadded:: next
 
@@ -1384,8 +1393,9 @@ Reading window contents
    starting at the current cursor position, or at *y*, *x* if specified, and
    stopping at the end of the line.  This is the variant of :meth:`instr` and
    :meth:`in_wstr` that *keeps* each cell's attributes and color pair (those
-   methods strip the rendition).  If *n* is specified, at most *n* cells are
-   returned.  The maximum value for *n* is 2047.
+   methods strip the rendition).  If *n* is specified and nonnegative, at most
+   *n* cells are returned; by default, or if *n* is negative, the rest of the
+   line is returned.
 
    The result can be written back unchanged with :meth:`addstr` (a read and a
    re-write is a round-trip that preserves every cell's rendition).

@@ -1706,7 +1706,7 @@ exit:
 }
 
 PyDoc_STRVAR(_curses_window_instr__doc__,
-"instr([y, x,] n=2047)\n"
+"instr([y, x,] n=-1)\n"
 "Return a string of characters, extracted from the window.\n"
 "\n"
 "  y\n"
@@ -1714,21 +1714,22 @@ PyDoc_STRVAR(_curses_window_instr__doc__,
 "  x\n"
 "    X-coordinate.\n"
 "  n\n"
-"    Maximal number of characters.\n"
+"    Maximal number of characters; negative means to the end of the line.\n"
 "\n"
 "Return a string of characters, extracted from the window starting\n"
 "at the current cursor position, or at y, x if specified, and\n"
 "stopping at the end of the line.  Attributes and color\n"
-"information are stripped from the characters.  If n is specified,\n"
-"instr() returns a string at most n characters long (exclusive of\n"
-"the trailing NUL).");
+"information are stripped from the characters.  If n is specified\n"
+"and nonnegative, instr() returns a string at most n characters\n"
+"long (exclusive of the trailing NUL); by default, or if n is\n"
+"negative, the rest of the line is returned.");
 
 #define _CURSES_WINDOW_INSTR_METHODDEF    \
     {"instr", (PyCFunction)_curses_window_instr, METH_VARARGS, _curses_window_instr__doc__},
 
 static PyObject *
 _curses_window_instr_impl(PyCursesWindowObject *self, int group_left_1,
-                          int y, int x, unsigned int n);
+                          int y, int x, int n);
 
 static PyObject *
 _curses_window_instr(PyObject *self, PyObject *args)
@@ -1737,18 +1738,18 @@ _curses_window_instr(PyObject *self, PyObject *args)
     int group_left_1 = 0;
     int y = 0;
     int x = 0;
-    unsigned int n = 2047;
+    int n = -1;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 0:
         case 1:
-            if (!PyArg_ParseTuple(args, "|O&:instr", _PyLong_UnsignedInt_Converter, &n)) {
+            if (!PyArg_ParseTuple(args, "|i:instr", &n)) {
                 goto exit;
             }
             break;
         case 2:
         case 3:
-            if (!PyArg_ParseTuple(args, "ii|O&:instr", &y, &x, _PyLong_UnsignedInt_Converter, &n)) {
+            if (!PyArg_ParseTuple(args, "ii|i:instr", &y, &x, &n)) {
                 goto exit;
             }
             group_left_1 = 1;
@@ -1817,7 +1818,7 @@ exit:
 }
 
 PyDoc_STRVAR(_curses_window_in_wstr__doc__,
-"in_wstr([y, x,] n=2047)\n"
+"in_wstr([y, x,] n=-1)\n"
 "Return a string of characters, extracted from the window.\n"
 "\n"
 "  y\n"
@@ -1825,7 +1826,7 @@ PyDoc_STRVAR(_curses_window_in_wstr__doc__,
 "  x\n"
 "    X-coordinate.\n"
 "  n\n"
-"    Maximal number of characters.\n"
+"    Maximal number of characters; negative means to the end of the line.\n"
 "\n"
 "This is the wide-character variant of instr(); it returns a str.");
 
@@ -1834,7 +1835,7 @@ PyDoc_STRVAR(_curses_window_in_wstr__doc__,
 
 static PyObject *
 _curses_window_in_wstr_impl(PyCursesWindowObject *self, int group_left_1,
-                            int y, int x, unsigned int n);
+                            int y, int x, int n);
 
 static PyObject *
 _curses_window_in_wstr(PyObject *self, PyObject *args)
@@ -1843,18 +1844,18 @@ _curses_window_in_wstr(PyObject *self, PyObject *args)
     int group_left_1 = 0;
     int y = 0;
     int x = 0;
-    unsigned int n = 2047;
+    int n = -1;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 0:
         case 1:
-            if (!PyArg_ParseTuple(args, "|O&:in_wstr", _PyLong_UnsignedInt_Converter, &n)) {
+            if (!PyArg_ParseTuple(args, "|i:in_wstr", &n)) {
                 goto exit;
             }
             break;
         case 2:
         case 3:
-            if (!PyArg_ParseTuple(args, "ii|O&:in_wstr", &y, &x, _PyLong_UnsignedInt_Converter, &n)) {
+            if (!PyArg_ParseTuple(args, "ii|i:in_wstr", &y, &x, &n)) {
                 goto exit;
             }
             group_left_1 = 1;
@@ -1870,7 +1871,7 @@ exit:
 }
 
 PyDoc_STRVAR(_curses_window_in_wchstr__doc__,
-"in_wchstr([y, x,] n=2047)\n"
+"in_wchstr([y, x,] n=-1)\n"
 "Return a complexstr of the styled cells extracted from the window.\n"
 "\n"
 "  y\n"
@@ -1878,7 +1879,7 @@ PyDoc_STRVAR(_curses_window_in_wchstr__doc__,
 "  x\n"
 "    X-coordinate.\n"
 "  n\n"
-"    Maximal number of cells.\n"
+"    Maximal number of cells; negative means to the end of the line.\n"
 "\n"
 "This is the wide-character variant of instr() and in_wstr() that\n"
 "keeps each cell\'s attributes and color pair; it returns a\n"
@@ -1889,7 +1890,7 @@ PyDoc_STRVAR(_curses_window_in_wchstr__doc__,
 
 static PyObject *
 _curses_window_in_wchstr_impl(PyCursesWindowObject *self, int group_left_1,
-                              int y, int x, unsigned int n);
+                              int y, int x, int n);
 
 static PyObject *
 _curses_window_in_wchstr(PyObject *self, PyObject *args)
@@ -1898,18 +1899,18 @@ _curses_window_in_wchstr(PyObject *self, PyObject *args)
     int group_left_1 = 0;
     int y = 0;
     int x = 0;
-    unsigned int n = 2047;
+    int n = -1;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 0:
         case 1:
-            if (!PyArg_ParseTuple(args, "|O&:in_wchstr", _PyLong_UnsignedInt_Converter, &n)) {
+            if (!PyArg_ParseTuple(args, "|i:in_wchstr", &n)) {
                 goto exit;
             }
             break;
         case 2:
         case 3:
-            if (!PyArg_ParseTuple(args, "ii|O&:in_wchstr", &y, &x, _PyLong_UnsignedInt_Converter, &n)) {
+            if (!PyArg_ParseTuple(args, "ii|i:in_wchstr", &y, &x, &n)) {
                 goto exit;
             }
             group_left_1 = 1;
@@ -6582,4 +6583,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=4e98ddbfb69f2c04 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=67d785b0c77d6608 input=a9049054013a1b77]*/

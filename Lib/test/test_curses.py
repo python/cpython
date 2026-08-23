@@ -1188,8 +1188,9 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(stdscr.instr(3)[:6], b' AB')
         self.assertEqual(stdscr.instr(0, 2)[:4], b'BCD ')
         self.assertEqual(stdscr.instr(0, 2, 4), b'BCD ')
-        self.assertRaises(ValueError, stdscr.instr, -2)
-        self.assertRaises(ValueError, stdscr.instr, 0, 2, -2)
+        # A negative n means the rest of the line, as it does for chgat().
+        self.assertEqual(stdscr.instr(-2), stdscr.instr())
+        self.assertEqual(stdscr.instr(0, 2, -2), stdscr.instr(0, 2))
         # instr(y, x, 1) reads a single cell byte, so only a character that the
         # window encoding maps to one byte is checked.  inch() returns the cell
         # value, which is the locale byte.
@@ -1205,6 +1206,27 @@ class TestCurses(unittest.TestCase):
                 stdscr.addstr(2, 0, ch)
                 self.assertEqual(stdscr.instr(2, 0, 1), b)
                 self.assertEqual(stdscr.inch(2, 0), v)
+
+    def test_read_wide_pad(self):
+        # gh-156230: a window read is bounded by the window, not by a fixed
+        # buffer size, so a pad wider than 2047 columns is not truncated.
+        width = 3000
+        pad = curses.newpad(1, width)
+        pad.addstr(0, 2500, 'X')
+
+        line = pad.instr(0, 0)
+        self.assertEqual(len(line), width)
+        self.assertEqual(line[2500:2501], b'X')
+        # The count is clamped to the columns left on the line, and an
+        # explicit count still limits the read.
+        self.assertEqual(len(pad.instr(0, 2900)), 100)
+        self.assertEqual(len(pad.instr(0, 0, 5)), 5)
+        self.assertEqual(len(pad.instr(0, 0, width + 1000)), width)
+
+        self.assertEqual(len(pad.in_wstr(0, 0)), width)
+        self.assertEqual(pad.in_wstr(0, 0)[2500], 'X')
+        self.assertEqual(len(pad.in_wchstr(0, 0)), width)
+        self.assertEqual(str(pad.in_wchstr(0, 2500, 1)), 'X')
 
     def test_coordinate_errors(self):
         # Addressing a cell outside the window raises curses.error.

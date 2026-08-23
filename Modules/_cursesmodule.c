@@ -3801,28 +3801,82 @@ _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
     return PyLong_FromUnsignedLongLong(rtn);
 }
 
+/* Maximum number of characters, and of bytes, that one cell can hold: a
+   spacing character optionally followed by CCHARW_MAX -1 combining
+   characters, each encoding to at most MB_CUR_MAX bytes. A narrow build
+   stores a single byte per call. */
+#ifdef HAVE_NCURSESW
+#  define CURSES_CELL_CHARS  ((size_t)CCHARW_MAX)
+#  define CURSES_CELL_BYTES  (CURSES_CELL_CHARS * (size_t)MB_CUR_MAX)
+#else
+#  define CURSES_CELL_CHARS  ((size_t)1)
+#  define CURSES_CELL_BYTES  ((size_t)1)
+#endif
+
+/* Number of units that can be read from the read position to the end of the
+   line, where units_per_cell is what the caller counts per cell: 1 for cells,
+   CURSES_CELL_CHARS for wide characters, CURSES_CELL_BYTES for bytes.
+   Return 0 if the position lies outside the window: the curses call then fails
+   and the caller returns an empty result. */
+static size_t
+curses_window_line_size(PyCursesWindowObject *self, int use_xy, int y, int x,
+                        size_t units_per_cell)
+{
+    int cury, curx, maxy, maxx;
+
+    getmaxyx(self->win, maxy, maxx);
+    if (use_xy) {
+        cury = y;
+        curx = x;
+    }
+    else {
+        getyx(self->win, cury, curx);
+    }
+    if (cury < 0 || cury >= maxy || curx < 0 || curx >= maxx) {
+        return 0;
+    }
+    size_t cells = (size_t)maxx - (size_t)curx;
+    if (cells > (size_t)INT_MAX / units_per_cell) {
+        return (size_t)INT_MAX;
+    }
+    return cells * units_per_cell;
+}
+
+/* Clamp the requested count to what is left on the line; a negative count
+   means the whole rest of the line. */
+static size_t
+curses_window_read_size(PyCursesWindowObject *self, int use_xy, int y, int x,
+                        int n, size_t units_per_cell)
+{
+    size_t max_size = curses_window_line_size(self, use_xy, y, x,
+                                              units_per_cell);
+    return n < 0 ? max_size : Py_MIN((size_t)n, max_size);
+}
+
 /* Extract characters from the window into a new bytes object (empty on ERR),
    with attributes and color stripped.  Shared by instr() and, without the wide
    library, by in_wstr(). */
 static PyObject *
 curses_window_instr_bytes(PyCursesWindowObject *self, int use_xy,
-                          int y, int x, unsigned int n)
+                          int y, int x, int n)
 {
     int rtn;
-    unsigned int max_buf_size = 2048;
+    size_t size = curses_window_read_size(self, use_xy, y, x, n,
+                                          CURSES_CELL_BYTES);
 
-    n = Py_MIN(n, max_buf_size - 1);
-    PyBytesWriter *writer = PyBytesWriter_Create(n + 1);
+    PyBytesWriter *writer = PyBytesWriter_Create((Py_ssize_t)size + 1);
     if (writer == NULL) {
         return NULL;
     }
     char *buf = PyBytesWriter_GetData(writer);
+    /* curses does not terminate the buffer when nothing is read. */
+    buf[0] = '\0';
 
     if (use_xy) {
-        rtn = mvwinnstr(self->win, y, x, buf, n);
+        rtn = mvwinnstr(self->win, y, x, buf, (int)size);
     }
     else {
-        rtn = winnstr(self->win, buf, n);
+        rtn = winnstr(self->win, buf, (int)size);
     }
 
     if (rtn == ERR) {
@@ -3841,8 +3895,8 @@ _curses.window.instr
     x: int
         X-coordinate.
     ]
-    n: unsigned_int = 2047
-        Maximal number of characters.
+    n: int = -1
+        Maximal number of characters; negative means to the end of the line.
     /
 
 Return a string of characters, extracted from the window.
@@ -3850,15 +3904,16 @@ Return a string of characters, extracted from the window.
 Return a string of characters, extracted from the window starting
 at the current cursor position, or at y, x if specified, and
 stopping at the end of the line.  Attributes and color
-information are stripped from the characters.  If n is specified,
-instr() returns a string at most n characters long (exclusive of
-the trailing NUL).
+information are stripped from the characters.  If n is specified
+and nonnegative, instr() returns a string at most n characters
+long (exclusive of the trailing NUL); by default, or if n is
+negative, the rest of the line is returned.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_instr_impl(PyCursesWindowObject *self, int group_left_1,
-                          int y, int x, unsigned int n)
-/*[clinic end generated code: output=40081f67070132da input=85e62048d2d92642]*/
+                          int y, int x, int n)
+/*[clinic end generated code: output=55246cfe039301bb input=6c052d79ef35ce11]*/
 {
     return curses_window_instr_bytes(self, group_left_1, y, x, n);
 }
@@ -3956,8 +4011,8 @@ _curses.window.in_wstr
     x: int
         X-coordinate.
     ]
-    n: unsigned_int = 2047
-        Maximal number of characters.
+    n: int = -1
+        Maximal number of characters; negative means to the end of the line.
     /
 
 Return a string of characters, extracted from the window.
@@ -3967,24 +4022,24 @@ This is the wide-character variant of instr(); it returns a str.
 
 static PyObject *
 _curses_window_in_wstr_impl(PyCursesWindowObject *self, int group_left_1,
-                            int y, int x, unsigned int n)
-/*[clinic end generated code: output=e3db72a1f10b9875 input=196703989dc57361]*/
+                            int y, int x, int n)
+/*[clinic end generated code: output=5137f0184e742a46 input=5fb03546802762cb]*/
 {
 #ifdef HAVE_NCURSESW
     int rtn;
-    unsigned int max_buf_size = 2048;
+    size_t size = curses_window_read_size(self, group_left_1, y, x, n,
+                                          CURSES_CELL_CHARS);
 
-    n = Py_MIN(n, max_buf_size - 1);
-    wchar_t *buf = PyMem_New(wchar_t, n + 1);
+    wchar_t *buf = PyMem_New(wchar_t, size + 1);
     if (buf == NULL) {
         return PyErr_NoMemory();
     }
 
     if (group_left_1) {
-        rtn = mvwinnwstr(self->win, y, x, buf, n);
+        rtn = mvwinnwstr(self->win, y, x, buf, (int)size);
     }
     else {
-        rtn = winnwstr(self->win, buf, n);
+        rtn = winnwstr(self->win, buf, (int)size);
     }
 
     if (rtn == ERR) {
@@ -4018,8 +4073,8 @@ _curses.window.in_wchstr
     x: int
         X-coordinate.
     ]
-    n: unsigned_int = 2047
-        Maximal number of cells.
+    n: int = -1
+        Maximal number of cells; negative means to the end of the line.
     /
 
 Return a complexstr of the styled cells extracted from the window.
@@ -4031,28 +4086,27 @@ complexstr.
 
 static PyObject *
 _curses_window_in_wchstr_impl(PyCursesWindowObject *self, int group_left_1,
-                              int y, int x, unsigned int n)
-/*[clinic end generated code: output=7fb5216f2088835b input=b725c0b8abff62c2]*/
+                              int y, int x, int n)
+/*[clinic end generated code: output=ce23cd8f85982884 input=8a1138d6fae0e389]*/
 {
     int rtn;
-    unsigned int max_buf_size = 2048;
+    size_t size = curses_window_read_size(self, group_left_1, y, x, n, 1);
 
-    n = Py_MIN(n, max_buf_size - 1);
     cursesmodule_state *state = get_cursesmodule_state_by_win(self);
     /* Zero the cells: reading a cell back through getcchar() relies on the
        cchar_t text array being NUL-terminated, which some curses libraries
        only guarantee for the characters they actually write. */
-    curses_cell_t *buf = PyMem_Calloc(n + 1, sizeof(curses_cell_t));
+    curses_cell_t *buf = PyMem_Calloc(size + 1, sizeof(curses_cell_t));
     if (buf == NULL) {
         return PyErr_NoMemory();
     }
 
 #ifdef HAVE_NCURSESW
     if (group_left_1) {
-        rtn = mvwin_wchnstr(self->win, y, x, buf, n);
+        rtn = mvwin_wchnstr(self->win, y, x, buf, (int)size);
     }
     else {
-        rtn = win_wchnstr(self->win, buf, n);
+        rtn = win_wchnstr(self->win, buf, (int)size);
     }
 
     if (rtn == ERR) {
@@ -4064,7 +4118,7 @@ _curses_window_in_wchstr_impl(PyCursesWindowObject *self, int group_left_1,
        the actual count; every real cell holds at least a space, so the first
        empty cell marks the end of the run. */
     Py_ssize_t count = 0;
-    while (count < (Py_ssize_t)n) {
+    while (count < (Py_ssize_t)size) {
         wchar_t wstr[CCHARW_MAX + 1];
         attr_t attrs;
         int pair;
@@ -4079,12 +4133,12 @@ _curses_window_in_wchstr_impl(PyCursesWindowObject *self, int group_left_1,
     /* winchnstr() is not guaranteed (SVr4) to terminate the array, so pre-zero
        it and stop at the first empty cell; a painted cell always holds at least
        a space, never 0. */
-    memset(buf, 0, ((size_t)n + 1) * sizeof(curses_cell_t));
+    memset(buf, 0, (size + 1) * sizeof(curses_cell_t));
     if (group_left_1) {
-        rtn = mvwinchnstr(self->win, y, x, buf, n);
+        rtn = mvwinchnstr(self->win, y, x, buf, (int)size);
     }
     else {
-        rtn = winchnstr(self->win, buf, n);
+        rtn = winchnstr(self->win, buf, (int)size);
     }
 
     if (rtn == ERR) {
@@ -4093,7 +4147,7 @@ _curses_window_in_wchstr_impl(PyCursesWindowObject *self, int group_left_1,
     }
 
     Py_ssize_t count = 0;
-    while (count < (Py_ssize_t)n && buf[count] != 0) {
+    while (count < (Py_ssize_t)size && buf[count] != 0) {
         count++;
     }
 #endif
