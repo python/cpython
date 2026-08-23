@@ -4,9 +4,6 @@
 .. module:: logging
    :synopsis: Flexible event logging system for applications.
 
-.. moduleauthor:: Vinay Sajip <vinay_sajip@red-dove.com>
-.. sectionauthor:: Vinay Sajip <vinay_sajip@red-dove.com>
-
 **Source code:** :source:`Lib/logging/__init__.py`
 
 .. index:: pair: Errors; logging
@@ -693,7 +690,7 @@ Formatter Objects
    :param defaults: A dictionary with default values to use in custom fields.
        For example,
        ``logging.Formatter('%(ip)s %(message)s', defaults={"ip": None})``
-   :type defaults: dict[str, Any]
+   :type defaults: dict[str, typing.Any]
 
    .. versionchanged:: 3.2
       Added the *style* parameter.
@@ -1010,6 +1007,11 @@ the options available to you.
 +----------------+-------------------------+-----------------------------------------------+
 | exc_info       | You shouldn't need to   | Exception tuple (à la ``sys.exc_info``) or,   |
 |                | format this yourself.   | if no exception has occurred, ``None``.       |
++----------------+-------------------------+-----------------------------------------------+
+| exc_text       | You shouldn't need to   | Exception information formatted as a string.  |
+|                | format this yourself.   | This is set when :meth:`Formatter.format` is  |
+|                |                         | invoked, or ``None`` if no exception has      |
+|                |                         | occurred.                                     |
 +----------------+-------------------------+-----------------------------------------------+
 | filename       | ``%(filename)s``        | Filename portion of ``pathname``.             |
 +----------------+-------------------------+-----------------------------------------------+
@@ -1546,7 +1548,7 @@ Module-Level Attributes
 Integration with the warnings module
 ------------------------------------
 
-The :func:`captureWarnings` function can be used to integrate :mod:`logging`
+The :func:`captureWarnings` function can be used to integrate :mod:`!logging`
 with the :mod:`warnings` module.
 
 .. function:: captureWarnings(capture)
@@ -1577,7 +1579,7 @@ with the :mod:`warnings` module.
       library.
 
    `Original Python logging package <https://old.red-dove.com/python_logging.html>`_
-      This is the original source for the :mod:`logging` package.  The version of the
+      This is the original source for the :mod:`!logging` package.  The version of the
       package available from this site is suitable for use with Python 1.5.2, 2.1.x
-      and 2.2.x, which do not include the :mod:`logging` package in the standard
+      and 2.2.x, which do not include the :mod:`!logging` package in the standard
       library.

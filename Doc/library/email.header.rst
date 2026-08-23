@@ -28,13 +28,13 @@ transferred using only 7-bit ASCII characters, so a slew of RFCs have been
 written describing how to encode email containing non-ASCII characters into
 :rfc:`2822`\ -compliant format. These RFCs include :rfc:`2045`, :rfc:`2046`,
 :rfc:`2047`, and :rfc:`2231`. The :mod:`email` package supports these standards
-in its :mod:`email.header` and :mod:`email.charset` modules.
+in its :mod:`!email.header` and :mod:`email.charset` modules.
 
 If you want to include non-ASCII characters in your email headers, say in the
 :mailheader:`Subject` or :mailheader:`To` fields, you should use the
 :class:`Header` class and assign the field in the :class:`~email.message.Message`
 object to an instance of :class:`Header` instead of using a string for the header
-value.  Import the :class:`Header` class from the :mod:`email.header` module.
+value.  Import the :class:`Header` class from the :mod:`!email.header` module.
 For example::
 
    >>> from email.message import Message
@@ -49,7 +49,7 @@ For example::
 
 Notice here how we wanted the :mailheader:`Subject` field to contain a non-ASCII
 character?  We did this by creating a :class:`Header` instance and passing in
-the character set that the byte string was encoded in.  When the subsequent
+the character set to use when encoding it.  When the subsequent
 :class:`~email.message.Message` instance was flattened, the :mailheader:`Subject`
 field was properly :rfc:`2047` encoded.  MIME-aware mail readers would show this
 header using the embedded ISO-8859-1 character.
@@ -150,7 +150,7 @@ Here is the :class:`Header` class description:
    .. method:: __str__()
 
       Returns an approximation of the :class:`Header` as a string, using an
-      unlimited line length.  All pieces are converted to unicode using the
+      unlimited line length.  All pieces are decoded using the
       specified encoding and joined together appropriately.  Any pieces with a
       charset of ``'unknown-8bit'`` are decoded as ASCII using the ``'replace'``
       error handler.
@@ -170,7 +170,7 @@ Here is the :class:`Header` class description:
       This method allows you to compare two :class:`Header` instances for
       inequality.
 
-The :mod:`email.header` module also provides the following convenient functions.
+The :mod:`!email.header` module also provides the following convenient functions.
 
 
 .. function:: decode_header(header)

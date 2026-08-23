@@ -1397,13 +1397,19 @@ _Py_HandlePending(PyThreadState *tstate)
     if ((breaker & _PY_GC_SCHEDULED_BIT) != 0) {
         _Py_unset_eval_breaker_bit(tstate, _PY_GC_SCHEDULED_BIT);
         _Py_RunGC(tstate);
+#ifdef _Py_TIER2
+        _Py_ClearExecutorDeletionList(tstate->interp);
+#endif
     }
 
+#ifdef _Py_TIER2
     if ((breaker & _PY_EVAL_JIT_INVALIDATE_COLD_BIT) != 0) {
         _Py_unset_eval_breaker_bit(tstate, _PY_EVAL_JIT_INVALIDATE_COLD_BIT);
         _Py_Executors_InvalidateCold(tstate->interp);
         tstate->interp->executor_creation_counter = JIT_CLEANUP_THRESHOLD;
+        _Py_ClearExecutorDeletionList(tstate->interp);
     }
+#endif
 
     /* GIL drop request */
     if ((breaker & _PY_GIL_DROP_REQUEST_BIT) != 0) {
@@ -1417,11 +1423,7 @@ _Py_HandlePending(PyThreadState *tstate)
 
     /* Check for asynchronous exception. */
     if ((breaker & _PY_ASYNC_EXCEPTION_BIT) != 0) {
-        _Py_unset_eval_breaker_bit(tstate, _PY_ASYNC_EXCEPTION_BIT);
-        PyObject *exc = _Py_atomic_exchange_ptr(&tstate->async_exc, NULL);
-        if (exc != NULL) {
-            _PyErr_SetNone(tstate, exc);
-            Py_DECREF(exc);
+        if (_PyEval_RaiseAsyncExc(tstate) < 0) {
             return -1;
         }
     }
@@ -1430,5 +1432,20 @@ _Py_HandlePending(PyThreadState *tstate)
     _PyRunRemoteDebugger(tstate);
 #endif
 
+    return 0;
+}
+
+int
+_PyEval_RaiseAsyncExc(PyThreadState *tstate)
+{
+    assert(tstate != NULL);
+    assert(tstate == _PyThreadState_GET());
+    _Py_unset_eval_breaker_bit(tstate, _PY_ASYNC_EXCEPTION_BIT);
+    PyObject *exc = _Py_atomic_exchange_ptr(&tstate->async_exc, NULL);
+    if (exc != NULL) {
+        _PyErr_SetNone(tstate, exc);
+        Py_DECREF(exc);
+        return -1;
+    }
     return 0;
 }

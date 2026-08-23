@@ -1,2 +1,0 @@
-Fix inconsistent state when enabling or disabling monitoring events too many
-times.

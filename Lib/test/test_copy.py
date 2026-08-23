@@ -60,7 +60,7 @@ class TestCopy(unittest.TestCase):
             def __reduce_ex__(self, proto):
                 c.append(1)
                 return ""
-            def __reduce__(self):
+            def __reduce__(*args):
                 self.fail("shouldn't call this")
         c = []
         x = C()
@@ -70,9 +70,15 @@ class TestCopy(unittest.TestCase):
 
     def test_copy_reduce(self):
         class C(object):
+            def __reduce_ex__(*args):
+                self.fail("shouldn't call this")
             def __reduce__(self):
                 c.append(1)
                 return ""
+            def __getattribute__(self, name):
+                if name == "__reduce_ex__":
+                    raise AttributeError(name)
+                return object.__getattribute__(self, name)
         c = []
         x = C()
         y = copy.copy(x)
@@ -132,6 +138,12 @@ class TestCopy(unittest.TestCase):
         y = copy.copy(x)
         self.assertEqual(y, x)
         self.assertIsNot(y, x)
+
+    def test_copy_frozendict(self):
+        x = frozendict(x=1, y=2)
+        self.assertIs(copy.copy(x), x)
+        x = frozendict()
+        self.assertIs(copy.copy(x), x)
 
     def test_copy_set(self):
         x = {1, 2, 3}
@@ -323,7 +335,7 @@ class TestCopy(unittest.TestCase):
             def __reduce_ex__(self, proto):
                 c.append(1)
                 return ""
-            def __reduce__(self):
+            def __reduce__(*args):
                 self.fail("shouldn't call this")
         c = []
         x = C()
@@ -333,9 +345,15 @@ class TestCopy(unittest.TestCase):
 
     def test_deepcopy_reduce(self):
         class C(object):
+            def __reduce_ex__(*args):
+                self.fail("shouldn't call this")
             def __reduce__(self):
                 c.append(1)
                 return ""
+            def __getattribute__(self, name):
+                if name == "__reduce_ex__":
+                    raise AttributeError(name)
+                return object.__getattribute__(self, name)
         c = []
         x = C()
         y = copy.deepcopy(x)
@@ -371,6 +389,7 @@ class TestCopy(unittest.TestCase):
         self.assertIsNot(x, y)
         self.assertIsNot(x[0], y[0])
 
+    @support.skip_if_huge_c_stack()
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def test_deepcopy_reflexive_list(self):
@@ -400,6 +419,7 @@ class TestCopy(unittest.TestCase):
         y = copy.deepcopy(x)
         self.assertIs(x, y)
 
+    @support.skip_if_huge_c_stack()
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def test_deepcopy_reflexive_tuple(self):
@@ -419,6 +439,31 @@ class TestCopy(unittest.TestCase):
         self.assertIsNot(x, y)
         self.assertIsNot(x["foo"], y["foo"])
 
+    def test_deepcopy_frozendict(self):
+        x = frozendict({"foo": [1, 2], "bar": 3})
+        y = copy.deepcopy(x)
+        self.assertEqual(y, x)
+        self.assertIsNot(x, y)
+        self.assertIsNot(x["foo"], y["foo"])
+
+        # recursive frozendict
+        x = frozendict(foo=[])
+        x['foo'].append(x)
+        y = copy.deepcopy(x)
+        self.assertEqual(y.keys(), x.keys())
+        self.assertIsNot(x, y)
+        self.assertIsNot(x["foo"], y["foo"])
+        self.assertIs(y['foo'][0], y)
+
+        x = frozendict(foo=[])
+        x['foo'].append(x)
+        x = x['foo']
+        y = copy.deepcopy(x)
+        self.assertIsNot(x, y)
+        self.assertIsNot(x[0], y[0])
+        self.assertIs(y[0]['foo'], y)
+
+    @support.skip_if_huge_c_stack()
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def test_deepcopy_reflexive_dict(self):
@@ -579,6 +624,7 @@ class TestCopy(unittest.TestCase):
         self.assertIsNot(y, x)
         self.assertIsNot(y.foo, x.foo)
 
+    @support.skip_if_huge_c_stack()
     def test_deepcopy_reflexive_inst(self):
         class C:
             pass
@@ -641,6 +687,7 @@ class TestCopy(unittest.TestCase):
         self.assertEqual(y, x)
         self.assertIsNot(y.foo, x.foo)
 
+    @support.skip_if_huge_c_stack()
     def test_reconstruct_reflexive(self):
         class C(object):
             pass

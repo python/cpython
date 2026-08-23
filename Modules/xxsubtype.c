@@ -301,7 +301,10 @@ xxsubtype_exec(PyObject* m)
     return 0;
 }
 
+PyABIInfo_VAR(abi_info);
+
 static struct PyModuleDef_Slot xxsubtype_slots[] = {
+    {Py_mod_abi, &abi_info},
     {Py_mod_exec, xxsubtype_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

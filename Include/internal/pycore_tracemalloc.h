@@ -21,7 +21,10 @@ struct _PyTraceMalloc_Config {
     } initialized;
 
     /* Is tracemalloc tracing memory allocations?
-       Variable protected by the TABLES_LOCK(). */
+       Variable protected by the TABLES_LOCK() and stored atomically.
+       Atomic store is used so that it can read without locking for the
+       general case of checking if tracemalloc is enabled.
+       */
     int tracing;
 
     /* limit of the number of frames in a traceback, 1 by default.

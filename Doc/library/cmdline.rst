@@ -12,7 +12,7 @@ The following modules have a command-line interface.
 * :ref:`calendar <calendar-cli>`
 * :mod:`code`
 * :ref:`compileall <compileall-cli>`
-* :mod:`cProfile`: see :ref:`profile <profile-cli>`
+* ``cProfile``: see :ref:`profiling.tracing <profiling-tracing-cli>`
 * :ref:`dis <dis-cli>`
 * :ref:`doctest <doctest-cli>`
 * :mod:`!encodings.rot_13`
@@ -31,8 +31,9 @@ The following modules have a command-line interface.
 * :ref:`pickletools <pickletools-cli>`
 * :ref:`platform <platform-cli>`
 * :mod:`poplib`
-* :ref:`profile <profile-cli>`
-* :mod:`pstats`
+* :ref:`profiling.sampling <profiling-sampling>`
+* :ref:`profiling.tracing <profiling-tracing-cli>`
+* :ref:`pstats <pstats-cli>`
 * :ref:`py_compile <py_compile-cli>`
 * :mod:`pyclbr`
 * :mod:`pydoc`

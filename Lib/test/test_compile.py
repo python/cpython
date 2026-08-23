@@ -249,8 +249,8 @@ class TestSpecifics(unittest.TestCase):
             d = -281474976710656  # 1 << 48
             e = +4611686018427387904  # 1 << 62
             f = -4611686018427387904  # 1 << 62
-            g = +9223372036854775807  # 1 << 63 - 1
-            h = -9223372036854775807  # 1 << 63 - 1
+            g = +9223372036854775807  # (1 << 63) - 1
+            h = -9223372036854775807  # (1 << 63) - 1
 
             for variable in self.test_32_63_bit_values.__code__.co_consts:
                 if variable is not None:
@@ -724,11 +724,14 @@ class TestSpecifics(unittest.TestCase):
 
     @support.cpython_only
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
+    @support.run_with_limited_c_stack(
+        100_000 if sys.platform == "android" else 500_000)
     @support.skip_emscripten_stack_overflow()
     def test_compiler_recursion_limit(self):
         # Compiler frames are small
         limit = 100
-        crash_depth = limit * 5000
+        # Android test devices have less memory.
+        crash_depth = limit * (1000 if sys.platform == "android" else 5000)
         success_depth = limit
 
         def check_limit(prefix, repeated, mode="single"):
@@ -1036,11 +1039,13 @@ class TestSpecifics(unittest.TestCase):
         # An implicit test for PyUnicode_FSDecoder().
         compile("42", FakePath("test_compile_pathlike"), "single")
 
+    # bpo-31113: Stack overflow when compile a long sequence of
+    # complex statements.
     @support.requires_resource('cpu')
     def test_stack_overflow(self):
-        # bpo-31113: Stack overflow when compile a long sequence of
-        # complex statements.
-        compile("if a: b\n" * 200000, "<dummy>", "exec")
+        # Android test devices have less memory.
+        size = 100_000 if sys.platform == "android" else 200_000
+        compile("if a: b\n" * size, "<dummy>", "exec")
 
     # Multiple users rely on the fact that CPython does not generate
     # bytecode for dead code blocks. See bpo-37500 for more context.
@@ -1295,7 +1300,7 @@ class TestSpecifics(unittest.TestCase):
                     x
                     in
                     y)
-        genexp_lines = [0, 4, 2, 0, 4]
+        genexp_lines = [4, 0, 4, 2, 0, 4]
 
         genexp_code = return_genexp.__code__.co_consts[0]
         code_lines = self.get_code_lines(genexp_code)
@@ -2060,7 +2065,7 @@ class TestSourcePositions(unittest.TestCase):
 
     def test_multiline_list_comprehension(self):
         snippet = textwrap.dedent("""\
-            [(x,
+            _ = [(x,
                 2*x)
                 for x
                 in [1,2,3] if (x > 0
@@ -2070,14 +2075,14 @@ class TestSourcePositions(unittest.TestCase):
         compiled_code, _ = self.check_positions_against_ast(snippet)
         self.assertIsInstance(compiled_code, types.CodeType)
         self.assertOpcodeSourcePositionIs(compiled_code, 'LIST_APPEND',
-            line=1, end_line=2, column=1, end_column=8, occurrence=1)
+            line=1, end_line=2, column=5, end_column=8, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
-            line=1, end_line=2, column=1, end_column=8, occurrence=1)
+            line=1, end_line=2, column=5, end_column=8, occurrence=1)
 
     def test_multiline_async_list_comprehension(self):
         snippet = textwrap.dedent("""\
             async def f():
-                [(x,
+                _ = [(x,
                     2*x)
                     async for x
                     in [1,2,3] if (x > 0
@@ -2090,11 +2095,11 @@ class TestSourcePositions(unittest.TestCase):
         compiled_code = g['f'].__code__
         self.assertIsInstance(compiled_code, types.CodeType)
         self.assertOpcodeSourcePositionIs(compiled_code, 'LIST_APPEND',
-            line=2, end_line=3, column=5, end_column=12, occurrence=1)
+            line=2, end_line=3, column=9, end_column=12, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
-            line=2, end_line=3, column=5, end_column=12, occurrence=1)
+            line=2, end_line=3, column=9, end_column=12, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE',
-            line=2, end_line=7, column=4, end_column=36, occurrence=1)
+            line=2, end_line=2, column=4, end_column=5, occurrence=1)
 
     def test_multiline_set_comprehension(self):
         snippet = textwrap.dedent("""\
@@ -2366,7 +2371,10 @@ class TestSourcePositions(unittest.TestCase):
         source = "del (\n lhs  \n   .    \n     rhs      \n       )"
         code = compile(source, "<test>", "exec")
         self.assertOpcodeSourcePositionIs(
-            code, "DELETE_ATTR", line=4, end_line=4, column=5, end_column=8
+            code, "PUSH_NULL", line=4, end_line=4, column=5, end_column=8
+        )
+        self.assertOpcodeSourcePositionIs(
+            code, "STORE_ATTR", line=4, end_line=4, column=5, end_column=8
         )
 
     def test_attribute_load(self):
@@ -2455,8 +2463,8 @@ class TestSourcePositions(unittest.TestCase):
                 for i, pos in enumerate(positions):
                     with self.subTest(i=i, pos=pos):
                         start_line, end_line, start_col, end_col = pos
-                        if i == 0 and start_col == end_col == 0:
-                            # ignore the RESUME in the beginning
+                        if i <= 1:
+                            # ignore the RESUME and CACHE in the beginning
                             continue
                         self.assertEqual(start_line, 1)
                         self.assertEqual(end_line, 1)
@@ -2482,12 +2490,13 @@ class TestSourcePositions(unittest.TestCase):
             start_line, end_line, _, _ = instr.positions
             self.assertEqual(start_line, end_line)
 
-        # Expect four `LOAD_CONST None` instructions:
+        # Expect four `None`-loading instructions:
         # three for the no-exception __exit__ call, and one for the return.
         # They should all have the locations of the context manager ('xyz').
 
         load_none = [instr for instr in dis.get_instructions(f) if
-                     instr.opname == 'LOAD_CONST' and instr.argval is None]
+                     instr.opname in ('LOAD_CONST', 'LOAD_COMMON_CONSTANT')
+                     and instr.argval is None]
         return_value = [instr for instr in dis.get_instructions(f) if
                         instr.opname == 'RETURN_VALUE']
 
