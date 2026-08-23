@@ -3252,6 +3252,9 @@ context_dealloc(PySSLContext *self)
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
     context_clear(self);
+    /* The SSL_CTX may outlive this object as the session_ctx of sockets that
+       were switched to another context; leave no Python callback behind. */
+    SSL_CTX_set_tlsext_servername_callback(self->ctx, NULL);
     SSL_CTX_free(self->ctx);
     PyMem_FREE(self->alpn_protocols);
     Py_TYPE(self)->tp_free(self);
@@ -4388,26 +4391,36 @@ _ssl__SSLContext_set_ecdh_curve(PySSLContext *self, PyObject *name)
 }
 
 static int
-_servername_callback(SSL *s, int *al, void *args)
+_servername_callback(SSL *s, int *al, void *Py_UNUSED(args))
 {
     int ret;
-    PySSLContext *sslctx = (PySSLContext *) args;
+    PySSLContext *sslctx;
     PySSLSocket *ssl;
     PyObject *result;
     /* The high-level ssl.SSLSocket object */
     PyObject *ssl_socket;
+    PyObject *sni_cb;
     const char *servername = SSL_get_servername(s, TLSEXT_NAMETYPE_host_name);
     PyGILState_STATE gstate = PyGILState_Ensure();
 
-    if (sslctx->set_sni_cb == NULL) {
-        /* remove race condition in this the call back while if removing the
-         * callback is in progress */
+    /* Do not use the SSL_CTX's servername arg to find the context: it is a
+       borrowed pointer to whichever _SSLContext installed the callback, and
+       that object may already be gone while OpenSSL still reaches this
+       callback through the connection's session_ctx (e.g. on the second
+       ClientHello after a HelloRetryRequest, once sni_callback has switched
+       the socket to another context).  The socket's current context is
+       always alive; hold strong references to it and to the callback while
+       they are used here. */
+    ssl = SSL_get_app_data(s);
+    assert(ssl != NULL);
+    sslctx = (PySSLContext *)Py_NewRef(ssl->ctx);
+    assert(Py_IS_TYPE(ssl, get_state_ctx(sslctx)->PySSLSocket_Type));
+    sni_cb = Py_XNewRef(sslctx->set_sni_cb);
+    if (sni_cb == NULL) {
+        Py_DECREF(sslctx);
         PyGILState_Release(gstate);
         return SSL_TLSEXT_ERR_OK;
     }
-
-    ssl = SSL_get_app_data(s);
-    assert(Py_IS_TYPE(ssl, get_state_ctx(sslctx)->PySSLSocket_Type));
 
     /* The servername callback expects an argument that represents the current
      * SSL connection and that has a .context attribute that can be changed to
@@ -4429,7 +4442,7 @@ _servername_callback(SSL *s, int *al, void *args)
         goto error;
 
     if (servername == NULL) {
-        result = PyObject_CallFunctionObjArgs(sslctx->set_sni_cb, ssl_socket,
+        result = PyObject_CallFunctionObjArgs(sni_cb, ssl_socket,
                                               Py_None, sslctx, NULL);
     }
     else {
@@ -4452,14 +4465,14 @@ _servername_callback(SSL *s, int *al, void *args)
         }
         Py_DECREF(servername_bytes);
         result = PyObject_CallFunctionObjArgs(
-            sslctx->set_sni_cb, ssl_socket, servername_str,
+            sni_cb, ssl_socket, servername_str,
             sslctx, NULL);
         Py_DECREF(servername_str);
     }
     Py_DECREF(ssl_socket);
 
     if (result == NULL) {
-        PyErr_WriteUnraisable(sslctx->set_sni_cb);
+        PyErr_WriteUnraisable(sni_cb);
         *al = SSL_AD_HANDSHAKE_FAILURE;
         ret = SSL_TLSEXT_ERR_ALERT_FATAL;
     }
@@ -4480,11 +4493,15 @@ _servername_callback(SSL *s, int *al, void *args)
         Py_DECREF(result);
     }
 
+    Py_DECREF(sni_cb);
+    Py_DECREF(sslctx);
     PyGILState_Release(gstate);
     return ret;
 
 error:
     Py_DECREF(ssl_socket);
+    Py_DECREF(sni_cb);
+    Py_DECREF(sslctx);
     *al = SSL_AD_INTERNAL_ERROR;
     ret = SSL_TLSEXT_ERR_ALERT_FATAL;
     PyGILState_Release(gstate);
@@ -4524,7 +4541,6 @@ set_sni_callback(PySSLContext *self, PyObject *arg, void *c)
         Py_INCREF(arg);
         self->set_sni_cb = arg;
         SSL_CTX_set_tlsext_servername_callback(self->ctx, _servername_callback);
-        SSL_CTX_set_tlsext_servername_arg(self->ctx, self);
     }
     return 0;
 }
