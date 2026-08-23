@@ -12523,11 +12523,15 @@ os_sendfile_impl(PyObject *module, int out_fd, int in_fd, PyObject *offobj,
 #ifndef __APPLE__
     off_t sbytes;
 #endif
-    Py_buffer *hbuf, *tbuf;
+    Py_buffer *hbuf = NULL, *tbuf = NULL;
     struct sf_hdtr sf;
+    int failed = 1;
+    int saved_errno = 0;
 
     sf.headers = NULL;
     sf.trailers = NULL;
+    sf.hdr_cnt = 0;
+    sf.trl_cnt = 0;
 
     if (headers != NULL) {
         if (!PySequence_Check(headers)) {
@@ -12546,8 +12550,10 @@ os_sendfile_impl(PyObject *module, int out_fd, int in_fd, PyObject *offobj,
             if (i > 0) {
                 sf.hdr_cnt = (int)i;
                 if (iov_setup(&(sf.headers), &hbuf,
-                              headers, sf.hdr_cnt, PyBUF_SIMPLE) < 0)
-                    return NULL;
+                              headers, sf.hdr_cnt, PyBUF_SIMPLE) < 0) {
+                    sf.headers = NULL;
+                    goto cleanup;
+                }
 #ifdef __APPLE__
                 for (i = 0; i < sf.hdr_cnt; i++) {
                     Py_ssize_t blen = sf.headers[i].iov_len;
@@ -12555,7 +12561,7 @@ os_sendfile_impl(PyObject *module, int out_fd, int in_fd, PyObject *offobj,
                     if (sbytes >= OFF_T_MAX - blen) {
                         PyErr_SetString(PyExc_OverflowError,
                             "sendfile() header is too large");
-                        return NULL;
+                        goto cleanup;
                     }
                     sbytes += blen;
                 }
@@ -12567,25 +12573,28 @@ os_sendfile_impl(PyObject *module, int out_fd, int in_fd, PyObject *offobj,
         if (!PySequence_Check(trailers)) {
             PyErr_SetString(PyExc_TypeError,
                 "sendfile() trailers must be a sequence");
-            return NULL;
+            goto cleanup;
         } else {
             Py_ssize_t i = PySequence_Size(trailers);
             if (i < 0)
-                return NULL;
+                goto cleanup;
             if (i > INT_MAX) {
                 PyErr_SetString(PyExc_OverflowError,
                     "sendfile() trailer is too large");
-                return NULL;
+                goto cleanup;
             }
             if (i > 0) {
                 sf.trl_cnt = (int)i;
                 if (iov_setup(&(sf.trailers), &tbuf,
-                              trailers, sf.trl_cnt, PyBUF_SIMPLE) < 0)
-                    return NULL;
+                              trailers, sf.trl_cnt, PyBUF_SIMPLE) < 0) {
+                    sf.trailers = NULL;
+                    goto cleanup;
+                }
             }
         }
     }
 
+    failed = 0;
     _Py_BEGIN_SUPPRESS_IPH
     do {
         Py_BEGIN_ALLOW_THREADS
@@ -12598,11 +12607,15 @@ os_sendfile_impl(PyObject *module, int out_fd, int in_fd, PyObject *offobj,
     } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     _Py_END_SUPPRESS_IPH
 
-    int saved_errno = errno;
+    saved_errno = errno;
+
+cleanup:
     if (sf.headers != NULL)
         iov_cleanup(sf.headers, hbuf, sf.hdr_cnt);
     if (sf.trailers != NULL)
         iov_cleanup(sf.trailers, tbuf, sf.trl_cnt);
+    if (failed)
+        return NULL;
 
     if (ret < 0) {
         if ((saved_errno == EAGAIN) || (saved_errno == EBUSY)) {

@@ -3879,6 +3879,17 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(self.server_buffer, b"abcde123456789")
 
     @requires_headers_trailers
+    async def test_headers_released_on_invalid_trailers(self):
+        # Validation errors after iov_setup of headers must still release
+        # the exported buffers, otherwise the bytearray cannot be resized.
+        header = bytearray(b"header")
+        with self.assertRaisesRegex(TypeError,
+                                    r"sendfile\(\) trailers must be a sequence"):
+            os.sendfile(self.sockno, self.fileno, 0, 0,
+                        headers=[header], trailers=object())
+        header.append(0)
+
+    @requires_headers_trailers
     @requires_32b
     async def test_headers_overflow_32bits(self):
         with self.assertRaises(OSError) as cm:
