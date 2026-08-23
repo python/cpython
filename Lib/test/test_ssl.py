@@ -49,12 +49,15 @@ Py_DEBUG_WIN32 = support.Py_DEBUG and sys.platform == 'win32'
 PROTOCOLS = sorted(ssl._PROTOCOL_NAMES)
 HOST = socket_helper.HOST
 IS_AWS_LC = "AWS-LC" in ssl.OPENSSL_VERSION
+IS_LIBRESSL = "LibreSSL" in ssl.OPENSSL_VERSION
 IS_OPENSSL_3_0_0 = ssl.OPENSSL_VERSION_INFO >= (3, 0, 0)
 CAN_GET_SELECTED_OPENSSL_GROUP = ssl.OPENSSL_VERSION_INFO >= (3, 2)
 CAN_IGNORE_UNKNOWN_OPENSSL_GROUPS = ssl.OPENSSL_VERSION_INFO >= (3, 3)
 CAN_GET_AVAILABLE_OPENSSL_GROUPS = ssl.OPENSSL_VERSION_INFO >= (3, 5)
 CAN_GET_AVAILABLE_OPENSSL_SIGALGS = ssl.OPENSSL_VERSION_INFO >= (3, 4)
-CAN_SET_CLIENT_SIGALGS = not IS_AWS_LC
+# LibreSSL does not provide SSL_CTX_set1_(client_)sigalgs_list().
+CAN_SET_CLIENT_SIGALGS = not IS_AWS_LC and not IS_LIBRESSL
+CAN_SET_SERVER_SIGALGS = not IS_LIBRESSL
 CAN_IGNORE_UNKNOWN_OPENSSL_SIGALGS = ssl.OPENSSL_VERSION_INFO >= (3, 3)
 CAN_GET_SELECTED_OPENSSL_SIGALG = ssl.OPENSSL_VERSION_INFO >= (3, 5)
 PY_SSL_DEFAULT_CIPHERS = sysconfig.get_config_var('PY_SSL_DEFAULT_CIPHERS')
@@ -1080,6 +1083,8 @@ class ContextTests(unittest.TestCase):
         if CAN_IGNORE_UNKNOWN_OPENSSL_SIGALGS:
             self.assertIsNone(ctx.set_client_sigalgs('rsa_pss_rsae_sha256:?foo'))
 
+    @unittest.skipUnless(CAN_SET_SERVER_SIGALGS,
+                         "SSL library doesn't support setting server sigalgs")
     def test_set_server_sigalgs(self):
         ctx = ssl.create_default_context()
 
@@ -1811,6 +1816,61 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLS_SERVER)
         self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
         self._assert_context_options(ctx)
+
+    def test__create_stdlib_context_check_hostname(self):
+        # gh-114905: check_hostname cannot be combined with CERT_NONE,
+        # the default for cert_reqs.
+        msg = "Cannot set verify_mode to CERT_NONE when check_hostname"
+        with self.assertRaisesRegex(ValueError, msg):
+            ssl._create_stdlib_context(check_hostname=True)
+        with self.assertRaisesRegex(ValueError, msg):
+            ssl._create_stdlib_context(cert_reqs=ssl.CERT_NONE,
+                                       check_hostname=True)
+
+        # Accepted before 3.10 with a legacy protocol.
+        if has_tls_protocol('PROTOCOL_TLSv1_2'):
+            with warnings_helper.check_warnings():
+                with self.assertRaisesRegex(ValueError, msg):
+                    ssl._create_stdlib_context(ssl.PROTOCOL_TLSv1_2,
+                                               cert_reqs=ssl.CERT_NONE,
+                                               check_hostname=True)
+
+        # cert_reqs=None leaves PROTOCOL_TLS_CLIENT's CERT_REQUIRED.
+        ctx = ssl._create_stdlib_context(cert_reqs=None, check_hostname=True)
+        self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
+        self.assertTrue(ctx.check_hostname)
+
+        # CERT_REQUIRED is covered by test__create_stdlib_context().
+        ctx = ssl._create_stdlib_context(cert_reqs=ssl.CERT_OPTIONAL,
+                                         check_hostname=True)
+        self.assertEqual(ctx.verify_mode, ssl.CERT_OPTIONAL)
+        self.assertTrue(ctx.check_hostname)
+
+    def test_delete_sslobject_attributes(self):
+        # None of the attributes of _ssl._SSLSocket can be deleted.
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        sslobj = ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO())._sslobj
+        for name in 'context', 'owner', 'session', 'session_reused':
+            with self.subTest(name=name):
+                value = getattr(sslobj, name)
+                with self.assertRaises(AttributeError):
+                    delattr(sslobj, name)
+                self.assertEqual(getattr(sslobj, name), value)
+
+    def test_delete_attributes(self):
+        # None of the attributes implemented in C can be deleted.
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        names = ['check_hostname', 'verify_mode', 'verify_flags', 'options',
+                 'minimum_version', 'maximum_version', 'sni_callback',
+                 '_host_flags', 'security_level', 'post_handshake_auth']
+        if hasattr(ctx, 'num_tickets'):
+            names.append('num_tickets')
+        for name in names:
+            with self.subTest(name=name):
+                value = getattr(ctx, name)
+                with self.assertRaises(AttributeError):
+                    delattr(ctx, name)
+                self.assertEqual(getattr(ctx, name), value)
 
     def test_check_hostname(self):
         with warnings_helper.check_warnings():
@@ -4593,6 +4653,8 @@ class ThreadedTests(unittest.TestCase):
                                chatty=True, connectionchatty=True,
                                sni_name=hostname)
 
+    @unittest.skipUnless(CAN_SET_SERVER_SIGALGS,
+                         "SSL library doesn't support setting server sigalgs")
     def test_server_sigalgs(self):
         # server rsa_pss_rsae_sha384, client auto
         sigalg = "rsa_pss_rsae_sha384"
@@ -4613,6 +4675,8 @@ class ThreadedTests(unittest.TestCase):
         if CAN_GET_SELECTED_OPENSSL_SIGALG:
             self.assertEqual(stats['server_sigalg'], sigalg)
 
+    @unittest.skipUnless(CAN_SET_SERVER_SIGALGS,
+                         "SSL library doesn't support setting server sigalgs")
     def test_server_sigalgs_mismatch(self):
         client_context, server_context, hostname = testing_context()
         client_context.set_server_sigalgs("rsa_pss_rsae_sha256")
@@ -5480,6 +5544,12 @@ class TestSSLDebug(unittest.TestCase):
         with self.assertRaises(TypeError):
             ctx.keylog_filename = 1
 
+        ctx.keylog_filename = os_helper.TESTFN
+        with self.assertRaisesRegex(AttributeError, 'cannot be deleted'):
+            del ctx.keylog_filename
+        # a failed deletion does not change the value
+        self.assertEqual(ctx.keylog_filename, os_helper.TESTFN)
+
     def test_keylog_filename(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         client_context, server_context, hostname = testing_context()
@@ -5553,6 +5623,18 @@ class TestSSLDebug(unittest.TestCase):
         self.assertIs(client_context._msg_callback, msg_cb)
         with self.assertRaises(TypeError):
             client_context._msg_callback = object()
+
+        # the attribute of the underlying C type accepts only a callable
+        # and cannot be deleted
+        descr = _ssl._SSLContext.__dict__['_msg_callback']
+        with self.assertRaises(TypeError):
+            descr.__set__(client_context, object())
+        # a failed assignment does not change the value
+        self.assertIs(client_context._msg_callback, msg_cb)
+        with self.assertRaisesRegex(AttributeError, 'cannot be deleted'):
+            descr.__delete__(client_context)
+        # a failed deletion does not change the value
+        self.assertIs(client_context._msg_callback, msg_cb)
 
     def test_msg_callback_exception(self):
         client_context, server_context, hostname = testing_context()

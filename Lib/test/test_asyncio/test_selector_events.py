@@ -421,6 +421,60 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.assertEqual(self.loop.call_exception_handler.call_count, 1)
         self.assertEqual(self.loop.call_later.call_count, 1)
 
+    def test_accept_connection2_factory_error_closes_conn(self):
+        # gh-155934: if the transport was never created, the accepted
+        # socket is closed and the error is reported even when debug
+        # mode is disabled.
+        self.loop.set_debug(False)
+        conn = mock.Mock()
+
+        def factory():
+            raise RuntimeError("protocol_factory failed")
+
+        self.loop.call_exception_handler = mock.Mock()
+        self.loop.run_until_complete(
+            self.loop._accept_connection2(factory, conn, {}))
+
+        self.assertTrue(conn.close.called)
+        self.loop.call_exception_handler.assert_called_once()
+
+    def test_accept_connection2_transport_error_closes_conn(self):
+        # gh-155934: same when the transport creation itself fails.
+        self.loop.set_debug(False)
+        conn = mock.Mock()
+        self.loop._make_socket_transport = mock.Mock(
+            side_effect=ZeroDivisionError)
+        self.loop.call_exception_handler = mock.Mock()
+
+        self.loop.run_until_complete(
+            self.loop._accept_connection2(mock.Mock(), conn, {}))
+
+        self.assertTrue(conn.close.called)
+        self.loop.call_exception_handler.assert_called_once()
+
+    def test_accept_connection2_waiter_error_stays_debug_only(self):
+        # Once the transport exists it owns the socket: waiter failures
+        # (e.g. SSL handshake errors) close the transport and stay
+        # debug-only, and the accepted socket is not closed directly.
+        self.loop.set_debug(False)
+        conn = mock.Mock()
+        transport = mock.Mock()
+
+        def make_transport(conn, protocol, waiter=None, **kwargs):
+            waiter.set_exception(OSError("handshake failed"))
+            return transport
+
+        self.loop._make_socket_transport = make_transport
+        self.loop.call_exception_handler = mock.Mock()
+
+        self.loop.run_until_complete(
+            self.loop._accept_connection2(mock.Mock(), conn, {}))
+
+        self.assertTrue(transport.close.called)
+        self.assertFalse(conn.close.called)
+        self.assertFalse(self.loop.call_exception_handler.called)
+
+
 class SelectorTransportTests(test_utils.TestCase):
 
     def setUp(self):

@@ -356,6 +356,35 @@ _PyCursesStatefulCheckFunction(PyObject *module,
     return 0;
 }
 
+/*
+ * Function to check that the current screen has a terminal, by testing
+ * stdscr, which a screen made by new_prescr() does not have.  If an error
+ * occurs, a PyCursesError is set and this returns 0.  Otherwise this
+ * returns 1.
+ */
+static int
+_PyCursesStatefulCheckTerminal(PyObject *module)
+{
+    if (stdscr != NULL) {
+        return 1;
+    }
+    cursesmodule_state *state = get_cursesmodule_state(module);
+    PyErr_SetString(state->error, "the current screen has no terminal");
+    return 0;
+}
+
+/* Same as _PyCursesStatefulCheckTerminal() for a Window object. */
+static int
+curses_window_check_terminal(PyCursesWindowObject *win)
+{
+    if (stdscr != NULL) {
+        return 1;
+    }
+    cursesmodule_state *state = get_cursesmodule_state_by_win(win);
+    PyErr_SetString(state->error, "the current screen has no terminal");
+    return 0;
+}
+
 #define PyCursesStatefulSetupTermCalled(MODULE)                         \
     do {                                                                \
         if (!_PyCursesStatefulCheckFunction(MODULE,                     \
@@ -370,7 +399,8 @@ _PyCursesStatefulCheckFunction(PyObject *module,
     do {                                                            \
         if (!_PyCursesStatefulCheckFunction(MODULE,                 \
                                             curses_initscr_called,  \
-                                            "initscr"))             \
+                                            "initscr")              \
+            || !_PyCursesStatefulCheckTerminal(MODULE))             \
         {                                                           \
             return 0;                                               \
         }                                                           \
@@ -433,7 +463,7 @@ curses_window_check_err(PyCursesWindowObject *win, int code,
 static int
 PyCurses_ConvertToChtype(PyCursesWindowObject *win, PyObject *obj, chtype *ch)
 {
-    long value;
+    unsigned long long value;
     if (PyBytes_Check(obj)) {
         if (PyBytes_GET_SIZE(obj) != 1) {
             PyErr_Format(PyExc_TypeError,
@@ -463,20 +493,18 @@ PyCurses_ConvertToChtype(PyCursesWindowObject *win, PyObject *obj, chtype *ch)
             bytes = PyUnicode_AsEncodedString(obj, encoding, NULL);
             if (bytes == NULL)
                 return 0;
-            if (PyBytes_GET_SIZE(bytes) == 1)
-                value = (unsigned char)PyBytes_AS_STRING(bytes)[0];
-            else
-                value = -1;
-            Py_DECREF(bytes);
-            if (value < 0)
+            if (PyBytes_GET_SIZE(bytes) != 1) {
+                Py_DECREF(bytes);
                 goto overflow;
+            }
+            value = (unsigned char)PyBytes_AS_STRING(bytes)[0];
+            Py_DECREF(bytes);
         }
     }
     else if (PyLong_CheckExact(obj)) {
-        int long_overflow;
-        value = PyLong_AsLongAndOverflow(obj, &long_overflow);
-        if (long_overflow)
-            goto overflow;
+        value = PyLong_AsUnsignedLongLong(obj);
+        if (value == (unsigned long long)-1 && PyErr_Occurred())
+            return 0;
     }
     else {
         PyErr_Format(PyExc_TypeError,
@@ -485,7 +513,7 @@ PyCurses_ConvertToChtype(PyCursesWindowObject *win, PyObject *obj, chtype *ch)
         return 0;
     }
     *ch = (chtype)value;
-    if ((long)*ch != value)
+    if ((unsigned long long)*ch != value)
         goto overflow;
     return 1;
 
@@ -533,6 +561,10 @@ PyCurses_ConvertToWideCell(PyObject *obj, wchar_t *wch)
        setcchar() would silently drop a trailing spacing character, or fail
        with a generic error for a control-character base. */
     if (nch > 1) {
+        if (wmemchr(wch, L'\0', nch) != NULL) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            return -1;
+        }
         int bad = wcwidth(wch[0]) < 0;
         for (Py_ssize_t i = 1; !bad && i < nch; i++) {
             bad = wcwidth(wch[i]) != 0;
@@ -557,7 +589,7 @@ PyCurses_ConvertToCchar_t(PyCursesWindowObject *win, PyObject *obj,
 #endif
                           )
 {
-    long value;
+    unsigned long long value;
 
     if (PyUnicode_Check(obj)) {
 #ifdef HAVE_NCURSESW
@@ -580,11 +612,8 @@ PyCurses_ConvertToCchar_t(PyCursesWindowObject *win, PyObject *obj,
         value = (unsigned char)PyBytes_AsString(obj)[0];
     }
     else if (PyLong_CheckExact(obj)) {
-        int overflow;
-        value = PyLong_AsLongAndOverflow(obj, &overflow);
-        if (overflow) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "int doesn't fit in long");
+        value = PyLong_AsUnsignedLongLong(obj);
+        if (value == (unsigned long long)-1 && PyErr_Occurred()) {
             return 0;
         }
     }
@@ -596,7 +625,7 @@ PyCurses_ConvertToCchar_t(PyCursesWindowObject *win, PyObject *obj,
     }
 
     *ch = (chtype)value;
-    if ((long)*ch != value) {
+    if ((unsigned long long)*ch != value) {
         PyErr_Format(PyExc_OverflowError,
                      "byte doesn't fit in chtype");
         return 0;
@@ -763,7 +792,9 @@ curses_getcchar(const cchar_t *wcval, wchar_t *wstr, attr_t *attrs, int *pair)
     /* getcchar() is not guaranteed to write the text of an empty cell, so make
        the output an empty string by default. */
     wstr[0] = L'\0';
-#if _NCURSES_EXTENDED_COLOR_FUNCS
+    /* getcchar()'s opts slot returns the extended color pair, but ncurses
+       returned ERR for a non-NULL opts until 6.3 (patch 20210116). */
+#if _NCURSES_EXTENDED_COLOR_FUNCS && NCURSES_VERSION_PATCH+0 >= 20210116
     int rtn = getcchar(wcval, wstr, attrs, &spair, pair);
 #else
     int rtn = getcchar(wcval, wstr, attrs, &spair, NULL);
@@ -771,6 +802,9 @@ curses_getcchar(const cchar_t *wcval, wchar_t *wstr, attr_t *attrs, int *pair)
         *pair = spair;
     }
 #endif
+    if (rtn != ERR) {
+        *attrs &= ~(attr_t)A_COLOR;
+    }
     return rtn;
 }
 
@@ -878,7 +912,9 @@ curses_cell_text(cursesmodule_state *state, const curses_cell_t *cell)
         PyErr_SetString(state->error, "getcchar() returned ERR");
         return NULL;
     }
-    return PyUnicode_FromWideChar(wstr, -1);
+    /* setcchar() stores no text for a NUL (it takes a NUL-terminated string),
+       so an empty cell holds a NUL character, as on a narrow build. */
+    return PyUnicode_FromWideChar(wstr, wstr[0] == L'\0' ? 1 : -1);
 #else
     char ch = (char)(*cell & A_CHARTEXT);
     return PyUnicode_Decode(&ch, 1, curses_screen_encoding, NULL);
@@ -1050,14 +1086,14 @@ attr_converter(PyObject *arg, void *ptr)
 {
     /* attr_t is unsigned and at least as wide as chtype, so an attribute
        value must be a non-negative integer that fits in attr_t. */
-    unsigned long attr = PyLong_AsUnsignedLong(arg);
-    if (attr == (unsigned long)-1 && PyErr_Occurred()) {
+    unsigned long long attr = PyLong_AsUnsignedLongLong(arg);
+    if (attr == (unsigned long long)-1 && PyErr_Occurred()) {
         return 0;
     }
-    if (attr > (unsigned long)(attr_t)-1) {
+    if (attr > (unsigned long long)(attr_t)-1) {
         PyErr_Format(PyExc_OverflowError,
-                     "attribute value is greater than maximum (%lu)",
-                     (unsigned long)(attr_t)-1);
+                     "attribute value is greater than maximum (%llu)",
+                     (unsigned long long)(attr_t)-1);
         return 0;
     }
     *(attr_t *)ptr = (attr_t)attr;
@@ -1192,7 +1228,7 @@ complexchar_get_attr(PyObject *self, void *Py_UNUSED(closure))
             &_PyCursesComplexCharObject_CAST(self)->cval, &attrs, &pair) < 0) {
         return NULL;
     }
-    return PyLong_FromUnsignedLong((unsigned long)attrs);
+    return PyLong_FromUnsignedLongLong((unsigned long long)attrs);
 }
 
 static PyObject *
@@ -1288,6 +1324,16 @@ static PyObject *
 complexstr_from_string(cursesmodule_state *state, PyObject *str,
                        attr_t attr, int pair)
 {
+    /* A NUL cell ends a batch write and a cell array read (add_wchnstr(3X)),
+       so a string of cells cannot hold one, as addstr() cannot either. */
+    Py_ssize_t nul = PyUnicode_FindChar(str, 0, 0, PyUnicode_GET_LENGTH(str), 1);
+    if (nul < -1) {
+        return NULL;
+    }
+    if (nul >= 0) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        return NULL;
+    }
 #ifdef HAVE_NCURSESW
     Py_ssize_t n;
     wchar_t *wbuf = PyUnicode_AsWideCharString(str, &n);
@@ -1791,6 +1837,42 @@ curses_window_put_cells(PyCursesWindowObject *self, PyObject *obj,
         Py_RETURN_NONE;                                                 \
     }
 
+/* Same as Window_OneArgNoReturnVoidFunction() for a function that needs
+   a terminal. */
+#define Window_OneArgNoReturnVoidTerminalFunction(X, TYPE, PARSESTR)    \
+    static PyObject * PyCursesWindow_ ## X                              \
+    (PyObject *op, PyObject *args)                                      \
+    {                                                                   \
+        TYPE arg1;                                                      \
+        if (!PyArg_ParseTuple(args, PARSESTR, &arg1)) {                 \
+            return NULL;                                                \
+        }                                                               \
+        PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);    \
+        if (!curses_window_check_terminal(self)) {                      \
+            return NULL;                                                \
+        }                                                               \
+        X(self->win, arg1);                                             \
+        Py_RETURN_NONE;                                                 \
+    }
+
+/* Same as Window_OneArgNoReturnFunction() for a function that needs
+   a terminal. */
+#define Window_OneArgNoReturnTerminalFunction(X, TYPE, PARSESTR)        \
+    static PyObject * PyCursesWindow_ ## X                              \
+    (PyObject *op, PyObject *args)                                      \
+    {                                                                   \
+        TYPE arg1;                                                      \
+        if (!PyArg_ParseTuple(args, PARSESTR, &arg1)) {                 \
+            return NULL;                                                \
+        }                                                               \
+        PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);    \
+        if (!curses_window_check_terminal(self)) {                      \
+            return NULL;                                                \
+        }                                                               \
+        int code = X(self->win, arg1);                                  \
+        return curses_window_check_err(self, code, # X, NULL);          \
+    }
+
 #define Window_OneArgNoReturnFunction(X, TYPE, PARSESTR)                \
     static PyObject * PyCursesWindow_ ## X                              \
     (PyObject *op, PyObject *args)                                      \
@@ -1868,6 +1950,7 @@ PyCursesWindow_getscrreg(PyObject *op, PyObject *Py_UNUSED(ignored))
     }
     return Py_BuildValue("(ii)", top, bottom);
 }
+#endif /* NCURSES_EXT_FUNCS >= 20110404 || PDCURSES */
 
 static PyObject *
 PyCursesWindow_getparent(PyObject *op, PyObject *Py_UNUSED(ignored))
@@ -1880,7 +1963,6 @@ PyCursesWindow_getparent(PyObject *op, PyObject *Py_UNUSED(ignored))
     }
     return Py_NewRef((PyObject *)self->orig);
 }
-#endif /* NCURSES_EXT_FUNCS >= 20110404 || PDCURSES */
 
 Window_NoArgNoReturnVoidFunction(wsyncup)
 Window_NoArgNoReturnVoidFunction(wsyncdown)
@@ -1891,7 +1973,7 @@ Window_NoArgNoReturnVoidFunction(wclrtoeol)
 Window_NoArgNoReturnVoidFunction(wclrtobot)
 Window_NoArgNoReturnVoidFunction(wclear)
 
-Window_OneArgNoReturnVoidFunction(idcok, int, "i;True(1) or False(0)")
+Window_OneArgNoReturnVoidTerminalFunction(idcok, int, "i;True(1) or False(0)")
 #ifdef HAVE_CURSES_IMMEDOK
 Window_OneArgNoReturnVoidFunction(immedok, int, "i;True(1) or False(0)")
 #endif
@@ -1903,8 +1985,8 @@ Window_NoArg2TupleReturnFunction(getmaxyx, int, "ii")
 Window_NoArg2TupleReturnFunction(getparyx, int, "ii")
 
 Window_OneArgNoReturnFunction(clearok, int, "i;True(1) or False(0)")
-Window_OneArgNoReturnFunction(idlok, int, "i;True(1) or False(0)")
-Window_OneArgNoReturnFunction(keypad, int, "i;True(1) or False(0)")
+Window_OneArgNoReturnTerminalFunction(idlok, int, "i;True(1) or False(0)")
+Window_OneArgNoReturnTerminalFunction(keypad, int, "i;True(1) or False(0)")
 Window_OneArgNoReturnFunction(leaveok, int, "i;True(1) or False(0)")
 Window_OneArgNoReturnFunction(nodelay, int, "i;True(1) or False(0)")
 Window_OneArgNoReturnFunction(notimeout, int, "i;True(1) or False(0)")
@@ -1930,7 +2012,7 @@ PyCursesWindow_New(cursesmodule_state *state,
 {
     if (encoding == NULL) {
 #if defined(MS_WINDOWS)
-        char *buffer[100];
+        char buffer[100];
         UINT cp;
         cp = GetConsoleOutputCP();
         if (cp != 0) {
@@ -2095,6 +2177,56 @@ curses_wattrset(PyCursesWindowObject *self, attr_t attr, const char *funcname)
     return 0;
 }
 
+/* Read the rendition a write with an *attr* argument has to put back.  The
+   color pair is read apart from the attributes because the A_COLOR field of a
+   chtype holds only pairs 0 to 255, while a window can use a larger one. */
+static int
+curses_wattr_save(PyCursesWindowObject *self, attr_t *attrs, int *pair,
+                  const char *funcname)
+{
+#if defined(HAVE_CURSES_WATTR_GET) && defined(HAVE_CURSES_WATTR_SET)
+    int rtn;
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+    short legacy_pair;
+    rtn = wattr_get(self->win, attrs, &legacy_pair, pair);
+#else
+    short spair;
+    rtn = wattr_get(self->win, attrs, &spair, NULL);
+    *pair = spair;
+#endif
+    if (rtn == ERR) {
+        curses_window_set_error(self, "wattr_get", funcname);
+        return -1;
+    }
+#else
+    *attrs = getattrs(self->win);
+    *pair = 0;
+#endif
+    return 0;
+}
+
+/* Put the rendition back.  The name of the curses function used is
+   _CURSES_WATTR_RESTORE_FUNC, for the caller to name it in an error. */
+#if defined(HAVE_CURSES_WATTR_GET) && defined(HAVE_CURSES_WATTR_SET)
+#define _CURSES_WATTR_RESTORE_FUNC      "wattr_set"
+#else
+#define _CURSES_WATTR_RESTORE_FUNC      "wattrset"
+#endif
+
+static int
+curses_wattr_restore(PyCursesWindowObject *self, attr_t attrs, int pair)
+{
+#if defined(HAVE_CURSES_WATTR_GET) && defined(HAVE_CURSES_WATTR_SET)
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+    return wattr_set(self->win, attrs, 0, &pair);
+#else
+    return wattr_set(self->win, attrs, (short)pair, NULL);
+#endif
+#else
+    return wattrset(self->win, attrs);
+#endif
+}
+
 /*[clinic input]
 _curses.window.addstr
 
@@ -2135,6 +2267,7 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
     wchar_t *wstr = NULL;
 #endif
     attr_t attr_old = A_NORMAL;
+    int pair_old = 0;
     int use_xy = group_left_1, use_attr = group_right_1;
     const char *funcname;
 
@@ -2159,8 +2292,9 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
         return NULL;
     }
     if (use_attr) {
-        attr_old = getattrs(self->win);
-        if (curses_wattrset(self, attr, "addstr") < 0) {
+        if (curses_wattr_save(self, &attr_old, &pair_old, "addstr") < 0 ||
+            curses_wattrset(self, attr, "addstr") < 0)
+        {
             curses_release_wstr(strtype, wstr);
             Py_XDECREF(bytesobj);
             return NULL;
@@ -2196,15 +2330,14 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
         }
         Py_DECREF(bytesobj);
     }
-    if (rtn == ERR) {
-        curses_window_set_error(self, funcname, "addstr");
-        return NULL;
-    }
     if (use_attr) {
-        rtn = wattrset(self->win, attr_old);
-        return curses_window_check_err(self, rtn, "wattrset", "addstr");
+        int attr_rtn = curses_wattr_restore(self, attr_old, pair_old);
+        if (rtn != ERR) {
+            rtn = attr_rtn;
+            funcname = _CURSES_WATTR_RESTORE_FUNC;
+        }
     }
-    Py_RETURN_NONE;
+    return curses_window_check_err(self, rtn, funcname, "addstr");
 }
 
 /*[clinic input]
@@ -2250,6 +2383,7 @@ _curses_window_addnstr_impl(PyCursesWindowObject *self, int group_left_1,
     wchar_t *wstr = NULL;
 #endif
     attr_t attr_old = A_NORMAL;
+    int pair_old = 0;
     int use_xy = group_left_1, use_attr = group_right_1;
     const char *funcname;
 
@@ -2274,8 +2408,9 @@ _curses_window_addnstr_impl(PyCursesWindowObject *self, int group_left_1,
         return NULL;
 
     if (use_attr) {
-        attr_old = getattrs(self->win);
-        if (curses_wattrset(self, attr, "addnstr") < 0) {
+        if (curses_wattr_save(self, &attr_old, &pair_old, "addnstr") < 0 ||
+            curses_wattrset(self, attr, "addnstr") < 0)
+        {
             curses_release_wstr(strtype, wstr);
             Py_XDECREF(bytesobj);
             return NULL;
@@ -2307,15 +2442,14 @@ _curses_window_addnstr_impl(PyCursesWindowObject *self, int group_left_1,
         }
         Py_DECREF(bytesobj);
     }
-    if (rtn == ERR) {
-        curses_window_set_error(self, funcname, "addnstr");
-        return NULL;
-    }
     if (use_attr) {
-        rtn = wattrset(self->win, attr_old);
-        return curses_window_check_err(self, rtn, "wattrset", "addnstr");
+        int attr_rtn = curses_wattr_restore(self, attr_old, pair_old);
+        if (rtn != ERR) {
+            rtn = attr_rtn;
+            funcname = _CURSES_WATTR_RESTORE_FUNC;
+        }
     }
-    Py_RETURN_NONE;
+    return curses_window_check_err(self, rtn, funcname, "addnstr");
 }
 
 /*[clinic input]
@@ -2409,6 +2543,7 @@ _curses_window_attrset_impl(PyCursesWindowObject *self, attr_t attr)
     return curses_window_check_err(self, rtn, "wattrset", "attrset");
 }
 
+#ifdef HAVE_CURSES_WATTR_GET
 /*[clinic input]
 _curses.window.attr_get
 
@@ -2434,7 +2569,9 @@ _curses_window_attr_get_impl(PyCursesWindowObject *self)
     }
     return Py_BuildValue("(ki)", (unsigned long)attrs, (int)pair);
 }
+#endif /* HAVE_CURSES_WATTR_GET */
 
+#ifdef HAVE_CURSES_WATTR_SET
 /*[clinic input]
 _curses.window.attr_set
 
@@ -2458,7 +2595,9 @@ _curses_window_attr_set_impl(PyCursesWindowObject *self, attr_t attr,
 #endif
     return curses_window_check_err(self, rtn, "wattr_set", "attr_set");
 }
+#endif /* HAVE_CURSES_WATTR_SET */
 
+#ifdef HAVE_CURSES_WATTR_ON
 /*[clinic input]
 _curses.window.attr_on
 
@@ -2475,7 +2614,9 @@ _curses_window_attr_on_impl(PyCursesWindowObject *self, attr_t attr)
     int rtn = wattr_on(self->win, attr, NULL);
     return curses_window_check_err(self, rtn, "wattr_on", "attr_on");
 }
+#endif /* HAVE_CURSES_WATTR_ON */
 
+#ifdef HAVE_CURSES_WATTR_OFF
 /*[clinic input]
 _curses.window.attr_off
 
@@ -2492,7 +2633,9 @@ _curses_window_attr_off_impl(PyCursesWindowObject *self, attr_t attr)
     int rtn = wattr_off(self->win, attr, NULL);
     return curses_window_check_err(self, rtn, "wattr_off", "attr_off");
 }
+#endif /* HAVE_CURSES_WATTR_OFF */
 
+#ifdef HAVE_CURSES_WCOLOR_SET
 /*[clinic input]
 _curses.window.color_set
 
@@ -2514,6 +2657,7 @@ _curses_window_color_set_impl(PyCursesWindowObject *self, int pair)
 #endif
     return curses_window_check_err(self, rtn, "wcolor_set", "color_set");
 }
+#endif /* HAVE_CURSES_WCOLOR_SET */
 
 /*[clinic input]
 _curses.window.getattrs
@@ -2525,7 +2669,7 @@ static PyObject *
 _curses_window_getattrs_impl(PyCursesWindowObject *self)
 /*[clinic end generated code: output=835f499205204ec4 input=bf56a0af5b730bd1]*/
 {
-    return PyLong_FromUnsignedLong((unsigned long)(attr_t)getattrs(self->win));
+    return PyLong_FromUnsignedLongLong((unsigned long long)(attr_t)getattrs(self->win));
 }
 
 /*[clinic input]
@@ -2571,21 +2715,21 @@ _curses_window_bkgdset_impl(PyCursesWindowObject *self, PyObject *ch,
 /*[clinic input]
 _curses.window.border
 
-    ls: object(c_default="NULL") = _curses.ACS_VLINE
+    ls: object(c_default="NULL") = 0
         Left side.
-    rs: object(c_default="NULL") = _curses.ACS_VLINE
+    rs: object(c_default="NULL") = 0
         Right side.
-    ts: object(c_default="NULL") = _curses.ACS_HLINE
+    ts: object(c_default="NULL") = 0
         Top side.
-    bs: object(c_default="NULL") = _curses.ACS_HLINE
+    bs: object(c_default="NULL") = 0
         Bottom side.
-    tl: object(c_default="NULL") = _curses.ACS_ULCORNER
+    tl: object(c_default="NULL") = 0
         Upper-left corner.
-    tr: object(c_default="NULL") = _curses.ACS_URCORNER
+    tr: object(c_default="NULL") = 0
         Upper-right corner.
-    bl: object(c_default="NULL") = _curses.ACS_LLCORNER
+    bl: object(c_default="NULL") = 0
         Bottom-left corner.
-    br: object(c_default="NULL") = _curses.ACS_LRCORNER
+    br: object(c_default="NULL") = 0
         Bottom-right corner.
     /
 
@@ -2602,7 +2746,7 @@ _curses_window_border_impl(PyCursesWindowObject *self, PyObject *ls,
                            PyObject *rs, PyObject *ts, PyObject *bs,
                            PyObject *tl, PyObject *tr, PyObject *bl,
                            PyObject *br)
-/*[clinic end generated code: output=670ef38d3d7c2aa3 input=42568c1458221d24]*/
+/*[clinic end generated code: output=670ef38d3d7c2aa3 input=d826ce9d6335479a]*/
 {
     chtype ch[8];
     int i, rtn;
@@ -2615,36 +2759,49 @@ _curses_window_border_impl(PyCursesWindowObject *self, PyObject *ls,
 #ifdef HAVE_NCURSESW
     cchar_t wch[8];
     const cchar_t *wch_p[8];
-    int use_wide = 0;
-    int types[8];
+    /* Only wborder_set() draws a complexchar and only wborder() an integer
+       or bytes character; a string character suits both, and so does the
+       integer 0, which asks for the default character. */
+    int has_narrow = 0, has_str = 0, has_cchar = 0;
     for (i = 0; i < 8; i++) {
-        types[i] = 0;
+        wch_p[i] = NULL;  /* use the default character */
         if (objs[i] != NULL) {
-            types[i] = PyCurses_ConvertToCell(self, objs[i], A_NORMAL, 0,
+            int type = PyCurses_ConvertToCell(self, objs[i], A_NORMAL, 0,
                                               "border", &ch[i], &wch[i]);
-            if (types[i] == 0) {
+            if (type == 0) {
                 return NULL;
             }
-            if (types[i] == 2) {
-                use_wide = 1;
+            if (type == 2) {
+                wch_p[i] = &wch[i];
+                if (PyUnicode_Check(objs[i])) {
+                    has_str = 1;
+                }
+                else {
+                    has_cchar = 1;
+                }
+            }
+            else if (!PyLong_CheckExact(objs[i]) || ch[i] != 0) {
+                has_narrow = 1;  /* b'\0' is a byte character, not the 0 */
             }
         }
     }
-    if (use_wide) {
+    if (has_narrow) {
+        if (has_cchar) {
+            PyErr_SetString(PyExc_TypeError,
+                            "border() cannot mix complexchar characters "
+                            "with integer or bytes characters");
+            return NULL;
+        }
+        /* Narrow the string characters. */
         for (i = 0; i < 8; i++) {
-            if (objs[i] == NULL) {
-                wch_p[i] = NULL;  /* use the default character */
-            }
-            else if (types[i] == 2) {
-                wch_p[i] = &wch[i];
-            }
-            else {
-                PyErr_SetString(PyExc_TypeError,
-                                "border() cannot mix integer or bytes "
-                                "characters with wide string characters");
+            if (objs[i] != NULL && PyUnicode_Check(objs[i]) &&
+                !PyCurses_ConvertToChtype(self, objs[i], &ch[i]))
+            {
                 return NULL;
             }
         }
+    }
+    else if (has_str || has_cchar) {
         rtn = wborder_set(self->win,
                           wch_p[0], wch_p[1], wch_p[2], wch_p[3],
                           wch_p[4], wch_p[5], wch_p[6], wch_p[7]);
@@ -2687,42 +2844,67 @@ _curses_window_box_impl(PyCursesWindowObject *self, int group_right_1,
                         PyObject *verch, PyObject *horch)
 /*[clinic end generated code: output=f3fcb038bb287192 input=e11acb7dbf6790b6]*/
 {
-    chtype ch1 = 0, ch2 = 0;
+    chtype ch[2] = {0, 0};
+    PyObject *objs[2] = {verch, horch};
+    int i;
 #ifdef HAVE_NCURSESW
-    cchar_t wch1, wch2;
-    int t1 = 0, t2 = 0;
+    cchar_t wch[2];
+    const cchar_t *wch_p[2] = {NULL, NULL};
+    int has_narrow = 0, has_str = 0, has_cchar = 0;
     if (group_right_1) {
-        t1 = PyCurses_ConvertToCell(self, verch, A_NORMAL, 0, "box", &ch1, &wch1);
-        if (t1 == 0) {
-            return NULL;
-        }
-        t2 = PyCurses_ConvertToCell(self, horch, A_NORMAL, 0, "box", &ch2, &wch2);
-        if (t2 == 0) {
-            return NULL;
+        for (i = 0; i < 2; i++) {
+            int type = PyCurses_ConvertToCell(self, objs[i], A_NORMAL, 0,
+                                              "box", &ch[i], &wch[i]);
+            if (type == 0) {
+                return NULL;
+            }
+            if (type == 2) {
+                wch_p[i] = &wch[i];
+                if (PyUnicode_Check(objs[i])) {
+                    has_str = 1;
+                }
+                else {
+                    has_cchar = 1;
+                }
+            }
+            else if (!PyLong_CheckExact(objs[i]) || ch[i] != 0) {
+                has_narrow = 1;  /* b'\0' is a byte character, not the 0 */
+            }
         }
     }
-    if (t1 == 2 || t2 == 2) {
-        if (t1 != 2 || t2 != 2) {
+    if (has_narrow) {
+        if (has_cchar) {
             PyErr_SetString(PyExc_TypeError,
-                            "box() cannot mix integer or bytes characters "
-                            "with wide string characters");
+                            "box() cannot mix complexchar characters "
+                            "with integer or bytes characters");
             return NULL;
         }
-        int rtn = wborder_set(self->win, &wch1, &wch1, &wch2, &wch2,
-                              NULL, NULL, NULL, NULL);
-        return curses_window_check_err(self, rtn, "wborder_set", "box");
+        /* Narrow the string characters. */
+        for (i = 0; i < 2; i++) {
+            if (PyUnicode_Check(objs[i]) &&
+                !PyCurses_ConvertToChtype(self, objs[i], &ch[i]))
+            {
+                return NULL;
+            }
+        }
+    }
+    else if (has_str || has_cchar) {
+        int rtn = box_set(self->win, wch_p[0], wch_p[1]);
+        return curses_window_check_err(self, rtn, "box_set", "box");
     }
 #else
     if (group_right_1) {
-        if (!PyCurses_ConvertToCell(self, verch, A_NORMAL, 0, "box", &ch1)) {
-            return NULL;
-        }
-        if (!PyCurses_ConvertToCell(self, horch, A_NORMAL, 0, "box", &ch2)) {
-            return NULL;
+        for (i = 0; i < 2; i++) {
+            if (!PyCurses_ConvertToCell(self, objs[i], A_NORMAL, 0, "box",
+                                        &ch[i]))
+            {
+                return NULL;
+            }
         }
     }
 #endif
-    return curses_window_check_err(self, box(self->win, ch1, ch2), "box", NULL);
+    return curses_window_check_err(self, box(self->win, ch[0], ch[1]),
+                                   "box", NULL);
 }
 
 #if defined(HAVE_NCURSES_H) || defined(MVWDELCH_IS_EXPRESSION)
@@ -2748,73 +2930,50 @@ int py_mvwdelch(WINDOW *w, int y, int x)
 /* chgat, added by Fabian Kreutz <fabian.kreutz at gmx.net> */
 #ifdef HAVE_CURSES_WCHGAT
 
-PyDoc_STRVAR(_curses_window_chgat__doc__,
-"chgat([y, x,] [n=-1,] attr)\n"
-"Set the attributes of characters.\n"
-"\n"
-"  y\n"
-"    Y-coordinate.\n"
-"  x\n"
-"    X-coordinate.\n"
-"  n\n"
-"    Number of characters.\n"
-"  attr\n"
-"    Attributes for characters.\n"
-"\n"
-"Set the attributes of num characters at the current cursor position, or at\n"
-"position (y, x) if supplied.  If no value of num is given or num = -1, the\n"
-"attribute will be set on all the characters to the end of the line.  This\n"
-"function does not move the cursor.  The changed line will be touched using\n"
-"the touchline() method so that the contents will be redisplayed by the next\n"
-"window refresh.");
+/*[clinic input]
+_curses.window.chgat
+
+    [
+    y: int
+        Y-coordinate.
+    x: int
+        X-coordinate.
+    ]
+    [
+    n: int = -1
+        Number of characters.
+    ]
+    attr: attr
+        Attributes for characters.
+    /
+
+Set the attributes of characters.
+
+Set the attributes of n characters at the current cursor position,
+or at position (y, x) if supplied.  If no value of n is given or
+n = -1, the attribute will be set on all the characters to the end
+of the line.  This function does not move the cursor.  The changed
+line will be touched using the touchline() method so that the
+contents will be redisplayed by the next window refresh.
+[clinic start generated code]*/
 
 static PyObject *
-PyCursesWindow_ChgAt(PyObject *op, PyObject *args)
+_curses_window_chgat_impl(PyCursesWindowObject *self, int group_left_1,
+                          int y, int x, int group_left_2, int n, attr_t attr)
+/*[clinic end generated code: output=b990d21c13383874 input=e5ad3c2716927e44]*/
 {
-    PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
-
     int rtn;
     const char *funcname;
-    int x, y;
-    int num = -1;
-    short color;
-    attr_t attr = A_NORMAL;
-    int use_xy = FALSE;
+    short color = (short) PAIR_NUMBER(attr);
 
-    switch (PyTuple_Size(args)) {
-    case 1:
-        if (!PyArg_ParseTuple(args,"O&;attr", attr_converter, &attr))
-            return NULL;
-        break;
-    case 2:
-        if (!PyArg_ParseTuple(args,"iO&;n,attr", &num, attr_converter, &attr))
-            return NULL;
-        break;
-    case 3:
-        if (!PyArg_ParseTuple(args,"iiO&;y,x,attr", &y, &x, attr_converter, &attr))
-            return NULL;
-        use_xy = TRUE;
-        break;
-    case 4:
-        if (!PyArg_ParseTuple(args,"iiiO&;y,x,n,attr", &y, &x, &num, attr_converter, &attr))
-            return NULL;
-        use_xy = TRUE;
-        break;
-    default:
-        PyErr_SetString(PyExc_TypeError,
-                        "_curses.window.chgat requires 1 to 4 arguments");
-        return NULL;
-    }
-
-    color = (short) PAIR_NUMBER(attr);
     attr = attr & A_ATTRIBUTES;
 
-    if (use_xy) {
-        rtn = mvwchgat(self->win,y,x,num,attr,color,NULL);
+    if (group_left_1) {
+        rtn = mvwchgat(self->win,y,x,n,attr,color,NULL);
         funcname = "mvwchgat";
     } else {
         getyx(self->win,y,x);
-        rtn = wchgat(self->win,num,attr,color,NULL);
+        rtn = wchgat(self->win,n,attr,color,NULL);
         funcname = "wchgat";
     }
     if (rtn == ERR) {
@@ -2948,6 +3107,10 @@ _curses_window_echochar_impl(PyCursesWindowObject *self, PyObject *ch,
                              int group_right_1, attr_t attr)
 /*[clinic end generated code: output=ab03afa580aa6a2a input=cd74c42aadcc7e30]*/
 {
+    if (!curses_window_check_terminal(self)) {
+        return NULL;
+    }
+
     chtype ch_;
 #ifdef HAVE_NCURSESW
     cchar_t wch;
@@ -3060,7 +3223,7 @@ _curses_window_getbkgd_impl(PyCursesWindowObject *self)
         curses_window_set_error(self, "getbkgd", NULL);
         return NULL;
     }
-    return PyLong_FromLong(rtn);
+    return PyLong_FromUnsignedLongLong(rtn);
 }
 
 /*[clinic input]
@@ -3194,6 +3357,10 @@ _curses_window_getch_impl(PyCursesWindowObject *self, int group_right_1,
 {
     int rtn;
 
+    if (!curses_window_check_terminal(self)) {
+        return NULL;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     if (!group_right_1) {
         rtn = wgetch(self->win);
@@ -3241,6 +3408,10 @@ _curses_window_getkey_impl(PyCursesWindowObject *self, int group_right_1,
 /*[clinic end generated code: output=8490a182db46b10f input=bd24a7da1ed9c73b]*/
 {
     int rtn;
+
+    if (!curses_window_check_terminal(self)) {
+        return NULL;
+    }
 
     Py_BEGIN_ALLOW_THREADS
     if (!group_right_1) {
@@ -3293,6 +3464,10 @@ _curses_window_get_wch_impl(PyCursesWindowObject *self, int group_right_1,
                             int y, int x)
 /*[clinic end generated code: output=9f4f86e91fe50ef3 input=dd7e5367fb49dc48]*/
 {
+    if (!curses_window_check_terminal(self)) {
+        return NULL;
+    }
+
 #ifdef HAVE_NCURSESW
     int ct;
     wint_t rtn;
@@ -3341,71 +3516,14 @@ _curses_window_get_wch_impl(PyCursesWindowObject *self, int group_right_1,
 #endif
 }
 
-/*
- * Helper function for parsing parameters from getstr() and instr().
- * This function is necessary because Argument Clinic does not know
- * how to handle nested optional groups with default values inside.
- *
- * Return 1 on success and 0 on failure, similar to PyArg_ParseTuple().
- */
-static int
-curses_clinic_parse_optional_xy_n(PyObject *args,
-                                  int *y, int *x, unsigned int *n, int *use_xy,
-                                  const char *qualname)
-{
-    switch (PyTuple_GET_SIZE(args)) {
-        case 0: {
-            *use_xy = 0;
-            return 1;
-        }
-        case 1: {
-            *use_xy = 0;
-            return PyArg_ParseTuple(args, "O&;n",
-                                    _PyLong_UnsignedInt_Converter, n);
-        }
-        case 2: {
-            *use_xy = 1;
-            return PyArg_ParseTuple(args, "ii;y,x", y, x);
-        }
-        case 3: {
-            *use_xy = 1;
-            return PyArg_ParseTuple(args, "iiO&;y,x,n", y, x,
-                                    _PyLong_UnsignedInt_Converter, n);
-        }
-        default: {
-            *use_xy = 0;
-            PyErr_Format(PyExc_TypeError, "%s requires 0 to 3 arguments",
-                         qualname);
-            return 0;
-        }
-    }
-}
-
-PyDoc_STRVAR(_curses_window_getstr__doc__,
-"getstr([[y, x,] n=2047])\n"
-"Read a string from the user, with primitive line editing capacity.\n"
-"\n"
-"  y\n"
-"    Y-coordinate.\n"
-"  x\n"
-"    X-coordinate.\n"
-"  n\n"
-"    Maximal number of characters.");
-
 /* Read user input into a new bytes object (empty on ERR), with primitive line
    editing.  Shared by getstr() and, without the wide library, by get_wstr(). */
 static PyObject *
-curses_window_getstr_bytes(PyCursesWindowObject *self, PyObject *args,
-                           const char *funcname)
+curses_window_getstr_bytes(PyCursesWindowObject *self, int use_xy,
+                           int y, int x, unsigned int n)
 {
-    int rtn, use_xy = 0, y = 0, x = 0;
+    int rtn;
     unsigned int max_buf_size = 2048;
-    unsigned int n = max_buf_size - 1;
-
-    if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy, funcname))
-    {
-        return NULL;
-    }
 
     n = Py_MIN(n, max_buf_size - 1);
     PyBytesWriter *writer = PyBytesWriter_Create(n + 1);
@@ -3438,11 +3556,31 @@ curses_window_getstr_bytes(PyCursesWindowObject *self, PyObject *args,
     return PyBytesWriter_FinishWithSize(writer, strlen(buf));
 }
 
+/*[clinic input]
+_curses.window.getstr
+
+    [
+    y: int
+        Y-coordinate.
+    x: int
+        X-coordinate.
+    ]
+    n: unsigned_int = 2047
+        Maximal number of characters.
+    /
+
+Read a string from the user, with primitive line editing capacity.
+[clinic start generated code]*/
+
 static PyObject *
-PyCursesWindow_getstr(PyObject *op, PyObject *args)
+_curses_window_getstr_impl(PyCursesWindowObject *self, int group_left_1,
+                           int y, int x, unsigned int n)
+/*[clinic end generated code: output=bea9b0ab7e8f34d9 input=c0fc273c2277a985]*/
 {
-    PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
-    return curses_window_getstr_bytes(self, args, "_curses.window.getstr");
+    if (!curses_window_check_terminal(self)) {
+        return NULL;
+    }
+    return curses_window_getstr_bytes(self, group_left_1, y, x, n);
 }
 
 /*[clinic input]
@@ -3544,6 +3682,24 @@ _curses_window_insch_impl(PyCursesWindowObject *self, int group_left_1,
     if (type == 0) {
         return NULL;
     }
+    if (type == 1) {
+        /* winsch() does not locale-decode a byte above 127 on a wide build,
+           unlike waddch(), so decode it here and insert it as a wide
+           character. (gh-153864) */
+        chtype cch = ch_ & A_CHARTEXT;
+        if (cch > 127) {
+            wint_t wc = btowc((int)cch);
+            if (wc != WEOF) {
+                wchar_t wstr[2] = { (wchar_t)wc, L'\0' };
+                attr_t cattr = (attr_t)((ch_ | attr) & ~(chtype)A_CHARTEXT);
+                if (curses_setcchar(&wch, wstr, cattr, PAIR_NUMBER(cattr)) == ERR) {
+                    curses_window_set_error(self, "setcchar", "insch");
+                    return NULL;
+                }
+                type = 2;
+            }
+        }
+    }
     if (type == 2) {
         if (!group_left_1) {
             rtn = wins_wch(self->win, &wch);
@@ -3596,7 +3752,39 @@ _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
 {
     chtype rtn;
     const char *funcname;
-
+#ifdef HAVE_NCURSESW
+    /* ncursesw's winch() returns the whole code point, which overflows the
+       chtype's 8-bit character field into the color and attribute bits. */
+    cchar_t cell = {0};
+    int rc;
+    if (!group_right_1) {
+        rc = win_wch(self->win, &cell);
+        funcname = "win_wch";
+    }
+    else {
+        rc = mvwin_wch(self->win, y, x, &cell);
+        funcname = "mvwin_wch";
+    }
+    if (rc == ERR) {
+        curses_window_set_error(self, funcname, "inch");
+        return NULL;
+    }
+    wchar_t wstr[CCHARW_MAX + 1];
+    attr_t attrs;
+    int pair;
+    if (curses_getcchar(&cell, wstr, &attrs, &pair) == ERR) {
+        curses_window_set_error(self, "getcchar", "inch");
+        return NULL;
+    }
+    int byte = 0;
+    if (wstr[0] != L'\0' && wstr[1] == L'\0') {
+        byte = wctob(wstr[0]);
+        if (byte == EOF) {
+            byte = 0;
+        }
+    }
+    rtn = (chtype)byte | attrs | COLOR_PAIR(pair);
+#else
     if (!group_right_1) {
         rtn = winch(self->win);
         funcname = "winch";
@@ -3609,42 +3797,19 @@ _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
         curses_window_set_error(self, funcname, "inch");
         return NULL;
     }
-    return PyLong_FromUnsignedLong(rtn);
+#endif
+    return PyLong_FromUnsignedLongLong(rtn);
 }
-
-PyDoc_STRVAR(_curses_window_instr__doc__,
-"instr([y, x,] n=2047)\n"
-"Return a string of characters, extracted from the window.\n"
-"\n"
-"  y\n"
-"    Y-coordinate.\n"
-"  x\n"
-"    X-coordinate.\n"
-"  n\n"
-"    Maximal number of characters.\n"
-"\n"
-"Return a string of characters, extracted from the window starting\n"
-"at the current cursor position, or at y, x if specified, and\n"
-"stopping at the end of the line.  Attributes and color\n"
-"information are stripped from the characters.  If n is specified,\n"
-"instr() returns a string at most n characters long (exclusive of\n"
-"the trailing NUL).");
 
 /* Extract characters from the window into a new bytes object (empty on ERR),
    with attributes and color stripped.  Shared by instr() and, without the wide
    library, by in_wstr(). */
 static PyObject *
-curses_window_instr_bytes(PyCursesWindowObject *self, PyObject *args,
-                          const char *funcname)
+curses_window_instr_bytes(PyCursesWindowObject *self, int use_xy,
+                          int y, int x, unsigned int n)
 {
-    int rtn, use_xy = 0, y = 0, x = 0;
+    int rtn;
     unsigned int max_buf_size = 2048;
-    unsigned int n = max_buf_size - 1;
-
-    if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy, funcname))
-    {
-        return NULL;
-    }
 
     n = Py_MIN(n, max_buf_size - 1);
     PyBytesWriter *writer = PyBytesWriter_Create(n + 1);
@@ -3667,40 +3832,66 @@ curses_window_instr_bytes(PyCursesWindowObject *self, PyObject *args,
     return PyBytesWriter_FinishWithSize(writer, strlen(buf));
 }
 
+/*[clinic input]
+_curses.window.instr
+
+    [
+    y: int
+        Y-coordinate.
+    x: int
+        X-coordinate.
+    ]
+    n: unsigned_int = 2047
+        Maximal number of characters.
+    /
+
+Return a string of characters, extracted from the window.
+
+Return a string of characters, extracted from the window starting
+at the current cursor position, or at y, x if specified, and
+stopping at the end of the line.  Attributes and color
+information are stripped from the characters.  If n is specified,
+instr() returns a string at most n characters long (exclusive of
+the trailing NUL).
+[clinic start generated code]*/
+
 static PyObject *
-PyCursesWindow_instr(PyObject *op, PyObject *args)
+_curses_window_instr_impl(PyCursesWindowObject *self, int group_left_1,
+                          int y, int x, unsigned int n)
+/*[clinic end generated code: output=40081f67070132da input=85e62048d2d92642]*/
 {
-    PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
-    return curses_window_instr_bytes(self, args, "_curses.window.instr");
+    return curses_window_instr_bytes(self, group_left_1, y, x, n);
 }
 
-PyDoc_STRVAR(_curses_window_get_wstr__doc__,
-"get_wstr([[y, x,] n=2047])\n"
-"Read a string from the user, with primitive line editing capacity.\n"
-"\n"
-"  y\n"
-"    Y-coordinate.\n"
-"  x\n"
-"    X-coordinate.\n"
-"  n\n"
-"    Maximal number of characters.\n"
-"\n"
-"This is the wide-character variant of getstr(); it returns a str.");
+/*[clinic input]
+_curses.window.get_wstr
+
+    [
+    y: int
+        Y-coordinate.
+    x: int
+        X-coordinate.
+    ]
+    n: unsigned_int = 2047
+        Maximal number of characters.
+    /
+
+Read a string from the user, with primitive line editing capacity.
+
+This is the wide-character variant of getstr(); it returns a str.
+[clinic start generated code]*/
 
 static PyObject *
-PyCursesWindow_get_wstr(PyObject *op, PyObject *args)
+_curses_window_get_wstr_impl(PyCursesWindowObject *self, int group_left_1,
+                             int y, int x, unsigned int n)
+/*[clinic end generated code: output=e0a6670551cbe79f input=874fc230c4e82ca7]*/
 {
-    PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
-#ifdef HAVE_NCURSESW
-    int rtn, use_xy = 0, y = 0, x = 0;
-    unsigned int max_buf_size = 2048;
-    unsigned int n = max_buf_size - 1;
-
-    if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy,
-                                           "_curses.window.get_wstr"))
-    {
+    if (!curses_window_check_terminal(self)) {
         return NULL;
     }
+#ifdef HAVE_NCURSESW
+    int rtn;
+    unsigned int max_buf_size = 2048;
 
     n = Py_MIN(n, max_buf_size - 1);
     wint_t *buf = PyMem_New(wint_t, n + 1);
@@ -3708,7 +3899,7 @@ PyCursesWindow_get_wstr(PyObject *op, PyObject *args)
         return PyErr_NoMemory();
     }
 
-    if (use_xy) {
+    if (group_left_1) {
         Py_BEGIN_ALLOW_THREADS
         rtn = mvwgetn_wstr(self->win, y, x, buf, n);
         Py_END_ALLOW_THREADS
@@ -3744,8 +3935,7 @@ PyCursesWindow_get_wstr(PyObject *op, PyObject *args)
 #else
     /* Without the wide library, read the bytes as getstr() does and decode them
        with the window's encoding. */
-    PyObject *bytes = curses_window_getstr_bytes(self, args,
-                                                 "_curses.window.get_wstr");
+    PyObject *bytes = curses_window_getstr_bytes(self, group_left_1, y, x, n);
     if (bytes == NULL) {
         return NULL;
     }
@@ -3757,33 +3947,32 @@ PyCursesWindow_get_wstr(PyObject *op, PyObject *args)
 #endif /* HAVE_NCURSESW */
 }
 
-PyDoc_STRVAR(_curses_window_in_wstr__doc__,
-"in_wstr([y, x,] n=2047)\n"
-"Return a string of characters, extracted from the window.\n"
-"\n"
-"  y\n"
-"    Y-coordinate.\n"
-"  x\n"
-"    X-coordinate.\n"
-"  n\n"
-"    Maximal number of characters.\n"
-"\n"
-"This is the wide-character variant of instr(); it returns a str.");
+/*[clinic input]
+_curses.window.in_wstr
+
+    [
+    y: int
+        Y-coordinate.
+    x: int
+        X-coordinate.
+    ]
+    n: unsigned_int = 2047
+        Maximal number of characters.
+    /
+
+Return a string of characters, extracted from the window.
+
+This is the wide-character variant of instr(); it returns a str.
+[clinic start generated code]*/
 
 static PyObject *
-PyCursesWindow_in_wstr(PyObject *op, PyObject *args)
+_curses_window_in_wstr_impl(PyCursesWindowObject *self, int group_left_1,
+                            int y, int x, unsigned int n)
+/*[clinic end generated code: output=e3db72a1f10b9875 input=196703989dc57361]*/
 {
-    PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
 #ifdef HAVE_NCURSESW
-    int rtn, use_xy = 0, y = 0, x = 0;
+    int rtn;
     unsigned int max_buf_size = 2048;
-    unsigned int n = max_buf_size - 1;
-
-    if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy,
-                                           "_curses.window.in_wstr"))
-    {
-        return NULL;
-    }
 
     n = Py_MIN(n, max_buf_size - 1);
     wchar_t *buf = PyMem_New(wchar_t, n + 1);
@@ -3791,7 +3980,7 @@ PyCursesWindow_in_wstr(PyObject *op, PyObject *args)
         return PyErr_NoMemory();
     }
 
-    if (use_xy) {
+    if (group_left_1) {
         rtn = mvwinnwstr(self->win, y, x, buf, n);
     }
     else {
@@ -3802,14 +3991,13 @@ PyCursesWindow_in_wstr(PyObject *op, PyObject *args)
         PyMem_Free(buf);
         return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
-    PyObject *res = PyUnicode_FromWideChar(buf, -1);
+    PyObject *res = PyUnicode_FromWideChar(buf, rtn);
     PyMem_Free(buf);
     return res;
 #else
     /* Without the wide library, read the bytes as instr() does and decode them
        with the window's encoding. */
-    PyObject *bytes = curses_window_instr_bytes(self, args,
-                                                "_curses.window.in_wstr");
+    PyObject *bytes = curses_window_instr_bytes(self, group_left_1, y, x, n);
     if (bytes == NULL) {
         return NULL;
     }
@@ -3821,33 +4009,33 @@ PyCursesWindow_in_wstr(PyObject *op, PyObject *args)
 #endif
 }
 
-PyDoc_STRVAR(_curses_window_in_wchstr__doc__,
-"in_wchstr([y, x,] n=2047)\n"
-"Return a complexstr of the styled cells extracted from the window.\n"
-"\n"
-"  y\n"
-"    Y-coordinate.\n"
-"  x\n"
-"    X-coordinate.\n"
-"  n\n"
-"    Maximal number of cells.\n"
-"\n"
-"This is the wide-character variant of instr() and in_wstr() that keeps\n"
-"each cell's attributes and color pair; it returns a complexstr.");
+/*[clinic input]
+_curses.window.in_wchstr
+
+    [
+    y: int
+        Y-coordinate.
+    x: int
+        X-coordinate.
+    ]
+    n: unsigned_int = 2047
+        Maximal number of cells.
+    /
+
+Return a complexstr of the styled cells extracted from the window.
+
+This is the wide-character variant of instr() and in_wstr() that
+keeps each cell's attributes and color pair; it returns a
+complexstr.
+[clinic start generated code]*/
 
 static PyObject *
-PyCursesWindow_in_wchstr(PyObject *op, PyObject *args)
+_curses_window_in_wchstr_impl(PyCursesWindowObject *self, int group_left_1,
+                              int y, int x, unsigned int n)
+/*[clinic end generated code: output=7fb5216f2088835b input=b725c0b8abff62c2]*/
 {
-    PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
-    int rtn, use_xy = 0, y = 0, x = 0;
+    int rtn;
     unsigned int max_buf_size = 2048;
-    unsigned int n = max_buf_size - 1;
-
-    if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy,
-                                           "_curses.window.in_wchstr"))
-    {
-        return NULL;
-    }
 
     n = Py_MIN(n, max_buf_size - 1);
     cursesmodule_state *state = get_cursesmodule_state_by_win(self);
@@ -3860,7 +4048,7 @@ PyCursesWindow_in_wchstr(PyObject *op, PyObject *args)
     }
 
 #ifdef HAVE_NCURSESW
-    if (use_xy) {
+    if (group_left_1) {
         rtn = mvwin_wchnstr(self->win, y, x, buf, n);
     }
     else {
@@ -3892,7 +4080,7 @@ PyCursesWindow_in_wchstr(PyObject *op, PyObject *args)
        it and stop at the first empty cell; a painted cell always holds at least
        a space, never 0. */
     memset(buf, 0, ((size_t)n + 1) * sizeof(curses_cell_t));
-    if (use_xy) {
+    if (group_left_1) {
         rtn = mvwinchnstr(self->win, y, x, buf, n);
     }
     else {
@@ -3955,6 +4143,7 @@ _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
     wchar_t *wstr = NULL;
 #endif
     attr_t attr_old = A_NORMAL;
+    int pair_old = 0;
     int use_xy = group_left_1, use_attr = group_right_1;
     const char *funcname;
 
@@ -3979,8 +4168,9 @@ _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
         return NULL;
 
     if (use_attr) {
-        attr_old = getattrs(self->win);
-        if (curses_wattrset(self, attr, "insstr") < 0) {
+        if (curses_wattr_save(self, &attr_old, &pair_old, "insstr") < 0 ||
+            curses_wattrset(self, attr, "insstr") < 0)
+        {
             curses_release_wstr(strtype, wstr);
             Py_XDECREF(bytesobj);
             return NULL;
@@ -3988,7 +4178,7 @@ _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
     }
 #ifdef HAVE_NCURSESW
     if (strtype == 2) {
-        if (use_xy) {
+        if (group_left_1) {
             rtn = mvwins_wstr(self->win,y,x,wstr);
             funcname = "mvwins_wstr";
         }
@@ -4002,7 +4192,7 @@ _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
 #endif
     {
         const char *str = PyBytes_AS_STRING(bytesobj);
-        if (use_xy) {
+        if (group_left_1) {
             rtn = mvwinsstr(self->win,y,x,str);
             funcname = "mvwinsstr";
         }
@@ -4012,15 +4202,14 @@ _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
         }
         Py_DECREF(bytesobj);
     }
-    if (rtn == ERR) {
-        curses_window_set_error(self, funcname, "insstr");
-        return NULL;
-    }
     if (use_attr) {
-        rtn = wattrset(self->win, attr_old);
-        return curses_window_check_err(self, rtn, "wattrset", "insstr");
+        int attr_rtn = curses_wattr_restore(self, attr_old, pair_old);
+        if (rtn != ERR) {
+            rtn = attr_rtn;
+            funcname = _CURSES_WATTR_RESTORE_FUNC;
+        }
     }
-    Py_RETURN_NONE;
+    return curses_window_check_err(self, rtn, funcname, "insstr");
 }
 
 /*[clinic input]
@@ -4068,6 +4257,7 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
     wchar_t *wstr = NULL;
 #endif
     attr_t attr_old = A_NORMAL;
+    int pair_old = 0;
     int use_xy = group_left_1, use_attr = group_right_1;
     const char *funcname;
 
@@ -4092,15 +4282,16 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
         return NULL;
 
     if (use_attr) {
-        attr_old = getattrs(self->win);
-        if (curses_wattrset(self, attr, "insnstr") < 0) {
+        if (curses_wattr_save(self, &attr_old, &pair_old, "insnstr") < 0 ||
+            curses_wattrset(self, attr, "insnstr") < 0)
+        {
             curses_release_wstr(strtype, wstr);
             return NULL;
         }
     }
 #ifdef HAVE_NCURSESW
     if (strtype == 2) {
-        if (use_xy) {
+        if (group_left_1) {
             rtn = mvwins_nwstr(self->win,y,x,wstr,n);
             funcname = "mvwins_nwstr";
         }
@@ -4114,7 +4305,7 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
 #endif
     {
         const char *str = PyBytes_AS_STRING(bytesobj);
-        if (use_xy) {
+        if (group_left_1) {
             rtn = mvwinsnstr(self->win,y,x,str,n);
             funcname = "mvwinsnstr";
         }
@@ -4124,15 +4315,14 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
         }
         Py_DECREF(bytesobj);
     }
-    if (rtn == ERR) {
-        curses_window_set_error(self, funcname, "insnstr");
-        return NULL;
-    }
     if (use_attr) {
-        rtn = wattrset(self->win, attr_old);
-        return curses_window_check_err(self, rtn, "wattrset", "insnstr");
+        int attr_rtn = curses_wattr_restore(self, attr_old, pair_old);
+        if (rtn != ERR) {
+            rtn = attr_rtn;
+            funcname = _CURSES_WATTR_RESTORE_FUNC;
+        }
     }
-    Py_RETURN_NONE;
+    return curses_window_check_err(self, rtn, funcname, "insnstr");
 }
 
 /*[clinic input]
@@ -4206,6 +4396,10 @@ _curses_window_noutrefresh_impl(PyCursesWindowObject *self)
 #endif
 {
     int rtn;
+
+    if (!curses_window_check_terminal(self)) {
+        return NULL;
+    }
 
 #ifdef py_is_pad
     if (py_is_pad(self->win)) {
@@ -4436,6 +4630,10 @@ _curses_window_refresh_impl(PyCursesWindowObject *self, int group_right_1,
 /*[clinic end generated code: output=42199543115e6e63 input=ff2e900c6b2696b1]*/
 {
     int rtn;
+
+    if (!curses_window_check_terminal(self)) {
+        return NULL;
+    }
 
 #ifdef py_is_pad
     if (py_is_pad(self->win)) {
@@ -4846,12 +5044,7 @@ static PyMethodDef PyCursesWindow_methods[] = {
     _CURSES_WINDOW_COLOR_SET_METHODDEF
     _CURSES_WINDOW_GETATTRS_METHODDEF
     _CURSES_WINDOW_BKGD_METHODDEF
-#ifdef HAVE_CURSES_WCHGAT
-    {
-        "chgat", PyCursesWindow_ChgAt, METH_VARARGS,
-        _curses_window_chgat__doc__
-    },
-#endif
+    _CURSES_WINDOW_CHGAT_METHODDEF
     _CURSES_WINDOW_BKGDSET_METHODDEF
     _CURSES_WINDOW_BORDER_METHODDEF
     _CURSES_WINDOW_BOX_METHODDEF
@@ -4899,11 +5092,9 @@ static PyMethodDef PyCursesWindow_methods[] = {
     {"getmaxyx", PyCursesWindow_getmaxyx, METH_NOARGS,
      "getmaxyx($self, /)\n--\n\n"
      "Return a tuple (y, x) of the window height and width."},
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404) || defined(PDCURSES)
     {"getparent", PyCursesWindow_getparent, METH_NOARGS,
      "getparent($self, /)\n--\n\n"
      "Return the parent window, or None if this is not a subwindow."},
-#endif
     {"getparyx", PyCursesWindow_getparyx, METH_NOARGS,
      "getparyx($self, /)\n--\n\n"
      "Return (y, x) relative to the parent window, or (-1, -1) if none."},
@@ -4912,14 +5103,8 @@ static PyMethodDef PyCursesWindow_methods[] = {
      "getscrreg($self, /)\n--\n\n"
      "Return a tuple (top, bottom) of the current scrolling region."},
 #endif
-    {
-        "getstr", PyCursesWindow_getstr, METH_VARARGS,
-        _curses_window_getstr__doc__
-    },
-    {
-        "get_wstr", PyCursesWindow_get_wstr, METH_VARARGS,
-        _curses_window_get_wstr__doc__
-    },
+    _CURSES_WINDOW_GETSTR_METHODDEF
+    _CURSES_WINDOW_GET_WSTR_METHODDEF
     {"getyx", PyCursesWindow_getyx, METH_NOARGS,
      "getyx($self, /)\n--\n\n"
      "Return a tuple (y, x) of the current cursor position."},
@@ -4946,18 +5131,9 @@ static PyMethodDef PyCursesWindow_methods[] = {
      "Insert a blank line under the cursor; move following lines down."},
     _CURSES_WINDOW_INSNSTR_METHODDEF
     _CURSES_WINDOW_INSSTR_METHODDEF
-    {
-        "instr", PyCursesWindow_instr, METH_VARARGS,
-        _curses_window_instr__doc__
-    },
-    {
-        "in_wstr", PyCursesWindow_in_wstr, METH_VARARGS,
-        _curses_window_in_wstr__doc__
-    },
-    {
-        "in_wchstr", PyCursesWindow_in_wchstr, METH_VARARGS,
-        _curses_window_in_wchstr__doc__
-    },
+    _CURSES_WINDOW_INSTR_METHODDEF
+    _CURSES_WINDOW_IN_WSTR_METHODDEF
+    _CURSES_WINDOW_IN_WCHSTR_METHODDEF
     _CURSES_WINDOW_IS_LINETOUCHED_METHODDEF
     {"is_wintouched", PyCursesWindow_is_wintouched, METH_NOARGS,
      "is_wintouched($self, /)\n--\n\n"
@@ -5235,8 +5411,8 @@ static PyObject *
 PyCursesScreen_use(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     PyCursesScreenObject *so = _PyCursesScreenObject_CAST(self);
+    cursesmodule_state *state = get_cursesmodule_state_by_cls(Py_TYPE(self));
     if (so->screen == NULL) {
-        cursesmodule_state *state = get_cursesmodule_state_by_cls(Py_TYPE(self));
         PyErr_SetString(state->error, "the screen has been deleted");
         return NULL;
     }
@@ -5245,7 +5421,10 @@ PyCursesScreen_use(PyObject *self, PyObject *args, PyObject *kwargs)
         return NULL;
     }
     curses_use_data data = {self, func, extra, kwargs, NULL};
+    PyObject *prev = state->topscreen;
+    state->topscreen = Py_NewRef(self);
     use_screen(so->screen, curses_use_screen_cb, &data);
+    Py_SETREF(state->topscreen, prev);
     Py_DECREF(extra);
     return data.result;
 }
@@ -5616,7 +5795,7 @@ _curses_color_pair_impl(PyObject *module, int pair_number)
                      pair_number, (int)PAIR_NUMBER(A_COLOR));
         return NULL;
     }
-    return PyLong_FromLong(attr);
+    return PyLong_FromUnsignedLongLong(attr);
 }
 
 /*[clinic input]
@@ -6033,6 +6212,7 @@ _curses_scr_init(PyObject *module, PyObject *filename)
 /*[clinic end generated code: output=2e861d381d710419 input=81c45e4702124ef6]*/
 ScreenDumpFunctionBody(scr_init)
 
+#ifdef HAVE_CURSES_SCR_SET
 /*[clinic input]
 _curses.scr_set
 
@@ -6049,6 +6229,7 @@ static PyObject *
 _curses_scr_set(PyObject *module, PyObject *filename)
 /*[clinic end generated code: output=6056fdec12c5935f input=d248c20543cc289b]*/
 ScreenDumpFunctionBody(scr_set)
+#endif /* HAVE_CURSES_SCR_SET */
 #endif /* HAVE_CURSES_SCR_DUMP */
 
 /*[clinic input]
@@ -6400,9 +6581,14 @@ curses_init_dict(PyObject *module)
     }
     /* This was moved from initcurses() because it core dumped on SGI,
        where they're not defined until you've called initscr() */
+    /* Use long long, not long: a chtype constant (the A_* attributes, ACS_*
+       and key codes) can set bits beyond a 32-bit long, which is what long is
+       on LLP64 platforms such as Windows -- A_DIM (0x80000000) would otherwise
+       be sign-extended to a negative number.  long long is at least 64 bits
+       everywhere and still represents the negative ERR (-1). */
 #define SetDictInt(NAME, VALUE)                                     \
     do {                                                            \
-        PyObject *value = PyLong_FromLong((long)(VALUE));           \
+        PyObject *value = PyLong_FromUnsignedLongLong((unsigned long long)(VALUE));  \
         if (value == NULL) {                                        \
             return -1;                                              \
         }                                                           \
@@ -6480,6 +6666,179 @@ curses_init_dict(PyObject *module)
     SetDictInt("ACS_STERLING",      (ACS_STERLING));
 #endif
 
+#ifdef HAVE_NCURSESW
+    /* The same graphic symbols as character cells, for the methods that take
+       a complexchar.  Unlike the ACS_* codes, these are not restricted to the
+       8-bit alternate character set. */
+    cursesmodule_state *state = get_cursesmodule_state(module);
+#define SetDictWACS(NAME, VALUE)                                    \
+    do {                                                            \
+        PyObject *value = PyCursesComplexChar_New(state, (VALUE));  \
+        if (value == NULL) {                                        \
+            return -1;                                              \
+        }                                                           \
+        int rc = PyDict_SetItemString(module_dict, (NAME), value);  \
+        Py_DECREF(value);                                           \
+        if (rc < 0) {                                               \
+            return -1;                                              \
+        }                                                           \
+    } while (0)
+
+    SetDictWACS("WACS_ULCORNER",    WACS_ULCORNER);
+    SetDictWACS("WACS_LLCORNER",    WACS_LLCORNER);
+    SetDictWACS("WACS_URCORNER",    WACS_URCORNER);
+    SetDictWACS("WACS_LRCORNER",    WACS_LRCORNER);
+    SetDictWACS("WACS_LTEE",        WACS_LTEE);
+    SetDictWACS("WACS_RTEE",        WACS_RTEE);
+    SetDictWACS("WACS_BTEE",        WACS_BTEE);
+    SetDictWACS("WACS_TTEE",        WACS_TTEE);
+    SetDictWACS("WACS_HLINE",       WACS_HLINE);
+    SetDictWACS("WACS_VLINE",       WACS_VLINE);
+    SetDictWACS("WACS_PLUS",        WACS_PLUS);
+    SetDictWACS("WACS_S1",          WACS_S1);
+    SetDictWACS("WACS_S9",          WACS_S9);
+    SetDictWACS("WACS_DIAMOND",     WACS_DIAMOND);
+    SetDictWACS("WACS_CKBOARD",     WACS_CKBOARD);
+    SetDictWACS("WACS_DEGREE",      WACS_DEGREE);
+    SetDictWACS("WACS_PLMINUS",     WACS_PLMINUS);
+    SetDictWACS("WACS_BULLET",      WACS_BULLET);
+    SetDictWACS("WACS_LARROW",      WACS_LARROW);
+    SetDictWACS("WACS_RARROW",      WACS_RARROW);
+    SetDictWACS("WACS_DARROW",      WACS_DARROW);
+    SetDictWACS("WACS_UARROW",      WACS_UARROW);
+    SetDictWACS("WACS_BOARD",       WACS_BOARD);
+    SetDictWACS("WACS_LANTERN",     WACS_LANTERN);
+    SetDictWACS("WACS_BLOCK",       WACS_BLOCK);
+
+    SetDictWACS("WACS_BSSB",        WACS_ULCORNER);
+    SetDictWACS("WACS_SSBB",        WACS_LLCORNER);
+    SetDictWACS("WACS_BBSS",        WACS_URCORNER);
+    SetDictWACS("WACS_SBBS",        WACS_LRCORNER);
+    SetDictWACS("WACS_SBSS",        WACS_RTEE);
+    SetDictWACS("WACS_SSSB",        WACS_LTEE);
+    SetDictWACS("WACS_SSBS",        WACS_BTEE);
+    SetDictWACS("WACS_BSSS",        WACS_TTEE);
+    SetDictWACS("WACS_BSBS",        WACS_HLINE);
+    SetDictWACS("WACS_SBSB",        WACS_VLINE);
+    SetDictWACS("WACS_SSSS",        WACS_PLUS);
+
+    /* The following are never available with strict SYSV curses */
+#ifdef WACS_S3
+    SetDictWACS("WACS_S3",          WACS_S3);
+#endif
+#ifdef WACS_S7
+    SetDictWACS("WACS_S7",          WACS_S7);
+#endif
+#ifdef WACS_LEQUAL
+    SetDictWACS("WACS_LEQUAL",      WACS_LEQUAL);
+#endif
+#ifdef WACS_GEQUAL
+    SetDictWACS("WACS_GEQUAL",      WACS_GEQUAL);
+#endif
+#ifdef WACS_PI
+    SetDictWACS("WACS_PI",          WACS_PI);
+#endif
+#ifdef WACS_NEQUAL
+    SetDictWACS("WACS_NEQUAL",      WACS_NEQUAL);
+#endif
+#ifdef WACS_STERLING
+    SetDictWACS("WACS_STERLING",    WACS_STERLING);
+#endif
+
+    /* Double-line and thick-line symbols have no ACS_* counterpart, and are
+       only provided by some implementations. */
+#ifdef WACS_D_ULCORNER
+    SetDictWACS("WACS_D_ULCORNER",  WACS_D_ULCORNER);
+    SetDictWACS("WACS_BDDB",        WACS_D_ULCORNER);
+#endif
+#ifdef WACS_D_LLCORNER
+    SetDictWACS("WACS_D_LLCORNER",  WACS_D_LLCORNER);
+    SetDictWACS("WACS_DDBB",        WACS_D_LLCORNER);
+#endif
+#ifdef WACS_D_URCORNER
+    SetDictWACS("WACS_D_URCORNER",  WACS_D_URCORNER);
+    SetDictWACS("WACS_BBDD",        WACS_D_URCORNER);
+#endif
+#ifdef WACS_D_LRCORNER
+    SetDictWACS("WACS_D_LRCORNER",  WACS_D_LRCORNER);
+    SetDictWACS("WACS_DBBD",        WACS_D_LRCORNER);
+#endif
+#ifdef WACS_D_LTEE
+    SetDictWACS("WACS_D_LTEE",      WACS_D_LTEE);
+    SetDictWACS("WACS_DDDB",        WACS_D_LTEE);
+#endif
+#ifdef WACS_D_RTEE
+    SetDictWACS("WACS_D_RTEE",      WACS_D_RTEE);
+    SetDictWACS("WACS_DBDD",        WACS_D_RTEE);
+#endif
+#ifdef WACS_D_BTEE
+    SetDictWACS("WACS_D_BTEE",      WACS_D_BTEE);
+    SetDictWACS("WACS_DDBD",        WACS_D_BTEE);
+#endif
+#ifdef WACS_D_TTEE
+    SetDictWACS("WACS_D_TTEE",      WACS_D_TTEE);
+    SetDictWACS("WACS_BDDD",        WACS_D_TTEE);
+#endif
+#ifdef WACS_D_HLINE
+    SetDictWACS("WACS_D_HLINE",     WACS_D_HLINE);
+    SetDictWACS("WACS_BDBD",        WACS_D_HLINE);
+#endif
+#ifdef WACS_D_VLINE
+    SetDictWACS("WACS_D_VLINE",     WACS_D_VLINE);
+    SetDictWACS("WACS_DBDB",        WACS_D_VLINE);
+#endif
+#ifdef WACS_D_PLUS
+    SetDictWACS("WACS_D_PLUS",      WACS_D_PLUS);
+    SetDictWACS("WACS_DDDD",        WACS_D_PLUS);
+#endif
+
+#ifdef WACS_T_ULCORNER
+    SetDictWACS("WACS_T_ULCORNER",  WACS_T_ULCORNER);
+    SetDictWACS("WACS_BTTB",        WACS_T_ULCORNER);
+#endif
+#ifdef WACS_T_LLCORNER
+    SetDictWACS("WACS_T_LLCORNER",  WACS_T_LLCORNER);
+    SetDictWACS("WACS_TTBB",        WACS_T_LLCORNER);
+#endif
+#ifdef WACS_T_URCORNER
+    SetDictWACS("WACS_T_URCORNER",  WACS_T_URCORNER);
+    SetDictWACS("WACS_BBTT",        WACS_T_URCORNER);
+#endif
+#ifdef WACS_T_LRCORNER
+    SetDictWACS("WACS_T_LRCORNER",  WACS_T_LRCORNER);
+    SetDictWACS("WACS_TBBT",        WACS_T_LRCORNER);
+#endif
+#ifdef WACS_T_LTEE
+    SetDictWACS("WACS_T_LTEE",      WACS_T_LTEE);
+    SetDictWACS("WACS_TTTB",        WACS_T_LTEE);
+#endif
+#ifdef WACS_T_RTEE
+    SetDictWACS("WACS_T_RTEE",      WACS_T_RTEE);
+    SetDictWACS("WACS_TBTT",        WACS_T_RTEE);
+#endif
+#ifdef WACS_T_BTEE
+    SetDictWACS("WACS_T_BTEE",      WACS_T_BTEE);
+    SetDictWACS("WACS_TTBT",        WACS_T_BTEE);
+#endif
+#ifdef WACS_T_TTEE
+    SetDictWACS("WACS_T_TTEE",      WACS_T_TTEE);
+    SetDictWACS("WACS_BTTT",        WACS_T_TTEE);
+#endif
+#ifdef WACS_T_HLINE
+    SetDictWACS("WACS_T_HLINE",     WACS_T_HLINE);
+    SetDictWACS("WACS_BTBT",        WACS_T_HLINE);
+#endif
+#ifdef WACS_T_VLINE
+    SetDictWACS("WACS_T_VLINE",     WACS_T_VLINE);
+    SetDictWACS("WACS_TBTB",        WACS_T_VLINE);
+#endif
+#ifdef WACS_T_PLUS
+    SetDictWACS("WACS_T_PLUS",      WACS_T_PLUS);
+    SetDictWACS("WACS_TTTT",        WACS_T_PLUS);
+#endif
+#undef SetDictWACS
+#endif /* HAVE_NCURSESW */
+
     SetDictInt("LINES", LINES);
     SetDictInt("COLS", COLS);
 #undef SetDictInt
@@ -6507,7 +6866,23 @@ _curses_initscr_impl(PyObject *module)
             _curses_set_null_error(state, "wrefresh", "initscr");
             return NULL;
         }
-        PyObject *winobj = PyCursesWindow_New(state, stdscr, NULL, NULL, NULL);
+        if (state->topscreen != NULL) {
+            /* The current screen is one made by newterm(); return its own
+               standard window instead of a second wrapper over the same
+               WINDOW, which would delwin() it on its own. */
+            PyCursesScreenObject *so = (PyCursesScreenObject *)state->topscreen;
+            if (so->stdscr_win != NULL) {
+                if (curses_update_screen_encoding(so->stdscr_win) < 0) {
+                    return NULL;
+                }
+                return Py_NewRef(so->stdscr_win);
+            }
+        }
+        /* Attach the current screen, like newwin(), newpad() and getwin() do,
+           so that the window keeps its screen alive.  It is NULL for the
+           screen created by initscr(), which has no screen object. */
+        PyObject *winobj = PyCursesWindow_New(state, stdscr, NULL, NULL,
+                                              state->topscreen);
         if (winobj == NULL) {
             return NULL;
         }
@@ -6768,11 +7143,17 @@ _curses_set_term(PyObject *module, PyObject *screen)
     if (so == NULL) {
         return NULL;
     }
+    cursesmodule_state *state = get_cursesmodule_state(module);
+    if (so->stdscr_win == NULL) {
+        /* A screen from new_prescr() has no terminal, so it cannot become the
+           current one: a later refresh would dereference NULL in curses. */
+        PyErr_SetString(state->error, "the screen has no terminal");
+        return NULL;
+    }
     set_term(so->screen);
     if (!update_lines_cols(module)) {
         return NULL;
     }
-    cursesmodule_state *state = get_cursesmodule_state(module);
     PyObject *prev = state->topscreen;          /* steal the owned reference */
     state->topscreen = Py_NewRef(screen);
     return prev != NULL ? prev : Py_NewRef(Py_None);
@@ -7347,7 +7728,7 @@ _curses_pair_content_impl(PyObject *module, int pair_number)
 @permit_long_summary
 _curses.pair_number
 
-    attr: int
+    attr: attr
     /
 
 Return the number of the color-pair set by the specified attribute value.
@@ -7356,8 +7737,8 @@ color_pair() is the counterpart to this function.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_pair_number_impl(PyObject *module, int attr)
-/*[clinic end generated code: output=85bce7d65c0aa3f4 input=b11152a78c2f9abf]*/
+_curses_pair_number_impl(PyObject *module, attr_t attr)
+/*[clinic end generated code: output=04cafc9083329197 input=562273b1a12a06d2]*/
 {
     PyCursesStatefulInitialised(module);
     PyCursesStatefulInitialisedColor(module);
@@ -7412,9 +7793,10 @@ _curses_qiflush_impl(PyObject *module, int flag)
     Py_RETURN_NONE;
 }
 
-#if defined(HAVE_CURSES_RESIZETERM) || defined(HAVE_CURSES_RESIZE_TERM)
 /* Internal helper used for updating curses.LINES, curses.COLS, _curses.LINES
- * and _curses.COLS. Returns 1 on success and 0 on failure. */
+ * and _curses.COLS. Returns 1 on success and 0 on failure.  Used
+ * unconditionally (e.g. by set_term()), so it must not be gated on resizeterm().
+ */
 static int
 update_lines_cols(PyObject *private_module)
 {
@@ -7482,8 +7864,6 @@ _curses_update_lines_cols_impl(PyObject *module)
     }
     Py_RETURN_NONE;
 }
-
-#endif
 
 /*[clinic input]
 _curses.raw
@@ -7689,7 +8069,7 @@ _curses_start_color_impl(PyObject *module)
     }
 #define DICT_ADD_INT_VALUE(NAME, VALUE)                             \
     do {                                                            \
-        PyObject *value = PyLong_FromLong((long)(VALUE));           \
+        PyObject *value = PyLong_FromUnsignedLongLong((unsigned long long)(VALUE));  \
         if (value == NULL) {                                        \
             return NULL;                                            \
         }                                                           \
@@ -7716,7 +8096,11 @@ Return a logical OR of all video attributes supported by the terminal.
 static PyObject *
 _curses_termattrs_impl(PyObject *module)
 /*[clinic end generated code: output=b06f437fce1b6fc4 input=0559882a04f84d1d]*/
-NoArgReturnIntFunctionBody(termattrs)
+{
+    PyCursesStatefulInitialised(module);
+
+    return PyLong_FromUnsignedLong((unsigned long)(chtype)termattrs());
+}
 
 #ifdef HAVE_CURSES_TERM_ATTRS
 /*[clinic input]
@@ -7734,7 +8118,7 @@ _curses_term_attrs_impl(PyObject *module)
 {
     PyCursesStatefulInitialised(module);
 
-    return PyLong_FromUnsignedLong(term_attrs());
+    return PyLong_FromUnsignedLongLong(term_attrs());
 }
 #endif /* HAVE_CURSES_TERM_ATTRS */
 
@@ -8254,15 +8638,15 @@ NoArgNoReturnFunctionBody(slk_touch)
 /*[clinic input]
 _curses.slk_attron
 
-    attr: long
+    attr: attr
     /
 
 Add the given chtype attributes to the soft labels.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_slk_attron_impl(PyObject *module, long attr)
-/*[clinic end generated code: output=01aa29848a58ab50 input=fa198a604e3eec04]*/
+_curses_slk_attron_impl(PyObject *module, attr_t attr)
+/*[clinic end generated code: output=c2a4bfac8ddbbf20 input=c2cfffeb7ce6a86e]*/
 {
     PyCursesStatefulInitialised(module);
     return curses_check_err(module, slk_attron((chtype)attr),
@@ -8272,15 +8656,15 @@ _curses_slk_attron_impl(PyObject *module, long attr)
 /*[clinic input]
 _curses.slk_attroff
 
-    attr: long
+    attr: attr
     /
 
 Remove the given chtype attributes from the soft labels.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_slk_attroff_impl(PyObject *module, long attr)
-/*[clinic end generated code: output=7b172cc37a17811f input=21dab55d43d30b8f]*/
+_curses_slk_attroff_impl(PyObject *module, attr_t attr)
+/*[clinic end generated code: output=321a3b4dc61119bb input=2593027e03cbd302]*/
 {
     PyCursesStatefulInitialised(module);
     return curses_check_err(module, slk_attroff((chtype)attr),
@@ -8290,15 +8674,15 @@ _curses_slk_attroff_impl(PyObject *module, long attr)
 /*[clinic input]
 _curses.slk_attrset
 
-    attr: long
+    attr: attr
     /
 
 Set the chtype attributes of the soft labels.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_slk_attrset_impl(PyObject *module, long attr)
-/*[clinic end generated code: output=1139e2b0f757edfd input=d5c798956a5f046a]*/
+_curses_slk_attrset_impl(PyObject *module, attr_t attr)
+/*[clinic end generated code: output=f396b745cb23fc01 input=5faafda445b2b158]*/
 {
     PyCursesStatefulInitialised(module);
     return curses_check_err(module, slk_attrset((chtype)attr),
@@ -8317,10 +8701,11 @@ _curses_slk_attr_impl(PyObject *module)
 /*[clinic end generated code: output=6d47752f82bdc29f input=be38805fdec52149]*/
 {
     PyCursesStatefulInitialised(module);
-    return PyLong_FromUnsignedLong((unsigned long)slk_attr());
+    return PyLong_FromUnsignedLongLong((unsigned long long)slk_attr());
 }
 #endif
 
+#ifdef HAVE_CURSES_SLK_ATTR_ON
 /*[clinic input]
 _curses.slk_attr_on
 
@@ -8338,7 +8723,9 @@ _curses_slk_attr_on_impl(PyObject *module, attr_t attr)
     return curses_check_err(module, slk_attr_on(attr, NULL),
                             "slk_attr_on", NULL);
 }
+#endif /* HAVE_CURSES_SLK_ATTR_ON */
 
+#ifdef HAVE_CURSES_SLK_ATTR_OFF
 /*[clinic input]
 _curses.slk_attr_off
 
@@ -8356,7 +8743,9 @@ _curses_slk_attr_off_impl(PyObject *module, attr_t attr)
     return curses_check_err(module, slk_attr_off(attr, NULL),
                             "slk_attr_off", NULL);
 }
+#endif /* HAVE_CURSES_SLK_ATTR_OFF */
 
+#ifdef HAVE_CURSES_SLK_ATTR_SET
 /*[clinic input]
 _curses.slk_attr_set
 
@@ -8380,7 +8769,9 @@ _curses_slk_attr_set_impl(PyObject *module, attr_t attr, int pair)
 #endif
     return curses_check_err(module, rtn, "slk_attr_set", NULL);
 }
+#endif /* HAVE_CURSES_SLK_ATTR_SET */
 
+#ifdef HAVE_CURSES_SLK_COLOR
 /*[clinic input]
 _curses.slk_color
 
@@ -8397,6 +8788,7 @@ _curses_slk_color_impl(PyObject *module, int pair)
     PyCursesStatefulInitialised(module);
     return curses_check_err(module, slk_color((short)pair), "slk_color", NULL);
 }
+#endif /* HAVE_CURSES_SLK_COLOR */
 
 #ifdef HAVE_CURSES_USE_ENV
 /*[clinic input]
@@ -8889,6 +9281,17 @@ cursesmodule_exec(PyObject *module)
         return -1;
     }
 
+    /* Whether a cell holds a character or a single byte of the locale
+       encoding, decided when the module is built. */
+#ifdef HAVE_NCURSESW
+    rc = PyDict_SetItemString(module_dict, "_wide_character_support", Py_True);
+#else
+    rc = PyDict_SetItemString(module_dict, "_wide_character_support", Py_False);
+#endif
+    if (rc < 0) {
+        return -1;
+    }
+
     /* Make the version available */
     PyObject *curses_version = PyBytes_FromString(PyCursesVersion);
     if (curses_version == NULL) {
@@ -8927,7 +9330,7 @@ cursesmodule_exec(PyObject *module)
 
 #define SetDictInt(NAME, VALUE)                                     \
     do {                                                            \
-        PyObject *value = PyLong_FromLong((long)(VALUE));           \
+        PyObject *value = PyLong_FromUnsignedLongLong((unsigned long long)(VALUE));  \
         if (value == NULL) {                                        \
             return -1;                                              \
         }                                                           \

@@ -286,6 +286,19 @@ _PyImport_ClearLazyModules(PyInterpreterState *interp)
     Py_CLEAR(LAZY_PENDING_SUBMODULES(interp));
 }
 
+static PyObject *
+get_importtime_name(PyObject *name)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    PyObject *encoded = PyUnicode_AsEncodedString(name, "utf-8",
+                                                  "backslashreplace");
+    if (encoded == NULL) {
+        PyErr_Clear();
+    }
+    PyErr_SetRaisedException(exc);
+    return encoded;
+}
+
 static int
 import_ensure_initialized(PyInterpreterState *interp, PyObject *mod, PyObject *name)
 {
@@ -323,8 +336,11 @@ done:
     if (_PyInterpreterState_GetConfig(interp)->import_time == 2) {
         _IMPORT_TIME_HEADER(interp);
 #define import_level FIND_AND_LOAD(interp).import_level
+        PyObject *encoded_name = get_importtime_name(name);
         fprintf(stderr, "import time: cached    | cached     | %*s\n",
-                import_level*2, PyUnicode_AsUTF8(name));
+                import_level*2,
+                encoded_name != NULL ? PyBytes_AS_STRING(encoded_name) : "?");
+        Py_XDECREF(encoded_name);
 #undef import_level
     }
 
@@ -3940,19 +3956,6 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
         goto error;
     }
 
-    Py_ssize_t dot = -1;
-    int full = 0;
-    if (lz->lz_attr != NULL) {
-        full = 1;
-    }
-    if (!full) {
-        dot = PyUnicode_FindChar(lz->lz_from, '.', 0,
-                                 PyUnicode_GET_LENGTH(lz->lz_from), 1);
-    }
-    if (dot < 0) {
-        full = 1;
-    }
-
     if (lz->lz_attr != NULL) {
         if (PyUnicode_Check(lz->lz_attr)) {
             fromlist = PyTuple_New(1);
@@ -3978,23 +3981,10 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
         PyErr_SetString(PyExc_ImportError, "__import__ not found");
         goto error;
     }
-    if (full) {
-        obj = _PyEval_ImportNameWithImport(
-            tstate, import_func, globals, globals,
-            lz->lz_from, fromlist, _PyLong_GetZero()
-        );
-    }
-    else {
-        PyObject *name = PyUnicode_Substring(lz->lz_from, 0, dot);
-        if (name == NULL) {
-            goto error;
-        }
-        obj = _PyEval_ImportNameWithImport(
-            tstate, import_func, globals, globals,
-            name, fromlist, _PyLong_GetZero()
-        );
-        Py_DECREF(name);
-    }
+    obj = _PyEval_ImportNameWithImport(
+        tstate, import_func, globals, globals,
+        lz->lz_from, fromlist, _PyLong_GetZero()
+    );
     if (obj == NULL) {
         goto error;
     }
@@ -4103,7 +4093,9 @@ ok:
 }
 
 static PyObject *
-import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
+import_find_and_load_with_name(PyThreadState *tstate, PyObject *abs_name,
+                               PyObject *find_and_load,
+                               PyObject *not_found)
 {
     PyObject *mod = NULL;
     PyInterpreterState *interp = tstate->interp;
@@ -4130,12 +4122,14 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
     if (PyDTrace_IMPORT_FIND_LOAD_START_ENABLED())
         PyDTrace_IMPORT_FIND_LOAD_START(PyUnicode_AsUTF8(abs_name));
 
-    mod = PyObject_CallMethodObjArgs(IMPORTLIB(interp), &_Py_ID(_find_and_load),
+    mod = PyObject_CallMethodObjArgs(IMPORTLIB(interp), find_and_load,
                                      abs_name, IMPORT_FUNC(interp), NULL);
 
-    if (PyDTrace_IMPORT_FIND_LOAD_DONE_ENABLED())
+    if (PyDTrace_IMPORT_FIND_LOAD_DONE_ENABLED()) {
+        int found = mod != NULL && mod != not_found;
         PyDTrace_IMPORT_FIND_LOAD_DONE(PyUnicode_AsUTF8(abs_name),
-                                       mod != NULL);
+                                       found);
+    }
 
     if (import_time) {
         PyTime_t t2;
@@ -4143,10 +4137,13 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
         PyTime_t cum = t2 - t1;
 
         import_level--;
+        PyObject *encoded_name = get_importtime_name(abs_name);
         fprintf(stderr, "import time: %9ld | %10ld | %*s%s\n",
                 (long)_PyTime_AsMicroseconds(cum - accumulated, _PyTime_ROUND_CEILING),
                 (long)_PyTime_AsMicroseconds(cum, _PyTime_ROUND_CEILING),
-                import_level*2, "", PyUnicode_AsUTF8(abs_name));
+                import_level*2, "",
+                encoded_name != NULL ? PyBytes_AS_STRING(encoded_name) : "?");
+        Py_XDECREF(encoded_name);
 
         accumulated = accumulated_copy + cum;
     }
@@ -4154,6 +4151,13 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
     return mod;
 #undef import_level
 #undef accumulated
+}
+
+static PyObject *
+import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
+{
+    return import_find_and_load_with_name(
+        tstate, abs_name, &_Py_ID(_find_and_load), NULL);
 }
 
 static PyObject *
@@ -4439,52 +4443,70 @@ register_from_lazy_on_parent(PyThreadState *tstate, PyObject *abs_name,
     return res;
 }
 
-PyObject *
-_PyImport_TryLoadLazySubmodule(PyObject *mod_name, PyObject *attr_name)
+_PyLazySubmoduleImportResult
+_PyImport_TryLoadLazySubmodule(PyObject *mod_name, PyObject *attr_name,
+                               PyObject **result)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(result != NULL);
+    *result = NULL;
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyInterpreterState *interp = tstate->interp;
     PyObject *lazy_pending = LAZY_PENDING_SUBMODULES(interp);
     if (lazy_pending == NULL) {
-        return NULL;
+        return _Py_LAZY_SUBMODULE_NOT_FOUND;
     }
 
     PyObject *pending_set;
     int rc = PyDict_GetItemRef(lazy_pending, mod_name, &pending_set);
-    if (rc <= 0) {
-        return NULL;
+    if (rc < 0) {
+        return _Py_LAZY_SUBMODULE_ERROR;
+    }
+    if (rc == 0) {
+        return _Py_LAZY_SUBMODULE_NOT_FOUND;
     }
 
     int contains = PySet_Contains(pending_set, attr_name);
-    if (contains <= 0) {
+    if (contains < 0) {
         Py_DECREF(pending_set);
-        return NULL;
+        return _Py_LAZY_SUBMODULE_ERROR;
+    }
+    if (contains == 0) {
+        Py_DECREF(pending_set);
+        return _Py_LAZY_SUBMODULE_NOT_FOUND;
     }
 
     PyObject *full_name = PyUnicode_FromFormat("%U.%U", mod_name, attr_name);
     if (full_name == NULL) {
         Py_DECREF(pending_set);
-        return NULL;
+        return _Py_LAZY_SUBMODULE_ERROR;
     }
 
-    PyObject *mod = PyImport_ImportModuleLevelObject(
-        full_name, NULL, NULL, NULL, 0);
+    PyObject *mod = import_find_and_load_with_name(
+        tstate, full_name, &_Py_ID(_find_and_load_lazy_submodule), Py_None);
     if (mod == NULL) {
         Py_DECREF(pending_set);
         Py_DECREF(full_name);
-        return NULL;
+        remove_importlib_frames(tstate);
+        return _Py_LAZY_SUBMODULE_ERROR;
     }
-    Py_DECREF(mod);
-
-    if (PySet_Discard(pending_set, attr_name) < 0) {
+    if (mod == Py_None) {
+        Py_DECREF(mod);
         Py_DECREF(pending_set);
         Py_DECREF(full_name);
-        return NULL;
+        return _Py_LAZY_SUBMODULE_NOT_FOUND;
+    }
+
+    if (PySet_Discard(pending_set, attr_name) < 0) {
+        Py_DECREF(mod);
+        Py_DECREF(pending_set);
+        Py_DECREF(full_name);
+        return _Py_LAZY_SUBMODULE_ERROR;
     }
     Py_DECREF(pending_set);
-
-    PyObject *submod = PyImport_GetModule(full_name);
     Py_DECREF(full_name);
-    return submod;
+    *result = mod;
+    return _Py_LAZY_SUBMODULE_LOADED;
 }
 
 PyObject *
