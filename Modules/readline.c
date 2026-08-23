@@ -1272,6 +1272,10 @@ on_completion(const char *text, int state)
                 goto error;
             result = strdup(PyBytes_AS_STRING(encoded));
             Py_DECREF(encoded);
+            if (result == NULL) {
+                PyErr_NoMemory();
+                goto error;
+            }
         }
         Py_DECREF(r);
         goto done;
