@@ -1404,26 +1404,29 @@ Reading window contents
             window.instr(y, x[, n])
 
    Read the text of the window from the current cursor position,
-   or from *y*, *x* if specified, to the end of the line,
+   or from *y*, *x* if specified, to the end of the line
+   or at most *n* bytes if *n* is specified,
    and return it as a bytes object, in the encoding of the current locale.
    Attributes and color pairs are stripped;
    use :meth:`in_wchstr` to read them too.
-   At most *n* bytes are read; *n* defaults to and cannot exceed 2047.
    A character not representable in the encoding cannot be returned;
    use :meth:`in_wstr` for those.
 
    .. versionchanged:: 3.14
       The maximum value for *n* was increased from 1023 to 2047.
 
+   .. versionchanged:: next
+      *n* is no longer limited to 2047.
+
 .. method:: window.in_wstr([n])
             window.in_wstr(y, x[, n])
 
    Read the text of the window from the current cursor position,
-   or from *y*, *x* if specified, to the end of the line,
+   or from *y*, *x* if specified, to the end of the line
+   or at most *n* characters if *n* is specified,
    and return it as a :class:`str`.
    Attributes and color pairs are stripped;
    use :meth:`in_wchstr` to read them too.
-   At most *n* characters are read; *n* defaults to and cannot exceed 2047.
 
    This is the wide-character variant of :meth:`instr`.
 
@@ -1433,12 +1436,12 @@ Reading window contents
             window.in_wchstr(y, x[, n])
 
    Read the styled cells of the window from the current cursor position,
-   or from *y*, *x* if specified, to the end of the line,
+   or from *y*, *x* if specified, to the end of the line
+   or at most *n* cells if *n* is specified,
    and return them as a :class:`complexstr`.
    Unlike :meth:`instr` and :meth:`in_wstr`, each cell keeps its attributes
    and color pair, so the result can be written back unchanged
    with :meth:`addstr`.
-   At most *n* cells are read; *n* defaults to and cannot exceed 2047.
 
    .. versionadded:: next
 
