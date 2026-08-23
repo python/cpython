@@ -30975,8 +30975,9 @@ esac
 fi
 
   # Check that we're able to link with crucial curses/panel functions. This
-  # also serves as a fallback in case pkg-config failed.
-  as_fn_append LIBS " $CURSES_LIBS $PANEL_LIBS"
+  # also serves as a fallback in case pkg-config failed. Extension modules are
+  # not linked with LIBS, so exclude it to get the required libraries.
+  LIBS="$CURSES_LIBS $PANEL_LIBS"
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing initscr" >&5
 printf %s "checking for library containing initscr... " >&6; }
 if test ${ac_cv_search_initscr+y}

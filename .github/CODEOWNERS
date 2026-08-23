@@ -620,6 +620,12 @@ Lib/test/test_unittest/testmock/ @cjw296
 # Weakref
 **/*weakref*                  @kumaraditya303
 
+# Zlib
+Doc/library/zlib.rst          @StanFromIreland
+Lib/compression/zlib.py       @StanFromIreland
+Lib/test/test_zlib.py         @StanFromIreland
+Modules/_zlibmodule.c         @StanFromIreland
+
 # Zipfile.Path
 Lib/test/test_zipfile/_path/  @jaraco
 Lib/zipfile/_path/            @jaraco
