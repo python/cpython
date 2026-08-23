@@ -238,8 +238,8 @@ class AutoCompleteTest(unittest.TestCase):
         # Test attributes
         s, b = acp.fetch_completions('', ac.ATTRS)
         self.assertLess(len(small), len(large))
-        self.assertTrue(all(filter(lambda x: x.startswith('_'), s)))
-        self.assertTrue(any(filter(lambda x: x.startswith('_'), b)))
+        self.assertFalse(any(x.startswith('_') for x in s))
+        self.assertTrue(any(x.startswith('_') for x in b))
 
         # Test smalll should respect to __all__.
         with patch.dict('__main__.__dict__', {'__all__': ['a', 'b']}):

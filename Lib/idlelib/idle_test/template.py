@@ -22,7 +22,7 @@ class Test(unittest.TestCase):
         del cls.root
 
     def test_init(self):
-        self.assertTrue(True)
+        self.assertTrue(self)
 
 
 if __name__ == '__main__':
