@@ -1267,6 +1267,24 @@ class CmdLineTest(unittest.TestCase):
         assert_python_failure('-X', 'importtime=-1', '-c', code)
         assert_python_failure('-X', 'importtime=3', '-c', code)
 
+    def test_import_time_unencodable_module_name(self):
+        code = textwrap.dedent("""
+            import sys, types
+            name = 'mod\\ud800'
+            sys.modules[name] = types.ModuleType(name)
+            __import__(name)
+            try:
+                __import__('nonexistent\\ud800')
+            except ModuleNotFoundError:
+                pass
+        """)
+        res = assert_python_ok('-X', 'importtime=2', '-c', code)
+        res_err = res.err.decode('utf-8')
+        self.assertRegex(res_err,
+                         r'import time: cached\s* \| cached\s* \| mod\\ud800')
+        self.assertRegex(res_err,
+                         r'import time: \s*\d+ \| \s*\d+ \| \s*nonexistent\\ud800')
+
     def res2int(self, res):
         out = res.out.strip().decode("utf-8")
         return tuple(int(i) for i in out.split())
