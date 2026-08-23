@@ -44,7 +44,10 @@ def add_default_legacy_c_converter(cls: CConverterClassT) -> CConverterClassT:
     # automatically add converter for default format unit
     # (but without stomping on the existing one if it's already
     # set, in case you subclass)
+    # A format unit which contains a quote is a C expression, not a legacy
+    # format unit which can be used as an annotation.
     if ((cls.format_unit not in ('O&', '')) and
+        ('"' not in cls.format_unit) and
         (cls.format_unit not in legacy_converters)):
         legacy_converters[cls.format_unit] = cls
     return cls
