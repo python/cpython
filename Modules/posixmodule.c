@@ -1702,25 +1702,6 @@ idtype_t_converter(PyObject *arg, void *addr)
 }
 #endif
 
-#ifdef MS_WINDOWS
-    typedef long long Py_off_t;
-#else
-    typedef off_t Py_off_t;
-#endif
-
-static int
-Py_off_t_converter(PyObject *arg, void *addr)
-{
-#ifdef HAVE_LARGEFILE_SUPPORT
-    *((Py_off_t *)addr) = PyLong_AsLongLong(arg);
-#else
-    *((Py_off_t *)addr) = PyLong_AsLong(arg);
-#endif
-    if (PyErr_Occurred())
-        return 0;
-    return 1;
-}
-
 static PyObject *
 PyLong_FromPy_off_t(Py_off_t offset)
 {
@@ -3221,18 +3202,6 @@ class dev_t_return_converter(unsigned_long_return_converter):
     conversion_fn = '_PyLong_FromDev'
     unsigned_cast = '(dev_t)'
 
-class pid_t_converter(CConverter):
-    type = 'pid_t'
-    format_unit = '" _Py_PARSE_PID "'
-
-    def parse_arg(self, argname, displayname, *, limited_capi):
-        return self.format_code("""
-            {paramname} = PyLong_AsPid({argname});
-            if ({paramname} == (pid_t)(-1) && PyErr_Occurred()) {{{{
-                goto exit;
-            }}}}
-            """, argname=argname)
-
 class idtype_t_converter(CConverter):
     type = 'idtype_t'
     converter = 'idtype_t_converter'
@@ -3261,10 +3230,6 @@ class intptr_t_converter(CConverter):
             }}}}
             """, argname=argname)
 
-class Py_off_t_converter(CConverter):
-    type = 'Py_off_t'
-    converter = 'Py_off_t_converter'
-
 class Py_off_t_return_converter(long_return_converter):
     type = 'Py_off_t'
     conversion_fn = 'PyLong_FromPy_off_t'
@@ -3284,7 +3249,7 @@ class confname_converter(CConverter):
         """, argname=argname, converter=self.converter, table=self.table)
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=ddbf3ac90a981122]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=e459765bdf453ebf]*/
 
 /*[clinic input]
 
@@ -12642,7 +12607,7 @@ done:
     }
 #endif
     off_t offset;
-    if (!Py_off_t_converter(offobj, &offset))
+    if (!_Py_Off_t_Converter(offobj, &offset))
         return NULL;
 
 #if defined(__sun) && defined(__SVR4)
@@ -13176,14 +13141,14 @@ os_copy_file_range_impl(PyObject *module, int src, int dst, Py_ssize_t count,
 
 
     if (offset_src != Py_None) {
-        if (!Py_off_t_converter(offset_src, &offset_src_val)) {
+        if (!_Py_Off_t_Converter(offset_src, &offset_src_val)) {
             return NULL;
         }
         p_offset_src = &offset_src_val;
     }
 
     if (offset_dst != Py_None) {
-        if (!Py_off_t_converter(offset_dst, &offset_dst_val)) {
+        if (!_Py_Off_t_Converter(offset_dst, &offset_dst_val)) {
             return NULL;
         }
         p_offset_dst = &offset_dst_val;
@@ -13247,14 +13212,14 @@ os_splice_impl(PyObject *module, int src, int dst, Py_ssize_t count,
 
 
     if (offset_src != Py_None) {
-        if (!Py_off_t_converter(offset_src, &offset_src_val)) {
+        if (!_Py_Off_t_Converter(offset_src, &offset_src_val)) {
             return NULL;
         }
         p_offset_src = &offset_src_val;
     }
 
     if (offset_dst != Py_None) {
-        if (!Py_off_t_converter(offset_dst, &offset_dst_val)) {
+        if (!_Py_Off_t_Converter(offset_dst, &offset_dst_val)) {
             return NULL;
         }
         p_offset_dst = &offset_dst_val;
