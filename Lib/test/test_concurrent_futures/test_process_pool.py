@@ -8,6 +8,7 @@ import unittest
 import unittest.mock
 import weakref
 from concurrent import futures
+from concurrent.futures import process as futures_process
 from concurrent.futures.process import BrokenProcessPool
 
 from test import support
@@ -541,6 +542,46 @@ class ProcessPoolExecutorTest(ExecutorTest):
             for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
                 if not worker_process.is_alive():
                     break
+
+
+class CheckSystemLimitsTest(unittest.TestCase):
+    # gh-155912: a denied sysconf read is the same condition as an
+    # unavailable one and must not be fatal.
+
+    def setUp(self):
+        saved = (futures_process._system_limits_checked,
+                 futures_process._system_limited)
+
+        def restore():
+            (futures_process._system_limits_checked,
+             futures_process._system_limited) = saved
+
+        self.addCleanup(restore)
+
+    def check(self, **kwargs):
+        futures_process._system_limits_checked = False
+        futures_process._system_limited = None
+        with unittest.mock.patch.object(os, "sysconf", **kwargs):
+            futures_process._check_system_limits()
+
+    def test_denied_read_is_not_fatal(self):
+        self.check(side_effect=PermissionError(1, "Operation not permitted"))
+
+    def test_other_oserror_is_not_fatal(self):
+        self.check(side_effect=OSError(5, "Input/output error"))
+
+    def test_unsupported_name_is_not_fatal(self):
+        self.check(side_effect=ValueError)
+
+    def test_indeterminate_limit_is_not_fatal(self):
+        self.check(return_value=-1)
+
+    def test_sufficient_semaphores(self):
+        self.check(return_value=87381)
+
+    def test_too_few_semaphores_still_raises(self):
+        with self.assertRaises(NotImplementedError):
+            self.check(return_value=10)
 
 
 create_executor_tests(globals(), ProcessPoolExecutorTest,
