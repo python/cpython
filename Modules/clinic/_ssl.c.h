@@ -8,6 +8,7 @@ preserve
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_fileutils.h"     // _Py_Off_t_Converter()
 #include "pycore_long.h"          // _PyLong_Size_t_Converter()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
@@ -614,7 +615,7 @@ _ssl__SSLSocket_sendfile(PyObject *self, PyObject *const *args, Py_ssize_t nargs
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[1], &offset)) {
+    if (!_Py_Off_t_Converter(args[1], &offset)) {
         goto exit;
     }
     if (!_PyLong_Size_t_Converter(args[2], &size)) {
@@ -3406,4 +3407,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=e9d9a5deca9e1a7d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f3fc13b81bf9bb6a input=a9049054013a1b77]*/
