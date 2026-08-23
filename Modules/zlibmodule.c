@@ -1280,7 +1280,7 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
     /* A previous flush() already reached the end of the stream and freed the
        decompression state, so there is nothing left to process. */
     if (!self->is_initialised) {
-        PyMutex_Unlock(&self->mutex);
+        LEAVE_ZLIB(self);
         return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
 
