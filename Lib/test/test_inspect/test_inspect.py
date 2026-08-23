@@ -6411,7 +6411,7 @@ class TestSignatureDefinitions(unittest.TestCase):
                 methods_unsupported_signature=methods_unsupported_signature)
 
     def test_warnings_module_has_signatures(self):
-        unsupported_signature = {'warn', 'warn_explicit'}
+        unsupported_signature = {'warn_explicit'}
         self._test_module_has_signatures(warnings, unsupported_signature=unsupported_signature)
 
     def test_weakref_module_has_signatures(self):
