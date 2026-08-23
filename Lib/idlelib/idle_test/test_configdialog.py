@@ -3,6 +3,7 @@
 Half the class creates dialog, half works with user customizations.
 """
 from idlelib import configdialog
+from idlelib.editor import EditorWindow
 from test.support import requires
 requires('gui')
 import unittest
@@ -51,12 +52,27 @@ def tearDownModule():
 
 
 class ConfigDialogTest(unittest.TestCase):
+    # The methods tested here are mocked out in the tests below.
+
+    def setUp(self):
+        self.parent = dialog.parent
+        self.instance = mock.create_autospec(EditorWindow, instance=True)
+        dialog.parent = mock.Mock(instance_dict={self.instance: []})
+
+    def tearDown(self):
+        dialog.parent = self.parent
 
     def test_deactivate_current_config(self):
-        pass
+        dialog.deactivate_current_config()
+        self.instance.RemoveKeybindings.assert_called_once_with()
 
-    def activate_config_changes(self):
-        pass
+    def test_activate_config_changes(self):
+        dialog.activate_config_changes()
+        for name in ('ResetColorizer', 'ResetFont', 'set_notabs_indentwidth',
+                     'ApplyKeybindings', 'reset_help_menu_entries',
+                     'update_cursor_blink'):
+            with self.subTest(name=name):
+                getattr(self.instance, name).assert_called_once_with()
 
 
 class ButtonTest(unittest.TestCase):

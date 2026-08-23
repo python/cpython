@@ -219,11 +219,13 @@ class RMenuTest(unittest.TestCase):
         cls.root = Tk()
         cls.root.withdraw()
         cls.window = Editor(root=cls.root)
+        cls.text = cls.window.text
+        cls.window.rmenu = cls.DummyRMenu
 
     @classmethod
     def tearDownClass(cls):
         cls.window._close()
-        del cls.window
+        del cls.window, cls.text
         cls.root.update_idletasks()
         for id in cls.root.after_info():
             cls.root.after_cancel(id)
@@ -233,8 +235,49 @@ class RMenuTest(unittest.TestCase):
     class DummyRMenu:
         def tk_popup(x, y): pass
 
-    def test_rclick(self):
-        pass
+    def click(self, index):
+        "Simulate a right click at the start of index; return the event."
+        x, y = self.text.bbox(index)[:2]
+        Event = namedtuple('Event', ['x', 'y', 'x_root', 'y_root'])
+        event = Event(x, y, x_root=0, y_root=0)
+        self.assertEqual(self.window.right_menu_event(event), 'break')
+        return event
+
+    def test_rclick_no_selection(self):
+        text = self.text
+        insert(text, 'one two three')
+        self.click('1.8')
+        self.assertEqual(text.tag_ranges('sel'), ())
+        self.assertEqual(text.index('insert'), '1.8')
+
+    def test_rclick_outside_selection(self):
+        text = self.text
+        insert(text, 'one two three')
+        text.tag_add('sel', '1.0', '1.3')
+        text.mark_set('insert', '1.3')
+        self.click('1.8')
+        self.assertEqual(text.tag_ranges('sel'), ())
+        self.assertEqual(text.index('insert'), '1.8')
+
+    def test_rclick_inside_selection(self):
+        text = self.text
+        insert(text, 'one two three')
+        text.tag_add('sel', '1.4', '1.7')
+        text.mark_set('insert', '1.7')
+        self.click('1.5')
+        self.assertEqual(text.index('sel.first'), '1.4')
+        self.assertEqual(text.index('sel.last'), '1.7')
+        self.assertEqual(text.index('insert'), '1.7')
+
+    def test_rmenu_check_copy(self):
+        text = self.text
+        insert(text, 'one two three')
+        eq = self.assertEqual
+        eq(self.window.rmenu_check_copy(), 'disabled')
+        eq(self.window.rmenu_check_cut(), 'disabled')
+        text.tag_add('sel', '1.0', '1.3')
+        eq(self.window.rmenu_check_copy(), 'normal')
+        eq(self.window.rmenu_check_cut(), 'normal')
 
 
 if __name__ == '__main__':
