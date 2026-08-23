@@ -215,6 +215,14 @@ static int curses_start_color_called = FALSE;
    while these functions are still in use. */
 static char *curses_screen_encoding = NULL;
 
+/* ncurses and PDCurses store n characters and add a terminator; NetBSD
+   curses counts the terminator in n.  Ask an unknown library for one more. */
+#if defined(NCURSES_VERSION) || defined(PDCURSES)
+#  define CURSES_STR_EXTRA  0
+#else
+#  define CURSES_STR_EXTRA  1
+#endif
+
 /* Utility Checking Procedures */
 
 /*
@@ -2014,25 +2022,33 @@ PyCursesWindow_instr(PyObject *op, PyObject *args)
         return NULL;
     }
 
-    n = Py_MIN(n, max_buf_size - 1);
+    n = Py_MIN(n, max_buf_size - 1 - CURSES_STR_EXTRA);
+    n += CURSES_STR_EXTRA;
     res = PyBytes_FromStringAndSize(NULL, n + 1);
     if (res == NULL) {
         return NULL;
     }
     char *buf = PyBytes_AS_STRING(res);
 
-    if (use_xy) {
-        rtn = mvwinnstr(self->win, y, x, buf, n);
-    }
-    else {
-        rtn = winnstr(self->win, buf, n);
+    /* Read again if the library stored more than asked: truncating could
+       split a multibyte character. */
+    for (unsigned int want = n - CURSES_STR_EXTRA; ; n = want) {
+        if (use_xy) {
+            rtn = mvwinnstr(self->win, y, x, buf, n);
+        }
+        else {
+            rtn = winnstr(self->win, buf, n);
+        }
+        if (rtn == ERR || (unsigned int)rtn <= want) {
+            break;
+        }
     }
 
     if (rtn == ERR) {
         Py_DECREF(res);
         return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
-    _PyBytes_Resize(&res, strlen(buf));  // 'res' is set to NULL on failure
+    _PyBytes_Resize(&res, rtn);  // 'res' is set to NULL on failure
     return res;
 }
 
