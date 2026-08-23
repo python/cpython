@@ -90,8 +90,13 @@ Python build for a single framework, the following options are available.
   installed. If `DIR` is not specified, the framework will be installed into
   a subdirectory of the `iOS/Frameworks` folder.
 
-  This argument *must* be provided when configuring iOS builds. iOS does not
-  support non-framework builds.
+  This argument is required for any iOS build that will be distributed, and
+  for any build that needs to load binary extension modules.
+
+  Omitting it builds a static `libpython` for embedding directly in an app
+  binary, instead of a `Python.framework`. That configuration comes with
+  significant restrictions; see [Building a static
+  Python](#building-a-static-python) below.
 
 * `--with-framework-name=NAME`
 
@@ -113,9 +118,11 @@ framework to contain non-library content, so the iOS build will produce a
 The `lib` folder will be needed at runtime to support the Python library.
 
 If you want to use Python in a real iOS project, you need to produce multiple
-`Python.framework` builds, one for each ABI and architecture. iOS builds of
-Python *must* be constructed as framework builds. To support this, you must
-provide the `--enable-framework` flag when configuring the build. The build
+`Python.framework` builds, one for each ABI and architecture. Unless you are
+statically linking Python into your app (see [Building a static
+Python](#building-a-static-python) below), iOS builds of Python *must* be
+constructed as framework builds. To support this, you must provide the
+`--enable-framework` flag when configuring the build. The build
 also requires the use of cross-compilation. The minimal commands for building
 Python for the ARM64 iOS simulator will look something like:
 ```
@@ -215,6 +222,69 @@ minimum supported iOS version) of 13.0. To specify a different deployment
 target, provide the version number as part of the `--host` argument - for
 example, `--host=arm64-apple-ios15.4-simulator` would compile an ARM64
 simulator build with a deployment target of 15.4.
+
+### Building a static Python
+
+The official iOS release artefact is a framework build. However, if you are
+embedding Python in an app that links `libpython` at compile time, you can
+instead build a static `libpython3.x.a`, and link that archive directly into
+your app binary.
+
+The App Store requirement that binary modules be packaged as signed frameworks
+does not apply to a static build, because a static build loads nothing at
+runtime; but for the same reason, this configuration cannot use *any* binary
+module that isn't compiled into the app binary. The restrictions that follow
+from that must be opted into explicitly at configure time:
+
+* `MODULE_BUILDTYPE=static` is required. There is no framework for a shared
+  extension module to link against, so every extension module, including the
+  ones in the standard library, must be linked into `libpython`.
+
+* `--disable-test-modules` is required. Some test modules must be compiled as
+  shared libraries (see `Modules/Setup.stdlib.in`), so they cannot be built in
+  this configuration at all.
+
+A non-framework build is selected by omitting `--enable-framework`;
+`--disable-framework` is accepted as an explicit spelling of the same thing.
+Such a build is also static by default, as `--enable-shared` is off unless
+requested; `--enable-shared` without a framework is rejected, since an iOS app
+can only load a signed framework, never a bare dylib.
+
+The minimal commands for a static build targeting ARM64 iOS devices are then:
+```
+export PATH="$(pwd)/Platforms/Apple/iOS/Resources/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/Apple/usr/bin"
+./configure \
+    --disable-framework \
+    --disable-test-modules \
+    MODULE_BUILDTYPE=static \
+    --host=arm64-apple-ios \
+    --build=arm64-apple-darwin \
+    --with-build-python=/path/to/python.exe
+make
+make install
+```
+This produces a `libpython3.x.a` containing the interpreter and the standard
+library's extension modules; `make install` installs that archive, along with
+the standard library's Python source, into the location given by `--prefix`.
+
+#### Limitations of a static build
+
+* **Binary wheels cannot be used.** There is no `libpython` dylib for a
+  third-party extension module to link against, and a static Python has nothing
+  to `dlopen` in any case. Pure Python wheels work as normal; any package with a
+  C extension must be compiled into the app binary alongside `libpython`.
+
+* **The standard library's extension modules are not loadable modules.** They
+  live in the archive, not in `.framework` bundles in the app's `Frameworks`
+  folder, so the packaging described in
+  [Using Python on iOS](https://docs.python.org/3/using/ios.html) does not apply
+  to them.
+
+* **The test suite cannot be run as-is**, as the test modules are not built.
+
+* This configuration is not covered by the `Platforms/Apple` build script, nor
+  by CPython's CI. It is not the configuration used to produce official
+  releases.
 
 ## Testing Python on iOS
 
