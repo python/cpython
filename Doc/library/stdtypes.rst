@@ -1881,7 +1881,7 @@ expression support in the :mod:`re` module).
 
    The casefolding algorithm is `described in section 3.13.3 'Default Case
    Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G53253>`__.
+   <https://www.unicode.org/versions/Unicode18.0.0/core-spec/chapter-3/#G53253>`__.
 
    .. versionadded:: 3.3
 
@@ -2122,7 +2122,7 @@ expression support in the :mod:`re` module).
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
    from the `Alphabetic property defined in section 4.10 'Letters, Alphabetic, and
    Ideographic' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-4/#G91002>`__.
+   <https://www.unicode.org/versions/Unicode18.0.0/core-spec/chapter-4/#G91002>`__.
    For example:
 
    .. doctest::
@@ -2388,7 +2388,7 @@ expression support in the :mod:`re` module).
 
    The lowercasing algorithm used is `described in section 3.13.2 'Default Case
    Conversion' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G34078>`__.
+   <https://www.unicode.org/versions/Unicode18.0.0/core-spec/chapter-3/#G34078>`__.
 
 
 .. method:: str.lstrip(chars=None, /)
@@ -2900,7 +2900,7 @@ expression support in the :mod:`re` module).
 
    The uppercasing algorithm used is `described in section 3.13.2 'Default Case
    Conversion' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G34078>`__.
+   <https://www.unicode.org/versions/Unicode18.0.0/core-spec/chapter-3/#G34078>`__.
 
 
 .. method:: str.zfill(width, /)
