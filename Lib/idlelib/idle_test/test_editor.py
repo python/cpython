@@ -211,30 +211,31 @@ class IndentSearcherTest(unittest.TestCase):
                 self.assertEqual(actual_pair, expected_pair)
 
 
-##class RMenuTest(unittest.TestCase):
-##
-##    @classmethod
-##    def setUpClass(cls):
-##        requires('gui')
-##        cls.root = Tk()
-##        cls.root.withdraw()
-##        cls.window = Editor(root=cls.root)
-##
-##    @classmethod
-##    def tearDownClass(cls):
-##        cls.window._close()
-##        del cls.window
-##        cls.root.update_idletasks()
-##        for id in cls.root.after_info():
-##            cls.root.after_cancel(id)
-##        cls.root.destroy()
-##        del cls.root
-##
-##    class DummyRMenu:
-##        def tk_popup(x, y): pass
-##
-##    def test_rclick(self):
-##        pass  # Comment out because cannot fail; gh-155648.
+@unittest.skip('Empty test')
+class RMenuTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+        cls.root = Tk()
+        cls.root.withdraw()
+        cls.window = Editor(root=cls.root)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.window._close()
+        del cls.window
+        cls.root.update_idletasks()
+        for id in cls.root.after_info():
+            cls.root.after_cancel(id)
+        cls.root.destroy()
+        del cls.root
+
+    class DummyRMenu:
+        def tk_popup(x, y): pass
+
+    def test_rclick(self):
+        pass
 
 
 if __name__ == '__main__':

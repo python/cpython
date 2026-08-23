@@ -50,13 +50,14 @@ def tearDownModule():
     root = dialog = None
 
 
-##class ConfigDialogTest(unittest.TestCase):
-##
-##    def test_deactivate_current_config(self):
-##        pass
-##
-##    def activate_config_changes(self):
-##        pass
+@unittest.skip('Empty tests')
+class ConfigDialogTest(unittest.TestCase):
+
+    def test_deactivate_current_config(self):
+        pass
+
+    def activate_config_changes(self):
+        pass
 
 
 class ButtonTest(unittest.TestCase):
