@@ -1732,9 +1732,9 @@ PyDoc_STRVAR(_curses_window_instr__doc__,
 "    Maximal number of bytes.  The rest of the line by default.\n"
 "\n"
 "Read from the current cursor position, or from y, x if specified, to\n"
-"the end of the line, and return the text in the encoding of the\n"
-"current locale, with attributes and color pairs stripped.  At most n\n"
-"bytes are read.");
+"the end of the line or at most n bytes if n is specified, and return\n"
+"the text in the encoding of the current locale, with attributes and\n"
+"color pairs stripped.");
 
 #define _CURSES_WINDOW_INSTR_METHODDEF    \
     {"instr", (PyCFunction)_curses_window_instr, METH_VARARGS, _curses_window_instr__doc__},
@@ -1853,8 +1853,8 @@ PyDoc_STRVAR(_curses_window_in_wstr__doc__,
 "\n"
 "This is the wide-character variant of instr().  Read from the\n"
 "current cursor position, or from y, x if specified, to the end of\n"
-"the line, with attributes and color pairs stripped.  At most n\n"
-"characters are read.");
+"the line or at most n characters if n is specified, with attributes\n"
+"and color pairs stripped.");
 
 #define _CURSES_WINDOW_IN_WSTR_METHODDEF    \
     {"in_wstr", (PyCFunction)_curses_window_in_wstr, METH_VARARGS, _curses_window_in_wstr__doc__},
@@ -1916,10 +1916,11 @@ PyDoc_STRVAR(_curses_window_in_wchstr__doc__,
 "  n\n"
 "    Maximal number of cells.  The rest of the line by default.\n"
 "\n"
-"Read from the current cursor position, or from y, x if specified, to\n"
-"the end of the line.  Unlike instr() and in_wstr(), each cell keeps\n"
-"its attributes and color pair, so the result can be written back\n"
-"unchanged with addstr().  At most n cells are read.");
+"Read from the current cursor position, or from y, x if specified,\n"
+"to the end of the line or at most n cells if n is specified.\n"
+"Unlike instr() and in_wstr(), each cell keeps its attributes and\n"
+"color pair, so the result can be written back unchanged with\n"
+"addstr().");
 
 #define _CURSES_WINDOW_IN_WCHSTR_METHODDEF    \
     {"in_wchstr", (PyCFunction)_curses_window_in_wchstr, METH_VARARGS, _curses_window_in_wchstr__doc__},
@@ -6631,4 +6632,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=b3fd89cab5087e85 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=81cb3f7a7225f920 input=a9049054013a1b77]*/

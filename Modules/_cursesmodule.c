@@ -3535,16 +3535,14 @@ _curses_window_get_wch_impl(PyCursesWindowObject *self, int group_right_1,
 #endif
 }
 
-/* How much one cell can contribute to a read: it holds at most CCHARW_MAX
-   characters, each of at most MB_CUR_MAX bytes. */
+/* Characters one cell can hold. */
 #ifdef HAVE_NCURSESW
 #define CURSES_CELL_CHARS       CCHARW_MAX
 #else
 #define CURSES_CELL_CHARS       1
 #endif
 
-/* The most a read starting at (y, x) can return: the columns left on the line,
-   in the unit the function counts (cells, characters or bytes). */
+/* The columns left on the line, in the unit the caller counts. */
 static unsigned int
 curses_window_read_limit(PyCursesWindowObject *self, int use_xy, int x,
                          unsigned int per_cell)
@@ -3906,15 +3904,15 @@ _curses.window.instr
 Return the text of the window as a bytes object.
 
 Read from the current cursor position, or from y, x if specified, to
-the end of the line, and return the text in the encoding of the
-current locale, with attributes and color pairs stripped.  At most n
-bytes are read.
+the end of the line or at most n bytes if n is specified, and return
+the text in the encoding of the current locale, with attributes and
+color pairs stripped.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_instr_impl(PyCursesWindowObject *self, int group_right_1,
                           int y, int x, int group_right_2, unsigned int n)
-/*[clinic end generated code: output=2428948b44ad10c7 input=c3612f8328d5bca8]*/
+/*[clinic end generated code: output=2428948b44ad10c7 input=9307eca4bd576899]*/
 {
     return curses_window_instr_bytes(self, group_right_1, group_right_2,
                                      y, x, n);
@@ -4025,14 +4023,14 @@ Return the text of the window as a str.
 
 This is the wide-character variant of instr().  Read from the
 current cursor position, or from y, x if specified, to the end of
-the line, with attributes and color pairs stripped.  At most n
-characters are read.
+the line or at most n characters if n is specified, with attributes
+and color pairs stripped.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_in_wstr_impl(PyCursesWindowObject *self, int group_right_1,
                             int y, int x, int group_right_2, unsigned int n)
-/*[clinic end generated code: output=d8c8bcfe8a26f519 input=7b3b1822c120bfcb]*/
+/*[clinic end generated code: output=d8c8bcfe8a26f519 input=5ba908338a94bfc8]*/
 {
 #ifdef HAVE_NCURSESW
     int rtn;
@@ -4098,17 +4096,18 @@ _curses.window.in_wchstr
 
 Return the styled cells of the window as a complexstr.
 
-Read from the current cursor position, or from y, x if specified, to
-the end of the line.  Unlike instr() and in_wstr(), each cell keeps
-its attributes and color pair, so the result can be written back
-unchanged with addstr().  At most n cells are read.
+Read from the current cursor position, or from y, x if specified,
+to the end of the line or at most n cells if n is specified.
+Unlike instr() and in_wstr(), each cell keeps its attributes and
+color pair, so the result can be written back unchanged with
+addstr().
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_in_wchstr_impl(PyCursesWindowObject *self, int group_right_1,
                               int y, int x, int group_right_2,
                               unsigned int n)
-/*[clinic end generated code: output=3807a62d51efd44f input=c9a1cc21bde40060]*/
+/*[clinic end generated code: output=3807a62d51efd44f input=50400321de1db1da]*/
 {
     int rtn;
     unsigned int limit = curses_window_read_limit(self, group_right_1, x, 1);
