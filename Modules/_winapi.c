@@ -1934,6 +1934,63 @@ _winapi_OpenProcess_impl(PyObject *module, DWORD desired_access,
 }
 
 /*[clinic input]
+_winapi.OpenThread -> HANDLE
+
+    desired_access: DWORD
+    inherit_handle: BOOL
+    thread_id: DWORD
+    /
+[clinic start generated code]*/
+
+static HANDLE
+_winapi_OpenThread_impl(PyObject *module, DWORD desired_access,
+                        BOOL inherit_handle, DWORD thread_id)
+/*[clinic end generated code: output=4eac45e975925ec0 input=ee54a437060f9b59]*/
+{
+    HANDLE handle;
+
+    if (PySys_Audit("_winapi.OpenThread", "kk",
+                    thread_id, desired_access) < 0) {
+        return INVALID_HANDLE_VALUE;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    handle = OpenThread(desired_access, inherit_handle, thread_id);
+    Py_END_ALLOW_THREADS
+    if (handle == NULL) {
+        PyErr_SetFromWindowsErr(0);
+        handle = INVALID_HANDLE_VALUE;
+    }
+
+    return handle;
+}
+
+/*[clinic input]
+_winapi.CancelSynchronousIo
+
+    thread: HANDLE
+    /
+
+Cancel pending synchronous I/O issued by the specified thread.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_CancelSynchronousIo_impl(PyObject *module, HANDLE thread)
+/*[clinic end generated code: output=a15680598ffc526b input=40cdf5a637ed95da]*/
+{
+    BOOL result;
+
+    Py_BEGIN_ALLOW_THREADS
+    result = CancelSynchronousIo(thread);
+    Py_END_ALLOW_THREADS
+
+    if (!result) {
+        return PyErr_SetFromWindowsErr(0);
+    }
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
 _winapi.PeekNamedPipe
 
     handle: HANDLE
@@ -3212,6 +3269,8 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_RESETEVENT_METHODDEF
     _WINAPI_SETEVENT_METHODDEF
     _WINAPI_SETNAMEDPIPEHANDLESTATE_METHODDEF
+    _WINAPI_OPENTHREAD_METHODDEF
+    _WINAPI_CANCELSYNCHRONOUSIO_METHODDEF
     _WINAPI_TERMINATEPROCESS_METHODDEF
     _WINAPI_UNMAPVIEWOFFILE_METHODDEF
     _WINAPI_VIRTUALQUERYSIZE_METHODDEF
@@ -3323,6 +3382,7 @@ static int winapi_exec(PyObject *m)
     WINAPI_CONSTANT(F_DWORD, PIPE_WAIT);
     WINAPI_CONSTANT(F_DWORD, PROCESS_ALL_ACCESS);
     WINAPI_CONSTANT(F_DWORD, SYNCHRONIZE);
+    WINAPI_CONSTANT(F_DWORD, THREAD_TERMINATE);
     WINAPI_CONSTANT(F_DWORD, PROCESS_DUP_HANDLE);
     WINAPI_CONSTANT(F_DWORD, PROCESS_QUERY_LIMITED_INFORMATION);
     WINAPI_CONSTANT(F_DWORD, SEC_COMMIT);
