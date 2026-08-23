@@ -1673,7 +1673,7 @@ suggest_missing_self(PyFunctionObject *func, PyCodeObject *co,
                      _PyStackRef const *args, Py_ssize_t argcount)
 {
     /* Missing self shows up as exactly one extra positional argument. */
-    if ((co->co_argcount + 1) != argcount || argcount == 0) {
+    if ((co->co_argcount + 1) != argcount) {
         return 0;
     }
 
