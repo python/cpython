@@ -10,17 +10,17 @@
 
 .. note::
 
-    :mod:`sys.monitoring` is a namespace within the :mod:`sys` module,
-    not an independent module, so there is no need to
-    ``import sys.monitoring``, simply ``import sys`` and then use
-    ``sys.monitoring``.
+    :mod:`!sys.monitoring` is a namespace within the :mod:`sys` module,
+    not an independent module, and ``import sys.monitoring`` would fail
+    with a :exc:`ModuleNotFoundError`. Instead, simply ``import sys``
+    and then use ``sys.monitoring``.
 
 
 This namespace provides access to the functions and constants necessary to
 activate and control event monitoring.
 
 As programs execute, events occur that might be of interest to tools that
-monitor execution. The :mod:`sys.monitoring` namespace provides means to
+monitor execution. The :mod:`!sys.monitoring` namespace provides means to
 receive callbacks when events of interest occur.
 
 The monitoring API consists of three components:
@@ -180,8 +180,8 @@ Local events
 ''''''''''''
 
 Local events are associated with normal execution of the program and happen
-at clearly defined locations. All local events can be disabled.
-The local events are:
+at clearly defined locations. All local events can be disabled
+per location. The local events are:
 
 * :monitoring-event:`PY_START`
 * :monitoring-event:`PY_RESUME`
@@ -205,6 +205,8 @@ Using :monitoring-event:`BRANCH_LEFT` and :monitoring-event:`BRANCH_RIGHT`
 events will give much better performance as they can be disabled
 independently.
 
+.. _monitoring-ancillary-events:
+
 Ancillary events
 ''''''''''''''''
 
@@ -216,14 +218,17 @@ by another event:
 
 The :monitoring-event:`C_RETURN` and :monitoring-event:`C_RAISE` events
 are controlled by the :monitoring-event:`CALL` event.
-:monitoring-event:`C_RETURN` and :monitoring-event:`C_RAISE` events will only be seen if the
-corresponding :monitoring-event:`CALL` event is being monitored.
+:monitoring-event:`C_RETURN` and :monitoring-event:`C_RAISE` events will only be
+seen if the corresponding :monitoring-event:`CALL` event is being monitored.
+
+
+.. _monitoring-event-global:
 
 Other events
 ''''''''''''
 
 Other events are not necessarily tied to a specific location in the
-program and cannot be individually disabled.
+program and cannot be individually disabled per location.
 
 The other events that can be monitored are:
 
@@ -231,6 +236,12 @@ The other events that can be monitored are:
 * :monitoring-event:`PY_UNWIND`
 * :monitoring-event:`RAISE`
 * :monitoring-event:`EXCEPTION_HANDLED`
+* :monitoring-event:`RERAISE`
+
+.. versionchanged:: 3.15
+   Other events can now be turned on and disabled on a per code object
+   basis. Returning :data:`DISABLE` from a callback disables the event
+   for the entire code object (for the current tool).
 
 
 The STOP_ITERATION event
@@ -244,8 +255,7 @@ raise an exception unless it would be visible to other code.
 
 To allow tools to monitor for real exceptions without slowing down generators
 and coroutines, the :monitoring-event:`STOP_ITERATION` event is provided.
-:monitoring-event:`STOP_ITERATION` can be locally disabled, unlike
-:monitoring-event:`RAISE`.
+:monitoring-event:`STOP_ITERATION` can be locally disabled.
 
 Note that the :monitoring-event:`STOP_ITERATION` event and the
 :monitoring-event:`RAISE` event for a :exc:`StopIteration` exception are
@@ -289,12 +299,13 @@ in Python (see :ref:`c-api-monitoring`).
 
 .. function:: get_local_events(tool_id: int, code: CodeType, /) -> int
 
-   Returns all the local events for *code*
+   Returns all the :ref:`local events <monitoring-event-local>` for *code*
 
 .. function:: set_local_events(tool_id: int, code: CodeType, event_set: int, /) -> None
 
-   Activates all the local events for *code* which are set in *event_set*.
-   Raises a :exc:`ValueError` if *tool_id* is not in use.
+   Activates all the :ref:`local events <monitoring-event-local>` for *code*
+   which are set in *event_set*. Raises a :exc:`ValueError` if *tool_id* is not
+   in use.
 
 
 Disabling events
@@ -305,14 +316,19 @@ Disabling events
    A special value that can be returned from a callback function to disable
    events for the current code location.
 
-Local events can be disabled for a specific code location by returning
-:data:`sys.monitoring.DISABLE` from a callback function. This does not change
-which events are set, or any other code locations for the same event.
+:ref:`Local events <monitoring-event-local>` can be disabled for a specific code
+location by returning :data:`sys.monitoring.DISABLE` from a callback function.
+This does not change which events are set, or any other code locations for the
+same event.
 
-Disabling events for specific locations is very important for high
-performance monitoring. For example, a program can be run under a
-debugger with no overhead if the debugger disables all monitoring
-except for a few breakpoints.
+:ref:`Other events <monitoring-event-global>` can be disabled on a per code
+object basis by returning :data:`sys.monitoring.DISABLE` from a callback
+function. This disables the event for the entire code object (for the current
+tool).
+
+Disabling events for specific locations is very important for high performance
+monitoring. For example, a program can be run under a debugger with no overhead
+if the debugger disables all monitoring except for a few breakpoints.
 
 .. function:: restart_events() -> None
 

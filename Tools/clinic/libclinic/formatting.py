@@ -39,8 +39,55 @@ def _quoted_for_c_string(text: str) -> str:
     return text
 
 
-def c_repr(text: str) -> str:
-    return '"' + text + '"'
+# Use octals, because \x... in C has arbitrary number of hexadecimal digits.
+_c_repr = [chr(i) if 32 <= i < 127 else fr'\{i:03o}' for i in range(256)]
+_c_repr[ord('"')] = r'\"'
+_c_repr[ord('\\')] = r'\\'
+_c_repr[ord('\a')] = r'\a'
+_c_repr[ord('\b')] = r'\b'
+_c_repr[ord('\f')] = r'\f'
+_c_repr[ord('\n')] = r'\n'
+_c_repr[ord('\r')] = r'\r'
+_c_repr[ord('\t')] = r'\t'
+_c_repr[ord('\v')] = r'\v'
+
+def _break_trigraphs(s: str) -> str:
+    # Prevent trigraphs from being interpreted inside string literals.
+    if '??' in s:
+        s = s.replace('??', r'?\?')
+        s = s.replace(r'\??', r'\?\?')
+    # Also Argument Clinic does not like comment-like sequences
+    # in string literals.
+    s = s.replace(r'/*', r'/\*')
+    s = s.replace(r'*/', r'*\/')
+    return s
+
+def c_bytes_repr(data: bytes) -> str:
+    r = ''.join(_c_repr[i] for i in data)
+    r = _break_trigraphs(r)
+    return '"' + r + '"'
+
+def c_str_repr(text: str) -> str:
+    r = ''.join(_c_repr[i] if i < 0x80
+                else fr'\u{i:04x}' if i < 0x10000
+                else fr'\U{i:08x}'
+                for i in map(ord, text))
+    r = _break_trigraphs(r)
+    return '"' + r + '"'
+
+def c_unichar_repr(char: str) -> str:
+    if char == "'":
+        return r"'\''"
+    if char == '"':
+        return """'"'"""
+    if char == '\0':
+        return '0'
+    i = ord(char)
+    if i < 0x80:
+        r = _c_repr[i]
+        if not r.startswith((r'\0', r'\1')):
+            return "'" + r + "'"
+    return f'0x{i:02x}'
 
 
 def wrapped_c_string_literal(
@@ -58,8 +105,8 @@ def wrapped_c_string_literal(
         drop_whitespace=False,
         break_on_hyphens=False,
     )
-    separator = c_repr(suffix + "\n" + subsequent_indent * " ")
-    return initial_indent * " " + c_repr(separator.join(wrapped))
+    separator = '"' + suffix + "\n" + subsequent_indent * " " + '"'
+    return initial_indent * " " + '"' + separator.join(wrapped) + '"'
 
 
 def _add_prefix_and_suffix(text: str, *, prefix: str = "", suffix: str = "") -> str:

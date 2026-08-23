@@ -1,0 +1,4 @@
+``asyncio``'s ``loop.sendfile(..., fallback=False)`` now consistently raises
+:exc:`asyncio.SendfileNotAvailableError` for fallback-only transports, such as
+SSL/TLS transports, when native sendfile cannot be used. Previously, this case
+raised :exc:`RuntimeError`.

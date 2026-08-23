@@ -3,6 +3,8 @@ Tests for pathlib.types._JoinablePath
 """
 
 import unittest
+import threading
+from test.support import threading_helper
 
 from .support import is_pypi
 from .support.lexical_path import LexicalPath
@@ -157,6 +159,26 @@ class JoinTestBase:
         p = P(f'{sep}a{sep}b')
         parts = p.parts
         self.assertEqual(parts, (sep, 'a', 'b'))
+
+    @threading_helper.requires_working_threading()
+    def test_parts_multithreaded(self):
+        P = self.cls
+
+        NUM_THREADS = 10
+        NUM_ITERS = 10
+
+        for _ in range(NUM_ITERS):
+            b = threading.Barrier(NUM_THREADS)
+            path = P('a') / 'b' / 'c' / 'd' / 'e'
+            expected = ('a', 'b', 'c', 'd', 'e')
+
+            def check_parts():
+                b.wait()
+                self.assertEqual(path.parts, expected)
+
+            threads = [threading.Thread(target=check_parts) for _ in range(NUM_THREADS)]
+            with threading_helper.start_threads(threads):
+                pass
 
     def test_parent(self):
         # Relative
@@ -353,6 +375,61 @@ class JoinTestBase:
         self.assertRaises(ValueError, P('a/b').with_suffix, './.d')
         self.assertRaises(ValueError, P('a/b').with_suffix, '.d/.')
         self.assertRaises(TypeError, P('a/b').with_suffix, None)
+
+    def test_relative_to(self):
+        P = self.cls
+        p = P('a/b')
+        self.assertEqual(p.relative_to(P('')), P('a', 'b'))
+        self.assertEqual(p.relative_to(P('a')), P('b'))
+        self.assertEqual(p.relative_to(P('a/b')), P(''))
+        self.assertEqual(p.relative_to(P(''), walk_up=True), P('a', 'b'))
+        self.assertEqual(p.relative_to(P('a'), walk_up=True), P('b'))
+        self.assertEqual(p.relative_to(P('a/b'), walk_up=True), P(''))
+        self.assertEqual(p.relative_to(P('a/c'), walk_up=True), P('..', 'b'))
+        self.assertEqual(p.relative_to(P('a/b/c'), walk_up=True), P('..'))
+        self.assertEqual(p.relative_to(P('c'), walk_up=True), P('..', 'a', 'b'))
+        self.assertRaises(ValueError, p.relative_to, P('c'))
+        self.assertRaises(ValueError, p.relative_to, P('a/b/c'))
+        self.assertRaises(ValueError, p.relative_to, P('a/c'))
+        self.assertRaises(ValueError, p.relative_to, P('/a'))
+        self.assertRaises(ValueError, p.relative_to, P('../a'))
+        self.assertRaises(ValueError, p.relative_to, P('a/..'))
+        self.assertRaises(ValueError, p.relative_to, P('/a/..'))
+        self.assertRaises(ValueError, p.relative_to, P('/'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('/a'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('../a'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('a/..'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('/a/..'), walk_up=True)
+        class Q(self.cls):
+            __eq__ = object.__eq__
+            __hash__ = object.__hash__
+        q = Q('a/b')
+        self.assertTrue(q.relative_to(q))
+        self.assertRaises(ValueError, q.relative_to, Q(''))
+        self.assertRaises(ValueError, q.relative_to, Q('a'))
+        self.assertRaises(ValueError, q.relative_to, Q('a'), walk_up=True)
+        self.assertRaises(ValueError, q.relative_to, Q('a/b'))
+        self.assertRaises(ValueError, q.relative_to, Q('c'))
+
+    def test_is_relative_to(self):
+        P = self.cls
+        p = P('a/b')
+        self.assertTrue(p.is_relative_to(P('')))
+        self.assertTrue(p.is_relative_to(P('a')))
+        self.assertTrue(p.is_relative_to(P('a/b')))
+        self.assertFalse(p.is_relative_to(P('c')))
+        self.assertFalse(p.is_relative_to(P('a/b/c')))
+        self.assertFalse(p.is_relative_to(P('a/c')))
+        self.assertFalse(p.is_relative_to(P('/a')))
+        class Q(self.cls):
+            __eq__ = object.__eq__
+            __hash__ = object.__hash__
+        q = Q('a/b')
+        self.assertTrue(q.is_relative_to(q))
+        self.assertFalse(q.is_relative_to(Q('')))
+        self.assertFalse(q.is_relative_to(Q('a')))
+        self.assertFalse(q.is_relative_to(Q('a/b')))
+        self.assertFalse(q.is_relative_to(Q('c')))
 
 
 class LexicalPathJoinTest(JoinTestBase, unittest.TestCase):

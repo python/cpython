@@ -1,6 +1,7 @@
 import contextlib
 import os
 import pickle
+import signal
 import sys
 from textwrap import dedent
 import threading
@@ -11,7 +12,7 @@ from test import support
 from test.support import os_helper
 from test.support import script_helper
 from test.support import import_helper
-from test.support.script_helper import assert_python_ok
+from test.support.script_helper import assert_python_ok, spawn_python
 # Raise SkipTest if subinterpreters not supported.
 _interpreters = import_helper.import_module('_interpreters')
 from concurrent import interpreters
@@ -288,6 +289,21 @@ class ListAllTests(TestBase):
         for interp1, interp2 in zip(actual, expected):
             self.assertIs(interp1, interp2)
 
+    def test_destroyed_by_gc(self):
+        # gh-155997: the interpreter is destroyed while list_all() runs.
+        interp = interpreters.create()
+        interpid = interp.id
+        cycle = []
+        cycle.append(cycle)
+        cycle.append(interp)
+        # The cycle holds the only reference, so only the collector frees it.
+        with support.disable_gc():
+            del interp, cycle
+
+        with support.gc_threshold(1):
+            ids = [i.id for i in interpreters.list_all()]
+        self.assertNotIn(interpid, ids)
+
     def test_created_with_capi(self):
         mainid, *_ = _interpreters.get_main()
         interpid1 = _interpreters.create()
@@ -431,9 +447,39 @@ class InterpreterObjectTests(TestBase):
         exit()"""
         stdout, stderr = repl.communicate(script)
         self.assertIsNone(stderr)
-        self.assertIn(b"remaining subinterpreters", stdout)
+        self.assertIn(b"Interpreter.close()", stdout)
         self.assertNotIn(b"Traceback", stdout)
 
+    @support.requires_subprocess()
+    @unittest.skipIf(os.name == 'nt', "signals don't work well on windows")
+    def test_keyboard_interrupt_in_thread_running_interp(self):
+        import subprocess
+        source = f"""if True:
+        from concurrent import interpreters
+        from threading import Thread
+
+        def test():
+            import time
+            print('a', flush=True, end='')
+            time.sleep(10)
+
+        interp = interpreters.create()
+        interp.call_in_thread(test)
+        """
+
+        with spawn_python("-c", source, stderr=subprocess.PIPE) as proc:
+            self.assertEqual(proc.stdout.read(1), b'a')
+            proc.send_signal(signal.SIGINT)
+            proc.stderr.flush()
+            error = proc.stderr.read()
+            self.assertIn(b"KeyboardInterrupt", error)
+            retcode = proc.wait()
+            # Sometimes we send the SIGINT after the subthread yields the GIL to
+            # the main thread, which results in the main thread getting the
+            # KeyboardInterrupt before finalization is reached. There's not
+            # any great way to protect against that, so we just allow a -2
+            # return code as well.
+            self.assertIn(retcode, (0, -signal.SIGINT))
 
 
 class TestInterpreterIsRunning(TestBase):
@@ -855,7 +901,7 @@ class TestInterpreterPrepareMain(TestBase):
             with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
                 interp.prepare_main({'spam': True})
             with self.assertRaisesRegex(ExecutionFailed, 'NameError'):
-                self.run_from_capi(interpid, 'assert spam is True')
+                self.run_from_capi(interpid, 'spam')
 
 
 class TestInterpreterExec(TestBase):

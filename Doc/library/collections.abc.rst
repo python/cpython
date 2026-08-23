@@ -4,9 +4,6 @@
 .. module:: collections.abc
    :synopsis: Abstract base classes for containers
 
-.. moduleauthor:: Raymond Hettinger <python at rcn.com>
-.. sectionauthor:: Raymond Hettinger <python at rcn.com>
-
 .. versionadded:: 3.3
    Formerly, this module was part of the :mod:`collections` module.
 
@@ -336,7 +333,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    .. note::
       In CPython, generator-based coroutines (:term:`generators <generator>`
-      decorated with :func:`@types.coroutine <types.coroutine>`) are
+      decorated with :deco:`types.coroutine`) are
       *awaitables*, even though they do not have an :meth:`~object.__await__` method.
       Using ``isinstance(gencoro, Awaitable)`` for them will return ``False``.
       Use :func:`inspect.isawaitable` to detect them.
@@ -354,7 +351,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    .. note::
       In CPython, generator-based coroutines (:term:`generators <generator>`
-      decorated with :func:`@types.coroutine <types.coroutine>`) are
+      decorated with :deco:`types.coroutine`) are
       *awaitables*, even though they do not have an :meth:`~object.__await__` method.
       Using ``isinstance(gencoro, Coroutine)`` for them will return ``False``.
       Use :func:`inspect.isawaitable` to detect them.
@@ -459,7 +456,7 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
    The :class:`Set` mixin provides a :meth:`!_hash` method to compute a hash value
    for the set; however, :meth:`~object.__hash__` is not defined because not all sets
    are :term:`hashable` or immutable.  To add set hashability using mixins,
-   inherit from both :meth:`Set` and :meth:`Hashable`, then define
+   inherit from both :class:`Set` and :class:`Hashable`, then define
    ``__hash__ = Set._hash``.
 
 .. seealso::

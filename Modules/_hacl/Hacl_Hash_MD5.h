@@ -23,8 +23,8 @@
  */
 
 
-#ifndef __Hacl_Hash_MD5_H
-#define __Hacl_Hash_MD5_H
+#ifndef Hacl_Hash_MD5_H
+#define Hacl_Hash_MD5_H
 
 #if defined(__cplusplus)
 extern "C" {
@@ -62,5 +62,5 @@ void Hacl_Hash_MD5_hash(uint8_t *output, uint8_t *input, uint32_t input_len);
 }
 #endif
 
-#define __Hacl_Hash_MD5_H_DEFINED
-#endif
+#define Hacl_Hash_MD5_H_DEFINED
+#endif /* Hacl_Hash_MD5_H */

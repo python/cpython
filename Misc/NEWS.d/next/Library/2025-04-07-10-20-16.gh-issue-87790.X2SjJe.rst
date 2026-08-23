@@ -1,2 +1,0 @@
-Support underscore and comma as thousands separators in the fractional part
-for :class:`~fractions.Fraction`'s formatting.  Patch by Sergey B Kirpichev.

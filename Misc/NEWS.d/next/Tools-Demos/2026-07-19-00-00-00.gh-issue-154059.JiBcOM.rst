@@ -1,0 +1,2 @@
+Fix the time units in Tachyon flame graph tooltips by accounting for the
+sampling interval when converting samples to milliseconds.

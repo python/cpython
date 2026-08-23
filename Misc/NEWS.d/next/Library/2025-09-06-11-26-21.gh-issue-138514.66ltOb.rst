@@ -1,2 +1,0 @@
-Raise :exc:`ValueError` when a multi-character string is passed to the
-*echo_char* parameter of :func:`getpass.getpass`. Patch by Benjamin Johnson.
