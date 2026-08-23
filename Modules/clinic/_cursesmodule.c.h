@@ -758,17 +758,24 @@ exit:
 
 PyDoc_STRVAR(_curses_window_getch__doc__,
 "getch([y, x])\n"
-"Get a character code from terminal keyboard.\n"
+"Read a key press and return it as an integer.\n"
 "\n"
 "  y\n"
 "    Y-coordinate.\n"
 "  x\n"
 "    X-coordinate.\n"
 "\n"
-"The integer returned does not have to be in ASCII range: function\n"
-"keys, keypad keys and so on return numbers higher than 256.  In\n"
-"no-delay mode, -1 is returned if there is no input, else getch()\n"
-"waits until a key is pressed.");
+"Wait until a key is pressed, or return -1 if the read is\n"
+"non-blocking or times out.\n"
+"\n"
+"An ordinary key is returned as the code of a single byte of its\n"
+"encoding in the current locale, so a character encoded with several\n"
+"bytes takes several calls.  Use get_wch() to read it as a single\n"
+"character.\n"
+"\n"
+"In keypad mode function keys and other special keys are returned as\n"
+"one of the KEY_* constants, which cannot be mistaken for an ordinary\n"
+"key.  Otherwise their bytes are returned one at a time.");
 
 #define _CURSES_WINDOW_GETCH_METHODDEF    \
     {"getch", (PyCFunction)_curses_window_getch, METH_VARARGS, _curses_window_getch__doc__},
@@ -806,17 +813,17 @@ exit:
 
 PyDoc_STRVAR(_curses_window_getkey__doc__,
 "getkey([y, x])\n"
-"Get a character (string) from terminal keyboard.\n"
+"Read a key press and return it as a str.\n"
 "\n"
 "  y\n"
 "    Y-coordinate.\n"
 "  x\n"
 "    X-coordinate.\n"
 "\n"
-"Returning a string instead of an integer, as getch() does.  Function\n"
-"keys, keypad keys and other special keys return a multibyte string\n"
-"containing the key name.  In no-delay mode, an exception is raised\n"
-"if there is no input.");
+"Read as getch() does, but return an ordinary key as a one-character\n"
+"string, the byte decoded as Latin-1, and a special key as its name,\n"
+"such as \'KEY_UP\'.  Raise curses.error instead of returning -1 if\n"
+"there is no input.");
 
 #define _CURSES_WINDOW_GETKEY_METHODDEF    \
     {"getkey", (PyCFunction)_curses_window_getkey, METH_VARARGS, _curses_window_getkey__doc__},
@@ -856,15 +863,19 @@ exit:
 
 PyDoc_STRVAR(_curses_window_get_wch__doc__,
 "get_wch([y, x])\n"
-"Get a wide character from terminal keyboard.\n"
+"Read a key press and return it as a one-character str.\n"
 "\n"
 "  y\n"
 "    Y-coordinate.\n"
 "  x\n"
 "    X-coordinate.\n"
 "\n"
-"Return a character for most keys, or an integer for function keys,\n"
-"keypad keys, and other special keys.");
+"Wait until a key is pressed, or raise curses.error if the read is\n"
+"non-blocking or times out.\n"
+"\n"
+"In keypad mode function keys and other special keys are returned as\n"
+"one of the KEY_* constants, an integer.  Otherwise their characters\n"
+"are returned one at a time.");
 
 #define _CURSES_WINDOW_GET_WCH_METHODDEF    \
     {"get_wch", (PyCFunction)_curses_window_get_wch, METH_VARARGS, _curses_window_get_wch__doc__},
@@ -4217,10 +4228,11 @@ PyDoc_STRVAR(_curses_unctrl__doc__,
 "unctrl($module, ch, /)\n"
 "--\n"
 "\n"
-"Return a string which is a printable representation of the character ch.\n"
+"Return a bytes object which is a printable representation of ch.\n"
 "\n"
-"Control characters are displayed as a caret followed by the character,\n"
-"for example as ^C.  Printing characters are left as they are.");
+"Control characters are displayed as a caret followed by the\n"
+"character, for example as ^C.  Printing characters are left as they\n"
+"are.  Any attributes and color pair are ignored.");
 
 #define _CURSES_UNCTRL_METHODDEF    \
     {"unctrl", (PyCFunction)_curses_unctrl, METH_O, _curses_unctrl__doc__},
@@ -4471,4 +4483,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=8f8629fba6d86b33 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b267dfb3db6b6f56 input=a9049054013a1b77]*/
