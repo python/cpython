@@ -51,7 +51,6 @@ def tearDownModule():
     root = dialog = None
 
 
-@unittest.skip('Empty tests')
 class ConfigDialogTest(unittest.TestCase):
     # The methods tested here are mocked out in the tests below.
 
