@@ -999,6 +999,9 @@ The ``in`` and ``not in`` operations have the same priorities as the
 comparison operations. The ``+`` (concatenation) and ``*`` (repetition)
 operations have the same priority as the corresponding numeric operations. [3]_
 
+See :ref:`time-complexity` for the costs of the various sequence
+operations.
+
 .. index::
    triple: operations on; sequence; types
    pair: built-in function; len
@@ -1120,6 +1123,8 @@ Notes:
    they are greater.  If *i* or *j* are omitted or ``None``, they become
    "end" values (which end depends on the sign of *k*).  Note, *k* cannot be zero.
    If *k* is ``None``, it is treated like ``1``.
+
+.. _typesseq-repeated-concatenation:
 
 (6)
    Concatenating immutable sequences always results in a new object.  This
@@ -5146,6 +5151,7 @@ computing mathematical operations such as intersection, union, difference, and
 symmetric difference.
 (For other containers see the built-in :class:`dict`, :class:`list`,
 and :class:`tuple` classes, and the :mod:`collections` module.)
+See :ref:`time-complexity` for the costs of the various set operations.
 
 Like other collections, sets support ``x in set``, ``len(set)``, and ``for x in
 set``.  Being an unordered collection, sets do not record element position or
@@ -5370,6 +5376,8 @@ There are currently two standard mapping types, the :dfn:`dictionary` and
 (For other containers see the built-in
 :class:`list`, :class:`set`, and :class:`tuple` classes, and the
 :mod:`collections` module.)
+See :ref:`time-complexity` for the costs of the various dictionary
+operations.
 
 A dictionary's keys are *almost* arbitrary values.  Values that are not
 :term:`hashable`, that is, values containing lists, dictionaries or other
