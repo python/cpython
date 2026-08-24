@@ -1,6 +1,7 @@
 """Tests for selector_events.py"""
 
 import collections
+import errno
 import selectors
 import socket
 import sys
@@ -24,7 +25,7 @@ MOCK_ANY = mock.ANY
 
 
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class TestBaseSelectorEventLoop(BaseSelectorEventLoop):
@@ -401,6 +402,78 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         # warnings by using asyncio.sleep(0)
         self.loop.run_until_complete(asyncio.sleep(0))
         self.assertEqual(sock.accept.call_count, backlog + 1)
+
+    def test_accept_connection_reschedules_once_on_resource_error(self):
+        # When accept() fails with a resource error (EMFILE), _accept_connection
+        # re-runs the error branch backlog+1 times, logging and rescheduling
+        # _start_serving once per iteration. With early return after first
+        # exception we avoid this behaviour
+        sock = mock.Mock()
+        sock.accept.side_effect = OSError(errno.EMFILE, 'too many open files')
+
+        self.loop.call_exception_handler = mock.Mock()
+        self.loop._remove_reader = mock.Mock()
+        self.loop.call_later = mock.Mock()
+
+        self.loop._accept_connection(mock.Mock(), sock, backlog=100)
+
+        self.assertEqual(sock.accept.call_count, 1)
+        self.assertEqual(self.loop.call_exception_handler.call_count, 1)
+        self.assertEqual(self.loop.call_later.call_count, 1)
+
+    def test_accept_connection2_factory_error_closes_conn(self):
+        # gh-155934: if the transport was never created, the accepted
+        # socket is closed and the error is reported even when debug
+        # mode is disabled.
+        self.loop.set_debug(False)
+        conn = mock.Mock()
+
+        def factory():
+            raise RuntimeError("protocol_factory failed")
+
+        self.loop.call_exception_handler = mock.Mock()
+        self.loop.run_until_complete(
+            self.loop._accept_connection2(factory, conn, {}))
+
+        self.assertTrue(conn.close.called)
+        self.loop.call_exception_handler.assert_called_once()
+
+    def test_accept_connection2_transport_error_closes_conn(self):
+        # gh-155934: same when the transport creation itself fails.
+        self.loop.set_debug(False)
+        conn = mock.Mock()
+        self.loop._make_socket_transport = mock.Mock(
+            side_effect=ZeroDivisionError)
+        self.loop.call_exception_handler = mock.Mock()
+
+        self.loop.run_until_complete(
+            self.loop._accept_connection2(mock.Mock(), conn, {}))
+
+        self.assertTrue(conn.close.called)
+        self.loop.call_exception_handler.assert_called_once()
+
+    def test_accept_connection2_waiter_error_stays_debug_only(self):
+        # Once the transport exists it owns the socket: waiter failures
+        # (e.g. SSL handshake errors) close the transport and stay
+        # debug-only, and the accepted socket is not closed directly.
+        self.loop.set_debug(False)
+        conn = mock.Mock()
+        transport = mock.Mock()
+
+        def make_transport(conn, protocol, waiter=None, **kwargs):
+            waiter.set_exception(OSError("handshake failed"))
+            return transport
+
+        self.loop._make_socket_transport = make_transport
+        self.loop.call_exception_handler = mock.Mock()
+
+        self.loop.run_until_complete(
+            self.loop._accept_connection2(mock.Mock(), conn, {}))
+
+        self.assertTrue(transport.close.called)
+        self.assertFalse(conn.close.called)
+        self.assertFalse(self.loop.call_exception_handler.called)
+
 
 class SelectorTransportTests(test_utils.TestCase):
 

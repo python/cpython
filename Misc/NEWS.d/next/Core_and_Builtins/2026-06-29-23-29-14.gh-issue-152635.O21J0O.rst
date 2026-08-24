@@ -1,0 +1,2 @@
+Fix a crash caused when running out of memory creating a
+:mod:`!_interpchannels` channel. Now a :exc:`MemoryError` is correctly raised.

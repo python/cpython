@@ -14,7 +14,7 @@
 typedef struct {
     PyObject_HEAD
     BinaryWriter *writer;
-    uint32_t cached_total_samples;  /* Preserved after finalize */
+    uint64_t cached_total_samples;  /* Preserved after finalize */
 } BinaryWriterObject;
 
 typedef struct {
@@ -281,7 +281,7 @@ class _remote_debugging.RemoteUnwinder "RemoteUnwinderObject *" "&RemoteUnwinder
 /*[clinic input]
 @permit_long_summary
 _remote_debugging.RemoteUnwinder.__init__
-    pid: int
+    pid: pid_t
     *
     all_threads: bool = False
     only_active_thread: bool = False
@@ -334,14 +334,14 @@ Raises:
 
 static int
 _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
-                                               int pid, int all_threads,
+                                               pid_t pid, int all_threads,
                                                int only_active_thread,
                                                int mode, int debug,
                                                int skip_non_matching_threads,
                                                int native, int gc,
                                                int opcodes, int cache_frames,
                                                int stats)
-/*[clinic end generated code: output=0031f743f4b9ad52 input=9d25ae328d62626d]*/
+/*[clinic end generated code: output=acfe554c8a92cf6b input=3b5a5ad153709125]*/
 {
     // Validate that all_threads and only_active_thread are not both True
     if (all_threads && only_active_thread) {
@@ -411,6 +411,9 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
         return -1;
     }
     if (async_debug_result < 0) {
+        if (_Py_RemoteDebug_HasPermissionError()) {
+            return -1;
+        }
         PyErr_Clear();
         memset(&self->async_debug_offsets, 0, sizeof(self->async_debug_offsets));
         self->async_debug_offsets_available = 0;
@@ -472,8 +475,8 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
         return -1;
     }
 
-    // Clear stale last_profiled_frame values from previous profilers
-    // This prevents us from stopping frame walking early due to stale values
+    // Clear stale profiler anchors from previous profilers. This prevents us
+    // from stopping frame walking early due to stale frame pointers.
     if (cache_frames) {
         clear_last_profiled_frames(self);
     }
@@ -1373,7 +1376,7 @@ cleanup_runtime_offsets(RuntimeOffsets *offsets)
 }
 
 static int
-init_runtime_offsets(RuntimeOffsets *offsets, int pid, int debug)
+init_runtime_offsets(RuntimeOffsets *offsets, pid_t pid, int debug)
 {
     offsets->debug = debug;
     if (_Py_RemoteDebug_InitProcHandle(&offsets->handle, pid) < 0) {
@@ -1411,7 +1414,7 @@ class _remote_debugging.GCMonitor "GCMonitorObject *" "&GCMonitor_Type"
 /*[clinic input]
 @permit_long_summary
 _remote_debugging.GCMonitor.__init__
-    pid: int
+    pid: pid_t
     *
     debug: bool = False
 
@@ -1434,9 +1437,9 @@ Raises:
 [clinic start generated code]*/
 
 static int
-_remote_debugging_GCMonitor___init___impl(GCMonitorObject *self, int pid,
+_remote_debugging_GCMonitor___init___impl(GCMonitorObject *self, pid_t pid,
                                           int debug)
-/*[clinic end generated code: output=2cdf351c2f6335db input=03da0b2d3282ae1b]*/
+/*[clinic end generated code: output=03b4c92bef0673ad input=dcc6ee2ec5a16fa1]*/
 {
     return init_runtime_offsets(&self->offsets, pid, debug);
 }
@@ -1621,9 +1624,6 @@ _remote_debugging_exec(PyObject *m)
         return -1;
     }
 
-#ifdef Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
-#endif
     int rc = PyModule_AddIntConstant(m, "PROCESS_VM_READV_SUPPORTED", HAVE_PROCESS_VM_READV);
     if (rc < 0) {
         return -1;
@@ -1784,9 +1784,9 @@ _remote_debugging_BinaryWriter_write_sample_impl(BinaryWriterObject *self,
 /* Finalize the writer, cache total_samples, and destroy it.
  *
  * The cache assignment must happen AFTER binary_writer_finalize(): finalize
- * flushes pending RLE samples via flush_pending_rle(), which increments
- * writer->total_samples for each one. Caching before finalize would lose
- * those trailing samples. */
+ * flushes pending RLE records and updates the file header before the writer is
+ * destroyed. Caching before finalize would preserve a count for a file that
+ * might still fail to finish. */
 static int
 binary_writer_finalize_and_cache(BinaryWriterObject *self)
 {
@@ -1916,9 +1916,9 @@ BinaryWriter_get_total_samples(PyObject *op, void *closure)
     BinaryWriterObject *self = BinaryWriter_CAST(op);
     if (!self->writer) {
         /* Use cached value after finalize/close */
-        return PyLong_FromUnsignedLong(self->cached_total_samples);
+        return PyLong_FromUnsignedLongLong(self->cached_total_samples);
     }
-    return PyLong_FromUnsignedLong(self->writer->total_samples);
+    return PyLong_FromUnsignedLongLong(self->writer->total_samples);
 }
 
 static PyGetSetDef BinaryWriter_getset[] = {
@@ -2141,7 +2141,7 @@ BinaryReader_get_sample_count(BinaryReaderObject *self, void *closure)
     if (!self->reader) {
         return PyLong_FromLong(0);
     }
-    return PyLong_FromUnsignedLong(self->reader->sample_count);
+    return PyLong_FromUnsignedLongLong(self->reader->sample_count);
 }
 
 static PyObject *
@@ -2226,7 +2226,7 @@ _remote_debugging_zstd_available_impl(PyObject *module)
 /*[clinic input]
 _remote_debugging.get_child_pids
 
-    pid: int
+    pid: pid_t
         Process ID of the parent process
     *
     recursive: bool = True
@@ -2248,24 +2248,24 @@ Raises:
 [clinic start generated code]*/
 
 static PyObject *
-_remote_debugging_get_child_pids_impl(PyObject *module, int pid,
+_remote_debugging_get_child_pids_impl(PyObject *module, pid_t pid,
                                       int recursive)
-/*[clinic end generated code: output=1ae2289c6b953e4b input=c6437b52e2fdd880]*/
+/*[clinic end generated code: output=fa3dfd1b02eed29b input=3325d95e9f39d75d]*/
 {
-    return enumerate_child_pids((pid_t)pid, recursive);
+    return enumerate_child_pids(pid, recursive);
 }
 
 /*[clinic input]
 _remote_debugging.is_python_process
 
-    pid: int
+    pid: pid_t
 
 Check if a process is a Python process.
 [clinic start generated code]*/
 
 static PyObject *
-_remote_debugging_is_python_process_impl(PyObject *module, int pid)
-/*[clinic end generated code: output=22947dc8afcac362 input=13488e28c7295d84]*/
+_remote_debugging_is_python_process_impl(PyObject *module, pid_t pid)
+/*[clinic end generated code: output=63541478c889e536 input=ff998fef4aeef433]*/
 {
     proc_handle_t handle;
 
@@ -2288,7 +2288,7 @@ _remote_debugging_is_python_process_impl(PyObject *module, int pid)
 /*[clinic input]
 _remote_debugging.get_gc_stats
 
-    pid: int
+    pid: pid_t
     *
     all_interpreters: bool = False
         If True, return GC statistics from all interpreters.
@@ -2314,9 +2314,9 @@ Raises:
 [clinic start generated code]*/
 
 static PyObject *
-_remote_debugging_get_gc_stats_impl(PyObject *module, int pid,
+_remote_debugging_get_gc_stats_impl(PyObject *module, pid_t pid,
                                     int all_interpreters)
-/*[clinic end generated code: output=d9dce5f7add149bb input=a2a08a45a8f0b119]*/
+/*[clinic end generated code: output=dd33199ccb6a56e9 input=41399e77788aa369]*/
 {
     RuntimeOffsets offsets;
     if (init_runtime_offsets(&offsets, pid, /*debug=*/1) < 0) {

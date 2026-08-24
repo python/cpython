@@ -5,6 +5,15 @@
  * standard Python regression test, via Lib/test/test_capi.py.
  */
 
+#include "pyconfig.h"   // Py_GIL_DISABLED
+
+#ifdef Py_GIL_DISABLED
+   // Cannot test the limited C API
+#else
+   // Use the oldest limited C API version
+#  define Py_LIMITED_API 0x03020000
+#endif
+
 #include "_testlimitedcapi/parts.h"
 
 static PyMethodDef TestMethods[] = {
@@ -36,6 +45,9 @@ PyInit__testlimitedcapi(void)
         return NULL;
     }
     if (_PyTestLimitedCAPI_Init_Bytes(mod) < 0) {
+        return NULL;
+    }
+    if (_PyTestLimitedCAPI_Init_Capsule(mod) < 0) {
         return NULL;
     }
     if (_PyTestLimitedCAPI_Init_Codec(mod) < 0) {
@@ -96,6 +108,15 @@ PyInit__testlimitedcapi(void)
         return NULL;
     }
     if (_PyTestLimitedCAPI_Init_File(mod) < 0) {
+        return NULL;
+    }
+    if (_PyTestLimitedCAPI_Init_Weakref(mod) < 0) {
+        return NULL;
+    }
+    if (_PyTestLimitedCAPI_Init_Run(mod) < 0) {
+        return NULL;
+    }
+    if (_PyTestLimitedCAPI_Init_Type(mod) < 0) {
         return NULL;
     }
     return mod;

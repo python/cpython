@@ -77,6 +77,9 @@ containing a copy or symlink of the Python executable
 It also creates a :file:`lib/pythonX.Y/site-packages` subdirectory
 (on Windows, this is :file:`Lib\\site-packages`).
 If an existing directory is specified, it will be re-used.
+Reusing an existing directory does not leave it unchanged: ``venv`` may create,
+update, or replace files in the target directory. Use a dedicated directory for
+the virtual environment, and avoid placing project files directly inside it.
 
 .. versionchanged:: 3.5
    The use of ``venv`` is now recommended for creating virtual environments.
@@ -126,7 +129,9 @@ The command, if run with ``-h``, will show the available options::
 
 .. option:: --clear
 
-   Delete the contents of the environment directory if it already exists, before environment creation.
+   Delete all contents of the environment directory if it already exists,
+   including files that were not created by ``venv``,
+   before environment creation.
 
 .. option:: --upgrade
 
@@ -297,7 +302,7 @@ mechanisms for third-party virtual environment creators to customize environment
 creation according to their needs, the :class:`EnvBuilder` class.
 
 .. class:: EnvBuilder(system_site_packages=False, clear=False, \
-                      symlinks=False, upgrade=False, with_pip=False, \
+                      symlinks=None, upgrade=False, with_pip=False, \
                       prompt=None, upgrade_deps=False, \
                       *, scm_ignore_files=frozenset())
 
@@ -311,7 +316,8 @@ creation according to their needs, the :class:`EnvBuilder` class.
       any existing target directory, before creating the environment.
 
     * *symlinks* -- a boolean value indicating whether to attempt to symlink the
-      Python binary rather than copying.
+      Python binary rather than copying. If ``None``, the default is ``False`` on
+      Windows and ``True`` on other platforms, matching the :ref:`CLI <venv-cli>`.
 
     * *upgrade* -- a boolean value which, if true, will upgrade an existing
       environment with the running Python - for use when that Python has been
@@ -345,6 +351,9 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
     .. versionchanged:: 3.13
        Added the ``scm_ignore_files`` parameter
+
+    .. versionchanged:: 3.16
+       The default value of *symlinks* is now platform-dependent.
 
     :class:`EnvBuilder` may be used as a base class.
 
@@ -516,7 +525,7 @@ creation according to their needs, the :class:`EnvBuilder` class.
 There is also a module-level convenience function:
 
 .. function:: create(env_dir, system_site_packages=False, clear=False, \
-                     symlinks=False, with_pip=False, prompt=None, \
+                     symlinks=None, with_pip=False, prompt=None, \
                      upgrade_deps=False, *, scm_ignore_files=frozenset())
 
     Create an :class:`EnvBuilder` with the given keyword arguments, and call its
@@ -535,6 +544,9 @@ There is also a module-level convenience function:
 
     .. versionchanged:: 3.13
        Added the *scm_ignore_files* parameter
+
+    .. versionchanged:: 3.16
+       The default value of *symlinks* is now platform-dependent.
 
 An example of extending ``EnvBuilder``
 --------------------------------------

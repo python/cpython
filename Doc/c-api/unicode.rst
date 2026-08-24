@@ -676,7 +676,8 @@ APIs:
 
    Append the string *right* to the end of *p_left*.
    *p_left* must point to a :term:`strong reference` to a Unicode object;
-   :c:func:`!PyUnicode_Append` releases ("steals") this reference.
+   :c:func:`!PyUnicode_Append` releases (":term:`steals <steal>`")
+   this reference.
 
    On error, set *\*p_left* to ``NULL`` and set an exception.
 
@@ -1953,7 +1954,7 @@ The following API is deprecated.
       whether you selected a "narrow" or "wide" Unicode version of Python at
       build time.
 
-   .. deprecated-removed:: 3.13 3.15
+   .. deprecated-removed:: 3.13 3.16
 
 
 .. c:function:: int PyUnicode_READY(PyObject *unicode)
