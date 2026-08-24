@@ -1168,6 +1168,58 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
         with self.assertRaisesRegex(TypeError, msg):
             b['a']
 
+    def test_binary_slice(self):
+        def binary_slice(data, start, stop):
+            return data[start:stop]
+
+        data = b'0123456789'
+        indices = (None, 0, 1, 5, 10, 20, -1, -5, -10, -20,
+                   sys.maxsize, -sys.maxsize - 1, 10**100, -10**100)
+        for start in indices:
+            for stop in indices:
+                with self.subTest(start=start, stop=stop):
+                    self.assertEqual(binary_slice(data, start, stop),
+                                     data[slice(start, stop)])
+
+        self.assertIs(binary_slice(data, None, None), data)
+
+        calls = []
+
+        class Index:
+            def __init__(self, name, value):
+                self.name = name
+                self.value = value
+
+            def __index__(self):
+                calls.append(self.name)
+                return self.value
+
+        self.assertEqual(binary_slice(data, Index('start', 2),
+                                     Index('stop', 5)), b'234')
+        self.assertEqual(calls, ['start', 'stop'])
+
+        calls.clear()
+
+        class BadIndex:
+            def __index__(self):
+                calls.append('start')
+                raise ValueError('bad index')
+
+        with self.assertRaisesRegex(ValueError, 'bad index'):
+            binary_slice(data, BadIndex(), Index('stop', 5))
+        self.assertEqual(calls, ['start'])
+
+        msg = "slice indices must be integers or have an __index__ method"
+        with self.assertRaisesRegex(TypeError, msg):
+            binary_slice(data, 1.5, 5)
+
+        class SliceOverride(bytes):
+            def __getitem__(self, key):
+                return key
+
+        key = binary_slice(SliceOverride(data), 2, 5)
+        self.assertEqual(key, slice(2, 5))
+
     def test_buffer_is_readonly(self):
         fd = os.open(__file__, os.O_RDONLY)
         with open(fd, "rb", buffering=0) as f:
