@@ -1,6 +1,8 @@
+import sys
 import threading
 import unittest
 from test import support
+from test.support import threading_helper
 
 # The race conditions these tests were written for only happen every now and
 # then, even with the current numbers. To find rare race conditions, bumping
@@ -110,6 +112,59 @@ class ContendedListIterationTest(ContendedTupleIterationTest):
             for m in mutators:
                 m.join()
         self.assert_iterator_results(results, list(seq))
+
+
+class ContendedSeqIterExhaustionTest(unittest.TestCase):
+    """Test draining a shared iter() fallback iterator (PySeqIter_Type).
+
+    Sequences implementing __getitem__ but not __iter__ iterate through
+    PySeqIter_Type.  Unlike the other tests in this file, this uses a
+    tiny sequence and many rounds so that many threads reach the racy
+    exhaustion path simultaneously (see gh-156310, where this
+    use-after-freed the sequence).
+    """
+
+    class Seq:
+        def __init__(self, n):
+            self.n = n
+
+        def __getitem__(self, i):
+            if i >= self.n:
+                raise IndexError(i)
+            return i
+
+    def test_shared_iterator_exhaustion(self):
+        nthreads = 8
+        nrounds = 20 if support.check_sanitizer(thread=True) else 100
+        seq = self.Seq(4)
+        expected = set(range(seq.n))
+        refcount_before = sys.getrefcount(seq)
+
+        def drain(it, barrier, results):
+            items = []
+            barrier.wait()
+            for item in it:
+                items.append(item)
+            results.extend(items)
+
+        for _ in range(nrounds):
+            it = iter(seq)
+            barrier = threading.Barrier(nthreads)
+            results = []
+            threads = [
+                threading.Thread(target=drain, args=(it, barrier, results))
+                for _ in range(nthreads)
+            ]
+            with threading_helper.start_threads(threads):
+                pass
+            del it
+            # Threads may see duplicate or missing items, but never
+            # invented ones.
+            self.assertEqual(set(results) - expected, set())
+
+        # A double-DECREF of the sequence does not always crash; it
+        # reliably shows up as a sagging reference count.
+        self.assertEqual(sys.getrefcount(seq), refcount_before)
 
 
 class ContendedRangeIterationTest(ContendedTupleIterationTest):

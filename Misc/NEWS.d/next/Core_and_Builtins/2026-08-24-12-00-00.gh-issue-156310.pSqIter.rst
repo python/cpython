@@ -1,0 +1,6 @@
+Fix a use-after-free of the underlying sequence when a single :func:`iter`
+fallback iterator for objects implementing :meth:`~object.__getitem__`
+without :meth:`~object.__iter__` (``PySeqIter_Type``) was shared between
+threads in the free-threaded build.  Such iterators are still not
+thread-safe in the sense that concurrent iteration may see duplicate or
+missing items, but they no longer corrupt the interpreter state.
