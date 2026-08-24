@@ -104,8 +104,8 @@ returns the same object, so is constant time (*O*\ (1)).
      - *O*\ (1)
 
 
-:class:`!dict`, :class:`!frozendict`
-====================================
+:class:`!dict`
+==============
 
 The times listed for dict objects are average-case times, as they assume the
 hash function for the objects is sufficiently robust to make collisions
@@ -115,9 +115,6 @@ each of the *O*\ (1) operations below instead takes *O*\ (*n*) time. They also
 assume that hashing and comparing a key is *O*\ (1). For more detail on the
 implementation, see :ref:`how-are-dictionaries-implemented`.
 
-A :class:`frozendict` is immutable, so it does not support setting, deleting,
-or updating items. The other operations below apply to it at the same costs.
-
 .. list-table::
    :header-rows: 1
 
@@ -125,7 +122,7 @@ or updating items. The other operations below apply to it at the same costs.
      - Complexity
    * - ``key in d``
      - *O*\ (1)
-   * - Copy (``d.copy()``) [6]_ [7]_
+   * - Copy (``d.copy()``) [7]_
      - *O*\ (*n*)
    * - Get item (``d[key]``, ``d.get(key)``)
      - *O*\ (1)
@@ -240,10 +237,6 @@ buffer.
      - *O*\ (1)
    * - Get slice (``v[i:j]``)
      - *O*\ (1)
-   * - Index (``v.index(x)``) [11]_ [14]_
-     - *O*\ (*n*)
-   * - Count (``v.count(x)``) [14]_
-     - *O*\ (*n*)
    * - Convert to bytes (``v.tobytes()``, ``bytes(v)``)
      - *O*\ (*n*)
    * - Get length (``len(v)``) [5]_
@@ -265,9 +258,9 @@ A :class:`range` object computes its items on demand from its *start*, *stop* an
      - *O*\ (1)
    * - Get slice (``r[i:j]``)
      - *O*\ (1)
-   * - ``x in r`` [15]_
+   * - ``x in r`` [14]_
      - *O*\ (1)
-   * - Index and count (``r.index(x)``, ``r.count(x)``) [15]_
+   * - Index and count (``r.index(x)``, ``r.count(x)``) [14]_
      - *O*\ (1)
    * - Iteration
      - *O*\ (*n*)
@@ -303,7 +296,7 @@ Notes
 .. [5] The number of elements is stored in the object, so ``len()`` does
    not need to count them.
 
-.. [6] Copying a :class:`frozendict` or a :class:`frozenset` is *O*\ (1) as it
+.. [6] Copying a :class:`frozenset` is *O*\ (1) as it
    returns the original object.
 
 .. [7] These operations scan the container's internal hash table, which is
@@ -330,8 +323,5 @@ Notes
 
 .. [13] This assumes a codec that does a constant amount of work per character.
 
-.. [14] These unpack and compare each element individually, so they are much
-   slower than the equivalent :class:`bytes` methods.
-
-.. [15] Assuming :class:`int` or :class:`bool` arguments. For other types,
+.. [14] Assuming :class:`int` or :class:`bool` arguments. For other types,
    the range is searched like any other sequence in *O*\ (*n*) time.
