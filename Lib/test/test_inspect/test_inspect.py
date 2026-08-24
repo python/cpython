@@ -844,32 +844,142 @@ class TestRetrievingSourceCode(GetSourceBase):
                           sys.modules[__name__])
 
     def test_getmodule_unregistered_exec_frame(self):
-        def exec_namespace(namespace):
+        def exec_namespace(namespace, filename, expected):
             exec(compile(textwrap.dedent("""
                 frame = inspect.currentframe()
                 try:
                     1 / 0
                 except ZeroDivisionError as error:
                     traceback = error.__traceback__
-            """), modfile, "exec"), namespace)
-            self.assertIsNone(inspect.getmodule(namespace["frame"]))
-            self.assertIsNone(inspect.getmodule(namespace["traceback"]))
+            """), filename, "exec"), namespace)
+            self.assertIs(inspect.getmodule(namespace["frame"]), expected)
+            self.assertIs(
+                inspect.getmodule(namespace["frame"].f_code), expected)
+            self.assertIs(inspect.getmodule(namespace["traceback"]), expected)
 
-        # Missing and invalid module names identify no registered namespace.
-        exec_namespace({"inspect": inspect})
-        exec_namespace({"inspect": inspect, "__name__": []})
+        with (unittest.mock.patch.object(inspect, "modulesbyfile", {}),
+              unittest.mock.patch.object(inspect, "_filesbymodname", {}),
+              unittest.mock.patch.object(
+                  inspect, "_modulesbyfile_snapshot", None)):
+            # Preserve filename-based resolution when the execution namespace
+            # does not identify the module that supplied the source.
+            exec_namespace({"inspect": inspect}, modfile, mod)
+            exec_namespace({"inspect": inspect, "__name__": []},
+                           modfile, mod)
 
-        module_name = f"{__name__}.not_registered"
-        for module in (None, object(), types.ModuleType(module_name)):
-            with self.subTest(module=module):
-                sys.modules[module_name] = module
-                try:
-                    exec_namespace({
-                        "inspect": inspect,
-                        "__name__": module_name,
-                    })
-                finally:
-                    del sys.modules[module_name]
+            module_name = f"{__name__}.not_registered"
+            for module in (None, object(), types.ModuleType(module_name)):
+                with self.subTest(module=module):
+                    sys.modules[module_name] = module
+                    try:
+                        exec_namespace({
+                            "inspect": inspect,
+                            "__name__": module_name,
+                        }, modfile, mod)
+                    finally:
+                        del sys.modules[module_name]
+
+            # A namespace and filename with no registered module still
+            # resolves to None after the filename fallback.
+            with temp_cwd() as cwd:
+                filename = os.path.join(cwd, "not_registered.py")
+                exec_namespace({"inspect": inspect}, filename, None)
+
+    def test_getmodule_skips_unchanged_module_rescan(self):
+        with temp_cwd() as cwd:
+            filename = os.path.join(cwd, "not_registered.py")
+            namespace = {"inspect": inspect}
+            exec(compile("frame = inspect.currentframe()", filename, "exec"),
+                 namespace)
+            frame = namespace["frame"]
+            modules = sys.modules.copy()
+            module_name = f"{__name__}.late_registered"
+            marker_name = f"{__name__}.scan_marker"
+            marker = types.ModuleType(marker_name)
+            marker.__file__ = os.path.join(cwd, "scan_marker.py")
+            with open(marker.__file__, "w"):
+                pass
+            modules[marker_name] = marker
+
+            original_ismodule = inspect.ismodule
+            scan_count = 0
+
+            def ismodule(object):
+                nonlocal scan_count
+                if object is marker:
+                    scan_count += 1
+                return original_ismodule(object)
+
+            with (unittest.mock.patch.object(sys, "modules", modules),
+                  unittest.mock.patch.object(inspect, "modulesbyfile", {}),
+                  unittest.mock.patch.object(inspect, "_filesbymodname", {}),
+                  unittest.mock.patch.object(inspect, "ismodule", ismodule),
+                  unittest.mock.patch.object(
+                      inspect, "_modulesbyfile_snapshot", None)):
+                self.assertIsNone(inspect.getmodule(frame, filename))
+                first_scan_count = scan_count
+                self.assertGreater(first_scan_count, 0)
+                self.assertIsNone(inspect.getmodule(frame, filename))
+                self.assertEqual(scan_count, first_scan_count)
+
+                module = types.ModuleType(module_name)
+                module.__file__ = filename
+                modules[module_name] = module
+                self.assertIs(inspect.getmodule(frame.f_code), module)
+                self.assertGreater(scan_count, first_scan_count)
+                second_scan_count = scan_count
+
+                # A replacement sys.modules object must invalidate the
+                # snapshot even when it contains the same entries.
+                replacement = modules.copy()
+                unknown = os.path.join(cwd, "unknown.py")
+                with unittest.mock.patch.object(sys, "modules", replacement):
+                    self.assertIsNone(inspect.getmodule(None, unknown))
+                    self.assertGreater(scan_count, second_scan_count)
+
+    def test_getmodule_sys_modules_changes_during_key_snapshot(self):
+        class MutatingModules(dict):
+            mutate = True
+
+            def __iter__(self):
+                iterator = super().__iter__()
+                yield next(iterator)
+                if self.mutate:
+                    self.mutate = False
+                    self[f"{__name__}.added_during_iteration"] = None
+                yield from iterator
+
+        modules = MutatingModules(sys.modules)
+        with (temp_cwd() as cwd,
+              unittest.mock.patch.object(sys, "modules", modules),
+              unittest.mock.patch.object(inspect, "modulesbyfile", {}),
+              unittest.mock.patch.object(inspect, "_filesbymodname", {}),
+              unittest.mock.patch.object(
+                  inspect, "_modulesbyfile_snapshot", None)):
+            filename = os.path.join(cwd, "not_registered.py")
+            self.assertIsNone(inspect.getmodule(None, filename))
+
+    def test_getmodule_snapshot_does_not_retain_modules(self):
+        with temp_cwd() as cwd:
+            module_name = f"{__name__}.snapshot_module"
+            module = types.ModuleType(module_name)
+            module.__file__ = os.path.join(cwd, "snapshot_module.py")
+            with open(module.__file__, "w"):
+                pass
+            module_ref = weakref.ref(module)
+            modules = sys.modules.copy()
+            modules[module_name] = module
+
+            with (unittest.mock.patch.object(sys, "modules", modules),
+                  unittest.mock.patch.object(inspect, "modulesbyfile", {}),
+                  unittest.mock.patch.object(inspect, "_filesbymodname", {}),
+                  unittest.mock.patch.object(
+                      inspect, "_modulesbyfile_snapshot", None)):
+                self.assertIs(inspect.getmodule(None, module.__file__), module)
+                del modules[module_name]
+                del module
+                support.gc_collect()
+                self.assertIsNone(module_ref())
 
     def test_getmodule_registered_exec_frame(self):
         def exec_module(module, filename):
@@ -902,8 +1012,24 @@ class TestRetrievingSourceCode(GetSourceBase):
                 self.assertIsNone(inspect.getmodule(module.frame))
                 self.assertIsNone(inspect.getmodule(module.traceback))
 
-                # Preserve the existing result for fileless modules while
-                # avoiding a scan of sys.modules.
+                # If another module supplied the source, fall back to the
+                # filename-based lookup instead of trusting frame globals.
+                source_name = f"{module_name}.source"
+                source_module = types.ModuleType(source_name)
+                source_module.__file__ = filename + ".source"
+                with open(source_module.__file__, "w"):
+                    pass
+                sys.modules[source_name] = source_module
+                try:
+                    exec_module(module, source_module.__file__)
+                    self.assertIs(inspect.getmodule(module.frame),
+                                  source_module)
+                    self.assertIs(inspect.getmodule(module.traceback),
+                                  source_module)
+                finally:
+                    del sys.modules[source_name]
+
+                # Preserve the existing result for fileless modules.
                 del module.__file__
                 exec_module(module, "<fileless>")
                 self.assertIsNone(inspect.getmodule(module.frame))

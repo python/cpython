@@ -925,6 +925,34 @@ def getabsfile(object, _filename=None):
 
 modulesbyfile = {}
 _filesbymodname = {}
+_modulesbyfile_snapshot = None
+
+
+def _getframemodule(frame, _filename=None):
+    """Return a module owned by a frame's globals, or None if not found."""
+    frame_globals = frame.f_globals
+    module_name = frame_globals.get('__name__')
+    if not isinstance(module_name, str):
+        return None
+    module = sys.modules.get(module_name)
+    if not (ismodule(module) and module.__dict__ is frame_globals):
+        return None
+    module_file = getattr(module, '__file__', None)
+    if module_file is None:
+        return None
+    try:
+        file = getabsfile(frame, _filename)
+    except (TypeError, FileNotFoundError):
+        return None
+    if frame.f_code.co_filename == module_file:
+        return module
+    try:
+        module_file = getabsfile(module)
+    except (TypeError, FileNotFoundError):
+        return None
+    if file == module_file or file == os.path.realpath(module_file):
+        return module
+
 
 def getmodule(object, _filename=None):
     """Return the module an object was defined in, or None if not found."""
@@ -938,29 +966,9 @@ def getmodule(object, _filename=None):
         # Frame globals identify the execution namespace directly. Preserve
         # the private filename override when it names a different file.
         if _filename is None or _filename == object.f_code.co_filename:
-            object_globals = object.f_globals
-            module_name = object_globals.get('__name__')
-            if not isinstance(module_name, str):
-                return None
-            module = sys.modules.get(module_name)
-            if not (ismodule(module) and module.__dict__ is object_globals):
-                return None
-            module_file = getattr(module, '__file__', None)
-            if module_file is None:
-                return None
-            try:
-                file = getabsfile(object, _filename)
-            except (TypeError, FileNotFoundError):
-                return None
-            if object.f_code.co_filename == module_file:
+            module = _getframemodule(object, _filename)
+            if module is not None:
                 return module
-            try:
-                module_file = getabsfile(module)
-            except (TypeError, FileNotFoundError):
-                return None
-            if file == module_file or file == os.path.realpath(module_file):
-                return module
-            return None
 
     # Try the filename to modulename cache
     if _filename is not None and _filename in modulesbyfile:
@@ -972,19 +980,33 @@ def getmodule(object, _filename=None):
         return None
     if file in modulesbyfile:
         return sys.modules.get(modulesbyfile[file])
-    # Update the filename to module name cache and check yet again
-    # Copy sys.modules in order to cope with changes while iterating
-    for modname, module in sys.modules.copy().items():
-        if ismodule(module) and hasattr(module, '__file__'):
-            f = module.__file__
-            if f == _filesbymodname.get(modname, None):
-                # Have already mapped this module, so skip it
-                continue
-            _filesbymodname[modname] = f
-            f = getabsfile(module)
-            # Always map to the name the module knows itself by
-            modulesbyfile[f] = modulesbyfile[
-                os.path.realpath(f)] = module.__name__
+    # Update the filename to module name cache only when sys.modules is
+    # replaced or its module names have changed since the previous scan.
+    # Retaining module values in the snapshot would keep removed modules alive.
+    global _modulesbyfile_snapshot
+    modules = sys.modules
+    modules_id = id(modules)
+    try:
+        snapshot = (modules_id, tuple(modules))
+    except RuntimeError:
+        # The mapping changed while its keys were being copied.
+        snapshot = None
+    if snapshot is None or snapshot != _modulesbyfile_snapshot:
+        # Copy sys.modules in order to cope with changes while iterating.
+        modules = modules.copy()
+        snapshot = (modules_id, tuple(modules))
+        for modname, module in modules.items():
+            if ismodule(module) and hasattr(module, '__file__'):
+                f = module.__file__
+                if f == _filesbymodname.get(modname, None):
+                    # Have already mapped this module, so skip it
+                    continue
+                _filesbymodname[modname] = f
+                f = getabsfile(module)
+                # Always map to the name the module knows itself by
+                modulesbyfile[f] = modulesbyfile[
+                    os.path.realpath(f)] = module.__name__
+        _modulesbyfile_snapshot = snapshot
     if file in modulesbyfile:
         return sys.modules.get(modulesbyfile[file])
     # Check the main module
