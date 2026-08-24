@@ -1948,7 +1948,7 @@ class _ProxyBypassEnvSettings:
     def __init__(self, data):
         self.matches = set()
         self.cidrs = []
-        
+
         for elem in data.split(','):
             elem = elem.strip()
 
