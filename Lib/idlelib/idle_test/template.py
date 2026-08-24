@@ -22,6 +22,7 @@ class Test(unittest.TestCase):
         cls.root.destroy()
         del cls.root
 
+    @unittest.skip('Dummy test')
     def test_init(self):
         self.assertTrue(True)
 
