@@ -419,9 +419,9 @@ class TestCase(unittest.TestCase):
         self.assertEqual(iter(c, 10, stop_exception=StopIteration).__reduce__(),
                          (iter, (c, 10)))
         self.assertEqual(iter(c, 10, stop_exception=()).__reduce__(),
-                         (iter, (c, 10)))
+                         (iter, (c, None), ((10,), ())))
         self.assertEqual(iter(c, stop_exception=StopIteration).__reduce__(),
-                         (iter, (c, None), ((), ())))
+                         (iter, (c, None), ((), StopIteration)))
         self.assertEqual(iter(c, stop_exception=IndexError).__reduce__(),
                          (iter, (c, None), ((), IndexError)))
         self.assertEqual(iter(c, 10, stop_exception=IndexError).__reduce__(),
@@ -439,10 +439,10 @@ class TestCase(unittest.TestCase):
         it.__setstate__(((10,), StopIteration))
         self.assertEqual(it.__reduce__(), (iter, (c, 10)))
         it.__setstate__(((10,), ()))
-        self.assertEqual(it.__reduce__(), (iter, (c, 10)))
+        self.assertEqual(it.__reduce__(), (iter, (c, None), ((10,), ())))
         it.__setstate__(((), IndexError))
         self.assertEqual(it.__reduce__(), (iter, (c, None), ((), IndexError)))
-        it.__setstate__(((10,), ()))
+        it.__setstate__(((10,), StopIteration))
         self.assertEqual(list(it), list(range(10)))
 
     def test_iter_function_concealing_reentrant_exhaustion(self):

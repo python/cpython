@@ -189,17 +189,18 @@ typedef struct {
     PyObject_HEAD
     /* All are set to NULL when the iterator is exhausted */
     PyObject *it_callable;
-    PyObject *it_sentinel; /* can be NULL */
-    PyObject *it_stop_exc; /* can be NULL */
+    PyObject *it_sentinel;  /* can be NULL */
+    PyObject *it_stop_exc;  /* not NULL if it_callable is not NULL */
 } calliterobject;
 
 PyObject *
 _PyCallIter_NewEx(PyObject *callable, PyObject *sentinel, PyObject *stop_exc)
 {
     calliterobject *it;
-    if (stop_exc != NULL &&
-        _PyEval_CheckExceptTypeValid(_PyThreadState_GET(), stop_exc) < 0)
-    {
+    if (stop_exc == NULL) {
+        stop_exc = PyExc_StopIteration;
+    }
+    else if (_PyEval_CheckExceptTypeValid(_PyThreadState_GET(), stop_exc) < 0) {
         return NULL;
     }
     it = PyObject_GC_New(calliterobject, &PyCallIter_Type);
@@ -207,7 +208,7 @@ _PyCallIter_NewEx(PyObject *callable, PyObject *sentinel, PyObject *stop_exc)
         return NULL;
     it->it_callable = Py_NewRef(callable);
     it->it_sentinel = Py_XNewRef(sentinel);
-    it->it_stop_exc = Py_XNewRef(stop_exc);
+    it->it_stop_exc = Py_NewRef(stop_exc);
     _PyObject_GC_TRACK(it);
     return (PyObject *)it;
 }
@@ -266,10 +267,7 @@ calliter_iternext(PyObject *op)
             Py_CLEAR(it->it_stop_exc);
         }
     }
-    else if ((it->it_stop_exc != NULL &&
-              PyErr_ExceptionMatches(it->it_stop_exc)) ||
-             PyErr_ExceptionMatches(PyExc_StopIteration))
-    {
+    else if (PyErr_ExceptionMatches(it->it_stop_exc)) {
         PyErr_Clear();
         Py_CLEAR(it->it_callable);
         Py_CLEAR(it->it_sentinel);
@@ -295,23 +293,15 @@ calliter_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
     /* Only the sentinel can be passed as an argument of iter(), so other
        attributes are restored from the state (see calliter_setstate()). */
     if (it->it_sentinel == NULL) {
-        if (it->it_stop_exc == NULL) {
-            return Py_BuildValue("N(OO)(()())", iter, it->it_callable, Py_None);
-        }
-        else {
-            return Py_BuildValue("N(OO)(()O)", iter, it->it_callable, Py_None,
-                                 it->it_stop_exc);
-        }
+        return Py_BuildValue("N(OO)(()O)", iter, it->it_callable, Py_None,
+                             it->it_stop_exc);
+    }
+    else if (it->it_stop_exc == PyExc_StopIteration) {
+        return Py_BuildValue("N(OO)", iter, it->it_callable, it->it_sentinel);
     }
     else {
-        if (it->it_stop_exc == NULL) {
-            return Py_BuildValue("N(OO)", iter, it->it_callable,
-                                 it->it_sentinel);
-        }
-        else {
-            return Py_BuildValue("N(OO)((O)O)", iter, it->it_callable, Py_None,
-                                 it->it_sentinel, it->it_stop_exc);
-        }
+        return Py_BuildValue("N(OO)((O)O)", iter, it->it_callable, Py_None,
+                             it->it_sentinel, it->it_stop_exc);
     }
 }
 
@@ -332,12 +322,11 @@ calliter_setstate(PyObject *op, PyObject *state)
     if (_PyEval_CheckExceptTypeValid(_PyThreadState_GET(), stop_exc) < 0) {
         return NULL;
     }
-    stop_exc = _PyIter_NormalizeStopException(stop_exc, PyExc_StopIteration);
     if (it->it_callable != NULL) {
         Py_XSETREF(it->it_sentinel,
                    PyTuple_GET_SIZE(sentinel) ?
                    Py_NewRef(PyTuple_GET_ITEM(sentinel, 0)) : NULL);
-        Py_XSETREF(it->it_stop_exc, Py_XNewRef(stop_exc));
+        Py_SETREF(it->it_stop_exc, Py_NewRef(stop_exc));
     }
     Py_RETURN_NONE;
 
@@ -629,8 +618,8 @@ typedef struct {
     PyObject_HEAD
     /* All are set to NULL when the iterator is exhausted */
     PyObject *it_callable;
-    PyObject *it_sentinel; /* can be NULL */
-    PyObject *it_stop_exc; /* can be NULL */
+    PyObject *it_sentinel;  /* can be NULL */
+    PyObject *it_stop_exc;  /* not NULL if it_callable is not NULL */
 } acalliterobject;
 
 #define acalliterobject_CAST(op)        ((acalliterobject *)(op))
@@ -649,9 +638,10 @@ typedef struct {
 PyObject *
 _PyACallIter_New(PyObject *callable, PyObject *sentinel, PyObject *stop_exc)
 {
-    if (stop_exc != NULL &&
-        _PyEval_CheckExceptTypeValid(_PyThreadState_GET(), stop_exc) < 0)
-    {
+    if (stop_exc == NULL) {
+        stop_exc = PyExc_StopAsyncIteration;
+    }
+    else if (_PyEval_CheckExceptTypeValid(_PyThreadState_GET(), stop_exc) < 0) {
         return NULL;
     }
     acalliterobject *it = PyObject_GC_New(acalliterobject, &_PyACallIter_Type);
@@ -660,7 +650,7 @@ _PyACallIter_New(PyObject *callable, PyObject *sentinel, PyObject *stop_exc)
     }
     it->it_callable = Py_NewRef(callable);
     it->it_sentinel = Py_XNewRef(sentinel);
-    it->it_stop_exc = Py_XNewRef(stop_exc);
+    it->it_stop_exc = Py_NewRef(stop_exc);
     _PyObject_GC_TRACK(it);
     return (PyObject *)it;
 }
@@ -671,15 +661,6 @@ acalliter_exhaust(acalliterobject *it)
     Py_CLEAR(it->it_callable);
     Py_CLEAR(it->it_sentinel);
     Py_CLEAR(it->it_stop_exc);
-}
-
-/* Return 1 if the raised exception ends the iteration. */
-static int
-acalliter_stop_matches(acalliterobject *it)
-{
-    return ((it->it_stop_exc != NULL &&
-             PyErr_ExceptionMatches(it->it_stop_exc)) ||
-            PyErr_ExceptionMatches(PyExc_StopAsyncIteration));
 }
 
 static void
@@ -797,7 +778,7 @@ acallawaitable_start(acallawaitableobject *aw)
     }
     PyObject *awaitable = _PyObject_CallNoArgs(it->it_callable);
     if (awaitable == NULL) {
-        if (acalliter_stop_matches(it)) {
+        if (PyErr_ExceptionMatches(it->it_stop_exc)) {
             PyErr_Clear();
             acalliter_exhaust(it);
             PyErr_SetNone(PyExc_StopAsyncIteration);
@@ -834,7 +815,7 @@ acallawaitable_handle_error(acallawaitableobject *aw)
         Py_DECREF(value);
         return NULL;
     }
-    if (acalliter_stop_matches(it)) {
+    if (PyErr_ExceptionMatches(it->it_stop_exc)) {
         PyErr_Clear();
         acalliter_exhaust(it);
         PyErr_SetNone(PyExc_StopAsyncIteration);

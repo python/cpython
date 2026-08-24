@@ -1924,10 +1924,6 @@ builtin_iter_impl(PyObject *module, PyObject *object, PyObject *stop_value,
                         "iter(): the first argument must be callable");
         return NULL;
     }
-    if (stop_exception != NULL) {
-        stop_exception = _PyIter_NormalizeStopException(stop_exception,
-                                                        PyExc_StopIteration);
-    }
     return _PyCallIter_NewEx(object, stop_value, stop_exception);
 }
 
@@ -1961,10 +1957,6 @@ builtin_aiter_impl(PyObject *module, PyObject *object, PyObject *stop_value,
         PyErr_SetString(PyExc_TypeError,
                         "aiter(): the first argument must be callable");
         return NULL;
-    }
-    if (stop_exception != NULL) {
-        stop_exception = _PyIter_NormalizeStopException(
-                stop_exception, PyExc_StopAsyncIteration);
     }
     return _PyACallIter_New(object, stop_value, stop_exception);
 }
