@@ -646,7 +646,8 @@ class SSLProtocol(protocols.BufferedProtocol):
             )
         ):
             self._transport._force_close(
-                exceptions.TimeoutError('SSL shutdown timed out'))
+                exceptions.TimeoutError(errno.ETIMEDOUT,
+                                        'SSL shutdown timed out'))
 
     def _do_flush(self):
         self._do_read()

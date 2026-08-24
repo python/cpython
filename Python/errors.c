@@ -933,6 +933,17 @@ PyErr_SetFromErrno(PyObject *exc)
     return PyErr_SetFromErrnoWithFilenameObjects(exc, NULL, NULL);
 }
 
+void
+_PyErr_SetOSErrorWithMessage(PyObject *exc, int err, const char *msg)
+{
+    PyObject *args = Py_BuildValue("(is)", err, msg);
+    if (args == NULL) {
+        return;
+    }
+    PyErr_SetObject(exc, args);
+    Py_DECREF(args);
+}
+
 #ifdef MS_WINDOWS
 /* Windows specific error code handling */
 PyObject *PyErr_SetExcFromWindowsErrWithFilenameObject(

@@ -35,7 +35,7 @@ class ResourceReader(metaclass=abc.ABCMeta):
         # This deliberately raises FileNotFoundError instead of
         # NotImplementedError so that if this method is accidentally called,
         # it'll still do the right thing.
-        raise FileNotFoundError
+        raise FileNotFoundError(errno.ENOENT, 'No such resource')
 
     @abc.abstractmethod
     def resource_path(self, resource: Text) -> Text:
@@ -48,7 +48,7 @@ class ResourceReader(metaclass=abc.ABCMeta):
         # This deliberately raises FileNotFoundError instead of
         # NotImplementedError so that if this method is accidentally called,
         # it'll still do the right thing.
-        raise FileNotFoundError
+        raise FileNotFoundError(errno.ENOENT, 'No such resource')
 
     @abc.abstractmethod
     def is_resource(self, path: Text) -> bool:
@@ -56,12 +56,12 @@ class ResourceReader(metaclass=abc.ABCMeta):
 
         Files are resources, directories are not.
         """
-        raise FileNotFoundError
+        raise FileNotFoundError(errno.ENOENT, 'No such resource')
 
     @abc.abstractmethod
     def contents(self) -> Iterable[str]:
         """Return an iterable of entries in `package`."""
-        raise FileNotFoundError
+        raise FileNotFoundError(errno.ENOENT, 'No such resource')
 
 
 class TraversalError(Exception):

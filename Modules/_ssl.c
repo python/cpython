@@ -2664,8 +2664,7 @@ _ssl__SSLSocket_sendfile_impl(PySSLSocket *self, int fd, Py_off_t offset,
     sockstate = PySSL_select(sock, 1, timeout);
     switch (sockstate) {
         case SOCKET_HAS_TIMED_OUT:
-            PyErr_SetString(PyExc_TimeoutError,
-                            "The write operation timed out");
+            set_timeout_err("The write operation timed out");
             goto error;
         case SOCKET_HAS_BEEN_CLOSED:
             PyErr_SetString(get_state_sock(self)->PySSLErrorObject,
@@ -2710,8 +2709,7 @@ _ssl__SSLSocket_sendfile_impl(PySSLSocket *self, int fd, Py_off_t offset,
         }
 
         if (sockstate == SOCKET_HAS_TIMED_OUT) {
-            PyErr_SetString(PyExc_TimeoutError,
-                            "The sendfile operation timed out");
+            set_timeout_err("The sendfile operation timed out");
             goto error;
         }
         else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {

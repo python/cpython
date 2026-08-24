@@ -135,7 +135,7 @@ class Timeout:
     def _insert_timeout_error(exc_val: BaseException) -> None:
         while exc_val.__context__ is not None:
             if isinstance(exc_val.__context__, exceptions.CancelledError):
-                te = TimeoutError()
+                te = TimeoutError(errno.ETIMEDOUT, 'timed out')
                 te.__context__ = te.__cause__ = exc_val.__context__
                 exc_val.__context__ = te
                 break
