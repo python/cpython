@@ -2274,10 +2274,11 @@ PyUnstable_InterpreterFrame_GetLocal(_PyInterpreterFrame *frame,
 
     // Free variable: read from the function closure rather than localsplus.
     if ((co->co_flags & CO_OPTIMIZED)
-            && PyStackRef_FunctionCheck(frame->f_funcobj)) {
+         && PyStackRef_FunctionCheck(frame->f_funcobj))
+    {
         PyFunctionObject *func = _PyFrame_GetFunction(frame);
         PyObject *cell = PyTuple_GET_ITEM(func->func_closure, index - offset);
-        return Py_XNewRef(PyCell_GET(cell));
+        return PyCell_GetRef((PyCellObject *)cell);
     }
     return NULL;
 }

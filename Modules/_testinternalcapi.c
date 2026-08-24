@@ -1515,7 +1515,7 @@ iframe_getlasti(PyObject *self, PyObject *frame)
 }
 
 // Reads the locals of the Python frame that called this C function using
-// PyUnstable_InterpreterFrame_GetLocals and returns them as a name -> value
+// PyUnstable_InterpreterFrame_GetLocal and returns them as a name -> value
 // dict, skipping NULL (unset or hidden) slots.
 static PyObject *
 get_frame_locals(PyObject *self, PyObject *Py_UNUSED(ignored))
