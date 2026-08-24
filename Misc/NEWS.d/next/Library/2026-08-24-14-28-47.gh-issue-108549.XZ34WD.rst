@@ -1,1 +1,1 @@
-In ``asyncio.Task.__step``, do not cancel the current task when a ``SystemExit``(or a ``KeyboardInterrupt``) exception was just raised.
+In ``asyncio.Task.__step``, do not cancel the current task when a ``SystemExit`` (or a ``KeyboardInterrupt``) exception was just raised.
