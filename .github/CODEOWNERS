@@ -223,7 +223,7 @@ Tools/cases_generator/        @markshannon
 Python/assemble.c             @markshannon @iritkatriel
 Python/codegen.c              @markshannon @iritkatriel
 Python/compile.c              @markshannon @iritkatriel
-Python/flowgraph.c            @markshannon @iritkatriel
+Python/flowgraph.c            @markshannon @iritkatriel @eclips4
 Python/instruction_sequence.c @iritkatriel
 Python/symtable.c             @JelleZijlstra @carljm
 
@@ -619,6 +619,12 @@ Lib/test/test_unittest/testmock/ @cjw296
 
 # Weakref
 **/*weakref*                  @kumaraditya303
+
+# Zlib
+Doc/library/zlib.rst          @StanFromIreland
+Lib/compression/zlib.py       @StanFromIreland
+Lib/test/test_zlib.py         @StanFromIreland
+Modules/_zlibmodule.c         @StanFromIreland
 
 # Zipfile.Path
 Lib/test/test_zipfile/_path/  @jaraco

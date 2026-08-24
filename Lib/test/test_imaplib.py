@@ -292,6 +292,8 @@ class TestImaplib(unittest.TestCase):
         # A scalar is passed through as a string.
         self.assertEqual(m._sequence_set(5), '5')
         self.assertEqual(m._sequence_set('1:3,7'), '1:3,7')
+        self.assertEqual(m._sequence_set(b'1:3,7'), '1:3,7')
+        self.assertEqual(m._sequence_set(bytearray(b'1:3,7')), '1:3,7')
         # A sequence of numbers and ranges is formatted as a sequence set.
         self.assertEqual(m._sequence_set([1, 2, 5]), '1,2,5')
         self.assertEqual(m._sequence_set([1, (3, 5), (8, '*')]), '1,3:5,8:*')
@@ -333,6 +335,7 @@ class TestImaplib(unittest.TestCase):
                          r'(\Seen \Answered)')
         # '?s' formats a message sequence set.
         self.assertEqual(sub('?s', [[1, (3, 5), (8, '*')]]), '1,3:5,8:*')
+        self.assertEqual(sub('?s', [b'1:3,7']), '1:3,7')
         # '??' is a literal '?'.
         self.assertEqual(sub('a?? b', []), 'a? b')
 
@@ -1566,6 +1569,16 @@ class NewIMAPTestsMixin:
         client.login('user', 'pass')
         client.select()
         typ, data = client.fetch('2:4', '(FLAGS)')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [
+            br'2 (FLAGS (\Seen))',
+            br'3 (FLAGS (\Seen))',
+            br'4 (FLAGS (\Seen))',
+        ])
+        self.assertEqual(server.args, ['2:4', '(FLAGS)'])
+
+        # A preformatted message set may be passed as bytes.
+        typ, data = client.fetch(b'2:4', '(FLAGS)')
         self.assertEqual(typ, 'OK')
         self.assertEqual(data, [
             br'2 (FLAGS (\Seen))',

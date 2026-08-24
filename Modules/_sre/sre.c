@@ -1273,8 +1273,7 @@ _sre_SRE_Pattern_split_impl(PatternObject *self, PyObject *string,
             );
         if (!item)
             goto error;
-        status = PyList_Append(list, item);
-        Py_DECREF(item);
+        status = _PyList_AppendTakeRef((PyListObject *)list, item);
         if (status < 0)
             goto error;
 
@@ -1283,8 +1282,7 @@ _sre_SRE_Pattern_split_impl(PatternObject *self, PyObject *string,
             item = state_getslice(&state, i+1, string, 0);
             if (!item)
                 goto error;
-            status = PyList_Append(list, item);
-            Py_DECREF(item);
+            status = _PyList_AppendTakeRef((PyListObject *)list, item);
             if (status < 0)
                 goto error;
         }
@@ -1301,8 +1299,7 @@ _sre_SRE_Pattern_split_impl(PatternObject *self, PyObject *string,
         );
     if (!item)
         goto error;
-    status = PyList_Append(list, item);
-    Py_DECREF(item);
+    status = _PyList_AppendTakeRef((PyListObject *)list, item);
     if (status < 0)
         goto error;
 

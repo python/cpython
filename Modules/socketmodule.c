@@ -1811,7 +1811,7 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
    (in particular, numeric IP addresses). */
 struct maybe_idna {
     PyObject *obj;
-    char *buf;
+    const char *buf;
 };
 
 static void
@@ -4990,9 +4990,9 @@ sock_sendmsg_impl(PySocketSockObject *s, void *data)
 _socket.socket.sendmsg
     self as s: self(type="PySocketSockObject *")
     buffers as data_arg: object
-    ancdata as cmsg_arg: object = NULL
+    ancdata as cmsg_arg: object(c_default="NULL") = ()
     flags: int = 0
-    address as addr_arg: object = NULL
+    address as addr_arg: object(c_default="NULL") = None
     /
 
 Send normal and ancillary data to the socket.
@@ -5016,7 +5016,7 @@ static PyObject *
 _socket_socket_sendmsg_impl(PySocketSockObject *s, PyObject *data_arg,
                             PyObject *cmsg_arg, int flags,
                             PyObject *addr_arg)
-/*[clinic end generated code: output=3b4cb1110644ce39 input=8ae408971a3aa329]*/
+/*[clinic end generated code: output=3b4cb1110644ce39 input=5fdf9b49bed3848b]*/
 
 {
     Py_ssize_t i, ndatabufs = 0, ncmsgs, ncmsgbufs = 0;

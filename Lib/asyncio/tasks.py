@@ -440,15 +440,13 @@ def _release_waiter(waiter, *args):
 async def wait_for(fut, timeout):
     """Wait for the single Future or coroutine to complete, with timeout.
 
-    Coroutine will be wrapped in Task.
-
     Returns result of the Future or coroutine.  When a timeout occurs,
-    it cancels the task and raises TimeoutError.  To avoid the task
-    cancellation, wrap it in shield().
+    it cancels fut and raises TimeoutError.  To prevent fut from being
+    cancelled, wrap it in shield().
 
-    If the wait is cancelled, the task is also cancelled.
+    If the wait is cancelled, fut is also cancelled.
 
-    If the task suppresses the cancellation and returns a value instead,
+    If fut suppresses the cancellation and returns a value instead,
     that value is returned.
 
     This function is a coroutine.
@@ -997,6 +995,9 @@ def shield(arg):
             # Keep only one callback to log on cancel
             inner.remove_done_callback(_log_on_exception)
             inner.add_done_callback(_log_on_exception)
+            if cur_task is not None:
+                inner.remove_done_callback(_clear_awaited_by_callback)
+                futures.future_discard_from_awaited_by(inner, cur_task)
 
     if cur_task is not None:
         inner.add_done_callback(_clear_awaited_by_callback)
