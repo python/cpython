@@ -241,6 +241,19 @@ import_get_module(PyThreadState *tstate, PyObject *name)
     return m;
 }
 
+static PyObject *
+get_importtime_name(PyObject *name)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    PyObject *encoded = PyUnicode_AsEncodedString(name, "utf-8",
+                                                  "backslashreplace");
+    if (encoded == NULL) {
+        PyErr_Clear();
+    }
+    PyErr_SetRaisedException(exc);
+    return encoded;
+}
+
 static int
 import_ensure_initialized(PyInterpreterState *interp, PyObject *mod, PyObject *name)
 {
@@ -278,8 +291,11 @@ done:
     if (_PyInterpreterState_GetConfig(interp)->import_time == 2) {
         _IMPORT_TIME_HEADER(interp);
 #define import_level FIND_AND_LOAD(interp).import_level
+        PyObject *encoded_name = get_importtime_name(name);
         fprintf(stderr, "import time: cached    | cached     | %*s\n",
-                import_level*2, PyUnicode_AsUTF8(name));
+                import_level*2,
+                encoded_name != NULL ? PyBytes_AS_STRING(encoded_name) : "?");
+        Py_XDECREF(encoded_name);
 #undef import_level
     }
 
@@ -3782,10 +3798,13 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
         PyTime_t cum = t2 - t1;
 
         import_level--;
+        PyObject *encoded_name = get_importtime_name(abs_name);
         fprintf(stderr, "import time: %9ld | %10ld | %*s%s\n",
                 (long)_PyTime_AsMicroseconds(cum - accumulated, _PyTime_ROUND_CEILING),
                 (long)_PyTime_AsMicroseconds(cum, _PyTime_ROUND_CEILING),
-                import_level*2, "", PyUnicode_AsUTF8(abs_name));
+                import_level*2, "",
+                encoded_name != NULL ? PyBytes_AS_STRING(encoded_name) : "?");
+        Py_XDECREF(encoded_name);
 
         accumulated = accumulated_copy + cum;
     }
