@@ -1,0 +1,2 @@
+Fix a crash in the free-threaded build when deleting the :attr:`!contents`
+attribute of a :mod:`ctypes` pointer.

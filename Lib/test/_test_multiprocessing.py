@@ -26,6 +26,7 @@ import subprocess
 import struct
 import tempfile
 import operator
+import pathlib
 import pickle
 import weakref
 import warnings
@@ -3228,6 +3229,27 @@ class _TestPool(BaseTestCase):
         p.terminate()
         p.join()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    @support.subTests('method_name', ("imap", "imap_unordered"))
+    def test_imap_with_buffersize_close_after_partial_consumption(
+        self, method_name
+    ):
+        # close()/join() must not deadlock when a buffersize iterator is
+        # only partially consumed (the throttled task generator must stop).
+        p = self.Pool(2)
+        method = getattr(p, method_name)
+        it = method(sqr, range(1000), buffersize=2)
+        next(it)
+        finished = threading.Event()
+        def finalize():
+            p.close()
+            p.join()
+            finished.set()
+        t = threading.Thread(target=finalize)
+        t.start()
+        t.join(support.SHORT_TIMEOUT)
+        self.assertTrue(finished.is_set(), "close()/join() deadlocked")
+
     @support.subTests('method_name', ("imap", "imap_unordered"))
     def test_imap_and_imap_unordered_with_buffersize_on_empty_iterable(
         self, method_name
@@ -6354,6 +6376,41 @@ class TestStartMethod(unittest.TestCase):
         # gh-109706: queue.put(1) can write into the queue before queue.put(2),
         # there is no synchronization in the test.
         self.assertSetEqual(set(results), set([2, 1]))
+
+    @unittest.skipIf(os.name == "nt", "requires POSIX")
+    @support.requires_non_root_user
+    @support.subTests("mode", [
+        os.R_OK,  # read-only directory
+        os.R_OK | os.X_OK, # read-only directory
+        os.W_OK # write-only directory _without_ permissions for creating files
+    ])
+    def test_forkserver_requires_writeable_tempdir(self, mode):
+        # Regression test to ensure that the defualt start method is
+        # not 'forkserver' when the temporary directory is not writeable.
+        #
+        # See https://github.com/python/cpython/issues/155717.
+
+        cmd = '''if 1:
+            import os, tempfile
+            # We fake the read-onlyiness of /tmp (which is a fallback when
+            # the user-defined TMPDIR is not acceptable) by hardcoding the
+            # temporary directory for this specific test.
+            tempfile.tempdir = os.environ["TMPDIR"]
+
+            # Imported after patching 'tempfile' so that the default start
+            # method is deduced according to the permissions of TMPDIR.
+            import multiprocessing
+            if __name__ == "__main__":
+                print(multiprocessing.get_start_method())
+        '''
+
+        with support.os_helper.temp_dir() as root:
+            TMPDIR = pathlib.Path(root, "TMPDIR")
+            TMPDIR.mkdir(mode=mode)
+            file = pathlib.Path(TMPDIR, "file")
+            self.assertRaises(OSError, file.touch)
+            _, out, err = script_helper.assert_python_ok('-c', cmd, TMPDIR=TMPDIR)
+        self.assertEqual(out.decode().strip(), "spawn")
 
 
 @unittest.skipIf(sys.platform == "win32",
