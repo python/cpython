@@ -2,7 +2,7 @@
 
 from collections.abc import Callable, Iterable, Iterator
 from types import TracebackType
-from typing import Any, Protocol, TypeAlias
+from typing import Any, Literal, NotRequired, Protocol, TypeAlias, TypedDict
 
 __all__ = [
     "StartResponse",
@@ -26,7 +26,29 @@ class StartResponse(Protocol):
         /,
     ) -> Callable[[bytes], object]: ...
 
-WSGIEnvironment: TypeAlias = dict[str, Any]
+WSGIEnvironment = TypedDict(
+    "WSGIEnvironment",
+    {
+        "REQUEST_METHOD": str,
+        "SCRIPT_NAME": NotRequired[str],
+        "PATH_INFO": NotRequired[str],
+        "QUERY_STRING": NotRequired[str],
+        "CONTENT_TYPE": NotRequired[str],
+        "CONTENT_LENGTH": NotRequired[str],
+        "SERVER_NAME": str,
+        "SERVER_PORT": str,
+        "SERVER_PROTOCOL": str,
+        "wsgi.version": tuple[Literal[1], Literal[0]],
+        "wsgi.url_scheme": str,
+        "wsgi.input": "InputStream",
+        "wsgi.errors": "ErrorStream",
+        "wsgi.multithread": Any,
+        "wsgi.multiprocess": Any,
+        "wsgi.run_once": Any,
+        "wsgi.file_wrapper": NotRequired["FileWrapper"],
+    },
+    extra_items=Any,
+)
 WSGIApplication: TypeAlias = Callable[[WSGIEnvironment, StartResponse],
     Iterable[bytes]]
 
