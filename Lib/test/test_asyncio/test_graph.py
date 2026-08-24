@@ -41,7 +41,7 @@ def capture_test_stack(*, fut=None, depth=1):
         return ret
 
     buf = io.StringIO()
-    asyncio.print_call_graph(fut, file=buf, depth=depth+1)
+    asyncio.print_call_graph(fut, file=buf, depth=depth)
 
     stack = asyncio.capture_call_graph(fut, depth=depth)
     return walk(stack), buf.getvalue()
@@ -421,6 +421,14 @@ class CallStackTestBase:
     def test_capture_call_graph_non_future(self):
         with self.assertRaises(TypeError):
             asyncio.capture_call_graph("not a future")
+
+    async def test_print_call_graph_innermost_frame(self):
+        # gh-156327: print_call_graph() must not report its own frame
+        buf = io.StringIO()
+        lineno = sys._getframe().f_lineno + 1
+        asyncio.print_call_graph(file=buf)
+        first_frame = buf.getvalue().splitlines()[2]
+        self.assertIn(f'File {__file__!r}, line {lineno},', first_frame)
 
     async def test_capture_call_graph_no_current_task(self):
         results = []
