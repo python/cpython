@@ -371,16 +371,18 @@ class TestCase(unittest.TestCase):
         self.check_iterator(iter(CallableIterClass(), 200, stop_exception=IndexError),
                             list(range(101)))
 
-    # StopIteration stops the iteration even if other exception is specified
-    def test_iter_exception_stop_iteration(self):
-        def spam(state=[0]):
-            i = state[0]
-            if i == 10:
-                raise StopIteration
-            state[0] = i+1
-            return i
-        self.check_iterator(iter(spam, stop_exception=IndexError), list(range(10)),
-                            pickle=False)
+    # A leaking StopIteration is replaced with RuntimeError (see PEP 479)
+    def test_iter_exception_stop_iteration_leak(self):
+        def spam():
+            raise StopIteration
+        it = iter(spam, stop_exception=IndexError)
+        with self.assertRaisesRegex(RuntimeError,
+                                    'callable raised StopIteration') as cm:
+            next(it)
+        self.assertIsInstance(cm.exception.__cause__, StopIteration)
+        # but if it matches stop_exception, it stops the iteration
+        it = iter(spam, stop_exception=(IndexError, StopIteration))
+        self.assertRaises(StopIteration, next, it)
 
     # Other exceptions are propagated
     def test_iter_exception_not_matching(self):
@@ -395,22 +397,16 @@ class TestCase(unittest.TestCase):
         self.assertRaises(TypeError, iter, len, stop_exception=(IndexError, 42))
         self.assertRaises(TypeError, iter, len, stop_exception=IndexError())
 
-    # StopIteration and an empty tuple stop the iteration in any case,
-    # so they are the same as no exception argument
-    def test_iter_exception_redundant(self):
-        def make_spam():
-            state = [0]
-            def spam():
-                if state[0] == 10:
-                    raise StopIteration
-                state[0] += 1
-                return state[0] - 1
-            return spam
-        for stop_exception in StopIteration, ():
-            with self.subTest(stop_exception=stop_exception):
-                self.check_iterator(
-                    iter(make_spam(), stop_exception=stop_exception),
-                    list(range(10)), pickle=False)
+    # StopIteration is the default stop exception
+    def test_iter_exception_stop_iteration(self):
+        def spam(state=[0]):
+            i = state[0]
+            if i == 10:
+                raise StopIteration
+            state[0] = i+1
+            return i
+        self.check_iterator(iter(spam, stop_exception=StopIteration),
+                            list(range(10)), pickle=False)
 
     def test_calliter_reduce(self):
         c = CallableIterClass()

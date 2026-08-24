@@ -77,8 +77,8 @@ are always available.  They are listed here in alphabetical order.
    calls *callable* with no arguments and awaits the result
    for each call to its :meth:`~object.__anext__` method;
    if the awaited value is equal to *stop_value*,
-   or if the call raises :exc:`StopAsyncIteration` or an exception
-   matching *stop_exception*, :exc:`StopAsyncIteration` will be raised,
+   or if the call raises an exception matching *stop_exception*,
+   :exc:`StopAsyncIteration` will be raised,
    otherwise the value will be returned.
    The callable is only called when the result of :meth:`~object.__anext__`
    is awaited.
@@ -86,6 +86,9 @@ are always available.  They are listed here in alphabetical order.
    *stop_exception* is an exception class or a tuple of exception classes.
    If *stop_value* is not specified,
    the iteration stops only when the callable raises an exception.
+   If the callable raises :exc:`StopAsyncIteration` which does not match
+   *stop_exception*, it is replaced with a :exc:`RuntimeError`,
+   as for asynchronous generators (see :pep:`525`).
 
    For example, reading fixed-size chunks from an asynchronous stream
    until the end of file is reached::
@@ -1191,13 +1194,15 @@ are always available.  They are listed here in alphabetical order.
    then the first argument must be a callable object.  The iterator created in this case
    will call *callable* with no arguments for each call to its
    :meth:`~iterator.__next__` method; if the value returned is equal to
-   *stop_value*, or if the call raises :exc:`StopIteration` or an exception
-   matching *stop_exception*, :exc:`StopIteration` will be raised, otherwise the
-   value will be returned.
+   *stop_value*, or if the call raises an exception matching *stop_exception*,
+   :exc:`StopIteration` will be raised, otherwise the value will be returned.
 
    *stop_exception* is an exception class or a tuple of exception classes.
    If *stop_value* is not specified,
    the iteration stops only when the callable raises an exception.
+   If the callable raises :exc:`StopIteration` which does not match
+   *stop_exception*, it is replaced with a :exc:`RuntimeError`,
+   as for generators (see :pep:`479`).
 
    See also :ref:`typeiter`.
 

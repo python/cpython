@@ -7,6 +7,7 @@
 #include "pycore_genobject.h"     // _PyCoro_GetAwaitableIter()
 #include "pycore_iterobject.h"    // _PyCallIter_NewEx()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
 
@@ -187,10 +188,10 @@ PyTypeObject PySeqIter_Type = {
 
 typedef struct {
     PyObject_HEAD
-    /* All are set to NULL when the iterator is exhausted */
+    /* Both are set to NULL when the iterator is exhausted */
     PyObject *it_callable;
     PyObject *it_sentinel;  /* can be NULL */
-    PyObject *it_stop_exc;  /* not NULL if it_callable is not NULL */
+    PyObject *it_stop_exc;  /* never NULL */
 } calliterobject;
 
 PyObject *
@@ -264,14 +265,17 @@ calliter_iternext(PyObject *op)
         if (ok > 0) {
             Py_CLEAR(it->it_callable);
             Py_CLEAR(it->it_sentinel);
-            Py_CLEAR(it->it_stop_exc);
         }
     }
     else if (PyErr_ExceptionMatches(it->it_stop_exc)) {
         PyErr_Clear();
         Py_CLEAR(it->it_callable);
         Py_CLEAR(it->it_sentinel);
-        Py_CLEAR(it->it_stop_exc);
+    }
+    else if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
+        /* It would be mistaken for the end of the iteration (see PEP 479). */
+        _PyErr_FormatFromCause(PyExc_RuntimeError,
+                               "callable raised StopIteration");
     }
     Py_XDECREF(result);
     return NULL;
@@ -616,10 +620,10 @@ PyAnextAwaitable_New(PyObject *awaitable, PyObject *default_value)
 
 typedef struct {
     PyObject_HEAD
-    /* All are set to NULL when the iterator is exhausted */
+    /* Both are set to NULL when the iterator is exhausted */
     PyObject *it_callable;
     PyObject *it_sentinel;  /* can be NULL */
-    PyObject *it_stop_exc;  /* not NULL if it_callable is not NULL */
+    PyObject *it_stop_exc;  /* never NULL */
 } acalliterobject;
 
 #define acalliterobject_CAST(op)        ((acalliterobject *)(op))
@@ -660,7 +664,6 @@ acalliter_exhaust(acalliterobject *it)
 {
     Py_CLEAR(it->it_callable);
     Py_CLEAR(it->it_sentinel);
-    Py_CLEAR(it->it_stop_exc);
 }
 
 static void
@@ -783,6 +786,16 @@ acallawaitable_start(acallawaitableobject *aw)
             acalliter_exhaust(it);
             PyErr_SetNone(PyExc_StopAsyncIteration);
         }
+        else if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
+            /* It would be mistaken for the result of the await (PEP 525). */
+            _PyErr_FormatFromCause(PyExc_RuntimeError,
+                                   "callable raised StopIteration");
+        }
+        else if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration)) {
+            /* It would be mistaken for the end of the iteration (PEP 525). */
+            _PyErr_FormatFromCause(PyExc_RuntimeError,
+                                   "callable raised StopAsyncIteration");
+        }
         return -1;
     }
     aw->aw_wrapped = awaitable;
@@ -819,6 +832,11 @@ acallawaitable_handle_error(acallawaitableobject *aw)
         PyErr_Clear();
         acalliter_exhaust(it);
         PyErr_SetNone(PyExc_StopAsyncIteration);
+    }
+    else if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration)) {
+        /* It would be mistaken for the end of the iteration (see PEP 525). */
+        _PyErr_FormatFromCause(PyExc_RuntimeError,
+                               "callable raised StopAsyncIteration");
     }
     return NULL;
 }

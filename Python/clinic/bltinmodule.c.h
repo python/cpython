@@ -858,7 +858,7 @@ PyDoc_STRVAR(builtin_iter__doc__,
 "\n"
 "In the first form, the argument must supply its own iterator, or be a\n"
 "sequence.  In the second form, the callable is called until it returns\n"
-"the stop value or raises StopIteration or the specified exception.");
+"the stop value or raises the specified exception.");
 
 #define BUILTIN_ITER_METHODDEF    \
     {"iter", _PyCFunction_CAST(builtin_iter), METH_FASTCALL|METH_KEYWORDS, builtin_iter__doc__},
@@ -938,8 +938,7 @@ PyDoc_STRVAR(builtin_aiter__doc__,
 "Return an AsyncIterator for an AsyncIterable object.\n"
 "\n"
 "In the second form, the callable is called and its result is awaited\n"
-"until it returns the stop value or raises StopAsyncIteration or the\n"
-"specified exception.");
+"until it returns the stop value or raises the specified exception.");
 
 #define BUILTIN_AITER_METHODDEF    \
     {"aiter", _PyCFunction_CAST(builtin_aiter), METH_FASTCALL|METH_KEYWORDS, builtin_aiter__doc__},
@@ -1540,4 +1539,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9a8a92605af72942 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5fb1ac6a4253ee2f input=a9049054013a1b77]*/

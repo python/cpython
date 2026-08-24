@@ -1908,13 +1908,13 @@ Get an iterator from an object.
 
 In the first form, the argument must supply its own iterator, or be a
 sequence.  In the second form, the callable is called until it returns
-the stop value or raises StopIteration or the specified exception.
+the stop value or raises the specified exception.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_iter_impl(PyObject *module, PyObject *object, PyObject *stop_value,
                   PyObject *stop_exception)
-/*[clinic end generated code: output=eb9c9ae8f77bf400 input=d4eb3d19c8942790]*/
+/*[clinic end generated code: output=eb9c9ae8f77bf400 input=d3a2f767f29d9ae6]*/
 {
     if (stop_value == NULL && stop_exception == NULL) {
         return PyObject_GetIter(object);
@@ -1941,14 +1941,13 @@ aiter as builtin_aiter
 Return an AsyncIterator for an AsyncIterable object.
 
 In the second form, the callable is called and its result is awaited
-until it returns the stop value or raises StopAsyncIteration or the
-specified exception.
+until it returns the stop value or raises the specified exception.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_aiter_impl(PyObject *module, PyObject *object, PyObject *stop_value,
                    PyObject *stop_exception)
-/*[clinic end generated code: output=2865edb3fbc45693 input=3eec4f0424a7ebac]*/
+/*[clinic end generated code: output=2865edb3fbc45693 input=2adb37d12adafd0c]*/
 {
     if (stop_value == NULL && stop_exception == NULL) {
         return PyObject_GetAIter(object);

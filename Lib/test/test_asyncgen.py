@@ -835,9 +835,8 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             self.collect(aiter(spam, 100, stop_exception=LookupError)),
             [1, 2, 3, 4, 5])
 
-    def test_aiter_callable_stop_exception_redundant(self):
-        # StopAsyncIteration and an empty tuple stop the iteration in any
-        # case, so they are the same as no exception argument
+    def test_aiter_callable_stop_async_iteration(self):
+        # StopAsyncIteration is the default stop exception
         counter = self.make_counter()
         async def spam():
             value = await counter()
@@ -847,21 +846,38 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         self.assertEqual(
             self.collect(aiter(spam, stop_exception=StopAsyncIteration)),
             [1, 2, 3])
-        counter = self.make_counter()
-        self.assertEqual(self.collect(aiter(spam, stop_exception=())),
-                         [1, 2, 3])
 
-    def test_aiter_callable_stop_async_iteration(self):
-        # StopAsyncIteration stops the iteration even if other exception
-        # is specified
-        counter = self.make_counter()
+    def test_aiter_callable_leak_from_await(self):
+        # A StopAsyncIteration leaking from the await is replaced with
+        # RuntimeError (see PEP 525)
         async def spam():
-            value = await counter()
-            if value > 3:
-                raise StopAsyncIteration
-            return value
-        self.assertEqual(self.collect(aiter(spam, stop_exception=LookupError)),
-                         [1, 2, 3])
+            raise StopAsyncIteration
+        it = aiter(spam, 10, stop_exception=LookupError)
+        with self.assertRaisesRegex(RuntimeError,
+                                    'callable raised StopAsyncIteration') as cm:
+            self.loop.run_until_complete(anext(it))
+        self.assertIsInstance(cm.exception.__cause__, StopAsyncIteration)
+        # but if it matches stop_exception, it stops the iteration
+        it = aiter(spam, 10, stop_exception=(LookupError, StopAsyncIteration))
+        with self.assertRaises(StopAsyncIteration):
+            self.loop.run_until_complete(anext(it))
+
+    def test_aiter_callable_leak_from_call(self):
+        # StopIteration and StopAsyncIteration leaking from the call are
+        # replaced with RuntimeError (see PEP 525)
+        for exc in StopIteration, StopAsyncIteration:
+            with self.subTest(exc=exc):
+                def spam():
+                    raise exc
+                it = aiter(spam, 10, stop_exception=LookupError)
+                with self.assertRaisesRegex(
+                        RuntimeError, f'callable raised {exc.__name__}') as cm:
+                    self.loop.run_until_complete(anext(it))
+                self.assertIsInstance(cm.exception.__cause__, exc)
+                # but if it matches stop_exception, it stops the iteration
+                it = aiter(spam, 10, stop_exception=(LookupError, exc))
+                with self.assertRaises(StopAsyncIteration):
+                    self.loop.run_until_complete(anext(it))
 
     def test_aiter_callable_other_exception(self):
         async def spam():
