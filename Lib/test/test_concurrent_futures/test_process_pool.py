@@ -544,11 +544,13 @@ class ProcessPoolExecutorTest(ExecutorTest):
                     break
 
 
+@unittest.skipUnless(hasattr(os, "sysconf"), "requires os.sysconf()")
 class CheckSystemLimitsTest(unittest.TestCase):
     # gh-155912: a denied sysconf read is the same condition as an
     # unavailable one and must not be fatal.
 
     def setUp(self):
+        support.skip_if_broken_multiprocessing_synchronize()
         saved = (futures_process._system_limits_checked,
                  futures_process._system_limited)
 
