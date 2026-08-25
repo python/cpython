@@ -1,0 +1,3 @@
+Fix regression in :mod:`configparser` where using a space as a delimiter
+no longer split option and value correctly. Parsing ``"foo bar=baz"`` with
+``delimiters=(' ', '=')`` now correctly yields option ``"foo"``.
