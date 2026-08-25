@@ -32,6 +32,7 @@ help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  clean      to remove build files"
 	@echo "  venv       to create a venv with necessary tools"
+	@echo "  lock       to regenerate the pinned dependencies in $(REQUIREMENTS)"
 	@echo "  html       to make standalone HTML files"
 	@echo "  gettext    to generate POT files"
 	@echo "  htmlview   to open the index page built by the html target in your browser"
@@ -187,6 +188,9 @@ venv:
 
 .PHONY: lock
 lock:
+# Dependencies have a 14 day cooldown period to mitigate supply chain attacks,
+# except for sphinx_linklint and python-docs-theme, which are maintained by
+# core team members.
 	uv pip compile requirements.txt \
 		--exclude-newer P14D \
 		--exclude-newer-package sphinx_linklint=PT0S \
