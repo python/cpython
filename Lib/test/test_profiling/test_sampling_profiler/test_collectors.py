@@ -1665,7 +1665,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
         data = diff._convert_to_flamegraph_format()
 
-        self.assertGreater(data["stats"]["elided_count"], 0)
+        self.assertEqual(data["stats"]["elided_count"], 1)
         self.assertIn("elided_flamegraph", data["stats"])
         elided = data["stats"]["elided_flamegraph"]
         self.assertTrue(elided["stats"]["is_differential"])
@@ -1680,6 +1680,74 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertAlmostEqual(child["diff_pct"], -100.0)
         self.assertGreater(child["baseline"], 0)
         self.assertAlmostEqual(child["diff"], -child["baseline"])
+
+    def test_diff_flamegraph_counts_elided_stacks_not_paths(self):
+        """Internal and leaf stack endings are counted separately."""
+        internal_stack = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 20, "old_mid"),
+                    MockFrameInfo("file.py", 10, "root"),
+                ])
+            ])
+        ]
+        leaf_stack = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 30, "old_leaf"),
+                    MockFrameInfo("file.py", 20, "old_mid"),
+                    MockFrameInfo("file.py", 10, "root"),
+                ])
+            ])
+        ]
+        current_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [MockFrameInfo("file.py", 10, "root")])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline(
+            [internal_stack, leaf_stack]
+        )
+        diff.collect(current_frames)
+
+        data = diff._convert_to_flamegraph_format()
+        self.assertEqual(data["stats"]["elided_count"], 2)
+
+    def test_diff_flamegraph_renders_small_elided_stack(self):
+        """Elided stacks are not removed by the significance filter."""
+        common_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 20, "common"),
+                    MockFrameInfo("file.py", 10, "root"),
+                ])
+            ])
+        ]
+        old_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 30, "old_tiny"),
+                    MockFrameInfo("file.py", 10, "root"),
+                ])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline(
+            [common_frames] * 1999 + [old_frames]
+        )
+        for _ in range(1999):
+            diff.collect(common_frames)
+
+        data = diff._convert_to_flamegraph_format()
+        self.assertEqual(data["stats"]["elided_count"], 1)
+        self.assertIn("elided_flamegraph", data["stats"])
+
+        elided = data["stats"]["elided_flamegraph"]
+        strings = elided["strings"]
+        self.assertIsNotNone(
+            find_child_by_name(elided.get("children", []), strings, "old_tiny")
+        )
 
     def test_diff_flamegraph_elided_top_level_root(self):
         """Elided top-level roots do not crash metadata generation."""
