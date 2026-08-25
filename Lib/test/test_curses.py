@@ -2984,6 +2984,11 @@ class MiscTests(unittest.TestCase):
         r = curses.has_extended_color_support()
         self.assertIsInstance(r, bool)
 
+    def test_err_and_ok(self):
+        # ERR is negative; it is not a chtype constant.
+        self.assertEqual(curses.ERR, -1)
+        self.assertEqual(curses.OK, 0)
+
     def test_type_names(self):
         # The curses types report their public module rather than the
         # underscore extension that implements them.

@@ -6657,11 +6657,10 @@ curses_init_dict(PyObject *module)
     }
     /* This was moved from initcurses() because it core dumped on SGI,
        where they're not defined until you've called initscr() */
-    /* Use long long, not long: a chtype constant (the A_* attributes, ACS_*
-       and key codes) can set bits beyond a 32-bit long, which is what long is
-       on LLP64 platforms such as Windows -- A_DIM (0x80000000) would otherwise
-       be sign-extended to a negative number.  long long is at least 64 bits
-       everywhere and still represents the negative ERR (-1). */
+    /* Use unsigned long long, not long: a chtype constant (the A_* attributes,
+       ACS_* and key codes) can set bits beyond a 32-bit long, which is what
+       long is on LLP64 platforms such as Windows -- A_DIM (0x80000000) would
+       otherwise be sign-extended to a negative number. */
 #define SetDictInt(NAME, VALUE)                                     \
     do {                                                            \
         PyObject *value = PyLong_FromUnsignedLongLong((unsigned long long)(VALUE));  \
@@ -9419,8 +9418,24 @@ cursesmodule_exec(PyObject *module)
         }                                                           \
     } while (0)
 
-    SetDictInt("ERR", ERR);
-    SetDictInt("OK", OK);
+    /* ERR is -1, so it needs a signed conversion, unlike the chtype
+       constants below. */
+#define SetDictSignedInt(NAME, VALUE)                               \
+    do {                                                            \
+        PyObject *value = PyLong_FromLongLong((long long)(VALUE));  \
+        if (value == NULL) {                                        \
+            return -1;                                              \
+        }                                                           \
+        int rc = PyDict_SetItemString(module_dict, (NAME), value);  \
+        Py_DECREF(value);                                           \
+        if (rc < 0) {                                               \
+            return -1;                                              \
+        }                                                           \
+    } while (0)
+
+    SetDictSignedInt("ERR", ERR);
+    SetDictSignedInt("OK", OK);
+#undef SetDictSignedInt
 
     /* Here are some attributes you can add to chars to print */
 
