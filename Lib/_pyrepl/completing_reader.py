@@ -30,7 +30,6 @@ from .reader import Reader
 
 # types
 lazy from .types import CompletionAction, Keymap
-from .commands import Command
 
 
 def prefix(wordlist: list[str], j: int = 0) -> str:
