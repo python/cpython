@@ -355,19 +355,30 @@ def _find_isoformat_datetime_separator(dtstr):
             return 8
 
 
+def _read_isoformat_component(s, n):
+    # The caller has verified the string is ASCII, so isdigit() matches only
+    # the ASCII digits accepted by the C parser.
+    if len(s) != n or not s.isdigit():
+        raise ValueError("Invalid isoformat string")
+    return int(s)
+
+
 def _parse_isoformat_date(dtstr):
     # It is assumed that this is an ASCII-only string of lengths 7, 8 or 10,
     # see the comment on Modules/_datetimemodule.c:_find_isoformat_datetime_separator
     if len(dtstr) not in (7, 8, 10):
         raise ValueError("Invalid isoformat string")
-    year = int(dtstr[0:4])
+    if not dtstr.isascii():
+        raise ValueError("Invalid isoformat string")
+
+    year = _read_isoformat_component(dtstr[0:4], 4)
     has_sep = dtstr[4] == '-'
 
     pos = 4 + has_sep
     if dtstr[pos:pos + 1] == "W":
         # YYYY-?Www-?D?
         pos += 1
-        weekno = int(dtstr[pos:pos + 2])
+        weekno = _read_isoformat_component(dtstr[pos:pos + 2], 2)
         pos += 2
 
         dayno = 1
@@ -377,17 +388,17 @@ def _parse_isoformat_date(dtstr):
 
             pos += has_sep
 
-            dayno = int(dtstr[pos:pos + 1])
+            dayno = _read_isoformat_component(dtstr[pos:pos + 1], 1)
 
         return list(_isoweek_to_gregorian(year, weekno, dayno))
     else:
-        month = int(dtstr[pos:pos + 2])
+        month = _read_isoformat_component(dtstr[pos:pos + 2], 2)
         pos += 2
         if (dtstr[pos:pos + 1] == "-") != has_sep:
             raise ValueError("Inconsistent use of dash separator")
 
         pos += has_sep
-        day = int(dtstr[pos:pos + 2])
+        day = _read_isoformat_component(dtstr[pos:pos + 2], 2)
 
         return [year, month, day]
 
@@ -402,10 +413,7 @@ def _parse_hh_mm_ss_ff(tstr):
     time_comps = [0, 0, 0, 0]
     pos = 0
     for comp in range(0, 3):
-        if (len_str - pos) < 2:
-            raise ValueError("Incomplete time component")
-
-        time_comps[comp] = int(tstr[pos:pos+2])
+        time_comps[comp] = _read_isoformat_component(tstr[pos:pos+2], 2)
 
         pos += 2
         next_char = tstr[pos:pos+1]
@@ -426,7 +434,7 @@ def _parse_hh_mm_ss_ff(tstr):
             raise ValueError("Invalid microsecond separator")
         else:
             pos += 1
-            if not all(map(_is_ascii_digit, tstr[pos:])):
+            if not tstr[pos:].isdigit():
                 raise ValueError("Non-digit values in fraction")
 
             len_remainder = len_str - pos
@@ -447,6 +455,8 @@ def _parse_isoformat_time(tstr):
     len_str = len(tstr)
     if len_str < 2:
         raise ValueError("Isoformat time too short")
+    if not tstr.isascii():
+        raise ValueError("Invalid isoformat string")
 
     # This is equivalent to re.search('[+-Z]', tstr), but faster
     tz_pos = (tstr.find('-') + 1 or tstr.find('+') + 1 or tstr.find('Z') + 1)
