@@ -233,11 +233,11 @@ quote_unescaped_unicode(PyObject *pystr)
     }
     int kind = PyUnicode_KIND(rval);
     void *data = PyUnicode_DATA(rval);
+    /* No escapes means the output has the same maxchar class as the input,
+       so PyUnicode_New() gave us the same kind and a raw copy is valid. */
+    assert(kind == PyUnicode_KIND(pystr));
     PyUnicode_WRITE(kind, data, 0, '"');
-    if (PyUnicode_CopyCharacters(rval, 1, pystr, 0, len) < 0) {
-        Py_DECREF(rval);
-        return NULL;
-    }
+    memcpy((char *)data + kind, PyUnicode_DATA(pystr), (size_t)len * kind);
     PyUnicode_WRITE(kind, data, len + 1, '"');
 #ifdef Py_DEBUG
     assert(_PyUnicode_CheckConsistency(rval, 1));
