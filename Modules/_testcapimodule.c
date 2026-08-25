@@ -2423,7 +2423,7 @@ static int
 _listdestroytracer(PyObject *obj, PyRefTracerEvent event, void *data)
 {
     if (event == PyRefTracer_DESTROY && PyList_CheckExact(obj)) {
-        (*(Py_ssize_t *)data)++;
+        _Py_atomic_add_ssize((Py_ssize_t *)data, 1);
     }
     return 0;
 }
@@ -2432,7 +2432,7 @@ static PyObject *
 start_counting_list_destroys(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     testcapistate_t *state = get_testcapi_state(self);
-    state->list_destroys = 0;
+    _Py_atomic_store_ssize(&state->list_destroys, 0);
     if (PyRefTracer_SetTracer(_listdestroytracer, &state->list_destroys) != 0) {
         return NULL;
     }
@@ -2445,7 +2445,8 @@ stop_counting_list_destroys(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (PyRefTracer_SetTracer(NULL, NULL) != 0) {
         return NULL;
     }
-    return PyLong_FromSsize_t(get_testcapi_state(self)->list_destroys);
+    return PyLong_FromSsize_t(
+        _Py_atomic_load_ssize(&get_testcapi_state(self)->list_destroys));
 }
 
 static PyObject *
