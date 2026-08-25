@@ -343,6 +343,7 @@ class CAPITest(unittest.TestCase):
 
 
 class RefTracerTest(unittest.TestCase):
+    @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def test_destroy_traced_for_trashcan_deferred_objects(self):
         depth = 200_000
