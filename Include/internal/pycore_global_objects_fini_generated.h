@@ -1715,6 +1715,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(digest_size));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(digestmod));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(dir_fd));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(directonly));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(discard));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(dispatch_table));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(displayhook));
@@ -1839,6 +1840,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(initial_value));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(initval));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(inner_size));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(innocuous));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(input));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(insert_comments));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(insert_pis));
