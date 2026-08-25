@@ -2666,15 +2666,16 @@ class TestCurses(unittest.TestCase):
         # reads a whole line at a time so that the second cell, which holds
         # the same character, is not reported as another one.
         text = '你好'
-        if self._encodable(text):
-            box, win = self._make_textbox(1, 12)
-            for ch in text:
-                box.do_command(ch)
-            self.assertEqual(box.gather(), text + ' ')
-            box, win = self._make_textbox(1, 12, stripspaces=0)
-            for ch in text:
-                box.do_command(ch)
-            self.assertEqual(box.gather(), text + ' ' * 8)
+        if not self._encodable(text):
+            self.skipTest('the locale cannot encode %r' % text)
+        box, win = self._make_textbox(1, 12)
+        for ch in text:
+            box.do_command(ch)
+        self.assertEqual(box.gather(), text + ' ')
+        box, win = self._make_textbox(1, 12, stripspaces=False)
+        for ch in text:
+            box.do_command(ch)
+        self.assertEqual(box.gather(), text + ' ' * 8)
 
     def test_textbox_edit_wide(self):
         # edit() reads characters through get_wch().  Each character is pushed
