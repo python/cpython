@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgsTstate()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
+#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_dict.h"          // _PyDict_FromItems()
 #include "pycore_function.h"      // _PyFunction_Vectorcall() definition
 #include "pycore_modsupport.h"    // _Py_VaBuildStack()
@@ -358,9 +359,22 @@ _PyObject_Call(PyThreadState *tstate, PyObject *callable,
             return NULL;
         }
 
-        result = (*call)(callable, args, kwargs);
+        /* Pass tp_call a copy of kwargs so that the callee cannot
+           mutate the caller's dict (gh-86199, gh-86795). */
+        PyObject *kwcopy = NULL;
+        if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
+            kwcopy = PyDict_Copy(kwargs);
+            if (kwcopy == NULL) {
+                _Py_LeaveRecursiveCallTstate(tstate);
+                return NULL;
+            }
+        }
+
+        result = (*call)(callable, args, kwcopy);
 
         _Py_LeaveRecursiveCallTstate(tstate);
+
+        Py_XDECREF(kwcopy);
 
         return _Py_CheckFunctionResult(tstate, callable, result, NULL);
     }
@@ -1020,7 +1034,11 @@ _PyStack_UnpackDict(PyThreadState *tstate,
     assert(kwargs != NULL);
     assert(PyDict_Check(kwargs));
 
+    PyObject **stack;
+    PyObject *kwnames;
     Py_ssize_t nkwargs = PyDict_GET_SIZE(kwargs);
+
+retry:;
     /* Check for overflow in the PyMem_Malloc() call below. The subtraction
      * in this check cannot overflow: both maxnargs and nkwargs are
      * non-negative signed integers, so their difference fits in the type. */
@@ -1031,13 +1049,13 @@ _PyStack_UnpackDict(PyThreadState *tstate,
     }
 
     /* Add 1 to support PY_VECTORCALL_ARGUMENTS_OFFSET */
-    PyObject **stack = PyMem_Malloc((1 + nargs + nkwargs) * sizeof(args[0]));
+    stack = PyMem_Malloc((1 + nargs + nkwargs) * sizeof(args[0]));
     if (stack == NULL) {
         _PyErr_NoMemory(tstate);
         return NULL;
     }
 
-    PyObject *kwnames = PyTuple_New(nkwargs);
+    kwnames = PyTuple_New(nkwargs);
     if (kwnames == NULL) {
         PyMem_Free(stack);
         return NULL;
@@ -1051,17 +1069,28 @@ _PyStack_UnpackDict(PyThreadState *tstate,
     }
 
     PyObject **kwstack = stack + nargs;
-    /* This loop doesn't support lookup function mutating the dictionary
-       to change its size. It's a deliberate choice for speed, this function is
-       called in the performance critical hot code. */
+    /* Copy the items out under the dict's lock.  The loop allocates
+       nothing, so the critical section is never suspended mid-loop. */
     Py_ssize_t pos = 0, i = 0;
     PyObject *key, *value;
     unsigned long keys_are_strings = Py_TPFLAGS_UNICODE_SUBCLASS;
-    while (PyDict_Next(kwargs, &pos, &key, &value)) {
-        keys_are_strings &= Py_TYPE(key)->tp_flags;
-        PyTuple_SET_ITEM(kwnames, i, Py_NewRef(key));
-        kwstack[i] = Py_NewRef(value);
-        i++;
+    Py_BEGIN_CRITICAL_SECTION(kwargs);
+    if (PyDict_GET_SIZE(kwargs) == nkwargs) {
+        while (PyDict_Next(kwargs, &pos, &key, &value)) {
+            keys_are_strings &= Py_TYPE(key)->tp_flags;
+            PyTuple_SET_ITEM(kwnames, i, Py_NewRef(key));
+            kwstack[i] = Py_NewRef(value);
+            i++;
+        }
+    }
+    Py_END_CRITICAL_SECTION();
+    if (i != nkwargs) {
+        /* Resized before we locked it; redo with the new size. */
+        assert(i == 0);
+        PyMem_Free(stack - 1);
+        Py_DECREF(kwnames);
+        nkwargs = PyDict_GET_SIZE(kwargs);
+        goto retry;
     }
 
     /* keys_are_strings has the value Py_TPFLAGS_UNICODE_SUBCLASS if that
