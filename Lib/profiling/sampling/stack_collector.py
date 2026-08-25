@@ -212,7 +212,7 @@ class FlamegraphCollector(StackTraceCollector):
             self._module_cache[filename] = module_name
         return module_name
 
-    def _convert_to_flamegraph_format(self):
+    def _convert_to_flamegraph_format(self, *, min_samples=None):
         if self._total_samples == 0:
             return {
                 "name": self._string_table.intern("No Data"),
@@ -302,7 +302,8 @@ class FlamegraphCollector(StackTraceCollector):
 
         # Filter out very small functions (less than 0.1% of total samples)
         total_samples = self._total_samples
-        min_samples = max(1, int(total_samples * 0.001))
+        if min_samples is None:
+            min_samples = max(1, int(total_samples * 0.001))
         path_info = get_python_path_info()
 
         root_children = convert_children(self._root["children"], min_samples, path_info)
@@ -690,7 +691,15 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         """Calculate elided paths and add elided flamegraph to stats."""
         self._elided_paths = baseline_stats.keys() - current_stats.keys()
 
-        current_flamegraph["stats"]["elided_count"] = len(self._elided_paths)
+        # A sampled stack can end at an internal path that also has elided
+        # descendants.  Count every disappeared path with self samples, not
+        # just the leaves of the elided path tree.
+        elided_stacks = {
+            path
+            for path in self._elided_paths
+            if baseline_stats[path]["self"] > 0
+        }
+        current_flamegraph["stats"]["elided_count"] = len(elided_stacks)
 
         if self._elided_paths:
             elided_flamegraph = self._build_elided_flamegraph(baseline_stats, scale)
@@ -713,7 +722,9 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         orig_get_source = self._baseline_collector._get_source_lines
         self._baseline_collector._get_source_lines = lambda func: None
         try:
-            baseline_data = self._baseline_collector._convert_to_flamegraph_format()
+            baseline_data = self._baseline_collector._convert_to_flamegraph_format(
+                min_samples=1
+            )
         finally:
             self._baseline_collector._get_source_lines = orig_get_source
 
