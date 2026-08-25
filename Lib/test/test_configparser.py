@@ -358,6 +358,13 @@ boolean {0[0]} NO
                 the larch {0[1]} 1
             """.format(self.delimiters)))
 
+    def test_space_delimiter(self):
+        # gh-156353: Space should be accepted as a delimiter
+        cf = self.newconfig(delimiters=(' ', '='))
+        cf.read_string("[all]\nfoo bar=baz")
+        self.assertEqual(cf.options('all'), ['foo'])
+        self.assertEqual(cf.get('all', 'foo'), 'bar=baz')
+
     def test_basic_from_dict(self):
         config = {
             "Foo Bar": {
