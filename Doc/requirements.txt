@@ -15,13 +15,12 @@ pygments @ https://github.com/pygments/pygments/archive/2cad2642058441b59782a6a1
 
 blurb
 
-sphinxext-opengraph~=0.13.0
+sphinx-linklint
 sphinx-notfound-page~=1.0.0
+sphinxext-opengraph~=0.13.0
 
 # The theme used by the documentation is stored separately, so we need
 # to install that as well.
 python-docs-theme>=2023.3.1,!=2023.7
-
-linklint
 
 -c constraints.txt
