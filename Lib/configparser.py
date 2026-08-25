@@ -670,7 +670,27 @@ class RawConfigParser(MutableMapping):
             self._optcre = self.OPTCRE_NV if allow_no_value else self.OPTCRE
         else:
             d = "|".join(re.escape(d) for d in delimiters)
-            if allow_no_value:
+            if any(dl.strip() == "" for dl in delimiters):
+                if allow_no_value:
+                    self._optcre = re.compile(
+                        r"""
+                        (?P<option>
+                            (?:(?!{delim})\S)+
+                        )
+                        \s*(?:
+                        (?P<vi>{delim})\s*
+                        (?P<value>.*))?$
+                        """.format(delim=d), re.VERBOSE)
+                else:
+                    self._optcre = re.compile(
+                        r"""
+                        (?P<option>
+                            (?:(?!{delim})\S)+
+                        )
+                        \s*(?P<vi>{delim})\s*
+                        (?P<value>.*)$
+                        """.format(delim=d), re.VERBOSE)
+            elif allow_no_value:
                 self._optcre = re.compile(self._OPT_NV_TMPL.format(delim=d),
                                           re.VERBOSE)
             else:
