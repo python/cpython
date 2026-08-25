@@ -1681,6 +1681,11 @@ def url2pathname(url, *, require_scheme=False, resolve_host=False):
     """
     if not require_scheme:
         url = 'file:' + url
+    # Handle Windows file URLs with backslashes like file:\\C:\path
+    # (as used in some browsers and in the wild). Normalize to forward
+    # slashes before parsing so urlsplit treats it as file://.
+    if url.lower().startswith('file:'):
+        url = url.replace('\\', '/')
     scheme, authority, url = urlsplit(url)[:3]  # Discard query and fragment.
     if scheme != 'file':
         raise URLError("URL is missing a 'file:' scheme")
