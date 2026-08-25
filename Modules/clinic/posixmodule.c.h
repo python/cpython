@@ -6653,9 +6653,9 @@ PyDoc_STRVAR(os_timerfd_settime_ns__doc__,
 "  flags\n"
 "    0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.\n"
 "  initial\n"
-"    initial expiration timing in seconds.\n"
+"    initial expiration timing in nanoseconds.\n"
 "  interval\n"
-"    interval for the timer in seconds.");
+"    interval for the timer in nanoseconds.");
 
 #define OS_TIMERFD_SETTIME_NS_METHODDEF    \
     {"timerfd_settime_ns", _PyCFunction_CAST(os_timerfd_settime_ns), METH_FASTCALL|METH_KEYWORDS, os_timerfd_settime_ns__doc__},
@@ -6748,7 +6748,7 @@ PyDoc_STRVAR(os_timerfd_gettime__doc__,
 "timerfd_gettime($module, fd, /)\n"
 "--\n"
 "\n"
-"Return a tuple of a timer file descriptor\'s (interval, next expiration) in float seconds.\n"
+"Return a tuple of a timer file descriptor\'s (next expiration, interval) in float seconds.\n"
 "\n"
 "  fd\n"
 "    A timer file descriptor.");
@@ -6783,7 +6783,7 @@ PyDoc_STRVAR(os_timerfd_gettime_ns__doc__,
 "timerfd_gettime_ns($module, fd, /)\n"
 "--\n"
 "\n"
-"Return a tuple of a timer file descriptor\'s (interval, next expiration) in nanoseconds.\n"
+"Return a tuple of a timer file descriptor\'s (next expiration, interval) in nanoseconds.\n"
 "\n"
 "  fd\n"
 "    A timer file descriptor.");
@@ -12910,4 +12910,4 @@ os__is_inputhook_installed(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=7ded622b43b4cf27 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=562803a2c932a175 input=a9049054013a1b77]*/
