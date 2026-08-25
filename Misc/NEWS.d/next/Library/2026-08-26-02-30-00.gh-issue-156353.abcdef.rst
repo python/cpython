@@ -1,0 +1,1 @@
+Fix :mod:`configparser` space delimiter parsing when using ``delimiters=(' ', '=')``.
