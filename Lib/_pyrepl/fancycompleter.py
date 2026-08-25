@@ -18,8 +18,7 @@ def safe_getattr(obj: object, name: str) -> object:
     if isinstance(getattr(type(obj), name, None), property):
         return None
     if (isinstance(obj, types.ModuleType)
-        # TODO: Should be resolved once mypy upgrades typeshed
-        and isinstance(obj.__dict__.get(name), types.LazyImportType)  # type: ignore[attr-defined]
+        and isinstance(obj.__dict__.get(name), types.LazyImportType)
     ):
         return obj.__dict__.get(name)
     return getattr(obj, name, None)
