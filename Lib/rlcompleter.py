@@ -31,9 +31,7 @@ Notes:
 
 import atexit
 import builtins
-import inspect
 import keyword
-import re
 import __main__
 import warnings
 import types
@@ -105,6 +103,7 @@ class Completer:
 
     def _callable_postfix(self, val, word):
         if callable(val):
+            import inspect
             word += "("
             try:
                 if not inspect.signature(val).parameters:
@@ -153,6 +152,7 @@ class Completer:
         with a __getattr__ hook is evaluated.
 
         """
+        import re
         m = re.match(r"(\w+(\.\w+)*)\.(\w*)", text)
         if not m:
             return []
