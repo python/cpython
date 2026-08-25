@@ -291,12 +291,6 @@ Tkinter_TkInit(Tcl_Interp *interp)
 
 static PyThread_type_lock tcl_lock = 0;
 
-/* Serializes Tcl_CreateInterp() and the one-time tcl_lock free.
-   tcl_lock itself cannot be used for that: it is discarded once Tcl is
-   threaded, and Tcl's first CreateInterp lazily initializes process-wide
-   mutexes that are not safe to race (gh-154923). */
-static PyMutex tcl_create_mutex = {0};
-
 #ifdef TCL_THREADS
 static Tcl_ThreadDataKey state_key;
 #define tcl_tstate \
@@ -650,6 +644,7 @@ Tkapp_New(const char *screenName, const char *className,
        Tcl_MutexLock initializing a static mutex). Concurrent callers race
        that init under free-threading; two threads can also both free
        tcl_lock. Serialize both (gh-154923). */
+    static PyMutex tcl_create_mutex;
     PyMutex_Lock(&tcl_create_mutex);
     v->interp = Tcl_CreateInterp();
     v->wantobjects = wantobjects;
