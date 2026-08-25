@@ -36,6 +36,9 @@ import __main__
 import warnings
 import types
 
+lazy import inspect
+lazy import re
+
 __all__ = ["Completer"]
 
 # Sentinel object to distinguish "missing" from "present but None"
@@ -103,7 +106,6 @@ class Completer:
 
     def _callable_postfix(self, val, word):
         if callable(val):
-            import inspect
             word += "("
             try:
                 if not inspect.signature(val).parameters:
@@ -152,7 +154,6 @@ class Completer:
         with a __getattr__ hook is evaluated.
 
         """
-        import re
         m = re.match(r"(\w+(\.\w+)*)\.(\w*)", text)
         if not m:
             return []
