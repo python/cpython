@@ -43,7 +43,7 @@ class CfgParserTestCaseClass:
     default_section = configparser.DEFAULTSECT
     interpolation = configparser._UNSET
 
-    def newconfig(self, defaults=None):
+    def newconfig(self, defaults=None, **kwargs):
         arguments = dict(
             defaults=defaults,
             allow_no_value=self.allow_no_value,
@@ -56,6 +56,7 @@ class CfgParserTestCaseClass:
             default_section=self.default_section,
             interpolation=self.interpolation,
         )
+        arguments.update(kwargs)
         instance = self.config_class(**arguments)
         return instance
 
@@ -1998,8 +1999,8 @@ class ConvertersTestCase(BasicTestCase, unittest.TestCase):
 
     config_class = configparser.ConfigParser
 
-    def newconfig(self, defaults=None):
-        instance = super().newconfig(defaults=defaults)
+    def newconfig(self, defaults=None, **kwargs):
+        instance = super().newconfig(defaults=defaults, **kwargs)
         instance.converters['list'] = lambda v: [e.strip() for e in v.split()
                                                  if e.strip()]
         return instance
