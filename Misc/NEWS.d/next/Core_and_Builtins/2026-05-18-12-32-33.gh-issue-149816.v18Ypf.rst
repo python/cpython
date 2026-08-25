@@ -1,0 +1,2 @@
+Fix race conditions in ``invoke_gc_callback`` iterating ``gc.callbacks``
+in free-threading mode.
