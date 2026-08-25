@@ -3868,6 +3868,8 @@ static PyStructSequence_Desc emscripten_info_desc = {
     4
 };
 
+EM_JS_DEPS(_Py_emscripten_runtime, "$stringToNewUTF8")
+
 EM_JS(char *, _Py_emscripten_runtime, (void), {
     var info;
     if (typeof process === "object") {
