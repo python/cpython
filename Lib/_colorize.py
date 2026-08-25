@@ -223,11 +223,12 @@ class Dis(ThemeSection):
 
     jump_target: str = ANSIColors.GREEN
     exception_label: str = ANSIColors.GREEN
+    location_info: str = ANSIColors.MAGENTA
 
     opname: str | None = ANSIColors.BLUE
     opname_with_label: str | None = ANSIColors.GREEN
 
-    arg: str = ANSIColors.YELLOW
+    arg: str = ANSIColors.CYAN
 
     load_opname: str = ANSIColors.BLUE
     pop_opname: str = ANSIColors.BLUE

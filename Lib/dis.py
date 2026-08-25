@@ -507,11 +507,11 @@ class Formatter:
                 # reporting positions instead of just line numbers
                 if instr_positions := instr.positions:
                     if all(p is None for p in instr_positions):
-                        positions_str = _NO_LINENO
+                        positions_str = f"{theme.location_info}{_NO_LINENO}{theme.reset}"
                     else:
                         ps = tuple('?' if p is None else p for p in instr_positions)
                         positions_str = f"{ps[0]}:{ps[2]}-{ps[1]}:{ps[3]}"
-                    fields.append(f'{positions_str:{lineno_width}}')
+                    fields.append(f'{theme.location_info}{positions_str:{lineno_width}}{theme.reset}')
                 else:
                     fields.append(' ' * lineno_width)
             else:
@@ -519,7 +519,7 @@ class Formatter:
                     lineno_fmt = "%%%dd" if instr.line_number is not None else "%%%ds"
                     lineno_fmt = lineno_fmt % lineno_width
                     lineno = _NO_LINENO if instr.line_number is None else instr.line_number
-                    fields.append(lineno_fmt % lineno)
+                    fields.append(f'{theme.location_info}{lineno_fmt % lineno}{theme.reset}')
                 else:
                     fields.append(' ' * lineno_width)
         # Column: Label
