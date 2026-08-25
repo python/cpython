@@ -4572,16 +4572,17 @@ Naturally, they are all only available on Linux.
    - :const:`time.CLOCK_BOOTTIME` (Since Linux 3.15 for timerfd_create)
 
    If *clockid* is :const:`time.CLOCK_REALTIME`, a settable system-wide
-   real-time clock is used. If system clock is changed, timer setting needs
-   to be updated. To cancel timer when system clock is changed, see
+   real-time clock is used. If the system clock is changed, the timer setting
+   needs to be updated. To cancel the timer when the system clock is changed, see
    :const:`TFD_TIMER_CANCEL_ON_SET`.
 
    If *clockid* is :const:`time.CLOCK_MONOTONIC`, a non-settable monotonically
    increasing clock is used. Even if the system clock is changed, the timer
    setting will not be affected.
 
-   If *clockid* is :const:`time.CLOCK_BOOTTIME`, same as :const:`time.CLOCK_MONOTONIC`
-   except it includes any time that the system is suspended.
+   If *clockid* is :const:`time.CLOCK_BOOTTIME`, it is the same as
+   :const:`time.CLOCK_MONOTONIC` except it includes any time that the system
+   is suspended.
 
    The file descriptor's behaviour can be modified by specifying a *flags* value.
    Any of the following variables may be used, combined using bitwise OR
@@ -4644,7 +4645,7 @@ Naturally, they are all only available on Linux.
    :const:`TFD_TIMER_ABSTIME` and the clock for this timer is
    :const:`time.CLOCK_REALTIME`, the timer is marked as cancelable if the
    real-time clock is changed discontinuously. Reading the descriptor is
-   aborted with the error ECANCELED.
+   aborted with the error :const:`errno.ECANCELED`.
 
    Linux manages system clock as UTC. A daylight-savings time transition is
    done by changing time offset only and doesn't cause discontinuous system
