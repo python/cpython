@@ -2002,7 +2002,11 @@ Other
 
 .. attribute:: window.encoding
 
-   Encoding used to encode method arguments (Unicode strings and characters).
+   Encoding used to encode and decode method arguments and results
+   (Unicode strings and characters) on a narrow build.  It is not used on a
+   build linked against a wide-character version of the underlying curses
+   library, where strings are passed to curses as wide characters and the
+   encoding of the current locale determines the bytes.
    The encoding attribute is inherited from the parent window when a subwindow
    is created, for example with :meth:`window.subwin`.
    By default, current locale encoding is used (see :func:`locale.getencoding`).
