@@ -5073,19 +5073,22 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
         if (type == COMP_GENEXP) {
             /* Insert GET_ITER before RETURN_GENERATOR.
                https://docs.python.org/3/reference/expressions.html#generator-expressions */
-            RETURN_IF_ERROR(
-                _PyInstructionSequence_InsertInstruction(
+            if(_PyInstructionSequence_InsertInstruction(
                     INSTR_SEQUENCE(c), 0,
-                    RESUME, RESUME_AT_GEN_EXPR_START, NO_LOCATION));
-            RETURN_IF_ERROR(
-                _PyInstructionSequence_InsertInstruction(
+                    RESUME, RESUME_AT_GEN_EXPR_START, NO_LOCATION) < 0) {
+                goto error_in_scope;
+            }
+            if(_PyInstructionSequence_InsertInstruction(
                     INSTR_SEQUENCE(c), 1,
-                    LOAD_FAST, 0, LOC(outermost->iter)));
-            RETURN_IF_ERROR(
-                _PyInstructionSequence_InsertInstruction(
+                    LOAD_FAST, 0, LOC(outermost->iter)) < 0) {
+                goto error_in_scope;
+            }
+            if(_PyInstructionSequence_InsertInstruction(
                     INSTR_SEQUENCE(c), 2,
                     outermost->is_async ? GET_AITER : GET_ITER,
-                    0, LOC(outermost->iter)));
+                    0, LOC(outermost->iter)) < 0) {
+                goto error_in_scope;
+            }
             iter_state = ITERATOR_ON_STACK;
         }
         else {
