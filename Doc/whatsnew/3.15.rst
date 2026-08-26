@@ -2121,7 +2121,7 @@ importlib
   subclasses is removed.
   The import system will no longer call it when defined on custom subclasses.
   The method has been deprecated in favor of
-  :meth:`~importlib.abc.Loader.exec_module()` since Python 3.4.
+  :meth:`~importlib.abc.Loader.exec_module` since Python 3.4.
   (Contributed by Brett Cannon in :gh:`97850`.)
 
 
