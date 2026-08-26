@@ -105,6 +105,7 @@ import time
 import inspect
 import sys
 
+from os import environ
 from os.path import isfile, split, join
 from pathlib import Path
 from contextlib import contextmanager
@@ -4017,18 +4018,31 @@ def read_docstrings(lang):
     Transfer docstrings, translated to lang, from a dictionary-file
     to the methods of classes Screen and Turtle and - in revised form -
     to the corresponding functions.
+
+    The dictionary is looked up as the submodule lang of the package
+    turtle_translations, then as the top-level module
+    turtle_docstringdict_lang.
+
+    Entries naming a method which does not exist in this version are
+    ignored.
     """
-    modname = "turtle_docstringdict_%(language)s" % {'language':lang.lower()}
-    module = __import__(modname)
+    import importlib
+    lang = lang.lower()
+    try:
+        module = importlib.import_module("turtle_translations.%s" % lang)
+    except ModuleNotFoundError:
+        module = importlib.import_module("turtle_docstringdict_%s" % lang)
     docsdict = module.docsdict
     for key in docsdict:
         try:
 #            eval(key).im_func.__doc__ = docsdict[key]
             eval(key).__doc__ = docsdict[key]
+        except AttributeError:
+            pass
         except Exception:
             print("Bad docstring-entry: %s" % key)
 
-_LANGUAGE = _CFG["language"]
+_LANGUAGE = environ.get("PYTHON_TURTLE_LANG") or _CFG["language"]
 
 try:
     if _LANGUAGE != "english":
