@@ -1,7 +1,6 @@
 import unittest
 
 from test import test_tools
-from typing import Dict, Set
 
 test_tools.skip_if_missing("peg_generator")
 with test_tools.imports_under_tool("peg_generator"):
@@ -12,7 +11,7 @@ with test_tools.imports_under_tool("peg_generator"):
 
 
 class TestFirstSets(unittest.TestCase):
-    def calculate_first_sets(self, grammar_source: str) -> Dict[str, Set[str]]:
+    def calculate_first_sets(self, grammar_source: str) -> dict[str, set[str | None]]:
         grammar: Grammar = parse_string(grammar_source, GrammarParser)
         return FirstSetCalculator(grammar.rules).calculate()
 
@@ -164,8 +163,8 @@ class TestFirstSets(unittest.TestCase):
         self.assertEqual(
             self.calculate_first_sets(grammar),
             {
-                "expr": {"'a'"},
-                "start": {"'a'"},
+                "expr": {None, "'a'", "'b'", "'c'"},
+                "start": {None, "'a'", "'b'", "'c'"},
                 "opt": {"'b'", "'c'", "'a'"},
             },
         )
@@ -180,8 +179,8 @@ class TestFirstSets(unittest.TestCase):
             self.calculate_first_sets(grammar),
             {
                 "opt": {"'b'", "'a'", "'c'"},
-                "expr": {"'b'", "'c'"},
-                "start": {"'b'", "'c'"},
+                "expr": {None, "'a'", "'b'", "'c'"},
+                "start": {None, "'a'", "'b'", "'c'"},
             },
         )
 
@@ -226,13 +225,12 @@ class TestFirstSets(unittest.TestCase):
             self.calculate_first_sets(grammar),
             {
                 "foo": {"'D'", "'B'"},
-                "bar": {"'D'"},
+                "bar": {"'B'", "'D'"},
                 "start": {"'D'", "'B'"},
             },
         )
 
     def test_nasty_left_recursion(self) -> None:
-        # TODO: Validate this
         grammar = """
         start: target '='
         target: maybe '+' | NAME
@@ -240,7 +238,7 @@ class TestFirstSets(unittest.TestCase):
         """
         self.assertEqual(
             self.calculate_first_sets(grammar),
-            {"maybe": set(), "target": {"NAME"}, "start": {"NAME"}},
+            {"maybe": {"NAME"}, "target": {"NAME"}, "start": {"NAME"}},
         )
 
     def test_nullable_rule(self) -> None:
@@ -284,3 +282,43 @@ class TestFirstSets(unittest.TestCase):
                 "another": {"'/'"},
             },
         )
+
+    def test_compound_negative_lookahead(self) -> None:
+        sets = self.calculate_first_sets("""
+        start: choice NEWLINE ENDMARKER
+        choice: !('a' 'b') ('a' | 'c') | 'd'
+        """)
+        self.assertEqual(sets['choice'], {None, "'a'", "'c'", "'d'"})
+
+    def test_nullable_recursive_rules(self) -> None:
+        sets = self.calculate_first_sets("""
+        start: a NUMBER ENDMARKER
+        a: b | NAME
+        b: a | ['+']
+        """)
+        self.assertEqual(sets['a'], {'', 'NAME', "'+'"})
+        self.assertEqual(sets['b'], {'', 'NAME', "'+'"})
+        self.assertEqual(sets['start'], {'NUMBER', 'NAME', "'+'"})
+
+    def test_control_flow_before_first_token(self) -> None:
+        sets = self.calculate_first_sets("""
+        start: NAME ENDMARKER
+        cut: ~ NAME
+        forced: &&'+'
+        guarded: &forced NUMBER
+        action: [NAME] { _PyPegen_dummy_name(p) }
+        """)
+        self.assertEqual(sets['cut'], {None, 'NAME'})
+        self.assertEqual(sets['forced'], {None, "'+'"})
+        self.assertEqual(sets['guarded'], {None, 'NUMBER'})
+        self.assertEqual(sets['action'], {None, '', 'NAME'})
+
+    def test_nullable_repeat_and_gather(self) -> None:
+        sets = self.calculate_first_sets("""
+        start: NAME ENDMARKER
+        optional: [NAME]
+        repeat: optional+ NUMBER
+        gather: ','.optional+ NUMBER
+        """)
+        self.assertEqual(sets['repeat'], {'NAME', 'NUMBER'})
+        self.assertEqual(sets['gather'], {'NAME', "','", 'NUMBER'})

@@ -1230,67 +1230,6 @@ statement_rule(Parser *p)
     }
     asdl_stmt_seq* _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 49:
-            case 665:
-            case 674:
-            case 700:
-            case 707:
-            case 712:
-            case 716:
-            case 717:
-            case 719:
-                _first_set_mask = 0x1ULL;
-                break;
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 16:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 522:
-            case 527:
-            case 528:
-            case 529:
-            case 530:
-            case 531:
-            case 588:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 632:
-            case 634:
-            case 638:
-            case 650:
-            case 651:
-            case 721:
-                _first_set_mask = 0x2ULL;
-                break;
-            case 1:
-                _first_set_mask = 0x3ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // compound_stmt
         if (p->error_indicator) {
             p->level--;
@@ -1315,7 +1254,6 @@ statement_rule(Parser *p)
         D(fprintf(stderr, "%*c%s statement[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "compound_stmt"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // simple_stmts
         if (p->error_indicator) {
             p->level--;
@@ -1411,68 +1349,6 @@ statement_newline_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 49:
-            case 665:
-            case 674:
-            case 700:
-            case 707:
-            case 712:
-            case 716:
-            case 717:
-            case 719:
-                _first_set_mask = 0x1ULL;
-                break;
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 16:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 522:
-            case 527:
-            case 528:
-            case 529:
-            case 530:
-            case 531:
-            case 588:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 632:
-            case 634:
-            case 638:
-            case 650:
-            case 651:
-            case 721:
-                _first_set_mask = 0x2ULL;
-                break;
-            case 1:
-                _first_set_mask = 0x3ULL;
-                break;
-            case 4:
-                _first_set_mask = 0x4ULL;
-                break;
-            case 0:
-                _first_set_mask = 0x8ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // single_compound_stmt NEWLINE
         if (p->error_indicator) {
             p->level--;
@@ -1500,7 +1376,6 @@ statement_newline_rule(Parser *p)
         D(fprintf(stderr, "%*c%s statement_newline[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "single_compound_stmt NEWLINE"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // simple_stmts
         if (p->error_indicator) {
             p->level--;
@@ -1520,7 +1395,6 @@ statement_newline_rule(Parser *p)
         D(fprintf(stderr, "%*c%s statement_newline[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "simple_stmts"));
     }
-    if (_first_set_mask & 0x4ULL)
     { // NEWLINE
         if (p->error_indicator) {
             p->level--;
@@ -1554,7 +1428,6 @@ statement_newline_rule(Parser *p)
         D(fprintf(stderr, "%*c%s statement_newline[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NEWLINE"));
     }
-    if (_first_set_mask & 0x8ULL)
     { // $
         if (p->error_indicator) {
             p->level--;
@@ -1598,54 +1471,6 @@ simple_stmts_rule(Parser *p)
     }
     asdl_stmt_seq* _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 16:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 522:
-            case 527:
-            case 528:
-            case 529:
-            case 530:
-            case 531:
-            case 588:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 632:
-            case 634:
-            case 638:
-            case 650:
-            case 651:
-            case 721:
-                _first_set_mask = 0x3ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // simple_stmt !';' NEWLINE
         if (p->error_indicator) {
             p->level--;
@@ -1675,7 +1500,6 @@ simple_stmts_rule(Parser *p)
         D(fprintf(stderr, "%*c%s simple_stmts[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "simple_stmt !';' NEWLINE"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // ';'.simple_stmt+ ';'? NEWLINE
         if (p->error_indicator) {
             p->level--;
@@ -1753,73 +1577,6 @@ simple_stmt_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 650:
-            case 651:
-                _first_set_mask = 0x4ULL;
-                break;
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 16:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x9ULL;
-                break;
-            case 1:
-                _first_set_mask = 0xfULL;
-                break;
-            case 522:
-                _first_set_mask = 0x10ULL;
-                break;
-            case 632:
-                _first_set_mask = 0x20ULL;
-                break;
-            case 527:
-                _first_set_mask = 0x49ULL;
-                break;
-            case 634:
-                _first_set_mask = 0x80ULL;
-                break;
-            case 588:
-                _first_set_mask = 0x101ULL;
-                break;
-            case 638:
-                _first_set_mask = 0x200ULL;
-                break;
-            case 528:
-                _first_set_mask = 0x409ULL;
-                break;
-            case 529:
-                _first_set_mask = 0x809ULL;
-                break;
-            case 530:
-                _first_set_mask = 0x1000ULL;
-                break;
-            case 531:
-                _first_set_mask = 0x2000ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // assignment
         if (p->error_indicator) {
             p->level--;
@@ -1839,7 +1596,6 @@ simple_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "assignment"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // &"type" type_alias
         if (p->error_indicator) {
             p->level--;
@@ -1861,7 +1617,6 @@ simple_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&\"type\" type_alias"));
     }
-    if (_first_set_mask & 0x4ULL)
     { // &('import' | 'from' | "lazy") import_stmt
         if (p->error_indicator) {
             p->level--;
@@ -1883,7 +1638,6 @@ simple_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&('import' | 'from' | \"lazy\") import_stmt"));
     }
-    if (_first_set_mask & 0x8ULL)
     { // star_expressions
         if (p->error_indicator) {
             p->level--;
@@ -1917,7 +1671,6 @@ simple_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "star_expressions"));
     }
-    if (_first_set_mask & 0x10ULL)
     { // &'return' return_stmt
         if (p->error_indicator) {
             p->level--;
@@ -1939,7 +1692,6 @@ simple_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&'return' return_stmt"));
     }
-    if (_first_set_mask & 0x20ULL)
     { // &'raise' raise_stmt
         if (p->error_indicator) {
             p->level--;
@@ -1961,7 +1713,6 @@ simple_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&'raise' raise_stmt"));
     }
-    if (_first_set_mask & 0x40ULL)
     { // &'pass' pass_stmt
         if (p->error_indicator) {
             p->level--;
@@ -1983,7 +1734,6 @@ simple_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&'pass' pass_stmt"));
     }
-    if (_first_set_mask & 0x80ULL)
     { // &'del' del_stmt
         if (p->error_indicator) {
             p->level--;
@@ -2005,7 +1755,6 @@ simple_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&'del' del_stmt"));
     }
-    if (_first_set_mask & 0x100ULL)
     { // &'yield' yield_stmt
         if (p->error_indicator) {
             p->level--;
@@ -2027,7 +1776,6 @@ simple_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&'yield' yield_stmt"));
     }
-    if (_first_set_mask & 0x200ULL)
     { // &'assert' assert_stmt
         if (p->error_indicator) {
             p->level--;
@@ -2049,7 +1797,6 @@ simple_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&'assert' assert_stmt"));
     }
-    if (_first_set_mask & 0x400ULL)
     { // &'break' break_stmt
         if (p->error_indicator) {
             p->level--;
@@ -2071,7 +1818,6 @@ simple_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&'break' break_stmt"));
     }
-    if (_first_set_mask & 0x800ULL)
     { // &'continue' continue_stmt
         if (p->error_indicator) {
             p->level--;
@@ -2093,7 +1839,6 @@ simple_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&'continue' continue_stmt"));
     }
-    if (_first_set_mask & 0x1000ULL)
     { // &'global' global_stmt
         if (p->error_indicator) {
             p->level--;
@@ -2115,7 +1860,6 @@ simple_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&'global' global_stmt"));
     }
-    if (_first_set_mask & 0x2000ULL)
     { // &'nonlocal' nonlocal_stmt
         if (p->error_indicator) {
             p->level--;
@@ -2165,51 +1909,6 @@ compound_stmt_rule(Parser *p)
     }
     stmt_ty _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 717:
-                _first_set_mask = 0x1ULL;
-                break;
-            case 700:
-                _first_set_mask = 0x2ULL;
-                break;
-            case 719:
-                _first_set_mask = 0x4ULL;
-                break;
-            case 49:
-                _first_set_mask = 0x5ULL;
-                break;
-            case 665:
-                _first_set_mask = 0x8ULL;
-                break;
-            case 712:
-                _first_set_mask = 0x10ULL;
-                break;
-            case 716:
-                _first_set_mask = 0x19ULL;
-                break;
-            case 674:
-                _first_set_mask = 0x20ULL;
-                break;
-            case 707:
-                _first_set_mask = 0x40ULL;
-                break;
-            case 1:
-                _first_set_mask = 0x80ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // &('def' | '@' | 'async') function_def
         if (p->error_indicator) {
             p->level--;
@@ -2231,7 +1930,6 @@ compound_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s compound_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&('def' | '@' | 'async') function_def"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // &'if' if_stmt
         if (p->error_indicator) {
             p->level--;
@@ -2253,7 +1951,6 @@ compound_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s compound_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&'if' if_stmt"));
     }
-    if (_first_set_mask & 0x4ULL)
     { // &('class' | '@') class_def
         if (p->error_indicator) {
             p->level--;
@@ -2275,7 +1972,6 @@ compound_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s compound_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&('class' | '@') class_def"));
     }
-    if (_first_set_mask & 0x8ULL)
     { // &('with' | 'async') with_stmt
         if (p->error_indicator) {
             p->level--;
@@ -2297,7 +1993,6 @@ compound_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s compound_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&('with' | 'async') with_stmt"));
     }
-    if (_first_set_mask & 0x10ULL)
     { // &('for' | 'async') for_stmt
         if (p->error_indicator) {
             p->level--;
@@ -2319,7 +2014,6 @@ compound_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s compound_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&('for' | 'async') for_stmt"));
     }
-    if (_first_set_mask & 0x20ULL)
     { // &'try' try_stmt
         if (p->error_indicator) {
             p->level--;
@@ -2341,7 +2035,6 @@ compound_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s compound_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&'try' try_stmt"));
     }
-    if (_first_set_mask & 0x40ULL)
     { // &'while' while_stmt
         if (p->error_indicator) {
             p->level--;
@@ -2363,7 +2056,6 @@ compound_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s compound_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&'while' while_stmt"));
     }
-    if (_first_set_mask & 0x80ULL)
     { // match_stmt
         if (p->error_indicator) {
             p->level--;
@@ -2416,47 +2108,6 @@ assignment_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 14:
-            case 15:
-            case 31:
-            case 527:
-            case 528:
-            case 529:
-            case 588:
-            case 598:
-            case 622:
-            case 721:
-                _first_set_mask = 0x10ULL;
-                break;
-            case 16:
-                _first_set_mask = 0x14ULL;
-                break;
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 25:
-            case 52:
-            case 59:
-            case 62:
-            case 627:
-            case 628:
-            case 629:
-                _first_set_mask = 0x1eULL;
-                break;
-            case 1:
-                _first_set_mask = 0x1fULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // NAME ':' expression ['=' annotated_rhs]
         if (p->error_indicator) {
             p->level--;
@@ -2499,7 +2150,6 @@ assignment_rule(Parser *p)
         D(fprintf(stderr, "%*c%s assignment[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME ':' expression ['=' annotated_rhs]"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // ('(' single_target ')' | attribute_or_subscript_target) ':' expression ['=' annotated_rhs]
         if (p->error_indicator) {
             p->level--;
@@ -2542,7 +2192,6 @@ assignment_rule(Parser *p)
         D(fprintf(stderr, "%*c%s assignment[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "('(' single_target ')' | attribute_or_subscript_target) ':' expression ['=' annotated_rhs]"));
     }
-    if (_first_set_mask & 0x4ULL)
     { // ((star_targets '='))+ annotated_rhs !'=' TYPE_COMMENT?
         if (p->error_indicator) {
             p->level--;
@@ -2584,7 +2233,6 @@ assignment_rule(Parser *p)
         D(fprintf(stderr, "%*c%s assignment[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "((star_targets '='))+ annotated_rhs !'=' TYPE_COMMENT?"));
     }
-    if (_first_set_mask & 0x8ULL)
     { // single_target augassign ~ annotated_rhs
         if (p->error_indicator) {
             p->level--;
@@ -2631,7 +2279,6 @@ assignment_rule(Parser *p)
             return NULL;
         }
     }
-    if (_first_set_mask & 0x10ULL)
     if (p->call_invalid_rules) { // invalid_assignment
         if (p->error_indicator) {
             p->level--;
@@ -2670,44 +2317,6 @@ annotated_rhs_rule(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    if (!p->call_invalid_rules) {
-        switch (_current_token_type) {
-            case 588:
-                goto first_set_alt_0;
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 16:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                goto first_set_alt_1;
-            default:
-                goto first_set_done_2;
-        }
-    }
-    first_set_alt_0:
     { // yield_expr
         if (p->error_indicator) {
             p->level--;
@@ -2727,10 +2336,6 @@ annotated_rhs_rule(Parser *p)
         D(fprintf(stderr, "%*c%s annotated_rhs[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "yield_expr"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_2;
-    }
-    first_set_alt_1:
     { // star_expressions
         if (p->error_indicator) {
             p->level--;
@@ -2750,11 +2355,6 @@ annotated_rhs_rule(Parser *p)
         D(fprintf(stderr, "%*c%s annotated_rhs[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "star_expressions"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_2;
-    }
-    first_set_done_2:
-    ;
     _res = NULL;
   done:
     p->level--;
@@ -2796,36 +2396,36 @@ augassign_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 36:
-                goto first_set_alt_3;
+                goto first_set_alt_0;
             case 37:
-                goto first_set_alt_4;
+                goto first_set_alt_1;
             case 38:
-                goto first_set_alt_5;
+                goto first_set_alt_2;
             case 50:
-                goto first_set_alt_6;
+                goto first_set_alt_3;
             case 39:
-                goto first_set_alt_7;
+                goto first_set_alt_4;
             case 40:
-                goto first_set_alt_8;
+                goto first_set_alt_5;
             case 41:
-                goto first_set_alt_9;
+                goto first_set_alt_6;
             case 42:
-                goto first_set_alt_10;
+                goto first_set_alt_7;
             case 43:
-                goto first_set_alt_11;
+                goto first_set_alt_8;
             case 44:
-                goto first_set_alt_12;
+                goto first_set_alt_9;
             case 45:
-                goto first_set_alt_13;
+                goto first_set_alt_10;
             case 46:
-                goto first_set_alt_14;
+                goto first_set_alt_11;
             case 48:
-                goto first_set_alt_15;
+                goto first_set_alt_12;
             default:
-                goto first_set_done_16;
+                goto first_set_done_13;
         }
     }
-    first_set_alt_3:
+    first_set_alt_0:
     { // '+='
         if (p->error_indicator) {
             p->level--;
@@ -2851,9 +2451,9 @@ augassign_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'+='"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_16;
+        goto first_set_done_13;
     }
-    first_set_alt_4:
+    first_set_alt_1:
     { // '-='
         if (p->error_indicator) {
             p->level--;
@@ -2879,9 +2479,9 @@ augassign_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'-='"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_16;
+        goto first_set_done_13;
     }
-    first_set_alt_5:
+    first_set_alt_2:
     { // '*='
         if (p->error_indicator) {
             p->level--;
@@ -2907,9 +2507,9 @@ augassign_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'*='"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_16;
+        goto first_set_done_13;
     }
-    first_set_alt_6:
+    first_set_alt_3:
     { // '@='
         if (p->error_indicator) {
             p->level--;
@@ -2935,9 +2535,9 @@ augassign_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'@='"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_16;
+        goto first_set_done_13;
     }
-    first_set_alt_7:
+    first_set_alt_4:
     { // '/='
         if (p->error_indicator) {
             p->level--;
@@ -2963,9 +2563,9 @@ augassign_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'/='"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_16;
+        goto first_set_done_13;
     }
-    first_set_alt_8:
+    first_set_alt_5:
     { // '%='
         if (p->error_indicator) {
             p->level--;
@@ -2991,9 +2591,9 @@ augassign_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'%='"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_16;
+        goto first_set_done_13;
     }
-    first_set_alt_9:
+    first_set_alt_6:
     { // '&='
         if (p->error_indicator) {
             p->level--;
@@ -3019,9 +2619,9 @@ augassign_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'&='"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_16;
+        goto first_set_done_13;
     }
-    first_set_alt_10:
+    first_set_alt_7:
     { // '|='
         if (p->error_indicator) {
             p->level--;
@@ -3047,9 +2647,9 @@ augassign_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'|='"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_16;
+        goto first_set_done_13;
     }
-    first_set_alt_11:
+    first_set_alt_8:
     { // '^='
         if (p->error_indicator) {
             p->level--;
@@ -3075,9 +2675,9 @@ augassign_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'^='"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_16;
+        goto first_set_done_13;
     }
-    first_set_alt_12:
+    first_set_alt_9:
     { // '<<='
         if (p->error_indicator) {
             p->level--;
@@ -3103,9 +2703,9 @@ augassign_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'<<='"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_16;
+        goto first_set_done_13;
     }
-    first_set_alt_13:
+    first_set_alt_10:
     { // '>>='
         if (p->error_indicator) {
             p->level--;
@@ -3131,9 +2731,9 @@ augassign_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'>>='"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_16;
+        goto first_set_done_13;
     }
-    first_set_alt_14:
+    first_set_alt_11:
     { // '**='
         if (p->error_indicator) {
             p->level--;
@@ -3159,9 +2759,9 @@ augassign_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'**='"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_16;
+        goto first_set_done_13;
     }
-    first_set_alt_15:
+    first_set_alt_12:
     { // '//='
         if (p->error_indicator) {
             p->level--;
@@ -3187,9 +2787,9 @@ augassign_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'//='"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_16;
+        goto first_set_done_13;
     }
-    first_set_done_16:
+    first_set_done_13:
     ;
     _res = NULL;
   done:
@@ -4931,57 +4531,6 @@ block_rule(Parser *p)
         return _res;
     }
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 16:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 522:
-            case 527:
-            case 528:
-            case 529:
-            case 530:
-            case 531:
-            case 588:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 632:
-            case 634:
-            case 638:
-            case 650:
-            case 651:
-            case 721:
-                _first_set_mask = 0x2ULL;
-                break;
-            case 4:
-                _first_set_mask = 0x5ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // NEWLINE INDENT statements DEDENT
         if (p->error_indicator) {
             p->level--;
@@ -5015,7 +4564,6 @@ block_rule(Parser *p)
         D(fprintf(stderr, "%*c%s block[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NEWLINE INDENT statements DEDENT"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // simple_stmts
         if (p->error_indicator) {
             p->level--;
@@ -5035,7 +4583,6 @@ block_rule(Parser *p)
         D(fprintf(stderr, "%*c%s block[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "simple_stmts"));
     }
-    if (_first_set_mask & 0x4ULL)
     if (p->call_invalid_rules) { // invalid_block
         if (p->error_indicator) {
             p->level--;
@@ -5127,14 +4674,14 @@ class_def_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 49:
-                goto first_set_alt_17;
+                goto first_set_alt_14;
             case 719:
-                goto first_set_alt_18;
+                goto first_set_alt_15;
             default:
-                goto first_set_done_19;
+                goto first_set_done_16;
         }
     }
-    first_set_alt_17:
+    first_set_alt_14:
     { // decorators class_def_raw
         if (p->error_indicator) {
             p->level--;
@@ -5163,9 +4710,9 @@ class_def_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "decorators class_def_raw"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_19;
+        goto first_set_done_16;
     }
-    first_set_alt_18:
+    first_set_alt_15:
     { // class_def_raw
         if (p->error_indicator) {
             p->level--;
@@ -5186,9 +4733,9 @@ class_def_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "class_def_raw"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_19;
+        goto first_set_done_16;
     }
-    first_set_done_19:
+    first_set_done_16:
     ;
     _res = NULL;
   done:
@@ -5329,15 +4876,15 @@ function_def_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 49:
-                goto first_set_alt_20;
+                goto first_set_alt_17;
             case 716:
             case 717:
-                goto first_set_alt_21;
+                goto first_set_alt_18;
             default:
-                goto first_set_done_22;
+                goto first_set_done_19;
         }
     }
-    first_set_alt_20:
+    first_set_alt_17:
     { // decorators function_def_raw
         if (p->error_indicator) {
             p->level--;
@@ -5366,9 +4913,9 @@ function_def_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "decorators function_def_raw"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_22;
+        goto first_set_done_19;
     }
-    first_set_alt_21:
+    first_set_alt_18:
     { // function_def_raw
         if (p->error_indicator) {
             p->level--;
@@ -5389,9 +4936,9 @@ function_def_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "function_def_raw"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_22;
+        goto first_set_done_19;
     }
-    first_set_done_22:
+    first_set_done_19:
     ;
     _res = NULL;
   done:
@@ -8082,44 +7629,6 @@ with_item_rule(Parser *p)
     }
     withitem_ty _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x7ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // expression 'as' star_target &(',' | ')' | ':')
         if (p->error_indicator) {
             p->level--;
@@ -8152,7 +7661,6 @@ with_item_rule(Parser *p)
         D(fprintf(stderr, "%*c%s with_item[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression 'as' star_target &(',' | ')' | ':')"));
     }
-    if (_first_set_mask & 0x2ULL)
     if (p->call_invalid_rules) { // invalid_with_item
         if (p->error_indicator) {
             p->level--;
@@ -8172,7 +7680,6 @@ with_item_rule(Parser *p)
         D(fprintf(stderr, "%*c%s with_item[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_with_item"));
     }
-    if (_first_set_mask & 0x4ULL)
     { // expression
         if (p->error_indicator) {
             p->level--;
@@ -9121,42 +8628,6 @@ subject_expr_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 16:
-                _first_set_mask = 0x1ULL;
-                break;
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x3ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // star_named_expression ',' star_named_expressions?
         if (p->error_indicator) {
             p->level--;
@@ -9196,7 +8667,6 @@ subject_expr_rule(Parser *p)
         D(fprintf(stderr, "%*c%s subject_expr[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "star_named_expression ',' star_named_expressions?"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // named_expression
         if (p->error_indicator) {
             p->level--;
@@ -9383,34 +8853,6 @@ patterns_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 16:
-                _first_set_mask = 0x1ULL;
-                break;
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 59:
-            case 62:
-            case 627:
-            case 628:
-            case 629:
-                _first_set_mask = 0x3ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // open_sequence_pattern
         if (p->error_indicator) {
             p->level--;
@@ -9444,7 +8886,6 @@ patterns_rule(Parser *p)
         D(fprintf(stderr, "%*c%s patterns[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "open_sequence_pattern"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // pattern
         if (p->error_indicator) {
             p->level--;
@@ -9483,36 +8924,6 @@ pattern_rule(Parser *p)
     }
     pattern_ty _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 59:
-            case 62:
-            case 627:
-            case 628:
-            case 629:
-                _first_set_mask = 0x3ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // as_pattern
         if (p->error_indicator) {
             p->level--;
@@ -9532,7 +8943,6 @@ pattern_rule(Parser *p)
         D(fprintf(stderr, "%*c%s pattern[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "as_pattern"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // or_pattern
         if (p->error_indicator) {
             p->level--;
@@ -9580,31 +8990,6 @@ as_pattern_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 59:
-            case 62:
-            case 627:
-            case 628:
-            case 629:
-                _first_set_mask = 0x3ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // or_pattern 'as' pattern_capture_target
         if (p->error_indicator) {
             p->level--;
@@ -9644,7 +9029,6 @@ as_pattern_rule(Parser *p)
         D(fprintf(stderr, "%*c%s as_pattern[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "or_pattern 'as' pattern_capture_target"));
     }
-    if (_first_set_mask & 0x2ULL)
     if (p->call_invalid_rules) { // invalid_as_pattern
         if (p->error_indicator) {
             p->level--;
@@ -9756,44 +9140,6 @@ closed_pattern_rule(Parser *p)
         return _res;
     }
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 2:
-            case 3:
-            case 14:
-            case 15:
-            case 59:
-            case 62:
-            case 627:
-            case 628:
-            case 629:
-                _first_set_mask = 0x1ULL;
-                break;
-            case 9:
-                _first_set_mask = 0x20ULL;
-                break;
-            case 7:
-                _first_set_mask = 0x30ULL;
-                break;
-            case 25:
-                _first_set_mask = 0x40ULL;
-                break;
-            case 1:
-                _first_set_mask = 0x8eULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // literal_pattern
         if (p->error_indicator) {
             p->level--;
@@ -9813,7 +9159,6 @@ closed_pattern_rule(Parser *p)
         D(fprintf(stderr, "%*c%s closed_pattern[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "literal_pattern"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // capture_pattern
         if (p->error_indicator) {
             p->level--;
@@ -9833,7 +9178,6 @@ closed_pattern_rule(Parser *p)
         D(fprintf(stderr, "%*c%s closed_pattern[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "capture_pattern"));
     }
-    if (_first_set_mask & 0x4ULL)
     { // wildcard_pattern
         if (p->error_indicator) {
             p->level--;
@@ -9853,7 +9197,6 @@ closed_pattern_rule(Parser *p)
         D(fprintf(stderr, "%*c%s closed_pattern[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "wildcard_pattern"));
     }
-    if (_first_set_mask & 0x8ULL)
     { // value_pattern
         if (p->error_indicator) {
             p->level--;
@@ -9873,7 +9216,6 @@ closed_pattern_rule(Parser *p)
         D(fprintf(stderr, "%*c%s closed_pattern[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "value_pattern"));
     }
-    if (_first_set_mask & 0x10ULL)
     { // group_pattern
         if (p->error_indicator) {
             p->level--;
@@ -9893,7 +9235,6 @@ closed_pattern_rule(Parser *p)
         D(fprintf(stderr, "%*c%s closed_pattern[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "group_pattern"));
     }
-    if (_first_set_mask & 0x20ULL)
     { // sequence_pattern
         if (p->error_indicator) {
             p->level--;
@@ -9913,7 +9254,6 @@ closed_pattern_rule(Parser *p)
         D(fprintf(stderr, "%*c%s closed_pattern[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "sequence_pattern"));
     }
-    if (_first_set_mask & 0x40ULL)
     { // mapping_pattern
         if (p->error_indicator) {
             p->level--;
@@ -9933,7 +9273,6 @@ closed_pattern_rule(Parser *p)
         D(fprintf(stderr, "%*c%s closed_pattern[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "mapping_pattern"));
     }
-    if (_first_set_mask & 0x80ULL)
     { // class_pattern
         if (p->error_indicator) {
             p->level--;
@@ -10256,35 +9595,6 @@ literal_expr_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 2:
-            case 14:
-            case 15:
-                _first_set_mask = 0x3ULL;
-                break;
-            case 3:
-            case 59:
-            case 62:
-                _first_set_mask = 0x4ULL;
-                break;
-            case 628:
-                _first_set_mask = 0x8ULL;
-                break;
-            case 627:
-                _first_set_mask = 0x10ULL;
-                break;
-            case 629:
-                _first_set_mask = 0x20ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // signed_number !('+' | '-')
         if (p->error_indicator) {
             p->level--;
@@ -10306,7 +9616,6 @@ literal_expr_rule(Parser *p)
         D(fprintf(stderr, "%*c%s literal_expr[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "signed_number !('+' | '-')"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // complex_number
         if (p->error_indicator) {
             p->level--;
@@ -10326,7 +9635,6 @@ literal_expr_rule(Parser *p)
         D(fprintf(stderr, "%*c%s literal_expr[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "complex_number"));
     }
-    if (_first_set_mask & 0x4ULL)
     { // &(STRING | FSTRING_START | TSTRING_START) strings
         if (p->error_indicator) {
             p->level--;
@@ -10348,7 +9656,6 @@ literal_expr_rule(Parser *p)
         D(fprintf(stderr, "%*c%s literal_expr[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&(STRING | FSTRING_START | TSTRING_START) strings"));
     }
-    if (_first_set_mask & 0x8ULL)
     { // 'None'
         if (p->error_indicator) {
             p->level--;
@@ -10382,7 +9689,6 @@ literal_expr_rule(Parser *p)
         D(fprintf(stderr, "%*c%s literal_expr[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'None'"));
     }
-    if (_first_set_mask & 0x10ULL)
     { // 'True'
         if (p->error_indicator) {
             p->level--;
@@ -10416,7 +9722,6 @@ literal_expr_rule(Parser *p)
         D(fprintf(stderr, "%*c%s literal_expr[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'True'"));
     }
-    if (_first_set_mask & 0x20ULL)
     { // 'False'
         if (p->error_indicator) {
             p->level--;
@@ -10606,16 +9911,16 @@ signed_number_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 2:
-                goto first_set_alt_23;
+                goto first_set_alt_20;
             case 14:
-                goto first_set_alt_24;
+                goto first_set_alt_21;
             case 15:
-                goto first_set_alt_25;
+                goto first_set_alt_22;
             default:
-                goto first_set_done_26;
+                goto first_set_done_23;
         }
     }
-    first_set_alt_23:
+    first_set_alt_20:
     { // NUMBER
         if (p->error_indicator) {
             p->level--;
@@ -10636,9 +9941,9 @@ signed_number_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NUMBER"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_26;
+        goto first_set_done_23;
     }
-    first_set_alt_24:
+    first_set_alt_21:
     { // '+' NUMBER
         if (p->error_indicator) {
             p->level--;
@@ -10667,9 +9972,9 @@ signed_number_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'+' NUMBER"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_26;
+        goto first_set_done_23;
     }
-    first_set_alt_25:
+    first_set_alt_22:
     { // '-' NUMBER
         if (p->error_indicator) {
             p->level--;
@@ -10707,9 +10012,9 @@ signed_number_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'-' NUMBER"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_26;
+        goto first_set_done_23;
     }
-    first_set_done_26:
+    first_set_done_23:
     ;
     _res = NULL;
   done:
@@ -10743,16 +10048,16 @@ signed_real_number_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 2:
-                goto first_set_alt_27;
+                goto first_set_alt_24;
             case 14:
-                goto first_set_alt_28;
+                goto first_set_alt_25;
             case 15:
-                goto first_set_alt_29;
+                goto first_set_alt_26;
             default:
-                goto first_set_done_30;
+                goto first_set_done_27;
         }
     }
-    first_set_alt_27:
+    first_set_alt_24:
     { // real_number
         if (p->error_indicator) {
             p->level--;
@@ -10773,9 +10078,9 @@ signed_real_number_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "real_number"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_30;
+        goto first_set_done_27;
     }
-    first_set_alt_28:
+    first_set_alt_25:
     { // '+' real_number
         if (p->error_indicator) {
             p->level--;
@@ -10804,9 +10109,9 @@ signed_real_number_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'+' real_number"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_30;
+        goto first_set_done_27;
     }
-    first_set_alt_29:
+    first_set_alt_26:
     { // '-' real_number
         if (p->error_indicator) {
             p->level--;
@@ -10844,9 +10149,9 @@ signed_real_number_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'-' real_number"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_30;
+        goto first_set_done_27;
     }
-    first_set_done_30:
+    first_set_done_27:
     ;
     _res = NULL;
   done:
@@ -11429,14 +10734,14 @@ sequence_pattern_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 9:
-                goto first_set_alt_31;
+                goto first_set_alt_28;
             case 7:
-                goto first_set_alt_32;
+                goto first_set_alt_29;
             default:
-                goto first_set_done_33;
+                goto first_set_done_30;
         }
     }
-    first_set_alt_31:
+    first_set_alt_28:
     { // '[' maybe_sequence_pattern? ']'
         if (p->error_indicator) {
             p->level--;
@@ -11477,9 +10782,9 @@ sequence_pattern_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'[' maybe_sequence_pattern? ']'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_33;
+        goto first_set_done_30;
     }
-    first_set_alt_32:
+    first_set_alt_29:
     { // '(' open_sequence_pattern? ')'
         if (p->error_indicator) {
             p->level--;
@@ -11520,9 +10825,9 @@ sequence_pattern_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'(' open_sequence_pattern? ')'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_33;
+        goto first_set_done_30;
     }
-    first_set_done_33:
+    first_set_done_30:
     ;
     _res = NULL;
   done:
@@ -11639,35 +10944,6 @@ maybe_star_pattern_rule(Parser *p)
     }
     pattern_ty _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    if (!p->call_invalid_rules) {
-        switch (_current_token_type) {
-            case 16:
-                goto first_set_alt_34;
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 59:
-            case 62:
-            case 627:
-            case 628:
-            case 629:
-                goto first_set_alt_35;
-            default:
-                goto first_set_done_36;
-        }
-    }
-    first_set_alt_34:
     { // star_pattern
         if (p->error_indicator) {
             p->level--;
@@ -11687,10 +10963,6 @@ maybe_star_pattern_rule(Parser *p)
         D(fprintf(stderr, "%*c%s maybe_star_pattern[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "star_pattern"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_36;
-    }
-    first_set_alt_35:
     { // pattern
         if (p->error_indicator) {
             p->level--;
@@ -11710,11 +10982,6 @@ maybe_star_pattern_rule(Parser *p)
         D(fprintf(stderr, "%*c%s maybe_star_pattern[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "pattern"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_36;
-    }
-    first_set_done_36:
-    ;
     _res = NULL;
   done:
     p->level--;
@@ -13148,8 +12415,8 @@ expressions_rule(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
-    expr_ty _prefix_37_result = NULL;
-    int _prefix_37_end = 0, _prefix_37_valid = 0;
+    expr_ty _prefix_31_result = NULL;
+    int _prefix_31_end = 0, _prefix_31_valid = 0;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
         p->level--;
@@ -13159,39 +12426,6 @@ expressions_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x7ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // expression ((',' expression))+ ','?
         if (p->error_indicator) {
             p->level--;
@@ -13203,7 +12437,7 @@ expressions_rule(Parser *p)
         expr_ty a;
         asdl_seq * b;
         if (
-            (a = ((!p->call_invalid_rules && _prefix_37_valid) ? (p->mark = _prefix_37_end, _prefix_37_result) : (_prefix_37_result = expression_rule(p), _prefix_37_end = p->mark, _prefix_37_valid = 1, _prefix_37_result)))  // expression
+            (a = ((!p->call_invalid_rules && _prefix_31_valid) ? (p->mark = _prefix_31_end, _prefix_31_result) : (_prefix_31_result = expression_rule(p), _prefix_31_end = p->mark, _prefix_31_valid = 1, _prefix_31_result)))  // expression
             &&
             (b = _loop1_55_rule(p))  // ((',' expression))+
             &&
@@ -13232,7 +12466,6 @@ expressions_rule(Parser *p)
         D(fprintf(stderr, "%*c%s expressions[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression ((',' expression))+ ','?"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // expression ','
         if (p->error_indicator) {
             p->level--;
@@ -13242,7 +12475,7 @@ expressions_rule(Parser *p)
         Token * _literal;
         expr_ty a;
         if (
-            (a = ((!p->call_invalid_rules && _prefix_37_valid) ? (p->mark = _prefix_37_end, _prefix_37_result) : (_prefix_37_result = expression_rule(p), _prefix_37_end = p->mark, _prefix_37_valid = 1, _prefix_37_result)))  // expression
+            (a = ((!p->call_invalid_rules && _prefix_31_valid) ? (p->mark = _prefix_31_end, _prefix_31_result) : (_prefix_31_result = expression_rule(p), _prefix_31_end = p->mark, _prefix_31_valid = 1, _prefix_31_result)))  // expression
             &&
             (_literal = _PyPegen_expect_token(p, 12))  // token=','
         )
@@ -13269,7 +12502,6 @@ expressions_rule(Parser *p)
         D(fprintf(stderr, "%*c%s expressions[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression ','"));
     }
-    if (_first_set_mask & 0x4ULL)
     { // expression
         if (p->error_indicator) {
             p->level--;
@@ -13278,7 +12510,7 @@ expressions_rule(Parser *p)
         D(fprintf(stderr, "%*c> expressions[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression"));
         expr_ty expression_var;
         if (
-            (expression_var = ((!p->call_invalid_rules && _prefix_37_valid) ? (p->mark = _prefix_37_end, _prefix_37_result) : (_prefix_37_result = expression_rule(p), _prefix_37_end = p->mark, _prefix_37_valid = 1, _prefix_37_result)))  // expression
+            (expression_var = ((!p->call_invalid_rules && _prefix_31_valid) ? (p->mark = _prefix_31_end, _prefix_31_result) : (_prefix_31_result = expression_rule(p), _prefix_31_end = p->mark, _prefix_31_valid = 1, _prefix_31_result)))  // expression
         )
         {
             D(fprintf(stderr, "%*c+ expressions[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression"));
@@ -13318,50 +12550,6 @@ expression_rule(Parser *p)
         return _res;
     }
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 527:
-            case 528:
-            case 529:
-                _first_set_mask = 0x2ULL;
-                break;
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 598:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x1bULL;
-                break;
-            case 1:
-                _first_set_mask = 0x1fULL;
-                break;
-            case 622:
-                _first_set_mask = 0x22ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     if (p->call_invalid_rules) { // invalid_if_expression
         if (p->error_indicator) {
             p->level--;
@@ -13381,7 +12569,6 @@ expression_rule(Parser *p)
         D(fprintf(stderr, "%*c%s expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_if_expression"));
     }
-    if (_first_set_mask & 0x2ULL)
     if (p->call_invalid_rules) { // invalid_expression
         if (p->error_indicator) {
             p->level--;
@@ -13401,7 +12588,6 @@ expression_rule(Parser *p)
         D(fprintf(stderr, "%*c%s expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_expression"));
     }
-    if (_first_set_mask & 0x4ULL)
     if (p->call_invalid_rules) { // invalid_legacy_expression
         if (p->error_indicator) {
             p->level--;
@@ -13421,7 +12607,6 @@ expression_rule(Parser *p)
         D(fprintf(stderr, "%*c%s expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_legacy_expression"));
     }
-    if (_first_set_mask & 0x8ULL)
     { // if_expression
         if (p->error_indicator) {
             p->level--;
@@ -13441,7 +12626,6 @@ expression_rule(Parser *p)
         D(fprintf(stderr, "%*c%s expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "if_expression"));
     }
-    if (_first_set_mask & 0x10ULL)
     { // disjunction
         if (p->error_indicator) {
             p->level--;
@@ -13461,7 +12645,6 @@ expression_rule(Parser *p)
         D(fprintf(stderr, "%*c%s expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "disjunction"));
     }
-    if (_first_set_mask & 0x20ULL)
     { // lambdef
         if (p->error_indicator) {
             p->level--;
@@ -13694,8 +12877,8 @@ star_expressions_rule(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
-    expr_ty _prefix_38_result = NULL;
-    int _prefix_38_end = 0, _prefix_38_valid = 0;
+    expr_ty _prefix_32_result = NULL;
+    int _prefix_32_end = 0, _prefix_32_valid = 0;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
         p->level--;
@@ -13705,40 +12888,6 @@ star_expressions_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 16:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x7ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // star_expression ((',' star_expression))+ ','?
         if (p->error_indicator) {
             p->level--;
@@ -13750,7 +12899,7 @@ star_expressions_rule(Parser *p)
         expr_ty a;
         asdl_seq * b;
         if (
-            (a = ((!p->call_invalid_rules && _prefix_38_valid) ? (p->mark = _prefix_38_end, _prefix_38_result) : (_prefix_38_result = star_expression_rule(p), _prefix_38_end = p->mark, _prefix_38_valid = 1, _prefix_38_result)))  // star_expression
+            (a = ((!p->call_invalid_rules && _prefix_32_valid) ? (p->mark = _prefix_32_end, _prefix_32_result) : (_prefix_32_result = star_expression_rule(p), _prefix_32_end = p->mark, _prefix_32_valid = 1, _prefix_32_result)))  // star_expression
             &&
             (b = _loop1_56_rule(p))  // ((',' star_expression))+
             &&
@@ -13779,7 +12928,6 @@ star_expressions_rule(Parser *p)
         D(fprintf(stderr, "%*c%s star_expressions[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "star_expression ((',' star_expression))+ ','?"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // star_expression ','
         if (p->error_indicator) {
             p->level--;
@@ -13789,7 +12937,7 @@ star_expressions_rule(Parser *p)
         Token * _literal;
         expr_ty a;
         if (
-            (a = ((!p->call_invalid_rules && _prefix_38_valid) ? (p->mark = _prefix_38_end, _prefix_38_result) : (_prefix_38_result = star_expression_rule(p), _prefix_38_end = p->mark, _prefix_38_valid = 1, _prefix_38_result)))  // star_expression
+            (a = ((!p->call_invalid_rules && _prefix_32_valid) ? (p->mark = _prefix_32_end, _prefix_32_result) : (_prefix_32_result = star_expression_rule(p), _prefix_32_end = p->mark, _prefix_32_valid = 1, _prefix_32_result)))  // star_expression
             &&
             (_literal = _PyPegen_expect_token(p, 12))  // token=','
         )
@@ -13816,7 +12964,6 @@ star_expressions_rule(Parser *p)
         D(fprintf(stderr, "%*c%s star_expressions[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "star_expression ','"));
     }
-    if (_first_set_mask & 0x4ULL)
     { // star_expression
         if (p->error_indicator) {
             p->level--;
@@ -13825,7 +12972,7 @@ star_expressions_rule(Parser *p)
         D(fprintf(stderr, "%*c> star_expressions[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_expression"));
         expr_ty star_expression_var;
         if (
-            (star_expression_var = ((!p->call_invalid_rules && _prefix_38_valid) ? (p->mark = _prefix_38_end, _prefix_38_result) : (_prefix_38_result = star_expression_rule(p), _prefix_38_end = p->mark, _prefix_38_valid = 1, _prefix_38_result)))  // star_expression
+            (star_expression_var = ((!p->call_invalid_rules && _prefix_32_valid) ? (p->mark = _prefix_32_end, _prefix_32_result) : (_prefix_32_result = star_expression_rule(p), _prefix_32_end = p->mark, _prefix_32_valid = 1, _prefix_32_result)))  // star_expression
         )
         {
             D(fprintf(stderr, "%*c+ star_expressions[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "star_expression"));
@@ -13868,38 +13015,6 @@ star_expression_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    if (!p->call_invalid_rules) {
-        switch (_current_token_type) {
-            case 16:
-                goto first_set_alt_39;
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                goto first_set_alt_40;
-            default:
-                goto first_set_done_41;
-        }
-    }
-    first_set_alt_39:
     { // '*' bitwise_or
         if (p->error_indicator) {
             p->level--;
@@ -13936,10 +13051,6 @@ star_expression_rule(Parser *p)
         D(fprintf(stderr, "%*c%s star_expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'*' bitwise_or"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_41;
-    }
-    first_set_alt_40:
     { // expression
         if (p->error_indicator) {
             p->level--;
@@ -13959,11 +13070,6 @@ star_expression_rule(Parser *p)
         D(fprintf(stderr, "%*c%s star_expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_41;
-    }
-    first_set_done_41:
-    ;
     _res = NULL;
   done:
     _PyPegen_insert_memo(p, _mark, star_expression_type, _res);
@@ -14040,38 +13146,6 @@ star_named_expression_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    if (!p->call_invalid_rules) {
-        switch (_current_token_type) {
-            case 16:
-                goto first_set_alt_42;
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                goto first_set_alt_43;
-            default:
-                goto first_set_done_44;
-        }
-    }
-    first_set_alt_42:
     { // '*' bitwise_or
         if (p->error_indicator) {
             p->level--;
@@ -14108,10 +13182,6 @@ star_named_expression_rule(Parser *p)
         D(fprintf(stderr, "%*c%s star_named_expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'*' bitwise_or"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_44;
-    }
-    first_set_alt_43:
     { // named_expression
         if (p->error_indicator) {
             p->level--;
@@ -14131,11 +13201,6 @@ star_named_expression_rule(Parser *p)
         D(fprintf(stderr, "%*c%s star_named_expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "named_expression"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_44;
-    }
-    first_set_done_44:
-    ;
     _res = NULL;
   done:
     p->level--;
@@ -14229,46 +13294,6 @@ named_expression_rule(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x6ULL;
-                break;
-            case 1:
-                _first_set_mask = 0x7ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // assignment_expression
         if (p->error_indicator) {
             p->level--;
@@ -14288,7 +13313,6 @@ named_expression_rule(Parser *p)
         D(fprintf(stderr, "%*c%s named_expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "assignment_expression"));
     }
-    if (_first_set_mask & 0x2ULL)
     if (p->call_invalid_rules) { // invalid_named_expression
         if (p->error_indicator) {
             p->level--;
@@ -14308,7 +13332,6 @@ named_expression_rule(Parser *p)
         D(fprintf(stderr, "%*c%s named_expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_named_expression"));
     }
-    if (_first_set_mask & 0x4ULL)
     { // expression !':='
         if (p->error_indicator) {
             p->level--;
@@ -14353,8 +13376,8 @@ disjunction_rule(Parser *p)
         return _res;
     }
     int _mark = p->mark;
-    expr_ty _prefix_45_result = NULL;
-    int _prefix_45_end = 0, _prefix_45_valid = 0;
+    expr_ty _prefix_33_result = NULL;
+    int _prefix_33_end = 0, _prefix_33_valid = 0;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
         p->level--;
@@ -14364,35 +13387,6 @@ disjunction_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 598:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x3ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // conjunction (('or' conjunction))+
         if (p->error_indicator) {
             p->level--;
@@ -14402,7 +13396,7 @@ disjunction_rule(Parser *p)
         expr_ty a;
         asdl_seq * b;
         if (
-            (a = ((!p->call_invalid_rules && _prefix_45_valid) ? (p->mark = _prefix_45_end, _prefix_45_result) : (_prefix_45_result = conjunction_rule(p), _prefix_45_end = p->mark, _prefix_45_valid = 1, _prefix_45_result)))  // conjunction
+            (a = ((!p->call_invalid_rules && _prefix_33_valid) ? (p->mark = _prefix_33_end, _prefix_33_result) : (_prefix_33_result = conjunction_rule(p), _prefix_33_end = p->mark, _prefix_33_valid = 1, _prefix_33_result)))  // conjunction
             &&
             (b = _loop1_59_rule(p))  // (('or' conjunction))+
         )
@@ -14429,7 +13423,6 @@ disjunction_rule(Parser *p)
         D(fprintf(stderr, "%*c%s disjunction[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "conjunction (('or' conjunction))+"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // conjunction
         if (p->error_indicator) {
             p->level--;
@@ -14438,7 +13431,7 @@ disjunction_rule(Parser *p)
         D(fprintf(stderr, "%*c> disjunction[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "conjunction"));
         expr_ty conjunction_var;
         if (
-            (conjunction_var = ((!p->call_invalid_rules && _prefix_45_valid) ? (p->mark = _prefix_45_end, _prefix_45_result) : (_prefix_45_result = conjunction_rule(p), _prefix_45_end = p->mark, _prefix_45_valid = 1, _prefix_45_result)))  // conjunction
+            (conjunction_var = ((!p->call_invalid_rules && _prefix_33_valid) ? (p->mark = _prefix_33_end, _prefix_33_result) : (_prefix_33_result = conjunction_rule(p), _prefix_33_end = p->mark, _prefix_33_valid = 1, _prefix_33_result)))  // conjunction
         )
         {
             D(fprintf(stderr, "%*c+ disjunction[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "conjunction"));
@@ -14473,8 +13466,8 @@ conjunction_rule(Parser *p)
         return _res;
     }
     int _mark = p->mark;
-    expr_ty _prefix_46_result = NULL;
-    int _prefix_46_end = 0, _prefix_46_valid = 0;
+    expr_ty _prefix_34_result = NULL;
+    int _prefix_34_end = 0, _prefix_34_valid = 0;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
         p->level--;
@@ -14484,35 +13477,6 @@ conjunction_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 598:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x3ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // inversion (('and' inversion))+
         if (p->error_indicator) {
             p->level--;
@@ -14522,7 +13486,7 @@ conjunction_rule(Parser *p)
         expr_ty a;
         asdl_seq * b;
         if (
-            (a = ((!p->call_invalid_rules && _prefix_46_valid) ? (p->mark = _prefix_46_end, _prefix_46_result) : (_prefix_46_result = inversion_rule(p), _prefix_46_end = p->mark, _prefix_46_valid = 1, _prefix_46_result)))  // inversion
+            (a = ((!p->call_invalid_rules && _prefix_34_valid) ? (p->mark = _prefix_34_end, _prefix_34_result) : (_prefix_34_result = inversion_rule(p), _prefix_34_end = p->mark, _prefix_34_valid = 1, _prefix_34_result)))  // inversion
             &&
             (b = _loop1_60_rule(p))  // (('and' inversion))+
         )
@@ -14549,7 +13513,6 @@ conjunction_rule(Parser *p)
         D(fprintf(stderr, "%*c%s conjunction[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "inversion (('and' inversion))+"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // inversion
         if (p->error_indicator) {
             p->level--;
@@ -14558,7 +13521,7 @@ conjunction_rule(Parser *p)
         D(fprintf(stderr, "%*c> conjunction[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "inversion"));
         expr_ty inversion_var;
         if (
-            (inversion_var = ((!p->call_invalid_rules && _prefix_46_valid) ? (p->mark = _prefix_46_end, _prefix_46_result) : (_prefix_46_result = inversion_rule(p), _prefix_46_end = p->mark, _prefix_46_valid = 1, _prefix_46_result)))  // inversion
+            (inversion_var = ((!p->call_invalid_rules && _prefix_34_valid) ? (p->mark = _prefix_34_end, _prefix_34_result) : (_prefix_34_result = inversion_rule(p), _prefix_34_end = p->mark, _prefix_34_valid = 1, _prefix_34_result)))  // inversion
         )
         {
             D(fprintf(stderr, "%*c+ conjunction[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "inversion"));
@@ -14602,33 +13565,6 @@ inversion_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    if (!p->call_invalid_rules) {
-        switch (_current_token_type) {
-            case 721:
-                goto first_set_alt_47;
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 598:
-            case 627:
-            case 628:
-            case 629:
-                goto first_set_alt_48;
-            default:
-                goto first_set_done_49;
-        }
-    }
-    first_set_alt_47:
     { // 'not' inversion
         if (p->error_indicator) {
             p->level--;
@@ -14665,10 +13601,6 @@ inversion_rule(Parser *p)
         D(fprintf(stderr, "%*c%s inversion[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'not' inversion"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_49;
-    }
-    first_set_alt_48:
     { // comparison
         if (p->error_indicator) {
             p->level--;
@@ -14688,11 +13620,6 @@ inversion_rule(Parser *p)
         D(fprintf(stderr, "%*c%s inversion[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "comparison"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_49;
-    }
-    first_set_done_49:
-    ;
     _res = NULL;
   done:
     _PyPegen_insert_memo(p, _mark, inversion_type, _res);
@@ -14713,8 +13640,8 @@ comparison_rule(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
-    expr_ty _prefix_50_result = NULL;
-    int _prefix_50_end = 0, _prefix_50_valid = 0;
+    expr_ty _prefix_35_result = NULL;
+    int _prefix_35_end = 0, _prefix_35_valid = 0;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
         p->level--;
@@ -14724,34 +13651,6 @@ comparison_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 598:
-            case 627:
-            case 628:
-            case 629:
-                _first_set_mask = 0x3ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // bitwise_or compare_op_bitwise_or_pair+
         if (p->error_indicator) {
             p->level--;
@@ -14761,7 +13660,7 @@ comparison_rule(Parser *p)
         expr_ty a;
         asdl_seq * b;
         if (
-            (a = ((!p->call_invalid_rules && _prefix_50_valid) ? (p->mark = _prefix_50_end, _prefix_50_result) : (_prefix_50_result = bitwise_or_rule(p), _prefix_50_end = p->mark, _prefix_50_valid = 1, _prefix_50_result)))  // bitwise_or
+            (a = ((!p->call_invalid_rules && _prefix_35_valid) ? (p->mark = _prefix_35_end, _prefix_35_result) : (_prefix_35_result = bitwise_or_rule(p), _prefix_35_end = p->mark, _prefix_35_valid = 1, _prefix_35_result)))  // bitwise_or
             &&
             (b = _loop1_61_rule(p))  // compare_op_bitwise_or_pair+
         )
@@ -14788,7 +13687,6 @@ comparison_rule(Parser *p)
         D(fprintf(stderr, "%*c%s comparison[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "bitwise_or compare_op_bitwise_or_pair+"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // bitwise_or
         if (p->error_indicator) {
             p->level--;
@@ -14797,7 +13695,7 @@ comparison_rule(Parser *p)
         D(fprintf(stderr, "%*c> comparison[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "bitwise_or"));
         expr_ty bitwise_or_var;
         if (
-            (bitwise_or_var = ((!p->call_invalid_rules && _prefix_50_valid) ? (p->mark = _prefix_50_end, _prefix_50_result) : (_prefix_50_result = bitwise_or_rule(p), _prefix_50_end = p->mark, _prefix_50_valid = 1, _prefix_50_result)))  // bitwise_or
+            (bitwise_or_var = ((!p->call_invalid_rules && _prefix_35_valid) ? (p->mark = _prefix_35_end, _prefix_35_result) : (_prefix_35_result = bitwise_or_rule(p), _prefix_35_end = p->mark, _prefix_35_valid = 1, _prefix_35_result)))  // bitwise_or
         )
         {
             D(fprintf(stderr, "%*c+ comparison[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "bitwise_or"));
@@ -15373,34 +14271,6 @@ bitwise_xor_raw(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 598:
-            case 627:
-            case 628:
-            case 629:
-                _first_set_mask = 0x3ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // bitwise_xor '^' bitwise_and
         if (p->error_indicator) {
             p->level--;
@@ -15440,7 +14310,6 @@ bitwise_xor_raw(Parser *p)
         D(fprintf(stderr, "%*c%s bitwise_xor[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "bitwise_xor '^' bitwise_and"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // bitwise_and
         if (p->error_indicator) {
             p->level--;
@@ -15660,8 +14529,8 @@ shift_expr_raw(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
-    expr_ty _prefix_51_result = NULL;
-    int _prefix_51_end = 0, _prefix_51_valid = 0;
+    expr_ty _prefix_36_result = NULL;
+    int _prefix_36_end = 0, _prefix_36_valid = 0;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
         p->level--;
@@ -15671,34 +14540,6 @@ shift_expr_raw(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 598:
-            case 627:
-            case 628:
-            case 629:
-                _first_set_mask = 0x7ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // shift_expr '<<' sum
         if (p->error_indicator) {
             p->level--;
@@ -15709,7 +14550,7 @@ shift_expr_raw(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = ((!p->call_invalid_rules && _prefix_51_valid) ? (p->mark = _prefix_51_end, _prefix_51_result) : (_prefix_51_result = shift_expr_rule(p), _prefix_51_end = p->mark, _prefix_51_valid = 1, _prefix_51_result)))  // shift_expr
+            (a = ((!p->call_invalid_rules && _prefix_36_valid) ? (p->mark = _prefix_36_end, _prefix_36_result) : (_prefix_36_result = shift_expr_rule(p), _prefix_36_end = p->mark, _prefix_36_valid = 1, _prefix_36_result)))  // shift_expr
             &&
             (_literal = _PyPegen_expect_token(p, 33))  // token='<<'
             &&
@@ -15738,7 +14579,6 @@ shift_expr_raw(Parser *p)
         D(fprintf(stderr, "%*c%s shift_expr[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "shift_expr '<<' sum"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // shift_expr '>>' sum
         if (p->error_indicator) {
             p->level--;
@@ -15749,7 +14589,7 @@ shift_expr_raw(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = ((!p->call_invalid_rules && _prefix_51_valid) ? (p->mark = _prefix_51_end, _prefix_51_result) : (_prefix_51_result = shift_expr_rule(p), _prefix_51_end = p->mark, _prefix_51_valid = 1, _prefix_51_result)))  // shift_expr
+            (a = ((!p->call_invalid_rules && _prefix_36_valid) ? (p->mark = _prefix_36_end, _prefix_36_result) : (_prefix_36_result = shift_expr_rule(p), _prefix_36_end = p->mark, _prefix_36_valid = 1, _prefix_36_result)))  // shift_expr
             &&
             (_literal = _PyPegen_expect_token(p, 34))  // token='>>'
             &&
@@ -15778,7 +14618,6 @@ shift_expr_raw(Parser *p)
         D(fprintf(stderr, "%*c%s shift_expr[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "shift_expr '>>' sum"));
     }
-    if (_first_set_mask & 0x4ULL)
     { // sum
         if (p->error_indicator) {
             p->level--;
@@ -15855,8 +14694,8 @@ sum_raw(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
-    expr_ty _prefix_52_result = NULL;
-    int _prefix_52_end = 0, _prefix_52_valid = 0;
+    expr_ty _prefix_37_result = NULL;
+    int _prefix_37_end = 0, _prefix_37_valid = 0;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
         p->level--;
@@ -15876,7 +14715,7 @@ sum_raw(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = ((!p->call_invalid_rules && _prefix_52_valid) ? (p->mark = _prefix_52_end, _prefix_52_result) : (_prefix_52_result = sum_rule(p), _prefix_52_end = p->mark, _prefix_52_valid = 1, _prefix_52_result)))  // sum
+            (a = ((!p->call_invalid_rules && _prefix_37_valid) ? (p->mark = _prefix_37_end, _prefix_37_result) : (_prefix_37_result = sum_rule(p), _prefix_37_end = p->mark, _prefix_37_valid = 1, _prefix_37_result)))  // sum
             &&
             (_literal = _PyPegen_expect_token(p, 14))  // token='+'
             &&
@@ -15915,7 +14754,7 @@ sum_raw(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = ((!p->call_invalid_rules && _prefix_52_valid) ? (p->mark = _prefix_52_end, _prefix_52_result) : (_prefix_52_result = sum_rule(p), _prefix_52_end = p->mark, _prefix_52_valid = 1, _prefix_52_result)))  // sum
+            (a = ((!p->call_invalid_rules && _prefix_37_valid) ? (p->mark = _prefix_37_end, _prefix_37_result) : (_prefix_37_result = sum_rule(p), _prefix_37_end = p->mark, _prefix_37_valid = 1, _prefix_37_result)))  // sum
             &&
             (_literal = _PyPegen_expect_token(p, 15))  // token='-'
             &&
@@ -16045,8 +14884,8 @@ term_raw(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
-    expr_ty _prefix_53_result = NULL;
-    int _prefix_53_end = 0, _prefix_53_valid = 0;
+    expr_ty _prefix_38_result = NULL;
+    int _prefix_38_end = 0, _prefix_38_valid = 0;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
         p->level--;
@@ -16056,34 +14895,6 @@ term_raw(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 598:
-            case 627:
-            case 628:
-            case 629:
-                _first_set_mask = 0x3fULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // term '*' factor
         if (p->error_indicator) {
             p->level--;
@@ -16094,7 +14905,7 @@ term_raw(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = ((!p->call_invalid_rules && _prefix_53_valid) ? (p->mark = _prefix_53_end, _prefix_53_result) : (_prefix_53_result = term_rule(p), _prefix_53_end = p->mark, _prefix_53_valid = 1, _prefix_53_result)))  // term
+            (a = ((!p->call_invalid_rules && _prefix_38_valid) ? (p->mark = _prefix_38_end, _prefix_38_result) : (_prefix_38_result = term_rule(p), _prefix_38_end = p->mark, _prefix_38_valid = 1, _prefix_38_result)))  // term
             &&
             (_literal = _PyPegen_expect_token(p, 16))  // token='*'
             &&
@@ -16123,7 +14934,6 @@ term_raw(Parser *p)
         D(fprintf(stderr, "%*c%s term[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "term '*' factor"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // term '/' factor
         if (p->error_indicator) {
             p->level--;
@@ -16134,7 +14944,7 @@ term_raw(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = ((!p->call_invalid_rules && _prefix_53_valid) ? (p->mark = _prefix_53_end, _prefix_53_result) : (_prefix_53_result = term_rule(p), _prefix_53_end = p->mark, _prefix_53_valid = 1, _prefix_53_result)))  // term
+            (a = ((!p->call_invalid_rules && _prefix_38_valid) ? (p->mark = _prefix_38_end, _prefix_38_result) : (_prefix_38_result = term_rule(p), _prefix_38_end = p->mark, _prefix_38_valid = 1, _prefix_38_result)))  // term
             &&
             (_literal = _PyPegen_expect_token(p, 17))  // token='/'
             &&
@@ -16163,7 +14973,6 @@ term_raw(Parser *p)
         D(fprintf(stderr, "%*c%s term[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "term '/' factor"));
     }
-    if (_first_set_mask & 0x4ULL)
     { // term '//' factor
         if (p->error_indicator) {
             p->level--;
@@ -16174,7 +14983,7 @@ term_raw(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = ((!p->call_invalid_rules && _prefix_53_valid) ? (p->mark = _prefix_53_end, _prefix_53_result) : (_prefix_53_result = term_rule(p), _prefix_53_end = p->mark, _prefix_53_valid = 1, _prefix_53_result)))  // term
+            (a = ((!p->call_invalid_rules && _prefix_38_valid) ? (p->mark = _prefix_38_end, _prefix_38_result) : (_prefix_38_result = term_rule(p), _prefix_38_end = p->mark, _prefix_38_valid = 1, _prefix_38_result)))  // term
             &&
             (_literal = _PyPegen_expect_token(p, 47))  // token='//'
             &&
@@ -16203,7 +15012,6 @@ term_raw(Parser *p)
         D(fprintf(stderr, "%*c%s term[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "term '//' factor"));
     }
-    if (_first_set_mask & 0x8ULL)
     { // term '%' factor
         if (p->error_indicator) {
             p->level--;
@@ -16214,7 +15022,7 @@ term_raw(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = ((!p->call_invalid_rules && _prefix_53_valid) ? (p->mark = _prefix_53_end, _prefix_53_result) : (_prefix_53_result = term_rule(p), _prefix_53_end = p->mark, _prefix_53_valid = 1, _prefix_53_result)))  // term
+            (a = ((!p->call_invalid_rules && _prefix_38_valid) ? (p->mark = _prefix_38_end, _prefix_38_result) : (_prefix_38_result = term_rule(p), _prefix_38_end = p->mark, _prefix_38_valid = 1, _prefix_38_result)))  // term
             &&
             (_literal = _PyPegen_expect_token(p, 24))  // token='%'
             &&
@@ -16243,7 +15051,6 @@ term_raw(Parser *p)
         D(fprintf(stderr, "%*c%s term[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "term '%' factor"));
     }
-    if (_first_set_mask & 0x10ULL)
     { // term '@' factor
         if (p->error_indicator) {
             p->level--;
@@ -16254,7 +15061,7 @@ term_raw(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = ((!p->call_invalid_rules && _prefix_53_valid) ? (p->mark = _prefix_53_end, _prefix_53_result) : (_prefix_53_result = term_rule(p), _prefix_53_end = p->mark, _prefix_53_valid = 1, _prefix_53_result)))  // term
+            (a = ((!p->call_invalid_rules && _prefix_38_valid) ? (p->mark = _prefix_38_end, _prefix_38_result) : (_prefix_38_result = term_rule(p), _prefix_38_end = p->mark, _prefix_38_valid = 1, _prefix_38_result)))  // term
             &&
             (_literal = _PyPegen_expect_token(p, 49))  // token='@'
             &&
@@ -16283,7 +15090,6 @@ term_raw(Parser *p)
         D(fprintf(stderr, "%*c%s term[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "term '@' factor"));
     }
-    if (_first_set_mask & 0x20ULL)
     { // factor
         if (p->error_indicator) {
             p->level--;
@@ -16335,40 +15141,6 @@ factor_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 25:
-            case 52:
-            case 59:
-            case 62:
-            case 598:
-            case 627:
-            case 628:
-            case 629:
-                _first_set_mask = 0x8ULL;
-                break;
-            case 14:
-                _first_set_mask = 0x11ULL;
-                break;
-            case 15:
-                _first_set_mask = 0x12ULL;
-                break;
-            case 31:
-                _first_set_mask = 0x14ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // '+' factor
         if (p->error_indicator) {
             p->level--;
@@ -16405,7 +15177,6 @@ factor_rule(Parser *p)
         D(fprintf(stderr, "%*c%s factor[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'+' factor"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // '-' factor
         if (p->error_indicator) {
             p->level--;
@@ -16442,7 +15213,6 @@ factor_rule(Parser *p)
         D(fprintf(stderr, "%*c%s factor[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'-' factor"));
     }
-    if (_first_set_mask & 0x4ULL)
     { // '~' factor
         if (p->error_indicator) {
             p->level--;
@@ -16479,7 +15249,6 @@ factor_rule(Parser *p)
         D(fprintf(stderr, "%*c%s factor[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'~' factor"));
     }
-    if (_first_set_mask & 0x8ULL)
     { // power
         if (p->error_indicator) {
             p->level--;
@@ -16499,7 +15268,6 @@ factor_rule(Parser *p)
         D(fprintf(stderr, "%*c%s factor[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "power"));
     }
-    if (_first_set_mask & 0x10ULL)
     if (p->call_invalid_rules) { // invalid_factor
         if (p->error_indicator) {
             p->level--;
@@ -16539,8 +15307,8 @@ power_rule(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
-    expr_ty _prefix_54_result = NULL;
-    int _prefix_54_end = 0, _prefix_54_valid = 0;
+    expr_ty _prefix_39_result = NULL;
+    int _prefix_39_end = 0, _prefix_39_valid = 0;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
         p->level--;
@@ -16550,31 +15318,6 @@ power_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 25:
-            case 52:
-            case 59:
-            case 62:
-            case 598:
-            case 627:
-            case 628:
-            case 629:
-                _first_set_mask = 0x3ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // await_primary '**' factor
         if (p->error_indicator) {
             p->level--;
@@ -16585,7 +15328,7 @@ power_rule(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = ((!p->call_invalid_rules && _prefix_54_valid) ? (p->mark = _prefix_54_end, _prefix_54_result) : (_prefix_54_result = await_primary_rule(p), _prefix_54_end = p->mark, _prefix_54_valid = 1, _prefix_54_result)))  // await_primary
+            (a = ((!p->call_invalid_rules && _prefix_39_valid) ? (p->mark = _prefix_39_end, _prefix_39_result) : (_prefix_39_result = await_primary_rule(p), _prefix_39_end = p->mark, _prefix_39_valid = 1, _prefix_39_result)))  // await_primary
             &&
             (_literal = _PyPegen_expect_token(p, 35))  // token='**'
             &&
@@ -16614,7 +15357,6 @@ power_rule(Parser *p)
         D(fprintf(stderr, "%*c%s power[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "await_primary '**' factor"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // await_primary
         if (p->error_indicator) {
             p->level--;
@@ -16623,7 +15365,7 @@ power_rule(Parser *p)
         D(fprintf(stderr, "%*c> power[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "await_primary"));
         expr_ty await_primary_var;
         if (
-            (await_primary_var = ((!p->call_invalid_rules && _prefix_54_valid) ? (p->mark = _prefix_54_end, _prefix_54_result) : (_prefix_54_result = await_primary_rule(p), _prefix_54_end = p->mark, _prefix_54_valid = 1, _prefix_54_result)))  // await_primary
+            (await_primary_var = ((!p->call_invalid_rules && _prefix_39_valid) ? (p->mark = _prefix_39_end, _prefix_39_result) : (_prefix_39_result = await_primary_rule(p), _prefix_39_end = p->mark, _prefix_39_valid = 1, _prefix_39_result)))  // await_primary
         )
         {
             D(fprintf(stderr, "%*c+ power[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "await_primary"));
@@ -16666,29 +15408,6 @@ await_primary_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    if (!p->call_invalid_rules) {
-        switch (_current_token_type) {
-            case 598:
-                goto first_set_alt_55;
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 25:
-            case 52:
-            case 59:
-            case 62:
-            case 627:
-            case 628:
-            case 629:
-                goto first_set_alt_56;
-            default:
-                goto first_set_done_57;
-        }
-    }
-    first_set_alt_55:
     { // 'await' primary
         if (p->error_indicator) {
             p->level--;
@@ -16725,10 +15444,6 @@ await_primary_rule(Parser *p)
         D(fprintf(stderr, "%*c%s await_primary[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'await' primary"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_57;
-    }
-    first_set_alt_56:
     { // primary
         if (p->error_indicator) {
             p->level--;
@@ -16748,11 +15463,6 @@ await_primary_rule(Parser *p)
         D(fprintf(stderr, "%*c%s await_primary[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "primary"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_57;
-    }
-    first_set_done_57:
-    ;
     _res = NULL;
   done:
     _PyPegen_insert_memo(p, _mark, await_primary_type, _res);
@@ -16816,8 +15526,8 @@ primary_raw(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
-    expr_ty _prefix_58_result = NULL;
-    int _prefix_58_end = 0, _prefix_58_valid = 0;
+    expr_ty _prefix_40_result = NULL;
+    int _prefix_40_end = 0, _prefix_40_valid = 0;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
         p->level--;
@@ -16827,30 +15537,6 @@ primary_raw(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 25:
-            case 52:
-            case 59:
-            case 62:
-            case 627:
-            case 628:
-            case 629:
-                _first_set_mask = 0x1fULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // primary '.' NAME
         if (p->error_indicator) {
             p->level--;
@@ -16861,7 +15547,7 @@ primary_raw(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = ((!p->call_invalid_rules && _prefix_58_valid) ? (p->mark = _prefix_58_end, _prefix_58_result) : (_prefix_58_result = primary_rule(p), _prefix_58_end = p->mark, _prefix_58_valid = 1, _prefix_58_result)))  // primary
+            (a = ((!p->call_invalid_rules && _prefix_40_valid) ? (p->mark = _prefix_40_end, _prefix_40_result) : (_prefix_40_result = primary_rule(p), _prefix_40_end = p->mark, _prefix_40_valid = 1, _prefix_40_result)))  // primary
             &&
             (_literal = _PyPegen_expect_token(p, 23))  // token='.'
             &&
@@ -16890,7 +15576,6 @@ primary_raw(Parser *p)
         D(fprintf(stderr, "%*c%s primary[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "primary '.' NAME"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // primary genexp
         if (p->error_indicator) {
             p->level--;
@@ -16900,7 +15585,7 @@ primary_raw(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = ((!p->call_invalid_rules && _prefix_58_valid) ? (p->mark = _prefix_58_end, _prefix_58_result) : (_prefix_58_result = primary_rule(p), _prefix_58_end = p->mark, _prefix_58_valid = 1, _prefix_58_result)))  // primary
+            (a = ((!p->call_invalid_rules && _prefix_40_valid) ? (p->mark = _prefix_40_end, _prefix_40_result) : (_prefix_40_result = primary_rule(p), _prefix_40_end = p->mark, _prefix_40_valid = 1, _prefix_40_result)))  // primary
             &&
             (b = genexp_rule(p))  // genexp
         )
@@ -16927,7 +15612,6 @@ primary_raw(Parser *p)
         D(fprintf(stderr, "%*c%s primary[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "primary genexp"));
     }
-    if (_first_set_mask & 0x4ULL)
     { // primary '(' arguments? ')'
         if (p->error_indicator) {
             p->level--;
@@ -16939,7 +15623,7 @@ primary_raw(Parser *p)
         expr_ty a;
         void *b;
         if (
-            (a = ((!p->call_invalid_rules && _prefix_58_valid) ? (p->mark = _prefix_58_end, _prefix_58_result) : (_prefix_58_result = primary_rule(p), _prefix_58_end = p->mark, _prefix_58_valid = 1, _prefix_58_result)))  // primary
+            (a = ((!p->call_invalid_rules && _prefix_40_valid) ? (p->mark = _prefix_40_end, _prefix_40_result) : (_prefix_40_result = primary_rule(p), _prefix_40_end = p->mark, _prefix_40_valid = 1, _prefix_40_result)))  // primary
             &&
             (_literal = _PyPegen_expect_token(p, 7))  // token='('
             &&
@@ -16970,7 +15654,6 @@ primary_raw(Parser *p)
         D(fprintf(stderr, "%*c%s primary[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "primary '(' arguments? ')'"));
     }
-    if (_first_set_mask & 0x8ULL)
     { // primary '[' slices ']'
         if (p->error_indicator) {
             p->level--;
@@ -16982,7 +15665,7 @@ primary_raw(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = ((!p->call_invalid_rules && _prefix_58_valid) ? (p->mark = _prefix_58_end, _prefix_58_result) : (_prefix_58_result = primary_rule(p), _prefix_58_end = p->mark, _prefix_58_valid = 1, _prefix_58_result)))  // primary
+            (a = ((!p->call_invalid_rules && _prefix_40_valid) ? (p->mark = _prefix_40_end, _prefix_40_result) : (_prefix_40_result = primary_rule(p), _prefix_40_end = p->mark, _prefix_40_valid = 1, _prefix_40_result)))  // primary
             &&
             (_literal = _PyPegen_expect_token(p, 9))  // token='['
             &&
@@ -17013,7 +15696,6 @@ primary_raw(Parser *p)
         D(fprintf(stderr, "%*c%s primary[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "primary '[' slices ']'"));
     }
-    if (_first_set_mask & 0x10ULL)
     { // atom
         if (p->error_indicator) {
             p->level--;
@@ -17061,43 +15743,6 @@ slices_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 16:
-                _first_set_mask = 0x2ULL;
-                break;
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 11:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x3ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // slice !','
         if (p->error_indicator) {
             p->level--;
@@ -17124,7 +15769,6 @@ slices_rule(Parser *p)
         D(fprintf(stderr, "%*c%s slices[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "slice !','"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // ','.(slice | starred_expression)+ ','?
         if (p->error_indicator) {
             p->level--;
@@ -17190,42 +15834,6 @@ slice_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 11:
-                _first_set_mask = 0x1ULL;
-                break;
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x3ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // expression? ':' expression? [':' expression?]
         if (p->error_indicator) {
             p->level--;
@@ -17268,7 +15876,6 @@ slice_rule(Parser *p)
         D(fprintf(stderr, "%*c%s slice[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression? ':' expression? [':' expression?]"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // named_expression
         if (p->error_indicator) {
             p->level--;
@@ -17331,36 +15938,6 @@ atom_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    if (!p->call_invalid_rules) {
-        switch (_current_token_type) {
-            case 1:
-                goto first_set_alt_59;
-            case 627:
-                goto first_set_alt_60;
-            case 629:
-                goto first_set_alt_61;
-            case 628:
-                goto first_set_alt_62;
-            case 3:
-            case 59:
-            case 62:
-                goto first_set_alt_63;
-            case 2:
-                goto first_set_alt_64;
-            case 7:
-                goto first_set_alt_65;
-            case 9:
-                goto first_set_alt_66;
-            case 25:
-                goto first_set_alt_67;
-            case 52:
-                goto first_set_alt_68;
-            default:
-                goto first_set_done_69;
-        }
-    }
-    first_set_alt_59:
     { // NAME
         if (p->error_indicator) {
             p->level--;
@@ -17380,10 +15957,6 @@ atom_rule(Parser *p)
         D(fprintf(stderr, "%*c%s atom[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_69;
-    }
-    first_set_alt_60:
     { // 'True'
         if (p->error_indicator) {
             p->level--;
@@ -17417,10 +15990,6 @@ atom_rule(Parser *p)
         D(fprintf(stderr, "%*c%s atom[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'True'"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_69;
-    }
-    first_set_alt_61:
     { // 'False'
         if (p->error_indicator) {
             p->level--;
@@ -17454,10 +16023,6 @@ atom_rule(Parser *p)
         D(fprintf(stderr, "%*c%s atom[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'False'"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_69;
-    }
-    first_set_alt_62:
     { // 'None'
         if (p->error_indicator) {
             p->level--;
@@ -17491,10 +16056,6 @@ atom_rule(Parser *p)
         D(fprintf(stderr, "%*c%s atom[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'None'"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_69;
-    }
-    first_set_alt_63:
     { // &(STRING | FSTRING_START | TSTRING_START) strings
         if (p->error_indicator) {
             p->level--;
@@ -17516,10 +16077,6 @@ atom_rule(Parser *p)
         D(fprintf(stderr, "%*c%s atom[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&(STRING | FSTRING_START | TSTRING_START) strings"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_69;
-    }
-    first_set_alt_64:
     { // NUMBER
         if (p->error_indicator) {
             p->level--;
@@ -17539,10 +16096,6 @@ atom_rule(Parser *p)
         D(fprintf(stderr, "%*c%s atom[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NUMBER"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_69;
-    }
-    first_set_alt_65:
     { // &'(' (genexp | tuple | group)
         if (p->error_indicator) {
             p->level--;
@@ -17564,10 +16117,6 @@ atom_rule(Parser *p)
         D(fprintf(stderr, "%*c%s atom[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&'(' (genexp | tuple | group)"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_69;
-    }
-    first_set_alt_66:
     { // &'[' (listcomp | list)
         if (p->error_indicator) {
             p->level--;
@@ -17589,10 +16138,6 @@ atom_rule(Parser *p)
         D(fprintf(stderr, "%*c%s atom[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&'[' (listcomp | list)"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_69;
-    }
-    first_set_alt_67:
     { // &'{' (dictcomp | setcomp | dict | set)
         if (p->error_indicator) {
             p->level--;
@@ -17614,10 +16159,6 @@ atom_rule(Parser *p)
         D(fprintf(stderr, "%*c%s atom[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&'{' (dictcomp | setcomp | dict | set)"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_69;
-    }
-    first_set_alt_68:
     { // '...'
         if (p->error_indicator) {
             p->level--;
@@ -17651,11 +16192,6 @@ atom_rule(Parser *p)
         D(fprintf(stderr, "%*c%s atom[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'...'"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_69;
-    }
-    first_set_done_69:
-    ;
     _res = NULL;
   done:
     p->level--;
@@ -18909,14 +17445,14 @@ fstring_middle_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 25:
-                goto first_set_alt_70;
+                goto first_set_alt_41;
             case 60:
-                goto first_set_alt_71;
+                goto first_set_alt_42;
             default:
-                goto first_set_done_72;
+                goto first_set_done_43;
         }
     }
-    first_set_alt_70:
+    first_set_alt_41:
     { // fstring_replacement_field
         if (p->error_indicator) {
             p->level--;
@@ -18937,9 +17473,9 @@ fstring_middle_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "fstring_replacement_field"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_72;
+        goto first_set_done_43;
     }
-    first_set_alt_71:
+    first_set_alt_42:
     { // FSTRING_MIDDLE
         if (p->error_indicator) {
             p->level--;
@@ -18965,9 +17501,9 @@ fstring_middle_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "FSTRING_MIDDLE"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_72;
+        goto first_set_done_43;
     }
-    first_set_done_72:
+    first_set_done_43:
     ;
     _res = NULL;
   done:
@@ -19218,14 +17754,14 @@ fstring_format_spec_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 60:
-                goto first_set_alt_73;
+                goto first_set_alt_44;
             case 25:
-                goto first_set_alt_74;
+                goto first_set_alt_45;
             default:
-                goto first_set_done_75;
+                goto first_set_done_46;
         }
     }
-    first_set_alt_73:
+    first_set_alt_44:
     { // FSTRING_MIDDLE
         if (p->error_indicator) {
             p->level--;
@@ -19251,9 +17787,9 @@ fstring_format_spec_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "FSTRING_MIDDLE"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_75;
+        goto first_set_done_46;
     }
-    first_set_alt_74:
+    first_set_alt_45:
     { // fstring_replacement_field
         if (p->error_indicator) {
             p->level--;
@@ -19274,9 +17810,9 @@ fstring_format_spec_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "fstring_replacement_field"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_75;
+        goto first_set_done_46;
     }
-    first_set_done_75:
+    first_set_done_46:
     ;
     _res = NULL;
   done:
@@ -19466,14 +18002,14 @@ tstring_format_spec_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 63:
-                goto first_set_alt_76;
+                goto first_set_alt_47;
             case 25:
-                goto first_set_alt_77;
+                goto first_set_alt_48;
             default:
-                goto first_set_done_78;
+                goto first_set_done_49;
         }
     }
-    first_set_alt_76:
+    first_set_alt_47:
     { // TSTRING_MIDDLE
         if (p->error_indicator) {
             p->level--;
@@ -19499,9 +18035,9 @@ tstring_format_spec_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "TSTRING_MIDDLE"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_78;
+        goto first_set_done_49;
     }
-    first_set_alt_77:
+    first_set_alt_48:
     { // tstring_format_spec_replacement_field
         if (p->error_indicator) {
             p->level--;
@@ -19522,9 +18058,9 @@ tstring_format_spec_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "tstring_format_spec_replacement_field"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_78;
+        goto first_set_done_49;
     }
-    first_set_done_78:
+    first_set_done_49:
     ;
     _res = NULL;
   done:
@@ -19729,14 +18265,14 @@ tstring_middle_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 25:
-                goto first_set_alt_79;
+                goto first_set_alt_50;
             case 63:
-                goto first_set_alt_80;
+                goto first_set_alt_51;
             default:
-                goto first_set_done_81;
+                goto first_set_done_52;
         }
     }
-    first_set_alt_79:
+    first_set_alt_50:
     { // tstring_replacement_field
         if (p->error_indicator) {
             p->level--;
@@ -19757,9 +18293,9 @@ tstring_middle_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "tstring_replacement_field"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_81;
+        goto first_set_done_52;
     }
-    first_set_alt_80:
+    first_set_alt_51:
     { // TSTRING_MIDDLE
         if (p->error_indicator) {
             p->level--;
@@ -19785,9 +18321,9 @@ tstring_middle_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "TSTRING_MIDDLE"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_81;
+        goto first_set_done_52;
     }
-    first_set_done_81:
+    first_set_done_52:
     ;
     _res = NULL;
   done:
@@ -20089,50 +18625,6 @@ display_item_rule(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 35:
-                _first_set_mask = 0x1ULL;
-                break;
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x2ULL;
-                break;
-            case 16:
-                _first_set_mask = 0x3ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     if (p->call_invalid_rules) { // invalid_starred_expression_unpacking_sequence
         if (p->error_indicator) {
             p->level--;
@@ -20152,7 +18644,6 @@ display_item_rule(Parser *p)
         D(fprintf(stderr, "%*c%s display_item[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_starred_expression_unpacking_sequence"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // star_named_expression
         if (p->error_indicator) {
             p->level--;
@@ -20545,43 +19036,6 @@ double_starred_kvpair_rule(Parser *p)
     }
     KeyValuePair* _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    if (!p->call_invalid_rules) {
-        switch (_current_token_type) {
-            case 35:
-                goto first_set_alt_82;
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                goto first_set_alt_83;
-            default:
-                goto first_set_done_84;
-        }
-    }
-    first_set_alt_82:
     { // '**' bitwise_or
         if (p->error_indicator) {
             p->level--;
@@ -20609,10 +19063,6 @@ double_starred_kvpair_rule(Parser *p)
         D(fprintf(stderr, "%*c%s double_starred_kvpair[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'**' bitwise_or"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_84;
-    }
-    first_set_alt_83:
     { // kvpair
         if (p->error_indicator) {
             p->level--;
@@ -20632,11 +19082,6 @@ double_starred_kvpair_rule(Parser *p)
         D(fprintf(stderr, "%*c%s double_starred_kvpair[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "kvpair"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_84;
-    }
-    first_set_done_84:
-    ;
     _res = NULL;
   done:
     p->level--;
@@ -21378,46 +19823,6 @@ arguments_rule(Parser *p)
         return _res;
     }
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 16:
-            case 25:
-            case 31:
-            case 35:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x3ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // args ','? &')'
         if (p->error_indicator) {
             p->level--;
@@ -21448,7 +19853,6 @@ arguments_rule(Parser *p)
         D(fprintf(stderr, "%*c%s arguments[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "args ','? &')'"));
     }
-    if (_first_set_mask & 0x2ULL)
     if (p->call_invalid_rules) { // invalid_arguments
         if (p->error_indicator) {
             p->level--;
@@ -21499,43 +19903,6 @@ args_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 35:
-                _first_set_mask = 0x2ULL;
-                break;
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 16:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x3ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // ','.(starred_expression | (assignment_expression | expression !':=') !'=')+ [',' kwargs]
         if (p->error_indicator) {
             p->level--;
@@ -21572,7 +19939,6 @@ args_rule(Parser *p)
         D(fprintf(stderr, "%*c%s args[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "','.(starred_expression | (assignment_expression | expression !':=') !'=')+ [',' kwargs]"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // kwargs
         if (p->error_indicator) {
             p->level--;
@@ -21627,48 +19993,6 @@ kwargs_rule(Parser *p)
     }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 16:
-                _first_set_mask = 0x1ULL;
-                break;
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 35:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x3ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // ','.kwarg_or_starred+ [',' ','.kwarg_or_double_starred+]
         if (p->error_indicator) {
             p->level--;
@@ -21696,7 +20020,6 @@ kwargs_rule(Parser *p)
         D(fprintf(stderr, "%*c%s kwargs[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "','.kwarg_or_starred+ [',' ','.kwarg_or_double_starred+]"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // ','.kwarg_or_double_starred+
         if (p->error_indicator) {
             p->level--;
@@ -21864,45 +20187,6 @@ kwarg_or_starred_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 35:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x1ULL;
-                break;
-            case 1:
-                _first_set_mask = 0x3ULL;
-                break;
-            case 16:
-                _first_set_mask = 0x4ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     if (p->call_invalid_rules) { // invalid_kwarg
         if (p->error_indicator) {
             p->level--;
@@ -21922,7 +20206,6 @@ kwarg_or_starred_rule(Parser *p)
         D(fprintf(stderr, "%*c%s kwarg_or_starred[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_kwarg"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // NAME '=' expression
         if (p->error_indicator) {
             p->level--;
@@ -21962,7 +20245,6 @@ kwarg_or_starred_rule(Parser *p)
         D(fprintf(stderr, "%*c%s kwarg_or_starred[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME '=' expression"));
     }
-    if (_first_set_mask & 0x4ULL)
     { // starred_expression
         if (p->error_indicator) {
             p->level--;
@@ -22015,44 +20297,6 @@ kwarg_or_double_starred_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x1ULL;
-                break;
-            case 1:
-                _first_set_mask = 0x3ULL;
-                break;
-            case 35:
-                _first_set_mask = 0x5ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     if (p->call_invalid_rules) { // invalid_kwarg
         if (p->error_indicator) {
             p->level--;
@@ -22072,7 +20316,6 @@ kwarg_or_double_starred_rule(Parser *p)
         D(fprintf(stderr, "%*c%s kwarg_or_double_starred[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_kwarg"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // NAME '=' expression
         if (p->error_indicator) {
             p->level--;
@@ -22112,7 +20355,6 @@ kwarg_or_double_starred_rule(Parser *p)
         D(fprintf(stderr, "%*c%s kwarg_or_double_starred[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME '=' expression"));
     }
-    if (_first_set_mask & 0x4ULL)
     { // '**' expression
         if (p->error_indicator) {
             p->level--;
@@ -22168,8 +20410,8 @@ star_targets_rule(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
-    expr_ty _prefix_85_result = NULL;
-    int _prefix_85_end = 0, _prefix_85_valid = 0;
+    expr_ty _prefix_53_result = NULL;
+    int _prefix_53_end = 0, _prefix_53_valid = 0;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
         p->level--;
@@ -22179,31 +20421,6 @@ star_targets_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 16:
-            case 25:
-            case 52:
-            case 59:
-            case 62:
-            case 627:
-            case 628:
-            case 629:
-                _first_set_mask = 0x3ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // star_target !','
         if (p->error_indicator) {
             p->level--;
@@ -22212,7 +20429,7 @@ star_targets_rule(Parser *p)
         D(fprintf(stderr, "%*c> star_targets[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_target !','"));
         expr_ty a;
         if (
-            (a = ((!p->call_invalid_rules && _prefix_85_valid) ? (p->mark = _prefix_85_end, _prefix_85_result) : (_prefix_85_result = star_target_rule(p), _prefix_85_end = p->mark, _prefix_85_valid = 1, _prefix_85_result)))  // star_target
+            (a = ((!p->call_invalid_rules && _prefix_53_valid) ? (p->mark = _prefix_53_end, _prefix_53_result) : (_prefix_53_result = star_target_rule(p), _prefix_53_end = p->mark, _prefix_53_valid = 1, _prefix_53_result)))  // star_target
             &&
             _PyPegen_lookahead_with_int(0, _PyPegen_expect_token, p, 12)  // token=','
         )
@@ -22230,7 +20447,6 @@ star_targets_rule(Parser *p)
         D(fprintf(stderr, "%*c%s star_targets[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "star_target !','"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // star_target ((',' star_target))* ','?
         if (p->error_indicator) {
             p->level--;
@@ -22242,7 +20458,7 @@ star_targets_rule(Parser *p)
         expr_ty a;
         asdl_seq * b;
         if (
-            (a = ((!p->call_invalid_rules && _prefix_85_valid) ? (p->mark = _prefix_85_end, _prefix_85_result) : (_prefix_85_result = star_target_rule(p), _prefix_85_end = p->mark, _prefix_85_valid = 1, _prefix_85_result)))  // star_target
+            (a = ((!p->call_invalid_rules && _prefix_53_valid) ? (p->mark = _prefix_53_end, _prefix_53_result) : (_prefix_53_result = star_target_rule(p), _prefix_53_end = p->mark, _prefix_53_valid = 1, _prefix_53_result)))  // star_target
             &&
             (b = _loop0_98_rule(p))  // ((',' star_target))*
             &&
@@ -22303,29 +20519,6 @@ star_target_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    if (!p->call_invalid_rules) {
-        switch (_current_token_type) {
-            case 16:
-                goto first_set_alt_86;
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 25:
-            case 52:
-            case 59:
-            case 62:
-            case 627:
-            case 628:
-            case 629:
-                goto first_set_alt_87;
-            default:
-                goto first_set_done_88;
-        }
-    }
-    first_set_alt_86:
     { // '*' (!'*' star_target)
         if (p->error_indicator) {
             p->level--;
@@ -22362,10 +20555,6 @@ star_target_rule(Parser *p)
         D(fprintf(stderr, "%*c%s star_target[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'*' (!'*' star_target)"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_88;
-    }
-    first_set_alt_87:
     { // target
         if (p->error_indicator) {
             p->level--;
@@ -22385,11 +20574,6 @@ star_target_rule(Parser *p)
         D(fprintf(stderr, "%*c%s star_target[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "target"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_88;
-    }
-    first_set_done_88:
-    ;
     _res = NULL;
   done:
     _PyPegen_insert_memo(p, _mark, star_target_type, _res);
@@ -22691,50 +20875,6 @@ type_expressions_rule(Parser *p)
     }
     asdl_expr_seq* _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 16:
-                _first_set_mask = 0x18ULL;
-                break;
-            case 35:
-                _first_set_mask = 0x20ULL;
-                break;
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x47ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // ','.expression+ ',' '*' expression ',' '**' expression
         if (p->error_indicator) {
             p->level--;
@@ -22777,7 +20917,6 @@ type_expressions_rule(Parser *p)
         D(fprintf(stderr, "%*c%s type_expressions[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "','.expression+ ',' '*' expression ',' '**' expression"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // ','.expression+ ',' '*' expression
         if (p->error_indicator) {
             p->level--;
@@ -22811,7 +20950,6 @@ type_expressions_rule(Parser *p)
         D(fprintf(stderr, "%*c%s type_expressions[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "','.expression+ ',' '*' expression"));
     }
-    if (_first_set_mask & 0x4ULL)
     { // ','.expression+ ',' '**' expression
         if (p->error_indicator) {
             p->level--;
@@ -22845,7 +20983,6 @@ type_expressions_rule(Parser *p)
         D(fprintf(stderr, "%*c%s type_expressions[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "','.expression+ ',' '**' expression"));
     }
-    if (_first_set_mask & 0x8ULL)
     { // '*' expression ',' '**' expression
         if (p->error_indicator) {
             p->level--;
@@ -22882,7 +21019,6 @@ type_expressions_rule(Parser *p)
         D(fprintf(stderr, "%*c%s type_expressions[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'*' expression ',' '**' expression"));
     }
-    if (_first_set_mask & 0x10ULL)
     { // '*' expression
         if (p->error_indicator) {
             p->level--;
@@ -22910,7 +21046,6 @@ type_expressions_rule(Parser *p)
         D(fprintf(stderr, "%*c%s type_expressions[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'*' expression"));
     }
-    if (_first_set_mask & 0x20ULL)
     { // '**' expression
         if (p->error_indicator) {
             p->level--;
@@ -22938,7 +21073,6 @@ type_expressions_rule(Parser *p)
         D(fprintf(stderr, "%*c%s type_expressions[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'**' expression"));
     }
-    if (_first_set_mask & 0x40ULL)
     { // ','.expression+
         if (p->error_indicator) {
             p->level--;
@@ -23101,50 +21235,6 @@ invalid_arguments_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 16:
-            case 35:
-                _first_set_mask = 0x79ULL;
-                break;
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x7bULL;
-                break;
-            case 1:
-                _first_set_mask = 0x7fULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // ((','.(starred_expression | (assignment_expression | expression !':=') !'=')+ ',' kwargs) | kwargs) ',' ','.(starred_expression !'=')+
         if (p->error_indicator) {
             p->level--;
@@ -23175,7 +21265,6 @@ invalid_arguments_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_arguments[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "((','.(starred_expression | (assignment_expression | expression !':=') !'=')+ ',' kwargs) | kwargs) ',' ','.(starred_expression !'=')+"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // expression for_if_clauses ',' [args | expression for_if_clauses]
         if (p->error_indicator) {
             p->level--;
@@ -23210,7 +21299,6 @@ invalid_arguments_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_arguments[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression for_if_clauses ',' [args | expression for_if_clauses]"));
     }
-    if (_first_set_mask & 0x4ULL)
     { // NAME '=' expression for_if_clauses
         if (p->error_indicator) {
             p->level--;
@@ -23244,7 +21332,6 @@ invalid_arguments_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_arguments[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME '=' expression for_if_clauses"));
     }
-    if (_first_set_mask & 0x8ULL)
     { // [(args ',')] NAME '=' &(',' | ')')
         if (p->error_indicator) {
             p->level--;
@@ -23278,7 +21365,6 @@ invalid_arguments_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_arguments[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "[(args ',')] NAME '=' &(',' | ')')"));
     }
-    if (_first_set_mask & 0x10ULL)
     { // args for_if_clauses
         if (p->error_indicator) {
             p->level--;
@@ -23306,7 +21392,6 @@ invalid_arguments_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_arguments[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "args for_if_clauses"));
     }
-    if (_first_set_mask & 0x20ULL)
     { // args ',' expression for_if_clauses
         if (p->error_indicator) {
             p->level--;
@@ -23340,7 +21425,6 @@ invalid_arguments_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_arguments[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "args ',' expression for_if_clauses"));
     }
-    if (_first_set_mask & 0x40ULL)
     { // args ',' args
         if (p->error_indicator) {
             p->level--;
@@ -23394,51 +21478,6 @@ invalid_kwarg_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 1:
-                _first_set_mask = 0x2ULL;
-                break;
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 721:
-                _first_set_mask = 0x4ULL;
-                break;
-            case 627:
-            case 628:
-            case 629:
-                _first_set_mask = 0x5ULL;
-                break;
-            case 35:
-                _first_set_mask = 0x8ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // ('True' | 'False' | 'None') '='
         if (p->error_indicator) {
             p->level--;
@@ -23466,7 +21505,6 @@ invalid_kwarg_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_kwarg[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "('True' | 'False' | 'None') '='"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // NAME '=' expression for_if_clauses
         if (p->error_indicator) {
             p->level--;
@@ -23500,7 +21538,6 @@ invalid_kwarg_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_kwarg[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME '=' expression for_if_clauses"));
     }
-    if (_first_set_mask & 0x4ULL)
     { // !(NAME '=') expression '='
         if (p->error_indicator) {
             p->level--;
@@ -23530,7 +21567,6 @@ invalid_kwarg_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_kwarg[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "!(NAME '=') expression '='"));
     }
-    if (_first_set_mask & 0x8ULL)
     { // '**' expression '=' expression
         if (p->error_indicator) {
             p->level--;
@@ -23589,8 +21625,8 @@ expression_without_invalid_rule(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
-    expr_ty _prefix_89_result = NULL;
-    int _prefix_89_end = 0, _prefix_89_valid = 0;
+    expr_ty _prefix_54_result = NULL;
+    int _prefix_54_end = 0, _prefix_54_valid = 0;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
         p->call_invalid_rules = _prev_call_invalid;
@@ -23601,38 +21637,6 @@ expression_without_invalid_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 598:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x3ULL;
-                break;
-            case 622:
-                _first_set_mask = 0x4ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // disjunction 'if' disjunction 'else' expression
         if (p->error_indicator) {
             p->call_invalid_rules = _prev_call_invalid;
@@ -23646,7 +21650,7 @@ expression_without_invalid_rule(Parser *p)
         expr_ty b;
         expr_ty c;
         if (
-            (a = ((!p->call_invalid_rules && _prefix_89_valid) ? (p->mark = _prefix_89_end, _prefix_89_result) : (_prefix_89_result = disjunction_rule(p), _prefix_89_end = p->mark, _prefix_89_valid = 1, _prefix_89_result)))  // disjunction
+            (a = ((!p->call_invalid_rules && _prefix_54_valid) ? (p->mark = _prefix_54_end, _prefix_54_result) : (_prefix_54_result = disjunction_rule(p), _prefix_54_end = p->mark, _prefix_54_valid = 1, _prefix_54_result)))  // disjunction
             &&
             (_keyword = _PyPegen_expect_token(p, 700))  // token='if'
             &&
@@ -23681,7 +21685,6 @@ expression_without_invalid_rule(Parser *p)
         D(fprintf(stderr, "%*c%s expression_without_invalid[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "disjunction 'if' disjunction 'else' expression"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // disjunction
         if (p->error_indicator) {
             p->call_invalid_rules = _prev_call_invalid;
@@ -23691,7 +21694,7 @@ expression_without_invalid_rule(Parser *p)
         D(fprintf(stderr, "%*c> expression_without_invalid[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "disjunction"));
         expr_ty disjunction_var;
         if (
-            (disjunction_var = ((!p->call_invalid_rules && _prefix_89_valid) ? (p->mark = _prefix_89_end, _prefix_89_result) : (_prefix_89_result = disjunction_rule(p), _prefix_89_end = p->mark, _prefix_89_valid = 1, _prefix_89_result)))  // disjunction
+            (disjunction_var = ((!p->call_invalid_rules && _prefix_54_valid) ? (p->mark = _prefix_54_end, _prefix_54_result) : (_prefix_54_result = disjunction_rule(p), _prefix_54_end = p->mark, _prefix_54_valid = 1, _prefix_54_result)))  // disjunction
         )
         {
             D(fprintf(stderr, "%*c+ expression_without_invalid[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "disjunction"));
@@ -23702,7 +21705,6 @@ expression_without_invalid_rule(Parser *p)
         D(fprintf(stderr, "%*c%s expression_without_invalid[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "disjunction"));
     }
-    if (_first_set_mask & 0x4ULL)
     { // lambdef
         if (p->error_indicator) {
             p->call_invalid_rules = _prev_call_invalid;
@@ -23800,14 +21802,14 @@ invalid_type_param_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 16:
-                goto first_set_alt_90;
+                goto first_set_alt_55;
             case 35:
-                goto first_set_alt_91;
+                goto first_set_alt_56;
             default:
-                goto first_set_done_92;
+                goto first_set_done_57;
         }
     }
-    first_set_alt_90:
+    first_set_alt_55:
     { // '*' NAME ':' expression
         if (p->error_indicator) {
             p->level--;
@@ -23842,9 +21844,9 @@ invalid_type_param_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'*' NAME ':' expression"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_92;
+        goto first_set_done_57;
     }
-    first_set_alt_91:
+    first_set_alt_56:
     { // '**' NAME ':' expression
         if (p->error_indicator) {
             p->level--;
@@ -23879,9 +21881,9 @@ invalid_type_param_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'**' NAME ':' expression"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_92;
+        goto first_set_done_57;
     }
-    first_set_done_92:
+    first_set_done_57:
     ;
     _res = NULL;
   done:
@@ -23909,54 +21911,8 @@ invalid_expression_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    expr_ty _prefix_93_result = NULL;
-    int _prefix_93_end = 0, _prefix_93_valid = 0;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 1:
-                _first_set_mask = 0xcULL;
-                break;
-            case 2:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 598:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0xeULL;
-                break;
-            case 3:
-                _first_set_mask = 0xfULL;
-                break;
-            case 527:
-            case 528:
-            case 529:
-                _first_set_mask = 0x10ULL;
-                break;
-            case 622:
-                _first_set_mask = 0x60ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
+    expr_ty _prefix_58_result = NULL;
+    int _prefix_58_end = 0, _prefix_58_valid = 0;
     { // STRING ((!STRING expression_without_invalid))+ STRING
         if (p->error_indicator) {
             p->level--;
@@ -23987,7 +21943,6 @@ invalid_expression_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "STRING ((!STRING expression_without_invalid))+ STRING"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // !(NAME STRING | SOFT_KEYWORD) disjunction expression_without_invalid
         if (p->error_indicator) {
             p->level--;
@@ -24017,7 +21972,6 @@ invalid_expression_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "!(NAME STRING | SOFT_KEYWORD) disjunction expression_without_invalid"));
     }
-    if (_first_set_mask & 0x4ULL)
     { // disjunction 'if' disjunction !('else' | ':')
         if (p->error_indicator) {
             p->level--;
@@ -24028,7 +21982,7 @@ invalid_expression_rule(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = ((!p->call_invalid_rules && _prefix_93_valid) ? (p->mark = _prefix_93_end, _prefix_93_result) : (_prefix_93_result = disjunction_rule(p), _prefix_93_end = p->mark, _prefix_93_valid = 1, _prefix_93_result)))  // disjunction
+            (a = ((!p->call_invalid_rules && _prefix_58_valid) ? (p->mark = _prefix_58_end, _prefix_58_result) : (_prefix_58_result = disjunction_rule(p), _prefix_58_end = p->mark, _prefix_58_valid = 1, _prefix_58_result)))  // disjunction
             &&
             (_keyword = _PyPegen_expect_token(p, 700))  // token='if'
             &&
@@ -24050,7 +22004,6 @@ invalid_expression_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "disjunction 'if' disjunction !('else' | ':')"));
     }
-    if (_first_set_mask & 0x8ULL)
     { // disjunction 'if' disjunction 'else' !expression
         if (p->error_indicator) {
             p->level--;
@@ -24062,7 +22015,7 @@ invalid_expression_rule(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            (a = ((!p->call_invalid_rules && _prefix_93_valid) ? (p->mark = _prefix_93_end, _prefix_93_result) : (_prefix_93_result = disjunction_rule(p), _prefix_93_end = p->mark, _prefix_93_valid = 1, _prefix_93_result)))  // disjunction
+            (a = ((!p->call_invalid_rules && _prefix_58_valid) ? (p->mark = _prefix_58_end, _prefix_58_result) : (_prefix_58_result = disjunction_rule(p), _prefix_58_end = p->mark, _prefix_58_valid = 1, _prefix_58_result)))  // disjunction
             &&
             (_keyword = _PyPegen_expect_token(p, 700))  // token='if'
             &&
@@ -24086,7 +22039,6 @@ invalid_expression_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "disjunction 'if' disjunction 'else' !expression"));
     }
-    if (_first_set_mask & 0x10ULL)
     { // (pass_stmt | break_stmt | continue_stmt) 'if' disjunction 'else' simple_stmt
         if (p->error_indicator) {
             p->level--;
@@ -24123,7 +22075,6 @@ invalid_expression_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(pass_stmt | break_stmt | continue_stmt) 'if' disjunction 'else' simple_stmt"));
     }
-    if (_first_set_mask & 0x20ULL)
     { // 'lambda' lambda_params? ':' &FSTRING_MIDDLE
         if (p->error_indicator) {
             p->level--;
@@ -24157,7 +22108,6 @@ invalid_expression_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'lambda' lambda_params? ':' &FSTRING_MIDDLE"));
     }
-    if (_first_set_mask & 0x40ULL)
     { // 'lambda' lambda_params? ':' &TSTRING_MIDDLE
         if (p->error_indicator) {
             p->level--;
@@ -24212,42 +22162,8 @@ invalid_if_expression_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    expr_ty _prefix_94_result = NULL;
-    int _prefix_94_end = 0, _prefix_94_valid = 0;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 598:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x3ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
+    expr_ty _prefix_59_result = NULL;
+    int _prefix_59_end = 0, _prefix_59_valid = 0;
     { // disjunction 'if' disjunction 'else' '*'
         if (p->error_indicator) {
             p->level--;
@@ -24260,7 +22176,7 @@ invalid_if_expression_rule(Parser *p)
         expr_ty b;
         expr_ty disjunction_var;
         if (
-            (disjunction_var = ((!p->call_invalid_rules && _prefix_94_valid) ? (p->mark = _prefix_94_end, _prefix_94_result) : (_prefix_94_result = disjunction_rule(p), _prefix_94_end = p->mark, _prefix_94_valid = 1, _prefix_94_result)))  // disjunction
+            (disjunction_var = ((!p->call_invalid_rules && _prefix_59_valid) ? (p->mark = _prefix_59_end, _prefix_59_result) : (_prefix_59_result = disjunction_rule(p), _prefix_59_end = p->mark, _prefix_59_valid = 1, _prefix_59_result)))  // disjunction
             &&
             (_keyword = _PyPegen_expect_token(p, 700))  // token='if'
             &&
@@ -24284,7 +22200,6 @@ invalid_if_expression_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_if_expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "disjunction 'if' disjunction 'else' '*'"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // disjunction 'if' disjunction 'else' '**'
         if (p->error_indicator) {
             p->level--;
@@ -24297,7 +22212,7 @@ invalid_if_expression_rule(Parser *p)
         expr_ty b;
         expr_ty disjunction_var;
         if (
-            (disjunction_var = ((!p->call_invalid_rules && _prefix_94_valid) ? (p->mark = _prefix_94_end, _prefix_94_result) : (_prefix_94_result = disjunction_rule(p), _prefix_94_end = p->mark, _prefix_94_valid = 1, _prefix_94_result)))  // disjunction
+            (disjunction_var = ((!p->call_invalid_rules && _prefix_59_valid) ? (p->mark = _prefix_59_end, _prefix_59_result) : (_prefix_59_result = disjunction_rule(p), _prefix_59_end = p->mark, _prefix_59_valid = 1, _prefix_59_result)))  // disjunction
             &&
             (_keyword = _PyPegen_expect_token(p, 700))  // token='if'
             &&
@@ -24347,48 +22262,6 @@ invalid_named_expression_rule(Parser *p)
         return _res;
     }
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 7:
-            case 9:
-            case 25:
-            case 527:
-            case 528:
-            case 529:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x1ULL;
-                break;
-            case 2:
-            case 3:
-            case 14:
-            case 15:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 598:
-                _first_set_mask = 0x5ULL;
-                break;
-            case 1:
-                _first_set_mask = 0x7ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // expression ':=' expression
         if (p->error_indicator) {
             p->level--;
@@ -24419,7 +22292,6 @@ invalid_named_expression_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_named_expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression ':=' expression"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // NAME '=' bitwise_or !('=' | ':=')
         if (p->error_indicator) {
             p->level--;
@@ -24452,7 +22324,6 @@ invalid_named_expression_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_named_expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME '=' bitwise_or !('=' | ':=')"));
     }
-    if (_first_set_mask & 0x4ULL)
     { // !(list | tuple | genexp | 'True' | 'None' | 'False') bitwise_or '=' bitwise_or !('=' | ':=')
         if (p->error_indicator) {
             p->level--;
@@ -24513,54 +22384,6 @@ invalid_assignment_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 588:
-                _first_set_mask = 0x10ULL;
-                break;
-            case 14:
-            case 15:
-            case 31:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 721:
-                _first_set_mask = 0x2eULL;
-                break;
-            case 16:
-                _first_set_mask = 0x3aULL;
-                break;
-            case 1:
-            case 2:
-            case 3:
-            case 25:
-            case 52:
-            case 59:
-            case 62:
-            case 627:
-            case 628:
-            case 629:
-                _first_set_mask = 0x3eULL;
-                break;
-            case 7:
-            case 9:
-                _first_set_mask = 0x3fULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // invalid_ann_assign_target ':' expression
         if (p->error_indicator) {
             p->level--;
@@ -24591,7 +22414,6 @@ invalid_assignment_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_assignment[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_ann_assign_target ':' expression"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // star_named_expression ',' star_named_expressions* ':' expression
         if (p->error_indicator) {
             p->level--;
@@ -24628,7 +22450,6 @@ invalid_assignment_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_assignment[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "star_named_expression ',' star_named_expressions* ':' expression"));
     }
-    if (_first_set_mask & 0x4ULL)
     { // expression ':' expression
         if (p->error_indicator) {
             p->level--;
@@ -24659,7 +22480,6 @@ invalid_assignment_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_assignment[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression ':' expression"));
     }
-    if (_first_set_mask & 0x8ULL)
     { // ((star_targets '='))* star_expressions '='
         if (p->error_indicator) {
             p->level--;
@@ -24690,7 +22510,6 @@ invalid_assignment_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_assignment[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "((star_targets '='))* star_expressions '='"));
     }
-    if (_first_set_mask & 0x10ULL)
     { // ((star_targets '='))* yield_expr '='
         if (p->error_indicator) {
             p->level--;
@@ -24721,7 +22540,6 @@ invalid_assignment_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_assignment[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "((star_targets '='))* yield_expr '='"));
     }
-    if (_first_set_mask & 0x20ULL)
     { // star_expressions augassign annotated_rhs
         if (p->error_indicator) {
             p->level--;
@@ -27311,14 +25129,14 @@ invalid_import_from_targets_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 1:
-                goto first_set_alt_95;
+                goto first_set_alt_60;
             case 4:
-                goto first_set_alt_96;
+                goto first_set_alt_61;
             default:
-                goto first_set_done_97;
+                goto first_set_done_62;
         }
     }
-    first_set_alt_95:
+    first_set_alt_60:
     { // import_from_as_names ',' NEWLINE
         if (p->error_indicator) {
             p->level--;
@@ -27350,9 +25168,9 @@ invalid_import_from_targets_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "import_from_as_names ',' NEWLINE"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_97;
+        goto first_set_done_62;
     }
-    first_set_alt_96:
+    first_set_alt_61:
     { // NEWLINE
         if (p->error_indicator) {
             p->level--;
@@ -27378,9 +25196,9 @@ invalid_import_from_targets_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NEWLINE"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_97;
+        goto first_set_done_62;
     }
-    first_set_done_97:
+    first_set_done_62:
     ;
     _res = NULL;
   done:
@@ -28753,36 +26571,6 @@ invalid_as_pattern_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 59:
-            case 62:
-            case 627:
-            case 628:
-            case 629:
-                _first_set_mask = 0x3ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // or_pattern 'as' "_"
         if (p->error_indicator) {
             p->level--;
@@ -28813,7 +26601,6 @@ invalid_as_pattern_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_as_pattern[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "or_pattern 'as' \"_\""));
     }
-    if (_first_set_mask & 0x2ULL)
     { // or_pattern 'as' expression
         if (p->error_indicator) {
             p->level--;
@@ -29850,50 +27637,6 @@ invalid_double_starred_kvpairs_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 16:
-                _first_set_mask = 0x1ULL;
-                break;
-            case 35:
-                _first_set_mask = 0x3ULL;
-                break;
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x7ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // invalid_kvpair_unpacking ','?
         if (p->error_indicator) {
             p->level--;
@@ -29917,7 +27660,6 @@ invalid_double_starred_kvpairs_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_double_starred_kvpairs[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_kvpair_unpacking ','?"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // ','.double_starred_kvpair+ ',' (invalid_kvpair | invalid_kvpair_unpacking)
         if (p->error_indicator) {
             p->level--;
@@ -29943,7 +27685,6 @@ invalid_double_starred_kvpairs_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_double_starred_kvpairs[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "','.double_starred_kvpair+ ',' (invalid_kvpair | invalid_kvpair_unpacking)"));
     }
-    if (_first_set_mask & 0x4ULL)
     { // expression ':' &('}' | ',')
         if (p->error_indicator) {
             p->level--;
@@ -29997,52 +27738,8 @@ invalid_kvpair_unpacking_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    expr_ty _prefix_98_result = NULL;
-    int _prefix_98_end = 0, _prefix_98_valid = 0;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 16:
-                _first_set_mask = 0x2ULL;
-                break;
-            case 35:
-                _first_set_mask = 0x5ULL;
-                break;
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x18ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
+    expr_ty _prefix_63_result = NULL;
+    int _prefix_63_end = 0, _prefix_63_valid = 0;
     { // '**' if_expression
         if (p->error_indicator) {
             p->level--;
@@ -30070,7 +27767,6 @@ invalid_kvpair_unpacking_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_kvpair_unpacking[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'**' if_expression"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // '*' bitwise_or ':' expression
         if (p->error_indicator) {
             p->level--;
@@ -30104,7 +27800,6 @@ invalid_kvpair_unpacking_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_kvpair_unpacking[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'*' bitwise_or ':' expression"));
     }
-    if (_first_set_mask & 0x4ULL)
     { // '**' bitwise_or ':' expression
         if (p->error_indicator) {
             p->level--;
@@ -30138,7 +27833,6 @@ invalid_kvpair_unpacking_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_kvpair_unpacking[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'**' bitwise_or ':' expression"));
     }
-    if (_first_set_mask & 0x8ULL)
     { // expression ':' '*' bitwise_or
         if (p->error_indicator) {
             p->level--;
@@ -30150,7 +27844,7 @@ invalid_kvpair_unpacking_rule(Parser *p)
         expr_ty b;
         expr_ty expression_var;
         if (
-            (expression_var = ((!p->call_invalid_rules && _prefix_98_valid) ? (p->mark = _prefix_98_end, _prefix_98_result) : (_prefix_98_result = expression_rule(p), _prefix_98_end = p->mark, _prefix_98_valid = 1, _prefix_98_result)))  // expression
+            (expression_var = ((!p->call_invalid_rules && _prefix_63_valid) ? (p->mark = _prefix_63_end, _prefix_63_result) : (_prefix_63_result = expression_rule(p), _prefix_63_end = p->mark, _prefix_63_valid = 1, _prefix_63_result)))  // expression
             &&
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
             &&
@@ -30172,7 +27866,6 @@ invalid_kvpair_unpacking_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_kvpair_unpacking[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression ':' '*' bitwise_or"));
     }
-    if (_first_set_mask & 0x10ULL)
     { // expression ':' '**' bitwise_or
         if (p->error_indicator) {
             p->level--;
@@ -30184,7 +27877,7 @@ invalid_kvpair_unpacking_rule(Parser *p)
         expr_ty b;
         expr_ty expression_var;
         if (
-            (expression_var = ((!p->call_invalid_rules && _prefix_98_valid) ? (p->mark = _prefix_98_end, _prefix_98_result) : (_prefix_98_result = expression_rule(p), _prefix_98_end = p->mark, _prefix_98_valid = 1, _prefix_98_result)))  // expression
+            (expression_var = ((!p->call_invalid_rules && _prefix_63_valid) ? (p->mark = _prefix_63_end, _prefix_63_result) : (_prefix_63_result = expression_rule(p), _prefix_63_end = p->mark, _prefix_63_valid = 1, _prefix_63_result)))  // expression
             &&
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
             &&
@@ -30229,46 +27922,8 @@ invalid_kvpair_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    expr_ty _prefix_99_result = NULL;
-    int _prefix_99_end = 0, _prefix_99_valid = 0;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0xfULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
+    expr_ty _prefix_64_result = NULL;
+    int _prefix_64_end = 0, _prefix_64_valid = 0;
     { // expression !(':')
         if (p->error_indicator) {
             p->level--;
@@ -30277,7 +27932,7 @@ invalid_kvpair_rule(Parser *p)
         D(fprintf(stderr, "%*c> invalid_kvpair[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression !(':')"));
         expr_ty a;
         if (
-            (a = ((!p->call_invalid_rules && _prefix_99_valid) ? (p->mark = _prefix_99_end, _prefix_99_result) : (_prefix_99_result = expression_rule(p), _prefix_99_end = p->mark, _prefix_99_valid = 1, _prefix_99_result)))  // expression
+            (a = ((!p->call_invalid_rules && _prefix_64_valid) ? (p->mark = _prefix_64_end, _prefix_64_result) : (_prefix_64_result = expression_rule(p), _prefix_64_end = p->mark, _prefix_64_valid = 1, _prefix_64_result)))  // expression
             &&
             _PyPegen_lookahead_with_int(0, _PyPegen_expect_token, p, 11)  // token=(':')
         )
@@ -30295,7 +27950,6 @@ invalid_kvpair_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_kvpair[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression !(':')"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // expression ':' '*' bitwise_or
         if (p->error_indicator) {
             p->level--;
@@ -30307,7 +27961,7 @@ invalid_kvpair_rule(Parser *p)
         expr_ty bitwise_or_var;
         expr_ty expression_var;
         if (
-            (expression_var = ((!p->call_invalid_rules && _prefix_99_valid) ? (p->mark = _prefix_99_end, _prefix_99_result) : (_prefix_99_result = expression_rule(p), _prefix_99_end = p->mark, _prefix_99_valid = 1, _prefix_99_result)))  // expression
+            (expression_var = ((!p->call_invalid_rules && _prefix_64_valid) ? (p->mark = _prefix_64_end, _prefix_64_result) : (_prefix_64_result = expression_rule(p), _prefix_64_end = p->mark, _prefix_64_valid = 1, _prefix_64_result)))  // expression
             &&
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
             &&
@@ -30329,7 +27983,6 @@ invalid_kvpair_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_kvpair[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression ':' '*' bitwise_or"));
     }
-    if (_first_set_mask & 0x4ULL)
     { // expression ':' '**' bitwise_or
         if (p->error_indicator) {
             p->level--;
@@ -30341,7 +27994,7 @@ invalid_kvpair_rule(Parser *p)
         expr_ty bitwise_or_var;
         expr_ty expression_var;
         if (
-            (expression_var = ((!p->call_invalid_rules && _prefix_99_valid) ? (p->mark = _prefix_99_end, _prefix_99_result) : (_prefix_99_result = expression_rule(p), _prefix_99_end = p->mark, _prefix_99_valid = 1, _prefix_99_result)))  // expression
+            (expression_var = ((!p->call_invalid_rules && _prefix_64_valid) ? (p->mark = _prefix_64_end, _prefix_64_result) : (_prefix_64_result = expression_rule(p), _prefix_64_end = p->mark, _prefix_64_valid = 1, _prefix_64_result)))  // expression
             &&
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
             &&
@@ -30363,7 +28016,6 @@ invalid_kvpair_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_kvpair[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression ':' '**' bitwise_or"));
     }
-    if (_first_set_mask & 0x8ULL)
     { // expression ':' &('}' | ',')
         if (p->error_indicator) {
             p->level--;
@@ -30373,7 +28025,7 @@ invalid_kvpair_rule(Parser *p)
         Token * a;
         expr_ty expression_var;
         if (
-            (expression_var = ((!p->call_invalid_rules && _prefix_99_valid) ? (p->mark = _prefix_99_end, _prefix_99_result) : (_prefix_99_result = expression_rule(p), _prefix_99_end = p->mark, _prefix_99_valid = 1, _prefix_99_result)))  // expression
+            (expression_var = ((!p->call_invalid_rules && _prefix_64_valid) ? (p->mark = _prefix_64_end, _prefix_64_result) : (_prefix_64_result = expression_rule(p), _prefix_64_end = p->mark, _prefix_64_valid = 1, _prefix_64_result)))  // expression
             &&
             (a = _PyPegen_expect_token(p, 11))  // token=':'
             &&
@@ -30521,14 +28173,14 @@ invalid_starred_expression_unpacking_sequence_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 35:
-                goto first_set_alt_100;
+                goto first_set_alt_65;
             case 16:
-                goto first_set_alt_101;
+                goto first_set_alt_66;
             default:
-                goto first_set_done_102;
+                goto first_set_done_67;
         }
     }
-    first_set_alt_100:
+    first_set_alt_65:
     { // '**' bitwise_or
         if (p->error_indicator) {
             p->level--;
@@ -30557,9 +28209,9 @@ invalid_starred_expression_unpacking_sequence_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'**' bitwise_or"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_102;
+        goto first_set_done_67;
     }
-    first_set_alt_101:
+    first_set_alt_66:
     if (p->call_invalid_rules) { // invalid_starred_expression_unpacking
         if (p->error_indicator) {
             p->level--;
@@ -30580,9 +28232,9 @@ invalid_starred_expression_unpacking_sequence_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_starred_expression_unpacking"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_102;
+        goto first_set_done_67;
     }
-    first_set_done_102:
+    first_set_done_67:
     ;
     _res = NULL;
   done:
@@ -31636,14 +29288,14 @@ invalid_string_tstring_concat_rule(Parser *p)
         switch (_current_token_type) {
             case 3:
             case 59:
-                goto first_set_alt_103;
+                goto first_set_alt_68;
             case 62:
-                goto first_set_alt_104;
+                goto first_set_alt_69;
             default:
-                goto first_set_done_105;
+                goto first_set_done_70;
         }
     }
-    first_set_alt_103:
+    first_set_alt_68:
     { // ((fstring | string))+ tstring
         if (p->error_indicator) {
             p->level--;
@@ -31672,9 +29324,9 @@ invalid_string_tstring_concat_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "((fstring | string))+ tstring"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_105;
+        goto first_set_done_70;
     }
-    first_set_alt_104:
+    first_set_alt_69:
     { // tstring+ (fstring | string)
         if (p->error_indicator) {
             p->level--;
@@ -31703,9 +29355,9 @@ invalid_string_tstring_concat_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "tstring+ (fstring | string)"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_105;
+        goto first_set_done_70;
     }
-    first_set_done_105:
+    first_set_done_70:
     ;
     _res = NULL;
   done:
@@ -32239,16 +29891,16 @@ _tmp_5_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 651:
-                goto first_set_alt_106;
+                goto first_set_alt_71;
             case 650:
-                goto first_set_alt_107;
+                goto first_set_alt_72;
             case 1:
-                goto first_set_alt_108;
+                goto first_set_alt_73;
             default:
-                goto first_set_done_109;
+                goto first_set_done_74;
         }
     }
-    first_set_alt_106:
+    first_set_alt_71:
     { // 'import'
         if (p->error_indicator) {
             p->level--;
@@ -32269,9 +29921,9 @@ _tmp_5_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'import'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_109;
+        goto first_set_done_74;
     }
-    first_set_alt_107:
+    first_set_alt_72:
     { // 'from'
         if (p->error_indicator) {
             p->level--;
@@ -32292,9 +29944,9 @@ _tmp_5_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'from'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_109;
+        goto first_set_done_74;
     }
-    first_set_alt_108:
+    first_set_alt_73:
     { // "lazy"
         if (p->error_indicator) {
             p->level--;
@@ -32315,9 +29967,9 @@ _tmp_5_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "\"lazy\""));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_109;
+        goto first_set_done_74;
     }
-    first_set_done_109:
+    first_set_done_74:
     ;
     _res = NULL;
   done:
@@ -32347,16 +29999,16 @@ _tmp_6_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 717:
-                goto first_set_alt_110;
+                goto first_set_alt_75;
             case 49:
-                goto first_set_alt_111;
+                goto first_set_alt_76;
             case 716:
-                goto first_set_alt_112;
+                goto first_set_alt_77;
             default:
-                goto first_set_done_113;
+                goto first_set_done_78;
         }
     }
-    first_set_alt_110:
+    first_set_alt_75:
     { // 'def'
         if (p->error_indicator) {
             p->level--;
@@ -32377,9 +30029,9 @@ _tmp_6_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'def'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_113;
+        goto first_set_done_78;
     }
-    first_set_alt_111:
+    first_set_alt_76:
     { // '@'
         if (p->error_indicator) {
             p->level--;
@@ -32400,9 +30052,9 @@ _tmp_6_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'@'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_113;
+        goto first_set_done_78;
     }
-    first_set_alt_112:
+    first_set_alt_77:
     { // 'async'
         if (p->error_indicator) {
             p->level--;
@@ -32423,9 +30075,9 @@ _tmp_6_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'async'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_113;
+        goto first_set_done_78;
     }
-    first_set_done_113:
+    first_set_done_78:
     ;
     _res = NULL;
   done:
@@ -32455,14 +30107,14 @@ _tmp_7_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 719:
-                goto first_set_alt_114;
+                goto first_set_alt_79;
             case 49:
-                goto first_set_alt_115;
+                goto first_set_alt_80;
             default:
-                goto first_set_done_116;
+                goto first_set_done_81;
         }
     }
-    first_set_alt_114:
+    first_set_alt_79:
     { // 'class'
         if (p->error_indicator) {
             p->level--;
@@ -32483,9 +30135,9 @@ _tmp_7_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'class'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_116;
+        goto first_set_done_81;
     }
-    first_set_alt_115:
+    first_set_alt_80:
     { // '@'
         if (p->error_indicator) {
             p->level--;
@@ -32506,9 +30158,9 @@ _tmp_7_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'@'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_116;
+        goto first_set_done_81;
     }
-    first_set_done_116:
+    first_set_done_81:
     ;
     _res = NULL;
   done:
@@ -32538,14 +30190,14 @@ _tmp_8_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 665:
-                goto first_set_alt_117;
+                goto first_set_alt_82;
             case 716:
-                goto first_set_alt_118;
+                goto first_set_alt_83;
             default:
-                goto first_set_done_119;
+                goto first_set_done_84;
         }
     }
-    first_set_alt_117:
+    first_set_alt_82:
     { // 'with'
         if (p->error_indicator) {
             p->level--;
@@ -32566,9 +30218,9 @@ _tmp_8_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'with'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_119;
+        goto first_set_done_84;
     }
-    first_set_alt_118:
+    first_set_alt_83:
     { // 'async'
         if (p->error_indicator) {
             p->level--;
@@ -32589,9 +30241,9 @@ _tmp_8_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'async'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_119;
+        goto first_set_done_84;
     }
-    first_set_done_119:
+    first_set_done_84:
     ;
     _res = NULL;
   done:
@@ -32621,14 +30273,14 @@ _tmp_9_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 712:
-                goto first_set_alt_120;
+                goto first_set_alt_85;
             case 716:
-                goto first_set_alt_121;
+                goto first_set_alt_86;
             default:
-                goto first_set_done_122;
+                goto first_set_done_87;
         }
     }
-    first_set_alt_120:
+    first_set_alt_85:
     { // 'for'
         if (p->error_indicator) {
             p->level--;
@@ -32649,9 +30301,9 @@ _tmp_9_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'for'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_122;
+        goto first_set_done_87;
     }
-    first_set_alt_121:
+    first_set_alt_86:
     { // 'async'
         if (p->error_indicator) {
             p->level--;
@@ -32672,9 +30324,9 @@ _tmp_9_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'async'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_122;
+        goto first_set_done_87;
     }
-    first_set_done_122:
+    first_set_done_87:
     ;
     _res = NULL;
   done:
@@ -32741,37 +30393,6 @@ _tmp_11_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 1:
-            case 2:
-            case 3:
-            case 9:
-            case 25:
-            case 52:
-            case 59:
-            case 62:
-            case 627:
-            case 628:
-            case 629:
-                _first_set_mask = 0x2ULL;
-                break;
-            case 7:
-                _first_set_mask = 0x3ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // '(' single_target ')'
         if (p->error_indicator) {
             p->level--;
@@ -32802,7 +30423,6 @@ _tmp_11_rule(Parser *p)
         D(fprintf(stderr, "%*c%s _tmp_11[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'(' single_target ')'"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // attribute_or_subscript_target
         if (p->error_indicator) {
             p->level--;
@@ -33039,14 +30659,14 @@ _tmp_15_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 13:
-                goto first_set_alt_123;
+                goto first_set_alt_88;
             case 4:
-                goto first_set_alt_124;
+                goto first_set_alt_89;
             default:
-                goto first_set_done_125;
+                goto first_set_done_90;
         }
     }
-    first_set_alt_123:
+    first_set_alt_88:
     { // ';'
         if (p->error_indicator) {
             p->level--;
@@ -33067,9 +30687,9 @@ _tmp_15_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "';'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_125;
+        goto first_set_done_90;
     }
-    first_set_alt_124:
+    first_set_alt_89:
     { // NEWLINE
         if (p->error_indicator) {
             p->level--;
@@ -33090,9 +30710,9 @@ _tmp_15_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NEWLINE"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_125;
+        goto first_set_done_90;
     }
-    first_set_done_125:
+    first_set_done_90:
     ;
     _res = NULL;
   done:
@@ -34288,16 +31908,16 @@ _tmp_35_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 12:
-                goto first_set_alt_126;
+                goto first_set_alt_91;
             case 8:
-                goto first_set_alt_127;
+                goto first_set_alt_92;
             case 11:
-                goto first_set_alt_128;
+                goto first_set_alt_93;
             default:
-                goto first_set_done_129;
+                goto first_set_done_94;
         }
     }
-    first_set_alt_126:
+    first_set_alt_91:
     { // ','
         if (p->error_indicator) {
             p->level--;
@@ -34318,9 +31938,9 @@ _tmp_35_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "','"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_129;
+        goto first_set_done_94;
     }
-    first_set_alt_127:
+    first_set_alt_92:
     { // ')'
         if (p->error_indicator) {
             p->level--;
@@ -34341,9 +31961,9 @@ _tmp_35_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "')'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_129;
+        goto first_set_done_94;
     }
-    first_set_alt_128:
+    first_set_alt_93:
     { // ':'
         if (p->error_indicator) {
             p->level--;
@@ -34364,9 +31984,9 @@ _tmp_35_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "':'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_129;
+        goto first_set_done_94;
     }
-    first_set_done_129:
+    first_set_done_94:
     ;
     _res = NULL;
   done:
@@ -34729,14 +32349,14 @@ _tmp_41_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 14:
-                goto first_set_alt_130;
+                goto first_set_alt_95;
             case 15:
-                goto first_set_alt_131;
+                goto first_set_alt_96;
             default:
-                goto first_set_done_132;
+                goto first_set_done_97;
         }
     }
-    first_set_alt_130:
+    first_set_alt_95:
     { // '+'
         if (p->error_indicator) {
             p->level--;
@@ -34757,9 +32377,9 @@ _tmp_41_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'+'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_132;
+        goto first_set_done_97;
     }
-    first_set_alt_131:
+    first_set_alt_96:
     { // '-'
         if (p->error_indicator) {
             p->level--;
@@ -34780,9 +32400,9 @@ _tmp_41_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'-'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_132;
+        goto first_set_done_97;
     }
-    first_set_done_132:
+    first_set_done_97:
     ;
     _res = NULL;
   done:
@@ -34812,16 +32432,16 @@ _tmp_42_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 3:
-                goto first_set_alt_133;
+                goto first_set_alt_98;
             case 59:
-                goto first_set_alt_134;
+                goto first_set_alt_99;
             case 62:
-                goto first_set_alt_135;
+                goto first_set_alt_100;
             default:
-                goto first_set_done_136;
+                goto first_set_done_101;
         }
     }
-    first_set_alt_133:
+    first_set_alt_98:
     { // STRING
         if (p->error_indicator) {
             p->level--;
@@ -34842,9 +32462,9 @@ _tmp_42_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "STRING"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_136;
+        goto first_set_done_101;
     }
-    first_set_alt_134:
+    first_set_alt_99:
     { // FSTRING_START
         if (p->error_indicator) {
             p->level--;
@@ -34865,9 +32485,9 @@ _tmp_42_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "FSTRING_START"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_136;
+        goto first_set_done_101;
     }
-    first_set_alt_135:
+    first_set_alt_100:
     { // TSTRING_START
         if (p->error_indicator) {
             p->level--;
@@ -34888,9 +32508,9 @@ _tmp_42_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "TSTRING_START"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_136;
+        goto first_set_done_101;
     }
-    first_set_done_136:
+    first_set_done_101:
     ;
     _res = NULL;
   done:
@@ -34920,16 +32540,16 @@ _tmp_43_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 23:
-                goto first_set_alt_137;
+                goto first_set_alt_102;
             case 7:
-                goto first_set_alt_138;
+                goto first_set_alt_103;
             case 22:
-                goto first_set_alt_139;
+                goto first_set_alt_104;
             default:
-                goto first_set_done_140;
+                goto first_set_done_105;
         }
     }
-    first_set_alt_137:
+    first_set_alt_102:
     { // '.'
         if (p->error_indicator) {
             p->level--;
@@ -34950,9 +32570,9 @@ _tmp_43_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'.'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_140;
+        goto first_set_done_105;
     }
-    first_set_alt_138:
+    first_set_alt_103:
     { // '('
         if (p->error_indicator) {
             p->level--;
@@ -34973,9 +32593,9 @@ _tmp_43_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'('"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_140;
+        goto first_set_done_105;
     }
-    first_set_alt_139:
+    first_set_alt_104:
     { // '='
         if (p->error_indicator) {
             p->level--;
@@ -34996,9 +32616,9 @@ _tmp_43_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'='"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_140;
+        goto first_set_done_105;
     }
-    first_set_done_140:
+    first_set_done_105:
     ;
     _res = NULL;
   done:
@@ -35253,31 +32873,6 @@ _tmp_48_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    if (!p->call_invalid_rules) {
-        switch (_current_token_type) {
-            case 2:
-            case 3:
-            case 14:
-            case 15:
-            case 59:
-            case 62:
-            case 627:
-            case 628:
-            case 629:
-                goto first_set_alt_141;
-            case 1:
-                goto first_set_alt_142;
-            default:
-                goto first_set_done_143;
-        }
-    }
-    first_set_alt_141:
     { // literal_expr
         if (p->error_indicator) {
             p->level--;
@@ -35297,10 +32892,6 @@ _tmp_48_rule(Parser *p)
         D(fprintf(stderr, "%*c%s _tmp_48[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "literal_expr"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_143;
-    }
-    first_set_alt_142:
     { // attr
         if (p->error_indicator) {
             p->level--;
@@ -35320,11 +32911,6 @@ _tmp_48_rule(Parser *p)
         D(fprintf(stderr, "%*c%s _tmp_48[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "attr"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_143;
-    }
-    first_set_done_143:
-    ;
     _res = NULL;
   done:
     p->level--;
@@ -36678,43 +34264,6 @@ _tmp_69_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    if (!p->call_invalid_rules) {
-        switch (_current_token_type) {
-            case 588:
-                goto first_set_alt_144;
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                goto first_set_alt_145;
-            default:
-                goto first_set_done_146;
-        }
-    }
-    first_set_alt_144:
     { // yield_expr
         if (p->error_indicator) {
             p->level--;
@@ -36734,10 +34283,6 @@ _tmp_69_rule(Parser *p)
         D(fprintf(stderr, "%*c%s _tmp_69[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "yield_expr"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_146;
-    }
-    first_set_alt_145:
     { // named_expression
         if (p->error_indicator) {
             p->level--;
@@ -36757,11 +34302,6 @@ _tmp_69_rule(Parser *p)
         D(fprintf(stderr, "%*c%s _tmp_69[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "named_expression"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_146;
-    }
-    first_set_done_146:
-    ;
     _res = NULL;
   done:
     p->level--;
@@ -38032,49 +35572,6 @@ _tmp_89_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x2ULL;
-                break;
-            case 1:
-                _first_set_mask = 0x3ULL;
-                break;
-            case 16:
-                _first_set_mask = 0x4ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // assignment_expression
         if (p->error_indicator) {
             p->level--;
@@ -38094,7 +35591,6 @@ _tmp_89_rule(Parser *p)
         D(fprintf(stderr, "%*c%s _tmp_89[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "assignment_expression"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // expression !':='
         if (p->error_indicator) {
             p->level--;
@@ -38116,7 +35612,6 @@ _tmp_89_rule(Parser *p)
         D(fprintf(stderr, "%*c%s _tmp_89[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression !':='"));
     }
-    if (_first_set_mask & 0x4ULL)
     { // starred_expression
         if (p->error_indicator) {
             p->level--;
@@ -38715,16 +36210,16 @@ _tmp_100_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 7:
-                goto first_set_alt_147;
+                goto first_set_alt_106;
             case 9:
-                goto first_set_alt_148;
+                goto first_set_alt_107;
             case 23:
-                goto first_set_alt_149;
+                goto first_set_alt_108;
             default:
-                goto first_set_done_150;
+                goto first_set_done_109;
         }
     }
-    first_set_alt_147:
+    first_set_alt_106:
     { // '('
         if (p->error_indicator) {
             p->level--;
@@ -38745,9 +36240,9 @@ _tmp_100_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'('"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_150;
+        goto first_set_done_109;
     }
-    first_set_alt_148:
+    first_set_alt_107:
     { // '['
         if (p->error_indicator) {
             p->level--;
@@ -38768,9 +36263,9 @@ _tmp_100_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'['"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_150;
+        goto first_set_done_109;
     }
-    first_set_alt_149:
+    first_set_alt_108:
     { // '.'
         if (p->error_indicator) {
             p->level--;
@@ -38791,9 +36286,9 @@ _tmp_100_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'.'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_150;
+        goto first_set_done_109;
     }
-    first_set_done_150:
+    first_set_done_109:
     ;
     _res = NULL;
   done:
@@ -39091,48 +36586,6 @@ _tmp_106_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 35:
-                _first_set_mask = 0x2ULL;
-                break;
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 16:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x3ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // (','.(starred_expression | (assignment_expression | expression !':=') !'=')+ ',' kwargs)
         if (p->error_indicator) {
             p->level--;
@@ -39152,7 +36605,6 @@ _tmp_106_rule(Parser *p)
         D(fprintf(stderr, "%*c%s _tmp_106[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(','.(starred_expression | (assignment_expression | expression !':=') !'=')+ ',' kwargs)"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // kwargs
         if (p->error_indicator) {
             p->level--;
@@ -39308,48 +36760,6 @@ _tmp_109_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 16:
-            case 35:
-                _first_set_mask = 0x1ULL;
-                break;
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x3ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // args
         if (p->error_indicator) {
             p->level--;
@@ -39369,7 +36779,6 @@ _tmp_109_rule(Parser *p)
         D(fprintf(stderr, "%*c%s _tmp_109[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "args"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // expression for_if_clauses
         if (p->error_indicator) {
             p->level--;
@@ -39461,14 +36870,14 @@ _tmp_111_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 12:
-                goto first_set_alt_151;
+                goto first_set_alt_110;
             case 8:
-                goto first_set_alt_152;
+                goto first_set_alt_111;
             default:
-                goto first_set_done_153;
+                goto first_set_done_112;
         }
     }
-    first_set_alt_151:
+    first_set_alt_110:
     { // ','
         if (p->error_indicator) {
             p->level--;
@@ -39489,9 +36898,9 @@ _tmp_111_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "','"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_153;
+        goto first_set_done_112;
     }
-    first_set_alt_152:
+    first_set_alt_111:
     { // ')'
         if (p->error_indicator) {
             p->level--;
@@ -39512,9 +36921,9 @@ _tmp_111_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "')'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_153;
+        goto first_set_done_112;
     }
-    first_set_done_153:
+    first_set_done_112:
     ;
     _res = NULL;
   done:
@@ -39544,16 +36953,16 @@ _tmp_112_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 627:
-                goto first_set_alt_154;
+                goto first_set_alt_113;
             case 629:
-                goto first_set_alt_155;
+                goto first_set_alt_114;
             case 628:
-                goto first_set_alt_156;
+                goto first_set_alt_115;
             default:
-                goto first_set_done_157;
+                goto first_set_done_116;
         }
     }
-    first_set_alt_154:
+    first_set_alt_113:
     { // 'True'
         if (p->error_indicator) {
             p->level--;
@@ -39574,9 +36983,9 @@ _tmp_112_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'True'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_157;
+        goto first_set_done_116;
     }
-    first_set_alt_155:
+    first_set_alt_114:
     { // 'False'
         if (p->error_indicator) {
             p->level--;
@@ -39597,9 +37006,9 @@ _tmp_112_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'False'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_157;
+        goto first_set_done_116;
     }
-    first_set_alt_156:
+    first_set_alt_115:
     { // 'None'
         if (p->error_indicator) {
             p->level--;
@@ -39620,9 +37029,9 @@ _tmp_112_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'None'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_157;
+        goto first_set_done_116;
     }
-    first_set_done_157:
+    first_set_done_116:
     ;
     _res = NULL;
   done:
@@ -39762,17 +37171,18 @@ _tmp_115_rule(Parser *p)
         return NULL;
     }
     int _current_token_type = p->tokens[_mark]->type;
+    unsigned long long _first_set_mask = ~0ULL;
     if (!p->call_invalid_rules) {
+        _first_set_mask = 0;
         switch (_current_token_type) {
             case 1:
-                goto first_set_alt_158;
-            case 58:
-                goto first_set_alt_159;
+                _first_set_mask = 0x3ULL;
+                break;
             default:
-                goto first_set_done_160;
+                break;
         }
     }
-    first_set_alt_158:
+    if (_first_set_mask & 0x1ULL)
     { // NAME STRING
         if (p->error_indicator) {
             p->level--;
@@ -39795,10 +37205,7 @@ _tmp_115_rule(Parser *p)
         D(fprintf(stderr, "%*c%s _tmp_115[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME STRING"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_160;
-    }
-    first_set_alt_159:
+    if (_first_set_mask & 0x2ULL)
     { // SOFT_KEYWORD
         if (p->error_indicator) {
             p->level--;
@@ -39818,11 +37225,6 @@ _tmp_115_rule(Parser *p)
         D(fprintf(stderr, "%*c%s _tmp_115[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "SOFT_KEYWORD"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_160;
-    }
-    first_set_done_160:
-    ;
     _res = NULL;
   done:
     p->level--;
@@ -39851,14 +37253,14 @@ _tmp_116_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 704:
-                goto first_set_alt_161;
+                goto first_set_alt_117;
             case 11:
-                goto first_set_alt_162;
+                goto first_set_alt_118;
             default:
-                goto first_set_done_163;
+                goto first_set_done_119;
         }
     }
-    first_set_alt_161:
+    first_set_alt_117:
     { // 'else'
         if (p->error_indicator) {
             p->level--;
@@ -39879,9 +37281,9 @@ _tmp_116_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'else'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_163;
+        goto first_set_done_119;
     }
-    first_set_alt_162:
+    first_set_alt_118:
     { // ':'
         if (p->error_indicator) {
             p->level--;
@@ -39902,9 +37304,9 @@ _tmp_116_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "':'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_163;
+        goto first_set_done_119;
     }
-    first_set_done_163:
+    first_set_done_119:
     ;
     _res = NULL;
   done:
@@ -39934,16 +37336,16 @@ _tmp_117_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 527:
-                goto first_set_alt_164;
+                goto first_set_alt_120;
             case 528:
-                goto first_set_alt_165;
+                goto first_set_alt_121;
             case 529:
-                goto first_set_alt_166;
+                goto first_set_alt_122;
             default:
-                goto first_set_done_167;
+                goto first_set_done_123;
         }
     }
-    first_set_alt_164:
+    first_set_alt_120:
     { // pass_stmt
         if (p->error_indicator) {
             p->level--;
@@ -39964,9 +37366,9 @@ _tmp_117_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "pass_stmt"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_167;
+        goto first_set_done_123;
     }
-    first_set_alt_165:
+    first_set_alt_121:
     { // break_stmt
         if (p->error_indicator) {
             p->level--;
@@ -39987,9 +37389,9 @@ _tmp_117_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "break_stmt"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_167;
+        goto first_set_done_123;
     }
-    first_set_alt_166:
+    first_set_alt_122:
     { // continue_stmt
         if (p->error_indicator) {
             p->level--;
@@ -40010,9 +37412,9 @@ _tmp_117_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "continue_stmt"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_167;
+        goto first_set_done_123;
     }
-    first_set_done_167:
+    first_set_done_123:
     ;
     _res = NULL;
   done:
@@ -40042,14 +37444,14 @@ _tmp_118_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 22:
-                goto first_set_alt_168;
+                goto first_set_alt_124;
             case 53:
-                goto first_set_alt_169;
+                goto first_set_alt_125;
             default:
-                goto first_set_done_170;
+                goto first_set_done_126;
         }
     }
-    first_set_alt_168:
+    first_set_alt_124:
     { // '='
         if (p->error_indicator) {
             p->level--;
@@ -40070,9 +37472,9 @@ _tmp_118_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'='"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_170;
+        goto first_set_done_126;
     }
-    first_set_alt_169:
+    first_set_alt_125:
     { // ':='
         if (p->error_indicator) {
             p->level--;
@@ -40093,9 +37495,9 @@ _tmp_118_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "':='"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_170;
+        goto first_set_done_126;
     }
-    first_set_done_170:
+    first_set_done_126:
     ;
     _res = NULL;
   done:
@@ -40430,14 +37832,14 @@ _tmp_122_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 9:
-                goto first_set_alt_171;
+                goto first_set_alt_127;
             case 25:
-                goto first_set_alt_172;
+                goto first_set_alt_128;
             default:
-                goto first_set_done_173;
+                goto first_set_done_129;
         }
     }
-    first_set_alt_171:
+    first_set_alt_127:
     { // '['
         if (p->error_indicator) {
             p->level--;
@@ -40458,9 +37860,9 @@ _tmp_122_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'['"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_173;
+        goto first_set_done_129;
     }
-    first_set_alt_172:
+    first_set_alt_128:
     { // '{'
         if (p->error_indicator) {
             p->level--;
@@ -40481,9 +37883,9 @@ _tmp_122_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'{'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_173;
+        goto first_set_done_129;
     }
-    first_set_done_173:
+    first_set_done_129:
     ;
     _res = NULL;
   done:
@@ -40589,14 +37991,14 @@ _tmp_124_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 12:
-                goto first_set_alt_174;
+                goto first_set_alt_130;
             case 1:
-                goto first_set_alt_175;
+                goto first_set_alt_131;
             default:
-                goto first_set_done_176;
+                goto first_set_done_132;
         }
     }
-    first_set_alt_174:
+    first_set_alt_130:
     { // ','
         if (p->error_indicator) {
             p->level--;
@@ -40617,9 +38019,9 @@ _tmp_124_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "','"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_176;
+        goto first_set_done_132;
     }
-    first_set_alt_175:
+    first_set_alt_131:
     { // param_no_default
         if (p->error_indicator) {
             p->level--;
@@ -40640,9 +38042,9 @@ _tmp_124_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "param_no_default"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_176;
+        goto first_set_done_132;
     }
-    first_set_done_176:
+    first_set_done_132:
     ;
     _res = NULL;
   done:
@@ -40672,14 +38074,14 @@ _tmp_125_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 8:
-                goto first_set_alt_177;
+                goto first_set_alt_133;
             case 12:
-                goto first_set_alt_178;
+                goto first_set_alt_134;
             default:
-                goto first_set_done_179;
+                goto first_set_done_135;
         }
     }
-    first_set_alt_177:
+    first_set_alt_133:
     { // ')'
         if (p->error_indicator) {
             p->level--;
@@ -40700,9 +38102,9 @@ _tmp_125_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "')'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_179;
+        goto first_set_done_135;
     }
-    first_set_alt_178:
+    first_set_alt_134:
     { // ','
         if (p->error_indicator) {
             p->level--;
@@ -40723,9 +38125,9 @@ _tmp_125_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "','"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_179;
+        goto first_set_done_135;
     }
-    first_set_done_179:
+    first_set_done_135:
     ;
     _res = NULL;
   done:
@@ -40755,14 +38157,14 @@ _tmp_126_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 8:
-                goto first_set_alt_180;
+                goto first_set_alt_136;
             case 12:
-                goto first_set_alt_181;
+                goto first_set_alt_137;
             default:
-                goto first_set_done_182;
+                goto first_set_done_138;
         }
     }
-    first_set_alt_180:
+    first_set_alt_136:
     { // ')'
         if (p->error_indicator) {
             p->level--;
@@ -40783,9 +38185,9 @@ _tmp_126_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "')'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_182;
+        goto first_set_done_138;
     }
-    first_set_alt_181:
+    first_set_alt_137:
     { // ',' (')' | '**')
         if (p->error_indicator) {
             p->level--;
@@ -40809,9 +38211,9 @@ _tmp_126_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' (')' | '**')"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_182;
+        goto first_set_done_138;
     }
-    first_set_done_182:
+    first_set_done_138:
     ;
     _res = NULL;
   done:
@@ -40841,14 +38243,14 @@ _tmp_127_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 1:
-                goto first_set_alt_183;
+                goto first_set_alt_139;
             case 12:
-                goto first_set_alt_184;
+                goto first_set_alt_140;
             default:
-                goto first_set_done_185;
+                goto first_set_done_141;
         }
     }
-    first_set_alt_183:
+    first_set_alt_139:
     { // param_no_default
         if (p->error_indicator) {
             p->level--;
@@ -40869,9 +38271,9 @@ _tmp_127_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "param_no_default"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_185;
+        goto first_set_done_141;
     }
-    first_set_alt_184:
+    first_set_alt_140:
     { // ','
         if (p->error_indicator) {
             p->level--;
@@ -40892,9 +38294,9 @@ _tmp_127_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "','"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_185;
+        goto first_set_done_141;
     }
-    first_set_done_185:
+    first_set_done_141:
     ;
     _res = NULL;
   done:
@@ -40924,16 +38326,16 @@ _tmp_128_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 16:
-                goto first_set_alt_186;
+                goto first_set_alt_142;
             case 35:
-                goto first_set_alt_187;
+                goto first_set_alt_143;
             case 17:
-                goto first_set_alt_188;
+                goto first_set_alt_144;
             default:
-                goto first_set_done_189;
+                goto first_set_done_145;
         }
     }
-    first_set_alt_186:
+    first_set_alt_142:
     { // '*'
         if (p->error_indicator) {
             p->level--;
@@ -40954,9 +38356,9 @@ _tmp_128_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'*'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_189;
+        goto first_set_done_145;
     }
-    first_set_alt_187:
+    first_set_alt_143:
     { // '**'
         if (p->error_indicator) {
             p->level--;
@@ -40977,9 +38379,9 @@ _tmp_128_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'**'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_189;
+        goto first_set_done_145;
     }
-    first_set_alt_188:
+    first_set_alt_144:
     { // '/'
         if (p->error_indicator) {
             p->level--;
@@ -41000,9 +38402,9 @@ _tmp_128_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'/'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_189;
+        goto first_set_done_145;
     }
-    first_set_done_189:
+    first_set_done_145:
     ;
     _res = NULL;
   done:
@@ -41225,14 +38627,14 @@ _tmp_132_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 12:
-                goto first_set_alt_190;
+                goto first_set_alt_146;
             case 1:
-                goto first_set_alt_191;
+                goto first_set_alt_147;
             default:
-                goto first_set_done_192;
+                goto first_set_done_148;
         }
     }
-    first_set_alt_190:
+    first_set_alt_146:
     { // ','
         if (p->error_indicator) {
             p->level--;
@@ -41253,9 +38655,9 @@ _tmp_132_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "','"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_192;
+        goto first_set_done_148;
     }
-    first_set_alt_191:
+    first_set_alt_147:
     { // lambda_param_no_default
         if (p->error_indicator) {
             p->level--;
@@ -41276,9 +38678,9 @@ _tmp_132_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "lambda_param_no_default"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_192;
+        goto first_set_done_148;
     }
-    first_set_done_192:
+    first_set_done_148:
     ;
     _res = NULL;
   done:
@@ -41308,14 +38710,14 @@ _tmp_133_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 11:
-                goto first_set_alt_193;
+                goto first_set_alt_149;
             case 12:
-                goto first_set_alt_194;
+                goto first_set_alt_150;
             default:
-                goto first_set_done_195;
+                goto first_set_done_151;
         }
     }
-    first_set_alt_193:
+    first_set_alt_149:
     { // ':'
         if (p->error_indicator) {
             p->level--;
@@ -41336,9 +38738,9 @@ _tmp_133_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "':'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_195;
+        goto first_set_done_151;
     }
-    first_set_alt_194:
+    first_set_alt_150:
     { // ',' (':' | '**')
         if (p->error_indicator) {
             p->level--;
@@ -41362,9 +38764,9 @@ _tmp_133_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' (':' | '**')"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_195;
+        goto first_set_done_151;
     }
-    first_set_done_195:
+    first_set_done_151:
     ;
     _res = NULL;
   done:
@@ -41394,14 +38796,14 @@ _tmp_134_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 1:
-                goto first_set_alt_196;
+                goto first_set_alt_152;
             case 12:
-                goto first_set_alt_197;
+                goto first_set_alt_153;
             default:
-                goto first_set_done_198;
+                goto first_set_done_154;
         }
     }
-    first_set_alt_196:
+    first_set_alt_152:
     { // lambda_param_no_default
         if (p->error_indicator) {
             p->level--;
@@ -41422,9 +38824,9 @@ _tmp_134_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "lambda_param_no_default"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_198;
+        goto first_set_done_154;
     }
-    first_set_alt_197:
+    first_set_alt_153:
     { // ','
         if (p->error_indicator) {
             p->level--;
@@ -41445,9 +38847,9 @@ _tmp_134_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "','"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_198;
+        goto first_set_done_154;
     }
-    first_set_done_198:
+    first_set_done_154:
     ;
     _res = NULL;
   done:
@@ -41914,14 +39316,14 @@ _tmp_143_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 695:
-                goto first_set_alt_199;
+                goto first_set_alt_155;
             case 691:
-                goto first_set_alt_200;
+                goto first_set_alt_156;
             default:
-                goto first_set_done_201;
+                goto first_set_done_157;
         }
     }
-    first_set_alt_199:
+    first_set_alt_155:
     { // 'except'
         if (p->error_indicator) {
             p->level--;
@@ -41942,9 +39344,9 @@ _tmp_143_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'except'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_201;
+        goto first_set_done_157;
     }
-    first_set_alt_200:
+    first_set_alt_156:
     { // 'finally'
         if (p->error_indicator) {
             p->level--;
@@ -41965,9 +39367,9 @@ _tmp_143_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'finally'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_201;
+        goto first_set_done_157;
     }
-    first_set_done_201:
+    first_set_done_157:
     ;
     _res = NULL;
   done:
@@ -42106,14 +39508,14 @@ _tmp_146_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 4:
-                goto first_set_alt_202;
+                goto first_set_alt_158;
             case 11:
-                goto first_set_alt_203;
+                goto first_set_alt_159;
             default:
-                goto first_set_done_204;
+                goto first_set_done_160;
         }
     }
-    first_set_alt_202:
+    first_set_alt_158:
     { // NEWLINE
         if (p->error_indicator) {
             p->level--;
@@ -42134,9 +39536,9 @@ _tmp_146_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NEWLINE"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_204;
+        goto first_set_done_160;
     }
-    first_set_alt_203:
+    first_set_alt_159:
     { // ':'
         if (p->error_indicator) {
             p->level--;
@@ -42157,9 +39559,9 @@ _tmp_146_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "':'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_204;
+        goto first_set_done_160;
     }
-    first_set_done_204:
+    first_set_done_160:
     ;
     _res = NULL;
   done:
@@ -42262,48 +39664,6 @@ _tmp_149_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 16:
-            case 35:
-                _first_set_mask = 0x2ULL;
-                break;
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x3ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     if (p->call_invalid_rules) { // invalid_kvpair
         if (p->error_indicator) {
             p->level--;
@@ -42323,7 +39683,6 @@ _tmp_149_rule(Parser *p)
         D(fprintf(stderr, "%*c%s _tmp_149[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_kvpair"));
     }
-    if (_first_set_mask & 0x2ULL)
     if (p->call_invalid_rules) { // invalid_kvpair_unpacking
         if (p->error_indicator) {
             p->level--;
@@ -42371,14 +39730,14 @@ _tmp_150_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 26:
-                goto first_set_alt_205;
+                goto first_set_alt_161;
             case 12:
-                goto first_set_alt_206;
+                goto first_set_alt_162;
             default:
-                goto first_set_done_207;
+                goto first_set_done_163;
         }
     }
-    first_set_alt_205:
+    first_set_alt_161:
     { // '}'
         if (p->error_indicator) {
             p->level--;
@@ -42399,9 +39758,9 @@ _tmp_150_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'}'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_207;
+        goto first_set_done_163;
     }
-    first_set_alt_206:
+    first_set_alt_162:
     { // ','
         if (p->error_indicator) {
             p->level--;
@@ -42422,9 +39781,9 @@ _tmp_150_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "','"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_207;
+        goto first_set_done_163;
     }
-    first_set_done_207:
+    first_set_done_163:
     ;
     _res = NULL;
   done:
@@ -42454,18 +39813,18 @@ _tmp_151_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 22:
-                goto first_set_alt_208;
+                goto first_set_alt_164;
             case 54:
-                goto first_set_alt_209;
+                goto first_set_alt_165;
             case 11:
-                goto first_set_alt_210;
+                goto first_set_alt_166;
             case 26:
-                goto first_set_alt_211;
+                goto first_set_alt_167;
             default:
-                goto first_set_done_212;
+                goto first_set_done_168;
         }
     }
-    first_set_alt_208:
+    first_set_alt_164:
     { // '='
         if (p->error_indicator) {
             p->level--;
@@ -42486,9 +39845,9 @@ _tmp_151_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'='"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_212;
+        goto first_set_done_168;
     }
-    first_set_alt_209:
+    first_set_alt_165:
     { // '!'
         if (p->error_indicator) {
             p->level--;
@@ -42509,9 +39868,9 @@ _tmp_151_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'!'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_212;
+        goto first_set_done_168;
     }
-    first_set_alt_210:
+    first_set_alt_166:
     { // ':'
         if (p->error_indicator) {
             p->level--;
@@ -42532,9 +39891,9 @@ _tmp_151_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "':'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_212;
+        goto first_set_done_168;
     }
-    first_set_alt_211:
+    first_set_alt_167:
     { // '}'
         if (p->error_indicator) {
             p->level--;
@@ -42555,9 +39914,9 @@ _tmp_151_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'}'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_212;
+        goto first_set_done_168;
     }
-    first_set_done_212:
+    first_set_done_168:
     ;
     _res = NULL;
   done:
@@ -42587,16 +39946,16 @@ _tmp_152_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 54:
-                goto first_set_alt_213;
+                goto first_set_alt_169;
             case 11:
-                goto first_set_alt_214;
+                goto first_set_alt_170;
             case 26:
-                goto first_set_alt_215;
+                goto first_set_alt_171;
             default:
-                goto first_set_done_216;
+                goto first_set_done_172;
         }
     }
-    first_set_alt_213:
+    first_set_alt_169:
     { // '!'
         if (p->error_indicator) {
             p->level--;
@@ -42617,9 +39976,9 @@ _tmp_152_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'!'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_216;
+        goto first_set_done_172;
     }
-    first_set_alt_214:
+    first_set_alt_170:
     { // ':'
         if (p->error_indicator) {
             p->level--;
@@ -42640,9 +39999,9 @@ _tmp_152_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "':'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_216;
+        goto first_set_done_172;
     }
-    first_set_alt_215:
+    first_set_alt_171:
     { // '}'
         if (p->error_indicator) {
             p->level--;
@@ -42663,9 +40022,9 @@ _tmp_152_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'}'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_216;
+        goto first_set_done_172;
     }
-    first_set_done_216:
+    first_set_done_172:
     ;
     _res = NULL;
   done:
@@ -42736,14 +40095,14 @@ _tmp_154_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 11:
-                goto first_set_alt_217;
+                goto first_set_alt_173;
             case 26:
-                goto first_set_alt_218;
+                goto first_set_alt_174;
             default:
-                goto first_set_done_219;
+                goto first_set_done_175;
         }
     }
-    first_set_alt_217:
+    first_set_alt_173:
     { // ':'
         if (p->error_indicator) {
             p->level--;
@@ -42764,9 +40123,9 @@ _tmp_154_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "':'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_219;
+        goto first_set_done_175;
     }
-    first_set_alt_218:
+    first_set_alt_174:
     { // '}'
         if (p->error_indicator) {
             p->level--;
@@ -42787,9 +40146,9 @@ _tmp_154_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'}'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_219;
+        goto first_set_done_175;
     }
-    first_set_done_219:
+    first_set_done_175:
     ;
     _res = NULL;
   done:
@@ -42819,14 +40178,14 @@ _tmp_155_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 59:
-                goto first_set_alt_220;
+                goto first_set_alt_176;
             case 3:
-                goto first_set_alt_221;
+                goto first_set_alt_177;
             default:
-                goto first_set_done_222;
+                goto first_set_done_178;
         }
     }
-    first_set_alt_220:
+    first_set_alt_176:
     { // fstring
         if (p->error_indicator) {
             p->level--;
@@ -42847,9 +40206,9 @@ _tmp_155_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "fstring"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_222;
+        goto first_set_done_178;
     }
-    first_set_alt_221:
+    first_set_alt_177:
     { // string
         if (p->error_indicator) {
             p->level--;
@@ -42870,9 +40229,9 @@ _tmp_155_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "string"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_222;
+        goto first_set_done_178;
     }
-    first_set_done_222:
+    first_set_done_178:
     ;
     _res = NULL;
   done:
@@ -42902,24 +40261,24 @@ _tmp_156_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 14:
-                goto first_set_alt_223;
+                goto first_set_alt_179;
             case 15:
-                goto first_set_alt_224;
+                goto first_set_alt_180;
             case 16:
-                goto first_set_alt_225;
+                goto first_set_alt_181;
             case 17:
-                goto first_set_alt_226;
+                goto first_set_alt_182;
             case 24:
-                goto first_set_alt_227;
+                goto first_set_alt_183;
             case 47:
-                goto first_set_alt_228;
+                goto first_set_alt_184;
             case 49:
-                goto first_set_alt_229;
+                goto first_set_alt_185;
             default:
-                goto first_set_done_230;
+                goto first_set_done_186;
         }
     }
-    first_set_alt_223:
+    first_set_alt_179:
     { // '+'
         if (p->error_indicator) {
             p->level--;
@@ -42940,9 +40299,9 @@ _tmp_156_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'+'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_230;
+        goto first_set_done_186;
     }
-    first_set_alt_224:
+    first_set_alt_180:
     { // '-'
         if (p->error_indicator) {
             p->level--;
@@ -42963,9 +40322,9 @@ _tmp_156_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'-'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_230;
+        goto first_set_done_186;
     }
-    first_set_alt_225:
+    first_set_alt_181:
     { // '*'
         if (p->error_indicator) {
             p->level--;
@@ -42986,9 +40345,9 @@ _tmp_156_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'*'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_230;
+        goto first_set_done_186;
     }
-    first_set_alt_226:
+    first_set_alt_182:
     { // '/'
         if (p->error_indicator) {
             p->level--;
@@ -43009,9 +40368,9 @@ _tmp_156_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'/'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_230;
+        goto first_set_done_186;
     }
-    first_set_alt_227:
+    first_set_alt_183:
     { // '%'
         if (p->error_indicator) {
             p->level--;
@@ -43032,9 +40391,9 @@ _tmp_156_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'%'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_230;
+        goto first_set_done_186;
     }
-    first_set_alt_228:
+    first_set_alt_184:
     { // '//'
         if (p->error_indicator) {
             p->level--;
@@ -43055,9 +40414,9 @@ _tmp_156_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'//'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_230;
+        goto first_set_done_186;
     }
-    first_set_alt_229:
+    first_set_alt_185:
     { // '@'
         if (p->error_indicator) {
             p->level--;
@@ -43078,9 +40437,9 @@ _tmp_156_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'@'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_230;
+        goto first_set_done_186;
     }
-    first_set_done_230:
+    first_set_done_186:
     ;
     _res = NULL;
   done:
@@ -43110,16 +40469,16 @@ _tmp_157_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 14:
-                goto first_set_alt_231;
+                goto first_set_alt_187;
             case 15:
-                goto first_set_alt_232;
+                goto first_set_alt_188;
             case 31:
-                goto first_set_alt_233;
+                goto first_set_alt_189;
             default:
-                goto first_set_done_234;
+                goto first_set_done_190;
         }
     }
-    first_set_alt_231:
+    first_set_alt_187:
     { // '+'
         if (p->error_indicator) {
             p->level--;
@@ -43140,9 +40499,9 @@ _tmp_157_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'+'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_234;
+        goto first_set_done_190;
     }
-    first_set_alt_232:
+    first_set_alt_188:
     { // '-'
         if (p->error_indicator) {
             p->level--;
@@ -43163,9 +40522,9 @@ _tmp_157_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'-'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_234;
+        goto first_set_done_190;
     }
-    first_set_alt_233:
+    first_set_alt_189:
     { // '~'
         if (p->error_indicator) {
             p->level--;
@@ -43186,9 +40545,9 @@ _tmp_157_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'~'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_234;
+        goto first_set_done_190;
     }
-    first_set_done_234:
+    first_set_done_190:
     ;
     _res = NULL;
   done:
@@ -43264,14 +40623,14 @@ _tmp_159_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 23:
-                goto first_set_alt_235;
+                goto first_set_alt_191;
             case 52:
-                goto first_set_alt_236;
+                goto first_set_alt_192;
             default:
-                goto first_set_done_237;
+                goto first_set_done_193;
         }
     }
-    first_set_alt_235:
+    first_set_alt_191:
     { // '.'
         if (p->error_indicator) {
             p->level--;
@@ -43292,9 +40651,9 @@ _tmp_159_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'.'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_237;
+        goto first_set_done_193;
     }
-    first_set_alt_236:
+    first_set_alt_192:
     { // '...'
         if (p->error_indicator) {
             p->level--;
@@ -43315,9 +40674,9 @@ _tmp_159_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'...'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_237;
+        goto first_set_done_193;
     }
-    first_set_done_237:
+    first_set_done_193:
     ;
     _res = NULL;
   done:
@@ -43525,44 +40884,6 @@ _tmp_164_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    if (!p->call_invalid_rules) {
-        switch (_current_token_type) {
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 11:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                goto first_set_alt_238;
-            case 16:
-                goto first_set_alt_239;
-            default:
-                goto first_set_done_240;
-        }
-    }
-    first_set_alt_238:
     { // slice
         if (p->error_indicator) {
             p->level--;
@@ -43582,10 +40903,6 @@ _tmp_164_rule(Parser *p)
         D(fprintf(stderr, "%*c%s _tmp_164[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "slice"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_240;
-    }
-    first_set_alt_239:
     { // starred_expression
         if (p->error_indicator) {
             p->level--;
@@ -43605,11 +40922,6 @@ _tmp_164_rule(Parser *p)
         D(fprintf(stderr, "%*c%s _tmp_164[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "starred_expression"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_240;
-    }
-    first_set_done_240:
-    ;
     _res = NULL;
   done:
     p->level--;
@@ -43675,43 +40987,6 @@ _tmp_166_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    if (!p->call_invalid_rules) {
-        switch (_current_token_type) {
-            case 16:
-                goto first_set_alt_241;
-            case 1:
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                goto first_set_alt_242;
-            default:
-                goto first_set_done_243;
-        }
-    }
-    first_set_alt_241:
     { // starred_expression
         if (p->error_indicator) {
             p->level--;
@@ -43731,10 +41006,6 @@ _tmp_166_rule(Parser *p)
         D(fprintf(stderr, "%*c%s _tmp_166[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "starred_expression"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_243;
-    }
-    first_set_alt_242:
     { // (assignment_expression | expression !':=') !'='
         if (p->error_indicator) {
             p->level--;
@@ -43756,11 +41027,6 @@ _tmp_166_rule(Parser *p)
         D(fprintf(stderr, "%*c%s _tmp_166[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(assignment_expression | expression !':=') !'='"));
     }
-    if (!p->call_invalid_rules) {
-        goto first_set_done_243;
-    }
-    first_set_done_243:
-    ;
     _res = NULL;
   done:
     p->level--;
@@ -43960,14 +41226,14 @@ _tmp_171_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 8:
-                goto first_set_alt_244;
+                goto first_set_alt_194;
             case 35:
-                goto first_set_alt_245;
+                goto first_set_alt_195;
             default:
-                goto first_set_done_246;
+                goto first_set_done_196;
         }
     }
-    first_set_alt_244:
+    first_set_alt_194:
     { // ')'
         if (p->error_indicator) {
             p->level--;
@@ -43988,9 +41254,9 @@ _tmp_171_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "')'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_246;
+        goto first_set_done_196;
     }
-    first_set_alt_245:
+    first_set_alt_195:
     { // '**'
         if (p->error_indicator) {
             p->level--;
@@ -44011,9 +41277,9 @@ _tmp_171_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'**'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_246;
+        goto first_set_done_196;
     }
-    first_set_done_246:
+    first_set_done_196:
     ;
     _res = NULL;
   done:
@@ -44043,14 +41309,14 @@ _tmp_172_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 11:
-                goto first_set_alt_247;
+                goto first_set_alt_197;
             case 35:
-                goto first_set_alt_248;
+                goto first_set_alt_198;
             default:
-                goto first_set_done_249;
+                goto first_set_done_199;
         }
     }
-    first_set_alt_247:
+    first_set_alt_197:
     { // ':'
         if (p->error_indicator) {
             p->level--;
@@ -44071,9 +41337,9 @@ _tmp_172_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "':'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_249;
+        goto first_set_done_199;
     }
-    first_set_alt_248:
+    first_set_alt_198:
     { // '**'
         if (p->error_indicator) {
             p->level--;
@@ -44094,9 +41360,9 @@ _tmp_172_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'**'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_249;
+        goto first_set_done_199;
     }
-    first_set_done_249:
+    first_set_done_199:
     ;
     _res = NULL;
   done:
@@ -44193,18 +41459,18 @@ _tmp_174_rule(Parser *p)
     if (!p->call_invalid_rules) {
         switch (_current_token_type) {
             case 12:
-                goto first_set_alt_250;
+                goto first_set_alt_200;
             case 8:
-                goto first_set_alt_251;
+                goto first_set_alt_201;
             case 13:
-                goto first_set_alt_252;
+                goto first_set_alt_202;
             case 4:
-                goto first_set_alt_253;
+                goto first_set_alt_203;
             default:
-                goto first_set_done_254;
+                goto first_set_done_204;
         }
     }
-    first_set_alt_250:
+    first_set_alt_200:
     { // ','
         if (p->error_indicator) {
             p->level--;
@@ -44225,9 +41491,9 @@ _tmp_174_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "','"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_254;
+        goto first_set_done_204;
     }
-    first_set_alt_251:
+    first_set_alt_201:
     { // ')'
         if (p->error_indicator) {
             p->level--;
@@ -44248,9 +41514,9 @@ _tmp_174_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "')'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_254;
+        goto first_set_done_204;
     }
-    first_set_alt_252:
+    first_set_alt_202:
     { // ';'
         if (p->error_indicator) {
             p->level--;
@@ -44271,9 +41537,9 @@ _tmp_174_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "';'"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_254;
+        goto first_set_done_204;
     }
-    first_set_alt_253:
+    first_set_alt_203:
     { // NEWLINE
         if (p->error_indicator) {
             p->level--;
@@ -44294,9 +41560,9 @@ _tmp_174_rule(Parser *p)
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NEWLINE"));
     }
     if (!p->call_invalid_rules) {
-        goto first_set_done_254;
+        goto first_set_done_204;
     }
-    first_set_done_254:
+    first_set_done_204:
     ;
     _res = NULL;
   done:
@@ -44401,46 +41667,6 @@ _tmp_177_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        p->level--;
-        return NULL;
-    }
-    int _current_token_type = p->tokens[_mark]->type;
-    unsigned long long _first_set_mask = ~0ULL;
-    if (!p->call_invalid_rules) {
-        _first_set_mask = 0;
-        switch (_current_token_type) {
-            case 2:
-            case 3:
-            case 7:
-            case 9:
-            case 14:
-            case 15:
-            case 25:
-            case 31:
-            case 52:
-            case 59:
-            case 62:
-            case 527:
-            case 528:
-            case 529:
-            case 598:
-            case 622:
-            case 627:
-            case 628:
-            case 629:
-            case 721:
-                _first_set_mask = 0x2ULL;
-                break;
-            case 1:
-                _first_set_mask = 0x3ULL;
-                break;
-            default:
-                break;
-        }
-    }
-    if (_first_set_mask & 0x1ULL)
     { // assignment_expression
         if (p->error_indicator) {
             p->level--;
@@ -44460,7 +41686,6 @@ _tmp_177_rule(Parser *p)
         D(fprintf(stderr, "%*c%s _tmp_177[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "assignment_expression"));
     }
-    if (_first_set_mask & 0x2ULL)
     { // expression !':='
         if (p->error_indicator) {
             p->level--;

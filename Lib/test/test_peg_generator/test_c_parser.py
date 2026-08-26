@@ -174,6 +174,100 @@ class TestCParser(unittest.TestCase):
         )
         """)
 
+    def test_first_set_compound_negative_lookahead(self) -> None:
+        self.run_test("""
+        start: choice NEWLINE ENDMARKER
+        choice: !('a' 'b') ('a' | 'c') | 'd'
+        """, """
+        self.check_input_strings_for_grammar(
+            valid_cases=['a', 'c', 'd'], invalid_cases=['a b'],
+        )
+        """)
+
+    def test_first_set_mutual_recursion(self) -> None:
+        self.run_test("""
+        start: a NEWLINE ENDMARKER
+        a: b 'x' | 'a'
+        b: a 'y' | 'b'
+        """, """
+        self.check_input_strings_for_grammar(
+            valid_cases=['a', 'b x', 'a y x', 'b x y x'],
+            invalid_cases=['a y', 'b'],
+        )
+        """)
+
+    def test_first_set_preserves_leading_cut(self) -> None:
+        self.run_test("""
+        start: choice NEWLINE ENDMARKER
+        choice: ~ NAME | NUMBER
+        """, """
+        self.check_input_strings_for_grammar(
+            valid_cases=['name'], invalid_cases=['42'],
+        )
+        """)
+
+    def test_first_set_preserves_forced_parse(self) -> None:
+        self.run_test("""
+        start: choice NEWLINE ENDMARKER
+        choice: &&'+' | NUMBER
+        """, """
+        self.check_input_strings_for_grammar(
+            valid_cases=['+'], invalid_cases=['42'],
+        )
+        """)
+
+    def test_first_set_nullable_prefix_action(self) -> None:
+        self.run_test("""
+        start: choice NEWLINE ENDMARKER
+        choice: guard NAME | NUMBER
+        guard: &NUMBER { RAISE_SYNTAX_ERROR("guard reached") }
+        """, """
+        with self.assertRaisesRegex(SyntaxError, 'guard reached'):
+            parse.parse_string('42', mode=0)
+        """)
+
+    def check_first_set_lookahead_forced_parse(self, predicate: str) -> None:
+        self.run_test(f"""
+        start: choice NEWLINE ENDMARKER
+        choice: {predicate}(NAME &&'+') STRING | NAME
+        """, """
+        with self.assertRaises(SyntaxError):
+            parse.parse_string('name', mode=0)
+        """)
+
+    def test_first_set_positive_lookahead_forced_parse(self) -> None:
+        self.check_first_set_lookahead_forced_parse('&')
+
+    def test_first_set_negative_lookahead_forced_parse(self) -> None:
+        self.check_first_set_lookahead_forced_parse('!')
+
+    def check_first_set_lookahead_action(self, predicate: str) -> None:
+        self.run_test(f"""
+        start: choice NEWLINE ENDMARKER
+        choice: {predicate}guard NAME | NUMBER
+        guard: NUMBER {{ RAISE_SYNTAX_ERROR("guard reached") }}
+        """, """
+        with self.assertRaisesRegex(SyntaxError, 'guard reached'):
+            parse.parse_string('42', mode=0)
+        """)
+
+    def test_first_set_positive_lookahead_action(self) -> None:
+        self.check_first_set_lookahead_action('&')
+
+    def test_first_set_negative_lookahead_action(self) -> None:
+        self.check_first_set_lookahead_action('!')
+
+    def test_first_set_named_soft_keyword(self) -> None:
+        self.run_test('''
+        start: choice NEWLINE ENDMARKER
+        choice: SOFT_KEYWORD ':' | NUMBER
+        spelling: "soft"
+        ''', """
+        self.check_input_strings_for_grammar(
+            valid_cases=['soft :', '42'], invalid_cases=['other :'],
+        )
+        """)
+
     def test_c_parser(self) -> None:
         grammar_source = """
         start[mod_ty]: a[asdl_stmt_seq*]=stmt* $ { _PyAST_Module(a, NULL, p->arena) }
