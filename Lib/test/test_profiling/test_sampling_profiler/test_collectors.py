@@ -1165,12 +1165,14 @@ class TestSampleProfilerComponents(unittest.TestCase):
         collector.set_replay_stats({
             "duration_sec": 1.25,
             "sample_rate": 4.0,
+            "error_rate": 2.5,
+            "missed_samples": 1.5,
         })
 
         self.assertEqual(collector.stats["duration_sec"], 1.25)
         self.assertEqual(collector.stats["sample_rate"], 4.0)
-        self.assertIsNone(collector.stats["error_rate"])
-        self.assertIsNone(collector.stats["missed_samples"])
+        self.assertEqual(collector.stats["error_rate"], 2.5)
+        self.assertEqual(collector.stats["missed_samples"], 1.5)
 
     def test_flamegraph_collector_leaves_legacy_replay_stats_unavailable(self):
         collector = FlamegraphCollector(1000)

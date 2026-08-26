@@ -358,8 +358,9 @@ maximum varint length.
 
 ## Profile Statistics
 
-New files can store measured duration and sampling rate in an optional
-32-byte extension immediately before the footer. Older readers ignore these
+New files can store measured duration, sampling rate, error rate, and missed
+sample percentage in an optional 56-byte extension immediately before the
+footer. Older readers ignore these
 bytes after parsing the declared number of frame-table entries, and newer
 readers treat a missing extension as unavailable statistics.
 
@@ -368,9 +369,13 @@ readers treat a missing extension as unavailable statistics.
 +--------+------+---------+----------------------------------------+
 |    0   |  8   | double  | Measured duration (seconds)            |
 |    8   |  8   | double  | Measured sample rate (samples/second)  |
-|   16   |  8   | bytes   | Signature ("TACHSTAT")                 |
-|   24   |  4   | uint32  | Extension version (1)                  |
-|   28   |  4   | uint32  | Extension size (32)                    |
+|   16   |  8   | double  | Failed sample percentage               |
+|   24   |  8   | double  | Missed sample percentage               |
+|   32   |  4   | uint32  | Optional field presence flags          |
+|   36   |  4   | uint32  | Reserved                               |
+|   40   |  8   | bytes   | Signature ("TACHSTAT")                 |
+|   48   |  4   | uint32  | Extension version (1)                  |
+|   52   |  4   | uint32  | Extension size (56)                    |
 +--------+------+---------+----------------------------------------+
 ```
 
@@ -379,6 +384,9 @@ the extension from its fixed position relative to the footer while allowing
 future versions to add fields before that trailer. Multi-byte values use the
 same native byte order as the rest of the file and are byte-swapped by
 cross-endian readers.
+
+Readers also accept the original 32-byte extension, which only contains the
+duration and sampling rate.
 
 ## Footer
 

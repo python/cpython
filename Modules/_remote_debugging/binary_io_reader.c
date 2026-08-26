@@ -130,24 +130,29 @@ static inline int
 reader_parse_profile_stats(BinaryReader *reader, const uint8_t *data,
                            size_t file_size)
 {
-    size_t minimum_size = FILE_FOOTER_SIZE + PROFILE_STATS_SIZE;
+    size_t minimum_size = FILE_FOOTER_SIZE + PROFILE_STATS_V1_SIZE;
     if (file_size < minimum_size) {
         return 0;
     }
 
-    const uint8_t *trailer = data + file_size - minimum_size;
-    if (memcmp(trailer + PST_OFF_MAGIC,
+    const uint8_t *stats_end = data + file_size - FILE_FOOTER_SIZE;
+    const uint8_t *stats_tail = stats_end - PROFILE_STATS_MAGIC_SIZE -
+                                PST_SIZE_VERSION - PST_SIZE_SIZE;
+    if (memcmp(stats_tail,
                PROFILE_STATS_MAGIC, PROFILE_STATS_MAGIC_SIZE) != 0) {
         return 0;
     }
 
     uint32_t version, size;
-    memcpy(&version, trailer + PST_OFF_VERSION, PST_SIZE_VERSION);
-    memcpy(&size, trailer + PST_OFF_SIZE, PST_SIZE_SIZE);
+    memcpy(&version, stats_tail + PROFILE_STATS_MAGIC_SIZE,
+           PST_SIZE_VERSION);
+    memcpy(&size, stats_tail + PROFILE_STATS_MAGIC_SIZE + PST_SIZE_VERSION,
+           PST_SIZE_SIZE);
     version = SWAP32_IF(reader->needs_swap, version);
     size = SWAP32_IF(reader->needs_swap, size);
 
-    if (size < PROFILE_STATS_SIZE || size > file_size - FILE_FOOTER_SIZE) {
+    if (size < PROFILE_STATS_V1_SIZE ||
+        size > file_size - FILE_FOOTER_SIZE) {
         PyErr_SetString(PyExc_ValueError,
                         "Invalid profiling statistics size");
         return -1;
@@ -156,7 +161,7 @@ reader_parse_profile_stats(BinaryReader *reader, const uint8_t *data,
         return 0;
     }
 
-    trailer = data + file_size - FILE_FOOTER_SIZE - size;
+    const uint8_t *trailer = stats_end - size;
     uint64_t duration_bits, sample_rate_bits;
     memcpy(&duration_bits, trailer + PST_OFF_DURATION, PST_SIZE_DURATION);
     memcpy(&sample_rate_bits, trailer + PST_OFF_SAMPLE_RATE,
@@ -173,6 +178,33 @@ reader_parse_profile_stats(BinaryReader *reader, const uint8_t *data,
         return -1;
     }
     reader->has_profile_stats = 1;
+
+    if (size >= PROFILE_STATS_SIZE) {
+        uint64_t error_rate_bits, missed_samples_bits;
+        uint32_t present;
+        memcpy(&error_rate_bits, trailer + PST_OFF_ERROR_RATE,
+               PST_SIZE_ERROR_RATE);
+        memcpy(&missed_samples_bits, trailer + PST_OFF_MISSED_SAMPLES,
+               PST_SIZE_MISSED_SAMPLES);
+        memcpy(&present, trailer + PST_OFF_PRESENT, PST_SIZE_PRESENT);
+        error_rate_bits = SWAP64_IF(reader->needs_swap, error_rate_bits);
+        missed_samples_bits = SWAP64_IF(reader->needs_swap,
+                                       missed_samples_bits);
+        present = SWAP32_IF(reader->needs_swap, present);
+        memcpy(&reader->error_rate, &error_rate_bits,
+               sizeof(error_rate_bits));
+        memcpy(&reader->missed_samples, &missed_samples_bits,
+               sizeof(missed_samples_bits));
+        if (((present & PROFILE_STATS_ERROR_RATE) &&
+             (!isfinite(reader->error_rate) || reader->error_rate < 0.0)) ||
+            ((present & PROFILE_STATS_MISSED) &&
+             !isfinite(reader->missed_samples))) {
+            PyErr_SetString(PyExc_ValueError,
+                            "Invalid profiling statistics values");
+            return -1;
+        }
+        reader->profile_stats_present = present;
+    }
     return 0;
 }
 
@@ -1337,8 +1369,27 @@ binary_reader_get_info(BinaryReader *reader)
         Py_DECREF(duration);
         return NULL;
     }
+    PyObject *error_rate =
+        reader->profile_stats_present & PROFILE_STATS_ERROR_RATE
+        ? PyFloat_FromDouble(reader->error_rate) : Py_NewRef(Py_None);
+    if (error_rate == NULL) {
+        Py_DECREF(py_version);
+        Py_DECREF(duration);
+        Py_DECREF(sample_rate);
+        return NULL;
+    }
+    PyObject *missed_samples =
+        reader->profile_stats_present & PROFILE_STATS_MISSED
+        ? PyFloat_FromDouble(reader->missed_samples) : Py_NewRef(Py_None);
+    if (missed_samples == NULL) {
+        Py_DECREF(py_version);
+        Py_DECREF(duration);
+        Py_DECREF(sample_rate);
+        Py_DECREF(error_rate);
+        return NULL;
+    }
     return Py_BuildValue(
-        "{s:I, s:N, s:K, s:K, s:K, s:I, s:I, s:I, s:i, s:N, s:N}",
+        "{s:I, s:N, s:K, s:K, s:K, s:I, s:I, s:I, s:i, s:N, s:N, s:N, s:N}",
         "version", BINARY_FORMAT_VERSION,
         "python_version", py_version,
         "start_time_us", reader->start_time_us,
@@ -1349,7 +1400,9 @@ binary_reader_get_info(BinaryReader *reader)
         "frame_count", reader->frames_count,
         "compression_type", reader->compression_type,
         "duration_sec", duration,
-        "sample_rate", sample_rate
+        "sample_rate", sample_rate,
+        "error_rate", error_rate,
+        "missed_samples", missed_samples
     );
 }
 

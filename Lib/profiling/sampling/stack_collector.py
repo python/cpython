@@ -157,8 +157,8 @@ class FlamegraphCollector(StackTraceCollector):
             self.sample_interval_usec,
             duration_sec,
             sample_rate,
-            error_rate=None,
-            missed_samples=None,
+            error_rate=info.get("error_rate"),
+            missed_samples=info.get("missed_samples"),
             mode=self.stats.get("mode"),
         )
 

@@ -1155,6 +1155,12 @@ binary_writer_finalize(BinaryWriter *writer)
                &writer->duration_sec, PST_SIZE_DURATION);
         memcpy(profile_stats + PST_OFF_SAMPLE_RATE,
                &writer->sample_rate, PST_SIZE_SAMPLE_RATE);
+        memcpy(profile_stats + PST_OFF_ERROR_RATE,
+               &writer->error_rate, PST_SIZE_ERROR_RATE);
+        memcpy(profile_stats + PST_OFF_MISSED_SAMPLES,
+               &writer->missed_samples, PST_SIZE_MISSED_SAMPLES);
+        memcpy(profile_stats + PST_OFF_PRESENT,
+               &writer->profile_stats_present, PST_SIZE_PRESENT);
         memcpy(profile_stats + PST_OFF_MAGIC,
                PROFILE_STATS_MAGIC, PROFILE_STATS_MAGIC_SIZE);
         memcpy(profile_stats + PST_OFF_VERSION, &version, PST_SIZE_VERSION);
@@ -1228,7 +1234,8 @@ binary_writer_finalize(BinaryWriter *writer)
 
 int
 binary_writer_set_stats(BinaryWriter *writer, double duration_sec,
-                        double sample_rate)
+                        double sample_rate, double error_rate,
+                        double missed_samples, uint32_t present)
 {
     if (!isfinite(duration_sec) || duration_sec < 0.0) {
         PyErr_SetString(PyExc_ValueError,
@@ -1240,8 +1247,22 @@ binary_writer_set_stats(BinaryWriter *writer, double duration_sec,
                         "sample rate must be a finite non-negative value");
         return -1;
     }
+    if ((present & PROFILE_STATS_ERROR_RATE) &&
+        (!isfinite(error_rate) || error_rate < 0.0)) {
+        PyErr_SetString(PyExc_ValueError,
+                        "error rate must be a finite non-negative value");
+        return -1;
+    }
+    if ((present & PROFILE_STATS_MISSED) && !isfinite(missed_samples)) {
+        PyErr_SetString(PyExc_ValueError,
+                        "missed samples must be a finite value");
+        return -1;
+    }
     writer->duration_sec = duration_sec;
     writer->sample_rate = sample_rate;
+    writer->error_rate = error_rate;
+    writer->missed_samples = missed_samples;
+    writer->profile_stats_present = present;
     writer->has_profile_stats = 1;
     return 0;
 }
