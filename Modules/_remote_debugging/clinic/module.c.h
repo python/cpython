@@ -717,7 +717,7 @@ exit:
 
 PyDoc_STRVAR(_remote_debugging_BinaryWriter___init____doc__,
 "BinaryWriter(filename, sample_interval_us, start_time_us, *,\n"
-"             compression=0)\n"
+"             compression=0, mode=-1, capture_features=-1)\n"
 "--\n"
 "\n"
 "High-performance binary writer for profiling data.\n"
@@ -728,6 +728,9 @@ PyDoc_STRVAR(_remote_debugging_BinaryWriter___init____doc__,
 "    start_time_us: Start timestamp in microseconds (from\n"
 "        time.monotonic() * 1e6)\n"
 "    compression: 0=none, 1=zstd (default: 0)\n"
+"    mode: Profiling mode, or -1 if unknown (default: -1)\n"
+"    capture_features: Capture feature bit mask, or -1 if unknown\n"
+"        (default: -1)\n"
 "\n"
 "Use as a context manager or call finalize() when done.");
 
@@ -736,7 +739,8 @@ _remote_debugging_BinaryWriter___init___impl(BinaryWriterObject *self,
                                              PyObject *filename,
                                              unsigned long long sample_interval_us,
                                              unsigned long long start_time_us,
-                                             int compression);
+                                             int compression, int mode,
+                                             int capture_features);
 
 static int
 _remote_debugging_BinaryWriter___init__(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -744,7 +748,7 @@ _remote_debugging_BinaryWriter___init__(PyObject *self, PyObject *args, PyObject
     int return_value = -1;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 4
+    #define NUM_KEYWORDS 6
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -753,7 +757,7 @@ _remote_debugging_BinaryWriter___init__(PyObject *self, PyObject *args, PyObject
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(filename), &_Py_ID(sample_interval_us), &_Py_ID(start_time_us), &_Py_ID(compression), },
+        .ob_item = { &_Py_ID(filename), &_Py_ID(sample_interval_us), &_Py_ID(start_time_us), &_Py_ID(compression), &_Py_ID(mode), &_Py_ID(capture_features), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -762,14 +766,14 @@ _remote_debugging_BinaryWriter___init__(PyObject *self, PyObject *args, PyObject
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"filename", "sample_interval_us", "start_time_us", "compression", NULL};
+    static const char * const _keywords[] = {"filename", "sample_interval_us", "start_time_us", "compression", "mode", "capture_features", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "BinaryWriter",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
+    PyObject *argsbuf[6];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 3;
@@ -777,6 +781,8 @@ _remote_debugging_BinaryWriter___init__(PyObject *self, PyObject *args, PyObject
     unsigned long long sample_interval_us;
     unsigned long long start_time_us;
     int compression = 0;
+    int mode = -1;
+    int capture_features = -1;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
             /*minpos*/ 3, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -793,12 +799,30 @@ _remote_debugging_BinaryWriter___init__(PyObject *self, PyObject *args, PyObject
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    compression = PyLong_AsInt(fastargs[3]);
-    if (compression == -1 && PyErr_Occurred()) {
+    if (fastargs[3]) {
+        compression = PyLong_AsInt(fastargs[3]);
+        if (compression == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (fastargs[4]) {
+        mode = PyLong_AsInt(fastargs[4]);
+        if (mode == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    capture_features = PyLong_AsInt(fastargs[5]);
+    if (capture_features == -1 && PyErr_Occurred()) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = _remote_debugging_BinaryWriter___init___impl((BinaryWriterObject *)self, filename, sample_interval_us, start_time_us, compression);
+    return_value = _remote_debugging_BinaryWriter___init___impl((BinaryWriterObject *)self, filename, sample_interval_us, start_time_us, compression, mode, capture_features);
 
 exit:
     return return_value;
@@ -1588,4 +1612,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=22511c10d9224b28 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b317d65ac48d5a02 input=a9049054013a1b77]*/

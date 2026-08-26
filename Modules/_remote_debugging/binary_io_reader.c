@@ -84,7 +84,7 @@ reader_parse_header(BinaryReader *reader, const uint8_t *data, size_t file_size)
     /* Read header fields with byte-swapping if needed */
     uint64_t start_time_us, sample_interval_us, string_table_offset, frame_table_offset;
     uint64_t sample_count;
-    uint32_t thread_count, compression_type;
+    uint32_t thread_count, compression_type, profiling_config;
 
     memcpy(&start_time_us, &data[HDR_OFF_START_TIME], HDR_SIZE_START_TIME);
     memcpy(&sample_interval_us, &data[HDR_OFF_INTERVAL], HDR_SIZE_INTERVAL);
@@ -93,6 +93,7 @@ reader_parse_header(BinaryReader *reader, const uint8_t *data, size_t file_size)
     memcpy(&string_table_offset, &data[HDR_OFF_STR_TABLE], HDR_SIZE_STR_TABLE);
     memcpy(&frame_table_offset, &data[HDR_OFF_FRAME_TABLE], HDR_SIZE_FRAME_TABLE);
     memcpy(&compression_type, &data[HDR_OFF_COMPRESSION], HDR_SIZE_COMPRESSION);
+    memcpy(&profiling_config, &data[HDR_OFF_CONFIG], HDR_SIZE_CONFIG);
 
     reader->start_time_us = SWAP64_IF(reader->needs_swap, start_time_us);
     reader->sample_interval_us = SWAP64_IF(reader->needs_swap, sample_interval_us);
@@ -101,6 +102,20 @@ reader_parse_header(BinaryReader *reader, const uint8_t *data, size_t file_size)
     reader->string_table_offset = SWAP64_IF(reader->needs_swap, string_table_offset);
     reader->frame_table_offset = SWAP64_IF(reader->needs_swap, frame_table_offset);
     reader->compression_type = (int)SWAP32_IF(reader->needs_swap, compression_type);
+    profiling_config = SWAP32_IF(reader->needs_swap, profiling_config);
+    uint32_t profiling_mode =
+        profiling_config & PROFILING_CONFIG_MODE_MASK;
+    if (profiling_mode > PROFILING_MODE_EXCEPTION + 1) {
+        PyErr_Format(PyExc_ValueError,
+                     "Invalid profiling mode in header: %u", profiling_mode);
+        return -1;
+    }
+    reader->profiling_mode = (int)profiling_mode - 1;
+    reader->capture_features =
+        profiling_config & PROFILING_CONFIG_FEATURES_KNOWN
+        ? (int)((profiling_config >> PROFILING_CONFIG_FEATURES_SHIFT) &
+                PROFILING_FEATURE_MASK)
+        : -1;
 
     return 0;
 }
@@ -1270,8 +1285,23 @@ binary_reader_get_info(BinaryReader *reader)
     if (py_version == NULL) {
         return NULL;
     }
+    PyObject *profiling_mode = reader->profiling_mode < 0
+        ? Py_NewRef(Py_None)
+        : PyLong_FromLong(reader->profiling_mode);
+    if (profiling_mode == NULL) {
+        Py_DECREF(py_version);
+        return NULL;
+    }
+    PyObject *capture_features = reader->capture_features < 0
+        ? Py_NewRef(Py_None)
+        : PyLong_FromLong(reader->capture_features);
+    if (capture_features == NULL) {
+        Py_DECREF(py_version);
+        Py_DECREF(profiling_mode);
+        return NULL;
+    }
     return Py_BuildValue(
-        "{s:I, s:N, s:K, s:K, s:K, s:I, s:I, s:I, s:i}",
+        "{s:I, s:N, s:K, s:K, s:K, s:I, s:I, s:I, s:i, s:N, s:N}",
         "version", BINARY_FORMAT_VERSION,
         "python_version", py_version,
         "start_time_us", reader->start_time_us,
@@ -1280,7 +1310,9 @@ binary_reader_get_info(BinaryReader *reader)
         "thread_count", reader->thread_count,
         "string_count", reader->strings_count,
         "frame_count", reader->frames_count,
-        "compression_type", reader->compression_type
+        "compression_type", reader->compression_type,
+        "mode", profiling_mode,
+        "capture_features", capture_features
     );
 }
 

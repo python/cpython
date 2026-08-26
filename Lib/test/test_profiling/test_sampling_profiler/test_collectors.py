@@ -1614,6 +1614,50 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertAlmostEqual(cold_node["diff"], -1.0)
         self.assertAlmostEqual(cold_node["diff_pct"], -50.0)
 
+    def test_diff_flamegraph_rejects_mismatched_profiling_modes(self):
+        from profiling.sampling.binary_collector import BinaryCollector
+        from profiling.sampling.stack_collector import DiffFlamegraphCollector
+
+        bin_file = tempfile.NamedTemporaryFile(suffix=".bin", delete=False)
+        self.addCleanup(close_and_unlink, bin_file)
+        writer = BinaryCollector(
+            bin_file.name,
+            sample_interval_usec=1000,
+            compression="none",
+            mode=PROFILING_MODE_CPU,
+        )
+        writer.export(None)
+
+        diff = DiffFlamegraphCollector(
+            1000,
+            baseline_binary_path=bin_file.name,
+            mode=PROFILING_MODE_WALL,
+        )
+        with self.assertRaisesRegex(ValueError, "profiling mode"):
+            diff._convert_to_flamegraph_format()
+
+    def test_diff_flamegraph_rejects_mismatched_capture_config(self):
+        from profiling.sampling.binary_collector import BinaryCollector
+        from profiling.sampling.stack_collector import DiffFlamegraphCollector
+
+        bin_file = tempfile.NamedTemporaryFile(suffix=".bin", delete=False)
+        self.addCleanup(close_and_unlink, bin_file)
+        writer = BinaryCollector(
+            bin_file.name,
+            sample_interval_usec=1000,
+            compression="none",
+            capture_config={"all_threads": True},
+        )
+        writer.export(None)
+
+        diff = DiffFlamegraphCollector(
+            1000,
+            baseline_binary_path=bin_file.name,
+            capture_config={"all_threads": False},
+        )
+        with self.assertRaisesRegex(ValueError, "all_threads"):
+            diff._convert_to_flamegraph_format()
+
     def test_diff_flamegraph_scale_factor(self):
         """Scale factor adjusts when sample counts differ."""
         baseline_frames = [

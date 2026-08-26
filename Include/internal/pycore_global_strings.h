@@ -366,6 +366,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(canonical)
         STRUCT_FOR_ID(capath)
         STRUCT_FOR_ID(capitals)
+        STRUCT_FOR_ID(capture_features)
         STRUCT_FOR_ID(category)
         STRUCT_FOR_ID(cb_type)
         STRUCT_FOR_ID(certfile)
