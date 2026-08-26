@@ -1180,6 +1180,7 @@ r_object(RFILE *p)
     int type, code = r_byte(p);
     int flag, is_interned = 0;
     PyObject *retval = NULL;
+    bool track_tuple = false;
 
     if (code == EOF) {
         if (PyErr_ExceptionMatches(PyExc_EOFError)) {
@@ -1422,6 +1423,11 @@ r_object(RFILE *p)
         if (v == NULL)
             break;
 
+        // empty tuples are untracked, and we can check if n > 0,
+        // but using PyObject_GC_UnTrack is clearer
+        PyObject_GC_UnTrack(v);
+        track_tuple = false;
+
         for (i = 0; i < n; i++) {
             v2 = r_object(p);
             if ( v2 == NULL ) {
@@ -1429,11 +1435,17 @@ r_object(RFILE *p)
                     PyErr_SetString(PyExc_TypeError,
                         "NULL object in marshal data for tuple");
                 Py_SETREF(v, NULL);
+                track_tuple = false;
                 break;
             }
             PyTuple_SET_ITEM(v, i, v2);
+            if (!track_tuple && PyObject_GC_IsTracked(v2)) {
+                track_tuple = true;
+            }
         }
-        _PyTuple_MaybeUntrack(v);
+        if (track_tuple) {
+            _PyObject_GC_TRACK(v);
+        }
         retval = v;
         break;
 
