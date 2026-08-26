@@ -1433,6 +1433,7 @@ r_object(RFILE *p)
             }
             PyTuple_SET_ITEM(v, i, v2);
         }
+        _PyTuple_MaybeUntrack(v);
         retval = v;
         break;
 
