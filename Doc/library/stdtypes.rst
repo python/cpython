@@ -1013,7 +1013,7 @@ For example::
    ...        yield 'ace of hearts'
 
    >>> list(CardDeck())
-   ... ['three of clubs', 'ace of hearts']
+   ['three of clubs', 'ace of hearts']
 
 
 .. index:: pair: object; generator
@@ -1129,7 +1129,7 @@ raises a :exc:`ValueError` exception.
 .. index:: pair: object; asynchronous-generator
 .. _asynchronous-generator-methods:
 
-Asynchronous generator-iterators
+Asynchronous generator iterators
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This subsection describes the methods of an asynchronous generator iterator,
@@ -1154,7 +1154,7 @@ which are used to control the execution of an asynchronous generator function.
    awaitable instead raises a :exc:`StopAsyncIteration` exception,
    signalling that the asynchronous iteration has completed.
 
-   This method is normally called implicitly by a :keyword:`async for` loop,
+   This method is normally called implicitly by an :keyword:`async for` loop,
    or by the built-in :func:`anext` function.
 
 
@@ -1174,7 +1174,7 @@ the underlying generator function:
    returns the next yielded value as the value of the raised
    :exc:`StopIteration`, or raises :exc:`StopAsyncIteration`.
 
-   :meth:`asend` is called to start the asynchronous
+   When :meth:`asend` is called to start the asynchronous
    generator, it must be called with :const:`None` as the argument,
    because there is no yield expression that could receive the value.
 
@@ -1205,7 +1205,7 @@ the underlying generator function:
    For backwards compatibility, however, the second signature is
    supported.
    An exception instance is created from three arguments in the same way as in
-   :meth:`generator.throw`
+   :meth:`generator.throw`.
 
    .. versionchanged:: 3.12
 
