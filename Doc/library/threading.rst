@@ -220,11 +220,14 @@ This module defines the following functions:
    .. versionadded:: 3.4
 
 
-.. function:: run(func, /, *args, **kwargs)
-              run_daemon(func, /, *args, **kwargs)
+.. function:: run([config, ]func, /, *args, **kwargs)
+              run_daemon([config, ]func, /, *args, **kwargs)
 
    Run ``func(*args, **kwargs)`` in a thread and return the corresponding
    :class:`Thread` object.  The thread is started automatically.
+
+   *config* is an optional dict which can be used to pass additional
+   arguments to the :class:`Thread` constructor.
 
    With :func:`run_daemon`, the thread is set as daemonic.
 
@@ -240,9 +243,12 @@ This module defines the following functions:
 
       t1 = threading.run(fetch, 'https://example.com/')
       t2 = threading.run(fetch, 'https://example.com/post', data=payload)
-
       t1.join()
       t2.join()
+
+      # with configuration
+      t = threading.run({'name': 'http-worker'}, fetch, 'https://example.com/')
+      t.join()
 
    .. versionadded:: next
 

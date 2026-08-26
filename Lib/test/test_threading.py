@@ -1529,10 +1529,23 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(z, [8])
 
         z = []
+        thread = threading.run({'name': 'run-func'}, func, 5, y=3)
+        thread.join()
+        self.assertEqual(z, [8])
+        self.assertEqual(thread.name, 'run-func')
+
+        z = []
         thread = threading.run_daemon(func, 8, y=4)
         thread.join()
         self.assertEqual(z, [12])
         self.assertEqual(thread.daemon, True)
+
+        z = []
+        thread = threading.run_daemon({'name': 'run-func'}, func, 8, y=4)
+        thread.join()
+        self.assertEqual(z, [12])
+        self.assertEqual(thread.daemon, True)
+        self.assertEqual(thread.name, 'run-func')
 
 class ThreadJoinOnShutdown(BaseTestCase):
 

@@ -1665,18 +1665,51 @@ def enumerate():
     with _active_limbo_lock:
         return list(_active.values()) + list(_limbo.values())
 
-def run(func, /, *args, **kwargs):
-    """Return a running Thread object of func(*args, **kwargs)."""
-    thread = Thread(target=func, name=func.__name__, args=args, kwargs=kwargs)
+def run(x, /, *args, **kwargs):
+    """
+    run(func, /, *args, **kwargs) -> Thread object
+    run(config, func, /, *args, **kwargs) -> Thread object
+
+    Return a running thread of func(*args, **kwargs).
+
+    *config* is an optional dict which can be used to pass additional
+    arguments to the Thread constructor.
+
+    """
+    if isinstance(x, dict):
+        if callable(x):
+            raise TypeError("ambiguous first argument: cannot determine if 'func' or 'config'")
+        if not args:
+            raise TypeError("missing positional argument 'func' after 'config'")
+
+        config = x
+        func, *args = args
+    else:
+        config = {}
+        func = x
+
+    thread = Thread(target=func, args=args, kwargs=kwargs, **config)
     thread.start()
     return thread
 
-def run_daemon(func, /, *args, **kwargs):
-    """Return a running daemonic Thread object of func(*args, **kwargs)."""
-    thread = Thread(target=func, name=func.__name__, args=args, kwargs=kwargs)
-    thread.daemon = True
-    thread.start()
-    return thread
+def run_daemon(x, /, *args, **kwargs):
+    """
+    run_daemon(func, /, *args, **kwargs) -> Thread object
+    run_daemon(config, func, /, *args, **kwargs) -> Thread object
+
+    Return a running daemonic thread of func(*args, **kwargs).
+
+    *config* is an optional dict which can be used to pass additional
+    arguments to the Thread constructor.
+
+    """
+    if isinstance(x, dict):
+        if callable(x):
+            raise TypeError("ambiguous first argument: cannot determine if 'func' or 'config'")
+
+        return run({'daemon': True} | x, *args, **kwargs)
+    else:
+        return run({'daemon': True}, x, *args, **kwargs)
 
 
 _threading_atexits = []
