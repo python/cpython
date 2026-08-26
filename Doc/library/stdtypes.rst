@@ -1008,9 +1008,9 @@ One common use for generator functions is implementing the
 For example::
 
    >>> class CardDeck:
-   ...    def __iter__(self):
-   ...        yield 'three of clubs'
-   ...        yield 'ace of hearts'
+   ...     def __iter__(self):
+   ...         yield 'three of clubs'
+   ...         yield 'ace of hearts'
 
    >>> list(CardDeck())
    ['three of clubs', 'ace of hearts']
