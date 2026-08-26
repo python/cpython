@@ -11,8 +11,7 @@ on:
     - 'main'
     - '3.*'
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
   # https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#concurrency
@@ -51,6 +50,8 @@ jobs:
 
   check-autoconf-regen:
     name: 'Check if Autoconf files are up to date'
+    permissions:
+      contents: read
     # Don't use ubuntu-latest but a specific version to make the job
     # reproducible: to get the same tools versions (autoconf, aclocal, ...)
     runs-on: ubuntu-26.04
@@ -94,6 +95,8 @@ jobs:
 
   check-generated-files:
     name: 'Check if generated files are up to date'
+    permissions:
+      contents: read
     # Don't use ubuntu-latest but a specific version to make the job
     # reproducible: to get the same tools versions (autoconf, aclocal, ...)
     runs-on: ubuntu-26.04
@@ -151,6 +154,8 @@ jobs:
 
   build-windows:
     name: >-
+    permissions:
+      contents: read
       Windows
       ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
     needs: build-context
@@ -183,6 +188,8 @@ jobs:
 
   build-macos:
     name: >-
+    permissions:
+      contents: read
       macOS
       ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
     needs: build-context
@@ -208,6 +215,8 @@ jobs:
 
   build-ubuntu:
     name: >-
+    permissions:
+      contents: read
       Ubuntu
       ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
       ${{ fromJSON(matrix.bolt) && '(bolt)' || '' }}
@@ -253,6 +262,8 @@ jobs:
 
   build-ubuntu-ssltests:
     name: 'Ubuntu SSL tests'
+    permissions:
+      contents: read
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     needs: build-context
@@ -326,6 +337,8 @@ jobs:
 
   build-android:
     name: Android (${{ matrix.arch }})
+    permissions:
+      contents: read
     needs: build-context
     if: needs.build-context.outputs.run-android == 'true'
     timeout-minutes: 60
@@ -348,6 +361,8 @@ jobs:
 
   build-ios:
     name: iOS
+    permissions:
+      contents: read
     needs: build-context
     if: needs.build-context.outputs.run-ios == 'true'
     timeout-minutes: 60
@@ -374,6 +389,8 @@ jobs:
 
   test-hypothesis:
     name: "Hypothesis tests on Ubuntu"
+    permissions:
+      contents: read
     runs-on: ubuntu-26.04
     timeout-minutes: 60
     needs: build-context
@@ -478,6 +495,8 @@ jobs:
 
   build-asan:
     name: 'Address sanitizer'
+    permissions:
+      contents: read
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     needs: build-context
@@ -549,6 +568,8 @@ jobs:
 
   cross-build-linux:
     name: Cross build Linux
+    permissions:
+      contents: read
     runs-on: ubuntu-26.04
     timeout-minutes: 60
     needs: build-context
