@@ -4122,7 +4122,8 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
        would reject the valid os.chmod(fd, mode). */
     if (fd_and_follow_symlinks_invalid("chmod",
                                        path->is_fd,
-                                       follow_symlinks)) {
+                                       follow_symlinks))
+    {
         return NULL;
     }
 #endif
