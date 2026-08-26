@@ -341,10 +341,10 @@ class Path:
         to io.TextIOWrapper().
         """
         if self.is_dir():
-            raise IsADirectoryError(self)
+            raise IsADirectoryError(filename=self)
         zip_mode = mode[0]
         if zip_mode == 'r' and not self.exists():
-            raise FileNotFoundError(self)
+            raise FileNotFoundError('No such file', filename=self)
         stream = self.root.open(self.at, zip_mode, pwd=pwd)
         if 'b' in mode:
             if args or kwargs:
