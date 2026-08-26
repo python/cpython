@@ -1134,7 +1134,7 @@ class CGIHTTPServerTestCase(BaseTestCase):
             self.assertEqual(res.read(), b'%d %d' % (size, size) + self.linesep)
 
     def test_large_content_length_truncated(self):
-        with support.swap_attr(self.request_handler, 'timeout', 0.001):
+        with support.swap_attr(self.request_handler, 'timeout', support.LOOPBACK_TIMEOUT):
             for w in range(18, 65):
                 size = 1 << w
                 headers = {'Content-Length' : str(size)}
