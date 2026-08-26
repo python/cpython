@@ -290,8 +290,7 @@ def _resetperms(path):
 # True if TemporaryDirectory._rmtree() can work relative to open directories
 # instead of resolving paths again.
 _rmtree_use_dir_fd = (
-    _shutil.rmtree.avoids_symlink_attacks
-    and {_os.open, _os.stat, _os.chmod, _os.unlink} <= _os.supports_dir_fd
+    {_os.open, _os.stat, _os.chmod, _os.unlink} <= _os.supports_dir_fd
     and _os.chmod in _os.supports_fd
     and hasattr(_os, 'O_NOFOLLOW')
 )
@@ -300,21 +299,6 @@ def _open_nofollow(name, dir_fd=None):
     # Open name relative to dir_fd, failing if its last component is a symlink.
     return _os.open(name, _os.O_RDONLY | _os.O_NONBLOCK | _os.O_NOFOLLOW,
                     dir_fd=dir_fd)
-
-def _open_containing_dir(root, path, dir_fd):
-    # Open the directory containing path, which must be a path under root,
-    # resolving every component below root without following symlinks.
-    *names, base = path[len(root):].lstrip(_os.sep).split(_os.sep)
-    fd = _open_nofollow(root, dir_fd)
-    try:
-        for name in names:
-            newfd = _open_nofollow(name, fd)
-            _os.close(fd)
-            fd = newfd
-    except OSError:
-        _os.close(fd)
-        raise
-    return fd, base
 
 def _resetperms_fd(dir_fd, path):
     # Same as _resetperms(), but for the directory referred to by dir_fd.
@@ -999,7 +983,7 @@ class TemporaryDirectory:
         if fullname is None:
             fullname = name
 
-        def onexc(func, path, exc):
+        def onexc(func, path, exc, direntry=None, dir_fd=None):
             # On DragonFly BSD, UF_NOUNLINK removal fails with EISDIR, not EPERM.
             if isinstance(exc, (PermissionError, IsADirectoryError)):
                 if repeated and path == name:
@@ -1008,47 +992,41 @@ class TemporaryDirectory:
                     raise
 
                 fullpath = fullname + path[len(name):]
+                if dir_fd is None or not _rmtree_use_dir_fd:
+                    base, dir_fd = path, None
+                elif direntry is None:
+                    base = path
+                else:
+                    base = direntry.name
+
                 try:
-                    # Resolve the components of path below name again, but
-                    # without following symlinks, so that replacing one of them
-                    # with a symlink cannot make the recovery below escape the
-                    # tree rooted at name (CVE-2026-12345).
-                    if path != name and _rmtree_use_dir_fd:
-                        parent_fd, base = _open_containing_dir(name, path, dir_fd)
-                    else:
-                        parent_fd, base = dir_fd, path
+                    if path != name:
+                        # The parent directory of path is the one referred to
+                        # by dir_fd.
+                        _resetperms_fd(dir_fd, _os.path.dirname(fullpath))
+                    _resetperms_at(base, dir_fd, fullpath)
 
                     try:
-                        if path != name:
-                            # The parent directory of path is the one referred
-                            # to by parent_fd.
-                            _resetperms_fd(parent_fd,
-                                           _os.path.dirname(fullpath))
-                        _resetperms_at(base, parent_fd, fullpath)
-
-                        try:
-                            _os.unlink(base, dir_fd=parent_fd)
-                        except IsADirectoryError:
-                            cls._rmtree(base, ignore_errors=ignore_errors,
-                                        dir_fd=parent_fd, fullname=fullpath)
-                        except PermissionError:
-                            # The PermissionError handler was originally added for
-                            # FreeBSD in directories, but it seems that it is raised
-                            # on Windows too.
-                            # bpo-43153: Calling _rmtree again may
-                            # raise NotADirectoryError and mask the PermissionError.
-                            # So we must re-raise the current PermissionError if
-                            # path is not a directory.
-                            if not _os.path.isdir(fullpath) or _os.path.isjunction(fullpath):
-                                if ignore_errors:
-                                    return
-                                raise
-                            cls._rmtree(base, ignore_errors=ignore_errors,
-                                        repeated=(path == name),
-                                        dir_fd=parent_fd, fullname=fullpath)
-                    finally:
-                        if parent_fd != dir_fd:
-                            _os.close(parent_fd)
+                        _os.unlink(base, dir_fd=dir_fd)
+                    except IsADirectoryError:
+                        cls._rmtree(base, ignore_errors=ignore_errors,
+                                    dir_fd=dir_fd, fullname=fullpath)
+                    except PermissionError:
+                        # The PermissionError handler was originally added for
+                        # FreeBSD in directories, but it seems that it is raised
+                        # on Windows too.
+                        # bpo-43153: Calling _rmtree again may
+                        # raise NotADirectoryError and mask the PermissionError.
+                        # So we must re-raise the current PermissionError if
+                        # path is not a directory.
+                        if (not _os.path.isdir(fullpath)
+                                or _os.path.isjunction(fullpath)):
+                            if ignore_errors:
+                                return
+                            raise
+                        cls._rmtree(base, ignore_errors=ignore_errors,
+                                    repeated=(path == name),
+                                    dir_fd=dir_fd, fullname=fullpath)
                 except FileNotFoundError:
                     pass
             elif isinstance(exc, FileNotFoundError):
@@ -1057,7 +1035,7 @@ class TemporaryDirectory:
                 if not ignore_errors:
                     raise
 
-        _shutil.rmtree(name, onexc=onexc, dir_fd=dir_fd)
+        _shutil.rmtree(name, onexc=onexc, dir_fd=dir_fd, _onexc_kwargs=True)
 
     @classmethod
     def _cleanup(cls, name, warn_message, ignore_errors=False, delete=True):
