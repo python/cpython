@@ -10,6 +10,23 @@ from .collector import Collector
 COMPRESSION_NONE = 0
 COMPRESSION_ZSTD = 1
 
+CAPTURE_FEATURES = {
+    "all_threads": 1 << 0,
+    "native": 1 << 1,
+    "gc": 1 << 2,
+    "opcodes": 1 << 3,
+    "blocking": 1 << 4,
+}
+
+
+def encode_capture_config(capture_config):
+    if capture_config is None:
+        return -1
+    return sum(
+        bit for name, bit in CAPTURE_FEATURES.items()
+        if capture_config.get(name, False)
+    )
+
 
 def _resolve_compression(compression):
     """Resolve compression type from string or int.
@@ -49,7 +66,7 @@ class BinaryCollector(Collector):
     """
 
     def __init__(self, filename, sample_interval_usec, *, skip_idle=False,
-                 compression='auto', mode=None):
+                 compression='auto', mode=None, capture_config=None):
         """Create a new binary collector.
 
         Args:
@@ -58,6 +75,8 @@ class BinaryCollector(Collector):
             skip_idle: If True, skip idle threads (not used in binary format)
             compression: 'auto', 'zstd', 'none', or int (0=none, 1=zstd)
             mode: Profiling mode, or None if unknown
+            capture_config: Mapping of capture feature names to booleans, or
+                None if the capture configuration is unknown
         """
         self.filename = filename
         self.sample_interval_usec = sample_interval_usec
@@ -69,6 +88,7 @@ class BinaryCollector(Collector):
             filename, sample_interval_usec, start_time_us,
             compression=compression_type,
             mode=-1 if mode is None else mode,
+            capture_features=encode_capture_config(capture_config),
         )
 
     def collect(self, stack_frames, timestamp_us=None):

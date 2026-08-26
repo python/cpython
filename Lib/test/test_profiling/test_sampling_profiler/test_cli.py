@@ -972,6 +972,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
             "sample_count": 0,
             "compression_type": 0,
             "mode": PROFILING_MODE_CPU,
+            "capture_config": {"all_threads": True},
         }
         reader.replay_samples.return_value = 0
         collector = mock.MagicMock()
@@ -996,6 +997,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
             skip_idle=False,
             mode=PROFILING_MODE_CPU,
             diff_baseline="baseline.bin",
+            capture_config={"all_threads": True},
         )
 
     def test_cli_jsonl_format_mutually_exclusive_with_pstats(self):
@@ -1051,11 +1053,14 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mode=PROFILING_MODE_CPU,
             output_file=binary_path,
             compression="none",
+            capture_config={"native": True},
         )
         collector.export(None)
 
         with BinaryReader(binary_path) as reader:
-            self.assertEqual(reader.get_info()["mode"], PROFILING_MODE_CPU)
+            info = reader.get_info()
+            self.assertEqual(info["mode"], PROFILING_MODE_CPU)
+            self.assertTrue(info["capture_config"]["native"])
 
     def test_cli_jsonl_rejects_opcodes_combination(self):
         """--opcodes is incompatible with --jsonl per opcodes_compatible_formats."""
