@@ -1,2 +1,0 @@
-Modernize annotation usage in :mod:`!test.libregrtest` by replacing a
-type-checking-only import with a lazy import. Patched by Shamil Abdulaev.
