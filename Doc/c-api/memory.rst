@@ -781,15 +781,14 @@ tracemalloc C API
    If memory block is already tracked, update the existing trace.
 
    The function can be called from any thread, with or without an
-   :term:`attached thread state`.  If the calling thread has no attached
-   thread state, the traceback of the allocation is recorded as
-   ``<unknown>``.
+   :term:`attached thread state`.  The traceback is captured using the
+   Python thread state associated with the calling thread, even if it is
+   not attached.  If the thread has no Python thread state, the traceback
+   is recorded as ``<unknown>``.
 
    .. versionchanged:: next
-      The function no longer acquires the :term:`GIL`.  When called from a
-      thread without an :term:`attached thread state`, the traceback is now
-      recorded as ``<unknown>`` instead of the Python traceback of the
-      calling thread.
+      The function no longer acquires the :term:`GIL` nor creates a
+      temporary thread state.
 
 .. c:function:: int PyTraceMalloc_Untrack(unsigned int domain, uintptr_t ptr)
 

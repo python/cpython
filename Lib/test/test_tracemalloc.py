@@ -1047,13 +1047,8 @@ class TestCAPI(unittest.TestCase):
         size = tracemalloc.get_traced_memory()[0]
 
         frames = self.track(release_gil, nframe)
-        if release_gil:
-            # PyTraceMalloc_Track() never acquires the GIL: without an
-            # attached thread state, the traceback is recorded as <unknown>
-            expected = tracemalloc.Traceback([("<unknown>", 0)])
-        else:
-            expected = tracemalloc.Traceback(frames)
-        self.assertEqual(self.get_traceback(), expected)
+        self.assertEqual(self.get_traceback(),
+                         tracemalloc.Traceback(frames))
 
         self.assertEqual(self.get_traced_memory(), self.size)
 
@@ -1061,8 +1056,8 @@ class TestCAPI(unittest.TestCase):
         self.check_track(False)
 
     def test_track_without_gil(self):
-        # check that calling PyTraceMalloc_Track() with the thread state
-        # detached (GIL released) records the trace with an unknown traceback
+        # check that calling PyTraceMalloc_Track() without the GIL
+        # (detached thread state) still captures the Python traceback
         self.check_track(True)
 
     def test_track_already_tracked(self):
