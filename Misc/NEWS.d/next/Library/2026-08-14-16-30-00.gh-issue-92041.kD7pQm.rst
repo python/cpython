@@ -1,1 +1,4 @@
-Improve :func:`inspect.getmodule` performance for frame and traceback objects by resolving registered modules directly from frame globals and avoiding repeated full scans when the names in :data:`sys.modules` are unchanged.
+Improve :func:`inspect.getmodule` performance for frame, traceback, and code
+objects by resolving registered modules directly from frame globals and
+avoiding repeated full scans while :data:`sys.modules` and relevant module
+metadata are unchanged.

@@ -143,6 +143,7 @@ __all__ = [
 
 
 import abc
+import _imp
 from annotationlib import Format, ForwardRef
 from annotationlib import get_annotations  # re-exported
 import ast
@@ -925,7 +926,65 @@ def getabsfile(object, _filename=None):
 
 modulesbyfile = {}
 _filesbymodname = {}
-_modulesbyfile_snapshot = None
+# (registry version, filename map, per-module metadata, volatile metadata)
+_modulesbyfile_cache = (None, {}, {}, ())
+_module_cache_missing = object()
+
+
+def _get_volatile_module_metadata(module):
+    """Return unwatchable module metadata used to validate the cache."""
+    try:
+        module_file = getattr(module, '__file__')
+    except AttributeError:
+        return _module_cache_missing, _module_cache_missing
+    if module_file is None:
+        return None, _module_cache_missing
+    return module_file, getattr(module, '__name__')
+
+
+def _volatile_modules_unchanged(modules, volatile_modules):
+    for modname, module_file, module_name in volatile_modules:
+        module = modules.get(modname, _module_cache_missing)
+        if not ismodule(module):
+            return False
+        current_file, current_name = _get_volatile_module_metadata(module)
+        if current_file != module_file or current_name != module_name:
+            return False
+    return True
+
+
+def _module_cache_is_current(modules, version, cache):
+    if (modules is not sys.modules or
+            version is None or version != cache[0]):
+        return False
+    volatile_modules = cache[3]
+    if not volatile_modules:
+        return True
+    if not _volatile_modules_unchanged(modules, volatile_modules):
+        return False
+    # Dynamic metadata may execute arbitrary Python code.
+    return (modules is sys.modules and
+            version == _imp._get_module_registry_version(modules))
+
+
+def _publish_module_cache(version, modules_by_file, files_by_module,
+                          volatile_modules):
+    """Publish a consistent filename cache and update its legacy mirrors."""
+    global _modulesbyfile_cache
+
+    # Keep these longstanding, externally visible dictionaries alive, but do
+    # not use them as the authoritative cache: updating two dictionaries and a
+    # version cannot be made atomic for concurrent getmodule() calls.
+    modulesbyfile.clear()
+    modulesbyfile.update(modules_by_file)
+    _filesbymodname.clear()
+    _filesbymodname.update(
+        (modname, metadata[0])
+        for modname, metadata in files_by_module.items()
+    )
+    # This single assignment is the authoritative publication point.
+    _modulesbyfile_cache = (
+        version, modules_by_file, files_by_module, volatile_modules)
 
 
 def _getframemodule(frame, _filename=None):
@@ -937,17 +996,29 @@ def _getframemodule(frame, _filename=None):
     module = sys.modules.get(module_name)
     if not (ismodule(module) and module.__dict__ is frame_globals):
         return None
-    module_file = getattr(module, '__file__', None)
+    try:
+        if type(module) is types.ModuleType:
+            module_file = module.__file__
+        else:
+            # A module subclass can supply dynamic metadata through
+            # descriptors. getattr() avoids a module-attribute specialization
+            # that may read the subclass's underlying module dict.
+            module_file = getattr(module, '__file__')
+    except AttributeError:
+        return None
     if module_file is None:
         return None
+    frame_filename = (
+        frame.f_code.co_filename if _filename is None else _filename
+    )
     try:
-        file = getabsfile(frame, _filename)
+        file = getabsfile(frame, frame_filename)
     except (TypeError, FileNotFoundError):
         return None
-    if frame.f_code.co_filename == module_file:
+    if frame_filename == module_file:
         return module
     try:
-        module_file = getabsfile(module)
+        module_file = getabsfile(module, module_file)
     except (TypeError, FileNotFoundError):
         return None
     if file == module_file or file == os.path.realpath(module_file):
@@ -970,45 +1041,172 @@ def getmodule(object, _filename=None):
             if module is not None:
                 return module
 
-    # Try the filename to modulename cache
-    if _filename is not None and _filename in modulesbyfile:
-        return sys.modules.get(modulesbyfile[_filename])
+    modules = sys.modules
+    version = _imp._get_module_registry_version(modules)
+    cache = _modulesbyfile_cache
+    cache_is_current = _module_cache_is_current(modules, version, cache)
+    cached_modulesbyfile = cache[1]
+
+    # Try the filename to modulename cache. Recheck the version after reading
+    # the module so a concurrent registry mutation cannot make the result
+    # stale.
+    if (cache_is_current and _filename is not None and
+            _filename in cached_modulesbyfile):
+        module = modules.get(cached_modulesbyfile[_filename])
+        if _module_cache_is_current(
+                modules, _imp._get_module_registry_version(modules), cache):
+            return module
+        cache_is_current = False
+
     # Try the cache again with the absolute file name
     try:
         file = getabsfile(object, _filename)
     except (TypeError, FileNotFoundError):
         return None
-    if file in modulesbyfile:
-        return sys.modules.get(modulesbyfile[file])
-    # Update the filename to module name cache only when sys.modules is
-    # replaced or its module names have changed since the previous scan.
-    # Retaining module values in the snapshot would keep removed modules alive.
-    global _modulesbyfile_snapshot
-    modules = sys.modules
-    modules_id = id(modules)
-    try:
-        snapshot = (modules_id, tuple(modules))
-    except RuntimeError:
-        # The mapping changed while its keys were being copied.
-        snapshot = None
-    if snapshot is None or snapshot != _modulesbyfile_snapshot:
-        # Copy sys.modules in order to cope with changes while iterating.
-        modules = modules.copy()
-        snapshot = (modules_id, tuple(modules))
-        for modname, module in modules.items():
-            if ismodule(module) and hasattr(module, '__file__'):
-                f = module.__file__
-                if f == _filesbymodname.get(modname, None):
-                    # Have already mapped this module, so skip it
+    if modules is not sys.modules:
+        # getabsfile() may execute user code through dynamic module metadata.
+        modules = sys.modules
+        cache_is_current = False
+    if not cache_is_current:
+        # getabsfile() can recurse through getsourcefile() and populate this
+        # cache. Avoid rebuilding it a second time in the outer call.
+        version = _imp._get_module_registry_version(modules)
+        cache = _modulesbyfile_cache
+        cache_is_current = _module_cache_is_current(modules, version, cache)
+        cached_modulesbyfile = cache[1]
+    if cache_is_current and file in cached_modulesbyfile:
+        module = modules.get(cached_modulesbyfile[file])
+        if _module_cache_is_current(
+                modules, _imp._get_module_registry_version(modules), cache):
+            return module
+        cache_is_current = False
+
+    if cache_is_current:
+        # A stable cache miss is a negative-cache hit. Validate it after the
+        # lookup just as for a positive hit.
+        cache_is_current = _module_cache_is_current(
+            modules, _imp._get_module_registry_version(modules), cache)
+
+    # Update the filename to module name cache when the canonical module
+    # registry or relevant module metadata has changed. Replacement
+    # sys.modules mappings cannot be watched, so scan those on every miss.
+    if not cache_is_current:
+        # Retry once if a mutation overlaps the scan. This handles imports
+        # triggered by the first scan without spinning under sustained churn.
+        for _ in range(2):
+            # Copy sys.modules in order to cope with changes while iterating.
+            modules = sys.modules
+            version = _imp._get_module_registry_version(modules)
+            modules_copy = modules.copy()
+            new_modulesbyfile = {}
+            new_filesbymodname = {}
+            volatile_modules = []
+            cached_filesbymodname = _modulesbyfile_cache[2]
+            for modname, module in modules_copy.items():
+                if ismodule(module):
+                    if type(module) is types.ModuleType:
+                        module_dict = module.__dict__
+                        try:
+                            f = module.__file__
+                        except AttributeError:
+                            if '__getattr__' in module_dict:
+                                volatile_modules.append((
+                                    modname,
+                                    _module_cache_missing,
+                                    _module_cache_missing,
+                                ))
+                            continue
+                        volatile = (
+                            module_dict.get(
+                                '__file__', _module_cache_missing) is not f
+                        )
+                    else:
+                        # Module subclasses may resolve __file__ or __name__
+                        # dynamically. Validate just these entries on cache
+                        # hits instead of making every fallback rescan all of
+                        # sys.modules.
+                        module_dict = None
+                        volatile = True
+                        try:
+                            f = getattr(module, '__file__')
+                        except AttributeError:
+                            volatile_modules.append((
+                                modname,
+                                _module_cache_missing,
+                                _module_cache_missing,
+                            ))
+                            continue
+                    if f is None:
+                        if volatile:
+                            volatile_modules.append((
+                                modname, None, _module_cache_missing))
+                        continue
+                    if module_dict is None:
+                        module_name = getattr(module, '__name__')
+                    else:
+                        module_name = module.__name__
+                    if (module_dict is not None and
+                            module_dict.get(
+                                '__name__', _module_cache_missing)
+                            is not module_name):
+                        volatile = True
+                    if volatile:
+                        volatile_modules.append(
+                            (modname, f, module_name))
+                    cached = cached_filesbymodname.get(modname)
+                    if (isinstance(cached, tuple) and len(cached) == 4 and
+                            f == cached[0] and module_name == cached[1]):
+                        _, _, absfile, realpath = cached
+                    else:
+                        # Canonicalize the same metadata value that was
+                        # validated above.  Re-reading __file__ here can
+                        # observe a different dynamic value.
+                        absfile = getabsfile(module, f)
+                        realpath = os.path.realpath(absfile)
+                    new_filesbymodname[modname] = (
+                        f, module_name, absfile, realpath)
+                    # Always map to the name the module knows itself by.
+                    new_modulesbyfile[absfile] = new_modulesbyfile[
+                        realpath] = module_name
+            module = None
+            found = file in new_modulesbyfile
+            if found:
+                module = modules.get(new_modulesbyfile[file])
+            # Watcher callbacks run before their mutations. Validate both the
+            # watched generation and the small set of dynamic metadata before
+            # retaining the rebuilt caches.
+            current_version = _imp._get_module_registry_version(modules)
+            if version is not None:
+                if (modules is not sys.modules or
+                        version != current_version):
                     continue
-                _filesbymodname[modname] = f
-                f = getabsfile(module)
-                # Always map to the name the module knows itself by
-                modulesbyfile[f] = modulesbyfile[
-                    os.path.realpath(f)] = module.__name__
-        _modulesbyfile_snapshot = snapshot
-    if file in modulesbyfile:
-        return sys.modules.get(modulesbyfile[file])
+                volatile_current = _volatile_modules_unchanged(
+                    modules, volatile_modules)
+                current_version = _imp._get_module_registry_version(modules)
+                if (modules is not sys.modules or
+                        version != current_version or
+                        not volatile_current):
+                    continue
+                _publish_module_cache(
+                    version,
+                    new_modulesbyfile,
+                    new_filesbymodname,
+                    tuple(volatile_modules),
+                )
+                if found:
+                    return module
+                break
+            if modules is sys.modules:
+                # A replacement sys.modules mapping cannot be watched, but its
+                # just-scanned result is still useful for this call.
+                _publish_module_cache(
+                    None, new_modulesbyfile, new_filesbymodname,
+                    tuple(volatile_modules))
+                if found:
+                    return module
+                break
+        # If both attempts overlap mutations, fall through rather than using
+        # a snapshot that could not be validated.
     # Check the main module
     main = sys.modules['__main__']
     if not hasattr(object, '__name__'):
