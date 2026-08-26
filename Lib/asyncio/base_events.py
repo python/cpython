@@ -1497,10 +1497,15 @@ class BaseEventLoop(events.AbstractEventLoop):
             else:
                 raise exceptions[0]
 
-        protocol = protocol_factory()
-        waiter = self.create_future()
-        transport = self._make_datagram_transport(
-            sock, protocol, r_addr, waiter)
+        try:
+            protocol = protocol_factory()
+            waiter = self.create_future()
+            transport = self._make_datagram_transport(
+                sock, protocol, r_addr, waiter)
+        except:
+            # gh-156400: close the socket if the transport is never created.
+            sock.close()
+            raise
         if self._debug:
             if local_addr:
                 logger.info("Datagram endpoint local_addr=%r remote_addr=%r "
@@ -1714,9 +1719,14 @@ class BaseEventLoop(events.AbstractEventLoop):
         return transport, protocol
 
     async def connect_read_pipe(self, protocol_factory, pipe):
-        protocol = protocol_factory()
-        waiter = self.create_future()
-        transport = self._make_read_pipe_transport(pipe, protocol, waiter)
+        try:
+            protocol = protocol_factory()
+            waiter = self.create_future()
+            transport = self._make_read_pipe_transport(pipe, protocol, waiter)
+        except:
+            # gh-156400: close the pipe if the transport is never created.
+            pipe.close()
+            raise
 
         try:
             await waiter
@@ -1730,9 +1740,14 @@ class BaseEventLoop(events.AbstractEventLoop):
         return transport, protocol
 
     async def connect_write_pipe(self, protocol_factory, pipe):
-        protocol = protocol_factory()
-        waiter = self.create_future()
-        transport = self._make_write_pipe_transport(pipe, protocol, waiter)
+        try:
+            protocol = protocol_factory()
+            waiter = self.create_future()
+            transport = self._make_write_pipe_transport(pipe, protocol, waiter)
+        except:
+            # gh-156400: close the pipe if the transport is never created.
+            pipe.close()
+            raise
 
         try:
             await waiter
