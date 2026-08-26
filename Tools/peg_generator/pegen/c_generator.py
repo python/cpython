@@ -810,8 +810,8 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             self.print("_first_set_mask = 0;")
             self.print("switch (_current_token_type) {")
             with self.indent():
-                for mask, token_types in sorted(masks.items()):
-                    for token_type in sorted(token_types):
+                for mask, mask_token_types in sorted(masks.items()):
+                    for token_type in sorted(mask_token_types):
                         self.print(f"case {token_type}:")
                     with self.indent():
                         self.print(f"_first_set_mask = 0x{mask:x}ULL;")
