@@ -818,9 +818,6 @@ PyErr_SetFromErrnoWithFilenameObjects(PyObject *exc, PyObject *filenameObject, P
     PyObject *message;
     PyObject *v, *args;
     int i = errno;
-#ifdef MS_WINDOWS
-    WCHAR *s_buf = NULL;
-#endif /* Unix/Windows */
 
 #ifdef EINTR
     if (i == EINTR && PyErr_CheckSignals())
@@ -850,38 +847,12 @@ PyErr_SetFromErrnoWithFilenameObjects(PyObject *exc, PyObject *filenameObject, P
             message = PyUnicode_FromString(_sys_errlist[i]);
         }
         else {
-            int len = FormatMessageW(
-                FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                FORMAT_MESSAGE_FROM_SYSTEM |
-                FORMAT_MESSAGE_IGNORE_INSERTS,
-                NULL,                   /* no message source */
-                i,
-                MAKELANGID(LANG_NEUTRAL,
-                           SUBLANG_DEFAULT),
-                           /* Default language */
-                (LPWSTR) &s_buf,
-                0,                      /* size not used */
-                NULL);                  /* no args */
-            if (len==0) {
-                /* Only ever seen this in out-of-mem
-                   situations */
-                s_buf = NULL;
-                message = PyUnicode_FromFormat("Windows Error 0x%x", i);
-            } else {
-                /* remove trailing cr/lf and dots */
-                while (len > 0 && (s_buf[len-1] <= L' ' || s_buf[len-1] == L'.'))
-                    s_buf[--len] = L'\0';
-                message = PyUnicode_FromWideChar(s_buf, len);
-            }
+            message = _PyErr_WindowsErrorMessage(i);
         }
     }
 #endif /* Unix/Windows */
 
-    if (message == NULL)
-    {
-#ifdef MS_WINDOWS
-        LocalFree(s_buf);
-#endif
+    if (message == NULL) {
         return NULL;
     }
 
@@ -904,9 +875,6 @@ PyErr_SetFromErrnoWithFilenameObjects(PyObject *exc, PyObject *filenameObject, P
             Py_DECREF(v);
         }
     }
-#ifdef MS_WINDOWS
-    LocalFree(s_buf);
-#endif
     return NULL;
 }
 
@@ -935,6 +903,36 @@ PyErr_SetFromErrno(PyObject *exc)
 
 #ifdef MS_WINDOWS
 /* Windows specific error code handling */
+
+PyObject *
+_PyErr_WindowsErrorMessage(unsigned long err)
+{
+    WCHAR *s_buf = NULL;    /* Free via LocalFree */
+    int len = FormatMessageW(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER |
+        FORMAT_MESSAGE_FROM_SYSTEM |
+        FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL,                   /* no message source */
+        err,
+        MAKELANGID(LANG_NEUTRAL,
+                   SUBLANG_DEFAULT),
+                   /* Default language */
+        (LPWSTR) &s_buf,
+        0,                      /* size not used */
+        NULL);                  /* no args */
+    if (len == 0) {
+        /* Only ever seen this in out-of-mem situations */
+        return PyUnicode_FromFormat("Windows Error 0x%x", err);
+    }
+    /* remove trailing cr/lf and dots */
+    while (len > 0 && (s_buf[len-1] <= L' ' || s_buf[len-1] == L'.')) {
+        s_buf[--len] = L'\0';
+    }
+    PyObject *message = PyUnicode_FromWideChar(s_buf, len);
+    LocalFree(s_buf);
+    return message;
+}
+
 PyObject *PyErr_SetExcFromWindowsErrWithFilenameObject(
     PyObject *exc,
     int ierr,
@@ -951,9 +949,6 @@ PyObject *PyErr_SetExcFromWindowsErrWithFilenameObjects(
     PyObject *filenameObject2)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    int len;
-    WCHAR *s_buf = NULL; /* Free via LocalFree */
-    PyObject *message;
     PyObject *args, *v;
 
     DWORD err = (DWORD)ierr;
@@ -961,32 +956,8 @@ PyObject *PyErr_SetExcFromWindowsErrWithFilenameObjects(
         err = GetLastError();
     }
 
-    len = FormatMessageW(
-        /* Error API error */
-        FORMAT_MESSAGE_ALLOCATE_BUFFER |
-        FORMAT_MESSAGE_FROM_SYSTEM |
-        FORMAT_MESSAGE_IGNORE_INSERTS,
-        NULL,           /* no message source */
-        err,
-        MAKELANGID(LANG_NEUTRAL,
-        SUBLANG_DEFAULT), /* Default language */
-        (LPWSTR) &s_buf,
-        0,              /* size not used */
-        NULL);          /* no args */
-    if (len==0) {
-        /* Only seen this in out of mem situations */
-        message = PyUnicode_FromFormat("Windows Error 0x%x", err);
-        s_buf = NULL;
-    } else {
-        /* remove trailing cr/lf and dots */
-        while (len > 0 && (s_buf[len-1] <= L' ' || s_buf[len-1] == L'.'))
-            s_buf[--len] = L'\0';
-        message = PyUnicode_FromWideChar(s_buf, len);
-    }
-
-    if (message == NULL)
-    {
-        LocalFree(s_buf);
+    PyObject *message = _PyErr_WindowsErrorMessage(err);
+    if (message == NULL) {
         return NULL;
     }
 
@@ -1009,7 +980,6 @@ PyObject *PyErr_SetExcFromWindowsErrWithFilenameObjects(
             Py_DECREF(v);
         }
     }
-    LocalFree(s_buf);
     return NULL;
 }
 
