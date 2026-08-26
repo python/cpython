@@ -17,6 +17,7 @@ import sysconfig
 import textwrap
 import threading
 import time
+import warnings
 import weakref
 
 try:
@@ -177,7 +178,13 @@ class GCTests(unittest.TestCase):
             with gc_threshold(1, 0, 0):
                 _testinternalcapi.defer_automatic_gc()
                 try:
-                    pid = os.fork()
+                    with warnings.catch_warnings():
+                        warnings.filterwarnings(
+                            "ignore",
+                            message="This process .* use of fork.*",
+                            category=DeprecationWarning,
+                        )
+                        pid = os.fork()
                     if pid == 0:
                         before = self.total_collections()
                         objects = [[] for _ in range(10_000)]
