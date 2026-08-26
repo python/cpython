@@ -314,7 +314,7 @@ static inline void _PyObject_GC_UNTRACK(
 */
 
 extern void _PyGC_InitState(struct _gc_runtime_state *);
-extern void _PyGC_AfterFork(PyInterpreterState *interp);
+extern void _PyGC_AfterFork(PyThreadState *tstate);
 
 extern Py_ssize_t _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason);
 extern void _PyGC_CollectNoFail(PyThreadState *tstate);

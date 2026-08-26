@@ -1787,22 +1787,30 @@ void
 _PyGC_DeferAutomaticCollection(PyThreadState *tstate)
 {
     GCState *gcstate = &tstate->interp->gc;
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
     assert(gcstate->automatic_collection_pause_count >= 0);
+    assert(tstate_impl->gc.automatic_collection_pause_count >= 0);
     gcstate->automatic_collection_pause_count++;
+    tstate_impl->gc.automatic_collection_pause_count++;
 }
 
 void
 _PyGC_ResumeAutomaticCollection(PyThreadState *tstate)
 {
     GCState *gcstate = &tstate->interp->gc;
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
     assert(gcstate->automatic_collection_pause_count > 0);
+    assert(tstate_impl->gc.automatic_collection_pause_count > 0);
     gcstate->automatic_collection_pause_count--;
+    tstate_impl->gc.automatic_collection_pause_count--;
 }
 
 void
-_PyGC_AfterFork(PyInterpreterState *interp)
+_PyGC_AfterFork(PyThreadState *tstate)
 {
-    interp->gc.automatic_collection_pause_count = 0;
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    tstate->interp->gc.automatic_collection_pause_count =
+        tstate_impl->gc.automatic_collection_pause_count;
 }
 
 /* Public API to invoke gc.collect() from C */

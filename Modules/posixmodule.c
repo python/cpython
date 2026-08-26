@@ -777,7 +777,7 @@ PyOS_AfterFork_Child(void)
         goto fatal_error;
     }
 
-    _PyGC_AfterFork(tstate->interp);
+    _PyGC_AfterFork(tstate);
 
 #if defined(PY_HAVE_JIT_GDB_UNWIND)
     // The child can inherit this mutex locked if another thread held it at

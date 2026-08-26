@@ -171,27 +171,43 @@ class GCTests(unittest.TestCase):
 
     @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
     @support.requires_fork()
-    def test_defer_automatic_collection_reset_after_fork(self):
+    @threading_helper.requires_working_threading()
+    def test_defer_automatic_collection_after_fork(self):
         was_enabled = gc.isenabled()
         gc.enable()
         try:
             with gc_threshold(1, 0, 0):
-                _testinternalcapi.defer_automatic_gc()
-                try:
-                    with warnings.catch_warnings():
-                        warnings.filterwarnings(
-                            "ignore",
-                            message="This process .* use of fork.*",
-                            category=DeprecationWarning,
-                        )
-                        pid = os.fork()
-                    if pid == 0:
-                        before = self.total_collections()
-                        objects = [[] for _ in range(10_000)]
-                        os._exit(self.total_collections() <= before)
-                    support.wait_process(pid, exitcode=0)
-                finally:
-                    _testinternalcapi.resume_automatic_gc()
+                ready = threading.Event()
+                release = threading.Event()
+
+                def defer_in_thread():
+                    _testinternalcapi.defer_automatic_gc()
+                    try:
+                        ready.set()
+                        release.wait()
+                    finally:
+                        _testinternalcapi.resume_automatic_gc()
+
+                thread = threading.Thread(target=defer_in_thread)
+                with threading_helper.start_threads([thread], release.set):
+                    self.assertTrue(ready.wait(support.SHORT_TIMEOUT))
+                    _testinternalcapi.defer_automatic_gc()
+                    try:
+                        with warnings.catch_warnings():
+                            warnings.filterwarnings(
+                                "ignore",
+                                message="This process .* use of fork.*",
+                                category=DeprecationWarning,
+                            )
+                            pid = os.fork()
+                        if pid == 0:
+                            _testinternalcapi.resume_automatic_gc()
+                            before = self.total_collections()
+                            objects = [[] for _ in range(10_000)]
+                            os._exit(self.total_collections() <= before)
+                        support.wait_process(pid, exitcode=0)
+                    finally:
+                        _testinternalcapi.resume_automatic_gc()
         finally:
             if not was_enabled:
                 gc.disable()
