@@ -164,7 +164,7 @@ static void
 mbuf_dealloc(PyObject *_self)
 {
     _PyManagedBufferObject *self = (_PyManagedBufferObject *)_self;
-    assert(self->exports == 0);
+    assert(FT_ATOMIC_LOAD_SSIZE_RELAXED(self->exports) == 0);
     mbuf_release(self);
     if (mbuf_has_flag(self, _Py_MANAGED_BUFFER_FREE_FORMAT))
         PyMem_Free(self->master.format);
@@ -183,7 +183,7 @@ static int
 mbuf_clear(PyObject *_self)
 {
     _PyManagedBufferObject *self = (_PyManagedBufferObject *)_self;
-    assert(self->exports >= 0);
+    assert(FT_ATOMIC_LOAD_SSIZE_RELAXED(self->exports) >= 0);
     mbuf_release(self);
     return 0;
 }
@@ -1674,6 +1674,21 @@ memoryview_cast_impl(PyMemoryViewObject *self, PyObject *format,
     return result;
 }
 
+static PyObject *
+memoryview_toreadonly_pinned(PyMemoryViewObject *self)
+{
+    CHECK_RELEASED(self);
+    CHECK_RESTRICTED(self);
+    /* Even if self is already readonly, we still need to create a new
+     * object for .release() to work correctly.
+     */
+    self = (PyMemoryViewObject *) mbuf_add_view(self->mbuf, &self->view);
+    if (self != NULL) {
+        self->view.readonly = 1;
+    };
+    return (PyObject *) self;
+}
+
 /*[clinic input]
 memoryview.toreadonly
 
@@ -1687,17 +1702,9 @@ memoryview_toreadonly_impl(PyMemoryViewObject *self)
     if (memoryview_pin(self) < 0) {
         return NULL;
     }
-    CHECK_RELEASED(self);
-    CHECK_RESTRICTED(self);
-    /* Even if self is already readonly, we still need to create a new
-     * object for .release() to work correctly.
-     */
-    self = (PyMemoryViewObject *) mbuf_add_view(self->mbuf, &self->view);
-    if (self != NULL) {
-        self->view.readonly = 1;
-    };
+    PyObject *result = memoryview_toreadonly_pinned(self);
     memoryview_unpin(self);
-    return (PyObject *) self;
+    return result;
 }
 
 
@@ -2583,7 +2590,13 @@ memoryview_hex_pinned(PyMemoryViewObject *self, PyObject *sep,
         // Prevent 'self' from being freed if computing len(sep) mutates 'self'
         // in _Py_strhex_with_sep().
         // See: https://github.com/python/cpython/issues/143195.
-        FT_ATOMIC_ADD_SSIZE(self->exports, 1);
+#ifdef Py_GIL_DISABLED
+        if (memoryview_add_export(self) < 0) {
+            return NULL;
+        }
+#else
+        self->exports++;
+#endif
         PyObject *ret = _Py_strhex_with_sep(src->buf, src->len, sep, bytes_per_sep);
         FT_ATOMIC_ADD_SSIZE(self->exports, -1);
         return ret;
@@ -3638,7 +3651,13 @@ memory_hash_pinned(PyObject *_self)
         if (view->obj != NULL) {
             // Prevent 'self' from being freed when computing the item's hash.
             // See https://github.com/python/cpython/issues/142664.
-            FT_ATOMIC_ADD_SSIZE(self->exports, 1);
+#ifdef Py_GIL_DISABLED
+            if (memoryview_add_export(self) < 0) {
+                return -1;
+            }
+#else
+            self->exports++;
+#endif
             Py_hash_t h = PyObject_Hash(view->obj);
             FT_ATOMIC_ADD_SSIZE(self->exports, -1);
             if (h == -1) {
