@@ -87,12 +87,17 @@ with a single seek to `file_size - 32`, without first reading the header.
 |   40   |  8   | uint64  | String table offset                    |
 |   48   |  8   | uint64  | Frame table offset                     |
 |   56   |  4   | uint32  | Compression type (0=none, 1=zstd)      |
-|   60   |  4   | uint32  | Profiling mode plus one (0=unknown)     |
+|   60   |  4   | uint32  | Profiling configuration bit field      |
 +--------+------+---------+----------------------------------------+
 ```
 
-Profiling modes use their `_remote_debugging.PROFILING_MODE_*` value plus one,
-leaving zero available for binaries written before this field was defined.
+The low three configuration bits contain the
+`_remote_debugging.PROFILING_MODE_*` value plus one. Zero means that the mode
+was not recorded, which is also the value in binaries written before this
+field was defined. Bit 3 indicates that capture features are known; when set,
+bits 4 through 8 respectively record `--all-threads`, `--native`, GC frames,
+`--opcodes`, and `--blocking`. Remaining bits are reserved for future capture
+features.
 
 The magic number `0x54414348` ("TACH" for Tachyon) identifies the file format
 and also serves as an **endianness marker**. When read on a system with

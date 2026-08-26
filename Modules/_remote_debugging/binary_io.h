@@ -59,9 +59,9 @@ extern "C" {
 #define HDR_SIZE_FRAME_TABLE 8
 #define HDR_OFF_COMPRESSION  (HDR_OFF_FRAME_TABLE + HDR_SIZE_FRAME_TABLE)
 #define HDR_SIZE_COMPRESSION 4
-#define HDR_OFF_MODE         (HDR_OFF_COMPRESSION + HDR_SIZE_COMPRESSION)
-#define HDR_SIZE_MODE        4
-#define FILE_HEADER_SIZE     (HDR_OFF_MODE + HDR_SIZE_MODE)
+#define HDR_OFF_CONFIG       (HDR_OFF_COMPRESSION + HDR_SIZE_COMPRESSION)
+#define HDR_SIZE_CONFIG      4
+#define FILE_HEADER_SIZE     (HDR_OFF_CONFIG + HDR_SIZE_CONFIG)
 #define FILE_HEADER_PLACEHOLDER_SIZE 64
 
 static_assert(FILE_HEADER_SIZE <= FILE_HEADER_PLACEHOLDER_SIZE,
@@ -105,6 +105,19 @@ static_assert(FILE_FOOTER_SIZE == 32,
 /* Compression types */
 #define COMPRESSION_NONE        0
 #define COMPRESSION_ZSTD        1
+
+/* Profiling configuration. The mode occupies the low three bits and is
+ * stored plus one so zero remains compatible with files written before this
+ * field was defined. Capture features are valid when bit 3 is set. */
+#define PROFILING_CONFIG_MODE_MASK       0x7U
+#define PROFILING_CONFIG_FEATURES_KNOWN  (1U << 3)
+#define PROFILING_CONFIG_FEATURES_SHIFT  4
+#define PROFILING_FEATURE_ALL_THREADS    (1U << 0)
+#define PROFILING_FEATURE_NATIVE         (1U << 1)
+#define PROFILING_FEATURE_GC             (1U << 2)
+#define PROFILING_FEATURE_OPCODES        (1U << 3)
+#define PROFILING_FEATURE_BLOCKING       (1U << 4)
+#define PROFILING_FEATURE_MASK           0x1FU
 
 /* Stack encoding types for delta compression */
 #define STACK_REPEAT            0x00  /* RLE: identical to previous, with count */
@@ -264,6 +277,7 @@ typedef struct {
     uint64_t sample_interval_us;
     uint64_t total_samples;
     int profiling_mode;
+    int capture_features;
 
     /* String hash table: PyObject* -> uint32_t index */
     _Py_hashtable_t *string_hash;
@@ -334,6 +348,7 @@ typedef struct {
     uint64_t string_table_offset;
     uint64_t frame_table_offset;
     int profiling_mode;
+    int capture_features;
 
     /* Parsed string table: array of Python string objects */
     PyObject **strings;
@@ -521,6 +536,7 @@ grow_array_inplace(void **ptr_addr, size_t count, size_t *capacity, size_t elem_
  *   compression_type: COMPRESSION_NONE or COMPRESSION_ZSTD
  *   start_time_us: Start timestamp in microseconds (from time.monotonic() * 1e6)
  *   profiling_mode: PROFILING_MODE_* value, or -1 if unknown
+ *   capture_features: PROFILING_FEATURE_* bit mask, or -1 if unknown
  *
  * Returns:
  *   New BinaryWriter* on success, NULL on failure (PyErr set)
@@ -530,7 +546,8 @@ BinaryWriter *binary_writer_create(
     uint64_t sample_interval_us,
     int compression_type,
     uint64_t start_time_us,
-    int profiling_mode
+    int profiling_mode,
+    int capture_features
 );
 
 /*

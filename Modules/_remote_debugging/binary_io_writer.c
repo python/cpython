@@ -727,7 +727,8 @@ write_sample_with_encoding(BinaryWriter *writer, ThreadEntry *entry,
 
 BinaryWriter *
 binary_writer_create(PyObject *path, uint64_t sample_interval_us, int compression_type,
-                     uint64_t start_time_us, int profiling_mode)
+                     uint64_t start_time_us, int profiling_mode,
+                     int capture_features)
 {
     BinaryWriter *writer = PyMem_Calloc(1, sizeof(BinaryWriter));
     if (!writer) {
@@ -739,6 +740,7 @@ binary_writer_create(PyObject *path, uint64_t sample_interval_us, int compressio
     writer->sample_interval_us = sample_interval_us;
     writer->compression_type = compression_type;
     writer->profiling_mode = profiling_mode;
+    writer->capture_features = capture_features;
 
     writer->write_buffer = PyMem_Malloc(WRITE_BUFFER_SIZE);
     if (!writer->write_buffer) {
@@ -1178,7 +1180,12 @@ binary_writer_finalize(BinaryWriter *writer)
     uint64_t frame_table_offset_u64 = (uint64_t)frame_table_offset;
     uint32_t thread_count_u32 = (uint32_t)writer->thread_count;
     uint32_t compression_type_u32 = (uint32_t)writer->compression_type;
-    uint32_t profiling_mode_u32 = (uint32_t)(writer->profiling_mode + 1);
+    uint32_t profiling_config_u32 = (uint32_t)(writer->profiling_mode + 1);
+    if (writer->capture_features >= 0) {
+        profiling_config_u32 |= PROFILING_CONFIG_FEATURES_KNOWN;
+        profiling_config_u32 |= (uint32_t)writer->capture_features
+            << PROFILING_CONFIG_FEATURES_SHIFT;
+    }
 
     uint8_t header[FILE_HEADER_SIZE] = {0};
     uint32_t magic = BINARY_FORMAT_MAGIC;
@@ -1195,7 +1202,7 @@ binary_writer_finalize(BinaryWriter *writer)
     memcpy(header + HDR_OFF_STR_TABLE, &string_table_offset_u64, HDR_SIZE_STR_TABLE);
     memcpy(header + HDR_OFF_FRAME_TABLE, &frame_table_offset_u64, HDR_SIZE_FRAME_TABLE);
     memcpy(header + HDR_OFF_COMPRESSION, &compression_type_u32, HDR_SIZE_COMPRESSION);
-    memcpy(header + HDR_OFF_MODE, &profiling_mode_u32, HDR_SIZE_MODE);
+    memcpy(header + HDR_OFF_CONFIG, &profiling_config_u32, HDR_SIZE_CONFIG);
     if (fwrite_checked_allow_threads(header, FILE_HEADER_SIZE, writer->fp) < 0) {
         return -1;
     }

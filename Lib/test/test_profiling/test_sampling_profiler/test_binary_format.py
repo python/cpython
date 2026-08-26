@@ -153,22 +153,23 @@ class BinaryFormatTestBase(unittest.TestCase):
                 os.unlink(f)
 
     def create_binary_file(self, samples, interval=1000, compression="none",
-                           mode=None):
+                           mode=None, capture_config=None):
         """Create a test binary file and track it for cleanup."""
         filename, _ = self.write_binary_file(
-            samples, interval, compression, mode
+            samples, interval, compression, mode, capture_config
         )
         return filename
 
     def write_binary_file(self, samples, interval=1000, compression="none",
-                          mode=None):
+                          mode=None, capture_config=None):
         """Like create_binary_file but also returns the writer collector."""
         with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
             filename = f.name
         self.temp_files.append(filename)
 
         collector = BinaryCollector(
-            filename, interval, compression=compression, mode=mode
+            filename, interval, compression=compression, mode=mode,
+            capture_config=capture_config,
         )
         for sample in samples:
             collector.collect(sample)
@@ -530,6 +531,27 @@ class TestBinaryRoundTrip(BinaryFormatTestBase):
         filename = self.create_binary_file([])
         with BinaryReader(filename) as reader:
             self.assertIsNone(reader.get_info()["mode"])
+
+    def test_capture_config_preserved(self):
+        capture_config = {
+            "all_threads": True,
+            "native": True,
+            "gc": False,
+            "opcodes": True,
+            "blocking": False,
+        }
+        filename = self.create_binary_file(
+            [], capture_config=capture_config
+        )
+        with BinaryReader(filename) as reader:
+            self.assertEqual(
+                reader.get_info()["capture_config"], capture_config
+            )
+
+    def test_missing_capture_config_is_unknown(self):
+        filename = self.create_binary_file([])
+        with BinaryReader(filename) as reader:
+            self.assertIsNone(reader.get_info()["capture_config"])
 
     def test_threads_interleaved_samples(self):
         """Multiple threads with interleaved varying samples."""

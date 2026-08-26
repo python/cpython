@@ -1718,6 +1718,7 @@ _remote_debugging.BinaryWriter.__init__
     *
     compression: int = 0
     mode: int = -1
+    capture_features: int = -1
 
 High-performance binary writer for profiling data.
 
@@ -1728,6 +1729,8 @@ Arguments:
         time.monotonic() * 1e6)
     compression: 0=none, 1=zstd (default: 0)
     mode: Profiling mode, or -1 if unknown (default: -1)
+    capture_features: Capture feature bit mask, or -1 if unknown
+        (default: -1)
 
 Use as a context manager or call finalize() when done.
 [clinic start generated code]*/
@@ -1737,11 +1740,17 @@ _remote_debugging_BinaryWriter___init___impl(BinaryWriterObject *self,
                                              PyObject *filename,
                                              unsigned long long sample_interval_us,
                                              unsigned long long start_time_us,
-                                             int compression, int mode)
-/*[clinic end generated code: output=d8448fc02a8bb7aa input=8f6aea7952dcfe28]*/
+                                             int compression, int mode,
+                                             int capture_features)
+/*[clinic end generated code: output=3c1c9576795658ce input=98add735b20403ad]*/
 {
     if (mode < -1 || mode > PROFILING_MODE_EXCEPTION) {
         PyErr_SetString(PyExc_ValueError, "invalid profiling mode");
+        return -1;
+    }
+    if (capture_features < -1 ||
+        capture_features > (int)PROFILING_FEATURE_MASK) {
+        PyErr_SetString(PyExc_ValueError, "invalid capture features");
         return -1;
     }
     if (self->writer) {
@@ -1749,7 +1758,8 @@ _remote_debugging_BinaryWriter___init___impl(BinaryWriterObject *self,
     }
 
     self->writer = binary_writer_create(
-        filename, sample_interval_us, compression, start_time_us, mode);
+        filename, sample_interval_us, compression, start_time_us, mode,
+        capture_features);
     if (!self->writer) {
         return -1;
     }

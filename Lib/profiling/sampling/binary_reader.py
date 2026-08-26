@@ -6,6 +6,7 @@ from .gecko_collector import GeckoCollector
 from .stack_collector import FlamegraphCollector, CollapsedStackCollector
 from .jsonl_collector import JsonlCollector
 from .pstats_collector import PstatsCollector
+from .binary_collector import CAPTURE_FEATURES
 
 
 class BinaryReader:
@@ -51,10 +52,20 @@ class BinaryReader:
                 - frame_count: Number of unique frames
                 - compression: Compression type used
                 - mode: Profiling mode, or None if not recorded
+                - capture_config: Capture feature mapping, or None if not
+                  recorded
         """
         if self._reader is None:
             raise RuntimeError("Reader not open. Use as context manager.")
-        return self._reader.get_info()
+        info = self._reader.get_info()
+        capture_features = info.pop("capture_features")
+        info["capture_config"] = (
+            None if capture_features is None else {
+                name: bool(capture_features & bit)
+                for name, bit in CAPTURE_FEATURES.items()
+            }
+        )
+        return info
 
     def replay_samples(self, collector, progress_callback=None):
         """Replay samples from binary file through a collector.

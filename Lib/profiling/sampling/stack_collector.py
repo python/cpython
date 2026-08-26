@@ -555,7 +555,7 @@ class DiffFlamegraphCollector(FlamegraphCollector):
     """Differential flamegraph collector that compares against a baseline binary profile."""
 
     def __init__(self, sample_interval_usec, *, baseline_binary_path,
-                 skip_idle=False, mode=None):
+                 skip_idle=False, mode=None, capture_config=None):
         super().__init__(sample_interval_usec, skip_idle=skip_idle)
         if not os.path.exists(baseline_binary_path):
             raise ValueError(f"Baseline file not found: {baseline_binary_path}")
@@ -563,6 +563,7 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         self._baseline_collector = None
         self._elided_paths = set()
         self.mode = mode
+        self.capture_config = capture_config
 
     def _load_baseline(self):
         """Load baseline profile from binary file."""
@@ -579,6 +580,22 @@ class DiffFlamegraphCollector(FlamegraphCollector):
             ):
                 raise ValueError(
                     "Baseline profiling mode does not match current mode"
+                )
+
+            baseline_config = info.get("capture_config")
+            if baseline_config is not None and self.capture_config is not None:
+                names = baseline_config.keys() | self.capture_config.keys()
+                mismatches = [
+                    name for name in names
+                    if baseline_config.get(name, False)
+                    != self.capture_config.get(name, False)
+                ]
+            else:
+                mismatches = []
+            if mismatches:
+                raise ValueError(
+                    "Baseline capture configuration does not match current "
+                    f"configuration: {', '.join(sorted(mismatches))}"
                 )
 
             baseline_collector = FlamegraphCollector(
