@@ -23,39 +23,34 @@
  */
 
 
-#ifndef __internal_Hacl_Hash_SHA1_H
-#define __internal_Hacl_Hash_SHA1_H
+#ifndef internal_Hacl_Hash_SHA1_H
+#define internal_Hacl_Hash_SHA1_H
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
 #include <string.h>
-#include "krml/types.h"
+#include "krml/internal/types.h"
 #include "krml/lowstar_endianness.h"
 #include "krml/internal/target.h"
 
 #include "../Hacl_Hash_SHA1.h"
 
-void Hacl_Hash_Core_SHA1_legacy_init(uint32_t *s);
+void Hacl_Hash_SHA1_init(uint32_t *s);
 
-void Hacl_Hash_Core_SHA1_legacy_finish(uint32_t *s, uint8_t *dst);
+void Hacl_Hash_SHA1_finish(uint32_t *s, uint8_t *dst);
 
-void Hacl_Hash_SHA1_legacy_update_multi(uint32_t *s, uint8_t *blocks, uint32_t n_blocks);
+void Hacl_Hash_SHA1_update_multi(uint32_t *s, uint8_t *blocks, uint32_t n_blocks);
 
 void
-Hacl_Hash_SHA1_legacy_update_last(
-  uint32_t *s,
-  uint64_t prev_len,
-  uint8_t *input,
-  uint32_t input_len
-);
+Hacl_Hash_SHA1_update_last(uint32_t *s, uint64_t prev_len, uint8_t *input, uint32_t input_len);
 
-void Hacl_Hash_SHA1_legacy_hash(uint8_t *input, uint32_t input_len, uint8_t *dst);
+void Hacl_Hash_SHA1_hash_oneshot(uint8_t *output, uint8_t *input, uint32_t input_len);
 
 #if defined(__cplusplus)
 }
 #endif
 
-#define __internal_Hacl_Hash_SHA1_H_DEFINED
-#endif
+#define internal_Hacl_Hash_SHA1_H_DEFINED
+#endif /* internal_Hacl_Hash_SHA1_H */

@@ -1,3 +1,7 @@
+# Contains code from https://github.com/MagicStack/uvloop/tree/v0.16.0
+# SPDX-License-Identifier: PSF-2.0 AND (MIT OR Apache-2.0)
+# SPDX-FileCopyrightText: Copyright (c) 2015-2021 MagicStack Inc.  http://magic.io
+
 import collections
 import enum
 import errno
@@ -99,7 +103,7 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         return self._ssl_protocol._app_protocol
 
     def is_closing(self):
-        return self._closed
+        return self._closed or self._ssl_protocol._is_transport_closing()
 
     def close(self):
         """Close the transport.
@@ -245,13 +249,12 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         The protocol's connection_lost() method will (eventually) be
         called with None as its argument.
         """
-        self._closed = True
-        if self._ssl_protocol is not None:
-            self._ssl_protocol._abort()
+        self._force_close(None)
 
     def _force_close(self, exc):
         self._closed = True
-        self._ssl_protocol._abort(exc)
+        if self._ssl_protocol is not None:
+            self._ssl_protocol._abort(exc)
 
     def _test__append_write_backlog(self, data):
         # for test only
@@ -377,6 +380,9 @@ class SSLProtocol(protocols.BufferedProtocol):
             self._app_transport = _SSLProtocolTransport(self._loop, self)
             self._app_transport_created = True
         return self._app_transport
+
+    def _is_transport_closing(self):
+        return self._transport is not None and self._transport.is_closing()
 
     def connection_made(self, transport):
         """Called when the low-level connection is made.
@@ -578,11 +584,18 @@ class SSLProtocol(protocols.BufferedProtocol):
 
             peercert = sslobj.getpeercert()
         except Exception as exc:
+            handshake_exc = None
             self._set_state(SSLProtocolState.UNWRAPPED)
             if isinstance(exc, ssl.CertificateError):
                 msg = 'SSL handshake failed on verifying the certificate'
             else:
                 msg = 'SSL handshake failed'
+            # gh-98078: When the handshake fails, OpenSSL leaves the fatal
+            # TLS alert (for example "bad certificate" or "protocol
+            # version") in the outgoing BIO.  Send it to the peer before
+            # closing the transport so that it knows why the handshake
+            # failed.
+            self._process_outgoing()
             self._fatal_error(exc, msg)
             self._wakeup_waiter(exc)
             return
@@ -616,7 +629,7 @@ class SSLProtocol(protocols.BufferedProtocol):
         if self._app_transport is not None:
             self._app_transport._closed = True
         if self._state == SSLProtocolState.DO_HANDSHAKE:
-            self._abort()
+            self._abort(None)
         else:
             self._set_state(SSLProtocolState.FLUSHING)
             self._shutdown_timeout_handle = self._loop.call_later(
@@ -647,6 +660,10 @@ class SSLProtocol(protocols.BufferedProtocol):
         except SSLAgainErrors:
             self._process_outgoing()
         except ssl.SSLError as exc:
+            # gh-98078: send what OpenSSL left in the outgoing BIO, e.g.
+            # the close_notify alert, to the peer before closing (see
+            # _on_handshake_complete()).
+            self._process_outgoing()
             self._on_shutdown_complete(exc)
         else:
             self._process_outgoing()
@@ -663,10 +680,10 @@ class SSLProtocol(protocols.BufferedProtocol):
         else:
             self._loop.call_soon(self._transport.close)
 
-    def _abort(self):
+    def _abort(self, exc):
         self._set_state(SSLProtocolState.UNWRAPPED)
         if self._transport is not None:
-            self._transport.abort()
+            self._transport._force_close(exc)
 
     # Outgoing flow
 
@@ -738,6 +755,11 @@ class SSLProtocol(protocols.BufferedProtocol):
                 else:
                     self._process_outgoing()
             self._control_ssl_reading()
+        except ssl.SSLError as ex:
+            # gh-98078: send the fatal TLS alert left in the outgoing
+            # BIO to the peer (see _on_handshake_complete()).
+            self._process_outgoing()
+            self._fatal_error(ex, 'Fatal error on SSL protocol')
         except Exception as ex:
             self._fatal_error(ex, 'Fatal error on SSL protocol')
 

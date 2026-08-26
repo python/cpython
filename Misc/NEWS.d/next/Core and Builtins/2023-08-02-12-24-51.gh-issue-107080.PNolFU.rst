@@ -1,4 +1,0 @@
-Trace refs builds (``--with-trace-refs``) were crashing when used with
-isolated subinterpreters.  The problematic global state has been isolated to
-each interpreter.  Other fixing the crashes, this change does not affect
-users.

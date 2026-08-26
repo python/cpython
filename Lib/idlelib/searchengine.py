@@ -84,7 +84,7 @@ class SearchEngine:
             flags = flags | re.IGNORECASE
         try:
             prog = re.compile(pat, flags)
-        except re.error as e:
+        except re.PatternError as e:
             self.report_error(pat, e.msg, e.pos)
             return None
         return prog

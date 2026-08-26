@@ -1,3 +1,0 @@
-Supporting :meth:`asyncio.Task.set_name` is now mandatory for third party task implementations.
-The undocumented :func:`!_set_task_name` function (deprecated since 3.8) has been removed.
-Patch by Kumar Aditya.

@@ -10,6 +10,7 @@ import weakref
 import inspect
 import types
 
+from collections import UserString
 from copy import deepcopy
 from test import support
 
@@ -54,6 +55,10 @@ class Test(object):
             self.events.append('tearDown')
 
 
+class List(list):
+    pass
+
+
 class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
 
     ### Set up attributes used by inherited tests
@@ -85,7 +90,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
             def runTest(self): raise MyException()
             def test(self): pass
 
-        self.assertEqual(Test().id()[-13:], '.Test.runTest')
+        self.assertEndsWith(Test().id(), '.Test.runTest')
 
         # test that TestCase can be instantiated with no args
         # primarily for use at the interactive interpreter
@@ -106,7 +111,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
             def runTest(self): raise MyException()
             def test(self): pass
 
-        self.assertEqual(Test('test').id()[-10:], '.Test.test')
+        self.assertEndsWith(Test('test').id(), '.Test.test')
 
     # "class TestCase([methodName])"
     # ...
@@ -325,18 +330,40 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
         self.assertIn('test1', str(w.warning))
         self.assertEqual(w.filename, __file__)
+        self.assertIn("returned 'int'", str(w.warning))
 
         with self.assertWarns(DeprecationWarning) as w:
             Foo('test2').run()
         self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
         self.assertIn('test2', str(w.warning))
         self.assertEqual(w.filename, __file__)
+        self.assertIn("returned 'generator'", str(w.warning))
 
         with self.assertWarns(DeprecationWarning) as w:
             Foo('test3').run()
         self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
         self.assertIn('test3', str(w.warning))
         self.assertEqual(w.filename, __file__)
+        self.assertIn(f'returned {Nothing.__name__!r}', str(w.warning))
+
+    def test_deprecation_of_return_val_from_test_async_method(self):
+        class Foo(unittest.TestCase):
+            async def test1(self):
+                return 1
+
+        with self.assertWarns(DeprecationWarning) as w:
+            warnings.filterwarnings('ignore',
+                    'coroutine .* was never awaited', RuntimeWarning)
+            Foo('test1').run()
+            support.gc_collect()
+        self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
+        self.assertIn('test1', str(w.warning))
+        self.assertEqual(w.filename, __file__)
+        self.assertIn("returned 'coroutine'", str(w.warning))
+        self.assertIn(
+            'Maybe you forgot to use IsolatedAsyncioTestCase as the base class?',
+            str(w.warning),
+        )
 
     def _check_call_order__subtests(self, result, events, expected_events):
         class Foo(Test.LoggingTestCase):
@@ -678,16 +705,136 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         self.assertRaises(self.failureException, self.assertIsNot, thing, thing)
 
     def testAssertIsInstance(self):
-        thing = []
+        thing = List()
         self.assertIsInstance(thing, list)
-        self.assertRaises(self.failureException, self.assertIsInstance,
-                          thing, dict)
+        self.assertIsInstance(thing, (int, list))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertIsInstance(thing, int)
+        self.assertEqual(str(cm.exception),
+                "[] is not an instance of <class 'int'>")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertIsInstance(thing, (int, float))
+        self.assertEqual(str(cm.exception),
+                "[] is not an instance of any of (<class 'int'>, <class 'float'>)")
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertIsInstance(thing, int, 'ababahalamaha')
+        self.assertIn('ababahalamaha', str(cm.exception))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertIsInstance(thing, int, msg='ababahalamaha')
+        self.assertIn('ababahalamaha', str(cm.exception))
 
     def testAssertNotIsInstance(self):
-        thing = []
-        self.assertNotIsInstance(thing, dict)
-        self.assertRaises(self.failureException, self.assertNotIsInstance,
-                          thing, list)
+        thing = List()
+        self.assertNotIsInstance(thing, int)
+        self.assertNotIsInstance(thing, (int, float))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotIsInstance(thing, list)
+        self.assertEqual(str(cm.exception),
+                "[] is an instance of <class 'list'>")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotIsInstance(thing, (int, list))
+        self.assertEqual(str(cm.exception),
+                "[] is an instance of <class 'list'>")
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotIsInstance(thing, list, 'ababahalamaha')
+        self.assertIn('ababahalamaha', str(cm.exception))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotIsInstance(thing, list, msg='ababahalamaha')
+        self.assertIn('ababahalamaha', str(cm.exception))
+
+    def testAssertIsSubclass(self):
+        self.assertIsSubclass(List, list)
+        self.assertIsSubclass(List, (int, list))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertIsSubclass(List, int)
+        self.assertEqual(str(cm.exception),
+                f"{List!r} is not a subclass of <class 'int'>")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertIsSubclass(List, (int, float))
+        self.assertEqual(str(cm.exception),
+                f"{List!r} is not a subclass of any of (<class 'int'>, <class 'float'>)")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertIsSubclass(1, int)
+        self.assertEqual(str(cm.exception), "1 is not a class")
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertIsSubclass(List, int, 'ababahalamaha')
+        self.assertIn('ababahalamaha', str(cm.exception))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertIsSubclass(List, int, msg='ababahalamaha')
+        self.assertIn('ababahalamaha', str(cm.exception))
+
+    def testAssertNotIsSubclass(self):
+        self.assertNotIsSubclass(List, int)
+        self.assertNotIsSubclass(List, (int, float))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotIsSubclass(List, list)
+        self.assertEqual(str(cm.exception),
+                f"{List!r} is a subclass of <class 'list'>")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotIsSubclass(List, (int, list))
+        self.assertEqual(str(cm.exception),
+                f"{List!r} is a subclass of <class 'list'>")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotIsSubclass(1, int)
+        self.assertEqual(str(cm.exception), "1 is not a class")
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotIsSubclass(List, list, 'ababahalamaha')
+        self.assertIn('ababahalamaha', str(cm.exception))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotIsSubclass(List, list, msg='ababahalamaha')
+        self.assertIn('ababahalamaha', str(cm.exception))
+
+    def testAssertHasAttr(self):
+        a = List()
+        a.x = 1
+        self.assertHasAttr(a, 'x')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertHasAttr(a, 'y')
+        self.assertEqual(str(cm.exception),
+                "'List' object has no attribute 'y'")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertHasAttr(List, 'spam')
+        self.assertEqual(str(cm.exception),
+                "type object 'List' has no attribute 'spam'")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertHasAttr(sys, 'nonexistent')
+        self.assertEqual(str(cm.exception),
+                "module 'sys' has no attribute 'nonexistent'")
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertHasAttr(a, 'y', 'ababahalamaha')
+        self.assertIn('ababahalamaha', str(cm.exception))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertHasAttr(a, 'y', msg='ababahalamaha')
+        self.assertIn('ababahalamaha', str(cm.exception))
+
+    def testAssertNotHasAttr(self):
+        a = List()
+        a.x = 1
+        self.assertNotHasAttr(a, 'y')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotHasAttr(a, 'x')
+        self.assertEqual(str(cm.exception),
+                "'List' object has unexpected attribute 'x'")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotHasAttr(List, 'append')
+        self.assertEqual(str(cm.exception),
+                "type object 'List' has unexpected attribute 'append'")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotHasAttr(sys, 'modules')
+        self.assertEqual(str(cm.exception),
+                "module 'sys' has unexpected attribute 'modules'")
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotHasAttr(a, 'x', 'ababahalamaha')
+        self.assertIn('ababahalamaha', str(cm.exception))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotHasAttr(a, 'x', msg='ababahalamaha')
+        self.assertIn('ababahalamaha', str(cm.exception))
 
     def testAssertIn(self):
         animals = {'monkey': 'banana', 'cow': 'grass', 'seal': 'fish'}
@@ -1132,6 +1279,8 @@ test case
             # need to remove the first line of the error message
             error = str(e).split('\n', 1)[1]
             self.assertEqual(sample_text_error, error)
+        else:
+            self.fail(f'{self.failureException} not raised')
 
     def testAssertEqualSingleLine(self):
         sample_text = "laden swallows fly slowly"
@@ -1148,6 +1297,8 @@ test case
             # need to remove the first line of the error message
             error = str(e).split('\n', 1)[1]
             self.assertEqual(sample_text_error, error)
+        else:
+            self.fail(f'{self.failureException} not raised')
 
     def testAssertEqualwithEmptyString(self):
         '''Verify when there is an empty string involved, the diff output
@@ -1165,6 +1316,8 @@ test case
             # need to remove the first line of the error message
             error = str(e).split('\n', 1)[1]
             self.assertEqual(sample_text_error, error)
+        else:
+            self.fail(f'{self.failureException} not raised')
 
     def testAssertEqualMultipleLinesMissingNewlineTerminator(self):
         '''Verifying format of diff output from assertEqual involving strings
@@ -1185,6 +1338,8 @@ test case
             # need to remove the first line of the error message
             error = str(e).split('\n', 1)[1]
             self.assertEqual(sample_text_error, error)
+        else:
+            self.fail(f'{self.failureException} not raised')
 
     def testAssertEqualMultipleLinesMismatchedNewlinesTerminators(self):
         '''Verifying format of diff output from assertEqual involving strings
@@ -1208,6 +1363,8 @@ test case
             # need to remove the first line of the error message
             error = str(e).split('\n', 1)[1]
             self.assertEqual(sample_text_error, error)
+        else:
+            self.fail(f'{self.failureException} not raised')
 
     def testEqualityBytesWarning(self):
         if sys.flags.bytes_warning:
@@ -1474,11 +1631,11 @@ test case
             self.assertRaisesRegex((ValueError, object), 'expect')
 
     def testAssertWarnsCallable(self):
-        def _runtime_warn():
-            warnings.warn("foo", RuntimeWarning)
+        def _runtime_warn(categories=(RuntimeWarning,)):
+            for category in categories:
+                warnings.warn("foo", category)
         # Success when the right warning is triggered, even several times
-        self.assertWarns(RuntimeWarning, _runtime_warn)
-        self.assertWarns(RuntimeWarning, _runtime_warn)
+        self.assertWarns(RuntimeWarning, _runtime_warn, (RuntimeWarning, RuntimeWarning))
         # A tuple of warning classes is accepted
         self.assertWarns((DeprecationWarning, RuntimeWarning), _runtime_warn)
         # *args and **kwargs also work
@@ -1491,22 +1648,35 @@ test case
         with self.assertRaises(TypeError):
             self.assertWarns(RuntimeWarning, None)
         # Failure when another warning is triggered
-        with warnings.catch_warnings():
+        with warnings.catch_warnings(record=True) as log:
             # Force default filter (in case tests are run with -We)
             warnings.simplefilter("default", RuntimeWarning)
             with self.assertRaises(self.failureException):
-                self.assertWarns(DeprecationWarning, _runtime_warn)
+                self.assertWarns(DeprecationWarning, _runtime_warn,
+                                 (RuntimeWarning, RuntimeWarning))
+        self.assertEqual(len(log), 1, log)
+        self.assertIsInstance(log[0].message, RuntimeWarning)
         # Filters for other warnings are not modified
         with warnings.catch_warnings():
             warnings.simplefilter("error", RuntimeWarning)
             with self.assertRaises(RuntimeWarning):
                 self.assertWarns(DeprecationWarning, _runtime_warn)
+        # Warnings that do not match the category are not swallowed.
+        with self.assertWarns(RuntimeWarning):
+            with self.assertRaises(self.failureException):
+                self.assertWarns(DeprecationWarning, _runtime_warn)
+        with self.assertWarns(RuntimeWarning):
+            self.assertWarns(DeprecationWarning, _runtime_warn,
+                             (RuntimeWarning, DeprecationWarning))
+        with self.assertWarns(RuntimeWarning):
+            self.assertWarns(DeprecationWarning, _runtime_warn,
+                             (DeprecationWarning, RuntimeWarning))
 
     def testAssertWarnsContext(self):
         # Believe it or not, it is preferable to duplicate all tests above,
         # to make sure the __warningregistry__ $@ is circumvented correctly.
-        def _runtime_warn():
-            warnings.warn("foo", RuntimeWarning)
+        def _runtime_warn(category=RuntimeWarning):
+            warnings.warn("foo", category)
         _runtime_warn_lineno = inspect.getsourcelines(_runtime_warn)[1]
         with self.assertWarns(RuntimeWarning) as cm:
             _runtime_warn()
@@ -1537,18 +1707,58 @@ test case
             with self.assertWarns(RuntimeWarning, foobar=42):
                 pass
         # Failure when another warning is triggered
-        with warnings.catch_warnings():
+        with warnings.catch_warnings(record=True) as log:
             # Force default filter (in case tests are run with -We)
             warnings.simplefilter("default", RuntimeWarning)
             with self.assertRaises(self.failureException):
                 with self.assertWarns(DeprecationWarning):
                     _runtime_warn()
+                    _runtime_warn()
+        self.assertEqual(len(log), 1, log)
+        self.assertIsInstance(log[0].message, RuntimeWarning)
+        with warnings.catch_warnings(record=True) as log:
+            # Force default filter (in case tests are run with -We)
+            warnings.simplefilter("error", RuntimeWarning)
+            warnings.filterwarnings("default", category=RuntimeWarning,
+                                    module=__name__)
+            with self.assertRaises(self.failureException):
+                with self.assertWarns(DeprecationWarning):
+                    _runtime_warn()
+                    _runtime_warn()
+        self.assertEqual(len(log), 1, log)
+        self.assertIsInstance(log[0].message, RuntimeWarning)
         # Filters for other warnings are not modified
         with warnings.catch_warnings():
             warnings.simplefilter("error", RuntimeWarning)
             with self.assertRaises(RuntimeWarning):
                 with self.assertWarns(DeprecationWarning):
                     _runtime_warn()
+        # Warnings that do not match the category are not swallowed.
+        with self.assertWarns(RuntimeWarning):
+            with self.assertRaises(self.failureException):
+                with self.assertWarns(DeprecationWarning):
+                    _runtime_warn()
+        with self.assertWarns(RuntimeWarning):
+            with self.assertWarns(DeprecationWarning):
+                _runtime_warn()
+                _runtime_warn(DeprecationWarning)
+        with self.assertWarns(RuntimeWarning):
+            with self.assertWarns(DeprecationWarning):
+                _runtime_warn(DeprecationWarning)
+                _runtime_warn()
+        # Filters by module name work for other warnings.
+        with warnings.catch_warnings(record=True) as log:
+            warnings.filterwarnings("error", category=RuntimeWarning)
+            warnings.filterwarnings("default", category=RuntimeWarning,
+                                    module=re.escape(__name__))
+            warnings.filterwarnings("error", category=RuntimeWarning,
+                                    module='test_case')
+            with self.assertWarns(DeprecationWarning):
+                _runtime_warn(DeprecationWarning)
+                _runtime_warn()
+                _runtime_warn()
+        self.assertEqual(len(log), 1, log)
+        self.assertIsInstance(log[0].message, RuntimeWarning)
 
     def testAssertWarnsNoExceptionType(self):
         with self.assertRaises(TypeError):
@@ -1565,8 +1775,9 @@ test case
             self.assertWarns((UserWarning, Exception))
 
     def testAssertWarnsRegexCallable(self):
-        def _runtime_warn(msg):
-            warnings.warn(msg, RuntimeWarning)
+        def _runtime_warn(*msgs):
+            for msg in msgs:
+                warnings.warn(msg, RuntimeWarning)
         self.assertWarnsRegex(RuntimeWarning, "o+",
                               _runtime_warn, "foox")
         # Failure when no warning is triggered
@@ -1577,16 +1788,26 @@ test case
         with self.assertRaises(TypeError):
             self.assertWarnsRegex(RuntimeWarning, "o+", None)
         # Failure when another warning is triggered
-        with warnings.catch_warnings():
+        with warnings.catch_warnings(record=True) as log:
             # Force default filter (in case tests are run with -We)
             warnings.simplefilter("default", RuntimeWarning)
             with self.assertRaises(self.failureException):
                 self.assertWarnsRegex(DeprecationWarning, "o+",
-                                      _runtime_warn, "foox")
-        # Failure when message doesn't match
-        with self.assertRaises(self.failureException):
+                                      _runtime_warn, "foox", "foox")
+        self.assertEqual(len(log), 1, log)
+        self.assertIsInstance(log[0].message, RuntimeWarning)
+        # Failure when message doesn't match.
+        # Warnings that do not match the regex are not swallowed.
+        with self.assertWarnsRegex(RuntimeWarning, "ar"):
+            with self.assertRaises(self.failureException):
+                self.assertWarnsRegex(RuntimeWarning, "o+",
+                                      _runtime_warn, "barz")
+        with self.assertWarnsRegex(RuntimeWarning, "ar"):
             self.assertWarnsRegex(RuntimeWarning, "o+",
-                                  _runtime_warn, "barz")
+                                  _runtime_warn, "barz", "foox")
+        with self.assertWarnsRegex(RuntimeWarning, "ar"):
+            self.assertWarnsRegex(RuntimeWarning, "o+",
+                                  _runtime_warn, "foox", "barz")
         # A little trickier: we ask RuntimeWarnings to be raised, and then
         # check for some of them.  It is implementation-defined whether
         # non-matching RuntimeWarnings are simply re-raised, or produce a
@@ -1621,15 +1842,28 @@ test case
             with self.assertWarnsRegex(RuntimeWarning, 'o+', foobar=42):
                 pass
         # Failure when another warning is triggered
-        with warnings.catch_warnings():
+        with warnings.catch_warnings(record=True) as log:
             # Force default filter (in case tests are run with -We)
             warnings.simplefilter("default", RuntimeWarning)
             with self.assertRaises(self.failureException):
                 with self.assertWarnsRegex(DeprecationWarning, "o+"):
                     _runtime_warn("foox")
-        # Failure when message doesn't match
-        with self.assertRaises(self.failureException):
+                    _runtime_warn("foox")
+        self.assertEqual(len(log), 1, log)
+        self.assertIsInstance(log[0].message, RuntimeWarning)
+        # Failure when message doesn't match.
+        # Warnings that do not match the regex are not swallowed.
+        with self.assertWarnsRegex(RuntimeWarning, "ar"):
+            with self.assertRaises(self.failureException):
+                with self.assertWarnsRegex(RuntimeWarning, "o+"):
+                    _runtime_warn("barz")
+        with self.assertWarnsRegex(RuntimeWarning, "ar"):
             with self.assertWarnsRegex(RuntimeWarning, "o+"):
+                _runtime_warn("barz")
+                _runtime_warn("foox")
+        with self.assertWarnsRegex(RuntimeWarning, "ar"):
+            with self.assertWarnsRegex(RuntimeWarning, "o+"):
+                _runtime_warn("foox")
                 _runtime_warn("barz")
         # A little trickier: we ask RuntimeWarnings to be raised, and then
         # check for some of them.  It is implementation-defined whether
@@ -1640,6 +1874,19 @@ test case
             with self.assertRaises((RuntimeWarning, self.failureException)):
                 with self.assertWarnsRegex(RuntimeWarning, "o+"):
                     _runtime_warn("barz")
+        # Filters by module name work for warnings with other message.
+        with warnings.catch_warnings(record=True) as log:
+            warnings.filterwarnings("error", category=RuntimeWarning)
+            warnings.filterwarnings("default", category=RuntimeWarning,
+                                    module=re.escape(__name__))
+            warnings.filterwarnings("error", category=RuntimeWarning,
+                                    module='test_case')
+            with self.assertWarnsRegex(RuntimeWarning, "ar"):
+                _runtime_warn("bar")
+                _runtime_warn("foox")
+                _runtime_warn("foox")
+        self.assertEqual(len(log), 1, log)
+        self.assertIsInstance(log[0].message, RuntimeWarning)
 
     def testAssertWarnsRegexNoExceptionType(self):
         with self.assertRaises(TypeError):
@@ -1763,6 +2010,22 @@ test case
             with self.assertLogs():
                 raise ZeroDivisionError("Unexpected")
 
+    def testAssertLogsWithFormatter(self):
+        # Check alternative formats will be respected
+        format = "[No.1: the larch] %(levelname)s:%(name)s:%(message)s"
+        formatter = logging.Formatter(format)
+        with self.assertNoStderr():
+            with self.assertLogs() as cm:
+                log_foo.info("1")
+                log_foobar.debug("2")
+            self.assertEqual(cm.output, ["INFO:foo:1"])
+            self.assertLogRecords(cm.records, [{'name': 'foo'}])
+            with self.assertLogs(formatter=formatter) as cm:
+                log_foo.info("1")
+                log_foobar.debug("2")
+            self.assertEqual(cm.output, ["[No.1: the larch] INFO:foo:1"])
+            self.assertLogRecords(cm.records, [{'name': 'foo'}])
+
     def testAssertNoLogsDefault(self):
         with self.assertRaises(self.failureException) as cm:
             with self.assertNoLogs():
@@ -1831,6 +2094,186 @@ test case
         with self.assertNoLogs() as value:
             pass
         self.assertIsNone(value)
+
+    def testAssertStartsWith(self):
+        self.assertStartsWith('ababahalamaha', 'ababa')
+        self.assertStartsWith('ababahalamaha', ('x', 'ababa', 'y'))
+        self.assertStartsWith(UserString('ababahalamaha'), 'ababa')
+        self.assertStartsWith(UserString('ababahalamaha'), ('x', 'ababa', 'y'))
+        self.assertStartsWith(bytearray(b'ababahalamaha'), b'ababa')
+        self.assertStartsWith(bytearray(b'ababahalamaha'), (b'x', b'ababa', b'y'))
+        self.assertStartsWith(b'ababahalamaha', bytearray(b'ababa'))
+        self.assertStartsWith(b'ababahalamaha',
+                (bytearray(b'x'), bytearray(b'ababa'), bytearray(b'y')))
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertStartsWith('ababahalamaha', 'amaha')
+        self.assertEqual(str(cm.exception),
+                "'ababahalamaha' doesn't start with 'amaha'")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertStartsWith('ababahalamaha', ('x', 'y'))
+        self.assertEqual(str(cm.exception),
+                "'ababahalamaha' doesn't start with any of ('x', 'y')")
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertStartsWith(b'ababahalamaha', 'ababa')
+        self.assertEqual(str(cm.exception), 'Expected str, not bytes')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertStartsWith(b'ababahalamaha', ('amaha', 'ababa'))
+        self.assertEqual(str(cm.exception), 'Expected str, not bytes')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertStartsWith([], 'ababa')
+        self.assertEqual(str(cm.exception), 'Expected str, not list')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertStartsWith('ababahalamaha', b'ababa')
+        self.assertEqual(str(cm.exception), 'Expected bytes, not str')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertStartsWith('ababahalamaha', (b'amaha', b'ababa'))
+        self.assertEqual(str(cm.exception), 'Expected bytes, not str')
+        with self.assertRaises(TypeError):
+            self.assertStartsWith('ababahalamaha', ord('a'))
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertStartsWith('ababahalamaha', 'amaha', 'abracadabra')
+        self.assertIn('ababahalamaha', str(cm.exception))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertStartsWith('ababahalamaha', 'amaha', msg='abracadabra')
+        self.assertIn('ababahalamaha', str(cm.exception))
+
+    def testAssertNotStartsWith(self):
+        self.assertNotStartsWith('ababahalamaha', 'amaha')
+        self.assertNotStartsWith('ababahalamaha', ('x', 'amaha', 'y'))
+        self.assertNotStartsWith(UserString('ababahalamaha'), 'amaha')
+        self.assertNotStartsWith(UserString('ababahalamaha'), ('x', 'amaha', 'y'))
+        self.assertNotStartsWith(bytearray(b'ababahalamaha'), b'amaha')
+        self.assertNotStartsWith(bytearray(b'ababahalamaha'), (b'x', b'amaha', b'y'))
+        self.assertNotStartsWith(b'ababahalamaha', bytearray(b'amaha'))
+        self.assertNotStartsWith(b'ababahalamaha',
+                (bytearray(b'x'), bytearray(b'amaha'), bytearray(b'y')))
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotStartsWith('ababahalamaha', 'ababa')
+        self.assertEqual(str(cm.exception),
+                "'ababahalamaha' starts with 'ababa'")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotStartsWith('ababahalamaha', ('x', 'ababa', 'y'))
+        self.assertEqual(str(cm.exception),
+                "'ababahalamaha' starts with 'ababa'")
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotStartsWith(b'ababahalamaha', 'ababa')
+        self.assertEqual(str(cm.exception), 'Expected str, not bytes')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotStartsWith(b'ababahalamaha', ('amaha', 'ababa'))
+        self.assertEqual(str(cm.exception), 'Expected str, not bytes')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotStartsWith([], 'ababa')
+        self.assertEqual(str(cm.exception), 'Expected str, not list')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotStartsWith('ababahalamaha', b'ababa')
+        self.assertEqual(str(cm.exception), 'Expected bytes, not str')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotStartsWith('ababahalamaha', (b'amaha', b'ababa'))
+        self.assertEqual(str(cm.exception), 'Expected bytes, not str')
+        with self.assertRaises(TypeError):
+            self.assertNotStartsWith('ababahalamaha', ord('a'))
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotStartsWith('ababahalamaha', 'ababa', 'abracadabra')
+        self.assertIn('ababahalamaha', str(cm.exception))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotStartsWith('ababahalamaha', 'ababa', msg='abracadabra')
+        self.assertIn('ababahalamaha', str(cm.exception))
+
+    def testAssertEndsWith(self):
+        self.assertEndsWith('ababahalamaha', 'amaha')
+        self.assertEndsWith('ababahalamaha', ('x', 'amaha', 'y'))
+        self.assertEndsWith(UserString('ababahalamaha'), 'amaha')
+        self.assertEndsWith(UserString('ababahalamaha'), ('x', 'amaha', 'y'))
+        self.assertEndsWith(bytearray(b'ababahalamaha'), b'amaha')
+        self.assertEndsWith(bytearray(b'ababahalamaha'), (b'x', b'amaha', b'y'))
+        self.assertEndsWith(b'ababahalamaha', bytearray(b'amaha'))
+        self.assertEndsWith(b'ababahalamaha',
+                (bytearray(b'x'), bytearray(b'amaha'), bytearray(b'y')))
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertEndsWith('ababahalamaha', 'ababa')
+        self.assertEqual(str(cm.exception),
+                "'ababahalamaha' doesn't end with 'ababa'")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertEndsWith('ababahalamaha', ('x', 'y'))
+        self.assertEqual(str(cm.exception),
+                "'ababahalamaha' doesn't end with any of ('x', 'y')")
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertEndsWith(b'ababahalamaha', 'amaha')
+        self.assertEqual(str(cm.exception), 'Expected str, not bytes')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertEndsWith(b'ababahalamaha', ('ababa', 'amaha'))
+        self.assertEqual(str(cm.exception), 'Expected str, not bytes')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertEndsWith([], 'amaha')
+        self.assertEqual(str(cm.exception), 'Expected str, not list')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertEndsWith('ababahalamaha', b'amaha')
+        self.assertEqual(str(cm.exception), 'Expected bytes, not str')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertEndsWith('ababahalamaha', (b'ababa', b'amaha'))
+        self.assertEqual(str(cm.exception), 'Expected bytes, not str')
+        with self.assertRaises(TypeError):
+            self.assertEndsWith('ababahalamaha', ord('a'))
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertEndsWith('ababahalamaha', 'ababa', 'abracadabra')
+        self.assertIn('ababahalamaha', str(cm.exception))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertEndsWith('ababahalamaha', 'ababa', msg='abracadabra')
+        self.assertIn('ababahalamaha', str(cm.exception))
+
+    def testAssertNotEndsWith(self):
+        self.assertNotEndsWith('ababahalamaha', 'ababa')
+        self.assertNotEndsWith('ababahalamaha', ('x', 'ababa', 'y'))
+        self.assertNotEndsWith(UserString('ababahalamaha'), 'ababa')
+        self.assertNotEndsWith(UserString('ababahalamaha'), ('x', 'ababa', 'y'))
+        self.assertNotEndsWith(bytearray(b'ababahalamaha'), b'ababa')
+        self.assertNotEndsWith(bytearray(b'ababahalamaha'), (b'x', b'ababa', b'y'))
+        self.assertNotEndsWith(b'ababahalamaha', bytearray(b'ababa'))
+        self.assertNotEndsWith(b'ababahalamaha',
+                (bytearray(b'x'), bytearray(b'ababa'), bytearray(b'y')))
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotEndsWith('ababahalamaha', 'amaha')
+        self.assertEqual(str(cm.exception),
+                "'ababahalamaha' ends with 'amaha'")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotEndsWith('ababahalamaha', ('x', 'amaha', 'y'))
+        self.assertEqual(str(cm.exception),
+                "'ababahalamaha' ends with 'amaha'")
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotEndsWith(b'ababahalamaha', 'amaha')
+        self.assertEqual(str(cm.exception), 'Expected str, not bytes')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotEndsWith(b'ababahalamaha', ('ababa', 'amaha'))
+        self.assertEqual(str(cm.exception), 'Expected str, not bytes')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotEndsWith([], 'amaha')
+        self.assertEqual(str(cm.exception), 'Expected str, not list')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotEndsWith('ababahalamaha', b'amaha')
+        self.assertEqual(str(cm.exception), 'Expected bytes, not str')
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotEndsWith('ababahalamaha', (b'ababa', b'amaha'))
+        self.assertEqual(str(cm.exception), 'Expected bytes, not str')
+        with self.assertRaises(TypeError):
+            self.assertNotEndsWith('ababahalamaha', ord('a'))
+
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotEndsWith('ababahalamaha', 'amaha', 'abracadabra')
+        self.assertIn('ababahalamaha', str(cm.exception))
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotEndsWith('ababahalamaha', 'amaha', msg='abracadabra')
+        self.assertIn('ababahalamaha', str(cm.exception))
 
     def testDeprecatedFailMethods(self):
         """Test that the deprecated fail* methods get removed in 3.12"""

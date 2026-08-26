@@ -1,4 +1,0 @@
-Skip test_freeze_simple_script() of test_tools.test_freeze if Python is built
-with ``./configure --enable-optimizations``, which means with Profile Guided
-Optimization (PGO): it just makes the test too slow. The freeze tool is tested
-by many other CIs with other (faster) compiler flags. Patch by Victor Stinner.

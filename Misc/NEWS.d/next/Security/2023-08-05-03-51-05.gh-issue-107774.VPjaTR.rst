@@ -1,3 +1,0 @@
-PEP 669 specifies that ``sys.monitoring.register_callback`` will generate an
-audit event. Pre-releases of Python 3.12 did not generate the audit event.
-This is now fixed.

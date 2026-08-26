@@ -1,2 +1,0 @@
-Fix interpreter crash when a NameError is raised inside the type parameters
-of a generic class.

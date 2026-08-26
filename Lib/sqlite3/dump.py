@@ -11,11 +11,15 @@ def _quote_name(name):
     return '"{0}"'.format(name.replace('"', '""'))
 
 
+def _escape_single_quotes(value):
+    return value.replace("'", "''")
+
+
 def _quote_value(value):
-    return "'{0}'".format(value.replace("'", "''"))
+    return "'{0}'".format(_escape_single_quotes(value))
 
 
-def _iterdump(connection):
+def _iterdump(connection, *, filter=None):
     """
     Returns an iterator to the dump of the database in an SQL text format.
 
@@ -26,17 +30,30 @@ def _iterdump(connection):
 
     writeable_schema = False
     cu = connection.cursor()
+    cu.row_factory = None  # Make sure we get predictable results.
+    # Disable foreign key constraints, if there is any foreign key violation.
+    violations = cu.execute("PRAGMA foreign_key_check").fetchall()
+    if violations:
+        yield('PRAGMA foreign_keys=OFF;')
     yield('BEGIN TRANSACTION;')
 
+    if filter:
+        # Return database objects which match the filter pattern.
+        filter_name_clause = 'AND "name" LIKE ?'
+        params = [filter]
+    else:
+        filter_name_clause = ""
+        params = []
     # sqlite_master table contains the SQL CREATE statements for the database.
-    q = """
+    q = f"""
         SELECT "name", "type", "sql"
         FROM "sqlite_master"
             WHERE "sql" NOT NULL AND
             "type" == 'table'
+            {filter_name_clause}
             ORDER BY "name"
         """
-    schema_res = cu.execute(q)
+    schema_res = cu.execute(q, params)
     sqlite_sequence = []
     for table_name, type, sql in schema_res.fetchall():
         if table_name == 'sqlite_sequence':
@@ -67,24 +84,26 @@ def _iterdump(connection):
         table_name_ident = _quote_name(table_name)
         res = cu.execute(f'PRAGMA table_info({table_name_ident})')
         column_names = [str(table_info[1]) for table_info in res.fetchall()]
-        q = "SELECT 'INSERT INTO {0} VALUES('{1}')' FROM {0};".format(
-            table_name_ident,
+        q = "SELECT 'INSERT INTO {0} VALUES('{1}')' FROM {2};".format(
+            _escape_single_quotes(table_name_ident),
             "','".join(
                 "||quote({0})||".format(_quote_name(col)) for col in column_names
-            )
+            ),
+            table_name_ident,
         )
         query_res = cu.execute(q)
         for row in query_res:
             yield("{0};".format(row[0]))
 
     # Now when the type is 'index', 'trigger', or 'view'
-    q = """
+    q = f"""
         SELECT "name", "type", "sql"
         FROM "sqlite_master"
             WHERE "sql" NOT NULL AND
             "type" IN ('index', 'trigger', 'view')
+            {filter_name_clause}
         """
-    schema_res = cu.execute(q)
+    schema_res = cu.execute(q, params)
     for name, type, sql in schema_res.fetchall():
         yield('{0};'.format(sql))
 

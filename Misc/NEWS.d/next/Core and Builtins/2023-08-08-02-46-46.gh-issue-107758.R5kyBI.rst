@@ -1,1 +1,0 @@
-Make the ``dump_stack()`` routine used by the ``lltrace`` feature (low-level interpreter debugging) robust against recursion by ensuring that it never calls a ``__repr__`` method implemented in Python. Also make the similar output for Tier-2 uops appear on ``stdout`` (instead of ``stderr``), to match the ``lltrace`` code in ceval.c.

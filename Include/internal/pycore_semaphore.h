@@ -7,10 +7,12 @@
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_time.h"            // _PyTime_t
+#include "pycore_pythread.h"      // _POSIX_SEMAPHORES
 
 #ifdef MS_WINDOWS
-#   define WIN32_LEAN_AND_MEAN
+#   ifndef WIN32_LEAN_AND_MEAN
+#       define WIN32_LEAN_AND_MEAN
+#   endif
 #   include <windows.h>
 #elif defined(HAVE_PTHREAD_H)
 #   include <pthread.h>
@@ -25,6 +27,7 @@
 #   define _Py_USE_SEMAPHORES
 #   include <semaphore.h>
 #endif
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,10 +46,8 @@ typedef struct _PySemaphore {
 } _PySemaphore;
 
 // Puts the current thread to sleep until _PySemaphore_Wakeup() is called.
-// If `detach` is true, then the thread will detach/release the GIL while
-// sleeping.
 PyAPI_FUNC(int)
-_PySemaphore_Wait(_PySemaphore *sema, _PyTime_t timeout_ns, int detach);
+_PySemaphore_Wait(_PySemaphore *sema, PyTime_t timeout_ns);
 
 // Wakes up a single thread waiting on sema. Note that _PySemaphore_Wakeup()
 // can be called before _PySemaphore_Wait().

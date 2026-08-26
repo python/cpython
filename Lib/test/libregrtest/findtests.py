@@ -1,11 +1,13 @@
 import os
 import sys
 import unittest
+from collections.abc import Container
 
 from test import support
 
+from .filter import match_test, set_match_tests
 from .utils import (
-    StrPath, TestName, TestTuple, TestList, FilterTuple,
+    StrPath, TestName, TestTuple, TestList, TestFilter,
     abs_module_name, count, printlist)
 
 
@@ -18,10 +20,16 @@ from .utils import (
 SPLITTESTDIRS: set[TestName] = {
     "test_asyncio",
     "test_concurrent_futures",
+    "test_doctests",
     "test_future_stmt",
+    "test_gdb",
+    "test_inspect",
+    "test_io",
     "test_multiprocessing_fork",
     "test_multiprocessing_forkserver",
     "test_multiprocessing_spawn",
+    "test_os",
+    "test_pydoc",
 }
 
 
@@ -29,7 +37,7 @@ def findtestdir(path: StrPath | None = None) -> StrPath:
     return path or os.path.dirname(os.path.dirname(__file__)) or os.curdir
 
 
-def findtests(*, testdir: StrPath | None = None, exclude=(),
+def findtests(*, testdir: StrPath | None = None, exclude: Container[str] = (),
               split_test_dirs: set[TestName] = SPLITTESTDIRS,
               base_mod: str = "") -> TestList:
     """Return a list of all applicable test modules."""
@@ -55,8 +63,9 @@ def findtests(*, testdir: StrPath | None = None, exclude=(),
     return sorted(tests)
 
 
-def split_test_packages(tests, *, testdir: StrPath | None = None, exclude=(),
-                        split_test_dirs=SPLITTESTDIRS):
+def split_test_packages(tests, *, testdir: StrPath | None = None,
+                        exclude: Container[str] = (),
+                        split_test_dirs=SPLITTESTDIRS) -> list[TestName]:
     testdir = findtestdir(testdir)
     splitted = []
     for name in tests:
@@ -70,35 +79,72 @@ def split_test_packages(tests, *, testdir: StrPath | None = None, exclude=(),
     return splitted
 
 
-def _list_cases(suite):
+def _list_cases(suite: unittest.TestSuite) -> None:
     for test in suite:
-        if isinstance(test, unittest.loader._FailedTest):
+        if isinstance(test, unittest.loader._FailedTest):  # type: ignore[attr-defined]
             continue
         if isinstance(test, unittest.TestSuite):
             _list_cases(test)
         elif isinstance(test, unittest.TestCase):
-            if support.match_test(test):
+            if match_test(test):
                 print(test.id())
 
 def list_cases(tests: TestTuple, *,
-               match_tests: FilterTuple | None = None,
-               ignore_tests: FilterTuple | None = None,
-               test_dir: StrPath | None = None):
+               match_tests: TestFilter | None = None,
+               test_dir: StrPath | None = None) -> None:
     support.verbose = False
-    support.set_match_tests(match_tests, ignore_tests)
-
-    skipped = []
-    for test_name in tests:
-        module_name = abs_module_name(test_name, test_dir)
-        try:
-            suite = unittest.defaultTestLoader.loadTestsFromName(module_name)
-            _list_cases(suite)
-        except unittest.SkipTest:
-            skipped.append(test_name)
-
+    cases_by_module, skipped = collect_cases(tests, match_tests=match_tests,
+                                             test_dir=test_dir)
+    for cases in cases_by_module.values():
+        for case_id in cases:
+            print(case_id)
     if skipped:
         sys.stdout.flush()
         stderr = sys.stderr
         print(file=stderr)
         print(count(len(skipped), "test"), "skipped:", file=stderr)
         printlist(skipped, file=stderr)
+
+class _ModuleLoadFailed(Exception):
+    """The test module failed to load; its test cases are unknown."""
+
+
+def collect_cases(tests: TestTuple, *,
+                  match_tests: TestFilter | None = None,
+                  test_dir: StrPath | None = None
+                  ) -> tuple[dict[TestName, list[str]], list[TestName]]:
+    # Install the filter unconditionally: passing None clears any
+    # previously installed global filter, so collection is not
+    # affected by unrelated state in this process.
+    set_match_tests(match_tests)
+    result: dict[TestName, list[str]] = {}
+    skipped: list[TestName] = []
+    for test_name in tests:
+        module_name = abs_module_name(test_name, test_dir)
+        cases: list[str] = []
+        try:
+            suite = unittest.defaultTestLoader.loadTestsFromName(module_name)
+            _collect_cases(suite, cases)
+        except unittest.SkipTest:
+            skipped.append(test_name)
+            continue
+        except _ModuleLoadFailed:
+            # The module failed to load. Run it as a whole, so that the
+            # error is reported as in the normal mode.
+            result[test_name] = [test_name]
+            continue
+        if cases:
+            result[test_name] = cases
+    return result, skipped
+
+def _collect_cases(suite: unittest.TestSuite, out: list[str]) -> None:
+    for test in suite:
+        if isinstance(test, unittest.TestSuite):
+            _collect_cases(test, out)
+        elif isinstance(test, unittest.loader._FailedTest):  # type: ignore[attr-defined]
+            # The test module failed to load. Its test cases are
+            # unknown: let the caller run the whole module.
+            raise _ModuleLoadFailed
+        elif isinstance(test, unittest.TestCase):
+            if match_test(test):
+                out.append(test.id())

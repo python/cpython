@@ -1,2 +1,0 @@
-Moved tests for ``zipfile.Path`` into ``Lib/test/test_zipfile/_path``. Made
-``zipfile._path`` a package.

@@ -15,16 +15,18 @@ _IntEnum._convert_(
         'Handlers', __name__,
         lambda name: name in ('SIG_DFL', 'SIG_IGN'))
 
-if 'pthread_sigmask' in _globals:
+if 'SIG_BLOCK' in _globals:
     _IntEnum._convert_(
             'Sigmasks', __name__,
             lambda name: name in ('SIG_BLOCK', 'SIG_UNBLOCK', 'SIG_SETMASK'))
 
 
 def _int_to_enum(value, enum_klass):
-    """Convert a numeric value to an IntEnum member.
-    If it's not a known member, return the numeric value itself.
+    """Convert a possible numeric value to an IntEnum member.
+    If it's not a known member, return the value itself.
     """
+    if not isinstance(value, int):
+        return value
     try:
         return enum_klass(value)
     except ValueError:

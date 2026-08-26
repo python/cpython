@@ -2,14 +2,18 @@
 #define _PY_INTERPRETER
 
 #include "Python.h"
-#include "pycore_frame.h"
-#include "pycore_function.h"
-#include "pycore_global_objects.h"
+#include "pycore_compile.h"       // _PyCompile_GetUnaryIntrinsicName
+#include "pycore_function.h"      // _Py_set_function_type_params()
+#include "pycore_genobject.h"     // _PyAsyncGenValueWrapperNew
+#include "pycore_interpframe.h"   // _PyFrame_GetLocals()
 #include "pycore_intrinsics.h"    // INTRINSIC_PRINT
+#include "pycore_list.h"          // _PyList_AsTupleAndClear()
+#include "pycore_object.h"        // _PyObject_IsUniquelyReferenced()
+#include "pycore_setobject.h"     // _PySet_Freeze()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_runtime.h"       // _Py_ID()
-#include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_typevarobject.h" // _Py_make_typevar()
+#include "pycore_unicodeobject.h" // _PyUnicode_FromASCII()
 
 
 /******** Unary functions ********/
@@ -22,16 +26,15 @@ no_intrinsic1(PyThreadState* tstate, PyObject *unused)
 }
 
 static PyObject *
-print_expr(PyThreadState* tstate, PyObject *value)
+print_expr(PyThreadState* Py_UNUSED(ignored), PyObject *value)
 {
-    PyObject *hook = _PySys_GetAttr(tstate, &_Py_ID(displayhook));
-    // Can't use ERROR_IF here.
+    PyObject *hook = PySys_GetAttr(&_Py_ID(displayhook));
     if (hook == NULL) {
-        _PyErr_SetString(tstate, PyExc_RuntimeError,
-                            "lost sys.displayhook");
         return NULL;
     }
-    return PyObject_CallOneArg(hook, value);
+    PyObject *res = PyObject_CallOneArg(hook, value);
+    Py_DECREF(hook);
+    return res;
 }
 
 static int
@@ -122,18 +125,15 @@ static PyObject *
 import_star(PyThreadState* tstate, PyObject *from)
 {
     _PyInterpreterFrame *frame = tstate->current_frame;
-    if (_PyFrame_FastToLocalsWithError(frame) < 0) {
-        return NULL;
-    }
 
-    PyObject *locals = frame->f_locals;
+    PyObject *locals = _PyFrame_GetLocals(frame);
     if (locals == NULL) {
         _PyErr_SetString(tstate, PyExc_SystemError,
                             "no locals found during 'import *'");
         return NULL;
     }
     int err = import_all_from(tstate, locals, from);
-    _PyFrame_LocalsToFast(frame, 0);
+    Py_DECREF(locals);
     if (err < 0) {
         return NULL;
     }
@@ -193,8 +193,12 @@ unary_pos(PyThreadState* unused, PyObject *value)
 static PyObject *
 list_to_tuple(PyThreadState* unused, PyObject *v)
 {
-    assert(PyList_Check(v));
-    return _PyTuple_FromArray(((PyListObject *)v)->ob_item, Py_SIZE(v));
+    /* INTRINSIC_LIST_TO_TUPLE is only emitted by the compiler for a
+       freshly-built, uniquely-referenced temporary list, so steal its items
+       into the tuple instead of copying them. */
+    assert(PyList_CheckExact(v));
+    assert(_PyObject_IsUniquelyReferenced(v));
+    return _PyList_AsTupleAndClear((PyListObject *)v);
 }
 
 static PyObject *
@@ -202,6 +206,14 @@ make_typevar(PyThreadState* Py_UNUSED(ignored), PyObject *v)
 {
     assert(PyUnicode_Check(v));
     return _Py_make_typevar(v, NULL, NULL);
+}
+
+static PyObject *
+make_frozenset(PyThreadState* Py_UNUSED(ignored), PyObject *set)
+{
+    assert(PySet_CheckExact(set));
+    assert(_PyObject_IsUniquelyReferenced(set));
+    return _PySet_Freeze(set);
 }
 
 
@@ -222,6 +234,7 @@ _PyIntrinsics_UnaryFunctions[] = {
     INTRINSIC_FUNC_ENTRY(INTRINSIC_TYPEVARTUPLE, _Py_make_typevartuple)
     INTRINSIC_FUNC_ENTRY(INTRINSIC_SUBSCRIPT_GENERIC, _Py_subscript_generic)
     INTRINSIC_FUNC_ENTRY(INTRINSIC_TYPEALIAS, _Py_make_typealias)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_BUILD_FROZENSET, make_frozenset)
 };
 
 
@@ -257,6 +270,23 @@ make_typevar_with_constraints(PyThreadState* Py_UNUSED(ignored), PyObject *name,
     return _Py_make_typevar(name, NULL, evaluate_constraints);
 }
 
+static PyObject *
+add_conditional_annotation(PyThreadState* tstate, PyObject *conditional_annotations,
+                           PyObject *index)
+{
+    // gh-154902: user code can rebind __conditional_annotations__ to any object
+    if (!PySet_CheckExact(conditional_annotations)) {
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "__conditional_annotations__ must be a set, not %T",
+                      conditional_annotations);
+        return NULL;
+    }
+    if (PySet_Add(conditional_annotations, index) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 const intrinsic_func2_info
 _PyIntrinsics_BinaryFunctions[] = {
     INTRINSIC_FUNC_ENTRY(INTRINSIC_2_INVALID, no_intrinsic2)
@@ -264,12 +294,14 @@ _PyIntrinsics_BinaryFunctions[] = {
     INTRINSIC_FUNC_ENTRY(INTRINSIC_TYPEVAR_WITH_BOUND, make_typevar_with_bound)
     INTRINSIC_FUNC_ENTRY(INTRINSIC_TYPEVAR_WITH_CONSTRAINTS, make_typevar_with_constraints)
     INTRINSIC_FUNC_ENTRY(INTRINSIC_SET_FUNCTION_TYPE_PARAMS, _Py_set_function_type_params)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_SET_TYPEPARAM_DEFAULT, _Py_set_typeparam_default)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_ADD_CONDITIONAL_ANNOTATION, add_conditional_annotation)
 };
 
 #undef INTRINSIC_FUNC_ENTRY
 
 PyObject*
-PyUnstable_GetUnaryIntrinsicName(int index)
+_PyCompile_GetUnaryIntrinsicName(int index)
 {
     if (index < 0 || index > MAX_INTRINSIC_1) {
         return NULL;
@@ -278,7 +310,7 @@ PyUnstable_GetUnaryIntrinsicName(int index)
 }
 
 PyObject*
-PyUnstable_GetBinaryIntrinsicName(int index)
+_PyCompile_GetBinaryIntrinsicName(int index)
 {
     if (index < 0 || index > MAX_INTRINSIC_2) {
         return NULL;

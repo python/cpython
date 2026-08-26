@@ -1,2 +1,0 @@
-Disallow nested scopes (lambdas, generator expressions, and comprehensions)
-within PEP 695 annotation scopes that are nested within classes.

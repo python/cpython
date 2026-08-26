@@ -1,2 +1,0 @@
-Opcode IDs are generated from bytecodes.c instead of being hard coded in
-opcode.py.

@@ -1,3 +1,0 @@
-Improve error messages when converting an incompatible type to
-:class:`ctypes.c_char_p`, :class:`ctypes.c_wchar_p` and
-:class:`ctypes.c_void_p`.

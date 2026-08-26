@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 static PyObject *
 pysqlite_row_new_impl(PyTypeObject *type, pysqlite_Cursor *cursor,
                       PyObject *data);
@@ -50,8 +52,8 @@ static PyObject *
 pysqlite_row_keys_impl(pysqlite_Row *self);
 
 static PyObject *
-pysqlite_row_keys(pysqlite_Row *self, PyObject *Py_UNUSED(ignored))
+pysqlite_row_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return pysqlite_row_keys_impl(self);
+    return pysqlite_row_keys_impl((pysqlite_Row *)self);
 }
-/*[clinic end generated code: output=972487d535d2e7d5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6c1acbb48f386468 input=a9049054013a1b77]*/

@@ -1,3 +1,0 @@
-Skip ``test_perf_profiler`` if Python is built with ASAN, MSAN or UBSAN
-sanitizer. Python does crash randomly in this test on such build. Patch by
-Victor Stinner.

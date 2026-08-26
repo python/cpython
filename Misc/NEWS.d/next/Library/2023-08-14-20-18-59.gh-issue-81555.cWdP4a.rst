@@ -1,1 +1,0 @@
-:mod:`xml.dom.minidom` now only quotes ``"`` in attributes.

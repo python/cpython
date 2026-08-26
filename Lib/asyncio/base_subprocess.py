@@ -3,6 +3,9 @@ import errno
 import os
 import subprocess
 import warnings
+import os
+import signal
+import sys
 
 from . import protocols
 from . import transports
@@ -21,7 +24,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         self._proc = None
         self._pid = None
         self._returncode = None
-        self._exit_waiters = []
+        self._exit_waiters = set()
         self._pending_calls = collections.deque()
         self._pipes = {}
         self._finished = False
@@ -103,7 +106,12 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         for proto in self._pipes.values():
             if proto is None:
                 continue
-            proto.pipe.close()
+            # See gh-114177
+            # skip closing the pipe if loop is already closed
+            # this can happen e.g. when loop is closed immediately after
+            # process is killed
+            if self._loop and not self._loop.is_closed():
+                proto.pipe.close()
 
         if (self._proc is not None and
                 # has the child process finished?
@@ -117,7 +125,8 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
 
             try:
                 self._proc.kill()
-            except ProcessLookupError:
+            except (ProcessLookupError, PermissionError):
+                # the process may have already exited or may be running setuid
                 pass
 
             # Don't clear the _proc reference yet: _post_init() may still run
@@ -143,17 +152,34 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         if self._proc is None:
             raise ProcessLookupError(errno.ESRCH, os.strerror(errno.ESRCH))
 
-    def send_signal(self, signal):
-        self._check_proc()
-        self._proc.send_signal(signal)
+    if sys.platform == 'win32':
+        def send_signal(self, signal):
+            self._check_proc()
+            self._proc.send_signal(signal)
 
-    def terminate(self):
-        self._check_proc()
-        self._proc.terminate()
+        def terminate(self):
+            self._check_proc()
+            self._proc.terminate()
 
-    def kill(self):
-        self._check_proc()
-        self._proc.kill()
+        def kill(self):
+            self._check_proc()
+            self._proc.kill()
+    else:
+        def send_signal(self, signal):
+            self._check_proc()
+            if self._returncode is not None:
+                # The process already exited
+                return
+            try:
+                os.kill(self._proc.pid, signal)
+            except ProcessLookupError:
+                pass
+
+        def terminate(self):
+            self.send_signal(signal.SIGTERM)
+
+        def kill(self):
+            self.send_signal(signal.SIGKILL)
 
     async def _connect_pipes(self, waiter):
         try:
@@ -187,6 +213,14 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         except (SystemExit, KeyboardInterrupt):
             raise
         except BaseException as exc:
+            # Close any pipes that were already connected before the
+            # error/cancellation to avoid leaking file descriptors.
+            for proto in self._pipes.values():
+                if proto is not None:
+                    proto.pipe.close()
+            for raw_pipe in (proc.stdin, proc.stdout, proc.stderr):
+                if raw_pipe is not None:
+                    raw_pipe.close()
             if waiter is not None and not waiter.cancelled():
                 waiter.set_exception(exc)
         else:
@@ -212,6 +246,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         if self._loop.get_debug():
             logger.info('%r exited with return code %r', self, returncode)
         self._returncode = returncode
+
         if self._proc.returncode is None:
             # asyncio uses a child watcher: copy the status into the Popen
             # object. On Python 3.6, it is required to avoid a ResourceWarning.
@@ -219,6 +254,13 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         self._call(self._protocol.process_exited)
 
         self._try_finish()
+
+        # gh-119710: Wake up futures waiting for wait() as soon as the process
+        # exits.
+        for waiter in self._exit_waiters:
+            if not waiter.done():
+                waiter.set_result(returncode)
+        self._exit_waiters = None
 
     async def _wait(self):
         """Wait until the process exit and return the process return code.
@@ -228,13 +270,18 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
             return self._returncode
 
         waiter = self._loop.create_future()
-        self._exit_waiters.append(waiter)
-        return await waiter
+        self._exit_waiters.add(waiter)
+        try:
+            return await waiter
+        finally:
+            if self._exit_waiters is not None:
+                self._exit_waiters.discard(waiter)
 
     def _try_finish(self):
         assert not self._finished
         if self._returncode is None:
             return
+
         if all(p is not None and p.disconnected
                for p in self._pipes.values()):
             self._finished = True
@@ -244,11 +291,6 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         try:
             self._protocol.connection_lost(exc)
         finally:
-            # wake up futures waiting for wait()
-            for waiter in self._exit_waiters:
-                if not waiter.cancelled():
-                    waiter.set_result(self._returncode)
-            self._exit_waiters = None
             self._loop = None
             self._proc = None
             self._protocol = None

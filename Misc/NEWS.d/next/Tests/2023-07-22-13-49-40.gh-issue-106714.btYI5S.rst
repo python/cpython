@@ -1,3 +1,0 @@
-test_capi: Fix test_no_FatalError_infinite_loop() to no longer write a
-coredump, by using test.support.SuppressCrashReport. Patch by Victor
-Stinner.

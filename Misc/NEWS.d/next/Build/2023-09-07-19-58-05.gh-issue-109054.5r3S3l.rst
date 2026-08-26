@@ -1,6 +1,0 @@
-Fix building the ``_testcapi`` extension on Linux AArch64 which requires
-linking to libatomic when ``<cpython/pyatomic.h>`` is used: the
-``_Py_atomic_or_uint64()`` function requires libatomic
-``__atomic_fetch_or_8()`` on this platform. The configure script now checks
-if linking to libatomic is needed and generates a new LIBATOMIC variable
-used to build the _testcapi extension. Patch by Victor Stinner.

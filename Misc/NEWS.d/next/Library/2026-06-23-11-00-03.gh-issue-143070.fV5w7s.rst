@@ -1,0 +1,3 @@
+Automatically generated :mod:`tkinter` widget names now start with ``"+"``
+instead of ``"!"``, so that they can be used as tags in the
+:class:`!tkinter.Canvas` and :class:`!tkinter.Text` widgets.

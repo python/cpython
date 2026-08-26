@@ -1,4 +1,0 @@
-Fix :func:`_thread.start_new_thread` race condition. If a thread is created
-during Python finalization, the newly spawned thread now exits immediately
-instead of trying to access freed memory and lead to a crash. Patch by
-Victor Stinner.
