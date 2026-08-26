@@ -1,0 +1,6 @@
+:mod:`tracemalloc` no longer acquires the :term:`GIL` nor creates a
+temporary thread state when tracing memory allocations. Memory allocations
+and :c:func:`PyTraceMalloc_Track` calls made by threads without an
+:term:`attached thread state` now record the traceback as ``<unknown>``
+instead of temporarily attaching a thread state to capture the Python
+traceback of the calling thread.
