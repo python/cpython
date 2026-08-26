@@ -153,10 +153,13 @@ get_module_state(PyObject *mod)
 #define INCHAR1 (PyUnicode_READ(kind, data, *inpos))
 #define INCHAR2 (PyUnicode_READ(kind, data, *inpos + 1))
 
+/* Decoders emit one character at a time, so this must stay inline: the
+   out-of-line _PyUnicodeWriter_WriteChar() is a cross-module call per output
+   character.  OUTCHAR2 below is written inline for the same reason. */
 #define OUTCHAR(c)                                                         \
     do {                                                                   \
-        if (_PyUnicodeWriter_WriteChar(writer, (c)) < 0)                   \
-            return MBERR_EXCEPTION;                                         \
+        if (_PyUnicodeWriter_WriteCharInline(writer, (c)) < 0)             \
+            return MBERR_EXCEPTION;                                        \
     } while (0)
 
 #define OUTCHAR2(c1, c2)                                                   \
