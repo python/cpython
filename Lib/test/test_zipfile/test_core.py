@@ -2662,6 +2662,49 @@ class OtherRepackTests(unittest.TestCase):
         fz.seek(0)
         self.assertEqual(fz.read(), expected)
 
+    def test_repack_failed_write_restores_header_offsets(self):
+        # A failed repack() must leave the in-memory offsets describing the
+        # file that is actually on disk, so that a later close() does not
+        # commit a central directory pointing at data that was never written.
+        class FlakyBytesIO(io.BytesIO):
+            countdown = None
+
+            def write(self, data):
+                if self.countdown is not None:
+                    self.countdown -= 1
+                    if self.countdown < 0:
+                        raise OSError(errno.ENOSPC, 'No space left on device')
+                return super().write(data)
+
+        names = ['a.txt', 'b.txt', 'c.txt', 'd.txt']
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, 'w') as zh:
+            for name in names:
+                zh.writestr(name, name[0].upper().encode() * 5000)
+
+        fz = FlakyBytesIO(buf.getvalue())
+        with zipfile.ZipFile(fz, 'a') as zh:
+            zi = zh.remove('b.txt')
+            expected = [z.header_offset for z in zh.infolist()]
+            expected_removed = zi.header_offset
+
+            fz.countdown = 1
+            with self.assertRaises(OSError):
+                zh.repack([zi], chunk_size=4096)
+
+            self.assertEqual([z.header_offset for z in zh.infolist()], expected)
+            self.assertEqual(zi.header_offset, expected_removed)
+
+            # The archive is still usable once the write error clears.
+            fz.countdown = None
+
+        fz.seek(0)
+        with zipfile.ZipFile(fz) as zh:
+            self.assertIsNone(zh.testzip())
+            self.assertEqual(zh.namelist(), ['a.txt', 'c.txt', 'd.txt'])
+            for name in zh.namelist():
+                self.assertEqual(zh.read(name), name[0].upper().encode() * 5000)
+
 class ZipRepackerTests(unittest.TestCase):
     def _generate_local_file_entry(self, arcname, raw_bytes,
                                    compression=zipfile.ZIP_STORED,

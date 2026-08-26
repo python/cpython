@@ -2434,12 +2434,18 @@ class ZipFile:
                 )
 
             self._writing = True
+            header_offsets = [(zinfo, zinfo.header_offset)
+                              for zinfo in (*self.filelist, *(removed or ()))]
             try:
                 repacker = _ZipRepacker(
                     strict_descriptor=strict_descriptor,
                     chunk_size=chunk_size,
                 )
                 repacker.repack(self, removed)
+            except BaseException:
+                for zinfo, header_offset in header_offsets:
+                    zinfo.header_offset = header_offset
+                raise
             finally:
                 self._writing = False
 
