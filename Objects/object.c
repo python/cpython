@@ -3224,6 +3224,10 @@ _PyTrash_thread_destroy_chain(PyThreadState *tstate)
          * up distorting allocation statistics.
          */
         _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
+#ifdef Py_TRACE_REFS
+        _Py_ForgetReference(op);
+#endif
+        _PyReftracerTrack(op, PyRefTracer_DESTROY);
         (*dealloc)(op);
     }
 }
@@ -3298,10 +3302,6 @@ _Py_Dealloc(PyObject *op)
         tstate = _PyThreadState_GET();
         margin = _Py_RecursionLimit_GetMargin(tstate);
         if (margin < 2) {
-#ifdef Py_TRACE_REFS
-            _Py_ForgetReference(op);
-#endif
-            _PyReftracerTrack(op, PyRefTracer_DESTROY);
             _PyTrash_thread_deposit_object(tstate, (PyObject *)op);
             return;
         }
