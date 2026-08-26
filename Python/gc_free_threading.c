@@ -2592,6 +2592,13 @@ _PyGC_ResumeAutomaticCollection(PyThreadState *tstate)
     assert(previous > 0);
 }
 
+void
+_PyGC_AfterFork(PyInterpreterState *interp)
+{
+    _Py_atomic_store_int(
+        &interp->gc.automatic_collection_pause_count, 0);
+}
+
 /* Public API to invoke gc.collect() from C */
 Py_ssize_t
 PyGC_Collect(void)

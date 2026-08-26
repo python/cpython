@@ -11,6 +11,7 @@ from test.support.script_helper import assert_python_ok, make_script
 from test.support import threading_helper, gc_threshold
 
 import gc
+import os
 import sys
 import sysconfig
 import textwrap
@@ -161,6 +162,27 @@ class GCTests(unittest.TestCase):
                     thread.join()
                     self.assertEqual(len(objects), 10_000)
                     self.assertEqual(self.total_collections(), before)
+                finally:
+                    _testinternalcapi.resume_automatic_gc()
+        finally:
+            if not was_enabled:
+                gc.disable()
+
+    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
+    @support.requires_fork()
+    def test_defer_automatic_collection_reset_after_fork(self):
+        was_enabled = gc.isenabled()
+        gc.enable()
+        try:
+            with gc_threshold(1, 0, 0):
+                _testinternalcapi.defer_automatic_gc()
+                try:
+                    pid = os.fork()
+                    if pid == 0:
+                        before = self.total_collections()
+                        objects = [[] for _ in range(10_000)]
+                        os._exit(self.total_collections() <= before)
+                    support.wait_process(pid, exitcode=0)
                 finally:
                     _testinternalcapi.resume_automatic_gc()
         finally:

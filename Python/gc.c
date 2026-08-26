@@ -1799,6 +1799,12 @@ _PyGC_ResumeAutomaticCollection(PyThreadState *tstate)
     gcstate->automatic_collection_pause_count--;
 }
 
+void
+_PyGC_AfterFork(PyInterpreterState *interp)
+{
+    interp->gc.automatic_collection_pause_count = 0;
+}
+
 /* Public API to invoke gc.collect() from C */
 Py_ssize_t
 PyGC_Collect(void)
