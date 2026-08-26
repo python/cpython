@@ -5,8 +5,10 @@
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_symtable.h"      // PySTEntryObject
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString
+#include "setobject.h"
 
 #include <stddef.h>               // offsetof()
+#include <stdint.h>
 
 
 // Set this to 1 to dump all symtables to stdout for debugging
@@ -128,14 +130,15 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
 
     if (st->st_cur != NULL &&
         (st->st_cur->ste_nested ||
-         _PyST_IsFunctionLike(st->st_cur)))
+         _PyST_IsFunctionLike(st->st_cur) ||
+         st->st_cur->ste_type == InlinedComprehensionBlock))
         ste->ste_nested = 1;
     ste->ste_generator = 0;
     ste->ste_coroutine = 0;
     ste->ste_comprehension = NoComprehension;
     ste->ste_returns_value = 0;
     ste->ste_needs_class_closure = 0;
-    ste->ste_comp_inlined = 0;
+    ste->ste_parent = (block == InlinedComprehensionBlock) ? st->st_cur : NULL;
     ste->ste_comp_iter_target = 0;
     ste->ste_can_see_class_scope = 0;
     ste->ste_comp_iter_expr = 0;
@@ -295,6 +298,7 @@ static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
         case TypeVariableBlock: blocktype = "TypeVariableBlock"; break;
         case TypeAliasBlock: blocktype = "TypeAliasBlock"; break;
         case TypeParametersBlock: blocktype = "TypeParametersBlock"; break;
+        case InlinedComprehensionBlock: blocktype = "InlinedComprehensionBlock"; break;
     }
     const char *comptype = "";
     switch (ste->ste_comprehension) {
@@ -308,7 +312,7 @@ static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
         (
             "%U=== Symtable for %U ===\n"
             "%U%s%s\n"
-            "%U%s%s%s%s%s%s%s%s%s%s%s\n"
+            "%U%s%s%s%s%s%s%s%s%s%s\n"
             "%Ulineno: %d col_offset: %d\n"
             "%U--- Symbols ---\n"
         ),
@@ -326,7 +330,6 @@ static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
         ste->ste_returns_value ? " returns_value" : "",
         ste->ste_needs_class_closure ? " needs_class_closure" : "",
         ste->ste_needs_classdict ? " needs_classdict" : "",
-        ste->ste_comp_inlined ? " comp_inlined" : "",
         ste->ste_comp_iter_target ? " comp_iter_target" : "",
         ste->ste_can_see_class_scope ? " can_see_class_scope" : "",
         prefix,
@@ -537,22 +540,26 @@ _PySymtable_LookupOptional(struct symtable *st, void *key,
 long
 _PyST_GetSymbol(PySTEntryObject *ste, PyObject *name)
 {
-    PyObject *v;
-    if (PyDict_GetItemRef(ste->ste_symbols, name, &v) < 0) {
-        return -1;
-    }
-    if (!v) {
-        return 0;
-    }
-    long symbol = PyLong_AsLong(v);
-    Py_DECREF(v);
-    if (symbol < 0) {
-        if (!PyErr_Occurred()) {
-            PyErr_SetString(PyExc_SystemError, "invalid symbol");
+    while (ste != NULL) {
+        PyObject *v;
+        if (PyDict_GetItemRef(ste->ste_symbols, name, &v) < 0) {
+            return -1;
         }
-        return -1;
+        if (v != NULL) {
+            long symbol = PyLong_AsLong(v);
+            Py_DECREF(v);
+            if (symbol < 0) {
+                if (!PyErr_Occurred()) {
+                    PyErr_SetString(PyExc_SystemError, "invalid symbol");
+                }
+                return -1;
+            }
+            return symbol;
+        }
+        assert(ste->ste_parent == NULL || ste->ste_type == InlinedComprehensionBlock);
+        ste = ste->ste_parent;
     }
-    return symbol;
+    return 0;
 }
 
 int
@@ -573,6 +580,13 @@ _PyST_IsFunctionLike(PySTEntryObject *ste)
         || ste->ste_type == TypeVariableBlock
         || ste->ste_type == TypeAliasBlock
         || ste->ste_type == TypeParametersBlock;
+}
+
+/* True if this block binds locals that are visible to nested scopes */
+static int
+ste_binds_locals_for_children(PySTEntryObject *ste)
+{
+    return _PyST_IsFunctionLike(ste) || ste->ste_type == InlinedComprehensionBlock;
 }
 
 static int
@@ -801,37 +815,102 @@ is_free_in_any_child(PySTEntryObject *entry, PyObject *key)
     return 0;
 }
 
+/* True if name is FREE in the comprehension and bound in the enclosing class.
+ * Those names are kept in the compressed delta so lookup does not treat them
+ * as class locals. */
 static int
-inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
-                     PyObject *scopes, PyObject *comp_free,
-                     PyObject *inlined_cells)
+class_binds_free_name(PySTEntryObject *ste, PyObject *name, long comp_flags)
+{
+    if (SYMBOL_TO_SCOPE(comp_flags) != FREE) {
+        return 0;
+    }
+    if (ste->ste_type != ClassBlock) {
+        return 0;
+    }
+    PyObject *v = PyDict_GetItemWithError(ste->ste_symbols, name);
+    if (v == NULL) {
+        return PyErr_Occurred() ? -1 : 0;
+    }
+    long class_flags = PyLong_AsLong(v);
+    if (class_flags == -1 && PyErr_Occurred()) {
+        return -1;
+    }
+    if (class_flags & (DEF_LOCAL | DEF_GLOBAL | DEF_FREE_CLASS | DEF_TYPE_PARAM))
+    {
+        return 1;
+    }
+    return 0;
+}
+
+static PyObject *
+get_freevar_names(PySTEntryObject *ste)
+{
+    PyObject *free = PySet_New(NULL);
+    if (free == NULL) {
+        return NULL;
+    }
+    PyObject *k, *v;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(ste->ste_symbols, &pos, &k, &v)) {
+        long flags = PyLong_AsLong(v);
+        if (flags == -1 && PyErr_Occurred()) {
+            Py_DECREF(free);
+            return NULL;
+        }
+        if (SYMBOL_TO_SCOPE(flags) == FREE) {
+            if (PySet_Add(free, k) < 0) {
+                Py_DECREF(free);
+                return NULL;
+            }
+        }
+    }
+    return free;
+}
+
+static int
+finalize_inlined_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
+                                PyObject *comp_free, PyObject *outer_newfree,
+                                PyObject *inlined_cells)
 {
     PyObject *k, *v;
     Py_ssize_t pos = 0;
-    int remove_dunder_class = 0;
-    int remove_dunder_classdict = 0;
-    int remove_dunder_cond_annotations = 0;
+    PyObject *to_remove = NULL;
+
+    assert(comp->ste_type == InlinedComprehensionBlock);
+    assert(comp->ste_parent != NULL);
+
+    to_remove = PyList_New(0);
+    if (to_remove == NULL) {
+        return 0;
+    }
 
     while (PyDict_Next(comp->ste_symbols, &pos, &k, &v)) {
-        // skip comprehension parameter
         long comp_flags = PyLong_AsLong(v);
         if (comp_flags == -1 && PyErr_Occurred()) {
-            return 0;
-        }
-        if (comp_flags & DEF_PARAM) {
-            assert(_PyUnicode_EqualToASCIIString(k, ".0"));
-            continue;
+            goto error;
         }
         int scope = SYMBOL_TO_SCOPE(comp_flags);
         int only_flags = comp_flags & ((1 << SCOPE_OFFSET) - 1);
         if (scope == CELL || only_flags & DEF_COMP_CELL) {
             if (PySet_Add(inlined_cells, k) < 0) {
-                return 0;
+                goto error;
+            }
+            if (!(only_flags & DEF_COMP_CELL)) {
+                comp_flags |= DEF_COMP_CELL;
+                PyObject *newv = PyLong_FromLong(comp_flags);
+                if (newv == NULL) {
+                    goto error;
+                }
+                if (PyDict_SetItem(comp->ste_symbols, k, newv) < 0) {
+                    Py_DECREF(newv);
+                    goto error;
+                }
+                Py_DECREF(newv);
             }
         }
         PyObject *existing = PyDict_GetItemWithError(ste->ste_symbols, k);
         if (existing == NULL && PyErr_Occurred()) {
-            return 0;
+            goto error;
         }
         // __class__, __classdict__ and __conditional_annotations__ are
         // not allowed to be free through a class scope (see
@@ -840,71 +919,103 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
                 (_PyUnicode_EqualToASCIIString(k, "__class__") ||
                  _PyUnicode_EqualToASCIIString(k, "__classdict__") ||
                  _PyUnicode_EqualToASCIIString(k, "__conditional_annotations__"))) {
-            scope = GLOBAL_IMPLICIT;
             int child_needs_free = is_free_in_any_child(comp, k);
             if (child_needs_free < 0) {
-                return 0;
+                goto error;
             }
             if (!child_needs_free) {
                 if (PySet_Discard(comp_free, k) < 0) {
-                    return 0;
+                    goto error;
                 }
             }
-            if (_PyUnicode_EqualToASCIIString(k, "__class__")) {
-                remove_dunder_class = 1;
+            long new_flags = only_flags | (GLOBAL_IMPLICIT << SCOPE_OFFSET);
+            PyObject *newv = PyLong_FromLong(new_flags);
+            if (newv == NULL) {
+                goto error;
             }
-            else if (_PyUnicode_EqualToASCIIString(k, "__conditional_annotations__")) {
-                remove_dunder_cond_annotations = 1;
+            if (PyDict_SetItem(comp->ste_symbols, k, newv) < 0) {
+                Py_DECREF(newv);
+                goto error;
             }
-            else {
-                remove_dunder_classdict = 1;
-            }
+            Py_DECREF(newv);
+            continue;
         }
-        if (!existing) {
-            // name does not exist in scope, copy from comprehension
-            assert(scope != FREE || PySet_Contains(comp_free, k) == 1);
-            PyObject *v_flags = PyLong_FromLong(only_flags);
-            if (v_flags == NULL) {
-                return 0;
-            }
-            int ok = PyDict_SetItem(ste->ste_symbols, k, v_flags);
-            Py_DECREF(v_flags);
-            if (ok < 0) {
-                return 0;
-            }
-            SET_SCOPE(scopes, k, scope);
-        }
-        else {
+        if (existing) {
             long flags = PyLong_AsLong(existing);
             if (flags == -1 && PyErr_Occurred()) {
-                return 0;
+                goto error;
             }
             if ((flags & DEF_BOUND) && ste->ste_type != ClassBlock) {
                 // free vars in comprehension that are locals in outer scope can
                 // now simply be locals, unless they are free in comp children,
-                // or if the outer scope is a class block
+                // needed as cells by sibling nested scopes, or if the outer
+                // scope is a class block
                 int ok = is_free_in_any_child(comp, k);
                 if (ok < 0) {
-                    return 0;
+                    goto error;
                 }
                 if (!ok) {
-                    if (PySet_Discard(comp_free, k) < 0) {
-                        return 0;
+                    int in_newfree = PySet_Contains(outer_newfree, k);
+                    if (in_newfree < 0) {
+                        goto error;
+                    }
+                    if (!in_newfree) {
+                        if (PySet_Discard(comp_free, k) < 0) {
+                            goto error;
+                        }
                     }
                 }
             }
         }
+        else {
+            assert(scope != FREE || PySet_Contains(comp_free, k) == 1);
+        }
+
+        /* keep bindings, globals, and class-bound frees in the delta;
+        drop other names (typically FREE uses) so lookup climbs to parent. */
+        if ((comp_flags & DEF_LOCAL) && !(comp_flags & DEF_NONLOCAL)) {
+            continue;
+        }
+        if (scope == GLOBAL_IMPLICIT || scope == GLOBAL_EXPLICIT) {
+            continue;
+        }
+        int keep = class_binds_free_name(ste, k, comp_flags);
+        if (keep < 0) {
+            goto error;
+        }
+        if (!keep) {
+            if (PyList_Append(to_remove, k) < 0) {
+                goto error;
+            }
+        }
     }
-    if (remove_dunder_class && PyDict_DelItemString(comp->ste_symbols, "__class__") < 0) {
-        return 0;
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(to_remove); i++) {
+        PyObject *name = PyList_GET_ITEM(to_remove, i);
+        if (PyDict_DelItem(comp->ste_symbols, name) < 0) {
+            goto error;
+        }
     }
-    if (remove_dunder_classdict && PyDict_DelItemString(comp->ste_symbols, "__classdict__") < 0) {
-        return 0;
-    }
-    if (remove_dunder_cond_annotations && PyDict_DelItemString(comp->ste_symbols, "__conditional_annotations__") < 0) {
-        return 0;
+    Py_CLEAR(to_remove);
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(comp->ste_children); i++) {
+        PySTEntryObject *child = (PySTEntryObject *)PyList_GET_ITEM(comp->ste_children, i);
+        if (child->ste_type != InlinedComprehensionBlock) {
+            continue;
+        }
+        PyObject *child_free = get_freevar_names(child);
+        if (child_free == NULL) {
+            return 0;
+        }
+        int ok = finalize_inlined_comprehension(ste, child, child_free,
+                                                outer_newfree, inlined_cells);
+        Py_DECREF(child_free);
+        if (!ok) {
+            return 0;
+        }
     }
     return 1;
+error:
+    Py_XDECREF(to_remove);
+    return 0;
 }
 
 #undef SET_SCOPE
@@ -1210,7 +1321,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     /* Populate global and bound sets to be passed to children. */
     if (ste->ste_type != ClassBlock) {
         /* Add function locals to bound set */
-        if (_PyST_IsFunctionLike(ste)) {
+        if (ste_binds_locals_for_children(ste)) {
             temp = PyNumber_InPlaceOr(newbound, local);
             if (!temp)
                 goto error;
@@ -1262,24 +1373,18 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
             }
         }
 
-        // we inline all non-generator-expression comprehensions,
-        // except those in annotation scopes that are nested in classes
-        int inline_comp =
-            entry->ste_comprehension &&
-            !entry->ste_generator &&
-            !ste->ste_can_see_class_scope;
-
+        // Compress InlinedComprehensionBlocks ste_symbols to a delta (bindings +
+        // class FREE overrides). Nested deltas are finalized recursively.
         if (!analyze_child_block(entry, newbound, newfree, newglobal,
                                  type_params, new_class_entry, &child_free))
         {
             goto error;
         }
-        if (inline_comp) {
-            if (!inline_comprehension(ste, entry, scopes, child_free, inlined_cells)) {
+        if (entry->ste_type == InlinedComprehensionBlock && ste->ste_type != InlinedComprehensionBlock) {
+            if (!finalize_inlined_comprehension(ste, entry, child_free, newfree, inlined_cells)) {
                 Py_DECREF(child_free);
                 goto error;
             }
-            entry->ste_comp_inlined = 1;
         }
         temp = PyNumber_InPlaceOr(newfree, child_free);
         Py_DECREF(child_free);
@@ -1294,8 +1399,9 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         PySTEntryObject* entry;
         assert(c && PySTEntry_Check(c));
         entry = (PySTEntryObject*)c;
-        if (entry->ste_comp_inlined &&
-            PyList_SetSlice(ste->ste_children, i, i + 1,
+        if (entry->ste_type == InlinedComprehensionBlock &&
+            PyList_GET_SIZE(entry->ste_children) > 0 &&
+            PyList_SetSlice(ste->ste_children, i+1, i + 1,
                             entry->ste_children) < 0)
         {
             goto error;
@@ -1303,10 +1409,12 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     }
 
     /* Check if any local variables must be converted to cell variables */
-    if (_PyST_IsFunctionLike(ste) && !analyze_cells(scopes, newfree, inlined_cells))
+    if (ste_binds_locals_for_children(ste) && !analyze_cells(scopes, newfree, inlined_cells)) {
         goto error;
-    else if (ste->ste_type == ClassBlock && !drop_class_free(ste, newfree))
+    }
+    else if (ste->ste_type == ClassBlock && !drop_class_free(ste, newfree)) {
         goto error;
+    }
     /* Records the results of the analysis in the symbol table entry */
     if (!update_symbols(ste->ste_symbols, scopes, bound, newfree, inlined_cells,
                         (ste->ste_type == ClassBlock) || ste->ste_can_see_class_scope))
@@ -2582,7 +2690,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
             return 0;
         }
         if (!allows_top_level_await(st)) {
-            if (!_PyST_IsFunctionLike(st->st_cur)) {
+            if (!ste_binds_locals_for_children(st->st_cur)) {
                 PyErr_SetString(PyExc_SyntaxError,
                                 "'await' outside function");
                 SET_ERROR_LOCATION(st->st_filename, LOCATION(e));
@@ -2660,7 +2768,8 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
             }
             /* Special-case super: it counts as a use of __class__ */
             if (e->v.Name.ctx == Load &&
-                _PyST_IsFunctionLike(st->st_cur) &&
+                (_PyST_IsFunctionLike(st->st_cur) ||
+                 st->st_cur->ste_type == InlinedComprehensionBlock) &&
                 _PyUnicode_EqualToASCIIString(e->v.Name.id, "super")) {
                 if (!symtable_add_def(st, &_Py_ID(__class__), USE, LOCATION(e)))
                     return 0;
@@ -3103,9 +3212,16 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
     st->st_cur->ste_comp_iter_expr++;
     VISIT(st, expr, outermost->iter);
     st->st_cur->ste_comp_iter_expr--;
+
+    /* Non-generator comprehensions are inlined into the enclosing compilation
+     * unit (including generator expressions), except in annotation scopes
+     * that can see a class. */
+    int will_inline = !is_generator && !st->st_cur->ste_can_see_class_scope;
+    _Py_block_ty block = will_inline ? InlinedComprehensionBlock : FunctionBlock;
+
     /* Create comprehension scope for the rest */
     if (!scope_name ||
-        !symtable_enter_block(st, scope_name, FunctionBlock, (void *)e, LOCATION(e))) {
+        !symtable_enter_block(st, scope_name, block, (void *)e, LOCATION(e))) {
         return 0;
     }
     switch(e->kind) {
@@ -3126,8 +3242,8 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
         st->st_cur->ste_coroutine = 1;
     }
 
-    /* Outermost iter is received as an argument */
-    if (!symtable_implicit_arg(st, 0)) {
+    /* Outermost iter is received as an argument for non-inlined comps */
+    if (!will_inline && !symtable_implicit_arg(st, 0)) {
         symtable_exit_block(st);
         return 0;
     }

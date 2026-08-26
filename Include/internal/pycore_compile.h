@@ -69,9 +69,8 @@ typedef struct {
     PyObject *u_varnames;  /* local variables */
     PyObject *u_cellvars;  /* cell variables */
     PyObject *u_freevars;  /* free variables */
-    PyObject *u_fasthidden; /* dict; keys are names that are fast-locals only
-                               temporarily within an inlined comprehension. When
-                               value is True, treat as fast-local. */
+    PyObject *u_fasthidden; /* set of names that are fast-locals only
+                               temporarily within an inlined comprehension. */
 
     Py_ssize_t u_argcount;        /* number of arguments for block */
     Py_ssize_t u_posonlyargcount;        /* number of positional only arguments for block */
@@ -155,7 +154,6 @@ int _PyCompile_ResolveNameop(struct _PyCompiler *c, PyObject *mangled, int scope
                              _PyCompile_optype *optype, Py_ssize_t *arg);
 
 int _PyCompile_IsInteractiveTopLevel(struct _PyCompiler *c);
-int _PyCompile_IsInInlinedComp(struct _PyCompiler *c);
 int _PyCompile_ScopeType(struct _PyCompiler *c);
 int _PyCompile_OptimizationLevel(struct _PyCompiler *c);
 int _PyCompile_LookupArg(struct _PyCompiler *c, PyCodeObject *co, PyObject *name);
@@ -179,16 +177,15 @@ enum {
 
 typedef struct {
     PyObject *pushed_locals;
-    PyObject *temp_symbols;
-    PyObject *fast_hidden;
     _PyJumpTargetLabel cleanup;
+    PySTEntryObject *saved_ste;
 } _PyCompile_InlinedComprehensionState;
 
-int _PyCompile_TweakInlinedComprehensionScopes(struct _PyCompiler *c, _Py_SourceLocation loc,
-                                               PySTEntryObject *entry,
-                                               _PyCompile_InlinedComprehensionState *state);
-int _PyCompile_RevertInlinedComprehensionScopes(struct _PyCompiler *c, _Py_SourceLocation loc,
-                                                _PyCompile_InlinedComprehensionState *state);
+int _PyCompile_EnterInlinedComprehensionScope(struct _PyCompiler *c, _Py_SourceLocation loc,
+                                              PySTEntryObject *entry,
+                                              _PyCompile_InlinedComprehensionState *state);
+int _PyCompile_ExitInlinedComprehensionScope(struct _PyCompiler *c, _Py_SourceLocation loc,
+                                             _PyCompile_InlinedComprehensionState *state);
 int _PyCompile_AddDeferredAnnotation(struct _PyCompiler *c, stmt_ty s,
                                      PyObject **conditional_annotation_index);
 void _PyCompile_EnterConditionalBlock(struct _PyCompiler *c);

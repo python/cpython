@@ -56,6 +56,7 @@ class SymbolTableType(StrEnum):
     TYPE_ALIAS = "type alias"
     TYPE_PARAMETERS = "type parameters"
     TYPE_VARIABLE = "type variable"
+    INLINED_COMPREHENSION = "inlined comprehension"
 
 
 class SymbolTable:
@@ -98,6 +99,8 @@ class SymbolTable:
             return SymbolTableType.TYPE_PARAMETERS
         if self._table.type == _symtable.TYPE_TYPE_VARIABLE:
             return SymbolTableType.TYPE_VARIABLE
+        if self._table.type == _symtable.TYPE_INLINED_COMPREHENSION:
+            return SymbolTableType.INLINED_COMPREHENSION
         assert False, f"unexpected type: {self._table.type}"
 
     def get_id(self):

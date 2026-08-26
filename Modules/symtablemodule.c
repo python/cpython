@@ -144,6 +144,8 @@ symtable_init_constants(PyObject *m)
         return -1;
     if (PyModule_AddIntConstant(m, "TYPE_TYPE_VARIABLE", TypeVariableBlock) < 0)
         return -1;
+    if (PyModule_AddIntConstant(m, "TYPE_INLINED_COMPREHENSION", InlinedComprehensionBlock) < 0)
+        return -1;
 
     if (PyModule_AddIntMacro(m, LOCAL) < 0) return -1;
     if (PyModule_AddIntMacro(m, GLOBAL_EXPLICIT) < 0) return -1;

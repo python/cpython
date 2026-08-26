@@ -3342,7 +3342,7 @@ codegen_nameop(compiler *c, location loc,
     case COMPILE_OP_DEREF:
         switch (ctx) {
         case Load:
-            if (SYMTABLE_ENTRY(c)->ste_type == ClassBlock && !_PyCompile_IsInInlinedComp(c)) {
+            if (SYMTABLE_ENTRY(c)->ste_type == ClassBlock) {
                 op = LOAD_FROM_DICT_OR_DEREF;
                 // First load the locals
                 if (codegen_addop_noarg(INSTR_SEQUENCE(c), LOAD_LOCALS, loc) < 0) {
@@ -3395,8 +3395,9 @@ codegen_nameop(compiler *c, location loc,
     case COMPILE_OP_NAME:
         switch (ctx) {
         case Load:
-            op = (SYMTABLE_ENTRY(c)->ste_type == ClassBlock
-                    && _PyCompile_IsInInlinedComp(c))
+            /* LOAD_NAME in a class reads the class dict; inlined comps must not. */
+            op = (SCOPE_TYPE(c) == COMPILE_SCOPE_CLASS
+                  && SYMTABLE_ENTRY(c)->ste_type == InlinedComprehensionBlock)
                 ? LOAD_GLOBAL
                 : LOAD_NAME;
             break;
@@ -4917,9 +4918,6 @@ codegen_push_inlined_comprehension_locals(compiler *c, location loc,
                                           PySTEntryObject *comp,
                                           _PyCompile_InlinedComprehensionState *state)
 {
-    int in_class_block = (SYMTABLE_ENTRY(c)->ste_type == ClassBlock) &&
-                          !_PyCompile_IsInInlinedComp(c);
-    PySTEntryObject *outer = SYMTABLE_ENTRY(c);
     // iterate over names bound in the comprehension and ensure we isolate
     // them from the outer scope as needed
     PyObject *k, *v;
@@ -4930,11 +4928,7 @@ codegen_push_inlined_comprehension_locals(compiler *c, location loc,
         RETURN_IF_ERROR(symbol);
         long scope = SYMBOL_TO_SCOPE(symbol);
 
-        long outsymbol = _PyST_GetSymbol(outer, k);
-        RETURN_IF_ERROR(outsymbol);
-        long outsc = SYMBOL_TO_SCOPE(outsymbol);
-
-        if ((symbol & DEF_LOCAL && !(symbol & DEF_NONLOCAL)) || in_class_block) {
+        if ((symbol & DEF_LOCAL) && !(symbol & DEF_NONLOCAL)) {
             // local names bound in comprehension must be isolated from
             // outer scope; push existing value (which may be NULL if
             // not defined) on stack
@@ -4949,14 +4943,16 @@ codegen_push_inlined_comprehension_locals(compiler *c, location loc,
             // comprehension and restore the original one after
             ADDOP_NAME(c, loc, LOAD_FAST_AND_CLEAR, k, varnames);
             if (scope == CELL) {
-                if (outsc == FREE) {
-                    ADDOP_NAME(c, loc, MAKE_CELL, k, freevars);
-                } else {
-                    ADDOP_NAME(c, loc, MAKE_CELL, k, cellvars);
-                }
+                ADDOP_NAME(c, loc, MAKE_CELL, k, cellvars);
             }
             if (PyList_Append(state->pushed_locals, k) < 0) {
                 return ERROR;
+            }
+            if (METADATA(c)->u_fasthidden != NULL) {
+                /* For Module/Class scopes, assemble needs to set CO_FAST_HIDDEN on these names */
+                if (PySet_Add(METADATA(c)->u_fasthidden, k) < 0) {
+                    return ERROR;
+                }
             }
         }
     }
@@ -4986,7 +4982,7 @@ push_inlined_comprehension_state(compiler *c, location loc,
                                  _PyCompile_InlinedComprehensionState *state)
 {
     RETURN_IF_ERROR(
-        _PyCompile_TweakInlinedComprehensionScopes(c, loc, comp, state));
+        _PyCompile_EnterInlinedComprehensionScope(c, loc, comp, state));
     RETURN_IF_ERROR(
         codegen_push_inlined_comprehension_locals(c, loc, comp, state));
     return SUCCESS;
@@ -5044,7 +5040,7 @@ pop_inlined_comprehension_state(compiler *c, location loc,
                                 _PyCompile_InlinedComprehensionState *state)
 {
     RETURN_IF_ERROR(codegen_pop_inlined_comprehension_locals(c, loc, state));
-    RETURN_IF_ERROR(_PyCompile_RevertInlinedComprehensionScopes(c, loc, state));
+    RETURN_IF_ERROR(_PyCompile_ExitInlinedComprehensionScope(c, loc, state));
     return SUCCESS;
 }
 
@@ -5054,13 +5050,13 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
                       expr_ty val, bool avoid_creation)
 {
     PyCodeObject *co = NULL;
-    _PyCompile_InlinedComprehensionState inline_state = {NULL, NULL, NULL, NO_LABEL};
+    _PyCompile_InlinedComprehensionState inline_state = {NULL, NO_LABEL, NULL};
     comprehension_ty outermost;
     PySTEntryObject *entry = _PySymtable_Lookup(SYMTABLE(c), (void *)e);
     if (entry == NULL) {
         goto error;
     }
-    int is_inlined = entry->ste_comp_inlined;
+    int is_inlined = (entry->ste_type == InlinedComprehensionBlock);
     int is_async_comprehension = entry->ste_coroutine;
 
     location loc = LOC(e);
@@ -5069,7 +5065,7 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
     IterStackPosition iter_state;
     if (is_inlined) {
         VISIT(c, expr, outermost->iter);
-        if (push_inlined_comprehension_state(c, loc, entry, &inline_state)) {
+        if (push_inlined_comprehension_state(c, loc, entry, &inline_state) < 0) {
             goto error;
         }
         iter_state = ITERABLE_ON_STACK;
@@ -5140,8 +5136,8 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
     }
 
     if (is_inlined) {
-        if (pop_inlined_comprehension_state(c, loc, &inline_state)) {
-            goto error;
+        if (pop_inlined_comprehension_state(c, loc, &inline_state) < 0) {
+            goto error_in_scope;
         }
         return SUCCESS;
     }
@@ -5181,15 +5177,18 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
 
     return SUCCESS;
 error_in_scope:
-    if (!is_inlined) {
+    if (is_inlined) {
+        if (inline_state.saved_ste != NULL) {
+            pop_inlined_comprehension_state(c, loc, &inline_state);
+        }
+    }
+    else {
         _PyCompile_ExitScope(c);
     }
 error:
     Py_XDECREF(co);
     Py_XDECREF(entry);
     Py_XDECREF(inline_state.pushed_locals);
-    Py_XDECREF(inline_state.temp_symbols);
-    Py_XDECREF(inline_state.fast_hidden);
     return ERROR;
 }
 
