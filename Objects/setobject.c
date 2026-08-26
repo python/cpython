@@ -562,6 +562,24 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
     return 0;
 }
 
+/*
+Do one big resize at the start, rather than incrementally resizing as we insert
+new keys.  Expect that there will be no (or few) overlapping keys.  An `n` too
+large for the arithmetic below is ignored, leaving growth incremental.
+*/
+static int
+set_presize(PySetObject *so, Py_ssize_t n)
+{
+    assert(n >= 0);
+    if (n == 0 || n >= PY_SSIZE_T_MAX/8 - so->fill) {
+        return 0;
+    }
+    if ((so->fill + n)*5 >= so->mask*3) {
+        return set_table_resize(so, (so->used + n)*2);
+    }
+    return 0;
+}
+
 static int
 set_contains_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
 {
@@ -842,13 +860,8 @@ set_merge_lock_held(PySetObject *so, PyObject *otherset)
     if (other == so || other->used == 0)
         /* a.update(a) or a.update(set()); nothing to do */
         return 0;
-    /* Do one big resize at the start, rather than
-     * incrementally resizing as we insert new keys.  Expect
-     * that there will be no (or few) overlapping keys.
-     */
-    if ((so->fill + other->used)*5 >= so->mask*3) {
-        if (set_table_resize(so, (so->used + other->used)*2) != 0)
-            return -1;
+    if (set_presize(so, other->used) < 0) {
+        return -1;
     }
     so_entry = so->table;
     other_entry = other->table;
@@ -1195,15 +1208,8 @@ set_update_dict_lock_held(PySetObject *so, PyObject *other)
     }
 #endif
 
-    /* Do one big resize at the start, rather than
-    * incrementally resizing as we insert new keys.  Expect
-    * that there will be no (or few) overlapping keys.
-    */
-    Py_ssize_t dictsize = PyDict_GET_SIZE(other);
-    if ((so->fill + dictsize)*5 >= so->mask*3) {
-        if (set_table_resize(so, (so->used + dictsize)*2) != 0) {
-            return -1;
-        }
+    if (set_presize(so, PyDict_GET_SIZE(other)) < 0) {
+        return -1;
     }
 
     Py_ssize_t pos = 0;
@@ -1225,6 +1231,15 @@ set_update_iterable_lock_held(PySetObject *so, PyObject *other)
 
     PyObject *it = PyObject_GetIter(other);
     if (it == NULL) {
+        return -1;
+    }
+
+    Py_ssize_t n = PyObject_LengthHint(other, 0);
+    if (n < 0) {
+        PyErr_Clear();  /* advisory only; just grow on demand instead */
+    }
+    else if (set_presize(so, n) < 0) {
+        Py_DECREF(it);
         return -1;
     }
 
