@@ -4599,6 +4599,26 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_UNPACK_SEQUENCE_TWO_TUPLE", uops)
         self.assertNotIn("_GUARD_TOS_TUPLE", uops)
 
+    def test_binary_slice_type_propagation(self):
+        def f(n):
+            result = None
+            for i in range(n):
+                stop = (i == TIER2_THRESHOLD) + 2
+                result = (
+                    type("abc"[:stop]),
+                    type([1, 2, 3][:stop]),
+                    type((1, 2, 3)[:stop]),
+                    type(b"abc"[:stop]),
+                )
+            return result
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, (str, list, tuple, bytes))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertEqual(count_ops(ex, "_BINARY_SLICE"), 4)
+        self.assertNotIn("_CALL_TYPE_1", uops)
+
     def test_binary_op_extend_float_result_enables_inplace_multiply(self):
         # (2 + x) * y with x, y floats: `2 + x` goes through _BINARY_OP_EXTEND
         # (int + float). The result_type/result_unique info should let the
