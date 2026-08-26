@@ -407,6 +407,64 @@ class AsyncBadSyntaxTest(unittest.TestCase):
             with self.subTest(code=code), self.assertRaises(SyntaxError):
                 compile(code, "<test>", "exec")
 
+    def test_async_comprehension_scope(self):
+        # List/set/dict comprehensions with await or async for are allowed
+        # only in async functions, or at module level with top-level await.
+        allowed = [
+            "async def f():\n    [await x for x in y]",
+            "async def f():\n    {await x for x in y}",
+            "async def f():\n    {k: await x for k, x in y}",
+            "async def f():\n    [x async for x in y]",
+            "async def f():\n    {x async for x in y}",
+            "async def f():\n    {k: x async for k, x in y}",
+            "async def f():\n    [[await x for x in y] for y in z]",
+        ]
+        for code in allowed:
+            with self.subTest(code=code):
+                compile(code, "<test>", "exec")
+
+        # Generator expressions with await are async genexps and may appear
+        # outside async functions.
+        for code in [
+            "(await x for x in y)",
+            "def f():\n    (await x for x in y)",
+            "class C:\n    (await x for x in y)",
+        ]:
+            with self.subTest(code=code):
+                compile(code, "<test>", "exec")
+
+        err = "asynchronous comprehension outside of an asynchronous function"
+        invalid = [
+            "[await x for x in y]",
+            "{await x for x in y}",
+            "{k: await x for k, x in y}",
+            "[x async for x in y]",
+            "{x async for x in y}",
+            "{k: x async for k, x in y}",
+            "[[await x for x in y] for y in z]",
+            "[[x async for x in y] for y in z]",
+            "def f():\n    [await x for x in y]",
+            "def f():\n    [x async for x in y]",
+            "async def f():\n    def g():\n        [await x for x in y]",
+            "class C:\n    [await x for x in y]",
+            "class C:\n    {await x for x in y}",
+            "class C:\n    {k: await x for k, x in y}",
+            "class C:\n    [x async for x in y]",
+            "class C:\n    [[await x for x in y] for y in z]",
+            "async def f():\n    class C:\n        x = [await y for y in z]",
+            "async def f():\n    class C:\n        x = [y async for y in z]",
+        ]
+        for code in invalid:
+            with self.subTest(code=code):
+                support.check_syntax_error(self, code, err)
+
+        support.check_syntax_error(
+            self, "await x", "'await' outside function")
+        support.check_syntax_error(
+            self, "class C:\n    await x", "'await' outside function")
+        support.check_syntax_error(
+            self, "def f():\n    await x", "'await' outside async function")
+
     def test_badsyntax_2(self):
         samples = [
             """def foo():
