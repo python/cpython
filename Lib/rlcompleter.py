@@ -35,7 +35,6 @@ import keyword
 import __main__
 import warnings
 import types
-
 lazy import inspect
 lazy import re
 

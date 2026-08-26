@@ -1,5 +1,1 @@
-Speed up ``import rlcompleter`` by deferring the imports of :mod:`inspect`
-and :mod:`re` into the completion methods that use them.  They are only
-needed while computing completions, so importing :mod:`rlcompleter` (for
-example when setting up interactive completion) no longer pays their import
-cost.
+Speed up the :mod:`rlcompleter` module's import time.
