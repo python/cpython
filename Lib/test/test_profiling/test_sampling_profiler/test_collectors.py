@@ -1159,6 +1159,30 @@ class TestSampleProfilerComponents(unittest.TestCase):
         collector.collect(stack_frames_gc)
         self.assertEqual(collector.samples_with_gc_frames, 2)
 
+    def test_flamegraph_collector_restores_replay_stats(self):
+        """Replay restores measured values from binary metadata."""
+        collector = FlamegraphCollector(1000)
+        collector.set_replay_stats({
+            "duration_sec": 1.25,
+            "sample_rate": 4.0,
+            "error_rate": 2.5,
+            "missed_samples": 1.5,
+        })
+
+        self.assertEqual(collector.stats["duration_sec"], 1.25)
+        self.assertEqual(collector.stats["sample_rate"], 4.0)
+        self.assertEqual(collector.stats["error_rate"], 2.5)
+        self.assertEqual(collector.stats["missed_samples"], 1.5)
+
+    def test_flamegraph_collector_leaves_legacy_replay_stats_unavailable(self):
+        collector = FlamegraphCollector(1000)
+        original_stats = collector.stats.copy()
+        collector.set_replay_stats({
+            "duration_sec": None,
+            "sample_rate": None,
+        })
+        self.assertEqual(collector.stats, original_stats)
+
     def test_flamegraph_collector_per_thread_stats(self):
         """Test per-thread statistics tracking in FlamegraphCollector."""
         collector = FlamegraphCollector(sample_interval_usec=1000)

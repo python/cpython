@@ -776,6 +776,8 @@ def _replay_with_reader(args, reader):
             )
 
     count = reader.replay_samples(collector, progress_callback)
+    if hasattr(collector, "set_replay_stats"):
+        collector.set_replay_stats(info)
     print()
 
     if args.format == "pstats":

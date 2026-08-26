@@ -1580,6 +1580,96 @@ class TestTimestampPreservation(BinaryFormatTestBase):
         self.assertEqual(ts_collector.all_timestamps, expected_timestamps)
 
 
+class TestBinaryReplayToFlamegraph(BinaryFormatTestBase):
+    def test_replay_includes_persisted_stats(self):
+        frames = [
+            make_frame("hot.py", 99, "hot_func"),
+            make_frame("main.py", 1, "main"),
+        ]
+        samples = [
+            [
+                make_interpreter(
+                    0,
+                    [make_thread(1, frames, THREAD_STATUS_HAS_GIL)],
+                )
+            ]
+            for _ in range(5)
+        ]
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as file:
+            bin_path = file.name
+        self.temp_files.append(bin_path)
+        collector = BinaryCollector(bin_path, 2000, compression="none")
+        for sample in samples:
+            collector.collect(sample)
+        collector.set_stats(
+            2000, 1.25, 4.0, error_rate=2.5, missed_samples=1.5
+        )
+        collector.export(None)
+
+        with BinaryReader(bin_path) as reader:
+            info = reader.get_info()
+        self.assertEqual(info["duration_sec"], 1.25)
+        self.assertEqual(info["sample_rate"], 4.0)
+        self.assertEqual(info["error_rate"], 2.5)
+        self.assertEqual(info["missed_samples"], 1.5)
+
+        with tempfile.NamedTemporaryFile(suffix=".html", delete=False) as file:
+            html_path = file.name
+        self.temp_files.append(html_path)
+
+        convert_binary_to_format(bin_path, html_path, "flamegraph")
+
+        with open(html_path, encoding="utf-8") as file:
+            content = file.read()
+        self.assertIn('"duration_sec": 1.25', content)
+        self.assertIn('"sample_rate": 4.0', content)
+        self.assertIn('"error_rate": 2.5', content)
+        self.assertIn('"missed_samples": 1.5', content)
+
+    def test_legacy_binary_has_no_measured_stats(self):
+        frame = make_frame("hot.py", 99, "hot_func")
+        bin_path = self.create_binary_file([
+            [make_interpreter(0, [make_thread(1, [frame])])]
+        ])
+
+        with BinaryReader(bin_path) as reader:
+            info = reader.get_info()
+
+        self.assertIsNone(info["duration_sec"])
+        self.assertIsNone(info["sample_rate"])
+        self.assertIsNone(info["error_rate"])
+        self.assertIsNone(info["missed_samples"])
+
+    def test_original_stats_extension_remains_readable(self):
+        frame = make_frame("hot.py", 99, "hot_func")
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as file:
+            bin_path = file.name
+        self.temp_files.append(bin_path)
+        collector = BinaryCollector(bin_path, 2000, compression="none")
+        collector.collect([
+            make_interpreter(0, [make_thread(1, [frame])])
+        ])
+        collector.set_stats(2000, 1.25, 4.0)
+        collector.export(None)
+
+        with open(bin_path, "rb") as file:
+            data = file.read()
+        stats = data[-88:-32]
+        footer = bytearray(data[-32:])
+        old_stats = stats[:16] + b"TACHSTAT" + struct.pack("=II", 1, 32)
+        old_data = bytearray(data[:-88] + old_stats + footer)
+        struct.pack_into("=Q", old_data, -24, len(old_data))
+        with open(bin_path, "wb") as file:
+            file.write(old_data)
+
+        with BinaryReader(bin_path) as reader:
+            info = reader.get_info()
+        self.assertEqual(info["duration_sec"], 1.25)
+        self.assertEqual(info["sample_rate"], 4.0)
+        self.assertIsNone(info["error_rate"])
+        self.assertIsNone(info["missed_samples"])
+
+
 class TestBinaryReplayToJsonl(BinaryFormatTestBase):
     """Tests for binary -> JSONL replay via convert_binary_to_format."""
 

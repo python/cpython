@@ -125,6 +125,8 @@ def convert_binary_to_format(input_file, output_file, output_format,
 
         # Replay samples through collector
         count = reader.replay_samples(collector, progress_callback)
+        if hasattr(collector, "set_replay_stats"):
+            collector.set_replay_stats(info)
 
         # Export to target format
         collector.export(output_file)

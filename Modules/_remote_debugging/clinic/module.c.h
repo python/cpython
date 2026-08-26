@@ -873,6 +873,103 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_remote_debugging_BinaryWriter_set_stats__doc__,
+"set_stats($self, /, duration_sec, sample_rate, error_rate=None,\n"
+"          missed_samples=None)\n"
+"--\n"
+"\n"
+"Store measured profile statistics in the binary file.");
+
+#define _REMOTE_DEBUGGING_BINARYWRITER_SET_STATS_METHODDEF    \
+    {"set_stats", _PyCFunction_CAST(_remote_debugging_BinaryWriter_set_stats), METH_FASTCALL|METH_KEYWORDS, _remote_debugging_BinaryWriter_set_stats__doc__},
+
+static PyObject *
+_remote_debugging_BinaryWriter_set_stats_impl(BinaryWriterObject *self,
+                                              double duration_sec,
+                                              double sample_rate,
+                                              PyObject *error_rate,
+                                              PyObject *missed_samples);
+
+static PyObject *
+_remote_debugging_BinaryWriter_set_stats(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 4
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(duration_sec), &_Py_ID(sample_rate), &_Py_ID(error_rate), &_Py_ID(missed_samples), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"duration_sec", "sample_rate", "error_rate", "missed_samples", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_stats",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[4];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
+    double duration_sec;
+    double sample_rate;
+    PyObject *error_rate = Py_None;
+    PyObject *missed_samples = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyFloat_CheckExact(args[0])) {
+        duration_sec = PyFloat_AS_DOUBLE(args[0]);
+    }
+    else
+    {
+        duration_sec = PyFloat_AsDouble(args[0]);
+        if (duration_sec == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[1])) {
+        sample_rate = PyFloat_AS_DOUBLE(args[1]);
+    }
+    else
+    {
+        sample_rate = PyFloat_AsDouble(args[1]);
+        if (sample_rate == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[2]) {
+        error_rate = args[2];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    missed_samples = args[3];
+skip_optional_pos:
+    return_value = _remote_debugging_BinaryWriter_set_stats_impl((BinaryWriterObject *)self, duration_sec, sample_rate, error_rate, missed_samples);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_remote_debugging_BinaryWriter_finalize__doc__,
 "finalize($self, /)\n"
 "--\n"
@@ -1588,4 +1685,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=22511c10d9224b28 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5f20a08be0d0ed5a input=a9049054013a1b77]*/

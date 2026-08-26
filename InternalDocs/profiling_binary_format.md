@@ -34,7 +34,7 @@ by 10-50x compared to text formats while also enabling faster I/O.
 
 ## File Layout
 
-The file consists of five sections:
+The file consists of five required sections and one optional extension:
 
 ```
 +------------------+  Offset 0
@@ -47,6 +47,8 @@ The file consists of five sections:
 |   String Table   |  Variable size
 +------------------+  frame_table_offset
 |   Frame Table    |  Variable size
++------------------+  file_size - 64 (when stats are present)
+| Profile Stats    |  32 bytes (optional)
 +------------------+  file_size - 32
 |     Footer       |  32 bytes (fixed)
 +------------------+  file_size
@@ -354,6 +356,38 @@ location. Zigzag encoding ensures these small negative values encode
 efficiently (−1 becomes 1, which is one byte) rather than requiring the
 maximum varint length.
 
+## Profile Statistics
+
+New files can store measured duration, sampling rate, error rate, and missed
+sample percentage in an optional 56-byte extension immediately before the
+footer. Older readers ignore these
+bytes after parsing the declared number of frame-table entries, and newer
+readers treat a missing extension as unavailable statistics.
+
+```
+ Offset   Size   Type      Description
++--------+------+---------+----------------------------------------+
+|    0   |  8   | double  | Measured duration (seconds)            |
+|    8   |  8   | double  | Measured sample rate (samples/second)  |
+|   16   |  8   | double  | Failed sample percentage               |
+|   24   |  8   | double  | Missed sample percentage               |
+|   32   |  4   | uint32  | Optional field presence flags          |
+|   36   |  4   | uint32  | Reserved                               |
+|   40   |  8   | bytes   | Signature ("TACHSTAT")                 |
+|   48   |  4   | uint32  | Extension version (1)                  |
+|   52   |  4   | uint32  | Extension size (56)                    |
++--------+------+---------+----------------------------------------+
+```
+
+Putting the signature, version, and size at the end lets readers discover
+the extension from its fixed position relative to the footer while allowing
+future versions to add fields before that trailer. Multi-byte values use the
+same native byte order as the rest of the file and are byte-swapped by
+cross-endian readers.
+
+Readers also accept the original 32-byte extension, which only contains the
+duration and sampling rate.
+
 ## Footer
 
 ```
@@ -448,8 +482,9 @@ compress less; higher levels (6+) compress more but slow down writing. Level
 4. Flush remaining buffered data and finalize compression
 5. Write the string table (length-prefixed strings in index order)
 6. Write the frame table (varint-encoded entries in index order)
-7. Write the footer with final counts
-8. Seek to offset 0 and write the header with actual values
+7. Write measured profile statistics, when available
+8. Write the footer with final counts
+9. Seek to offset 0 and write the header with actual values
 
 The writer maintains two dictionaries: one mapping strings to indices, one
 mapping (filename_idx, funcname_idx, lineno) tuples to frame indices. These
@@ -461,12 +496,13 @@ enable O(1) lookup during interning.
    if the magic appears byte-swapped)
 2. Validate version and read remaining header fields (byte-swapping if needed)
 3. Seek to end − 32 and read the footer (byte-swapping counts if needed)
-4. Allocate string array of `string_count` elements
-5. Parse the string table, populating the array
-6. Allocate frame array of `frame_count * 3` uint32 elements
-7. Parse the frame table, populating the array
-8. If compressed, decompress the sample data region
-9. Iterate through samples, resolving indices to strings/frames
+4. Read measured profile statistics when the optional extension is present
+5. Allocate string array of `string_count` elements
+6. Parse the string table, populating the array
+7. Allocate the frame array
+8. Parse the frame table, populating the array
+9. If compressed, decompress the sample data region
+10. Iterate through samples, resolving indices to strings/frames
    (byte-swapping thread_id and interpreter_id if needed)
 
 The reader builds lookup arrays rather than dictionaries since it only needs
@@ -530,11 +566,10 @@ one write() call (or feeds through the compression stream).
 
 ## Future Considerations
 
-The format reserves space for future extensions. The 12 reserved bytes in
-the header could hold additional metadata. The 16-byte checksum field in
-the footer is currently unused. The version field allows incompatible
-changes with graceful rejection. New compression types could be added
-(compression_type > 1).
+The optional profile-statistics block provides an extensible metadata area.
+The 16-byte checksum field in the footer is currently unused. The version
+field allows incompatible changes with graceful rejection. New compression
+types could be added (compression_type > 1).
 
 Any changes that alter the meaning of existing fields or the parsing logic
 should increment the version number to prevent older readers from
