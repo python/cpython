@@ -1,14 +1,13 @@
 import sys
 import trace
 from _colorize import get_colors  # type: ignore[import-not-found]
+lazy from xml.etree.ElementTree import Element
 
 from .runtests import RunTests
 from .result import State, TestResult, TestStats, Location
 from .utils import (
     StrPath, TestName, TestTuple, TestList, FilterDict,
     printlist, count, format_duration)
-
-lazy from xml.etree.ElementTree import Element
 
 
 # Python uses exit code 1 when an exception is not caught
