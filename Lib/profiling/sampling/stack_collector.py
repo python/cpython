@@ -675,9 +675,33 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         current_data = current_stats.get(path_key, {"total": 0, "self": 0})
         baseline_data = baseline_stats.get(path_key, {"total": 0, "self": 0})
 
-        current_self = current_data["self"]
-        baseline_self = baseline_data["self"] * scale
-        baseline_total = baseline_data["total"] * scale
+        current_self = node.get("self", 0)
+        current_total = node.get("value", 0)
+
+        current_nonself = current_total - current_self
+        aggregate_nonself = current_data["total"] - current_data["self"]
+
+        # Allocate self and descendant samples separately.  Line-number
+        # changes can split one function path into several rendered nodes,
+        # and using independent weights for self and inclusive totals could
+        # otherwise assign a node more self samples than total samples.
+        self_weight = self._sample_weight(
+            current_self,
+            current_data["self"],
+            current_total,
+            current_data["total"],
+        )
+        nonself_weight = self._sample_weight(
+            current_nonself,
+            aggregate_nonself,
+            current_total,
+            current_data["total"],
+        )
+        baseline_self = baseline_data["self"] * scale * self_weight
+        baseline_nonself = (
+            baseline_data["total"] - baseline_data["self"]
+        ) * scale * nonself_weight
+        baseline_total = baseline_self + baseline_nonself
 
         diff = current_self - baseline_self
         if baseline_self > 0:
@@ -696,6 +720,14 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         if "children" in node and node["children"]:
             for child in node["children"]:
                 self._add_diff_data_to_node(child, path_key, current_stats, baseline_stats, scale)
+
+    @staticmethod
+    def _sample_weight(value, aggregate, fallback_value, fallback_aggregate):
+        if aggregate > 0:
+            return value / aggregate
+        if fallback_aggregate > 0:
+            return fallback_value / fallback_aggregate
+        return 0
 
     def _is_promoted_root(self, data):
         """Check if the data represents a promoted root node."""
@@ -783,6 +815,9 @@ class DiffFlamegraphCollector(FlamegraphCollector):
             # elided nodes keep their original value to preserve self-samples
             if elided_children and not is_elided:
                 node["value"] = total_value
+                node["self"] = 0
+                node.pop("opcodes", None)
+                node.pop("thread_opcodes", None)
 
         # Keep this node if it's elided or has elided descendants
         return is_elided or bool(node.get("children"))
@@ -798,9 +833,13 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         baseline_self = 0
         baseline_total = 0
         if func_key and current_path in baseline_stats:
-            baseline_data = baseline_stats[current_path]
-            baseline_self = baseline_data["self"] * scale
-            baseline_total = baseline_data["total"] * scale
+            baseline_total = node.get("value", 0) * scale
+
+            # Matched nodes are retained only as structural ancestors.  Their
+            # own samples are still present in the current profile and must
+            # not be reported as disappeared.
+            if current_path in self._elided_paths:
+                baseline_self = node.get("self", 0) * scale
 
             node["baseline"] = baseline_self
             node["baseline_total"] = baseline_total
