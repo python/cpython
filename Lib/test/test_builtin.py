@@ -545,6 +545,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             '''a = [await sleep(0, 1) for _ in [0]][0]''',
             '''a = {await sleep(0, 1) for _ in [0]}.pop()''',
             '''a = {0: await sleep(0, 1) for _ in [0]}[0]''',
+            '''a = (lambda x=[await sleep(0, 1) for _ in [0]]: x)()[0]''',
             # gh-121637: Make sure we correctly handle the case where the
             # async code is optimized away
             '''assert not await sleep(0); a = 1''',
@@ -623,6 +624,15 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             '''async def f():
                    class C:
                        [await x for x in y]
+            ''',
+            '''lambda: [await x for x in y]''',
+            '''class C:
+                   def f(self, x=[await y for y in z]):
+                       pass
+            ''',
+            '''type T = [await x for x in y]''',
+            '''async def f[T=[await x for x in y]]():
+                   pass
             ''',
         ]
         for mode, code_sample in product(modes, code_samples):
