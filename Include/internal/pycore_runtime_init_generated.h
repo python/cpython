@@ -1736,6 +1736,7 @@ extern "C" {
     INIT_ID(endpos), \
     INIT_ID(entrypoint), \
     INIT_ID(env), \
+    INIT_ID(error_rate), \
     INIT_ID(errors), \
     INIT_ID(event), \
     INIT_ID(eventmask), \
@@ -1920,6 +1921,7 @@ extern "C" {
     INIT_ID(milliseconds), \
     INIT_ID(minute), \
     INIT_ID(minutes), \
+    INIT_ID(missed_samples), \
     INIT_ID(mod), \
     INIT_ID(mode), \
     INIT_ID(module), \

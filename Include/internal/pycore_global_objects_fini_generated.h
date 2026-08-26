@@ -1738,6 +1738,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(endpos));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(entrypoint));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(env));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(error_rate));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(errors));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(event));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(eventmask));
@@ -1922,6 +1923,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(milliseconds));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(minute));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(minutes));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(missed_samples));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(mod));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(mode));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(module));
