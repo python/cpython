@@ -359,10 +359,29 @@ boolean {0[0]} NO
                 the larch {0[1]} 1
             """.format(self.delimiters)))
 
-    def test_space_delimiter(self):
+    @support.subTests('data', [
+        'foo bar=baz',
+        'foo   bar=baz',
+        'foo=bar=baz',
+        'foo = bar=baz',
+        'foo\t \t=\t \tbar=baz',
+    ])
+    def test_space_delimiter(self, data):
         # gh-156353: Space should be accepted as a delimiter
         cf = self.newconfig(delimiters=(' ', '='))
-        cf.read_string("[all]\nfoo bar=baz")
+        cf.read_string(f"[all]\n{data}")
+        self.assertEqual(cf.options('all'), ['foo'])
+        self.assertEqual(cf.get('all', 'foo'), 'bar=baz')
+
+    @support.subTests('delimiter', ' =:;#x\t\0\N{RS}\N{CEDILLA}\N{CAT}')
+    @support.subTests('space_before', ['', ' ', '\t', ' \t'])
+    @support.subTests('space_after', ['', ' ', '\t', ' \t'])
+    def test_any_delimiter(self, delimiter, space_before, space_after):
+        cf = self.newconfig(
+            delimiters=(delimiter,),
+            inline_comment_prefixes=None,
+        )
+        cf.read_string(f"[all]\nfoo{space_before}{delimiter}{space_after}bar=baz")
         self.assertEqual(cf.options('all'), ['foo'])
         self.assertEqual(cf.get('all', 'foo'), 'bar=baz')
 
