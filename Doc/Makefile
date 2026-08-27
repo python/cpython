@@ -13,16 +13,16 @@ JOBS         = auto
 PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
-REQUIREMENTS = requirements.txt
-SPHINXERRORHANDLING = -W
+REQUIREMENTS = pylock.toml
+SPHINXERRORHANDLING = --fail-on-warning
 
 # Internal variables.
-PAPEROPT_a4     = -D latex_elements.papersize=a4paper
-PAPEROPT_letter = -D latex_elements.papersize=letterpaper
+PAPEROPT_a4     = --define latex_elements.papersize=a4paper
+PAPEROPT_letter = --define latex_elements.papersize=letterpaper
 
-ALLSPHINXOPTS = -b $(BUILDER) \
-                -d build/doctrees \
-                -j $(JOBS) \
+ALLSPHINXOPTS = --builder $(BUILDER) \
+                --doctree-dir build/doctrees \
+                --jobs $(JOBS) \
                 $(PAPEROPT_$(PAPER)) \
                 $(SPHINXOPTS) $(SPHINXERRORHANDLING) \
                 . build/$(BUILDER) $(SOURCES)
@@ -32,6 +32,7 @@ help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  clean      to remove build files"
 	@echo "  venv       to create a venv with necessary tools"
+	@echo "  lock       to regenerate the pinned dependencies in $(REQUIREMENTS)"
 	@echo "  html       to make standalone HTML files"
 	@echo "  gettext    to generate POT files"
 	@echo "  htmlview   to open the index page built by the html target in your browser"
@@ -58,7 +59,7 @@ build:
 	@if [ -f  ../Misc/NEWS ] ; then \
 		echo "Using existing Misc/NEWS file"; \
 		cp ../Misc/NEWS build/NEWS; \
-	elif $(BLURB) help >/dev/null 2>&1 && $(SPHINXBUILD) --version >/dev/null 2>&1; then \
+	elif $(BLURB) --version && $(SPHINXBUILD) --version ; then \
 		if [ -d ../Misc/NEWS.d ]; then \
 			echo "Building NEWS from Misc/NEWS.d with blurb"; \
 			$(BLURB) merge -f build/NEWS; \
@@ -89,7 +90,8 @@ htmlhelp: build
 
 .PHONY: latex
 latex: BUILDER = latex
-latex: build
+latex: _ensure-sphinxcontrib-svg2pdfconverter
+	$(MAKE) build BUILDER=$(BUILDER)
 	@echo "Build finished; the LaTeX files are in build/latex."
 	@echo "Run \`make all-pdf' or \`make all-ps' in that directory to" \
 	      "run these through (pdf)latex."
@@ -140,11 +142,12 @@ doctest:
 pydoc-topics: BUILDER = pydoc-topics
 pydoc-topics: build
 	@echo "Building finished; now run this:" \
-	      "cp build/pydoc-topics/topics.py ../Lib/pydoc_data/topics.py"
+	      "cp build/pydoc-topics/topics.py ../Lib/pydoc_data/topics.py" \
+	      "&& cp build/pydoc-topics/module_docs.py ../Lib/pydoc_data/module_docs.py"
 
 .PHONY: gettext
 gettext: BUILDER = gettext
-gettext: SPHINXOPTS += -d build/doctrees-gettext
+gettext: override SPHINXOPTS := --doctree-dir build/doctrees-gettext $(SPHINXOPTS)
 gettext: build
 
 .PHONY: htmlview
@@ -170,9 +173,10 @@ venv:
 		echo "venv already exists."; \
 		echo "To recreate it, remove it first with \`make clean-venv'."; \
 	else \
+		set -e; \
 		echo "Creating venv in $(VENVDIR)"; \
 		if $(UV) --version >/dev/null 2>&1; then \
-			$(UV) venv $(VENVDIR); \
+			$(UV) venv --python=$(PYTHON) $(VENVDIR); \
 			VIRTUAL_ENV=$(VENVDIR) $(UV) pip install -r $(REQUIREMENTS); \
 		else \
 			$(PYTHON) -m venv $(VENVDIR); \
@@ -182,8 +186,21 @@ venv:
 		echo "The venv has been created in the $(VENVDIR) directory"; \
 	fi
 
+.PHONY: lock
+lock:
+# Dependencies have a 14 day cooldown period to mitigate supply chain attacks,
+# except for sphinx_linklint and python-docs-theme, which are maintained by
+# core team members.
+	uv pip compile requirements.txt \
+		--exclude-newer P14D \
+		--exclude-newer-package sphinx_linklint=PT0S \
+		--exclude-newer-package python-docs-theme=PT0S \
+		--no-cache --output-file $(REQUIREMENTS) \
+		--python-version 3.12 --universal \
+		--custom-compile-command="make lock"
+
 .PHONY: dist-no-html
-dist-no-html: dist-text dist-pdf dist-epub dist-texinfo
+dist-no-html: dist-text dist-epub dist-texinfo
 
 .PHONY: dist
 dist:
@@ -204,6 +221,7 @@ dist-html:
 	find dist -name 'python-$(DISTVERSION)-docs-html*' -exec rm -rf {} \;
 	$(MAKE) html
 	cp -pPR build/html dist/python-$(DISTVERSION)-docs-html
+	rm -rf dist/python-$(DISTVERSION)-docs-html/_images/social_previews/
 	tar -C dist -cf dist/python-$(DISTVERSION)-docs-html.tar python-$(DISTVERSION)-docs-html
 	bzip2 -9 -k dist/python-$(DISTVERSION)-docs-html.tar
 	(cd dist; zip -q -r -9 python-$(DISTVERSION)-docs-html.zip python-$(DISTVERSION)-docs-html)
@@ -228,7 +246,7 @@ dist-text:
 	@echo "Build finished and archived!"
 
 .PHONY: dist-pdf
-dist-pdf:
+dist-pdf: _ensure-sphinxcontrib-svg2pdfconverter
 	# archive the A4 latex
 	@echo "Building LaTeX (A4 paper)..."
 	mkdir -p dist
@@ -239,7 +257,8 @@ dist-pdf:
 	# as otherwise the full latexmk process is run twice.
 	# ($$ is needed to escape the $; https://www.gnu.org/software/make/manual/make.html#Basics-of-Variable-References)
 	-sed -i 's/: all-$$(FMT)/:/' build/latex/Makefile
-	(cd build/latex; $(MAKE) clean && $(MAKE) --jobs=$$((`nproc`+1)) --output-sync LATEXMKOPTS='-quiet' all-pdf && $(MAKE) FMT=pdf zip bz2)
+	if [ -n "$(filter output-sync,$(value .FEATURES))" ]; then OUTPUTSYNC=--output-sync; else OUTPUTSYNC=; fi && \
+	(cd build/latex; $(MAKE) clean && $(MAKE) --jobs=$$((`getconf _NPROCESSORS_ONLN`+1)) $$OUTPUTSYNC LATEXMKOPTS='-quiet' all-pdf && $(MAKE) FMT=pdf zip bz2)
 	cp build/latex/docs-pdf.zip dist/python-$(DISTVERSION)-docs-pdf-a4.zip
 	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-a4.tar.bz2
 	@echo "Build finished and archived!"
@@ -288,32 +307,36 @@ _ensure-pre-commit:
 _ensure-sphinx-autobuild:
 	$(MAKE) _ensure-package PACKAGE=sphinx-autobuild
 
+.PHONY: _ensure-sphinxcontrib-svg2pdfconverter
+_ensure-sphinxcontrib-svg2pdfconverter:
+	$(MAKE) _ensure-package PACKAGE=sphinxcontrib-svg2pdfconverter
+
 .PHONY: check
 check: _ensure-pre-commit
 	$(VENVDIR)/bin/python3 -m pre_commit run --all-files
 
 .PHONY: serve
 serve:
-	@echo "The serve target was removed, use htmlview instead (see bpo-36329)"
+	@echo "The serve target was removed, use htmllive instead (see gh-80510)"
 
 # Targets for daily automated doc build
 # By default, Sphinx only rebuilds pages where the page content has changed.
 # This means it doesn't always pick up changes to preferred link targets, etc
 # To ensure such changes are picked up, we build the published docs with
-# `-E` (to ignore the cached environment) and `-a` (to ignore already existing
-# output files)
+# ``--fresh-env`` (to ignore the cached environment) and ``--write-all``
+# (to ignore already existing output files)
 
 # for development releases: always build
 .PHONY: autobuild-dev
 autobuild-dev: DISTVERSION = $(shell $(PYTHON) tools/extensions/patchlevel.py --short)
 autobuild-dev:
-	$(MAKE) dist-no-html SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1' DISTVERSION=$(DISTVERSION)
+	$(MAKE) dist-no-html SPHINXOPTS='$(SPHINXOPTS) --fresh-env --write-all --html-define daily=1' DISTVERSION=$(DISTVERSION)
 
 # for HTML-only rebuilds
 .PHONY: autobuild-dev-html
 autobuild-dev-html: DISTVERSION = $(shell $(PYTHON) tools/extensions/patchlevel.py --short)
 autobuild-dev-html:
-	$(MAKE) dist-html SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1' DISTVERSION=$(DISTVERSION)
+	$(MAKE) dist-html SPHINXOPTS='$(SPHINXOPTS) --fresh-env --write-all --html-define daily=1' DISTVERSION=$(DISTVERSION)
 
 # for stable releases: only build if not in pre-release stage (alpha, beta)
 # release candidate downloads are okay, since the stable tree can be in that stage
@@ -332,3 +355,9 @@ autobuild-stable-html:
 		exit 1;; \
 	esac
 	@$(MAKE) autobuild-dev-html
+
+# Collect HTML IDs to a JSON document
+.PHONY: html-ids
+html-ids:
+	$(PYTHON) tools/check-html-ids.py collect build/html \
+		-o build/html/html-ids.json.gz

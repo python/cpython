@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2006 Python Software Foundation
+# Copyright (C) 2001 Python Software Foundation
 # Author: Ben Gertzfield
 # Contact: email-sig@python.org
 
@@ -272,7 +272,7 @@ def decode(encoded, eol=NL):
                 decoded += eol
     # Special case if original string did not end with eol
     if encoded[-1] not in '\r\n' and decoded.endswith(eol):
-        decoded = decoded[:-1]
+        decoded = decoded[:-len(eol)]
     return decoded
 
 

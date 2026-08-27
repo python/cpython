@@ -1,3 +1,0 @@
-Add a new attribute in :attr:`~codeobject.co_flags` to indicate whether the
-first item in :attr:`~codeobject.co_consts` is the docstring. If a code
-object has no docstring, ``None`` will **NOT** be inserted.

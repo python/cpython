@@ -1,6 +1,6 @@
 /*
  * Implementation of safe memory reclamation scheme using
- * quiescent states.
+ * quiescent states.  See InternalDocs/qsbr.md.
  *
  * This is derived from the "GUS" safe memory reclamation technique
  * in FreeBSD written by Jeffrey Roberson. It is heavily modified. Any bugs
@@ -32,18 +32,15 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include "Python.h"
-#include "pycore_initconfig.h"      // _PyStatus_NO_MEMORY()
-#include "pycore_lock.h"            // PyMutex_Lock()
-#include "pycore_qsbr.h"
+#include "pycore_interp.h"          // PyInterpreterState
 #include "pycore_pystate.h"         // _PyThreadState_GET()
+#include "pycore_qsbr.h"
+#include "pycore_tstate.h"          // _PyThreadStateImpl
+#include "pycore_stats.h"           // FT_STAT_QSBR_POLL_INC()
 
 
 // Starting size of the array of qsbr thread states
 #define MIN_ARRAY_SIZE 8
-
-// For _Py_qsbr_deferred_advance(): the number of deferrals before advancing
-// the write sequence.
-#define QSBR_DEFERRED_LIMIT 10
 
 // Allocate a QSBR thread state from the freelist
 static struct _qsbr_thread_state *
@@ -60,7 +57,7 @@ qsbr_allocate(struct _qsbr_shared *shared)
     return qsbr;
 }
 
-// Initialize (or reintialize) the freelist of QSBR thread states
+// Initialize (or reinitialize) the freelist of QSBR thread states
 static void
 initialize_new_array(struct _qsbr_shared *shared)
 {
@@ -88,22 +85,29 @@ grow_thread_array(struct _qsbr_shared *shared)
         new_size = MIN_ARRAY_SIZE;
     }
 
-    struct _qsbr_pad *array = PyMem_RawCalloc(new_size, sizeof(*array));
-    if (array == NULL) {
+    // Overallocate by 63 bytes so we can align to a 64-byte boundary.
+    // This avoids potential false sharing between the first entry and other
+    // allocations.
+    size_t alignment = 64;
+    size_t alloc_size = (size_t)new_size * sizeof(struct _qsbr_pad) + alignment - 1;
+    void *raw = PyMem_RawCalloc(1, alloc_size);
+    if (raw == NULL) {
         return -1;
     }
+    struct _qsbr_pad *array = _Py_ALIGN_UP(raw, alignment);
 
-    struct _qsbr_pad *old = shared->array;
-    if (old != NULL) {
+    void *old_raw = shared->array_raw;
+    if (shared->array != NULL) {
         memcpy(array, shared->array, shared->size * sizeof(*array));
     }
 
     shared->array = array;
+    shared->array_raw = raw;
     shared->size = new_size;
     shared->freelist = NULL;
     initialize_new_array(shared);
 
-    PyMem_RawFree(old);
+    PyMem_RawFree(old_raw);
     return 0;
 }
 
@@ -117,13 +121,9 @@ _Py_qsbr_advance(struct _qsbr_shared *shared)
 }
 
 uint64_t
-_Py_qsbr_deferred_advance(struct _qsbr_thread_state *qsbr)
+_Py_qsbr_shared_next(struct _qsbr_shared *shared)
 {
-    if (++qsbr->deferrals < QSBR_DEFERRED_LIMIT) {
-        return _Py_qsbr_shared_current(qsbr->shared) + QSBR_INCR;
-    }
-    qsbr->deferrals = 0;
-    return _Py_qsbr_advance(qsbr->shared);
+    return _Py_qsbr_shared_current(shared) + QSBR_INCR;
 }
 
 static uint64_t
@@ -161,11 +161,12 @@ bool
 _Py_qsbr_poll(struct _qsbr_thread_state *qsbr, uint64_t goal)
 {
     assert(_Py_atomic_load_int_relaxed(&_PyThreadState_GET()->state) == _Py_THREAD_ATTACHED);
+    assert(((_PyThreadStateImpl *)_PyThreadState_GET())->qsbr == qsbr);
 
     if (_Py_qbsr_goal_reached(qsbr, goal)) {
         return true;
     }
-
+    FT_STAT_QSBR_POLL_INC();
     uint64_t rd_seq = qsbr_poll_scan(qsbr->shared);
     return QSBR_LEQ(goal, rd_seq);
 }
@@ -205,15 +206,15 @@ _Py_qsbr_reserve(PyInterpreterState *interp)
         }
         _PyEval_StartTheWorld(interp);
     }
-    PyMutex_Unlock(&shared->mutex);
-
-    if (qsbr == NULL) {
-        return -1;
-    }
 
     // Return an index rather than the pointer because the array may be
     // resized and the pointer invalidated.
-    return (struct _qsbr_pad *)qsbr - shared->array;
+    Py_ssize_t index = -1;
+    if (qsbr != NULL) {
+        index = (struct _qsbr_pad *)qsbr - shared->array;
+    }
+    PyMutex_Unlock(&shared->mutex);
+    return index;
 }
 
 void
@@ -240,7 +241,7 @@ _Py_qsbr_unregister(PyThreadState *tstate)
     // gh-119369: GIL must be released (if held) to prevent deadlocks, because
     // we might not have an active tstate, which means that blocking on PyMutex
     // locks will not implicitly release the GIL.
-    assert(!tstate->_status.holds_gil);
+    assert(!tstate->holds_gil);
 
     PyMutex_Lock(&shared->mutex);
     // NOTE: we must load (or reload) the thread state's qbsr inside the mutex
@@ -263,8 +264,9 @@ void
 _Py_qsbr_fini(PyInterpreterState *interp)
 {
     struct _qsbr_shared *shared = &interp->qsbr;
-    PyMem_RawFree(shared->array);
+    PyMem_RawFree(shared->array_raw);
     shared->array = NULL;
+    shared->array_raw = NULL;
     shared->size = 0;
     shared->freelist = NULL;
 }

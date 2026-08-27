@@ -1,6 +1,0 @@
-We've added :class:`concurrent.futures.InterpreterPoolExecutor`, which
-allows you to run code in multiple isolated interpreters.  This allows you
-to circumvent the limitations of CPU-bound threads (due to the GIL). Patch
-by Eric Snow.
-
-This addition is unrelated to :pep:`734`.

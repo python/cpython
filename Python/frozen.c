@@ -55,6 +55,7 @@
 #include "frozen_modules/os.h"
 #include "frozen_modules/site.h"
 #include "frozen_modules/stat.h"
+#include "frozen_modules/linecache.h"
 #include "frozen_modules/importlib.util.h"
 #include "frozen_modules/importlib.machinery.h"
 #include "frozen_modules/runpy.h"
@@ -84,10 +85,12 @@ static const struct _frozen stdlib_modules[] = {
     {"genericpath", _Py_M__genericpath, (int)sizeof(_Py_M__genericpath), false},
     {"ntpath", _Py_M__ntpath, (int)sizeof(_Py_M__ntpath), false},
     {"posixpath", _Py_M__posixpath, (int)sizeof(_Py_M__posixpath), false},
-    {"os.path", _Py_M__posixpath, (int)sizeof(_Py_M__posixpath), false},
     {"os", _Py_M__os, (int)sizeof(_Py_M__os), false},
     {"site", _Py_M__site, (int)sizeof(_Py_M__site), false},
     {"stat", _Py_M__stat, (int)sizeof(_Py_M__stat), false},
+
+    /* pythonrun - interactive */
+    {"linecache", _Py_M__linecache, (int)sizeof(_Py_M__linecache), false},
 
     /* runpy - run module with -m */
     {"importlib.util", _Py_M__importlib_util, (int)sizeof(_Py_M__importlib_util), false},
@@ -116,7 +119,6 @@ const struct _frozen *_PyImport_FrozenTest = test_modules;
 static const struct _module_alias aliases[] = {
     {"_frozen_importlib", "importlib._bootstrap"},
     {"_frozen_importlib_external", "importlib._bootstrap_external"},
-    {"os.path", "posixpath"},
     {"__hello_alias__", "__hello__"},
     {"__phello_alias__", "__hello__"},
     {"__phello_alias__.spam", "__hello__"},

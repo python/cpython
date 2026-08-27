@@ -120,9 +120,6 @@ BaseServer:
 
 # Author of the BaseServer patch: Luke Kenneth Casson Leighton
 
-__version__ = "0.4"
-
-
 import socket
 import selectors
 import os
@@ -441,7 +438,7 @@ class TCPServer(BaseServer):
 
     socket_type = socket.SOCK_STREAM
 
-    request_queue_size = 5
+    request_queue_size = getattr(socket, "SOMAXCONN", 5)
 
     allow_reuse_address = False
 
@@ -468,7 +465,12 @@ class TCPServer(BaseServer):
         """
         if self.allow_reuse_address and hasattr(socket, "SO_REUSEADDR"):
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        if self.allow_reuse_port and hasattr(socket, "SO_REUSEPORT"):
+        # Since Linux 6.12.9, SO_REUSEPORT is not allowed
+        # on other address families than AF_INET/AF_INET6.
+        if (
+            self.allow_reuse_port and hasattr(socket, "SO_REUSEPORT")
+            and self.address_family in (socket.AF_INET, socket.AF_INET6)
+        ):
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         self.socket.bind(self.server_address)
         self.server_address = self.socket.getsockname()
@@ -856,3 +858,12 @@ class DatagramRequestHandler(BaseRequestHandler):
 
     def finish(self):
         self.socket.sendto(self.wfile.getvalue(), self.client_address)
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "0.4"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

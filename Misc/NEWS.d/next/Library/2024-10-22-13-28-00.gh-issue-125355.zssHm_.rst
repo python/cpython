@@ -1,7 +1,0 @@
-Fix several bugs in :meth:`argparse.ArgumentParser.parse_intermixed_args`.
-
-* The parser no longer changes temporarily during parsing.
-* Default values are not processed twice.
-* Required mutually exclusive groups containing positional arguments are now supported.
-* The missing arguments report now includes the names of all required optional and positional arguments.
-* Unknown options can be intermixed with positional arguments in parse_known_intermixed_args().

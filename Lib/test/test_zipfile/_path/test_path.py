@@ -1,21 +1,18 @@
 import io
 import itertools
-import contextlib
 import pathlib
 import pickle
 import stat
 import sys
-import time
 import unittest
 import zipfile
 import zipfile._path
 
-from test.support.os_helper import temp_dir, FakePath
+from test.support.os_helper import FakePath, temp_dir
 
 from ._functools import compose
 from ._itertools import Counter
-
-from ._test_params import parameterize, Invoked
+from ._test_params import Invoked, parameterize
 
 
 class jaraco:
@@ -85,12 +82,8 @@ pass_alpharep = parameterize(['alpharep'], alpharep_generators)
 
 
 class TestPath(unittest.TestCase):
-    def setUp(self):
-        self.fixtures = contextlib.ExitStack()
-        self.addCleanup(self.fixtures.close)
-
     def zipfile_ondisk(self, alpharep):
-        tmpdir = pathlib.Path(self.fixtures.enter_context(temp_dir()))
+        tmpdir = pathlib.Path(self.enterContext(temp_dir()))
         buffer = alpharep.fp
         alpharep.close()
         path = tmpdir / alpharep.filename
@@ -147,7 +140,7 @@ class TestPath(unittest.TestCase):
 
     def test_open_encoding_utf16(self):
         in_memory_file = io.BytesIO()
-        zf = zipfile.ZipFile(in_memory_file, "w")
+        zf = self.enterContext(zipfile.ZipFile(in_memory_file, "w"))
         zf.writestr("path/16.txt", "This was utf-16".encode("utf-16"))
         zf.filename = "test_open_utf16.zip"
         root = zipfile.Path(zf)
@@ -162,7 +155,7 @@ class TestPath(unittest.TestCase):
 
     def test_open_encoding_errors(self):
         in_memory_file = io.BytesIO()
-        zf = zipfile.ZipFile(in_memory_file, "w")
+        zf = self.enterContext(zipfile.ZipFile(in_memory_file, "w"))
         zf.writestr("path/bad-utf8.bin", b"invalid utf-8: \xff\xff.")
         zf.filename = "test_read_text_encoding_errors.zip"
         root = zipfile.Path(zf)
@@ -194,10 +187,10 @@ class TestPath(unittest.TestCase):
         """EncodingWarning must blame the read_text and open calls."""
         assert sys.flags.warn_default_encoding
         root = zipfile.Path(alpharep)
-        with self.assertWarns(EncodingWarning) as wc:
+        with self.assertWarns(EncodingWarning) as wc:  # noqa: F821 (astral-sh/ruff#13296)
             root.joinpath("a.txt").read_text()
         assert __file__ == wc.filename
-        with self.assertWarns(EncodingWarning) as wc:
+        with self.assertWarns(EncodingWarning) as wc:  # noqa: F821 (astral-sh/ruff#13296)
             root.joinpath("a.txt").open("r").close()
         assert __file__ == wc.filename
 
@@ -206,7 +199,8 @@ class TestPath(unittest.TestCase):
         If the zipfile is open for write, it should be possible to
         write bytes or text to it.
         """
-        zf = zipfile.Path(zipfile.ZipFile(io.BytesIO(), mode='w'))
+        zip_file = self.enterContext(zipfile.ZipFile(io.BytesIO(), mode='w'))
+        zf = zipfile.Path(zip_file)
         with zf.joinpath('file.bin').open('wb') as strm:
             strm.write(b'binary contents')
         with zf.joinpath('file.txt').open('w', encoding="utf-8") as strm:
@@ -276,7 +270,8 @@ class TestPath(unittest.TestCase):
         """
         zipfile_ondisk = self.zipfile_ondisk(alpharep)
         pathlike = FakePath(str(zipfile_ondisk))
-        zipfile.Path(pathlike)
+        root = zipfile.Path(pathlike)
+        root.root.close()
 
     @pass_alpharep
     def test_traverse_pathlike(self, alpharep):
@@ -318,9 +313,9 @@ class TestPath(unittest.TestCase):
     HUGE_ZIPFILE_NUM_ENTRIES = 2**13
 
     def huge_zipfile(self):
-        """Create a read-only zipfile with a huge number of entries entries."""
+        """Create a read-only zipfile with a huge number of entries."""
         strm = io.BytesIO()
-        zf = zipfile.ZipFile(strm, "w")
+        zf = self.enterContext(zipfile.ZipFile(strm, "w"))
         for entry in map(str, range(self.HUGE_ZIPFILE_NUM_ENTRIES)):
             zf.writestr(entry, entry)
         zf.mode = 'r'
@@ -364,6 +359,18 @@ class TestPath(unittest.TestCase):
         """
         root = zipfile.Path(alpharep)
         assert root.name == 'alpharep.zip' == root.filename.name
+
+    @pass_alpharep
+    def test_root_on_disk(self, alpharep):
+        """
+        The name/stem of the root should match the zipfile on disk.
+
+        This condition must hold across platforms.
+        """
+        root = zipfile.Path(self.zipfile_ondisk(alpharep))
+        assert root.name == 'alpharep.zip' == root.filename.name
+        assert root.stem == 'alpharep' == root.filename.stem
+        root.root.close()
 
     @pass_alpharep
     def test_suffix(self, alpharep):
@@ -519,7 +526,8 @@ class TestPath(unittest.TestCase):
         ]
 
     def test_glob_empty(self):
-        root = zipfile.Path(zipfile.ZipFile(io.BytesIO(), 'w'))
+        zip_file = self.enterContext(zipfile.ZipFile(io.BytesIO(), 'w'))
+        root = zipfile.Path(zip_file)
         with self.assertRaises(ValueError):
             root.glob('')
 
@@ -565,11 +573,13 @@ class TestPath(unittest.TestCase):
     )
     def test_pickle(self, alpharep, path_type, subpath):
         zipfile_ondisk = path_type(str(self.zipfile_ondisk(alpharep)))
-
-        saved_1 = pickle.dumps(zipfile.Path(zipfile_ondisk, at=subpath))
+        root = zipfile.Path(zipfile_ondisk, at=subpath)
+        saved_1 = pickle.dumps(root)
+        root.root.close()
         restored_1 = pickle.loads(saved_1)
         first, *rest = restored_1.iterdir()
         assert first.read_text(encoding='utf-8').startswith('content of ')
+        restored_1.root.close()
 
     @pass_alpharep
     def test_extract_orig_with_implied_dirs(self, alpharep):
@@ -581,6 +591,7 @@ class TestPath(unittest.TestCase):
         # wrap the zipfile for its side effect
         zipfile.Path(zf)
         zf.extractall(source_path.parent)
+        zf.close()
 
     @pass_alpharep
     def test_getinfo_missing(self, alpharep):
@@ -600,7 +611,7 @@ class TestPath(unittest.TestCase):
         Paths with dots are treated like regular files.
         """
         data = io.BytesIO()
-        zf = zipfile.ZipFile(data, "w")
+        zf = self.enterContext(zipfile.ZipFile(data, "w"))
         zf.writestr("/one-slash.txt", b"content")
         zf.writestr("//two-slash.txt", b"content")
         zf.writestr("../parent.txt", b"content")
@@ -618,7 +629,7 @@ class TestPath(unittest.TestCase):
         in the zip file.
         """
         data = io.BytesIO()
-        zf = zipfile.ZipFile(data, "w")
+        zf = self.enterContext(zipfile.ZipFile(data, "w"))
         zf.writestr("path?", b"content")
         zf.writestr("V: NMS.flac", b"fLaC...")
         zf.filename = ''
@@ -633,8 +644,8 @@ class TestPath(unittest.TestCase):
         In a zip file, backslashes are not separators.
         """
         data = io.BytesIO()
-        zf = zipfile.ZipFile(data, "w")
-        zf.writestr(DirtyZipInfo.for_name("foo\\bar", zf), b"content")
+        zf = self.enterContext(zipfile.ZipFile(data, "w"))
+        zf.writestr(DirtyZipInfo("foo\\bar")._for_archive(zf), b"content")
         zf.filename = ''
         root = zipfile.Path(zf)
         (first,) = root.iterdir()
@@ -657,20 +668,3 @@ class DirtyZipInfo(zipfile.ZipInfo):
     def __init__(self, filename, *args, **kwargs):
         super().__init__(filename, *args, **kwargs)
         self.filename = filename
-
-    @classmethod
-    def for_name(cls, name, archive):
-        """
-        Construct the same way that ZipFile.writestr does.
-
-        TODO: extract this functionality and re-use
-        """
-        self = cls(filename=name, date_time=time.localtime(time.time())[:6])
-        self.compress_type = archive.compression
-        self.compress_level = archive.compresslevel
-        if self.filename.endswith('/'):  # pragma: no cover
-            self.external_attr = 0o40775 << 16  # drwxrwxr-x
-            self.external_attr |= 0x10  # MS-DOS directory flag
-        else:
-            self.external_attr = 0o600 << 16  # ?rw-------
-        return self

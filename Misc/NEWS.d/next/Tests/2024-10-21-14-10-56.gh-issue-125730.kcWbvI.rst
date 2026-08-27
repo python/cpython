@@ -1,2 +1,0 @@
-Change ``make test`` to not run GUI tests by default. Use ``make ci`` to run
-tests with GUI tests instead.

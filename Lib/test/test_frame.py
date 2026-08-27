@@ -222,6 +222,223 @@ class FrameAttrsTest(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del f.f_lineno
 
+    def test_f_trace(self):
+        f, _, _ = self.make_frames()
+        def tracer(*args):
+            pass
+        for value in tracer, 42, None:
+            f.f_trace = value
+            self.assertEqual(f.f_trace, value)
+        f.f_trace = tracer
+        del f.f_trace
+        self.assertIsNone(f.f_trace)
+
+    def test_f_trace_lines_and_opcodes(self):
+        f, _, _ = self.make_frames()
+        for name in 'f_trace_lines', 'f_trace_opcodes':
+            with self.subTest(name=name):
+                for value in False, True:
+                    setattr(f, name, value)
+                    self.assertEqual(getattr(f, name), value)
+                with self.assertRaisesRegex(TypeError,
+                                            'attribute value type must be bool'):
+                    setattr(f, name, 1)
+        with self.assertRaisesRegex(TypeError,
+                                    "can't delete numeric/char attribute"):
+            del f.f_trace_lines
+        with self.assertRaisesRegex(AttributeError, 'cannot be deleted'):
+            del f.f_trace_opcodes
+
+    def test_f_generator(self):
+        # Test f_generator in different contexts.
+
+        def t0():
+            def nested():
+                frame = sys._getframe()
+                return frame.f_generator
+
+            def gen():
+                yield nested()
+
+            g = gen()
+            try:
+                return next(g)
+            finally:
+                g.close()
+
+        def t1():
+            frame = sys._getframe()
+            return frame.f_generator
+
+        def t2():
+            frame = sys._getframe()
+            yield frame.f_generator
+
+        async def t3():
+            frame = sys._getframe()
+            return frame.f_generator
+
+        # For regular functions f_generator is None
+        self.assertIsNone(t0())
+        self.assertIsNone(t1())
+
+        # For generators f_generator is equal to self
+        g = t2()
+        try:
+            frame_g = next(g)
+            self.assertIs(g, frame_g)
+        finally:
+            g.close()
+
+        # Ditto for coroutines
+        c = t3()
+        try:
+            c.send(None)
+        except StopIteration as ex:
+            self.assertIs(ex.value, c)
+        else:
+            raise AssertionError('coroutine did not exit')
+
+
+class WeakRefTest(unittest.TestCase):
+    """
+    Frames support weak references (gh-102960).
+    """
+
+    def make_frame(self):
+        # Return the frame object of a finished function call.  Unlike
+        # frames extracted from a traceback, it isn't part of a reference
+        # cycle, so it dies as soon as the last reference is dropped.
+        def func():
+            return sys._getframe()
+        return func()
+
+    def make_traceback_frames(self):
+        def outer():
+            def inner():
+                1/0
+            return inner()
+        try:
+            outer()
+        except ZeroDivisionError as e:
+            tb = e.__traceback__
+            frames = []
+            while tb:
+                frames.append(tb.tb_frame)
+                tb = tb.tb_next
+        return frames
+
+    def test_weakref_basic(self):
+        called = []
+        f = self.make_frame()
+        ref = weakref.ref(f)
+        cb_ref = weakref.ref(f, called.append)
+        self.assertIs(ref(), f)
+        self.assertIs(cb_ref(), f)
+        del f
+        support.gc_collect()
+        self.assertIsNone(ref())
+        self.assertIsNone(cb_ref())
+        self.assertEqual(called, [cb_ref])
+
+    @support.thread_unsafe("relies on gc.collect() reclaiming its cycles")
+    def test_weakref_live_frame(self):
+        refs = []
+        def func():
+            frame = sys._getframe()
+            refs.append(weakref.ref(frame))
+            self.assertIs(refs[0](), frame)
+        func()
+        support.gc_collect()
+        self.assertIsNone(refs[0]())
+
+    @support.thread_unsafe("relies on gc.collect() reclaiming its cycles")
+    def test_weak_key_dictionary(self):
+        wkd = weakref.WeakKeyDictionary()
+        def _fill():
+            for i, frame in enumerate(self.make_traceback_frames()):
+                wkd[frame] = i
+            self.assertEqual(len(wkd), 3)
+        _fill()
+        support.gc_collect()
+        self.assertEqual(len(wkd), 0)
+
+    @support.thread_unsafe("relies on gc.collect() reclaiming its cycles")
+    def test_weakref_traceback_frames(self):
+        # Frames that participate in reference cycles are cleaned up
+        # by the cyclic garbage collector.
+        refs = []
+        def _make():
+            for frame in self.make_traceback_frames():
+                refs.append(weakref.ref(frame))
+            for ref in refs:
+                self.assertIsNotNone(ref())
+        _make()
+        support.gc_collect()
+        for ref in refs:
+            self.assertIsNone(ref())
+
+    def test_weakref_generator_frame(self):
+        def gen():
+            yield sys._getframe()
+        g = gen()
+        frame = next(g)
+        ref = weakref.ref(frame)
+        del frame
+        support.gc_collect()
+        # The generator keeps its frame alive while suspended.
+        self.assertIsNotNone(ref())
+        g.close()
+        del g
+        support.gc_collect()
+        self.assertIsNone(ref())
+
+    def test_weakref_after_frame_clear(self):
+        f = self.make_frame()
+        ref = weakref.ref(f)
+        # Clearing the frame's contents must not affect weak references
+        # to the frame object itself.
+        f.clear()
+        self.assertIs(ref(), f)
+        del f
+        support.gc_collect()
+        self.assertIsNone(ref())
+
+    @threading_helper.requires_working_threading()
+    def test_weakref_concurrent(self):
+        # Exercise concurrent creation and destruction of weak references
+        # to the same frame, mainly for the free-threaded build.
+        def gen():
+            yield sys._getframe()
+        g = gen()
+        frame = next(g)
+        barrier = threading.Barrier(4)
+        # Collect failures instead of asserting in the workers: exceptions
+        # raised in threads don't propagate to the unittest result.
+        failures = []
+        def work():
+            barrier.wait()
+            for _ in range(1000):
+                ref = weakref.ref(frame)
+                if ref() is not frame:
+                    failures.append('shared ref dead while frame alive')
+                # Callback refs are not shared, so this concurrently adds
+                # to and removes from the frame's weakref list.
+                cb_ref = weakref.ref(frame, lambda r: None)
+                if cb_ref() is not frame:
+                    failures.append('callback ref dead while frame alive')
+                del ref, cb_ref
+        threads = [threading.Thread(target=work) for _ in range(4)]
+        with threading_helper.start_threads(threads):
+            pass
+        self.assertEqual(failures, [])
+        ref = weakref.ref(frame)
+        del frame
+        g.close()
+        del g
+        support.gc_collect()
+        self.assertIsNone(ref())
+
 
 class ReprTest(unittest.TestCase):
     """
@@ -295,6 +512,12 @@ class TestFrameLocals(unittest.TestCase):
         f()
         self.assertEqual(x, 2)
         self.assertEqual(y, 3)
+
+    def test_closure_with_inline_comprehension(self):
+        lambda: k
+        k = 1
+        lst = [locals() for k in [0]]
+        self.assertEqual(lst[0]['k'], 0)
 
     def test_as_dict(self):
         x = 1
@@ -541,6 +764,22 @@ class TestFrameLocals(unittest.TestCase):
         with self.assertRaises(TypeError):
             FrameLocalsProxy(frame=sys._getframe())  # no keyword arguments
 
+    def test_overwrite_locals(self):
+        # Verify we do not crash if we overwrite a local passed as an argument
+        # from an ancestor in the call stack.
+        def f():
+            xs = [1, 2, 3]
+            ys = [4, 5, 6]
+            return g(xs)
+
+        def g(xs):
+            f = sys._getframe()
+            f.f_back.f_locals["xs"] = None
+            f.f_back.f_locals["ys"] = None
+            return xs[1]
+
+        self.assertEqual(f(), 2)
+
 
 class FrameLocalsProxyMappingTests(mapping_tests.TestHashMappingProtocol):
     """Test that FrameLocalsProxy behaves like a Mapping (with exceptions)"""
@@ -609,28 +848,37 @@ class TestFrameCApi(unittest.TestCase):
     def test_basic(self):
         x = 1
         ctypes = import_helper.import_module('ctypes')
-        PyEval_GetFrameLocals = ctypes.pythonapi.PyEval_GetFrameLocals
-        PyEval_GetFrameLocals.restype = ctypes.py_object
+        import ctypes.util  # noqa: F811
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def PyEval_GetFrameLocals() -> ctypes.py_object:
+            pass
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def PyEval_GetFrameGlobals() -> ctypes.py_object:
+            pass
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def PyEval_GetFrameBuiltins() -> ctypes.py_object:
+            pass
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def PyFrame_GetLocals(frame: ctypes.py_object) -> ctypes.py_object:
+            pass
+
         frame_locals = PyEval_GetFrameLocals()
         self.assertTrue(type(frame_locals), dict)
         self.assertEqual(frame_locals['x'], 1)
         frame_locals['x'] = 2
         self.assertEqual(x, 1)
 
-        PyEval_GetFrameGlobals = ctypes.pythonapi.PyEval_GetFrameGlobals
-        PyEval_GetFrameGlobals.restype = ctypes.py_object
         frame_globals = PyEval_GetFrameGlobals()
         self.assertTrue(type(frame_globals), dict)
         self.assertIs(frame_globals, globals())
 
-        PyEval_GetFrameBuiltins = ctypes.pythonapi.PyEval_GetFrameBuiltins
-        PyEval_GetFrameBuiltins.restype = ctypes.py_object
         frame_builtins = PyEval_GetFrameBuiltins()
         self.assertEqual(frame_builtins, __builtins__)
 
-        PyFrame_GetLocals = ctypes.pythonapi.PyFrame_GetLocals
-        PyFrame_GetLocals.argtypes = [ctypes.py_object]
-        PyFrame_GetLocals.restype = ctypes.py_object
         frame = sys._getframe()
         f_locals = PyFrame_GetLocals(frame)
         self.assertTrue(f_locals['x'], 1)
@@ -723,51 +971,6 @@ class TestIncompleteFrameAreInvisible(unittest.TestCase):
             self.assertIs(catcher.unraisable.exc_type, TypeError)
         self.assertIsNone(weak())
 
-@unittest.skipIf(_testcapi is None, 'need _testcapi')
-class TestCAPI(unittest.TestCase):
-    def getframe(self):
-        return sys._getframe()
-
-    def test_frame_getters(self):
-        frame = self.getframe()
-        self.assertEqual(frame.f_locals, _testcapi.frame_getlocals(frame))
-        self.assertIs(frame.f_globals, _testcapi.frame_getglobals(frame))
-        self.assertIs(frame.f_builtins, _testcapi.frame_getbuiltins(frame))
-        self.assertEqual(frame.f_lasti, _testcapi.frame_getlasti(frame))
-
-    def test_getvar(self):
-        current_frame = sys._getframe()
-        x = 1
-        self.assertEqual(_testcapi.frame_getvar(current_frame, "x"), 1)
-        self.assertEqual(_testcapi.frame_getvarstring(current_frame, b"x"), 1)
-        with self.assertRaises(NameError):
-            _testcapi.frame_getvar(current_frame, "y")
-        with self.assertRaises(NameError):
-            _testcapi.frame_getvarstring(current_frame, b"y")
-
-        # wrong name type
-        with self.assertRaises(TypeError):
-            _testcapi.frame_getvar(current_frame, b'x')
-        with self.assertRaises(TypeError):
-            _testcapi.frame_getvar(current_frame, 123)
-
-    def getgenframe(self):
-        yield sys._getframe()
-
-    def test_frame_get_generator(self):
-        gen = self.getgenframe()
-        frame = next(gen)
-        self.assertIs(gen, _testcapi.frame_getgenerator(frame))
-
-    def test_frame_fback_api(self):
-        """Test that accessing `f_back` does not cause a segmentation fault on
-        a frame created with `PyFrame_New` (GH-99110)."""
-        def dummy():
-            pass
-
-        frame = _testcapi.frame_new(dummy.__code__, globals(), locals())
-        # The following line should not cause a segmentation fault.
-        self.assertIsNone(frame.f_back)
 
 if __name__ == "__main__":
     unittest.main()

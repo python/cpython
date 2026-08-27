@@ -1,1 +1,0 @@
-Hard-code float word ordering as little endian on WASM.

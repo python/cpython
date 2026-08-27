@@ -619,6 +619,33 @@ class AsyncGenTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "coroutine ignored GeneratorExit"):
             gen.close()
 
+    def test_async_gen_athrow_send_non_none(self):
+        # gh-120321: sending a non-None value to a just-started athrow()
+        # awaitable must not claim the generator, so the generator stays
+        # usable and the awaitable can still be awaited afterwards.
+        class MyExc(Exception):
+            pass
+
+        async def agenfn():
+            try:
+                yield 1
+            except MyExc:
+                yield 2
+
+        agen = agenfn()
+        with self.assertRaises(StopIteration):
+            agen.asend(None).send(None)
+
+        gen = agen.athrow(MyExc)
+        with self.assertRaisesRegex(RuntimeError, "non-None value"):
+            gen.send(42)
+        self.assertFalse(agen.ag_running)
+
+        # The awaitable is still in its initial state and works normally.
+        with self.assertRaises(StopIteration) as cm:
+            gen.send(None)
+        self.assertEqual(cm.exception.value, 2)
+
 
 class AsyncGenAsyncioTest(unittest.TestCase):
 
@@ -629,7 +656,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
     def tearDown(self):
         self.loop.close()
         self.loop = None
-        asyncio.set_event_loop_policy(None)
+        asyncio.set_event_loop(None)
 
     def check_async_iterator_anext(self, ait_class):
         with self.subTest(anext="pure-Python"):
@@ -1151,6 +1178,43 @@ class AsyncGenAsyncioTest(unittest.TestCase):
                 await it.__anext__()
 
         self.loop.run_until_complete(run())
+
+    def test_async_gen_asyncio_anext_tuple_no_exceptions(self):
+        # StopAsyncIteration exceptions should be cleared.
+        # See: https://github.com/python/cpython/issues/128078.
+
+        async def foo():
+            if False:
+                yield (1, 2)
+
+        async def run():
+            it = foo().__aiter__()
+            with self.assertRaises(StopAsyncIteration):
+                await it.__anext__()
+            res = await anext(it, ('a', 'b'))
+            self.assertTupleEqual(res, ('a', 'b'))
+
+        self.loop.run_until_complete(run())
+
+    def test_sync_anext_raises_exception(self):
+        # See: https://github.com/python/cpython/issues/131670
+        msg = 'custom'
+        for exc_type in [
+            StopAsyncIteration,
+            StopIteration,
+            ValueError,
+            Exception,
+        ]:
+            exc = exc_type(msg)
+            with self.subTest(exc=exc):
+                class A:
+                    def __anext__(self):
+                        raise exc
+
+                with self.assertRaisesRegex(exc_type, msg):
+                    anext(A())
+                with self.assertRaisesRegex(exc_type, msg):
+                    anext(A(), 1)
 
     def test_async_gen_asyncio_anext_stopiteration(self):
         async def foo():
@@ -1913,6 +1977,41 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         ):
             nxt.throw(MyException)
 
+    def test_async_gen_send_same_athrow_coro_after_completion(self):
+        # gh-120321: an athrow() awaitable that needs more than one send()
+        # to complete must be closed on completion; sending to it again
+        # must raise instead of resuming the generator.
+        class YieldOnce:
+            def __await__(self):
+                yield
+
+        async def async_iterate():
+            try:
+                yield 1
+            except ValueError:
+                await YieldOnce()
+            yield 2
+
+        it = async_iterate()
+        with self.assertRaises(StopIteration):
+            it.__anext__().send(None)
+
+        nxt = it.athrow(ValueError)
+        # The exception handler suspends before the operation completes.
+        nxt.send(None)
+        with self.assertRaises(StopIteration) as cm:
+            nxt.send(None)
+        self.assertEqual(cm.exception.value, 2)
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            r"cannot reuse already awaited aclose\(\)/athrow\(\)"
+        ):
+            nxt.send(None)
+
+        with self.assertRaises(StopIteration):
+            it.aclose().send(None)
+
     def test_async_gen_aclose_twice_with_different_coros(self):
         # Regression test for https://bugs.python.org/issue39606
         async def async_iterate():
@@ -1983,6 +2082,15 @@ class TestUnawaitedWarnings(unittest.TestCase):
             g = gen()
             g.athrow(RuntimeError)
             gc_collect()
+
+    def test_athrow_throws_immediately(self):
+        async def gen():
+            yield 1
+
+        g = gen()
+        msg = "athrow expected at least 1 argument, got 0"
+        with self.assertRaisesRegex(TypeError, msg):
+            g.athrow()
 
     def test_aclose(self):
         async def gen():

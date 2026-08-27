@@ -10,7 +10,7 @@ The Python 2.3 Method Resolution Order
    The Method Resolution Order discussed here was *introduced* in Python 2.3,
    but it is still used in later versions -- including Python 3.
 
-By `Michele Simionato <https://www.phyast.pitt.edu/~micheles/>`__.
+By `Michele Simionato <https://github.com/micheles>`__.
 
 :Abstract:
 
@@ -398,7 +398,7 @@ with inheritance diagram
 
 We see that class G inherits from F and E, with F *before* E:  therefore
 we would expect the attribute *G.remember2buy* to be inherited by
-*F.rembermer2buy* and not by *E.remember2buy*:  nevertheless Python 2.2
+*F.remember2buy* and not by *E.remember2buy*:  nevertheless Python 2.2
 gives
 
   >>> G.remember2buy  # doctest: +SKIP

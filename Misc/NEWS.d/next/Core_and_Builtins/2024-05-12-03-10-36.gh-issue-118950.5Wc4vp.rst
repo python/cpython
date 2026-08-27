@@ -1,1 +1,0 @@
-Fix bug where SSLProtocol.connection_lost wasn't getting called when OSError was thrown on writing to socket.
