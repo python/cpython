@@ -565,7 +565,7 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
         tok->input_error = 1;
         return 0;
     }
-    if (!prepared &&
+    if (tok->reader->kind == _PYTOK_READER_INTERACTIVE &&
             _PyTok_SourceAppendLine(&tok->source, chunk.data, chunk.len,
                                     chunk.implicit_newline) < 0) {
         _PyTok_ChunkClear(&chunk);
