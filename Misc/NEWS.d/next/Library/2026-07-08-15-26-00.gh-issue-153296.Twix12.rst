@@ -1,0 +1,1 @@
+Fix a data race and use-after-free when iterating over an :class:`io.StringIO` object while it is being concurrently mutated. The ``__next__`` method now properly acquires the object's lock.

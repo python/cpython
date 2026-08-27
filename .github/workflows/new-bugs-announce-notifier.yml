@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   notify-new-bugs-announce:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     permissions:
       issues: read
     timeout-minutes: 10

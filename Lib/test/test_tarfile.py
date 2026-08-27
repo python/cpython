@@ -1,3 +1,4 @@
+import copy
 import errno
 import sys
 import os
@@ -1141,6 +1142,38 @@ class LzmaDetectReadTest(LzmaTest, DetectReadTest):
 class ZstdDetectReadTest(ZstdTest, DetectReadTest):
     pass
 
+
+@support.requires_zstd()
+class ZstdOpenTest(unittest.TestCase):
+    """
+    See: https://github.com/python/cpython/issues/150077
+    """
+    def test_zstopen_closes_fileobj_on_base_exception(self):
+        path = os_helper.TESTFN + ".tar.zst"
+        self.addCleanup(os_helper.unlink, path)
+        with tarfile.open(path, "w:zst"):
+            pass
+
+        opened = []
+        real_ZstdFile = zstd.ZstdFile
+
+        def tracking_ZstdFile(*args, **kwargs):
+            fileobj = real_ZstdFile(*args, **kwargs)
+            opened.append(fileobj)
+            return fileobj
+
+        with (
+            unittest.mock.patch("compression.zstd.ZstdFile", tracking_ZstdFile),
+            unittest.mock.patch.object(
+                tarfile.TarFile, "taropen", side_effect=KeyboardInterrupt),
+            self.assertRaises(KeyboardInterrupt),
+        ):
+            tarfile.TarFile.zstopen(path)
+
+        self.assertEqual(len(opened), 1)
+        self.assertTrue(opened[0].closed)
+
+
 class GzipBrokenHeaderCorrectException(GzipTest, unittest.TestCase):
     """
     See: https://github.com/python/cpython/issues/107396
@@ -1367,6 +1400,37 @@ class GNUReadTest(LongnameTest, ReadTest, unittest.TestCase):
     def test_sparse_file_10(self):
         self._test_sparse_file("gnu/sparse-1.0")
 
+    def test_sparse_file_10_pax_size(self):
+        # gh-83869: when the pax header replaces the size field, the offset
+        # of the next header must be computed from the size of the data in
+        # the archive, not from the apparent size of the sparse file.
+        data = b"payload!" * 4
+        realsize = 1 << 20
+        smap = b"1\n%d\n%d\n" % (realsize - len(data), len(data))
+        smap += b"\0" * (-len(smap) % tarfile.BLOCKSIZE)
+
+        sparse = tarfile.TarInfo("sparse")
+        sparse.size = len(smap) + len(data)
+        sparse.pax_headers = {
+            "GNU.sparse.major": "1",
+            "GNU.sparse.minor": "0",
+            "GNU.sparse.name": "sparse",
+            "GNU.sparse.realsize": str(realsize),
+            "size": str(sparse.size),
+        }
+        buf = sparse.tobuf(tarfile.PAX_FORMAT)
+        buf += smap + data + b"\0" * (-len(data) % tarfile.BLOCKSIZE)
+
+        last = tarfile.TarInfo("last")
+        last.size = len(data)
+        buf += last.tobuf(tarfile.PAX_FORMAT)
+        buf += data + b"\0" * (-len(data) % tarfile.BLOCKSIZE)
+        buf += b"\0" * (tarfile.BLOCKSIZE * 2)
+
+        with tarfile.open(fileobj=io.BytesIO(buf)) as tar:
+            self.assertEqual(tar.getnames(), ["sparse", "last"])
+            self.assertEqual(tar.extractfile("last").read(), data)
+
     @staticmethod
     def _fs_supports_holes():
         # Return True if the platform knows the st_blocks stat attribute and
@@ -1439,6 +1503,31 @@ class PaxReadTest(LongnameTest, ReadTest, unittest.TestCase):
                              "\xc4\xd6\xdc\xe4\xf6\xfc\xdf")
         finally:
             tar.close()
+
+    def test_offset_after_global_header(self):
+        # gh-83869: a global header is a member of its own, the member which
+        # follows it keeps the offset of its own header.
+        rec = b"30 comment=global header here\n"
+        glob = tarfile.TarInfo("././@PaxHeader")
+        glob.type = tarfile.XGLTYPE
+        glob.size = len(rec)
+        buf = glob.tobuf(tarfile.USTAR_FORMAT)
+        buf += rec + b"\0" * (-len(rec) % tarfile.BLOCKSIZE)
+
+        member = tarfile.TarInfo("member")
+        data = b"hello\n"
+        member.size = len(data)
+        offset = len(buf)
+        buf += member.tobuf(tarfile.USTAR_FORMAT)
+        buf += data + b"\0" * (-len(data) % tarfile.BLOCKSIZE)
+        buf += b"\0" * (tarfile.BLOCKSIZE * 2)
+
+        with tarfile.open(fileobj=io.BytesIO(buf)) as tar:
+            tarinfo = tar.getmember("member")
+            self.assertEqual(tarinfo.offset, offset)
+            self.assertEqual(tarinfo.pax_headers.get("comment"),
+                             "global header here")
+            self.assertEqual(tar.extractfile(tarinfo).read(), data)
 
     def test_pax_number_fields(self):
         # All following number fields are read from the pax header.
@@ -1663,6 +1752,22 @@ class WriteTest(WriteTestBase, unittest.TestCase):
             try:
                 tarinfo = tar.gettarinfo(path)
                 self.assertEqual(tarinfo.size, 0)
+            finally:
+                tar.close()
+        finally:
+            os_helper.unlink(path)
+
+    @os_helper.skip_unless_symlink
+    def test_symlink_target_normalization(self):
+        # Test for gh-151669.
+        path = os.path.join(TEMPDIR, "symlink")
+        target = "subdir/link/target"
+        os.symlink(target.replace("/", os.sep), path)
+        try:
+            tar = tarfile.open(tmpname, self.mode)
+            try:
+                tarinfo = tar.gettarinfo(path)
+                self.assertEqual(tarinfo.linkname, target)
             finally:
                 tar.close()
         finally:
@@ -3303,12 +3408,12 @@ def root_is_uid_gid_0():
     except ImportError:
         return False
     try:
-        if pwd.getpwuid(0)[0] != 'root':
+        if pwd.getpwuid(0).pw_name != 'root':
             return False
     except KeyError:
         # On Cygwin, there is no root user (uid 0)
         return False
-    if grp.getgrgid(0)[0] != 'root':
+    if grp.getgrgid(0).gr_name != 'root':
         return False
     return True
 
@@ -3475,6 +3580,16 @@ class ReplaceTests(ReadTest, unittest.TestCase):
         member = self.tar.getmember('ustar/regtype')
         with self.assertRaises(TypeError):
             member.replace(offset=123456789)
+
+    def test_copy_replace(self):
+        member = self.tar.getmember('ustar/regtype')
+        replaced = copy.replace(member, name='misc/other', mode=0o644)
+        self.assertEqual(replaced.name, 'misc/other')
+        self.assertEqual(replaced.mode, 0o644)
+        self.assertEqual(replaced.size, member.size)
+        self.assertEqual(member.name, 'ustar/regtype')
+        with self.assertRaises(TypeError):
+            copy.replace(member, offset=123456789)
 
 
 class NoneInfoExtractTests(ReadTest):
@@ -3976,6 +4091,20 @@ class TestExtractionFilters(unittest.TestCase):
                     self.expect_exception(
                         tarfile.AbsolutePathError,
                         """['"].*escaped.evil['"] has an absolute path""")
+
+    def test_parent_dir_out_and_back(self):
+        # Test a member that leaves the destination and comes back.
+        # The containment check looks at the resolved path, which stays
+        # inside, but the intermediate directories are created from the
+        # name as given, which does not.
+        with ArchiveMaker() as arc:
+            arc.add(f'../escaped.evil/../{self.destdir.name}/sub/file',
+                    content='content')
+
+        for filter in 'tar', 'data':
+            with self.subTest(filter):
+                with self.check_context(arc.open(), filter):
+                    self.expect_file('sub/file', content='content')
 
     @symlink_test
     def test_parent_symlink(self):

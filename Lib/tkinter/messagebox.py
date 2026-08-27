@@ -1,3 +1,5 @@
+"""Interface to the standard Tk message boxes."""
+
 # tk common message boxes
 #
 # this module provides an interface to the native message boxes
