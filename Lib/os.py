@@ -722,7 +722,7 @@ from _collections_abc import MutableMapping, Mapping
 
 # Sentinel used for seeing if a value is found within the internal _Environ
 # dictionary.
-_environ_missing = object()
+_MISSING = sentinel("MISSING")
 
 
 class _Environ(MutableMapping):
@@ -779,8 +779,8 @@ class _Environ(MutableMapping):
         return dict(self)
 
     def get(self, key, default = None):
-        val = self._data.get(self.encodekey(key), _environ_missing)
-        return default if val is _environ_missing else self.decodevalue(val)
+        val = self._data.get(self.encodekey(key), _MISSING)
+        return default if val is _MISSING else self.decodevalue(val)
 
     def setdefault(self, key, value):
         if key not in self:
