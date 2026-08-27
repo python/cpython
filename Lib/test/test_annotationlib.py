@@ -654,6 +654,13 @@ class TestGetAnnotations(unittest.TestCase):
         result = get_annotations(f, eval_str=True)
         self.assertEqual(result, {'x': int, 'return': str})
 
+    def test_eval_str_wrapped_partial_cycle_self(self):
+        def f(x: 'int') -> 'str': ...
+        f.__wrapped__ = functools.partial(f, 0)
+        # Cycle is detected and broken; globals from f itself are used.
+        result = get_annotations(f, eval_str=True)
+        self.assertEqual(result, {'x': int, 'return': str})
+
     def test_eval_str_wrapped_cycle_mutual(self):
         # gh-146556: mutual __wrapped__ cycle (a -> b -> a) must not hang.
         def a(x: 'int'): ...
