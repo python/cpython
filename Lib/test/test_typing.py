@@ -3894,22 +3894,32 @@ class ProtocolTests(BaseTestCase):
         # class out of ABCMeta's cache and made every isinstance() call walk
         # all of the protocol members again.
         @runtime_checkable
-        class P(Protocol):
+        class PAttr(Protocol):
             x = 1
+
+        @runtime_checkable
+        class PProperty(Protocol):
+            @property
+            def x(self) -> int: ...
 
         class B:
             x = None
 
-        self.assertIsInstance(B(), P)
-
-        # The first check must have cached B as a subclass of P, so the second
-        # one may not touch the members at all.
-        typing._lazy_load_getattr_static.cache_clear()
-        try:
-            with patch.object(inspect, "getattr_static", side_effect=AssertionError):
+        for P in (PAttr, PProperty):
+            with self.subTest(protocol=P.__name__):
+                self.assertIn("x", P.__non_callable_proto_members__)
                 self.assertIsInstance(B(), P)
-        finally:
-            typing._lazy_load_getattr_static.cache_clear()
+
+                # The first check must have cached B as a subclass of P, so
+                # the second one may not touch the members at all.
+                typing._lazy_load_getattr_static.cache_clear()
+                try:
+                    with patch.object(
+                        inspect, "getattr_static", side_effect=AssertionError
+                    ):
+                        self.assertIsInstance(B(), P)
+                finally:
+                    typing._lazy_load_getattr_static.cache_clear()
 
     def test_none_on_callable_blocks_implementation(self):
         @runtime_checkable
