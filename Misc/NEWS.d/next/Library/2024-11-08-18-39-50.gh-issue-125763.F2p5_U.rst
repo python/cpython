@@ -1,1 +1,1 @@
-Fix an abnormal exit of a case in turtledemo.
+Remove the broken spacebar quit binding from :mod:`turtledemo`\s ``sorting_animate`` example.
