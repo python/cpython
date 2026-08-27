@@ -475,6 +475,10 @@ Dialects support the following attributes:
    On reading, the *escapechar* removes any special meaning from
    the following character. It defaults to :const:`None`, which disables escaping.
 
+   .. versionchanged:: 3.10
+      Previously the *escapechar* itself was not escaped,
+      which lost it on reading.
+
    .. versionchanged:: 3.11
       An empty *escapechar* is not allowed.
 
