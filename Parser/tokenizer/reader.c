@@ -487,7 +487,7 @@ next_interactive(struct tok_state *tok, _PyTok_Chunk *chunk)
         return _PYTOK_READ_ERROR;
     }
     chunk->data = _PyTok_NormalizeNewlines(
-        decoded.data, decoded.len, 0, 1,
+        decoded.data, decoded.len, 0, 0,
         &chunk->len, &chunk->implicit_newline);
     _PyTok_ChunkClear(&decoded);
     if (chunk->data == NULL) {
