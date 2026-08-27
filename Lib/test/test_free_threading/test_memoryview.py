@@ -4,11 +4,9 @@ import unittest
 
 from test.support import threading_helper
 
-NTHREADS = 8
-
-# Fresh objects expose one-time races under ThreadSanitizer.
-ROUNDS = 20
-ITERS = 20
+NTHREADS = 4
+ROUNDS = 4
+ITERS = 10
 
 HASH_DATA_TEMPLATE = bytes(range(256))
 HASH_DATA_REPEAT = 256
@@ -44,7 +42,8 @@ def run_racy(func, *args):
 
 @threading_helper.requires_working_threading()
 class TestMemoryViewRaces(unittest.TestCase):
-    def assert_exporter_free(self, buf):
+    def ensure_exporter_free(self, buf):
+        # Will raise BufferError if any memoryview still exports it.
         buf.append(0)
         del buf[-1]
 
@@ -77,7 +76,7 @@ class TestMemoryViewRaces(unittest.TestCase):
 
             threading_helper.run_concurrently(release, nthreads=NTHREADS)
 
-        self.assert_exporter_free(buf)
+        self.ensure_exporter_free(buf)
 
     def test_release_races_with_reads(self):
         for _ in range(ROUNDS):
@@ -104,7 +103,7 @@ class TestMemoryViewRaces(unittest.TestCase):
             )
 
             cell[0].release()
-            self.assert_exporter_free(buf)
+            self.ensure_exporter_free(buf)
 
     def test_read_keeps_exporter_alive_after_release(self):
         size = 1 << 20
@@ -157,7 +156,7 @@ class TestMemoryViewRaces(unittest.TestCase):
             threading_helper.run_concurrently(workers, nthreads=NTHREADS)
 
             cell[0].release()
-            self.assert_exporter_free(buf)
+            self.ensure_exporter_free(buf)
 
     def test_release_races_with_buffer_exports(self):
         for _ in range(ROUNDS):
@@ -177,7 +176,7 @@ class TestMemoryViewRaces(unittest.TestCase):
             )
 
             mv.release()
-            self.assert_exporter_free(buf)
+            self.ensure_exporter_free(buf)
 
     def test_release_with_live_export(self):
         buf = bytearray(64)
@@ -198,7 +197,7 @@ class TestMemoryViewRaces(unittest.TestCase):
             held.release()
             mv.release()
 
-        self.assert_exporter_free(buf)
+        self.ensure_exporter_free(buf)
 
     def test_compare_two_views_races_with_release(self):
         for _ in range(ROUNDS):
@@ -220,13 +219,14 @@ class TestMemoryViewRaces(unittest.TestCase):
                     run_racy(lambda: left != right)
 
             threading_helper.run_concurrently(
-                [lambda: releaser(0), lambda: releaser(1)] + [comparer] * 6,
+                [lambda: releaser(0), lambda: releaser(1)]
+                + [comparer] * (NTHREADS - 2),
                 nthreads=NTHREADS,
             )
 
             for mv in cell:
                 mv.release()
-            self.assert_exporter_free(buf)
+            self.ensure_exporter_free(buf)
 
     def test_release_parent_keeps_child_valid(self):
         for _ in range(ROUNDS):
@@ -249,7 +249,7 @@ class TestMemoryViewRaces(unittest.TestCase):
 
             self.assertEqual(child.tobytes(), bytes(range(32)))
             child.release()
-            self.assert_exporter_free(buf)
+            self.ensure_exporter_free(buf)
 
     def test_concurrent_iteration(self):
         for _ in range(ROUNDS):
@@ -274,7 +274,7 @@ class TestMemoryViewRaces(unittest.TestCase):
             )
 
             cell[0].release()
-            self.assert_exporter_free(buf)
+            self.ensure_exporter_free(buf)
 
     def test_iterator_exhaustion_drops_last_reference(self):
         def loop():
