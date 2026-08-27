@@ -12,7 +12,7 @@
 #include "pycore_traceback.h"     // EXCEPTION_TB_HEADER
 
 #include "frameobject.h"          // PyFrame_New()
-#include "Parser/tokenizer/tokenizer.h"
+#include "../Parser/tokenizer/tokenizer.h"
 
 #include "osdefs.h"               // SEP
 #ifdef HAVE_UNISTD_H

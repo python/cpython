@@ -13,7 +13,7 @@
 #include "pycore_traceback.h"     // _PyTraceBack_FromFrame()
 #include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 
-#include "Parser/tokenizer/tokenizer.h"
+#include "../Parser/tokenizer/tokenizer.h"
 
 #ifdef MS_WINDOWS
 #  include <windows.h>
