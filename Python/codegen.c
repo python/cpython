@@ -5036,6 +5036,38 @@ pop_inlined_comprehension_state(compiler *c, location loc,
 }
 
 static int
+codegen_comprehension_init_container(compiler *c, location loc, int type,
+                                     int is_inlined, bool avoid_creation)
+{
+    int op;
+    switch (type) {
+    case COMP_LISTCOMP:
+        op = BUILD_LIST;
+        break;
+    case COMP_SETCOMP:
+        op = BUILD_SET;
+        break;
+    case COMP_DICTCOMP:
+        op = BUILD_MAP;
+        break;
+    default:
+        PyErr_Format(PyExc_SystemError,
+                     "unknown comprehension type %d", type);
+        return ERROR;
+    }
+
+    if (!avoid_creation) {
+        ADDOP_I(c, loc, op, 0);
+        if (is_inlined) {
+            ADDOP_I(c, loc, SWAP, 2);
+        }
+    } else {
+        ADDOP_I(c, loc, COPY, 1);
+    }
+    return SUCCESS;
+}
+
+static int
 codegen_comprehension(compiler *c, expr_ty e, int type,
                       identifier name, asdl_comprehension_seq *generators, expr_ty elt,
                       expr_ty val, bool avoid_creation)
@@ -5098,30 +5130,9 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
     Py_CLEAR(entry);
 
     if (type != COMP_GENEXP) {
-        int op;
-        switch (type) {
-        case COMP_LISTCOMP:
-            op = BUILD_LIST;
-            break;
-        case COMP_SETCOMP:
-            op = BUILD_SET;
-            break;
-        case COMP_DICTCOMP:
-            op = BUILD_MAP;
-            break;
-        default:
-            PyErr_Format(PyExc_SystemError,
-                         "unknown comprehension type %d", type);
+        if (codegen_comprehension_init_container(
+            c, loc, type, is_inlined, avoid_creation) < 0) {
             goto error_in_scope;
-        }
-
-        if (!avoid_creation) {
-            ADDOP_I(c, loc, op, 0);
-            if (is_inlined) {
-                ADDOP_I(c, loc, SWAP, 2);
-            }
-        } else {
-            ADDOP_I(c, loc, COPY, 1);
         }
     }
     if (codegen_comprehension_generator(c, loc, generators, 0, 0,
@@ -5137,7 +5148,7 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
     }
 
     if (type != COMP_GENEXP) {
-        ADDOP(c, LOC(e), RETURN_VALUE);
+        ADDOP_IN_SCOPE(c, LOC(e), RETURN_VALUE);
     }
     if (type == COMP_GENEXP) {
         if (codegen_wrap_in_stopiteration_handler(c) < 0) {
