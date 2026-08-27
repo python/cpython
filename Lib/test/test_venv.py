@@ -303,6 +303,55 @@ class BasicTest(BaseTest):
                              pathlib.Path(expected), prefix)
 
     @requireVenvCreate
+    def test_prefixes_with_non_normalised_executable(self):
+        """
+        Test that a non-normalised executable path isn't counted as a mismatch.
+        """
+        # gh-156495: sys.prefix isn't normalised, but the prefix derived from
+        # sys.executable is, so a string comparison flagged two spellings of the
+        # same directory.
+        rmtree(self.env_dir)
+        self.run_with_capture(venv.create, self.env_dir)
+        # Run from a directory next to the env so argv[0] starts with '..',
+        # which normpath() can't collapse.
+        subdir = tempfile.mkdtemp(dir=os.path.dirname(self.env_dir))
+        self.addCleanup(rmtree, subdir)
+        relative_exe = os.path.join(
+            os.pardir, os.path.basename(self.env_dir), self.bindir, self.exe)
+        p = subprocess.run(
+            [relative_exe, '-c',
+             'import sys; print(sys.prefix); print(sys.exec_prefix)'],
+            cwd=subdir, capture_output=True, encoding='utf-8',
+            env={**os.environ, 'PYTHONHOME': ''})
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertNotIn('Unexpected value in sys.prefix', p.stderr)
+        self.assertNotIn('Unexpected value in sys.exec_prefix', p.stderr)
+        prefix, exec_prefix = p.stdout.splitlines()
+        for name, value in (('prefix', prefix), ('exec_prefix', exec_prefix)):
+            self.assertEqual(os.path.realpath(value),
+                             os.path.realpath(self.env_dir), name)
+
+    @requireVenvCreate
+    def test_prefixes_mismatch_is_still_reported(self):
+        """
+        Test that a genuine prefix mismatch is still reported.
+        """
+        rmtree(self.env_dir)
+        self.run_with_capture(venv.create, self.env_dir)
+        # Move pyvenv.cfg next to the interpreter instead of leaving it in the
+        # prefix, so that sys.prefix and the prefix derived from sys.executable
+        # differ for real and not only in spelling.
+        os.rename(os.path.join(self.env_dir, 'pyvenv.cfg'),
+                  os.path.join(self.env_dir, self.bindir, 'pyvenv.cfg'))
+        p = subprocess.run(
+            [self.envpy(), '-c', 'import sys; print(sys.prefix)'],
+            capture_output=True, encoding='utf-8',
+            env={**os.environ, 'PYTHONHOME': ''})
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertIn('Unexpected value in sys.prefix', p.stderr)
+        self.assertIn('Unexpected value in sys.exec_prefix', p.stderr)
+
+    @requireVenvCreate
     def test_sysconfig(self):
         """
         Test that the sysconfig functions work in a virtual environment.
