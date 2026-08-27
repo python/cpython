@@ -274,7 +274,7 @@ Interpreter objects
 
    .. method:: call(callable, /, *args, **kwargs)
 
-      Return the result of calling running the given function in the
+      Return the result of running the given function in the
       interpreter (in the current thread).
 
    .. _interp-call-in-thread:
