@@ -707,16 +707,8 @@ codegen_enter_scope(compiler *c, identifier name, int scope_type,
 }
 
 static int
-codegen_setup_annotations_scope(compiler *c, location loc,
-                                void *key, PyObject *name)
+codegen_emit_annotations_prologue(compiler *c, location loc)
 {
-    _PyCompile_CodeUnitMetadata umd = {
-        .u_posonlyargcount = 1,
-    };
-    RETURN_IF_ERROR(
-        codegen_enter_scope(c, name, COMPILE_SCOPE_ANNOTATIONS,
-                            key, loc.lineno, NULL, &umd));
-
     // if .format > VALUE_WITH_FAKE_GLOBALS: raise NotImplementedError
     PyObject *value_with_fake_globals = PyLong_FromLong(_Py_ANNOTATE_FORMAT_VALUE_WITH_FAKE_GLOBALS);
     if (value_with_fake_globals == NULL) {
@@ -733,6 +725,21 @@ codegen_setup_annotations_scope(compiler *c, location loc,
     ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, CONSTANT_NOTIMPLEMENTEDERROR);
     ADDOP_I(c, loc, RAISE_VARARGS, 1);
     USE_LABEL(c, body);
+    return SUCCESS;
+}
+
+static int
+codegen_setup_annotations_scope(compiler *c, location loc,
+                                void *key, PyObject *name)
+{
+    _PyCompile_CodeUnitMetadata umd = {
+        .u_posonlyargcount = 1,
+    };
+    RETURN_IF_ERROR(
+        codegen_enter_scope(c, name, COMPILE_SCOPE_ANNOTATIONS,
+                            key, loc.lineno, NULL, &umd));
+
+    RETURN_IF_ERROR_IN_SCOPE(c, codegen_emit_annotations_prologue(c, loc));
     return SUCCESS;
 }
 
