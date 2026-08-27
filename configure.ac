@@ -945,8 +945,12 @@ AS_CASE([$host],
 )
 
 dnl Add the compiler flag for the iOS minimum supported OS version.
-AS_CASE([$ac_sys_system],
-  [iOS], [
+AS_CASE([$host],
+  [*-apple-ios*-simulator], [
+    AS_VAR_APPEND([CFLAGS], [" -mios-simulator-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"])
+    AS_VAR_APPEND([LDFLAGS], [" -mios-simulator-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"])
+  ],
+  [*-apple-ios*], [
     AS_VAR_APPEND([CFLAGS], [" -mios-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"])
     AS_VAR_APPEND([LDFLAGS], [" -mios-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"])
   ],
@@ -6835,8 +6839,9 @@ WITH_SAVE_ENV([
   ]))
 
   # Check that we're able to link with crucial curses/panel functions. This
-  # also serves as a fallback in case pkg-config failed.
-  AS_VAR_APPEND([LIBS], [" $CURSES_LIBS $PANEL_LIBS"])
+  # also serves as a fallback in case pkg-config failed. Extension modules are
+  # not linked with LIBS, so exclude it to get the required libraries.
+  LIBS="$CURSES_LIBS $PANEL_LIBS"
   AC_SEARCH_LIBS([initscr], [ncursesw ncurses],
     [AS_VAR_IF([have_curses], [no],
       [AS_VAR_SET([have_curses], [yes])

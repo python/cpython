@@ -185,6 +185,14 @@ static int initialisedcolors = FALSE;
    while these functions are still in use. */
 static char *screen_encoding = NULL;
 
+/* ncurses and PDCurses store n characters and add a terminator; NetBSD
+   curses counts the terminator in n.  Ask an unknown library for one more. */
+#if defined(NCURSES_VERSION) || defined(PDCURSES)
+#  define CURSES_STR_EXTRA  0
+#else
+#  define CURSES_STR_EXTRA  1
+#endif
+
 /* Utility Macros */
 #define PyCursesSetupTermCalled                                         \
     if (initialised_setupterm != TRUE) {                                \
@@ -1403,18 +1411,25 @@ _curses.window.getch
     ]
     /
 
-Get a character code from terminal keyboard.
+Read a key press and return it as an integer.
 
-The integer returned does not have to be in ASCII range: function
-keys, keypad keys and so on return numbers higher than 256.  In
-no-delay mode, -1 is returned if there is no input, else getch()
-waits until a key is pressed.
+Wait until a key is pressed, or return -1 if the read is
+non-blocking or times out.
+
+An ordinary key is returned as the code of a single byte of its
+encoding in the current locale, so a character encoded with several
+bytes takes several calls.  Use get_wch() to read it as a single
+character.
+
+In keypad mode function keys and other special keys are returned as
+one of the KEY_* constants, which cannot be mistaken for an ordinary
+key.  Otherwise their bytes are returned one at a time.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_getch_impl(PyCursesWindowObject *self, int group_right_1,
                           int y, int x)
-/*[clinic end generated code: output=e1639e87d545e676 input=0dc5ff40e079787a]*/
+/*[clinic end generated code: output=e1639e87d545e676 input=882ddab9b41afbbd]*/
 {
     int rtn;
 
@@ -1451,18 +1466,18 @@ _curses.window.getkey
     ]
     /
 
-Get a character (string) from terminal keyboard.
+Read a key press and return it as a str.
 
-Returning a string instead of an integer, as getch() does.  Function
-keys, keypad keys and other special keys return a multibyte string
-containing the key name.  In no-delay mode, an exception is raised
-if there is no input.
+Read as getch() does, but return an ordinary key as a one-character
+string, the byte decoded as Latin-1, and a special key as its name,
+such as 'KEY_UP'.  Raise curses.error instead of returning -1 if
+there is no input.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_getkey_impl(PyCursesWindowObject *self, int group_right_1,
                            int y, int x)
-/*[clinic end generated code: output=8490a182db46b10f input=bd24a7da1ed9c73b]*/
+/*[clinic end generated code: output=8490a182db46b10f input=f054cf034c69e879]*/
 {
     int rtn;
 
@@ -1509,16 +1524,20 @@ _curses.window.get_wch
     ]
     /
 
-Get a wide character from terminal keyboard.
+Read a key press and return it as a one-character str.
 
-Return a character for most keys, or an integer for function keys,
-keypad keys, and other special keys.
+Wait until a key is pressed, or raise curses.error if the read is
+non-blocking or times out.
+
+In keypad mode function keys and other special keys are returned as
+one of the KEY_* constants, an integer.  Otherwise their characters
+are returned one at a time.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_get_wch_impl(PyCursesWindowObject *self, int group_right_1,
                             int y, int x)
-/*[clinic end generated code: output=9f4f86e91fe50ef3 input=dd7e5367fb49dc48]*/
+/*[clinic end generated code: output=9f4f86e91fe50ef3 input=77eb2da426ebe71f]*/
 {
     int ct;
     wint_t rtn;
@@ -1557,10 +1576,10 @@ _curses.window.getstr
         X-coordinate.
     ]
     n: int = 1023
-        Maximal number of characters.
+        Maximal number of bytes.
     /
 
-Read a string from the user, with primitive line editing capacity.
+Read a line of input and return it as a bytes object.
 [-clinic start generated code]*/
 
 static PyObject *
@@ -1815,26 +1834,26 @@ _curses.window.instr
         X-coordinate.
     ]
     n: int = 1023
-        Maximal number of characters.
+        Maximal number of bytes.
     /
 
-Return a string of characters, extracted from the window.
+Return the text of the window as a bytes object.
 
-Return a string of characters, extracted from the window starting at the
-current cursor position, or at y, x if specified.  Attributes are stripped
-from the characters.  If n is specified, instr() returns a string at most
-n characters long (exclusive of the trailing NUL).
+Read from the current cursor position, or from y, x if specified, to
+the end of the line, and return the text in the encoding of the
+current locale, with attributes and color pairs stripped.  At most n
+bytes are read.
 [-clinic start generated code]*/
 static PyObject *
 PyCursesWindow_InStr(PyCursesWindowObject *self, PyObject *args)
 {
-    int x, y, n;
+    int x = 0, y = 0, n;
     char rtn[1024]; /* This should be big enough.. I hope */
-    int rtn2;
+    int rtn2, use_xy = 0;
 
     switch (PyTuple_Size(args)) {
     case 0:
-        rtn2 = winnstr(self->win,rtn, 1023);
+        n = 1023;
         break;
     case 1:
         if (!PyArg_ParseTuple(args,"i;n", &n))
@@ -1843,12 +1862,13 @@ PyCursesWindow_InStr(PyCursesWindowObject *self, PyObject *args)
             PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
             return NULL;
         }
-        rtn2 = winnstr(self->win, rtn, Py_MIN(n, 1023));
+        n = Py_MIN(n, 1023);
         break;
     case 2:
         if (!PyArg_ParseTuple(args,"ii;y,x",&y,&x))
             return NULL;
-        rtn2 = mvwinnstr(self->win,y,x,rtn,1023);
+        n = 1023;
+        use_xy = 1;
         break;
     case 3:
         if (!PyArg_ParseTuple(args, "iii;y,x,n", &y, &x, &n))
@@ -1857,15 +1877,31 @@ PyCursesWindow_InStr(PyCursesWindowObject *self, PyObject *args)
             PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
             return NULL;
         }
-        rtn2 = mvwinnstr(self->win, y, x, rtn, Py_MIN(n,1023));
+        n = Py_MIN(n, 1023);
+        use_xy = 1;
         break;
     default:
         PyErr_SetString(PyExc_TypeError, "instr requires 0 or 3 arguments");
         return NULL;
     }
+
+    /* Read again if the library stored more than asked: truncating could
+       split a multibyte character. */
+    for (int ask = n + CURSES_STR_EXTRA; ; ask = n) {
+        if (use_xy) {
+            rtn2 = mvwinnstr(self->win, y, x, rtn, ask);
+        }
+        else {
+            rtn2 = winnstr(self->win, rtn, ask);
+        }
+        if (rtn2 == ERR || rtn2 <= n) {
+            break;
+        }
+    }
+
     if (rtn2 == ERR)
-        rtn[0] = 0;
-    return PyBytes_FromString(rtn);
+        return PyBytes_FromStringAndSize(NULL, 0);
+    return PyBytes_FromStringAndSize(rtn, rtn2);
 }
 
 /*[clinic input]
@@ -2585,33 +2621,31 @@ PyDoc_STRVAR(_curses_window_chgat__doc__,
 "window refresh.");
 
 PyDoc_STRVAR(_curses_window_getstr__doc__,
-"getstr([[y, x,] n=2047])\n"
-"Read a string from the user, with primitive line editing capacity.\n"
+"getstr([[y, x,] n=1023])\n"
+"Read a line of input and return it as a bytes object.\n"
 "\n"
 "  y\n"
 "    Y-coordinate.\n"
 "  x\n"
 "    X-coordinate.\n"
 "  n\n"
-"    Maximal number of characters.");
+"    Maximal number of bytes.");
 
 PyDoc_STRVAR(_curses_window_instr__doc__,
-"instr([y, x,] n=2047)\n"
-"Return a string of characters, extracted from the window.\n"
+"instr([y, x,] n=1023)\n"
+"Return the text of the window as a bytes object.\n"
 "\n"
 "  y\n"
 "    Y-coordinate.\n"
 "  x\n"
 "    X-coordinate.\n"
 "  n\n"
-"    Maximal number of characters.\n"
+"    Maximal number of bytes.\n"
 "\n"
-"Return a string of characters, extracted from the window starting\n"
-"at the current cursor position, or at y, x if specified, and\n"
-"stopping at the end of the line.  Attributes and color\n"
-"information are stripped from the characters.  If n is specified,\n"
-"instr() returns a string at most n characters long (exclusive of\n"
-"the trailing NUL).");
+"Read from the current cursor position, or from y, x if specified, to\n"
+"the end of the line, and return the text in the encoding of the\n"
+"current locale, with attributes and color pairs stripped.  At most n\n"
+"bytes are read.");
 
 static PyMethodDef PyCursesWindow_Methods[] = {
     _CURSES_WINDOW_ADDCH_METHODDEF
@@ -4656,15 +4690,16 @@ _curses.unctrl
     ch: object
     /
 
-Return a string which is a printable representation of the character ch.
+Return a bytes object which is a printable representation of ch.
 
-Control characters are displayed as a caret followed by the character,
-for example as ^C.  Printing characters are left as they are.
+Control characters are displayed as a caret followed by the
+character, for example as ^C.  Printing characters are left as they
+are.  Any attributes and color pair are ignored.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_unctrl(PyObject *module, PyObject *ch)
-/*[clinic end generated code: output=8e07fafc430c9434 input=cd1e35e16cd1ace4]*/
+/*[clinic end generated code: output=8e07fafc430c9434 input=6732d59733d3ed5b]*/
 {
     chtype ch_;
 
