@@ -381,12 +381,11 @@ next_readline(struct tok_state *tok, _PyTok_Chunk *chunk)
                 Py_DECREF(raw);
                 return _PYTOK_READ_ERROR;
             }
-            if (_PyTok_StartDecoder(tok, "replace") < 0) {
-                Py_XDECREF(raw);
-                return _PYTOK_READ_ERROR;
-            }
             if (PyBytes_GET_SIZE(raw) == 0) {
                 Py_DECREF(raw);
+                if (_PyTok_StartDecoder(tok, "replace") < 0) {
+                    return _PYTOK_READ_ERROR;
+                }
                 if (finalize_decoding(tok) < 0) {
                     return _PYTOK_READ_ERROR;
                 }
@@ -396,7 +395,20 @@ next_readline(struct tok_state *tok, _PyTok_Chunk *chunk)
             input.data = PyBytes_AS_STRING(raw);
             input.len = PyBytes_GET_SIZE(raw);
             input.ownership = _PYTOK_CHUNK_PYOBJECT;
-            if (_PyTok_DecodeChunk(tok, &input, 0) < 0) {
+            int decoded;
+            if (reader->decoder == NULL &&
+                    strcmp(tok->encoding, "utf-8") == 0 &&
+                    chunk_is_line(&input)) {
+                decoded = _PyTok_DecodeOnce(
+                    tok, &input, "utf-8", "replace");
+            }
+            else {
+                decoded = _PyTok_StartDecoder(tok, "replace");
+                if (decoded == 0) {
+                    decoded = _PyTok_DecodeChunk(tok, &input, 0);
+                }
+            }
+            if (decoded < 0) {
                 _PyTok_ChunkClear(&input);
                 return _PYTOK_READ_ERROR;
             }
@@ -482,7 +494,8 @@ next_interactive(struct tok_state *tok, _PyTok_Chunk *chunk)
         .ownership = _PYTOK_CHUNK_PYMEM,
     };
     if (tok->encoding != NULL &&
-            _PyTok_DecodeOnce(tok, &decoded, tok->encoding) < 0) {
+            _PyTok_DecodeOnce(
+                tok, &decoded, tok->encoding, NULL) < 0) {
         _PyTok_ChunkClear(&decoded);
         return _PYTOK_READ_ERROR;
     }

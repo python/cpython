@@ -267,10 +267,10 @@ _PyTok_DetectEncoding(struct tok_state *tok, const _PyTok_Chunk *first,
 
 int
 _PyTok_DecodeOnce(struct tok_state *tok, _PyTok_Chunk *chunk,
-                  const char *encoding)
+                  const char *encoding, const char *errors)
 {
     PyObject *unicode = PyUnicode_Decode(
-        chunk->data, chunk->len, encoding, NULL);
+        chunk->data, chunk->len, encoding, errors);
     if (unicode == NULL) {
         tok->done = PyErr_ExceptionMatches(PyExc_MemoryError)
             ? E_NOMEM : E_DECODE;
@@ -387,7 +387,8 @@ _PyTok_PrepareString(struct tok_state *tok, const char *input, int utf8_only,
         .ownership = _PYTOK_CHUNK_BORROWED,
     };
     if (tok->encoding != NULL && strcmp(tok->encoding, "utf-8") != 0) {
-        if (_PyTok_DecodeOnce(tok, &decoded, tok->encoding) < 0) {
+        if (_PyTok_DecodeOnce(
+                tok, &decoded, tok->encoding, NULL) < 0) {
             return -1;
         }
     }

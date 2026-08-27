@@ -64,7 +64,8 @@ typedef struct _PyTok_Reader {
 struct tok_state;
 
 char *_PyTok_CopyBytes(const char *, Py_ssize_t);
-int _PyTok_DecodeOnce(struct tok_state *, _PyTok_Chunk *, const char *);
+int _PyTok_DecodeOnce(
+    struct tok_state *, _PyTok_Chunk *, const char *, const char *);
 char *_PyTok_NormalizeNewlines(
     const char *, Py_ssize_t, int, int, Py_ssize_t *, int *);
 void _PyTok_ChunkClear(_PyTok_Chunk *);
