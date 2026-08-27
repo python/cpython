@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_fileutils.h"     // _Py_Off_t_Converter()
 #include "pycore_long.h"          // _PyLong_UnsignedInt_Converter()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
@@ -6330,7 +6331,7 @@ os_wait(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(HAVE_WAIT) */
 
-#if (defined(__linux__) && defined(__NR_pidfd_open) && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
+#if (defined(HAVE_PIDFD_OPEN) || (defined(__linux__) && defined(__NR_pidfd_open) && !(defined(__ANDROID__) && __ANDROID_API__ < 31)))
 
 PyDoc_STRVAR(os_pidfd_open__doc__,
 "pidfd_open($module, /, pid, flags=0)\n"
@@ -6405,9 +6406,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(__linux__) && defined(__NR_pidfd_open) && !(defined(__ANDROID__) && __ANDROID_API__ < 31)) */
+#endif /* (defined(HAVE_PIDFD_OPEN) || (defined(__linux__) && defined(__NR_pidfd_open) && !(defined(__ANDROID__) && __ANDROID_API__ < 31))) */
 
-#if (defined(__linux__) && defined(__NR_pidfd_getfd) && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
+#if (defined(HAVE_PIDFD_GETFD) || (defined(__linux__) && defined(__NR_pidfd_getfd) && !(defined(__ANDROID__) && __ANDROID_API__ < 31)))
 
 PyDoc_STRVAR(os_pidfd_getfd__doc__,
 "pidfd_getfd($module, /, pidfd, targetfd, *, flags=0)\n"
@@ -6492,7 +6493,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(__linux__) && defined(__NR_pidfd_getfd) && !(defined(__ANDROID__) && __ANDROID_API__ < 31)) */
+#endif /* (defined(HAVE_PIDFD_GETFD) || (defined(__linux__) && defined(__NR_pidfd_getfd) && !(defined(__ANDROID__) && __ANDROID_API__ < 31))) */
 
 #if defined(HAVE_SETNS)
 
@@ -7076,9 +7077,9 @@ PyDoc_STRVAR(os_timerfd_settime_ns__doc__,
 "  flags\n"
 "    0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.\n"
 "  initial\n"
-"    initial expiration timing in seconds.\n"
+"    initial expiration timing in nanoseconds.\n"
 "  interval\n"
-"    interval for the timer in seconds.");
+"    interval for the timer in nanoseconds.");
 
 #define OS_TIMERFD_SETTIME_NS_METHODDEF    \
     {"timerfd_settime_ns", _PyCFunction_CAST(os_timerfd_settime_ns), METH_FASTCALL|METH_KEYWORDS, os_timerfd_settime_ns__doc__},
@@ -7174,7 +7175,7 @@ PyDoc_STRVAR(os_timerfd_gettime__doc__,
 "timerfd_gettime($module, fd, /)\n"
 "--\n"
 "\n"
-"Return a tuple of a timer file descriptor\'s (interval, next expiration) in float seconds.\n"
+"Return a tuple of a timer file descriptor\'s (next expiration, interval) in float seconds.\n"
 "\n"
 "  fd\n"
 "    A timer file descriptor.");
@@ -7209,7 +7210,7 @@ PyDoc_STRVAR(os_timerfd_gettime_ns__doc__,
 "timerfd_gettime_ns($module, fd, /)\n"
 "--\n"
 "\n"
-"Return a tuple of a timer file descriptor\'s (interval, next expiration) in nanoseconds.\n"
+"Return a tuple of a timer file descriptor\'s (next expiration, interval) in nanoseconds.\n"
 "\n"
 "  fd\n"
 "    A timer file descriptor.");
@@ -7761,7 +7762,7 @@ os_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (command == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[2], &length)) {
+    if (!_Py_Off_t_Converter(args[2], &length)) {
         goto exit;
     }
     return_value = os_lockf_impl(module, fd, command, length);
@@ -7813,7 +7814,7 @@ os_lseek(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[1], &position)) {
+    if (!_Py_Off_t_Converter(args[1], &position)) {
         goto exit;
     }
     how = PyLong_AsInt(args[2]);
@@ -8024,7 +8025,7 @@ os_pread(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
         length = ival;
     }
-    if (!Py_off_t_converter(args[2], &offset)) {
+    if (!_Py_Off_t_Converter(args[2], &offset)) {
         goto exit;
     }
     return_value = os_pread_impl(module, fd, length, offset);
@@ -8084,7 +8085,7 @@ os_preadv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     buffers = args[1];
-    if (!Py_off_t_converter(args[2], &offset)) {
+    if (!_Py_Off_t_Converter(args[2], &offset)) {
         goto exit;
     }
     if (nargs < 4) {
@@ -8223,10 +8224,10 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     if (in_fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[2], &offset)) {
+    if (!_Py_Off_t_Converter(args[2], &offset)) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[3], &sbytes)) {
+    if (!_Py_Off_t_Converter(args[3], &sbytes)) {
         goto exit;
     }
     if (!noptargs) {
@@ -8328,7 +8329,7 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     if (in_fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[2], &offset)) {
+    if (!_Py_Off_t_Converter(args[2], &offset)) {
         goto exit;
     }
     {
@@ -8757,7 +8758,7 @@ os_pwrite(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (PyObject_GetBuffer(args[1], &buffer, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[2], &offset)) {
+    if (!_Py_Off_t_Converter(args[2], &offset)) {
         goto exit;
     }
     _return_value = os_pwrite_impl(module, fd, &buffer, offset);
@@ -8830,7 +8831,7 @@ os_pwritev(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     buffers = args[1];
-    if (!Py_off_t_converter(args[2], &offset)) {
+    if (!_Py_Off_t_Converter(args[2], &offset)) {
         goto exit;
     }
     if (nargs < 4) {
@@ -8853,7 +8854,7 @@ exit:
 
 #endif /* (defined(HAVE_PWRITEV) || defined (HAVE_PWRITEV2)) */
 
-#if defined(HAVE_COPY_FILE_RANGE)
+#if defined(_Py_HAVE_COPY_FILE_RANGE)
 
 PyDoc_STRVAR(os_copy_file_range__doc__,
 "copy_file_range($module, /, src, dst, count, offset_src=None,\n"
@@ -8969,7 +8970,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_COPY_FILE_RANGE) */
+#endif /* defined(_Py_HAVE_COPY_FILE_RANGE) */
 
 #if ((defined(HAVE_SPLICE) && !defined(_AIX)))
 
@@ -9444,7 +9445,7 @@ os_ftruncate(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[1], &length)) {
+    if (!_Py_Off_t_Converter(args[1], &length)) {
         goto exit;
     }
     return_value = os_ftruncate_impl(module, fd, length);
@@ -9516,7 +9517,7 @@ os_truncate(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     if (!path_converter(args[0], &path)) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[1], &length)) {
+    if (!_Py_Off_t_Converter(args[1], &length)) {
         goto exit;
     }
     return_value = os_truncate_impl(module, &path, length);
@@ -9564,10 +9565,10 @@ os_posix_fallocate(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[1], &offset)) {
+    if (!_Py_Off_t_Converter(args[1], &offset)) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[2], &length)) {
+    if (!_Py_Off_t_Converter(args[2], &length)) {
         goto exit;
     }
     return_value = os_posix_fallocate_impl(module, fd, offset, length);
@@ -9617,10 +9618,10 @@ os_posix_fadvise(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[1], &offset)) {
+    if (!_Py_Off_t_Converter(args[1], &offset)) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[2], &length)) {
+    if (!_Py_Off_t_Converter(args[2], &length)) {
         goto exit;
     }
     advice = PyLong_AsInt(args[3]);
@@ -11547,7 +11548,7 @@ exit:
     return return_value;
 }
 
-#if defined(HAVE_MEMFD_CREATE)
+#if defined(_Py_HAVE_MEMFD_CREATE)
 
 PyDoc_STRVAR(os_memfd_create__doc__,
 "memfd_create($module, /, name, flags=MFD_CLOEXEC)\n"
@@ -11633,7 +11634,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_MEMFD_CREATE) */
+#endif /* defined(_Py_HAVE_MEMFD_CREATE) */
 
 #if (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC))
 
@@ -12578,7 +12579,7 @@ exit:
     return return_value;
 }
 
-#if defined(HAVE_GETRANDOM_SYSCALL)
+#if (defined(HAVE_GETRANDOM) || defined(HAVE_GETRANDOM_SYSCALL))
 
 PyDoc_STRVAR(os_getrandom__doc__,
 "getrandom($module, /, size, flags=0)\n"
@@ -12590,7 +12591,7 @@ PyDoc_STRVAR(os_getrandom__doc__,
     {"getrandom", _PyCFunction_CAST(os_getrandom), METH_FASTCALL|METH_KEYWORDS, os_getrandom__doc__},
 
 static PyObject *
-os_getrandom_impl(PyObject *module, Py_ssize_t size, int flags);
+os_getrandom_impl(PyObject *module, Py_ssize_t size, unsigned int flags);
 
 static PyObject *
 os_getrandom(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -12626,7 +12627,7 @@ os_getrandom(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_ssize_t size;
-    int flags = 0;
+    unsigned int flags = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -12648,9 +12649,21 @@ os_getrandom(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    flags = PyLong_AsInt(args[1]);
-    if (flags == -1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[1], &flags, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
 skip_optional_pos:
     return_value = os_getrandom_impl(module, size, flags);
@@ -12659,7 +12672,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_GETRANDOM_SYSCALL) */
+#endif /* (defined(HAVE_GETRANDOM) || defined(HAVE_GETRANDOM_SYSCALL)) */
 
 #if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM))
 
@@ -13734,4 +13747,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=d641f02a97057666 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d4e858cbdf280235 input=a9049054013a1b77]*/
