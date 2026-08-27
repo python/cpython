@@ -118,11 +118,11 @@ class Function:
     critical_section: bool = False
     disable_fastcall: bool = False
     target_critical_section: list[str] = dc.field(default_factory=list)
-    vectorcall: bool = False
     # Line of the file on which the function is declared.
     line_number: int | None = None
     # Line on which the docstring starts (`None` if there is no docstring).
     docstring_line_number: int | None = None
+    vectorcall: bool = False
 
     def __post_init__(self) -> None:
         self.parent = self.cls or self.module
@@ -327,6 +327,25 @@ def walk_definitions(
         for module in parent.modules.values():
             yield depth, module.name, module
             yield from walk_definitions(module, module.name, depth + 1)
+
+
+def group_to_variable_name(group: int) -> str:
+    adjective = "left_" if group < 0 else "right_"
+    return "group_" + adjective + str(abs(group))
+
+
+def count_required(subset: ParamTuple) -> int:
+    """Return the number of arguments which cannot be omitted.
+
+    A parameter in an optional group is passed together with its group,
+    so only trailing parameters with a default value can be omitted.
+    """
+    count = len(subset)
+    for p in reversed(subset):
+        if p.group or not p.is_optional():
+            break
+        count -= 1
+    return count
 
 
 def permute_left_option_groups(

@@ -27,9 +27,15 @@ Linux and the BSD variants of Unix.
 
    Whenever the documentation mentions a *character* it can be specified
    as an integer, a one-character Unicode string or a one-byte byte string.
+   An integer is the code of a single encoded byte, optionally combined with
+   attributes and a color pair, as returned by :meth:`window.inch`.
+   Methods that write to a window accept also a character cell: a Unicode
+   string of a spacing character followed by combining characters, or a
+   :class:`complexchar`.
 
    Whenever the documentation mentions a *character string* it can be specified
    as a Unicode string or a byte string.
+   Methods that write to a window accept also a :class:`complexstr`.
 
 .. note::
 
@@ -364,9 +370,9 @@ Keyboard input
    Push *ch* so the next :meth:`~window.getch` or :meth:`~window.get_wch` will
    return it.
 
-   *ch* may be an integer (a key code or character code), a byte, or a string of
-   length 1.  A one-character string is pushed like :func:`unget_wch`; on a
-   narrow build it must encode to a single byte.
+   *ch* may be an integer (a key code or the code of an encoded byte), a byte,
+   or a string of length 1.  A one-character string is pushed like
+   :func:`unget_wch`; on a narrow build it must encode to a single byte.
 
    .. note::
 
@@ -379,6 +385,9 @@ Keyboard input
 .. function:: unget_wch(ch)
 
    Push *ch* so the next :meth:`~window.get_wch` will return it.
+
+   *ch* may be an integer (a character code, not a key code) or a string of
+   length 1.
 
    .. note::
 
@@ -1015,7 +1024,7 @@ Terminfo database
 .. function:: tparm(str[, ...])
 
    Instantiate the bytes object *str* with the supplied parameters, where *str* should
-   be a parameterized string obtained from the terminfo database.  For example,
+   be a parameterized byte string obtained from the terminfo database.  For example,
    ``tparm(tigetstr("cup"), 5, 3)`` could result in ``b'\033[6;4H'``, the exact
    result depending on terminal type.  Up to nine integer parameters may be supplied.
 
@@ -1024,8 +1033,8 @@ Terminfo database
 .. function:: putp(str)
 
    Equivalent to ``tputs(str, 1, putchar)``; emit the value of a specified
-   terminfo capability for the current terminal.  Note that the output of :func:`putp`
-   always goes to standard output.
+   terminfo capability, a bytes object, for the current terminal.
+   Note that the output of :func:`putp` always goes to standard output.
 
    :func:`setupterm` (or :func:`initscr`) must be called first.
 
@@ -1035,9 +1044,15 @@ Utilities
 
 .. function:: unctrl(ch)
 
-   Return a bytes object which is a printable representation of the character *ch*.
-   *ch* cannot be a character that does not fit in a single byte; use
-   :func:`wunctrl` for those.
+   Return a bytes object which is a printable representation of the character *ch*;
+   any attributes and color pair are ignored.
+   Control characters are represented as a caret followed by a character,
+   for example as ``b'^C'``.
+   Printing characters are left as they are.
+   The representation of other characters is defined by the underlying curses
+   library.
+
+   *ch* must fit in a single byte; use :func:`wunctrl` for other characters.
 
 .. function:: wunctrl(ch)
 
@@ -1264,19 +1279,47 @@ Reading input
 
 .. method:: window.getch([y, x])
 
-   Get a character. Note that the integer returned does *not* have to be in ASCII
-   range: function keys, keypad keys and so on are represented by numbers higher
-   than 255.  In no-delay mode, return ``-1`` if there is no input, otherwise
-   wait until a key is pressed.
-   A multibyte character is returned as its encoded bytes one at a time; use
-   :meth:`get_wch` to read it as a single character.
+   Read a key press, after moving the cursor to *y*, *x* if specified,
+   and return it as an integer.
+   The window is refreshed first if it is not a pad and was modified since
+   the last refresh.
+   Wait until a key is pressed, or return ``-1`` if the read is non-blocking
+   or times out (see :meth:`nodelay` and :meth:`timeout`).
+
+   An ordinary key is returned as the code of a single byte of its encoding
+   in the current locale,
+   so a character encoded with several bytes takes several calls.
+   For example, in a UTF-8 locale ``'é'`` is read as ``195``, then ``169``.
+   Use :meth:`get_wch` to read it as a single character.
+
+   In keypad mode (see :meth:`keypad`) function keys and other special keys
+   are returned as one of the :ref:`KEY_* constants <curses-key-constants>`,
+   which cannot be mistaken for an ordinary key.
+   Otherwise, or if their escape sequence does not arrive in time
+   (see :meth:`notimeout` and :func:`set_escdelay`),
+   their bytes are returned one at a time.
+
+   In echo mode (see :func:`echo`) the key is added to the window as by
+   :meth:`addch`; special keys are not echoed.
 
 .. method:: window.get_wch([y, x])
 
-   Get a wide character. Return a character for most keys, or an integer for
-   function keys, keypad keys, and other special keys.  Unlike :meth:`getch`, an
-   ordinary key is returned as a one-character :class:`str`.
-   In no-delay mode, raise an exception if there is no input.
+   Read a key press, after moving the cursor to *y*, *x* if specified,
+   and return it as a one-character :class:`str`.
+   The window is refreshed first if it is not a pad and was modified since
+   the last refresh.
+   Wait until a key is pressed, or raise :exc:`error` if the read is
+   non-blocking or times out (see :meth:`nodelay` and :meth:`timeout`).
+
+   In keypad mode (see :meth:`keypad`) function keys and other special keys
+   are returned as one of the :ref:`KEY_* constants <curses-key-constants>`,
+   an integer.
+   Otherwise, or if their escape sequence does not arrive in time
+   (see :meth:`notimeout` and :func:`set_escdelay`),
+   their characters are returned one at a time.
+
+   In echo mode (see :func:`echo`) the key is added to the window as by
+   :meth:`addch`; special keys are not echoed.
 
    .. versionadded:: 3.3
 
@@ -1286,21 +1329,24 @@ Reading input
 
 .. method:: window.getkey([y, x])
 
-   Get a character, returning a string instead of an integer, as :meth:`getch`
-   does. Function keys, keypad keys and other special keys return a multibyte
-   string containing the key name.  In no-delay mode, raise an exception if
-   there is no input.
+   Read a key press as :meth:`getch` does, but return it as a :class:`str`:
+   an ordinary key as a one-character string, the byte decoded as Latin-1,
+   and a special key as its name, such as ``'KEY_UP'`` (see :func:`keyname`).
+   Raise :exc:`error` instead of returning ``-1`` if there is no input.
 
 .. method:: window.getstr()
             window.getstr(n)
             window.getstr(y, x)
             window.getstr(y, x, n)
 
-   Read a bytes object from the user, with primitive line editing capacity.
-   At most *n* characters are read;
+   Read a line of input from the user, with primitive line editing capacity,
+   after moving the cursor to *y*, *x* if specified.
+   Return it as a bytes object, in the encoding of the current locale
+   and without the terminating newline.
+   At most *n* bytes are read;
    *n* defaults to and cannot exceed 2047.
-   A multibyte character is returned as its encoded bytes; use :meth:`get_wstr`
-   to read the input as a :class:`str`.
+
+   Use :meth:`get_wstr` to read the input as a :class:`str`.
 
    .. versionchanged:: 3.14
       The maximum value for *n* was increased from 1023 to 2047.
@@ -1310,10 +1356,13 @@ Reading input
             window.get_wstr(y, x)
             window.get_wstr(y, x, n)
 
-   Read a string from the user, with primitive line editing capacity.
-   Unlike :meth:`getstr`, it can return characters that are not representable in
-   the window's encoding.
-   At most *n* characters are read; *n* defaults to and cannot exceed 2047.
+   Read a line of input from the user, with primitive line editing capacity,
+   after moving the cursor to *y*, *x* if specified.
+   Return it as a :class:`str`, without the terminating newline.
+   At most *n* characters are read;
+   *n* defaults to and cannot exceed 2047.
+
+   This is the wide-character variant of :meth:`getstr`.
 
    .. versionadded:: next
 
@@ -1354,41 +1403,45 @@ Reading window contents
 .. method:: window.instr([n])
             window.instr(y, x[, n])
 
-   Return a bytes object of characters, extracted from the window starting at the
-   current cursor position, or at *y*, *x* if specified, and stopping at the end
-   of the line. Attributes and color information are stripped
-   from the characters.  If *n* is specified, :meth:`instr` returns a string
-   at most *n* characters long (exclusive of the trailing NUL).
-   The maximum value for *n* is 2047.
-   A character not representable in the window's encoding cannot be returned;
+   Read the text of the window from the current cursor position,
+   or from *y*, *x* if specified, to the end of the line
+   or at most *n* bytes if *n* is specified,
+   and return it as a bytes object, in the encoding of the current locale.
+   Attributes and color pairs are stripped;
+   use :meth:`in_wchstr` to read them too.
+   A character not representable in the encoding cannot be returned;
    use :meth:`in_wstr` for those.
 
    .. versionchanged:: 3.14
       The maximum value for *n* was increased from 1023 to 2047.
 
+   .. versionchanged:: next
+      *n* is no longer limited to 2047.
+
 .. method:: window.in_wstr([n])
             window.in_wstr(y, x[, n])
 
-   Return a string of characters, extracted from the window starting at the
-   current cursor position, or at *y*, *x* if specified.  Unlike :meth:`instr`,
-   it can return characters that are not representable in the window's encoding.
-   Attributes and color information are stripped from the characters.  The
-   maximum value for *n* is 2047.
+   Read the text of the window from the current cursor position,
+   or from *y*, *x* if specified, to the end of the line
+   or at most *n* characters if *n* is specified,
+   and return it as a :class:`str`.
+   Attributes and color pairs are stripped;
+   use :meth:`in_wchstr` to read them too.
+
+   This is the wide-character variant of :meth:`instr`.
 
    .. versionadded:: next
 
 .. method:: window.in_wchstr([n])
             window.in_wchstr(y, x[, n])
 
-   Return a :class:`complexstr` of the styled cells extracted from the window
-   starting at the current cursor position, or at *y*, *x* if specified, and
-   stopping at the end of the line.  This is the variant of :meth:`instr` and
-   :meth:`in_wstr` that *keeps* each cell's attributes and color pair (those
-   methods strip the rendition).  If *n* is specified, at most *n* cells are
-   returned.  The maximum value for *n* is 2047.
-
-   The result can be written back unchanged with :meth:`addstr` (a read and a
-   re-write is a round-trip that preserves every cell's rendition).
+   Read the styled cells of the window from the current cursor position,
+   or from *y*, *x* if specified, to the end of the line
+   or at most *n* cells if *n* is specified,
+   and return them as a :class:`complexstr`.
+   Unlike :meth:`instr` and :meth:`in_wstr`, each cell keeps its attributes
+   and color pair, so the result can be written back unchanged
+   with :meth:`addstr`.
 
    .. versionadded:: next
 
@@ -1835,6 +1888,8 @@ Input options
    If *flag* is ``True``, escape sequences generated by some keys (keypad,  function keys)
    will be interpreted by :mod:`!curses`. If *flag* is ``False``, escape sequences will be
    left as is in the input stream.
+   Keypad mode is disabled by default, but :func:`wrapper` enables it for the
+   main window.
 
 .. method:: window.nodelay(flag)
 
@@ -2330,6 +2385,8 @@ by some methods.
 +-------------------------+--------------------------+--------------------------------------------------+
 | .. data:: A_COLOR       |                          | Bit-mask to extract color-pair field information |
 +-------------------------+--------------------------+--------------------------------------------------+
+
+.. _curses-key-constants:
 
 Keys
 ~~~~

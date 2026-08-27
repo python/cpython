@@ -766,8 +766,8 @@ class DSLParser:
             disable_fastcall=self.disable_fastcall,
             target_critical_section=self.target_critical_section,
             forced_text_signature=self.forced_text_signature,
-            vectorcall=self.vectorcall,
             line_number=self.line_number,
+            vectorcall=self.vectorcall,
         )
         self.add_function(func)
 
