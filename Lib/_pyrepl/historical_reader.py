@@ -17,17 +17,13 @@
 # CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-from __future__ import annotations
-
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 
 from . import commands, input
 from .reader import Reader
 
-
-if False:
-    from .types import SimpleContextManager, KeySpec, CommandName
+lazy from .types import SimpleContextManager, KeySpec, CommandName
 
 
 isearch_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
