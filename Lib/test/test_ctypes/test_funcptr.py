@@ -153,6 +153,35 @@ class CFuncPtrTestCase(unittest.TestCase, StructCheckMixin):
             def PyObject_GetAttrString(op: ctypes.py_object, attr: ctypes.c_char_p):
                 pass
 
+    def test_wrap_dll_function_non_positional(self):
+        # argtypes describes positional arguments only, so a parameter that
+        # cannot be passed positionally is rejected.
+        regex = "'PyObject_GetAttr' has non-positional parameter"
+
+        with self.assertRaisesRegex(ValueError, regex):
+            @wrap_dll_function(ctypes.pythonapi)
+            def PyObject_GetAttr(op: ctypes.py_object, attr: ctypes.py_object,
+                                 *args: ctypes.c_int) -> ctypes.py_object:
+                pass
+
+        with self.assertRaisesRegex(ValueError, regex):
+            @wrap_dll_function(ctypes.pythonapi)
+            def PyObject_GetAttr(op: ctypes.py_object, attr: ctypes.py_object,
+                                 **kwargs: ctypes.c_int) -> ctypes.py_object:
+                pass
+
+        with self.assertRaisesRegex(ValueError, regex):
+            @wrap_dll_function(ctypes.pythonapi)
+            def PyObject_GetAttr(op: ctypes.py_object, attr: ctypes.py_object,
+                                 *, kwonly: ctypes.c_int) -> ctypes.py_object:
+                pass
+
+        with self.assertRaisesRegex(ValueError, regex):
+            @wrap_dll_function(ctypes.pythonapi)
+            def PyObject_GetAttr(op: ctypes.py_object, attr: ctypes.py_object,
+                                 *, kwonly) -> ctypes.py_object:
+                pass
+
     def test_wrap_dll_function_str_ann(self):
         from test.test_ctypes import wrap_str_ann
         version = wrap_str_ann.Py_GetVersion()
