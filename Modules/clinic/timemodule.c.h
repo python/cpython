@@ -452,14 +452,14 @@ PyDoc_STRVAR(time_tzset__doc__,
 "\n"
 "Initialize, or reinitialize, the local timezone.\n"
 "\n"
-"The value is stored in os.environ[\'TZ\'].  The TZ environment variable\n"
-"should be specified in standard Unix timezone format as documented in\n"
-"the tzset man page (eg. \'US/Eastern\', \'Europe/Amsterdam\').  Unknown\n"
-"timezones will silently fall back to UTC.  If the TZ environment\n"
-"variable is not set, the local timezone is set to the systems best\n"
-"guess of wallclock time.  Changing the TZ environment variable without\n"
-"calling tzset *may* change the local timezone used by methods such as\n"
-"localtime, but this behaviour should not be relied on.");
+"The local timezone is set to the value stored in os.environ[\'TZ\'].  The\n"
+"TZ environment variable should be specified in standard Unix timezone\n"
+"format as documented in the tzset man page (eg. \'US/Eastern\',\n"
+"\'Europe/Amsterdam\').  Unknown timezones will silently fall back to UTC.\n"
+"If the TZ environment variable is not set, the local timezone is set to\n"
+"the systems best guess of wallclock time.  Changing the TZ environment\n"
+"variable without calling tzset *may* change the local timezone used by\n"
+"methods such as localtime, but this behaviour should not be relied on.");
 
 #define TIME_TZSET_METHODDEF    \
     {"tzset", (PyCFunction)time_tzset, METH_NOARGS, time_tzset__doc__},
@@ -751,4 +751,4 @@ exit:
 #ifndef TIME_THREAD_TIME_NS_METHODDEF
     #define TIME_THREAD_TIME_NS_METHODDEF
 #endif /* !defined(TIME_THREAD_TIME_NS_METHODDEF) */
-/*[clinic end generated code: output=75f2a96aa9a21a15 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=540a094cac69e0d4 input=a9049054013a1b77]*/

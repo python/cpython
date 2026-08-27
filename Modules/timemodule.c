@@ -1201,19 +1201,19 @@ time.tzset
 
 Initialize, or reinitialize, the local timezone.
 
-The value is stored in os.environ['TZ'].  The TZ environment variable
-should be specified in standard Unix timezone format as documented in
-the tzset man page (eg. 'US/Eastern', 'Europe/Amsterdam').  Unknown
-timezones will silently fall back to UTC.  If the TZ environment
-variable is not set, the local timezone is set to the systems best
-guess of wallclock time.  Changing the TZ environment variable without
-calling tzset *may* change the local timezone used by methods such as
-localtime, but this behaviour should not be relied on.
+The local timezone is set to the value stored in os.environ['TZ'].  The
+TZ environment variable should be specified in standard Unix timezone
+format as documented in the tzset man page (eg. 'US/Eastern',
+'Europe/Amsterdam').  Unknown timezones will silently fall back to UTC.
+If the TZ environment variable is not set, the local timezone is set to
+the systems best guess of wallclock time.  Changing the TZ environment
+variable without calling tzset *may* change the local timezone used by
+methods such as localtime, but this behaviour should not be relied on.
 [clinic start generated code]*/
 
 static PyObject *
 time_tzset_impl(PyObject *module)
-/*[clinic end generated code: output=d1564ac4d48d320b input=ae8cbbf5583146d8]*/
+/*[clinic end generated code: output=d1564ac4d48d320b input=a4d11aab49badf88]*/
 {
     PyObject* m;
 
