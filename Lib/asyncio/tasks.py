@@ -269,8 +269,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
                 f'__step(): already done: {self!r}, {exc!r}')
         if self._must_cancel:
             if not isinstance(exc, (exceptions.CancelledError,
-                                   # gh-108549: do not swallow these
-                                   # 2 exceptions
+                                   # gh-108549: do not swallow these exceptions
                                    SystemExit, KeyboardInterrupt)
                               ):
                 exc = self._make_cancelled_error()

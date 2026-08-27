@@ -1892,8 +1892,7 @@ class BaseTaskTests:
             'ko')
 
     def test_step_dont_swallow_systemexit(self):
-        # gh-108549: do not swallow
-        # KeybordInterrupt too.
+        # gh-108549: do not swallow KeybordInterrupt too.
         async def sub_task():
             raise SystemExit
 
