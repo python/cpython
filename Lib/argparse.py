@@ -713,7 +713,7 @@ class HelpFormatter(object):
         return result
 
     def _expand_help(self, action):
-        help_string = self._get_help_string(action)
+        help_string = str(self._get_help_string(action))
         if '%' not in help_string:
             return self._apply_text_markup(help_string)
         params = dict(vars(action), prog=self._prog)
@@ -1545,6 +1545,12 @@ class Namespace(_AttributeHolder):
     def __contains__(self, key):
         return key in self.__dict__
 
+    def __replace__(self, /, **changes):
+        new = self.__class__()
+        new.__dict__.update(self.__dict__)
+        new.__dict__.update(changes)
+        return new
+
 
 class _ActionsContainer(object):
 
@@ -1963,6 +1969,9 @@ def _prog_name(prog=None):
         modspec = None
     if modspec is None:
         # simple script
+        return _os.path.basename(arg0)
+    if modspec.name != '__main__' and arg0 != modspec.origin:
+        # named module executed as main without altering sys.argv[0]
         return _os.path.basename(arg0)
     py = _os.path.basename(_sys.executable)
     if modspec.name != '__main__':
@@ -2908,11 +2917,14 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self._print_message(help_text, file)
 
     def _print_message(self, message, file=None):
-        if message:
-            file = file or _sys.stderr
+        if not message:
+            return
+        if file is None:
+            file = _sys.stderr
+        if file is not None:
             try:
                 file.write(message)
-            except (AttributeError, OSError):
+            except OSError:
                 pass
 
     def _get_theme(self, file=None):

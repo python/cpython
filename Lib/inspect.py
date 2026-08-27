@@ -793,12 +793,14 @@ def _getowndoc(obj):
     except AttributeError:
         return None
 
-def getdoc(object, *, fallback_to_class_doc=True, inherit_class_doc=True):
+def getdoc(object, *, fallback_to_class_doc=True, inherit_class_doc=True,
+           dedent=True):
     """Get the documentation string for an object.
 
     All tabs are expanded to spaces.  To clean up docstrings that are
     indented to line up with blocks of code, any whitespace than can be
-    uniformly removed from the second line onwards is removed."""
+    uniformly removed from the second line onwards is removed, unless
+    dedent is false."""
     if fallback_to_class_doc:
         try:
             doc = object.__doc__
@@ -813,22 +815,23 @@ def getdoc(object, *, fallback_to_class_doc=True, inherit_class_doc=True):
             return None
     if not isinstance(doc, str):
         return None
-    return cleandoc(doc)
+    return cleandoc(doc, dedent=dedent)
 
-def cleandoc(doc):
+def cleandoc(doc, *, dedent=True):
     """Clean up indentation from docstrings.
 
     Any whitespace that can be uniformly removed from the second line
-    onwards is removed."""
+    onwards is removed, unless dedent is false."""
     lines = doc.expandtabs().split('\n')
 
     # Find minimum indentation of any non-blank lines after first line.
     margin = sys.maxsize
-    for line in lines[1:]:
-        content = len(line.lstrip(' '))
-        if content:
-            indent = len(line) - content
-            margin = min(margin, indent)
+    if dedent:
+        for line in lines[1:]:
+            content = len(line.lstrip(' '))
+            if content:
+                indent = len(line) - content
+                margin = min(margin, indent)
     # Remove indentation.
     if lines:
         lines[0] = lines[0].lstrip(' ')
