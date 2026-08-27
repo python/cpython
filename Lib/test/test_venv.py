@@ -23,8 +23,8 @@ from test.support import (captured_stdout, captured_stderr,
                           is_wasm32,
                           requires_venv_with_pip, TEST_HOME_DIR,
                           requires_resource, copy_python_src_ignore)
-from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree,
-                                    TESTFN, FakePath)
+from test.support.os_helper import (can_symlink, change_cwd, EnvironmentVarGuard,
+                                    rmtree, TESTFN, FakePath)
 import unittest
 import venv
 from unittest.mock import patch, Mock
@@ -318,11 +318,14 @@ class BasicTest(BaseTest):
         self.addCleanup(rmtree, subdir)
         relative_exe = os.path.join(
             os.pardir, os.path.basename(self.env_dir), self.bindir, self.exe)
-        p = subprocess.run(
-            [relative_exe, '-c',
-             'import sys; print(sys.prefix); print(sys.exec_prefix)'],
-            cwd=subdir, capture_output=True, encoding='utf-8',
-            env={**os.environ, 'PYTHONHOME': ''})
+        # Windows does not resolve a relative executable against subprocess's
+        # cwd argument, so change directory in this process instead.
+        with change_cwd(subdir):
+            p = subprocess.run(
+                [relative_exe, '-c',
+                 'import sys; print(sys.prefix); print(sys.exec_prefix)'],
+                capture_output=True, encoding='utf-8',
+                env={**os.environ, 'PYTHONHOME': ''})
         self.assertEqual(p.returncode, 0, p.stderr)
         self.assertNotIn('Unexpected value in sys.prefix', p.stderr)
         self.assertNotIn('Unexpected value in sys.exec_prefix', p.stderr)
