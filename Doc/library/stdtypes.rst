@@ -895,7 +895,7 @@ instead.
 
 .. _typeiter:
 
-Iteration-related Types
+Iteration-related types
 =======================
 
 .. index::
@@ -964,7 +964,7 @@ Implementations that do not obey this property are deemed broken.
 
 .. _generator-types:
 
-Generator Types
+Generator types
 ---------------
 
 Python's :term:`generators <generator>` -- or more precisely,
