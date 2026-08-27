@@ -1,0 +1,1 @@
+Await async callable objects used as :attr:`unittest.mock.AsyncMock.side_effect`.
