@@ -2196,6 +2196,7 @@ class ReTests(unittest.TestCase):
         self.assertRaises(ValueError, re.compile, b'(?a)', re.LOCALE)
         self.assertRaises(re.PatternError, re.compile, b'(?aL)')
 
+    @ignore_warnings(category=DeprecationWarning)
     def test_locale_ignorecase_negated_set(self):
         IL = re.LOCALE | re.IGNORECASE
         # [bc] matches b'B', so [^bc] must not.
