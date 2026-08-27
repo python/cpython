@@ -1549,6 +1549,9 @@ class DSLParser:
         if not self.function.vectorcall:
             return
         for i, p in enumerate(self.function.parameters.values()):
+            if p.group:
+                fail("@vectorcall does not support optional groups",
+                     line_number=lineno)
             if p.is_vararg() or p.is_var_keyword():
                 continue
             if isinstance(p.converter, (self_converter,

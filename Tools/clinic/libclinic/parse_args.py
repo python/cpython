@@ -1602,6 +1602,8 @@ class ParseArgsCodeGen:
 
         Dispatch to specific parser-code builders based on parameter shape.
         """
+        # The DSL parser rejects @vectorcall with optional groups.
+        assert not self.has_option_groups()
         if not self.parameters and not self.varpos and not self.var_keyword:
             self.parse_vectorcall_no_args()
         elif (self.pos_only == len(self.parameters)

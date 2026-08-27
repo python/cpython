@@ -2981,6 +2981,20 @@ class ClinicParserTest(TestCase):
         """
         self.expect_failure(block, err, lineno=6)
 
+    def test_vectorcall_with_option_groups(self):
+        err = "@vectorcall does not support optional groups"
+        block = """
+            module m
+            class Foo "FooObject *" "Foo_Type"
+            @vectorcall
+            Foo.__init__
+                [
+                a: object
+                ]
+                /
+        """
+        self.expect_failure(block, err, lineno=7)
+
     def test_unused_param(self):
         block = self.parse("""
             module foo
