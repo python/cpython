@@ -50,10 +50,12 @@ FROZEN = [
     ('stdlib - startup, without site (python -S)', [
         'abc',
         'codecs',
-        '<encodings>',
-        'encodings.aliases',
-        'encodings.utf_8',
-        'encodings._win_cp_codecs',
+        # gh-148750: Partially freezing encodings causes import errors of
+        # submodules when using a zipped standard library.
+        #'<encodings>',
+        #'encodings.aliases',
+        #'encodings.utf_8',
+        #'encodings._win_cp_codecs',
         'io',
         ]),
     ('stdlib - startup, with site', [
