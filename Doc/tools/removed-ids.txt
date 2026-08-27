@@ -6,6 +6,8 @@ c-api/file.html: deprecated-api
 
 library/asyncio-task.html: terminating-a-task-group
 
+tutorial/modules.html: packages-in-multiple-directories
+
 # Removed APIs
 c-api/import.html: c.PyImport_LazyImportsMode.PyImport_LAZY_NONE
 
