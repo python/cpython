@@ -55,7 +55,7 @@ def download_test_data_file(filename):
 class UnicodeMethodsTest(unittest.TestCase):
 
     # update this, if the database changes
-    expectedchecksum = ('47a99fa654ef1f50e89d2e9697b7b041fccb5a05'
+    expectedchecksum = ('2bb59305a65254fee9cd6ef981cc3cab7551c60e'
                         if quicktest else
                         '8b2615a9fc627676cbc0b6fac0191177df97ef5f')
 
@@ -696,6 +696,8 @@ class BaseUnicodeFunctionsTest:
         self.assertEqual(eaw('\U0001FAE9'), 'N' if self.old else 'W')
         # New in 17.0.0
         self.assertEqual(eaw('\U00016FF2'), 'N' if self.old else 'W')
+        # New in 18.0.0
+        self.assertEqual(eaw('\U000107BD'), 'N' if self.old else 'W')
 
     def test_east_asian_width_unassigned(self):
         eaw = self.db.east_asian_width
@@ -721,7 +723,7 @@ class UnicodeFunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
 
     # Update this if the database changes. Make sure to do a full rebuild
     # (e.g. 'make distclean && make') to get the correct checksum.
-    expectedchecksum = ('00b13fa975a60b1d3f490f1fc8c126ab24990c75'
+    expectedchecksum = ('04a01eac45fd6ca3cfa5aafe90f278c1f7d62aa2'
                         if quicktest else
                         'ebfc9dd281c2226998fd435744dd2e9321899beb')
 
