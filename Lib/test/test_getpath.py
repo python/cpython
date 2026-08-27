@@ -407,6 +407,74 @@ class MockGetPathTests(unittest.TestCase):
         actual = getpath(ns, expected)
         self.assertEqual(expected, actual)
 
+    def test_venv_relocated_base_installation_posix(self):
+        "Test a venv whose base installation was relocated from PREFIX."
+        ns = MockPosixNamespace(
+            argv0="/venv/bin/python",
+            PREFIX="/build/install",
+        )
+        ns.add_known_xfile("/relocated/bin/python3")
+        ns.add_known_xfile("/public/bin/python")
+        ns.add_known_link("/public/bin/python", "/relocated/bin/python3")
+        ns.add_known_xfile("/venv/bin/python")
+        ns.add_known_link("/venv/bin/python", "/public/bin/python")
+        ns.add_known_file("/relocated/lib/python9.8/os.py")
+        ns.add_known_dir("/relocated/lib/python9.8/lib-dynload")
+        ns.add_known_file("/venv/pyvenv.cfg", [
+            "home = /public/bin",
+        ])
+        expected = dict(
+            executable="/venv/bin/python",
+            prefix="/venv",
+            exec_prefix="/venv",
+            base_executable="/relocated/bin/python3",
+            base_prefix="/relocated",
+            base_exec_prefix="/relocated",
+            module_search_paths_set=1,
+            module_search_paths=[
+                "/relocated/lib/python98.zip",
+                "/relocated/lib/python9.8",
+                "/relocated/lib/python9.8/lib-dynload",
+            ],
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
+
+    def test_venv_symlink_with_misleading_landmarks_posix(self):
+        "Test that landmarks near an external symlink do effect resolution."
+        ns = MockPosixNamespace(
+            argv0="/venv/bin/python",
+            PREFIX="/opt/python",
+        )
+        ns.add_known_xfile("/opt/python/bin/python3")
+        ns.add_known_xfile("/public/bin/python")
+        ns.add_known_link("/public/bin/python", "/opt/python/bin/python3")
+        ns.add_known_xfile("/venv/bin/python")
+        ns.add_known_link("/venv/bin/python", "/public/bin/python")
+        ns.add_known_file("/opt/python/lib/python9.8/os.py")
+        ns.add_known_dir("/opt/python/lib/python9.8/lib-dynload")
+        ns.add_known_file("/public/lib/python9.8/os.py")
+        ns.add_known_dir("/public/lib/python9.8/lib-dynload")
+        ns.add_known_file("/venv/pyvenv.cfg", [
+            "home = /public/bin",
+        ])
+        expected = dict(
+            executable="/venv/bin/python",
+            prefix="/venv",
+            exec_prefix="/venv",
+            base_executable="/opt/python/bin/python3",
+            base_prefix="/opt/python",
+            base_exec_prefix="/opt/python",
+            module_search_paths_set=1,
+            module_search_paths=[
+                "/opt/python/lib/python98.zip",
+                "/opt/python/lib/python9.8",
+                "/opt/python/lib/python9.8/lib-dynload",
+            ],
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
+
     def test_venv_non_installed_zip_path_posix(self):
         "Test a venv created from non-installed python has correct zip path."""
         ns = MockPosixNamespace(
