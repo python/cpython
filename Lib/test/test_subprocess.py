@@ -2051,8 +2051,9 @@ class RunFuncTestCase(BaseTestCase):
             run("echo hello", shell=True, text=True)
             check_output("echo hello", shell=True, text=True)
             """)
+        env = support.make_clean_env()
         cp = subprocess.run([sys.executable, "-Xwarn_default_encoding", "-c", code],
-                            capture_output=True)
+                            capture_output=True, env=env)
         lines = cp.stderr.splitlines()
         self.assertEqual(len(lines), 2, lines)
         self.assertStartsWith(lines[0], b"<string>:2: EncodingWarning: ")
@@ -2448,6 +2449,16 @@ class POSIXProcessTestCase(BaseTestCase):
         # unknown signal
         err = subprocess.CalledProcessError(-9876543, "fake cmd")
         self.assertEqual(str(err), "Command 'fake cmd' died with unknown signal 9876543.")
+
+        # returncode which is not an integer, which happens for example when
+        # Popen is mocked: str() must not fail
+        for returncode in (None, "2", 2.5, [2]):
+            with self.subTest(returncode=returncode):
+                err = subprocess.CalledProcessError(returncode, "fake cmd")
+                self.assertEqual(
+                    str(err),
+                    f"Command 'fake cmd' returned non-zero "
+                    f"exit status {returncode}.")
 
     def test_TimeoutExpired_str(self):
         # timeout command string
@@ -3780,6 +3791,34 @@ class Win32ProcessTestCase(BaseTestCase):
             self.assertEqual(startupinfo.wShowWindow, subprocess.SW_HIDE)
             self.assertEqual(startupinfo.lpAttributeList, {"handle_list": []})
 
+    def test_startupinfo_shell_show_window(self):
+        # gh-85028: shell=True must not override wShowWindow set by the caller
+        import _winapi
+        SW_MAXIMIZE = 3
+        used = []
+        create_process = _winapi.CreateProcess
+
+        def spy(*args):
+            # The startup info is the last argument of CreateProcess()
+            used.append(args[-1])
+            return create_process(*args)
+
+        startupinfo = subprocess.STARTUPINFO(
+            dwFlags=subprocess.STARTF_USESHOWWINDOW,
+            wShowWindow=SW_MAXIMIZE)
+        with mock.patch.object(_winapi, 'CreateProcess', spy):
+            rc = subprocess.call(ZERO_RETURN_CMD, shell=True,
+                                 startupinfo=startupinfo)
+            self.assertEqual(rc, 0)
+            rc = subprocess.call(ZERO_RETURN_CMD, shell=True)
+            self.assertEqual(rc, 0)
+
+        requested, default = used
+        self.assertEqual(requested.wShowWindow, SW_MAXIMIZE)
+        # Without STARTF_USESHOWWINDOW the shell window is still hidden.
+        self.assertTrue(default.dwFlags & subprocess.STARTF_USESHOWWINDOW)
+        self.assertEqual(default.wShowWindow, subprocess.SW_HIDE)
+
     # CREATE_NEW_CONSOLE creates a "popup" window.
     @support.requires_resource('gui')
     def test_creationflags(self):
@@ -4312,6 +4351,32 @@ class FastWaitTestCase(BaseTestCase):
                 p.wait(self.WAIT_TIMEOUT)
             self.assertEqual(p.wait(timeout=support.LONG_TIMEOUT), 0)
         self.assertFalse(m.called)
+
+    @unittest.skipIf(mswindows, "requires the POSIX wait implementation")
+    def test_wait_huge_timeout(self):
+        # gh-154836: very large timeout values used to overflow the C
+        # timestamp conversion in poll() / kqueue.control() and raise
+        # OverflowError / TypeError.
+        for timeout in (10**10, sys.maxsize, float('inf')):
+            with self.subTest(timeout=timeout):
+                p = subprocess.Popen(ZERO_RETURN_CMD)
+                self.assertEqual(p.wait(timeout=timeout), 0)
+
+    @unittest.skipIf(mswindows, "requires the POSIX wait implementation")
+    def test_run_huge_timeout(self):
+        # gh-154836: same as test_wait_huge_timeout, via the
+        # subprocess.run() / communicate() code path.
+        cp = subprocess.run(ZERO_RETURN_CMD, timeout=1e10)
+        self.assertEqual(cp.returncode, 0)
+
+    @unittest.skipIf(mswindows, "requires the POSIX wait implementation")
+    def test_wait_slices_do_not_expire_early(self):
+        # A clamped wait slice must not raise TimeoutExpired before the
+        # real deadline: with a tiny slice limit, a process that
+        # outlives many slices must still be waited for successfully.
+        with mock.patch.object(subprocess, "_MAXIMUM_WAIT_TIMEOUT", 0.01):
+            p = subprocess.Popen(self.COMMAND)  # sleeps 0.3s
+            self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
 
 if __name__ == "__main__":
     unittest.main()

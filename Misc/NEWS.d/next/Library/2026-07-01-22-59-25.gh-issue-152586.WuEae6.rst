@@ -1,0 +1,1 @@
+:class:`!tempfile._TemporaryFileWrapper` has been renamed to the public :class:`tempfile.TemporaryFileWrapper`. The old private name is kept as a deprecated alias and will be removed in Python 3.21.

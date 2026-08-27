@@ -15,7 +15,7 @@ class MyException(Exception):
 
 
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class TestFreeThreading:

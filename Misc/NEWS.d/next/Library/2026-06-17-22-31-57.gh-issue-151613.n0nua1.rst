@@ -1,0 +1,3 @@
+Fix another way the Tachyon profiler frame cache could produce impossible
+mixed stack traces when ``_PyInterpreterFrame`` addresses are reused, by
+validating cached frame anchors with a sequence counter.

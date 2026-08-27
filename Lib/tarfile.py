@@ -833,6 +833,13 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
         # For example, 'C:/foo' on Windows.
         raise AbsolutePathError(member)
     # Ensure we stay in the destination
+    if '..' in name.replace(os.sep, '/').split('/'):
+        # Directories are created from the name as given, so a name that
+        # leaves the destination part-way through would create them
+        # outside it even if the resolved path stays inside.
+        normalized = os.path.normpath(name)
+        if normalized != name:
+            name = new_attrs['name'] = normalized
     target_path = os.path.realpath(os.path.join(dest_path, name),
                                    strict=os.path.ALLOW_MISSING)
     if os.path.commonpath([target_path, dest_path]) != dest_path:
@@ -1035,6 +1042,8 @@ class TarInfo(object):
         if gname is not _KEEP:
             result.gname = gname
         return result
+
+    __replace__ = replace
 
     def get_info(self):
         """Return the TarInfo's attributes as a dictionary.
@@ -1611,16 +1620,21 @@ class TarInfo(object):
         if self.type in (XHDTYPE, SOLARIS_XHDTYPE):
             # Patch the TarInfo object with the extended header info.
             next._apply_pax_info(pax_headers, tarfile.encoding, tarfile.errors)
-            next.offset = self.offset
 
             if "size" in pax_headers:
                 # If the extended header replaces the size field,
                 # we need to recalculate the offset where the next
                 # header starts.
-                offset = next.offset_data
+                offset = next.offset + BLOCKSIZE
                 if next.isreg() or next.type not in SUPPORTED_TYPES:
-                    offset += next._block(next.size)
+                    try:
+                        size = PAX_NUMBER_FIELDS["size"](pax_headers["size"])
+                    except ValueError:
+                        size = 0
+                    offset += next._block(size)
                 tarfile.offset = offset
+
+            next.offset = self.offset
 
         return next
 
@@ -2129,7 +2143,7 @@ class TarFile(object):
             if mode == 'r':
                 raise ReadError("not a zstd file") from e
             raise
-        except Exception:
+        except:
             fileobj.close()
             raise
         t._extfileobj = False
@@ -2255,7 +2269,7 @@ class TarFile(object):
             type = FIFOTYPE
         elif stat.S_ISLNK(stmd):
             type = SYMTYPE
-            linkname = os.readlink(name)
+            linkname = os.readlink(name).replace(os.sep, "/")
         elif stat.S_ISCHR(stmd):
             type = CHRTYPE
         elif stat.S_ISBLK(stmd):
@@ -2282,14 +2296,14 @@ class TarFile(object):
         if pwd:
             if tarinfo.uid not in self._unames:
                 try:
-                    self._unames[tarinfo.uid] = pwd.getpwuid(tarinfo.uid)[0]
+                    self._unames[tarinfo.uid] = pwd.getpwuid(tarinfo.uid).pw_name
                 except KeyError:
                     self._unames[tarinfo.uid] = ''
             tarinfo.uname = self._unames[tarinfo.uid]
         if grp:
             if tarinfo.gid not in self._gnames:
                 try:
-                    self._gnames[tarinfo.gid] = grp.getgrgid(tarinfo.gid)[0]
+                    self._gnames[tarinfo.gid] = grp.getgrgid(tarinfo.gid).gr_name
                 except KeyError:
                     self._gnames[tarinfo.gid] = ''
             tarinfo.gname = self._gnames[tarinfo.gid]
@@ -2534,7 +2548,8 @@ class TarFile(object):
         tarinfo, unfiltered = self._get_extract_tarinfo(
             member, filter_function, path)
         if tarinfo is not None:
-            self._extract_one(tarinfo, path, set_attrs, numeric_owner)
+            self._extract_one(tarinfo, path, set_attrs, numeric_owner,
+                              filter_function=filter_function)
 
     def _get_extract_tarinfo(self, member, filter_function, path):
         """Get (filtered, unfiltered) TarInfos from *member*
@@ -2836,12 +2851,12 @@ class TarFile(object):
             if not numeric_owner:
                 try:
                     if grp and tarinfo.gname:
-                        g = grp.getgrnam(tarinfo.gname)[2]
+                        g = grp.getgrnam(tarinfo.gname).gr_gid
                 except KeyError:
                     pass
                 try:
                     if pwd and tarinfo.uname:
-                        u = pwd.getpwnam(tarinfo.uname)[2]
+                        u = pwd.getpwnam(tarinfo.uname).pw_uid
                 except KeyError:
                     pass
             if g is None:

@@ -19,6 +19,7 @@ EXPECTED_SCREEN_DISTANCE_OR_EMPTY_ERRMSG = '(bad|expected) screen distance (or "
 class PackTest(AbstractWidgetTest, unittest.TestCase):
 
     test_keys = None
+    test_options_in_docstring = None
 
     def create2(self):
         pack = tkinter.Toplevel(self.root, name='pack')
@@ -312,6 +313,7 @@ class PackTest(AbstractWidgetTest, unittest.TestCase):
 class PlaceTest(AbstractWidgetTest, unittest.TestCase):
 
     test_keys = None
+    test_options_in_docstring = None
 
     def create2(self):
         t = tkinter.Toplevel(self.root, width=300, height=200, bd=0)
@@ -538,6 +540,7 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
 class GridTest(AbstractWidgetTest, unittest.TestCase):
 
     test_keys = None
+    test_options_in_docstring = None
 
     def tearDown(self):
         cols, rows = self.root.grid_size()

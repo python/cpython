@@ -3,7 +3,7 @@
 Tkinter provides classes which allow the display, positioning and
 control of widgets. Toplevel widgets are Tk and Toplevel. Other
 widgets are Frame, Label, Entry, Text, Canvas, Button, Radiobutton,
-Checkbutton, Scale, Listbox, Scrollbar, OptionMenu, Spinbox
+Checkbutton, Scale, Listbox, Scrollbar, OptionMenu, Spinbox,
 LabelFrame and PanedWindow.
 
 Properties of the widgets are specified with keyword arguments.
@@ -818,7 +818,7 @@ class Misc:
         else:
             return self.tk.getint(self.tk.call(args))
 
-    def wait_variable(self, name='PY_VAR'):
+    def wait_variable(self, name):
         """Wait until the variable is modified.
 
         A parameter of type IntVar, StringVar, DoubleVar or
@@ -843,11 +843,11 @@ class Misc:
             window = self
         self.tk.call('tkwait', 'visibility', window._w)
 
-    def setvar(self, name='PY_VAR', value='1'):
+    def setvar(self, name, value):
         """Set Tcl variable NAME to VALUE."""
         self.tk.setvar(name, value)
 
-    def getvar(self, name='PY_VAR'):
+    def getvar(self, name):
         """Return value of Tcl variable NAME."""
         return self.tk.getvar(name)
 
@@ -894,7 +894,10 @@ class Misc:
         the focus."""
         name = self.tk.call('focus')
         if name == 'none' or not name: return None
-        return self._nametowidget(name)
+        try:
+            return self._nametowidget(name)
+        except KeyError:
+            return None
 
     def focus_displayof(self):
         """Return the widget which has currently the focus on the
@@ -903,14 +906,20 @@ class Misc:
         Return None if the application does not have the focus."""
         name = self.tk.call('focus', '-displayof', self._w)
         if name == 'none' or not name: return None
-        return self._nametowidget(name)
+        try:
+            return self._nametowidget(name)
+        except KeyError:
+            return None
 
     def focus_lastfor(self):
         """Return the widget which would have the focus if top level
         for this widget gets the focus from the window manager."""
         name = self.tk.call('focus', '-lastfor', self._w)
         if name == 'none' or not name: return None
-        return self._nametowidget(name)
+        try:
+            return self._nametowidget(name)
+        except KeyError:
+            return None
 
     def tk_focusFollowsMouse(self):
         """The widget under mouse will get automatically focus. Can not
@@ -1313,15 +1322,18 @@ class Misc:
                + self._displayof(displayof) + (rootX, rootY)
         name = self.tk.call(args)
         if not name: return None
-        return self._nametowidget(name)
+        try:
+            return self._nametowidget(name)
+        except KeyError:
+            return None
 
     def winfo_depth(self):
         """Return the number of bits per pixel."""
         return self.tk.getint(self.tk.call('winfo', 'depth', self._w))
 
     def winfo_exists(self):
-        """Return true if this widget exists."""
-        return self.tk.getint(
+        """Return True if this widget exists."""
+        return self.tk.getboolean(
             self.tk.call('winfo', 'exists', self._w))
 
     def winfo_fpixels(self, number):
@@ -1358,8 +1370,8 @@ class Misc:
             self.tk.call('winfo', 'isdark', self._w))
 
     def winfo_ismapped(self):
-        """Return true if this widget is mapped."""
-        return self.tk.getint(
+        """Return True if this widget is mapped."""
+        return self.tk.getboolean(
             self.tk.call('winfo', 'ismapped', self._w))
 
     def winfo_manager(self):
@@ -1486,8 +1498,8 @@ class Misc:
             'winfo', 'toplevel', self._w))
 
     def winfo_viewable(self):
-        """Return true if the widget and all its higher ancestors are mapped."""
-        return self.tk.getint(
+        """Return True if the widget and all its higher ancestors are mapped."""
+        return self.tk.getboolean(
             self.tk.call('winfo', 'viewable', self._w))
 
     def winfo_visual(self):
@@ -1788,7 +1800,16 @@ class Misc:
         for n in name:
             if not n:
                 break
-            w = w.children[n]
+            try:
+                w = w.children[n]
+            except KeyError:
+                # Menu clones (a menu used as a menubar or a cascade) get
+                # auto-generated names where each path component is the
+                # original name prefixed with one or more '#' clone markers.
+                # Map such a name back to the original widget.
+                if not n.startswith('#'):
+                    raise
+                w = w.children[n.rsplit('#', 1)[-1]]
 
         return w
 
@@ -2507,7 +2528,7 @@ class Wm:
 
     def wm_iconposition(self, x=None, y=None):
         """Set the position of the icon of this widget to X and Y. Return
-        a tuple of the current values of X and X if None is given."""
+        a tuple of the current values of X and Y if None is given."""
         return self._getints(self.tk.call(
             'wm', 'iconposition', self._w, x, y))
 
@@ -2729,11 +2750,13 @@ class Tk(Misc, Wm):
         if os.path.isfile(class_tcl):
             self.tk.call('source', class_tcl)
         if os.path.isfile(class_py):
-            exec(open(class_py).read(), dir)
+            with open(class_py, 'rb') as f:
+                exec(f.read(), dir)
         if os.path.isfile(base_tcl):
             self.tk.call('source', base_tcl)
         if os.path.isfile(base_py):
-            exec(open(base_py).read(), dir)
+            with open(base_py, 'rb') as f:
+                exec(f.read(), dir)
 
     def report_callback_exception(self, exc, val, tb):
         """Report callback exception on sys.stderr.
@@ -2955,16 +2978,20 @@ class BaseWidget(Misc):
             del cnf['name']
         if not name:
             name = self.__class__.__name__.lower()
+            # Generated names are marked with a leading "+", which a user is
+            # unlikely to use, so they do not clash with explicit names.
+            # "+" is also one of the few symbols with no special meaning in
+            # canvas and text tag expressions, so the name can be used as a tag.
             if name[-1].isdigit():
-                name += "!"  # Avoid duplication when calculating names below
+                name += "+"  # Avoid duplication when calculating names below
             if master._last_child_ids is None:
                 master._last_child_ids = {}
             count = master._last_child_ids.get(name, 0) + 1
             master._last_child_ids[name] = count
             if count == 1:
-                name = '!%s' % (name,)
+                name = '+%s' % (name,)
             else:
-                name = '!%s%d' % (name, count)
+                name = '+%s%d' % (name, count)
         self._name = name
         if master._w=='.':
             self._w = '.' + name
@@ -3019,10 +3046,11 @@ class Toplevel(BaseWidget, Wm):
     def __init__(self, master=None, cnf={}, **kw):
         """Construct a toplevel widget with the parent MASTER.
 
-        Valid option names: background, bd, bg, borderwidth, class,
-        colormap, container, cursor, height, highlightbackground,
-        highlightcolor, highlightthickness, menu, relief, screen, takefocus,
-        use, visual, width."""
+        Valid option names: background, backgroundimage (Tk 9.0+), bd, bg,
+        bgimg (Tk 9.0+), borderwidth, class, colormap, container,
+        cursor, height, highlightbackground, highlightcolor,
+        highlightthickness, menu, padx, pady, relief, screen,
+        takefocus, tile (Tk 9.0+), use, visual, width."""
         if kw:
             cnf = _cnfmerge((cnf, kw))
         extra = ()
@@ -3104,6 +3132,12 @@ class Canvas(Widget, XView, YView):
         state, takefocus, width, xscrollcommand, xscrollincrement,
         yscrollcommand, yscrollincrement."""
         Widget.__init__(self, master, 'canvas', cnf, kw)
+
+    def tk_print(self):
+        """Print the contents of the canvas using the native print dialog.
+
+        Requires Tk 8.7/9.0 or newer."""
+        self.tk.call('tk', 'print', self._w)
 
     def addtag(self, *args):
         """Internal function."""
@@ -3421,12 +3455,13 @@ class Checkbutton(Widget):
         """Construct a checkbutton widget with the parent MASTER.
 
         Valid option names: activebackground, activeforeground, anchor,
-        background, bd, bg, bitmap, borderwidth, command, cursor,
-        disabledforeground, fg, font, foreground, height,
-        highlightbackground, highlightcolor, highlightthickness, image,
-        indicatoron, justify, offvalue, onvalue, padx, pady, relief,
-        selectcolor, selectimage, state, takefocus, text, textvariable,
-        underline, variable, width, wraplength."""
+        background, bd, bg, bitmap, borderwidth, command, compound,
+        cursor, disabledforeground, fg, font, foreground, height,
+        highlightbackground, highlightcolor, highlightthickness,
+        image, indicatoron, justify, offrelief, offvalue, onvalue,
+        overrelief, padx, pady, relief, selectcolor, selectimage,
+        state, takefocus, text, textvariable, tristateimage,
+        tristatevalue, underline, variable, width, wraplength."""
         Widget.__init__(self, master, 'checkbutton', cnf, kw)
 
     def _setup(self, master, cnf):
@@ -3470,13 +3505,15 @@ class Entry(Widget, XView):
         """Construct an entry widget with the parent MASTER.
 
         Valid option names: background, bd, bg, borderwidth, cursor,
-        exportselection, fg, font, foreground, highlightbackground,
-        highlightcolor, highlightthickness, insertbackground,
-        insertborderwidth, insertofftime, insertontime, insertwidth,
-        invalidcommand, invcmd, justify, relief, selectbackground,
-        selectborderwidth, selectforeground, show, state, takefocus,
-        textvariable, validate, validatecommand, vcmd, width,
-        xscrollcommand."""
+        disabledbackground, disabledforeground, exportselection, fg,
+        font, foreground, highlightbackground, highlightcolor,
+        highlightthickness, insertbackground, insertborderwidth,
+        insertofftime, insertontime, insertwidth, invalidcommand,
+        invcmd, justify, locale (Tk 9.1+), placeholder (Tk 9.0+),
+        placeholderforeground (Tk 9.0+), readonlybackground, relief,
+        selectbackground, selectborderwidth, selectforeground, show,
+        state, takefocus, textvariable, validate, validatecommand,
+        vcmd, width, xscrollcommand."""
         Widget.__init__(self, master, 'entry', cnf, kw)
 
     def delete(self, first, last=None):
@@ -3563,9 +3600,11 @@ class Frame(Widget):
     def __init__(self, master=None, cnf={}, **kw):
         """Construct a frame widget with the parent MASTER.
 
-        Valid option names: background, bd, bg, borderwidth, class,
-        colormap, container, cursor, height, highlightbackground,
-        highlightcolor, highlightthickness, relief, takefocus, visual, width."""
+        Valid option names: background, backgroundimage (Tk 9.0+), bd, bg,
+        bgimg (Tk 9.0+), borderwidth, class, colormap, container,
+        cursor, height, highlightbackground, highlightcolor,
+        highlightthickness, padx, pady, relief, takefocus, tile (Tk
+        9.0+), visual, width."""
         cnf = _cnfmerge((cnf, kw))
         extra = ()
         if 'class_' in cnf:
@@ -3595,7 +3634,8 @@ class Label(Widget):
 
         WIDGET-SPECIFIC OPTIONS
 
-            height, state, width
+            compound, height, state,
+            textangle (Tk 9.1+), width
 
         """
         Widget.__init__(self, master, 'label', cnf, kw)
@@ -3607,11 +3647,14 @@ class Listbox(Widget, XView, YView):
     def __init__(self, master=None, cnf={}, **kw):
         """Construct a listbox widget with the parent MASTER.
 
-        Valid option names: background, bd, bg, borderwidth, cursor,
-        exportselection, fg, font, foreground, height, highlightbackground,
-        highlightcolor, highlightthickness, relief, selectbackground,
-        selectborderwidth, selectforeground, selectmode, setgrid, takefocus,
-        width, xscrollcommand, yscrollcommand, listvariable."""
+        Valid option names: activestyle, background, bd, bg, borderwidth,
+        cursor, disabledforeground, exportselection, fg, font,
+        foreground, height, highlightbackground, highlightcolor,
+        highlightthickness, inactiveselectbackground (Tk 9.1+),
+        inactiveselectforeground (Tk 9.1+), justify, listvariable,
+        relief, selectbackground, selectborderwidth, selectforeground,
+        selectmode, setgrid, state, takefocus, width, xscrollcommand,
+        yscrollcommand."""
         Widget.__init__(self, master, 'listbox', cnf, kw)
 
     def activate(self, index):
@@ -3721,7 +3764,8 @@ class Menu(Widget):
         """Construct menu widget with the parent MASTER.
 
         Valid option names: activebackground, activeborderwidth,
-        activeforeground, background, bd, bg, borderwidth, cursor,
+        activeforeground, activerelief (Tk 9.0+), background, bd, bg,
+        borderwidth, cursor,
         disabledforeground, fg, font, foreground, postcommand, relief,
         selectcolor, takefocus, tearoff, tearoffcommand, title, type."""
         Widget.__init__(self, master, 'menu', cnf, kw)
@@ -3859,6 +3903,14 @@ class Menubutton(Widget):
     """Menubutton widget, obsolete since Tk8.0."""
 
     def __init__(self, master=None, cnf={}, **kw):
+        """Construct a menubutton widget with the parent MASTER.
+
+        Valid option names: activebackground, activeforeground, anchor,
+        background, bd, bg, bitmap, borderwidth, compound, cursor,
+        direction, disabledforeground, fg, font, foreground, height,
+        highlightbackground, highlightcolor, highlightthickness,
+        image, indicatoron, justify, menu, padx, pady, relief, state,
+        takefocus, text, textvariable, underline, width, wraplength."""
         Widget.__init__(self, master, 'menubutton', cnf, kw)
 
 
@@ -3866,6 +3918,12 @@ class Message(Widget):
     """Message widget to display multiline text. Obsolete since Label does it too."""
 
     def __init__(self, master=None, cnf={}, **kw):
+        """Construct a message widget with the parent MASTER.
+
+        Valid option names: anchor, aspect, background, bd, bg, borderwidth,
+        cursor, fg, font, foreground, highlightbackground,
+        highlightcolor, highlightthickness, justify, padx, pady,
+        relief, takefocus, text, textvariable, width."""
         Widget.__init__(self, master, 'message', cnf, kw)
 
 
@@ -3876,12 +3934,13 @@ class Radiobutton(Widget):
         """Construct a radiobutton widget with the parent MASTER.
 
         Valid option names: activebackground, activeforeground, anchor,
-        background, bd, bg, bitmap, borderwidth, command, cursor,
-        disabledforeground, fg, font, foreground, height,
-        highlightbackground, highlightcolor, highlightthickness, image,
-        indicatoron, justify, padx, pady, relief, selectcolor, selectimage,
-        state, takefocus, text, textvariable, underline, value, variable,
-        width, wraplength."""
+        background, bd, bg, bitmap, borderwidth, command, compound,
+        cursor, disabledforeground, fg, font, foreground, height,
+        highlightbackground, highlightcolor, highlightthickness,
+        image, indicatoron, justify, offrelief, overrelief, padx,
+        pady, relief, selectcolor, selectimage, state, takefocus,
+        text, textvariable, tristateimage, tristatevalue, underline,
+        value, variable, width, wraplength."""
         Widget.__init__(self, master, 'radiobutton', cnf, kw)
 
     def deselect(self):
@@ -4012,12 +4071,20 @@ class Text(Widget, XView, YView):
 
         WIDGET-SPECIFIC OPTIONS
 
-            autoseparators, height, maxundo,
-            spacing1, spacing2, spacing3,
-            state, tabs, undo, width, wrap,
+            autoseparators, blockcursor, endline,
+            height, inactiveselectbackground,
+            insertunfocussed, locale (Tk 9.1+), maxundo,
+            spacing1, spacing2, spacing3, startline,
+            state, tabs, tabstyle, undo, width, wrap,
 
         """
         Widget.__init__(self, master, 'text', cnf, kw)
+
+    def tk_print(self):
+        """Print the contents of the text widget using the native print dialog.
+
+        Requires Tk 8.7/9.0 or newer."""
+        self.tk.call('tk', 'print', self._w)
 
     def bbox(self, index):  # overrides Misc.bbox
         """Return a tuple of (x,y,width,height) which gives the bounding
@@ -4158,6 +4225,8 @@ class Text(Widget, XView, YView):
         modified flag. If boolean is specified, sets the
         modified flag of the widget to arg.
         """
+        if arg is None:
+            return self.tk.getboolean(self.edit("modified"))
         return self.edit("modified", arg)
 
     def edit_redo(self):
@@ -4981,9 +5050,12 @@ class Spinbox(Widget, XView):
             buttondownrelief, buttonuprelief,
             command, disabledbackground,
             disabledforeground, format, from,
-            invalidcommand, increment,
+            invalidcommand, invcmd, increment,
+            locale (Tk 9.1+),
+            placeholder (Tk 9.0+),
+            placeholderforeground (Tk 9.0+),
             readonlybackground, state, to,
-            validate, validatecommand values,
+            validate, validatecommand, vcmd, values,
             width, wrap,
         """
         Widget.__init__(self, master, 'spinbox', cnf, kw)
@@ -5180,8 +5252,9 @@ class PanedWindow(Widget):
         WIDGET-SPECIFIC OPTIONS
 
             handlepad, handlesize, opaqueresize,
-            sashcursor, sashpad, sashrelief,
-            sashwidth, showhandle,
+            proxybackground, proxyborderwidth,
+            proxyrelief, sashcursor, sashpad,
+            sashrelief, sashwidth, showhandle,
         """
         Widget.__init__(self, master, 'panedwindow', cnf, kw)
 
@@ -5272,7 +5345,7 @@ class PanedWindow(Widget):
         return self.tk.call(
             (self._w, 'panecget') + (child, '-'+option))
 
-    def paneconfigure(self, tagOrId, cnf=None, **kw):
+    def paneconfigure(self, child=None, cnf=None, **kw):
         """Query or modify the configuration options for a child window.
 
         Similar to configure() except that it applies to the specified
@@ -5334,12 +5407,26 @@ class PanedWindow(Widget):
             Tk_GetPixels.
 
         """
+        if 'tagOrId' in kw:
+            if child is not None:
+                raise TypeError("paneconfigure() got values for both 'child' "
+                                "and its deprecated alias 'tagOrId'")
+            import warnings
+            warnings.warn(
+                    "The 'tagOrId' parameter of PanedWindow.paneconfigure() "
+                    "is deprecated and will be removed in Python 3.18; "
+                    "use 'child' instead.",
+                    DeprecationWarning, stacklevel=2)
+            child = kw.pop('tagOrId')
+        if child is None:
+            raise TypeError("paneconfigure() missing 1 required positional "
+                            "argument: 'child'")
         if cnf is None and not kw:
-            return self._getconfigure(self._w, 'paneconfigure', tagOrId)
+            return self._getconfigure(self._w, 'paneconfigure', child)
         if isinstance(cnf, str) and not kw:
             return self._getconfigure1(
-                self._w, 'paneconfigure', tagOrId, '-'+cnf)
-        self.tk.call((self._w, 'paneconfigure', tagOrId) +
+                self._w, 'paneconfigure', child, '-'+cnf)
+        self.tk.call((self._w, 'paneconfigure', child) +
                  self._options(cnf, kw))
 
     paneconfig = paneconfigure

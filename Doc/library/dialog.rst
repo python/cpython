@@ -159,17 +159,26 @@ listed below:
 The below functions when called create a modal, native look-and-feel dialog,
 wait for the user's selection, and return it.
 The exact return value depends on the function (see below); when the dialog is
-cancelled it is an empty string, an empty tuple, an empty list or ``None``.
+cancelled it is the empty value documented for that function -- an empty
+string, an empty tuple, an empty list or ``None``.
 
 .. function:: askopenfile(mode="r", **options)
-              askopenfiles(mode="r", **options)
 
-   Create an :class:`Open` dialog.
-   :func:`askopenfile` returns the opened file object, or ``None`` if the
-   dialog is cancelled.
-   :func:`askopenfiles` returns a list of the opened file objects, or an empty
-   list if cancelled.
+   Create an :class:`Open` dialog and return the opened file object,
+   or ``None`` if the dialog is cancelled.
+   The file is opened in mode *mode* (read-only ``'r'`` by default).
+
+.. function:: askopenfiles(mode="r", **options)
+
+   Create an :class:`Open` dialog and return a list of the opened file objects,
+   or an empty list if cancelled.
    The files are opened in mode *mode* (read-only ``'r'`` by default).
+
+   .. deprecated-removed:: next 3.19
+      Opening several files at once is error-prone,
+      and the returned list cannot be used in a :keyword:`with` statement.
+      Iterate over the names returned by :func:`askopenfilenames`
+      and open them one by one instead.
 
 .. function:: asksaveasfile(mode="w", **options)
 
@@ -200,25 +209,32 @@ cancelled it is an empty string, an empty tuple, an empty list or ``None``.
 
 .. class:: Open(master=None, **options)
            SaveAs(master=None, **options)
+           Directory(master=None, **options)
 
-   The above two classes provide native dialog windows for saving and loading
-   files.
+   The above three classes provide native dialog windows for loading and saving
+   files and for selecting a directory.
 
 **Convenience classes**
 
 The below classes are used for creating file/directory windows from scratch.
 These do not emulate the native look-and-feel of the platform.
 
-.. class:: Directory(master=None, **options)
-
-   Create a dialog prompting the user to select a directory.
-
 .. note::  The *FileDialog* class should be subclassed for custom event
    handling and behaviour.
 
-.. class:: FileDialog(master, title=None)
+.. class:: FileDialog(master, title=None, *, use_ttk=True)
 
    Create a basic file selection dialog.
+   Its layout -- a filter entry, side-by-side directory and file lists, and a
+   selection entry -- follows the classic Motif file selection dialog.
+   When *use_ttk* is true (the default), the dialog is built from the themed
+   :mod:`tkinter.ttk` widgets; when false, from the classic :mod:`tkinter`
+   widgets.
+
+   .. versionchanged:: next
+      The dialog is now built from the themed :mod:`tkinter.ttk` widgets by
+      default, instead of the classic :mod:`tkinter` widgets.
+      Added the *use_ttk* parameter.
 
    .. method:: cancel_command(event=None)
 
@@ -280,20 +296,26 @@ These do not emulate the native look-and-feel of the platform.
       Update the current file selection to *file*.
 
 
-.. class:: LoadFileDialog(master, title=None)
+.. class:: LoadFileDialog(master, title=None, *, use_ttk=True)
 
    A subclass of FileDialog that creates a dialog window for selecting an
    existing file.
+
+   .. versionchanged:: next
+      Added the *use_ttk* parameter.
 
    .. method:: ok_command()
 
       Test that a file is provided and that the selection indicates an
       already existing file.
 
-.. class:: SaveFileDialog(master, title=None)
+.. class:: SaveFileDialog(master, title=None, *, use_ttk=True)
 
    A subclass of FileDialog that creates a dialog window for selecting a
    destination file.
+
+   .. versionchanged:: next
+      Added the *use_ttk* parameter.
 
    .. method:: ok_command()
 
@@ -336,23 +358,25 @@ the classic (non-themed) Tk widgets.
 
 .. data:: DIALOG_ICON
 
-   The name of the default bitmap (``'questhead'``) displayed by a
-   :class:`Dialog`.
+   The name of a bitmap (``'questhead'``) suitable for use as the *bitmap*
+   of a :class:`Dialog`.
 
 .. class:: Dialog(master=None, cnf={}, **kw)
 
    Display a modal dialog box built from the classic (non-themed) Tk widgets
    and wait for the user to press one of its buttons.
-   The options, given through *cnf* or as keyword arguments, include *title*
-   (the window title), *text* (the message), *bitmap* (an icon,
-   :data:`DIALOG_ICON` by default), *default* (the index of the default button)
-   and *strings* (the sequence of button labels).
+   The options, given through *cnf* or as keyword arguments, are all required:
+   *title* (the window title), *text* (the message), *bitmap* (the name of a
+   bitmap icon, such as :data:`DIALOG_ICON`), *default* (the index of the
+   default button) and *strings* (the sequence of button labels).
    After construction, the :attr:`!num` attribute holds the index of the button
    the user pressed.
 
    .. method:: destroy()
 
-      Destroy the dialog window.
+      Do nothing.
+      The dialog window is destroyed automatically before the constructor
+      returns, so there is nothing left for this method to do.
 
 
 .. seealso::
