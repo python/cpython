@@ -1,0 +1,1 @@
+Update macOS installer builds to SQLite 3.53.4.
