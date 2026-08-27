@@ -598,6 +598,12 @@ Doc/library/tomllib.rst       @encukou @hauntsaninja
 Lib/test/test_tomllib/        @encukou @hauntsaninja
 Lib/tomllib/                  @encukou @hauntsaninja
 
+# Turtle
+Doc/library/turtle.rst        @StanFromIreland
+Doc/library/turtle-star.png   @StanFromIreland
+Lib/test/test_turtle.py       @StanFromIreland
+Lib/turtle.py                 @StanFromIreland
+
 # Typing
 Doc/library/typing.rst        @JelleZijlstra @AlexWaygood
 Lib/test/test_typing.py       @JelleZijlstra @AlexWaygood
@@ -619,6 +625,12 @@ Lib/test/test_unittest/testmock/ @cjw296
 
 # Weakref
 **/*weakref*                  @kumaraditya303
+
+# Zlib
+Doc/library/zlib.rst          @StanFromIreland
+Lib/compression/zlib.py       @StanFromIreland
+Lib/test/test_zlib.py         @StanFromIreland
+Modules/_zlibmodule.c         @StanFromIreland
 
 # Zipfile.Path
 Lib/test/test_zipfile/_path/  @jaraco
