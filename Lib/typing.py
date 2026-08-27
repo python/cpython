@@ -2127,11 +2127,15 @@ def _proto_hook(cls, other):
     if not cls.__dict__.get('_is_protocol', False):
         return NotImplemented
 
+    # Setting a member to None only means "explicitly not implemented" for
+    # *callable* members; this mirrors _ProtocolMeta.__instancecheck__.
+    non_callable_members = cls.__dict__.get('__non_callable_proto_members__') or ()
     for attr in cls.__protocol_attrs__:
         for base in other.__mro__:
             # Check if the members appears in the class dictionary...
             if attr in base.__dict__:
-                if base.__dict__[attr] is None:
+                if (base.__dict__[attr] is None
+                        and attr not in non_callable_members):
                     return NotImplemented
                 break
 

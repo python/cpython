@@ -3888,6 +3888,29 @@ class ProtocolTests(BaseTestCase):
         self.assertIsInstance(B(), P)
         self.assertIsInstance(C(), P)
 
+    def test_none_on_non_callable_doesnt_defeat_the_abc_cache(self):
+        # gh-156413: a None-valued non-callable member used to be rejected by
+        # _proto_hook even though __instancecheck__ accepts it, which kept the
+        # class out of ABCMeta's cache and made every isinstance() call walk
+        # all of the protocol members again.
+        @runtime_checkable
+        class P(Protocol):
+            x = 1
+
+        class B:
+            x = None
+
+        self.assertIsInstance(B(), P)
+
+        # The first check must have cached B as a subclass of P, so the second
+        # one may not touch the members at all.
+        typing._lazy_load_getattr_static.cache_clear()
+        try:
+            with patch.object(inspect, "getattr_static", side_effect=AssertionError):
+                self.assertIsInstance(B(), P)
+        finally:
+            typing._lazy_load_getattr_static.cache_clear()
+
     def test_none_on_callable_blocks_implementation(self):
         @runtime_checkable
         class P(Protocol):
