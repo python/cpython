@@ -115,6 +115,8 @@ class BytecodeBrowserWindow(Toplevel):
         text.bind("<<Selection>>", self.sync_from_editor, add="+")
         text.bind("<KeyRelease>", self.sync_from_editor, add="+")
         text.bind("<ButtonRelease-1>", self.sync_from_editor, add="+")
+        # Focus the tree, not the window, so that Up and Down work at once.
+        self.tree.focus_set()
         # Follow the debugger: it fires these on the Shell text when it stops
         # at, or steps to, a frame, and when it is closed.  Binding on the
         # long-lived Shell text works whichever opens first.
@@ -313,7 +315,7 @@ class BytecodeBrowserWindow(Toplevel):
             self.populate()
         self.deiconify()
         self.lift()
-        self.focus_set()
+        self.tree.focus_set()
 
     # -- Debugger integration ------------------------------------------------
     #
