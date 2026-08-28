@@ -288,6 +288,25 @@ class CharSelectWindowTest(unittest.TestCase):
                          str(dialog.search_entry))
         dialog.destroy()
 
+    def test_show_editor(self):
+        # Selecting the browser from the taskbar reveals its editor: it is
+        # deiconified if iconified, and raised in any case.
+        dialog = self.dialog
+        text = Text(self.root)
+        self.addCleanup(text.destroy)
+        self.addCleanup(setattr, dialog, "editor_text", None)
+        dialog.editor_text = text
+        for state, deiconified in (("iconic", True), ("normal", False)):
+            with self.subTest(state=state):
+                top = Func()
+                top.wm_state = Func(result=state)
+                top.deiconify = Func()
+                top.lift = Func()
+                text.winfo_toplevel = Func(result=top)
+                dialog.show_editor()
+                self.assertEqual(bool(top.deiconify.called), deiconified)
+                self.assertTrue(top.lift.called)
+
     def test_set_title(self):
         # The title names the file the character is inserted into.
         dialog = self.dialog

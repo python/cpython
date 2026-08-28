@@ -235,6 +235,7 @@ class CharSelectWindow(Toplevel):
         self.bind("<Button-4>", self.wheel)
         self.bind("<Button-5>", self.wheel)
         self.bind("<<Copy>>", self.copy_event)  # Ctrl+C copies the character.
+        self.bind("<FocusIn>", self.show_editor)
 
         self.cell_font = Font(self, family="DejaVu Sans", size=18)
         self.big_font = Font(self, family="DejaVu Sans", size=72)
@@ -269,6 +270,23 @@ class CharSelectWindow(Toplevel):
         title = "Character Browser"
         self.title(f"{title} - {name}" if name else title)
         self.wm_iconname(title)
+
+    def show_editor(self, event=None):
+        """Reveal the editor when the browser is selected from the taskbar.
+
+        The editor may be iconified or buried under other windows; raise
+        the browser again to keep it on top of the editor it belongs to.
+        """
+        if self.editor_text is None:
+            return
+        try:
+            top = self.editor_text.winfo_toplevel()
+            if top.wm_state() == "iconic":
+                top.deiconify()
+            top.lift()
+            self.lift()
+        except TclError:  # The editor may already be gone.
+            pass
 
     def configure_style(self):
         """Take the grid and detail colors from the current theme.
