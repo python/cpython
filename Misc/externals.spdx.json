@@ -70,21 +70,21 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "0349aef1ff9ded3eb23be12c2586e026be5cec3fd40df859e388671d7844fced"
+          "checksumValue": "0a7db2958a5ba7f3a7438835f1a583476a611aa160e04b445f9a25e2ffe865aa"
         }
       ],
-      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/openssl-3.0.21.tar.gz",
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/openssl-3.0.22.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:openssl:openssl:3.0.21:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:openssl:openssl:3.0.22:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
       "licenseConcluded": "NOASSERTION",
       "name": "openssl",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "3.0.21"
+      "versionInfo": "3.0.22"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-sqlite",
