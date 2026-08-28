@@ -64,7 +64,6 @@ these values. Type checks use `PyStackRef_IsTaggedInt` and `PyStackRef_LongCheck
 
 ## Free threading considerations
 
-With `Py_GIL_DISABLED`, `Py_TAG_DEFERRED` is an alias for `Py_TAG_REFCNT`.
 Objects that support deferred reference counting can be pushed to the evaluation
 stack and stored in local variables without directly incrementing the reference
 count because they are only freed during cyclic garbage collection. This avoids

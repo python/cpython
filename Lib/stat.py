@@ -1,7 +1,4 @@
-"""Constants/functions for interpreting results of os.stat() and os.lstat().
-
-Suggested usage: from stat import *
-"""
+"""Constants/functions for interpreting results of os.stat() and os.lstat()."""
 
 # Indices for stat struct members in the tuple returned by os.stat()
 
@@ -166,9 +163,14 @@ def filemode(mode):
     perm = []
     for index, table in enumerate(_filemode_table):
         for bit, char in table:
-            if mode & bit == bit:
-                perm.append(char)
-                break
+            if index == 0:
+                if S_IFMT(mode) == bit:
+                    perm.append(char)
+                    break
+            else:
+                if mode & bit == bit:
+                    perm.append(char)
+                    break
         else:
             if index == 0:
                 # Unknown filetype

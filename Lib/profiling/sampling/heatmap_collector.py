@@ -8,15 +8,17 @@ import json
 import math
 import os
 import platform
-import site
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Tuple
 
 from ._css_utils import get_combined_css
+from ._format_utils import fmt
 from .collector import normalize_location, extract_lineno
+from .opcode_utils import get_opcode_info, format_opcode
 from .stack_collector import StackTraceCollector
+from .module_utils import extract_module_name, get_python_path_info
 
 
 # ============================================================================
@@ -44,126 +46,6 @@ class TreeNode:
     samples: int = 0
     count: int = 0
     children: Dict[str, 'TreeNode'] = field(default_factory=dict)
-
-
-# ============================================================================
-# Module Path Analysis
-# ============================================================================
-
-def get_python_path_info():
-    """Get information about Python installation paths for module extraction.
-
-    Returns:
-        dict: Dictionary containing stdlib path, site-packages paths, and sys.path entries.
-    """
-    info = {
-        'stdlib': None,
-        'site_packages': [],
-        'sys_path': []
-    }
-
-    # Get standard library path from os module location
-    try:
-        if hasattr(os, '__file__') and os.__file__:
-            info['stdlib'] = Path(os.__file__).parent
-    except (AttributeError, OSError):
-        pass  # Silently continue if we can't determine stdlib path
-
-    # Get site-packages directories
-    site_packages = []
-    try:
-        site_packages.extend(Path(p) for p in site.getsitepackages())
-    except (AttributeError, OSError):
-        pass  # Continue without site packages if unavailable
-
-    # Get user site-packages
-    try:
-        user_site = site.getusersitepackages()
-        if user_site and Path(user_site).exists():
-            site_packages.append(Path(user_site))
-    except (AttributeError, OSError):
-        pass  # Continue without user site packages
-
-    info['site_packages'] = site_packages
-    info['sys_path'] = [Path(p) for p in sys.path if p]
-
-    return info
-
-
-def extract_module_name(filename, path_info):
-    """Extract Python module name and type from file path.
-
-    Args:
-        filename: Path to the Python file
-        path_info: Dictionary from get_python_path_info()
-
-    Returns:
-        tuple: (module_name, module_type) where module_type is one of:
-               'stdlib', 'site-packages', 'project', or 'other'
-    """
-    if not filename:
-        return ('unknown', 'other')
-
-    try:
-        file_path = Path(filename)
-    except (ValueError, OSError):
-        return (str(filename), 'other')
-
-    # Check if it's in stdlib
-    if path_info['stdlib'] and _is_subpath(file_path, path_info['stdlib']):
-        try:
-            rel_path = file_path.relative_to(path_info['stdlib'])
-            return (_path_to_module(rel_path), 'stdlib')
-        except ValueError:
-            pass
-
-    # Check site-packages
-    for site_pkg in path_info['site_packages']:
-        if _is_subpath(file_path, site_pkg):
-            try:
-                rel_path = file_path.relative_to(site_pkg)
-                return (_path_to_module(rel_path), 'site-packages')
-            except ValueError:
-                continue
-
-    # Check other sys.path entries (project files)
-    if not str(file_path).startswith(('<', '[')):  # Skip special files
-        for path_entry in path_info['sys_path']:
-            if _is_subpath(file_path, path_entry):
-                try:
-                    rel_path = file_path.relative_to(path_entry)
-                    return (_path_to_module(rel_path), 'project')
-                except ValueError:
-                    continue
-
-    # Fallback: just use the filename
-    return (_path_to_module(file_path), 'other')
-
-
-def _is_subpath(file_path, parent_path):
-    try:
-        file_path.relative_to(parent_path)
-        return True
-    except (ValueError, OSError):
-        return False
-
-
-def _path_to_module(path):
-    if isinstance(path, str):
-        path = Path(path)
-
-    # Remove .py extension
-    if path.suffix == '.py':
-        path = path.with_suffix('')
-
-    # Convert path separators to dots
-    parts = path.parts
-
-    # Handle __init__ files - they represent the package itself
-    if parts and parts[-1] == '__init__':
-        parts = parts[:-1]
-
-    return '.'.join(parts) if parts else path.stem
 
 
 # ============================================================================
@@ -201,7 +83,9 @@ class _TemplateLoader:
             self.file_css = css_content
 
             # Load JS
-            shared_js = (assets_dir / "heatmap_shared.js").read_text(encoding="utf-8")
+            base_js = (template_dir / "_shared_assets" / "base.js").read_text(encoding="utf-8")
+            heatmap_shared_js = (assets_dir / "heatmap_shared.js").read_text(encoding="utf-8")
+            shared_js = f"{base_js}\n{heatmap_shared_js}"
             self.index_js = f"{shared_js}\n{(assets_dir / 'heatmap_index.js').read_text(encoding='utf-8')}"
             self.file_js = f"{shared_js}\n{(assets_dir / 'heatmap.js').read_text(encoding='utf-8')}"
 
@@ -343,7 +227,7 @@ class _HtmlRenderer:
   <div class="type-header" onclick="toggleTypeSection(this)">
     <span class="type-icon">{icon}</span>
     <span class="type-title">{type_names[module_type]}</span>
-    <span class="type-stats">({tree.count} {file_word}, {tree.samples:,} {sample_word})</span>
+    <span class="type-stats">({tree.count} {file_word}, {tree.samples:n} {sample_word})</span>
   </div>
   <div class="type-content"{content_style}>
 '''
@@ -390,7 +274,7 @@ class _HtmlRenderer:
         parts.append(f'{indent}    <span class="folder-icon">▶</span>')
         parts.append(f'{indent}    <span class="folder-name">📁 {html.escape(name)}</span>')
         parts.append(f'{indent}    <span class="folder-stats">'
-                     f'({node.count} {file_word}, {node.samples:,} {sample_word})</span>')
+                     f'({node.count} {file_word}, {node.samples:n} {sample_word})</span>')
         parts.append(f'{indent}  </div>')
         parts.append(f'{indent}  <div class="folder-content" style="display: none;">')
 
@@ -431,10 +315,11 @@ class _HtmlRenderer:
         bar_width = min(stat.percentage, 100)
 
         html_file = self.file_index[stat.filename]
+        s = "" if stat.total_samples == 1 else "s"
 
         return (f'{indent}<div class="file-item">\n'
                 f'{indent}  <a href="{html_file}" class="file-link" title="{full_path}">📄 {module_name}</a>\n'
-                f'{indent}  <span class="file-samples">{stat.total_samples:,} samples</span>\n'
+                f'{indent}  <span class="file-samples">{stat.total_samples:n} sample{s}</span>\n'
                 f'{indent}  <div class="heatmap-bar-container"><div class="heatmap-bar" style="width: {bar_width}px; height: {self.heatmap_bar_height}px;" data-intensity="{intensity:.3f}"></div></div>\n'
                 f'{indent}</div>\n')
 
@@ -468,6 +353,10 @@ class HeatmapCollector(StackTraceCollector):
         self.call_graph = collections.defaultdict(set)
         self.callers_graph = collections.defaultdict(set)
         self.function_definitions = {}
+
+        # Map each sampled line to its function for proper caller lookup
+        # (filename, lineno) -> funcname
+        self.line_to_function = {}
 
         # Edge counting for call path analysis
         self.edge_samples = collections.Counter()
@@ -518,7 +407,7 @@ class HeatmapCollector(StackTraceCollector):
         }
         self.stats.update(kwargs)
 
-    def process_frames(self, frames, thread_id):
+    def process_frames(self, frames, thread_id, weight=1):
         """Process stack frames and count samples per line.
 
         Args:
@@ -526,8 +415,9 @@ class HeatmapCollector(StackTraceCollector):
                     leaf-to-root order. location is (lineno, end_lineno, col_offset, end_col_offset).
                     opcode is None if not gathered.
             thread_id: Thread ID for this stack trace
+            weight: Number of samples this stack represents (for batched RLE)
         """
-        self._total_samples += 1
+        self._total_samples += weight
         self._seen_lines.clear()
 
         for i, (filename, location, funcname, opcode) in enumerate(frames):
@@ -545,21 +435,23 @@ class HeatmapCollector(StackTraceCollector):
                 self._seen_lines.add(line_key)
 
             self._record_line_sample(filename, lineno, funcname, is_leaf=is_leaf,
-                                     count_cumulative=count_cumulative)
+                                     count_cumulative=count_cumulative, weight=weight)
 
             if opcode is not None:
                 # Set opcodes_enabled flag when we first encounter opcode data
                 self.opcodes_enabled = True
                 self._record_bytecode_sample(filename, lineno, opcode,
-                                             end_lineno, col_offset, end_col_offset)
+                                             end_lineno, col_offset, end_col_offset,
+                                             weight=weight)
 
-            # Build call graph for adjacent frames
+            # Build call graph for adjacent frames (relationships are deduplicated anyway)
             if i + 1 < len(frames):
                 next_frame = frames[i + 1]
                 next_lineno = extract_lineno(next_frame[1])
                 self._record_call_relationship(
                     (filename, lineno, funcname),
-                    (next_frame[0], next_lineno, next_frame[2])
+                    (next_frame[0], next_lineno, next_frame[2]),
+                    weight=weight,
                 )
 
     def _is_valid_frame(self, filename, lineno):
@@ -575,24 +467,29 @@ class HeatmapCollector(StackTraceCollector):
         return True
 
     def _record_line_sample(self, filename, lineno, funcname, is_leaf=False,
-                            count_cumulative=True):
+                            count_cumulative=True, weight=1):
         """Record a sample for a specific line."""
         # Track cumulative samples (all occurrences in stack)
         if count_cumulative:
-            self.line_samples[(filename, lineno)] += 1
-            self.file_samples[filename][lineno] += 1
+            self.line_samples[(filename, lineno)] += weight
+            self.file_samples[filename][lineno] += weight
 
         # Track self/leaf samples (only when at top of stack)
         if is_leaf:
-            self.line_self_samples[(filename, lineno)] += 1
-            self.file_self_samples[filename][lineno] += 1
+            self.line_self_samples[(filename, lineno)] += weight
+            self.file_self_samples[filename][lineno] += weight
 
         # Record function definition location
         if funcname and (filename, funcname) not in self.function_definitions:
             self.function_definitions[(filename, funcname)] = lineno
 
+        # Map this line to its function for caller/callee navigation
+        if funcname:
+            self.line_to_function[(filename, lineno)] = funcname
+
     def _record_bytecode_sample(self, filename, lineno, opcode,
-                                end_lineno=None, col_offset=None, end_col_offset=None):
+                                end_lineno=None, col_offset=None, end_col_offset=None,
+                                weight=1):
         """Record a sample for a specific bytecode instruction.
 
         Args:
@@ -602,6 +499,7 @@ class HeatmapCollector(StackTraceCollector):
             end_lineno: End line number (may be -1 if not available)
             col_offset: Column offset in UTF-8 bytes (may be -1 if not available)
             end_col_offset: End column offset in UTF-8 bytes (may be -1 if not available)
+            weight: Number of samples this represents (for batched RLE)
         """
         key = (filename, lineno)
 
@@ -609,7 +507,7 @@ class HeatmapCollector(StackTraceCollector):
         if opcode not in self.line_opcodes[key]:
             self.line_opcodes[key][opcode] = {'count': 0, 'locations': set()}
 
-        self.line_opcodes[key][opcode]['count'] += 1
+        self.line_opcodes[key][opcode]['count'] += weight
 
         # Store unique location info if column offset is available (not -1)
         if col_offset is not None and col_offset >= 0:
@@ -627,8 +525,6 @@ class HeatmapCollector(StackTraceCollector):
         Returns:
             List of dicts with instruction info, sorted by samples descending
         """
-        from .opcode_utils import get_opcode_info, format_opcode
-
         key = (filename, lineno)
         opcode_data = self.line_opcodes.get(key, {})
 
@@ -664,7 +560,7 @@ class HeatmapCollector(StackTraceCollector):
         result.sort(key=lambda x: (-x['samples'], x['opcode']))
         return result
 
-    def _record_call_relationship(self, callee_frame, caller_frame):
+    def _record_call_relationship(self, callee_frame, caller_frame, weight=1):
         """Record caller/callee relationship between adjacent frames."""
         callee_filename, callee_lineno, callee_funcname = callee_frame
         caller_filename, caller_lineno, caller_funcname = caller_frame
@@ -690,7 +586,7 @@ class HeatmapCollector(StackTraceCollector):
 
         # Count this call edge for path analysis
         edge_key = (caller_key, callee_key)
-        self.edge_samples[edge_key] += 1
+        self.edge_samples[edge_key] += weight
 
     def export(self, output_path):
         """Export heatmap data as HTML files in a directory.
@@ -700,7 +596,7 @@ class HeatmapCollector(StackTraceCollector):
         """
         if not self.file_samples:
             print("Warning: No heatmap data to export")
-            return
+            return False
 
         try:
             output_dir = self._prepare_output_directory(output_path)
@@ -714,6 +610,7 @@ class HeatmapCollector(StackTraceCollector):
             self._generate_index_html(output_dir / 'index.html', file_stats)
 
             self._print_export_summary(output_dir, file_stats)
+            return True
 
         except Exception as e:
             print(f"Error: Failed to export heatmap: {e}")
@@ -761,7 +658,8 @@ class HeatmapCollector(StackTraceCollector):
         """Print summary of exported heatmap."""
         print(f"Heatmap output written to {output_dir}/")
         print(f"  - Index: {output_dir / 'index.html'}")
-        print(f"  - {len(file_stats)} source file(s) analyzed")
+        s = "" if len(file_stats) == 1 else "s"
+        print(f"  - {len(file_stats)} source file{s} analyzed")
 
     def _calculate_file_stats(self) -> List[FileStats]:
         """Calculate statistics for each file.
@@ -824,7 +722,7 @@ class HeatmapCollector(StackTraceCollector):
         # Format error rate and missed samples with bar classes
         error_rate = self.stats.get('error_rate')
         if error_rate is not None:
-            error_rate_str = f"{error_rate:.1f}%"
+            error_rate_str = f"{fmt(error_rate)}%"
             error_rate_width = min(error_rate, 100)
             # Determine bar color class based on rate
             if error_rate < 5:
@@ -840,7 +738,7 @@ class HeatmapCollector(StackTraceCollector):
 
         missed_samples = self.stats.get('missed_samples')
         if missed_samples is not None:
-            missed_samples_str = f"{missed_samples:.1f}%"
+            missed_samples_str = f"{fmt(missed_samples)}%"
             missed_samples_width = min(missed_samples, 100)
             if missed_samples < 5:
                 missed_samples_class = "good"
@@ -859,10 +757,10 @@ class HeatmapCollector(StackTraceCollector):
             "<!-- INLINE_JS -->": f"<script>\n{self._template_loader.index_js}\n</script>",
             "<!-- PYTHON_LOGO -->": self._template_loader.logo_html,
             "<!-- PYTHON_VERSION -->": f"{sys.version_info.major}.{sys.version_info.minor}",
-            "<!-- NUM_FILES -->": str(len(file_stats)),
-            "<!-- TOTAL_SAMPLES -->": f"{self._total_samples:,}",
-            "<!-- DURATION -->": f"{self.stats.get('duration_sec', 0):.1f}s",
-            "<!-- SAMPLE_RATE -->": f"{self.stats.get('sample_rate', 0):.1f}",
+            "<!-- NUM_FILES -->": f"{len(file_stats):n}",
+            "<!-- TOTAL_SAMPLES -->": f"{self._total_samples:n}",
+            "<!-- DURATION -->": fmt(self.stats.get('duration_sec', 0)),
+            "<!-- SAMPLE_RATE -->": fmt(self.stats.get('sample_rate', 0)),
             "<!-- ERROR_RATE -->": error_rate_str,
             "<!-- ERROR_RATE_WIDTH -->": str(error_rate_width),
             "<!-- ERROR_RATE_CLASS -->": error_rate_class,
@@ -906,12 +804,12 @@ class HeatmapCollector(StackTraceCollector):
         # Populate template
         replacements = {
             "<!-- FILENAME -->": html.escape(filename),
-            "<!-- TOTAL_SAMPLES -->": f"{file_stat.total_samples:,}",
-            "<!-- TOTAL_SELF_SAMPLES -->": f"{file_stat.total_self_samples:,}",
-            "<!-- NUM_LINES -->": str(file_stat.num_lines),
-            "<!-- PERCENTAGE -->": f"{file_stat.percentage:.2f}",
-            "<!-- MAX_SAMPLES -->": str(file_stat.max_samples),
-            "<!-- MAX_SELF_SAMPLES -->": str(file_stat.max_self_samples),
+            "<!-- TOTAL_SAMPLES -->": f"{file_stat.total_samples:n}",
+            "<!-- TOTAL_SELF_SAMPLES -->": f"{file_stat.total_self_samples:n}",
+            "<!-- NUM_LINES -->": f"{file_stat.num_lines:n}",
+            "<!-- PERCENTAGE -->": fmt(file_stat.percentage, 2),
+            "<!-- MAX_SAMPLES -->": f"{file_stat.max_samples:n}",
+            "<!-- MAX_SELF_SAMPLES -->": f"{file_stat.max_self_samples:n}",
             "<!-- CODE_LINES -->": ''.join(code_lines_html),
             "<!-- INLINE_CSS -->": f"<style>\n{self._template_loader.file_css}\n</style>",
             "<!-- INLINE_JS -->": f"<script>\n{self._template_loader.file_js}\n</script>",
@@ -948,9 +846,9 @@ class HeatmapCollector(StackTraceCollector):
             else:
                 self_intensity = 0
 
-            self_display = f"{self_samples:,}" if self_samples > 0 else ""
-            cumulative_display = f"{cumulative_samples:,}"
-            tooltip = f"Self: {self_samples:,}, Total: {cumulative_samples:,}"
+            self_display = f"{self_samples:n}" if self_samples > 0 else ""
+            cumulative_display = f"{cumulative_samples:n}"
+            tooltip = f"Self: {self_samples:n}, Total: {cumulative_samples:n}"
         else:
             cumulative_intensity = 0
             self_intensity = 0
@@ -978,7 +876,17 @@ class HeatmapCollector(StackTraceCollector):
                 f'data-spec-pct="{spec_pct}" '
                 f'onclick="toggleBytecode(this)" title="Show bytecode">&#9654;</button>'
             )
-            bytecode_panel_html = f'        <div class="bytecode-panel" id="bytecode-{line_num}" style="display:none;"></div>\n'
+            # Wrapper contains columns + content panel
+            bytecode_panel_html = (
+                f'        <div class="bytecode-wrapper" id="bytecode-wrapper-{line_num}">\n'
+                f'            <div class="bytecode-columns">'
+                f'<div class="line-number"></div>'
+                f'<div class="line-samples-self"></div>'
+                f'<div class="line-samples-cumulative"></div>'
+                f'</div>\n'
+                f'            <div class="bytecode-panel" id="bytecode-{line_num}"></div>\n'
+                f'        </div>\n'
+            )
         elif self.opcodes_enabled:
             # Add invisible spacer to maintain consistent indentation when opcodes are enabled
             bytecode_btn_html = '<div class="bytecode-spacer"></div>'
@@ -1020,8 +928,6 @@ class HeatmapCollector(StackTraceCollector):
         Simple: collect ranges with sample counts, assign each byte position to
         smallest covering range, then emit spans for contiguous runs with sample data.
         """
-        import html as html_module
-
         content = line_content.rstrip('\n')
         if not content:
             return ''
@@ -1044,7 +950,7 @@ class HeatmapCollector(StackTraceCollector):
                             range_data[key]['opcodes'].append(opname)
 
         if not range_data:
-            return html_module.escape(content)
+            return html.escape(content)
 
         # For each byte position, find the smallest covering range
         byte_to_range = {}
@@ -1072,7 +978,7 @@ class HeatmapCollector(StackTraceCollector):
         def flush_span():
             nonlocal span_chars, current_range
             if span_chars:
-                text = html_module.escape(''.join(span_chars))
+                text = html.escape(''.join(span_chars))
                 if current_range:
                     data = range_data.get(current_range, {'samples': 0, 'opcodes': []})
                     samples = data['samples']
@@ -1086,7 +992,7 @@ class HeatmapCollector(StackTraceCollector):
                                   f'data-samples="{samples}" '
                                   f'data-max-samples="{max_range_samples}" '
                                   f'data-pct="{pct}" '
-                                  f'data-opcodes="{html_module.escape(opcodes)}">{text}</span>')
+                                  f'data-opcodes="{html.escape(opcodes)}">{text}</span>')
                 else:
                     result.append(text)
                 span_chars = []
@@ -1132,13 +1038,36 @@ class HeatmapCollector(StackTraceCollector):
         return f"rgba({r}, {g}, {b}, {alpha})"
 
     def _build_navigation_buttons(self, filename: str, line_num: int) -> str:
-        """Build navigation buttons for callers/callees."""
+        """Build navigation buttons for callers/callees.
+
+        - Callers: All lines in a function show who calls this function
+        - Callees: Only actual call site lines show what they call
+        """
         line_key = (filename, line_num)
-        caller_list = self._deduplicate_by_function(self.callers_graph.get(line_key, set()))
+
+        funcname = self.line_to_function.get(line_key)
+
+        # Get callers: look up by function definition line, not current line
+        # This ensures all lines in a function show who calls this function
+        if funcname:
+            func_def_line = self.function_definitions.get((filename, funcname), line_num)
+            func_def_key = (filename, func_def_line)
+            caller_list = self._deduplicate_by_function(self.callers_graph.get(func_def_key, set()))
+        else:
+            caller_list = self._deduplicate_by_function(self.callers_graph.get(line_key, set()))
+
+        # Get callees: only show for actual call site lines (not every line in function)
         callee_list = self._deduplicate_by_function(self.call_graph.get(line_key, set()))
 
         # Get edge counts for each caller/callee
-        callers_with_counts = self._get_edge_counts(line_key, caller_list, is_caller=True)
+        # For callers, use the function definition key for edge lookup
+        if funcname:
+            func_def_line = self.function_definitions.get((filename, funcname), line_num)
+            caller_edge_key = (filename, func_def_line)
+        else:
+            caller_edge_key = line_key
+        callers_with_counts = self._get_edge_counts(caller_edge_key, caller_list, is_caller=True)
+        # For callees, use the actual line key since that's where the call happens
         callees_with_counts = self._get_edge_counts(line_key, callee_list, is_caller=False)
 
         # Build navigation buttons with counts
@@ -1195,7 +1124,7 @@ class HeatmapCollector(StackTraceCollector):
             file, line, func, count = valid_items[0]
             target_html = self.file_index[file]
             nav_data = json.dumps({'link': f"{target_html}#line-{line}", 'func': func})
-            title = f"Go to {btn_class}: {html.escape(func)} ({count:,} samples)"
+            title = f"Go to {btn_class}: {html.escape(func)} ({count:n} samples)"
             return f'<button class="nav-btn {btn_class}" data-nav=\'{html.escape(nav_data)}\' title="{title}">{arrow}</button>'
 
         # Multiple items - create menu
@@ -1210,5 +1139,5 @@ class HeatmapCollector(StackTraceCollector):
             for file, line, func, count in valid_items
         ]
         items_json = html.escape(json.dumps(items_data))
-        title = f"{len(items_data)} {btn_class}s ({total_samples:,} samples)"
+        title = f"{len(items_data)} {btn_class}s ({total_samples:n} samples)"
         return f'<button class="nav-btn {btn_class}" data-nav-multi=\'{items_json}\' title="{title}">{arrow}</button>'

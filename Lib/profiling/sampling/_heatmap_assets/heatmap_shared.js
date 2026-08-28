@@ -40,6 +40,15 @@ function intensityToColor(intensity) {
 }
 
 // ============================================================================
+// Theme Support
+// ============================================================================
+
+// Restore theme from localStorage, or use browser preference
+function restoreUIState() {
+    applyTheme(getPreferredTheme());
+}
+
+// ============================================================================
 // Favicon (Reuse logo image as favicon)
 // ============================================================================
 

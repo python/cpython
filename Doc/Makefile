@@ -13,7 +13,7 @@ JOBS         = auto
 PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
-REQUIREMENTS = requirements.txt
+REQUIREMENTS = pylock.toml
 SPHINXERRORHANDLING = --fail-on-warning
 
 # Internal variables.
@@ -32,6 +32,7 @@ help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  clean      to remove build files"
 	@echo "  venv       to create a venv with necessary tools"
+	@echo "  lock       to regenerate the pinned dependencies in $(REQUIREMENTS)"
 	@echo "  html       to make standalone HTML files"
 	@echo "  gettext    to generate POT files"
 	@echo "  htmlview   to open the index page built by the html target in your browser"
@@ -58,7 +59,7 @@ build:
 	@if [ -f  ../Misc/NEWS ] ; then \
 		echo "Using existing Misc/NEWS file"; \
 		cp ../Misc/NEWS build/NEWS; \
-	elif $(BLURB) help >/dev/null 2>&1 && $(SPHINXBUILD) --version >/dev/null 2>&1; then \
+	elif $(BLURB) --version && $(SPHINXBUILD) --version ; then \
 		if [ -d ../Misc/NEWS.d ]; then \
 			echo "Building NEWS from Misc/NEWS.d with blurb"; \
 			$(BLURB) merge -f build/NEWS; \
@@ -89,7 +90,8 @@ htmlhelp: build
 
 .PHONY: latex
 latex: BUILDER = latex
-latex: build
+latex: _ensure-sphinxcontrib-svg2pdfconverter
+	$(MAKE) build BUILDER=$(BUILDER)
 	@echo "Build finished; the LaTeX files are in build/latex."
 	@echo "Run \`make all-pdf' or \`make all-ps' in that directory to" \
 	      "run these through (pdf)latex."
@@ -140,7 +142,8 @@ doctest:
 pydoc-topics: BUILDER = pydoc-topics
 pydoc-topics: build
 	@echo "Building finished; now run this:" \
-	      "cp build/pydoc-topics/topics.py ../Lib/pydoc_data/topics.py"
+	      "cp build/pydoc-topics/topics.py ../Lib/pydoc_data/topics.py" \
+	      "&& cp build/pydoc-topics/module_docs.py ../Lib/pydoc_data/module_docs.py"
 
 .PHONY: gettext
 gettext: BUILDER = gettext
@@ -182,6 +185,19 @@ venv:
 		fi; \
 		echo "The venv has been created in the $(VENVDIR) directory"; \
 	fi
+
+.PHONY: lock
+lock:
+# Dependencies have a 14 day cooldown period to mitigate supply chain attacks,
+# except for sphinx_linklint and python-docs-theme, which are maintained by
+# core team members.
+	uv pip compile requirements.txt \
+		--exclude-newer P14D \
+		--exclude-newer-package sphinx_linklint=PT0S \
+		--exclude-newer-package python-docs-theme=PT0S \
+		--no-cache --output-file $(REQUIREMENTS) \
+		--python-version 3.12 --universal \
+		--custom-compile-command="make lock"
 
 .PHONY: dist-no-html
 dist-no-html: dist-text dist-epub dist-texinfo
@@ -230,7 +246,7 @@ dist-text:
 	@echo "Build finished and archived!"
 
 .PHONY: dist-pdf
-dist-pdf:
+dist-pdf: _ensure-sphinxcontrib-svg2pdfconverter
 	# archive the A4 latex
 	@echo "Building LaTeX (A4 paper)..."
 	mkdir -p dist
@@ -291,6 +307,10 @@ _ensure-pre-commit:
 _ensure-sphinx-autobuild:
 	$(MAKE) _ensure-package PACKAGE=sphinx-autobuild
 
+.PHONY: _ensure-sphinxcontrib-svg2pdfconverter
+_ensure-sphinxcontrib-svg2pdfconverter:
+	$(MAKE) _ensure-package PACKAGE=sphinxcontrib-svg2pdfconverter
+
 .PHONY: check
 check: _ensure-pre-commit
 	$(VENVDIR)/bin/python3 -m pre_commit run --all-files
@@ -335,3 +355,9 @@ autobuild-stable-html:
 		exit 1;; \
 	esac
 	@$(MAKE) autobuild-dev-html
+
+# Collect HTML IDs to a JSON document
+.PHONY: html-ids
+html-ids:
+	$(PYTHON) tools/check-html-ids.py collect build/html \
+		-o build/html/html-ids.json.gz

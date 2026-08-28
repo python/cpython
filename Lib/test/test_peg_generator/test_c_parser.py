@@ -100,14 +100,17 @@ class TestCParser(unittest.TestCase):
 
         with contextlib.ExitStack() as stack:
             python_exe = stack.enter_context(support.setup_venv_with_pip_setuptools("venv"))
-            platlib_path = subprocess.check_output(
-                [python_exe, "-c", "import sysconfig; print(sysconfig.get_path('platlib'))"],
-                text=True,
-            ).strip()
-            purelib_path = subprocess.check_output(
-                [python_exe, "-c", "import sysconfig; print(sysconfig.get_path('purelib'))"],
-                text=True,
-            ).strip()
+
+            def get_sysconfig_path(name):
+                # Force UTF-8 to emit the non-ASCII venv path in any locale.
+                return subprocess.check_output(
+                    [python_exe, "-X", "utf8", "-c",
+                     f"import sysconfig; print(sysconfig.get_path({name!r}))"],
+                    encoding="utf-8",
+                ).strip()
+
+            platlib_path = get_sysconfig_path("platlib")
+            purelib_path = get_sysconfig_path("purelib")
             stack.enter_context(import_helper.DirsOnSysPath(platlib_path, purelib_path))
             cls.addClassCleanup(stack.pop_all().close)
 
@@ -356,9 +359,9 @@ class TestCParser(unittest.TestCase):
         grammar_source = """
         start[mod_ty]: a[asdl_stmt_seq*]=import_from+ NEWLINE ENDMARKER { _PyAST_Module(a, NULL, p->arena)}
         import_from[stmt_ty]: ( a='from' !'import' c=simple_name 'import' d=import_as_names_from {
-                                _PyAST_ImportFrom(c->v.Name.id, d, 0, EXTRA) }
+                                _PyAST_ImportFrom(c->v.Name.id, d, 0, 0, EXTRA) }
                             | a='from' '.' 'import' c=import_as_names_from {
-                                _PyAST_ImportFrom(NULL, c, 1, EXTRA) }
+                                _PyAST_ImportFrom(NULL, c, 1, 0, EXTRA) }
                             )
         simple_name[expr_ty]: NAME
         import_as_names_from[asdl_alias_seq*]: a[asdl_alias_seq*]=','.import_as_name_from+ { a }

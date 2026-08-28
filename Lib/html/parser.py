@@ -157,6 +157,9 @@ class HTMLParser(_markupbase.ParserBase):
         self.cdata_elem = None
         self._support_cdata = True
         self._escapable = True
+        self._pending = []
+        self._pending_len = 0
+        self._parse_threshold = 1
         super().reset()
 
     def feed(self, data):
@@ -165,11 +168,36 @@ class HTMLParser(_markupbase.ParserBase):
         Call this as often as you want, with as little or as much text
         as you want (may include '\n').
         """
-        self.rawdata = self.rawdata + data
-        self.goahead(0)
+        # Accumulate new data in a list and only join and parse it once
+        # enough has piled up.  Rescanning an unparsed buffer (e.g. an
+        # unterminated tag) and concatenating onto it on every call would
+        # both be quadratic in the input size.
+        self._pending_len += len(data)
+        if self._pending_len < self._parse_threshold:
+            self._pending.append(data)
+        else:
+            if not self._pending:
+                self.rawdata += data
+            else:
+                self._pending.append(data)
+                self.rawdata += ''.join(self._pending)
+                self._pending.clear()
+            self._pending_len = 0
+            n = len(self.rawdata)
+            self.goahead(0)
+            if len(self.rawdata) < n:
+                # Some data was parsed; resume on the next call.
+                self._parse_threshold = 1
+            else:
+                # Nothing was parsed; wait until the buffer doubles.
+                self._parse_threshold = len(self.rawdata)
 
     def close(self):
         """Handle any buffered data."""
+        if self._pending:
+            self.rawdata += ''.join(self._pending)
+            self._pending.clear()
+            self._pending_len = 0
         self.goahead(1)
 
     __starttag_text = None
@@ -387,9 +415,11 @@ class HTMLParser(_markupbase.ParserBase):
     def parse_comment(self, i, report=True):
         rawdata = self.rawdata
         assert rawdata.startswith('<!--', i), 'unexpected call to parse_comment()'
-        match = commentclose.search(rawdata, i+4)
+        # An empty comment is abruptly closed by the first ">" or "->",
+        # taking priority over a later "-->" or "--!>" close.
+        match = commentabruptclose.match(rawdata, i+4)
         if not match:
-            match = commentabruptclose.match(rawdata, i+4)
+            match = commentclose.search(rawdata, i+4)
             if not match:
                 return -1
         if report:

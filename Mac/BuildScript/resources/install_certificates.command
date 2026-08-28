@@ -25,7 +25,8 @@ def main():
 
     print(" -- pip install --upgrade certifi")
     subprocess.check_call([sys.executable,
-        "-E", "-s", "-m", "pip", "install", "--upgrade", "certifi"])
+        "-E", "-s", "-m", "pip", "install", "--upgrade", "certifi",
+        "--disable-pip-version-check"])
 
     import certifi
 

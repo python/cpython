@@ -268,7 +268,7 @@ py_hashentry_table_new(void) {
 
         if (h->py_alias != NULL) {
             if (_Py_hashtable_set(ht, (const void*)entry->py_alias, (void*)entry) < 0) {
-                PyMem_Free(entry);
+                /* entry is already in ht, will be freed by _Py_hashtable_destroy() */
                 goto error;
             }
             entry->refcnt++;
@@ -1006,6 +1006,7 @@ _hashlib_HASH_get_blocksize(PyObject *op, void *Py_UNUSED(closure))
 {
     HASHobject *self = HASHobject_CAST(op);
     long block_size = EVP_MD_CTX_block_size(self->ctx);
+    assert(block_size > 0);
     return PyLong_FromLong(block_size);
 }
 
@@ -1014,6 +1015,7 @@ _hashlib_HASH_get_digestsize(PyObject *op, void *Py_UNUSED(closure))
 {
     HASHobject *self = HASHobject_CAST(op);
     long size = EVP_MD_CTX_size(self->ctx);
+    assert(size > 0);
     return PyLong_FromLong(size);
 }
 
@@ -2103,6 +2105,7 @@ hashlib_HMAC_CTX_new_from_digestmod(_hashlibstate *state,
     PY_EVP_MD_free(md);
 #endif
     if (r == 0) {
+        hashlib_openssl_HMAC_CTX_free(ctx);
         if (is_xof) {
             /* use a better default error message if an XOF is used */
             raise_unsupported_algorithm_error(state, digestmod);
@@ -2199,7 +2202,7 @@ error:
  *
  * On error, set an exception and return BAD_DIGEST_SIZE.
  */
-static unsigned int
+static int
 _hashlib_hmac_digest_size(HMACobject *self)
 {
     assert(EVP_MAX_MD_SIZE < INT_MAX);
@@ -2214,15 +2217,18 @@ _hashlib_hmac_digest_size(HMACobject *self)
     }
     int digest_size = EVP_MD_size(md);
     /* digest_size < 0 iff EVP_MD context is NULL (which is impossible here) */
-    assert(digest_size >= 0);
     assert(digest_size <= (int)EVP_MAX_MD_SIZE);
+    if (digest_size < 0) {
+        raise_ssl_error(PyExc_SystemError, "invalid digest size");
+        return BAD_DIGEST_SIZE;
+    }
 #endif
     /* digest_size == 0 means that the context is not entirely initialized */
     if (digest_size == 0) {
-        raise_ssl_error(PyExc_ValueError, "missing digest size");
+        raise_ssl_error(PyExc_SystemError, "missing digest size");
         return BAD_DIGEST_SIZE;
     }
-    return (unsigned int)digest_size;
+    return (int)digest_size;
 }
 
 static int
@@ -2320,7 +2326,7 @@ _hashlib_HMAC_update_impl(HMACobject *self, PyObject *msg)
 static Py_ssize_t
 _hmac_digest(HMACobject *self, unsigned char *buf)
 {
-    unsigned int digest_size = _hashlib_hmac_digest_size(self);
+    int digest_size = _hashlib_hmac_digest_size(self);
     assert(digest_size <= EVP_MAX_MD_SIZE);
     if (digest_size == BAD_DIGEST_SIZE) {
         assert(PyErr_Occurred());
@@ -2363,18 +2369,17 @@ _hashlib_HMAC_digest_impl(HMACobject *self)
 
 /*[clinic input]
 @permit_long_summary
-@permit_long_docstring_body
 _hashlib.HMAC.hexdigest
 
 Return hexadecimal digest of the bytes passed to the update() method so far.
 
-This may be used to exchange the value safely in email or other non-binary
-environments.
+This may be used to exchange the value safely in email or other
+non-binary environments.
 [clinic start generated code]*/
 
 static PyObject *
 _hashlib_HMAC_hexdigest_impl(HMACobject *self)
-/*[clinic end generated code: output=80d825be1eaae6a7 input=5e48db83ab1a4d19]*/
+/*[clinic end generated code: output=80d825be1eaae6a7 input=e37a84c36a43787c]*/
 {
     unsigned char buf[EVP_MAX_MD_SIZE];
     Py_ssize_t n = _hmac_digest(self, buf);
@@ -2385,7 +2390,7 @@ static PyObject *
 _hashlib_hmac_get_digest_size(PyObject *op, void *Py_UNUSED(closure))
 {
     HMACobject *self = HMACobject_CAST(op);
-    unsigned int size = _hashlib_hmac_digest_size(self);
+    int size = _hashlib_hmac_digest_size(self);
     return size == BAD_DIGEST_SIZE ? NULL : PyLong_FromLong(size);
 }
 
@@ -2534,8 +2539,8 @@ _hashlib.get_fips_mode -> int
 Determine the OpenSSL FIPS mode of operation.
 
 For OpenSSL 3.0.0 and newer it returns the state of the default provider
-in the default OSSL context. It's not quite the same as FIPS_mode() but good
-enough for unittests.
+in the default OSSL context. It's not quite the same as FIPS_mode() but
+good enough for unittests.
 
 Effectively any non-zero return value indicates FIPS mode;
 values other than 1 may have additional significance.
@@ -2543,7 +2548,7 @@ values other than 1 may have additional significance.
 
 static int
 _hashlib_get_fips_mode_impl(PyObject *module)
-/*[clinic end generated code: output=87eece1bab4d3fa9 input=2db61538c41c6fef]*/
+/*[clinic end generated code: output=87eece1bab4d3fa9 input=a6cdb6901421d122]*/
 
 {
 #ifdef Py_HAS_OPENSSL3_SUPPORT
@@ -2899,6 +2904,7 @@ hashlib_constants(PyObject *module)
 }
 
 static PyModuleDef_Slot hashlib_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, hashlib_init_hashtable},
     {Py_mod_exec, hashlib_init_HASH_type},
     {Py_mod_exec, hashlib_init_HASHXOF_type},

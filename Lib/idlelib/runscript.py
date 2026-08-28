@@ -139,6 +139,10 @@ class ScriptBinding:
                 return 'break'
         self.cli_args, restart = run_args if customize else ([], True)
         interp = self.shell.interp
+        if self.shell.executing and not restart:
+            # Cannot run without restarting the busy shell (gh-82183).
+            interp.display_executing_dialog()
+            return 'break'
         if pyshell.use_subprocess and restart:
             interp.restart_subprocess(
                     with_cwd=False, filename=filename)

@@ -1,5 +1,0 @@
-Fix :func:`subprocess.Popen.communicate` timeout handling on Windows
-when writing large input. Previously, the timeout was ignored during
-stdin writing, causing the method to block indefinitely if the child
-process did not consume input quickly. The stdin write is now performed
-in a background thread, allowing the timeout to be properly enforced.

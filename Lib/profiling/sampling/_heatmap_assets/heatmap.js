@@ -15,35 +15,11 @@ let coldCodeHidden = false;
 // ============================================================================
 
 function toggleTheme() {
-    const html = document.documentElement;
-    const current = html.getAttribute('data-theme') || 'light';
-    const next = current === 'light' ? 'dark' : 'light';
-    html.setAttribute('data-theme', next);
-    localStorage.setItem('heatmap-theme', next);
-
-    // Update theme button icon
-    const btn = document.getElementById('theme-btn');
-    if (btn) {
-        btn.querySelector('.icon-moon').style.display = next === 'dark' ? 'none' : '';
-        btn.querySelector('.icon-sun').style.display = next === 'dark' ? '' : 'none';
-    }
+    toggleAndSaveTheme();
     applyLineColors();
 
     // Rebuild scroll marker with new theme colors
     buildScrollMarker();
-}
-
-function restoreUIState() {
-    // Restore theme
-    const savedTheme = localStorage.getItem('heatmap-theme');
-    if (savedTheme) {
-        document.documentElement.setAttribute('data-theme', savedTheme);
-        const btn = document.getElementById('theme-btn');
-        if (btn) {
-            btn.querySelector('.icon-moon').style.display = savedTheme === 'dark' ? 'none' : '';
-            btn.querySelector('.icon-sun').style.display = savedTheme === 'dark' ? '' : 'none';
-        }
-    }
 }
 
 // ============================================================================
@@ -108,7 +84,7 @@ function showNavigationMenu(button, items, title) {
 
         item.appendChild(funcDiv);
         item.appendChild(createElement('div', 'callee-menu-file', linkData.file));
-        item.addEventListener('click', () => window.location.href = linkData.link);
+        item.addEventListener('click', () => navigateToLine(linkData.link));
         menu.appendChild(item);
     });
 
@@ -129,7 +105,7 @@ function handleNavigationClick(button, e) {
 
     const navData = button.getAttribute('data-nav');
     if (navData) {
-        window.location.href = JSON.parse(navData).link;
+        navigateToLine(JSON.parse(navData).link);
         return;
     }
 
@@ -141,11 +117,29 @@ function handleNavigationClick(button, e) {
     }
 }
 
+function restartLineHighlight(target) {
+    target.style.animation = 'none';
+    // Force style recalculation so restoring the animation restarts it.
+    void target.offsetWidth;
+    target.style.animation = '';
+}
+
+function navigateToLine(link) {
+    const url = new URL(link, window.location.href);
+
+    if (url.href === window.location.href) {
+        scrollToTargetLine();
+    } else {
+        window.location.href = link;
+    }
+}
+
 function scrollToTargetLine() {
     if (!window.location.hash) return;
     const target = document.querySelector(window.location.hash);
     if (target) {
         target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        restartLineHighlight(target);
     }
 }
 
@@ -226,23 +220,6 @@ function applyLineColors() {
 // ============================================================================
 // Toggle Controls
 // ============================================================================
-
-function updateToggleUI(toggleId, isOn) {
-    const toggle = document.getElementById(toggleId);
-    if (toggle) {
-        const track = toggle.querySelector('.toggle-track');
-        const labels = toggle.querySelectorAll('.toggle-label');
-        if (isOn) {
-            track.classList.add('on');
-            labels[0].classList.remove('active');
-            labels[1].classList.add('active');
-        } else {
-            track.classList.remove('on');
-            labels[0].classList.add('active');
-            labels[1].classList.remove('active');
-        }
-    }
-}
 
 function toggleColdCode() {
     coldCodeHidden = !coldCodeHidden;
@@ -542,20 +519,23 @@ function toggleBytecode(button) {
     const lineId = lineDiv.id;
     const lineNum = lineId.replace('line-', '');
     const panel = document.getElementById(`bytecode-${lineNum}`);
+    const wrapper = document.getElementById(`bytecode-wrapper-${lineNum}`);
 
-    if (!panel) return;
+    if (!panel || !wrapper) return;
 
-    const isExpanded = panel.style.display !== 'none';
+    const isExpanded = panel.classList.contains('expanded');
 
     if (isExpanded) {
-        panel.style.display = 'none';
+        panel.classList.remove('expanded');
+        wrapper.classList.remove('expanded');
         button.classList.remove('expanded');
         button.innerHTML = '&#9654;';  // Right arrow
     } else {
         if (!panel.dataset.populated) {
             populateBytecodePanel(panel, button);
         }
-        panel.style.display = 'block';
+        panel.classList.add('expanded');
+        wrapper.classList.add('expanded');
         button.classList.add('expanded');
         button.innerHTML = '&#9660;';  // Down arrow
     }
@@ -598,10 +578,12 @@ function populateBytecodePanel(panel, button) {
         else if (specPct >= 33) specClass = 'medium';
 
         // Build specialization summary
+        const instruction_word = instructions.length === 1 ? 'instruction' : 'instructions';
+        const sample_word = totalSamples === 1 ? 'sample' : 'samples';
         let html = `<div class="bytecode-spec-summary ${specClass}">
             <span class="spec-pct">${specPct}%</span>
             <span class="spec-label">specialized</span>
-            <span class="spec-detail">(${specializedCount}/${instructions.length} instructions, ${specializedSamples.toLocaleString()}/${totalSamples.toLocaleString()} samples)</span>
+            <span class="spec-detail">(${specializedCount}/${instructions.length} ${instruction_word}, ${specializedSamples.toLocaleString()}/${totalSamples.toLocaleString()} ${sample_word})</span>
         </div>`;
 
         html += '<div class="bytecode-header">' +
