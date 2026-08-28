@@ -234,6 +234,11 @@ The module defines the following user-callable items:
    debugging or when you need your cleanup behavior to be conditional based on
    other logic.
 
+   .. warning::
+
+      Cleanup is not robust against the tree being modified while it is removed.
+      Files outside of the tree may have their permissions and file flags reset.
+
    .. audit-event:: tempfile.mkdtemp fullpath tempfile.TemporaryDirectory
 
    .. versionadded:: 3.2

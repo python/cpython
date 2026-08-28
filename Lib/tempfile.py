@@ -44,7 +44,6 @@ import os as _os
 import shutil as _shutil
 import errno as _errno
 from random import Random as _Random
-import stat as _stat
 import sys as _sys
 import types as _types
 import weakref as _weakref
@@ -290,15 +289,9 @@ def _resetperms(path):
 # True if TemporaryDirectory._rmtree() can work relative to open directories
 # instead of resolving paths again.
 _rmtree_use_dir_fd = (
-    {_os.open, _os.stat, _os.chmod, _os.unlink} <= _os.supports_dir_fd
+    {_os.chmod, _os.unlink} <= _os.supports_dir_fd
     and _os.chmod in _os.supports_fd
-    and hasattr(_os, 'O_NOFOLLOW')
 )
-
-def _open_nofollow(name, dir_fd=None):
-    # Open name relative to dir_fd, failing if its last component is a symlink.
-    return _os.open(name, _os.O_RDONLY | _os.O_NONBLOCK | _os.O_NOFOLLOW,
-                    dir_fd=dir_fd)
 
 def _resetperms_fd(dir_fd, path):
     # Same as _resetperms(), but for the directory referred to by dir_fd.
@@ -310,29 +303,19 @@ def _resetperms_fd(dir_fd, path):
 
 def _resetperms_at(name, dir_fd, path):
     # Same as _resetperms(), but name is resolved relative to the directory
-    # file descriptor dir_fd. It is only used for os.chflags(), which dosen't
-    # supports dir_fd or file descriptors.
+    # file descriptor dir_fd. path is only used for os.chflags(), which
+    # doesn't support dir_fd or file descriptors.
     if dir_fd is None:
         _resetperms(path)
         return
     _resetflags(path)
     try:
-        fd = _open_nofollow(name, dir_fd)
-    except OSError:
-        pass
-    else:
-        try:
-            _os.chmod(fd, 0o700)
-        finally:
-            _os.close(fd)
-        return
-    try:
         _os.chmod(name, 0o700, dir_fd=dir_fd, follow_symlinks=False)
-    except (NotImplementedError, ValueError, OSError):
-        # Not supported for this file on this platform. So we look for a symlink
-        # first, which is subject to a race condition.
-        if not _stat.S_ISLNK(_os.stat(name, dir_fd=dir_fd, follow_symlinks=False).st_mode):
-            _os.chmod(name, 0o700, dir_fd=dir_fd)
+    except (NotImplementedError, ValueError):
+        # Not supported for this file on this platform. The permissions of a
+        # symbolic link are never worth changing, and changing them through
+        # name would risk reaching its target instead.
+        pass
 
 
 # User visible interfaces.
@@ -991,7 +974,10 @@ class TemporaryDirectory:
                         return
                     raise
 
+                # fullpath is path as seen from the working directory
                 fullpath = fullname + path[len(name):]
+                # base is path relative to dir_fd, the directory rmtree()
+                # reached it through, or the whole path when there is none
                 if dir_fd is None or not _rmtree_use_dir_fd:
                     base, dir_fd = path, None
                 elif direntry is None:

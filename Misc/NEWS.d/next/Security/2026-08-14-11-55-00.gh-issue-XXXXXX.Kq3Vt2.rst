@@ -1,6 +1,6 @@
 Fix a race condition in the cleanup of :class:`tempfile.TemporaryDirectory`.
-When working around file system permission errors, permissions are now reset
-and files removed relative to open directory file descriptors instead of
-resolving their path again, so that replacing a directory of the tree with a
-symbolic link can no longer make the cleanup change the mode of, or delete,
-files outside of the temporary directory. This addresses :cve:`2026-12345`.
+When working around file system permission errors, files are now removed
+relative to open directory file descriptors instead of resolving their path
+again, so that replacing a directory of the tree with a symbolic link can no
+longer make the cleanup delete files outside of the temporary directory.
+This addresses :cve:`2026-12345`.
