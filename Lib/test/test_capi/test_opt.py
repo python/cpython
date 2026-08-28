@@ -5584,6 +5584,8 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
 
         self.assertIn("_BINARY_OP_SUBSCR_INIT_CALL", uops)
+        # The inlined return proves the optimizer completed the callee frame.
+        self.assertIn("_RETURN_VALUE", uops)
         self.assertNotIn("_POP_TOP_NOP", uops)
 
     def test_load_attr_property_frame(self):
@@ -6230,8 +6232,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
+        self.assertNotIn("_UNARY_NEGATIVE", uops)
         self.assertNotIn("_SWAP", uops)
-        self.assertNotIn("_SWAP_2", uops)
 
     def test_peephole_removes_redundant_rrot(self):
         def add(a, b):
@@ -6247,25 +6249,48 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, 3 * TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
+        self.assertIn("_RETURN_VALUE", uops)
+        self.assertEqual(count_ops(ex, "_BINARY_OP_ADD_INT"), 1)
         self.assertNotIn("_RROT_3", uops)
 
-    def test_combine_adjacent_int_guards(self):
-        def testfunc(left, right, loops):
-            for _ in range(loops):
-                result = left + right
-            return result
+    def test_combine_adjacent_guards(self):
+        class StrSubclass(str):
+            pass
 
-        result = testfunc(40, 2, TIER2_THRESHOLD)
+        cases = (
+            (int, (40, 2), ((40, 2.0), (40.0, 2), (1 << 100, 2)),
+             "_GUARD_TOS_AND_NOS_INT"),
+            (float, (1.5, 2.5), ((1.5, 2), (1, 2.5)),
+             "_GUARD_TOS_AND_NOS_FLOAT"),
+            (str, ("a", "b"),
+             (("a", StrSubclass("b")), (StrSubclass("a"), "b")),
+             "_GUARD_TOS_AND_NOS_UNICODE"),
+        )
+        for (
+            operand_type, good_operands, deopt_operands, combined_guard,
+        ) in cases:
+            with self.subTest(operand_type=operand_type.__name__):
+                def testfunc(left, right, loops):
+                    for _ in range(loops):
+                        result = left + right
+                    return result
 
-        self.assertEqual(result, 42)
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
-        self.assertIn("_GUARD_TOS_AND_NOS_INT", uops)
-        self.assertNotIn("_GUARD_TOS_INT", uops)
-        self.assertNotIn("_GUARD_NOS_INT", uops)
-        self.assertEqual(testfunc(40.0, 2.0, 1), 42.0)
-        self.assertEqual(testfunc(1 << 100, 2, 1), (1 << 100) + 2)
+                with clear_executors(testfunc):
+                    left, right = good_operands
+                    result = testfunc(left, right, TIER2_THRESHOLD)
+
+                    self.assertEqual(result, left + right)
+                    ex = get_first_executor(testfunc)
+                    self.assertIsNotNone(ex)
+                    uops = get_opnames(ex)
+                    suffix = combined_guard.removeprefix(
+                        "_GUARD_TOS_AND_NOS_"
+                    )
+                    self.assertIn(combined_guard, uops)
+                    self.assertNotIn(f"_GUARD_TOS_{suffix}", uops)
+                    self.assertNotIn(f"_GUARD_NOS_{suffix}", uops)
+                    for left, right in deopt_operands:
+                        self.assertEqual(testfunc(left, right, 1), left + right)
 
     def test_combine_adjacent_overflowed_guards(self):
         def testfunc(start, loops):
@@ -6284,40 +6309,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_TOS_OVERFLOWED", uops)
         self.assertNotIn("_GUARD_NOS_OVERFLOWED", uops)
         self.assertEqual(testfunc(1 << 100, 1), -1)
-
-    def test_combine_adjacent_float_guards(self):
-        def testfunc(left, right, loops):
-            for _ in range(loops):
-                result = left + right
-            return result
-
-        result = testfunc(1.5, 2.5, TIER2_THRESHOLD)
-
-        self.assertEqual(result, 4.0)
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
-        self.assertIn("_GUARD_TOS_AND_NOS_FLOAT", uops)
-        self.assertNotIn("_GUARD_TOS_FLOAT", uops)
-        self.assertNotIn("_GUARD_NOS_FLOAT", uops)
-        self.assertEqual(testfunc(1, 2, 1), 3)
-
-    def test_combine_adjacent_unicode_guards(self):
-        def testfunc(left, right, loops):
-            for _ in range(loops):
-                result = left + right
-            return result
-
-        result = testfunc("a", "b", TIER2_THRESHOLD)
-
-        self.assertEqual(result, "ab")
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
-        self.assertIn("_GUARD_TOS_AND_NOS_UNICODE", uops)
-        self.assertNotIn("_GUARD_TOS_UNICODE", uops)
-        self.assertNotIn("_GUARD_NOS_UNICODE", uops)
-        self.assertEqual(testfunc(b"a", b"b", 1), b"ab")
 
 def global_identity(x):
     return x
