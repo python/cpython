@@ -2662,6 +2662,24 @@ class OtherRepackTests(unittest.TestCase):
         fz.seek(0)
         self.assertEqual(fz.read(), expected)
 
+    def test_repack_removed_iterator(self):
+        # A one-shot iterable of removed entries must still be repacked.
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, 'w') as zh:
+            for name in ['a.txt', 'b.txt', 'c.txt']:
+                zh.writestr(name, name[0].upper().encode() * 5000)
+        full_size = len(buf.getvalue())
+
+        fz = io.BytesIO(buf.getvalue())
+        with zipfile.ZipFile(fz, 'a') as zh:
+            zh.repack(iter([zh.remove('b.txt')]))
+
+        self.assertLess(len(fz.getvalue()), full_size - 5000)
+        fz.seek(0)
+        with zipfile.ZipFile(fz) as zh:
+            self.assertIsNone(zh.testzip())
+            self.assertEqual(zh.namelist(), ['a.txt', 'c.txt'])
+
     def test_repack_failed_write_restores_header_offsets(self):
         # A failed repack() must leave the in-memory offsets describing the
         # file that is actually on disk, so that a later close() does not
