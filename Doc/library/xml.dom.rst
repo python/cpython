@@ -465,9 +465,9 @@ objects:
 
 .. method:: NodeList.item(i)
 
-   Return the *i*'th item from the sequence, if there is one, or ``None``.  The
-   index *i* is not allowed to be less than zero or greater than or equal to the
-   length of the sequence.
+   Return the *i*'th item from the sequence,
+   or ``None`` if *i* is out of range.
+   Negative indices are not supported.
 
 
 .. attribute:: NodeList.length
@@ -831,6 +831,12 @@ Attr Objects
 
 :class:`Attr` inherits from :class:`Node`, so inherits all its attributes.
 
+Attribute nodes are not part of the document tree.
+They are contained in the :attr:`~Node.attributes` map of an element,
+not in its children,
+and their :attr:`~Node.parentNode`, :attr:`~Node.previousSibling`
+and :attr:`~Node.nextSibling` are always ``None``.
+
 
 .. attribute:: Attr.name
 
@@ -1048,7 +1054,8 @@ enclosed in CDATA marked sections are stored in :class:`CDATASection` objects.
 These two interfaces are identical, but provide different values for the
 :attr:`~Node.nodeType` attribute.
 
-These interfaces extend the :class:`CharacterData` interface.
+:class:`Text` extends the :class:`CharacterData` interface,
+and :class:`CDATASection` extends :class:`Text`.
 
 
 .. attribute:: Text.data
