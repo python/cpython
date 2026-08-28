@@ -90,16 +90,33 @@ class TokenBrowserWindowTest(unittest.TestCase):
         self.find(type="PLUS", string="+")
 
     def test_token_colors(self):
+        # Rows are colored like the code they come from.
         self.text.delete("1.0", "end")
-        self.text.insert("1.0", "x = 'a' + 1  # c\n")
+        self.text.insert("1.0", "def f(x):\n    return len('a' * x)  # c\n")
         self.window.populate()
         tree = self.window.tree
         tags = {tree.item(item, "values")[1]: tree.item(item, "tags")
                 for item in tree.get_children()}
+        self.assertIn("keyword", tags[repr("def")])
+        self.assertIn("definition", tags[repr("f")])
+        self.assertIn("builtin", tags[repr("len")])
         self.assertIn("string", tags[repr("'a'")])
-        self.assertIn("number", tags[repr("1")])
         self.assertIn("comment", tags[repr("# c")])
-        self.assertNotIn("string", tags[repr("x")])   # NAME: default color.
+        self.assertIn("space", tags[repr("    ")])    # The INDENT token.
+        # Plain names, operators and numbers keep the default color.
+        self.assertEqual(tags[repr("x")], "")
+        self.assertEqual(tags[repr("(")], "")
+
+    def test_group_colors(self):
+        # Each group is colored by the theme element that colors the same
+        # code in the editor.
+        theme = idleConf.CurrentTheme()
+        tree = self.window.tree
+        for group, element in tokenbrowser.GROUP_ELEMENTS.items():
+            with self.subTest(group=group):
+                colors = idleConf.GetHighlight(theme, element)
+                self.assertEqual(str(tree.tag_configure(group, "foreground")),
+                                 colors['foreground'])
 
     def test_editor_index(self):
         window = self.window

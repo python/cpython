@@ -302,11 +302,13 @@ Token Browser
    Open a window listing the Python tokens of the editor content
    (or, in the Shell, the current input),
    or of the selection if there is one.
-   Token type names are colored as by ``python -m tokenize``.
+   Rows are colored like the code they come from.
    Selecting rows highlights the matching regions in the editor
    and moves the cursor there;
    selecting text or moving the cursor in the editor
    selects the matching rows.
+   The cursor alone selects the token it is in,
+   or the last one that starts before it.
    Press :kbd:`Escape` to hide the browser
    and return to the editor at the token.
 

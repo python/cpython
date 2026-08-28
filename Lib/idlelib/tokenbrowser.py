@@ -2,12 +2,15 @@
 
 The Browse menu's "Token Browser" command (see open() below) opens a
 window listing the Python tokens of the editor content (or, in the Shell,
-the current input), or of the selection if there is one.  Selecting rows
+the current input), or of the selection if there is one.  Rows are colored
+like the code they come from.  Selecting rows
 highlights the matching regions in the editor and moves the editor cursor
 there; selecting text (or moving the cursor) in the editor selects the
 matching rows.  Escape hides the browser, revealing the editor at the token.
 """
+import builtins
 import io
+import keyword
 import token
 import tokenize
 
@@ -23,32 +26,34 @@ TAG = "TOKENBROWSER"
 # The ttk style of the tree; see configure_style.
 STYLE = "TokenBrowser.Treeview"
 
-# Row colors per token group, mirroring the "python -m tokenize" CLI
-# (see tokenize._get_token_colors and _colorize.Syntax/Tokenize).  Token
-# groups not listed here (NAME, OP) keep the default foreground.
-GROUP_COLORS = {
-    'comment': '#cc0000',       # RED
-    'string': '#008700',        # GREEN
-    'number': '#a67c00',        # YELLOW
-    'soft_keyword': '#0000cc',  # BOLD_BLUE
-    'whitespace': '#808080',    # GREY
-    'error': '#e40000',         # BOLD_RED
+# A row is colored like the code it comes from, with the theme element
+# that colors it in the editor (see configure_style).  Tokens of no group
+# (operators and plain names) keep the default color.
+GROUP_ELEMENTS = {
+    'comment': 'comment',
+    'string': 'string',
+    'keyword': 'keyword',
+    'builtin': 'builtin',
+    'definition': 'definition',
+    'error': 'error',
+    'space': 'linenumber',   # Indents and line ends, as in the sidebar.
 }
+
+BUILTINS = {name for name in dir(builtins)
+            if not name.startswith('_') and not keyword.iskeyword(name)}
 
 
 def token_groups():
-    "Map token type numbers to a color group name (mirrors the CLI)."
+    "Map token type numbers to a color group name."
     groups = {}
     for group, names in (
             ('comment', ['COMMENT']),
-            ('whitespace', ['DEDENT', 'ENCODING', 'ENDMARKER', 'INDENT',
-                            'NEWLINE', 'NL']),
+            ('space', ['DEDENT', 'ENCODING', 'ENDMARKER', 'INDENT',
+                       'NEWLINE', 'NL']),
             ('error', ['ERRORTOKEN']),
             ('string', ['STRING', 'FSTRING_START', 'FSTRING_MIDDLE',
                         'FSTRING_END', 'TSTRING_START', 'TSTRING_MIDDLE',
-                        'TSTRING_END']),
-            ('number', ['NUMBER']),
-            ('soft_keyword', ['SOFT_KEYWORD'])):
+                        'TSTRING_END'])):
         for name in names:
             value = getattr(token, name, None)
             if value is not None:  # Some token types are version-specific.
@@ -135,8 +140,6 @@ class TokenBrowserWindow(Toplevel):
                 ("string", "String", 260, True)):
             self.tree.heading(name, text=title)
             self.tree.column(name, width=width, stretch=stretch, anchor=W)
-        for group, color in GROUP_COLORS.items():
-            self.tree.tag_configure(group, foreground=color)
         vbar = ttk.Scrollbar(frame, orient=VERTICAL, command=self.tree.yview)
         self.tree.configure(yscrollcommand=vbar.set)
         vbar.pack(side=RIGHT, fill=Y)
@@ -172,6 +175,9 @@ class TokenBrowserWindow(Toplevel):
         style.map(STYLE,
                   background=[('selected', hilite['background'])],
                   foreground=[('selected', hilite['foreground'])])
+        for group, element in GROUP_ELEMENTS.items():
+            self.tree.tag_configure(group,
+                                    **idleConf.GetHighlight(theme, element))
         self.text.tag_configure(TAG, **idleConf.GetHighlight(theme, 'hit'))
 
     def editor_index(self, row, col):
@@ -217,9 +223,19 @@ class TokenBrowserWindow(Toplevel):
         if not source.endswith("\n"):
             source += "\n"
         error = None
+        defining = False    # The next name is the one being defined.
         try:
             for tok in tokenize.generate_tokens(io.StringIO(source).readline):
-                self.add_token(tok)
+                group = TOKEN_GROUPS.get(tok.type, '')
+                if tok.type == token.NAME:
+                    if defining:
+                        group = 'definition'
+                    elif keyword.iskeyword(tok.string):
+                        group = 'keyword'
+                    elif tok.string in BUILTINS:
+                        group = 'builtin'
+                    defining = tok.string in ('def', 'class')
+                self.add_token(tok, group)
         except (tokenize.TokenError, IndentationError, SyntaxError) as exc:
             error = exc.args[0] if exc.args else type(exc).__name__
         status = f"{len(self.ranges)} tokens in {scope}"
@@ -268,11 +284,10 @@ class TokenBrowserWindow(Toplevel):
             self.tree.focus(items[0])
             self.tree.see(items[0])
 
-    def add_token(self, tok):
+    def add_token(self, tok, group):
         name = token.tok_name[tok.exact_type]
         start = self.editor_index(*tok.start)
         end = self.editor_index(*tok.end)
-        group = TOKEN_GROUPS.get(tok.type, '')   # '' means the default color.
         item = self.tree.insert("", END, values=(name, repr(tok.string)),
                                 tags=(group,) if group else ())
         self.ranges[item] = (start, end)
