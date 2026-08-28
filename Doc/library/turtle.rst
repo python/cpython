@@ -8,11 +8,13 @@
 **Source code:** :source:`Lib/turtle.py`
 
 .. testsetup:: default
+   :skipif: _tkinter is None
 
    from turtle import *
    turtle = Turtle()
 
 .. testcleanup::
+   :skipif: _tkinter is None
 
    import os
    os.remove("my_drawing.ps")
@@ -79,8 +81,8 @@ In a Python shell, import all the objects of the ``turtle`` module::
 
     from turtle import *
 
-If you run into a ``No module named '_tkinter'`` error, you'll have to
-install the :mod:`Tk interface package <tkinter>` on your system.
+If you run into a ``Standard library module '_tkinter' was not found`` error,
+you'll have to install the :mod:`Tk interface package <tkinter>` on your system.
 
 
 Basic drawing
@@ -167,14 +169,16 @@ filling can be turned on and off::
 
 Next we'll create a loop::
 
+    start = pos()
+
     while True:
         forward(200)
         left(170)
-        if abs(pos()) < 1:
+        if distance(start) < 1:
             break
 
-``abs(pos()) < 1`` is a good way to know when the turtle is back at its
-home position.
+``distance(start) < 1`` is a good way to know when the turtle is back at its
+start position.
 
 Finally, complete the filling::
 
@@ -508,6 +512,7 @@ Turtle motion
    turtle is headed.  Do not change the turtle's heading.
 
    .. doctest::
+      :skipif: _tkinter is None
       :hide:
 
       >>> turtle.goto(0, 0)
@@ -850,6 +855,7 @@ Turtle motion
    last *n* stamps.
 
    .. doctest::
+      :skipif: _tkinter is None
 
       >>> for i in range(8):
       ...     unused_stamp_id = turtle.stamp()
@@ -1407,8 +1413,11 @@ More drawing control
    font.  If *move* is true, the pen is moved to the bottom-right corner of the
    text.  By default, *move* is ``False``.
 
-   >>> turtle.write("Home = ", True, align="center")
-   >>> turtle.write((0,0), True)
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> turtle.write("Home = ", True, align="center")
+      >>> turtle.write((0,0), True)
 
 
 Turtle state
@@ -1445,12 +1454,15 @@ Visibility
 
    Return ``True`` if the Turtle is shown, ``False`` if it's hidden.
 
-   >>> turtle.hideturtle()
-   >>> turtle.isvisible()
-   False
-   >>> turtle.showturtle()
-   >>> turtle.isvisible()
-   True
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> turtle.hideturtle()
+      >>> turtle.isvisible()
+      False
+      >>> turtle.showturtle()
+      >>> turtle.isvisible()
+      True
 
 
 Appearance
@@ -1980,6 +1992,9 @@ Window control
    window.  To observe hidden parts of the canvas, use the scrollbars. With this
    method, one can make visible those parts of a drawing which were outside the
    canvas before.
+
+   .. doctest::
+      :skipif: _tkinter is None
 
       >>> screen.screensize()
       (400, 300)

@@ -247,6 +247,23 @@ class HelperFunctionsTests(unittest.TestCase):
         sitedir = stdout.getvalue().rstrip()
         self.assertEqual(sitedir, pth_dir)
 
+    def test_fullname_variable(self):
+        # gh-156404: ".pth" files generated before Python 3.15 read the path
+        # of the file being processed from the frame executing the import
+        # line, under the name "fullname". For example, "wheel-axle"
+        # generates: "import wheel_axle.runtime;
+        # wheel_axle.runtime.finalize(fullname);"
+        code = '; '.join((
+            "import sys",
+            "print(fullname)",
+            "print(filename)",
+        ))
+        pth_dir, pth_fn = self.make_pth(code)
+        with support.captured_stdout() as stdout:
+            site.addpackage(pth_dir, pth_fn, set())
+        expected = os.path.join(pth_dir, pth_fn)
+        self.assertEqual(stdout.getvalue().splitlines(), [expected, expected])
+
     # This tests _getuserbase, hence the double underline
     # to distinguish from a test for getuserbase
     def test__getuserbase(self):
