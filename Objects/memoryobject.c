@@ -104,20 +104,24 @@ _PyManagedBuffer_FromObject(PyObject *base, int flags)
 }
 
 static inline int
-flags_test_and_set(int *flags, int bit)
+flags_set_released(int *flags, int released)
 {
 #ifdef Py_GIL_DISABLED
     int prev = _Py_atomic_load_int_relaxed(flags);
-    while (!_Py_atomic_compare_exchange_int(flags, &prev, prev | bit)) {
-        // Compare-exchange updates prev. Note that retries are bounded by the
-        // number of flag bits being concurrently set. So, yielding here is
-        // unnecessary.
+    if (prev & released) {
+        return 1;
     }
+    if (!_Py_atomic_compare_exchange_int(flags, &prev, prev | released)) {
+        // RELEASED is the only flag that can change concurrently.
+        assert(prev & released);
+        return 1;
+    }
+    return 0;
 #else
     int prev = *flags;
-    *flags = prev | bit;
+    *flags = prev | released;
+    return (prev & released) != 0;
 #endif
-    return (prev & bit) != 0;
 }
 
 static inline int
@@ -133,9 +137,9 @@ mv_has_flag(PyMemoryViewObject *mv, int bits)
 }
 
 static inline int
-mv_set_flag(PyMemoryViewObject *mv, int bit)
+mv_set_released(PyMemoryViewObject *mv)
 {
-    return flags_test_and_set(&mv->flags, bit);
+    return flags_set_released(&mv->flags, _Py_MEMORYVIEW_RELEASED);
 }
 
 static inline int
@@ -145,15 +149,15 @@ mbuf_has_flag(_PyManagedBufferObject *mbuf, int bits)
 }
 
 static inline int
-mbuf_set_flag(_PyManagedBufferObject *mbuf, int bit)
+mbuf_set_released(_PyManagedBufferObject *mbuf)
 {
-    return flags_test_and_set(&mbuf->flags, bit);
+    return flags_set_released(&mbuf->flags, _Py_MANAGED_BUFFER_RELEASED);
 }
 
 static void
 mbuf_release(_PyManagedBufferObject *self)
 {
-    if (mbuf_set_flag(self, _Py_MANAGED_BUFFER_RELEASED)) {
+    if (mbuf_set_released(self)) {
         return;
     }
 
@@ -1227,7 +1231,7 @@ static void
 _memory_release(PyMemoryViewObject *self)
 {
     assert(get_exports(self) == 0);
-    if (mv_set_flag(self, _Py_MEMORYVIEW_RELEASED)) {
+    if (mv_set_released(self)) {
         return;
     }
 
