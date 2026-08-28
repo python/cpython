@@ -214,9 +214,24 @@ static unsigned int sre_upper_locale(unsigned int ch)
 #define SRE_UNI_IS_PRINT(ch) ((SRE_UNI_IS_GRAPH(ch) || SRE_UNI_IS_BLANK(ch)) && \
                               !SRE_IS_CC(ch))
 
+/* The key by which characters are compared case-insensitively: the lowercase
+   of the simple case folding.  Folding, unlike lowercasing, makes MICRO SIGN
+   and GREEK SMALL LETTER MU compare equal; lowercasing the result keeps the
+   key below the case pairs, as Cherokee letters fold to their uppercase.
+   When the full folding is not a single character (as "ss" for both SHARP S
+   characters), the character is lowercased on its own. */
 static unsigned int sre_lower_unicode(unsigned int ch)
 {
-    return (unsigned int) Py_UNICODE_TOLOWER(ch);
+    switch (ch) {
+    /* Characters which the case folding does not unify: they only have the
+       same uppercase, or the same full folding of more than one character.
+       All are Unicode 1.1. */
+    case 0x0131: return 0x0069;  /* DOTLESS I -> I */
+    case 0x1fd3: return 0x0390;  /* IOTA WITH DIALYTIKA AND OXIA -> TONOS */
+    case 0x1fe3: return 0x03b0;  /* UPSILON WITH DIALYTIKA AND OXIA -> TONOS */
+    case 0xfb05: return 0xfb06;  /* LIGATURE LONG S T -> LIGATURE ST */
+    }
+    return (unsigned int) _PyUnicode_ToFoldedLowercase((Py_UCS4)ch);
 }
 
 static unsigned int sre_upper_unicode(unsigned int ch)
