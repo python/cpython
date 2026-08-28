@@ -3051,13 +3051,12 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
     if (task->task_must_cancel) {
         assert(exc != Py_None);
 
+        /* exc was not a CancelledError, neither SystemExit or KeyboardInterrupt.
+        See gh-108549 for explanation about the last two exceptions */
         if (!exc ||
             (!PyErr_GivenExceptionMatches(exc, state->asyncio_CancelledError) &&
             !PyErr_GivenExceptionMatches(exc, PyExc_KeyboardInterrupt) &&
-            !PyErr_GivenExceptionMatches(exc, PyExc_SystemExit))
-            ) {
-            /* exc was not a CancelledError,
-            neither SystemExit or KeyboardInterrupt (see gh-108549 )*/
+            !PyErr_GivenExceptionMatches(exc, PyExc_SystemExit))) {
             exc = create_cancelled_error(state, (FutureObj*)task);
 
             if (!exc) {

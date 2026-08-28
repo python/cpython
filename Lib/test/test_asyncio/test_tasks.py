@@ -1891,23 +1891,26 @@ class BaseTaskTests:
             self.loop.run_until_complete(task),
             'ko')
 
-    def test_step_dont_swallow_systemexit(self):
-        # gh-108549: do not swallow KeybordInterrupt too.
-        async def sub_task():
-            raise SystemExit
+    def test_step_dont_swallow_systemexit_or_keyboardinterrupt(self):
+        # see gh-108549: do not swallow SystemExit and KeyboardInterrupt
+        # in Task.__step when the current task must be cancelled.
+        async def sub_task(exc):
+            raise exc
 
-        async def gather():
+        async def current_task(exc):
             try:
-                await asyncio.gather(sub_task(),)
-            except SystemExit:
+                await asyncio.create_task(sub_task(exc))
+            except exc:
                 pass
+            except BaseException as e:
+                self.fail(f'{exc} is expected, instead of {type(e)}')
 
-        t = self.new_task(self.loop, gather())
-        with self.assertRaises(SystemExit):
-            self.loop.run_until_complete(t)
-        t.cancel()
-        self.loop.run_until_complete(t)
-        self.assertTrue(t.done())
+        for exc in (SystemExit, KeyboardInterrupt):
+            t = self.new_task(self.loop, current_task(exc))
+            self.assertRaises(exc, self.loop.run_until_complete, t)
+            t.cancel()
+            test_utils.run_briefly(self.loop)
+            self.assertTrue(t.done())
 
     def test_step_result_future(self):
         # If coroutine returns future, task waits on this future.
