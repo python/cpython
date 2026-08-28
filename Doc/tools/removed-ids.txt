@@ -16,6 +16,8 @@ deprecations/index.html: pending-removal-in-python-3-16
 deprecations/index.html: c-api-pending-removal-in-python-3-15
 deprecations/index.html: c-api-pending-removal-in-python-3-16
 
+tutorial/modules.html: packages-in-multiple-directories
+
 # Removed libmpdec
 using/configure.html: cmdoption-with-system-libmpdec
 
@@ -23,6 +25,13 @@ using/configure.html: cmdoption-with-system-libmpdec
 library/symtable.html: symtable.Class.get_methods
 library/sys.html: sys._enablelegacywindowsfsencoding
 c-api/import.html: c.PyImport_LazyImportsMode.PyImport_LAZY_NONE
+c-api/frame.html: c.PyUnstable_EXECUTABLE_KINDS
+c-api/frame.html: c.PyUnstable_ExecutableKinds
+c-api/frame.html: c.PyUnstable_ExecutableKinds.PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION
+c-api/frame.html: c.PyUnstable_ExecutableKinds.PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR
+c-api/frame.html: c.PyUnstable_ExecutableKinds.PyUnstable_EXECUTABLE_KIND_PY_FUNCTION
+c-api/frame.html: c.PyUnstable_ExecutableKinds.PyUnstable_EXECUTABLE_KIND_SKIP
+
 
 ## Old names for grammar tokens
 reference/expressions.html: grammar-token-python-grammar-comp_for

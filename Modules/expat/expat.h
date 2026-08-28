@@ -40,6 +40,8 @@
    DAMAGES OR  OTHER LIABILITY, WHETHER  IN AN  ACTION OF CONTRACT,  TORT OR
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+   SPDX-License-Identifier: MIT
 */
 
 #ifndef Expat_INCLUDED
@@ -1094,7 +1096,7 @@ XML_SetReparseDeferralEnabled(XML_Parser parser, XML_Bool enabled);
 */
 #  define XML_MAJOR_VERSION 2
 #  define XML_MINOR_VERSION 8
-#  define XML_MICRO_VERSION 2
+#  define XML_MICRO_VERSION 3
 
 #  ifdef __cplusplus
 }

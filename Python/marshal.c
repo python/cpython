@@ -1471,6 +1471,9 @@ r_object(RFILE *p)
         }
         if (type == TYPE_DICT) {
             R_REF(v);
+            if (v == NULL) {
+                break;
+            }
         }
         else {
             idx = r_ref_reserve(flag, p);
@@ -1502,6 +1505,7 @@ r_object(RFILE *p)
         }
         if (type == TYPE_FROZENDICT && v != NULL) {
             Py_SETREF(v, PyFrozenDict_New(v));
+            v = r_ref_insert(v, idx, flag, p);
         }
         retval = v;
         break;

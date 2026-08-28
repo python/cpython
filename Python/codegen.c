@@ -707,16 +707,8 @@ codegen_enter_scope(compiler *c, identifier name, int scope_type,
 }
 
 static int
-codegen_setup_annotations_scope(compiler *c, location loc,
-                                void *key, PyObject *name)
+codegen_emit_annotations_prologue(compiler *c, location loc)
 {
-    _PyCompile_CodeUnitMetadata umd = {
-        .u_posonlyargcount = 1,
-    };
-    RETURN_IF_ERROR(
-        codegen_enter_scope(c, name, COMPILE_SCOPE_ANNOTATIONS,
-                            key, loc.lineno, NULL, &umd));
-
     // if .format > VALUE_WITH_FAKE_GLOBALS: raise NotImplementedError
     PyObject *value_with_fake_globals = PyLong_FromLong(_Py_ANNOTATE_FORMAT_VALUE_WITH_FAKE_GLOBALS);
     if (value_with_fake_globals == NULL) {
@@ -733,6 +725,21 @@ codegen_setup_annotations_scope(compiler *c, location loc,
     ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, CONSTANT_NOTIMPLEMENTEDERROR);
     ADDOP_I(c, loc, RAISE_VARARGS, 1);
     USE_LABEL(c, body);
+    return SUCCESS;
+}
+
+static int
+codegen_setup_annotations_scope(compiler *c, location loc,
+                                void *key, PyObject *name)
+{
+    _PyCompile_CodeUnitMetadata umd = {
+        .u_posonlyargcount = 1,
+    };
+    RETURN_IF_ERROR(
+        codegen_enter_scope(c, name, COMPILE_SCOPE_ANNOTATIONS,
+                            key, loc.lineno, NULL, &umd));
+
+    RETURN_IF_ERROR_IN_SCOPE(c, codegen_emit_annotations_prologue(c, loc));
     return SUCCESS;
 }
 
@@ -1189,7 +1196,7 @@ codegen_function_annotations(compiler *c, location loc,
         RETURN_IF_ERROR_IN_SCOPE(
             c, codegen_annotations_in_scope(c, loc, args, returns, &annotations_len)
         );
-        ADDOP_I(c, loc, BUILD_MAP, annotations_len);
+        ADDOP_I_IN_SCOPE(c, loc, BUILD_MAP, annotations_len);
         RETURN_IF_ERROR(codegen_leave_annotations_scope(c, loc));
         return MAKE_FUNCTION_ANNOTATE;
     }
@@ -5807,7 +5814,9 @@ codegen_annassign(compiler *c, stmt_ty s)
                         ADDOP_NAME(c, loc, LOAD_NAME, &_Py_ID(__conditional_annotations__), names);
                     }
                     ADDOP_LOAD_CONST_NEW(c, loc, conditional_annotation_index);
-                    ADDOP_I(c, loc, SET_ADD, 1);
+                    // gh-154902: change SET_ADD to new INTRINSIC_ADD_CONDITIONAL_ANNOTATION intrinsic
+                    ADDOP_I(c, loc, CALL_INTRINSIC_2,
+                            INTRINSIC_ADD_CONDITIONAL_ANNOTATION);
                     ADDOP(c, loc, POP_TOP);
                 }
             }
