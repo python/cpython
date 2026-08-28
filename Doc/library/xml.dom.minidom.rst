@@ -245,11 +245,12 @@ rules apply:
   Instead, :mod:`!xml.dom.minidom` uses standard Python exceptions such as
   :exc:`TypeError` and :exc:`AttributeError`.
 
-* :class:`NodeList` objects are implemented using Python's built-in list type.
-  These objects provide the interface defined in the DOM specification, but with
-  earlier versions of Python they do not support the official API.  They are,
-  however, much more "Pythonic" than the interface defined in the W3C
-  recommendations.
+* The :mod:`!xml.dom.minidom` implementation of :class:`~xml.dom.NodeList`
+  is a subclass of :class:`list`.
+  In addition to the interface defined in the DOM specification,
+  it supports all list operations, which are much more "Pythonic".
+  Nodes which cannot have children use another implementation,
+  which is a subclass of :class:`tuple`.
 
 The following interfaces have no implementation in :mod:`!xml.dom.minidom`:
 
