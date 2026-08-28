@@ -7409,7 +7409,8 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
             .seconds_per_day = Py_NewRef(st_old->seconds_per_day),
             .epoch = Py_NewRef(st_old->epoch),
             .time_struct_time = Py_XNewRef(st_old->time_struct_time),
-            .time_strftime = Py_XNewRef(st_old->time_strftime),
+            .time_struct_time = Py_NewRef(st_old->time_struct_time),
+            .time_strftime = Py_NewRef(st_old->time_strftime),
         };
         return 0;
     }
