@@ -119,6 +119,8 @@ class TokenBrowserWindow(Toplevel):
         text.bind("<<Selection>>", self.sync_from_editor, add="+")
         text.bind("<KeyRelease>", self.sync_from_editor, add="+")
         text.bind("<ButtonRelease-1>", self.sync_from_editor, add="+")
+        # Focus the tree, not the window, so that Up and Down work at once.
+        self.tree.focus_set()
         if not _utest:
             self.deiconify()
 
@@ -251,7 +253,7 @@ class TokenBrowserWindow(Toplevel):
         self.populate()
         self.deiconify()
         self.lift()
-        self.focus_set()
+        self.tree.focus_set()
 
     def sync_from_editor(self, event=None):
         "Select the rows matching the editor's selection, or the cursor's row."
