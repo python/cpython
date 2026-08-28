@@ -389,7 +389,6 @@ Inserting a child of a not allowed type raises :exc:`HierarchyRequestErr`.
    You can always get the information you would get here from another
    property such as the :attr:`~Element.tagName` property for elements or the
    :attr:`~Attr.name` property for attributes.
-   For all node types, the value of this attribute is a string or ``None``.
    This is a read-only attribute.
 
 
