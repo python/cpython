@@ -318,6 +318,21 @@ class TokenBrowserWindowTest(unittest.TestCase):
         self.assertEqual(int(style.lookup(tokenbrowser.STYLE, 'rowheight')),
                          tree_font.metrics("linespace") + 2)
 
+    def test_show_editor(self):
+        # Selecting the browser from the taskbar reveals its editor: it is
+        # deiconified if iconified, and raised in any case.
+        for state, deiconified in (("iconic", True), ("normal", False)):
+            with self.subTest(state=state):
+                top = Func()
+                top.wm_state = Func(result=state)
+                top.deiconify = Func()
+                top.lift = Func()
+                with mock.patch.object(self.text, "winfo_toplevel",
+                                       Func(result=top)):
+                    self.window.show_editor()
+                self.assertEqual(bool(top.deiconify.called), deiconified)
+                self.assertTrue(top.lift.called)
+
     def test_hide(self):
         text = Text(self.root)
         text.insert("1.0", code_sample)
