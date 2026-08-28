@@ -499,12 +499,28 @@ class BytecodeBrowserWindow(Toplevel):
         self.focused = True
         self.show_highlight()
         self.show_cursor("hollow")
+        self.show_editor()
 
     def on_focus_out(self, event=None):
         "Hide the highlight while the editor (or another window) has focus."
         self.focused = False
         self.hide_highlight()
         self.show_cursor("none")
+
+    def show_editor(self):
+        """Reveal the editor when the browser is selected from the taskbar.
+
+        The editor may be iconified or buried under other windows; raise
+        the browser again to keep it on top of the editor it belongs to.
+        """
+        try:
+            top = self.text.winfo_toplevel()
+            if top.wm_state() == "iconic":
+                top.deiconify()
+            top.lift()
+            self.lift()
+        except TclError:  # The editor may already be gone.
+            pass
 
     def show_cursor(self, mode):
         """Show ("hollow") or hide ("none") the cursor of the unfocused editor.
