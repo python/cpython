@@ -4,7 +4,8 @@ from test.support import requires
 
 import unittest
 from unittest import mock
-from tkinter import Tk, Text
+from tkinter import Tk, Text, font, ttk
+from idlelib.config import idleConf
 from idlelib.idle_test.mock_idle import Func
 
 code_sample = "import sys\n\ndef f(x):\n    return x + 1\n"
@@ -24,7 +25,7 @@ class TokenBrowserOpenTest(unittest.TestCase):
         with mock.patch.object(tokenbrowser, 'TokenBrowserWindow',
                                Func(result='window')) as window:
             tokenbrowser.open(editwin)
-        self.assertEqual(window.args, ('toplevel', 'text'))
+        self.assertEqual(window.args, ('toplevel', 'text', editwin))
         self.assertEqual(editwin.token_browser, 'window')
 
     def test_open_reuses_window(self):
@@ -158,6 +159,16 @@ class TokenBrowserWindowTest(unittest.TestCase):
         window.on_focus_in()           # Focus returns to the browser.
         self.assertNotEqual(self.text.tag_ranges(tokenbrowser.TAG), ())
 
+    def test_cursor_shown_while_focused(self):
+        # The editor cursor marks tokens with no text, such as ENDMARKER.
+        if "insertunfocussed" not in self.text.configure():
+            self.skipTest("Tk does not support -insertunfocussed")
+        window = self.window
+        window.on_focus_in()
+        self.assertEqual(str(self.text["insertunfocussed"]), "hollow")
+        window.on_focus_out()
+        self.assertEqual(str(self.text["insertunfocussed"]), "none")
+
     def test_extend_selection(self):
         tree = self.window.tree
         rows = tree.get_children()
@@ -175,6 +186,19 @@ class TokenBrowserWindowTest(unittest.TestCase):
         tree.focus(last)
         self.window.extend_selection(1)     # No next row to add.
         self.assertEqual(tree.selection(), (last,))
+
+    def test_newline_highlighted(self):
+        # A NEWLINE or NL token highlights the newline itself.
+        window = self.window
+        window.focused = True
+        for type, start, end in (("NEWLINE", "1.10", "2.0"),
+                                 ("NL", "2.0", "3.0")):
+            with self.subTest(type=type):
+                window.tree.selection_set(self.find(type=type, string="\n"))
+                window.select_tokens()
+                self.assertEqual(
+                    [str(i) for i in self.text.tag_ranges(tokenbrowser.TAG)],
+                    [start, end])
 
     def test_zero_width_not_highlighted(self):
         window = self.window
@@ -221,11 +245,53 @@ class TokenBrowserWindowTest(unittest.TestCase):
     def test_move_cursor(self):
         window = self.window
         item = self.find(type="NAME", string="return")
-        window.move_cursor(item)
+        window.tree.selection_set(item)
+        window.move_cursor()
         self.assertEqual(self.text.index("insert"), window.ranges[item][0])
 
-    def test_move_cursor_no_item(self):
-        self.window.move_cursor("")     # identify_row returns "" off a row.
+    def test_move_cursor_no_selection(self):
+        self.window.tree.selection_set(())
+        self.window.move_cursor()       # Nothing to move to.
+
+    def test_registers_with_editor(self):
+        # The editor restyles registered windows; see reset_browsers.
+        editwin = Func()
+        editwin.browsers = []
+        editwin.short_title = Func(result="spam.py")
+        text = Text(self.root)
+        window = tokenbrowser.TokenBrowserWindow(
+            self.root, text, editwin, _utest=True)
+        self.assertEqual(editwin.browsers, [window])
+        window.destroy()
+        text.destroy()
+
+    def test_set_title(self):
+        # The title names the browsed file, as the module browser's does.
+        window = self.window
+        self.assertEqual(window.title(), "Token Browser")   # No editor window.
+        self.addCleanup(window.set_title)
+        self.addCleanup(setattr, window, "editwin", None)
+        window.editwin = Func()
+        window.editwin.short_title = Func(result="spam.py")
+        window.set_title()
+        self.assertEqual(window.title(), "Token Browser - spam.py")
+
+    def test_configure_style(self):
+        # The tree follows the configured colors and font.
+        colors = idleConf.GetHighlight(idleConf.CurrentTheme(), 'normal')
+        text_font = idleConf.GetFont(self.root, 'main', 'EditorWindow')
+        style = ttk.Style(self.window)
+        for option in ('background', 'foreground'):
+            self.assertEqual(style.lookup(tokenbrowser.STYLE, option),
+                             colors[option])
+        self.assertEqual(style.lookup(tokenbrowser.STYLE, 'fieldbackground'),
+                         colors['background'])
+        tree_font = font.Font(root=self.root,
+                              font=style.lookup(tokenbrowser.STYLE, 'font'))
+        self.assertEqual(tree_font.actual(),
+                         font.Font(root=self.root, font=text_font).actual())
+        self.assertEqual(int(style.lookup(tokenbrowser.STYLE, 'rowheight')),
+                         tree_font.metrics("linespace") + 2)
 
     def test_hide(self):
         text = Text(self.root)
@@ -236,7 +302,7 @@ class TokenBrowserWindowTest(unittest.TestCase):
         window.tree.selection_set(window.tree.get_children()[0])
         window.select_tokens()
         self.assertNotEqual(text.tag_ranges(tokenbrowser.TAG), ())
-        window.hide()                   # Double-click (or Escape) hides it.
+        window.hide()                   # Escape (or the close box) hides it.
         self.assertEqual(window.wm_state(), "withdrawn")   # Not destroyed.
         self.assertTrue(window.winfo_exists())
         self.assertEqual(text.tag_ranges(tokenbrowser.TAG), ())

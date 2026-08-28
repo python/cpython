@@ -307,8 +307,8 @@ Token Browser
    and moves the cursor there;
    selecting text or moving the cursor in the editor
    selects the matching rows.
-   Double-click a row, or press :kbd:`Escape`,
-   to hide the browser and return to the editor at the token.
+   Press :kbd:`Escape` to hide the browser
+   and return to the editor at the token.
 
 Options menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
