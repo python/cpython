@@ -1,6 +1,6 @@
 "Test , coverage %."
 
-from idlelib import zzdummy
+from idlelib import zzdummy  # Replace with the module to test.
 import unittest
 from test.support import requires
 from tkinter import Tk
