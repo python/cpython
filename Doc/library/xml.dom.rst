@@ -635,7 +635,6 @@ inherits properties from :class:`Node`.
 .. attribute:: Document.strictErrorChecking
 
    Whether error checking is enforced.
-   Always ``False`` in :mod:`xml.dom.minidom`.
 
 
 .. attribute:: Document.documentURI
@@ -926,7 +925,6 @@ and :attr:`~Node.nextSibling` are always ``None``.
 
    Whether the value of the attribute was explicitly set in the document,
    as opposed to being defaulted from the DTD.
-   Always ``False`` in :mod:`xml.dom.minidom`.
    This is a read-only attribute.
 
 
@@ -995,13 +993,8 @@ NamedNodeMap Objects
    Remove and return the node with the given namespace URI and local name.
    Raise :exc:`NotFoundErr` if there is no such node.
 
-:mod:`xml.dom.minidom` provides additional methods which make the attribute
-map of an element behave more like a mapping: :meth:`!get`, :meth:`!keys`,
-:meth:`!keysNS`, :meth:`!values`, :meth:`!items` and :meth:`!itemsNS`, as well
-as ``len()``, ``in``, subscription and deletion.  They are not available for
-:attr:`DocumentType.entities` and :attr:`DocumentType.notations`, which are
-read-only.  You can also use the standardized :meth:`!getAttribute\*` family of
-methods on the :class:`Element` objects.
+You can also use the standardized :meth:`!getAttribute\*` family of methods
+on the :class:`Element` objects.
 
 
 .. _dom-documentfragment-objects:

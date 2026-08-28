@@ -245,12 +245,24 @@ rules apply:
   Instead, :mod:`!xml.dom.minidom` uses standard Python exceptions such as
   :exc:`TypeError` and :exc:`AttributeError`.
 
-* The :mod:`!xml.dom.minidom` implementation of :class:`~xml.dom.NodeList`
-  is a subclass of :class:`list`.
-  In addition to the interface defined in the DOM specification,
-  it supports all list operations, which are much more "Pythonic".
-  Nodes which cannot have children use another implementation,
-  which is a subclass of :class:`tuple`.
+* Each of the :class:`~xml.dom.NodeList` and :class:`~xml.dom.NamedNodeMap`
+  interfaces has two implementations, which provide additional methods and
+  operations.
+
+  :attr:`~xml.dom.Node.childNodes` is a subclass of :class:`list`, or, for
+  nodes which cannot have children, a subclass of :class:`tuple`.
+  It supports iteration, concatenation, indexing and slicing.
+
+  :attr:`~xml.dom.Node.attributes` supports ``len()``, the :keyword:`in`
+  operator, subscription by a name or by a ``(namespaceURI, localName)``
+  tuple, assignment and deletion, and the methods :meth:`!get`, :meth:`!keys`,
+  :meth:`!keysNS`, :meth:`!values`, :meth:`!items` and :meth:`!itemsNS`.
+  :attr:`~xml.dom.DocumentType.entities` and
+  :attr:`~xml.dom.DocumentType.notations` are read-only and support only
+  ``len()`` and subscription by a name.
+
+* :attr:`~xml.dom.Document.strictErrorChecking` and
+  :attr:`~xml.dom.Attr.specified` are always ``False``.
 
 The following interfaces have no implementation in :mod:`!xml.dom.minidom`:
 
