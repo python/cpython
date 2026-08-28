@@ -2136,6 +2136,21 @@ class BaseTaskTests:
         test_utils.run_briefly(self.loop)
         mock_handler.assert_called_once()
 
+    def test_shield_cancel_outer_exception_retrieved(self):
+        # gh-156321: an exception retrieved by an awaiter must not be reported
+        mock_handler = mock.Mock()
+        self.loop.set_exception_handler(mock_handler)
+        inner = self.new_future(self.loop)
+        outer = asyncio.shield(inner)
+        test_utils.run_briefly(self.loop)
+        outer.cancel()
+        test_utils.run_briefly(self.loop)
+        inner.set_exception(Exception('foo'))
+        self.assertIsNotNone(inner.exception())
+        test_utils.run_briefly(self.loop)
+        test_utils.run_briefly(self.loop)
+        mock_handler.assert_not_called()
+
     def test_shield_cancel_outer_in_task(self):
         inner = self.new_future(self.loop)
 
