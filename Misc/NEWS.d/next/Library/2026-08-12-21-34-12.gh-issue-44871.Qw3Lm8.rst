@@ -5,6 +5,8 @@ Inserting a node created by another document
 now raises :exc:`~xml.dom.WrongDocumentErr`,
 and inserting a node into itself or its descendant
 now raises :exc:`~xml.dom.HierarchyRequestErr`.
+A document can no longer have two element or two document type children,
+and a document fragment can no longer have notation children.
 Attributes defaulted in the DTD are no longer omitted when parsing,
 and :attr:`!Attr.specified` now reports
 whether the attribute was given in the start tag.

@@ -617,6 +617,8 @@ xml
   It checks names passed to the factory methods,
   rejects inserting a node created by another document
   or making a node a descendant of itself,
+  rejects a second element or document type child of a document
+  and a notation child of a document fragment,
   reports attributes defaulted in the DTD
   and whether an attribute was given in the start tag,
   and implements :class:`!EntityReference` nodes
@@ -850,6 +852,8 @@ that may require changes to your code.
   for inserting a node created by another document,
   and :exc:`~xml.dom.HierarchyRequestErr` for inserting a node into itself
   or its descendant.
+  It also rejects a second element or document type child of a document
+  and a notation child of a document fragment.
   Such operations formerly succeeded
   and produced an invalid document or an endless loop.
   Attributes defaulted in the DTD are no longer omitted when parsing.

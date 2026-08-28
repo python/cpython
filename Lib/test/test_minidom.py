@@ -1855,6 +1855,48 @@ class MinidomTest(unittest.TestCase):
         self.assertIs(grandchild.parentNode, child)
         doc.unlink()
 
+    def testOnlyOneElementAndDocumentType(self):
+        impl = getDOMImplementation()
+        doc = impl.createDocument(None, "root", None)
+        elem = doc.documentElement
+        comment = doc.appendChild(doc.createComment("c"))
+        self.assertRaises(xml.dom.HierarchyRequestErr,
+                          doc.appendChild, doc.createElement("x"))
+        self.assertRaises(xml.dom.HierarchyRequestErr,
+                          doc.insertBefore, doc.createElement("x"), comment)
+        self.assertRaises(xml.dom.HierarchyRequestErr,
+                          doc.replaceChild, doc.createElement("x"), comment)
+        # replacing the document element and reordering it are allowed
+        other = doc.createElement("other")
+        doc.replaceChild(other, elem)
+        self.assertIs(doc.documentElement, other)
+        doc.appendChild(other)
+        self.assertEqual([n.nodeName for n in doc.childNodes],
+                         ["#comment", "other"])
+
+        doc2 = impl.createDocument(None, None, None)
+        doctype = impl.createDocumentType("a", None, None)
+        doc2.appendChild(doctype)
+        self.assertRaises(xml.dom.HierarchyRequestErr, doc2.appendChild,
+                          impl.createDocumentType("b", None, None))
+        # re-adding the same node and replacing it are allowed
+        doc2.appendChild(doctype)
+        doc2.replaceChild(impl.createDocumentType("b", None, None), doctype)
+        doc.unlink()
+        doc2.unlink()
+
+    def testDocumentFragmentChildren(self):
+        doc = parseString('<!DOCTYPE doc [<!NOTATION n SYSTEM "n">]><doc/>')
+        frag = doc.createDocumentFragment()
+        notation = doc.doctype.notations.item(0)
+        self.assertRaises(xml.dom.HierarchyRequestErr,
+                          frag.appendChild, notation)
+        frag.appendChild(doc.createElement("e"))
+        frag.appendChild(doc.createTextNode("t"))
+        frag.appendChild(doc.createComment("c"))
+        self.assertEqual(len(frag.childNodes), 3)
+        doc.unlink()
+
     def testAttrSpecified(self):
         doc = parseString("<!DOCTYPE doc ["
                           "  <!ELEMENT doc EMPTY>"

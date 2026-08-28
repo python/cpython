@@ -80,7 +80,7 @@ class Node(xml.dom.Node):
         if self.childNodes:
             return self.childNodes[-1]
 
-    def _check_new_child(self, newChild):
+    def _check_new_child(self, newChild, oldChild=None):
         # Common checks for insertBefore(), appendChild() and replaceChild().
         doc = self.ownerDocument or self
         newChildDoc = newChild.ownerDocument
@@ -151,7 +151,7 @@ class Node(xml.dom.Node):
             return self.insertBefore(newChild, refChild)
         if newChild is oldChild:
             return
-        self._check_new_child(newChild)
+        self._check_new_child(newChild, oldChild)
         if newChild.parentNode is not None:
             newChild.parentNode.removeChild(newChild)
         try:
@@ -374,8 +374,7 @@ class DocumentFragment(Node):
                          Node.CDATA_SECTION_NODE,
                          Node.ENTITY_REFERENCE_NODE,
                          Node.PROCESSING_INSTRUCTION_NODE,
-                         Node.COMMENT_NODE,
-                         Node.NOTATION_NODE)
+                         Node.COMMENT_NODE)
 
     def __init__(self):
         self.childNodes = NodeList()
@@ -1693,18 +1692,26 @@ class Document(Node, DocumentLS):
     def _get_version(self):
         return self.version
 
+    def _check_new_child(self, newChild, oldChild=None):
+        Node._check_new_child(self, newChild, oldChild)
+        # A document can have only one element and only one document type.
+        if newChild.nodeType == Node.ELEMENT_NODE:
+            what = "document elements"
+        elif newChild.nodeType == Node.DOCUMENT_TYPE_NODE:
+            what = "document types"
+        else:
+            return
+        for node in self.childNodes:
+            if (node.nodeType == newChild.nodeType
+                    and node is not newChild and node is not oldChild):
+                raise xml.dom.HierarchyRequestErr("two %s disallowed" % what)
+
     def appendChild(self, node):
         self._check_new_child(node)
         if node.parentNode is not None:
-            # This needs to be done before the next test since this
-            # may *be* the document element, in which case it should
+            # This may *be* the document element, in which case it should
             # end up re-ordered to the end.
             node.parentNode.removeChild(node)
-
-        if node.nodeType == Node.ELEMENT_NODE \
-           and self._get_documentElement():
-            raise xml.dom.HierarchyRequestErr(
-                "two document elements disallowed")
         return Node.appendChild(self, node)
 
     def removeChild(self, oldChild):
