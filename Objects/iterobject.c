@@ -188,9 +188,8 @@ PyTypeObject PySeqIter_Type = {
 
 typedef struct {
     PyObject_HEAD
-    /* Both are set to NULL when the iterator is exhausted */
-    PyObject *it_callable;
-    PyObject *it_sentinel;  /* can be NULL */
+    PyObject *it_callable;  /* set to NULL when the iterator is exhausted */
+    PyObject *it_sentinel;  /* can be NULL, and is when exhausted */
     PyObject *it_stop_exc;  /* never NULL */
 } calliterobject;
 
@@ -218,6 +217,13 @@ PyObject *
 PyCallIter_New(PyObject *callable, PyObject *sentinel)
 {
     return _PyCallIter_NewEx(callable, sentinel, NULL);
+}
+
+static void
+calliter_exhaust(calliterobject *it)
+{
+    Py_CLEAR(it->it_callable);
+    Py_CLEAR(it->it_sentinel);
 }
 
 static void
@@ -263,14 +269,12 @@ calliter_iternext(PyObject *op)
         }
 
         if (ok > 0) {
-            Py_CLEAR(it->it_callable);
-            Py_CLEAR(it->it_sentinel);
+            calliter_exhaust(it);
         }
     }
     else if (PyErr_ExceptionMatches(it->it_stop_exc)) {
         PyErr_Clear();
-        Py_CLEAR(it->it_callable);
-        Py_CLEAR(it->it_sentinel);
+        calliter_exhaust(it);
     }
     else if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
         /* It would be mistaken for the end of the iteration (see PEP 479). */
@@ -620,9 +624,8 @@ PyAnextAwaitable_New(PyObject *awaitable, PyObject *default_value)
 
 typedef struct {
     PyObject_HEAD
-    /* Both are set to NULL when the iterator is exhausted */
-    PyObject *it_callable;
-    PyObject *it_sentinel;  /* can be NULL */
+    PyObject *it_callable;  /* set to NULL when the iterator is exhausted */
+    PyObject *it_sentinel;  /* can be NULL, and is when exhausted */
     PyObject *it_stop_exc;  /* never NULL */
 } acalliterobject;
 
@@ -634,7 +637,7 @@ typedef struct {
     PyObject_HEAD
     PyObject *aw_iterator; /* the iterator which created this object */
     PyObject *aw_wrapped;  /* the awaitable returned by the callable */
-    char aw_closed;
+    bool aw_closed;
 } acallawaitableobject;
 
 #define acallawaitableobject_CAST(op)   ((acallawaitableobject *)(op))
@@ -704,28 +707,13 @@ static PyAsyncMethods acalliter_as_async = {
 
 PyTypeObject _PyACallIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "async_callable_iterator",                  /* tp_name */
-    sizeof(acalliterobject),                    /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    /* methods */
-    acalliter_dealloc,                          /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    &acalliter_as_async,                        /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    PyObject_GenericGetAttr,                    /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
-    0,                                          /* tp_doc */
-    acalliter_traverse,                         /* tp_traverse */
+    .tp_name = "async_callable_iterator",
+    .tp_basicsize = sizeof(acalliterobject),
+    .tp_dealloc = acalliter_dealloc,
+    .tp_as_async = &acalliter_as_async,
+    .tp_getattro = PyObject_GenericGetAttr,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_traverse = acalliter_traverse,
 };
 
 /* -------------------------------------- */
@@ -740,7 +728,7 @@ acallawaitable_new(PyObject *iterator)
     }
     aw->aw_iterator = Py_NewRef(iterator);
     aw->aw_wrapped = NULL;
-    aw->aw_closed = 0;
+    aw->aw_closed = false;
     _PyObject_GC_TRACK(aw);
     return (PyObject *)aw;
 }
@@ -903,7 +891,7 @@ acallawaitable_throw(PyObject *op, PyObject *args)
         if (!PyArg_UnpackTuple(args, "throw", 1, 3, &typ, &val, &tb)) {
             return NULL;
         }
-        aw->aw_closed = 1;
+        aw->aw_closed = true;
         (void)_PyGen_SetException(typ, val, tb);
         return NULL;
     }
@@ -917,11 +905,11 @@ acallawaitable_close(PyObject *op, PyObject *Py_UNUSED(dummy))
 
     if (aw->aw_wrapped == NULL) {
         /* Not started, so there is nothing to close. */
-        aw->aw_closed = 1;
+        aw->aw_closed = true;
         Py_RETURN_NONE;
     }
     PyObject *result = acallawaitable_proxy(aw, "close", NULL);
-    aw->aw_closed = 1;
+    aw->aw_closed = true;
     return result;
 }
 
@@ -941,32 +929,14 @@ static PyAsyncMethods acallawaitable_as_async = {
 
 PyTypeObject _PyACallIterAwaitable_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "async_callable_iterator_awaitable",        /* tp_name */
-    sizeof(acallawaitableobject),               /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    /* methods */
-    acallawaitable_dealloc,                     /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    &acallawaitable_as_async,                   /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    PyObject_GenericGetAttr,                    /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
-    0,                                          /* tp_doc */
-    acallawaitable_traverse,                    /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    PyObject_SelfIter,                          /* tp_iter */
-    acallawaitable_iternext,                    /* tp_iternext */
-    acallawaitable_methods,                     /* tp_methods */
+    .tp_name = "async_callable_iterator_awaitable",
+    .tp_basicsize = sizeof(acallawaitableobject),
+    .tp_dealloc = acallawaitable_dealloc,
+    .tp_as_async = &acallawaitable_as_async,
+    .tp_getattro = PyObject_GenericGetAttr,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_traverse = acallawaitable_traverse,
+    .tp_iter = PyObject_SelfIter,
+    .tp_iternext = acallawaitable_iternext,
+    .tp_methods = acallawaitable_methods,
 };

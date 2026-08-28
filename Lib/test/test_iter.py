@@ -93,7 +93,7 @@ class CallableIterClass:
         i = self.i
         self.i = i + 1
         if i > 100:
-            raise IndexError # Emergency stop
+            raise IndexError  # stops the iteration
         return i
 
 class EmptyIterClass:
