@@ -109,7 +109,9 @@ flags_test_and_set(int *flags, int bit)
 #ifdef Py_GIL_DISABLED
     int prev = _Py_atomic_load_int_relaxed(flags);
     while (!_Py_atomic_compare_exchange_int(flags, &prev, prev | bit)) {
-        // Compare-exchange updates prev.
+        // Compare-exchange updates prev. Note that retries are bounded by the
+        // number of flag bits being concurrently set. So, yielding here is
+        // unnecessary.
     }
 #else
     int prev = *flags;
@@ -121,7 +123,7 @@ flags_test_and_set(int *flags, int bit)
 static inline int
 mv_get_flags(PyMemoryViewObject *mv)
 {
-    return FT_ATOMIC_LOAD_INT(mv->flags);
+    return FT_ATOMIC_LOAD_INT_RELAXED(mv->flags);
 }
 
 static inline int
