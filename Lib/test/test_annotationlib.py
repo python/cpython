@@ -1206,6 +1206,22 @@ class TestGetAnnotations(unittest.TestCase):
                 with self.subTest(format=format, obj=obj):
                     self.assertEqual(get_annotations(obj, format=format), {})
 
+    def test_conditional_annotations(self):
+        class ConditionalAnnotations:
+            x: int
+            if False:
+                y: str
+
+        self.assertEqual(get_annotations(ConditionalAnnotations), {"x": int})
+        self.assertEqual(
+            get_annotations(ConditionalAnnotations, format=Format.FORWARDREF),
+            {"x": int},
+        )
+        self.assertEqual(
+            get_annotations(ConditionalAnnotations, format=Format.STRING),
+            {"x": "int"},
+        )
+
     def test_pep695_generic_class_with_future_annotations(self):
         ann_module695 = inspect_stringized_annotations_pep695
         A_annotations = get_annotations(ann_module695.A, eval_str=True)
