@@ -489,7 +489,7 @@ f_string_middle:
         );
 
        if (c == EOF || (current_tok->quote_size == 1 && c == '\n')) {
-            if (tok->decoding_erred) {
+            if (tok->input_error) {
                 return MAKE_TOKEN(ERRORTOKEN);
             }
 
