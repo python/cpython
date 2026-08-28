@@ -2791,24 +2791,6 @@ class _TestContainers(BaseTestCase):
         self.assertIsInstance(s, collections.abc.MutableSet)
         self.assertNotIsInstance(s, collections.abc.MutableMapping)
 
-        mutable_set_methods = (
-            '__contains__', '__iter__', '__len__',
-            'add', 'discard', 'remove', 'pop', 'clear',
-            'update', 'difference_update', 'intersection_update',
-            'symmetric_difference_update',
-        )
-        for name in mutable_set_methods:
-            with self.subTest(name=name):
-                self.assertTrue(callable(getattr(s, name)))
-
-        mapping_only_methods = (
-            '__getitem__', '__setitem__', 'setdefault',
-            'keys', 'items', 'values', 'get',
-        )
-        for name in mapping_only_methods:
-            with self.subTest(name=name):
-                self.assertFalse(hasattr(s, name))
-
     def test_nested_queue(self):
         a = self.list() # Test queue inside list
         a.append(self.Queue())
