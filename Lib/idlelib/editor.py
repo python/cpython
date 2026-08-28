@@ -425,6 +425,7 @@ class EditorWindow:
         ("edit", "_Edit"),
         ("format", "F_ormat"),
         ("run", "_Run"),
+        ("browse", "_Browse"),
         ("options", "_Options"),
         ("window", "_Window"),
         ("help", "_Help"),
