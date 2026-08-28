@@ -690,7 +690,7 @@ inherits properties from :class:`Node`.
    :data:`~xml.dom.EMPTY_NAMESPACE` if the node does not belong to a namespace.
    *name* is the new qualified name.
 
-   Raise :exc:`WrongDocumentErr` if *n* was created by other document,
+   Raise :exc:`WrongDocumentErr` if *n* was created by another document,
    and :exc:`NotSupportedErr` if it is neither an element nor an attribute.
 
 
@@ -1133,7 +1133,8 @@ The name of the entity is its :attr:`~Node.nodeName`.
 
 .. attribute:: Entity.systemId
 
-   The system identifier of the entity.
+   The system identifier of the entity,
+   or ``None`` if it is not specified.
    This is a read-only attribute.
 
 
