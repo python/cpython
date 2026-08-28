@@ -87,8 +87,8 @@ _bytecode_browser_spec = {
     'msg': "Expand code objects in the tree and select instructions; verify\n"
            "the matching source regions are highlighted in the sample editor\n"
            "above.  Select text in the editor and verify the instructions\n"
-           "built from it are selected.  Double-click a row and verify the\n"
-           "editor cursor jumps to it and the editor gets focus."
+           "built from it are selected.  Press Escape and verify the browser\n"
+           "hides and the editor cursor is at the instruction."
     }
 
 # TODO implement ^\; adding '<Control-Key-\\>' to function does not work.

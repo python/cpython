@@ -308,8 +308,8 @@ Bytecode Browser
    and moves the cursor there;
    selecting text or moving the cursor in the editor
    selects the instructions built from it.
-   Double-click a row, or press :kbd:`Escape`,
-   to hide the browser and return to the editor at the instruction.
+   Press :kbd:`Escape` to hide the browser
+   and return to the editor at the instruction.
    While the debugger is stopped, the browser follows it instead of the
    editor, showing the code object that is executing
    and marking the current instruction.

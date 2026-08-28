@@ -6,7 +6,8 @@ import dis
 import types
 import unittest
 from unittest import mock
-from tkinter import Tk, Text
+from tkinter import Tk, Text, font, ttk
+from idlelib.config import idleConf
 from idlelib.idle_test.mock_idle import Func
 
 code_sample = "import sys\n\ndef f(x):\n    return x + 1\n"
@@ -342,27 +343,68 @@ class BytecodeBrowserWindowTest(GuiTest):
 
     def test_move_cursor(self):
         window = self.window
-        window.move_cursor(self.instr_at(("4.11", "4.12")))
+        window.tree.selection_set(self.instr_at(("4.11", "4.12")))
+        window.move_cursor()
         self.assertEqual(self.text.index("insert"), "4.11")
         # A row without a source range (the module RESUME) leaves it put.
-        window.move_cursor(self.find_op("RESUME"))
+        window.tree.selection_set(self.find_op("RESUME"))
+        window.move_cursor()
         self.assertEqual(self.text.index("insert"), "4.11")
 
-    def test_goto_instr(self):
-        # Double-clicking a row moves the cursor there and hides the browser.
+    def test_registers_with_editor(self):
+        # The editor restyles registered windows; see reset_browsers.
+        editwin = Func()
+        editwin.browsers = []
+        editwin.short_title = Func(result="spam.py")
         text = Text(self.root)
-        text.insert("1.0", code_sample)
-        window = bytecodebrowser.BytecodeBrowserWindow(self.root, text, _utest=True)
-        item = find_instr(window, ("4.11", "4.12"))
-        event = Func()
-        event.y = 5
-        with mock.patch.object(window.tree, 'identify_row', Func(result=item)):
-            result = window.goto_instr(event)
-        self.assertEqual(text.index("insert"), "4.11")
-        self.assertEqual(window.wm_state(), "withdrawn")
-        self.assertEqual(result, "break")
+        window = bytecodebrowser.BytecodeBrowserWindow(
+            self.root, text, editwin, _utest=True)
+        self.assertEqual(editwin.browsers, [window])
         window.destroy()
         text.destroy()
+
+    def test_set_title(self):
+        # The title names the browsed file, as the module browser's does.
+        window = self.window
+        self.assertEqual(window.title(), "Bytecode Browser")
+        self.addCleanup(window.set_title)
+        self.addCleanup(setattr, window, "editwin", None)
+        window.editwin = Func()
+        window.editwin.short_title = Func(result="spam.py")
+        window.set_title()
+        self.assertEqual(window.title(), "Bytecode Browser - spam.py")
+
+    def test_configure_style(self):
+        # The tree follows the configured colors and font.
+        theme = idleConf.CurrentTheme()
+        colors = idleConf.GetHighlight(theme, 'normal')
+        text_font = idleConf.GetFont(self.root, 'main', 'EditorWindow')
+        style = ttk.Style(self.window)
+        for option in ('background', 'foreground'):
+            self.assertEqual(style.lookup(bytecodebrowser.STYLE, option),
+                             colors[option])
+        self.assertEqual(style.lookup(bytecodebrowser.STYLE, 'fieldbackground'),
+                         colors['background'])
+        tree_font = font.Font(root=self.root,
+                              font=style.lookup(bytecodebrowser.STYLE, 'font'))
+        self.assertEqual(tree_font.actual(),
+                         font.Font(root=self.root, font=text_font).actual())
+        self.assertEqual(int(style.lookup(bytecodebrowser.STYLE, 'rowheight')),
+                         tree_font.metrics("linespace") + 2)
+        # The debugger's current instruction gets the breakpoint colors.
+        self.assertEqual(str(self.window.tree.tag_configure("current",
+                                                            "background")),
+                         idleConf.GetHighlight(theme, 'break')['background'])
+
+    def test_cursor_shown_while_focused(self):
+        # The editor cursor marks the source of the selected instruction.
+        if "insertunfocussed" not in self.text.configure():
+            self.skipTest("Tk does not support -insertunfocussed")
+        window = self.window
+        window.on_focus_in()
+        self.assertEqual(str(self.text["insertunfocussed"]), "hollow")
+        window.on_focus_out()
+        self.assertEqual(str(self.text["insertunfocussed"]), "none")
 
     def test_hide(self):
         text = Text(self.root)

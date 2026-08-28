@@ -4,8 +4,7 @@ The Browse menu's "Bytecode Browser" command (see open() below) shows
 the disassembled bytecode of the editor content, the Shell input, or the
 selection, as collapsible code objects.  Selecting an instruction highlights
 the matching source and moves the cursor there; selecting source selects the
-instructions built from it.  Double-clicking a row, or Escape, hides the
-browser.
+instructions built from it.  Escape hides the browser.
 
 While the debugger is stopped, the browser follows it instead of the editor,
 showing the code object that is executing and marking the current instruction.
@@ -16,15 +15,15 @@ import types
 
 from tkinter import Toplevel, TclError
 from tkinter import TOP, BOTTOM, LEFT, RIGHT, X, Y, BOTH, W, END, VERTICAL
-from tkinter import ttk
+from tkinter import font, ttk
 
 from idlelib.config import idleConf
 
 # The editor tag that highlights the source of the selected instructions.
 TAG = "BYTECODEBROWSER"
 
-# Background of the instruction the debugger is stopped at (see show_running).
-CURRENT_BG = "#ffe9a8"
+# The ttk style of the tree, colored after IDLE's current theme.
+STYLE = "BytecodeBrowser.Treeview"
 
 # Row colors for code-object headers and for instructions grouped by the
 # operand they act on (mirroring the opcode collections in the dis module).
@@ -74,13 +73,16 @@ class BytecodeBrowserWindow(Toplevel):
 
         parent - the master widget of this window.
         text - the editor Text widget to browse and drive.
-        editwin - the owning editor window (for debugger integration), or None.
+        editwin - the owning editor window: its file name titles the
+            browser, and it provides the debugger integration.
         _htest - bool; change box location when running htest.
         _utest - bool; don't wait for user interaction when unit testing.
         """
         super().__init__(parent)
         self.text = text
         self.editwin = editwin
+        if editwin is not None:
+            editwin.browsers.append(self)  # See EditorWindow.reset_browsers.
         self.base = (1, 0)      # Editor index of the compiled region's start.
         self.source_lines = []  # Lines of the compiled source (for byte->char).
         self.ranges = {}        # Tree item id -> (start index, end index).
@@ -88,16 +90,21 @@ class BytecodeBrowserWindow(Toplevel):
         self.focused = False    # Whether the browser currently has the focus.
         self.debugging = False  # Whether it is showing a stopped debug frame.
         self.map_source = True  # Whether instruction ranges map to the editor.
-        self.title("Bytecode Browser")
+        self.set_title()
         self.protocol("WM_DELETE_WINDOW", self.hide)
         self.bind("<Escape>", self.hide)
-        x = parent.winfo_rootx() + 20
-        y = parent.winfo_rooty() + (100 if _htest else 20)
-        self.geometry(f"640x480+{x}+{y}")
+        # Open beside the editor, as the module browser does, rather than
+        # on top of the text being browsed.
+        width, height = 640, 480
+        x = parent.winfo_rootx() + parent.winfo_width() + 10
+        if x + width > self.winfo_screenwidth():   # No room on the right.
+            x = max(0, parent.winfo_rootx() - width - 10)
+        y = parent.winfo_rooty() + (100 if _htest else 0)
+        self.geometry(f"{width}x{height}+{x}+{y}")
         self.minsize(400, 300)
 
         self.create_widgets()
-        self.configure_tag()
+        self.configure_style()
         self.populate()
         # Follow the editor and select the matching instructions.  <<Selection>>
         # covers selection changes by keyboard or mouse (a generic <KeyRelease>
@@ -127,7 +134,7 @@ class BytecodeBrowserWindow(Toplevel):
     def create_widgets(self):
         bar = ttk.Frame(self, padding=(6, 6, 6, 0))
         bar.pack(side=TOP, fill=X)
-        ttk.Button(bar, text="Refresh", command=self.populate).pack(side=LEFT)
+        ttk.Button(bar, text="Refresh", command=self.refresh).pack(side=LEFT)
 
         self.status = ttk.Label(self, anchor=W, relief="sunken", padding=3)
         self.status.pack(side=BOTTOM, fill=X)
@@ -137,7 +144,8 @@ class BytecodeBrowserWindow(Toplevel):
         # Each code object is a collapsible top-level row; the tree column
         # (#0) holds its name and, for its instruction children, the offset.
         self.tree = ttk.Treeview(frame, columns=("mark", "opname", "arg"),
-                                 show="tree headings", selectmode="extended")
+                                 show="tree headings", selectmode="extended",
+                                 style=STYLE)
         self.tree.heading("#0", text="Code / offset", anchor=W)
         self.tree.column("#0", width=170, stretch=False, anchor=W)
         for name, title, width, stretch in (
@@ -146,26 +154,51 @@ class BytecodeBrowserWindow(Toplevel):
                 ("arg", "Argument", 200, True)):
             self.tree.heading(name, text=title, anchor=W)
             self.tree.column(name, width=width, stretch=stretch, anchor=W)
-        for group, color in GROUP_COLORS.items():
-            self.tree.tag_configure(group, foreground=color)
-        self.tree.tag_configure("current", background=CURRENT_BG)
         vbar = ttk.Scrollbar(frame, orient=VERTICAL, command=self.tree.yview)
         self.tree.configure(yscrollcommand=vbar.set)
         vbar.pack(side=RIGHT, fill=Y)
         self.tree.pack(side=LEFT, fill=BOTH, expand=True)
         self.tree.bind("<<TreeviewSelect>>", self.select_instrs)
-        self.tree.bind("<Double-Button-1>", self.goto_instr)
         # The highlight is shown only while the browser has the focus.
         self.bind("<FocusIn>", self.on_focus_in)
         self.bind("<FocusOut>", self.on_focus_out)
 
-    def configure_tag(self):
-        "Give the highlight tag the theme's 'hit' colors."
-        try:
-            colors = idleConf.GetHighlight(idleConf.CurrentTheme(), 'hit')
-        except Exception:
-            colors = {'foreground': '#000000', 'background': '#ffff80'}
-        self.text.tag_configure(TAG, **colors)
+    def set_title(self):
+        "Name the browsed file in the title, as the module browser does."
+        title = "Bytecode Browser"
+        name = self.editwin.short_title() if self.editwin else ""
+        self.title(f"{title} - {name}" if name else title)
+        self.wm_iconname(title)
+
+    def configure_style(self):
+        """Take the tree's colors and font from the current configuration.
+
+        The tree follows the editor's font and its normal and selection
+        colors, so that it looks right with dark themes and with the
+        configured text size; the tag that marks the selected rows in the
+        editor gets the theme's 'hit' colors.  The row height is set with
+        the font because the ttk default is a fixed 20 pixels, which clips
+        all but the smallest text.
+        """
+        theme = idleConf.CurrentTheme()
+        normal = idleConf.GetHighlight(theme, 'normal')
+        hilite = idleConf.GetHighlight(theme, 'hilite')
+        text_font = idleConf.GetFont(self, 'main', 'EditorWindow')
+        height = font.Font(root=self, font=text_font).metrics("linespace")
+        style = ttk.Style(self)
+        style.configure(STYLE, font=text_font, rowheight=height + 2,
+                        fieldbackground=normal['background'], **normal)
+        style.map(STYLE,
+                  background=[('selected', hilite['background'])],
+                  foreground=[('selected', hilite['foreground'])])
+        self.text.tag_configure(TAG, **idleConf.GetHighlight(theme, 'hit'))
+        # Mark the instruction the debugger is stopped at (see show_running)
+        # with the theme's breakpoint colors.  Tags created first have
+        # priority, so this one wins over the operand colors below.
+        self.tree.tag_configure("current",
+                                **idleConf.GetHighlight(theme, 'break'))
+        for group, color in GROUP_COLORS.items():
+            self.tree.tag_configure(group, foreground=color)
 
     def editor_selection(self):
         "Return the editor's (first, last) selection, or ('', '') if none."
@@ -271,7 +304,9 @@ class BytecodeBrowserWindow(Toplevel):
                 self.add_code(const)
 
     def refresh(self):
-        "Re-compile the current range and bring the browser to the front."
+        "Re-read the editor and the configuration, and show the browser."
+        self.set_title()
+        self.configure_style()
         if self.debugging:
             self.sync_from_debugger()   # Stay on the stopped frame.
         else:
@@ -461,24 +496,30 @@ class BytecodeBrowserWindow(Toplevel):
         "Restore the highlight when the browser regains focus."
         self.focused = True
         self.show_highlight()
+        self.show_cursor("hollow")
 
     def on_focus_out(self, event=None):
         "Hide the highlight while the editor (or another window) has focus."
         self.focused = False
         self.hide_highlight()
+        self.show_cursor("none")
 
-    def goto_instr(self, event=None):
-        "Move the cursor to the double-clicked row and hide the browser."
-        self.move_cursor(self.tree.identify_row(event.y))
-        self.hide()
-        return "break"      # Suppress the default double-click handling.
+    def show_cursor(self, mode):
+        """Show ("hollow") or hide ("none") the cursor of the unfocused editor.
 
-    def move_cursor(self, item=None):
-        "Move the editor cursor to a row (the first selected row by default)."
-        if item is None:
-            selection = self.tree.selection()
-            item = selection[0] if selection else None
-        rng = self.ranges.get(item)
+        Selecting a row moves the cursor, so it marks the source of the
+        selected instruction.  Tk before 8.6 cannot show the cursor of an
+        unfocused widget.
+        """
+        try:
+            self.text["insertunfocussed"] = mode
+        except TclError:
+            pass
+
+    def move_cursor(self):
+        "Move the editor cursor to the first selected row."
+        selection = self.tree.selection()
+        rng = self.ranges.get(selection[0]) if selection else None
         if rng:
             self.text.mark_set("insert", rng[0])
             self.text.see(rng[0])
