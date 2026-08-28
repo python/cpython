@@ -4,6 +4,7 @@
 #include "errcode.h"
 
 #include "state.h"
+#include "../tokenizer/reader.h"
 
 /* Never change this */
 #define TABSIZE 8
@@ -28,36 +29,30 @@ _PyTokenizer_tok_new(void)
     tok->end = NULL;
     tok->done = E_OK;
     tok->fp = NULL;
-    tok->input = NULL;
     tok->tabsize = TABSIZE;
     tok->indent = 0;
     tok->indstack[0] = 0;
     tok->atbol = 1;
     tok->pendin = 0;
-    tok->prompt = tok->nextprompt = NULL;
+    tok->prompt = NULL;
     tok->lineno = 0;
     tok->starting_col_offset = -1;
     tok->col_offset = -1;
     tok->level = 0;
     tok->altindstack[0] = 0;
-    tok->decoding_state = STATE_INIT;
-    tok->decoding_erred = 0;
-    tok->enc = NULL;
+    tok->input_error = 0;
     tok->encoding = NULL;
-    tok->cont_line = 0;
     tok->filename = NULL;
     tok->module = NULL;
-    tok->decoding_readline = NULL;
-    tok->decoding_buffer = NULL;
-    tok->readline = NULL;
     tok->type_comments = 0;
     tok->interactive_underflow = IUNDERFLOW_NORMAL;
-    tok->underflow = NULL;
     tok->str = NULL;
     tok->report_warnings = 1;
     tok->tok_extra_tokens = 0;
     tok->comment_newline = 0;
     tok->implicit_newline = 0;
+    _PyTok_SourceInit(&tok->source);
+    tok->reader = NULL;
     tok->tok_mode_stack[0] = (tokenizer_mode){.kind =TOK_REGULAR_MODE, .quote='\0', .quote_size = 0, .in_debug=0};
     tok->tok_mode_stack_index = 0;
 #ifdef Py_DEBUG
@@ -91,20 +86,10 @@ _PyTokenizer_Free(struct tok_state *tok)
     if (tok->encoding != NULL) {
         PyMem_Free(tok->encoding);
     }
-    Py_XDECREF(tok->decoding_readline);
-    Py_XDECREF(tok->decoding_buffer);
-    Py_XDECREF(tok->readline);
     Py_XDECREF(tok->filename);
     Py_XDECREF(tok->module);
-    if ((tok->readline != NULL || tok->fp != NULL ) && tok->buf != NULL) {
-        PyMem_Free(tok->buf);
-    }
-    if (tok->input) {
-        PyMem_Free(tok->input);
-    }
-    if (tok->interactive_src_start != NULL) {
-        PyMem_Free(tok->interactive_src_start);
-    }
+    _PyTok_ReaderFree(tok);
+    _PyTok_SourceClear(&tok->source);
     free_fstring_expressions(tok);
     PyMem_Free(tok);
 }

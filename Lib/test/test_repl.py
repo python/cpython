@@ -152,6 +152,36 @@ class TestInteractiveInterpreter(unittest.TestCase):
         output = kill_python(p)
         self.assertEqual(p.returncode, 0)
 
+    @unittest.skipIf(sys.platform == "win32", "select() cannot wait for pipes")
+    def test_secondary_prompt_is_not_read_ahead(self):
+        process = spawn_repl()
+        output = ""
+
+        def read_until(marker, start=0):
+            nonlocal output
+            while marker not in output[start:]:
+                ready, _, _ = select.select(
+                    [process.stdout], [], [], SHORT_TIMEOUT
+                )
+                self.assertTrue(ready, output)
+                data = os.read(process.stdout.fileno(), 4096)
+                self.assertTrue(data, output)
+                output += data.decode()
+
+        try:
+            read_until(">>> ")
+            process.stdin.write("(\n")
+            process.stdin.flush()
+            read_until("... ")
+            after_secondary_prompt = len(output)
+
+            process.stdin.write("1)\n")
+            process.stdin.flush()
+            read_until(">>> ", after_secondary_prompt)
+            self.assertEqual(output[after_secondary_prompt:], "1\n>>> ")
+        finally:
+            kill_python(process)
+
     @cpython_only
     def test_lexer_buffer_realloc_with_null_start(self):
         # gh-144759: NULL pointer arithmetic in the lexer when start and

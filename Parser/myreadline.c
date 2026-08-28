@@ -366,8 +366,6 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 char *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *) = NULL;
 
 
-/* Interface used by file_tokenizer.c and bltinmodule.c */
-
 char *
 PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 {

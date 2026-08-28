@@ -1603,6 +1603,8 @@ except Exception:
         self.assertEqual(f'''{
 3
 =}''', '\n3\n=3')
+        x = 1
+        self.assertEqual(eval('f"""{(\nx\n)=}"""'), '(\nx\n)=1')
 
         # Since = is handled specially, make sure all existing uses of
         # it still work.

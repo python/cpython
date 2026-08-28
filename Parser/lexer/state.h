@@ -2,6 +2,7 @@
 #define _PY_LEXER_H_
 
 #include "object.h"
+#include "../tokenizer/source.h"
 
 #define MAXINDENT 100       /* Max indentation level */
 #define MAXLEVEL 200        /* Max parentheses level */
@@ -11,12 +12,6 @@
 #define INSIDE_FSTRING_EXPR(tok) (tok->curly_bracket_expr_start_depth >= 0)
 #define INSIDE_FSTRING_EXPR_AT_TOP(tok) \
     (tok->curly_bracket_depth - tok->curly_bracket_expr_start_depth == 1)
-
-enum decoding_state {
-    STATE_INIT,
-    STATE_SEEK_CODING,
-    STATE_NORMAL
-};
 
 enum interactive_underflow_t {
     /* Normal mode of operation: return a new token when asked in interactive mode */
@@ -90,7 +85,7 @@ struct tok_state {
     int indstack[MAXINDENT];            /* Stack of indents */
     int atbol;          /* Nonzero if at begin of new line */
     int pendin;         /* Pending indents (if > 0) or dedents (if < 0) */
-    const char *prompt, *nextprompt;          /* For interactive prompting */
+    const char *prompt;          /* For interactive prompting */
     int lineno;         /* Current line number */
     int first_lineno;   /* First line of a single line or multi line string
                            expression (cf. issue 16806) */
@@ -106,27 +101,21 @@ struct tok_state {
     /* Stuff for checking on different tab sizes */
     int altindstack[MAXINDENT];         /* Stack of alternate indents */
     /* Stuff for PEP 0263 */
-    enum decoding_state decoding_state;
-    int decoding_erred;         /* whether erred in decoding  */
+    int input_error;
     char *encoding;         /* Source encoding. */
-    int cont_line;          /* whether we are in a continuation line. */
     const char* line_start;     /* pointer to start of current line */
     const char* multi_line_start; /* pointer to start of first line of
                                      a single line or multi line string
                                      expression (cf. issue 16806) */
-    PyObject *decoding_readline; /* open(...).readline */
-    PyObject *decoding_buffer;
-    PyObject *readline;     /* readline() function */
-    const char* enc;        /* Encoding for the current str. */
     char* str;          /* Source string being tokenized (if tokenizing from a string)*/
-    char* input;       /* Tokenizer's newline translated copy of the string. */
+
+    _PyTok_SourceText source;
+    struct _PyTok_Reader *reader;
 
     int type_comments;      /* Whether to look for type comments */
 
     /* How to proceed when asked for a new token in interactive mode */
     enum interactive_underflow_t interactive_underflow;
-    int (*underflow)(struct tok_state *); /* Function to call when buffer is empty and we need to refill it*/
-
     int report_warnings;
     // TODO: Factor this into its own thing
     tokenizer_mode tok_mode_stack[MAXFSTRINGLEVEL];
