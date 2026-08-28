@@ -196,6 +196,14 @@ class ASTBrowserWindowTest(unittest.TestCase):
         window.select_nodes()
         self.assertEqual(self.text.tag_ranges(astbrowser.TAG), ())
 
+    def test_tree_takes_focus(self):
+        # The tree takes the focus, so Up and Down work at once.
+        window = self.window
+        window.refresh()
+        window.update()          # The window must be mapped to take focus.
+        self.assertEqual(window.tk.call("focus", "-lastfor", window),
+                         str(window.tree))
+
     def test_refresh(self):
         window = self.window
         self.text.delete("1.0", "end")
