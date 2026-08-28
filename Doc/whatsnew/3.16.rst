@@ -615,7 +615,7 @@ xml
 
 * :mod:`xml.dom.minidom` now conforms closer to the DOM Level 1 specification.
   It checks names passed to the factory methods,
-  rejects inserting a node created by other document
+  rejects inserting a node created by another document
   or making a node a descendant of itself,
   reports attributes defaulted in the DTD
   and whether an attribute was given in the start tag,
@@ -847,7 +847,7 @@ that may require changes to your code.
 * :mod:`xml.dom.minidom` now raises :exc:`~xml.dom.InvalidCharacterErr`
   for a name which is not a valid XML name,
   :exc:`~xml.dom.WrongDocumentErr`
-  for inserting a node created by other document,
+  for inserting a node created by another document,
   and :exc:`~xml.dom.HierarchyRequestErr` for inserting a node into itself
   or its descendant.
   Such operations formerly succeeded

@@ -1,7 +1,7 @@
 :mod:`xml.dom.minidom` now conforms closer to the DOM Level 1 specification.
 The factory methods now raise :exc:`~xml.dom.InvalidCharacterErr`
 if the name is not a valid XML name.
-Inserting a node created by other document
+Inserting a node created by another document
 now raises :exc:`~xml.dom.WrongDocumentErr`,
 and inserting a node into itself or its descendant
 now raises :exc:`~xml.dom.HierarchyRequestErr`.
