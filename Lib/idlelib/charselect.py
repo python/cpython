@@ -258,6 +258,8 @@ class CharSelectWindow(Toplevel):
         if search.strip():
             self.search_var.set(search)
             self.search()
+        # Focus the search box, the only place to type in this window.
+        self.search_entry.focus_set()
         if not _utest:
             self.deiconify()
 
@@ -331,7 +333,8 @@ class CharSelectWindow(Toplevel):
 
         ttk.Label(top, text="Search:").pack(side=LEFT)
         self.search_var = StringVar(self)
-        search_entry = ttk.Entry(top, textvariable=self.search_var, width=22)
+        self.search_entry = search_entry = ttk.Entry(
+                top, textvariable=self.search_var, width=22)
         search_entry.pack(side=LEFT, padx=4)
         search_entry.bind("<Return>", self.search)
         ttk.Button(top, text="Go", command=self.search).pack(side=LEFT)

@@ -280,6 +280,14 @@ class CharSelectWindowTest(unittest.TestCase):
         self.assertEqual(cell.cget("fg"), colors['foreground'])
         self.assertEqual(dialog.overview.cget("bg"), colors['background'])
 
+    def test_search_entry_takes_focus(self):
+        # Typing goes to the search box as soon as the window opens.
+        dialog = charselect.CharSelectWindow(self.root, None, "", _utest=True)
+        dialog.update()          # Focus is set when the window is realized.
+        self.assertEqual(dialog.tk.call("focus", "-lastfor", dialog),
+                         str(dialog.search_entry))
+        dialog.destroy()
+
     def test_set_title(self):
         # The title names the file the character is inserted into.
         dialog = self.dialog
