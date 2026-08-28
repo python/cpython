@@ -400,11 +400,9 @@ TOKENIZER_OBJS=		\
 		Parser/lexer/state.o \
 		Parser/lexer/string.o \
 		Parser/tokenizer/cursor.o \
-		Parser/tokenizer/file_tokenizer.o \
-		Parser/tokenizer/readline_tokenizer.o \
+		Parser/tokenizer/decoder.o \
+		Parser/tokenizer/reader.o \
 		Parser/tokenizer/source.o \
-		Parser/tokenizer/string_tokenizer.o \
-		Parser/tokenizer/utf8_tokenizer.o \
 		Parser/tokenizer/helpers.o
 
 PEGEN_HEADERS= \
@@ -418,6 +416,8 @@ TOKENIZER_HEADERS= \
 		Parser/lexer/lexer_internal.h \
 		Parser/lexer/state.h \
 		Parser/tokenizer/cursor.h \
+		Parser/tokenizer/reader.h \
+		Parser/tokenizer/reader_internal.h \
 		Parser/tokenizer/source.h \
 		Parser/tokenizer/tokenizer.h \
 		Parser/tokenizer/helpers.h
