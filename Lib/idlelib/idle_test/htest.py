@@ -87,8 +87,8 @@ _ast_browser_spec = {
     'msg': "Expand nodes in the AST tree and verify the matching source\n"
            "regions are highlighted in the sample editor above.  Select\n"
            "text in the editor and verify the enclosing node is selected.\n"
-           "Double-click a node and verify the editor cursor jumps to it\n"
-           "and the editor gets focus."
+           "Press Escape and verify the browser hides and the editor cursor\n"
+           "is at the node."
     }
 
 # TODO implement ^\; adding '<Control-Key-\\>' to function does not work.

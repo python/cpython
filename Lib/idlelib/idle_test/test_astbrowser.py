@@ -4,7 +4,8 @@ from test.support import requires
 
 import unittest
 from unittest import mock
-from tkinter import Tk, Text
+from tkinter import Tk, Text, font, ttk
+from idlelib.config import idleConf
 from idlelib.idle_test.mock_idle import Func
 
 code_sample = "import sys\n\ndef f(x):\n    return x + 1\n"
@@ -35,7 +36,7 @@ class ASTBrowserOpenTest(unittest.TestCase):
         with mock.patch.object(astbrowser, 'ASTBrowserWindow',
                                Func(result='window')) as window:
             astbrowser.open(editwin)
-        self.assertEqual(window.args, ('toplevel', 'text'))
+        self.assertEqual(window.args, ('toplevel', 'text', editwin))
         self.assertEqual(editwin.ast_browser, 'window')
 
     def test_open_reuses_window(self):
@@ -204,12 +205,63 @@ class ASTBrowserWindowTest(unittest.TestCase):
 
     def test_move_cursor(self):
         window = self.window
-        item = self.find("Name(id='x'")
-        window.move_cursor(item)
+        window.tree.selection_set(self.find("Name(id='x'"))
+        window.move_cursor()
         self.assertEqual(self.text.index("insert"), "4.11")
         # A node without a source range (Module) leaves the cursor put.
-        window.move_cursor(self.find("Module"))
+        window.tree.selection_set(self.find("Module"))
+        window.move_cursor()
         self.assertEqual(self.text.index("insert"), "4.11")
+
+    def test_registers_with_editor(self):
+        # The editor restyles registered windows; see reset_browsers.
+        editwin = Func()
+        editwin.browsers = []
+        editwin.short_title = Func(result="spam.py")
+        text = Text(self.root)
+        window = astbrowser.ASTBrowserWindow(
+            self.root, text, editwin, _utest=True)
+        self.assertEqual(editwin.browsers, [window])
+        window.destroy()
+        text.destroy()
+
+    def test_set_title(self):
+        # The title names the browsed file, as the module browser's does.
+        window = self.window
+        self.assertEqual(window.title(), "AST Browser")   # No editor window.
+        self.addCleanup(window.set_title)
+        self.addCleanup(setattr, window, "editwin", None)
+        window.editwin = Func()
+        window.editwin.short_title = Func(result="spam.py")
+        window.set_title()
+        self.assertEqual(window.title(), "AST Browser - spam.py")
+
+    def test_configure_style(self):
+        # The tree follows the configured colors and font.
+        colors = idleConf.GetHighlight(idleConf.CurrentTheme(), 'normal')
+        text_font = idleConf.GetFont(self.root, 'main', 'EditorWindow')
+        style = ttk.Style(self.window)
+        for option in ('background', 'foreground'):
+            self.assertEqual(style.lookup(astbrowser.STYLE, option),
+                             colors[option])
+        self.assertEqual(style.lookup(astbrowser.STYLE, 'fieldbackground'),
+                         colors['background'])
+        tree_font = font.Font(root=self.root,
+                              font=style.lookup(astbrowser.STYLE, 'font'))
+        self.assertEqual(tree_font.actual(),
+                         font.Font(root=self.root, font=text_font).actual())
+        self.assertEqual(int(style.lookup(astbrowser.STYLE, 'rowheight')),
+                         tree_font.metrics("linespace") + 2)
+
+    def test_cursor_shown_while_focused(self):
+        # The editor cursor marks the start of the selected node.
+        if "insertunfocussed" not in self.text.configure():
+            self.skipTest("Tk does not support -insertunfocussed")
+        window = self.window
+        window.on_focus_in()
+        self.assertEqual(str(self.text["insertunfocussed"]), "hollow")
+        window.on_focus_out()
+        self.assertEqual(str(self.text["insertunfocussed"]), "none")
 
     def test_hide(self):
         text = Text(self.root)

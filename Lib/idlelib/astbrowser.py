@@ -5,19 +5,22 @@ showing the abstract syntax tree of the editor content (or, in the Shell,
 the current input), or of the selection if there is one.  Selecting a node
 highlights the matching region in the editor and moves the editor cursor
 there; selecting text or moving the cursor in the editor selects the
-innermost matching node.  Double-clicking a node hides the browser (as
-does Escape), revealing the editor at the node.
+innermost matching node.  Escape hides the browser, revealing the editor
+at the node.
 """
 import ast
 
 from tkinter import Toplevel, TclError
 from tkinter import TOP, BOTTOM, LEFT, RIGHT, X, Y, BOTH, W, END, VERTICAL
-from tkinter import ttk
+from tkinter import font, ttk
 
 from idlelib.config import idleConf
 
 # The editor tag that highlights the source of the selected nodes.
 TAG = "ASTBROWSER"
+
+# The ttk style of the tree, colored after IDLE's current theme.
+STYLE = "ASTBrowser.Treeview"
 
 
 def open(editwin):
@@ -26,36 +29,47 @@ def open(editwin):
     if window is not None and window.winfo_exists():
         window.refresh()
     else:
-        editwin.ast_browser = ASTBrowserWindow(editwin.top, editwin.text)
+        editwin.ast_browser = ASTBrowserWindow(
+            editwin.top, editwin.text, editwin)
 
 
 class ASTBrowserWindow(Toplevel):
     "Show the abstract syntax tree of a Text widget's content or selection."
 
-    def __init__(self, parent, text, *, _htest=False, _utest=False):
+    def __init__(self, parent, text, editwin=None, *,
+                 _htest=False, _utest=False):
         """Create the AST browser.
 
         parent - the master widget of this window.
         text - the editor Text widget to browse and drive.
+        editwin - the editor window, whose file name titles the browser.
         _htest - bool; change box location when running htest.
         _utest - bool; don't wait for user interaction when unit testing.
         """
         super().__init__(parent)
         self.text = text
+        self.editwin = editwin
+        if editwin is not None:
+            editwin.browsers.append(self)  # See EditorWindow.reset_browsers.
         self.base = (1, 0)      # Editor index of the parsed region's start.
         self.source_lines = []  # Lines of the parsed source (for byte->char).
         self.ranges = {}        # Tree item id -> (start index, end index).
         self.focused = False    # Whether the browser currently has the focus.
-        self.title("AST Browser")
+        self.set_title()
         self.protocol("WM_DELETE_WINDOW", self.hide)
         self.bind("<Escape>", self.hide)
-        x = parent.winfo_rootx() + 20
-        y = parent.winfo_rooty() + (100 if _htest else 20)
-        self.geometry(f"640x480+{x}+{y}")
+        # Open beside the editor, as the module browser does, rather than
+        # on top of the text being browsed.
+        width, height = 640, 480
+        x = parent.winfo_rootx() + parent.winfo_width() + 10
+        if x + width > self.winfo_screenwidth():   # No room on the right.
+            x = max(0, parent.winfo_rootx() - width - 10)
+        y = parent.winfo_rooty() + (100 if _htest else 0)
+        self.geometry(f"{width}x{height}+{x}+{y}")
         self.minsize(400, 300)
 
         self.create_widgets()
-        self.configure_tag()
+        self.configure_style()
         self.populate()
         # Follow the editor and select the matching node.  <<Selection>> covers
         # selection changes by keyboard or mouse (a generic <KeyRelease> is
@@ -72,31 +86,52 @@ class ASTBrowserWindow(Toplevel):
     def create_widgets(self):
         bar = ttk.Frame(self, padding=(6, 6, 6, 0))
         bar.pack(side=TOP, fill=X)
-        ttk.Button(bar, text="Refresh", command=self.populate).pack(side=LEFT)
+        ttk.Button(bar, text="Refresh", command=self.refresh).pack(side=LEFT)
 
         self.status = ttk.Label(self, anchor=W, relief="sunken", padding=3)
         self.status.pack(side=BOTTOM, fill=X)
 
         frame = ttk.Frame(self, padding=6)
         frame.pack(side=TOP, fill=BOTH, expand=True)
-        self.tree = ttk.Treeview(frame, show="tree", selectmode="extended")
+        self.tree = ttk.Treeview(frame, show="tree",
+                                 selectmode="extended", style=STYLE)
         vbar = ttk.Scrollbar(frame, orient=VERTICAL, command=self.tree.yview)
         self.tree.configure(yscrollcommand=vbar.set)
         vbar.pack(side=RIGHT, fill=Y)
         self.tree.pack(side=LEFT, fill=BOTH, expand=True)
         self.tree.bind("<<TreeviewSelect>>", self.select_nodes)
-        self.tree.bind("<Double-Button-1>", self.goto_node)
         # The highlight is shown only while the browser has the focus.
         self.bind("<FocusIn>", self.on_focus_in)
         self.bind("<FocusOut>", self.on_focus_out)
 
-    def configure_tag(self):
-        "Give the highlight tag the theme's 'hit' colors."
-        try:
-            colors = idleConf.GetHighlight(idleConf.CurrentTheme(), 'hit')
-        except Exception:
-            colors = {'foreground': '#000000', 'background': '#ffff80'}
-        self.text.tag_configure(TAG, **colors)
+    def set_title(self):
+        "Name the browsed file in the title, as the module browser does."
+        name = self.editwin.short_title() if self.editwin else ""
+        self.title(f"AST Browser - {name}" if name else "AST Browser")
+        self.wm_iconname("AST Browser")
+
+    def configure_style(self):
+        """Take the tree's colors and font from the current configuration.
+
+        The tree follows the editor's font and its normal and selection
+        colors, so that it looks right with dark themes and with the
+        configured text size; the tag that marks the selected rows in the
+        editor gets the theme's 'hit' colors.  The row height is set with
+        the font because the ttk default is a fixed 20 pixels, which clips
+        all but the smallest text.
+        """
+        theme = idleConf.CurrentTheme()
+        normal = idleConf.GetHighlight(theme, 'normal')
+        hilite = idleConf.GetHighlight(theme, 'hilite')
+        text_font = idleConf.GetFont(self, 'main', 'EditorWindow')
+        height = font.Font(root=self, font=text_font).metrics("linespace")
+        style = ttk.Style(self)
+        style.configure(STYLE, font=text_font, rowheight=height + 2,
+                        fieldbackground=normal['background'], **normal)
+        style.map(STYLE,
+                  background=[('selected', hilite['background'])],
+                  foreground=[('selected', hilite['foreground'])])
+        self.text.tag_configure(TAG, **idleConf.GetHighlight(theme, 'hit'))
 
     def editor_selection(self):
         "Return the editor's (first, last) selection, or ('', '') if none."
@@ -199,7 +234,9 @@ class ASTBrowserWindow(Toplevel):
         return count
 
     def refresh(self):
-        "Re-parse the current range and bring the browser to the front."
+        "Re-read the editor and the configuration, and show the browser."
+        self.set_title()
+        self.configure_style()
         self.populate()
         self.deiconify()
         self.lift()
@@ -261,24 +298,30 @@ class ASTBrowserWindow(Toplevel):
         "Restore the highlight when the browser regains focus."
         self.focused = True
         self.show_highlight()
+        self.show_cursor("hollow")
 
     def on_focus_out(self, event=None):
         "Hide the highlight while the editor (or another window) has focus."
         self.focused = False
         self.hide_highlight()
+        self.show_cursor("none")
 
-    def goto_node(self, event=None):
-        "Move the cursor to the double-clicked node and hide the browser."
-        self.move_cursor(self.tree.identify_row(event.y))
-        self.hide()
-        return "break"      # Suppress the default double-click handling.
+    def show_cursor(self, mode):
+        """Show ("hollow") or hide ("none") the cursor of the unfocused editor.
 
-    def move_cursor(self, item=None):
-        "Move the editor cursor to a node (the first selected row by default)."
-        if item is None:
-            selection = self.tree.selection()
-            item = selection[0] if selection else None
-        rng = self.ranges.get(item)
+        Selecting a row moves the cursor, so it marks the start of the
+        selected node.  Tk before 8.6 cannot show the cursor of an
+        unfocused widget.
+        """
+        try:
+            self.text["insertunfocussed"] = mode
+        except TclError:
+            pass
+
+    def move_cursor(self):
+        "Move the editor cursor to the first selected row."
+        selection = self.tree.selection()
+        rng = self.ranges.get(selection[0]) if selection else None
         if rng:
             self.text.mark_set("insert", rng[0])
             self.text.see(rng[0])

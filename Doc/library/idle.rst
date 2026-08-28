@@ -306,8 +306,8 @@ AST Browser
    and moves the cursor there;
    selecting text or moving the cursor in the editor
    selects the innermost enclosing node.
-   Double-click a node, or press :kbd:`Escape`,
-   to hide the browser and return to the editor at the node.
+   Press :kbd:`Escape` to hide the browser
+   and return to the editor at the node.
 
 Options menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
