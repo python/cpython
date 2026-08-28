@@ -96,6 +96,8 @@ The :mod:`!xml.dom` contains the following functions:
    the corresponding module and returns a :class:`DOMImplementation` object if the
    import succeeds.  If no name is given, and if the environment variable
    :envvar:`!PYTHON_DOM` is set, this variable is used to find the implementation.
+   The only well-known name in the standard library is ``'minidom'``,
+   for :mod:`xml.dom.minidom`.
 
    If name is not given, this examines the available implementations to find one
    with the required feature set.  If no implementation can be found, raise an
@@ -241,6 +243,23 @@ Node Objects
 
 All of the components of an XML document are subclasses of :class:`Node`.
 
+Only nodes of the following types can have children,
+and only children of the listed types:
+
+:class:`Document`
+   at most one :class:`Element`, at most one :class:`DocumentType`,
+   :class:`ProcessingInstruction` and :class:`Comment`
+
+:class:`DocumentFragment` and :class:`Element`
+   :class:`Element`, :class:`Text`, :class:`CDATASection`,
+   :class:`ProcessingInstruction` and :class:`Comment`
+
+:class:`Attr`
+   :class:`Text`
+
+Nodes of other types cannot have children.
+Inserting a child of a not allowed type raises :exc:`HierarchyRequestErr`.
+
 
 .. attribute:: Node.nodeType
 
@@ -301,7 +320,9 @@ All of the components of an XML document are subclasses of :class:`Node`.
 
 .. attribute:: Node.childNodes
 
-   A list of nodes contained within this node. This is a read-only attribute.
+   A :class:`NodeList` of the children of this node.
+   If the node has no children, the list is empty.
+   This is a read-only attribute.
 
 
 .. attribute:: Node.firstChild
@@ -364,20 +385,48 @@ All of the components of an XML document are subclasses of :class:`Node`.
 
 .. attribute:: Node.nodeName
 
-   This has a different meaning for each node type; see the DOM specification for
-   details.  You can always get the information you would get here from another
+   The name of this node, depending on its type; see the table below.
+   You can always get the information you would get here from another
    property such as the :attr:`~Element.tagName` property for elements or the
-   :attr:`~Attr.name` property for attributes. For all node types, the value of
-   this attribute will be either a string or ``None``.
+   :attr:`~Attr.name` property for attributes.
+   For all node types, the value of this attribute is a string or ``None``.
    This is a read-only attribute.
 
 
 .. attribute:: Node.nodeValue
 
-   This has a different meaning for each node type; see the DOM specification for
-   details.  The situation is similar to that with :attr:`nodeName`.  The value is
-   a string or ``None``.
+   The value of this node, depending on its type; see the table below.
+   The value is a string or ``None``.
 
+
+The values of :attr:`~Node.nodeName` and :attr:`~Node.nodeValue`
+for each node type are:
+
++--------------------------------+---------------------------------------+-------------------------------------+
+| Node type                      | nodeName                              | nodeValue                           |
++================================+=======================================+=====================================+
+| :class:`Attr`                  | :attr:`~Attr.name`                    | :attr:`~Attr.value`                 |
++--------------------------------+---------------------------------------+-------------------------------------+
+| :class:`CDATASection`          | ``'#cdata-section'``                  | the content                         |
++--------------------------------+---------------------------------------+-------------------------------------+
+| :class:`Comment`               | ``'#comment'``                        | the content                         |
++--------------------------------+---------------------------------------+-------------------------------------+
+| :class:`Document`              | ``'#document'``                       | ``None``                            |
++--------------------------------+---------------------------------------+-------------------------------------+
+| :class:`DocumentFragment`      | ``'#document-fragment'``              | ``None``                            |
++--------------------------------+---------------------------------------+-------------------------------------+
+| :class:`DocumentType`          | :attr:`~DocumentType.name`            | ``None``                            |
++--------------------------------+---------------------------------------+-------------------------------------+
+| :class:`Element`               | :attr:`~Element.tagName`              | ``None``                            |
++--------------------------------+---------------------------------------+-------------------------------------+
+| :class:`Entity`                | the name of the entity                | ``None``                            |
++--------------------------------+---------------------------------------+-------------------------------------+
+| :class:`Notation`              | the name of the notation              | ``None``                            |
++--------------------------------+---------------------------------------+-------------------------------------+
+| :class:`ProcessingInstruction` | :attr:`~ProcessingInstruction.target` | :attr:`~ProcessingInstruction.data` |
++--------------------------------+---------------------------------------+-------------------------------------+
+| :class:`Text`                  | ``'#text'``                           | the content                         |
++--------------------------------+---------------------------------------+-------------------------------------+
 
 .. method:: Node.hasAttributes()
 
@@ -459,6 +508,8 @@ one as its list of child nodes, and the :meth:`~Element.getElementsByTagName`
 and :meth:`~Element.getElementsByTagNameNS` methods of :class:`Node` return
 objects with this interface to represent query results.
 
+:class:`NodeList` does *not* inherit from :class:`Node`.
+
 The DOM Level 2 recommendation defines one method and one attribute for these
 objects:
 
@@ -509,14 +560,14 @@ following attributes:
 
 .. attribute:: DocumentType.publicId
 
-   The public identifier for the external subset of the document type definition.
-   This will be a string or ``None``.
+   The public identifier for the external subset of the document type definition,
+   or ``None`` if the ``DOCTYPE`` declaration does not specify it.
 
 
 .. attribute:: DocumentType.systemId
 
-   The system identifier for the external subset of the document type definition.
-   This will be a URI as a string, or ``None``.
+   The system identifier, a URI, for the external subset of the document type
+   definition, or ``None`` if the ``DOCTYPE`` declaration does not specify it.
 
 
 .. attribute:: DocumentType.internalSubset
@@ -945,9 +996,13 @@ NamedNodeMap Objects
    Remove and return the node with the given namespace URI and local name.
    Raise :exc:`NotFoundErr` if there is no such node.
 
-There are also experimental methods that give this class more mapping behavior.
-You can use them or you can use the standardized :meth:`!getAttribute\*` family
-of methods on the :class:`Element` objects.
+:mod:`xml.dom.minidom` provides additional methods which make the attribute
+map of an element behave more like a mapping: :meth:`!get`, :meth:`!keys`,
+:meth:`!keysNS`, :meth:`!values`, :meth:`!items` and :meth:`!itemsNS`, as well
+as ``len()``, ``in``, subscription and deletion.  They are not available for
+:attr:`DocumentType.entities` and :attr:`DocumentType.notations`, which are
+read-only.  You can also use the standardized :meth:`!getAttribute\*` family of
+methods on the :class:`Element` objects.
 
 
 .. _dom-documentfragment-objects:
