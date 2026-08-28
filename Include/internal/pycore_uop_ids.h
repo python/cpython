@@ -369,7 +369,7 @@ enum {
     _UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE,
     _YIELD_VALUE,
 };
-#define MAX_UOP_ID 656
+#define MAX_UOP_ID 657
 
 #define _BUILD_INTERPOLATION BUILD_INTERPOLATION
 #define _BUILD_LIST BUILD_LIST
@@ -1459,7 +1459,7 @@ enum {
     _WITH_EXCEPT_START_r33,
     _YIELD_VALUE_r11,
 };
-#define MAX_UOP_REGS_ID 1665
+#define MAX_UOP_REGS_ID 1670
 
 #ifdef __cplusplus
 }
