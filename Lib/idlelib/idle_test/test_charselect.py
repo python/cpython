@@ -4,6 +4,7 @@ from test.support import requires
 
 import unittest
 from tkinter import Tk, Text
+from idlelib.config import idleConf
 from idlelib.idle_test.mock_idle import Func
 
 
@@ -23,7 +24,7 @@ class CharSelectOpenTest(unittest.TestCase):
         finally:
             charselect.CharSelectWindow = orig
         self.assertTrue(mock.called)
-        self.assertEqual(mock.args, ('toplevel', text, 'ab'))
+        self.assertEqual(mock.args, ('toplevel', text, 'ab', editwin))
 
     def test_open_no_selection(self):
         editwin = Func()
@@ -36,7 +37,7 @@ class CharSelectOpenTest(unittest.TestCase):
             charselect.open(editwin)
         finally:
             charselect.CharSelectWindow = orig
-        self.assertEqual(mock.args, ('toplevel', text, ''))
+        self.assertEqual(mock.args, ('toplevel', text, '', editwin))
 
 
 class CharSelectWindowTest(unittest.TestCase):
@@ -245,7 +246,7 @@ class CharSelectWindowTest(unittest.TestCase):
         dialog.search()
         self.assertEqual(dialog.selected_cp, 0x2764)
         self.assertIn("HEAVY BLACK HEART", dialog.overview.get("1.0", "end"))
-        self.assertEqual(dialog.selected_cell.cget("bg"), charselect.SELECT_BG)
+        self.assertEqual(dialog.selected_cell.cget("bg"), dialog.select_bg)
 
     def test_search_selects_first_when_detail_empty(self):
         dialog = self.dialog
@@ -266,7 +267,39 @@ class CharSelectWindowTest(unittest.TestCase):
         dialog.show_block(charselect.BLOCKS[0])   # Basic Latin, includes 'A'
         dialog.select(0x41)
         self.assertIs(dialog.selected_cell, dialog.cells[0x41])
-        self.assertEqual(dialog.selected_cell.cget("bg"), charselect.SELECT_BG)
+        self.assertEqual(dialog.selected_cell.cget("bg"), dialog.select_bg)
+
+    def test_configure_style(self):
+        # The grid and the detail text follow the theme's colors.
+        dialog = self.dialog
+        colors = idleConf.GetHighlight(idleConf.CurrentTheme(), 'normal')
+        dialog.show_block(charselect.BLOCKS[0])
+        self.assertEqual(dialog.canvas.cget("bg"), colors['background'])
+        cell = dialog.cells[0x41]
+        self.assertEqual(cell.cget("bg"), colors['background'])
+        self.assertEqual(cell.cget("fg"), colors['foreground'])
+        self.assertEqual(dialog.overview.cget("bg"), colors['background'])
+
+    def test_set_title(self):
+        # The title names the file the character is inserted into.
+        dialog = self.dialog
+        self.assertEqual(dialog.title(), "Character Browser")
+        self.addCleanup(dialog.set_title)
+        self.addCleanup(setattr, dialog, "editwin", None)
+        dialog.editwin = Func()
+        dialog.editwin.short_title = Func(result="spam.py")
+        dialog.set_title()
+        self.assertEqual(dialog.title(), "Character Browser - spam.py")
+
+    def test_registers_with_editor(self):
+        # The editor restyles registered windows; see reset_browsers.
+        editwin = Func()
+        editwin.browsers = []
+        editwin.short_title = Func(result="spam.py")
+        dialog = charselect.CharSelectWindow(
+            self.root, None, "", editwin, _utest=True)
+        self.assertEqual(editwin.browsers, [dialog])
+        dialog.destroy()
 
     def test_simple_escape_in_repr(self):
         dialog = self.dialog

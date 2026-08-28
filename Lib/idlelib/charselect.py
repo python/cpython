@@ -17,6 +17,8 @@ from tkinter import TOP, BOTTOM, LEFT, RIGHT, X, Y, BOTH, END, NSEW, \
 from tkinter import ttk
 from tkinter.font import Font
 
+from idlelib.config import idleConf
+
 # Unicode blocks: (name, start, end).
 BLOCKS = [
     ("Basic Latin", 0x0020, 0x007F),
@@ -56,10 +58,9 @@ BLOCKS = [
 COLS = 16  # Characters per row in the grid.
 
 # Grid cell background colors: normal, hovered, and selected.
-CELL_BG, HOVER_BG, SELECT_BG = "white", "#dde8ff", "#a8c7ff"
+# Grid and detail colors come from the current theme; see configure_style.
 
 # Foreground for click-to-copy values in the detail tabs.
-LINK_FG = "#0645ad"
 
 # Tk counts two clicks within its NEARBY_MS (500) as a double click.  Defer a
 # single-click copy this long so a double-click (which inserts) can cancel it.
@@ -202,7 +203,7 @@ def open(editwin):
     except TclError:  # A plain Text raises with no selection.
         first = last = ""
     selection = text.get(first, last) if first and last else ""
-    CharSelectWindow(editwin.top, text, selection)
+    CharSelectWindow(editwin.top, text, selection, editwin)
 
 
 class CharSelectWindow(Toplevel):
@@ -210,18 +211,22 @@ class CharSelectWindow(Toplevel):
 
     last_block = 0  # Block index to reopen on; kept across browser windows.
 
-    def __init__(self, parent, text=None, search="", *,
+    def __init__(self, parent, text=None, search="", editwin=None, *,
                  _htest=False, _utest=False):
         """Create the character browser as a child of parent.
 
         text - the editor Text to insert into, or None to disable Insert.
         search - initial search query (e.g. the editor selection).
+        editwin - the editor window, whose file name titles the browser.
         _htest - bool; change box location when running htest.
         _utest - bool; don't wait for user interaction when unit testing.
         """
         super().__init__(parent)
         self.editor_text = text
-        self.title("Character Browser")
+        self.editwin = editwin
+        if editwin is not None:
+            editwin.browsers.append(self)  # See EditorWindow.reset_browsers.
+        self.set_title()
         self.protocol("WM_DELETE_WINDOW", self.close)
         self.bind("<Escape>", self.close)
         # Scroll the grid with the mouse wheel over this window only
@@ -241,6 +246,7 @@ class CharSelectWindow(Toplevel):
         self.pending_copy = None     # after() id of a deferred single click.
 
         self.create_widgets()
+        self.configure_style()
         # Size the window from a full 16-column block before showing the
         # remembered block or a seeded search, whose few results would
         # otherwise size the grid too narrow.
@@ -254,6 +260,36 @@ class CharSelectWindow(Toplevel):
             self.search()
         if not _utest:
             self.deiconify()
+
+    def set_title(self):
+        "Name the file to insert into, as the module browser names its own."
+        name = self.editwin.short_title() if self.editwin else ""
+        title = "Character Browser"
+        self.title(f"{title} - {name}" if name else title)
+        self.wm_iconname(title)
+
+    def configure_style(self):
+        """Take the grid and detail colors from the current theme.
+
+        A cell uses the editor's normal colors, the selected one its
+        selection colors, and the one under the pointer the colors of the
+        code context.
+        """
+        theme = idleConf.CurrentTheme()
+        normal = idleConf.GetHighlight(theme, 'normal')
+        hilite = idleConf.GetHighlight(theme, 'hilite')
+        self.cell_bg, self.cell_fg = normal['background'], normal['foreground']
+        self.select_bg = hilite['background']
+        self.select_fg = hilite['foreground']
+        self.hover_bg = idleConf.GetHighlight(theme, 'context')['background']
+        link_fg = idleConf.GetHighlight(theme, 'definition')['foreground']
+        self.canvas.configure(bg=self.cell_bg)
+        for cell in self.cells.values():
+            cell.configure(bg=self.cell_bg, fg=self.cell_fg)
+        for text in self.info_texts:
+            text.configure(bg=self.cell_bg, fg=self.cell_fg)
+            text.tag_configure("copy", foreground=link_fg)
+        self.restore_highlight()
 
     def set_geometry(self, _htest=False):
         "Size the window so that all 16 columns and the buttons are visible."
@@ -270,10 +306,12 @@ class CharSelectWindow(Toplevel):
         width = grid_width + detail_width + 16  # Allow for the sash.
         height = self.winfo_reqheight()
         self.minsize(width, height)
-        # Place the window below and to the right of the parent.
+        # Open beside the editor, not on top of the text.
         parent = self.master
-        x = parent.winfo_rootx() + 20
-        y = parent.winfo_rooty() + (100 if _htest else 20)
+        x = parent.winfo_rootx() + parent.winfo_width() + 10
+        if x + width > self.winfo_screenwidth():   # No room on the right.
+            x = max(0, parent.winfo_rootx() - width - 10)
+        y = parent.winfo_rooty() + (100 if _htest else 0)
         self.geometry(f"{width}x{height}+{x}+{y}")
         self.update_idletasks()
         self.paned.sashpos(0, grid_width)
@@ -305,7 +343,7 @@ class CharSelectWindow(Toplevel):
         paned.pack(fill=BOTH, expand=True)
 
         grid_frame = ttk.Frame(paned)
-        self.canvas = Canvas(grid_frame, highlightthickness=0, bg="white")
+        self.canvas = Canvas(grid_frame, highlightthickness=0)
         vbar = ttk.Scrollbar(grid_frame, orient=VERTICAL,
                              command=self.canvas.yview)
         self.canvas.configure(yscrollcommand=vbar.set)
@@ -325,6 +363,7 @@ class CharSelectWindow(Toplevel):
                   anchor="center").pack(fill=X, pady=(0, 8))
         notebook = ttk.Notebook(detail)
         notebook.pack(fill=BOTH, expand=True)
+        self.info_texts = []
         self.overview = self.make_info_tab(notebook, "Overview")
         self.reprs = self.make_info_tab(notebook, "Repr")
         self.unidata = self.make_info_tab(notebook, "Unicode")
@@ -364,7 +403,7 @@ class CharSelectWindow(Toplevel):
         row, col = divmod(self.cell_index, COLS)
         cell = Label(self.grid_inner, text=ch, font=self.cell_font,
                      width=2, height=1, relief="ridge", borderwidth=1,
-                     bg=CELL_BG)
+                     bg=self.cell_bg, fg=self.cell_fg)
         cell.grid(row=row, column=col, sticky=NSEW, padx=1, pady=1)
         cell.bind("<Button-1>", lambda e, p=cp: self.select(p))
         cell.bind("<Double-Button-1>", lambda e, p=cp: self.activate_cell(p))
@@ -376,22 +415,24 @@ class CharSelectWindow(Toplevel):
 
     def hover_cell(self, event):
         if event.widget is not self.selected_cell:
-            event.widget.configure(bg=HOVER_BG)
+            event.widget.configure(bg=self.hover_bg)
 
     def unhover_cell(self, event):
         if event.widget is not self.selected_cell:
-            event.widget.configure(bg=CELL_BG)
+            event.widget.configure(bg=self.cell_bg)
 
     def highlight_cell(self, cp):
         "Mark cp's cell as selected, deselecting any previous one."
         if self.selected_cell is not None:
             try:
-                self.selected_cell.configure(bg=CELL_BG)
+                self.selected_cell.configure(bg=self.cell_bg,
+                                             fg=self.cell_fg)
             except TclError:
                 pass            # The old cell was destroyed by clear_grid.
         self.selected_cell = self.cells.get(cp)
         if self.selected_cell is not None:
-            self.selected_cell.configure(bg=SELECT_BG)
+            self.selected_cell.configure(bg=self.select_bg,
+                                         fg=self.select_fg)
 
     def restore_highlight(self):
         "Re-mark the selected character's cell after the grid is rebuilt."
@@ -415,8 +456,9 @@ class CharSelectWindow(Toplevel):
     def make_info_tab(self, notebook, title):
         "Add a read-only text tab to notebook and return its Text widget."
         text = Text(notebook, width=30, height=12, wrap="word",
-                    state="disabled", relief="flat", bg=self["bg"])
-        text.tag_configure("copy", foreground=LINK_FG, underline=True)
+                    state="disabled", relief="flat")
+        text.tag_configure("copy", underline=True)
+        self.info_texts.append(text)
         text.tag_bind("copy", "<Enter>",
                       lambda e: text.configure(cursor="hand2"))
         text.tag_bind("copy", "<Leave>",
