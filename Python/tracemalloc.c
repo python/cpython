@@ -7,6 +7,7 @@
 #include "pycore_lock.h"          // PyMutex_LockFlags()
 #include "pycore_object.h"        // _PyType_PreHeaderSize()
 #include "pycore_pymem.h"         // _Py_tracemalloc_config
+#include "pycore_pystate.h"       // _PyInterpreterGuard_TryAcquire()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_traceback.h"     // _Py_DumpHexadecimal()
 
@@ -415,15 +416,19 @@ traceback_new(void)
     // itself pushes and pops its own frames, and no Python object is used
     // or modified. If not attached (e.g. the GIL was released), fall back
     // to the thread state most recently bound to the thread, if any.
+    int detached = 0;
+    PyInterpreterGuard guard = {NULL};
     PyThreadState *tstate = _PyThreadState_GET();
     if (tstate == NULL) {
-        if (_PyRuntimeState_GetFinalizing(&_PyRuntime) != NULL) {
-            // non-attached thread states can be cleared during finalization
+        if (_PyInterpreterGuard_TryAcquire(_PyInterpreterState_Main(),
+                                           &guard) < 0) {
             return tracemalloc_empty_traceback;
         }
+        detached = 1;
         tstate = PyGILState_GetThisThreadState();
         if (tstate == NULL) {
             // the thread never had a thread state: no frames to capture
+            _PyInterpreterGuard_Release(&guard);
             return tracemalloc_empty_traceback;
         }
     }
@@ -433,6 +438,9 @@ traceback_new(void)
     traceback->nframe = 0;
     traceback->total_nframe = 0;
     traceback_get_frames(traceback, tstate);
+    if (detached) {
+        _PyInterpreterGuard_Release(&guard);
+    }
     if (traceback->nframe == 0) {
         return tracemalloc_empty_traceback;
     }
