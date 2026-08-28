@@ -7408,7 +7408,6 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
             .us_per_week = Py_NewRef(st_old->us_per_week),
             .seconds_per_day = Py_NewRef(st_old->seconds_per_day),
             .epoch = Py_NewRef(st_old->epoch),
-            .time_struct_time = Py_XNewRef(st_old->time_struct_time),
             .time_struct_time = Py_NewRef(st_old->time_struct_time),
             .time_strftime = Py_NewRef(st_old->time_strftime),
         };
