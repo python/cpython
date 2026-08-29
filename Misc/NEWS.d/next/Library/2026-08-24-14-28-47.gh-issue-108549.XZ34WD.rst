@@ -1,3 +1,3 @@
 Fix :class:`asyncio.Task`, when the task has a pending cancellation,
-replace **exc** exception with a :exc:`CancelledError` unless it is
-:exc:`SystemExit` or :exc:`KeyboardInterrupt`, which must propagate unchanged
+replace **exc** exception with a :exc:`asyncio.CancelledError` unless it is
+:exc:`SystemExit` or :exc:`KeyboardInterrupt`, which must propagate unchanged.
