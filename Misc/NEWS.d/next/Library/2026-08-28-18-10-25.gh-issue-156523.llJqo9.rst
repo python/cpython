@@ -1,0 +1,2 @@
+Fix :func:`asyncio.as_completed` not recording the awaiting task in the call
+graph.
