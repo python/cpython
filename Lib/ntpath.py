@@ -626,12 +626,23 @@ else:
         allowed_winerror = 1, 2, 3, 5, 21, 32, 50, 53, 65, 67, 87, 123, 161, 1005, 1920, 1921
 
         # Non-strict algorithm is to find as much of the target directory
-        # as we can and join the rest.
+        # as we can and join the rest.  join() is not used, because the tail
+        # can contain a colon and be mistaken for a drive (gh-102475).
+        if isinstance(path, bytes):
+            sep = b'\\'
+        else:
+            sep = '\\'
+
+        def join(path, tail):
+            if path[-1:] == sep or not tail:
+                return path + tail
+            return path + sep + tail
+
         tail = path[:0]
         while path:
             try:
                 path = _getfinalpathname(path)
-                return join(path, tail) if tail else path
+                return join(path, tail)
             except ignored_error as ex:
                 if ex.winerror not in allowed_winerror:
                     raise
@@ -642,7 +653,7 @@ else:
                     new_path = _readlink_deep(path,
                                               ignored_error=ignored_error)
                     if new_path != path:
-                        return join(new_path, tail) if tail else new_path
+                        return join(new_path, tail)
                 except ignored_error:
                     # If we fail to readlink(), let's keep traversing
                     pass
@@ -657,7 +668,7 @@ else:
                     path, name = split(path)
                 if path and not name:
                     return path + tail
-                tail = join(name, tail) if tail else name
+                tail = join(name, tail)
         return tail
 
     def realpath(path, *, strict=False):
@@ -666,7 +677,6 @@ else:
             prefix = b'\\\\?\\'
             unc_prefix = b'\\\\?\\UNC\\'
             new_unc_prefix = b'\\\\'
-            cwd = os.getcwdb()
             # bpo-38081: Special case for realpath(b'nul')
             devnull = b'nul'
             if normcase(path) == devnull:
@@ -675,7 +685,6 @@ else:
             prefix = '\\\\?\\'
             unc_prefix = '\\\\?\\UNC\\'
             new_unc_prefix = '\\\\'
-            cwd = os.getcwd()
             # bpo-38081: Special case for realpath('nul')
             devnull = 'nul'
             if normcase(path) == devnull:
@@ -691,7 +700,9 @@ else:
             ignored_error = OSError
 
         if not had_prefix and not isabs(path):
-            path = join(cwd, path)
+            # abspath() is used instead of join(cwd, path), because the path
+            # can be relative to another drive (gh-102475).
+            path = abspath(path)
         try:
             path = _getfinalpathname(path)
             initial_winerror = 0
