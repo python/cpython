@@ -295,6 +295,15 @@ concurrent.futures
   (Contributed by xzmeng and Serhiy Storchaka in :gh:`108518`.)
 
 
+dis
+---
+
+* :func:`dis.dis` supports colored output by default, which can also be
+  :ref:`controlled <using-on-controlling-color>` through ``NO_COLOR=1``
+  environment variable.
+  (Contributed by Abduaziz Ziyodov in :gh:`144207`.)
+
+
 encodings
 ---------
 

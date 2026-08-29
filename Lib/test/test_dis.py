@@ -13,10 +13,11 @@ import tempfile
 import textwrap
 import types
 import unittest
-from test.support import (captured_stdout, requires_debug_ranges,
-                          requires_specialization, cpython_only,
-                          os_helper, import_helper, reset_code,
-                          requires_jit_enabled)
+from test.support import (captured_stdout, force_not_colorized_test_class,
+                          force_colorized_test_class, requires_debug_ranges,
+                          requires_specialization, cpython_only, os_helper,
+                          import_helper, reset_code, requires_jit_enabled)
+
 from test.support.bytecode_helper import BytecodeTestCase
 
 
@@ -36,6 +37,8 @@ def get_tb():
     return tb
 
 TRACEBACK_CODE = get_tb().tb_frame.f_code
+
+theme = dis._get_dis_theme()
 
 class _C:
     def __init__(self, x):
@@ -997,6 +1000,7 @@ class DisTestBase(unittest.TestCase):
         self.assertEqual(got, expected)
 
 
+@force_not_colorized_test_class
 class DisTests(DisTestBase):
 
     maxDiff = None
@@ -2032,6 +2036,7 @@ class InstructionTestCase(BytecodeTestCase):
         instrs_2 = [instr_2._replace(positions=None, cache_info=None) for instr_2 in instrs_2]
         self.assertEqual(instrs_1, instrs_2)
 
+@force_not_colorized_test_class
 class InstructionTests(InstructionTestCase):
 
     def __init__(self, *args):
@@ -2353,6 +2358,7 @@ class InstructionTests(InstructionTestCase):
 
 # get_instructions has its own tests above, so can rely on it to validate
 # the object oriented API
+@force_not_colorized_test_class
 class BytecodeTests(InstructionTestCase, DisTestBase):
 
     def test_instantiation(self):
@@ -2486,6 +2492,7 @@ class TestFinderMethods(unittest.TestCase):
         self.assertEqual(offsets, [0, 4])
 
 
+@force_not_colorized_test_class
 class TestDisTraceback(DisTestBase):
     def setUp(self) -> None:
         try:  # We need to clean up existing tracebacks
@@ -2523,6 +2530,7 @@ class TestDisTraceback(DisTestBase):
         self.do_disassembly_compare(self.get_disassembly(tb), dis_traceback)
 
 
+@force_not_colorized_test_class
 class TestDisTracebackWithFile(TestDisTraceback):
     # Run the `distb` tests again, using the file arg instead of print
     def get_disassembly(self, tb):
@@ -2557,6 +2565,7 @@ def _unroll_caches_as_Instructions(instrs, show_caches=False):
                                 False, None, None, instr.positions)
 
 
+@force_not_colorized_test_class
 class TestDisCLI(unittest.TestCase):
 
     def setUp(self):
@@ -2671,6 +2680,143 @@ class TestDisCLI(unittest.TestCase):
         for flag in ['-S', '--specialized']:
             self.check_output(source, expect, flag)
 
+
+@force_colorized_test_class
+class DisColoredTests(unittest.TestCase):
+    def get_colored_output(self, func):
+        output = io.StringIO()
+
+        with contextlib.redirect_stdout(output):
+            dis.dis(func)
+
+        return output.getvalue()
+
+    def _check_colored(self, output, opname, color, as_not_colored):
+        # allow spaces, ANSI colors etc.
+        inter_word_pattern = r"(?:\s|\x1b\[[0-9;]*m)*"
+
+        tokens = opname.split()
+        escaped_tokens = [re.escape(token) for token in tokens]
+        joined_opname = inter_word_pattern.join(escaped_tokens)
+
+        pattern = re.escape(color) + inter_word_pattern + joined_opname
+
+        if as_not_colored:
+            self.assertNotRegex(
+                output,
+                pattern,
+                f"{opname} should NOT be colored with {color!r}",
+            )
+        else:
+            self.assertRegex(
+                output, pattern, f"{opname} should be colored with {color!r}"
+            )
+
+    def assertOpColoredAs(self, output, opname, color):
+        self._check_colored(output, opname, color, as_not_colored=False)
+
+    def assertOpNotColoredAs(self, output, opname, wrong_color):
+        self._check_colored(output, opname, wrong_color, as_not_colored=True)
+
+    def test_opname_and_arg_colored(self):
+        def f(a):
+            return a
+
+        out = self.get_colored_output(f)
+        self.assertOpColoredAs(out, "LOAD_FAST_BORROW", theme.load_opname)
+        self.assertOpColoredAs(out, "RETURN_VALUE", theme.opname)
+        self.assertOpColoredAs(out, "0", theme.arg)
+
+    def test_control_flow_ops_colored(self):
+        def f(a):
+            for _ in a:
+                pass
+
+        out = self.get_colored_output(f)
+
+        self.assertOpNotColoredAs(out, "FOR_ITER", theme.opname)
+        self.assertOpNotColoredAs(out, "END_FOR", theme.opname)
+
+        self.assertOpColoredAs(out, "FOR_ITER", theme.opname_with_label)
+        self.assertOpColoredAs(out, "END_FOR", theme.opname_with_label)
+
+        cases = (
+            ("RESUME", theme.opname),
+            ("LOAD_FAST", theme.load_opname),
+            ("GET_ITER", theme.opname),
+            ("STORE_FAST", theme.opname),
+            ("JUMP_BACKWARD", theme.opname),
+            ("POP_ITER", theme.pop_opname),
+            ("LOAD_COMMON_CONSTANT", theme.load_opname),
+            ("RETURN_VALUE", theme.opname),
+        )
+
+        for opname, expected_color in cases:
+            self.assertOpColoredAs(out, opname, expected_color)
+
+    def test_jump_targets_colored(self):
+        # sample code from:
+        # https://github.com/python/cpython/pull/144208#issuecomment-5375286176
+        def f(a, c):
+            _t2.d if (
+                _t2 := (
+                    _t1
+                    if (_t1 := a.b if a is not None else None) is not None
+                    else c
+                )
+            ) is not None else None
+
+        out = self.get_colored_output(f)
+
+        for n in range(1, 6):
+            self.assertOpColoredAs(out, f"L{n}:", theme.jump_target)
+            self.assertIn(f"(to {theme.jump_target}L{n}{theme.reset})", out)
+
+        cases = (
+            "L1: LOAD_COMMON_CONSTANT",
+            "L2: COPY",
+            "L3: LOAD_FAST",
+            "L4: COPY",
+            "L5: LOAD_COMMON_CONSTANT",
+        )
+
+        for part in cases:
+            self.assertOpColoredAs(out, part, theme.jump_target)
+
+    def test_exception_table_colored(self):
+        def f(a):
+            try:
+                a
+            except Exception:
+                pass
+            else:
+                return a
+
+        out = self.get_colored_output(f)
+
+        cases = (
+            ("L1", "L2", "L3"),
+            ("L3", "L4", "L8"),
+            ("L5", "L6", "L8"),
+            ("L7", "L8", "L8"),
+        )
+
+        def assertExceptionTableRow(pairs, out):
+            p1, p2, p3 = pairs
+            part = f"{theme.jump_target}{p1}{theme.reset} to {theme.jump_target}{p2}{theme.reset} -> {theme.jump_target}{p3}{theme.reset}"
+            self.assertIn(part, out)
+
+        for pairs in cases:
+            assertExceptionTableRow(pairs, out)
+
+        cases = (
+            "L3: PUSH_EXC_INFO",
+            "L6: POP_EXCEPT",
+            "L7: RERAISE",
+        )
+
+        for part in cases:
+            self.assertOpColoredAs(out, part, theme.jump_target)
 
 if __name__ == "__main__":
     unittest.main()
