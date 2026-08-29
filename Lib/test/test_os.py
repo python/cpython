@@ -3575,6 +3575,45 @@ class DeviceEncodingTests(unittest.TestCase):
         self.assertTrue(codecs.lookup(encoding))
 
 
+@unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
+class Win32DeviceEncodingTests(unittest.TestCase):
+    # gh-87587: any console file descriptor is supported, not only 0, 1 and 2,
+    # and other character devices are not consoles.
+
+    @staticmethod
+    def expected_encoding(cp):
+        return 'utf-8' if cp == 65001 else 'cp%d' % cp
+
+    def test_console(self):
+        import ctypes
+        kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
+        try:
+            fin = open('CONIN$')
+        except OSError:
+            self.skipTest('no console')
+        with fin:
+            self.assertEqual(os.device_encoding(fin.fileno()),
+                             self.expected_encoding(kernel32.GetConsoleCP()))
+        with open('CONOUT$', 'w') as fout:
+            self.assertEqual(
+                os.device_encoding(fout.fileno()),
+                self.expected_encoding(kernel32.GetConsoleOutputCP()))
+
+    def test_not_a_console(self):
+        with open('NUL', 'w') as f:
+            self.assertTrue(os.isatty(f.fileno()))
+            self.assertIsNone(os.device_encoding(f.fileno()))
+            # Not a console even if it is a standard file descriptor.
+            saved = os.dup(1)
+            try:
+                os.dup2(f.fileno(), 1)
+                encoding = os.device_encoding(1)
+            finally:
+                os.dup2(saved, 1)
+                os.close(saved)
+            self.assertIsNone(encoding)
+
+
 @support.requires_subprocess()
 class PidTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'getppid'), "test needs os.getppid")
