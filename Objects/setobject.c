@@ -563,17 +563,11 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
 }
 
 /*
-Do one big resize at the start, rather than incrementally resizing as we insert
-new keys.  Expect that there will be no (or few) overlapping keys.  An `n` too
-large for the arithmetic below is ignored, leaving growth incremental.
+Resize at the start of an operation where the final maximum set size is known
 */
 static int
 set_presize(PySetObject *so, Py_ssize_t n)
 {
-    assert(n >= 0);
-    if (n == 0 || n >= PY_SSIZE_T_MAX/8 - so->fill) {
-        return 0;
-    }
     if ((so->fill + n)*5 >= so->mask*3) {
         return set_table_resize(so, (so->used + n)*2);
     }
@@ -1236,7 +1230,11 @@ set_update_iterable_lock_held(PySetObject *so, PyObject *other)
 
     Py_ssize_t n = PyObject_LengthHint(other, 0);
     if (n < 0) {
-        PyErr_Clear();  /* advisory only; just grow on demand instead */
+        PyErr_Clear();  /* grow on demand instead */
+    }
+    else if (n == 0 || n >= PY_SSIZE_T_MAX/8 - so->fill) {
+        /* Either a length hint was not found or the returned value for `n`
+           could lead to an overflow */
     }
     else if (set_presize(so, n) < 0) {
         Py_DECREF(it);
