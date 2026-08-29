@@ -7933,6 +7933,9 @@ finally:
     Py_XDECREF(consts_list);
     Py_XDECREF(metadata);
     compiler_exit_scope(c);
+    if (c->u != NULL) {
+        compiler_exit_scope(c);
+    }
     compiler_free(c);
     _PyArena_Free(arena);
     return res;
