@@ -10,6 +10,7 @@ from ntpath import ALLOW_MISSING
 from test import support
 from test.support import os_helper, is_emscripten
 from test.support.os_helper import FakePath
+from test.support.testcase import ExtraAssertions
 from test import test_genericpath
 from tempfile import TemporaryFile
 
@@ -82,7 +83,7 @@ def _parameterize(*parameters):
     return support.subTests('kwargs', parameters, _do_cleanups=True)
 
 
-class NtpathTestCase(unittest.TestCase):
+class NtpathTestCase(unittest.TestCase, ExtraAssertions):
     def assertPathEqual(self, path1, path2):
         if path1 == path2 or _norm(path1) == _norm(path2):
             return
@@ -1437,6 +1438,33 @@ class TestNtpath(NtpathTestCase):
         self.assertEqual(ntpath.realpath(drive + ':spam'),
                          drive + ':\\spam')
         self.assertEqual(ntpath.realpath(drive + ':'), drive + ':\\')
+
+    @unittest.skipIf(sys.platform != 'win32', "Can only test junctions with creation on win32.")
+    def test_realpath_volume_guid_path(self):
+        # gh-89760: the \\?\ prefix cannot be stripped from a volume GUID path.
+        # Find a volume which is not mounted as a drive.
+        for volume in os.listvolumes():
+            if not os.listmounts(volume):
+                break
+        else:
+            raise unittest.SkipTest('no volume without a mount point')
+
+        with os_helper.temp_dir() as d:
+            with os_helper.change_cwd(d):
+                # _winapi.CreateJunction() adds the \\??\\ prefix to a path
+                # which already has a prefix.
+                try:
+                    subprocess.run(['cmd', '/c', 'mklink', '/j',
+                                    'testjunc', volume],
+                                   check=True, capture_output=True)
+                except (OSError, subprocess.CalledProcessError):
+                    raise unittest.SkipTest('creating the test junction failed')
+
+                for path in 'testjunc', 'testjunc/spam', 'testjunc/spam/eggs':
+                    with self.subTest(path=path):
+                        realpath = ntpath.realpath(path)
+                        self.assertStartsWith(realpath, '\\\\?\\Volume{')
+                        self.assertTrue(ntpath.isabs(realpath), realpath)
 
     def test_isfile_invalid_paths(self):
         isfile = ntpath.isfile
