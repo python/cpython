@@ -484,6 +484,24 @@ class CallStackTestBase:
         with self.assertRaises(TypeError):
             asyncio.capture_call_graph("not a future")
 
+    async def test_call_graph_finished_task(self):
+        # gh-156408: the call graph must not record a finished coroutine's None frame
+        async def boom():
+            raise ValueError
+
+        done = asyncio.create_task(asyncio.sleep(0), name='done')
+        failed = asyncio.create_task(boom(), name='failed')
+        cancelled = asyncio.create_task(asyncio.Event().wait(), name='cancelled')
+        cancelled.cancel()
+        await asyncio.gather(done, failed, cancelled, return_exceptions=True)
+
+        for task in (done, failed, cancelled):
+            with self.subTest(task=task.get_name()):
+                buf = io.StringIO()
+                asyncio.print_call_graph(task, file=buf)
+                self.assertEqual(asyncio.capture_call_graph(task).call_stack, ())
+                self.assertIn(f"name={task.get_name()!r}", buf.getvalue())
+
     async def test_capture_call_graph_no_current_task(self):
         results = []
 
