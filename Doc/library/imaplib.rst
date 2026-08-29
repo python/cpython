@@ -628,7 +628,7 @@ The following attributes are defined on instances of :class:`IMAP4`:
    because the server can advertise different capabilities
    in different connection states.
 
-   .. versionchanged:: 3.14.7
+   .. versionchanged:: 3.13.15
       Refreshed after :meth:`~IMAP4.login` and :meth:`~IMAP4.authenticate`.
 
 
