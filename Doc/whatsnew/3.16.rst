@@ -85,6 +85,23 @@ Other language changes
   libraries.
   (Contributed by Serhiy Storchaka in :gh:`78959`.)
 
+* The :exc:`OSError` constructor no longer requires the *errno* and
+  *strerror* arguments.
+  If *errno* is omitted, it defaults to the error code which corresponds
+  to the exception class, so that ``FileNotFoundError()`` works both with
+  code which tests the :attr:`~OSError.errno` attribute and with code
+  which uses :func:`isinstance`.
+  If *strerror* is omitted, it is derived from the resulting
+  :attr:`~OSError.errno`, or on Windows from :attr:`~OSError.winerror`
+  if that was given.
+  The *filename*, *winerror* and *filename2* arguments can now be passed
+  by keyword, as can *characters_written* for :exc:`BlockingIOError`::
+
+     >>> str(FileNotFoundError(filename='cfg.ini'))
+     "[Errno 2] No such file or directory: 'cfg.ini'"
+
+  (Contributed by Serhiy Storchaka in :gh:`109714`.)
+
 * :ref:`Frame objects <frame-objects>` now support :mod:`weak references
   <weakref>`.  This allows associating extra data with active frames,
   for example in debuggers, without keeping the frames (and everything
@@ -844,6 +861,15 @@ that may require changes to your code.
   them, which formerly defaulted to ``'PY_VAR'`` and ``'1'``, now raises
   :exc:`TypeError`.
   (Contributed by Serhiy Storchaka in :gh:`152587`.)
+
+* The :attr:`~BaseException.args` attribute of :exc:`OSError` is no longer
+  truncated to two items when a file name is given, so that
+  ``OSError(2, 'No such file or directory', 'cfg.ini').args`` is now the
+  whole 3-tuple.  This makes an exception which carries a file name
+  survive pickling.
+  Passing more than five positional arguments to the constructor now
+  raises :exc:`TypeError` instead of being silently ignored.
+  (Contributed by Serhiy Storchaka in :gh:`109714`.)
 
 * On Windows, seeking a pipe now fails instead of silently appearing to
   succeed: :func:`os.lseek` and :meth:`~io.IOBase.seek` raise :exc:`OSError`,

@@ -357,8 +357,7 @@ The following exceptions are the exceptions that are usually raised.
       the built-in constant.
 
 
-.. exception:: OSError([arg])
-               OSError(errno, strerror[, filename[, winerror[, filename2]]])
+.. exception:: OSError([[errno,] strerror,] /, filename=None, winerror=None, filename2=None)
 
    .. index:: pair: module; errno
 
@@ -366,11 +365,24 @@ The following exceptions are the exceptions that are usually raised.
    error, including I/O failures such as "file not found" or "disk full"
    (not for illegal argument types or other incidental errors).
 
-   The second form of the constructor sets the corresponding attributes,
-   described below.  The attributes default to :const:`None` if not
-   specified.  For backwards compatibility, if three arguments are passed,
-   the :attr:`~BaseException.args` attribute contains only a 2-tuple
-   of the first two constructor arguments.
+   The constructor arguments set the corresponding attributes, described below.
+   If *errno* is omitted,
+   it defaults to the error code which corresponds to the exception class,
+   for the subclasses listed in `OS exceptions`_ below,
+   and to ``None`` for :exc:`OSError` itself.
+   If *strerror* is omitted,
+   it is derived from *winerror* on Windows when that was given,
+   and from the resulting :attr:`.errno` otherwise.
+   The remaining attributes default to ``None``.
+
+   If *filename*, *winerror* or *filename2* is given,
+   the :attr:`~BaseException.args` attribute is set to
+   ``(errno, strerror, filename, winerror, filename2)``,
+   truncated after the last of the three which was given,
+   with omitted values replaced by ``None``.
+   Otherwise it contains the arguments as passed.
+   Either way ``type(exc)(*exc.args)`` reproduces the exception,
+   which is how it is pickled.
 
    The constructor often actually returns a subclass of :exc:`OSError`, as
    described in `OS exceptions`_ below.  The particular subclass depends on
@@ -380,7 +392,9 @@ The following exceptions are the exceptions that are usually raised.
 
    .. attribute:: errno
 
-      A numeric error code from the C variable :c:data:`errno`.
+      A numeric error code from the C variable :c:data:`errno`,
+      or the :attr:`default_errno` of the exception class
+      when the constructor was called without one.
 
    .. attribute:: winerror
 
@@ -422,6 +436,11 @@ The following exceptions are the exceptions that are usually raised.
       the function, instead of the name encoded to or decoded from the
       :term:`filesystem encoding and error handler`. Also, the *filename2*
       constructor argument and attribute was added.
+
+   .. versionchanged:: next
+      *errno* and *strerror* can now be omitted.
+      *filename*, *winerror* and *filename2* can be passed by keyword.
+      The :attr:`~BaseException.args` attribute is no longer truncated.
 
 
 .. exception:: OverflowError
@@ -737,6 +756,20 @@ OS exceptions
 
 The following exceptions are subclasses of :exc:`OSError`, they get raised
 depending on the system error code.
+Each of them corresponds to one or more :mod:`errno` values,
+and defines the first of them as a class attribute:
+
+.. attribute:: OSError.default_errno
+
+   The error code which corresponds to the exception class,
+   used as :attr:`~OSError.errno` when the *errno* argument is omitted.
+   It is not defined by :exc:`OSError` itself,
+   nor by :exc:`ConnectionError`,
+   which correspond to no single error code.
+   A user-defined subclass may define it
+   to give its instances a default :attr:`~OSError.errno` too.
+
+   .. versionadded:: next
 
 .. exception:: BlockingIOError
 
@@ -753,6 +786,12 @@ depending on the system error code.
       An integer containing the number of **bytes** written to the stream
       before it blocked. This attribute is available when using the
       buffered I/O classes from the :mod:`io` module.
+
+      It is set by passing the *characters_written* keyword argument
+      or the third positional argument.
+
+   .. versionchanged:: next
+      Added the *characters_written* keyword argument.
 
 .. exception:: ChildProcessError
 
