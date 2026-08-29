@@ -491,7 +491,7 @@ class CallStackTestBase:
         asyncio.print_call_graph(file=buf)
         first_frame = buf.getvalue().splitlines()[2]
         self.assertIn(f'File {__file__!r}, line {lineno},', first_frame)
-        
+
     async def test_call_graph_finished_task(self):
         # gh-156408: the call graph must not record a finished coroutine's None frame
         async def boom():
