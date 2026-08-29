@@ -368,6 +368,20 @@ class ZipAppTest(unittest.TestCase):
 
     @unittest.skipIf(sys.platform == 'win32',
                      'Windows does not support an executable bit')
+    @os_helper.skip_unless_working_chmod
+    def test_copied_archive_with_pathlike_target_is_executable(self):
+        # Test that copying an archive to a PathLike target makes it executable.
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '__main__.py').touch()
+        target = self.tmpdir / 'source.pyz'
+        zipapp.create_archive(source, target, interpreter='python')
+        new_target = self.tmpdir / 'changed.pyz'
+        zipapp.create_archive(target, new_target, interpreter='python')
+        self.assertTrue(new_target.stat().st_mode & stat.S_IEXEC)
+
+    @unittest.skipIf(sys.platform == 'win32',
+                     'Windows does not support an executable bit')
     def test_no_shebang_is_not_executable(self):
         # Test that an archive with no shebang line is not made executable.
         source = self.tmpdir / 'source'
