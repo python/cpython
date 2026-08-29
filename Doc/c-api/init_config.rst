@@ -479,8 +479,12 @@ Configuration Options
      - Read-only
    * - ``"stderr_encoding"``
      - :c:member:`stderr_encoding <PyConfig.stderr_encoding>`
+     - ``str``
+     - Read-only
    * - ``"stdin_encoding"``
      - :c:member:`stdin_encoding <PyConfig.stdin_encoding>`
+     - ``str``
+     - Read-only
    * - ``"stdout_encoding"``
      - :c:member:`stdout_encoding <PyConfig.stdout_encoding>`
      - ``str``
