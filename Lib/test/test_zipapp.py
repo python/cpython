@@ -376,6 +376,10 @@ class ZipAppTest(unittest.TestCase):
         (source / '__main__.py').touch()
         target = self.tmpdir / 'source.pyz'
         zipapp.create_archive(source, target, interpreter='python')
+        # Copying an archive uses a different code path than creating
+        # one from scratch. Ensure that the executable bit is set
+        # even if the target is a path-like object.
+        # See https://github.com/python/cpython/issues/156568
         new_target = self.tmpdir / 'changed.pyz'
         zipapp.create_archive(target, new_target, interpreter='python')
         self.assertTrue(new_target.stat().st_mode & stat.S_IEXEC)
