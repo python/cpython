@@ -1535,6 +1535,35 @@ class TestNtpath(NtpathTestCase):
                 self.assertFalse(ntpath.isjunction('tmpdir'))
                 self.assertPathEqual(ntpath.realpath('testjunc'), ntpath.realpath('tmpdir'))
 
+    @unittest.skipIf(sys.platform != 'win32', "Can only test on win32.")
+    def test_realpath_drive_like_names(self):
+        # gh-102475: the unresolved tail is appended, not joined, so a name
+        # which looks like a drive does not reset the path.
+        drive = ntpath.splitroot(os.getcwd())[0]
+        for path, expected in [
+            ('C:/spam:eggs', 'C:\\spam:eggs'),
+            ('C:/nonexistent/spam:eggs', 'C:\\nonexistent\\spam:eggs'),
+            ('C:/spam:eggs/ham', 'C:\\spam:eggs\\ham'),
+            ('C:/nonexistent/spam:eggs/ham', 'C:\\nonexistent\\spam:eggs\\ham'),
+        ]:
+            with self.subTest(path=path):
+                self.assertEqual(ntpath.realpath(path), expected)
+                self.assertEqual(ntpath.realpath(os.fsencode(path)),
+                                 os.fsencode(expected))
+
+    @unittest.skipIf(sys.platform != 'win32', "Can only test on win32.")
+    def test_realpath_drive_relative(self):
+        # gh-102475: the working directory of a drive which does not exist
+        # is its root directory.
+        for drive in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
+            if not ntpath.exists(drive + ':'):
+                break
+        else:
+            raise unittest.SkipTest('all drives exist')
+        self.assertEqual(ntpath.realpath(drive + ':spam'),
+                         drive + ':\\spam')
+        self.assertEqual(ntpath.realpath(drive + ':'), drive + ':\\')
+
     @unittest.skipIf(sys.platform != 'win32', "Can only test junctions with creation on win32.")
     def test_realpath_volume_guid_path(self):
         # gh-89760: the \\?\ prefix cannot be stripped from a volume GUID path.
