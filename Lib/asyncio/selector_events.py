@@ -253,7 +253,9 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         except (SystemExit, KeyboardInterrupt):
             raise
         except BaseException as exc:
-            if self._debug:
+            if transport is None:
+                conn.close()
+            if transport is None or self._debug:
                 context = {
                     'message':
                         'Error on transport creation for incoming connection',
@@ -1198,8 +1200,13 @@ class _SelectorSocketTransport(_SelectorTransport):
             return
 
         for data in list_of_data:
+            # gh-155888: an empty chunk can never be drained, so never buffer it
+            if not data:
+                continue
             self._buffer.append(memoryview(data))
             self._buffer_size += len(data)
+        if not self._buffer:
+            return
         self._write_ready()
         # If the entire buffer couldn't be written, register a write handler
         if self._buffer:
