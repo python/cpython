@@ -66,7 +66,7 @@ tokenizeriter_new_impl(PyTypeObject *type, PyObject *readline,
     if (filename == NULL) {
         return NULL;
     }
-    self->tok = _PyTokenizer_FromReadline(readline, encoding, 1, 1);
+    self->tok = _PyTokenizer_FromReadline(readline, encoding);
     if (self->tok == NULL) {
         Py_DECREF(filename);
         return NULL;
