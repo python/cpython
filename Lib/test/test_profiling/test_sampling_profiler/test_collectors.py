@@ -596,8 +596,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.addCleanup(close_and_unlink, flamegraph_out)
 
         collector = FlamegraphCollector(1000)
-        # Deeper than the default recursion limit; the tree walk in export()
-        # used to blow up here.
+        # Deeper than the default recursion limit.
         frames = [MockFrameInfo("f.py", i + 1, f"f{i}") for i in range(1536)]
         collector.collect(
             [MockInterpreterInfo(0, [MockThreadInfo(1, frames)])])

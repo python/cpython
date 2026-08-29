@@ -67,8 +67,7 @@ class CollapsedStackCollector(StackTraceCollector):
         return True
 
 
-# Extra recursion budget for the recursive flamegraph tree walk during export,
-# large enough to cover the unwinder's maximum captured stack depth.
+# Bounded by the unwinder's maximum captured stack depth (MAX_FRAMES).
 _FLAMEGRAPH_RECURSION_MARGIN = 2000
 
 
@@ -168,10 +167,7 @@ class FlamegraphCollector(StackTraceCollector):
         )
 
     def export(self, filename):
-        # The flamegraph tree is as deep as the deepest sampled stack and is
-        # walked recursively here (and by json.dumps), so raise the recursion
-        # limit while exporting. The remote unwinder caps stack depth at
-        # MAX_FRAMES, so this margin is bounded.
+        # export() and json.dumps() recurse to the sampled stack depth.
         old_limit = sys.getrecursionlimit()
         sys.setrecursionlimit(old_limit + _FLAMEGRAPH_RECURSION_MARGIN)
         try:
