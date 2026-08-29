@@ -6598,24 +6598,29 @@ static int
 update_slot_after_setattr(PyTypeObject *type, PyObject *name)
 {
 #ifdef Py_GIL_DISABLED
-    // stack allocate one chunk since that's all we need
     assert(SLOT_UPDATE_CHUNK_SIZE >= MAX_EQUIV);
     slot_update_chunk_t chunk = {0};
+    // Stack allocate the first chunk.  It is usually the only one needed but
+    // updates are queued for subclasses as well, so more chunks are needed if
+    // the type has more than SLOT_UPDATE_CHUNK_SIZE subclasses.
     slot_update_t queued_updates = {&chunk};
 
-    if (update_slot(type, name, &queued_updates) < 0) {
-        return -1;
-    }
-    if (queued_updates.head->n > 0) {
+    int res = update_slot(type, name, &queued_updates);
+    if (res == 0 && queued_updates.head->n > 0) {
         apply_type_slot_updates(&queued_updates);
         ASSERT_TYPE_LOCK_HELD();
-        // should never allocate another chunk
-        assert(chunk.prev == NULL);
     }
+    slot_update_chunk_t *cur = queued_updates.head;
+    while (cur != &chunk) {
+        slot_update_chunk_t *prev = cur->prev;
+        PyMem_Free(cur);
+        cur = prev;
+    }
+    return res;
 #else
     update_slot(type, name, NULL);
-#endif
     return 0;
+#endif
 }
 
 static int
