@@ -907,6 +907,20 @@ An :class:`IMAP4` instance has the following methods:
 
 The following attributes are defined on instances of :class:`IMAP4`:
 
+.. attribute:: IMAP4.capabilities
+
+   A tuple of the capabilities advertised by the server, in upper case.
+
+   It is set when the connection is established,
+   and refreshed after a successful :meth:`~IMAP4.login`,
+   :meth:`~IMAP4.authenticate` or :meth:`~IMAP4.starttls`,
+   because the server can advertise different capabilities
+   in different connection states.
+
+   .. versionchanged:: 3.14.7
+      Refreshed after :meth:`~IMAP4.login` and :meth:`~IMAP4.authenticate`.
+
+
 .. attribute:: IMAP4.PROTOCOL_VERSION
 
    The most recent supported protocol in the ``CAPABILITY`` response from the
