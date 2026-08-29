@@ -677,6 +677,7 @@ else:
             prefix = b'\\\\?\\'
             unc_prefix = b'\\\\?\\UNC\\'
             new_unc_prefix = b'\\\\'
+            colon_sep = b':\\'
             # bpo-38081: Special case for realpath(b'nul')
             devnull = b'nul'
             if normcase(path) == devnull:
@@ -685,6 +686,7 @@ else:
             prefix = '\\\\?\\'
             unc_prefix = '\\\\?\\UNC\\'
             new_unc_prefix = '\\\\'
+            colon_sep = ':\\'
             # bpo-38081: Special case for realpath('nul')
             devnull = 'nul'
             if normcase(path) == devnull:
@@ -729,25 +731,29 @@ else:
         # strip off that prefix unless it was already provided on the original
         # path.
         if not had_prefix and path.startswith(prefix):
-            # For UNC paths, the prefix will actually be \\?\UNC\
-            # Handle that case as well.
+            # For UNC drives, the path starts with \\?\UNC\.
             if path.startswith(unc_prefix):
                 spath = new_unc_prefix + path[len(unc_prefix):]
-            else:
+            # For drive-letter drives, the path starts with \\?\<letter>:\.
+            elif path.startswith(colon_sep, len(prefix) + 1):
                 spath = path[len(prefix):]
-            # Ensure that the non-prefixed path resolves to the same path
-            try:
-                if _getfinalpathname(spath) == path:
-                    path = spath
-            except ValueError:
-                # Unexpected, as an invalid path should not have gained a prefix
-                # at any point, but we ignore this error just in case.
-                pass
-            except OSError as ex:
-                # If the path does not exist and originally did not exist, then
-                # strip the prefix anyway.
-                if ex.winerror == initial_winerror:
-                    path = spath
+            # For all others, e.g. volume GUID paths, it cannot be stripped.
+            else:
+                spath = None
+            if spath is not None:
+                # Ensure that the non-prefixed path resolves to the same path
+                try:
+                    if _getfinalpathname(spath) == path:
+                        path = spath
+                except ValueError:
+                    # Unexpected, as an invalid path should not have gained a
+                    # prefix at any point, but we ignore this error just in case.
+                    pass
+                except OSError as ex:
+                    # If the path does not exist and originally did not exist,
+                    # then strip the prefix anyway.
+                    if ex.winerror == initial_winerror:
+                        path = spath
         return path
 
 
