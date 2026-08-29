@@ -345,6 +345,9 @@ class BaseUnicodeFunctionsTest:
         # New in 17.0.0
         self.assertEqual(self.db.bidirectional('\u088f'), '' if self.old else 'AL')
         self.assertEqual(self.db.bidirectional('\U0001fbfa'), '' if self.old else 'ON')
+        # New in 18.0.0
+        self.assertEqual(self.db.bidirectional('\u00001B3A'), '' if self.old else 'L')
+        self.assertEqual(self.db.bidirectional('\u00001B3C'), '' if self.old else 'L')
 
         self.assertRaises(TypeError, self.db.bidirectional)
         self.assertRaises(TypeError, self.db.bidirectional, 'xx')
@@ -377,6 +380,8 @@ class BaseUnicodeFunctionsTest:
         self.assertEqual(self.db.decomposition('\U0001CCD6'), '' if self.old else '<font> 0041')
         # New in 17.0.0
         self.assertEqual(self.db.decomposition('\uA7F1'), '' if self.old else '<super> 0053')
+        # New in 18.0.0
+        self.assertEqual(self.db.decomposition('\u055B'), '' if self.old else '<super> 0567')
 
         # Hangul characters
         self.assertEqual(self.db.decomposition('\uAC00'), '1100 1161')
@@ -428,6 +433,8 @@ class BaseUnicodeFunctionsTest:
         self.assertEqual(self.db.combining('\u0897'), 0 if self.old else 230)
         # New in 17.0.0
         self.assertEqual(self.db.combining('\u1ACF'), 0 if self.old else 230)
+        # New in 18.0.0
+        self.assertEqual(self.db.combining('\u0001D127'), 0 if self.old else 220)
 
         self.assertRaises(TypeError, self.db.combining)
         self.assertRaises(TypeError, self.db.combining, 'xx')
@@ -697,12 +704,12 @@ class BaseUnicodeFunctionsTest:
         # New in 17.0.0
         self.assertEqual(eaw('\U00016FF2'), 'N' if self.old else 'W')
         # New in 18.0.0
-        self.assertEqual(eaw('\U000107BD'), 'N' if self.old else 'W')
+        self.assertEqual(eaw('\U0001F7DB'), 'N' if self.old else 'W')
 
     def test_east_asian_width_unassigned(self):
         eaw = self.db.east_asian_width
         # unassigned
-        for char in '\u0530\u0ecf\u10c6\u20fc\uaaca\U000107bd\U000115f2':
+        for char in '\u0530\u0ecf\u10c6\u20fc\uaaca\U000115f2':
             self.assertEqual(eaw(char), 'N')
             self.assertIs(self.db.name(char, None), None)
 
@@ -884,6 +891,9 @@ class UnicodeFunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
         # New in 17.0.0
         self.assertEqual(gcb('\u1AEB'), 'Extend')
         self.assertEqual(gcb('\U00011B67'), 'SpacingMark')
+        # New in 18.0.0
+        self.assertEqual(gcb('\u00011DF0'), 'Extend')
+        self.assertEqual(gcb('\u0001D25F'), 'Extend')
 
         self.assertRaises(TypeError, gcb)
         self.assertRaises(TypeError, gcb, b'x')
@@ -912,6 +922,8 @@ class UnicodeFunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
         self.assertEqual(incb('\u1000'), 'Consonant')
         self.assertEqual(incb('\U00011F33'), 'Consonant')
         self.assertEqual(incb('\U0001E6F5'), 'Extend')
+        # New in 18.0.0
+        self.assertEqual(incb('\U00011A3A'), 'Linker')
 
         self.assertRaises(TypeError, incb)
         self.assertRaises(TypeError, incb, b'x')
@@ -932,6 +944,8 @@ class UnicodeFunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
         # New in 17.0.0
         self.assertIs(ext_pict('\u2388'), False)
         self.assertIs(ext_pict('\U0001FA6D'), False)
+        # New in 18.0.0
+        self.assertIs(ext_pict('\U0001F6D9'), True)
 
         self.assertRaises(TypeError, ext_pict)
         self.assertRaises(TypeError, ext_pict, b'x')
@@ -1089,6 +1103,14 @@ class UnicodeFunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
         # New in 17.0.0
         self.assertEqual(self.db.block('\u1AEB'), 'Combining Diacritical Marks Extended')
         self.assertEqual(self.db.block('\U00011B67'), 'Sharada Supplement')
+        # New in 18.0.0
+        self.assertEqual(self.db.block('\U00011DF2'), 'Bengali Supplement')
+        self.assertEqual(self.db.block('\U000125F2'), 'Archaic Cuneiform Numerals')
+        self.assertEqual(self.db.block('\U00018EF2'), 'Jurchen')
+        self.assertEqual(self.db.block('\U000191A2'), 'Jurchen Radicals')
+        self.assertEqual(self.db.block('\U0001D252'), 'Musical Symbols Supplement')
+        self.assertEqual(self.db.block('\U0001DB52'), 'Miscellaneous Symbols and Arrows Extended')
+        self.assertEqual(self.db.block('\U0003DB52'), 'Seal')
         # Unassigned
         self.assertEqual(self.db.block('\U00100000'), 'Supplementary Private Use Area-B')
         self.assertEqual(self.db.block('\U0010FFFF'), 'Supplementary Private Use Area-B')
