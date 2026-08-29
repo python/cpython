@@ -1432,7 +1432,6 @@ pymarshal_write_long_to_file(PyObject* self, PyObject *args)
 
     fp = Py_fopen(filename, "wb");
     if (fp == NULL) {
-        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
@@ -1457,7 +1456,6 @@ pymarshal_write_object_to_file(PyObject* self, PyObject *args)
 
     fp = Py_fopen(filename, "wb");
     if (fp == NULL) {
-        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
@@ -1481,7 +1479,6 @@ pymarshal_read_short_from_file(PyObject* self, PyObject *args)
 
     fp = Py_fopen(filename, "rb");
     if (fp == NULL) {
-        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
@@ -1506,7 +1503,6 @@ pymarshal_read_long_from_file(PyObject* self, PyObject *args)
 
     fp = Py_fopen(filename, "rb");
     if (fp == NULL) {
-        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
@@ -1528,7 +1524,6 @@ pymarshal_read_last_object_from_file(PyObject* self, PyObject *args)
 
     FILE *fp = Py_fopen(filename, "rb");
     if (fp == NULL) {
-        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
@@ -1551,7 +1546,6 @@ pymarshal_read_object_from_file(PyObject* self, PyObject *args)
 
     FILE *fp = Py_fopen(filename, "rb");
     if (fp == NULL) {
-        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
