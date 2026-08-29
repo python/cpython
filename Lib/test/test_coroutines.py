@@ -419,16 +419,19 @@ class AsyncBadSyntaxTest(unittest.TestCase):
             "async def f():\n    {x async for x in y}",
             "async def f():\n    {k: x async for k, x in y}",
             "async def f():\n    [[await x for x in y] for y in z]",
-            # Defaults and bases are evaluated in the enclosing scope.
+            # Defaults, bases, and genexp iterables are evaluated in the
+            # enclosing scope.
             "async def outer():\n    async def f(x=[await y for y in z]): pass",
             "async def f():\n    class C([await x for x in y]): pass",
+            "async def f():\n    (x for x in [await y for y in z])",
+            "async def f():\n    (x for x in [y async for y in z])",
         ]
         for code in allowed:
             with self.subTest(code=code):
                 compile(code, "<test>", "exec")
 
         # Generator expressions with await are async genexps and may appear
-        # outside async functions. A listcomp nested in a genexp is also
+        # outside async functions. A listcomp nested in a genexp body is also
         # allowed (the genexp becomes an async generator).
         for code in [
             "(await x for x in y)",
@@ -467,7 +470,10 @@ class AsyncBadSyntaxTest(unittest.TestCase):
             "lambda: [await x for x in y]",
             "async def f():\n    lambda: [await x for x in y]",
             "class C:\n    f = lambda: [await x for x in y]",
-            # Defaults and bases run in the enclosing scope.
+            # Defaults, bases, and genexp iterables run in the enclosing scope.
+            "(x for x in [await y for y in z])",
+            "(x for x in [y async for y in z])",
+            "def f():\n    (x for x in [await y for y in z])",
             "async def f(x=[await y for y in z]): pass",
             "def f(x=[await y for y in z]): pass",
             "class C:\n    def f(self, x=[await y for y in z]): pass",
@@ -497,11 +503,14 @@ class AsyncBadSyntaxTest(unittest.TestCase):
             "async def f(x=[await y for y in z]): pass",
             "class C([await x for x in y]): pass",
             "f'{[await x for x in y]}'",
+            "(x for x in [await y for y in z])",
+            "(x for x in [y async for y in z])",
         ]:
             with self.subTest(code=code, tla=True):
                 compile(code, "<test>", "exec", flags=flags)
         still_invalid = [
             "lambda: [await x for x in y]",
+            "def f():\n    (x for x in [await y for y in z])",
             "class C:\n    def f(self, x=[await y for y in z]): pass",
             "type T = [await x for x in y]",
             "async def f[T=[await x for x in y]](): pass",
