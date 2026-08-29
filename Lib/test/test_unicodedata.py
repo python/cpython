@@ -346,8 +346,8 @@ class BaseUnicodeFunctionsTest:
         self.assertEqual(self.db.bidirectional('\u088f'), '' if self.old else 'AL')
         self.assertEqual(self.db.bidirectional('\U0001fbfa'), '' if self.old else 'ON')
         # New in 18.0.0
-        self.assertEqual(self.db.bidirectional('\u00001B3A'), '' if self.old else 'L')
-        self.assertEqual(self.db.bidirectional('\u00001B3C'), '' if self.old else 'L')
+        self.assertEqual(self.db.bidirectional('\U00001b3a'), '' if self.old else 'L')
+        self.assertEqual(self.db.bidirectional('\U00001b3c'), '' if self.old else 'L')
 
         self.assertRaises(TypeError, self.db.bidirectional)
         self.assertRaises(TypeError, self.db.bidirectional, 'xx')
@@ -434,7 +434,7 @@ class BaseUnicodeFunctionsTest:
         # New in 17.0.0
         self.assertEqual(self.db.combining('\u1ACF'), 0 if self.old else 230)
         # New in 18.0.0
-        self.assertEqual(self.db.combining('\u0001D127'), 0 if self.old else 220)
+        self.assertEqual(self.db.combining('\U0001d127'), 0 if self.old else 220)
 
         self.assertRaises(TypeError, self.db.combining)
         self.assertRaises(TypeError, self.db.combining, 'xx')
@@ -892,8 +892,8 @@ class UnicodeFunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
         self.assertEqual(gcb('\u1AEB'), 'Extend')
         self.assertEqual(gcb('\U00011B67'), 'SpacingMark')
         # New in 18.0.0
-        self.assertEqual(gcb('\u00011DF0'), 'Extend')
-        self.assertEqual(gcb('\u0001D25F'), 'Extend')
+        self.assertEqual(gcb('\U00011DF0'), 'Extend')
+        self.assertEqual(gcb('\U0001D25F'), 'Extend')
 
         self.assertRaises(TypeError, gcb)
         self.assertRaises(TypeError, gcb, b'x')
