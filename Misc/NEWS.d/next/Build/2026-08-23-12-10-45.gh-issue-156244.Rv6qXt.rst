@@ -1,0 +1,1 @@
+Update :program:`configure` to reflect that the ``riscv64-unknown-linux-gnu`` target triple is now a :pep:`11` tier 3 supported platform.
