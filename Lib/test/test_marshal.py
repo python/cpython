@@ -806,6 +806,22 @@ class CAPI_TestCase(unittest.TestCase, HelperMixin):
             with self.subTest(func=func.__name__):
                 self.assertRaises(OSError, func, os_helper.TESTFN)
 
+    @unittest.skipUnless(os.path.exists('/dev/full'), 'requires /dev/full')
+    def test_write_to_file_error(self):
+        # A write error is reported as OSError.
+        # The data is large enough to not fit in the stdio buffer, so that
+        # the error is detected before the file is closed.
+        obj = b'x' * 100000
+        with self.assertRaises(OSError):
+            _testcapi.pymarshal_write_object_to_file(obj, '/dev/full',
+                                                     marshal.version)
+
+    def test_write_unmarshallable_to_file(self):
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with self.assertRaises(ValueError):
+            _testcapi.pymarshal_write_object_to_file(object(), os_helper.TESTFN,
+                                                     marshal.version)
+
     def test_write_long_to_file(self):
         for v in range(marshal.version + 1):
             _testcapi.pymarshal_write_long_to_file(0x12345678, os_helper.TESTFN, v)

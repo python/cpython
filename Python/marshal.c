@@ -106,6 +106,7 @@ module marshal
 #define WFERR_NESTEDTOODEEP 2
 #define WFERR_NOMEMORY 3
 #define WFERR_CODE_NOT_ALLOWED 4
+#define WFERR_ERROR_SET 5  /* An exception has already been raised. */
 
 typedef struct {
     FILE *fp;
@@ -125,11 +126,32 @@ typedef struct {
             *(p)->ptr++ = (c);                          \
     } while(0)
 
+/* Report a failure of the underlying file.  An earlier error is not
+   overwritten. */
+static void
+w_file_error(WFILE *p)
+{
+    int saved_errno = errno;
+    if (p->error != WFERR_OK) {
+        return;
+    }
+    p->error = WFERR_ERROR_SET;
+    if (PyErr_CheckSignals()) {
+        /* The signal handler has raised an exception. */
+        return;
+    }
+    errno = saved_errno;
+    PyErr_SetFromErrno(PyExc_OSError);
+}
+
 static void
 w_flush(WFILE *p)
 {
     assert(p->fp != NULL);
-    fwrite(p->buf, 1, p->ptr - p->buf, p->fp);
+    size_t n = (size_t)(p->ptr - p->buf);
+    if (fwrite(p->buf, 1, n, p->fp) != n) {
+        w_file_error(p);
+    }
     p->ptr = p->buf;
 }
 
@@ -182,7 +204,9 @@ w_string(const void *s, Py_ssize_t n, WFILE *p)
         }
         else {
             w_flush(p);
-            fwrite(s, 1, n, p->fp);
+            if (fwrite(s, 1, n, p->fp) != (size_t)n) {
+                w_file_error(p);
+            }
         }
     }
     else {
@@ -782,11 +806,36 @@ w_clear_refs(WFILE *wf)
     }
 }
 
+/* Set the error indicator according to the recorded error. */
+static void
+w_set_error(WFILE *p)
+{
+    assert(p->error != WFERR_OK);
+    switch (p->error) {
+    case WFERR_NOMEMORY:
+        PyErr_NoMemory();
+        break;
+    case WFERR_NESTEDTOODEEP:
+        PyErr_SetString(PyExc_ValueError,
+                        "object too deeply nested to marshal");
+        break;
+    case WFERR_CODE_NOT_ALLOWED:
+        PyErr_SetString(PyExc_ValueError,
+                        "marshalling code objects is disallowed");
+        break;
+    case WFERR_ERROR_SET:
+        /* An exception has already been raised. */
+        assert(PyErr_Occurred());
+        break;
+    default:
+    case WFERR_UNMARSHALLABLE:
+        PyErr_SetString(PyExc_ValueError,
+                        "unmarshallable object");
+        break;
+    }
+}
+
 /* version currently has no effect for writing ints. */
-/* Note that while the documentation states that this function
- * can error, currently it never does. Setting an exception in
- * this function should be regarded as an API-breaking change.
- */
 void
 PyMarshal_WriteLongToFile(long x, FILE *fp, int version)
 {
@@ -800,6 +849,9 @@ PyMarshal_WriteLongToFile(long x, FILE *fp, int version)
     wf.version = version;
     w_long(x, &wf);
     w_flush(&wf);
+    if (wf.error != WFERR_OK) {
+        w_set_error(&wf);
+    }
 }
 
 void
@@ -823,6 +875,9 @@ PyMarshal_WriteObjectToFile(PyObject *x, FILE *fp, int version)
     w_object(x, &wf);
     w_clear_refs(&wf);
     w_flush(&wf);
+    if (wf.error != WFERR_OK) {
+        w_set_error(&wf);
+    }
 }
 
 typedef struct {
@@ -930,7 +985,10 @@ r_byte(RFILE *p)
         if (c != EOF) {
             return c;
         }
-        if (!PyErr_CheckSignals() && ferror(p->fp)) {
+        if (PyErr_CheckSignals()) {
+            return EOF;
+        }
+        if (ferror(p->fp)) {
             PyErr_SetFromErrno(PyExc_OSError);
             return EOF;
         }
@@ -1958,24 +2016,7 @@ _PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code)
     }
     if (wf.error != WFERR_OK) {
         Py_XDECREF(wf.str);
-        switch (wf.error) {
-        case WFERR_NOMEMORY:
-            PyErr_NoMemory();
-            break;
-        case WFERR_NESTEDTOODEEP:
-            PyErr_SetString(PyExc_ValueError,
-                            "object too deeply nested to marshal");
-            break;
-        case WFERR_CODE_NOT_ALLOWED:
-            PyErr_SetString(PyExc_ValueError,
-                            "marshalling code objects is disallowed");
-            break;
-        default:
-        case WFERR_UNMARSHALLABLE:
-            PyErr_SetString(PyExc_ValueError,
-                            "unmarshallable object");
-            break;
-        }
+        w_set_error(&wf);
         return NULL;
     }
     return wf.str;

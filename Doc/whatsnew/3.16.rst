@@ -909,6 +909,20 @@ Porting to Python 3.16
 * :c:func:`PyType_ClearCache` is now a no-op as the type cache is now
   implemented per-type. It still returns the current version tag.
 
+* Functions reading marshalled data from a :c:expr:`FILE*`,
+  such as :c:func:`PyMarshal_ReadObjectFromFile`,
+  now raise :exc:`OSError` for I/O errors
+  and :exc:`KeyboardInterrupt` for interrupted reading,
+  instead of :exc:`EOFError`.
+  (Contributed by Serhiy Storchaka in :gh:`155907`.)
+
+* :c:func:`PyMarshal_WriteLongToFile` and :c:func:`PyMarshal_WriteObjectToFile`
+  now set the error indicator for I/O errors and interrupted writing,
+  instead of ignoring them.
+  :c:func:`PyMarshal_WriteObjectToFile` now also sets the error indicator
+  if the value cannot be marshalled.
+  (Contributed by Serhiy Storchaka in :gh:`155907`.)
+
 Deprecated C APIs
 -----------------
 
