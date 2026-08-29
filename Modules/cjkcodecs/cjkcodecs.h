@@ -155,8 +155,8 @@ get_module_state(PyObject *mod)
 
 #define OUTCHAR(c)                                                         \
     do {                                                                   \
-        if (_PyUnicodeWriter_WriteChar(writer, (c)) < 0)                   \
-            return MBERR_EXCEPTION;                                         \
+        if (_PyUnicodeWriter_WriteCharInline(writer, (c)) < 0)             \
+            return MBERR_EXCEPTION;                                        \
     } while (0)
 
 #define OUTCHAR2(c1, c2)                                                   \
