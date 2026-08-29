@@ -1,0 +1,2 @@
+Running the Python test suite with ``-vv`` now reports every example of a
+doctest.  A single ``-v`` reports the test names, as before.
