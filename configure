@@ -7457,16 +7457,16 @@ case $host/$ac_cv_cc_name in #(
     PY_SUPPORT_TIER=2 ;; #(
     aarch64-*-linux-gnu/clang) :
     PY_SUPPORT_TIER=2 ;; #(
-  powerpc64le-*-linux-gnu/gcc) :
+  aarch64-pc-windows-msvc/msvc) :
+    PY_SUPPORT_TIER=2 ;; #(
+    powerpc64le-*-linux-gnu/gcc) :
     PY_SUPPORT_TIER=2 ;; #(
     wasm32-unknown-wasip1/clang) :
     PY_SUPPORT_TIER=2 ;; #(
     x86_64-*-linux-gnu/clang) :
     PY_SUPPORT_TIER=2 ;; #(
 
-  aarch64-pc-windows-msvc/msvc) :
-    PY_SUPPORT_TIER=2 ;; #(
-    armv7l-*-linux-gnueabihf/gcc) :
+  armv7l-*-linux-gnueabihf/gcc) :
     PY_SUPPORT_TIER=3 ;; #(
     powerpc64le-*-linux-gnu/clang) :
     PY_SUPPORT_TIER=3 ;; #(
