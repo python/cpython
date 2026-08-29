@@ -11,8 +11,8 @@ import re
 import unicodedata
 from html.entities import codepoint2name
 
-from tkinter import Toplevel, StringVar, Canvas, Text, Label, Entry, TclError
-from tkinter import TOP, BOTTOM, LEFT, RIGHT, X, Y, BOTH, END, NSEW, \
+from tkinter import Toplevel, StringVar, Canvas, Label, Entry, TclError
+from tkinter import TOP, BOTTOM, LEFT, RIGHT, X, Y, BOTH, W, EW, NSEW, \
     VERTICAL, SUNKEN
 from tkinter import ttk
 from tkinter.font import Font
@@ -57,14 +57,7 @@ BLOCKS = [
 
 COLS = 16  # Characters per row in the grid.
 
-# Grid cell background colors: normal, hovered, and selected.
-# Grid and detail colors come from the current theme; see configure_style.
-
-# Foreground for click-to-copy values in the detail tabs.
-
-# Tk counts two clicks within its NEARBY_MS (500) as a double click.  Defer a
-# single-click copy this long so a double-click (which inserts) can cancel it.
-DOUBLE_CLICK_MS = 500
+# The grid colors come from the current theme; see configure_style.
 
 # Categories with nothing worth showing in the grid.
 SKIP_CATEGORIES = {"Cc", "Cs", "Cn", "Co"}
@@ -244,7 +237,6 @@ class CharSelectWindow(Toplevel):
         self.selected_cell = None    # The highlighted grid cell, if any.
         self.cells = {}              # codepoint -> grid cell widget.
         self.cell_index = 0
-        self.pending_copy = None     # after() id of a deferred single click.
 
         self.create_widgets()
         self.configure_style()
@@ -289,7 +281,7 @@ class CharSelectWindow(Toplevel):
             pass
 
     def configure_style(self):
-        """Take the grid and detail colors from the current theme.
+        """Take the character grid's colors from the current theme.
 
         A cell uses the editor's normal colors, the selected one its
         selection colors, and the one under the pointer the colors of the
@@ -302,13 +294,9 @@ class CharSelectWindow(Toplevel):
         self.select_bg = hilite['background']
         self.select_fg = hilite['foreground']
         self.hover_bg = idleConf.GetHighlight(theme, 'context')['background']
-        link_fg = idleConf.GetHighlight(theme, 'definition')['foreground']
         self.canvas.configure(bg=self.cell_bg)
         for cell in self.cells.values():
             cell.configure(bg=self.cell_bg, fg=self.cell_fg)
-        for text in self.info_texts:
-            text.configure(bg=self.cell_bg, fg=self.cell_fg)
-            text.tag_configure("copy", foreground=link_fg)
         self.restore_highlight()
 
     def set_geometry(self, _htest=False):
@@ -382,9 +370,10 @@ class CharSelectWindow(Toplevel):
         self.big_var = StringVar(self)
         ttk.Label(detail, textvariable=self.big_var, font=self.big_font,
                   anchor="center").pack(fill=X, pady=(0, 8))
-        notebook = ttk.Notebook(detail)
+        # Ask for room for the rows of a typical character; the tabs are
+        # empty when the window is first sized, so they cannot ask for it.
+        notebook = ttk.Notebook(detail, width=420, height=460)
         notebook.pack(fill=BOTH, expand=True)
-        self.info_texts = []
         self.overview = self.make_info_tab(notebook, "Overview")
         self.reprs = self.make_info_tab(notebook, "Repr")
         self.unidata = self.make_info_tab(notebook, "Unicode")
@@ -475,20 +464,18 @@ class CharSelectWindow(Toplevel):
     # Selection and detail.
 
     def make_info_tab(self, notebook, title):
-        "Add a read-only text tab to notebook and return its Text widget."
-        text = Text(notebook, width=30, height=12, wrap="word",
-                    state="disabled", relief="flat")
-        text.tag_configure("copy", underline=True)
-        self.info_texts.append(text)
-        text.tag_bind("copy", "<Enter>",
-                      lambda e: text.configure(cursor="hand2"))
-        text.tag_bind("copy", "<Leave>",
-                      lambda e: text.configure(cursor=""))
-        notebook.add(text, text=title)
-        return text
+        """Add a tab of label and value rows to notebook and return its frame.
+
+        The tab is a dialog pane, not a view of the code, so it keeps the
+        colors of the window rather than those of the current theme.
+        """
+        frame = ttk.Frame(notebook, padding=6)
+        frame.columnconfigure(1, weight=1)   # The values take the free width.
+        notebook.add(frame, text=title)
+        return frame
 
     def activate_cell(self, cp):
-        "Select cp then insert it and close (the double-click action)."
+        "Select cp and insert it (the double-click action of a cell)."
         self.select(cp)
         self.insert_char()
 
@@ -501,29 +488,35 @@ class CharSelectWindow(Toplevel):
         self.fill_info(self.unidata, self.unidata_pairs(cp))
         self.highlight_cell(cp)
 
-    def fill_info(self, text, pairs):
-        """Show (label, value) or (label, value, copy) rows in the tab.
+    def fill_info(self, frame, pairs):
+        """Show (label, value) or (label, value, insert) rows in the tab.
 
-        A row with a copy string is drawn as a link that puts it on the
-        clipboard when clicked.
+        Each value is in a read-only entry, so that it can be selected and
+        copied, and is followed by a Copy button.  A row with an insert
+        string also gets an Insert button.
         """
-        width = max(len(label) for label, *_ in pairs) + 2
-        text.configure(state="normal")
-        text.delete("1.0", END)
-        for i, (label, value, *rest) in enumerate(pairs):
-            if i:
-                text.insert(END, "\n")
-            text.insert(END, f"{label + ':':<{width}}")
-            if rest:  # A value: click to copy it, double-click to insert it.
-                tag = f"copy-{i}"
-                text.insert(END, str(value), ("copy", tag))
-                text.tag_bind(tag, "<Button-1>",
-                              lambda e, s=rest[0]: self.copy_later(s))
-                text.tag_bind(tag, "<Double-Button-1>",
-                              lambda e, s=rest[0]: self.insert_value(s))
-            else:
-                text.insert(END, str(value))
-        text.configure(state="disabled")
+        for child in frame.winfo_children():
+            child.destroy()
+        for row, (label, value, *rest) in enumerate(pairs):
+            ttk.Label(frame, text=f"{label}:").grid(row=row, column=0,
+                                                    sticky=W, padx=(0, 8))
+            entry = ttk.Entry(frame, width=24)
+            entry.insert(0, str(value))
+            entry.configure(state="readonly")
+            entry.grid(row=row, column=1, sticky=EW)
+            # A normalization row copies and inserts the literal string,
+            # not the codepoints shown beside it.
+            string = rest[0] if rest else str(value)
+            ttk.Button(frame, text="Copy", width=6,
+                       command=lambda s=string: self.copy_text(s)).grid(
+                           row=row, column=2, padx=(6, 0))
+            if rest:
+                button = ttk.Button(frame, text="Insert", width=6,
+                                    command=lambda s=string:
+                                        self.insert_text(s))
+                button.grid(row=row, column=3, padx=(4, 0))
+                if self.editor_text is None:  # Nothing to insert into.
+                    button.state(["disabled"])
 
     def overview_pairs(self, cp):
         "The identity of the character: name, codepoint, decimal value."
@@ -606,11 +599,16 @@ class CharSelectWindow(Toplevel):
             return
         cps = parse_input(query)
         if cps is not None:
-            # A single character or a marked codepoint notation names exactly
-            # these characters (shown even if normally filtered out); a name
-            # search would only add noise.
+            # A marked codepoint notation names exactly these characters,
+            # which are shown even if normally filtered out.
             valid = [cp for cp in cps if 0 <= cp <= 0x10FFFF]
-            self.show_results(valid, query, forced=set(valid))
+            results = valid
+            if len(query) == 1 and query.isascii() and query.isalpha():
+                # A letter is also a word of many names, so "a" shows A,
+                # \N{LATIN SMALL LETTER A WITH GRAVE}, and the rest of the
+                # letters named after it.
+                results = valid + self.name_matches(query, word=True)
+            self.show_results(results, query, forced=set(valid))
             return
         # A bare token may name a codepoint as hexadecimal (and, if all
         # digits, also as decimal), and may still occur in character names.
@@ -622,15 +620,21 @@ class CharSelectWindow(Toplevel):
         results = forced + self.name_matches(query)
         self.show_results(results, query, forced=set(forced))
 
-    def name_matches(self, query):
-        "Return codepoints whose name contains query, or [] if it cannot occur."
+    def name_matches(self, query, word=False):
+        """Return codepoints whose name contains query, or [] if it cannot.
+
+        A word search matches only whole words of the name, which is what
+        makes a one letter query useful.
+        """
         upper = query.upper()
         if not re.fullmatch("[A-Z0-9 -]+", upper):
             return []       # A name has only letters, digits, spaces, hyphens.
+        matches = re.compile(rf"\b{re.escape(upper)}\b").search if word \
+            else lambda name: upper in name
         results = []
         for start, end in SEARCH_RANGES:
             for cp in range(start, end + 1):
-                if upper in char_name(chr(cp)):
+                if matches(char_name(chr(cp))):
                     results.append(cp)
             if len(results) > SEARCH_LIMIT:
                 break
@@ -649,9 +653,11 @@ class CharSelectWindow(Toplevel):
         self.canvas.yview_moveto(0)
         self.status.configure(text=f"Search '{query}'"
                                    f"  •  {self.cell_index} results")
-        # Select the sole result, or the first one when no character is shown
-        # yet; otherwise keep the current detail and re-mark its cell.
-        if len(shown) == 1 or (shown and self.selected_cp is None):
+        # Select the character the query names, the sole result, or the
+        # first one when no character is shown yet; otherwise keep the
+        # current detail and re-mark its cell.
+        if shown and (shown[0] in forced or len(shown) == 1
+                      or self.selected_cp is None):
             self.select(shown[0])
         else:
             self.restore_highlight()
@@ -673,33 +679,15 @@ class CharSelectWindow(Toplevel):
             self.canvas.yview_scroll(-1, "units")
 
     def copy_event(self, event=None):
-        "Copy the character, unless a text widget has its own selection to copy."
+        "Copy the character, unless the focused entry has its own selection."
         focus = self.focus_get()
         if isinstance(focus, Entry) and focus.selection_present():
-            return              # Let the search box copy its selected text.
-        if isinstance(focus, Text) and focus.tag_ranges("sel"):
-            return              # Let a detail pane copy its selected text.
+            return              # Let the search box or a value copy its text.
         self.copy_char()
         return "break"
 
-    def copy_later(self, s):
-        "Copy s after a delay, so a following double-click can cancel it."
-        self.cancel_copy()
-        self.pending_copy = self.after(DOUBLE_CLICK_MS, self.copy_text, s)
-
-    def cancel_copy(self):
-        if self.pending_copy is not None:
-            self.after_cancel(self.pending_copy)
-            self.pending_copy = None
-
-    def insert_value(self, s):
-        "Insert a detail value, cancelling the pending single-click copy."
-        self.cancel_copy()
-        self.insert_text(s)
-
     def copy_text(self, s):
         "Put s on the clipboard and report it in the status bar."
-        self.pending_copy = None
         self.clipboard_clear()
         self.clipboard_append(s)
         self.status.configure(text=f"Copied {s!r} to the clipboard")
@@ -709,7 +697,11 @@ class CharSelectWindow(Toplevel):
             self.copy_text(chr(self.selected_cp))
 
     def insert_text(self, s):
-        "Insert string s into the editor, replacing any selection, then close."
+        """Insert string s into the editor, replacing any selection.
+
+        The browser stays open and keeps the focus, so that more can be
+        inserted; the editor is reached by clicking it or pressing Escape.
+        """
         if self.editor_text is None:
             self.bell()              # Nowhere to insert.
             return
@@ -732,8 +724,7 @@ class CharSelectWindow(Toplevel):
             text.insert(first, s)
         else:
             text.insert("insert", s)
-        text.focus_set()
-        self.close()
+        self.status.configure(text=f"Inserted {s!r} into the editor")
 
     def insert_char(self):
         "Insert the selected character (Insert button and grid double-click)."
@@ -743,7 +734,6 @@ class CharSelectWindow(Toplevel):
         self.insert_text(chr(self.selected_cp))
 
     def close(self, event=None):
-        self.cancel_copy()  # Don't let a deferred copy fire after destroy.
         self.destroy()
 
 

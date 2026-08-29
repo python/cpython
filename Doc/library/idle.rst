@@ -300,15 +300,16 @@ Browse menu (Shell and Editor)
 
 Character Browser
    Open a window to browse Unicode blocks
-   and search for characters by name or code point.
+   and search for characters by name or code point;
+   a single letter also finds the characters named after it.
    Double-click a character, or select it and press Insert,
    to insert it into the current window.
    Press Copy character to copy it to the clipboard.
    The detail tabs show the character's representations,
    such as escapes, UTF-8 bytes, XML and HTML references,
    and normalization forms.
-   Click a highlighted value to copy it,
-   or double-click it to insert it.
+   Press Copy or Insert beside a value to copy or insert it;
+   a value can also be selected and copied with :kbd:`C-c`.
 
 Options menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

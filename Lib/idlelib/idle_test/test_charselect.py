@@ -8,6 +8,31 @@ from idlelib.config import idleConf
 from idlelib.idle_test.mock_idle import Func
 
 
+def info_rows(frame):
+    "Return the {label: value} rows of an info tab."
+    labels, values = {}, {}
+    for child in frame.winfo_children():
+        row = child.grid_info()["row"]
+        if child.winfo_class() == "TLabel":
+            labels[row] = child.cget("text").removesuffix(":")
+        elif child.winfo_class() == "TEntry":
+            values[row] = child.get()
+    return {label: values[row] for row, label in labels.items()}
+
+
+def info_text(frame):
+    "Return the label and value rows of an info tab as one string."
+    return "\n".join(f"{label}: {value}"
+                      for label, value in info_rows(frame).items())
+
+
+def row_buttons(frame, row):
+    "Return the {text: button} buttons of a row of an info tab."
+    return {child.cget("text"): child for child in frame.winfo_children()
+            if child.winfo_class() == "TButton"
+            and child.grid_info()["row"] == row}
+
+
 class CharSelectOpenTest(unittest.TestCase):
     "Test the open() entry point (no gui needed)."
 
@@ -104,11 +129,11 @@ class CharSelectWindowTest(unittest.TestCase):
         dialog.select(0x2764)            # HEAVY BLACK HEART
         self.assertEqual(dialog.selected_cp, 0x2764)
         self.assertEqual(dialog.big_var.get(), '❤')
-        overview = dialog.overview.get("1.0", "end")
+        overview = info_text(dialog.overview)
         self.assertIn("HEAVY BLACK HEART", overview)
         self.assertIn("U+2764", overview)
         self.assertIn("10084", overview)     # decimal
-        reprs = dialog.reprs.get("1.0", "end")
+        reprs = info_text(dialog.reprs)
         self.assertIn(r"\u2764", reprs)   # Python escape
         utf8 = "".join(charselect.char_escape(b) for b in '❤'.encode())
         self.assertIn(utf8, reprs)        # UTF-8 as \x escapes
@@ -126,20 +151,20 @@ class CharSelectWindowTest(unittest.TestCase):
         for cp, (escape, entity) in cases.items():
             with self.subTest(cp=cp):
                 dialog.select(cp)
-                reprs = dialog.reprs.get("1.0", "end")
+                reprs = info_text(dialog.reprs)
                 self.assertIn(escape, reprs)
                 self.assertIn(entity, reprs)
 
     def test_select_unnamed(self):
         dialog = self.dialog
         dialog.select(0xE000)            # private use, no name
-        self.assertIn("<unnamed>", dialog.overview.get("1.0", "end"))
+        self.assertIn("<unnamed>", info_text(dialog.overview))
 
     def test_repr_tab_non_bmp(self):
         dialog = self.dialog
         cp = 0x1F600                     # GRINNING FACE (non-BMP)
         dialog.select(cp)
-        reprs = dialog.reprs.get("1.0", "end")
+        reprs = info_text(dialog.reprs)
         self.assertIn(chr(cp), reprs)                        # literal character
         self.assertIn(charselect.char_escape(cp), reprs)    # Python escape
         self.assertIn(charselect.surrogate_pair(cp), reprs)  # UTF-16 surrogates
@@ -152,16 +177,16 @@ class CharSelectWindowTest(unittest.TestCase):
     def test_repr_tab_xml_entity(self):
         dialog = self.dialog
         dialog.select(0x27)              # APOSTROPHE: &apos; in XML, numeric HTML
-        reprs = dialog.reprs.get("1.0", "end")
+        reprs = info_text(dialog.reprs)
         self.assertIn("&apos;", reprs)   # XML predefines this entity
         self.assertIn("&#39;", reprs)    # but HTML has no name for it
         dialog.select(0x2764)            # not predefined -> decimal XML reference
-        self.assertIn("&#10084;", dialog.reprs.get("1.0", "end"))
+        self.assertIn("&#10084;", info_text(dialog.reprs))
 
     def test_repr_tab_bmp_has_no_surrogates(self):
         dialog = self.dialog
         dialog.select(0x0041)            # LATIN CAPITAL LETTER A (BMP)
-        self.assertNotIn("Surrogates", dialog.reprs.get("1.0", "end"))
+        self.assertNotIn("Surrogates", info_text(dialog.reprs))
 
     def test_surrogate_pair(self):
         self.assertIsNone(charselect.surrogate_pair(0x41))   # BMP has none
@@ -172,7 +197,7 @@ class CharSelectWindowTest(unittest.TestCase):
     def test_unicode_tab(self):
         dialog = self.dialog
         dialog.select(0x0041)            # LATIN CAPITAL LETTER A
-        data = dialog.unidata.get("1.0", "end")
+        data = info_text(dialog.unidata)
         self.assertIn("LATIN CAPITAL LETTER A", data)  # name
         self.assertIn("Basic Latin", data)             # block
         self.assertIn("Lu", data)                      # category
@@ -183,7 +208,7 @@ class CharSelectWindowTest(unittest.TestCase):
     def test_unicode_tab_numeric(self):
         dialog = self.dialog
         dialog.select(0x00BD)            # VULGAR FRACTION ONE HALF
-        data = dialog.unidata.get("1.0", "end")
+        data = info_text(dialog.unidata)
         self.assertIn("Numeric", data)
         self.assertIn("0.5", data)
         self.assertIn("(other number)", data)    # category name in parens
@@ -211,9 +236,10 @@ class CharSelectWindowTest(unittest.TestCase):
 
     def test_search_single_character(self):
         dialog = self.dialog
-        dialog.search_var.set("A")       # A single character shows only itself.
+        dialog.search_var.set("❤")       # Not a letter: only the character.
         dialog.search()
         self.assertEqual(dialog.cell_index, 1)
+        self.assertEqual(list(dialog.cells), [0x2764])
 
     def grid_chars(self):
         return [w.cget("text") for w in self.dialog.grid_inner.winfo_children()]
@@ -239,13 +265,25 @@ class CharSelectWindowTest(unittest.TestCase):
         dialog.search()
         self.assertEqual(dialog.cell_index, 1)   # shown because it is explicit
 
+    def test_search_single_letter(self):
+        # A single letter also finds the characters named after it.
+        dialog = self.dialog
+        dialog.search_var.set("a")
+        dialog.search()
+        cps = list(dialog.cells)
+        self.assertEqual(cps[0], ord("a"))       # The letter itself is first,
+        self.assertEqual(dialog.selected_cp, ord("a"))          # and selected.
+        for ch in "AÀÁÂ":
+            self.assertIn(ord(ch), cps)
+        self.assertNotIn(ord("b"), cps)          # Not a substring of a word.
+
     def test_search_single_result_selects(self):
         dialog = self.dialog
         dialog.selected_cp = None
         dialog.search_var.set("U+2764")  # exactly one result
         dialog.search()
         self.assertEqual(dialog.selected_cp, 0x2764)
-        self.assertIn("HEAVY BLACK HEART", dialog.overview.get("1.0", "end"))
+        self.assertIn("HEAVY BLACK HEART", info_text(dialog.overview))
         self.assertEqual(dialog.selected_cell.cget("bg"), dialog.select_bg)
 
     def test_search_selects_first_when_detail_empty(self):
@@ -270,7 +308,7 @@ class CharSelectWindowTest(unittest.TestCase):
         self.assertEqual(dialog.selected_cell.cget("bg"), dialog.select_bg)
 
     def test_configure_style(self):
-        # The grid and the detail text follow the theme's colors.
+        # The character grid follows the theme's colors.
         dialog = self.dialog
         colors = idleConf.GetHighlight(idleConf.CurrentTheme(), 'normal')
         dialog.show_block(charselect.BLOCKS[0])
@@ -278,7 +316,6 @@ class CharSelectWindowTest(unittest.TestCase):
         cell = dialog.cells[0x41]
         self.assertEqual(cell.cget("bg"), colors['background'])
         self.assertEqual(cell.cget("fg"), colors['foreground'])
-        self.assertEqual(dialog.overview.cget("bg"), colors['background'])
 
     def test_search_entry_takes_focus(self):
         # Typing goes to the search box as soon as the window opens.
@@ -331,9 +368,9 @@ class CharSelectWindowTest(unittest.TestCase):
     def test_simple_escape_in_repr(self):
         dialog = self.dialog
         dialog.select(0x0A)              # LINE FEED
-        reprs = dialog.reprs.get("1.0", "end")
-        self.assertIn("Escaped:   " + chr(92) + "n", reprs)   # \n, not \x0a
-        self.assertIn(chr(92) + "x0a", reprs)                 # UTF-8 keeps \xHH
+        rows = info_rows(dialog.reprs)
+        self.assertEqual(rows["Escaped"], chr(92) + "n")   # \n, not \x0a
+        self.assertEqual(rows["UTF-8"], chr(92) + "x0a")   # UTF-8 keeps \xHH
 
     def test_seed_search(self):
         dialog, text = self.editor_dialog("U+1F600")
@@ -397,40 +434,49 @@ class CharSelectWindowTest(unittest.TestCase):
         self.assertEqual(dialog.clipboard_get(), "hello")
         self.assertIn("Copied", dialog.status.cget("text"))
 
-    def test_copy_later_defers_copy(self):
-        dialog = self.dialog
-        dialog.copy_later("hi")                     # a single click on a value
-        self.assertIsNotNone(dialog.pending_copy)   # scheduled, not immediate
-        self.addCleanup(dialog.cancel_copy)
-        dialog.cancel_copy()
-        self.assertIsNone(dialog.pending_copy)
-
-    def test_double_click_value_cancels_copy(self):
-        dialog, text = self.editor_dialog()
-        dialog.copy_later("x")                      # single click scheduled copy
-        self.assertIsNotNone(dialog.pending_copy)
-        dialog.insert_value("x")                    # the double-click action
-        self.assertIsNone(dialog.pending_copy)      # copy was cancelled
-        self.assertEqual(text.get("1.0", "end-1c"), "x")
-        self.assertFalse(dialog.winfo_exists())     # inserted and closed
-
-    def test_repr_values_are_clickable(self):
+    def test_row_buttons(self):
+        # Each value has a Copy button; an insertable one has Insert too.
         dialog = self.dialog
         dialog.select(0x2764)
-        # Every Repr row carries a copy string equal to its displayed value.
-        for label, value, copy in dialog.repr_pairs(0x2764):
-            self.assertEqual(copy, value)
-        self.assertTrue(dialog.reprs.tag_ranges("copy"))      # click targets
-        self.assertFalse(dialog.overview.tag_ranges("copy"))  # plain text
+        dialog.clipboard_clear()
+        buttons = row_buttons(dialog.reprs, 0)      # the Character row
+        self.assertEqual(set(buttons), {"Copy", "Insert"})
+        buttons["Copy"].invoke()
+        self.assertEqual(dialog.clipboard_get(), "❤")
+        # Without an editor there is nothing to insert into.
+        self.assertIn("disabled", buttons["Insert"].state())
+        # A plain row, such as the codepoint, is only copiable.
+        self.assertEqual(set(row_buttons(dialog.overview, 1)), {"Copy"})
 
-    def test_normalization_click_copies_literal(self):
+    def test_row_insert_button(self):
+        dialog, text = self.editor_dialog()
+        dialog.select(0x2764)
+        buttons = row_buttons(dialog.reprs, 1)      # the Escaped row
+        self.assertNotIn("disabled", buttons["Insert"].state())
+        buttons["Insert"].invoke()
+        self.assertEqual(text.get("1.0", "end-1c"), r"\u2764")
+        self.assertTrue(dialog.winfo_exists())      # open for more inserts
+        self.assertIn("Inserted", dialog.status.cget("text"))
+
+    def test_repr_values_are_insertable(self):
+        dialog = self.dialog
+        dialog.select(0x2764)
+        # Every Repr row carries an insert string equal to its shown value.
+        for label, value, insert in dialog.repr_pairs(0x2764):
+            self.assertEqual(insert, value)
+        # The values are in read-only entries, to select and copy from.
+        entries = [child for child in dialog.reprs.winfo_children()
+                   if child.winfo_class() == "TEntry"]
+        self.assertEqual(len(entries), len(dialog.repr_pairs(0x2764)))
+        self.assertEqual(str(entries[0].cget("state")), "readonly")
+
+    def test_normalization_row_inserts_literal(self):
         dialog = self.dialog
         dialog.select(0x00BD)            # VULGAR FRACTION ONE HALF
         rows = {p[0]: p for p in dialog.unidata_pairs(0x00BD)}
-        label, display, copy = rows["NFKD"]
-        self.assertIn("U+2044", display)                 # shown with codepoints
-        self.assertEqual(copy, "1" + chr(0x2044) + "2")  # copied without them
-        self.assertTrue(dialog.unidata.tag_ranges("copy"))
+        label, display, insert = rows["NFKD"]
+        self.assertIn("U+2044", display)                   # with codepoints
+        self.assertEqual(insert, "1" + chr(0x2044) + "2")  # without them
 
     def test_copy_event(self):
         dialog = self.dialog
@@ -440,14 +486,17 @@ class CharSelectWindowTest(unittest.TestCase):
         self.assertEqual(dialog.copy_event(), "break")
         self.assertEqual(dialog.clipboard_get(), '❤')
 
-    def test_copy_event_defers_to_text_selection(self):
+    def test_copy_event_defers_to_entry_selection(self):
+        # A selection in the search box or in a value is copied instead.
         dialog = self.dialog
         dialog.select(0x2764)
         dialog.clipboard_clear()
         dialog.clipboard_append("kept")
-        dialog.overview.tag_add("sel", "1.0", "1.3")   # a pane with a selection
-        self.addCleanup(dialog.overview.tag_remove, "sel", "1.0", "end")
-        self.set_focus(dialog, dialog.overview)
+        entry = next(child for child in dialog.reprs.winfo_children()
+                     if child.winfo_class() == "TEntry")
+        entry.selection_range(0, "end")           # a value with a selection
+        self.addCleanup(entry.selection_clear)
+        self.set_focus(dialog, entry)
         self.assertIsNone(dialog.copy_event())         # deferred, not copied
         self.assertEqual(dialog.clipboard_get(), "kept")
 
@@ -463,20 +512,21 @@ class CharSelectWindowTest(unittest.TestCase):
         text.mark_set("insert", "1.1")     # Cursor between a and b.
         dialog.insert_char()
         self.assertEqual(text.get("1.0", "end-1c"), "a❤b")
-        self.assertFalse(dialog.winfo_exists())  # insert_char closed it.
+        self.assertTrue(dialog.winfo_exists())   # Still open.
 
-    def test_double_click_inserts_and_closes(self):
+    def test_double_click_inserts(self):
         dialog, text = self.editor_dialog()
         dialog.activate_cell(0x41)                 # the <Double-Button-1> action
         self.assertEqual(text.get("1.0", "end-1c"), "A")
-        self.assertFalse(dialog.winfo_exists())   # inserted and closed
+        self.assertTrue(dialog.winfo_exists())     # Still open.
 
-    def test_insert_text_inserts_and_closes(self):
-        # The double-click action on a detail value inserts its string.
+    def test_insert_text_twice(self):
+        # The browser stays open, so more can be inserted.
         dialog, text = self.editor_dialog()
         dialog.insert_text(r"\U0001f600")
-        self.assertEqual(text.get("1.0", "end-1c"), r"\U0001f600")
-        self.assertFalse(dialog.winfo_exists())   # inserted and closed
+        dialog.insert_text("!")
+        self.assertEqual(text.get("1.0", "end-1c"), r"\U0001f600" + "!")
+        self.assertTrue(dialog.winfo_exists())
 
     def test_insert_text_beeps_without_editor(self):
         dialog = self.dialog                       # opened with no editor Text
