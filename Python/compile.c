@@ -1735,7 +1735,9 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
 finally:
     Py_XDECREF(consts_list);
     Py_XDECREF(metadata);
-    _PyCompile_ExitScope(c);
+    if (c->u != NULL) {
+        _PyCompile_ExitScope(c);
+    }
     compiler_free(c);
     _PyArena_Free(arena);
     return res;
