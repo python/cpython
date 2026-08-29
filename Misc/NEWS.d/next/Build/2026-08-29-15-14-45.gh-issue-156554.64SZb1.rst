@@ -1,0 +1,1 @@
+Set ``PY_SUPPORT_TIER=2`` for Windows ARM64 builds.
