@@ -1,1 +1,3 @@
-Set ``PY_SUPPORT_TIER=2`` for Windows ARM64 builds.
+Update ``PY_SUPPORT_TIER`` according to :pep:`11` for these target triples:
+``aarch64-*-linux-gnu/gcc``, ``aarch64-pc-windows-msvc/msvc``,
+``x86_64-apple-darwin*/clang``, and ``powerpc64le-*-linux-gnu/gcc``.
