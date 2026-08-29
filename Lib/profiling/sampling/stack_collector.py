@@ -67,6 +67,11 @@ class CollapsedStackCollector(StackTraceCollector):
         return True
 
 
+# Extra recursion budget for the recursive flamegraph tree walk during export,
+# large enough to cover the unwinder's maximum captured stack depth.
+_FLAMEGRAPH_RECURSION_MARGIN = 2000
+
+
 class FlamegraphCollector(StackTraceCollector):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -163,34 +168,44 @@ class FlamegraphCollector(StackTraceCollector):
         )
 
     def export(self, filename):
-        flamegraph_data = self._convert_to_flamegraph_format()
+        # The flamegraph tree is as deep as the deepest sampled stack and is
+        # walked recursively here (and by json.dumps), so raise the recursion
+        # limit while exporting. The remote unwinder caps stack depth at
+        # MAX_FRAMES, so this margin is bounded.
+        old_limit = sys.getrecursionlimit()
+        sys.setrecursionlimit(old_limit + _FLAMEGRAPH_RECURSION_MARGIN)
+        try:
+            flamegraph_data = self._convert_to_flamegraph_format()
 
-        # Debug output with string table statistics
-        num_functions = len(flamegraph_data.get("children", []))
-        total_time = flamegraph_data.get("value", 0)
-        string_count = len(self._string_table)
-        s1 = "" if num_functions == 1 else "s"
-        s2 = "" if total_time == 1 else "s"
-        s3 = "" if string_count == 1 else "s"
-        print(
-            f"Flamegraph data: {num_functions} root function{s1}, "
-            f"{total_time} total sample{s2}, "
-            f"{string_count} unique string{s3}"
-        )
-
-        if num_functions == 0:
+            # Debug output with string table statistics
+            num_functions = len(flamegraph_data.get("children", []))
+            total_time = flamegraph_data.get("value", 0)
+            string_count = len(self._string_table)
+            s1 = "" if num_functions == 1 else "s"
+            s2 = "" if total_time == 1 else "s"
+            s3 = "" if string_count == 1 else "s"
             print(
-                "Warning: No functions found in profiling data. Check if sampling captured any data."
+                f"Flamegraph data: {num_functions} root function{s1}, "
+                f"{total_time} total sample{s2}, "
+                f"{string_count} unique string{s3}"
             )
-            return False
 
-        html_content = self._create_flamegraph_html(flamegraph_data)
+            if num_functions == 0:
+                print(
+                    "Warning: No functions found in profiling data. "
+                    "Check if sampling captured any data."
+                )
+                return False
 
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(html_content)
+            html_content = self._create_flamegraph_html(flamegraph_data)
 
-        print(f"Flamegraph saved to: {filename}")
-        return True
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(html_content)
+
+            print(f"Flamegraph saved to: {filename}")
+            return True
+        finally:
+            sys.setrecursionlimit(old_limit)
 
     @staticmethod
     @functools.lru_cache(maxsize=None)
