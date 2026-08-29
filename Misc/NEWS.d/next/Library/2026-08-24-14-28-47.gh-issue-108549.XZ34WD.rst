@@ -1,1 +1,3 @@
-In ``asyncio.Task.__step``, do not cancel the current task when a ``SystemExit`` (or a ``KeyboardInterrupt``) exception was just raised.
+Fix :class:`asyncio.Task`, when the task has a pending cancellation,
+replace **exc** exception with a :exc:`CancelledError` unless it is
+:exc:`SystemExit` or :exc:`KeyboardInterrupt`, which must propagate unchanged

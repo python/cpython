@@ -1906,11 +1906,12 @@ class BaseTaskTests:
                 self.fail(f'{exc} is expected, instead of {type(e)}')
 
         for exc in (SystemExit, KeyboardInterrupt):
-            t = self.new_task(self.loop, current_task(exc))
-            self.assertRaises(exc, self.loop.run_until_complete, t)
-            t.cancel()
-            test_utils.run_briefly(self.loop)
-            self.assertTrue(t.done())
+            with self.subTest(exc):
+                t = self.new_task(self.loop, current_task(exc))
+                self.assertRaises(exc, self.loop.run_until_complete, t)
+                t.cancel()
+                test_utils.run_briefly(self.loop)
+                self.assertTrue(not t.cancelled())
 
     def test_step_result_future(self):
         # If coroutine returns future, task waits on this future.
