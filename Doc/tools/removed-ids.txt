@@ -16,6 +16,8 @@ deprecations/index.html: pending-removal-in-python-3-16
 deprecations/index.html: c-api-pending-removal-in-python-3-15
 deprecations/index.html: c-api-pending-removal-in-python-3-16
 
+tutorial/modules.html: packages-in-multiple-directories
+
 # Removed libmpdec
 using/configure.html: cmdoption-with-system-libmpdec
 
