@@ -1597,8 +1597,57 @@ class IpaddrUnitTest(unittest.TestCase):
     def testNextNetworkOutOfAddressSpace(self):
         ipv4 = ipaddress.IPv4Network('255.255.255.0/24')
         self.assertRaises(ValueError, ipv4.next_network)
+        self.assertRaises(ValueError, ipv4.next_network, 25)
         ipv6 = ipaddress.IPv6Network('ffff:ffff:ffff:ffff:ffff:ffff:ffff:0/112')
         self.assertRaises(ValueError, ipv6.next_network)
+        self.assertRaises(ValueError, ipv4.next_network, 112)
+
+    def testPrevNetwork(self):
+        ipv4 = ipaddress.IPv4Network('1.2.3.0/24')
+        self.assertEqual(
+            ipv4.prev_network(),
+            ipaddress.IPv4Network('1.2.2.0/24'),
+        )
+        self.assertEqual(
+            ipv4.prev_network(prev_prefix=16),
+            ipaddress.IPv4Network('1.1.0.0/16'),
+        )
+        self.assertEqual(
+            ipv4.prev_network(prev_prefix=25),
+            ipaddress.IPv4Network('1.2.2.128/25'),
+        )
+        self.assertEqual(
+            ipv4.prev_network(prev_prefix=23),
+            ipaddress.IPv4Network('1.2.0.0/23'),
+        )
+
+        ipv6 = ipaddress.IPv6Network('2001:dbb8:aaaa:aaaa::/64')
+        self.assertEqual(
+            ipv6.prev_network(),
+            ipaddress.IPv6Network('2001:dbb8:aaaa:aaa9::/64'),
+        )
+        self.assertEqual(
+            ipv6.prev_network(prev_prefix=48),
+            ipaddress.IPv6Network('2001:dbb8:aaa9::/48'),
+        )
+        self.assertEqual(
+            ipv6.prev_network(prev_prefix=88),
+            ipaddress.IPv6Network('2001:dbb8:aaaa:aaa9:ffff:ff00::/88'),
+        )
+
+    def testPrevNetworkWithBadPrefix(self):
+        self.assertRaises(ValueError, self.ipv4_network.prev_network, 0)
+        self.assertRaises(ValueError, self.ipv4_network.prev_network, 35)
+        self.assertRaises(ValueError, self.ipv6_network.prev_network, 0)
+        self.assertRaises(ValueError, self.ipv6_network.prev_network, 150)
+
+    def testPrevNetworkOutOfAddressSpace(self):
+        ipv4 = ipaddress.IPv4Network('0.0.0.0/24')
+        self.assertRaises(ValueError, ipv4.prev_network)
+        self.assertRaises(ValueError, ipv4.prev_network, 25)
+        ipv6 = ipaddress.IPv6Network('::/112')
+        self.assertRaises(ValueError, ipv6.prev_network)
+        self.assertRaises(ValueError, ipv6.prev_network, 112)
 
     def testFancySubnetting(self):
         self.assertEqual(sorted(self.ipv4_network.subnets(prefixlen_diff=3)),
