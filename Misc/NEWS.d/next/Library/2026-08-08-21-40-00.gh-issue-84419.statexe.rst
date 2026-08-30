@@ -1,0 +1,3 @@
+Fix :func:`os.stat` on Windows: trailing dots and spaces, which are ignored
+by the operating system, are no longer taken into account when the execute
+permissions are guessed from the file extension.
