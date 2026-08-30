@@ -1150,15 +1150,15 @@ class _BaseNetwork(_IPAddressBase):
             ((new_netmask._ip & self.network_address._ip) >> bit_shift) + 1
         ) << bit_shift
 
-        try:
-            return self.__class__(
-                f"{self._string_from_ip_int(next_ip)}/{next_prefix}"
-            )
-        except OverflowError:
+        if next_ip > self._ALL_ONES:
             raise ValueError(
                 f"out of address space, cannot make another /{next_prefix} "
                 "network"
-            ) from None
+            )
+
+        return self.__class__(
+            f"{self._string_from_ip_int(next_ip)}/{next_prefix}"
+        )
 
 
 class _BaseConstants:
