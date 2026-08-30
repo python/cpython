@@ -245,20 +245,46 @@ rules apply:
   Instead, :mod:`!xml.dom.minidom` uses standard Python exceptions such as
   :exc:`TypeError` and :exc:`AttributeError`.
 
-* :class:`NodeList` objects are implemented using Python's built-in list type.
-  These objects provide the interface defined in the DOM specification, but with
-  earlier versions of Python they do not support the official API.  They are,
-  however, much more "Pythonic" than the interface defined in the W3C
-  recommendations.
+* Each of the :class:`~xml.dom.NodeList` and :class:`~xml.dom.NamedNodeMap`
+  interfaces has two implementations, which provide additional methods and
+  operations.
+
+  :attr:`~xml.dom.Node.childNodes` is a subclass of :class:`list`, or, for
+  nodes which cannot have children, a subclass of :class:`tuple`.
+  It supports iteration, concatenation, indexing and slicing.
+
+  :attr:`~xml.dom.Node.attributes` supports ``len()``, the :keyword:`in`
+  operator, subscription by a name or by a ``(namespaceURI, localName)``
+  tuple, assignment and deletion, and the methods :meth:`!get`, :meth:`!keys`,
+  :meth:`!keysNS`, :meth:`!values`, :meth:`!items` and :meth:`!itemsNS`.
+  :attr:`~xml.dom.DocumentType.entities` and
+  :attr:`~xml.dom.DocumentType.notations` are read-only and support only
+  ``len()`` and subscription by a name.
+
+* :attr:`~xml.dom.Document.strictErrorChecking` is always ``False``.
+
+  .. versionchanged:: next
+     Previously, :attr:`~xml.dom.Attr.specified` was always ``False``.
+
+* The constraints of the DOM are now enforced,
+  and the corresponding exceptions are raised.
+
+  .. versionchanged:: next
+     Previously, many invalid operations silently succeeded
+     and produced an invalid document,
+     but removing an absent attribute raised :exc:`~xml.dom.NotFoundErr`.
 
 The following interfaces have no implementation in :mod:`!xml.dom.minidom`:
 
 * :class:`DOMTimeStamp`
 
-* :class:`EntityReference`
-
-Most of these reflect information in the XML document that is not of general
+This reflects information in the XML document that is not of general
 utility to most DOM users.
+
+.. versionchanged:: next
+   :class:`~xml.dom.EntityReference` is now implemented.
+   Note that the parser expands entity references,
+   so they only occur in a document if created explicitly.
 
 .. rubric:: Footnotes
 

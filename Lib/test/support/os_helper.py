@@ -1,6 +1,7 @@
 import collections.abc
 import contextlib
 import errno
+import functools
 import logging
 import os
 import re
@@ -804,6 +805,48 @@ class EnvironmentVarGuard(collections.abc.MutableMapping):
             else:
                 self._environ[k] = v
         os.environ = self._environ
+
+
+def without_source_date_epoch(fxn):
+    """Runs function with SOURCE_DATE_EPOCH unset."""
+    @functools.wraps(fxn)
+    def wrapper(*args, **kwargs):
+        with EnvironmentVarGuard() as env:
+            env.unset('SOURCE_DATE_EPOCH')
+            return fxn(*args, **kwargs)
+    return wrapper
+
+
+_MISSING = sentinel("MISSING")
+
+def with_source_date_epoch(fxn=_MISSING, *, epoch=123456789):
+    """Runs function with SOURCE_DATE_EPOCH set to *epoch*."""
+    if fxn is _MISSING:
+        return functools.partial(with_source_date_epoch, epoch=epoch)
+
+    @functools.wraps(fxn)
+    def wrapper(*args, **kwargs):
+        with EnvironmentVarGuard() as env:
+            env['SOURCE_DATE_EPOCH'] = str(epoch)
+            return fxn(*args, **kwargs)
+    return wrapper
+
+
+# Run tests with SOURCE_DATE_EPOCH set or unset explicitly.
+class SourceDateEpochTestMeta(type(unittest.TestCase)):
+    def __new__(mcls, name, bases, dct, *, source_date_epoch):
+        cls = super().__new__(mcls, name, bases, dct)
+
+        for attr in dir(cls):
+            if attr.startswith('test_'):
+                meth = getattr(cls, attr)
+                if source_date_epoch:
+                    wrapper = with_source_date_epoch(meth)
+                else:
+                    wrapper = without_source_date_epoch(meth)
+                setattr(cls, attr, wrapper)
+
+        return cls
 
 
 try:
