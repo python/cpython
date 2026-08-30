@@ -816,6 +816,18 @@ New deprecations
     open them one by one instead.
     (Contributed by Serhiy Storchaka in :gh:`152638`.)
 
+* :mod:`xml.dom.minidom`:
+
+  * Setting a read-only attribute of a node is deprecated.
+    It now emits a :exc:`DeprecationWarning`
+    and will raise :exc:`xml.dom.NoModificationAllowedErr` in the future.
+    This affects the :attr:`!nodeType`, :attr:`!nodeName`, :attr:`!name`,
+    :attr:`!tagName`, :attr:`!target`, :attr:`!prefix`, :attr:`!namespaceURI`,
+    :attr:`!publicId` and :attr:`!systemId` attributes.
+    Use ``Document.renameNode()`` to rename an element
+    or an attribute.
+    (Contributed by Serhiy Storchaka in :gh:`57336`.)
+
 .. Add deprecations above alphabetically, not here at the end.
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
