@@ -62,7 +62,7 @@ _Pypegen_tokenizer_error(Parser *p)
             msg = "too many levels of indentation";
             break;
         case E_LINECONT: {
-            col_offset = p->tok->cur - p->tok->buf - 1;
+            col_offset = p->tok->cur - p->tok->line_start - 1;
             msg = "unexpected character after line continuation character";
             break;
         }

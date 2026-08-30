@@ -564,6 +564,7 @@ reset_streaming_buffer(struct tok_state *tok)
     assert(tok->buf_offset <= PY_SSIZE_T_MAX - consumed);
     tok->buf_offset += consumed;
     tok->cur = tok->inp = tok->buf;
+    tok->line_start = tok->buf;
 }
 
 int
@@ -651,7 +652,6 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
             tok->buf_offset = source_start;
             tok->line_start = tok->buf;
             tok->start = NULL;
-            tok->multi_line_start = NULL;
         }
         else if (source_will_grow) {
             _PyLexer_RestoreBufferPointers(
@@ -672,7 +672,7 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
     }
     tok->implicit_newline = chunk.implicit_newline;
 
-    ADVANCE_LINENO();
+    tok->lineno++;
     if (kind == _PYTOK_READER_FILE &&
             (tok->encoding == NULL || strcmp(tok->encoding, "utf-8") == 0) &&
             !_PyTokenizer_ensure_utf8(tok->cur, tok, tok->lineno)) {
@@ -708,6 +708,7 @@ tokenizer_new_with_reader(_PyTok_ReaderKind kind)
             return NULL;
         }
         tok->cur = tok->inp = tok->buf;
+        tok->line_start = tok->buf;
         tok->buf[0] = '\0';
     }
     return tok;
