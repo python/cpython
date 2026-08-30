@@ -477,6 +477,15 @@ class AsyncArguments(IsolatedAsyncioTestCase):
         result = await mock(5)
         self.assertEqual(result, 6)
 
+    async def test_add_side_effect_sync_callable(self):
+        class SyncCallable:
+            def __call__(self, var):
+                return var + 1
+
+        mock = AsyncMock(side_effect=SyncCallable())
+        result = await mock(5)
+        self.assertEqual(result, 6)
+
     async def test_add_side_effect_normal_function(self):
         def addition(var):
             return var + 1
