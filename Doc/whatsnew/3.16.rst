@@ -643,10 +643,11 @@ xml
   (Contributed by Jason Orendorff and Serhiy Storchaka in :gh:`44871`.)
 
 * :meth:`~xml.dom.minidom.Node.toprettyxml` in :mod:`xml.dom.minidom`
-  no longer adds whitespace inside an element
-  which is marked with ``xml:space="preserve"``,
-  which is declared in the DTD as not having element content,
-  or, in absence of such declaration, which contains text.
+  and :func:`~xml.etree.ElementTree.indent` in :mod:`xml.etree.ElementTree`
+  no longer add whitespace inside an element
+  which is marked with ``xml:space="preserve"`` or which contains text.
+  :meth:`!toprettyxml` also takes into account
+  the content model declared in the DTD.
   (Contributed by Serhiy Storchaka in :gh:`81623`.)
 
 * Add :meth:`!GetSpecifiedAttributeCount` method
@@ -889,11 +890,12 @@ that may require changes to your code.
   (Contributed by Jason Orendorff and Serhiy Storchaka in :gh:`44871`.)
 
 * :meth:`~xml.dom.minidom.Node.toprettyxml` in :mod:`xml.dom.minidom`
-  no longer adds whitespace inside an element
-  which is marked with ``xml:space="preserve"``,
-  which is declared in the DTD as not having element content,
-  or, in absence of such declaration, which contains text,
+  and :func:`~xml.etree.ElementTree.indent` in :mod:`xml.etree.ElementTree`
+  no longer add whitespace inside an element
+  which is marked with ``xml:space="preserve"`` or which contains text,
   because this changed the content of the element.
+  :meth:`!toprettyxml` also takes into account
+  the content model declared in the DTD.
   (Contributed by Serhiy Storchaka in :gh:`81623`.)
 
 * On Windows, seeking a pipe now fails instead of silently appearing to

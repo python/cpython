@@ -1,5 +1,6 @@
-:meth:`~xml.dom.minidom.Node.toprettyxml` in :mod:`xml.dom.minidom` no longer
-adds whitespace inside an element which is marked with
-``xml:space="preserve"``, which is declared in the DTD as not having element
-content, or, in absence of such declaration, which contains text.  Previously
-such indentation changed the content of the element.
+:meth:`~xml.dom.minidom.Node.toprettyxml` in :mod:`xml.dom.minidom` and
+:func:`~xml.etree.ElementTree.indent` in :mod:`xml.etree.ElementTree` no longer
+add whitespace inside an element which is marked with ``xml:space="preserve"``
+or which contains text (:meth:`!toprettyxml` also takes into account the
+content model declared in the DTD).  Previously such indentation changed the
+content of the element.

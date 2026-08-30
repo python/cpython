@@ -603,7 +603,15 @@ Functions
    characters by default.  For indenting partial subtrees inside of an
    already indented tree, pass the initial indentation level as *level*.
 
+   No whitespace is added inside an element
+   which is marked with ``xml:space="preserve"``
+   or which contains text, because this would change its content.
+
    .. versionadded:: 3.9
+
+   .. versionchanged:: next
+      Whitespace is no longer added inside an element with mixed content
+      or marked with ``xml:space="preserve"``.
 
 
 .. function:: iselement(element)

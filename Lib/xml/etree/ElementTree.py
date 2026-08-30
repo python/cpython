@@ -104,6 +104,9 @@ from . import ElementPath
 # The white space characters of the XML specification (see XML 1.0, 2.3).
 _XML_WHITESPACE = " \t\r\n"
 
+# The xml:space attribute (see XML 1.0, 2.10).
+_XML_SPACE = "{http://www.w3.org/XML/1998/namespace}space"
+
 class ParseError(SyntaxError):
     """An error when parsing an XML document.
 
@@ -1184,7 +1187,20 @@ def indent(tree, space="  ", level=0):
     # Reduce the memory consumption by reusing indentation strings.
     indentations = ["\n" + level * space]
 
+    def _preserves_whitespace(elem):
+        # True iff whitespace in the content of the element is significant.
+        if elem.get(_XML_SPACE) == "preserve":
+            return True
+        if elem.text and elem.text.strip(_XML_WHITESPACE):
+            return True
+        return any(child.tail and child.tail.strip(_XML_WHITESPACE)
+                   for child in elem)
+
     def _indent_children(elem, level):
+        if _preserves_whitespace(elem):
+            # Adding whitespace here would change the content.
+            return
+
         # Start a new indentation level for the first child.
         child_level = level + 1
         try:
@@ -1193,18 +1209,15 @@ def indent(tree, space="  ", level=0):
             child_indentation = indentations[level] + space
             indentations.append(child_indentation)
 
-        if not elem.text or not elem.text.strip(_XML_WHITESPACE):
-            elem.text = child_indentation
+        elem.text = child_indentation
 
         for child in elem:
             if len(child):
                 _indent_children(child, child_level)
-            if not child.tail or not child.tail.strip(_XML_WHITESPACE):
-                child.tail = child_indentation
+            child.tail = child_indentation
 
         # Dedent after the last child by overwriting the previous indentation.
-        if not child.tail.strip(_XML_WHITESPACE):
-            child.tail = indentations[level]
+        child.tail = indentations[level]
 
     _indent_children(tree, 0)
 
