@@ -266,6 +266,13 @@ rules apply:
   .. versionchanged:: next
      Previously, :attr:`~xml.dom.Attr.specified` was always ``False``.
 
+* The constraints of the DOM are now enforced,
+  and the corresponding exceptions are raised.
+
+  .. versionchanged:: next
+     Previously, many invalid operations silently succeeded
+     and produced an invalid document.
+
 The following interfaces have no implementation in :mod:`!xml.dom.minidom`:
 
 * :class:`DOMTimeStamp`

@@ -232,6 +232,8 @@ DOM Level 2 added the ability to create new :class:`Document` and
    *qualifiedName*, *publicId*, and *systemId* strings, representing the
    information contained in an XML document type declaration.
 
+   Raise :exc:`InvalidCharacterErr` if the name is not a valid XML name.
+
 
 .. _dom-node-objects:
 
@@ -457,6 +459,10 @@ for each node type are:
    children, returning *newChild*. If the node was already in
    the tree, it is removed first.
 
+   Raise :exc:`WrongDocumentErr` if *newChild* was created by another
+   document, and :exc:`HierarchyRequestErr` if it is this node itself or
+   its ancestor.
+
 
 .. method:: Node.insertBefore(newChild, refChild)
 
@@ -464,6 +470,10 @@ for each node type are:
    *refChild* is a child of this node; if not, :exc:`ValueError` is raised.
    *newChild* is returned. If *refChild* is ``None``, it inserts *newChild* at the
    end of the children's list.
+
+   Raise :exc:`WrongDocumentErr` if *newChild* was created by another
+   document, and :exc:`HierarchyRequestErr` if it is this node itself or
+   its ancestor.
 
 
 .. method:: Node.removeChild(oldChild)
@@ -478,6 +488,10 @@ for each node type are:
 
    Replace an existing node with a new node. It must be the case that  *oldChild*
    is a child of this node; if not, :exc:`ValueError` is raised.
+
+   Raise :exc:`WrongDocumentErr` if *newChild* was created by another
+   document, and :exc:`HierarchyRequestErr` if it is this node itself or
+   its ancestor.
 
 
 .. method:: Node.normalize()
@@ -665,6 +679,8 @@ inherits properties from :class:`Node`.
    document when it is created.  You need to explicitly insert it with one of the
    other methods such as :meth:`~Node.insertBefore` or :meth:`~Node.appendChild`.
 
+   Raise :exc:`InvalidCharacterErr` if the name is not a valid XML name.
+
 
 .. method:: Document.createElementNS(namespaceURI, tagName)
 
@@ -672,6 +688,8 @@ inherits properties from :class:`Node`.
    prefix.  The element is not inserted into the document when it is created.  You
    need to explicitly insert it with one of the other methods such as
    :meth:`~Node.insertBefore` or :meth:`~Node.appendChild`.
+
+   Raise :exc:`InvalidCharacterErr` if the name is not a valid XML name.
 
 
 .. method:: Document.createTextNode(data)
@@ -685,6 +703,8 @@ inherits properties from :class:`Node`.
 
    Create and return a new entity reference node.
    The node is not inserted into the document when it is created.
+
+   Raise :exc:`InvalidCharacterErr` if the name is not a valid XML name.
 
    .. versionadded:: next
 
@@ -702,6 +722,8 @@ inherits properties from :class:`Node`.
    *data* passed as parameters.  As with the other creation methods, this one does
    not insert the node into the tree.
 
+   Raise :exc:`InvalidCharacterErr` if the name is not a valid XML name.
+
 
 .. method:: Document.createAttribute(name)
 
@@ -710,6 +732,8 @@ inherits properties from :class:`Node`.
    :meth:`~Element.setAttributeNode` on the appropriate :class:`Element` object
    to use the newly created attribute instance.
 
+   Raise :exc:`InvalidCharacterErr` if the name is not a valid XML name.
+
 
 .. method:: Document.createAttributeNS(namespaceURI, qualifiedName)
 
@@ -717,6 +741,8 @@ inherits properties from :class:`Node`.
    prefix.  This method does not associate the attribute node with any particular
    element.  You must use :meth:`~Element.setAttributeNode` on the appropriate
    :class:`Element` object to use the newly created attribute instance.
+
+   Raise :exc:`InvalidCharacterErr` if the name is not a valid XML name.
 
 
 .. method:: Document.getElementById(id)
@@ -854,6 +880,8 @@ of that class.
 
    Set an attribute value from a string.
 
+   Raise :exc:`InvalidCharacterErr` if the name is not a valid XML name.
+
 
 .. method:: Element.setAttributeNode(newAttr)
 
@@ -861,6 +889,8 @@ of that class.
    necessary if the :attr:`~Attr.name` attribute matches.  If a replacement
    occurs, the old attribute node will be returned.  If *newAttr* is already in use,
    :exc:`InuseAttributeErr` will be raised.
+
+   Raise :exc:`WrongDocumentErr` if *newAttr* was created by another document.
 
 
 .. method:: Element.setAttributeNodeNS(newAttr)
@@ -871,11 +901,15 @@ of that class.
    returned.  If *newAttr* is already in use, :exc:`InuseAttributeErr` will be
    raised.
 
+   Raise :exc:`WrongDocumentErr` if *newAttr* was created by another document.
+
 
 .. method:: Element.setAttributeNS(namespaceURI, qname, value)
 
    Set an attribute value from a string, given a *namespaceURI* and a *qname*.
    Note that a qname is the whole attribute name.  This is different than above.
+
+   Raise :exc:`InvalidCharacterErr` if the name is not a valid XML name.
 
 
 .. _dom-attr-objects:
@@ -982,12 +1016,18 @@ NamedNodeMap Objects
    Add *node* to the map, using its :attr:`~Attr.name` as the key.
    Return the node which it replaces, or ``None`` if it replaces no node.
 
+   Raise :exc:`WrongDocumentErr` if *node* was created by another document,
+   and :exc:`InuseAttributeErr` if it belongs to another element.
+
 
 .. method:: NamedNodeMap.setNamedItemNS(node)
 
    Add *node* to the map,
    using its namespace URI and local name as the key.
    Return the node which it replaces, or ``None`` if it replaces no node.
+
+   Raise :exc:`WrongDocumentErr` if *node* was created by another document,
+   and :exc:`InuseAttributeErr` if it belongs to another element.
 
 
 .. method:: NamedNodeMap.removeNamedItem(name)
