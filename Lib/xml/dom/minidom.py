@@ -649,6 +649,12 @@ class NamedNodeMap(object):
         if not isinstance(node, Attr):
             raise xml.dom.HierarchyRequestErr(
                 "%s cannot be child of %s" % (repr(node), repr(self)))
+        owner = self._ownerElement
+        if node.ownerDocument not in (None, owner.ownerDocument):
+            raise xml.dom.WrongDocumentErr(
+                "%s was created by another document" % repr(node))
+        if node.ownerElement not in (None, owner):
+            raise xml.dom.InuseAttributeErr("attribute node already owned")
         old = self._attrs.get(node.name)
         if old:
             old.unlink()

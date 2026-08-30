@@ -1910,6 +1910,22 @@ class MinidomTest(unittest.TestCase):
         self.assertTrue(elem.hasAttribute("z"))
         # re-setting an own attribute is not an error
         elem.setAttributeNode(elem.getAttributeNode("a"))
+
+        # the same checks are applied in NamedNodeMap.setNamedItem()
+        attrs = elem.attributes
+        self.assertRaises(xml.dom.WrongDocumentErr, attrs.setNamedItem,
+                          other.createAttribute("y"))
+        self.assertRaises(xml.dom.WrongDocumentErr, attrs.setNamedItemNS,
+                          other.createAttributeNS(None, "y"))
+        attrs.setNamedItem(doc.createAttribute("y"))
+        self.assertTrue(elem.hasAttribute("y"))
+
+        # an attribute of another element of the same document is in use
+        doc2 = parseString("<doc><a x='v'/><b/></doc>")
+        a, b = doc2.documentElement.childNodes
+        self.assertRaises(xml.dom.InuseAttributeErr, b.attributes.setNamedItem,
+                          a.getAttributeNode("x"))
+        doc2.unlink()
         doc.unlink()
         other.unlink()
 

@@ -3,6 +3,8 @@ The factory methods now raise :exc:`~xml.dom.InvalidCharacterErr`
 if the name is not a valid XML name.
 Inserting or setting a node created by another document
 now raises :exc:`~xml.dom.WrongDocumentErr`,
+setting an attribute node which belongs to another element
+now raises :exc:`~xml.dom.InuseAttributeErr`,
 and inserting a node into itself or its descendant
 now raises :exc:`~xml.dom.HierarchyRequestErr`.
 A document can no longer have two element or two document type children,

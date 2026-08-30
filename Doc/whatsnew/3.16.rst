@@ -867,6 +867,8 @@ that may require changes to your code.
   for a name which is not a valid XML name,
   :exc:`~xml.dom.WrongDocumentErr`
   for inserting or setting a node created by another document,
+  :exc:`~xml.dom.InuseAttributeErr` for setting an attribute node
+  which belongs to another element,
   and :exc:`~xml.dom.HierarchyRequestErr` for inserting a node into itself
   or its descendant.
   It also rejects a second element or document type child of a document
