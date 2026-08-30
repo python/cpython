@@ -60,24 +60,6 @@ _PyTokenizer_tok_new(void)
     return tok;
 }
 
-static void
-free_fstring_expressions(struct tok_state *tok)
-{
-    int index;
-    tokenizer_mode *mode;
-
-    for (index = tok->tok_mode_stack_index; index >= 0; --index) {
-        mode = &(tok->tok_mode_stack[index]);
-        if (mode->last_expr_buffer != NULL) {
-            PyMem_Free(mode->last_expr_buffer);
-            mode->last_expr_buffer = NULL;
-            mode->last_expr_size = 0;
-            mode->last_expr_end = -1;
-            mode->in_format_spec = 0;
-        }
-    }
-}
-
 /* Free a tok_state structure */
 void
 _PyTokenizer_Free(struct tok_state *tok)
@@ -89,7 +71,9 @@ _PyTokenizer_Free(struct tok_state *tok)
     Py_XDECREF(tok->module);
     _PyTok_ReaderFree(tok);
     _PyTok_SourceClear(&tok->source);
-    free_fstring_expressions(tok);
+    for (int i = 0; i <= tok->tok_mode_stack_index; i++) {
+        PyMem_Free(tok->tok_mode_stack[i].comments);
+    }
     PyMem_Free(tok);
 }
 
@@ -108,31 +92,11 @@ _PyToken_Init(struct token *token) {
     token->metadata = NULL;
 }
 
-static inline _PyTok_Span
-buffer_span(const struct tok_state *tok, const char *start, const char *end)
-{
-    if (start == NULL) {
-        assert(end == NULL);
-        return (_PyTok_Span){-1, -1};
-    }
-    assert(end != NULL);
-    const char *base = tok->buf;
-    assert(base != NULL);
-    assert(tok->inp >= base);
-    Py_ssize_t start_offset = start - base;
-    Py_ssize_t end_offset = end - base;
-    assert(start_offset >= 0 && start_offset <= end_offset);
-    assert(end_offset <= tok->inp - base);
-    assert(tok->buf_offset <= PY_SSIZE_T_MAX - end_offset);
-    return _PyTok_SpanFromBounds(
-        tok->buf_offset + start_offset, tok->buf_offset + end_offset);
-}
-
 int
 _PyLexer_token_setup(struct tok_state *tok, struct token *token, int type, const char *start, const char *end)
 {
     token->level = tok->level;
-    token->span = buffer_span(tok, start, end);
+    token->span = _PyLexer_BufferSpan(tok, start, end);
     int lineno = ISSTRINGLIT(type) ? tok->first_lineno : tok->lineno;
     token->start_loc = (_PyTok_Loc){lineno, -1};
     token->end_loc = (_PyTok_Loc){tok->lineno, -1};

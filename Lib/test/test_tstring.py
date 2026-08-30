@@ -287,5 +287,22 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         )
         self.assertEqual(fstring(t), "\n        Hello,\n        Python\n        ")
 
+        t = t'{"""a" # inside"""}'
+        self.assertEqual(t.interpolations[0].expression,
+                         '"""a" # inside"""')
+
+        t = t'{"""a""""#" # outside
+}'
+        self.assertEqual(t.interpolations[0].expression, '"""a""""#"')
+
+        x, y = 1, 2
+        t = t'{x != y # outside
+}'
+        self.assertEqual(t.interpolations[0].expression, 'x != y')
+
+        d = {'a#b': 42}
+        t = t'''{f"{d["a#b"]}"}'''
+        self.assertEqual(t.interpolations[0].expression, 'f"{d["a#b"]}"')
+
 if __name__ == '__main__':
     unittest.main()

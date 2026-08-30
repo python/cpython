@@ -317,6 +317,18 @@ _PyLexer_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, str
             c = tok_nextc(tok);
         }
 
+        if (INSIDE_FSTRING(tok) && INSIDE_FSTRING_EXPR(current_tok)) {
+            const char *comment_end = tok->cur;
+            if (c == '\n' || c == '\r') {
+                comment_end--;
+            }
+            if (_PyLexer_record_ftstring_comment(
+                    tok, tok->start, comment_end) < 0) {
+                tok->done = E_NOMEM;
+                return MAKE_TOKEN(ERRORTOKEN);
+            }
+        }
+
         if (tok->tok_extra_tokens) {
             p = tok->start;
         }
@@ -544,10 +556,18 @@ _PyLexer_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, str
          int cursor_in_format_with_debug =
              cursor == 1 && (current_tok->in_debug || in_format_spec);
          int cursor_valid = cursor == 0 || cursor_in_format_with_debug;
-        if ((cursor_valid) && !_PyLexer_update_ftstring_expr(tok, c)) {
-            return MAKE_TOKEN(ENDMARKER);
+        if (cursor_valid && c == '!') {
+            int c2 = tok_nextc(tok);
+            if (c2 == '=') {
+                cursor_valid = 0;
+            }
+            tok_backup(tok, c2);
         }
-        if ((cursor_valid) && c != '{' && _PyLexer_set_ftstring_expr(tok, token, c)) {
+        if (cursor_valid) {
+            _PyLexer_update_ftstring_expr(tok, c);
+        }
+        if (cursor_valid && c != '{' &&
+                _PyLexer_set_ftstring_expr_metadata(tok, token)) {
             return MAKE_TOKEN(ERRORTOKEN);
         }
 
