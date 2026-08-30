@@ -1017,7 +1017,7 @@ math_1a(PyObject *arg, double (*func) (double), const char *err_msg)
    The last rule is used to catch overflow on platforms which follow
    C89 but for which HUGE_VAL is not an infinity.
 
-   For most two-argument functions (copysign, fmod, hypot)
+   For most two-argument functions (fmod, hypot)
    these rules are enough to ensure that Python's functions behave as
    specified in 'Annex F' of the C99 standard, with the 'invalid' and
    'divide-by-zero' floating-point exceptions mapping to Python's
@@ -1206,7 +1206,7 @@ math_ceil(PyObject *module, PyObject *number)
     return PyLong_FromDouble(ceil(x));
 }
 
-FUNC2(copysign, copysign,
+FUNC2NE(copysign, copysign,
       "copysign($module, x, y, /)\n--\n\n"
        "Return a float with the magnitude (absolute value) of x but the sign of y.\n\n"
       "On platforms that support signed zeros, copysign(1.0, -0.0)\n"
