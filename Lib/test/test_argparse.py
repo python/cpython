@@ -909,6 +909,11 @@ class TestOptionalsActionStoreFalse(ParserTestCase):
         ('-z', NS(z=False)),
     ]
 
+    def test_metavar(self):
+        parser = argparse.ArgumentParser()
+        action = parser.add_argument('-z', action='store_false', metavar='FLAG')
+        self.assertEqual(action.metavar, 'FLAG')
+
 
 class TestOptionalsActionStoreTrue(ParserTestCase):
     """Tests the store_true action for an Optional"""
@@ -919,6 +924,11 @@ class TestOptionalsActionStoreTrue(ParserTestCase):
         ('', NS(apple=False)),
         ('--apple', NS(apple=True)),
     ]
+
+    def test_metavar(self):
+        parser = argparse.ArgumentParser()
+        action = parser.add_argument('--apple', action='store_true', metavar='FLAG')
+        self.assertEqual(action.metavar, 'FLAG')
 
 class TestBooleanOptionalAction(ParserTestCase):
     """Tests BooleanOptionalAction"""

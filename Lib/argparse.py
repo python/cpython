@@ -1163,15 +1163,17 @@ class _StoreTrueAction(_StoreConstAction):
                  default=False,
                  required=False,
                  help=None,
+                 metavar=None,
                  deprecated=False):
         super(_StoreTrueAction, self).__init__(
             option_strings=option_strings,
             dest=dest,
             const=True,
-            deprecated=deprecated,
+            default=default,
             required=required,
             help=help,
-            default=default)
+            metavar=metavar,
+            deprecated=deprecated)
 
 
 class _StoreFalseAction(_StoreConstAction):
@@ -1182,6 +1184,7 @@ class _StoreFalseAction(_StoreConstAction):
                  default=True,
                  required=False,
                  help=None,
+                 metavar=None,
                  deprecated=False):
         super(_StoreFalseAction, self).__init__(
             option_strings=option_strings,
@@ -1190,6 +1193,7 @@ class _StoreFalseAction(_StoreConstAction):
             default=default,
             required=required,
             help=help,
+            metavar=metavar,
             deprecated=deprecated)
 
 

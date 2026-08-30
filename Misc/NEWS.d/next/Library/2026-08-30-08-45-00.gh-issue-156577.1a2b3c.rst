@@ -1,0 +1,1 @@
+Allow passing ``metavar`` to :mod:`argparse` actions ``'store_true'`` and ``'store_false'`` for consistency with ``'store_const'``.
