@@ -5,7 +5,8 @@
 ###############################
 
 While :ref:`reference-index` describes the exact syntax and
-semantics of the Python language, this library reference manual
+semantics of the Python language,  and :ref:`builtin-index` describes
+the built-ins, this library reference manual
 describes the standard library that is distributed with Python. It also
 describes some of the optional components that are commonly included
 in Python distributions.
