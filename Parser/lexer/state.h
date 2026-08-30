@@ -102,7 +102,6 @@ struct tok_state {
     /* Stuff for PEP 0263 */
     char *encoding;         /* Source encoding. */
     const char* line_start;     /* pointer to start of current line */
-    char* str;          /* Source string being tokenized (if tokenizing from a string)*/
 
     _PyTok_SourceText source;
     struct _PyTok_Reader *reader;

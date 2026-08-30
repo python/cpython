@@ -753,7 +753,9 @@ tokenizer_from_string(const char *input, int utf8_only, int exec_input,
         _PyTokenizer_Free(tok);
         return NULL;
     }
-    tok->buf = tok->cur = tok->inp = tok->str;
+    char *source = (char *)_PyTok_SourceData(&tok->source);
+    tok->buf = tok->cur = tok->inp = source;
+    tok->line_start = source;
     return tok;
 }
 

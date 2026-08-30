@@ -27,6 +27,12 @@ typedef struct {
     Py_ssize_t implicit_cap;
 } _PyTok_SourceText;
 
+static inline const char *
+_PyTok_SourceData(const _PyTok_SourceText *source)
+{
+    return source->bytes != NULL ? source->bytes : "";
+}
+
 PyAPI_FUNC(void) _PyTok_SourceInit(_PyTok_SourceText *);
 /* Clear invalidates all spans and views for the source. */
 PyAPI_FUNC(void) _PyTok_SourceClear(_PyTok_SourceText *);

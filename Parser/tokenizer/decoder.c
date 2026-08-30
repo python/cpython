@@ -399,10 +399,9 @@ _PyTok_PrepareString(struct tok_state *tok, const char *input, int utf8_only,
     if (stored < 0) {
         return -1;
     }
-    tok->str = tok->source.bytes != NULL ? tok->source.bytes : (char *)"";
     if (!utf8_only &&
             (tok->encoding == NULL || strcmp(tok->encoding, "utf-8") == 0) &&
-            !_PyTokenizer_ensure_utf8(tok->str, tok, 1)) {
+            !_PyTokenizer_ensure_utf8(_PyTok_SourceData(&tok->source), tok, 1)) {
         return -1;
     }
     return 0;

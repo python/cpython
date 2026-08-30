@@ -961,12 +961,9 @@ _PyPegen_set_syntax_error_metadata(Parser *p) {
         PyErr_SetRaisedException(exc);
         return;
     }
-    const char *source = NULL;
-    if (p->tok->str != NULL) {
-        source = p->tok->str;
-    }
-    if (!source && p->tok->fp_interactive && p->tok->interactive_src_start) {
-        source = p->tok->interactive_src_start;
+    const char *source = p->tok->source.bytes;
+    if (source == NULL && p->tok->fp == NULL) {
+        source = _PyTok_SourceData(&p->tok->source);
     }
     PyObject* the_source = NULL;
     if (source) {
