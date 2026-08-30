@@ -30,6 +30,7 @@ extensions = [
     'implementation_detail',
     'issue_role',
     'lexers',
+    'meta_navigation',
     'misc_news',
     'profiling_trace',
     'pydoc_topics',
