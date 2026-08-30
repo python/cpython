@@ -648,6 +648,12 @@ xml
   rather than defaulted from the DTD.
   (Contributed by Jason Orendorff and Serhiy Storchaka in :gh:`44871`.)
 
+* The :meth:`~xml.dom.minidom.Node.writexml`,
+  :meth:`~xml.dom.minidom.Node.toxml` and
+  :meth:`~xml.dom.minidom.Node.toprettyxml` methods
+  now work for :class:`!DocumentFragment` nodes in :mod:`xml.dom.minidom`.
+  (Contributed by Serhiy Storchaka in :gh:`54092`.)
+
 zipfile
 -------
 
