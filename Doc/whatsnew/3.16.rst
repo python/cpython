@@ -793,12 +793,12 @@ New deprecations
 
 * :mod:`abc`:
 
-  * Soft-deprecated since Python 3.3 :class:`abc.abstractclassmethod`,
-    :class:`abc.abstractstaticmethod`, and :class:`abc.abstractproperty`
+  * :class:`abc.abstractclassmethod`, :class:`abc.abstractstaticmethod`,
+    and :class:`abc.abstractproperty`, soft-deprecated since Python 3.3,
     now raise a :exc:`DeprecationWarning`.
-    These classes will be removed in Python 3.21, instead
+    These classes will be removed in Python 3.21;
     use :func:`abc.abstractmethod` with :func:`classmethod`,
-    :func:`staticmethod`, and :class:`property` respectively.
+    :func:`staticmethod`, and :class:`property` respectively instead.
 
 * :mod:`ast`:
 
@@ -813,9 +813,9 @@ New deprecations
 
 * :mod:`struct`:
 
-  * Soft-deprecated since Python 3.15, using ``'F'`` and ``'D'`` type codes are now
-    deprecated.  These codes will be removed in Python 3.21.  Use instead
-    two-letter forms ``'Zf'`` and ``'Zd'``.
+  * The ``'F'`` and ``'D'`` type codes, soft-deprecated since Python 3.15,
+    are now deprecated.  These codes will be removed in Python 3.21.
+    Use the two-letter forms ``'Zf'`` and ``'Zd'`` instead.
     (Contributed by Sergey B Kirpichev in :gh:`121249`.)
 
 * :mod:`tempfile`:
