@@ -41,6 +41,12 @@ enum string_kind_t {
 
 #define MAX_EXPR_NESTING 3
 
+typedef struct _tokenizer_comments {
+    Py_ssize_t count;
+    Py_ssize_t capacity;
+    _PyTok_Span spans[];
+} tokenizer_comments;
+
 typedef struct _tokenizer_mode {
     enum tokenizer_mode_kind_t kind;
 
@@ -50,20 +56,16 @@ typedef struct _tokenizer_mode {
     char quote;
     int quote_size;
     int raw;
-    const char* start;
-    const char* multi_line_start;
+    _PyTok_Off start;
+    _PyTok_Off multi_line_start;
     int first_line;
 
-    Py_ssize_t start_offset;
-    Py_ssize_t multi_line_start_offset;
-
-    Py_ssize_t last_expr_size;
-    Py_ssize_t last_expr_end;
-    char* last_expr_buffer;
+    _PyTok_Span expr_span;
     int in_debug;
     int in_format_spec;
 
     enum string_kind_t string_kind;
+    tokenizer_comments *comments;
 } tokenizer_mode;
 
 /* Tokenizer state */
@@ -128,6 +130,53 @@ struct tok_state {
     int debug;
 #endif
 };
+
+static inline _PyTok_Off
+_PyLexer_BufferOffset(const struct tok_state *tok, const char *position)
+{
+    assert(tok->buf != NULL);
+    assert(tok->inp >= tok->buf);
+    assert(position >= tok->buf && position <= tok->inp);
+    Py_ssize_t offset = position - tok->buf;
+    assert(tok->buf_offset <= PY_SSIZE_T_MAX - offset);
+    return tok->buf_offset + offset;
+}
+
+static inline char *
+_PyLexer_BufferPointer(const struct tok_state *tok, _PyTok_Off offset)
+{
+    assert(tok->buf != NULL);
+    assert(tok->inp >= tok->buf);
+    assert(offset >= tok->buf_offset);
+    assert(offset - tok->buf_offset <= tok->inp - tok->buf);
+    return tok->buf + (offset - tok->buf_offset);
+}
+
+static inline const char *
+_PyLexer_BufferSpanView(const struct tok_state *tok, _PyTok_Span span,
+                        Py_ssize_t *length)
+{
+    assert(length != NULL);
+    assert(_PyTok_SpanIsValid(span));
+    *length = span.end - span.start;
+    (void)_PyLexer_BufferPointer(tok, span.end);
+    return _PyLexer_BufferPointer(tok, span.start);
+}
+
+static inline _PyTok_Span
+_PyLexer_BufferSpan(const struct tok_state *tok, const char *start,
+                    const char *end)
+{
+    if (start == NULL) {
+        assert(end == NULL);
+        return (_PyTok_Span){-1, -1};
+    }
+    assert(end != NULL);
+    assert(start <= end);
+    return _PyTok_SpanFromBounds(
+        _PyLexer_BufferOffset(tok, start),
+        _PyLexer_BufferOffset(tok, end));
+}
 
 int _PyLexer_token_setup(struct tok_state *tok, struct token *token, int type, const char *start, const char *end);
 
