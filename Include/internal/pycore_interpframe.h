@@ -368,6 +368,9 @@ _PyFrame_ClearLocals(_PyInterpreterFrame *frame);
  PyAPI_FUNC(void)
 _PyFrame_ClearExceptCode(_PyInterpreterFrame * frame);
 
+void
+_PyFrame_ClearExceptCodeAndFunction(_PyInterpreterFrame *frame);
+
 int
 _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg);
 

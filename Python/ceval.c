@@ -1998,10 +1998,7 @@ clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     gen->gi_exc_state.previous_item = NULL;
     assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
     frame->previous = NULL;
-    if (PyGen_Check(gen)) {
-        frame->f_funcobj = PyStackRef_DUP(frame->f_funcobj);
-    }
-    _PyFrame_ClearExceptCode(frame);
+    _PyFrame_ClearExceptCodeAndFunction(frame);
     _PyErr_ClearExcState(&gen->gi_exc_state);
     // gh-143939: There must not be any escaping calls between setting
     // the generator return kind and returning from _PyEval_EvalFrame.
