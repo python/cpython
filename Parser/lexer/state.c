@@ -100,41 +100,46 @@ _PyToken_Free(struct token *token) {
 
 void
 _PyToken_Init(struct token *token) {
+#ifdef Py_DEBUG
+    token->span = (_PyTok_Span){-1, -1};
+    token->start_loc = (_PyTok_Loc){-1, -1};
+    token->end_loc = (_PyTok_Loc){-1, -1};
+#endif
     token->metadata = NULL;
 }
 
-int
-_PyLexer_type_comment_token_setup(struct tok_state *tok, struct token *token, int type, int col_offset,
-                         int end_col_offset, const char *start, const char *end)
+static inline _PyTok_Span
+buffer_span(const struct tok_state *tok, const char *start, const char *end)
 {
-    token->level = tok->level;
-    token->lineno = token->end_lineno = tok->lineno;
-    token->col_offset = col_offset;
-    token->end_col_offset = end_col_offset;
-    token->start = start;
-    token->end = end;
-    return type;
+    if (start == NULL) {
+        assert(end == NULL);
+        return (_PyTok_Span){-1, -1};
+    }
+    assert(end != NULL);
+    const char *base = tok->buf;
+    assert(base != NULL);
+    assert(tok->inp >= base);
+    Py_ssize_t start_offset = start - base;
+    Py_ssize_t end_offset = end - base;
+    assert(start_offset >= 0 && start_offset <= end_offset);
+    assert(end_offset <= tok->inp - base);
+    assert(tok->buf_offset <= PY_SSIZE_T_MAX - end_offset);
+    return _PyTok_SpanFromBounds(
+        tok->buf_offset + start_offset, tok->buf_offset + end_offset);
 }
 
 int
 _PyLexer_token_setup(struct tok_state *tok, struct token *token, int type, const char *start, const char *end)
 {
-    assert((start == NULL && end == NULL) || (start != NULL && end != NULL));
     token->level = tok->level;
-    if (ISSTRINGLIT(type)) {
-        token->lineno = tok->first_lineno;
-    }
-    else {
-        token->lineno = tok->lineno;
-    }
-    token->end_lineno = tok->lineno;
-    token->col_offset = token->end_col_offset = -1;
-    token->start = start;
-    token->end = end;
+    token->span = buffer_span(tok, start, end);
+    int lineno = ISSTRINGLIT(type) ? tok->first_lineno : tok->lineno;
+    token->start_loc = (_PyTok_Loc){lineno, -1};
+    token->end_loc = (_PyTok_Loc){tok->lineno, -1};
 
     if (start != NULL && end != NULL) {
-        token->col_offset = tok->starting_col_offset;
-        token->end_col_offset = tok->col_offset;
+        token->start_loc.byte_col = tok->starting_col_offset;
+        token->end_loc.byte_col = tok->col_offset;
     }
     return type;
 }

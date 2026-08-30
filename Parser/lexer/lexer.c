@@ -12,8 +12,6 @@
 
 
 #define MAKE_TOKEN(token_type) _PyLexer_token_setup(tok, token, token_type, p_start, p_end)
-#define MAKE_TYPE_COMMENT_TOKEN(token_type, col_offset, end_col_offset) (\
-                _PyLexer_type_comment_token_setup(tok, token, token_type, col_offset, end_col_offset, p_start, p_end))
 
 /* Spaces in this constant are treated as "zero or more spaces or tabs" when
    tokenizing. */
@@ -360,21 +358,25 @@ _PyLexer_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, str
                     && !(tok->cur > ignore_end
                          && ((unsigned char)ignore_end[0] >= 128 || Py_ISALNUM(ignore_end[0]))));
 
+                int type = is_type_ignore ? TYPE_IGNORE : TYPE_COMMENT;
+                int start_col_offset = is_type_ignore
+                    ? ignore_end_col_offset : current_starting_col_offset;
+                p_end = tok->cur;
                 if (is_type_ignore) {
                     p_start = ignore_end;
-                    p_end = tok->cur;
 
                     /* If this type ignore is the only thing on the line, consume the newline also. */
                     if (blankline) {
                         tok_nextc(tok);
                         tok->atbol = 1;
                     }
-                    return MAKE_TYPE_COMMENT_TOKEN(TYPE_IGNORE, ignore_end_col_offset, tok->col_offset);
                 } else {
                     p_start = type_start;
-                    p_end = tok->cur;
-                    return MAKE_TYPE_COMMENT_TOKEN(TYPE_COMMENT, current_starting_col_offset, tok->col_offset);
                 }
+                _PyLexer_token_setup(tok, token, type, p_start, p_end);
+                token->start_loc = (_PyTok_Loc){tok->lineno, start_col_offset};
+                token->end_loc = (_PyTok_Loc){tok->lineno, tok->col_offset};
+                return type;
             }
         }
         if (tok->tok_extra_tokens) {
