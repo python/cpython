@@ -80,34 +80,6 @@
 #endif
 
 
-#ifdef BIO_get_ktls_send
-#  ifdef MS_WINDOWS
-typedef long long Py_off_t;
-#  else
-typedef off_t Py_off_t;
-#  endif
-
-static int
-Py_off_t_converter(PyObject *arg, void *addr)
-{
-#ifdef HAVE_LARGEFILE_SUPPORT
-    *((Py_off_t *)addr) = PyLong_AsLongLong(arg);
-#else
-    *((Py_off_t *)addr) = PyLong_AsLong(arg);
-#endif
-    return PyErr_Occurred() ? 0 : 1;
-}
-
-/*[python input]
-
-class Py_off_t_converter(CConverter):
-    type = 'Py_off_t'
-    converter = 'Py_off_t_converter'
-
-[python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=3fd9ca8ca6f0cbb8]*/
-#endif /* BIO_get_ktls_send */
-
 struct py_ssl_error_code {
     const char *mnemonic;
     int library, reason;
@@ -3863,6 +3835,10 @@ _ssl__SSLContext_set_client_sigalgs_impl(PySSLContext *self,
 #ifdef OPENSSL_IS_AWSLC
     _setSSLError(get_state_ctx(self), "can't set client sigalgs on AWS-LC", 0, __FILE__, __LINE__);
     return NULL;
+#elif defined(LIBRESSL_VERSION_NUMBER)
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "setting client sigalgs is not supported by LibreSSL");
+    return NULL;
 #else
     if (!SSL_CTX_set1_client_sigalgs_list(self->ctx, sigalgslist)) {
         _setSSLError(get_state_ctx(self), "unrecognized signature algorithm", 0, __FILE__, __LINE__);
@@ -3884,11 +3860,17 @@ _ssl__SSLContext_set_server_sigalgs_impl(PySSLContext *self,
                                          const char *sigalgslist)
 /*[clinic end generated code: output=31ecb1d310285644 input=653b752e4f8d801b]*/
 {
+#ifdef LIBRESSL_VERSION_NUMBER
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "setting server sigalgs is not supported by LibreSSL");
+    return NULL;
+#else
     if (!SSL_CTX_set1_sigalgs_list(self->ctx, sigalgslist)) {
         _setSSLError(get_state_ctx(self), "unrecognized signature algorithm", 0, __FILE__, __LINE__);
         return NULL;
     }
     Py_RETURN_NONE;
+#endif
 }
 
 static int
@@ -4924,16 +4906,16 @@ static PyObject *
 _ssl__SSLContext_load_dh_params_impl(PySSLContext *self, PyObject *filepath)
 /*[clinic end generated code: output=dd74b3c524dd2723 input=832769a0734b8c4d]*/
 {
-    FILE *f;
-    DH *dh;
-
-#if defined(MS_WINDOWS) && defined(Py_DEBUG)
+#if defined(MS_WINDOWS_APP) && !defined(MS_WINDOWS_DESKTOP)
+    PyErr_SetString(PyExc_NotImplementedError, "load_dh_params: unavailable on UWP build");
+    return NULL;
+#elif defined(MS_WINDOWS) && defined(Py_DEBUG)
     PyErr_SetString(PyExc_NotImplementedError,
                     "load_dh_params: unavailable on Windows debug build");
     return NULL;
-#endif
-
-    f = Py_fopen(filepath, "rb");
+#else
+    FILE* f = Py_fopen(filepath, "rb");
+    DH* dh;
     if (f == NULL)
         return NULL;
 
@@ -4959,6 +4941,7 @@ _ssl__SSLContext_load_dh_params_impl(PySSLContext *self, PyObject *filepath)
     }
     DH_free(dh);
     Py_RETURN_NONE;
+#endif
 }
 
 /*[clinic input]

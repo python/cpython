@@ -15,7 +15,7 @@ from test.test_asyncio.utils import await_without_task
 
 # To prevent a warning "test altered the execution environment"
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class MyExc(Exception):
@@ -608,6 +608,39 @@ class BaseTestTaskGroup:
             get_error_types(cm.exception), {MyBaseExc, ZeroDivisionError}
         )
 
+    async def test_taskgroup_20b(self):
+        # Same setup as test_taskgroup_20 (a KeyboardInterrupt from the
+        # "async with" body itself, alongside a sibling task's exception):
+        # raising self._base_error out of _aexit() discards self._errors
+        # silently. The sibling's exception can't be raised alongside
+        # the KeyboardInterrupt (only one exception can propagate), but
+        # it must be reported via the loop's exception handler instead
+        # of being discarded silently. See gh-135736.
+        async def crash_soon():
+            await asyncio.sleep(0.1)
+            1 / 0
+
+        async def nested():
+            try:
+                await asyncio.sleep(10)
+            finally:
+                raise KeyboardInterrupt
+
+        async def runner():
+            async with taskgroups.TaskGroup() as g:
+                g.create_task(crash_soon())
+                await nested()
+
+        contexts = []
+        loop = asyncio.get_running_loop()
+        loop.set_exception_handler(lambda loop, context: contexts.append(context))
+
+        with self.assertRaises(KeyboardInterrupt):
+            await runner()
+
+        self.assertEqual(len(contexts), 1)
+        self.assertIsInstance(contexts[0]['exception'], ZeroDivisionError)
+
     async def _test_taskgroup_21(self):
         # This test doesn't work as asyncio, currently, doesn't
         # correctly propagate KeyboardInterrupt (or SystemExit) --
@@ -1154,6 +1187,27 @@ class BaseTestTaskGroup:
             with self.assertRaises(RuntimeError):
                 tg.create_task(asyncio.sleep(1))
 
+    async def test_taskgroup_cancel_keeps_outer_cancellation(self):
+        # gh-155433: any cancellation from outside the group must propagate.
+        async def child():
+            try:
+                await asyncio.sleep(10)
+            finally:
+                await asyncio.sleep(0.1)
+
+        async def body():
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(child())
+                await asyncio.sleep(0)
+                tg.cancel()
+
+        task = asyncio.create_task(body())
+        await asyncio.sleep(0.01)
+        task.cancel('message')
+        with self.assertRaises(asyncio.CancelledError) as cm:
+            await task
+        self.assertEqual('message', cm.exception.args[0])
+
     async def test_taskgroup_cancel_before_exception(self):
         async def raise_exc(parent_tg: asyncio.TaskGroup):
             parent_tg.cancel()
@@ -1226,6 +1280,72 @@ class BaseTestTaskGroup:
 
         self.assertEqual(await race(fn_1, fn_2, fn_3), 1)
         self.assertListEqual(record, ["1 started", "2 started", "3 started", "1 finished"])
+
+    async def test_taskgroup_generator_exit_01(self):
+        # GeneratorExit in a TaskGroup should be fine
+        async def gen():
+            yield 1
+
+        async def fn():
+            async with asyncio.TaskGroup() as tg:
+                async for n in gen():
+                    yield n
+
+        g = fn()
+        await g.asend(None)
+        await g.aclose()
+
+    async def test_taskgroup_generator_exit_02(self):
+        # A lone GeneratorExit in a task should still give an ExceptionGroup
+        async def t():
+            raise GeneratorExit
+
+        async def fn():
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(t())
+
+        with self.assertRaises(BaseExceptionGroup) as cm:
+            await fn()
+        self.assertEqual(get_error_types(cm.exception), {GeneratorExit})
+
+    async def test_taskgroup_generator_exit_03(self):
+        # A GeneratorExit in one task and an error in another should
+        # still give an ExceptionGroup
+        async def t1():
+            raise GeneratorExit
+
+        async def t2():
+            raise AssertionError('t2 failed')
+
+        async def fn():
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(t1())
+                tg.create_task(t2())
+
+        with self.assertRaises(BaseExceptionGroup) as cm:
+            await fn()
+
+        self.assertEqual(get_error_types(cm.exception), {GeneratorExit, AssertionError})
+
+    async def test_taskgroup_generator_exit_04(self):
+        event = asyncio.Event()
+        async def t():
+            event.set()
+            raise AssertionError('t failed')
+
+        async def fn():
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(t())
+                yield 1
+
+        g = fn()
+        await g.asend(None)
+        await event.wait()  # wait for t() to run
+
+        with self.assertRaises(BaseExceptionGroup) as cm:
+            await g.aclose()
+
+        self.assertEqual(get_error_types(cm.exception), {GeneratorExit, AssertionError})
 
 
 class TestTaskGroup(BaseTestTaskGroup, unittest.IsolatedAsyncioTestCase):

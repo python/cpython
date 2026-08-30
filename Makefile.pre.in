@@ -285,6 +285,7 @@ DIST=		$(DISTFILES) $(DISTDIRS)
 LIBRARY=	@LIBRARY@
 LDLIBRARY=      @LDLIBRARY@
 BLDLIBRARY=     @BLDLIBRARY@
+MODULE_LDFLAGS_SHARED=$(if $(LIBPYTHON),$(BLDLIBRARY))
 PY3LIBRARY=     @PY3LIBRARY@
 DLLLIBRARY=	@DLLLIBRARY@
 LDLIBRARYDIR=   @LDLIBRARYDIR@
@@ -395,11 +396,13 @@ PEGEN_OBJS=		\
 TOKENIZER_OBJS=		\
 		Parser/lexer/buffer.o \
 		Parser/lexer/lexer.o \
+		Parser/lexer/number.o \
 		Parser/lexer/state.o \
-		Parser/tokenizer/file_tokenizer.o \
-		Parser/tokenizer/readline_tokenizer.o \
-		Parser/tokenizer/string_tokenizer.o \
-		Parser/tokenizer/utf8_tokenizer.o \
+		Parser/lexer/string.o \
+		Parser/tokenizer/cursor.o \
+		Parser/tokenizer/decoder.o \
+		Parser/tokenizer/reader.o \
+		Parser/tokenizer/source.o \
 		Parser/tokenizer/helpers.o
 
 PEGEN_HEADERS= \
@@ -410,7 +413,12 @@ PEGEN_HEADERS= \
 TOKENIZER_HEADERS= \
 		Parser/lexer/buffer.h \
 		Parser/lexer/lexer.h \
+		Parser/lexer/lexer_internal.h \
 		Parser/lexer/state.h \
+		Parser/tokenizer/cursor.h \
+		Parser/tokenizer/reader.h \
+		Parser/tokenizer/reader_internal.h \
+		Parser/tokenizer/source.h \
 		Parser/tokenizer/tokenizer.h \
 		Parser/tokenizer/helpers.h
 
@@ -508,6 +516,7 @@ PYTHON_OBJS=	\
 		Python/thread.o \
 		Python/traceback.o \
 		Python/tracemalloc.o \
+		Python/typecache.o \
 		Python/uniqueid.o \
 		Python/getopt.o \
 		Python/pystrcmp.o \
@@ -621,13 +630,16 @@ LIBEXPAT_HEADERS= \
 		Modules/expat/expat.h \
 		Modules/expat/expat_config.h \
 		Modules/expat/expat_external.h \
+		Modules/expat/fallthrough.h \
 		Modules/expat/iasciitab.h \
 		Modules/expat/internal.h \
 		Modules/expat/latin1tab.h \
+		Modules/expat/memory_sanitizer.h \
 		Modules/expat/nametab.h \
 		Modules/expat/pyexpatns.h \
 		Modules/expat/siphash.h \
 		Modules/expat/utf8tab.h \
+		Modules/expat/xcsinc.c \
 		Modules/expat/xmlrole.h \
 		Modules/expat/xmltok.h \
 		Modules/expat/xmltok_impl.h \
@@ -1413,6 +1425,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_tracemalloc.h \
 		$(srcdir)/Include/internal/pycore_tstate.h \
 		$(srcdir)/Include/internal/pycore_tuple.h \
+		$(srcdir)/Include/internal/pycore_typecache.h \
 		$(srcdir)/Include/internal/pycore_typedefs.h \
 		$(srcdir)/Include/internal/pycore_typeobject.h \
 		$(srcdir)/Include/internal/pycore_typevarobject.h \
@@ -1616,6 +1629,8 @@ Programs/_bootstrap_python.o: Programs/_bootstrap_python.c $(BOOTSTRAP_HEADERS) 
 _bootstrap_python: $(LIBRARY_OBJS_OMIT_FROZEN) Programs/_bootstrap_python.o Modules/getpath.o Modules/Setup.local
 	$(LINKCC) $(PY_LDFLAGS_NOLTO) -o $@ $(LIBRARY_OBJS_OMIT_FROZEN) \
 		Programs/_bootstrap_python.o Modules/getpath.o $(LIBS) $(MODLIBS) $(SYSLIBS)
+	# Dummy pybuilddir.txt  is needed for _bootstrap_python to be runnable
+	@echo "none" > ./pybuilddir.txt
 
 
 ############################################################################
@@ -1650,10 +1665,6 @@ FROZEN_FILES_IN = \
 		Lib/zipimport.py \
 		Lib/abc.py \
 		Lib/codecs.py \
-		Lib/encodings/__init__.py \
-		Lib/encodings/aliases.py \
-		Lib/encodings/utf_8.py \
-		Lib/encodings/_win_cp_codecs.py \
 		Lib/io.py \
 		Lib/_collections_abc.py \
 		Lib/_sitebuiltins.py \
@@ -1680,10 +1691,6 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/zipimport.h \
 		Python/frozen_modules/abc.h \
 		Python/frozen_modules/codecs.h \
-		Python/frozen_modules/encodings.h \
-		Python/frozen_modules/encodings.aliases.h \
-		Python/frozen_modules/encodings.utf_8.h \
-		Python/frozen_modules/encodings._win_cp_codecs.h \
 		Python/frozen_modules/io.h \
 		Python/frozen_modules/_collections_abc.h \
 		Python/frozen_modules/_sitebuiltins.h \
@@ -1732,18 +1739,6 @@ Python/frozen_modules/abc.h: Lib/abc.py $(FREEZE_MODULE_DEPS)
 
 Python/frozen_modules/codecs.h: Lib/codecs.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) codecs $(srcdir)/Lib/codecs.py Python/frozen_modules/codecs.h
-
-Python/frozen_modules/encodings.h: Lib/encodings/__init__.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) encodings $(srcdir)/Lib/encodings/__init__.py Python/frozen_modules/encodings.h
-
-Python/frozen_modules/encodings.aliases.h: Lib/encodings/aliases.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) encodings.aliases $(srcdir)/Lib/encodings/aliases.py Python/frozen_modules/encodings.aliases.h
-
-Python/frozen_modules/encodings.utf_8.h: Lib/encodings/utf_8.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) encodings.utf_8 $(srcdir)/Lib/encodings/utf_8.py Python/frozen_modules/encodings.utf_8.h
-
-Python/frozen_modules/encodings._win_cp_codecs.h: Lib/encodings/_win_cp_codecs.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) encodings._win_cp_codecs $(srcdir)/Lib/encodings/_win_cp_codecs.py Python/frozen_modules/encodings._win_cp_codecs.h
 
 Python/frozen_modules/io.h: Lib/io.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) io $(srcdir)/Lib/io.py Python/frozen_modules/io.h
@@ -2673,6 +2668,21 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_lazy_import/data \
 		test/test_lazy_import/data/pkg \
 		test/test_lazy_import/data/badsyntax \
+		test/test_lazy_import/data/circular_import_pkg \
+		test/test_lazy_import/data/lazypkg \
+		test/test_lazy_import/data/metasyntactic \
+		test/test_lazy_import/data/metasyntactic/foo \
+		test/test_lazy_import/data/metasyntactic/foo/ack \
+		test/test_lazy_import/data/metasyntactic/foo/bar \
+		test/test_lazy_import/data/metasyntactic/foo/bar/baz \
+		test/test_lazy_import/data/metasyntactic/foo/bar/baz/qux \
+		test/test_lazy_import/data/metasyntactic/foo/bar/thud \
+		test/test_lazy_import/data/metasyntactic/plugh \
+		test/test_lazy_import/data/metasyntactic/waldo \
+		test/test_lazy_import/data/metasyntactic/waldo/fred \
+		test/test_lazy_import/data/module_same_name_var_order1 \
+		test/test_lazy_import/data/module_same_name_var_order2 \
+		test/test_lazy_import/data/versioned \
 		test/test_module \
 		test/test_multiprocessing_fork \
 		test/test_multiprocessing_forkserver \
@@ -3452,7 +3462,7 @@ MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h $(srcdir)/Modules/addrinfo.
 MODULE__SSL_DEPS=$(srcdir)/Modules/_ssl.h $(srcdir)/Modules/_ssl/cert.c $(srcdir)/Modules/_ssl/debughelpers.c $(srcdir)/Modules/_ssl/misc.c $(srcdir)/Modules/_ssl_data_111.h $(srcdir)/Modules/_ssl_data_300.h $(srcdir)/Modules/socketmodule.h
 MODULE__TESTCAPI_DEPS=$(srcdir)/Modules/_testcapi/parts.h $(srcdir)/Modules/_testcapi/util.h
 MODULE__TESTLIMITEDCAPI_DEPS=$(srcdir)/Modules/_testlimitedcapi/testcapi_long.h $(srcdir)/Modules/_testlimitedcapi/parts.h $(srcdir)/Modules/_testlimitedcapi/util.h
-MODULE__TESTINTERNALCAPI_DEPS=$(srcdir)/Modules/_testinternalcapi/parts.h $(srcdir)/Python/ceval.h $(srcdir)/Modules/_testinternalcapi/test_targets.h $(srcdir)/Modules/_testinternalcapi/test_cases.c.h
+MODULE__TESTINTERNALCAPI_DEPS=$(srcdir)/Modules/_testinternalcapi/parts.h $(srcdir)/Parser/tokenizer/cursor.h $(srcdir)/Parser/tokenizer/source.h $(srcdir)/Python/ceval.h $(srcdir)/Modules/_testinternalcapi/test_targets.h $(srcdir)/Modules/_testinternalcapi/test_cases.c.h
 MODULE__SQLITE3_DEPS=$(srcdir)/Modules/_sqlite/connection.h $(srcdir)/Modules/_sqlite/cursor.h $(srcdir)/Modules/_sqlite/microprotocols.h $(srcdir)/Modules/_sqlite/module.h $(srcdir)/Modules/_sqlite/prepare_protocol.h $(srcdir)/Modules/_sqlite/row.h $(srcdir)/Modules/_sqlite/util.h
 MODULE__ZSTD_DEPS=$(srcdir)/Modules/_zstd/_zstdmodule.h $(srcdir)/Modules/_zstd/buffer.h $(srcdir)/Modules/_zstd/zstddict.h
 

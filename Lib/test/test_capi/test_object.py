@@ -178,10 +178,16 @@ class EnableDeferredRefcountingTest(unittest.TestCase):
     @support.requires_resource("cpu")
     def test_enable_deferred_refcount(self):
         from threading import Thread
+        import gc
 
         self.assertEqual(_testcapi.pyobject_enable_deferred_refcount("not tracked"), 0)
         foo = []
         self.assertEqual(_testcapi.pyobject_enable_deferred_refcount(foo), int(support.Py_GIL_DISABLED))
+
+        # The object must be tracked by the GC
+        not_gc_tracked = tuple([1, 2])
+        self.assertFalse(gc.is_tracked(not_gc_tracked))
+        self.assertEqual(_testcapi.pyobject_enable_deferred_refcount(not_gc_tracked), 0)
 
         # Make sure reference counting works on foo now
         self.assertEqual(foo, [])

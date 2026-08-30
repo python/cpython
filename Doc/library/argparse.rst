@@ -442,9 +442,8 @@ is considered equivalent to the expression ``['-f', 'foo', '-f', 'bar']``.
 
 .. note::
 
-   Empty lines are treated as empty strings (``''``), which are allowed as values but
-   not as arguments. Empty lines that are read as arguments will result in an
-   "unrecognized arguments" error.
+   Each line is treated as a single argument, so an empty line is read as an
+   empty string (``''``).
 
 :class:`ArgumentParser` uses :term:`filesystem encoding and error handler`
 to read the file containing arguments.
@@ -1052,6 +1051,10 @@ is used when no command-line argument was present::
    >>> parser.parse_args([])
    Namespace(foo=42)
 
+Because ``nargs='*'`` gathers any supplied values into a list, an absent
+positional argument yields an empty list (``[]``). Only a non-``None``
+*default* overrides this (so ``default=None`` still gives ``[]``).
+
 For required_ arguments, the ``default`` value is ignored. For example, this
 applies to positional arguments with nargs_ values other than ``?`` or ``*``,
 or optional arguments marked as ``required=True``.
@@ -1369,6 +1372,11 @@ behavior::
    >>> parser.parse_args('--foo XXX'.split())
    Namespace(bar='XXX')
 
+Multiple arguments may share the same ``dest``.  By default, the value from the
+last such argument given on the command line wins.  Use ``action='append'`` to
+collect values from all of them into a list instead.  For conflicting *option
+strings* rather than ``dest`` names, see conflict_handler_.
+
 .. versionchanged:: 3.15
    Single-dash long option now takes precedence over short options.
 
@@ -1556,12 +1564,12 @@ it exits and prints the error along with a usage message::
    >>> # invalid option
    >>> parser.parse_args(['--bar'])
    usage: PROG [-h] [--foo FOO] [bar]
-   PROG: error: no such option: --bar
+   PROG: error: unrecognized arguments: --bar
 
    >>> # wrong number of arguments
    >>> parser.parse_args(['spam', 'badger'])
    usage: PROG [-h] [--foo FOO] [bar]
-   PROG: error: extra arguments found: badger
+   PROG: error: unrecognized arguments: badger
 
 
 Arguments containing ``-``
@@ -1598,7 +1606,7 @@ there are no options in the parser that look like negative numbers::
    >>> # negative number options present, so -2 is an option
    >>> parser.parse_args(['-2'])
    usage: PROG [-h] [-1 ONE] [foo]
-   PROG: error: no such option: -2
+   PROG: error: unrecognized arguments: -2
 
    >>> # negative number options present, so both -1s are options
    >>> parser.parse_args(['-1', '-1'])
@@ -1615,6 +1623,11 @@ argument::
 
 See also :ref:`the argparse howto on ambiguous arguments <specifying-ambiguous-arguments>`
 for more details.
+
+.. versionchanged:: 3.14
+   Negative-number matching was expanded to include numbers in scientific
+   notation (``-2.5e-6``), numbers containing underscores (``-1_234.5``),
+   and complex numbers (``-1.2e-3j``).
 
 .. _prefix-matching:
 
@@ -1670,6 +1683,12 @@ The Namespace object
 
    Simple class used by default by :meth:`~ArgumentParser.parse_args` to create
    an object holding attributes and return it.
+
+   :class:`!Namespace` objects support :func:`copy.replace`,
+   which returns a copy of the object with the specified attributes replaced.
+
+   .. versionchanged:: next
+      Added support for :func:`copy.replace`.
 
    This class is deliberately simple, just an :class:`object` subclass with a
    readable string representation. If you prefer to have dict-like view of the
@@ -1776,6 +1795,11 @@ Subcommands
    the ``a`` command is specified, only the ``foo`` and ``bar`` attributes are
    present, and when the ``b`` command is specified, only the ``foo`` and
    ``baz`` attributes are present.
+
+   If a subparser defines an argument with the same ``dest`` as the parent
+   parser, the two share a single namespace attribute, so the parent's value
+   won't be retained. Users should give them  distinct ``dest`` values to
+   keep both.
 
    Similarly, when a help message is requested from a subparser, only the help
    for that particular parser will be printed.  The help message will not
@@ -2231,6 +2255,9 @@ Customizing file parsing
     class MyArgumentParser(argparse.ArgumentParser):
         def convert_arg_line_to_args(self, arg_line):
             return arg_line.split()
+
+   Note that with this override an argument can no longer contain spaces, since
+   each space-separated word becomes a separate argument.
 
 
 Exiting methods

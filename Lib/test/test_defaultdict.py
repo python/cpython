@@ -37,6 +37,9 @@ class TestDefaultDict(unittest.TestCase):
         self.assertIn(42, d2.keys())
         self.assertNotIn(12, d2)
         self.assertNotIn(12, d2.keys())
+        d2.default_factory = list
+        del d2.default_factory
+        self.assertEqual(d2.default_factory, None)
         d2.default_factory = None
         self.assertEqual(d2.default_factory, None)
         try:
@@ -185,6 +188,18 @@ class TestDefaultDict(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             i |= None
+
+        # frozendict
+        i_fd = i | frozendict(s)
+        self.assertIs(type(i_fd), defaultdict)
+        self.assertIs(i_fd.default_factory, int)
+        self.assertDictEqual(i_fd, {1: "one", 2: 2, 0: "zero"})
+        self.assertEqual(list(i_fd), [1, 2, 0])
+
+        fd_i = frozendict(s) | i
+        self.assertIs(type(fd_i), frozendict)
+        self.assertEqual(fd_i, {1: "one", 2: 2, 0: "zero"})
+        self.assertEqual(list(fd_i), [0, 1, 2])
 
     def test_factory_conflict_with_set_value(self):
         key = "conflict_test"

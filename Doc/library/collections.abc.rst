@@ -456,7 +456,7 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
    The :class:`Set` mixin provides a :meth:`!_hash` method to compute a hash value
    for the set; however, :meth:`~object.__hash__` is not defined because not all sets
    are :term:`hashable` or immutable.  To add set hashability using mixins,
-   inherit from both :meth:`Set` and :meth:`Hashable`, then define
+   inherit from both :class:`Set` and :class:`Hashable`, then define
    ``__hash__ = Set._hash``.
 
 .. seealso::

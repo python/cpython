@@ -1055,6 +1055,25 @@ pyexpat_xmlparser_GetBase_impl(xmlparseobject *self)
 }
 
 /*[clinic input]
+pyexpat.xmlparser.GetSpecifiedAttributeCount
+
+Return the index just past the attributes given in the start tag.
+
+Attributes defaulted from the DTD follow the specified ones, so
+attributes at lower indices in the list passed to
+StartElementHandler were given in the start tag.  Each attribute
+takes two items in that list, its name and its value.  Only
+meaningful inside a StartElementHandler call.
+[clinic start generated code]*/
+
+static PyObject *
+pyexpat_xmlparser_GetSpecifiedAttributeCount_impl(xmlparseobject *self)
+/*[clinic end generated code: output=f96b627de9393c0c input=4981c36cf99ebe9f]*/
+{
+    return PyLong_FromLong(XML_GetSpecifiedAttributeCount(self->itself));
+}
+
+/*[clinic input]
 @permit_long_summary
 pyexpat.xmlparser.GetInputContext
 
@@ -1118,6 +1137,7 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
     new_parser->specified_attributes = self->specified_attributes;
     new_parser->in_callback = 0;
     new_parser->ns_prefixes = self->ns_prefixes;
+    new_parser->reparse_deferral_enabled = self->reparse_deferral_enabled;
     new_parser->itself = XML_ExternalEntityParserCreate(self->itself, context,
                                                         encoding);
     // The new subparser will make use of the parent XML_Parser inside of Expat.
@@ -1418,6 +1438,7 @@ static struct PyMethodDef xmlparse_methods[] = {
     PYEXPAT_XMLPARSER_PARSEFILE_METHODDEF
     PYEXPAT_XMLPARSER_SETBASE_METHODDEF
     PYEXPAT_XMLPARSER_GETBASE_METHODDEF
+    PYEXPAT_XMLPARSER_GETSPECIFIEDATTRIBUTECOUNT_METHODDEF
     PYEXPAT_XMLPARSER_GETINPUTCONTEXT_METHODDEF
     PYEXPAT_XMLPARSER_EXTERNALENTITYPARSERCREATE_METHODDEF
     PYEXPAT_XMLPARSER_SETPARAMENTITYPARSING_METHODDEF
@@ -1473,6 +1494,9 @@ pyexpat_encoding_create(const char *name, PyObject *mapping)
 static int
 pyexpat_encoding_convert(void *data, const char *s)
 {
+    if (PyErr_Occurred()) {
+        return -1;
+    }
     pyexpat_encoding_info *info = (pyexpat_encoding_info *)data;
     int i = (unsigned char)s[0];
     assert(info->map[i] < -1);
@@ -2546,8 +2570,8 @@ pyexpat_exec(PyObject *mod)
     capi->SetBillionLaughsAttackProtectionActivationThreshold = XML_SetBillionLaughsAttackProtectionActivationThreshold;
     capi->SetBillionLaughsAttackProtectionMaximumAmplification = XML_SetBillionLaughsAttackProtectionMaximumAmplification;
 #else
-    capi->SetAllocTrackerActivationThreshold = NULL;
-    capi->SetAllocTrackerMaximumAmplification = NULL;
+    capi->SetBillionLaughsAttackProtectionActivationThreshold = NULL;
+    capi->SetBillionLaughsAttackProtectionMaximumAmplification = NULL;
 #endif
 
     /* export using capsule */

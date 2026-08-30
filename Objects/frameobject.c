@@ -9,12 +9,14 @@
 #include "pycore_function.h"      // _PyFunction_FromConstructor()
 #include "pycore_genobject.h"     // _PyGen_GetGeneratorFromFrame()
 #include "pycore_interpframe.h"   // _PyFrame_GetLocalsArray()
+#include "pycore_list.h"          // _PyList_AppendTakeRef()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_metadata.h" // _PyOpcode_Caches
 #include "pycore_optimizer.h"     // _Py_Executors_InvalidateDependency()
 #include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_unicodeobject.h" // _PyUnicode_Equal()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include "frameobject.h"          // PyFrameLocalsProxyObject
 #include "opcode.h"               // EXTENDED_ARG
@@ -636,9 +638,7 @@ framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
                 goto error;
             }
 
-            int rc = PyList_Append(items, pair);
-            Py_DECREF(pair);
-            if (rc < 0) {
+            if (_PyList_AppendTakeRef((PyListObject *)items, pair) < 0) {
                 goto error;
             }
         }
@@ -655,9 +655,7 @@ framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
                 goto error;
             }
 
-            int rc = PyList_Append(items, pair);
-            Py_DECREF(pair);
-            if (rc < 0) {
+            if (_PyList_AppendTakeRef((PyListObject *)items, pair) < 0) {
                 goto error;
             }
         }
@@ -1117,7 +1115,7 @@ frame_back_get_impl(PyFrameObject *self)
 /*[clinic end generated code: output=3a84c22a55a63c79 input=9e528570d0e1f44a]*/
 {
     PyObject *res = (PyObject *)PyFrame_GetBack(self);
-    if (res == NULL) {
+    if (res == NULL && !PyErr_Occurred()) {
         Py_RETURN_NONE;
     }
     return res;
@@ -1653,10 +1651,6 @@ frame_lineno_set_impl(PyFrameObject *self, PyObject *value)
 /*[clinic end generated code: output=e64c86ff6be64292 input=36ed3c896b27fb91]*/
 {
     PyCodeObject *code = _PyFrame_GetCode(self->f_frame);
-    if (value == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
-        return -1;
-    }
     /* f_lineno must be an integer. */
     if (!PyLong_CheckExact(value)) {
         PyErr_SetString(PyExc_ValueError,
@@ -1870,12 +1864,13 @@ frame_trace_get_impl(PyFrameObject *self)
 @permit_long_summary
 @critical_section
 @setter
+@deleter
 frame.f_trace as frame_trace
 [clinic start generated code]*/
 
 static int
 frame_trace_set_impl(PyFrameObject *self, PyObject *value)
-/*[clinic end generated code: output=d6fe08335cf76ae4 input=e57380734815dac5]*/
+/*[clinic end generated code: output=d6fe08335cf76ae4 input=9fb7a5805196eae2]*/
 {
     if (value == Py_None) {
         value = NULL;
@@ -1933,6 +1928,8 @@ frame_dealloc(PyObject *op)
     if (_PyObject_GC_IS_TRACKED(f)) {
         _PyObject_GC_UNTRACK(f);
     }
+
+    FT_CLEAR_WEAKREFS(op, f->f_weakreflist);
 
     /* GH-106092: If f->f_frame was on the stack and we reached the maximum
      * nesting depth for deallocations, the trashcan may have delayed this
@@ -2092,7 +2089,7 @@ PyTypeObject PyFrame_Type = {
     frame_traverse,                             /* tp_traverse */
     frame_tp_clear,                             /* tp_clear */
     0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
+    OFF(f_weakreflist),                         /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
     frame_methods,                              /* tp_methods */
@@ -2128,6 +2125,7 @@ _PyFrame_New_NoTrack(PyCodeObject *code)
     f->f_extra_locals = NULL;
     f->f_locals_cache = NULL;
     f->f_overwritten_fast_locals = NULL;
+    f->f_weakreflist = NULL;
     return f;
 }
 
@@ -2405,6 +2403,9 @@ PyFrame_GetBack(PyFrameObject *frame)
         prev = _PyFrame_GetFirstComplete(prev);
         if (prev) {
             back = _PyFrame_GetFrameObject(prev);
+            if (back == NULL) {
+                return NULL;
+            }
         }
     }
     return (PyFrameObject*)Py_XNewRef(back);

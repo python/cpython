@@ -1,0 +1,2 @@
+Fix crash on unset :exc:`MemoryError` on allocation failure in
+:func:`ctypes.get_errno`.

@@ -1,0 +1,6 @@
+:meth:`imaplib.IMAP4.copy`, :meth:`~imaplib.IMAP4.move`,
+:meth:`~imaplib.IMAP4.fetch`, :meth:`~imaplib.IMAP4.store`,
+:meth:`~imaplib.IMAP4.search`, :meth:`~imaplib.IMAP4.sort`,
+:meth:`~imaplib.IMAP4.thread` and :meth:`~imaplib.IMAP4.expunge` now accept a
+keyword-only *uid* argument that selects the corresponding ``UID`` command, as
+a more convenient alternative to :meth:`~imaplib.IMAP4.uid`.

@@ -59,6 +59,7 @@ class MmapTests(unittest.TestCase):
             f.flush()
             m = mmap.mmap(f.fileno(), 2 * PAGESIZE)
             self.addCleanup(m.close)
+            self.assertEqual(f.tell(), 2 * PAGESIZE)
         finally:
             f.close()
 
@@ -354,6 +355,8 @@ class MmapTests(unittest.TestCase):
         self.assertEqual(m.find(b'one', 1, -1), 8)
         self.assertEqual(m.find(b'one', 1, -2), -1)
         self.assertEqual(m.find(bytearray(b'one')), 0)
+        self.assertEqual(m.find(b'', n + 1), -1)
+        self.assertEqual(m.rfind(b'', n + 1), -1)
 
         for i in range(-n-1, n+1):
             for j in range(-n-1, n+1):
@@ -905,9 +908,10 @@ class MmapTests(unittest.TestCase):
 
         with mmap.mmap(-1, start_size) as m:
             m[:] = data
-            if sys.platform.startswith(('linux', 'android')):
-                # Can't expand a shared anonymous mapping on Linux.
-                # See https://bugzilla.kernel.org/show_bug.cgi?id=8691
+            if sys.platform.startswith(('linux', 'android', 'netbsd')):
+                # Can't expand a shared anonymous mapping on Linux
+                # (see https://bugzilla.kernel.org/show_bug.cgi?id=8691)
+                # or NetBSD.
                 with self.assertRaises(ValueError):
                     m.resize(new_size)
             else:
@@ -1173,8 +1177,8 @@ class MmapTests(unittest.TestCase):
             if hasattr(mmap, 'MS_INVALIDATE'):
                 m.flush(PAGESIZE * 2, flags=mmap.MS_INVALIDATE)
             if hasattr(mmap, 'MS_ASYNC') and hasattr(mmap, 'MS_INVALIDATE'):
-                if sys.platform == 'freebsd':
-                    # FreeBSD doesn't support this combination
+                if sys.platform.startswith(('freebsd', 'dragonfly')):
+                    # FreeBSD and DragonFly don't support this combination
                     with self.assertRaises(OSError) as cm:
                         m.flush(0, PAGESIZE, flags=mmap.MS_ASYNC | mmap.MS_INVALIDATE)
                     self.assertEqual(cm.exception.errno, errno.EINVAL)
