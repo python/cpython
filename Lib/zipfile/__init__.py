@@ -588,6 +588,7 @@ class ZipInfo:
         # Try to decode the extra field.
         extra = self.extra
         unpack = struct.unpack
+        seen_unicode_path = False
         while len(extra) >= 4:
             tp, ln = unpack('<HH', extra[:4])
             if ln+4 > len(extra):
@@ -611,6 +612,12 @@ class ZipInfo:
                     raise BadZipFile(f"Corrupt zip64 extra field. "
                                      f"{field} not found.") from None
             elif tp == 0x7075:
+                # Parsers disagree on which one wins, so a member carrying more
+                # than one is ambiguous rather than merely redundant.
+                if seen_unicode_path:
+                    raise BadZipFile(
+                        "Duplicate unicode path extra field (0x7075)")
+                seen_unicode_path = True
                 data = extra[4:ln+4]
                 # Unicode Path Extra Field
                 try:

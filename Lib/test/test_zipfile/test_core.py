@@ -4156,6 +4156,23 @@ class OtherTests(unittest.TestCase):
         with self.assertRaises(zipfile.BadZipfile):
             zipfile.ZipFile(TESTFN, "r").close()
 
+    def test_read_zipfile_duplicate_unicode_path_extra_field(self):
+        filename = "이름.txt"
+        filename_crc = struct.pack('<L', zipfile.crc32(filename.encode("utf-8")))
+
+        def unicode_path(name):
+            data = b'\x01' + filename_crc + name
+            return b'\x75\x70' + len(data).to_bytes(2, 'little') + data
+
+        with zipfile.ZipFile(TESTFN, mode='w') as zf:
+            zip_info = zipfile.ZipInfo(filename)
+            zip_info.extra = (unicode_path("first.txt".encode("utf-8"))
+                              + unicode_path("last.txt".encode("utf-8")))
+            zf.writestr(zip_info, b'Hello World!')
+
+        with self.assertRaisesRegex(zipfile.BadZipFile, "Duplicate unicode path"):
+            zipfile.ZipFile(TESTFN, "r").close()
+
     def test_read_after_write_unicode_filenames(self):
         with zipfile.ZipFile(TESTFN2, 'w') as zipfp:
             zipfp.writestr('приклад', b'sample')

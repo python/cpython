@@ -1,0 +1,4 @@
+:mod:`zipfile` now rejects an archive member that carries more than one
+Unicode Path extra field (``0x7075``) instead of silently using the last one.
+ZIP parsers disagree on which of the duplicates wins, so such a member is
+ambiguous rather than merely redundant.
