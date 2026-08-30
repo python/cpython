@@ -2184,6 +2184,18 @@ class ArgsTestCase(BaseTestCase):
                                   failed=[testname],
                                   parallel=True,
                                   stats=TestStats(1, 2, 1))
+        # A single -v reports the test names, not the examples.
+        self.assertNotIn('Trying:', output)
+
+        # -vv reports every example, without changing what is run.
+        output = self.run_tests("--fail-env-changed", "-vv", "-j1", testname,
+                                exitcode=EXITCODE_BAD_TEST)
+        self.check_executed_tests(output, [testname],
+                                  failed=[testname],
+                                  parallel=True,
+                                  stats=TestStats(1, 2, 1))
+        self.assertIn('Trying:\n    1 + 1\n', output)
+        self.assertIn('Expecting:\n    2\n', output)
 
     def _check_random_seed(self, run_workers: bool):
         # gh-109276: When -r/--randomize is used, random.seed() is called
