@@ -26,7 +26,6 @@ _PyTokenizer_tok_new(void)
     tok->interactive_src_start = NULL;
     tok->interactive_src_end = NULL;
     tok->start = NULL;
-    tok->end = NULL;
     tok->done = E_OK;
     tok->fp = NULL;
     tok->tabsize = TABSIZE;
