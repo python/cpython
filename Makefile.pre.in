@@ -394,7 +394,6 @@ PEGEN_OBJS=		\
 		Parser/peg_api.o
 
 TOKENIZER_OBJS=		\
-		Parser/lexer/buffer.o \
 		Parser/lexer/lexer.o \
 		Parser/lexer/number.o \
 		Parser/lexer/state.o \
@@ -410,7 +409,6 @@ PEGEN_HEADERS= \
 		$(srcdir)/Parser/string_parser.h
 
 TOKENIZER_HEADERS= \
-		Parser/lexer/buffer.h \
 		Parser/lexer/lexer.h \
 		Parser/lexer/lexer_internal.h \
 		Parser/lexer/state.h \

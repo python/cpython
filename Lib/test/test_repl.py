@@ -184,9 +184,8 @@ class TestInteractiveInterpreter(unittest.TestCase):
 
     @cpython_only
     def test_lexer_buffer_realloc_with_null_start(self):
-        # gh-144759: NULL pointer arithmetic in the lexer when start and
-        # multi_line_start are NULL (uninitialized in tok_mode_stack[0])
-        # and the lexer buffer is reallocated while parsing long input.
+        # gh-144759: NULL pointer arithmetic when the lexer buffer grows
+        # while parsing long input.
         long_value = "a" * 2000
         user_input = dedent(f"""\
         x = f'{{{long_value!r}}}'
@@ -197,6 +196,22 @@ class TestInteractiveInterpreter(unittest.TestCase):
         output = kill_python(p)
         self.assertEqual(p.returncode, 0)
         self.assertIn(long_value, output)
+
+    @cpython_only
+    def test_multiline_fstring_source_reallocation(self):
+        long_line = " " * 9000 + "+ 2"
+        user_input = (
+            'value = f"""{(\n'
+            '1\n'
+            f'{long_line}\n'
+            ')}"""\n'
+            'print(value)\n'
+        )
+        p = spawn_repl()
+        p.stdin.write(user_input)
+        output = kill_python(p)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn(">>> 3\n>>> ", output)
 
     def test_close_stdin(self):
         user_input = dedent('''

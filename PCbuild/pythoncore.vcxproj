@@ -422,7 +422,6 @@
     <ClInclude Include="..\Parser\lexer\state.h" />
     <ClInclude Include="..\Parser\lexer\lexer.h" />
     <ClInclude Include="..\Parser\lexer\lexer_internal.h" />
-    <ClInclude Include="..\Parser\lexer\buffer.h" />
     <ClInclude Include="..\Parser\tokenizer\reader.h" />
     <ClInclude Include="..\Parser\tokenizer\reader_internal.h" />
     <ClInclude Include="..\Parser\tokenizer\source.h" />
@@ -591,7 +590,6 @@
     <ClCompile Include="..\Parser\lexer\lexer.c" />
     <ClCompile Include="..\Parser\lexer\number.c" />
     <ClCompile Include="..\Parser\lexer\string.c" />
-    <ClCompile Include="..\Parser\lexer\buffer.c" />
     <ClCompile Include="..\Parser\tokenizer\source.c" />
     <ClCompile Include="..\Parser\tokenizer\decoder.c" />
     <ClCompile Include="..\Parser\tokenizer\reader.c" />
