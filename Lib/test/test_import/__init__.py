@@ -2544,6 +2544,7 @@ class SubinterpImportTests(unittest.TestCase):
         excsnap = _interpreters.run_string(interpid, script)
         self.assertIsNot(excsnap, None)
 
+    @cpython_only
     @requires_subinterpreters
     def test_pyinit_function_raises_exception(self):
         # gh-144601: PyInit functions that raised exceptions would cause a
