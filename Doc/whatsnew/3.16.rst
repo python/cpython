@@ -120,6 +120,16 @@ codecs
   even when a built-in codec of the same name exists.
   (Contributed by Serhiy Storchaka in :gh:`152997`.)
 
+
+concurrent.futures
+------------------
+
+* The iterator returned by :meth:`concurrent.futures.Executor.map` is no longer
+  automatically closed if a function call raises an exception.
+  Use method :meth:`!close` to explicitly close the iterator.
+  (Contributed by xzmeng and Serhiy Storchaka in :gh:`108518`.)
+
+
 csv
 ---
 
@@ -139,6 +149,19 @@ csv
   by a majority vote among the line endings of the sample,
   instead of always returning ``'\r\n'``.
   (Contributed by Serhiy Storchaka in :gh:`75008`.)
+
+
+ctypes
+------
+
+* Add :func:`ctypes.util.struct` for generating :class:`~ctypes.Structure` types
+  from an annotation-based syntax, similar to how the :mod:`dataclasses` module
+  is used.
+  (Contributed by Peter Bierma in :gh:`104533`.)
+* Add :func:`ctypes.util.wrap_dll_function` for generating function pointers
+  through a function signature.
+  (Contributed by Peter Bierma in :gh:`153903`.)
+
 
 curses
 ------
@@ -274,27 +297,6 @@ curses
   (Contributed by Serhiy Storchaka in :gh:`133031`.)
 
 
-ctypes
-------
-
-* Add :func:`ctypes.util.struct` for generating :class:`~ctypes.Structure` types
-  from an annotation-based syntax, similar to how the :mod:`dataclasses` module
-  is used.
-  (Contributed by Peter Bierma in :gh:`104533`.)
-* Add :func:`ctypes.util.wrap_dll_function` for generating function pointers
-  through a function signature.
-  (Contributed by Peter Bierma in :gh:`153903`.)
-
-
-concurrent.futures
-------------------
-
-* The iterator returned by :meth:`concurrent.futures.Executor.map` is no longer
-  automatically closed if a function call raises an exception.
-  Use method :meth:`!close` to explicitly close the iterator.
-  (Contributed by xzmeng and Serhiy Storchaka in :gh:`108518`.)
-
-
 encodings
 ---------
 
@@ -309,12 +311,6 @@ gzip
 * :func:`gzip.open` now accepts an optional argument ``mtime``
   which is passed on to the constructor of the :class:`~gzip.GzipFile` class.
   (Contributed by Marin Misur in :gh:`91372`.)
-
-io
---
-
-* Add :meth:`io.BytesIO.peek` method to read without advancing position.
-  (Contributed by Marcel Martin in :gh:`90533`.)
 
 
 imaplib
@@ -366,6 +362,13 @@ imaplib
   that substitutes and quotes ``?`` placeholders,
   in the manner of :mod:`sqlite3` parameter substitution.
   (Contributed by Serhiy Storchaka in :gh:`153521`.)
+
+
+io
+--
+
+* Add :meth:`io.BytesIO.peek` method to read without advancing position.
+  (Contributed by Marcel Martin in :gh:`90533`.)
 
 
 ipaddress
@@ -471,6 +474,7 @@ shlex
   a string, even if it is already safe for a shell without being quoted.
   (Contributed by Jay Berry in :gh:`148846`.)
 
+
 sqlite3
 -------
 
@@ -478,6 +482,7 @@ sqlite3
   writing (e.g. ``blob[9:0:-2]``).  Previously, such slices would raise
   :exc:`SystemError` or :exc:`ValueError`.
   (Contributed by Jiseok CHOI in :gh:`150449`.)
+
 
 symtable
 --------
