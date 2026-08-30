@@ -163,7 +163,7 @@ typedef struct {
     PyObject *iscoroutine_typecache;
 
     /* Imports from asyncio.events. */
-    PyObject *asyncio_get_event_loop_policy;
+    PyObject *asyncio_get_event_loop;
 
     /* Imports from asyncio.base_futures. */
     PyObject *asyncio_future_repr_func;
@@ -343,7 +343,6 @@ static PyObject *
 get_event_loop(asyncio_state *state)
 {
     PyObject *loop;
-    PyObject *policy;
 
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
     loop = Py_XNewRef(ts->asyncio_running_loop);
@@ -352,14 +351,7 @@ get_event_loop(asyncio_state *state)
         return loop;
     }
 
-    policy = PyObject_CallNoArgs(state->asyncio_get_event_loop_policy);
-    if (policy == NULL) {
-        return NULL;
-    }
-
-    loop = PyObject_CallMethodNoArgs(policy, &_Py_ID(get_event_loop));
-    Py_DECREF(policy);
-    return loop;
+    return PyObject_CallNoArgs(state->asyncio_get_event_loop);
 }
 
 
@@ -777,7 +769,6 @@ future_get_result(asyncio_state *state, FutureObj *fut, PyObject **result)
             return -1;
         }
         *result = Py_NewRef(fut->fut_exception);
-        Py_CLEAR(fut->fut_exception_tb);
         return 1;
     }
 
@@ -1393,10 +1384,6 @@ _asyncio_Future__asyncio_future_blocking_set_impl(FutureObj *self,
     if (future_ensure_alive(self)) {
         return -1;
     }
-    if (value == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
-        return -1;
-    }
 
     int is_true = PyObject_IsTrue(value);
     if (is_true < 0) {
@@ -1436,10 +1423,6 @@ static int
 _asyncio_Future__log_traceback_set_impl(FutureObj *self, PyObject *value)
 /*[clinic end generated code: output=9ce8e19504f42f54 input=30ac8217754b08c2]*/
 {
-    if (value == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
-        return -1;
-    }
     int is_true = PyObject_IsTrue(value);
     if (is_true < 0) {
         return -1;
@@ -1601,10 +1584,6 @@ static int
 _asyncio_Future__cancel_message_set_impl(FutureObj *self, PyObject *value)
 /*[clinic end generated code: output=0854b2f77bff2209 input=f461d17f2d891fad]*/
 {
-    if (value == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
-        return -1;
-    }
     Py_INCREF(value);
     Py_XSETREF(self->fut_cancel_msg, value);
     return 0;
@@ -1742,7 +1721,8 @@ static PyMethodDef FutureType_methods[] = {
     _ASYNCIO_FUTURE_DONE_METHODDEF
     _ASYNCIO_FUTURE_GET_LOOP_METHODDEF
     _ASYNCIO_FUTURE__MAKE_CANCELLED_ERROR_METHODDEF
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+    PyDoc_STR("Futures are generic over the type of their results")},
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -2365,8 +2345,15 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
         return -1;
     }
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
+#ifdef Py_GIL_DISABLED
+    // This is required so that _Py_TryIncref(self)
+    // works correctly in non-owning threads.
+    _PyObject_SetMaybeWeakref((PyObject *)self);
+#endif
     if (eager_start) {
-        PyObject *res = PyObject_CallMethodNoArgs(loop, &_Py_ID(is_running));
+        // gh-154695: loop may be None here, future_init() resolved it into task_loop.
+        PyObject *res = PyObject_CallMethodNoArgs(self->task_loop,
+                                                  &_Py_ID(is_running));
         if (res == NULL) {
             return -1;
         }
@@ -2383,11 +2370,6 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     if (task_call_step_soon(state, self, NULL)) {
         return -1;
     }
-#ifdef Py_GIL_DISABLED
-    // This is required so that _Py_TryIncref(self)
-    // works correctly in non-owning threads.
-    _PyObject_SetMaybeWeakref((PyObject *)self);
-#endif
     register_task(ts, self);
     return 0;
 }
@@ -2456,10 +2438,6 @@ static int
 _asyncio_Task__log_destroy_pending_set_impl(TaskObj *self, PyObject *value)
 /*[clinic end generated code: output=7ebc030bb92ec5ce input=49b759c97d1216a4]*/
 {
-    if (value == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
-        return -1;
-    }
     int is_true = PyObject_IsTrue(value);
     if (is_true < 0) {
         return -1;
@@ -2792,7 +2770,11 @@ static PyObject *
 _asyncio_Task_get_context_impl(TaskObj *self)
 /*[clinic end generated code: output=6996f53d3dc01aef input=87c0b209b8fceeeb]*/
 {
-    return Py_NewRef(self->task_context);
+    if (self->task_context) {
+        return Py_NewRef(self->task_context);
+    }
+
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -2927,7 +2909,8 @@ static PyMethodDef TaskType_methods[] = {
     _ASYNCIO_TASK_SET_NAME_METHODDEF
     _ASYNCIO_TASK_GET_CORO_METHODDEF
     _ASYNCIO_TASK_GET_CONTEXT_METHODDEF
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+    PyDoc_STR("Tasks are generic over the return type of their wrapped coroutines")},
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -2972,13 +2955,17 @@ TaskObj_dealloc(PyObject *self)
     if (PyObject_CallFinalizerFromDealloc(self) < 0) {
         return; // resurrected
     }
+    // Untrack the object before unregistering the task, since the
+    // latter can cause a stop-the-world pause, after which another
+    // thread might call the GC and reach the object while it is
+    // semi-deallocated but still tracked
+    PyObject_GC_UnTrack(self);
+
     // unregister the task after finalization so that
     // if the task gets resurrected, it remains registered
     unregister_task((TaskObj *)self);
 
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject_GC_UnTrack(self);
-
     PyObject_ClearWeakRefs(self);
 
     (void)TaskObj_clear(self);
@@ -3636,12 +3623,13 @@ call_soon or similar API), this function will always return the
 running event loop.
 
 If there is no running event loop set, the function will return
-the result of `get_event_loop_policy().get_event_loop()` call.
+the loop set by `set_event_loop()`, or raise a RuntimeError if
+no loop has been set.
 [clinic start generated code]*/
 
 static PyObject *
 _asyncio_get_event_loop_impl(PyObject *module)
-/*[clinic end generated code: output=2a2d8b2f824c648b input=9364bf2916c8655d]*/
+/*[clinic end generated code: output=2a2d8b2f824c648b input=fa104f00dc7995dc]*/
 {
     asyncio_state *state = get_asyncio_state(module);
     return get_event_loop(state);
@@ -4190,7 +4178,7 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->asyncio_mod);
     Py_VISIT(state->traceback_extract_stack);
     Py_VISIT(state->asyncio_future_repr_func);
-    Py_VISIT(state->asyncio_get_event_loop_policy);
+    Py_VISIT(state->asyncio_get_event_loop);
     Py_VISIT(state->asyncio_iscoroutine_func);
     Py_VISIT(state->asyncio_task_get_stack_func);
     Py_VISIT(state->asyncio_task_print_stack_func);
@@ -4220,7 +4208,7 @@ module_clear(PyObject *mod)
     Py_CLEAR(state->asyncio_mod);
     Py_CLEAR(state->traceback_extract_stack);
     Py_CLEAR(state->asyncio_future_repr_func);
-    Py_CLEAR(state->asyncio_get_event_loop_policy);
+    Py_CLEAR(state->asyncio_get_event_loop);
     Py_CLEAR(state->asyncio_iscoroutine_func);
     Py_CLEAR(state->asyncio_task_get_stack_func);
     Py_CLEAR(state->asyncio_task_print_stack_func);
@@ -4283,7 +4271,7 @@ module_init(asyncio_state *state)
     }
 
     WITH_MOD("asyncio.events")
-    GET_MOD_ATTR(state->asyncio_get_event_loop_policy, "_get_event_loop_policy")
+    GET_MOD_ATTR(state->asyncio_get_event_loop, "_get_event_loop")
 
     WITH_MOD("asyncio.base_futures")
     GET_MOD_ATTR(state->asyncio_future_repr_func, "_future_repr")

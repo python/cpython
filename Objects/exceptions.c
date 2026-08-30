@@ -11,9 +11,11 @@
 #include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_initconfig.h"
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
+#include "pycore_moduleobject.h"  // _PyModule_CAST()
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"      // struct _PyErr_SetRaisedException
 #include "pycore_tuple.h"         // _PyTuple_FromPair
+#include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 
 #include "osdefs.h"               // SEP
 #include "clinic/exceptions.c.h"
@@ -344,12 +346,13 @@ BaseException_args_get_impl(PyBaseExceptionObject *self)
 /*[clinic input]
 @critical_section
 @setter
+@deleter
 BaseException.args
 [clinic start generated code]*/
 
 static int
 BaseException_args_set_impl(PyBaseExceptionObject *self, PyObject *value)
-/*[clinic end generated code: output=331137e11d8f9e80 input=2400047ea5970a84]*/
+/*[clinic end generated code: output=331137e11d8f9e80 input=177ad350c8b45219]*/
 {
     PyObject *seq;
     if (value == NULL) {
@@ -383,13 +386,14 @@ BaseException___traceback___get_impl(PyBaseExceptionObject *self)
 /*[clinic input]
 @critical_section
 @setter
+@deleter
 BaseException.__traceback__
 [clinic start generated code]*/
 
 static int
 BaseException___traceback___set_impl(PyBaseExceptionObject *self,
                                      PyObject *value)
-/*[clinic end generated code: output=a82c86d9f29f48f0 input=12676035676badad]*/
+/*[clinic end generated code: output=a82c86d9f29f48f0 input=53a1df586023d786]*/
 {
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "__traceback__ may not be deleted");
@@ -428,13 +432,14 @@ BaseException___context___get_impl(PyBaseExceptionObject *self)
 /*[clinic input]
 @critical_section
 @setter
+@deleter
 BaseException.__context__
 [clinic start generated code]*/
 
 static int
 BaseException___context___set_impl(PyBaseExceptionObject *self,
                                    PyObject *value)
-/*[clinic end generated code: output=b4cb52dcca1da3bd input=c0971adf47fa1858]*/
+/*[clinic end generated code: output=b4cb52dcca1da3bd input=fe79e7c0a0854004]*/
 {
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "__context__ may not be deleted");
@@ -471,13 +476,14 @@ BaseException___cause___get_impl(PyBaseExceptionObject *self)
 /*[clinic input]
 @critical_section
 @setter
+@deleter
 BaseException.__cause__
 [clinic start generated code]*/
 
 static int
 BaseException___cause___set_impl(PyBaseExceptionObject *self,
                                  PyObject *value)
-/*[clinic end generated code: output=6161315398aaf541 input=e1b403c0bde3f62a]*/
+/*[clinic end generated code: output=6161315398aaf541 input=3fdd9a0d1674abc9]*/
 {
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "__cause__ may not be deleted");
@@ -1743,7 +1749,8 @@ static PyMemberDef BaseExceptionGroup_members[] = {
 
 static PyMethodDef BaseExceptionGroup_methods[] = {
     {"__class_getitem__", Py_GenericAlias,
-      METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+     METH_O|METH_CLASS,
+     PyDoc_STR("Exception groups are generic over the type of their contained exceptions")},
     BASEEXCEPTIONGROUP_DERIVE_METHODDEF
     BASEEXCEPTIONGROUP_SPLIT_METHODDEF
     BASEEXCEPTIONGROUP_SUBGROUP_METHODDEF
@@ -2139,10 +2146,10 @@ oserror_init(PyOSErrorObject *self, PyObject **p_args,
                 return -1;
         }
         else {
-            self->filename = Py_NewRef(filename);
+            Py_XSETREF(self->filename, Py_NewRef(filename));
 
             if (filename2 && filename2 != Py_None) {
-                self->filename2 = Py_NewRef(filename2);
+                Py_XSETREF(self->filename2, Py_NewRef(filename2));
             }
 
             if (nargs >= 2 && nargs <= 5) {
@@ -2157,10 +2164,10 @@ oserror_init(PyOSErrorObject *self, PyObject **p_args,
             }
         }
     }
-    self->myerrno = Py_XNewRef(myerrno);
-    self->strerror = Py_XNewRef(strerror);
+    Py_XSETREF(self->myerrno, Py_XNewRef(myerrno));
+    Py_XSETREF(self->strerror, Py_XNewRef(strerror));
 #ifdef MS_WINDOWS
-    self->winerror = Py_XNewRef(winerror);
+    Py_XSETREF(self->winerror, Py_XNewRef(winerror));
 #endif
 
     /* Steals the reference to args */
@@ -2701,6 +2708,65 @@ AttributeError_dealloc(PyObject *self)
     Py_TYPE(self)->tp_free(self);
 }
 
+static PyObject *
+AttributeError_str(PyObject *op)
+{
+    PyAttributeErrorObject *self = PyAttributeErrorObject_CAST(op);
+    PyObject *arg;  // borrowed ref
+    PyObject *obj = NULL, *name = NULL;
+
+     /* .name and .obj are set automatically when attribute lookup fails, so
+        synthesize a more informative message from them when the caller
+        didn't supply a meaningful one of their own -- that is, when args is
+        empty, or contains only the attribute name.  Otherwise, use the
+        message the caller gave. */
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    if (
+        self->obj && self->name && PyUnicode_Check(self->name)
+        && ((PyTuple_GET_SIZE(self->args) == 1
+             && PyUnicode_Check(arg = PyTuple_GET_ITEM(self->args, 0))
+             && _PyUnicode_Equal(arg, self->name))
+            || PyTuple_GET_SIZE(self->args) == 0)
+    ) {
+        obj = Py_NewRef(self->obj);
+        name = Py_NewRef(self->name);
+    }
+    Py_END_CRITICAL_SECTION();
+
+    if (!obj) {
+        assert(!name);
+        return BaseException_str(op);  /* re-acquires lock */
+    }
+
+    PyObject *result = NULL;
+    if (PyModule_Check(obj)) {
+        PyModuleObject *mod = _PyModule_CAST(obj);
+        PyObject *modname;
+        if (PyDict_GetItemRef(mod->md_dict, &_Py_ID(__name__), &modname) < 0) {
+            goto done;
+        }
+        if (modname && PyUnicode_Check(modname)) {
+            result = PyUnicode_FromFormat("module %R has no attribute %R",
+                                          modname, name);
+            Py_DECREF(modname);
+        } else {
+            Py_XDECREF(modname);
+            result = PyUnicode_FromFormat("module has no attribute %R", name);
+        }
+    } else if (PyType_Check(obj)) {
+        result = PyUnicode_FromFormat("type object '%N' has no attribute %R",
+                                      obj, name);
+    } else {
+        result = PyUnicode_FromFormat("'%T' object has no attribute %R",
+                                      obj, name);
+    }
+done:
+    Py_DECREF(obj);
+    Py_DECREF(name);
+    return result;
+}
+
 static int
 AttributeError_traverse(PyObject *op, visitproc visit, void *arg)
 {
@@ -2769,7 +2835,7 @@ static PyMethodDef AttributeError_methods[] = {
 ComplexExtendsException(PyExc_Exception, AttributeError,
                         AttributeError, 0,
                         AttributeError_methods, AttributeError_members,
-                        0, BaseException_str, 0, "Attribute not found.");
+                        0, AttributeError_str, 0, "Attribute not found.");
 
 /*
  *    SyntaxError extends Exception

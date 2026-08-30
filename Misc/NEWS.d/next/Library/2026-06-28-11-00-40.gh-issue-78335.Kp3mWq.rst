@@ -1,0 +1,4 @@
+Update the docstrings of :mod:`tkinter` and :mod:`tkinter.ttk` widget classes
+to list all supported widget options, including options added in Tk 9.0 and
+9.1.  ``tkinter.Menubutton`` and ``tkinter.Message`` previously had no option
+list at all.

@@ -225,7 +225,9 @@ write_str(stringio *self, PyObject *obj)
 
     if (self->state == STATE_ACCUMULATING) {
         if (self->string_size == self->pos) {
-            if (PyUnicodeWriter_WriteStr(self->writer, decoded))
+            // gh-149046: Avoid PyUnicodeWriter_WriteStr() which calls str(obj)
+            // on str subclasses
+            if (_PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)self->writer, decoded))
                 goto fail;
             goto success;
         }
@@ -405,8 +407,10 @@ _io_StringIO_readline_impl(stringio *self, Py_ssize_t size)
 }
 
 static PyObject *
-stringio_iternext(PyObject *op)
+stringio_iternext_lock_held(PyObject *op)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
+
     PyObject *line;
     stringio *self = stringio_CAST(op);
 
@@ -440,6 +444,16 @@ stringio_iternext(PyObject *op)
     }
 
     return line;
+}
+
+static PyObject *
+stringio_iternext(PyObject *op)
+{
+    PyObject *ret;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    ret = stringio_iternext_lock_held(op);
+    Py_END_CRITICAL_SECTION();
+    return ret;
 }
 
 /*[clinic input]

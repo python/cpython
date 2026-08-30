@@ -1485,11 +1485,22 @@ class TracebackException:
             # Limit the number of possible matches to try
             max_matches = 3
             matches = []
+
+            hint = _get_cross_language_keyword_hint(wrong_name)
+            if hint:
+                matches.append(hint)
             if _suggestions is not None:
-                suggestion = _suggestions._generate_suggestions(keyword.kwlist, wrong_name)
+                suggestion = _suggestions._generate_suggestions(keyword.kwlist + keyword.softkwlist, wrong_name)
                 if suggestion:
                     matches.append(suggestion)
-            matches.extend(difflib.get_close_matches(wrong_name, keyword.kwlist, n=max_matches, cutoff=0.5))
+            matches.extend(
+                difflib.get_close_matches(
+                    wrong_name,
+                    keyword.kwlist + keyword.softkwlist,
+                    n=max_matches,
+                    cutoff=0.5
+                )
+            )
             matches = matches[:max_matches]
             for suggestion in matches:
                 if not suggestion or suggestion == wrong_name:
@@ -1787,6 +1798,17 @@ _CROSS_LANGUAGE_HINTS = frozendict({
 })
 
 
+# Cross-language keyword suggestions.
+_CROSS_LANGUAGE_KEYWORD_HINTS = frozendict({
+    # C/C++ equivalents
+    'switch': 'match',
+    'delete': 'del',
+    # function define equivalents
+    'function': 'def',
+    'func': 'def',
+    'void': 'def',
+})
+
 def _substitution_cost(ch_a, ch_b):
     if ch_a == ch_b:
         return 0
@@ -1864,6 +1886,12 @@ def _get_cross_language_hint(obj, wrong_name):
                 return hint
             return f"Did you mean '.{hint}'?"
     return None
+
+
+def _get_cross_language_keyword_hint(wrong_name):
+    """Check if wrong_name is a common keyword from another language
+    """
+    return _CROSS_LANGUAGE_KEYWORD_HINTS.get(wrong_name)
 
 
 def _get_safe___dir__(obj):

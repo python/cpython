@@ -128,7 +128,8 @@ def printlist(x, width=70, indent=4, file=None):
     blanks = ' ' * indent
     # Print the sorted list: 'x' may be a '--random' list or a set()
     print(textwrap.fill(' '.join(str(elt) for elt in sorted(x)), width,
-                        initial_indent=blanks, subsequent_indent=blanks),
+                        initial_indent=blanks, subsequent_indent=blanks,
+                        break_long_words=False, break_on_hyphens=False),
           file=file)
 
 
@@ -141,7 +142,8 @@ orig_unraisablehook: Callable[..., None] | None = None
 
 def regrtest_unraisable_hook(unraisable) -> None:
     global orig_unraisablehook
-    support.environment_altered = True
+    support.set_environment_altered(
+        f"unraisable exception ({unraisable.exc_type.__name__})")
     support.print_warning("Unraisable exception")
     old_stderr = sys.stderr
     try:
@@ -165,7 +167,8 @@ orig_threading_excepthook: Callable[..., object] | None = None
 
 def regrtest_threading_excepthook(args) -> None:
     global orig_threading_excepthook
-    support.environment_altered = True
+    support.set_environment_altered(
+        f"uncaught thread exception ({args.exc_type.__name__})")
     support.print_warning(f"Uncaught thread exception: {args.exc_type.__name__}")
     old_stderr = sys.stderr
     try:
@@ -272,8 +275,7 @@ def clear_caches():
     except KeyError:
         pass
     else:
-        for f in typing._cleanups:
-            f()
+        typing._clear_caches()
 
         import inspect
         abs_classes = filter(inspect.isabstract, typing.__dict__.values())
@@ -525,7 +527,7 @@ def remove_testfn(test_name: TestName, verbose: int) -> None:
 
     if verbose:
         print_warning(f"{test_name} left behind {kind} {name!r}")
-        support.environment_altered = True
+        support.set_environment_altered(f"left behind {kind} {name!r}")
 
     try:
         import stat
