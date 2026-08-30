@@ -359,7 +359,13 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
 latex_documents = [
-    ('c-api/index', 'c-api.tex', 'The Python/C API', _doc_authors, 'manual'),
+    (
+        'c-api/index',
+        'c-api.tex',
+        'The Python/C API',
+        _doc_authors,
+        'manual',
+    ),
     (
         'extending/index',
         'extending.tex',
@@ -371,6 +377,13 @@ latex_documents = [
         'installing/index',
         'installing.tex',
         'Installing Python Modules',
+        _doc_authors,
+        'manual',
+    ),
+    (
+        'library/builtin-index',
+        'builtin.tex',
+        'Built-in Functions and Classes',
         _doc_authors,
         'manual',
     ),

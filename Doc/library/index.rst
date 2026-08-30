@@ -39,12 +39,6 @@ the `Python Package Index <https://pypi.org>`_.
    :maxdepth: 2
 
    intro.rst
-   functions.rst
-   constants.rst
-   stdtypes.rst
-   exceptions.rst
-   threadsafety.rst
-   time-complexity.rst
 
    text.rst
    binary.rst
