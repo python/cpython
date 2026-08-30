@@ -940,6 +940,10 @@ class Element(Node):
                 self.childNodes[0].nodeType in (
                         Node.TEXT_NODE, Node.CDATA_SECTION_NODE)):
                 self.childNodes[0].writexml(writer, '', '', '')
+            elif self._preserves_whitespace():
+                # Adding whitespace here would change the content.
+                for node in self.childNodes:
+                    node.writexml(writer, '', '', '')
             else:
                 writer.write(newl)
                 for node in self.childNodes:
@@ -948,6 +952,25 @@ class Element(Node):
             writer.write("</%s>%s" % (self.tagName, newl))
         else:
             writer.write("/>%s"%(newl))
+
+    def _preserves_whitespace(self):
+        """Returns true iff whitespace in the content is significant.
+
+        This is the case if the element is marked with xml:space="preserve",
+        if the DTD declares that its content model is not element content,
+        or, in absence of such declaration, if it contains text.
+        """
+        if self.getAttribute("xml:space") == "preserve":
+            return True
+        doc = self.ownerDocument
+        info = doc and doc._get_elem_info(self)
+        if info is not None:
+            # Only whitespace in element content is ignorable
+            # (see XML 1.0, 3.2.1).
+            return not info.isElementContent()
+        return any(node.nodeType in (Node.TEXT_NODE, Node.CDATA_SECTION_NODE)
+                   and node.data.strip(_XML_WHITESPACE)
+                   for node in self.childNodes)
 
     def _get_attributes(self):
         self._ensure_attributes()
