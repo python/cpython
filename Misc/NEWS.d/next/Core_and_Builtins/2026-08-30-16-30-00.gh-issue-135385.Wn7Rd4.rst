@@ -1,0 +1,3 @@
+Reduce the memory consumption of instances of classes which define
+``__slots__`` and also have a ``__dict__``.  Space for the attributes stored
+in slots is no longer reserved in the inline values of every instance.
