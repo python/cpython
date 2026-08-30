@@ -1431,6 +1431,7 @@ An example of usage for ``yield from`` in async generator:
    ...     final_number = yield from sleepy_count(5)
    ...     yield final_number
    ...
+   >>> ag = counter()
    >>> await anext(ag)
    0
    >>> await anext(ag)
