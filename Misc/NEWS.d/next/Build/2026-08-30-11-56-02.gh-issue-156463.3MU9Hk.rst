@@ -1,0 +1,5 @@
+Install the manual page under the name of the interpreter it documents, so
+that non-default builds get one too. The page is now installed as
+``python$(LDVERSION).1``, which yields ``python3.16t.1`` for a free-threaded
+build and ``python3.16d.1`` for a debug build, instead of overwriting the
+default ``python3.16.1``. Builds with an empty ``ABIFLAGS`` are unaffected.

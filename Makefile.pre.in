@@ -2518,13 +2518,13 @@ altmaninstall:
 		fi; \
 	done
 	$(INSTALL_DATA) $(srcdir)/Misc/python.man \
-		$(DESTDIR)$(MANDIR)/man1/python$(VERSION).1
+		$(DESTDIR)$(MANDIR)/man1/python$(LDVERSION).1
 
 # Install the unversioned manual page
 .PHONY: maninstall
 maninstall:	altmaninstall
 	-rm -f $(DESTDIR)$(MANDIR)/man1/python3.1
-	(cd $(DESTDIR)$(MANDIR)/man1; $(LN) -s python$(VERSION).1 python3.1)
+	(cd $(DESTDIR)$(MANDIR)/man1; $(LN) -s python$(LDVERSION).1 python3.1)
 
 # Install the library
 XMLLIBSUBDIRS=  xml xml/dom xml/etree xml/parsers xml/sax
