@@ -591,7 +591,6 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
             tok->done = E_INTR;
         }
         else {
-            tok->input_error = 1;
             if (tok->done == E_OK) {
                 tok->done = PyErr_ExceptionMatches(PyExc_MemoryError)
                     ? E_NOMEM : E_ERROR;
@@ -622,7 +621,6 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
         if (overflow || reserve_input_buffer(tok, used + scan_len + 1) < 0) {
             _PyTok_ChunkClear(&chunk);
             tok->done = E_NOMEM;
-            tok->input_error = 1;
             return 0;
         }
         memcpy(tok->inp, chunk.data, (size_t)scan_len);
@@ -644,7 +642,6 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
             _PyTok_ChunkClear(&chunk);
             tok->done = PyErr_ExceptionMatches(PyExc_MemoryError)
                 ? E_NOMEM : E_ERROR;
-            tok->input_error = 1;
             return 0;
         }
         if (reset_buffer) {
@@ -677,7 +674,6 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
             (tok->encoding == NULL || strcmp(tok->encoding, "utf-8") == 0) &&
             !_PyTokenizer_ensure_utf8(tok->cur, tok, tok->lineno)) {
         _PyTok_ChunkClear(&chunk);
-        tok->input_error = 1;
         return 0;
     }
     _PyTok_ChunkClear(&chunk);

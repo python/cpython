@@ -86,7 +86,7 @@ verify_identifier(struct tok_state *tok)
         return 1;
     }
     PyObject *s;
-    if (tok->input_error)
+    if (tok_failed(tok))
         return 0;
     s = PyUnicode_DecodeUTF8(tok->start, tok->cur - tok->start, NULL);
     if (s == NULL) {
@@ -709,7 +709,7 @@ int
 _PyTokenizer_Get(struct tok_state *tok, struct token *token)
 {
     int result = tok_get(tok, token);
-    if (tok->input_error) {
+    if (tok_failed(tok)) {
         result = ERRORTOKEN;
     }
     return result;

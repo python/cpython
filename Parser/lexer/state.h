@@ -100,7 +100,6 @@ struct tok_state {
     /* Stuff for checking on different tab sizes */
     int altindstack[MAXINDENT];         /* Stack of alternate indents */
     /* Stuff for PEP 0263 */
-    int input_error;
     char *encoding;         /* Source encoding. */
     const char* line_start;     /* pointer to start of current line */
     char* str;          /* Source string being tokenized (if tokenizing from a string)*/
