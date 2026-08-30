@@ -791,7 +791,7 @@ Deprecated
 New deprecations
 ----------------
 
-* :mod:`abc`
+* :mod:`abc`:
 
   * Soft-deprecated since Python 3.3 :class:`abc.abstractclassmethod`,
     :class:`abc.abstractstaticmethod`, and :class:`abc.abstractproperty`
@@ -818,7 +818,7 @@ New deprecations
     two-letter forms ``'Zf'`` and ``'Zd'``.
     (Contributed by Sergey B Kirpichev in :gh:`121249`.)
 
-* :mod:`tempfile`
+* :mod:`tempfile`:
 
   * The private ``tempfile._TemporaryFileWrapper`` name is deprecated
     and is slated for removal in Python 3.21.
