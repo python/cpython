@@ -67,15 +67,15 @@ typedef struct _tokenizer_mode {
 
 /* Tokenizer state */
 struct tok_state {
-    /* Input state; buf <= cur <= inp <= end */
+    /* Input state; buf <= cur <= inp */
     /* NB an entire line is held in the buffer */
     char *buf;          /* Input buffer, or NULL; malloc'ed if fp != NULL or readline != NULL */
     char *cur;          /* Next character in buffer */
     char *inp;          /* End of data in buffer */
+    _PyTok_Off buf_offset; /* Logical offset of buf[0]. */
     int fp_interactive; /* If the file descriptor is interactive */
     char *interactive_src_start; /* The start of the source parsed so far in interactive mode */
     char *interactive_src_end; /* The end of the source parsed so far in interactive mode */
-    const char *end;    /* End of input buffer if buf != NULL */
     const char *start;  /* Start of current token if not NULL */
     int done;           /* E_OK normally, E_EOF at EOF, otherwise error code */
     /* NB If done != E_OK, cur must be == inp!!! */
