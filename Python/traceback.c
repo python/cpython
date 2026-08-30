@@ -12,6 +12,7 @@
 #include "pycore_traceback.h"     // EXCEPTION_TB_HEADER
 
 #include "frameobject.h"          // PyFrame_New()
+#include "../Parser/tokenizer/tokenizer.h"
 
 #include "osdefs.h"               // SEP
 #ifdef HAVE_UNISTD_H
@@ -56,9 +57,6 @@
 #define MAX_STRING_LENGTH 500
 #define MAX_FRAME_DEPTH 100
 #define DEFAULT_MAX_NTHREADS 100
-
-/* Function from Parser/tokenizer/file_tokenizer.c */
-extern char* _PyTokenizer_FindEncodingFilename(int, PyObject *);
 
 /*[clinic input]
 class traceback "PyTracebackObject *" "&PyTraceback_Type"

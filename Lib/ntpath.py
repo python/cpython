@@ -626,12 +626,23 @@ else:
         allowed_winerror = 1, 2, 3, 5, 21, 32, 50, 53, 65, 67, 87, 123, 161, 1005, 1920, 1921
 
         # Non-strict algorithm is to find as much of the target directory
-        # as we can and join the rest.
+        # as we can and join the rest.  join() is not used, because the tail
+        # can contain a colon and be mistaken for a drive (gh-102475).
+        if isinstance(path, bytes):
+            sep = b'\\'
+        else:
+            sep = '\\'
+
+        def join(path, tail):
+            if path[-1:] == sep or not tail:
+                return path + tail
+            return path + sep + tail
+
         tail = path[:0]
         while path:
             try:
                 path = _getfinalpathname(path)
-                return join(path, tail) if tail else path
+                return join(path, tail)
             except ignored_error as ex:
                 if ex.winerror not in allowed_winerror:
                     raise
@@ -642,7 +653,7 @@ else:
                     new_path = _readlink_deep(path,
                                               ignored_error=ignored_error)
                     if new_path != path:
-                        return join(new_path, tail) if tail else new_path
+                        return join(new_path, tail)
                 except ignored_error:
                     # If we fail to readlink(), let's keep traversing
                     pass
@@ -657,7 +668,7 @@ else:
                     path, name = split(path)
                 if path and not name:
                     return path + tail
-                tail = join(name, tail) if tail else name
+                tail = join(name, tail)
         return tail
 
     def realpath(path, /, *, strict=False):
@@ -666,7 +677,7 @@ else:
             prefix = b'\\\\?\\'
             unc_prefix = b'\\\\?\\UNC\\'
             new_unc_prefix = b'\\\\'
-            cwd = os.getcwdb()
+            colon_sep = b':\\'
             # bpo-38081: Special case for realpath(b'nul')
             devnull = b'nul'
             if normcase(path) == devnull:
@@ -675,7 +686,7 @@ else:
             prefix = '\\\\?\\'
             unc_prefix = '\\\\?\\UNC\\'
             new_unc_prefix = '\\\\'
-            cwd = os.getcwd()
+            colon_sep = ':\\'
             # bpo-38081: Special case for realpath('nul')
             devnull = 'nul'
             if normcase(path) == devnull:
@@ -692,7 +703,9 @@ else:
             ignored_error = OSError
 
         if not had_prefix and not isabs(path):
-            path = join(cwd, path)
+            # abspath() is used instead of join(cwd, path), because the path
+            # can be relative to another drive (gh-102475).
+            path = abspath(path)
         try:
             path = _getfinalpathname(path)
             initial_winerror = 0
@@ -718,25 +731,29 @@ else:
         # strip off that prefix unless it was already provided on the original
         # path.
         if not had_prefix and path.startswith(prefix):
-            # For UNC paths, the prefix will actually be \\?\UNC\
-            # Handle that case as well.
+            # For UNC drives, the path starts with \\?\UNC\.
             if path.startswith(unc_prefix):
                 spath = new_unc_prefix + path[len(unc_prefix):]
-            else:
+            # For drive-letter drives, the path starts with \\?\<letter>:\.
+            elif path.startswith(colon_sep, len(prefix) + 1):
                 spath = path[len(prefix):]
-            # Ensure that the non-prefixed path resolves to the same path
-            try:
-                if _getfinalpathname(spath) == path:
-                    path = spath
-            except ValueError:
-                # Unexpected, as an invalid path should not have gained a prefix
-                # at any point, but we ignore this error just in case.
-                pass
-            except OSError as ex:
-                # If the path does not exist and originally did not exist, then
-                # strip the prefix anyway.
-                if ex.winerror == initial_winerror:
-                    path = spath
+            # For all others, e.g. volume GUID paths, it cannot be stripped.
+            else:
+                spath = None
+            if spath is not None:
+                # Ensure that the non-prefixed path resolves to the same path
+                try:
+                    if _getfinalpathname(spath) == path:
+                        path = spath
+                except ValueError:
+                    # Unexpected, as an invalid path should not have gained a
+                    # prefix at any point, but we ignore this error just in case.
+                    pass
+                except OSError as ex:
+                    # If the path does not exist and originally did not exist,
+                    # then strip the prefix anyway.
+                    if ex.winerror == initial_winerror:
+                        path = spath
         return path
 
 
