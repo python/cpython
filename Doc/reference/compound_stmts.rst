@@ -279,12 +279,12 @@ and the exception occurs in the :keyword:`!try` clause of the inner handler,
 the outer handler will not handle the exception.)
 
 When an exception has been assigned using ``as target``, it is cleared at the
-end of the :keyword:`!except` clause.  This is as if ::
+end of the :keyword:`!except` clause.  This is as if::
 
    except E as N:
        foo
 
-was translated to ::
+was translated to::
 
    except E as N:
        try:
@@ -341,7 +341,7 @@ can have either :keyword:`except` or :keyword:`!except*` clauses, but not both.
 The exception type for matching is mandatory in the case of :keyword:`!except*`,
 so ``except*:`` is a syntax error. The type is interpreted as in the case of
 :keyword:`!except`, but matching is performed on the exceptions contained in the
-group that is being handled. An :exc:`TypeError` is raised if a matching
+group that is being handled. A :exc:`TypeError` is raised if a matching
 type is a subclass of :exc:`!BaseExceptionGroup`, because that would have
 ambiguous semantics.
 
@@ -357,7 +357,7 @@ or the last :keyword:`!except*` clause has run.
 
 After all :keyword:`!except*` clauses execute, the group of unhandled exceptions
 is merged with any exceptions that were raised or re-raised from within
-:keyword:`!except*` clauses. This merged exception group propagates on.::
+:keyword:`!except*` clauses. This merged exception group propagates on::
 
    >>> try:
    ...     raise ExceptionGroup("eg",
@@ -544,9 +544,9 @@ The following code::
 is semantically equivalent to::
 
     manager = (EXPRESSION)
-    enter = type(manager).__enter__
-    exit = type(manager).__exit__
-    value = enter(manager)
+    enter = manager.__enter__
+    exit = manager.__exit__
+    value = enter()
     hit_except = False
 
     try:
@@ -554,11 +554,14 @@ is semantically equivalent to::
         SUITE
     except:
         hit_except = True
-        if not exit(manager, *sys.exc_info()):
+        if not exit(*sys.exc_info()):
             raise
     finally:
         if not hit_except:
-            exit(manager, None, None, None)
+            exit(None, None, None)
+
+except that implicit :ref:`special method lookup <special-lookup>` is used
+for :meth:`~object.__enter__` and :meth:`~object.__exit__`.
 
 With more than one item, the context managers are processed as if multiple
 :keyword:`with` statements were nested::
@@ -615,9 +618,9 @@ The match statement is used for pattern matching.  Syntax:
 
 .. productionlist:: python-grammar
    match_stmt: 'match' `subject_expr` ":" NEWLINE INDENT `case_block`+ DEDENT
-   subject_expr: `!star_named_expression` "," `!star_named_expressions`?
-               : | `!named_expression`
-   case_block: 'case' `patterns` [`guard`] ":" `!block`
+   subject_expr: `flexible_expression` "," [`flexible_expression_list` [',']]
+               : | `assignment_expression`
+   case_block: 'case' `patterns` [`guard`] ":" `suite`
 
 .. note::
    This section uses single quotes to denote
@@ -706,7 +709,7 @@ Guards
 .. index:: ! guard
 
 .. productionlist:: python-grammar
-   guard: "if" `!named_expression`
+   guard: "if" `assignment_expression`
 
 A ``guard`` (which is part of the ``case``) must succeed for code inside
 the ``case`` block to execute.  It takes the form: :keyword:`if` followed by an
@@ -855,7 +858,7 @@ A literal pattern corresponds to most
                   : | "None"
                   : | "True"
                   : | "False"
-   signed_number: ["-"] NUMBER
+   signed_number: ["+" | "-"] NUMBER
 
 The rule ``strings`` and the token ``NUMBER`` are defined in the
 :doc:`standard Python grammar <./grammar>`.  Triple-quoted strings are
@@ -1169,6 +1172,7 @@ subject value:
    * :class:`bytes`
    * :class:`dict`
    * :class:`float`
+   * :class:`frozendict`
    * :class:`frozenset`
    * :class:`int`
    * :class:`list`
@@ -1307,7 +1311,7 @@ mutable object, such as a list or a dictionary: if the function modifies the
 object (e.g. by appending an item to a list), the default parameter value is in effect
 modified.  This is generally not what was intended.  A way around this is to use
 ``None`` as the default, and explicitly test for it in the body of the function,
-e.g.::
+for example::
 
    def whats_on_the_telly(penguin=None):
        if penguin is None:
@@ -1679,13 +1683,12 @@ The following code::
 
 Is semantically equivalent to::
 
-    iter = (ITER)
-    iter = type(iter).__aiter__(iter)
+    iter = (ITER).__aiter__()
     running = True
 
     while running:
         try:
-            TARGET = await type(iter).__anext__(iter)
+            TARGET = await iter.__anext__()
         except StopAsyncIteration:
             running = False
         else:
@@ -1693,7 +1696,8 @@ Is semantically equivalent to::
     else:
         SUITE2
 
-See also :meth:`~object.__aiter__` and :meth:`~object.__anext__` for details.
+except that implicit :ref:`special method lookup <special-lookup>` is used
+for :meth:`~object.__aiter__` and :meth:`~object.__anext__`.
 
 It is a :exc:`SyntaxError` to use an ``async for`` statement outside the
 body of a coroutine function.
@@ -1719,9 +1723,9 @@ The following code::
 is semantically equivalent to::
 
     manager = (EXPRESSION)
-    aenter = type(manager).__aenter__
-    aexit = type(manager).__aexit__
-    value = await aenter(manager)
+    aenter = manager.__aenter__
+    aexit = manager.__aexit__
+    value = await aenter()
     hit_except = False
 
     try:
@@ -1729,13 +1733,14 @@ is semantically equivalent to::
         SUITE
     except:
         hit_except = True
-        if not await aexit(manager, *sys.exc_info()):
+        if not await aexit(*sys.exc_info()):
             raise
     finally:
         if not hit_except:
-            await aexit(manager, None, None, None)
+            await aexit(None, None, None)
 
-See also :meth:`~object.__aenter__` and :meth:`~object.__aexit__` for details.
+except that implicit :ref:`special method lookup <special-lookup>` is used
+for :meth:`~object.__aenter__` and :meth:`~object.__aexit__`.
 
 It is a :exc:`SyntaxError` to use an ``async with`` statement outside the
 body of a coroutine function.
@@ -2006,7 +2011,7 @@ Annotations are conventionally used for :term:`type hints <type hint>`, but this
 is not enforced by the language, and in general annotations may contain arbitrary
 expressions. The presence of annotations does not change the runtime semantics of
 the code, except if some mechanism is used that introspects and uses the annotations
-(such as :mod:`dataclasses` or :func:`functools.singledispatch`).
+(such as :mod:`dataclasses` or :deco:`functools.singledispatch`).
 
 By default, annotations are lazily evaluated in an :ref:`annotation scope <annotation-scopes>`.
 This means that they are not evaluated when the code containing the annotation is evaluated.

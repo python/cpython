@@ -109,6 +109,39 @@ def _wait_for_process_ready(proc, timeout):
     return proc.poll() is None
 
 
+@unittest.skipIf(
+    _build_child_profiler_args is None,
+    "profiling.sampling.cli unavailable",
+)
+class TestChildProfilerArgBuilder(unittest.TestCase):
+    """Tests for child profiler CLI argument construction."""
+
+    def test_build_child_profiler_args_diff_flamegraph(self):
+        """Test child args use the real --diff-flamegraph flag."""
+        args = argparse.Namespace(
+            sample_interval_usec=1000,
+            duration=None,
+            all_threads=False,
+            realtime_stats=False,
+            native=False,
+            gc=True,
+            opcodes=False,
+            async_aware=False,
+            mode="wall",
+            format="diff_flamegraph",
+            diff_baseline="baseline.bin",
+        )
+
+        child_args = _build_child_profiler_args(args)
+
+        self.assertIn("--diff-flamegraph", child_args)
+        self.assertNotIn("--diff_flamegraph", child_args)
+
+        flag_index = child_args.index("--diff-flamegraph")
+        self.assertGreater(len(child_args), flag_index + 1)
+        self.assertEqual(child_args[flag_index + 1], "baseline.bin")
+
+
 @requires_remote_subprocess_debugging()
 class TestGetChildPids(unittest.TestCase):
     """Tests for the get_child_pids function."""

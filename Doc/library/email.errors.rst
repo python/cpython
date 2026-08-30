@@ -8,7 +8,7 @@
 
 --------------
 
-The following exception classes are defined in the :mod:`email.errors` module:
+The following exception classes are defined in the :mod:`!email.errors` module:
 
 
 .. exception:: MessageError()

@@ -1,3 +1,0 @@
-Use ``ppoll()`` if available in :func:`select.poll` to have a timeout
-resolution of 1 nanosecond, instead of a resolution of 1 ms. Patch by Victor
-Stinner.

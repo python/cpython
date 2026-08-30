@@ -265,9 +265,17 @@ The constructors :func:`int`, :func:`float`, and
    pair: operator; % (percent)
    pair: operator; **
 
+.. _stdtypes-mixed-arithmetic:
+
 Python fully supports mixed arithmetic: when a binary arithmetic operator has
-operands of different numeric types, the operand with the "narrower" type is
-widened to that of the other, where integer is narrower than floating point.
+operands of different built-in numeric types, the operand with the "narrower"
+type is widened to that of the other:
+
+* If both arguments are complex numbers, no conversion is performed;
+* if either argument is a complex or a floating-point number, the other is
+  converted to a floating-point number;
+* otherwise, both must be integers and no conversion is necessary.
+
 Arithmetic with complex and real operands is defined by the usual mathematical
 formula, for example::
 
@@ -698,7 +706,7 @@ A hexadecimal string takes the form::
 
    [sign] ['0x'] integer ['.' fraction] ['p' exponent]
 
-where the optional ``sign`` may by either ``+`` or ``-``, ``integer``
+where the optional ``sign`` may be either ``+`` or ``-``, ``integer``
 and ``fraction`` are strings of hexadecimal digits, and ``exponent``
 is a decimal integer with an optional leading sign.  Case is not
 significant, and there must be at least one hexadecimal digit in
@@ -991,6 +999,9 @@ The ``in`` and ``not in`` operations have the same priorities as the
 comparison operations. The ``+`` (concatenation) and ``*`` (repetition)
 operations have the same priority as the corresponding numeric operations. [3]_
 
+See :ref:`time-complexity` for the costs of the various sequence
+operations.
+
 .. index::
    triple: operations on; sequence; types
    pair: built-in function; len
@@ -1113,6 +1124,8 @@ Notes:
    "end" values (which end depends on the sign of *k*).  Note, *k* cannot be zero.
    If *k* is ``None``, it is treated like ``1``.
 
+.. _typesseq-repeated-concatenation:
+
 (6)
    Concatenating immutable sequences always results in a new object.  This
    means that building up a sequence by repeated concatenation will have a
@@ -1155,13 +1168,13 @@ Sequence types also support the following methods:
 
    Return the total number of occurrences of *value* in *sequence*.
 
-.. method:: list.index(value[, start[, stop])
-            range.index(value[, start[, stop])
-            tuple.index(value[, start[, stop])
+.. method:: list.index(value[, start[, stop]])
+            range.index(value[, start[, stop]])
+            tuple.index(value[, start[, stop]])
    :no-contents-entry:
    :no-index-entry:
    :no-typesetting:
-.. method:: sequence.index(value[, start[, stop])
+.. method:: sequence.index(value[, start[, stop]])
 
    Return the index of the first occurrence of *value* in *sequence*.
 
@@ -1278,7 +1291,7 @@ Mutable sequence types also support the following methods:
    :no-typesetting:
 .. method:: sequence.append(value, /)
 
-   Append *value* to the end of the sequence
+   Append *value* to the end of the sequence.
    This is equivalent to writing ``seq[len(seq):len(seq)] = [value]``.
 
 .. method:: bytearray.clear()
@@ -1337,7 +1350,7 @@ Mutable sequence types also support the following methods:
    :no-typesetting:
 .. method:: sequence.pop(index=-1, /)
 
-   Retrieve the item at *index* and also removes it from *sequence*.
+   Retrieve the item at *index* and also remove it from *sequence*.
    By default, the last item in *sequence* is removed and returned.
 
 .. method:: bytearray.remove(value, /)
@@ -1395,6 +1408,8 @@ application).
    Many other operations also produce lists, including the :func:`sorted`
    built-in.
 
+   Lists are :ref:`generic <generics>` over the types of their items.
+
    Lists implement all of the :ref:`common <typesseq-common>` and
    :ref:`mutable <typesseq-mutable>` sequence operations. Lists also provide the
    following additional method:
@@ -1441,108 +1456,10 @@ application).
          list appear empty for the duration, and raises :exc:`ValueError` if it can
          detect that the list has been mutated during a sort.
 
-.. admonition:: Thread safety
+.. seealso::
 
-   Reading a single element from a :class:`list` is
-   :term:`atomic <atomic operation>`:
-
-   .. code-block::
-      :class: green
-
-      lst[i]   # list.__getitem__
-
-   The following methods traverse the list and use :term:`atomic <atomic operation>`
-   reads of each item to perform their function. That means that they may
-   return results affected by concurrent modifications:
-
-   .. code-block::
-      :class: maybe
-
-      item in lst
-      lst.index(item)
-      lst.count(item)
-
-   All of the above methods/operations are also lock-free. They do not block
-   concurrent modifications. Other operations that hold a lock will not block
-   these from observing intermediate states.
-
-   All other operations from here on block using the per-object lock.
-
-   Writing a single item via ``lst[i] = x`` is safe to call from multiple
-   threads and will not corrupt the list.
-
-   The following operations return new objects and appear
-   :term:`atomic <atomic operation>` to other threads:
-
-   .. code-block::
-      :class: good
-
-      lst1 + lst2    # concatenates two lists into a new list
-      x * lst        # repeats lst x times into a new list
-      lst.copy()     # returns a shallow copy of the list
-
-   Methods that only operate on a single elements with no shifting required are
-   :term:`atomic <atomic operation>`:
-
-   .. code-block::
-      :class: good
-
-      lst.append(x)  # append to the end of the list, no shifting required
-      lst.pop()      # pop element from the end of the list, no shifting required
-
-   The :meth:`~list.clear` method is also :term:`atomic <atomic operation>`.
-   Other threads cannot observe elements being removed.
-
-   The :meth:`~list.sort` method is not :term:`atomic <atomic operation>`.
-   Other threads cannot observe intermediate states during sorting, but the
-   list appears empty for the duration of the sort.
-
-   The following operations may allow lock-free operations to observe
-   intermediate states since they modify multiple elements in place:
-
-   .. code-block::
-      :class: maybe
-
-      lst.insert(idx, item)  # shifts elements
-      lst.pop(idx)           # idx not at the end of the list, shifts elements
-      lst *= x               # copies elements in place
-
-   The :meth:`~list.remove` method may allow concurrent modifications since
-   element comparison may execute arbitrary Python code (via
-   :meth:`~object.__eq__`).
-
-   :meth:`~list.extend` is safe to call from multiple threads.  However, its
-   guarantees depend on the iterable passed to it. If it is a :class:`list`, a
-   :class:`tuple`, a :class:`set`, a :class:`frozenset`, a :class:`dict` or a
-   :ref:`dictionary view object <dict-views>` (but not their subclasses), the
-   ``extend`` operation is safe from concurrent modifications to the iterable.
-   Otherwise, an iterator is created which can be concurrently modified by
-   another thread.  The same applies to inplace concatenation of a list with
-   other iterables when using ``lst += iterable``.
-
-   Similarly, assigning to a list slice with ``lst[i:j] = iterable`` is safe
-   to call from multiple threads, but ``iterable`` is only locked when it is
-   also a :class:`list` (but not its subclasses).
-
-   Operations that involve multiple accesses, as well as iteration, are never
-   atomic. For example:
-
-   .. code-block::
-      :class: bad
-
-      # NOT atomic: read-modify-write
-      lst[i] = lst[i] + 1
-
-      # NOT atomic: check-then-act
-      if lst:
-          item = lst.pop()
-
-      # NOT thread-safe: iteration while modifying
-      for item in lst:
-          process(item)  # another thread may modify lst
-
-   Consider external synchronization when sharing :class:`list` instances
-   across threads.  See :ref:`freethreading-python-howto` for more information.
+   For detailed information on thread-safety guarantees for :class:`list`
+   objects, see :ref:`thread-safety-list`.
 
 
 .. _typesseq-tuple:
@@ -1583,6 +1500,10 @@ homogeneous data is needed (such as allowing storage in a :class:`set` or
 
    Tuples implement all of the :ref:`common <typesseq-common>` sequence
    operations.
+
+   Tuples are :ref:`generic <generics>` over the types of their contents.
+   For more information, refer to
+   :ref:`the typing documentation on annotating tuples <annotating-tuples>`.
 
 For heterogeneous collections of data where access by name is clearer than
 access by index, :func:`collections.namedtuple` may be a more appropriate
@@ -1804,7 +1725,11 @@ category.
 |                          |  :meth:`str.strip`                        |  :meth:`bytes.strip`                              |
 |                          +--------------------+----------------------+----------------------+----------------------------+
 |                          | :meth:`str.lstrip` | :meth:`str.rstrip`   | :meth:`bytes.lstrip` | :meth:`bytes.rstrip`       |
-+--------------------------+--------------------+----------------------+----------------------+----------------------------+
+|                          +--------------------+----------------------+----------------------+----------------------------+
+|                          |  :meth:`str.removeprefix`                 |  :meth:`bytes.removeprefix`                       |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.removesuffix`                 |  :meth:`bytes.removesuffix`                       |
++--------------------------+-------------------------------------------+---------------------------------------------------+
 | Translation and Encoding |  :meth:`str.translate`                    |  :meth:`bytes.translate`                          |
 |                          +-------------------------------------------+---------------------------------------------------+
 |                          |  :meth:`str.maketrans`                    |  :meth:`bytes.maketrans`                          |
@@ -2163,6 +2088,8 @@ expression support in the :mod:`re` module).
 
    .. doctest::
 
+      >>> 'spam, spam, spam'.index('spam')
+      0
       >>> 'spam, spam, spam'.index('eggs')
       Traceback (most recent call last):
         File "<python-input-0>", line 1, in <module>
@@ -2178,7 +2105,18 @@ expression support in the :mod:`re` module).
    Return ``True`` if all characters in the string are alphanumeric and there is at
    least one character, ``False`` otherwise.  A character ``c`` is alphanumeric if one
    of the following returns ``True``: ``c.isalpha()``, ``c.isdecimal()``,
-   ``c.isdigit()``, or ``c.isnumeric()``.
+   ``c.isdigit()``, or ``c.isnumeric()``. For example:
+
+   .. doctest::
+
+      >>> 'abc123'.isalnum()
+      True
+      >>> 'abc123!@#'.isalnum()
+      False
+      >>> ''.isalnum()
+      False
+      >>> ' '.isalnum()
+      False
 
 
 .. method:: str.isalpha()
@@ -2187,7 +2125,7 @@ expression support in the :mod:`re` module).
    one character, ``False`` otherwise.  Alphabetic characters are those characters defined
    in the Unicode character database as "Letter", i.e., those with general category
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
-   from the `Alphabetic property defined in the section 4.10 'Letters, Alphabetic, and
+   from the `Alphabetic property defined in section 4.10 'Letters, Alphabetic, and
    Ideographic' of the Unicode Standard
    <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-4/#G91002>`__.
    For example:
@@ -2245,8 +2183,24 @@ expression support in the :mod:`re` module).
    character, ``False`` otherwise.  Digits include decimal characters and digits that need
    special handling, such as the compatibility superscript digits.
    This covers digits which cannot be used to form numbers in base 10,
-   like the Kharosthi numbers.  Formally, a digit is a character that has the
+   like the `Kharosthi numbers <https://en.wikipedia.org/wiki/Kharosthi#Numerals>`__.
+   Formally, a digit is a character that has the
    property value Numeric_Type=Digit or Numeric_Type=Decimal.
+
+   For example:
+
+   .. doctest::
+
+      >>> '0123456789'.isdigit()
+      True
+      >>> '٠١٢٣٤٥٦٧٨٩'.isdigit()  # Arabic-Indic digits zero to nine
+      True
+      >>> '⅕'.isdigit()  # Vulgar fraction one fifth
+      False
+      >>> '²'.isdecimal(), '²'.isdigit(),  '²'.isnumeric()
+      (False, True, True)
+
+   See also :meth:`isdecimal` and :meth:`isnumeric`.
 
 
 .. method:: str.isidentifier()
@@ -2288,15 +2242,14 @@ expression support in the :mod:`re` module).
 
       >>> '0123456789'.isnumeric()
       True
-      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric()  # Arabic-indic digit zero to nine
+      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric()  # Arabic-Indic digits zero to nine
       True
       >>> '⅕'.isnumeric()  # Vulgar fraction one fifth
       True
       >>> '²'.isdecimal(), '²'.isdigit(),  '²'.isnumeric()
       (False, True, True)
 
-   See also :meth:`isdecimal` and :meth:`isdigit`. Numeric characters are
-   a superset of decimal numbers.
+   See also :meth:`isdecimal` and :meth:`isdigit`.
 
 
 .. method:: str.isprintable()
@@ -2324,16 +2277,33 @@ expression support in the :mod:`re` module).
       >>> '\t'.isprintable(), '\n'.isprintable()
       (False, False)
 
+   See also :meth:`isspace`.
+
 
 .. method:: str.isspace()
 
    Return ``True`` if there are only whitespace characters in the string and there is
    at least one character, ``False`` otherwise.
 
+   For example:
+
+   .. doctest::
+
+      >>> ''.isspace()
+      False
+      >>> ' '.isspace()
+      True
+      >>> '\t\n'.isspace() # TAB and BREAK LINE
+      True
+      >>> '\u3000'.isspace() # IDEOGRAPHIC SPACE
+      True
+
    A character is *whitespace* if in the Unicode character database
    (see :mod:`unicodedata`), either its general category is ``Zs``
    ("Separator, space"), or its bidirectional class is one of ``WS``,
    ``B``, or ``S``.
+
+   See also :meth:`isprintable`.
 
 
 .. method:: str.istitle()
@@ -2430,7 +2400,8 @@ expression support in the :mod:`re` module).
 
    Return a copy of the string with leading characters removed.  The *chars*
    argument is a string specifying the set of characters to be removed.  If omitted
-   or ``None``, the *chars* argument defaults to removing whitespace.  The *chars*
+   or ``None``, the *chars* argument defaults to removing whitespace, that is
+   characters for which :meth:`str.isspace` is true.  The *chars*
    argument is not a prefix; rather, all combinations of its values are stripped::
 
       >>> '   spacious   '.lstrip()
@@ -2462,6 +2433,10 @@ expression support in the :mod:`re` module).
    the same position in *to*.  If there is a third argument, it must be a string,
    whose characters will be mapped to ``None`` in the result.
 
+   .. versionchanged:: 3.15
+
+      *dict* can now be a :class:`frozendict`.
+
 
 .. method:: str.partition(sep, /)
 
@@ -2469,6 +2444,19 @@ expression support in the :mod:`re` module).
    containing the part before the separator, the separator itself, and the part
    after the separator.  If the separator is not found, return a 3-tuple containing
    the string itself, followed by two empty strings.
+
+   For example:
+
+   .. doctest::
+
+      >>> 'Monty Python'.partition(' ')
+      ('Monty', ' ', 'Python')
+      >>> "Monty Python's Flying Circus".partition(' ')
+      ('Monty', ' ', "Python's Flying Circus")
+      >>> 'Monty Python'.partition('-')
+      ('Monty Python', '', '')
+
+   See also :meth:`rpartition`.
 
 
 .. method:: str.removeprefix(prefix, /)
@@ -2546,6 +2534,20 @@ expression support in the :mod:`re` module).
 
    Like :meth:`rfind` but raises :exc:`ValueError` when the substring *sub* is not
    found.
+   For example:
+
+   .. doctest::
+
+      >>> 'spam, spam, spam'.rindex('spam')
+      12
+      >>> 'spam, spam, spam'.rindex('eggs')
+      Traceback (most recent call last):
+        File "<stdin-0>", line 1, in <module>
+          'spam, spam, spam'.rindex('eggs')
+          ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+      ValueError: substring not found
+
+   See also :meth:`index` and :meth:`find`.
 
 
 .. method:: str.rjust(width, fillchar=' ', /)
@@ -2553,6 +2555,19 @@ expression support in the :mod:`re` module).
    Return the string right justified in a string of length *width*. Padding is
    done using the specified *fillchar* (default is an ASCII space). The
    original string is returned if *width* is less than or equal to ``len(s)``.
+
+   For example:
+
+   .. doctest::
+
+      >>> 'Python'.rjust(10)
+      '    Python'
+      >>> 'Python'.rjust(10, '.')
+      '....Python'
+      >>> 'Monty Python'.rjust(10, '.')
+      'Monty Python'
+
+   See also :meth:`ljust` and :meth:`zfill`.
 
 
 .. method:: str.rpartition(sep, /)
@@ -2580,7 +2595,8 @@ expression support in the :mod:`re` module).
 
    Return a list of the words in the string, using *sep* as the delimiter string.
    If *maxsplit* is given, at most *maxsplit* splits are done, the *rightmost*
-   ones.  If *sep* is not specified or ``None``, any whitespace string is a
+   ones.  If *sep* is not specified or ``None``, any
+   :meth:`whitespace <str.isspace>` string is a
    separator.  Except for splitting from the right, :meth:`rsplit` behaves like
    :meth:`split` which is described in detail below.
 
@@ -2589,21 +2605,28 @@ expression support in the :mod:`re` module).
 
    Return a copy of the string with trailing characters removed.  The *chars*
    argument is a string specifying the set of characters to be removed.  If omitted
-   or ``None``, the *chars* argument defaults to removing whitespace.  The *chars*
-   argument is not a suffix; rather, all combinations of its values are stripped::
+   or ``None``, the *chars* argument defaults to removing whitespace, that is
+   characters for which :meth:`str.isspace` is true.  The *chars*
+   argument is not a suffix; rather, all combinations of its values are stripped.
+   For example:
+
+   .. doctest::
 
       >>> '   spacious   '.rstrip()
       '   spacious'
       >>> 'mississippi'.rstrip('ipz')
       'mississ'
 
-   See :meth:`str.removesuffix` for a method that will remove a single suffix
+   See :meth:`removesuffix` for a method that will remove a single suffix
    string rather than all of a set of characters.  For example::
 
       >>> 'Monty Python'.rstrip(' Python')
       'M'
       >>> 'Monty Python'.removesuffix(' Python')
       'Monty'
+
+   See also :meth:`strip`.
+
 
 .. method:: str.split(sep=None, maxsplit=-1)
 
@@ -2620,7 +2643,9 @@ expression support in the :mod:`re` module).
    :func:`re.split`). Splitting an empty string with a specified separator
    returns ``['']``.
 
-   For example::
+   For example:
+
+   .. doctest::
 
       >>> '1,2,3'.split(',')
       ['1', '2', '3']
@@ -2632,13 +2657,16 @@ expression support in the :mod:`re` module).
       ['1', '2', '3<4']
 
    If *sep* is not specified or is ``None``, a different splitting algorithm is
-   applied: runs of consecutive whitespace are regarded as a single separator,
+   applied: runs of consecutive :meth:`whitespace <str.isspace>` are regarded
+   as a single separator,
    and the result will contain no empty strings at the start or end if the
    string has leading or trailing whitespace.  Consequently, splitting an empty
    string or a string consisting of just whitespace with a ``None`` separator
    returns ``[]``.
 
-   For example::
+   For example:
+
+   .. doctest::
 
       >>> '1 2 3'.split()
       ['1', '2', '3']
@@ -2650,7 +2678,9 @@ expression support in the :mod:`re` module).
    If *sep* is not specified or is ``None`` and  *maxsplit* is ``0``, only
    leading runs of consecutive whitespace are considered.
 
-   For example::
+   For example:
+
+   .. doctest::
 
       >>> "".split(None, 0)
       []
@@ -2659,7 +2689,7 @@ expression support in the :mod:`re` module).
       >>> "   foo   ".split(maxsplit=0)
       ['foo   ']
 
-   See also :meth:`join`.
+   See also :meth:`join` and :meth:`rsplit`.
 
 
 .. index::
@@ -2735,14 +2765,31 @@ expression support in the :mod:`re` module).
    test string beginning at that position.  With optional *end*, stop comparing
    string at that position.
 
+   For example:
+
+   .. doctest::
+
+      >>> 'Python'.startswith('Py')
+      True
+      >>> 'a tuple of prefixes'.startswith(('at', 'a'))
+      True
+      >>> 'Python is amazing'.startswith('is', 7)
+      True
+
+   See also :meth:`endswith` and :meth:`removeprefix`.
+
 
 .. method:: str.strip(chars=None, /)
 
    Return a copy of the string with the leading and trailing characters removed.
    The *chars* argument is a string specifying the set of characters to be removed.
-   If omitted or ``None``, the *chars* argument defaults to removing whitespace.
-   The *chars* argument is not a prefix or suffix; rather, all combinations of its
-   values are stripped::
+   If omitted or ``None``, the *chars* argument defaults to removing whitespace,
+   that is characters for which :meth:`str.isspace` is true.  The *chars* argument
+   is not a prefix or suffix; rather, all combinations of its values are stripped.
+
+   For example:
+
+   .. doctest::
 
       >>> '   spacious   '.strip()
       'spacious'
@@ -2753,18 +2800,37 @@ expression support in the :mod:`re` module).
    from the string. Characters are removed from the leading end until
    reaching a string character that is not contained in the set of
    characters in *chars*. A similar action takes place on the trailing end.
-   For example::
+
+   For example:
+
+   .. doctest::
 
       >>> comment_string = '#....... Section 3.2.1 Issue #32 .......'
       >>> comment_string.strip('.#! ')
       'Section 3.2.1 Issue #32'
 
+   See also :meth:`rstrip`.
+
 
 .. method:: str.swapcase()
 
    Return a copy of the string with uppercase characters converted to lowercase and
-   vice versa. Note that it is not necessarily true that
-   ``s.swapcase().swapcase() == s``.
+   vice versa. For example:
+
+   .. doctest::
+
+      >>> 'Hello World'.swapcase()
+      'hELLO wORLD'
+
+   Note that it is not necessarily true that ``s.swapcase().swapcase() == s``.
+   For example:
+
+   .. doctest::
+
+      >>> 'straße'.swapcase().swapcase()
+      'strasse'
+
+   See also :meth:`str.lower` and :meth:`str.upper`.
 
 
 .. method:: str.title()
@@ -2817,6 +2883,14 @@ expression support in the :mod:`re` module).
    You can use :meth:`str.maketrans` to create a translation map from
    character-to-character mappings in different formats.
 
+   The following example uses a mapping to replace ``'a'`` with ``'X'``,
+   ``'b'`` with ``'Y'``, and delete ``'c'``:
+
+   .. doctest::
+
+      >>> 'abc123'.translate({ord('a'): 'X', ord('b'): 'Y', ord('c'): None})
+      'XY123'
+
    See also the :mod:`codecs` module for a more flexible approach to custom
    character mappings.
 
@@ -2842,12 +2916,16 @@ expression support in the :mod:`re` module).
    than before. The original string is returned if *width* is less than
    or equal to ``len(s)``.
 
-   For example::
+   For example:
+
+   .. doctest::
 
       >>> "42".zfill(5)
       '00042'
       >>> "-42".zfill(5)
       '-0042'
+
+   See also :meth:`rjust`.
 
 
 .. index::
@@ -2971,7 +3049,7 @@ replacement field. For example::
    '0.333333'
    >>> f'{one_third:_^+10}'
    '___+1/3___'
-   >>> >>> f'{one_third!r:_^20}'
+   >>> f'{one_third!r:_^20}'
    '___Fraction(1, 3)___'
    >>> f'{one_third = :~>10}~'
    'one_third = ~~~~~~~1/3~'
@@ -2981,12 +3059,12 @@ replacement field. For example::
 Template String Literals (t-strings)
 ------------------------------------
 
-An :dfn:`t-string` (formally a :dfn:`template string literal`) is
+A :dfn:`t-string` (formally a :dfn:`template string literal`) is
 a string literal that is prefixed with ``t`` or ``T``.
 
 These strings follow the same syntax and evaluation rules as
 :ref:`formatted string literals <stdtypes-fstrings>`,
-with for the following differences:
+with the following differences:
 
 * Rather than evaluating to a ``str`` object, template string literals evaluate
   to a :class:`string.templatelib.Template` object.
@@ -3013,7 +3091,7 @@ with for the following differences:
   The :class:`!Interpolation` instance for the expression will be created as
   normal, except that :attr:`~string.templatelib.Interpolation.conversion` will
   be set to '``r``' (:func:`repr`) by default.
-  If an explicit conversion or format specifier are provided,
+  If an explicit conversion or format specifier is provided,
   this will override the default behaviour.
 
 
@@ -3177,6 +3255,10 @@ The conversion types are:
 | ``'%'``    | No argument is converted, results in a ``'%'``      |       |
 |            | character in the result.                            |       |
 +------------+-----------------------------------------------------+-------+
+
+For floating-point formats, the result should be correctly rounded to a given
+precision ``p`` of digits after the decimal point.  The rounding mode matches
+that of the :func:`round` builtin.
 
 Notes:
 
@@ -3386,7 +3468,7 @@ objects.
 
    .. classmethod:: fromhex(string, /)
 
-      This :class:`bytearray` class method returns bytearray object, decoding
+      This :class:`bytearray` class method returns a bytearray object, decoding
       the given string object.  The string must contain two hexadecimal digits
       per byte, with ASCII whitespace being ignored.
 
@@ -3485,6 +3567,11 @@ The representation of bytearray objects uses the bytes literal format
 (``bytearray(b'...')``) since it is often more useful than e.g.
 ``bytearray([46, 46, 46])``.  You can always convert a bytearray object into
 a list of integers using ``list(b)``.
+
+.. seealso::
+
+   For detailed information on thread-safety guarantees for :class:`bytearray`
+   objects, see :ref:`thread-safety-bytearray`.
 
 
 .. _bytes-methods:
@@ -3702,12 +3789,13 @@ arbitrary binary data.
    The separator to search for may be any :term:`bytes-like object`.
 
 
-.. method:: bytes.replace(old, new, count=-1, /)
-            bytearray.replace(old, new, count=-1, /)
+.. method:: bytes.replace(old, new, /, count=-1)
+            bytearray.replace(old, new, /, count=-1)
 
    Return a copy of the sequence with all occurrences of subsequence *old*
-   replaced by *new*.  If the optional argument *count* is given, only the
-   first *count* occurrences are replaced.
+   replaced by *new*.  If *count* is given, only the first *count* occurrences
+   are replaced.  If *count* is not specified or ``-1``, then all occurrences
+   are replaced.
 
    The subsequence to search for and its replacement may be any
    :term:`bytes-like object`.
@@ -3716,6 +3804,9 @@ arbitrary binary data.
 
       The bytearray version of this method does *not* operate in place - it
       always produces a new object, even if no changes were made.
+
+   .. versionchanged:: 3.15
+      *count* is now supported as a keyword argument.
 
 
 .. method:: bytes.rfind(sub[, start[, end]])
@@ -3831,7 +3922,8 @@ produce new objects.
    Return a copy of the sequence with specified leading bytes removed.  The
    *bytes* argument is a binary sequence specifying the set of byte values to
    be removed.  If omitted or ``None``, the *bytes* argument defaults
-   to removing ASCII whitespace.  The *bytes* argument is not a prefix;
+   to removing :meth:`ASCII whitespace <bytes.isspace>`.
+   The *bytes* argument is not a prefix;
    rather, all combinations of its values are stripped::
 
       >>> b'   spacious   '.lstrip()
@@ -3875,7 +3967,8 @@ produce new objects.
    Split the binary sequence into subsequences of the same type, using *sep*
    as the delimiter string. If *maxsplit* is given, at most *maxsplit* splits
    are done, the *rightmost* ones.  If *sep* is not specified or ``None``,
-   any subsequence consisting solely of ASCII whitespace is a separator.
+   any subsequence consisting solely of
+   :meth:`ASCII whitespace <bytes.isspace>` is a separator.
    Except for splitting from the right, :meth:`rsplit` behaves like
    :meth:`split` which is described in detail below.
 
@@ -3886,7 +3979,8 @@ produce new objects.
    Return a copy of the sequence with specified trailing bytes removed.  The
    *bytes* argument is a binary sequence specifying the set of byte values to
    be removed.  If omitted or ``None``, the *bytes* argument defaults to
-   removing ASCII whitespace.  The *bytes* argument is not a suffix; rather,
+   removing :meth:`ASCII whitespace <bytes.isspace>`.
+   The *bytes* argument is not a suffix; rather,
    all combinations of its values are stripped::
 
       >>> b'   spacious   '.rstrip()
@@ -3939,7 +4033,8 @@ produce new objects.
       [b'1', b'2', b'3<4']
 
    If *sep* is not specified or is ``None``, a different splitting algorithm
-   is applied: runs of consecutive ASCII whitespace are regarded as a single
+   is applied: runs of consecutive :meth:`ASCII whitespace <bytes.isspace>`
+   are regarded as a single
    separator, and the result will contain no empty strings at the start or
    end if the sequence has leading or trailing whitespace.  Consequently,
    splitting an empty sequence or a sequence consisting solely of ASCII
@@ -3962,7 +4057,8 @@ produce new objects.
    Return a copy of the sequence with specified leading and trailing bytes
    removed. The *bytes* argument is a binary sequence specifying the set of
    byte values to be removed.  If omitted or ``None``, the *bytes*
-   argument defaults to removing ASCII whitespace. The *bytes* argument is
+   argument defaults to removing :meth:`ASCII whitespace <bytes.isspace>`.
+   The *bytes* argument is
    not a prefix or suffix; rather, all combinations of its values are
    stripped::
 
@@ -4336,7 +4432,7 @@ the ``%`` operator (modulo).
 This is also known as the bytes *formatting* or *interpolation* operator.
 Given ``format % values`` (where *format* is a bytes object), ``%`` conversion
 specifications in *format* are replaced with zero or more elements of *values*.
-The effect is similar to using the :c:func:`sprintf` in the C language.
+The effect is similar to using the :c:func:`sprintf` function in the C language.
 
 If *format* requires a single argument, *values* may be a single non-tuple
 object. [5]_  Otherwise, *values* must be a tuple with exactly the number of
@@ -4533,8 +4629,11 @@ copying.
    types such as :class:`bytes` and :class:`bytearray`, an element is a single
    byte, but other types such as :class:`array.array` may have bigger elements.
 
-   ``len(view)`` is equal to the length of :class:`~memoryview.tolist`, which
-   is the nested list representation of the view. If ``view.ndim = 1``,
+   :class:`!memoryview`\s are :ref:`generic <generics>` over the type of their
+   underlying data.
+
+   ``len(view)`` is equal to the length of :meth:`~memoryview.tolist`, which
+   is the nested list representation of the view. If ``view.ndim == 1``,
    this is equal to the number of elements in the view.
 
    .. versionchanged:: 3.12
@@ -4619,7 +4718,7 @@ copying.
       :class:`collections.abc.Sequence`
 
    .. versionchanged:: 3.5
-      memoryviews can now be indexed with tuple of integers.
+      memoryviews can now be indexed with a tuple of integers.
 
    .. versionchanged:: 3.14
       memoryview is now a :term:`generic type`.
@@ -4784,13 +4883,20 @@ copying.
       .. versionadded:: 3.2
 
    .. method:: cast(format, /)
-               cast(format, shape, /)
+               cast(format, shape, /, *, order='C')
 
       Cast a memoryview to a new format or shape. *shape* defaults to
       ``[byte_length//new_itemsize]``, which means that the result view
       will be one-dimensional. The return value is a new memoryview, but
-      the buffer itself is not copied. Supported casts are 1D -> C-:term:`contiguous`
-      and C-contiguous -> 1D.
+      the buffer itself is not copied. Supported casts are
+      1D -> C-:term:`contiguous`, C-contiguous -> 1D, and
+      F-contiguous -> 1D.
+
+      With a multidimensional *shape*, *order* selects the memory layout of
+      the result: ``'C'`` for C-contiguous (row-major, the default) or ``'F'``
+      for Fortran-contiguous (column-major).  The buffer is still not copied,
+      so ``order='F'`` gives a zero-copy view over a buffer holding
+      column-major data.
 
       The destination format is restricted to a single element native format in
       :mod:`struct` syntax. One of the formats must be a byte format
@@ -4877,6 +4983,10 @@ copying.
       .. versionchanged:: 3.5
          The source format is no longer restricted when casting to a byte view.
 
+      .. versionchanged:: next
+         Casting a multi-dimensional F-contiguous view to a one-dimensional
+         view is now supported.
+
    .. method:: count(value, /)
 
       Count the number of occurrences of *value*.
@@ -4939,7 +5049,19 @@ copying.
          >>> y.nbytes
          96
 
+      Interpret a flat buffer as a Fortran-contiguous (column-major) array::
+
+         >>> buf = bytes(range(6))
+         >>> y = memoryview(buf).cast('B', shape=[3, 2], order='F')
+         >>> y.f_contiguous
+         True
+         >>> y.tolist()
+         [[0, 3], [1, 4], [2, 5]]
+
       .. versionadded:: 3.3
+
+      .. versionchanged:: next
+         Added the *order* parameter.
 
    .. attribute:: readonly
 
@@ -5012,6 +5134,9 @@ copying.
 
       .. versionadded:: 3.3
 
+For information on the thread safety of :class:`memoryview` objects in
+the :term:`free-threaded build`, see :ref:`thread-safety-memoryview`.
+
 
 .. _types-set:
 
@@ -5026,6 +5151,7 @@ computing mathematical operations such as intersection, union, difference, and
 symmetric difference.
 (For other containers see the built-in :class:`dict`, :class:`list`,
 and :class:`tuple` classes, and the :mod:`collections` module.)
+See :ref:`time-complexity` for the costs of the various set operations.
 
 Like other collections, sets support ``x in set``, ``len(set)``, and ``for x in
 set``.  Being an unordered collection, sets do not record element position or
@@ -5223,11 +5349,18 @@ Note, the *elem* argument to the :meth:`~object.__contains__`,
 :meth:`~set.discard` methods may be a set.  To support searching for an equivalent
 frozenset, a temporary one is created from *elem*.
 
+Sets and frozensets are :ref:`generic <generics>` over the type of their elements.
+
+.. seealso::
+
+   For detailed information on thread-safety guarantees for :class:`set`
+   objects, see :ref:`thread-safety-set`.
+
 
 .. _typesmapping:
 
-Mapping Types --- :class:`dict`
-===============================
+Mapping types --- :class:`!dict`, :class:`!frozendict`
+======================================================
 
 .. index::
    pair: object; mapping
@@ -5238,10 +5371,13 @@ Mapping Types --- :class:`dict`
    pair: built-in function; len
 
 A :term:`mapping` object maps :term:`hashable` values to arbitrary objects.
-Mappings are mutable objects.  There is currently only one standard mapping
-type, the :dfn:`dictionary`.  (For other containers see the built-in
+There are currently two standard mapping types, the :dfn:`dictionary` and
+:class:`frozendict`.
+(For other containers see the built-in
 :class:`list`, :class:`set`, and :class:`tuple` classes, and the
 :mod:`collections` module.)
+See :ref:`time-complexity` for the costs of the various dictionary
+operations.
 
 A dictionary's keys are *almost* arbitrary values.  Values that are not
 :term:`hashable`, that is, values containing lists, dictionaries or other
@@ -5319,6 +5455,9 @@ can be used interchangeably to index the same dictionary entry.
    .. versionchanged:: 3.7
       Dictionary order is guaranteed to be insertion order.  This behavior was
       an implementation detail of CPython from 3.6.
+
+   Dictionaries are :ref:`generic <generics>` over two types, signifying
+   (respectively) the types of the dictionary's keys and values.
 
    These are the operations that dictionaries support (and therefore, custom
    mapping types should support too):
@@ -5509,9 +5648,14 @@ can be used interchangeably to index the same dictionary entry.
       Dictionaries are now reversible.
 
 
+   .. seealso::
+      :class:`frozendict` and :class:`types.MappingProxyType` can be used to
+      create a read-only view of a :class:`dict`.
+
 .. seealso::
-   :class:`types.MappingProxyType` can be used to create a read-only view
-   of a :class:`dict`.
+
+   For detailed information on thread-safety guarantees for :class:`dict`
+   objects, see :ref:`thread-safety-dict`.
 
 
 .. _dict-views:
@@ -5618,6 +5762,51 @@ An example of dictionary view usage::
    mappingproxy({'bacon': 1, 'spam': 500})
    >>> values.mapping['spam']
    500
+
+
+Frozen dictionaries
+-------------------
+
+.. class:: frozendict(**kwargs)
+           frozendict(mapping, /, **kwargs)
+           frozendict(iterable, /, **kwargs)
+
+   Return a new frozen dictionary initialized from an optional positional
+   argument and a possibly empty set of keyword arguments.
+
+   A :class:`!frozendict` has a similar API to the :class:`dict` API, with the
+   following differences:
+
+   * :class:`!dict` has more methods than :class:`!frozendict`:
+
+      * :meth:`!__delitem__`
+      * :meth:`!__setitem__`
+      * :meth:`~dict.clear`
+      * :meth:`~dict.pop`
+      * :meth:`~dict.popitem`
+      * :meth:`~dict.setdefault`
+      * :meth:`~dict.update`
+
+   * A :class:`!frozendict` can be hashed with ``hash(frozendict)`` if all keys and
+     values can be hashed.
+
+   * ``frozendict |= other`` does not modify the :class:`!frozendict` in-place but
+     creates a new frozen dictionary.
+
+   :class:`!frozendict` is not a :class:`!dict` subclass but inherits directly
+   from ``object``.
+
+   Like dictionaries, frozendicts are :ref:`generic <generics>` over two types,
+   signifying (respectively) the types of the frozendict's keys and values.
+
+   .. classmethod:: fromkeys(iterable, value=None, /)
+
+      Similar to :meth:`dict.fromkeys`, but call again the type constructor
+      with an initialized :class:`frozendict` if the type is a
+      :class:`frozendict` subclass or if the constructor returned a
+      :class:`frozendict`.
+
+   .. versionadded:: 3.15
 
 
 .. _typecontextmanager:
@@ -5758,7 +5947,8 @@ type and the :class:`bytes` data type:
 
 ``GenericAlias`` objects are instances of the class
 :class:`types.GenericAlias`, which can also be used to create ``GenericAlias``
-objects directly.
+objects directly. Specializations of user-defined :ref:`generic classes <generic-classes>`
+may not be instances of :class:`types.GenericAlias`, but they provide similar functionality.
 
 .. describe:: T[X, Y, ...]
 
@@ -5807,6 +5997,15 @@ creation::
    >>> type(l)
    <class 'list'>
 
+
+Instances of ``GenericAlias`` are not classes at runtime, even though they behave like classes (they can be instantiated and subclassed)::
+
+   >>> import inspect
+   >>> inspect.isclass(list[int])
+   False
+
+This is true for :ref:`user-defined generics <user-defined-generics>` also.
+
 Calling :func:`repr` or :func:`str` on a generic shows the parameterized type::
 
    >>> repr(list[int])
@@ -5843,6 +6042,7 @@ list is non-exhaustive.
 * :class:`list`
 * :class:`dict`
 * :class:`set`
+* :class:`frozendict`
 * :class:`frozenset`
 * :class:`type`
 * :class:`asyncio.Future`
@@ -5990,7 +6190,7 @@ enables cleaner type hinting syntax compared to subscripting :class:`typing.Unio
 
    .. note::
 
-      The ``|`` operand cannot be used at runtime to define unions where one or
+      The ``|`` operator cannot be used at runtime to define unions where one or
       more members is a forward reference. For example, ``int | "Foo"``, where
       ``"Foo"`` is a reference to a class not yet defined, will fail at
       runtime. For unions which include forward references, present the
@@ -6149,7 +6349,7 @@ Methods
 Methods are functions that are called using the attribute notation.
 There are two flavors: :ref:`built-in methods <builtin-methods>`
 (such as :meth:`~list.append` on lists)
-and :ref:`class instance method <instance-methods>`.
+and :ref:`class instance methods <instance-methods>`.
 Built-in methods are described with the types that support them.
 
 If you access a method (a function defined in a class namespace) through an

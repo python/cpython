@@ -272,6 +272,7 @@ zoneinfo_new_instance(zoneinfo_state *state, PyTypeObject *type, PyObject *key)
 
     goto cleanup;
 error:
+    assert(PyErr_Occurred());
     Py_CLEAR(self);
 cleanup:
     if (file_obj != NULL) {
@@ -321,6 +322,9 @@ zoneinfo_ZoneInfo_impl(PyTypeObject *type, PyObject *key)
     }
 
     PyObject *weak_cache = get_weak_cache(state, type);
+    if (weak_cache == NULL) {
+        return NULL;
+    }
     instance = PyObject_CallMethod(weak_cache, "get", "O", key, Py_None);
     if (instance == NULL) {
         Py_DECREF(weak_cache);
@@ -335,6 +339,7 @@ zoneinfo_ZoneInfo_impl(PyTypeObject *type, PyObject *key)
             return NULL;
         }
 
+        ((PyZoneInfo_ZoneInfo *)tmp)->source = SOURCE_CACHE;
         instance =
             PyObject_CallMethod(weak_cache, "setdefault", "OO", key, tmp);
         Py_DECREF(tmp);
@@ -342,7 +347,15 @@ zoneinfo_ZoneInfo_impl(PyTypeObject *type, PyObject *key)
             Py_DECREF(weak_cache);
             return NULL;
         }
-        ((PyZoneInfo_ZoneInfo *)instance)->source = SOURCE_CACHE;
+    }
+
+    if (!PyObject_TypeCheck(instance, type)) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "Unexpected instance of %T in %s weak cache for key %R",
+                     instance, _PyType_Name(type), key);
+        Py_DECREF(instance);
+        Py_DECREF(weak_cache);
+        return NULL;
     }
 
     update_strong_cache(state, type, key, instance);
@@ -446,6 +459,7 @@ zoneinfo_ZoneInfo_from_file_impl(PyTypeObject *type, PyTypeObject *cls,
     return (PyObject *)self;
 
 error:
+    assert(PyErr_Occurred());
     Py_XDECREF(file_repr);
     Py_XDECREF(self);
     return NULL;
@@ -496,6 +510,9 @@ zoneinfo_ZoneInfo_clear_cache_impl(PyTypeObject *type, PyTypeObject *cls,
 {
     zoneinfo_state *state = zoneinfo_get_state_by_cls(cls);
     PyObject *weak_cache = get_weak_cache(state, type);
+    if (weak_cache == NULL) {
+        return NULL;
+    }
 
     if (only_keys == NULL || only_keys == Py_None) {
         PyObject *rv = PyObject_CallMethod(weak_cache, "clear", NULL);
@@ -974,7 +991,7 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
     }
 
     if (!PyTuple_CheckExact(data_tuple)) {
-        PyErr_Format(PyExc_TypeError, "Invalid data result type: %r",
+        PyErr_Format(PyExc_TypeError, "Invalid data result type: %R",
                      data_tuple);
         goto error;
     }
@@ -1028,10 +1045,12 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
     self->trans_list_utc =
         PyMem_Malloc(self->num_transitions * sizeof(int64_t));
     if (self->trans_list_utc == NULL) {
+        PyErr_NoMemory();
         goto error;
     }
     trans_idx = PyMem_Malloc(self->num_transitions * sizeof(Py_ssize_t));
     if (trans_idx == NULL) {
+        PyErr_NoMemory();
         goto error;
     }
 
@@ -1051,12 +1070,12 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
         }
 
         Py_ssize_t cur_trans_idx = PyLong_AsSsize_t(num);
-        if (cur_trans_idx == -1) {
+        if (cur_trans_idx == -1 && PyErr_Occurred()) {
             goto error;
         }
 
         trans_idx[i] = (size_t)cur_trans_idx;
-        if (trans_idx[i] > self->num_ttinfos) {
+        if (trans_idx[i] >= self->num_ttinfos) {
             PyErr_Format(
                 PyExc_ValueError,
                 "Invalid transition index found while reading TZif: %zd",
@@ -1071,6 +1090,7 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
     isdst = PyMem_Malloc(self->num_ttinfos * sizeof(unsigned char));
 
     if (utcoff == NULL || isdst == NULL) {
+        PyErr_NoMemory();
         goto error;
     }
     for (size_t i = 0; i < self->num_ttinfos; ++i) {
@@ -1100,6 +1120,7 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
 
     dstoff = PyMem_Calloc(self->num_ttinfos, sizeof(long));
     if (dstoff == NULL) {
+        PyErr_NoMemory();
         goto error;
     }
 
@@ -1116,6 +1137,7 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
     // Build _ttinfo objects from utcoff, dstoff and abbr
     self->_ttinfos = PyMem_Malloc(self->num_ttinfos * sizeof(_ttinfo));
     if (self->_ttinfos == NULL) {
+        PyErr_NoMemory();
         goto error;
     }
     for (size_t i = 0; i < self->num_ttinfos; ++i) {
@@ -1136,6 +1158,7 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
     self->trans_ttinfos =
         PyMem_Calloc(self->num_transitions, sizeof(_ttinfo *));
     if (self->trans_ttinfos == NULL) {
+        PyErr_NoMemory();
         goto error;
     }
     for (size_t i = 0; i < self->num_transitions; ++i) {
@@ -1158,7 +1181,12 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
         self->ttinfo_before = &(self->_ttinfos[0]);
     }
 
-    if (tz_str != Py_None && PyObject_IsTrue(tz_str)) {
+    int has_tz_str = PyObject_IsTrue(tz_str);
+    if (has_tz_str < 0) {
+        goto error;
+    }
+
+    if (has_tz_str) {
         if (parse_tz_str(state, tz_str, &(self->tzrule_after))) {
             goto error;
         }
@@ -1654,9 +1682,11 @@ parse_tz_str(zoneinfo_state *state, PyObject *tz_str_obj, _tzrule *out)
         p++;
 
         if (parse_transition_rule(&p, transitions[i])) {
-            PyErr_Format(PyExc_ValueError,
-                         "Malformed transition rule in TZ string: %R",
-                         tz_str_obj);
+            if (!PyErr_ExceptionMatches(PyExc_MemoryError)) {
+                PyErr_Format(PyExc_ValueError,
+                             "Malformed transition rule in TZ string: %R",
+                             tz_str_obj);
+            }
             goto error;
         }
     }
@@ -1737,6 +1767,9 @@ parse_abbr(const char **p, PyObject **abbr)
             ptr++;
         }
         str_end = ptr;
+        if (str_end == str_start) {
+            return -1;
+        }
         ptr++;
     }
     else {
@@ -1856,6 +1889,7 @@ parse_transition_rule(const char **p, TransitionRuleType **out)
 
         CalendarRule *rv = PyMem_Calloc(1, sizeof(CalendarRule));
         if (rv == NULL) {
+            PyErr_NoMemory();
             return -1;
         }
 
@@ -1887,6 +1921,7 @@ parse_transition_rule(const char **p, TransitionRuleType **out)
 
         DayRule *rv = PyMem_Calloc(1, sizeof(DayRule));
         if (rv == NULL) {
+            PyErr_NoMemory();
             return -1;
         }
 
@@ -2054,7 +2089,7 @@ utcoff_to_dstoff(size_t *trans_idx, long *utcoffs, long *dstoffs,
             dstoff = utcoff - utcoffs[comp_idx];
         }
 
-        if (!dstoff && idx < (num_ttinfos - 1)) {
+        if (!dstoff && idx < (num_ttinfos - 1) && i + 1 < num_transitions) {
             comp_idx = trans_idx[i + 1];
 
             // If the following transition is also DST and we couldn't find
@@ -2120,6 +2155,7 @@ ts_to_local(size_t *trans_idx, int64_t *trans_utc, long *utcoff,
     for (size_t i = 0; i < 2; ++i) {
         trans_local[i] = PyMem_Malloc(num_transitions * sizeof(int64_t));
         if (trans_local[i] == NULL) {
+            PyErr_NoMemory();
             return -1;
         }
 
@@ -2280,7 +2316,7 @@ get_local_timestamp(PyObject *dt, int64_t *local_ts)
         }
         hour = PyLong_AsLong(num);
         Py_DECREF(num);
-        if (hour == -1) {
+        if (hour == -1 && PyErr_Occurred()) {
             return -1;
         }
 
@@ -2290,7 +2326,7 @@ get_local_timestamp(PyObject *dt, int64_t *local_ts)
         }
         minute = PyLong_AsLong(num);
         Py_DECREF(num);
-        if (minute == -1) {
+        if (minute == -1 && PyErr_Occurred()) {
             return -1;
         }
 
@@ -2300,7 +2336,7 @@ get_local_timestamp(PyObject *dt, int64_t *local_ts)
         }
         second = PyLong_AsLong(num);
         Py_DECREF(num);
-        if (second == -1) {
+        if (second == -1 && PyErr_Occurred()) {
             return -1;
         }
     }
@@ -2767,6 +2803,7 @@ error:
 }
 
 static PyModuleDef_Slot zoneinfomodule_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, zoneinfomodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

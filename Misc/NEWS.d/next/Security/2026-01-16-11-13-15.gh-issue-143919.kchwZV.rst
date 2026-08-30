@@ -1,1 +1,0 @@
-Reject control characters in :class:`http.cookies.Morsel` fields and values.

@@ -135,10 +135,12 @@ class ProcessPoolForkserverMixin(ExecutorMixin):
             _check_system_limits()
         except NotImplementedError:
             self.skipTest("ProcessPoolExecutor unavailable on this system")
-        if sys.platform == "win32":
+        if sys.platform in ("win32", "cygwin"):
             self.skipTest("require unix system")
         if support.check_sanitizer(thread=True):
             self.skipTest("TSAN doesn't support threads after fork")
+        if "forkserver" not in multiprocessing.get_all_start_methods():
+            self.skipTest("forkserver start method is not available")
         return super().get_context()
 
     def create_event(self):

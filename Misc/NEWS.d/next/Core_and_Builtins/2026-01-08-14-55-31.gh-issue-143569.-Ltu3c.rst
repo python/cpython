@@ -1,3 +1,0 @@
-Generator expressions in 3.15 now conform to the documented behavior when
-the iterable does not support iteration. This matches the behavior in 3.14
-and earlier

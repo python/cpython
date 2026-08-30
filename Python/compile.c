@@ -23,6 +23,7 @@
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_stats.h"
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 #include "cpython/code.h"
@@ -173,6 +174,7 @@ new_compiler(mod_ty mod, PyObject *filename, PyCompilerFlags *pflags,
 {
     compiler *c = PyMem_Calloc(1, sizeof(compiler));
     if (c == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
     if (compiler_setup(c, mod, filename, pflags, optimize, arena, module) < 0) {
@@ -231,12 +233,16 @@ _PyCompile_MaybeAddStaticAttributeToClass(compiler *c, expr_ty e)
     return SUCCESS;
 }
 
-static int
-compiler_set_qualname(compiler *c)
+int
+_PyCompile_SetQualname(compiler *c)
 {
     Py_ssize_t stack_size;
     struct compiler_unit *u = c->u;
     PyObject *name, *base;
+
+    if (u->u_scope_type == COMPILE_SCOPE_MODULE) {
+        return SUCCESS;
+    }
 
     base = NULL;
     stack_size = PyList_GET_SIZE(c->c_stack);
@@ -296,6 +302,19 @@ compiler_set_qualname(compiler *c)
                 base = Py_NewRef(parent->u_metadata.u_qualname);
             }
         }
+        if (u->u_ste->ste_function_name != NULL) {
+            PyObject *tmp = base;
+            base = PyUnicode_FromFormat("%U.%U",
+                base,
+                u->u_ste->ste_function_name);
+            Py_DECREF(tmp);
+            if (base == NULL) {
+                return ERROR;
+            }
+        }
+    }
+    else if (u->u_ste->ste_function_name != NULL) {
+        base = Py_NewRef(u->u_ste->ste_function_name);
     }
 
     if (base != NULL) {
@@ -709,9 +728,6 @@ _PyCompile_EnterScope(compiler *c, identifier name, int scope_type,
     u->u_private = Py_XNewRef(private);
 
     c->u = u;
-    if (scope_type != COMPILE_SCOPE_MODULE) {
-        RETURN_IF_ERROR(compiler_set_qualname(c));
-    }
     return SUCCESS;
 }
 
@@ -800,6 +816,26 @@ _PyCompile_TopFBlock(compiler *c)
     return &c->u->u_fblock[c->u->u_nfblocks - 1];
 }
 
+bool
+_PyCompile_InExceptionHandler(compiler *c)
+{
+    for (Py_ssize_t i = 0; i < c->u->u_nfblocks; i++) {
+        fblockinfo *block = &c->u->u_fblock[i];
+        switch (block->fb_type) {
+            case COMPILE_FBLOCK_TRY_EXCEPT:
+            case COMPILE_FBLOCK_FINALLY_TRY:
+            case COMPILE_FBLOCK_FINALLY_END:
+            case COMPILE_FBLOCK_EXCEPTION_HANDLER:
+            case COMPILE_FBLOCK_EXCEPTION_GROUP_HANDLER:
+            case COMPILE_FBLOCK_HANDLER_CLEANUP:
+                return true;
+            default:
+                break;
+        }
+    }
+    return false;
+}
+
 void
 _PyCompile_DeferredAnnotations(compiler *c,
                                PyObject **deferred_annotations,
@@ -859,12 +895,15 @@ compiler_mod(compiler *c, mod_ty mod)
 {
     PyCodeObject *co = NULL;
     int addNone = mod->kind != Expression_kind;
+    assert(c->u == NULL);
     if (compiler_codegen(c, mod) < 0) {
         goto finally;
     }
     co = _PyCompile_OptimizeAndAssemble(c, addNone);
 finally:
-    _PyCompile_ExitScope(c);
+    if (c->u != NULL) {
+        _PyCompile_ExitScope(c);
+    }
     return co;
 }
 
@@ -1079,18 +1118,22 @@ _PyCompile_TweakInlinedComprehensionScopes(compiler *c, location loc,
                 assert(orig == NULL || orig == Py_True || orig == Py_False);
                 if (orig != Py_True) {
                     if (PyDict_SetItem(c->u->u_metadata.u_fasthidden, k, Py_True) < 0) {
+                        Py_XDECREF(orig);
                         return ERROR;
                     }
                     if (state->fast_hidden == NULL) {
                         state->fast_hidden = PySet_New(NULL);
                         if (state->fast_hidden == NULL) {
+                            Py_XDECREF(orig);
                             return ERROR;
                         }
                     }
                     if (PySet_Add(state->fast_hidden, k) < 0) {
+                        Py_XDECREF(orig);
                         return ERROR;
                     }
                 }
+                Py_XDECREF(orig);
             }
         }
     }
@@ -1620,6 +1663,7 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
 {
     PyObject *res = NULL;
     PyObject *metadata = NULL;
+    PyObject *consts_list = NULL;
 
     if (!PyAST_Check(ast)) {
         PyErr_SetString(PyExc_TypeError, "expected an AST");
@@ -1646,7 +1690,7 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
 
     metadata = PyDict_New();
     if (metadata == NULL) {
-        return NULL;
+        goto finally;
     }
 
     if (compiler_codegen(c, mod) < 0) {
@@ -1674,14 +1718,27 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
     }
 
     if (_PyInstructionSequence_ApplyLabelMap(_PyCompile_InstrSequence(c)) < 0) {
-        return NULL;
+        goto finally;
     }
+
+    /* After AddReturnAtEnd: co_consts indices match the final instruction stream. */
+    consts_list = consts_dict_keys_inorder(umd->u_consts);
+    if (consts_list == NULL) {
+        goto finally;
+    }
+    if (PyDict_SetItemString(metadata, "consts", consts_list) < 0) {
+        goto finally;
+    }
+
     /* Allocate a copy of the instruction sequence on the heap */
-    res = PyTuple_Pack(2, _PyCompile_InstrSequence(c), metadata);
+    res = _PyTuple_FromPair((PyObject *)_PyCompile_InstrSequence(c), metadata);
 
 finally:
+    Py_XDECREF(consts_list);
     Py_XDECREF(metadata);
-    _PyCompile_ExitScope(c);
+    if (c->u != NULL) {
+        _PyCompile_ExitScope(c);
+    }
     compiler_free(c);
     _PyArena_Free(arena);
     return res;
