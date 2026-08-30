@@ -153,6 +153,11 @@ Objects in the DOM
 
 The definitive documentation for the DOM is the DOM specification from the W3C.
 
+The names documented in this section are DOM interfaces.
+With the exception of :class:`Node` and the exception classes,
+they are not provided by the :mod:`!xml.dom` module itself,
+but by concrete DOM implementations, such as :mod:`xml.dom.minidom`.
+
 Note that DOM attributes may also be manipulated as nodes instead of as simple
 strings.  It is fairly rare that you must do this, however, so this usage is not
 yet documented.
