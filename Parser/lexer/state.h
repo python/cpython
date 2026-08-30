@@ -164,7 +164,6 @@ _PyLexer_BufferSpan(const struct tok_state *tok, const char *start,
 
 int _PyLexer_token_setup(struct tok_state *tok, struct token *token, int type, const char *start, const char *end);
 
-struct tok_state *_PyTokenizer_tok_new(void);
 void _PyTokenizer_Free(struct tok_state *);
 void _PyToken_Free(struct token *);
 void _PyToken_Init(struct token *);

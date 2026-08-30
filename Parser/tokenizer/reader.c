@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_fileutils.h"
+#include "pycore_pystate.h"
 
 #include "errcode.h"
 #include "helpers.h"
@@ -727,10 +728,17 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
 static struct tok_state *
 tokenizer_new_with_reader(_PyTok_ReaderKind kind)
 {
-    struct tok_state *tok = _PyTokenizer_tok_new();
+    struct tok_state *tok = PyMem_Calloc(1, sizeof(*tok));
     if (tok == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
+    tok->done = E_OK;
+    tok->atbol = 1;
+    tok->start_loc = (_PyTok_Loc){-1, -1};
+#ifdef Py_DEBUG
+    tok->debug = _Py_GetConfig()->parser_debug;
+#endif
     tok->reader = PyMem_Calloc(1, sizeof(*tok->reader));
     if (tok->reader == NULL) {
         PyErr_NoMemory();
