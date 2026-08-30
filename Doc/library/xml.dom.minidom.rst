@@ -261,22 +261,30 @@ rules apply:
   :attr:`~xml.dom.DocumentType.notations` are read-only and support only
   ``len()`` and subscription by a name.
 
-* :attr:`~xml.dom.Document.strictErrorChecking` and
-  :attr:`~xml.dom.Attr.specified` are always ``False``.
+* :attr:`~xml.dom.Document.strictErrorChecking` is always ``False``.
 
-* :meth:`~xml.dom.Element.removeAttribute` and
-  :meth:`~xml.dom.Element.removeAttributeNS` raise
-  :exc:`~xml.dom.NotFoundErr` if there is no matching attribute,
-  while the DOM specifies that this has no effect.
+  .. versionchanged:: next
+     Previously, :attr:`~xml.dom.Attr.specified` was always ``False``.
+
+* The constraints of the DOM are now enforced,
+  and the corresponding exceptions are raised.
+
+  .. versionchanged:: next
+     Previously, many invalid operations silently succeeded
+     and produced an invalid document,
+     but removing an absent attribute raised :exc:`~xml.dom.NotFoundErr`.
 
 The following interfaces have no implementation in :mod:`!xml.dom.minidom`:
 
 * :class:`DOMTimeStamp`
 
-* :class:`EntityReference`
-
-Most of these reflect information in the XML document that is not of general
+This reflects information in the XML document that is not of general
 utility to most DOM users.
+
+.. versionchanged:: next
+   :class:`~xml.dom.EntityReference` is now implemented.
+   Note that the parser expands entity references,
+   so they only occur in a document if created explicitly.
 
 .. rubric:: Footnotes
 
