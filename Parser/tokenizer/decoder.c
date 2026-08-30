@@ -103,7 +103,9 @@ _PyTok_NormalizeNewlines(const char *data, Py_ssize_t len, int preserve_crlf,
     }
     result[write] = '\0';
     *out_len = write;
-    *implicit_newline = implicit;
+    if (implicit_newline != NULL) {
+        *implicit_newline = implicit;
+    }
     return result;
 }
 

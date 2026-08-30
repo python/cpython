@@ -32,14 +32,13 @@ typedef enum {
 
 typedef struct {
     char *data;
-    Py_ssize_t len;
-    int implicit_newline;
     PyObject *owner;
+    Py_ssize_t len;
     _PyTok_ChunkOwnership ownership;
+    unsigned char implicit_newline;
 } _PyTok_Chunk;
 
 typedef struct _PyTok_Reader {
-    _PyTok_ReaderKind kind;
     PyObject *readline;
     PyObject *decoder;
     const char *prompt;
@@ -50,18 +49,16 @@ typedef struct _PyTok_Reader {
     char *file_buffer;
     Py_ssize_t file_buffer_cap;
     _PyTok_Chunk prefetched_lines[2];
-    int prefetched_index;
-    int prefetched_count;
 
     char *decoded;
     Py_ssize_t decoded_pos;
     Py_ssize_t decoded_len;
     Py_ssize_t decoded_cap;
-    int decoded_tail_is_implicit;
-
-    int file_initialized;
-    int file_eof;
-    int decoder_finalized;
+    _PyTok_ReaderKind kind;
+    unsigned char decoded_tail_is_implicit;
+    unsigned char file_initialized;
+    unsigned char file_eof;
+    unsigned char decoder_finalized;
     unsigned char stop_interactive;
 } _PyTok_Reader;
 

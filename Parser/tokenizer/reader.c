@@ -190,10 +190,10 @@ chunk_is_line(const _PyTok_Chunk *chunk)
 static _PyTok_ReadResult
 next_prepared(struct tok_state *tok, _PyTok_Chunk *chunk)
 {
-    int lineno = tok->lineno + 1;
-    if (lineno > tok->source.nlines) {
+    if (tok->lineno >= tok->source.nlines) {
         return _PYTOK_READ_EOF;
     }
+    int lineno = tok->lineno + 1;
     const char *start = tok->inp;
     const char *newline = memchr(
         start, '\n', tok->source.bytes + tok->source.len - start);
@@ -259,7 +259,6 @@ initialize_file(struct tok_state *tok)
     if (result != _PYTOK_READ_LINE) {
         return -1;
     }
-    reader->prefetched_count = 1;
     Py_ssize_t bom_len;
     _PyTok_EncodingResult detection = _PyTok_DetectEncoding(
         tok, &reader->prefetched_lines[0], NULL, 0, &bom_len);
@@ -277,16 +276,13 @@ initialize_file(struct tok_state *tok)
         reader->prefetched_lines[0].data = first;
         reader->prefetched_lines[0].ownership = _PYTOK_CHUNK_PYMEM;
         result = read_file_line(tok, &reader->prefetched_lines[1]);
-        if (result == _PYTOK_READ_LINE) {
-            reader->prefetched_count = 2;
-        }
-        else if (result == _PYTOK_READ_EOF) {
+        if (result == _PYTOK_READ_EOF) {
             reader->file_eof = 1;
         }
-        else {
+        else if (result != _PYTOK_READ_LINE) {
             return -1;
         }
-        _PyTok_Chunk *second = reader->prefetched_count == 2
+        _PyTok_Chunk *second = reader->prefetched_lines[1].data != NULL
             ? &reader->prefetched_lines[1] : NULL;
         detection = _PyTok_DetectEncoding(
             tok, &reader->prefetched_lines[0], second, 1, &bom_len);
@@ -356,10 +352,13 @@ next_file(struct tok_state *tok, _PyTok_Chunk *chunk)
             return _PYTOK_READ_LINE;
         }
         _PyTok_Chunk input = {0};
-        if (reader->prefetched_index < reader->prefetched_count) {
-            input = reader->prefetched_lines[reader->prefetched_index];
-            reader->prefetched_lines[reader->prefetched_index++] =
-                (_PyTok_Chunk){0};
+        if (reader->prefetched_lines[0].data != NULL) {
+            input = reader->prefetched_lines[0];
+            reader->prefetched_lines[0] = (_PyTok_Chunk){0};
+        }
+        else if (reader->prefetched_lines[1].data != NULL) {
+            input = reader->prefetched_lines[1];
+            reader->prefetched_lines[1] = (_PyTok_Chunk){0};
         }
         else if (!reader->file_eof) {
             _PyTok_ReadResult result = read_file_line(tok, &input);
@@ -557,7 +556,7 @@ next_interactive(struct tok_state *tok, _PyTok_Chunk *chunk)
     }
     chunk->data = _PyTok_NormalizeNewlines(
         decoded.data, decoded.len, 0, 0,
-        &chunk->len, &chunk->implicit_newline);
+        &chunk->len, NULL);
     _PyTok_ChunkClear(&decoded);
     if (chunk->data == NULL) {
         PyErr_NoMemory();
@@ -644,6 +643,12 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
                 result != _PYTOK_READ_STOPPED) {
             PySys_WriteStderr("\n");
         }
+        return 0;
+    }
+    if (tok->lineno == INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "too many tokenizer source lines");
+        tok->done = E_ERROR;
+        _PyTok_ChunkClear(&chunk);
         return 0;
     }
 
