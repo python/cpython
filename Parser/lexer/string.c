@@ -20,6 +20,7 @@ int
 _PyLexer_record_ftstring_comment(struct tok_state *tok, ftstring_state *state,
                                  const char *start, const char *end)
 {
+    assert(state == _PyLexer_CurrentFTString(tok) && state->mode == FTSTRING_MODE_EXPRESSION);
     if (state->expr_span.end >= 0) {
         return 0;
     }
@@ -57,7 +58,8 @@ int
 _PyLexer_finish_ftstring_expr(struct tok_state *tok, ftstring_state *state,
                               struct token *token)
 {
-    assert(token != NULL);
+    assert(token != NULL && state == _PyLexer_CurrentFTString(tok));
+    assert(state->mode == FTSTRING_MODE_EXPRESSION && tok->start != NULL);
 
     if (state->expr_span.end >= 0) {
         return 0;
@@ -338,6 +340,9 @@ _PyLexer_scan_string(struct tok_state *tok, struct token *token, int c)
 int
 _PyLexer_get_ftstring(struct tok_state *tok, ftstring_state *current, struct token *token)
 {
+    assert(current == _PyLexer_CurrentFTString(tok) && current->mode != FTSTRING_MODE_EXPRESSION);
+    assert((current->quote_size == 1 || current->quote_size == 3) &&
+           current->replacement_depth <= MAX_EXPR_NESTING);
     const char *p_start = NULL;
     const char *p_end = NULL;
     int end_quote_size = 0;

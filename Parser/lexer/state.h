@@ -115,7 +115,7 @@ static inline ftstring_state *
 _PyLexer_CurrentFTString(struct tok_state *tok)
 {
     assert(tok->ftstring_stack != NULL);
-    assert(tok->ftstring_depth <= tok->ftstring_capacity);
+    assert(tok->ftstring_depth >= 0 && tok->ftstring_depth <= tok->ftstring_capacity);
     if (tok->ftstring_depth == 0) {
         return NULL;
     }

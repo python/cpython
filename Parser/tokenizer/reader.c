@@ -156,6 +156,7 @@ append_implicit_newline(_PyTok_Reader *reader)
 static int
 pop_decoded_line(_PyTok_Reader *reader, _PyTok_Chunk *chunk)
 {
+    assert(reader->decoded_pos >= 0 && reader->decoded_pos <= reader->decoded_len);
     if (reader->decoded_pos == reader->decoded_len) {
         return 0;
     }
@@ -614,6 +615,8 @@ reset_streaming_buffer(struct tok_state *tok)
 int
 _PyTok_ReaderUnderflow(struct tok_state *tok)
 {
+    assert(tok->cur == tok->inp || (tok->buf != NULL &&
+           tok->cur >= tok->buf && tok->cur < tok->inp));
     _PyTok_ReaderKind kind = tok->reader->kind;
     int prepared = kind == _PYTOK_READER_PREPARED;
     int streaming = reader_is_streaming(kind);
@@ -647,6 +650,7 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
         }
         return 0;
     }
+    assert(chunk.data != NULL && chunk.len > 0);
     if (tok->lineno == INT_MAX) {
         PyErr_SetString(PyExc_OverflowError, "too many tokenizer source lines");
         tok->done = E_ERROR;

@@ -9,6 +9,7 @@
 ftstring_state *
 _PyLexer_PushFTString(struct tok_state *tok)
 {
+    assert(tok->ftstring_depth >= 0 && tok->ftstring_depth <= tok->ftstring_capacity);
     int next_depth = tok->ftstring_depth + 1;
     if (next_depth >= MAXFTSTRINGLEVEL) {
         _PyTokenizer_syntaxerror(
