@@ -938,6 +938,8 @@ def getmodule(object, _filename=None):
         return sys.modules.get(modulesbyfile[_filename])
     # Try the cache again with the absolute file name
     try:
+        if _filename is None:
+            _filename = getfile(object)
         file = getabsfile(object, _filename)
     except (TypeError, FileNotFoundError):
         return None
