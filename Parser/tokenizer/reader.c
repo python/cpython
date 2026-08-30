@@ -664,7 +664,7 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
         tok->interactive_src_end = tok->source.bytes + tok->source.len;
     }
     if (prepared) {
-        if (tok->start == NULL) {
+        if (tok->start == NULL && !INSIDE_FSTRING(tok)) {
             tok->buf = tok->cur;
             tok->buf_offset = chunk.data - tok->source.bytes;
         }
@@ -672,12 +672,6 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
     }
     tok->implicit_newline = chunk.implicit_newline;
 
-    if (!prepared && tok->tok_mode_stack_index &&
-            !_PyLexer_update_ftstring_expr(tok, 0)) {
-        _PyTok_ChunkClear(&chunk);
-        tok->input_error = 1;
-        return 0;
-    }
     ADVANCE_LINENO();
     if (kind == _PYTOK_READER_FILE &&
             (tok->encoding == NULL || strcmp(tok->encoding, "utf-8") == 0) &&

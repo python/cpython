@@ -8,109 +8,100 @@
 #define MAKE_TOKEN(token_type) _PyLexer_token_setup(tok, token, token_type, p_start, p_end)
 
 int
-_PyLexer_set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
+_PyLexer_record_ftstring_comment(struct tok_state *tok, const char *start,
+                                 const char *end)
+{
+    tokenizer_mode *mode = TOK_GET_MODE(tok);
+    if (mode->expr_span.end >= 0) {
+        return 0;
+    }
+    assert(mode->expr_span.start >= 0);
+    tokenizer_comments *comments = mode->comments;
+    if (comments == NULL || comments->count == comments->capacity) {
+        int create = comments == NULL;
+        Py_ssize_t max_capacity = (PY_SSIZE_T_MAX -
+            (Py_ssize_t)sizeof(*comments)) /
+            (Py_ssize_t)sizeof(*comments->spans);
+        if (comments != NULL && comments->capacity > max_capacity / 2) {
+            PyErr_NoMemory();
+            return -1;
+        }
+        Py_ssize_t capacity = comments == NULL ? 4 : comments->capacity * 2;
+        size_t size = sizeof(*comments) +
+            (size_t)capacity * sizeof(*comments->spans);
+        tokenizer_comments *resized = PyMem_Realloc(comments, size);
+        if (resized == NULL) {
+            PyErr_NoMemory();
+            return -1;
+        }
+        comments = resized;
+        if (create) {
+            comments->count = 0;
+        }
+        comments->capacity = capacity;
+        mode->comments = comments;
+    }
+    comments->spans[comments->count++] =
+        _PyLexer_BufferSpan(tok, start, end);
+    return 0;
+}
+
+int
+_PyLexer_set_ftstring_expr_metadata(struct tok_state *tok, struct token *token)
+{
     assert(token != NULL);
-    assert(c == '}' || c == ':' || c == '!');
     tokenizer_mode *tok_mode = TOK_GET_MODE(tok);
 
     if (!(tok_mode->in_debug || tok_mode->string_kind == TSTRING) || token->metadata) {
         return 0;
     }
-    PyObject *res = NULL;
-
-    // Look for a # character outside of string literals
-    int hash_detected = 0;
-    int in_string = 0;
-    char quote_char = 0;
-
-    for (Py_ssize_t i = 0; i < tok_mode->last_expr_size - tok_mode->last_expr_end; i++) {
-        char ch = tok_mode->last_expr_buffer[i];
-
-        // Skip escaped characters
-        if (ch == '\\') {
-            i++;
-            continue;
-        }
-
-        // Handle quotes
-        if (ch == '"' || ch == '\'') {
-            // The following if/else block works becase there is an off number
-            // of quotes in STRING tokens and the lexer only ever reaches this
-            // function with valid STRING tokens.
-            // For example: """hello"""
-            // First quote: in_string = 1
-            // Second quote: in_string = 0
-            // Third quote: in_string = 1
-            if (!in_string) {
-                in_string = 1;
-                quote_char = ch;
+    Py_ssize_t expr_len;
+    const char *expr = _PyLexer_BufferSpanView(
+        tok, tok_mode->expr_span, &expr_len);
+    tokenizer_comments *comments = tok_mode->comments;
+    PyObject *res;
+    if (comments != NULL && comments->count > 0) {
+        Py_ssize_t stripped_size = expr_len;
+        _PyTok_Off previous_end = tok_mode->expr_span.start;
+        Py_ssize_t comment_count = 0;
+        for (Py_ssize_t i = 0; i < comments->count; i++) {
+            _PyTok_Span comment = comments->spans[i];
+            assert(_PyTok_SpanIsValid(comment));
+            assert(comment.start >= previous_end);
+            if (comment.start >= tok_mode->expr_span.end) {
+                break;
             }
-            else if (ch == quote_char) {
-                in_string = 0;
-            }
-            continue;
+            assert(comment.end <= tok_mode->expr_span.end);
+            stripped_size -= comment.end - comment.start;
+            previous_end = comment.end;
+            comment_count++;
         }
-
-        // Check for # outside strings
-        if (ch == '#' && !in_string) {
-            hash_detected = 1;
-            break;
-        }
-    }
-    // If we found a # character in the expression, we need to handle comments
-    if (hash_detected) {
-        // Allocate buffer for processed result
-        char *result = (char *)PyMem_Malloc((tok_mode->last_expr_size - tok_mode->last_expr_end + 1) * sizeof(char));
-        if (!result) {
+        char *stripped = PyMem_Malloc((size_t)stripped_size);
+        if (stripped == NULL) {
+            PyErr_NoMemory();
             return -1;
         }
-
-        Py_ssize_t i = 0;  // Input position
-        Py_ssize_t j = 0;  // Output position
-        in_string = 0;     // Whether we're in a string
-        quote_char = 0;    // Current string quote char
-
-        // Process each character
-        while (i < tok_mode->last_expr_size - tok_mode->last_expr_end) {
-            char ch = tok_mode->last_expr_buffer[i];
-
-            // Handle string quotes
-            if (ch == '"' || ch == '\'') {
-                // See comment above to understand this part
-                if (!in_string) {
-                    in_string = 1;
-                    quote_char = ch;
-                } else if (ch == quote_char) {
-                    in_string = 0;
-                }
-                result[j++] = ch;
-            }
-            // Skip comments
-            else if (ch == '#' && !in_string) {
-                while (i < tok_mode->last_expr_size - tok_mode->last_expr_end &&
-                       tok_mode->last_expr_buffer[i] != '\n') {
-                    i++;
-                }
-                if (i < tok_mode->last_expr_size - tok_mode->last_expr_end) {
-                    result[j++] = '\n';
-                }
-            }
-            // Copy other chars
-            else {
-                result[j++] = ch;
-            }
-            i++;
+        _PyTok_Off copied_to = tok_mode->expr_span.start;
+        Py_ssize_t stripped_len = 0;
+        for (Py_ssize_t i = 0; i < comment_count; i++) {
+            _PyTok_Span comment = comments->spans[i];
+            Py_ssize_t length = comment.start - copied_to;
+            memcpy(stripped + stripped_len,
+                   expr + copied_to - tok_mode->expr_span.start,
+                   (size_t)length);
+            stripped_len += length;
+            copied_to = comment.end;
         }
-
-        result[j] = '\0';  // Null-terminate the result string
-        res = PyUnicode_DecodeUTF8(result, j, NULL);
-        PyMem_Free(result);
-    } else {
-        res = PyUnicode_DecodeUTF8(
-            tok_mode->last_expr_buffer,
-            tok_mode->last_expr_size - tok_mode->last_expr_end,
-            NULL
-        );
+        Py_ssize_t length = tok_mode->expr_span.end - copied_to;
+        memcpy(stripped + stripped_len,
+               expr + copied_to - tok_mode->expr_span.start,
+               (size_t)length);
+        stripped_len += length;
+        res = PyUnicode_DecodeUTF8(stripped, stripped_len, NULL);
+        PyMem_Free(stripped);
+    }
+    else {
+        res = PyUnicode_DecodeUTF8(expr, expr_len, NULL);
     }
 
     if (!res) {
@@ -120,61 +111,33 @@ _PyLexer_set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
     return 0;
 }
 
-int
+void
 _PyLexer_update_ftstring_expr(struct tok_state *tok, char cur)
 {
-    assert(tok->cur != NULL);
-
-    Py_ssize_t size = cur == 0
-        ? tok->inp - tok->cur : (Py_ssize_t)strlen(tok->cur);
     tokenizer_mode *tok_mode = TOK_GET_MODE(tok);
 
     switch (cur) {
-       case 0:
-            if (!tok_mode->last_expr_buffer || tok_mode->last_expr_end >= 0) {
-                return 1;
-            }
-            char *new_buffer = PyMem_Realloc(
-                tok_mode->last_expr_buffer,
-                tok_mode->last_expr_size + size
-            );
-            if (new_buffer == NULL) {
-                PyMem_Free(tok_mode->last_expr_buffer);
-                goto error;
-            }
-            tok_mode->last_expr_buffer = new_buffer;
-            memcpy(tok_mode->last_expr_buffer + tok_mode->last_expr_size,
-                   tok->cur, size);
-            tok_mode->last_expr_size += size;
-            break;
         case '{':
-            if (tok_mode->last_expr_buffer != NULL) {
-                PyMem_Free(tok_mode->last_expr_buffer);
+            tok_mode->expr_span = (_PyTok_Span){
+                _PyLexer_BufferOffset(tok, tok->cur), -1};
+            tokenizer_comments *comments = tok_mode->comments;
+            if (comments != NULL) {
+                comments->count = 0;
             }
-            tok_mode->last_expr_buffer = PyMem_Malloc(size);
-            if (tok_mode->last_expr_buffer == NULL) {
-                goto error;
-            }
-            tok_mode->last_expr_size = size;
-            tok_mode->last_expr_end = -1;
-            memcpy(tok_mode->last_expr_buffer, tok->cur, size);
             break;
         case '}':
         case '!':
-            tok_mode->last_expr_end = strlen(tok->start);
+            tok_mode->expr_span.end = _PyLexer_BufferOffset(tok, tok->start);
             break;
         case ':':
-            if (tok_mode->last_expr_end == -1) {
-               tok_mode->last_expr_end = strlen(tok->start);
+            if (tok_mode->expr_span.end < 0) {
+                tok_mode->expr_span.end =
+                    _PyLexer_BufferOffset(tok, tok->start);
             }
             break;
         default:
             Py_UNREACHABLE();
     }
-    return 1;
-error:
-    tok->done = E_NOMEM;
-    return 0;
 }
 
 int
@@ -265,16 +228,14 @@ _PyLexer_scan_fstring_start(struct tok_state *tok, struct token *token, int c)
     the_current_tok->kind = TOK_FSTRING_MODE;
     the_current_tok->quote = quote;
     the_current_tok->quote_size = quote_size;
-    the_current_tok->start = tok->start;
-    the_current_tok->multi_line_start = tok->line_start;
+    the_current_tok->start = _PyLexer_BufferOffset(tok, tok->start);
+    the_current_tok->multi_line_start =
+        _PyLexer_BufferOffset(tok, tok->line_start);
     the_current_tok->first_line = tok->lineno;
-    the_current_tok->start_offset = -1;
-    the_current_tok->multi_line_start_offset = -1;
-    the_current_tok->last_expr_buffer = NULL;
-    the_current_tok->last_expr_size = 0;
-    the_current_tok->last_expr_end = -1;
+    the_current_tok->expr_span = (_PyTok_Span){-1, -1};
     the_current_tok->in_format_spec = 0;
     the_current_tok->in_debug = 0;
+    the_current_tok->comments = NULL;
 
     enum string_kind_t string_kind = FSTRING;
     switch (*tok->start) {
@@ -462,15 +423,10 @@ _PyLexer_get_fstring_mode(struct tok_state *tok, tokenizer_mode* current_tok, st
         }
     }
 
-    if (current_tok->last_expr_buffer != NULL) {
-        PyMem_Free(current_tok->last_expr_buffer);
-        current_tok->last_expr_buffer = NULL;
-        current_tok->last_expr_size = 0;
-        current_tok->last_expr_end = -1;
-    }
-
     p_start = tok->start;
     p_end = tok->cur;
+    PyMem_Free(current_tok->comments);
+    current_tok->comments = NULL;
     tok->tok_mode_stack_index--;
     return MAKE_TOKEN(FTSTRING_END(current_tok));
 
@@ -520,9 +476,9 @@ f_string_middle:
             // shift the tok_state's location into
             // the start of string, and report the error
             // from the initial quote character
-            tok->cur = (char *)current_tok->start;
-            tok->cur++;
-            tok->line_start = current_tok->multi_line_start;
+            tok->cur = _PyLexer_BufferPointer(tok, current_tok->start) + 1;
+            tok->line_start = _PyLexer_BufferPointer(
+                tok, current_tok->multi_line_start);
             int start = tok->lineno;
 
             tokenizer_mode *the_current_tok = TOK_GET_MODE(tok);
@@ -553,9 +509,7 @@ f_string_middle:
         }
 
         if (c == '{') {
-            if (!_PyLexer_update_ftstring_expr(tok, c)) {
-                return MAKE_TOKEN(ENDMARKER);
-            }
+            _PyLexer_update_ftstring_expr(tok, c);
             int peek = tok_nextc(tok);
             if (peek != '{' || in_format_spec) {
                 tok_backup(tok, peek);

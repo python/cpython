@@ -1679,6 +1679,20 @@ except Exception:
 
         self.assertEqual(f'{" # nooo "=}', '" # nooo "=\' # nooo \'')
         self.assertEqual(f'{" \" # nooo \" "=}', '" \\" # nooo \\" "=\' " # nooo " \'')
+        self.assertEqual(f'{"""a" # inside"""=}',
+                         '"""a" # inside"""=\'a" # inside\'')
+        self.assertEqual(f"{'''a' # inside'''=}",
+                         "'''a' # inside'''=\"a' # inside\"")
+        self.assertEqual(f'{"""a""""#" # outside
+=}', '"""a""""#" \n=\'a#\'')
+
+        x, y = 1, 2
+        self.assertEqual(f'{x != y # outside
+=}', 'x != y \n=True')
+
+        d = {'a#b': 42}
+        self.assertEqual(f'''{f"{d["a#b"]}"=}''',
+                         'f"{d["a#b"]}"=\'42\'')
 
         self.assertEqual(f'{ # some comment goes here
   """hello"""=}',  ' \n  """hello"""=\'hello\'')
