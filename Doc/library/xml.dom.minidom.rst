@@ -261,8 +261,7 @@ rules apply:
   :attr:`~xml.dom.DocumentType.notations` are read-only and support only
   ``len()`` and subscription by a name.
 
-* :attr:`~xml.dom.Document.strictErrorChecking` and
-  :attr:`~xml.dom.Attr.specified` are always ``False``.
+* :attr:`~xml.dom.Document.strictErrorChecking` is always ``False``.
 
 The following interfaces have no implementation in :mod:`!xml.dom.minidom`:
 
