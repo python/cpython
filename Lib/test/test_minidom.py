@@ -365,7 +365,7 @@ class MinidomTest(unittest.TestCase):
         dom = Document()
         child = dom.appendChild(
                 dom.createElementNS("http://www.python.org", "python:abc"))
-        child.setAttributeNS("http://www.w3.org", "xmlns:python",
+        child.setAttributeNS(xml.dom.XMLNS_NAMESPACE, "xmlns:python",
                                                 "http://www.python.org")
         child.setAttributeNS("http://www.python.org", "python:abcattr", "foo")
         # removing an absent attribute has no effect
@@ -472,11 +472,13 @@ class MinidomTest(unittest.TestCase):
         dom = Document()
         child = dom.appendChild(
                 dom.createElementNS("http://www.python.org", "python:abc"))
-        child.setAttributeNS("http://www.w3.org", "xmlns:python",
+        child.setAttributeNS(xml.dom.XMLNS_NAMESPACE, "xmlns:python",
                                                 "http://www.python.org")
-        self.assertEqual(child.getAttributeNS("http://www.w3.org", "python"),
+        self.assertEqual(
+            child.getAttributeNS(xml.dom.XMLNS_NAMESPACE, "python"),
             'http://www.python.org')
-        self.assertEqual(child.getAttributeNS("http://www.w3.org", "other"),
+        self.assertEqual(
+            child.getAttributeNS(xml.dom.XMLNS_NAMESPACE, "other"),
             '')
         child2 = child.appendChild(dom.createElement('abc'))
         self.assertEqual(child2.getAttributeNS("http://www.python.org", "missing"),
@@ -1785,6 +1787,69 @@ class MinidomTest(unittest.TestCase):
         self.checkWholeText(dom1.getElementsByTagName('node')[0].firstChild, '</data>')
         dom2 = parseString(dom1.toprettyxml())
         self.checkWholeText(dom2.getElementsByTagName('node')[0].firstChild, '</data>')
+
+    def testNamespaceErr(self):
+        doc = parseString("<doc/>")
+        elem = doc.documentElement
+        XML_NS = xml.dom.XML_NAMESPACE
+        XMLNS_NS = xml.dom.XMLNS_NAMESPACE
+        for namespaceURI, qname in [
+            (None, "p:e"),                  # a prefix without a namespace
+            ("", "p:e"),
+            ("http://xml.python.org/ns", "p:p:e"),   # malformed
+            ("http://xml.python.org/ns", "p:"),
+            ("http://xml.python.org/ns", "p:1e"),
+            ("http://xml.python.org/ns", "xml:e"),   # the xml prefix
+        ]:
+            with self.subTest(namespaceURI=namespaceURI, qname=qname):
+                self.assertRaises(xml.dom.NamespaceErr,
+                                  doc.createElementNS, namespaceURI, qname)
+                self.assertRaises(xml.dom.NamespaceErr,
+                                  doc.createAttributeNS, namespaceURI, qname)
+                self.assertRaises(xml.dom.NamespaceErr,
+                                  elem.setAttributeNS, namespaceURI, qname, "v")
+
+        # the xmlns name and prefix are only allowed in the XMLNS namespace
+        for namespaceURI, qname in [
+            ("http://xml.python.org/ns", "xmlns"),
+            ("http://xml.python.org/ns", "xmlns:p"),
+            (None, "xmlns:p"),
+            (XMLNS_NS, "p:a"),              # and it allows nothing else
+            (XMLNS_NS, "a"),
+        ]:
+            with self.subTest(namespaceURI=namespaceURI, qname=qname):
+                self.assertRaises(xml.dom.NamespaceErr,
+                                  doc.createAttributeNS, namespaceURI, qname)
+                self.assertRaises(xml.dom.NamespaceErr,
+                                  elem.setAttributeNS, namespaceURI, qname, "v")
+
+        # valid combinations
+        doc.createElementNS(None, "e")
+        doc.createElementNS("http://xml.python.org/ns", "p:e")
+        doc.createElementNS(XML_NS, "xml:e")
+        doc.createAttributeNS(None, "a")
+        doc.createAttributeNS(XML_NS, "xml:lang")
+        doc.createAttributeNS(XMLNS_NS, "xmlns")
+        doc.createAttributeNS(XMLNS_NS, "xmlns:p")
+        elem.setAttributeNS("http://xml.python.org/ns", "p:a", "v")
+        doc.unlink()
+
+    def testAttrPrefix(self):
+        doc = parseString("<doc/>")
+        attr = doc.createAttributeNS("http://xml.python.org/ns", "p:a")
+        self.assertRaises(xml.dom.InvalidCharacterErr,
+                          setattr, attr, "prefix", "q:r")
+        self.assertRaises(xml.dom.InvalidCharacterErr,
+                          setattr, attr, "prefix", "1q")
+        self.assertRaises(xml.dom.NamespaceErr,
+                          setattr, attr, "prefix", "xml")
+        self.assertRaises(xml.dom.NamespaceErr,
+                          setattr, attr, "prefix", "xmlns")
+        attr.prefix = "q"
+        self.assertEqual(attr.name, "q:a")
+        attr.prefix = None
+        self.assertEqual(attr.name, "a")
+        doc.unlink()
 
     def testInvalidCharacterErr(self):
         doc = parseString("<doc/>")

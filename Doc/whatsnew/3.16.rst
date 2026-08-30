@@ -642,6 +642,15 @@ xml
   and :meth:`!Document.createEntityReference`.
   (Contributed by Jason Orendorff and Serhiy Storchaka in :gh:`44871`.)
 
+* :mod:`xml.dom.minidom` now validates namespaces in the factory methods
+  :meth:`~xml.dom.Document.createElementNS`,
+  :meth:`~xml.dom.Document.createAttributeNS`
+  and :meth:`~xml.dom.Element.setAttributeNS`.
+  :exc:`~xml.dom.NamespaceErr` is now raised for a malformed qualified name,
+  for a prefix with an empty namespace, and for illegal use
+  of the ``xml`` and ``xmlns`` prefixes.
+  (Contributed by Serhiy Storchaka in :gh:`156665`.)
+
 * Add :meth:`!GetSpecifiedAttributeCount` method
   to the :mod:`XML parser <xml.parsers.expat>` objects.
   It tells how many of the reported attributes were given in the start tag
@@ -880,6 +889,12 @@ that may require changes to your code.
   :exc:`~xml.dom.NotFoundErr` if there is no matching attribute.
   Attributes defaulted in the DTD are no longer omitted when parsing.
   (Contributed by Jason Orendorff and Serhiy Storchaka in :gh:`44871`.)
+
+* :mod:`xml.dom.minidom` now raises :exc:`~xml.dom.NamespaceErr`
+  for a malformed qualified name, for a prefix with an empty namespace,
+  and for illegal use of the ``xml`` and ``xmlns`` prefixes.
+  Such operations formerly succeeded and produced an invalid document.
+  (Contributed by Serhiy Storchaka in :gh:`156665`.)
 
 * On Windows, seeking a pipe now fails instead of silently appearing to
   succeed: :func:`os.lseek` and :meth:`~io.IOBase.seek` raise :exc:`OSError`,

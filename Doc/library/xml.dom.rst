@@ -695,6 +695,10 @@ inherits properties from :class:`Node`.
    :meth:`~Node.insertBefore` or :meth:`~Node.appendChild`.
 
    Raise :exc:`InvalidCharacterErr` if the name is not a valid XML name.
+   Raise :exc:`NamespaceErr` if the qualified name is malformed,
+   if it has a prefix and the namespace URI is empty,
+   or if the prefix is ``'xml'``
+   and the namespace URI is not the XML namespace.
 
 
 .. method:: Document.createTextNode(data)
@@ -748,6 +752,11 @@ inherits properties from :class:`Node`.
    :class:`Element` object to use the newly created attribute instance.
 
    Raise :exc:`InvalidCharacterErr` if the name is not a valid XML name.
+   Raise :exc:`NamespaceErr` if the qualified name is malformed,
+   if it has a prefix and the namespace URI is empty,
+   if the prefix is ``'xml'`` and the namespace URI is not the XML namespace,
+   or if the name or the prefix is ``'xmlns'``
+   and the namespace URI is not the XMLNS namespace, or vice versa.
 
 
 .. method:: Document.getElementById(id)
@@ -913,6 +922,11 @@ of that class.
    Note that a qname is the whole attribute name.  This is different than above.
 
    Raise :exc:`InvalidCharacterErr` if the name is not a valid XML name.
+   Raise :exc:`NamespaceErr` if the qualified name is malformed,
+   if it has a prefix and the namespace URI is empty,
+   if the prefix is ``'xml'`` and the namespace URI is not the XML namespace,
+   or if the name or the prefix is ``'xmlns'``
+   and the namespace URI is not the XMLNS namespace, or vice versa.
 
 
 .. _dom-attr-objects:
