@@ -757,15 +757,16 @@ class ListComprehensionTest(unittest.TestCase):
         self._check_in_scopes(code, {"x": 2, "y": [3]}, ns={"x": 3}, scopes=["class"])
         self._check_in_scopes(code, {"x": 2, "y": [2]}, ns={"x": 3}, scopes=["function", "module"])
 
+    def test_comprehension_name_reuse_with_free_variable(self):
         x = 3
 
-        def f():
+        def sibling_comprehension():
             [x for x in [1]]
             return [x for _ in [1]]
 
-        self.assertEqual(f(), [3])
+        self.assertEqual(sibling_comprehension(), [3])
 
-        def g():
+        def nested_function():
             [x for x in [1]]
 
             def inner():
@@ -773,7 +774,10 @@ class ListComprehensionTest(unittest.TestCase):
 
             return inner()
 
-        self.assertEqual(g(), 3)
+        self.assertEqual(nested_function(), 3)
+
+    def test_comprehension_cell_and_free_variable(self):
+        x = 3
 
         def captured_then_sibling():
             funcs = [lambda: x for x in [1]]
@@ -796,6 +800,9 @@ class ListComprehensionTest(unittest.TestCase):
             return funcs[0](), list(x for _ in [1])
 
         self.assertEqual(captured_then_generator_expression(), (1, [3]))
+
+    def test_comprehension_cell_exception_cleanup(self):
+        x = 3
 
         def raises_after_one():
             yield 1
