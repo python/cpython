@@ -77,9 +77,14 @@ class TestUserObjects(unittest.TestCase):
         class A(UserDict):
             def __missing__(self, key):
                 return 456
-        self.assertEqual(A()[123], 456)
+        a = A()
+        self.assertEqual(a[123], 456)
+        a[123] = "hello"
+        self.assertEqual(a[123], "hello")
+        del a[123]
+        self.assertEqual(a[123], 456)
         # get() ignores __missing__ on dict
-        self.assertIs(A().get(123), None)
+        self.assertIs(a.get(123), None)
 
 
 ################################################################################

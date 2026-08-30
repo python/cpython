@@ -1,0 +1,1 @@
+Avoid race condition in :meth:`collections.UserDict.__getitem__` under free-threading by using a single ``try``/``except KeyError`` lookup on ``self.data`` rather than a containment check followed by indexing.
