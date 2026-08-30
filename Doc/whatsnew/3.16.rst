@@ -487,6 +487,15 @@ symtable
   (Contributed by Serhiy Storchaka in :gh:`153844`.)
 
 
+socket
+------
+
+* :meth:`socket.socket.sendfile` now uses the :c:func:`!TransmitFile` system
+  call on Windows, instead of falling back to a slower
+  :meth:`~socket.socket.send` loop.
+  (Contributed by An Long in :gh:`65920`.)
+
+
 tkinter
 -------
 
