@@ -263,6 +263,9 @@ rules apply:
 
 * :attr:`~xml.dom.Document.strictErrorChecking` is always ``False``.
 
+  .. versionchanged:: next
+     Previously, :attr:`~xml.dom.Attr.specified` was always ``False``.
+
 The following interfaces have no implementation in :mod:`!xml.dom.minidom`:
 
 * :class:`DOMTimeStamp`
