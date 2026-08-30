@@ -757,6 +757,24 @@ class ListComprehensionTest(unittest.TestCase):
         self._check_in_scopes(code, {"x": 2, "y": [3]}, ns={"x": 3}, scopes=["class"])
         self._check_in_scopes(code, {"x": 2, "y": [2]}, ns={"x": 3}, scopes=["function", "module"])
 
+        x = 3
+
+        def f():
+            [x for x in [1]]
+            return [x for _ in [1]]
+
+        self.assertEqual(f(), [3])
+
+        def g():
+            [x for x in [1]]
+
+            def inner():
+                return x
+
+            return inner()
+
+        self.assertEqual(g(), 3)
+
     def test_exception_locations(self):
         # The location of an exception raised from __init__ or
         # __next__ should be the iterator expression
