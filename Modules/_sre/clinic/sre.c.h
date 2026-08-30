@@ -7,7 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
-#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_sre_getcodesize__doc__,
 "getcodesize($module, /)\n"
@@ -159,6 +159,60 @@ _sre_unicode_tolower(PyObject *module, PyObject *arg)
         goto exit;
     }
     return_value = PyLong_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_sre_category_matches__doc__,
+"category_matches($module, category, character, /)\n"
+"--\n"
+"\n"
+"Whether the character matches the resolved category code.");
+
+#define _SRE_CATEGORY_MATCHES_METHODDEF    \
+    {"category_matches", _PyCFunction_CAST(_sre_category_matches), METH_FASTCALL, _sre_category_matches__doc__},
+
+static int
+_sre_category_matches_impl(PyObject *module, unsigned int category,
+                           int character);
+
+static PyObject *
+_sre_category_matches(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    unsigned int category;
+    int character;
+    int _return_value;
+
+    if (!_PyArg_CheckPositional("category_matches", nargs, 2, 2)) {
+        goto exit;
+    }
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[0], &category, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
+    }
+    character = PyLong_AsInt(args[1]);
+    if (character == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    _return_value = _sre_category_matches_impl(module, category, character);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
 
 exit:
     return return_value;
@@ -1568,4 +1622,4 @@ _sre_SRE_Scanner_search(PyObject *self, PyTypeObject *cls, PyObject *const *args
 #ifndef _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
     #define _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
 #endif /* !defined(_SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF) */
-/*[clinic end generated code: output=0c867efb64e020aa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dd44960c30198f1a input=a9049054013a1b77]*/

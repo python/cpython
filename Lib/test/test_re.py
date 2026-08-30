@@ -1,5 +1,5 @@
 from test.support import (gc_collect, bigmemtest, _2G,
-                          cpython_only, captured_stdout,
+                          cpython_only, captured_stdout, subTests,
                           check_disallow_instantiation, linked_to_musl,
                           SHORT_TIMEOUT, Stopwatch, requires_resource)
 import locale
@@ -2811,6 +2811,36 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.findall(r'(?:ab)?+', 'ababc'), ['ab', 'ab', '', ''])
         self.assertEqual(re.findall(r'(?:ab){1,3}+', 'ababc'), ['abab'])
 
+    # A greedy repeat is made possessive only when that cannot change the
+    # match (see Lib/re/_optimizer.py); each pattern here would match
+    # differently if its repeat were wrongly made possessive.
+    @subTests('pattern,string,flags,expected', [
+        # rigid body: only the leading atom matters, not the inner ones
+        (r'(ab)+a', 'abab', 0, (0, 3)),
+        (r'(ab)+b', 'abb', 0, (0, 3)),
+        # variable-width alternation must stay greedy (re-parse "a" as "ab")
+        (r'(a|ab)+c', 'abc', 0, (0, 3)),
+        # a scoped inline flag changes how the atom folds
+        (r'(?i:a)+A', 'aA', 0, (0, 2)),
+        (r'a+(?i:A)', 'aa', 0, (0, 2)),
+        # the {i, I, ı, İ} fold group
+        ('İ*i', 'ı', re.I, (0, 1)),
+        # $ matches before an interior newline, reachable by backtracking
+        (r'[ \n]+$', ' \n x', re.M, (0, 1)),
+        (r'\s+$', ' \n x', re.M, (0, 1)),
+        # the follower can match the character a+ gives back
+        (r'a+(?=a)', 'aaa', 0, (0, 2)),
+        (r'a+(?>a)', 'aaa', 0, (0, 3)),
+    ])
+    def test_auto_possessification(self, pattern, string, flags, expected):
+        m = re.compile(pattern, flags).search(string)
+        self.assertEqual(m.span() if m else None, expected)
+
+    def test_auto_possessification_keeps_captures(self):
+        # captures are preserved when a repeat is made possessive
+        self.assertEqual(re.search(r'(a+)b', 'aaab').group(1), 'aaa')
+        self.assertEqual(re.search(r'(ab)+c', 'ababc').span(), (0, 5))
+
     def test_atomic_grouping(self):
         """Test Atomic Grouping
         Test non-capturing groups of the form (?>...), which does
@@ -3064,6 +3094,88 @@ POSSESSIVE_REPEAT 0 1
 13: SUCCESS
 14. SUCCESS
 ''')
+
+
+@cpython_only
+class OptimizerTests(unittest.TestCase):
+    # Auto-possessification (see Lib/re/_optimizer.py).
+
+    def is_possessive(self, pattern, flags=0):
+        with captured_stdout() as out:
+            re.compile(pattern, flags | re.DEBUG)
+        return 'POSSESSIVE_REPEAT' in out.getvalue()
+
+    @subTests('pattern,flags', [
+        (r'a+b', 0), (r'\d+\.', 0), (r'[a-z]+[0-9]', 0), (r'\w+\s', 0),
+        (r'(a)+b', 0), (r'(\d)+x', 0),                  # capturing groups
+        (r'(ab)+c', 0), (r'(\d\d\d)+x', 0),
+        (r'([ab]c)+d', 0), (r'((ab)c)+d', 0),           # rigid bodies
+        (r'a+\z', 0), (r'a+$', 0), (r'\d+$', 0), (r'a+$', re.M),  # anchors
+        (r'(?>ab)+c', 0), (r'a+(?>bc)d', 0),            # atomic groups
+        (r'(a+)b', 0), (r'(a+|c)d', 0),                 # across a group
+        (r'a+', 0),                                     # end of the pattern
+        # a fused set-operation charset that excludes the follower
+        (r'[a-z--b]+b', 0), (r'[\w--\d]+\d', 0), (r'[\s--\n]+\S', 0),
+        (r'[\w--0-5]+\s', 0), (r'[^\d]+\d', 0),
+        # \p{...} engine categories, decided per character
+        (r'\p{Lu}+x', 0), (r'\p{Alpha}+!', 0), (r'x+\p{Lu}', 0),
+        (r'\p{XID_Start}+-', 0), (r'\p{Cf}+A', re.I),  # Cf is fold-closed
+        (r'\p{Cased}+!', 0), (r'\p{Case_Ignorable}+A', 0),
+        # a category and its complement are disjoint whatever they mean
+        (r'\p{Lu}+\P{Lu}', 0), (r'\P{Cased}+\p{Cased}', 0),
+        (r'\p{Lu}+\P{Lu}', re.I), (r'\d+\D', 0),
+        (r'\w+\W', 0), (r'(?a:\w+\W)', 0),
+    ])
+    def test_possessified(self, pattern, flags):
+        self.assertTrue(self.is_possessive(pattern, flags))
+
+    def test_many_sequential_groups(self):
+        # The follower scan recurses once per following group; a very long
+        # sequence of groups must not turn that into a crash, and repeats
+        # outside the chain are still optimized.
+        self.assertTrue(self.is_possessive('(a)' * 2000 + 'b+c'))
+
+    def test_follower_set_capped(self):
+        # Each empty branch alternative appends the continuation again, so
+        # an uncapped follower set grows exponentially (found by OSS-Fuzz).
+        re.compile('(|)' * 100 + 'x')
+        # Each growth point gives up at the limit and no earlier (the y?
+        # followers overlap each other, so only x+ can possessify):
+        # a chain of optional followers,
+        self.assertTrue(self.is_possessive('x+' + 'y?' * 64 + 'y'))
+        self.assertFalse(self.is_possessive('x+' + 'y?' * 65 + 'y'))
+        # branch alternatives (the first characters must be distinct -- the
+        # parser factors a common prefix out of the alternation -- and there
+        # are not enough unreserved ASCII alphanumerics for 65 of them),
+        alts = ['%cz' % (0x100 + i) for i in range(65)]
+        self.assertTrue(self.is_possessive('x+(?:%s)' % '|'.join(alts[:64])))
+        self.assertFalse(self.is_possessive('x+(?:%s)' % '|'.join(alts)))
+        # and resuming what follows the group.
+        alts[0] = 'yz'
+        self.assertTrue(self.is_possessive(
+            '(x+' + 'y?' * 32 + ')(?:%s)' % '|'.join(alts[:32])))
+        self.assertFalse(self.is_possessive(
+            '(x+' + 'y?' * 32 + ')(?:%s)' % '|'.join(alts[:33])))
+
+    @subTests('pattern,flags', [
+        (r'a+a', 0), (r'.+x', 0),                       # overlapping
+        (r'(ab)+a', 0), (r'(a|ab)+c', 0), (r'(ab?)+c', 0),
+        (r'[a\n]+$', re.M), (r'\s+$', re.M),            # $ before a newline
+        (r'a+\b', 0), (r'a+\B', 0),                     # word boundary
+        (r'a+(?=a)', 0), (r'a+(?!b)', 0),               # lookaround
+        (r'(?i:a)+A', 0), (r'a+(?i:A)', 0),             # scoped flags
+        # not complement pairs: unicode \w and ascii \W overlap (e.g. é)
+        (r'(?a:\w+)\W', 0), (r'\w+(?a:\W)', 0),
+        (b'a+B', re.L | re.I),                          # runtime locale folding
+        (r'a+?b', 0),                                   # lazy
+        (r'[a-z--b]+c', 0), (r'[\w--\d]+\w', 0),       # follower in the set
+        (r'\p{Lu}+A', 0), (r'\p{L}+\d', 0),             # not provably disjoint
+        (r'\p{Lu}+\P{L}', 0),     # disjoint, but not a complement pair
+        # Lu is not fold-closed: under IGNORECASE it depends on the context
+        (r'\p{Lu}+x', re.I),
+    ])
+    def test_not_possessified(self, pattern, flags):
+        self.assertFalse(self.is_possessive(pattern, flags))
 
 
 class PatternReprTests(unittest.TestCase):

@@ -655,6 +655,12 @@ re
   (Contributed by Serhiy Storchaka in :gh:`152033` and Pieter Eendebak in
   :gh:`152056`.)
 
+* A greedy repeat is now compiled as possessive when the repeated characters
+  and the characters that can follow it are provably disjoint (for example
+  ``\d+\.`` is compiled as if it were ``\d++\.``), which makes failing and
+  heavily backtracking matches severalfold faster.
+  (Contributed by Serhiy Storchaka in :gh:`153044`.)
+
 module_name
 -----------
 

@@ -629,6 +629,24 @@ _sre_unicode_tolower_impl(PyObject *module, int character)
     return sre_lower_unicode(character);
 }
 
+/*[clinic input]
+_sre.category_matches -> bool
+
+    category: unsigned_int(bitwise=True)
+    character: int
+    /
+
+Whether the character matches the resolved category code.
+[clinic start generated code]*/
+
+static int
+_sre_category_matches_impl(PyObject *module, unsigned int category,
+                           int character)
+/*[clinic end generated code: output=fab7e15a7c0467bc input=5ad3c5d79206b936]*/
+{
+    return sre_category(category, (unsigned int)character) != 0;
+}
+
 LOCAL(void)
 state_reset(SRE_STATE* state)
 {
@@ -3561,6 +3579,7 @@ static PyMethodDef _functions[] = {
     _SRE_UNICODE_ISCASED_METHODDEF
     _SRE_ASCII_TOLOWER_METHODDEF
     _SRE_UNICODE_TOLOWER_METHODDEF
+    _SRE_CATEGORY_MATCHES_METHODDEF
     {NULL, NULL}
 };
 
