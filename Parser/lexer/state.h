@@ -90,14 +90,11 @@ struct tok_state {
     /* Stuff for PEP 0263 */
     char *encoding;         /* Source encoding. */
     const char* line_start;     /* pointer to start of current line */
-
     _PyTok_SourceText source;
     struct _PyTok_Reader *reader;
 
     int type_comments;      /* Whether to look for type comments */
 
-    int report_warnings;
-    // TODO: Factor this into its own thing
     tokenizer_mode tok_mode_stack[MAXFSTRINGLEVEL];
     int tok_mode_stack_index;
     int tok_extra_tokens;

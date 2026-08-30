@@ -5,7 +5,6 @@
 #include "helpers.h"
 #include "reader.h"
 #include "reader_internal.h"
-#include "../lexer/lexer.h"
 #include "../lexer/state.h"
 
 #ifdef HAVE_UNISTD_H
@@ -865,13 +864,10 @@ _PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
         _PyTokenizer_Free(tok);
         return NULL;
     }
-    /* Reporting a warning here could recursively ask for the encoding. */
-    tok->report_warnings = 0;
-    while (tok->lineno < 2 && tok->done == E_OK) {
-        struct token token;
-        _PyToken_Init(&token);
-        _PyTokenizer_Get(tok, &token);
-        _PyToken_Free(&token);
+    if (initialize_file(tok) < 0) {
+        fclose(fp);
+        _PyTokenizer_Free(tok);
+        return NULL;
     }
     fclose(fp);
     char *encoding = tok->encoding == NULL
