@@ -718,22 +718,27 @@ asyncio
 functools
 ---------
 
-* Calling the Python implementation of :func:`functools.reduce` with *function*
-  or *sequence* as keyword arguments has been deprecated since Python 3.14.
+* Remove support for calling the Python implementation of
+  :func:`functools.reduce` with *function* or *sequence* as keyword arguments,
+  deprecated since Python 3.14.  These parameters are now positional-only.
+  (Contributed by Nikita Sobolev in :gh:`149537`.)
 
 logging
 -------
 
-* Support for custom logging handlers with the *strm* argument is deprecated
-  and scheduled for removal in Python 3.16. Define handlers with the *stream*
-  argument instead.
+* Remove support for custom logging handlers with the *strm* argument,
+  deprecated since Python 3.14.
+  Define handlers with the *stream* argument instead.
+  (Contributed by Nikita Sobolev in :gh:`149598`.)
 
 mimetypes
 ---------
 
-* Valid extensions start with a '.' or are empty for
-  :meth:`mimetypes.MimeTypes.add_type`.
-  Undotted extensions now raise a :exc:`ValueError`.
+* Remove support for undotted extensions in
+  :meth:`mimetypes.MimeTypes.add_type`, deprecated since Python 3.14.
+  Valid extensions must now start with a ``'.'`` or be empty;
+  undotted extensions raise a :exc:`ValueError`.
+  (Contributed by Nikita Sobolev in :gh:`149720`.)
 
 shutil
 ------
