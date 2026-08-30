@@ -212,6 +212,30 @@ pyexpat_xmlparser_GetBase(PyObject *self, PyObject *Py_UNUSED(ignored))
     return pyexpat_xmlparser_GetBase_impl((xmlparseobject *)self);
 }
 
+PyDoc_STRVAR(pyexpat_xmlparser_GetSpecifiedAttributeCount__doc__,
+"GetSpecifiedAttributeCount($self, /)\n"
+"--\n"
+"\n"
+"Return the index just past the attributes given in the start tag.\n"
+"\n"
+"Attributes defaulted from the DTD follow the specified ones, so\n"
+"attributes at lower indices in the list passed to\n"
+"StartElementHandler were given in the start tag.  Each attribute\n"
+"takes two items in that list, its name and its value.  Only\n"
+"meaningful inside a StartElementHandler call.");
+
+#define PYEXPAT_XMLPARSER_GETSPECIFIEDATTRIBUTECOUNT_METHODDEF    \
+    {"GetSpecifiedAttributeCount", (PyCFunction)pyexpat_xmlparser_GetSpecifiedAttributeCount, METH_NOARGS, pyexpat_xmlparser_GetSpecifiedAttributeCount__doc__},
+
+static PyObject *
+pyexpat_xmlparser_GetSpecifiedAttributeCount_impl(xmlparseobject *self);
+
+static PyObject *
+pyexpat_xmlparser_GetSpecifiedAttributeCount(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return pyexpat_xmlparser_GetSpecifiedAttributeCount_impl((xmlparseobject *)self);
+}
+
 PyDoc_STRVAR(pyexpat_xmlparser_GetInputContext__doc__,
 "GetInputContext($self, /)\n"
 "--\n"
@@ -839,4 +863,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF
     #define PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF) */
-/*[clinic end generated code: output=270a0bfe3300e8a1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d7e59d139fe45487 input=a9049054013a1b77]*/

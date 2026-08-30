@@ -1,0 +1,19 @@
+:mod:`xml.dom.minidom` now conforms closer to the DOM Level 1 specification.
+The factory methods now raise :exc:`~xml.dom.InvalidCharacterErr`
+if the name is not a valid XML name.
+Removing an absent attribute with :meth:`!Element.removeAttribute` or
+:meth:`!Element.removeAttributeNS` no longer raises
+:exc:`~xml.dom.NotFoundErr`, it has no effect as the DOM specifies.
+Inserting or setting a node created by another document
+now raises :exc:`~xml.dom.WrongDocumentErr`,
+setting an attribute node which belongs to another element
+now raises :exc:`~xml.dom.InuseAttributeErr`,
+and inserting a node into itself or its descendant
+now raises :exc:`~xml.dom.HierarchyRequestErr`.
+A document can no longer have two element or two document type children,
+and a document fragment can no longer have notation children.
+Attributes defaulted in the DTD are no longer omitted when parsing,
+and :attr:`!Attr.specified` now reports
+whether the attribute was given in the start tag.
+:class:`!EntityReference` nodes
+and :meth:`!Document.createEntityReference` are now implemented.
