@@ -140,6 +140,15 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         )
         self.assertEqual(fstring(t), "Value: value = 42")
 
+        class C:
+            def __format__(self, spec):
+                return f"FORMAT-{spec}"
+
+        x = y = C()
+        t = t"{x:{y:{value=}}}"
+        self.assertEqual(t.interpolations[0].format_spec,
+                         "FORMAT-value=42")
+
     def test_raw_tstrings(self):
         path = r"C:\Users"
         t = rt"{path}\Documents"
@@ -217,6 +226,10 @@ class TestTString(unittest.TestCase, TStringBaseCase):
             ("t'{x=!}'", "t-string: missing conversion character"),
             ("t'{x!z}'", "t-string: invalid conversion character 'z': "
                          "expected 's', 'r', or 'a'"),
+            ("f\"{t'{x!z}'}\"", "t-string: invalid conversion character 'z': "
+                                "expected 's', 'r', or 'a'"),
+            ("t'{f\"{x!z}\"}'", "f-string: invalid conversion character 'z': "
+                                "expected 's', 'r', or 'a'"),
             ("t'{lambda:1}'", "t-string: lambda expressions are not allowed "
                               "without parentheses"),
             ("t'{x:{;}}'", "t-string: expecting a valid expression after '{'"),

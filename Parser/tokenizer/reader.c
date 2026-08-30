@@ -617,7 +617,8 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
     _PyTok_ReaderKind kind = tok->reader->kind;
     int prepared = kind == _PYTOK_READER_PREPARED;
     int streaming = reader_is_streaming(kind);
-    int reset_buffer = !prepared && tok->start == NULL && !INSIDE_FSTRING(tok);
+    int reset_buffer = !prepared && tok->start == NULL &&
+        _PyLexer_CurrentFTString(tok) == NULL;
 
     _PyTok_Chunk chunk;
     _PyTok_ReadResult result = reader_next(tok, &chunk);
@@ -706,7 +707,7 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
         tok->inp = tok->source.bytes + source_start + scan_len;
     }
     if (prepared) {
-        if (tok->start == NULL && !INSIDE_FSTRING(tok)) {
+        if (tok->start == NULL && _PyLexer_CurrentFTString(tok) == NULL) {
             tok->buf = tok->cur;
             tok->buf_offset = chunk.data - tok->source.bytes;
         }
@@ -736,6 +737,8 @@ tokenizer_new_with_reader(_PyTok_ReaderKind kind)
     tok->done = E_OK;
     tok->atbol = 1;
     tok->start_loc = (_PyTok_Loc){-1, -1};
+    tok->ftstring_stack = tok->ftstring_stack_inline;
+    tok->ftstring_capacity = FTSTRING_STACK_INLINE_CAPACITY;
 #ifdef Py_DEBUG
     tok->debug = _Py_GetConfig()->parser_debug;
 #endif

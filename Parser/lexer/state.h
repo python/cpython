@@ -6,12 +6,8 @@
 
 #define MAXINDENT 100       /* Max indentation level */
 #define MAXLEVEL 200        /* Max parentheses level */
-#define MAXFSTRINGLEVEL 150 /* Max f-string nesting level */
-
-#define INSIDE_FSTRING(tok) (tok->tok_mode_stack_index > 0)
-#define INSIDE_FSTRING_EXPR(tok) (tok->curly_bracket_expr_start_depth >= 0)
-#define INSIDE_FSTRING_EXPR_AT_TOP(tok) \
-    (tok->curly_bracket_depth - tok->curly_bracket_expr_start_depth == 1)
+#define MAXFTSTRINGLEVEL 150
+#define FTSTRING_STACK_INLINE_CAPACITY 1
 
 struct token {
     int level;
@@ -21,15 +17,18 @@ struct token {
     PyObject *metadata;
 };
 
-enum tokenizer_mode_kind_t {
-    TOK_REGULAR_MODE,
-    TOK_FSTRING_MODE,
-};
+typedef enum {
+    FTSTRING_MODE_MIDDLE,
+    FTSTRING_MODE_EXPRESSION,
+    FTSTRING_MODE_FORMAT_SPEC,
+} ftstring_mode;
 
-enum string_kind_t {
+typedef enum {
     FSTRING,
+    RAW_FSTRING,
     TSTRING,
-};
+    RAW_TSTRING,
+} ftstring_kind;
 
 #define MAX_EXPR_NESTING 3
 
@@ -39,26 +38,31 @@ typedef struct _tokenizer_comments {
     _PyTok_Span spans[];
 } tokenizer_comments;
 
-typedef struct _tokenizer_mode {
-    enum tokenizer_mode_kind_t kind;
-
-    int curly_bracket_depth;
-    int curly_bracket_expr_start_depth;
-
+typedef struct _ftstring_state {
+    ftstring_mode mode;
+    ftstring_kind kind;
     char quote;
-    int quote_size;
-    int raw;
+    unsigned char quote_size;
+    unsigned char debug_expr;
+    unsigned char replacement_depth;
+    int paren_level;
     _PyTok_Off start;
-    _PyTok_Off multi_line_start;
-    int first_line;
-
+    _PyTok_Loc start_loc;
     _PyTok_Span expr_span;
-    int in_debug;
-    int in_format_spec;
-
-    enum string_kind_t string_kind;
     tokenizer_comments *comments;
-} tokenizer_mode;
+} ftstring_state;
+
+static inline int
+_PyLexer_IsTString(ftstring_kind kind)
+{
+    return kind == TSTRING || kind == RAW_TSTRING;
+}
+
+static inline int
+_PyLexer_IsRawString(ftstring_kind kind)
+{
+    return kind == RAW_FSTRING || kind == RAW_TSTRING;
+}
 
 /* Tokenizer state */
 struct tok_state {
@@ -95,8 +99,10 @@ struct tok_state {
 
     int type_comments;      /* Whether to look for type comments */
 
-    tokenizer_mode tok_mode_stack[MAXFSTRINGLEVEL];
-    int tok_mode_stack_index;
+    ftstring_state *ftstring_stack;
+    ftstring_state ftstring_stack_inline[FTSTRING_STACK_INLINE_CAPACITY];
+    int ftstring_depth;
+    int ftstring_capacity;
     int tok_extra_tokens;
     int comment_newline;
     int implicit_newline;
@@ -104,6 +110,30 @@ struct tok_state {
     int debug;
 #endif
 };
+
+static inline ftstring_state *
+_PyLexer_CurrentFTString(struct tok_state *tok)
+{
+    assert(tok->ftstring_stack != NULL);
+    assert(tok->ftstring_depth <= tok->ftstring_capacity);
+    if (tok->ftstring_depth == 0) {
+        return NULL;
+    }
+    return &tok->ftstring_stack[tok->ftstring_depth - 1];
+}
+
+static inline char
+_PyLexer_StringPrefix(ftstring_kind kind)
+{
+    return _PyLexer_IsTString(kind) ? 't' : 'f';
+}
+
+static inline int
+_PyLexer_FTStringBracketDepth(const struct tok_state *tok,
+                              const ftstring_state *state)
+{
+    return tok->level - state->paren_level;
+}
 
 static inline _PyTok_Off
 _PyLexer_BufferOffset(const struct tok_state *tok, const char *position)
@@ -165,6 +195,8 @@ _PyLexer_BufferSpan(const struct tok_state *tok, const char *start,
 int _PyLexer_token_setup(struct tok_state *tok, struct token *token, int type, const char *start, const char *end);
 
 void _PyTokenizer_Free(struct tok_state *);
+ftstring_state *_PyLexer_PushFTString(struct tok_state *);
+void _PyLexer_PopFTString(struct tok_state *);
 void _PyToken_Free(struct token *);
 void _PyToken_Init(struct token *);
 

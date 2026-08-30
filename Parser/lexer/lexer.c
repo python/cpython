@@ -154,8 +154,11 @@ tok_continuation_line(struct tok_state *tok) {
 
 
 int
-_PyLexer_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct token *token)
+_PyLexer_get_normal(struct tok_state *tok, ftstring_state *current, struct token *token)
 {
+    assert(current == NULL ||
+           (current->mode == FTSTRING_MODE_EXPRESSION &&
+            current->replacement_depth > 0));
     int c;
     int blankline, nonascii;
 
@@ -318,13 +321,13 @@ _PyLexer_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, str
             c = tok_nextc(tok);
         }
 
-        if (INSIDE_FSTRING(tok) && INSIDE_FSTRING_EXPR(current_tok)) {
+        if (current != NULL) {
             const char *comment_end = tok->cur;
             if (c == '\n' || c == '\r') {
                 comment_end--;
             }
             if (_PyLexer_record_ftstring_comment(
-                    tok, tok->start, comment_end) < 0) {
+                    tok, current, tok->start, comment_end) < 0) {
                 tok->done = E_NOMEM;
                 return MAKE_TOKEN(ERRORTOKEN);
             }
@@ -548,34 +551,25 @@ _PyLexer_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, str
     }
 
     /* Punctuation character */
-    int is_punctuation = (c == ':' || c == '}' || c == '!' || c == '{');
-    if (is_punctuation && INSIDE_FSTRING(tok) && INSIDE_FSTRING_EXPR(current_tok)) {
-        /* This code block gets executed before the curly_bracket_depth is incremented
-         * by the `{` case, so for ensuring that we are on the 0th level, we need
-         * to adjust it manually */
-        int cursor = current_tok->curly_bracket_depth - (c != '{');
-        int in_format_spec = current_tok->in_format_spec;
-         int cursor_in_format_with_debug =
-             cursor == 1 && (current_tok->in_debug || in_format_spec);
-         int cursor_valid = cursor == 0 || cursor_in_format_with_debug;
-        if (cursor_valid && c == '!') {
+    int is_punctuation = (c == ':' || c == '}' || c == '!');
+    if (is_punctuation && current != NULL) {
+        int bracket_depth = _PyLexer_FTStringBracketDepth(tok, current);
+        int at_expression_boundary =
+            bracket_depth == current->replacement_depth;
+        if (at_expression_boundary && c == '!') {
             int c2 = tok_nextc(tok);
             if (c2 == '=') {
-                cursor_valid = 0;
+                at_expression_boundary = 0;
             }
             tok_backup(tok, c2);
         }
-        if (cursor_valid) {
-            _PyLexer_update_ftstring_expr(tok, c);
-        }
-        if (cursor_valid && c != '{' &&
-                _PyLexer_set_ftstring_expr_metadata(tok, token)) {
+        if (at_expression_boundary &&
+                _PyLexer_finish_ftstring_expr(tok, current, token)) {
             return MAKE_TOKEN(ERRORTOKEN);
         }
 
-        if (c == ':' && cursor == current_tok->curly_bracket_expr_start_depth) {
-            current_tok->kind = TOK_FSTRING_MODE;
-            current_tok->in_format_spec = 1;
+        if (c == ':' && at_expression_boundary) {
+            current->mode = FTSTRING_MODE_FORMAT_SPEC;
             p_start = tok->start;
             p_end = tok->cur;
             return MAKE_TOKEN(_PyToken_OneChar(c));
@@ -614,16 +608,20 @@ _PyLexer_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, str
         tok->parenlinenostack[tok->level] = tok->lineno;
         tok->parencolstack[tok->level] = (int)(tok->start - tok->line_start);
         tok->level++;
-        if (INSIDE_FSTRING(tok)) {
-            current_tok->curly_bracket_depth++;
-        }
         break;
     case ')':
     case ']':
     case '}':
-        if (INSIDE_FSTRING(tok) && !current_tok->curly_bracket_depth && c == '}') {
-            return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
-                "%c-string: single '}' is not allowed", TOK_GET_STRING_PREFIX(tok)));
+        if (current != NULL &&
+                _PyLexer_FTStringBracketDepth(tok, current) == 0) {
+            if (c == '}') {
+                return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
+                    "%c-string: single '}' is not allowed",
+                    _PyLexer_StringPrefix(current->kind)));
+            }
+            return MAKE_TOKEN(_PyTokenizer_syntaxerror(
+                tok, "%c-string: unmatched '%c'",
+                _PyLexer_StringPrefix(current->kind), c));
         }
         if (!tok->tok_extra_tokens && !tok->level) {
             return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "unmatched '%c'", c));
@@ -634,17 +632,15 @@ _PyLexer_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, str
             if (!tok->tok_extra_tokens && !((opening == '(' && c == ')') ||
                                             (opening == '[' && c == ']') ||
                                             (opening == '{' && c == '}'))) {
-                /* If the opening bracket belongs to an f-string's expression
-                part (e.g. f"{)}") and the closing bracket is an arbitrary
-                nested expression, then instead of matching a different
-                syntactical construct with it; we'll throw an unmatched
-                parentheses error. */
-                if (INSIDE_FSTRING(tok) && opening == '{') {
-                    assert(current_tok->curly_bracket_depth >= 0);
-                    int previous_bracket = current_tok->curly_bracket_depth - 1;
-                    if (previous_bracket == current_tok->curly_bracket_expr_start_depth) {
+                /* Do not match a closer against the brace that opened the
+                 * current replacement field. */
+                if (current != NULL && opening == '{') {
+                    int bracket_depth =
+                        _PyLexer_FTStringBracketDepth(tok, current);
+                    if (bracket_depth == current->replacement_depth - 1) {
                         return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
-                            "%c-string: unmatched '%c'", TOK_GET_STRING_PREFIX(tok), c));
+                            "%c-string: unmatched '%c'",
+                            _PyLexer_StringPrefix(current->kind), c));
                     }
                 }
                 if (tok->parenlinenostack[tok->level] != tok->lineno) {
@@ -662,17 +658,16 @@ _PyLexer_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, str
             }
         }
 
-        if (INSIDE_FSTRING(tok)) {
-            current_tok->curly_bracket_depth--;
-            if (current_tok->curly_bracket_depth < 0) {
+        if (current != NULL) {
+            int bracket_depth = _PyLexer_FTStringBracketDepth(tok, current);
+            if (bracket_depth < 0) {
                 return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "%c-string: unmatched '%c'",
-                    TOK_GET_STRING_PREFIX(tok), c));
+                    _PyLexer_StringPrefix(current->kind), c));
             }
-            if (c == '}' && current_tok->curly_bracket_depth == current_tok->curly_bracket_expr_start_depth) {
-                current_tok->curly_bracket_expr_start_depth--;
-                current_tok->kind = TOK_FSTRING_MODE;
-                current_tok->in_format_spec = 0;
-                current_tok->in_debug = 0;
+            if (c == '}' && bracket_depth == current->replacement_depth - 1) {
+                current->replacement_depth--;
+                current->mode = FTSTRING_MODE_MIDDLE;
+                current->debug_expr = 0;
             }
         }
         break;
@@ -684,8 +679,9 @@ _PyLexer_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, str
         return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "invalid non-printable character U+%04X", c));
     }
 
-    if( c == '=' && INSIDE_FSTRING_EXPR_AT_TOP(current_tok)) {
-        current_tok->in_debug = 1;
+    if (c == '=' && current != NULL &&
+            _PyLexer_FTStringBracketDepth(tok, current) == current->replacement_depth) {
+        current->debug_expr = 1;
     }
 
     /* Punctuation character */
@@ -695,21 +691,13 @@ _PyLexer_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, str
 }
 
 
-static int
-tok_get(struct tok_state *tok, struct token *token)
-{
-    tokenizer_mode *current_tok = TOK_GET_MODE(tok);
-    if (current_tok->kind == TOK_REGULAR_MODE) {
-        return _PyLexer_get_normal_mode(tok, current_tok, token);
-    } else {
-        return _PyLexer_get_fstring_mode(tok, current_tok, token);
-    }
-}
-
 int
 _PyTokenizer_Get(struct tok_state *tok, struct token *token)
 {
-    int result = tok_get(tok, token);
+    ftstring_state *current = _PyLexer_CurrentFTString(tok);
+    int result = current == NULL || current->mode == FTSTRING_MODE_EXPRESSION
+        ? _PyLexer_get_normal(tok, current, token)
+        : _PyLexer_get_ftstring(tok, current, token);
     if (tok_failed(tok)) {
         result = ERRORTOKEN;
     }
