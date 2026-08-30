@@ -433,7 +433,7 @@ if sys.platform.startswith("win"):
                           % (fullname, exc),
                           file=sys.__stderr__)
                     mode = 0
-                if stat.S_ISDIR(mode):
+                if stat.S_ISDIR(mode) and not os.path.isjunction(fullname):
                     _waitfor(_rmtree_inner, fullname, waitall=True)
                     _force_run(fullname, os.rmdir, fullname)
                 else:

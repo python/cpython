@@ -1,62 +1,46 @@
 #include "Python.h"
-#include "errcode.h"
-
+#include "buffer.h"
 #include "state.h"
 
-/* Traverse and remember all f-string buffers, in order to be able to restore
-   them after reallocating tok->buf */
 void
-_PyLexer_remember_fstring_buffers(struct tok_state *tok)
+_PyLexer_SaveBufferPointers(struct tok_state *tok, const char *base,
+                            _PyLexer_BufferPointers *pointers)
 {
-    int index;
-    tokenizer_mode *mode;
-
-    for (index = tok->tok_mode_stack_index; index >= 0; --index) {
-        mode = &(tok->tok_mode_stack[index]);
+    pointers->buf_from_base = tok->buf - base;
+    pointers->cur_from_buf = tok->cur - tok->buf;
+    pointers->inp_from_buf = tok->inp - tok->buf;
+    pointers->start_from_buf = tok->start == NULL
+        ? -1 : tok->start - tok->buf;
+    pointers->line_start_from_buf = tok->line_start == NULL
+        ? -1 : tok->line_start - tok->buf;
+    pointers->multi_line_start_from_buf = tok->multi_line_start == NULL
+        ? -1 : tok->multi_line_start - tok->buf;
+    for (int index = tok->tok_mode_stack_index; index > 0; --index) {
+        tokenizer_mode *mode = &tok->tok_mode_stack[index];
         mode->start_offset = mode->start == NULL ? -1 : mode->start - tok->buf;
-        mode->multi_line_start_offset = mode->multi_line_start == NULL ? -1 : mode->multi_line_start - tok->buf;
+        mode->multi_line_start_offset = mode->multi_line_start == NULL
+            ? -1 : mode->multi_line_start - tok->buf;
     }
 }
 
-/* Traverse and restore all f-string buffers after reallocating tok->buf */
 void
-_PyLexer_restore_fstring_buffers(struct tok_state *tok)
+_PyLexer_RestoreBufferPointers(struct tok_state *tok, char *base,
+                               const _PyLexer_BufferPointers *pointers)
 {
-    int index;
-    tokenizer_mode *mode;
-
-    for (index = tok->tok_mode_stack_index; index >= 0; --index) {
-        mode = &(tok->tok_mode_stack[index]);
-        mode->start = mode->start_offset < 0 ? NULL : tok->buf + mode->start_offset;
-        mode->multi_line_start = mode->multi_line_start_offset < 0 ? NULL : tok->buf + mode->multi_line_start_offset;
+    tok->buf = base + pointers->buf_from_base;
+    tok->cur = tok->buf + pointers->cur_from_buf;
+    tok->inp = tok->buf + pointers->inp_from_buf;
+    tok->start = pointers->start_from_buf < 0
+        ? NULL : tok->buf + pointers->start_from_buf;
+    tok->line_start = pointers->line_start_from_buf < 0
+        ? NULL : tok->buf + pointers->line_start_from_buf;
+    tok->multi_line_start = pointers->multi_line_start_from_buf < 0
+        ? NULL : tok->buf + pointers->multi_line_start_from_buf;
+    for (int index = tok->tok_mode_stack_index; index > 0; --index) {
+        tokenizer_mode *mode = &tok->tok_mode_stack[index];
+        mode->start = mode->start_offset < 0
+            ? NULL : tok->buf + mode->start_offset;
+        mode->multi_line_start = mode->multi_line_start_offset < 0
+            ? NULL : tok->buf + mode->multi_line_start_offset;
     }
-}
-
-int
-_PyLexer_tok_reserve_buf(struct tok_state *tok, Py_ssize_t size)
-{
-    Py_ssize_t cur = tok->cur - tok->buf;
-    Py_ssize_t oldsize = tok->inp - tok->buf;
-    Py_ssize_t newsize = oldsize + Py_MAX(size, oldsize >> 1);
-    if (newsize > tok->end - tok->buf) {
-        char *newbuf = tok->buf;
-        Py_ssize_t start = tok->start == NULL ? -1 : tok->start - tok->buf;
-        Py_ssize_t line_start = tok->start == NULL ? -1 : tok->line_start - tok->buf;
-        Py_ssize_t multi_line_start = tok->multi_line_start - tok->buf;
-        _PyLexer_remember_fstring_buffers(tok);
-        newbuf = (char *)PyMem_Realloc(newbuf, newsize);
-        if (newbuf == NULL) {
-            tok->done = E_NOMEM;
-            return 0;
-        }
-        tok->buf = newbuf;
-        tok->cur = tok->buf + cur;
-        tok->inp = tok->buf + oldsize;
-        tok->end = tok->buf + newsize;
-        tok->start = start < 0 ? NULL : tok->buf + start;
-        tok->line_start = line_start < 0 ? NULL : tok->buf + line_start;
-        tok->multi_line_start = multi_line_start < 0 ? NULL : tok->buf + multi_line_start;
-        _PyLexer_restore_fstring_buffers(tok);
-    }
-    return 1;
 }
