@@ -775,6 +775,41 @@ class ListComprehensionTest(unittest.TestCase):
 
         self.assertEqual(g(), 3)
 
+        def captured_then_sibling():
+            funcs = [lambda: x for x in [1]]
+            return funcs[0](), [x for _ in [1]]
+
+        self.assertEqual(captured_then_sibling(), (1, [3]))
+
+        def captured_then_nested_function():
+            funcs = [lambda: x for x in [1]]
+
+            def inner():
+                return x
+
+            return funcs[0](), inner()
+
+        self.assertEqual(captured_then_nested_function(), (1, 3))
+
+        def captured_then_generator_expression():
+            funcs = [lambda: x for x in [1]]
+            return funcs[0](), list(x for _ in [1])
+
+        self.assertEqual(captured_then_generator_expression(), (1, [3]))
+
+        def raises_after_one():
+            yield 1
+            raise RuntimeError
+
+        def captured_then_exception():
+            funcs = []
+            try:
+                [funcs.append(lambda: x) for x in raises_after_one()]
+            except RuntimeError:
+                return funcs[0](), [x for _ in [1]]
+
+        self.assertEqual(captured_then_exception(), (1, [3]))
+
     def test_exception_locations(self):
         # The location of an exception raised from __init__ or
         # __next__ should be the iterator expression

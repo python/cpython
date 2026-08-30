@@ -945,7 +945,7 @@ analyze_cells(PyObject *scopes, PyObject *free, PyObject *inlined_cells,
         if (scope == -1 && PyErr_Occurred()) {
             goto error;
         }
-        if (scope != LOCAL)
+        if (scope != LOCAL && scope != CELL)
             continue;
         int contains = PySet_Contains(free, name);
         if (contains < 0) {
@@ -966,7 +966,7 @@ analyze_cells(PyObject *scopes, PyObject *free, PyObject *inlined_cells,
                 continue;
             }
         }
-        else {
+        else if (scope == LOCAL) {
             contains = PySet_Contains(inlined_cells, name);
             if (contains < 0) {
                 goto error;
@@ -974,6 +974,11 @@ analyze_cells(PyObject *scopes, PyObject *free, PyObject *inlined_cells,
             if (!contains) {
                 continue;
             }
+        }
+        if (scope == CELL) {
+            // Retain a cell copied from an inlined comprehension if no child
+            // needs the same name as a free variable.
+            continue;
         }
         /* Replace LOCAL with CELL for this name, and remove
            from free. It is safe to replace the value of name

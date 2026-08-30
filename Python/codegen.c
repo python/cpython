@@ -4919,7 +4919,6 @@ codegen_push_inlined_comprehension_locals(compiler *c, location loc,
 {
     int in_class_block = (SYMTABLE_ENTRY(c)->ste_type == ClassBlock) &&
                           !_PyCompile_IsInInlinedComp(c);
-    PySTEntryObject *outer = SYMTABLE_ENTRY(c);
     // iterate over names bound in the comprehension and ensure we isolate
     // them from the outer scope as needed
     PyObject *k, *v;
@@ -4929,10 +4928,6 @@ codegen_push_inlined_comprehension_locals(compiler *c, location loc,
         assert(symbol >= 0 || PyErr_Occurred());
         RETURN_IF_ERROR(symbol);
         long scope = SYMBOL_TO_SCOPE(symbol);
-
-        long outsymbol = _PyST_GetSymbol(outer, k);
-        RETURN_IF_ERROR(outsymbol);
-        long outsc = SYMBOL_TO_SCOPE(outsymbol);
 
         if ((symbol & DEF_LOCAL && !(symbol & DEF_NONLOCAL)) || in_class_block) {
             // local names bound in comprehension must be isolated from
@@ -4949,11 +4944,7 @@ codegen_push_inlined_comprehension_locals(compiler *c, location loc,
             // comprehension and restore the original one after
             ADDOP_NAME(c, loc, LOAD_FAST_AND_CLEAR, k, varnames);
             if (scope == CELL) {
-                if (outsc == FREE) {
-                    ADDOP_NAME(c, loc, MAKE_CELL, k, freevars);
-                } else {
-                    ADDOP_NAME(c, loc, MAKE_CELL, k, cellvars);
-                }
+                ADDOP_NAME(c, loc, MAKE_CELL, k, cellvars);
             }
             if (PyList_Append(state->pushed_locals, k) < 0) {
                 return ERROR;
