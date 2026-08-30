@@ -6762,7 +6762,7 @@ local_timezone_from_timestamp(time_t timestamp)
     PyObject *nameo = NULL;
     const char *zone = NULL;
 #ifndef HAVE_STRUCT_TM_TM_ZONE
-    char buf[100];
+    char buf[100];  // for zone, which is used after the block below
 #endif
 
     if (_PyTime_localtime(timestamp, &local_time_tm) != 0)
@@ -6774,10 +6774,9 @@ local_timezone_from_timestamp(time_t timestamp)
     {
         PyObject *local_time, *utc_time;
         struct tm utc_time_tm;
-        if (strftime(buf, sizeof(buf), "%Z", &local_time_tm) == 0) {
-            buf[0] = '\0';
+        if (strftime(buf, sizeof(buf), "%Z", &local_time_tm) != 0) {
+            zone = buf;
         }
-        zone = buf;
         local_time = new_datetime(local_time_tm.tm_year + 1900,
                                   local_time_tm.tm_mon + 1,
                                   local_time_tm.tm_mday,
