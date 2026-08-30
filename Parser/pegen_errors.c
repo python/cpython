@@ -7,6 +7,7 @@
 #include "lexer/state.h"
 #include "lexer/lexer.h"
 #include "pegen.h"
+#include "tokenizer/reader.h"
 
 // TOKENIZER ERRORS
 
@@ -62,7 +63,7 @@ _Pypegen_tokenizer_error(Parser *p)
             msg = "too many levels of indentation";
             break;
         case E_LINECONT: {
-            col_offset = p->tok->cur - p->tok->buf - 1;
+            col_offset = p->tok->cur - p->tok->line_start - 1;
             msg = "unexpected character after line continuation character";
             break;
         }
@@ -122,7 +123,7 @@ _PyPegen_tokenize_full_source_to_check_for_errors(Parser *p) {
     // before the one that we had for the generic error.
 
     // We don't want to tokenize to the end for interactive input
-    if (p->tok->prompt != NULL) {
+    if (_PyTok_ReaderIsInteractive(p->tok)) {
         return 0;
     }
 
@@ -163,10 +164,8 @@ _PyPegen_tokenize_full_source_to_check_for_errors(Parser *p) {
 
 exit:
     _PyToken_Free(&new_token);
-    // If we're in an f-string, we want the syntax error in the expression part
-    // to propagate, so that tokenizer errors (like expecting '}') that happen afterwards
-    // do not swallow it.
-    if (PyErr_Occurred() && p->tok->tok_mode_stack_index <= 0) {
+    // Preserve expression errors over later formatted-string errors.
+    if (PyErr_Occurred() && _PyLexer_CurrentFTString(p->tok) == NULL) {
         Py_XDECREF(value);
         Py_XDECREF(type);
         Py_XDECREF(traceback);
@@ -225,45 +224,23 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, int use_mark, const char *err
 }
 
 static PyObject *
-get_error_line_from_tokenizer_buffers(Parser *p, Py_ssize_t lineno)
+get_error_line_from_source(Parser *p, Py_ssize_t lineno)
 {
-    /* If the file descriptor is interactive, the source lines of the current
-     * (multi-line) statement are stored in p->tok->interactive_src_start.
-     * If not, we're parsing from a string, which means that the whole source
-     * is stored in p->tok->str. */
-    assert((p->tok->fp == NULL && p->tok->str != NULL) || p->tok->fp != NULL);
-
-    char *cur_line = p->tok->fp_interactive ? p->tok->interactive_src_start : p->tok->str;
-    if (cur_line == NULL) {
-        assert(p->tok->fp_interactive);
-        // We can reach this point if the tokenizer buffers for interactive source have not been
-        // initialized because we failed to decode the original source with the given locale.
-        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
-    }
+    const char *cur_line = _PyTok_SourceData(&p->tok->source);
 
     Py_ssize_t relative_lineno = p->starting_lineno ? lineno - p->starting_lineno + 1 : lineno;
-    const char* buf_end = p->tok->fp_interactive ? p->tok->interactive_src_end : p->tok->inp;
-
-    if (buf_end < cur_line) {
-        buf_end = cur_line + strlen(cur_line);
-    }
+    const char *buf_end = cur_line + p->tok->source.len;
 
     for (int i = 0; i < relative_lineno - 1; i++) {
-        char *new_line = strchr(cur_line, '\n');
-        // The assert is here for debug builds but the conditional that
-        // follows is there so in release builds we do not crash at the cost
-        // to report a potentially wrong line.
-        assert(new_line != NULL && new_line + 1 < buf_end);
-        if (new_line == NULL || new_line + 1 > buf_end) {
+        const char *new_line = memchr(cur_line, '\n', buf_end - cur_line);
+        if (new_line == NULL) {
             break;
         }
         cur_line = new_line + 1;
     }
 
-    char *next_newline;
-    if ((next_newline = strchr(cur_line, '\n')) == NULL) { // This is the last line
-        next_newline = cur_line + strlen(cur_line);
-    }
+    const char *next_newline = memchr(cur_line, '\n', buf_end - cur_line);
+    next_newline = next_newline != NULL ? next_newline : buf_end;
     return PyUnicode_DecodeUTF8(cur_line, next_newline - cur_line, "replace");
 }
 
@@ -295,8 +272,9 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
         goto error;
     }
 
-    if (p->tok->fp_interactive && p->tok->interactive_src_start != NULL) {
-        error_line = get_error_line_from_tokenizer_buffers(p, lineno);
+    if (_PyTok_ReaderIsInteractive(p->tok) &&
+            p->tok->source.bytes != NULL) {
+        error_line = get_error_line_from_source(p, lineno);
     }
     else if (p->start_rule == Py_file_input) {
         error_line = _PyErr_ProgramDecodedTextObject(p->tok->filename,
@@ -318,7 +296,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
             error_line = PyUnicode_DecodeUTF8(p->tok->line_start, size, "replace");
         }
         else if (p->tok->fp == NULL || p->tok->fp == stdin) {
-            error_line = get_error_line_from_tokenizer_buffers(p, lineno);
+            error_line = get_error_line_from_source(p, lineno);
         }
         else {
             error_line = Py_GetConstant(Py_CONSTANT_EMPTY_STR);

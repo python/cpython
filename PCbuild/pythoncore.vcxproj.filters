@@ -330,12 +330,6 @@
     <ClInclude Include="..\Parser\lexer\lexer_internal.h">
       <Filter>Parser</Filter>
     </ClInclude>
-    <ClInclude Include="..\Parser\lexer\buffer.h">
-      <Filter>Parser</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Parser\tokenizer\cursor.h">
-      <Filter>Parser</Filter>
-    </ClInclude>
     <ClInclude Include="..\Parser\tokenizer\reader.h">
       <Filter>Parser</Filter>
     </ClInclude>
@@ -1356,12 +1350,6 @@
       <Filter>Parser</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\lexer\state.c">
-      <Filter>Parser</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Parser\lexer\buffer.c">
-      <Filter>Parser</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Parser\tokenizer\cursor.c">
       <Filter>Parser</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\tokenizer\source.c">

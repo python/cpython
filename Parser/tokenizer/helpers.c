@@ -98,10 +98,6 @@ _PyTokenizer_indenterror(struct tok_state *tok)
 int
 _PyTokenizer_warn_invalid_escape_sequence(struct tok_state *tok, int first_invalid_escape_char)
 {
-    if (!tok->report_warnings) {
-        return 0;
-    }
-
     PyObject *msg = PyUnicode_FromFormat(
         "\"\\%c\" is an invalid escape sequence. "
         "Such sequences will not work in the future. "
@@ -187,10 +183,6 @@ error:
 int
 _PyTokenizer_parser_warn(struct tok_state *tok, PyObject *category, const char *format, ...)
 {
-    if (!tok->report_warnings) {
-        return 0;
-    }
-
     PyObject *errmsg;
     va_list vargs;
     va_start(vargs, format);
