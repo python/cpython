@@ -502,8 +502,10 @@ ctype_free_stginfo_members(StgInfo *info)
     info->ffi_type_pointer.elements = NULL;
     PyMem_Free(info->format);
     info->format = NULL;
+    /* The strides point into the shape allocation. */
     PyMem_Free(info->shape);
     info->shape = NULL;
+    info->strides = NULL;
     ctype_clear_stginfo(info);
 }
 
@@ -1783,7 +1785,7 @@ PyCArrayType_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (stginfo->format == NULL)
         goto error;
     stginfo->ndim = iteminfo->ndim + 1;
-    stginfo->shape = PyMem_Malloc(sizeof(Py_ssize_t) * stginfo->ndim);
+    stginfo->shape = PyMem_Malloc(sizeof(Py_ssize_t) * stginfo->ndim * 2);
     if (stginfo->shape == NULL) {
         PyErr_NoMemory();
         goto error;
@@ -1792,6 +1794,15 @@ PyCArrayType_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (stginfo->ndim > 1) {
         memmove(&stginfo->shape[1], iteminfo->shape,
             sizeof(Py_ssize_t) * (stginfo->ndim - 1));
+    }
+    stginfo->strides = stginfo->shape + stginfo->ndim;
+    if (stginfo->ndim > 1) {
+        memmove(&stginfo->strides[1], iteminfo->strides,
+            sizeof(Py_ssize_t) * (stginfo->ndim - 1));
+        stginfo->strides[0] = stginfo->strides[1] * stginfo->shape[1];
+    }
+    else {
+        stginfo->strides[0] = iteminfo->size;
     }
 
     itemsize = iteminfo->size;
@@ -3123,16 +3134,38 @@ PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
     }
     assert(item_info);
 
+    if (info->ndim > 1 && (flags & PyBUF_F_CONTIGUOUS) == PyBUF_F_CONTIGUOUS) {
+        PyErr_SetString(PyExc_BufferError,
+                        "ctypes array is not Fortran contiguous");
+        return -1;
+    }
+
     view->buf = self->b_ptr;
     view->obj = Py_NewRef(myself);
     view->len = self->b_size;
     view->readonly = 0;
-    /* use default format character if not set */
-    view->format = info->format ? info->format : "B";
-    view->ndim = info->ndim;
-    view->shape = info->shape;
+    if ((flags & PyBUF_FORMAT) == PyBUF_FORMAT) {
+        /* use default format character if not set */
+        view->format = info->format ? info->format : "B";
+    }
+    else {
+        view->format = NULL;
+    }
+    if ((flags & PyBUF_ND) == PyBUF_ND) {
+        view->ndim = info->ndim;
+        view->shape = info->shape;
+    }
+    else {
+        /* The buffer is C contiguous, so it can be exposed as flat.
+           Keep ndim <= 1: ndim > 1 implies shape != NULL, see
+           PyBuffer_IsContiguous(). */
+        view->ndim = info->ndim ? 1 : 0;
+        view->shape = NULL;
+    }
     view->itemsize = item_info->size;
-    view->strides = NULL;
+    /* PyBUF_STRIDES implies PyBUF_ND. */
+    view->strides = ((flags & PyBUF_STRIDES) == PyBUF_STRIDES)
+                    ? info->strides : NULL;
     view->suboffsets = NULL;
     view->internal = NULL;
     return 0;

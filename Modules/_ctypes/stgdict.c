@@ -49,14 +49,21 @@ PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info)
         }
         strcpy(dst_info->format, src_info->format);
     }
+    dst_info->strides = NULL;
     if (src_info->shape) {
-        dst_info->shape = PyMem_Malloc(sizeof(Py_ssize_t) * src_info->ndim);
+        dst_info->shape = PyMem_Malloc(
+            sizeof(Py_ssize_t) * src_info->ndim * 2);
         if (dst_info->shape == NULL) {
             PyErr_NoMemory();
             return -1;
         }
         memcpy(dst_info->shape, src_info->shape,
                sizeof(Py_ssize_t) * src_info->ndim);
+        if (src_info->strides) {
+            dst_info->strides = dst_info->shape + src_info->ndim;
+            memcpy(dst_info->strides, src_info->strides,
+                   sizeof(Py_ssize_t) * src_info->ndim);
+        }
     }
 
     if (src_info->ffi_type_pointer.elements == NULL)
