@@ -467,7 +467,7 @@ for each node type are:
 .. method:: Node.insertBefore(newChild, refChild)
 
    Insert a new child node before an existing child.  It must be the case that
-   *refChild* is a child of this node; if not, :exc:`ValueError` is raised.
+   *refChild* is a child of this node; if not, :exc:`NotFoundErr` is raised.
    *newChild* is returned. If *refChild* is ``None``, it inserts *newChild* at the
    end of the children's list.
 
@@ -479,7 +479,7 @@ for each node type are:
 .. method:: Node.removeChild(oldChild)
 
    Remove a child node.  *oldChild* must be a child of this node; if not,
-   :exc:`ValueError` is raised.  *oldChild* is returned on success.  If *oldChild*
+   :exc:`NotFoundErr` is raised.  *oldChild* is returned on success.  If *oldChild*
    will not be used further, its :meth:`~xml.dom.minidom.Node.unlink` method
    should be called.
 
@@ -487,7 +487,7 @@ for each node type are:
 .. method:: Node.replaceChild(newChild, oldChild)
 
    Replace an existing node with a new node. It must be the case that  *oldChild*
-   is a child of this node; if not, :exc:`ValueError` is raised.
+   is a child of this node; if not, :exc:`NotFoundErr` is raised.
 
    Raise :exc:`WrongDocumentErr` if *newChild* was created by another
    document, and :exc:`HierarchyRequestErr` if it is this node itself or
@@ -860,8 +860,7 @@ of that class.
 
 .. method:: Element.removeAttribute(name)
 
-   Remove an attribute by name.  If there is no matching attribute, a
-   :exc:`NotFoundErr` is raised.
+   Remove an attribute by name.
 
 
 .. method:: Element.removeAttributeNode(oldAttr)
@@ -872,8 +871,7 @@ of that class.
 
 .. method:: Element.removeAttributeNS(namespaceURI, localName)
 
-   Remove an attribute by name.  Note that it uses a localName, not a qname.  No
-   exception is raised if there is no matching attribute.
+   Remove an attribute by name.  Note that it uses a localName, not a qname.
 
 
 .. method:: Element.setAttribute(name, value)

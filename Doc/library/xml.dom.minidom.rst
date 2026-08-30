@@ -273,6 +273,11 @@ rules apply:
      Previously, many invalid operations silently succeeded
      and produced an invalid document.
 
+* :meth:`~xml.dom.Element.removeAttribute` and
+  :meth:`~xml.dom.Element.removeAttributeNS` raise
+  :exc:`~xml.dom.NotFoundErr` if there is no matching attribute,
+  while the DOM specifies that this has no effect.
+
 The following interfaces have no implementation in :mod:`!xml.dom.minidom`:
 
 * :class:`DOMTimeStamp`
