@@ -1018,8 +1018,7 @@ exit:
 #if defined(CMSG_LEN)
 
 PyDoc_STRVAR(_socket_socket_sendmsg__doc__,
-"sendmsg($self, buffers, ancdata=<unrepresentable>, flags=0,\n"
-"        address=<unrepresentable>, /)\n"
+"sendmsg($self, buffers, ancdata=(), flags=0, address=None, /)\n"
 "--\n"
 "\n"
 "Send normal and ancillary data to the socket.\n"
@@ -2479,4 +2478,4 @@ exit:
 #ifndef _SOCKET_CMSG_SPACE_METHODDEF
     #define _SOCKET_CMSG_SPACE_METHODDEF
 #endif /* !defined(_SOCKET_CMSG_SPACE_METHODDEF) */
-/*[clinic end generated code: output=133662a8c304b1b7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=acc30d6fdeb54e90 input=a9049054013a1b77]*/

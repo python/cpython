@@ -1,0 +1,9 @@
+Add the :option:`--with-zlib` and :option:`--with-bzip2` :program:`configure`
+options to select the zlib and bzip2 implementations used to build the
+:mod:`zlib` and :mod:`bz2` modules. In addition to the default system
+libraries, they can build against `zlib-rs
+<https://github.com/trifectatechfoundation/zlib-rs/>`__ and `libbzip2-rs
+<https://github.com/trifectatechfoundation/libbzip2-rs>`__, and
+``--with-zlib=zlib-ng`` verifies that the detected zlib is `zlib-ng
+<https://github.com/zlib-ng/zlib-ng>`__. :option:`--without-zlib` and
+:option:`--without-bzip2` exclude the modules from the build.
