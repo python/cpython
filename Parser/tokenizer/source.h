@@ -5,7 +5,8 @@
 
 typedef Py_ssize_t _PyTok_Off;
 
-/* Half-open byte offsets into a _PyTok_SourceText. */
+/* Spans use half-open logical byte offsets into decoded input. Their backing
+   storage may retain only the current input window. */
 typedef struct {
     _PyTok_Off start;
     _PyTok_Off end;
