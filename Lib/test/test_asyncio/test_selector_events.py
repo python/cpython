@@ -1195,6 +1195,28 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.assertEqual(transport.get_write_buffer_size(), 0)
         self.assertTrue(self.protocol.connection_lost.called)
 
+    def test_resume_writing_closes_transport(self):
+        # gh-156512: When protocol.resume_writing() closes the transport,
+        # connection_lost must be called exactly once and not raise AttributeError.
+        data = memoryview(b'data')
+        self.sock.send.return_value = 4
+        self.sock.send.fileno.return_value = 7
+
+        def _resume_writing():
+            transport.close()
+
+        self.protocol.resume_writing.side_effect = _resume_writing
+
+        transport = self.socket_transport()
+        transport._high_water = 1
+        transport._buffer_size = 4
+        transport._buffer.append(data)
+        transport._protocol_paused = True
+
+        transport._write_ready()
+
+        self.assertEqual(self.protocol.connection_lost.call_count, 1)
+
 class SelectorSocketTransportBufferedProtocolTests(test_utils.TestCase):
 
     def setUp(self):

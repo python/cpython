@@ -916,8 +916,9 @@ class _SelectorTransport(transports._FlowControlMixin,
             if self._protocol_connected:
                 self._protocol.connection_lost(exc)
         finally:
-            self._sock.close()
-            self._sock = None
+            if self._sock is not None:
+                self._sock.close()
+                self._sock = None
             self._protocol = None
             self._loop = None
             server = self._server
@@ -1128,7 +1129,9 @@ class _SelectorSocketTransport(_SelectorTransport):
                 if self._empty_waiter is not None:
                     self._empty_waiter.set_result(None)
                 if self._closing:
-                    self._call_connection_lost(None)
+                    if not self._conn_lost:
+                        self._conn_lost += 1
+                        self._call_connection_lost(None)
                 elif self._eof:
                     self._sock.shutdown(socket.SHUT_WR)
 
@@ -1174,7 +1177,9 @@ class _SelectorSocketTransport(_SelectorTransport):
                 if self._empty_waiter is not None:
                     self._empty_waiter.set_result(None)
                 if self._closing:
-                    self._call_connection_lost(None)
+                    if not self._conn_lost:
+                        self._conn_lost += 1
+                        self._call_connection_lost(None)
                 elif self._eof:
                     self._sock.shutdown(socket.SHUT_WR)
 
@@ -1345,4 +1350,6 @@ class _SelectorDatagramTransport(_SelectorTransport, transports.DatagramTranspor
         if not self._buffer:
             self._loop._remove_writer(self._sock_fd)
             if self._closing:
-                self._call_connection_lost(None)
+                if not self._conn_lost:
+                    self._conn_lost += 1
+                    self._call_connection_lost(None)
