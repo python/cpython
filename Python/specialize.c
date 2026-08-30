@@ -2956,7 +2956,7 @@ _Py_Specialize_Resume(_Py_CODEUNIT *instr, PyThreadState *tstate, _PyInterpreter
 {
     if (tstate->tracing == 0 && instr->op.code == RESUME) {
         if (tstate->interp->jit) {
-            PyCodeObject *co = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            PyCodeObject *co = (PyCodeObject *)frame->f_executable;
             if (co != NULL &&
                 PyCode_Check(co) &&
                 (co->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) == 0) {

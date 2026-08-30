@@ -145,6 +145,7 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
     op->func_typeparams = NULL;
     op->vectorcall = _PyFunction_Vectorcall;
     op->func_version = FUNC_VERSION_UNSET;
+    op->func_old_codes = NULL;
     // NOTE: functions created via FrameConstructor do not use deferred
     // reference counting because they are typically not part of cycles
     // nor accessed by multiple threads.
@@ -223,6 +224,7 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     op->func_typeparams = NULL;
     op->vectorcall = _PyFunction_Vectorcall;
     op->func_version = FUNC_VERSION_UNSET;
+    op->func_old_codes = NULL;
     if (((code_obj->co_flags & CO_NESTED) == 0) ||
         (code_obj->co_flags & CO_METHOD)) {
         // Use deferred reference counting for top-level functions, but not
@@ -698,6 +700,19 @@ func_set_code(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyEval_StopTheWorld(interp);
     func_clear_version(interp, op);
+    if (op->func_old_codes == NULL) {
+        op->func_old_codes = PyList_New(0);
+        if (op->func_old_codes == NULL) {
+            _PyEval_StartTheWorld(interp);
+            return -1;
+        }
+    }
+
+    if (PyList_Append(op->func_old_codes, op->func_code) < 0) {
+        _PyEval_StartTheWorld(interp);
+        return -1;
+    }
+
     PyObject *old_code = op->func_code;
     op->func_code = Py_NewRef(value);
     _PyEval_StartTheWorld(interp);
@@ -1204,6 +1219,7 @@ func_clear(PyObject *self)
     Py_CLEAR(op->func_annotations);
     Py_CLEAR(op->func_annotate);
     Py_CLEAR(op->func_typeparams);
+    Py_CLEAR(op->func_old_codes);
     // Don't Py_CLEAR(op->func_code), since code is always required
     // to be non-NULL. Similarly, name and qualname shouldn't be NULL.
     // However, name and qualname could be str subclasses, so they
@@ -1259,6 +1275,7 @@ func_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(f->func_annotate);
     Py_VISIT(f->func_typeparams);
     Py_VISIT(f->func_qualname);
+    Py_VISIT(f->func_old_codes);
     return 0;
 }
 

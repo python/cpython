@@ -1875,7 +1875,7 @@ dummy_func(
             /* We don't know which of these is relevant here, so keep them equal */
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
             #if TIER_ONE && defined(Py_DEBUG)
-            if (!PyStackRef_IsNone(frame->f_executable)) {
+            if (frame->f_executable != NULL) {
                 Py_ssize_t i = frame->instr_ptr - _PyFrame_GetBytecode(frame);
                 assert(i >= 0 && i <= INT_MAX);
                 int opcode = _Py_GetBaseCodeUnit(_PyFrame_GetCode(frame), (int)i).op.code;
@@ -6309,7 +6309,7 @@ dummy_func(
         }
 
         tier2 op(_GUARD_CODE_VERSION__PUSH_FRAME, (version/2 -- )) {
-            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            PyObject *code = frame->f_executable;
             assert(PyCode_Check(code));
             if (((PyCodeObject *)code)->co_version != version) {
                 EXIT_IF(true);
@@ -6317,7 +6317,7 @@ dummy_func(
         }
 
         tier2 op(_GUARD_CODE_VERSION_YIELD_VALUE, (version/2 -- )) {
-            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            PyObject *code = frame->f_executable;
             assert(PyCode_Check(code));
             if (((PyCodeObject *)code)->co_version != version) {
                 frame->instr_ptr += 1 + INLINE_CACHE_ENTRIES_SEND;
@@ -6326,7 +6326,7 @@ dummy_func(
         }
 
         tier2 op(_GUARD_CODE_VERSION_RETURN_VALUE, (version/2 -- )) {
-            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            PyObject *code = frame->f_executable;
             assert(PyCode_Check(code));
             if (((PyCodeObject *)code)->co_version != version) {
                 frame->instr_ptr += frame->return_offset;
@@ -6335,7 +6335,7 @@ dummy_func(
         }
 
         tier2 op(_GUARD_CODE_VERSION_RETURN_GENERATOR, (version/2 -- )) {
-            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            PyObject *code = frame->f_executable;
             assert(PyCode_Check(code));
             if (((PyCodeObject *)code)->co_version != version) {
                 frame->instr_ptr += frame->return_offset;
@@ -6629,14 +6629,14 @@ dummy_func(
             }
             tracer->prev_state.recorded_count = 0;
             tracer->prev_state.instr = next_instr;
-            PyObject *prev_code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            PyObject *prev_code = frame->f_executable;
             if (tracer->prev_state.instr_code != (PyCodeObject *)prev_code) {
                 Py_SETREF(tracer->prev_state.instr_code, (PyCodeObject*)Py_NewRef((prev_code)));
             }
 
             tracer->prev_state.instr_frame = frame;
             tracer->prev_state.instr_oparg = oparg;
-            tracer->prev_state.instr_stacklevel = PyStackRef_IsNone(frame->f_executable) ? 2 : STACK_LEVEL();
+            tracer->prev_state.instr_stacklevel = frame->f_executable == NULL ? 2 : STACK_LEVEL();
             if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]
                 // Branch opcodes use the cache for branch history, not
                 // specialization counters.  Don't reset it.

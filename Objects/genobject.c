@@ -94,9 +94,9 @@ gen_traverse(PyObject *self, visitproc visit, void *arg)
         }
     }
     else {
-        // We still need to visit the code object when the frame is cleared to
+        // We still need to visit the function object when the frame is cleared to
         // ensure that it's kept alive if the reference is deferred.
-        _Py_VISIT_STACKREF(gen->gi_iframe.f_executable);
+        _Py_VISIT_STACKREF(gen->gi_iframe.f_funcobj);
     }
     /* No need to visit cr_origin, because it's just tuples/str/int, so can't
        participate in a reference cycle. */
@@ -170,7 +170,7 @@ gen_clear_frame(PyGenObject *gen)
     _PyInterpreterFrame *frame = &gen->gi_iframe;
     _PyThreadState_UpdateLastProfiledFrame(_PyThreadState_GET(), frame, frame->previous);
     frame->previous = NULL;
-    _PyFrame_ClearExceptCode(frame);
+    _PyFrame_ClearExceptCodeAndFunction(frame);
     _PyErr_ClearExcState(&gen->gi_exc_state);
 }
 
@@ -231,7 +231,7 @@ gen_dealloc(PyObject *self)
         gen_clear_frame(gen);
     }
     assert(gen->gi_exc_state.exc_value == NULL);
-    PyStackRef_CLEAR(gen->gi_iframe.f_executable);
+    gen->gi_iframe.f_executable = NULL;
     Py_CLEAR(gen->gi_name);
     Py_CLEAR(gen->gi_qualname);
 
@@ -1105,7 +1105,7 @@ make_gen(PyTypeObject *type, PyFunctionObject *func)
     gen->gi_weakreflist = NULL;
     gen->gi_exc_state.exc_value = NULL;
     gen->gi_exc_state.previous_item = NULL;
-    gen->gi_iframe.f_executable = PyStackRef_None;
+    gen->gi_iframe.f_executable = NULL;
     assert(func->func_name != NULL);
     gen->gi_name = Py_NewRef(func->func_name);
     assert(func->func_qualname != NULL);

@@ -53,7 +53,7 @@ the generator object.
 When a generator object is destroyed in [`gen_dealloc`](../Objects/genobject.c),
 its embedded `_PyInterpreterFrame` field may need to be preserved, if it is exposed
 to Python as part of a [`PyFrameObject`](frames.md#frame-objects). This is detected
-in [`_PyFrame_ClearExceptCode`](../Python/frame.c) by the fact that the interpreter
+in [`_PyFrame_ClearExceptCodeAndFunction`](../Python/frame.c) by the fact that the interpreter
 frame's `frame_obj` field is set, and the frame object it points to has refcount
 greater than 1. If so, the `take_ownership()` function is called to create a new
 copy of the interpreter frame and transfer ownership of it from the generator to

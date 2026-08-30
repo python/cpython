@@ -9,6 +9,8 @@ from ctypes import (CDLL, Structure, Array, CFUNCTYPE,
 from test.support import import_helper
 _ctypes_test = import_helper.import_module("_ctypes_test")
 from _ctypes import _Pointer,  _SimpleCData
+import gc
+import weakref
 
 
 try:
@@ -462,6 +464,39 @@ class FunctionTestCase(unittest.TestCase):
 
         callback = proto(callback)
         self.assertRaises(ArgumentError, lambda: callback((1, 2, 3, 4), POINT()))
+
+    def test_reassign_code_while_running(self):
+        freevar1 = None
+        freevar2 = None
+
+        def replacement():
+            freevar1
+            freevar2
+            return "replacement"
+
+        def original():
+            original.__code__ = replacement.__code__
+            return "original"
+
+        self.assertEqual(original(), "original")
+        self.assertEqual(original(), "replacement")
+
+    def test_function_code_object_no_leak(self):
+        def get_code(i):
+            ns = {}
+            exec(f"def f(): return {i}", ns)
+            return ns["f"].__code__
+
+        refs = []
+        def f(): pass
+        for i in range(100):
+            f.__code__ = get_code(i)
+            refs.append(weakref.ref(f.__code__))
+            self.assertEqual(f(), i)
+
+        del f
+        gc.collect()
+        self.assertTrue(all(ref() is None for ref in refs))
 
 
 if __name__ == '__main__':
