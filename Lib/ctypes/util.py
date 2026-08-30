@@ -4,6 +4,7 @@ import sys
 from dataclasses import dataclass
 
 lazy import functools
+lazy import inspect
 lazy import shutil
 lazy import subprocess
 
@@ -508,6 +509,13 @@ def wrap_dll_function(dll):
             restype = annotations.pop("return")
         except KeyError as error:
             raise ValueError(f"{name!r} missing return type annotation") from error
+
+        for param in inspect.signature(func).parameters.values():
+            if param.kind not in (param.POSITIONAL_ONLY,
+                                  param.POSITIONAL_OR_KEYWORD):
+                raise ValueError(f"{name!r} has non-positional parameter "
+                                 f"{param.name!r}; argtypes describes "
+                                 f"positional arguments only")
 
         ptr.restype = restype
         ptr.argtypes = tuple(annotations.values())
