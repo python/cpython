@@ -529,13 +529,13 @@ static _PyTok_ReadResult
 next_interactive(struct tok_state *tok, _PyTok_Chunk *chunk)
 {
     _PyTok_Reader *reader = tok->reader;
-    if (tok->interactive_underflow == IUNDERFLOW_STOP) {
+    if (reader->stop_interactive) {
         return _PYTOK_READ_STOPPED;
     }
     char *input = PyOS_Readline(
-        tok->fp != NULL ? tok->fp : stdin, stdout, tok->prompt);
+        tok->fp != NULL ? tok->fp : stdin, stdout, reader->prompt);
     if (reader->nextprompt != NULL) {
-        tok->prompt = reader->nextprompt;
+        reader->prompt = reader->nextprompt;
     }
     if (input == NULL) {
         return _PYTOK_READ_INTERRUPT;
@@ -567,6 +567,20 @@ next_interactive(struct tok_state *tok, _PyTok_Chunk *chunk)
     }
     chunk->ownership = _PYTOK_CHUNK_PYMEM;
     return _PYTOK_READ_LINE;
+}
+
+int
+_PyTok_ReaderIsInteractive(const struct tok_state *tok)
+{
+    return tok->reader->kind == _PYTOK_READER_INTERACTIVE;
+}
+
+void
+_PyTok_ReaderStopInteractive(struct tok_state *tok)
+{
+    if (_PyTok_ReaderIsInteractive(tok)) {
+        tok->reader->stop_interactive = 1;
+    }
 }
 
 static _PyTok_ReadResult
@@ -686,10 +700,6 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
         }
         tok->inp = tok->source.bytes + source_start + scan_len;
     }
-    if (tok->fp_interactive) {
-        tok->interactive_src_start = tok->source.bytes;
-        tok->interactive_src_end = tok->source.bytes + tok->source.len;
-    }
     if (prepared) {
         if (tok->start == NULL && !INSIDE_FSTRING(tok)) {
             tok->buf = tok->cur;
@@ -801,7 +811,7 @@ _PyTokenizer_FromFile(FILE *fp, const char *encoding,
         return NULL;
     }
     tok->fp = fp;
-    tok->prompt = ps1;
+    tok->reader->prompt = ps1;
     tok->reader->nextprompt = ps2;
     return tok;
 }

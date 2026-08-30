@@ -42,6 +42,7 @@ typedef struct _PyTok_Reader {
     _PyTok_ReaderKind kind;
     PyObject *readline;
     PyObject *decoder;
+    const char *prompt;
     const char *nextprompt;
 
     Py_ssize_t input_buffer_cap;
@@ -61,6 +62,7 @@ typedef struct _PyTok_Reader {
     int file_initialized;
     int file_eof;
     int decoder_finalized;
+    unsigned char stop_interactive;
 } _PyTok_Reader;
 
 struct tok_state;

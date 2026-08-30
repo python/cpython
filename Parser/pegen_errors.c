@@ -7,6 +7,7 @@
 #include "lexer/state.h"
 #include "lexer/lexer.h"
 #include "pegen.h"
+#include "tokenizer/reader.h"
 
 // TOKENIZER ERRORS
 
@@ -122,7 +123,7 @@ _PyPegen_tokenize_full_source_to_check_for_errors(Parser *p) {
     // before the one that we had for the generic error.
 
     // We don't want to tokenize to the end for interactive input
-    if (p->tok->prompt != NULL) {
+    if (_PyTok_ReaderIsInteractive(p->tok)) {
         return 0;
     }
 
@@ -273,7 +274,8 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
         goto error;
     }
 
-    if (p->tok->fp_interactive && p->tok->interactive_src_start != NULL) {
+    if (_PyTok_ReaderIsInteractive(p->tok) &&
+            p->tok->source.bytes != NULL) {
         error_line = get_error_line_from_source(p, lineno);
     }
     else if (p->start_rule == Py_file_input) {

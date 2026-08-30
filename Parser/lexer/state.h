@@ -13,14 +13,6 @@
 #define INSIDE_FSTRING_EXPR_AT_TOP(tok) \
     (tok->curly_bracket_depth - tok->curly_bracket_expr_start_depth == 1)
 
-enum interactive_underflow_t {
-    /* Normal mode of operation: return a new token when asked in interactive mode */
-    IUNDERFLOW_NORMAL,
-    /* Forcefully return ENDMARKER when asked for a new token in interactive mode. This
-     * can be used to prevent the tokenizer to prompt the user for new tokens */
-    IUNDERFLOW_STOP,
-};
-
 struct token {
     int level;
     _PyTok_Span span;
@@ -76,9 +68,6 @@ struct tok_state {
     char *cur;          /* Next character in buffer */
     char *inp;          /* End of data in buffer */
     _PyTok_Off buf_offset; /* Logical offset of buf[0]. */
-    int fp_interactive; /* If the file descriptor is interactive */
-    char *interactive_src_start; /* The start of the source parsed so far in interactive mode */
-    char *interactive_src_end; /* The end of the source parsed so far in interactive mode */
     const char *start;  /* Start of current token if not NULL */
     int done;           /* E_OK normally, E_EOF at EOF, otherwise error code */
     /* NB If done != E_OK, cur must be == inp!!! */
@@ -87,7 +76,6 @@ struct tok_state {
     int indstack[MAXINDENT];            /* Stack of indents */
     int atbol;          /* Nonzero if at begin of new line */
     int pendin;         /* Pending indents (if > 0) or dedents (if < 0) */
-    const char *prompt;          /* For interactive prompting */
     int lineno;         /* Current line number */
     _PyTok_Loc start_loc;
     int level;          /* () [] {} Parentheses nesting level */
@@ -108,8 +96,6 @@ struct tok_state {
 
     int type_comments;      /* Whether to look for type comments */
 
-    /* How to proceed when asked for a new token in interactive mode */
-    enum interactive_underflow_t interactive_underflow;
     int report_warnings;
     // TODO: Factor this into its own thing
     tokenizer_mode tok_mode_stack[MAXFSTRINGLEVEL];

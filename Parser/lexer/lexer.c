@@ -204,15 +204,16 @@ _PyLexer_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, str
         }
         tok_backup(tok, c);
         if (c == '#' || c == '\n' || c == '\r') {
+            int interactive = _PyTok_ReaderIsInteractive(tok);
             /* Lines with only whitespace and/or comments
                shouldn't affect the indentation and are
                not passed to the parser as NEWLINE tokens,
                except *totally* empty lines in interactive
                mode, which signal the end of a command group. */
-            if (col == 0 && c == '\n' && tok->prompt != NULL) {
+            if (col == 0 && c == '\n' && interactive) {
                 blankline = 0; /* Let it through */
             }
-            else if (tok->prompt != NULL && tok->lineno == 1) {
+            else if (interactive && tok->lineno == 1) {
                 /* In interactive mode, if the first line contains
                    only spaces and/or a comment, let it through. */
                 blankline = 0;
