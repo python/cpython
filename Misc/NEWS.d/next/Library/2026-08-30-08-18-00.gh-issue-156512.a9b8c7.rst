@@ -1,0 +1,1 @@
+Fix duplicate connection lost invocations and unhandled AttributeError in :mod:`asyncio` selector transports when :meth:`~asyncio.BaseProtocol.resume_writing` closes or aborts the transport.
