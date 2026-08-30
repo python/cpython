@@ -826,6 +826,9 @@ class Element(Node):
         return self._attrsNS.get((namespaceURI, localName))
 
     def setAttributeNode(self, attr):
+        if attr.ownerDocument not in (None, self.ownerDocument):
+            raise xml.dom.WrongDocumentErr(
+                "%s was created by another document" % repr(attr))
         if attr.ownerElement not in (None, self):
             raise xml.dom.InuseAttributeErr("attribute node already owned")
         self._ensure_attributes()

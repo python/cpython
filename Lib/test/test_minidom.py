@@ -1897,6 +1897,22 @@ class MinidomTest(unittest.TestCase):
         self.assertEqual(len(frag.childNodes), 3)
         doc.unlink()
 
+    def testSetAttributeNodeWrongDocument(self):
+        doc = parseString("<doc a='v'/>")
+        other = parseString("<other b='w'/>")
+        elem = doc.documentElement
+        self.assertRaises(xml.dom.WrongDocumentErr, elem.setAttributeNode,
+                          other.createAttribute("z"))
+        self.assertRaises(xml.dom.WrongDocumentErr, elem.setAttributeNodeNS,
+                          other.createAttributeNS(None, "z"))
+        # an imported attribute belongs to this document and is accepted
+        elem.setAttributeNode(doc.importNode(other.createAttribute("z"), True))
+        self.assertTrue(elem.hasAttribute("z"))
+        # re-setting an own attribute is not an error
+        elem.setAttributeNode(elem.getAttributeNode("a"))
+        doc.unlink()
+        other.unlink()
+
     def testAttrSpecified(self):
         doc = parseString("<!DOCTYPE doc ["
                           "  <!ELEMENT doc EMPTY>"
