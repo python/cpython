@@ -58,7 +58,8 @@ def _build_graph_for_future(
     while coro is not None:
         if hasattr(coro, 'cr_await'):
             # A native coroutine or duck-type compatible iterator
-            st.append(FrameCallGraphEntry(coro.cr_frame))
+            if coro.cr_frame is not None:
+                st.append(FrameCallGraphEntry(coro.cr_frame))
             coro = coro.cr_await
         elif hasattr(coro, 'ag_await'):
             # A native async generator or duck-type compatible iterator
