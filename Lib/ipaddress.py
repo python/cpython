@@ -1152,16 +1152,12 @@ class _BaseNetwork(_IPAddressBase):
                 ((new_netmask._ip & self.network_address._ip) >> bit_shift)
                 + offset
             ) << bit_shift
+            if not 0 <= new_ip <= self._ALL_ONES:
+                raise ValueError(error)
 
-        if new_ip < 0:
-            raise ValueError(error)
-
-        try:
-            return self.__class__(
-                f"{self._string_from_ip_int(new_ip)}/{prefix}"
-            )
-        except OverflowError:
-            raise ValueError(error) from None
+        return self.__class__(
+            f"{self._string_from_ip_int(new_ip)}/{prefix}"
+        )
 
     def next_network(self, next_prefix=None):
         """Get the next closest network with a specific prefix.

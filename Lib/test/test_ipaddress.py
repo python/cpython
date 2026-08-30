@@ -1595,12 +1595,17 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertRaises(ValueError, self.ipv6_network.next_network, 150)
 
     def testNextNetworkOutOfAddressSpace(self):
+        error = r"out of address space, cannot make another /{} network"
         ipv4 = ipaddress.IPv4Network('255.255.255.0/24')
-        self.assertRaises(ValueError, ipv4.next_network)
-        self.assertRaises(ValueError, ipv4.next_network, 25)
+        with self.assertRaisesRegex(ValueError, error.format(24)):
+            ipv4.next_network()
+        with self.assertRaisesRegex(ValueError, error.format(25)):
+            ipv4.next_network(25)
         ipv6 = ipaddress.IPv6Network('ffff:ffff:ffff:ffff:ffff:ffff:ffff:0/112')
-        self.assertRaises(ValueError, ipv6.next_network)
-        self.assertRaises(ValueError, ipv4.next_network, 112)
+        with self.assertRaisesRegex(ValueError, error.format(112)):
+            ipv6.next_network()
+        with self.assertRaisesRegex(ValueError, error.format(120)):
+            ipv6.next_network(120)
 
     def testPrevNetwork(self):
         ipv4 = ipaddress.IPv4Network('1.2.3.0/24')
@@ -1642,12 +1647,17 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertRaises(ValueError, self.ipv6_network.prev_network, 150)
 
     def testPrevNetworkOutOfAddressSpace(self):
+        error = r"out of address space, cannot make another /{} network"
         ipv4 = ipaddress.IPv4Network('0.0.0.0/24')
-        self.assertRaises(ValueError, ipv4.prev_network)
-        self.assertRaises(ValueError, ipv4.prev_network, 25)
+        with self.assertRaisesRegex(ValueError, error.format(24)):
+            ipv4.prev_network()
+        with self.assertRaisesRegex(ValueError, error.format(25)):
+            ipv4.prev_network(25)
         ipv6 = ipaddress.IPv6Network('::/112')
-        self.assertRaises(ValueError, ipv6.prev_network)
-        self.assertRaises(ValueError, ipv6.prev_network, 112)
+        with self.assertRaisesRegex(ValueError, error.format(112)):
+            ipv6.prev_network()
+        with self.assertRaisesRegex(ValueError, error.format(120)):
+            ipv6.prev_network(120)
 
     def testFancySubnetting(self):
         self.assertEqual(sorted(self.ipv4_network.subnets(prefixlen_diff=3)),
