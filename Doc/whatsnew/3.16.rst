@@ -875,6 +875,9 @@ that may require changes to your code.
   and a notation child of a document fragment.
   Such operations formerly succeeded
   and produced an invalid document or an endless loop.
+  On the other hand, :meth:`!Element.removeAttribute` and
+  :meth:`!Element.removeAttributeNS` no longer raise
+  :exc:`~xml.dom.NotFoundErr` if there is no matching attribute.
   Attributes defaulted in the DTD are no longer omitted when parsing.
   (Contributed by Jason Orendorff and Serhiy Storchaka in :gh:`44871`.)
 

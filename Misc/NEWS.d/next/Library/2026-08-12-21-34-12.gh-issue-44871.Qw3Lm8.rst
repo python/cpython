@@ -1,6 +1,9 @@
 :mod:`xml.dom.minidom` now conforms closer to the DOM Level 1 specification.
 The factory methods now raise :exc:`~xml.dom.InvalidCharacterErr`
 if the name is not a valid XML name.
+Removing an absent attribute with :meth:`!Element.removeAttribute` or
+:meth:`!Element.removeAttributeNS` no longer raises
+:exc:`~xml.dom.NotFoundErr`, it has no effect as the DOM specifies.
 Inserting or setting a node created by another document
 now raises :exc:`~xml.dom.WrongDocumentErr`,
 setting an attribute node which belongs to another element

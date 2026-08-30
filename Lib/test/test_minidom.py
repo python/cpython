@@ -354,7 +354,9 @@ class MinidomTest(unittest.TestCase):
 
         child.setAttribute("def", "ghi")
         self.assertEqual(len(child.attributes), 1)
-        self.assertRaises(xml.dom.NotFoundErr, child.removeAttribute, "foo")
+        # removing an absent attribute has no effect
+        child.removeAttribute("foo")
+        self.assertEqual(len(child.attributes), 1)
         child.removeAttribute("def")
         self.assertEqual(len(child.attributes), 0)
         dom.unlink()
@@ -366,8 +368,8 @@ class MinidomTest(unittest.TestCase):
         child.setAttributeNS("http://www.w3.org", "xmlns:python",
                                                 "http://www.python.org")
         child.setAttributeNS("http://www.python.org", "python:abcattr", "foo")
-        self.assertRaises(xml.dom.NotFoundErr, child.removeAttributeNS,
-            "foo", "http://www.python.org")
+        # removing an absent attribute has no effect
+        child.removeAttributeNS("foo", "http://www.python.org")
         self.assertEqual(len(child.attributes), 2)
         child.removeAttributeNS("http://www.python.org", "abcattr")
         self.assertEqual(len(child.attributes), 1)
