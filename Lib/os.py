@@ -778,7 +778,7 @@ class _Environ(MutableMapping):
     def copy(self):
         return dict(self)
 
-    def get(self, key, default = None):
+    def get(self, key, default=None):
         val = self._data.get(self.encodekey(key), _MISSING)
         return default if val is _MISSING else self.decodevalue(val)
 
