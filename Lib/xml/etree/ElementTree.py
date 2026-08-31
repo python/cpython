@@ -714,7 +714,7 @@ class ElementTree:
           *default_namespace* -- sets the default XML namespace (for
                                  "xmlns")
 
-          *method* -- either "xml" (default), "html, "text", or "c14n"
+          *method* -- either "xml" (default), "html" or "text"
 
           *short_empty_elements* -- controls the formatting of elements
                                     that contain no content.  If True
@@ -730,11 +730,10 @@ class ElementTree:
         elif method not in _serialize:
             raise ValueError("unknown method %r" % method)
         if not encoding:
-            if method == "c14n":
-                encoding = "utf-8"
-            else:
-                encoding = "us-ascii"
+            encoding = "us-ascii"
         with _get_writer(file_or_filename, encoding) as (write, declared_encoding):
+            if declared_encoding.lower() == "utf-8-sig":
+                declared_encoding = "utf-8"
             if method == "xml" and (xml_declaration or
                     (xml_declaration is None and
                      encoding.lower() != "unicode" and
@@ -748,10 +747,6 @@ class ElementTree:
                 serialize = _serialize[method]
                 serialize(write, self._root, qnames, namespaces,
                           short_empty_elements=short_empty_elements)
-
-    def write_c14n(self, file):
-        # lxml.etree compatibility.  use output method instead
-        return self.write(file, method="c14n")
 
 # --------------------------------------------------------------------
 # serialization support
@@ -917,17 +912,20 @@ def _serialize_xml(write, elem, qnames, namespaces,
     if elem.tail:
         write(_escape_cdata(elem.tail))
 
+_CDATA_CONTENT_ELEMENTS = {"script", "style", "xmp", "iframe", "noembed",
+                           "noframes", "plaintext"}
+
 HTML_EMPTY = {"area", "base", "basefont", "br", "col", "embed", "frame", "hr",
               "img", "input", "isindex", "link", "meta", "param", "source",
-              "track", "wbr"}
+              "track", "wbr", "plaintext"}
 
 def _serialize_html(write, elem, qnames, namespaces, **kwargs):
     tag = elem.tag
     text = elem.text
     if tag is Comment:
-        write("<!--%s-->" % _escape_cdata(text))
+        write("<!--%s-->" % text)
     elif tag is ProcessingInstruction:
-        write("<?%s?>" % _escape_cdata(text))
+        write("<?%s?>" % text)
     else:
         tag = qnames[tag]
         if tag is None:
@@ -951,16 +949,19 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
                 for k, v in items:
                     if isinstance(k, QName):
                         k = k.text
-                    if isinstance(v, QName):
-                        v = qnames[v.text]
+                    k = qnames[k]
+                    if v is None:
+                        write(" %s" % k)  # empty attr
                     else:
-                        v = _escape_attrib_html(v)
-                    # FIXME: handle boolean attributes
-                    write(" %s=\"%s\"" % (qnames[k], v))
+                        if isinstance(v, QName):
+                            v = qnames[v.text]
+                        else:
+                            v = _escape_attrib_html(v)
+                        write(" %s=\"%s\"" % (k, v))
             write(">")
             ltag = tag.lower()
             if text:
-                if ltag == "script" or ltag == "style":
+                if ltag in _CDATA_CONTENT_ELEMENTS:
                     write(text)
                 else:
                     write(_escape_cdata(text))
@@ -981,8 +982,6 @@ _serialize = {
     "xml": _serialize_xml,
     "html": _serialize_html,
     "text": _serialize_text,
-# this optional method is imported at the end of the module
-#   "c14n": _serialize_c14n,
 }
 
 
@@ -1094,7 +1093,7 @@ def tostring(element, encoding=None, method=None, *,
 
     *element* is an Element instance, *encoding* is an optional output
     encoding defaulting to US-ASCII, *method* is an optional output which
-    can be one of "xml" (default), "html", "text" or "c14n",
+    can be one of "xml" (default), "html" or "text",
     *default_namespace* sets the default XML namespace (for "xmlns").
 
     Returns an (optionally) encoded string containing the XML data.

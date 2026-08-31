@@ -1,0 +1,2 @@
+Fix a crash when ``__conditional_annotations__`` is rebound to a non-set
+object.

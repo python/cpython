@@ -359,6 +359,10 @@ struct PyInterpreterView {
 PyAPI_FUNC(Py_ssize_t) _PyInterpreterState_GuardCountdown(PyInterpreterState *interp);
 PyAPI_FUNC(PyInterpreterState *) _PyInterpreterGuard_GetInterpreter(PyInterpreterGuard *guard);
 
+extern int _PyInterpreterGuard_TryAcquire(PyInterpreterState *interp,
+                                          PyInterpreterGuard *guard);
+extern void _PyInterpreterGuard_Release(PyInterpreterGuard *guard);
+
 #ifdef __cplusplus
 }
 #endif
