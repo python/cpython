@@ -851,36 +851,78 @@ class SourceDateEpochTestMeta(type(unittest.TestCase)):
 
 try:
     if support.MS_WINDOWS:
-        import ctypes
+        import ctypes.util
         kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
-
-        ERROR_FILE_NOT_FOUND = 2
-        DDD_REMOVE_DEFINITION = 2
-        DDD_EXACT_MATCH_ON_REMOVE = 4
-        DDD_NO_BROADCAST_SYSTEM = 8
     else:
         raise AttributeError
 except (ImportError, AttributeError):
     def subst_drive(path):
         raise unittest.SkipTest('ctypes or kernel32 is not available')
+
+    def handle_count():
+        return 0
 else:
+    ERROR_FILE_NOT_FOUND = 2
+    DDD_REMOVE_DEFINITION = 2
+    DDD_EXACT_MATCH_ON_REMOVE = 4
+    DDD_NO_BROADCAST_SYSTEM = 8
+
+
+    @ctypes.util.wrap_dll_function(kernel32)
+    def DefineDosDeviceW(
+        dwFlags: ctypes.wintypes.DWORD,
+        lpDeviceName: ctypes.c_wchar_p,
+        lpTargetPath: ctypes.c_wchar_p,
+    ) -> ctypes.wintypes.BOOL:
+        pass
+
+    @ctypes.util.wrap_dll_function(kernel32)
+    def QueryDosDeviceW(
+        lpDeviceName: ctypes.c_wchar_p,
+        lpTargetPath: ctypes.c_wchar_p,
+        ucchMax: ctypes.wintypes.DWORD,
+    ) -> ctypes.wintypes.DWORD:
+        pass
+
     @contextlib.contextmanager
     def subst_drive(path):
         """Temporarily yield a substitute drive for a given path."""
         for c in reversed(string.ascii_uppercase):
             drive = f'{c}:'
-            if (not kernel32.QueryDosDeviceW(drive, None, 0) and
+            if (not QueryDosDeviceW(drive, None, 0) and
                     ctypes.get_last_error() == ERROR_FILE_NOT_FOUND):
                 break
         else:
             raise unittest.SkipTest('no available logical drive')
-        if not kernel32.DefineDosDeviceW(
-                DDD_NO_BROADCAST_SYSTEM, drive, path):
+
+        if not DefineDosDeviceW(DDD_NO_BROADCAST_SYSTEM, drive, path):
             raise ctypes.WinError(ctypes.get_last_error())
+
         try:
             yield drive
         finally:
-            if not kernel32.DefineDosDeviceW(
-                    DDD_REMOVE_DEFINITION | DDD_EXACT_MATCH_ON_REMOVE,
-                    drive, path):
+            flags = DDD_REMOVE_DEFINITION | DDD_EXACT_MATCH_ON_REMOVE
+            if not DefineDosDeviceW(flags, drive, path):
                 raise ctypes.WinError(ctypes.get_last_error())
+
+
+    @ctypes.util.wrap_dll_function(kernel32)
+    def GetCurrentProcess() -> ctypes.wintypes.HANDLE:
+        pass
+
+    @ctypes.util.wrap_dll_function(kernel32)
+    def GetProcessHandleCount(khProcess: ctypes.wintypes.HANDLE,
+                              pdwHandleCount: ctypes.wintypes.LPDWORD) -> ctypes.wintypes.BOOL:
+        pass
+
+    del kernel32
+
+    def handle_count():
+        # Pseudo-handle that doesn't need to be closed
+        hproc = GetCurrentProcess()
+
+        handle_count = ctypes.wintypes.DWORD()
+        if not GetProcessHandleCount(hproc, ctypes.byref(handle_count)):
+            raise ctypes.WinError(ctypes.get_last_error())
+
+        return handle_count.value
