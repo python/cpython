@@ -7340,20 +7340,13 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             return NULL;
         }
 
-        PyObject *type_name = _PyType_GetFullyQualifiedName(type, '.');
-        if (type_name == NULL) {
-            Py_DECREF(joined);
-            return NULL;
-        }
-
         PyErr_Format(PyExc_TypeError,
-                     "Can't instantiate abstract class %U "
+                     "Can't instantiate abstract class %N "
                      "without an implementation for abstract method%s '%U'",
-                     type_name,
+                     type,
                      method_count > 1 ? "s" : "",
                      joined);
         Py_DECREF(joined);
-        Py_DECREF(type_name);
         return NULL;
     }
     PyObject *obj = type->tp_alloc(type, 0);
