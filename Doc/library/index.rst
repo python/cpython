@@ -44,6 +44,7 @@ the `Python Package Index <https://pypi.org>`_.
    stdtypes.rst
    exceptions.rst
    threadsafety.rst
+   time-complexity.rst
 
    text.rst
    binary.rst
