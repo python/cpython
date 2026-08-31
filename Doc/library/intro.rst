@@ -14,7 +14,7 @@ source form.  Some modules provide interfaces that are highly specific to
 Python, like printing a stack trace; some provide interfaces that are specific
 to particular operating systems, such as access to specific hardware; others
 provide interfaces that are specific to a particular application domain, like
-the web development. Some modules are available in all versions and ports of
+web development. Some modules are available in all versions and ports of
 Python; others are only available when the underlying system supports or
 requires them; yet others are available only when a particular configuration
 option was chosen at the time when Python was compiled and installed.
@@ -27,9 +27,9 @@ browse the table of contents (in front of the manual), or look for a specific
 function, module or term in the index (in the back).  And finally, if you enjoy
 learning about random subjects, you choose a random page
 and read a section or two.  Regardless of the order in which you
-read the sections of this manual, it helps to start with chapter
-:ref:`built-in-funcs`, as the remainder of the manual assumes familiarity with
-this material.
+read the sections of this manual, it helps to first read
+:ref:`built-in-funcs` in :ref:`builtin-index`, as the remainder of this section
+assumes familiarity with this material.
 
 Let the show begin!
 
