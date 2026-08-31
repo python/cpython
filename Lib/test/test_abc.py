@@ -735,7 +735,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
 
     class TestAbstractClassErrorMessage(unittest.TestCase):
 
-        class MyAbstractClass(abc.ABC):
+        class MyAbstractClass(metaclass=abc_ABCMeta):
             @abc.abstractmethod
             def my_method(self):
                 pass
