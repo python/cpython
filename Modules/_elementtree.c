@@ -86,6 +86,7 @@ typedef struct {
     PyObject *elementpath_obj;
     PyObject *comment_factory;
     PyObject *pi_factory;
+    PyObject *cdata_factory;
     /* Interned strings */
     PyObject *str_text;
     PyObject *str_tail;
@@ -143,6 +144,7 @@ elementtree_clear(PyObject *m)
     Py_CLEAR(st->elementpath_obj);
     Py_CLEAR(st->comment_factory);
     Py_CLEAR(st->pi_factory);
+    Py_CLEAR(st->cdata_factory);
 
     // Interned strings
     Py_CLEAR(st->str_append);
@@ -174,6 +176,7 @@ elementtree_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->elementpath_obj);
     Py_VISIT(st->comment_factory);
     Py_VISIT(st->pi_factory);
+    Py_VISIT(st->cdata_factory);
 
     // Heap types
     Py_VISIT(st->Element_Type);
@@ -2298,8 +2301,13 @@ elementiter_next(PyObject *op)
         }
         if (it->gettext) {
             if (elem->tag != Py_None && !PyUnicode_Check(elem->tag)) {
-                Py_DECREF(elem);
-                continue;
+                /* the content of a CDATA section is character data */
+                elementtreestate *st =
+                    get_elementtree_state_by_type(Py_TYPE(op));
+                if (elem->tag != st->cdata_factory) {
+                    Py_DECREF(elem);
+                    continue;
+                }
             }
             text = element_get_text(elem);
             goto gettext;
@@ -2407,6 +2415,7 @@ typedef struct {
     PyObject *element_factory;
     PyObject *comment_factory;
     PyObject *pi_factory;
+    PyObject *cdata_factory;
 
     /* element tracing */
     PyObject *events_append; /* the append method of the list of events, or NULL */
@@ -2419,6 +2428,7 @@ typedef struct {
 
     char insert_comments;
     char insert_pis;
+    char insert_cdata;
     elementtreestate *state;
 } TreeBuilderObject;
 
@@ -2441,6 +2451,7 @@ treebuilder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         t->element_factory = NULL;
         t->comment_factory = NULL;
         t->pi_factory = NULL;
+        t->cdata_factory = NULL;
         t->stack = PyList_New(20);
         if (!t->stack) {
             Py_DECREF(t->this);
@@ -2454,7 +2465,7 @@ treebuilder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         t->start_event_obj = t->end_event_obj = NULL;
         t->start_ns_event_obj = t->end_ns_event_obj = NULL;
         t->comment_event_obj = t->pi_event_obj = NULL;
-        t->insert_comments = t->insert_pis = 0;
+        t->insert_comments = t->insert_pis = t->insert_cdata = 0;
         t->state = get_elementtree_state_by_type(type);
     }
     return (PyObject *)t;
@@ -2467,8 +2478,10 @@ _elementtree.TreeBuilder.__init__
     *
     comment_factory: object = None
     pi_factory: object = None
+    cdata_factory: object = None
     insert_comments: bool = False
     insert_pis: bool = False
+    insert_cdata: bool = False
 
 [clinic start generated code]*/
 
@@ -2477,8 +2490,10 @@ _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
                                        PyObject *element_factory,
                                        PyObject *comment_factory,
                                        PyObject *pi_factory,
-                                       int insert_comments, int insert_pis)
-/*[clinic end generated code: output=8571d4dcadfdf952 input=ae98a94df20b5cc3]*/
+                                       PyObject *cdata_factory,
+                                       int insert_comments, int insert_pis,
+                                       int insert_cdata)
+/*[clinic end generated code: output=3ccfba7fd8cdd668 input=64951f52e409494b]*/
 {
     if (element_factory != Py_None) {
         Py_XSETREF(self->element_factory, Py_NewRef(element_factory));
@@ -2510,6 +2525,18 @@ _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
         self->insert_pis = 0;
     }
 
+    if (cdata_factory == Py_None) {
+        elementtreestate *st = self->state;
+        cdata_factory = st->cdata_factory;
+    }
+    if (cdata_factory) {
+        Py_XSETREF(self->cdata_factory, Py_NewRef(cdata_factory));
+        self->insert_cdata = insert_cdata;
+    } else {
+        Py_CLEAR(self->cdata_factory);
+        self->insert_cdata = 0;
+    }
+
     return 0;
 }
 
@@ -2533,6 +2560,7 @@ treebuilder_gc_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(self->stack);
     Py_VISIT(self->pi_factory);
     Py_VISIT(self->comment_factory);
+    Py_VISIT(self->cdata_factory);
     Py_VISIT(self->element_factory);
     return 0;
 }
@@ -2553,6 +2581,7 @@ treebuilder_gc_clear(PyObject *op)
     Py_CLEAR(self->last);
     Py_CLEAR(self->last_for_tail);
     Py_CLEAR(self->this);
+    Py_CLEAR(self->cdata_factory);
     Py_CLEAR(self->pi_factory);
     Py_CLEAR(self->comment_factory);
     Py_CLEAR(self->element_factory);
@@ -2574,22 +2603,25 @@ treebuilder_dealloc(PyObject *self)
 /* helpers for handling of arbitrary element-like objects */
 
 /*[clinic input]
-@permit_long_summary
 _elementtree._set_factories
 
     comment_factory: object
     pi_factory: object
+    cdata_factory: object
     /
 
-Change the factories used to create comments and processing instructions.
+Change the factories used to create special elements.
+
+They create comments, processing instructions and CDATA sections.
 
 For internal use only.
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree__set_factories_impl(PyObject *module, PyObject *comment_factory,
-                                 PyObject *pi_factory)
-/*[clinic end generated code: output=813b408adee26535 input=0f415cb6b821f768]*/
+                                 PyObject *pi_factory,
+                                 PyObject *cdata_factory)
+/*[clinic end generated code: output=bb15ac96eeda66af input=f61d1ce3068ef3f2]*/
 {
     elementtreestate *st = get_elementtree_state(module);
     PyObject *old;
@@ -2604,10 +2636,20 @@ _elementtree__set_factories_impl(PyObject *module, PyObject *comment_factory,
                      Py_TYPE(pi_factory)->tp_name);
         return NULL;
     }
+    if (!PyCallable_Check(cdata_factory) && cdata_factory != Py_None) {
+        PyErr_Format(PyExc_TypeError,
+                     "CDATA factory must be callable, not %.100s",
+                     Py_TYPE(cdata_factory)->tp_name);
+        return NULL;
+    }
 
-    old = _PyTuple_FromPair(
+    old = Py_BuildValue("OOO",
         st->comment_factory ? st->comment_factory : Py_None,
-        st->pi_factory ? st->pi_factory : Py_None);
+        st->pi_factory ? st->pi_factory : Py_None,
+        st->cdata_factory ? st->cdata_factory : Py_None);
+    if (old == NULL) {
+        return NULL;
+    }
 
     if (comment_factory == Py_None) {
         Py_CLEAR(st->comment_factory);
@@ -2618,6 +2660,11 @@ _elementtree__set_factories_impl(PyObject *module, PyObject *comment_factory,
         Py_CLEAR(st->pi_factory);
     } else {
         Py_XSETREF(st->pi_factory, Py_NewRef(pi_factory));
+    }
+    if (cdata_factory == Py_None) {
+        Py_CLEAR(st->cdata_factory);
+    } else {
+        Py_XSETREF(st->cdata_factory, Py_NewRef(cdata_factory));
     }
 
     return old;
@@ -2919,6 +2966,56 @@ treebuilder_handle_comment(TreeBuilderObject* self, PyObject* text)
     return NULL;
 }
 
+LOCAL(int)
+treebuilder_handle_cdata_start(TreeBuilderObject* self)
+{
+    if (!self->insert_cdata) {
+        return 0;
+    }
+    /* the text before the section belongs to the preceding node */
+    return treebuilder_flush_data(self);
+}
+
+LOCAL(PyObject*)
+treebuilder_handle_cdata_end(TreeBuilderObject* self)
+{
+    PyObject* text;
+    PyObject* cdata;
+    PyObject* this;
+
+    if (!self->insert_cdata) {
+        Py_RETURN_NONE;
+    }
+
+    if (self->data) {
+        text = PyList_CheckExact(self->data) ? list_join(self->data)
+                                             : Py_NewRef(self->data);
+        Py_CLEAR(self->data);
+    } else {
+        text = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
+    }
+    if (!text) {
+        return NULL;
+    }
+
+    cdata = PyObject_CallOneArg(self->cdata_factory, text);
+    Py_DECREF(text);
+    if (!cdata) {
+        return NULL;
+    }
+
+    this = self->this;
+    if (this != Py_None) {
+        if (treebuilder_add_subelement(self->state, this, cdata) < 0) {
+            Py_DECREF(cdata);
+            return NULL;
+        }
+        Py_XSETREF(self->last_for_tail, Py_NewRef(cdata));
+    }
+
+    return cdata;
+}
+
 LOCAL(PyObject*)
 treebuilder_handle_pi(TreeBuilderObject* self, PyObject* target, PyObject* text)
 {
@@ -3029,6 +3126,37 @@ _elementtree_TreeBuilder_end_impl(TreeBuilderObject *self, PyObject *tag)
 }
 
 /*[clinic input]
+_elementtree.TreeBuilder.start_cdata
+
+Begin a CDATA section.
+
+[clinic start generated code]*/
+
+static PyObject *
+_elementtree_TreeBuilder_start_cdata_impl(TreeBuilderObject *self)
+/*[clinic end generated code: output=433004da9adec83c input=43afb6bdadd7d183]*/
+{
+    if (treebuilder_handle_cdata_start(self) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_elementtree.TreeBuilder.end_cdata
+
+End a CDATA section and create it using the cdata_factory.
+
+[clinic start generated code]*/
+
+static PyObject *
+_elementtree_TreeBuilder_end_cdata_impl(TreeBuilderObject *self)
+/*[clinic end generated code: output=7795f7e05cd36223 input=1d292f199287c164]*/
+{
+    return treebuilder_handle_cdata_end(self);
+}
+
+/*[clinic input]
 _elementtree.TreeBuilder.comment
 
     text: object
@@ -3130,6 +3258,8 @@ typedef struct {
     PyObject *handle_end;
 
     PyObject *handle_comment;
+    PyObject *handle_start_cdata;
+    PyObject *handle_end_cdata;
     PyObject *handle_pi;
     PyObject *handle_doctype;
 
@@ -3533,6 +3663,44 @@ expat_end_ns_handler(void *op, const XML_Char *prefix_in)
 }
 
 static void
+expat_start_cdata_handler(void *op)
+{
+    XMLParserObject *self = XMLParserObject_CAST(op);
+
+    if (PyErr_Occurred())
+        return;
+
+    elementtreestate *st = self->state;
+    if (TreeBuilder_CheckExact(st, self->target)) {
+        /* shortcut */
+        (void)treebuilder_handle_cdata_start((TreeBuilderObject*) self->target);
+    } else if (self->handle_start_cdata) {
+        PyObject *res = PyObject_CallNoArgs(self->handle_start_cdata);
+        Py_XDECREF(res);
+    }
+}
+
+static void
+expat_end_cdata_handler(void *op)
+{
+    XMLParserObject *self = XMLParserObject_CAST(op);
+
+    if (PyErr_Occurred())
+        return;
+
+    elementtreestate *st = self->state;
+    if (TreeBuilder_CheckExact(st, self->target)) {
+        /* shortcut */
+        PyObject *res =
+            treebuilder_handle_cdata_end((TreeBuilderObject*) self->target);
+        Py_XDECREF(res);
+    } else if (self->handle_end_cdata) {
+        PyObject *res = PyObject_CallNoArgs(self->handle_end_cdata);
+        Py_XDECREF(res);
+    }
+}
+
+static void
 expat_comment_handler(void *op, const XML_Char *comment_in)
 {
     XMLParserObject *self = XMLParserObject_CAST(op);
@@ -3687,6 +3855,7 @@ xmlparser_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->handle_start_ns = self->handle_end_ns = NULL;
         self->handle_start = self->handle_data = self->handle_end = NULL;
         self->handle_comment = self->handle_pi = self->handle_close = NULL;
+        self->handle_start_cdata = self->handle_end_cdata = NULL;
         self->handle_doctype = NULL;
         self->elementtree_module = PyType_GetModuleByDef(type, &elementtreemodule);
         assert(self->elementtree_module != NULL);
@@ -3786,6 +3955,14 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
     if (ignore_attribute_error(self->handle_comment)) {
         return -1;
     }
+    self->handle_start_cdata = PyObject_GetAttrString(target, "start_cdata");
+    if (ignore_attribute_error(self->handle_start_cdata)) {
+        return -1;
+    }
+    self->handle_end_cdata = PyObject_GetAttrString(target, "end_cdata");
+    if (ignore_attribute_error(self->handle_end_cdata)) {
+        return -1;
+    }
     self->handle_pi = PyObject_GetAttrString(target, "pi");
     if (ignore_attribute_error(self->handle_pi)) {
         return -1;
@@ -3830,6 +4007,12 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
             self->parser,
             (XML_ProcessingInstructionHandler) expat_pi_handler
             );
+    if (self->handle_start_cdata || self->handle_end_cdata)
+        EXPAT(st, SetCdataSectionHandler)(
+            self->parser,
+            (XML_StartCdataSectionHandler) expat_start_cdata_handler,
+            (XML_EndCdataSectionHandler) expat_end_cdata_handler
+            );
     EXPAT(st, SetStartDoctypeDeclHandler)(
         self->parser,
         (XML_StartDoctypeDeclHandler) expat_start_doctype_handler
@@ -3850,6 +4033,8 @@ xmlparser_gc_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(self->handle_close);
     Py_VISIT(self->handle_pi);
     Py_VISIT(self->handle_comment);
+    Py_VISIT(self->handle_start_cdata);
+    Py_VISIT(self->handle_end_cdata);
     Py_VISIT(self->handle_end);
     Py_VISIT(self->handle_data);
     Py_VISIT(self->handle_start);
@@ -3879,6 +4064,8 @@ xmlparser_gc_clear(PyObject *op)
     Py_CLEAR(self->handle_close);
     Py_CLEAR(self->handle_pi);
     Py_CLEAR(self->handle_comment);
+    Py_CLEAR(self->handle_start_cdata);
+    Py_CLEAR(self->handle_end_cdata);
     Py_CLEAR(self->handle_end);
     Py_CLEAR(self->handle_data);
     Py_CLEAR(self->handle_start);
@@ -4377,6 +4564,8 @@ static PyMethodDef treebuilder_methods[] = {
     _ELEMENTTREE_TREEBUILDER_START_METHODDEF
     _ELEMENTTREE_TREEBUILDER_END_METHODDEF
     _ELEMENTTREE_TREEBUILDER_COMMENT_METHODDEF
+    _ELEMENTTREE_TREEBUILDER_START_CDATA_METHODDEF
+    _ELEMENTTREE_TREEBUILDER_END_CDATA_METHODDEF
     _ELEMENTTREE_TREEBUILDER_PI_METHODDEF
     _ELEMENTTREE_TREEBUILDER_CLOSE_METHODDEF
     {NULL, NULL}

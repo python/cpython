@@ -648,6 +648,22 @@ xml
   rather than defaulted from the DTD.
   (Contributed by Jason Orendorff and Serhiy Storchaka in :gh:`44871`.)
 
+* Add :func:`~xml.etree.ElementTree.CDATA` to :mod:`xml.etree.ElementTree`,
+  a factory of special elements which are serialized as CDATA sections,
+  like :func:`~xml.etree.ElementTree.Comment` and
+  :func:`~xml.etree.ElementTree.ProcessingInstruction`.
+  The content of a CDATA section is character data:
+  it is not escaped when serialized, and it is returned by
+  :meth:`~xml.etree.ElementTree.Element.itertext`
+  and by the ``"text"`` serialization method.
+  :class:`~xml.etree.ElementTree.TreeBuilder` supports the *cdata_factory*
+  and *insert_cdata* arguments, which make the parser keep CDATA sections
+  instead of parsing them as text, and the new :meth:`!start_cdata` and
+  :meth:`!end_cdata` methods, which :class:`~xml.etree.ElementTree.XMLParser`
+  calls for the boundaries of a CDATA section, like :meth:`!comment` and
+  :meth:`!pi`.
+  (Contributed by Serhiy Storchaka in :gh:`81055`.)
+
 zipfile
 -------
 

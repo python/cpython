@@ -72,6 +72,7 @@
 
 __all__ = [
     # public symbols
+    "CDATA",
     "Comment",
     "dump",
     "Element", "ElementTree",
@@ -408,7 +409,8 @@ class Element:
 
         """
         tag = self.tag
-        if not isinstance(tag, str) and tag is not None:
+        if not isinstance(tag, str) and tag is not None and tag is not CDATA:
+            # the content of a CDATA section is character data
             return
         t = self.text
         if t:
@@ -469,6 +471,21 @@ def ProcessingInstruction(target, text=None):
     return element
 
 PI = ProcessingInstruction
+
+
+def CDATA(text=None):
+    """CDATA section factory.
+
+    This function creates a special element which the standard serializer
+    serializes as a CDATA section.  The parser never creates such elements:
+    the content of a CDATA section is character data, and is parsed as text.
+
+    *text* is a string containing the content of the CDATA section.
+
+    """
+    element = Element(CDATA)
+    element.text = text
+    return element
 
 
 class QName:
@@ -848,7 +865,8 @@ def _namespaces(elem, default_namespace=None):
         elif isinstance(tag, str):
             if tag not in qnames:
                 add_qname(tag)
-        elif tag is not None and tag is not Comment and tag is not PI:
+        elif (tag is not None and tag is not Comment and tag is not PI
+                and tag is not CDATA):
             _raise_serialization_error(tag)
         for key, value in elem.items():
             if isinstance(key, QName):
@@ -870,6 +888,8 @@ def _serialize_xml(write, elem, qnames, namespaces,
         write("<!--%s-->" % text)
     elif tag is ProcessingInstruction:
         write("<?%s?>" % text)
+    elif tag is CDATA:
+        write(_cdata_section(text))
     else:
         tag = qnames[tag]
         if tag is None:
@@ -926,6 +946,8 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
         write("<!--%s-->" % text)
     elif tag is ProcessingInstruction:
         write("<?%s?>" % text)
+    elif tag is CDATA:
+        write(_cdata_section(text))
     else:
         tag = qnames[tag]
         if tag is None:
@@ -973,8 +995,16 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
         write(_escape_cdata(elem.tail))
 
 def _serialize_text(write, elem):
-    for part in elem.itertext():
-        write(part)
+    tag = elem.tag
+    if tag is CDATA:
+        # the content of a CDATA section is character data
+        if elem.text:
+            write(elem.text)
+    elif tag is None or isinstance(tag, str):
+        if elem.text:
+            write(elem.text)
+        for e in elem:
+            _serialize_text(write, e)
     if elem.tail:
         write(elem.tail)
 
@@ -1023,6 +1053,18 @@ def _raise_serialization_error(text):
     raise TypeError(
         "cannot serialize %r (type %s)" % (text, type(text).__name__)
         )
+
+def _cdata_section(text):
+    # write character data as a CDATA section
+    if text is None:
+        return "<![CDATA[]]>"
+    try:
+        if "]]>" in text:
+            # a CDATA section cannot contain "]]>", split it in two
+            text = text.replace("]]>", "]]]]><![CDATA[>")
+        return "<![CDATA[" + text + "]]>"
+    except (TypeError, AttributeError):
+        _raise_serialization_error(text)
 
 def _escape_cdata(text):
     # escape character data
@@ -1428,10 +1470,14 @@ class TreeBuilder:
     *pi_factory* is a factory to create processing instructions to be used
     instead of the standard factory.  If *insert_pis* is false (the default),
     processing instructions will not be inserted into the tree.
+
+    *cdata_factory* is a factory to create CDATA sections to be used instead
+    of the standard factory.  If *insert_cdata* is false (the default), the
+    content of CDATA sections is added to the tree as ordinary text.
     """
     def __init__(self, element_factory=None, *,
-                 comment_factory=None, pi_factory=None,
-                 insert_comments=False, insert_pis=False):
+                 comment_factory=None, pi_factory=None, cdata_factory=None,
+                 insert_comments=False, insert_pis=False, insert_cdata=False):
         self._data = [] # data collector
         self._elem = [] # element stack
         self._last = None # last element
@@ -1445,6 +1491,10 @@ class TreeBuilder:
             pi_factory = ProcessingInstruction
         self._pi_factory = pi_factory
         self.insert_pis = insert_pis
+        if cdata_factory is None:
+            cdata_factory = CDATA
+        self._cdata_factory = cdata_factory
+        self.insert_cdata = insert_cdata
         if element_factory is None:
             element_factory = Element
         self._factory = element_factory
@@ -1519,6 +1569,23 @@ class TreeBuilder:
         return self._handle_single(
             self._pi_factory, self.insert_pis, target, text)
 
+    def start_cdata(self):
+        """Begin a CDATA section.
+
+        The text collected until the matching end_cdata() call is the
+        content of the section.
+        """
+        if self.insert_cdata:
+            self._flush()
+
+    def end_cdata(self):
+        """End a CDATA section and create it using the cdata_factory."""
+        if not self.insert_cdata:
+            return None
+        text = "".join(self._data)
+        self._data = []
+        return self._handle_single(self._cdata_factory, True, text)
+
     def _handle_single(self, factory, insert, *args):
         elem = factory(*args)
         if insert:
@@ -1576,6 +1643,10 @@ class XMLParser:
             parser.CommentHandler = target.comment
         if hasattr(target, 'pi'):
             parser.ProcessingInstructionHandler = target.pi
+        if hasattr(target, 'start_cdata'):
+            parser.StartCdataSectionHandler = target.start_cdata
+        if hasattr(target, 'end_cdata'):
+            parser.EndCdataSectionHandler = target.end_cdata
         # Configure pyexpat: buffering, new-style attribute handling.
         parser.buffer_text = 1
         parser.ordered_attributes = 1
@@ -2117,7 +2188,7 @@ try:
 except ImportError:
     pass
 else:
-    _set_factories(Comment, ProcessingInstruction)
+    _set_factories(Comment, ProcessingInstruction, CDATA)
 
 
 # --------------------------------------------------------------------
