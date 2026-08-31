@@ -1,11 +1,12 @@
 {%- if page_source_path is defined %}
   {%- set source_path = page_source_path %}
 {%- elif page_source_suffix is defined %}
-  {%- set source_path = pagename + '.rst' %}
+  {%- set source_path = pagename + page_source_suffix %}
 {%- else %}
   {%- set source_path = none %}
 {%- endif %}
-{%- if page_source_suffix is defined or show_page_menu|default(false) %}
+{%- set is_source_page = page_source_suffix is defined %}
+{%- if is_source_page or show_page_menu|default(false) %}
   {% if source_path %}
   <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -27,13 +28,14 @@
     <ul class="this-page-menu">
       <li><a href="{{ pathto('bugs') }}">{% trans %}Report a bug{% endtrans %}</a></li>
       <li><a{% if source_path %} class="improvepage"{% endif %} href="{{ pathto('improve-page-nojs') }}">{% trans %}Improve this page{% endtrans %}</a></li>
-      {% if source_path %}
+      {% if show_source and source_path %}
       <li>
         <a href="https://github.com/python/cpython/blob/{{ source_branch }}/Doc/{{ source_path }}?plain=1"
             rel="nofollow">{{ _('Show source') }}
         </a>
       </li>
-      {% if language != "en" and source_branch != "main" %}
+      {% endif %}
+      {% if language != "en" and source_branch != "main" and is_source_page %}
       <li>
         <a href="https://github.com/python/python-docs-{{ language | replace('_', '-') | lower }}/blob/{{ source_branch }}/{{ pagename }}.po?plain=1"
            rel="nofollow">{{ _('Show translation source') }}</a>
