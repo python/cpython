@@ -4398,15 +4398,21 @@ static PyType_Spec element_spec = {
     .slots = element_slots,
 };
 
+/*[clinic input]
+_elementtree.TreeBuilder.document
+
+Return the children of the document.
+[clinic start generated code]*/
+
 static PyObject *
 _elementtree_TreeBuilder_document_impl(TreeBuilderObject *self)
+/*[clinic end generated code: output=23aee8fbdee7bb53 input=8e3b119052a148d8]*/
 {
     return PyList_GetSlice(self->document, 0, PyList_GET_SIZE(self->document));
 }
 
 static PyMethodDef treebuilder_methods[] = {
-    {"document", (PyCFunction)_elementtree_TreeBuilder_document_impl,
-     METH_NOARGS, "Return the children of the document."},
+    _ELEMENTTREE_TREEBUILDER_DOCUMENT_METHODDEF
     _ELEMENTTREE_TREEBUILDER_DATA_METHODDEF
     _ELEMENTTREE_TREEBUILDER_START_METHODDEF
     _ELEMENTTREE_TREEBUILDER_END_METHODDEF

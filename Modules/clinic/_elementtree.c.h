@@ -1331,4 +1331,22 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c863ce16d8566291 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_elementtree_TreeBuilder_document__doc__,
+"document($self, /)\n"
+"--\n"
+"\n"
+"Return the children of the document.");
+
+#define _ELEMENTTREE_TREEBUILDER_DOCUMENT_METHODDEF    \
+    {"document", (PyCFunction)_elementtree_TreeBuilder_document, METH_NOARGS, _elementtree_TreeBuilder_document__doc__},
+
+static PyObject *
+_elementtree_TreeBuilder_document_impl(TreeBuilderObject *self);
+
+static PyObject *
+_elementtree_TreeBuilder_document(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _elementtree_TreeBuilder_document_impl((TreeBuilderObject *)self);
+}
+/*[clinic end generated code: output=c26dab038e641a6c input=a9049054013a1b77]*/
