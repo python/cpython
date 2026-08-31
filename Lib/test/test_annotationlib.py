@@ -1222,6 +1222,23 @@ class TestGetAnnotations(unittest.TestCase):
             {"x": "int"},
         )
 
+    def test_conditional_annotations_forwardref(self):
+        class ConditionalForwardRef:
+            a: object.undefined
+            if False:
+                b: str
+
+        self.assertEqual(
+            get_annotations(ConditionalForwardRef, format=Format.FORWARDREF),
+            {"a": support.EqualToForwardRef(
+                "object.undefined", is_class=True, owner=ConditionalForwardRef
+            )},
+        )
+        self.assertEqual(
+            get_annotations(ConditionalForwardRef, format=Format.STRING),
+            {"a": "object.undefined"},
+        )
+
     def test_pep695_generic_class_with_future_annotations(self):
         ann_module695 = inspect_stringized_annotations_pep695
         A_annotations = get_annotations(ann_module695.A, eval_str=True)
