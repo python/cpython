@@ -1499,13 +1499,13 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         try:
             protocol = protocol_factory()
-            waiter = self.create_future()
-            transport = self._make_datagram_transport(
-                sock, protocol, r_addr, waiter)
         except:
-            # gh-156400: close the socket if the transport is never created.
+            # gh-156400: no transport owns the socket yet, so close it.
             sock.close()
             raise
+        waiter = self.create_future()
+        transport = self._make_datagram_transport(
+            sock, protocol, r_addr, waiter)
         if self._debug:
             if local_addr:
                 logger.info("Datagram endpoint local_addr=%r remote_addr=%r "
@@ -1721,12 +1721,12 @@ class BaseEventLoop(events.AbstractEventLoop):
     async def connect_read_pipe(self, protocol_factory, pipe):
         try:
             protocol = protocol_factory()
-            waiter = self.create_future()
-            transport = self._make_read_pipe_transport(pipe, protocol, waiter)
         except:
-            # gh-156400: close the pipe if the transport is never created.
+            # gh-156400: no transport owns the pipe yet, so close it.
             pipe.close()
             raise
+        waiter = self.create_future()
+        transport = self._make_read_pipe_transport(pipe, protocol, waiter)
 
         try:
             await waiter
@@ -1742,12 +1742,12 @@ class BaseEventLoop(events.AbstractEventLoop):
     async def connect_write_pipe(self, protocol_factory, pipe):
         try:
             protocol = protocol_factory()
-            waiter = self.create_future()
-            transport = self._make_write_pipe_transport(pipe, protocol, waiter)
         except:
-            # gh-156400: close the pipe if the transport is never created.
+            # gh-156400: no transport owns the pipe yet, so close it.
             pipe.close()
             raise
+        waiter = self.create_future()
+        transport = self._make_write_pipe_transport(pipe, protocol, waiter)
 
         try:
             await waiter
