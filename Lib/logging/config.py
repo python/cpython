@@ -24,21 +24,26 @@ Copyright (C) 2001-2022 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging.config' and log away!
 """
 
+lazy import configparser
 import errno
 import functools
 import io
+lazy import json
 import logging
-import logging.handlers
+# rebinds the name `logging`, so the first `logging.<attr>` use loads handlers
+lazy import logging.handlers
 import os
-import queue
+lazy import queue
 import re
-import socket
-import struct
+lazy import select
+lazy import socket
+lazy import struct
 import threading
 import traceback
 
-from bisect import bisect_left
-from socketserver import ThreadingTCPServer, StreamRequestHandler
+lazy from bisect import bisect_left
+lazy from multiprocessing.queues import Queue as MPQueue
+lazy from socketserver import ThreadingTCPServer, StreamRequestHandler
 
 
 DEFAULT_LOGGING_CONFIG_PORT = 9030
@@ -61,8 +66,6 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True, encoding=Non
     developer provides a mechanism to present the choices and load the chosen
     configuration).
     """
-    import configparser
-
     if isinstance(fname, str):
         if not os.path.exists(fname):
             raise FileNotFoundError(f"{fname} doesn't exist")
@@ -510,8 +513,6 @@ def _is_queue_like_object(obj):
     """Check that *obj* implements the Queue API."""
     if isinstance(obj, (queue.Queue, queue.SimpleQueue)):
         return True
-    # defer importing multiprocessing as much as possible
-    from multiprocessing.queues import Queue as MPQueue
     if isinstance(obj, MPQueue):
         return True
     # Depending on the multiprocessing start context, we cannot create
@@ -978,7 +979,6 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
                     if chunk is not None:   # verified, can process
                         chunk = chunk.decode("utf-8")
                         try:
-                            import json
                             d =json.loads(chunk)
                             assert isinstance(d, dict)
                             dictConfig(d)
@@ -1023,7 +1023,6 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
             self.verify = verify
 
         def serve_until_stopped(self):
-            import select
             abort = 0
             while not abort:
                 rd, wr, ex = select.select([self.socket.fileno()],

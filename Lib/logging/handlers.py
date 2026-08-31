@@ -23,17 +23,26 @@ Copyright (C) 2001-2021 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging.handlers' and log away!
 """
 
-import copy
+lazy import base64
+lazy import copy
+lazy import email.utils
+lazy import http.client
+# io and os must stay eager to support finalization
 import io
 import logging
 import os
-import pickle
-import queue
+lazy import pickle
+lazy import queue
 import re
-import socket
-import struct
+lazy import smtplib
+lazy import socket
+lazy import ssl
+lazy import struct
 import threading
 import time
+lazy import urllib.parse
+
+lazy from email.message import EmailMessage
 
 #
 # Some constants...
@@ -1113,10 +1122,6 @@ class SMTPHandler(logging.Handler):
         Format the record and send it to the specified addressees.
         """
         try:
-            import smtplib
-            from email.message import EmailMessage
-            import email.utils
-
             port = self.mailport
             if not port:
                 port = smtplib.SMTP_PORT
@@ -1129,8 +1134,6 @@ class SMTPHandler(logging.Handler):
             msg.set_content(self.format(record))
             if self.username:
                 if self.secure is not None:
-                    import ssl
-
                     try:
                         keyfile = self.secure[0]
                     except IndexError:
@@ -1313,7 +1316,6 @@ class HTTPHandler(logging.Handler):
         Override when a custom connection is required, for example if
         there is a proxy.
         """
-        import http.client
         if secure:
             connection = http.client.HTTPSConnection(host, context=self.context)
         else:
@@ -1327,7 +1329,6 @@ class HTTPHandler(logging.Handler):
         Send the record to the web server as a percent-encoded dictionary
         """
         try:
-            import urllib.parse
             host = self.host
             h = self.getConnection(host, self.secure)
             url = self.url
@@ -1352,7 +1353,6 @@ class HTTPHandler(logging.Handler):
                             "application/x-www-form-urlencoded")
                 h.putheader("Content-length", str(len(data)))
             if self.credentials:
-                import base64
                 s = ('%s:%s' % self.credentials).encode('utf-8')
                 s = 'Basic ' + base64.b64encode(s).strip().decode('ascii')
                 h.putheader('Authorization', s)
