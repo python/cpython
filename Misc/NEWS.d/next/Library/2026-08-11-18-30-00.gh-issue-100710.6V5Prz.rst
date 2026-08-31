@@ -1,5 +1,0 @@
-Add a class-level ``nodeValue`` default (``None``) to the base
-:class:`!Node` class in :mod:`xml.dom.minidom`, matching the DOM
-interface it implements. Every concrete subclass already sets
-``nodeValue`` at runtime, so this only affects code and static type
-checkers that reference a bare ``Node``-typed value.
