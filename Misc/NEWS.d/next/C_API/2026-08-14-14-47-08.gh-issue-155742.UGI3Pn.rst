@@ -1,0 +1,2 @@
+:c:func:`PyBytesWriter_FinishWithSize` now returns single byte singletons if
+*size* equals to ``1``. Patch by Victor Stinner.
