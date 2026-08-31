@@ -429,8 +429,8 @@ multibytecodec_decerror(const MultibyteCodec *codec,
     }
 
     if (errors == ERROR_REPLACE) {
-        if (_PyUnicodeWriter_WriteChar(&buf->writer,
-                                       Py_UNICODE_REPLACEMENT_CHARACTER) < 0)
+        if (_PyUnicodeWriter_WriteCharInline(
+                &buf->writer, Py_UNICODE_REPLACEMENT_CHARACTER) < 0)
             goto errorexit;
     }
     if (errors == ERROR_IGNORE || errors == ERROR_REPLACE) {
