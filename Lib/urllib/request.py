@@ -1223,10 +1223,11 @@ class HTTPDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
 
     def http_error_401(self, req, fp, code, msg, headers):
         host = urlparse(req.full_url)[1]
-        retry = self.http_error_auth_reqed('www-authenticate',
-                                           host, req, headers)
-        self.reset_retry_count()
-        return retry
+        try:
+            return self.http_error_auth_reqed('www-authenticate',
+                                              host, req, headers)
+        finally:
+            self.reset_retry_count()
 
 
 class ProxyDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
@@ -1236,10 +1237,11 @@ class ProxyDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
 
     def http_error_407(self, req, fp, code, msg, headers):
         host = req.host
-        retry = self.http_error_auth_reqed('proxy-authenticate',
-                                           host, req, headers)
-        self.reset_retry_count()
-        return retry
+        try:
+            return self.http_error_auth_reqed('proxy-authenticate',
+                                              host, req, headers)
+        finally:
+            self.reset_retry_count()
 
 class AbstractHTTPHandler(BaseHandler):
 
