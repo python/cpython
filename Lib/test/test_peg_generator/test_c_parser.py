@@ -100,14 +100,17 @@ class TestCParser(unittest.TestCase):
 
         with contextlib.ExitStack() as stack:
             python_exe = stack.enter_context(support.setup_venv_with_pip_setuptools("venv"))
-            platlib_path = subprocess.check_output(
-                [python_exe, "-c", "import sysconfig; print(sysconfig.get_path('platlib'))"],
-                text=True,
-            ).strip()
-            purelib_path = subprocess.check_output(
-                [python_exe, "-c", "import sysconfig; print(sysconfig.get_path('purelib'))"],
-                text=True,
-            ).strip()
+
+            def get_sysconfig_path(name):
+                # Force UTF-8 to emit the non-ASCII venv path in any locale.
+                return subprocess.check_output(
+                    [python_exe, "-X", "utf8", "-c",
+                     f"import sysconfig; print(sysconfig.get_path({name!r}))"],
+                    encoding="utf-8",
+                ).strip()
+
+            platlib_path = get_sysconfig_path("platlib")
+            purelib_path = get_sysconfig_path("purelib")
             stack.enter_context(import_helper.DirsOnSysPath(platlib_path, purelib_path))
             cls.addClassCleanup(stack.pop_all().close)
 

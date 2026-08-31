@@ -17,7 +17,6 @@ from test.support import (
     SHORT_TIMEOUT,
 )
 from test.support.script_helper import kill_python
-from test.support.import_helper import import_module
 
 try:
     import pty
@@ -99,12 +98,8 @@ def run_on_interactive_mode(source):
 @support.force_not_colorized_test_class
 class TestInteractiveInterpreter(unittest.TestCase):
 
-    @cpython_only
-    # Python built with Py_TRACE_REFS fail with a fatal error in
-    # _PyRefchain_Trace() on memory allocation error.
-    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
+    @support.nomemtest
     def test_no_memory(self):
-        import_module("_testcapi")
         # Issue #30696: Fix the interactive interpreter looping endlessly when
         # no memory. Check also that the fix does not break the interactive
         # loop when an exception is raised.
@@ -156,6 +151,36 @@ class TestInteractiveInterpreter(unittest.TestCase):
         p.stdin.write(user_input)
         output = kill_python(p)
         self.assertEqual(p.returncode, 0)
+
+    @unittest.skipIf(sys.platform == "win32", "select() cannot wait for pipes")
+    def test_secondary_prompt_is_not_read_ahead(self):
+        process = spawn_repl()
+        output = ""
+
+        def read_until(marker, start=0):
+            nonlocal output
+            while marker not in output[start:]:
+                ready, _, _ = select.select(
+                    [process.stdout], [], [], SHORT_TIMEOUT
+                )
+                self.assertTrue(ready, output)
+                data = os.read(process.stdout.fileno(), 4096)
+                self.assertTrue(data, output)
+                output += data.decode()
+
+        try:
+            read_until(">>> ")
+            process.stdin.write("(\n")
+            process.stdin.flush()
+            read_until("... ")
+            after_secondary_prompt = len(output)
+
+            process.stdin.write("1)\n")
+            process.stdin.flush()
+            read_until(">>> ", after_secondary_prompt)
+            self.assertEqual(output[after_secondary_prompt:], "1\n>>> ")
+        finally:
+            kill_python(process)
 
     @cpython_only
     def test_lexer_buffer_realloc_with_null_start(self):

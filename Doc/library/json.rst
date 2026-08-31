@@ -211,7 +211,7 @@ Basic Usage
       a string (such as ``"\t"``) is used to indent each level.
       If zero, negative, or ``""`` (the empty string),
       only newlines are inserted.
-      If ``None`` (the default), the most compact representation is used.
+      If ``None`` (the default), no newlines are inserted.
    :type indent: int | str | None
 
    :param separators:
@@ -486,7 +486,7 @@ Encoders and Decoders
    +----------------------------------------+---------------+
    | Python                                 | JSON          |
    +========================================+===============+
-   | dict                                   | object        |
+   | dict, frozendict                       | object        |
    +----------------------------------------+---------------+
    | list, tuple                            | array         |
    +----------------------------------------+---------------+
@@ -503,6 +503,9 @@ Encoders and Decoders
 
    .. versionchanged:: 3.4
       Added support for int- and float-derived Enum classes.
+
+   .. versionchanged:: 3.15
+      Added support for :class:`frozendict`.
 
    To extend this to recognize other objects, subclass and implement a
    :meth:`~JSONEncoder.default` method with another method that returns a serializable object

@@ -7,10 +7,10 @@ Definition slots
 
 To define :ref:`module objects <moduleobjects>` and
 :ref:`classes <creating-heap-types>` using the C API, you may use
-an array of *slots* -- essentally, key-value pairs that describe features
+an array of *slots* -- essentially, key-value pairs that describe features
 of the object to create.
 This decouples the data from the structures used at runtime, allowing CPython
--- and other Python C API implementations -- to update the stuctures without
+-- and other Python C API implementations -- to update the structures without
 breaking backwards compatibility.
 
 This section documents slots in general.

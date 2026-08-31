@@ -87,12 +87,17 @@ __all__ = [
 
 
 import os as _os
-import re as _re
 import sys as _sys
-from gettext import gettext as _
-from gettext import ngettext
 
 lazy import _colorize
+lazy import copy
+lazy import difflib
+lazy import re as _re
+lazy import shutil
+lazy import textwrap
+lazy import warnings
+lazy from gettext import gettext as _
+lazy from gettext import ngettext
 
 SUPPRESS = '==SUPPRESS=='
 
@@ -143,10 +148,8 @@ def _copy_items(items):
         return []
     # The copy module is used only in the 'append' and 'append_const'
     # actions, and it is needed only when the default value isn't a list.
-    # Delay its import for speeding up the common case.
     if type(items) is list:
         return items[:]
-    import copy
     return copy.copy(items)
 
 
@@ -163,6 +166,8 @@ class _ColorlessTheme:
     def __getattr__(self, name):
         # _colorize's no_color themes are just all empty strings
         # by directly using empty strings the import is avoided
+        if name.startswith("_"):
+            raise AttributeError(name)
         return ""
 
 _colorless_theme = _ColorlessTheme()
@@ -184,7 +189,6 @@ class HelpFormatter(object):
     ):
         # default setting for width
         if width is None:
-            import shutil
             width = shutil.get_terminal_size().columns
             width -= 2
 
@@ -709,7 +713,7 @@ class HelpFormatter(object):
         return result
 
     def _expand_help(self, action):
-        help_string = self._get_help_string(action)
+        help_string = str(self._get_help_string(action))
         if '%' not in help_string:
             return self._apply_text_markup(help_string)
         params = dict(vars(action), prog=self._prog)
@@ -771,14 +775,38 @@ class HelpFormatter(object):
 
     def _split_lines(self, text, width):
         text = self._whitespace_matcher.sub(' ', text).strip()
-        # The textwrap module is used only for formatting help.
-        # Delay its import for speeding up the common usage of argparse.
-        import textwrap
-        return textwrap.wrap(text, width)
+        decolored = self._decolor(text)
+        if decolored == text:
+            return textwrap.wrap(text, width)
+
+        # gh-142035: colors inflate textwrap's length counts, so wrap
+        # the decolored text and re-apply colors per word; if textwrap
+        # split a word, keep the plain lines (colors can't be mapped).
+        plain = self._whitespace_matcher.sub(' ', decolored).strip()
+        if not plain:
+            # nothing visible to wrap (e.g. an empty interpolated value)
+            return [text]
+        plain_lines = textwrap.wrap(plain, width)
+        plain_words = plain.split()
+        colored_words = text.split()
+        # Drop escape-only tokens (e.g. an empty interpolated value).
+        if len(colored_words) != len(plain_words):
+            colored_words = [
+                word for word in colored_words if self._decolor(word)
+            ]
+        colored_lines = []
+        start = 0
+        for plain_line in plain_lines:
+            plain_line_words = plain_line.split()
+            end = start + len(plain_line_words)
+            if plain_words[start:end] != plain_line_words:
+                return plain_lines
+            colored_lines.append(' '.join(colored_words[start:end]))
+            start = end
+        return colored_lines
 
     def _fill_text(self, text, width, indent):
         text = self._whitespace_matcher.sub(' ', text).strip()
-        import textwrap
         return textwrap.fill(text, width,
                              initial_indent=indent,
                              subsequent_indent=indent)
@@ -1456,7 +1484,6 @@ class FileType(object):
     """
 
     def __init__(self, mode='r', bufsize=-1, encoding=None, errors=None):
-        import warnings
         warnings.warn(
             "FileType is deprecated. Simply open files after parsing arguments.",
             category=PendingDeprecationWarning,
@@ -1517,6 +1544,12 @@ class Namespace(_AttributeHolder):
 
     def __contains__(self, key):
         return key in self.__dict__
+
+    def __replace__(self, /, **changes):
+        new = self.__class__()
+        new.__dict__.update(self.__dict__)
+        new.__dict__.update(changes)
+        return new
 
 
 class _ActionsContainer(object):
@@ -1863,7 +1896,6 @@ class _ArgumentGroup(_ActionsContainer):
 
     def __init__(self, container, title=None, description=None, **kwargs):
         if 'prefix_chars' in kwargs:
-            import warnings
             depr_msg = (
                 "The use of the undocumented 'prefix_chars' parameter in "
                 "ArgumentParser.add_argument_group() is deprecated."
@@ -1937,6 +1969,9 @@ def _prog_name(prog=None):
         modspec = None
     if modspec is None:
         # simple script
+        return _os.path.basename(arg0)
+    if modspec.name != '__main__' and arg0 != modspec.origin:
+        # named module executed as main without altering sys.argv[0]
         return _os.path.basename(arg0)
     py = _os.path.basename(_sys.executable)
     if modspec.name != '__main__':
@@ -2794,7 +2829,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
             if self.suggest_on_error and isinstance(value, str):
                 if all(isinstance(choice, str) for choice in action.choices):
-                    import difflib
                     suggestions = difflib.get_close_matches(value, action.choices, 1)
                     if suggestions:
                         args['closest'] = suggestions[0]
@@ -2883,11 +2917,14 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self._print_message(help_text, file)
 
     def _print_message(self, message, file=None):
-        if message:
-            file = file or _sys.stderr
+        if not message:
+            return
+        if file is None:
+            file = _sys.stderr
+        if file is not None:
             try:
                 file.write(message)
-            except (AttributeError, OSError):
+            except OSError:
                 pass
 
     def _get_theme(self, file=None):
@@ -2934,8 +2971,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
 def __getattr__(name):
     if name == "__version__":
-        from warnings import _deprecated
-
-        _deprecated("__version__", remove=(3, 20))
+        warnings._deprecated("__version__", remove=(3, 20))
         return "1.1"  # Do not change
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
