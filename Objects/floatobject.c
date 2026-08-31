@@ -1896,6 +1896,9 @@ PyFloat_Pack2(double x, char *data, int le)
 {
     unsigned char *p = (unsigned char *)data;
 #if HAVE_FLOAT16
+    /* Conversion can change NaNs type or alter payload.  Here we
+       just fallback to the generic code, instead of providing
+       workarounds as for single/double precision. */
     if (!isnan(x)) {
         _Float16 y = (_Float16)x;
 
@@ -2128,6 +2131,7 @@ PyFloat_Unpack2(const char *data, int le)
     if (!isnan(x16)) {
         return x16;
     }
+    /* Fallback to the generic code for NaNs, see PyFloat_Pack2(). */
 #endif
     unsigned char sign;
     int e;
