@@ -110,7 +110,7 @@ def runtest_refleak(test_name, test_func,
     # Store the deltas as raw values in arrays rather than as int objects in
     # lists: each unique delta stored as an object would live until the end of
     # the loop and show up in the following repetition's reference and memory
-    # block deltas (bpo-31217, gh-155981).
+    # block deltas (gh-75400, gh-155981).
     rep_range = list(range(repcount))
     rc_deltas = array('q', [0]) * repcount
     alloc_deltas = array('q', [0]) * repcount
