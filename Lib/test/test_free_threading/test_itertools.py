@@ -5,6 +5,7 @@ from itertools import (
     chain,
     combinations_with_replacement,
     cycle,
+    pairwise,
     permutations,
     tee,
     zip_longest,
