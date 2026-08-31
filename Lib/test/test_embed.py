@@ -599,7 +599,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def check_program_exitcode(self, *args, check_stderr=True, **kwargs):
         out, err = self.run_embedded_interpreter(*args, **kwargs)
-        self.assertIn('ok! Py_RunMain() returned 123', out.rstrip())
+        self.assertEqual(out.rstrip(), 'ok! Py_RunMain() returned 123')
         if check_stderr:
             self.assertEqual(err, '')
 
