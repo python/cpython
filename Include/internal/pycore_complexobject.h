@@ -27,6 +27,9 @@ PyAPI_FUNC(Py_complex) _Py_cr_prod(Py_complex, double);
 PyAPI_FUNC(Py_complex) _Py_cr_quot(Py_complex, double);
 PyAPI_FUNC(Py_complex) _Py_rc_quot(double, Py_complex);
 
+PyAPI_FUNC(bool) _Py_c_isnan(Py_complex);
+PyAPI_FUNC(bool) _Py_c_isinf(Py_complex);
+PyAPI_FUNC(bool) _Py_c_isfinite(Py_complex);
 
 #ifdef __cplusplus
 }

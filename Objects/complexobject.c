@@ -28,6 +28,24 @@ class complex "PyComplexObject *" "&PyComplex_Type"
 
 static Py_complex c_1 = {1., 0.};
 
+bool
+_Py_c_isnan(Py_complex a)
+{
+    return isnan(a.real) || isnan(a.imag);
+}
+
+bool
+_Py_c_isinf(Py_complex a)
+{
+    return isinf(a.real) || isinf(a.imag);
+}
+
+bool
+_Py_c_isfinite(Py_complex a)
+{
+    return isfinite(a.real) && isfinite(a.imag);
+}
+
 Py_complex
 _Py_c_sum(Py_complex a, Py_complex b)
 {
@@ -98,7 +116,7 @@ _Py_c_prod(Py_complex z, Py_complex w)
     if (isnan(r.real) && isnan(r.imag)) {
         int recalc = 0;
 
-        if (isinf(a) || isinf(b)) {  /* z is infinite */
+        if (_Py_c_isinf(z)) {
             /* "Box" the infinity and change nans in the other factor to 0 */
             a = copysign(isinf(a) ? 1.0 : 0.0, a);
             b = copysign(isinf(b) ? 1.0 : 0.0, b);
@@ -110,7 +128,7 @@ _Py_c_prod(Py_complex z, Py_complex w)
             }
             recalc = 1;
         }
-        if (isinf(c) || isinf(d)) {  /* w is infinite */
+        if (_Py_c_isinf(w)) {
             /* "Box" the infinity and change nans in the other factor to 0 */
             c = copysign(isinf(c) ? 1.0 : 0.0, c);
             d = copysign(isinf(d) ? 1.0 : 0.0, d);
@@ -224,17 +242,13 @@ _Py_c_quot(Py_complex a, Py_complex b)
     /* Recover infinities and zeros that computed as nan+nanj.  See e.g.
        the C11, Annex G.5.2, routine _Cdivd(). */
     if (isnan(r.real) && isnan(r.imag)) {
-        if ((isinf(a.real) || isinf(a.imag))
-            && isfinite(b.real) && isfinite(b.imag))
-        {
+        if (_Py_c_isinf(a) && _Py_c_isfinite(b)) {
             const double x = copysign(isinf(a.real) ? 1.0 : 0.0, a.real);
             const double y = copysign(isinf(a.imag) ? 1.0 : 0.0, a.imag);
             r.real = INFINITY * (x*b.real + y*b.imag);
             r.imag = INFINITY * (y*b.real - x*b.imag);
         }
-        else if ((isinf(abs_breal) || isinf(abs_bimag))
-                 && isfinite(a.real) && isfinite(a.imag))
-        {
+        else if (_Py_c_isinf(b) && _Py_c_isfinite(a)) {
             const double x = copysign(isinf(b.real) ? 1.0 : 0.0, b.real);
             const double y = copysign(isinf(b.imag) ? 1.0 : 0.0, b.imag);
             r.real = 0.0 * (a.real*x + a.imag*y);
@@ -291,9 +305,7 @@ _Py_rc_quot(double a, Py_complex b)
         r.real = r.imag = Py_NAN;
     }
 
-    if (isnan(r.real) && isnan(r.imag) && isfinite(a)
-        && (isinf(abs_breal) || isinf(abs_bimag)))
-    {
+    if (isnan(r.real) && isnan(r.imag) && isfinite(a) && _Py_c_isinf(b)) {
         const double x = copysign(isinf(b.real) ? 1.0 : 0.0, b.real);
         const double y = copysign(isinf(b.imag) ? 1.0 : 0.0, b.imag);
         r.real = 0.0 * (a*x);
@@ -306,20 +318,25 @@ _Py_rc_quot(double a, Py_complex b)
 #pragma optimize("", on)
 #endif
 
-Py_complex
-_Py_c_pow(Py_complex a, Py_complex b)
+static Py_complex
+c_pow(Py_complex a, Py_complex b)
 {
     Py_complex r;
     double vabs,len,at,phase;
+
     if (b.real == 0. && b.imag == 0.) {
         r.real = 1.;
         r.imag = 0.;
     }
     else if (a.real == 0. && a.imag == 0.) {
-        if (b.imag != 0. || b.real < 0.)
-            errno = EDOM;
-        r.real = 0.;
-        r.imag = 0.;
+        if (b.imag != 0. || b.real < 0.) {
+            r.real = NAN;
+            r.imag = NAN;
+        }
+        else {
+            r.real = 0.;
+            r.imag = 0.;
+        }
     }
     else {
         vabs = hypot(a.real,a.imag);
@@ -332,8 +349,25 @@ _Py_c_pow(Py_complex a, Py_complex b)
         }
         r.real = len*cos(phase);
         r.imag = len*sin(phase);
+    }
+    return r;
+}
 
-        _Py_ADJUST_ERANGE2(r.real, r.imag);
+Py_complex
+_Py_c_pow(Py_complex a, Py_complex b)
+{
+    int saved_errno = errno;
+    Py_complex r = c_pow(a, b);
+
+    if (_Py_c_isnan(r) && a.real == 0 && a.imag == 0) {
+        errno = EDOM;
+        r.real = r.imag = 0.0; /* and set r as documented */
+    }
+    else if (_Py_c_isinf(r) && _Py_c_isfinite(a) && _Py_c_isfinite(b)) {
+        errno = ERANGE;
+    }
+    else {
+        errno = saved_errno;
     }
     return r;
 }
@@ -370,7 +404,7 @@ _Py_c_abs(Py_complex z)
     /* sets errno = ERANGE on overflow;  otherwise errno = 0 */
     double result;
 
-    if (!isfinite(z.real) || !isfinite(z.imag)) {
+    if (!_Py_c_isfinite(z)) {
         /* C99 rules: if either the real or the imaginary part is an
            infinity, return infinity, even if the other part is a
            NaN. */
@@ -748,23 +782,20 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
         PyErr_SetString(PyExc_ValueError, "complex modulo");
         return NULL;
     }
-    errno = 0;
     // Check whether the exponent has a small integer value, and if so use
     // a faster and more accurate algorithm.
     if (b.imag == 0.0 && b.real == floor(b.real) && fabs(b.real) <= 100.0) {
         p = c_powi(a, (long)b.real);
-        _Py_ADJUST_ERANGE2(p.real, p.imag);
     }
     else {
-        p = _Py_c_pow(a, b);
+        p = c_pow(a, b);
     }
-
-    if (errno == EDOM) {
+    if (_Py_c_isnan(p) && a.real == 0 && a.imag == 0) {
         PyErr_SetString(PyExc_ZeroDivisionError,
                         "zero to a negative or complex power");
         return NULL;
     }
-    else if (errno == ERANGE) {
+    else if (_Py_c_isinf(p) && _Py_c_isfinite(a) && _Py_c_isfinite(b)) {
         PyErr_SetString(PyExc_OverflowError,
                         "complex exponentiation");
         return NULL;

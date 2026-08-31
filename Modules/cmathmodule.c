@@ -140,7 +140,7 @@ special_type(double d)
 }
 
 #define SPECIAL_VALUE(z, table)                       \
-    if (!isfinite((z).real) || !isfinite((z).imag)) { \
+    if (!_Py_c_isfinite(z)) {                         \
         errno = 0;                                    \
         return table[special_type((z).real)]          \
                     [special_type((z).imag)];         \
@@ -446,7 +446,7 @@ cmath_cosh_impl(PyObject *module, Py_complex z)
     double x_minus_one;
 
     /* special treatment for cosh(+/-inf + iy) if y is not a NaN */
-    if (!isfinite(z.real) || !isfinite(z.imag)) {
+    if (!_Py_c_isfinite(z)) {
         if (isinf(z.real) && isfinite(z.imag) &&
             (z.imag != 0.)) {
             if (z.real > 0) {
@@ -482,7 +482,7 @@ cmath_cosh_impl(PyObject *module, Py_complex z)
         r.imag = sin(z.imag) * sinh(z.real);
     }
     /* detect overflow, and set errno accordingly */
-    if (isinf(r.real) || isinf(r.imag))
+    if (_Py_c_isinf(r))
         errno = ERANGE;
     else
         errno = 0;
@@ -515,7 +515,7 @@ cmath_exp_impl(PyObject *module, Py_complex z)
     Py_complex r;
     double l;
 
-    if (!isfinite(z.real) || !isfinite(z.imag)) {
+    if (!_Py_c_isfinite(z)) {
         if (isinf(z.real) && isfinite(z.imag)
             && (z.imag != 0.)) {
             if (z.real > 0) {
@@ -552,7 +552,7 @@ cmath_exp_impl(PyObject *module, Py_complex z)
         r.imag = l*sin(z.imag);
     }
     /* detect overflow, and set errno accordingly */
-    if (isinf(r.real) || isinf(r.imag))
+    if (_Py_c_isinf(r))
         errno = ERANGE;
     else
         errno = 0;
@@ -708,7 +708,7 @@ cmath_sinh_impl(PyObject *module, Py_complex z)
 
     /* special treatment for sinh(+/-inf + iy) if y is finite and
        nonzero */
-    if (!isfinite(z.real) || !isfinite(z.imag)) {
+    if (!_Py_c_isfinite(z)) {
         if (isinf(z.real) && isfinite(z.imag)
             && (z.imag != 0.)) {
             if (z.real > 0) {
@@ -742,7 +742,7 @@ cmath_sinh_impl(PyObject *module, Py_complex z)
         r.imag = sin(z.imag) * cosh(z.real);
     }
     /* detect overflow, and set errno accordingly */
-    if (isinf(r.real) || isinf(r.imag))
+    if (_Py_c_isinf(r))
         errno = ERANGE;
     else
         errno = 0;
@@ -894,7 +894,7 @@ cmath_tanh_impl(PyObject *module, Py_complex z)
 
     /* special treatment for tanh(+/-inf + iy) if y is finite and
        nonzero */
-    if (!isfinite(z.real) || !isfinite(z.imag)) {
+    if (!_Py_c_isfinite(z)) {
         if (isinf(z.real) && isfinite(z.imag)
             && (z.imag != 0.)) {
             if (z.real > 0) {
@@ -1129,7 +1129,7 @@ static PyObject *
 cmath_isfinite_impl(PyObject *module, Py_complex z)
 /*[clinic end generated code: output=ac76611e2c774a36 input=e224f5c36d94f5da]*/
 {
-    return PyBool_FromLong(isfinite(z.real) && isfinite(z.imag));
+    return PyBool_FromLong(_Py_c_isfinite(z));
 }
 
 /*[clinic input]
@@ -1142,7 +1142,7 @@ static PyObject *
 cmath_isnan_impl(PyObject *module, Py_complex z)
 /*[clinic end generated code: output=e7abf6e0b28beab7 input=71799f5d284c9baf]*/
 {
-    return PyBool_FromLong(isnan(z.real) || isnan(z.imag));
+    return PyBool_FromLong(_Py_c_isnan(z));
 }
 
 /*[clinic input]
@@ -1155,7 +1155,7 @@ static PyObject *
 cmath_isinf_impl(PyObject *module, Py_complex z)
 /*[clinic end generated code: output=502a75a79c773469 input=363df155c7181329]*/
 {
-    return PyBool_FromLong(isinf(z.real) || isinf(z.imag));
+    return PyBool_FromLong(_Py_c_isinf(z));
 }
 
 /*[clinic input]
@@ -1211,7 +1211,7 @@ cmath_isclose_impl(PyObject *module, Py_complex a, Py_complex b,
        above.
     */
 
-    if (isinf(a.real) || isinf(a.imag) || isinf(b.real) || isinf(b.imag)) {
+    if (_Py_c_isinf(a) || _Py_c_isinf(b)) {
         return 0;
     }
 

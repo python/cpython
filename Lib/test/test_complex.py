@@ -362,6 +362,14 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertRaises(TypeError, pow, None, 1j)
         self.assertAlmostEqual(pow(1j, 0.5), 0.7071067811865476+0.7071067811865475j)
 
+        # No overflows for infinite base
+        r = pow(complex(INF), 2)  # integer power
+        self.assertEqual(r.real, INF)
+        self.assertTrue(isnan(r.imag))
+        r = pow(complex(INF), 2.25)  # generic algorithm
+        self.assertEqual(r.real, INF)
+        self.assertTrue(isnan(r.imag))
+
         a = 3.33+4.43j
         self.assertEqual(a ** 0j, 1)
         self.assertEqual(a ** 0.+0.j, 1)
