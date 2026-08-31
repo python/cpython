@@ -1,1 +1,1 @@
-Add fully qualified name for abc class initialization exception.
+The :exc:`TypeError` raised when instantiating an abstract class with unimplemented abstract methods now includes the fully qualified name of the class.
