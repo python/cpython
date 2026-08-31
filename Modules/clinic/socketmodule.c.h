@@ -2478,4 +2478,4 @@ exit:
 #ifndef _SOCKET_CMSG_SPACE_METHODDEF
     #define _SOCKET_CMSG_SPACE_METHODDEF
 #endif /* !defined(_SOCKET_CMSG_SPACE_METHODDEF) */
-/*[clinic end generated code: output=acc30d6fdeb54e90 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=aa9082b592c39fa5 input=a9049054013a1b77]*/

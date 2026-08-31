@@ -20744,10 +20744,22 @@ then :
   printf "%s\n" "#define HAVE_GRANTPT 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "if_indextoname" "ac_cv_func_if_indextoname"
+if test "x$ac_cv_func_if_indextoname" = xyes
+then :
+  printf "%s\n" "#define HAVE_IF_INDEXTONAME 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "if_nameindex" "ac_cv_func_if_nameindex"
 if test "x$ac_cv_func_if_nameindex" = xyes
 then :
   printf "%s\n" "#define HAVE_IF_NAMEINDEX 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "if_nametoindex" "ac_cv_func_if_nametoindex"
+if test "x$ac_cv_func_if_nametoindex" = xyes
+then :
+  printf "%s\n" "#define HAVE_IF_NAMETOINDEX 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "initgroups" "ac_cv_func_initgroups"
@@ -40179,4 +40191,3 @@ if test "$ac_cv_header_stdatomic_h" != "yes"; then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Your compiler or platform does have a working C11 stdatomic.h. A future version of Python may require stdatomic.h." >&5
 printf "%s\n" "$as_me: Your compiler or platform does have a working C11 stdatomic.h. A future version of Python may require stdatomic.h." >&6;}
 fi
-
