@@ -1197,7 +1197,7 @@ class BaseTestTaskGroup:
         async with asyncio.TaskGroup() as tg:
             task = tg.create_task(child(tg))
         self.assertTrue(task.cancelled())
-        
+
     async def test_taskgroup_cancel_keeps_outer_cancellation(self):
         # gh-155433: any cancellation from outside the group must propagate.
         async def child():
