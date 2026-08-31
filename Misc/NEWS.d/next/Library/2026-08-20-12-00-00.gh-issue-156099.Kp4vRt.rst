@@ -1,0 +1,3 @@
+Fix a crash when deleting the ``keylog_filename`` attribute of
+:class:`ssl.SSLContext`.
+It now raises :exc:`AttributeError`.

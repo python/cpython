@@ -933,6 +933,7 @@ class ElementTreeTest(unittest.TestCase):
             (b"<?xml version='1.0' encoding='ISO-8859-1'?>\n"
              b"<body><tag>\xf8</tag></body>", 'ISO-8859-1', None),
             ('<body><tag>ø</tag></body>', 'unicode', None),
+            (b"\xef\xbb\xbf<body><tag>\xc3\xb8</tag></body>", 'utf-8-sig', None),
 
             # ... xml_declaration = False
             (b"<body><tag>&#248;</tag></body>", None, False),
@@ -940,6 +941,7 @@ class ElementTreeTest(unittest.TestCase):
             (b"<body><tag>&#248;</tag></body>", 'US-ASCII', False),
             (b"<body><tag>\xf8</tag></body>", 'ISO-8859-1', False),
             ("<body><tag>ø</tag></body>", 'unicode', False),
+            (b"\xef\xbb\xbf<body><tag>\xc3\xb8</tag></body>", 'utf-8-sig', False),
 
             # ... xml_declaration = True
             (b"<?xml version='1.0' encoding='us-ascii'?>\n"
@@ -952,6 +954,8 @@ class ElementTreeTest(unittest.TestCase):
              b"<body><tag>\xf8</tag></body>", 'ISO-8859-1', True),
             ("<?xml version='1.0' encoding='utf-8'?>\n"
              "<body><tag>ø</tag></body>", 'unicode', True),
+            (b"\xef\xbb\xbf<?xml version='1.0' encoding='utf-8'?>\n"
+             b"<body><tag>\xc3\xb8</tag></body>", 'utf-8-sig', True),
 
         ]
         for expected_retval, encoding, xml_declaration in TESTCASES:
@@ -1063,6 +1067,34 @@ class ElementTreeTest(unittest.TestCase):
 
         self.assertRaises(ValueError, ET.XML, xml('undefined').encode('ascii'))
         self.assertRaises(LookupError, ET.XML, xml('xxx').encode('ascii'))
+
+    def test_parse_text_source(self):
+        # gh-99064: The encoding declared in the document does not apply
+        # to a source which is already decoded.
+        def check(encoding, body):
+            xml = (f"<?xml version='1.0' encoding='{encoding}'?>"
+                   f"<xml>{body}</xml>")
+            with self.subTest(encoding=encoding):
+                self.assertEqual(ET.parse(io.StringIO(xml)).getroot().text,
+                                 body)
+                # the same with an explicitly created parser
+                self.assertEqual(
+                    ET.parse(io.StringIO(xml), ET.XMLParser()).getroot().text,
+                    body)
+        check("ascii", 'a')
+        check("iso-8859-1", '\xbd')
+        check("iso-8859-15", '\u20ac')
+        check("cp437", '\u221a')
+        check("utf-8", '\u4e2d')
+        # not ASCII compatible, unsupported for a bytes source
+        check("utf-16", '\u4e2d')
+        check("utf-32", '\u4e2d')
+
+    def test_parse_text_source_multiple_chunks(self):
+        # the encoding is overridden before the first chunk is parsed
+        body = '\xe4' * 100_000
+        xml = "<?xml version='1.0' encoding='ISO-8859-1'?><xml>%s</xml>" % body
+        self.assertEqual(ET.parse(io.StringIO(xml)).getroot().text, body)
 
     @support.subTests('sample,exception', [
         (b'<x> \xa1</x>', UnicodeDecodeError),  # crashed
