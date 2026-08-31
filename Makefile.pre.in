@@ -399,10 +399,10 @@ TOKENIZER_OBJS=		\
 		Parser/lexer/number.o \
 		Parser/lexer/state.o \
 		Parser/lexer/string.o \
-		Parser/tokenizer/file_tokenizer.o \
-		Parser/tokenizer/readline_tokenizer.o \
-		Parser/tokenizer/string_tokenizer.o \
-		Parser/tokenizer/utf8_tokenizer.o \
+		Parser/tokenizer/cursor.o \
+		Parser/tokenizer/decoder.o \
+		Parser/tokenizer/reader.o \
+		Parser/tokenizer/source.o \
 		Parser/tokenizer/helpers.o
 
 PEGEN_HEADERS= \
@@ -415,6 +415,10 @@ TOKENIZER_HEADERS= \
 		Parser/lexer/lexer.h \
 		Parser/lexer/lexer_internal.h \
 		Parser/lexer/state.h \
+		Parser/tokenizer/cursor.h \
+		Parser/tokenizer/reader.h \
+		Parser/tokenizer/reader_internal.h \
+		Parser/tokenizer/source.h \
 		Parser/tokenizer/tokenizer.h \
 		Parser/tokenizer/helpers.h
 
@@ -1661,11 +1665,6 @@ FROZEN_FILES_IN = \
 		Lib/zipimport.py \
 		Lib/abc.py \
 		Lib/codecs.py \
-		Lib/encodings/__init__.py \
-		Lib/encodings/aliases.py \
-		Lib/encodings/utf_8.py \
-		Lib/encodings/_win_cp_codecs.py \
-		Lib/encodings/_iconv_codecs.py \
 		Lib/io.py \
 		Lib/_collections_abc.py \
 		Lib/_sitebuiltins.py \
@@ -1692,11 +1691,6 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/zipimport.h \
 		Python/frozen_modules/abc.h \
 		Python/frozen_modules/codecs.h \
-		Python/frozen_modules/encodings.h \
-		Python/frozen_modules/encodings.aliases.h \
-		Python/frozen_modules/encodings.utf_8.h \
-		Python/frozen_modules/encodings._win_cp_codecs.h \
-		Python/frozen_modules/encodings._iconv_codecs.h \
 		Python/frozen_modules/io.h \
 		Python/frozen_modules/_collections_abc.h \
 		Python/frozen_modules/_sitebuiltins.h \
@@ -1745,21 +1739,6 @@ Python/frozen_modules/abc.h: Lib/abc.py $(FREEZE_MODULE_DEPS)
 
 Python/frozen_modules/codecs.h: Lib/codecs.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) codecs $(srcdir)/Lib/codecs.py Python/frozen_modules/codecs.h
-
-Python/frozen_modules/encodings.h: Lib/encodings/__init__.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) encodings $(srcdir)/Lib/encodings/__init__.py Python/frozen_modules/encodings.h
-
-Python/frozen_modules/encodings.aliases.h: Lib/encodings/aliases.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) encodings.aliases $(srcdir)/Lib/encodings/aliases.py Python/frozen_modules/encodings.aliases.h
-
-Python/frozen_modules/encodings.utf_8.h: Lib/encodings/utf_8.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) encodings.utf_8 $(srcdir)/Lib/encodings/utf_8.py Python/frozen_modules/encodings.utf_8.h
-
-Python/frozen_modules/encodings._win_cp_codecs.h: Lib/encodings/_win_cp_codecs.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) encodings._win_cp_codecs $(srcdir)/Lib/encodings/_win_cp_codecs.py Python/frozen_modules/encodings._win_cp_codecs.h
-
-Python/frozen_modules/encodings._iconv_codecs.h: Lib/encodings/_iconv_codecs.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) encodings._iconv_codecs $(srcdir)/Lib/encodings/_iconv_codecs.py Python/frozen_modules/encodings._iconv_codecs.h
 
 Python/frozen_modules/io.h: Lib/io.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) io $(srcdir)/Lib/io.py Python/frozen_modules/io.h
@@ -3483,7 +3462,7 @@ MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h $(srcdir)/Modules/addrinfo.
 MODULE__SSL_DEPS=$(srcdir)/Modules/_ssl.h $(srcdir)/Modules/_ssl/cert.c $(srcdir)/Modules/_ssl/debughelpers.c $(srcdir)/Modules/_ssl/misc.c $(srcdir)/Modules/_ssl_data_111.h $(srcdir)/Modules/_ssl_data_300.h $(srcdir)/Modules/socketmodule.h
 MODULE__TESTCAPI_DEPS=$(srcdir)/Modules/_testcapi/parts.h $(srcdir)/Modules/_testcapi/util.h
 MODULE__TESTLIMITEDCAPI_DEPS=$(srcdir)/Modules/_testlimitedcapi/testcapi_long.h $(srcdir)/Modules/_testlimitedcapi/parts.h $(srcdir)/Modules/_testlimitedcapi/util.h
-MODULE__TESTINTERNALCAPI_DEPS=$(srcdir)/Modules/_testinternalcapi/parts.h $(srcdir)/Python/ceval.h $(srcdir)/Modules/_testinternalcapi/test_targets.h $(srcdir)/Modules/_testinternalcapi/test_cases.c.h
+MODULE__TESTINTERNALCAPI_DEPS=$(srcdir)/Modules/_testinternalcapi/parts.h $(srcdir)/Parser/tokenizer/cursor.h $(srcdir)/Parser/tokenizer/source.h $(srcdir)/Python/ceval.h $(srcdir)/Modules/_testinternalcapi/test_targets.h $(srcdir)/Modules/_testinternalcapi/test_cases.c.h
 MODULE__SQLITE3_DEPS=$(srcdir)/Modules/_sqlite/connection.h $(srcdir)/Modules/_sqlite/cursor.h $(srcdir)/Modules/_sqlite/microprotocols.h $(srcdir)/Modules/_sqlite/module.h $(srcdir)/Modules/_sqlite/prepare_protocol.h $(srcdir)/Modules/_sqlite/row.h $(srcdir)/Modules/_sqlite/util.h
 MODULE__ZSTD_DEPS=$(srcdir)/Modules/_zstd/_zstdmodule.h $(srcdir)/Modules/_zstd/buffer.h $(srcdir)/Modules/_zstd/zstddict.h
 

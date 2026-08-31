@@ -1,37 +1,23 @@
 from __future__ import annotations
 import itertools
 import textwrap
-from typing import TYPE_CHECKING, Literal, Final
+from typing import TYPE_CHECKING, Final
 from operator import attrgetter
 from collections.abc import Iterable
 
 import libclinic.cpp
-from libclinic import (
-    unspecified, fail, Sentinels, VersionTuple)
-from libclinic.codegen import CRenderData, TemplateDict, CodeGen
+from libclinic import unspecified, fail, VersionTuple
+from libclinic.codegen import CRenderData, CodeGen
 from libclinic.language import Language
 from libclinic.function import (
-    Module, Class, Function, Parameter, ParamTuple,
-    permute_optional_groups,
-    GETTER, SETTER, METHOD_INIT)
+    Module, Class, Function, Parameter,
+    group_to_variable_name,
+    GETTER, METHOD_INIT,
+    ACCESSORS, SETTERS)
 from libclinic.converters import self_converter
 from libclinic.parse_args import ParseArgsCodeGen
 if TYPE_CHECKING:
     from libclinic.app import Clinic
-
-
-def count_required(subset: ParamTuple) -> int:
-    """Return the number of arguments which cannot be omitted.
-
-    A parameter in an optional group is passed together with its group,
-    so only trailing parameters with a default value can be omitted.
-    """
-    count = len(subset)
-    for p in reversed(subset):
-        if p.group or not p.is_optional():
-            break
-        count -= 1
-    return count
 
 
 def c_id(name: str) -> str:
@@ -91,7 +77,10 @@ class CLanguage(Language):
         for o in signatures:
             if isinstance(o, Function):
                 if function:
-                    fail("You may specify at most one function per block.\nFound a block containing at least two:\n\t" + repr(function) + " and " + repr(o))
+                    fail("You may specify at most one function per block.\n"
+                         "Found a block containing at least two:\n\t"
+                         + repr(function) + " and " + repr(o),
+                         line_number=o.line_number)
                 function = o
         return self.render_function(clinic, function)
 
@@ -260,145 +249,6 @@ class CLanguage(Language):
         args = ParseArgsCodeGen(f, codegen)
         return args.parse_args(self)
 
-    @staticmethod
-    def group_to_variable_name(group: int) -> str:
-        adjective = "left_" if group < 0 else "right_"
-        return "group_" + adjective + str(abs(group))
-
-    def render_option_group_parsing(
-        self,
-        f: Function,
-        template_dict: TemplateDict,
-        limited_capi: bool,
-    ) -> None:
-        # positional only, grouped, optional arguments!
-        # can be optional on the left or right.
-        # here's an example:
-        #
-        # [ [ [ A1 A2 ] B1 B2 B3 ] C1 C2 ] D1 D2 D3 [ E1 E2 E3 [ F1 F2 F3 ] ]
-        #
-        # Here group D are required, and all other groups are optional.
-        # (Group D's "group" is actually None.)
-        # We can figure out which sets of arguments we have based on
-        # how many arguments are in the tuple.
-        #
-        # Note that you need to count up on both sides.  For example,
-        # you could have groups C+D, or C+D+E, or C+D+E+F.
-        #
-        # What if the number of arguments leads us to an ambiguous result?
-        # Clinic prefers groups on the left.  So in the above example,
-        # five arguments would map to B+C, not C+D.
-        #
-        # A nested group can only be omitted together with the group
-        # containing it, but groups on the same level, like G and H in
-        #
-        # [ G1 G2 ] [ H1 ] I1 I2
-        #
-        # can be omitted independently of each other.
-
-        out = []
-        parameters = list(f.parameters.values())
-        if isinstance(parameters[0].converter, self_converter):
-            del parameters[0]
-
-        # Groups are collected into chains of nested groups.  A group which
-        # is not nested in the preceding one starts a new chain.
-        group: list[Parameter] | None = None
-        left: list[list[list[Parameter]]] = []
-        right: list[list[list[Parameter]]] = []
-        required: list[Parameter] = []
-        last: int | Literal[Sentinels.unspecified] = unspecified
-        last_depth = 0
-
-        for p in parameters:
-            group_id = p.group
-            if group_id != last:
-                last = group_id
-                group = []
-                if group_id == 0:
-                    group = required
-                else:
-                    chains = left if group_id < 0 else right
-                    nested = ((p.group_depth < last_depth) if group_id < 0
-                              else (p.group_depth > last_depth))
-                    if chains and nested:
-                        chains[-1].append(group)
-                    else:
-                        chains.append([group])
-                last_depth = p.group_depth
-            assert group is not None
-            group.append(p)
-
-        # Map the number of arguments to the subset which accepts it.
-        subsets: dict[int, ParamTuple] = {}
-        for subset in permute_optional_groups(left, required, right):
-            for count in range(count_required(subset), len(subset) + 1):
-                if count in subsets:
-                    fail(f"Function {f.full_name!r} has an ambiguous group "
-                         f"configuration: a call with {count} argument(s) "
-                         f"can be parsed in more than one way.")
-                subsets[count] = subset
-
-        if limited_capi:
-            nargs = 'PyTuple_Size(args)'
-        else:
-            nargs = 'PyTuple_GET_SIZE(args)'
-        out.append(f"switch ({nargs}) {{\n")
-        for count, subset in sorted(subsets.items()):
-            if count < len(subset):
-                # The omitted parameters are parsed by the following case.
-                out.append(f"    case {count}:\n")
-                continue
-
-            if count == 0:
-                out.append("""    case 0:
-        break;
-""")
-                continue
-
-            # A set would eliminate duplicates too, but the iteration
-            # order of small negative integers depends on the platform.
-            group_ids = dict.fromkeys(p.group for p in subset)
-            d: dict[str, str | int] = {}
-            d['count'] = count
-            d['name'] = f.name
-            format_units = [p.converter.format_unit for p in subset]
-            n_required = count_required(subset)
-            if n_required < count:
-                format_units.insert(n_required, '|')
-            d['format_units'] = "".join(format_units)
-
-            parse_arguments: list[str] = []
-            for p in subset:
-                p.converter.parse_argument(parse_arguments)
-            d['parse_arguments'] = ", ".join(parse_arguments)
-
-            group_ids.pop(0, None)
-            lines = "\n".join([
-                self.group_to_variable_name(g) + " = 1;"
-                for g in group_ids
-            ])
-
-            s = """\
-    case {count}:
-        if (!PyArg_ParseTuple(args, "{format_units}:{name}", {parse_arguments})) {{
-            goto exit;
-        }}
-        {group_booleans}
-        break;
-"""
-            s = libclinic.linear_format(s, group_booleans=lines)
-            s = s.format_map(d)
-            out.append(s)
-
-        out.append("    default:\n")
-        s = '        PyErr_SetString(PyExc_TypeError, "{} requires {} to {} arguments");\n'
-        out.append(s.format(f.full_name, min(subsets), max(subsets)))
-        out.append('        goto exit;\n')
-        out.append("}")
-
-        template_dict['option_group_parsing'] = libclinic.format_escape("".join(out))
-
     def render_function(
         self,
         clinic: Clinic,
@@ -451,7 +301,7 @@ class CLanguage(Language):
             if last_group != group:
                 last_group = group
                 if group:
-                    group_name = self.group_to_variable_name(group)
+                    group_name = group_to_variable_name(group)
                     data.impl_arguments.append(group_name)
                     data.declarations.append("int " + group_name + " = 0;")
                     data.impl_parameters.append("int " + group_name)
@@ -461,7 +311,8 @@ class CLanguage(Language):
 
         if has_option_groups and (not positional):
             fail("You cannot use optional groups ('[' and ']') "
-                 "unless all parameters are positional-only ('/').")
+                 "unless all parameters are positional-only ('/').",
+                 line_number=f.line_number)
 
         # HACK
         # when we're METH_O, but have a custom return converter,
@@ -478,12 +329,12 @@ class CLanguage(Language):
         full_name = f.full_name
         template_dict = {'full_name': full_name}
         template_dict['name'] = f.displayname
-        if f.kind in {GETTER, SETTER}:
+        if f.kind in ACCESSORS:
             template_dict['getset_name'] = f.c_basename.upper()
             template_dict['getset_basename'] = f.c_basename
             if f.kind is GETTER:
                 template_dict['c_basename'] = f.c_basename + "_get"
-            elif f.kind is SETTER:
+            else:
                 template_dict['c_basename'] = f.c_basename + "_set"
                 # Implicitly add the setter value parameter.
                 data.impl_parameters.append("PyObject *value")
@@ -498,7 +349,7 @@ class CLanguage(Language):
         for converter in converters:
             converter.set_template_dict(template_dict)
 
-        if f.kind not in {SETTER, METHOD_INIT}:
+        if f.kind not in SETTERS | {METHOD_INIT}:
             f.return_converter.render(f, data)
         template_dict['impl_return_type'] = f.return_converter.type
 
@@ -535,16 +386,9 @@ class CLanguage(Language):
         template_dict['unpack_min'] = str(unpack_min)
         template_dict['unpack_max'] = str(unpack_max)
 
-        if has_option_groups:
-            self.render_option_group_parsing(f, template_dict,
-                                             limited_capi=codegen.limited_capi)
-
         # buffers, not destination
         for name, destination in clinic.destination_buffers.items():
             template = templates[name]
-            if has_option_groups:
-                template = libclinic.linear_format(template,
-                        option_group_parsing=template_dict['option_group_parsing'])
             template = libclinic.linear_format(template,
                 declarations=template_dict['declarations'],
                 return_conversion=template_dict['return_conversion'],

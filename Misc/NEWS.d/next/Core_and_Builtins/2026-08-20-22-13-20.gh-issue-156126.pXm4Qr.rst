@@ -1,0 +1,3 @@
+Fix a crash when importing a module whose name contains characters that
+cannot be encoded to UTF-8 (such as lone surrogates) while :option:`-X
+importtime <-X>` is enabled.
