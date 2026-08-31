@@ -573,6 +573,13 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
                                                                self.max_size)
         except OSError as exc:
             self._protocol.error_received(exc)
+            if not self._closing and not self._conn_lost:
+                # Some errors are transient and recoverable, e.g. a
+                # ConnectionResetError raised synchronously by WSARecvFrom()
+                # from a stale ICMP port-unreachable notification on a UDP
+                # socket. Re-arm the read loop instead of leaving it dead
+                # (gh-127057).
+                self._loop.call_soon(self._loop_reading)
         except exceptions.CancelledError:
             if not self._closing:
                 raise
