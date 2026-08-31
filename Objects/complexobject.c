@@ -795,9 +795,11 @@ complex_abs(PyObject *op)
     PyComplexObject *v = _PyComplexObject_CAST(op);
     double result;
 
-    errno = 0;
-    result = _Py_c_abs(v->cval);
-    if (errno == ERANGE) {
+    result = hypot(v->cval.real, v->cval.imag);
+    /* Testing FE_OVERFLOW floating-point exception is slow. */
+    if (isfinite(v->cval.real) && isfinite(v->cval.imag)
+        && !isfinite(result))
+    {
         PyErr_SetString(PyExc_OverflowError,
                         "absolute value too large");
         return NULL;
