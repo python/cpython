@@ -1898,23 +1898,21 @@ PyFloat_Pack2(double x, char *data, int le)
 #if HAVE_FLOAT16
     if (!isnan(x)) {
         _Float16 y = (_Float16)x;
-        int i, incr = 1;
 
         if (isinf(y) && !isinf(x)) {
             goto Overflow;
         }
 
         unsigned char s[sizeof(_Float16)];
+
         memcpy(s, &y, sizeof(_Float16));
-
         if ((_PY_FLOAT_LITTLE_ENDIAN && !le) || (_PY_FLOAT_BIG_ENDIAN && le)) {
-            p += 1;
-            incr = -1;
+            p[1] = s[0];
+            p[0] = s[1];
         }
-
-        for (i = 0; i < 2; i++) {
-            *p = s[i];
-            p += incr;
+        else {
+            p[0] = s[0];
+            p[1] = s[1];
         }
         return 0;
     }
@@ -2119,12 +2117,9 @@ PyFloat_Unpack2(const char *data, int le)
 
     if ((_PY_FLOAT_LITTLE_ENDIAN && !le) || (_PY_FLOAT_BIG_ENDIAN && le)) {
         char buf[2];
-        char *d = &buf[1];
-        int i;
 
-        for (i = 0; i < 2; i++) {
-            *d-- = *p++;
-        }
+        buf[1] = p[0];
+        buf[0] = p[1];
         memcpy(&x16, buf, 2);
     }
     else {
@@ -2133,7 +2128,6 @@ PyFloat_Unpack2(const char *data, int le)
     if (!isnan(x16)) {
         return x16;
     }
-    p = (unsigned char *)data;
 #endif
     unsigned char sign;
     int e;
