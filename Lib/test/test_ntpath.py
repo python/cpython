@@ -1585,11 +1585,15 @@ class TestNtpath(NtpathTestCase):
                 except (OSError, subprocess.CalledProcessError):
                     raise unittest.SkipTest('creating the test junction failed')
 
-                for path in 'testjunc', 'testjunc/spam', 'testjunc/spam/eggs':
-                    with self.subTest(path=path):
-                        realpath = ntpath.realpath(path)
-                        self.assertStartsWith(realpath, '\\\\?\\Volume{')
-                        self.assertTrue(ntpath.isabs(realpath), realpath)
+                try:
+                    for path in 'testjunc', 'testjunc/spam', 'testjunc/spam/eggs':
+                        with self.subTest(path=path):
+                            realpath = ntpath.realpath(path)
+                            self.assertStartsWith(realpath, '\\\\?\\Volume{')
+                            self.assertTrue(ntpath.isabs(realpath), realpath)
+                finally:
+                    # Remove the junction, not the volume it points to.
+                    os_helper.rmdir('testjunc')
 
     def test_isfile_invalid_paths(self):
         isfile = ntpath.isfile
