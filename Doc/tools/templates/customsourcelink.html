@@ -1,25 +1,35 @@
-{%- if page_source_suffix is defined %}
+{%- if page_source_path is defined %}
+  {%- set source_path = page_source_path %}
+{%- elif page_source_suffix is defined %}
+  {%- set source_path = pagename + '.rst' %}
+{%- else %}
+  {%- set source_path = none %}
+{%- endif %}
+{%- if page_source_suffix is defined or show_page_menu|default(false) %}
+  {% if source_path %}
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const title = document.querySelector('meta[property="og:title"]').content;
+        const title = document.querySelector('.body h1').textContent;
         const elements = document.querySelectorAll('.improvepage');
         const pageurl = window.location.href.split('?')[0];
         elements.forEach(element => {
             const url = new URL(element.href.split('?')[0].replace("-nojs", ""));
             url.searchParams.set('pagetitle', title);
             url.searchParams.set('pageurl', pageurl);
-            url.searchParams.set('pagesource', "{{ pagename }}.rst");
+            url.searchParams.set('pagesource', "{{ source_path }}");
             element.href = url.toString();
         });
     });
   </script>
+  {% endif %}
   <div role="note" aria-label="source link">
     <h3>{{ _('This page') }}</h3>
     <ul class="this-page-menu">
       <li><a href="{{ pathto('bugs') }}">{% trans %}Report a bug{% endtrans %}</a></li>
-      <li><a class="improvepage" href="{{ pathto('improve-page-nojs') }}">{% trans %}Improve this page{% endtrans %}</a></li>
+      <li><a{% if source_path %} class="improvepage"{% endif %} href="{{ pathto('improve-page-nojs') }}">{% trans %}Improve this page{% endtrans %}</a></li>
+      {% if source_path %}
       <li>
-        <a href="https://github.com/python/cpython/blob/{{ source_branch }}/Doc/{{ pagename }}.rst?plain=1"
+        <a href="https://github.com/python/cpython/blob/{{ source_branch }}/Doc/{{ source_path }}?plain=1"
             rel="nofollow">{{ _('Show source') }}
         </a>
       </li>

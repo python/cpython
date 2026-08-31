@@ -12,6 +12,12 @@ if TYPE_CHECKING:
     from sphinx.util.typing import ExtensionMetadata
 
 
+_TEMPLATE_SOURCES = {
+    'download': 'tools/templates/download.html',
+    'search': 'tools/templates/search.html',
+}
+
+
 def _has_module_index(app: Sphinx) -> bool:
     return any(
         name == 'py-modindex' for name, *_ in app.builder.domain_indices
@@ -109,6 +115,12 @@ def add_meta_page_relations(
 ) -> None:
     if app.builder.name != 'html':
         return
+
+    if pagename in _TEMPLATE_SOURCES:
+        context['show_page_menu'] = True
+        context['page_source_path'] = _TEMPLATE_SOURCES[pagename]
+    elif pagename == 'py-modindex' or pagename.startswith('genindex'):
+        context['show_page_menu'] = True
 
     index_flow = ['glossary']
     if _has_module_index(app):
