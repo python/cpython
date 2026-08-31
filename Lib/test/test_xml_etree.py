@@ -947,6 +947,24 @@ class ElementTreeTest(unittest.TestCase):
             [sorted(e.attrib.items()) for e in elem.iter()]
         )
 
+    def test_tostring_default_namespace_registered_empty_prefix(self):
+        # gh-118416: the empty prefix is registered for other namespace,
+        # so it cannot be used for the default namespace
+        nsmap = ET.register_namespace._namespace_map
+        self.addCleanup(nsmap.pop, 'default', None)
+        ET.register_namespace('', 'default')
+        elem = ET.Element('{default}elem')
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode',
+                        default_namespace='otherdefault'),
+            '<ns1:elem xmlns="otherdefault" xmlns:ns1="default" />'
+        )
+        # without the option the registered prefix is used
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode'),
+            '<elem xmlns="default" />'
+        )
+
     def test_tostring_no_xml_declaration(self):
         elem = ET.XML('<body><tag/></body>')
         self.assertEqual(

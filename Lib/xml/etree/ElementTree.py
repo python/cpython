@@ -827,14 +827,16 @@ def _namespaces(elem, default_namespace=None):
         if isattr:
             prefix = attr_prefixes.get(uri)
             if prefix is None:
-                # the default namespace is of no use for an attribute name
+                # the empty prefix is of no use for an attribute name
                 prefix = prefixes.get(uri) or None
         else:
             prefix = prefixes.get(uri)
         if prefix is not None:
             return prefix
         prefix = _namespace_map.get(uri)
-        if not prefix:
+        if prefix is None or not prefix and (isattr or default_namespace):
+            # the empty prefix is of no use for an attribute name,
+            # and the default namespace is used for other uri
             prefix = "ns%d" % len(namespaces)
         if prefix != "xml":
             namespaces[prefix] = uri
