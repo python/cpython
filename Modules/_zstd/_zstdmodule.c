@@ -274,7 +274,7 @@ _zstd_train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
                       PyObject *samples_sizes, Py_ssize_t dict_size)
 /*[clinic end generated code: output=8e87fe43935e8f77 input=d20dedb21c72cb62]*/
 {
-    PyObject *dst_dict_bytes = NULL;
+    PyBytesWriter *dst_dict_bytes = NULL;
     size_t *chunk_sizes = NULL;
     Py_ssize_t chunks_number;
     size_t zstd_ret;
@@ -294,13 +294,13 @@ _zstd_train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
     }
 
     /* Allocate dict buffer */
-    dst_dict_bytes = PyBytes_FromStringAndSize(NULL, dict_size);
+    dst_dict_bytes = PyBytesWriter_Create(dict_size);
     if (dst_dict_bytes == NULL) {
         goto error;
     }
 
     /* Train the dictionary */
-    char *dst_dict_buffer = PyBytes_AS_STRING(dst_dict_bytes);
+    char *dst_dict_buffer = PyBytesWriter_GetData(dst_dict_bytes);
     const char *samples_buffer = PyBytes_AS_STRING(samples_bytes);
     Py_BEGIN_ALLOW_THREADS
     zstd_ret = ZDICT_trainFromBuffer(dst_dict_buffer, dict_size,
@@ -315,19 +315,15 @@ _zstd_train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
         goto error;
     }
 
-    /* Resize dict_buffer */
-    if (_PyBytes_Resize(&dst_dict_bytes, zstd_ret) < 0) {
-        goto error;
-    }
+    PyMem_Free(chunk_sizes);
 
-    goto success;
+    /* Resize dict_buffer */
+    return PyBytesWriter_FinishWithSize(dst_dict_bytes, zstd_ret);
 
 error:
-    Py_CLEAR(dst_dict_bytes);
-
-success:
+    PyBytesWriter_Discard(dst_dict_bytes);
     PyMem_Free(chunk_sizes);
-    return dst_dict_bytes;
+    return NULL;
 }
 
 /*[clinic input]

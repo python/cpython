@@ -880,6 +880,14 @@ Other language changes
   other, as regular dynamic extensions do.
   (Contributed by Stefano Rivera in :gh:`122931`.)
 
+* The ``__cached__`` attribute on modules, which was deprecated since version
+  3.13, is no longer set or taken into consideration by the import system or
+  standard library.
+  Use :attr:`__spec__.cached <importlib.machinery.ModuleSpec.cached>` instead.
+  (Contributed by Brett Cannon in :gh:`97879`)
+
+  Note that the :attr:`~module.__loader__` and :attr:`~module.__package__`
+  attributes are also deprecated and scheduled for removal.
 
 
 Default interactive shell
@@ -1001,7 +1009,7 @@ base64
 
 * Added the *canonical* parameter in
   :func:`~base64.b32decode`, :func:`~base64.b32hexdecode`,
-  :func:`~base64.b64decode`, :func:`~base64.urlsafe_b64decode`,
+  :func:`~base64.b64decode`,
   :func:`~base64.a85decode`, :func:`~base64.b85decode`, and
   :func:`~base64.z85decode`,
   to reject encodings with non-zero padding bits or other non-canonical
