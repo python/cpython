@@ -271,6 +271,68 @@ class CallStackTestBase:
             ]
         ])
 
+    async def test_stack_as_completed(self):
+        # gh-156523: as_completed() must record the awaiting task
+        stack_for_inner = None
+
+        async def inner():
+            await asyncio.sleep(0)
+            nonlocal stack_for_inner
+            stack_for_inner = capture_test_stack()
+
+        async def main(t):
+            for f in asyncio.as_completed([t]):
+                await f
+
+        t = asyncio.create_task(inner(), name='inner')
+        await main(t)
+        self.assertFalse(t._asyncio_awaited_by)
+
+        self.assertEqual(stack_for_inner[0], [
+            'T<inner>',
+            ['s capture_test_stack', 'a inner'],
+            [
+                ['T<anon>',
+                    ['a get', 'a _wait_for_one', 'a main',
+                     'a test_stack_as_completed'],
+                    []
+                ]
+            ]
+        ])
+
+    async def test_stack_as_completed_timeout(self):
+        # gh-156523: the awaiting task must be dropped when as_completed() times out
+        stack_for_inner = None
+
+        async def inner():
+            nonlocal stack_for_inner
+            stack_for_inner = capture_test_stack()
+            await asyncio.sleep(3600)
+
+        async def main(t):
+            with self.assertRaises(TimeoutError):
+                for f in asyncio.as_completed([t], timeout=0.01):
+                    await f
+
+        t = asyncio.create_task(inner(), name='inner')
+        await main(t)
+        self.assertFalse(t._asyncio_awaited_by)
+        t.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            await t
+
+        self.assertEqual(stack_for_inner[0], [
+            'T<inner>',
+            ['s capture_test_stack', 'a inner'],
+            [
+                ['T<anon>',
+                    ['a get', 'a _wait_for_one', 'a main',
+                     'a test_stack_as_completed_timeout'],
+                    []
+                ]
+            ]
+        ])
+
     async def test_stack_task(self):
 
         stack_for_inner = None
