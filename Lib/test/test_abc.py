@@ -754,7 +754,6 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 with self.assertRaises(TypeError) as cm:
                     self.MyAbstractClass()
 
-                print(str(cm.exception))
                 self.assertRegex(str(cm.exception), r"test_module\..*\.MyAbstractClass")
             finally:
                 self.MyAbstractClass.__module__ = original_module
