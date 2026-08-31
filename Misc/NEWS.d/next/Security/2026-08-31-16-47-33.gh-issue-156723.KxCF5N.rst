@@ -1,0 +1,6 @@
+<<<<<<< HEAD:Misc/NEWS.d/next/Security/2026-08-11-15-24-21.gh-issue-155558.yDsXZC.rst
+Update bundled `libexpat <https://libexpat.github.io/>`_ to version 2.8.3
+for the fix to `CVE-2026-72522 <https://www.cve.org/CVERecord?id=CVE-2026-72522>`_.
+=======
+Update bundled `libexpat <https://libexpat.github.io/>`_ to version 2.8.4.
+>>>>>>> 287b7cffb79 (gh-156723: Update bundled libexpat to version 2.8.4 (#156724)):Misc/NEWS.d/next/Security/2026-08-31-16-47-33.gh-issue-156723.KxCF5N.rst
