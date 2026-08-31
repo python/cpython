@@ -16724,7 +16724,7 @@ printf "%s\n" "#define _Py_FFI_SUPPORT_C_COMPLEX 1" >>confdefs.h
 
 fi
 
-# Check for native half-float type.
+# Check for native half-float type (_Float16).
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for _Float16 support" >&5
 printf %s "checking for _Float16 support... " >&6; }
 if test ${ac_cv_float16_supported+y}
