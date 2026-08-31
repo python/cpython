@@ -1,3 +1,3 @@
-Gate `socket.if_nametoindex` and `socket.if_indextoname` on their respective
-OS functionality. This matters for Android, on which both are available
-prior to API 24, as they are gated on ``if_nameindex`` which is not!
+:func:`socket.if_nametoindex` and :func:`socket.if_indextoname` are now
+available on platforms that provide them but not ``if_nameindex()``, such
+as Android before API level 24.
