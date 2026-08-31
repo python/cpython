@@ -59,6 +59,59 @@ class MinidomTest(unittest.TestCase):
         t = node.wholeText
         self.assertEqual(t, s, "looking for %r, found %r" % (s, t))
 
+    def testDOMLevel3GetFeature(self):
+        impl = getDOMImplementation()
+        doc = impl.createDocument(None, "doc", None)
+        node = doc.documentElement
+
+        self.assertIs(impl.getFeature("Core", "2.0"), impl)
+        self.assertIs(node.getFeature("Core", "2.0"), node)
+        self.assertIsNone(impl.getFeature("Core", "3.0"))
+        self.assertIsNone(node.getFeature("Core", "3.0"))
+
+        # The names from the working draft are kept for compatibility.
+        self.assertIs(impl.getInterface("Core"), impl)
+        self.assertIs(node.getInterface("Core"), node)
+
+    def testDOMLevel3AttributeNames(self):
+        doc = Document()
+        pairs = (
+            ("actualEncoding", "inputEncoding", "us-ascii", "utf-8"),
+            ("encoding", "xmlEncoding", "utf-8", "utf-16"),
+            ("standalone", "xmlStandalone", False, True),
+            ("version", "xmlVersion", "1.0", "1.1"),
+        )
+        for old_name, new_name, old_value, new_value in pairs:
+            with self.subTest(node="Document", name=new_name):
+                setattr(doc, old_name, old_value)
+                self.assertEqual(getattr(doc, new_name), old_value)
+                setattr(doc, new_name, new_value)
+                self.assertEqual(getattr(doc, old_name), new_value)
+
+        entity = xml.dom.minidom.Entity("entity", None, None, None)
+        pairs = (
+            ("actualEncoding", "inputEncoding", "us-ascii", "utf-8"),
+            ("encoding", "xmlEncoding", "utf-8", "utf-16"),
+            ("version", "xmlVersion", "1.0", "1.1"),
+        )
+        for old_name, new_name, old_value, new_value in pairs:
+            with self.subTest(node="Entity", name=new_name):
+                setattr(entity, old_name, old_value)
+                self.assertEqual(getattr(entity, new_name), old_value)
+                setattr(entity, new_name, new_value)
+                self.assertEqual(getattr(entity, old_name), new_value)
+
+        doc = parseString(
+            "<!DOCTYPE doc ["
+            "<!ELEMENT doc (child)>"
+            "<!ELEMENT child EMPTY>"
+            "]><doc> <child/></doc>"
+        )
+        text = doc.documentElement.firstChild
+        self.assertTrue(text.isElementContentWhitespace)
+        self.assertEqual(text.isElementContentWhitespace,
+                         text.isWhitespaceInElementContent)
+
     def testDocumentAsyncAttr(self):
         doc = Document()
         self.assertFalse(doc.async_)
@@ -1555,12 +1608,14 @@ class MinidomTest(unittest.TestCase):
         # DTD-based namespace is right.  The names can vary by loader
         # since each supports a different level of DTD information.
         t = elem.schemaType
+        self.assertIs(elem.schemaTypeInfo, t)
         self.confirm(t.name is None
                 and t.namespace == xml.dom.EMPTY_NAMESPACE)
         names = "id notid text enum ref refs ent ents nm nms".split()
         for name in names:
             a = elem.getAttributeNode(name)
             t = a.schemaType
+            self.assertEqual(a.schemaTypeInfo, t)
             self.confirm(hasattr(t, "name")
                     and t.namespace == xml.dom.EMPTY_NAMESPACE)
 
