@@ -1072,8 +1072,8 @@ class ElementTreeTest(unittest.TestCase):
         # gh-99064: The encoding declared in the document does not apply
         # to a source which is already decoded.
         def check(encoding, body):
-            xml = ("<?xml version='1.0' encoding='%s'?><xml>%s</xml>" %
-                   (encoding, body))
+            xml = (f"<?xml version='1.0' encoding='{encoding}'?>" 
+                   f"<xml>{body}</xml>")
             with self.subTest(encoding=encoding):
                 self.assertEqual(ET.parse(io.StringIO(xml)).getroot().text,
                                  body)
