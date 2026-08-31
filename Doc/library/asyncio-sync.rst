@@ -11,7 +11,7 @@ Synchronization Primitives
 -----------------------------------------------
 
 asyncio synchronization primitives are designed to be similar to
-those of the :mod:`threading` module with two important caveats:
+those of the :mod:`threading` module with several important caveats:
 
 * asyncio primitives are not thread-safe, therefore they should not
   be used for OS thread synchronization (use :mod:`threading` for
@@ -20,6 +20,10 @@ those of the :mod:`threading` module with two important caveats:
 * methods of these synchronization primitives do not accept the *timeout*
   argument; use the :func:`asyncio.wait_for` function to perform
   operations with timeouts.
+
+* asyncio primitives are bound to a specific event loop and must be
+  constructed inside the loop to function correctly. A common mistake is
+  constructing them before the loop starts, such as with global variables.
 
 asyncio has the following basic synchronization primitives:
 
