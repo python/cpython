@@ -1,0 +1,4 @@
+Don't set the result in error in :c:func:`PyLong_AsInt32`,
+:c:func:`PyLong_AsUInt32`, :c:func:`PyLong_AsInt64` and
+:c:func:`PyLong_AsUInt64`. Leave the result unchanged in this case. Patch by
+Victor Stinner.
