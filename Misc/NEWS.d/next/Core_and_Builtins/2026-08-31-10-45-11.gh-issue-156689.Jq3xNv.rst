@@ -1,0 +1,2 @@
+Fix an out-of-bounds read in :func:`compile` and :func:`ast.parse` when an AST
+object is passed with ``mode='func_type'``.
