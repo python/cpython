@@ -1,0 +1,5 @@
+Fix :func:`xml.etree.ElementTree.parse` with a text file or other source
+of :class:`str` data in the C implementation.
+The encoding declared in the document was applied to the already decoded
+text, which produced mojibake.  It is now ignored, as when parsing with
+:meth:`!XMLParser.feed` or :func:`~xml.etree.ElementTree.fromstring`.
