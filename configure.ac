@@ -4463,7 +4463,7 @@ if test "$ac_cv_ffi_complex_double_supported" = "yes"; then
               [Defined if _Complex C type can be used with libffi.])
 fi
 
-# Check for native half-float type.
+# Check for native half-float type (_Float16).
 AC_CACHE_CHECK([for _Float16 support], [ac_cv_float16_supported],
 WITH_SAVE_ENV([
 CFLAGS="$CFLAGS -O0"
