@@ -1668,9 +1668,7 @@ def url2pathname(url, *, require_scheme=False, resolve_host=False):
     """
     if not require_scheme:
         url = 'file:' + url
-    parts = urlsplit(url)
-    # Discard query and fragment.
-    scheme, authority, url = parts.scheme, parts.netloc, parts.path
+    scheme, authority, url = urlsplit(url)[:3]  # Discard query and fragment.
     if scheme != 'file':
         raise URLError("URL is missing a 'file:' scheme")
     if os.name == 'nt':
