@@ -11,7 +11,6 @@
 #include "pycore_freelist.h"      // _Py_FREELIST_FREE(), _Py_FREELIST_POP()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_Init()
-#include "pycore_pymath.h"        // _Py_ADJUST_ERANGE2()
 
 
 #define _PyComplexObject_CAST(op)   ((PyComplexObject *)(op))
