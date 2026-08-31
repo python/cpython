@@ -1123,6 +1123,7 @@ with_frame_pointers
 enable_experimental_jit
 with_dsymutil
 with_address_sanitizer
+with_hwaddress_sanitizer
 with_memory_sanitizer
 with_undefined_behavior_sanitizer
 with_thread_sanitizer
@@ -1931,6 +1932,9 @@ Optional Packages:
   --with-address-sanitizer
                           enable AddressSanitizer memory error detector,
                           'asan' (default is no)
+  --with-hwaddress-sanitizer
+                          enable HWAddressSanitizer memory error detector,
+                          'hwasan' (default is no)
   --with-memory-sanitizer enable MemorySanitizer allocation error detector,
                           'msan' (default is no)
   --with-undefined-behavior-sanitizer
@@ -14161,6 +14165,81 @@ printf "%s\n" "$withval" >&6; }
 BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=address $LDFLAGS"
 # ASan works by controlling memory allocation, our own malloc interferes.
+with_pymalloc="no"
+
+else case e in #(
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; } ;;
+esac
+fi
+
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-hwaddress-sanitizer" >&5
+printf %s "checking for --with-hwaddress-sanitizer... " >&6; }
+
+# Check whether --with-hwaddress_sanitizer was given.
+if test ${with_hwaddress_sanitizer+y}
+then :
+  withval=$with_hwaddress_sanitizer;
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
+printf "%s\n" "$withval" >&6; }
+hwasan_flags="-fsanitize=hwaddress"
+# x86-64 lacks address tagging, so HWASan needs the page aliasing mode there.
+# See https://clang.llvm.org/docs/HardwareAssistedAddressSanitizerDesign.html#supported-architectures
+case $host_cpu in #(
+  x86_64|amd64) :
+    hwasan_flags="$hwasan_flags -fsanitize-hwaddress-experimental-aliasing"
+ ;; #(
+  *) :
+     ;;
+esac
+as_CACHEVAR=`printf "%s\n" "ax_cv_check_cflags__$hwasan_flags" | sed "$as_sed_sh"`
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts $hwasan_flags" >&5
+printf %s "checking whether C compiler accepts $hwasan_flags... " >&6; }
+if eval test \${$as_CACHEVAR+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  $hwasan_flags"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  eval "$as_CACHEVAR=yes"
+else case e in #(
+  e) eval "$as_CACHEVAR=no" ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags ;;
+esac
+fi
+eval ac_res=\$$as_CACHEVAR
+	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+printf "%s\n" "$ac_res" >&6; }
+if eval test \"x\$"$as_CACHEVAR"\" = x"yes"
+then :
+
+BASECFLAGS="$hwasan_flags -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="$hwasan_flags $LDFLAGS"
+
+else case e in #(
+  e) as_fn_error $? "The selected compiler doesn't support hardware address sanitizer" "$LINENO" 5 ;;
+esac
+fi
+
+# HWASan works by controlling memory allocation, our own malloc interferes.
 with_pymalloc="no"
 
 else case e in #(

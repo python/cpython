@@ -934,6 +934,11 @@ Build changes
 
   (Contributed by Stan Ulbrych in :gh:`139314`.)
 
+* Add the :option:`--with-hwaddress-sanitizer` :program:`configure` option to
+  build with `HWAddressSanitizer <https://clang.llvm.org/docs/HardwareAssistedAddressSanitizerDesign.html>`_.
+
+  (Contributed by Stan Ulbrych, Florian Mayer and AnnaAr321 in :gh:`156049`.)
+
 
 C API changes
 =============

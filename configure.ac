@@ -3533,6 +3533,30 @@ with_pymalloc="no"
 ],
 [AC_MSG_RESULT([no])])
 
+AC_MSG_CHECKING([for --with-hwaddress-sanitizer])
+AC_ARG_WITH(
+  [hwaddress_sanitizer],
+  [AS_HELP_STRING(
+    [--with-hwaddress-sanitizer],
+    [enable HWAddressSanitizer memory error detector, 'hwasan' (default is no)]
+  )],
+[
+AC_MSG_RESULT([$withval])
+hwasan_flags="-fsanitize=hwaddress"
+# x86-64 lacks address tagging, so HWASan needs the page aliasing mode there.
+# See https://clang.llvm.org/docs/HardwareAssistedAddressSanitizerDesign.html#supported-architectures
+AS_CASE([$host_cpu],
+  [x86_64|amd64], [hwasan_flags="$hwasan_flags -fsanitize-hwaddress-experimental-aliasing"]
+)
+AX_CHECK_COMPILE_FLAG([$hwasan_flags],[
+BASECFLAGS="$hwasan_flags -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="$hwasan_flags $LDFLAGS"
+],[AC_MSG_ERROR([The selected compiler doesn't support hardware address sanitizer])])
+# HWASan works by controlling memory allocation, our own malloc interferes.
+with_pymalloc="no"
+],
+[AC_MSG_RESULT([no])])
+
 AC_MSG_CHECKING([for --with-memory-sanitizer])
 AC_ARG_WITH(
   [memory_sanitizer],

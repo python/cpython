@@ -1,0 +1,2 @@
+Add :option:`--with-hwaddress-sanitizer` to build with `HWAddressSanitizer
+<https://clang.llvm.org/docs/HardwareAssistedAddressSanitizerDesign.html>`_.
