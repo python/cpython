@@ -4072,6 +4072,7 @@ _elementtree_XMLParser__parse_whole_impl(XMLParserObject *self,
 
     /* read from open file object */
     elementtreestate *st = self->state;
+    int first = 1;
     for (;;) {
 
         buffer = PyObject_CallFunction(reader, "i", 64*1024);
@@ -4087,6 +4088,11 @@ _elementtree_XMLParser__parse_whole_impl(XMLParserObject *self,
             if (PyUnicode_GET_LENGTH(buffer) == 0) {
                 Py_DECREF(buffer);
                 break;
+            }
+            if (first) {
+                /* The text is already decoded, the encoding declared in the
+                   document does not apply to it.  Return code ignored. */
+                (void)EXPAT(st, SetEncoding)(self->parser, "utf-8");
             }
             temp = PyUnicode_AsEncodedString(buffer, "utf-8", "surrogatepass");
             Py_DECREF(buffer);
@@ -4111,6 +4117,7 @@ _elementtree_XMLParser__parse_whole_impl(XMLParserObject *self,
         res = expat_parse(
             st, self, PyBytes_AS_STRING(buffer), (int)PyBytes_GET_SIZE(buffer),
             0);
+        first = 0;
 
         Py_DECREF(buffer);
 
