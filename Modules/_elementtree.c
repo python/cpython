@@ -2419,6 +2419,7 @@ typedef struct {
 
     char insert_comments;
     char insert_pis;
+    PyObject *document; /* the children of the document, or NULL */
     elementtreestate *state;
 } TreeBuilderObject;
 
@@ -2455,6 +2456,14 @@ treebuilder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         t->start_ns_event_obj = t->end_ns_event_obj = NULL;
         t->comment_event_obj = t->pi_event_obj = NULL;
         t->insert_comments = t->insert_pis = 0;
+        t->document = PyList_New(0);
+        if (!t->document) {
+            Py_DECREF(t->this);
+            Py_DECREF(t->last);
+            Py_DECREF(t->stack);
+            Py_DECREF((PyObject *) t);
+            return NULL;
+        }
         t->state = get_elementtree_state_by_type(type);
     }
     return (PyObject *)t;
@@ -2525,6 +2534,7 @@ treebuilder_gc_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(self->end_event_obj);
     Py_VISIT(self->start_event_obj);
     Py_VISIT(self->events_append);
+    Py_VISIT(self->document);
     Py_VISIT(self->root);
     Py_VISIT(self->this);
     Py_VISIT(self->last);
@@ -2557,6 +2567,7 @@ treebuilder_gc_clear(PyObject *op)
     Py_CLEAR(self->comment_factory);
     Py_CLEAR(self->element_factory);
     Py_CLEAR(self->root);
+    Py_CLEAR(self->document);
     return 0;
 }
 
@@ -2785,6 +2796,9 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
             goto error;
         }
         self->root = Py_NewRef(node);
+        if (PyList_Append(self->document, node) < 0) {
+            goto error;
+        }
     }
 
     if (self->index < PyList_GET_SIZE(self->stack)) {
@@ -2897,11 +2911,17 @@ treebuilder_handle_comment(TreeBuilderObject* self, PyObject* text)
             return NULL;
 
         this = self->this;
-        if (self->insert_comments && this != Py_None) {
-            if (treebuilder_add_subelement(self->state, this, comment) < 0) {
+        if (self->insert_comments) {
+            if (this != Py_None) {
+                if (treebuilder_add_subelement(self->state, this, comment) < 0) {
+                    goto error;
+                }
+                Py_XSETREF(self->last_for_tail, Py_NewRef(comment));
+            }
+            /* outside the root element: the prolog or the epilog */
+            else if (PyList_Append(self->document, comment) < 0) {
                 goto error;
             }
-            Py_XSETREF(self->last_for_tail, Py_NewRef(comment));
         }
     } else {
         comment = Py_NewRef(text);
@@ -2937,11 +2957,17 @@ treebuilder_handle_pi(TreeBuilderObject* self, PyObject* target, PyObject* text)
         }
 
         this = self->this;
-        if (self->insert_pis && this != Py_None) {
-            if (treebuilder_add_subelement(self->state, this, pi) < 0) {
+        if (self->insert_pis) {
+            if (this != Py_None) {
+                if (treebuilder_add_subelement(self->state, this, pi) < 0) {
+                    goto error;
+                }
+                Py_XSETREF(self->last_for_tail, Py_NewRef(pi));
+            }
+            /* outside the root element: the prolog or the epilog */
+            else if (PyList_Append(self->document, pi) < 0) {
                 goto error;
             }
-            Py_XSETREF(self->last_for_tail, Py_NewRef(pi));
         }
     } else {
         pi = _PyTuple_FromPair(target, text);
@@ -4372,7 +4398,15 @@ static PyType_Spec element_spec = {
     .slots = element_slots,
 };
 
+static PyObject *
+_elementtree_TreeBuilder_document_impl(TreeBuilderObject *self)
+{
+    return PyList_GetSlice(self->document, 0, PyList_GET_SIZE(self->document));
+}
+
 static PyMethodDef treebuilder_methods[] = {
+    {"document", (PyCFunction)_elementtree_TreeBuilder_document_impl,
+     METH_NOARGS, "Return the children of the document."},
     _ELEMENTTREE_TREEBUILDER_DATA_METHODDEF
     _ELEMENTTREE_TREEBUILDER_START_METHODDEF
     _ELEMENTTREE_TREEBUILDER_END_METHODDEF

@@ -519,6 +519,114 @@ class QName:
 # --------------------------------------------------------------------
 
 
+def _is_misc(node):
+    """Is the node a comment or a processing instruction?"""
+    return node.tag is Comment or node.tag is ProcessingInstruction
+
+
+class _DocumentChildren:
+    """A view of the children of a document.
+
+    The document can have any number of comments and processing
+    instructions, and at most one element, its root element.
+    """
+    __slots__ = ('_tree',)
+
+    def __init__(self, tree):
+        self._tree = tree
+
+    def __len__(self):
+        """Return the number of children of the document."""
+        return len(self._tree._children)
+
+    def __iter__(self):
+        """Iterate over the children of the document."""
+        return iter(self._tree._children)
+
+    def __getitem__(self, index):
+        """Return the child at the index, or the children in the slice."""
+        return self._tree._children[index]
+
+    def __repr__(self):
+        return '<document children %r>' % (self._tree._children,)
+
+    def _check(self, value, root):
+        # Check a new child of a document whose root element is *root*,
+        # and return the root element after adding it.
+        if not iselement(value):
+            raise TypeError('expected an Element, not %s'
+                            % type(value).__name__)
+        if _is_misc(value):
+            return root
+        if root is not None:
+            raise ValueError('a document can have only one element child')
+        return value
+
+    def _contains_root(self, nodes):
+        root = self._tree._root
+        return root is not None and any(node is root for node in nodes)
+
+    def append(self, value):
+        """Add a child at the end of the document."""
+        root = self._check(value, self._tree._root)
+        self._tree._children.append(value)
+        self._tree._root = root
+
+    def insert(self, index, value):
+        """Add a child at the given position."""
+        root = self._check(value, self._tree._root)
+        self._tree._children.insert(index, value)
+        self._tree._root = root
+
+    def extend(self, values):
+        """Add several children at the end of the document."""
+        values = list(values)
+        root = self._tree._root
+        for item in values:
+            root = self._check(item, root)
+        self._tree._children.extend(values)
+        self._tree._root = root
+
+    def remove(self, value):
+        """Remove the first child equal to the value."""
+        self._tree._children.remove(value)
+        if value is self._tree._root:
+            self._tree._root = None
+
+    def clear(self):
+        """Remove all children of the document."""
+        self._tree._children.clear()
+        self._tree._root = None
+
+    def __setitem__(self, index, value):
+        """Replace the child at the index, or the children in the slice."""
+        children = self._tree._children
+        root = self._tree._root
+        if isinstance(index, slice):
+            value = list(value)
+            if self._contains_root(children[index]):
+                root = None
+            for item in value:
+                root = self._check(item, root)
+        else:
+            if children[index] is root:
+                root = None
+            root = self._check(value, root)
+        children[index] = value
+        self._tree._root = root
+
+    def __delitem__(self, index):
+        """Remove the child at the index, or the children in the slice."""
+        children = self._tree._children
+        if isinstance(index, slice):
+            root_removed = self._contains_root(children[index])
+        else:
+            root_removed = children[index] is self._tree._root
+        del children[index]
+        if root_removed:
+            self._tree._root = None
+
+
 class ElementTree:
     """An XML element hierarchy.
 
@@ -531,12 +639,17 @@ class ElementTree:
 
     """
     def __init__(self, element=None, file=None):
-        if element is not None and not iselement(element):
-            raise TypeError('expected an Element, not %s' %
-                            type(element).__name__)
-        self._root = element # first node
+        self._root = None # the root element
+        self._children = []
+        if element is not None:
+            self._setroot(element)
         if file:
             self.parse(file)
+
+    @property
+    def children(self):
+        """A view of the children of the document."""
+        return _DocumentChildren(self)
 
     def getroot(self):
         """Return root element of this tree."""
@@ -552,6 +665,13 @@ class ElementTree:
         if not iselement(element):
             raise TypeError('expected an Element, not %s'
                             % type(element).__name__)
+        if _is_misc(element):
+            raise ValueError('the root element cannot be a comment '
+                             'or a processing instruction')
+        if self._root is None:
+            self._children.append(element)
+        else:
+            self._children[self._children.index(self._root)] = element
         self._root = element
 
     def parse(self, source, parser=None):
@@ -578,28 +698,36 @@ class ElementTree:
                     # can define an internal _parse_whole API for efficiency.
                     # It can be used to parse the whole source without feeding
                     # it with chunks.
-                    self._root = parser._parse_whole(source)
+                    self._setroot(parser._parse_whole(source))
                     return self._root
             while data := source.read(65536):
                 parser.feed(data)
-            self._root = parser.close()
+            # close() releases the target, ask it for the document first
+            document = getattr(getattr(parser, 'target', None), 'document', None)
+            result = parser.close()
+            # a custom target can return anything, even None
+            self._root = result
+            if document is not None:
+                self._children[:] = document()
+            else:
+                self._children = [result] if iselement(result) else []
             return self._root
         finally:
             if close_source:
                 source.close()
 
     def iter(self, tag=None):
-        """Create and return tree iterator for the root element.
+        """Create and return tree iterator for the document.
 
-        The iterator loops over all elements in this tree, in document
-        order.
+        The iterator loops over all children of the document and their
+        descendants, in document order.
 
         *tag* is a string with the tag name to iterate over
         (default is to return all elements).
 
         """
-        # assert self._root is not None
-        return self._root.iter(tag)
+        for child in self._children:
+            yield from child.iter(tag)
 
     def find(self, path, namespaces=None):
         """Find first matching element by tag name or path.
@@ -723,7 +851,7 @@ class ElementTree:
                                     emitted as a pair of start/end tags
 
         """
-        if self._root is None:
+        if not self._children:
             raise TypeError('ElementTree not initialized')
         if not method:
             method = "xml"
@@ -741,12 +869,20 @@ class ElementTree:
                 write("<?xml version='1.0' encoding='%s'?>\n" % (
                     declared_encoding,))
             if method == "text":
-                _serialize_text(write, self._root)
+                for child in self._children:
+                    _serialize_text(write, child)
             else:
-                qnames, namespaces = _namespaces(self._root, default_namespace)
+                root = self._root
+                if root is None:
+                    # the document has no element child
+                    qnames, namespaces = {None: None}, {}
+                else:
+                    qnames, namespaces = _namespaces(root, default_namespace)
                 serialize = _serialize[method]
-                serialize(write, self._root, qnames, namespaces,
-                          short_empty_elements=short_empty_elements)
+                for child in self._children:
+                    serialize(write, child, qnames,
+                              namespaces if child is root else None,
+                              short_empty_elements=short_empty_elements)
 
 # --------------------------------------------------------------------
 # serialization support
@@ -1100,7 +1236,10 @@ def tostring(element, encoding=None, method=None, *,
 
     """
     stream = io.StringIO() if encoding == 'unicode' else io.BytesIO()
-    ElementTree(element).write(stream, encoding,
+    # the element can also be a comment or a processing instruction
+    tree = ElementTree()
+    tree.children.append(element)
+    tree.write(stream, encoding,
                                xml_declaration=xml_declaration,
                                default_namespace=default_namespace,
                                method=method,
@@ -1129,7 +1268,10 @@ def tostringlist(element, encoding=None, method=None, *,
                  short_empty_elements=True):
     lst = []
     stream = _ListDataStream(lst)
-    ElementTree(element).write(stream, encoding,
+    # the element can also be a comment or a processing instruction
+    tree = ElementTree()
+    tree.children.append(element)
+    tree.write(stream, encoding,
                                xml_declaration=xml_declaration,
                                default_namespace=default_namespace,
                                method=method,
@@ -1436,6 +1578,7 @@ class TreeBuilder:
         self._elem = [] # element stack
         self._last = None # last element
         self._root = None # root element
+        self._document = [] # the children of the document
         self._tail = None # true if we're after an end tag
         if comment_factory is None:
             comment_factory = Comment
@@ -1484,6 +1627,7 @@ class TreeBuilder:
             self._elem[-1].append(elem)
         elif self._root is None:
             self._root = elem
+            self._document.append(elem)
         self._elem.append(elem)
         self._tail = 0
         return elem
@@ -1526,8 +1670,19 @@ class TreeBuilder:
             self._last = elem
             if self._elem:
                 self._elem[-1].append(elem)
+            else:
+                # outside the root element: the prolog or the epilog
+                self._document.append(elem)
             self._tail = 1
         return elem
+
+    def document(self):
+        """Return the children of the document.
+
+        These are the root element and the comments and processing
+        instructions which were inserted outside of it.
+        """
+        return list(self._document)
 
 
 # also see ElementTree and TreeBuilder
@@ -2110,6 +2265,7 @@ try:
     # the Python version of it accessible for some "creative" by external code
     # (see tests)
     _Element_Py = Element
+    _TreeBuilder_Py = TreeBuilder
 
     # Element, SubElement, ParseError, TreeBuilder, XMLParser, _set_factories
     from _elementtree import *
