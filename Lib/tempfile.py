@@ -302,6 +302,11 @@ def _resetperms_fd(dir_fd, path):
     _resetflags(path)
     _os.chmod(dir_fd, 0o700)
 
+try:
+    _nofollow_mode = _os.O_RDONLY | _os.O_NONBLOCK | _os.O_NOFOLLOW
+except AttributeError:
+    _nofollow_mode = None
+
 def _resetperms_at(name, dir_fd, path):
     # Same as _resetperms(), but name is resolved relative to the directory
     # file descriptor dir_fd. path is only used for os.chflags(), which
@@ -314,7 +319,20 @@ def _resetperms_at(name, dir_fd, path):
         _os.chmod(name, 0o700, dir_fd=dir_fd, follow_symlinks=False)
     else:
         # dir_fd & follow_symlinks is not supported on this platform.
-        # We change by name, which is subject to a race condition.
+        # Try chmod opening the file with O_NOFOLLOW.
+        if _nofollow_mode is not None:
+            try:
+                fd = _os.open(name, _nofollow_mode, dir_fd=dir_fd)
+            except (OSError, AttributeError):
+                pass
+        else:
+            try:
+                _os.chmod(fd, 0o700)
+            finally:
+                _os.close(fd)
+            return
+        # If that did not work, we change by name, which is subject to a race
+        # condition.
         stat = _os.stat(name, dir_fd=dir_fd, follow_symlinks=False)
         if not _stat.S_ISLNK(stat.st_mode):
             _os.chmod(name, 0o700, dir_fd=dir_fd)
