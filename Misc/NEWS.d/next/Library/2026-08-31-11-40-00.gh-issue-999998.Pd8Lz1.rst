@@ -1,0 +1,2 @@
+Speed up :mod:`pdb` startup by about 40% using :keyword:`lazy import`, and by
+skipping the :mod:`asyncio` import when no event loop has been used.

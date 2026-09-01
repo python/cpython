@@ -73,28 +73,32 @@ import cmd
 import bdb
 import dis
 import code
-import glob
-import json
+lazy import glob
+lazy import json
 import stat
+lazy import runpy
+lazy import shlex
+lazy import pydoc
 import token
 import types
 import atexit
 import codeop
-import pprint
-import signal
-import socket
+lazy import pprint
+lazy import signal
+lazy import socket
 import typing
-import asyncio
+lazy import asyncio
 import inspect
 import weakref
+lazy import argparse
 import builtins
-import tempfile
+lazy import tempfile
 import textwrap
 import tokenize
 import itertools
 import traceback
 import linecache
-import selectors
+lazy import selectors
 import threading
 import _colorize
 
@@ -246,7 +250,6 @@ class _ModuleTarget(_ExecutableTarget):
     def __init__(self, target):
         self._target = target
 
-        import runpy
         try:
             _, self._spec, self._code = runpy._get_module_details(self._target)
         except ImportError as e:
@@ -281,8 +284,6 @@ class _ModuleTarget(_ExecutableTarget):
 
 class _ZipTarget(_ExecutableTarget):
     def __init__(self, target):
-        import runpy
-
         self._target = os.path.realpath(target)
         sys.path.insert(0, self._target)
         try:
@@ -902,6 +903,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self._chained_exception_index = 0
 
     def _get_asyncio_task(self):
+        # If asyncio has never been imported there cannot be a running task,
+        # so skip the import rather than pay for it on every interaction.
+        if 'asyncio' not in sys.modules:
+            return None
         try:
             task = asyncio.current_task()
         except RuntimeError:
@@ -2084,7 +2089,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                        'e.g. "python -m pdb myscript.py"')
             return
         if arg:
-            import shlex
             argv0 = sys.argv[0:1]
             try:
                 sys.argv = shlex.split(arg)
@@ -3739,7 +3743,6 @@ def test():
 
 # print help
 def help():
-    import pydoc
     pydoc.pager(__doc__)
 
 _usage = """\
@@ -3779,8 +3782,6 @@ def parse_args():
     # "python -m pdb foo.py -m bar" should pass "-m bar" to "foo.py".
     # "python -m pdb -m foo -m bar" should pass "-m bar" to "foo".
     # This require some customized parsing logic to find the actual debug target.
-
-    import argparse
 
     parser = argparse.ArgumentParser(
         usage="%(prog)s [-h] [-c command] (-m module | -p pid | pyfile) [args ...]",
