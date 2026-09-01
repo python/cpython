@@ -1,5 +1,8 @@
 import unittest
 
+from test import support
+from test.support.os_helper import temp_cwd
+from test.support.script_helper import assert_python_ok
 from test.test_string._support import TStringBaseCase, fstring
 
 
@@ -78,6 +81,27 @@ class TestTString(unittest.TestCase, TStringBaseCase):
             [(data["name"], "data['name']"), (data["age"], "data['age']")],
         )
         self.assertEqual(fstring(t), "Name: Bob, Age: 30")
+
+    def test_interpolation_expression_in_file_after_buffer_resize(self):
+        expression = "(\n" + (" " * 64 + "\n") * 256 + "1\n)"
+        with temp_cwd():
+            script = 'script.py'
+            source = (
+                f"template = t'''{{{expression}}}'''\n"
+                "interpolation = template.interpolations[0]\n"
+                f"assert interpolation.expression == {expression!r}\n"
+            )
+            with open(script, 'w') as f:
+                f.write(source)
+            assert_python_ok(script)
+
+    @support.requires_resource('cpu')
+    def test_many_tstrings_in_module(self):
+        fields = ''.join(f'{{x{i}}}' for i in range(100))
+        source = ''.join(
+            f"value_{i} = t'{fields}'\n" for i in range(1_000)
+        )
+        compile(source, '<string>', 'exec')
 
     def test_format_specifiers(self):
         # Test basic format specifiers
