@@ -5,7 +5,10 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_genobject.h"     // _PyCoro_GetAwaitableIter()
+#include "pycore_iterobject.h"    // _PyCallIter_NewEx()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 
 
 typedef struct {
@@ -185,22 +188,44 @@ PyTypeObject PySeqIter_Type = {
 
 typedef struct {
     PyObject_HEAD
-    PyObject *it_callable; /* Set to NULL when iterator is exhausted */
-    PyObject *it_sentinel; /* Set to NULL when iterator is exhausted */
+    PyObject *it_callable;  /* set to NULL when the iterator is exhausted */
+    PyObject *it_sentinel;  /* can be NULL, and is when exhausted */
+    PyObject *it_stop_exc;  /* never NULL */
 } calliterobject;
 
 PyObject *
-PyCallIter_New(PyObject *callable, PyObject *sentinel)
+_PyCallIter_NewEx(PyObject *callable, PyObject *sentinel, PyObject *stop_exc)
 {
     calliterobject *it;
+    if (stop_exc == NULL) {
+        stop_exc = PyExc_StopIteration;
+    }
+    else if (_PyEval_CheckExceptTypeValid(_PyThreadState_GET(), stop_exc) < 0) {
+        return NULL;
+    }
     it = PyObject_GC_New(calliterobject, &PyCallIter_Type);
     if (it == NULL)
         return NULL;
     it->it_callable = Py_NewRef(callable);
-    it->it_sentinel = Py_NewRef(sentinel);
+    it->it_sentinel = Py_XNewRef(sentinel);
+    it->it_stop_exc = Py_NewRef(stop_exc);
     _PyObject_GC_TRACK(it);
     return (PyObject *)it;
 }
+
+PyObject *
+PyCallIter_New(PyObject *callable, PyObject *sentinel)
+{
+    return _PyCallIter_NewEx(callable, sentinel, NULL);
+}
+
+static void
+calliter_exhaust(calliterobject *it)
+{
+    Py_CLEAR(it->it_callable);
+    Py_CLEAR(it->it_sentinel);
+}
+
 static void
 calliter_dealloc(PyObject *op)
 {
@@ -208,6 +233,7 @@ calliter_dealloc(PyObject *op)
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_callable);
     Py_XDECREF(it->it_sentinel);
+    Py_XDECREF(it->it_stop_exc);
     PyObject_GC_Del(it);
 }
 
@@ -217,6 +243,7 @@ calliter_traverse(PyObject *op, visitproc visit, void *arg)
     calliterobject *it = (calliterobject*)op;
     Py_VISIT(it->it_callable);
     Py_VISIT(it->it_sentinel);
+    Py_VISIT(it->it_stop_exc);
     return 0;
 }
 
@@ -231,23 +258,28 @@ calliter_iternext(PyObject *op)
     }
 
     result = _PyObject_CallNoArgs(it->it_callable);
-    if (result != NULL && it->it_sentinel != NULL){
-        int ok;
-
-        ok = PyObject_RichCompareBool(it->it_sentinel, result, Py_EQ);
+    /* The call can exhaust the iterator re-entrantly. */
+    if (result != NULL && it->it_callable != NULL) {
+        if (it->it_sentinel == NULL) {
+            return result; /* Common case, fast path */
+        }
+        int ok = PyObject_RichCompareBool(it->it_sentinel, result, Py_EQ);
         if (ok == 0) {
             return result; /* Common case, fast path */
         }
 
         if (ok > 0) {
-            Py_CLEAR(it->it_callable);
-            Py_CLEAR(it->it_sentinel);
+            calliter_exhaust(it);
         }
     }
-    else if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
+    else if (PyErr_ExceptionMatches(it->it_stop_exc)) {
         PyErr_Clear();
-        Py_CLEAR(it->it_callable);
-        Py_CLEAR(it->it_sentinel);
+        calliter_exhaust(it);
+    }
+    else if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
+        /* It would be mistaken for the end of the iteration (see PEP 479). */
+        _PyErr_FormatFromCause(PyExc_RuntimeError,
+                               "callable raised StopIteration");
     }
     Py_XDECREF(result);
     return NULL;
@@ -263,14 +295,57 @@ calliter_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
      * call must be before access of iterator pointers.
      * see issue #101765 */
 
-    if (it->it_callable != NULL && it->it_sentinel != NULL)
-        return Py_BuildValue("N(OO)", iter, it->it_callable, it->it_sentinel);
-    else
+    if (it->it_callable == NULL) {
         return Py_BuildValue("N(())", iter);
+    }
+    /* Only the sentinel can be passed as an argument of iter(), so other
+       attributes are restored from the state (see calliter_setstate()). */
+    if (it->it_sentinel == NULL) {
+        return Py_BuildValue("N(OO)(()O)", iter, it->it_callable, Py_None,
+                             it->it_stop_exc);
+    }
+    else if (it->it_stop_exc == PyExc_StopIteration) {
+        return Py_BuildValue("N(OO)", iter, it->it_callable, it->it_sentinel);
+    }
+    else {
+        return Py_BuildValue("N(OO)((O)O)", iter, it->it_callable, Py_None,
+                             it->it_sentinel, it->it_stop_exc);
+    }
+}
+
+static PyObject *
+calliter_setstate(PyObject *op, PyObject *state)
+{
+    calliterobject *it = (calliterobject*)op;
+    PyObject *sentinel, *stop_exc;
+
+    if (!PyTuple_Check(state) || PyTuple_GET_SIZE(state) != 2) {
+        goto error;
+    }
+    sentinel = PyTuple_GET_ITEM(state, 0);
+    stop_exc = PyTuple_GET_ITEM(state, 1);
+    if (!PyTuple_Check(sentinel) || PyTuple_GET_SIZE(sentinel) > 1) {
+        goto error;
+    }
+    if (_PyEval_CheckExceptTypeValid(_PyThreadState_GET(), stop_exc) < 0) {
+        return NULL;
+    }
+    if (it->it_callable != NULL) {
+        Py_XSETREF(it->it_sentinel,
+                   PyTuple_GET_SIZE(sentinel) ?
+                   Py_NewRef(PyTuple_GET_ITEM(sentinel, 0)) : NULL);
+        Py_SETREF(it->it_stop_exc, Py_NewRef(stop_exc));
+    }
+    Py_RETURN_NONE;
+
+error:
+    PyErr_SetString(PyExc_TypeError, "invalid state for callable_iterator");
+    return NULL;
 }
 
 static PyMethodDef calliter_methods[] = {
     {"__reduce__", calliter_reduce, METH_NOARGS, reduce_doc},
+    {"__setstate__", calliter_setstate, METH_O, setstate_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -337,10 +412,10 @@ anextawaitable_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-anextawaitable_getiter(anextawaitableobject *obj)
+awaitable_getiter(PyObject *owner, PyObject *wrapped)
 {
-    assert(obj->wrapped != NULL);
-    PyObject *awaitable = _PyCoro_GetAwaitableIter(obj->wrapped);
+    assert(wrapped != NULL);
+    PyObject *awaitable = _PyCoro_GetAwaitableIter(wrapped);
     if (awaitable == NULL) {
         return NULL;
     }
@@ -359,7 +434,7 @@ anextawaitable_getiter(anextawaitableobject *obj)
         if (!PyIter_Check(awaitable)) {
             PyErr_Format(PyExc_TypeError,
                          "%T.__await__() must return an iterable, not %T",
-                         obj, awaitable);
+                         owner, awaitable);
             Py_DECREF(awaitable);
             return NULL;
         }
@@ -391,7 +466,7 @@ anextawaitable_iternext(PyObject *op)
      * gen.__anext__().__next__()
      */
     anextawaitableobject *obj = anextawaitableobject_CAST(op);
-    PyObject *awaitable = anextawaitable_getiter(obj);
+    PyObject *awaitable = awaitable_getiter(op, obj->wrapped);
     if (awaitable == NULL) {
         return NULL;
     }
@@ -411,7 +486,7 @@ anextawaitable_iternext(PyObject *op)
 static PyObject *
 anextawaitable_proxy(anextawaitableobject *obj, char *meth, PyObject *arg)
 {
-    PyObject *awaitable = anextawaitable_getiter(obj);
+    PyObject *awaitable = awaitable_getiter((PyObject *)obj, obj->wrapped);
     if (awaitable == NULL) {
         return NULL;
     }
@@ -540,3 +615,328 @@ PyAnextAwaitable_New(PyObject *awaitable, PyObject *default_value)
     _PyObject_GC_TRACK(anext);
     return (PyObject *)anext;
 }
+
+
+/* -------------------------------------- */
+
+/* The asynchronous counterpart of calliterobject: the callable is called
+   and its result is awaited for every __anext__(). */
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *it_callable;  /* set to NULL when the iterator is exhausted */
+    PyObject *it_sentinel;  /* can be NULL, and is when exhausted */
+    PyObject *it_stop_exc;  /* never NULL */
+} acalliterobject;
+
+#define acalliterobject_CAST(op)        ((acalliterobject *)(op))
+
+/* The awaitable returned by acalliter_anext().  The callable is only
+   called when this object is awaited. */
+typedef struct {
+    PyObject_HEAD
+    PyObject *aw_iterator; /* the iterator which created this object */
+    PyObject *aw_wrapped;  /* the awaitable returned by the callable */
+    bool aw_closed;
+} acallawaitableobject;
+
+#define acallawaitableobject_CAST(op)   ((acallawaitableobject *)(op))
+
+PyObject *
+_PyACallIter_New(PyObject *callable, PyObject *sentinel, PyObject *stop_exc)
+{
+    if (stop_exc == NULL) {
+        stop_exc = PyExc_StopAsyncIteration;
+    }
+    else if (_PyEval_CheckExceptTypeValid(_PyThreadState_GET(), stop_exc) < 0) {
+        return NULL;
+    }
+    acalliterobject *it = PyObject_GC_New(acalliterobject, &_PyACallIter_Type);
+    if (it == NULL) {
+        return NULL;
+    }
+    it->it_callable = Py_NewRef(callable);
+    it->it_sentinel = Py_XNewRef(sentinel);
+    it->it_stop_exc = Py_NewRef(stop_exc);
+    _PyObject_GC_TRACK(it);
+    return (PyObject *)it;
+}
+
+static void
+acalliter_exhaust(acalliterobject *it)
+{
+    Py_CLEAR(it->it_callable);
+    Py_CLEAR(it->it_sentinel);
+}
+
+static void
+acalliter_dealloc(PyObject *op)
+{
+    acalliterobject *it = acalliterobject_CAST(op);
+    _PyObject_GC_UNTRACK(it);
+    Py_XDECREF(it->it_callable);
+    Py_XDECREF(it->it_sentinel);
+    Py_XDECREF(it->it_stop_exc);
+    PyObject_GC_Del(it);
+}
+
+static int
+acalliter_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    acalliterobject *it = acalliterobject_CAST(op);
+    Py_VISIT(it->it_callable);
+    Py_VISIT(it->it_sentinel);
+    Py_VISIT(it->it_stop_exc);
+    return 0;
+}
+
+static PyObject *acallawaitable_new(PyObject *iterator);
+
+static PyObject *
+acalliter_anext(PyObject *op)
+{
+    return acallawaitable_new(op);
+}
+
+static PyAsyncMethods acalliter_as_async = {
+    0,                                          /* am_await */
+    PyObject_SelfIter,                          /* am_aiter */
+    acalliter_anext,                            /* am_anext */
+    0,                                          /* am_send  */
+};
+
+PyTypeObject _PyACallIter_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "async_callable_iterator",
+    .tp_basicsize = sizeof(acalliterobject),
+    .tp_dealloc = acalliter_dealloc,
+    .tp_as_async = &acalliter_as_async,
+    .tp_getattro = PyObject_GenericGetAttr,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_traverse = acalliter_traverse,
+};
+
+/* -------------------------------------- */
+
+static PyObject *
+acallawaitable_new(PyObject *iterator)
+{
+    acallawaitableobject *aw = PyObject_GC_New(
+            acallawaitableobject, &_PyACallIterAwaitable_Type);
+    if (aw == NULL) {
+        return NULL;
+    }
+    aw->aw_iterator = Py_NewRef(iterator);
+    aw->aw_wrapped = NULL;
+    aw->aw_closed = false;
+    _PyObject_GC_TRACK(aw);
+    return (PyObject *)aw;
+}
+
+static void
+acallawaitable_dealloc(PyObject *op)
+{
+    acallawaitableobject *aw = acallawaitableobject_CAST(op);
+    _PyObject_GC_UNTRACK(aw);
+    Py_XDECREF(aw->aw_iterator);
+    Py_XDECREF(aw->aw_wrapped);
+    PyObject_GC_Del(aw);
+}
+
+static int
+acallawaitable_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    acallawaitableobject *aw = acallawaitableobject_CAST(op);
+    Py_VISIT(aw->aw_iterator);
+    Py_VISIT(aw->aw_wrapped);
+    return 0;
+}
+
+/* Call the callable.  Return 0 on success, -1 on failure. */
+static int
+acallawaitable_start(acallawaitableobject *aw)
+{
+    acalliterobject *it = acalliterobject_CAST(aw->aw_iterator);
+
+    if (aw->aw_closed) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "cannot reuse already awaited __anext__()");
+        return -1;
+    }
+    if (it->it_callable == NULL) {
+        PyErr_SetNone(PyExc_StopAsyncIteration);
+        return -1;
+    }
+    PyObject *awaitable = _PyObject_CallNoArgs(it->it_callable);
+    if (awaitable == NULL) {
+        if (PyErr_ExceptionMatches(it->it_stop_exc)) {
+            PyErr_Clear();
+            acalliter_exhaust(it);
+            PyErr_SetNone(PyExc_StopAsyncIteration);
+        }
+        else if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
+            /* It would be mistaken for the result of the await (PEP 525). */
+            _PyErr_FormatFromCause(PyExc_RuntimeError,
+                                   "callable raised StopIteration");
+        }
+        else if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration)) {
+            /* It would be mistaken for the end of the iteration (PEP 525). */
+            _PyErr_FormatFromCause(PyExc_RuntimeError,
+                                   "callable raised StopAsyncIteration");
+        }
+        return -1;
+    }
+    aw->aw_wrapped = awaitable;
+    return 0;
+}
+
+/* Turn the exception raised by the wrapped awaitable into the result of
+   the await.  Always returns NULL. */
+static PyObject *
+acallawaitable_handle_error(acallawaitableobject *aw)
+{
+    acalliterobject *it = acalliterobject_CAST(aw->aw_iterator);
+
+    if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
+        PyObject *value;
+        if (_PyGen_FetchStopIterationValue(&value) < 0) {
+            return NULL;
+        }
+        int ok = 0;
+        if (it->it_sentinel != NULL) {
+            ok = PyObject_RichCompareBool(it->it_sentinel, value, Py_EQ);
+        }
+        if (ok == 0) {
+            (void)_PyGen_SetStopIterationValue(value);
+        }
+        else if (ok > 0) {
+            acalliter_exhaust(it);
+            PyErr_SetNone(PyExc_StopAsyncIteration);
+        }
+        Py_DECREF(value);
+        return NULL;
+    }
+    if (PyErr_ExceptionMatches(it->it_stop_exc)) {
+        PyErr_Clear();
+        acalliter_exhaust(it);
+        PyErr_SetNone(PyExc_StopAsyncIteration);
+    }
+    else if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration)) {
+        /* It would be mistaken for the end of the iteration (see PEP 525). */
+        _PyErr_FormatFromCause(PyExc_RuntimeError,
+                               "callable raised StopAsyncIteration");
+    }
+    return NULL;
+}
+
+static PyObject *
+acallawaitable_iternext(PyObject *op)
+{
+    acallawaitableobject *aw = acallawaitableobject_CAST(op);
+
+    if (aw->aw_wrapped == NULL && acallawaitable_start(aw) < 0) {
+        return NULL;
+    }
+    PyObject *awaitable = awaitable_getiter(op, aw->aw_wrapped);
+    if (awaitable == NULL) {
+        return NULL;
+    }
+    PyObject *result = (*Py_TYPE(awaitable)->tp_iternext)(awaitable);
+    Py_DECREF(awaitable);
+    if (result != NULL) {
+        return result;
+    }
+    return acallawaitable_handle_error(aw);
+}
+
+static PyObject *
+acallawaitable_proxy(acallawaitableobject *aw, char *meth, PyObject *arg)
+{
+    PyObject *awaitable = awaitable_getiter((PyObject *)aw, aw->aw_wrapped);
+    if (awaitable == NULL) {
+        return NULL;
+    }
+    // When specified, 'arg' may be a tuple (if coming from a METH_VARARGS
+    // method) or a single object (if coming from a METH_O method).
+    PyObject *ret = arg == NULL
+        ? PyObject_CallMethod(awaitable, meth, NULL)
+        : PyObject_CallMethod(awaitable, meth, "O", arg);
+    Py_DECREF(awaitable);
+    if (ret != NULL) {
+        return ret;
+    }
+    return acallawaitable_handle_error(aw);
+}
+
+static PyObject *
+acallawaitable_send(PyObject *op, PyObject *arg)
+{
+    acallawaitableobject *aw = acallawaitableobject_CAST(op);
+
+    if (aw->aw_wrapped == NULL && acallawaitable_start(aw) < 0) {
+        return NULL;
+    }
+    return acallawaitable_proxy(aw, "send", arg);
+}
+
+static PyObject *
+acallawaitable_throw(PyObject *op, PyObject *args)
+{
+    acallawaitableobject *aw = acallawaitableobject_CAST(op);
+
+    if (aw->aw_wrapped == NULL) {
+        /* Not started, so the exception is raised at the point of the
+           await, as for a not started coroutine. */
+        PyObject *typ, *val = NULL, *tb = NULL;
+        if (!PyArg_UnpackTuple(args, "throw", 1, 3, &typ, &val, &tb)) {
+            return NULL;
+        }
+        aw->aw_closed = true;
+        (void)_PyGen_SetException(typ, val, tb);
+        return NULL;
+    }
+    return acallawaitable_proxy(aw, "throw", args);
+}
+
+static PyObject *
+acallawaitable_close(PyObject *op, PyObject *Py_UNUSED(dummy))
+{
+    acallawaitableobject *aw = acallawaitableobject_CAST(op);
+
+    if (aw->aw_wrapped == NULL) {
+        /* Not started, so there is nothing to close. */
+        aw->aw_closed = true;
+        Py_RETURN_NONE;
+    }
+    PyObject *result = acallawaitable_proxy(aw, "close", NULL);
+    aw->aw_closed = true;
+    return result;
+}
+
+static PyMethodDef acallawaitable_methods[] = {
+    {"send", acallawaitable_send, METH_O, send_doc},
+    {"throw", acallawaitable_throw, METH_VARARGS, throw_doc},
+    {"close", acallawaitable_close, METH_NOARGS, close_doc},
+    {NULL, NULL}        /* Sentinel */
+};
+
+static PyAsyncMethods acallawaitable_as_async = {
+    PyObject_SelfIter,                          /* am_await */
+    0,                                          /* am_aiter */
+    0,                                          /* am_anext */
+    0,                                          /* am_send  */
+};
+
+PyTypeObject _PyACallIterAwaitable_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "async_callable_iterator_awaitable",
+    .tp_basicsize = sizeof(acallawaitableobject),
+    .tp_dealloc = acallawaitable_dealloc,
+    .tp_as_async = &acallawaitable_as_async,
+    .tp_getattro = PyObject_GenericGetAttr,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_traverse = acallawaitable_traverse,
+    .tp_iter = PyObject_SelfIter,
+    .tp_iternext = acallawaitable_iternext,
+    .tp_methods = acallawaitable_methods,
+};

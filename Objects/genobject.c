@@ -542,8 +542,8 @@ gen_close(PyObject *self, PyObject *args)
 
 // Set an exception for a gen.throw() call.
 // Return 0 on success, -1 on failure.
-static int
-gen_set_exception(PyObject *typ, PyObject *val, PyObject *tb)
+int
+_PyGen_SetException(PyObject *typ, PyObject *val, PyObject *tb)
 {
     /* First, check the traceback argument, replacing None with
        NULL. */
@@ -640,7 +640,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
                     "cannot reuse already awaited coroutine");
                 return NULL;
             }
-            gen_set_exception(typ, val, tb);
+            _PyGen_SetException(typ, val, tb);
             return NULL;
         }
 
@@ -718,7 +718,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
 
 throw_here:
     assert(FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state) == FRAME_EXECUTING);
-    if (gen_set_exception(typ, val, tb) < 0) {
+    if (_PyGen_SetException(typ, val, tb) < 0) {
         FT_ATOMIC_STORE_INT8_RELEASE(gen->gi_frame_state, frame_state);
         return NULL;
     }
