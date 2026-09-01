@@ -129,9 +129,6 @@ class Element:
     want to check if an element is truly empty, you should check BOTH
     its length AND its text attribute.
 
-    The element tag, attribute names, and attribute values can be either
-    bytes or strings.
-
     *tag* is the element name.  *attrib* is an optional dictionary containing
     element attributes. *extra* are additional element attributes given as
     keyword arguments.

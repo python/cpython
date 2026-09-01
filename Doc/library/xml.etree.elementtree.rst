@@ -551,10 +551,9 @@ Functions
 .. function:: Comment(text=None)
 
    Comment element factory.  This factory function creates a special element
-   that will be serialized as an XML comment by the standard serializer.  The
-   comment string can be either a bytestring or a Unicode string.  *text* is a
-   string containing the comment string.  Returns an element instance
-   representing a comment.
+   that will be serialized as an XML comment by the standard serializer.
+   *text* is a string containing the comment string.
+   Returns an element instance representing a comment.
 
    Note that :class:`XMLParser` skips over comments in the input
    instead of creating comment objects for them. An :class:`ElementTree` will
@@ -622,9 +621,9 @@ Functions
    (the "ns" events are used to get detailed namespace
    information).  If *events* is omitted, only ``"end"`` events are reported.
    *parser* is an optional parser instance.  If not given, the standard
-   :class:`XMLParser` parser is used.  *parser* must be a subclass of
-   :class:`XMLParser` and can only use the default :class:`TreeBuilder` as a
-   target. Returns an :term:`iterator` providing ``(event, elem)`` pairs;
+   :class:`XMLParser` parser is used.  *parser* must be an instance of
+   :class:`XMLParser` or its subclass and can only use the default
+   :class:`TreeBuilder` as a target. Returns an :term:`iterator` providing ``(event, elem)`` pairs;
    it has a ``root`` attribute that references the root element of the
    resulting XML tree once *source* is fully read.
    The iterator has the :meth:`!close` method that closes the internal
@@ -696,8 +695,7 @@ Functions
    Subelement factory.  This function creates an element instance, and appends
    it to an existing element.
 
-   The element name, attribute names, and attribute values can be either
-   bytestrings or Unicode strings.  *parent* is the parent element.  *tag* is
+   *parent* is the parent element.  *tag* is
    the subelement name.  *attrib* is an optional dictionary, containing element
    attributes.  *extra* contains additional attributes, given as keyword
    arguments.  Returns an element instance.
@@ -888,8 +886,7 @@ Element Objects
    Element class.  This class defines the Element interface, and provides a
    reference implementation of this interface.
 
-   The element name, attribute names, and attribute values can be either
-   bytestrings or Unicode strings.  *tag* is the element name.  *attrib* is
+   *tag* is the element name.  *attrib* is
    an optional dictionary, containing element attributes.  *extra* contains
    additional attributes, given as keyword arguments.
 
@@ -1296,8 +1293,7 @@ TreeBuilder Objects
 
    .. method:: data(data)
 
-      Adds text to the current element.  *data* is a string.  This should be
-      either a bytestring, or a Unicode string.
+      Adds text to the current element.  *data* is a string.
 
 
    .. method:: end(tag)
@@ -1400,7 +1396,8 @@ XMLParser Objects
 
    .. method:: feed(data)
 
-      Feeds data to the parser.  *data* is encoded data.
+      Feeds data to the parser.  *data* is a string
+      or encoded data (:class:`bytes` or a :term:`bytes-like object`).
 
 
    .. method:: flush()
@@ -1479,7 +1476,8 @@ XMLPullParser Objects
 
    .. method:: feed(data)
 
-      Feed the given bytes data to the parser.
+      Feed the given data to the parser.  *data* is a string
+      or encoded data (:class:`bytes` or a :term:`bytes-like object`).
 
    .. method:: flush()
 
