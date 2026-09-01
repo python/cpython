@@ -290,7 +290,7 @@ def _resetperms(path):
 # True if TemporaryDirectory._rmtree() can work relative to open directories
 # instead of resolving paths again.
 _rmtree_use_dir_fd = (
-    {_os.chmod, _os.unlink} <= _os.supports_dir_fd
+    {_os.chmod, _os.unlink, _os.lstat} <= _os.supports_dir_fd
     and _os.chmod in _os.supports_fd
 )
 
@@ -333,7 +333,7 @@ def _resetperms_at(name, dir_fd, path):
             return
         # If that did not work, we change by name, which is subject to a race
         # condition.
-        stat = _os.stat(name, dir_fd=dir_fd, follow_symlinks=False)
+        stat = _os.lstat(name, dir_fd=dir_fd)
         if not _stat.S_ISLNK(stat.st_mode):
             _os.chmod(name, 0o700, dir_fd=dir_fd)
 
