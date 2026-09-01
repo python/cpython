@@ -292,6 +292,8 @@ class TestImaplib(unittest.TestCase):
         # A scalar is passed through as a string.
         self.assertEqual(m._sequence_set(5), '5')
         self.assertEqual(m._sequence_set('1:3,7'), '1:3,7')
+        self.assertEqual(m._sequence_set(b'1:3,7'), '1:3,7')
+        self.assertEqual(m._sequence_set(bytearray(b'1:3,7')), '1:3,7')
         # A sequence of numbers and ranges is formatted as a sequence set.
         self.assertEqual(m._sequence_set([1, 2, 5]), '1,2,5')
         self.assertEqual(m._sequence_set([1, (3, 5), (8, '*')]), '1,3:5,8:*')
@@ -333,6 +335,7 @@ class TestImaplib(unittest.TestCase):
                          r'(\Seen \Answered)')
         # '?s' formats a message sequence set.
         self.assertEqual(sub('?s', [[1, (3, 5), (8, '*')]]), '1,3:5,8:*')
+        self.assertEqual(sub('?s', [b'1:3,7']), '1:3,7')
         # '??' is a literal '?'.
         self.assertEqual(sub('a?? b', []), 'a? b')
 
@@ -1066,6 +1069,8 @@ class NewIMAPTestsMixin:
         client.login('user', 'pass')
         self.assertIn('ENABLE', client.capabilities)
         self.assertIn('UTF8=ACCEPT', client.capabilities)
+        self.assertEqual(client.response('CAPABILITY'),
+                         ('CAPABILITY', [b'IMAP4rev1 ENABLE UTF8=ACCEPT']))
         typ, _ = client.enable('UTF8=ACCEPT')
         self.assertEqual(typ, 'OK')
 
@@ -1084,6 +1089,8 @@ class NewIMAPTestsMixin:
         self.assertNotIn('ENABLE', client.capabilities)
         client.authenticate('MYAUTH', lambda x: b'fake')
         self.assertIn('ENABLE', client.capabilities)
+        self.assertEqual(client.response('CAPABILITY'),
+                         ('CAPABILITY', [b'IMAP4rev1 ENABLE']))
 
     def test_greeting_capabilities(self):
         # Capabilities advertised in the greeting are used directly,
@@ -1097,6 +1104,8 @@ class NewIMAPTestsMixin:
         client, server = self._setup(GreetingHandler)
         self.assertEqual(client.capabilities, ('IMAP4REV1', 'ENABLE'))
         self.assertFalse(getattr(server, 'capability_queried', False))
+        # The greeting is not a response to a command, so it is consumed.
+        self.assertEqual(client.response('CAPABILITY'), ('CAPABILITY', [None]))
 
     def test_login_requery_capabilities(self):
         # If the server does not advertise capabilities after login,
@@ -1566,6 +1575,16 @@ class NewIMAPTestsMixin:
         client.login('user', 'pass')
         client.select()
         typ, data = client.fetch('2:4', '(FLAGS)')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [
+            br'2 (FLAGS (\Seen))',
+            br'3 (FLAGS (\Seen))',
+            br'4 (FLAGS (\Seen))',
+        ])
+        self.assertEqual(server.args, ['2:4', '(FLAGS)'])
+
+        # A preformatted message set may be passed as bytes.
+        typ, data = client.fetch(b'2:4', '(FLAGS)')
         self.assertEqual(typ, 'OK')
         self.assertEqual(data, [
             br'2 (FLAGS (\Seen))',
