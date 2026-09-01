@@ -1,4 +1,4 @@
-.. _builtin-index:
+.. _builtins-index:
 
 #######################
   Built-ins reference

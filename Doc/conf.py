@@ -381,9 +381,9 @@ latex_documents = [
         'manual',
     ),
     (
-        'library/builtin-index',
-        'builtin.tex',
-        'Built-in Functions and Classes',
+        'builtins/index',
+        'builtins.tex',
+        'Built-ins Reference',
         _doc_authors,
         'manual',
     ),

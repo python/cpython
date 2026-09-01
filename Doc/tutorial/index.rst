@@ -30,7 +30,7 @@ have a basic understanding of programming in general. It helps to have a Python
 interpreter handy for hands-on experience, but all examples are self-contained,
 so the tutorial can be read off-line as well.
 
-For a description of standard objects and modules, see :ref:`builtin-index` and
+For a description of standard objects and modules, see :ref:`builtins-index` and
 :ref:`library-index`.  :ref:`reference-index` gives a more formal definition of
 the language.  To write extensions in C or C++, read :ref:`extending-index` and
 :ref:`c-api-index`. There are also several books covering Python in depth.
