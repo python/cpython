@@ -74,7 +74,7 @@ __all__ = [
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
     "reset_code", "on_github_actions",
     "requires_root_user", "requires_non_root_user",
-    "skip_if_double_rounding",
+    "skip_if_double_rounding", "built_with_c_assertions",
     ]
 
 
