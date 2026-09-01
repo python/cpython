@@ -3928,6 +3928,27 @@ expat_parse(elementtreestate *st, XMLParserObject *self, const char *data,
     Py_RETURN_NONE;
 }
 
+/* Expat takes the length as an int, feed larger data in chunks. */
+#define MAX_CHUNK_SIZE (1 << 20)
+
+LOCAL(PyObject*)
+expat_parse_large(elementtreestate *st, XMLParserObject *self,
+                  const char *data, Py_ssize_t data_len, int final)
+{
+    static_assert(MAX_CHUNK_SIZE <= INT_MAX,
+                  "MAX_CHUNK_SIZE is larger than INT_MAX");
+    while (data_len > MAX_CHUNK_SIZE) {
+        PyObject *res = expat_parse(st, self, data, MAX_CHUNK_SIZE, 0);
+        if (res == NULL) {
+            return NULL;
+        }
+        Py_DECREF(res);
+        data += MAX_CHUNK_SIZE;
+        data_len -= MAX_CHUNK_SIZE;
+    }
+    return expat_parse(st, self, data, (int)data_len, final);
+}
+
 /*[clinic input]
 _elementtree.XMLParser.close
 
@@ -4019,26 +4040,17 @@ _elementtree_XMLParser_feed_impl(XMLParserObject *self, PyObject *data)
         const char *data_ptr = PyUnicode_AsUTF8AndSize(data, &data_len);
         if (data_ptr == NULL)
             return NULL;
-        if (data_len > INT_MAX) {
-            PyErr_SetString(PyExc_OverflowError, "size does not fit in an int");
-            return NULL;
-        }
         /* Explicitly set UTF-8 encoding. Return code ignored. */
         (void)EXPAT(st, SetEncoding)(self->parser, "utf-8");
 
-        return expat_parse(st, self, data_ptr, (int)data_len, 0);
+        return expat_parse_large(st, self, data_ptr, data_len, 0);
     }
     else {
         Py_buffer view;
         PyObject *res;
         if (PyObject_GetBuffer(data, &view, PyBUF_SIMPLE) < 0)
             return NULL;
-        if (view.len > INT_MAX) {
-            PyBuffer_Release(&view);
-            PyErr_SetString(PyExc_OverflowError, "size does not fit in an int");
-            return NULL;
-        }
-        res = expat_parse(st, self, view.buf, (int)view.len, 0);
+        res = expat_parse_large(st, self, view.buf, view.len, 0);
         PyBuffer_Release(&view);
         return res;
     }
@@ -4108,14 +4120,8 @@ _elementtree_XMLParser__parse_whole_impl(XMLParserObject *self,
             break;
         }
 
-        if (PyBytes_GET_SIZE(buffer) > INT_MAX) {
-            Py_DECREF(buffer);
-            Py_DECREF(reader);
-            PyErr_SetString(PyExc_OverflowError, "size does not fit in an int");
-            return NULL;
-        }
-        res = expat_parse(
-            st, self, PyBytes_AS_STRING(buffer), (int)PyBytes_GET_SIZE(buffer),
+        res = expat_parse_large(
+            st, self, PyBytes_AS_STRING(buffer), PyBytes_GET_SIZE(buffer),
             0);
         first = 0;
 
