@@ -23,24 +23,23 @@ Copyright (C) 2001-2021 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging.handlers' and log away!
 """
 
+import io  # must stay eager to support finalization
+import logging
+import os
+import re
+import threading
+import time
 lazy import base64
 lazy import copy
 lazy import email.utils
 lazy import http.client
-import io # must stay eager to support finalization
-import logging
-import os
 lazy import pickle
 lazy import queue
-import re
 lazy import smtplib
 lazy import socket
 lazy import ssl
 lazy import struct
-import threading
-import time
 lazy import urllib.parse
-
 lazy from email.message import EmailMessage
 
 #

@@ -25,11 +25,11 @@ To use, simply 'import logging' and log away!
 
 import sys, os, time, io, re, traceback, warnings, weakref, collections.abc
 
-lazy import pickle
-
 from types import GenericAlias
 from string import Template
 from string import Formatter as StrFormatter
+
+lazy import pickle
 
 
 __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',

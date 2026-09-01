@@ -24,25 +24,24 @@ Copyright (C) 2001-2022 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging.config' and log away!
 """
 
-lazy import configparser
 import errno
 import functools
 import io
-lazy import json
 import logging
-lazy import logging.handlers
 import os
-lazy import queue
 import re
+import threading
+import traceback
+lazy import configparser
+lazy import json
+lazy import queue
 lazy import select
 lazy import socket
 lazy import struct
-import threading
-import traceback
-
 lazy from bisect import bisect_left
+lazy from logging import handlers as logging_handlers
 lazy from multiprocessing.queues import Queue as MPQueue
-lazy from socketserver import ThreadingTCPServer, StreamRequestHandler
+lazy from socketserver import StreamRequestHandler, ThreadingTCPServer
 
 
 DEFAULT_LOGGING_CONFIG_PORT = 9030
@@ -169,7 +168,7 @@ def _install_handlers(cp, formatters):
             h.setLevel(level)
         if len(fmt):
             h.setFormatter(formatters[fmt])
-        if issubclass(klass, logging.handlers.MemoryHandler):
+        if issubclass(klass, logging_handlers.MemoryHandler):
             target = section.get("target", "")
             if len(target): #the target handler may not be loaded yet, so keep for later...
                 fixups.append((h, target))
@@ -761,7 +760,7 @@ class DictConfigurator(BaseConfigurator):
             q = queue.Queue()  # unbounded
 
         rhl = kwargs.pop('respect_handler_level', False)
-        lklass = kwargs.pop('listener', logging.handlers.QueueListener)
+        lklass = kwargs.pop('listener', logging_handlers.QueueListener)
         handlers = kwargs.pop('handlers', [])
 
         listener = lklass(q, *handlers, respect_handler_level=rhl)
@@ -792,7 +791,7 @@ class DictConfigurator(BaseConfigurator):
                 klass = cname
             else:
                 klass = self.resolve(cname)
-            if issubclass(klass, logging.handlers.MemoryHandler):
+            if issubclass(klass, logging_handlers.MemoryHandler):
                 if 'flushLevel' in config:
                     config['flushLevel'] = logging._checkLevel(config['flushLevel'])
                 if 'target' in config:
@@ -806,7 +805,7 @@ class DictConfigurator(BaseConfigurator):
                         config['target'] = th
                     except Exception as e:
                         raise ValueError('Unable to set target handler %r' % tn) from e
-            elif issubclass(klass, logging.handlers.QueueHandler):
+            elif issubclass(klass, logging_handlers.QueueHandler):
                 # Another special case for handler which refers to other handlers
                 # if 'handlers' not in config:
                     # raise ValueError('No handlers specified for a QueueHandler')
@@ -828,13 +827,13 @@ class DictConfigurator(BaseConfigurator):
                 if 'listener' in config:
                     lspec = config['listener']
                     if isinstance(lspec, type):
-                        if not issubclass(lspec, logging.handlers.QueueListener):
+                        if not issubclass(lspec, logging_handlers.QueueListener):
                             raise TypeError('Invalid listener specifier %r' % lspec)
                     else:
                         if isinstance(lspec, str):
                             listener = self.resolve(lspec)
                             if isinstance(listener, type) and\
-                                not issubclass(listener, logging.handlers.QueueListener):
+                                not issubclass(listener, logging_handlers.QueueListener):
                                 raise TypeError('Invalid listener specifier %r' % lspec)
                         elif isinstance(lspec, dict):
                             if '()' not in lspec:
@@ -858,13 +857,13 @@ class DictConfigurator(BaseConfigurator):
                     except Exception as e:
                         raise ValueError('Unable to set required handler %r' % hn) from e
                     config['handlers'] = hlist
-            elif issubclass(klass, logging.handlers.SMTPHandler) and\
+            elif issubclass(klass, logging_handlers.SMTPHandler) and\
                 'mailhost' in config:
                 config['mailhost'] = self.as_tuple(config['mailhost'])
-            elif issubclass(klass, logging.handlers.SysLogHandler) and\
+            elif issubclass(klass, logging_handlers.SysLogHandler) and\
                 'address' in config:
                 config['address'] = self.as_tuple(config['address'])
-            if issubclass(klass, logging.handlers.QueueHandler):
+            if issubclass(klass, logging_handlers.QueueHandler):
                 factory = functools.partial(self._configure_queue_handler, klass)
             else:
                 factory = klass
