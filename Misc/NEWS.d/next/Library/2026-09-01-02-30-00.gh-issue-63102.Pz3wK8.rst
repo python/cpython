@@ -1,0 +1,6 @@
+:class:`~xml.etree.ElementTree.XMLPullParser` and
+:func:`~xml.etree.ElementTree.iterparse` now support the *target* parameter.
+The reported object is the value returned by the corresponding method
+of the target, so no tree is built if the target does not build one.
+Only the standard :class:`~xml.etree.ElementTree.TreeBuilder` was supported
+in the C implementation before.
