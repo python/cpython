@@ -1,0 +1,4 @@
+Emscripten: ``libpython`` can now be linked into a program statically. The
+setup that wraps ``main()`` in ``WebAssembly.promising()`` moves to the
+interpreter, so an embedder whose ``main()`` is not Python's no longer gets
+it, and the call trampoline no longer needs the interpreter's link flags.
