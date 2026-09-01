@@ -1,0 +1,24 @@
+[
+    [
+        "",
+        "Project-Id-Version: PACKAGE VERSION\nReport-Msgid-Bugs-To: \nPOT-Creation-Date: 2018-11-30 23:46+0100\nPO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\nLast-Translator: FULL NAME <EMAIL@ADDRESS>\nLanguage-Team: French\nLanguage: fr\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nPlural-Forms: nplurals=2; plural=(n > 1);\n"
+    ],
+    [
+        "Hello!",
+        "Bonjour !"
+    ],
+    [
+        [
+            "{n} horse",
+            0
+        ],
+        "{n} cheval"
+    ],
+    [
+        [
+            "{n} horse",
+            1
+        ],
+        "{n} chevaux"
+    ]
+]
