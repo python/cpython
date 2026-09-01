@@ -2526,143 +2526,11 @@ extern PyTypeObject _PyMemoryIter_Type;
 extern PyTypeObject _PyPositionsIterator;
 extern PyTypeObject _Py_GenericAliasIterType;
 
-static PyTypeObject* static_types[_Py_NUM_MANAGED_PREINITIALIZED_TYPES] = {
-    // The two most important base types: must be initialized first and
-    // deallocated last.
-    &PyBaseObject_Type,
-    &PyType_Type,
-
-    // PyStaticMethod_Type and PyCFunction_Type are used by PyType_Ready()
-    // on other types and so must be initialized first.
-    &PyStaticMethod_Type,
-    &PyCFunction_Type,
-
-    // Static types with base=&PyBaseObject_Type
-    &PyAsyncGen_Type,
-    &PyByteArrayIter_Type,
-    &PyByteArray_Type,
-    &PyBytesIter_Type,
-    &PyBytes_Type,
-    &PyCallIter_Type,
-    &PyCapsule_Type,
-    &PyCell_Type,
-    &PyClassMethodDescr_Type,
-    &PyClassMethod_Type,
-    &PyCode_Type,
-    &PyComplex_Type,
-    &PyContextToken_Type,
-    &PyContextVar_Type,
-    &PyContext_Type,
-    &PyCoro_Type,
-    &PyDictItems_Type,
-    &PyDictIterItem_Type,
-    &PyDictIterKey_Type,
-    &PyDictIterValue_Type,
-    &PyDictKeys_Type,
-    &PyDictProxy_Type,
-    &PyDictRevIterItem_Type,
-    &PyDictRevIterKey_Type,
-    &PyDictRevIterValue_Type,
-    &PyDictValues_Type,
-    &PyDict_Type,
-    &PyEllipsis_Type,
-    &PyEnum_Type,
-    &PyFilter_Type,
-    &PyFloat_Type,
-    &PyFrameLocalsProxy_Type,
-    &PyFrame_Type,
-    &PyFrozenDict_Type,
-    &PyFrozenSet_Type,
-    &PyFunction_Type,
-    &PyGen_Type,
-    &PyGetSetDescr_Type,
-    &PyInstanceMethod_Type,
-    &PyLazyImport_Type,
-    &PyListIter_Type,
-    &PyListRevIter_Type,
-    &PyList_Type,
-    &PyLongRangeIter_Type,
-    &PyLong_Type,
-    &PyMap_Type,
-    &PyMemberDescr_Type,
-    &PyMemoryView_Type,
-    &PyMethodDescr_Type,
-    &PyMethod_Type,
-    &PyModuleDef_Type,
-    &PyModule_Type,
-    &PyODictIter_Type,
-    &PyPickleBuffer_Type,
-    &PyProperty_Type,
-    &PyRangeIter_Type,
-    &PyRange_Type,
-    &PyReversed_Type,
-    &PySTEntry_Type,
-    &PySentinel_Type,
-    &PySeqIter_Type,
-    &PySetIter_Type,
-    &PySet_Type,
-    &PySlice_Type,
-    &PyStdPrinter_Type,
-    &PySuper_Type,
-    &PyTraceBack_Type,
-    &PyTupleIter_Type,
-    &PyTuple_Type,
-    &PyUnicodeIter_Type,
-    &PyUnicode_Type,
-    &PyWrapperDescr_Type,
-    &PyZip_Type,
-    &Py_GenericAliasType,
-    &_PyAnextAwaitable_Type,
-    &_PyAsyncGenASend_Type,
-    &_PyAsyncGenAThrow_Type,
-    &_PyAsyncGenWrappedValue_Type,
-    &_PyBufferWrapper_Type,
-    &_PyContextTokenMissing_Type,
-    &_PyCoroWrapper_Type,
-    &_Py_GenericAliasIterType,
-    &_PyHamtItems_Type,
-    &_PyHamtKeys_Type,
-    &_PyHamtValues_Type,
-    &_PyHamt_ArrayNode_Type,
-    &_PyHamt_BitmapNode_Type,
-    &_PyHamt_CollisionNode_Type,
-    &_PyHamt_Type,
-    &_PyInstructionSequence_Type,
-    &_PyInterpolation_Type,
-    &_PyLegacyEventHandler_Type,
-    &_PyLineIterator,
-    &_PyManagedBuffer_Type,
-    &_PyMemoryIter_Type,
-    &_PyMethodWrapper_Type,
-    &_PyNamespace_Type,
-    &_PyNone_Type,
-    &_PyNotImplemented_Type,
-    &_PyPositionsIterator,
-    &_PyTemplate_Type,
-    &_PyTemplateIter_Type,
-    &_PyUnicodeASCIIIter_Type,
-    &_PyUnion_Type,
-#ifdef _Py_TIER2
-    &_PyUOpExecutor_Type,
-#else
-    // The array should have the same size on all builds; see gh-149139
-    NULL,
-#endif
-    &_PyWeakref_CallableProxyType,
-    &_PyWeakref_ProxyType,
-    &_PyWeakref_RefType,
-    &_PyTypeAlias_Type,
-    &_PyNoDefault_Type,
-
-    // subclasses: _PyTypes_FiniTypes() deallocates them before their base
-    // class
-    &PyBool_Type,         // base=&PyLong_Type
-    &PyCMethod_Type,      // base=&PyCFunction_Type
-    &PyODictItems_Type,   // base=&PyDictItems_Type
-    &PyODictKeys_Type,    // base=&PyDictKeys_Type
-    &PyODictValues_Type,  // base=&PyDictValues_Type
-    &PyODict_Type,        // base=&PyDict_Type
+#define _ADD_TYPE(name) &name,
+static PyTypeObject* static_types[] = {
+    _Py_FOREACH_STATIC_PREINIT_TYPE(_ADD_TYPE)
 };
+#undef _ADD_TYPE
 
 
 PyStatus
@@ -2671,9 +2539,6 @@ _PyTypes_InitTypes(PyInterpreterState *interp)
     // All other static types (unless initialized elsewhere)
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
         PyTypeObject *type = static_types[i];
-        if (type == NULL) {
-            continue;
-        }
         if (_PyStaticType_InitBuiltin(interp, type) < 0) {
             return _PyStatus_ERR("Can't initialize builtin type");
         }
@@ -2714,9 +2579,6 @@ _PyTypes_FiniTypes(PyInterpreterState *interp)
     // their base classes.
     for (Py_ssize_t i=Py_ARRAY_LENGTH(static_types)-1; i>=0; i--) {
         PyTypeObject *type = static_types[i];
-        if (type == NULL) {
-            continue;
-        }
         _PyStaticType_FiniBuiltin(interp, type);
     }
 }
