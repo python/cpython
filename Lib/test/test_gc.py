@@ -79,13 +79,6 @@ class Uncollectable(object):
     def __tp_del__(self):
         pass
 
-if sysconfig.get_config_vars().get('PY_CFLAGS', ''):
-    BUILD_WITH_NDEBUG = ('-DNDEBUG' in sysconfig.get_config_vars()['PY_CFLAGS'])
-else:
-    # Usually, sys.gettotalrefcount() is only present if Python has been
-    # compiled in debug mode. If it's missing, expect that Python has
-    # been released in release mode: with NDEBUG defined.
-    BUILD_WITH_NDEBUG = (not hasattr(sys, 'gettotalrefcount'))
 
 ### Tests
 ###############################################################################
@@ -1422,8 +1415,8 @@ class GCCallbackTests(unittest.TestCase):
 
 
     @requires_subprocess()
-    @unittest.skipIf(BUILD_WITH_NDEBUG,
-                     'built with -NDEBUG')
+    @unittest.skipIf(not support.built_with_c_assertions(),
+                     'built without C assertions')
     def test_refcount_errors(self):
         self.preclean()
         # Verify the "handling" of objects with broken refcounts

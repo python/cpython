@@ -3526,3 +3526,23 @@ def check_immutable_type(testcase, type):
     else:
         flags = type_getflags(type)
         testcase.assertTrue(flags & Py_TPFLAGS_IMMUTABLETYPE)
+
+
+def built_with_c_assertions():
+    # Check if Python was built with C assertions (assert())
+
+    if MS_WINDOWS:
+        # On Windows, rely on Py_DEBUG macro to check for assertions
+        return Py_DEBUG
+
+    # Check for "./configure --with-assertions" flag
+    config_args = (sysconfig.get_config_var('CONFIG_ARGS') or '')
+    if '--with-assertions' in config_args:
+        return True
+
+    # Check if the NDEBUG macro is defined in C compiler flags
+    PY_CFLAGS = (sysconfig.get_config_var('PY_CFLAGS') or '')
+    if '-DNDEBUG' in PY_CFLAGS:
+        return False
+
+    return True
