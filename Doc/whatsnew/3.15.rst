@@ -903,7 +903,7 @@ Default interactive shell
   (Contributed by Antonio Cuni and Pablo Galindo in :gh:`130472`.)
 
 * Tab completions now suggest modules attributes in ``from ... import`` statements.
-  The module needs to be imported to provide suggestions; if it's not, ask the user 
+  The module needs to be imported to provide suggestions; if it's not, ask the user
   for approval before auto-importing it (except for stdlib modules).
   (Contributed by Loïc Simon and Pablo Galindo in :gh:`140870`.)
 
