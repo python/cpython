@@ -1,7 +1,7 @@
 """Get useful information from live Python objects.
 
 This module encapsulates the interface provided by the internal special
-attributes (co_*, im_*, tb_*, etc.) in a friendlier fashion.
+attributes (co_*, tb_*, etc.) in a friendlier fashion.
 It also provides some help for examining source code and class layout.
 
 Here are some of the useful functions provided by this module:
@@ -196,18 +196,18 @@ def ispackage(object):
 def ismethoddescriptor(object):
     """Return true if the object is a method descriptor.
 
-    But not if ismethod() or isclass() or isfunction() are true.
+    But not if ismethod(), isclass() or isfunction() is true.
 
-    This is new in Python 2.2, and, for example, is true of int.__add__.
-    An object passing this test has a __get__ attribute, but not a
-    __set__ attribute or a __delete__ attribute. Beyond that, the set
-    of attributes varies; __name__ is usually sensible, and __doc__
-    often is.
+    An object passing this test (for example, int.__add__) has a __get__
+    attribute, but not a __set__ attribute or a __delete__ attribute.
+    Beyond that, the set of attributes varies; __name__ is usually
+    sensible, and __doc__ often is.
 
     Methods implemented via descriptors that also pass one of the other
-    tests return false from the ismethoddescriptor() test, simply because
-    the other tests promise more -- you can, e.g., count on having the
-    __func__ attribute (etc) when an object passes ismethod()."""
+    tests (ismethod(), isclass(), isfunction()) make this function return
+    false, simply because those other tests promise more -- you can, for
+    example, count on having the __func__ attribute when an object passes
+    ismethod()."""
     if isclass(object) or ismethod(object) or isfunction(object):
         # mutual exclusion
         return False
@@ -219,8 +219,13 @@ def ismethoddescriptor(object):
 def isdatadescriptor(object):
     """Return true if the object is a data descriptor.
 
+    But not if ismethod(), isclass() or isfunction() is true.
+
     Data descriptors have a __set__ or a __delete__ attribute.  Examples are
-    properties (defined in Python) and getsets and members (defined in C).
+    properties, getsets, and members.  For the latter two (defined only in C
+    extension modules) more specific tests are available as well:
+    isgetsetdescriptor() and ismemberdescriptor(), respectively.
+
     Typically, data descriptors will also have __name__ and __doc__ attributes
     (properties, getsets, and members have both of these attributes), but this
     is not guaranteed."""
@@ -416,7 +421,6 @@ def iscode(object):
         co_freevars         tuple of names of free variables
         co_posonlyargcount  number of positional only arguments
         co_kwonlyargcount   number of keyword only arguments (not including ** arg)
-        co_lnotab           encoded mapping of line numbers to bytecode indices
         co_name             name with which this code object was defined
         co_names            tuple of names other than arguments and function locals
         co_nlocals          number of local variables
@@ -789,12 +793,14 @@ def _getowndoc(obj):
     except AttributeError:
         return None
 
-def getdoc(object, *, fallback_to_class_doc=True, inherit_class_doc=True):
+def getdoc(object, *, fallback_to_class_doc=True, inherit_class_doc=True,
+           dedent=True):
     """Get the documentation string for an object.
 
     All tabs are expanded to spaces.  To clean up docstrings that are
     indented to line up with blocks of code, any whitespace than can be
-    uniformly removed from the second line onwards is removed."""
+    uniformly removed from the second line onwards is removed, unless
+    dedent is false."""
     if fallback_to_class_doc:
         try:
             doc = object.__doc__
@@ -809,22 +815,23 @@ def getdoc(object, *, fallback_to_class_doc=True, inherit_class_doc=True):
             return None
     if not isinstance(doc, str):
         return None
-    return cleandoc(doc)
+    return cleandoc(doc, dedent=dedent)
 
-def cleandoc(doc):
+def cleandoc(doc, *, dedent=True):
     """Clean up indentation from docstrings.
 
     Any whitespace that can be uniformly removed from the second line
-    onwards is removed."""
+    onwards is removed, unless dedent is false."""
     lines = doc.expandtabs().split('\n')
 
     # Find minimum indentation of any non-blank lines after first line.
     margin = sys.maxsize
-    for line in lines[1:]:
-        content = len(line.lstrip(' '))
-        if content:
-            indent = len(line) - content
-            margin = min(margin, indent)
+    if dedent:
+        for line in lines[1:]:
+            content = len(line.lstrip(' '))
+            if content:
+                indent = len(line) - content
+                margin = min(margin, indent)
     # Remove indentation.
     if lines:
         lines[0] = lines[0].lstrip(' ')
@@ -1255,17 +1262,19 @@ def getargs(co):
 FullArgSpec = namedtuple('FullArgSpec',
     'args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations')
 
-def getfullargspec(func):
+def getfullargspec(func, *, annotation_format=Format.VALUE):
     """Get the names and default values of a callable object's parameters.
 
-    A tuple of seven things is returned:
-    (args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations).
+    A FullArgSpec namedtuple is returned, which has the following attributes:
     'args' is a list of the parameter names.
     'varargs' and 'varkw' are the names of the * and ** parameters or None.
     'defaults' is an n-tuple of the default values of the last n parameters.
     'kwonlyargs' is a list of keyword-only parameter names.
     'kwonlydefaults' is a dictionary mapping names from kwonlyargs to defaults.
     'annotations' is a dictionary mapping parameter names to annotations.
+
+    The *annotation_format* parameter controls the format of the annotations.
+    See the annotationlib documentation for details.
 
     Notable differences from inspect.signature():
       - the "self" parameter is always reported, even for bound methods
@@ -1292,7 +1301,8 @@ def getfullargspec(func):
                                        follow_wrapper_chains=False,
                                        skip_bound_arg=False,
                                        sigcls=Signature,
-                                       eval_str=False)
+                                       eval_str=False,
+                                       annotation_format=annotation_format)
     except Exception as ex:
         # Most of the times 'signature' will raise ValueError.
         # But, it can also raise AttributeError, and, maybe something
@@ -1634,7 +1644,6 @@ def getframeinfo(frame, context=1):
 
 def getlineno(frame):
     """Get the line number from a frame object, allowing for optimization."""
-    # FrameType.f_lineno is now a descriptor that grovels co_lnotab
     return frame.f_lineno
 
 _FrameInfo = namedtuple('_FrameInfo', ('frame',) + Traceback._fields)
@@ -1708,9 +1717,13 @@ def _check_instance(obj, attr):
 
 
 def _check_class(klass, attr):
+    last_meta = None
     for entry in _static_getmro(klass):
-        if _shadowed_dict(type(entry)) is _sentinel and attr in entry.__dict__:
-            return entry.__dict__[attr]
+        meta = type(entry)
+        if meta is last_meta or _shadowed_dict(meta) is _sentinel:
+            last_meta = meta
+            if attr in entry.__dict__:
+                return entry.__dict__[attr]
     return _sentinel
 
 
@@ -1742,6 +1755,9 @@ def _shadowed_dict(klass):
     # destroyed, and the dynamically created classes happen to be the only
     # objects that hold strong references to other objects that take up a
     # significant amount of memory.
+    # Fast path: `type` is the dominant caller; result is always _sentinel.
+    if klass is type:
+        return _sentinel
     return _shadowed_dict_from_weakref_mro_tuple(
         *[make_weakref(entry) for entry in _static_getmro(klass)]
     )
@@ -2199,7 +2215,8 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
             except NameError:
                 raise ValueError
 
-        if isinstance(value, (str, int, float, bytes, bool, type(None))):
+        if isinstance(value, (str, int, float, bytes, bool, type(None),
+                              sentinel)):
             return ast.Constant(value)
         raise ValueError
 
@@ -3353,22 +3370,117 @@ class BufferFlags(enum.IntFlag):
     WRITE = 0x200
 
 
+def _get_details_for_cli(module, nominal_target, resolved_target):
+    # Determine if the given module name is an alias for another module,
+    # or if it is reexporting a name that is actually defined elsewhere
+    resolved_module = getmodule(resolved_target)
+    if resolved_module is not None and resolved_module is not module:
+        # Referenced target indicates it was defined somewhere else,
+        # so report the details of that module rather than the lookup module
+        module = resolved_module
+    reported_module_name = module.__name__
+    # Ensure the reported source file reflects the actual defining location
+    try:
+        source_file = getsourcefile(resolved_target)
+    except Exception:
+        try:
+            source_file = getsourcefile(module)
+        except Exception:
+            source_file = None
+    # Determine if the nominal target location is its defining location
+    if resolved_target is module:
+        reported_target = reported_module_name
+    else:
+        reported_qualname = getattr(resolved_target, "__qualname__", None)
+        if not reported_qualname:
+            reported_qualname = nominal_target.partition(":")[2]
+        reported_target = f"{reported_module_name}:{reported_qualname}"
+        # Special case for looking up functions in frozen modules
+        if source_file == f"<frozen {reported_module_name}>":
+            source_file = module.__file__
+    # Populate the actual details to be reported
+    details = {
+        "target": reported_target,
+        "origin": module.__spec__.origin,
+        "cached": module.__spec__.cached,
+        "source": source_file,
+    }
+    if reported_target != nominal_target:
+        details["alias"] = nominal_target
+    error = None
+    if not source_file:
+        if module.__name__ in sys.builtin_module_names:
+            error = "No source code available for builtin module"
+        else:
+            error = "No source code available for defining module"
+    if resolved_target is module:
+        details["loader"] = repr(module.__spec__.loader)
+        if hasattr(module, '__path__'):
+            details["submodule_paths"] = str(module.__path__)
+    elif source_file:
+            try:
+                __, lineno = findsource(resolved_target)
+            except Exception:
+                error = "Failed to retrieve source code for given target"
+            else:
+                details["lineno"] = lineno
+    if error:
+        details["error"] = error
+    return details
+
+def _render_details_for_cli(details):
+    resolved_target = details["target"]
+    alias = details.get("alias")
+    if alias:
+        rendered_target = f'{resolved_target} (looked up as "{alias}")'
+    else:
+        rendered_target = resolved_target
+    lines = [
+        f'Target: {rendered_target}',
+        f'Origin: {details["origin"]}',
+        f'Source: {details["source"]}',
+        f'Cached: {details["cached"]}',
+    ]
+    loader = details.get("loader")
+    if loader:
+        lines.append(f'Loader: {loader}')
+        submodule_paths = details.get("submodule_paths")
+        if submodule_paths:
+            lines.append(f'Submodule search paths: {submodule_paths}')
+    else:
+        error = details.get("error")
+        if error:
+            # The error is only informational when retrieving object details
+            lines.append(error)
+        else:
+            lines.append(f'Line: {details["lineno"]}')
+
+    lines.append("")
+    return "\n".join(lines)
+
+
 def _main():
     """ Logic for inspecting an object given at command line """
     import argparse
     import importlib
 
-    parser = argparse.ArgumentParser(color=True)
+    # The printed text can contain characters unencodable in the encoding
+    # of stdout, e.g. undecodable bytes of a file name.
+    sys.stdout.reconfigure(errors='backslashreplace')
+
+    parser = argparse.ArgumentParser()
     parser.add_argument(
         'object',
          help="The object to be analysed. "
-              "It supports the 'module:qualname' syntax")
+              "It supports the `module:qualname` syntax")
     parser.add_argument(
         '-d', '--details', action='store_true',
         help='Display info about the module rather than its source code')
 
     args = parser.parse_args()
 
+    # We don't use `pkgutil.resolve_name` here because we want to obtain
+    # references to both the module *and* the fully resolved target object
     target = args.object
     mod_name, has_attrs, attrs = target.partition(":")
     try:
@@ -3386,29 +3498,16 @@ def _main():
         for part in parts:
             obj = getattr(obj, part)
 
-    if module.__name__ in sys.builtin_module_names:
-        print("Can't get info for builtin modules.", file=sys.stderr)
-        sys.exit(1)
-
+    details = _get_details_for_cli(module, target, obj)
     if args.details:
-        print(f'Target: {target}')
-        print(f'Origin: {getsourcefile(module)}')
-        print(f'Cached: {module.__spec__.cached}')
-        if obj is module:
-            print(f'Loader: {module.__loader__!r}')
-            if hasattr(module, '__path__'):
-                print(f'Submodule search path: {module.__path__}')
-        else:
-            try:
-                __, lineno = findsource(obj)
-            except Exception:
-                pass
-            else:
-                print(f'Line: {lineno}')
-
-        print()
+        print(_render_details_for_cli(details))
     else:
-        print(getsource(obj))
+        # Attempt to render target source details
+        error = details.get("error")
+        if error:
+            sys.exit(error)
+        else:
+            print(getsource(obj))
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-This is Python version 3.15.0 alpha 8
+This is Python version 3.16.0 alpha 0
 =====================================
 
 .. image:: https://github.com/python/cpython/actions/workflows/build.yml/badge.svg?branch=main&event=push
@@ -76,8 +76,8 @@ to macOS framework and universal builds.  Refer to `Mac/README.rst
 On Windows, see `PCbuild/readme.txt
 <https://github.com/python/cpython/blob/main/PCbuild/readme.txt>`_.
 
-To build Windows installer, see `Tools/msi/README.txt
-<https://github.com/python/cpython/blob/main/Tools/msi/README.txt>`_.
+To build Windows packages, see `PC/layout/README.md
+<https://github.com/python/cpython/blob/main/PC/layout/README.md>`_.
 
 If you wish, you can create a subdirectory and invoke configure from there.
 For example::
@@ -91,7 +91,7 @@ For example::
 (This will fail if you *also* built at the top-level directory.  You should do
 a ``make clean`` at the top-level first.)
 
-To get an optimized build of Python, ``configure --enable-optimizations``
+To get an optimized build of Python, run ``configure --enable-optimizations``
 before you run ``make``.  This sets the default make targets up to enable
 Profile Guided Optimization (PGO) and may be used to auto-enable Link Time
 Optimization (LTO) on some platforms.  For more details, see the sections
@@ -136,7 +136,7 @@ What's New
 ----------
 
 We have a comprehensive overview of the changes in the `What's new in Python
-3.15 <https://docs.python.org/3.15/whatsnew/3.15.html>`_ document.  For a more
+3.16 <https://docs.python.org/3.16/whatsnew/3.16.html>`_ document.  For a more
 detailed change log, read `Misc/NEWS
 <https://github.com/python/cpython/tree/main/Misc/NEWS.d>`_, but a full
 accounting of changes can only be gleaned from the `commit history
@@ -149,7 +149,7 @@ entitled "Installing multiple versions".
 Documentation
 -------------
 
-`Documentation for Python 3.15 <https://docs.python.org/3.15/>`_ is online,
+`Documentation for Python 3.16 <https://docs.python.org/3.16/>`_ is online,
 updated daily.
 
 It can also be downloaded in many formats for faster access.  The documentation
@@ -208,7 +208,7 @@ and ``make altinstall`` in the others.
 Release Schedule
 ----------------
 
-See `PEP 790 <https://peps.python.org/pep-0790/>`__ for Python 3.15 release details.
+See `PEP 826 <https://peps.python.org/pep-0826/>`__ for Python 3.16 release details.
 
 
 Copyright and License Information

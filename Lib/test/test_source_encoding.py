@@ -82,6 +82,46 @@ class MiscSourceEncodingTest(unittest.TestCase):
             with self.subTest(seq=seq):
                 self.assertRaises(SyntaxError, compile, seq, '<test>', 'exec')
 
+    def test_invalid_utf8_offset_after_non_ascii(self):
+        with self.assertRaises(SyntaxError) as caught:
+            compile(b"x = \xc3\xa9\xff\n", "<test>", "exec")
+        error = caught.exception
+        self.assertEqual(
+            (error.lineno, error.offset, error.end_lineno, error.end_offset),
+            (1, 6, 1, 6),
+        )
+
+    def test_long_bom_conflict_message_is_not_truncated(self):
+        encoding = "x" * 400
+        source = b"\xef\xbb\xbf# coding:" + encoding.encode() + b"\n"
+        with self.assertRaises(SyntaxError) as caught:
+            compile(source, "<test>", "exec")
+        self.assertEqual(
+            caught.exception.msg,
+            f"encoding problem: {encoding} with BOM",
+        )
+
+    def _assert_python_file_ok(self, source):
+        with tempfile.TemporaryDirectory() as directory:
+            filename = script_helper.make_script(directory, "source", source)
+            script_helper.assert_python_ok(filename)
+
+    @support.requires_subprocess()
+    def test_stateful_file_decoder_spans_lines(self):
+        encoded_name = "変数".encode("iso2022_jp")
+        payload = encoded_name[3:-3]
+        source = (
+            b"# coding: iso2022_jp\n"
+            b"# \x1b$B" + payload + b"\n"
+            + payload + b"\x1b(B = 1\n"
+        )
+        self._assert_python_file_ok(source)
+
+    @support.requires_subprocess()
+    def test_stateful_file_decoder_finalizes_before_implicit_newline(self):
+        source = b"# coding: hz\n# ~{1dA?"
+        self._assert_python_file_ok(source)
+
     @support.requires_subprocess()
     def test_20731(self):
         sub = subprocess.Popen([sys.executable,
@@ -387,8 +427,7 @@ class AbstractSourceEncodingTest:
                b'#third\xa4\n'
                b'raise RuntimeError\n')
         self.check_script_error(src,
-                br"'utf-8' codec can't decode byte|"
-                br"encoding problem: utf8")
+                br"'utf-8' codec can't decode byte")
 
     def test_crlf(self):
         src = (b'print(ascii("""\r\n"""))\n')
@@ -540,6 +579,20 @@ class FileSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
                 line = line.removeprefix('\ufeff')
             self.assertIn(line.encode(), err)
 
+    def test_coding_spec_unknown_encoding(self):
+        src = (b'# coding: c1252\n'
+               b'print("Hi!")\n')
+        self.check_script_error(src, br"unknown encoding: c1252")
+
+    def test_coding_spec_decode_error(self):
+        src = (b'# coding: shift-jis\n'
+               b'print("\xc4\x85")\n')
+        self.check_script_error(src, br"'shift_jis' codec can't decode byte")
+
+    def test_coding_spec_non_text_encoding(self):
+        src = (b'# coding: hex_codec\n'
+               b'print("eggs")\n')
+        self.check_script_error(src, br"'hex_codec' is not a text encoding")
 
 
 if __name__ == "__main__":

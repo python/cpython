@@ -8,7 +8,6 @@ import os
 import re
 import string
 import sys
-from distutils.errors import DistutilsPlatformError
 
 def get_host_platform():
     """Return a string that identifies the current platform.  This is used mainly to
