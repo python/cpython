@@ -904,7 +904,7 @@ Default interactive shell
 
 * Tab completions now suggest modules attributes in ``from ... import`` statements.
   The module needs to be imported to provide suggestions; if it's not, ask the user
-  for approval before auto-importing it (except for stdlib modules).
+  for approval before auto-importing it (except for :term:`stdlib` modules).
   (Contributed by Loïc Simon and Pablo Galindo in :gh:`140870`.)
 
 
