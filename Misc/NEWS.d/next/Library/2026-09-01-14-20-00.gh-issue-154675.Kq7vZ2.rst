@@ -1,0 +1,2 @@
+Speed up ``import json.tool`` by importing :mod:`argparse` and ``_colorize``
+lazily.
