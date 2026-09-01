@@ -1042,8 +1042,8 @@ method of other descriptors.
 
 Remove the ``PyEval_GetCallStats()`` function and deprecate the untested and
 undocumented ``sys.callstats()`` function. Remove the ``CALL_PROFILE``
-special build: use the :func:`sys.setprofile` function, :mod:`cProfile` or
-:mod:`profile` to profile function calls.
+special build: use the :func:`sys.setprofile` function, :mod:`!cProfile` or
+:mod:`!profile` to profile function calls.
 
 ..
 

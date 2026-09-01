@@ -132,6 +132,7 @@ class StartupTests(TestBase):
                     'sub': sys.path[0],
                 }}, indent=4), flush=True)
                 """)
+            interp.close()
             '''
         # <tmp>/
         #   pkg/
@@ -172,7 +173,10 @@ class FinalizationTests(TestBase):
         argv = [sys.executable, '-c', '''if True:
             from concurrent import interpreters
             interp = interpreters.create()
-            raise Exception
+            try:
+                raise Exception
+            finally:
+                interp.close()
             ''']
         proc = subprocess.run(argv, capture_output=True, text=True)
         self.assertIn('Traceback', proc.stderr)

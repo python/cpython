@@ -1,2 +1,0 @@
-Removed deprecated :meth:`!pathlib.PurePath.is_reserved`. Use
-:func:`os.path.isreserved` to detect reserved paths on Windows.

@@ -530,19 +530,19 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     char a = 'A';
-    char b = '\x07';
-    char c = '\x08';
+    char b = '\a';
+    char c = '\b';
     char d = '\t';
     char e = '\n';
-    char f = '\x0b';
-    char g = '\x0c';
+    char f = '\v';
+    char g = '\f';
     char h = '\r';
     char i = '"';
     char j = '\'';
     char k = '?';
     char l = '\\';
-    char m = '\x00';
-    char n = '\xff';
+    char m = '\0';
+    char n = '\377';
 
     if (!_PyArg_CheckPositional("test_char_converter", nargs, 0, 14)) {
         goto exit;
@@ -936,7 +936,7 @@ static PyObject *
 test_char_converter_impl(PyObject *module, char a, char b, char c, char d,
                          char e, char f, char g, char h, char i, char j,
                          char k, char l, char m, char n)
-/*[clinic end generated code: output=ff11e203248582df input=e42330417a44feac]*/
+/*[clinic end generated code: output=6503d15448e1d4c4 input=e42330417a44feac]*/
 
 
 /*[clinic input]
@@ -1192,14 +1192,14 @@ test_int_converter
 
     a: int = 12
     b: int(accept={int}) = 34
-    c: int(accept={str}) = 45
+    c: int(accept={str}) = '-'
     d: int(type='myenum') = 67
     /
 
 [clinic start generated code]*/
 
 PyDoc_STRVAR(test_int_converter__doc__,
-"test_int_converter($module, a=12, b=34, c=45, d=67, /)\n"
+"test_int_converter($module, a=12, b=34, c=\'-\', d=67, /)\n"
 "--\n"
 "\n");
 
@@ -1215,7 +1215,7 @@ test_int_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     int a = 12;
     int b = 34;
-    int c = 45;
+    int c = '-';
     myenum d = 67;
 
     if (!_PyArg_CheckPositional("test_int_converter", nargs, 0, 4)) {
@@ -1266,7 +1266,7 @@ exit:
 
 static PyObject *
 test_int_converter_impl(PyObject *module, int a, int b, int c, myenum d)
-/*[clinic end generated code: output=fbcfb7554688663d input=d20541fc1ca0553e]*/
+/*[clinic end generated code: output=d5357b563bdb8789 input=5d8f4eb5899b24de]*/
 
 
 /*[clinic input]
@@ -4341,7 +4341,7 @@ test_vararg_and_posonly(PyObject *module, PyObject *const *args, Py_ssize_t narg
         goto exit;
     }
     a = args[0];
-    __clinic_args = _PyTuple_FromArray(args + 1, nargs - 1);
+    __clinic_args = PyTuple_FromArray(args + 1, nargs - 1);
     if (__clinic_args == NULL) {
         goto exit;
     }
@@ -4356,7 +4356,7 @@ exit:
 
 static PyObject *
 test_vararg_and_posonly_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=0c11c475e240869e input=2c49a482f68545c0]*/
+/*[clinic end generated code: output=83cbe9554d04add2 input=2c49a482f68545c0]*/
 
 /*[clinic input]
 test_vararg
@@ -4421,7 +4421,7 @@ test_vararg(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     }
     a = fastargs[0];
     __clinic_args = nargs > 1
-        ? _PyTuple_FromArray(args + 1, nargs - 1)
+        ? PyTuple_FromArray(args + 1, nargs - 1)
         : PyTuple_New(0);
     if (__clinic_args == NULL) {
         goto exit;
@@ -4437,7 +4437,7 @@ exit:
 
 static PyObject *
 test_vararg_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=17ba625cdd0369c1 input=7448995636d9186a]*/
+/*[clinic end generated code: output=d773f7b54e61f73a input=7448995636d9186a]*/
 
 /*[clinic input]
 test_vararg_with_default
@@ -4514,7 +4514,7 @@ test_vararg_with_default(PyObject *module, PyObject *const *args, Py_ssize_t nar
     }
 skip_optional_kwonly:
     __clinic_args = nargs > 1
-        ? _PyTuple_FromArray(args + 1, nargs - 1)
+        ? PyTuple_FromArray(args + 1, nargs - 1)
         : PyTuple_New(0);
     if (__clinic_args == NULL) {
         goto exit;
@@ -4531,7 +4531,7 @@ exit:
 static PyObject *
 test_vararg_with_default_impl(PyObject *module, PyObject *a, PyObject *args,
                               int b)
-/*[clinic end generated code: output=3f2b06ab08d5d0be input=3a0f9f557ce1f712]*/
+/*[clinic end generated code: output=d25e56802c197344 input=3a0f9f557ce1f712]*/
 
 /*[clinic input]
 test_vararg_with_only_defaults
@@ -4612,7 +4612,7 @@ test_vararg_with_only_defaults(PyObject *module, PyObject *const *args, Py_ssize
     }
     c = fastargs[1];
 skip_optional_kwonly:
-    __clinic_args = _PyTuple_FromArray(args, nargs);
+    __clinic_args = PyTuple_FromArray(args, nargs);
     if (__clinic_args == NULL) {
         goto exit;
     }
@@ -4628,7 +4628,7 @@ exit:
 static PyObject *
 test_vararg_with_only_defaults_impl(PyObject *module, PyObject *args, int b,
                                     PyObject *c)
-/*[clinic end generated code: output=f46666f0b1bf86b9 input=6983e66817f82924]*/
+/*[clinic end generated code: output=7366943a7df42e05 input=6983e66817f82924]*/
 
 /*[clinic input]
 test_paramname_module
@@ -5431,6 +5431,12 @@ Test_property_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
 {
     int return_value;
 
+    if (value == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute 'property' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
     return_value = Test_property_set_impl((TestObj *)self, value);
 
     return return_value;
@@ -5438,7 +5444,40 @@ Test_property_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
 
 static int
 Test_property_set_impl(TestObj *self, PyObject *value)
-/*[clinic end generated code: output=49f925ab2a33b637 input=3bc3f46a23c83a88]*/
+/*[clinic end generated code: output=ec103a151cf51d25 input=3bc3f46a23c83a88]*/
+
+/*[clinic input]
+@setter
+@deleter
+Test.settable_and_deletable
+[clinic start generated code]*/
+
+#if !defined(Test_settable_and_deletable_DOCSTR)
+#  define Test_settable_and_deletable_DOCSTR NULL
+#endif
+#if defined(TEST_SETTABLE_AND_DELETABLE_GETSETDEF)
+#  undef TEST_SETTABLE_AND_DELETABLE_GETSETDEF
+#  define TEST_SETTABLE_AND_DELETABLE_GETSETDEF {"settable_and_deletable", (getter)Test_settable_and_deletable_get, (setter)Test_settable_and_deletable_set, Test_settable_and_deletable_DOCSTR},
+#else
+#  define TEST_SETTABLE_AND_DELETABLE_GETSETDEF {"settable_and_deletable", NULL, (setter)Test_settable_and_deletable_set, NULL},
+#endif
+
+static int
+Test_settable_and_deletable_set_impl(TestObj *self, PyObject *value);
+
+static int
+Test_settable_and_deletable_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    return_value = Test_settable_and_deletable_set_impl((TestObj *)self, value);
+
+    return return_value;
+}
+
+static int
+Test_settable_and_deletable_set_impl(TestObj *self, PyObject *value)
+/*[clinic end generated code: output=479986d499b2f56d input=f5647f3511b9daea]*/
 
 /*[clinic input]
 @setter
@@ -5463,6 +5502,12 @@ Test_setter_first_with_docstr_set(PyObject *self, PyObject *value, void *Py_UNUS
 {
     int return_value;
 
+    if (value == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute 'setter_first_with_docstr' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
     return_value = Test_setter_first_with_docstr_set_impl((TestObj *)self, value);
 
     return return_value;
@@ -5470,7 +5515,7 @@ Test_setter_first_with_docstr_set(PyObject *self, PyObject *value, void *Py_UNUS
 
 static int
 Test_setter_first_with_docstr_set_impl(TestObj *self, PyObject *value)
-/*[clinic end generated code: output=5aaf44373c0af545 input=31a045ce11bbe961]*/
+/*[clinic end generated code: output=eac8bafcaa50aa51 input=31a045ce11bbe961]*/
 
 /*[clinic input]
 @getter
@@ -5741,21 +5786,15 @@ Test___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("Test", kwargs)) {
         goto exit;
     }
-    switch (PyTuple_GET_SIZE(args)) {
-        case 1:
-            if (!PyArg_ParseTuple(args, "O:__init__", &a)) {
-                goto exit;
-            }
-            break;
-        case 2:
-            if (!PyArg_ParseTuple(args, "OO:__init__", &a, &b)) {
-                goto exit;
-            }
-            group_right_1 = 1;
-            break;
-        default:
-            PyErr_SetString(PyExc_TypeError, "Test.__init__ requires 1 to 2 arguments");
-            goto exit;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    if (nargs < 1 || nargs > 2) {
+        PyErr_SetString(PyExc_TypeError, "Test.__init__ requires 1 to 2 arguments");
+        goto exit;
+    }
+    a = PyTuple_GET_ITEM(args, 0);
+    if (nargs >= 2) {
+        b = PyTuple_GET_ITEM(args, 1);
+        group_right_1 = 1;
     }
     return_value = Test___init___impl((TestObj *)self, a, group_right_1, b);
 
@@ -5766,7 +5805,175 @@ exit:
 static int
 Test___init___impl(TestObj *self, PyObject *a, int group_right_1,
                    PyObject *b)
-/*[clinic end generated code: output=2bbb8ea60e8f57a6 input=10f5d0f1e8e466ef]*/
+/*[clinic end generated code: output=72fdd2de63c05b9e input=10f5d0f1e8e466ef]*/
+
+
+/*[clinic input]
+only_optional_group
+    [
+    a: object
+    ]
+    /
+The only parameter is in an optional group.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(only_optional_group__doc__,
+"only_optional_group([a])\n"
+"The only parameter is in an optional group.");
+
+#define ONLY_OPTIONAL_GROUP_METHODDEF    \
+    {"only_optional_group", _PyCFunction_CAST(only_optional_group), METH_FASTCALL, only_optional_group__doc__},
+
+static PyObject *
+only_optional_group_impl(PyObject *module, int group_right_1, PyObject *a);
+
+static PyObject *
+only_optional_group(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int group_right_1 = 0;
+    PyObject *a = NULL;
+
+    if (nargs > 1) {
+        PyErr_SetString(PyExc_TypeError, "only_optional_group requires 0 to 1 arguments");
+        goto exit;
+    }
+    if (nargs >= 1) {
+        a = args[0];
+        group_right_1 = 1;
+    }
+    return_value = only_optional_group_impl(module, group_right_1, a);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+only_optional_group_impl(PyObject *module, int group_right_1, PyObject *a)
+/*[clinic end generated code: output=4c7959fcc06bd216 input=426c64055af7bcab]*/
+
+
+/*[clinic input]
+group_and_optional_parameter
+    [
+    a: object
+    b: object
+    ]
+    c: object = None
+    /
+The optional parameter can be omitted with or without the group.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(group_and_optional_parameter__doc__,
+"group_and_optional_parameter([a, b,] c=None)\n"
+"The optional parameter can be omitted with or without the group.");
+
+#define GROUP_AND_OPTIONAL_PARAMETER_METHODDEF    \
+    {"group_and_optional_parameter", _PyCFunction_CAST(group_and_optional_parameter), METH_FASTCALL, group_and_optional_parameter__doc__},
+
+static PyObject *
+group_and_optional_parameter_impl(PyObject *module, int group_left_1,
+                                  PyObject *a, PyObject *b, PyObject *c);
+
+static PyObject *
+group_and_optional_parameter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int group_left_1 = 0;
+    PyObject *a = NULL;
+    PyObject *b = NULL;
+    PyObject *c = Py_None;
+
+    Py_ssize_t offset = 0;
+    if (nargs > 3) {
+        PyErr_SetString(PyExc_TypeError, "group_and_optional_parameter requires 0 to 3 arguments");
+        goto exit;
+    }
+    if (nargs >= 2) {
+        a = args[0];
+        b = args[1];
+        offset += 2;
+        group_left_1 = 1;
+    }
+    if (nargs <= offset) {
+        goto skip_optional;
+    }
+    c = args[offset];
+skip_optional:
+    return_value = group_and_optional_parameter_impl(module, group_left_1, a, b, c);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+group_and_optional_parameter_impl(PyObject *module, int group_left_1,
+                                  PyObject *a, PyObject *b, PyObject *c)
+/*[clinic end generated code: output=651f2361ffc5e256 input=7f0fbb6124f5a972]*/
+
+
+/*[clinic input]
+two_groups_on_the_same_level
+    [
+    a: object
+    b: object
+    ]
+    [
+    c: object
+    ]
+    d: object
+    /
+Groups on the same level are independent of each other.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(two_groups_on_the_same_level__doc__,
+"two_groups_on_the_same_level([a, b,] [c,] d)\n"
+"Groups on the same level are independent of each other.");
+
+#define TWO_GROUPS_ON_THE_SAME_LEVEL_METHODDEF    \
+    {"two_groups_on_the_same_level", _PyCFunction_CAST(two_groups_on_the_same_level), METH_FASTCALL, two_groups_on_the_same_level__doc__},
+
+static PyObject *
+two_groups_on_the_same_level_impl(PyObject *module, int group_left_1,
+                                  PyObject *a, PyObject *b, int group_left_2,
+                                  PyObject *c, PyObject *d);
+
+static PyObject *
+two_groups_on_the_same_level(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int group_left_1 = 0;
+    PyObject *a = NULL;
+    PyObject *b = NULL;
+    int group_left_2 = 0;
+    PyObject *c = NULL;
+    PyObject *d;
+
+    if (nargs < 1 || nargs > 4) {
+        PyErr_SetString(PyExc_TypeError, "two_groups_on_the_same_level requires 1 to 4 arguments");
+        goto exit;
+    }
+    if (nargs >= 3) {
+        a = args[0];
+        b = args[1];
+        group_left_1 = 1;
+    }
+    if (nargs == 2 || nargs == 4) {
+        c = args[nargs - 2];
+        group_left_2 = 1;
+    }
+    d = args[nargs - 1];
+    return_value = two_groups_on_the_same_level_impl(module, group_left_1, a, b, group_left_2, c, d);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+two_groups_on_the_same_level_impl(PyObject *module, int group_left_1,
+                                  PyObject *a, PyObject *b, int group_left_2,
+                                  PyObject *c, PyObject *d)
+/*[clinic end generated code: output=737c3f543296e916 input=1b45d9b675b32d1a]*/
 
 
 /*[clinic input]

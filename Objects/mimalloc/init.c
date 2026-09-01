@@ -183,9 +183,9 @@ mi_heap_t* _mi_heap_main_get(void) {
 
 // note: in x64 in release build `sizeof(mi_thread_data_t)` is under 4KiB (= OS page size).
 typedef struct mi_thread_data_s {
-  mi_heap_t  heap;  // must come first due to cast in `_mi_heap_done`
+  mi_heap_t  heap;   // must come first due to cast in `_mi_heap_done`
   mi_tld_t   tld;
-  mi_memid_t memid;
+  mi_memid_t memid;  // must come last due to zero'ing
 } mi_thread_data_t;
 
 
@@ -231,7 +231,7 @@ static mi_thread_data_t* mi_thread_data_zalloc(void) {
   }
 
   if (td != NULL && !is_zero) {
-    _mi_memzero_aligned(td, sizeof(*td));
+    _mi_memzero_aligned(td, offsetof(mi_thread_data_t,memid));
   }
   return td;
 }

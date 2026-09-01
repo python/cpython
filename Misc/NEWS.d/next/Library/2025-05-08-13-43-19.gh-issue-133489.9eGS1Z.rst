@@ -1,2 +1,0 @@
-:func:`random.getrandbits` can now generate more that 2\ :sup:`31` bits.
-:func:`random.randbytes` can now generate more that 256 MiB.

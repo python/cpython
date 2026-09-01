@@ -12,7 +12,7 @@ from typing import NoReturn
 from test.support import os_helper, MS_WINDOWS, flush_std_streams
 
 from .cmdline import _parse_args, Namespace
-from .findtests import findtests, split_test_packages, list_cases
+from .findtests import findtests, split_test_packages, list_cases, collect_cases
 from .logger import Logger
 from .pgo import setup_pgo_tests
 from .result import TestResult
@@ -26,8 +26,8 @@ from .utils import (
     strip_py_suffix, count, format_duration,
     printlist, get_temp_dir, get_work_dir, exit_timeout,
     display_header, cleanup_temp_dir, print_warning,
-    is_cross_compiled, get_host_runner,
-    EXIT_TIMEOUT)
+    is_cross_compiled, get_host_runner, display_title,
+    get_process_memory_usage, EXIT_TIMEOUT)
 
 
 class Regrtest:
@@ -73,6 +73,7 @@ class Regrtest:
         self.want_header: bool = ns.header
         self.want_list_tests: bool = ns.list_tests
         self.want_list_cases: bool = ns.list_cases
+        self.want_single_process_per_case: bool = ns.single_process_per_case
         self.want_wait: bool = ns.wait
         self.want_cleanup: bool = ns.cleanup
         self.want_rerun: bool = ns.rerun
@@ -99,6 +100,10 @@ class Regrtest:
         else:
             num_workers = ns.use_mp  # run in parallel
         self.num_workers: int = num_workers
+        if ns.single_process_per_case and ns.use_mp is None:
+            # Each test case runs in its own worker subprocess;
+            # default to one worker when -j was not given.
+            self.num_workers = 1
         self.worker_json: StrJSON | None = ns.worker_json
 
         # Options to run tests
@@ -118,7 +123,7 @@ class Regrtest:
         self.junit_filename: StrPath | None = ns.xmlpath
         self.memory_limit: str | None = ns.memlimit
         self.gc_threshold: int | None = ns.threshold
-        self.use_resources: tuple[str, ...] = tuple(ns.use_resources)
+        self.use_resources: dict[str, str | None] = dict(ns.use_resources)
         if ns.python:
             self.python_cmd: tuple[str, ...] | None = tuple(ns.python)
         else:
@@ -126,6 +131,7 @@ class Regrtest:
         self.coverage: bool = ns.trace
         self.coverage_dir: StrPath | None = ns.coverdir
         self._tmp_dir: StrPath | None = ns.tempdir
+        self.pythoninfo: bool = ns.pythoninfo
 
         # Randomize
         self.randomize: bool = ns.randomize
@@ -322,9 +328,7 @@ class Regrtest:
         title = f"Bisect {test}"
         if progress:
             title = f"{title} ({progress})"
-        print(title)
-        print("#" * len(title))
-        print()
+        display_title(title)
 
         cmd = runtests.create_python_cmd()
         cmd.extend([
@@ -345,9 +349,7 @@ class Regrtest:
         exitcode = proc.returncode
 
         title = f"{title}: exit code {exitcode}"
-        print(title)
-        print("#" * len(title))
-        print(flush=True)
+        display_title(title)
 
         if exitcode:
             print(f"Bisect failed with exit code {exitcode}")
@@ -396,7 +398,12 @@ class Regrtest:
 
         return result
 
+    def _get_mem_usage(self):
+        return get_process_memory_usage(os.getpid())
+
     def run_tests_sequentially(self, runtests: RunTests) -> None:
+        if not self.pgo:
+            self.logger.get_mem_usage = self._get_mem_usage
         if self.coverage:
             tracer = trace.Trace(trace=False, count=True)
         else:
@@ -446,7 +453,7 @@ class Regrtest:
 
     def get_state(self) -> str:
         state = self.results.get_state(self.fail_env_changed)
-        if self.first_state:
+        if self.first_state and self.first_state != state:
             state = f'{self.first_state} then {state}'
         return state
 
@@ -519,6 +526,8 @@ class Regrtest:
             randomize=self.randomize,
             random_seed=self.random_seed,
             parallel_threads=self.parallel_threads,
+            single_process_per_case=self.want_single_process_per_case,
+            case_groups=None,
         )
 
     def _run_tests(self, selected: TestTuple, tests: TestList | None) -> int:
@@ -544,6 +553,23 @@ class Regrtest:
         print("Using random seed:", self.random_seed)
 
         runtests = self.create_run_tests(selected)
+        if self.want_single_process_per_case:
+            cases_by_module, _ = collect_cases(
+                selected,
+                match_tests=self.match_tests,
+                test_dir=self.test_dir)
+            groups = []
+            for module_name in selected:
+                cases = cases_by_module.get(module_name)
+                if cases:
+                    groups.append((module_name, tuple(cases)))
+                else:
+                    groups.append((module_name, (module_name,)))
+            case_groups = tuple(groups)
+            case_ids = tuple(
+                case_id for _, cases in case_groups for case_id in cases
+            )
+            runtests = runtests.copy(tests=case_ids, case_groups=case_groups)
         self.first_runtests = runtests
         self.logger.set_tests(runtests)
 
@@ -646,15 +672,23 @@ class Regrtest:
         return (environ, keep_environ)
 
     def _add_ci_python_opts(self, python_opts, keep_environ):
-        # --fast-ci and --slow-ci add options to Python:
-        # "-u -W default -bb -E"
+        # --fast-ci and --slow-ci add options to Python.
+        #
+        # Some platforms run tests in embedded mode and cannot change options
+        # after startup, so if this function changes, consider also updating:
+        #  * gradle_task in Android/android.py
 
-        # Unbuffered stdout and stderr
-        if not sys.stdout.write_through:
+        # Unbuffered stdout and stderr. This isn't helpful on Android, because
+        # it would cause lines to be split into multiple log messages.
+        if not sys.stdout.write_through and sys.platform != "android":
             python_opts.append('-u')
 
-        # Add warnings filter 'error'
-        if 'default' not in sys.warnoptions:
+        # Add warnings filter 'error', unless the user specified a different
+        # filter. Ignore BytesWarning since it's controlled by '-b' below.
+        if not [
+            opt for opt in sys.warnoptions
+            if not opt.endswith("::BytesWarning")
+        ]:
             python_opts.extend(('-W', 'error'))
 
         # Error on bytes/str comparison
@@ -673,8 +707,12 @@ class Regrtest:
 
         cmd_text = shlex.join(cmd)
         try:
-            print(f"+ {cmd_text}", flush=True)
+            # Android and iOS run tests in embedded mode. To update their
+            # Python options, see the comment in _add_ci_python_opts.
+            if not cmd[0]:
+                raise ValueError("No Python executable is present")
 
+            print(f"+ {cmd_text}", flush=True)
             if hasattr(os, 'execv') and not MS_WINDOWS:
                 os.execv(cmd[0], cmd)
                 # On success, execv() do no return.
@@ -740,6 +778,15 @@ class Regrtest:
             )
         return self._tmp_dir
 
+    def run_pythoninfo(self):
+        from test import pythoninfo
+        try:
+            pythoninfo.main()
+        except SystemExit:
+            # Ignore non-zero exit code on purpose
+            pass
+        print()
+
     def main(self, tests: TestList | None = None) -> NoReturn:
         if self.want_add_python_opts:
             self._add_python_opts()
@@ -752,6 +799,9 @@ class Regrtest:
 
         if self.want_wait:
             input("Press any key to continue...")
+
+        if self.pythoninfo:
+            self.run_pythoninfo()
 
         setup_test_dir(self.test_dir)
         selected, tests = self.find_tests(tests)
