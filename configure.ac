@@ -2446,6 +2446,11 @@ AS_CASE([$ac_sys_system],
 
     AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
       AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE"])
+      AC_DEFINE([Py_EMSCRIPTEN_DYNAMIC_LINKING], [1],
+                [Define if the Emscripten build is linked with -sMAIN_MODULE.])
+    ], [
+      dnl Implied by MAIN_MODULE; the call trampoline's addFunction() needs it.
+      AS_VAR_APPEND([LINKFORSHARED], [" -sALLOW_TABLE_GROWTH"])
     ])
 
     AS_VAR_IF([enable_wasm_pthreads], [yes], [
@@ -5406,8 +5411,8 @@ PLATFORM_MAIN_OBJS=
 
 AS_CASE([$ac_sys_system],
   [Emscripten], [
-    AS_VAR_APPEND([PLATFORM_MAIN_OBJS], [' Programs/emscripten_beforemain.o'])
     AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_trampoline_wasm.o'])
+    AS_VAR_APPEND([PLATFORM_MAIN_OBJS], [' Programs/emscripten_beforemain.o'])
     AS_VAR_IF([enable_emscripten_syscalls], [yes], [
       AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_syscalls.o'])
     ])

@@ -161,6 +161,19 @@ EM_JS_MACROS(__externref_t, __maybe_poll_async, (intptr_t fds, int nfds, int tim
     if (!WebAssembly.promising) {
         return null;
     }
+    // Suspending at all requires a promising stack, so do not if there is
+    // nothing to await.
+    var async = false;
+    for (var i = 0; i < nfds; i++) {
+        var s = FS.getStream(HEAP32[(fds + POLLFD_SIZE * i + POLLFD_FD)/4]);
+        if (s && s.stream_ops.pollAsync) {
+            async = true;
+            break;
+        }
+    }
+    if (!async) {
+        return null;
+    }
     return (async function() {
         try {
             var nonzero = 0;
