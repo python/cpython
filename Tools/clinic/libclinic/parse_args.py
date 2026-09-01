@@ -1,11 +1,13 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, Literal
 
 import libclinic
-from libclinic import fail, warn
+from libclinic import fail, warn, unspecified, Sentinels
 from libclinic.function import (
-    Function, Parameter,
-    GETTER, SETTER, METHOD_NEW)
+    Function, Parameter, ParamTuple,
+    count_required, group_to_variable_name, permute_optional_groups,
+    GETTER, SETTER, METHOD_NEW,
+    ACCESSORS, SETTERS)
 from libclinic.converter import CConverter
 from libclinic.converters import (
     defining_class_converter, object_converter, self_converter)
@@ -188,6 +190,21 @@ METHODDEF_PROTOTYPE_IFNDEF: Final[str] = libclinic.normalize_snippet("""
         #define {methoddef_name}
     #endif /* !defined({methoddef_name}) */
 """)
+GETSETDEF_PROTOTYPE_IFNDEF: Final[str] = libclinic.normalize_snippet("""
+    #ifndef {getset_name}_GETSETDEF
+        #define {getset_name}_GETSETDEF
+    #endif /* !defined({getset_name}_GETSETDEF) */
+""")
+# The setter is called with NULL to delete the attribute.  Unless @deleter is
+# applied to it, deletion is rejected before the implementation is called.
+SETTER_PREAMBLE: Final[str] = libclinic.normalize_snippet("""
+    if (value == NULL) {{
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '{name}' of '%.100s' objects cannot be deleted",
+                     Py_TYPE({self_name})->tp_name);
+        return -1;
+    }}
+""", indent=4)
 
 
 class ParseArgsCodeGen:
@@ -328,9 +345,10 @@ class ParseArgsCodeGen:
             self.methoddef_define = GETTERDEF_PROTOTYPE_DEFINE
             if self.func.docstring:
                 self.docstring_definition = GETSET_DOCSTRING_PROTOTYPE_STRVAR
-        elif self.func.kind is SETTER:
+        elif self.func.kind in SETTERS:
             if self.func.docstring:
-                fail("docstrings are only supported for @getter, not @setter")
+                fail("docstrings are only supported for @getter, not @setter",
+                     line_number=self.func.line_number)
             self.return_value_declaration = "int {parser_retval};"
             self.methoddef_define = SETTERDEF_PROTOTYPE_DEFINE
         else:
@@ -387,9 +405,12 @@ class ParseArgsCodeGen:
         if self.func.kind is GETTER:
             self.parser_prototype = PARSER_PROTOTYPE_GETTER
             parser_code = []
-        elif self.func.kind is SETTER:
+        elif self.func.kind in SETTERS:
             self.parser_prototype = PARSER_PROTOTYPE_SETTER
-            parser_code = []
+            if self.func.kind is SETTER:
+                parser_code = [SETTER_PREAMBLE]
+            else:
+                parser_code = []
         elif not self.requires_defining_class:
             # no self.parameters, METH_NOARGS
             self.flags = "METH_NOARGS"
@@ -462,15 +483,315 @@ class ParseArgsCodeGen:
             parser_code = libclinic.normalize_snippet(parsearg, indent=4)
             self.parser_body(parser_code)
 
+    def option_group_subsets(self) -> dict[int, ParamTuple]:
+        # positional only, grouped, optional arguments!
+        # can be optional on the left or right.
+        # here's an example:
+        #
+        # [ [ [ A1 A2 ] B1 B2 B3 ] C1 C2 ] D1 D2 D3 [ E1 E2 E3 [ F1 F2 F3 ] ]
+        #
+        # Here group D are required, and all other groups are optional.
+        # (Group D's "group" is actually None.)
+        # We can figure out which sets of arguments we have based on
+        # how many arguments are in the tuple.
+        #
+        # Note that you need to count up on both sides.  For example,
+        # you could have groups C+D, or C+D+E, or C+D+E+F.
+        #
+        # What if the number of arguments leads us to an ambiguous result?
+        # Clinic prefers groups on the left.  So in the above example,
+        # five arguments would map to B+C, not C+D.
+        #
+        # A nested group can only be omitted together with the group
+        # containing it, but groups on the same level, like G and H in
+        #
+        # [ G1 G2 ] [ H1 ] I1 I2
+        #
+        # can be omitted independently of each other.
+
+        # Groups are collected into chains of nested groups.  A group which
+        # is not nested in the preceding one starts a new chain.
+        group: list[Parameter] | None = None
+        left: list[list[list[Parameter]]] = []
+        right: list[list[list[Parameter]]] = []
+        required: list[Parameter] = []
+        last: int | Literal[Sentinels.unspecified] = unspecified
+        last_depth = 0
+
+        for p in self.parameters:
+            group_id = p.group
+            if group_id != last:
+                last = group_id
+                group = []
+                if group_id == 0:
+                    group = required
+                else:
+                    chains = left if group_id < 0 else right
+                    nested = ((p.group_depth < last_depth) if group_id < 0
+                              else (p.group_depth > last_depth))
+                    if chains and nested:
+                        chains[-1].append(group)
+                    else:
+                        chains.append([group])
+                last_depth = p.group_depth
+            assert group is not None
+            group.append(p)
+
+        # Map the number of arguments to the subset which accepts it.
+        subsets: dict[int, ParamTuple] = {}
+        for subset in permute_optional_groups(left, required, right):
+            for count in range(count_required(subset), len(subset) + 1):
+                if count in subsets:
+                    fail(f"Function {self.func.full_name!r} has an ambiguous "
+                         f"group configuration: a call with {count} "
+                         f"argument(s) can be parsed in more than one way.",
+                         line_number=self.func.line_number)
+                subsets[count] = subset
+        return subsets
+
     def parse_option_groups(self) -> None:
         # positional parameters with option groups
-        # (we have to generate lots of PyArg_ParseTuple calls
-        #  in a big switch statement)
+        # (which groups are passed is determined by the number of arguments)
 
-        self.flags = "METH_VARARGS"
-        self.parser_prototype = PARSER_PROTOTYPE_VARARGS
-        parser_code = '    {option_group_parsing}'
-        self.parser_body(parser_code)
+        nargs, argname_fmt = self.select_positional_convention()
+        # With the stack convention "nargs" is already a parameter.
+        size_expr = None if self.fastcall else nargs
+
+        subsets = self.option_group_subsets()
+        parser_code = self.render_option_groups(subsets, argname_fmt, size_expr)
+        if parser_code is None:
+            # The code of some converter cannot be inlined, so the
+            # arguments of every combination of groups are parsed at once.
+            parser_code = self.render_option_groups_parse_tuple(subsets)
+        self.parser_body(*parser_code)
+
+    def render_option_groups(
+        self,
+        subsets: dict[int, ParamTuple],
+        argname_fmt: str,
+        size_expr: str | None,
+    ) -> list[str] | None:
+        """Return the code which parses the arguments of all groups.
+
+        Every parameter is parsed once, in a block guarded by the number of
+        arguments.  Return None if the code of some converter cannot be
+        inlined.
+        """
+        # Split the parameters into the groups, in the order in which
+        # they are passed.
+        groups: list[tuple[int, list[Parameter]]] = []
+        for p in self.parameters:
+            if not groups or groups[-1][0] != p.group:
+                groups.append((p.group, []))
+            groups[-1][1].append(p)
+
+        indices, shifting = self.render_option_group_indices(subsets, groups)
+
+        parser_code = []
+        if size_expr is not None:
+            parser_code.append(libclinic.normalize_snippet(
+                f"Py_ssize_t nargs = {size_expr};", indent=4))
+        if shifting:
+            parser_code.append(libclinic.normalize_snippet(
+                "Py_ssize_t offset = 0;", indent=4))
+        parser_code.append(self.render_option_group_check(subsets))
+
+        has_optional = False
+        for group_id, params in groups:
+            body = []
+            for p in params:
+                index_expr = indices[p.name]
+                if index_expr.isdigit():
+                    displayname = p.get_displayname(int(index_expr) + 1)
+                else:
+                    # The position of the argument differs between the calls.
+                    displayname = p.get_displayname(0)
+                parsearg = p.converter.parse_arg(argname_fmt % index_expr,
+                                                 displayname,
+                                                 limited_capi=self.limited_capi)
+                if parsearg is None:
+                    return None
+                if not group_id and (has_optional or p.is_optional()):
+                    # Such parameter is omitted on its own, and nothing
+                    # can follow it, so the rest is simply skipped.
+                    has_optional = True
+                    body.append(libclinic.normalize_snippet("""
+                        if (nargs <= %s) {{
+                            goto skip_optional;
+                        }}
+                        """, indent=4) % index_expr)
+                body.append(libclinic.normalize_snippet(parsearg, indent=4))
+
+            if not group_id:
+                parser_code.extend(body)
+                continue
+
+            if group_id in shifting:
+                # The arguments of this group shift the following ones.
+                body.append(libclinic.normalize_snippet(
+                    f"offset += {len(params)};", indent=4))
+            body.append(libclinic.normalize_snippet(
+                f"{group_to_variable_name(group_id)} = 1;", indent=4))
+            condition = self.render_option_group_condition(subsets, group_id)
+            parser_code.append(libclinic.normalize_snippet(
+                f"if ({condition}) {{{{", indent=4))
+            parser_code.extend(libclinic.normalize_snippet(line, indent=8)
+                               for line in body)
+            parser_code.append(libclinic.normalize_snippet("}}", indent=4))
+
+        if has_optional:
+            parser_code.append("skip_optional:")
+        return parser_code
+
+    @staticmethod
+    def render_option_group_indices(
+        subsets: dict[int, ParamTuple],
+        groups: list[tuple[int, list[Parameter]]],
+    ) -> tuple[dict[str, str], set[int]]:
+        """Return the index of the argument of every parameter, as C code,
+        and the groups which have to add their size to "offset".
+
+        A group which is not passed shifts the following arguments.  Their
+        index can still be fixed if it is counted from the end; otherwise it
+        is counted at run time, in "offset".
+        """
+        forward: dict[str, set[int]] = {}
+        backward: dict[str, set[int]] = {}
+        for count, subset in subsets.items():
+            for i, p in enumerate(subset[:count]):
+                forward.setdefault(p.name, set()).add(i)
+                backward.setdefault(p.name, set()).add(count - i)
+        # A parameter with a default value can be omitted on its own, so
+        # its index from the end is not fixed.
+        for group_id, params in groups:
+            if not group_id:
+                for p in params:
+                    if p.is_optional():
+                        backward.pop(p.name)
+
+        def counted_at_run_time(p: Parameter) -> bool:
+            return (len(forward[p.name]) != 1
+                    and len(backward.get(p.name, ())) != 1)
+
+        # A group adds its size to "offset" if it shifts an argument
+        # which is counted at run time.
+        shifting: set[int] = set()
+        seen: list[int] = []
+        for group_id, params in groups:
+            if any(counted_at_run_time(p) for p in params):
+                shifting.update(g for g in seen if g)
+            seen.append(group_id)
+
+        indices = {}
+        # The number of the parameters before the current one, and how many
+        # of them are counted in "offset".
+        pos = 0
+        in_offset = 0
+        for group_id, params in groups:
+            for i, p in enumerate(params):
+                if not counted_at_run_time(p):
+                    if len(forward[p.name]) == 1:
+                        indices[p.name] = str(min(forward[p.name]))
+                    else:
+                        indices[p.name] = f"nargs - {min(backward[p.name])}"
+                else:
+                    index = pos + i - in_offset
+                    indices[p.name] = ("offset" if index == 0
+                                       else f"offset + {index}")
+            pos += len(params)
+            if group_id in shifting:
+                in_offset += len(params)
+        return indices, shifting
+
+    @staticmethod
+    def render_option_group_condition(
+        subsets: dict[int, ParamTuple],
+        group_id: int,
+    ) -> str:
+        """Return the condition on which the group is passed."""
+        counts = sorted(count for count, subset in subsets.items()
+                        if any(p.group == group_id for p in subset))
+        if counts == list(range(counts[0], max(subsets) + 1)):
+            return f"nargs >= {counts[0]}"
+        return " || ".join(f"nargs == {count}" for count in counts)
+
+    def render_option_group_check(
+        self,
+        subsets: dict[int, ParamTuple],
+    ) -> str:
+        """Return the code which rejects an unsupported number of arguments."""
+        error = ('PyErr_SetString(PyExc_TypeError, "%s requires %d to %d '
+                 'arguments");' % (self.func.full_name, min(subsets),
+                                   max(subsets)))
+        counts = sorted(subsets)
+        if counts == list(range(counts[0], counts[-1] + 1)):
+            tests = [f"nargs > {counts[-1]}"]
+            if counts[0]:
+                tests.insert(0, f"nargs < {counts[0]}")
+            lines = [
+                f"if ({' || '.join(tests)}) {{{{",
+                f"    {error}",
+                "    goto exit;",
+                "}}",
+            ]
+        else:
+            # Some numbers of arguments in between are not supported.
+            lines = ["switch (nargs) {{"]
+            lines += [f"    case {count}:" for count in counts]
+            lines += [
+                "        break;",
+                "    default:",
+                f"        {error}",
+                "        goto exit;",
+                "}}",
+            ]
+        return libclinic.normalize_snippet("\n".join(lines), indent=4)
+
+    def render_option_groups_parse_tuple(
+        self,
+        subsets: dict[int, ParamTuple],
+    ) -> list[str]:
+        """Return the code which parses the arguments of every group at once."""
+        parse_call = self.render_parse_all_arguments()
+        # The convention can have changed, so ask for it again.
+        size_expr, _ = self.select_positional_convention()
+        parser_code = [libclinic.normalize_snippet(f"switch ({size_expr}) {{{{",
+                                                   indent=4)]
+        for count, subset in sorted(subsets.items()):
+            parser_code.append(f"        case {count}:")
+            if count != len(subset):
+                # The omitted parameters are parsed by the following case.
+                continue
+            if count:
+                format_units = [p.converter.format_unit for p in subset]
+                n_required = count_required(subset)
+                if n_required < count:
+                    format_units.insert(n_required, '|')
+                parse_arguments: list[str] = []
+                for p in subset:
+                    p.converter.parse_argument(parse_arguments)
+                parser_code.append(libclinic.normalize_snippet("""
+                    if (!%s"%s:%s", %s)) {{
+                        goto exit;
+                    }}
+                    """, indent=12) % (parse_call, "".join(format_units),
+                                       self.func.name,
+                                       ", ".join(parse_arguments)))
+            # A set would eliminate duplicates too, but the iteration
+            # order of small negative integers depends on the platform.
+            group_ids = dict.fromkeys(p.group for p in subset)
+            group_ids.pop(0, None)
+            for group_id in group_ids:
+                parser_code.append(
+                    f"            {group_to_variable_name(group_id)} = 1;")
+            parser_code.append("            break;")
+        parser_code.append("        default:")
+        parser_code.append(
+            '            PyErr_SetString(PyExc_TypeError, "%s requires %d to %d arguments");'
+            % (self.func.full_name, min(subsets), max(subsets)))
+        parser_code.append("            goto exit;")
+        parser_code.append("    }}")
+        return parser_code
 
     def _parse_vararg(self) -> str:
         assert self.varpos is not None
@@ -488,27 +809,45 @@ class ParseArgsCodeGen:
         assert isinstance(c, libclinic.converters.VarKeywordCConverter)
         return c.parse_var_keyword()
 
-    def parse_pos_only(self) -> None:
-        if self.fastcall:
-            # positional-only, but no option groups
-            # we only need one call to _PyArg_ParseStack
+    def select_positional_convention(self) -> tuple[str, str]:
+        """Select the calling convention of a positional-only function.
 
+        Set the method flags and the prototype, and return the expression of
+        the number of arguments and the format of an argument expression.
+        """
+        if self.fastcall:
             self.flags = "METH_FASTCALL"
             self.parser_prototype = PARSER_PROTOTYPE_FASTCALL
-            nargs = 'nargs'
-            argname_fmt = 'args[%d]'
-        else:
-            # positional-only, but no option groups
-            # we only need one call to PyArg_ParseTuple
+            return 'nargs', 'args[%s]'
 
-            self.flags = "METH_VARARGS"
-            self.parser_prototype = PARSER_PROTOTYPE_VARARGS
-            if self.limited_capi:
-                nargs = 'PyTuple_Size(args)'
-                argname_fmt = 'PyTuple_GetItem(args, %d)'
-            else:
-                nargs = 'PyTuple_GET_SIZE(args)'
-                argname_fmt = 'PyTuple_GET_ITEM(args, %d)'
+        self.flags = "METH_VARARGS"
+        self.parser_prototype = PARSER_PROTOTYPE_VARARGS
+        if self.limited_capi:
+            return 'PyTuple_Size(args)', 'PyTuple_GetItem(args, %s)'
+        return 'PyTuple_GET_SIZE(args)', 'PyTuple_GET_ITEM(args, %s)'
+
+    def render_parse_all_arguments(self) -> str:
+        """Return the beginning of the call which parses all arguments.
+
+        Fall back to the tuple convention if the stack one cannot be used.
+        """
+        for p in self.parameters:
+            p.converter.use_converter()
+        if self.limited_capi:
+            # _PyArg_ParseStack() is not part of the limited C API.
+            self.fastcall = False
+        if self.fastcall:
+            self.codegen.add_include('pycore_modsupport.h',
+                                     '_PyArg_ParseStack()')
+            return '_PyArg_ParseStack(args, nargs, '
+        self.flags = "METH_VARARGS"
+        self.parser_prototype = PARSER_PROTOTYPE_VARARGS
+        return 'PyArg_ParseTuple(args, '
+
+    def parse_pos_only(self) -> None:
+        # positional-only, but no option groups: we only need one call
+        # to _PyArg_ParseStack or PyArg_ParseTuple
+        nargs, argname_fmt = self.select_positional_convention()
 
         parser_code = []
         max_args = NO_VARARG if self.varpos else self.max_pos
@@ -586,29 +925,13 @@ class ParseArgsCodeGen:
             elif self.var_keyword:
                 parser_code.append(libclinic.normalize_snippet(self._parse_kwarg(), indent=4))
         else:
-            for parameter in self.parameters:
-                parameter.converter.use_converter()
-
-            if self.limited_capi:
-                self.fastcall = False
-            if self.fastcall:
-                self.codegen.add_include('pycore_modsupport.h',
-                                         '_PyArg_ParseStack()')
-                parser_code = [libclinic.normalize_snippet("""
-                    if (!_PyArg_ParseStack(args, nargs, "{format_units}:{name}",
-                        {parse_arguments})) {{
-                        goto exit;
-                    }}
-                    """, indent=4)]
-            else:
-                self.flags = "METH_VARARGS"
-                self.parser_prototype = PARSER_PROTOTYPE_VARARGS
-                parser_code = [libclinic.normalize_snippet("""
-                    if (!PyArg_ParseTuple(args, "{format_units}:{name}",
-                        {parse_arguments})) {{
-                        goto exit;
-                    }}
-                    """, indent=4)]
+            parse_call = self.render_parse_all_arguments()
+            parser_code = [libclinic.normalize_snippet("""
+                if (!%s"{format_units}:{name}",
+                    {parse_arguments})) {{
+                    goto exit;
+                }}
+                """, indent=4) % parse_call]
         self.parser_body(*parser_code)
 
     def parse_var_keyword(self) -> None:
@@ -635,6 +958,7 @@ class ParseArgsCodeGen:
                 }}}}
                 """, indent=4))
 
+        has_optional = False
         for i, p in enumerate(self.parameters):
             parse_arg = p.converter.parse_arg(
                 f'PyTuple_GET_ITEM(args, {i})',
@@ -642,7 +966,16 @@ class ParseArgsCodeGen:
                 limited_capi=self.limited_capi,
             )
             assert parse_arg is not None
+            if has_optional or p.is_optional():
+                has_optional = True
+                parser_code.append(libclinic.normalize_snippet("""
+                    if (%s < %d) {{
+                        goto skip_optional;
+                    }}
+                    """, indent=4) % (nargs, i + 1))
             parser_code.append(libclinic.normalize_snippet(parse_arg, indent=4))
+        if has_optional:
+            parser_code.append("skip_optional:")
 
         if self.varpos:
             parser_code.append(libclinic.normalize_snippet(self._parse_vararg(), indent=4))
@@ -921,7 +1254,10 @@ class ParseArgsCodeGen:
             self.cpp_endif = "#endif /* " + conditional + " */"
 
             if self.methoddef_define and self.codegen.add_ifndef_symbol(self.func.full_name):
-                self.methoddef_ifndef = METHODDEF_PROTOTYPE_IFNDEF
+                if self.func.kind in ACCESSORS:
+                    self.methoddef_ifndef = GETSETDEF_PROTOTYPE_IFNDEF
+                else:
+                    self.methoddef_ifndef = METHODDEF_PROTOTYPE_IFNDEF
 
     def finalize(self, clang: CLanguage) -> None:
         # add ';' to the end of self.parser_prototype and self.impl_prototype
