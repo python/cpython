@@ -90,15 +90,35 @@ def create_process_group(*args, **kwargs):
         kwargs['start_new_session'] = True
     return subprocess.Popen(*args, **kwargs)
 
-def kill_process_group(proc):
+def terminate_process_group(proc, timeout=10):
     if USE_PROCESS_GROUP:
         try:
-            os.killpg(proc.pid, signal.SIGKILL)
+            os.killpg(proc.pid, signal.SIGTERM)
         except ProcessLookupError:
             pass
     else:
-        proc.kill()
-    proc.communicate()  # Clean up
+        proc.terminate()
+
+    try:
+        proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        if USE_PROCESS_GROUP:
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        else:
+            proc.kill()
+        try:
+            proc.communicate(timeout=timeout)  # Clean up
+        except subprocess.TimeoutExpired:
+            for pipe in (proc.stdin, proc.stdout, proc.stderr):
+                if pipe is not None:
+                    pipe.close()
+            try:
+                proc.wait(timeout=timeout)
+            except subprocess.TimeoutExpired:
+                pass
 
 
 def run_readelf(cmd):
@@ -163,7 +183,7 @@ class TraceBackend:
         try:
             stdout, _ = proc.communicate(timeout=timeout)
         except subprocess.TimeoutExpired:
-            kill_process_group(proc)
+            terminate_process_group(proc)
             raise
         if check_returncode and proc.returncode:
             raise AssertionError(
@@ -350,7 +370,7 @@ gc__done:1""",
             )
             stdout, stderr = proc.communicate(timeout=60)
         except subprocess.TimeoutExpired:
-            kill_process_group(proc)
+            terminate_process_group(proc)
             raise AssertionError("bpftrace timed out")
         except (FileNotFoundError, PermissionError) as e:
             raise unittest.SkipTest(f"bpftrace not available: {e}")
@@ -389,7 +409,7 @@ gc__done:1""",
             )
             stdout, stderr = proc.communicate(timeout=10)
         except subprocess.TimeoutExpired:
-            kill_process_group(proc)
+            terminate_process_group(proc)
             raise unittest.SkipTest("bpftrace timed out during usability check")
         except OSError as e:
             raise unittest.SkipTest(f"bpftrace not available: {e}")
