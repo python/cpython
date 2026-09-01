@@ -901,6 +901,70 @@ class ElementTreeTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, EXPECTED_MSG):
             ET.tostring(elem, encoding='unicode', default_namespace='foobar')
 
+    def test_tostring_default_namespace_attributes(self):
+        # gh-61290: the default namespace does not apply to attribute names
+        elem = ET.XML('<body xmlns="http://effbot.org/ns" attr="value">'
+                      '<tag attr="value" /></body>')
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode',
+                        default_namespace='http://effbot.org/ns'),
+            '<body xmlns="http://effbot.org/ns" attr="value">'
+            '<tag attr="value" /></body>'
+        )
+
+    def test_tostring_default_namespace_qualified_attributes(self):
+        # a qualified attribute name always needs a prefix, even if it is
+        # in the default namespace
+        elem = ET.Element('{http://effbot.org/ns}body',
+                          {'{http://effbot.org/ns}attr': 'value'})
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode',
+                        default_namespace='http://effbot.org/ns'),
+            '<body xmlns="http://effbot.org/ns" '
+            'xmlns:ns1="http://effbot.org/ns" ns1:attr="value" />'
+        )
+        # an attribute in another namespace uses the prefix of that namespace
+        elem = ET.Element('{http://effbot.org/ns}body',
+                          {'{foobar}attr': 'value', 'plain': 'value'})
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode',
+                        default_namespace='http://effbot.org/ns'),
+            '<body xmlns="http://effbot.org/ns" xmlns:ns1="foobar" '
+            'ns1:attr="value" plain="value" />'
+        )
+
+    def test_tostring_default_namespace_attributes_round_trip(self):
+        xml = ('<body xmlns="http://effbot.org/ns" xmlns:ns1="foobar" '
+               'attr="1"><tag ns1:attr="2" /></body>')
+        elem = ET.XML(xml)
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode',
+                        default_namespace='http://effbot.org/ns'),
+            xml
+        )
+        self.assertEqual(
+            [sorted(e.attrib.items()) for e in ET.XML(xml).iter()],
+            [sorted(e.attrib.items()) for e in elem.iter()]
+        )
+
+    def test_tostring_default_namespace_registered_empty_prefix(self):
+        # gh-118416: the empty prefix is registered for other namespace,
+        # so it cannot be used for the default namespace
+        nsmap = ET.register_namespace._namespace_map
+        self.addCleanup(nsmap.pop, 'default', None)
+        ET.register_namespace('', 'default')
+        elem = ET.Element('{default}elem')
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode',
+                        default_namespace='otherdefault'),
+            '<ns1:elem xmlns="otherdefault" xmlns:ns1="default" />'
+        )
+        # without the option the registered prefix is used
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode'),
+            '<elem xmlns="default" />'
+        )
+
     def test_tostring_no_xml_declaration(self):
         elem = ET.XML('<body><tag/></body>')
         self.assertEqual(
@@ -969,6 +1033,14 @@ class ElementTreeTest(unittest.TestCase):
                     ),
                     expected_retval
                 )
+
+    def test_tostring_default_namespace_attributes_html(self):
+        elem = ET.XML('<body xmlns="http://effbot.org/ns" attr="value" />')
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode', method='html',
+                        default_namespace='http://effbot.org/ns'),
+            '<body xmlns="http://effbot.org/ns" attr="value"></body>'
+        )
 
     def test_tostringlist_default_namespace(self):
         elem = ET.XML('<body xmlns="http://effbot.org/ns"><tag/></body>')

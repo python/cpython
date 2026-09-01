@@ -743,9 +743,10 @@ class ElementTree:
             if method == "text":
                 _serialize_text(write, self._root)
             else:
-                qnames, namespaces = _namespaces(self._root, default_namespace)
+                qnames, attr_qnames, namespaces = _namespaces(
+                    self._root, default_namespace)
                 serialize = _serialize[method]
-                serialize(write, self._root, qnames, namespaces,
+                serialize(write, self._root, qnames, attr_qnames, namespaces,
                           short_empty_elements=short_empty_elements)
 
 # --------------------------------------------------------------------
@@ -806,28 +807,59 @@ def _namespaces(elem, default_namespace=None):
 
     # maps qnames to *encoded* prefix:local names
     qnames = {None: None}
+    # The default namespace declaration does not apply to attribute names,
+    # so they are encoded separately: an unqualified name is left as is,
+    # and a qualified name always gets a prefix.
+    attr_qnames = {None: None} if default_namespace else qnames
 
-    # maps uri:s to prefixes
+    # maps prefixes to uri:s
     namespaces = {}
+    # maps uri:s to prefixes, "" is the prefix of the default namespace
+    prefixes = {}
+    # maps uri:s to prefixes usable in attribute names
+    attr_prefixes = {} if default_namespace else prefixes
     if default_namespace:
-        namespaces[default_namespace] = ""
+        namespaces[""] = default_namespace
+        prefixes[default_namespace] = ""
 
-    def add_qname(qname):
+    def get_prefix(uri, isattr):
+        # find or create the prefix for the namespace uri
+        if isattr:
+            prefix = attr_prefixes.get(uri)
+            if prefix is None:
+                # the empty prefix is of no use for an attribute name
+                prefix = prefixes.get(uri) or None
+        else:
+            prefix = prefixes.get(uri)
+        if prefix is not None:
+            return prefix
+        prefix = _namespace_map.get(uri)
+        if prefix is None or not prefix and (isattr or default_namespace):
+            # the empty prefix is of no use for an attribute name,
+            # and the default namespace is used for other uri
+            prefix = "ns%d" % len(namespaces)
+        if prefix != "xml":
+            namespaces[prefix] = uri
+        if isattr:
+            attr_prefixes[uri] = prefix
+        prefixes.setdefault(uri, prefix)
+        return prefix
+
+    def add_qname(qname, isattr=False):
         # calculate serialized qname representation
         try:
             if qname[:1] == "{":
                 uri, tag = qname[1:].rsplit("}", 1)
-                prefix = namespaces.get(uri)
-                if prefix is None:
-                    prefix = _namespace_map.get(uri)
-                    if prefix is None:
-                        prefix = "ns%d" % len(namespaces)
-                    if prefix != "xml":
-                        namespaces[uri] = prefix
+                prefix = get_prefix(uri, isattr)
                 if prefix:
-                    qnames[qname] = "%s:%s" % (prefix, tag)
+                    if isattr:
+                        attr_qnames[qname] = "%s:%s" % (prefix, tag)
+                    else:
+                        qnames[qname] = "%s:%s" % (prefix, tag)
                 else:
                     qnames[qname] = tag # default element
+            elif isattr:
+                attr_qnames[qname] = qname
             else:
                 if default_namespace:
                     # FIXME: can this be handled in XML 1.0?
@@ -853,16 +885,16 @@ def _namespaces(elem, default_namespace=None):
         for key, value in elem.items():
             if isinstance(key, QName):
                 key = key.text
-            if key not in qnames:
-                add_qname(key)
+            if key not in attr_qnames:
+                add_qname(key, isattr=True)
             if isinstance(value, QName) and value.text not in qnames:
                 add_qname(value.text)
         text = elem.text
         if isinstance(text, QName) and text.text not in qnames:
             add_qname(text.text)
-    return qnames, namespaces
+    return qnames, attr_qnames, namespaces
 
-def _serialize_xml(write, elem, qnames, namespaces,
+def _serialize_xml(write, elem, qnames, attr_qnames, namespaces,
                    short_empty_elements, **kwargs):
     tag = elem.tag
     text = elem.text
@@ -876,15 +908,14 @@ def _serialize_xml(write, elem, qnames, namespaces,
             if text:
                 write(_escape_cdata(text))
             for e in elem:
-                _serialize_xml(write, e, qnames, None,
+                _serialize_xml(write, e, qnames, attr_qnames, None,
                                short_empty_elements=short_empty_elements)
         else:
             write("<" + tag)
             items = list(elem.items())
             if items or namespaces:
                 if namespaces:
-                    for v, k in sorted(namespaces.items(),
-                                       key=lambda x: x[1]):  # sort on prefix
+                    for k, v in sorted(namespaces.items()):  # sort on prefix
                         if k:
                             k = ":" + k
                         write(" xmlns%s=\"%s\"" % (
@@ -898,13 +929,13 @@ def _serialize_xml(write, elem, qnames, namespaces,
                         v = qnames[v.text]
                     else:
                         v = _escape_attrib(v)
-                    write(" %s=\"%s\"" % (qnames[k], v))
+                    write(" %s=\"%s\"" % (attr_qnames[k], v))
             if text or len(elem) or not short_empty_elements:
                 write(">")
                 if text:
                     write(_escape_cdata(text))
                 for e in elem:
-                    _serialize_xml(write, e, qnames, None,
+                    _serialize_xml(write, e, qnames, attr_qnames, None,
                                    short_empty_elements=short_empty_elements)
                 write("</" + tag + ">")
             else:
@@ -919,7 +950,7 @@ HTML_EMPTY = {"area", "base", "basefont", "br", "col", "embed", "frame", "hr",
               "img", "input", "isindex", "link", "meta", "param", "source",
               "track", "wbr", "plaintext"}
 
-def _serialize_html(write, elem, qnames, namespaces, **kwargs):
+def _serialize_html(write, elem, qnames, attr_qnames, namespaces, **kwargs):
     tag = elem.tag
     text = elem.text
     if tag is Comment:
@@ -932,14 +963,13 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
             if text:
                 write(_escape_cdata(text))
             for e in elem:
-                _serialize_html(write, e, qnames, None)
+                _serialize_html(write, e, qnames, attr_qnames, None)
         else:
             write("<" + tag)
             items = list(elem.items())
             if items or namespaces:
                 if namespaces:
-                    for v, k in sorted(namespaces.items(),
-                                       key=lambda x: x[1]):  # sort on prefix
+                    for k, v in sorted(namespaces.items()):  # sort on prefix
                         if k:
                             k = ":" + k
                         write(" xmlns%s=\"%s\"" % (
@@ -949,7 +979,7 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
                 for k, v in items:
                     if isinstance(k, QName):
                         k = k.text
-                    k = qnames[k]
+                    k = attr_qnames[k]
                     if v is None:
                         write(" %s" % k)  # empty attr
                     else:
@@ -966,7 +996,7 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
                 else:
                     write(_escape_cdata(text))
             for e in elem:
-                _serialize_html(write, e, qnames, None)
+                _serialize_html(write, e, qnames, attr_qnames, None)
             if ltag not in HTML_EMPTY:
                 write("</" + tag + ">")
     if elem.tail:
