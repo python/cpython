@@ -513,17 +513,21 @@ class partialmethod:
             # Unknown descriptor == unknown binding
             # Need to get callable at runtime and apply partial on top
             new_func = self.func.__get__(obj, cls)
-            result = partial(new_func, *self.args, **self.keywords)
-            result.__partialmethod__ = self
-            if self.__isabstractmethod__:
-                result = abstractmethod(result)
-            try:
-                obj = new_func.__self__
-            except AttributeError:
-                pass
+            if new_func is self.func:
+                method = None
             else:
-                result.__self__ = obj
-            return result
+                result = partial(new_func, *self.args, **self.keywords)
+                result.__partialmethod__ = self
+                if self.__isabstractmethod__:
+                    result = abstractmethod(result)
+                try:
+                    obj = new_func.__self__
+                except AttributeError:
+                    pass
+                else:
+                    result.__self__ = obj
+                return result
+
         if method is None:
             # Cache method
             self.method = method = self.__make_method()
