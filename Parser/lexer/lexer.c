@@ -5,6 +5,7 @@
 
 #include "lexer_internal.h"
 #include "../tokenizer/helpers.h"
+#include "../tokenizer/reader.h"
 
 /* Alternate tab spacing */
 #define ALTTABSIZE 1
@@ -41,7 +42,7 @@ _PyLexer_nextc(struct tok_state *tok)
         if (tok->done != E_OK) {
             return EOF;
         }
-        rc = tok->underflow(tok);
+        rc = _PyTok_ReaderUnderflow(tok);
 #if defined(Py_DEBUG)
         if (tok->debug) {
             fprintf(stderr, "line[%d] = ", tok->lineno);
@@ -89,7 +90,7 @@ verify_identifier(struct tok_state *tok)
         return 1;
     }
     PyObject *s;
-    if (tok->decoding_erred)
+    if (tok->input_error)
         return 0;
     s = PyUnicode_DecodeUTF8(tok->start, tok->cur - tok->start, NULL);
     if (s == NULL) {
@@ -483,7 +484,6 @@ _PyLexer_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, str
         }
         p_start = tok->start;
         p_end = tok->cur - 1; /* Leave '\n' out of the string */
-        tok->cont_line = 0;
         return MAKE_TOKEN(NEWLINE);
     }
 
@@ -528,7 +528,6 @@ _PyLexer_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, str
         if ((c = tok_continuation_line(tok)) == -1) {
             return MAKE_TOKEN(ERRORTOKEN);
         }
-        tok->cont_line = 1;
         goto again; /* Read next line */
     }
 
@@ -687,9 +686,8 @@ int
 _PyTokenizer_Get(struct tok_state *tok, struct token *token)
 {
     int result = tok_get(tok, token);
-    if (tok->decoding_erred) {
+    if (tok->input_error) {
         result = ERRORTOKEN;
-        tok->done = E_DECODE;
     }
     return result;
 }

@@ -1,0 +1,4 @@
+Fix :meth:`curses.window.instr`, :meth:`~curses.window.in_wstr` and
+:meth:`~curses.window.in_wchstr` returning one character too few when the
+:mod:`curses` module is built against a curses library that counts the
+terminator in the requested length, such as the NetBSD one.

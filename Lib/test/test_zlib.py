@@ -182,6 +182,9 @@ class ChecksumCombineMixin:
             self.assertNotEqual(invalid_res, checksum)
 
         self.assertRaises(TypeError, self.combine, 0, 0, "len")
+        self.assertRaises(ValueError, self.combine, 0, 0, -1)
+        self.assertRaises(OverflowError, self.combine, 0, 0, 2**1000)
+        self.assertRaises(OverflowError, self.combine, 0, 0, -2**1000)
 
     def test_combine_with_iv(self):
         for _ in range(self.N):
@@ -718,6 +721,20 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         self.assertFalse(dco.eof)
         dco.flush()
         self.assertFalse(dco.eof)
+
+    def test_decompress_flush_corrupt_stream(self):
+        x = b'x\x9cK\xcb\xcf\x07\x00\x02\x82\x01E'  # 'foo'
+        corrupt = x[:-1] + b'\x00'
+        dco = zlib.decompressobj()
+        self.assertEqual(dco.decompress(corrupt, 1), b'f')
+        self.assertRaises(zlib.error, dco.flush)
+
+    def test_decompress_flush_twice(self):
+        x = b'x\x9cK\xcb\xcf\x07\x00\x02\x82\x01E'  # 'foo'
+        dco = zlib.decompressobj()
+        self.assertEqual(dco.decompress(x), b'foo')
+        self.assertEqual(dco.flush(), b'')
+        self.assertEqual(dco.flush(), b'')
 
     def test_decompress_unused_data(self):
         # Repeated calls to decompress() after EOF should accumulate data in

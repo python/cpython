@@ -4895,8 +4895,13 @@ case $host in #(
      ;;
 esac
 
-case $ac_sys_system in #(
-  iOS) :
+case $host in #(
+  *-apple-ios*-simulator) :
+
+    as_fn_append CFLAGS " -mios-simulator-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"
+    as_fn_append LDFLAGS " -mios-simulator-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"
+   ;; #(
+  *-apple-ios*) :
 
     as_fn_append CFLAGS " -mios-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"
     as_fn_append LDFLAGS " -mios-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"
@@ -7465,7 +7470,11 @@ case $host/$ac_cv_cc_name in #(
     PY_SUPPORT_TIER=3 ;; #(
     powerpc64le-*-linux-gnu/clang) :
     PY_SUPPORT_TIER=3 ;; #(
-    s390x-*-linux-gnu/gcc) :
+    riscv64-*-linux-gnu/gcc) :
+    PY_SUPPORT_TIER=3 ;; #(
+    riscv64-*-linux-gnu/clang) :
+    PY_SUPPORT_TIER=3 ;; #(
+  s390x-*-linux-gnu/gcc) :
     PY_SUPPORT_TIER=3 ;; #(
     x86_64-*-freebsd*/clang) :
     PY_SUPPORT_TIER=3 ;; #(
@@ -30970,8 +30979,9 @@ esac
 fi
 
   # Check that we're able to link with crucial curses/panel functions. This
-  # also serves as a fallback in case pkg-config failed.
-  as_fn_append LIBS " $CURSES_LIBS $PANEL_LIBS"
+  # also serves as a fallback in case pkg-config failed. Extension modules are
+  # not linked with LIBS, so exclude it to get the required libraries.
+  LIBS="$CURSES_LIBS $PANEL_LIBS"
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing initscr" >&5
 printf %s "checking for library containing initscr... " >&6; }
 if test ${ac_cv_search_initscr+y}
