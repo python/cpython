@@ -1036,6 +1036,10 @@ class TemporaryDirectory:
                                     dir_fd=dir_fd, fullname=fullpath)
                 except FileNotFoundError:
                     pass
+                except OSError:
+                    if ignore_errors:
+                        return
+                    raise
             elif isinstance(exc, FileNotFoundError):
                 pass
             else:

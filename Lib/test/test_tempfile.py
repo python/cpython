@@ -2079,7 +2079,8 @@ class TestTemporaryDirectory(BaseTestCase):
                     d.cleanup()
                 self.assertFalse(os.path.exists(d.name))
 
-    def test_parent_mode_preserved(self):
+    @support.subTests('ignore_errors', (True, False))
+    def test_parent_mode_preserved(self, ignore_errors):
         # Test that cleanup does not touch the parent directory,
         # even if that prevents removal.
         for mode in range(8):
@@ -2087,14 +2088,16 @@ class TestTemporaryDirectory(BaseTestCase):
             with self.subTest(mode=format(mode, '03o')):
                 outer = self.do_create()
                 with outer:
-                    d = self.do_create(dir=outer.name, dirs=2, files=2)
+                    d = self.do_create(dir=outer.name, dirs=2, files=2,
+                                       ignore_cleanup_errors=ignore_errors)
                     with d:
                         os.chmod(outer.name, mode)
                         orig_mode = os.stat(outer.name).st_mode
                         try:
                             d.cleanup()
                         except PermissionError:
-                            pass
+                            if ignore_errors:
+                                raise
                         self.assertEqual(os.stat(outer.name).st_mode, orig_mode)
                         outer.cleanup()
                 self.assertFalse(os.path.exists(outer.name))
