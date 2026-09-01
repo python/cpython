@@ -1,0 +1,3 @@
+:meth:`curses.window.instr`, :meth:`~curses.window.in_wstr` and
+:meth:`~curses.window.in_wchstr` no longer limit the count to 2047, which
+silently truncated a longer line.
