@@ -1,2 +1,0 @@
-Fix :meth:`!reorganize` in :mod:`dbm.dumb` failing to persist updated value
-offsets, which could cause data loss after reopening the database.

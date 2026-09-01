@@ -992,7 +992,7 @@ These methods are available on :class:`HTTPPasswordMgr` and
    match authentication URIs with the same scheme or no scheme. A URI without a
    scheme matches authentication URIs with any scheme.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Authentication credentials for URIs with a scheme are now scoped by
       that scheme.
 
