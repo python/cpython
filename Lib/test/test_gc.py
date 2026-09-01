@@ -12,7 +12,6 @@ from test.support import threading_helper, gc_threshold
 
 import gc
 import sys
-import sysconfig
 import textwrap
 import threading
 import time
