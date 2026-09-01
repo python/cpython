@@ -7,9 +7,11 @@ https://github.com/python/importlib_metadata/wiki/Development-Methodology
 for more detail.
 """
 
+import errno
 import functools
 import io
 import itertools
+import os
 import pathlib
 import posixpath
 import re
@@ -341,10 +343,10 @@ class Path:
         to io.TextIOWrapper().
         """
         if self.is_dir():
-            raise IsADirectoryError(self)
+            raise IsADirectoryError(errno.EISDIR, os.strerror(errno.EISDIR), self)
         zip_mode = mode[0]
         if zip_mode == 'r' and not self.exists():
-            raise FileNotFoundError(self)
+            raise FileNotFoundError(errno.ENOENT, 'No such file', self)
         stream = self.root.open(self.at, zip_mode, pwd=pwd)
         if 'b' in mode:
             if args or kwargs:

@@ -12,10 +12,12 @@ __all__ = (
 
 import concurrent.futures
 import contextvars
+import errno
 import functools
 import inspect
 import itertools
 import math
+import os
 import types
 import weakref
 from types import GenericAlias
@@ -480,7 +482,7 @@ async def wait_for(fut, timeout):
         try:
             return fut.result()
         except exceptions.CancelledError as exc:
-            raise TimeoutError from exc
+            raise TimeoutError(errno.ETIMEDOUT, os.strerror(errno.ETIMEDOUT)) from exc
 
     async with timeouts.timeout(timeout):
         return await fut
@@ -617,7 +619,8 @@ class _AsCompletedIterator:
         f = await self._done.get()
         if f is None:
             # Dummy value from _handle_timeout().
-            raise exceptions.TimeoutError
+            raise exceptions.TimeoutError(errno.ETIMEDOUT,
+                                          os.strerror(errno.ETIMEDOUT))
         return f.result() if resolve else f
 
 

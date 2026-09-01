@@ -2502,10 +2502,12 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
         DWORD err = GetLastError();
         PyMem_Free(debugger_script_path_w);
         if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND) {
-            PyErr_SetString(PyExc_FileNotFoundError, "Script file does not exist");
+            _PyErr_SetOSErrorWithMessage(PyExc_FileNotFoundError, ENOENT,
+                                         "Script file does not exist");
         }
         else if (err == ERROR_ACCESS_DENIED) {
-            PyErr_SetString(PyExc_PermissionError, "Script file cannot be read");
+            _PyErr_SetOSErrorWithMessage(PyExc_PermissionError, EACCES,
+                                         "Script file cannot be read");
         }
         else {
             PyErr_SetFromWindowsErr(err);
@@ -2517,10 +2519,12 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
     if (access(debugger_script_path, F_OK | R_OK) != 0) {
         switch (errno) {
             case ENOENT:
-                PyErr_SetString(PyExc_FileNotFoundError, "Script file does not exist");
+                _PyErr_SetOSErrorWithMessage(PyExc_FileNotFoundError, ENOENT,
+                                             "Script file does not exist");
                 break;
             case EACCES:
-                PyErr_SetString(PyExc_PermissionError, "Script file cannot be read");
+                _PyErr_SetOSErrorWithMessage(PyExc_PermissionError, EACCES,
+                                             "Script file cannot be read");
                 break;
             default:
                 PyErr_SetFromErrno(PyExc_OSError);

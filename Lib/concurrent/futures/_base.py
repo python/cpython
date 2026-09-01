@@ -4,7 +4,9 @@
 __author__ = 'Brian Quinlan (brian@sweetapp.com)'
 
 import collections
+import errno
 import logging
+import os
 import threading
 import time
 import types
@@ -231,6 +233,7 @@ def as_completed(fs, timeout=None):
                 wait_timeout = end_time - time.monotonic()
                 if wait_timeout < 0:
                     raise TimeoutError(
+                            errno.ETIMEDOUT,
                             '%d (of %d) futures unfinished' % (
                             len(pending), total_futures))
 
@@ -460,7 +463,7 @@ class Future(object):
                 elif self._state == FINISHED:
                     return self.__get_result()
                 else:
-                    raise TimeoutError()
+                    raise TimeoutError(errno.ETIMEDOUT, os.strerror(errno.ETIMEDOUT))
         finally:
             # Break a reference cycle with the exception in self._exception
             self = None
@@ -496,7 +499,7 @@ class Future(object):
             elif self._state == FINISHED:
                 return self._exception
             else:
-                raise TimeoutError()
+                raise TimeoutError(errno.ETIMEDOUT, os.strerror(errno.ETIMEDOUT))
 
     # The following methods should only be used by Executors and in tests.
     def set_running_or_notify_cancel(self):
