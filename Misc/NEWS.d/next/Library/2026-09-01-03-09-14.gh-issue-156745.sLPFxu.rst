@@ -1,0 +1,1 @@
+Optimize cjk codec decode() with 'replace' error handling
