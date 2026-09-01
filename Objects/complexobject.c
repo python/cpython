@@ -27,24 +27,6 @@ class complex "PyComplexObject *" "&PyComplex_Type"
 
 static Py_complex c_1 = {1., 0.};
 
-bool
-_Py_c_isnan(Py_complex a)
-{
-    return isnan(a.real) || isnan(a.imag);
-}
-
-bool
-_Py_c_isinf(Py_complex a)
-{
-    return isinf(a.real) || isinf(a.imag);
-}
-
-bool
-_Py_c_isfinite(Py_complex a)
-{
-    return isfinite(a.real) && isfinite(a.imag);
-}
-
 Py_complex
 _Py_c_sum(Py_complex a, Py_complex b)
 {
