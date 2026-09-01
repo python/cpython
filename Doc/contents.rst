@@ -8,7 +8,7 @@
    tutorial/index.rst
    using/index.rst
    reference/index.rst
-   library/builtin-index.rst
+   builtins/index.rst
    library/index.rst
    extending/index.rst
    c-api/index.rst

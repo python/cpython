@@ -11,7 +11,7 @@ should you go to learn more?
 This tutorial is part of Python's documentation set.   Some other documents in
 the set are:
 
-* :ref:`builtin-index`: gives details about Python's built-in types and
+* :ref:`builtins-index`: gives details about Python's built-in types and
   functions.
 
 * :ref:`library-index`: gives complete (though terse)
