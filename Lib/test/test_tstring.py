@@ -101,7 +101,11 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         source = ''.join(
             f"value_{i} = t'{fields}'\n" for i in range(1_000)
         )
-        compile(source, '<string>', 'exec')
+        namespace = {f'x{i}': str(i) for i in range(100)}
+        expected = ''.join(str(i) for i in range(100))
+        exec(source, namespace)
+        self.assertEqual(fstring(namespace['value_0']), expected)
+        self.assertEqual(fstring(namespace['value_999']), expected)
 
     def test_format_specifiers(self):
         # Test basic format specifiers
@@ -111,6 +115,14 @@ class TestTString(unittest.TestCase, TStringBaseCase):
             t, ("Pi: ", ""), [(value, "value", None, ".2f")]
         )
         self.assertEqual(fstring(t), "Pi: 3.14")
+
+        a = 3
+        b = 4
+        t = t"{a!=b:>10}"
+        self.assertTStringEqual(
+            t, ("", ""), [(a != b, "a!=b", None, ">10")]
+        )
+        self.assertEqual(fstring(t), "         1")
 
     def test_conversions(self):
         # Test !s conversion (str)
