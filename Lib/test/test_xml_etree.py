@@ -1052,6 +1052,41 @@ class ElementTreeTest(unittest.TestCase):
         xml = "<?xml version='1.0' encoding='ISO-8859-1'?><xml>%s</xml>" % body
         self.assertEqual(ET.parse(io.StringIO(xml)).getroot().text, body)
 
+    def test_parse_input_larger_than_chunk(self):
+        # gh-83895: the C implementation feeds Expat in chunks of 1 MiB
+        size = 3 * (1 << 20)
+        xml = '<r><a>%s</a><b/></r>' % ('x' * size)
+        for source in xml, xml.encode():
+            with self.subTest(type=type(source).__name__):
+                root = ET.fromstring(source)
+                self.assertEqual(len(root[0].text), size)
+                self.assertEqual(root[1].tag, 'b')
+
+    # gh-83895: input larger than INT_MAX is fed to Expat in chunks.
+    # memuse is 3 for the Python implementation, which joins the collected
+    # data, 2 would be enough for the C implementation.
+    @support.bigmemtest(size=support._2G + 100, memuse=3, dry_run=False)
+    def test_large_input(self, size):
+        data = b'<r>' + b'x' * size + b'</r>'
+        root = None
+        try:
+            parser = ET.XMLParser()
+            parser.feed(data)
+            data = None
+            root = parser.close()
+            self.assertEqual(len(root.text), size)
+        finally:
+            data = None
+            root = None
+
+    def test_parse_error_after_chunk_boundary(self):
+        # the reported position accounts for the preceding chunks
+        size = 2 * (1 << 20)
+        with self.assertRaises(ET.ParseError) as cm:
+            ET.fromstring('<r>%s<</r>' % ('x' * size))
+        self.assertEqual(cm.exception.position, (1, size + 4))
+
+
     def test_methods(self):
         # Test serialization methods.
 
