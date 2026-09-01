@@ -4929,7 +4929,11 @@ codegen_push_inlined_comprehension_locals(compiler *c, location loc,
         RETURN_IF_ERROR(symbol);
         long scope = SYMBOL_TO_SCOPE(symbol);
 
-        if ((symbol & DEF_LOCAL && !(symbol & DEF_NONLOCAL)) || in_class_block) {
+        // A DEF_LOCAL with FREE scope was copied from a nested inlined
+        // comprehension and is not bound by this comprehension.
+        if ((symbol & DEF_LOCAL && !(symbol & DEF_NONLOCAL) && scope != FREE) ||
+            in_class_block)
+        {
             // local names bound in comprehension must be isolated from
             // outer scope; push existing value (which may be NULL if
             // not defined) on stack

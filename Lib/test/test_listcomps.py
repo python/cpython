@@ -801,6 +801,29 @@ class ListComprehensionTest(unittest.TestCase):
 
         self.assertEqual(captured_then_generator_expression(), (1, [3]))
 
+    def test_nested_comprehension_cell_and_free_variable(self):
+        def local_cell(x):
+            result = [
+                ([lambda: x for x in [1]], lambda: x, [x for _ in [0]])
+                for _ in [0]
+            ]
+            captured, sibling, sibling_comprehension = result[0]
+            return captured[0](), sibling(), sibling_comprehension
+
+        self.assertEqual(local_cell(7), (1, 7, [7]))
+
+        x = 7
+
+        def free_variable():
+            result = [
+                ([lambda: x for x in [1]], lambda: x, [x for _ in [0]])
+                for _ in [0]
+            ]
+            captured, sibling, sibling_comprehension = result[0]
+            return captured[0](), sibling(), sibling_comprehension
+
+        self.assertEqual(free_variable(), (1, 7, [7]))
+
     def test_comprehension_cell_exception_cleanup(self):
         x = 3
 
