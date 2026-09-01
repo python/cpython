@@ -29,7 +29,7 @@ lazy import email.utils
 lazy import http.client
 import io # must stay eager to support finalization
 import logging
-import os # must stay eager to support finalization
+import os
 lazy import pickle
 lazy import queue
 import re

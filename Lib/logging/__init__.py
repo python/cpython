@@ -23,7 +23,6 @@ Copyright (C) 2001-2022 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-# io, os, traceback and warnings must stay eager to support finalization
 import sys, os, time, io, re, traceback, warnings, weakref, collections.abc
 
 lazy import pickle
