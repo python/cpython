@@ -191,7 +191,7 @@ objects are either directly shared or copied efficiently.  For example:
 * :class:`float`
 * :class:`tuple` (of similarly supported objects)
 
-There is a small number of Python types that actually share mutable
+There are a small number of Python types that actually share mutable
 data between interpreters:
 
 * :class:`memoryview`
