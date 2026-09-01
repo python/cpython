@@ -869,6 +869,72 @@ class StreamReaderWriterXmlgenTest(XmlgenTest, unittest.TestCase):
 start = b'<?xml version="1.0" encoding="iso-8859-1"?>\n'
 
 
+class XmlgenValidationTest(unittest.TestCase):
+
+    def gen(self, validate=True):
+        return XMLGenerator(StringIO(), validate=validate)
+
+    def check(self, callback):
+        with self.assertRaises(ValueError):
+            callback(self.gen())
+        callback(self.gen(validate=False))  # no exception
+
+    def test_invalid_element_name(self):
+        for name in '', '0', 'a/b', 'a b':
+            with self.subTest(name=name):
+                self.check(lambda gen: gen.startElement(name, {}))
+                self.check(lambda gen: gen.endElement(name))
+
+    def test_invalid_attribute_name(self):
+        for name in '', '0', 'a/b':
+            with self.subTest(name=name):
+                self.check(lambda gen: gen.startElement('doc', {name: 'v'}))
+
+    def test_invalid_attribute_value(self):
+        for value in '\x00', '\x01', '\ud8ff', '\ufffe':
+            with self.subTest(value=value):
+                self.check(lambda gen: gen.startElement('doc', {'a': value}))
+
+    def test_invalid_characters(self):
+        for text in '\x00', '\x01', '\ud8ff', '\ufffe':
+            with self.subTest(text=text):
+                self.check(lambda gen: gen.characters(text))
+
+    def test_invalid_whitespace(self):
+        for text in '\x00', '&', 'x', '\f', '\xa0':
+            with self.subTest(text=text):
+                self.check(lambda gen: gen.ignorableWhitespace(text))
+        gen = self.gen()
+        gen.ignorableWhitespace(' \t\r\n')  # no exception
+
+    def test_invalid_processing_instruction(self):
+        for target, data in ('', 'a'), ('0', 'a'), ('a/b', 'a'), \
+                            ('xml', 'a'), ('XML', 'a'), \
+                            ('t', 'a?>b'), ('t', '\x00'), ('t', '\ufffe'):
+            with self.subTest(target=target, data=data):
+                self.check(lambda gen: gen.processingInstruction(target, data))
+
+    def test_invalid_namespace(self):
+        self.check(lambda gen: gen.startPrefixMapping('a b', 'http://e'))
+        self.check(lambda gen: gen.startPrefixMapping('p', 'http://\x00'))
+
+    def test_valid(self):
+        result = StringIO()
+        gen = XMLGenerator(result, validate=True)
+        gen.startDocument()
+        gen.startPrefixMapping('p', 'http://e')
+        gen.startElementNS(('http://e', 'doc'), None,
+                           AttributesNSImpl({(None, 'a'): 'v'}, {(None, 'a'): 'a'}))
+        gen.characters('text')
+        gen.processingInstruction('t', 'data')
+        gen.endElementNS(('http://e', 'doc'), None)
+        gen.endPrefixMapping('p')
+        gen.endDocument()
+        self.assertEqual(result.getvalue(),
+                         '<?xml version="1.0" encoding="iso-8859-1"?>\n'
+                         '<p:doc xmlns:p="http://e" a="v">text<?t data?></p:doc>')
+
+
 class XMLFilterBaseTest(unittest.TestCase):
     def test_filter_basic(self):
         result = BytesIO()
