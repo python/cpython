@@ -1,4 +1,3 @@
-import warnings
 import xml.sax
 import xml.sax.handler
 
@@ -237,17 +236,6 @@ class DOMEventStream:
 
     def __exit__(self, *args):
         self.close()
-
-    def __del__(self, _warn=warnings.warn):
-        if self._owns_stream and self.stream is not None:
-            try:
-                if not self.stream.closed:
-                    _warn(
-                        f"unclosed {self!r}",
-                        ResourceWarning,
-                        source=self)
-            finally:
-                self.stream.close()
 
     def expandNode(self, node):
         event = self.getEvent()
