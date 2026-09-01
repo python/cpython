@@ -956,14 +956,12 @@ Element Objects
 
    .. method:: items()
 
-      Returns the element attributes as a sequence of (name, value) pairs.  The
-      attributes are returned in an arbitrary order.
+      Returns the element attributes as (name, value) pairs.
 
 
    .. method:: keys()
 
-      Returns the elements attribute names as a list.  The names are returned
-      in an arbitrary order.
+      Returns the element attribute names.
 
 
    .. method:: set(key, value)
