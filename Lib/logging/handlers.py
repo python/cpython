@@ -27,10 +27,9 @@ lazy import base64
 lazy import copy
 lazy import email.utils
 lazy import http.client
-# io and os must stay eager to support finalization
-import io
+import io # must stay eager to support finalization
 import logging
-import os
+import os # must stay eager to support finalization
 lazy import pickle
 lazy import queue
 import re

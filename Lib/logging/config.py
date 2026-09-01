@@ -30,7 +30,6 @@ import functools
 import io
 lazy import json
 import logging
-# rebinds the name `logging`, so the first `logging.<attr>` use loads handlers
 lazy import logging.handlers
 import os
 lazy import queue

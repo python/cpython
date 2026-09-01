@@ -1,5 +1,0 @@
-Speed up importing :mod:`logging.handlers` and :mod:`logging.config` by
-deferring rarely-used imports with :keyword:`lazy import`, and by lifting
-function-level imports to module scope. Imports that logging needs during
-interpreter finalization (:mod:`io`, :mod:`traceback`, :mod:`os` and
-:mod:`warnings`) deliberately remain eager.
