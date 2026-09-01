@@ -44,6 +44,7 @@ import os as _os
 import shutil as _shutil
 import errno as _errno
 from random import Random as _Random
+import stat as _stat
 import sys as _sys
 import types as _types
 import weakref as _weakref
@@ -309,13 +310,14 @@ def _resetperms_at(name, dir_fd, path):
         _resetperms(path)
         return
     _resetflags(path)
-    try:
+    if _os.chmod in _os.supports_follow_symlinks:
         _os.chmod(name, 0o700, dir_fd=dir_fd, follow_symlinks=False)
-    except (NotImplementedError, ValueError):
-        # Not supported for this file on this platform. The permissions of a
-        # symbolic link are never worth changing, and changing them through
-        # name would risk reaching its target instead.
-        pass
+    else:
+        # dir_fd & follow_symlinks is not supported on this platform.
+        # We change by name, which is subject to a race condition.
+        stat = _os.stat(name, dir_fd=dir_fd, follow_symlinks=False)
+        if not _stat.S_ISLNK(stat.st_mode):
+            _os.chmod(name, 0o700, dir_fd=dir_fd)
 
 
 # User visible interfaces.
