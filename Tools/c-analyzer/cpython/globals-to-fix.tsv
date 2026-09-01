@@ -58,6 +58,8 @@ Objects/genobject.c	-	_PyCoroWrapper_Type	-
 Objects/interpolationobject.c	-	_PyInterpolation_Type	-
 Objects/iterobject.c	-	PyCallIter_Type	-
 Objects/iterobject.c	-	PySeqIter_Type	-
+Objects/iterobject.c	-	_PyACallIter_Type	-
+Objects/iterobject.c	-	_PyACallIterAwaitable_Type	-
 Objects/iterobject.c	-	_PyAnextAwaitable_Type	-
 Objects/lazyimportobject.c	-	PyLazyImport_Type	-
 Objects/listobject.c	-	PyListIter_Type	-
@@ -73,6 +75,8 @@ Objects/moduleobject.c	-	PyModule_Type	-
 Objects/namespaceobject.c	-	_PyNamespace_Type	-
 Objects/object.c	-	_PyNone_Type	-
 Objects/object.c	-	_PyNotImplemented_Type	-
+Objects/object.c 	-	_PyACallIter_Type	-
+Objects/object.c 	-	_PyACallIterAwaitable_Type	-
 Objects/object.c 	-	_PyAnextAwaitable_Type	-
 Objects/odictobject.c	-	PyODictItems_Type	-
 Objects/odictobject.c	-	PyODictIter_Type	-

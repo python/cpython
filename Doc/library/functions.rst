@@ -65,13 +65,53 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. function:: aiter(async_iterable, /)
+              aiter(callable, /, stop_value, *, stop_exception=StopAsyncIteration)
+              aiter(callable, /, *, stop_exception)
 
-   Return an :term:`asynchronous iterator` for an :term:`asynchronous iterable`.
-   Equivalent to calling ``x.__aiter__()``.
+   Return an :term:`asynchronous iterator` object.
+   The first argument is interpreted very differently
+   depending on the presence of the other arguments.
+   Without other arguments,
+   the single argument must be an :term:`asynchronous iterable`,
+   and the result is equivalent to calling ``x.__aiter__()``.
 
-   Note: Unlike :func:`iter`, :func:`aiter` has no 2-argument variant.
+   If *stop_value* or *stop_exception* is given,
+   then the first argument must be a callable object.
+   The asynchronous iterator created in this case
+   calls *callable* with no arguments and awaits the result
+   for each call to its :meth:`~object.__anext__` method;
+   if the awaited value is equal to *stop_value*,
+   or if the call raises an exception matching *stop_exception*,
+   :exc:`StopAsyncIteration` will be raised,
+   otherwise the value will be returned.
+   The callable is only called when the result of :meth:`~object.__anext__`
+   is awaited.
+
+   *stop_exception* is an exception class or a tuple of exception classes.
+   If *stop_value* is not specified,
+   the iteration stops only when the callable raises an exception.
+   If the callable raises :exc:`StopAsyncIteration`
+   which does not match *stop_exception*,
+   it is replaced with a :exc:`RuntimeError`,
+   as for asynchronous generators (see :pep:`525`).
+
+   For example, reading fixed-size chunks from an asynchronous stream
+   until the end of file is reached::
+
+      from functools import partial
+      async for chunk in aiter(partial(reader.read, 1024), b''):
+          process_chunk(chunk)
+
+   Or consuming an :class:`asyncio.Queue` until it is shut down::
+
+      from asyncio import QueueShutDown
+      async for item in aiter(queue.get, stop_exception=QueueShutDown):
+          process_item(item)
 
    .. versionadded:: 3.10
+
+   .. versionchanged:: next
+      Added the *stop_value* and *stop_exception* parameters.
 
 .. function:: all(iterable, /)
 
@@ -1143,21 +1183,33 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. function:: iter(iterable, /)
-              iter(callable, sentinel, /)
+              iter(callable, /, stop_value, *, stop_exception=StopIteration)
+              iter(callable, /, *, stop_exception)
 
    Return an :term:`iterator` object.  The first argument is interpreted very
-   differently depending on the presence of the second argument. Without a
-   second argument, the single argument must be a collection object which supports the
+   differently depending on the presence of the other arguments. Without other
+   arguments, the single argument must be a collection object which supports the
    :term:`iterable` protocol (the :meth:`~object.__iter__` method),
    or it must support
    the sequence protocol (the :meth:`~object.__getitem__` method with integer arguments
    starting at ``0``).  If it does not support either of those protocols,
-   :exc:`TypeError` is raised. If the second argument, *sentinel*, is given,
+   :exc:`TypeError` is raised.
+
+   If *stop_value* or *stop_exception* is given,
    then the first argument must be a callable object.  The iterator created in this case
    will call *callable* with no arguments for each call to its
    :meth:`~iterator.__next__` method; if the value returned is equal to
-   *sentinel*, :exc:`StopIteration` will be raised, otherwise the value will
+   *stop_value*, or if the call raises an exception matching *stop_exception*,
+   :exc:`StopIteration` will be raised, otherwise the value will
    be returned.
+
+   *stop_exception* is an exception class or a tuple of exception classes.
+   If *stop_value* is not specified,
+   the iteration stops only when the callable raises an exception.
+   If the callable raises :exc:`StopIteration`
+   which does not match *stop_exception*,
+   it is replaced with a :exc:`RuntimeError`,
+   as for generators (see :pep:`479`).
 
    See also :ref:`typeiter`.
 
@@ -1169,6 +1221,19 @@ are always available.  They are listed here in alphabetical order.
       with open('mydata.db', 'rb') as f:
           for block in iter(partial(f.read, 64), b''):
               process_block(block)
+
+   *stop_exception* is useful for callables
+   which report exhaustion by raising an exception
+   instead of returning a special value.
+   For example, draining a queue::
+
+      import queue
+      for item in iter(input_queue.get_nowait, stop_exception=queue.Empty):
+          process_item(item)
+
+   .. versionchanged:: next
+      Added the *stop_exception* parameter
+      and allowed passing *stop_value* by keyword.
 
 
 .. function:: len(object, /)
