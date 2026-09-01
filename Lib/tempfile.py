@@ -996,6 +996,7 @@ class TemporaryDirectory:
                         _os.unlink(base, dir_fd=dir_fd)
                     except IsADirectoryError:
                         cls._rmtree(base, ignore_errors=ignore_errors,
+                                    repeated=(path == name),
                                     dir_fd=dir_fd, fullname=fullpath)
                     except PermissionError:
                         # The PermissionError handler was originally added for
