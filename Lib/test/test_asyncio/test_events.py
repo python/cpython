@@ -1523,8 +1523,17 @@ class EventLoopTestsMixin:
 
             _received_datagram = None
 
+            def connection_made(self, transport):
+                self.errors = []
+                self.error_received_event = loop.create_future()
+
             def datagram_received(self, data, addr):
                 self._received_datagram.set_result(data)
+
+            def error_received(self, exc):
+                self.errors.append(exc)
+                if not self.error_received_event.done():
+                    self.error_received_event.set_result(None)
 
             async def wait_for_datagram_received(self):
                 self._received_datagram = loop.create_future()
@@ -1580,6 +1589,15 @@ class EventLoopTestsMixin:
             protocol_1.wait_for_datagram_received()
         ), b'd')
 
+        if sys.platform == 'win32':
+            # The bad send to addr_3 should be surfaced to the protocol
+            # via error_received() instead of being silently dropped,
+            # while transport_1 keeps working as shown above.
+            loop.run_until_complete(
+                asyncio.wait_for(protocol_1.error_received_event, 10))
+            self.assertTrue(protocol_1.errors)
+            self.assertIsInstance(protocol_1.errors[0], ConnectionResetError)
+
         transport_1.close()
         transport_2.close()
 
@@ -1588,8 +1606,8 @@ class EventLoopTestsMixin:
         # datagram to an address that wasn't listening can raise
         # ConnectionResetError (WSAECONNRESET) on a later receive
         # attempt: synchronously from WSARecvFrom() on ProactorEventLoop
-        # (instead of via the completion result already handled in
-        # _finish_recvfrom() for gh-91227), or from a plain recvfrom()
+        # (instead of via the completion result surfaced through
+        # error_received() for gh-91227), or from a plain recvfrom()
         # on SelectorEventLoop. Either way the transport must keep
         # working afterwards instead of the read loop dying silently.
         loop = self.loop
