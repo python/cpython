@@ -14,6 +14,7 @@ import weakref
 import gc
 import shutil
 import subprocess
+import sysconfig
 from unittest import mock
 
 import unittest
@@ -2114,6 +2115,17 @@ class TestTemporaryDirectory(BaseTestCase):
             pass
         self.assertTrue(os.path.exists(working_dir))
         shutil.rmtree(working_dir)
+
+    @unittest.skipUnless(
+        sysconfig.get_config_var('PY_SUPPORT_TIER')
+        and sysconfig.get_config_var('PY_SUPPORT_TIER') <= 3,
+        'regression test for supported platforms')
+    @unittest.skipIf(support.MS_WINDOWS, 'dirfd not used on Windows')
+    def test_cleanup_safe(self):
+        """Verify that cleanup uses the safer code path"""
+        # This is a regression test. Feel free to add exceptions for new
+        # platforms, but don't forget to update docs.
+        self.assertTrue(tempfile._rmtree_use_dir_fd)
 
 if __name__ == "__main__":
     unittest.main()
