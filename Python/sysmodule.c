@@ -3905,6 +3905,8 @@ EM_JS(char *, _Py_emscripten_runtime, (void), {
 #endif
 });
 
+EM_JS_DEPS(_Py_emscripten_runtime, "$stringToNewUTF8");
+
 static PyObject *
 make_emscripten_info(void)
 {
