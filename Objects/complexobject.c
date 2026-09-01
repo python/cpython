@@ -183,8 +183,8 @@ _Py_rc_prod(double a, Py_complex b)
 #ifdef _M_ARM64
 #pragma optimize("", off)
 #endif
-Py_complex
-_Py_c_quot(Py_complex a, Py_complex b)
+static Py_complex
+c_quot(Py_complex a, Py_complex b)
 {
     /******************************************************************
     This was the original algorithm.  It's grossly prone to spurious
@@ -208,15 +208,14 @@ _Py_c_quot(Py_complex a, Py_complex b)
      * Algorithm 116 (Complex Division, Robert L. Smith, Stanford
      * University).
      */
-     Py_complex r;      /* the result */
-     const double abs_breal = b.real < 0 ? -b.real : b.real;
-     const double abs_bimag = b.imag < 0 ? -b.imag : b.imag;
+    Py_complex r;      /* the result */
+    const double abs_breal = b.real < 0 ? -b.real : b.real;
+    const double abs_bimag = b.imag < 0 ? -b.imag : b.imag;
 
     if (abs_breal >= abs_bimag) {
         /* divide tops and bottom by b.real */
         if (abs_breal == 0.0) {
-            errno = EDOM;
-            r.real = r.imag = 0.0;
+            r.real = r.imag = NAN;
         }
         else {
             const double ratio = b.imag / b.real;
@@ -237,7 +236,6 @@ _Py_c_quot(Py_complex a, Py_complex b)
         /* At least one of b.real or b.imag is a NaN */
         r.real = r.imag = Py_NAN;
     }
-
     /* Recover infinities and zeros that computed as nan+nanj.  See e.g.
        the C11, Annex G.5.2, routine _Cdivd(). */
     if (isnan(r.real) && isnan(r.imag)) {
@@ -254,7 +252,6 @@ _Py_c_quot(Py_complex a, Py_complex b)
             r.imag = 0.0 * (a.imag*x - a.real*y);
         }
     }
-
     return r;
 }
 
@@ -316,6 +313,18 @@ _Py_rc_quot(double a, Py_complex b)
 #ifdef _M_ARM64
 #pragma optimize("", on)
 #endif
+
+Py_complex
+_Py_c_quot(Py_complex a, Py_complex b)
+{
+    Py_complex r = c_quot(a, b);
+
+    if (_Py_c_isnan(r) && b.real == 0 && b.imag == 0) {
+        errno = EDOM;
+        r.real = r.imag = 0.0; /* and set r as documented */
+    }
+    return r;
+}
 
 static Py_complex
 c_pow(Py_complex a, Py_complex b)
@@ -393,7 +402,7 @@ c_powi(Py_complex x, long n)
     if (n > 0)
         return c_powu(x,n);
     else
-        return _Py_c_quot(c_1, c_powu(x,-n));
+        return c_quot(c_1, c_powu(x,-n));
 
 }
 

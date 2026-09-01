@@ -353,6 +353,7 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertEqual(pow(-1, 0+0j), 1.0)
         self.assertRaises(ZeroDivisionError, pow, 0+0j, 1j)
         self.assertRaises(ZeroDivisionError, pow, 0+0j, -1000)
+        self.assertRaises(ZeroDivisionError, pow, 0+0j, -1)
         self.assertAlmostEqual(pow(1j, -1), 1/1j)
         self.assertAlmostEqual(pow(1j, 200), 1)
         self.assertRaises(ValueError, pow, 1+1j, 1+1j, 1+1j)
