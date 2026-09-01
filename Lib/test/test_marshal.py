@@ -15,6 +15,27 @@ try:
 except ImportError:
     _testcapi = None
 
+
+def _make_ambiguous_set_codes():
+    template = (lambda: None).__code__
+    left = complex(float("nan"), 0)
+    right = complex(float("nan"), 0)
+    code = template.replace(co_consts=(frozenset((left, right)),))
+    nested_code = template.replace(
+        co_consts=(frozenset((frozenset((left, right)),)),)
+    )
+    return code, nested_code
+
+
+if support.Py_GIL_DISABLED:
+    # Code construction immortalizes numeric constants in free-threaded
+    # builds. Create these constants once so refleak runs do not accumulate
+    # intentionally immortal objects.
+    _AMBIGUOUS_SET_CODES = _make_ambiguous_set_codes()
+else:
+    _AMBIGUOUS_SET_CODES = ()
+
+
 class HelperMixin:
     def helper(self, sample, *extra):
         new = marshal.loads(marshal.dumps(sample, *extra))
@@ -433,13 +454,7 @@ class BugsTestCase(unittest.TestCase):
         "only deterministic code serialization rejects ambiguous set order",
     )
     def test_code_serialization_set_sort_key_ties(self):
-        template = (lambda: None).__code__
-        left = complex(float("nan"), 0)
-        right = complex(float("nan"), 0)
-        code = template.replace(co_consts=(frozenset((left, right)),))
-        nested_code = template.replace(
-            co_consts=(frozenset((frozenset((left, right)),)),)
-        )
+        code, nested_code = _AMBIGUOUS_SET_CODES
         for version in range(marshal.version + 1):
             with self.subTest(version=version):
                 with self.assertRaisesRegex(
