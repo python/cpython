@@ -450,8 +450,7 @@ class partialmethod:
     callables as instance methods.
     """
 
-    __slots__ = ("func", "args", "keywords", "wrapper",
-                 "__dict__", "__weakref__")
+    __slots__ = ("func", "args", "keywords", "__dict__", "__weakref__")
 
     __repr__ = _partial_repr
 
@@ -463,6 +462,9 @@ class partialmethod:
             func = func.func
             args = temp.args
             keywords = temp.keywords
+
+        if args and args[-1] is Placeholder:
+            raise TypeError("trailing Placeholders are not allowed")
 
         self.func = func
         self.args = args
