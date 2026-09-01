@@ -514,8 +514,8 @@ PyDoc_STRVAR(builtin_eval__doc__,
 "\n"
 "Evaluate the given source in the context of globals and locals.\n"
 "\n"
-"The source may be a string representing a Python expression\n"
-"or a code object as returned by compile().\n"
+"The source may be a string representing a Python expression,\n"
+"a bytes-like object, or a code object as returned by compile().\n"
 "The globals must be a dictionary and locals can be any mapping,\n"
 "defaulting to the current globals and locals.\n"
 "If only globals is given, locals defaults to it.");
@@ -593,8 +593,8 @@ PyDoc_STRVAR(builtin_exec__doc__,
 "\n"
 "Execute the given source in the context of globals and locals.\n"
 "\n"
-"The source may be a string representing one or more Python statements\n"
-"or a code object as returned by compile().\n"
+"The source may be a string representing one or more Python statements,\n"
+"a bytes-like object, or a code object as returned by compile().\n"
 "The globals must be a dictionary and locals can be any mapping,\n"
 "defaulting to the current globals and locals.\n"
 "If only globals is given, locals defaults to it.\n"
@@ -1387,4 +1387,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=84efa9c5cc737ce5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d55e3e1d90ee22d1 input=a9049054013a1b77]*/
