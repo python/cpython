@@ -970,6 +970,88 @@ class ElementTreeTest(unittest.TestCase):
                     expected_retval
                 )
 
+    def test_tostring_standalone(self):
+        elem = ET.XML('<body><tag/></body>')
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode', standalone=True),
+            "<?xml version='1.0' encoding='utf-8' standalone='yes'?>\n"
+            "<body><tag /></body>"
+        )
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode', standalone=False),
+            "<?xml version='1.0' encoding='utf-8' standalone='no'?>\n"
+            "<body><tag /></body>"
+        )
+        # the XML declaration is written even if it would be omitted
+        self.assertEqual(
+            ET.tostring(elem, standalone=True),
+            b"<?xml version='1.0' encoding='us-ascii' standalone='yes'?>\n"
+            b"<body><tag /></body>"
+        )
+        self.assertEqual(
+            ET.tostring(elem, encoding='UTF-8', standalone=False),
+            b"<?xml version='1.0' encoding='UTF-8' standalone='no'?>\n"
+            b"<body><tag /></body>"
+        )
+
+    def test_tostring_standalone_none(self):
+        elem = ET.XML('<body><tag/></body>')
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode', standalone=None),
+            '<body><tag /></body>'
+        )
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode', xml_declaration=True,
+                        standalone=None),
+            "<?xml version='1.0' encoding='utf-8'?>\n<body><tag /></body>"
+        )
+
+    def test_tostring_standalone_without_xml_declaration(self):
+        elem = ET.XML('<body><tag/></body>')
+        for standalone in True, False:
+            for xml_declaration in False, 0, '':
+                with self.subTest(standalone=standalone,
+                                  xml_declaration=xml_declaration):
+                    with self.assertRaises(ValueError):
+                        ET.tostring(elem, xml_declaration=xml_declaration,
+                                    standalone=standalone)
+
+    def test_tostring_standalone_text_method(self):
+        elem = ET.XML('<body><tag>text</tag></body>')
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode', method='text',
+                        standalone=True),
+            'text'
+        )
+
+    def test_tostringlist_standalone(self):
+        elem = ET.XML('<body><tag/></body>')
+        self.assertEqual(
+            b''.join(ET.tostringlist(elem, standalone=True)),
+            b"<?xml version='1.0' encoding='us-ascii' standalone='yes'?>\n"
+            b"<body><tag /></body>"
+        )
+        with self.assertRaises(ValueError):
+            ET.tostringlist(elem, xml_declaration=False, standalone=False)
+
+    def test_write_standalone(self):
+        elem = ET.XML('<body><tag/></body>')
+        tree = ET.ElementTree(elem)
+        for standalone, expected in [
+                (True, "standalone='yes'"), (False, "standalone='no'")]:
+            with self.subTest(standalone=standalone):
+                file = io.StringIO()
+                tree.write(file, encoding='unicode', standalone=standalone)
+                self.assertEqual(
+                    file.getvalue(),
+                    "<?xml version='1.0' encoding='utf-8' %s?>\n"
+                    "<body><tag /></body>" % expected
+                )
+        file = io.StringIO()
+        with self.assertRaises(ValueError):
+            tree.write(file, encoding='unicode', xml_declaration=False,
+                       standalone=True)
+
     def test_tostringlist_default_namespace(self):
         elem = ET.XML('<body xmlns="http://effbot.org/ns"><tag/></body>')
         self.assertEqual(

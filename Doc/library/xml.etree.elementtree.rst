@@ -711,16 +711,16 @@ Functions
 
 .. function:: tostring(element, encoding="us-ascii", method="xml", *, \
                        xml_declaration=None, default_namespace=None, \
-                       short_empty_elements=True)
+                       short_empty_elements=True, standalone=None)
 
    Generates a string representation of an XML element, including all
    subelements.  *element* is an :class:`Element` instance.  *encoding* [1]_ is
    the output encoding (default is US-ASCII).  Use ``encoding="unicode"`` to
    generate a Unicode string (otherwise, a bytestring is generated).  *method*
    is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
-   *xml_declaration*, *default_namespace* and *short_empty_elements* has the same
-   meaning as in :meth:`ElementTree.write`. Returns an (optionally) encoded string
-   containing the XML data.
+   *xml_declaration*, *default_namespace*, *short_empty_elements* and
+   *standalone* has the same meaning as in :meth:`ElementTree.write`.
+   Returns an (optionally) encoded string containing the XML data.
 
    .. versionchanged:: 3.4
       Added the *short_empty_elements* parameter.
@@ -732,19 +732,23 @@ Functions
       The :func:`tostring` function now preserves the attribute order
       specified by the user.
 
+   .. versionchanged:: next
+      Added the *standalone* parameter.
+
 
 .. function:: tostringlist(element, encoding="us-ascii", method="xml", *, \
                            xml_declaration=None, default_namespace=None, \
-                           short_empty_elements=True)
+                           short_empty_elements=True, standalone=None)
 
    Generates a string representation of an XML element, including all
    subelements.  *element* is an :class:`Element` instance.  *encoding* [1]_ is
    the output encoding (default is US-ASCII).  Use ``encoding="unicode"`` to
    generate a Unicode string (otherwise, a bytestring is generated).  *method*
    is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
-   *xml_declaration*, *default_namespace* and *short_empty_elements* has the same
-   meaning as in :meth:`ElementTree.write`. Returns a list of (optionally) encoded
-   strings containing the XML data. It does not guarantee any specific sequence,
+   *xml_declaration*, *default_namespace*, *short_empty_elements* and
+   *standalone* has the same meaning as in :meth:`ElementTree.write`.
+   Returns a list of (optionally) encoded strings containing the XML data.
+   It does not guarantee any specific sequence,
    except that ``b"".join(tostringlist(element)) == tostring(element)``.
 
    .. versionadded:: 3.2
@@ -758,6 +762,9 @@ Functions
    .. versionchanged:: 3.8
       The :func:`tostringlist` function now preserves the attribute order
       specified by the user.
+
+   .. versionchanged:: next
+      Added the *standalone* parameter.
 
 
 .. function:: XML(text, parser=None)
@@ -1186,7 +1193,7 @@ ElementTree Objects
 
    .. method:: write(file, encoding="us-ascii", xml_declaration=None, \
                      default_namespace=None, method="xml", *, \
-                     short_empty_elements=True)
+                     short_empty_elements=True, standalone=None)
 
       Writes the element tree to a file, as XML.  *file* is a file name, or a
       :term:`file object` opened for writing.  *encoding* [1]_ is the output
@@ -1202,6 +1209,13 @@ ElementTree Objects
       emitted as a single self-closed tag, otherwise they are emitted as a pair
       of start/end tags.
 
+      The keyword-only *standalone* parameter is the value of the standalone
+      document declaration in the XML declaration.
+      Use ``True`` for ``standalone="yes"``, ``False`` for ``standalone="no"``,
+      and ``None`` (the default) to omit it.
+      An XML declaration is written if *standalone* is not ``None``;
+      combining it with ``xml_declaration=False`` raises a :exc:`ValueError`.
+
       The output is either a string (:class:`str`) or binary (:class:`bytes`).
       This is controlled by the *encoding* argument.  If *encoding* is
       ``"unicode"``, the output is a string; otherwise, it's binary.  Note that
@@ -1215,6 +1229,9 @@ ElementTree Objects
       .. versionchanged:: 3.8
          The :meth:`write` method now preserves the attribute order specified
          by the user.
+
+      .. versionchanged:: next
+         Added the *standalone* parameter.
 
 
 This is the XML file that is going to be manipulated::
