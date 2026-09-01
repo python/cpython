@@ -357,10 +357,10 @@ c_powu(Py_complex x, long n)
 static Py_complex
 c_powi(Py_complex x, long n)
 {
-    if (n > 0)
+    if (n >= 0)
         return c_powu(x,n);
     else
-        return _Py_c_quot(c_1, c_powu(x,-n));
+        return c_powu(_Py_c_quot(c_1, x), -n);
 
 }
 
