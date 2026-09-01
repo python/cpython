@@ -33,12 +33,18 @@ class PullDOMTestCase(unittest.TestCase):
 
         # Test with a filename:
         handler = pulldom.parse(tstfile)
-        self.addCleanup(handler.close)
+        self.addCleanup(handler.clear)
         list(handler)
 
         # Test with a file object:
         with open(tstfile, "rb") as fin:
             list(pulldom.parse(fin))
+
+    def test_context_manager_closes_owned_stream(self):
+        with pulldom.parse(tstfile) as events:
+            stream = events.stream
+            list(events)
+        self.assertTrue(stream.closed)
 
     def test_context_manager_does_not_close_user_stream(self):
         with open(tstfile, 'rb') as f:
@@ -46,18 +52,12 @@ class PullDOMTestCase(unittest.TestCase):
                 list(events)
             self.assertFalse(f.closed)
 
-    def test_close_is_idempotent(self):
-        events = pulldom.parse(tstfile)
-        stream = events.stream
-        events.close()
-        self.assertTrue(stream.closed)
-        events.close()  # should not raise
-
     def test_clear_closes_owned_stream(self):
         events = pulldom.parse(tstfile)
         stream = events.stream
         events.clear()
         self.assertTrue(stream.closed)
+        events.clear()  # should not raise
 
     def test_parse_semantics(self):
         """Test DOMEventStream parsing semantics."""

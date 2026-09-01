@@ -226,16 +226,11 @@ class DOMEventStream:
     def __iter__(self):
         return self
 
-    def close(self):
-        """Close the stream if it was opened by parse()."""
-        if self._owns_stream and self.stream is not None:
-            self.stream.close()
-
     def __enter__(self):
         return self
 
     def __exit__(self, *args):
-        self.close()
+        self.clear()
 
     def expandNode(self, node):
         event = self.getEvent()
@@ -287,9 +282,11 @@ class DOMEventStream:
 
     def clear(self):
         """clear(): Explicitly release parsing objects"""
-        self.close()
-        self.pulldom.clear()
-        del self.pulldom
+        if self._owns_stream and self.stream is not None:
+            self.stream.close()
+        if self.pulldom is not None:
+            self.pulldom.clear()
+        self.pulldom = None
         self.parser = None
         self.stream = None
 
