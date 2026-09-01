@@ -943,6 +943,36 @@ checking for that feed.
    }
 
 
+Proxy Settings
+--------------
+
+By default, the Python install manager will use your system-wide proxy settings,
+including automatic authentication. For most users, this behaves the same as
+your browser and other applications.
+
+To override the settings, use the ``NO_PROXY``, ``HTTP_PROXY`` and
+``HTTPS_PROXY`` environment variables. These should be set in the terminal
+session before using the Python install manager. Other applications may also
+use the variables, so use caution before setting them globally for your entire
+machine.
+
+Setting ``NO_PROXY`` to any non-empty value will disable the use of any proxy.
+Use this to bypass your system's default proxy setting and attempt to access the
+index server directly.
+
+Setting ``HTTPS_PROXY`` to a string like ``example.com:8080`` will connect to
+that proxy server for all HTTPS connections. For the default index, all
+connections will be using HTTPS, and so this is the usual setting to override.
+
+The ``HTTP_PROXY`` variable may be needed if you are using a private index
+server that does not use encrypted connections, but does require the default
+proxy server to be overridden. It follows the same format as ``HTTPS_PROXY``.
+
+Credentials may be embedded in either setting, however, when ``HTTPS_PROXY`` has
+credentials embedded they will be used in preference to other credentials. Only
+one set of credentials will be used for both types of proxy, and may be sent to
+the other proxy for connections of that type.
+
 .. _pymanager-troubleshoot:
 
 Troubleshooting
