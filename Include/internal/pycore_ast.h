@@ -676,11 +676,13 @@ struct _type_param {
 
         struct {
             identifier name;
+            expr_ty bound;
             expr_ty default_value;
         } ParamSpec;
 
         struct {
             identifier name;
+            expr_ty bound;
             expr_ty default_value;
         } TypeVarTuple;
 
@@ -919,12 +921,13 @@ type_ignore_ty _PyAST_TypeIgnore(int lineno, string tag, PyArena *arena);
 type_param_ty _PyAST_TypeVar(identifier name, expr_ty bound, expr_ty
                              default_value, int lineno, int col_offset, int
                              end_lineno, int end_col_offset, PyArena *arena);
-type_param_ty _PyAST_ParamSpec(identifier name, expr_ty default_value, int
-                               lineno, int col_offset, int end_lineno, int
-                               end_col_offset, PyArena *arena);
-type_param_ty _PyAST_TypeVarTuple(identifier name, expr_ty default_value, int
-                                  lineno, int col_offset, int end_lineno, int
-                                  end_col_offset, PyArena *arena);
+type_param_ty _PyAST_ParamSpec(identifier name, expr_ty bound, expr_ty
+                               default_value, int lineno, int col_offset, int
+                               end_lineno, int end_col_offset, PyArena *arena);
+type_param_ty _PyAST_TypeVarTuple(identifier name, expr_ty bound, expr_ty
+                                  default_value, int lineno, int col_offset,
+                                  int end_lineno, int end_col_offset, PyArena
+                                  *arena);
 
 
 PyObject* PyAST_mod2obj(mod_ty t);

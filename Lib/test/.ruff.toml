@@ -18,6 +18,9 @@ extend-exclude = [
     "test_lazy_import/data/badsyntax/*.py",
     # Unary plus literal pattern is not yet supported by Ruff (GH-145239)
     "test_patma.py",
+    # Bounds on type variable tuples and parameter specifications are not yet
+    # supported by Ruff (GH-148945)
+    "test_type_params.py",
 ]
 
 [lint]

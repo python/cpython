@@ -37,6 +37,7 @@ typedef struct {
     PyObject_HEAD
     PyObject *name;
     PyObject *bound;
+    PyObject *evaluate_bound;
     PyObject *default_value;
     PyObject *evaluate_default;
     bool covariant;
@@ -48,6 +49,7 @@ typedef struct {
     PyObject_HEAD
     PyObject *name;
     PyObject *bound;
+    PyObject *evaluate_bound;
     PyObject *default_value;
     PyObject *evaluate_default;
     bool covariant;
@@ -1180,6 +1182,7 @@ paramspec_dealloc(PyObject *self)
 
     Py_XDECREF(ps->name);
     Py_XDECREF(ps->bound);
+    Py_XDECREF(ps->evaluate_bound);
     Py_XDECREF(ps->default_value);
     Py_XDECREF(ps->evaluate_default);
     PyObject_ClearManagedDict(self);
@@ -1196,6 +1199,7 @@ paramspec_traverse(PyObject *self, visitproc visit, void *arg)
     paramspecobject *ps = paramspecobject_CAST(self);
     Py_VISIT(ps->name);
     Py_VISIT(ps->bound);
+    Py_VISIT(ps->evaluate_bound);
     Py_VISIT(ps->default_value);
     Py_VISIT(ps->evaluate_default);
     return PyObject_VisitManagedDict(self, visit, arg);
@@ -1207,6 +1211,7 @@ paramspec_clear(PyObject *op)
     paramspecobject *self = paramspecobject_CAST(op);
     Py_CLEAR(self->name);
     Py_CLEAR(self->bound);
+    Py_CLEAR(self->evaluate_bound);
     Py_CLEAR(self->default_value);
     Py_CLEAR(self->evaluate_default);
     PyObject_ClearManagedDict(op);
@@ -1228,7 +1233,6 @@ paramspec_repr(PyObject *self)
 
 static PyMemberDef paramspec_members[] = {
     {"__name__", _Py_T_OBJECT, offsetof(paramspecobject, name), Py_READONLY},
-    {"__bound__", _Py_T_OBJECT, offsetof(paramspecobject, bound), Py_READONLY},
     {"__covariant__", Py_T_BOOL, offsetof(paramspecobject, covariant), Py_READONLY},
     {"__contravariant__", Py_T_BOOL, offsetof(paramspecobject, contravariant), Py_READONLY},
     {"__infer_variance__", Py_T_BOOL, offsetof(paramspecobject, infer_variance), Py_READONLY},
@@ -1247,6 +1251,34 @@ paramspec_kwargs(PyObject *self, void *Py_UNUSED(closure))
 {
     PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.paramspeckwargs_type;
     return (PyObject *)paramspecattr_new(tp, self);
+}
+
+static PyObject *
+paramspec_bound(PyObject *op, void *Py_UNUSED(closure))
+{
+    paramspecobject *self = paramspecobject_CAST(op);
+    if (self->bound != NULL) {
+        return Py_NewRef(self->bound);
+    }
+    if (self->evaluate_bound == NULL) {
+        Py_RETURN_NONE;
+    }
+    PyObject *bound = PyObject_CallNoArgs(self->evaluate_bound);
+    self->bound = Py_XNewRef(bound);
+    return bound;
+}
+
+static PyObject *
+paramspec_evaluate_bound(PyObject *op, void *Py_UNUSED(closure))
+{
+    paramspecobject *self = paramspecobject_CAST(op);
+    if (self->evaluate_bound != NULL) {
+        return Py_NewRef(self->evaluate_bound);
+    }
+    if (self->bound != NULL) {
+        return constevaluator_alloc(self->bound);
+    }
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -1280,13 +1312,16 @@ paramspec_evaluate_default(PyObject *op, void *Py_UNUSED(closure))
 static PyGetSetDef paramspec_getset[] = {
     {"args", paramspec_args, NULL, PyDoc_STR("Represents positional arguments."), NULL},
     {"kwargs", paramspec_kwargs, NULL, PyDoc_STR("Represents keyword arguments."), NULL},
+    {"__bound__", paramspec_bound, NULL, "The bound for this ParamSpec.", NULL},
     {"__default__", paramspec_default, NULL, "The default value for this ParamSpec.", NULL},
+    {"evaluate_bound", paramspec_evaluate_bound, NULL, NULL, NULL},
     {"evaluate_default", paramspec_evaluate_default, NULL, NULL, NULL},
     {0},
 };
 
 static paramspecobject *
-paramspec_alloc(PyObject *name, PyObject *bound, PyObject *default_value, bool covariant,
+paramspec_alloc(PyObject *name, PyObject *bound, PyObject *evaluate_bound,
+                PyObject *default_value, bool covariant,
                 bool contravariant, bool infer_variance, PyObject *module)
 {
     PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.paramspec_type;
@@ -1296,6 +1331,7 @@ paramspec_alloc(PyObject *name, PyObject *bound, PyObject *default_value, bool c
     }
     ps->name = Py_NewRef(name);
     ps->bound = Py_XNewRef(bound);
+    ps->evaluate_bound = Py_XNewRef(evaluate_bound);
     ps->covariant = covariant;
     ps->contravariant = contravariant;
     ps->infer_variance = infer_variance;
@@ -1340,12 +1376,16 @@ paramspec_new_impl(PyTypeObject *type, PyObject *name, PyObject *bound,
         PyErr_SetString(PyExc_ValueError, "Variance cannot be specified with infer_variance.");
         return NULL;
     }
+    if (Py_IsNone(bound)) {
+        bound = NULL;
+    }
     PyObject *module = caller();
     if (module == NULL) {
         return NULL;
     }
     PyObject *ps = (PyObject *)paramspec_alloc(
-        name, bound, default_value, covariant, contravariant, infer_variance, module);
+        name, bound, NULL, default_value, covariant, contravariant,
+        infer_variance, module);
     Py_DECREF(module);
     return ps;
 }
@@ -1521,6 +1561,7 @@ typevartuple_dealloc(PyObject *self)
 
     Py_XDECREF(tvt->name);
     Py_XDECREF(tvt->bound);
+    Py_XDECREF(tvt->evaluate_bound);
     Py_XDECREF(tvt->default_value);
     Py_XDECREF(tvt->evaluate_default);
     PyObject_ClearManagedDict(self);
@@ -1563,7 +1604,6 @@ typevartuple_repr(PyObject *self)
 
 static PyMemberDef typevartuple_members[] = {
     {"__name__", _Py_T_OBJECT, offsetof(typevartupleobject, name), Py_READONLY},
-    {"__bound__", _Py_T_OBJECT, offsetof(typevartupleobject, bound), Py_READONLY},
     {"__covariant__", Py_T_BOOL, offsetof(typevartupleobject, covariant), Py_READONLY},
     {"__contravariant__", Py_T_BOOL, offsetof(typevartupleobject, contravariant), Py_READONLY},
     {"__infer_variance__", Py_T_BOOL, offsetof(typevartupleobject, infer_variance), Py_READONLY},
@@ -1571,7 +1611,8 @@ static PyMemberDef typevartuple_members[] = {
 };
 
 static typevartupleobject *
-typevartuple_alloc(PyObject *name, PyObject *bound, PyObject *default_value,
+typevartuple_alloc(PyObject *name, PyObject *bound, PyObject *evaluate_bound,
+                   PyObject *default_value,
                    bool covariant, bool contravariant, bool infer_variance,
                    PyObject *module)
 {
@@ -1582,6 +1623,7 @@ typevartuple_alloc(PyObject *name, PyObject *bound, PyObject *default_value,
     }
     tvt->name = Py_NewRef(name);
     tvt->bound = Py_XNewRef(bound);
+    tvt->evaluate_bound = Py_XNewRef(evaluate_bound);
     tvt->covariant = covariant;
     tvt->contravariant = contravariant;
     tvt->infer_variance = infer_variance;
@@ -1626,12 +1668,16 @@ typevartuple_impl(PyTypeObject *type, PyObject *name, PyObject *bound,
         PyErr_SetString(PyExc_ValueError, "Variance cannot be specified with infer_variance.");
         return NULL;
     }
+    if (Py_IsNone(bound)) {
+        bound = NULL;
+    }
     PyObject *module = caller();
     if (module == NULL) {
         return NULL;
     }
     PyObject *result = (PyObject *)typevartuple_alloc(
-        name, bound, default_value, covariant, contravariant, infer_variance, module);
+        name, bound, NULL, default_value, covariant, contravariant,
+        infer_variance, module);
     Py_DECREF(module);
     return result;
 }
@@ -1716,6 +1762,7 @@ typevartuple_traverse(PyObject *self, visitproc visit, void *arg)
     typevartupleobject *tvt = typevartupleobject_CAST(self);
     Py_VISIT(tvt->name);
     Py_VISIT(tvt->bound);
+    Py_VISIT(tvt->evaluate_bound);
     Py_VISIT(tvt->default_value);
     Py_VISIT(tvt->evaluate_default);
     return PyObject_VisitManagedDict(self, visit, arg);
@@ -1727,10 +1774,39 @@ typevartuple_clear(PyObject *self)
     typevartupleobject *tvt = typevartupleobject_CAST(self);
     Py_CLEAR(tvt->name);
     Py_CLEAR(tvt->bound);
+    Py_CLEAR(tvt->evaluate_bound);
     Py_CLEAR(tvt->default_value);
     Py_CLEAR(tvt->evaluate_default);
     PyObject_ClearManagedDict(self);
     return 0;
+}
+
+static PyObject *
+typevartuple_bound(PyObject *op, void *Py_UNUSED(closure))
+{
+    typevartupleobject *self = typevartupleobject_CAST(op);
+    if (self->bound != NULL) {
+        return Py_NewRef(self->bound);
+    }
+    if (self->evaluate_bound == NULL) {
+        Py_RETURN_NONE;
+    }
+    PyObject *bound = PyObject_CallNoArgs(self->evaluate_bound);
+    self->bound = Py_XNewRef(bound);
+    return bound;
+}
+
+static PyObject *
+typevartuple_evaluate_bound(PyObject *op, void *Py_UNUSED(closure))
+{
+    typevartupleobject *self = typevartupleobject_CAST(op);
+    if (self->evaluate_bound != NULL) {
+        return Py_NewRef(self->evaluate_bound);
+    }
+    if (self->bound != NULL) {
+        return constevaluator_alloc(self->bound);
+    }
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -1762,7 +1838,9 @@ typevartuple_evaluate_default(PyObject *op, void *Py_UNUSED(closure))
 }
 
 static PyGetSetDef typevartuple_getset[] = {
+    {"__bound__", typevartuple_bound, NULL, "The bound for this TypeVarTuple.", NULL},
     {"__default__", typevartuple_default, NULL, "The default value for this TypeVarTuple.", NULL},
+    {"evaluate_bound", typevartuple_evaluate_bound, NULL, NULL, NULL},
     {"evaluate_default", typevartuple_evaluate_default, NULL, NULL, NULL},
     {0},
 };
@@ -1851,14 +1929,32 @@ PyObject *
 _Py_make_paramspec(PyThreadState *Py_UNUSED(ignored), PyObject *v)
 {
     assert(PyUnicode_Check(v));
-    return (PyObject *)paramspec_alloc(v, NULL, NULL, false, false, true, NULL);
+    return (PyObject *)paramspec_alloc(v, NULL, NULL, NULL, false, false, true,
+                                       NULL);
+}
+
+PyObject *
+_Py_make_paramspec_with_bound(PyObject *name, PyObject *evaluate_bound)
+{
+    assert(PyUnicode_Check(name));
+    return (PyObject *)paramspec_alloc(name, NULL, evaluate_bound, NULL,
+                                       false, false, true, NULL);
 }
 
 PyObject *
 _Py_make_typevartuple(PyThreadState *Py_UNUSED(ignored), PyObject *v)
 {
     assert(PyUnicode_Check(v));
-    return (PyObject *)typevartuple_alloc(v, NULL, NULL, false, false, true, NULL);
+    return (PyObject *)typevartuple_alloc(v, NULL, NULL, NULL, false, false,
+                                          true, NULL);
+}
+
+PyObject *
+_Py_make_typevartuple_with_bound(PyObject *name, PyObject *evaluate_bound)
+{
+    assert(PyUnicode_Check(name));
+    return (PyObject *)typevartuple_alloc(name, NULL, evaluate_bound, NULL,
+                                          false, false, true, NULL);
 }
 
 static PyObject *

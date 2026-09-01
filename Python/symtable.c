@@ -2755,8 +2755,13 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
             return 0;
         }
 
+        if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVarTuple.bound, tp->v.TypeVarTuple.name,
+                                                        tp, "a TypeVarTuple bound")) {
+            return 0;
+        }
+
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVarTuple.default_value, tp->v.TypeVarTuple.name,
-                                                        tp, "a TypeVarTuple default")) {
+                                                        (type_param_ty)((uintptr_t)tp + 1), "a TypeVarTuple default")) {
             return 0;
         }
         break;
@@ -2765,8 +2770,13 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
             return 0;
         }
 
+        if (!symtable_visit_type_param_bound_or_default(st, tp->v.ParamSpec.bound, tp->v.ParamSpec.name,
+                                                        tp, "a ParamSpec bound")) {
+            return 0;
+        }
+
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.ParamSpec.default_value, tp->v.ParamSpec.name,
-                                                        tp, "a ParamSpec default")) {
+                                                        (type_param_ty)((uintptr_t)tp + 1), "a ParamSpec default")) {
             return 0;
         }
         break;

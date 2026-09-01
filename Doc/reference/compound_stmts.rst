@@ -1768,8 +1768,8 @@ Type parameter lists
    type_params: "[" `type_param` ("," `type_param`)* "]"
    type_param: `typevar` | `typevartuple` | `paramspec`
    typevar: `identifier` (":" `expression`)? ("=" `expression`)?
-   typevartuple: "*" `identifier` ("=" `expression`)?
-   paramspec: "**" `identifier` ("=" `expression`)?
+   typevartuple: "*" `identifier` (":" `starred_expression`)? ("=" `starred_expression`)?
+   paramspec: "**" `identifier` (":" `expression`)? ("=" `expression`)?
 
 :ref:`Functions <def>` (including :ref:`coroutines <async def>`),
 :ref:`classes <class>` and :ref:`type aliases <type>` may
@@ -1832,8 +1832,19 @@ but only when the value is explicitly accessed through the attributes ``__bound_
 and ``__constraints__``. To accomplish this, the bounds or constraints are
 evaluated in a separate :ref:`annotation scope <annotation-scopes>`.
 
-:data:`typing.TypeVarTuple`\ s and :data:`typing.ParamSpec`\ s cannot have bounds
-or constraints.
+:data:`typing.TypeVarTuple`\ s and :data:`typing.ParamSpec`\ s can also declare a
+bound with a colon (``:``) followed by an expression, but they cannot declare
+constraints. For a :data:`!typing.TypeVarTuple`, the bound applies to each of the
+types it stands for (e.g. in ``*Ts: int``, every type substituted for ``Ts`` must
+be a subtype of :class:`int`). For a :data:`!typing.ParamSpec`, the bound is a
+parameter list that the substituted parameters must be compatible with (e.g.
+``**P: [int]``). As with :data:`!typing.TypeVar`, these bounds are lazily
+evaluated in a separate :ref:`annotation scope <annotation-scopes>` and are not
+enforced at runtime.
+
+.. versionchanged:: 3.16
+   Added support for bounds on :data:`!typing.TypeVarTuple`\ s and
+   :data:`!typing.ParamSpec`\ s.
 
 All three flavors of type parameters can also have a *default value*, which is used
 when the type parameter is not explicitly provided. This is added by appending
@@ -1853,7 +1864,9 @@ The following example indicates the full set of allowed type parameter declarati
       TypeVarWithBound: int,
       TypeVarWithConstraints: (str, bytes),
       *SimpleTypeVarTuple = (int, float),
+      *TypeVarTupleWithBound: int,
       **SimpleParamSpec = (str, bytearray),
+      **ParamSpecWithBound: [int],
    ](
       a: SimpleTypeVar,
       b: TypeVarWithDefault,
