@@ -73,32 +73,28 @@ import cmd
 import bdb
 import dis
 import code
-lazy import glob
-lazy import json
+import glob
+import json
 import stat
-lazy import runpy
-lazy import shlex
-lazy import pydoc
 import token
 import types
 import atexit
 import codeop
-lazy import pprint
-lazy import signal
-lazy import socket
+import pprint
+import signal
+import socket
 import typing
 lazy import asyncio
 import inspect
 import weakref
-lazy import argparse
 import builtins
-lazy import tempfile
+import tempfile
 import textwrap
 import tokenize
 import itertools
 import traceback
 import linecache
-lazy import selectors
+import selectors
 import threading
 import _colorize
 
@@ -250,6 +246,7 @@ class _ModuleTarget(_ExecutableTarget):
     def __init__(self, target):
         self._target = target
 
+        import runpy
         try:
             _, self._spec, self._code = runpy._get_module_details(self._target)
         except ImportError as e:
@@ -284,6 +281,8 @@ class _ModuleTarget(_ExecutableTarget):
 
 class _ZipTarget(_ExecutableTarget):
     def __init__(self, target):
+        import runpy
+
         self._target = os.path.realpath(target)
         sys.path.insert(0, self._target)
         try:
@@ -2089,6 +2088,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                        'e.g. "python -m pdb myscript.py"')
             return
         if arg:
+            import shlex
             argv0 = sys.argv[0:1]
             try:
                 sys.argv = shlex.split(arg)
@@ -3743,6 +3743,7 @@ def test():
 
 # print help
 def help():
+    import pydoc
     pydoc.pager(__doc__)
 
 _usage = """\
@@ -3782,6 +3783,8 @@ def parse_args():
     # "python -m pdb foo.py -m bar" should pass "-m bar" to "foo.py".
     # "python -m pdb -m foo -m bar" should pass "-m bar" to "foo".
     # This require some customized parsing logic to find the actual debug target.
+
+    import argparse
 
     parser = argparse.ArgumentParser(
         usage="%(prog)s [-h] [-c command] (-m module | -p pid | pyfile) [args ...]",
