@@ -1482,23 +1482,25 @@ mbstreamreader_iread(MultibyteStreamReaderObject *self,
         endoffile = (PyBytes_GET_SIZE(cres) == 0);
 
         if (self->pendingsize > 0) {
-            PyObject *ctr;
-            char *ctrdata;
-
             if (PyBytes_GET_SIZE(cres) > PY_SSIZE_T_MAX - self->pendingsize) {
                 PyErr_NoMemory();
                 goto errorexit;
             }
             rsize = PyBytes_GET_SIZE(cres) + self->pendingsize;
-            ctr = PyBytes_FromStringAndSize(NULL, rsize);
-            if (ctr == NULL)
+
+            PyBytesWriter *writer = PyBytesWriter_Create(rsize);
+            if (writer == NULL) {
                 goto errorexit;
-            ctrdata = PyBytes_AS_STRING(ctr);
+            }
+            char *ctrdata = PyBytesWriter_GetData(writer);
             memcpy(ctrdata, self->pending, self->pendingsize);
             memcpy(ctrdata + self->pendingsize,
                     PyBytes_AS_STRING(cres),
                     PyBytes_GET_SIZE(cres));
-            Py_SETREF(cres, ctr);
+            Py_SETREF(cres, PyBytesWriter_Finish(writer));
+            if (cres == NULL) {
+                goto errorexit;
+            }
             self->pendingsize = 0;
         }
 
