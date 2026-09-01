@@ -363,6 +363,146 @@ class BugsTestCase(unittest.TestCase):
         self.assertEqual(b[0], big)
         self.assertIs(b[0], b[1])
 
+    @unittest.skipUnless(
+        support.Py_GIL_DISABLED,
+        "free-threaded builds require deterministic reference tracking",
+    )
+    def test_code_reference_tracking_does_not_depend_on_refcount(self):
+        for version in range(3, marshal.version + 1):
+            with self.subTest(version=version):
+                constant = (bytes(bytearray(b"payload")),)
+                code = (lambda: None).__code__.replace(co_consts=(constant,))
+                del constant
+
+                without_extra_reference = marshal.dumps(code, version)
+                extra_reference = code.co_consts[0]
+                with_extra_reference = marshal.dumps(code, version)
+                self.assertEqual(without_extra_reference, with_extra_reference)
+                self.assertEqual(
+                    marshal.loads(with_extra_reference).co_consts,
+                    code.co_consts,
+                )
+                self.assertIs(extra_reference, code.co_consts[0])
+
+    def test_code_serialization_does_not_depend_on_compile_order(self):
+        script = textwrap.dedent("""
+            import marshal
+            {prelude}
+            code = compile({source!r}, "/repro/target.py", "exec")
+            print(marshal.dumps(code).hex())
+        """)
+
+        cases = (
+            (
+                """
+                    value = {"foo", 2, 3}
+
+                    def function():
+                        nested = {"foo", 2, 3}
+                """,
+                'compile("import foo", "/repro/prelude.py", "exec")',
+            ),
+            (
+                """
+                    value = target["foo":"bar"]
+
+                    def function(target):
+                        return target["foo":"bar"]
+                """,
+                'compile(\'target["foo":"bar"]\', '
+                '"/repro/prelude.py", "exec")',
+            ),
+        )
+        for source, prelude in cases:
+            source = textwrap.dedent(source)
+            with self.subTest(source=source):
+                _, without_prelude, _ = assert_python_ok(
+                    "-c",
+                    script.format(prelude="", source=source),
+                    PYTHONHASHSEED="0",
+                )
+                _, with_prelude, _ = assert_python_ok(
+                    "-c",
+                    script.format(prelude=prelude, source=source),
+                    PYTHONHASHSEED="0",
+                )
+                self.assertEqual(without_prelude, with_prelude)
+
+    @unittest.skipUnless(
+        support.Py_GIL_DISABLED,
+        "only deterministic code serialization rejects ambiguous set order",
+    )
+    def test_code_serialization_set_sort_key_ties(self):
+        template = (lambda: None).__code__
+        left = complex(float("nan"), 0)
+        right = complex(float("nan"), 0)
+        code = template.replace(co_consts=(frozenset((left, right)),))
+        nested_code = template.replace(
+            co_consts=(frozenset((frozenset((left, right)),)),)
+        )
+        for version in range(marshal.version + 1):
+            with self.subTest(version=version):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "cannot deterministically marshal set elements",
+                ):
+                    marshal.dumps(code, version)
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "cannot deterministically marshal set elements",
+                ):
+                    marshal.dumps(nested_code, version)
+
+        source = """
+            def contains(value):
+                return value in {
+                    (1e300 * 1e300) - (1e300 * 1e300),
+                    (1e300 * 1e300) - (1e300 * 1e300),
+                }
+        """
+        code = compile(textwrap.dedent(source), "/repro/nan_set.py", "exec")
+        marshal.dumps(code)
+
+    def test_code_serialization_set_shared_subobjects(self):
+        shared = (0,)
+        for _ in range(21):
+            shared = (shared, shared)
+        code = (lambda: None).__code__.replace(
+            co_consts=(frozenset(((shared,),)),)
+        )
+
+        payload = marshal.dumps(code)
+        self.assertLess(len(payload), 1000)
+        self.assertEqual(marshal.loads(payload).co_consts, code.co_consts)
+
+        shared = frozenset((0,))
+        for _ in range(10):
+            shared = frozenset(((0, shared), (1, shared)))
+        code = (lambda: None).__code__.replace(co_consts=(shared,))
+
+        payload = marshal.dumps(code)
+        self.assertLess(len(payload), 2000)
+        self.assertEqual(marshal.loads(payload).co_consts, code.co_consts)
+
+    def test_code_serialization_recursive_constants(self):
+        recursive = []
+        recursive_slice = slice(recursive)
+        recursive.append(recursive_slice)
+        code = (lambda: None).__code__.replace(
+            co_consts=(recursive_slice,)
+        )
+        for version in range(marshal.version + 1):
+            with self.subTest(type="slice", version=version):
+                self.assertRaises(ValueError, marshal.dumps, code, version)
+
+        recursive = []
+        recursive_frozendict = frozendict({None: recursive})
+        recursive.append(recursive_frozendict)
+        code = code.replace(co_consts=(recursive_frozendict,))
+        for version in range(marshal.version + 1):
+            with self.subTest(type="frozendict", version=version):
+                self.assertRaises(ValueError, marshal.dumps, code, version)
+
     def test_reference_loop_code(self):
         def f():
             return 1234.5
