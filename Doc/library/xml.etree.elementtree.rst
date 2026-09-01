@@ -620,10 +620,11 @@ Functions
    ``"pi"``, ``"start-ns"`` and ``"end-ns"``
    (the "ns" events are used to get detailed namespace
    information).  If *events* is omitted, only ``"end"`` events are reported.
-   *parser* is an optional parser instance.  If not given, the standard
-   :class:`XMLParser` parser is used.  *parser* must be an instance of
-   :class:`XMLParser` or its subclass and can only use the default
-   :class:`TreeBuilder` as a target. Returns an :term:`iterator` providing ``(event, elem)`` pairs;
+   *parser* is an optional parser instance.
+   If not given, the standard :class:`XMLParser` parser is used.
+   *parser* must be an instance of :class:`XMLParser` or its subclass
+   and can only use the default :class:`TreeBuilder` as a target.
+   Returns an :term:`iterator` providing ``(event, elem)`` pairs;
    it has a ``root`` attribute that references the root element of the
    resulting XML tree once *source* is fully read.
    The iterator has the :meth:`!close` method that closes the internal
