@@ -147,11 +147,11 @@ Diff generation
       :meth:`~SequenceMatcher.find_longest_match` method's *isjunk*
       parameter for an explanation.
 
-      .. versionchanged:: 3.16
-         Added keyword-only *autojunk* parameter.
-
       Setting the optional *autojunk* argument to ``False`` will turn
       :ref:`automatic junk heuristic <difflib-junk>` off.
+
+      .. versionchanged:: 3.16
+         Added keyword-only *autojunk* parameter.
 
 
 
@@ -200,11 +200,11 @@ Diff generation
       (used by :class:`HtmlDiff` to generate the side by side HTML differences).
       See :func:`ndiff` documentation for argument default values and descriptions.
 
-      .. versionchanged:: 3.16
-         Added keyword-only *autojunk* parameter.
-
       Setting the optional *autojunk* argument to ``False`` will turn
       :ref:`automatic junk heuristic <difflib-junk>` off.
+
+      .. versionchanged:: 3.16
+         Added keyword-only *autojunk* parameter.
 
 
    The following methods are public:
@@ -294,11 +294,11 @@ Diff generation
 
    See :ref:`difflib-interface` for a more detailed example.
 
-   .. versionchanged:: 3.16
-      Added keyword-only *autojunk* parameter.
-
    Setting the optional *autojunk* argument to ``False`` will turn
    :ref:`automatic junk heuristic <difflib-junk>` off.
+
+   .. versionchanged:: 3.16
+      Added keyword-only *autojunk* parameter.
 
 
 .. function:: get_close_matches(word, possibilities, n=3, cutoff=0.6, *, autojunk=True)
@@ -312,9 +312,6 @@ Diff generation
 
    Optional argument *cutoff* (default ``0.6``) is a float in the range [0, 1].
    Possibilities that don't score at least that similar to *word* are ignored.
-
-   .. versionchanged:: 3.16
-      Added keyword-only *autojunk* parameter.
 
    Setting the optional *autojunk* argument to ``False`` will turn
    :ref:`automatic junk heuristic <difflib-junk>` off.
@@ -331,6 +328,9 @@ Diff generation
       []
       >>> get_close_matches('accept', keyword.kwlist)
       ['except']
+
+   .. versionchanged:: 3.16
+      Added keyword-only *autojunk* parameter.
 
 
 .. function:: ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK, *, autojunk=True)
@@ -354,9 +354,6 @@ Diff generation
    function :func:`IS_CHARACTER_JUNK`, which filters out whitespace characters (a
    blank or tab; it's a bad idea to include newline in this!).
 
-   .. versionchanged:: 3.16
-      Added keyword-only *autojunk* parameter.
-
    Setting the optional *autojunk* argument to ``False`` will turn
    :ref:`automatic junk heuristic <difflib-junk>` off.
 
@@ -374,6 +371,9 @@ Diff generation
       ?  -
       + tree
       + emu
+
+   .. versionchanged:: 3.16
+      Added keyword-only *autojunk* parameter.
 
 
 .. function:: restore(sequence, which)
@@ -447,11 +447,11 @@ Diff generation
    .. versionchanged:: 3.15
       Added the *color* parameter.
 
-   .. versionchanged:: 3.16
-      Added keyword-only *autojunk* parameter.
-
    Setting the optional *autojunk* argument to ``False`` will turn
    :ref:`automatic junk heuristic <difflib-junk>` off.
+
+   .. versionchanged:: 3.16
+      Added keyword-only *autojunk* parameter.
 
 
 .. function:: diff_bytes(dfunc, a, b, fromfile=b'', tofile=b'', fromfiledate=b'', tofiledate=b'', n=3, lineterm=b'\n')
