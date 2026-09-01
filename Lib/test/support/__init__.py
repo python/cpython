@@ -3535,11 +3535,6 @@ def built_with_c_assertions():
         # On Windows, rely on Py_DEBUG macro to check for assertions
         return Py_DEBUG
 
-    # Check for "./configure --with-assertions" flag
-    config_args = (sysconfig.get_config_var('CONFIG_ARGS') or '')
-    if '--with-assertions' in config_args:
-        return True
-
     # Check if the NDEBUG macro is defined in C compiler flags
     PY_CFLAGS = (sysconfig.get_config_var('PY_CFLAGS') or '')
     if '-DNDEBUG' in PY_CFLAGS:
