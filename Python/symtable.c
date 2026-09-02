@@ -91,6 +91,12 @@
 
 #define IS_ASYNC_DEF(st) ((st)->st_cur->ste_type == FunctionBlock && (st)->st_cur->ste_coroutine)
 
+static int
+ste_uses_fast_locals(PySTEntryObject *ste)
+{
+    return _PyST_IsFunctionLike(ste) || ste->ste_type == InlinedComprehensionBlock;
+}
+
 static PySTEntryObject *
 ste_new(struct symtable *st, identifier name, _Py_block_ty block,
         void *key, _Py_SourceLocation loc)
@@ -130,8 +136,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
 
     if (st->st_cur != NULL &&
         (st->st_cur->ste_nested ||
-         _PyST_IsFunctionLike(st->st_cur) ||
-         st->st_cur->ste_type == InlinedComprehensionBlock))
+         ste_uses_fast_locals(st->st_cur)))
         ste->ste_nested = 1;
     ste->ste_generator = 0;
     ste->ste_coroutine = 0;
@@ -580,13 +585,6 @@ _PyST_IsFunctionLike(PySTEntryObject *ste)
         || ste->ste_type == TypeVariableBlock
         || ste->ste_type == TypeAliasBlock
         || ste->ste_type == TypeParametersBlock;
-}
-
-/* True if this block binds locals that are visible to nested scopes */
-static int
-ste_binds_locals_for_children(PySTEntryObject *ste)
-{
-    return _PyST_IsFunctionLike(ste) || ste->ste_type == InlinedComprehensionBlock;
 }
 
 static int
@@ -1321,7 +1319,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     /* Populate global and bound sets to be passed to children. */
     if (ste->ste_type != ClassBlock) {
         /* Add function locals to bound set */
-        if (ste_binds_locals_for_children(ste)) {
+        if (ste_uses_fast_locals(ste)) {
             temp = PyNumber_InPlaceOr(newbound, local);
             if (!temp)
                 goto error;
@@ -1409,7 +1407,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     }
 
     /* Check if any local variables must be converted to cell variables */
-    if (ste_binds_locals_for_children(ste) && !analyze_cells(scopes, newfree, inlined_cells)) {
+    if (ste_uses_fast_locals(ste) && !analyze_cells(scopes, newfree, inlined_cells)) {
         goto error;
     }
     else if (ste->ste_type == ClassBlock && !drop_class_free(ste, newfree)) {
@@ -2690,7 +2688,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
             return 0;
         }
         if (!allows_top_level_await(st)) {
-            if (!ste_binds_locals_for_children(st->st_cur)) {
+            if (!ste_uses_fast_locals(st->st_cur)) {
                 PyErr_SetString(PyExc_SyntaxError,
                                 "'await' outside function");
                 SET_ERROR_LOCATION(st->st_filename, LOCATION(e));
@@ -2768,8 +2766,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
             }
             /* Special-case super: it counts as a use of __class__ */
             if (e->v.Name.ctx == Load &&
-                (_PyST_IsFunctionLike(st->st_cur) ||
-                 st->st_cur->ste_type == InlinedComprehensionBlock) &&
+                ste_uses_fast_locals(st->st_cur) &&
                 _PyUnicode_EqualToASCIIString(e->v.Name.id, "super")) {
                 if (!symtable_add_def(st, &_Py_ID(__class__), USE, LOCATION(e)))
                     return 0;
