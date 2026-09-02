@@ -614,6 +614,22 @@ class XmlgenTest:
            '<ns1:doc xmlns:ns1="%s"><udoc></udoc></ns1:doc>' %
                                          ns_uri))
 
+    def test_xmlgen_ns_escaped_uri(self):
+        uri = 'http://example.org/?a="1"&b=<2>'
+        result = self.ioclass()
+        gen = XMLGenerator(result)
+
+        gen.startDocument()
+        gen.startPrefixMapping("ns1", uri)
+        gen.startElementNS((uri, "doc"), "ns1:doc", {})
+        gen.endElementNS((uri, "doc"), "ns1:doc")
+        gen.endPrefixMapping("ns1")
+        gen.endDocument()
+
+        self.assertEqual(result.getvalue(), self.xml(
+            """<ns1:doc xmlns:ns1='http://example.org/?a="1"&amp;b=&lt;2&gt;'>"""
+            "</ns1:doc>"))
+
     def test_xmlgen_ns_empty(self):
         result = self.ioclass()
         gen = XMLGenerator(result, short_empty_elements=True)
