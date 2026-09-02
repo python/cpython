@@ -195,28 +195,17 @@ c_quot(Py_complex a, Py_complex b)
     const double abs_bimag = b.imag < 0 ? -b.imag : b.imag;
 
     if (abs_breal >= abs_bimag) {
-        /* divide tops and bottom by b.real */
-        if (abs_breal == 0.0) {
-            r.real = r.imag = NAN;
-        }
-        else {
-            const double ratio = b.imag / b.real;
-            const double denom = b.real + b.imag * ratio;
-            r.real = (a.real + a.imag * ratio) / denom;
-            r.imag = (a.imag - a.real * ratio) / denom;
-        }
+        const double ratio = b.imag / b.real;
+        const double denom = b.real + b.imag * ratio;
+        r.real = (a.real + a.imag * ratio) / denom;
+        r.imag = (a.imag - a.real * ratio) / denom;
     }
-    else if (abs_bimag >= abs_breal) {
+    else {
         /* divide tops and bottom by b.imag */
         const double ratio = b.real / b.imag;
         const double denom = b.real * ratio + b.imag;
-        assert(b.imag != 0.0);
         r.real = (a.real * ratio + a.imag) / denom;
         r.imag = (a.imag * ratio - a.real) / denom;
-    }
-    else {
-        /* At least one of b.real or b.imag is a NaN */
-        r.real = r.imag = Py_NAN;
     }
     /* Recover infinities and zeros that computed as nan+nanj.  See e.g.
        the C11, Annex G.5.2, routine _Cdivd(). */
@@ -312,34 +301,17 @@ static Py_complex
 c_pow(Py_complex a, Py_complex b)
 {
     Py_complex r;
-    double vabs,len,at,phase;
+    double vabs = hypot(a.real, a.imag);
+    double len = pow(vabs, b.real);
+    double at = atan2(a.imag, a.real);
+    double phase = at*b.real;
 
-    if (_Py_c_iszero(b)) {
-        r.real = 1.;
-        r.imag = 0.;
+    if (b.imag != 0.0) {
+        len *= exp(-at*b.imag);
+        phase += b.imag*log(vabs);
     }
-    else if (_Py_c_iszero(a)) {
-        if (b.imag != 0. || b.real < 0.) {
-            r.real = NAN;
-            r.imag = NAN;
-        }
-        else {
-            r.real = 0.;
-            r.imag = 0.;
-        }
-    }
-    else {
-        vabs = hypot(a.real,a.imag);
-        len = pow(vabs,b.real);
-        at = atan2(a.imag, a.real);
-        phase = at*b.real;
-        if (b.imag != 0.0) {
-            len *= exp(-at*b.imag);
-            phase += b.imag*log(vabs);
-        }
-        r.real = len*cos(phase);
-        r.imag = len*sin(phase);
-    }
+    r.real = len*cos(phase);
+    r.imag = len*sin(phase);
     return r;
 }
 
