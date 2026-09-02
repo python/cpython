@@ -697,7 +697,8 @@ class ElementTree:
               xml_declaration=None,
               default_namespace=None,
               method=None, *,
-              short_empty_elements=True):
+              short_empty_elements=True,
+              standalone=None):
         """Write element tree to a file as XML.
 
         Arguments:
@@ -722,6 +723,10 @@ class ElementTree:
                                     self-closed tag, otherwise they are
                                     emitted as a pair of start/end tags
 
+          *standalone* -- bool for the standalone document declaration in
+                          the XML declaration.  If None (default), the
+                          standalone document declaration is omitted
+
         """
         if self._root is None:
             raise TypeError('ElementTree not initialized')
@@ -729,6 +734,11 @@ class ElementTree:
             method = "xml"
         elif method not in _serialize:
             raise ValueError("unknown method %r" % method)
+        if standalone is not None:
+            if xml_declaration is not None and not xml_declaration:
+                raise ValueError("the standalone document declaration "
+                                 "requires the XML declaration")
+            xml_declaration = True
         if not encoding:
             encoding = "us-ascii"
         with _get_writer(file_or_filename, encoding) as (write, declared_encoding):
@@ -738,8 +748,13 @@ class ElementTree:
                     (xml_declaration is None and
                      encoding.lower() != "unicode" and
                      declared_encoding.lower() not in ("utf-8", "us-ascii"))):
-                write("<?xml version='1.0' encoding='%s'?>\n" % (
-                    declared_encoding,))
+                if standalone is None:
+                    sddecl = ""
+                else:
+                    sddecl = " standalone='%s'" % (
+                        "yes" if standalone else "no",)
+                write("<?xml version='1.0' encoding='%s'%s?>\n" % (
+                    declared_encoding, sddecl))
             if method == "text":
                 _serialize_text(write, self._root)
             else:
@@ -1085,7 +1100,7 @@ def _escape_attrib_html(text):
 
 def tostring(element, encoding=None, method=None, *,
              xml_declaration=None, default_namespace=None,
-             short_empty_elements=True):
+             short_empty_elements=True, standalone=None):
     """Generate string representation of XML element.
 
     All subelements are included.  If encoding is "unicode", a string
@@ -1094,7 +1109,9 @@ def tostring(element, encoding=None, method=None, *,
     *element* is an Element instance, *encoding* is an optional output
     encoding defaulting to US-ASCII, *method* is an optional output which
     can be one of "xml" (default), "html" or "text",
-    *default_namespace* sets the default XML namespace (for "xmlns").
+    *default_namespace* sets the default XML namespace (for "xmlns"),
+    *standalone* is the value of the standalone document declaration
+    in the XML declaration (omitted if None).
 
     Returns an (optionally) encoded string containing the XML data.
 
@@ -1104,7 +1121,8 @@ def tostring(element, encoding=None, method=None, *,
                                xml_declaration=xml_declaration,
                                default_namespace=default_namespace,
                                method=method,
-                               short_empty_elements=short_empty_elements)
+                               short_empty_elements=short_empty_elements,
+                               standalone=standalone)
     return stream.getvalue()
 
 class _ListDataStream(io.BufferedIOBase):
@@ -1126,14 +1144,15 @@ class _ListDataStream(io.BufferedIOBase):
 
 def tostringlist(element, encoding=None, method=None, *,
                  xml_declaration=None, default_namespace=None,
-                 short_empty_elements=True):
+                 short_empty_elements=True, standalone=None):
     lst = []
     stream = _ListDataStream(lst)
     ElementTree(element).write(stream, encoding,
                                xml_declaration=xml_declaration,
                                default_namespace=default_namespace,
                                method=method,
-                               short_empty_elements=short_empty_elements)
+                               short_empty_elements=short_empty_elements,
+                               standalone=standalone)
     return lst
 
 
