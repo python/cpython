@@ -4478,7 +4478,7 @@ AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main(void)
 {
     _Float16 val = 1.0f16;
-    int test = !isfinite(val) || isinf(val) || isnan(val);
+    int test = isinf(val) || isnan(val); /* basic support from libm */
     double d = 3.14;
     val = d;
     return test;
