@@ -342,14 +342,13 @@ _PyCompile_SetQualname(compiler *c)
 static int
 const_cache_contains_rebuilt_container(PyObject *o)
 {
+#ifdef Py_GIL_DISABLED
     if (PyFrozenSet_CheckExact(o)) {
         return 1;
     }
-#ifdef Py_GIL_DISABLED
     if (PySlice_Check(o)) {
         return 1;
     }
-#endif
     if (PyTuple_CheckExact(o)) {
         for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(o); i++) {
             if (const_cache_contains_rebuilt_container(
@@ -359,6 +358,9 @@ const_cache_contains_rebuilt_container(PyObject *o)
             }
         }
     }
+#else
+    (void)o;
+#endif
     return 0;
 }
 

@@ -1,4 +1,4 @@
 Make reference tracking for marshalled code objects in free-threaded builds
 independent of live reference counts. Avoid unstable sharing of immutable
-constants in all builds. This makes bytecode compilation deterministic across
-compilation order and concurrent free-threaded compilation.
+constants in free-threaded compiler output. This makes free-threaded bytecode
+compilation deterministic across compilation order and concurrent compilation.

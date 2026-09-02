@@ -405,6 +405,10 @@ class BugsTestCase(unittest.TestCase):
                 )
                 self.assertIs(extra_reference, code.co_consts[0])
 
+    @unittest.skipUnless(
+        support.Py_GIL_DISABLED,
+        "free-threaded builds require compile-order-independent constants",
+    )
     def test_code_serialization_does_not_depend_on_compile_order(self):
         script = textwrap.dedent("""
             import marshal

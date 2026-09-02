@@ -816,10 +816,16 @@ class TestSpecifics(unittest.TestCase):
                       f2.__code__.co_consts[1])
 
         # {0} is converted to a constant frozenset({0}) by the peephole
-        # optimizer. Frozenset-bearing co_consts are intentionally not shared
-        # across code units because later string interning can replace them.
-        f1, f2 = lambda x: x in {0}, lambda x: x in {0}
-        self.assertIsNot(f1.__code__.co_consts, f2.__code__.co_consts)
+        # optimizer. In free-threaded builds, frozenset-bearing co_consts are
+        # not shared across code units because later string interning can
+        # replace them.
+        ns = {}
+        exec("f1, f2 = lambda x: x in {0}, lambda x: x in {0}", ns)
+        f1, f2 = ns["f1"], ns["f2"]
+        if support.Py_GIL_DISABLED:
+            self.assertIsNot(f1.__code__.co_consts, f2.__code__.co_consts)
+        else:
+            self.assertIs(f1.__code__.co_consts, f2.__code__.co_consts)
         self.check_constant(f1, frozenset({0}))
         self.check_constant(f2, frozenset({0}))
         self.assertTrue(f1(0))
