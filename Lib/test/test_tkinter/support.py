@@ -62,9 +62,9 @@ class AbstractTkTest:
 
 
 class AbstractDialogTest(AbstractTkTest):
-    # Tk delivers generated keyboard events to the window which has the
-    # focus.  Hide the root window, otherwise the window manager can take
-    # the focus back from the dialog (gh-154357).
+    # Tk delivers generated keyboard events to the focused window.  Hide the
+    # root window, otherwise the window manager can take the focus back from
+    # the dialog (gh-154357).
 
     def setUp(self):
         super().setUp()

@@ -195,8 +195,10 @@ class FileDialogTest(AbstractDialogTest, unittest.TestCase):
         d.files.delete(0, 'end')
         for name in ('alpha', 'bravo', 'charlie'):
             d.files.insert('end', name)
-        d.files.focus_force()
         d.top.update()
+        # Force the focus right before generating the event: the window
+        # manager can take it back.
+        d.files.focus_force()
         d.files.event_generate('<Key>', keysym='c')
         d.top.update()
         sel = d.files.curselection()

@@ -2029,7 +2029,7 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.tv.update()
 
         # Force the focus right before generating the event: the window
-        # manager can take it back while the events are processed.
+        # manager can take it back.
         self.tv.focus_force()
         self.tv.event_generate('<Right>')  # Open the focused parent.
         self.tv.update()

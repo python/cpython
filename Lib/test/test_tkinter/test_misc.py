@@ -509,15 +509,20 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.root.update_idletasks()
         f.focus_force()
         self.root.update()
-        self.assertIs(self.root.focus_get(), f)
-        self.assertIs(self.root.focus_displayof(), f)
+        # The window manager can take the focus away, and then focus_get()
+        # and focus_displayof() return None.
+        if self.root.focus_displayof() is not None:
+            self.assertIs(self.root.focus_get(), f)
+            self.assertIs(self.root.focus_displayof(), f)
         self.assertIs(f.focus_lastfor(), f)
         b = tkinter.Button(f)
         b.pack()
         self.root.update()
         b.focus_set()
         self.root.update()
-        self.assertIs(self.root.focus_get(), b)
+        if self.root.focus_displayof() is not None:
+            self.assertIs(self.root.focus_get(), b)
+        self.assertIs(f.focus_lastfor(), b)
 
     def test_focus_methods_unresolvable(self):
         # The focus may be on a widget that tkinter did not create and so
@@ -1320,6 +1325,11 @@ class WmTest(AbstractTkTest, unittest.TestCase):
     def test_wm_stackorder(self):
         t1 = tkinter.Toplevel(self.root)
         t2 = tkinter.Toplevel(self.root)
+        if self.root._windowingsystem == 'x11':
+            # Bypass the window manager, which may ignore lift() or reorder
+            # the windows while they are being mapped.
+            t1.overrideredirect(True)
+            t2.overrideredirect(True)
         t1.deiconify()
         t2.deiconify()
         wait_until_mapped(t1)
