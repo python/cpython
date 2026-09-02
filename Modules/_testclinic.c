@@ -1238,6 +1238,24 @@ posonly_poskw_varpos_array_impl(PyObject *module, PyObject *a, PyObject *b,
 
 
 /*[clinic input]
+only_group
+
+    [
+    a: object
+    ]
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+only_group_impl(PyObject *module, int group_right_1, PyObject *a)
+/*[clinic end generated code: output=e92d6c85b72a5897 input=7aca574206712a42]*/
+{
+    return pack_arguments_newref(2, group_right_1 ? Py_True : Py_False, a);
+}
+
+
+/*[clinic input]
 group_and_opt
 
     [
@@ -2457,6 +2475,23 @@ kwds_with_pos_only_impl(PyObject *module, PyObject *a, PyObject *b,
 
 
 /*[clinic input]
+kwds_with_optional_pos_only
+    a: object
+    b: object = None
+    /
+    **kwds: dict
+[clinic start generated code]*/
+
+static PyObject *
+kwds_with_optional_pos_only_impl(PyObject *module, PyObject *a, PyObject *b,
+                                 PyObject *kwds)
+/*[clinic end generated code: output=25a8458f5acc1a07 input=0b18b9e1670904ec]*/
+{
+    return pack_arguments_newref(3, a, b, kwds);
+}
+
+
+/*[clinic input]
 kwds_with_stararg
     *args: tuple
     **kwds: dict
@@ -2553,6 +2588,7 @@ static PyMethodDef tester_methods[] = {
     POSONLY_VARPOS_ARRAY_METHODDEF
     POSONLY_REQ_OPT_VARPOS_ARRAY_METHODDEF
     POSONLY_POSKW_VARPOS_ARRAY_METHODDEF
+    ONLY_GROUP_METHODDEF
     GROUP_AND_OPT_METHODDEF
     GROUP_AND_TWO_OPT_METHODDEF
     TWO_GROUPS_ON_LEFT_METHODDEF
@@ -2592,6 +2628,7 @@ static PyMethodDef tester_methods[] = {
 
     LONE_KWDS_METHODDEF
     KWDS_WITH_POS_ONLY_METHODDEF
+    KWDS_WITH_OPTIONAL_POS_ONLY_METHODDEF
     KWDS_WITH_STARARG_METHODDEF
     KWDS_WITH_POS_ONLY_AND_STARARG_METHODDEF
 
