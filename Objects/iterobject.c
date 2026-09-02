@@ -79,18 +79,25 @@ iter_iternext(PyObject *iterator)
 
     result = PySequence_GetItem(seq, index);
     if (result != NULL) {
-        FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, index + 1);
+        /* PySequence_GetItem() can exhaust the iterator re-entrantly.
+         * Preserve the exhaustion sentinel if it is observed.  Concurrent
+         * exhaustion can still race with the store, but remains memory-safe
+         * because the sequence stays alive. */
+        if (FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index) >= 0) {
+            FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, index + 1);
+        }
         return result;
     }
     if (PyErr_ExceptionMatches(PyExc_IndexError) ||
         PyErr_ExceptionMatches(PyExc_StopIteration))
     {
-        PyErr_Clear();
+        /* Mark the iterator exhausted before anything that can run
+         * arbitrary code. */
         FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, -1);
 #ifndef Py_GIL_DISABLED
-        it->it_seq = NULL;
-        Py_DECREF(seq);
+        Py_CLEAR(it->it_seq);
 #endif
+        PyErr_Clear();
     }
     return NULL;
 }
@@ -146,14 +153,9 @@ iter_setstate(PyObject *op, PyObject *state)
     Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
-    /* An exhausted iterator keeps its reference to the sequence in the
-     * free-threaded build, but must not be revived, matching the
-     * default build where the reference is already gone.  See gh-120971. */
-    if (it->it_seq != NULL
-        && FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index) >= 0)
-    {
-        if (index < 0)
-            index = 0;
+    if (index < 0)
+        index = 0;
+    if (it->it_seq && FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index) >= 0) {
         FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, index);
     }
     Py_RETURN_NONE;

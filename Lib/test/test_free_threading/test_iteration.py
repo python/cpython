@@ -133,6 +133,7 @@ class ContendedSeqIterExhaustionTest(unittest.TestCase):
                 raise IndexError(i)
             return i
 
+    @support.refcount_test
     def test_shared_iterator_exhaustion(self):
         nthreads = 8
         nrounds = 20 if support.check_sanitizer(thread=True) else 100
@@ -155,8 +156,10 @@ class ContendedSeqIterExhaustionTest(unittest.TestCase):
                 threading.Thread(target=drain, args=(it, barrier, results))
                 for _ in range(nthreads)
             ]
-            with threading_helper.start_threads(threads):
-                pass
+            with threading_helper.catch_threading_exception() as cm:
+                with threading_helper.start_threads(threads):
+                    pass
+                self.assertIsNone(cm.exc_value)
             del it
             # Threads may see duplicate or missing items, but never
             # invented ones.
