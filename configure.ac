@@ -578,28 +578,25 @@ AC_ARG_ENABLE([framework],
 
 	case $enableval in
 	no)
-		case $ac_sys_system in
-			*)
-				PYTHONFRAMEWORK=
-				PYTHONFRAMEWORKDIR=no-framework
-				PYTHONFRAMEWORKPREFIX=
-				PYTHONFRAMEWORKINSTALLDIR=
-				PYTHONFRAMEWORKINSTALLNAMEPREFIX=
-				RESSRCDIR=
-				FRAMEWORKINSTALLFIRST=
-				FRAMEWORKINSTALLLAST=
-				FRAMEWORKALTINSTALLFIRST=
-				FRAMEWORKALTINSTALLLAST=
-				FRAMEWORKPYTHONW=
-				INSTALLTARGETS="commoninstall bininstall maninstall"
+		PYTHONFRAMEWORK=
+		PYTHONFRAMEWORKDIR=no-framework
+		PYTHONFRAMEWORKPREFIX=
+		PYTHONFRAMEWORKINSTALLDIR=
+		PYTHONFRAMEWORKINSTALLNAMEPREFIX=
+		RESSRCDIR=
+		FRAMEWORKINSTALLFIRST=
+		FRAMEWORKINSTALLLAST=
+		FRAMEWORKALTINSTALLFIRST=
+		FRAMEWORKALTINSTALLLAST=
+		FRAMEWORKPYTHONW=
+		INSTALLTARGETS="commoninstall bininstall maninstall"
 
-				if test "x${prefix}" = "xNONE"; then
-					FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
-				else
-					FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
-				fi
-				enable_framework=
-		esac
+		if test "x${prefix}" = "xNONE"; then
+			FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
+		else
+			FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
+		fi
+		enable_framework=
 		;;
 	*)
 		PYTHONFRAMEWORKPREFIX="${enableval}"
@@ -687,27 +684,24 @@ AC_ARG_ENABLE([framework],
 			esac
 		esac
 	],[
-	case $ac_sys_system in
-		*)
-			PYTHONFRAMEWORK=
-			PYTHONFRAMEWORKDIR=no-framework
-			PYTHONFRAMEWORKPREFIX=
-			PYTHONFRAMEWORKINSTALLDIR=
-			PYTHONFRAMEWORKINSTALLNAMEPREFIX=
-			RESSRCDIR=
-			FRAMEWORKINSTALLFIRST=
-			FRAMEWORKINSTALLLAST=
-			FRAMEWORKALTINSTALLFIRST=
-			FRAMEWORKALTINSTALLLAST=
-			FRAMEWORKPYTHONW=
-			INSTALLTARGETS="commoninstall bininstall maninstall"
-			if test "x${prefix}" = "xNONE" ; then
-				FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
-			else
-				FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
-			fi
-			enable_framework=
-	esac
+	PYTHONFRAMEWORK=
+	PYTHONFRAMEWORKDIR=no-framework
+	PYTHONFRAMEWORKPREFIX=
+	PYTHONFRAMEWORKINSTALLDIR=
+	PYTHONFRAMEWORKINSTALLNAMEPREFIX=
+	RESSRCDIR=
+	FRAMEWORKINSTALLFIRST=
+	FRAMEWORKINSTALLLAST=
+	FRAMEWORKALTINSTALLFIRST=
+	FRAMEWORKALTINSTALLLAST=
+	FRAMEWORKPYTHONW=
+	INSTALLTARGETS="commoninstall bininstall maninstall"
+	if test "x${prefix}" = "xNONE" ; then
+		FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
+	else
+		FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
+	fi
+	enable_framework=
 ])
 AC_SUBST([PYTHONFRAMEWORK])
 AC_SUBST([PYTHONFRAMEWORKIDENTIFIER])
@@ -1674,6 +1668,9 @@ if test $enable_shared = "yes"; then
       RUNSHARED=DYLD_LIBRARY_PATH=`pwd`${DYLD_LIBRARY_PATH:+:${DYLD_LIBRARY_PATH}}
       ;;
     iOS)
+      if test -z "$PYTHONFRAMEWORK"; then
+        AC_MSG_ERROR([iOS shared builds must use --enable-framework; an iOS app can only load a signed framework, never a bare dylib])
+      fi
       LDLIBRARY='libpython$(LDVERSION).dylib'
       ;;
     AIX*)
@@ -1692,10 +1689,6 @@ else # shared is disabled
   esac
 fi
 AC_MSG_RESULT([$LDLIBRARY])
-
-if test "$ac_sys_system" = "iOS" && test "$PY_ENABLE_SHARED" = 1 && test -z "$PYTHONFRAMEWORK"; then
-  AC_MSG_ERROR([iOS builds must use --enable-framework; --enable-shared cannot be used without a framework, as an iOS app can only load a signed framework])
-fi
 
 # HOSTRUNNER - Program to run CPython for the host platform
 AC_MSG_CHECKING([HOSTRUNNER])
@@ -8158,6 +8151,11 @@ AC_ARG_ENABLE([test-modules],
   AS_VAR_IF([enable_test_modules], [yes], [TEST_MODULES=yes], [TEST_MODULES=no])
 ], [TEST_MODULES=yes])
 AC_MSG_RESULT([$TEST_MODULES])
+dnl Some test modules can only be built as shared libraries (see
+dnl Modules/Setup.stdlib.in), which a non-framework iOS build cannot do.
+AS_IF([test "$ac_sys_system" = "iOS" && test -z "$PYTHONFRAMEWORK"],
+  [AS_IF([test "$TEST_MODULES" != "no"],
+    [AC_MSG_ERROR([iOS non-framework builds must use --disable-test-modules])])])
 AC_SUBST([TEST_MODULES])
 
 # Check for --with-build-details-suffix
@@ -8397,14 +8395,11 @@ AS_CASE([$host_cpu],
 )
 AC_SUBST([MODULE_BUILDTYPE])
 
-dnl A non-framework iOS build can neither link nor load shared extension
-dnl modules; some test modules can only be shared (see Modules/Setup.stdlib.in).
-AS_IF([test "$ac_sys_system" = "iOS" && test -z "$PYTHONFRAMEWORK"], [
-  AS_IF([test "$MODULE_BUILDTYPE" != "static"],
-    [AC_MSG_ERROR([iOS builds must use --enable-framework; a non-framework build cannot build shared extension modules, and requires MODULE_BUILDTYPE=static])])
-  AS_IF([test "$TEST_MODULES" != "no"],
-    [AC_MSG_ERROR([iOS builds must use --enable-framework; a non-framework build cannot build the shared test modules, and requires --disable-test-modules])])
-])
+dnl A non-framework iOS build has no framework for a shared extension module
+dnl to link against, so every extension module must be built into libpython.
+AS_IF([test "$ac_sys_system" = "iOS" && test -z "$PYTHONFRAMEWORK"],
+  [AS_IF([test "$MODULE_BUILDTYPE" != "static"],
+    [AC_MSG_ERROR([iOS non-framework builds must use MODULE_BUILDTYPE=static])])])
 
 dnl _MODULE_BLOCK_ADD([VAR], [VALUE])
 dnl internal: adds $1=quote($2) to MODULE_BLOCK

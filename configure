@@ -4441,28 +4441,25 @@ then :
 
 	case $enableval in
 	no)
-		case $ac_sys_system in
-			*)
-				PYTHONFRAMEWORK=
-				PYTHONFRAMEWORKDIR=no-framework
-				PYTHONFRAMEWORKPREFIX=
-				PYTHONFRAMEWORKINSTALLDIR=
-				PYTHONFRAMEWORKINSTALLNAMEPREFIX=
-				RESSRCDIR=
-				FRAMEWORKINSTALLFIRST=
-				FRAMEWORKINSTALLLAST=
-				FRAMEWORKALTINSTALLFIRST=
-				FRAMEWORKALTINSTALLLAST=
-				FRAMEWORKPYTHONW=
-				INSTALLTARGETS="commoninstall bininstall maninstall"
+		PYTHONFRAMEWORK=
+		PYTHONFRAMEWORKDIR=no-framework
+		PYTHONFRAMEWORKPREFIX=
+		PYTHONFRAMEWORKINSTALLDIR=
+		PYTHONFRAMEWORKINSTALLNAMEPREFIX=
+		RESSRCDIR=
+		FRAMEWORKINSTALLFIRST=
+		FRAMEWORKINSTALLLAST=
+		FRAMEWORKALTINSTALLFIRST=
+		FRAMEWORKALTINSTALLLAST=
+		FRAMEWORKPYTHONW=
+		INSTALLTARGETS="commoninstall bininstall maninstall"
 
-				if test "x${prefix}" = "xNONE"; then
-					FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
-				else
-					FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
-				fi
-				enable_framework=
-		esac
+		if test "x${prefix}" = "xNONE"; then
+			FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
+		else
+			FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
+		fi
+		enable_framework=
 		;;
 	*)
 		PYTHONFRAMEWORKPREFIX="${enableval}"
@@ -4557,27 +4554,24 @@ then :
 
 else case e in #(
   e)
-	case $ac_sys_system in
-		*)
-			PYTHONFRAMEWORK=
-			PYTHONFRAMEWORKDIR=no-framework
-			PYTHONFRAMEWORKPREFIX=
-			PYTHONFRAMEWORKINSTALLDIR=
-			PYTHONFRAMEWORKINSTALLNAMEPREFIX=
-			RESSRCDIR=
-			FRAMEWORKINSTALLFIRST=
-			FRAMEWORKINSTALLLAST=
-			FRAMEWORKALTINSTALLFIRST=
-			FRAMEWORKALTINSTALLLAST=
-			FRAMEWORKPYTHONW=
-			INSTALLTARGETS="commoninstall bininstall maninstall"
-			if test "x${prefix}" = "xNONE" ; then
-				FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
-			else
-				FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
-			fi
-			enable_framework=
-	esac
+	PYTHONFRAMEWORK=
+	PYTHONFRAMEWORKDIR=no-framework
+	PYTHONFRAMEWORKPREFIX=
+	PYTHONFRAMEWORKINSTALLDIR=
+	PYTHONFRAMEWORKINSTALLNAMEPREFIX=
+	RESSRCDIR=
+	FRAMEWORKINSTALLFIRST=
+	FRAMEWORKINSTALLLAST=
+	FRAMEWORKALTINSTALLFIRST=
+	FRAMEWORKALTINSTALLLAST=
+	FRAMEWORKPYTHONW=
+	INSTALLTARGETS="commoninstall bininstall maninstall"
+	if test "x${prefix}" = "xNONE" ; then
+		FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
+	else
+		FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
+	fi
+	enable_framework=
  ;;
 esac
 fi
@@ -8025,6 +8019,9 @@ printf "%s\n" "#define Py_ENABLE_SHARED 1" >>confdefs.h
       RUNSHARED=DYLD_LIBRARY_PATH=`pwd`${DYLD_LIBRARY_PATH:+:${DYLD_LIBRARY_PATH}}
       ;;
     iOS)
+      if test -z "$PYTHONFRAMEWORK"; then
+        as_fn_error $? "iOS shared builds must use --enable-framework; an iOS app can only load a signed framework, never a bare dylib" "$LINENO" 5
+      fi
       LDLIBRARY='libpython$(LDVERSION).dylib'
       ;;
     AIX*)
@@ -8044,10 +8041,6 @@ else # shared is disabled
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $LDLIBRARY" >&5
 printf "%s\n" "$LDLIBRARY" >&6; }
-
-if test "$ac_sys_system" = "iOS" && test "$PY_ENABLE_SHARED" = 1 && test -z "$PYTHONFRAMEWORK"; then
-  as_fn_error $? "iOS builds must use --enable-framework; --enable-shared cannot be used without a framework, as an iOS app can only load a signed framework" "$LINENO" 5
-fi
 
 # HOSTRUNNER - Program to run CPython for the host platform
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking HOSTRUNNER" >&5
@@ -35049,6 +35042,13 @@ fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $TEST_MODULES" >&5
 printf "%s\n" "$TEST_MODULES" >&6; }
+if test "$ac_sys_system" = "iOS" && test -z "$PYTHONFRAMEWORK"
+then :
+  if test "$TEST_MODULES" != "no"
+then :
+  as_fn_error $? "iOS non-framework builds must use --disable-test-modules" "$LINENO" 5
+fi
+fi
 
 
 # Check for --with-build-details-suffix
@@ -35341,16 +35341,10 @@ esac
 
 if test "$ac_sys_system" = "iOS" && test -z "$PYTHONFRAMEWORK"
 then :
-
   if test "$MODULE_BUILDTYPE" != "static"
 then :
-  as_fn_error $? "iOS builds must use --enable-framework; a non-framework build cannot build shared extension modules, and requires MODULE_BUILDTYPE=static" "$LINENO" 5
+  as_fn_error $? "iOS non-framework builds must use MODULE_BUILDTYPE=static" "$LINENO" 5
 fi
-  if test "$TEST_MODULES" != "no"
-then :
-  as_fn_error $? "iOS builds must use --enable-framework; a non-framework build cannot build the shared test modules, and requires --disable-test-modules" "$LINENO" 5
-fi
-
 fi
 
 
