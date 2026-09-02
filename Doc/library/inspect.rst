@@ -486,8 +486,8 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
       wrapped function is a Python generator function.
 
    .. versionchanged:: 3.10.6
-      Duck-type functions now return ``True`` if their code object has the CO_GENERATOR
-      flag.
+      :term:`Duck-typed <duck-typing>` function-like objects now return
+      ``True`` if their code object has the :data:`CO_GENERATOR` flag.
 
    .. versionchanged:: 3.13
       Functions wrapped in :func:`functools.partialmethod` now return ``True``
@@ -512,8 +512,8 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
       wrapped function is a :term:`coroutine function`.
 
    .. versionchanged:: 3.10.6
-      Duck-type functions now return ``True`` if their code object has the CO_COROUTINE
-      flag.
+      :term:`Duck-typed <duck-typing>` function-like objects now return
+      ``True`` if their code object has the :data:`CO_COROUTINE` flag.
 
    .. versionchanged:: 3.12
       Sync functions marked with :func:`markcoroutinefunction` now return
@@ -590,8 +590,8 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
       wrapped function is an :term:`asynchronous generator` function.
 
    .. versionchanged:: 3.10.6
-      Duck-type functions now return ``True`` if their code object has the CO_ASYNC_GENERATOR
-      flag.
+      :term:`Duck-typed <duck-typing>` function-like objects now return
+      ``True`` if their code object has the :data:`CO_ASYNC_GENERATOR` flag.
 
    .. versionchanged:: 3.13
       Functions wrapped in :func:`functools.partialmethod` now return ``True``
