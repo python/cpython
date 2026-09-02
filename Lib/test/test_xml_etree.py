@@ -773,9 +773,10 @@ class ElementTreeTest(unittest.TestCase):
         ET.indent(elem)
         self.assertEqual(ET.tostring(elem), b'<html>\n  <body>text</body>\n</html>')
 
+        # an element with mixed content is not indented
         elem = ET.XML("<html><body>text</body>tail</html>")
         ET.indent(elem)
-        self.assertEqual(ET.tostring(elem), b'<html>\n  <body>text</body>tail</html>')
+        self.assertEqual(ET.tostring(elem), b'<html><body>text</body>tail</html>')
 
         elem = ET.XML("<html><body><p>par</p>\n<p>text</p>\t<p><br/></p></body></html>")
         ET.indent(elem)
@@ -844,6 +845,45 @@ class ElementTreeTest(unittest.TestCase):
             len({el.tail for el in elem.iter()}),
             len({id(el.tail) for el in elem.iter()}),
         )
+
+    def test_indent_non_xml_whitespace(self):
+        # only " \t\r\n" are whitespace in XML (see XML 1.0, 2.3)
+        elem = ET.XML('<html>\xa0<body><p>text</p>\xa0</body></html>')
+        ET.indent(elem)
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html>&#160;<body><p>text</p>&#160;</body></html>'
+        )
+
+    def test_indent_preserve(self):
+        # xml:space="preserve" applies to the whole subtree
+        elem = ET.XML('<html xml:space="preserve"> <body><p>text</p></body> </html>')
+        ET.indent(elem)
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html xml:space="preserve"> <body><p>text</p></body> </html>'
+        )
+        # other values do not preserve whitespace
+        elem = ET.XML('<html xml:space="default"><body><p>text</p></body></html>')
+        ET.indent(elem)
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html xml:space="default">\n'
+            b'  <body>\n'
+            b'    <p>text</p>\n'
+            b'  </body>\n'
+            b'</html>'
+        )
+
+    def test_indent_mixed_content(self):
+        # whitespace in an element which contains text is significant
+        elem = ET.XML('<p>hello <b>x</b> <i>y</i></p>')
+        ET.indent(elem)
+        self.assertEqual(ET.tostring(elem), b'<p>hello <b>x</b> <i>y</i></p>')
+        # the subtree of such element is not indented either
+        elem = ET.XML('<p>hello <b><i>y</i></b></p>')
+        ET.indent(elem)
+        self.assertEqual(ET.tostring(elem), b'<p>hello <b><i>y</i></b></p>')
 
     def test_indent_level(self):
         elem = ET.XML("<html><body><p>pre<br/>post</p><p>text</p></body></html>")
@@ -4899,6 +4939,11 @@ class C14NTest(unittest.TestCase):
         self.assertEqual(c14n_roundtrip(xml), xml)
         xml = '<X xmlns="http://nps/a"><Y xmlns:b="http://nsp/b" b:targets="abc,xyz"></Y></X>'
         self.assertEqual(c14n_roundtrip(xml), xml)
+
+    def test_c14n_strip_non_xml_whitespace(self):
+        # only " \t\r\n" are whitespace in XML (see XML 1.0, 2.3)
+        self.assertEqual(c14n_roundtrip("<a> \xa0x\xa0 </a>", strip_text=True),
+                         "<a>\xa0x\xa0</a>")
 
     def test_c14n_exclusion(self):
         xml = textwrap.dedent("""\

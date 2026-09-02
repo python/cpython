@@ -654,6 +654,14 @@ xml
   and :meth:`!Document.createEntityReference`.
   (Contributed by Jason Orendorff and Serhiy Storchaka in :gh:`44871`.)
 
+* :meth:`~xml.dom.minidom.Node.toprettyxml` in :mod:`xml.dom.minidom`
+  and :func:`~xml.etree.ElementTree.indent` in :mod:`xml.etree.ElementTree`
+  no longer add whitespace inside an element
+  which is marked with ``xml:space="preserve"`` or which contains text.
+  :meth:`!toprettyxml` also takes into account
+  the content model declared in the DTD.
+  (Contributed by Serhiy Storchaka in :gh:`81623`.)
+
 * Add :meth:`!GetSpecifiedAttributeCount` method
   to the :mod:`XML parser <xml.parsers.expat>` objects.
   It tells how many of the reported attributes were given in the start tag
@@ -891,6 +899,15 @@ that may require changes to your code.
   :exc:`~xml.dom.NotFoundErr` if there is no matching attribute.
   Attributes defaulted in the DTD are no longer omitted when parsing.
   (Contributed by Jason Orendorff and Serhiy Storchaka in :gh:`44871`.)
+
+* :meth:`~xml.dom.minidom.Node.toprettyxml` in :mod:`xml.dom.minidom`
+  and :func:`~xml.etree.ElementTree.indent` in :mod:`xml.etree.ElementTree`
+  no longer add whitespace inside an element
+  which is marked with ``xml:space="preserve"`` or which contains text,
+  because this changed the content of the element.
+  :meth:`!toprettyxml` also takes into account
+  the content model declared in the DTD.
+  (Contributed by Serhiy Storchaka in :gh:`81623`.)
 
 * On Windows, seeking a pipe now fails instead of silently appearing to
   succeed: :func:`os.lseek` and :meth:`~io.IOBase.seek` raise :exc:`OSError`,

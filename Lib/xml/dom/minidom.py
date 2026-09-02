@@ -31,6 +31,9 @@ from xml.dom.xmlbuilder import DOMImplementationLS, DocumentLS
 _nodeTypes_with_children = (xml.dom.Node.ELEMENT_NODE,
                             xml.dom.Node.ENTITY_REFERENCE_NODE)
 
+# The white space characters of the XML specification (see XML 1.0, 2.3).
+_XML_WHITESPACE = " \t\r\n"
+
 
 class Node(xml.dom.Node):
     namespaceURI = None # this is non-null only for elements and attributes
@@ -937,6 +940,10 @@ class Element(Node):
                 self.childNodes[0].nodeType in (
                         Node.TEXT_NODE, Node.CDATA_SECTION_NODE)):
                 self.childNodes[0].writexml(writer, '', '', '')
+            elif self._preserves_whitespace():
+                # Adding whitespace here would change the content.
+                for node in self.childNodes:
+                    node.writexml(writer, '', '', '')
             else:
                 writer.write(newl)
                 for node in self.childNodes:
@@ -945,6 +952,25 @@ class Element(Node):
             writer.write("</%s>%s" % (self.tagName, newl))
         else:
             writer.write("/>%s"%(newl))
+
+    def _preserves_whitespace(self):
+        """Returns true iff whitespace in the content is significant.
+
+        This is the case if the element is marked with xml:space="preserve",
+        if the DTD declares that its content model is not element content,
+        or, in absence of such declaration, if it contains text.
+        """
+        if self.getAttribute("xml:space") == "preserve":
+            return True
+        doc = self.ownerDocument
+        info = doc and doc._get_elem_info(self)
+        if info is not None:
+            # Only whitespace in element content is ignorable
+            # (see XML 1.0, 3.2.1).
+            return not info.isElementContent()
+        return any(node.nodeType in (Node.TEXT_NODE, Node.CDATA_SECTION_NODE)
+                   and node.data.strip(_XML_WHITESPACE)
+                   for node in self.childNodes)
 
     def _get_attributes(self):
         self._ensure_attributes()
@@ -1209,7 +1235,7 @@ class Text(CharacterData):
             return None
 
     def _get_isWhitespaceInElementContent(self):
-        if self.data.strip():
+        if self.data.strip(_XML_WHITESPACE):
             return False
         elem = _get_containing_element(self)
         if elem is None:

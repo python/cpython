@@ -609,38 +609,106 @@ class MinidomTest(unittest.TestCase):
         self.assertEqual(domstr, str.replace("\n", "\r\n"))
 
     def test_toprettyxml_with_text_nodes(self):
-        # see issue #4147, text nodes are not indented
+        # see gh-48397 and gh-81623,
+        # the content of an element with text is not changed
         decl = '<?xml version="1.0" ?>\n'
         self.assertEqual(parseString('<B>A</B>').toprettyxml(),
                          decl + '<B>A</B>\n')
         self.assertEqual(parseString('<C>A<B>A</B></C>').toprettyxml(),
-                         decl + '<C>\n\tA\n\t<B>A</B>\n</C>\n')
+                         decl + '<C>A<B>A</B></C>\n')
         self.assertEqual(parseString('<C><B>A</B>A</C>').toprettyxml(),
-                         decl + '<C>\n\t<B>A</B>\n\tA\n</C>\n')
+                         decl + '<C><B>A</B>A</C>\n')
         self.assertEqual(parseString('<C><B>A</B><B>A</B></C>').toprettyxml(),
                          decl + '<C>\n\t<B>A</B>\n\t<B>A</B>\n</C>\n')
         self.assertEqual(parseString('<C><B>A</B>A<B>A</B></C>').toprettyxml(),
-                         decl + '<C>\n\t<B>A</B>\n\tA\n\t<B>A</B>\n</C>\n')
+                         decl + '<C><B>A</B>A<B>A</B></C>\n')
+        # toprettyxml treats whitespace between elements as insignificant
+        self.assertEqual(parseString('<C> <B>A</B> </C>').toprettyxml(),
+                         decl + '<C>\n\t \n\t<B>A</B>\n\t \n</C>\n')
 
     def test_toprettyxml_with_adjacent_text_nodes(self):
-        # see issue #4147, adjacent text nodes are indented normally
+        # see gh-81623, adjacent text nodes are not separated
         dom = Document()
         elem = dom.createElement('elem')
         elem.appendChild(dom.createTextNode('TEXT'))
         elem.appendChild(dom.createTextNode('TEXT'))
         dom.appendChild(elem)
         decl = '<?xml version="1.0" ?>\n'
-        self.assertEqual(dom.toprettyxml(),
-                         decl + '<elem>\n\tTEXT\n\tTEXT\n</elem>\n')
+        self.assertEqual(dom.toprettyxml(), decl + '<elem>TEXTTEXT</elem>\n')
+
+    def test_toprettyxml_preserve(self):
+        decl = '<?xml version="1.0" ?>\n'
+        # xml:space="preserve" applies to the whole subtree
+        self.assertEqual(
+            parseString('<C xml:space="preserve"><B>A</B><B>A</B></C>'
+                        ).toprettyxml(),
+            decl + '<C xml:space="preserve"><B>A</B><B>A</B></C>\n')
+        self.assertEqual(
+            parseString('<C xml:space="preserve"><B><D/></B></C>'
+                        ).toprettyxml(),
+            decl + '<C xml:space="preserve"><B><D/></B></C>\n')
+        # other values do not preserve whitespace
+        self.assertEqual(
+            parseString('<C xml:space="default"><B>A</B></C>').toprettyxml(),
+            decl + '<C xml:space="default">\n\t<B>A</B>\n</C>\n')
+
+    def test_toprettyxml_with_non_xml_whitespace(self):
+        # only " \t\r\n" are whitespace in XML (see XML 1.0, 2.3)
+        decl = '<?xml version="1.0" ?>\n'
+        self.assertEqual(parseString('<C>\xa0<B>A</B></C>').toprettyxml(),
+                         decl + '<C>\xa0<B>A</B></C>\n')
+
+    def test_toprettyxml_with_dtd(self):
+        decl = '<?xml version="1.0" ?>\n'
+        # only whitespace in element content is ignorable
+        doctype = ('<!DOCTYPE C [<!ELEMENT C (#PCDATA|B)*>'
+                   '<!ELEMENT B (#PCDATA)>]>')
+        self.assertEqual(
+            parseString(doctype + '<C><B>A</B><B>A</B></C>').toprettyxml(),
+            decl + doctype + '\n<C><B>A</B><B>A</B></C>\n')
+        doctype = '<!DOCTYPE C [<!ELEMENT C (B)*><!ELEMENT B (#PCDATA)>]>'
+        self.assertEqual(
+            parseString(doctype + '<C><B>A</B><B>A</B></C>').toprettyxml(),
+            decl + doctype + '\n<C>\n\t<B>A</B>\n\t<B>A</B>\n</C>\n')
+
+    def test_toprettyxml_with_cdata_section(self):
+        decl = '<?xml version="1.0" ?>\n'
+        self.assertEqual(
+            parseString('<C><![CDATA[A]]><B>A</B></C>').toprettyxml(),
+            decl + '<C><![CDATA[A]]><B>A</B></C>\n')
 
     def test_toprettyxml_preserves_content_of_text_node(self):
-        # see issue #4147
+        # see gh-48397
         for str in ('<B>A</B>', '<A><B>C</B></A>'):
             dom = parseString(str)
             dom2 = parseString(dom.toprettyxml())
             self.assertEqual(
                 dom.getElementsByTagName('B')[0].childNodes[0].toxml(),
                 dom2.getElementsByTagName('B')[0].childNodes[0].toxml())
+
+    def test_isWhitespaceInElementContent(self):
+        # only " \t\r\n" are whitespace in XML (see XML 1.0, 2.3)
+        dom = parseString('<!DOCTYPE a [<!ELEMENT a (b)*><!ELEMENT b (#PCDATA)>]>'
+                          '<a> <b>x</b>\xa0</a>')
+        children = dom.documentElement.childNodes
+        self.assertTrue(children[0].isWhitespaceInElementContent)
+        self.assertFalse(children[2].isWhitespaceInElementContent)
+        dom.unlink()
+
+    def test_remove_whitespace_in_element_content(self):
+        from xml.dom.xmlbuilder import DOMBuilder, DOMInputSource
+        builder = DOMBuilder()
+        builder.setFeature("whitespace-in-element-content", False)
+        source = DOMInputSource()
+        source.byteStream = io.BytesIO(
+            b'<!DOCTYPE a [<!ELEMENT a (b)*><!ELEMENT b (#PCDATA)>]>'
+            b'<a> <b>x</b>\xc2\xa0</a>')
+        dom = builder.parse(source)
+        children = dom.documentElement.childNodes
+        # ignorable whitespace is removed, other characters are not
+        self.assertEqual([node.nodeName for node in children], ['b', '#text'])
+        self.assertEqual(children[1].data, '\xa0')
+        dom.unlink()
 
     def testProcessingInstruction(self):
         dom = parseString('<e><?mypi \t\n data \t\n ?></e>')
