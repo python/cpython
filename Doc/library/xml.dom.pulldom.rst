@@ -147,11 +147,13 @@ DOMEventStream Objects
 
    .. method:: DOMEventStream.reset()
 
-   .. method:: DOMEventStream.clear()
+   .. method:: clear()
 
-      Release the parsing objects and close the underlying stream if it
-      was opened by :func:`parse`. Streams provided by the caller are not
-      closed. It is safe to call this method more than once.
+      Release references to the parser, the stream and the DOM builder,
+      and close the stream if it was opened by :func:`parse`. Streams
+      provided by the caller are not closed. It is safe to call this
+      method more than once. The event stream cannot be used after
+      calling this method.
 
       .. versionchanged:: next
          This method now closes the underlying stream if it was opened

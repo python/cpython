@@ -281,7 +281,10 @@ class DOMEventStream:
         return rc
 
     def clear(self):
-        """clear(): Explicitly release parsing objects"""
+        """Release the parsing objects.
+
+        The stream is closed if it was opened by parse().
+        """
         if self._owns_stream and self.stream is not None:
             self.stream.close()
         if self.pulldom is not None:

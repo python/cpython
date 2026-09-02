@@ -59,6 +59,13 @@ class PullDOMTestCase(unittest.TestCase):
         self.assertTrue(stream.closed)
         events.clear()  # should not raise
 
+    def test_clear_does_not_close_user_stream(self):
+        with open(tstfile, 'rb') as f:
+            events = pulldom.parse(f)
+            list(events)
+            events.clear()
+            self.assertFalse(f.closed)
+
     def test_parse_semantics(self):
         """Test DOMEventStream parsing semantics."""
 
