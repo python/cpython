@@ -39,9 +39,9 @@ import sys as _sys
 import types as _types
 from io import StringIO as _StringIO
 
-lazy from dataclasses import is_dataclass
-lazy from dataclasses import fields as dataclass_fields
-lazy import re
+lazy from dataclasses import is_dataclass as _is_dataclass
+lazy from dataclasses import fields as _dataclass_fields
+lazy import re as _re
 
 __all__ = ["pprint","pformat","isreadable","isrecursive","saferepr",
            "PrettyPrinter", "pp"]
@@ -208,7 +208,7 @@ class PrettyPrinter:
                 p(self, object, stream, indent, allowance, context, level + 1)
                 del context[objid]
                 return
-            elif (is_dataclass(object) and
+            elif (_is_dataclass(object) and
                   not isinstance(object, type) and
                   object.__dataclass_params__.repr and
                   # Check dataclass has generated repr method.
@@ -248,7 +248,7 @@ class PrettyPrinter:
             indent += self._indent_per_level
         else:
             indent += len(cls_name) + 1
-        items = [(f.name, getattr(object, f.name)) for f in dataclass_fields(object) if f.repr]
+        items = [(f.name, getattr(object, f.name)) for f in _dataclass_fields(object) if f.repr]
         stream.write(self._format_block_start(cls_name + '(', indent))
         self._format_namespace_items(items, stream, indent, allowance, context, level)
         stream.write(self._format_block_end(')', indent - self._indent_per_level))
@@ -423,7 +423,7 @@ class PrettyPrinter:
                 chunks.append(rep)
             else:
                 # A list of alternating (non-space, space) strings
-                parts = re.findall(r'\S*\s*', line)
+                parts = _re.findall(r'\S*\s*', line)
                 assert parts
                 assert not parts[-1]
                 parts.pop()  # drop empty last part
