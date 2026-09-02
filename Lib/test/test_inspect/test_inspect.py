@@ -3052,6 +3052,9 @@ class TestGetAsyncGenState(unittest.TestCase):
         await anext(self.asyncgen)
         self.assertEqual(self._asyncgenstate(), inspect.AGEN_SUSPENDED)
 
+
+class TestGetAsyncGenLocals(unittest.TestCase):
+
     def test_easy_debugging(self):
         # repr() and str() of a asyncgen state should contain the state name
         names = 'AGEN_CREATED AGEN_RUNNING AGEN_SUSPENDED AGEN_CLOSED'.split()
