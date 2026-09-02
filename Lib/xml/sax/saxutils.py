@@ -110,6 +110,7 @@ def _gettextwriter(out, encoding):
                             write_through=True)
 
 class XMLGenerator(handler.ContentHandler):
+    """Content handler which writes the events back as an XML document."""
 
     def __init__(self, out=None, encoding="iso-8859-1", short_empty_elements=False):
         handler.ContentHandler.__init__(self)
