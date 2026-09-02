@@ -60,7 +60,8 @@ class CollapsedStackCollector(StackTraceCollector):
 
         lines.sort(key=lambda x: (-x[1], x[0]))
 
-        with open(filename, "w") as f:
+        with open(filename, "w",
+                  encoding="utf-8", errors="surrogatepass") as f:
             for stack, count in lines:
                 f.write(f"{stack} {count}\n")
         print(f"Collapsed stack output written to {filename}")

@@ -1,0 +1,4 @@
+Fix a :exc:`UnicodeEncodeError` crash in the sampling profiler's
+collapsed-stack export (``--collapsed``) when a sampled frame's function or
+file name contains non-ASCII or surrogate-escaped characters. The output file
+is now written as UTF-8.
