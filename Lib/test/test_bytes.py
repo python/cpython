@@ -1828,6 +1828,30 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         b[8:] = b
         self.assertEqual(b, bytearray(list(range(8)) + list(range(256))))
 
+    def test_setslice_reentrant_resize(self):
+        # gh-153578: a buffer argument whose __buffer__ resizes the bytearray
+        # while the buffer is being acquired must not leave the slice bounds
+        # with lo > hi, which drove a negative-size memmove (an out-of-bounds
+        # write) in the setslice path reached through extend().
+        class Evil:
+            def __init__(self, resize):
+                self.resize = resize
+            def __buffer__(self, flags):
+                self.resize()
+                return memoryview(b'ABCDEFGH')
+        # clear() during __buffer__: extend appends to the emptied bytearray.
+        b = bytearray(b'x' * 100)
+        b.extend(Evil(b.clear))
+        self.assertEqual(b, b'ABCDEFGH')
+        # partial shrink during __buffer__.
+        b = bytearray(b'x' * 100)
+        b.extend(Evil(lambda: b.__delitem__(slice(30, None))))
+        self.assertEqual(b, b'x' * 30 + b'ABCDEFGH')
+        # grow during __buffer__: the data lands at the original end.
+        b = bytearray(b'x' * 10)
+        b.extend(Evil(lambda: b.extend(b'y' * 100)))
+        self.assertEqual(b, b'x' * 10 + b'ABCDEFGH' + b'y' * 100)
+
     def test_iconcat(self):
         b = bytearray(b"abc")
         b1 = b

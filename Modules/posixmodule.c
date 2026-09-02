@@ -21,6 +21,7 @@
 #include "pycore_import.h"        // _PyImport_AcquireLock()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_jit_unwind.h"    // _Py_jit_debug_mutex
+#include "pycore_lock.h"          // PyMutex_LockFast()
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_LookupSpecial()
@@ -66,6 +67,10 @@
 
 #ifdef __EMSCRIPTEN__
 #  include "emscripten.h"         // emscripten_debugger()
+#endif
+
+#ifdef HAVE_SYS_RANDOM_H
+#  include <sys/random.h>         // getrandom()
 #endif
 
 #ifdef HAVE_SYS_UIO_H
@@ -153,8 +158,8 @@
 #ifdef HAVE_LINUX_RANDOM_H
 #  include <linux/random.h>       // GRND_RANDOM
 #endif
-#ifdef HAVE_GETRANDOM_SYSCALL
-#  include <sys/syscall.h>        // syscall()
+#ifdef HAVE_SYS_SYSCALL_H
+#  include <sys/syscall.h>        // syscall(), __NR_xxx syscall numbers
 #endif
 
 #ifdef HAVE_POSIX_SPAWN
@@ -1697,25 +1702,6 @@ idtype_t_converter(PyObject *arg, void *addr)
 }
 #endif
 
-#ifdef MS_WINDOWS
-    typedef long long Py_off_t;
-#else
-    typedef off_t Py_off_t;
-#endif
-
-static int
-Py_off_t_converter(PyObject *arg, void *addr)
-{
-#ifdef HAVE_LARGEFILE_SUPPORT
-    *((Py_off_t *)addr) = PyLong_AsLongLong(arg);
-#else
-    *((Py_off_t *)addr) = PyLong_AsLong(arg);
-#endif
-    if (PyErr_Occurred())
-        return 0;
-    return 1;
-}
-
 static PyObject *
 PyLong_FromPy_off_t(Py_off_t offset)
 {
@@ -2035,6 +2021,14 @@ win32_wchdir(LPCWSTR path)
 #define HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES 1
 #define HAVE_STRUCT_STAT_ST_REPARSE_TAG 1
 
+/* The \\?\ prefix disables the path normalization, in particular
+   stripping of trailing dots and spaces. */
+static int
+is_extended_path(const wchar_t *path)
+{
+    return wcsncmp(path, L"\\\\?\\", 4) == 0;
+}
+
 static void
 find_data_to_file_info(WIN32_FIND_DATAW *pFileData,
                        FILE_BASIC_INFO* basic_info,
@@ -2108,12 +2102,20 @@ update_st_mode_from_path(const wchar_t *path, DWORD attr,
            GetSecurityInfo, OpenThreadToken/OpenProcessToken, and
            AccessCheck to check for generic read, write, and execute
            access. */
-        const wchar_t *fileExtension = wcsrchr(path, '.');
-        if (fileExtension) {
-            if (_wcsicmp(fileExtension, L".exe") == 0 ||
-                _wcsicmp(fileExtension, L".bat") == 0 ||
-                _wcsicmp(fileExtension, L".cmd") == 0 ||
-                _wcsicmp(fileExtension, L".com") == 0) {
+        size_t len = wcslen(path);
+        if (!is_extended_path(path)) {
+            /* Trailing dots and spaces are stripped from the last component
+               of the path. */
+            while (len > 0 && (path[len - 1] == L'.' || path[len - 1] == L' ')) {
+                len--;
+            }
+        }
+        if (len >= 4) {
+            const wchar_t *fileExtension = path + len - 4;
+            if (_wcsnicmp(fileExtension, L".exe", 4) == 0 ||
+                _wcsnicmp(fileExtension, L".bat", 4) == 0 ||
+                _wcsnicmp(fileExtension, L".cmd", 4) == 0 ||
+                _wcsnicmp(fileExtension, L".com", 4) == 0) {
                 result->st_mode |= 0111;
             }
         }
@@ -3216,18 +3218,6 @@ class dev_t_return_converter(unsigned_long_return_converter):
     conversion_fn = '_PyLong_FromDev'
     unsigned_cast = '(dev_t)'
 
-class pid_t_converter(CConverter):
-    type = 'pid_t'
-    format_unit = '" _Py_PARSE_PID "'
-
-    def parse_arg(self, argname, displayname, *, limited_capi):
-        return self.format_code("""
-            {paramname} = PyLong_AsPid({argname});
-            if ({paramname} == (pid_t)(-1) && PyErr_Occurred()) {{{{
-                goto exit;
-            }}}}
-            """, argname=argname)
-
 class idtype_t_converter(CConverter):
     type = 'idtype_t'
     converter = 'idtype_t_converter'
@@ -3256,10 +3246,6 @@ class intptr_t_converter(CConverter):
             }}}}
             """, argname=argname)
 
-class Py_off_t_converter(CConverter):
-    type = 'Py_off_t'
-    converter = 'Py_off_t_converter'
-
 class Py_off_t_return_converter(long_return_converter):
     type = 'Py_off_t'
     conversion_fn = 'PyLong_FromPy_off_t'
@@ -3279,7 +3265,7 @@ class confname_converter(CConverter):
         """, argname=argname, converter=self.converter, table=self.table)
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=ddbf3ac90a981122]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=e459765bdf453ebf]*/
 
 /*[clinic input]
 
@@ -10874,8 +10860,9 @@ os_wait_impl(PyObject *module)
 
 
 // This system call always crashes on older Android versions.
-#if defined(__linux__) && defined(__NR_pidfd_open) && \
-    !(defined(__ANDROID__) && __ANDROID_API__ < 31)
+#if defined(HAVE_PIDFD_OPEN) \
+    || (defined(__linux__) && defined(__NR_pidfd_open) \
+        && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
 /*[clinic input]
 os.pidfd_open
   pid: pid_t
@@ -10891,7 +10878,11 @@ static PyObject *
 os_pidfd_open_impl(PyObject *module, pid_t pid, unsigned int flags)
 /*[clinic end generated code: output=5c7252698947dc41 input=03058b32c389f874]*/
 {
+#ifdef HAVE_PIDFD_OPEN
+    int fd = pidfd_open(pid, flags);
+#else
     int fd = syscall(__NR_pidfd_open, pid, flags);
+#endif
     if (fd < 0) {
         return posix_error();
     }
@@ -10900,8 +10891,9 @@ os_pidfd_open_impl(PyObject *module, pid_t pid, unsigned int flags)
 #endif
 
 
-#if defined(__linux__) && defined(__NR_pidfd_getfd) && \
-    !(defined(__ANDROID__) && __ANDROID_API__ < 31)
+#if defined(HAVE_PIDFD_GETFD) \
+    || (defined(__linux__) && defined(__NR_pidfd_getfd) \
+        && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
 /*[clinic input]
 os.pidfd_getfd
   pidfd: int
@@ -10920,7 +10912,11 @@ os_pidfd_getfd_impl(PyObject *module, int pidfd, int targetfd,
                     unsigned int flags)
 /*[clinic end generated code: output=e1a1415a13c7137f input=ef6417fb10deb1cc]*/
 {
+#ifdef HAVE_PIDFD_GETFD
+    int fd = pidfd_getfd(pidfd, targetfd, flags);
+#else
     int fd = syscall(__NR_pidfd_getfd, pidfd, targetfd, flags);
+#endif
     if (fd < 0) {
         return posix_error();
     }
@@ -11568,9 +11564,9 @@ os.timerfd_settime_ns
     flags: int = 0
         0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.
     initial: long_long = 0
-        initial expiration timing in seconds.
+        initial expiration timing in nanoseconds.
     interval: long_long = 0
-        interval for the timer in seconds.
+        interval for the timer in nanoseconds.
 
 Alter a timer file descriptor's internal timer in nanoseconds.
 [clinic start generated code]*/
@@ -11578,7 +11574,7 @@ Alter a timer file descriptor's internal timer in nanoseconds.
 static PyObject *
 os_timerfd_settime_ns_impl(PyObject *module, int fd, int flags,
                            long long initial, long long interval)
-/*[clinic end generated code: output=6273ec7d7b4cc0b3 input=261e105d6e42f5bc]*/
+/*[clinic end generated code: output=6273ec7d7b4cc0b3 input=94bdcea7292157eb]*/
 {
     struct itimerspec new_value;
     struct itimerspec old_value;
@@ -11608,12 +11604,12 @@ os.timerfd_gettime
         A timer file descriptor.
     /
 
-Return a tuple of a timer file descriptor's (interval, next expiration) in float seconds.
+Return a tuple of a timer file descriptor's (next expiration, interval) in float seconds.
 [clinic start generated code]*/
 
 static PyObject *
 os_timerfd_gettime_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=ec5a94a66cfe6ab4 input=05f7d568a4820dc6]*/
+/*[clinic end generated code: output=ec5a94a66cfe6ab4 input=7b0a7cc61ea9e31a]*/
 {
     struct itimerspec curr_value;
     int result;
@@ -11635,12 +11631,12 @@ os.timerfd_gettime_ns
         A timer file descriptor.
     /
 
-Return a tuple of a timer file descriptor's (interval, next expiration) in nanoseconds.
+Return a tuple of a timer file descriptor's (next expiration, interval) in nanoseconds.
 [clinic start generated code]*/
 
 static PyObject *
 os_timerfd_gettime_ns_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=580633a4465f39fe input=d0de95b9782179c5]*/
+/*[clinic end generated code: output=580633a4465f39fe input=89702268455fa93b]*/
 {
     struct itimerspec curr_value;
     int result;
@@ -12691,7 +12687,7 @@ done:
     }
 #endif
     off_t offset;
-    if (!Py_off_t_converter(offobj, &offset))
+    if (!_Py_Off_t_Converter(offobj, &offset))
         return NULL;
 
 #if defined(__sun) && defined(__SVR4)
@@ -13183,7 +13179,12 @@ os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
 }
 #endif /* HAVE_PWRITEV */
 
-#ifdef HAVE_COPY_FILE_RANGE
+#if defined(HAVE_COPY_FILE_RANGE) || \
+    (defined(__linux__) && defined(__NR_copy_file_range))
+#  define _Py_HAVE_COPY_FILE_RANGE
+#endif
+
+#ifdef _Py_HAVE_COPY_FILE_RANGE
 /*[clinic input]
 
 os.copy_file_range
@@ -13220,14 +13221,14 @@ os_copy_file_range_impl(PyObject *module, int src, int dst, Py_ssize_t count,
 
 
     if (offset_src != Py_None) {
-        if (!Py_off_t_converter(offset_src, &offset_src_val)) {
+        if (!_Py_Off_t_Converter(offset_src, &offset_src_val)) {
             return NULL;
         }
         p_offset_src = &offset_src_val;
     }
 
     if (offset_dst != Py_None) {
-        if (!Py_off_t_converter(offset_dst, &offset_dst_val)) {
+        if (!_Py_Off_t_Converter(offset_dst, &offset_dst_val)) {
             return NULL;
         }
         p_offset_dst = &offset_dst_val;
@@ -13235,7 +13236,13 @@ os_copy_file_range_impl(PyObject *module, int src, int dst, Py_ssize_t count,
 
     do {
         Py_BEGIN_ALLOW_THREADS
+#ifdef HAVE_COPY_FILE_RANGE
         ret = copy_file_range(src, p_offset_src, dst, p_offset_dst, count, flags);
+#else
+        /* Largefile support makes off_t 64-bit, as the kernel expects. */
+        ret = syscall(__NR_copy_file_range, src, p_offset_src, dst, p_offset_dst,
+                      count, flags);
+#endif
         Py_END_ALLOW_THREADS
     } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 
@@ -13245,7 +13252,7 @@ os_copy_file_range_impl(PyObject *module, int src, int dst, Py_ssize_t count,
 
     return PyLong_FromSsize_t(ret);
 }
-#endif /* HAVE_COPY_FILE_RANGE*/
+#endif /* _Py_HAVE_COPY_FILE_RANGE */
 
 #if (defined(HAVE_SPLICE) && !defined(_AIX))
 /*[clinic input]
@@ -13285,14 +13292,14 @@ os_splice_impl(PyObject *module, int src, int dst, Py_ssize_t count,
 
 
     if (offset_src != Py_None) {
-        if (!Py_off_t_converter(offset_src, &offset_src_val)) {
+        if (!_Py_Off_t_Converter(offset_src, &offset_src_val)) {
             return NULL;
         }
         p_offset_src = &offset_src_val;
     }
 
     if (offset_dst != Py_None) {
-        if (!Py_off_t_converter(offset_dst, &offset_dst_val)) {
+        if (!_Py_Off_t_Converter(offset_dst, &offset_dst_val)) {
             return NULL;
         }
         p_offset_dst = &offset_dst_val;
@@ -15963,7 +15970,12 @@ os_urandom_impl(PyObject *module, Py_ssize_t size)
     return PyBytesWriter_Finish(writer);
 }
 
-#ifdef HAVE_MEMFD_CREATE
+#if defined(HAVE_MEMFD_CREATE) || \
+    (defined(__linux__) && defined(__NR_memfd_create) && defined(MFD_CLOEXEC))
+#  define _Py_HAVE_MEMFD_CREATE
+#endif
+
+#ifdef _Py_HAVE_MEMFD_CREATE
 /*[clinic input]
 os.memfd_create
 
@@ -15979,7 +15991,11 @@ os_memfd_create_impl(PyObject *module, PyObject *name, unsigned int flags)
     int fd;
     const char *bytes = PyBytes_AS_STRING(name);
     Py_BEGIN_ALLOW_THREADS
+#ifdef HAVE_MEMFD_CREATE
     fd = memfd_create(bytes, flags);
+#else
+    fd = syscall(__NR_memfd_create, bytes, flags);
+#endif
     Py_END_ALLOW_THREADS
     if (fd == -1) {
         return PyErr_SetFromErrno(PyExc_OSError);
@@ -16798,12 +16814,6 @@ static PyType_Spec DirEntryType_spec = {
 
 #ifdef MS_WINDOWS
 
-static int
-is_extended_path(const wchar_t *path)
-{
-    return wcsncmp(path, L"\\\\?\\", 4) == 0;
-}
-
 static wchar_t *
 join_path_filenameW(const wchar_t *path_wide, const wchar_t *filename,
                     int normalize)
@@ -17031,6 +17041,13 @@ typedef struct {
 #ifdef HAVE_FDOPENDIR
     int fd;
 #endif
+    // Sharing the iterator between threads is subject to race conditions:
+    // which entries each thread receives is unspecified.  It must not
+    // corrupt the iterator or crash.  Since we don't want close() to be
+    // held up by a blocking directory read, we set the 'closed' flag if
+    // there are reads in progress.
+    PyMutex read_mutex;
+    uint8_t closed;
 } ScandirIterator;
 
 #define ScandirIterator_CAST(op)    ((ScandirIterator *)(op))
@@ -17040,61 +17057,83 @@ typedef struct {
 static int
 ScandirIterator_is_closed(ScandirIterator *iterator)
 {
-    return iterator->handle == INVALID_HANDLE_VALUE;
+    return _Py_atomic_load_uint8(&iterator->closed);
 }
 
 static void
 ScandirIterator_closedir(ScandirIterator *iterator)
 {
-    HANDLE handle = iterator->handle;
+    HANDLE handle = INVALID_HANDLE_VALUE;
 
-    if (handle == INVALID_HANDLE_VALUE)
-        return;
+    _Py_atomic_store_uint8(&iterator->closed, 1);
+    if (PyMutex_LockFast(&iterator->read_mutex)) {
+        // no reads in progress, we can close the handle
+        handle = iterator->handle;
+        iterator->handle = INVALID_HANDLE_VALUE;
+        PyMutex_Unlock(&iterator->read_mutex);
+    }
 
-    iterator->handle = INVALID_HANDLE_VALUE;
-    Py_BEGIN_ALLOW_THREADS
-    FindClose(handle);
-    Py_END_ALLOW_THREADS
+    if (handle != INVALID_HANDLE_VALUE) {
+        Py_BEGIN_ALLOW_THREADS
+        FindClose(handle);
+        Py_END_ALLOW_THREADS
+    }
 }
 
 static PyObject *
 ScandirIterator_iternext(PyObject *op)
 {
     ScandirIterator *iterator = ScandirIterator_CAST(op);
-    WIN32_FIND_DATAW *file_data = &iterator->file_data;
+    WIN32_FIND_DATAW file_data;
     BOOL success;
-    PyObject *entry;
+    DWORD error = ERROR_SUCCESS;
+    int found = 0;
 
+    PyMutex_Lock(&iterator->read_mutex);
     /* Happens if the iterator is iterated twice, or closed explicitly */
-    if (iterator->handle == INVALID_HANDLE_VALUE)
-        return NULL;
-
-    while (1) {
+    while (iterator->handle != INVALID_HANDLE_VALUE &&
+           !_Py_atomic_load_uint8_relaxed(&iterator->closed))
+    {
         if (!iterator->first_time) {
             Py_BEGIN_ALLOW_THREADS
-            success = FindNextFileW(iterator->handle, file_data);
+            success = FindNextFileW(iterator->handle, &iterator->file_data);
+            if (!success) {
+                error = GetLastError();
+            }
             Py_END_ALLOW_THREADS
             if (!success) {
-                /* Error or no more files */
-                if (GetLastError() != ERROR_NO_MORE_FILES)
-                    path_error(&iterator->path);
                 break;
             }
         }
         iterator->first_time = 0;
 
         /* Skip over . and .. */
-        if (wcscmp(file_data->cFileName, L".") != 0 &&
-            wcscmp(file_data->cFileName, L"..") != 0)
+        if (wcscmp(iterator->file_data.cFileName, L".") != 0 &&
+            wcscmp(iterator->file_data.cFileName, L"..") != 0)
         {
-            PyObject *module = PyType_GetModule(Py_TYPE(iterator));
-            entry = DirEntry_from_find_data(module, &iterator->path, file_data);
-            if (!entry)
-                break;
-            return entry;
+            file_data = iterator->file_data;
+            found = 1;
+            break;
         }
 
         /* Loop till we get a non-dot directory or finish iterating */
+    }
+    PyMutex_Unlock(&iterator->read_mutex);
+
+    if (found && ScandirIterator_is_closed(iterator)) {
+        ScandirIterator_closedir(iterator); // deferred close
+    }
+
+    if (found) {
+        PyObject *module = PyType_GetModule(Py_TYPE(iterator));
+        PyObject *entry = DirEntry_from_find_data(module, &iterator->path, &file_data);
+        if (entry != NULL) {
+            return entry;
+        }
+    }
+    else if (error != ERROR_SUCCESS && error != ERROR_NO_MORE_FILES) {
+        SetLastError(error);
+        path_error(&iterator->path);
     }
 
     /* Error or no more files */
@@ -17107,27 +17146,32 @@ ScandirIterator_iternext(PyObject *op)
 static int
 ScandirIterator_is_closed(ScandirIterator *iterator)
 {
-    return !iterator->dirp;
+    return _Py_atomic_load_uint8(&iterator->closed);
 }
 
 static void
 ScandirIterator_closedir(ScandirIterator *iterator)
 {
-    DIR *dirp = iterator->dirp;
+    DIR *dirp = NULL;
 
-    if (!dirp)
-        return;
-
-    iterator->dirp = NULL;
-    Py_BEGIN_ALLOW_THREADS
-#ifdef HAVE_FDOPENDIR
-    if (iterator->path.is_fd) {
-        rewinddir(dirp);
+    _Py_atomic_store_uint8(&iterator->closed, 1);
+    if (PyMutex_LockFast(&iterator->read_mutex)) {
+        // no reads in progress, we can close dirp
+        dirp = iterator->dirp;
+        iterator->dirp = NULL;
+        PyMutex_Unlock(&iterator->read_mutex);
     }
+
+    if (dirp != NULL) {
+        Py_BEGIN_ALLOW_THREADS
+#ifdef HAVE_FDOPENDIR
+        if (iterator->path.is_fd) {
+            rewinddir(dirp);
+        }
 #endif
-    closedir(dirp);
-    Py_END_ALLOW_THREADS
-    return;
+        closedir(dirp);
+        Py_END_ALLOW_THREADS
+    }
 }
 
 static PyObject *
@@ -17135,24 +17179,32 @@ ScandirIterator_iternext(PyObject *op)
 {
     ScandirIterator *iterator = ScandirIterator_CAST(op);
     struct dirent *direntp;
-    Py_ssize_t name_len;
+    Py_ssize_t name_len = 0;
     int is_dot;
-    PyObject *entry;
+    int found = 0;
+    int error = 0;
+    int no_memory = 0;
+    char namebuf[256];
+    char *name = namebuf;
+    ino_t d_ino = 0;
+#ifdef HAVE_DIRENT_D_TYPE
+    unsigned char d_type = 0;
+#endif
 
+    PyMutex_Lock(&iterator->read_mutex);
     /* Happens if the iterator is iterated twice, or closed explicitly */
-    if (!iterator->dirp)
-        return NULL;
-
-    while (1) {
-        errno = 0;
+    while (iterator->dirp != NULL &&
+           !_Py_atomic_load_uint8_relaxed(&iterator->closed))
+    {
         Py_BEGIN_ALLOW_THREADS
+        errno = 0;
         direntp = readdir(iterator->dirp);
+        if (direntp == NULL) {
+            error = errno;
+        }
         Py_END_ALLOW_THREADS
 
         if (!direntp) {
-            /* Error or no more files */
-            if (errno != 0)
-                path_error(&iterator->path);
             break;
         }
 
@@ -17161,20 +17213,53 @@ ScandirIterator_iternext(PyObject *op)
         is_dot = direntp->d_name[0] == '.' &&
                  (name_len == 1 || (direntp->d_name[1] == '.' && name_len == 2));
         if (!is_dot) {
-            PyObject *module = PyType_GetModule(Py_TYPE(iterator));
-            entry = DirEntry_from_posix_info(module,
-                                             &iterator->path, direntp->d_name,
-                                             name_len, direntp->d_ino
+            if ((size_t)name_len >= sizeof(namebuf)) {
+                name = PyMem_RawMalloc(name_len + 1);
+                if (name == NULL) {
+                    no_memory = 1;
+                    break;
+                }
+            }
+            memcpy(name, direntp->d_name, name_len);
+            name[name_len] = '\0';
+            d_ino = direntp->d_ino;
 #ifdef HAVE_DIRENT_D_TYPE
-                                             , direntp->d_type
+            d_type = direntp->d_type;
 #endif
-                                            );
-            if (!entry)
-                break;
-            return entry;
+            found = 1;
+            break;
         }
 
         /* Loop till we get a non-dot directory or finish iterating */
+    }
+    PyMutex_Unlock(&iterator->read_mutex);
+
+    if (found && ScandirIterator_is_closed(iterator)) {
+        ScandirIterator_closedir(iterator); // deferred close
+    }
+
+    if (found) {
+        PyObject *module = PyType_GetModule(Py_TYPE(iterator));
+        PyObject *entry = DirEntry_from_posix_info(module,
+                                                   &iterator->path, name,
+                                                   name_len, d_ino
+#ifdef HAVE_DIRENT_D_TYPE
+                                                   , d_type
+#endif
+                                                  );
+        if (name != namebuf) {
+            PyMem_RawFree(name);
+        }
+        if (entry != NULL) {
+            return entry;
+        }
+    }
+    else if (no_memory) {
+        PyErr_NoMemory();
+    }
+    else if (error != 0) {
+        errno = error;
+        path_error(&iterator->path);
     }
 
     /* Error or no more files */
@@ -17213,9 +17298,11 @@ ScandirIterator_finalize(PyObject *op)
     /* Save the current exception, if any. */
     PyObject *exc = PyErr_GetRaisedException();
 
-    if (!ScandirIterator_is_closed(iterator)) {
-        ScandirIterator_closedir(iterator);
+    int was_closed = ScandirIterator_is_closed(iterator);
 
+    ScandirIterator_closedir(iterator);
+
+    if (!was_closed) {
         if (PyErr_ResourceWarning(op, 1,
                                   "unclosed scandir iterator %R", iterator))
         {
@@ -17313,6 +17400,8 @@ os_scandir_impl(PyObject *module, path_t *path)
     if (!iterator)
         return NULL;
 
+    iterator->read_mutex = (PyMutex){0};
+    iterator->closed = 1;
 #ifdef MS_WINDOWS
     iterator->handle = INVALID_HANDLE_VALUE;
 #else
@@ -17385,6 +17474,7 @@ os_scandir_impl(PyObject *module, path_t *path)
     }
 #endif
 
+    iterator->closed = 0;
     return (PyObject *)iterator;
 
 error:
@@ -17456,19 +17546,19 @@ os_fspath_impl(PyObject *module, PyObject *path)
     return PyOS_FSPath(path);
 }
 
-#ifdef HAVE_GETRANDOM_SYSCALL
+#if defined(HAVE_GETRANDOM) || defined(HAVE_GETRANDOM_SYSCALL)
 /*[clinic input]
 os.getrandom
 
     size: Py_ssize_t
-    flags: int=0
+    flags: unsigned_int(bitwise=True) = 0
 
 Obtain a series of random bytes.
 [clinic start generated code]*/
 
 static PyObject *
-os_getrandom_impl(PyObject *module, Py_ssize_t size, int flags)
-/*[clinic end generated code: output=b3a618196a61409c input=59bafac39c594947]*/
+os_getrandom_impl(PyObject *module, Py_ssize_t size, unsigned int flags)
+/*[clinic end generated code: output=c2163c05f0e1d0a1 input=e0174983f5703f82]*/
 {
     if (size < 0) {
         errno = EINVAL;
@@ -17483,7 +17573,11 @@ os_getrandom_impl(PyObject *module, Py_ssize_t size, int flags)
 
     Py_ssize_t n;
     while (1) {
+#ifdef HAVE_GETRANDOM
+        n = getrandom(data, size, flags);
+#else
         n = syscall(SYS_getrandom, data, size, flags);
+#endif
         if (n < 0 && errno == EINTR) {
             if (PyErr_CheckSignals() < 0) {
                 goto error;
@@ -18591,11 +18685,11 @@ all_ins(PyObject *m)
     if (PyModule_AddIntMacro(m, RTLD_MEMBER)) return -1;
 #endif
 
-#ifdef HAVE_GETRANDOM_SYSCALL
+#if defined(HAVE_GETRANDOM) || defined(HAVE_GETRANDOM_SYSCALL)
     if (PyModule_AddIntMacro(m, GRND_RANDOM)) return -1;
     if (PyModule_AddIntMacro(m, GRND_NONBLOCK)) return -1;
 #endif
-#ifdef HAVE_MEMFD_CREATE
+#ifdef _Py_HAVE_MEMFD_CREATE
     if (PyModule_AddIntMacro(m, MFD_CLOEXEC)) return -1;
     if (PyModule_AddIntMacro(m, MFD_ALLOW_SEALING)) return -1;
 #ifdef MFD_HUGETLB
@@ -18643,7 +18737,7 @@ all_ins(PyObject *m)
 #ifdef MFD_HUGE_16GB
     if (PyModule_AddIntMacro(m, MFD_HUGE_16GB)) return -1;
 #endif
-#endif /* HAVE_MEMFD_CREATE */
+#endif /* _Py_HAVE_MEMFD_CREATE */
 
 #if defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC)
     if (PyModule_AddIntMacro(m, EFD_CLOEXEC)) return -1;
@@ -18899,7 +18993,7 @@ static const struct have_function {
     { "HAVE_LUTIMES", NULL },
 #endif
 
-#ifdef HAVE_MEMFD_CREATE
+#ifdef _Py_HAVE_MEMFD_CREATE
     { "HAVE_MEMFD_CREATE", NULL },
 #endif
 
