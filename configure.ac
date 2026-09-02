@@ -4474,12 +4474,14 @@ AC_CACHE_CHECK([for _Float16 support], [ac_cv_float16_supported],
 WITH_SAVE_ENV([
 CFLAGS="$CFLAGS -O0"
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <math.h>
 int main(void)
 {
     _Float16 val = 1.0f16;
+    int test = !isfinite(val) || isinf(val) || isnan(val);
     double d = 3.14;
     val = d;
-    return 0;
+    return test;
 }
 ]])], [ac_cv_float16_supported=yes],
 [ac_cv_float16_supported=no],
