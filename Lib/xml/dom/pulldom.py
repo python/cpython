@@ -1,3 +1,5 @@
+"""Support for building partial DOM trees from SAX events."""
+
 import xml.sax
 import xml.sax.handler
 
@@ -11,6 +13,10 @@ IGNORABLE_WHITESPACE = "IGNORABLE_WHITESPACE"
 CHARACTERS = "CHARACTERS"
 
 class PullDOM(xml.sax.ContentHandler):
+    """Content handler which turns SAX events into pull parser events.
+
+    The nodes are created, but they are not added to the tree."""
+
     _locator = None
     document = None
 
@@ -202,6 +208,8 @@ class ErrorHandler:
         raise exception
 
 class DOMEventStream:
+    """Stream of the pull parser events."""
+
     def __init__(self, stream, parser, bufsize):
         self.stream = stream
         self.parser = parser
@@ -211,6 +219,7 @@ class DOMEventStream:
         self.reset()
 
     def reset(self):
+        """Discard unread events and prepare for parsing a new document."""
         self.pulldom = PullDOM()
         # This content handler relies on namespace support
         self.parser.setFeature(xml.sax.handler.feature_namespaces, 1)
@@ -226,6 +235,7 @@ class DOMEventStream:
         return self
 
     def expandNode(self, node):
+        """Expand all children of the node into the node."""
         event = self.getEvent()
         parents = [node]
         while event:
@@ -241,6 +251,7 @@ class DOMEventStream:
             event = self.getEvent()
 
     def getEvent(self):
+        """Return the next (event, node) tuple, or None at the end."""
         # use IncrementalParser interface, so we get the desired
         # pull effect
         if not self.pulldom.firstEvent[1]:
@@ -274,13 +285,14 @@ class DOMEventStream:
         return rc
 
     def clear(self):
-        """clear(): Explicitly release parsing objects"""
+        """Release the parser and the document."""
         self.pulldom.clear()
         del self.pulldom
         self.parser = None
         self.stream = None
 
 class SAX2DOM(PullDOM):
+    """PullDOM which also adds every created node to the tree."""
 
     def startElementNS(self, name, tagName , attrs):
         PullDOM.startElementNS(self, name, tagName, attrs)
@@ -316,6 +328,7 @@ class SAX2DOM(PullDOM):
 default_bufsize = (2 ** 14) - 20
 
 def parse(stream_or_string, parser=None, bufsize=None):
+    """Return a DOMEventStream for the given file name or file object."""
     if bufsize is None:
         bufsize = default_bufsize
     if isinstance(stream_or_string, str):
@@ -327,6 +340,7 @@ def parse(stream_or_string, parser=None, bufsize=None):
     return DOMEventStream(stream, parser, bufsize)
 
 def parseString(string, parser=None):
+    """Return a DOMEventStream for the given string."""
     from io import StringIO
 
     bufsize = len(string)
