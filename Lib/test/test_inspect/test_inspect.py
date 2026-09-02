@@ -40,7 +40,7 @@ from test.support import cpython_only, import_helper
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
 from test.support import run_no_yield_async_fn, EqualToForwardRef
 from test.support.import_helper import DirsOnSysPath, ready_to_import
-from test.support.os_helper import TESTFN, temp_cwd
+from test.support.os_helper import TESTFN, TESTFN_UNDECODABLE, temp_cwd
 from test.support.script_helper import assert_python_ok, assert_python_failure, kill_python
 from test.support import has_subprocess_support
 from test import support
@@ -6171,10 +6171,10 @@ class TestSignatureDefinitions(unittest.TestCase):
                         'dict', 'frozendict', 'int', 'str'}
         # These need PEP 457 groups
         needs_groups = {"range", "slice", "dir", "getattr",
-                        "next", "iter", "vars"}
+                        "next", "vars"}
         no_signature |= needs_groups
         # These have unrepresentable parameter default values of NULL
-        unsupported_signature = {"anext"}
+        unsupported_signature = {"anext", "aiter", "iter"}
         # These need *args support in Argument Clinic
         needs_varargs = {"min", "max", "__build_class__"}
         no_signature |= needs_varargs
@@ -6411,7 +6411,7 @@ class TestSignatureDefinitions(unittest.TestCase):
                 methods_unsupported_signature=methods_unsupported_signature)
 
     def test_warnings_module_has_signatures(self):
-        unsupported_signature = {'warn', 'warn_explicit'}
+        unsupported_signature = {'warn_explicit'}
         self._test_module_has_signatures(warnings, unsupported_signature=unsupported_signature)
 
     def test_weakref_module_has_signatures(self):
@@ -6618,6 +6618,25 @@ class TestModuleCLI(unittest.TestCase):
                                             'importlib.machinery:SOURCE_SUFFIXES')
         lines = err.decode().splitlines()
         self.assertEqual(lines, [self.NO_SOURCE_TARGET_ERROR])
+
+    @unittest.skipUnless(TESTFN_UNDECODABLE,
+                         'requires undecodable file names')
+    def test_details_undecodable_path(self):
+        # gh-69370: the path of the module is not encodable in the encoding
+        # of stdout.
+        with temp_cwd() as test_dir:
+            subdir = os.path.join(os.fsencode(test_dir), TESTFN_UNDECODABLE)
+            try:
+                os.mkdir(subdir)
+            except OSError:
+                self.skipTest('undecodable paths are not supported')
+            with open(os.path.join(subdir, b'undecodable_mod.py'), 'w') as f:
+                f.write('"""Module docstring."""\n')
+            rc, out, err = assert_python_ok('-X', 'utf8=0', '-m', 'inspect',
+                                            '--details', 'undecodable_mod',
+                                            PYTHONPATH=os.fsdecode(subdir))
+        self.assertIn(b'Target: undecodable_mod', out)
+        self.assertEqual(err, b'')
 
     def test_details_option_with_package(self):
         module_name = 'unittest'
