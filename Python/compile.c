@@ -1018,10 +1018,6 @@ _PyCompile_ResolveNameop(compiler *c, PyObject *mangled, int scope,
 
     PySTEntryObject *ste = c->u->u_ste;
     assert(ste != NULL);
-    while (ste->ste_parent != NULL) {
-        assert(ste->ste_type == InlinedComprehensionBlock);
-        ste = ste->ste_parent;
-    }
 
     assert(scope >= 0);
     switch (scope) {
@@ -1034,15 +1030,24 @@ _PyCompile_ResolveNameop(compiler *c, PyObject *mangled, int scope,
         *optype = COMPILE_OP_DEREF;
         break;
     case LOCAL:
-        if (_PyST_IsFunctionLike(ste) || c->u->u_ste->ste_type == InlinedComprehensionBlock) {
+        /* Inlined comprehensions isolate their locals as FAST, even when
+         * nested in class or module scope. */
+        if (_PyST_IsFunctionLike(ste) || ste->ste_type == InlinedComprehensionBlock) {
             *optype = COMPILE_OP_FAST;
         }
         break;
-    case GLOBAL_IMPLICIT:
-        if (_PyST_IsFunctionLike(ste)) {
+    case GLOBAL_IMPLICIT: {
+        /* Opcode depends on the enclosing non-inlined scope. */
+        PySTEntryObject *enclosing = ste;
+        while (enclosing->ste_parent != NULL) {
+            assert(enclosing->ste_type == InlinedComprehensionBlock);
+            enclosing = enclosing->ste_parent;
+        }
+        if (_PyST_IsFunctionLike(enclosing)) {
             *optype = COMPILE_OP_GLOBAL;
         }
         break;
+    }
     case GLOBAL_EXPLICIT:
         *optype = COMPILE_OP_GLOBAL;
         break;
@@ -1058,8 +1063,7 @@ _PyCompile_ResolveNameop(compiler *c, PyObject *mangled, int scope,
 }
 
 int
-_PyCompile_EnterInlinedComprehensionScope(compiler *c, location loc,
-                                          PySTEntryObject *entry,
+_PyCompile_EnterInlinedComprehensionScope(compiler *c, PySTEntryObject *entry,
                                           _PyCompile_InlinedComprehensionState *state)
 {
     assert(state->saved_ste == NULL);
@@ -1069,8 +1073,8 @@ _PyCompile_EnterInlinedComprehensionScope(compiler *c, location loc,
 }
 
 int
-_PyCompile_ExitInlinedComprehensionScope(compiler *c, location loc,
-                                         _PyCompile_InlinedComprehensionState *state)
+_PyCompile_ExitInlinedComprehensionScope(compiler *c,
+                                        _PyCompile_InlinedComprehensionState *state)
 {
     assert(state->saved_ste != NULL);
     Py_DECREF(c->u->u_ste);

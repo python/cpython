@@ -4982,7 +4982,7 @@ push_inlined_comprehension_state(compiler *c, location loc,
                                  _PyCompile_InlinedComprehensionState *state)
 {
     RETURN_IF_ERROR(
-        _PyCompile_EnterInlinedComprehensionScope(c, loc, comp, state));
+        _PyCompile_EnterInlinedComprehensionScope(c, comp, state));
     RETURN_IF_ERROR(
         codegen_push_inlined_comprehension_locals(c, loc, comp, state));
     return SUCCESS;
@@ -5040,7 +5040,7 @@ pop_inlined_comprehension_state(compiler *c, location loc,
                                 _PyCompile_InlinedComprehensionState *state)
 {
     RETURN_IF_ERROR(codegen_pop_inlined_comprehension_locals(c, loc, state));
-    RETURN_IF_ERROR(_PyCompile_ExitInlinedComprehensionScope(c, loc, state));
+    RETURN_IF_ERROR(_PyCompile_ExitInlinedComprehensionScope(c, state));
     return SUCCESS;
 }
 

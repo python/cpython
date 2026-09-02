@@ -181,10 +181,10 @@ typedef struct {
     PySTEntryObject *saved_ste;
 } _PyCompile_InlinedComprehensionState;
 
-int _PyCompile_EnterInlinedComprehensionScope(struct _PyCompiler *c, _Py_SourceLocation loc,
+int _PyCompile_EnterInlinedComprehensionScope(struct _PyCompiler *c,
                                               PySTEntryObject *entry,
                                               _PyCompile_InlinedComprehensionState *state);
-int _PyCompile_ExitInlinedComprehensionScope(struct _PyCompiler *c, _Py_SourceLocation loc,
+int _PyCompile_ExitInlinedComprehensionScope(struct _PyCompiler *c,
                                              _PyCompile_InlinedComprehensionState *state);
 int _PyCompile_AddDeferredAnnotation(struct _PyCompiler *c, stmt_ty s,
                                      PyObject **conditional_annotation_index);

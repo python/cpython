@@ -499,8 +499,12 @@ symtable
   (Contributed by Serhiy Storchaka in :gh:`153844`.)
 
 * Inlined list, set and dict comprehensions (:pep:`709`) are now represented
-  as their own symbol tables, of type
-  :attr:`~symtable.SymbolTableType.INLINED_COMPREHENSION`.
+  as their own symbol table entries, of type
+  :attr:`~symtable.SymbolTableType.INLINED_COMPREHENSION`. This entry type
+  represents a sub-scope, and holds information only on the symbols whose
+  scopes are different in the comprehension and the enclosing scope.
+  Sub-scopes are a new mechanism that can be used when a symbol's scope
+  changes within the same compilation unit.
   (Contributed by Irit Katriel in :gh:`124697`.)
 
 
