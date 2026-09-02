@@ -1726,7 +1726,7 @@ class SizeofTest(unittest.TestCase):
         check(iter('abc'), size('lP'))
         # callable-iterator
         import re
-        check(re.finditer('',''), size('2P'))
+        check(re.finditer('',''), size('3P'))
         # list
         check(list([]), vsize('Pn'))
         check(list([1]), vsize('Pn') + 2*self.P)
