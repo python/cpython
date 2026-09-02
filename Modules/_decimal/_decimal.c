@@ -352,9 +352,6 @@ static const char *invalid_rounding_err =
    ROUND_HALF_UP, ROUND_HALF_DOWN, ROUND_HALF_EVEN,\n\
    ROUND_05UP]";
 
-static const char cannot_delete_err[] =
-"context attributes cannot be deleted";
-
 static const char *invalid_signals_err =
 "valid values for signals are:\n\
   [InvalidOperation, FloatOperation, DivisionByZero,\n\
@@ -395,9 +392,10 @@ type_error_int(const char *mesg)
 }
 
 static int
-attribute_error_int(const char *mesg)
+delete_error_int(void)
 {
-    PyErr_SetString(PyExc_AttributeError, mesg);
+    PyErr_SetString(PyExc_AttributeError,
+        "context attributes cannot be deleted");
     return -1;
 }
 
@@ -967,7 +965,7 @@ context_setprec(PyObject *self, PyObject *value, void *Py_UNUSED(closure))
     mpd_ssize_t x;
 
     if (value == NULL) {
-        return attribute_error_int(cannot_delete_err);
+        return delete_error_int();
     }
 
     x = PyLong_AsSsize_t(value);
@@ -991,7 +989,7 @@ context_setemin(PyObject *self, PyObject *value, void *Py_UNUSED(closure))
     mpd_ssize_t x;
 
     if (value == NULL) {
-        return attribute_error_int(cannot_delete_err);
+        return delete_error_int();
     }
 
     x = PyLong_AsSsize_t(value);
@@ -1015,7 +1013,7 @@ context_setemax(PyObject *self, PyObject *value, void *Py_UNUSED(closure))
     mpd_ssize_t x;
 
     if (value == NULL) {
-        return attribute_error_int(cannot_delete_err);
+        return delete_error_int();
     }
 
     x = PyLong_AsSsize_t(value);
@@ -1110,7 +1108,7 @@ context_setround(PyObject *self, PyObject *value, void *Py_UNUSED(closure))
     int x;
 
     if (value == NULL) {
-        return attribute_error_int(cannot_delete_err);
+        return delete_error_int();
     }
 
     decimal_state *state = get_module_state_from_ctx(self);
@@ -1133,7 +1131,7 @@ context_setcapitals(PyObject *self, PyObject *value, void *Py_UNUSED(closure))
     mpd_ssize_t x;
 
     if (value == NULL) {
-        return attribute_error_int(cannot_delete_err);
+        return delete_error_int();
     }
 
     x = PyLong_AsSsize_t(value);
@@ -1158,7 +1156,7 @@ context_settraps(PyObject *self, PyObject *value, void *Py_UNUSED(closure))
     uint32_t flags;
 
     if (value == NULL) {
-        return attribute_error_int(cannot_delete_err);
+        return delete_error_int();
     }
 
     flags = long_as_flags(value);
@@ -1227,7 +1225,7 @@ context_setstatus(PyObject *self, PyObject *value, void *Py_UNUSED(closure))
     uint32_t flags;
 
     if (value == NULL) {
-        return attribute_error_int(cannot_delete_err);
+        return delete_error_int();
     }
 
     flags = long_as_flags(value);
@@ -1296,7 +1294,7 @@ context_setclamp(PyObject *self, PyObject *value, void *Py_UNUSED(closure))
     mpd_ssize_t x;
 
     if (value == NULL) {
-        return attribute_error_int(cannot_delete_err);
+        return delete_error_int();
     }
 
     x = PyLong_AsSsize_t(value);
@@ -1321,7 +1319,7 @@ context_setallcr(PyObject *self, PyObject *value, void *Py_UNUSED(closure))
     mpd_ssize_t x;
 
     if (value == NULL) {
-        return attribute_error_int(cannot_delete_err);
+        return delete_error_int();
     }
 
     x = PyLong_AsSsize_t(value);
@@ -1362,7 +1360,7 @@ static int
 context_setattr(PyObject *self, PyObject *name, PyObject *value)
 {
     if (value == NULL) {
-        return attribute_error_int(cannot_delete_err);
+        return delete_error_int();
     }
 
     if (PyUnicode_Check(name)) {
