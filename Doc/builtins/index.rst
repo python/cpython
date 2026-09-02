@@ -1,8 +1,8 @@
 .. _builtins-index:
 
-#######################
-  Built-ins reference
-#######################
+##############################
+  Python built-ins reference
+##############################
 
 Python comes with a number of built-in functions and classes.
 

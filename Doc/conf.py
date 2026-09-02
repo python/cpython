@@ -383,7 +383,7 @@ latex_documents = [
     (
         'builtins/index',
         'builtins.tex',
-        'Built-ins Reference',
+        'Python Built-ins Reference',
         _doc_authors,
         'manual',
     ),
