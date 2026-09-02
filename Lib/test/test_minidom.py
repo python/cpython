@@ -640,6 +640,30 @@ class MinidomTest(unittest.TestCase):
                 dom.getElementsByTagName('B')[0].childNodes[0].toxml(),
                 dom2.getElementsByTagName('B')[0].childNodes[0].toxml())
 
+    def test_isWhitespaceInElementContent(self):
+        # only " \t\r\n" are whitespace in XML (see XML 1.0, 2.3)
+        dom = parseString('<!DOCTYPE a [<!ELEMENT a (b)*><!ELEMENT b (#PCDATA)>]>'
+                          '<a> <b>x</b>\xa0</a>')
+        children = dom.documentElement.childNodes
+        self.assertTrue(children[0].isWhitespaceInElementContent)
+        self.assertFalse(children[2].isWhitespaceInElementContent)
+        dom.unlink()
+
+    def test_remove_whitespace_in_element_content(self):
+        from xml.dom.xmlbuilder import DOMBuilder, DOMInputSource
+        builder = DOMBuilder()
+        builder.setFeature("whitespace-in-element-content", False)
+        source = DOMInputSource()
+        source.byteStream = io.BytesIO(
+            b'<!DOCTYPE a [<!ELEMENT a (b)*><!ELEMENT b (#PCDATA)>]>'
+            b'<a> <b>x</b>\xc2\xa0</a>')
+        dom = builder.parse(source)
+        children = dom.documentElement.childNodes
+        # ignorable whitespace is removed, other characters are not
+        self.assertEqual([node.nodeName for node in children], ['b', '#text'])
+        self.assertEqual(children[1].data, '\xa0')
+        dom.unlink()
+
     def testProcessingInstruction(self):
         dom = parseString('<e><?mypi \t\n data \t\n ?></e>')
         pi = dom.documentElement.firstChild

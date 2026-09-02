@@ -811,6 +811,15 @@ class ElementTreeTest(unittest.TestCase):
             len({id(el.tail) for el in elem.iter()}),
         )
 
+    def test_indent_non_xml_whitespace(self):
+        # only " \t\r\n" are whitespace in XML (see XML 1.0, 2.3)
+        elem = ET.XML('<html>\xa0<body><p>text</p>\xa0</body></html>')
+        ET.indent(elem)
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html>&#160;<body>\n    <p>text</p>&#160;</body>\n</html>'
+        )
+
     def test_indent_level(self):
         elem = ET.XML("<html><body><p>pre<br/>post</p><p>text</p></body></html>")
         with self.assertRaises(ValueError):
@@ -4683,6 +4692,11 @@ class C14NTest(unittest.TestCase):
         self.assertEqual(c14n_roundtrip(xml), xml)
         xml = '<X xmlns="http://nps/a"><Y xmlns:b="http://nsp/b" b:targets="abc,xyz"></Y></X>'
         self.assertEqual(c14n_roundtrip(xml), xml)
+
+    def test_c14n_strip_non_xml_whitespace(self):
+        # only " \t\r\n" are whitespace in XML (see XML 1.0, 2.3)
+        self.assertEqual(c14n_roundtrip("<a> \xa0x\xa0 </a>", strip_text=True),
+                         "<a>\xa0x\xa0</a>")
 
     def test_c14n_exclusion(self):
         xml = textwrap.dedent("""\
