@@ -1,0 +1,4 @@
+:meth:`!concurrent.interpreters.Queue.get` and
+:meth:`!concurrent.interpreters.Queue.put` now compute their ``timeout``
+deadline from :func:`time.monotonic` instead of the wall clock, so adjusting
+the system clock during the call no longer makes them over- or under-wait.

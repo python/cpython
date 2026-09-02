@@ -708,16 +708,18 @@ Specifying function pointers using type annotations
 
       @wrap_dll_function(dll_to_wrap)
       def function_ptr_name(arg_name: ctypes_type, ...) -> ctypes_type:
-         # There should be no body
-         pass
+         """Optional docstring. There should be no function body."""
 
    The body of the decorated function is ignored, and any parameters that are
    missing type annotations are skipped. The names of the parameters are ignored
    and do not have to match the underlying C implementation.
 
    If the decorated function does not have a return type annotation, a
-   :exc:`ValueError` is raised. If the name of the function does not exist
-   in *dll*, an :exc:`AttributeError` is raised.
+   :exc:`ValueError` is raised. A :exc:`ValueError` is also raised if it has a
+   keyword-only, ``*args``, or ``**kwargs`` parameter, since
+   :attr:`~ctypes._CFuncPtr.argtypes` describes positional arguments only. If
+   the name of the function does not exist in *dll*, an :exc:`AttributeError`
+   is raised.
 
    For example::
 
@@ -1866,6 +1868,10 @@ like ``find_library("c")`` will fail and return ``None``.
    function in the same library that allocated the memory.
 
    .. availability:: Windows
+
+   .. soft-deprecated:: 3.16
+      This function now always returns ``None``, as there are no more
+      VC runtime DLLs that are a single file and supported by Microsoft.
 
 
 .. _ctypes-listing-loaded-shared-libraries:

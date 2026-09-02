@@ -2,6 +2,7 @@
 # Most tests are executed with environment variables ignored
 # See test_cmd_line_script.py for testing of script execution
 
+import locale
 import os
 import re
 import subprocess
@@ -369,9 +370,27 @@ class CmdLineTest(unittest.TestCase):
         )
         test_args = [valid_utf8, invalid_utf8]
 
-        for run_cmd in (run_default, run_c_locale, run_utf8_mode,
-                        run_no_utf8_mode):
-            with self.subTest(run_cmd=run_cmd):
+        for run_cmd, encoding in (
+            (run_default, sys.getfilesystemencoding()),
+            (run_c_locale, None),
+            (run_utf8_mode, None),
+            (run_no_utf8_mode, locale.getencoding())
+        ):
+            with self.subTest(run_cmd=run_cmd.__name__):
+                # Arbitrary bytes round-trip through surrogateescape only in
+                # UTF-8 and single-byte encodings, not in a multibyte encoding
+                # such as EUC-JP.
+                if encoding is not None:
+                    try:
+                        lossless = len(bytes(range(256)).decode(
+                            encoding, 'surrogateescape')) == 256
+                    except UnicodeError:
+                        lossless = False
+                else:
+                    lossless = True
+                if not lossless:
+                    self.skipTest(f'{encoding} cannot losslessly '
+                                  f'round-trip arbitrary bytes')
                 for arg in test_args:
                     proc = run_cmd(arg)
                     self.assertEqual(proc.stdout.rstrip(), ascii(arg))
@@ -1048,6 +1067,41 @@ class CmdLineTest(unittest.TestCase):
         support.skip_on_low_desktop_heap_memory_subprocess(p.returncode)
         self.assertEqual(p.returncode, 0)
 
+    @unittest.skipUnless(support.MS_WINDOWS, 'Test only applicable on Windows')
+    def test_python_legacy_windows_stdio_encoding(self):
+        # gh-86427: In the legacy mode the encoding of the standard streams
+        # is the encoding of the console.
+        import ctypes
+        kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
+        try:
+            fin = open('CONIN$')
+        except OSError:
+            self.skipTest('no console')
+        # We cannot use PIPE, because the standard streams should be
+        # connected to the console.  So we use the exit code.
+        code = ("import sys; sys.exit(sys.stdin.encoding != 'cp850' or "
+                "sys.stdout.encoding != 'cp850')")
+        env = os.environ.copy()
+        env['PYTHONLEGACYWINDOWSSTDIO'] = '1'
+        env['PYTHONUTF8'] = '0'
+        env.pop('PYTHONIOENCODING', None)
+        old_cp = kernel32.GetConsoleCP()
+        old_output_cp = kernel32.GetConsoleOutputCP()
+        with fin, open('CONOUT$', 'w') as fout:
+            try:
+                if not kernel32.SetConsoleCP(850):
+                    self.skipTest('cannot set the console input code page')
+                if not kernel32.SetConsoleOutputCP(850):
+                    self.skipTest('cannot set the console output code page')
+                proc = subprocess.run([sys.executable, '-c', code], env=env,
+                                      stdin=fin, stdout=fout,
+                                      stderr=subprocess.DEVNULL)
+            finally:
+                kernel32.SetConsoleCP(old_cp)
+                kernel32.SetConsoleOutputCP(old_output_cp)
+        support.skip_on_low_desktop_heap_memory_subprocess(proc.returncode)
+        self.assertEqual(proc.returncode, 0)
+
     @unittest.skipIf("-fsanitize" in sysconfig.get_config_vars().get('PY_CFLAGS', ()),
                      "PYTHONMALLOCSTATS doesn't work with ASAN")
     def test_python_malloc_stats(self):
@@ -1247,6 +1301,24 @@ class CmdLineTest(unittest.TestCase):
 
         assert_python_failure('-X', 'importtime=-1', '-c', code)
         assert_python_failure('-X', 'importtime=3', '-c', code)
+
+    def test_import_time_unencodable_module_name(self):
+        code = textwrap.dedent("""
+            import sys, types
+            name = 'mod\\ud800'
+            sys.modules[name] = types.ModuleType(name)
+            __import__(name)
+            try:
+                __import__('nonexistent\\ud800')
+            except ModuleNotFoundError:
+                pass
+        """)
+        res = assert_python_ok('-X', 'importtime=2', '-c', code)
+        res_err = res.err.decode('utf-8')
+        self.assertRegex(res_err,
+                         r'import time: cached\s* \| cached\s* \| mod\\ud800')
+        self.assertRegex(res_err,
+                         r'import time: \s*\d+ \| \s*\d+ \| \s*nonexistent\\ud800')
 
     def res2int(self, res):
         out = res.out.strip().decode("utf-8")

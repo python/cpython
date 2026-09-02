@@ -58,11 +58,12 @@ def _build_graph_for_future(
     while coro is not None:
         if hasattr(coro, 'cr_await'):
             # A native coroutine or duck-type compatible iterator
-            st.append(FrameCallGraphEntry(coro.cr_frame))
+            if coro.cr_frame is not None:
+                st.append(FrameCallGraphEntry(coro.cr_frame))
             coro = coro.cr_await
         elif hasattr(coro, 'ag_await'):
             # A native async generator or duck-type compatible iterator
-            st.append(FrameCallGraphEntry(coro.cr_frame))
+            st.append(FrameCallGraphEntry(coro.ag_frame))
             coro = coro.ag_await
         else:
             break
@@ -273,4 +274,5 @@ def print_call_graph(
     limit: int | None = None,
 ) -> None:
     """Print the async call graph for the current task or the provided Future."""
-    print(format_call_graph(future, depth=depth, limit=limit), file=file)
+    # gh-156327: print_call_graph() must not report its own frame
+    print(format_call_graph(future, depth=depth + 1, limit=limit), file=file)
