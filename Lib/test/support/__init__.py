@@ -73,7 +73,7 @@ __all__ = [
     "in_systemd_nspawn_sync_suppressed",
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
     "reset_code", "on_github_actions",
-    "requires_root_user", "requires_non_root_user",
+    "requires_root_user", "requires_non_root_user", "built_with_c_assertions",
     ]
 
 
