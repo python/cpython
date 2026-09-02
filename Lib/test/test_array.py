@@ -144,8 +144,10 @@ IEEE_754_DOUBLE_COMPLEX_LE = 24
 IEEE_754_DOUBLE_COMPLEX_BE = 25
 IEEE_754_FLOAT16_LE = 26
 IEEE_754_FLOAT16_BE = 27
+IEEE_754_FLOAT16_COMPLEX_LE = 28
+IEEE_754_FLOAT16_COMPLEX_BE = 29
 
-MACHINE_FORMAT_CODE_MAX = 27
+MACHINE_FORMAT_CODE_MAX = 29
 
 
 class ArrayReconstructorTest(unittest.TestCase):
@@ -221,6 +223,10 @@ class ArrayReconstructorTest(unittest.TestCase):
              [9006104071832581.0, float('inf'), float('-inf'), -0.0]),
             (['d'], IEEE_754_DOUBLE_BE, '>dddd',
              [9006104071832581.0, float('inf'), float('-inf'), -0.0]),
+            (['Ze'], IEEE_754_FLOAT16_COMPLEX_LE, '<ZeZeZeZe',
+             [167.0j, float('inf'), complex('1-infj'), -0.0]),
+            (['Ze'], IEEE_754_FLOAT16_COMPLEX_BE, '>ZeZeZeZe',
+             [167.0j, float('inf'), complex('1-infj'), -0.0]),
             (['Zf'], IEEE_754_FLOAT_COMPLEX_LE, '<ZfZfZfZf',
              [16711938.0j, float('inf'), complex('1-infj'), -0.0]),
             (['Zf'], IEEE_754_FLOAT_COMPLEX_BE, '>ZfZfZfZf',
@@ -1632,6 +1638,11 @@ class DoubleTest(FPTest, unittest.TestCase):
         else:
             self.fail("Array of size > maxsize created - MemoryError expected")
 
+
+class ComplexHalfFloatTest(CFPTest, unittest.TestCase):
+    typecode = 'Ze'
+    minitemsize = 4
+    example = [-42j, 0, 42+1j, 1e2j, -1e3]
 
 class ComplexFloatTest(CFPTest, unittest.TestCase):
     typecode = 'Zf'

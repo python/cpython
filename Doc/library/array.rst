@@ -46,9 +46,11 @@ defined:
 +-----------+--------------------+-------------------+-----------------------+-------+
 | ``'d'``   | double             | float             | 8                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
-| ``'Zf'``  | float complex      | complex           | 8                     | \(3)  |
+| ``'Ze'``  | _Float16 complex   | complex           | 4                     | \(3)  |
 +-----------+--------------------+-------------------+-----------------------+-------+
-| ``'Zd'``  | double complex     | complex           | 16                    | \(3)  |
+| ``'Zf'``  | float complex      | complex           | 8                     | \(4)  |
++-----------+--------------------+-------------------+-----------------------+-------+
+| ``'Zd'``  | double complex     | complex           | 16                    | \(4)  |
 +-----------+--------------------+-------------------+-----------------------+-------+
 
 
@@ -67,6 +69,11 @@ Notes:
    .. versionadded:: 3.15
 
 (3)
+   Complex type ``Ze`` is available unconditionally.
+
+   .. versionadded:: 3.16
+
+(4)
    Complex types (``Zf`` and ``Zd``) are available unconditionally,
    regardless on support for complex types (the Annex G of the C11 standard)
    by the C compiler.

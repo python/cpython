@@ -108,6 +108,14 @@ New modules
 Improved modules
 ================
 
+array
+-----
+
+* Support the :c:expr:`_Float16 complex` C type in
+  the :mod:`array` module (format code ``'Ze'``).
+  (Contributed by Sergey B Kirpichev in :gh:`153740`.)
+
+
 asyncio
 -------
 

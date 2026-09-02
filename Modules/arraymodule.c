@@ -123,10 +123,12 @@ enum machine_format_code {
     IEEE_754_DOUBLE_COMPLEX_LE = 24,
     IEEE_754_DOUBLE_COMPLEX_BE = 25,
     IEEE_754_FLOAT16_LE = 26,
-    IEEE_754_FLOAT16_BE = 27
+    IEEE_754_FLOAT16_BE = 27,
+    IEEE_754_FLOAT16_COMPLEX_LE = 28,
+    IEEE_754_FLOAT16_COMPLEX_BE = 29,
 };
 #define MACHINE_FORMAT_CODE_MIN 0
-#define MACHINE_FORMAT_CODE_MAX 27
+#define MACHINE_FORMAT_CODE_MAX 29
 
 
 /*
@@ -639,6 +641,41 @@ d_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 }
 
 static PyObject *
+ce_getitem(arrayobject *ap, Py_ssize_t i)
+{
+    double real = PyFloat_Unpack2(ap->ob_item + 2*sizeof(short)*i,
+                                  PY_LITTLE_ENDIAN);
+    double imag = PyFloat_Unpack2(ap->ob_item + 2*sizeof(short)*i + sizeof(short),
+                                  PY_LITTLE_ENDIAN);
+
+    return PyComplex_FromDoubles(real, imag);
+}
+
+static int
+ce_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
+{
+    Py_complex x;
+    int ret;
+
+    if (!PyArg_Parse(v, "D;array item must be complex", &x)) {
+        return -1;
+    }
+
+    CHECK_ARRAY_BOUNDS(ap, i);
+
+    if (i >= 0) {
+        ret = PyFloat_Pack2(x.real, ap->ob_item + 2*sizeof(short)*i,
+                            PY_LITTLE_ENDIAN);
+        if (ret) {
+            return ret;
+        }
+        return PyFloat_Pack2(x.imag, ap->ob_item + 2*sizeof(short)*i + sizeof(short),
+                             PY_LITTLE_ENDIAN);
+    }
+    return 0;
+}
+
+static PyObject *
 cf_getitem(arrayobject *ap, Py_ssize_t i)
 {
     float f[2];
@@ -739,6 +776,7 @@ static const struct arraydescr descriptors[] = {
     {"e", sizeof(short), e_getitem, e_setitem, NULL, 0, 0},
     {"f", sizeof(float), f_getitem, f_setitem, NULL, 0, 0},
     {"d", sizeof(double), d_getitem, d_setitem, NULL, 0, 0},
+    {"Ze", 2*sizeof(short), ce_getitem, ce_setitem, NULL, 0, 0},
     {"Zf", 2*sizeof(float), cf_getitem, cf_setitem, NULL, 0, 0},
     {"Zd", 2*sizeof(double), cd_getitem, cd_setitem, NULL, 0, 0},
     {"", 0, 0, 0, 0, 0, 0} /* Sentinel */
@@ -1572,13 +1610,25 @@ array_array_byteswap_impl(arrayobject *self)
         }
         break;
     case 4:
-        for (p = self->ob_item, i = Py_SIZE(self); --i >= 0; p += 4) {
-            char p0 = p[0];
-            char p1 = p[1];
-            p[0] = p[3];
-            p[1] = p[2];
-            p[2] = p1;
-            p[3] = p0;
+        if (strcmp(self->ob_descr->typecode, "Ze") != 0) {
+            for (p = self->ob_item, i = Py_SIZE(self); --i >= 0; p += 4) {
+                char p0 = p[0];
+                char p1 = p[1];
+                p[0] = p[3];
+                p[1] = p[2];
+                p[2] = p1;
+                p[3] = p0;
+            }
+        }
+        else {
+            for (p = self->ob_item, i = Py_SIZE(self); --i >= 0; p += 4) {
+                char p0 = p[0];
+                p[0] = p[1];
+                p[1] = p0;
+                p0 = p[2];
+                p[2] = p[3];
+                p[3] = p0;
+            }
         }
         break;
     case 8:
@@ -2059,7 +2109,9 @@ static const struct mformatdescr {
     {16, 0, 0},                 /* 24: IEEE_754_DOUBLE_COMPLEX_LE */
     {16, 0, 1},                 /* 25: IEEE_754_DOUBLE_COMPLEX_BE */
     {2, 0, 0},                  /* 26: IEEE_754_FLOAT16_LE */
-    {2, 0, 1}                   /* 27: IEEE_754_FLOAT16_BE */
+    {2, 0, 1},                  /* 27: IEEE_754_FLOAT16_BE */
+    {4, 0, 0},                  /* 28: IEEE_754_FLOAT16_COMPLEX_LE */
+    {4, 0, 1},                  /* 29: IEEE_754_FLOAT16_COMPLEX_BE */
 };
 
 
@@ -2096,6 +2148,9 @@ typecode_to_mformat_code(const char *typecode)
 
     case 'Z': {
         switch (typecode[1]) {
+        case 'e':
+            return _PY_FLOAT_BIG_ENDIAN ? \
+                IEEE_754_FLOAT16_COMPLEX_BE : IEEE_754_FLOAT16_COMPLEX_LE;
         case 'f':
             return _PY_FLOAT_BIG_ENDIAN ? \
                 IEEE_754_FLOAT_COMPLEX_BE : IEEE_754_FLOAT_COMPLEX_LE;
@@ -2338,6 +2393,29 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
                 return NULL;
             }
             PyList_SET_ITEM(converted_items, i, pyfloat);
+        }
+        break;
+    }
+    case IEEE_754_FLOAT16_COMPLEX_LE:
+    case IEEE_754_FLOAT16_COMPLEX_BE: {
+        Py_ssize_t i;
+        int le = (mformat_code == IEEE_754_FLOAT16_COMPLEX_LE) ? 1 : 0;
+        Py_ssize_t itemcount = Py_SIZE(items) / 4;
+        const char *memstr = PyBytes_AS_STRING(items);
+
+        converted_items = PyList_New(itemcount);
+        if (converted_items == NULL) {
+            return NULL;
+        }
+        for (i = 0; i < itemcount; i++) {
+            PyObject *pycomplex = PyComplex_FromDoubles(
+                PyFloat_Unpack2(&memstr[i * 4], le),
+                PyFloat_Unpack2(&memstr[i * 4] + 2, le));
+            if (pycomplex == NULL) {
+                Py_DECREF(converted_items);
+                return NULL;
+            }
+            PyList_SET_ITEM(converted_items, i, pycomplex);
         }
         break;
     }
@@ -3111,6 +3189,7 @@ The following type codes are defined:\n\
     'e'         16-bit IEEE floats 2\n\
     'f'         floating-point     4\n\
     'd'         floating-point     8\n\
+    'Ze'        _Float16 complex   4\n\
     'Zf'        float complex      8\n\
     'Zd'        double complex     16\n\
 \n\
