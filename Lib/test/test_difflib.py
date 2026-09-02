@@ -114,7 +114,7 @@ class TestSFbugs(unittest.TestCase):
     def test_mdiff_catch_stop_iteration(self):
         # Issue #33224
         self.assertEqual(
-            list(difflib._mdiff(["2"], ["3"], 1)),
+            list(difflib.mdiff(["2"], ["3"], 1)),
             [((1, '\x00-2\x01'), (1, '\x00+3\x01'), True)],
         )
 

@@ -1358,7 +1358,7 @@ def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK):
     """
     return Differ(linejunk, charjunk).compare(a, b)
 
-def _mdiff(fromlines, tolines, context=None, linejunk=None,
+def mdiff(fromlines, tolines, context=None, linejunk=None,
            charjunk=IS_CHARACTER_JUNK):
     r"""Returns generator yielding marked up from/to side by side differences.
 
@@ -2025,7 +2025,7 @@ class HtmlDiff(object):
             context_lines = numlines
         else:
             context_lines = None
-        diffs = _mdiff(fromlines,tolines,context_lines,linejunk=self._linejunk,
+        diffs = mdiff(fromlines,tolines,context_lines,linejunk=self._linejunk,
                       charjunk=self._charjunk)
 
         # set up iterator to wrap lines that exceed desired width
