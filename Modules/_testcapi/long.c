@@ -281,6 +281,29 @@ get_pylong_layout(PyObject *module, PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject *
+corrupt_bool_singleton(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
+{
+    PyObject *obj = Py_True;
+    ((PyLongObject*)obj)->long_value.ob_digit[0] = 0;
+
+    PyGC_Collect();
+    Py_RETURN_NONE;
+}
+
+
+static PyObject *
+corrupt_long_singleton(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
+{
+    PyObject *obj = PyLong_FromLong(5);
+    assert(obj != NULL);
+    ((PyLongObject*)obj)->long_value.ob_digit[0] = 42;
+
+    PyGC_Collect();
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef test_methods[] = {
     _TESTCAPI_CALL_LONG_COMPACT_API_METHODDEF
     {"pylong_fromunicodeobject",    pylong_fromunicodeobject,   METH_VARARGS},
@@ -295,6 +318,8 @@ static PyMethodDef test_methods[] = {
     {"pylong_ispositive",           pylong_ispositive,          METH_O},
     {"pylong_isnegative",           pylong_isnegative,          METH_O},
     {"pylong_iszero",               pylong_iszero,              METH_O},
+    {"corrupt_bool_singleton",      corrupt_bool_singleton,    METH_NOARGS},
+    {"corrupt_long_singleton",      corrupt_long_singleton,    METH_NOARGS},
     {NULL},
 };
 

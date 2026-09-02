@@ -563,6 +563,19 @@ static PyType_Spec Writer_spec = {
 };
 
 
+static PyObject *
+corrupt_unicode_singleton(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
+{
+    PyObject *obj = PyUnicode_FromOrdinal('a');
+    assert(obj != NULL);
+    assert(PyUnicode_KIND(obj) == PyUnicode_1BYTE_KIND);
+    PyUnicode_1BYTE_DATA(obj)[0] = 'A';
+
+    PyGC_Collect();
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"unicode_new",              unicode_new,                    METH_VARARGS},
     {"unicode_fill",             unicode_fill,                   METH_VARARGS},
@@ -572,6 +585,7 @@ static PyMethodDef TestMethods[] = {
     {"unicode_asutf8",           unicode_asutf8,                 METH_VARARGS},
     {"unicode_copycharacters",   unicode_copycharacters,         METH_VARARGS},
     {"unicode_GET_CACHED_HASH",  unicode_GET_CACHED_HASH,        METH_O},
+    {"corrupt_unicode_singleton", corrupt_unicode_singleton,     METH_NOARGS},
     {NULL},
 };
 

@@ -3526,3 +3526,13 @@ def check_immutable_type(testcase, type):
     else:
         flags = type_getflags(type)
         testcase.assertTrue(flags & Py_TPFLAGS_IMMUTABLETYPE)
+
+
+def built_with_c_assertions():
+    # Check if Python was built in debug mode or using --with-assertions
+    if MS_WINDOWS:
+        return Py_DEBUG
+
+    PY_CFLAGS = sysconfig.get_config_var('PY_CFLAGS')
+    NDEBUG = (PY_CFLAGS and '-DNDEBUG' in PY_CFLAGS)
+    return (not NDEBUG)
