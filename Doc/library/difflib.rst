@@ -348,10 +348,13 @@ Diff generation
       line num -- integer or None (to indicate a context separation)
       line text -- original line text with following markers inserted:
 
-         '\0+' -- marks start of added text
-         '\0-' -- marks start of deleted text
-         '\0^' -- marks start of changed text
-         '\1' -- marks end of added/deleted/changed text
+         ``'\0+'`` -- marks start of added text
+
+         ``'\0-'`` -- marks start of deleted text
+
+         ``'\0^'`` -- marks start of changed text
+
+         ``'\1'`` -- marks end of added/deleted/changed text
 
    boolean flag -- None indicates context separation, True indicates
         either "from" or "to" line contains a change, otherwise False.
