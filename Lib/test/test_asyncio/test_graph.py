@@ -1,0 +1,693 @@
+import asyncio
+import io
+import sys
+import unittest
+from unittest import mock
+
+
+# To prevent a warning "test altered the execution environment"
+def tearDownModule():
+    asyncio.set_event_loop(None)
+
+
+def capture_test_stack(*, fut=None, depth=1):
+
+    def walk(s):
+        ret = [
+            (f"T<{n}>" if '-' not in (n := s.future.get_name()) else 'T<anon>')
+                if isinstance(s.future, asyncio.Task) else 'F'
+        ]
+
+        ret.append(
+            [
+                (
+                    f"s {entry.frame.f_code.co_name}"
+                        if entry.frame.f_generator is None else
+                        (
+                            f"a {entry.frame.f_generator.cr_code.co_name}"
+                            if hasattr(entry.frame.f_generator, 'cr_code') else
+                            f"ag {entry.frame.f_generator.ag_code.co_name}"
+                        )
+                ) for entry in s.call_stack
+            ]
+        )
+
+        ret.append(
+            sorted([
+                walk(ab) for ab in s.awaited_by
+            ], key=lambda entry: entry[0])
+        )
+
+        return ret
+
+    buf = io.StringIO()
+    asyncio.print_call_graph(fut, file=buf, depth=depth)
+
+    stack = asyncio.capture_call_graph(fut, depth=depth)
+    return walk(stack), buf.getvalue()
+
+
+class CallStackTestBase:
+
+    async def test_stack_tgroup(self):
+
+        stack_for_c5 = None
+
+        def c5():
+            nonlocal stack_for_c5
+            stack_for_c5 = capture_test_stack(depth=2)
+
+        async def c4():
+            await asyncio.sleep(0)
+            c5()
+
+        async def c3():
+            await c4()
+
+        async def c2():
+            await c3()
+
+        async def c1(task):
+            await task
+
+        async def main():
+            async with asyncio.TaskGroup() as tg:
+                task = tg.create_task(c2(), name="c2_root")
+                tg.create_task(c1(task), name="sub_main_1")
+                tg.create_task(c1(task), name="sub_main_2")
+
+        await main()
+
+        self.assertEqual(stack_for_c5[0], [
+            # task name
+            'T<c2_root>',
+            # call stack
+            ['s c5', 'a c4', 'a c3', 'a c2'],
+            # awaited by
+            [
+                ['T<anon>',
+                     ['a _aexit', 'a __aexit__', 'a main', 'a test_stack_tgroup'], []
+                ],
+                ['T<sub_main_1>',
+                    ['a c1'],
+                    [
+                        ['T<anon>',
+                            ['a _aexit', 'a __aexit__', 'a main', 'a test_stack_tgroup'], []
+                        ]
+                    ]
+                ],
+                ['T<sub_main_2>',
+                    ['a c1'],
+                    [
+                        ['T<anon>',
+                            ['a _aexit', 'a __aexit__', 'a main', 'a test_stack_tgroup'], []
+                        ]
+                    ]
+                ]
+            ]
+        ])
+
+        self.assertIn(
+            ' async CallStackTestBase.test_stack_tgroup()',
+            stack_for_c5[1])
+
+
+    async def test_stack_async_gen(self):
+
+        stack_for_gen_nested_call = None
+
+        async def gen_nested_call():
+            nonlocal stack_for_gen_nested_call
+            stack_for_gen_nested_call = capture_test_stack()
+
+        async def gen():
+            for num in range(2):
+                yield num
+                if num == 1:
+                    await gen_nested_call()
+
+        async def main():
+            async for el in gen():
+                pass
+
+        await main()
+
+        self.assertEqual(stack_for_gen_nested_call[0], [
+            'T<anon>',
+            [
+                's capture_test_stack',
+                'a gen_nested_call',
+                'ag gen',
+                'a main',
+                'a test_stack_async_gen'
+            ],
+            []
+        ])
+
+        self.assertIn(
+            'async generator CallStackTestBase.test_stack_async_gen.<locals>.gen()',
+            stack_for_gen_nested_call[1])
+
+    def test_ag_frame_used_for_async_generator(self):
+        # Regression test for gh-148736: the ag_await branch of
+        # _build_graph_for_future must read ag_frame, not cr_frame.
+        from asyncio.graph import _build_graph_for_future
+
+        sentinel_frame = sys._getframe()
+
+        class FakeAsyncGen:
+            ag_await = None
+            ag_frame = sentinel_frame
+
+        class FakeCoro:
+            cr_frame = sentinel_frame
+            cr_await = FakeAsyncGen()
+
+        loop = asyncio.new_event_loop()
+        try:
+            fut = loop.create_future()
+            fut.get_coro = lambda: FakeCoro()
+            result = _build_graph_for_future(fut)
+        finally:
+            loop.close()
+
+        self.assertEqual(len(result.call_stack), 2)
+
+    async def test_stack_gather(self):
+
+        stack_for_deep = None
+
+        async def deep():
+            await asyncio.sleep(0)
+            nonlocal stack_for_deep
+            stack_for_deep = capture_test_stack()
+
+        async def c1():
+            await asyncio.sleep(0)
+            await deep()
+
+        async def c2():
+            await asyncio.sleep(0)
+
+        async def main():
+            await asyncio.gather(c1(), c2())
+
+        await main()
+
+        self.assertEqual(stack_for_deep[0], [
+            'T<anon>',
+            ['s capture_test_stack', 'a deep', 'a c1'],
+            [
+                ['T<anon>', ['a main', 'a test_stack_gather'], []]
+            ]
+        ])
+
+    async def test_stack_shield(self):
+
+        stack_for_shield = None
+
+        async def deep():
+            await asyncio.sleep(0)
+            nonlocal stack_for_shield
+            stack_for_shield = capture_test_stack()
+
+        async def c1():
+            await asyncio.sleep(0)
+            await deep()
+
+        async def main():
+            await asyncio.shield(c1())
+
+        await main()
+
+        self.assertEqual(stack_for_shield[0], [
+            'T<anon>',
+            ['s capture_test_stack', 'a deep', 'a c1'],
+            [
+                ['T<anon>', ['a main', 'a test_stack_shield'], []]
+            ]
+        ])
+
+    async def test_stack_timeout(self):
+
+        stack_for_inner = None
+
+        async def inner():
+            await asyncio.sleep(0)
+            nonlocal stack_for_inner
+            stack_for_inner = capture_test_stack()
+
+        async def c1():
+            async with asyncio.timeout(1):
+                await asyncio.sleep(0)
+                await inner()
+
+        async def main():
+            await asyncio.shield(c1())
+
+        await main()
+
+        self.assertEqual(stack_for_inner[0], [
+            'T<anon>',
+            ['s capture_test_stack', 'a inner', 'a c1'],
+            [
+                ['T<anon>', ['a main', 'a test_stack_timeout'], []]
+            ]
+        ])
+
+    async def test_stack_wait(self):
+
+        stack_for_inner = None
+
+        async def inner():
+            await asyncio.sleep(0)
+            nonlocal stack_for_inner
+            stack_for_inner = capture_test_stack()
+
+        async def c1():
+            async with asyncio.timeout(1):
+                await asyncio.sleep(0)
+                await inner()
+
+        async def c2():
+            for i in range(3):
+                await asyncio.sleep(0)
+
+        async def main(t1, t2):
+            while True:
+                _, pending = await asyncio.wait([t1, t2])
+                if not pending:
+                    break
+
+        t1 = asyncio.create_task(c1())
+        t2 = asyncio.create_task(c2())
+        try:
+            await main(t1, t2)
+        finally:
+            await t1
+            await t2
+
+        self.assertEqual(stack_for_inner[0], [
+            'T<anon>',
+            ['s capture_test_stack', 'a inner', 'a c1'],
+            [
+                ['T<anon>',
+                    ['a _wait', 'a wait', 'a main', 'a test_stack_wait'],
+                    []
+                ]
+            ]
+        ])
+
+    async def test_stack_as_completed(self):
+        # gh-156523: as_completed() must record the awaiting task
+        stack_for_inner = None
+
+        async def inner():
+            await asyncio.sleep(0)
+            nonlocal stack_for_inner
+            stack_for_inner = capture_test_stack()
+
+        async def main(t):
+            for f in asyncio.as_completed([t]):
+                await f
+
+        t = asyncio.create_task(inner(), name='inner')
+        await main(t)
+        self.assertFalse(t._asyncio_awaited_by)
+
+        self.assertEqual(stack_for_inner[0], [
+            'T<inner>',
+            ['s capture_test_stack', 'a inner'],
+            [
+                ['T<anon>',
+                    ['a get', 'a _wait_for_one', 'a main',
+                     'a test_stack_as_completed'],
+                    []
+                ]
+            ]
+        ])
+
+    async def test_stack_as_completed_timeout(self):
+        # gh-156523: the awaiting task must be dropped when as_completed() times out
+        stack_for_inner = None
+
+        async def inner():
+            nonlocal stack_for_inner
+            stack_for_inner = capture_test_stack()
+            await asyncio.sleep(3600)
+
+        async def main(t):
+            with self.assertRaises(TimeoutError):
+                for f in asyncio.as_completed([t], timeout=0.01):
+                    await f
+
+        t = asyncio.create_task(inner(), name='inner')
+        await main(t)
+        self.assertFalse(t._asyncio_awaited_by)
+        t.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            await t
+
+        self.assertEqual(stack_for_inner[0], [
+            'T<inner>',
+            ['s capture_test_stack', 'a inner'],
+            [
+                ['T<anon>',
+                    ['a get', 'a _wait_for_one', 'a main',
+                     'a test_stack_as_completed_timeout'],
+                    []
+                ]
+            ]
+        ])
+
+    async def test_stack_task(self):
+
+        stack_for_inner = None
+
+        async def inner():
+            await asyncio.sleep(0)
+            nonlocal stack_for_inner
+            stack_for_inner = capture_test_stack()
+
+        async def c1():
+            await inner()
+
+        async def c2():
+            await asyncio.create_task(c1(), name='there there')
+
+        async def main():
+            await c2()
+
+        await main()
+
+        self.assertEqual(stack_for_inner[0], [
+            'T<there there>',
+            ['s capture_test_stack', 'a inner', 'a c1'],
+            [['T<anon>', ['a c2', 'a main', 'a test_stack_task'], []]]
+        ])
+
+    async def test_stack_future(self):
+
+        stack_for_fut = None
+
+        async def a2(fut):
+            await fut
+
+        async def a1(fut):
+            await a2(fut)
+
+        async def b1(fut):
+            await fut
+
+        async def main():
+            nonlocal stack_for_fut
+
+            fut = asyncio.Future()
+            async with asyncio.TaskGroup() as g:
+                g.create_task(a1(fut), name="task A")
+                g.create_task(b1(fut), name='task B')
+
+                for _ in range(5):
+                    # Do a few iterations to ensure that both a1 and b1
+                    # await on the future
+                    await asyncio.sleep(0)
+
+                stack_for_fut = capture_test_stack(fut=fut)
+                fut.set_result(None)
+
+        await main()
+
+        self.assertEqual(stack_for_fut[0],
+            ['F',
+            [],
+            [
+                ['T<task A>',
+                    ['a a2', 'a a1'],
+                    [['T<anon>', ['a test_stack_future'], []]]
+                ],
+                ['T<task B>',
+                    ['a b1'],
+                    [['T<anon>', ['a test_stack_future'], []]]
+                ],
+            ]]
+        )
+
+        self.assertTrue(stack_for_fut[1].startswith('* Future(id='))
+
+    async def test_capture_call_graph_positive_limit(self):
+        captured = None
+
+        async def c3():
+            nonlocal captured
+            captured = asyncio.capture_call_graph(limit=2)
+
+        async def c2():
+            await c3()
+
+        async def c1():
+            await c2()
+
+        await c1()
+        self.assertEqual(len(captured.call_stack), 2)
+
+    async def test_capture_call_graph_negative_limit(self):
+        captured = None
+
+        async def c3():
+            nonlocal captured
+            captured = asyncio.capture_call_graph(limit=-2)
+
+        async def c2():
+            await c3()
+
+        async def c1():
+            await c2()
+
+        await c1()
+        self.assertEqual(len(captured.call_stack), 2)
+
+    async def test_capture_call_graph_zero_limit(self):
+        captured = None
+
+        async def inner():
+            nonlocal captured
+            captured = asyncio.capture_call_graph(limit=0)
+
+        await inner()
+        self.assertEqual(captured.call_stack, ())
+
+    def test_capture_call_graph_outside_loop(self):
+        with self.assertRaises(RuntimeError):
+            asyncio.capture_call_graph()
+
+    def test_capture_call_graph_non_future(self):
+        with self.assertRaises(TypeError):
+            asyncio.capture_call_graph("not a future")
+
+    async def test_print_call_graph_innermost_frame(self):
+        # gh-156327: print_call_graph() must not report its own frame
+        buf = io.StringIO()
+        lineno = sys._getframe().f_lineno + 1
+        asyncio.print_call_graph(file=buf)
+        first_frame = buf.getvalue().splitlines()[2]
+        self.assertIn(f'File {__file__!r}, line {lineno},', first_frame)
+
+    async def test_call_graph_finished_task(self):
+        # gh-156408: the call graph must not record a finished coroutine's None frame
+        async def boom():
+            raise ValueError
+
+        done = asyncio.create_task(asyncio.sleep(0), name='done')
+        failed = asyncio.create_task(boom(), name='failed')
+        cancelled = asyncio.create_task(asyncio.Event().wait(), name='cancelled')
+        cancelled.cancel()
+        await asyncio.gather(done, failed, cancelled, return_exceptions=True)
+
+        for task in (done, failed, cancelled):
+            with self.subTest(task=task.get_name()):
+                buf = io.StringIO()
+                asyncio.print_call_graph(task, file=buf)
+                self.assertEqual(asyncio.capture_call_graph(task).call_stack, ())
+                self.assertIn(f"name={task.get_name()!r}", buf.getvalue())
+
+    async def test_capture_call_graph_no_current_task(self):
+        results = []
+
+        def cb():
+            results.append(asyncio.capture_call_graph())
+            results.append(asyncio.format_call_graph())
+
+        loop = asyncio.get_running_loop()
+        loop.call_soon(cb)
+        await asyncio.sleep(0)
+
+        self.assertEqual(results, [None, ""])
+
+    async def test_capture_call_graph_current_task_not_future(self):
+        sentinel = object()
+        with mock.patch('asyncio.tasks.current_task', return_value=sentinel):
+            with self.assertRaises(TypeError):
+                asyncio.capture_call_graph(sentinel)
+
+    async def test_build_graph_for_future_positive_limit(self):
+        fut = asyncio.Future()
+        captured = None
+
+        async def deep():
+            await fut
+
+        async def mid():
+            await deep()
+
+        async def runner():
+            await mid()
+
+        async def main():
+            nonlocal captured
+            async with asyncio.TaskGroup() as g:
+                t = g.create_task(runner(), name='runner')
+                for _ in range(5):
+                    await asyncio.sleep(0)
+                captured = asyncio.capture_call_graph(t, limit=2)
+                fut.set_result(None)
+
+        await main()
+        self.assertEqual(len(captured.call_stack), 2)
+
+    async def test_build_graph_for_future_negative_limit(self):
+        fut = asyncio.Future()
+        captured = None
+
+        async def deep():
+            await fut
+
+        async def mid():
+            await deep()
+
+        async def runner():
+            await mid()
+
+        async def main():
+            nonlocal captured
+            async with asyncio.TaskGroup() as g:
+                t = g.create_task(runner(), name='runner')
+                for _ in range(5):
+                    await asyncio.sleep(0)
+                captured = asyncio.capture_call_graph(t, limit=-2)
+                fut.set_result(None)
+
+        await main()
+        self.assertEqual(len(captured.call_stack), 2)
+
+    async def test_format_call_graph_regular_generator(self):
+        output = []
+
+        def gen():
+            output.append(asyncio.format_call_graph())
+            yield
+
+        async def main():
+            for _ in gen():
+                pass
+
+        await main()
+        self.assertRegex(output[0], r'in generator [\w.<>]+\.gen\(\)')
+
+
+@unittest.skipIf(
+    not hasattr(asyncio.futures, "_c_future_add_to_awaited_by"),
+    "C-accelerated asyncio call graph backend missing",
+)
+class TestCallStackC(CallStackTestBase, unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        futures = asyncio.futures
+        tasks = asyncio.tasks
+
+        self._Future = asyncio.Future
+        asyncio.Future = futures.Future = futures._CFuture
+
+        self._Task = asyncio.Task
+        asyncio.Task = tasks.Task = tasks._CTask
+
+        self._future_add_to_awaited_by = asyncio.future_add_to_awaited_by
+        futures.future_add_to_awaited_by = futures._c_future_add_to_awaited_by
+        asyncio.future_add_to_awaited_by = futures.future_add_to_awaited_by
+
+        self._future_discard_from_awaited_by = asyncio.future_discard_from_awaited_by
+        futures.future_discard_from_awaited_by = futures._c_future_discard_from_awaited_by
+        asyncio.future_discard_from_awaited_by = futures.future_discard_from_awaited_by
+
+        self._current_task = asyncio.current_task
+        asyncio.current_task = asyncio.tasks.current_task = tasks._c_current_task
+
+    def tearDown(self):
+        futures = asyncio.futures
+        tasks = asyncio.tasks
+
+        futures.future_discard_from_awaited_by = self._future_discard_from_awaited_by
+        asyncio.future_discard_from_awaited_by = self._future_discard_from_awaited_by
+        del self._future_discard_from_awaited_by
+
+        futures.future_add_to_awaited_by = self._future_add_to_awaited_by
+        asyncio.future_add_to_awaited_by = self._future_add_to_awaited_by
+        del self._future_add_to_awaited_by
+
+        asyncio.Task = self._Task
+        tasks.Task = self._Task
+        del self._Task
+
+        asyncio.Future = self._Future
+        futures.Future = self._Future
+        del self._Future
+
+        asyncio.current_task = asyncio.tasks.current_task = self._current_task
+
+
+@unittest.skipIf(
+    not hasattr(asyncio.futures, "_py_future_add_to_awaited_by"),
+    "Pure Python asyncio call graph backend missing",
+)
+class TestCallStackPy(CallStackTestBase, unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        futures = asyncio.futures
+        tasks = asyncio.tasks
+
+        self._Future = asyncio.Future
+        asyncio.Future = futures.Future = futures._PyFuture
+
+        self._Task = asyncio.Task
+        asyncio.Task = tasks.Task = tasks._PyTask
+
+        self._future_add_to_awaited_by = asyncio.future_add_to_awaited_by
+        futures.future_add_to_awaited_by = futures._py_future_add_to_awaited_by
+        asyncio.future_add_to_awaited_by = futures.future_add_to_awaited_by
+
+        self._future_discard_from_awaited_by = asyncio.future_discard_from_awaited_by
+        futures.future_discard_from_awaited_by = futures._py_future_discard_from_awaited_by
+        asyncio.future_discard_from_awaited_by = futures.future_discard_from_awaited_by
+
+        self._current_task = asyncio.current_task
+        asyncio.current_task = asyncio.tasks.current_task = tasks._py_current_task
+
+
+    def tearDown(self):
+        futures = asyncio.futures
+        tasks = asyncio.tasks
+
+        futures.future_discard_from_awaited_by = self._future_discard_from_awaited_by
+        asyncio.future_discard_from_awaited_by = self._future_discard_from_awaited_by
+        del self._future_discard_from_awaited_by
+
+        futures.future_add_to_awaited_by = self._future_add_to_awaited_by
+        asyncio.future_add_to_awaited_by = self._future_add_to_awaited_by
+        del self._future_add_to_awaited_by
+
+        asyncio.Task = self._Task
+        tasks.Task = self._Task
+        del self._Task
+
+        asyncio.Future = self._Future
+        futures.Future = self._Future
+        del self._Future
+
+        asyncio.current_task = asyncio.tasks.current_task = self._current_task

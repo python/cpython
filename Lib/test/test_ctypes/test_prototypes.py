@@ -1,7 +1,3 @@
-from ctypes import *
-from test.test_ctypes import need_symbol
-import unittest
-
 # IMPORTANT INFO:
 #
 # Consider this call:
@@ -22,8 +18,17 @@ import unittest
 #
 # In this case, there would have to be an additional reference to the argument...
 
-import _ctypes_test
+import unittest
+from ctypes import (CDLL, CFUNCTYPE, POINTER, ArgumentError,
+                    pointer, byref, sizeof, addressof, create_string_buffer,
+                    c_void_p, c_char_p, c_wchar_p, c_char, c_wchar,
+                    c_short, c_int, c_long, c_longlong, c_double)
+from test.support import import_helper
+_ctypes_test = import_helper.import_module("_ctypes_test")
+
+
 testdll = CDLL(_ctypes_test.__file__)
+
 
 # Return machine address `a` as a (possibly long) non-negative integer.
 # Starting with Python 2.5, id(anything) is always non-negative, and
@@ -38,12 +43,13 @@ def positive_address(a):
     assert a >= 0
     return a
 
+
 def c_wbuffer(init):
     n = len(init) + 1
     return (c_wchar * n)(*init)
 
-class CharPointersTestCase(unittest.TestCase):
 
+class CharPointersTestCase(unittest.TestCase):
     def setUp(self):
         func = testdll._testfunc_p_p
         func.restype = c_long
@@ -66,6 +72,32 @@ class CharPointersTestCase(unittest.TestCase):
         self.assertEqual(func(None), None)
         self.assertEqual(func(input=None), None)
 
+    def test_invalid_paramflags(self):
+        proto = CFUNCTYPE(c_int, c_char_p)
+        with self.assertRaises(ValueError):
+            func = proto(("myprintf", testdll), ((1, "fmt"), (1, "arg1")))
+
+    def test_invalid_setattr_argtypes(self):
+        proto = CFUNCTYPE(c_int, c_char_p)
+        func = proto(("myprintf", testdll), ((1, "fmt"),))
+
+        with self.assertRaisesRegex(TypeError, "_argtypes_ must be a sequence of types"):
+            func.argtypes = 123
+        self.assertEqual(func.argtypes, (c_char_p,))
+
+        with self.assertRaisesRegex(ValueError, "paramflags must have the same length as argtypes"):
+            func.argtypes = (c_char_p, c_int)
+        self.assertEqual(func.argtypes, (c_char_p,))
+
+    def test_paramflags_outarg(self):
+        proto = CFUNCTYPE(c_int, c_char_p, c_int)
+        with self.assertRaisesRegex(TypeError, "must be a pointer type"):
+            func = proto(("myprintf", testdll), ((1, "fmt"), (2, "out")))
+
+        proto = CFUNCTYPE(c_int, c_char_p, c_void_p)
+        func = proto(("myprintf", testdll), ((1, "fmt"), (2, "out")))
+        with self.assertRaisesRegex(TypeError, "must be a pointer type"):
+            func.argtypes = (c_char_p, c_int)
 
     def test_int_pointer_arg(self):
         func = testdll._testfunc_p_p
@@ -100,7 +132,7 @@ class CharPointersTestCase(unittest.TestCase):
         self.assertEqual(None, func(c_char_p(None)))
         self.assertEqual(b"123", func(c_char_p(b"123")))
 
-        self.assertEqual(b"123", func(c_buffer(b"123")))
+        self.assertEqual(b"123", func(create_string_buffer(b"123")))
         ca = c_char(b"a")
         self.assertEqual(ord(b"a"), func(pointer(ca))[0])
         self.assertEqual(ord(b"a"), func(byref(ca))[0])
@@ -115,7 +147,7 @@ class CharPointersTestCase(unittest.TestCase):
         self.assertEqual(None, func(c_char_p(None)))
         self.assertEqual(b"123", func(c_char_p(b"123")))
 
-        self.assertEqual(b"123", func(c_buffer(b"123")))
+        self.assertEqual(b"123", func(create_string_buffer(b"123")))
         ca = c_char(b"a")
         self.assertEqual(ord(b"a"), func(pointer(ca))[0])
         self.assertEqual(ord(b"a"), func(byref(ca))[0])
@@ -130,7 +162,7 @@ class CharPointersTestCase(unittest.TestCase):
         self.assertEqual(b"123", func(c_char_p(b"123")))
         self.assertEqual(None, func(c_char_p(None)))
 
-        self.assertEqual(b"123", func(c_buffer(b"123")))
+        self.assertEqual(b"123", func(create_string_buffer(b"123")))
         ca = c_char(b"a")
         self.assertEqual(ord(b"a"), func(pointer(ca))[0])
         self.assertEqual(ord(b"a"), func(byref(ca))[0])
@@ -139,7 +171,6 @@ class CharPointersTestCase(unittest.TestCase):
         func(pointer(c_int()))
         func((c_int * 3)())
 
-    @need_symbol('c_wchar_p')
     def test_c_void_p_arg_with_c_wchar_p(self):
         func = testdll._testfunc_p_p
         func.restype = c_wchar_p
@@ -161,9 +192,8 @@ class CharPointersTestCase(unittest.TestCase):
         func.argtypes = None
         self.assertEqual(None, func(X()))
 
-@need_symbol('c_wchar')
-class WCharPointersTestCase(unittest.TestCase):
 
+class WCharPointersTestCase(unittest.TestCase):
     def setUp(self):
         func = testdll._testfunc_p_p
         func.restype = c_int
@@ -203,6 +233,7 @@ class WCharPointersTestCase(unittest.TestCase):
         self.assertEqual("a", func(pointer(ca))[0])
         self.assertEqual("a", func(byref(ca))[0])
 
+
 class ArrayTest(unittest.TestCase):
     def test(self):
         func = testdll._testfunc_ai8
@@ -216,7 +247,6 @@ class ArrayTest(unittest.TestCase):
         def func(): pass
         CFUNCTYPE(None, c_int * 3)(func)
 
-################################################################
 
 if __name__ == '__main__':
     unittest.main()

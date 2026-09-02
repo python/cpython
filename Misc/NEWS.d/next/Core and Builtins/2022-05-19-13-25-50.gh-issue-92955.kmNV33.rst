@@ -1,1 +1,0 @@
-Fix memory leak in code object's lines and positions iterators as they were not finalized at exit. Patch by Kumar Aditya.

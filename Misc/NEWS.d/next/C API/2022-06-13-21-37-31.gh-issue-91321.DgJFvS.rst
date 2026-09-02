@@ -1,2 +1,0 @@
-Fix the compatibility of the Python C API with C++ older than C++11. Patch by
-Victor Stinner.

@@ -240,8 +240,8 @@ after shrinking a memory block.
 .. nonce: j7ZvN_
 .. section: Core and Builtins
 
-`PyErr_PrintEx()` clears now the ignored exception that may be raised by
-`_PySys_SetObjectId()`, for example when no memory.
+``PyErr_PrintEx()`` clears now the ignored exception that may be raised by
+``_PySys_SetObjectId()``, for example when no memory.
 
 ..
 
@@ -350,7 +350,7 @@ the left most segment of hostname in second argument of
 .. nonce: Nj3A0x
 .. section: Library
 
-Make :meth:`msilib.SummaryInformation.GetProperty` return ``None`` when the
+Make :meth:`!msilib.SummaryInformation.GetProperty` return ``None`` when the
 value of property is ``VT_EMPTY``.  Initial patch by Mark Mc Mahon.
 
 ..
@@ -396,7 +396,7 @@ Initial patch by Robin Wellner.
 .. nonce: xWT9k0
 .. section: Library
 
-:func:`msilib.OpenDatabase` now raises a better exception message when it
+:func:`!msilib.OpenDatabase` now raises a better exception message when it
 couldn't open or create an MSI file.  Initial patch by William Tisäter.
 
 ..
@@ -539,7 +539,7 @@ optional
 .. section: Library
 
 Updates 2to3 to convert from operator.isCallable(obj) to callable(obj).
-Patch by Dong-hee Na.
+Patch by Donghee Na.
 
 ..
 
@@ -549,7 +549,7 @@ Patch by Dong-hee Na.
 .. section: Library
 
 inspect.signature should follow :pep:`8`, if the parameter has an annotation
-and a default value. Patch by Dong-hee Na.
+and a default value. Patch by Donghee Na.
 
 ..
 
@@ -643,7 +643,7 @@ undocumented.
 .. nonce: RwietE
 .. section: Library
 
-cProfile command line now accepts `-m module_name` as an alternative to
+cProfile command line now accepts ``-m module_name`` as an alternative to
 script path. Patch by Sanyam Khurana.
 
 ..
@@ -754,8 +754,8 @@ now accepts characters as arguments.  Based on patch by Steve Fink.
 .. nonce: DYQL0g
 .. section: Library
 
-Add 3 new clock identifiers: :data:`time.CLOCK_BOOTTIME`,
-:data:`time.CLOCK_PROF` and :data:`time.CLOCK_UPTIME`.
+Add 3 new clock identifiers: :const:`time.CLOCK_BOOTTIME`,
+:const:`time.CLOCK_PROF` and :const:`time.CLOCK_UPTIME`.
 
 ..
 
@@ -926,7 +926,7 @@ Fix multiprocessing.Process when stdout and/or stderr is closed or None.
 .. nonce: -1MBEy
 .. section: Library
 
-Add `subnet_of` and `superset_of` containment tests to
+Add ``subnet_of`` and ``superset_of`` containment tests to
 :class:`ipaddress.IPv6Network` and :class:`ipaddress.IPv4Network`. Patch by
 Michel Albert and Cheryl Sabella.
 
@@ -948,7 +948,7 @@ for backward compatibility with Python 2.2, and was deprecated since Python
 .. nonce: IxCvGB
 .. section: Library
 
-Add a ``subprocess.Popen(text=False)`` keyword argument to `subprocess`
+Add a ``subprocess.Popen(text=False)`` keyword argument to ``subprocess``
 functions to be more explicit about when the library should attempt to
 decode outputs into text. Patch by Andrew Clegg.
 
@@ -1191,7 +1191,7 @@ interruptions. If it crashes, restart it when necessary.
 .. nonce: AniZuz
 .. section: Library
 
-Added support for AF_UNIX socket in asyncio `create_datagram_endpoint`.
+Added support for AF_UNIX socket in asyncio ``create_datagram_endpoint``.
 
 ..
 
@@ -1609,7 +1609,7 @@ comparison functions.
 .. nonce: Q3T_8n
 .. section: C API
 
-The `PyExc_RecursionErrorInst` singleton is removed and
-`PyErr_NormalizeException()` does not use it anymore. This singleton is
+The ``PyExc_RecursionErrorInst`` singleton is removed and
+``PyErr_NormalizeException()`` does not use it anymore. This singleton is
 persistent and its members being never cleared may cause a segfault during
 finalization of the interpreter. See also issue #22898.

@@ -1,2 +1,0 @@
-``test_modulefinder`` now creates a temporary directory in
-``ModuleFinderTest.setUp()`` instead of module scope.

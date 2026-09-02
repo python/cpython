@@ -1,1 +1,0 @@
-Make asyncio task groups prevent child tasks from being GCed

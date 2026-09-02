@@ -1,7 +1,0 @@
-Added more tests for :mod:`dataclasses` to cover behavior with data
-descriptor-based fields.
-
-# Write your Misc/NEWS entry below.  It should be a simple ReST paragraph. #
-Don't start with "- Issue #<n>: " or "- gh-issue-<n>: " or that sort of
-stuff.
-###########################################################################

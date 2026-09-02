@@ -40,6 +40,20 @@ def grep(text, io=None, flist=None):
     dialog.open(text, searchphrase, io)
 
 
+def default_glob(path):
+    """Return the initial "In files:" pattern for a file path (gh-80504).
+
+    Always include a full directory so that grep output shows which
+    directory was searched.
+    """
+    dir, base = os.path.split(path)
+    dir = os.path.abspath(dir)  # An empty dir becomes the current directory.
+    head, tail = os.path.splitext(base)
+    if not tail:
+        tail = ".py"
+    return os.path.join(dir, "*" + tail)
+
+
 def walk_error(msg):
     "Handle os.walk error."
     print(msg)
@@ -103,11 +117,7 @@ class GrepDialog(SearchDialogBase):
             path = io.filename or ""
         else:
             path = ""
-        dir, base = os.path.split(path)
-        head, tail = os.path.splitext(base)
-        if not tail:
-            tail = ".py"
-        self.globvar.set(os.path.join(dir, "*" + tail))
+        self.globvar.set(default_glob(path))
 
     def create_entries(self):
         "Create base entry widgets and add widget for search path."
@@ -190,7 +200,7 @@ class GrepDialog(SearchDialogBase):
 
 
 def _grep_dialog(parent):  # htest #
-    from tkinter import Toplevel, Text, SEL, END
+    from tkinter import Toplevel, Text, SEL
     from tkinter.ttk import Frame, Button
     from idlelib.pyshell import PyShellFileList
 
@@ -204,14 +214,16 @@ def _grep_dialog(parent):  # htest #
     frame.pack()
     text = Text(frame, height=5)
     text.pack()
+    text.insert('1.0', 'import grep')
 
     def show_grep_dialog():
-        text.tag_add(SEL, "1.0", END)
+        text.tag_add(SEL, "1.0", '1.end')
         grep(text, flist=flist)
-        text.tag_remove(SEL, "1.0", END)
+        text.tag_remove(SEL, "1.0", '1.end')
 
     button = Button(frame, text="Show GrepDialog", command=show_grep_dialog)
     button.pack()
+
 
 if __name__ == "__main__":
     from unittest import main

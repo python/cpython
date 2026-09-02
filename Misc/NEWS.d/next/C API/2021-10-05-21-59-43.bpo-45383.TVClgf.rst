@@ -1,3 +1,0 @@
-The :c:func:`PyType_FromSpec` API will now find and use a metaclass
-based on the provided bases.
-An error will be raised if there is a metaclass conflict.

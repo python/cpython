@@ -1,2 +1,0 @@
-Now raise ``ValueError`` when ``None`` or an empty string are passed to
-``Distribution.from_name`` (and other callers).

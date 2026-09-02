@@ -1,6 +1,0 @@
-:func:`importlib.invalidate_caches` now drops entries from
-:data:`sys.path_importer_cache` with a relative path as name. This solves a
-caching issue when a process changes its current working directory.
-
-``FileFinder`` no longer inserts a dot in the path, e.g.
-``/egg/./spam`` is now ``/egg/spam``.

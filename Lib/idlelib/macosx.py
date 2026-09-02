@@ -14,25 +14,39 @@ import tkinter
 _tk_type = None
 
 def _init_tk_type():
-    """
-    Initializes OS X Tk variant values for
-    isAquaTk(), isCarbonTk(), isCocoaTk(), and isXQuartz().
+    """ Initialize _tk_type for isXyzTk functions.
+
+    This function is only called once, when _tk_type is still None.
     """
     global _tk_type
     if platform == 'darwin':
+
+        # When running IDLE, GUI is present, test/* may not be.
+        # When running tests, test/* is present, GUI may not be.
+        # If not, guess most common.  Does not matter for testing.
+        from idlelib.__init__ import testing
+        if testing:
+            from test.support import requires, ResourceDenied
+            try:
+                requires('gui')
+            except ResourceDenied:
+                _tk_type = "cocoa"
+                return
+
         root = tkinter.Tk()
         ws = root.tk.call('tk', 'windowingsystem')
         if 'x11' in ws:
             _tk_type = "xquartz"
         elif 'aqua' not in ws:
             _tk_type = "other"
-        elif 'AppKit' in root.tk.call('winfo', 'server', '.'):
+        elif 'AppKit' in root.winfo_server():
             _tk_type = "cocoa"
         else:
             _tk_type = "carbon"
         root.destroy()
     else:
         _tk_type = "other"
+    return
 
 def isAquaTk():
     """
@@ -160,9 +174,8 @@ def overrideRootMenu(root, flist):
     del mainmenu.menudefs[-3][1][0:2]
     menubar = Menu(root)
     root.configure(menu=menubar)
-    menudict = {}
 
-    menudict['window'] = menu = Menu(menubar, name='window', tearoff=0)
+    menu = Menu(menubar, name='window', tearoff=0)
     menubar.add_cascade(label='Window', menu=menu, underline=0)
 
     def postwindowsmenu(menu=menu):
@@ -208,12 +221,11 @@ def overrideRootMenu(root, flist):
         # The binding above doesn't reliably work on all versions of Tk
         # on macOS. Adding command definition below does seem to do the
         # right thing for now.
-        root.createcommand('exit', flist.close_all_callback)
+        root.createcommand('::tk::mac::Quit', flist.close_all_callback)
 
     if isCarbonTk():
         # for Carbon AquaTk, replace the default Tk apple menu
-        menudict['application'] = menu = Menu(menubar, name='apple',
-                                              tearoff=0)
+        menu = Menu(menubar, name='apple', tearoff=0)
         menubar.add_cascade(label='IDLE', menu=menu)
         mainmenu.menudefs.insert(0,
             ('application', [

@@ -1,6 +1,4 @@
-"""      turtle-example-suite:
-
-          tdemo_wikipedia3.py
+"""turtledemo/rosette.py
 
 This example is
 inspired by the Wikipedia article on turtle

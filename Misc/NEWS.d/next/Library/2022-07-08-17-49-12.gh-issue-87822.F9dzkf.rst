@@ -1,1 +1,0 @@
-When called with ``capture_locals=True``, the :mod:`traceback` module functions swallow exceptions raised from calls to ``repr()`` on local variables of frames. This is in order to prioritize the original exception over rendering errors.  An indication of the failure is printed in place of the missing value.  (Patch by Simon-Martin Schroeder).

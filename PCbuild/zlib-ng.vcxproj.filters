@@ -1,0 +1,249 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(zlibNgDir)\adler32.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\x86\adler32_avx2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\x86\adler32_avx512.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\x86\adler32_avx512_vnni.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\generic\adler32_c.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\generic\adler32_fold_c.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\x86\adler32_sse42.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\x86\adler32_ssse3.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\x86\chunkset_avx2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\x86\chunkset_avx512.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\generic\chunkset_c.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\x86\chunkset_sse2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\x86\chunkset_ssse3.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\x86\compare256_avx2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\generic\compare256_c.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\x86\compare256_sse2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\compress.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\cpu_features.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\crc32.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\generic\crc32_braid_c.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\crc32_braid_comb.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\generic\crc32_fold_c.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\x86\crc32_pclmulqdq.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\x86\crc32_vpclmulqdq.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\deflate.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\deflate_fast.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\deflate_huff.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\deflate_medium.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\deflate_quick.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\deflate_rle.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\deflate_slow.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\deflate_stored.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\functable.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\infback.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\inflate.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\inftrees.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\insert_string.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\insert_string_roll.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\x86\slide_hash_avx2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\generic\slide_hash_c.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\x86\slide_hash_sse2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\trees.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\uncompr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\x86\x86_features.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\zutil.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(zlibNgDir)\arch\x86\adler32_avx512_p.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\adler32_p.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\arch_functions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\arch\generic\chunk_permute_table.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\chunkset_tpl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\arch\generic\compare256_p.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\compare256_rle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\cpu_features.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\crc32_braid_comb_p.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\crc32_braid_p.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\crc32_braid_tbl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\deflate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\deflate_p.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\fallback_builtins.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\functable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\arch\generic\generic_functions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\inffast_tpl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\inffixed_tbl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\inflate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\inflate_p.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\inftrees.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\insert_string_tpl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\match_tpl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\trees.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\trees_emit.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\trees_tbl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\arch\x86\x86_features.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\arch\x86\x86_functions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\zbuild.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PC\zconf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\zendian.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PC\zlib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibNgDir)\zutil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{967252c0-03f1-4991-897f-db8f4cd7dc44}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{4c0539fb-5187-41a1-abe5-bf7cd416d7bd}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

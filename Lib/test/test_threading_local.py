@@ -3,6 +3,7 @@ import unittest
 from doctest import DocTestSuite
 from test import support
 from test.support import threading_helper
+from test.support.import_helper import import_module
 import weakref
 
 # Modules under test
@@ -194,6 +195,33 @@ class BaseLocalTest:
         del x
         support.gc_collect()  # For PyPy or other GCs.
         self.assertIsNone(wr())
+
+
+    def test_threading_local_clear_race(self):
+        # See https://github.com/python/cpython/issues/100892
+
+        _testcapi = import_module('_testcapi')
+        _testcapi.call_in_temporary_c_thread(lambda: None, False)
+
+        for _ in range(1000):
+            _ = threading.local()
+
+        _testcapi.join_temporary_c_thread()
+
+    @support.cpython_only
+    def test_error(self):
+        class Loop(self._local):
+            attr = 1
+
+        # Trick the "if name == '__dict__':" test of __setattr__()
+        # to always be true
+        class NameCompareTrue:
+            def __eq__(self, other):
+                return True
+
+        loop = Loop()
+        with self.assertRaisesRegex(AttributeError, 'Loop.*read-only'):
+            loop.__setattr__(NameCompareTrue(), 2)
 
 
 class ThreadLocalTest(unittest.TestCase, BaseLocalTest):

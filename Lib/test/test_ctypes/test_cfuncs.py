@@ -1,19 +1,23 @@
-# A lot of failures in these tests on Mac OS X.
-# Byte order related?
-
+import ctypes
 import unittest
-from ctypes import *
-from test.test_ctypes import need_symbol
+from ctypes import (CDLL,
+                    c_byte, c_ubyte, c_char,
+                    c_short, c_ushort, c_int, c_uint,
+                    c_long, c_ulong, c_longlong, c_ulonglong,
+                    c_float, c_double, c_longdouble)
+from test import support
+from test.support import import_helper, threading_helper
+_ctypes_test = import_helper.import_module("_ctypes_test")
 
-import _ctypes_test
 
 class CFunctions(unittest.TestCase):
     _dll = CDLL(_ctypes_test.__file__)
 
     def S(self):
-        return c_longlong.in_dll(self._dll, "last_tf_arg_s").value
+        return _ctypes_test.get_last_tf_arg_s()
+
     def U(self):
-        return c_ulonglong.in_dll(self._dll, "last_tf_arg_u").value
+        return _ctypes_test.get_last_tf_arg_u()
 
     def test_byte(self):
         self._dll.tf_b.restype = c_byte
@@ -111,28 +115,24 @@ class CFunctions(unittest.TestCase):
         self.assertEqual(self._dll.tf_bL(b' ', 4294967295), 1431655765)
         self.assertEqual(self.U(), 4294967295)
 
-    @need_symbol('c_longlong')
     def test_longlong(self):
         self._dll.tf_q.restype = c_longlong
         self._dll.tf_q.argtypes = (c_longlong, )
         self.assertEqual(self._dll.tf_q(-9223372036854775806), -3074457345618258602)
         self.assertEqual(self.S(), -9223372036854775806)
 
-    @need_symbol('c_longlong')
     def test_longlong_plus(self):
         self._dll.tf_bq.restype = c_longlong
         self._dll.tf_bq.argtypes = (c_byte, c_longlong)
         self.assertEqual(self._dll.tf_bq(0, -9223372036854775806), -3074457345618258602)
         self.assertEqual(self.S(), -9223372036854775806)
 
-    @need_symbol('c_ulonglong')
     def test_ulonglong(self):
         self._dll.tf_Q.restype = c_ulonglong
         self._dll.tf_Q.argtypes = (c_ulonglong, )
         self.assertEqual(self._dll.tf_Q(18446744073709551615), 6148914691236517205)
         self.assertEqual(self.U(), 18446744073709551615)
 
-    @need_symbol('c_ulonglong')
     def test_ulonglong_plus(self):
         self._dll.tf_bQ.restype = c_ulonglong
         self._dll.tf_bQ.argtypes = (c_byte, c_ulonglong)
@@ -163,14 +163,12 @@ class CFunctions(unittest.TestCase):
         self.assertEqual(self._dll.tf_bd(0, 42.), 14.)
         self.assertEqual(self.S(), 42)
 
-    @need_symbol('c_longdouble')
     def test_longdouble(self):
         self._dll.tf_D.restype = c_longdouble
         self._dll.tf_D.argtypes = (c_longdouble,)
         self.assertEqual(self._dll.tf_D(42.), 14.)
         self.assertEqual(self.S(), 42)
 
-    @need_symbol('c_longdouble')
     def test_longdouble_plus(self):
         self._dll.tf_bD.restype = c_longdouble
         self._dll.tf_bD.argtypes = (c_byte, c_longdouble)
@@ -195,14 +193,28 @@ class CFunctions(unittest.TestCase):
         self.assertEqual(self._dll.tv_i(-42), None)
         self.assertEqual(self.S(), -42)
 
+    @threading_helper.requires_working_threading()
+    @support.requires_resource("cpu")
+    @unittest.skipUnless(support.Py_GIL_DISABLED, "only meaningful on free-threading")
+    def test_thread_safety(self):
+        from threading import Thread
+
+        def concurrent():
+            for _ in range(100):
+                self._dll.tf_b.restype = c_byte
+                self._dll.tf_b.argtypes = (c_byte,)
+
+        with threading_helper.catch_threading_exception() as exc:
+            with threading_helper.start_threads((Thread(target=concurrent) for _ in range(10))):
+                pass
+
+            self.assertIsNone(exc.exc_value)
+
+
 # The following repeats the above tests with stdcall functions (where
 # they are available)
-try:
-    WinDLL
-except NameError:
-    def stdcall_dll(*_): pass
-else:
-    class stdcall_dll(WinDLL):
+if hasattr(ctypes, 'WinDLL'):
+    class stdcall_dll(ctypes.WinDLL):
         def __getattr__(self, name):
             if name[:2] == '__' and name[-2:] == '__':
                 raise AttributeError(name)
@@ -210,9 +222,9 @@ else:
             setattr(self, name, func)
             return func
 
-@need_symbol('WinDLL')
-class stdcallCFunctions(CFunctions):
-    _dll = stdcall_dll(_ctypes_test.__file__)
+    class stdcallCFunctions(CFunctions):
+        _dll = stdcall_dll(_ctypes_test.__file__)
+
 
 if __name__ == '__main__':
     unittest.main()

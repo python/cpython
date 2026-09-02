@@ -25,8 +25,10 @@ import errno
 import os
 import select
 import socket
+import sys
 import time
 import unittest
+from test import support
 
 if not hasattr(select, "epoll"):
     raise unittest.SkipTest("test works only on Linux 2.6")
@@ -51,12 +53,11 @@ class TestEPoll(unittest.TestCase):
     def _connected_pair(self):
         client = socket.socket()
         client.setblocking(False)
+        # The connection is either established immediately or in progress.
         try:
             client.connect(('127.0.0.1', self.serverSocket.getsockname()[1]))
         except OSError as e:
             self.assertEqual(e.args[0], errno.EINPROGRESS)
-        else:
-            raise AssertionError("Connect should have raised EINPROGRESS")
         server, addr = self.serverSocket.accept()
 
         self.connections.extend((client, server))
@@ -186,10 +187,16 @@ class TestEPoll(unittest.TestCase):
         client.sendall(b"Hello!")
         server.sendall(b"world!!!")
 
-        now = time.monotonic()
-        events = ep.poll(1.0, 4)
-        then = time.monotonic()
-        self.assertFalse(then - now > 0.01)
+        # we might receive events one at a time, necessitating multiple calls to
+        # poll
+        events = []
+        for _ in support.busy_retry(support.SHORT_TIMEOUT):
+            now = time.monotonic()
+            events += ep.poll(1.0, 4)
+            then = time.monotonic()
+            self.assertFalse(then - now > 0.01)
+            if len(events) >= 2:
+                break
 
         expected = [(client.fileno(), select.EPOLLIN | select.EPOLLOUT),
                     (server.fileno(), select.EPOLLIN | select.EPOLLOUT)]
@@ -211,6 +218,9 @@ class TestEPoll(unittest.TestCase):
         self.assertRaises(ValueError, select.epoll().register, -1,
                           select.EPOLLIN)
 
+    @unittest.skipIf(sys.platform.startswith('sunos'),
+                     'unregistering a closed file descriptor succeeds '
+                     'on Solaris')
     def test_unregister_closed(self):
         server, client = self._connected_pair()
         fd = server.fileno()
@@ -251,6 +261,15 @@ class TestEPoll(unittest.TestCase):
         self.assertRaises(ValueError, epoll.poll, 1.0)
         self.assertRaises(ValueError, epoll.register, fd, select.EPOLLIN)
         self.assertRaises(ValueError, epoll.unregister, fd)
+
+    def test_close_error(self):
+        # gh-146205: close() should raise OSError if underlying fd is invalid
+        epoll = select.epoll()
+        fd = epoll.fileno()
+        os.close(fd)
+        with self.assertRaises(OSError) as cm:
+            epoll.close()
+        self.assertEqual(cm.exception.errno, errno.EBADF)
 
     def test_fd_non_inheritable(self):
         epoll = select.epoll()

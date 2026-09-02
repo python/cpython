@@ -23,7 +23,7 @@ header injection attacks.
 .. nonce: B299Yq
 .. section: Security
 
-CVE-2020-8492: The :class:`~urllib.request.AbstractBasicAuthHandler` class
+:cve:`2020-8492`: The :class:`~urllib.request.AbstractBasicAuthHandler` class
 of the :mod:`urllib.request` module uses an inefficient regular expression
 which can be exploited by an attacker to cause a denial of service. Fix the
 regex to prevent the catastrophic backtracking. Vulnerability reported by
@@ -59,8 +59,8 @@ anything that depends on it.
 .. section: Core and Builtins
 
 Fix the tokenizer to display the correct error message, when there is a
-SyntaxError on the last input character and no newline follows. It used to
-be `unexpected EOF while parsing`, while it should be `invalid syntax`.
+``SyntaxError`` on the last input character and no newline follows. It used to
+be ``unexpected EOF while parsing``, while it should be ``invalid syntax``.
 
 ..
 
@@ -79,7 +79,7 @@ evaluation for annotations activated. Patch by Batuhan Taskaya.
 .. nonce: vXPze5
 .. section: Core and Builtins
 
-Report a specialized error message, `invalid string prefix`, when the
+Report a specialized error message, ``invalid string prefix``, when the
 tokenizer encounters a string with an invalid prefix.
 
 ..
@@ -111,7 +111,7 @@ str.decode().
 .. nonce: m15TTX
 .. section: Core and Builtins
 
-Fix possible refleaks in :mod:`_json`, memo of PyScannerObject should be
+Fix possible refleaks in :mod:`!_json`, memo of PyScannerObject should be
 traversed.
 
 ..
@@ -343,7 +343,7 @@ https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=242274
 .. nonce: Er8sv-
 .. section: Library
 
-The :mod:`lib2to3` module is pending deprecation due to :pep:`617`.
+The :mod:`!lib2to3` module is pending deprecation due to :pep:`617`.
 
 ..
 
@@ -403,7 +403,7 @@ after encoding it to utf-8, not before.
 .. nonce: pDZR6V
 .. section: Library
 
-Added :meth:`pathlib.Path.with_stem()` to create a new Path with the stem
+Added :meth:`pathlib.Path.with_stem` to create a new Path with the stem
 replaced.
 
 ..
@@ -434,7 +434,7 @@ for the correspondent concrete type (``list`` in this case).
 .. nonce: ux8FUr
 .. section: Library
 
-func:`inspect.getdoc` no longer returns docstring inherited from the type of
+:func:`inspect.getdoc` no longer returns docstring inherited from the type of
 the object or from parent class if it is a class if it is not defined in the
 object itself. In :mod:`pydoc` the documentation string is now shown not
 only for class, function, method etc, but for any object that has its own
@@ -504,7 +504,7 @@ extension. This allows the use of functions such as ``json_object``.
 .. nonce: 4EcyIN
 .. section: Library
 
-Wait in `KqueueSelector.select` when no fds are registered
+Wait in ``KqueueSelector.select`` when no fds are registered
 
 ..
 
@@ -564,7 +564,7 @@ Implement traverse and clear slots in _abc._abc_data type.
 .. nonce: 3rO_q7
 .. section: Library
 
-Remove deprecated :meth:`symtable.SymbolTable.has_exec`.
+Remove deprecated :meth:`!symtable.SymbolTable.has_exec`.
 
 ..
 
@@ -635,7 +635,7 @@ script is killed by signal 11, it now logs: "CGI script exit code -11."
 .. section: Library
 
 Improve the error message when triying to import a module using :mod:`runpy`
-and incorrently use the ".py" extension at the end of the module name. Patch
+and incorrectly using the ".py" extension at the end of the module name. Patch
 by Pablo Galindo.
 
 ..
@@ -666,8 +666,8 @@ for _main_thread, instead of a _DummyThread instance.
 .. nonce: VTq_8s
 .. section: Library
 
-Add a private ``_at_fork_reinit()`` method to :class:`_thread.Lock`,
-:class:`_thread.RLock`, :class:`threading.RLock` and
+Add a private ``_at_fork_reinit()`` method to :class:`!_thread.Lock`,
+:class:`!_thread.RLock`, :class:`threading.RLock` and
 :class:`threading.Condition` classes: reinitialize the lock at fork in the
 child process, reset the lock to the unlocked state. Rename also the private
 ``_reset_internal_locks()`` method of :class:`threading.Event` to
@@ -680,7 +680,7 @@ child process, reset the lock to the unlocked state. Rename also the private
 .. nonce: kIjVge
 .. section: Library
 
-Expose :data:`~socket.CAN_RAW_JOIN_FILTERS` in the :mod:`socket` module.
+Expose :const:`~socket.CAN_RAW_JOIN_FILTERS` in the :mod:`socket` module.
 
 ..
 
@@ -701,7 +701,7 @@ per header: use the realm of the first Basic challenge.
 .. section: Library
 
 Removed daemon threads from :mod:`concurrent.futures` by adding an internal
-`threading._register_atexit()`, which calls registered functions prior to
+``threading._register_atexit()``, which calls registered functions prior to
 joining all non-daemon threads. This allows for compatibility with
 subinterpreters, which don't support daemon threads.
 
@@ -735,7 +735,7 @@ number of groups. For other implementations, double the group list size.
 .. nonce: HFpHZS
 .. section: Library
 
-Add :data:`time.CLOCK_TAI` constant if the operating system support it.
+Add :const:`time.CLOCK_TAI` constant if the operating system support it.
 
 ..
 
@@ -781,9 +781,9 @@ Added :pep:`584` operators to :class:`weakref.WeakKeyDictionary`.
 .. nonce: 56Yokh
 .. section: Library
 
-Fix linear runtime behaviour of the `__getitem__` and `__setitem__` methods
+Fix linear runtime behaviour of the ``__getitem__`` and ``__setitem__`` methods
 in :class:`multiprocessing.shared_memory.ShareableList`. This avoids
-quadratic performance when iterating a `ShareableList`. Patch by Thomas
+quadratic performance when iterating a ``ShareableList``. Patch by Thomas
 Krennwallner.
 
 ..
@@ -793,9 +793,9 @@ Krennwallner.
 .. nonce: AxXZNz
 .. section: Library
 
-Remove undocumented support for *closing* a `pathlib.Path` object via its
+Remove undocumented support for *closing* a ``pathlib.Path`` object via its
 context manager. The context manager magic methods remain, but they are now
-a no-op, making `Path` objects immutable.
+a no-op, making ``Path`` objects immutable.
 
 ..
 
@@ -866,7 +866,7 @@ of source of the class. Patch by Karthikeyan Singaravelan.
 .. nonce: vHC7YQ
 .. section: Library
 
-Deprecate passing None as an argument for :func:`shlex.split()`'s ``s``
+Deprecate passing None as an argument for :func:`shlex.split`'s ``s``
 parameter.  Patch by Zackery Spytz.
 
 ..
@@ -1118,7 +1118,7 @@ into an exit code.
 .. nonce: _FOf7E
 .. section: C API
 
-Move the :c:type:`PyGC_Head` structure to the internal C API.
+Move the :c:type:`!PyGC_Head` structure to the internal C API.
 
 ..
 
@@ -1149,8 +1149,8 @@ the garbage collector respectively. Patch by Pablo Galindo.
 .. nonce: Seuh3D
 .. section: C API
 
-The :c:func:`PyObject_NEW` macro becomes an alias to the
-:c:func:`PyObject_New` macro, and the :c:func:`PyObject_NEW_VAR` macro
+The :c:func:`!PyObject_NEW` macro becomes an alias to the
+:c:func:`PyObject_New` macro, and the :c:func:`!PyObject_NEW_VAR` macro
 becomes an alias to the :c:func:`PyObject_NewVar` macro, to hide
 implementation details. They no longer access directly the
 :c:member:`PyTypeObject.tp_basicsize` member.
@@ -1174,7 +1174,7 @@ used.
 .. nonce: 6nFYbY
 .. section: C API
 
-Convert the :c:func:`PyObject_GET_WEAKREFS_LISTPTR` macro to a function to
+Convert the :c:func:`!PyObject_GET_WEAKREFS_LISTPTR` macro to a function to
 hide implementation details: the macro accessed directly to the
 :c:member:`PyTypeObject.tp_weaklistoffset` member.
 

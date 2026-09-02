@@ -1,1 +1,0 @@
-In a very special case, the email package tried to append the nonexistent ``InvalidHeaderError`` to the defect list. It should have been ``InvalidHeaderDefect``.
