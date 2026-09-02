@@ -168,7 +168,6 @@ gen_clear_frame(PyGenObject *gen)
 {
     assert(FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state) == FRAME_CLEARED);
     _PyInterpreterFrame *frame = &gen->gi_iframe;
-    _PyThreadState_UpdateLastProfiledFrame(_PyThreadState_GET(), frame, frame->previous);
     frame->previous = NULL;
     _PyFrame_ClearExceptCode(frame);
     _PyErr_ClearExcState(&gen->gi_exc_state);
@@ -308,8 +307,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult, int exc)
     /* If the generator just returned (as opposed to yielding), signal
      * that the generator is exhausted. */
     if (result) {
-        assert(result == Py_None || !PyAsyncGen_CheckExact(gen));
-        if (result == Py_None && !PyAsyncGen_CheckExact(gen) && !arg) {
+        if (result == Py_None && !arg) {
             /* Return NULL if called by gen_iternext() */
             Py_CLEAR(result);
         }
@@ -381,12 +379,14 @@ PyGen_am_send(PyObject *self, PyObject *arg, PyObject **result)
     return gen_send_ex(gen, arg, result);
 }
 
+int
+_PyAsyncGen_SetStopIterationValue(PyObject *value);
+
 static PyObject *
 gen_set_stop_iteration(PyGenObject *gen, PyObject *result)
 {
     if (PyAsyncGen_CheckExact(gen)) {
-        assert(result == Py_None);
-        PyErr_SetNone(PyExc_StopAsyncIteration);
+        _PyAsyncGen_SetStopIterationValue(result);
     }
     else if (result == Py_None) {
         PyErr_SetNone(PyExc_StopIteration);
@@ -426,7 +426,7 @@ gen_close_iter(PyObject *yf)
 {
     PyObject *retval = NULL;
 
-    if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf)) {
+    if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf) || PyAsyncGen_CheckExact(yf)) {
         retval = gen_close((PyObject *)yf, NULL);
         if (retval == NULL)
             return -1;
@@ -622,7 +622,7 @@ the (type, val, tb) signature is deprecated, \n\
 and may be removed in a future version of Python.");
 
 static PyObject *
-_gen_throw(PyGenObject *gen, int close_on_genexit,
+_gen_throw(PyGenObject *gen,
            PyObject *typ, PyObject *val, PyObject *tb)
 {
     int8_t frame_state = FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state);
@@ -653,13 +653,18 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
         PyObject *yf = PyStackRef_AsPyObjectNew(_PyFrame_StackPeek(frame, 2));
         PyObject *ret;
         int err;
-        if (PyErr_GivenExceptionMatches(typ, PyExc_GeneratorExit) &&
-            close_on_genexit
-        ) {
+        if (PyErr_GivenExceptionMatches(typ, PyExc_GeneratorExit)) {
             /* Asynchronous generators *should not* be closed right away.
                We have to allow some awaits to work it through, hence the
                `close_on_genexit` parameter here.
             */
+            // XXX: As of PEP 828, this doesn't seem to be true?
+            // In the above condition, there used to be a "&& close_on_genexit",
+            // where close_on_genexit was a parameter that was always zero when
+            // this was called from athrow(). This broke some tests/expected behavior
+            // for yield from in asyncgens. Removing the parameter didn't seem to cause
+            // any new test failures, nor could I reproduce any different behavior
+            // when experimenting with it, but we need to be careful.
             err = gen_close_iter(yf);
             Py_DECREF(yf);
             if (err < 0) {
@@ -669,7 +674,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
         }
         PyThreadState *tstate = _PyThreadState_GET();
         assert(tstate != NULL);
-        if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf)) {
+        if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf) || PyAsyncGen_CheckExact(yf)) {
             /* `yf` is a generator or a coroutine. */
 
             /* Link frame into the stack to enable complete backtraces. */
@@ -680,9 +685,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             tstate->current_frame = frame;
             /* Close the generator that we are currently iterating with
                'yield from' or awaiting on with 'await'. */
-            ret = _gen_throw((PyGenObject *)yf, close_on_genexit,
-                             typ, val, tb);
-            _PyThreadState_UpdateLastProfiledFrame(tstate, frame, prev);
+            ret = _gen_throw((PyGenObject *)yf, typ, val, tb);
             tstate->current_frame = prev;
             frame->previous = NULL;
         }
@@ -703,7 +706,6 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             frame->previous = prev;
             tstate->current_frame = frame;
             ret = PyObject_CallFunctionObjArgs(meth, typ, val, tb, NULL);
-            _PyThreadState_UpdateLastProfiledFrame(tstate, frame, prev);
             tstate->current_frame = prev;
             frame->previous = NULL;
             Py_DECREF(meth);
@@ -753,7 +755,7 @@ gen_throw(PyObject *op, PyObject *const *args, Py_ssize_t nargs)
     else if (nargs == 2) {
         val = args[1];
     }
-    return _gen_throw(gen, 1, typ, val, tb);
+    return _gen_throw(gen, typ, val, tb);
 }
 
 
@@ -779,9 +781,12 @@ gen_iternext(PyObject *self)
  *
  * Returns 0 if StopIteration is set and -1 if any other exception is set.
  */
-int
-_PyGen_SetStopIterationValue(PyObject *value)
+static int
+set_stop_iteration_value(PyObject *exc_class, PyObject *value)
 {
+    assert(exc_class != NULL);
+    assert(PyType_Check(exc_class));
+    assert(value != NULL);
     assert(!PyErr_Occurred());
     // Construct an exception instance manually with PyObject_CallOneArg()
     // but use PyErr_SetRaisedException() instead of PyErr_SetObject() as
@@ -789,13 +794,25 @@ _PyGen_SetStopIterationValue(PyObject *value)
     // is a tuple, where the value of the StopIteration exception would be
     // set to 'value[0]' instead of 'value'.
     PyObject *exc = value == NULL
-        ? PyObject_CallNoArgs(PyExc_StopIteration)
-        : PyObject_CallOneArg(PyExc_StopIteration, value);
+        ? PyObject_CallNoArgs(exc_class)
+        : PyObject_CallOneArg(exc_class, value);
     if (exc == NULL) {
         return -1;
     }
     PyErr_SetRaisedException(exc /* stolen */);
     return 0;
+}
+
+int
+_PyGen_SetStopIterationValue(PyObject *value)
+{
+    return set_stop_iteration_value(PyExc_StopIteration, value);
+}
+
+int
+_PyAsyncGen_SetStopIterationValue(PyObject *value)
+{
+    return set_stop_iteration_value(PyExc_StopAsyncIteration, value);
 }
 
 /*
@@ -2430,8 +2447,6 @@ async_gen_athrow_send(PyObject *self, PyObject *arg)
         FT_ATOMIC_STORE_INT8_RELAXED(o->agt_gen->ag_closed, 1);
 
         retval = _gen_throw((PyGenObject *)gen,
-                            0,  /* Do not close generator when
-                                   PyExc_GeneratorExit is passed */
                             PyExc_GeneratorExit, NULL, NULL);
 
         if (retval && _PyAsyncGenWrappedValue_CheckExact(retval)) {
@@ -2440,8 +2455,6 @@ async_gen_athrow_send(PyObject *self, PyObject *arg)
         }
     } else {
         retval = _gen_throw((PyGenObject *)gen,
-                            0,  /* Do not close generator when
-                                   PyExc_GeneratorExit is passed */
                             o->agt_typ, o->agt_val, o->agt_tb);
         retval = async_gen_unwrap_value(o->agt_gen, retval);
     }

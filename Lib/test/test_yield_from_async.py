@@ -1,0 +1,1722 @@
+"""
+Test suite for PEP 828 (`yield from` in asyn cgenerator)
+
+Adapted from `test_yield_from`. Each adapted test mirrors its PEP 380
+counterpart by name with an `_ayf` suffix; `TestParityWithPEP380` enforces
+the 1:1 mapping. Tests with no PEP 380 analogue go in `TestPEP828Extras`.
+"""
+
+import unittest
+import inspect
+from functools import partial
+
+lazy from test import test_yield_from
+from test.support import captured_stderr, disable_gc, gc_collect, run_yielding_async_fn, catch_unraisable_exception
+
+_async_test = partial(partial, run_yielding_async_fn)
+
+async def arange(*args):
+    for i in range(*args):
+        yield i
+
+class AsAsyncIterator:
+    def __init__(self, wrapped):
+        self._wrapped = iter(wrapped)
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        try:
+            return self._wrapped.__next__()
+        except StopAsyncIteration as e:
+            raise RuntimeError("async generator raised StopAsyncIteration") from e
+        except StopIteration as e:
+            raise StopAsyncIteration(e.value) from e
+
+class TestPEP828Operation(unittest.TestCase):
+    """Test semantics. Mirrors `TestPEP380Operation` in `test_yield_from`."""
+
+    @_async_test
+    async def test_delegation_of_initial_next_to_subgenerator_ayf(self):
+        """
+        Test delegation of initial anext() call to subgenerator
+        """
+        trace = []
+        async def g1():
+            trace.append("Starting g1")
+            yield from g2()
+            trace.append("Finishing g1")
+        async def g2():
+            trace.append("Starting g2")
+            yield 42
+            trace.append("Finishing g2")
+        async for x in g1():
+            trace.append("Yielded %s" % (x,))
+        self.assertEqual(trace,[
+            "Starting g1",
+            "Starting g2",
+            "Yielded 42",
+            "Finishing g2",
+            "Finishing g1",
+        ])
+
+    @_async_test
+    async def test_raising_exception_in_initial_next_call_ayf(self):
+        """
+        Test raising exception in initial anext() call
+        """
+        trace = []
+        async def g1():
+            try:
+                trace.append("Starting g1")
+                yield from g2()
+            finally:
+                trace.append("Finishing g1")
+        async def g2():
+            try:
+                trace.append("Starting g2")
+                yield from AsAsyncIterator(())
+                raise ValueError("spanish inquisition occurred")
+            finally:
+                trace.append("Finishing g2")
+        try:
+            async for x in g1():
+                trace.append("Yielded %s" % (x,))
+        except ValueError as e:
+            self.assertEqual(e.args[0], "spanish inquisition occurred")
+        else:
+            self.fail("subgenerator failed to raise ValueError")
+        self.assertEqual(trace, [
+            "Starting g1",
+            "Starting g2",
+            "Finishing g2",
+            "Finishing g1",
+        ])
+
+    @_async_test
+    async def test_delegation_of_next_call_to_subgenerator_ayf(self):
+        """
+        Test delegation of anext() call to subgenerator
+        """
+        trace = []
+        async def g1():
+            trace.append("Starting g1")
+            yield "g1 ham"
+            yield from g2()
+            yield "g1 eggs"
+            trace.append("Finishing g1")
+        async def g2():
+            trace.append("Starting g2")
+            yield "g2 spam"
+            yield "g2 more spam"
+            trace.append("Finishing g2")
+        async for x in g1():
+            trace.append("Yielded %s" % (x,))
+        self.assertEqual(trace,[
+            "Starting g1",
+            "Yielded g1 ham",
+            "Starting g2",
+            "Yielded g2 spam",
+            "Yielded g2 more spam",
+            "Finishing g2",
+            "Yielded g1 eggs",
+            "Finishing g1",
+        ])
+
+    @_async_test
+    async def test_raising_exception_in_delegated_next_call_ayf(self):
+        """
+        Test raising exception in delegated anext() call
+        """
+        trace = []
+        async def g1():
+            try:
+                trace.append("Starting g1")
+                yield "g1 ham"
+                yield from g2()
+                yield "g1 eggs"
+            finally:
+                trace.append("Finishing g1")
+        async def g2():
+            try:
+                trace.append("Starting g2")
+                yield "g2 spam"
+                raise ValueError("hovercraft is full of eels")
+                yield "g2 more spam"
+            finally:
+                trace.append("Finishing g2")
+        try:
+            async for x in g1():
+                trace.append("Yielded %s" % (x,))
+        except ValueError as e:
+            self.assertEqual(e.args[0], "hovercraft is full of eels")
+        else:
+            self.fail("subgenerator failed to raise ValueError")
+        self.assertEqual(trace,[
+            "Starting g1",
+            "Yielded g1 ham",
+            "Starting g2",
+            "Yielded g2 spam",
+            "Finishing g2",
+            "Finishing g1",
+        ])
+
+    @_async_test
+    async def test_delegation_of_send_ayf(self):
+         """
+         Test delegation of asend()
+         """
+         trace = []
+         async def g1():
+             trace.append("Starting g1")
+             x = yield "g1 ham"
+             trace.append("g1 received %s" % (x,))
+             yield from g2()
+             x = yield "g1 eggs"
+             trace.append("g1 received %s" % (x,))
+             trace.append("Finishing g1")
+         async def g2():
+             trace.append("Starting g2")
+             x = yield "g2 spam"
+             trace.append("g2 received %s" % (x,))
+             x = yield "g2 more spam"
+             trace.append("g2 received %s" % (x,))
+             trace.append("Finishing g2")
+         g = g1()
+         y = await anext(g)
+         x = 1
+         try:
+             while 1:
+                 y = await g.asend(x)
+                 trace.append("Yielded %s" % (y,))
+                 x += 1
+         except StopAsyncIteration:
+             pass
+         self.assertEqual(trace,[
+             "Starting g1",
+             "g1 received 1",
+             "Starting g2",
+             "Yielded g2 spam",
+             "g2 received 2",
+             "Yielded g2 more spam",
+             "g2 received 3",
+             "Finishing g2",
+             "Yielded g1 eggs",
+             "g1 received 4",
+             "Finishing g1",
+         ])
+
+    @_async_test
+    async def test_handling_exception_while_delegating_send_ayf(self):
+        """
+        Test handling exception while delegating 'asend'
+        """
+        trace = []
+        async def g1():
+            trace.append("Starting g1")
+            x = yield "g1 ham"
+            trace.append("g1 received %s" % (x,))
+            yield from g2()
+            x = yield "g1 eggs"
+            trace.append("g1 received %s" % (x,))
+            trace.append("Finishing g1")
+        async def g2():
+            trace.append("Starting g2")
+            x = yield "g2 spam"
+            trace.append("g2 received %s" % (x,))
+            raise ValueError("hovercraft is full of eels")
+            x = yield "g2 more spam"
+            trace.append("g2 received %s" % (x,))
+            trace.append("Finishing g2")
+        async def run():
+            g = g1()
+            y = await anext(g)
+            x = 1
+            try:
+                while 1:
+                    y = await g.asend(x)
+                    trace.append("Yielded %s" % (y,))
+                    x += 1
+            except StopAsyncIteration:
+                trace.append("StopAsyncIteration")
+        with self.assertRaises(ValueError):
+            await run()
+        self.assertEqual(trace,[
+            "Starting g1",
+            "g1 received 1",
+            "Starting g2",
+            "Yielded g2 spam",
+            "g2 received 2",
+        ])
+
+    @_async_test
+    async def test_delegating_close_ayf(self):
+        """
+        Test delegating 'aclose'
+        """
+        trace = []
+        async def g1():
+            try:
+                trace.append("Starting g1")
+                yield "g1 ham"
+                yield from g2()
+                yield "g1 eggs"
+            finally:
+                trace.append("Finishing g1")
+        async def g2():
+            try:
+                trace.append("Starting g2")
+                yield "g2 spam"
+                yield "g2 more spam"
+            finally:
+                trace.append("Finishing g2")
+        g = g1()
+        for i in range(2):
+            x = await anext(g)
+            trace.append("Yielded %s" % (x,))
+        await g.aclose()
+        self.assertEqual(trace,[
+            "Starting g1",
+            "Yielded g1 ham",
+            "Starting g2",
+            "Yielded g2 spam",
+            "Finishing g2",
+            "Finishing g1"
+        ])
+
+    @_async_test
+    async def test_handing_exception_while_delegating_close_ayf(self):
+        """
+        Test handling exception while delegating 'aclose'
+        """
+        trace = []
+        async def g1():
+            try:
+                trace.append("Starting g1")
+                yield "g1 ham"
+                yield from g2()
+                yield "g1 eggs"
+            finally:
+                trace.append("Finishing g1")
+        async def g2():
+            try:
+                trace.append("Starting g2")
+                yield "g2 spam"
+                yield "g2 more spam"
+            finally:
+                trace.append("Finishing g2")
+                raise ValueError("nybbles have exploded with delight")
+        try:
+            g = g1()
+            for i in range(2):
+                x = await anext(g)
+                trace.append("Yielded %s" % (x,))
+            await g.aclose()
+        except ValueError as e:
+            self.assertEqual(e.args[0], "nybbles have exploded with delight")
+            self.assertIsInstance(e.__context__, GeneratorExit)
+        else:
+            self.fail("subgenerator failed to raise ValueError")
+        self.assertEqual(trace,[
+            "Starting g1",
+            "Yielded g1 ham",
+            "Starting g2",
+            "Yielded g2 spam",
+            "Finishing g2",
+            "Finishing g1",
+        ])
+
+    @_async_test
+    async def test_delegating_throw_ayf(self):
+        """
+        Test delegating 'athrow'
+        """
+        trace = []
+        async def g1():
+            try:
+                trace.append("Starting g1")
+                yield "g1 ham"
+                yield from g2()
+                yield "g1 eggs"
+            finally:
+                trace.append("Finishing g1")
+        async def g2():
+            try:
+                trace.append("Starting g2")
+                yield "g2 spam"
+                yield "g2 more spam"
+            finally:
+                trace.append("Finishing g2")
+        try:
+            g = g1()
+            for i in range(2):
+                x = await anext(g)
+                trace.append("Yielded %s" % (x,))
+            e = ValueError("tomato ejected")
+            await g.athrow(e)
+        except ValueError as e:
+            self.assertEqual(e.args[0], "tomato ejected")
+        else:
+            self.fail("subgenerator failed to raise ValueError")
+        self.assertEqual(trace,[
+            "Starting g1",
+            "Yielded g1 ham",
+            "Starting g2",
+            "Yielded g2 spam",
+            "Finishing g2",
+            "Finishing g1",
+        ])
+
+    @_async_test
+    async def test_value_attribute_of_StopIteration_exception_ayf(self):
+        """
+        Test 'value' attribute of StopAsyncIteration exception
+        """
+        trace = []
+        async def pex(e):
+            trace.append("%s: %s" % (e.__class__.__name__, e))
+            trace.append("value = %s" % (e.value,))
+        e = StopAsyncIteration()
+        await pex(e)
+        e = StopAsyncIteration("spam")
+        await pex(e)
+        e.value = "eggs"
+        await pex(e)
+        self.assertEqual(trace,[
+            "StopAsyncIteration: ",
+            "value = None",
+            "StopAsyncIteration: spam",
+            "value = spam",
+            "StopAsyncIteration: spam",
+            "value = eggs",
+        ])
+
+    @_async_test
+    async def test_exception_value_crash_ayf(self):
+        # There used to be a refcount error when the return value
+        # stored in the StopAsyncIteration has a refcount of 1.
+        async def g1():
+            yield from g2()
+        async def g2():
+            yield "g2"
+            return object()
+        self.assertEqual([x async for x in g1()], ["g2"])
+
+    @_async_test
+    async def test_generator_return_value_ayf(self):
+        """
+        Test generator return value
+        """
+        trace = []
+        async def g1():
+            trace.append("Starting g1")
+            yield "g1 ham"
+            ret = yield from g2()
+            trace.append("g2 returned %r" % (ret,))
+            for v in 1, (2,), StopAsyncIteration(3):
+                ret = yield from g2(v)
+                trace.append("g2 returned %r" % (ret,))
+            yield "g1 eggs"
+            trace.append("Finishing g1")
+        async def g2(v = None):
+            trace.append("Starting g2")
+            yield "g2 spam"
+            yield "g2 more spam"
+            trace.append("Finishing g2")
+            if v:
+                return v
+        async for x in g1():
+            trace.append("Yielded %s" % (x,))
+        self.assertEqual(trace,[
+            "Starting g1",
+            "Yielded g1 ham",
+            "Starting g2",
+            "Yielded g2 spam",
+            "Yielded g2 more spam",
+            "Finishing g2",
+            "g2 returned None",
+            "Starting g2",
+            "Yielded g2 spam",
+            "Yielded g2 more spam",
+            "Finishing g2",
+            "g2 returned 1",
+            "Starting g2",
+            "Yielded g2 spam",
+            "Yielded g2 more spam",
+            "Finishing g2",
+            "g2 returned (2,)",
+            "Starting g2",
+            "Yielded g2 spam",
+            "Yielded g2 more spam",
+            "Finishing g2",
+            "g2 returned StopAsyncIteration(3)",
+            "Yielded g1 eggs",
+            "Finishing g1",
+        ])
+
+    @_async_test
+    async def test_delegation_of_next_to_non_generator_ayf(self):
+        """
+        Test delegation of anext() to non-generator
+        """
+        trace = []
+        async def g():
+            yield from arange(3)
+        async for x in g():
+            trace.append("Yielded %s" % (x,))
+        self.assertEqual(trace,[
+            "Yielded 0",
+            "Yielded 1",
+            "Yielded 2",
+        ])
+
+    @_async_test
+    async def test_conversion_of_sendNone_to_next_ayf(self):
+        """
+        Test conversion of asend(None) to anext()
+        """
+        trace = []
+        async def g():
+            yield from arange(3)
+        gi = g()
+        for x in range(3):
+            y = await gi.asend(None)
+            trace.append("Yielded: %s" % (y,))
+        self.assertEqual(trace,[
+            "Yielded: 0",
+            "Yielded: 1",
+            "Yielded: 2",
+        ])
+
+    @_async_test
+    async def test_delegation_of_close_to_non_generator_ayf(self):
+        """
+        Test delegation of aclose() to non-generator
+        """
+        trace = []
+        async def g():
+            try:
+                trace.append("starting g")
+                yield from arange(3)
+                trace.append("g should not be here")
+            finally:
+                trace.append("finishing g")
+        gi = g()
+        await anext(gi)
+        with captured_stderr() as output:
+            await gi.aclose()
+        self.assertEqual(output.getvalue(), '')
+        self.assertEqual(trace,[
+            "starting g",
+            "finishing g",
+        ])
+
+    @_async_test
+    async def test_delegating_throw_to_non_generator_ayf(self):
+        """
+        Test delegating 'athrow' to non-generator
+        """
+        trace = []
+        async def g():
+            try:
+                trace.append("Starting g")
+                yield from arange(10)
+            finally:
+                trace.append("Finishing g")
+        try:
+            gi = g()
+            for i in range(5):
+                x = await anext(gi)
+                trace.append("Yielded %s" % (x,))
+            e = ValueError("tomato ejected")
+            await gi.athrow(e)
+        except ValueError as e:
+            self.assertEqual(e.args[0],"tomato ejected")
+        else:
+            self.fail("subgenerator failed to raise ValueError")
+        self.assertEqual(trace,[
+            "Starting g",
+            "Yielded 0",
+            "Yielded 1",
+            "Yielded 2",
+            "Yielded 3",
+            "Yielded 4",
+            "Finishing g",
+        ])
+
+    @_async_test
+    async def test_attempting_to_send_to_non_generator_ayf(self):
+        """
+        Test attempting to asend to non-generator
+        """
+        trace = []
+        async def g():
+            try:
+                trace.append("starting g")
+                yield from AsAsyncIterator([1, 2, 3])
+                trace.append("g should not be here")
+            finally:
+                trace.append("finishing g")
+        try:
+            gi = g()
+            await anext(gi)
+            for x in range(3):
+                y = await gi.asend(42)
+                trace.append("Should not have yielded: %s" % (y,))
+        except AttributeError as e:
+            self.assertIn("send", e.args[0])
+        else:
+            self.fail("was able to send into non-generator")
+        self.assertEqual(trace,[
+            "starting g",
+            "finishing g",
+        ])
+
+    @_async_test
+    async def test_broken_getattr_handling_ayf(self):
+        """
+        Test subiterator with a broken getattr implementation
+        """
+        class Broken:
+            def __aiter__(self):
+                return self
+            async def __anext__(self):
+                return 1
+            def __getattr__(self, attr):
+                1/0
+
+        async def g():
+            yield from Broken()
+
+        with self.assertRaises(ZeroDivisionError):
+            gi = g()
+            self.assertEqual(await anext(gi), 1)
+            await gi.asend(1)
+
+        with self.assertRaises(ZeroDivisionError):
+            gi = g()
+            self.assertEqual(await anext(gi), 1)
+            await gi.athrow(AttributeError)
+
+        with catch_unraisable_exception() as cm:
+            gi = g()
+            self.assertEqual(await anext(gi), 1)
+            await gi.aclose()
+
+            self.assertEqual(ZeroDivisionError, cm.unraisable.exc_type)
+
+    @_async_test
+    async def test_exception_in_initial_next_call_ayf(self):
+        """
+        Test exception in initial anext() call
+        """
+        trace = []
+        async def g1():
+            trace.append("g1 about to yield from g2")
+            yield from g2()
+            trace.append("g1 should not be here")
+        async def g2():
+            yield 1/0
+        async def run():
+            gi = g1()
+            await anext(gi)
+        with self.assertRaises(ZeroDivisionError):
+            await run()
+        self.assertEqual(trace,[
+            "g1 about to yield from g2"
+        ])
+
+    @_async_test
+    async def test_attempted_yield_from_loop_ayf(self):
+        """
+        Test attempted `yield from` loop
+        """
+        trace = []
+        async def g1():
+            trace.append("g1: starting")
+            yield "y1"
+            trace.append("g1: about to yield from g2")
+            yield from g2()
+            trace.append("g1 should not be here")
+
+        async def g2():
+            trace.append("g2: starting")
+            yield "y2"
+            trace.append("g2: about to yield from g1")
+            yield from gi
+            trace.append("g2 should not be here")
+        try:
+            gi = g1()
+            async for y in gi:
+                trace.append("Yielded: %s" % (y,))
+        except RuntimeError as e:
+            self.assertEqual(e.args[0],"anext(): asynchronous generator is already running")
+        else:
+            self.fail("subgenerator didn't raise RuntimeError")
+        self.assertEqual(trace,[
+            "g1: starting",
+            "Yielded: y1",
+            "g1: about to yield from g2",
+            "g2: starting",
+            "Yielded: y2",
+            "g2: about to yield from g1",
+        ])
+
+    @_async_test
+    async def test_returning_value_from_delegated_throw_ayf(self):
+        """
+        Test returning value from delegated 'athrow'
+        """
+        trace = []
+        async def g1():
+            try:
+                trace.append("Starting g1")
+                yield "g1 ham"
+                yield from g2()
+                yield "g1 eggs"
+            finally:
+                trace.append("Finishing g1")
+        async def g2():
+            try:
+                trace.append("Starting g2")
+                yield "g2 spam"
+                yield "g2 more spam"
+            except LunchError:
+                trace.append("Caught LunchError in g2")
+                yield "g2 lunch saved"
+                yield "g2 yet more spam"
+        class LunchError(Exception):
+            pass
+        g = g1()
+        for i in range(2):
+            x = await anext(g)
+            trace.append("Yielded %s" % (x,))
+        e = LunchError("tomato ejected")
+        await g.athrow(e)
+        async for x in g:
+            trace.append("Yielded %s" % (x,))
+        self.assertEqual(trace,[
+            "Starting g1",
+            "Yielded g1 ham",
+            "Starting g2",
+            "Yielded g2 spam",
+            "Caught LunchError in g2",
+            "Yielded g2 yet more spam",
+            "Yielded g1 eggs",
+            "Finishing g1",
+        ])
+
+    @_async_test
+    async def test_next_and_return_with_value_ayf(self):
+        """
+        Test anext and return with value
+        """
+        trace = []
+        async def f(r):
+            gi = g(r)
+            await anext(gi)
+            try:
+                trace.append("f resuming g")
+                await anext(gi)
+                trace.append("f SHOULD NOT BE HERE")
+            except StopAsyncIteration as e:
+                trace.append("f caught %r" % (e,))
+        async def g(r):
+            trace.append("g starting")
+            yield
+            trace.append("g returning %r" % (r,))
+            return r
+        await f(None)
+        await f(1)
+        await f((2,))
+        await f(StopAsyncIteration(3))
+        self.assertEqual(trace,[
+            "g starting",
+            "f resuming g",
+            "g returning None",
+            "f caught StopAsyncIteration()",
+            "g starting",
+            "f resuming g",
+            "g returning 1",
+            "f caught StopAsyncIteration(1)",
+            "g starting",
+            "f resuming g",
+            "g returning (2,)",
+            "f caught StopAsyncIteration((2,))",
+            "g starting",
+            "f resuming g",
+            "g returning StopAsyncIteration(3)",
+            "f caught StopAsyncIteration(StopAsyncIteration(3))",
+        ])
+
+    @_async_test
+    async def test_send_and_return_with_value_ayf(self):
+        """
+        Test asend and return with value
+        """
+        trace = []
+        async def f(r):
+            gi = g(r)
+            await anext(gi)
+            try:
+                trace.append("f sending spam to g")
+                await gi.asend("spam")
+                trace.append("f SHOULD NOT BE HERE")
+            except StopAsyncIteration as e:
+                trace.append("f caught %r" % (e,))
+        async def g(r):
+            trace.append("g starting")
+            x = yield
+            trace.append("g received %r" % (x,))
+            trace.append("g returning %r" % (r,))
+            return r
+        await f(None)
+        await f(1)
+        await f((2,))
+        await f(StopAsyncIteration(3))
+        self.assertEqual(trace, [
+            "g starting",
+            "f sending spam to g",
+            "g received 'spam'",
+            "g returning None",
+            "f caught StopAsyncIteration(None)",
+            "g starting",
+            "f sending spam to g",
+            "g received 'spam'",
+            "g returning 1",
+            'f caught StopAsyncIteration(1)',
+            'g starting',
+            'f sending spam to g',
+            "g received 'spam'",
+            'g returning (2,)',
+            'f caught StopAsyncIteration((2,))',
+            'g starting',
+            'f sending spam to g',
+            "g received 'spam'",
+            'g returning StopAsyncIteration(3)',
+            'f caught StopAsyncIteration(StopAsyncIteration(3))'
+        ])
+
+    @_async_test
+    async def test_catching_exception_from_subgen_and_returning_ayf(self):
+        """
+        Test catching an exception athrown into a
+        subgenerator and returning a value
+        """
+        async def inner():
+            try:
+                yield 1
+            except ValueError:
+                trace.append("inner caught ValueError")
+            return value
+
+        async def outer():
+            v = yield from inner()
+            trace.append("inner returned %r to outer" % (v,))
+            yield v
+
+        for value in 2, (2,), StopAsyncIteration(2):
+            trace = []
+            g = outer()
+            trace.append(await anext(g))
+            trace.append(repr(await g.athrow(ValueError)))
+            self.assertEqual(trace, [
+                1,
+                "inner caught ValueError",
+                "inner returned %r to outer" % (value,),
+                repr(value),
+            ])
+
+    @_async_test
+    async def test_throwing_GeneratorExit_into_subgen_that_returns_ayf(self):
+        """
+        Test athrow(GeneratorExit) into a subgenerator that
+        catches it and returns normally.
+        """
+        trace = []
+        async def f():
+            try:
+                trace.append("Enter f")
+                yield
+                trace.append("Exit f")
+            except GeneratorExit:
+                return
+        async def g():
+            trace.append("Enter g")
+            yield from f()
+            trace.append("Exit g")
+        try:
+            gi = g()
+            await anext(gi)
+            await gi.athrow(GeneratorExit)
+        except GeneratorExit:
+            pass
+        else:
+            self.fail("subgenerator failed to raise GeneratorExit")
+        self.assertEqual(trace,[
+            "Enter g",
+            "Enter f",
+        ])
+
+    @_async_test
+    async def test_throwing_GeneratorExit_into_subgenerator_that_yields_ayf(self):
+        """
+        Test athrow(GeneratorExit) into a subgenerator that
+        catches it and yields.
+        """
+        trace = []
+        async def f():
+            try:
+                trace.append("Enter f")
+                yield
+                trace.append("Exit f")
+            except GeneratorExit:
+                yield
+        async def g():
+            trace.append("Enter g")
+            yield from f()
+            trace.append("Exit g")
+        try:
+            gi = g()
+            await anext(gi)
+            await gi.athrow(GeneratorExit)
+        except RuntimeError as e:
+            self.assertEqual(e.args[0], "async generator ignored GeneratorExit")
+        else:
+            self.fail("subgenerator failed to raise GeneratorExit")
+        self.assertEqual(trace,[
+            "Enter g",
+            "Enter f",
+        ])
+
+    @_async_test
+    async def test_throwing_GeneratorExit_into_subgen_that_raises_ayf(self):
+        """
+        Test athrow(GeneratorExit) into a subgenerator that
+        catches it and raises a different exception.
+        """
+        trace = []
+        async def f():
+            try:
+                trace.append("Enter f")
+                yield
+                trace.append("Exit f")
+            except GeneratorExit:
+                raise ValueError("Vorpal bunny encountered")
+        async def g():
+            trace.append("Enter g")
+            yield from f()
+            trace.append("Exit g")
+        try:
+            gi = g()
+            await anext(gi)
+            await gi.athrow(GeneratorExit)
+        except ValueError as e:
+            self.assertEqual(e.args[0], "Vorpal bunny encountered")
+            self.assertIsInstance(e.__context__, GeneratorExit)
+        else:
+            self.fail("subgenerator failed to raise ValueError")
+        self.assertEqual(trace,[
+            "Enter g",
+            "Enter f",
+        ])
+
+    @_async_test
+    async def test_yield_from_empty_ayf(self):
+        async def g():
+            yield from AsAsyncIterator(())
+        with self.assertRaises(StopAsyncIteration):
+            await anext(g())
+
+    @_async_test
+    async def test_delegating_generators_claim_to_be_running_ayf(self):
+        # Check with basic iteration
+        async def one():
+            yield 0
+            yield from two()
+            yield 3
+        async def two():
+            yield 1
+            try:
+                yield from g1
+            except RuntimeError:
+                pass
+            yield 2
+        g1 = one()
+        self.assertEqual([e async for e in g1], [0, 1, 2, 3])
+
+        # Check with asend
+        g1 = one()
+        res = [await anext(g1)]
+        try:
+            while True:
+                res.append(await g1.asend(42))
+        except StopAsyncIteration:
+            pass
+        self.assertEqual(res, [0, 1, 2, 3])
+
+    @_async_test
+    async def test_delegating_generators_claim_to_be_running_with_throw_ayf(self):
+        # Check with throw
+        class MyErr(Exception):
+            pass
+        async def one():
+            try:
+                yield 0
+            except MyErr:
+                pass
+            yield from two()
+            try:
+                yield 3
+            except MyErr:
+                pass
+        async def two():
+            try:
+                yield 1
+            except MyErr:
+                pass
+            try:
+                yield from g1
+            except RuntimeError:
+                pass
+            try:
+                yield 2
+            except MyErr:
+                pass
+        g1 = one()
+        res = [await anext(g1)]
+        try:
+            while True:
+                res.append(await g1.athrow(MyErr))
+        except StopAsyncIteration:
+            pass
+        except:
+            self.assertEqual(res, [0, 1, 2, 3])
+            raise
+
+    @_async_test
+    async def test_delegating_generators_claim_to_be_running_with_close_ayf(self):
+        # Check with close
+        class MyIt:
+            def __aiter__(self):
+                return self
+            async def __anext__(self):
+                return 42
+            async def aclose(self_):
+                self.assertTrue(g1.gi_running)
+                with self.assertRaises(RuntimeError):
+                    await anext(g1)
+        async def one():
+            yield from MyIt()
+        g1 = one()
+        await anext(g1)
+        await g1.aclose()
+
+    @_async_test
+    async def test_delegator_is_visible_to_debugger_ayf(self):
+        async def call_stack():
+            return [f[3] for f in inspect.stack()]
+
+        async def gen():
+            yield await call_stack()
+            yield await call_stack()
+            yield await call_stack()
+
+        async def spam(g):
+            yield from g
+
+        async def eggs(g):
+            yield from g
+
+        async for stack in spam(gen()):
+            self.assertTrue('spam' in stack)
+
+        async for stack in spam(eggs(gen())):
+            self.assertTrue('spam' in stack and 'eggs' in stack)
+
+    @_async_test
+    async def test_custom_iterator_return_ayf(self):
+        class MyIter:
+            def __aiter__(self):
+                return self
+            async def __anext__(self):
+                raise StopAsyncIteration(42)
+        async def gen():
+            nonlocal ret
+            ret = yield from MyIter()
+        ret = None
+        [e async for e in gen()]
+        self.assertEqual(ret, 42)
+
+    @_async_test
+    async def test_close_with_cleared_frame_ayf(self):
+        async def innermost():
+            yield
+        async def inner():
+            outer_gen = yield
+            yield from innermost()
+        async def outer():
+            inner_gen = yield
+            yield from inner_gen
+
+        with disable_gc():
+            inner_gen = inner()
+            outer_gen = outer()
+            await outer_gen.asend(None)
+            await outer_gen.asend(inner_gen)
+            await outer_gen.asend(outer_gen)
+
+            del outer_gen
+            del inner_gen
+            gc_collect()
+
+    @_async_test
+    async def test_send_tuple_with_custom_generator_ayf(self):
+        class MyGen:
+            def __aiter__(self):
+                return self
+            async def __anext__(self):
+                return 42
+            async def asend(self, what):
+                nonlocal v
+                v = what
+                return None
+        async def outer():
+            v = yield from MyGen()
+        g = outer()
+        await anext(g)
+        v = None
+        await g.asend((1, 2, 3, 4))
+        self.assertEqual(v, (1, 2, 3, 4))
+
+class TestInterestingEdgeCases(unittest.TestCase):
+    """Interesting edge cases. Mirrors `TestInterestingEdgeCases` in `test_yield_from`."""
+
+    async def assert_stop_iteration(self, iterator):
+        with self.assertRaises(StopAsyncIteration) as caught:
+            await anext(iterator)
+        self.assertIsNone(caught.exception.value)
+        self.assertIsNone(caught.exception.__context__)
+
+    def assert_generator_raised_stop_iteration(self):
+        return self.assertRaisesRegex(RuntimeError, r"^async generator raised StopAsyncIteration$")
+
+    def assert_generator_ignored_generator_exit(self):
+        return self.assertRaisesRegex(RuntimeError, r"^async generator ignored GeneratorExit$")
+
+    @_async_test
+    async def test_close_and_throw_work_ayf(self):
+
+        yielded_first = sentinel("yielded_first")
+        yielded_second = sentinel("yielded_second")
+        returned = sentinel("returned")
+
+        async def inner():
+            yield yielded_first
+            yield yielded_second
+            return returned
+
+        async def outer():
+            return (yield from inner())
+
+        with self.subTest("aclose"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            await g.aclose()
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow GeneratorExit"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            thrown = GeneratorExit()
+            with self.assertRaises(GeneratorExit) as caught:
+                await g.athrow(thrown)
+            self.assertIs(caught.exception, thrown)
+            self.assertIsNone(caught.exception.__context__)
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow StopAsyncIteration"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            thrown = StopAsyncIteration()
+            with self.assert_generator_raised_stop_iteration() as caught:
+                await g.athrow(thrown)
+            self.assertIs(caught.exception.__context__, thrown)
+            self.assertIsNone(caught.exception.__context__.__context__)
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow BaseException"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            thrown = BaseException()
+            with self.assertRaises(BaseException) as caught:
+                await g.athrow(thrown)
+            self.assertIs(caught.exception, thrown)
+            self.assertIsNone(caught.exception.__context__)
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow Exception"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            thrown = Exception()
+            with self.assertRaises(Exception) as caught:
+                await g.athrow(thrown)
+            self.assertIs(caught.exception, thrown)
+            self.assertIsNone(caught.exception.__context__)
+            await self.assert_stop_iteration(g)
+
+    @_async_test
+    async def test_close_and_throw_raise_generator_exit_ayf(self):
+
+        yielded_first = sentinel("yielded_first")
+        yielded_second = sentinel("yielded_second")
+        returned = sentinel("returned")
+
+        async def inner():
+            try:
+                yield yielded_first
+                yield yielded_second
+                return returned
+            finally:
+                raise raised
+
+        async def outer():
+            return (yield from inner())
+
+        with self.subTest("aclose"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            raised = GeneratorExit()
+            # GeneratorExit is suppressed. This is analogous to PEP 342:
+            # https://peps.python.org/pep-0342/#new-generator-method-close
+            await g.aclose()
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow GeneratorExit"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            raised = GeneratorExit()
+            thrown = GeneratorExit()
+            with self.assertRaises(GeneratorExit) as caught:
+                await g.athrow(thrown)
+            # The raised GeneratorExit is suppressed, but the thrown one
+            # propagates. This is analogous to PEP 380:
+            # https://peps.python.org/pep-0380/#proposal
+            self.assertIs(caught.exception, thrown)
+            self.assertIsNone(caught.exception.__context__)
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow StopAsyncIteration"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            raised = GeneratorExit()
+            thrown = StopAsyncIteration()
+            with self.assertRaises(GeneratorExit) as caught:
+                await g.athrow(thrown)
+            self.assertIs(caught.exception, raised)
+            self.assertIs(caught.exception.__context__, thrown)
+            self.assertIsNone(caught.exception.__context__.__context__)
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow BaseException"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            raised = GeneratorExit()
+            thrown = BaseException()
+            with self.assertRaises(GeneratorExit) as caught:
+                await g.athrow(thrown)
+            self.assertIs(caught.exception, raised)
+            self.assertIs(caught.exception.__context__, thrown)
+            self.assertIsNone(caught.exception.__context__.__context__)
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow Exception"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            raised = GeneratorExit()
+            thrown = Exception()
+            with self.assertRaises(GeneratorExit) as caught:
+                await g.athrow(thrown)
+            self.assertIs(caught.exception, raised)
+            self.assertIs(caught.exception.__context__, thrown)
+            self.assertIsNone(caught.exception.__context__.__context__)
+            await self.assert_stop_iteration(g)
+
+    @_async_test
+    async def test_close_and_throw_raise_stop_iteration_ayf(self):
+
+        yielded_first = sentinel("yielded_first")
+        yielded_second = sentinel("yielded_second")
+        returned = sentinel("returned")
+
+        async def inner():
+            try:
+                yield yielded_first
+                yield yielded_second
+                return returned
+            finally:
+                raise raised
+
+        async def outer():
+            return (yield from inner())
+
+        with self.subTest("aclose"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            raised = StopAsyncIteration()
+            # PEP 479:
+            with self.assert_generator_raised_stop_iteration() as caught:
+                await g.aclose()
+            self.assertIs(caught.exception.__context__, raised)
+            self.assertIsInstance(caught.exception.__context__.__context__, GeneratorExit)
+            self.assertIsNone(caught.exception.__context__.__context__.__context__)
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow GeneratorExit"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            raised = StopAsyncIteration()
+            thrown = GeneratorExit()
+            # PEP 479:
+            with self.assert_generator_raised_stop_iteration() as caught:
+                await g.athrow(thrown)
+            self.assertIs(caught.exception.__context__, raised)
+            # This isn't the same GeneratorExit as thrown! It's the one created
+            # by calling inner.aclose():
+            self.assertIsInstance(caught.exception.__context__.__context__, GeneratorExit)
+            self.assertIsNone(caught.exception.__context__.__context__.__context__)
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow StopAsyncIteration"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            raised = StopAsyncIteration()
+            thrown = StopAsyncIteration()
+            # PEP 479:
+            with self.assert_generator_raised_stop_iteration() as caught:
+                await g.athrow(thrown)
+            self.assertIs(caught.exception.__context__, raised)
+            self.assertIs(caught.exception.__context__.__context__, thrown)
+            self.assertIsNone(caught.exception.__context__.__context__.__context__)
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow BaseException"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            raised = StopAsyncIteration()
+            thrown = BaseException()
+            # PEP 479:
+            with self.assert_generator_raised_stop_iteration() as caught:
+                await g.athrow(thrown)
+            self.assertIs(caught.exception.__context__, raised)
+            self.assertIs(caught.exception.__context__.__context__, thrown)
+            self.assertIsNone(caught.exception.__context__.__context__.__context__)
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow Exception"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            raised = StopAsyncIteration()
+            thrown = Exception()
+            # PEP 479:
+            with self.assert_generator_raised_stop_iteration() as caught:
+                await g.athrow(thrown)
+            self.assertIs(caught.exception.__context__, raised)
+            self.assertIs(caught.exception.__context__.__context__, thrown)
+            self.assertIsNone(caught.exception.__context__.__context__.__context__)
+            await self.assert_stop_iteration(g)
+
+    @_async_test
+    async def test_close_and_throw_raise_base_exception_ayf(self):
+
+        yielded_first = sentinel("yielded_first")
+        yielded_second = sentinel("yielded_second")
+        returned = sentinel("returned")
+
+        async def inner():
+            try:
+                yield yielded_first
+                yield yielded_second
+                return returned
+            finally:
+                raise raised
+
+        async def outer():
+            return (yield from inner())
+
+        with self.subTest("aclose"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            raised = BaseException()
+            with self.assertRaises(BaseException) as caught:
+                await g.aclose()
+            self.assertIs(caught.exception, raised)
+            self.assertIsInstance(caught.exception.__context__, GeneratorExit)
+            self.assertIsNone(caught.exception.__context__.__context__)
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow GeneratorExit"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            raised = BaseException()
+            thrown = GeneratorExit()
+            with self.assertRaises(BaseException) as caught:
+                await g.athrow(thrown)
+            self.assertIs(caught.exception, raised)
+            # This isn't the same GeneratorExit as thrown! It's the one created
+            # by calling inner.aclose():
+            self.assertIsInstance(caught.exception.__context__, GeneratorExit)
+            self.assertIsNone(caught.exception.__context__.__context__)
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow StopAsyncIteration"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            raised = BaseException()
+            thrown = StopAsyncIteration()
+            with self.assertRaises(BaseException) as caught:
+                await g.athrow(thrown)
+            self.assertIs(caught.exception, raised)
+            self.assertIs(caught.exception.__context__, thrown)
+            self.assertIsNone(caught.exception.__context__.__context__)
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow BaseException"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            raised = BaseException()
+            thrown = BaseException()
+            with self.assertRaises(BaseException) as caught:
+                await g.athrow(thrown)
+            self.assertIs(caught.exception, raised)
+            self.assertIs(caught.exception.__context__, thrown)
+            self.assertIsNone(caught.exception.__context__.__context__)
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow Exception"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            raised = BaseException()
+            thrown = Exception()
+            with self.assertRaises(BaseException) as caught:
+                await g.athrow(thrown)
+            self.assertIs(caught.exception, raised)
+            self.assertIs(caught.exception.__context__, thrown)
+            self.assertIsNone(caught.exception.__context__.__context__)
+            await self.assert_stop_iteration(g)
+
+    @_async_test
+    async def test_close_and_throw_raise_exception_ayf(self):
+
+        yielded_first = sentinel("yielded_first")
+        yielded_second = sentinel("yielded_second")
+        returned = sentinel("returned")
+
+        async def inner():
+            try:
+                yield yielded_first
+                yield yielded_second
+                return returned
+            finally:
+                raise raised
+
+        async def outer():
+            return (yield from inner())
+
+        with self.subTest("aclose"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            raised = Exception()
+            with self.assertRaises(Exception) as caught:
+                await g.aclose()
+            self.assertIs(caught.exception, raised)
+            self.assertIsInstance(caught.exception.__context__, GeneratorExit)
+            self.assertIsNone(caught.exception.__context__.__context__)
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow GeneratorExit"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            raised = Exception()
+            thrown = GeneratorExit()
+            with self.assertRaises(Exception) as caught:
+                await g.athrow(thrown)
+            self.assertIs(caught.exception, raised)
+            # This isn't the same GeneratorExit as thrown! It's the one created
+            # by calling inner.aclose():
+            self.assertIsInstance(caught.exception.__context__, GeneratorExit)
+            self.assertIsNone(caught.exception.__context__.__context__)
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow StopAsyncIteration"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            raised = Exception()
+            thrown = StopAsyncIteration()
+            with self.assertRaises(Exception) as caught:
+                await g.athrow(thrown)
+            self.assertIs(caught.exception, raised)
+            self.assertIs(caught.exception.__context__, thrown)
+            self.assertIsNone(caught.exception.__context__.__context__)
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow BaseException"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            raised = Exception()
+            thrown = BaseException()
+            with self.assertRaises(Exception) as caught:
+                await g.athrow(thrown)
+            self.assertIs(caught.exception, raised)
+            self.assertIs(caught.exception.__context__, thrown)
+            self.assertIsNone(caught.exception.__context__.__context__)
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow Exception"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            raised = Exception()
+            thrown = Exception()
+            with self.assertRaises(Exception) as caught:
+                await g.athrow(thrown)
+            self.assertIs(caught.exception, raised)
+            self.assertIs(caught.exception.__context__, thrown)
+            self.assertIsNone(caught.exception.__context__.__context__)
+            await self.assert_stop_iteration(g)
+
+    @_async_test
+    async def test_close_and_throw_yield_ayf(self):
+
+        yielded_first = sentinel("yielded_first")
+        yielded_second = sentinel("yielded_second")
+        returned = sentinel("returned")
+
+        async def inner():
+            try:
+                yield yielded_first
+            finally:
+                yield yielded_second
+            return returned
+
+        async def outer():
+            return (yield from inner())
+
+        with self.subTest("aclose"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            # No chaining happens. This is analogous to PEP 342:
+            # https://peps.python.org/pep-0342/#new-generator-method-close
+            with self.assert_generator_ignored_generator_exit() as caught:
+                await g.aclose()
+            self.assertIsNone(caught.exception.__context__)
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow GeneratorExit"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            thrown = GeneratorExit()
+            # No chaining happens. This is analogous to PEP 342:
+            # https://peps.python.org/pep-0342/#new-generator-method-close
+            with self.assert_generator_ignored_generator_exit() as caught:
+                await g.athrow(thrown)
+            self.assertIsNone(caught.exception.__context__)
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow StopAsyncIteration"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            thrown = StopAsyncIteration()
+            self.assertEqual(await g.athrow(thrown), yielded_second)
+            # PEP 479:
+            with self.assert_generator_raised_stop_iteration() as caught:
+                await anext(g)
+            self.assertIs(caught.exception.__context__, thrown)
+            self.assertIsNone(caught.exception.__context__.__context__)
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow BaseException"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            thrown = BaseException()
+            self.assertEqual(await g.athrow(thrown), yielded_second)
+            with self.assertRaises(BaseException) as caught:
+                await anext(g)
+            self.assertIs(caught.exception, thrown)
+            self.assertIsNone(caught.exception.__context__)
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow Exception"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            thrown = Exception()
+            self.assertEqual(await g.athrow(thrown), yielded_second)
+            with self.assertRaises(Exception) as caught:
+                await anext(g)
+            self.assertIs(caught.exception, thrown)
+            self.assertIsNone(caught.exception.__context__)
+            await self.assert_stop_iteration(g)
+
+    @_async_test
+    async def test_close_and_throw_return_ayf(self):
+        yielded_first = sentinel("yielded_first")
+        yielded_second = sentinel("yielded_second")
+        returned = sentinel("returned")
+
+        async def inner():
+            try:
+                yield yielded_first
+                yield yielded_second
+            except:
+                pass
+            return returned
+
+        async def outer():
+            return (yield from inner())
+
+        with self.subTest("aclose"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            # StopAsyncIteration is suppressed. This is analogous to PEP 342:
+            # https://peps.python.org/pep-0342/#new-generator-method-close
+            await g.aclose()
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow GeneratorExit"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            thrown = GeneratorExit()
+            # StopAsyncIteration is suppressed. This is analogous to PEP 342:
+            # https://peps.python.org/pep-0342/#new-generator-method-close
+            with self.assertRaises(GeneratorExit) as caught:
+                await g.athrow(thrown)
+            self.assertIs(caught.exception, thrown)
+            self.assertIsNone(caught.exception.__context__)
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow StopAsyncIteration"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            thrown = StopAsyncIteration()
+            with self.assertRaises(StopAsyncIteration) as caught:
+                await g.athrow(thrown)
+            self.assertIs(caught.exception.value, returned)
+            self.assertIsNone(caught.exception.__context__)
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow BaseException"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            thrown = BaseException()
+            with self.assertRaises(StopAsyncIteration) as caught:
+                await g.athrow(thrown)
+            self.assertIs(caught.exception.value, returned)
+            self.assertIsNone(caught.exception.__context__)
+            await self.assert_stop_iteration(g)
+
+        with self.subTest("athrow Exception"):
+            g = outer()
+            self.assertIs(await anext(g), yielded_first)
+            thrown = Exception()
+            with self.assertRaises(StopAsyncIteration) as caught:
+                await g.athrow(thrown)
+            self.assertIs(caught.exception.value, returned)
+            self.assertIsNone(caught.exception.__context__)
+            await self.assert_stop_iteration(g)
+
+    @_async_test
+    async def test_throws_in_iter_ayf(self):
+        class Silly:
+            async def __aiter__(self):
+                yield from AsAsyncIterator(())
+                raise RuntimeError("nobody expects the spanish inquisition")
+
+        async def my_generator():
+            yield from Silly()
+
+        with self.assertRaisesRegex(RuntimeError, "nobody expects the spanish inquisition"):
+            await anext(my_generator())
+
+
+class TestParityWithPEP380(unittest.TestCase):
+    """Enforce PEP 828 tests cover every PEP 380 test."""
+
+    def assert_parity(self, base_class, variant_class, *, suffix):
+        """Assert variant_class is in 1:1 parity with base_class via ``suffix``.
+
+        Every method ``test_xxx`` on ``base_class`` must have a counterpart
+        ``test_xxx<suffix>`` on ``variant_class`` and vice versa. Variant-only
+        tests belong in a separate TestCase class.
+        """
+        def test_methods(cls):
+            return {n for n in dir(cls) if n.startswith("test_")}
+
+        def fqn(cls):
+            return f"{cls.__module__}.{cls.__qualname__}"
+
+        expected = {n + suffix for n in test_methods(base_class)}
+        actual = test_methods(variant_class)
+        missing = sorted(expected - actual)
+        extra = sorted(actual - expected)
+        if missing or extra:
+            lines = [
+                f"{fqn(variant_class)} is not a 1:1 mirror of "
+                f"{fqn(base_class)} (suffix {suffix!r}):"
+            ]
+            for name in missing:
+                lines.append(f"    missing in {fqn(variant_class)}: {name}")
+            for name in extra:
+                lines.append(f"    no counterpart in {fqn(base_class)}: {name}")
+            self.fail("\n".join(lines))
+
+    def test_TestPEP828Operation(self):
+        self.assert_parity(
+            test_yield_from.TestPEP380Operation,
+            TestPEP828Operation,
+            suffix="_ayf",
+        )
+
+    def test_TestInterestingEdgeCases(self):
+        self.assert_parity(
+            test_yield_from.TestInterestingEdgeCases,
+            TestInterestingEdgeCases,
+            suffix="_ayf",
+        )
+
+
+class TestPEP828Extras(unittest.TestCase):
+    """Tests with no PEP 380 counterpart.
+
+    Anything added here describes behaviour specific to ``yield from``.
+    Tests that have a logical equivalent in plain ``yield from`` belong in
+    ``TestPEP828Operation`` or ``TestInterestingEdgeCases`` and are
+    parity-checked against ``test_yield_from``.
+    """
+
+    @_async_test
+    async def test_delegate_exception(self):
+        yielded_first = sentinel("yielded_first")
+        yielded_second = sentinel("yielded_second")
+        returned = sentinel("returned")
+
+        async def inner():
+            try:
+                yield yielded_first
+                yield yielded_second
+                return returned
+            finally:
+                raise raised
+
+        async def outer():
+            return (yield from inner())
+
+        g = outer()
+        assert (await anext(g)) is yielded_first
+        raised = RuntimeError()
+        with self.assertRaises(RuntimeError) as error:
+            await g.athrow(SystemError)
+        self.assertIs(raised, error.exception)
+
+
+if __name__ == '__main__':
+    unittest.main()
