@@ -192,7 +192,7 @@ class _ComplexBinder:
         self.typename = _types[type][0]
         self.widget = widget
         self.widgetinst = widgetinst
-        self.bindedfuncs = {None: [[] for s in _states]}
+        self.bindedfuncs = {None: [[] for _ in _states]}
         self.handlerids = []
         # we don't want to change the lists of functions while a handler is
         # running - it will mess up the loop and anyway, we usually want the
@@ -212,7 +212,7 @@ class _ComplexBinder:
 
     def bind(self, triplet, func):
         if triplet[2] not in self.bindedfuncs:
-            self.bindedfuncs[triplet[2]] = [[] for s in _states]
+            self.bindedfuncs[triplet[2]] = [[] for _ in _states]
             for s in _states:
                 lists = [ self.bindedfuncs[detail][i]
                           for detail in (triplet[2], None)

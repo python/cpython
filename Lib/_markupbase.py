@@ -221,7 +221,7 @@ class ParserBase:
                 if (j + 1) == n:
                     # end of buffer; incomplete
                     return -1
-                s, j = self._scan_name(j + 1, declstartpos)
+                _, j = self._scan_name(j + 1, declstartpos)
                 if j < 0:
                     return j
                 if rawdata[j] == ";":
@@ -286,7 +286,7 @@ class ParserBase:
                     # end of buffer, incomplete
                     return -1
             else:
-                name, j = self._scan_name(j, declstartpos)
+                _, j = self._scan_name(j, declstartpos)
             c = rawdata[j:j+1]
             if not c:
                 return -1
@@ -303,7 +303,7 @@ class ParserBase:
                 if rawdata[j:] == "#":
                     # end of buffer
                     return -1
-                name, j = self._scan_name(j + 1, declstartpos)
+                _, j = self._scan_name(j + 1, declstartpos)
                 if j < 0:
                     return j
                 c = rawdata[j:j+1]

@@ -4092,7 +4092,7 @@ if __name__ == "__main__":
         write("start", 1)
         color("red")
         # staircase
-        for i in range(5):
+        for _ in range(5):
             forward(20)
             left(90)
             forward(20)
