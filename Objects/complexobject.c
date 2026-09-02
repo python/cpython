@@ -361,24 +361,26 @@ c_powi(Py_complex x, long n)
         return c_powu(x,n);
 
     Py_complex r = _Py_c_quot(c_1, c_powu(x, -n));
-    if (errno == EDOM
-        || (isfinite(r.real) && isfinite(r.imag)
-            && (r.real != 0.0 || r.imag != 0.0)))
-        return r;
 
-    /* gh-156695: x**|n| left the exponent range although the result is
-       representable.  Redo it with x scaled to exponent zero; both the
-       scaling and its undoing are exact. */
-    double m = fabs(x.real) > fabs(x.imag) ? fabs(x.real) : fabs(x.imag);
-    if (m == 0.0 || !isfinite(m))
-        return r;
-
-    int e;
-    frexp(m, &e);
-    Py_complex w = {ldexp(x.real, -e), ldexp(x.imag, -e)};
-    r = _Py_c_quot(c_1, c_powu(w, -n));
-    r.real = ldexp(r.real, (int)(e * n));
-    r.imag = ldexp(r.imag, (int)(e * n));
+    /* gh-156695: x**|n| needs roughly twice the exponent range of the
+       result, so it can leave the range even when the result itself is
+       representable, leaving the quotient degenerate.  Only then redo the
+       computation with x scaled to exponent zero; both the scaling and its
+       undoing are exact.  The common path above is untouched. */
+    if (!(isfinite(r.real) && isfinite(r.imag)
+          && (r.real != 0.0 || r.imag != 0.0))
+        && errno != EDOM)
+    {
+        double m = fabs(x.real) > fabs(x.imag) ? fabs(x.real) : fabs(x.imag);
+        if (m != 0.0 && isfinite(m)) {
+            int e;
+            frexp(m, &e);
+            Py_complex w = {ldexp(x.real, -e), ldexp(x.imag, -e)};
+            r = _Py_c_quot(c_1, c_powu(w, -n));
+            r.real = ldexp(r.real, (int)(e * n));
+            r.imag = ldexp(r.imag, (int)(e * n));
+        }
+    }
     return r;
 }
 
