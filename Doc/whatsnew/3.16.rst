@@ -498,6 +498,11 @@ symtable
   like the builtin :func:`compile`.
   (Contributed by Serhiy Storchaka in :gh:`153844`.)
 
+* Inlined list, set and dict comprehensions (:pep:`709`) are now represented
+  as their own symbol tables, of type
+  :attr:`~symtable.SymbolTableType.INLINED_COMPREHENSION`.
+  (Contributed by Irit Katriel in :gh:`124697`.)
+
 
 tkinter
 -------
