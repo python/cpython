@@ -104,6 +104,9 @@ import weakref
 from . import ElementPath
 
 
+# The white space characters of the XML specification (see XML 1.0, 2.3).
+_XML_WHITESPACE = " \t\r\n"
+
 class ParseError(SyntaxError):
     """An error when parsing an XML document.
 
@@ -1190,17 +1193,17 @@ def indent(tree, space="  ", level=0):
             child_indentation = indentations[level] + space
             indentations.append(child_indentation)
 
-        if not elem.text or not elem.text.strip():
+        if not elem.text or not elem.text.strip(_XML_WHITESPACE):
             elem.text = child_indentation
 
         for child in elem:
             if len(child):
                 _indent_children(child, child_level)
-            if not child.tail or not child.tail.strip():
+            if not child.tail or not child.tail.strip(_XML_WHITESPACE):
                 child.tail = child_indentation
 
         # Dedent after the last child by overwriting the previous indentation.
-        if not child.tail.strip():
+        if not child.tail.strip(_XML_WHITESPACE):
             child.tail = indentations[level]
 
     _indent_children(tree, 0)
@@ -1701,7 +1704,7 @@ class XMLParser:
             if prefix == ">":
                 self._doctype = None
                 return
-            text = text.strip()
+            text = text.strip(_XML_WHITESPACE)
             if not text:
                 return
             self._doctype.append(text)
@@ -1917,7 +1920,7 @@ class C14NWriterTarget:
         data = _join_text(self._data)
         del self._data[:]
         if self._strip_text and not self._preserve_space[-1]:
-            data = data.strip()
+            data = data.strip(_XML_WHITESPACE)
         if self._pending_start is not None:
             args, self._pending_start = self._pending_start, None
             qname_text = data if data and _looks_like_prefix_name(data) else None
