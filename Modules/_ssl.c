@@ -179,6 +179,9 @@ extern const SSL_METHOD *TLSv1_2_method(void);
   #ifndef PY_SSL_DEFAULT_CIPHER_STRING
      #error "Py_SSL_DEFAULT_CIPHERS 0 needs Py_SSL_DEFAULT_CIPHER_STRING"
   #endif
+  #ifndef PY_SSL_DEFAULT_CIPHERSUITES
+     #define PY_SSL_DEFAULT_CIPHERSUITES TLS_DEFAULT_CIPHERSUITES
+  #endif
   #ifndef PY_SSL_MIN_PROTOCOL
     #define PY_SSL_MIN_PROTOCOL TLS1_2_VERSION
   #endif
@@ -197,12 +200,15 @@ extern const SSL_METHOD *TLSv1_2_method(void);
  * https://hynek.me/articles/hardening-your-web-servers-ssl-ciphers/
  */
   #define PY_SSL_DEFAULT_CIPHER_STRING "@SECLEVEL=2:ECDH+AESGCM:ECDH+CHACHA20:ECDH+AES:DHE+AES:!aNULL:!eNULL:!aDSS:!SHA1:!AESCCM"
+/* Select all 5 TLSv1.3 cipher suites */
+  #define PY_SSL_DEFAULT_CIPHERSUITES "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:TLS_AES_128_CCM_SHA256:TLS_AES_128_CCM_8_SHA256"
   #ifndef PY_SSL_MIN_PROTOCOL
     #define PY_SSL_MIN_PROTOCOL TLS1_2_VERSION
   #endif
 #elif PY_SSL_DEFAULT_CIPHERS == 2
 /* Ignored in SSLContext constructor, only used to as _ssl.DEFAULT_CIPHER_STRING */
   #define PY_SSL_DEFAULT_CIPHER_STRING SSL_DEFAULT_CIPHER_LIST
+  #define PY_SSL_DEFAULT_CIPHERSUITES  TLS_DEFAULT_CIPHERSUITES
 #else
   #error "Unsupported PY_SSL_DEFAULT_CIPHERS"
 #endif
@@ -3561,6 +3567,15 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
         ERR_clear_error();
         PyErr_SetString(get_state_ctx(self)->PySSLErrorObject,
                         "No cipher can be selected.");
+        goto error;
+    }
+    /* TLSv1.3 ciphersuites */
+    result = SSL_CTX_set_ciphersuites(ctx, PY_SSL_DEFAULT_CIPHERSUITES);
+    if (result == 0) {
+        Py_DECREF(self);
+        ERR_clear_error();
+        PyErr_SetString(get_state_ctx(self)->PySSLErrorObject,
+                        "No ciphersuite can be selected.");
         goto error;
     }
 #ifdef PY_SSL_MIN_PROTOCOL
