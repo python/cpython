@@ -120,13 +120,9 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
     // GH-99729: Clearing this frame can expose the stack (via finalizers). It's
     // crucial that this frame has been unlinked, and is no longer visible:
     assert(_PyThreadState_GET()->current_frame != frame);
-#ifdef Py_GIL_DISABLED
-    PyFrameObject *f = _Py_atomic_exchange_ptr(&frame->frame_obj, NULL);
-#else
-    PyFrameObject *f = frame->frame_obj;
-    frame->frame_obj = NULL;
-#endif
+    PyFrameObject *f = FT_ATOMIC_LOAD_PTR_RELAXED(frame->frame_obj);
     if (f != NULL) {
+        FT_ATOMIC_STORE_PTR_RELAXED(frame->frame_obj, NULL);
         if (!_PyObject_IsUniquelyReferenced((PyObject *)f)) {
             take_ownership(f, frame);
             Py_DECREF(f);
