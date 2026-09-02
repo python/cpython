@@ -1416,10 +1416,7 @@ _PyCompile_OptimizeAndAssemble(compiler *c, int addNone)
     PyObject *filename = c->c_filename;
 
     int code_flags = compute_code_flags(c);
-    if (code_flags < 0) {
-        return NULL;
-    }
-
+    assert(code_flags >= 0);
     if (_PyCodegen_AddReturnAtEnd(c, addNone) < 0) {
         return NULL;
     }
