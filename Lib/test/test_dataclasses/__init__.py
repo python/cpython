@@ -27,7 +27,7 @@ import typing       # Needed for the string "typing.ClassVar[int]" to work as an
 import dataclasses  # Needed for the string "dataclasses.InitVar[int]" to work as an annotation.
 
 from test import support
-from test.support import cpython_only, import_helper, script_helper
+from test.support import cpython_only, import_helper
 
 # Just any custom exception we can catch.
 class CustomError(Exception): pass
@@ -43,17 +43,17 @@ class TestImportTime(unittest.TestCase):
 
     @cpython_only
     def test_slots_does_not_import_inspect(self):
-        code = textwrap.dedent("""
-            import sys
-            from dataclasses import dataclass
-
-            @dataclass(slots=True)
+        create_slotted_class = textwrap.dedent(
+            """
+            @dataclasses.dataclass(slots=True)
             class C:
                 x: int = 0
-
-            assert 'inspect' not in sys.modules
-        """)
-        script_helper.assert_python_ok("-c", code)
+            """
+        )
+        import_helper.ensure_lazy_imports(
+            "dataclasses", {"inspect"},
+            additional_code=create_slotted_class,
+        )
 
 
 class TestCase(unittest.TestCase):
