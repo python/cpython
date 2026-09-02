@@ -1134,7 +1134,16 @@ class CGIHTTPServerTestCase(BaseTestCase):
             self.assertEqual(res.read(), b'%d %d' % (size, size) + self.linesep)
 
     def test_large_content_length_truncated(self):
-        with support.swap_attr(self.request_handler, 'timeout', support.LOOPBACK_TIMEOUT):
+        timeout = support.LOOPBACK_TIMEOUT
+        if not hasattr(os, 'fork'):
+            # On Windows, request() waits for the entire timeout; the default
+            # LOOPBACK_TIMEOUT (10s) is too long for 40 repetitions.
+            # Use a fraction of that (for slow machines), or .001 (in case
+            # LOOPBACK_TIMEOUT is configured to be smaller).
+            timeout = max(timeout / 100, 0.001)
+            # (On Unix, request() returns early so a large LOOPBACK_TIMEOUT
+            # isn't an issue.)
+        with support.swap_attr(self.request_handler, 'timeout', timeout):
             for w in range(18, 65):
                 size = 1 << w
                 headers = {'Content-Length' : str(size)}
