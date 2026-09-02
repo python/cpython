@@ -617,6 +617,16 @@ class AsyncGenTest(unittest.TestCase):
         applied_twice = aiter(applied_once)
         self.assertIs(applied_once, applied_twice)
 
+    def test_aiter_callable_errors(self):
+        async def gen():
+            yield 1
+        self.assertRaises(TypeError, aiter, gen(), 1)
+        self.assertRaises(TypeError, aiter, [1, 2], stop_exception=LookupError)
+        self.assertRaises(TypeError, aiter, len, stop_exception=42)
+        self.assertRaises(TypeError, aiter, len,
+                          stop_exception=(LookupError, 42))
+        self.assertRaises(TypeError, aiter, len, stop_exception=LookupError())
+
     def test_anext_iter(self):
         class MyError(Exception):
             pass
@@ -1118,16 +1128,6 @@ class AsyncGenAsyncioTest(unittest.TestCase):
                 await task
         self.loop.run_until_complete(main())
         self.assertEqual(cancelled, [1])
-
-    def test_aiter_callable_errors(self):
-        async def gen():
-            yield 1
-        self.assertRaises(TypeError, aiter, gen(), 1)
-        self.assertRaises(TypeError, aiter, [1, 2], stop_exception=LookupError)
-        self.assertRaises(TypeError, aiter, len, stop_exception=42)
-        self.assertRaises(TypeError, aiter, len,
-                          stop_exception=(LookupError, 42))
-        self.assertRaises(TypeError, aiter, len, stop_exception=LookupError())
 
     def test_anext_bad_args(self):
         async def gen():
