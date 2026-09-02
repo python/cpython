@@ -1139,7 +1139,7 @@ class CGIHTTPServerTestCase(BaseTestCase):
             # On Windows, request() waits for the entire timeout; the default
             # LOOPBACK_TIMEOUT (10s) is too long for 40 repetitions.
             # Use a fraction of that (for slow machines), or .001 (in case
-            # LOOPBACK_TIMEOUT is cunfigured to be smaller).
+            # LOOPBACK_TIMEOUT is configured to be smaller).
             timeout = max(timeout / 100, 0.001)
             # (On Unix, request() returns early so a large LOOPBACK_TIMEOUT
             # isn't an issue.)
