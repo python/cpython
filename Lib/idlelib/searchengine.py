@@ -180,7 +180,7 @@ class SearchEngine:
                 wrapped = 1
                 wrap = 0
                 pos = text.index("end-1c")
-                line, col = map(int, pos.split("."))
+                line = int(pos.split(".")[0])
             chars = text.get("%d.0" % line, "%d.0" % (line+1))
             col = len(chars) - 1
         return None
