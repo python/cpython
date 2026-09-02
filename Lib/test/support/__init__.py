@@ -3529,10 +3529,10 @@ def check_immutable_type(testcase, type):
 
 
 def built_with_c_assertions():
-    # Check if Python was built with C assertions (assert())
+    """Check if Python was built with C assertions (assert())."""
 
     if MS_WINDOWS:
-        # On Windows, rely on Py_DEBUG macro to check for assertions
+        # On Windows, rely on the Py_DEBUG macro to check for assertions
         return Py_DEBUG
 
     # Check if the NDEBUG macro is defined in C compiler flags
