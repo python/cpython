@@ -170,7 +170,9 @@ gen_clear_frame(PyGenObject *gen)
     _PyInterpreterFrame *frame = &gen->gi_iframe;
     _PyThreadState_UpdateLastProfiledFrame(_PyThreadState_GET(), frame, frame->previous);
     frame->previous = NULL;
+    Py_BEGIN_CRITICAL_SECTION(gen);
     _PyFrame_ClearExceptCode(frame);
+    Py_END_CRITICAL_SECTION();
     _PyErr_ClearExcState(&gen->gi_exc_state);
 }
 
@@ -960,8 +962,17 @@ _gen_getframe(PyGenObject *gen, const char *const name)
     if (FRAME_STATE_FINISHED(frame_state)) {
         Py_RETURN_NONE;
     }
-    // TODO: still not thread-safe with free threading
-    return _Py_XNewRef((PyObject *)_PyFrame_GetFrameObject(&gen->gi_iframe));
+    PyObject *frame = NULL;
+    Py_BEGIN_CRITICAL_SECTION(gen);
+    frame_state = FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state);
+    if (FRAME_STATE_FINISHED(frame_state)) {
+        frame = Py_None;
+    }
+    else {
+        frame = _Py_XNewRef((PyObject *)_PyFrame_GetFrameObject(&gen->gi_iframe));
+    }
+    Py_END_CRITICAL_SECTION();
+    return frame;
 }
 
 static PyObject *
