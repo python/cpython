@@ -4,6 +4,7 @@ import unittest
 
 from .util import memory_database
 from .util import MemoryDatabaseMixin
+from .util import requires_virtual_table
 
 
 class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
@@ -54,6 +55,24 @@ class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
         ]
         [self.assertEqual(expected_sqls[i], actual_sqls[i])
             for i in range(len(expected_sqls))]
+
+    def test_dump_single_quote_in_identifier(self):
+        # A single quote in a table or column name must not break the dump.
+        self.cu.execute("""CREATE TABLE "a'b" ("c'd" text);""")
+        self.cu.execute("""INSERT INTO "a'b" VALUES('x''y');""")
+        expected = [
+            "BEGIN TRANSACTION;",
+            """CREATE TABLE "a'b" ("c'd" text);""",
+            """INSERT INTO "a'b" VALUES('x''y');""",
+            "COMMIT;",
+        ]
+        actual = list(self.cx.iterdump())
+        self.assertEqual(expected, actual)
+        # The dump restores into a fresh database.
+        with memory_database() as cx2:
+            cx2.executescript("".join(actual))
+            row = cx2.execute("""SELECT "c'd" FROM "a'b";""").fetchone()
+            self.assertEqual(row[0], "x'y")
 
     def test_table_dump_filter(self):
         all_table_sqls = [
@@ -206,6 +225,7 @@ class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
         self.assertEqual(expected, actual)
         self.assertEqual(self.cx.row_factory, dict_factory)
 
+    @requires_virtual_table("fts4")
     def test_dump_virtual_tables(self):
         # gh-64662
         expected = [

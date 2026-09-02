@@ -8,6 +8,7 @@ from . import events
 from . import exceptions as exceptions_mod
 from . import locks
 from . import tasks
+from . import futures
 
 
 async def staggered_race(coro_fns, delay, *, loop=None):
@@ -61,8 +62,8 @@ async def staggered_race(coro_fns, delay, *, loop=None):
           coroutine's entry is ``None``.
 
     """
-    # TODO: when we have aiter() and anext(), allow async iterables in coro_fns.
     loop = loop or events.get_running_loop()
+    parent_task = tasks.current_task(loop)
     enum_coro_fns = enumerate(coro_fns)
     winner_result = None
     winner_index = None
@@ -73,6 +74,7 @@ async def staggered_race(coro_fns, delay, *, loop=None):
 
     def task_done(task):
         running_tasks.discard(task)
+        futures.future_discard_from_awaited_by(task, parent_task)
         if (
             on_completed_fut is not None
             and not on_completed_fut.done()
@@ -88,11 +90,7 @@ async def staggered_race(coro_fns, delay, *, loop=None):
             return
         unhandled_exceptions.append(exc)
 
-    async def run_one_coro(ok_to_start, previous_failed) -> None:
-        # in eager tasks this waits for the calling task to append this task
-        # to running_tasks, in regular tasks this wait is a no-op that does
-        # not yield a future. See gh-124309.
-        await ok_to_start.wait()
+    async def run_one_coro(previous_failed) -> None:
         # Wait for the previous task to finish, or for delay seconds
         if previous_failed is not None:
             with contextlib.suppress(exceptions_mod.TimeoutError):
@@ -108,13 +106,13 @@ async def staggered_race(coro_fns, delay, *, loop=None):
             return
         # Start task that will run the next coroutine
         this_failed = locks.Event()
-        next_ok_to_start = locks.Event()
-        next_task = loop.create_task(run_one_coro(next_ok_to_start, this_failed))
+        next_task = loop.create_task(
+            run_one_coro(this_failed),
+            eager_start=False,
+        )
+        futures.future_add_to_awaited_by(next_task, parent_task)
         running_tasks.add(next_task)
         next_task.add_done_callback(task_done)
-        # next_task has been appended to running_tasks so next_task is ok to
-        # start.
-        next_ok_to_start.set()
         # Prepare place to put this coroutine's exceptions if not won
         exceptions.append(None)
         assert len(exceptions) == this_index + 1
@@ -146,12 +144,11 @@ async def staggered_race(coro_fns, delay, *, loop=None):
 
     propagate_cancellation_error = None
     try:
-        ok_to_start = locks.Event()
-        first_task = loop.create_task(run_one_coro(ok_to_start, None))
+        first_task = loop.create_task(run_one_coro(None), eager_start=False)
+        futures.future_add_to_awaited_by(first_task, parent_task)
         running_tasks.add(first_task)
         first_task.add_done_callback(task_done)
-        # first_task has been appended to running_tasks so first_task is ok to start.
-        ok_to_start.set()
+        # first_task has been appended to running_tasks before the event loop starts running it.
         propagate_cancellation_error = None
         # Make sure no tasks are left running if we leave this function
         while running_tasks:
@@ -171,4 +168,4 @@ async def staggered_race(coro_fns, delay, *, loop=None):
             raise propagate_cancellation_error
         return winner_result, winner_index, exceptions
     finally:
-        del exceptions, propagate_cancellation_error, unhandled_exceptions
+        del exceptions, propagate_cancellation_error, unhandled_exceptions, parent_task

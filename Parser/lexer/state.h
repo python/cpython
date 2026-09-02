@@ -2,6 +2,7 @@
 #define _PY_LEXER_H_
 
 #include "object.h"
+#include "../tokenizer/source.h"
 
 #define MAXINDENT 100       /* Max indentation level */
 #define MAXLEVEL 200        /* Max parentheses level */
@@ -9,12 +10,8 @@
 
 #define INSIDE_FSTRING(tok) (tok->tok_mode_stack_index > 0)
 #define INSIDE_FSTRING_EXPR(tok) (tok->curly_bracket_expr_start_depth >= 0)
-
-enum decoding_state {
-    STATE_INIT,
-    STATE_SEEK_CODING,
-    STATE_NORMAL
-};
+#define INSIDE_FSTRING_EXPR_AT_TOP(tok) \
+    (tok->curly_bracket_depth - tok->curly_bracket_expr_start_depth == 1)
 
 enum interactive_underflow_t {
     /* Normal mode of operation: return a new token when asked in interactive mode */
@@ -36,6 +33,11 @@ enum tokenizer_mode_kind_t {
     TOK_FSTRING_MODE,
 };
 
+enum string_kind_t {
+    FSTRING,
+    TSTRING,
+};
+
 #define MAX_EXPR_NESTING 3
 
 typedef struct _tokenizer_mode {
@@ -44,21 +46,23 @@ typedef struct _tokenizer_mode {
     int curly_bracket_depth;
     int curly_bracket_expr_start_depth;
 
-    char f_string_quote;
-    int f_string_quote_size;
-    int f_string_raw;
-    const char* f_string_start;
-    const char* f_string_multi_line_start;
-    int f_string_line_start;
+    char quote;
+    int quote_size;
+    int raw;
+    const char* start;
+    const char* multi_line_start;
+    int first_line;
 
-    Py_ssize_t f_string_start_offset;
-    Py_ssize_t f_string_multi_line_start_offset;
+    Py_ssize_t start_offset;
+    Py_ssize_t multi_line_start_offset;
 
     Py_ssize_t last_expr_size;
     Py_ssize_t last_expr_end;
     char* last_expr_buffer;
-    int f_string_debug;
+    int in_debug;
     int in_format_spec;
+
+    enum string_kind_t string_kind;
 } tokenizer_mode;
 
 /* Tokenizer state */
@@ -81,7 +85,7 @@ struct tok_state {
     int indstack[MAXINDENT];            /* Stack of indents */
     int atbol;          /* Nonzero if at begin of new line */
     int pendin;         /* Pending indents (if > 0) or dedents (if < 0) */
-    const char *prompt, *nextprompt;          /* For interactive prompting */
+    const char *prompt;          /* For interactive prompting */
     int lineno;         /* Current line number */
     int first_lineno;   /* First line of a single line or multi line string
                            expression (cf. issue 16806) */
@@ -93,30 +97,25 @@ struct tok_state {
     int parenlinenostack[MAXLEVEL];
     int parencolstack[MAXLEVEL];
     PyObject *filename;
+    PyObject *module;
     /* Stuff for checking on different tab sizes */
     int altindstack[MAXINDENT];         /* Stack of alternate indents */
     /* Stuff for PEP 0263 */
-    enum decoding_state decoding_state;
-    int decoding_erred;         /* whether erred in decoding  */
+    int input_error;
     char *encoding;         /* Source encoding. */
-    int cont_line;          /* whether we are in a continuation line. */
     const char* line_start;     /* pointer to start of current line */
     const char* multi_line_start; /* pointer to start of first line of
                                      a single line or multi line string
                                      expression (cf. issue 16806) */
-    PyObject *decoding_readline; /* open(...).readline */
-    PyObject *decoding_buffer;
-    PyObject *readline;     /* readline() function */
-    const char* enc;        /* Encoding for the current str. */
     char* str;          /* Source string being tokenized (if tokenizing from a string)*/
-    char* input;       /* Tokenizer's newline translated copy of the string. */
+
+    _PyTok_SourceText source;
+    struct _PyTok_Reader *reader;
 
     int type_comments;      /* Whether to look for type comments */
 
     /* How to proceed when asked for a new token in interactive mode */
     enum interactive_underflow_t interactive_underflow;
-    int (*underflow)(struct tok_state *); /* Function to call when buffer is empty and we need to refill it*/
-
     int report_warnings;
     // TODO: Factor this into its own thing
     tokenizer_mode tok_mode_stack[MAXFSTRINGLEVEL];

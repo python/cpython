@@ -27,16 +27,15 @@ class EnvBuilder:
     By default, the builder makes the system (global) site-packages dir
     *un*available to the created environment.
 
-    If invoked using the Python -m option, the default is to use copying
-    on Windows platforms but symlinks elsewhere. If instantiated some
-    other way, the default is to *not* use symlinks.
+    By default, the builder uses copying on Windows platforms but symlinks
+    elsewhere, matching the behaviour when invoked using the Python -m option.
 
     :param system_site_packages: If True, the system (global) site-packages
                                  dir is available to created environments.
     :param clear: If True, delete the contents of the environment directory if
                   it already exists, before environment creation.
     :param symlinks: If True, attempt to symlink rather than copy files into
-                     virtual environment.
+                     virtual environment. If None, use the platform default.
     :param upgrade: If True, upgrade an existing virtual environment.
     :param with_pip: If True, ensure pip is installed in the virtual
                      environment
@@ -47,11 +46,11 @@ class EnvBuilder:
     """
 
     def __init__(self, system_site_packages=False, clear=False,
-                 symlinks=False, upgrade=False, with_pip=False, prompt=None,
+                 symlinks=None, upgrade=False, with_pip=False, prompt=None,
                  upgrade_deps=False, *, scm_ignore_files=frozenset()):
         self.system_site_packages = system_site_packages
         self.clear = clear
-        self.symlinks = symlinks
+        self.symlinks = os.name != 'nt' if symlinks is None else symlinks
         self.upgrade = upgrade
         self.with_pip = with_pip
         self.orig_prompt = prompt
@@ -174,6 +173,7 @@ class EnvBuilder:
         context.python_exe = exename
         binpath = self._venv_path(env_dir, 'scripts')
         libpath = self._venv_path(env_dir, 'purelib')
+        platlibpath = self._venv_path(env_dir, 'platlib')
 
         # PEP 405 says venvs should create a local include directory.
         # See https://peps.python.org/pep-0405/#include-files
@@ -191,12 +191,8 @@ class EnvBuilder:
         create_if_needed(incpath)
         context.lib_path = libpath
         create_if_needed(libpath)
-        # Issue 21197: create lib64 as a symlink to lib on 64-bit non-OS X POSIX
-        if ((sys.maxsize > 2**32) and (os.name == 'posix') and
-            (sys.platform != 'darwin')):
-            link_path = os.path.join(env_dir, 'lib64')
-            if not os.path.exists(link_path):   # Issue #21643
-                os.symlink('lib', link_path)
+        context.platlib_path = platlibpath
+        create_if_needed(platlibpath)
         context.bin_path = binpath
         context.bin_name = os.path.relpath(binpath, env_dir)
         context.env_exe = os.path.join(binpath, exename)
@@ -270,6 +266,8 @@ class EnvBuilder:
         switch to a different set of files instead.)
         """
         assert os.name != 'nt'
+        if os.path.islink(dst) and not os.path.exists(dst):
+            os.unlink(dst)
         force_copy = not self.symlinks
         if not force_copy:
             try:
@@ -309,15 +307,11 @@ class EnvBuilder:
             binpath = context.bin_path
             path = context.env_exe
             copier = self.symlink_or_copy
-            dirname = context.python_dir
             copier(context.executable, path)
             if not os.path.islink(path):
                 os.chmod(path, 0o755)
-
-            suffixes = ['python', 'python3', f'python3.{sys.version_info[1]}']
-            if sys.version_info[:2] == (3, 14):
-                suffixes.append('𝜋thon')
-            for suffix in suffixes:
+            for suffix in ('python', 'python3',
+                           f'python3.{sys.version_info[1]}'):
                 path = os.path.join(binpath, suffix)
                 if not os.path.exists(path):
                     # Issue 18807: make copies if
@@ -325,6 +319,14 @@ class EnvBuilder:
                     copier(context.env_exe, path, relative_symlinks_ok=True)
                     if not os.path.islink(path):
                         os.chmod(path, 0o755)
+
+            if not self.symlinks and sys.platform == 'cygwin':
+                # Copy libpython DLL
+                libpython_dll = sysconfig.get_config_var('DLLLIBRARY')
+                if not os.path.exists(os.path.join(binpath, libpython_dll)):
+                    exe_path = os.path.dirname(sys.executable)
+                    shutil.copy(os.path.join(exe_path, libpython_dll),
+                                os.path.join(binpath, libpython_dll))
 
     else:
         def setup_python(self, context):
@@ -365,6 +367,9 @@ class EnvBuilder:
                 exe_t = f'3.{sys.version_info[1]}t'
                 python_exe = os.path.join(dirname, f'python{exe_t}{exe_d}.exe')
                 pythonw_exe = os.path.join(dirname, f'pythonw{exe_t}{exe_d}.exe')
+                if not os.path.isfile(python_exe):
+                    python_exe = os.path.join(dirname, f'python{exe_d}.exe')
+                    pythonw_exe = os.path.join(dirname, f'pythonw{exe_d}.exe')
                 link_sources = {
                     'python.exe': python_exe,
                     f'python{exe_d}.exe': python_exe,
@@ -588,7 +593,7 @@ class EnvBuilder:
                                    'may be binary: %s', srcfile, e)
                     continue
                 if new_data == data:
-                    shutil.copy2(srcfile, dstfile)
+                    shutil.copy(srcfile, dstfile)
                 else:
                     with open(dstfile, 'wb') as f:
                         f.write(new_data)
@@ -603,7 +608,7 @@ class EnvBuilder:
 
 
 def create(env_dir, system_site_packages=False, clear=False,
-           symlinks=False, with_pip=False, prompt=None, upgrade_deps=False,
+           symlinks=None, with_pip=False, prompt=None, upgrade_deps=False,
            *, scm_ignore_files=frozenset()):
     """Create a virtual environment in a directory."""
     builder = EnvBuilder(system_site_packages=system_site_packages,
@@ -624,7 +629,8 @@ def main(args=None):
                                             'created, you may wish to '
                                             'activate it, e.g. by '
                                             'sourcing an activate script '
-                                            'in its bin directory.')
+                                            'in its bin directory.',
+                                     )
     parser.add_argument('dirs', metavar='ENV_DIR', nargs='+',
                         help='A directory to create the environment in.')
     parser.add_argument('--system-site-packages', default=False,

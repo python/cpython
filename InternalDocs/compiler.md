@@ -359,19 +359,19 @@ in [Python/compile.c](../Python/compile.c) into a sequence of pseudo instruction
 These are similar to bytecode, but in some cases they are more abstract, and are
 resolved later into actual bytecode. The construction of this instruction sequence
 is handled by several functions that break the task down by various AST node types.
-The functions are all named `compiler_visit_{xx}` where *xx* is the name of the node
+The functions are all named `codegen_visit_{xx}` where *xx* is the name of the node
 type (such as `stmt`, `expr`, etc.).  Each function receives a `struct compiler *`
 and `{xx}_ty` where *xx* is the AST node type.  Typically these functions
 consist of a large 'switch' statement, branching based on the kind of
 node type passed to it.  Simple things are handled inline in the
 'switch' statement with more complex transformations farmed out to other
-functions named `compiler_{xx}` with *xx* being a descriptive name of what is
+functions named `codegen_{xx}` with *xx* being a descriptive name of what is
 being handled.
 
 When transforming an arbitrary AST node, use the `VISIT()` macro.
-The appropriate `compiler_visit_{xx}` function is called, based on the value
+The appropriate `codegen_visit_{xx}` function is called, based on the value
 passed in for <node type> (so `VISIT({c}, expr, {node})` calls
-`compiler_visit_expr({c}, {node})`).  The `VISIT_SEQ()` macro is very similar,
+`codegen_visit_expr({c}, {node})`).  The `VISIT_SEQ()` macro is very similar,
 but is called on AST node sequences (those values that were created as
 arguments to a node that used the '*' modifier).
 
@@ -401,7 +401,7 @@ Emission of bytecode is handled by the following macros:
   add the `LOAD_CONST` opcode with the proper argument based on the
   position of the specified PyObject in the consts table.
 * `ADDOP_LOAD_CONST_NEW(struct compiler *, location, PyObject *)`:
-  just like `ADDOP_LOAD_CONST_NEW`, but steals a reference to PyObject
+  just like `ADDOP_LOAD_CONST`, but steals a reference to PyObject
 * `ADDOP_JUMP(struct compiler *, location, int, basicblock *)`:
   create a jump to a basic block
 
@@ -414,8 +414,8 @@ which is added at the end of a function is not associated with any
 line in the source code.
 
 There are several helper functions that will emit pseudo-instructions
-and are named `compiler_{xx}()` where *xx* is what the function helps
-with (`list`, `boolop`, etc.).  A rather useful one is `compiler_nameop()`.
+and are named `codegen_{xx}()` where *xx* is what the function helps
+with (`list`, `boolop`, etc.).  A rather useful one is `codegen_nameop()`.
 This function looks up the scope of a variable and, based on the
 expression context, emits the proper opcode to load, store, or delete
 the variable.
@@ -505,8 +505,8 @@ Important files
   * [Python/ast.c](../Python/ast.c):
     Used for validating the AST.
 
-  * [Python/ast_opt.c](../Python/ast_opt.c):
-    Optimizes the AST.
+  * [Python/ast_preprocess.c](../Python/ast_preprocess.c):
+    Preprocesses the AST before compiling.
 
   * [Python/ast_unparse.c](../Python/ast_unparse.c):
     Converts the AST expression node back into a string (for string annotations).
@@ -604,4 +604,4 @@ References
        pp. 213--227, 1997.
 
 [^2]: The Zephyr Abstract Syntax Description Language.:
-      https://www.cs.princeton.edu/research/techreps/TR-554-97
+      https://www.cs.princeton.edu/research/techreps/254

@@ -13,7 +13,7 @@ _commentclose = re.compile(r'--\s*>')
 _markedsectionclose = re.compile(r']\s*]\s*>')
 
 # An analysis of the MS-Word extensions is available at
-# http://www.planetpublish.com/xmlarena/xap/Thursday/WordtoXML.pdf
+# http://web.archive.org/web/20060321153828/http://www.planetpublish.com/xmlarena/xap/Thursday/WordtoXML.pdf
 
 _msmarkedsectionclose = re.compile(r']\s*>')
 

@@ -1,8 +1,10 @@
 import os
 import sys
 import warnings
+from array import array
 from inspect import isabstract
 from typing import Any
+import linecache
 
 from test import support
 from test.support import os_helper
@@ -73,6 +75,11 @@ def runtest_refleak(test_name, test_func,
     ps = copyreg.dispatch_table.copy()
     pic = sys.path_importer_cache.copy()
     zdc: dict[str, Any] | None
+    # Linecache holds a cache with the source of interactive code snippets
+    # (e.g. code typed in the REPL). This cache is not cleared by
+    # linecache.clearcache(). We need to save and restore it to avoid false
+    # positives.
+    linecache_data = linecache.cache.copy(), linecache._interactive_cache.copy() # type: ignore[attr-defined]
     try:
         import zipimport
     except ImportError:
@@ -87,24 +94,27 @@ def runtest_refleak(test_name, test_func,
         for obj in abc.__subclasses__() + [abc]:
             abcs[obj] = _get_dump(obj)[0]
 
-    # bpo-31217: Integer pool to get a single integer object for the same
-    # value. The pool is used to prevent false alarm when checking for memory
-    # block leaks. Fill the pool with values in -1000..1000 which are the most
-    # common (reference, memory block, file descriptor) differences.
-    int_pool = {value: value for value in range(-1000, 1000)}
-    def get_pooled_int(value):
-        return int_pool.setdefault(value, value)
+    # `ByteString` is not included in `collections.abc.__all__`
+    with warnings.catch_warnings(action='ignore', category=DeprecationWarning):
+        ByteString = collections.abc.ByteString
+    # Mypy doesn't even think `ByteString` is a class, hence the `type: ignore`
+    for obj in ByteString.__subclasses__() + [ByteString]:  # type: ignore[attr-defined]
+        abcs[obj] = _get_dump(obj)[0]
 
     warmups = hunt_refleak.warmups
     runs = hunt_refleak.runs
     filename = hunt_refleak.filename
     repcount = warmups + runs
 
-    # Pre-allocate to ensure that the loop doesn't allocate anything new
+    # Pre-allocate to ensure that the loop doesn't allocate anything new.
+    # Store the deltas as raw values in arrays rather than as int objects in
+    # lists: each unique delta stored as an object would live until the end of
+    # the loop and show up in the following repetition's reference and memory
+    # block deltas (gh-75400, gh-155981).
     rep_range = list(range(repcount))
-    rc_deltas = [0] * repcount
-    alloc_deltas = [0] * repcount
-    fd_deltas = [0] * repcount
+    rc_deltas = array('q', [0]) * repcount
+    alloc_deltas = array('q', [0]) * repcount
+    fd_deltas = array('q', [0]) * repcount
     getallocatedblocks = sys.getallocatedblocks
     gettotalrefcount = sys.gettotalrefcount
     getunicodeinternedsize = sys.getunicodeinternedsize
@@ -122,7 +132,7 @@ def runtest_refleak(test_name, test_func,
 
     xml_filename = 'refleak-xml.tmp'
     result = None
-    dash_R_cleanup(fs, ps, pic, zdc, abcs)
+    dash_R_cleanup(fs, ps, pic, zdc, abcs, linecache_data)
 
     for i in rep_range:
         support.gc_collect()
@@ -134,7 +144,7 @@ def runtest_refleak(test_name, test_func,
             refleak_helper._hunting_for_refleaks = current
 
         save_support_xml(xml_filename)
-        dash_R_cleanup(fs, ps, pic, zdc, abcs)
+        dash_R_cleanup(fs, ps, pic, zdc, abcs, linecache_data)
         support.gc_collect()
 
         # Read memory statistics immediately after the garbage collection.
@@ -148,12 +158,11 @@ def runtest_refleak(test_name, test_func,
         rc_after = gettotalrefcount()
         fd_after = fd_count()
 
-        rc_deltas[i] = get_pooled_int(rc_after - rc_before)
-        alloc_deltas[i] = get_pooled_int(alloc_after - alloc_before)
-        fd_deltas[i] = get_pooled_int(fd_after - fd_before)
+        rc_deltas[i] = rc_after - rc_before
+        alloc_deltas[i] = alloc_after - alloc_before
+        fd_deltas[i] = fd_after - fd_before
 
         if not quiet:
-            # use max, not sum, so total_leaks is one of the pooled ints
             total_leaks = max(rc_deltas[i], alloc_deltas[i], fd_deltas[i])
             if total_leaks <= 0:
                 symbol = '.'
@@ -199,13 +208,13 @@ def runtest_refleak(test_name, test_func,
         return any(deltas)
 
     failed = False
-    for deltas, item_name, checker in [
+    for raw_deltas, item_name, checker in [
         (rc_deltas, 'references', check_rc_deltas),
         (alloc_deltas, 'memory blocks', check_rc_deltas),
         (fd_deltas, 'file descriptors', check_fd_deltas)
     ]:
-        # ignore warmup runs
-        deltas = deltas[warmups:]
+        # ignore warmup runs; convert to a list for reporting
+        deltas = list(raw_deltas[warmups:])
         failing = checker(deltas)
         suspicious = any(deltas)
         if failing or suspicious:
@@ -223,7 +232,7 @@ def runtest_refleak(test_name, test_func,
     return (failed, result)
 
 
-def dash_R_cleanup(fs, ps, pic, zdc, abcs):
+def dash_R_cleanup(fs, ps, pic, zdc, abcs, linecache_data):
     import copyreg
     import collections.abc
 
@@ -233,6 +242,11 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     copyreg.dispatch_table.update(ps)
     sys.path_importer_cache.clear()
     sys.path_importer_cache.update(pic)
+    lcache, linteractive = linecache_data
+    linecache._interactive_cache.clear()
+    linecache._interactive_cache.update(linteractive)
+    linecache.cache.clear()
+    linecache.cache.update(lcache)
     try:
         import zipimport
     except ImportError:
@@ -243,6 +257,8 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
 
     # Clear ABC registries, restoring previously saved ABC registries.
     abs_classes = [getattr(collections.abc, a) for a in collections.abc.__all__]
+    with warnings.catch_warnings(action='ignore', category=DeprecationWarning):
+        abs_classes.append(collections.abc.ByteString)
     abs_classes = filter(isabstract, abs_classes)
     for abc in abs_classes:
         for obj in abc.__subclasses__() + [abc]:

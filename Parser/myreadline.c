@@ -11,7 +11,9 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
-#include "pycore_pystate.h"   // _PyThreadState_GET()
+#include "pycore_interp.h"        // _PyInterpreterState_GetConfig()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_signal.h"        // _PyOS_SigintEvent()
 #ifdef MS_WINDOWS
 #  ifndef WIN32_LEAN_AND_MEAN
 #    define WIN32_LEAN_AND_MEAN
@@ -160,8 +162,8 @@ _PyOS_WindowsConsoleReadline(PyThreadState *tstate, HANDLE hStdIn)
                 goto exit;
             err = 0;
             HANDLE hInterruptEvent = _PyOS_SigintEvent();
-            if (WaitForSingleObjectEx(hInterruptEvent, 100, FALSE)
-                    == WAIT_OBJECT_0) {
+            DWORD state = WaitForSingleObjectEx(hInterruptEvent, 100, FALSE);
+            if (state == WAIT_OBJECT_0) {
                 ResetEvent(hInterruptEvent);
                 PyEval_RestoreThread(tstate);
                 s = PyErr_CheckSignals();
@@ -170,7 +172,13 @@ _PyOS_WindowsConsoleReadline(PyThreadState *tstate, HANDLE hStdIn)
                     goto exit;
                 }
             }
-            break;
+            else if (state != WAIT_TIMEOUT) {
+                err = GetLastError();
+                goto exit;
+            }
+            /* The console cancelled the read and flushed its input buffer,
+               but no exception was raised.  Start the read over. */
+            continue;
         }
 
         total_read += n_read;
@@ -342,7 +350,7 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
             break;
         }
         n += strlen(p + n);
-    } while (p[n-1] != '\n');
+    } while (n == 0 || p[n-1] != '\n');
 
     pr = (char *)PyMem_RawRealloc(p, n+1);
     if (pr == NULL) {
@@ -363,8 +371,6 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 
 char *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *) = NULL;
 
-
-/* Interface used by file_tokenizer.c and bltinmodule.c */
 
 char *
 PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)

@@ -13,8 +13,8 @@ _PyLexer_remember_fstring_buffers(struct tok_state *tok)
 
     for (index = tok->tok_mode_stack_index; index >= 0; --index) {
         mode = &(tok->tok_mode_stack[index]);
-        mode->f_string_start_offset = mode->f_string_start - tok->buf;
-        mode->f_string_multi_line_start_offset = mode->f_string_multi_line_start - tok->buf;
+        mode->start_offset = mode->start == NULL ? -1 : mode->start - tok->buf;
+        mode->multi_line_start_offset = mode->multi_line_start == NULL ? -1 : mode->multi_line_start - tok->buf;
     }
 }
 
@@ -27,25 +27,11 @@ _PyLexer_restore_fstring_buffers(struct tok_state *tok)
 
     for (index = tok->tok_mode_stack_index; index >= 0; --index) {
         mode = &(tok->tok_mode_stack[index]);
-        mode->f_string_start = tok->buf + mode->f_string_start_offset;
-        mode->f_string_multi_line_start = tok->buf + mode->f_string_multi_line_start_offset;
+        mode->start = mode->start_offset < 0 ? NULL : tok->buf + mode->start_offset;
+        mode->multi_line_start = mode->multi_line_start_offset < 0 ? NULL : tok->buf + mode->multi_line_start_offset;
     }
 }
 
-/* Read a line of text from TOK into S, using the stream in TOK.
-   Return NULL on failure, else S.
-
-   On entry, tok->decoding_buffer will be one of:
-     1) NULL: need to call tok->decoding_readline to get a new line
-     2) PyUnicodeObject *: decoding_feof has called tok->decoding_readline and
-       stored the result in tok->decoding_buffer
-     3) PyByteArrayObject *: previous call to tok_readline_recode did not have enough room
-       (in the s buffer) to copy entire contents of the line read
-       by tok->decoding_readline.  tok->decoding_buffer has the overflow.
-       In this case, tok_readline_recode is called in a loop (with an expanded buffer)
-       until the buffer ends with a '\n' (or until the end of the file is
-       reached): see tok_nextc and its calls to tok_reserve_buf.
-*/
 int
 _PyLexer_tok_reserve_buf(struct tok_state *tok, Py_ssize_t size)
 {

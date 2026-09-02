@@ -44,6 +44,10 @@ Direct API functions
 
    On failure, return ``NULL`` with an exception set.
 
+   .. note::
+      If the object implements the buffer protocol, then the buffer
+      must not be mutated while the bytearray object is being created.
+
 
 .. c:function:: PyObject* PyByteArray_FromStringAndSize(const char *string, Py_ssize_t len)
 
@@ -58,6 +62,10 @@ Direct API functions
 
    On failure, return ``NULL`` with an exception set.
 
+   .. note::
+      If the object implements the buffer protocol, then the buffer
+      must not be mutated while the bytearray object is being created.
+
 
 .. c:function:: Py_ssize_t PyByteArray_Size(PyObject *bytearray)
 
@@ -70,10 +78,18 @@ Direct API functions
    ``NULL`` pointer.  The returned array always has an extra
    null byte appended.
 
+   .. note::
+      It is not thread-safe to mutate the bytearray object while using the returned char array.
+
 
 .. c:function:: int PyByteArray_Resize(PyObject *bytearray, Py_ssize_t len)
 
    Resize the internal buffer of *bytearray* to *len*.
+   Failure is a ``-1`` return with an exception set.
+
+   .. versionchanged:: 3.14
+      A negative *len* will now result in an exception being set and -1 returned.
+
 
 Macros
 ^^^^^^
@@ -83,6 +99,9 @@ These macros trade safety for speed and they don't check pointers.
 .. c:function:: char* PyByteArray_AS_STRING(PyObject *bytearray)
 
    Similar to :c:func:`PyByteArray_AsString`, but without error checking.
+
+   .. note::
+      It is not thread-safe to mutate the bytearray object while using the returned char array.
 
 
 .. c:function:: Py_ssize_t PyByteArray_GET_SIZE(PyObject *bytearray)

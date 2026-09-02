@@ -36,9 +36,11 @@ enum_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(iterable), &_Py_ID(start), },
     };
     #undef NUM_KEYWORDS
@@ -80,7 +82,7 @@ exit:
 }
 
 PyDoc_STRVAR(reversed_new__doc__,
-"reversed(sequence, /)\n"
+"reversed(object, /)\n"
 "--\n"
 "\n"
 "Return a reverse iterator over the values of the given sequence.");
@@ -108,4 +110,4 @@ reversed_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2e339ade8bedb3a0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=155cc9483d5f9eab input=a9049054013a1b77]*/

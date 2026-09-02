@@ -3,7 +3,7 @@
 import __future__
 import ast
 import unittest
-from test.support import import_helper
+from test.support import force_not_colorized, import_helper
 from test.support.script_helper import spawn_python, kill_python
 from textwrap import dedent
 import os
@@ -176,6 +176,7 @@ class FutureTest(unittest.TestCase):
         exec("from __future__ import unicode_literals; x = ''", {}, scope)
         self.assertIsInstance(scope["x"], str)
 
+    @force_not_colorized
     def test_syntactical_future_repl(self):
         p = spawn_python('-i')
         p.stdin.write(b"from __future__ import barry_as_FLUFL\n")
@@ -349,6 +350,8 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq("(i ** 2 + j for i in (1, 2, 3) for j in (1, 2, 3))")
         eq("{i: 0 for i in (1, 2, 3)}")
         eq("{i: j for i, j in ((1, 'a'), (2, 'b'), (3, 'c'))}")
+        eq("{**x for x in ()}")
+        eq("[*x for x in ()]")
         eq("[(x, y) for x, y in (a, b)]")
         eq("[(x,) for x, in (a,)]")
         eq("Python3 > Python2 > COBOL")
@@ -422,6 +425,11 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq('(((a)))', 'a')
         eq('(((a, b)))', '(a, b)')
         eq("1 + 2 + 3")
+        eq("t''")
+        eq("t'{a    +  b}'")
+        eq("t'{a!s}'")
+        eq("t'{a:b}'")
+        eq("t'{a:b=}'")
 
     def test_fstring_debug_annotations(self):
         # f-strings with '=' don't round trip very well, so set the expected

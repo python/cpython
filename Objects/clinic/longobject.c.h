@@ -22,9 +22,11 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(base), },
     };
     #undef NUM_KEYWORDS
@@ -260,19 +262,20 @@ PyDoc_STRVAR(int_to_bytes__doc__,
 "Return an array of bytes representing an integer.\n"
 "\n"
 "  length\n"
-"    Length of bytes object to use.  An OverflowError is raised if the\n"
-"    integer is not representable with the given number of bytes.  Default\n"
-"    is length 1.\n"
+"    Length of bytes object to use.  An OverflowError is raised if\n"
+"    the integer is not representable with the given number of bytes.\n"
+"    Default is length 1.\n"
 "  byteorder\n"
-"    The byte order used to represent the integer.  If byteorder is \'big\',\n"
-"    the most significant byte is at the beginning of the byte array.  If\n"
-"    byteorder is \'little\', the most significant byte is at the end of the\n"
-"    byte array.  To request the native byte order of the host system, use\n"
-"    sys.byteorder as the byte order value.  Default is to use \'big\'.\n"
+"    The byte order used to represent the integer.  If byteorder is\n"
+"    \'big\', the most significant byte is at the beginning of the byte\n"
+"    array.  If byteorder is \'little\', the most significant byte is at\n"
+"    the end of the byte array.  To request the native byte order of\n"
+"    the host system, use sys.byteorder as the byte order value.\n"
+"    Default is to use \'big\'.\n"
 "  signed\n"
-"    Determines whether two\'s complement is used to represent the integer.\n"
-"    If signed is False and a negative integer is given, an OverflowError\n"
-"    is raised.");
+"    Determines whether two\'s complement is used to represent the\n"
+"    integer.  If signed is False and a negative integer is given,\n"
+"    an OverflowError is raised.");
 
 #define INT_TO_BYTES_METHODDEF    \
     {"to_bytes", _PyCFunction_CAST(int_to_bytes), METH_FASTCALL|METH_KEYWORDS, int_to_bytes__doc__},
@@ -291,9 +294,11 @@ int_to_bytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(length), &_Py_ID(byteorder), &_Py_ID(signed), },
     };
     #undef NUM_KEYWORDS
@@ -336,6 +341,11 @@ int_to_bytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
                 goto exit;
             }
             length = ival;
+            if (length < 0) {
+                PyErr_SetString(PyExc_ValueError,
+                                "length cannot be negative");
+                goto exit;
+            }
         }
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -374,17 +384,19 @@ PyDoc_STRVAR(int_from_bytes__doc__,
 "\n"
 "  bytes\n"
 "    Holds the array of bytes to convert.  The argument must either\n"
-"    support the buffer protocol or be an iterable object producing bytes.\n"
-"    Bytes and bytearray are examples of built-in objects that support the\n"
-"    buffer protocol.\n"
+"    support the buffer protocol or be an iterable object producing\n"
+"    bytes.  Bytes and bytearray are examples of built-in objects that\n"
+"    support the buffer protocol.\n"
 "  byteorder\n"
-"    The byte order used to represent the integer.  If byteorder is \'big\',\n"
-"    the most significant byte is at the beginning of the byte array.  If\n"
-"    byteorder is \'little\', the most significant byte is at the end of the\n"
-"    byte array.  To request the native byte order of the host system, use\n"
-"    sys.byteorder as the byte order value.  Default is to use \'big\'.\n"
+"    The byte order used to represent the integer.  If byteorder is\n"
+"    \'big\', the most significant byte is at the beginning of the byte\n"
+"    array.  If byteorder is \'little\', the most significant byte is at\n"
+"    the end of the byte array.  To request the native byte order of\n"
+"    the host system, use sys.byteorder as the byte order value.\n"
+"    Default is to use \'big\'.\n"
 "  signed\n"
-"    Indicates whether two\'s complement is used to represent the integer.");
+"    Indicates whether two\'s complement is used to represent the\n"
+"    integer.");
 
 #define INT_FROM_BYTES_METHODDEF    \
     {"from_bytes", _PyCFunction_CAST(int_from_bytes), METH_FASTCALL|METH_KEYWORDS|METH_CLASS, int_from_bytes__doc__},
@@ -394,7 +406,7 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
                     PyObject *byteorder, int is_signed);
 
 static PyObject *
-int_from_bytes(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+int_from_bytes(PyObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -403,9 +415,11 @@ int_from_bytes(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyOb
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(bytes), &_Py_ID(byteorder), &_Py_ID(signed), },
     };
     #undef NUM_KEYWORDS
@@ -456,7 +470,7 @@ skip_optional_pos:
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = int_from_bytes_impl(type, bytes_obj, byteorder, is_signed);
+    return_value = int_from_bytes_impl((PyTypeObject *)type, bytes_obj, byteorder, is_signed);
 
 exit:
     return return_value;
@@ -479,4 +493,4 @@ int_is_integer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return int_is_integer_impl(self);
 }
-/*[clinic end generated code: output=fb96bd642a643f75 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d95766fb7ff46963 input=a9049054013a1b77]*/

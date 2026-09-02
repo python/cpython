@@ -15,16 +15,6 @@ cET_alias = import_fresh_module('xml.etree.cElementTree',
 
 @unittest.skipUnless(cET, 'requires _elementtree')
 class MiscTests(unittest.TestCase):
-    # Issue #8651.
-    @support.bigmemtest(size=support._2G + 100, memuse=1, dry_run=False)
-    def test_length_overflow(self, size):
-        data = b'x' * size
-        parser = cET.XMLParser()
-        try:
-            self.assertRaises(OverflowError, parser.feed, data)
-        finally:
-            data = None
-
     def test_del_attribute(self):
         element = cET.Element('tag')
 
@@ -57,7 +47,8 @@ class MiscTests(unittest.TestCase):
             del element.attrib
         self.assertEqual(element.attrib, {'A': 'B', 'C': 'D'})
 
-    @unittest.skipIf(support.is_emscripten, "segfaults")
+    @support.skip_wasi_stack_overflow()
+    @support.skip_emscripten_stack_overflow()
     def test_trashcan(self):
         # If this test fails, it will most likely die via segfault.
         e = root = cET.Element('root')
@@ -193,8 +184,7 @@ class MiscTests(unittest.TestCase):
         )
         for tp in dataset:
             with self.subTest(tp=tp):
-                with self.assertRaisesRegex(TypeError, "immutable"):
-                    tp.foo = 1
+                support.check_immutable_type(self, tp)
 
     @support.cpython_only
     def test_disallow_instantiation(self):

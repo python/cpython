@@ -1,3 +1,4 @@
+import ast
 import contextlib
 import copy
 import inspect
@@ -407,6 +408,118 @@ class AsyncBadSyntaxTest(unittest.TestCase):
             with self.subTest(code=code), self.assertRaises(SyntaxError):
                 compile(code, "<test>", "exec")
 
+    def test_async_comprehension_scope(self):
+        # List/set/dict comprehensions with await or async for are allowed
+        # only in async functions, or at module level with top-level await.
+        allowed = [
+            "async def f():\n    [await x for x in y]",
+            "async def f():\n    {await x for x in y}",
+            "async def f():\n    {k: await x for k, x in y}",
+            "async def f():\n    [x async for x in y]",
+            "async def f():\n    {x async for x in y}",
+            "async def f():\n    {k: x async for k, x in y}",
+            "async def f():\n    [[await x for x in y] for y in z]",
+            # Defaults, bases, and genexp iterables are evaluated in the
+            # enclosing scope.
+            "async def outer():\n    async def f(x=[await y for y in z]): pass",
+            "async def f():\n    class C([await x for x in y]): pass",
+            "async def f():\n    (x for x in [await y for y in z])",
+            "async def f():\n    (x for x in [y async for y in z])",
+        ]
+        for code in allowed:
+            with self.subTest(code=code):
+                compile(code, "<test>", "exec")
+
+        # Generator expressions with await are async genexps and may appear
+        # outside async functions. A listcomp nested in a genexp body is also
+        # allowed (the genexp becomes an async generator).
+        for code in [
+            "(await x for x in y)",
+            "def f():\n    (await x for x in y)",
+            "class C:\n    (await x for x in y)",
+            "lambda: (await x for x in y)",
+            "([await x for x in y] for y in z)",
+            "def f():\n    ([await x for x in y] for y in z)",
+            "class C:\n    ([await x for x in y] for y in z)",
+            "async def f():\n    ([await x for x in y] for y in z)",
+        ]:
+            with self.subTest(code=code):
+                compile(code, "<test>", "exec")
+
+        err = "asynchronous comprehension outside of an asynchronous function"
+        invalid = [
+            "[await x for x in y]",
+            "{await x for x in y}",
+            "{k: await x for k, x in y}",
+            "[x async for x in y]",
+            "{x async for x in y}",
+            "{k: x async for k, x in y}",
+            "[[await x for x in y] for y in z]",
+            "[[x async for x in y] for y in z]",
+            "def f():\n    [await x for x in y]",
+            "def f():\n    [x async for x in y]",
+            "async def f():\n    def g():\n        [await x for x in y]",
+            "class C:\n    [await x for x in y]",
+            "class C:\n    {await x for x in y}",
+            "class C:\n    {k: await x for k, x in y}",
+            "class C:\n    [x async for x in y]",
+            "class C:\n    [[await x for x in y] for y in z]",
+            "async def f():\n    class C:\n        x = [await y for y in z]",
+            "async def f():\n    class C:\n        x = [y async for y in z]",
+            # Lambdas are never async, even inside async def.
+            "lambda: [await x for x in y]",
+            "async def f():\n    lambda: [await x for x in y]",
+            "class C:\n    f = lambda: [await x for x in y]",
+            # Defaults, bases, and genexp iterables run in the enclosing scope.
+            "(x for x in [await y for y in z])",
+            "(x for x in [y async for y in z])",
+            "def f():\n    (x for x in [await y for y in z])",
+            "async def f(x=[await y for y in z]): pass",
+            "def f(x=[await y for y in z]): pass",
+            "class C:\n    def f(self, x=[await y for y in z]): pass",
+            "class C([await x for x in y]): pass",
+            # Type aliases and type-parameter scopes.
+            "type T = [await x for x in y]",
+            "type T = [x async for x in y]",
+            "def f[T=[await x for x in y]](): pass",
+            "def f[T: [await x for x in y]](): pass",
+            "async def f[T=[await x for x in y]](): pass",
+            "async def f(x: [await y for y in z]): pass",
+        ]
+        for code in invalid:
+            with self.subTest(code=code):
+                support.check_syntax_error(self, code, err)
+
+        support.check_syntax_error(
+            self, "await x", "'await' outside function")
+        support.check_syntax_error(
+            self, "class C:\n    await x", "'await' outside function")
+        support.check_syntax_error(
+            self, "def f():\n    await x", "'await' outside async function")
+
+        flags = ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
+        for code in [
+            "[await x for x in y]",
+            "async def f(x=[await y for y in z]): pass",
+            "class C([await x for x in y]): pass",
+            "f'{[await x for x in y]}'",
+            "(x for x in [await y for y in z])",
+            "(x for x in [y async for y in z])",
+        ]:
+            with self.subTest(code=code, tla=True):
+                compile(code, "<test>", "exec", flags=flags)
+        still_invalid = [
+            "lambda: [await x for x in y]",
+            "def f():\n    (x for x in [await y for y in z])",
+            "class C:\n    def f(self, x=[await y for y in z]): pass",
+            "type T = [await x for x in y]",
+            "async def f[T=[await x for x in y]](): pass",
+        ]
+        for code in still_invalid:
+            with self.subTest(code=code, tla=True):
+                with self.assertRaisesRegex(SyntaxError, err):
+                    compile(code, "<test>", "exec", flags=flags)
+
     def test_badsyntax_2(self):
         samples = [
             """def foo():
@@ -527,7 +640,7 @@ class CoroutineTest(unittest.TestCase):
 
     def test_gen_1(self):
         def gen(): yield
-        self.assertFalse(hasattr(gen, '__await__'))
+        self.assertNotHasAttr(gen, '__await__')
 
     def test_func_1(self):
         async def foo():
@@ -735,7 +848,7 @@ class CoroutineTest(unittest.TestCase):
 
     def test_func_12(self):
         async def g():
-            i = me.send(None)
+            me.send(None)
             await foo
         me = g()
         with self.assertRaisesRegex(ValueError,
@@ -1008,7 +1121,7 @@ class CoroutineTest(unittest.TestCase):
             return (await Awaitable())
 
         with self.assertRaisesRegex(
-            TypeError, "__await__.*returned non-iterator of type"):
+            TypeError, "__await__.*must return an iterator, not"):
 
             run_async(foo())
 
@@ -1106,7 +1219,7 @@ class CoroutineTest(unittest.TestCase):
             return await Awaitable()
 
         with self.assertRaisesRegex(
-                TypeError, r"__await__\(\) returned a coroutine"):
+                TypeError, r"__await__\(\) must return an iterator, not coroutine"):
             run_async(foo())
 
         c.close()
@@ -1120,7 +1233,7 @@ class CoroutineTest(unittest.TestCase):
             return await Awaitable()
 
         with self.assertRaisesRegex(
-            TypeError, "__await__.*returned non-iterator of type"):
+            TypeError, "__await__.*must return an iterator, not"):
 
             run_async(foo())
 
@@ -1190,6 +1303,17 @@ class CoroutineTest(unittest.TestCase):
 
         _, result = run_async(g())
         self.assertIsNone(result.__context__)
+
+    def test_await_17(self):
+        # See https://github.com/python/cpython/issues/131666 for details.
+        class A:
+            async def __anext__(self):
+                raise StopAsyncIteration
+            def __aiter__(self):
+                return self
+
+        with contextlib.closing(anext(A(), "a").__await__()) as anext_awaitable:
+            self.assertRaises(TypeError, anext_awaitable.close, 1)
 
     def test_with_1(self):
         class Manager:
@@ -2136,8 +2260,10 @@ class CoroutineTest(unittest.TestCase):
             coro = None
             support.gc_collect()
 
+            self.assertEqual(cm.unraisable.err_msg,
+                             f"Exception ignored while finalizing "
+                             f"coroutine {coro_repr}")
             self.assertIn("was never awaited", str(cm.unraisable.exc_value))
-            self.assertEqual(repr(cm.unraisable.object), coro_repr)
 
     def test_for_assign_raising_stop_async_iteration(self):
         class BadTarget:
@@ -2252,6 +2378,20 @@ class CoroutineTest(unittest.TestCase):
         # before fixing, visible stack from throw would be shorter than from send.
         self.assertEqual(len_send, len_throw)
 
+    def test_call_generator_in_frame_clear(self):
+        # gh-143939: Running a generator while clearing the coroutine's frame
+        # should not be misinterpreted as a yield.
+        class CallGeneratorOnDealloc:
+            def __del__(self):
+                next(x for x in [1])
+
+        async def coro():
+            obj = CallGeneratorOnDealloc()
+            return 42
+
+        yielded, result = run_async(coro())
+        self.assertEqual(yielded, [])
+        self.assertEqual(result, 42)
 
 @unittest.skipIf(
     support.is_emscripten or support.is_wasi,
@@ -2281,20 +2421,20 @@ class CoroAsyncIOCompatTest(unittest.TestCase):
                 buffer.append(exc_type.__name__)
 
         async def f():
-            async with CM() as c:
+            async with CM():
                 await asyncio.sleep(0.01)
                 raise MyException
             buffer.append('unreachable')
 
         loop = asyncio.new_event_loop()
-        asyncio._set_event_loop(loop)
+        asyncio.set_event_loop(loop)
         try:
             loop.run_until_complete(f())
         except MyException:
             pass
         finally:
             loop.close()
-            asyncio._set_event_loop_policy(None)
+            asyncio.set_event_loop(None)
 
         self.assertEqual(buffer, [1, 2, 'MyException'])
 
@@ -2373,7 +2513,7 @@ class OriginTrackingTest(unittest.TestCase):
 
         orig_depth = sys.get_coroutine_origin_tracking_depth()
         try:
-            msg = check(0, f"coroutine '{corofn.__qualname__}' was never awaited")
+            check(0, f"coroutine '{corofn.__qualname__}' was never awaited")
             check(1, "".join([
                 f"coroutine '{corofn.__qualname__}' was never awaited\n",
                 "Coroutine created at (most recent call last)\n",
@@ -2414,7 +2554,9 @@ class OriginTrackingTest(unittest.TestCase):
                 del coro
                 support.gc_collect()
 
-                self.assertEqual(repr(cm.unraisable.object), coro_repr)
+                self.assertEqual(cm.unraisable.err_msg,
+                                 f"Exception ignored while finalizing "
+                                 f"coroutine {coro_repr}")
                 self.assertEqual(cm.unraisable.exc_type, ZeroDivisionError)
 
             del warnings._warn_unawaited_coroutine
@@ -2475,7 +2617,7 @@ class CAPITest(unittest.TestCase):
             return (await future)
 
         with self.assertRaisesRegex(
-                TypeError, "__await__.*returned non-iterator of type 'int'"):
+                TypeError, "__await__.*must return an iterator, not int"):
             self.assertEqual(foo().send(None), 1)
 
 

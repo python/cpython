@@ -41,9 +41,6 @@ internationalized, to the local language and cultural habits.
 #   to do binary searches and lazy initializations.  Or you might want to use
 #   the undocumented double-hash algorithm for .mo files with hash tables, but
 #   you'll need to study the GNU gettext code to do this.
-#
-# - Support Solaris .mo file formats.  Unfortunately, we've been unable to
-#   find this format documented anywhere.
 
 
 import operator
@@ -114,8 +111,9 @@ _binary_ops = (
     ('+', '-'),
     ('*', '/', '%'),
 )
-_binary_ops = {op: i for i, ops in enumerate(_binary_ops, 1) for op in ops}
-_c2py_ops = {'||': 'or', '&&': 'and', '/': '//'}
+_binary_ops = frozendict({op: i for i, ops in enumerate(_binary_ops, 1)
+                          for op in ops})
+_c2py_ops = frozendict({'||': 'or', '&&': 'and', '/': '//'})
 
 
 def _parse(tokens, priority=-1):

@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import patch
 import builtins
+import types
 import rlcompleter
 from test.support import MISSING_C_DOCSTRINGS
 
@@ -54,11 +55,26 @@ class TestRlcompleter(unittest.TestCase):
                          ['str.{}('.format(x) for x in dir(str)
                           if x.startswith('s')])
         self.assertEqual(self.stdcompleter.attr_matches('tuple.foospamegg'), [])
-        expected = sorted({'None.%s%s' % (x,
-                                          '()' if x in ('__init_subclass__', '__class__')
-                                          else '' if x == '__doc__'
-                                          else '(')
-                           for x in dir(None)})
+
+        def create_expected_for_none():
+            if not MISSING_C_DOCSTRINGS:
+                parentheses = ('__init_subclass__', '__class__')
+            else:
+                # When `--without-doc-strings` is used, `__class__`
+                # won't have a known signature.
+                parentheses = ('__init_subclass__',)
+
+            items = set()
+            for x in dir(None):
+                if x in parentheses:
+                    items.add(f'None.{x}()')
+                elif x == '__doc__':
+                    items.add(f'None.{x}')
+                else:
+                    items.add(f'None.{x}(')
+            return sorted(items)
+
+        expected = create_expected_for_none()
         self.assertEqual(self.stdcompleter.attr_matches('None.'), expected)
         self.assertEqual(self.stdcompleter.attr_matches('None._'), expected)
         self.assertEqual(self.stdcompleter.attr_matches('None.__'), expected)
@@ -73,7 +89,7 @@ class TestRlcompleter(unittest.TestCase):
                          ['CompleteMe._ham'])
         matches = self.completer.attr_matches('CompleteMe.__')
         for x in matches:
-            self.assertTrue(x.startswith('CompleteMe.__'), x)
+            self.assertStartsWith(x, 'CompleteMe.__')
         self.assertIn('CompleteMe.__name__', matches)
         self.assertIn('CompleteMe.__new__(', matches)
 
@@ -91,19 +107,35 @@ class TestRlcompleter(unittest.TestCase):
         # we use __dir__ and __getattr__ in class Foo to create a "magic"
         # class attribute 'bar'. This forces `getattr` to call __getattr__
         # (which is doesn't necessarily do).
-        class Foo:
+        # Test 1: Attribute returns None
+        class FooReturnsNone:
             calls = 0
-            bar = ''
+            bar = None
             def __getattribute__(self, name):
                 if name == 'bar':
                     self.calls += 1
                     return None
                 return super().__getattribute__(name)
 
-        f = Foo()
-        completer = rlcompleter.Completer(dict(f=f))
-        self.assertEqual(completer.complete('f.b', 0), 'f.bar')
-        self.assertEqual(f.calls, 1)
+        f1 = FooReturnsNone()
+        completer1 = rlcompleter.Completer(dict(f=f1))
+        self.assertEqual(completer1.complete('f.b', 0), 'f.bar')
+        self.assertEqual(f1.calls, 1)
+
+        # Test 2: Attribute returns non-None value
+        class FooReturnsValue:
+            calls = 0
+            bar = ''
+            def __getattribute__(self, name):
+                if name == 'bar':
+                    self.calls += 1
+                    return ''
+                return super().__getattribute__(name)
+
+        f2 = FooReturnsValue()
+        completer2 = rlcompleter.Completer(dict(f=f2))
+        self.assertEqual(completer2.complete('f.b', 0), 'f.bar')
+        self.assertEqual(f2.calls, 1)
 
     def test_property_method_not_called(self):
         class Foo:
@@ -120,6 +152,57 @@ class TestRlcompleter(unittest.TestCase):
         self.assertEqual(completer.complete('f.b', 0), 'f.bar')
         self.assertFalse(f.property_called)
 
+    def test_released_memoryview_completion_works(self):
+        mv = memoryview(b"abc")
+        mv.release()
+
+        self.assertIsInstance(type(mv).shape, types.GetSetDescriptorType)
+        self.assertIsInstance(type(mv).strides, types.GetSetDescriptorType)
+
+        completer = rlcompleter.Completer(dict(mv=mv))
+        matches = completer.attr_matches('mv.')
+
+        # These are getset descriptors on memoryview and should be completed
+        # without evaluating the released-memoryview getters.
+        self.assertIn('mv.shape', matches)
+        self.assertIn('mv.strides', matches)
+
+    def test_member_descriptor_not_evaluated(self):
+        class Foo:
+            __slots__ = ("boom",)
+            boom_accesses = 0
+
+            def __getattribute__(self, name):
+                if name == "boom":
+                    type(self).boom_accesses += 1
+                    raise RuntimeError("boom access should be skipped")
+                return super().__getattribute__(name)
+
+        self.assertIsInstance(Foo.boom, types.MemberDescriptorType)
+
+        completer = rlcompleter.Completer(dict(f=Foo()))
+        matches = completer.attr_matches('f.')
+        self.assertIn('f.boom', matches)
+        self.assertEqual(Foo.boom_accesses, 0)
+
+    def test_raising_descriptor_completion_works(self):
+        class ExplodingDescriptor:
+            def __init__(self):
+                self.instance_get_calls = 0
+
+            def __get__(self, obj, owner):
+                if obj is None:
+                    return self
+                self.instance_get_calls += 1
+                raise RuntimeError("descriptor getter exploded")
+
+        class Foo:
+            boom = ExplodingDescriptor()
+
+        completer = rlcompleter.Completer(dict(f=Foo()))
+        matches = completer.attr_matches('f.')
+        self.assertIn('f.boom', matches)
+        self.assertEqual(Foo.boom.instance_get_calls, 0)
 
     def test_uncreated_attr(self):
         # Attributes like properties and slots should be completed even when
@@ -128,6 +211,7 @@ class TestRlcompleter(unittest.TestCase):
             __slots__ = ("bar",)
         completer = rlcompleter.Completer(dict(f=Foo()))
         self.assertEqual(completer.complete('f.', 0), 'f.bar')
+
 
     @unittest.mock.patch('rlcompleter._readline_available', False)
     def test_complete(self):

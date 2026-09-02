@@ -1,0 +1,3 @@
+Improved protection against XML hash-flooding attacks in
+:mod:`xml.parsers.expat` and :mod:`xml.etree.ElementTree` when Python is
+compiled with libExpat 2.8.0 or later.

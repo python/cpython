@@ -778,7 +778,7 @@ class ScopeTests(unittest.TestCase):
         class X:
             locals()["x"] = 43
             del x
-        self.assertFalse(hasattr(X, "x"))
+        self.assertNotHasAttr(X, "x")
         self.assertEqual(x, 42)
 
     @cpython_only

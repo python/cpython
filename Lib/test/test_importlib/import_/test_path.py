@@ -1,3 +1,4 @@
+from test.support import os_helper
 from test.test_importlib import util
 
 importlib = util.import_importlib('importlib')
@@ -151,6 +152,32 @@ class FinderTests:
 
         with util.import_state(path=['']):
             # Do not want FileNotFoundError raised.
+            self.assertIsNone(self.machinery.PathFinder.find_spec('whatever'))
+
+    @os_helper.skip_unless_working_chmod
+    def test_permission_error_cwd(self):
+        # gh-115911: Test that an unreadable CWD does not break imports, in
+        # particular during early stages of interpreter startup.
+
+        def noop_hook(*args):
+            raise ImportError
+
+        with (
+            os_helper.temp_dir() as new_dir,
+            os_helper.save_mode(new_dir),
+            os_helper.change_cwd(new_dir),
+            util.import_state(path=[''], path_hooks=[noop_hook]),
+        ):
+            # chmod() is done here (inside the 'with' block) because the order
+            # of teardown operations cannot be the reverse of setup order. See
+            # https://github.com/python/cpython/pull/116131#discussion_r1739649390
+            try:
+                os.chmod(new_dir, 0o000)
+            except OSError:
+                self.skipTest("platform does not allow "
+                              "changing mode of the cwd")
+
+            # Do not want PermissionError raised.
             self.assertIsNone(self.machinery.PathFinder.find_spec('whatever'))
 
     def test_invalidate_caches_finders(self):

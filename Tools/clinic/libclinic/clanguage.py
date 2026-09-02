@@ -1,20 +1,19 @@
 from __future__ import annotations
 import itertools
-import sys
 import textwrap
-from typing import TYPE_CHECKING, Literal, Final
+from typing import TYPE_CHECKING, Final
 from operator import attrgetter
 from collections.abc import Iterable
 
-import libclinic
-from libclinic import (
-    unspecified, fail, Sentinels, VersionTuple)
-from libclinic.codegen import CRenderData, TemplateDict, CodeGen
+import libclinic.cpp
+from libclinic import unspecified, fail, VersionTuple
+from libclinic.codegen import CRenderData, CodeGen
 from libclinic.language import Language
 from libclinic.function import (
     Module, Class, Function, Parameter,
-    permute_optional_groups,
-    GETTER, SETTER, METHOD_INIT)
+    group_to_variable_name,
+    GETTER, METHOD_INIT,
+    ACCESSORS, SETTERS)
 from libclinic.converters import self_converter
 from libclinic.parse_args import ParseArgsCodeGen
 if TYPE_CHECKING:
@@ -78,7 +77,10 @@ class CLanguage(Language):
         for o in signatures:
             if isinstance(o, Function):
                 if function:
-                    fail("You may specify at most one function per block.\nFound a block containing at least two:\n\t" + repr(function) + " and " + repr(o))
+                    fail("You may specify at most one function per block.\n"
+                         "Found a block containing at least two:\n\t"
+                         + repr(function) + " and " + repr(o),
+                         line_number=o.line_number)
                 function = o
         return self.render_function(clinic, function)
 
@@ -101,7 +103,7 @@ class CLanguage(Language):
         code = self.COMPILER_DEPRECATION_WARNING_PROTOTYPE.format(
             major=minversion[0],
             minor=minversion[1],
-            message=libclinic.c_repr(message),
+            message=libclinic.c_str_repr(message),
         )
         return libclinic.normalize_snippet(code)
 
@@ -247,116 +249,6 @@ class CLanguage(Language):
         args = ParseArgsCodeGen(f, codegen)
         return args.parse_args(self)
 
-    @staticmethod
-    def group_to_variable_name(group: int) -> str:
-        adjective = "left_" if group < 0 else "right_"
-        return "group_" + adjective + str(abs(group))
-
-    def render_option_group_parsing(
-        self,
-        f: Function,
-        template_dict: TemplateDict,
-        limited_capi: bool,
-    ) -> None:
-        # positional only, grouped, optional arguments!
-        # can be optional on the left or right.
-        # here's an example:
-        #
-        # [ [ [ A1 A2 ] B1 B2 B3 ] C1 C2 ] D1 D2 D3 [ E1 E2 E3 [ F1 F2 F3 ] ]
-        #
-        # Here group D are required, and all other groups are optional.
-        # (Group D's "group" is actually None.)
-        # We can figure out which sets of arguments we have based on
-        # how many arguments are in the tuple.
-        #
-        # Note that you need to count up on both sides.  For example,
-        # you could have groups C+D, or C+D+E, or C+D+E+F.
-        #
-        # What if the number of arguments leads us to an ambiguous result?
-        # Clinic prefers groups on the left.  So in the above example,
-        # five arguments would map to B+C, not C+D.
-
-        out = []
-        parameters = list(f.parameters.values())
-        if isinstance(parameters[0].converter, self_converter):
-            del parameters[0]
-
-        group: list[Parameter] | None = None
-        left = []
-        right = []
-        required: list[Parameter] = []
-        last: int | Literal[Sentinels.unspecified] = unspecified
-
-        for p in parameters:
-            group_id = p.group
-            if group_id != last:
-                last = group_id
-                group = []
-                if group_id < 0:
-                    left.append(group)
-                elif group_id == 0:
-                    group = required
-                else:
-                    right.append(group)
-            assert group is not None
-            group.append(p)
-
-        count_min = sys.maxsize
-        count_max = -1
-
-        if limited_capi:
-            nargs = 'PyTuple_Size(args)'
-        else:
-            nargs = 'PyTuple_GET_SIZE(args)'
-        out.append(f"switch ({nargs}) {{\n")
-        for subset in permute_optional_groups(left, required, right):
-            count = len(subset)
-            count_min = min(count_min, count)
-            count_max = max(count_max, count)
-
-            if count == 0:
-                out.append("""    case 0:
-        break;
-""")
-                continue
-
-            group_ids = {p.group for p in subset}  # eliminate duplicates
-            d: dict[str, str | int] = {}
-            d['count'] = count
-            d['name'] = f.name
-            d['format_units'] = "".join(p.converter.format_unit for p in subset)
-
-            parse_arguments: list[str] = []
-            for p in subset:
-                p.converter.parse_argument(parse_arguments)
-            d['parse_arguments'] = ", ".join(parse_arguments)
-
-            group_ids.discard(0)
-            lines = "\n".join([
-                self.group_to_variable_name(g) + " = 1;"
-                for g in group_ids
-            ])
-
-            s = """\
-    case {count}:
-        if (!PyArg_ParseTuple(args, "{format_units}:{name}", {parse_arguments})) {{
-            goto exit;
-        }}
-        {group_booleans}
-        break;
-"""
-            s = libclinic.linear_format(s, group_booleans=lines)
-            s = s.format_map(d)
-            out.append(s)
-
-        out.append("    default:\n")
-        s = '        PyErr_SetString(PyExc_TypeError, "{} requires {} to {} arguments");\n'
-        out.append(s.format(f.full_name, count_min, count_max))
-        out.append('        goto exit;\n')
-        out.append("}")
-
-        template_dict['option_group_parsing'] = libclinic.format_escape("".join(out))
-
     def render_function(
         self,
         clinic: Clinic,
@@ -409,7 +301,7 @@ class CLanguage(Language):
             if last_group != group:
                 last_group = group
                 if group:
-                    group_name = self.group_to_variable_name(group)
+                    group_name = group_to_variable_name(group)
                     data.impl_arguments.append(group_name)
                     data.declarations.append("int " + group_name + " = 0;")
                     data.impl_parameters.append("int " + group_name)
@@ -419,29 +311,30 @@ class CLanguage(Language):
 
         if has_option_groups and (not positional):
             fail("You cannot use optional groups ('[' and ']') "
-                 "unless all parameters are positional-only ('/').")
+                 "unless all parameters are positional-only ('/').",
+                 line_number=f.line_number)
 
         # HACK
         # when we're METH_O, but have a custom return converter,
-        # we use "impl_parameters" for the parsing function
+        # we use "parser_parameters" for the parsing function
         # because that works better.  but that means we must
         # suppress actually declaring the impl's parameters
         # as variables in the parsing function.  but since it's
         # METH_O, we have exactly one anyway, so we know exactly
         # where it is.
         if ("METH_O" in templates['methoddef_define'] and
-            '{impl_parameters}' in templates['parser_prototype']):
+            '{parser_parameters}' in templates['parser_prototype']):
             data.declarations.pop(0)
 
         full_name = f.full_name
         template_dict = {'full_name': full_name}
         template_dict['name'] = f.displayname
-        if f.kind in {GETTER, SETTER}:
+        if f.kind in ACCESSORS:
             template_dict['getset_name'] = f.c_basename.upper()
             template_dict['getset_basename'] = f.c_basename
             if f.kind is GETTER:
                 template_dict['c_basename'] = f.c_basename + "_get"
-            elif f.kind is SETTER:
+            else:
                 template_dict['c_basename'] = f.c_basename + "_set"
                 # Implicitly add the setter value parameter.
                 data.impl_parameters.append("PyObject *value")
@@ -456,7 +349,7 @@ class CLanguage(Language):
         for converter in converters:
             converter.set_template_dict(template_dict)
 
-        if f.kind not in {SETTER, METHOD_INIT}:
+        if f.kind not in SETTERS | {METHOD_INIT}:
             f.return_converter.render(f, data)
         template_dict['impl_return_type'] = f.return_converter.type
 
@@ -475,6 +368,7 @@ class CLanguage(Language):
         else:
             template_dict['parse_arguments_comma'] = '';
         template_dict['impl_parameters'] = ", ".join(data.impl_parameters)
+        template_dict['parser_parameters'] = ", ".join(data.impl_parameters[1:])
         template_dict['impl_arguments'] = ", ".join(data.impl_arguments)
 
         template_dict['return_conversion'] = libclinic.format_escape("".join(data.return_conversion).rstrip())
@@ -482,6 +376,7 @@ class CLanguage(Language):
         template_dict['cleanup'] = libclinic.format_escape("".join(data.cleanup))
 
         template_dict['return_value'] = data.return_value
+        template_dict['parser_retval'] = data.parser_retval
         template_dict['lock'] = "\n".join(data.lock)
         template_dict['unlock'] = "\n".join(data.unlock)
 
@@ -491,16 +386,9 @@ class CLanguage(Language):
         template_dict['unpack_min'] = str(unpack_min)
         template_dict['unpack_max'] = str(unpack_max)
 
-        if has_option_groups:
-            self.render_option_group_parsing(f, template_dict,
-                                             limited_capi=codegen.limited_capi)
-
         # buffers, not destination
         for name, destination in clinic.destination_buffers.items():
             template = templates[name]
-            if has_option_groups:
-                template = libclinic.linear_format(template,
-                        option_group_parsing=template_dict['option_group_parsing'])
             template = libclinic.linear_format(template,
                 declarations=template_dict['declarations'],
                 return_conversion=template_dict['return_conversion'],

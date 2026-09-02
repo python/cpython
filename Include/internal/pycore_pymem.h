@@ -2,7 +2,6 @@
 #define Py_INTERNAL_PYMEM_H
 
 #include "pycore_llist.h"           // struct llist_node
-#include "pycore_lock.h"            // PyMutex
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,41 +25,6 @@ PyAPI_FUNC(char*) _PyMem_Strdup(const char *str);
 
 // wcsdup() using PyMem_RawMalloc()
 extern wchar_t* _PyMem_RawWcsdup(const wchar_t *str);
-
-typedef struct {
-    /* We tag each block with an API ID in order to tag API violations */
-    char api_id;
-    PyMemAllocatorEx alloc;
-} debug_alloc_api_t;
-
-struct _pymem_allocators {
-    PyMutex mutex;
-    struct {
-        PyMemAllocatorEx raw;
-        PyMemAllocatorEx mem;
-        PyMemAllocatorEx obj;
-    } standard;
-    struct {
-        debug_alloc_api_t raw;
-        debug_alloc_api_t mem;
-        debug_alloc_api_t obj;
-    } debug;
-    int is_debug_enabled;
-    PyObjectArenaAllocator obj_arena;
-};
-
-struct _Py_mem_interp_free_queue {
-    int has_work;   // true if the queue is not empty
-    PyMutex mutex;  // protects the queue
-    struct llist_node head;  // queue of _mem_work_chunk items
-};
-
-/* Set the memory allocator of the specified domain to the default.
-   Save the old allocator into *old_alloc if it's non-NULL.
-   Return on success, or return -1 if the domain is unknown. */
-extern int _PyMem_SetDefaultAllocator(
-    PyMemAllocatorDomain domain,
-    PyMemAllocatorEx *old_alloc);
 
 /* Special bytes broadcast into debug memory blocks at appropriate times.
    Strings of these are unlikely to be valid addresses, floats, ints or
@@ -90,17 +54,40 @@ static inline int _PyMem_IsPtrFreed(const void *ptr)
 {
     uintptr_t value = (uintptr_t)ptr;
 #if SIZEOF_VOID_P == 8
-    return (value == 0
+    return (value <= 0xff  // NULL, 0x1, 0x2, ..., 0xff
             || value == (uintptr_t)0xCDCDCDCDCDCDCDCD
             || value == (uintptr_t)0xDDDDDDDDDDDDDDDD
-            || value == (uintptr_t)0xFDFDFDFDFDFDFDFD);
+            || value == (uintptr_t)0xFDFDFDFDFDFDFDFD
+            || value >= (uintptr_t)0xFFFFFFFFFFFFFF00);  // -0xff, ..., -2, -1
 #elif SIZEOF_VOID_P == 4
-    return (value == 0
+    return (value <= 0xff
             || value == (uintptr_t)0xCDCDCDCD
             || value == (uintptr_t)0xDDDDDDDD
-            || value == (uintptr_t)0xFDFDFDFD);
+            || value == (uintptr_t)0xFDFDFDFD
+            || value >= (uintptr_t)0xFFFFFF00);
 #else
 #  error "unknown pointer size"
+#endif
+}
+
+// Similar to _PyMem_IsPtrFreed() but expects an 'unsigned long' instead of a
+// pointer.
+static inline int _PyMem_IsULongFreed(unsigned long value)
+{
+#if SIZEOF_LONG == 8
+    return (value == 0
+            || value == (unsigned long)0xCDCDCDCDCDCDCDCD
+            || value == (unsigned long)0xDDDDDDDDDDDDDDDD
+            || value == (unsigned long)0xFDFDFDFDFDFDFDFD
+            || value == (unsigned long)0xFFFFFFFFFFFFFFFF);
+#elif SIZEOF_LONG == 4
+    return (value == 0
+            || value == (unsigned long)0xCDCDCDCD
+            || value == (unsigned long)0xDDDDDDDD
+            || value == (unsigned long)0xFDFDFDFD
+            || value == (unsigned long)0xFFFFFFFF);
+#else
+#  error "unknown long size"
 #endif
 }
 
@@ -113,25 +100,21 @@ extern int _PyMem_GetAllocatorName(
    PYMEM_ALLOCATOR_NOT_SET does nothing. */
 extern int _PyMem_SetupAllocators(PyMemAllocatorName allocator);
 
+// Default raw memory allocator that is not affected by PyMem_SetAllocator()
+extern void *_PyMem_DefaultRawMalloc(size_t);
+extern void *_PyMem_DefaultRawCalloc(size_t, size_t);
+extern void *_PyMem_DefaultRawRealloc(void *, size_t);
+extern void _PyMem_DefaultRawFree(void *);
+extern wchar_t *_PyMem_DefaultRawWcsdup(const wchar_t *str);
+
 /* Is the debug allocator enabled? */
 extern int _PyMem_DebugEnabled(void);
 
 // Enqueue a pointer to be freed possibly after some delay.
-extern void _PyMem_FreeDelayed(void *ptr);
-
-// Enqueue an object to be freed possibly after some delay
-#ifdef Py_GIL_DISABLED
-extern void _PyObject_XDecRefDelayed(PyObject *obj);
-#else
-static inline void _PyObject_XDecRefDelayed(PyObject *obj)
-{
-    Py_XDECREF(obj);
-}
-#endif
+extern void _PyMem_FreeDelayed(void *ptr, size_t size);
 
 // Periodically process delayed free requests.
 extern void _PyMem_ProcessDelayed(PyThreadState *tstate);
-
 
 // Periodically process delayed free requests when the world is stopped.
 // Notify of any objects whic should be freeed.
