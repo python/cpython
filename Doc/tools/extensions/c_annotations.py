@@ -194,6 +194,8 @@ def add_annotations(app: Sphinx, doctree: nodes.document) -> None:
                     break
                 ancestor = node.parent
             else:
+
+                # no skip; add the annotation
                 annotation = _stable_abi_annotation(record)
                 node.insert(0, annotation)
                 node.setdefault("classes", []).append('ADDED-HERE')
@@ -458,6 +460,12 @@ class CorrespondingTypeSlot(SphinxDirective):
 
 
 class StableABINote(SphinxDirective):
+    """A manual Stable ABI note
+
+    Normally, notes are auto-generated.
+    This directive allows adding a similarly styled note manually.
+    Pair with omit-stable-abi-notes to override the automatic generation.
+    """
     has_content = True
 
     def run(self) -> list[nodes.Node]:
@@ -470,6 +478,11 @@ class StableABINote(SphinxDirective):
 
 
 class OmitStableABINotes(SphinxDirective):
+    """A block where automatic Stable ABI notes are not generated
+
+    Normally used for dense lists/tables of definitions, where individual notes
+    are omitted and the whole block has a common manual note.
+    """
     has_content = True
 
     def run(self) -> list[nodes.Node]:
