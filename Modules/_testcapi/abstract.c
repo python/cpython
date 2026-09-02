@@ -174,7 +174,7 @@ sequence_fast_get_item(PyObject *self, PyObject *args)
         return NULL;
     }
     NULLABLE(obj);
-    return PySequence_Fast_GET_ITEM(obj, index);
+    return Py_NewRef(PySequence_Fast_GET_ITEM(obj, index));
 }
 
 

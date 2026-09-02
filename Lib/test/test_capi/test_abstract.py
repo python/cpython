@@ -1,4 +1,6 @@
+import sys
 import unittest
+
 from collections import OrderedDict
 from test import support
 from test.support import import_helper
@@ -1042,6 +1044,12 @@ class CAPITest(unittest.TestCase):
 
         # CRASHES sequence_fast_get_size(NULL)
         # CRASHES sequence_fast_get_item(NULL, 0)
+        obj = object()
+        lst = [obj]
+        refcount = sys.getrefcount(obj)
+        result = sequence_fast_get_item(lst, 0)
+        self.assertIs(result, obj)
+        self.assertEqual(sys.getrefcount(obj), refcount + 1)
 
     def test_object_generichash(self):
         # Test PyObject_GenericHash()

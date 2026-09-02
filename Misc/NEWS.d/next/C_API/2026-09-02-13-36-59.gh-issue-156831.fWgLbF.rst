@@ -1,0 +1,2 @@
+Fix a reference counting error in ``_testcapi.sequence_fast_get_item()``
+that could cause a debug build to abort with a negative reference count.
