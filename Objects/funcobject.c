@@ -8,6 +8,7 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_object_deferred.h" // _PyObject_SetDeferredRefcount()
+#include "pycore_optimizer.h"       // _Py_Executors_InvalidateDependency()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_stats.h"
@@ -63,6 +64,13 @@ handle_func_event(PyFunction_WatchEvent event, PyFunctionObject *func,
         case PyFunction_EVENT_MODIFY_DEFAULTS:
         case PyFunction_EVENT_MODIFY_KWDEFAULTS:
         case PyFunction_EVENT_MODIFY_QUALNAME:
+#if _Py_TIER2
+            // Note: we only invalidate JIT code if a function version changes.
+            // Not when the function is deallocated.
+            // Function deallocation occurs frequently (think: lambdas),
+            // so we want to minimize dependency invalidation there.
+            _Py_Executors_InvalidateDependency(interp, func, 1);
+#endif
             RARE_EVENT_INTERP_INC(interp, func_modification);
             break;
         default:
@@ -341,20 +349,6 @@ func_clear_version(PyInterpreterState *interp, PyFunctionObject *func)
     func->func_version = FUNC_VERSION_CLEARED;
 }
 
-// Called when any of the critical function attributes are changed
-static void
-_PyFunction_ClearVersion(PyFunctionObject *func)
-{
-    if (func->func_version < FUNC_VERSION_FIRST_VALID) {
-        // Version was never set or has already been cleared.
-        return;
-    }
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyEval_StopTheWorld(interp);
-    func_clear_version(interp, func);
-    _PyEval_StartTheWorld(interp);
-}
-
 void
 _PyFunction_ClearCodeByVersion(uint32_t version)
 {
@@ -440,10 +434,15 @@ PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
         PyErr_SetString(PyExc_SystemError, "non-tuple default args");
         return -1;
     }
-    handle_func_event(PyFunction_EVENT_MODIFY_DEFAULTS,
-                      (PyFunctionObject *) op, defaults);
-    _PyFunction_ClearVersion((PyFunctionObject *)op);
-    Py_XSETREF(((PyFunctionObject *)op)->func_defaults, defaults);
+    PyFunctionObject *func = (PyFunctionObject *)op;
+    handle_func_event(PyFunction_EVENT_MODIFY_DEFAULTS, func, defaults);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    func_clear_version(interp, func);
+    PyObject *old_defaults = func->func_defaults;
+    func->func_defaults = defaults;
+    _PyEval_StartTheWorld(interp);
+    Py_XDECREF(old_defaults);
     return 0;
 }
 
@@ -451,8 +450,11 @@ void
 PyFunction_SetVectorcall(PyFunctionObject *func, vectorcallfunc vectorcall)
 {
     assert(func != NULL);
-    _PyFunction_ClearVersion(func);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    func_clear_version(interp, func);
     func->vectorcall = vectorcall;
+    _PyEval_StartTheWorld(interp);
 }
 
 PyObject *
@@ -482,10 +484,15 @@ PyFunction_SetKwDefaults(PyObject *op, PyObject *defaults)
                         "non-dict keyword only default args");
         return -1;
     }
-    handle_func_event(PyFunction_EVENT_MODIFY_KWDEFAULTS,
-                      (PyFunctionObject *) op, defaults);
-    _PyFunction_ClearVersion((PyFunctionObject *)op);
-    Py_XSETREF(((PyFunctionObject *)op)->func_kwdefaults, defaults);
+    PyFunctionObject *func = (PyFunctionObject *)op;
+    handle_func_event(PyFunction_EVENT_MODIFY_KWDEFAULTS, func, defaults);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    func_clear_version(interp, func);
+    PyObject *old_kwdefaults = func->func_kwdefaults;
+    func->func_kwdefaults = defaults;
+    _PyEval_StartTheWorld(interp);
+    Py_XDECREF(old_kwdefaults);
     return 0;
 }
 
@@ -517,8 +524,14 @@ PyFunction_SetClosure(PyObject *op, PyObject *closure)
                      Py_TYPE(closure)->tp_name);
         return -1;
     }
-    _PyFunction_ClearVersion((PyFunctionObject *)op);
-    Py_XSETREF(((PyFunctionObject *)op)->func_closure, closure);
+    PyFunctionObject *func = (PyFunctionObject *)op;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    func_clear_version(interp, func);
+    PyObject *old_closure = func->func_closure;
+    func->func_closure = closure;
+    _PyEval_StartTheWorld(interp);
+    Py_XDECREF(old_closure);
     return 0;
 }
 
@@ -597,8 +610,15 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
         return -1;
     }
     PyFunctionObject *func = (PyFunctionObject *)op;
-    Py_XSETREF(func->func_annotations, annotations);
-    Py_CLEAR(func->func_annotate);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    PyObject *old_annotations = func->func_annotations;
+    func->func_annotations = annotations;
+    PyObject *old_annotate = func->func_annotate;
+    func->func_annotate = NULL;
+    _PyEval_StartTheWorld(interp);
+    Py_XDECREF(old_annotations);
+    Py_XDECREF(old_annotate);
     return 0;
 }
 
@@ -608,9 +628,7 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
 
 static PyMemberDef func_memberlist[] = {
     {"__closure__",   _Py_T_OBJECT,     OFF(func_closure), Py_READONLY},
-    {"__doc__",       _Py_T_OBJECT,     OFF(func_doc), 0},
     {"__globals__",   _Py_T_OBJECT,     OFF(func_globals), Py_READONLY},
-    {"__module__",    _Py_T_OBJECT,     OFF(func_module), 0},
     {"__builtins__",  _Py_T_OBJECT,     OFF(func_builtins), Py_READONLY},
     {NULL}  /* Sentinel */
 };
@@ -677,8 +695,13 @@ func_set_code(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
     }
 
     handle_func_event(PyFunction_EVENT_MODIFY_CODE, op, value);
-    _PyFunction_ClearVersion(op);
-    Py_XSETREF(op->func_code, Py_NewRef(value));
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    func_clear_version(interp, op);
+    PyObject *old_code = op->func_code;
+    op->func_code = Py_NewRef(value);
+    _PyEval_StartTheWorld(interp);
+    Py_XDECREF(old_code);
     return 0;
 }
 
@@ -700,7 +723,12 @@ func_set_name(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
                         "__name__ must be set to a string object");
         return -1;
     }
-    Py_XSETREF(op->func_name, Py_NewRef(value));
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    PyObject *old_name = op->func_name;
+    op->func_name = Py_NewRef(value);
+    _PyEval_StartTheWorld(interp);
+    Py_XDECREF(old_name);
     return 0;
 }
 
@@ -723,7 +751,62 @@ func_set_qualname(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
         return -1;
     }
     handle_func_event(PyFunction_EVENT_MODIFY_QUALNAME, (PyFunctionObject *) op, value);
-    Py_XSETREF(op->func_qualname, Py_NewRef(value));
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    PyObject *old_qualname = op->func_qualname;
+    op->func_qualname = Py_NewRef(value);
+    _PyEval_StartTheWorld(interp);
+    Py_XDECREF(old_qualname);
+    return 0;
+}
+
+static PyObject *
+func_get_doc(PyObject *self, void *Py_UNUSED(ignored))
+{
+    PyFunctionObject *op = _PyFunction_CAST(self);
+    PyObject *doc = op->func_doc;
+    if (doc == NULL) {
+        doc = Py_None;
+    }
+    return Py_NewRef(doc);
+}
+
+static int
+func_set_doc(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
+{
+    /* Legal to del f.__doc__ or to set it to any object. */
+    PyFunctionObject *op = _PyFunction_CAST(self);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    PyObject *old_doc = op->func_doc;
+    op->func_doc = Py_XNewRef(value);
+    _PyEval_StartTheWorld(interp);
+    Py_XDECREF(old_doc);
+    return 0;
+}
+
+static PyObject *
+func_get_module(PyObject *self, void *Py_UNUSED(ignored))
+{
+    PyFunctionObject *op = _PyFunction_CAST(self);
+    PyObject *module = op->func_module;
+    if (module == NULL) {
+        module = Py_None;
+    }
+    return Py_NewRef(module);
+}
+
+static int
+func_set_module(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
+{
+    /* Legal to del f.__module__ or to set it to any object. */
+    PyFunctionObject *op = _PyFunction_CAST(self);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    PyObject *old_module = op->func_module;
+    op->func_module = Py_XNewRef(value);
+    _PyEval_StartTheWorld(interp);
+    Py_XDECREF(old_module);
     return 0;
 }
 
@@ -764,8 +847,13 @@ func_set_defaults(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
     }
 
     handle_func_event(PyFunction_EVENT_MODIFY_DEFAULTS, op, value);
-    _PyFunction_ClearVersion(op);
-    Py_XSETREF(op->func_defaults, Py_XNewRef(value));
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    func_clear_version(interp, op);
+    PyObject *old_defaults = op->func_defaults;
+    op->func_defaults = Py_XNewRef(value);
+    _PyEval_StartTheWorld(interp);
+    Py_XDECREF(old_defaults);
     return 0;
 }
 
@@ -807,8 +895,13 @@ func_set_kwdefaults(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
     }
 
     handle_func_event(PyFunction_EVENT_MODIFY_KWDEFAULTS, op, value);
-    _PyFunction_ClearVersion(op);
-    Py_XSETREF(op->func_kwdefaults, Py_XNewRef(value));
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    func_clear_version(interp, op);
+    PyObject *old_kwdefaults = op->func_kwdefaults;
+    op->func_kwdefaults = Py_XNewRef(value);
+    _PyEval_StartTheWorld(interp);
+    Py_XDECREF(old_kwdefaults);
     return 0;
 }
 
@@ -833,12 +926,13 @@ function___annotate___get_impl(PyFunctionObject *self)
 /*[clinic input]
 @critical_section
 @setter
+@deleter
 function.__annotate__
 [clinic start generated code]*/
 
 static int
 function___annotate___set_impl(PyFunctionObject *self, PyObject *value)
-/*[clinic end generated code: output=05b7dfc07ada66cd input=eb6225e358d97448]*/
+/*[clinic end generated code: output=05b7dfc07ada66cd input=4bcfad0bdcfec768]*/
 {
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,
@@ -846,11 +940,11 @@ function___annotate___set_impl(PyFunctionObject *self, PyObject *value)
         return -1;
     }
     if (Py_IsNone(value)) {
-        Py_XSETREF(self->func_annotate, value);
+        Py_XSETREF(self->func_annotate, Py_NewRef(value));
         return 0;
     }
     else if (PyCallable_Check(value)) {
-        Py_XSETREF(self->func_annotate, Py_XNewRef(value));
+        Py_XSETREF(self->func_annotate, Py_NewRef(value));
         Py_CLEAR(self->func_annotations);
         return 0;
     }
@@ -887,12 +981,13 @@ function___annotations___get_impl(PyFunctionObject *self)
 /*[clinic input]
 @critical_section
 @setter
+@deleter
 function.__annotations__
 [clinic start generated code]*/
 
 static int
 function___annotations___set_impl(PyFunctionObject *self, PyObject *value)
-/*[clinic end generated code: output=a61795d4a95eede4 input=5302641f686f0463]*/
+/*[clinic end generated code: output=a61795d4a95eede4 input=71f6a58c00ac6745]*/
 {
     if (value == Py_None)
         value = NULL;
@@ -932,12 +1027,13 @@ function___type_params___get_impl(PyFunctionObject *self)
 /*[clinic input]
 @critical_section
 @setter
+@deleter
 function.__type_params__
 [clinic start generated code]*/
 
 static int
 function___type_params___set_impl(PyFunctionObject *self, PyObject *value)
-/*[clinic end generated code: output=038b4cda220e56fb input=3862fbd4db2b70e8]*/
+/*[clinic end generated code: output=038b4cda220e56fb input=c0e33abc5901a2f5]*/
 {
     /* Not legal to del f.__type_params__ or to set it to anything
      * other than a tuple object. */
@@ -968,6 +1064,8 @@ static PyGetSetDef func_getsetlist[] = {
     FUNCTION___ANNOTATIONS___GETSETDEF
     FUNCTION___ANNOTATE___GETSETDEF
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
+    {"__doc__", func_get_doc, func_set_doc},
+    {"__module__", func_get_module, func_set_module},
     {"__name__", func_get_name, func_set_name},
     {"__qualname__", func_get_qualname, func_set_qualname},
     FUNCTION___TYPE_PARAMS___GETSETDEF

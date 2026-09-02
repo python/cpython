@@ -20,8 +20,8 @@ PyDoc_STRVAR(_zstd_ZstdDecompressor_new__doc__,
 "  options\n"
 "    A dict object that contains advanced decompression parameters.\n"
 "\n"
-"Thread-safe at method level. For one-shot decompression, use the decompress()\n"
-"function instead.");
+"Thread-safe at method level.  For one-shot decompression, use the\n"
+"decompress() function instead.");
 
 static PyObject *
 _zstd_ZstdDecompressor_new_impl(PyTypeObject *type, PyObject *zstd_dict,
@@ -91,7 +91,8 @@ PyDoc_STRVAR(_zstd_ZstdDecompressor_unused_data__doc__,
 "A bytes object of un-consumed input data.\n"
 "\n"
 "When ZstdDecompressor object stops after a frame is\n"
-"decompressed, unused input data after the frame. Otherwise this will be b\'\'.");
+"decompressed, unused input data after the frame.  Otherwise this\n"
+"will be b\'\'.");
 #if defined(_zstd_ZstdDecompressor_unused_data_DOCSTR)
 #   undef _zstd_ZstdDecompressor_unused_data_DOCSTR
 #endif
@@ -129,18 +130,19 @@ PyDoc_STRVAR(_zstd_ZstdDecompressor_decompress__doc__,
 "    output buffer is unlimited. When it is nonnegative, returns at\n"
 "    most max_length bytes of decompressed data.\n"
 "\n"
-"If *max_length* is nonnegative, returns at most *max_length* bytes of\n"
-"decompressed data. If this limit is reached and further output can be\n"
-"produced, *self.needs_input* will be set to ``False``. In this case, the next\n"
-"call to *decompress()* may provide *data* as b\'\' to obtain more of the output.\n"
+"If *max_length* is nonnegative, returns at most *max_length* bytes\n"
+"of decompressed data.  If this limit is reached and further output\n"
+"can be produced, *self.needs_input* will be set to ``False``.  In\n"
+"this case, the next call to *decompress()* may provide *data* as b\'\'\n"
+"to obtain more of the output.\n"
 "\n"
-"If all of the input data was decompressed and returned (either because this\n"
-"was less than *max_length* bytes, or because *max_length* was negative),\n"
-"*self.needs_input* will be set to True.\n"
+"If all of the input data was decompressed and returned (either\n"
+"because this was less than *max_length* bytes, or because\n"
+"*max_length* was negative), *self.needs_input* will be set to True.\n"
 "\n"
-"Attempting to decompress data after the end of a frame is reached raises an\n"
-"EOFError. Any data found after the end of the frame is ignored and saved in\n"
-"the self.unused_data attribute.");
+"Attempting to decompress data after the end of a frame is reached\n"
+"raises an EOFError.  Any data found after the end of the frame is\n"
+"ignored and saved in the self.unused_data attribute.");
 
 #define _ZSTD_ZSTDDECOMPRESSOR_DECOMPRESS_METHODDEF    \
     {"decompress", _PyCFunction_CAST(_zstd_ZstdDecompressor_decompress), METH_FASTCALL|METH_KEYWORDS, _zstd_ZstdDecompressor_decompress__doc__},
@@ -220,4 +222,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=30c12ef047027ede input=a9049054013a1b77]*/
+/*[clinic end generated code: output=70bc308e86463751 input=a9049054013a1b77]*/

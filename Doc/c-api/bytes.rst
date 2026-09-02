@@ -47,9 +47,9 @@ called with a non-bytes parameter.
    *len* on success, and ``NULL`` on failure.  If *v* is ``NULL``, the contents of
    the bytes object are uninitialized.
 
-   .. deprecated:: 3.15
-      ``PyBytes_FromStringAndSize(NULL, len)`` is :term:`soft deprecated`,
-      use the :c:type:`PyBytesWriter` API instead.
+   .. soft-deprecated:: 3.15
+      Use the :c:type:`PyBytesWriter` API instead of
+      ``PyBytes_FromStringAndSize(NULL, len)``.
 
 
 .. c:function:: PyObject* PyBytes_FromFormat(const char *format, ...)
@@ -184,10 +184,11 @@ called with a non-bytes parameter.
 .. c:function:: void PyBytes_Concat(PyObject **bytes, PyObject *newpart)
 
    Create a new bytes object in *\*bytes* containing the contents of *newpart*
-   appended to *bytes*; the caller will own the new reference.  The reference to
-   the old value of *bytes* will be stolen.  If the new object cannot be
-   created, the old reference to *bytes* will still be discarded and the value
-   of *\*bytes* will be set to ``NULL``; the appropriate exception will be set.
+   appended to *bytes*; the caller will own the new reference.
+   The reference to the old value of *bytes* will be ":term:`stolen <steal>`".
+   If the new object cannot be created, the old reference to *bytes* will still
+   be "stolen", the value of *\*bytes* will be set to ``NULL``, and
+   the appropriate exception will be set.
 
    .. note::
       If *newpart* implements the buffer protocol, then the buffer
@@ -238,9 +239,8 @@ called with a non-bytes parameter.
    *\*bytes* is set to ``NULL``, :exc:`MemoryError` is set, and ``-1`` is
    returned.
 
-   .. deprecated:: 3.15
-      The function is :term:`soft deprecated`,
-      use the :c:type:`PyBytesWriter` API instead.
+   .. soft-deprecated:: 3.15
+      Use the :c:type:`PyBytesWriter` API instead.
 
 
 .. c:function:: PyObject *PyBytes_Repr(PyObject *bytes, int smartquotes)
@@ -385,14 +385,18 @@ Getters
 
    Get the writer size.
 
+   The function does not invalidate pointers returned by
+   :c:func:`PyBytesWriter_GetData`.
+
    The function cannot fail.
 
 .. c:function:: void* PyBytesWriter_GetData(PyBytesWriter *writer)
 
    Get the writer data: start of the internal buffer.
 
-   The pointer is valid until :c:func:`PyBytesWriter_Finish` or
-   :c:func:`PyBytesWriter_Discard` is called on *writer*.
+   The pointer remains valid until a :c:type:`PyBytesWriter` function other
+   than :c:func:`PyBytesWriter_GetData` or :c:func:`PyBytesWriter_GetSize` is
+   called on *writer*.
 
    The function cannot fail.
 
