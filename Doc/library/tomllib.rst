@@ -163,14 +163,14 @@ Limits and interoperability considerations
 
 :mod:`!tomllib` places some limits on the documents it can handle,
 and it preserves details that other TOML parsers are allowed to ignore.
-When writing portable TOML files, consider only using features that are
+When writing portable TOML files, only use features that are
 guaranteed or recommended by the standard.
 
 The implementation details listed here may change in future versions of Python.
 
 Tables/dicts
-   Key/value pairs in TOML documents and tables are not guaranteed to be
-   in any specific order.
+   The TOML spec does not guarantee key/value pairs in TOML documents and
+   tables to be in any specific order.
 
    .. impl-detail::
       :mod:`!tomllib` loads dictionary entries in the order they appear in
