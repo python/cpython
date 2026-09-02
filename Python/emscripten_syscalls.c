@@ -74,7 +74,7 @@ EM_JS_MACROS(__externref_t, __maybe_fd_read_async, (
     size_t iovcnt,
     __wasi_size_t *nread
 ), {
-    if (!WebAssembly.promising) {
+    if (!Module.Py_EmscriptenStackSwitching) {
         return null;
     }
     var stream;
@@ -158,20 +158,7 @@ _Static_assert(offsetof(struct pollfd, revents) == 6, "Unepxected pollfd struct 
 _Static_assert(sizeof(struct pollfd) == 8, "Unepxected pollfd struct layout");
 
 EM_JS_MACROS(__externref_t, __maybe_poll_async, (intptr_t fds, int nfds, int timeout), {
-    if (!WebAssembly.promising) {
-        return null;
-    }
-    // Suspending at all requires a promising stack, so do not if there is
-    // nothing to await.
-    var async = false;
-    for (var i = 0; i < nfds; i++) {
-        var s = FS.getStream(HEAP32[(fds + POLLFD_SIZE * i + POLLFD_FD)/4]);
-        if (s && s.stream_ops.pollAsync) {
-            async = true;
-            break;
-        }
-    }
-    if (!async) {
+    if (!Module.Py_EmscriptenStackSwitching) {
         return null;
     }
     return (async function() {

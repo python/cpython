@@ -84,6 +84,9 @@ EM_JS_MACROS(void, _PyEmscripten_BeforeMain_js, (void), {
         Module.onExit = (code) => process.exit(code);
     }
     _Py_EM_WRAP_MAIN
+    // main() now runs on a promising stack, so libpython may suspend in a
+    // syscall.
+    Module.Py_EmscriptenStackSwitching = true;
 }
 // * wrap the entry point with WebAssembly.promising,
 // * call exit_with_live_runtime() to prevent emscripten from shutting down
