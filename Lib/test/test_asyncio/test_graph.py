@@ -434,6 +434,42 @@ class CallStackTestBase:
 
         self.assertTrue(stack_for_fut[1].startswith('* Future(id='))
 
+    async def test_build_graph_for_future_expands_dag_once(self):
+        # gh-156860: a future reachable by several paths is expanded once.
+        async def waits_for(*deps):
+            await asyncio.gather(*deps)
+
+        fut = asyncio.Future()
+        layer = [fut]
+        for _ in range(3):
+            layer = [asyncio.ensure_future(waits_for(*layer)) for _ in range(2)]
+        await asyncio.sleep(0)
+        captured = asyncio.format_call_graph(fut)
+
+        fut.set_result(None)
+        await asyncio.gather(*layer)
+
+        self.assertEqual(captured.count('* Task'), 10)
+
+    async def test_capture_call_graph_expands_dag_once(self):
+        # gh-156860
+        captured = None
+
+        async def waits_for(*deps):
+            await asyncio.gather(*deps)
+
+        async def root():
+            nonlocal captured
+            await asyncio.sleep(0)
+            captured = asyncio.format_call_graph()
+
+        layer = [asyncio.ensure_future(root())]
+        for _ in range(3):
+            layer = [asyncio.ensure_future(waits_for(*layer)) for _ in range(2)]
+        await asyncio.gather(*layer)
+
+        self.assertEqual(captured.count('* Task'), 13)
+
     async def test_capture_call_graph_positive_limit(self):
         captured = None
 
