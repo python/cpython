@@ -1,5 +1,5 @@
-import functools
 import asyncio
+import functools
 import inspect
 import types
 import unittest
@@ -422,7 +422,6 @@ class AsyncGenTest(unittest.TestCase):
             gen2.send(None)
 
     def test_async_gen_athrow_throw_concurrent_with_send(self):
-
         class MyExc(Exception):
             pass
 
@@ -482,7 +481,6 @@ class AsyncGenTest(unittest.TestCase):
             gen2.send(None)
 
     def test_async_gen_athrow_throw_concurrent_with_throw(self):
-
         class MyExc(Exception):
             pass
 
@@ -562,7 +560,6 @@ class AsyncGenTest(unittest.TestCase):
             gen.close()
 
     def test_async_gen_athrow_close_runtime_error(self):
-
         class MyExc(Exception):
             pass
 
@@ -843,6 +840,7 @@ class AsyncGenTest(unittest.TestCase):
 
         with self.assertRaises(StopIteration):
             it.aclose().send(None)
+
 
 @requires_working_socket()
 class AsyncGenAsyncioTest(unittest.TestCase):
