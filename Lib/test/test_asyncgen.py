@@ -40,10 +40,7 @@ def run_until_complete(coro):
 
 def to_list(gen):
     async def iterate():
-        res = []
-        async for i in gen:
-            res.append(i)
-        return res
+        return [i async for i in gen]
 
     return run_until_complete(iterate())
 
@@ -1562,10 +1559,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         self.assertEqual(cancelled, [1])
 
     async def to_list(self, gen):
-        res = []
-        async for i in gen:
-            res.append(i)
-        return res
+        return [i async for i in gen]
 
     def test_async_gen_asyncio_01(self):
         async def gen():
