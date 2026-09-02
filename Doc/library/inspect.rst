@@ -487,7 +487,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    .. versionchanged:: 3.10.6
       Duck-type functions now return ``True`` if their code object has the CO_GENERATOR
-      fla
+      flag.
 
    .. versionchanged:: 3.13
       Functions wrapped in :func:`functools.partialmethod` now return ``True``
@@ -513,7 +513,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    .. versionchanged:: 3.10.6
       Duck-type functions now return ``True`` if their code object has the CO_COROUTINE
-      flag
+      flag.
 
    .. versionchanged:: 3.12
       Sync functions marked with :func:`markcoroutinefunction` now return
@@ -591,7 +591,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    .. versionchanged:: 3.10.6
       Duck-type functions now return ``True`` if their code object has the CO_ASYNC_GENERATOR
-      flag
+      flag.
 
    .. versionchanged:: 3.13
       Functions wrapped in :func:`functools.partialmethod` now return ``True``
