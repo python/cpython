@@ -117,6 +117,7 @@ def _check_name(name, what):
 
 
 class XMLGenerator(handler.ContentHandler):
+    """Content handler which writes the events back as an XML document."""
 
     def __init__(self, out=None, encoding="iso-8859-1", short_empty_elements=False,
                  *, validate=False):
