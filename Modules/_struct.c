@@ -496,6 +496,30 @@ nu_double(_structmodulestate *state, const char *p, const formatdef *f)
 }
 
 static PyObject *
+unpack_halfcomplex(const char *p, int le)
+{
+    double real = PyFloat_Unpack2(p, le);
+
+    if (real == -1.0 && PyErr_Occurred()) {
+        return NULL;
+    }
+
+    double imag = PyFloat_Unpack2(p + 2, le);
+
+    if (imag == -1.0 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyComplex_FromDoubles(real, imag);
+}
+
+static PyObject *
+nu_halffloat_complex(_structmodulestate *state, const char *p,
+                     const formatdef *f)
+{
+    return unpack_halfcomplex(p, PY_LITTLE_ENDIAN);
+}
+
+static PyObject *
 nu_float_complex(_structmodulestate *state, const char *p, const formatdef *f)
 {
     float x[2];
@@ -786,6 +810,34 @@ np_double(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 }
 
 static int
+pack_halfcomplex(_structmodulestate *state, char *p,
+                 PyObject *v, int le)
+{
+    Py_complex c = PyComplex_AsCComplex(v);
+
+    if (c.real == -1 && PyErr_Occurred()) {
+        PyErr_SetString(state->StructError,
+                        "required argument is not a complex");
+        return -1;
+    }
+    if (PyFloat_Pack2(c.real, p, le) == -1) {
+        return -1;
+    }
+    if (PyFloat_Pack2(c.imag, p + 2, le) == -1) {
+        return -1;
+    }
+    return 0;
+
+}
+
+static int
+np_halffloat_complex(_structmodulestate *state, char *p, PyObject *v,
+                 const formatdef *f)
+{
+    return pack_halfcomplex(state, p, v, PY_LITTLE_ENDIAN);
+}
+
+static int
 np_float_complex(_structmodulestate *state, char *p, PyObject *v,
                  const formatdef *f)
 {
@@ -857,6 +909,7 @@ static const formatdef native_table[] = {
     {"d",       sizeof(double), _Alignof(double),   nu_double,      np_double},
     {"F",       2*sizeof(float), _Alignof(float), nu_float_complex, np_float_complex},
     {"D",       2*sizeof(double), _Alignof(double), nu_double_complex, np_double_complex},
+    {"Ze",      2*sizeof(short), _Alignof(short), nu_halffloat_complex, np_halffloat_complex},
     {"Zf",      2*sizeof(float), _Alignof(float), nu_float_complex, np_float_complex},
     {"Zd",      2*sizeof(double), _Alignof(double), nu_double_complex, np_double_complex},
     {"P",       sizeof(void *), _Alignof(void *),   nu_void_p,      np_void_p},
@@ -957,6 +1010,12 @@ static PyObject *
 bu_double(_structmodulestate *state, const char *p, const formatdef *f)
 {
     return unpack_double(p, 0);
+}
+
+static PyObject *
+bu_halffloat_complex(_structmodulestate *state, const char *p, const formatdef *f)
+{
+    return unpack_halfcomplex(p, 0);
 }
 
 static PyObject *
@@ -1129,6 +1188,12 @@ bp_double(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 }
 
 static int
+bp_halffloat_complex(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
+{
+    return pack_halfcomplex(state, p, v, 0);
+}
+
+static int
 bp_float_complex(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     Py_complex x = PyComplex_AsCComplex(v);
@@ -1190,6 +1255,7 @@ static formatdef bigendian_table[] = {
     {"d",       8,              0,              bu_double,      bp_double},
     {"F",       8,              0,              bu_float_complex, bp_float_complex},
     {"D",       16,             0,              bu_double_complex, bp_double_complex},
+    {"Ze",      4,              0,              bu_halffloat_complex, bp_halffloat_complex},
     {"Zf",      8,              0,              bu_float_complex, bp_float_complex},
     {"Zd",      16,             0,              bu_double_complex, bp_double_complex},
     {0}
@@ -1289,6 +1355,12 @@ static PyObject *
 lu_double(_structmodulestate *state, const char *p, const formatdef *f)
 {
     return unpack_double(p, 1);
+}
+
+static PyObject *
+lu_halffloat_complex(_structmodulestate *state, const char *p, const formatdef *f)
+{
+    return unpack_halfcomplex(p, 1);
 }
 
 static PyObject *
@@ -1455,6 +1527,12 @@ lp_double(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 }
 
 static int
+lp_halffloat_complex(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
+{
+    return pack_halfcomplex(state, p, v, 1);
+}
+
+static int
 lp_float_complex(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     Py_complex x = PyComplex_AsCComplex(v);
@@ -1507,6 +1585,7 @@ static formatdef lilendian_table[] = {
     {"d",       8,              0,              lu_double,      lp_double},
     {"F",       8,              0,              lu_float_complex, lp_float_complex},
     {"D",       16,             0,              lu_double_complex, lp_double_complex},
+    {"Ze",      4,              0,              lu_halffloat_complex, lp_halffloat_complex},
     {"Zf",      8,              0,              lu_float_complex, lp_float_complex},
     {"Zd",      16,             0,              lu_double_complex, lp_double_complex},
     {0}

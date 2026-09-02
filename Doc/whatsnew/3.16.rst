@@ -491,6 +491,14 @@ sqlite3
   (Contributed by Jiseok CHOI in :gh:`150449`.)
 
 
+struct
+------
+
+* Support the :c:expr:`_Float16 complex` C type in
+  the :mod:`struct` module (format code ``'Ze'``).
+  (Contributed by Sergey B Kirpichev in :gh:`153740`.)
+
+
 symtable
 --------
 

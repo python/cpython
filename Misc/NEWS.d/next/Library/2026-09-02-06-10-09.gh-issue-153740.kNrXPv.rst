@@ -1,0 +1,2 @@
+Support the :c:expr:`_Float16 complex` C type in the :mod:`struct` module
+(format code ``'Ze'``).  Patch by Sergey B Kirpichev.
