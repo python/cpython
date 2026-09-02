@@ -1,2 +1,1 @@
-Speed up ``import json.tool`` by importing :mod:`argparse` and ``_colorize``
-lazily.
+Improve the import time of :mod:`json.tool` using lazy imports.
