@@ -186,8 +186,12 @@ class PrettyPrinter:
         s, readable, recursive = self.format(object, {}, 0, 0)
         return readable and not recursive
 
-    def _format(self, object, stream, indent, allowance, context, level,
-                prefix_len=0):
+    def _format(self, object, stream, indent, allowance, context, level):
+        # Width of any "key: " prefix already written on the current line by
+        # _format_child().  In expand mode `indent` is the block indent and so
+        # does not include it, but it still consumes width here.
+        prefix_len = self._pending_prefix_len
+        self._pending_prefix_len = 0
         objid = id(object)
         if objid in context:
             stream.write(_recursion(object))
@@ -195,15 +199,7 @@ class PrettyPrinter:
             self._readable = False
             return
         rep = self._repr(object, context, level)
-        # prefix_len is the width of any "key: " or "name=" already written on
-        # this line.  In aligned mode continuation lines start after it, so it
-        # is folded into the indent.  In expand mode children are indented at
-        # the block level instead, but the prefix still consumes width here.
-        if self._expand:
-            max_width = self._width - indent - prefix_len - allowance
-        else:
-            indent += prefix_len
-            max_width = self._width - indent - allowance
+        max_width = self._width - indent - prefix_len - allowance
         if len(rep) > max_width:
             p = self._dispatch.get(type(object).__repr__, None)
             # Lazy import to improve module import time
@@ -240,6 +236,22 @@ class PrettyPrinter:
         if self._expand:
             return indent
         return indent + prefix_len
+
+    # Set by _format_child() immediately before it calls _format(), and
+    # consumed there.  Passing it out of band keeps _format()'s signature
+    # unchanged for third-party subclasses that override it.
+    _pending_prefix_len = 0
+
+    def _format_child(self, object, stream, indent, allowance, context, level,
+                      prefix_len):
+        if self._expand:
+            # Aligned mode folds the prefix into the indent (see
+            # _child_indent), so only expand mode needs to report it.
+            self._pending_prefix_len = prefix_len
+        try:
+            self._format(object, stream, indent, allowance, context, level)
+        finally:
+            self._pending_prefix_len = 0
 
     def _write_indent_padding(self, write):
         if self._expand:
@@ -312,14 +324,14 @@ class PrettyPrinter:
             return
         cls = object.__class__
         stream.write(cls.__name__ + '(')
-        self._format(
+        self._format_child(
             list(object.items()),
             stream,
-            indent,
+            self._child_indent(indent, len(cls.__name__) + 1),
             allowance + 1,
             context,
             level,
-            prefix_len=len(cls.__name__) + 1,
+            len(cls.__name__) + 1,
         )
         stream.write(')')
 
@@ -508,14 +520,14 @@ class PrettyPrinter:
 
     def _pprint_mappingproxy(self, object, stream, indent, allowance, context, level):
         stream.write('mappingproxy(')
-        self._format(
+        self._format_child(
             object.copy(),
             stream,
-            indent,
+            self._child_indent(indent, 13),
             allowance + 1,
             context,
             level,
-            prefix_len=13,
+            13,
         )
         stream.write(')')
 
@@ -551,14 +563,14 @@ class PrettyPrinter:
             rep = self._repr(key, context, level)
             write(rep)
             write(': ')
-            self._format(
+            self._format_child(
                 ent,
                 stream,
-                indent,
+                self._child_indent(indent, len(rep) + 2),
                 allowance if last else 1,
                 context,
                 level,
-                prefix_len=len(rep) + 2,
+                len(rep) + 2,
             )
             if not last:
                 write(delimnl)
@@ -578,14 +590,14 @@ class PrettyPrinter:
                 # recursive dataclass repr.
                 write("...")
             else:
-                self._format(
+                self._format_child(
                     ent,
                     stream,
-                    indent,
+                    self._child_indent(indent, len(key) + 1),
                     allowance if last else 1,
                     context,
                     level,
-                    prefix_len=len(key) + 1,
+                    len(key) + 1,
                 )
             if not last:
                 write(delimnl)
