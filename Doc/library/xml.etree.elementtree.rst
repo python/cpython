@@ -891,6 +891,18 @@ Element Objects
    an optional dictionary, containing element attributes.  *extra* contains
    additional attributes, given as keyword arguments.
 
+   The element name and the attribute names and values are strings or
+   :class:`QName` instances, and the text and the tail are strings or
+   ``None``.
+   The element name can also be :func:`Comment` or
+   :func:`ProcessingInstruction`, which are used for special elements.
+   If it is ``None``, the element itself is not serialized: only its text
+   and its children are written, and its attributes are ignored.
+   This can be used for a fragment which contains several elements.
+   With ``method="html"`` the attribute value can also be ``None``,
+   which produces an empty attribute (such as ``checked``).
+   Other objects can be stored in the tree, but they cannot be serialized.
+
    .. versionchanged:: 3.15
       *attrib* can now be a :class:`frozendict`.
 
