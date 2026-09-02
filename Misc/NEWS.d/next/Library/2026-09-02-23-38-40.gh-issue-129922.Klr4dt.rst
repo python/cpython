@@ -1,0 +1,1 @@
+Promote ``difflib._mdiff()`` to a public function named :func:`difflib.mdiff`.
