@@ -1,3 +1,2 @@
-Speed up :mod:`pdb` startup by deferring the :mod:`asyncio` import, and by
-skipping it entirely in ``Pdb._get_asyncio_task()`` when no event loop has
-been used.
+Speed up :mod:`pdb` startup by only importing :mod:`asyncio` when the program
+being debugged has already imported it.

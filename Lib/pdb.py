@@ -84,7 +84,6 @@ import pprint
 import signal
 import socket
 import typing
-lazy import asyncio
 import inspect
 import weakref
 import builtins
@@ -101,6 +100,8 @@ import _colorize
 from contextlib import ExitStack, closing, contextmanager
 from types import CodeType
 from warnings import deprecated
+
+lazy import asyncio
 
 try:
     import _pyrepl.utils
