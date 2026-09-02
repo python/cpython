@@ -1,0 +1,3 @@
+Made :func:`select.select` dynamically allocate fd_set arrays on Windows,
+based on size of inputs. This basically removes the FD_SETSIZE
+limitation on Windows.
