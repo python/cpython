@@ -3309,30 +3309,22 @@ class TestMiscellaneous(TestEmailBase):
         self.assertEqual(utils.formataddr((a, b)), y)
 
     def test_formataddr_non_ascii_name_with_specials(self):
-        # gh-100900: when the charset is configured not to RFC 2047-encode the
-        # display name, formataddr() must still quote a non-ASCII name that
-        # contains specials, the same way its ASCII branch does, so the result
-        # round-trips through getaddresses() instead of splitting on the comma.
-        from email import charset as _charset
-        sentinel = object()
-        previous = _charset.CHARSETS.get('utf-8', sentinel)
-        def restore():
-            if previous is sentinel:
-                _charset.CHARSETS.pop('utf-8', None)
-            else:
-                _charset.CHARSETS['utf-8'] = previous
-        self.addCleanup(restore)
-        _charset.add_charset('utf-8', None)  # do not RFC 2047-encode the name
-        formatted = utils.formataddr(('Fôo, Bar', 'a@b.com'))
+        # gh-100900: with a charset that doesn't RFC 2047-encode the name,
+        # formataddr() must still quote a non-ASCII name containing specials
+        # so it round-trips through getaddresses().
+        charset = Charset('utf-8')
+        charset.header_encoding = None
+        formatted = utils.formataddr(('Fôo, Bar', 'a@b.com'), charset)
         self.assertEqual(formatted, '"Fôo, Bar" <a@b.com>')
-        self.assertEqual(utils.getaddresses([formatted]),
-                         [('Fôo, Bar', 'a@b.com')])
-        # A non-ASCII name without specials is still emitted unquoted.
-        self.assertEqual(utils.formataddr(('Fôo Bar', 'a@b.com')),
+        self.assertEqual(utils.getaddresses([formatted]), [('Fôo, Bar', 'a@b.com')])
+        # " and \ in the name are escaped within the quotes.
+        name = 'Fô"o\\Bar'
+        formatted = utils.formataddr((name, 'a@b.com'), charset)
+        self.assertEqual(formatted, '"Fô\\"o\\\\Bar" <a@b.com>')
+        self.assertEqual(utils.getaddresses([formatted]), [(name, 'a@b.com')])
+        # A non-ASCII name without specials is emitted unquoted.
+        self.assertEqual(utils.formataddr(('Fôo Bar', 'a@b.com'), charset),
                          'Fôo Bar <a@b.com>')
-        # The ASCII branch is unchanged.
-        self.assertEqual(utils.formataddr(('Foo, Bar', 'a@b.com')),
-                         '"Foo, Bar" <a@b.com>')
 
     def test_parseaddr_preserves_quoted_pairs_in_addresses(self):
         # issue 10005.  Note that in the third test the second pair of
