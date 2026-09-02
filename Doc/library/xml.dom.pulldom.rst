@@ -41,12 +41,12 @@ Example::
 
    from xml.dom import pulldom
 
-   doc = pulldom.parse('sales_items.xml')
-   for event, node in doc:
-       if event == pulldom.START_ELEMENT and node.tagName == 'item':
-           if int(node.getAttribute('price')) > 50:
-               doc.expandNode(node)
-               print(node.toxml())
+   with pulldom.parse('sales_items.xml') as doc:
+       for event, node in doc:
+           if event == pulldom.START_ELEMENT and node.tagName == 'item':
+               if int(node.getAttribute('price')) > 50:
+                   doc.expandNode(node)
+                   print(node.toxml())
 
 ``event`` is a constant and can be one of:
 
@@ -114,6 +114,11 @@ DOMEventStream Objects
    .. versionchanged:: 3.11
       Support for :meth:`~object.__getitem__` method has been removed.
 
+   .. versionchanged:: next
+      :class:`DOMEventStream` can now be used as a :term:`context manager`.
+      On exit, :meth:`~DOMEventStream.clear` is called, closing file
+      handles opened by :func:`parse`.
+
    .. method:: getEvent()
 
       Return a tuple containing *event* and the current *node* as
@@ -141,3 +146,15 @@ DOMEventStream Objects
                   print(node.toxml())
 
    .. method:: DOMEventStream.reset()
+
+   .. method:: clear()
+
+      Release references to the parser, the stream and the DOM builder,
+      and close the stream if it was opened by :func:`parse`. Streams
+      provided by the caller are not closed. It is safe to call this
+      method more than once. The event stream cannot be used after
+      calling this method.
+
+      .. versionchanged:: next
+         This method now closes the underlying stream if it was opened
+         by :func:`parse`.
