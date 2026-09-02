@@ -177,7 +177,6 @@ nitpick_ignore = [
     ('c:type', 'unsigned __int64'),
     ('c:type', 'double'),
     ('c:type', '_Float16'),
-    ('c:type', '_Float16 complex'),
     # Standard C structures
     ('c:struct', 'in6_addr'),
     ('c:struct', 'in_addr'),
@@ -226,6 +225,9 @@ nitpick_ignore = [
     ('envvar', 'USERNAME'),
     ('envvar', 'USERPROFILE'),
 ]
+
+# Tell Sphinx to accept these tokens as valid parts of a C type/identifier
+c_id_attributes = ['_Float16']
 
 # Temporary undocumented names.
 # In future this list must be empty.
