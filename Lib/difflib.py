@@ -10,6 +10,9 @@ Function context_diff(a, b):
 Function ndiff(a, b):
     Return a delta: the difference between `a` and `b` (lists of strings).
 
+Function mdiff(fromlines, tolines):
+    Return a generator yielding marked up from/to side by side differences.
+
 Function restore(delta, which):
     Return one of the two sequences that generated an ndiff delta.
 
@@ -26,7 +29,7 @@ Class HtmlDiff:
     For producing HTML side by side comparison with change highlights.
 """
 
-__all__ = ['get_close_matches', 'ndiff', 'restore', 'SequenceMatcher',
+__all__ = ['get_close_matches', 'ndiff', 'mdiff', 'restore', 'SequenceMatcher',
            'Differ','IS_CHARACTER_JUNK', 'IS_LINE_JUNK', 'context_diff',
            'unified_diff', 'diff_bytes', 'HtmlDiff', 'Match']
 
