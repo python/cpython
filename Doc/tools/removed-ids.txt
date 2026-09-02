@@ -53,6 +53,14 @@ c-api/typeobj.html: c.Py_tp_bases
 # Removed pages
 library/asyncio-policy.html: (page missing)
 
+# Moved to builtins/
+library/constants.html: (page missing)
+library/exceptions.html: (page missing)
+library/functions.html: (page missing)
+library/stdtypes.html: (page missing)
+library/threadsafety.html: (page missing)
+library/time-complexity.html: (page missing)
+
 # Removed old Windows installer docs
 using/windows.html: diagnostics
 using/windows.html: dry-run
