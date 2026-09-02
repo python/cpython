@@ -1039,6 +1039,26 @@ class ExpatReaderTest(XmlTestBase):
         self.assertEqual(result.getvalue(), start +
                          b"<doc><entity></entity></doc>")
 
+    def test_expat_entityresolver_not_well_formed(self):
+        # gh-156796: the parser of an external entity was never finalized,
+        # so errors only detectable at the end of its input, such as an
+        # unclosed element, were silently ignored.
+        class NotWellFormedEntityResolver:
+            def resolveEntity(self, publicId, systemId):
+                inpsrc = InputSource()
+                inpsrc.setByteStream(BytesIO(b"<entity>"))
+                return inpsrc
+
+        parser = create_parser()
+        parser.setFeature(feature_external_ges, True)
+        parser.setEntityResolver(NotWellFormedEntityResolver())
+        parser.setContentHandler(XMLGenerator(BytesIO()))
+
+        with self.assertRaises(SAXParseException):
+            parser.feed('<!DOCTYPE doc [<!ENTITY test SYSTEM "whatever">]>'
+                        '<doc>&test;</doc>')
+            parser.close()
+
     def test_expat_entityresolver_default(self):
         parser = create_parser()
         self.assertEqual(parser.getFeature(feature_external_ges), False)
