@@ -29,8 +29,7 @@ be raised is re-raised.
 
 In programs that use multiple interpreters, each interpreter has its own stack
 of exit handlers, which are executed when the interpreter shuts down
-(for example, with :meth:`concurrent.interpreters.Interpreter.close` or the
-C API :c:func:`Py_EndInterpreter`).
+(for example, with the C API function :c:func:`Py_EndInterpreter`).
 Registration functions in this module only affect the interpreter they are
 called from.
 
