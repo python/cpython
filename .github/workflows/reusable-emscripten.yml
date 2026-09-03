@@ -41,18 +41,18 @@ jobs:
         with open(os.environ["GITHUB_ENV"], "a") as f:
             f.write(f"EMSDK_CACHE={emsdk_cache}\n")
     - name: "Install Node.js"
-      uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
       with:
         node-version: ${{ steps.emscripten-config.outputs.node-version }}
     - name: "Cache Emscripten SDK"
       id: emsdk-cache
-      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ env.EMSDK_CACHE }}
         key: emsdk-${{ steps.emscripten-config.outputs.emscripten-version }}-${{ steps.emscripten-config.outputs.deps-hash }}
         restore-keys: emsdk-${{ steps.emscripten-config.outputs.emscripten-version }}
     - name: "Install Python"
-      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
       with:
         python-version: '3.x'
     - name: "Runner image version"
