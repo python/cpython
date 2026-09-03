@@ -450,7 +450,7 @@ class partialmethod:
     """
     __slots__ = (
         "_func", "_args", "_keywords", "__dict__", "__weakref__",
-        "_cachedmethod", "_iscachable"
+        "_cachedmethod", "_iscacheable"
     )
 
     __repr__ = _partial_repr
@@ -478,14 +478,14 @@ class partialmethod:
     @func.setter
     def func(self, func):
         if isinstance(func, _PM_FAST_METHOD_TYPES):
-            self._iscachable = True
+            self._iscacheable = True
         elif getattr(func, '__get__', None) is None:
             if not callable(func):
                 raise TypeError(f'the first argument {func!r} must be a callable '
                                 'or a descriptor')
-            self._iscachable = True
+            self._iscacheable = True
         else:
-            self._iscachable = False
+            self._iscacheable = False
         self._func = func
         self._cachedmethod = None
 
@@ -541,26 +541,21 @@ class partialmethod:
     def __get__(self, obj, cls=None):
         method = self._cachedmethod
         if method is None:
-            if not self._iscachable:
+            if not self._iscacheable:
                 # Unknown descriptor == unknown binding
                 # Need to get callable at runtime and apply partial on top
-                new_func = self._func.__get__(obj, cls)
-                if new_func is not self.func:
+                func = self._func
+                new_func = func.__get__(obj, cls)
+                if new_func is not func:
                     result = partial(new_func, *self._args, **self._keywords)
-                    result.__partialmethod__ = self
-                    if self.__isabstractmethod__:
-                        result.__isabstractmethod__ = True
                     try:
-                        obj = new_func.__self__
+                        result.__self__ = new_func.__self__
                     except AttributeError:
                         pass
-                    else:
-                        result.__self__ = obj
                     return result
 
-            if method is None:
-                # Cache method
-                self._cachedmethod = method = self.__make_method()
+            # Cache method
+            self._cachedmethod = method = self.__make_method()
 
         return method.__get__(obj, cls)
 
