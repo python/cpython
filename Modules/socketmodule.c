@@ -631,7 +631,7 @@ _PyLong_##NAME##_Converter(PyObject *obj, void *ptr)                \
     return 1;                                                       \
 }
 
-#if defined(HAVE_IF_INDEXTONAME) || defined(HAVE_IF_NAMETOINDEX) || defined(MS_WINDOWS)
+#if defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS)
 # ifdef MS_WINDOWS
     UNSIGNED_INT_CONVERTER(NetIfindex, NET_IFINDEX)
 # else
