@@ -946,6 +946,8 @@ checking for that feed.
 Proxy Settings
 --------------
 
+.. versionadded:: 26.4
+
 By default, the Python install manager will use your system-wide proxy settings,
 including automatic authentication. For most users, this behaves the same as
 your browser and other applications.
@@ -970,8 +972,7 @@ proxy server to be overridden. It follows the same format as ``HTTPS_PROXY``.
 
 Credentials may be embedded in either setting, however, when ``HTTPS_PROXY`` has
 credentials embedded they will be used in preference to other credentials. Only
-one set of credentials will be used for both types of proxy, and may be sent to
-the other proxy for connections of that type.
+one set of credentials will be used for both types of proxy.
 
 .. _pymanager-troubleshoot:
 
