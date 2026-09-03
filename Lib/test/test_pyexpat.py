@@ -19,6 +19,11 @@ from xml.parsers import expat
 from xml.parsers.expat import errors
 
 
+# pyexpat built with expat 2.6.0+ has support for reparse deferral
+# and defaults to enabled
+HAS_REPARSE_DEFERRAL = expat.ParserCreate().GetReparseDeferralEnabled()
+
+
 class SetAttributeTest(unittest.TestCase):
     def setUp(self):
         self.parser = expat.ParserCreate(namespace_separator='!')
@@ -1046,7 +1051,7 @@ class ParentParserLifetimeTest(unittest.TestCase):
         del subparser
 
     # gh-155485: GetReparseDeferralEnabled always returns False with Expat <2.6.0.
-    @unittest.skipIf(not expat.ParserCreate().GetReparseDeferralEnabled(),
+    @unittest.skipIf(not HAS_REPARSE_DEFERRAL,
                      "requires Python compiled with Expat >= 2.6.0")
     def test_subparser_inherits_reparse_deferral(self):
         for enabled in (True, False):
@@ -1097,7 +1102,7 @@ class ExternalEntityParserCreateErrorTest(unittest.TestCase):
 class ReparseDeferralTest(unittest.TestCase):
     def test_getter_setter_round_trip(self):
         parser = expat.ParserCreate()
-        enabled = (expat.version_info >= (2, 6, 0))
+        enabled = HAS_REPARSE_DEFERRAL
 
         self.assertIs(parser.GetReparseDeferralEnabled(), enabled)
         parser.SetReparseDeferralEnabled(False)
@@ -1106,8 +1111,8 @@ class ReparseDeferralTest(unittest.TestCase):
         self.assertIs(parser.GetReparseDeferralEnabled(), enabled)
 
     def test_reparse_deferral_enabled(self):
-        if expat.version_info < (2, 6, 0):
-            self.skipTest(f'Expat {expat.version_info} does not '
+        if not HAS_REPARSE_DEFERRAL:
+            self.skipTest(f'Expat < 2.6.0 does not '
                           'support reparse deferral')
 
         started = []
@@ -1137,7 +1142,7 @@ class ReparseDeferralTest(unittest.TestCase):
 
         parser = expat.ParserCreate()
         parser.StartElementHandler = start_element
-        if expat.version_info >= (2, 6, 0):
+        if HAS_REPARSE_DEFERRAL:
             parser.SetReparseDeferralEnabled(False)
         self.assertFalse(parser.GetReparseDeferralEnabled())
 

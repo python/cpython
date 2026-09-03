@@ -2073,8 +2073,8 @@ class XMLPullParserTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unknown event 'bogus'"):
             ET.XMLPullParser(events=(x.decode() for x in (b'start', b'end', b'bogus')))
 
-    @unittest.skipIf(pyexpat.version_info < (2, 6, 0),
-                     f'Expat {pyexpat.version_info} does not '
+    @unittest.skipIf(not pyexpat.ParserCreate().GetReparseDeferralEnabled(),
+                     'Python compiled with Expat < 2.6.0 does not '
                      'support reparse deferral')
     def test_flush_reparse_deferral_enabled(self):
         parser = ET.XMLPullParser(events=('start', 'end'))
