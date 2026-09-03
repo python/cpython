@@ -379,10 +379,16 @@ def _open_exclusive_lock(resource):
         # The tests are not run in parallel, so there is nothing to exclude.
         return None
     # The file is left behind: another process may be waiting on a lock on it,
-    # and it is empty anyway.
+    # and it is empty anyway.  Nothing is ever written in it.
     path = os.path.join(directory, f'python-test-exclusive-{resource}.lock')
+    if MS_WINDOWS:
+        flags = os.O_WRONLY | os.O_CREAT
+    else:
+        # flock() locks a file open for reading too, so that the tests of
+        # another user, who cannot write the file, are locked out as well.
+        flags = os.O_RDONLY | os.O_CREAT | os.O_NOFOLLOW
     try:
-        fd = os.open(path, os.O_WRONLY | os.O_CREAT, 0o600)
+        fd = os.open(path, flags, 0o666)
     except OSError:
         return None
     try:
