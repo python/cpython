@@ -263,6 +263,7 @@ class CAPIComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertEqual(_py_c_pow(1, 1j), (1+0j, 0))
         self.assertEqual(_py_c_pow(0j, 1), (0j, 0))
         self.assertAlmostEqual(_py_c_pow(1j, 2)[0], -1.0+0j)
+        self.assertEqual(_py_c_pow(complex('nan+0j'), 0j)[0], 1+0j)
 
         r, e = _py_c_pow(1+1j, -1)
         self.assertAlmostEqual(r, 0.5-0.5j)

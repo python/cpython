@@ -351,6 +351,7 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertEqual(pow(0+0j, 2000+0j), 0.0)
         self.assertEqual(pow(0, 0+0j), 1.0)
         self.assertEqual(pow(-1, 0+0j), 1.0)
+        self.assertEqual(pow(0j, complex(INF)), 0j)
         self.assertRaises(ZeroDivisionError, pow, 0+0j, 1j)
         self.assertRaises(ZeroDivisionError, pow, 0+0j, -1000)
         self.assertRaises(ZeroDivisionError, pow, 0+0j, -1)
