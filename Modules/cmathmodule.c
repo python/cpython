@@ -803,7 +803,7 @@ cmath_sqrt_impl(PyObject *module, Py_complex z)
 
     SPECIAL_VALUE(z, sqrt_special_values);
 
-    if (z.real == 0. && z.imag == 0.) {
+    if (_Py_c_iszero(z)) {
         r.real = 0.;
         r.imag = z.imag;
         return r;

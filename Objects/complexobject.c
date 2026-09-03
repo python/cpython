@@ -302,11 +302,11 @@ _Py_c_pow(Py_complex a, Py_complex b)
 {
     Py_complex r;
     double vabs,len,at,phase;
-    if (b.real == 0. && b.imag == 0.) {
+    if (_Py_c_iszero(b)) {
         r.real = 1.;
         r.imag = 0.;
     }
-    else if (a.real == 0. && a.imag == 0.) {
+    else if (_Py_c_iszero(a)) {
         if (b.imag != 0. || b.real < 0.)
             errno = EDOM;
         r.real = 0.;
