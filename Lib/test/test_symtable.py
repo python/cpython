@@ -575,6 +575,18 @@ class SymtableTest(unittest.TestCase):
         self.assertTrue(comp.lookup("y").is_referenced())
         self.assertTrue(comp.lookup("x").is_local())
 
+    def test_inlined_comprehension_class_closure_names_are_free(self):
+        st = symtable.symtable(
+            "class C:\n"
+            "    [__class__ for x in [1]]",
+            "?", "exec")
+        C = find_block(st, "C")
+        comp, = C.get_children()
+        self.assertTrue(comp.lookup("__class__").is_free())
+        self.assertTrue(comp.lookup("__class__").is_referenced())
+        with self.assertRaises(KeyError):
+            C.lookup("__class__")
+
     def test_inlined_nested_comprehension_class_iter_var(self):
         st = symtable.symtable(
             "class C:\n"

@@ -913,7 +913,9 @@ finally:
 /* Inlined comprehensions are compiled in the enclosing unit. If a name is
  * FREE in the comprehension, resolve it in enclosing tables until it is no
  * longer FREE. Stop if the next table is a class: nested scopes (including
- * inlined comprehensions) do not see class locals, so the name stays FREE. */
+ * inlined comprehensions) do not see class locals, so the name stays FREE.
+ * __class__ and friends are not allowed to be free through a class; treat
+ * those loads as implicit globals. */
 static int
 compiler_resolve_inlined_free(PySTEntryObject **ste, int scope, PyObject *name)
 {
@@ -921,6 +923,9 @@ compiler_resolve_inlined_free(PySTEntryObject **ste, int scope, PyObject *name)
         PySTEntryObject *parent = (*ste)->ste_parent;
         assert(parent != NULL);
         if (parent->ste_type == ClassBlock) {
+            if (_PyST_IsClassClosureName(name)) {
+                return GLOBAL_IMPLICIT;
+            }
             break;
         }
         *ste = parent;
@@ -933,10 +938,7 @@ compiler_resolve_inlined_free(PySTEntryObject **ste, int scope, PyObject *name)
 int
 _PyCompile_GetRefType(compiler *c, PyObject *name)
 {
-    if (c->u->u_scope_type == COMPILE_SCOPE_CLASS &&
-        (_PyUnicode_EqualToASCIIString(name, "__class__") ||
-         _PyUnicode_EqualToASCIIString(name, "__classdict__") ||
-         _PyUnicode_EqualToASCIIString(name, "__conditional_annotations__"))) {
+    if (c->u->u_scope_type == COMPILE_SCOPE_CLASS && _PyST_IsClassClosureName(name)) {
         return CELL;
     }
     PySTEntryObject *ste = c->u->u_ste;

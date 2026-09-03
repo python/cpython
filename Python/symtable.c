@@ -587,6 +587,14 @@ _PyST_IsFunctionLike(PySTEntryObject *ste)
         || ste->ste_type == TypeParametersBlock;
 }
 
+int
+_PyST_IsClassClosureName(PyObject *name)
+{
+    return _PyUnicode_EqualToASCIIString(name, "__class__")
+        || _PyUnicode_EqualToASCIIString(name, "__classdict__")
+        || _PyUnicode_EqualToASCIIString(name, "__conditional_annotations__");
+}
+
 static int
 error_at_directive(PySTEntryObject *ste, PyObject *name)
 {
@@ -878,13 +886,11 @@ finalize_inlined_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
         if (existing == NULL && PyErr_Occurred()) {
             goto error;
         }
-        // __class__, __classdict__ and __conditional_annotations__ are
-        // not allowed to be free through a class scope (see
-        // drop_class_free) unless children scopes need it
+        // These names are not allowed to be free through a class (see
+        // drop_class_free) unless a nested child needs them. Keep FREE
+        // on this table; compile treats the load as a global.
         if (scope == FREE && ste->ste_type == ClassBlock &&
-                (_PyUnicode_EqualToASCIIString(k, "__class__") ||
-                 _PyUnicode_EqualToASCIIString(k, "__classdict__") ||
-                 _PyUnicode_EqualToASCIIString(k, "__conditional_annotations__"))) {
+                _PyST_IsClassClosureName(k)) {
             int child_needs_free = is_free_in_any_child(comp, k);
             if (child_needs_free < 0) {
                 goto error;
@@ -894,16 +900,6 @@ finalize_inlined_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
                     goto error;
                 }
             }
-            long new_flags = only_flags | (GLOBAL_IMPLICIT << SCOPE_OFFSET);
-            PyObject *newv = PyLong_FromLong(new_flags);
-            if (newv == NULL) {
-                goto error;
-            }
-            if (PyDict_SetItem(comp->ste_symbols, k, newv) < 0) {
-                Py_DECREF(newv);
-                goto error;
-            }
-            Py_DECREF(newv);
             continue;
         }
         if (existing) {
