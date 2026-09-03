@@ -26,8 +26,6 @@ class complex "PyComplexObject *" "&PyComplex_Type"
 
 /* elementary operations on complex numbers */
 
-static Py_complex c_1 = {1., 0.};
-
 Py_complex
 _Py_c_sum(Py_complex a, Py_complex b)
 {
@@ -342,10 +340,12 @@ _Py_c_pow(Py_complex a, Py_complex b)
     return r;
 }
 
+#define INT_EXP_CUTOFF 100
+
 static Py_complex
 c_powu(Py_complex x, long n)
 {
-    assert(n > 0);
+    assert(0 < n && n <= INT_EXP_CUTOFF);
     while ((n & 1) == 0) {
         x = _Py_c_prod(x, x);
         n >>= 1;
@@ -370,7 +370,7 @@ c_powi(Py_complex x, long n)
     else if (n < 0)
         return _Py_rc_quot(1.0, c_powu(x, -n));
     else
-        return c_1;
+        return (Py_complex){1., 0.};
 }
 
 double
@@ -760,7 +760,9 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
     errno = 0;
     // Check whether the exponent has a small integer value, and if so use
     // a faster and more accurate algorithm.
-    if (b.imag == 0.0 && b.real == floor(b.real) && fabs(b.real) <= 100.0) {
+    if (b.imag == 0.0 && b.real == floor(b.real)
+        && fabs(b.real) <= INT_EXP_CUTOFF)
+    {
         p = c_powi(a, (long)b.real);
         if (isfinite(a.real) && isfinite(a.imag)) {
             _Py_ADJUST_ERANGE2(p.real, p.imag);
