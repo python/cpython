@@ -276,7 +276,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             sock=None, backlog=100, ssl=None,
             ssl_handshake_timeout=None,
             ssl_shutdown_timeout=None,
-            start_serving=True, cleanup_socket=True):
+            start_serving=True, cleanup_socket=True, mode=None):
         if isinstance(ssl, bool):
             raise TypeError('ssl argument must be an SSLContext or None')
 
@@ -294,6 +294,9 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                     'path and sock can not be specified at the same time')
 
             path = os.fspath(path)
+            if mode is not None and path and path[0] in (0, '\x00'):
+                raise ValueError(
+                    'mode is not supported for abstract sockets')
             sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 
             # Check for abstract socket. `str` and `bytes` paths are supported.
@@ -322,10 +325,25 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             except:
                 sock.close()
                 raise
+
+            if mode is not None:
+                # The socket cannot accept connections until listen() is
+                # called, which happens later in Server._start_serving(),
+                # so no connection can be accepted while the socket still
+                # has the default permissions.
+                try:
+                    os.chmod(path, mode)
+                except:
+                    sock.close()
+                    raise
         else:
             if sock is None:
                 raise ValueError(
                     'path was not specified, and no sock specified')
+
+            if mode is not None:
+                raise ValueError(
+                    'mode is only meaningful with path')
 
             if (sock.family != socket.AF_UNIX or
                     sock.type != socket.SOCK_STREAM):
@@ -658,19 +676,19 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
         # On AIX, the reader trick (to be notified when the read end of the
         # socket is closed) only works for sockets. On other platforms it
         # works for pipes and sockets. (Exception: OS X 10.4?  Issue #19294.)
-        # On macOS, the trick misfires for named FIFOs (but not for pipes
-        # created with os.pipe(), which have st_nlink == 0): the write end
-        # polls as readable whenever unread data sits in the FIFO, and no
+        # On macOS and Solaris, the trick misfires for named FIFOs (but not for
+        # pipes created with os.pipe(), which have st_nlink == 0): the write
+        # end polls as readable whenever unread data sits in the FIFO, and no
         # event is delivered when the read end is closed, so it can only
-        # ever report a false disconnection (gh-145030). The same xnu
+        # ever report a false disconnection (gh-145030). The same XNU
         # behaviour applies on iOS/tvOS/watchOS (sys.platform is not
         # "darwin" there).
-        is_named_fifo_on_apple = (
-            sys.platform in {"darwin", "ios", "tvos", "watchos"}
+        is_named_fifo_without_close_event = (
+            sys.platform in {"darwin", "ios", "tvos", "watchos", "sunos5"}
             and is_fifo and pipe_stat.st_nlink > 0)
         if is_socket or (is_fifo
                          and not sys.platform.startswith("aix")
-                         and not is_named_fifo_on_apple):
+                         and not is_named_fifo_without_close_event):
             # only start reading when connection_made() has been called
             self._loop.call_soon(self._loop._add_reader,
                                  self._fileno, self._read_ready)

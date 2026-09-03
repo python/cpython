@@ -1,0 +1,5 @@
+Fix thread safety of :term:`asynchronous generators <asynchronous
+generator>` when iterated, closed or thrown into concurrently from multiple
+threads on the :term:`free threading` build. Also make an ``athrow()``
+awaitable single-use: reusing it after completion now raises
+:exc:`RuntimeError` instead of resuming the generator again.
