@@ -419,14 +419,25 @@ class ListComprehensionTest(unittest.TestCase):
 
     def test_nested_mixed_comprehensions_use_outer_iter(self):
         cases = [
-            ("y = [{x for _ in (0,)} for x in (42,)]", {"y": [{42}]}),
-            ("y = [{x: x for _ in (0,)} for x in (42,)]", {"y": [{42: 42}]}),
-            ("y = {[x for _ in (0,)][0] for x in (42,)}", {"y": {42}}),
-            ("y = {x: [x for _ in (0,)] for x in (42,)}", {"y": {42: [42]}}),
+            ("""
+            x = 99
+            y = [{x for _ in (0,)} for x in (42,)]
+            """, {"y": [{42}]}),
+            ("""
+            x = 99
+            y = [{x: x for _ in (0,)} for x in (42,)]
+            """, {"y": [{42: 42}]}),
+            ("""
+            x = 99
+            y = {[x for _ in (0,)][0] for x in (42,)}
+            """, {"y": {42}}),
+            ("""
+            x = 99
+            y = {x: [x for _ in (0,)] for x in (42,)}
+            """, {"y": {42: [42]}}),
         ]
-        for line, outputs in cases:
-            with self.subTest(line=line):
-                code = f"x = 99\n{line}"
+        for code, outputs in cases:
+            with self.subTest(code=code):
                 self._check_in_scopes(code, outputs)
 
     def test_nested_triple_inner_uses_outer_iter(self):
