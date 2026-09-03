@@ -584,8 +584,8 @@ e_getitem(arrayobject *ap, Py_ssize_t i)
 static int
 e_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
-    float x;
-    if (!PyArg_Parse(v, "f;array item must be float", &x)) {
+    double x;
+    if (!PyArg_Parse(v, "d;array item must be float", &x)) {
         return -1;
     }
 

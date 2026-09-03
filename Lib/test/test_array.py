@@ -1607,6 +1607,12 @@ class HalfFloatTest(FPTest, unittest.TestCase):
     typecode = 'e'
     minitemsize = 2
 
+    def test_overflows(self):
+        # Overflows half-float type:
+        self.assertRaises(OverflowError, array.array, self.typecode, [123456])
+        # Overflows also float type:
+        self.assertRaises(OverflowError, array.array, self.typecode, [1e300])
+
 class FloatTest(FPTest, unittest.TestCase):
     typecode = 'f'
     minitemsize = 4
