@@ -1,0 +1,3 @@
+Improve accuracy of complex division and complex powers with small negative
+integer exponents.  This also applies to :c:func:`_Py_c_quot` and
+:c:func:`_Py_c_pow`.  Contributed by High Performance Kernels LLC.
