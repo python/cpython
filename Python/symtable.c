@@ -1394,21 +1394,6 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         Py_DECREF(temp);
     }
 
-    /* Splice children of inlined comprehensions into our children list */
-    for (i = PyList_GET_SIZE(ste->ste_children) - 1; i >= 0; --i) {
-        PyObject* c = PyList_GET_ITEM(ste->ste_children, i);
-        PySTEntryObject* entry;
-        assert(c && PySTEntry_Check(c));
-        entry = (PySTEntryObject*)c;
-        if (entry->ste_type == InlinedComprehensionBlock &&
-            PyList_GET_SIZE(entry->ste_children) > 0 &&
-            PyList_SetSlice(ste->ste_children, i+1, i + 1,
-                            entry->ste_children) < 0)
-        {
-            goto error;
-        }
-    }
-
     /* Check if any local variables must be converted to cell variables */
     if (ste_uses_fast_locals(ste) && !analyze_cells(scopes, newfree, inlined_cells)) {
         goto error;

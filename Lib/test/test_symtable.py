@@ -523,13 +523,11 @@ class SymtableTest(unittest.TestCase):
         self.assertEqual(len(children), nchildren)
         return children
 
-    def check_nested_inlined_listcomp(self, outer, hoisted, outer_ids, inner_ids, *, nested):
-        # Nested namespaces of inlined comprehensions are also hoisted into
-        # the enclosing scope's children list.
+    def check_nested_inlined_listcomp(self, outer, outer_ids, inner_ids, *, nested):
         inner, = self.check_inlined_listcomp(
             outer, outer_ids, nested=nested, nchildren=1)
         self.check_inlined_listcomp(inner, inner_ids, nested=True)
-        self.assertIs(hoisted, inner)
+        return inner
 
     def test_inlined_comprehension(self):
         st = symtable.symtable("[x for x in [1]]", "?", "exec")
@@ -542,9 +540,9 @@ class SymtableTest(unittest.TestCase):
         st = symtable.symtable("[[y for y in x] for x in [1]]", "?", "exec")
         self.assertEqual(sorted(st.get_identifiers()), [])
         children = st.get_children()
-        self.assertEqual(len(children), 2)
+        self.assertEqual(len(children), 1)
         self.check_nested_inlined_listcomp(
-            children[0], children[1], ["x"], ["y"], nested=False)
+            children[0], ["x"], ["y"], nested=False)
 
     def test_inlined_nested_comprehension_class_iter_var(self):
         st = symtable.symtable(
@@ -554,16 +552,16 @@ class SymtableTest(unittest.TestCase):
             "?", "exec")
         C = find_block(st, "C")
         children = C.get_children()
-        self.assertEqual(len(children), 2)
-        self.check_nested_inlined_listcomp(
-            children[0], children[1], ["x"], ["_"], nested=False)
+        self.assertEqual(len(children), 1)
+        inner = self.check_nested_inlined_listcomp(
+            children[0], ["x"], ["_"], nested=False)
         self.assertFalse(C.lookup("x").is_free())
         self.assertTrue(C.lookup("x").is_local())
         self.assertFalse(children[0].lookup("x").is_free())
         self.assertTrue(children[0].lookup("x").is_cell())
-        self.assertFalse(children[1].lookup("_").is_free())
+        self.assertFalse(inner.lookup("_").is_free())
         with self.assertRaises(KeyError):
-            children[1].lookup("x")
+            inner.lookup("x")
 
     def test_inlined_sibling_nested_comprehensions(self):
         st = symtable.symtable(
@@ -573,11 +571,24 @@ class SymtableTest(unittest.TestCase):
         self.assertIs(f.get_type(), symtable.SymbolTableType.FUNCTION)
         self.assertEqual(sorted(f.get_identifiers()), [])
         children = f.get_children()
-        self.assertEqual(len(children), 4)
+        self.assertEqual(len(children), 2)
         self.check_nested_inlined_listcomp(
-            children[0], children[1], ["x"], ["y"], nested=True)
+            children[0], ["x"], ["y"], nested=True)
         self.check_nested_inlined_listcomp(
-            children[2], children[3], ["z"], ["w"], nested=True)
+            children[1], ["z"], ["w"], nested=True)
+
+    def test_deeply_nested_inlined_comprehensions(self):
+        depth = 24
+        source = "[" * depth + "0" + " for x in ()]" * depth
+        st = symtable.symtable(source, "?", "exec")
+        cur = st
+        for _ in range(depth):
+            children = cur.get_children()
+            self.assertEqual(len(children), 1)
+            cur = children[0]
+            self.assertIs(cur.get_type(),
+                          symtable.SymbolTableType.INLINED_COMPREHENSION)
+        self.assertEqual(cur.get_children(), [])
 
     def test__symtable_refleak(self):
         # Regression test for reference leak in PyUnicode_FSDecoder.
