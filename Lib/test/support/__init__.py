@@ -74,7 +74,7 @@ __all__ = [
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
     "reset_code", "on_github_actions",
     "requires_root_user", "requires_non_root_user",
-    "skip_if_double_rounding",
+    "skip_if_double_rounding", "built_with_c_assertions",
     ]
 
 
@@ -868,7 +868,7 @@ def open_urlresource(url, *args, **kw):
 
     check = kw.pop('check', None)
 
-    filename = urllib.parse.urlparse(url)[2].split('/')[-1] # '/': it's URL!
+    filename = urllib.parse.urlparse(url).path.split('/')[-1] # '/': it's URL!
 
     fn = os.path.join(TEST_DATA_DIR, filename)
 
@@ -3526,3 +3526,18 @@ def check_immutable_type(testcase, type):
     else:
         flags = type_getflags(type)
         testcase.assertTrue(flags & Py_TPFLAGS_IMMUTABLETYPE)
+
+
+def built_with_c_assertions():
+    """Check if Python was built with C assertions (assert())."""
+
+    if MS_WINDOWS:
+        # On Windows, rely on the Py_DEBUG macro to check for assertions
+        return Py_DEBUG
+
+    # Check if the NDEBUG macro is defined in C compiler flags
+    PY_CFLAGS = (sysconfig.get_config_var('PY_CFLAGS') or '')
+    if '-DNDEBUG' in PY_CFLAGS:
+        return False
+
+    return True
