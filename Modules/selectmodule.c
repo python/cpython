@@ -247,7 +247,7 @@ select.select
     rlist: object
     wlist: object
     xlist: object
-    timeout as timeout_obj: object = None
+    timeout: duration(accept={float, NoneType}, allow_negative=False) = None
     /
 
 Wait until one or more file descriptors are ready for some kind of I/O.
@@ -277,8 +277,8 @@ descriptors can be used.
 
 static PyObject *
 select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
-                   PyObject *xlist, PyObject *timeout_obj)
-/*[clinic end generated code: output=2b3cfa824f7ae4cf input=cc93e9bb9ffacbaf]*/
+                   PyObject *xlist, PyTime_t timeout)
+/*[clinic end generated code: output=a745f606d2d8944b input=b8323e681af8584e]*/
 {
 #ifdef SELECT_USES_HEAP
     pylist *rfd2obj, *wfd2obj, *efd2obj;
@@ -298,27 +298,13 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
     struct timeval tv, *tvp;
     int imax, omax, emax, max;
     int n;
-    PyTime_t timeout, deadline = 0;
+    PyTime_t deadline = 0;
 
-    if (timeout_obj == Py_None)
+    if (timeout < 0)
         tvp = (struct timeval *)NULL;
     else {
-        if (_PyTime_FromSecondsObject(&timeout, timeout_obj,
-                                      _PyTime_ROUND_TIMEOUT) < 0) {
-            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-                PyErr_Format(PyExc_TypeError,
-                             "timeout must be a real number or None, not %T",
-                             timeout_obj);
-            }
-            return NULL;
-        }
-
         if (_PyTime_AsTimeval(timeout, &tv, _PyTime_ROUND_TIMEOUT) == -1)
             return NULL;
-        if (tv.tv_sec < 0) {
-            PyErr_SetString(PyExc_ValueError, "timeout must be non-negative");
-            return NULL;
-        }
         tvp = &tv;
     }
 
@@ -609,7 +595,7 @@ select_poll_unregister_impl(pollObject *self, int fd)
 @critical_section
 select.poll.poll
 
-    timeout as timeout_obj: object = None
+    timeout: duration(unit='ms', accept={float, NoneType}) = None
       The maximum time to wait in milliseconds, or else None (or a negative
       value) to wait indefinitely.
     /
@@ -621,43 +607,28 @@ to report, as a list of (fd, event) 2-tuples.
 [clinic start generated code]*/
 
 static PyObject *
-select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
-/*[clinic end generated code: output=876e837d193ed7e4 input=e0a9c0aa283de8c8]*/
+select_poll_poll_impl(pollObject *self, PyTime_t timeout)
+/*[clinic end generated code: output=3277f509c8d65943 input=55893cf923910f95]*/
 {
     PyObject *result_list = NULL;
     int poll_result, i, j;
     PyObject *value = NULL, *num = NULL;
-    PyTime_t timeout = -1, deadline = 0;
+    PyTime_t deadline = 0;
     int async_err = 0;
-
-    if (timeout_obj != Py_None) {
-        if (_PyTime_FromMillisecondsObject(&timeout, timeout_obj,
-                                           _PyTime_ROUND_TIMEOUT) < 0) {
-            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-                PyErr_Format(PyExc_TypeError,
-                             "timeout must be a real number or None, not %T",
-                             timeout_obj);
-            }
-            return NULL;
-        }
-    }
 
 #ifdef HAVE_PPOLL
     struct timespec ts, *ts_p = NULL;
 
-    if (timeout_obj != Py_None) {
+    if (timeout >= 0) {
         if (_PyTime_AsTimespec(timeout, &ts) < 0) {
             return NULL;
         }
-
-        if (timeout >= 0) {
-            ts_p = &ts;
-        }
+        ts_p = &ts;
     }
 #else
     PyTime_t ms = -1;
 
-    if (timeout_obj != Py_None) {
+    if (timeout >= 0) {
         ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_TIMEOUT);
         if (ms < INT_MIN || ms > INT_MAX) {
             PyErr_SetString(PyExc_OverflowError, "timeout is too large");
@@ -974,7 +945,7 @@ select_devpoll_unregister_impl(devpollObject *self, int fd)
 /*[clinic input]
 @critical_section
 select.devpoll.poll
-    timeout as timeout_obj: object = None
+    timeout: duration(unit='ms', accept={float, NoneType}) = None
       The maximum time to wait in milliseconds, or else None (or
       a negative value) to wait indefinitely.
     /
@@ -986,34 +957,22 @@ to report, as a list of (fd, event) 2-tuples.
 [clinic start generated code]*/
 
 static PyObject *
-select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
-/*[clinic end generated code: output=2654e5457cca0b3c input=9e1672658d728539]*/
+select_devpoll_poll_impl(devpollObject *self, PyTime_t timeout)
+/*[clinic end generated code: output=1482d1e3a61f509b input=a106ed5295252e80]*/
 {
     struct dvpoll dvp;
     PyObject *result_list = NULL;
     int poll_result, i;
     PyObject *value, *num1, *num2;
-    PyTime_t timeout, ms, deadline = 0;
+    PyTime_t ms, deadline = 0;
 
     if (self->fd_devpoll < 0)
         return devpoll_err_closed();
 
-    /* Check values for timeout */
-    if (timeout_obj == Py_None) {
-        timeout = -1;
+    if (timeout < 0) {
         ms = -1;
     }
     else {
-        if (_PyTime_FromMillisecondsObject(&timeout, timeout_obj,
-                                           _PyTime_ROUND_TIMEOUT) < 0) {
-            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-                PyErr_Format(PyExc_TypeError,
-                             "timeout must be a real number or None, not %T",
-                             timeout_obj);
-            }
-            return NULL;
-        }
-
         ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_TIMEOUT);
         if (ms < -1 || ms > INT_MAX) {
             PyErr_SetString(PyExc_OverflowError, "timeout is too large");
@@ -1597,7 +1556,7 @@ select_epoll_unregister_impl(pyEpoll_Object *self, int fd)
 /*[clinic input]
 select.epoll.poll
 
-    timeout as timeout_obj: object = None
+    timeout: duration(accept={float, NoneType}) = None
       the maximum time to wait in seconds (with fractions);
       a timeout of None or -1 makes poll wait indefinitely
     maxevents: int = -1
@@ -1610,31 +1569,20 @@ report, as a list of (fd, events) 2-tuples.
 [clinic start generated code]*/
 
 static PyObject *
-select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
-                       int maxevents)
-/*[clinic end generated code: output=e02d121a20246c6c input=911ddc16978a9159]*/
+select_epoll_poll_impl(pyEpoll_Object *self, PyTime_t timeout, int maxevents)
+/*[clinic end generated code: output=bf26920ae5d044aa input=494d1006b9770384]*/
 {
     int nfds, i;
     PyObject *elist = NULL, *etuple = NULL;
     struct epoll_event *evs = NULL;
-    PyTime_t timeout = -1, ms = -1, deadline = 0;
+    PyTime_t ms = -1, deadline = 0;
 
     if (self->epfd < 0)
         return pyepoll_err_closed();
 
-    if (timeout_obj != Py_None) {
+    if (timeout >= 0) {
         /* epoll_wait() has a resolution of 1 millisecond, round towards
            infinity to wait at least timeout seconds. */
-        if (_PyTime_FromSecondsObject(&timeout, timeout_obj,
-                                      _PyTime_ROUND_TIMEOUT) < 0) {
-            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-                PyErr_Format(PyExc_TypeError,
-                             "timeout must be a real number or None, not %T",
-                             timeout_obj);
-            }
-            return NULL;
-        }
-
         ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_CEILING);
         if (ms < INT_MIN || ms > INT_MAX) {
             PyErr_SetString(PyExc_OverflowError, "timeout is too large");
@@ -2324,7 +2272,7 @@ select.kqueue.control
         to the kernel's watch list or None.
     maxevents: int
         The maximum number of events that the kernel will return.
-    timeout as otimeout: object = None
+    timeout: duration(accept={float, NoneType}, allow_negative=False) = None
         The maximum time to wait in seconds, or else None to wait forever.
         This accepts non-integers for smaller timeouts, too.
     /
@@ -2334,8 +2282,8 @@ Calls the kernel kevent function.
 
 static PyObject *
 select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
-                           int maxevents, PyObject *otimeout)
-/*[clinic end generated code: output=81324ff5130db7ae input=be969d2bc6f84205]*/
+                           int maxevents, PyTime_t timeout)
+/*[clinic end generated code: output=93c3b6c262b640db input=e3d6d3a498f277ab]*/
 {
     int gotevents = 0;
     int nchanges = 0;
@@ -2346,7 +2294,7 @@ select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
     struct kevent *chl = NULL;
     struct timespec timeoutspec;
     struct timespec *ptimeoutspec;
-    PyTime_t timeout, deadline = 0;
+    PyTime_t deadline = 0;
     _selectstate *state = _selectstate_by_type(Py_TYPE(self));
 
     if (self->kqfd < 0)
@@ -2359,28 +2307,12 @@ select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
         return NULL;
     }
 
-    if (otimeout == Py_None) {
+    if (timeout < 0) {
         ptimeoutspec = NULL;
     }
     else {
-        if (_PyTime_FromSecondsObject(&timeout,
-                                      otimeout, _PyTime_ROUND_TIMEOUT) < 0) {
-            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-                PyErr_Format(PyExc_TypeError,
-                             "timeout must be a real number or None, not %T",
-                             otimeout);
-            }
-            return NULL;
-        }
-
         if (_PyTime_AsTimespec(timeout, &timeoutspec) == -1)
             return NULL;
-
-        if (timeoutspec.tv_sec < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "timeout must be positive or None");
-            return NULL;
-        }
         ptimeoutspec = &timeoutspec;
     }
 

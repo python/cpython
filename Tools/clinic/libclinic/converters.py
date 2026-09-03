@@ -4,7 +4,8 @@ import sys
 from types import NoneType
 from typing import Any
 
-from libclinic import fail, NullType, unspecified, NULL, c_bytes_repr, c_unichar_repr
+from libclinic import (fail, NullType, unspecified, NULL, c_bytes_repr,
+                       c_unichar_repr, indent_all_lines)
 from libclinic.function import (
     Function, Parameter,
     CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW,
@@ -601,6 +602,147 @@ class fildes_converter(CConverter):
             argname=argname)
 
 
+class duration_converter(CConverter):
+    """Convert a number of seconds or milliseconds to a time interval.
+
+    type is the C type used by the implementation: 'PyTime_t'
+    (nanoseconds) or 'struct timeval'.
+    unit is the unit of the argument: 's' (seconds) or 'ms' (milliseconds).
+    round is the rounding mode: 'timeout', 'ceiling', 'floor' or 'up'.
+    If NoneType is accepted, None keeps the default value, which usually
+    means "no timeout".
+    """
+    type = 'PyTime_t'
+    default_type = (int, float, NoneType)
+    c_ignored_default = '0'
+    # The default value for None, unless overridden with c_default.
+    c_init_default = '-1'
+
+    _UNITS = {'s': '_PyTime_FromSecondsObject',
+              'ms': '_PyTime_FromMillisecondsObject'}
+
+    # (type, unit, round, None is accepted) -> the "O&" converter function
+    _CONVERTERS = {
+        ('PyTime_t', 's', 'timeout', False): '_PyTime_Duration_Seconds_Converter',
+        ('PyTime_t', 's', 'timeout', True): '_PyTime_DurationOrNone_Seconds_Converter',
+        ('PyTime_t', 's', 'ceiling', False): '_PyTime_Duration_SecondsCeil_Converter',
+        ('PyTime_t', 's', 'ceiling', True): '_PyTime_DurationOrNone_SecondsCeil_Converter',
+        ('PyTime_t', 'ms', 'timeout', False): '_PyTime_Duration_Milliseconds_Converter',
+        ('PyTime_t', 'ms', 'timeout', True): '_PyTime_DurationOrNone_Milliseconds_Converter',
+        ('struct timeval', 's', 'timeout', False): '_PyTime_Duration_Timeval_Converter',
+        ('struct timeval', 's', 'ceiling', False): '_PyTime_Duration_TimevalCeil_Converter',
+    }
+
+    _ROUNDING = {'timeout': '_PyTime_ROUND_TIMEOUT',
+                 'ceiling': '_PyTime_ROUND_CEILING',
+                 'floor': '_PyTime_ROUND_FLOOR',
+                 'up': '_PyTime_ROUND_UP'}
+
+    def converter_init(self, *, type: str = 'PyTime_t', unit: str = 's',
+                       round: str = 'timeout', accept: TypeSet = {float},
+                       allow_negative: bool = True) -> None:
+        if type not in ('PyTime_t', 'struct timeval'):
+            fail(f"duration_converter: illegal 'type' argument {type!r}")
+        if unit not in self._UNITS:
+            fail(f"duration_converter: illegal 'unit' argument {unit!r}")
+        if round not in self._ROUNDING:
+            fail(f"duration_converter: illegal 'round' argument {round!r}")
+        if accept not in ({float}, {float, NoneType}):
+            fail(f"duration_converter: illegal 'accept' argument {accept!r}")
+        if type == 'struct timeval':
+            if unit != 's':
+                fail("duration_converter: type='struct timeval' "
+                     "requires unit='s'")
+            self.type = type
+            self.c_init_default = '{0, 0}'
+            self.c_ignored_default = '{0, 0}'
+            if not self.c_default:
+                # A struct cannot be initialized with a number, so the only
+                # supported default is zero.
+                self.c_default = '{0, 0}'
+        self.unit = unit
+        self.rounding = round
+        self.accept_none = accept == {float, NoneType}
+        self.allow_negative = allow_negative
+        name = self._CONVERTERS.get((type, unit, round, self.accept_none))
+        if name is None:
+            fail(f"duration_converter: unsupported combination of "
+                 f"unit={unit!r} and round={round!r}")
+        self.converter = name
+
+    def use_converter(self) -> None:
+        self.add_include('pycore_time.h', f'{self.converter}()')
+
+    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+        if limited_capi:
+            return None
+        if self.type == 'struct timeval':
+            self.add_include('pycore_time.h', f'{self.converter}()')
+            convert = ("if (!{converter}({argname}, &{paramname})) {{{{\n"
+                       "    goto exit;\n"
+                       "}}}}\n")
+        else:
+            self.add_include('pycore_time.h', f'{self._UNITS[self.unit]}()')
+            convert = ("if ({fromobject}(&{paramname}, {argname}, {rounding}) < 0) {{{{\n"
+                       "    goto exit;\n"
+                       "}}}}\n")
+        if not self.allow_negative and self.type != 'struct timeval':
+            convert += ('if ({paramname} < 0) {{{{\n'
+                        '    PyErr_SetString(PyExc_ValueError,\n'
+                        '                    "{name} must be non-negative");\n'
+                        '    goto exit;\n'
+                        '}}}}\n')
+        if self.accept_none:
+            # None does not change the value, it keeps the default.
+            code = ('if ({argname} != Py_None) {{{{\n'
+                    + indent_all_lines(convert, '    ')
+                    + '}}}}\n')
+        else:
+            code = convert
+        return self.format_code(code,
+                                argname=argname,
+                                name=self.name,
+                                converter=self.converter,
+                                fromobject=self._UNITS[self.unit],
+                                rounding=self._ROUNDING[self.rounding])
+
+
+class timestamp_converter(CConverter):
+    """Convert a number of seconds since the epoch.
+
+    type is the C type used by the implementation: 'time_t' (whole seconds)
+    or 'PyTime_t' (nanoseconds).  A fractional value is rounded down,
+    as in time.gmtime() and datetime.date.fromtimestamp().
+    """
+    type = 'time_t'
+    default_type = (int, float)
+
+    # type -> the "O&" converter function and the inline conversion
+    _TYPES = {
+        'time_t': ('_PyTime_Timestamp_Time_t_Converter',
+                   '_PyTime_ObjectToTime_t({argname}, &{paramname}, {rounding})'),
+        'PyTime_t': ('_PyTime_Timestamp_Converter',
+                     '_PyTime_FromSecondsObject(&{paramname}, {argname}, {rounding})'),
+    }
+
+    def converter_init(self, *, type: str = 'time_t') -> None:
+        if type not in self._TYPES:
+            fail(f"timestamp_converter: illegal 'type' argument {type!r}")
+        self.type = type
+        self.converter, self._call = self._TYPES[type]
+
+    def use_converter(self) -> None:
+        self.add_include('pycore_time.h', f'{self.converter}()')
+
+    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+        if limited_capi:
+            return None
+        self.add_include('pycore_time.h', self._call.split('(', 1)[0] + '()')
+        return self.format_code(
+            'if (' + self._call + ' < 0) {{{{\n'
+            '    goto exit;\n'
+            '}}}}\n',
+            argname=argname, rounding='_PyTime_ROUND_FLOOR')
 class pid_t_converter(CConverter):
     type = 'pid_t'
     format_unit = '" _Py_PARSE_PID "'

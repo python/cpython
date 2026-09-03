@@ -9,6 +9,7 @@ preserve
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_time.h"          // _PyTime_FromSecondsObject()
 
 PyDoc_STRVAR(select_select__doc__,
 "select($module, rlist, wlist, xlist, timeout=None, /)\n"
@@ -43,7 +44,7 @@ PyDoc_STRVAR(select_select__doc__,
 
 static PyObject *
 select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
-                   PyObject *xlist, PyObject *timeout_obj);
+                   PyObject *xlist, PyTime_t timeout);
 
 static PyObject *
 select_select(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -52,7 +53,7 @@ select_select(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *rlist;
     PyObject *wlist;
     PyObject *xlist;
-    PyObject *timeout_obj = Py_None;
+    PyTime_t timeout = -1;
 
     if (!_PyArg_CheckPositional("select", nargs, 3, 4)) {
         goto exit;
@@ -63,9 +64,18 @@ select_select(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 4) {
         goto skip_optional;
     }
-    timeout_obj = args[3];
+    if (args[3] != Py_None) {
+        if (_PyTime_FromSecondsObject(&timeout, args[3], _PyTime_ROUND_TIMEOUT) < 0) {
+            goto exit;
+        }
+        if (timeout < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "timeout must be non-negative");
+            goto exit;
+        }
+    }
 skip_optional:
-    return_value = select_select_impl(module, rlist, wlist, xlist, timeout_obj);
+    return_value = select_select_impl(module, rlist, wlist, xlist, timeout);
 
 exit:
     return return_value;
@@ -222,13 +232,13 @@ PyDoc_STRVAR(select_poll_poll__doc__,
     {"poll", _PyCFunction_CAST(select_poll_poll), METH_FASTCALL, select_poll_poll__doc__},
 
 static PyObject *
-select_poll_poll_impl(pollObject *self, PyObject *timeout_obj);
+select_poll_poll_impl(pollObject *self, PyTime_t timeout);
 
 static PyObject *
 select_poll_poll(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *timeout_obj = Py_None;
+    PyTime_t timeout = -1;
 
     if (!_PyArg_CheckPositional("poll", nargs, 0, 1)) {
         goto exit;
@@ -236,10 +246,14 @@ select_poll_poll(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    timeout_obj = args[0];
+    if (args[0] != Py_None) {
+        if (_PyTime_FromMillisecondsObject(&timeout, args[0], _PyTime_ROUND_TIMEOUT) < 0) {
+            goto exit;
+        }
+    }
 skip_optional:
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = select_poll_poll_impl((pollObject *)self, timeout_obj);
+    return_value = select_poll_poll_impl((pollObject *)self, timeout);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -407,13 +421,13 @@ PyDoc_STRVAR(select_devpoll_poll__doc__,
     {"poll", _PyCFunction_CAST(select_devpoll_poll), METH_FASTCALL, select_devpoll_poll__doc__},
 
 static PyObject *
-select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj);
+select_devpoll_poll_impl(devpollObject *self, PyTime_t timeout);
 
 static PyObject *
 select_devpoll_poll(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *timeout_obj = Py_None;
+    PyTime_t timeout = -1;
 
     if (!_PyArg_CheckPositional("poll", nargs, 0, 1)) {
         goto exit;
@@ -421,10 +435,14 @@ select_devpoll_poll(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    timeout_obj = args[0];
+    if (args[0] != Py_None) {
+        if (_PyTime_FromMillisecondsObject(&timeout, args[0], _PyTime_ROUND_TIMEOUT) < 0) {
+            goto exit;
+        }
+    }
 skip_optional:
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = select_devpoll_poll_impl((devpollObject *)self, timeout_obj);
+    return_value = select_devpoll_poll_impl((devpollObject *)self, timeout);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -986,8 +1004,7 @@ PyDoc_STRVAR(select_epoll_poll__doc__,
     {"poll", _PyCFunction_CAST(select_epoll_poll), METH_FASTCALL|METH_KEYWORDS, select_epoll_poll__doc__},
 
 static PyObject *
-select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
-                       int maxevents);
+select_epoll_poll_impl(pyEpoll_Object *self, PyTime_t timeout, int maxevents);
 
 static PyObject *
 select_epoll_poll(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1022,7 +1039,7 @@ select_epoll_poll(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObj
     #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject *timeout_obj = Py_None;
+    PyTime_t timeout = -1;
     int maxevents = -1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -1034,7 +1051,11 @@ select_epoll_poll(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObj
         goto skip_optional_pos;
     }
     if (args[0]) {
-        timeout_obj = args[0];
+        if (args[0] != Py_None) {
+            if (_PyTime_FromSecondsObject(&timeout, args[0], _PyTime_ROUND_TIMEOUT) < 0) {
+                goto exit;
+            }
+        }
         if (!--noptargs) {
             goto skip_optional_pos;
         }
@@ -1044,7 +1065,7 @@ select_epoll_poll(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObj
         goto exit;
     }
 skip_optional_pos:
-    return_value = select_epoll_poll_impl((pyEpoll_Object *)self, timeout_obj, maxevents);
+    return_value = select_epoll_poll_impl((pyEpoll_Object *)self, timeout, maxevents);
 
 exit:
     return return_value;
@@ -1270,7 +1291,7 @@ PyDoc_STRVAR(select_kqueue_control__doc__,
 
 static PyObject *
 select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
-                           int maxevents, PyObject *otimeout);
+                           int maxevents, PyTime_t timeout);
 
 static PyObject *
 select_kqueue_control(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
@@ -1278,7 +1299,7 @@ select_kqueue_control(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *changelist;
     int maxevents;
-    PyObject *otimeout = Py_None;
+    PyTime_t timeout = -1;
 
     if (!_PyArg_CheckPositional("control", nargs, 2, 3)) {
         goto exit;
@@ -1291,9 +1312,18 @@ select_kqueue_control(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    otimeout = args[2];
+    if (args[2] != Py_None) {
+        if (_PyTime_FromSecondsObject(&timeout, args[2], _PyTime_ROUND_TIMEOUT) < 0) {
+            goto exit;
+        }
+        if (timeout < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "timeout must be non-negative");
+            goto exit;
+        }
+    }
 skip_optional:
-    return_value = select_kqueue_control_impl((kqueue_queue_Object *)self, changelist, maxevents, otimeout);
+    return_value = select_kqueue_control_impl((kqueue_queue_Object *)self, changelist, maxevents, timeout);
 
 exit:
     return return_value;
@@ -1400,4 +1430,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=a1ac666294fd14bd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fcd6eea7096b311e input=a9049054013a1b77]*/

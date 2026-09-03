@@ -3150,10 +3150,11 @@ class ClinicParserTest(TestCase):
         err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
         self.expect_failure(block, err)
 
-    def test_allow_negative_accepted_by_py_ssize_t_converter_only(self):
+    def test_allow_negative_accepted_by_few_converters_only(self):
         errmsg = re.escape("converter_init() got an unexpected keyword argument 'allow_negative'")
+        supported = {"Py_ssize_t", "duration"}
         unsupported_converters = [converter_name for converter_name in converters.keys()
-                                  if converter_name != "Py_ssize_t"]
+                                  if converter_name not in supported]
         for converter in unsupported_converters:
             with self.subTest(converter=converter):
                 block = f"""
@@ -3566,6 +3567,7 @@ class ClinicExternalTest(TestCase):
             "char",
             "defining_class",
             "double",
+            "duration",
             "DWORD",
             "fildes",
             "float",
@@ -3587,6 +3589,7 @@ class ClinicExternalTest(TestCase):
             "size_t",
             "slice_index",
             "str",
+            "timestamp",
             "uint16",
             "uint32",
             "uint64",

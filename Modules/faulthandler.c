@@ -783,7 +783,7 @@ format_timeout(PyTime_t us)
 /*[clinic input]
 faulthandler.dump_traceback_later
 
-    timeout as timeout_obj: object
+    timeout: duration
     repeat: bool = False
     file: object(py_default="sys.stderr") = NULL
     exit: bool = False
@@ -798,22 +798,17 @@ max_threads caps the number of threads dumped.
 [clinic start generated code]*/
 
 static PyObject *
-faulthandler_dump_traceback_later_impl(PyObject *module,
-                                       PyObject *timeout_obj, int repeat,
-                                       PyObject *file, int exit,
+faulthandler_dump_traceback_later_impl(PyObject *module, PyTime_t timeout,
+                                       int repeat, PyObject *file, int exit,
                                        Py_ssize_t max_threads)
-/*[clinic end generated code: output=543a0f3807113394 input=32aaf7437d0928db]*/
+/*[clinic end generated code: output=9f28abab0cb9a89d input=80e588c432b70d7e]*/
 {
-    PyTime_t timeout, timeout_us;
+    PyTime_t timeout_us;
     int fd;
     PyThreadState *tstate;
     char *header;
     size_t header_len;
 
-    if (_PyTime_FromSecondsObject(&timeout, timeout_obj,
-                                  _PyTime_ROUND_TIMEOUT) < 0) {
-        return NULL;
-    }
     timeout_us = _PyTime_AsMicroseconds(timeout, _PyTime_ROUND_TIMEOUT);
     if (timeout_us <= 0) {
         PyErr_SetString(PyExc_ValueError, "timeout must be greater than 0");

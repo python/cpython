@@ -102,6 +102,25 @@ PyAPI_FUNC(time_t) _PyLong_AsTime_t(PyObject *obj);
 
 // Convert a number of seconds, int or float, to time_t.
 // Export for '_datetime' shared extension.
+// Argument Clinic converters for durations, see the "duration" converter.
+// Export for shared extensions (Argument Clinic code).
+PyAPI_FUNC(int) _PyTime_Duration_Seconds_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyTime_DurationOrNone_Seconds_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyTime_Duration_SecondsCeil_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyTime_DurationOrNone_SecondsCeil_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyTime_Duration_Milliseconds_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyTime_DurationOrNone_Milliseconds_Converter(PyObject *, void *);
+
+#ifndef MS_WINDOWS
+PyAPI_FUNC(int) _PyTime_Duration_Timeval_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyTime_Duration_TimevalCeil_Converter(PyObject *, void *);
+#endif
+
+// Argument Clinic converters for timestamps, see the "timestamp" converter.
+// Export for shared extensions (Argument Clinic code).
+PyAPI_FUNC(int) _PyTime_Timestamp_Time_t_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyTime_Timestamp_Converter(PyObject *, void *);
+
 PyAPI_FUNC(int) _PyTime_ObjectToTime_t(
     PyObject *obj,
     time_t *sec,

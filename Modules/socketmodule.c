@@ -3230,7 +3230,7 @@ _socket_socket_getblocking_impl(PySocketSockObject *s)
 
 
 static int
-socket_parse_timeout(PyTime_t *timeout, PyObject *timeout_obj)
+socket_check_timeout(PyTime_t timeout)
 {
 #ifdef MS_WINDOWS
     struct timeval tv;
@@ -3240,25 +3240,15 @@ socket_parse_timeout(PyTime_t *timeout, PyObject *timeout_obj)
 #endif
     int overflow = 0;
 
-    if (timeout_obj == Py_None) {
-        *timeout = _PyTime_FromSeconds(-1);
+    if (timeout < 0) {   /* no timeout */
         return 0;
     }
 
-    if (_PyTime_FromSecondsObject(timeout,
-                                  timeout_obj, _PyTime_ROUND_TIMEOUT) < 0)
-        return -1;
-
-    if (*timeout < 0) {
-        PyErr_SetString(PyExc_ValueError, "Timeout value out of range");
-        return -1;
-    }
-
 #ifdef MS_WINDOWS
-    overflow |= (_PyTime_AsTimeval(*timeout, &tv, _PyTime_ROUND_TIMEOUT) < 0);
+    overflow |= (_PyTime_AsTimeval(timeout, &tv, _PyTime_ROUND_TIMEOUT) < 0);
 #endif
 #ifndef HAVE_POLL
-    ms = _PyTime_AsMilliseconds(*timeout, _PyTime_ROUND_TIMEOUT);
+    ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_TIMEOUT);
     overflow |= (ms > INT_MAX);
 #endif
     if (overflow) {
@@ -3279,7 +3269,7 @@ socket_parse_timeout(PyTime_t *timeout, PyObject *timeout_obj)
 /*[clinic input]
 _socket.socket.settimeout
     self as s: self(type="PySocketSockObject *")
-    timeout as arg: object
+    timeout: duration(accept={float, NoneType}, allow_negative=False)
     /
 
 Set a timeout on socket operations.
@@ -3291,12 +3281,10 @@ setblocking(0).
 [clinic start generated code]*/
 
 static PyObject *
-_socket_socket_settimeout_impl(PySocketSockObject *s, PyObject *arg)
-/*[clinic end generated code: output=5e57e2e1cba1c234 input=08bc8324b9fdb3f9]*/
+_socket_socket_settimeout_impl(PySocketSockObject *s, PyTime_t timeout)
+/*[clinic end generated code: output=c95af193c52a5e4d input=e8caf62b665d6009]*/
 {
-    PyTime_t timeout;
-
-    if (socket_parse_timeout(&timeout, arg) < 0)
+    if (socket_check_timeout(timeout) < 0)
         return NULL;
 
     s->sock_timeout = timeout;
@@ -7287,7 +7275,7 @@ _socket_getdefaulttimeout_impl(PyObject *module)
 /*[clinic input]
 _socket.setdefaulttimeout
 
-    timeout as arg: object
+    timeout: duration(accept={float, NoneType}, allow_negative=False)
     /
 
 Set the default timeout in seconds for new socket objects.
@@ -7297,12 +7285,10 @@ When the socket module is first imported, the default is None.
 [clinic start generated code]*/
 
 static PyObject *
-_socket_setdefaulttimeout(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=b5d59296163d66bf input=929785d885173684]*/
+_socket_setdefaulttimeout_impl(PyObject *module, PyTime_t timeout)
+/*[clinic end generated code: output=c731770cfca966af input=ee28b7e8f7d0c5f8]*/
 {
-    PyTime_t timeout;
-
-    if (socket_parse_timeout(&timeout, arg) < 0)
+    if (socket_check_timeout(timeout) < 0)
         return NULL;
 
     socket_state *state = get_module_state(module);
