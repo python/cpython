@@ -171,20 +171,23 @@ float_from_string_inner(const char *s, Py_ssize_t len, void *data)
     }
 
 error:
-    PyObject *obj = (PyObject*)data;
-    if (obj == NULL) {
-        obj = PyBytes_FromStringAndSize(orig_s, len);
+    // Label followed by a declaration is a C23 extension, so use a sub-scope
+    {
+        PyObject *obj = (PyObject*)data;
         if (obj == NULL) {
-            return NULL;
+            obj = PyBytes_FromStringAndSize(orig_s, len);
+            if (obj == NULL) {
+                return NULL;
+            }
         }
+        else {
+            Py_INCREF(obj);
+        }
+        PyErr_Format(PyExc_ValueError,
+                     "could not convert string to float: "
+                     "%R", obj);
+        Py_DECREF(obj);
     }
-    else {
-        Py_INCREF(obj);
-    }
-    PyErr_Format(PyExc_ValueError,
-                 "could not convert string to float: "
-                 "%R", obj);
-    Py_DECREF(obj);
     return NULL;
 }
 
