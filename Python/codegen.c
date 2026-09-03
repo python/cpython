@@ -4603,6 +4603,78 @@ codegen_unpack_starred(compiler *c, location loc, expr_ty value, bool yield)
 }
 
 static int
+codegen_comprehension_generator_helper(compiler *c, location elt_loc, int depth,
+                                       expr_ty elt, expr_ty val, int type,
+                                       bool avoid_creation)
+{
+    switch (type) {
+    case COMP_GENEXP:
+        assert(!avoid_creation);
+        if (elt->kind == Starred_kind) {
+            RETURN_IF_ERROR(codegen_unpack_starred(c, elt_loc, elt->v.Starred.value, /*yield=*/true));
+        }
+        else {
+            VISIT(c, expr, elt);
+            ADDOP_YIELD(c, elt_loc);
+            ADDOP(c, elt_loc, POP_TOP);
+        }
+        break;
+    case COMP_LISTCOMP:
+        if (avoid_creation) {
+            if (elt->kind == Starred_kind) {
+                RETURN_IF_ERROR(codegen_unpack_starred(c, elt_loc, elt->v.Starred.value, /*yield=*/false));
+            } else {
+                VISIT(c, expr, elt);
+                ADDOP(c, elt_loc, POP_TOP);
+            }
+            break;
+        }
+        if (elt->kind == Starred_kind) {
+            VISIT(c, expr, elt->v.Starred.value);
+            ADDOP_I(c, elt_loc, LIST_EXTEND, depth + 1);
+        }
+        else {
+            VISIT(c, expr, elt);
+            ADDOP_I(c, elt_loc, LIST_APPEND, depth + 1);
+        }
+        break;
+    case COMP_SETCOMP:
+        assert(!avoid_creation);
+        if (elt->kind == Starred_kind) {
+            VISIT(c, expr, elt->v.Starred.value);
+            ADDOP_I(c, elt_loc, SET_UPDATE, depth + 1);
+        }
+        else {
+            VISIT(c, expr, elt);
+            ADDOP_I(c, elt_loc, SET_ADD, depth + 1);
+        }
+        break;
+    case COMP_DICTCOMP:
+        assert(!avoid_creation);
+        if (val == NULL) {
+            /* unpacking (**) case */
+            VISIT(c, expr, elt);
+            ADDOP_I(c, elt_loc, DICT_UPDATE, depth + 1);
+        }
+        else {
+            /* With '{k: v}', k is evaluated before v, so we do
+            the same. */
+            VISIT(c, expr, elt);
+            VISIT(c, expr, val);
+            elt_loc = LOCATION(elt->lineno,
+                               val->end_lineno,
+                               elt->col_offset,
+                               val->end_col_offset);
+            ADDOP_I(c, elt_loc, MAP_ADD, depth + 1);
+        }
+        break;
+    default:
+        return ERROR;
+    }
+    return SUCCESS;
+}
+
+static int
 codegen_sync_comprehension_generator(compiler *c, location loc,
                                      asdl_comprehension_seq *generators,
                                      int gen_index, int depth,
@@ -4683,67 +4755,14 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
     /* only append after the last for generator */
     if (gen_index >= asdl_seq_LEN(generators)) {
         /* comprehension specific code */
-        switch (type) {
-        case COMP_GENEXP:
-            assert(!avoid_creation);
-            if (elt->kind == Starred_kind) {
-                RETURN_IF_ERROR(codegen_unpack_starred(c, elt_loc, elt->v.Starred.value, /*yield=*/true));
-            }
-            else {
-                VISIT(c, expr, elt);
-                ADDOP_YIELD(c, elt_loc);
-                ADDOP(c, elt_loc, POP_TOP);
-            }
-            break;
-        case COMP_LISTCOMP:
-            if (avoid_creation) {
-                if (elt->kind == Starred_kind) {
-                    RETURN_IF_ERROR(codegen_unpack_starred(c, elt_loc, elt->v.Starred.value, /*yield=*/false));
-                } else {
-                    VISIT(c, expr, elt);
-                    ADDOP(c, elt_loc, POP_TOP);
-                }
-                break;
-            }
-            if (elt->kind == Starred_kind) {
-                VISIT(c, expr, elt->v.Starred.value);
-                ADDOP_I(c, elt_loc, LIST_EXTEND, depth + 1);
-            }
-            else {
-                VISIT(c, expr, elt);
-                ADDOP_I(c, elt_loc, LIST_APPEND, depth + 1);
-            }
-            break;
-        case COMP_SETCOMP:
-            if (elt->kind == Starred_kind) {
-                VISIT(c, expr, elt->v.Starred.value);
-                ADDOP_I(c, elt_loc, SET_UPDATE, depth + 1);
-            }
-            else {
-                VISIT(c, expr, elt);
-                ADDOP_I(c, elt_loc, SET_ADD, depth + 1);
-            }
-            break;
-        case COMP_DICTCOMP:
-            if (val == NULL) {
-                /* unpacking (**) case */
-                VISIT(c, expr, elt);
-                ADDOP_I(c, elt_loc, DICT_UPDATE, depth+1);
-            }
-            else {
-                /* With '{k: v}', k is evaluated before v, so we do
-                the same. */
-                VISIT(c, expr, elt);
-                VISIT(c, expr, val);
-                elt_loc = LOCATION(elt->lineno,
-                                   val->end_lineno,
-                                   elt->col_offset,
-                                   val->end_col_offset);
-                ADDOP_I(c, elt_loc, MAP_ADD, depth + 1);
-            }
-            break;
-        default:
-            return ERROR;
+        RETURN_IF_ERROR(codegen_comprehension_generator_helper(c, elt_loc, depth,
+                                                               elt, val, type,
+                                                               avoid_creation));
+        if (type == COMP_DICTCOMP && val != NULL) {
+            elt_loc = LOCATION(elt->lineno,
+                               val->end_lineno,
+                               elt->col_offset,
+                               val->end_col_offset);
         }
     }
 
@@ -4825,81 +4844,14 @@ codegen_async_comprehension_generator(compiler *c, location loc,
     /* only append after the last for generator */
     if (gen_index >= asdl_seq_LEN(generators)) {
         /* comprehension specific code */
-        switch (type) {
-        case COMP_GENEXP:
-            assert(!avoid_creation);
-            if (elt->kind == Starred_kind) {
-                NEW_JUMP_TARGET_LABEL(c, unpack_start);
-                NEW_JUMP_TARGET_LABEL(c, unpack_end);
-                VISIT(c, expr, elt->v.Starred.value);
-                ADDOP_I(c, elt_loc, GET_ITER, 0);
-                USE_LABEL(c, unpack_start);
-                ADDOP_JUMP(c, elt_loc, FOR_ITER, unpack_end);
-                ADDOP_YIELD(c, elt_loc);
-                ADDOP(c, elt_loc, POP_TOP);
-                ADDOP_JUMP(c, NO_LOCATION, JUMP, unpack_start);
-                USE_LABEL(c, unpack_end);
-                ADDOP(c, NO_LOCATION, END_FOR);
-                ADDOP(c, NO_LOCATION, POP_ITER);
-            }
-            else {
-                VISIT(c, expr, elt);
-                ADDOP_YIELD(c, elt_loc);
-                ADDOP(c, elt_loc, POP_TOP);
-            }
-            break;
-        case COMP_LISTCOMP:
-            if (avoid_creation) {
-                if (elt->kind == Starred_kind) {
-                    RETURN_IF_ERROR(codegen_unpack_starred(c, elt_loc, elt->v.Starred.value, /*yield=*/false));
-                } else {
-                    VISIT(c, expr, elt);
-                    ADDOP(c, elt_loc, POP_TOP);
-                }
-                break;
-            }
-
-            if (elt->kind == Starred_kind) {
-                VISIT(c, expr, elt->v.Starred.value);
-                ADDOP_I(c, elt_loc, LIST_EXTEND, depth + 1);
-            }
-            else {
-                VISIT(c, expr, elt);
-                ADDOP_I(c, elt_loc, LIST_APPEND, depth + 1);
-            }
-            break;
-        case COMP_SETCOMP:
-            assert(!avoid_creation);
-            if (elt->kind == Starred_kind) {
-                VISIT(c, expr, elt->v.Starred.value);
-                ADDOP_I(c, elt_loc, SET_UPDATE, depth + 1);
-            }
-            else {
-                VISIT(c, expr, elt);
-                ADDOP_I(c, elt_loc, SET_ADD, depth + 1);
-            }
-            break;
-        case COMP_DICTCOMP:
-            assert(!avoid_creation);
-            if (val == NULL) {
-                /* unpacking (**) case */
-                VISIT(c, expr, elt);
-                ADDOP_I(c, elt_loc, DICT_UPDATE, depth+1);
-            }
-            else {
-                /* With '{k: v}', k is evaluated before v, so we do
-                the same. */
-                VISIT(c, expr, elt);
-                VISIT(c, expr, val);
-                elt_loc = LOCATION(elt->lineno,
-                                   val->end_lineno,
-                                   elt->col_offset,
-                                   val->end_col_offset);
-                ADDOP_I(c, elt_loc, MAP_ADD, depth + 1);
-            }
-            break;
-        default:
-            return ERROR;
+        RETURN_IF_ERROR(codegen_comprehension_generator_helper(c, elt_loc, depth,
+                                                               elt, val, type,
+                                                               avoid_creation));
+        if (type == COMP_DICTCOMP && val != NULL) {
+            elt_loc = LOCATION(elt->lineno,
+                               val->end_lineno,
+                               elt->col_offset,
+                               val->end_col_offset);
         }
     }
 
