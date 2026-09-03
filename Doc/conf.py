@@ -44,6 +44,7 @@ _OPTIONAL_EXTENSIONS = (
     'sphinx_linklint.ext',
     'notfound.extension',
     'sphinxext.opengraph',
+    'sphinxext.rediraffe',
     'sphinxcontrib.rsvgconverter',
 )
 for optional_ext in _OPTIONAL_EXTENSIONS:
@@ -257,6 +258,16 @@ gettext_additional_targets = [
     'index',
     'literal-block',
 ]
+
+rediraffe_redirects = {
+    # Splitting builtins from library
+    "library/functions.rst": "builtins/functions.rst",
+    "library/stdtypes.rst": "builtins/stdtypes.rst",
+    "library/constants.rst": "builtins/constants.rst",
+    "library/exceptions.rst": "builtins/exceptions.rst",
+    "library/threadsafety.rst": "builtins/threadsafety.rst",
+    "library/time-complexity.rst": "builtins/time-complexity.rst",
+}
 
 # Options for HTML output
 # -----------------------

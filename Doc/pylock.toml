@@ -239,6 +239,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/f6/c0/eb6838e3bae624ce6
 wheels = [{ url = "https://files.pythonhosted.org/packages/bf/a4/66c1fd4f8fab88faf71cee04a945f9806ba0fef753f2cfc8be6353f64508/sphinxext_opengraph-0.13.0-py3-none-any.whl", upload-time = 2025-08-29T12:20:29Z, size = 1004152, hashes = { sha256 = "936c07828edc9ad9a7b07908b29596dc84ed0b3ceaa77acdf51282d232d4d80e" } }]
 
 [[packages]]
+name = "sphinxext-rediraffe"
+version = "0.3.0"
+sdist = { url = "https://files.pythonhosted.org/packages/e3/a9/ab13d156049eea633f992424f3e92cb40e3f1b606bb6d01d40a27457d38a/sphinxext_rediraffe-0.3.0.tar.gz", upload-time = 2025-09-28T15:31:53Z, size = 22114, hashes = { sha256 = "f319b3ccb7c3c3b6f63ffa6fd3eeb171b6d272df55075a9e84364394f391f507" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/87/55/ab40a0d1378ee5c859590a633052cf1d0a1f8435af87558a9f7cd576601a/sphinxext_rediraffe-0.3.0-py3-none-any.whl", upload-time = 2025-09-28T15:31:52Z, size = 7194, hashes = { sha256 = "f4220beafa99c99177488276b8e4fcf61fbeeec4253c1e4aae841a18c475330c" } }]
+
+[[packages]]
 name = "urllib3"
 version = "2.7.0"
 sdist = { url = "https://files.pythonhosted.org/packages/53/0c/06f8b233b8fd13b9e5ee11424ef85419ba0d8ba0b3138bf360be2ff56953/urllib3-2.7.0.tar.gz", upload-time = 2026-05-07T16:13:18Z, size = 433602, hashes = { sha256 = "231e0ec3b63ceb14667c67be60f2f2c40a518cb38b03af60abc813da26505f4c" } }
