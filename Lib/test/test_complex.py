@@ -370,9 +370,7 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         r = pow(complex(INF), 2.25)  # generic algorithm
         self.assertEqual(r.real, INF)
         self.assertTrue(isnan(r.imag))
-        r = pow(complex(INF), 1j)
-        self.assertTrue(isnan(r.real))
-        self.assertTrue(isnan(r.imag))
+        self.assertRaises(ZeroDivisionError, pow, complex(INF), 1j)
 
         a = 3.33+4.43j
         self.assertEqual(a ** 0j, 1)
