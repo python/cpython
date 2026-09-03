@@ -63,6 +63,30 @@ class TestSpecifics(unittest.TestCase):
         self.assertRaises(SyntaxError, exec, 'def f(a = 0, a = 1): pass')
         self.assertRaises(SyntaxError, exec, 'def f(a): global a; a = 1')
 
+    def test_call_opcode_stack_use_limit(self):
+        def get_call_opcode(positional_count, keyword_count):
+            args = ["0"] * positional_count
+            args.extend(f"a{i}=0" for i in range(keyword_count))
+            code = compile(f"f({', '.join(args)})", "<test>", "exec")
+            return next(
+                instr.opname for instr in dis.get_instructions(code)
+                if instr.opname.startswith("CALL")
+            )
+
+        for positional_count, keyword_count, expected_opcode in [
+            (0, 16, "CALL_KW"),
+            (15, 14, "CALL_KW"),
+            (15, 15, "CALL_FUNCTION_EX"),
+        ]:
+            with self.subTest(
+                positional_count=positional_count,
+                keyword_count=keyword_count,
+            ):
+                self.assertEqual(
+                    get_call_opcode(positional_count, keyword_count),
+                    expected_opcode,
+                )
+
     def test_syntax_error(self):
         self.assertRaises(SyntaxError, compile, "1+*3", "filename", "exec")
 
