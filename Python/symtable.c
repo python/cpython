@@ -1314,9 +1314,9 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
             }
         }
 
-        // Compress InlinedComprehensionBlocks ste_symbols to a delta (bindings +
-        // class FREE overrides). Nested deltas are finalized recursively
-        // against their immediate parent.
+        // Finalize inlined comprehensions against the nearest non-inlined
+        // enclosing scope. Nested ones are finalized recursively against
+        // their immediate parent.
         if (!analyze_child_block(entry, newbound, newfree, newglobal,
                                  type_params, new_class_entry, &child_free))
         {
