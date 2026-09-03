@@ -1,0 +1,3 @@
+Fix Replace All in the IDLE editor's Replace dialog when the search
+direction is "Up" and "Wrap around" is off: it now replaces all matches
+above the current position instead of only the first one.

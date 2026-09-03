@@ -15,8 +15,8 @@ PyDoc_STRVAR(_io_FileIO_close__doc__,
 "\n"
 "Close the file.\n"
 "\n"
-"A closed file cannot be used for further I/O operations.  close() may be\n"
-"called more than once without error.");
+"A closed file cannot be used for further I/O operations.  close()\n"
+"may be called more than once without error.");
 
 #define _IO_FILEIO_CLOSE_METHODDEF    \
     {"close", _PyCFunction_CAST(_io_FileIO_close), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io_FileIO_close__doc__},
@@ -41,16 +41,19 @@ PyDoc_STRVAR(_io_FileIO___init____doc__,
 "Open a file.\n"
 "\n"
 "The mode can be \'r\' (default), \'w\', \'x\' or \'a\' for reading,\n"
-"writing, exclusive creation or appending.  The file will be created if it\n"
-"doesn\'t exist when opened for writing or appending; it will be truncated\n"
-"when opened for writing.  A FileExistsError will be raised if it already\n"
-"exists when opened for creating. Opening a file for creating implies\n"
-"writing so this mode behaves in a similar way to \'w\'.Add a \'+\' to the mode\n"
-"to allow simultaneous reading and writing. A custom opener can be used by\n"
-"passing a callable as *opener*. The underlying file descriptor for the file\n"
-"object is then obtained by calling opener with (*name*, *flags*).\n"
-"*opener* must return an open file descriptor (passing os.open as *opener*\n"
-"results in functionality similar to passing None).");
+"writing, exclusive creation or appending.  The file will be created\n"
+"if it doesn\'t exist when opened for writing or appending; it will be\n"
+"truncated when opened for writing.  A FileExistsError will be raised\n"
+"if it already exists when opened for creating.  Opening a file for\n"
+"creating implies writing so this mode behaves in a similar way to\n"
+"\'w\'.  Add a \'+\' to the mode to allow simultaneous reading and\n"
+"writing.\n"
+"\n"
+"A custom opener can be used by passing a callable as *opener*.\n"
+"The underlying file descriptor for the file object is then obtained\n"
+"by calling opener with (*name*, *flags*).  *opener* must return\n"
+"an open file descriptor (passing os.open as *opener* results in\n"
+"functionality similar to passing None).");
 
 static int
 _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
@@ -270,22 +273,28 @@ PyDoc_STRVAR(_io_FileIO_readall__doc__,
 "\n"
 "Read all data from the file, returned as bytes.\n"
 "\n"
-"Reads until either there is an error or read() returns size 0 (indicates EOF).\n"
-"If the file is already at EOF, returns an empty bytes object.\n"
+"Reads until either there is an error or read() returns size 0\n"
+"(indicates EOF).  If the file is already at EOF, returns an empty\n"
+"bytes object.\n"
 "\n"
-"In non-blocking mode, returns as much data as could be read before EAGAIN. If no\n"
-"data is available (EAGAIN is returned before bytes are read) returns None.");
+"In non-blocking mode, returns as much data as could be read before\n"
+"EAGAIN.  If no data is available (EAGAIN is returned before bytes\n"
+"are read) returns None.");
 
 #define _IO_FILEIO_READALL_METHODDEF    \
-    {"readall", (PyCFunction)_io_FileIO_readall, METH_NOARGS, _io_FileIO_readall__doc__},
+    {"readall", _PyCFunction_CAST(_io_FileIO_readall), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io_FileIO_readall__doc__},
 
 static PyObject *
-_io_FileIO_readall_impl(fileio *self);
+_io_FileIO_readall_impl(fileio *self, PyTypeObject *cls);
 
 static PyObject *
-_io_FileIO_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
+_io_FileIO_readall(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _io_FileIO_readall_impl((fileio *)self);
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "readall() takes no arguments");
+        return NULL;
+    }
+    return _io_FileIO_readall_impl((fileio *)self, cls);
 }
 
 PyDoc_STRVAR(_io_FileIO_read__doc__,
@@ -294,14 +303,14 @@ PyDoc_STRVAR(_io_FileIO_read__doc__,
 "\n"
 "Read at most size bytes, returned as bytes.\n"
 "\n"
-"If size is less than 0, read all bytes in the file making multiple read calls.\n"
-"See ``FileIO.readall``.\n"
+"If size is less than 0, read all bytes in the file making multiple\n"
+"read calls.  See ``FileIO.readall``.\n"
 "\n"
-"Attempts to make only one system call, retrying only per PEP 475 (EINTR). This\n"
-"means less data may be returned than requested.\n"
+"Attempts to make only one system call, retrying only per PEP 475\n"
+"(EINTR).  This means less data may be returned than requested.\n"
 "\n"
-"In non-blocking mode, returns None if no data is available. Return an empty\n"
-"bytes object at EOF.");
+"In non-blocking mode, returns None if no data is available.  Return\n"
+"an empty bytes object at EOF.");
 
 #define _IO_FILEIO_READ_METHODDEF    \
     {"read", _PyCFunction_CAST(_io_FileIO_read), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io_FileIO_read__doc__},
@@ -354,8 +363,8 @@ PyDoc_STRVAR(_io_FileIO_write__doc__,
 "Write buffer b to file, return number of bytes written.\n"
 "\n"
 "Only makes one system call, so not all of the data may be written.\n"
-"The number of bytes actually written is returned.  In non-blocking mode,\n"
-"returns None if the write would block.");
+"The number of bytes actually written is returned.  In non-blocking\n"
+"mode, returns None if the write would block.");
 
 #define _IO_FILEIO_WRITE_METHODDEF    \
     {"write", _PyCFunction_CAST(_io_FileIO_write), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io_FileIO_write__doc__},
@@ -408,11 +417,12 @@ PyDoc_STRVAR(_io_FileIO_seek__doc__,
 "\n"
 "Move to new file position and return the file position.\n"
 "\n"
-"Argument offset is a byte count.  Optional argument whence defaults to\n"
-"SEEK_SET or 0 (offset from start of file, offset should be >= 0); other values\n"
-"are SEEK_CUR or 1 (move relative to current position, positive or negative),\n"
-"and SEEK_END or 2 (move relative to end of file, usually negative, although\n"
-"many platforms allow seeking beyond the end of a file).\n"
+"Argument offset is a byte count.  Optional argument whence defaults\n"
+"to SEEK_SET or 0 (offset from start of file, offset should be >= 0);\n"
+"other values are SEEK_CUR or 1 (move relative to current position,\n"
+"positive or negative), and SEEK_END or 2 (move relative to end of\n"
+"file, usually negative, although many platforms allow seeking beyond\n"
+"the end of a file).\n"
 "\n"
 "Note that not all file objects are seekable.");
 
@@ -543,4 +553,4 @@ _io_FileIO_isatty(PyObject *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=1902fac9e39358aa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=453d584e2e72f986 input=a9049054013a1b77]*/

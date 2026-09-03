@@ -3,8 +3,6 @@
 
 .. module:: uuid
    :synopsis: UUID objects (universally unique identifiers) according to RFC 9562
-.. moduleauthor:: Ka-Ping Yee <ping@zesty.ca>
-.. sectionauthor:: George Yoshida <quiver@users.sourceforge.net>
 
 **Source code:** :source:`Lib/uuid.py`
 
@@ -168,7 +166,7 @@ which relays any information about the UUID's safety, using this enumeration:
 
    .. versionadded:: 3.7
 
-The :mod:`uuid` module defines the following functions:
+The :mod:`!uuid` module defines the following functions:
 
 
 .. function:: getnode()
@@ -193,43 +191,52 @@ The :mod:`uuid` module defines the following functions:
 
 .. function:: uuid1(node=None, clock_seq=None)
 
-   Generate a UUID from a host ID, sequence number, and the current time. If *node*
-   is not given, :func:`getnode` is used to obtain the hardware address. If
-   *clock_seq* is given, it is used as the sequence number; otherwise a random
-   14-bit sequence number is chosen.
+   Generate a UUID from a host ID, sequence number, and the current time
+   according to :rfc:`RFC 9562, §5.1 <9562#section-5.1>`.
+
+   When *node* is not specified, :func:`getnode` is used to obtain the hardware
+   address as a 48-bit positive integer. When a sequence number *clock_seq* is
+   not specified, a pseudo-random 14-bit positive integer is generated.
+
+   If *node* or *clock_seq* exceed their expected bit count,
+   only their least significant bits are kept.
 
 
 .. function:: uuid3(namespace, name)
 
    Generate a UUID based on the MD5 hash of a namespace identifier (which is a
    UUID) and a name (which is a :class:`bytes` object or a string
-   that will be encoded using UTF-8).
+   that will be encoded using UTF-8)
+   according to :rfc:`RFC 9562, §5.3 <9562#section-5.3>`.
 
 
 .. function:: uuid4()
 
-   Generate a random UUID.
+   Generate a random UUID in a cryptographically-secure method
+   according to :rfc:`RFC 9562, §5.4 <9562#section-5.4>`.
 
 
 .. function:: uuid5(namespace, name)
 
    Generate a UUID based on the SHA-1 hash of a namespace identifier (which is a
    UUID) and a name (which is a :class:`bytes` object or a string
-   that will be encoded using UTF-8).
+   that will be encoded using UTF-8)
+   according to :rfc:`RFC 9562, §5.5 <9562#section-5.5>`.
 
 
 .. function:: uuid6(node=None, clock_seq=None)
 
    Generate a UUID from a sequence number and the current time according to
-   :rfc:`9562`.
+   :rfc:`RFC 9562, §5.6 <9562#section-5.6>`.
+
    This is an alternative to :func:`uuid1` to improve database locality.
 
    When *node* is not specified, :func:`getnode` is used to obtain the hardware
    address as a 48-bit positive integer. When a sequence number *clock_seq* is
    not specified, a pseudo-random 14-bit positive integer is generated.
 
-   If *node* or *clock_seq* exceed their expected bit count, only their least
-   significant bits are kept.
+   If *node* or *clock_seq* exceed their expected bit count,
+   only their least significant bits are kept.
 
    .. versionadded:: 3.14
 
@@ -264,7 +271,7 @@ The :mod:`uuid` module defines the following functions:
    .. versionadded:: 3.14
 
 
-The :mod:`uuid` module defines the following namespace identifiers for use with
+The :mod:`!uuid` module defines the following namespace identifiers for use with
 :func:`uuid3` or :func:`uuid5`.
 
 
@@ -289,7 +296,7 @@ The :mod:`uuid` module defines the following namespace identifiers for use with
    When this namespace is specified, the *name* string is an X.500 DN in DER or a
    text output format.
 
-The :mod:`uuid` module defines the following constants for the possible values
+The :mod:`!uuid` module defines the following constants for the possible values
 of the :attr:`~UUID.variant` attribute:
 
 
@@ -315,7 +322,7 @@ of the :attr:`~UUID.variant` attribute:
    Reserved for future definition.
 
 
-The :mod:`uuid` module defines the special Nil and Max UUID values:
+The :mod:`!uuid` module defines the special Nil and Max UUID values:
 
 
 .. data:: NIL
@@ -348,7 +355,7 @@ Command-Line Usage
 
 .. versionadded:: 3.12
 
-The :mod:`uuid` module can be executed as a script from the command line.
+The :mod:`!uuid` module can be executed as a script from the command line.
 
 .. code-block:: sh
 
@@ -397,12 +404,12 @@ The following options are accepted:
 Example
 -------
 
-Here are some examples of typical usage of the :mod:`uuid` module::
+Here are some examples of typical usage of the :mod:`!uuid` module::
 
    >>> import uuid
 
    >>> # make a UUID based on the host ID and current time
-   >>> uuid.uuid1()
+   >>> uuid.uuid1()  # doctest: +SKIP
    UUID('a8098c1a-f86e-11da-bd1a-00112444be1e')
 
    >>> # make a UUID using an MD5 hash of a namespace UUID and a name
@@ -440,14 +447,23 @@ Here are some examples of typical usage of the :mod:`uuid` module::
    >>> uuid.MAX
    UUID('ffffffff-ffff-ffff-ffff-ffffffffffff')
 
+   >>> # same as UUIDv1 but with fields reordered to improve DB locality
+   >>> uuid.uuid6()  # doctest: +SKIP
+   UUID('1f0799c0-98b9-62db-92c6-a0d365b91053')
+
    >>> # get UUIDv7 creation (local) time as a timestamp in milliseconds
    >>> u = uuid.uuid7()
    >>> u.time  # doctest: +SKIP
    1743936859822
+
    >>> # get UUIDv7 creation (local) time as a datetime object
    >>> import datetime as dt
    >>> dt.datetime.fromtimestamp(u.time / 1000)  # doctest: +SKIP
    datetime.datetime(...)
+
+   >>> # make a UUID with custom blocks
+   >>> uuid.uuid8(0x12345678, 0x9abcdef0, 0x11223344)
+   UUID('00001234-5678-8ef0-8000-000011223344')
 
 
 .. _uuid-cli-example:
@@ -455,7 +471,7 @@ Here are some examples of typical usage of the :mod:`uuid` module::
 Command-Line Example
 --------------------
 
-Here are some examples of typical usage of the :mod:`uuid` command-line interface:
+Here are some examples of typical usage of the :mod:`!uuid` command-line interface:
 
 .. code-block:: shell
 

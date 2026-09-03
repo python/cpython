@@ -145,7 +145,7 @@ class ReadableLocalPath(_ReadablePath, LexicalPath):
         super().__init__(*pathsegments)
         self.info = LocalPathInfo(self)
 
-    def __open_rb__(self, buffering=-1):
+    def __open_reader__(self):
         return open(self, 'rb')
 
     def iterdir(self):
@@ -163,8 +163,8 @@ class WritableLocalPath(_WritablePath, LexicalPath):
     __slots__ = ()
     __fspath__ = LexicalPath.__vfspath__
 
-    def __open_wb__(self, buffering=-1):
-        return open(self, 'wb')
+    def __open_writer__(self, mode):
+        return open(self, f'{mode}b')
 
     def mkdir(self, mode=0o777):
         os.mkdir(self, mode)

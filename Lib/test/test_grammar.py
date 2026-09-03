@@ -1,8 +1,6 @@
 # Python test set -- part 1, grammar.
 # This just tests whether the parser accepts them all.
 
-from test.support import check_syntax_error, skip_wasi_stack_overflow
-from test.support import import_helper
 import annotationlib
 import inspect
 import unittest
@@ -18,6 +16,12 @@ import test.typinganndata.ann_module as ann_module
 import typing
 from test.typinganndata import ann_module2
 import test
+from test.support import (
+    check_syntax_error,
+    import_helper,
+    skip_emscripten_stack_overflow,
+    skip_wasi_stack_overflow,
+)
 from test.support.numbers import (
     VALID_UNDERSCORE_LITERALS,
     INVALID_UNDERSCORE_LITERALS,
@@ -250,6 +254,7 @@ the \'lazy\' dog.\n\
             self.assertIn("was never closed", str(cm.exception))
 
     @skip_wasi_stack_overflow()
+    @skip_emscripten_stack_overflow()
     def test_max_level(self):
         # Macro defined in Parser/lexer/state.h
         MAXLEVEL = 200
@@ -1554,6 +1559,8 @@ class GrammarTests(unittest.TestCase):
         check('[None [i, j]]')
         check('[True [i, j]]')
         check('[... [i, j]]')
+        check('[t"{x}" [i, j]]')
+        check('[t"x={x}" [i, j]]')
 
         msg=r'indices must be integers or slices, not tuple; perhaps you missed a comma\?'
         check('[(1, 2) [i, j]]')
@@ -1564,8 +1571,6 @@ class GrammarTests(unittest.TestCase):
         check('[f"x={x}" [i, j]]')
         check('["abc" [i, j]]')
         check('[b"abc" [i, j]]')
-        check('[t"{x}" [i, j]]')
-        check('[t"x={x}" [i, j]]')
 
         msg=r'indices must be integers or slices, not tuple;'
         check('[[1, 2] [3, 4]]')
@@ -1586,6 +1591,7 @@ class GrammarTests(unittest.TestCase):
         check('[[1, 2] [f"{x}"]]')
         check('[[1, 2] [f"x={x}"]]')
         check('[[1, 2] ["abc"]]')
+        msg=r'indices must be integers or slices, not string.templatelib.Template;'
         check('[[1, 2] [t"{x}"]]')
         check('[[1, 2] [t"x={x}"]]')
         msg=r'indices must be integers or slices, not'

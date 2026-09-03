@@ -1,0 +1,1 @@
+Add :keyword:`lazy` to the list of support topic by :func:`help`.

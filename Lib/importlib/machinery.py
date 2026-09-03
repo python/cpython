@@ -1,5 +1,9 @@
 """The machinery of importlib: finders, loaders, hooks, etc."""
 
+lazy import warnings
+
+
+# Public API
 from ._bootstrap import ModuleSpec
 from ._bootstrap import BuiltinImporter
 from ._bootstrap import FrozenImporter
@@ -16,6 +20,7 @@ from ._bootstrap_external import SourcelessFileLoader
 from ._bootstrap_external import ExtensionFileLoader
 from ._bootstrap_external import AppleFrameworkLoader
 from ._bootstrap_external import NamespaceLoader
+from ._bootstrap_external import NamespacePath
 
 
 def all_suffixes():
@@ -32,8 +37,6 @@ __all__ = ['AppleFrameworkLoader', 'BYTECODE_SUFFIXES', 'BuiltinImporter',
 
 
 def __getattr__(name):
-    import warnings
-
     if name == 'DEBUG_BYTECODE_SUFFIXES':
         warnings.warn('importlib.machinery.DEBUG_BYTECODE_SUFFIXES is '
                       'deprecated; use importlib.machinery.BYTECODE_SUFFIXES '

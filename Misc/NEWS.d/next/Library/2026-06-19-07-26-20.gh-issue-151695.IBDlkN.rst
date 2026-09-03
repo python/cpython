@@ -1,0 +1,4 @@
+Fix a use-after-free in the :mod:`curses` module.  The encoding of the initial
+screen, used by :func:`curses.unctrl` and :func:`curses.ungetch` to encode
+non-ASCII characters, is now kept as a private copy instead of a borrowed
+pointer to a window object that may be deallocated.

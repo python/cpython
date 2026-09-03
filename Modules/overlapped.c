@@ -12,6 +12,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_tuple.h"           // _PyTuple_FromPairSteal
 
 #define WINDOWS_LEAN_AND_MEAN
 #include <winsock2.h>
@@ -50,9 +51,6 @@ class pointer_converter(CConverter):
 class OVERLAPPED_converter(pointer_converter):
     type = 'OVERLAPPED *'
 
-class HANDLE_converter(pointer_converter):
-    type = 'HANDLE'
-
 class ULONG_PTR_converter(pointer_converter):
     type = 'ULONG_PTR'
 
@@ -65,13 +63,8 @@ class ULONG_PTR_converter(pointer_converter):
             """,
             argname=argname)
 
-class DWORD_converter(unsigned_long_converter):
-    type = 'DWORD'
-
-class BOOL_converter(int_converter):
-    type = 'BOOL'
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=436f4440630a304c]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=e3b1c126cba99725]*/
 
 /*[clinic input]
 module _overlapped
@@ -559,7 +552,7 @@ _overlapped_BindLocal_impl(PyObject *module, HANDLE Socket, int Family)
         ret = bind((SOCKET)Socket, (SOCKADDR*)&addr, sizeof(addr))
                 != SOCKET_ERROR;
     } else {
-        PyErr_SetString(PyExc_ValueError, "expected tuple of length 2 or 4");
+        PyErr_SetString(PyExc_ValueError, "Only AF_INET and AF_INET6 families are supported");
         return NULL;
     }
 
@@ -884,18 +877,20 @@ _overlapped.Overlapped.getresult
 
 Retrieve result of operation.
 
-If wait is true then it blocks until the operation is finished.  If wait
-is false and the operation is still pending then an error is raised.
+If wait is true then it blocks until the operation is finished.  If
+wait is false and the operation is still pending then an error is
+raised.
 [clinic start generated code]*/
 
 static PyObject *
 _overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
-/*[clinic end generated code: output=8c9bd04d08994f6c input=aa5b03e9897ca074]*/
+/*[clinic end generated code: output=8c9bd04d08994f6c input=852fbd817cbd2b3d]*/
 {
     DWORD transferred = 0;
     BOOL ret;
     DWORD err;
     PyObject *addr;
+    PyObject *transferred_obj;
 
     if (self->type == TYPE_NONE) {
         PyErr_SetString(PyExc_ValueError, "operation not yet attempted");
@@ -964,17 +959,11 @@ _overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
             }
 
             // The result is a two item tuple: (message, address)
-            self->read_from.result = PyTuple_New(2);
+            self->read_from.result = _PyTuple_FromPairSteal(
+                Py_NewRef(self->read_from.allocated_buffer), addr);
             if (self->read_from.result == NULL) {
-                Py_CLEAR(addr);
                 return NULL;
             }
-
-            // first item: message
-            PyTuple_SET_ITEM(self->read_from.result, 0,
-                             Py_NewRef(self->read_from.allocated_buffer));
-            // second item: address
-            PyTuple_SET_ITEM(self->read_from.result, 1, addr);
 
             return Py_NewRef(self->read_from.result);
         case TYPE_READ_FROM_INTO:
@@ -986,18 +975,18 @@ _overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
                 return NULL;
             }
 
-            // The result is a two item tuple: (number of bytes read, address)
-            self->read_from_into.result = PyTuple_New(2);
-            if (self->read_from_into.result == NULL) {
-                Py_CLEAR(addr);
+            transferred_obj = PyLong_FromUnsignedLong((unsigned long)transferred);
+            if (transferred_obj == NULL) {
+                Py_DECREF(addr);
                 return NULL;
             }
 
-            // first item: number of bytes read
-            PyTuple_SET_ITEM(self->read_from_into.result, 0,
-                PyLong_FromUnsignedLong((unsigned long)transferred));
-            // second item: address
-            PyTuple_SET_ITEM(self->read_from_into.result, 1, addr);
+            // The result is a two item tuple: (number of bytes read, address)
+            self->read_from_into.result = _PyTuple_FromPairSteal(
+                transferred_obj, addr);
+            if (self->read_from_into.result == NULL) {
+                return NULL;
+            }
 
             return Py_NewRef(self->read_from_into.result);
         default:
@@ -1806,7 +1795,7 @@ _overlapped_Overlapped_WSASendTo_impl(OverlappedObject *self, HANDLE handle,
         case ERROR_IO_PENDING:
             Py_RETURN_NONE;
         default:
-            self->type = TYPE_NOT_STARTED;
+            Overlapped_clear(self);
             return SetFromWindowsErr(err);
     }
 }
@@ -1873,7 +1862,7 @@ _overlapped_Overlapped_WSARecvFrom_impl(OverlappedObject *self,
     case ERROR_IO_PENDING:
         Py_RETURN_NONE;
     default:
-        self->type = TYPE_NOT_STARTED;
+        Overlapped_clear(self);
         return SetFromWindowsErr(err);
     }
 }
@@ -1914,6 +1903,11 @@ _overlapped_Overlapped_WSARecvFromInto_impl(OverlappedObject *self,
     }
 #endif
 
+    if (bufobj->len < (Py_ssize_t)size) {
+        PyErr_SetString(PyExc_ValueError, "nbytes is greater than the length of the buffer");
+        return NULL;
+    }
+
     wsabuf.buf = bufobj->buf;
     wsabuf.len = size;
 
@@ -1940,7 +1934,7 @@ _overlapped_Overlapped_WSARecvFromInto_impl(OverlappedObject *self,
     case ERROR_IO_PENDING:
         Py_RETURN_NONE;
     default:
-        self->type = TYPE_NOT_STARTED;
+        Overlapped_clear(self);
         return SetFromWindowsErr(err);
     }
 }
@@ -2073,6 +2067,7 @@ overlapped_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot overlapped_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, overlapped_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

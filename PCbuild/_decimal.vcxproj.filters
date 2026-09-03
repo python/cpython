@@ -18,9 +18,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Modules\_decimal\docstrings.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="$(mpdecimalDir)\libmpdec\basearith.h">
       <Filter>Header Files\libmpdec</Filter>
     </ClInclude>

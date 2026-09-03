@@ -4,9 +4,6 @@
 .. module:: pydoc
    :synopsis: Documentation generator and online help system.
 
-.. moduleauthor:: Ka-Ping Yee <ping@lfw.org>
-.. sectionauthor:: Ka-Ping Yee <ping@lfw.org>
-
 **Source code:** :source:`Lib/pydoc.py`
 
 .. index::
@@ -70,6 +67,11 @@ that will serve documentation to visiting web browsers.  :program:`python -m pyd
 will start a HTTP server on port 1234, allowing you to browse the
 documentation at ``http://localhost:1234/`` in your preferred web browser.
 Specifying ``0`` as the port number will select an arbitrary unused port.
+
+.. warning::
+
+   The :mod:`!pydoc` HTTP server is intended for local use during
+   development and is not suitable for production use.
 
 :program:`python -m pydoc -n <hostname>` will start the server listening at the given
 hostname.  By default the hostname is 'localhost' but if you want the server to

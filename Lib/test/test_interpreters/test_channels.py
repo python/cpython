@@ -1,4 +1,3 @@
-import importlib
 import pickle
 import threading
 from textwrap import dedent
@@ -28,7 +27,12 @@ class LowLevelTests(TestBase):
 
     def test_highlevel_reloaded(self):
         # See gh-115490 (https://github.com/python/cpython/issues/115490).
-        importlib.reload(channels)
+        interp = interpreters.create()
+        interp.exec(dedent(f"""
+            import importlib
+            from test.support import channels
+            importlib.reload(channels)
+            """));
 
 
 class TestChannels(TestBase):
@@ -46,6 +50,12 @@ class TestChannels(TestBase):
             created.add(ch)
         after = set(channels.list_all())
         self.assertEqual(after, created)
+
+    def test_list_all_closed(self):
+        created = [channels.create() for _ in range(3)]
+        rch, sch = created.pop(1)
+        rch.close()
+        self.assertEqual(set(channels.list_all()), set(created))
 
     def test_shareable(self):
         interp = interpreters.create()
@@ -121,9 +131,11 @@ class TestRecvChannelAttrs(TestBase):
 
     def test_pickle(self):
         ch, _ = channels.create()
-        data = pickle.dumps(ch)
-        unpickled = pickle.loads(data)
-        self.assertEqual(unpickled, ch)
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=protocol):
+                data = pickle.dumps(ch, protocol)
+                unpickled = pickle.loads(data)
+                self.assertEqual(unpickled, ch)
 
 
 class TestSendChannelAttrs(TestBase):
@@ -152,9 +164,11 @@ class TestSendChannelAttrs(TestBase):
 
     def test_pickle(self):
         _, ch = channels.create()
-        data = pickle.dumps(ch)
-        unpickled = pickle.loads(data)
-        self.assertEqual(unpickled, ch)
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=protocol):
+                data = pickle.dumps(ch, protocol)
+                unpickled = pickle.loads(data)
+                self.assertEqual(unpickled, ch)
 
 
 class TestSendRecv(TestBase):

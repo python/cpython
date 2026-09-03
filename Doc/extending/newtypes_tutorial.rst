@@ -6,11 +6,6 @@
 Defining Extension Types: Tutorial
 **********************************
 
-.. sectionauthor:: Michael Hudson <mwh@python.net>
-.. sectionauthor:: Dave Kuhlman <dkuhlman@rexx.com>
-.. sectionauthor:: Jim Fulton <jim@zope.com>
-
-
 Python allows the writer of a C extension module to define new types that
 can be manipulated from Python code, much like the built-in :class:`str`
 and :class:`list` types.  The code for all extension types follows a
@@ -277,7 +272,7 @@ be an instance of a subclass.
    The explicit cast to ``CustomObject *`` above is needed because we defined
    ``Custom_dealloc`` to take a ``PyObject *`` argument, as the ``tp_dealloc``
    function pointer expects to receive a ``PyObject *`` argument.
-   By assigning to the the ``tp_dealloc`` slot of a type, we declare
+   By assigning to the ``tp_dealloc`` slot of a type, we declare
    that it can only be called with instances of our ``CustomObject``
    class, so the cast to ``(CustomObject *)`` is safe.
    This is object-oriented polymorphism, in C!
