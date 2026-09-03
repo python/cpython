@@ -268,10 +268,9 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             raise exceptions.InvalidStateError(
                 f'__step(): already done: {self!r}, {exc!r}')
         if self._must_cancel:
-            # gh-108549: do not swallow SystemExit and KeyboardInterrupt
+            # gh-108549: do not swallow SystemExit and KeyboardInterrupt.
             if not isinstance(exc, (exceptions.CancelledError,
-                                   SystemExit, KeyboardInterrupt)
-                              ):
+                                    SystemExit, KeyboardInterrupt)):
                 exc = self._make_cancelled_error()
             self._must_cancel = False
         self._fut_waiter = None

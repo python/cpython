@@ -1904,6 +1904,7 @@ class BaseTaskTests:
                 pass
             except BaseException as e:
                 self.fail(f'{exc} is expected, instead of {type(e)}')
+            return "ok"
 
         for exc in (SystemExit, KeyboardInterrupt):
             with self.subTest(exc):
@@ -1912,6 +1913,7 @@ class BaseTaskTests:
                 t.cancel()
                 test_utils.run_briefly(self.loop)
                 self.assertTrue(not t.cancelled())
+                self.assertEqual(t.result(), "ok")
 
     def test_step_result_future(self):
         # If coroutine returns future, task waits on this future.
