@@ -11,9 +11,9 @@ import inspect
 from functools import partial
 
 lazy from test import test_yield_from
-from test.support import captured_stderr, disable_gc, gc_collect, run_yielding_async_fn, catch_unraisable_exception
+from test.support import captured_stderr, disable_gc, gc_collect, run_no_yield_async_fn, catch_unraisable_exception
 
-_async_test = partial(partial, run_yielding_async_fn)
+_async_test = partial(partial, run_no_yield_async_fn)
 
 async def arange(*args):
     for i in range(*args):
