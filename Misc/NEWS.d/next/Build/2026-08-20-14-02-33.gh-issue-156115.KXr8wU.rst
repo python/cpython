@@ -1,0 +1,4 @@
+iOS simulator builds are now configured with
+``-mios-simulator-version-min`` instead of the device's
+``-mios-version-min``. The device flag made the linker reject libraries
+resolved from the simulator SDK, so library detection silently failed.

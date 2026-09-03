@@ -10,6 +10,7 @@
 #include "pycore_floatobject.h"   // _PyFloat_ExactDealloc()
 #include "pycore_interp.h"        // _PyInterpreterState_GetConfig()
 #include "pycore_import.h"        // _PyImport_LazyImportModuleLevelObject  ()
+#include "pycore_iterobject.h"    // _PyCallIter_NewEx()
 #include "pycore_long.h"          // _PyLong_CompactValue
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _Py_AddToAllObjects()
@@ -1893,50 +1894,70 @@ builtin_hex(PyObject *module, PyObject *integer)
 }
 
 
-/* AC: cannot convert yet, as needs PEP 457 group support in inspect */
-static PyObject *
-builtin_iter(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *v;
-
-    if (!_PyArg_CheckPositional("iter", nargs, 1, 2))
-        return NULL;
-    v = args[0];
-    if (nargs == 1)
-        return PyObject_GetIter(v);
-    if (!PyCallable_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "iter(v, w): v must be callable");
-        return NULL;
-    }
-    PyObject *sentinel = args[1];
-    return PyCallIter_New(v, sentinel);
-}
-
-PyDoc_STRVAR(iter_doc,
-"iter(iterable) -> iterator\n\
-iter(callable, sentinel) -> iterator\n\
-\n\
-Get an iterator from an object.  In the first form, the argument must\n\
-supply its own iterator, or be a sequence.\n\
-In the second form, the callable is called until it returns the\n\
-sentinel.");
-
-
 /*[clinic input]
-aiter as builtin_aiter
+@text_signature "($module, object, /, [stop_value], *, stop_exception=StopIteration)"
+iter as builtin_iter
 
-    async_iterable: object
+    object: object
     /
+    stop_value: object = NULL
+    *
+    stop_exception: object = NULL
 
-Return an AsyncIterator for an AsyncIterable object.
+Get an iterator from an object.
+
+In the first form, the argument must supply its own iterator, or be a
+sequence.  In the second form, the callable is called until it returns
+the stop value or raises the specified exception.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_aiter(PyObject *module, PyObject *async_iterable)
-/*[clinic end generated code: output=1bae108d86f7960e input=473993d0cacc7d23]*/
+builtin_iter_impl(PyObject *module, PyObject *object, PyObject *stop_value,
+                  PyObject *stop_exception)
+/*[clinic end generated code: output=eb9c9ae8f77bf400 input=d3a2f767f29d9ae6]*/
 {
-    return PyObject_GetAIter(async_iterable);
+    if (stop_value == NULL && stop_exception == NULL) {
+        return PyObject_GetIter(object);
+    }
+    if (!PyCallable_Check(object)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "iter(): the first argument must be callable");
+        return NULL;
+    }
+    return _PyCallIter_NewEx(object, stop_value, stop_exception);
+}
+
+
+/*[clinic input]
+@text_signature "($module, object, /, [stop_value], *, stop_exception=StopAsyncIteration)"
+aiter as builtin_aiter
+
+    object: object
+    /
+    stop_value: object = NULL
+    *
+    stop_exception: object = NULL
+
+Return an AsyncIterator for an AsyncIterable object.
+
+In the second form, the callable is called and its result is awaited
+until it returns the stop value or raises the specified exception.
+[clinic start generated code]*/
+
+static PyObject *
+builtin_aiter_impl(PyObject *module, PyObject *object, PyObject *stop_value,
+                   PyObject *stop_exception)
+/*[clinic end generated code: output=2865edb3fbc45693 input=2adb37d12adafd0c]*/
+{
+    if (stop_value == NULL && stop_exception == NULL) {
+        return PyObject_GetAIter(object);
+    }
+    if (!PyCallable_Check(object)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "aiter(): the first argument must be callable");
+        return NULL;
+    }
+    return _PyACallIter_New(object, stop_value, stop_exception);
 }
 
 PyObject *PyAnextAwaitable_New(PyObject *, PyObject *);
@@ -3472,7 +3493,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_INPUT_METHODDEF
     BUILTIN_ISINSTANCE_METHODDEF
     BUILTIN_ISSUBCLASS_METHODDEF
-    {"iter", _PyCFunction_CAST(builtin_iter), METH_FASTCALL, iter_doc},
+    BUILTIN_ITER_METHODDEF
     BUILTIN_AITER_METHODDEF
     BUILTIN_LEN_METHODDEF
     BUILTIN_LOCALS_METHODDEF

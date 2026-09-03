@@ -1671,17 +1671,17 @@ _textiowrapper_writeflush(textio *self)
     }
     else {
         assert(PyList_Check(pending));
-        b = PyBytes_FromStringAndSize(NULL, self->pending_bytes_count);
-        if (b == NULL) {
+        PyBytesWriter *writer = PyBytesWriter_Create(self->pending_bytes_count);
+        if (writer == NULL) {
             return -1;
         }
 
-        char *buf = PyBytes_AsString(b);
+        char *buf = PyBytesWriter_GetData(writer);
         Py_ssize_t pos = 0;
 
         for (Py_ssize_t i = 0; i < PyList_GET_SIZE(pending); i++) {
             PyObject *obj = PyList_GET_ITEM(pending, i);
-            char *src;
+            const char *src;
             Py_ssize_t len;
             if (PyUnicode_Check(obj)) {
                 assert(PyUnicode_IS_ASCII(obj));
@@ -1690,15 +1690,18 @@ _textiowrapper_writeflush(textio *self)
             }
             else {
                 assert(PyBytes_Check(obj));
-                if (PyBytes_AsStringAndSize(obj, &src, &len) < 0) {
-                    Py_DECREF(b);
-                    return -1;
-                }
+                src = PyBytes_AS_STRING(obj);
+                len = PyBytes_GET_SIZE(obj);
             }
             memcpy(buf + pos, src, len);
             pos += len;
         }
         assert(pos == self->pending_bytes_count);
+
+        b = PyBytesWriter_Finish(writer);
+        if (b == NULL) {
+            return -1;
+        }
     }
 
     self->pending_bytes_count = 0;
@@ -3414,10 +3417,6 @@ _io_TextIOWrapper__CHUNK_SIZE_set_impl(textio *self, PyObject *value)
 {
     Py_ssize_t n;
     CHECK_ATTACHED_INT(self);
-    if (value == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
-        return -1;
-    }
     n = PyNumber_AsSsize_t(value, PyExc_ValueError);
     if (n == -1 && PyErr_Occurred())
         return -1;
