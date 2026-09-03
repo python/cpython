@@ -361,7 +361,6 @@ static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
         if (flags & DEF_ANNOT) printf(" DEF_ANNOT");
         if (flags & DEF_COMP_ITER) printf(" DEF_COMP_ITER");
         if (flags & DEF_TYPE_PARAM) printf(" DEF_TYPE_PARAM");
-        if (flags & DEF_COMP_CELL) printf(" DEF_COMP_CELL");
         switch (scope) {
             case LOCAL: printf(" LOCAL"); break;
             case GLOBAL_EXPLICIT: printf(" GLOBAL_EXPLICIT"); break;
@@ -860,22 +859,9 @@ finalize_inlined_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
             goto error;
         }
         int scope = SYMBOL_TO_SCOPE(comp_flags);
-        int only_flags = comp_flags & ((1 << SCOPE_OFFSET) - 1);
-        if (scope == CELL || only_flags & DEF_COMP_CELL) {
+        if (scope == CELL) {
             if (PySet_Add(inlined_cells, k) < 0) {
                 goto error;
-            }
-            if (!(only_flags & DEF_COMP_CELL)) {
-                comp_flags |= DEF_COMP_CELL;
-                PyObject *newv = PyLong_FromLong(comp_flags);
-                if (newv == NULL) {
-                    goto error;
-                }
-                if (PyDict_SetItem(comp->ste_symbols, k, newv) < 0) {
-                    Py_DECREF(newv);
-                    goto error;
-                }
-                Py_DECREF(newv);
             }
         }
         PyObject *existing = PyDict_GetItemWithError(ste->ste_symbols, k);
@@ -1037,7 +1023,7 @@ drop_class_free(PySTEntryObject *ste, PyObject *free)
 static int
 update_symbols(PyObject *symbols, PyObject *scopes,
                PyObject *bound, PyObject *free,
-               PyObject *inlined_cells, int classflag)
+               int classflag)
 {
     PyObject *name = NULL, *itr = NULL;
     PyObject *v = NULL, *v_scope = NULL, *v_new = NULL, *v_free = NULL;
@@ -1048,13 +1034,6 @@ update_symbols(PyObject *symbols, PyObject *scopes,
         long flags = PyLong_AsLong(v);
         if (flags == -1 && PyErr_Occurred()) {
             return 0;
-        }
-        int contains = PySet_Contains(inlined_cells, name);
-        if (contains < 0) {
-            return 0;
-        }
-        if (contains) {
-            flags |= DEF_COMP_CELL;
         }
         if (PyDict_GetItemRef(scopes, name, &v_scope) < 0) {
             return 0;
@@ -1336,7 +1315,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         goto error;
     }
     /* Records the results of the analysis in the symbol table entry */
-    if (!update_symbols(ste->ste_symbols, scopes, bound, newfree, inlined_cells,
+    if (!update_symbols(ste->ste_symbols, scopes, bound, newfree,
                         (ste->ste_type == ClassBlock) || ste->ste_can_see_class_scope))
         goto error;
     temp = PyNumber_InPlaceOr(free, newfree);

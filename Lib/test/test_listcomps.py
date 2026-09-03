@@ -277,6 +277,20 @@ class ListComprehensionTest(unittest.TestCase):
         outputs = {"y": [1]}
         self._check_in_scopes(code, outputs, scopes=["module", "function"])
 
+    def test_inlined_comp_cell_with_enclosing_free(self):
+        # The listcomp cell and the enclosing free must not share an index.
+        code = """
+            def outer(y):
+                def inner():
+                    return [lambda: x for x in (1, 2)], y
+                return inner()
+            funcs, val = outer(99)
+            z = [f() for f in funcs]
+            w = val
+        """
+        outputs = {"z": [2, 2], "w": 99}
+        self._check_in_scopes(code, outputs)
+
     def test_free_inner_cell_outer(self):
         code = """
             g = 2

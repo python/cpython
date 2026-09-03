@@ -595,6 +595,75 @@ dictbytype(PyObject *src, int scope_type, int flag, Py_ssize_t offset)
     return dest;
 }
 
+static int
+add_cell_names_from_symbols(PyObject *symbols, PyObject *names)
+{
+    Py_ssize_t pos = 0;
+    PyObject *k, *v;
+    while (PyDict_Next(symbols, &pos, &k, &v)) {
+        long flags = PyLong_AsLong(v);
+        if (flags == -1 && PyErr_Occurred()) {
+            return ERROR;
+        }
+        if (SYMBOL_TO_SCOPE(flags) == CELL) {
+            if (PySet_Add(names, k) < 0) {
+                return ERROR;
+            }
+        }
+    }
+    return SUCCESS;
+}
+
+static int
+add_inlined_comprehension_cell_names(PySTEntryObject *ste, PyObject *names)
+{
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(ste->ste_children); i++) {
+        PySTEntryObject *child =
+            (PySTEntryObject *)PyList_GET_ITEM(ste->ste_children, i);
+        if (child->ste_type != InlinedComprehensionBlock) {
+            continue;
+        }
+        if (add_cell_names_from_symbols(child->ste_symbols, names) < 0) {
+            return ERROR;
+        }
+        if (add_inlined_comprehension_cell_names(child, names) < 0) {
+            return ERROR;
+        }
+    }
+    return SUCCESS;
+}
+
+/* Cells of the shared unit: this table's CELL names, plus cells that live
+ * only on inlined comprehension children. */
+static PyObject *
+compiler_cellvars(PySTEntryObject *ste)
+{
+    PyObject *names = PySet_New(NULL);
+    if (names == NULL) {
+        return NULL;
+    }
+    if (add_cell_names_from_symbols(ste->ste_symbols, names) < 0) {
+        Py_DECREF(names);
+        return NULL;
+    }
+    if (add_inlined_comprehension_cell_names(ste, names) < 0) {
+        Py_DECREF(names);
+        return NULL;
+    }
+    PyObject *sorted = PySequence_List(names);
+    Py_DECREF(names);
+    if (sorted == NULL) {
+        return NULL;
+    }
+    if (PyList_Sort(sorted) < 0) {
+        Py_DECREF(sorted);
+        return NULL;
+    }
+    PyObject *cellvars = list2dict(sorted);
+    Py_DECREF(sorted);
+    return cellvars;
+}
+
 int
 _PyCompile_EnterScope(compiler *c, identifier name, int scope_type,
                        void *key, int lineno, PyObject *private,
@@ -626,7 +695,7 @@ _PyCompile_EnterScope(compiler *c, identifier name, int scope_type,
         compiler_unit_free(u);
         return ERROR;
     }
-    u->u_metadata.u_cellvars = dictbytype(u->u_ste->ste_symbols, CELL, DEF_COMP_CELL, 0);
+    u->u_metadata.u_cellvars = compiler_cellvars(u->u_ste);
     if (!u->u_metadata.u_cellvars) {
         compiler_unit_free(u);
         return ERROR;

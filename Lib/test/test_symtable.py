@@ -431,7 +431,7 @@ class SymtableTest(unittest.TestCase):
 
         st2 = symtable.symtable("[(lambda: x) for x in [1]]", "?", "exec")
         self.assertEqual(repr(st2.get_children()[0].lookup("x")),
-                         "<symbol 'x': CELL, DEF_LOCAL|DEF_COMP_ITER|DEF_COMP_CELL>")
+                         "<symbol 'x': CELL, DEF_LOCAL|DEF_COMP_ITER>")
 
         st3 = symtable.symtable("def f():\n"
                                 "   x = 1\n"
@@ -556,6 +556,20 @@ class SymtableTest(unittest.TestCase):
         self.assertTrue(comp.lookup("x").is_free())
         self.assertTrue(comp.lookup("x").is_referenced())
 
+    def test_inlined_comprehension_comp_cell_not_on_enclosing(self):
+        st = symtable.symtable(
+            "def f():\n"
+            "    x = 1\n"
+            "    return [(lambda: x) for x in [1]]",
+            "?", "exec")
+        f = find_block(st, "f")
+        self.assertTrue(f.lookup("x").is_cell())
+        self.assertFalse(f.lookup("x").is_comp_cell())
+        comp, = (c for c in f.get_children()
+                 if c.get_type() is symtable.SymbolTableType.INLINED_COMPREHENSION)
+        self.assertTrue(comp.lookup("x").is_cell())
+        self.assertTrue(comp.lookup("x").is_comp_cell())
+
     def test_inlined_comprehension_use_of_enclosing_free_in_class(self):
         st = symtable.symtable(
             "def f():\n"
@@ -600,8 +614,10 @@ class SymtableTest(unittest.TestCase):
             children[0], ["x"], ["_", "x"], nested=False)
         self.assertFalse(C.lookup("x").is_free())
         self.assertTrue(C.lookup("x").is_local())
+        self.assertFalse(C.lookup("x").is_comp_cell())
         self.assertFalse(children[0].lookup("x").is_free())
         self.assertTrue(children[0].lookup("x").is_cell())
+        self.assertTrue(children[0].lookup("x").is_comp_cell())
         self.assertFalse(inner.lookup("_").is_free())
         self.assertTrue(inner.lookup("x").is_free())
         self.assertTrue(inner.lookup("x").is_referenced())
