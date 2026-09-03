@@ -556,6 +556,36 @@ class ContextTest(unittest.TestCase):
 
         ctx.run(fun)
 
+    def test_context_eq_reentrant_contextvar_set(self):
+        var = contextvars.ContextVar("v")
+        ctx1 = contextvars.Context()
+        ctx2 = contextvars.Context()
+
+        class ReentrantEq:
+            def __eq__(self, other):
+                ctx1.run(lambda: var.set(object()))
+                return True
+
+        ctx1.run(var.set, ReentrantEq())
+        ctx2.run(var.set, object())
+        ctx1 == ctx2
+
+    def test_context_eq_reentrant_contextvar_set_in_hash(self):
+        var = contextvars.ContextVar("v")
+        ctx1 = contextvars.Context()
+        ctx2 = contextvars.Context()
+
+        class ReentrantHash:
+            def __hash__(self):
+                ctx1.run(lambda: var.set(object()))
+                return 0
+            def __eq__(self, other):
+                return isinstance(other, ReentrantHash)
+
+        ctx1.run(var.set, ReentrantHash())
+        ctx2.run(var.set, ReentrantHash())
+        ctx1 == ctx2
+
 
 # HAMT Tests
 
@@ -1245,6 +1275,31 @@ class HamtTest(unittest.TestCase):
         next(hi)
 
         del h, hi
+
+        gc.collect()
+        gc.collect()
+        gc.collect()
+
+        self.assertIsNone(ref())
+
+    def test_hamt_gc_3(self):
+        # gh-154535: the iterators must be tracked by the GC, otherwise a
+        # cycle running through one is never collected and the HAMT it
+        # holds -- and everything in it -- leaks.
+        A = HashKey(100, 'A')
+
+        container = []
+        h = hamt()
+        h = h.set(A, container)
+
+        hi = h.items()
+        self.assertTrue(gc.is_tracked(hi))
+
+        # Close the cycle: hi -> h -> container -> hi.
+        container.append(hi)
+        ref = weakref.ref(h)
+
+        del h, hi, container
 
         gc.collect()
         gc.collect()

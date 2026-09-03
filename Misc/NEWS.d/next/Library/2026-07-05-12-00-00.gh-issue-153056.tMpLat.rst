@@ -1,0 +1,4 @@
+Fix :class:`string.Template` raising a spurious :exc:`ValueError` when the
+*pattern* attribute is a compiled regular expression object, which the
+documentation allows.  On the free-threaded build this also occurred as a data
+race on the first concurrent use.

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import io
 import os
 import re
@@ -138,7 +136,7 @@ def pipe_pager(text: str, cmd: str, title: str = '') -> None:
         '.'
         '?e (END):?pB %pB\\%..'
         ' (press h for help or q to quit)')
-    env['LESS'] = '-RmPm{0}$PM{0}$'.format(prompt_string)
+    env['LESS'] = '-RcmPm{0}$PM{0}$'.format(prompt_string)
     proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
                             errors='backslashreplace', env=env)
     assert proc.stdin is not None

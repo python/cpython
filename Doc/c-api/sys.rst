@@ -123,6 +123,24 @@ Operating System Utilities
    This is a thin wrapper around either :c:func:`!sigaction` or :c:func:`!signal`.  Do
    not call those functions directly!
 
+
+.. c:function:: int PyOS_InterruptOccurred(void)
+
+   Check if a :c:macro:`!SIGINT` signal has been received.
+
+   Returns ``1`` if a :c:macro:`!SIGINT` has occurred and clears the signal flag,
+   or ``0`` otherwise.
+
+   In most cases, you should prefer :c:func:`PyErr_CheckSignals` over this function.
+   :c:func:`!PyErr_CheckSignals` invokes the appropriate signal handlers
+   for all pending signals, allowing Python code to handle the signal properly.
+   This function only detects :c:macro:`!SIGINT` and does not invoke any Python
+   signal handlers.
+
+   This function is async-signal-safe and this function cannot fail.
+   The caller must hold an :term:`attached thread state`.
+
+
 .. c:function:: wchar_t* Py_DecodeLocale(const char* arg, size_t *size)
 
    .. warning::
@@ -415,7 +433,7 @@ accessible to C code.  They all work with the current interpreter thread's
    This function is safe to call before :c:func:`Py_Initialize`. When called
    after runtime initialization, existing audit hooks are notified and may
    silently abort the operation by raising an error subclassed from
-   :class:`Exception` (other errors will not be silenced).
+   :class:`RuntimeError` (other errors will not be silenced).
 
    The hook function is always called with an :term:`attached thread state` by
    the Python interpreter that raised the event.
@@ -429,7 +447,7 @@ accessible to C code.  They all work with the current interpreter thread's
 
       If the interpreter is initialized, this function raises an auditing event
       ``sys.addaudithook`` with no arguments. If any existing hooks raise an
-      exception derived from :class:`Exception`, the new hook will not be
+      exception derived from :class:`RuntimeError`, the new hook will not be
       added and the exception is cleared. As a result, callers cannot assume
       that their hook has been added unless they control all existing hooks.
 
@@ -443,6 +461,11 @@ accessible to C code.  They all work with the current interpreter thread's
       *userData* is the argument passed to PySys_AddAuditHook().
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.8.1
+
+      Exceptions derived from :class:`Exception` but not :class:`RuntimeError`
+      are no longer suppressed.
 
 
 .. _processcontrol:

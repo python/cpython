@@ -31,8 +31,7 @@
 
 {% if last_updated %}<p><b>{% trans %}Last updated on: {{ last_updated }}.{% endtrans %}</b></p>{% endif %}
 
-<p>{% trans %}To download an archive containing all the documents for this version of
-Python in one of various formats, follow one of links in this table.{% endtrans %}</p>
+<p>{% trans %}Download an archive containing all the documentation for this version of Python:{% endtrans %}</p>
 
 <table class="docutils">
   <tr>
@@ -62,8 +61,6 @@ Python in one of various formats, follow one of links in this table.{% endtrans 
   </tr>
 </table>
 
-<p>{% trans %}These archives contain all the content in the documentation.{% endtrans %}</p>
-
 <p>{% trans %}
 We no longer provide pre-built PDFs of the documentation.
 To build a PDF archive, follow the instructions in the
@@ -74,7 +71,6 @@ and run <code>make dist-pdf</code> in the <code>Doc/</code> directory of a copy 
 <p>{% trans %}
 See the <a href="https://docs.python.org/{{ version }}/archives/">directory listing</a>
 for file sizes.{% endtrans %}</p>
-
 
 <h2>{% trans %}Problems{% endtrans %}</h2>
 {% set bugs = pathto('bugs') %}
