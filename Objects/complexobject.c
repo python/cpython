@@ -165,8 +165,8 @@ _Py_rc_prod(double a, Py_complex b)
 #ifdef _M_ARM64
 #pragma optimize("", off)
 #endif
-static Py_complex
-c_quot(Py_complex a, Py_complex b)
+Py_complex
+_Py_c_quot(Py_complex a, Py_complex b)
 {
     /******************************************************************
     This was the original algorithm.  It's grossly prone to spurious
@@ -190,14 +190,15 @@ c_quot(Py_complex a, Py_complex b)
      * Algorithm 116 (Complex Division, Robert L. Smith, Stanford
      * University).
      */
-    Py_complex r;      /* the result */
-    const double abs_breal = b.real < 0 ? -b.real : b.real;
-    const double abs_bimag = b.imag < 0 ? -b.imag : b.imag;
+     Py_complex r;      /* the result */
+     const double abs_breal = b.real < 0 ? -b.real : b.real;
+     const double abs_bimag = b.imag < 0 ? -b.imag : b.imag;
 
     if (abs_breal >= abs_bimag) {
         /* divide tops and bottom by b.real */
         if (abs_breal == 0.0) {
-            r.real = r.imag = NAN;
+            errno = EDOM;
+            r.real = r.imag = 0.0;
         }
         else {
             const double ratio = b.imag / b.real;
@@ -297,36 +298,19 @@ _Py_rc_quot(double a, Py_complex b)
 #endif
 
 Py_complex
-_Py_c_quot(Py_complex a, Py_complex b)
-{
-    Py_complex r = c_quot(a, b);
-
-    if (_Py_c_isnan(r) && _Py_c_iszero(b)) {
-        errno = EDOM;
-        r.real = r.imag = 0.0; /* and set r as documented */
-    }
-    return r;
-}
-
-static Py_complex
-c_pow(Py_complex a, Py_complex b)
+_Py_c_pow(Py_complex a, Py_complex b)
 {
     Py_complex r;
     double vabs,len,at,phase;
-
-    if (_Py_c_iszero(b)) {
+    if (b.real == 0. && b.imag == 0.) {
         r.real = 1.;
         r.imag = 0.;
     }
-    else if (_Py_c_iszero(a)) {
-        if (b.imag != 0. || b.real < 0.) {
-            r.real = NAN;
-            r.imag = NAN;
-        }
-        else {
-            r.real = 0.;
-            r.imag = 0.;
-        }
+    else if (a.real == 0. && a.imag == 0.) {
+        if (b.imag != 0. || b.real < 0.)
+            errno = EDOM;
+        r.real = 0.;
+        r.imag = 0.;
     }
     else {
         vabs = hypot(a.real,a.imag);
@@ -339,25 +323,10 @@ c_pow(Py_complex a, Py_complex b)
         }
         r.real = len*cos(phase);
         r.imag = len*sin(phase);
-    }
-    return r;
-}
 
-Py_complex
-_Py_c_pow(Py_complex a, Py_complex b)
-{
-    int saved_errno = errno;
-    Py_complex r = c_pow(a, b);
-
-    if (_Py_c_isnan(r) && a.real == 0 && a.imag == 0) {
-        errno = EDOM;
-        r.real = r.imag = 0.0; /* and set r as documented */
-    }
-    else if (_Py_c_isinf(r) && _Py_c_isfinite(a) && _Py_c_isfinite(b)) {
-        errno = ERANGE;
-    }
-    else {
-        errno = saved_errno;
+        if (_Py_c_isinf(r) && _Py_c_isfinite(a) && _Py_c_isfinite(b)) {
+            errno = ERANGE;
+        }
     }
     return r;
 }
@@ -384,7 +353,7 @@ c_powi(Py_complex x, long n)
     if (n > 0)
         return c_powu(x,n);
     else
-        return c_quot(c_1, c_powu(x,-n));
+        return _Py_c_quot(c_1, c_powu(x,-n));
 
 }
 
@@ -772,20 +741,24 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
         PyErr_SetString(PyExc_ValueError, "complex modulo");
         return NULL;
     }
+    errno = 0;
     // Check whether the exponent has a small integer value, and if so use
     // a faster and more accurate algorithm.
     if (b.imag == 0.0 && b.real == floor(b.real) && fabs(b.real) <= 100.0) {
         p = c_powi(a, (long)b.real);
+        if (_Py_c_isinf(p) && _Py_c_isfinite(a) && isfinite(b.real)) {
+            errno = ERANGE;
+        }
     }
     else {
-        p = c_pow(a, b);
+        p = _Py_c_pow(a, b);
     }
-    if (_Py_c_isnan(p) && _Py_c_iszero(a) && (b.imag || b.real < 0)) {
+    if (errno == EDOM) {
         PyErr_SetString(PyExc_ZeroDivisionError,
                         "zero to a negative or complex power");
         return NULL;
     }
-    else if (_Py_c_isinf(p) && _Py_c_isfinite(a) && _Py_c_isfinite(b)) {
+    else if (errno == ERANGE) {
         PyErr_SetString(PyExc_OverflowError,
                         "complex exponentiation");
         return NULL;
