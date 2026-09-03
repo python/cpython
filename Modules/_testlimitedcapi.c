@@ -100,6 +100,9 @@ static struct PyModuleDef _testlimitedcapimodule_def = {
     .m_size = 0,
     .m_slots = (PyModuleDef_Slot[]){
         {Py_mod_exec, module_exec},
+#ifdef Py_GIL_DISABLED
+        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
         {0}
     }
 };
