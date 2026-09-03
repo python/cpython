@@ -407,6 +407,86 @@ class ListComprehensionTest(unittest.TestCase):
         outputs = {"y": [[0, 1], [0, 1, 4]]}
         self._check_in_scopes(code, outputs)
 
+    def test_nested_inner_uses_outer_iter(self):
+        # Inner comprehension reads the outer iteration variable. In a class
+        # this must not be treated as a class-level name of the same name.
+        code = """
+            x = 99
+            y = [[x for _ in (0,)] for x in (42,)]
+        """
+        outputs = {"y": [[42]]}
+        self._check_in_scopes(code, outputs)
+
+    def test_nested_mixed_comprehensions_use_outer_iter(self):
+        cases = [
+            ("y = [{x for _ in (0,)} for x in (42,)]", {"y": [{42}]}),
+            ("y = [{x: x for _ in (0,)} for x in (42,)]", {"y": [{42: 42}]}),
+            ("y = {[x for _ in (0,)][0] for x in (42,)}", {"y": {42}}),
+            ("y = {x: [x for _ in (0,)] for x in (42,)}", {"y": {42: [42]}}),
+        ]
+        for line, outputs in cases:
+            with self.subTest(line=line):
+                code = f"x = 99\n{line}"
+                self._check_in_scopes(code, outputs)
+
+    def test_nested_triple_inner_uses_outer_iter(self):
+        code = """
+            x = 99
+            y = [[[x for _ in (0,)] for _ in (0,)] for x in (42,)]
+        """
+        outputs = {"y": [[[42]]]}
+        self._check_in_scopes(code, outputs)
+
+    def test_nested_inner_uses_outer_iter_in_iter(self):
+        code = """
+            x = 99
+            y = [[_ for _ in (x,)] for x in (42,)]
+        """
+        outputs = {"y": [[42]]}
+        self._check_in_scopes(code, outputs)
+
+    def test_nested_inner_uses_outer_iter_in_if(self):
+        code = """
+            x = 99
+            y = [[1 for _ in (0,) if x] for x in (42,)]
+        """
+        outputs = {"y": [[1]]}
+        self._check_in_scopes(code, outputs)
+
+    def test_nested_sibling_inners_use_outer_iter(self):
+        code = """
+            x = 99
+            y = [([x for _ in (0,)], [x for _ in (1,)]) for x in (42,)]
+        """
+        outputs = {"y": [([42], [42])]}
+        self._check_in_scopes(code, outputs)
+
+    def test_nested_lambda_captures_outer_iter(self):
+        code = """
+            x = 99
+            y = [[lambda: x for _ in (0,)] for x in (42,)]
+            z = y[0][0]()
+        """
+        outputs = {"z": 42}
+        self._check_in_scopes(code, outputs)
+
+    def test_nested_references___class__(self):
+        code = """
+            res = [[__class__ for _ in (0,)] for _ in (1,)]
+        """
+        self._check_in_scopes(code, raises=NameError)
+
+    def test_nested_references___class___via_lambda(self):
+        class _C:
+            res = [[lambda: __class__ for _ in (0,)] for _ in (1,)]
+        self.assertIs(_C.res[0][0](), _C)
+
+    def test_nested_references_super(self):
+        code = """
+            res = [[super for _ in (0,)] for _ in (1,)]
+        """
+        self._check_in_scopes(code, outputs={"res": [[super]]})
+
     def test_nested_2(self):
         code = """
             l = [1, 2, 3]

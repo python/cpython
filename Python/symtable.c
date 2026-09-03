@@ -994,6 +994,8 @@ finalize_inlined_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
         }
     }
     Py_CLEAR(to_remove);
+    /* Finalize nested inlined comprehensions against this comprehension,
+     * not the original enclosing scope. */
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(comp->ste_children); i++) {
         PySTEntryObject *child = (PySTEntryObject *)PyList_GET_ITEM(comp->ste_children, i);
         if (child->ste_type != InlinedComprehensionBlock) {
@@ -1003,7 +1005,7 @@ finalize_inlined_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
         if (child_free == NULL) {
             return 0;
         }
-        int ok = finalize_inlined_comprehension(ste, child, child_free,
+        int ok = finalize_inlined_comprehension(comp, child, child_free,
                                                 outer_newfree, inlined_cells);
         Py_DECREF(child_free);
         if (!ok) {
@@ -1372,7 +1374,8 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         }
 
         // Compress InlinedComprehensionBlocks ste_symbols to a delta (bindings +
-        // class FREE overrides). Nested deltas are finalized recursively.
+        // class FREE overrides). Nested deltas are finalized recursively
+        // against their immediate parent.
         if (!analyze_child_block(entry, newbound, newfree, newglobal,
                                  type_params, new_class_entry, &child_free))
         {

@@ -546,6 +546,25 @@ class SymtableTest(unittest.TestCase):
         self.check_nested_inlined_listcomp(
             children[0], children[1], ["x"], ["y"], nested=False)
 
+    def test_inlined_nested_comprehension_class_iter_var(self):
+        st = symtable.symtable(
+            "class C:\n"
+            "    x = 99\n"
+            "    [[x for _ in (0,)] for x in (42,)]",
+            "?", "exec")
+        C = find_block(st, "C")
+        children = C.get_children()
+        self.assertEqual(len(children), 2)
+        self.check_nested_inlined_listcomp(
+            children[0], children[1], ["x"], ["_"], nested=False)
+        self.assertFalse(C.lookup("x").is_free())
+        self.assertTrue(C.lookup("x").is_local())
+        self.assertFalse(children[0].lookup("x").is_free())
+        self.assertTrue(children[0].lookup("x").is_cell())
+        self.assertFalse(children[1].lookup("_").is_free())
+        with self.assertRaises(KeyError):
+            children[1].lookup("x")
+
     def test_inlined_sibling_nested_comprehensions(self):
         st = symtable.symtable(
             "def f(): [[y for y in x] for x in [1]]; [[w for w in z] for z in [2]]",
