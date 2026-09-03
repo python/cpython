@@ -57,7 +57,7 @@ Complex Number Objects
    not defined then it falls back to call :c:func:`PyFloat_AsDouble` and
    returns its result.
 
-   Upon failure, this method returns ``-1.0`` with an exception set, so one
+   Upon failure, this function returns ``-1.0`` with an exception set, so one
    should call :c:func:`PyErr_Occurred` to check for errors.
 
    .. versionchanged:: 3.13
@@ -73,7 +73,7 @@ Complex Number Objects
    not defined then it falls back to call :c:func:`PyFloat_AsDouble` and
    returns ``0.0`` on success.
 
-   Upon failure, this method returns ``-1.0`` with an exception set, so one
+   Upon failure, this function returns ``-1.0`` with an exception set, so one
    should call :c:func:`PyErr_Occurred` to check for errors.
 
    .. versionchanged:: 3.13
@@ -112,7 +112,7 @@ Complex Number Objects
    :meth:`~object.__float__`.  If :meth:`!__float__` is not defined then it falls back
    to :meth:`~object.__index__`.
 
-   Upon failure, this method returns :c:type:`Py_complex`
+   Upon failure, this function returns :c:type:`Py_complex`
    with :c:member:`~Py_complex.real` set to ``-1.0`` and with an exception set, so one
    should call :c:func:`PyErr_Occurred` to check for errors.
 
@@ -171,7 +171,7 @@ the :ref:`Number Protocol <number>` API or use native complex types, like
    Return the quotient of two complex numbers, using the C :c:type:`Py_complex`
    representation.
 
-   If *divisor* is null, this method returns zero and sets
+   If *divisor* is zero, this function returns zero and sets
    :c:data:`errno` to :c:macro:`!EDOM`.
 
    .. deprecated:: 3.15
@@ -182,10 +182,11 @@ the :ref:`Number Protocol <number>` API or use native complex types, like
    Return the exponentiation of *num* by *exp*, using the C :c:type:`Py_complex`
    representation.
 
-   If *num* is null and *exp* is not a positive real number,
-   this method returns zero and sets :c:data:`errno` to :c:macro:`!EDOM`.
+   If *exp* is zero, this function returns ``{1.0, 0.0}``; otherwise
+   if *num* is zero and *exp* is not a positive real number,
+   this function returns zero and sets :c:data:`errno` to :c:macro:`!EDOM`.
 
-   Set :c:data:`errno` to :c:macro:`!ERANGE` on overflows.
+   On overflow, this function sets :c:data:`errno` to :c:macro:`!ERANGE`.
 
    .. deprecated:: 3.15
 
@@ -194,6 +195,6 @@ the :ref:`Number Protocol <number>` API or use native complex types, like
 
    Return the absolute value of the complex number *num*.
 
-   Set :c:data:`errno` to :c:macro:`!ERANGE` on overflows.
+   On overflow, this function sets :c:data:`errno` to :c:macro:`!ERANGE`.
 
    .. deprecated:: 3.15
