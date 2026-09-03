@@ -14,7 +14,7 @@ __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
            'partial', 'partialmethod', 'singledispatch', 'singledispatchmethod',
            'cached_property', 'Placeholder']
 
-from abc import abstractmethod, get_cache_token
+from abc import get_cache_token
 from collections import namedtuple
 # import weakref  # Deferred to single_dispatch()
 from operator import itemgetter
@@ -435,10 +435,9 @@ try:
 except ImportError:
     pass
 
-_UNKNOWN_DESCRIPTOR = object()
-_STD_METHOD_TYPES = (staticmethod, classmethod, FunctionType, partial)
-_ONE_PLACEHOLDER_TUPLE = (Placeholder,)
-_VOID_LAMBDA = lambda *_, **__: None
+
+_PM_WRAPPED_METHOD_TYPES = (staticmethod, classmethod)
+_PM_FAST_METHOD_TYPES = _PM_WRAPPED_METHOD_TYPES + (FunctionType, partial)
 
 
 # Descriptor version
@@ -449,88 +448,120 @@ class partialmethod:
     Supports wrapping existing descriptors and handles non-descriptor
     callables as instance methods.
     """
-
-    __slots__ = ("func", "args", "keywords", "__dict__", "__weakref__")
+    __slots__ = (
+        "_func", "_args", "_keywords", "__dict__", "__weakref__",
+        "_cachedmethod", "_iscachable"
+    )
 
     __repr__ = _partial_repr
 
     def __init__(self, func, /, *args, **keywords):
         if isinstance(func, partialmethod):
             # Subclass optimization
-            temp = partial(_VOID_LAMBDA, *func.args, **func.keywords)
+            temp = partial(lambda *_, **__: None, *func._args, **func.keywords)
             temp = partial(temp, *args, **keywords)
-            func = func.func
+            func = func._func
             args = temp.args
             keywords = temp.keywords
 
         if args and args[-1] is Placeholder:
             raise TypeError("trailing Placeholders are not allowed")
 
-        self.func = func
-        self.args = args
-        self.keywords = keywords
+        self.func = func    # setting via attribute setter
+        self._args = args
+        self._keywords = keywords
 
-        if isinstance(func, _STD_METHOD_TYPES):
-            self.method = None
+    @property
+    def func(self):
+        return self._func
+
+    @func.setter
+    def func(self, func):
+        if isinstance(func, _PM_FAST_METHOD_TYPES):
+            self._iscachable = True
         elif getattr(func, '__get__', None) is None:
             if not callable(func):
                 raise TypeError(f'the first argument {func!r} must be a callable '
                                 'or a descriptor')
-            self.method = None
+            self._iscachable = True
         else:
-            # Unknown descriptor
-            self.method = _UNKNOWN_DESCRIPTOR
+            self._iscachable = False
+        self._func = func
+        self._cachedmethod = None
+
+    @property
+    def args(self):
+        return self._args
+
+    @args.setter
+    def args(self, args):
+        self._args = args
+        self._cachedmethod = None
+
+    @property
+    def keywords(self):
+        method = self._cachedmethod
+        if method is None:
+            return self._keywords
+        if isinstance(method, _PM_WRAPPED_METHOD_TYPES):
+            method = method.__wrapped__
+        return method.keywords
+
+    @keywords.setter
+    def keywords(self, keywords):
+        self._keywords = keywords
+        self._cachedmethod = None
 
     def __make_method(self):
-        args = self.args
-        func = self.func
-
+        func = self._func
+        args = self._args
+        keywords = self._keywords
         if isinstance(func, staticmethod):
             deco = staticmethod
-            method = partial(func.__wrapped__, *args, **self.keywords)
+            method = partial(func.__wrapped__, *args, **keywords)
         elif isinstance(func, classmethod):
             deco = classmethod
-            ph_args = _ONE_PLACEHOLDER_TUPLE if args else ()
-            method = partial(func.__wrapped__, *ph_args, *args, **self.keywords)
+            ph_args = (Placeholder,) if args else ()
+            method = partial(func.__wrapped__, *ph_args, *args, **keywords)
         else:
             # instance method. 2 cases:
             #   a) FunctionType | partial
             #   b) callable object without __get__
             deco = None
-            ph_args = _ONE_PLACEHOLDER_TUPLE if args else ()
-            method = partial(func, *ph_args, *args, **self.keywords)
+            ph_args = (Placeholder,) if args else ()
+            method = partial(func, *ph_args, *args, **keywords)
 
         method.__partialmethod__ = self
         if self.__isabstractmethod__:
-            method = abstractmethod(method)
+            method.__isabstractmethod__ = True
         if deco is not None:
             method = deco(method)
         return method
 
     def __get__(self, obj, cls=None):
-        method = self.method
-        if method is _UNKNOWN_DESCRIPTOR:
-            # Unknown descriptor == unknown binding
-            # Need to get callable at runtime and apply partial on top
-            new_func = self.func.__get__(obj, cls)
-            if new_func is self.func:
-                method = None
-            else:
-                result = partial(new_func, *self.args, **self.keywords)
-                result.__partialmethod__ = self
-                if self.__isabstractmethod__:
-                    result = abstractmethod(result)
-                try:
-                    obj = new_func.__self__
-                except AttributeError:
-                    pass
-                else:
-                    result.__self__ = obj
-                return result
-
+        method = self._cachedmethod
         if method is None:
-            # Cache method
-            self.method = method = self.__make_method()
+            if not self._iscachable:
+                # Unknown descriptor == unknown binding
+                # Need to get callable at runtime and apply partial on top
+                new_func = self._func.__get__(obj, cls)
+                if new_func is not self.func:
+                    result = partial(new_func, *self._args, **self._keywords)
+                    result.__partialmethod__ = self
+                    if self.__isabstractmethod__:
+                        result.__isabstractmethod__ = True
+                    try:
+                        obj = new_func.__self__
+                    except AttributeError:
+                        pass
+                    else:
+                        result.__self__ = obj
+                    return result
+
+            if method is None:
+                # Cache method
+                self._cachedmethod = method = self.__make_method()
+
         return method.__get__(obj, cls)
 
     @property
