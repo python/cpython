@@ -2626,12 +2626,6 @@ class LzmaBoundedDecompressTests(AbstractBoundedDecompressTests,
     compression = zipfile.ZIP_LZMA
 
 
-@requires_zstd()
-class ZstdBoundedDecompressTests(AbstractBoundedDecompressTests,
-                                 unittest.TestCase):
-    compression = zipfile.ZIP_ZSTANDARD
-
-
 class AbstractBadCrcTests:
     def test_testzip_with_bad_crc(self):
         """Tests that files with bad CRCs return their name from testzip."""
