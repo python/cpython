@@ -285,7 +285,8 @@ class _SpoofOut(StringIO):
         return result
 
     def truncate(self, size=None):
-        self.seek(size)
+        if size is not None:
+            self.seek(size)
         StringIO.truncate(self)
 
 # Worst-case linear-time ellipsis matching.
@@ -922,7 +923,7 @@ class DocTestFinder:
         # given object's docstring.
         try:
             file = inspect.getsourcefile(obj)
-        except TypeError:
+        except (TypeError, OSError):
             source_lines = None
         else:
             if not file:
@@ -1199,6 +1200,18 @@ class DocTestFinder:
 ######################################################################
 ## 5. DocTest Runner
 ######################################################################
+
+def _make_output_function(stream):
+    """Return a function writing to *stream*, whatever it can encode."""
+    encoding = getattr(stream, 'encoding', None)
+    if encoding is None or encoding.lower() == 'utf-8':
+        return stream.write
+    def out(s):
+        # Use backslashreplace error handling on write
+        s = str(s.encode(encoding, 'backslashreplace'), encoding)
+        stream.write(s)
+    return out
+
 
 class DocTestRunner:
     """
@@ -1560,14 +1573,7 @@ class DocTestRunner:
 
         save_stdout = sys.stdout
         if out is None:
-            encoding = save_stdout.encoding
-            if encoding is None or encoding.lower() == 'utf-8':
-                out = save_stdout.write
-            else:
-                # Use backslashreplace error handling on write
-                def out(s):
-                    s = str(s.encode(encoding, 'backslashreplace'), encoding)
-                    save_stdout.write(s)
+            out = _make_output_function(save_stdout)
         sys.stdout = self._fakeout
 
         # Patch pdb.set_trace to restore sys.stdout during interactive
@@ -1768,7 +1774,7 @@ class OutputChecker:
                           '', want)
             # If a line in got contains only spaces, then remove the
             # spaces.
-            got = re.sub(r'(?m)^[^\S\n]+$', '', got)
+            got = re.sub(r'(?m)^[\s--\n]+$', '', got)
             if got == want:
                 return True
 
@@ -2321,6 +2327,9 @@ class _DocTestCaseRunner(DocTestRunner):
         unittest.case._addSkip(self._test_result, self._subTest(), '')
 
     def report_success(self, out, test, example, got):
+        # Report "ok" if verbose, to close what report_start() opened.  A
+        # failed or skipped example is reported by the test result instead.
+        super().report_success(out, test, example, got)
         self._test_result.addSubTest(self._test_case, self._subTest(), None)
 
     def report_unexpected_exception(self, out, test, example, exc_info):
@@ -2400,10 +2409,23 @@ class DocTestCase(unittest.TestCase):
         if getattr(result, 'failfast', False):
             optionflags |= FAIL_FAST
 
+        # Report every example only if the test runner is asked for more than
+        # the test names it reports at verbosity 2.  Write them to its stream,
+        # so that they are not swallowed by result.buffer.
+        verbose = getattr(result, 'verbosity', 1) >= 3
+        stream = getattr(result, 'stream', None)
+        out = None
+        if verbose and stream is not None:
+            out = _make_output_function(stream)
+            if test.examples and not getattr(result, '_newline', True):
+                # End the line which startTest() left open.
+                out('\n')
+                result._newline = True
+
         runner = _DocTestCaseRunner(optionflags=optionflags,
-                               checker=self._dt_checker, verbose=False,
+                               checker=self._dt_checker, verbose=verbose,
                                test_case=self, test_result=result)
-        results = runner.run(test, clear_globs=False)
+        results = runner.run(test, out=out, clear_globs=False)
         if results.skipped == results.attempted:
             raise unittest.SkipTest("all examples were skipped")
 

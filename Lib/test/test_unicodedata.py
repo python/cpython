@@ -321,7 +321,7 @@ class BaseUnicodeFunctionsTest:
         self.assertRaises(TypeError, self.db.category, 'xx')
 
     def test_bidirectional(self):
-        self.assertEqual(self.db.bidirectional('\uFFFE'), 'BN')
+        self.assertEqual(self.db.bidirectional('\uFFFE'), '' if self.old else 'BN')
         self.assertEqual(self.db.bidirectional(' '), 'WS')
         self.assertEqual(self.db.bidirectional('A'), 'L')
         self.assertEqual(self.db.bidirectional('\U00020000'), 'L')
@@ -350,15 +350,13 @@ class BaseUnicodeFunctionsTest:
         self.assertRaises(TypeError, self.db.bidirectional, 'xx')
 
     def test_bidirectional_unassigned(self):
-        if self.old:
-            return
-        self.assertEqual(self.db.bidirectional('\u0378'), 'L')
-        self.assertEqual(self.db.bidirectional('\u077F'), 'AL')
-        self.assertEqual(self.db.bidirectional('\u20CF'), 'ET')
-        self.assertEqual(self.db.bidirectional('\u0590'), 'R')
-        self.assertEqual(self.db.bidirectional('\uFFFF'), 'BN')
-        self.assertEqual(self.db.bidirectional('\U0001FFFE'), 'BN')
-        self.assertEqual(self.db.bidirectional('\U00010D01'), 'AL')
+        self.assertEqual(self.db.bidirectional('\u0378'), '' if self.old else 'L')
+        self.assertEqual(self.db.bidirectional('\u077F'), '' if self.old else 'AL')
+        self.assertEqual(self.db.bidirectional('\u20CF'), '' if self.old else 'ET')
+        self.assertEqual(self.db.bidirectional('\u0590'), '' if self.old else 'R')
+        self.assertEqual(self.db.bidirectional('\uFFFF'), '' if self.old else 'BN')
+        self.assertEqual(self.db.bidirectional('\U0001FFFE'), '' if self.old else 'BN')
+        self.assertEqual(self.db.bidirectional('\U00010D01'), '' if self.old else 'AL')
 
     def test_decomposition(self):
         self.assertEqual(self.db.decomposition('\uFFFE'),'')
@@ -615,6 +613,34 @@ class BaseUnicodeFunctionsTest:
         a = 'C\u0338' * 20  + 'C\u0327'
         b = 'C\u0338' * 20  + '\xC7'
         self.assertEqual(self.db.normalize('NFC', a), b)
+
+    def test_long_combining_mark_run(self):
+        # gh-149079: avoid quadratic canonical ordering.
+        payload = "a" + ("\u0300\u0327" * 32)
+        nfd = "a" + ("\u0327" * 32) + ("\u0300" * 32)
+        nfc = "\u00e0" + ("\u0327" * 32) + ("\u0300" * 31)
+
+        self.assertEqual(self.db.normalize("NFD", payload), nfd)
+        self.assertEqual(self.db.normalize("NFKD", payload), nfd)
+        self.assertEqual(self.db.normalize("NFC", payload), nfc)
+        self.assertEqual(self.db.normalize("NFKC", payload), nfc)
+
+    def test_combining_mark_run_fast_paths(self):
+        # gh-149079: cover short runs and already-sorted long runs.
+        short_payload = "a" + ("\u0300\u0327" * 9) + "\u0300"
+        short_nfd = "a" + ("\u0327" * 9) + ("\u0300" * 10)
+        short_nfc = "\u00e0" + ("\u0327" * 9) + ("\u0300" * 9)
+        long_sorted = "a" + ("\u0327" * 30) + ("\u0300" * 30)
+        long_sorted_nfc = "\u00e0" + ("\u0327" * 30) + ("\u0300" * 29)
+
+        self.assertEqual(self.db.normalize("NFD", short_payload), short_nfd)
+        self.assertEqual(self.db.normalize("NFKD", short_payload), short_nfd)
+        self.assertEqual(self.db.normalize("NFC", short_payload), short_nfc)
+        self.assertEqual(self.db.normalize("NFKC", short_payload), short_nfc)
+        self.assertEqual(self.db.normalize("NFD", long_sorted), long_sorted)
+        self.assertEqual(self.db.normalize("NFKD", long_sorted), long_sorted)
+        self.assertEqual(self.db.normalize("NFC", long_sorted), long_sorted_nfc)
+        self.assertEqual(self.db.normalize("NFKC", long_sorted), long_sorted_nfc)
 
     def test_issue29456(self):
         # Fix #29456
@@ -1076,9 +1102,9 @@ class UnicodeFunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
 class Unicode_3_2_0_FunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
     db = unicodedata.ucd_3_2_0
     old = True
-    expectedchecksum = ('cb5bbbd1f55b67371e18222b90a8e21c87f16b72'
+    expectedchecksum = ('883824cb6c0ccf994e4451ebf281e2d6d479af47'
                         if quicktest else
-                        '74936dffe949d99203a47e6a66565b2fc337bae7')
+                        '68cd01e2c680b851c1fcab012efb5635b2229c2b')
 
 
 class UnicodeMiscTest(unittest.TestCase):

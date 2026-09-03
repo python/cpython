@@ -34,10 +34,6 @@ jit             Tooling for building the JIT.
 
 lockbench       Benchmarks for PyMutex and critical sections.
 
-msi             Support for packaging Python as an MSI package on Windows.
-
-nuget           Files for the NuGet package manager for .NET.
-
 patchcheck      Tools for checking and applying patches to the Python source code
                 and verifying the integrity of patch files.
 

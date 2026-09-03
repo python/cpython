@@ -49,7 +49,9 @@ _Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int margin_count)
 #endif
 }
 
-#if defined(__s390x__)
+#if defined(_Py_LINKER_THREAD_STACK_SIZE)
+#  define Py_C_STACK_SIZE _Py_LINKER_THREAD_STACK_SIZE
+#elif defined(__s390x__)
 #  define Py_C_STACK_SIZE 320000
 #elif defined(_WIN32)
    // Don't define Py_C_STACK_SIZE, ask the O/S
@@ -997,6 +999,14 @@ _Py_assert_within_stack_bounds(
         abort();
     }
 }
+#ifdef _Py_JIT
+void
+_Py_jit_assert_within_stack_bounds(
+    _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int lineno
+) {
+    _Py_assert_within_stack_bounds(frame, stack_pointer, "executor_cases.c.h", lineno);
+}
+#endif
 #endif
 
 int _Py_CheckRecursiveCallPy(
@@ -1046,6 +1056,7 @@ _PyObjectArray_FromStackRefArray(_PyStackRef *input, Py_ssize_t nargs, PyObject 
         // +1 in case PY_VECTORCALL_ARGUMENTS_OFFSET is set.
         result = PyMem_Malloc((nargs + 1) * sizeof(PyObject *));
         if (result == NULL) {
+            PyErr_NoMemory();
             return NULL;
         }
     }
@@ -1135,6 +1146,36 @@ _PyEval_GetIter(_PyStackRef iterable, _PyStackRef *index_or_null, int yield_from
         return PyStackRef_ERROR;
     }
     return PyStackRef_FromPyObjectSteal(iter_o);
+}
+
+int _PyEval_StoreName(PyThreadState *tstate, _PyStackRef v, PyObject *name, PyObject* ns)
+{
+    int deletion = PyStackRef_IsNull(v);
+
+    if (ns == NULL) {
+        const char *msg = deletion
+            ? "no locals found when deleting %R"
+            : "no locals found when storing %R";
+        _PyErr_Format(tstate, PyExc_SystemError, msg, name);
+        return 1;
+    }
+
+    if (deletion) {
+        int error = PyObject_DelItem(ns, name);
+        if (error) {
+            _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                                    NAME_ERROR_MSG,
+                                    name);
+        }
+        return error;
+    }
+
+    PyObject *v_o = PyStackRef_AsPyObjectBorrow(v);
+    if (PyDict_CheckExact(ns)) {
+        return PyDict_SetItem(ns, name, v_o);
+    }
+
+    return PyObject_SetItem(ns, name, v_o);
 }
 
 #if (defined(__GNUC__) && __GNUC__ >= 10 && !defined(__clang__)) && defined(__x86_64__)
@@ -1240,6 +1281,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry.frame.return_offset = 0;
 #ifdef Py_DEBUG
     entry.frame.lltrace = 0;
+    entry.frame.stackpointer_valid = 1;
 #endif
     /* Push frame */
     entry.frame.previous = tstate->current_frame;
@@ -1248,6 +1290,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry.frame.localsplus[0] = PyStackRef_NULL;
 #ifdef _Py_TIER2
     if (tstate->current_executor != NULL) {
+        assert(Py_TYPE(tstate->current_executor) == &_PyUOpExecutor_Type);
         entry.frame.localsplus[0] = PyStackRef_FromPyObjectNew(tstate->current_executor);
         tstate->current_executor = NULL;
     }
@@ -1276,6 +1319,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         next_instr = frame->instr_ptr;
         monitor_throw(tstate, frame, next_instr);
         stack_pointer = _PyFrame_GetStackPointer(frame);
+        _PyFrame_StackPointerInvalidate(frame);
 #if _Py_TAIL_CALL_INTERP
 #   if Py_STATS
         return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, instruction_funcptr_handler_table, 0, lastopcode);
@@ -1952,9 +1996,11 @@ clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     assert(tstate->exc_info == &gen->gi_exc_state);
     tstate->exc_info = gen->gi_exc_state.previous_item;
     gen->gi_exc_state.previous_item = NULL;
-    assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
     frame->previous = NULL;
+    Py_BEGIN_CRITICAL_SECTION(gen);
+    assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
     _PyFrame_ClearExceptCode(frame);
+    Py_END_CRITICAL_SECTION();
     _PyErr_ClearExcState(&gen->gi_exc_state);
     // gh-143939: There must not be any escaping calls between setting
     // the generator return kind and returning from _PyEval_EvalFrame.
@@ -1964,15 +2010,8 @@ clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
 void
 _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
 {
-    // Update last_profiled_frame for remote profiler frame caching.
     // By this point, tstate->current_frame is already set to the parent frame.
-    // Only update if we're popping the exact frame that was last profiled.
-    // This avoids corrupting the cache when transient frames (called and returned
-    // between profiler samples) update last_profiled_frame to addresses the
-    // profiler never saw.
-    if (tstate->last_profiled_frame != NULL && tstate->last_profiled_frame == frame) {
-        tstate->last_profiled_frame = tstate->current_frame;
-    }
+    _PyThreadState_UpdateLastProfiledFrame(tstate, frame, tstate->current_frame);
 
     if (frame->owner == FRAME_OWNED_BY_THREAD) {
         clear_thread_frame(tstate, frame);
@@ -1998,6 +2037,7 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, _PyStackRef func,
     _PyFrame_Initialize(tstate, frame, func, locals, code, 0, previous);
     if (initialize_locals(tstate, func_obj, frame->localsplus, args, argcount, kwnames)) {
         assert(frame->owner == FRAME_OWNED_BY_THREAD);
+        _PyThreadState_UpdateLastProfiledFrame(tstate, frame, tstate->current_frame);
         clear_thread_frame(tstate, frame);
         return NULL;
     }

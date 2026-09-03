@@ -4,6 +4,8 @@
 #include "parts.h"
 #include "util.h"
 
+#include <stddef.h>               // offsetof()
+
 #include "pycore_bytesobject.h"   // _PyBytesWriter_CreateByteArray()
 
 
@@ -150,8 +152,8 @@ writer_write_bytes(PyObject *self_raw, PyObject *args)
     }
 
     char *bytes;
-    Py_ssize_t size;
-    if (!PyArg_ParseTuple(args, "yn", &bytes, &size)) {
+    Py_ssize_t unused_size, size;
+    if (!PyArg_ParseTuple(args, "y#n", &bytes, &unused_size, &size)) {
         return NULL;
     }
 
@@ -376,6 +378,13 @@ _PyTestCapi_Init_Bytes(PyObject *m)
         return -1;
     }
     Py_DECREF(writer_type);
+
+    // PyBytesWriter.obj is the second member, small_buffer is the first member
+    long size = (long)offsetof(PyBytesWriter, obj);
+    if (PyModule_AddIntConstant(m, "PyBytesWriter_small_buffer", size) < 0) {
+        Py_DECREF(writer_type);
+        return -1;
+    }
 
     return 0;
 }

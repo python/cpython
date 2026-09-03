@@ -527,8 +527,8 @@ sys_addaudithook_impl(PyObject *module, PyObject *hook)
 
     /* Invoke existing audit hooks to allow them an opportunity to abort. */
     if (_PySys_Audit(tstate, "sys.addaudithook", NULL) < 0) {
-        if (_PyErr_ExceptionMatches(tstate, PyExc_Exception)) {
-            /* We do not report errors derived from Exception */
+        if (_PyErr_ExceptionMatches(tstate, PyExc_RuntimeError)) {
+            /* We do not report errors derived from RuntimeError */
             _PyErr_Clear(tstate);
             Py_RETURN_NONE;
         }
@@ -1633,6 +1633,7 @@ static PyStructSequence_Field windows_version_fields[] = {
     {"suite_mask", "Bit mask identifying available product suites"},
     {"product_type", "System product type"},
     {"platform_version", "Diagnostic version number"},
+    {"device_family", "'Desktop', 'Xbox' or 'UWP'"},
     {0}
 };
 
@@ -1645,13 +1646,10 @@ static PyStructSequence_Desc windows_version_desc = {
                                       via indexing, the rest are name only */
 };
 
+#ifdef MS_WINDOWS_DESKTOP
 static PyObject *
 _sys_getwindowsversion_from_kernel32(void)
 {
-#ifndef MS_WINDOWS_DESKTOP
-    PyErr_SetString(PyExc_OSError, "cannot read version info on this platform");
-    return NULL;
-#else
     HANDLE hKernel32;
     wchar_t kernel32_path[MAX_PATH];
     LPVOID verblock;
@@ -1688,8 +1686,8 @@ _sys_getwindowsversion_from_kernel32(void)
     realBuild = HIWORD(ffi->dwProductVersionLS);
     PyMem_RawFree(verblock);
     return Py_BuildValue("(kkk)", realMajor, realMinor, realBuild);
-#endif /* !MS_WINDOWS_DESKTOP */
 }
+#endif /* MS_WINDOWS_DESKTOP */
 
 /* Disable deprecation warnings about GetVersionEx as the result is
    being passed straight through to the caller, who is responsible for
@@ -1719,7 +1717,6 @@ sys_getwindowsversion_impl(PyObject *module)
 {
     PyObject *version;
     int pos = 0;
-    OSVERSIONINFOEXW ver;
 
     if (PyObject_GetOptionalAttrString(module, "_cached_windows_version", &version) < 0) {
         return NULL;
@@ -1729,6 +1726,8 @@ sys_getwindowsversion_impl(PyObject *module)
     }
     Py_XDECREF(version);
 
+    OSVERSIONINFOEXW ver;
+    ZeroMemory(&ver, sizeof(ver));
     ver.dwOSVersionInfoSize = sizeof(ver);
     if (!GetVersionExW((OSVERSIONINFOW*) &ver))
         return PyErr_SetFromWindowsErr(0);
@@ -1756,6 +1755,7 @@ sys_getwindowsversion_impl(PyObject *module)
     SET_VERSION_INFO(PyLong_FromLong(ver.wSuiteMask));
     SET_VERSION_INFO(PyLong_FromLong(ver.wProductType));
 
+#if defined(MS_WINDOWS_DESKTOP)
     // GetVersion will lie if we are running in a compatibility mode.
     // We need to read the version info from a system file resource
     // to accurately identify the OS version. If we fail for any reason,
@@ -1775,6 +1775,14 @@ sys_getwindowsversion_impl(PyObject *module)
     }
 
     SET_VERSION_INFO(realVersion);
+    SET_VERSION_INFO(PyUnicode_FromString("Desktop"));
+#elif defined(MS_WINDOWS_GAMES)
+    SET_VERSION_INFO(Py_BuildValue("(kkk)", ver.dwMajorVersion, ver.dwMinorVersion, ver.dwBuildNumber));
+    SET_VERSION_INFO(PyUnicode_FromString("Xbox"));
+#else
+    SET_VERSION_INFO(Py_BuildValue("(kkk)", ver.dwMajorVersion, ver.dwMinorVersion, ver.dwBuildNumber));
+    SET_VERSION_INFO(PyUnicode_FromString("UWP"));
+#endif
 
 #undef SET_VERSION_INFO
 
@@ -1874,7 +1882,8 @@ sys_get_int_max_str_digits_impl(PyObject *module)
 /*[clinic end generated code: output=0042f5e8ae0e8631 input=77fb74e987ba7ecb]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return PyLong_FromLong(interp->long_state.max_str_digits);
+    int maxdigits = _Py_atomic_load_int(&interp->long_state.max_str_digits);
+    return PyLong_FromLong(maxdigits);
 }
 
 
@@ -3490,14 +3499,39 @@ sys_set_flag(PyObject *flags, Py_ssize_t pos, PyObject *value)
 int
 _PySys_SetFlagObj(Py_ssize_t pos, PyObject *value)
 {
-    PyObject *flags = PySys_GetAttrString("flags");
-    if (flags == NULL) {
-        return -1;
+    PyObject *new_flags = NULL;
+    PyObject *flags_str = &_Py_ID(flags);  // immortal ref
+
+    PyObject *old_flags = PySys_GetAttr(flags_str);
+    if (old_flags == NULL) {
+        goto error;
     }
 
-    sys_set_flag(flags, pos, value);
-    Py_DECREF(flags);
-    return 0;
+    new_flags = PyStructSequence_New(&FlagsType);
+    if (new_flags == NULL) {
+        goto error;
+    }
+
+    for (Py_ssize_t i = 0; i < (Py_ssize_t)(Py_ARRAY_LENGTH(flags_fields) - 1); i++) {
+        if (i != pos) {
+            PyObject *old_value;
+            old_value = PyStructSequence_GET_ITEM(old_flags, i);  // borrowed ref
+            sys_set_flag(new_flags, i, old_value);
+        }
+        else {
+            sys_set_flag(new_flags, pos, value);
+        }
+    }
+
+    int res = _PySys_SetAttr(flags_str, new_flags);
+    Py_DECREF(old_flags);
+    Py_DECREF(new_flags);
+    return res;
+
+error:
+    Py_XDECREF(old_flags);
+    Py_XDECREF(new_flags);
+    return -1;
 }
 
 
@@ -3521,8 +3555,6 @@ set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
     const PyPreConfig *preconfig = &interp->runtime->preconfig;
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
 
-    // _PySys_UpdateConfig() modifies sys.flags in-place:
-    // Py_XDECREF() is needed in this case.
     Py_ssize_t pos = 0;
 #define SetFlagObj(expr) \
     do { \
@@ -3836,6 +3868,8 @@ static PyStructSequence_Desc emscripten_info_desc = {
     4
 };
 
+EM_JS_DEPS(_Py_emscripten_runtime, "$stringToNewUTF8")
+
 EM_JS(char *, _Py_emscripten_runtime, (void), {
     var info;
     if (typeof process === "object") {
@@ -4033,7 +4067,7 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     /* implementation */
     SET_SYS("implementation", make_impl_info(version_info));
 
-    // sys.flags: updated in-place later by _PySys_UpdateConfig()
+    // sys.flags: updated later by _PySys_UpdateConfig()
     ENSURE_INFO_TYPE(FlagsType, flags_desc);
     SET_SYS("flags", make_flags(tstate->interp));
 
@@ -4153,16 +4187,21 @@ _PySys_UpdateConfig(PyThreadState *tstate)
 #undef COPY_LIST
 #undef COPY_WSTR
 
-    // sys.flags
-    PyObject *flags = PySys_GetAttrString("flags");
-    if (flags == NULL) {
+    // replace sys.flags
+    PyObject *new_flags = PyStructSequence_New(&FlagsType);
+    if (new_flags == NULL) {
         return -1;
     }
-    if (set_flags_from_config(interp, flags) < 0) {
-        Py_DECREF(flags);
+    if (set_flags_from_config(interp, new_flags) < 0) {
+        Py_DECREF(new_flags);
         return -1;
     }
-    Py_DECREF(flags);
+
+    res = _PySys_SetAttr(&_Py_ID(flags), new_flags);
+    Py_DECREF(new_flags);
+    if (res < 0) {
+        return -1;
+    }
 
     SET_SYS("dont_write_bytecode", PyBool_FromLong(!config->write_bytecode));
 
@@ -4612,8 +4651,8 @@ PySys_WriteStderr(const char *format, ...)
     va_end(va);
 }
 
-static void
-sys_format(PyObject *key, FILE *fp, const char *format, va_list va)
+void
+_PySys_FormatV(PyObject *key, FILE *fp, const char *format, va_list va)
 {
     PyObject *file, *message;
     const char *utf8;
@@ -4635,13 +4674,14 @@ sys_format(PyObject *key, FILE *fp, const char *format, va_list va)
     _PyErr_SetRaisedException(tstate, exc);
 }
 
+
 void
 PySys_FormatStdout(const char *format, ...)
 {
     va_list va;
 
     va_start(va, format);
-    sys_format(&_Py_ID(stdout), stdout, format, va);
+    _PySys_FormatV(&_Py_ID(stdout), stdout, format, va);
     va_end(va);
 }
 
@@ -4651,7 +4691,7 @@ PySys_FormatStderr(const char *format, ...)
     va_list va;
 
     va_start(va, format);
-    sys_format(&_Py_ID(stderr), stderr, format, va);
+    _PySys_FormatV(&_Py_ID(stderr), stderr, format, va);
     va_end(va);
 }
 
@@ -4675,7 +4715,7 @@ _PySys_SetIntMaxStrDigits(int maxdigits)
     // Set PyInterpreterState.long_state.max_str_digits
     // and PyInterpreterState.config.int_max_str_digits.
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    interp->long_state.max_str_digits = maxdigits;
-    interp->config.int_max_str_digits = maxdigits;
+    _Py_atomic_store_int(&interp->long_state.max_str_digits, maxdigits);
+    _Py_atomic_store_int(&interp->config.int_max_str_digits, maxdigits);
     return 0;
 }
