@@ -5,14 +5,6 @@
  * standard Python regression test, via Lib/test/test_capi/test_misc.py.
  */
 
-
-#ifdef Py_GIL_DISABLED
-   // Cannot test the limited C API
-#else
-    // Need limited C API version 3.13 for PyModuleDef_Init
-    #define Py_LIMITED_API 0x03050000
-#endif
-
 #include "_testlimitedcapi/parts.h"
 
 static int
