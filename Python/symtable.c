@@ -545,26 +545,22 @@ _PySymtable_LookupOptional(struct symtable *st, void *key,
 long
 _PyST_GetSymbol(PySTEntryObject *ste, PyObject *name)
 {
-    while (ste != NULL) {
-        PyObject *v;
-        if (PyDict_GetItemRef(ste->ste_symbols, name, &v) < 0) {
-            return -1;
-        }
-        if (v != NULL) {
-            long symbol = PyLong_AsLong(v);
-            Py_DECREF(v);
-            if (symbol < 0) {
-                if (!PyErr_Occurred()) {
-                    PyErr_SetString(PyExc_SystemError, "invalid symbol");
-                }
-                return -1;
-            }
-            return symbol;
-        }
-        assert(ste->ste_parent == NULL || ste->ste_type == InlinedComprehensionBlock);
-        ste = ste->ste_parent;
+    PyObject *v;
+    if (PyDict_GetItemRef(ste->ste_symbols, name, &v) < 0) {
+        return -1;
     }
-    return 0;
+    if (v == NULL) {
+        return 0;
+    }
+    long symbol = PyLong_AsLong(v);
+    Py_DECREF(v);
+    if (symbol < 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_SystemError, "invalid symbol");
+        }
+        return -1;
+    }
+    return symbol;
 }
 
 int
