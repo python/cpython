@@ -921,7 +921,7 @@ def _serialize_xml(write, elem, qnames, namespaces, *,
                             k = ":" + k
                             if validate:
                                 if not is_valid_name(k):
-                                    raise ValueError(f'invalid namespace name {k[1:]!r}')
+                                    raise ValueError(f'invalid namespace prefix {k[1:]!r}')
                         write(" xmlns%s=\"%s\"" % (
                             k,
                             _escape_attrib(v, validate)
@@ -1002,7 +1002,7 @@ def _serialize_html(write, elem, qnames, namespaces, *, validate=True, **kwargs)
                             k = ":" + k
                         if validate:
                             if not re.fullmatch('[^\0\t\n\r\f />=\ud800-\udfff]++', k):
-                                raise ValueError(f'invalid namespace name {k[1:]!r}')
+                                raise ValueError(f'invalid namespace prefix {k[1:]!r}')
                         if validate:
                             if not _is_valid_html_text(v):
                                 raise ValueError('invalid characters')
