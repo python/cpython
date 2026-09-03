@@ -16745,12 +16745,14 @@ else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
+#include <math.h>
 int main(void)
 {
     _Float16 val = 1.0f16;
+    int test = isinf(val) || isnan(val); /* basic support from libm */
     double d = 3.14;
     val = d;
-    return 0;
+    return test;
 }
 
 _ACEOF
