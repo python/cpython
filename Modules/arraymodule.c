@@ -643,9 +643,9 @@ d_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 static PyObject *
 ce_getitem(arrayobject *ap, Py_ssize_t i)
 {
-    double real = PyFloat_Unpack2(ap->ob_item + 2*sizeof(short)*i,
+    double real = PyFloat_Unpack2(ap->ob_item + sizeof(short)*2*i,
                                   PY_LITTLE_ENDIAN);
-    double imag = PyFloat_Unpack2(ap->ob_item + 2*sizeof(short)*i + sizeof(short),
+    double imag = PyFloat_Unpack2(ap->ob_item + sizeof(short)*(2*i + 1),
                                   PY_LITTLE_ENDIAN);
 
     return PyComplex_FromDoubles(real, imag);
@@ -664,13 +664,17 @@ ce_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     CHECK_ARRAY_BOUNDS(ap, i);
 
     if (i >= 0) {
-        ret = PyFloat_Pack2(x.real, ap->ob_item + 2*sizeof(short)*i,
-                            PY_LITTLE_ENDIAN);
+        char val[4];
+
+        ret = PyFloat_Pack2(x.real, val, PY_LITTLE_ENDIAN);
         if (ret) {
             return ret;
         }
-        return PyFloat_Pack2(x.imag, ap->ob_item + 2*sizeof(short)*i + sizeof(short),
-                             PY_LITTLE_ENDIAN);
+        ret = PyFloat_Pack2(x.imag, val + 2, PY_LITTLE_ENDIAN);
+        if (!ret) {
+            memcpy(ap->ob_item + sizeof(short)*2*i, val, 2*sizeof(short));
+        }
+        return ret;
     }
     return 0;
 }
