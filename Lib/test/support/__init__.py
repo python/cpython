@@ -339,7 +339,8 @@ def get_resource_value(resource):
 
 # Resources which are machine-wide: two tests using one of them at the same
 # time interfere with each other.
-EXCLUSIVE_RESOURCES = frozenset({'audio', 'console', 'curses', 'gui'})
+EXCLUSIVE_RESOURCES = frozenset({'audio', 'bigmem', 'console', 'curses',
+                                 'gui'})
 
 # The environment variable naming the directory in which the test runner keeps
 # the lock files.  It is set only when tests are run in parallel.
@@ -359,7 +360,7 @@ def _lock_file(fd):
             try:
                 msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
             except OSError:
-                # LK_LOCK gives up after ten seconds, so retry ourselves.
+                # It returns at once if the file is locked, so wait ourselves.
                 time.sleep(0.1)
             else:
                 return
@@ -377,16 +378,22 @@ def _open_exclusive_lock(resource):
     if not directory:
         # The tests are not run in parallel, so there is nothing to exclude.
         return None
+    # The file is left behind: another process may be waiting on a lock on it,
+    # and it is empty anyway.
+    path = os.path.join(directory, f'python-test-exclusive-{resource}.lock')
     try:
-        fd = os.open(os.path.join(directory, f'exclusive-{resource}.lock'),
-                     os.O_WRONLY | os.O_CREAT, 0o600)
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT, 0o600)
     except OSError:
         return None
     try:
         _lock_file(fd)
-    except OSError:
+    except (ImportError, OSError):
+        # Locking is not available here, so the tests are not serialized.
         os.close(fd)
         return None
+    except BaseException:
+        os.close(fd)
+        raise
     return fd
 
 
@@ -1454,7 +1461,7 @@ def bigmemtest(size, memuse, dry_run=True):
                 cls = type(self)
                 qualname = f'{cls.__qualname__}.{f.__name__}'
                 # A real run allocates most of the memory of the machine.
-                with _exclusive_resource('memory'):
+                with _exclusive_resource('bigmem'):
                     proc = isolation._start_test(cls.__module__, qualname)
                     watchdog = _memory_watchdog(proc.pid) if verbose else None
                     payload, output, returncode = proc.wait(tick=watchdog)
