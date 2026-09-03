@@ -36,6 +36,11 @@ ROLE_TO_OBJECT_TYPE = {
     "data": "var",
 }
 
+# Class that suppresses the generated Stable ABI notes for all C API
+# elements documented inside the element it is set on (see
+# ``_stable_abi_note_suppressed``).
+NO_STABLE_ABI_NOTES_CLASS = "no-stable-abi-notes"
+
 
 @dataclasses.dataclass(slots=True)
 class RefCountEntry:
@@ -183,8 +188,9 @@ def add_annotations(app: Sphinx, doctree: nodes.document) -> None:
                     f"{ROLE_TO_OBJECT_TYPE[record.role]!r} != {objtype!r}"
                 )
                 raise ValueError(msg)
-            annotation = _stable_abi_annotation(record)
-            node.insert(0, annotation)
+            if not _stable_abi_note_suppressed(node):
+                annotation = _stable_abi_annotation(record)
+                node.insert(0, annotation)
 
         # Unstable API annotation.
         if name.startswith("PyUnstable"):
@@ -201,6 +207,26 @@ def add_annotations(app: Sphinx, doctree: nodes.document) -> None:
             continue
         annotation = _return_value_annotation(entry.result_refs)
         node.insert(0, annotation)
+
+
+def _stable_abi_note_suppressed(node: nodes.Element) -> bool:
+    """Return whether an ancestor of *node* opts out of Stable ABI notes.
+
+    In compact tables of many similar definitions, the generated notes
+    get repetitive and take up too much vertical space.
+    Such a table can instead carry a single manually written note, and
+    suppress the generated ones by setting the ``no-stable-abi-notes``
+    class, for example::
+
+       .. list-table::
+          :class: no-stable-abi-notes
+    """
+    ancestor = node.parent
+    while ancestor is not None:
+        if NO_STABLE_ABI_NOTES_CLASS in ancestor.get("classes", ()):
+            return True
+        ancestor = ancestor.parent
+    return False
 
 
 def _stable_abi_annotation(
