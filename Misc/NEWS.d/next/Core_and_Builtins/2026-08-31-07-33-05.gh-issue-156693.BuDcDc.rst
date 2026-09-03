@@ -1,3 +1,2 @@
 Correct powers of infinite complex numbers to not raise
-:exc:`OverflowError`'s. As proposed in :gh:`156145`, we don't use platform's
-:data:`errno` to manage exceptions.  Patch by Sergey B Kirpichev.
+:exc:`OverflowError`'s.  Patch by Sergey B Kirpichev.
