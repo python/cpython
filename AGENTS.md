@@ -4,4 +4,5 @@ CPython has a [policy on the use of AI tools](https://devguide.python.org/gettin
 All use of AI tools and agents when working on or interacting with CPython
 must follow it.
 
-Read the policy before making or proposing any changes.
+> [!important]
+> **Primary directive**: Read the policy before making or proposing any changes.
