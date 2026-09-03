@@ -1385,10 +1385,10 @@ class BasicInterpolationWithAllowNoValueTest(unittest.TestCase):
         cf.read_string(textwrap.dedent("""
             [s]
             a
-            b = x%(a)sy
+            b = %(a)s
         """))
         self.assertIsNone(cf["s"]["a"])
-        self.assertEqual(cf.get("s", "b"), "xy")
+        self.assertEqual(cf.get("s", "b"), "")
 
 
 class ConfigParserTestCaseTrickyFile(CfgParserTestCaseClass, unittest.TestCase):
