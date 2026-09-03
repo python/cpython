@@ -189,12 +189,12 @@ def add_annotations(app: Sphinx, doctree: nodes.document) -> None:
             ancestor = node
             while ancestor:
                 if 'omit-stable-abi-note' not in ancestor.get(
-                    'c_annotations', [],
+                    'c_annotations',
+                    [],
                 ):
                     break
                 ancestor = node.parent
             else:
-
                 # no skip; add the annotation
                 annotation = _stable_abi_annotation(record)
                 node.insert(0, annotation)
@@ -466,6 +466,7 @@ class StableABINote(SphinxDirective):
     This directive allows adding a similarly styled note manually.
     Pair with omit-stable-abi-notes to override the automatic generation.
     """
+
     has_content = True
 
     def run(self) -> list[nodes.Node]:
@@ -483,6 +484,7 @@ class OmitStableABINotes(SphinxDirective):
     Normally used for dense lists/tables of definitions, where individual notes
     are omitted and the whole block has a common manual note.
     """
+
     has_content = True
 
     def run(self) -> list[nodes.Node]:
