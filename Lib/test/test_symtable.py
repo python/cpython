@@ -544,6 +544,37 @@ class SymtableTest(unittest.TestCase):
         self.check_nested_inlined_listcomp(
             children[0], ["x"], ["y"], nested=False)
 
+    def test_inlined_comprehension_use_of_enclosing_free_in_function(self):
+        st = symtable.symtable(
+            "def outer(x):\n"
+            "    def inner():\n"
+            "        return [x for y in ()]",
+            "?", "exec")
+        inner = find_block(find_block(st, "outer"), "inner")
+        self.assertTrue(inner.lookup("x").is_free())
+        comp, = inner.get_children()
+        self.assertTrue(comp.lookup("x").is_free())
+        self.assertTrue(comp.lookup("x").is_referenced())
+
+    def test_inlined_comprehension_use_of_enclosing_free_in_class(self):
+        st = symtable.symtable(
+            "def f():\n"
+            "    y = 1\n"
+            "    class C:\n"
+            "        y = 2\n"
+            "        vals = [(x, y) for x in range(2)]",
+            "?", "exec")
+        f = find_block(st, "f")
+        self.assertTrue(f.lookup("y").is_cell())
+        C = find_block(f, "C")
+        self.assertTrue(C.lookup("y").is_local())
+        self.assertFalse(C.lookup("y").is_free())
+        self.assertTrue(C.lookup("y").is_free_class())
+        comp, = C.get_children()
+        self.assertTrue(comp.lookup("y").is_free())
+        self.assertTrue(comp.lookup("y").is_referenced())
+        self.assertTrue(comp.lookup("x").is_local())
+
     def test_inlined_nested_comprehension_class_iter_var(self):
         st = symtable.symtable(
             "class C:\n"
@@ -554,14 +585,14 @@ class SymtableTest(unittest.TestCase):
         children = C.get_children()
         self.assertEqual(len(children), 1)
         inner = self.check_nested_inlined_listcomp(
-            children[0], ["x"], ["_"], nested=False)
+            children[0], ["x"], ["_", "x"], nested=False)
         self.assertFalse(C.lookup("x").is_free())
         self.assertTrue(C.lookup("x").is_local())
         self.assertFalse(children[0].lookup("x").is_free())
         self.assertTrue(children[0].lookup("x").is_cell())
         self.assertFalse(inner.lookup("_").is_free())
-        with self.assertRaises(KeyError):
-            inner.lookup("x")
+        self.assertTrue(inner.lookup("x").is_free())
+        self.assertTrue(inner.lookup("x").is_referenced())
 
     def test_inlined_sibling_nested_comprehensions(self):
         st = symtable.symtable(

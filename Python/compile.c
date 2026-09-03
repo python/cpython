@@ -910,6 +910,26 @@ finally:
     return co;
 }
 
+/* Inlined comprehensions are compiled in the enclosing unit. If a name is
+ * FREE in the comprehension, resolve it in enclosing tables until it is no
+ * longer FREE. Stop if the next table is a class: nested scopes (including
+ * inlined comprehensions) do not see class locals, so the name stays FREE. */
+static int
+compiler_resolve_inlined_free(PySTEntryObject **ste, int scope, PyObject *name)
+{
+    while (scope == FREE && (*ste)->ste_type == InlinedComprehensionBlock) {
+        PySTEntryObject *parent = (*ste)->ste_parent;
+        assert(parent != NULL);
+        if (parent->ste_type == ClassBlock) {
+            break;
+        }
+        *ste = parent;
+        scope = _PyST_GetScope(*ste, name);
+        RETURN_IF_ERROR(scope);
+    }
+    return scope;
+}
+
 int
 _PyCompile_GetRefType(compiler *c, PyObject *name)
 {
@@ -921,6 +941,9 @@ _PyCompile_GetRefType(compiler *c, PyObject *name)
     }
     PySTEntryObject *ste = c->u->u_ste;
     int scope = _PyST_GetScope(ste, name);
+    RETURN_IF_ERROR(scope);
+    scope = compiler_resolve_inlined_free(&ste, scope, name);
+    RETURN_IF_ERROR(scope);
     if (scope == 0) {
         PyErr_Format(PyExc_SystemError,
                      "_PyST_GetScope(name=%R) failed: "
@@ -1020,6 +1043,9 @@ _PyCompile_ResolveNameop(compiler *c, PyObject *mangled, int scope,
     assert(ste != NULL);
 
     assert(scope >= 0);
+    scope = compiler_resolve_inlined_free(&ste, scope, mangled);
+    RETURN_IF_ERROR(scope);
+
     switch (scope) {
     case FREE:
         dict = c->u->u_metadata.u_freevars;

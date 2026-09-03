@@ -813,33 +813,6 @@ is_free_in_any_child(PySTEntryObject *entry, PyObject *key)
     return 0;
 }
 
-/* True if name is FREE in the comprehension and bound in the enclosing class.
- * Those names are kept in the compressed delta so lookup does not treat them
- * as class locals. */
-static int
-class_binds_free_name(PySTEntryObject *ste, PyObject *name, long comp_flags)
-{
-    if (SYMBOL_TO_SCOPE(comp_flags) != FREE) {
-        return 0;
-    }
-    if (ste->ste_type != ClassBlock) {
-        return 0;
-    }
-    PyObject *v = PyDict_GetItemWithError(ste->ste_symbols, name);
-    if (v == NULL) {
-        return PyErr_Occurred() ? -1 : 0;
-    }
-    long class_flags = PyLong_AsLong(v);
-    if (class_flags == -1 && PyErr_Occurred()) {
-        return -1;
-    }
-    if (class_flags & (DEF_LOCAL | DEF_GLOBAL | DEF_FREE_CLASS | DEF_TYPE_PARAM))
-    {
-        return 1;
-    }
-    return 0;
-}
-
 static PyObject *
 get_freevar_names(PySTEntryObject *ste)
 {
@@ -865,6 +838,7 @@ get_freevar_names(PySTEntryObject *ste)
     return free;
 }
 
+
 static int
 finalize_inlined_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
                                 PyObject *comp_free, PyObject *outer_newfree,
@@ -872,15 +846,9 @@ finalize_inlined_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
 {
     PyObject *k, *v;
     Py_ssize_t pos = 0;
-    PyObject *to_remove = NULL;
 
     assert(comp->ste_type == InlinedComprehensionBlock);
     assert(comp->ste_parent != NULL);
-
-    to_remove = PyList_New(0);
-    if (to_remove == NULL) {
-        return 0;
-    }
 
     while (PyDict_Next(comp->ste_symbols, &pos, &k, &v)) {
         long comp_flags = PyLong_AsLong(v);
@@ -968,32 +936,7 @@ finalize_inlined_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
         else {
             assert(scope != FREE || PySet_Contains(comp_free, k) == 1);
         }
-
-        /* keep bindings, globals, and class-bound frees in the delta;
-        drop other names (typically FREE uses) so lookup climbs to parent. */
-        if ((comp_flags & DEF_LOCAL) && !(comp_flags & DEF_NONLOCAL)) {
-            continue;
-        }
-        if (scope == GLOBAL_IMPLICIT || scope == GLOBAL_EXPLICIT) {
-            continue;
-        }
-        int keep = class_binds_free_name(ste, k, comp_flags);
-        if (keep < 0) {
-            goto error;
-        }
-        if (!keep) {
-            if (PyList_Append(to_remove, k) < 0) {
-                goto error;
-            }
-        }
     }
-    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(to_remove); i++) {
-        PyObject *name = PyList_GET_ITEM(to_remove, i);
-        if (PyDict_DelItem(comp->ste_symbols, name) < 0) {
-            goto error;
-        }
-    }
-    Py_CLEAR(to_remove);
     /* Finalize nested inlined comprehensions against this comprehension,
      * not the original enclosing scope. */
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(comp->ste_children); i++) {
@@ -1014,7 +957,6 @@ finalize_inlined_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
     }
     return 1;
 error:
-    Py_XDECREF(to_remove);
     return 0;
 }
 
@@ -1287,7 +1229,6 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     inlined_cells = PySet_New(NULL);
     if (!inlined_cells)
         goto error;
-
     /* Class namespace has no effect on names visible in
        nested functions, so populate the global and bound
        sets to be passed to child blocks before analyzing
@@ -1382,7 +1323,8 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
             goto error;
         }
         if (entry->ste_type == InlinedComprehensionBlock && ste->ste_type != InlinedComprehensionBlock) {
-            if (!finalize_inlined_comprehension(ste, entry, child_free, newfree, inlined_cells)) {
+            if (!finalize_inlined_comprehension(ste, entry, child_free, newfree,
+                                                inlined_cells)) {
                 Py_DECREF(child_free);
                 goto error;
             }
@@ -1405,7 +1347,6 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     if (!update_symbols(ste->ste_symbols, scopes, bound, newfree, inlined_cells,
                         (ste->ste_type == ClassBlock) || ste->ste_can_see_class_scope))
         goto error;
-
     temp = PyNumber_InPlaceOr(free, newfree);
     if (!temp)
         goto error;
