@@ -631,14 +631,14 @@ _PyLong_##NAME##_Converter(PyObject *obj, void *ptr)                \
     return 1;                                                       \
 }
 
-#if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
+#if defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS)
 # ifdef MS_WINDOWS
     UNSIGNED_INT_CONVERTER(NetIfindex, NET_IFINDEX)
 # else
 #   define _PyLong_NetIfindex_Converter _PyLong_UnsignedInt_Converter
 #   define NET_IFINDEX unsigned int
 # endif
-#endif // defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
+#endif // defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS)
 
 /*[python input]
 class NET_IFINDEX_converter(CConverter):
@@ -7403,6 +7403,9 @@ _socket_if_nameindex_impl(PyObject *module)
 #endif
 }
 
+#endif // defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
+
+#if defined(HAVE_IF_NAMETOINDEX) || defined(MS_WINDOWS)
 
 /*[clinic input]
 _socket.if_nametoindex
@@ -7432,6 +7435,9 @@ _socket_if_nametoindex_impl(PyObject *module, PyObject *oname)
     return PyLong_FromUnsignedLong(index);
 }
 
+#endif // defined(HAVE_IF_NAMETOINDEX) || defined(MS_WINDOWS)
+
+#if defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS)
 
 /*[clinic input]
 @permit_long_summary
@@ -7456,7 +7462,7 @@ _socket_if_indextoname_impl(PyObject *module, NET_IFINDEX index)
     return PyUnicode_DecodeFSDefault(name);
 }
 
-#endif // defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
+#endif // defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS)
 
 
 #ifdef CMSG_LEN
