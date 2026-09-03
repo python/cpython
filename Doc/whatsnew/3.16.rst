@@ -75,6 +75,13 @@ New features
 Other language changes
 ======================
 
+* The :func:`iter` function now accepts the *stop_exception* parameter.
+  The created iterator stops when the callable raises the specified exception.
+  The second parameter is now named *stop_value* and can be passed by keyword.
+  :func:`aiter` now accepts the same *stop_value* and *stop_exception*
+  parameters, calling an asynchronous callable and awaiting the result.
+  (Contributed by Serhiy Storchaka in :gh:`64862`.)
+
 * :meth:`memoryview.cast` now allows casting a multidimensional
   F-contiguous view to a one-dimensional view.
   (Contributed by Jaemin Park in :gh:`91484`.)
@@ -120,6 +127,16 @@ codecs
   even when a built-in codec of the same name exists.
   (Contributed by Serhiy Storchaka in :gh:`152997`.)
 
+
+concurrent.futures
+------------------
+
+* The iterator returned by :meth:`concurrent.futures.Executor.map` is no longer
+  automatically closed if a function call raises an exception.
+  Use method :meth:`!close` to explicitly close the iterator.
+  (Contributed by xzmeng and Serhiy Storchaka in :gh:`108518`.)
+
+
 csv
 ---
 
@@ -139,6 +156,19 @@ csv
   by a majority vote among the line endings of the sample,
   instead of always returning ``'\r\n'``.
   (Contributed by Serhiy Storchaka in :gh:`75008`.)
+
+
+ctypes
+------
+
+* Add :func:`ctypes.util.struct` for generating :class:`~ctypes.Structure` types
+  from an annotation-based syntax, similar to how the :mod:`dataclasses` module
+  is used.
+  (Contributed by Peter Bierma in :gh:`104533`.)
+* Add :func:`ctypes.util.wrap_dll_function` for generating function pointers
+  through a function signature.
+  (Contributed by Peter Bierma in :gh:`153903`.)
+
 
 curses
 ------
@@ -216,6 +246,11 @@ curses
   counterpart of :func:`curses.termattrs`.
   (Contributed by Serhiy Storchaka in :gh:`152332`.)
 
+* Add the ``WACS_*`` constants to the :mod:`curses` module, the counterparts of
+  the :ref:`ACS_* <curses-acs-codes>` line-drawing codes as
+  :class:`curses.complexchar` cells.
+  (Contributed by Serhiy Storchaka in :gh:`155863`.)
+
 * Add the :mod:`curses` functions :func:`curses.alloc_pair`,
   :func:`curses.find_pair`, :func:`curses.free_pair` and
   :func:`curses.reset_color_pairs` for dynamic color-pair management,
@@ -269,27 +304,6 @@ curses
   (Contributed by Serhiy Storchaka in :gh:`133031`.)
 
 
-ctypes
-------
-
-* Add :func:`ctypes.util.struct` for generating :class:`~ctypes.Structure` types
-  from an annotation-based syntax, similar to how the :mod:`dataclasses` module
-  is used.
-  (Contributed by Peter Bierma in :gh:`104533`.)
-* Add :func:`ctypes.util.wrap_dll_function` for generating function pointers
-  through a function signature.
-  (Contributed by Peter Bierma in :gh:`153903`.)
-
-
-concurrent.futures
-------------------
-
-* The iterator returned by :meth:`concurrent.futures.Executor.map` is no longer
-  automatically closed if a function call raises an exception.
-  Use method :meth:`!close` to explicitly close the iterator.
-  (Contributed by xzmeng and Serhiy Storchaka in :gh:`108518`.)
-
-
 encodings
 ---------
 
@@ -304,12 +318,6 @@ gzip
 * :func:`gzip.open` now accepts an optional argument ``mtime``
   which is passed on to the constructor of the :class:`~gzip.GzipFile` class.
   (Contributed by Marin Misur in :gh:`91372`.)
-
-io
---
-
-* Add :meth:`io.BytesIO.peek` method to read without advancing position.
-  (Contributed by Marcel Martin in :gh:`90533`.)
 
 
 imaplib
@@ -363,12 +371,20 @@ imaplib
   (Contributed by Serhiy Storchaka in :gh:`153521`.)
 
 
+io
+--
+
+* Add :meth:`io.BytesIO.peek` method to read without advancing position.
+  (Contributed by Marcel Martin in :gh:`90533`.)
+
+
 ipaddress
 ---------
 
-Add :meth:`~ipaddress.IPv4Network.next_network` and
-:meth:`~ipaddress.IPv6Network.next_network` methods to find the next nearest
-network with a specific prefix size.
+* Add :meth:`~ipaddress.IPv4Network.next_network` and
+  :meth:`~ipaddress.IPv6Network.next_network` methods to find the next nearest
+  network with a specific prefix size.
+  (Contributed by Faisal Mahmood in :gh:`87027`.)
 
 
 logging
@@ -408,16 +424,15 @@ math
 multiprocessing
 ---------------
 
-* Add the optional ``buffersize`` parameter to
+* Add the optional *buffersize* parameter to
   :meth:`multiprocessing.pool.Pool.imap` and
   :meth:`multiprocessing.pool.Pool.imap_unordered` to limit the number of
   submitted tasks whose results have not yet been yielded. If the buffer is
-  full, iteration over the *iterables* pauses until a result is yielded from
+  full, iteration over the *iterable* pauses until a result is yielded from
   the buffer. To fully utilize pool's capacity when using this feature, set
   *buffersize* at least to the number of processes in pool (to consume
   *iterable* as you go), or even higher (to prefetch the next
   ``N=buffersize-processes`` arguments).
-
   (Contributed by Oleksandr Baltian in :gh:`136871`.)
 
 
@@ -466,6 +481,7 @@ shlex
   a string, even if it is already safe for a shell without being quoted.
   (Contributed by Jay Berry in :gh:`148846`.)
 
+
 sqlite3
 -------
 
@@ -473,6 +489,7 @@ sqlite3
   writing (e.g. ``blob[9:0:-2]``).  Previously, such slices would raise
   :exc:`SystemError` or :exc:`ValueError`.
   (Contributed by Jiseok CHOI in :gh:`150449`.)
+
 
 symtable
 --------
@@ -625,6 +642,24 @@ xml
   instead of failing later, when encountering non-ASCII data.
   (Contributed by Serhiy Storchaka in :gh:`62259`.)
 
+* :mod:`xml.dom.minidom` now conforms closer to the DOM Level 1 specification.
+  It checks names passed to the factory methods,
+  rejects inserting or setting a node created by another document
+  or making a node a descendant of itself,
+  rejects a second element or document type child of a document
+  and a notation child of a document fragment,
+  reports attributes defaulted in the DTD
+  and whether an attribute was given in the start tag,
+  and implements :class:`!EntityReference` nodes
+  and :meth:`!Document.createEntityReference`.
+  (Contributed by Jason Orendorff and Serhiy Storchaka in :gh:`44871`.)
+
+* Add :meth:`!GetSpecifiedAttributeCount` method
+  to the :mod:`XML parser <xml.parsers.expat>` objects.
+  It tells how many of the reported attributes were given in the start tag
+  rather than defaulted from the DTD.
+  (Contributed by Jason Orendorff and Serhiy Storchaka in :gh:`44871`.)
+
 zipfile
 -------
 
@@ -649,12 +684,6 @@ re
   of patterns such as ``\d+`` and reduces the size of the compiled byte code.
   (Contributed by Serhiy Storchaka in :gh:`152033` and Pieter Eendebak in
   :gh:`152056`.)
-
-module_name
------------
-
-* TODO
-
 
 
 Removed
@@ -696,22 +725,27 @@ asyncio
 functools
 ---------
 
-* Calling the Python implementation of :func:`functools.reduce` with *function*
-  or *sequence* as keyword arguments has been deprecated since Python 3.14.
+* Remove support for calling the Python implementation of
+  :func:`functools.reduce` with *function* or *sequence* as keyword arguments,
+  deprecated since Python 3.14.  These parameters are now positional-only.
+  (Contributed by Nikita Sobolev in :gh:`149537`.)
 
 logging
 -------
 
-* Support for custom logging handlers with the *strm* argument is deprecated
-  and scheduled for removal in Python 3.16. Define handlers with the *stream*
-  argument instead.
+* Remove support for custom logging handlers with the *strm* argument,
+  deprecated since Python 3.14.
+  Define handlers with the *stream* argument instead.
+  (Contributed by Nikita Sobolev in :gh:`149598`.)
 
 mimetypes
 ---------
 
-* Valid extensions start with a '.' or are empty for
-  :meth:`mimetypes.MimeTypes.add_type`.
-  Undotted extensions now raise a :exc:`ValueError`.
+* Remove support for undotted extensions in
+  :meth:`mimetypes.MimeTypes.add_type`, deprecated since Python 3.14.
+  Valid extensions must now start with a ``'.'`` or be empty;
+  undotted extensions raise a :exc:`ValueError`.
+  (Contributed by Nikita Sobolev in :gh:`149720`.)
 
 shutil
 ------
@@ -768,14 +802,14 @@ Deprecated
 New deprecations
 ----------------
 
-* :mod:`abc`
+* :mod:`abc`:
 
-  * Soft-deprecated since Python 3.3 :class:`abc.abstractclassmethod`,
-    :class:`abc.abstractstaticmethod`, and :class:`abc.abstractproperty`
+  * :class:`abc.abstractclassmethod`, :class:`abc.abstractstaticmethod`,
+    and :class:`abc.abstractproperty`, soft-deprecated since Python 3.3,
     now raise a :exc:`DeprecationWarning`.
-    These classes will be removed in Python 3.21, instead
+    These classes will be removed in Python 3.21;
     use :func:`abc.abstractmethod` with :func:`classmethod`,
-    :func:`staticmethod`, and :class:`property` respectively.
+    :func:`staticmethod`, and :class:`property` respectively instead.
 
 * :mod:`ast`:
 
@@ -790,12 +824,12 @@ New deprecations
 
 * :mod:`struct`:
 
-  * Soft-deprecated since Python 3.15, using ``'F'`` and ``'D'`` type codes are now
-    deprecated.  These codes will be removed in Python 3.21.  Use instead
-    two-letter forms ``'Zf'`` and ``'Zd'``.
+  * The ``'F'`` and ``'D'`` type codes, soft-deprecated since Python 3.15,
+    are now deprecated.  These codes will be removed in Python 3.21.
+    Use the two-letter forms ``'Zf'`` and ``'Zd'`` instead.
     (Contributed by Sergey B Kirpichev in :gh:`121249`.)
 
-* :mod:`tempfile`
+* :mod:`tempfile`:
 
   * The private ``tempfile._TemporaryFileWrapper`` name is deprecated
     and is slated for removal in Python 3.21.
@@ -839,6 +873,24 @@ that may require changes to your code.
   them, which formerly defaulted to ``'PY_VAR'`` and ``'1'``, now raises
   :exc:`TypeError`.
   (Contributed by Serhiy Storchaka in :gh:`152587`.)
+
+* :mod:`xml.dom.minidom` now raises :exc:`~xml.dom.InvalidCharacterErr`
+  for a name which is not a valid XML name,
+  :exc:`~xml.dom.WrongDocumentErr`
+  for inserting or setting a node created by another document,
+  :exc:`~xml.dom.InuseAttributeErr` for setting an attribute node
+  which belongs to another element,
+  and :exc:`~xml.dom.HierarchyRequestErr` for inserting a node into itself
+  or its descendant.
+  It also rejects a second element or document type child of a document
+  and a notation child of a document fragment.
+  Such operations formerly succeeded
+  and produced an invalid document or an endless loop.
+  On the other hand, :meth:`!Element.removeAttribute` and
+  :meth:`!Element.removeAttributeNS` no longer raise
+  :exc:`~xml.dom.NotFoundErr` if there is no matching attribute.
+  Attributes defaulted in the DTD are no longer omitted when parsing.
+  (Contributed by Jason Orendorff and Serhiy Storchaka in :gh:`44871`.)
 
 * On Windows, seeking a pipe now fails instead of silently appearing to
   succeed: :func:`os.lseek` and :meth:`~io.IOBase.seek` raise :exc:`OSError`,
