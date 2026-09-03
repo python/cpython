@@ -11,6 +11,7 @@
 #include "pycore_freelist.h"      // _Py_FREELIST_FREE(), _Py_FREELIST_POP()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_Init()
+#include "pycore_pymath.h"        // _Py_ADJUST_ERANGE2()
 
 
 #define _PyComplexObject_CAST(op)   ((PyComplexObject *)(op))
@@ -325,7 +326,7 @@ _Py_c_pow(Py_complex a, Py_complex b)
         r.imag = len*sin(phase);
 
         if (_Py_c_isinf(r) && _Py_c_isfinite(a) && _Py_c_isfinite(b)) {
-            errno = ERANGE;
+            _Py_ADJUST_ERANGE2(r.real, r.imag);
         }
     }
     return r;
@@ -747,7 +748,7 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
     if (b.imag == 0.0 && b.real == floor(b.real) && fabs(b.real) <= 100.0) {
         p = c_powi(a, (long)b.real);
         if (_Py_c_isinf(p) && _Py_c_isfinite(a) && isfinite(b.real)) {
-            errno = ERANGE;
+            _Py_ADJUST_ERANGE2(p.real, p.imag);
         }
     }
     else {
