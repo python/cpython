@@ -19,12 +19,26 @@ IGNORED_ID_RE = re.compile(
 )
 
 
+class Redirect(Exception):  # noqa: N818 Exception should be named with an Error suffix
+    def __init__(self, redirect_to):
+        self.redirect_to = redirect_to
+
+
 class IDGatherer(html.parser.HTMLParser):
     def __init__(self, ids):
         super().__init__()
         self.__ids = ids
 
     def handle_starttag(self, tag, attrs):
+        if tag == "meta":
+            # Redirects are done with a meta tag:
+            # <meta http-equiv="refresh" content="0; url=../builtins/stdtypes.html"/>
+            dattr = dict(attrs)
+            if dattr.get("http-equiv") == "refresh":
+                content = dattr.get("content", "")
+                if content.startswith("0; url="):
+                    redirect_to = content[7:]
+                    raise Redirect(redirect_to)
         for name, value in attrs:
             if name == 'id':
                 if not IGNORED_ID_RE.fullmatch(value):
@@ -38,6 +52,18 @@ def get_ids_from_file(path):
         while chunk := file.read(4096):
             gatherer.feed(chunk)
     return ids
+
+
+def get_ids_including_redirects(path):
+    # Only try 6 redirects, to avoid accidental endless loops
+    for _ in range(6):
+        try:
+            return get_ids_from_file(path)
+        except Redirect as r:
+            path = (path.parent / r.redirect_to).resolve()
+            continue
+    else:
+        raise RuntimeError("Apparent infinite redirects")
 
 
 def gather_ids(htmldir, *, verbose_print):
@@ -55,7 +81,9 @@ def gather_ids(htmldir, *, verbose_print):
             continue
         if 'whatsnew' in relative_path.parts:
             continue
-        tasks[relative_path] = pool.submit(get_ids_from_file, path=path)
+        tasks[relative_path] = pool.submit(
+            get_ids_including_redirects, path=path
+        )
 
     ids_by_page = {}
     for relative_path, future in tasks.items():
