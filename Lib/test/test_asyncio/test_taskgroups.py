@@ -1187,6 +1187,17 @@ class BaseTestTaskGroup:
             with self.assertRaises(RuntimeError):
                 tg.create_task(asyncio.sleep(1))
 
+    async def test_taskgroup_cancel_from_child_before_first_suspension(self):
+        # gh-155418: an eager task can cancel the group before joining _tasks
+        async def child(tg):
+            tg.cancel()
+            await asyncio.sleep(10)
+            self.fail("the child was not cancelled")
+
+        async with asyncio.TaskGroup() as tg:
+            task = tg.create_task(child(tg))
+        self.assertTrue(task.cancelled())
+
     async def test_taskgroup_cancel_keeps_outer_cancellation(self):
         # gh-155433: any cancellation from outside the group must propagate.
         async def child():

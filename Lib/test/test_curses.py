@@ -2694,6 +2694,23 @@ class TestCurses(unittest.TestCase):
                 box.do_command(ch)
             self.assertEqual(box.gather(), text + ' ')
 
+    @requires_wide_build
+    def test_textbox_double_width(self):
+        # A double-width (East Asian) character occupies two cells.  gather()
+        # reads a whole line at a time so that the second cell, which holds
+        # the same character, is not reported as another one.
+        text = '你好'
+        if not self._encodable(text):
+            self.skipTest('the locale cannot encode %r' % text)
+        box, win = self._make_textbox(1, 12)
+        for ch in text:
+            box.do_command(ch)
+        self.assertEqual(box.gather(), text + ' ')
+        box, win = self._make_textbox(1, 12, stripspaces=False)
+        for ch in text:
+            box.do_command(ch)
+        self.assertEqual(box.gather(), text + ' ' * 8)
+
     def test_textbox_edit_wide(self):
         # edit() reads characters through get_wch().  Each character is pushed
         # with unget_wch(), which on a narrow build requires it to encode to a
@@ -2966,6 +2983,11 @@ class MiscTests(unittest.TestCase):
     def test_has_extended_color_support(self):
         r = curses.has_extended_color_support()
         self.assertIsInstance(r, bool)
+
+    def test_err_and_ok(self):
+        # ERR is negative; it is not a chtype constant.
+        self.assertEqual(curses.ERR, -1)
+        self.assertEqual(curses.OK, 0)
 
     def test_type_names(self):
         # The curses types report their public module rather than the
