@@ -2,6 +2,7 @@ import calendar
 import unittest
 
 from test import support
+from test.support import import_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 import contextlib
 import datetime
@@ -11,6 +12,7 @@ import os
 import platform
 import sys
 import time
+from unittest import mock
 
 # From https://en.wikipedia.org/wiki/Leap_year_starting_on_Saturday
 result_0_02_text = """\
@@ -658,8 +660,13 @@ class CalendarTestCase(unittest.TestCase):
         # Wine). Reloading the calendar module used to let that
         # ValueError propagate instead of falling back to
         # month_name/month_abbr.
-        import importlib
-
+        #
+        # datetime.date is an immutable C type, so its strftime cannot be
+        # patched directly; instead we patch the name 'datetime.date' with
+        # a subclass while a fresh copy of calendar is imported, and use
+        # import_fresh_module() rather than importlib.reload() so this
+        # test doesn't leave a mutated calendar module behind for other
+        # tests in this process.
         real_date = datetime.date
 
         class FakeDate(real_date):
@@ -668,14 +675,13 @@ class CalendarTestCase(unittest.TestCase):
                     raise ValueError('Invalid format string')
                 return super().strftime(fmt)
 
-        datetime.date = FakeDate
-        try:
-            importlib.reload(calendar)
-        finally:
-            datetime.date = real_date
-            importlib.reload(calendar)
+        with mock.patch('datetime.date', FakeDate):
+            fresh_calendar = import_helper.import_fresh_module('calendar')
 
-        self.assertEqual(calendar.standalone_month_name[1], calendar.month_name[1])
+        self.assertEqual(
+            fresh_calendar.standalone_month_name[1],
+            fresh_calendar.month_name[1],
+        )
 
     def test_locale_text_calendar(self):
         try:
