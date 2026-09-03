@@ -485,6 +485,10 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a Python generator function.
 
+   .. versionchanged:: 3.10.6
+      :term:`Duck-typed <duck-typing>` function-like objects now return
+      ``True`` if their code object has the :data:`CO_GENERATOR` flag.
+
    .. versionchanged:: 3.13
       Functions wrapped in :func:`functools.partialmethod` now return ``True``
       if the wrapped function is a Python generator function.
@@ -506,6 +510,10 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    .. versionchanged:: 3.8
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a :term:`coroutine function`.
+
+   .. versionchanged:: 3.10.6
+      :term:`Duck-typed <duck-typing>` function-like objects now return
+      ``True`` if their code object has the :data:`CO_COROUTINE` flag.
 
    .. versionchanged:: 3.12
       Sync functions marked with :func:`markcoroutinefunction` now return
@@ -580,6 +588,10 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    .. versionchanged:: 3.8
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is an :term:`asynchronous generator` function.
+
+   .. versionchanged:: 3.10.6
+      :term:`Duck-typed <duck-typing>` function-like objects now return
+      ``True`` if their code object has the :data:`CO_ASYNC_GENERATOR` flag.
 
    .. versionchanged:: 3.13
       Functions wrapped in :func:`functools.partialmethod` now return ``True``
