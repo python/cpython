@@ -5,8 +5,13 @@
  * standard Python regression test, via Lib/test/test_capi/test_misc.py.
  */
 
-// Need limited C API version 3.15 for PySlot
-#define Py_LIMITED_API 0x030f0000
+
+#ifdef Py_GIL_DISABLED
+   // Cannot test the limited C API
+#else
+    // Need limited C API version 3.13 for PyModuleDef_Init
+    #define Py_LIMITED_API 0x03050000
+#endif
 
 #include "_testlimitedcapi/parts.h"
 
@@ -97,16 +102,12 @@ module_exec(PyObject *mod)
     return 0;
 }
 
-PyABIInfo_VAR(abi_info);
-
 static struct PyModuleDef _testlimitedcapimodule_def = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_testlimitedcapi",
     .m_size = 0,
     .m_slots = (PyModuleDef_Slot[]){
-        {Py_mod_abi, &abi_info},
         {Py_mod_exec, module_exec},
-        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
         {0}
     }
 };
