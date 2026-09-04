@@ -184,21 +184,21 @@ def add_annotations(app: Sphinx, doctree: nodes.document) -> None:
                 )
                 raise ValueError(msg)
 
-            # Skip the note if any ancestor has 'omit-stable-abi-note'
+            # Skip the note if any ancestor has 'omit-stable-abi-notes'
             # in a 'c_annotations' attribute.
             ancestor = node
             while ancestor:
-                if 'omit-stable-abi-note' not in ancestor.get(
+                if 'omit-stable-abi-notes' in ancestor.get(
                     'c_annotations',
                     [],
                 ):
                     break
-                ancestor = node.parent
+                ancestor = ancestor.parent
             else:
+
                 # no skip; add the annotation
                 annotation = _stable_abi_annotation(record)
                 node.insert(0, annotation)
-                node.setdefault("classes", []).append('ADDED-HERE')
 
         # Unstable API annotation.
         if name.startswith("PyUnstable"):
