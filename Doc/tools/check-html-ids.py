@@ -83,6 +83,8 @@ def do_check(baseline, checked, excluded, *, verbose_print):
                 print(f'{name}: (page missing)')
                 print()
         else:
+            if (name, '*') in excluded:
+                continue
             missing_ids = set(baseline_ids) - set(checked_ids)
             if missing_ids:
                 missing_ids = {
