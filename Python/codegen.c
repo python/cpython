@@ -87,6 +87,9 @@ typedef _PyCompile_FBlockInfo fblockinfo;
 
 #define LOC(x) SRC_LOCATION_FROM_AST(x)
 
+#define CALL_STACK_USE(nargs, nkwds) \
+    ((nargs) + (nkwds) + ((nkwds) != 0))
+
 #define NEW_JUMP_TARGET_LABEL(C, NAME) \
     jump_target_label NAME = _PyInstructionSequence_NewLabel(INSTR_SEQUENCE(C)); \
     if (!IS_JUMP_TARGET_LABEL(NAME)) { \
@@ -4147,7 +4150,7 @@ maybe_optimize_method_call(compiler *c, expr_ty e)
     /* Check that there aren't too many arguments */
     argsl = asdl_seq_LEN(args);
     kwdsl = asdl_seq_LEN(kwds);
-    if (argsl + kwdsl + (kwdsl != 0) >= _PY_STACK_USE_GUIDELINE) {
+    if (CALL_STACK_USE(argsl, kwdsl) >= _PY_STACK_USE_GUIDELINE) {
         return 0;
     }
     /* Check that there are no *varargs types of arguments. */
@@ -4440,7 +4443,7 @@ codegen_call_helper_impl(compiler *c, location loc,
     nelts = asdl_seq_LEN(args);
     nkwelts = asdl_seq_LEN(keywords);
 
-    if (nelts + nkwelts*2 > _PY_STACK_USE_GUIDELINE) {
+    if (CALL_STACK_USE(nelts, nkwelts) > _PY_STACK_USE_GUIDELINE) {
          goto ex_call;
     }
     for (i = 0; i < nelts; i++) {
