@@ -2566,7 +2566,7 @@ class CTokenizeTest(TestCase):
             self._get_tokens('bé )tf"2 ', extra_tokens=True)
         self.assertEqual(
             caught.exception.args,
-            ("'f' and 't' prefixes are incompatible", (1, 6)),
+            ("'f' and 't' prefixes are incompatible", (1, 5)),
         )
 
     def test_tolerant_fstring_closer_at_expression_entry_depth(self):
