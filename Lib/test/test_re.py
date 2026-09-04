@@ -1327,6 +1327,46 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.match(r'\ufb05', '\ufb06', re.I))
         self.assertTrue(re.match(r'\ufb06', '\ufb05', re.I))
 
+        # Cherokee letters case fold to their uppercase. Unicode 8.0+.
+        assert '\uab70'.casefold() == '\u13a0'.casefold() == '\u13a0' # 'ꭰ', 'Ꭰ'
+        self.assertTrue(re.match('\u13a0', '\uab70', re.I))
+        self.assertTrue(re.match('\uab70', '\u13a0', re.I))
+
+    # Characters which the matcher maps to the same code (see
+    # _sre.unicode_tolower), and which are therefore matched
+    # case-insensitively wherever it compares characters.
+    FOLDED_PAIRS = [
+        ('\u03c2', '\u03c3'),  # 'ς', 'σ'
+        ('\u03c3', '\u03a3'),  # 'σ', 'Σ'
+        ('\u00b5', '\u03bc'),  # 'µ', 'μ'
+        ('\u017f', 's'),      # 'ſ'
+        ('\u00df', '\u1e9e'),  # 'ß', 'ẞ'
+        ('k', '\u212a'),      # KELVIN SIGN
+        ('\u0432', '\u1c80'),  # 'в', 'ᲀ'
+        ('\uab70', '\u13a0'),  # 'ꭰ', 'Ꭰ'
+        # Not unified by the case folding (see sre_lower_unicode).
+        ('i', '\u0131'),      # LATIN SMALL LETTER DOTLESS I
+        ('\u0390', '\u1fd3'),  # 'ΐ' with tonos and with oxia
+        ('\u03b0', '\u1fe3'),  # 'ΰ' with tonos and with oxia
+        ('\ufb05', '\ufb06'),  # 'ﬅ', 'ﬆ'
+    ]
+
+    def test_ignore_case_backreference(self):
+        for a, b in self.FOLDED_PAIRS:
+            with self.subTest(pair=(a, b)):
+                self.assertTrue(re.fullmatch(r'(.)\1', a + b, re.I))
+                self.assertTrue(re.fullmatch(r'(.)\1', b + a, re.I))
+
+    def test_ignore_case_folded_pairs(self):
+        for a, b in self.FOLDED_PAIRS:
+            with self.subTest(pair=(a, b)):
+                self.assertTrue(re.match(a, b, re.I))
+                self.assertTrue(re.match(b, a, re.I))
+                self.assertTrue(re.match('[%s]' % a, b, re.I))
+                self.assertTrue(re.match('[%s]' % b, a, re.I))
+                self.assertIsNone(re.match('[^%s]' % a, b, re.I))
+                self.assertIsNone(re.match('[^%s]' % b, a, re.I))
+
     def test_ignore_case_set(self):
         self.assertTrue(re.match(r'[19A]', 'A', re.I))
         self.assertTrue(re.match(r'[19a]', 'a', re.I))
@@ -3196,11 +3236,18 @@ class ImplementationTest(unittest.TestCase):
             self.assertEqual(_sre.ascii_iscased(i), iscased)
             self.assertEqual(_sre.unicode_iscased(i), iscased)
 
+        # Characters which the case folding does not unify.
+        fold_exceptions = {0x0131: 0x0069, 0x1fd3: 0x0390,
+                           0x1fe3: 0x03b0, 0xfb05: 0xfb06}
         for i in list(range(128, 0x1000)) + [0x10400, 0x10428]:
             c = chr(i)
             self.assertEqual(_sre.ascii_tolower(i), i)
-            if i != 0x0130:
-                self.assertEqual(_sre.unicode_tolower(i), ord(c.lower()))
+            if i != 0x0130 and i not in fold_exceptions:
+                # unicode_tolower() is the case folding when it is a single
+                # character, and the lowercase otherwise.
+                f = c.casefold()
+                self.assertEqual(_sre.unicode_tolower(i),
+                                 ord(f) if len(f) == 1 else ord(c.lower()))
             iscased = c != c.lower() or c != c.upper()
             self.assertFalse(_sre.ascii_iscased(i))
             self.assertEqual(_sre.unicode_iscased(i),
@@ -3210,6 +3257,22 @@ class ImplementationTest(unittest.TestCase):
         self.assertEqual(_sre.unicode_tolower(0x0130), ord('i'))
         self.assertFalse(_sre.ascii_iscased(0x0130))
         self.assertTrue(_sre.unicode_iscased(0x0130))
+
+        # Case folding, unlike lowercasing, unifies these.
+        self.assertEqual(_sre.unicode_tolower(0x00b5), 0x03bc)  # 'µ', 'μ'
+        self.assertEqual(_sre.unicode_tolower(0x017f), ord('s'))  # 'ſ'
+        # The full case folding of both sharp S characters is "ss", so they
+        # are matched through their common lowercase.
+        self.assertEqual(_sre.unicode_tolower(0x00df), 0x00df)  # 'ß'
+        self.assertEqual(_sre.unicode_tolower(0x1e9e), 0x00df)  # 'ẞ'
+        # Cherokee letters case fold to their uppercase, which is lowercased
+        # back so that the two forms share a key.
+        self.assertEqual(_sre.unicode_tolower(0x13a0), 0xab70)  # 'Ꭰ', 'ꭰ'
+        self.assertEqual(_sre.unicode_tolower(0xab70), 0xab70)
+        for i, lo in fold_exceptions.items():
+            with self.subTest(char=chr(i)):
+                self.assertEqual(_sre.unicode_tolower(i), lo)
+
 
     @cpython_only
     def test_dealloc(self):
