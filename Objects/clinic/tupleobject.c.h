@@ -120,6 +120,9 @@ tuple_vectorcall(PyObject *type, PyObject *const *args,
     PyObject *iterable = NULL;
 
     assert(Py_Is(_PyType_CAST(type), &PyTuple_Type));
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
     if (!_PyArg_NoKwnames("tuple", kwnames)) {
         goto exit;
     }
@@ -153,4 +156,4 @@ tuple___getnewargs__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return tuple___getnewargs___impl((PyTupleObject *)self);
 }
-/*[clinic end generated code: output=9baf9b4c006e85f5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=69cab12f1ecb03e9 input=a9049054013a1b77]*/

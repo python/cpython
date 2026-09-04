@@ -100,6 +100,9 @@ enum_vectorcall(PyObject *type, PyObject *const *args,
     PyObject *start = 0;
 
     assert(Py_Is(_PyType_CAST(type), &PyEnum_Type));
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
     if (kwnames != NULL || nargs < 1 || nargs > 2) {
         return enum_new_parse_args(_PyType_CAST(type), args, nargs,
             kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
@@ -155,6 +158,9 @@ reversed_vectorcall(PyObject *type, PyObject *const *args,
     PyObject *seq;
 
     assert(Py_Is(_PyType_CAST(type), &PyReversed_Type));
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
     if (!_PyArg_NoKwnames("reversed", kwnames)) {
         goto exit;
     }
@@ -167,4 +173,4 @@ reversed_vectorcall(PyObject *type, PyObject *const *args,
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0ef73f3adedaa5dc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8fded37f4f8dba37 input=a9049054013a1b77]*/

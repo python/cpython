@@ -4879,6 +4879,9 @@ vc_plain_vectorcall(PyObject *type, PyObject *const *args,
     PyObject *a = Py_None;
 
     assert(Py_Is(_PyType_CAST(type), &VcNew_Type));
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
     if (kwnames != NULL || nargs > 1) {
         return vc_plain_new_parse_args(_PyType_CAST(type), args, nargs,
             kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
@@ -4975,6 +4978,9 @@ vc_posorkw_vectorcall(PyObject *type, PyObject *const *args,
     PyObject *b = Py_None;
 
     assert(Py_Is(_PyType_CAST(type), &VcInit_Type));
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
     if (kwnames != NULL || nargs < 1 || nargs > 2) {
         self = _PyType_CAST(type)->tp_alloc(
             _PyType_CAST(type), 0);
@@ -5091,6 +5097,9 @@ vc_base_vectorcall(PyObject *type, PyObject *const *args,
     PyObject *b = Py_None;
 
     assert(Py_Is(_PyType_CAST(type), &VcNewBase_Type));
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
     if (kwnames != NULL || nargs < 1 || nargs > 2) {
         return vc_base_new_parse_args(_PyType_CAST(type), args, nargs,
             kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
@@ -5181,8 +5190,11 @@ vc_kwonly_vectorcall(PyObject *type, PyObject *const *args,
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
 
     assert(Py_Is(_PyType_CAST(type), &VcKwOnly_Type));
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
     return vc_kwonly_new_parse_args(_PyType_CAST(type), args, nargs,
         kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
         NULL, kwnames);
 }
-/*[clinic end generated code: output=72f69e7a2630791e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fdc3e9950259e0ac input=a9049054013a1b77]*/

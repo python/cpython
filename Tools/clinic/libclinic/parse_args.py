@@ -258,43 +258,6 @@ VECTORCALL_FINALE_MARKERS_INIT: Final[dict[str, str]] = {
         return_value = self;
     """),
 }
-# Filled by _vectorcall_delegate_to_helper(); %(nkw)s is the C expression for the
-# number of keyword arguments.
-VECTORCALL_DELEGATE_SKELETON: Final[str] = libclinic.normalize_snippet("""
-    {self_alloc}
-    {helper_call}
-    {init_result_check}
-    """, indent=4)
-VECTORCALL_DELEGATE_MARKERS_NEW: Final[dict[str, str]] = {
-    "self_alloc": "",
-    "helper_call": libclinic.normalize_snippet("""
-        return {c_basename}_parse_args(_PyType_CAST(type), args, nargs,
-            %(nkw)s,
-            NULL, kwnames);
-    """),
-    "init_result_check": "",
-}
-VECTORCALL_DELEGATE_MARKERS_INIT: Final[dict[str, str]] = {
-    "self_alloc": libclinic.normalize_snippet("""
-        self = _PyType_CAST(type)->tp_alloc(
-            _PyType_CAST(type), 0);
-        if (self == NULL) {{
-            return NULL;
-        }}
-    """),
-    "helper_call": libclinic.normalize_snippet("""
-        _result = {c_basename}_parse_args(self, args, nargs,
-            %(nkw)s,
-            NULL, kwnames);
-    """),
-    "init_result_check": libclinic.normalize_snippet("""
-        if (_result != 0) {{
-            Py_DECREF(self);
-            return NULL;
-        }}
-        return self;
-    """),
-}
 
 
 class ParseArgsCodeGen:
@@ -1462,8 +1425,8 @@ class ParseArgsCodeGen:
         assert func.cls.type_object
         return [libclinic.normalize_snippet(f"""
             assert(Py_Is(_PyType_CAST(type), {func.cls.type_object}));
-            # Make sure the type object is immutable: the generated
-            # vectorcall doesn't deal e.g. with users reassigning __init__
+            /* Make sure the type object is immutable: the generated
+             * vectorcall doesn't deal e.g. with users reassigning __init__. */
             assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
             """, indent=4)]
 
@@ -1562,11 +1525,33 @@ class ParseArgsCodeGen:
         nkw: Number of keyword arguments.
         """
         if self.func.kind is METHOD_INIT:
-            markers = VECTORCALL_DELEGATE_MARKERS_INIT
+            receiver = "self"
+            bind_result = "_result = "
+            prologue = libclinic.normalize_snippet("""
+                self = _PyType_CAST(type)->tp_alloc(
+                    _PyType_CAST(type), 0);
+                if (self == NULL) {{
+                    return NULL;
+                }}
+            """, indent=4)
+            epilogue = libclinic.normalize_snippet("""
+                if (_result != 0) {{
+                    Py_DECREF(self);
+                    return NULL;
+                }}
+                return self;
+            """, indent=4)
         else:
-            markers = VECTORCALL_DELEGATE_MARKERS_NEW
-        markers["helper_call"].replace('$NKW', nkw)
-        return libclinic.linear_format(VECTORCALL_DELEGATE_SKELETON, **markers)
+            receiver = "_PyType_CAST(type)"
+            bind_result = "return "
+            prologue = epilogue = ""
+        helper_call = libclinic.normalize_snippet(f"""
+            {bind_result}{{c_basename}}_parse_args({receiver}, args, nargs,
+                {nkw},
+                NULL, kwnames);
+        """, indent=4)
+        parts = [prologue, helper_call, epilogue]
+        return "\n".join(part for part in parts if part)
 
     def parse_vectorcall_kw_required(self) -> None:
         """Required keyword arguemnts; always delegate to helper."""
