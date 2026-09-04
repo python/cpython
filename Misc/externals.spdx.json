@@ -70,42 +70,42 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "ca94e7c6c223d9caf77bb51aac5949186379608ea2a0cad3aa8bdf31856912e9"
+          "checksumValue": "36af13403a6f34251c875946d1d524c228cbf7b82fd54dd13d9019fbc37da87e"
         }
       ],
-      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/openssl-3.5.7.tar.gz",
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/openssl-3.5.8.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:openssl:openssl:3.5.7:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:openssl:openssl:3.5.8:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
       "licenseConcluded": "NOASSERTION",
       "name": "openssl",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "3.5.7"
+      "versionInfo": "3.5.8"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-sqlite",
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "53f8711811090cc4d9ffc624c360f81e7b409763b145ab2e948998f1a0d6a612"
+          "checksumValue": "acc27a72ca7745781bb902269370303e778736a090585cc13acd2ea9ab785666"
         }
       ],
-      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/sqlite-3.53.2.0.tar.gz",
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/sqlite-3.53.4.0.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:sqlite:sqlite:3.53.2.0:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:sqlite:sqlite:3.53.4.0:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
       "licenseConcluded": "NOASSERTION",
       "name": "sqlite",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "3.53.2.0"
+      "versionInfo": "3.53.4.0"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-tcl",

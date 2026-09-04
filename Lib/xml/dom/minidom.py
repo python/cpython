@@ -16,6 +16,7 @@ Todo:
 """
 
 import io
+import xml
 import xml.dom
 
 from xml.dom import EMPTY_NAMESPACE, EMPTY_PREFIX, XMLNS_NAMESPACE, domreg
@@ -29,6 +30,9 @@ from xml.dom.xmlbuilder import DOMImplementationLS, DocumentLS
 #
 _nodeTypes_with_children = (xml.dom.Node.ELEMENT_NODE,
                             xml.dom.Node.ENTITY_REFERENCE_NODE)
+
+# The white space characters of the XML specification (see XML 1.0, 2.3).
+_XML_WHITESPACE = " \t\r\n"
 
 
 class Node(xml.dom.Node):
@@ -79,15 +83,32 @@ class Node(xml.dom.Node):
         if self.childNodes:
             return self.childNodes[-1]
 
+    def _check_new_child(self, newChild, oldChild=None):
+        # Common checks for insertBefore(), appendChild() and replaceChild().
+        doc = self.ownerDocument or self
+        newChildDoc = newChild.ownerDocument
+        if newChildDoc is not doc and newChildDoc is not None:
+            raise xml.dom.WrongDocumentErr(
+                "%s was created by a different document" % repr(newChild))
+        if newChild.nodeType not in self._child_node_types:
+            raise xml.dom.HierarchyRequestErr(
+                "%s cannot be child of %s" % (repr(newChild), repr(self)))
+        if newChild is self:
+            raise xml.dom.HierarchyRequestErr(
+                "%s cannot be child of itself" % repr(self))
+        # A node without children cannot be an ancestor, and testing this
+        # first keeps appending leaf nodes linear in the depth of the tree.
+        if newChild.childNodes and _is_ancestor(newChild, self):
+            raise xml.dom.HierarchyRequestErr(
+                "%s is an ancestor of %s" % (repr(newChild), repr(self)))
+
     def insertBefore(self, newChild, refChild):
         if newChild.nodeType == self.DOCUMENT_FRAGMENT_NODE:
             for c in tuple(newChild.childNodes):
                 self.insertBefore(c, refChild)
             ### The DOM does not clearly specify what to return in this case
             return newChild
-        if newChild.nodeType not in self._child_node_types:
-            raise xml.dom.HierarchyRequestErr(
-                "%s cannot be child of %s" % (repr(newChild), repr(self)))
+        self._check_new_child(newChild)
         if newChild.parentNode is not None:
             newChild.parentNode.removeChild(newChild)
         if refChild is None:
@@ -117,10 +138,8 @@ class Node(xml.dom.Node):
                 self.appendChild(c)
             ### The DOM does not clearly specify what to return in this case
             return node
-        if node.nodeType not in self._child_node_types:
-            raise xml.dom.HierarchyRequestErr(
-                "%s cannot be child of %s" % (repr(node), repr(self)))
-        elif node.nodeType in _nodeTypes_with_children:
+        self._check_new_child(node)
+        if node.nodeType in _nodeTypes_with_children:
             _clear_id_cache(self)
         if node.parentNode is not None:
             node.parentNode.removeChild(node)
@@ -133,11 +152,9 @@ class Node(xml.dom.Node):
             refChild = oldChild.nextSibling
             self.removeChild(oldChild)
             return self.insertBefore(newChild, refChild)
-        if newChild.nodeType not in self._child_node_types:
-            raise xml.dom.HierarchyRequestErr(
-                "%s cannot be child of %s" % (repr(newChild), repr(self)))
         if newChild is oldChild:
             return
+        self._check_new_child(newChild, oldChild)
         if newChild.parentNode is not None:
             newChild.parentNode.removeChild(newChild)
         try:
@@ -282,6 +299,22 @@ defproperty(Node, "lastChild",  doc="Last child node, or None.")
 defproperty(Node, "localName",  doc="Namespace-local name of this node.")
 
 
+def _check_name(name):
+    if not xml.is_valid_name(name):
+        raise xml.dom.InvalidCharacterErr(
+            "%r is not a valid XML name" % (name,))
+
+
+def _is_ancestor(node, other):
+    "Returns true iff node is an ancestor of other."
+    other = other.parentNode
+    while other is not None:
+        if other is node:
+            return True
+        other = other.parentNode
+    return False
+
+
 def _append_child(self, node):
     # fast path with less checks; usable by DOM builders if careful
     childNodes = self.childNodes
@@ -344,8 +377,7 @@ class DocumentFragment(Node):
                          Node.CDATA_SECTION_NODE,
                          Node.ENTITY_REFERENCE_NODE,
                          Node.PROCESSING_INSTRUCTION_NODE,
-                         Node.COMMENT_NODE,
-                         Node.NOTATION_NODE)
+                         Node.COMMENT_NODE)
 
     def __init__(self):
         self.childNodes = NodeList()
@@ -620,6 +652,12 @@ class NamedNodeMap(object):
         if not isinstance(node, Attr):
             raise xml.dom.HierarchyRequestErr(
                 "%s cannot be child of %s" % (repr(node), repr(self)))
+        owner = self._ownerElement
+        if node.ownerDocument not in (None, owner.ownerDocument):
+            raise xml.dom.WrongDocumentErr(
+                "%s was created by another document" % repr(node))
+        if node.ownerElement not in (None, owner):
+            raise xml.dom.InuseAttributeErr("attribute node already owned")
         old = self._attrs.get(node.name)
         if old:
             old.unlink()
@@ -758,6 +796,7 @@ class Element(Node):
     def setAttribute(self, attname, value):
         attr = self.getAttributeNode(attname)
         if attr is None:
+            _check_name(attname)
             attr = Attr(attname)
             attr.value = value # also sets nodeValue
             attr.ownerDocument = self.ownerDocument
@@ -771,6 +810,7 @@ class Element(Node):
         prefix, localname = _nssplit(qualifiedName)
         attr = self.getAttributeNodeNS(namespaceURI, localname)
         if attr is None:
+            _check_name(qualifiedName)
             attr = Attr(qualifiedName, namespaceURI, localname, prefix)
             attr.value = value
             attr.ownerDocument = self.ownerDocument
@@ -795,6 +835,9 @@ class Element(Node):
         return self._attrsNS.get((namespaceURI, localName))
 
     def setAttributeNode(self, attr):
+        if attr.ownerDocument not in (None, self.ownerDocument):
+            raise xml.dom.WrongDocumentErr(
+                "%s was created by another document" % repr(attr))
         if attr.ownerElement not in (None, self):
             raise xml.dom.InuseAttributeErr("attribute node already owned")
         self._ensure_attributes()
@@ -816,22 +859,17 @@ class Element(Node):
     setAttributeNodeNS = setAttributeNode
 
     def removeAttribute(self, name):
-        if self._attrsNS is None:
-            raise xml.dom.NotFoundErr()
-        try:
-            attr = self._attrs[name]
-        except KeyError:
-            raise xml.dom.NotFoundErr()
-        self.removeAttributeNode(attr)
+        # The DOM specifies that removing an absent attribute has no effect.
+        if self._attrs is not None:
+            attr = self._attrs.get(name)
+            if attr is not None:
+                self.removeAttributeNode(attr)
 
     def removeAttributeNS(self, namespaceURI, localName):
-        if self._attrsNS is None:
-            raise xml.dom.NotFoundErr()
-        try:
-            attr = self._attrsNS[(namespaceURI, localName)]
-        except KeyError:
-            raise xml.dom.NotFoundErr()
-        self.removeAttributeNode(attr)
+        if self._attrsNS is not None:
+            attr = self._attrsNS.get((namespaceURI, localName))
+            if attr is not None:
+                self.removeAttributeNode(attr)
 
     def removeAttributeNode(self, node):
         if node is None:
@@ -1174,7 +1212,7 @@ class Text(CharacterData):
             return None
 
     def _get_isWhitespaceInElementContent(self):
-        if self.data.strip():
+        if self.data.strip(_XML_WHITESPACE):
             return False
         elem = _get_containing_element(self)
         if elem is None:
@@ -1416,6 +1454,45 @@ class Entity(Identified, Node):
         raise xml.dom.HierarchyRequestErr(
             "cannot replace children of an entity node")
 
+class EntityReference(Node):
+    nodeType = Node.ENTITY_REFERENCE_NODE
+    nodeValue = None
+    attributes = None
+
+    _child_node_types = (Node.ELEMENT_NODE,
+                         Node.PROCESSING_INSTRUCTION_NODE,
+                         Node.COMMENT_NODE,
+                         Node.TEXT_NODE,
+                         Node.CDATA_SECTION_NODE,
+                         Node.ENTITY_REFERENCE_NODE)
+
+    def __init__(self, name):
+        self.nodeName = name
+        self.childNodes = NodeList()
+
+    def _get_nodeName(self):
+        return self.nodeName
+
+    def appendChild(self, newChild):
+        raise xml.dom.NoModificationAllowedErr(
+            "entity reference nodes are read-only")
+
+    def insertBefore(self, newChild, refChild):
+        raise xml.dom.NoModificationAllowedErr(
+            "entity reference nodes are read-only")
+
+    def removeChild(self, oldChild):
+        raise xml.dom.NoModificationAllowedErr(
+            "entity reference nodes are read-only")
+
+    def replaceChild(self, newChild, oldChild):
+        raise xml.dom.NoModificationAllowedErr(
+            "entity reference nodes are read-only")
+
+    def writexml(self, writer, indent="", addindent="", newl=""):
+        writer.write("&%s;" % self.nodeName)
+
+
 class Notation(Identified, Childless, Node):
     nodeType = Node.NOTATION_NODE
     nodeValue = None
@@ -1487,6 +1564,7 @@ class DOMImplementation(DOMImplementationLS):
         return doc
 
     def createDocumentType(self, qualifiedName, publicId, systemId):
+        _check_name(qualifiedName)
         doctype = DocumentType(qualifiedName)
         doctype.publicId = publicId
         doctype.systemId = systemId
@@ -1621,20 +1699,26 @@ class Document(Node, DocumentLS):
     def _get_version(self):
         return self.version
 
+    def _check_new_child(self, newChild, oldChild=None):
+        Node._check_new_child(self, newChild, oldChild)
+        # A document can have only one element and only one document type.
+        if newChild.nodeType == Node.ELEMENT_NODE:
+            what = "document elements"
+        elif newChild.nodeType == Node.DOCUMENT_TYPE_NODE:
+            what = "document types"
+        else:
+            return
+        for node in self.childNodes:
+            if (node.nodeType == newChild.nodeType
+                    and node is not newChild and node is not oldChild):
+                raise xml.dom.HierarchyRequestErr("two %s disallowed" % what)
+
     def appendChild(self, node):
-        if node.nodeType not in self._child_node_types:
-            raise xml.dom.HierarchyRequestErr(
-                "%s cannot be child of %s" % (repr(node), repr(self)))
+        self._check_new_child(node)
         if node.parentNode is not None:
-            # This needs to be done before the next test since this
-            # may *be* the document element, in which case it should
+            # This may *be* the document element, in which case it should
             # end up re-ordered to the end.
             node.parentNode.removeChild(node)
-
-        if node.nodeType == Node.ELEMENT_NODE \
-           and self._get_documentElement():
-            raise xml.dom.HierarchyRequestErr(
-                "two document elements disallowed")
         return Node.appendChild(self, node)
 
     def removeChild(self, oldChild):
@@ -1687,6 +1771,7 @@ class Document(Node, DocumentLS):
         return d
 
     def createElement(self, tagName):
+        _check_name(tagName)
         e = Element(tagName)
         e.ownerDocument = self
         return e
@@ -1707,29 +1792,39 @@ class Document(Node, DocumentLS):
         c.ownerDocument = self
         return c
 
+    def createEntityReference(self, name):
+        _check_name(name)
+        e = EntityReference(name)
+        e.ownerDocument = self
+        return e
+
     def createComment(self, data):
         c = Comment(data)
         c.ownerDocument = self
         return c
 
     def createProcessingInstruction(self, target, data):
+        _check_name(target)
         p = ProcessingInstruction(target, data)
         p.ownerDocument = self
         return p
 
     def createAttribute(self, qName):
+        _check_name(qName)
         a = Attr(qName)
         a.ownerDocument = self
         a.value = ""
         return a
 
     def createElementNS(self, namespaceURI, qualifiedName):
+        _check_name(qualifiedName)
         prefix, localName = _nssplit(qualifiedName)
         e = Element(qualifiedName, namespaceURI, prefix)
         e.ownerDocument = self
         return e
 
     def createAttributeNS(self, namespaceURI, qualifiedName):
+        _check_name(qualifiedName)
         prefix, localName = _nssplit(qualifiedName)
         a = Attr(qualifiedName, namespaceURI, localName, prefix)
         a.ownerDocument = self
@@ -1935,6 +2030,8 @@ def _clone_node(node, deep, newOwnerDocument):
                                                              node.data)
     elif node.nodeType == Node.COMMENT_NODE:
         clone = newOwnerDocument.createComment(node.data)
+    elif node.nodeType == Node.ENTITY_REFERENCE_NODE:
+        clone = newOwnerDocument.createEntityReference(node.nodeName)
     elif node.nodeType == Node.ATTRIBUTE_NODE:
         clone = newOwnerDocument.createAttributeNS(node.namespaceURI,
                                                    node.nodeName)

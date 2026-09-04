@@ -1006,8 +1006,12 @@ AS_CASE([$host],
 )
 
 dnl Add the compiler flag for the iOS minimum supported OS version.
-AS_CASE([$ac_sys_system],
-  [iOS], [
+AS_CASE([$host],
+  [*-apple-ios*-simulator], [
+    AS_VAR_APPEND([CFLAGS], [" -mios-simulator-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"])
+    AS_VAR_APPEND([LDFLAGS], [" -mios-simulator-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"])
+  ],
+  [*-apple-ios*], [
     AS_VAR_APPEND([CFLAGS], [" -mios-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"])
     AS_VAR_APPEND([LDFLAGS], [" -mios-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"])
   ],
@@ -1202,6 +1206,7 @@ AS_CASE([$ac_sys_system],
   [Darwin*], [MULTIARCH=""],
   [iOS], [MULTIARCH=""],
   [FreeBSD*], [MULTIARCH=""],
+  [OpenBSD*], [MULTIARCH=""],
   [MULTIARCH=$($CC --print-multiarch 2>/dev/null)]
 )
 AC_SUBST([MULTIARCH])
@@ -1264,6 +1269,8 @@ AS_CASE([$host/$ac_cv_cc_name],
   [aarch64-pc-windows-msvc/msvc],        [PY_SUPPORT_TIER=3], dnl Windows ARM64, MSVC
   [armv7l-*-linux-gnueabihf/gcc],        [PY_SUPPORT_TIER=3], dnl ARMv7 LE with hardware floats, any vendor, glibc, gcc
   [powerpc64le-*-linux-gnu/clang],       [PY_SUPPORT_TIER=3], dnl Linux on PPC64 little endian, glibc, clang
+  [riscv64-*-linux-gnu/gcc],             [PY_SUPPORT_TIER=3], dnl Linux on RISC-V 64bit, glibc, gcc+clang
+  [riscv64-*-linux-gnu/clang],           [PY_SUPPORT_TIER=3],
   [s390x-*-linux-gnu/gcc],               [PY_SUPPORT_TIER=3], dnl Linux on 64bit s390x (big endian), glibc, gcc
   [x86_64-*-freebsd*/clang],             [PY_SUPPORT_TIER=3], dnl FreeBSD on AMD64
   [aarch64-apple-ios*-simulator/clang],  [PY_SUPPORT_TIER=3], dnl iOS Simulator on arm64
@@ -4462,6 +4469,27 @@ if test "$ac_cv_ffi_complex_double_supported" = "yes"; then
               [Defined if _Complex C type can be used with libffi.])
 fi
 
+# Check for native half-float type (_Float16).
+AC_CACHE_CHECK([for _Float16 support], [ac_cv_float16_supported],
+WITH_SAVE_ENV([
+CFLAGS="$CFLAGS -O0"
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <math.h>
+int main(void)
+{
+    _Float16 val = 1.0f16;
+    int test = isinf(val) || isnan(val); /* basic support from libm */
+    double d = 3.14;
+    val = d;
+    return test;
+}
+]])], [ac_cv_float16_supported=yes],
+[ac_cv_float16_supported=no],
+[ac_cv_float16_supported=no])]))
+AS_VAR_IF([ac_cv_float16_supported], [yes],
+          [AC_DEFINE([HAVE_FLOAT16], [1],
+                     [Defined if _Float16 C type is supported])])
+
 dnl Check for libmpdec >= 2.5.0
 PKG_CHECK_MODULES([LIBMPDEC], [libmpdec >= 2.5.0], [have_mpdec=yes], [
   WITH_SAVE_ENV([
@@ -5496,13 +5524,15 @@ AC_CHECK_FUNCS([ \
   copy_file_range ctermid dladdr dup execv explicit_bzero explicit_memset \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
-  gai_strerror getegid geteuid getgid getgrent getgrgid getgrgid_r \
+  gai_strerror getdents64 getegid geteuid getgid getgrent getgrgid getgrgid_r \
   getgrnam_r getgrouplist gethostname getitimer getloadavg getlogin getlogin_r \
   getpeername getpgid getpid getppid getpriority _getpty \
   getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid getspent \
-  getspnam getuid getwd grantpt if_nameindex initgroups kill killpg lchown linkat \
+  getspnam gettid getuid getwd grantpt if_indextoname if_nameindex \
+  if_nametoindex initgroups kill killpg lchown linkat \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
-  mknod mknodat mktime mmap mremap nice openat opendir pathconf pause pipe \
+  mknod mknodat mktime mmap mremap nice openat opendir pathconf pause \
+  pidfd_open pidfd_getfd pidfd_send_signal pipe \
   plock poll ppoll posix_fadvise posix_fallocate posix_openpt posix_spawn posix_spawnp \
   posix_spawn_file_actions_addclosefrom_np \
   pread preadv preadv2 process_vm_readv \
@@ -5704,10 +5734,34 @@ fi
 dnl Check for compression libraries
 AH_TEMPLATE([HAVE_ZLIB_COPY], [Define if the zlib library has inflateCopy])
 
-dnl detect zlib from Emscripten emport
-PY_CHECK_EMSCRIPTEN_PORT([ZLIB], [-sUSE_ZLIB])
+AC_MSG_CHECKING([for --with-zlib])
+AC_ARG_WITH(
+  [zlib],
+  [AS_HELP_STRING([--with(out)-zlib@<:@=zlib|zlib-ng|zlib-rs|no@:>@],
+                  [select the zlib implementation to link against, or disable
+                   zlib support (default: auto)])],
+  [AS_CASE([$with_zlib],
+     [yes|auto], [with_zlib=auto],
+     [zlib|zlib-ng|zlib-rs|no], [],
+     [AC_MSG_ERROR([proper usage is --with(out)-zlib@<:@=zlib|zlib-ng|zlib-rs|no@:>@])])],
+  [with_zlib=auto])
+AC_MSG_RESULT([$with_zlib])
 
-PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.2.1], [
+dnl detect zlib from Emscripten emport
+AS_CASE([$with_zlib], [auto|zlib], [PY_CHECK_EMSCRIPTEN_PORT([ZLIB], [-sUSE_ZLIB])])
+
+AS_VAR_IF([with_zlib], [zlib-rs], [
+  AS_VAR_SET([zlib_name], ["libz_rs"])
+  AS_VAR_SET([zlib_version], ["0.6.0"])
+  AS_VAR_SET([zlib_libname], ["z_rs"])
+], [
+  AS_VAR_SET([zlib_name], ["zlib"])
+  AS_VAR_SET([zlib_version], ["1.2.2.1"])
+  AS_VAR_SET([zlib_libname], ["z"])
+])
+
+AS_VAR_IF([with_zlib], [no], [have_zlib=no], [
+PKG_CHECK_MODULES([ZLIB], [$zlib_name >= $zlib_version], [
   have_zlib=yes
   dnl zlib 1.2.0 (2003) added inflateCopy
   AC_DEFINE([HAVE_ZLIB_COPY], [1])
@@ -5716,15 +5770,30 @@ PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.2.1], [
     CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
     LIBS="$LIBS $ZLIB_LIBS"
     AC_CHECK_HEADERS([zlib.h], [
-      PY_CHECK_LIB([z], [gzread], [have_zlib=yes], [have_zlib=no])
+      PY_CHECK_LIB([$zlib_libname], [gzread], [have_zlib=yes], [have_zlib=no])
     ], [have_zlib=no])
     AS_VAR_IF([have_zlib], [yes], [
       ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
-      ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
-      PY_CHECK_LIB([z], [inflateCopy], [AC_DEFINE([HAVE_ZLIB_COPY], [1])])
+      ZLIB_LIBS=${ZLIB_LIBS-"-l$zlib_libname"}
+      PY_CHECK_LIB([$zlib_libname], [inflateCopy], [AC_DEFINE([HAVE_ZLIB_COPY], [1])])
     ])
   ])
 ])
+])
+
+AS_VAR_IF([with_zlib], [zlib-ng], [AS_VAR_IF([have_zlib], [yes], [
+  WITH_SAVE_ENV([
+    CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
+    AC_CHECK_DECL([ZLIBNG_VERSION], [],
+      [AC_MSG_ERROR([--with-zlib=zlib-ng: the detected zlib library is not zlib-ng])],
+      [@%:@include <zlib.h>])
+  ])
+])])
+
+AS_CASE([$with_zlib],
+  [auto|no], [],
+  [AS_VAR_IF([have_zlib], [no],
+    [AC_MSG_ERROR([--with-zlib=$with_zlib requested but $zlib_name was not found])])])
 
 dnl binascii can use zlib for optimized crc32.
 AS_VAR_IF([have_zlib], [yes], [
@@ -5732,22 +5801,50 @@ AS_VAR_IF([have_zlib], [yes], [
   BINASCII_LIBS="$ZLIB_LIBS"
 ])
 
-dnl detect bzip2 from Emscripten emport
-PY_CHECK_EMSCRIPTEN_PORT([BZIP2], [-sUSE_BZIP2])
+AC_MSG_CHECKING([for --with-bzip2])
+AC_ARG_WITH(
+  [bzip2],
+  [AS_HELP_STRING([--with(out)-bzip2@<:@=bzip2|bzip2-rs|no@:>@],
+                  [select the bzip2 implementation to link against, or disable
+                   bzip2 support (default: auto)])],
+  [AS_CASE([$with_bzip2],
+     [yes|auto], [with_bzip2=auto],
+     [bzip2|bzip2-rs|no], [],
+     [AC_MSG_ERROR([proper usage is --with(out)-bzip2@<:@=bzip2|bzip2-rs|no@:>@])])],
+  [with_bzip2=auto])
+AC_MSG_RESULT([$with_bzip2])
 
-PKG_CHECK_MODULES([BZIP2], [bzip2], [have_bzip2=yes], [
+dnl detect bzip2 from Emscripten emport
+AS_CASE([$with_bzip2], [auto|bzip2], [PY_CHECK_EMSCRIPTEN_PORT([BZIP2], [-sUSE_BZIP2])])
+
+AS_VAR_IF([with_bzip2], [bzip2-rs], [
+  AS_VAR_SET([bzip2_name], ["libbz2_rs"])
+  AS_VAR_SET([bzip2_libname], ["bz2_rs"])
+], [
+  AS_VAR_SET([bzip2_name], ["bzip2"])
+  AS_VAR_SET([bzip2_libname], ["bz2"])
+])
+
+AS_VAR_IF([with_bzip2], [no], [have_bzip2=no], [
+PKG_CHECK_MODULES([BZIP2], [$bzip2_name], [have_bzip2=yes], [
   WITH_SAVE_ENV([
     CPPFLAGS="$CPPFLAGS $BZIP2_CFLAGS"
     LIBS="$LIBS $BZIP2_LIBS"
     AC_CHECK_HEADERS([bzlib.h], [
-      AC_CHECK_LIB([bz2], [BZ2_bzCompress], [have_bzip2=yes], [have_bzip2=no])
+      AC_CHECK_LIB([$bzip2_libname], [BZ2_bzCompress], [have_bzip2=yes], [have_bzip2=no])
     ], [have_bzip2=no])
     AS_VAR_IF([have_bzip2], [yes], [
       BZIP2_CFLAGS=${BZIP2_CFLAGS-""}
-      BZIP2_LIBS=${BZIP2_LIBS-"-lbz2"}
+      BZIP2_LIBS=${BZIP2_LIBS-"-l$bzip2_libname"}
     ])
   ])
 ])
+])
+
+AS_CASE([$with_bzip2],
+  [auto|no], [],
+  [AS_VAR_IF([have_bzip2], [no],
+    [AC_MSG_ERROR([--with-bzip2=$with_bzip2 requested but $bzip2_name was not found])])])
 
 PKG_CHECK_MODULES([LIBLZMA], [liblzma], [have_liblzma=yes], [
   WITH_SAVE_ENV([
@@ -6669,18 +6766,21 @@ LDVERSION='$(VERSION)$(ABIFLAGS)'
 AC_MSG_RESULT([$LDVERSION])
 
 # Configure the flags and dependencies used when compiling shared modules.
-# Do not rename LIBPYTHON - it's accessed via sysconfig by package build
-# systems (e.g. Meson) to decide whether to link extension modules against
-# libpython.
 AC_SUBST([MODULE_DEPS_SHARED])
 AC_SUBST([LIBPYTHON])
 MODULE_DEPS_SHARED='$(MODULE_DEPS_STATIC) $(EXPORTSYMS)'
+
+# On most platforms, extension modules aren't linked against libpython, so
+# LIBPYTHON must be empty.
 LIBPYTHON=''
 
 # On Android and Cygwin the shared libraries must be linked with libpython.
+# LIBPYTHON is used by python-config, python3.pc, the commands for building the
+# stdlib's own extension modules, and external package build systems via
+# sysconfig, so its value must be suitable for all those contexts.
 if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MACHDEP" = "cygwin"); then
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(LDLIBRARY)"
-  LIBPYTHON="\$(BLDLIBRARY)"
+  LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
 fi
 
 # On iOS the shared libraries must be linked with the Python framework
@@ -7205,8 +7305,9 @@ WITH_SAVE_ENV([
     ]))])
 
   # Check that we're able to link with crucial curses/panel functions. This
-  # also serves as a fallback in case pkg-config failed.
-  AS_VAR_APPEND([LIBS], [" $CURSES_LIBS $PANEL_LIBS"])
+  # also serves as a fallback in case pkg-config failed. Extension modules are
+  # not linked with LIBS, so exclude it to get the required libraries.
+  LIBS="$CURSES_LIBS $PANEL_LIBS"
   AC_SEARCH_LIBS([initscr], [$curses_libs],
     [AS_VAR_IF([have_curses], [no],
       [AS_VAR_SET([have_curses], [yes])
