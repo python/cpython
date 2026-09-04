@@ -11,6 +11,7 @@ from test.support import is_emscripten
 
 try:
     import _remote_debugging  # noqa: F401
+    from profiling.sampling import gecko_collector
     from profiling.sampling.pstats_collector import PstatsCollector
     from profiling.sampling.stack_collector import (
         CollapsedStackCollector,
@@ -39,7 +40,16 @@ except ImportError:
 
 from test.support import captured_stdout, captured_stderr
 
-from .mocks import MockFrameInfo, MockThreadInfo, MockInterpreterInfo, LocationInfo, make_diff_collector_with_mock_baseline
+from .mocks import (
+    MockAwaitedInfo,
+    MockCoroInfo,
+    MockFrameInfo,
+    MockInterpreterInfo,
+    MockTaskInfo,
+    MockThreadInfo,
+    LocationInfo,
+    make_diff_collector_with_mock_baseline,
+)
 from .helpers import close_and_unlink, jsonl_tables
 
 
@@ -57,6 +67,42 @@ def find_child_by_name(children, strings, substr):
         if substr in resolve_name(child, strings):
             return child
     return None
+
+
+def export_gecko_profile(testcase, collector):
+    gecko_out = tempfile.NamedTemporaryFile(suffix=".json", delete=False)
+    testcase.addCleanup(close_and_unlink, gecko_out)
+    # We cannot overwrite an open file on Windows.
+    gecko_out.close()
+
+    with captured_stdout(), captured_stderr():
+        collector.export(gecko_out.name)
+
+    testcase.assertGreater(os.path.getsize(gecko_out.name), 0)
+    with open(gecko_out.name, encoding="utf-8") as file:
+        return json.load(file)
+
+
+def assert_gecko_column_lengths(testcase, table, columns):
+    expected = table["length"]
+    for column in columns:
+        testcase.assertEqual(
+            len(table[column]), expected,
+            f"{column!r} has wrong length",
+        )
+
+
+def gecko_marker_names(profile, markers):
+    string_array = profile["shared"]["stringArray"]
+    return [string_array[idx] for idx in markers["name"]]
+
+
+def gecko_opcode_marker_data(profile):
+    markers = profile["threads"][0]["markers"]
+    return [
+        data for data in markers["data"]
+        if data.get("type") == "Opcode"
+    ]
 
 
 class TestSampleProfilerComponents(unittest.TestCase):
@@ -420,6 +466,28 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn(stack1_expected, lines)
         self.assertIn(stack2_expected, lines)
 
+    def test_collapsed_stack_collector_export_non_ascii_names(self):
+        # gh-156810: frame names are written verbatim, so the output must be
+        # opened with an encoding that can represent non-ASCII and
+        # surrogate-escaped (undecodable-path) names.
+        collapsed_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, collapsed_out)
+
+        collector = CollapsedStackCollector(1000)
+        frame = MockFrameInfo("/tmp/ba\udc80d.py", 5, "计算")
+        collector.collect([
+            MockInterpreterInfo(0, [MockThreadInfo(1, [frame])])
+        ])
+
+        with captured_stdout(), captured_stderr():
+            collector.export(collapsed_out.name)
+
+        with open(collapsed_out.name, encoding="utf-8",
+                  errors="surrogatepass") as f:
+            content = f.read()
+        self.assertIn("计算", content)
+        self.assertIn("ba\udc80d.py", content)
+
     def test_flamegraph_collector_basic(self):
         """Test basic FlamegraphCollector functionality."""
         collector = FlamegraphCollector(1000)
@@ -459,6 +527,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn("func1 (file.py:10)", resolve_name(child, strings))
         self.assertEqual(child["value"], 1)
         self.assertEqual(child["self"], 1)  # leaf: all time is self
+        self.assertEqual(data["stats"]["sample_interval_usec"], 1000)
 
     def test_flamegraph_collector_export(self):
         """Test flamegraph HTML export functionality."""
@@ -467,7 +536,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         )
         self.addCleanup(close_and_unlink, flamegraph_out)
 
-        collector = FlamegraphCollector(1000)
+        collector = FlamegraphCollector(10000)
 
         # Create some test data (use Interpreter/Thread objects like runtime)
         test_frames1 = [
@@ -502,9 +571,10 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
         # Export flamegraph
         with captured_stdout(), captured_stderr():
-            collector.export(flamegraph_out.name)
+            export_ok = collector.export(flamegraph_out.name)
 
         # Verify file was created and contains valid data
+        self.assertTrue(export_ok)
         self.assertTrue(os.path.exists(flamegraph_out.name))
         self.assertGreater(os.path.getsize(flamegraph_out.name), 0)
 
@@ -522,6 +592,23 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn('"name":', content)
         self.assertIn('"value":', content)
         self.assertIn('"children":', content)
+        self.assertIn('"sample_interval_usec": 10000', content)
+        self.assertIn("samples * data.stats.sample_interval_usec / 1000", content)
+
+    def test_flamegraph_collector_empty_export_fails(self):
+        """Test empty flamegraph export reports no output."""
+        flamegraph_out = tempfile.NamedTemporaryFile(
+            suffix=".html", delete=False
+        )
+        self.addCleanup(close_and_unlink, flamegraph_out)
+
+        collector = FlamegraphCollector(1000)
+
+        with captured_stdout(), captured_stderr():
+            export_ok = collector.export(flamegraph_out.name)
+
+        self.assertFalse(export_ok)
+        self.assertEqual(os.path.getsize(flamegraph_out.name), 0)
 
     def test_gecko_collector_basic(self):
         """Test basic GeckoCollector functionality."""
@@ -583,9 +670,10 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
         # Verify samples
         samples = thread_data["samples"]
-        self.assertEqual(len(samples["stack"]), 1)
-        self.assertEqual(len(samples["time"]), 1)
         self.assertEqual(samples["length"], 1)
+        assert_gecko_column_lengths(
+            self, samples, ("stack", "time", "eventDelay")
+        )
 
         # Verify function table structure and content
         func_table = thread_data["funcTable"]
@@ -619,12 +707,51 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertGreater(stack_table["length"], 0)
         self.assertGreater(len(stack_table["frame"]), 0)
 
+    def test_gecko_collector_async_aware(self):
+        collector = GeckoCollector(1000)
+
+        parent = MockTaskInfo(
+            task_id=1,
+            task_name="Parent",
+            coroutine_stack=[
+                MockCoroInfo(
+                    task_name="Parent",
+                    call_stack=[MockFrameInfo("parent.py", 10, "parent_fn")],
+                )
+            ],
+        )
+        child = MockTaskInfo(
+            task_id=2,
+            task_name="Child",
+            coroutine_stack=[
+                MockCoroInfo(
+                    task_name="Child",
+                    call_stack=[MockFrameInfo("child.py", 20, "child_fn")],
+                )
+            ],
+            awaited_by=[MockCoroInfo(task_name=1, call_stack=[])],
+        )
+
+        collector.collect(
+            [MockAwaitedInfo(thread_id=100, awaited_by=[parent, child])],
+            timestamps_us=[1000, 2000],
+        )
+        profile_data = collector._build_profile()
+
+        self.assertEqual(len(profile_data["threads"]), 1)
+        thread_data = profile_data["threads"][0]
+        self.assertEqual(thread_data["samples"]["length"], 2)
+
+        string_array = profile_data["shared"]["stringArray"]
+        self.assertIn("parent_fn", string_array)
+        self.assertIn("child_fn", string_array)
+        self.assertIn("Parent", string_array)
+        self.assertIn("Child", string_array)
+        self.assertEqual(thread_data["markers"]["length"], 0)
+
     @unittest.skipIf(is_emscripten, "threads not available")
     def test_gecko_collector_export(self):
         """Test Gecko profile export functionality."""
-        gecko_out = tempfile.NamedTemporaryFile(suffix=".json", delete=False)
-        self.addCleanup(close_and_unlink, gecko_out)
-
         collector = GeckoCollector(1000)
 
         test_frames1 = [
@@ -657,17 +784,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         collector.collect(test_frames2)
         collector.collect(test_frames3)
 
-        # Export gecko profile
-        with captured_stdout(), captured_stderr():
-            collector.export(gecko_out.name)
-
-        # Verify file was created and contains valid data
-        self.assertTrue(os.path.exists(gecko_out.name))
-        self.assertGreater(os.path.getsize(gecko_out.name), 0)
-
-        # Check file contains valid JSON
-        with open(gecko_out.name, "r") as f:
-            profile_data = json.load(f)
+        profile_data = export_gecko_profile(self, collector)
 
         # Should be valid Gecko profile format
         self.assertIn("meta", profile_data)
@@ -687,6 +804,100 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn("func1", string_array)
         self.assertIn("func2", string_array)
         self.assertIn("other_func", string_array)
+
+        thread_data = profile_data["threads"][0]
+        assert_gecko_column_lengths(
+            self, thread_data["samples"], ("stack", "time", "eventDelay")
+        )
+
+    @unittest.skipIf(is_emscripten, "threads not available")
+    def test_gecko_collector_export_after_spill_flush(self):
+        """Test Gecko profile export after spill buffers flush to disk."""
+        old_buffer_bytes = gecko_collector.DEFAULT_SPILL_BUFFER_BYTES
+        gecko_collector.DEFAULT_SPILL_BUFFER_BYTES = 1
+        self.addCleanup(
+            setattr, gecko_collector, "DEFAULT_SPILL_BUFFER_BYTES",
+            old_buffer_bytes
+        )
+
+        collector = GeckoCollector(1000)
+        test_frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [MockFrameInfo("file.py", 10, "func")],
+                        status=THREAD_STATUS_HAS_GIL,
+                    )
+                ],
+            )
+        ]
+        collector.collect(test_frames, timestamps_us=[1000, 2000, 3000])
+
+        profile_data = export_gecko_profile(self, collector)
+        samples = profile_data["threads"][0]["samples"]
+        self.assertEqual(samples["length"], 3)
+        assert_gecko_column_lengths(
+            self, samples, ("stack", "time", "eventDelay")
+        )
+
+    @unittest.skipIf(is_emscripten, "threads not available")
+    def test_gecko_collector_rejects_collect_after_export(self):
+        collector = GeckoCollector(1000)
+        test_frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [MockFrameInfo("file.py", 10, "func")],
+                        status=THREAD_STATUS_HAS_GIL,
+                    )
+                ],
+            )
+        ]
+        collector.collect(test_frames)
+        export_gecko_profile(self, collector)
+
+        with self.assertRaisesRegex(RuntimeError, "after export"):
+            collector.collect(test_frames)
+
+    @unittest.skipIf(is_emscripten, "threads not available")
+    def test_gecko_collector_export_failure_keeps_existing_file(self):
+        collector = GeckoCollector(1000)
+        test_frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [MockFrameInfo("file.py", 10, "func")],
+                        status=THREAD_STATUS_HAS_GIL,
+                    )
+                ],
+            )
+        ]
+        collector.collect(test_frames)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            filename = os.path.join(temp_dir, "profile.json")
+            with open(filename, "w", encoding="utf-8") as file:
+                file.write("existing")
+
+            before = set(os.listdir(temp_dir))
+
+            def fail(file):
+                raise OSError("boom")
+
+            collector._stream_profile = fail
+            with captured_stdout(), captured_stderr():
+                with self.assertRaisesRegex(OSError, "boom"):
+                    collector.export(filename)
+
+            with open(filename, encoding="utf-8") as file:
+                self.assertEqual(file.read(), "existing")
+            self.assertEqual(set(os.listdir(temp_dir)), before)
 
     def test_gecko_collector_markers(self):
         """Test Gecko profile markers for GIL and CPU state tracking."""
@@ -771,21 +982,16 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn("markers", thread_data)
         markers = thread_data["markers"]
 
-        # Should have marker arrays
-        self.assertIn("name", markers)
-        self.assertIn("startTime", markers)
-        self.assertIn("endTime", markers)
-        self.assertIn("category", markers)
         self.assertGreater(
             markers["length"], 0, "Should have generated markers"
         )
-
-        # Get marker names from string table
-        string_array = profile_data["shared"]["stringArray"]
-        marker_names = [string_array[idx] for idx in markers["name"]]
+        assert_gecko_column_lengths(
+            self, markers,
+            ("data", "name", "startTime", "endTime", "phase", "category"),
+        )
 
         # Verify we have different marker types
-        marker_name_set = set(marker_names)
+        marker_name_set = set(gecko_marker_names(profile_data, markers))
 
         # Should have "Has GIL" markers (when thread had GIL)
         self.assertIn(
@@ -975,6 +1181,30 @@ class TestSampleProfilerComponents(unittest.TestCase):
         collector.collect(stack_frames_gc)
         self.assertEqual(collector.samples_with_gc_frames, 2)
 
+    def test_flamegraph_collector_restores_replay_stats(self):
+        """Replay restores measured values from binary metadata."""
+        collector = FlamegraphCollector(1000)
+        collector.set_replay_stats({
+            "duration_sec": 1.25,
+            "sample_rate": 4.0,
+            "error_rate": 2.5,
+            "missed_samples": 1.5,
+        })
+
+        self.assertEqual(collector.stats["duration_sec"], 1.25)
+        self.assertEqual(collector.stats["sample_rate"], 4.0)
+        self.assertEqual(collector.stats["error_rate"], 2.5)
+        self.assertEqual(collector.stats["missed_samples"], 1.5)
+
+    def test_flamegraph_collector_leaves_legacy_replay_stats_unavailable(self):
+        collector = FlamegraphCollector(1000)
+        original_stats = collector.stats.copy()
+        collector.set_replay_stats({
+            "duration_sec": None,
+            "sample_rate": None,
+        })
+        self.assertEqual(collector.stats, original_stats)
+
     def test_flamegraph_collector_per_thread_stats(self):
         """Test per-thread statistics tracking in FlamegraphCollector."""
         collector = FlamegraphCollector(sample_interval_usec=1000)
@@ -1154,6 +1384,87 @@ class TestSampleProfilerComponents(unittest.TestCase):
             self.assertIn("gil_requested_pct", thread_data)
             self.assertIn("gc_pct", thread_data)
             self.assertIn("total", thread_data)
+
+    def test_flamegraph_nodes_include_per_thread_values(self):
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+        root = MockFrameInfo("app.py", 1, "main")
+        collector.process_frames(
+            [MockFrameInfo("app.py", 10, "worker_a"), root],
+            thread_id=1,
+            weight=2,
+        )
+        collector.process_frames(
+            [MockFrameInfo("app.py", 20, "worker_b"), root],
+            thread_id=2,
+            weight=3,
+        )
+
+        data = collector._convert_to_flamegraph_format()
+
+        self.assertEqual(data["thread_values"], {1: [2, 0], 2: [3, 0]})
+        children_by_line = {child["lineno"]: child for child in data["children"]}
+        self.assertEqual(children_by_line[10]["thread_values"], {1: [2, 2]})
+        self.assertEqual(children_by_line[20]["thread_values"], {2: [3, 3]})
+
+    def test_flamegraph_pruning_preserves_low_volume_thread(self):
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+        collector.process_frames(
+            [MockFrameInfo("app.py", 10, "busy")],
+            thread_id=1,
+            weight=1999,
+        )
+        collector.process_frames(
+            [MockFrameInfo("app.py", 20, "rare")],
+            thread_id=2,
+        )
+
+        data = collector._convert_to_flamegraph_format()
+
+        self.assertEqual(data["thread_values"], {1: [1999, 0], 2: [1, 0]})
+        children_by_line = {child["lineno"]: child for child in data["children"]}
+        self.assertEqual(children_by_line[10]["thread_values"], {1: [1999, 1999]})
+        self.assertEqual(children_by_line[20]["thread_values"], {2: [1, 1]})
+
+    def test_flamegraph_does_not_promote_incomplete_root(self):
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+        collector.process_frames(
+            [MockFrameInfo("app.py", 1, "busy")],
+            thread_id=1,
+            weight=2000,
+        )
+        for line in range(2, 2002):
+            collector.process_frames(
+                [MockFrameInfo("app.py", line, f"fragment_{line}")],
+                thread_id=2,
+            )
+
+        data = collector._convert_to_flamegraph_format()
+
+        self.assertNotIn("filename", data)
+        self.assertEqual(data["thread_values"], {1: [2000, 0], 2: [2000, 0]})
+        self.assertEqual(len(data["children"]), 1)
+        self.assertEqual(data["children"][0]["thread_values"], {1: [2000, 2000]})
+
+    def test_flamegraph_nodes_include_per_thread_opcodes(self):
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+        collector.process_frames(
+            [MockFrameInfo("app.py", 10, "worker", opcode=100)],
+            thread_id=1,
+            weight=2,
+        )
+        collector.process_frames(
+            [MockFrameInfo("app.py", 10, "worker", opcode=101)],
+            thread_id=2,
+            weight=3,
+        )
+
+        data = collector._convert_to_flamegraph_format()
+
+        self.assertEqual(data["opcodes"], {100: 2, 101: 3})
+        self.assertEqual(
+            data["thread_opcodes"],
+            {1: {100: 2}, 2: {101: 3}},
+        )
 
     def test_flamegraph_collector_per_thread_gc_percentage(self):
         """Test that per-thread GC percentage uses total samples as denominator."""
@@ -1400,7 +1711,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
         data = diff._convert_to_flamegraph_format()
 
-        self.assertGreater(data["stats"]["elided_count"], 0)
+        self.assertEqual(data["stats"]["elided_count"], 1)
         self.assertIn("elided_flamegraph", data["stats"])
         elided = data["stats"]["elided_flamegraph"]
         self.assertTrue(elided["stats"]["is_differential"])
@@ -1415,6 +1726,74 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertAlmostEqual(child["diff_pct"], -100.0)
         self.assertGreater(child["baseline"], 0)
         self.assertAlmostEqual(child["diff"], -child["baseline"])
+
+    def test_diff_flamegraph_counts_elided_stacks_not_paths(self):
+        """Internal and leaf stack endings are counted separately."""
+        internal_stack = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 20, "old_mid"),
+                    MockFrameInfo("file.py", 10, "root"),
+                ])
+            ])
+        ]
+        leaf_stack = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 30, "old_leaf"),
+                    MockFrameInfo("file.py", 20, "old_mid"),
+                    MockFrameInfo("file.py", 10, "root"),
+                ])
+            ])
+        ]
+        current_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [MockFrameInfo("file.py", 10, "root")])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline(
+            [internal_stack, leaf_stack]
+        )
+        diff.collect(current_frames)
+
+        data = diff._convert_to_flamegraph_format()
+        self.assertEqual(data["stats"]["elided_count"], 2)
+
+    def test_diff_flamegraph_renders_small_elided_stack(self):
+        """Elided stacks are not removed by the significance filter."""
+        common_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 20, "common"),
+                    MockFrameInfo("file.py", 10, "root"),
+                ])
+            ])
+        ]
+        old_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 30, "old_tiny"),
+                    MockFrameInfo("file.py", 10, "root"),
+                ])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline(
+            [common_frames] * 1999 + [old_frames]
+        )
+        for _ in range(1999):
+            diff.collect(common_frames)
+
+        data = diff._convert_to_flamegraph_format()
+        self.assertEqual(data["stats"]["elided_count"], 1)
+        self.assertIn("elided_flamegraph", data["stats"])
+
+        elided = data["stats"]["elided_flamegraph"]
+        strings = elided["strings"]
+        self.assertIsNotNone(
+            find_child_by_name(elided.get("children", []), strings, "old_tiny")
+        )
 
     def test_diff_flamegraph_elided_top_level_root(self):
         """Elided top-level roots do not crash metadata generation."""
@@ -1482,6 +1861,123 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertGreater(child["self_time"], 0)
         self.assertAlmostEqual(child["diff"], 0.0, places=1)
         self.assertAlmostEqual(child["diff_pct"], 0.0, places=1)
+
+    def test_diff_flamegraph_does_not_duplicate_line_values(self):
+        """Function aggregates are apportioned across line nodes."""
+        def sample(line):
+            return [
+                MockInterpreterInfo(0, [
+                    MockThreadInfo(1, [
+                        MockFrameInfo("file.py", line, "func"),
+                        MockFrameInfo("file.py", 1, "caller"),
+                    ])
+                ])
+            ]
+
+        diff = make_diff_collector_with_mock_baseline(
+            [sample(10), sample(20)]
+        )
+        diff.collect(sample(10))
+        diff.collect(sample(20))
+
+        data = diff._convert_to_flamegraph_format()
+        children = data["children"]
+        self.assertEqual(sum(node["self"] for node in children), 2)
+        self.assertEqual(sum(node["self_time"] for node in children), 2)
+        self.assertEqual(sum(node["baseline"] for node in children), 2)
+        for node in children:
+            self.assertEqual(node["self"], 1)
+            self.assertEqual(node["self_time"], 1)
+            self.assertAlmostEqual(node["baseline"], 1.0)
+            self.assertAlmostEqual(node["diff"], 0.0)
+
+    def test_diff_flamegraph_line_totals_include_allocated_self(self):
+        """A line's baseline self time cannot exceed its inclusive time."""
+        def sample(*frames):
+            return [
+                MockInterpreterInfo(0, [MockThreadInfo(1, list(frames))])
+            ]
+
+        target_10 = MockFrameInfo("file.py", 10, "target")
+        target_20 = MockFrameInfo("file.py", 20, "target")
+        child = MockFrameInfo("file.py", 30, "child")
+
+        diff = make_diff_collector_with_mock_baseline(
+            [sample(target_10)] * 100
+        )
+        for _ in range(10):
+            diff.collect(sample(target_10))
+        for _ in range(90):
+            diff.collect(sample(child, target_20))
+
+        data = diff._convert_to_flamegraph_format()
+        nodes = data["children"]
+        self.assertEqual(sum(node["baseline"] for node in nodes), 100)
+        self.assertEqual(sum(node["baseline_total"] for node in nodes), 100)
+        for node in nodes:
+            self.assertGreaterEqual(node["baseline"], 0)
+            self.assertLessEqual(node["baseline"], node["baseline_total"])
+
+    def test_diff_flamegraph_does_not_duplicate_elided_line_values(self):
+        """Elided metadata uses each rendered line node's samples."""
+        def sample(line, funcname="old_func"):
+            return [
+                MockInterpreterInfo(0, [
+                    MockThreadInfo(1, [
+                        MockFrameInfo("file.py", line, funcname),
+                        MockFrameInfo("file.py", 1, "caller"),
+                    ])
+                ])
+            ]
+
+        diff = make_diff_collector_with_mock_baseline(
+            [sample(10), sample(20)]
+        )
+        diff.collect(sample(30, "new_func"))
+
+        data = diff._convert_to_flamegraph_format()
+        elided = data["stats"]["elided_flamegraph"]
+        children = elided["children"]
+        scale = data["stats"]["baseline_scale"]
+        self.assertEqual(sum(node["self"] for node in children), 2)
+        self.assertEqual(sum(node["baseline"] for node in children), 2 * scale)
+        for node in children:
+            self.assertEqual(node["self"], 1)
+            self.assertAlmostEqual(node["baseline"], scale)
+            self.assertAlmostEqual(node["diff"], -scale)
+
+    def test_diff_flamegraph_elided_ancestors_have_no_lost_self_time(self):
+        """Matched ancestors only carry inclusive elided geometry."""
+        root = MockFrameInfo("file.py", 10, "root")
+        common = MockFrameInfo("file.py", 20, "common", opcode=100)
+        old = MockFrameInfo("file.py", 30, "old")
+
+        common_sample = [
+            MockInterpreterInfo(0, [MockThreadInfo(1, [common, root])])
+        ]
+        old_sample = [
+            MockInterpreterInfo(0, [MockThreadInfo(1, [old, common, root])])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline(
+            [common_sample] * 3 + [old_sample]
+        )
+        diff.collect(common_sample)
+
+        data = diff._convert_to_flamegraph_format()
+        elided_root = data["stats"]["elided_flamegraph"]
+        common_node = elided_root["children"][0]
+        old_node = common_node["children"][0]
+
+        for ancestor in (elided_root, common_node):
+            self.assertEqual(ancestor["self"], 0)
+            self.assertEqual(ancestor["baseline"], 0)
+            self.assertNotIn("opcodes", ancestor)
+            self.assertLessEqual(
+                ancestor["baseline"], ancestor["baseline_total"]
+            )
+        self.assertEqual(old_node["self"], 1)
+        self.assertEqual(old_node["baseline"], old_node["baseline_total"])
 
     def test_diff_flamegraph_empty_current(self):
         """Empty current profile still produces differential metadata and elided paths."""
@@ -1552,8 +2048,9 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.addCleanup(close_and_unlink, flamegraph_out)
 
         with captured_stdout(), captured_stderr():
-            diff.export(flamegraph_out.name)
+            export_ok = diff.export(flamegraph_out.name)
 
+        self.assertTrue(export_ok)
         self.assertTrue(os.path.exists(flamegraph_out.name))
         self.assertGreater(os.path.getsize(flamegraph_out.name), 0)
 
@@ -2659,6 +3156,7 @@ class TestGeckoOpcodeMarkers(unittest.TestCase):
     def test_gecko_opcode_state_tracking(self):
         """Test that GeckoCollector tracks opcode state changes."""
         collector = GeckoCollector(sample_interval_usec=1000, opcodes=True)
+        self.addCleanup(collector._cleanup_spills)
 
         # First sample with opcode 90 (RAISE_VARARGS)
         frame1 = MockFrameInfo("test.py", 10, "func", opcode=90)
@@ -2702,10 +3200,28 @@ class TestGeckoOpcodeMarkers(unittest.TestCase):
         collector.collect(frames2)
 
         # Should have emitted a marker for the first opcode
-        thread_data = collector.threads[1]
-        markers = thread_data["markers"]
-        # At least one marker should have been added
-        self.assertGreater(len(markers["name"]), 0)
+        profile = collector._build_profile()
+        markers = profile["threads"][0]["markers"]
+        assert_gecko_column_lengths(
+            self, markers,
+            ("data", "name", "startTime", "endTime", "phase", "category"),
+        )
+        opcode_markers = gecko_opcode_marker_data(profile)
+        self.assertIn(
+            {
+                "opcode": 90,
+                "line": 10,
+                "function": "func",
+            },
+            [
+                {
+                    "opcode": marker["opcode"],
+                    "line": marker["line"],
+                    "function": marker["function"],
+                }
+                for marker in opcode_markers
+            ],
+        )
 
     def test_gecko_opcode_markers_not_emitted_when_disabled(self):
         """Test that no opcode markers when opcodes=False."""
@@ -2729,8 +3245,9 @@ class TestGeckoOpcodeMarkers(unittest.TestCase):
         ]
         collector.collect(frames2)
 
-        # opcode_state should not be tracked
-        self.assertEqual(len(collector.opcode_state), 0)
+        profile = collector._build_profile()
+        self.assertEqual(gecko_opcode_marker_data(profile), [])
+        self.assertEqual(profile["meta"]["markerSchema"], [])
 
     def test_gecko_opcode_with_none_opcode(self):
         """Test that None opcode doesn't cause issues."""
@@ -2746,9 +3263,8 @@ class TestGeckoOpcodeMarkers(unittest.TestCase):
         ]
         collector.collect(frames)
 
-        # Should track the state but opcode is None
-        self.assertIn(1, collector.opcode_state)
-        self.assertIsNone(collector.opcode_state[1][0])
+        profile = collector._build_profile()
+        self.assertEqual(gecko_opcode_marker_data(profile), [])
 
 
 class TestCollectorFrameFormat(unittest.TestCase):

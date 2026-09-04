@@ -1,0 +1,4 @@
+IDLE now reads and writes its configuration files and the breakpoints file
+using UTF-8 instead of the locale encoding.  This keeps non-ASCII data (such
+as non-ASCII paths) from being corrupted and makes the files portable between
+environments.

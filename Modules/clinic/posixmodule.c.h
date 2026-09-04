@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_fileutils.h"     // _Py_Off_t_Converter()
 #include "pycore_long.h"          // _PyLong_UnsignedInt_Converter()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
@@ -512,9 +513,9 @@ PyDoc_STRVAR(os_chdir__doc__,
 "\n"
 "Change the current working directory to the specified path.\n"
 "\n"
-"path may always be specified as a string.\n"
-"On some platforms, path may also be specified as an open file descriptor.\n"
-"If this functionality is unavailable, using it raises an exception.");
+"path may always be specified as a string.  On some platforms, path may\n"
+"also be specified as an open file descriptor.  If this functionality is\n"
+"unavailable, using it raises an exception.");
 
 #define OS_CHDIR_METHODDEF    \
     {"chdir", _PyCFunction_CAST(os_chdir), METH_FASTCALL|METH_KEYWORDS, os_chdir__doc__},
@@ -649,14 +650,15 @@ PyDoc_STRVAR(os_chmod__doc__,
 "Change the access permissions of a file.\n"
 "\n"
 "  path\n"
-"    Path to be modified.  May always be specified as a str, bytes, or a path-like object.\n"
-"    On some platforms, path may also be specified as an open file descriptor.\n"
-"    If this functionality is unavailable, using it raises an exception.\n"
+"    Path to be modified.  May always be specified as a str, bytes, or\n"
+"    a path-like object.  On some platforms, path may also be specified\n"
+"    as an open file descriptor.  If this functionality is unavailable,\n"
+"    using it raises an exception.\n"
 "  mode\n"
 "    Operating-system mode bitfield.\n"
-"    Be careful when using number literals for *mode*. The conventional UNIX notation for\n"
-"    numeric modes uses an octal base, which needs to be indicated with a ``0o`` prefix in\n"
-"    Python.\n"
+"    Be careful when using number literals for *mode*. The conventional\n"
+"    UNIX notation for numeric modes uses an octal base, which needs to\n"
+"    be indicated with a ``0o`` prefix in Python.\n"
 "  dir_fd\n"
 "    If not None, it should be a file descriptor open to a directory,\n"
 "    and path should be relative; path will then be relative to that\n"
@@ -765,9 +767,9 @@ PyDoc_STRVAR(os_fchmod__doc__,
 "    The file descriptor of the file to be modified.\n"
 "  mode\n"
 "    Operating-system mode bitfield.\n"
-"    Be careful when using number literals for *mode*. The conventional UNIX notation for\n"
-"    numeric modes uses an octal base, which needs to be indicated with a ``0o`` prefix in\n"
-"    Python.\n"
+"    Be careful when using number literals for *mode*.  The conventional\n"
+"    UNIX notation for numeric modes uses an octal base, which needs to\n"
+"    be indicated with a ``0o`` prefix in Python.\n"
 "\n"
 "Equivalent to os.chmod(fd, mode).");
 
@@ -841,8 +843,8 @@ PyDoc_STRVAR(os_lchmod__doc__,
 "\n"
 "Change the access permissions of a file, without following symbolic links.\n"
 "\n"
-"If path is a symlink, this affects the link itself rather than the target.\n"
-"Equivalent to chmod(path, mode, follow_symlinks=False).\"");
+"If path is a symlink, this affects the link itself rather than the\n"
+"target.  Equivalent to chmod(path, mode, follow_symlinks=False).");
 
 #define OS_LCHMOD_METHODDEF    \
     {"lchmod", _PyCFunction_CAST(os_lchmod), METH_FASTCALL|METH_KEYWORDS, os_lchmod__doc__},
@@ -916,9 +918,9 @@ PyDoc_STRVAR(os_chflags__doc__,
 "\n"
 "Set file flags.\n"
 "\n"
-"If follow_symlinks is False, and the last element of the path is a symbolic\n"
-"  link, chflags will change flags on the symbolic link itself instead of the\n"
-"  file the link points to.\n"
+"If follow_symlinks is False, and the last element of the path is\n"
+"a symbolic link, chflags() will change flags on the symbolic link itself\n"
+"instead of the file the link points to.\n"
 "follow_symlinks may not be implemented on your platform.  If it is\n"
 "unavailable, using it will raise a NotImplementedError.");
 
@@ -1329,10 +1331,11 @@ PyDoc_STRVAR(os_chown__doc__,
 "chown($module, /, path, uid, gid, *, dir_fd=None, follow_symlinks=True)\n"
 "--\n"
 "\n"
-"Change the owner and group id of path to the numeric uid and gid.\\\n"
+"Change the owner and group id of path to the numeric uid and gid.\n"
 "\n"
 "  path\n"
-"    Path to be examined; can be string, bytes, a path-like object, or open-file-descriptor int.\n"
+"    Path to be examined; can be string, bytes, a path-like object, or\n"
+"    open-file-descriptor int.\n"
 "  dir_fd\n"
 "    If not None, it should be a file descriptor open to a directory,\n"
 "    and path should be relative; path will then be relative to that\n"
@@ -1342,18 +1345,19 @@ PyDoc_STRVAR(os_chown__doc__,
 "    stat will examine the symbolic link itself instead of the file\n"
 "    the link points to.\n"
 "\n"
-"path may always be specified as a string.\n"
-"On some platforms, path may also be specified as an open file descriptor.\n"
-"  If this functionality is unavailable, using it raises an exception.\n"
-"If dir_fd is not None, it should be a file descriptor open to a directory,\n"
-"  and path should be relative; path will then be relative to that directory.\n"
-"If follow_symlinks is False, and the last element of the path is a symbolic\n"
-"  link, chown will modify the symbolic link itself instead of the file the\n"
-"  link points to.\n"
+"path may always be specified as a string.  On some platforms, path may\n"
+"also be specified as an open file descriptor.  If this functionality is\n"
+"unavailable, using it raises an exception.\n"
+"If dir_fd is not None, it should be a file descriptor open to\n"
+"a directory, and path should be relative; path will then be relative to\n"
+"that directory.\n"
+"If follow_symlinks is False, and the last element of the path is\n"
+"a symbolic link, chown will modify the symbolic link itself instead of\n"
+"the file the link points to.\n"
 "It is an error to use dir_fd or follow_symlinks when specifying path as\n"
-"  an open file descriptor.\n"
-"dir_fd and follow_symlinks may not be implemented on your platform.\n"
-"  If they are unavailable, using them will raise a NotImplementedError.");
+"an open file descriptor.\n"
+"dir_fd and follow_symlinks may not be implemented on your platform.  If\n"
+"they are unavailable, using them will raise a NotImplementedError.");
 
 #define OS_CHOWN_METHODDEF    \
     {"chown", _PyCFunction_CAST(os_chown), METH_FASTCALL|METH_KEYWORDS, os_chown__doc__},
@@ -1641,14 +1645,15 @@ PyDoc_STRVAR(os_link__doc__,
 "Create a hard link to a file.\n"
 "\n"
 "If either src_dir_fd or dst_dir_fd is not None, it should be a file\n"
-"  descriptor open to a directory, and the respective path string (src or dst)\n"
-"  should be relative; the path will then be relative to that directory.\n"
+"descriptor open to a directory, and the respective path string (src or\n"
+"dst) should be relative; the path will then be relative to that\n"
+"directory.\n"
 "If follow_symlinks is False, and the last element of src is a symbolic\n"
-"  link, link will create a link to the symbolic link itself instead of the\n"
-"  file the link points to.\n"
-"src_dir_fd, dst_dir_fd, and follow_symlinks may not be implemented on your\n"
-"  platform.  If they are unavailable, using them will raise a\n"
-"  NotImplementedError.");
+"link, link will create a link to the symbolic link itself instead of the\n"
+"file the link points to.\n"
+"src_dir_fd, dst_dir_fd, and follow_symlinks may not be implemented on\n"
+"your platform.  If they are unavailable, using them will raise\n"
+"a NotImplementedError.");
 
 #define OS_LINK_METHODDEF    \
     {"link", _PyCFunction_CAST(os_link), METH_FASTCALL|METH_KEYWORDS, os_link__doc__},
@@ -1750,13 +1755,13 @@ PyDoc_STRVAR(os_listdir__doc__,
 "\n"
 "Return a list containing the names of the files in the directory.\n"
 "\n"
-"path can be specified as either str, bytes, or a path-like object.  If path is bytes,\n"
-"  the filenames returned will also be bytes; in all other circumstances\n"
-"  the filenames returned will be str.\n"
+"path can be specified as either str, bytes, or a path-like object.  If\n"
+"path is bytes, the filenames returned will also be bytes; in all other\n"
+"circumstances the filenames returned will be str.\n"
 "If path is None, uses the path=\'.\'.\n"
-"On some platforms, path may also be specified as an open file descriptor;\\\n"
-"  the file descriptor must refer to a directory.\n"
-"  If this functionality is unavailable, using it raises NotImplementedError.\n"
+"On some platforms, path may also be specified as an open file\n"
+"descriptor; the file descriptor must refer to a directory.  If this\n"
+"functionality is unavailable, using it raises NotImplementedError.\n"
 "\n"
 "The list is in arbitrary order.  It does not include the special\n"
 "entries \'.\' and \'..\' even if they are present in the directory.");
@@ -1847,7 +1852,7 @@ os_listdrives(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)) */
 
-#if (defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM))
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM))
 
 PyDoc_STRVAR(os_listvolumes__doc__,
 "listvolumes($module, /)\n"
@@ -1869,7 +1874,7 @@ os_listvolumes(PyObject *module, PyObject *Py_UNUSED(ignored))
     return os_listvolumes_impl(module);
 }
 
-#endif /* (defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)) */
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)) */
 
 #if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM))
 
@@ -2709,13 +2714,14 @@ PyDoc_STRVAR(os_mkdir__doc__,
 "\n"
 "Create a directory.\n"
 "\n"
-"If dir_fd is not None, it should be a file descriptor open to a directory,\n"
-"  and path should be relative; path will then be relative to that directory.\n"
-"dir_fd may not be implemented on your platform.\n"
-"  If it is unavailable, using it will raise a NotImplementedError.\n"
+"If dir_fd is not None, it should be a file descriptor open to\n"
+"a directory, and path should be relative; path will then be relative to\n"
+"that directory.\n"
+"dir_fd may not be implemented on your platform.  If it is unavailable,\n"
+"using it will raise a NotImplementedError.\n"
 "\n"
-"The mode argument is ignored on Windows. Where it is used, the current umask\n"
-"value is first masked out.");
+"The mode argument is ignored on Windows.  Where it is used, the current\n"
+"umask value is first masked out.");
 
 #define OS_MKDIR_METHODDEF    \
     {"mkdir", _PyCFunction_CAST(os_mkdir), METH_FASTCALL|METH_KEYWORDS, os_mkdir__doc__},
@@ -2981,10 +2987,11 @@ PyDoc_STRVAR(os_rename__doc__,
 "Rename a file or directory.\n"
 "\n"
 "If either src_dir_fd or dst_dir_fd is not None, it should be a file\n"
-"  descriptor open to a directory, and the respective path string (src or dst)\n"
-"  should be relative; the path will then be relative to that directory.\n"
+"descriptor open to a directory, and the respective path string (src or\n"
+"dst) should be relative; the path will then be relative to that\n"
+"directory.\n"
 "src_dir_fd and dst_dir_fd, may not be implemented on your platform.\n"
-"  If they are unavailable, using them will raise a NotImplementedError.");
+"If they are unavailable, using them will raise a NotImplementedError.");
 
 #define OS_RENAME_METHODDEF    \
     {"rename", _PyCFunction_CAST(os_rename), METH_FASTCALL|METH_KEYWORDS, os_rename__doc__},
@@ -3075,10 +3082,11 @@ PyDoc_STRVAR(os_replace__doc__,
 "Rename a file or directory, overwriting the destination.\n"
 "\n"
 "If either src_dir_fd or dst_dir_fd is not None, it should be a file\n"
-"  descriptor open to a directory, and the respective path string (src or dst)\n"
-"  should be relative; the path will then be relative to that directory.\n"
+"descriptor open to a directory, and the respective path string (src or\n"
+"dst) should be relative; the path will then be relative to that\n"
+"directory.\n"
 "src_dir_fd and dst_dir_fd, may not be implemented on your platform.\n"
-"  If they are unavailable, using them will raise a NotImplementedError.");
+"If they are unavailable, using them will raise a NotImplementedError.");
 
 #define OS_REPLACE_METHODDEF    \
     {"replace", _PyCFunction_CAST(os_replace), METH_FASTCALL|METH_KEYWORDS, os_replace__doc__},
@@ -3168,10 +3176,11 @@ PyDoc_STRVAR(os_rmdir__doc__,
 "\n"
 "Remove a directory.\n"
 "\n"
-"If dir_fd is not None, it should be a file descriptor open to a directory,\n"
-"  and path should be relative; path will then be relative to that directory.\n"
+"If dir_fd is not None, it should be a file descriptor open to\n"
+"a directory, and path should be relative; path will then be relative\n"
+"to that directory.\n"
 "dir_fd may not be implemented on your platform.\n"
-"  If it is unavailable, using it will raise a NotImplementedError.");
+"If it is unavailable, using it will raise a NotImplementedError.");
 
 #define OS_RMDIR_METHODDEF    \
     {"rmdir", _PyCFunction_CAST(os_rmdir), METH_FASTCALL|METH_KEYWORDS, os_rmdir__doc__},
@@ -3426,10 +3435,11 @@ PyDoc_STRVAR(os_unlink__doc__,
 "\n"
 "Remove a file (same as remove()).\n"
 "\n"
-"If dir_fd is not None, it should be a file descriptor open to a directory,\n"
-"  and path should be relative; path will then be relative to that directory.\n"
+"If dir_fd is not None, it should be a file descriptor open to\n"
+"a directory, and path should be relative; path will then be relative to\n"
+"that directory.\n"
 "dir_fd may not be implemented on your platform.\n"
-"  If it is unavailable, using it will raise a NotImplementedError.");
+"If it is unavailable, using it will raise a NotImplementedError.");
 
 #define OS_UNLINK_METHODDEF    \
     {"unlink", _PyCFunction_CAST(os_unlink), METH_FASTCALL|METH_KEYWORDS, os_unlink__doc__},
@@ -3503,10 +3513,11 @@ PyDoc_STRVAR(os_remove__doc__,
 "\n"
 "Remove a file (same as unlink()).\n"
 "\n"
-"If dir_fd is not None, it should be a file descriptor open to a directory,\n"
-"  and path should be relative; path will then be relative to that directory.\n"
+"If dir_fd is not None, it should be a file descriptor open to\n"
+"a directory, and path should be relative; path will then be relative\n"
+"to that directory.\n"
 "dir_fd may not be implemented on your platform.\n"
-"  If it is unavailable, using it will raise a NotImplementedError.");
+"If it is unavailable, using it will raise a NotImplementedError.");
 
 #define OS_REMOVE_METHODDEF    \
     {"remove", _PyCFunction_CAST(os_remove), METH_FASTCALL|METH_KEYWORDS, os_remove__doc__},
@@ -3606,27 +3617,28 @@ PyDoc_STRVAR(os_utime__doc__,
 "\n"
 "Set the access and modified time of path.\n"
 "\n"
-"path may always be specified as a string.\n"
-"On some platforms, path may also be specified as an open file descriptor.\n"
-"  If this functionality is unavailable, using it raises an exception.\n"
+"path may always be specified as a string.  On some platforms, path may\n"
+"also be specified as an open file descriptor.  If this functionality is\n"
+"unavailable, using it raises an exception.\n"
 "\n"
 "If times is not None, it must be a tuple (atime, mtime);\n"
-"    atime and mtime should be expressed as float seconds since the epoch.\n"
+"atime and mtime should be expressed as float seconds since the epoch.\n"
 "If ns is specified, it must be a tuple (atime_ns, mtime_ns);\n"
-"    atime_ns and mtime_ns should be expressed as integer nanoseconds\n"
-"    since the epoch.\n"
+"atime_ns and mtime_ns should be expressed as integer nanoseconds\n"
+"since the epoch.\n"
 "If times is None and ns is unspecified, utime uses the current time.\n"
 "Specifying tuples for both times and ns is an error.\n"
 "\n"
-"If dir_fd is not None, it should be a file descriptor open to a directory,\n"
-"  and path should be relative; path will then be relative to that directory.\n"
-"If follow_symlinks is False, and the last element of the path is a symbolic\n"
-"  link, utime will modify the symbolic link itself instead of the file the\n"
-"  link points to.\n"
-"It is an error to use dir_fd or follow_symlinks when specifying path\n"
-"  as an open file descriptor.\n"
+"If dir_fd is not None, it should be a file descriptor open to\n"
+"a directory, and path should be relative; path will then be relative to\n"
+"that directory.\n"
+"If follow_symlinks is False, and the last element of the path is\n"
+"a symbolic link, utime will modify the symbolic link itself instead of\n"
+"the file the link points to.\n"
+"It is an error to use dir_fd or follow_symlinks when specifying path as\n"
+"an open file descriptor.\n"
 "dir_fd and follow_symlinks may not be available on your platform.\n"
-"  If they are unavailable, using them will raise a NotImplementedError.");
+"If they are unavailable, using them will raise a NotImplementedError.");
 
 #define OS_UTIME_METHODDEF    \
     {"utime", _PyCFunction_CAST(os_utime), METH_FASTCALL|METH_KEYWORDS, os_utime__doc__},
@@ -3929,7 +3941,8 @@ PyDoc_STRVAR(os_posix_spawn__doc__,
 "  resetids\n"
 "    If the value is `true` the POSIX_SPAWN_RESETIDS will be activated.\n"
 "  setsid\n"
-"    If the value is `true` the POSIX_SPAWN_SETSID or POSIX_SPAWN_SETSID_NP will be activated.\n"
+"    If the value is `true` the POSIX_SPAWN_SETSID or POSIX_SPAWN_SETSID_NP\n"
+"    will be activated.\n"
 "  setsigmask\n"
 "    The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.\n"
 "  setsigdef\n"
@@ -4082,7 +4095,8 @@ PyDoc_STRVAR(os_posix_spawnp__doc__,
 "  resetids\n"
 "    If the value is `True` the POSIX_SPAWN_RESETIDS will be activated.\n"
 "  setsid\n"
-"    If the value is `True` the POSIX_SPAWN_SETSID or POSIX_SPAWN_SETSID_NP will be activated.\n"
+"    If the value is `True` the POSIX_SPAWN_SETSID or POSIX_SPAWN_SETSID_NP\n"
+"    will be activated.\n"
 "  setsigmask\n"
 "    The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.\n"
 "  setsigdef\n"
@@ -4953,8 +4967,8 @@ PyDoc_STRVAR(os_posix_openpt__doc__,
 "Open and return a file descriptor for a master pseudo-terminal device.\n"
 "\n"
 "Performs a posix_openpt() C function call. The oflag argument is used to\n"
-"set file status flags and file access modes as specified in the manual page\n"
-"of posix_openpt() of your system.");
+"set file status flags and file access modes as specified in the manual\n"
+"page of posix_openpt() of your system.");
 
 #define OS_POSIX_OPENPT_METHODDEF    \
     {"posix_openpt", (PyCFunction)os_posix_openpt, METH_O, os_posix_openpt__doc__},
@@ -5411,9 +5425,9 @@ PyDoc_STRVAR(os_initgroups__doc__,
 "\n"
 "Initialize the group access list.\n"
 "\n"
-"Call the system initgroups() to initialize the group access list with all of\n"
-"the groups of which the specified username is a member, plus the specified\n"
-"group id.");
+"Call the system initgroups() to initialize the group access list with\n"
+"all of the groups of which the specified username is a member, plus the\n"
+"specified group id.");
 
 #define OS_INITGROUPS_METHODDEF    \
     {"initgroups", _PyCFunction_CAST(os_initgroups), METH_FASTCALL, os_initgroups__doc__},
@@ -5457,9 +5471,9 @@ PyDoc_STRVAR(os_initgroups__doc__,
 "\n"
 "Initialize the group access list.\n"
 "\n"
-"Call the system initgroups() to initialize the group access list with all of\n"
-"the groups of which the specified username is a member, plus the specified\n"
-"group id.");
+"Call the system initgroups() to initialize the group access list with\n"
+"all of the groups of which the specified username is a member, plus the\n"
+"specified group id.");
 
 #define OS_INITGROUPS_METHODDEF    \
     {"initgroups", _PyCFunction_CAST(os_initgroups), METH_FASTCALL, os_initgroups__doc__},
@@ -5612,7 +5626,8 @@ PyDoc_STRVAR(os_getppid__doc__,
 "Return the parent\'s process id.\n"
 "\n"
 "If the parent process has already exited, Windows machines will still\n"
-"return its id; others systems will return the id of the \'init\' process (1).");
+"return its id; others systems will return the id of the \'init\' proces\n"
+"(1).");
 
 #define OS_GETPPID_METHODDEF    \
     {"getppid", (PyCFunction)os_getppid, METH_NOARGS, os_getppid__doc__},
@@ -6162,8 +6177,8 @@ PyDoc_STRVAR(os_waitid__doc__,
 "    Constructed from the ORing of one or more of WEXITED, WSTOPPED\n"
 "    or WCONTINUED and additionally may be ORed with WNOHANG or WNOWAIT.\n"
 "\n"
-"Returns either waitid_result or None if WNOHANG is specified and there are\n"
-"no children in a waitable state.");
+"Returns either waitid_result or None if WNOHANG is specified and there\n"
+"are no children in a waitable state.");
 
 #define OS_WAITID_METHODDEF    \
     {"waitid", _PyCFunction_CAST(os_waitid), METH_FASTCALL, os_waitid__doc__},
@@ -6316,7 +6331,7 @@ os_wait(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(HAVE_WAIT) */
 
-#if (defined(__linux__) && defined(__NR_pidfd_open) && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
+#if (defined(HAVE_PIDFD_OPEN) || (defined(__linux__) && defined(__NR_pidfd_open) && !(defined(__ANDROID__) && __ANDROID_API__ < 31)))
 
 PyDoc_STRVAR(os_pidfd_open__doc__,
 "pidfd_open($module, /, pid, flags=0)\n"
@@ -6324,8 +6339,8 @@ PyDoc_STRVAR(os_pidfd_open__doc__,
 "\n"
 "Return a file descriptor referring to the process *pid*.\n"
 "\n"
-"The descriptor can be used to perform process management without races and\n"
-"signals.");
+"The descriptor can be used to perform process management without races\n"
+"and signals.");
 
 #define OS_PIDFD_OPEN_METHODDEF    \
     {"pidfd_open", _PyCFunction_CAST(os_pidfd_open), METH_FASTCALL|METH_KEYWORDS, os_pidfd_open__doc__},
@@ -6391,9 +6406,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(__linux__) && defined(__NR_pidfd_open) && !(defined(__ANDROID__) && __ANDROID_API__ < 31)) */
+#endif /* (defined(HAVE_PIDFD_OPEN) || (defined(__linux__) && defined(__NR_pidfd_open) && !(defined(__ANDROID__) && __ANDROID_API__ < 31))) */
 
-#if (defined(__linux__) && defined(__NR_pidfd_getfd) && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
+#if (defined(HAVE_PIDFD_GETFD) || (defined(__linux__) && defined(__NR_pidfd_getfd) && !(defined(__ANDROID__) && __ANDROID_API__ < 31)))
 
 PyDoc_STRVAR(os_pidfd_getfd__doc__,
 "pidfd_getfd($module, /, pidfd, targetfd, *, flags=0)\n"
@@ -6478,7 +6493,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(__linux__) && defined(__NR_pidfd_getfd) && !(defined(__ANDROID__) && __ANDROID_API__ < 31)) */
+#endif /* (defined(HAVE_PIDFD_GETFD) || (defined(__linux__) && defined(__NR_pidfd_getfd) && !(defined(__ANDROID__) && __ANDROID_API__ < 31))) */
 
 #if defined(HAVE_SETNS)
 
@@ -6636,8 +6651,9 @@ PyDoc_STRVAR(os_readlink__doc__,
 "\n"
 "Return a string representing the path to which the symbolic link points.\n"
 "\n"
-"If dir_fd is not None, it should be a file descriptor open to a directory,\n"
-"and path should be relative; path will then be relative to that directory.\n"
+"If dir_fd is not None, it should be a file descriptor open to\n"
+"a directory, and path should be relative; path will then be relative to\n"
+"that directory.\n"
 "\n"
 "dir_fd may not be implemented on your platform.  If it is unavailable,\n"
 "using it will raise a NotImplementedError.");
@@ -6719,14 +6735,15 @@ PyDoc_STRVAR(os_symlink__doc__,
 "Create a symbolic link pointing to src named dst.\n"
 "\n"
 "target_is_directory is required on Windows if the target is to be\n"
-"  interpreted as a directory.  (On Windows, symlink requires\n"
-"  Windows 6.0 or greater, and raises a NotImplementedError otherwise.)\n"
-"  target_is_directory is ignored on non-Windows platforms.\n"
+"interpreted as a directory.  (On Windows, symlink requires Windows 6.0\n"
+"or greater, and raises a NotImplementedError otherwise.)\n"
+"target_is_directory is ignored on non-Windows platforms.\n"
 "\n"
-"If dir_fd is not None, it should be a file descriptor open to a directory,\n"
-"  and path should be relative; path will then be relative to that directory.\n"
-"dir_fd may not be implemented on your platform.\n"
-"  If it is unavailable, using it will raise a NotImplementedError.");
+"If dir_fd is not None, it should be a file descriptor open to\n"
+"a directory, and path should be relative; path will then be relative\n"
+"to that directory.\n"
+"dir_fd may not be implemented on your platform.  If it is unavailable,\n"
+"using it will raise a NotImplementedError.");
 
 #define OS_SYMLINK_METHODDEF    \
     {"symlink", _PyCFunction_CAST(os_symlink), METH_FASTCALL|METH_KEYWORDS, os_symlink__doc__},
@@ -7060,9 +7077,9 @@ PyDoc_STRVAR(os_timerfd_settime_ns__doc__,
 "  flags\n"
 "    0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.\n"
 "  initial\n"
-"    initial expiration timing in seconds.\n"
+"    initial expiration timing in nanoseconds.\n"
 "  interval\n"
-"    interval for the timer in seconds.");
+"    interval for the timer in nanoseconds.");
 
 #define OS_TIMERFD_SETTIME_NS_METHODDEF    \
     {"timerfd_settime_ns", _PyCFunction_CAST(os_timerfd_settime_ns), METH_FASTCALL|METH_KEYWORDS, os_timerfd_settime_ns__doc__},
@@ -7158,7 +7175,7 @@ PyDoc_STRVAR(os_timerfd_gettime__doc__,
 "timerfd_gettime($module, fd, /)\n"
 "--\n"
 "\n"
-"Return a tuple of a timer file descriptor\'s (interval, next expiration) in float seconds.\n"
+"Return a tuple of a timer file descriptor\'s (next expiration, interval) in float seconds.\n"
 "\n"
 "  fd\n"
 "    A timer file descriptor.");
@@ -7193,7 +7210,7 @@ PyDoc_STRVAR(os_timerfd_gettime_ns__doc__,
 "timerfd_gettime_ns($module, fd, /)\n"
 "--\n"
 "\n"
-"Return a tuple of a timer file descriptor\'s (interval, next expiration) in nanoseconds.\n"
+"Return a tuple of a timer file descriptor\'s (next expiration, interval) in nanoseconds.\n"
 "\n"
 "  fd\n"
 "    A timer file descriptor.");
@@ -7394,10 +7411,11 @@ PyDoc_STRVAR(os_open__doc__,
 "\n"
 "Open a file for low level IO.  Returns a file descriptor (integer).\n"
 "\n"
-"If dir_fd is not None, it should be a file descriptor open to a directory,\n"
-"  and path should be relative; path will then be relative to that directory.\n"
-"dir_fd may not be implemented on your platform.\n"
-"  If it is unavailable, using it will raise a NotImplementedError.");
+"If dir_fd is not None, it should be a file descriptor open to\n"
+"a directory, and path should be relative; path will then be relative to\n"
+"that directory.\n"
+"dir_fd may not be implemented on your platform.  If it is unavailable,\n"
+"using it will raise a NotImplementedError.");
 
 #define OS_OPEN_METHODDEF    \
     {"open", _PyCFunction_CAST(os_open), METH_FASTCALL|METH_KEYWORDS, os_open__doc__},
@@ -7744,7 +7762,7 @@ os_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (command == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[2], &length)) {
+    if (!_Py_Off_t_Converter(args[2], &length)) {
         goto exit;
     }
     return_value = os_lockf_impl(module, fd, command, length);
@@ -7771,7 +7789,8 @@ PyDoc_STRVAR(os_lseek__doc__,
 "    - SEEK_CUR: seek from the current file position.\n"
 "    - SEEK_END: seek from the end of the file.\n"
 "\n"
-"The return value is the number of bytes relative to the beginning of the file.");
+"The return value is the number of bytes relative to the beginning of\n"
+"the file.");
 
 #define OS_LSEEK_METHODDEF    \
     {"lseek", _PyCFunction_CAST(os_lseek), METH_FASTCALL, os_lseek__doc__},
@@ -7795,7 +7814,7 @@ os_lseek(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[1], &position)) {
+    if (!_Py_Off_t_Converter(args[1], &position)) {
         goto exit;
     }
     how = PyLong_AsInt(args[2]);
@@ -7862,15 +7881,15 @@ PyDoc_STRVAR(os_readinto__doc__,
 "\n"
 "Read into a buffer object from a file descriptor.\n"
 "\n"
-"The buffer should be mutable and bytes-like. On success, returns the number of\n"
-"bytes read. Less bytes may be read than the size of the buffer. The underlying\n"
-"system call will be retried when interrupted by a signal, unless the signal\n"
-"handler raises an exception. Other errors will not be retried and an error will\n"
-"be raised.\n"
+"The buffer should be mutable and bytes-like.  On success, returns the\n"
+"number of bytes read.  Less bytes may be read than the size of the\n"
+"buffer.  The underlying system call will be retried when interrupted by\n"
+"a signal, unless the signal handler raises an exception.  Other errors\n"
+"will not be retried and an error will be raised.\n"
 "\n"
-"Returns 0 if *fd* is at end of file or if the provided *buffer* has length 0\n"
-"(which can be used to check for errors without reading data). Never returns\n"
-"negative.");
+"Returns 0 if *fd* is at end of file or if the provided *buffer* has\n"
+"length 0 (which can be used to check for errors without reading data).\n"
+"Never returns negative.");
 
 #define OS_READINTO_METHODDEF    \
     {"readinto", _PyCFunction_CAST(os_readinto), METH_FASTCALL, os_readinto__doc__},
@@ -8006,7 +8025,7 @@ os_pread(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
         length = ival;
     }
-    if (!Py_off_t_converter(args[2], &offset)) {
+    if (!_Py_Off_t_Converter(args[2], &offset)) {
         goto exit;
     }
     return_value = os_pread_impl(module, fd, length, offset);
@@ -8025,14 +8044,15 @@ PyDoc_STRVAR(os_preadv__doc__,
 "\n"
 "Reads from a file descriptor into a number of mutable bytes-like objects.\n"
 "\n"
-"Combines the functionality of readv() and pread(). As readv(), it will\n"
-"transfer data into each buffer until it is full and then move on to the next\n"
-"buffer in the sequence to hold the rest of the data. Its fourth argument,\n"
-"specifies the file offset at which the input operation is to be performed. It\n"
-"will return the total number of bytes read (which can be less than the total\n"
-"capacity of all the objects).\n"
+"Combines the functionality of readv() and pread().  As readv(), it will\n"
+"transfer data into each buffer until it is full and then move on to the\n"
+"next buffer in the sequence to hold the rest of the data.  Its fourth\n"
+"argument, specifies the file offset at which the input operation is to\n"
+"be performed.  It will return the total number of bytes read (which can\n"
+"be less than the total capacity of all the objects).\n"
 "\n"
-"The flags argument contains a bitwise OR of zero or more of the following flags:\n"
+"The flags argument contains a bitwise OR of zero or more of the\n"
+"following flags:\n"
 "\n"
 "- RWF_HIPRI\n"
 "- RWF_NOWAIT\n"
@@ -8065,7 +8085,7 @@ os_preadv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     buffers = args[1];
-    if (!Py_off_t_converter(args[2], &offset)) {
+    if (!_Py_Off_t_Converter(args[2], &offset)) {
         goto exit;
     }
     if (nargs < 4) {
@@ -8204,10 +8224,10 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     if (in_fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[2], &offset)) {
+    if (!_Py_Off_t_Converter(args[2], &offset)) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[3], &sbytes)) {
+    if (!_Py_Off_t_Converter(args[3], &sbytes)) {
         goto exit;
     }
     if (!noptargs) {
@@ -8309,7 +8329,7 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     if (in_fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[2], &offset)) {
+    if (!_Py_Off_t_Converter(args[2], &offset)) {
         goto exit;
     }
     {
@@ -8738,7 +8758,7 @@ os_pwrite(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (PyObject_GetBuffer(args[1], &buffer, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[2], &offset)) {
+    if (!_Py_Off_t_Converter(args[2], &offset)) {
         goto exit;
     }
     _return_value = os_pwrite_impl(module, fd, &buffer, offset);
@@ -8766,20 +8786,23 @@ PyDoc_STRVAR(os_pwritev__doc__,
 "\n"
 "Writes the contents of bytes-like objects to a file descriptor at a given offset.\n"
 "\n"
-"Combines the functionality of writev() and pwrite(). All buffers must be a sequence\n"
-"of bytes-like objects. Buffers are processed in array order. Entire contents of first\n"
-"buffer is written before proceeding to second, and so on. The operating system may\n"
-"set a limit (sysconf() value SC_IOV_MAX) on the number of buffers that can be used.\n"
-"This function writes the contents of each object to the file descriptor and returns\n"
-"the total number of bytes written.\n"
+"Combines the functionality of writev() and pwrite(). All buffers must be\n"
+"a sequence of bytes-like objects.  Buffers are processed in array order.\n"
+"Entire contents of first buffer is written before proceeding to second,\n"
+"and so on. The operating system may set a limit (sysconf() value\n"
+"SC_IOV_MAX) on the number of buffers that can be used.\n"
+"This function writes the contents of each object to the file descriptor\n"
+"and returns the total number of bytes written.\n"
 "\n"
-"The flags argument contains a bitwise OR of zero or more of the following flags:\n"
+"The flags argument contains a bitwise OR of zero or more of the\n"
+"following flags:\n"
 "\n"
 "- RWF_DSYNC\n"
 "- RWF_SYNC\n"
 "- RWF_APPEND\n"
 "- RWF_DONTCACHE\n"
 "- RWF_ATOMIC\n"
+"- RWF_NOSIGNAL\n"
 "\n"
 "Using non-zero flags requires Linux 4.7 or newer.");
 
@@ -8808,7 +8831,7 @@ os_pwritev(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     buffers = args[1];
-    if (!Py_off_t_converter(args[2], &offset)) {
+    if (!_Py_Off_t_Converter(args[2], &offset)) {
         goto exit;
     }
     if (nargs < 4) {
@@ -8831,7 +8854,7 @@ exit:
 
 #endif /* (defined(HAVE_PWRITEV) || defined (HAVE_PWRITEV2)) */
 
-#if defined(HAVE_COPY_FILE_RANGE)
+#if defined(_Py_HAVE_COPY_FILE_RANGE)
 
 PyDoc_STRVAR(os_copy_file_range__doc__,
 "copy_file_range($module, /, src, dst, count, offset_src=None,\n"
@@ -8947,7 +8970,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_COPY_FILE_RANGE) */
+#endif /* defined(_Py_HAVE_COPY_FILE_RANGE) */
 
 #if ((defined(HAVE_SPLICE) && !defined(_AIX)))
 
@@ -9088,10 +9111,11 @@ PyDoc_STRVAR(os_mkfifo__doc__,
 "\n"
 "Create a \"fifo\" (a POSIX named pipe).\n"
 "\n"
-"If dir_fd is not None, it should be a file descriptor open to a directory,\n"
-"  and path should be relative; path will then be relative to that directory.\n"
-"dir_fd may not be implemented on your platform.\n"
-"  If it is unavailable, using it will raise a NotImplementedError.");
+"If dir_fd is not None, it should be a file descriptor open to\n"
+"a directory, and path should be relative; path will then be relative to\n"
+"that directory.\n"
+"dir_fd may not be implemented on your platform.  If it is unavailable,\n"
+"using it will raise a NotImplementedError.");
 
 #define OS_MKFIFO_METHODDEF    \
     {"mkfifo", _PyCFunction_CAST(os_mkfifo), METH_FASTCALL|METH_KEYWORDS, os_mkfifo__doc__},
@@ -9183,17 +9207,18 @@ PyDoc_STRVAR(os_mknod__doc__,
 "\n"
 "Create a node in the file system.\n"
 "\n"
-"Create a node in the file system (file, device special file or named pipe)\n"
-"at path.  mode specifies both the permissions to use and the\n"
+"Create a node in the file system (file, device special file or named\n"
+"pipe) at path.  mode specifies both the permissions to use and the\n"
 "type of node to be created, being combined (bitwise OR) with one of\n"
-"S_IFREG, S_IFCHR, S_IFBLK, and S_IFIFO.  If S_IFCHR or S_IFBLK is set on mode,\n"
-"device defines the newly created device special file (probably using\n"
-"os.makedev()).  Otherwise device is ignored.\n"
+"S_IFREG, S_IFCHR, S_IFBLK, and S_IFIFO.  If S_IFCHR or S_IFBLK is set\n"
+"on mode, device defines the newly created device special file (probably\n"
+"using os.makedev()).  Otherwise device is ignored.\n"
 "\n"
-"If dir_fd is not None, it should be a file descriptor open to a directory,\n"
-"  and path should be relative; path will then be relative to that directory.\n"
-"dir_fd may not be implemented on your platform.\n"
-"  If it is unavailable, using it will raise a NotImplementedError.");
+"If dir_fd is not None, it should be a file descriptor open to\n"
+"a directory, and path should be relative; path will then be relative\n"
+"to that directory.\n"
+"dir_fd may not be implemented on your platform.  If it is unavailable,\n"
+"using it will raise a NotImplementedError.");
 
 #define OS_MKNOD_METHODDEF    \
     {"mknod", _PyCFunction_CAST(os_mknod), METH_FASTCALL|METH_KEYWORDS, os_mknod__doc__},
@@ -9420,7 +9445,7 @@ os_ftruncate(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[1], &length)) {
+    if (!_Py_Off_t_Converter(args[1], &length)) {
         goto exit;
     }
     return_value = os_ftruncate_impl(module, fd, length);
@@ -9439,8 +9464,9 @@ PyDoc_STRVAR(os_truncate__doc__,
 "\n"
 "Truncate a file, specified by path, to a specific length.\n"
 "\n"
-"On some platforms, path may also be specified as an open file descriptor.\n"
-"  If this functionality is unavailable, using it raises an exception.");
+"On some platforms, path may also be specified as an open file\n"
+"descriptor.  If this functionality is unavailable, using it raises\n"
+"an exception.");
 
 #define OS_TRUNCATE_METHODDEF    \
     {"truncate", _PyCFunction_CAST(os_truncate), METH_FASTCALL|METH_KEYWORDS, os_truncate__doc__},
@@ -9491,7 +9517,7 @@ os_truncate(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     if (!path_converter(args[0], &path)) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[1], &length)) {
+    if (!_Py_Off_t_Converter(args[1], &length)) {
         goto exit;
     }
     return_value = os_truncate_impl(module, &path, length);
@@ -9514,7 +9540,8 @@ PyDoc_STRVAR(os_posix_fallocate__doc__,
 "Ensure a file has allocated at least a particular number of bytes on disk.\n"
 "\n"
 "Ensure that the file specified by fd encompasses a range of bytes\n"
-"starting at offset bytes from the beginning and continuing for length bytes.");
+"starting at offset bytes from the beginning and continuing for length\n"
+"bytes.");
 
 #define OS_POSIX_FALLOCATE_METHODDEF    \
     {"posix_fallocate", _PyCFunction_CAST(os_posix_fallocate), METH_FASTCALL, os_posix_fallocate__doc__},
@@ -9538,10 +9565,10 @@ os_posix_fallocate(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[1], &offset)) {
+    if (!_Py_Off_t_Converter(args[1], &offset)) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[2], &length)) {
+    if (!_Py_Off_t_Converter(args[2], &length)) {
         goto exit;
     }
     return_value = os_posix_fallocate_impl(module, fd, offset, length);
@@ -9560,8 +9587,8 @@ PyDoc_STRVAR(os_posix_fadvise__doc__,
 "\n"
 "Announce an intention to access data in a specific pattern.\n"
 "\n"
-"Announce an intention to access data in a specific pattern, thus allowing\n"
-"the kernel to make optimizations.\n"
+"Announce an intention to access data in a specific pattern, thus\n"
+"allowing the kernel to make optimizations.\n"
 "The advice applies to the region of the file specified by fd starting at\n"
 "offset and continuing for length bytes.\n"
 "advice is one of POSIX_FADV_NORMAL, POSIX_FADV_SEQUENTIAL,\n"
@@ -9591,10 +9618,10 @@ os_posix_fadvise(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[1], &offset)) {
+    if (!_Py_Off_t_Converter(args[1], &offset)) {
         goto exit;
     }
-    if (!Py_off_t_converter(args[2], &length)) {
+    if (!_Py_Off_t_Converter(args[2], &length)) {
         goto exit;
     }
     advice = PyLong_AsInt(args[3]);
@@ -10383,8 +10410,9 @@ PyDoc_STRVAR(os_statvfs__doc__,
 "Perform a statvfs system call on the given path.\n"
 "\n"
 "path may always be specified as a string.\n"
-"On some platforms, path may also be specified as an open file descriptor.\n"
-"  If this functionality is unavailable, using it raises an exception.");
+"On some platforms, path may also be specified as an open file\n"
+"descriptor.  If this functionality is unavailable, using it raises\n"
+"an exception.");
 
 #define OS_STATVFS_METHODDEF    \
     {"statvfs", _PyCFunction_CAST(os_statvfs), METH_FASTCALL|METH_KEYWORDS, os_statvfs__doc__},
@@ -10567,8 +10595,9 @@ PyDoc_STRVAR(os_pathconf__doc__,
 "Return the configuration limit name for the file or directory path.\n"
 "\n"
 "If there is no limit, return -1.\n"
-"On some platforms, path may also be specified as an open file descriptor.\n"
-"  If this functionality is unavailable, using it raises an exception.");
+"On some platforms, path may also be specified as an open file\n"
+"descriptor.  If this functionality is unavailable, using it raises\n"
+"an exception.");
 
 #define OS_PATHCONF_METHODDEF    \
     {"pathconf", _PyCFunction_CAST(os_pathconf), METH_FASTCALL|METH_KEYWORDS, os_pathconf__doc__},
@@ -10711,8 +10740,8 @@ PyDoc_STRVAR(os_abort__doc__,
 "\n"
 "Abort the interpreter immediately.\n"
 "\n"
-"This function \'dumps core\' or otherwise fails in the hardest way possible\n"
-"on the hosting operating system.  This function never returns.");
+"This function \'dumps core\' or otherwise fails in the hardest way\n"
+"possible on the hosting operating system.  This function never returns.");
 
 #define OS_ABORT_METHODDEF    \
     {"abort", (PyCFunction)os_abort, METH_NOARGS, os_abort__doc__},
@@ -11100,10 +11129,11 @@ PyDoc_STRVAR(os_getxattr__doc__,
 "\n"
 "Return the value of extended attribute attribute on path.\n"
 "\n"
-"path may be either a string, a path-like object, or an open file descriptor.\n"
-"If follow_symlinks is False, and the last element of the path is a symbolic\n"
-"  link, getxattr will examine the symbolic link itself instead of the file\n"
-"  the link points to.");
+"path may be either a string, a path-like object, or an open file\n"
+"descriptor.\n"
+"If follow_symlinks is False, and the last element of the path is\n"
+"a symbolic link, getxattr will examine the symbolic link itself\n"
+"instead of the file the link points to.");
 
 #define OS_GETXATTR_METHODDEF    \
     {"getxattr", _PyCFunction_CAST(os_getxattr), METH_FASTCALL|METH_KEYWORDS, os_getxattr__doc__},
@@ -11190,10 +11220,11 @@ PyDoc_STRVAR(os_setxattr__doc__,
 "\n"
 "Set extended attribute attribute on path to value.\n"
 "\n"
-"path may be either a string, a path-like object,  or an open file descriptor.\n"
-"If follow_symlinks is False, and the last element of the path is a symbolic\n"
-"  link, setxattr will modify the symbolic link itself instead of the file\n"
-"  the link points to.");
+"path may be either a string, a path-like object,  or an open file\n"
+"descriptor.\n"
+"If follow_symlinks is False, and the last element of the path is\n"
+"a symbolic link, setxattr will modify the symbolic link itself instead\n"
+"of the file the link points to.");
 
 #define OS_SETXATTR_METHODDEF    \
     {"setxattr", _PyCFunction_CAST(os_setxattr), METH_FASTCALL|METH_KEYWORDS, os_setxattr__doc__},
@@ -11301,10 +11332,11 @@ PyDoc_STRVAR(os_removexattr__doc__,
 "\n"
 "Remove extended attribute attribute on path.\n"
 "\n"
-"path may be either a string, a path-like object, or an open file descriptor.\n"
-"If follow_symlinks is False, and the last element of the path is a symbolic\n"
-"  link, removexattr will modify the symbolic link itself instead of the file\n"
-"  the link points to.");
+"path may be either a string, a path-like object, or an open file\n"
+"descriptor.\n"
+"If follow_symlinks is False, and the last element of the path is\n"
+"a symbolic link, removexattr will modify the symbolic link itself\n"
+"instead of the file the link points to.");
 
 #define OS_REMOVEXATTR_METHODDEF    \
     {"removexattr", _PyCFunction_CAST(os_removexattr), METH_FASTCALL|METH_KEYWORDS, os_removexattr__doc__},
@@ -11390,11 +11422,12 @@ PyDoc_STRVAR(os_listxattr__doc__,
 "\n"
 "Return a list of extended attributes on path.\n"
 "\n"
-"path may be either None, a string, a path-like object, or an open file descriptor.\n"
-"if path is None, listxattr will examine the current directory.\n"
-"If follow_symlinks is False, and the last element of the path is a symbolic\n"
-"  link, listxattr will examine the symbolic link itself instead of the file\n"
-"  the link points to.");
+"path may be either None, a string, a path-like object, or an open file\n"
+"descriptor.  If path is None, listxattr will examine the current\n"
+"directory.\n"
+"If follow_symlinks is False, and the last element of the path is\n"
+"a symbolic link, listxattr will examine the symbolic link itself instead\n"
+"of the file the link points to.");
 
 #define OS_LISTXATTR_METHODDEF    \
     {"listxattr", _PyCFunction_CAST(os_listxattr), METH_FASTCALL|METH_KEYWORDS, os_listxattr__doc__},
@@ -11515,7 +11548,7 @@ exit:
     return return_value;
 }
 
-#if defined(HAVE_MEMFD_CREATE)
+#if defined(_Py_HAVE_MEMFD_CREATE)
 
 PyDoc_STRVAR(os_memfd_create__doc__,
 "memfd_create($module, /, name, flags=MFD_CLOEXEC)\n"
@@ -11601,7 +11634,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_MEMFD_CREATE) */
+#endif /* defined(_Py_HAVE_MEMFD_CREATE) */
 
 #if (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC))
 
@@ -12416,9 +12449,9 @@ PyDoc_STRVAR(os_scandir__doc__,
 "\n"
 "Return an iterator of DirEntry objects for given path.\n"
 "\n"
-"path can be specified as either str, bytes, or a path-like object.  If path\n"
-"is bytes, the names of yielded DirEntry objects will also be bytes; in\n"
-"all other circumstances they will be str.\n"
+"path can be specified as either str, bytes, or a path-like object.  If\n"
+"path is bytes, the names of yielded DirEntry objects will also be bytes;\n"
+"in all other circumstances they will be str.\n"
 "\n"
 "If path is None, uses the path=\'.\'.");
 
@@ -12490,9 +12523,9 @@ PyDoc_STRVAR(os_fspath__doc__,
 "\n"
 "Return the file system path representation of the object.\n"
 "\n"
-"If the object is str or bytes, then allow it to pass through as-is. If the\n"
-"object defines __fspath__(), then return the result of that method. All other\n"
-"types raise a TypeError.");
+"If the object is str or bytes, then allow it to pass through as-is.  If\n"
+"the object defines __fspath__(), then return the result of that method.\n"
+"All other types raise a TypeError.");
 
 #define OS_FSPATH_METHODDEF    \
     {"fspath", _PyCFunction_CAST(os_fspath), METH_FASTCALL|METH_KEYWORDS, os_fspath__doc__},
@@ -12546,7 +12579,7 @@ exit:
     return return_value;
 }
 
-#if defined(HAVE_GETRANDOM_SYSCALL)
+#if (defined(HAVE_GETRANDOM) || defined(HAVE_GETRANDOM_SYSCALL))
 
 PyDoc_STRVAR(os_getrandom__doc__,
 "getrandom($module, /, size, flags=0)\n"
@@ -12558,7 +12591,7 @@ PyDoc_STRVAR(os_getrandom__doc__,
     {"getrandom", _PyCFunction_CAST(os_getrandom), METH_FASTCALL|METH_KEYWORDS, os_getrandom__doc__},
 
 static PyObject *
-os_getrandom_impl(PyObject *module, Py_ssize_t size, int flags);
+os_getrandom_impl(PyObject *module, Py_ssize_t size, unsigned int flags);
 
 static PyObject *
 os_getrandom(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -12594,7 +12627,7 @@ os_getrandom(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_ssize_t size;
-    int flags = 0;
+    unsigned int flags = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -12616,9 +12649,21 @@ os_getrandom(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    flags = PyLong_AsInt(args[1]);
-    if (flags == -1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[1], &flags, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
 skip_optional_pos:
     return_value = os_getrandom_impl(module, size, flags);
@@ -12627,7 +12672,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_GETRANDOM_SYSCALL) */
+#endif /* (defined(HAVE_GETRANDOM) || defined(HAVE_GETRANDOM_SYSCALL)) */
 
 #if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM))
 
@@ -12786,8 +12831,8 @@ PyDoc_STRVAR(os_waitstatus_to_exitcode__doc__,
 "On Windows, return status shifted right by 8 bits.\n"
 "\n"
 "On Unix, if the process is being traced or if waitpid() was called with\n"
-"WUNTRACED option, the caller must first check if WIFSTOPPED(status) is true.\n"
-"This function must not be called if WIFSTOPPED(status) is true.");
+"WUNTRACED option, the caller must first check if WIFSTOPPED(status) is\n"
+"true.  This function must not be called if WIFSTOPPED(status) is true.");
 
 #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF    \
     {"waitstatus_to_exitcode", _PyCFunction_CAST(os_waitstatus_to_exitcode), METH_FASTCALL|METH_KEYWORDS, os_waitstatus_to_exitcode__doc__},
@@ -13702,4 +13747,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=c4cf19262e42e352 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d4e858cbdf280235 input=a9049054013a1b77]*/
