@@ -1563,7 +1563,7 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.findall(r'[~~1]', s), list('1~'))
         with self.assertWarnsRegex(FutureWarning,
                                    'Possible set symmetric difference ') as w:
-            re.compile(r'[a||[c~~d]]')
+            re.compile(r'[\w--[\d~~1]]')
         self.assertEqual(w.filename, __file__)
 
     def test_search_coverage(self):
