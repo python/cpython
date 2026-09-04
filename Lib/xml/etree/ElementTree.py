@@ -703,7 +703,8 @@ class ElementTree:
             while data := source.read(65536):
                 parser.feed(data)
             # close() releases the target, ask it for the document first
-            document = getattr(getattr(parser, 'target', None), 'document', None)
+            document = getattr(getattr(parser, 'target', None),
+                               'get_document_children', None)
             result = parser.close()
             # a custom target can return anything, even None
             self._root = result
@@ -1676,7 +1677,7 @@ class TreeBuilder:
             self._tail = 1
         return elem
 
-    def document(self):
+    def get_document_children(self):
         """Return the children of the document.
 
         These are the root element and the comments and processing

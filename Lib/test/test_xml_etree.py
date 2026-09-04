@@ -3999,15 +3999,15 @@ class DocumentChildrenTest(unittest.TestCase):
         parser.feed(self.sample)
         root = parser.close()
         self.assertEqual(root.tag, 'r')
-        self.assertEqual(len(builder.document()), 5)
-        self.assertIs(builder.document()[2], root)
+        self.assertEqual(len(builder.get_document_children()), 5)
+        self.assertIs(builder.get_document_children()[2], root)
 
     def test_builder_document_without_inserting(self):
         builder = ET.TreeBuilder()
         parser = ET.XMLParser(target=builder)
         parser.feed(self.sample)
         root = parser.close()
-        self.assertEqual(builder.document(), [root])
+        self.assertEqual(builder.get_document_children(), [root])
 
 class TreeBuilderTest(unittest.TestCase):
     sample1 = ('<!DOCTYPE html PUBLIC'

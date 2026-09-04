@@ -4399,20 +4399,20 @@ static PyType_Spec element_spec = {
 };
 
 /*[clinic input]
-_elementtree.TreeBuilder.document
+_elementtree.TreeBuilder.get_document_children
 
 Return the children of the document.
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_TreeBuilder_document_impl(TreeBuilderObject *self)
-/*[clinic end generated code: output=23aee8fbdee7bb53 input=8e3b119052a148d8]*/
+_elementtree_TreeBuilder_get_document_children_impl(TreeBuilderObject *self)
+/*[clinic end generated code: output=64bb75aa4dd144b9 input=bee07a0ff2788878]*/
 {
     return PyList_GetSlice(self->document, 0, PyList_GET_SIZE(self->document));
 }
 
 static PyMethodDef treebuilder_methods[] = {
-    _ELEMENTTREE_TREEBUILDER_DOCUMENT_METHODDEF
+    _ELEMENTTREE_TREEBUILDER_GET_DOCUMENT_CHILDREN_METHODDEF
     _ELEMENTTREE_TREEBUILDER_DATA_METHODDEF
     _ELEMENTTREE_TREEBUILDER_START_METHODDEF
     _ELEMENTTREE_TREEBUILDER_END_METHODDEF

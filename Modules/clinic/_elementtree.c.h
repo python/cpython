@@ -1332,21 +1332,21 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_elementtree_TreeBuilder_document__doc__,
-"document($self, /)\n"
+PyDoc_STRVAR(_elementtree_TreeBuilder_get_document_children__doc__,
+"get_document_children($self, /)\n"
 "--\n"
 "\n"
 "Return the children of the document.");
 
-#define _ELEMENTTREE_TREEBUILDER_DOCUMENT_METHODDEF    \
-    {"document", (PyCFunction)_elementtree_TreeBuilder_document, METH_NOARGS, _elementtree_TreeBuilder_document__doc__},
+#define _ELEMENTTREE_TREEBUILDER_GET_DOCUMENT_CHILDREN_METHODDEF    \
+    {"get_document_children", (PyCFunction)_elementtree_TreeBuilder_get_document_children, METH_NOARGS, _elementtree_TreeBuilder_get_document_children__doc__},
 
 static PyObject *
-_elementtree_TreeBuilder_document_impl(TreeBuilderObject *self);
+_elementtree_TreeBuilder_get_document_children_impl(TreeBuilderObject *self);
 
 static PyObject *
-_elementtree_TreeBuilder_document(PyObject *self, PyObject *Py_UNUSED(ignored))
+_elementtree_TreeBuilder_get_document_children(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _elementtree_TreeBuilder_document_impl((TreeBuilderObject *)self);
+    return _elementtree_TreeBuilder_get_document_children_impl((TreeBuilderObject *)self);
 }
-/*[clinic end generated code: output=c26dab038e641a6c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=69f8363b3ff015f2 input=a9049054013a1b77]*/
