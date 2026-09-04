@@ -715,8 +715,11 @@ Specifying function pointers using type annotations
    and do not have to match the underlying C implementation.
 
    If the decorated function does not have a return type annotation, a
-   :exc:`ValueError` is raised. If the name of the function does not exist
-   in *dll*, an :exc:`AttributeError` is raised.
+   :exc:`ValueError` is raised. A :exc:`ValueError` is also raised if it has a
+   keyword-only, ``*args``, or ``**kwargs`` parameter, since
+   :attr:`~ctypes._CFuncPtr.argtypes` describes positional arguments only. If
+   the name of the function does not exist in *dll*, an :exc:`AttributeError`
+   is raised.
 
    For example::
 

@@ -15,7 +15,7 @@ for parsing and creating XML data.
    This module will use a fast implementation whenever available.
 
 .. deprecated:: 3.3
-   The :mod:`!xml.etree.cElementTree` module is deprecated.
+   The :mod:`!xml.etree.cElementTree` alias of this module is deprecated.
 
 
 .. note::
@@ -551,10 +551,9 @@ Functions
 .. function:: Comment(text=None)
 
    Comment element factory.  This factory function creates a special element
-   that will be serialized as an XML comment by the standard serializer.  The
-   comment string can be either a bytestring or a Unicode string.  *text* is a
-   string containing the comment string.  Returns an element instance
-   representing a comment.
+   that will be serialized as an XML comment by the standard serializer.
+   *text* is a string containing the comment string.
+   Returns an element instance representing a comment.
 
    Note that :class:`XMLParser` skips over comments in the input
    instead of creating comment objects for them. An :class:`ElementTree` will
@@ -621,10 +620,11 @@ Functions
    ``"pi"``, ``"start-ns"`` and ``"end-ns"``
    (the "ns" events are used to get detailed namespace
    information).  If *events* is omitted, only ``"end"`` events are reported.
-   *parser* is an optional parser instance.  If not given, the standard
-   :class:`XMLParser` parser is used.  *parser* must be a subclass of
-   :class:`XMLParser` and can only use the default :class:`TreeBuilder` as a
-   target. Returns an :term:`iterator` providing ``(event, elem)`` pairs;
+   *parser* is an optional parser instance.
+   If not given, the standard :class:`XMLParser` parser is used.
+   *parser* must be an instance of :class:`XMLParser` or its subclass
+   and can only use the default :class:`TreeBuilder` as a target.
+   Returns an :term:`iterator` providing ``(event, elem)`` pairs;
    it has a ``root`` attribute that references the root element of the
    resulting XML tree once *source* is fully read.
    The iterator has the :meth:`!close` method that closes the internal
@@ -696,8 +696,7 @@ Functions
    Subelement factory.  This function creates an element instance, and appends
    it to an existing element.
 
-   The element name, attribute names, and attribute values can be either
-   bytestrings or Unicode strings.  *parent* is the parent element.  *tag* is
+   *parent* is the parent element.  *tag* is
    the subelement name.  *attrib* is an optional dictionary, containing element
    attributes.  *extra* contains additional attributes, given as keyword
    arguments.  Returns an element instance.
@@ -711,16 +710,16 @@ Functions
 
 .. function:: tostring(element, encoding="us-ascii", method="xml", *, \
                        xml_declaration=None, default_namespace=None, \
-                       short_empty_elements=True)
+                       short_empty_elements=True, standalone=None)
 
    Generates a string representation of an XML element, including all
    subelements.  *element* is an :class:`Element` instance.  *encoding* [1]_ is
    the output encoding (default is US-ASCII).  Use ``encoding="unicode"`` to
    generate a Unicode string (otherwise, a bytestring is generated).  *method*
    is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
-   *xml_declaration*, *default_namespace* and *short_empty_elements* has the same
-   meaning as in :meth:`ElementTree.write`. Returns an (optionally) encoded string
-   containing the XML data.
+   *xml_declaration*, *default_namespace*, *short_empty_elements* and
+   *standalone* has the same meaning as in :meth:`ElementTree.write`.
+   Returns an (optionally) encoded string containing the XML data.
 
    .. versionchanged:: 3.4
       Added the *short_empty_elements* parameter.
@@ -732,19 +731,23 @@ Functions
       The :func:`tostring` function now preserves the attribute order
       specified by the user.
 
+   .. versionchanged:: next
+      Added the *standalone* parameter.
+
 
 .. function:: tostringlist(element, encoding="us-ascii", method="xml", *, \
                            xml_declaration=None, default_namespace=None, \
-                           short_empty_elements=True)
+                           short_empty_elements=True, standalone=None)
 
    Generates a string representation of an XML element, including all
    subelements.  *element* is an :class:`Element` instance.  *encoding* [1]_ is
    the output encoding (default is US-ASCII).  Use ``encoding="unicode"`` to
    generate a Unicode string (otherwise, a bytestring is generated).  *method*
    is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
-   *xml_declaration*, *default_namespace* and *short_empty_elements* has the same
-   meaning as in :meth:`ElementTree.write`. Returns a list of (optionally) encoded
-   strings containing the XML data. It does not guarantee any specific sequence,
+   *xml_declaration*, *default_namespace*, *short_empty_elements* and
+   *standalone* has the same meaning as in :meth:`ElementTree.write`.
+   Returns a list of (optionally) encoded strings containing the XML data.
+   It does not guarantee any specific sequence,
    except that ``b"".join(tostringlist(element)) == tostring(element)``.
 
    .. versionadded:: 3.2
@@ -758,6 +761,9 @@ Functions
    .. versionchanged:: 3.8
       The :func:`tostringlist` function now preserves the attribute order
       specified by the user.
+
+   .. versionchanged:: next
+      Added the *standalone* parameter.
 
 
 .. function:: XML(text, parser=None)
@@ -888,10 +894,21 @@ Element Objects
    Element class.  This class defines the Element interface, and provides a
    reference implementation of this interface.
 
-   The element name, attribute names, and attribute values can be either
-   bytestrings or Unicode strings.  *tag* is the element name.  *attrib* is
+   *tag* is the element name.  *attrib* is
    an optional dictionary, containing element attributes.  *extra* contains
    additional attributes, given as keyword arguments.
+
+   The element name and the attribute names and values are strings or
+   :class:`QName` instances, and the text and the tail are strings or
+   ``None``.
+   The element name can also be :func:`Comment` or
+   :func:`ProcessingInstruction`, which are used for special elements.
+   If it is ``None``, the element itself is not serialized: only its text
+   and its children are written, and its attributes are ignored.
+   This can be used for a fragment which contains several elements.
+   With ``method="html"`` the attribute value can also be ``None``,
+   which produces an empty attribute (such as ``checked``).
+   Other objects can be stored in the tree, but they cannot be serialized.
 
    .. versionchanged:: 3.15
       *attrib* can now be a :class:`frozendict`.
@@ -958,14 +975,12 @@ Element Objects
 
    .. method:: items()
 
-      Returns the element attributes as a sequence of (name, value) pairs.  The
-      attributes are returned in an arbitrary order.
+      Returns the element attributes as (name, value) pairs.
 
 
    .. method:: keys()
 
-      Returns the elements attribute names as a list.  The names are returned
-      in an arbitrary order.
+      Returns the element attribute names.
 
 
    .. method:: set(key, value)
@@ -1186,7 +1201,7 @@ ElementTree Objects
 
    .. method:: write(file, encoding="us-ascii", xml_declaration=None, \
                      default_namespace=None, method="xml", *, \
-                     short_empty_elements=True)
+                     short_empty_elements=True, standalone=None)
 
       Writes the element tree to a file, as XML.  *file* is a file name, or a
       :term:`file object` opened for writing.  *encoding* [1]_ is the output
@@ -1202,6 +1217,13 @@ ElementTree Objects
       emitted as a single self-closed tag, otherwise they are emitted as a pair
       of start/end tags.
 
+      The keyword-only *standalone* parameter is the value of the standalone
+      document declaration in the XML declaration.
+      Use ``True`` for ``standalone="yes"``, ``False`` for ``standalone="no"``,
+      and ``None`` (the default) to omit it.
+      An XML declaration is written if *standalone* is not ``None``;
+      combining it with ``xml_declaration=False`` raises a :exc:`ValueError`.
+
       The output is either a string (:class:`str`) or binary (:class:`bytes`).
       This is controlled by the *encoding* argument.  If *encoding* is
       ``"unicode"``, the output is a string; otherwise, it's binary.  Note that
@@ -1215,6 +1237,9 @@ ElementTree Objects
       .. versionchanged:: 3.8
          The :meth:`write` method now preserves the attribute order specified
          by the user.
+
+      .. versionchanged:: next
+         Added the *standalone* parameter.
 
 
 This is the XML file that is going to be manipulated::
@@ -1296,8 +1321,7 @@ TreeBuilder Objects
 
    .. method:: data(data)
 
-      Adds text to the current element.  *data* is a string.  This should be
-      either a bytestring, or a Unicode string.
+      Adds text to the current element.  *data* is a string.
 
 
    .. method:: end(tag)
@@ -1400,7 +1424,8 @@ XMLParser Objects
 
    .. method:: feed(data)
 
-      Feeds data to the parser.  *data* is encoded data.
+      Feeds data to the parser.  *data* is a string
+      or encoded data (:class:`bytes` or a :term:`bytes-like object`).
 
 
    .. method:: flush()
@@ -1479,7 +1504,8 @@ XMLPullParser Objects
 
    .. method:: feed(data)
 
-      Feed the given bytes data to the parser.
+      Feed the given data to the parser.  *data* is a string
+      or encoded data (:class:`bytes` or a :term:`bytes-like object`).
 
    .. method:: flush()
 
