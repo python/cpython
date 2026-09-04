@@ -833,6 +833,13 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
         # For example, 'C:/foo' on Windows.
         raise AbsolutePathError(member)
     # Ensure we stay in the destination
+    if '..' in name.replace(os.sep, '/').split('/'):
+        # Directories are created from the name as given, so a name that
+        # leaves the destination part-way through would create them
+        # outside it even if the resolved path stays inside.
+        normalized = os.path.normpath(name)
+        if normalized != name:
+            name = new_attrs['name'] = normalized
     target_path = os.path.realpath(os.path.join(dest_path, name),
                                    strict=os.path.ALLOW_MISSING)
     if os.path.commonpath([target_path, dest_path]) != dest_path:
@@ -1035,6 +1042,8 @@ class TarInfo(object):
         if gname is not _KEEP:
             result.gname = gname
         return result
+
+    __replace__ = replace
 
     def get_info(self):
         """Return the TarInfo's attributes as a dictionary.
@@ -1592,6 +1601,14 @@ class TarInfo(object):
         # Fetch the next header.
         try:
             next = self._fromtarfile(tarfile, dircheck=False)
+        except EOFHeaderError:
+            if self.type == XGLTYPE:
+                # If this is a global header at the end of the archive
+                # (no regular members follow), let the EOFHeaderError
+                # propagate so the caller handles end-of-archive normally.
+                tarfile.offset = tarfile.fileobj.tell() - BLOCKSIZE
+                raise
+            raise SubsequentHeaderError("end of file header") from None
         except HeaderError as e:
             raise SubsequentHeaderError(str(e)) from None
 
@@ -1611,16 +1628,21 @@ class TarInfo(object):
         if self.type in (XHDTYPE, SOLARIS_XHDTYPE):
             # Patch the TarInfo object with the extended header info.
             next._apply_pax_info(pax_headers, tarfile.encoding, tarfile.errors)
-            next.offset = self.offset
 
             if "size" in pax_headers:
                 # If the extended header replaces the size field,
                 # we need to recalculate the offset where the next
                 # header starts.
-                offset = next.offset_data
+                offset = next.offset + BLOCKSIZE
                 if next.isreg() or next.type not in SUPPORTED_TYPES:
-                    offset += next._block(next.size)
+                    try:
+                        size = PAX_NUMBER_FIELDS["size"](pax_headers["size"])
+                    except ValueError:
+                        size = 0
+                    offset += next._block(size)
                 tarfile.offset = offset
+
+            next.offset = self.offset
 
         return next
 

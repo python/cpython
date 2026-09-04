@@ -231,15 +231,19 @@ the *new_callable* argument to :func:`patch`.
     Create a new :class:`Mock` object. :class:`Mock` takes several optional arguments
     that specify the behaviour of the Mock object:
 
-    * *spec*: This can be either a list of strings or an existing object (a
-      class or instance) that acts as the specification for the mock object. If
-      you pass in an object then a list of strings is formed by calling dir on
+    * *spec*: This can be either a list or tuple of strings,
+      or an existing object (a class or instance)
+      that acts as the specification for the mock object.
+      If you pass in an object then a list of strings is formed by calling dir on
       the object (excluding unsupported magic attributes and methods).
       Accessing any attribute not in this list will raise an :exc:`AttributeError`.
 
       If *spec* is an object (rather than a list of strings) then
       :attr:`~object.__class__` returns the class of the spec object. This
       allows mocks to pass :func:`isinstance` tests.
+
+      .. versionchanged:: next
+         :func:`dir` now works for a mock created with a tuple *spec*.
 
     * *spec_set*: A stricter variant of *spec*. If used, attempting to *set*
       or get an attribute on the mock that isn't on the object passed as
@@ -448,9 +452,9 @@ the *new_callable* argument to :func:`patch`.
 
     .. method:: mock_add_spec(spec, spec_set=False)
 
-        Add a spec to a mock. *spec* can either be an object or a
-        list of strings. Only attributes on the *spec* can be fetched as
-        attributes from the mock.
+        Add a spec to a mock.
+        *spec* can either be an object or a list or tuple of strings.
+        Only attributes on the *spec* can be fetched as attributes from the mock.
 
         If *spec_set* is true then only attributes on the spec can be set.
 

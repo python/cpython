@@ -485,6 +485,10 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a Python generator function.
 
+   .. versionchanged:: 3.10.6
+      :term:`Duck-typed <duck-typing>` function-like objects now return
+      ``True`` if their code object has the :data:`CO_GENERATOR` flag.
+
    .. versionchanged:: 3.13
       Functions wrapped in :func:`functools.partialmethod` now return ``True``
       if the wrapped function is a Python generator function.
@@ -506,6 +510,10 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    .. versionchanged:: 3.8
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a :term:`coroutine function`.
+
+   .. versionchanged:: 3.10.6
+      :term:`Duck-typed <duck-typing>` function-like objects now return
+      ``True`` if their code object has the :data:`CO_COROUTINE` flag.
 
    .. versionchanged:: 3.12
       Sync functions marked with :func:`markcoroutinefunction` now return
@@ -580,6 +588,10 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    .. versionchanged:: 3.8
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is an :term:`asynchronous generator` function.
+
+   .. versionchanged:: 3.10.6
+      :term:`Duck-typed <duck-typing>` function-like objects now return
+      ``True`` if their code object has the :data:`CO_ASYNC_GENERATOR` flag.
 
    .. versionchanged:: 3.13
       Functions wrapped in :func:`functools.partialmethod` now return ``True``
@@ -747,6 +759,7 @@ Retrieving source code
 .. function:: getfile(object)
 
    Return the name of the (text or binary) file in which an object was defined.
+   An :exc:`OSError` is raised if the source code cannot be retrieved.
    This will fail with a :exc:`TypeError` if the object is a built-in module,
    class, or function.
 
@@ -760,9 +773,10 @@ Retrieving source code
 .. function:: getsourcefile(object)
 
    Return the name of the Python source file in which an object was defined
-   or ``None`` if no way can be identified to get the source.  This
-   will fail with a :exc:`TypeError` if the object is a built-in module, class, or
-   function.
+   or ``None`` if no way can be identified to get the source.  An :exc:`OSError` is
+   raised if the source code cannot be retrieved.
+   This will fail with a :exc:`TypeError` if the object is a built-in module,
+   class, or function.
 
 
 .. function:: getsourcelines(object)
