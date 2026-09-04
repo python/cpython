@@ -106,7 +106,7 @@ module marshal
 #define WFERR_NESTEDTOODEEP 2
 #define WFERR_NOMEMORY 3
 #define WFERR_CODE_NOT_ALLOWED 4
-#define WFERR_ERROR_SET 5  /* An exception has already been raised. */
+#define WFERR_EXCEPTION_SET 5  /* An exception has already been raised. */
 
 typedef struct {
     FILE *fp;
@@ -135,7 +135,7 @@ w_file_error(WFILE *p)
     if (p->error != WFERR_OK) {
         return;
     }
-    p->error = WFERR_ERROR_SET;
+    p->error = WFERR_EXCEPTION_SET;
     if (PyErr_CheckSignals()) {
         /* The signal handler has raised an exception. */
         return;
@@ -823,7 +823,7 @@ w_set_exception(WFILE *p)
         PyErr_SetString(PyExc_ValueError,
                         "marshalling code objects is disallowed");
         break;
-    case WFERR_ERROR_SET:
+    case WFERR_EXCEPTION_SET:
         /* An exception has already been raised. */
         assert(PyErr_Occurred());
         break;
