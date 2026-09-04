@@ -73,8 +73,8 @@ def _build_graph_for_future(
         seen = set()
 
     # gh-156860: "awaited by" is a DAG, not a tree. Expand each future once
-    if future._asyncio_awaited_by and id(future) not in seen:
-        seen.add(id(future))
+    if future._asyncio_awaited_by and future not in seen:
+        seen.add(future)
         for parent in future._asyncio_awaited_by:
             awaited_by.append(
                 _build_graph_for_future(parent, limit=limit, seen=seen))
@@ -177,7 +177,7 @@ def capture_call_graph(
 
     awaited_by = []
     if future._asyncio_awaited_by:
-        seen = {id(future)}
+        seen = {future}
         for parent in future._asyncio_awaited_by:
             awaited_by.append(
                 _build_graph_for_future(parent, limit=limit, seen=seen))
