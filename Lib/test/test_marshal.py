@@ -818,7 +818,7 @@ class CAPI_TestCase(unittest.TestCase, HelperMixin):
 
     def test_write_unmarshallable_to_file(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, 'unmarshallable object'):
             _testcapi.pymarshal_write_object_to_file(object(), os_helper.TESTFN,
                                                      marshal.version)
 

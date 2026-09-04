@@ -806,9 +806,9 @@ w_clear_refs(WFILE *wf)
     }
 }
 
-/* Set the error indicator according to the recorded error. */
+/* Set the exception indicator according to the recorded error. */
 static void
-w_set_error(WFILE *p)
+w_set_exception(WFILE *p)
 {
     assert(p->error != WFERR_OK);
     switch (p->error) {
@@ -850,7 +850,7 @@ PyMarshal_WriteLongToFile(long x, FILE *fp, int version)
     w_long(x, &wf);
     w_flush(&wf);
     if (wf.error != WFERR_OK) {
-        w_set_error(&wf);
+        w_set_exception(&wf);
     }
 }
 
@@ -876,7 +876,7 @@ PyMarshal_WriteObjectToFile(PyObject *x, FILE *fp, int version)
     w_clear_refs(&wf);
     w_flush(&wf);
     if (wf.error != WFERR_OK) {
-        w_set_error(&wf);
+        w_set_exception(&wf);
     }
 }
 
@@ -932,7 +932,9 @@ r_string(Py_ssize_t n, RFILE *p)
         read = fread(p->buf, 1, n, p->fp);
         if (read != n) {
             assert(read < n);
+            int saved_errno = errno;
             if (!PyErr_CheckSignals() && ferror(p->fp)) {
+                errno = saved_errno;
                 PyErr_SetFromErrno(PyExc_OSError);
             }
         }
@@ -953,6 +955,9 @@ r_string(Py_ssize_t n, RFILE *p)
         }
         read = PyNumber_AsSsize_t(res, PyExc_ValueError);
         Py_DECREF(res);
+        if (read == -1 && PyErr_Occurred()) {
+            return NULL;
+        }
         if (read > n) {
             PyErr_Format(PyExc_ValueError,
                          "read() returned too much data: "
@@ -985,10 +990,12 @@ r_byte(RFILE *p)
         if (c != EOF) {
             return c;
         }
+        int saved_errno = errno;
         if (PyErr_CheckSignals()) {
             return EOF;
         }
         if (ferror(p->fp)) {
+            errno = saved_errno;
             PyErr_SetFromErrno(PyExc_OSError);
             return EOF;
         }
@@ -1922,8 +1929,10 @@ PyMarshal_ReadLastObjectFromFile(FILE *fp)
         if (pBuf != NULL) {
             PyObject *v = NULL;
             size_t n = fread(pBuf, 1, (size_t)filesize, fp);
+            int saved_errno = errno;
             if (!PyErr_CheckSignals()) {
                 if (ferror(fp)) {
+                    errno = saved_errno;
                     PyErr_SetFromErrno(PyExc_OSError);
                 }
                 else {
@@ -2016,7 +2025,7 @@ _PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code)
     }
     if (wf.error != WFERR_OK) {
         Py_XDECREF(wf.str);
-        w_set_error(&wf);
+        w_set_exception(&wf);
         return NULL;
     }
     return wf.str;
