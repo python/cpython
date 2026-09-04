@@ -1,0 +1,2 @@
+Fix :class:`shlex.shlex` source inclusion when the source filename is the
+final token in a stream.
