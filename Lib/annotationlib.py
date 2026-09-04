@@ -191,12 +191,26 @@ class ForwardRef:
 
         arg = self.__forward_arg__
         if arg.isidentifier() and not keyword.iskeyword(arg):
+            resolved = _sentinel
             if arg in locals:
-                return locals[arg]
+                resolved = locals[arg]
             elif arg in globals:
-                return globals[arg]
+                resolved = globals[arg]
             elif hasattr(builtins, arg):
-                return getattr(builtins, arg)
+                resolved = getattr(builtins, arg)
+
+            if resolved is not _sentinel:
+                if isinstance(resolved, types.LazyImportType):
+                    # We try reifying the lazy object, and assume it's an error
+                    # if format=VALUE was used:
+                    try:
+                        return resolved.resolve()
+                    except Exception:
+                        if not is_forwardref_format:
+                            raise
+                        return self
+                else:
+                    return resolved
             elif is_forwardref_format:
                 return self
             else:

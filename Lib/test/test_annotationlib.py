@@ -2179,6 +2179,64 @@ class TestForwardRefClass(unittest.TestCase):
             support.EqualToForwardRef('"a" + 1'),
         )
 
+    def test_evaluate_lazy_import(self):
+        ns = {}
+        exec(
+            textwrap.dedent(
+                """
+                lazy from test.test_lazy_import.data.basic2 import x
+                lazy from test.test_lazy_import.data.broken_module import y
+
+                class A:
+                    a: x
+
+                class B:
+                    b: y
+                """
+            ),
+            ns,
+        )
+        self.addCleanup(
+            import_helper.unload, "test.test_lazy_import.data.basic2"
+        )
+        self.addCleanup(
+            import_helper.unload, "test.test_lazy_import.data.broken_module"
+        )
+        self.assertIs(type(ns["x"]), types.LazyImportType)
+        self.assertIs(type(ns["y"]), types.LazyImportType)
+
+        # The lazy import resolves successfully:
+        for format in (Format.VALUE, Format.FORWARDREF):
+            with self.subTest(format=format):
+                self.assertEqual(
+                    ForwardRef("x").evaluate(globals=ns, format=format), 42
+                )
+                self.assertEqual(
+                    ForwardRef("x").evaluate(locals=ns, format=format), 42
+                )
+        self.assertEqual(
+            get_annotations(ns["A"], format=Format.FORWARDREF), {"a": 42}
+        )
+
+        # The lazy import fails to resolve:
+        fr = ForwardRef("y")
+        with self.assertRaisesRegex(ValueError, "always fails to import"):
+            fr.evaluate(globals=ns, format=Format.VALUE)
+        with self.assertRaisesRegex(ValueError, "always fails to import"):
+            fr.evaluate(locals=ns, format=Format.VALUE)
+        self.assertIs(fr.evaluate(globals=ns, format=Format.FORWARDREF), fr)
+        self.assertIs(fr.evaluate(locals=ns, format=Format.FORWARDREF), fr)
+
+        annos = get_annotations(ns["B"], format=Format.FORWARDREF)
+        self.assertEqual(
+            annos,
+            {"b": support.EqualToForwardRef("y", is_class=True, owner=ns["B"])},
+        )
+        with self.assertRaisesRegex(ValueError, "always fails to import"):
+            annos["b"].evaluate(format=Format.VALUE)
+        with self.assertRaisesRegex(ValueError, "always fails to import"):
+            get_annotations(ns["B"], format=Format.VALUE)
+
     def test_evaluate_notimplemented_format(self):
         class C:
             x: alias
