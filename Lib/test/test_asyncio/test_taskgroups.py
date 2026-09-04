@@ -608,6 +608,39 @@ class BaseTestTaskGroup:
             get_error_types(cm.exception), {MyBaseExc, ZeroDivisionError}
         )
 
+    async def test_taskgroup_20b(self):
+        # Same setup as test_taskgroup_20 (a KeyboardInterrupt from the
+        # "async with" body itself, alongside a sibling task's exception):
+        # raising self._base_error out of _aexit() discards self._errors
+        # silently. The sibling's exception can't be raised alongside
+        # the KeyboardInterrupt (only one exception can propagate), but
+        # it must be reported via the loop's exception handler instead
+        # of being discarded silently. See gh-135736.
+        async def crash_soon():
+            await asyncio.sleep(0.1)
+            1 / 0
+
+        async def nested():
+            try:
+                await asyncio.sleep(10)
+            finally:
+                raise KeyboardInterrupt
+
+        async def runner():
+            async with taskgroups.TaskGroup() as g:
+                g.create_task(crash_soon())
+                await nested()
+
+        contexts = []
+        loop = asyncio.get_running_loop()
+        loop.set_exception_handler(lambda loop, context: contexts.append(context))
+
+        with self.assertRaises(KeyboardInterrupt):
+            await runner()
+
+        self.assertEqual(len(contexts), 1)
+        self.assertIsInstance(contexts[0]['exception'], ZeroDivisionError)
+
     async def _test_taskgroup_21(self):
         # This test doesn't work as asyncio, currently, doesn't
         # correctly propagate KeyboardInterrupt (or SystemExit) --
@@ -1153,6 +1186,38 @@ class BaseTestTaskGroup:
             #   raised, and the child task run until the first await.
             with self.assertRaises(RuntimeError):
                 tg.create_task(asyncio.sleep(1))
+
+    async def test_taskgroup_cancel_from_child_before_first_suspension(self):
+        # gh-155418: an eager task can cancel the group before joining _tasks
+        async def child(tg):
+            tg.cancel()
+            await asyncio.sleep(10)
+            self.fail("the child was not cancelled")
+
+        async with asyncio.TaskGroup() as tg:
+            task = tg.create_task(child(tg))
+        self.assertTrue(task.cancelled())
+
+    async def test_taskgroup_cancel_keeps_outer_cancellation(self):
+        # gh-155433: any cancellation from outside the group must propagate.
+        async def child():
+            try:
+                await asyncio.sleep(10)
+            finally:
+                await asyncio.sleep(0.1)
+
+        async def body():
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(child())
+                await asyncio.sleep(0)
+                tg.cancel()
+
+        task = asyncio.create_task(body())
+        await asyncio.sleep(0.01)
+        task.cancel('message')
+        with self.assertRaises(asyncio.CancelledError) as cm:
+            await task
+        self.assertEqual('message', cm.exception.args[0])
 
     async def test_taskgroup_cancel_before_exception(self):
         async def raise_exc(parent_tg: asyncio.TaskGroup):

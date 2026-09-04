@@ -66,9 +66,9 @@ struct _PyInterpreterFrame {
     PyObject *prefix##_qualname;                                            \
     _PyErr_StackItem prefix##_exc_state;                                    \
     PyObject *prefix##_origin_or_finalizer;                                 \
-    char prefix##_hooks_inited;                                             \
-    char prefix##_closed;                                                   \
-    char prefix##_running_async;                                            \
+    int8_t prefix##_hooks_inited;                                           \
+    int8_t prefix##_closed;                                                 \
+    int8_t prefix##_running_async;                                          \
     /* The frame */                                                         \
     int8_t prefix##_frame_state;                                            \
     _PyInterpreterFrame prefix##_iframe;                                    \

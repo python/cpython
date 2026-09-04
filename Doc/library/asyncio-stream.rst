@@ -49,7 +49,7 @@ and work with streams:
 
 
 .. function:: open_connection(host=None, port=None, *, \
-                 limit=None, ssl=None, family=0, proto=0, \
+                 limit=65536, ssl=None, family=0, proto=0, \
                  flags=0, sock=None, local_addr=None, \
                  server_hostname=None, ssl_handshake_timeout=None, \
                  ssl_shutdown_timeout=None, \
@@ -89,7 +89,7 @@ and work with streams:
 
 
 .. function:: start_server(client_connected_cb, host=None, \
-                 port=None, *, limit=None, \
+                 port=None, *, limit=65536, \
                  family=socket.AF_UNSPEC, \
                  flags=socket.AI_PASSIVE, sock=None, \
                  backlog=100, ssl=None, reuse_address=None, \
@@ -137,7 +137,7 @@ and work with streams:
 
 .. rubric:: Unix Sockets
 
-.. function:: open_unix_connection(path=None, *, limit=None, \
+.. function:: open_unix_connection(path=None, *, limit=65536, \
                ssl=None, sock=None, server_hostname=None, \
                ssl_handshake_timeout=None, ssl_shutdown_timeout=None)
    :async:
@@ -169,7 +169,7 @@ and work with streams:
 
 
 .. function:: start_unix_server(client_connected_cb, path=None, \
-                 *, limit=None, sock=None, backlog=100, ssl=None, \
+                 *, limit=65536, sock=None, backlog=100, ssl=None, \
                  ssl_handshake_timeout=None, \
                  ssl_shutdown_timeout=None, start_serving=True, \
                  cleanup_socket=True, mode=None)
@@ -388,6 +388,16 @@ StreamWriter
       buffer is drained down to the low watermark and writing can
       be resumed.  When there is nothing to wait for, the :meth:`drain`
       returns immediately.
+
+      .. note::
+
+         When the write buffer is below the high watermark,
+         :meth:`drain` returns immediately without yielding to
+         the event loop.  As a result, code which repeatedly calls
+         ``write()`` followed by ``await drain()`` may prevent other
+         tasks from running.  To prevent blocking behavior, yield
+         to the event loop explicitly with ``await asyncio.sleep(0)``
+         (see :func:`asyncio.sleep`).
 
    .. method:: start_tls(sslcontext, *, server_hostname=None, \
                          ssl_handshake_timeout=None, ssl_shutdown_timeout=None)
