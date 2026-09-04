@@ -1,0 +1,4 @@
+Fixed a crash (use-after-free) in :func:`marshal.dumps` that could occur if an
+item's :meth:`~object.__buffer__` concurrently mutates the list, dict, or set
+being serialized.  A resulting change in the container's size is now reported
+as a :exc:`RuntimeError`.
