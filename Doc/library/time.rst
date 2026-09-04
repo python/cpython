@@ -122,23 +122,24 @@ An explanation of some terminology and conventions is in order.
 Functions
 ---------
 
-.. function:: asctime([t])
+.. function:: asctime([time_tuple])
 
    Convert a tuple or :class:`struct_time` representing a time as returned by
    :func:`gmtime` or :func:`localtime` to a string of the following
    form: ``'Sun Jun 20 23:21:05 1993'``. The day field is two characters long
    and is space padded if the day is a single digit,
-   e.g.: ``'Wed Jun  9 04:26:40 1993'``.
+   for example: ``'Wed Jun  9 04:26:40 1993'``.
 
-   If *t* is not provided, the current time as returned by :func:`localtime`
-   is used. Locale information is not used by :func:`asctime`.
+   If *time_tuple* is not provided,
+   the current time as returned by :func:`localtime` is used.
+   Locale information is not used by :func:`asctime`.
 
    .. note::
 
       Unlike the C function of the same name, :func:`asctime` does not add a
       trailing newline.
 
-.. function:: pthread_getcpuclockid(thread_id)
+.. function:: pthread_getcpuclockid(thread_id, /)
 
    Return the *clk_id* of the thread-specific CPU-time clock for the specified *thread_id*.
 
@@ -157,7 +158,7 @@ Functions
 
    .. versionadded:: 3.7
 
-.. function:: clock_getres(clk_id)
+.. function:: clock_getres(clk_id, /)
 
    Return the resolution (precision) of the specified clock *clk_id*.  Refer to
    :ref:`time-clock-id-constants` for a list of accepted values for *clk_id*.
@@ -167,7 +168,7 @@ Functions
    .. versionadded:: 3.3
 
 
-.. function:: clock_gettime(clk_id) -> float
+.. function:: clock_gettime(clk_id, /) -> float
 
    Return the time of the specified clock *clk_id*.  Refer to
    :ref:`time-clock-id-constants` for a list of accepted values for *clk_id*.
@@ -180,7 +181,7 @@ Functions
    .. versionadded:: 3.3
 
 
-.. function:: clock_gettime_ns(clk_id) -> int
+.. function:: clock_gettime_ns(clk_id, /) -> int
 
    Similar to :func:`clock_gettime` but return time as nanoseconds.
 
@@ -189,7 +190,7 @@ Functions
    .. versionadded:: 3.7
 
 
-.. function:: clock_settime(clk_id, time: float)
+.. function:: clock_settime(clk_id, time, /)
 
    Set the time of the specified clock *clk_id*.  Currently,
    :data:`CLOCK_REALTIME` is the only accepted value for *clk_id*.
@@ -201,8 +202,11 @@ Functions
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.15
+      Accepts any real number as *time*, not only integer or float.
 
-.. function:: clock_settime_ns(clk_id, time: int)
+
+.. function:: clock_settime_ns(clk_id, time: int, /)
 
    Similar to :func:`clock_settime` but set time with nanoseconds.
 
@@ -211,20 +215,23 @@ Functions
    .. versionadded:: 3.7
 
 
-.. function:: ctime([secs])
+.. function:: ctime(seconds=None, /)
 
    Convert a time expressed in seconds since the epoch_ to a string of a form:
    ``'Sun Jun 20 23:21:05 1993'`` representing local time. The day field
    is two characters long and is space padded if the day is a single digit,
-   e.g.: ``'Wed Jun  9 04:26:40 1993'``.
+   for example: ``'Wed Jun  9 04:26:40 1993'``.
 
-   If *secs* is not provided or :const:`None`, the current time as
-   returned by :func:`.time` is used. ``ctime(secs)`` is equivalent to
-   ``asctime(localtime(secs))``. Locale information is not used by
+   If *seconds* is not provided or :const:`None`, the current time as
+   returned by :func:`.time` is used. ``ctime(seconds)`` is equivalent to
+   ``asctime(localtime(seconds))``. Locale information is not used by
    :func:`ctime`.
 
+   .. versionchanged:: 3.15
+      Accepts any real number, not only integer or float.
 
-.. function:: get_clock_info(name)
+
+.. function:: get_clock_info(name, /)
 
    Get information on the specified clock as a namespace object.
    Supported clock names and the corresponding functions to read their value
@@ -238,8 +245,8 @@ Functions
 
    The result has the following attributes:
 
-   - *adjustable*: ``True`` if the clock can be changed automatically (e.g. by
-     a NTP daemon) or manually by the system administrator, ``False`` otherwise
+   - *adjustable*: ``True`` if the clock can be set to jump forward or backward
+     in time, ``False`` otherwise. Does not refer to gradual NTP rate adjustments.
    - *implementation*: The name of the underlying C function used to get
      the clock value.  Refer to :ref:`time-clock-id-constants` for possible values.
    - *monotonic*: ``True`` if the clock cannot go backward,
@@ -249,21 +256,25 @@ Functions
    .. versionadded:: 3.3
 
 
-.. function:: gmtime([secs])
+.. function:: gmtime(seconds=None, /)
 
    Convert a time expressed in seconds since the epoch_ to a :class:`struct_time` in
-   UTC in which the dst flag is always zero.  If *secs* is not provided or
+   UTC in which the dst flag is always zero.  If *seconds* is not provided or
    :const:`None`, the current time as returned by :func:`.time` is used.  Fractions
    of a second are ignored.  See above for a description of the
    :class:`struct_time` object. See :func:`calendar.timegm` for the inverse of this
    function.
 
+   .. versionchanged:: 3.15
+      Accepts any real number, not only integer or float.
 
-.. function:: localtime([secs])
 
-   Like :func:`gmtime` but converts to local time.  If *secs* is not provided or
-   :const:`None`, the current time as returned by :func:`.time` is used.  The dst
-   flag is set to ``1`` when DST applies to the given time.
+.. function:: localtime(seconds=None, /)
+
+   Like :func:`gmtime` but converts to local time.
+   If *seconds* is not provided or :const:`None`,
+   the current time as returned by :func:`.time` is used.
+   The dst flag is set to ``1`` when DST applies to the given time.
 
    :func:`localtime` may raise :exc:`OverflowError`, if the timestamp is
    outside the range of values supported by the platform C :c:func:`localtime`
@@ -271,8 +282,11 @@ Functions
    :c:func:`gmtime` failure. It's common for this to be restricted to years
    between 1970 and 2038.
 
+   .. versionchanged:: 3.15
+      Accepts any real number, not only integer or float.
 
-.. function:: mktime(t)
+
+.. function:: mktime(time_tuple, /)
 
    This is the inverse function of :func:`localtime`.  Its argument is the
    :class:`struct_time` or full 9-tuple (since the dst flag is needed; use ``-1``
@@ -306,10 +320,11 @@ Functions
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.5
-      The function is now always available and always system-wide.
+      The function is now always available and the clock is now the same for
+      all processes.
 
    .. versionchanged:: 3.10
-      On macOS, the function is now system-wide.
+      On macOS, the clock is now the same for all processes.
 
 
 .. function:: monotonic_ns() -> int
@@ -325,7 +340,8 @@ Functions
 
    Return the value (in fractional seconds) of a performance counter, i.e. a
    clock with the highest available resolution to measure a short duration.  It
-   does include time elapsed during sleep and is system-wide.  The reference
+   does include time elapsed during sleep. The clock is the same for all
+   processes. The reference
    point of the returned value is undefined, so that only the difference between
    the results of two calls is valid.
 
@@ -340,7 +356,7 @@ Functions
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.10
-      On Windows, the function is now system-wide.
+      On Windows, the clock is now the same for all processes.
 
    .. versionchanged:: 3.13
       Use the same clock as :func:`time.monotonic`.
@@ -377,11 +393,10 @@ Functions
 
    .. versionadded:: 3.7
 
-.. function:: sleep(secs)
+.. function:: sleep(seconds, /)
 
    Suspend execution of the calling thread for the given number of seconds.
-   The argument may be a floating-point number to indicate a more precise sleep
-   time.
+   The argument may be a non-integer to indicate a more precise sleep time.
 
    If the sleep is interrupted by a signal and no exception is raised by the
    signal handler, the sleep is restarted with a recomputed timeout.
@@ -391,13 +406,16 @@ Functions
 
    .. rubric:: Windows implementation
 
-   On Windows, if *secs* is zero, the thread relinquishes the remainder of its
-   time slice to any other thread that is ready to run. If there are no other
-   threads ready to run, the function returns immediately, and the thread
-   continues execution.  On Windows 8.1 and newer the implementation uses
+   On Windows, if *seconds* is zero,
+   the thread relinquishes the remainder of its time slice
+   to any other thread that is ready to run.
+   If there are no other threads ready to run,
+   the function returns immediately, and the thread continues execution.
+   On Windows 10 and newer the implementation uses
    a `high-resolution timer
-   <https://learn.microsoft.com/windows-hardware/drivers/kernel/high-resolution-timers>`_
-   which provides resolution of 100 nanoseconds. If *secs* is zero, ``Sleep(0)`` is used.
+   <https://learn.microsoft.com/windows/win32/api/synchapi/nf-synchapi-createwaitabletimerexw>`_
+   which provides resolution of 100 nanoseconds.
+   If *seconds* is zero, ``Sleep(0)`` is used.
 
    .. rubric:: Unix implementation
 
@@ -412,12 +430,13 @@ Functions
       To voluntarily relinquish the CPU, specify a real-time :ref:`scheduling
       policy <os-scheduling-policy>` and use :func:`os.sched_yield` instead.
 
-   .. audit-event:: time.sleep secs
+   .. audit-event:: time.sleep seconds
 
    .. versionchanged:: 3.5
-      The function now sleeps at least *secs* even if the sleep is interrupted
-      by a signal, except if the signal handler raises an exception (see
-      :pep:`475` for the rationale).
+      The function now sleeps at least *seconds*
+      even if the sleep is interrupted by a signal,
+      except if the signal handler raises an exception
+      (see :pep:`475` for the rationale).
 
    .. versionchanged:: 3.11
       On Unix, the ``clock_nanosleep()`` and ``nanosleep()`` functions are now
@@ -426,16 +445,19 @@ Functions
    .. versionchanged:: 3.13
       Raises an auditing event.
 
+   .. versionchanged:: 3.15
+      Accepts any real number, not only integer or float.
+
 .. index::
    single: % (percent); datetime format
 
-.. function:: strftime(format[, t])
+.. function:: strftime(format[, time_tuple])
 
    Convert a tuple or :class:`struct_time` representing a time as returned by
    :func:`gmtime` or :func:`localtime` to a string as specified by the *format*
-   argument.  If *t* is not provided, the current time as returned by
+   argument.  If *time_tuple* is not provided, the current time as returned by
    :func:`localtime` is used.  *format* must be a string.  :exc:`ValueError` is
-   raised if any field in *t* is outside of the allowed range.
+   raised if any field in *time_tuple* is outside of the allowed range.
 
    0 is a legal argument for any position in the time tuple; if it is normally
    illegal the value is forced to a correct one.
@@ -568,7 +590,7 @@ Functions
       calculations when the day of the week and the year are specified.
 
    Here is an example, a format for dates compatible with that specified  in the
-   :rfc:`2822` Internet email standard.  [1]_ ::
+   :rfc:`5322` Internet email standard.  [1]_ ::
 
       >>> from time import gmtime, strftime
       >>> strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime())
@@ -933,7 +955,7 @@ These constants are used as parameters for :func:`clock_getres` and
 
 .. data:: CLOCK_TAI
 
-   `International Atomic Time <https://www.nist.gov/pml/time-and-frequency-division/nist-time-frequently-asked-questions-faq#tai>`_
+   `International Atomic Time <https://www.nist.gov/pml/time-and-frequency-division/how-utcnist-related-coordinated-universal-time-utc-international>`_
 
    The system must have a current leap second table in order for this to give
    the correct answer.  PTP or NTP software can maintain a leap second table.
@@ -987,8 +1009,8 @@ The following constant is the only parameter that can be sent to
 
 .. data:: CLOCK_REALTIME
 
-   System-wide real-time clock.  Setting this clock requires appropriate
-   privileges.
+   Real-time clock.  Setting this clock requires appropriate privileges.
+   The clock is the same for all processes.
 
    .. availability:: Unix.
 
@@ -1050,4 +1072,5 @@ Timezone Constants
    strict reading of the original 1982 :rfc:`822` standard calls for a two-digit
    year (``%y`` rather than ``%Y``), but practice moved to 4-digit years long before the
    year 2000.  After that, :rfc:`822` became obsolete and the 4-digit year has
-   been first recommended by :rfc:`1123` and then mandated by :rfc:`2822`.
+   been first recommended by :rfc:`1123` and then mandated by :rfc:`2822`,
+   with :rfc:`5322` continuing this requirement.

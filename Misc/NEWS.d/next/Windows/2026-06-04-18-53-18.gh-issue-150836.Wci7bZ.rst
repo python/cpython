@@ -1,0 +1,1 @@
+Make installed tkinter work with Tcl/Tk 9 builds that embed the Tk script library in the Tk DLL on Windows.

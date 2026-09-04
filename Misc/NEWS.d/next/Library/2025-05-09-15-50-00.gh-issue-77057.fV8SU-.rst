@@ -1,2 +1,0 @@
-Fix handling of invalid markup declarations in
-:class:`html.parser.HTMLParser`.

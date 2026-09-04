@@ -24,7 +24,6 @@ enum _frameowner {
     FRAME_OWNED_BY_GENERATOR = 1,
     FRAME_OWNED_BY_FRAME_OBJECT = 2,
     FRAME_OWNED_BY_INTERPRETER = 3,
-    FRAME_OWNED_BY_CSTACK = 4,
 };
 
 struct _PyInterpreterFrame {
@@ -45,7 +44,8 @@ struct _PyInterpreterFrame {
     char owner;
 #ifdef Py_DEBUG
     uint8_t visited:1;
-    uint8_t lltrace:7;
+    uint8_t stackpointer_valid:1;
+    uint8_t lltrace:6;
 #else
     uint8_t visited;
 #endif
@@ -66,9 +66,9 @@ struct _PyInterpreterFrame {
     PyObject *prefix##_qualname;                                            \
     _PyErr_StackItem prefix##_exc_state;                                    \
     PyObject *prefix##_origin_or_finalizer;                                 \
-    char prefix##_hooks_inited;                                             \
-    char prefix##_closed;                                                   \
-    char prefix##_running_async;                                            \
+    int8_t prefix##_hooks_inited;                                           \
+    int8_t prefix##_closed;                                                 \
+    int8_t prefix##_running_async;                                          \
     /* The frame */                                                         \
     int8_t prefix##_frame_state;                                            \
     _PyInterpreterFrame prefix##_iframe;                                    \

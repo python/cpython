@@ -481,7 +481,7 @@ typedef struct mi_segment_s {
   struct mi_segment_s* next;            // the list of freed segments in the cache (must be first field, see `segment.c:mi_segment_init`)
 
   size_t            abandoned;          // abandoned pages (i.e. the original owning thread stopped) (`abandoned <= used`)
-  size_t            abandoned_visits;   // count how often this segment is visited in the abandoned list (to force reclaim it it is too long)
+  size_t            abandoned_visits;   // count how often this segment is visited in the abandoned list (to force reclaim if it is too long)
   size_t            used;               // count of pages in use
   uintptr_t         cookie;             // verify addresses in debug mode: `mi_ptr_cookie(segment) == segment->cookie`
 
@@ -608,8 +608,8 @@ struct mi_heap_s {
 
 #if (MI_DEBUG)
 // use our own assertion to print without memory allocation
-mi_decl_noreturn mi_decl_cold mi_decl_throw
-void _mi_assert_fail(const char* assertion, const char* fname, unsigned int line, const char* func);
+mi_decl_noreturn mi_decl_cold
+void _mi_assert_fail(const char* assertion, const char* fname, unsigned int line, const char* func) mi_decl_throw;
 #define mi_assert(expr)     ((expr) ? (void)0 : _mi_assert_fail(#expr,__FILE__,__LINE__,__func__))
 #else
 #define mi_assert(x)

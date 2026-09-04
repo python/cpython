@@ -4,7 +4,6 @@
 .. module:: unittest.mock
    :synopsis: Mock object library.
 
-.. moduleauthor:: Michael Foord <michael@python.org>
 .. currentmodule:: unittest.mock
 
 .. versionadded:: 3.3
@@ -13,11 +12,11 @@
 
 --------------
 
-:mod:`unittest.mock` is a library for testing in Python. It allows you to
+:mod:`!unittest.mock` is a library for testing in Python. It allows you to
 replace parts of your system under test with mock objects and make assertions
 about how they have been used.
 
-:mod:`unittest.mock` provides a core :class:`Mock` class removing the need to
+:mod:`!unittest.mock` provides a core :class:`Mock` class removing the need to
 create a host of stubs throughout your test suite. After performing an
 action, you can make assertions about which methods / attributes were used
 and arguments they were called with. You can also specify return values and
@@ -33,7 +32,7 @@ Mock is designed for use with :mod:`unittest` and
 is based on the 'action -> assertion' pattern instead of 'record -> replay'
 used by many mocking frameworks.
 
-There is a backport of :mod:`unittest.mock` for earlier versions of Python,
+There is a backport of :mod:`!unittest.mock` for earlier versions of Python,
 available as :pypi:`mock` on PyPI.
 
 
@@ -232,15 +231,19 @@ the *new_callable* argument to :func:`patch`.
     Create a new :class:`Mock` object. :class:`Mock` takes several optional arguments
     that specify the behaviour of the Mock object:
 
-    * *spec*: This can be either a list of strings or an existing object (a
-      class or instance) that acts as the specification for the mock object. If
-      you pass in an object then a list of strings is formed by calling dir on
+    * *spec*: This can be either a list or tuple of strings,
+      or an existing object (a class or instance)
+      that acts as the specification for the mock object.
+      If you pass in an object then a list of strings is formed by calling dir on
       the object (excluding unsupported magic attributes and methods).
       Accessing any attribute not in this list will raise an :exc:`AttributeError`.
 
       If *spec* is an object (rather than a list of strings) then
       :attr:`~object.__class__` returns the class of the spec object. This
       allows mocks to pass :func:`isinstance` tests.
+
+      .. versionchanged:: next
+         :func:`dir` now works for a mock created with a tuple *spec*.
 
     * *spec_set*: A stricter variant of *spec*. If used, attempting to *set*
       or get an attribute on the mock that isn't on the object passed as
@@ -346,7 +349,7 @@ the *new_callable* argument to :func:`patch`.
 
     .. method:: assert_any_call(*args, **kwargs)
 
-        assert the mock has been called with the specified arguments.
+        Assert the mock has been called with the specified arguments.
 
         The assert passes if the mock has *ever* been called, unlike
         :meth:`assert_called_with` and :meth:`assert_called_once_with` that
@@ -361,7 +364,7 @@ the *new_callable* argument to :func:`patch`.
 
     .. method:: assert_has_calls(calls, any_order=False)
 
-        assert the mock has been called with the specified calls.
+        Assert the mock has been called with the specified calls.
         The :attr:`mock_calls` list is checked for the calls.
 
         If *any_order* is false then the calls must be
@@ -449,9 +452,9 @@ the *new_callable* argument to :func:`patch`.
 
     .. method:: mock_add_spec(spec, spec_set=False)
 
-        Add a spec to a mock. *spec* can either be an object or a
-        list of strings. Only attributes on the *spec* can be fetched as
-        attributes from the mock.
+        Add a spec to a mock.
+        *spec* can either be an object or a list or tuple of strings.
+        Only attributes on the *spec* can be fetched as attributes from the mock.
 
         If *spec_set* is true then only attributes on the spec can be set.
 
@@ -639,7 +642,7 @@ the *new_callable* argument to :func:`patch`.
         This is either ``None`` (if the mock hasn't been called), or the
         arguments that the mock was last called with. This will be in the
         form of a tuple: the first member, which can also be accessed through
-        the ``args`` property, is any ordered arguments the mock was
+        the ``args`` property, is any positional arguments the mock was
         called with (or an empty tuple) and the second member, which can
         also be accessed through the ``kwargs`` property, is any keyword
         arguments (or an empty dictionary).
@@ -2224,7 +2227,7 @@ return something else::
    >>> mock == 3
    True
 
-The return value of :meth:`MagicMock.__iter__` can be any iterable object and isn't
+The return value of :meth:`!__iter__` can be any iterable object and isn't
 required to be an iterator:
 
    >>> mock = MagicMock()
@@ -2540,7 +2543,7 @@ Alternatively you can just use ``vars(my_mock)`` (instance members) and
 mock_open
 ~~~~~~~~~
 
-.. function:: mock_open(mock=None, read_data=None)
+.. function:: mock_open(mock=None, read_data='')
 
    A helper function to create a mock to replace the use of :func:`open`. It works
    for :func:`open` called directly or used as a context manager.
@@ -2638,7 +2641,7 @@ unit tests. Testing everything in isolation is all fine and dandy, but if you
 don't test how your units are "wired together" there is still lots of room
 for bugs that tests might have caught.
 
-:mod:`unittest.mock` already provides a feature to help with this, called speccing. If you
+:mod:`!unittest.mock` already provides a feature to help with this, called speccing. If you
 use a class or instance as the :attr:`!spec` for a mock then you can only access
 attributes on the mock that exist on the real class:
 

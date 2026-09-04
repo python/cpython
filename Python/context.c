@@ -1,11 +1,13 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_VectorcallTstate()
 #include "pycore_context.h"
+#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_freelist.h"      // _Py_FREELIST_FREE(), _Py_FREELIST_POP()
 #include "pycore_gc.h"            // _PyObject_GC_MAY_BE_TRACKED()
 #include "pycore_hamt.h"
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_INT_RELAXED()
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
@@ -64,6 +66,41 @@ contextvar_set(PyContextVar *var, PyObject *val);
 static int
 contextvar_del(PyContextVar *var);
 
+static inline PyHamtObject *
+context_get_vars(PyContext *ctx)
+{
+    PyHamtObject *vars;
+    Py_BEGIN_CRITICAL_SECTION(ctx);
+    vars = ctx->ctx_vars;
+    assert(vars != NULL);
+    Py_INCREF(vars);
+    Py_END_CRITICAL_SECTION();
+    return vars;
+}
+
+static inline PyHamtObject *
+context_get_current_vars(PyContext *ctx)
+{
+    // ctx_vars written only by the owning thread, and read by other threads
+    // only under the context's lock, a plain (non-atomic) load is okay
+    PyHamtObject *vars = ctx->ctx_vars;
+    assert(vars != NULL);
+    return vars;
+}
+
+// Note: steals a reference to new_vars and must only be called by the thread
+// that has `ctx` as its current context.
+static inline void
+context_set_vars(PyContext *ctx, PyHamtObject *new_vars)
+{
+    PyHamtObject *old_vars;
+    Py_BEGIN_CRITICAL_SECTION(ctx);
+    old_vars = ctx->ctx_vars;
+    ctx->ctx_vars = new_vars;
+    Py_END_CRITICAL_SECTION();
+    Py_XDECREF(old_vars);
+}
+
 
 PyObject *
 _PyContext_NewHamtForTests(void)
@@ -84,7 +121,10 @@ PyContext_Copy(PyObject * octx)
 {
     ENSURE_Context(octx, NULL)
     PyContext *ctx = (PyContext *)octx;
-    return (PyObject *)context_new_from_vars(ctx->ctx_vars);
+    PyHamtObject *vars = context_get_vars(ctx);
+    PyObject *res = (PyObject *)context_new_from_vars(vars);
+    Py_DECREF(vars);
+    return res;
 }
 
 
@@ -96,7 +136,7 @@ PyContext_CopyCurrent(void)
         return NULL;
     }
 
-    return (PyObject *)context_new_from_vars(ctx->ctx_vars);
+    return (PyObject *)context_new_from_vars(context_get_current_vars(ctx));
 }
 
 static const char *
@@ -190,21 +230,25 @@ context_switched(PyThreadState *ts)
 }
 
 
-static int
+int
 _PyContext_Enter(PyThreadState *ts, PyObject *octx)
 {
     ENSURE_Context(octx, -1)
     PyContext *ctx = (PyContext *)octx;
+#ifdef Py_GIL_DISABLED
+    int already_entered = _Py_atomic_exchange_int(&ctx->ctx_entered, 1);
+#else
+    int already_entered = ctx->ctx_entered;
+    ctx->ctx_entered = 1;
+#endif
 
-    if (ctx->ctx_entered) {
+    if (already_entered) {
         _PyErr_Format(ts, PyExc_RuntimeError,
                       "cannot enter context: %R is already entered", ctx);
         return -1;
     }
 
     ctx->ctx_prev = (PyContext *)ts->context;  /* borrow */
-    ctx->ctx_entered = 1;
-
     ts->context = Py_NewRef(ctx);
     context_switched(ts);
     return 0;
@@ -220,13 +264,14 @@ PyContext_Enter(PyObject *octx)
 }
 
 
-static int
+int
 _PyContext_Exit(PyThreadState *ts, PyObject *octx)
 {
     ENSURE_Context(octx, -1)
     PyContext *ctx = (PyContext *)octx;
+    int already_entered = FT_ATOMIC_LOAD_INT_RELAXED(ctx->ctx_entered);
 
-    if (!ctx->ctx_entered) {
+    if (!already_entered) {
         PyErr_Format(PyExc_RuntimeError,
                      "cannot exit context: %R has not been entered", ctx);
         return -1;
@@ -243,7 +288,7 @@ _PyContext_Exit(PyThreadState *ts, PyObject *octx)
     Py_SETREF(ts->context, (PyObject *)ctx->ctx_prev);
 
     ctx->ctx_prev = NULL;
-    ctx->ctx_entered = 0;
+    FT_ATOMIC_STORE_INT(ctx->ctx_entered, 0);
     context_switched(ts);
     return 0;
 }
@@ -293,7 +338,7 @@ PyContextVar_Get(PyObject *ovar, PyObject *def, PyObject **val)
 #endif
 
     assert(PyContext_CheckExact(ts->context));
-    PyHamtObject *vars = ((PyContext *)ts->context)->ctx_vars;
+    PyHamtObject *vars = context_get_current_vars((PyContext *)ts->context);
 
     PyObject *found = NULL;
     int res = _PyHamt_Find(vars, (PyObject*)var, &found);
@@ -343,19 +388,14 @@ PyContextVar_Set(PyObject *ovar, PyObject *val)
     ENSURE_ContextVar(ovar, NULL)
     PyContextVar *var = (PyContextVar *)ovar;
 
-    if (!PyContextVar_CheckExact(var)) {
-        PyErr_SetString(
-            PyExc_TypeError, "an instance of ContextVar was expected");
-        return NULL;
-    }
-
     PyContext *ctx = context_get();
     if (ctx == NULL) {
         return NULL;
     }
 
     PyObject *old_val = NULL;
-    int found = _PyHamt_Find(ctx->ctx_vars, (PyObject *)var, &old_val);
+    int found = _PyHamt_Find(context_get_current_vars(ctx), (PyObject *)var,
+                             &old_val);
     if (found < 0) {
         return NULL;
     }
@@ -363,6 +403,9 @@ PyContextVar_Set(PyObject *ovar, PyObject *val)
     Py_XINCREF(old_val);
     PyContextToken *tok = token_new(ctx, var, old_val);
     Py_XDECREF(old_val);
+    if (tok == NULL) {
+        return NULL;
+    }
 
     if (contextvar_set(var, val)) {
         Py_DECREF(tok);
@@ -550,7 +593,10 @@ static PyObject *
 context_tp_iter(PyObject *op)
 {
     PyContext *self = _PyContext_CAST(op);
-    return _PyHamt_NewIterKeys(self->ctx_vars);
+    PyHamtObject *vars = context_get_vars(self);
+    PyObject *res = _PyHamt_NewIterKeys(vars);
+    Py_DECREF(vars);
+    return res;
 }
 
 static PyObject *
@@ -562,8 +608,11 @@ context_tp_richcompare(PyObject *v, PyObject *w, int op)
         Py_RETURN_NOTIMPLEMENTED;
     }
 
-    int res = _PyHamt_Eq(
-        ((PyContext *)v)->ctx_vars, ((PyContext *)w)->ctx_vars);
+    PyHamtObject *v_vars = context_get_vars((PyContext *)v);
+    PyHamtObject *w_vars = context_get_vars((PyContext *)w);
+    int res = _PyHamt_Eq(v_vars, w_vars);
+    Py_DECREF(v_vars);
+    Py_DECREF(w_vars);
     if (res < 0) {
         return NULL;
     }
@@ -584,7 +633,10 @@ static Py_ssize_t
 context_tp_len(PyObject *op)
 {
     PyContext *self = _PyContext_CAST(op);
-    return _PyHamt_Len(self->ctx_vars);
+    PyHamtObject *vars = context_get_vars(self);
+    Py_ssize_t res = _PyHamt_Len(vars);
+    Py_DECREF(vars);
+    return res;
 }
 
 static PyObject *
@@ -595,7 +647,10 @@ context_tp_subscript(PyObject *op, PyObject *key)
     }
     PyObject *val = NULL;
     PyContext *self = _PyContext_CAST(op);
-    int found = _PyHamt_Find(self->ctx_vars, key, &val);
+    PyHamtObject *vars = context_get_vars(self);
+    int found = _PyHamt_Find(vars, key, &val);
+    Py_XINCREF(val);
+    Py_DECREF(vars);
     if (found < 0) {
         return NULL;
     }
@@ -603,7 +658,7 @@ context_tp_subscript(PyObject *op, PyObject *key)
         PyErr_SetObject(PyExc_KeyError, key);
         return NULL;
     }
-    return Py_NewRef(val);
+    return val;
 }
 
 static int
@@ -614,11 +669,15 @@ context_tp_contains(PyObject *op, PyObject *key)
     }
     PyObject *val = NULL;
     PyContext *self = _PyContext_CAST(op);
-    return _PyHamt_Find(self->ctx_vars, key, &val);
+    PyHamtObject *vars = context_get_vars(self);
+    int res = _PyHamt_Find(vars, key, &val);
+    Py_DECREF(vars);
+    return res;
 }
 
 
 /*[clinic input]
+@permit_long_summary
 _contextvars.Context.get
     key: object
     default: object = None
@@ -626,28 +685,31 @@ _contextvars.Context.get
 
 Return the value for `key` if `key` has the value in the context object.
 
-If `key` does not exist, return `default`. If `default` is not given,
-return None.
+If `key` does not exist, return `default`.  If `default` is not
+given, return None.
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_Context_get_impl(PyContext *self, PyObject *key,
                               PyObject *default_value)
-/*[clinic end generated code: output=0c54aa7664268189 input=c8eeb81505023995]*/
+/*[clinic end generated code: output=0c54aa7664268189 input=d669a0d56fabb0a5]*/
 {
     if (context_check_key_type(key)) {
         return NULL;
     }
 
     PyObject *val = NULL;
-    int found = _PyHamt_Find(self->ctx_vars, key, &val);
+    PyHamtObject *vars = context_get_vars(self);
+    int found = _PyHamt_Find(vars, key, &val);
+    Py_XINCREF(val);
+    Py_DECREF(vars);
     if (found < 0) {
         return NULL;
     }
     if (found == 0) {
         return Py_NewRef(default_value);
     }
-    return Py_NewRef(val);
+    return val;
 }
 
 
@@ -663,7 +725,10 @@ static PyObject *
 _contextvars_Context_items_impl(PyContext *self)
 /*[clinic end generated code: output=fa1655c8a08502af input=00db64ae379f9f42]*/
 {
-    return _PyHamt_NewIterItems(self->ctx_vars);
+    PyHamtObject *vars = context_get_vars(self);
+    PyObject *res = _PyHamt_NewIterItems(vars);
+    Py_DECREF(vars);
+    return res;
 }
 
 
@@ -677,7 +742,10 @@ static PyObject *
 _contextvars_Context_keys_impl(PyContext *self)
 /*[clinic end generated code: output=177227c6b63ec0e2 input=114b53aebca3449c]*/
 {
-    return _PyHamt_NewIterKeys(self->ctx_vars);
+    PyHamtObject *vars = context_get_vars(self);
+    PyObject *res = _PyHamt_NewIterKeys(vars);
+    Py_DECREF(vars);
+    return res;
 }
 
 
@@ -691,7 +759,10 @@ static PyObject *
 _contextvars_Context_values_impl(PyContext *self)
 /*[clinic end generated code: output=d286dabfc8db6dde input=ce8075d04a6ea526]*/
 {
-    return _PyHamt_NewIterValues(self->ctx_vars);
+    PyHamtObject *vars = context_get_vars(self);
+    PyObject *res = _PyHamt_NewIterValues(vars);
+    Py_DECREF(vars);
+    return res;
 }
 
 
@@ -705,7 +776,10 @@ static PyObject *
 _contextvars_Context_copy_impl(PyContext *self)
 /*[clinic end generated code: output=30ba8896c4707a15 input=ebafdbdd9c72d592]*/
 {
-    return (PyObject *)context_new_from_vars(self->ctx_vars);
+    PyHamtObject *vars = context_get_vars(self);
+    PyObject *res = (PyObject *)context_new_from_vars(vars);
+    Py_DECREF(vars);
+    return res;
 }
 
 
@@ -793,12 +867,12 @@ contextvar_set(PyContextVar *var, PyObject *val)
     }
 
     PyHamtObject *new_vars = _PyHamt_Assoc(
-        ctx->ctx_vars, (PyObject *)var, val);
+        context_get_current_vars(ctx), (PyObject *)var, val);
     if (new_vars == NULL) {
         return -1;
     }
 
-    Py_SETREF(ctx->ctx_vars, new_vars);
+    context_set_vars(ctx, new_vars);
 
 #ifndef Py_GIL_DISABLED
     var->var_cached = val;  /* borrow */
@@ -820,7 +894,7 @@ contextvar_del(PyContextVar *var)
         return -1;
     }
 
-    PyHamtObject *vars = ctx->ctx_vars;
+    PyHamtObject *vars = context_get_current_vars(ctx);
     PyHamtObject *new_vars = _PyHamt_Without(vars, (PyObject *)var);
     if (new_vars == NULL) {
         return -1;
@@ -832,7 +906,7 @@ contextvar_del(PyContextVar *var)
         return -1;
     }
 
-    Py_SETREF(ctx->ctx_vars, new_vars);
+    context_set_vars(ctx, new_vars);
     return 0;
 }
 
@@ -1013,23 +1087,19 @@ _contextvars.ContextVar.get
 
 Return a value for the context variable for the current context.
 
-If there is no value for the variable in the current context, the method will:
- * return the value of the default argument of the method, if provided; or
- * return the default value for the context variable, if it was created
-   with one; or
+If there is no value for the variable in the current context, the
+method will:
+ * return the value of the default argument of the method, if
+   provided; or
+ * return the default value for the context variable, if it was
+   created with one; or
  * raise a LookupError.
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_ContextVar_get_impl(PyContextVar *self, PyObject *default_value)
-/*[clinic end generated code: output=0746bd0aa2ced7bf input=30aa2ab9e433e401]*/
+/*[clinic end generated code: output=0746bd0aa2ced7bf input=83814c6aef4a9fe3]*/
 {
-    if (!PyContextVar_CheckExact(self)) {
-        PyErr_SetString(
-            PyExc_TypeError, "an instance of ContextVar was expected");
-        return NULL;
-    }
-
     PyObject *val;
     if (PyContextVar_Get((PyObject *)self, default_value, &val) < 0) {
         return NULL;
@@ -1044,21 +1114,23 @@ _contextvars_ContextVar_get_impl(PyContextVar *self, PyObject *default_value)
 }
 
 /*[clinic input]
+@permit_long_summary
 _contextvars.ContextVar.set
     value: object
     /
 
 Call to set a new value for the context variable in the current context.
 
-The required value argument is the new value for the context variable.
+The required value argument is the new value for the context
+variable.
 
-Returns a Token object that can be used to restore the variable to its previous
-value via the `ContextVar.reset()` method.
+Returns a Token object that can be used to restore the variable to
+its previous value via the `ContextVar.reset()` method.
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_ContextVar_set_impl(PyContextVar *self, PyObject *value)
-/*[clinic end generated code: output=1b562d35cc79c806 input=c0a6887154227453]*/
+/*[clinic end generated code: output=1b562d35cc79c806 input=04ef8dcd810f5be6]*/
 {
     return PyContextVar_Set((PyObject *)self, value);
 }
@@ -1070,13 +1142,13 @@ _contextvars.ContextVar.reset
 
 Reset the context variable.
 
-The variable is reset to the value it had before the `ContextVar.set()` that
-created the token was used.
+The variable is reset to the value it had before the
+`ContextVar.set()` that created the token was used.
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_ContextVar_reset_impl(PyContextVar *self, PyObject *token)
-/*[clinic end generated code: output=3205d2bdff568521 input=ebe2881e5af4ffda]*/
+/*[clinic end generated code: output=3205d2bdff568521 input=dd33cfcb18c00e37]*/
 {
     if (!PyContextToken_CheckExact(token)) {
         PyErr_Format(PyExc_TypeError,
@@ -1102,7 +1174,8 @@ static PyMethodDef PyContextVar_methods[] = {
     _CONTEXTVARS_CONTEXTVAR_SET_METHODDEF
     _CONTEXTVARS_CONTEXTVAR_RESET_METHODDEF
     {"__class_getitem__", Py_GenericAlias,
-    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    METH_O|METH_CLASS,
+    PyDoc_STR("ContextVars are generic over the type of their contained values")},
     {NULL, NULL}
 };
 
@@ -1268,7 +1341,8 @@ token_exit_impl(PyContextToken *self, PyObject *type, PyObject *val,
 
 static PyMethodDef PyContextTokenType_methods[] = {
     {"__class_getitem__",    Py_GenericAlias,
-    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    METH_O|METH_CLASS,
+    PyDoc_STR("Tokens are generic over the same type as the ContextVar which created them.")},
     TOKEN_ENTER_METHODDEF
     TOKEN_EXIT_METHODDEF
     {NULL}
@@ -1357,11 +1431,8 @@ get_token_missing(void)
 PyStatus
 _PyContext_Init(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
     PyObject *missing = get_token_missing();
+    assert(PyUnstable_IsImmortal(missing));
     if (PyDict_SetItemString(
         _PyType_GetDict(&PyContextToken_Type), "MISSING", missing))
     {

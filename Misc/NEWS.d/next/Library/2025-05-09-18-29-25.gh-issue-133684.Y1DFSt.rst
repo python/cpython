@@ -1,3 +1,0 @@
-Fix bug where :func:`annotationlib.get_annotations` would return the wrong
-result for certain classes that are part of a class hierarchy where ``from
-__future__ import annotations`` is used.

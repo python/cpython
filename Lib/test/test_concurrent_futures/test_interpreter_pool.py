@@ -1,8 +1,11 @@
+import _thread
 import asyncio
 import contextlib
 import io
 import os
+import subprocess
 import sys
+import textwrap
 import time
 import unittest
 from concurrent.futures.interpreter import BrokenInterpreterPool
@@ -126,12 +129,12 @@ class InterpreterPoolExecutorTest(
             """
         os.write(w, b'\0')
 
-        executor = self.executor_type(initializer=initscript)
-        before_init = os.read(r, 100)
-        fut = executor.submit(script)
-        after_init = read_msg(r)
-        fut.result()
-        after_run = read_msg(r)
+        with self.executor_type(initializer=initscript) as executor:
+            before_init = os.read(r, 100)
+            fut = executor.submit(script)
+            after_init = read_msg(r)
+            fut.result()
+            after_run = read_msg(r)
 
         self.assertEqual(before_init, b'\0')
         self.assertEqual(after_init, msg1)
@@ -147,11 +150,11 @@ class InterpreterPoolExecutorTest(
         r, w = self.pipe()
         os.write(w, b'\0')
 
-        executor = self.executor_type(
-                initializer=write_msg, initargs=(w, msg))
-        before = os.read(r, 100)
-        executor.submit(mul, 10, 10)
-        after = read_msg(r)
+        with self.executor_type(
+                initializer=write_msg, initargs=(w, msg)) as executor:
+            before = os.read(r, 100)
+            executor.submit(mul, 10, 10)
+            after = read_msg(r)
 
         self.assertEqual(before, b'\0')
         self.assertEqual(after, msg)
@@ -257,11 +260,10 @@ class InterpreterPoolExecutorTest(
             import os
             os.write({w}, __name__.encode('utf-8') + b'\\0')
             """
-        executor = self.executor_type()
-
-        fut = executor.submit(script)
-        res = fut.result()
-        after = read_msg(r)
+        with self.executor_type() as executor:
+            fut = executor.submit(script)
+            res = fut.result()
+            after = read_msg(r)
 
         self.assertEqual(after, b'__main__')
         self.assertIs(res, None)
@@ -275,25 +277,24 @@ class InterpreterPoolExecutorTest(
             spam += 1
             return spam
 
-        executor = self.executor_type()
+        with self.executor_type() as executor:
+            fut = executor.submit(task1)
+            with self.assertRaises(_interpreters.NotShareableError):
+                fut.result()
 
-        fut = executor.submit(task1)
-        with self.assertRaises(_interpreters.NotShareableError):
-            fut.result()
-
-        fut = executor.submit(task2)
-        with self.assertRaises(_interpreters.NotShareableError):
-            fut.result()
+            fut = executor.submit(task2)
+            with self.assertRaises(_interpreters.NotShareableError):
+                fut.result()
 
     def test_submit_local_instance(self):
         class Spam:
             def __init__(self):
                 self.value = True
 
-        executor = self.executor_type()
-        fut = executor.submit(Spam)
-        with self.assertRaises(_interpreters.NotShareableError):
-            fut.result()
+        with self.executor_type() as executor:
+            fut = executor.submit(Spam)
+            with self.assertRaises(_interpreters.NotShareableError):
+                fut.result()
 
     def test_submit_instance_method(self):
         class Spam:
@@ -301,15 +302,15 @@ class InterpreterPoolExecutorTest(
                 return True
         spam = Spam()
 
-        executor = self.executor_type()
-        fut = executor.submit(spam.run)
-        with self.assertRaises(_interpreters.NotShareableError):
-            fut.result()
+        with self.executor_type() as executor:
+            fut = executor.submit(spam.run)
+            with self.assertRaises(_interpreters.NotShareableError):
+                fut.result()
 
     def test_submit_func_globals(self):
-        executor = self.executor_type()
-        fut = executor.submit(get_current_name)
-        name = fut.result()
+        with self.executor_type() as executor:
+            fut = executor.submit(get_current_name)
+            name = fut.result()
 
         self.assertEqual(name, __name__)
         self.assertNotEqual(name, '__main__')
@@ -457,21 +458,74 @@ class InterpreterPoolExecutorTest(
         # Weak references don't cross between interpreters.
         raise unittest.SkipTest('not applicable')
 
+    @support.requires_subprocess()
+    def test_import_interpreter_pool_executor(self):
+        # Test the import behavior normally if _interpreters is unavailable.
+        code = textwrap.dedent("""
+        import sys
+        # Set it to None to emulate the case when _interpreter is unavailable.
+        sys.modules['_interpreters'] = None
+        from concurrent import futures
+
+        try:
+            futures.InterpreterPoolExecutor
+        except AttributeError:
+            pass
+        else:
+            print('AttributeError not raised!', file=sys.stderr)
+            sys.exit(1)
+
+        try:
+            from concurrent.futures import InterpreterPoolExecutor
+        except ImportError:
+            pass
+        else:
+            print('ImportError not raised!', file=sys.stderr)
+            sys.exit(1)
+
+        from concurrent.futures import *
+
+        if 'InterpreterPoolExecutor' in globals():
+            print('InterpreterPoolExecutor should not be imported!',
+                  file=sys.stderr)
+            sys.exit(1)
+        """)
+
+        cmd = [sys.executable, '-c', code]
+        p = subprocess.run(cmd, capture_output=True)
+        self.assertEqual(p.returncode, 0, p.stderr.decode())
+        self.assertEqual(p.stdout.decode(), '')
+        self.assertEqual(p.stderr.decode(), '')
+
+    def test_thread_name_prefix(self):
+        self.assertStartsWith(self.executor._thread_name_prefix,
+                              "InterpreterPoolExecutor-")
+
+    @unittest.skipUnless(hasattr(_thread, '_get_name'), "missing _thread._get_name")
+    def test_thread_name_prefix_with_thread_get_name(self):
+        def get_thread_name():
+            import _thread
+            return _thread._get_name()
+
+        # Some platforms (Linux) are using 16 bytes to store the thread name,
+        # so only compare the first 15 bytes (without the trailing \n).
+        self.assertStartsWith(self.executor.submit(get_thread_name).result(),
+                              "InterpreterPoolExecutor-"[:15])
 
 class AsyncioTest(InterpretersMixin, testasyncio_utils.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # Most uses of asyncio will implicitly call set_event_loop_policy()
-        # with the default policy if a policy hasn't been set already.
+        # Most uses of asyncio will implicitly set a thread event loop
+        # if one hasn't been set already.
         # If that happens in a test, like here, we'll end up with a failure
         # when --fail-env-changed is used.  That's why the other tests that
-        # use asyncio are careful to set the policy back to None and why
+        # use asyncio are careful to set the loop back to None and why
         # we're careful to do so here.  We also validate that no other
-        # tests left a policy in place, just in case.
-        policy = support.maybe_get_event_loop_policy()
-        assert policy is None, policy
-        cls.addClassCleanup(lambda: asyncio._set_event_loop_policy(None))
+        # tests left a loop in place, just in case.
+        loop = support.maybe_get_event_loop()
+        assert loop is None, loop
+        cls.addClassCleanup(lambda: asyncio.set_event_loop(None))
 
     def setUp(self):
         super().setUp()

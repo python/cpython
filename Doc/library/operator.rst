@@ -4,8 +4,6 @@
 .. module:: operator
    :synopsis: Functions corresponding to the standard operators.
 
-.. sectionauthor:: Skip Montanaro <skip@automatrix.com>
-
 **Source code:** :source:`Lib/operator.py`
 
 .. testsetup::
@@ -15,7 +13,7 @@
 
 --------------
 
-The :mod:`operator` module exports a set of efficient functions corresponding to
+The :mod:`!operator` module exports a set of efficient functions corresponding to
 the intrinsic operators of Python.  For example, ``operator.add(x, y)`` is
 equivalent to the expression ``x+y``. Many function names are those used for
 special methods, without the double underscores.  For backward compatibility,
@@ -112,7 +110,7 @@ The mathematical and bitwise operations are the most numerous:
 .. function:: and_(a, b)
               __and__(a, b)
 
-   Return the bitwise and of *a* and *b*.
+   Return ``a & b``.
 
 
 .. function:: floordiv(a, b)
@@ -136,13 +134,13 @@ The mathematical and bitwise operations are the most numerous:
               __inv__(obj)
               __invert__(obj)
 
-   Return the bitwise inverse of the number *obj*.  This is equivalent to ``~obj``.
+   Return ``~obj``.
 
 
 .. function:: lshift(a, b)
               __lshift__(a, b)
 
-   Return *a* shifted left by *b*.
+   Return ``a << b``.
 
 
 .. function:: mod(a, b)
@@ -154,7 +152,7 @@ The mathematical and bitwise operations are the most numerous:
 .. function:: mul(a, b)
               __mul__(a, b)
 
-   Return ``a * b``, for *a* and *b* numbers.
+   Return ``a * b``.
 
 
 .. function:: matmul(a, b)
@@ -174,25 +172,25 @@ The mathematical and bitwise operations are the most numerous:
 .. function:: or_(a, b)
               __or__(a, b)
 
-   Return the bitwise or of *a* and *b*.
+   Return ``a | b``.
 
 
 .. function:: pos(obj)
               __pos__(obj)
 
-   Return *obj* positive (``+obj``).
+   Return ``+obj``.
 
 
 .. function:: pow(a, b)
               __pow__(a, b)
 
-   Return ``a ** b``, for *a* and *b* numbers.
+   Return ``a ** b``.
 
 
 .. function:: rshift(a, b)
               __rshift__(a, b)
 
-   Return *a* shifted right by *b*.
+   Return ``a >> b``.
 
 
 .. function:: sub(a, b)
@@ -211,7 +209,7 @@ The mathematical and bitwise operations are the most numerous:
 .. function:: xor(a, b)
               __xor__(a, b)
 
-   Return the bitwise exclusive or of *a* and *b*.
+   Return ``a ^ b``.
 
 
 Operations which work with sequences (some of them with mappings too) include:
@@ -275,7 +273,7 @@ The following operation works with callables:
    .. versionadded:: 3.11
 
 
-The :mod:`operator` module also defines tools for generalized attribute and item
+The :mod:`!operator` module also defines tools for generalized attribute and item
 lookups.  These are useful for making fast field extractors as arguments for
 :func:`map`, :func:`sorted`, :meth:`itertools.groupby`, or other functions that
 expect a function argument.
@@ -390,7 +388,7 @@ Mapping Operators to Functions
 ------------------------------
 
 This table shows how abstract operations correspond to operator symbols in the
-Python syntax and the functions in the :mod:`operator` module.
+Python syntax and the functions in the :mod:`!operator` module.
 
 +-----------------------+-------------------------+---------------------------------------+
 | Operation             | Syntax                  | Function                              |
@@ -405,13 +403,18 @@ Python syntax and the functions in the :mod:`operator` module.
 +-----------------------+-------------------------+---------------------------------------+
 | Division              | ``a // b``              | ``floordiv(a, b)``                    |
 +-----------------------+-------------------------+---------------------------------------+
-| Bitwise And           | ``a & b``               | ``and_(a, b)``                        |
+| Bitwise And, or       | ``a & b``               | ``and_(a, b)``                        |
+| Intersection          |                         |                                       |
 +-----------------------+-------------------------+---------------------------------------+
-| Bitwise Exclusive Or  | ``a ^ b``               | ``xor(a, b)``                         |
+| Bitwise Exclusive Or, | ``a ^ b``               | ``xor(a, b)``                         |
+| or Symmetric          |                         |                                       |
+| Difference            |                         |                                       |
 +-----------------------+-------------------------+---------------------------------------+
-| Bitwise Inversion     | ``~ a``                 | ``invert(a)``                         |
+| Bitwise Inversion, or | ``~ a``                 | ``invert(a)``                         |
+| Complement            |                         |                                       |
 +-----------------------+-------------------------+---------------------------------------+
-| Bitwise Or            | ``a | b``               | ``or_(a, b)``                         |
+| Bitwise Or, or        | ``a | b``               | ``or_(a, b)``                         |
+| Union                 |                         |                                       |
 +-----------------------+-------------------------+---------------------------------------+
 | Exponentiation        | ``a ** b``              | ``pow(a, b)``                         |
 +-----------------------+-------------------------+---------------------------------------+

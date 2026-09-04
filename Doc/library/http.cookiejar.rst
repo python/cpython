@@ -4,15 +4,12 @@
 .. module:: http.cookiejar
    :synopsis: Classes for automatic handling of HTTP cookies.
 
-.. moduleauthor:: John J. Lee <jjl@pobox.com>
-.. sectionauthor:: John J. Lee <jjl@pobox.com>
-
 **Source code:** :source:`Lib/http/cookiejar.py`
 
 --------------
 
-The :mod:`http.cookiejar` module defines classes for automatic handling of HTTP
-cookies.  It is useful for accessing web sites that require small pieces of data
+The :mod:`!http.cookiejar` module defines classes for automatic handling of HTTP
+cookies.  It is useful for accessing websites that require small pieces of data
 -- :dfn:`cookies` -- to be set on the client machine by an HTTP response from a
 web server, and then returned to the server in later HTTP requests.
 
@@ -21,7 +18,7 @@ Both the regular Netscape cookie protocol and the protocol defined by
 :rfc:`2109` cookies are parsed as Netscape cookies and subsequently treated
 either as Netscape or RFC 2965 cookies according to the 'policy' in effect.
 Note that the great majority of cookies on the internet are Netscape cookies.
-:mod:`http.cookiejar` attempts to follow the de-facto Netscape cookie protocol (which
+:mod:`!http.cookiejar` attempts to follow the de-facto Netscape cookie protocol (which
 differs substantially from that set out in the original Netscape specification),
 including taking note of the ``max-age`` and ``port`` cookie-attributes
 introduced with RFC 2965.
@@ -29,7 +26,7 @@ introduced with RFC 2965.
 .. note::
 
    The various named parameters found in :mailheader:`Set-Cookie` and
-   :mailheader:`Set-Cookie2` headers (eg. ``domain`` and ``expires``) are
+   :mailheader:`Set-Cookie2` headers (for example, ``domain`` and ``expires``) are
    conventionally referred to as :dfn:`attributes`.  To distinguish them from
    Python attributes, the documentation for this module uses the term
    :dfn:`cookie-attribute` instead.
@@ -88,7 +85,7 @@ The following classes are provided:
 
    Constructor arguments should be passed as keyword arguments only.
    *blocked_domains* is a sequence of domain names that we never accept cookies
-   from, nor return cookies to. *allowed_domains* if not :const:`None`, this is a
+   from, nor return cookies to. *allowed_domains* if not ``None``, this is a
    sequence of the only domains for which we accept and return cookies.
    *secure_protocols* is a sequence of protocols for which secure cookies can be
    added to. By default *https* and *wss* (secure websocket) are considered
@@ -96,12 +93,12 @@ The following classes are provided:
    :class:`CookiePolicy` and :class:`DefaultCookiePolicy` objects.
 
    :class:`DefaultCookiePolicy` implements the standard accept / reject rules for
-   Netscape and :rfc:`2965` cookies.  By default, :rfc:`2109` cookies (ie. cookies
+   Netscape and :rfc:`2965` cookies.  By default, :rfc:`2109` cookies (that is, cookies
    received in a :mailheader:`Set-Cookie` header with a version cookie-attribute of
    1) are treated according to the RFC 2965 rules.  However, if RFC 2965 handling
    is turned off or :attr:`rfc2109_as_netscape` is ``True``, RFC 2109 cookies are
    'downgraded' by the :class:`CookieJar` instance to Netscape cookies, by
-   setting the :attr:`version` attribute of the :class:`Cookie` instance to 0.
+   setting the :attr:`~Cookie.version` attribute of the :class:`Cookie` instance to 0.
    :class:`DefaultCookiePolicy` also provides some parameters to allow some
    fine-tuning of policy.
 
@@ -109,8 +106,8 @@ The following classes are provided:
 .. class:: Cookie()
 
    This class represents Netscape, :rfc:`2109` and :rfc:`2965` cookies.  It is not
-   expected that users of :mod:`http.cookiejar` construct their own :class:`Cookie`
-   instances.  Instead, if necessary, call :meth:`make_cookies` on a
+   expected that users of :mod:`!http.cookiejar` construct their own :class:`Cookie`
+   instances.  Instead, if necessary, call :meth:`~CookieJar.make_cookies` on a
    :class:`CookieJar` instance.
 
 
@@ -121,13 +118,13 @@ The following classes are provided:
 
    Module :mod:`http.cookies`
       HTTP cookie classes, principally useful for server-side code.  The
-      :mod:`http.cookiejar` and :mod:`http.cookies` modules do not depend on each
+      :mod:`!http.cookiejar` and :mod:`http.cookies` modules do not depend on each
       other.
 
    https://curl.se/rfc/cookie_spec.html
       The specification of the original Netscape cookie protocol.  Though this is
       still the dominant protocol, the 'Netscape cookie protocol' implemented by all
-      the major browsers (and :mod:`http.cookiejar`) only bears a passing resemblance to
+      the major browsers (and :mod:`!http.cookiejar`) only bears a passing resemblance to
       the one sketched out in ``cookie_spec.html``.
 
    :rfc:`2109` - HTTP State Management Mechanism
@@ -144,7 +141,7 @@ The following classes are provided:
 
 .. _cookie-jar-objects:
 
-CookieJar and FileCookieJar Objects
+CookieJar and FileCookieJar objects
 -----------------------------------
 
 :class:`CookieJar` objects support the :term:`iterator` protocol for iterating over
@@ -157,20 +154,27 @@ contained :class:`Cookie` objects.
 
    Add correct :mailheader:`Cookie` header to *request*.
 
-   If policy allows (ie. the :attr:`rfc2965` and :attr:`hide_cookie2` attributes of
+   If policy allows (that is, the :attr:`~CookiePolicy.rfc2965` and
+   :attr:`~CookiePolicy.hide_cookie2` attributes of
    the :class:`CookieJar`'s :class:`CookiePolicy` instance are true and false
    respectively), the :mailheader:`Cookie2` header is also added when appropriate.
 
    The *request* object (usually a :class:`urllib.request.Request` instance)
-   must support the methods :meth:`get_full_url`, :meth:`has_header`,
-   :meth:`get_header`, :meth:`header_items`, :meth:`add_unredirected_header`
-   and the attributes :attr:`host`, :attr:`!type`, :attr:`unverifiable`
-   and :attr:`origin_req_host` as documented by :mod:`urllib.request`.
+   must support the methods :meth:`~urllib.request.Request.get_full_url`,
+   :meth:`~urllib.request.Request.has_header`,
+   :meth:`~urllib.request.Request.get_header`,
+   :meth:`~urllib.request.Request.header_items`,
+   :meth:`~urllib.request.Request.add_unredirected_header`
+   and the attributes :attr:`~urllib.request.Request.host`,
+   :attr:`~urllib.request.Request.type`, :attr:`~urllib.request.Request.unverifiable`
+   and :attr:`~urllib.request.Request.origin_req_host` as documented by
+   :mod:`urllib.request`.
 
    .. versionchanged:: 3.3
 
-    *request* object needs :attr:`origin_req_host` attribute. Dependency on a
-    deprecated method :meth:`get_origin_req_host` has been removed.
+    *request* object needs :attr:`~urllib.request.Request.origin_req_host`
+    attribute. Dependency on a deprecated method
+    :meth:`!get_origin_req_host` has been removed.
 
 
 .. method:: CookieJar.extract_cookies(response, request)
@@ -183,20 +187,24 @@ contained :class:`Cookie` objects.
    as appropriate (subject to the :meth:`CookiePolicy.set_ok` method's approval).
 
    The *response* object (usually the result of a call to
-   :meth:`urllib.request.urlopen`, or similar) should support an :meth:`info`
-   method, which returns an :class:`email.message.Message` instance.
+   :meth:`urllib.request.urlopen`, or similar) should support an
+   :meth:`~http.client.HTTPResponse.info` method, which returns an
+   :class:`email.message.Message` instance.
 
    The *request* object (usually a :class:`urllib.request.Request` instance)
-   must support the method :meth:`get_full_url` and the attributes
-   :attr:`host`, :attr:`unverifiable` and :attr:`origin_req_host`,
+   must support the method :meth:`~urllib.request.Request.get_full_url` and
+   the attributes :attr:`~urllib.request.Request.host`,
+   :attr:`~urllib.request.Request.unverifiable`
+   and :attr:`~urllib.request.Request.origin_req_host`,
    as documented by :mod:`urllib.request`.  The request is used to set
    default values for cookie-attributes as well as for checking that the
    cookie is allowed to be set.
 
    .. versionchanged:: 3.3
 
-    *request* object needs :attr:`origin_req_host` attribute. Dependency on a
-    deprecated method :meth:`get_origin_req_host` has been removed.
+    *request* object needs :attr:`~urllib.request.Request.origin_req_host`
+    attribute. Dependency on a deprecated method
+    :meth:`!get_origin_req_host` has been removed.
 
 .. method:: CookieJar.set_policy(policy)
 
@@ -239,13 +247,13 @@ contained :class:`Cookie` objects.
 
    Discard all session cookies.
 
-   Discards all contained cookies that have a true :attr:`discard` attribute
+   Discards all contained cookies that have a true :attr:`~Cookie.discard` attribute
    (usually because they had either no ``max-age`` or ``expires`` cookie-attribute,
    or an explicit ``discard`` cookie-attribute).  For interactive browsers, the end
    of a session usually corresponds to closing the browser window.
 
-   Note that the :meth:`save` method won't save session cookies anyway, unless you
-   ask otherwise by passing a true *ignore_discard* argument.
+   Note that the :meth:`~FileCookieJar.save` method won't save session cookies
+   anyway, unless you ask otherwise by passing a true *ignore_discard* argument.
 
 :class:`FileCookieJar` implements the following additional methods:
 
@@ -258,8 +266,9 @@ contained :class:`Cookie` objects.
    method unimplemented.
 
    *filename* is the name of file in which to save cookies.  If *filename* is not
-   specified, :attr:`self.filename` is used (whose default is the value passed to
-   the constructor, if any); if :attr:`self.filename` is :const:`None`,
+   specified, :attr:`self.filename <FileCookieJar.filename>` is used (whose
+   default is the value passed to the constructor, if any); if
+   :attr:`self.filename <FileCookieJar.filename>` is ``None``,
    :exc:`ValueError` is raised.
 
    *ignore_discard*: save even cookies set to be discarded. *ignore_expires*: save
@@ -352,7 +361,7 @@ writing.
 
 .. _cookie-policy-objects:
 
-CookiePolicy Objects
+CookiePolicy objects
 --------------------
 
 Objects implementing the :class:`CookiePolicy` interface have the following
@@ -436,7 +445,7 @@ setting and receiving any and all cookies (this is unlikely to be useful).
 
 .. _default-cookie-policy-objects:
 
-DefaultCookiePolicy Objects
+DefaultCookiePolicy objects
 ---------------------------
 
 Implements the standard rules for accepting and returning cookies.
@@ -466,10 +475,10 @@ blocking some benign cookies).
 A domain blocklist and allowlist is provided (both off by default). Only domains
 not in the blocklist and present in the allowlist (if the allowlist is active)
 participate in cookie setting and returning.  Use the *blocked_domains*
-constructor argument, and :meth:`blocked_domains` and
-:meth:`set_blocked_domains` methods (and the corresponding argument and methods
-for *allowed_domains*).  If you set an allowlist, you can turn it off again by
-setting it to :const:`None`.
+constructor argument, and :meth:`~DefaultCookiePolicy.blocked_domains` and
+:meth:`~DefaultCookiePolicy.set_blocked_domains` methods (and the corresponding
+argument and methods for *allowed_domains*).  If you set an allowlist, you can
+turn it off again by setting it to ``None``.
 
 Domains in block or allow lists that do not start with a dot must equal the
 cookie domain to be matched.  For example, ``"example.com"`` matches a blocklist
@@ -501,12 +510,12 @@ and ``".168.1.2"``, 192.168.1.2 is blocked, but 193.168.1.2 is not.
 
 .. method:: DefaultCookiePolicy.allowed_domains()
 
-   Return :const:`None`, or the sequence of allowed domains (as a tuple).
+   Return ``None``, or the sequence of allowed domains (as a tuple).
 
 
 .. method:: DefaultCookiePolicy.set_allowed_domains(allowed_domains)
 
-   Set the sequence of allowed domains, or :const:`None`.
+   Set the sequence of allowed domains, or ``None``.
 
 
 .. method:: DefaultCookiePolicy.is_not_allowed(domain)
@@ -522,9 +531,9 @@ all be assigned to.
 .. attribute:: DefaultCookiePolicy.rfc2109_as_netscape
 
    If true, request that the :class:`CookieJar` instance downgrade :rfc:`2109` cookies
-   (ie. cookies received in a :mailheader:`Set-Cookie` header with a version
+   (that is, cookies received in a :mailheader:`Set-Cookie` header with a version
    cookie-attribute of 1) to Netscape cookies by setting the version attribute of
-   the :class:`Cookie` instance to 0.  The default value is :const:`None`, in which
+   the :class:`Cookie` instance to 0.  The default value is ``None``, in which
    case RFC 2109 cookies are downgraded if and only if :rfc:`2965` handling is turned
    off.  Therefore, RFC 2109 cookies are downgraded by default.
 
@@ -570,14 +579,14 @@ Netscape protocol strictness switches:
 
    Don't allow setting cookies whose path doesn't path-match request URI.
 
-:attr:`strict_ns_domain` is a collection of flags.  Its value is constructed by
+:attr:`~DefaultCookiePolicy.strict_ns_domain` is a collection of flags.  Its value is constructed by
 or-ing together (for example, ``DomainStrictNoDots|DomainStrictNonDomain`` means
 both flags are set).
 
 
 .. attribute:: DefaultCookiePolicy.DomainStrictNoDots
 
-   When setting cookies, the 'host prefix' must not contain a dot (eg.
+   When setting cookies, the 'host prefix' must not contain a dot (for example,
    ``www.foo.bar.com`` can't set a cookie for ``.bar.com``, because ``www.foo``
    contains a dot).
 
@@ -585,7 +594,7 @@ both flags are set).
 .. attribute:: DefaultCookiePolicy.DomainStrictNonDomain
 
    Cookies that did not explicitly specify a ``domain`` cookie-attribute can only
-   be returned to a domain equal to the domain that set the cookie (eg.
+   be returned to a domain equal to the domain that set the cookie (for example,
    ``spam.example.com`` won't be returned cookies from ``example.com`` that had no
    ``domain`` cookie-attribute).
 
@@ -600,7 +609,7 @@ combinations of the above flags:
 
 .. attribute:: DefaultCookiePolicy.DomainLiberal
 
-   Equivalent to 0 (ie. all of the above Netscape domain strictness flags switched
+   Equivalent to 0 (that is, all of the above Netscape domain strictness flags switched
    off).
 
 
@@ -609,7 +618,7 @@ combinations of the above flags:
    Equivalent to ``DomainStrictNoDots|DomainStrictNonDomain``.
 
 
-Cookie Objects
+Cookie objects
 --------------
 
 :class:`Cookie` instances have Python attributes roughly corresponding to the
@@ -617,7 +626,7 @@ standard cookie-attributes specified in the various cookie standards.  The
 correspondence is not one-to-one, because there are complicated rules for
 assigning default values, because the ``max-age`` and ``expires``
 cookie-attributes contain equivalent information, and because :rfc:`2109` cookies
-may be 'downgraded' by :mod:`http.cookiejar` from version 1 to version 0 (Netscape)
+may be 'downgraded' by :mod:`!http.cookiejar` from version 1 to version 0 (Netscape)
 cookies.
 
 Assignment to these attributes should not be necessary other than in rare
@@ -627,9 +636,9 @@ internal consistency, so you should know what you're doing if you do that.
 
 .. attribute:: Cookie.version
 
-   Integer or :const:`None`.  Netscape cookies have :attr:`version` 0. :rfc:`2965` and
+   Integer or ``None``.  Netscape cookies have :attr:`version` 0. :rfc:`2965` and
    :rfc:`2109` cookies have a ``version`` cookie-attribute of 1.  However, note that
-   :mod:`http.cookiejar` may 'downgrade' RFC 2109 cookies to Netscape cookies, in which
+   :mod:`!http.cookiejar` may 'downgrade' RFC 2109 cookies to Netscape cookies, in which
    case :attr:`version` is 0.
 
 
@@ -640,13 +649,13 @@ internal consistency, so you should know what you're doing if you do that.
 
 .. attribute:: Cookie.value
 
-   Cookie value (a string), or :const:`None`.
+   Cookie value (a string), or ``None``.
 
 
 .. attribute:: Cookie.port
 
-   String representing a port or a set of ports (eg. '80', or '80,8080'), or
-   :const:`None`.
+   String representing a port or a set of ports (for example, '80', or '80,8080'), or
+   ``None``.
 
 
 .. attribute:: Cookie.domain
@@ -656,7 +665,7 @@ internal consistency, so you should know what you're doing if you do that.
 
 .. attribute:: Cookie.path
 
-   Cookie path (a string, eg. ``'/acme/rocket_launchers'``).
+   Cookie path (a string, for example, ``'/acme/rocket_launchers'``).
 
 
 .. attribute:: Cookie.secure
@@ -666,7 +675,7 @@ internal consistency, so you should know what you're doing if you do that.
 
 .. attribute:: Cookie.expires
 
-   Integer expiry date in seconds since epoch, or :const:`None`.  See also the
+   Integer expiry date in seconds since epoch, or ``None``.  See also the
    :meth:`is_expired` method.
 
 
@@ -678,21 +687,21 @@ internal consistency, so you should know what you're doing if you do that.
 .. attribute:: Cookie.comment
 
    String comment from the server explaining the function of this cookie, or
-   :const:`None`.
+   ``None``.
 
 
 .. attribute:: Cookie.comment_url
 
    URL linking to a comment from the server explaining the function of this cookie,
-   or :const:`None`.
+   or ``None``.
 
 
 .. attribute:: Cookie.rfc2109
 
-   ``True`` if this cookie was received as an :rfc:`2109` cookie (ie. the cookie
+   ``True`` if this cookie was received as an :rfc:`2109` cookie (that is, the cookie
    arrived in a :mailheader:`Set-Cookie` header, and the value of the Version
    cookie-attribute in that header was 1).  This attribute is provided because
-   :mod:`http.cookiejar` may 'downgrade' RFC 2109 cookies to Netscape cookies, in
+   :mod:`!http.cookiejar` may 'downgrade' RFC 2109 cookies to Netscape cookies, in
    which case :attr:`version` is 0.
 
 
@@ -744,7 +753,7 @@ The :class:`Cookie` class also defines the following method:
 Examples
 --------
 
-The first example shows the most common usage of :mod:`http.cookiejar`::
+The first example shows the most common usage of :mod:`!http.cookiejar`::
 
    import http.cookiejar, urllib.request
    cj = http.cookiejar.CookieJar()

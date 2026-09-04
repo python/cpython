@@ -2,7 +2,6 @@
 
 from concurrent import interpreters
 import sys
-import textwrap
 from . import thread as _thread
 import traceback
 
@@ -111,12 +110,14 @@ class InterpreterPoolExecutor(_thread.ThreadPoolExecutor):
         """Initializes a new InterpreterPoolExecutor instance.
 
         Args:
-            max_workers: The maximum number of interpreters that can be used to
-                execute the given calls.
+            max_workers: The maximum number of interpreters that can be used
+                to execute the given calls.
             thread_name_prefix: An optional name prefix to give our threads.
             initializer: A callable or script used to initialize
                 each worker interpreter.
             initargs: A tuple of arguments to pass to the initializer.
         """
+        thread_name_prefix = (thread_name_prefix or
+                              (f"InterpreterPoolExecutor-{self._counter()}"))
         super().__init__(max_workers, thread_name_prefix,
                          initializer, initargs)

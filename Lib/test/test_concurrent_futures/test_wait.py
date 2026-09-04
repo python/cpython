@@ -3,7 +3,7 @@ import threading
 import unittest
 from concurrent import futures
 from test import support
-from test.support import threading_helper
+from test.support import threading_helper, warnings_helper
 
 from .util import (
     CANCELLED_FUTURE, CANCELLED_AND_NOTIFIED_FUTURE, EXCEPTION_FUTURE,
@@ -22,6 +22,7 @@ def wait_and_raise(e):
 
 
 class WaitTests:
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_20369(self):
         # See https://bugs.python.org/issue20369
         future = self.executor.submit(mul, 1, 2)
@@ -30,7 +31,7 @@ class WaitTests:
         self.assertEqual({future}, done)
         self.assertEqual(set(), not_done)
 
-
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_first_completed(self):
         event = self.create_event()
         future1 = self.executor.submit(mul, 21, 2)
@@ -47,6 +48,7 @@ class WaitTests:
             event.set()
         future2.result()  # wait for job to finish
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_first_completed_some_already_completed(self):
         event = self.create_event()
         future1 = self.executor.submit(event.wait)
@@ -64,6 +66,7 @@ class WaitTests:
             event.set()
         future1.result()  # wait for job to finish
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_first_exception(self):
         event1 = self.create_event()
         event2 = self.create_event()
@@ -93,6 +96,7 @@ class WaitTests:
             event2.set()
         future3.result()  # wait for job to finish
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_first_exception_some_already_complete(self):
         event = self.create_event()
         future1 = self.executor.submit(divmod, 21, 0)
@@ -114,6 +118,7 @@ class WaitTests:
             event.set()
         future2.result()  # wait for job to finish
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_first_exception_one_already_failed(self):
         event = self.create_event()
         future1 = self.executor.submit(event.wait)
@@ -129,6 +134,7 @@ class WaitTests:
             event.set()
         future1.result()  # wait for job to finish
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_all_completed(self):
         future1 = self.executor.submit(divmod, 2, 0)
         future2 = self.executor.submit(mul, 2, 21)
@@ -148,6 +154,7 @@ class WaitTests:
                               future2]), finished)
         self.assertEqual(set(), pending)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_timeout(self):
         short_timeout = 0.050
 

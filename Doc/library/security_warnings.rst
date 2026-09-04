@@ -28,7 +28,7 @@ The following modules have specific security considerations:
   <subprocess-security>`
 * :mod:`tempfile`: :ref:`mktemp is deprecated due to vulnerability to race
   conditions <tempfile-mktemp-deprecated>`
-* :mod:`xml`: :ref:`XML vulnerabilities <xml-vulnerabilities>`
+* :mod:`xml`: :ref:`XML security <xml-security>`
 * :mod:`zipfile`: :ref:`maliciously prepared .zip files can cause disk volume
   exhaustion <zipfile-resources-limitations>`
 

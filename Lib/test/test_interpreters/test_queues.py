@@ -1,8 +1,9 @@
-import importlib
 import pickle
 import threading
 from textwrap import dedent
+import time
 import unittest
+from unittest import mock
 
 from test.support import import_helper, Py_DEBUG
 # Raise SkipTest if subinterpreters not supported.
@@ -11,7 +12,7 @@ from concurrent import interpreters
 from concurrent.interpreters import _queues as queues, _crossinterp
 from .utils import _run_output, TestBase as _TestBase
 
-
+HUGE_TIMEOUT = 3600
 REPLACE = _crossinterp._UNBOUND_CONSTANT_TO_FLAG[_crossinterp.UNBOUND]
 
 
@@ -39,7 +40,12 @@ class LowLevelTests(TestBase):
 
     def test_highlevel_reloaded(self):
         # See gh-115490 (https://github.com/python/cpython/issues/115490).
-        importlib.reload(queues)
+        interp = interpreters.create()
+        interp.exec(dedent(f"""
+            import importlib
+            from concurrent.interpreters import _queues as queues
+            importlib.reload(queues)
+            """));
 
     def test_create_destroy(self):
         qid = _queues.create(2, REPLACE, -1)
@@ -188,9 +194,11 @@ class QueueTests(TestBase):
 
     def test_pickle(self):
         queue = queues.create()
-        data = pickle.dumps(queue)
-        unpickled = pickle.loads(data)
-        self.assertEqual(unpickled, queue)
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=protocol):
+                data = pickle.dumps(queue, protocol)
+                unpickled = pickle.loads(data)
+                self.assertEqual(unpickled, queue)
 
 
 class TestQueueOps(TestBase):
@@ -304,6 +312,8 @@ class TestQueueOps(TestBase):
         queue.put(None)
         with self.assertRaises(queues.QueueFull):
             queue.put(None, timeout=0.1)
+        with self.assertRaises(queues.QueueFull):
+            queue.put(None, HUGE_TIMEOUT, 0.1)
         queue.get()
         queue.put(None)
 
@@ -313,6 +323,10 @@ class TestQueueOps(TestBase):
         queue.put_nowait(None)
         with self.assertRaises(queues.QueueFull):
             queue.put_nowait(None)
+        with self.assertRaises(queues.QueueFull):
+            queue.put(None, False)
+        with self.assertRaises(queues.QueueFull):
+            queue.put(None, False, timeout=HUGE_TIMEOUT)
         queue.get()
         queue.put_nowait(None)
 
@@ -343,11 +357,30 @@ class TestQueueOps(TestBase):
         queue = queues.create()
         with self.assertRaises(queues.QueueEmpty):
             queue.get(timeout=0.1)
+        with self.assertRaises(queues.QueueEmpty):
+            queue.get(HUGE_TIMEOUT, 0.1)
+
+    def test_timeout_uses_monotonic_clock(self):
+        # gh-153005: the deadline must be computed from the monotonic clock,
+        # since the wall clock can be adjusted while the call is blocked.
+        queue = queues.create(1)
+        with mock.patch.object(queues, 'time', wraps=time) as fake_time:
+            with self.assertRaises(queues.QueueEmpty):
+                queue.get(timeout=0)
+            queue.put(None)
+            with self.assertRaises(queues.QueueFull):
+                queue.put(None, timeout=0)
+        fake_time.monotonic.assert_called()
+        fake_time.time.assert_not_called()
 
     def test_get_nowait(self):
         queue = queues.create()
         with self.assertRaises(queues.QueueEmpty):
             queue.get_nowait()
+        with self.assertRaises(queues.QueueEmpty):
+            queue.get(False)
+        with self.assertRaises(queues.QueueEmpty):
+            queue.get(False, timeout=HUGE_TIMEOUT)
 
     def test_put_get_full_fallback(self):
         expected = list(range(20))

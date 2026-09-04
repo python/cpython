@@ -1,0 +1,14 @@
+The :class:`!tkinter.filedialog.FileDialog` dialog and its
+:class:`!tkinter.filedialog.LoadFileDialog` and
+:class:`!tkinter.filedialog.SaveFileDialog` subclasses, which follow the layout
+of the classic Motif file selection dialog, were modernized to match its look
+and feel more closely.
+They are now built from the themed :mod:`tkinter.ttk` widgets instead of the
+classic :mod:`tkinter` widgets, and gained a *use_ttk* parameter that selects
+between the classic Tk widgets and the themed ttk widgets.
+The buttons and field labels gained :kbd:`Alt` key accelerators, the default
+ring follows the keyboard focus, and the :kbd:`Escape` key cancels the dialog.
+The directory and file lists gained a horizontal scrollbar and type-ahead
+selection.
+The dialog is now centered over its parent, and the overwrite confirmation of
+:class:`!SaveFileDialog` uses a themed message box.
