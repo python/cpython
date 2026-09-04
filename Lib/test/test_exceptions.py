@@ -237,9 +237,9 @@ class ExceptionTests(unittest.TestCase):
             ('abcd = 00010', 8, 11),
             ('\u03b1\u03b2\u03b3\u03b4 = 00010', 8, 11),
             ('a\u0301b\u0308c\u20d7d\u1ab0 = 00010', 12, 15),
-            ("abcd = ub'a'", 8, 10),
-            ("\u03b1\u03b2\u03b3\u03b4 = ub'a'", 8, 10),
-            ("a\u0301b\u0308c\u20d7d\u1ab0 = ub'a'", 12, 14),
+            ("abcd = ub'a'", 10, 13),
+            ("\u03b1\u03b2\u03b3\u03b4 = ub'a'", 10, 13),
+            ("a\u0301b\u0308c\u20d7d\u1ab0 = ub'a'", 14, 17),
         ]:
             with self.subTest(source=source):
                 with self.assertRaises(SyntaxError) as cm:
