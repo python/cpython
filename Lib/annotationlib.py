@@ -201,8 +201,9 @@ class ForwardRef:
 
             if resolved is not _sentinel:
                 if isinstance(resolved, types.LazyImportType):
-                    # We try reifying the lazy object, and assume it's an error
-                    # if format=VALUE was used:
+                    # We try reifying the lazy object. If this fails, we propagate
+                    # the error in the VALUE format and leave the
+                    # ForwardRef unresolved in the FORWARDREF format.
                     try:
                         return resolved.resolve()
                     except Exception:
