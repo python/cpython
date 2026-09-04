@@ -7,6 +7,9 @@
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_long.h"          // _PY_IS_SMALL_INT()
 #include "pycore_hashtable.h"     // _Py_hashtable_t
+#ifdef Py_GIL_DISABLED
+#  include "pycore_setobject.h"   // _PySet_NextEntry()
+#endif
 
 #include "pycore_opcode_utils.h"
 #include "pycore_opcode_metadata.h" // OPCODE_HAS_ARG, etc
@@ -1345,9 +1348,11 @@ get_const_value(int opcode, int oparg, PyObject *co_consts)
 // Steals a reference to newconst.
 static int
 add_const(PyObject *newconst, PyObject *consts, PyObject *const_cache,
-          _Py_hashtable_t *consts_index)
+          PyObject *local_const_cache, _Py_hashtable_t *consts_index)
 {
-    if (_PyCompile_ConstCacheMergeOne(const_cache, &newconst) < 0) {
+    if (_PyCompile_ConstCacheMergeOneLocal(
+            const_cache, local_const_cache, &newconst) < 0)
+    {
         Py_DECREF(newconst);
         return -1;
     }
@@ -1496,6 +1501,7 @@ maybe_instr_make_load_common_const(cfg_instr *instr, PyObject *newconst)
 static int
 instr_make_load_const(cfg_instr *instr, PyObject *newconst,
                       PyObject *consts, PyObject *const_cache,
+                      PyObject *local_const_cache,
                       _Py_hashtable_t *consts_index)
 {
     int res = maybe_instr_make_load_smallint(instr, newconst, consts, const_cache);
@@ -1514,7 +1520,8 @@ instr_make_load_const(cfg_instr *instr, PyObject *newconst,
     if (res > 0) {
         return SUCCESS;
     }
-    int oparg = add_const(newconst, consts, const_cache, consts_index);
+    int oparg = add_const(
+        newconst, consts, const_cache, local_const_cache, consts_index);
     RETURN_IF_ERROR(oparg);
     INSTR_SET_OP1(instr, LOAD_CONST, oparg);
     return SUCCESS;
@@ -1528,7 +1535,8 @@ instr_make_load_const(cfg_instr *instr, PyObject *newconst,
 */
 static int
 fold_tuple_of_constants(basicblock *bb, int i, PyObject *consts,
-                        PyObject *const_cache, _Py_hashtable_t *consts_index)
+                        PyObject *const_cache, PyObject *local_const_cache,
+                        _Py_hashtable_t *consts_index)
 {
     /* Pre-conditions */
     assert(PyDict_CheckExact(const_cache));
@@ -1565,7 +1573,9 @@ fold_tuple_of_constants(basicblock *bb, int i, PyObject *consts,
     }
 
     nop_out(const_instrs, seq_size);
-    return instr_make_load_const(instr, const_tuple, consts, const_cache, consts_index);
+    return instr_make_load_const(
+        instr, const_tuple, consts, const_cache, local_const_cache,
+        consts_index);
 }
 
 /* Replace:
@@ -1587,9 +1597,49 @@ fold_tuple_of_constants(basicblock *bb, int i, PyObject *consts,
    matching BUILD_LIST/BUILD_SET start is selected from its opcode, and
    for sets the result is wrapped in a frozenset.
 */
+
+#ifdef Py_GIL_DISABLED
+static int
+constant_contains_nan(PyObject *value)
+{
+    if (PyFloat_CheckExact(value)) {
+        return isnan(PyFloat_AS_DOUBLE(value));
+    }
+    if (PyComplex_CheckExact(value)) {
+        Py_complex number = PyComplex_AsCComplex(value);
+        return isnan(number.real) || isnan(number.imag);
+    }
+    if (PyTuple_CheckExact(value)) {
+        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(value); i++) {
+            if (constant_contains_nan(PyTuple_GET_ITEM(value, i))) {
+                return 1;
+            }
+        }
+    }
+    else if (PyFrozenSet_CheckExact(value)) {
+        Py_ssize_t pos = 0;
+        PyObject *item;
+        Py_hash_t hash;
+        while (_PySet_NextEntry(value, &pos, &item, &hash)) {
+            if (constant_contains_nan(item)) {
+                return 1;
+            }
+        }
+    }
+    else if (PySlice_Check(value)) {
+        PySliceObject *slice = (PySliceObject *)value;
+        return (constant_contains_nan(slice->start) ||
+                constant_contains_nan(slice->stop) ||
+                constant_contains_nan(slice->step));
+    }
+    return 0;
+}
+#endif
+
 static int
 fold_constant_seq_into_load_const(basicblock *bb, int i,
                                   PyObject *consts, PyObject *const_cache,
+                                  PyObject *local_const_cache,
                                   _Py_hashtable_t *consts_index)
 {
     assert(PyDict_CheckExact(const_cache));
@@ -1648,11 +1698,16 @@ fold_constant_seq_into_load_const(basicblock *bb, int i,
                     assert(consts_found > 0);
                     PyTuple_SET_ITEM(newconst, --consts_found, constant);
                 }
-                nop_out(&instr, 1);
             }
             assert(consts_found == 0);
 
             if (build_op == BUILD_SET) {
+#ifdef Py_GIL_DISABLED
+                if (constant_contains_nan(newconst)) {
+                    Py_DECREF(newconst);
+                    return SUCCESS;
+                }
+#endif
                 PyObject *frozen = PyFrozenSet_New(newconst);
                 Py_DECREF(newconst);
                 if (frozen == NULL) {
@@ -1660,7 +1715,15 @@ fold_constant_seq_into_load_const(basicblock *bb, int i,
                 }
                 newconst = frozen;
             }
-            return instr_make_load_const(target, newconst, consts, const_cache, consts_index);
+            for (int newpos = newpos_start; newpos >= pos; newpos--) {
+                instr = &bb->b_instr[newpos];
+                if (instr->i_opcode != NOP) {
+                    nop_out(&instr, 1);
+                }
+            }
+            return instr_make_load_const(
+                target, newconst, consts, const_cache, local_const_cache,
+                consts_index);
         }
 
         if (expect_append) {
@@ -1697,6 +1760,7 @@ Optimize lists and sets for:
 static int
 optimize_lists_and_sets(basicblock *bb, int i, int nextop,
                         PyObject *consts, PyObject *const_cache,
+                        PyObject *local_const_cache,
                         _Py_hashtable_t *consts_index)
 {
     assert(PyDict_CheckExact(const_cache));
@@ -1739,6 +1803,12 @@ optimize_lists_and_sets(basicblock *bb, int i, int nextop,
     }
 
     if (instr->i_opcode == BUILD_SET) {
+#ifdef Py_GIL_DISABLED
+        if (constant_contains_nan(const_result)) {
+            Py_DECREF(const_result);
+            return SUCCESS;
+        }
+#endif
         PyObject *frozenset = PyFrozenSet_New(const_result);
         if (frozenset == NULL) {
             Py_DECREF(const_result);
@@ -1747,7 +1817,8 @@ optimize_lists_and_sets(basicblock *bb, int i, int nextop,
         Py_SETREF(const_result, frozenset);
     }
 
-    int index = add_const(const_result, consts, const_cache, consts_index);
+    int index = add_const(
+        const_result, consts, const_cache, local_const_cache, consts_index);
     RETURN_IF_ERROR(index);
     nop_out(const_instrs, seq_size);
 
@@ -1945,7 +2016,8 @@ eval_const_binop(PyObject *left, int op, PyObject *right)
 
 static int
 fold_const_binop(basicblock *bb, int i, PyObject *consts,
-                 PyObject *const_cache, _Py_hashtable_t *consts_index)
+                 PyObject *const_cache, PyObject *local_const_cache,
+                 _Py_hashtable_t *consts_index)
 {
     #define BINOP_OPERAND_COUNT 2
     assert(PyDict_CheckExact(const_cache));
@@ -1987,7 +2059,9 @@ fold_const_binop(basicblock *bb, int i, PyObject *consts,
     }
 
     nop_out(operands_instrs, BINOP_OPERAND_COUNT);
-    return instr_make_load_const(binop, newconst, consts, const_cache, consts_index);
+    return instr_make_load_const(
+        binop, newconst, consts, const_cache, local_const_cache,
+        consts_index);
 }
 
 static PyObject *
@@ -2034,7 +2108,8 @@ eval_const_unaryop(PyObject *operand, int opcode, int oparg)
 
 static int
 fold_const_unaryop(basicblock *bb, int i, PyObject *consts,
-                   PyObject *const_cache, _Py_hashtable_t *consts_index)
+                   PyObject *const_cache, PyObject *local_const_cache,
+                   _Py_hashtable_t *consts_index)
 {
     #define UNARYOP_OPERAND_COUNT 1
     assert(PyDict_CheckExact(const_cache));
@@ -2071,7 +2146,9 @@ fold_const_unaryop(basicblock *bb, int i, PyObject *consts,
         assert(PyBool_Check(newconst));
     }
     nop_out(&operand_instr, UNARYOP_OPERAND_COUNT);
-    return instr_make_load_const(unaryop, newconst, consts, const_cache, consts_index);
+    return instr_make_load_const(
+        unaryop, newconst, consts, const_cache, local_const_cache,
+        consts_index);
 }
 
 #define VISITED (-1)
@@ -2266,8 +2343,10 @@ apply_static_swaps(basicblock *block, int i)
 }
 
 static int
-basicblock_optimize_load_const(PyObject *const_cache, basicblock *bb,
-                               PyObject *consts, _Py_hashtable_t *consts_index)
+basicblock_optimize_load_const(PyObject *const_cache,
+                               PyObject *local_const_cache, basicblock *bb,
+                               PyObject *consts,
+                               _Py_hashtable_t *consts_index)
 {
     assert(PyDict_CheckExact(const_cache));
     assert(PyList_CheckExact(consts));
@@ -2385,7 +2464,9 @@ basicblock_optimize_load_const(PyObject *const_cache, basicblock *bb,
                     return ERROR;
                 }
                 cnt = PyBool_FromLong(is_true);
-                int index = add_const(cnt, consts, const_cache, consts_index);
+                int index = add_const(
+                    cnt, consts, const_cache, local_const_cache,
+                    consts_index);
                 if (index < 0) {
                     return ERROR;
                 }
@@ -2410,16 +2491,20 @@ basicblock_optimize_load_const(PyObject *const_cache, basicblock *bb,
 }
 
 static int
-optimize_load_const(PyObject *const_cache, cfg_builder *g, PyObject *consts,
-                    _Py_hashtable_t *consts_index) {
+optimize_load_const(PyObject *const_cache, PyObject *local_const_cache,
+                    cfg_builder *g, PyObject *consts,
+                    _Py_hashtable_t *consts_index)
+{
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        RETURN_IF_ERROR(basicblock_optimize_load_const(const_cache, b, consts, consts_index));
+        RETURN_IF_ERROR(basicblock_optimize_load_const(
+            const_cache, local_const_cache, b, consts, consts_index));
     }
     return SUCCESS;
 }
 
 static int
-optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts,
+optimize_basic_block(PyObject *const_cache, PyObject *local_const_cache,
+                     basicblock *bb, PyObject *consts,
                      _Py_hashtable_t *consts_index)
 {
     assert(PyDict_CheckExact(const_cache));
@@ -2460,11 +2545,15 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts,
                             continue;
                     }
                 }
-                RETURN_IF_ERROR(fold_tuple_of_constants(bb, i, consts, const_cache, consts_index));
+                RETURN_IF_ERROR(fold_tuple_of_constants(
+                    bb, i, consts, const_cache, local_const_cache,
+                    consts_index));
                 break;
             case BUILD_LIST:
             case BUILD_SET:
-                RETURN_IF_ERROR(optimize_lists_and_sets(bb, i, nextop, consts, const_cache, consts_index));
+                RETURN_IF_ERROR(optimize_lists_and_sets(
+                    bb, i, nextop, consts, const_cache, local_const_cache,
+                    consts_index));
                 break;
             case POP_JUMP_IF_NOT_NONE:
             case POP_JUMP_IF_NONE:
@@ -2599,28 +2688,37 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts,
                 _Py_FALLTHROUGH;
             case UNARY_INVERT:
             case UNARY_NEGATIVE:
-                RETURN_IF_ERROR(fold_const_unaryop(bb, i, consts, const_cache, consts_index));
+                RETURN_IF_ERROR(fold_const_unaryop(
+                    bb, i, consts, const_cache, local_const_cache,
+                    consts_index));
                 break;
             case CALL_INTRINSIC_1:
                 if (oparg == INTRINSIC_LIST_TO_TUPLE) {
-                    RETURN_IF_ERROR(fold_constant_seq_into_load_const(bb, i, consts, const_cache, consts_index));
+                    RETURN_IF_ERROR(fold_constant_seq_into_load_const(
+                        bb, i, consts, const_cache, local_const_cache,
+                        consts_index));
                     if (inst->i_opcode == CALL_INTRINSIC_1 && nextop == GET_ITER) {
                         INSTR_SET_OP0(inst, NOP);
                     }
                 }
                 else if (oparg == INTRINSIC_UNARY_POSITIVE) {
-                    RETURN_IF_ERROR(fold_const_unaryop(bb, i, consts, const_cache, consts_index));
+                    RETURN_IF_ERROR(fold_const_unaryop(
+                        bb, i, consts, const_cache, local_const_cache,
+                        consts_index));
                 }
                 break;
             case LIST_APPEND:
             case SET_ADD:
                 if (oparg == 1 && (nextop == GET_ITER || nextop == CONTAINS_OP)) {
                     RETURN_IF_ERROR(fold_constant_seq_into_load_const(
-                        bb, i, consts, const_cache, consts_index));
+                        bb, i, consts, const_cache, local_const_cache,
+                        consts_index));
                 }
                 break;
             case BINARY_OP:
-                RETURN_IF_ERROR(fold_const_binop(bb, i, consts, const_cache, consts_index));
+                RETURN_IF_ERROR(fold_const_binop(
+                    bb, i, consts, const_cache, local_const_cache,
+                    consts_index));
                 break;
         }
     }
@@ -2666,6 +2764,7 @@ remove_redundant_nops_and_jumps(cfg_builder *g)
 */
 static int
 optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache,
+             PyObject *local_const_cache,
              _Py_hashtable_t *consts_index, int firstlineno)
 {
     assert(PyDict_CheckExact(const_cache));
@@ -2673,9 +2772,11 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache,
     RETURN_IF_ERROR(inline_small_or_no_lineno_blocks(g->g_entryblock));
     RETURN_IF_ERROR(remove_unreachable(g->g_entryblock));
     RETURN_IF_ERROR(resolve_line_numbers(g, firstlineno));
-    RETURN_IF_ERROR(optimize_load_const(const_cache, g, consts, consts_index));
+    RETURN_IF_ERROR(optimize_load_const(
+        const_cache, local_const_cache, g, consts, consts_index));
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        RETURN_IF_ERROR(optimize_basic_block(const_cache, b, consts, consts_index));
+        RETURN_IF_ERROR(optimize_basic_block(
+            const_cache, local_const_cache, b, consts, consts_index));
     }
     RETURN_IF_ERROR(remove_redundant_nops_and_pairs(g->g_entryblock));
     RETURN_IF_ERROR(remove_unreachable(g->g_entryblock));
@@ -3799,9 +3900,22 @@ _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
 
     /** Optimization **/
 
+    PyObject *local_const_cache = PyDict_New();
+    if (local_const_cache == NULL) {
+        return ERROR;
+    }
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(consts); i++) {
+        PyObject *item = PyList_GET_ITEM(consts, i);
+        if (_PyCompile_ConstCacheAddLocal(local_const_cache, item) < 0) {
+            Py_DECREF(local_const_cache);
+            return ERROR;
+        }
+    }
+
     _Py_hashtable_t *consts_index = _Py_hashtable_new(
         _Py_hashtable_hash_ptr, _Py_hashtable_compare_direct);
     if (consts_index == NULL) {
+        Py_DECREF(local_const_cache);
         PyErr_NoMemory();
         return ERROR;
     }
@@ -3814,14 +3928,17 @@ _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
         if (_Py_hashtable_set(consts_index, (void *)item,
                               (void *)(uintptr_t)i) < 0) {
             _Py_hashtable_destroy(consts_index);
+            Py_DECREF(local_const_cache);
             PyErr_NoMemory();
             return ERROR;
         }
     }
 
-    int ret = optimize_cfg(g, consts, const_cache, consts_index, firstlineno);
+    int ret = optimize_cfg(
+        g, consts, const_cache, local_const_cache, consts_index, firstlineno);
 
     _Py_hashtable_destroy(consts_index);
+    Py_DECREF(local_const_cache);
 
     RETURN_IF_ERROR(ret);
 

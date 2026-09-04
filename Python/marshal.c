@@ -106,6 +106,7 @@ module marshal
 #define WFERR_NESTEDTOODEEP 2
 #define WFERR_NOMEMORY 3
 #define WFERR_CODE_NOT_ALLOWED 4
+#define WFERR_DETERMINISTIC_SET 5
 
 typedef struct {
     FILE *fp;
@@ -118,7 +119,22 @@ typedef struct {
     _Py_hashtable_t *hashtable;
     int version;
     int allow_code;
+    enum {
+        WF_REF_DEFAULT,
+        WF_REF_DETERMINISTIC,
+    } ref_mode;
 } WFILE;
+
+static int
+w_ref_mode_for_object(PyObject *x)
+{
+#ifdef Py_GIL_DISABLED
+    if (PyCode_Check(x)) {
+        return WF_REF_DETERMINISTIC;
+    }
+#endif
+    return WF_REF_DEFAULT;
+}
 
 #define w_byte(c, p) do {                               \
         if ((p)->ptr != (p)->end || w_reserve((p), 1))  \
@@ -251,7 +267,8 @@ w_short_pstring(const void *s, Py_ssize_t n, WFILE *p)
 } while(0)
 
 static PyObject *
-_PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code);
+w_object_to_string(PyObject *x, int version, int allow_code,
+                   int ref_mode, int *error);
 
 #define _r_digits(bitsize)                                                \
 static void                                                               \
@@ -386,12 +403,9 @@ w_ref(PyObject *v, char *flag, WFILE *p)
     if (p->version < 3 || p->hashtable == NULL)
         return 0; /* not writing object references */
 
-    /* If it has only one reference, it definitely isn't shared.
-     * But we use TYPE_REF always for interned string, to PYC file stable
-     * as possible.
-     */
-    if (_PyObject_IsUniquelyReferenced(v) &&
-            !(PyUnicode_CheckExact(v) && PyUnicode_CHECK_INTERNED(v))) {
+    if (p->ref_mode == WF_REF_DEFAULT &&
+        _PyObject_IsUniquelyReferenced(v) &&
+             !(PyUnicode_CheckExact(v) && PyUnicode_CHECK_INTERNED(v))) {
         return 0;
     }
 
@@ -441,7 +455,8 @@ w_complete(PyObject *v, WFILE *p)
     if (p->version < 3 || p->hashtable == NULL) {
         return;
     }
-    if (_PyObject_IsUniquelyReferenced(v)) {
+    if (p->ref_mode == WF_REF_DEFAULT &&
+        _PyObject_IsUniquelyReferenced(v)) {
         return;
     }
 
@@ -657,22 +672,46 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         Py_ssize_t i = 0;
         Py_BEGIN_CRITICAL_SECTION(v);
         while (_PySet_NextEntryRef(v, &pos, &value, &hash)) {
-            PyObject *dump = _PyMarshal_WriteObjectToString(value,
-                                    p->version, p->allow_code);
+            int error = WFERR_UNMARSHALLABLE;
+            PyObject *dump = w_object_to_string(
+                value, p->version, p->allow_code, p->ref_mode, &error);
             if (dump == NULL) {
-                p->error = WFERR_UNMARSHALLABLE;
+                p->error = error;
                 Py_DECREF(value);
                 break;
             }
-            PyObject *pair = _PyTuple_FromPairSteal(dump, value);
-            if (pair == NULL) {
-                p->error = WFERR_NOMEMORY;
-                break;
+            PyObject *pair;
+            if (p->ref_mode == WF_REF_DETERMINISTIC) {
+                PyObject *ordinal = PyLong_FromSsize_t(i);
+                if (ordinal == NULL) {
+                    p->error = WFERR_NOMEMORY;
+                    Py_DECREF(dump);
+                    Py_DECREF(value);
+                    break;
+                }
+                pair = PyTuple_New(3);
+                if (pair == NULL) {
+                    p->error = WFERR_NOMEMORY;
+                    Py_DECREF(dump);
+                    Py_DECREF(ordinal);
+                    Py_DECREF(value);
+                    break;
+                }
+                PyTuple_SET_ITEM(pair, 0, dump);
+                PyTuple_SET_ITEM(pair, 1, ordinal);
+                PyTuple_SET_ITEM(pair, 2, value);
+            }
+            else {
+                pair = _PyTuple_FromPairSteal(dump, value);
+                if (pair == NULL) {
+                    p->error = WFERR_NOMEMORY;
+                    break;
+                }
             }
             PyList_SET_ITEM(pairs, i++, pair);
         }
         Py_END_CRITICAL_SECTION();
-        if (p->error == WFERR_UNMARSHALLABLE || p->error == WFERR_NOMEMORY) {
+        if (p->error != WFERR_OK) {
             Py_DECREF(pairs);
             return;
         }
@@ -682,9 +721,31 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             Py_DECREF(pairs);
             return;
         }
+        if (p->ref_mode == WF_REF_DETERMINISTIC) {
+            for (Py_ssize_t i = 1; i < n; i++) {
+                PyObject *previous = PyTuple_GET_ITEM(
+                    PyList_GET_ITEM(pairs, i - 1), 0);
+                PyObject *current = PyTuple_GET_ITEM(
+                    PyList_GET_ITEM(pairs, i), 0);
+                if (PyBytes_GET_SIZE(previous) == PyBytes_GET_SIZE(current) &&
+                    memcmp(PyBytes_AS_STRING(previous),
+                           PyBytes_AS_STRING(current),
+                           PyBytes_GET_SIZE(previous)) == 0)
+                {
+                    PyErr_SetString(
+                        PyExc_ValueError,
+                        "cannot deterministically marshal set elements "
+                        "with identical encodings");
+                    p->error = WFERR_DETERMINISTIC_SET;
+                    Py_DECREF(pairs);
+                    return;
+                }
+            }
+        }
+        int value_index = p->ref_mode == WF_REF_DETERMINISTIC ? 2 : 1;
         for (Py_ssize_t i = 0; i < n; i++) {
             PyObject *pair = PyList_GET_ITEM(pairs, i);
-            value = PyTuple_GET_ITEM(pair, 1);
+            value = PyTuple_GET_ITEM(pair, value_index);
             w_object(value, p);
         }
         Py_DECREF(pairs);
@@ -817,6 +878,7 @@ PyMarshal_WriteObjectToFile(PyObject *x, FILE *fp, int version)
     wf.error = WFERR_OK;
     wf.version = version;
     wf.allow_code = 1;
+    wf.ref_mode = w_ref_mode_for_object(x);
     if (w_init_refs(&wf, version)) {
         return; /* caller must check PyErr_Occurred() */
     }
@@ -1909,34 +1971,56 @@ PyMarshal_ReadObjectFromString(const char *str, Py_ssize_t len)
 }
 
 static PyObject *
-_PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code)
+w_object_to_string(PyObject *x, int version, int allow_code,
+                   int ref_mode, int *error)
 {
     WFILE wf;
 
+    if (error != NULL) {
+        *error = WFERR_UNMARSHALLABLE;
+    }
     if (PySys_Audit("marshal.dumps", "Oi", x, version) < 0) {
         return NULL;
     }
     memset(&wf, 0, sizeof(wf));
     wf.str = PyBytes_FromStringAndSize((char *)NULL, 50);
-    if (wf.str == NULL)
+    if (wf.str == NULL) {
+        if (error != NULL) {
+            *error = WFERR_NOMEMORY;
+        }
         return NULL;
+    }
     wf.ptr = wf.buf = PyBytes_AS_STRING(wf.str);
     wf.end = wf.ptr + PyBytes_GET_SIZE(wf.str);
     wf.error = WFERR_OK;
     wf.version = version;
     wf.allow_code = allow_code;
+    wf.ref_mode = ref_mode;
     if (w_init_refs(&wf, version)) {
         Py_DECREF(wf.str);
+        if (error != NULL) {
+            *error = WFERR_NOMEMORY;
+        }
         return NULL;
     }
     w_object(x, &wf);
     w_clear_refs(&wf);
-    if (wf.str != NULL) {
+    if (wf.str == NULL) {
+        wf.error = WFERR_NOMEMORY;
+    }
+    else {
         const char *base = PyBytes_AS_STRING(wf.str);
-        if (_PyBytes_Resize(&wf.str, (Py_ssize_t)(wf.ptr - base)) < 0)
+        if (_PyBytes_Resize(&wf.str, (Py_ssize_t)(wf.ptr - base)) < 0) {
+            if (error != NULL) {
+                *error = WFERR_NOMEMORY;
+            }
             return NULL;
+        }
     }
     if (wf.error != WFERR_OK) {
+        if (error != NULL) {
+            *error = wf.error;
+        }
         Py_XDECREF(wf.str);
         switch (wf.error) {
         case WFERR_NOMEMORY:
@@ -1950,6 +2034,12 @@ _PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code)
             PyErr_SetString(PyExc_ValueError,
                             "marshalling code objects is disallowed");
             break;
+        case WFERR_DETERMINISTIC_SET:
+            PyErr_SetString(
+                PyExc_ValueError,
+                "cannot deterministically marshal set elements "
+                "with identical encodings");
+            break;
         default:
         case WFERR_UNMARSHALLABLE:
             PyErr_SetString(PyExc_ValueError,
@@ -1959,6 +2049,13 @@ _PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code)
         return NULL;
     }
     return wf.str;
+}
+
+static PyObject *
+_PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code)
+{
+    int ref_mode = w_ref_mode_for_object(x);
+    return w_object_to_string(x, version, allow_code, ref_mode, NULL);
 }
 
 PyObject *

@@ -339,10 +339,38 @@ _PyCompile_SetQualname(compiler *c)
 /* Merge const *o* and return constant key object.
  * If recursive, insert all elements if o is a tuple or frozen set.
  */
-static PyObject*
-const_cache_insert(PyObject *const_cache, PyObject *o, bool recursive)
+static int
+const_cache_contains_rebuilt_container(PyObject *o)
 {
-    assert(PyDict_CheckExact(const_cache));
+#ifdef Py_GIL_DISABLED
+    if (PyFrozenSet_CheckExact(o)) {
+        return 1;
+    }
+    if (PySlice_Check(o)) {
+        return 1;
+    }
+    if (PyTuple_CheckExact(o)) {
+        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(o); i++) {
+            if (const_cache_contains_rebuilt_container(
+                    PyTuple_GET_ITEM(o, i)))
+            {
+                return 1;
+            }
+        }
+    }
+#else
+    (void)o;
+#endif
+    return 0;
+}
+
+static PyObject*
+const_cache_insert(PyObject *const_cache, PyObject *local_const_cache,
+                   PyObject *o, bool recursive)
+{
+    assert(const_cache == NULL || PyDict_CheckExact(const_cache));
+    assert(local_const_cache == NULL ||
+           PyDict_CheckExact(local_const_cache));
     // None and Ellipsis are immortal objects, and key is the singleton.
     // No need to merge object and key.
     if (o == Py_None || o == Py_Ellipsis) {
@@ -354,28 +382,34 @@ const_cache_insert(PyObject *const_cache, PyObject *o, bool recursive)
         return NULL;
     }
 
-    PyObject *t;
-    int res = PyDict_SetDefaultRef(const_cache, key, key, &t);
-    if (res != 0) {
-        // o was not inserted into const_cache. t is either the existing value
-        // or NULL (on error).
-        Py_DECREF(key);
-        return t;
+    // Code construction can rebuild some containers after interning their
+    // elements. Do not let prior compilation decide whether code units share
+    // the original object.
+    PyObject *cache = const_cache_contains_rebuilt_container(o)
+        ? local_const_cache : const_cache;
+    if (cache != NULL) {
+        PyObject *t;
+        int res = PyDict_SetDefaultRef(cache, key, key, &t);
+        if (res != 0) {
+            // o was not inserted into const_cache. t is either the existing
+            // value or NULL (on error).
+            Py_DECREF(key);
+            return t;
+        }
+        Py_DECREF(t);
     }
-    Py_DECREF(t);
 
     if (!recursive) {
         return key;
     }
 
-    // We registered o in const_cache.
-    // When o is a tuple or frozenset, we want to merge its
-    // items too.
+    // When o is a tuple or frozenset, merge its items too.
     if (PyTuple_CheckExact(o)) {
         Py_ssize_t len = PyTuple_GET_SIZE(o);
         for (Py_ssize_t i = 0; i < len; i++) {
             PyObject *item = PyTuple_GET_ITEM(o, i);
-            PyObject *u = const_cache_insert(const_cache, item, recursive);
+            PyObject *u = const_cache_insert(
+                const_cache, local_const_cache, item, recursive);
             if (u == NULL) {
                 Py_DECREF(key);
                 return NULL;
@@ -417,7 +451,8 @@ const_cache_insert(PyObject *const_cache, PyObject *o, bool recursive)
         PyObject *item;
         Py_hash_t hash;
         while (_PySet_NextEntry(o, &pos, &item, &hash)) {
-            PyObject *k = const_cache_insert(const_cache, item, recursive);
+            PyObject *k = const_cache_insert(
+                const_cache, local_const_cache, item, recursive);
             if (k == NULL) {
                 Py_DECREF(tuple);
                 Py_DECREF(key);
@@ -454,7 +489,7 @@ const_cache_insert(PyObject *const_cache, PyObject *o, bool recursive)
 static PyObject*
 merge_consts_recursive(PyObject *const_cache, PyObject *o)
 {
-    return const_cache_insert(const_cache, o, true);
+    return const_cache_insert(const_cache, NULL, o, true);
 }
 
 Py_ssize_t
@@ -1385,7 +1420,7 @@ _PyCompile_Metadata(compiler *c)
 int
 _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj)
 {
-    PyObject *key = const_cache_insert(const_cache, *obj, false);
+    PyObject *key = const_cache_insert(const_cache, NULL, *obj, false);
     if (key == NULL) {
         return ERROR;
     }
@@ -1397,6 +1432,41 @@ _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj)
     else {
         Py_SETREF(*obj, key);
     }
+    return SUCCESS;
+}
+
+int
+_PyCompile_ConstCacheMergeOneLocal(PyObject *const_cache,
+                                   PyObject *local_const_cache,
+                                   PyObject **obj)
+{
+    PyObject *key = const_cache_insert(
+        const_cache, local_const_cache, *obj, false);
+    if (key == NULL) {
+        return ERROR;
+    }
+    if (PyTuple_CheckExact(key)) {
+        PyObject *item = PyTuple_GET_ITEM(key, 1);
+        Py_SETREF(*obj, Py_NewRef(item));
+        Py_DECREF(key);
+    }
+    else {
+        Py_SETREF(*obj, key);
+    }
+    return SUCCESS;
+}
+
+int
+_PyCompile_ConstCacheAddLocal(PyObject *local_const_cache, PyObject *obj)
+{
+    if (!const_cache_contains_rebuilt_container(obj)) {
+        return SUCCESS;
+    }
+    PyObject *key = const_cache_insert(NULL, local_const_cache, obj, false);
+    if (key == NULL) {
+        return ERROR;
+    }
+    Py_DECREF(key);
     return SUCCESS;
 }
 
