@@ -354,6 +354,10 @@ Standard names are defined for the following types:
 
    .. seealso:: :pep:`810`
 
+   .. method:: resolve()
+
+      Resolve the lazy object by reifying the lazily imported module.
+
 
 .. class:: GetSetDescriptorType
 
