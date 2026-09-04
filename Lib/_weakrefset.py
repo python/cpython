@@ -52,14 +52,11 @@ class WeakSet:
         return self.__class__(self)
 
     def pop(self):
-        while True:
-            try:
-                itemref = self.data.pop()
-            except KeyError:
-                raise KeyError('pop from empty WeakSet') from None
+        for itemref in iter(self.data.pop, stop_exception=KeyError):
             item = itemref()
             if item is not None:
                 return item
+        raise KeyError('pop from empty WeakSet')
 
     def remove(self, item):
         self.data.remove(ref(item))

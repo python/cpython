@@ -257,11 +257,8 @@ class Heap(object):
 
     def _free_pending_blocks(self):
         # Free all the blocks in the pending list - called with the lock held.
-        while True:
-            try:
-                block = self._pending_free_blocks.pop()
-            except IndexError:
-                break
+        for block in iter(self._pending_free_blocks.pop,
+                          stop_exception=IndexError):
             self._add_free_block(block)
             self._remove_allocated_block(block)
 
