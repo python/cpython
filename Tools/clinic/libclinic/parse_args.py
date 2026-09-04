@@ -1462,6 +1462,9 @@ class ParseArgsCodeGen:
         assert func.cls.type_object
         return [libclinic.normalize_snippet(f"""
             assert(Py_Is(_PyType_CAST(type), {func.cls.type_object}));
+            # Make sure the type object is immutable: the generated
+            # vectorcall doesn't deal e.g. with users reassigning __init__
+            assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
             """, indent=4)]
 
     def _vectorcall_positional(self, *,
@@ -1483,9 +1486,7 @@ class ParseArgsCodeGen:
         """Wrap parser code in the vectorcall prototype."""
         prototype = PARSER_PROTOTYPE_VECTORCALL.replace(
             "{vc_basename}", self.func.c_basename_vectorcall)
-        lines = [prototype]
-        for field in preamble, *fields, finale:
-            lines.append(field)
+        lines = [prototype, preamble, *fields, finale]
 
         if self.func.kind is METHOD_INIT:
             markers = VECTORCALL_FINALE_MARKERS_INIT
@@ -1564,7 +1565,7 @@ class ParseArgsCodeGen:
             markers = VECTORCALL_DELEGATE_MARKERS_INIT
         else:
             markers = VECTORCALL_DELEGATE_MARKERS_NEW
-        markers = markers | {"helper_call": markers["helper_call"] % {"nkw": nkw}}
+        markers["helper_call"].replace('$NKW', nkw)
         return libclinic.linear_format(VECTORCALL_DELEGATE_SKELETON, **markers)
 
     def parse_vectorcall_kw_required(self) -> None:
