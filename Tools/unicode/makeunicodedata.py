@@ -28,12 +28,13 @@
 #
 
 import os
+import subprocess
 import sys
 import zipfile
 
 from textwrap import dedent
 
-SCRIPT = sys.argv[0]
+SCRIPT = os.path.normpath(sys.argv[0])
 VERSION = "3.2"
 
 # The Unicode Database
@@ -124,6 +125,7 @@ def maketables(trace=0):
     makeunicodename(unicode, trace)
     makeunicodedata(unicode, trace)
     makeunicodetype(unicode, trace)
+    makestringprep()
 
 # --------------------------------------------------------------------
 # unicode character properties
@@ -784,6 +786,19 @@ def makeunicodename(unicode, trace):
     print('};', file=fp)
 
     fp.close()
+
+
+
+def makestringprep():
+    FILE = "Lib/stringprep.py"
+
+    print("--- Preparing", FILE, "...")
+
+    MKSTRINGPREP = "Tools/unicode/mkstringprep.py"
+
+    with open(FILE, "w") as f:
+        f.truncate()
+        subprocess.check_call([sys.executable, MKSTRINGPREP], stdout=f)
 
 
 def merge_old_version(version, new, old):

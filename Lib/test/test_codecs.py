@@ -1652,6 +1652,17 @@ class IDNACodecTest(unittest.TestCase):
         self.assertEqual("pyth\xf6n.org".encode("idna"), b"xn--pythn-mua.org")
         self.assertEqual("pyth\xf6n.org.".encode("idna"), b"xn--pythn-mua.org.")
 
+    def test_new_unicode_case_folding(self):
+        cases = [
+            ('\N{CHEROKEE LETTER A}\N{CHEROKEE LETTER A}', b"xn--58da"),
+            ('\N{GEORGIAN CAPITAL LETTER AN}.', b"xn--7md."),
+            ('\N{CYRILLIC LETTER PALOCHKA}.example', b"xn--d5a.example"),
+            ('\N{ROMAN NUMERAL REVERSED ONE HUNDRED}.example.', b"xn--q5g.example."),
+        ]
+        for unicode, encoded in cases:
+            with self.subTest(unicode=unicode, encoded=encoded):
+                self.assertEqual(unicode.encode("idna"), encoded)
+
     def test_builtin_decode_length_limit(self):
         with self.assertRaisesRegex(UnicodeError, "too long"):
             (b"xn--016c"+b"a"*1100).decode("idna")
