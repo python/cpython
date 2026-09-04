@@ -1,0 +1,2 @@
+Avoid a debug-build assertion in list sorting when its specialized comparison
+cross-check hits the C stack overflow guard.
