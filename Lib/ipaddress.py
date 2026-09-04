@@ -1124,10 +1124,14 @@ class _BaseNetwork(_IPAddressBase):
 
         Args:
             next_prefix: The desired next prefix length, if not specified the
-            same self.prefixlen will be used
+            same self.prefixlen will be used.
 
         Returns:
             An IPv(4|6) Network object of the next closest network.
+
+        Raises:
+            ValueError: If next_prefix is outside the range of valid prefix
+            lengths, or if no further network of that size exists.
 
         """
         if next_prefix is None:
@@ -1156,9 +1160,7 @@ class _BaseNetwork(_IPAddressBase):
                 "network"
             )
 
-        return self.__class__(
-            f"{self._string_from_ip_int(next_ip)}/{next_prefix}"
-        )
+        return self.__class__((next_ip, next_prefix))
 
 
 class _BaseConstants:
