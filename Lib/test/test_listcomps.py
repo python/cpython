@@ -808,6 +808,23 @@ class ListComprehensionTest(unittest.TestCase):
         """
         self._check_in_scopes(code, {"val": 0}, ns={"sys": sys})
 
+    def test_frame_locals_comp_cell_and_enclosing_free(self):
+        # The inlined listcomp cell and the enclosing free share a name.
+        # f_locals keys must still be unique so dict(**f_locals) works.
+        code = """
+            def outer(x):
+                def inner():
+                    return [(lambda: x, dict(**sys._getframe().f_locals))
+                            for x in x]
+                return inner()
+            result = outer([1, 2])
+            snaps = [d['x'] for _, d in result]
+            vals = [fn() for fn, _ in result]
+        """
+        import sys
+        self._check_in_scopes(code, {"snaps": [1, 2], "vals": [2, 2]},
+                              ns={"sys": sys}, scopes=["module", "function"])
+
     def _recursive_replace(self, maybe_code):
         if not isinstance(maybe_code, types.CodeType):
             return maybe_code
