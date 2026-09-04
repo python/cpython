@@ -747,6 +747,9 @@
     <ClInclude Include="..\Include\internal\pycore_intrinsics.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_iterobject.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_jit.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
