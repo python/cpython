@@ -2252,7 +2252,7 @@ class DeprecatedTests(PyPublicAPITests):
         with self.assertWarnsRegex(RuntimeWarning, "c will go away soon"):
             c()
 
-    def test_skip_file_prefixes():
+    def test_skip_file_prefixes(self):
         code = """\
 from warnings import deprecated
 
