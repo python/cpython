@@ -1475,26 +1475,6 @@ class ParseArgsCodeGen:
         """) + "\n"
         self._assemble_vectorcall(preamble, fields, PARSER_FINALE_SKELETON)
 
-    def parse_vectorcall_no_args(self) -> None:
-        """No positional or keyword arguments."""
-        parser_code = self._vectorcall_type_check()
-        self.codegen.add_include('pycore_modsupport.h',
-                                 '_PyArg_NoKwnames()')
-        parser_code.append(libclinic.normalize_snippet("""
-            if (!_PyArg_NoKwnames("{name}", kwnames)) {{
-                goto exit;
-            }}
-            """, indent=4))
-        parser_code.append(libclinic.normalize_snippet("""
-            if (nargs != 0) {{
-                PyErr_Format(PyExc_TypeError,
-                    "{name}() takes no arguments (%zd given)",
-                    nargs);
-                goto exit;
-            }}
-            """, indent=4))
-        self.vectorcall_body(*parser_code)
-
     def parse_vectorcall_pos_only(self) -> None:
         """All positional sometimes optional arguments."""
         parser_code = self._vectorcall_type_check()
@@ -1588,15 +1568,18 @@ class ParseArgsCodeGen:
 
         Dispatch to specific parser-code builders based on parameter shape.
         """
-        # The DSL parser rejects @vectorcall with optional groups.
+        # Branches ordered to mirror parse_args().  The DSL parser rejects
+        # @vectorcall with optional groups, and METH_O never applies to
+        # __new__/__init__. They always have arguments.
         assert not self.has_option_groups()
+        assert not self.use_meth_o()
         if not self.parameters and not self.varpos and not self.var_keyword:
-            self.parse_vectorcall_no_args()
-        elif (self.pos_only == len(self.parameters)
-              and self.var_keyword is None):
+            raise NotImplementedError("No argument vectorcall")
+        elif self.var_keyword is not None:
+            self.parse_vectorcall_kw_required()
+        elif self.pos_only == len(self.parameters):
             self.parse_vectorcall_pos_only()
-        elif (any(p.is_keyword_only() for p in self.parameters)
-              or self.varpos or self.var_keyword):
+        elif any(p.is_keyword_only() for p in self.parameters) or self.varpos:
             self.parse_vectorcall_kw_required()
         else:
             self.parse_vectorcall_pos_or_kw()
