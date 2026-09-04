@@ -366,6 +366,16 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertRaises(TypeError, pow, None, 1j)
         self.assertAlmostEqual(pow(1j, 0.5), 0.7071067811865476+0.7071067811865475j)
 
+        # gh-156886: an infinite phase is not a zero base.
+        for base, exp in [(complex(INF), 1j),
+                          (complex(INF, 1), 1j),
+                          (1e300, 1e308j),
+                          (complex(2), complex(0, INF))]:
+            with self.subTest(base=base, exponent=exp):
+                r = base ** exp
+                self.assertTrue(isnan(r.real))
+                self.assertTrue(isnan(r.imag))
+
         a = 3.33+4.43j
         self.assertEqual(a ** 0j, 1)
         self.assertEqual(a ** 0.+0.j, 1)
