@@ -440,15 +440,13 @@ def _release_waiter(waiter, *args):
 async def wait_for(fut, timeout):
     """Wait for the single Future or coroutine to complete, with timeout.
 
-    Coroutine will be wrapped in Task.
-
     Returns result of the Future or coroutine.  When a timeout occurs,
-    it cancels the task and raises TimeoutError.  To avoid the task
-    cancellation, wrap it in shield().
+    it cancels fut and raises TimeoutError.  To prevent fut from being
+    cancelled, wrap it in shield().
 
-    If the wait is cancelled, the task is also cancelled.
+    If the wait is cancelled, fut is also cancelled.
 
-    If the task suppresses the cancellation and returns a value instead,
+    If fut suppresses the cancellation and returns a value instead,
     that value is returned.
 
     This function is a coroutine.
@@ -524,6 +522,7 @@ async def _wait(fs, timeout, return_when, loop):
             timeout_handle.cancel()
         for f in fs:
             f.remove_done_callback(_on_completion)
+            futures.future_discard_from_awaited_by(f, cur_task)
 
     done, pending = set(), set()
     for f in fs:
@@ -563,9 +562,11 @@ class _AsCompletedIterator:
         self._timeout_handle = None
 
         loop = events.get_event_loop()
+        self._cur_task = current_task()
         todo = {ensure_future(aw, loop=loop) for aw in set(aws)}
         for f in todo:
             f.add_done_callback(self._handle_completion)
+            futures.future_add_to_awaited_by(f, self._cur_task)
         if todo and timeout is not None:
             self._timeout_handle = (
                 loop.call_later(timeout, self._handle_timeout)
@@ -596,6 +597,7 @@ class _AsCompletedIterator:
     def _handle_timeout(self):
         for f in self._todo:
             f.remove_done_callback(self._handle_completion)
+            futures.future_discard_from_awaited_by(f, self._cur_task)
             self._done.put_nowait(None)  # Sentinel for _wait_for_one().
         self._todo.clear()  # Can't do todo.remove(f) in the loop.
 
@@ -603,6 +605,7 @@ class _AsCompletedIterator:
         if not self._todo:
             return  # _handle_timeout() was here first.
         self._todo.remove(f)
+        futures.future_discard_from_awaited_by(f, self._cur_task)
         self._done.put_nowait(f)
         if not self._todo and self._timeout_handle is not None:
             self._timeout_handle.cancel()
@@ -996,6 +999,9 @@ def shield(arg):
             # Keep only one callback to log on cancel
             inner.remove_done_callback(_log_on_exception)
             inner.add_done_callback(_log_on_exception)
+            if cur_task is not None:
+                inner.remove_done_callback(_clear_awaited_by_callback)
+                futures.future_discard_from_awaited_by(inner, cur_task)
 
     if cur_task is not None:
         inner.add_done_callback(_clear_awaited_by_callback)

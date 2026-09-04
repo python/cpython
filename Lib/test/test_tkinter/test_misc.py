@@ -1,12 +1,15 @@
 import collections.abc
 import functools
+import os
+import gc
 import platform
 import sys
 import textwrap
+import time
 import unittest
 import weakref
 import tkinter
-from tkinter import TclError
+from tkinter import TclError, ttk
 import enum
 from test import support
 from test.support import os_helper
@@ -14,7 +17,7 @@ from test.support.script_helper import assert_python_ok
 from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import (AbstractTkTest, AbstractDefaultRootTest,
                                        requires_tk, get_tk_patchlevel,
-                                       tcl_version)
+                                       tcl_version, tk_version)
 
 support.requires('gui')
 
@@ -49,8 +52,27 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertNotEqual(str(f), str(f2))
         b = tkinter.Button(f2)
         b2 = Button2(f2)
-        for name in str(b).split('.') + str(b2).split('.'):
+        for w in (t, f, f2, b, b2):
+            # The full path name starts with a dot, the name of the root.
+            self.assertTrue(str(w).startswith('.'), msg=repr(str(w)))
+            name = w.winfo_name()
+            # A generated name is not empty and contains no dot, which would
+            # be interpreted as a path name component separator.
+            self.assertTrue(name, msg=repr(name))
+            self.assertNotIn('.', name, msg=repr(name))
+            # A generated name can be used not only as a window name, but also
+            # as a canvas or text tag, an option database pattern or a Tcl list
+            # element, so it must avoid characters that are special there.
+            # It is marked so as not to look like a user-chosen name.
             self.assertFalse(name.isidentifier(), msg=repr(name))
+            # A capital letter starts a class name in an option pattern.
+            self.assertFalse(name[0].isupper(), msg=repr(name))
+            # "!&|^()" are operators in canvas tag expressions (gh-143070),
+            # "*" separates words in an option pattern, and whitespace and
+            # "{}[]\\"$;" are special in Tcl lists and scripts.
+            self.assertNotRegex(name, r'[][!&|^()*\s{}"\\$;]', msg=repr(name))
+            # "-", "@" and "~" are special only as the first character.
+            self.assertNotIn(name[0], '-@~', msg=repr(name))
         b3 = tkinter.Button(f2)
         b4 = Button2(f2)
         self.assertEqual(len({str(b), str(b2), str(b3), str(b4)}), 4)
@@ -395,6 +417,36 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         support.gc_collect()
         self.assertIsNone(ref())
 
+    def test_gc_protocol(self):
+        # gh-116946: _tkinter objects implement the GC protocol.
+        self.assertTrue(gc.is_tracked(self.root))
+        tok = self.root.tk.createtimerhandler(10_000_000, lambda: None)
+        try:
+            self.assertTrue(gc.is_tracked(tok))
+        finally:
+            tok.deletetimerhandler()
+
+    def test_timer_fires_after_gc(self):
+        # gh-116946: a pending timer is kept alive by the Tcl event loop, not by
+        # the garbage collector, so collecting it must not cancel it -- it must
+        # still fire even when the Python token has been dropped.
+        fired = []
+        self.root.tk.createtimerhandler(1, lambda: fired.append(1))
+        support.gc_collect()
+        deadline = time.monotonic() + support.SHORT_TIMEOUT
+        while not fired and time.monotonic() < deadline:
+            self.root.update()
+        self.assertEqual(fired, [1])
+
+    def test_pending_timer_at_shutdown(self):
+        # gh-116946: the final garbage collection at interpreter shutdown must
+        # not crash when it visits a timer that is still pending (its type has
+        # already been cleared by the module's tp_clear).
+        assert_python_ok('-c',
+            'import tkinter\n'
+            'interp = tkinter.Tcl()\n'
+            'interp.tk.createtimerhandler(10_000_000, lambda: None)\n')
+
     def test_option(self):
         self.addCleanup(self.root.option_clear)
         self.root.option_add('*Button.background', 'red')
@@ -592,9 +644,21 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         ms = self.root.tk_inactive()
         self.assertIsInstance(ms, int)
         # A count of milliseconds, or -1 if the windowing system lacks support.
-        self.assertGreaterEqual(ms, -1)
+        if self.root._windowingsystem != 'win32':
+            # On Windows the value can overflow to a negative number
+            # (Tk ticket 3cb7c4ac72d4).
+            self.assertGreaterEqual(ms, -1)
         # Resetting the timer returns None and does not raise.
         self.assertIsNone(self.root.tk_inactive(reset=True))
+
+    def test_tk_print(self):
+        # tk print supports only canvas and text widgets, so tk_print is a
+        # method of Canvas and Text only.  Calling it opens the print
+        # dialog, so the behavior itself cannot be tested here.
+        self.assertHasAttr(tkinter.Canvas, 'tk_print')
+        self.assertHasAttr(tkinter.Text, 'tk_print')
+        self.assertNotHasAttr(tkinter.Frame, 'tk_print')
+        self.assertNotHasAttr(tkinter.Misc, 'tk_print')
 
     def test_wait_variable(self):
         var = tkinter.StringVar(self.root)
@@ -806,6 +870,26 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
 
 class TkTest(AbstractTkTest, unittest.TestCase):
 
+    def test_readprofile(self):
+        # gh-153333: profile scripts are decoded with their own coding cookie,
+        # not the locale encoding.  Two cookies so no locale can mask the bug.
+        profiles = {
+            '.RpClass.py': ('latin-1', "self._rp_latin1 = 'caf\xe9'"),
+            '.rpbase.py': ('utf-8', "self._rp_utf8 = 'caf\xe9'"),
+        }
+        self.addCleanup(self.root.__dict__.pop, '_rp_latin1', None)
+        self.addCleanup(self.root.__dict__.pop, '_rp_utf8', None)
+        with (os_helper.temp_dir() as home,
+              os_helper.EnvironmentVarGuard() as env):
+            env['HOME'] = home
+            for filename, (encoding, body) in profiles.items():
+                script = '# -*- coding: %s -*-\n%s\n' % (encoding, body)
+                with open(os.path.join(home, filename), 'wb') as f:
+                    f.write(script.encode(encoding))
+            self.root.readprofile('rpbase', 'RpClass')
+        self.assertEqual(self.root._rp_latin1, 'caf\xe9')
+        self.assertEqual(self.root._rp_utf8, 'caf\xe9')
+
     def test_className(self):
         # The className argument sets the class of the root window.  Tk
         # title-cases it: the first letter is upper-cased, the rest lower-cased.
@@ -902,13 +986,26 @@ class WinfoTest(AbstractTkTest, unittest.TestCase):
             self.assertIsInstance(name, str)
             self.assertIsInstance(depth, int)
 
+    def test_winfo_exists(self):
+        f = tkinter.Frame(self.root)
+        self.assertIs(f.winfo_exists(), True)
+        f.destroy()
+        self.assertIs(f.winfo_exists(), False)
+
+    def test_winfo_ismapped(self):
+        f = tkinter.Frame(self.root)
+        self.assertIs(f.winfo_ismapped(), False)
+        f.pack()
+        self.root.update()
+        self.assertIs(f.winfo_ismapped(), True)
+
     def test_winfo_viewable(self):
         f = tkinter.Frame(self.root)
-        self.assertFalse(f.winfo_viewable())
+        self.assertIs(f.winfo_viewable(), False)
         f.pack()
         f.wait_visibility()
         self.root.update()
-        self.assertTrue(f.winfo_viewable())
+        self.assertIs(f.winfo_viewable(), True)
 
     @requires_tk(9, 1)
     def test_winfo_isdark(self):
@@ -1041,13 +1138,10 @@ class WmTest(AbstractTkTest, unittest.TestCase):
             and sys.platform == 'darwin'
             and platform.machine() == 'x86_64'
             and platform.mac_ver()[0].startswith('26.')
-            and (
-                patchlevel[:3] <= (8, 6, 17)
-                or (9, 0) <= patchlevel[:3] <= (9, 0, 3)
-            )
         ):
             # https://github.com/python/cpython/issues/146531
             # Tk bug 4a2070f0d3a99aa412bc582d386d575ca2f37323
+            # Not fixed as of Tk 8.6.18 and 9.0.4.
             self.skipTest('wm iconbitmap hangs on macOS 26 Intel')
 
         self.assertEqual(t.wm_iconbitmap(), '')
@@ -2039,6 +2133,66 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
 
 def _info_commands(widget, pattern=None):
     return widget.tk.splitlist(widget.tk.call('info', 'commands', pattern))
+
+
+class TclObjTypeTest(AbstractTkTest, unittest.TestCase):
+    # See FromObj() in Modules/_tkinter.c: Tcl object types are converted to
+    # appropriate Python types.  These conversions only happen in the object
+    # mode, so skip when it is disabled.
+
+    def setUp(self):
+        super().setUp()
+        if not self.wantobjects:
+            self.skipTest('requires wantobjects')
+
+    def test_enum_option_returns_str(self):
+        # An "index" object (an enumeration keyword) is returned as a str.
+        w = ttk.Scale(self.root, orient='horizontal')
+        value = w.cget('orient')
+        self.assertIsInstance(value, str)
+        self.assertEqual(value, 'horizontal')
+
+    def test_enum_option_is_interned(self):
+        # Equal "index" keywords share a single interned str object.
+        a = ttk.Scale(self.root, orient='horizontal').cget('orient')
+        b = ttk.Scale(self.root, orient='horizontal').cget('orient')
+        self.assertIs(a, b)
+
+    def test_window_option_returns_str(self):
+        # A "window" object is returned as a str.
+        label = tkinter.Label(self.root)
+        w = ttk.LabelFrame(self.root, labelwidget=label)
+        value = w.cget('labelwidget')
+        self.assertIsInstance(value, str)
+        self.assertEqual(value, str(label))
+
+    def test_variable_option_returns_str(self):
+        # A "parsedVarName" object is returned as a str.
+        w = tkinter.Checkbutton(self.root)
+        self.assertIsInstance(w.cget('variable'), str)
+
+    def test_pixel_option_without_unit_returns_number(self):
+        # A screen distance with no unit suffix is already in pixels and thus
+        # screen independent, so it is returned as an int or a float.
+        w = tkinter.Frame(self.root)
+        w['borderwidth'] = 3
+        self.assertIsInstance(w.cget('borderwidth'), int)
+        self.assertEqual(w.cget('borderwidth'), 3)
+        if tk_version >= (9, 0):
+            # Tk < 9 rounds a fractional screen distance to an integer.
+            w['borderwidth'] = 2.5
+            self.assertIsInstance(w.cget('borderwidth'), float)
+            self.assertEqual(w.cget('borderwidth'), 2.5)
+
+    @requires_tk(9, 0)
+    def test_pixel_option_with_unit_is_not_a_number(self):
+        # A screen distance with an m/c/i/p suffix depends on the screen
+        # resolution, so it is not converted to a number here.  (Tk < 9 resolves
+        # it eagerly to an integer pixel count when the option is read.)
+        w = tkinter.Frame(self.root)
+        w['borderwidth'] = '3m'
+        self.assertNotIsInstance(w.cget('borderwidth'), (int, float))
+        self.assertEqual(str(w.cget('borderwidth')), '3m')
 
 
 if __name__ == "__main__":

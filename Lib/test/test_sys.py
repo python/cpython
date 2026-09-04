@@ -425,6 +425,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(v[2], v.build)
         self.assertEqual(v[3], v.platform)
         self.assertEqual(v[4], v.service_pack)
+        support.check_immutable_type(self, type(v))
 
         # This is how platform.py calls it. Make sure tuple
         #  still has 5 elements
@@ -690,6 +691,7 @@ class SysModuleTest(unittest.TestCase):
             self.assertEqual(algo, 0)
         self.assertGreaterEqual(sys.hash_info.cutoff, 0)
         self.assertLess(sys.hash_info.cutoff, 8)
+        support.check_immutable_type(self, type(sys.hash_info))
 
         self.assertIsInstance(sys.maxsize, int)
         self.assertIsInstance(sys.maxunicode, int)
@@ -893,11 +895,13 @@ class SysModuleTest(unittest.TestCase):
         # sys.flags, sys.version_info, and sys.getwindowsversion.
         support.check_disallow_instantiation(self, type(sys_attr), sys_attr)
 
-    def test_sys_flags_no_instantiation(self):
+    def test_sys_flags_type(self):
         self.assert_raise_on_new_sys_type(sys.flags)
+        support.check_immutable_type(self, type(sys.flags))
 
-    def test_sys_version_info_no_instantiation(self):
+    def test_sys_version_info_type(self):
         self.assert_raise_on_new_sys_type(sys.version_info)
+        support.check_immutable_type(self, type(sys.version_info))
 
     def test_sys_getwindowsversion_no_instantiation(self):
         # Skip if not being run on Windows.
@@ -1700,7 +1704,7 @@ class SizeofTest(unittest.TestCase):
             INTERPRETER_FRAME = '9PihcP'
         else:
             INTERPRETER_FRAME = '9PhcP'
-        check(x, size('3PiccPPP' + INTERPRETER_FRAME + 'P'))
+        check(x, size('3PiccPPPP' + INTERPRETER_FRAME + 'P'))
         # function
         def func(): pass
         check(func, size('16Pi'))
@@ -1722,7 +1726,7 @@ class SizeofTest(unittest.TestCase):
         check(iter('abc'), size('lP'))
         # callable-iterator
         import re
-        check(re.finditer('',''), size('2P'))
+        check(re.finditer('',''), size('3P'))
         # list
         check(list([]), vsize('Pn'))
         check(list([1]), vsize('Pn') + 2*self.P)
@@ -1809,7 +1813,7 @@ class SizeofTest(unittest.TestCase):
         check((1,2,3), vsize('') + self.P + 3*self.P)
         # type
         # static type: PyTypeObject
-        fmt = 'P2nPI13Pl4Pn9Pn12PI2Pc'
+        fmt = 'P2nPI13Pl4Pn9Pn12PI2PcP'
         s = vsize(fmt)
         check(int, s)
         typeid = 'n' if support.Py_GIL_DISABLED else ''
@@ -1954,6 +1958,7 @@ class SizeofTest(unittest.TestCase):
         cur = sys.get_asyncgen_hooks()
         self.assertIsNone(cur.firstiter)
         self.assertIsNone(cur.finalizer)
+        support.check_immutable_type(self, type(cur))
 
         # gh-118473
         with self.assertRaises(TypeError):
@@ -1996,6 +2001,7 @@ class SizeofTest(unittest.TestCase):
         rc, out, err = assert_python_failure('-c', code)
         self.assertEqual(out, b"")
         self.assertEqual(err, b"")
+
 
 @test.support.support_remote_exec_only
 @test.support.cpython_only
@@ -2282,8 +2288,8 @@ this is invalid python code
     def test_remote_exec_deleted_static_executable(self):
         """Test remote exec when the target static executable was deleted."""
         build_dir = sysconfig.get_config_var('abs_builddir')
-        srcdir = sysconfig.get_config_var('srcdir')
-        if not build_dir or not srcdir:
+        stdlib_dir = os.path.dirname(os.path.abspath(os.__file__))
+        if not build_dir or not os.path.isdir(stdlib_dir):
             self.skipTest('cannot determine build-tree locations')
 
         pybuilddir_txt = os.path.join(build_dir, 'pybuilddir.txt')
@@ -2300,8 +2306,7 @@ this is invalid python code
             copied_build_dir = os.path.join(copied_root, 'build')
             copied_pybuilddir = os.path.join(copied_build_dir, pybuilddir)
             os.makedirs(os.path.dirname(copied_pybuilddir))
-            os.symlink(os.path.join(srcdir, 'Lib'),
-                       os.path.join(copied_root, 'Lib'))
+            os.symlink(stdlib_dir, os.path.join(copied_root, 'Lib'))
             os.symlink(source_ext_dir, copied_pybuilddir)
             shutil.copy2(pybuilddir_txt,
                          os.path.join(copied_build_dir, 'pybuilddir.txt'))

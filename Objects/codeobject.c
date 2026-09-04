@@ -748,6 +748,7 @@ _PyCode_New(struct _PyCodeConstructor *con)
 #endif
 
     if (init_code(co, con) < 0) {
+        Py_XDECREF(replacement_locations);
         Py_DECREF(co);
         return NULL;
     }
@@ -3313,12 +3314,18 @@ _Py_ReserveTLBCIndex(PyInterpreterState *interp)
 }
 
 void
+_Py_UnreserveTLBCIndex(PyInterpreterState *interp, int32_t index)
+{
+    if (interp->config.tlbc_enabled) {
+        _PyIndexPool_FreeIndex(&interp->tlbc_indices, index);
+    }
+}
+
+void
 _Py_ClearTLBCIndex(_PyThreadStateImpl *tstate)
 {
     PyInterpreterState *interp = ((PyThreadState *)tstate)->interp;
-    if (interp->config.tlbc_enabled) {
-        _PyIndexPool_FreeIndex(&interp->tlbc_indices, tstate->tlbc_index);
-    }
+    _Py_UnreserveTLBCIndex(interp, tstate->tlbc_index);
 }
 
 static _PyCodeArray *

@@ -12,7 +12,7 @@
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interpframe.h"   // _PyThreadState_HasStackSpace()
-#include "pycore_object.h"        // _PyType_InitCache(), _Py_ClearImmortal()
+#include "pycore_object.h"        // _Py_ClearImmortal()
 #include "pycore_obmalloc.h"      // _PyMem_obmalloc_state_on_heap()
 #include "pycore_opcode_utils.h"  // NUM_COMMON_CONSTANTS
 #include "pycore_optimizer.h"     // JIT_CLEANUP_THRESHOLD
@@ -420,8 +420,6 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     }
 #endif
 
-    _PyTypes_AfterFork();
-
     _PyThread_AfterFork(&runtime->threads);
 
     return _PyStatus_OK();
@@ -573,7 +571,6 @@ init_interpreter(PyInterpreterState *interp,
     _PyEval_InitState(interp);
     _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
-    _PyType_InitCache(interp);
 #ifdef Py_GIL_DISABLED
     _Py_brc_init_state(interp);
 #endif
@@ -656,6 +653,9 @@ init_interpreter(PyInterpreterState *interp,
         NULL,
         &alloc
     );
+    if (interp->open_stackrefs_table == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
 #  ifdef Py_STACKREF_CLOSE_DEBUG
     interp->closed_stackrefs_table = _Py_hashtable_new_full(
         _Py_hashtable_hash_ptr,
@@ -664,6 +664,9 @@ init_interpreter(PyInterpreterState *interp,
         NULL,
         &alloc
     );
+    if (interp->closed_stackrefs_table == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
 #  endif
     _Py_stackref_associate(interp, Py_None, PyStackRef_None);
     _Py_stackref_associate(interp, Py_False, PyStackRef_False);
@@ -1505,6 +1508,8 @@ alloc_threadstate(PyInterpreterState *interp)
         }
         reset_threadstate(tstate);
     }
+    // Set the interpreter before any later initialization can fail.
+    tstate->base.interp = interp;
     return tstate;
 }
 
@@ -1664,21 +1669,23 @@ new_threadstate(PyInterpreterState *interp, int whence)
         return NULL;
     }
 
-#ifdef Py_GIL_DISABLED
-    Py_ssize_t qsbr_idx = _Py_qsbr_reserve(interp);
-    if (qsbr_idx < 0) {
+#ifdef Py_STATS
+    // The PyStats structure is quite large and is allocated separated from
+    // tstate.
+    if (!_PyStats_ThreadInit(interp, tstate)) {
         free_threadstate(tstate);
         return NULL;
     }
+#endif
+#ifdef Py_GIL_DISABLED
     int32_t tlbc_idx = _Py_ReserveTLBCIndex(interp);
     if (tlbc_idx < 0) {
         free_threadstate(tstate);
         return NULL;
     }
-#endif
-#ifdef Py_STATS
-    // The PyStats structure is quite large and is allocated separated from tstate.
-    if (!_PyStats_ThreadInit(interp, tstate)) {
+    Py_ssize_t qsbr_idx = _Py_qsbr_reserve(interp);
+    if (qsbr_idx < 0) {
+        _Py_UnreserveTLBCIndex(interp, tlbc_idx);
         free_threadstate(tstate);
         return NULL;
     }
@@ -3412,8 +3419,8 @@ PyInterpreterGuard_FromCurrent(void)
     return guard;
 }
 
-void
-PyInterpreterGuard_Close(PyInterpreterGuard *guard)
+static void
+release_interp_guard(PyInterpreterGuard *guard)
 {
     PyInterpreterState *interp = guard->interp;
     assert(interp != NULL);
@@ -3425,7 +3432,26 @@ PyInterpreterGuard_Close(PyInterpreterGuard *guard)
     }
 
     assert(old_value > 0);
+}
+
+void
+PyInterpreterGuard_Close(PyInterpreterGuard *guard)
+{
+    release_interp_guard(guard);
     PyMem_RawFree(guard);
+}
+
+int
+_PyInterpreterGuard_TryAcquire(PyInterpreterState *interp,
+                               PyInterpreterGuard *guard)
+{
+    return try_acquire_interp_guard(interp, guard);
+}
+
+void
+_PyInterpreterGuard_Release(PyInterpreterGuard *guard)
+{
+    release_interp_guard(guard);
 }
 
 PyInterpreterView *

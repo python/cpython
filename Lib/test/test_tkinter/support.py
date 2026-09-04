@@ -93,7 +93,7 @@ def destroy_default_root():
         tkinter._default_root.destroy()
         tkinter._default_root = None
 
-def wait_until_mapped(widget, timeout=None):
+def wait_until_mapped(widget, timeout=None, *, full_size=False):
     """Wait until *widget* is actually mapped and laid out by the window
     manager, so that realized-geometry queries (winfo_width(), identify(),
     coords(), ...) return meaningful values.
@@ -103,6 +103,10 @@ def wait_until_mapped(widget, timeout=None):
     ``support.LOOPBACK_TIMEOUT``).  Unlike Misc.wait_visibility(), this
     never blocks indefinitely, so it is safe under a window manager that
     never maps the window (see gh-69134, gh-74941, bpo-40722).
+
+    If *full_size* is true, also wait until the realized size reaches the
+    requested size, so that per-pixel queries near an edge (e.g. identify())
+    are reliable even under load.
     """
     if timeout is None:
         timeout = support.LOOPBACK_TIMEOUT
@@ -110,10 +114,15 @@ def wait_until_mapped(widget, timeout=None):
     widget.update_idletasks()
     while True:
         widget.update()  # drain pending Map/Configure events
-        if (widget.winfo_ismapped()
-                and widget.winfo_width() > 1
-                and widget.winfo_height() > 1):
-            return True
+        if widget.winfo_ismapped():
+            if full_size:
+                w_ok = widget.winfo_width() >= widget.winfo_reqwidth() > 1
+                h_ok = widget.winfo_height() >= widget.winfo_reqheight() > 1
+            else:
+                w_ok = widget.winfo_width() > 1
+                h_ok = widget.winfo_height() > 1
+            if w_ok and h_ok:
+                return True
         if time.monotonic() >= deadline:
             return False
         time.sleep(0.01)

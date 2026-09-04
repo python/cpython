@@ -1,0 +1,1 @@
+Accept an uppercase V prefix in IPvFuture addresses in :func:`urllib.parse.urlsplit`.

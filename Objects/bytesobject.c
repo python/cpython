@@ -3380,6 +3380,7 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
         Py_DECREF(v);
         return (*pv == NULL) ? -1 : 0;
     }
+    assert(v != bytes_get_empty());
 
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(v);
@@ -3765,13 +3766,23 @@ PyBytesWriter_FinishWithSize(PyBytesWriter *writer, Py_ssize_t size)
                 }
             }
         }
+
         result = writer->obj;
         writer->obj = NULL;
+
+        if (size == 1 && !writer->use_bytearray) {
+            // Get the single byte singleton
+            unsigned char ch = PyBytes_AS_STRING(result)[0];
+            PyObject *op = (PyObject*)CHARACTER(ch);
+            assert(_Py_IsImmortal(op));
+            Py_SETREF(result, op);
+        }
     }
     else if (writer->use_bytearray) {
         result = PyByteArray_FromStringAndSize(writer->small_buffer, size);
     }
     else {
+        // The function returns single byte singleton if size equals 1
         result = PyBytes_FromStringAndSize(writer->small_buffer, size);
     }
     PyBytesWriter_Discard(writer);

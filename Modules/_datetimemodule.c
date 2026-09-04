@@ -52,6 +52,9 @@ typedef struct {
 
     /* The interned Unix epoch datetime instance */
     PyObject *epoch;
+
+    PyObject *time_struct_time;
+    PyObject *time_strftime;
 } datetime_state;
 
 /* The module has a fixed number of static objects, due to being exposed
@@ -1034,7 +1037,16 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
             has_separator = (c == ':');
         }
 
-        if (p >= p_end) {
+        if (c == '.' || c == ',') {
+            if (i < 2) {
+                return -3;  // Decimal mark on hour or minute
+            }
+            if (p >= p_end) {
+                return -3;  // Decimal mark not followed by any digit
+            }
+            break;
+        }
+        else if (p >= p_end) {
             return c != '\0';
         }
         else if (has_separator && (c == ':')) {
@@ -1043,14 +1055,10 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
             }
             continue;
         }
-        else if (c == '.' || c == ',') {
-            if (i < 2) {
-                return -3; // Decimal mark on hour or minute
-            }
-            break;
-        } else if (!has_separator) {
+        else if (!has_separator) {
             --p;
-        } else {
+        }
+        else {
             return -4;  // Malformed time separator
         }
     }
@@ -1887,10 +1895,12 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     assert(object && format && timetuple);
     assert(PyUnicode_Check(format));
 
-    PyObject *strftime = PyImport_ImportModuleAttrString("time", "strftime");
-    if (strftime == NULL) {
+    PyObject *current_mod = NULL;
+    datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
         return NULL;
     }
+    PyObject *strftime = st->time_strftime;
 
     /* Scan the input format, looking for %z/%Z/%f escapes, building
      * a new format.  Since computing the replacements for those codes
@@ -2050,7 +2060,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     Py_XDECREF(zreplacement);
     Py_XDECREF(colonzreplacement);
     Py_XDECREF(Zreplacement);
-    Py_XDECREF(strftime);
+    RELEASE_CURRENT_STATE(st, current_mod);
     return result;
 
  Error:
@@ -2063,41 +2073,26 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
  * from C.  Perhaps they should be.
  */
 
-/* Call time.time() and return its result (a Python float). */
-static PyObject *
-time_time(void)
-{
-    PyObject *result = NULL;
-    PyObject *time = PyImport_ImportModuleAttrString("time", "time");
-
-    if (time != NULL) {
-        result = PyObject_CallNoArgs(time);
-        Py_DECREF(time);
-    }
-    return result;
-}
-
 /* Build a time.struct_time.  The weekday and day number are automatically
  * computed from the y,m,d args.
  */
 static PyObject *
 build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
 {
-    PyObject *struct_time;
-    PyObject *result;
-
-    struct_time = PyImport_ImportModuleAttrString("time", "struct_time");
-    if (struct_time == NULL) {
+    PyObject *current_mod = NULL;
+    datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
         return NULL;
     }
 
-    result = PyObject_CallFunction(struct_time, "((iiiiiiiii))",
+    PyObject *result = PyObject_CallFunction(st->time_struct_time,
+                         "((iiiiiiiii))",
                          y, m, d,
                          hh, mm, ss,
                          weekday(y, m, d),
                          days_before_month(y, m) + d,
                          dstflag);
-    Py_DECREF(struct_time);
+    RELEASE_CURRENT_STATE(st, current_mod);
     return result;
 }
 
@@ -3332,7 +3327,11 @@ datetime_date_today_impl(PyTypeObject *type)
                            type);
     }
 
-    PyObject *time = time_time();
+    PyTime_t ts;
+    if (PyTime_Time(&ts) < 0) {
+        return NULL;
+    }
+    PyObject *time = PyFloat_FromDouble(PyTime_AsSecondsDouble(ts));
     if (time == NULL) {
         return NULL;
     }
@@ -6762,6 +6761,9 @@ local_timezone_from_timestamp(time_t timestamp)
     struct tm local_time_tm;
     PyObject *nameo = NULL;
     const char *zone = NULL;
+#ifndef HAVE_STRUCT_TM_TM_ZONE
+    char buf[100];  // for zone, which is used after the block below
+#endif
 
     if (_PyTime_localtime(timestamp, &local_time_tm) != 0)
         return NULL;
@@ -6772,9 +6774,9 @@ local_timezone_from_timestamp(time_t timestamp)
     {
         PyObject *local_time, *utc_time;
         struct tm utc_time_tm;
-        char buf[100];
-        strftime(buf, sizeof(buf), "%Z", &local_time_tm);
-        zone = buf;
+        if (strftime(buf, sizeof(buf), "%Z", &local_time_tm) != 0) {
+            zone = buf;
+        }
         local_time = new_datetime(local_time_tm.tm_year + 1900,
                                   local_time_tm.tm_mon + 1,
                                   local_time_tm.tm_mday,
@@ -6784,8 +6786,10 @@ local_timezone_from_timestamp(time_t timestamp)
         if (local_time == NULL) {
             return NULL;
         }
-        if (_PyTime_gmtime(timestamp, &utc_time_tm) != 0)
+        if (_PyTime_gmtime(timestamp, &utc_time_tm) != 0) {
+            Py_DECREF(local_time);
             return NULL;
+        }
         utc_time = new_datetime(utc_time_tm.tm_year + 1900,
                                 utc_time_tm.tm_mon + 1,
                                 utc_time_tm.tm_mday,
@@ -7444,6 +7448,8 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
             .us_per_week = Py_NewRef(st_old->us_per_week),
             .seconds_per_day = Py_NewRef(st_old->seconds_per_day),
             .epoch = Py_NewRef(st_old->epoch),
+            .time_struct_time = Py_NewRef(st_old->time_struct_time),
+            .time_strftime = Py_NewRef(st_old->time_strftime),
         };
         return 0;
     }
@@ -7488,6 +7494,15 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
         return -1;
     }
 
+    st->time_struct_time = PyImport_ImportModuleAttrString("time", "struct_time");
+    if (st->time_struct_time == NULL) {
+        return -1;
+    }
+    st->time_strftime = PyImport_ImportModuleAttrString("time", "strftime");
+    if (st->time_strftime == NULL) {
+        return -1;
+    }
+
     return 0;
 }
 
@@ -7496,6 +7511,9 @@ traverse_state(datetime_state *st, visitproc visit, void *arg)
 {
     /* heap types */
     Py_VISIT(st->isocalendar_date_type);
+
+    Py_VISIT(st->time_struct_time);
+    Py_VISIT(st->time_strftime);
 
     return 0;
 }
@@ -7512,6 +7530,8 @@ clear_state(datetime_state *st)
     Py_CLEAR(st->us_per_week);
     Py_CLEAR(st->seconds_per_day);
     Py_CLEAR(st->epoch);
+    Py_CLEAR(st->time_struct_time);
+    Py_CLEAR(st->time_strftime);
     return 0;
 }
 

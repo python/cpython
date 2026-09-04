@@ -9,6 +9,7 @@ from test import support
 from test.support import import_helper
 
 _testcapi = import_helper.import_module('_testcapi')
+_testinternalcapi = import_helper.import_module('_testinternalcapi')
 
 
 # Is the Py_STATS macro defined?
@@ -375,6 +376,46 @@ class CAPITests(unittest.TestCase):
                     for value in invalid_types:
                         with self.assertRaises(TypeError):
                             config_set(name, value)
+                finally:
+                    config_set(name, old_value)
+
+    def test_config_set_global_vars(self):
+        # Test PyConfig_Set() with global configuration variables
+        config_get = _testcapi.config_get
+        config_set = _testcapi.config_set
+        get_configs = _testinternalcapi.get_configs
+        new_values = (0, 1, 5)
+
+        for name, global_name, not_value in (
+            ('bytes_warning', 'Py_BytesWarningFlag', False),
+            ('inspect', 'Py_InspectFlag', False),
+            ('interactive', 'Py_InteractiveFlag', False),
+            ('optimization_level', 'Py_OptimizeFlag', False),
+            ('parser_debug', 'Py_DebugFlag', False),
+            ('quiet', 'Py_QuietFlag', False),
+            ('use_environment', 'Py_IgnoreEnvironmentFlag', True),
+            ('verbose', 'Py_VerboseFlag', False),
+            ('write_bytecode', 'Py_DontWriteBytecodeFlag', True),
+
+            # Read-only variables
+            #('buffered_stdio', 'Py_UnbufferedStdioFlag', True),
+            #('isolated', 'Py_IsolatedFlag', False),
+            #('pathconfig_warnings', 'Py_FrozenFlag', True),
+            #('site_import', 'Py_NoSiteFlag', True),
+            #('user_site_directory', 'Py_NoUserSiteDirectory', True),
+            # Windows only
+            #('legacy_windows_stdio', 'Py_LegacyWindowsStdioFlag', False)
+        ):
+            with self.subTest(name=name):
+                old_value = config_get(name)
+                try:
+                    for value in new_values:
+                        config_set(name, value)
+                        global_config = get_configs()['global_config']
+                        expected = value
+                        if not_value:
+                            expected = int(not value)
+                        self.assertEqual(global_config[global_name], expected)
                 finally:
                     config_set(name, old_value)
 
