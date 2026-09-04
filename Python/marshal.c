@@ -111,7 +111,7 @@ typedef struct {
     FILE *fp;
     int error;  /* see WFERR_* values */
     int depth;
-    PyObject *str;
+    PyBytesWriter *writer;
     char *ptr;
     const char *end;
     char *buf;
@@ -136,16 +136,16 @@ w_flush(WFILE *p)
 static int
 w_reserve(WFILE *p, Py_ssize_t needed)
 {
-    Py_ssize_t pos, size, delta;
     if (p->ptr == NULL)
         return 0; /* An error already occurred */
     if (p->fp != NULL) {
         w_flush(p);
         return needed <= p->end - p->ptr;
     }
-    assert(p->str != NULL);
-    pos = p->ptr - p->buf;
-    size = PyBytes_GET_SIZE(p->str);
+    assert(p->writer != NULL);
+    Py_ssize_t pos = p->ptr - p->buf;
+    Py_ssize_t size = PyBytesWriter_GetSize(p->writer);
+    Py_ssize_t delta;
     if (size > 16*1024*1024)
         delta = (size >> 3);            /* 12.5% overallocation */
     else
@@ -156,12 +156,14 @@ w_reserve(WFILE *p, Py_ssize_t needed)
         return 0;
     }
     size += delta;
-    if (_PyBytes_Resize(&p->str, size) != 0) {
+    if (PyBytesWriter_Resize(p->writer, size) != 0) {
+        PyBytesWriter_Discard(p->writer);
+        p->writer = NULL;
         p->end = p->ptr = p->buf = NULL;
         return 0;
     }
     else {
-        p->buf = PyBytes_AS_STRING(p->str);
+        p->buf = PyBytesWriter_GetData(p->writer);
         p->ptr = p->buf + pos;
         p->end = p->buf + size;
         return 1;
@@ -1311,16 +1313,12 @@ r_object(RFILE *p)
                 }
                 break;
             }
-            v = PyBytes_FromStringAndSize((char *)NULL, n);
-            if (v == NULL)
-                break;
             ptr = r_string(n, p);
             if (ptr == NULL) {
-                Py_DECREF(v);
                 break;
             }
-            memcpy(PyBytes_AS_STRING(v), ptr, n);
-            retval = v;
+
+            retval = PyBytes_FromStringAndSize(ptr, n);  // can be NULL
             R_REF(retval);
             break;
         }
@@ -1917,27 +1915,35 @@ _PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code)
         return NULL;
     }
     memset(&wf, 0, sizeof(wf));
-    wf.str = PyBytes_FromStringAndSize((char *)NULL, 50);
-    if (wf.str == NULL)
+    wf.writer = PyBytesWriter_Create(50);
+    if (wf.writer == NULL) {
         return NULL;
-    wf.ptr = wf.buf = PyBytes_AS_STRING(wf.str);
-    wf.end = wf.ptr + PyBytes_GET_SIZE(wf.str);
+    }
+    wf.ptr = wf.buf = PyBytesWriter_GetData(wf.writer);
+    wf.end = wf.ptr + PyBytesWriter_GetSize(wf.writer);
     wf.error = WFERR_OK;
     wf.version = version;
     wf.allow_code = allow_code;
     if (w_init_refs(&wf, version)) {
-        Py_DECREF(wf.str);
+        PyBytesWriter_Discard(wf.writer);
         return NULL;
     }
     w_object(x, &wf);
     w_clear_refs(&wf);
-    if (wf.str != NULL) {
-        const char *base = PyBytes_AS_STRING(wf.str);
-        if (_PyBytes_Resize(&wf.str, (Py_ssize_t)(wf.ptr - base)) < 0)
+
+    if (wf.writer != NULL) {
+        assert(wf.ptr != NULL);
+        const char *base = PyBytesWriter_GetData(wf.writer);
+        if (PyBytesWriter_Resize(wf.writer, (Py_ssize_t)(wf.ptr - base)) < 0) {
+            PyBytesWriter_Discard(wf.writer);
+            // PyBytesWriter_Resize() sets an exception
+            assert(PyErr_Occurred());
             return NULL;
+        }
     }
+
     if (wf.error != WFERR_OK) {
-        Py_XDECREF(wf.str);
+        PyBytesWriter_Discard(wf.writer);
         switch (wf.error) {
         case WFERR_NOMEMORY:
             PyErr_NoMemory();
@@ -1958,7 +1964,14 @@ _PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code)
         }
         return NULL;
     }
-    return wf.str;
+
+    if (wf.writer == NULL) {
+        // In w_reserve(), PyBytesWriter_Resize() failed with an exception set
+        assert(PyErr_Occurred());
+        return NULL;
+    }
+
+    return PyBytesWriter_Finish(wf.writer);
 }
 
 PyObject *
