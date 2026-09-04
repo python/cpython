@@ -1539,7 +1539,7 @@ class ReTests(unittest.TestCase):
             re.compile(r'[a-z--[aeiou]]')
         # A reserved construct inside a nested operand warns against the caller.
         with self.assertWarnsRegex(FutureWarning, 'Possible nested set ') as w:
-            re.compile(r'[a--[[b]]]')
+            re.compile(r'[\w--[[:digit:]]]')
         self.assertEqual(w.filename, __file__)
 
         # Set union  A||B == A or B (an explicit form of [AB]); flat operands
