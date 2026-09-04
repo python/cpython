@@ -466,6 +466,28 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn(stack1_expected, lines)
         self.assertIn(stack2_expected, lines)
 
+    def test_collapsed_stack_collector_export_non_ascii_names(self):
+        # gh-156810: frame names are written verbatim, so the output must be
+        # opened with an encoding that can represent non-ASCII and
+        # surrogate-escaped (undecodable-path) names.
+        collapsed_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, collapsed_out)
+
+        collector = CollapsedStackCollector(1000)
+        frame = MockFrameInfo("/tmp/ba\udc80d.py", 5, "计算")
+        collector.collect([
+            MockInterpreterInfo(0, [MockThreadInfo(1, [frame])])
+        ])
+
+        with captured_stdout(), captured_stderr():
+            collector.export(collapsed_out.name)
+
+        with open(collapsed_out.name, encoding="utf-8",
+                  errors="surrogatepass") as f:
+            content = f.read()
+        self.assertIn("计算", content)
+        self.assertIn("ba\udc80d.py", content)
+
     def test_flamegraph_collector_basic(self):
         """Test basic FlamegraphCollector functionality."""
         collector = FlamegraphCollector(1000)

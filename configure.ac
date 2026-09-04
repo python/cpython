@@ -4469,6 +4469,27 @@ if test "$ac_cv_ffi_complex_double_supported" = "yes"; then
               [Defined if _Complex C type can be used with libffi.])
 fi
 
+# Check for native half-float type (_Float16).
+AC_CACHE_CHECK([for _Float16 support], [ac_cv_float16_supported],
+WITH_SAVE_ENV([
+CFLAGS="$CFLAGS -O0"
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <math.h>
+int main(void)
+{
+    _Float16 val = 1.0f16;
+    int test = isinf(val) || isnan(val); /* basic support from libm */
+    double d = 3.14;
+    val = d;
+    return test;
+}
+]])], [ac_cv_float16_supported=yes],
+[ac_cv_float16_supported=no],
+[ac_cv_float16_supported=no])]))
+AS_VAR_IF([ac_cv_float16_supported], [yes],
+          [AC_DEFINE([HAVE_FLOAT16], [1],
+                     [Defined if _Float16 C type is supported])])
+
 dnl Check for libmpdec >= 2.5.0
 PKG_CHECK_MODULES([LIBMPDEC], [libmpdec >= 2.5.0], [have_mpdec=yes], [
   WITH_SAVE_ENV([
@@ -5507,7 +5528,8 @@ AC_CHECK_FUNCS([ \
   getgrnam_r getgrouplist gethostname getitimer getloadavg getlogin getlogin_r \
   getpeername getpgid getpid getppid getpriority _getpty \
   getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid getspent \
-  getspnam gettid getuid getwd grantpt if_nameindex initgroups kill killpg lchown linkat \
+  getspnam gettid getuid getwd grantpt if_indextoname if_nameindex \
+  if_nametoindex initgroups kill killpg lchown linkat \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause \
   pidfd_open pidfd_getfd pidfd_send_signal pipe \
