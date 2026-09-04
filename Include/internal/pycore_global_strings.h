@@ -565,6 +565,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(initval)
         STRUCT_FOR_ID(inner_size)
         STRUCT_FOR_ID(input)
+        STRUCT_FOR_ID(insert_cdata)
         STRUCT_FOR_ID(insert_comments)
         STRUCT_FOR_ID(insert_pis)
         STRUCT_FOR_ID(instructions)

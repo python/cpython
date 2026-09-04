@@ -660,6 +660,13 @@ xml
   rather than defaulted from the DTD.
   (Contributed by Jason Orendorff and Serhiy Storchaka in :gh:`44871`.)
 
+* Add :class:`~xml.etree.ElementTree.CDATA` to :mod:`xml.etree.ElementTree`,
+  a :class:`str` subclass for character data which is serialized as a CDATA
+  section.  :class:`~xml.etree.ElementTree.TreeBuilder` supports the
+  *insert_cdata* argument, which makes it preserve CDATA sections of the
+  parsed document.
+  (Contributed by Serhiy Storchaka in :gh:`81055`.)
+
 zipfile
 -------
 
