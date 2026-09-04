@@ -1,16 +1,19 @@
 """ !Changing this line will break Test_findfile.test_found!
 Non-gui unit tests for grep.GrepDialog methods.
-dummy_command calls grep_it calls findfiles.
+default_command calls grep_it calls findfiles.
 An exception raised in one method will fail callers.
 Otherwise, tests are mostly independent.
-Currently only test grep_it, coverage 51%.
+Currently test default_command and grep_it, coverage 51%.
 """
 from idlelib import grep
 import unittest
+from unittest import mock
 from test.support import captured_stdout
 from idlelib.idle_test.mock_tk import Var
+import io
 import os
 import re
+import sys
 
 
 class Dummy_searchengine:
@@ -21,12 +24,15 @@ class Dummy_searchengine:
     def getpat(self):
         return self._pat
 
+    def getprog(self):
+        return self._prog
+
 searchengine = Dummy_searchengine()
 
 
 class Dummy_grep:
     # Methods tested
-    #default_command = GrepDialog.default_command
+    default_command = grep.GrepDialog.default_command
     grep_it = grep.GrepDialog.grep_it
     # Other stuff needed
     recvar = Var(False)
@@ -166,9 +172,48 @@ class Grep_itTest(unittest.TestCase):
 
 
 class Default_commandTest(unittest.TestCase):
-    # To write this, move outwin import to top of GrepDialog
-    # so it can be replaced by captured_stdout in class setup/teardown.
-    pass
+    # default_command searches with grep_it, tested above, writing to an
+    # OutputWindow, which is replaced here by a text buffer.
+
+    def setUp(self):
+        self.dialog = Dummy_grep()
+        self.dialog.top = mock.Mock()  # For top.bell().
+        self.dialog.flist = 'flist'
+        self.dialog.globvar = Var(value=__file__)
+        searchengine._pat = pat = 'xyz*' * 7  # Not in this file.
+        searchengine._prog = re.compile(pat)
+
+    def default_command(self):
+        "Return the mock OutputWindow class and what was written to it."
+        save = sys.stdout
+        with mock.patch('idlelib.outwin.OutputWindow') as OutputWindow:
+            OutputWindow.return_value = out = io.StringIO()
+            self.dialog.default_command()
+        self.assertIs(sys.stdout, save)  # Restored even when not replaced.
+        return OutputWindow, out.getvalue()
+
+    def test_no_pattern(self):
+        # An invalid pattern is reported by getprog, not here.
+        searchengine._prog = None
+        OutputWindow, output = self.default_command()
+        OutputWindow.assert_not_called()
+        self.assertEqual(output, '')
+        self.dialog.top.bell.assert_not_called()
+
+    def test_no_path(self):
+        self.dialog.globvar = Var(value='')
+        OutputWindow, output = self.default_command()
+        self.dialog.top.bell.assert_called_once()
+        OutputWindow.assert_not_called()
+        self.assertEqual(output, '')
+
+    def test_search(self):
+        OutputWindow, output = self.default_command()
+        OutputWindow.assert_called_once_with('flist')  # The flist argument.
+        lines = output.split('\n')
+        self.assertIn(searchengine._pat, lines[0])
+        self.assertEqual(lines[1], 'No hits.')
+        self.dialog.top.bell.assert_not_called()
 
 
 if __name__ == '__main__':
