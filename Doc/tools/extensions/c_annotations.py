@@ -195,7 +195,6 @@ def add_annotations(app: Sphinx, doctree: nodes.document) -> None:
                     break
                 ancestor = ancestor.parent
             else:
-
                 # no skip; add the annotation
                 annotation = _stable_abi_annotation(record)
                 node.insert(0, annotation)
