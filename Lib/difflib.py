@@ -10,6 +10,9 @@ Function context_diff(a, b):
 Function ndiff(a, b):
     Return a delta: the difference between `a` and `b` (lists of strings).
 
+Function mdiff(fromlines, tolines):
+    Return a generator yielding marked up from/to side by side differences.
+
 Function restore(delta, which):
     Return one of the two sequences that generated an ndiff delta.
 
@@ -26,7 +29,7 @@ Class HtmlDiff:
     For producing HTML side by side comparison with change highlights.
 """
 
-__all__ = ['get_close_matches', 'ndiff', 'restore', 'SequenceMatcher',
+__all__ = ['get_close_matches', 'ndiff', 'mdiff', 'restore', 'SequenceMatcher',
            'Differ','IS_CHARACTER_JUNK', 'IS_LINE_JUNK', 'context_diff',
            'unified_diff', 'diff_bytes', 'HtmlDiff', 'Match']
 
@@ -1358,7 +1361,7 @@ def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK):
     """
     return Differ(linejunk, charjunk).compare(a, b)
 
-def _mdiff(fromlines, tolines, context=None, linejunk=None,
+def mdiff(fromlines, tolines, context=None, linejunk=None,
            charjunk=IS_CHARACTER_JUNK):
     r"""Returns generator yielding marked up from/to side by side differences.
 
@@ -2025,7 +2028,7 @@ class HtmlDiff(object):
             context_lines = numlines
         else:
             context_lines = None
-        diffs = _mdiff(fromlines,tolines,context_lines,linejunk=self._linejunk,
+        diffs = mdiff(fromlines,tolines,context_lines,linejunk=self._linejunk,
                       charjunk=self._charjunk)
 
         # set up iterator to wrap lines that exceed desired width

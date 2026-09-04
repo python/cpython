@@ -338,6 +338,26 @@ Diff generation
       + tree
       + emu
 
+.. function:: mdiff(fromlines, tolines, context=None, linejunk=None, charjunk=IS_CHARACTER_JUNK)
+
+   Return a generator yielding marked up *fromlines* and *tolines* side by side differences.
+
+   Optional keyword parameters *context* is number of lines to display on each side the difference, if ``None``, all from/to text lines will be generated; *linejunk* and *charjunk* are filtering functions.
+
+   from/to line tuple -- (line num, line text)
+      line num -- integer or None (to indicate a context separation)
+      line text -- original line text with following markers inserted:
+
+         ``'\0+'`` -- marks start of added text
+
+         ``'\0-'`` -- marks start of deleted text
+
+         ``'\0^'`` -- marks start of changed text
+
+         ``'\1'`` -- marks end of added/deleted/changed text
+
+   boolean flag -- None indicates context separation, True indicates
+        either "from" or "to" line contains a change, otherwise False.
 
 .. function:: restore(sequence, which)
 
