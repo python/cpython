@@ -231,6 +231,8 @@ class NumberTestCase(unittest.TestCase, ComplexesAreIdenticalMixin):
         # probably be changed:
         self.assertRaises(TypeError, c_int, c_long(42))
 
+    @unittest.skipUnless(hasattr(ctypes, "c_double_complex"),
+                         "requires C11 complex type")
     def test_float_overflow(self):
         big_int = int(sys.float_info.max) * 2
         for t in float_types + [c_longdouble]:
