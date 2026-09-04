@@ -387,7 +387,7 @@ class CLanguage(Language):
             vc_impl_args = [vc_first] + data.impl_arguments[1:]
             template_dict['vectorcall_impl_arguments'] = ", ".join(vc_impl_args)
         else:
-            template_dict['vectorcall_impl_arguments'] = ""
+            pass
 
         template_dict['return_conversion'] = libclinic.format_escape("".join(data.return_conversion).rstrip())
         template_dict['post_parsing'] = libclinic.format_escape("".join(data.post_parsing).rstrip())

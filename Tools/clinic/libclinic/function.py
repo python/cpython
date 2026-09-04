@@ -149,7 +149,7 @@ class Function:
         name = self.c_basename
         for suffix in ('___init__', '___new__', '_new', '_init'):
             if name.endswith(suffix):
-                name = name[:-len(suffix)]
+                name = name.removesuffix(suffix)
                 break
         return f'{name}_vectorcall'
 
