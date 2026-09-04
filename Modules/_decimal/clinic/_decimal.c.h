@@ -5444,7 +5444,7 @@ PyDoc_STRVAR(_decimal_Context_power__doc__,
 "Compute a**b.\n"
 "\n"
 "If \'a\' is negative, then \'b\' must be integral. The result will be\n"
-"inexact unless \'a\' is integral and the result is finite and can be\n"
+"inexact unless \'b\' is integral and the result is finite and can be\n"
 "expressed exactly in \'precision\' digits.  In the Python version the\n"
 "result is always correctly rounded, in the C version the result is\n"
 "almost always correctly rounded.\n"
@@ -6139,7 +6139,13 @@ PyDoc_STRVAR(_decimal_Context_canonical__doc__,
 "canonical($self, x, /)\n"
 "--\n"
 "\n"
-"Return a new instance of x.");
+"Returns the same Decimal object.\n"
+"\n"
+"As we do not have different encodings for the same number, the\n"
+"received object already is in its canonical form.\n"
+"\n"
+">>> ExtendedContext.canonical(Decimal(\'2.50\'))\n"
+"Decimal(\'2.50\')");
 
 #define _DECIMAL_CONTEXT_CANONICAL_METHODDEF    \
     {"canonical", _PyCFunction_CAST(_decimal_Context_canonical), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_canonical__doc__},
@@ -7100,4 +7106,4 @@ exit:
 #ifndef _DECIMAL_CONTEXT_APPLY_METHODDEF
     #define _DECIMAL_CONTEXT_APPLY_METHODDEF
 #endif /* !defined(_DECIMAL_CONTEXT_APPLY_METHODDEF) */
-/*[clinic end generated code: output=718b1f6c20412350 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d56f7a18603f50c6 input=a9049054013a1b77]*/
