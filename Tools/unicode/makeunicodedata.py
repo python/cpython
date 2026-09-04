@@ -28,6 +28,7 @@
 
 import dataclasses
 import os
+import subprocess
 import sys
 import zipfile
 
@@ -35,7 +36,7 @@ from functools import partial
 from textwrap import dedent
 from typing import Iterator, List, Optional, Set, Tuple
 
-SCRIPT = sys.argv[0]
+SCRIPT = os.path.normpath(sys.argv[0])
 VERSION = "3.3"
 
 # The Unicode Database
@@ -128,6 +129,7 @@ def maketables(trace=0):
     makeunicodename(unicode, trace)
     makeunicodedata(unicode, trace)
     makeunicodetype(unicode, trace)
+    makestringprep()
 
 
 # --------------------------------------------------------------------
@@ -790,6 +792,19 @@ def makeunicodename(unicode, trace):
             seq_str = ', '.join('0x%04X' % cp for cp in sequence)
             fprint('    {%d, {%s}},' % (len(sequence), seq_str))
         fprint('};')
+
+
+
+def makestringprep():
+    FILE = "Lib/stringprep.py"
+
+    print("--- Preparing", FILE, "...")
+
+    MKSTRINGPREP = "Tools/unicode/mkstringprep.py"
+
+    with open(FILE, "w") as f:
+        f.truncate()
+        subprocess.check_call([sys.executable, MKSTRINGPREP], stdout=f)
 
 
 def merge_old_version(version, new, old):
