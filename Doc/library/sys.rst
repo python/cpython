@@ -1071,13 +1071,13 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. impl-detail::
 
-      The :func:`getprofile` function is intended only for implementing profilers
-      and similar tools.  When a C profile function is in effect (for example,
-      one installed by ``cProfile``), the returned object is the internal
-      profiler object and not a callable suitable for passing to :func:`setprofile`.
-      As a result, saving and restoring the profiler state using
-      :func:`getprofile` and :func:`setprofile` may not work as expected when
-      C-based profilers are in use.
+      The :func:`getprofile` function is intended only for implementing
+      profilers and similar tools.  When a C profile function is in effect
+      (for example, one installed by :mod:`cProfile`), the returned object is
+      the internal profiler object and not a callable suitable for passing to
+      :func:`setprofile`.  As a result, saving and restoring the profiler
+      state using :func:`getprofile` and :func:`setprofile` may not work as
+      expected when C-based profilers are in use.
 
 
 .. function:: gettrace()
