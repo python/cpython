@@ -70,6 +70,15 @@ _imp_release_lock(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _imp_release_lock_impl(module);
 }
 
+PyDoc_STRVAR(_imp__get_module_registry_version__doc__,
+"_get_module_registry_version($module, modules, /)\n"
+"--\n"
+"\n"
+"Return the canonical module registry\'s filename-lookup version, or None.");
+
+#define _IMP__GET_MODULE_REGISTRY_VERSION_METHODDEF    \
+    {"_get_module_registry_version", (PyCFunction)_imp__get_module_registry_version, METH_O, _imp__get_module_registry_version__doc__},
+
 PyDoc_STRVAR(_imp__fix_co_filename__doc__,
 "_fix_co_filename($module, code, path, /)\n"
 "--\n"
@@ -665,4 +674,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=0974db098d601372 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e96d82cd2522bb44 input=a9049054013a1b77]*/

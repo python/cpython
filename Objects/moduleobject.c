@@ -12,10 +12,11 @@
 #include "pycore_modsupport.h"    // _PyModule_CreateInitialized()
 #include "pycore_moduleobject.h"  // _PyModule_GetDefOrNull()
 #include "pycore_object.h"        // _PyType_AllocNoTrack
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_ADD_UINT64()
 #include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_slots.h"         // _PySlotIterator_Init
-#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
+#include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include "osdefs.h"               // MAXPATHLEN
@@ -196,15 +197,56 @@ new_module_notrack(PyTypeObject *mt)
     return m;
 }
 
-/* Module dict watcher callback.
- * When a module dictionary is modified, we need to clear the keys version
- * to invalidate any cached lookups that depend on the dictionary structure.
+/* Module and module-registry dict watcher callback.
+ * When a module dictionary is modified, we may need to clear the keys version
+ * or invalidate filename-based module lookups.
  */
+static bool
+is_module_lookup_attr(PyObject *key)
+{
+    if (key == &_Py_ID(__file__) || key == &_Py_ID(__name__) ||
+        key == &_Py_ID(__getattr__)) {
+        return true;
+    }
+    if (!PyUnicode_Check(key)) {
+        return false;
+    }
+    // Interned strings compare by identity, so the common module-global key
+    // cannot match any of the identifiers checked above.
+    if (PyUnicode_CheckExact(key) && PyUnicode_CHECK_INTERNED(key)) {
+        return false;
+    }
+    Py_ssize_t length = PyUnicode_GET_LENGTH(key);
+    return ((length == 8 &&
+             (_PyUnicode_Equal(key, &_Py_ID(__file__)) ||
+              _PyUnicode_Equal(key, &_Py_ID(__name__)))) ||
+            (length == 11 &&
+             _PyUnicode_Equal(key, &_Py_ID(__getattr__))));
+}
+
 static int
 module_dict_watcher(PyDict_WatchEvent event, PyObject *dict,
                     PyObject *key, PyObject *new_value)
 {
     assert(PyDict_Check(dict));
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    bool registry_changed = dict == interp->imports.modules;
+    if (!registry_changed) {
+        if ((event == PyDict_EVENT_ADDED ||
+             event == PyDict_EVENT_MODIFIED ||
+             event == PyDict_EVENT_DELETED) &&
+            is_module_lookup_attr(key)) {
+            registry_changed = true;
+        }
+        else if (event == PyDict_EVENT_CLONED ||
+                 event == PyDict_EVENT_CLEARED) {
+            // These events may change lookup metadata without a key event.
+            registry_changed = true;
+        }
+    }
+    if (registry_changed) {
+        FT_ATOMIC_ADD_UINT64(interp->imports.module_registry_version, 1);
+    }
     // Only if a new lazy object shows up do we need to clear the dictionary. If
     // this is adding a new key then the version will be reset anyway.
     if (event == PyDict_EVENT_MODIFIED &&
@@ -213,6 +255,21 @@ module_dict_watcher(PyDict_WatchEvent event, PyObject *dict,
         _PyDict_ClearKeysVersionLockHeld(dict);
     }
     return 0;
+}
+
+static int
+module_setattro(PyObject *self, PyObject *name, PyObject *value)
+{
+    PyTypeObject *old_type = Py_TYPE(self);
+    int result = PyObject_GenericSetAttr(self, name, value);
+    if (result == 0 && Py_TYPE(self) != old_type) {
+        // Module dict changes are handled by the watcher above. A class
+        // change is not a dict mutation, but may make lookup metadata
+        // dynamic.
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        FT_ATOMIC_ADD_UINT64(interp->imports.module_registry_version, 1);
+    }
+    return result;
 }
 
 int
@@ -1812,7 +1869,7 @@ PyTypeObject PyModule_Type = {
     0,                                          /* tp_call */
     0,                                          /* tp_str */
     _Py_module_getattro,                        /* tp_getattro */
-    PyObject_GenericSetAttr,                    /* tp_setattro */
+    module_setattro,                            /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,                    /* tp_flags */
