@@ -1712,6 +1712,103 @@ class EventLoopTestsMixin:
             unhandled,
             f'unhandled exception in the write loop: {unhandled}')
 
+    def test_datagram_close_flushes_queued_data(self):
+        # See https://github.com/python/cpython/issues/156920: _conn_lost
+        # used to mean "close() was requested" rather than "no more data
+        # will be sent". Since add_done_callback() always defers an
+        # already-completed write's callback with call_soon(), a sendto()
+        # immediately followed by close() -- with no await in between --
+        # leaves a write genuinely outstanding at close() time on every
+        # platform, not just a slow one. Closing must let that write (and
+        # anything queued behind it) drain and still call connection_lost(),
+        # instead of tripping the "no more data will be sent" guard before
+        # the drain has actually happened and hanging forever.
+        loop = self.loop
+
+        class Receiver(asyncio.DatagramProtocol):
+            def connection_made(self, transport):
+                self.received = []
+
+            def datagram_received(self, data, addr):
+                self.received.append(data)
+
+        recv_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        recv_sock.setblocking(False)
+        recv_sock.bind(('127.0.0.1', 0))
+        recv_transport, receiver = loop.run_until_complete(
+            loop.create_datagram_endpoint(Receiver, sock=recv_sock))
+        addr = recv_sock.getsockname()
+
+        class Protocol(asyncio.DatagramProtocol):
+            def connection_made(self, transport):
+                self.lost = loop.create_future()
+
+            def connection_lost(self, exc):
+                if not self.lost.done():
+                    self.lost.set_result(exc)
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setblocking(False)
+        sock.bind(('127.0.0.1', 0))
+        transport, protocol = loop.run_until_complete(
+            loop.create_datagram_endpoint(Protocol, sock=sock))
+
+        # 'first' is still in flight (its completion callback hasn't run
+        # yet) and 'second' is queued behind it when close() is called.
+        transport.sendto(b'first', addr)
+        transport.sendto(b'second', addr)
+        transport.close()
+
+        loop.run_until_complete(asyncio.wait_for(protocol.lost, 10))
+
+        test_utils.run_until(
+            loop, lambda: len(receiver.received) >= 2)
+        self.assertEqual(sorted(receiver.received), [b'first', b'second'])
+
+        recv_transport.close()
+        test_utils.run_briefly(loop)
+
+    def test_datagram_close_during_write_error_calls_connection_lost(self):
+        # See https://github.com/python/cpython/issues/156920: if the
+        # write that's outstanding when close() is called goes on to fail
+        # (rather than succeed), the failure handler used to only re-arm
+        # the write loop when data was still queued behind it. If that
+        # failing write was the last thing in the buffer, nothing re-armed
+        # the loop, so the close() in progress never got to call
+        # connection_lost() -- it hung forever instead of finishing once
+        # the buffer was actually empty.
+        loop = self.loop
+
+        class Protocol(asyncio.DatagramProtocol):
+            def connection_made(self, transport):
+                self.lost = loop.create_future()
+                self.errors = []
+
+            def error_received(self, exc):
+                self.errors.append(exc)
+
+            def connection_lost(self, exc):
+                if not self.lost.done():
+                    self.lost.set_result(exc)
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setblocking(False)
+        sock.bind(('127.0.0.1', 0))
+        transport, protocol = loop.run_until_complete(
+            loop.create_datagram_endpoint(Protocol, sock=sock))
+        addr = sock.getsockname()
+
+        # 'ok' is still in flight when close() is called; 'oversized' is
+        # queued behind it and fails once it reaches the front of the
+        # buffer, leaving the buffer empty right as the error is handled.
+        oversized = b'\x00' * 70000
+        transport.sendto(b'ok', addr)
+        transport.sendto(oversized, addr)
+        transport.close()
+
+        loop.run_until_complete(asyncio.wait_for(protocol.lost, 10))
+        self.assertTrue(protocol.errors)
+
     def test_internal_fds(self):
         loop = self.create_event_loop()
         if not isinstance(loop, selector_events.BaseSelectorEventLoop):

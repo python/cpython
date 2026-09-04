@@ -105,8 +105,9 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
         if self._closing:
             return
         self._closing = True
-        self._conn_lost += 1
         if not self._buffer and self._write_fut is None:
+            # Nothing left to flush: no more data will be sent.
+            self._conn_lost += 1
             self._loop.call_soon(self._call_connection_lost, None)
         if self._read_fut is not None:
             self._read_fut.cancel()
@@ -386,6 +387,7 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
                 self._buffer = None
             if not data:
                 if self._closing:
+                    self._conn_lost += 1
                     self._loop.call_soon(self._call_connection_lost, None)
                 if self._eof_written:
                     self._sock.shutdown(socket.SHUT_WR)
@@ -480,6 +482,11 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
     def abort(self):
         self._force_close(None)
 
+    def _force_close(self, exc):
+        # The base class drops the buffer; the size is tracked separately.
+        self._buffer_size = 0
+        super()._force_close(exc)
+
     def sendto(self, data, addr=None):
         if not isinstance(data, (bytes, bytearray, memoryview)):
             raise TypeError('data argument must be bytes-like object (%r)',
@@ -509,6 +516,8 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
     def _loop_writing(self, fut=None):
         try:
             if self._conn_lost:
+                # No more data will be sent: either everything buffered has
+                # already been flushed, or _force_close() dropped it.
                 return
 
             assert fut is self._write_fut
@@ -517,9 +526,10 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
                 # We are in a _loop_writing() done callback, get the result
                 fut.result()
 
-            if not self._buffer or (self._conn_lost and self._address):
-                # The connection has been closed
+            if not self._buffer:
+                # Everything buffered has been sent
                 if self._closing:
+                    self._conn_lost += 1
                     self._loop.call_soon(self._call_connection_lost, None)
                 return
 
@@ -534,17 +544,26 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
                                                               addr=addr)
         except OSError as exc:
             self._protocol.error_received(exc)
-            if self._buffer:
-                # Re-arm the write loop so buffered data isn't stranded and
-                # a paused protocol is eventually resumed (gh-156698).
-                def resume_writing():
-                    # a sendto() may have armed a write in the meantime;
-                    # its own callback will drain the rest of the buffer.
+            # error_received() is arbitrary protocol code: it may have sent
+            # (arming a write of its own, directly or via call_soon()),
+            # closed, or aborted the transport.
+            if self._buffer or self._closing:
+                # Either data is still queued, or a close() is waiting on
+                # the write loop to drain it and call connection_lost().
+                # This write failed, so there is no completion callback
+                # pending to re-enter the loop -- schedule one (gh-156698).
+                def write_next():
+                    # error_received() may have armed a write of its own,
+                    # directly or with call_soon(); its completion callback
+                    # will drain the rest of the buffer.
                     if self._write_fut is None:
                         self._loop_writing()
 
-                self._loop.call_soon(resume_writing)
+                self._loop.call_soon(write_next)
             else:
+                # Nothing left to write, so a paused protocol has to be
+                # resumed here: the next entry into _loop_writing() returns
+                # early on an empty buffer without doing it.
                 self._maybe_resume_protocol()
         except Exception as exc:
             self._fatal_error(exc, 'Fatal write error on datagram transport')
