@@ -349,7 +349,8 @@ def _find_lines(code, strs):
     # and check the constants for references to other code objects
     for c in code.co_consts:
         if inspect.iscode(c):
-            # skip __annotate__ code objects (PEP 649)
+            # Skip __annotate__ functions (PEP 649).  They only run when the
+            # annotations are introspected, so their lines are not missing.
             if c.co_name == "__annotate__":
                 continue
             # find another code object, so recurse into it
