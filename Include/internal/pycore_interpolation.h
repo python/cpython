@@ -18,6 +18,8 @@ PyAPI_FUNC(PyObject *) _PyInterpolation_Build(PyObject *value, PyObject *str,
 
 extern PyStatus _PyInterpolation_InitTypes(PyInterpreterState *interp);
 extern PyObject *_PyInterpolation_GetValueRef(PyObject *interpolation);
+extern int _PyInterpolation_WriteSource(PyUnicodeWriter *writer,
+                                        PyObject *interpolation);
 
 #ifdef __cplusplus
 }

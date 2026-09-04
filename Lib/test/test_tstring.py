@@ -7,13 +7,12 @@ class TestTString(unittest.TestCase, TStringBaseCase):
     def test_string_representation(self):
         # Test __repr__
         t = t"Hello"
-        self.assertEqual(repr(t), "Template(strings=('Hello',), interpolations=())")
+        self.assertRegex(repr(t), r"^<Template t'Hello' at 0x[0-9A-Fa-f]+>$")
 
         name = "Python"
         t = t"Hello, {name}"
-        self.assertEqual(repr(t),
-            "Template(strings=('Hello, ', ''), "
-            "interpolations=(Interpolation('Python', 'name', None, ''),))"
+        self.assertRegex(repr(t),
+            r"^<Template t'Hello, \{name='Python'\}' at 0x[0-9A-Fa-f]+>$"
         )
 
     def test_interpolation_basics(self):
