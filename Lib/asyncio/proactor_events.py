@@ -534,10 +534,16 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
                                                               addr=addr)
         except OSError as exc:
             self._protocol.error_received(exc)
-            if self._buffer and not self._conn_lost:
+            if self._buffer:
                 # Re-arm the write loop so buffered data isn't stranded and
                 # a paused protocol is eventually resumed (gh-156698).
-                self._loop.call_soon(self._loop_writing)
+                def resume_writing():
+                    # a sendto() may have armed a write in the meantime;
+                    # its own callback will drain the rest of the buffer.
+                    if self._write_fut is None:
+                        self._loop_writing()
+
+                self._loop.call_soon(resume_writing)
             else:
                 self._maybe_resume_protocol()
         except Exception as exc:

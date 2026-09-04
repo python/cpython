@@ -1656,6 +1656,62 @@ class EventLoopTestsMixin:
         self._test_datagram_write_error_resumes_paused_protocol(
             b'ok', oversized)
 
+    def test_datagram_write_error_reentrant_sendto(self):
+        # See https://github.com/python/cpython/issues/156698: an
+        # error_received() callback that sends more data synchronously
+        # can itself arm a new write. The write-loop restart scheduled
+        # for the failed write must notice that and not try to start a
+        # second, conflicting one.
+        loop = self.loop
+        unhandled = []
+        loop.set_exception_handler(lambda loop, context: unhandled.append(context))
+
+        class Protocol(asyncio.DatagramProtocol):
+            def connection_made(self, transport):
+                self.transport = transport
+                self.sent_extra = False
+                self.errors = []
+                self.done = loop.create_future()
+
+            def datagram_received(self, data, addr):
+                if not self.done.done():
+                    self.done.set_result(None)
+
+            def error_received(self, exc):
+                self.errors.append(exc)
+                if not self.sent_extra:
+                    # Reentrantly kicks off another write while the
+                    # failing one is still unwinding on the stack.
+                    self.sent_extra = True
+                    self.transport.sendto(b'extra', self.addr)
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setblocking(False)
+        sock.bind(('127.0.0.1', 0))
+        transport, protocol = loop.run_until_complete(
+            loop.create_datagram_endpoint(Protocol, sock=sock))
+        protocol.addr = addr = sock.getsockname()
+
+        oversized = b'\x00' * 70000
+        transport.sendto(oversized, addr)
+        transport.sendto(b'queued', addr)
+
+        # The 'extra' datagram sent from error_received() is delivered
+        # back to the same socket; waiting for it proves the write loop
+        # kept running instead of wedging or crashing.
+        loop.run_until_complete(asyncio.wait_for(protocol.done, 10))
+
+        test_utils.run_until(
+            loop, lambda: transport.get_write_buffer_size() == 0)
+
+        transport.close()
+        test_utils.run_briefly(loop)
+
+        self.assertTrue(protocol.errors)
+        self.assertFalse(
+            unhandled,
+            f'unhandled exception in the write loop: {unhandled}')
+
     def test_internal_fds(self):
         loop = self.create_event_loop()
         if not isinstance(loop, selector_events.BaseSelectorEventLoop):
