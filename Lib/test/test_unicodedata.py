@@ -159,6 +159,15 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertRaises(TypeError, self.db.bidirectional)
         self.assertRaises(TypeError, self.db.bidirectional, 'xx')
 
+    def test_bidirectional_unassigned(self):
+        self.assertEqual(self.db.bidirectional('\u0378'), '')
+        self.assertEqual(self.db.bidirectional('\u077F'), '' if self.old else 'AL')
+        self.assertEqual(self.db.bidirectional('\u20CF'), '')
+        self.assertEqual(self.db.bidirectional('\u0590'), '')
+        self.assertEqual(self.db.bidirectional('\uFFFF'), '')
+        self.assertEqual(self.db.bidirectional('\U0001FFFE'), '')
+        self.assertEqual(self.db.bidirectional('\U00010D01'), '' if self.old else 'AL')
+
     def test_decomposition(self):
         self.assertEqual(self.db.decomposition('\uFFFE'),'')
         self.assertEqual(self.db.decomposition('\u00bc'), '<fraction> 0031 2044 0034')
