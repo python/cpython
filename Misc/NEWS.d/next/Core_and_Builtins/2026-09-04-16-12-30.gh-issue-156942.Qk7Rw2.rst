@@ -1,0 +1,4 @@
+:mod:`marshal` no longer replaces the exception raised while marshalling the
+value with a generic ``ValueError("unmarshallable object")``.  Error messages
+now name the type of the unsupported object and, for the types supported only
+by newer data formats, the required version.
