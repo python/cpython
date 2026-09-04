@@ -27,7 +27,7 @@ static PyObject *
 enum_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *start);
 
 static PyObject *
-enum_new_parse_args(PyTypeObject *type, PyObject *const *args,
+enum_new_helper(PyTypeObject *type, PyObject *const *args,
     Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
@@ -84,7 +84,7 @@ exit:
 static PyObject *
 enum_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    return enum_new_parse_args(type, _PyTuple_CAST(args)->ob_item,
+    return enum_new_helper(type, _PyTuple_CAST(args)->ob_item,
         PyTuple_GET_SIZE(args),
         kwargs ? PyDict_GET_SIZE(kwargs) : 0,
         kwargs, NULL);
@@ -104,7 +104,7 @@ enum_vectorcall(PyObject *type, PyObject *const *args,
      * vectorcall doesn't deal e.g. with users reassigning __init__. */
     assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
     if (kwnames != NULL || nargs < 1 || nargs > 2) {
-        return enum_new_parse_args(_PyType_CAST(type), args, nargs,
+        return enum_new_helper(_PyType_CAST(type), args, nargs,
             kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
             NULL, kwnames);
     }
@@ -173,4 +173,4 @@ reversed_vectorcall(PyObject *type, PyObject *const *args,
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8fded37f4f8dba37 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d0c066334eeb3b17 input=a9049054013a1b77]*/

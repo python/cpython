@@ -106,7 +106,7 @@ PARSER_PROTOTYPE_KEYWORD: Final[str] = libclinic.normalize_snippet("""
 """)
 PARSER_PROTOTYPE_KEYWORD_HELPER: Final[str] = libclinic.normalize_snippet("""
     static {return_type}
-    {c_basename}_parse_args({self_type}{self_name}, PyObject *const *args,
+    {c_basename}_helper({self_type}{self_name}, PyObject *const *args,
         Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 """)
 PARSER_PROTOTYPE_VARARGS: Final[str] = libclinic.normalize_snippet("""
@@ -1281,7 +1281,7 @@ class ParseArgsCodeGen:
         """Change the parser to a helper that call and vectorcall can use.
 
         The parsing code is almost identical with slightly different args so
-        share the parser body as a {c_basename}_parse_args helper and the slot
+        share the parser body as a {c_basename}_helper helper and the slot
         entry point is a thin wrapper around it.
         """
         self.parser_helper = self.parser_definition
@@ -1289,7 +1289,7 @@ class ParseArgsCodeGen:
         self.parser_definition = '\n'.join([
             self.parser_prototype,
             '{{',
-            '    return {c_basename}_parse_args({self_name}, '
+            '    return {c_basename}_helper({self_name}, '
                 '_PyTuple_CAST(args)->ob_item,',
             '        PyTuple_GET_SIZE(args),',
             '        kwargs ? PyDict_GET_SIZE(kwargs) : 0,',
@@ -1520,7 +1520,7 @@ class ParseArgsCodeGen:
             delegate=self._vectorcall_delegate_to_helper(nkw))
 
     def _vectorcall_delegate_to_helper(self, nkw: str) -> str:
-        """Hand off to the {c_basename}_parse_args helper and return.
+        """Hand off to the {c_basename}_helper helper and return.
 
         nkw: Number of keyword arguments.
         """
@@ -1546,7 +1546,7 @@ class ParseArgsCodeGen:
             bind_result = "return "
             prologue = epilogue = ""
         helper_call = libclinic.normalize_snippet(f"""
-            {bind_result}{{c_basename}}_parse_args({receiver}, args, nargs,
+            {bind_result}{{c_basename}}_helper({receiver}, args, nargs,
                 {nkw},
                 NULL, kwnames);
         """, indent=4)

@@ -4809,7 +4809,7 @@ static PyObject *
 vc_plain_new_impl(PyTypeObject *type, PyObject *a);
 
 static PyObject *
-vc_plain_new_parse_args(PyTypeObject *type, PyObject *const *args,
+vc_plain_new_helper(PyTypeObject *type, PyObject *const *args,
     Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
@@ -4864,7 +4864,7 @@ exit:
 static PyObject *
 vc_plain_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    return vc_plain_new_parse_args(type, _PyTuple_CAST(args)->ob_item,
+    return vc_plain_new_helper(type, _PyTuple_CAST(args)->ob_item,
         PyTuple_GET_SIZE(args),
         kwargs ? PyDict_GET_SIZE(kwargs) : 0,
         kwargs, NULL);
@@ -4883,7 +4883,7 @@ vc_plain_vectorcall(PyObject *type, PyObject *const *args,
      * vectorcall doesn't deal e.g. with users reassigning __init__. */
     assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
     if (kwnames != NULL || nargs > 1) {
-        return vc_plain_new_parse_args(_PyType_CAST(type), args, nargs,
+        return vc_plain_new_helper(_PyType_CAST(type), args, nargs,
             kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
             NULL, kwnames);
     }
@@ -4901,7 +4901,7 @@ static int
 vc_posorkw_init_impl(PyObject *self, PyObject *a, PyObject *b);
 
 static int
-vc_posorkw_init_parse_args(PyObject *self, PyObject *const *args,
+vc_posorkw_init_helper(PyObject *self, PyObject *const *args,
     Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     int return_value = -1;
@@ -4960,7 +4960,7 @@ exit:
 static int
 vc_posorkw_init(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    return vc_posorkw_init_parse_args(self, _PyTuple_CAST(args)->ob_item,
+    return vc_posorkw_init_helper(self, _PyTuple_CAST(args)->ob_item,
         PyTuple_GET_SIZE(args),
         kwargs ? PyDict_GET_SIZE(kwargs) : 0,
         kwargs, NULL);
@@ -4987,7 +4987,7 @@ vc_posorkw_vectorcall(PyObject *type, PyObject *const *args,
         if (self == NULL) {
             return NULL;
         }
-        _result = vc_posorkw_init_parse_args(self, args, nargs,
+        _result = vc_posorkw_init_helper(self, args, nargs,
             kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
             NULL, kwnames);
         if (_result != 0) {
@@ -5024,7 +5024,7 @@ static PyObject *
 vc_base_new_impl(PyTypeObject *type, PyObject *a, PyObject *b);
 
 static PyObject *
-vc_base_new_parse_args(PyTypeObject *type, PyObject *const *args,
+vc_base_new_helper(PyTypeObject *type, PyObject *const *args,
     Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
@@ -5081,7 +5081,7 @@ exit:
 static PyObject *
 vc_base_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    return vc_base_new_parse_args(type, _PyTuple_CAST(args)->ob_item,
+    return vc_base_new_helper(type, _PyTuple_CAST(args)->ob_item,
         PyTuple_GET_SIZE(args),
         kwargs ? PyDict_GET_SIZE(kwargs) : 0,
         kwargs, NULL);
@@ -5101,7 +5101,7 @@ vc_base_vectorcall(PyObject *type, PyObject *const *args,
      * vectorcall doesn't deal e.g. with users reassigning __init__. */
     assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
     if (kwnames != NULL || nargs < 1 || nargs > 2) {
-        return vc_base_new_parse_args(_PyType_CAST(type), args, nargs,
+        return vc_base_new_helper(_PyType_CAST(type), args, nargs,
             kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
             NULL, kwnames);
     }
@@ -5120,7 +5120,7 @@ static PyObject *
 vc_kwonly_new_impl(PyTypeObject *type, PyObject *a, PyObject *b);
 
 static PyObject *
-vc_kwonly_new_parse_args(PyTypeObject *type, PyObject *const *args,
+vc_kwonly_new_helper(PyTypeObject *type, PyObject *const *args,
     Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
@@ -5177,7 +5177,7 @@ exit:
 static PyObject *
 vc_kwonly_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    return vc_kwonly_new_parse_args(type, _PyTuple_CAST(args)->ob_item,
+    return vc_kwonly_new_helper(type, _PyTuple_CAST(args)->ob_item,
         PyTuple_GET_SIZE(args),
         kwargs ? PyDict_GET_SIZE(kwargs) : 0,
         kwargs, NULL);
@@ -5193,8 +5193,8 @@ vc_kwonly_vectorcall(PyObject *type, PyObject *const *args,
     /* Make sure the type object is immutable: the generated
      * vectorcall doesn't deal e.g. with users reassigning __init__. */
     assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
-    return vc_kwonly_new_parse_args(_PyType_CAST(type), args, nargs,
+    return vc_kwonly_new_helper(_PyType_CAST(type), args, nargs,
         kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
         NULL, kwnames);
 }
-/*[clinic end generated code: output=fdc3e9950259e0ac input=a9049054013a1b77]*/
+/*[clinic end generated code: output=89143e35d39bbf80 input=a9049054013a1b77]*/
