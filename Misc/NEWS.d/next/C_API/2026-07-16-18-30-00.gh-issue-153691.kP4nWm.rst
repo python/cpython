@@ -1,0 +1,4 @@
+Fix :c:func:`PyInitConfig_GetStrList` and :c:func:`PyInitConfig_SetStrList`
+for empty string lists on platforms where ``malloc(0)`` returns ``NULL``.
+Previously these APIs could spuriously report out-of-memory for a valid
+empty list.

@@ -4235,6 +4235,12 @@ PyInitConfig_GetStrList(PyInitConfig *config, const char *name, size_t *length, 
     PyWideStringList *list = raw_member;
     *length = list->length;
 
+    // Don't call malloc(0): it may return NULL on some platforms.
+    if (list->length == 0) {
+        *items = NULL;
+        return 0;
+    }
+
     *items = malloc(list->length * sizeof(char*));
     if (*items == NULL) {
         config->status = _PyStatus_NO_MEMORY();
@@ -4430,6 +4436,14 @@ initconfig_set_str_list(PyInitConfig *config, PyWideStringList *list,
                         Py_ssize_t length, char * const *items)
 {
     PyWideStringList wlist = _PyWideStringList_INIT;
+
+    // Don't call malloc(0): it may return NULL on some platforms.
+    if (length == 0) {
+        initconfig_free_wstr_list(list);
+        *list = wlist;
+        return 0;
+    }
+
     size_t size = sizeof(wchar_t*) * length;
     wlist.items = (wchar_t **)malloc(size);
     if (wlist.items == NULL) {
