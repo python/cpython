@@ -12,6 +12,7 @@
 #include "pycore_opcode_metadata.h" // OPCODE_HAS_ARG, etc
 #include "pycore_pystate.h"         // _PyInterpreterState_GET()
 #include "pycore_stackref.h"        // PyStackRef_AsPyObjectBorrow()
+#include "pycore_tuple.h"           // _PyTuple_MaybeUntrack()
 
 #include <stdbool.h>
 
@@ -1563,6 +1564,7 @@ fold_tuple_of_constants(basicblock *bb, int i, PyObject *consts,
         }
         PyTuple_SET_ITEM(const_tuple, i, element);
     }
+    _PyTuple_MaybeUntrack(const_tuple);
 
     nop_out(const_instrs, seq_size);
     return instr_make_load_const(instr, const_tuple, consts, const_cache, consts_index);
@@ -1650,6 +1652,7 @@ fold_constant_seq_into_load_const(basicblock *bb, int i,
                 }
                 nop_out(&instr, 1);
             }
+            _PyTuple_MaybeUntrack(newconst);
             assert(consts_found == 0);
 
             if (build_op == BUILD_SET) {
@@ -1737,6 +1740,7 @@ optimize_lists_and_sets(basicblock *bb, int i, int nextop,
         }
         PyTuple_SET_ITEM(const_result, i, element);
     }
+    _PyTuple_MaybeUntrack(const_result);
 
     if (instr->i_opcode == BUILD_SET) {
         PyObject *frozenset = PyFrozenSet_New(const_result);
