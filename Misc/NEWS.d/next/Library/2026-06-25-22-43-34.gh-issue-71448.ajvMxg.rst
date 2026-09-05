@@ -1,0 +1,2 @@
+Update :meth:`io.BytesIO.truncate` to match :meth:`io.IOBase.truncate`
+resize extension behavior. All resize behavior now matches.
