@@ -70,17 +70,14 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind) {
         r = lookahead(tok, "ot");
     }
     if (r) {
-        tok_backup(tok, c);
         if (_PyTokenizer_parser_warn(tok, PyExc_SyntaxWarning,
                 "invalid %s literal", kind))
         {
             return 0;
         }
-        tok_nextc(tok);
     }
     else /* In future releases, only error will remain. */
     if (c < 128 && is_potential_identifier_char(c)) {
-        tok_backup(tok, c);
         _PyTokenizer_syntaxerror(tok, "invalid %s literal", kind);
         return 0;
     }
@@ -130,7 +127,6 @@ _PyLexer_scan_number(struct tok_state *tok, struct token *token, int c,
                     c = tok_nextc(tok);
                 }
                 if (!Py_ISXDIGIT(c)) {
-                    tok_backup(tok, c);
                     return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "invalid hexadecimal literal"));
                 }
                 do {
@@ -154,7 +150,6 @@ _PyLexer_scan_number(struct tok_state *tok, struct token *token, int c,
                                 "invalid digit '%c' in octal literal", c));
                     }
                     else {
-                        tok_backup(tok, c);
                         return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "invalid octal literal"));
                     }
                 }
@@ -182,7 +177,6 @@ _PyLexer_scan_number(struct tok_state *tok, struct token *token, int c,
                         return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "invalid digit '%c' in binary literal", c));
                     }
                     else {
-                        tok_backup(tok, c);
                         return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "invalid binary literal"));
                     }
                 }
