@@ -438,6 +438,10 @@ setitem_lock_held(PyDictObject *mp, PyObject *key, PyObject *value);
 static int
 dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_value,
                     PyObject **result, int incref_result);
+static int
+setdefault_ref_lock_held_known_hash(PyDictObject *mp, PyObject *key,
+                    PyObject *default_value, Py_hash_t hash,
+                    PyObject **result, int incref_result);
 
 #ifndef NDEBUG
 static int _PyObject_InlineValuesConsistencyCheck(PyObject *obj);
@@ -4810,36 +4814,15 @@ dict_get_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
 }
 
 static int
-dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_value,
+setdefault_ref_lock_held_known_hash(PyDictObject *mp, PyObject *key,
+                    PyObject *default_value, Py_hash_t hash,
                     PyObject **result, int incref_result)
 {
-    if (!PyDict_Check(d)) {
-        if (PyFrozenDict_Check(d)) {
-            frozendict_does_not_support("assignment");
-        }
-        else {
-            PyErr_BadInternalCall();
-        }
-        if (result) {
-            *result = NULL;
-        }
-        return -1;
-    }
-    assert(can_modify_dict((PyDictObject*)d));
+    assert(can_modify_dict(mp));
+    assert(hash != -1);
 
-    PyDictObject *mp = (PyDictObject *)d;
     PyObject *value;
-    Py_hash_t hash;
     Py_ssize_t ix;
-
-    hash = _PyObject_HashDictKey(key);
-    if (hash == -1) {
-        dict_unhashable_type(d, key);
-        if (result) {
-            *result = NULL;
-        }
-        return -1;
-    }
 
     if (mp->ma_keys == Py_EMPTY_KEYS) {
         if (insert_to_emptydict(mp, Py_NewRef(key), hash,
@@ -4910,6 +4893,67 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
     }
     return 1;
 }
+
+static int
+dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_value,
+                    PyObject **result, int incref_result)
+{
+    if (!PyDict_Check(d)) {
+        if (PyFrozenDict_Check(d)) {
+            frozendict_does_not_support("assignment");
+        }
+        else {
+            PyErr_BadInternalCall();
+        }
+        if (result) {
+            *result = NULL;
+        }
+        return -1;
+    }
+
+    Py_hash_t hash = _PyObject_HashDictKey(key);
+    if (hash == -1) {
+        dict_unhashable_type(d, key);
+        if (result) {
+            *result = NULL;
+        }
+        return -1;
+    }
+
+    return setdefault_ref_lock_held_known_hash(
+        (PyDictObject *)d, key, default_value, hash, result, incref_result);
+}
+
+int
+_PyDict_SetDefaultRef_KnownHash(PyObject *d, PyObject *key,
+                                PyObject *default_value, Py_hash_t hash,
+                                PyObject **result)
+{
+    assert(key);
+    assert(default_value);
+    assert(hash != -1);
+
+    if (!PyDict_Check(d)) {
+        if (PyFrozenDict_Check(d)) {
+            frozendict_does_not_support("assignment");
+        }
+        else {
+            PyErr_BadInternalCall();
+        }
+        if (result) {
+            *result = NULL;
+        }
+        return -1;
+    }
+
+    int res;
+    Py_BEGIN_CRITICAL_SECTION(d);
+    res = setdefault_ref_lock_held_known_hash(
+        (PyDictObject *)d, key, default_value, hash, result, 1);
+    Py_END_CRITICAL_SECTION();
+    return res;
+}
+
 
 int
 PyDict_SetDefaultRef(PyObject *d, PyObject *key, PyObject *default_value,
