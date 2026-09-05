@@ -171,13 +171,12 @@ that *there is no* :abbr:`EOT (End of Transfer)` *on a socket.* If a ``recv``
 returns 0 bytes, the connection has been broken. In contrast, you should never
 call ``send`` on a broken socket, as it will raise an :exc:`OSError` rather than
 returning 0.  If the connection has *not* been broken, you may wait on a
-``recv``
-forever, because the socket will *not* tell you that there's nothing more to
-read (for now).  Now if you think about that a bit, you'll come to realize a
-fundamental truth of sockets: *messages must either be fixed length* (yuck), *or
-be delimited* (shrug), *or indicate how long they are* (much better), *or end by
-shutting down the connection*. The choice is entirely yours, (but some ways are
-righter than others).
+``recv`` forever, because the socket will *not* tell you that there's nothing
+more to read (for now).  Now if you think about that a bit, you'll come to
+realize a fundamental truth of sockets: *messages must either be fixed length*
+(yuck), *or be delimited* (shrug), *or indicate how long they are* (much
+better), *or end by shutting down the connection*. The choice is entirely
+yours, (but some ways are righter than others).
 
 Assuming you don't want to end the connection, the simplest solution is a fixed
 length message::
