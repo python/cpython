@@ -503,8 +503,7 @@ class partialmethod:
         method = self._cachedmethod
         if method is None:
             return self._keywords
-        cachetype = self._cachetype
-        if cachetype in (1, 2):
+        if self._cachetype in (1, 2):
             method = method.__wrapped__
         return method.keywords
 
