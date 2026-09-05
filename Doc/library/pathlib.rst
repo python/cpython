@@ -596,9 +596,8 @@ Pure paths provide the following methods and properties:
    Return ``True`` if matching is successful, ``False`` otherwise.
 
    This method is similar to :meth:`~PurePath.full_match`, but empty patterns
-   aren't allowed (:exc:`ValueError` is raised), the recursive wildcard
-   "``**``" isn't supported (it acts like non-recursive "``*``"), and if a
-   relative pattern is provided, then matching is done from the right::
+   aren't allowed (:exc:`ValueError` is raised), and if a relative pattern is
+   provided, then matching is done from the right::
 
       >>> PurePath('a/b.py').match('*.py')
       True
@@ -612,6 +611,10 @@ Pure paths provide the following methods and properties:
 
    .. versionchanged:: 3.12
       The *case_sensitive* parameter was added.
+
+   .. versionchanged:: next
+      Added support for the recursive wildcard "``**``". In previous versions,
+      it acted like non-recursive "``*``".
 
 
 .. method:: PurePath.relative_to(other, walk_up=False)
