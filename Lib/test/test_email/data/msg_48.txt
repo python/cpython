@@ -1,0 +1,7 @@
+Subject: Regarding messages containing whitespace that follow field names
+To: receiver@example.org
+x-whitespace-after-fieldname       : value
+Date: Fri, 20 May 2022 18:13:19 +1200
+From: sender@example.org
+
+Field names can be followed by arbitrary whitespace
