@@ -1186,6 +1186,266 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_io_BufferedRWPair_read__doc__,
+"read($self, size=-1, /)\n"
+"--\n"
+"\n");
+
+#define _IO_BUFFEREDRWPAIR_READ_METHODDEF    \
+    {"read", _PyCFunction_CAST(_io_BufferedRWPair_read), METH_FASTCALL, _io_BufferedRWPair_read__doc__},
+
+static PyObject *
+_io_BufferedRWPair_read_impl(rwpair *self, PyObject *size);
+
+static PyObject *
+_io_BufferedRWPair_read(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *size = NULL;
+
+    if (!_PyArg_CheckPositional("read", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    size = args[0];
+skip_optional:
+    return_value = _io_BufferedRWPair_read_impl((rwpair *)self, size);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_io_BufferedRWPair_peek__doc__,
+"peek($self, size=0, /)\n"
+"--\n"
+"\n");
+
+#define _IO_BUFFEREDRWPAIR_PEEK_METHODDEF    \
+    {"peek", _PyCFunction_CAST(_io_BufferedRWPair_peek), METH_FASTCALL, _io_BufferedRWPair_peek__doc__},
+
+static PyObject *
+_io_BufferedRWPair_peek_impl(rwpair *self, PyObject *size);
+
+static PyObject *
+_io_BufferedRWPair_peek(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *size = NULL;
+
+    if (!_PyArg_CheckPositional("peek", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    size = args[0];
+skip_optional:
+    return_value = _io_BufferedRWPair_peek_impl((rwpair *)self, size);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_io_BufferedRWPair_read1__doc__,
+"read1($self, size=-1, /)\n"
+"--\n"
+"\n");
+
+#define _IO_BUFFEREDRWPAIR_READ1_METHODDEF    \
+    {"read1", _PyCFunction_CAST(_io_BufferedRWPair_read1), METH_FASTCALL, _io_BufferedRWPair_read1__doc__},
+
+static PyObject *
+_io_BufferedRWPair_read1_impl(rwpair *self, PyObject *size);
+
+static PyObject *
+_io_BufferedRWPair_read1(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *size = NULL;
+
+    if (!_PyArg_CheckPositional("read1", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    size = args[0];
+skip_optional:
+    return_value = _io_BufferedRWPair_read1_impl((rwpair *)self, size);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_io_BufferedRWPair_readinto__doc__,
+"readinto($self, buffer, /)\n"
+"--\n"
+"\n");
+
+#define _IO_BUFFEREDRWPAIR_READINTO_METHODDEF    \
+    {"readinto", (PyCFunction)_io_BufferedRWPair_readinto, METH_O, _io_BufferedRWPair_readinto__doc__},
+
+static PyObject *
+_io_BufferedRWPair_readinto_impl(rwpair *self, PyObject *buffer);
+
+static PyObject *
+_io_BufferedRWPair_readinto(PyObject *self, PyObject *buffer)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _io_BufferedRWPair_readinto_impl((rwpair *)self, buffer);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_io_BufferedRWPair_readinto1__doc__,
+"readinto1($self, buffer, /)\n"
+"--\n"
+"\n");
+
+#define _IO_BUFFEREDRWPAIR_READINTO1_METHODDEF    \
+    {"readinto1", (PyCFunction)_io_BufferedRWPair_readinto1, METH_O, _io_BufferedRWPair_readinto1__doc__},
+
+static PyObject *
+_io_BufferedRWPair_readinto1_impl(rwpair *self, PyObject *buffer);
+
+static PyObject *
+_io_BufferedRWPair_readinto1(PyObject *self, PyObject *buffer)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _io_BufferedRWPair_readinto1_impl((rwpair *)self, buffer);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_io_BufferedRWPair_write__doc__,
+"write($self, buffer, /)\n"
+"--\n"
+"\n");
+
+#define _IO_BUFFEREDRWPAIR_WRITE_METHODDEF    \
+    {"write", (PyCFunction)_io_BufferedRWPair_write, METH_O, _io_BufferedRWPair_write__doc__},
+
+static PyObject *
+_io_BufferedRWPair_write_impl(rwpair *self, PyObject *buffer);
+
+static PyObject *
+_io_BufferedRWPair_write(PyObject *self, PyObject *buffer)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _io_BufferedRWPair_write_impl((rwpair *)self, buffer);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_io_BufferedRWPair_flush__doc__,
+"flush($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO_BUFFEREDRWPAIR_FLUSH_METHODDEF    \
+    {"flush", (PyCFunction)_io_BufferedRWPair_flush, METH_NOARGS, _io_BufferedRWPair_flush__doc__},
+
+static PyObject *
+_io_BufferedRWPair_flush_impl(rwpair *self);
+
+static PyObject *
+_io_BufferedRWPair_flush(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io_BufferedRWPair_flush_impl((rwpair *)self);
+}
+
+PyDoc_STRVAR(_io_BufferedRWPair_readable__doc__,
+"readable($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO_BUFFEREDRWPAIR_READABLE_METHODDEF    \
+    {"readable", (PyCFunction)_io_BufferedRWPair_readable, METH_NOARGS, _io_BufferedRWPair_readable__doc__},
+
+static PyObject *
+_io_BufferedRWPair_readable_impl(rwpair *self);
+
+static PyObject *
+_io_BufferedRWPair_readable(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io_BufferedRWPair_readable_impl((rwpair *)self);
+}
+
+PyDoc_STRVAR(_io_BufferedRWPair_writable__doc__,
+"writable($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO_BUFFEREDRWPAIR_WRITABLE_METHODDEF    \
+    {"writable", (PyCFunction)_io_BufferedRWPair_writable, METH_NOARGS, _io_BufferedRWPair_writable__doc__},
+
+static PyObject *
+_io_BufferedRWPair_writable_impl(rwpair *self);
+
+static PyObject *
+_io_BufferedRWPair_writable(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io_BufferedRWPair_writable_impl((rwpair *)self);
+}
+
+PyDoc_STRVAR(_io_BufferedRWPair_close__doc__,
+"close($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO_BUFFEREDRWPAIR_CLOSE_METHODDEF    \
+    {"close", (PyCFunction)_io_BufferedRWPair_close, METH_NOARGS, _io_BufferedRWPair_close__doc__},
+
+static PyObject *
+_io_BufferedRWPair_close_impl(rwpair *self);
+
+static PyObject *
+_io_BufferedRWPair_close(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io_BufferedRWPair_close_impl((rwpair *)self);
+}
+
+PyDoc_STRVAR(_io_BufferedRWPair_isatty__doc__,
+"isatty($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO_BUFFEREDRWPAIR_ISATTY_METHODDEF    \
+    {"isatty", (PyCFunction)_io_BufferedRWPair_isatty, METH_NOARGS, _io_BufferedRWPair_isatty__doc__},
+
+static PyObject *
+_io_BufferedRWPair_isatty_impl(rwpair *self);
+
+static PyObject *
+_io_BufferedRWPair_isatty(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io_BufferedRWPair_isatty_impl((rwpair *)self);
+}
+
+#if !defined(_io_BufferedRWPair_closed_DOCSTR)
+#  define _io_BufferedRWPair_closed_DOCSTR NULL
+#endif
+#if defined(_IO_BUFFEREDRWPAIR_CLOSED_GETSETDEF)
+#  undef _IO_BUFFEREDRWPAIR_CLOSED_GETSETDEF
+#  define _IO_BUFFEREDRWPAIR_CLOSED_GETSETDEF {"closed", (getter)_io_BufferedRWPair_closed_get, (setter)_io_BufferedRWPair_closed_set, _io_BufferedRWPair_closed_DOCSTR},
+#else
+#  define _IO_BUFFEREDRWPAIR_CLOSED_GETSETDEF {"closed", (getter)_io_BufferedRWPair_closed_get, NULL, _io_BufferedRWPair_closed_DOCSTR},
+#endif
+
+static PyObject *
+_io_BufferedRWPair_closed_get_impl(rwpair *self);
+
+static PyObject *
+_io_BufferedRWPair_closed_get(PyObject *self, void *Py_UNUSED(context))
+{
+    return _io_BufferedRWPair_closed_get_impl((rwpair *)self);
+}
+
 PyDoc_STRVAR(_io_BufferedRandom___init____doc__,
 "BufferedRandom(raw, buffer_size=DEFAULT_BUFFER_SIZE)\n"
 "--\n"
@@ -1265,4 +1525,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3ee17211d2010462 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=aa42e059c43be3fd input=a9049054013a1b77]*/
