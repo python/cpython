@@ -68,7 +68,6 @@ struct compiler_unit {
     instr_sequence *u_stashed_instr_sequence; /* temporarily stashed parent instruction sequence */
 
     int u_nfblocks;
-    int u_in_inlined_comp;
     int u_in_conditional_block;
 
     _PyCompile_FBlockInfo u_fblock[CO_MAXBLOCKS];
@@ -596,6 +595,75 @@ dictbytype(PyObject *src, int scope_type, int flag, Py_ssize_t offset)
     return dest;
 }
 
+static int
+add_cell_names_from_symbols(PyObject *symbols, PyObject *names)
+{
+    Py_ssize_t pos = 0;
+    PyObject *k, *v;
+    while (PyDict_Next(symbols, &pos, &k, &v)) {
+        long flags = PyLong_AsLong(v);
+        if (flags == -1 && PyErr_Occurred()) {
+            return ERROR;
+        }
+        if (SYMBOL_TO_SCOPE(flags) == CELL) {
+            if (PySet_Add(names, k) < 0) {
+                return ERROR;
+            }
+        }
+    }
+    return SUCCESS;
+}
+
+static int
+add_inlined_comprehension_cell_names(PySTEntryObject *ste, PyObject *names)
+{
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(ste->ste_children); i++) {
+        PySTEntryObject *child =
+            (PySTEntryObject *)PyList_GET_ITEM(ste->ste_children, i);
+        if (child->ste_type != InlinedComprehensionBlock) {
+            continue;
+        }
+        if (add_cell_names_from_symbols(child->ste_symbols, names) < 0) {
+            return ERROR;
+        }
+        if (add_inlined_comprehension_cell_names(child, names) < 0) {
+            return ERROR;
+        }
+    }
+    return SUCCESS;
+}
+
+/* Cells of the shared unit: this table's CELL names, plus cells that live
+ * only on inlined comprehension children. */
+static PyObject *
+compiler_cellvars(PySTEntryObject *ste)
+{
+    PyObject *names = PySet_New(NULL);
+    if (names == NULL) {
+        return NULL;
+    }
+    if (add_cell_names_from_symbols(ste->ste_symbols, names) < 0) {
+        Py_DECREF(names);
+        return NULL;
+    }
+    if (add_inlined_comprehension_cell_names(ste, names) < 0) {
+        Py_DECREF(names);
+        return NULL;
+    }
+    PyObject *sorted = PySequence_List(names);
+    Py_DECREF(names);
+    if (sorted == NULL) {
+        return NULL;
+    }
+    if (PyList_Sort(sorted) < 0) {
+        Py_DECREF(sorted);
+        return NULL;
+    }
+    PyObject *cellvars = list2dict(sorted);
+    Py_DECREF(sorted);
+    return cellvars;
+}
+
 int
 _PyCompile_EnterScope(compiler *c, identifier name, int scope_type,
                        void *key, int lineno, PyObject *private,
@@ -627,7 +695,7 @@ _PyCompile_EnterScope(compiler *c, identifier name, int scope_type,
         compiler_unit_free(u);
         return ERROR;
     }
-    u->u_metadata.u_cellvars = dictbytype(u->u_ste->ste_symbols, CELL, DEF_COMP_CELL, 0);
+    u->u_metadata.u_cellvars = compiler_cellvars(u->u_ste);
     if (!u->u_metadata.u_cellvars) {
         compiler_unit_free(u);
         return ERROR;
@@ -670,14 +738,18 @@ _PyCompile_EnterScope(compiler *c, identifier name, int scope_type,
         return ERROR;
     }
 
-    u->u_metadata.u_fasthidden = PyDict_New();
-    if (!u->u_metadata.u_fasthidden) {
-        compiler_unit_free(u);
-        return ERROR;
+    if (scope_type == COMPILE_SCOPE_MODULE || scope_type == COMPILE_SCOPE_CLASS) {
+        u->u_metadata.u_fasthidden = PySet_New(NULL);
+        if (!u->u_metadata.u_fasthidden) {
+            compiler_unit_free(u);
+            return ERROR;
+        }
+    }
+    else {
+        u->u_metadata.u_fasthidden = NULL;
     }
 
     u->u_nfblocks = 0;
-    u->u_in_inlined_comp = 0;
     u->u_metadata.u_firstlineno = lineno;
     u->u_metadata.u_consts = PyDict_New();
     if (!u->u_metadata.u_consts) {
@@ -907,17 +979,42 @@ finally:
     return co;
 }
 
+/* Inlined comprehensions are compiled in the enclosing unit. If a name is
+ * FREE in the comprehension, resolve it in enclosing tables until it is no
+ * longer FREE. Stop if the next table is a class: nested scopes (including
+ * inlined comprehensions) do not see class locals, so the name stays FREE.
+ * __class__ and friends are not allowed to be free through a class; treat
+ * those loads as implicit globals. */
+static int
+compiler_resolve_inlined_free(PySTEntryObject **ste, int scope, PyObject *name)
+{
+    while (scope == FREE && (*ste)->ste_type == InlinedComprehensionBlock) {
+        PySTEntryObject *parent = (*ste)->ste_parent;
+        assert(parent != NULL);
+        if (parent->ste_type == ClassBlock) {
+            if (_PyST_IsClassClosureName(name)) {
+                return GLOBAL_IMPLICIT;
+            }
+            break;
+        }
+        *ste = parent;
+        scope = _PyST_GetScope(*ste, name);
+        RETURN_IF_ERROR(scope);
+    }
+    return scope;
+}
+
 int
 _PyCompile_GetRefType(compiler *c, PyObject *name)
 {
-    if (c->u->u_scope_type == COMPILE_SCOPE_CLASS &&
-        (_PyUnicode_EqualToASCIIString(name, "__class__") ||
-         _PyUnicode_EqualToASCIIString(name, "__classdict__") ||
-         _PyUnicode_EqualToASCIIString(name, "__conditional_annotations__"))) {
+    if (c->u->u_scope_type == COMPILE_SCOPE_CLASS && _PyST_IsClassClosureName(name)) {
         return CELL;
     }
     PySTEntryObject *ste = c->u->u_ste;
     int scope = _PyST_GetScope(ste, name);
+    RETURN_IF_ERROR(scope);
+    scope = compiler_resolve_inlined_free(&ste, scope, name);
+    RETURN_IF_ERROR(scope);
     if (scope == 0) {
         PyErr_Format(PyExc_SystemError,
                      "_PyST_GetScope(name=%R) failed: "
@@ -1013,7 +1110,13 @@ _PyCompile_ResolveNameop(compiler *c, PyObject *mangled, int scope,
     PyObject *dict = c->u->u_metadata.u_names;
     *optype = COMPILE_OP_NAME;
 
+    PySTEntryObject *ste = c->u->u_ste;
+    assert(ste != NULL);
+
     assert(scope >= 0);
+    scope = compiler_resolve_inlined_free(&ste, scope, mangled);
+    RETURN_IF_ERROR(scope);
+
     switch (scope) {
     case FREE:
         dict = c->u->u_metadata.u_freevars;
@@ -1024,24 +1127,24 @@ _PyCompile_ResolveNameop(compiler *c, PyObject *mangled, int scope,
         *optype = COMPILE_OP_DEREF;
         break;
     case LOCAL:
-        if (_PyST_IsFunctionLike(c->u->u_ste)) {
+        /* Inlined comprehensions isolate their locals as FAST, even when
+         * nested in class or module scope. */
+        if (_PyST_IsFunctionLike(ste) || ste->ste_type == InlinedComprehensionBlock) {
             *optype = COMPILE_OP_FAST;
         }
-        else {
-            PyObject *item;
-            RETURN_IF_ERROR(PyDict_GetItemRef(c->u->u_metadata.u_fasthidden, mangled,
-                                              &item));
-            if (item == Py_True) {
-                *optype = COMPILE_OP_FAST;
-            }
-            Py_XDECREF(item);
-        }
         break;
-    case GLOBAL_IMPLICIT:
-        if (_PyST_IsFunctionLike(c->u->u_ste)) {
+    case GLOBAL_IMPLICIT: {
+        /* Opcode depends on the enclosing non-inlined scope. */
+        PySTEntryObject *enclosing = ste;
+        while (enclosing->ste_parent != NULL) {
+            assert(enclosing->ste_type == InlinedComprehensionBlock);
+            enclosing = enclosing->ste_parent;
+        }
+        if (_PyST_IsFunctionLike(enclosing)) {
             *optype = COMPILE_OP_GLOBAL;
         }
         break;
+    }
     case GLOBAL_EXPLICIT:
         *optype = COMPILE_OP_GLOBAL;
         break;
@@ -1057,120 +1160,23 @@ _PyCompile_ResolveNameop(compiler *c, PyObject *mangled, int scope,
 }
 
 int
-_PyCompile_TweakInlinedComprehensionScopes(compiler *c, location loc,
-                                            PySTEntryObject *entry,
-                                            _PyCompile_InlinedComprehensionState *state)
+_PyCompile_EnterInlinedComprehensionScope(compiler *c, PySTEntryObject *entry,
+                                          _PyCompile_InlinedComprehensionState *state)
 {
-    int in_class_block = (c->u->u_ste->ste_type == ClassBlock) && !c->u->u_in_inlined_comp;
-    c->u->u_in_inlined_comp++;
-
-    PyObject *k, *v;
-    Py_ssize_t pos = 0;
-    while (PyDict_Next(entry->ste_symbols, &pos, &k, &v)) {
-        long symbol = PyLong_AsLong(v);
-        assert(symbol >= 0 || PyErr_Occurred());
-        RETURN_IF_ERROR(symbol);
-        long scope = SYMBOL_TO_SCOPE(symbol);
-
-        long outsymbol = _PyST_GetSymbol(c->u->u_ste, k);
-        RETURN_IF_ERROR(outsymbol);
-        long outsc = SYMBOL_TO_SCOPE(outsymbol);
-
-        // If a name has different scope inside than outside the comprehension,
-        // we need to temporarily handle it with the right scope while
-        // compiling the comprehension. If it's free in the comprehension
-        // scope, no special handling; it should be handled the same as the
-        // enclosing scope. (If it's free in outer scope and cell in inner
-        // scope, we can't treat it as both cell and free in the same function,
-        // but treating it as free throughout is fine; it's *_DEREF
-        // either way.)
-        if ((scope != outsc && scope != FREE && !(scope == CELL && outsc == FREE))
-                || in_class_block) {
-            if (state->temp_symbols == NULL) {
-                state->temp_symbols = PyDict_New();
-                if (state->temp_symbols == NULL) {
-                    return ERROR;
-                }
-            }
-            // update the symbol to the in-comprehension version and save
-            // the outer version; we'll restore it after running the
-            // comprehension
-            if (PyDict_SetItem(c->u->u_ste->ste_symbols, k, v) < 0) {
-                return ERROR;
-            }
-            PyObject *outv = PyLong_FromLong(outsymbol);
-            if (outv == NULL) {
-                return ERROR;
-            }
-            int res = PyDict_SetItem(state->temp_symbols, k, outv);
-            Py_DECREF(outv);
-            RETURN_IF_ERROR(res);
-        }
-        // locals handling for names bound in comprehension (DEF_LOCAL |
-        // DEF_NONLOCAL occurs in assignment expression to nonlocal)
-        if ((symbol & DEF_LOCAL && !(symbol & DEF_NONLOCAL)) || in_class_block) {
-            if (!_PyST_IsFunctionLike(c->u->u_ste)) {
-                // non-function scope: override this name to use fast locals
-                PyObject *orig;
-                if (PyDict_GetItemRef(c->u->u_metadata.u_fasthidden, k, &orig) < 0) {
-                    return ERROR;
-                }
-                assert(orig == NULL || orig == Py_True || orig == Py_False);
-                if (orig != Py_True) {
-                    if (PyDict_SetItem(c->u->u_metadata.u_fasthidden, k, Py_True) < 0) {
-                        Py_XDECREF(orig);
-                        return ERROR;
-                    }
-                    if (state->fast_hidden == NULL) {
-                        state->fast_hidden = PySet_New(NULL);
-                        if (state->fast_hidden == NULL) {
-                            Py_XDECREF(orig);
-                            return ERROR;
-                        }
-                    }
-                    if (PySet_Add(state->fast_hidden, k) < 0) {
-                        Py_XDECREF(orig);
-                        return ERROR;
-                    }
-                }
-                Py_XDECREF(orig);
-            }
-        }
-    }
+    assert(state->saved_ste == NULL);
+    state->saved_ste = c->u->u_ste;
+    c->u->u_ste = (PySTEntryObject *)Py_NewRef(entry);
     return SUCCESS;
 }
 
 int
-_PyCompile_RevertInlinedComprehensionScopes(compiler *c, location loc,
-                                             _PyCompile_InlinedComprehensionState *state)
+_PyCompile_ExitInlinedComprehensionScope(compiler *c,
+                                        _PyCompile_InlinedComprehensionState *state)
 {
-    c->u->u_in_inlined_comp--;
-    if (state->temp_symbols) {
-        PyObject *k, *v;
-        Py_ssize_t pos = 0;
-        while (PyDict_Next(state->temp_symbols, &pos, &k, &v)) {
-            if (PyDict_SetItem(c->u->u_ste->ste_symbols, k, v)) {
-                return ERROR;
-            }
-        }
-        Py_CLEAR(state->temp_symbols);
-    }
-    if (state->fast_hidden) {
-        while (PySet_Size(state->fast_hidden) > 0) {
-            PyObject *k = PySet_Pop(state->fast_hidden);
-            if (k == NULL) {
-                return ERROR;
-            }
-            // we set to False instead of clearing, so we can track which names
-            // were temporarily fast-locals and should use CO_FAST_HIDDEN
-            if (PyDict_SetItem(c->u->u_metadata.u_fasthidden, k, Py_False)) {
-                Py_DECREF(k);
-                return ERROR;
-            }
-            Py_DECREF(k);
-        }
-        Py_CLEAR(state->fast_hidden);
-    }
+    assert(state->saved_ste != NULL);
+    Py_DECREF(c->u->u_ste);
+    c->u->u_ste = state->saved_ste;
+    state->saved_ste = NULL;
     return SUCCESS;
 }
 
@@ -1362,12 +1368,6 @@ _PyCompile_ScopeType(compiler *c)
     return c->u->u_scope_type;
 }
 
-int
-_PyCompile_IsInInlinedComp(compiler *c)
-{
-    return c->u->u_in_inlined_comp;
-}
-
 PyObject *
 _PyCompile_Qualname(compiler *c)
 {
@@ -1513,10 +1513,7 @@ _PyCompile_OptimizeAndAssemble(compiler *c, int addNone)
     PyObject *filename = c->c_filename;
 
     int code_flags = compute_code_flags(c);
-    if (code_flags < 0) {
-        return NULL;
-    }
-
+    assert(code_flags >= 0);
     if (_PyCodegen_AddReturnAtEnd(c, addNone) < 0) {
         return NULL;
     }
