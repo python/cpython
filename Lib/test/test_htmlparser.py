@@ -42,7 +42,9 @@ class EventCollector(html.parser.HTMLParser):
             else:
                 L.append(event)
             prevtype = type
+        # Reset events and append for re-testing
         self.events = L
+        self.append = self.events.append
         return L
 
     # structure markup
