@@ -836,6 +836,22 @@ So cutting the number of compares is almost always measurably helpful in
 CPython, and the savings swamp the quadratic-time data movement costs for
 reasonable minrun values.
 
+Additionally, "binary insertion sort" has implemented adaptivity procedure.
+While "binary insertion sort" ensures optimal number of comparisons,
+it looses best case of "textbook insertion sort" when data is highly sorted
+in correct order. Adaptivity brings that back (and more) at a small cost.
+It adapts to any data where position of the next element is close to the one of
+the last. Thus, it adapts to cases where it is highly sorted in correct
+order, reverse order or elements are being funneled into some mid-point.
+For example, it adapts well to sequence [-4, 4, -3, 3, -2, 2, -1, 1],
+for which it only does ~2n comparisons. It needs to compare twice for
+each element as being in the middle it needs to compare with elements at
+both sides.
+Also, it is worth noting that driftless random walk is the threshold
+beyond which adaptivity starts paying off. Thus, in practice, adaptivity
+has little effect when sorting raw stock prices, where drift value is
+very small in comparison to fluctuations around it.
+
 
 LEFT OR RIGHT
 gallop_left() and gallop_right() are akin to the Python bisect module's
