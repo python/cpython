@@ -87,6 +87,9 @@ typedef _PyCompile_FBlockInfo fblockinfo;
 
 #define LOC(x) SRC_LOCATION_FROM_AST(x)
 
+#define CALL_STACK_USE(nargs, nkwds) \
+    ((nargs) + (nkwds) + ((nkwds) != 0))
+
 #define NEW_JUMP_TARGET_LABEL(C, NAME) \
     jump_target_label NAME = _PyInstructionSequence_NewLabel(INSTR_SEQUENCE(C)); \
     if (!IS_JUMP_TARGET_LABEL(NAME)) { \
@@ -4147,7 +4150,7 @@ maybe_optimize_method_call(compiler *c, expr_ty e)
     /* Check that there aren't too many arguments */
     argsl = asdl_seq_LEN(args);
     kwdsl = asdl_seq_LEN(kwds);
-    if (argsl + kwdsl + (kwdsl != 0) >= _PY_STACK_USE_GUIDELINE) {
+    if (CALL_STACK_USE(argsl, kwdsl) >= _PY_STACK_USE_GUIDELINE) {
         return 0;
     }
     /* Check that there are no *varargs types of arguments. */
@@ -4440,7 +4443,7 @@ codegen_call_helper_impl(compiler *c, location loc,
     nelts = asdl_seq_LEN(args);
     nkwelts = asdl_seq_LEN(keywords);
 
-    if (nelts + nkwelts*2 > _PY_STACK_USE_GUIDELINE) {
+    if (CALL_STACK_USE(nelts, nkwelts) > _PY_STACK_USE_GUIDELINE) {
          goto ex_call;
     }
     for (i = 0; i < nelts; i++) {
@@ -5049,6 +5052,38 @@ pop_inlined_comprehension_state(compiler *c, location loc,
 }
 
 static int
+codegen_comprehension_init_container(compiler *c, location loc, int type,
+                                     int is_inlined, bool avoid_creation)
+{
+    int op;
+    switch (type) {
+    case COMP_LISTCOMP:
+        op = BUILD_LIST;
+        break;
+    case COMP_SETCOMP:
+        op = BUILD_SET;
+        break;
+    case COMP_DICTCOMP:
+        op = BUILD_MAP;
+        break;
+    default:
+        PyErr_Format(PyExc_SystemError,
+                     "unknown comprehension type %d", type);
+        return ERROR;
+    }
+
+    if (!avoid_creation) {
+        ADDOP_I(c, loc, op, 0);
+        if (is_inlined) {
+            ADDOP_I(c, loc, SWAP, 2);
+        }
+    } else {
+        ADDOP_I(c, loc, COPY, 1);
+    }
+    return SUCCESS;
+}
+
+static int
 codegen_comprehension(compiler *c, expr_ty e, int type,
                       identifier name, asdl_comprehension_seq *generators, expr_ty elt,
                       expr_ty val, bool avoid_creation)
@@ -5086,19 +5121,22 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
         if (type == COMP_GENEXP) {
             /* Insert GET_ITER before RETURN_GENERATOR.
                https://docs.python.org/3/reference/expressions.html#generator-expressions */
-            RETURN_IF_ERROR(
-                _PyInstructionSequence_InsertInstruction(
+            if(_PyInstructionSequence_InsertInstruction(
                     INSTR_SEQUENCE(c), 0,
-                    RESUME, RESUME_AT_GEN_EXPR_START, NO_LOCATION));
-            RETURN_IF_ERROR(
-                _PyInstructionSequence_InsertInstruction(
+                    RESUME, RESUME_AT_GEN_EXPR_START, NO_LOCATION) < 0) {
+                goto error_in_scope;
+            }
+            if(_PyInstructionSequence_InsertInstruction(
                     INSTR_SEQUENCE(c), 1,
-                    LOAD_FAST, 0, LOC(outermost->iter)));
-            RETURN_IF_ERROR(
-                _PyInstructionSequence_InsertInstruction(
+                    LOAD_FAST, 0, LOC(outermost->iter)) < 0) {
+                goto error_in_scope;
+            }
+            if(_PyInstructionSequence_InsertInstruction(
                     INSTR_SEQUENCE(c), 2,
                     outermost->is_async ? GET_AITER : GET_ITER,
-                    0, LOC(outermost->iter)));
+                    0, LOC(outermost->iter)) < 0) {
+                goto error_in_scope;
+            }
             iter_state = ITERATOR_ON_STACK;
         }
         else {
@@ -5108,30 +5146,9 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
     Py_CLEAR(entry);
 
     if (type != COMP_GENEXP) {
-        int op;
-        switch (type) {
-        case COMP_LISTCOMP:
-            op = BUILD_LIST;
-            break;
-        case COMP_SETCOMP:
-            op = BUILD_SET;
-            break;
-        case COMP_DICTCOMP:
-            op = BUILD_MAP;
-            break;
-        default:
-            PyErr_Format(PyExc_SystemError,
-                         "unknown comprehension type %d", type);
+        if (codegen_comprehension_init_container(
+            c, loc, type, is_inlined, avoid_creation) < 0) {
             goto error_in_scope;
-        }
-
-        if (!avoid_creation) {
-            ADDOP_I(c, loc, op, 0);
-            if (is_inlined) {
-                ADDOP_I(c, loc, SWAP, 2);
-            }
-        } else {
-            ADDOP_I(c, loc, COPY, 1);
         }
     }
     if (codegen_comprehension_generator(c, loc, generators, 0, 0,
@@ -5147,7 +5164,7 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
     }
 
     if (type != COMP_GENEXP) {
-        ADDOP(c, LOC(e), RETURN_VALUE);
+        ADDOP_IN_SCOPE(c, LOC(e), RETURN_VALUE);
     }
     if (type == COMP_GENEXP) {
         if (codegen_wrap_in_stopiteration_handler(c) < 0) {

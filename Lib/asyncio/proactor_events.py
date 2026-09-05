@@ -534,10 +534,16 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
                                                               addr=addr)
         except OSError as exc:
             self._protocol.error_received(exc)
-            if self._buffer and not self._conn_lost:
+            if self._buffer:
                 # Re-arm the write loop so buffered data isn't stranded and
                 # a paused protocol is eventually resumed (gh-156698).
-                self._loop.call_soon(self._loop_writing)
+                def resume_writing():
+                    # a sendto() may have armed a write in the meantime;
+                    # its own callback will drain the rest of the buffer.
+                    if self._write_fut is None:
+                        self._loop_writing()
+
+                self._loop.call_soon(resume_writing)
             else:
                 self._maybe_resume_protocol()
         except Exception as exc:
@@ -577,6 +583,15 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
             else:
                 self._read_fut = self._loop._proactor.recvfrom(self._sock,
                                                                self.max_size)
+        except ConnectionResetError as exc:
+            # WSARecvFrom() reports a stale ICMP port unreachable
+            # notification as a synchronous ConnectionResetError when the
+            # same socket was used to send to an address that is not
+            # listening.  This is transient, so reschedule the read loop
+            # instead of leaving it dead.
+            self._protocol.error_received(exc)
+            if not self._closing:
+                self._loop.call_soon(self._loop_reading)
         except OSError as exc:
             self._protocol.error_received(exc)
             if not self._closing and not self._conn_lost:

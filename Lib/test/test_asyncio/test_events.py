@@ -1601,71 +1601,6 @@ class EventLoopTestsMixin:
         transport_1.close()
         transport_2.close()
 
-    def test_datagram_recvfrom_connection_reset_recovers(self):
-        # gh-127057: on Windows, a UDP socket that previously sent a
-        # datagram to an address that wasn't listening can raise
-        # ConnectionResetError (WSAECONNRESET) on a later receive
-        # attempt: synchronously from WSARecvFrom() on ProactorEventLoop
-        # (instead of via the completion result surfaced through
-        # error_received() for gh-91227), or from a plain recvfrom()
-        # on SelectorEventLoop. Either way the transport must keep
-        # working afterwards instead of the read loop dying silently.
-        loop = self.loop
-
-        class Protocol(asyncio.DatagramProtocol):
-            def connection_made(self, transport):
-                self.transport = transport
-                self.errors = []
-                self.received = []
-                self.datagram_received_event = loop.create_future()
-
-            def error_received(self, exc):
-                self.errors.append(exc)
-
-            def datagram_received(self, data, addr):
-                self.received.append(data)
-                if not self.datagram_received_event.done():
-                    self.datagram_received_event.set_result(None)
-
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.setblocking(False)
-        sock.bind(('127.0.0.1', 0))
-        addr = sock.getsockname()
-
-        # Bind and immediately close a second socket to get an address
-        # that is guaranteed not to be listening.
-        closed = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        closed.bind(('127.0.0.1', 0))
-        closed_addr = closed.getsockname()
-        closed.close()
-
-        # Trigger a real ICMP port-unreachable now, before the socket is
-        # wrapped in a transport and before any read is armed for it --
-        # on Windows this is what makes a Proactor's first WSARecvFrom()
-        # call raise synchronously.
-        sock.sendto(b'x', closed_addr)
-
-        transport, protocol = loop.run_until_complete(
-            loop.create_datagram_endpoint(Protocol, sock=sock))
-
-        # The transport must still be able to receive afterwards -- this
-        # is the actual regression check, and must hold regardless of
-        # whether this platform surfaced an error for the bad send above.
-        transport.sendto(b'ping', addr)
-        loop.run_until_complete(
-            asyncio.wait_for(protocol.datagram_received_event, 10))
-        self.assertEqual(protocol.received, [b'ping'])
-
-        if sys.platform == 'win32':
-            # Windows reliably reports the bad send via a later recvfrom();
-            # other platforms generally don't deliver ICMP errors to a
-            # plain recv() on an unconnected UDP socket.
-            self.assertEqual(len(protocol.errors), 1)
-            self.assertIsInstance(protocol.errors[0], ConnectionResetError)
-
-        transport.close()
-        test_utils.run_briefly(loop)
-
     def _test_datagram_write_error_resumes_paused_protocol(self, first, second):
         # See https://github.com/python/cpython/issues/156698: a
         # datagram write error must not strand data left in the write
@@ -1738,6 +1673,116 @@ class EventLoopTestsMixin:
         oversized = b'\x00' * 70000
         self._test_datagram_write_error_resumes_paused_protocol(
             b'ok', oversized)
+
+    def test_datagram_write_error_reentrant_sendto(self):
+        # See https://github.com/python/cpython/issues/156698: an
+        # error_received() callback that sends more data synchronously
+        # can itself arm a new write. The write-loop restart scheduled
+        # for the failed write must notice that and not try to start a
+        # second, conflicting one.
+        loop = self.loop
+        unhandled = []
+        loop.set_exception_handler(lambda loop, context: unhandled.append(context))
+
+        class Protocol(asyncio.DatagramProtocol):
+            def connection_made(self, transport):
+                self.transport = transport
+                self.sent_extra = False
+                self.errors = []
+                self.done = loop.create_future()
+
+            def datagram_received(self, data, addr):
+                if not self.done.done():
+                    self.done.set_result(None)
+
+            def error_received(self, exc):
+                self.errors.append(exc)
+                if not self.sent_extra:
+                    # Reentrantly kicks off another write while the
+                    # failing one is still unwinding on the stack.
+                    self.sent_extra = True
+                    self.transport.sendto(b'extra', self.addr)
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setblocking(False)
+        sock.bind(('127.0.0.1', 0))
+        transport, protocol = loop.run_until_complete(
+            loop.create_datagram_endpoint(Protocol, sock=sock))
+        protocol.addr = addr = sock.getsockname()
+
+        oversized = b'\x00' * 70000
+        transport.sendto(oversized, addr)
+        transport.sendto(b'queued', addr)
+
+        # The 'extra' datagram sent from error_received() is delivered
+        # back to the same socket; waiting for it proves the write loop
+        # kept running instead of wedging or crashing.
+        loop.run_until_complete(asyncio.wait_for(protocol.done, 10))
+
+        test_utils.run_until(
+            loop, lambda: transport.get_write_buffer_size() == 0)
+
+        transport.close()
+        test_utils.run_briefly(loop)
+
+        self.assertTrue(protocol.errors)
+        self.assertFalse(
+            unhandled,
+            f'unhandled exception in the write loop: {unhandled}')
+
+    def test_datagram_recvfrom_connection_reset_recovers(self):
+        # gh-127057: a UDP socket that sent a datagram to an address that
+        # wasn't listening can raise ConnectionResetError on a later
+        # receive.  The transport must keep working afterwards.
+        loop = self.loop
+
+        class Protocol(asyncio.DatagramProtocol):
+            def connection_made(self, transport):
+                self.transport = transport
+                self.errors = []
+                self.received = []
+                self.datagram_received_event = loop.create_future()
+
+            def error_received(self, exc):
+                self.errors.append(exc)
+
+            def datagram_received(self, data, addr):
+                self.received.append(data)
+                if not self.datagram_received_event.done():
+                    self.datagram_received_event.set_result(None)
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setblocking(False)
+        sock.bind(('127.0.0.1', 0))
+        addr = sock.getsockname()
+
+        # Bind and immediately close a second socket to get an address
+        # that is guaranteed not to be listening.
+        closed = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        closed.bind(('127.0.0.1', 0))
+        closed_addr = closed.getsockname()
+        closed.close()
+
+        # Trigger the error before the socket is wrapped in a transport,
+        # so that the first read raises synchronously.
+        sock.sendto(b'x', closed_addr)
+
+        transport, protocol = loop.run_until_complete(
+            loop.create_datagram_endpoint(Protocol, sock=sock))
+
+        transport.sendto(b'ping', addr)
+        loop.run_until_complete(asyncio.wait_for(
+            protocol.datagram_received_event, support.SHORT_TIMEOUT))
+        self.assertEqual(protocol.received, [b'ping'])
+
+        if sys.platform == 'win32':
+            # Other platforms don't report ICMP errors on an
+            # unconnected UDP socket.
+            self.assertEqual(len(protocol.errors), 1)
+            self.assertIsInstance(protocol.errors[0], ConnectionResetError)
+
+        transport.close()
+        test_utils.run_briefly(loop)
 
     def test_internal_fds(self):
         loop = self.create_event_loop()
