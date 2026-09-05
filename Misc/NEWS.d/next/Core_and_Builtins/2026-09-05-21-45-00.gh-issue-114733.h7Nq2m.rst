@@ -1,0 +1,3 @@
+In the free-threaded build, cache whether an object's type supports cyclic
+garbage collection in the object's header at creation time, avoiding a type
+dereference on every :c:func:`PyObject_IS_GC` check.

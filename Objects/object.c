@@ -2741,14 +2741,26 @@ new_reference(PyObject *op)
 #else
     op->ob_flags = 0;
     op->ob_mutex = (PyMutex){ 0 };
+    // Cache whether the type is a GC type with a static (NULL) tp_is_gc,
+    // so _PyObject_IS_GC() can skip dereferencing the type object on
+    // future calls (gh-114733). Py_TYPE(op) is already valid here: callers
+    // either just set it (_PyObject_Init()) or are reinitializing a
+    // reused block (realloc, freelist) whose type cannot have changed,
+    // since types never change their GC-ness after creation. Types with
+    // a non-NULL tp_is_gc (only _PyUOpExecutor_Type at present) are left
+    // uncached, since their "is GC" result can change at runtime; they
+    // always take the slow path in _PyObject_IS_GC().
+    PyTypeObject *tp = Py_TYPE(op);
+    uint8_t gc_bits = (_PyType_IS_GC(tp) && tp->tp_is_gc == NULL)
+        ? _PyGC_BITS_IS_GC : 0;
 #ifdef _Py_THREAD_SANITIZER
     _Py_atomic_store_uintptr_relaxed(&op->ob_tid, _Py_ThreadId());
-    _Py_atomic_store_uint8_relaxed(&op->ob_gc_bits, 0);
+    _Py_atomic_store_uint8_relaxed(&op->ob_gc_bits, gc_bits);
     _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, 1);
     _Py_atomic_store_ssize_relaxed(&op->ob_ref_shared, 0);
 #else
     op->ob_tid = _Py_ThreadId();
-    op->ob_gc_bits = 0;
+    op->ob_gc_bits = gc_bits;
     op->ob_ref_local = 1;
     op->ob_ref_shared = 0;
 #endif

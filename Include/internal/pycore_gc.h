@@ -43,6 +43,8 @@ static inline PyObject* _Py_FROM_GC(PyGC_Head *gc) {
 #  define _PyGC_BITS_SHARED         (1<<4)
 #  define _PyGC_BITS_ALIVE          (1<<5)    // Reachable from a known root.
 #  define _PyGC_BITS_DEFERRED       (1<<6)    // Use deferred reference counting
+#  define _PyGC_BITS_IS_GC          (1<<7)    // Cached result of _PyType_IS_GC()
+                                               // for types with a NULL tp_is_gc
 #endif
 
 #ifdef Py_GIL_DISABLED

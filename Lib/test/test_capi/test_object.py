@@ -224,6 +224,43 @@ class IsUniquelyReferencedTest(unittest.TestCase):
         self.assertFalse(_testcapi.is_uniquely_referenced(42))
         # CRASHES is_uniquely_referenced(NULL)
 
+class IsGCTest(unittest.TestCase):
+    """Test PyObject_IS_GC()"""
+
+    class Slotted:
+        __slots__ = ()
+
+    def check_is_gc(self, expected, factory):
+        # Check both freshly allocated objects and ones obtained after
+        # churning through a freelist (gh-114733: the free-threaded build
+        # caches the result of PyObject_IS_GC() at allocation/reinitialization
+        # time, so both paths must agree with the general, uncached result).
+        for _ in range(1050):
+            obj = factory()
+        self.assertEqual(_testcapi.pyobject_is_gc(obj), expected)
+        del obj
+
+    def test_is_gc_true(self):
+        self.check_is_gc(True, list)
+        self.check_is_gc(True, dict)
+        self.check_is_gc(True, set)
+        self.check_is_gc(True, tuple)
+        self.check_is_gc(True, lambda: (1, 2, 3))
+        self.check_is_gc(True, self.Slotted)
+
+    def test_is_gc_false(self):
+        # object() itself has no GC support: instances hold no references
+        # and so cannot participate in reference cycles.
+        self.check_is_gc(False, object)
+        self.check_is_gc(False, int)
+        self.check_is_gc(False, float)
+        self.check_is_gc(False, complex)
+        self.check_is_gc(False, str)
+        self.check_is_gc(False, bytes)
+        self.check_is_gc(False, lambda: 42)
+        self.check_is_gc(False, lambda: 4.2)
+
+
 class CAPITest(unittest.TestCase):
     def check_negative_refcount(self, code):
         # bpo-35059: Check that Py_DECREF() reports the correct filename
