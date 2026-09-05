@@ -65,6 +65,10 @@ Notes on availability
   *Availability: Linux >= 3.17 with glibc >= 2.27* requires both Linux 3.17 or
   newer and glibc 2.27 or newer.
 
+* A particular library dependency with an optional minimal ``major.minor``
+  version constraint is indicated by *Availability: library >= major.minor*.
+
+
 .. _wasm-availability:
 
 WebAssembly platforms
