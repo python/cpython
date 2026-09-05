@@ -2784,7 +2784,8 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
         textiowrapper_set_decoded_chars(self, decoded);
 
         /* Skip chars_to_skip of the decoded characters. */
-        if (PyUnicode_GetLength(self->decoded_chars) < cookie.chars_to_skip) {
+        /* gh-153662: Reject negative chars_to_skip */
+        if (cookie.chars_to_skip < 0 || PyUnicode_GetLength(self->decoded_chars) < cookie.chars_to_skip) {
             PyErr_SetString(PyExc_OSError, "can't restore logical file position");
             goto fail;
         }
@@ -2939,7 +2940,13 @@ _io_TextIOWrapper_tell_impl(textio *self)
 
     /* Fast search for an acceptable start point, close to our
        current pos */
-    skip_bytes = (Py_ssize_t) (self->b2cratio * chars_to_skip);
+    double skip_bytes_d = self->b2cratio * (double) chars_to_skip;
+    if (!(skip_bytes_d >= 0) || skip_bytes_d >= (double) PY_SSIZE_T_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "chars_to_skip are too large");
+        goto fail;
+    }
+    skip_bytes = (Py_ssize_t) skip_bytes_d;
     skip_back = 1;
     assert(skip_bytes <= PyBytes_GET_SIZE(next_input));
     input = PyBytes_AS_STRING(next_input);
