@@ -1,0 +1,2 @@
+Fix duplicate :exc:`SyntaxWarning` messages when importing source modules
+from ZIP archives.
