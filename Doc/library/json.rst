@@ -243,6 +243,10 @@ Basic Usage
    .. versionchanged:: 3.6
       All optional parameters are now :ref:`keyword-only <keyword-only_parameter>`.
 
+   .. versionchanged:: next
+      *sort_keys* no longer fails for keys of different basic types
+      or for unsupported keys skipped due to *skipkeys*.
+
 
 .. function:: dumps(obj, *, skipkeys=False, ensure_ascii=True, \
                     check_circular=True, allow_nan=True, cls=None, \
@@ -536,6 +540,11 @@ Encoders and Decoders
    If *sort_keys* is true (default: ``False``), then the output of dictionaries
    will be sorted by key; this is useful for regression tests to ensure that
    JSON serializations can be compared on a day-to-day basis.
+   Keys of mixed types are sorted by groups: strings, numbers and ``None``.
+
+   .. versionchanged:: next
+      *sort_keys* no longer fails for keys of different basic types
+      or for unsupported keys skipped due to *skipkeys*.
 
    If *indent* is a non-negative integer or string, then JSON array elements and
    object members will be pretty-printed with that indent level.  An indent level
