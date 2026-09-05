@@ -956,7 +956,8 @@ exit:
 
 PyDoc_STRVAR(_elementtree_TreeBuilder___init____doc__,
 "TreeBuilder(element_factory=None, *, comment_factory=None,\n"
-"            pi_factory=None, insert_comments=False, insert_pis=False)\n"
+"            pi_factory=None, cdata_factory=None, insert_comments=False,\n"
+"            insert_pis=False, insert_cdata=False)\n"
 "--\n"
 "\n"
 "Generic element structure builder.\n"
@@ -983,7 +984,9 @@ _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
                                        PyObject *element_factory,
                                        PyObject *comment_factory,
                                        PyObject *pi_factory,
-                                       int insert_comments, int insert_pis);
+                                       PyObject *cdata_factory,
+                                       int insert_comments, int insert_pis,
+                                       int insert_cdata);
 
 static int
 _elementtree_TreeBuilder___init__(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -991,7 +994,7 @@ _elementtree_TreeBuilder___init__(PyObject *self, PyObject *args, PyObject *kwar
     int return_value = -1;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 5
+    #define NUM_KEYWORDS 7
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -1000,7 +1003,7 @@ _elementtree_TreeBuilder___init__(PyObject *self, PyObject *args, PyObject *kwar
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(element_factory), &_Py_ID(comment_factory), &_Py_ID(pi_factory), &_Py_ID(insert_comments), &_Py_ID(insert_pis), },
+        .ob_item = { &_Py_ID(element_factory), &_Py_ID(comment_factory), &_Py_ID(pi_factory), &_Py_ID(cdata_factory), &_Py_ID(insert_comments), &_Py_ID(insert_pis), &_Py_ID(insert_cdata), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1009,22 +1012,24 @@ _elementtree_TreeBuilder___init__(PyObject *self, PyObject *args, PyObject *kwar
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"element_factory", "comment_factory", "pi_factory", "insert_comments", "insert_pis", NULL};
+    static const char * const _keywords[] = {"element_factory", "comment_factory", "pi_factory", "cdata_factory", "insert_comments", "insert_pis", "insert_cdata", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "TreeBuilder",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[5];
+    PyObject *argsbuf[7];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
     PyObject *element_factory = Py_None;
     PyObject *comment_factory = Py_None;
     PyObject *pi_factory = Py_None;
+    PyObject *cdata_factory = Py_None;
     int insert_comments = 0;
     int insert_pis = 0;
+    int insert_cdata = 0;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
             /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -1057,7 +1062,13 @@ skip_optional_pos:
         }
     }
     if (fastargs[3]) {
-        insert_comments = PyObject_IsTrue(fastargs[3]);
+        cdata_factory = fastargs[3];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (fastargs[4]) {
+        insert_comments = PyObject_IsTrue(fastargs[4]);
         if (insert_comments < 0) {
             goto exit;
         }
@@ -1065,22 +1076,33 @@ skip_optional_pos:
             goto skip_optional_kwonly;
         }
     }
-    insert_pis = PyObject_IsTrue(fastargs[4]);
-    if (insert_pis < 0) {
+    if (fastargs[5]) {
+        insert_pis = PyObject_IsTrue(fastargs[5]);
+        if (insert_pis < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    insert_cdata = PyObject_IsTrue(fastargs[6]);
+    if (insert_cdata < 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = _elementtree_TreeBuilder___init___impl((TreeBuilderObject *)self, element_factory, comment_factory, pi_factory, insert_comments, insert_pis);
+    return_value = _elementtree_TreeBuilder___init___impl((TreeBuilderObject *)self, element_factory, comment_factory, pi_factory, cdata_factory, insert_comments, insert_pis, insert_cdata);
 
 exit:
     return return_value;
 }
 
 PyDoc_STRVAR(_elementtree__set_factories__doc__,
-"_set_factories($module, comment_factory, pi_factory, /)\n"
+"_set_factories($module, comment_factory, pi_factory, cdata_factory, /)\n"
 "--\n"
 "\n"
-"Change the factories used to create comments and processing instructions.\n"
+"Change the factories used to create special elements.\n"
+"\n"
+"They create comments, processing instructions and CDATA sections.\n"
 "\n"
 "For internal use only.");
 
@@ -1089,7 +1111,8 @@ PyDoc_STRVAR(_elementtree__set_factories__doc__,
 
 static PyObject *
 _elementtree__set_factories_impl(PyObject *module, PyObject *comment_factory,
-                                 PyObject *pi_factory);
+                                 PyObject *pi_factory,
+                                 PyObject *cdata_factory);
 
 static PyObject *
 _elementtree__set_factories(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -1097,13 +1120,15 @@ _elementtree__set_factories(PyObject *module, PyObject *const *args, Py_ssize_t 
     PyObject *return_value = NULL;
     PyObject *comment_factory;
     PyObject *pi_factory;
+    PyObject *cdata_factory;
 
-    if (!_PyArg_CheckPositional("_set_factories", nargs, 2, 2)) {
+    if (!_PyArg_CheckPositional("_set_factories", nargs, 3, 3)) {
         goto exit;
     }
     comment_factory = args[0];
     pi_factory = args[1];
-    return_value = _elementtree__set_factories_impl(module, comment_factory, pi_factory);
+    cdata_factory = args[2];
+    return_value = _elementtree__set_factories_impl(module, comment_factory, pi_factory, cdata_factory);
 
 exit:
     return return_value;
@@ -1153,6 +1178,42 @@ _elementtree_TreeBuilder_end(PyObject *self, PyObject *tag)
     return_value = _elementtree_TreeBuilder_end_impl((TreeBuilderObject *)self, tag);
 
     return return_value;
+}
+
+PyDoc_STRVAR(_elementtree_TreeBuilder_start_cdata__doc__,
+"start_cdata($self, /)\n"
+"--\n"
+"\n"
+"Begin a CDATA section.");
+
+#define _ELEMENTTREE_TREEBUILDER_START_CDATA_METHODDEF    \
+    {"start_cdata", (PyCFunction)_elementtree_TreeBuilder_start_cdata, METH_NOARGS, _elementtree_TreeBuilder_start_cdata__doc__},
+
+static PyObject *
+_elementtree_TreeBuilder_start_cdata_impl(TreeBuilderObject *self);
+
+static PyObject *
+_elementtree_TreeBuilder_start_cdata(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _elementtree_TreeBuilder_start_cdata_impl((TreeBuilderObject *)self);
+}
+
+PyDoc_STRVAR(_elementtree_TreeBuilder_end_cdata__doc__,
+"end_cdata($self, /)\n"
+"--\n"
+"\n"
+"End a CDATA section and create it using the cdata_factory.");
+
+#define _ELEMENTTREE_TREEBUILDER_END_CDATA_METHODDEF    \
+    {"end_cdata", (PyCFunction)_elementtree_TreeBuilder_end_cdata, METH_NOARGS, _elementtree_TreeBuilder_end_cdata__doc__},
+
+static PyObject *
+_elementtree_TreeBuilder_end_cdata_impl(TreeBuilderObject *self);
+
+static PyObject *
+_elementtree_TreeBuilder_end_cdata(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _elementtree_TreeBuilder_end_cdata_impl((TreeBuilderObject *)self);
 }
 
 PyDoc_STRVAR(_elementtree_TreeBuilder_comment__doc__,
@@ -1479,4 +1540,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e2e9cf288c4400f6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5a998c6679074bc0 input=a9049054013a1b77]*/
