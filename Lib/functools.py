@@ -315,52 +315,6 @@ def _partial_prepare_merger(args):
     merger = itemgetter(*order) if phcount else None
     return phcount, merger
 
-def _partial_new(cls, func, /, *args, **keywords):
-    if issubclass(cls, partial):
-        base_cls = partial
-        if not callable(func):
-            raise TypeError("the first argument must be callable")
-    else:
-        base_cls = partialmethod
-        # func could be a descriptor like classmethod which isn't callable
-        if not callable(func) and not hasattr(func, "__get__"):
-            raise TypeError(f"the first argument {func!r} must be a callable "
-                            "or a descriptor")
-    if args and args[-1] is Placeholder:
-        raise TypeError("trailing Placeholders are not allowed")
-    for value in keywords.values():
-        if value is Placeholder:
-            raise TypeError("Placeholder cannot be passed as a keyword argument")
-    if isinstance(func, base_cls):
-        pto_phcount = func._phcount
-        tot_args = func.args
-        if args:
-            tot_args += args
-            if pto_phcount:
-                # merge args with args of `func` which is `partial`
-                nargs = len(args)
-                if nargs < pto_phcount:
-                    tot_args += (Placeholder,) * (pto_phcount - nargs)
-                tot_args = func._merger(tot_args)
-                if nargs > pto_phcount:
-                    tot_args += args[pto_phcount:]
-            phcount, merger = _partial_prepare_merger(tot_args)
-        else:   # works for both pto_phcount == 0 and != 0
-            phcount, merger = pto_phcount, func._merger
-        keywords = {**func.keywords, **keywords}
-        func = func.func
-    else:
-        tot_args = args
-        phcount, merger = _partial_prepare_merger(tot_args)
-
-    self = object.__new__(cls)
-    self.func = func
-    self.args = tot_args
-    self.keywords = keywords
-    self._phcount = phcount
-    self._merger = merger
-    return self
-
 def _partial_repr(self):
     cls = type(self)
     module = cls.__module__
@@ -379,7 +333,44 @@ class partial:
     __slots__ = ("func", "args", "keywords", "_phcount", "_merger",
                  "__dict__", "__weakref__")
 
-    __new__ = _partial_new
+    def __new__(cls, func, /, *args, **keywords):
+        if not callable(func):
+            raise TypeError("the first argument must be callable")
+        if args and args[-1] is Placeholder:
+            raise TypeError("trailing Placeholders are not allowed")
+        for value in keywords.values():
+            if value is Placeholder:
+                raise TypeError("Placeholder cannot be passed as a keyword argument")
+        if isinstance(func, partial):
+            pto_phcount = func._phcount
+            tot_args = func.args
+            if args:
+                tot_args += args
+                if pto_phcount:
+                    # merge args with args of `func` which is `partial`
+                    nargs = len(args)
+                    if nargs < pto_phcount:
+                        tot_args += (Placeholder,) * (pto_phcount - nargs)
+                    tot_args = func._merger(tot_args)
+                    if nargs > pto_phcount:
+                        tot_args += args[pto_phcount:]
+                phcount, merger = _partial_prepare_merger(tot_args)
+            else:   # works for both pto_phcount == 0 and != 0
+                phcount, merger = pto_phcount, func._merger
+            keywords = {**func.keywords, **keywords}
+            func = func.func
+        else:
+            tot_args = args
+            phcount, merger = _partial_prepare_merger(tot_args)
+
+        self = object.__new__(cls)
+        self.func = func
+        self.args = tot_args
+        self.keywords = keywords
+        self._phcount = phcount
+        self._merger = merger
+        return self
+
     __repr__ = recursive_repr()(_partial_repr)
 
     def __call__(self, /, *args, **keywords):
@@ -444,6 +435,7 @@ try:
 except ImportError:
     pass
 
+
 # Descriptor version
 class partialmethod:
     """Method descriptor with partial application of the given arguments
@@ -452,46 +444,139 @@ class partialmethod:
     Supports wrapping existing descriptors and handles non-descriptor
     callables as instance methods.
     """
-    __new__ = _partial_new
+    __slots__ = (
+        "_func", "_args", "_keywords", "__dict__", "__weakref__",
+        "_cachedmethod", "_cachetype"
+    )
+
     __repr__ = _partial_repr
 
-    def _make_unbound_method(self):
-        def _method(cls_or_self, /, *args, **keywords):
-            phcount = self._phcount
-            if phcount:
-                try:
-                    pto_args = self._merger(self.args + args)
-                    args = args[phcount:]
-                except IndexError:
-                    raise TypeError("missing positional arguments "
-                                    "in 'partialmethod' call; expected "
-                                    f"at least {phcount}, got {len(args)}")
-            else:
-                pto_args = self.args
-            keywords = {**self.keywords, **keywords}
-            return self.func(cls_or_self, *pto_args, *args, **keywords)
-        _method.__isabstractmethod__ = self.__isabstractmethod__
-        _method.__partialmethod__ = self
-        return _method
+    def __init__(self, func, /, *args, **keywords):
+        if isinstance(func, partialmethod):
+            # Subclass optimization
+            temp = partial(lambda *_, **__: None, *func._args, **func.keywords)
+            temp = partial(temp, *args, **keywords)
+            func = func._func
+            args = temp.args
+            keywords = temp.keywords
+
+        if args and args[-1] is Placeholder:
+            raise TypeError("trailing Placeholders are not allowed")
+
+        self._cachedmethod = None
+        self.func = func    # setting via attribute setter
+        self._args = args
+        self._keywords = keywords
+
+    @property
+    def func(self):
+        return self._func
+
+    @func.setter
+    def func(self, func):
+        if isinstance(func, staticmethod):
+            self._cachetype = 1
+        elif isinstance(func, classmethod):
+            self._cachetype = 2
+        elif isinstance(func, (FunctionType, partial)):
+            self._cachetype = 3
+        elif getattr(func, '__get__', None) is None:
+            if not callable(func):
+                raise TypeError(f'the first argument {func!r} must be a callable '
+                                'or a descriptor')
+            self._cachetype = 4
+        else:
+            self._cachetype = 0
+        self._func = func
+        method = self._cachedmethod
+        if method is not None:
+            if self._cachetype in (1, 2):
+                method = method.__wrapped__
+            self._keywords = method.keywords
+        self._cachedmethod = None
+
+    @property
+    def args(self):
+        return self._args
+
+    @args.setter
+    def args(self, args):
+        self._args = args
+        method = self._cachedmethod
+        if method is not None:
+            if self._cachetype in (1, 2):
+                method = method.__wrapped__
+            self._keywords = method.keywords
+        self._cachedmethod = None
+
+    @property
+    def keywords(self):
+        method = self._cachedmethod
+        if method is None:
+            return self._keywords
+        if self._cachetype in (1, 2):
+            method = method.__wrapped__
+        return method.keywords
+
+    @keywords.setter
+    def keywords(self, keywords):
+        self._keywords = keywords
+        method = self._cachedmethod
+        if method is not None:
+            if self._cachetype in (1, 2):
+                method = method.__wrapped__
+            mkeywords = method.keywords
+            mkeywords.clear()
+            mkeywords.update(keywords)
+
+    def __make_method(self):
+        func = self._func
+        args = self._args
+        keywords = self._keywords
+        cachetype = self._cachetype
+        if cachetype == 1:
+            method = partial(func.__wrapped__, *args, **keywords)
+            method.__isabstractmethod__ = self.__isabstractmethod__
+            return staticmethod(method)
+        elif cachetype == 2:
+            ph_args = (Placeholder,) if args else ()
+            method = partial(func.__wrapped__, *ph_args, *args, **keywords)
+            method.__isabstractmethod__ = self.__isabstractmethod__
+            return classmethod(method)
+        else:
+            # Either:
+            #   a) FunctionType / partial
+            #   b) callable object without __get__
+            #   c) non cacheable callable with __get__ that returned itself
+            ph_args = (Placeholder,) if args else ()
+            method = partial(func, *ph_args, *args, **keywords)
+            method.__isabstractmethod__ = self.__isabstractmethod__
+            method.__partialmethod__ = self
+            return method
 
     def __get__(self, obj, cls=None):
-        get = getattr(self.func, "__get__", None)
-        result = None
-        if get is not None:
-            new_func = get(obj, cls)
-            if new_func is not self.func:
+        cachetype = self._cachetype
+        if not cachetype:
+            # Unknown descriptor == unknown binding
+            # Get callable at runtime and apply partial on top
+            func = self._func
+            new_func = func.__get__(obj, cls)
+            if new_func is not func:
                 # Assume __get__ returning something new indicates the
                 # creation of an appropriate callable
-                result = partial(new_func, *self.args, **self.keywords)
+                result = partial(new_func, *self._args, **self._keywords)
                 try:
                     result.__self__ = new_func.__self__
                 except AttributeError:
                     pass
-        if result is None:
-            # If the underlying descriptor didn't do anything, treat this
-            # like an instance method
-            result = self._make_unbound_method().__get__(obj, cls)
-        return result
+                return result
+            else:
+                return self.__make_method().__get__(obj, cls)
+
+        method = self._cachedmethod
+        if method is None:
+            self._cachedmethod = method = self.__make_method()
+        return method.__get__(obj, cls)
 
     @property
     def __isabstractmethod__(self):
@@ -511,12 +596,13 @@ def _unwrap_partialmethod(func):
     prev = None
     while func is not prev:
         prev = func
-        while isinstance(getattr(func, "__partialmethod__", None), partialmethod):
-            func = func.__partialmethod__
-        while isinstance(func, partialmethod):
-            func = getattr(func, 'func')
-        func = _unwrap_partial(func)
+        __partialmethod__ = getattr(func, "__partialmethod__", None)
+        if isinstance(__partialmethod__, partialmethod):
+            func = __partialmethod__.func
+        if isinstance(func, (partial, partialmethod)):
+            func = func.func
     return func
+
 
 ################################################################################
 ### LRU Cache function decorator

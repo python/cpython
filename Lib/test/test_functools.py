@@ -797,6 +797,26 @@ class TestPartialMethod(unittest.TestCase):
                 self.assertEqual(obj.cls(c=8), ((self.A,), {'c': 8, 'd': 9}))
                 self.assertEqual(obj.cls(5, c=8), ((self.A, 5), {'c': 8, 'd': 9}))
 
+    def test_descriptor_custom_bind(self):
+        # make sure always returns bound branch
+        class Desc:
+            def __get__(self, obj, cls=None):
+                if obj is None:
+                    return self
+                return lambda a, b: ("bound", a, b)
+            def __call__(self, *args):
+                return ("Desc.__call__", args)
+
+        class A:
+            pd = functools.partialmethod(Desc(), 1)
+
+        a = A()
+        self.assertEqual(a.pd(2), ('bound', 1, 2))
+        # This was broken by initial caching implementation
+        #   after any access
+        A.pd
+        self.assertEqual(a.pd(2), ('bound', 1, 2))
+
     def test_overriding_keywords(self):
         self.assertEqual(self.a.keywords(a=3), ((self.a,), {'a': 3}))
         self.assertEqual(self.A.keywords(self.a, a=3), ((self.a,), {'a': 3}))
