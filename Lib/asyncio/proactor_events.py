@@ -573,7 +573,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
                                                                self.max_size)
         except OSError as exc:
             self._protocol.error_received(exc)
-            if not self._conn_lost:
+            if not self._closing:
                 # The error can be transient, e.g. a ConnectionResetError
                 # from a stale ICMP port unreachable notification, so
                 # reschedule the read loop instead of leaving it dead.
