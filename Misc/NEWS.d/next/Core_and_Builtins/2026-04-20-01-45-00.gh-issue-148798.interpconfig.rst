@@ -1,0 +1,4 @@
+Fix a crash in :func:`!_interpreters.create` when a config value contains
+a string with an unpaired surrogate. :c:func:`PyUnicode_AsUTF8` returned
+``NULL`` and the result was passed to :c:func:`!strncpy`, dereferencing
+it. The caller now propagates the :exc:`UnicodeEncodeError` instead.
