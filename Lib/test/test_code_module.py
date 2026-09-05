@@ -324,6 +324,15 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
         self.assertIsNotNone(self.sysmod.last_traceback)
         self.assertIs(self.sysmod.last_exc, self.sysmod.last_value)
 
+    def test_system_error(self):
+        # SystemError from the compiler should be reported (runsource returns
+        # False) rather than propagating to the caller.
+        from unittest import mock
+        err = SystemError("compiler internal error")
+        self.console.compile = mock.Mock(side_effect=err)
+        result = self.console.runsource("x = 1")
+        self.assertFalse(result)
+
 
 class TestInteractiveConsoleLocalExit(unittest.TestCase, MockSys):
 
