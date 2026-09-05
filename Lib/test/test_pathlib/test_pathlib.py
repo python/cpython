@@ -2309,6 +2309,27 @@ class PathTest(PurePathTest):
         self.assertEqual(os.stat(r).st_size, size)
         self.assertFileNotFound(q.stat)
 
+    def test_rename_bytes_target(self):
+        P = self.cls(self.base)
+        source = P / 'fileA'
+        target = P / 'dirA' / 'fileAA'
+        target_bytes = os.fsencode(target)
+        for target_arg in (target_bytes, FakePath(target_bytes)):
+            with self.subTest(target=target_arg):
+                with self.assertRaises(TypeError):
+                    source.rename(target_arg)
+                self.assertTrue(source.exists())
+                self.assertFalse(target.exists())
+
+    def test_rename_preserves_target(self):
+        P = self.cls(self.base)
+        source = P / 'fileA'
+        target = str(P / 'dirA' / 'fileAA') + self.parser.sep
+        with mock.patch.object(os, 'rename') as rename:
+            renamed = source.rename(target)
+        rename.assert_called_once_with(source, target)
+        self.assertEqual(renamed, self.cls(target))
+
     def test_replace(self):
         P = self.cls(self.base)
         p = P / 'fileA'
@@ -2325,6 +2346,27 @@ class PathTest(PurePathTest):
         self.assertEqual(replaced_q, self.cls(r))
         self.assertEqual(os.stat(r).st_size, size)
         self.assertFileNotFound(q.stat)
+
+    def test_replace_bytes_target(self):
+        P = self.cls(self.base)
+        source = P / 'fileA'
+        target = P / 'dirA' / 'fileAA'
+        target_bytes = os.fsencode(target)
+        for target_arg in (target_bytes, FakePath(target_bytes)):
+            with self.subTest(target=target_arg):
+                with self.assertRaises(TypeError):
+                    source.replace(target_arg)
+                self.assertTrue(source.exists())
+                self.assertFalse(target.exists())
+
+    def test_replace_preserves_target(self):
+        P = self.cls(self.base)
+        source = P / 'fileA'
+        target = str(P / 'dirA' / 'fileAA') + self.parser.sep
+        with mock.patch.object(os, 'replace') as replace:
+            replaced = source.replace(target)
+        replace.assert_called_once_with(source, target)
+        self.assertEqual(replaced, self.cls(target))
 
     def test_touch_common(self):
         P = self.cls(self.base)
