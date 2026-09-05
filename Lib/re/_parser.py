@@ -86,18 +86,26 @@ class State:
         return len(self.groupwidths)
     def opengroup(self, name=None):
         gid = self.groups
-        self.groupwidths.append(None)
         if self.groups > MAXGROUPS:
             raise error("too many groups")
         if name is not None:
             ogid = self.groupdict.get(name, None)
             if ogid is not None:
-                raise error("redefinition of group name %r as group %d; "
-                            "was group %d" % (name, gid,  ogid))
+                # The same name may be used for more than one group.  All such
+                # groups share a single group number, and the name refers to
+                # whichever of them matched.
+                return ogid
             self.groupdict[name] = gid
+        self.groupwidths.append(None)
         return gid
     def closegroup(self, gid, p):
-        self.groupwidths[gid] = p.getwidth()
+        # A reused group number may be closed more than once; its width spans
+        # the union of all the definitions.
+        w = p.getwidth()
+        wold = self.groupwidths[gid]
+        if wold is not None:
+            w = (min(wold[0], w[0]), max(wold[1], w[1]))
+        self.groupwidths[gid] = w
     def checkgroup(self, gid):
         return gid < self.groups and self.groupwidths[gid] is not None
 
