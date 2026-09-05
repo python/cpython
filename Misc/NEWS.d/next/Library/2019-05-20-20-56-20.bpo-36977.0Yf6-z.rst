@@ -1,0 +1,1 @@
+SharedMemoryManager server processes do not block anymore the release of shared memory segments if their parent process was unexpectedly terminated.
