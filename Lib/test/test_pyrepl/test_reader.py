@@ -359,6 +359,12 @@ class TestReader(ScreenEqualMixin, TestCase):
         self.assertEqual(prompt, "\033[0;32m樂>\033[0m> ")
         self.assertEqual(l, 5)
 
+        # Handles backspace in prompt
+        ps1 = "Question? _\b"
+        prompt, l = Reader.process_prompt(ps1)
+        self.assertEqual(prompt, ps1)
+        self.assertEqual(l, 10)
+
     def test_prepare_with_zero_width_does_not_crash(self):
         console = prepare_console([], width=0)
         reader = ReadlineAlikeReader(console=console, config=ReadlineConfig())
