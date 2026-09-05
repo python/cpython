@@ -804,7 +804,7 @@ is_free_in_any_child(PySTEntryObject *entry, PyObject *key)
 static int
 inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
                      PyObject *scopes, PyObject *comp_free,
-                     PyObject *inlined_cells)
+                     PyObject *inlined_cells, PyObject *local)
 {
     PyObject *k, *v;
     Py_ssize_t pos = 0;
@@ -880,16 +880,22 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
                 return 0;
             }
             if ((flags & DEF_BOUND) && ste->ste_type != ClassBlock) {
-                // free vars in comprehension that are locals in outer scope can
-                // now simply be locals, unless they are free in comp children,
-                // or if the outer scope is a class block
-                int ok = is_free_in_any_child(comp, k);
-                if (ok < 0) {
+                int is_local = PySet_Contains(local, k);
+                if (is_local < 0) {
                     return 0;
                 }
-                if (!ok) {
-                    if (PySet_Discard(comp_free, k) < 0) {
+                if (is_local) {
+                    // free vars in comprehension that are locals in outer scope can
+                    // now simply be locals, unless they are free in comp children,
+                    // or if the outer scope is a class block
+                    int ok = is_free_in_any_child(comp, k);
+                    if (ok < 0) {
                         return 0;
+                    }
+                    if (!ok) {
+                        if (PySet_Discard(comp_free, k) < 0) {
+                            return 0;
+                        }
                     }
                 }
             }
@@ -913,32 +919,54 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
    provides the binding for the free variable.  The name should be
    marked CELL in this block and removed from the free list.
 
-   Note that the current block's free variables are included in free.
-   That's safe because no name can be free and local in the same scope.
+   Note that the current block's free variables are included in free.  A name
+   can appear local in scopes and free if the local binding was copied from an
+   inlined comprehension; such a name is not in local and must remain free.
 */
 
 static int
-analyze_cells(PyObject *scopes, PyObject *free, PyObject *inlined_cells)
+analyze_cells(PyObject *scopes, PyObject *free, PyObject *inlined_cells,
+              PyObject *local)
 {
-    PyObject *name, *v, *v_cell;
+    PyObject *name, *v, *v_cell, *v_free;
     int success = 0;
     Py_ssize_t pos = 0;
 
     v_cell = PyLong_FromLong(CELL);
     if (!v_cell)
         return 0;
+    v_free = PyLong_FromLong(FREE);
+    if (!v_free) {
+        Py_DECREF(v_cell);
+        return 0;
+    }
     while (PyDict_Next(scopes, &pos, &name, &v)) {
         long scope = PyLong_AsLong(v);
         if (scope == -1 && PyErr_Occurred()) {
             goto error;
         }
-        if (scope != LOCAL)
+        if (scope != LOCAL && scope != CELL)
             continue;
         int contains = PySet_Contains(free, name);
         if (contains < 0) {
             goto error;
         }
-        if (!contains) {
+        if (contains) {
+            int is_local = PySet_Contains(local, name);
+            if (is_local < 0) {
+                goto error;
+            }
+            if (!is_local) {
+                // This binding was copied from an inlined comprehension, not
+                // defined in this scope.  Another child may still need the
+                // name from an enclosing scope.
+                if (PyDict_SetItem(scopes, name, v_free) < 0) {
+                    goto error;
+                }
+                continue;
+            }
+        }
+        else if (scope == LOCAL) {
             contains = PySet_Contains(inlined_cells, name);
             if (contains < 0) {
                 goto error;
@@ -946,6 +974,11 @@ analyze_cells(PyObject *scopes, PyObject *free, PyObject *inlined_cells)
             if (!contains) {
                 continue;
             }
+        }
+        if (scope == CELL) {
+            // Retain a cell copied from an inlined comprehension if no child
+            // needs the same name as a free variable.
+            continue;
         }
         /* Replace LOCAL with CELL for this name, and remove
            from free. It is safe to replace the value of name
@@ -959,6 +992,7 @@ analyze_cells(PyObject *scopes, PyObject *free, PyObject *inlined_cells)
     success = 1;
  error:
     Py_DECREF(v_cell);
+    Py_DECREF(v_free);
     return success;
 }
 
@@ -1275,7 +1309,8 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
             goto error;
         }
         if (inline_comp) {
-            if (!inline_comprehension(ste, entry, scopes, child_free, inlined_cells)) {
+            if (!inline_comprehension(ste, entry, scopes, child_free,
+                                      inlined_cells, local)) {
                 Py_DECREF(child_free);
                 goto error;
             }
@@ -1303,8 +1338,11 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     }
 
     /* Check if any local variables must be converted to cell variables */
-    if (_PyST_IsFunctionLike(ste) && !analyze_cells(scopes, newfree, inlined_cells))
+    if (_PyST_IsFunctionLike(ste) &&
+        !analyze_cells(scopes, newfree, inlined_cells, local))
+    {
         goto error;
+    }
     else if (ste->ste_type == ClassBlock && !drop_class_free(ste, newfree))
         goto error;
     /* Records the results of the analysis in the symbol table entry */

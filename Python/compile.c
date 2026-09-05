@@ -1080,12 +1080,9 @@ _PyCompile_TweakInlinedComprehensionScopes(compiler *c, location loc,
         // we need to temporarily handle it with the right scope while
         // compiling the comprehension. If it's free in the comprehension
         // scope, no special handling; it should be handled the same as the
-        // enclosing scope. (If it's free in outer scope and cell in inner
-        // scope, we can't treat it as both cell and free in the same function,
-        // but treating it as free throughout is fine; it's *_DEREF
-        // either way.)
-        if ((scope != outsc && scope != FREE && !(scope == CELL && outsc == FREE))
-                || in_class_block) {
+        // enclosing scope. A name that is a cell in the comprehension and free
+        // outside it uses separate cell and free-variable slots.
+        if ((scope != outsc && scope != FREE) || in_class_block) {
             if (state->temp_symbols == NULL) {
                 state->temp_symbols = PyDict_New();
                 if (state->temp_symbols == NULL) {

@@ -120,6 +120,7 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject *key, bool read, PyO
     }
 
     bool found = false;
+    int write_fallback = -1;
 
     // We do 2 loops here because it's highly possible the key is interned
     // and we can do a pointer comparison.
@@ -139,7 +140,12 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject *key, bool read, PyO
                 }
             } else {
                 if (!(_PyLocals_GetKind(co->co_localspluskinds, i) & CO_FAST_HIDDEN)) {
-                    return i;
+                    if (framelocalsproxy_hasval(frame->f_frame, co, i)) {
+                        return i;
+                    }
+                    if (write_fallback < 0) {
+                        write_fallback = i;
+                    }
                 }
             }
             found = true;
@@ -148,7 +154,7 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject *key, bool read, PyO
     if (found) {
         // This is an attempt to read an unset local variable or
         // write to a variable that is hidden from regular write operations
-        return -1;
+        return read ? -1 : write_fallback;
     }
     // This is unlikely, but we need to make sure. This means the key
     // is not interned.
@@ -177,13 +183,52 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject *key, bool read, PyO
                 }
             } else {
                 if (!(_PyLocals_GetKind(co->co_localspluskinds, i) & CO_FAST_HIDDEN)) {
-                    return i;
+                    if (framelocalsproxy_hasval(frame->f_frame, co, i)) {
+                        return i;
+                    }
+                    if (write_fallback < 0) {
+                        write_fallback = i;
+                    }
                 }
             }
         }
     }
 
-    return -1;
+    return read ? -1 : write_fallback;
+}
+
+static PyObject *
+framelocalsproxy_snapshot(PyFrameObject *frame)
+{
+    PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
+    PyObject *snapshot = PyDict_New();
+    if (snapshot == NULL) {
+        return NULL;
+    }
+
+    for (int i = 0; i < co->co_nlocalsplus; i++) {
+        PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
+        if (value == NULL) {
+            continue;
+        }
+        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+        // Match direct lookup by keeping the first live slot when a
+        // comprehension cell and a free variable have the same name.
+        if (PyDict_SetDefaultRef(snapshot, name, value, NULL) < 0) {
+            Py_DECREF(value);
+            Py_DECREF(snapshot);
+            return NULL;
+        }
+        Py_DECREF(value);
+    }
+
+    if (frame->f_extra_locals != NULL &&
+        PyDict_Merge(snapshot, frame->f_extra_locals, 0) < 0)
+    {
+        Py_DECREF(snapshot);
+        return NULL;
+    }
+    return snapshot;
 }
 
 static PyObject *
@@ -375,38 +420,12 @@ static PyObject *
 framelocalsproxy_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
-    PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
-    PyObject *names = PyList_New(0);
-    if (names == NULL) {
+    PyObject *snapshot = framelocalsproxy_snapshot(frame);
+    if (snapshot == NULL) {
         return NULL;
     }
-
-    for (int i = 0; i < co->co_nlocalsplus; i++) {
-        if (framelocalsproxy_hasval(frame->f_frame, co, i)) {
-            PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-            if (PyList_Append(names, name) < 0) {
-                Py_DECREF(names);
-                return NULL;
-            }
-        }
-    }
-
-    // Iterate through the extra locals
-    if (frame->f_extra_locals) {
-        assert(PyDict_Check(frame->f_extra_locals));
-
-        Py_ssize_t i = 0;
-        PyObject *key = NULL;
-        PyObject *value = NULL;
-
-        while (PyDict_Next(frame->f_extra_locals, &i, &key, &value)) {
-            if (PyList_Append(names, key) < 0) {
-                Py_DECREF(names);
-                return NULL;
-            }
-        }
-    }
-
+    PyObject *names = PyDict_Keys(snapshot);
+    Py_DECREF(snapshot);
     return names;
 }
 
@@ -584,37 +603,12 @@ static PyObject *
 framelocalsproxy_values(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
-    PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
-    PyObject *values = PyList_New(0);
-    if (values == NULL) {
+    PyObject *snapshot = framelocalsproxy_snapshot(frame);
+    if (snapshot == NULL) {
         return NULL;
     }
-
-    for (int i = 0; i < co->co_nlocalsplus; i++) {
-        PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
-        if (value) {
-            if (PyList_Append(values, value) < 0) {
-                Py_DECREF(values);
-                Py_DECREF(value);
-                return NULL;
-            }
-            Py_DECREF(value);
-        }
-    }
-
-    // Iterate through the extra locals
-    if (frame->f_extra_locals) {
-        Py_ssize_t j = 0;
-        PyObject *key = NULL;
-        PyObject *value = NULL;
-        while (PyDict_Next(frame->f_extra_locals, &j, &key, &value)) {
-            if (PyList_Append(values, value) < 0) {
-                Py_DECREF(values);
-                return NULL;
-            }
-        }
-    }
-
+    PyObject *values = PyDict_Values(snapshot);
+    Py_DECREF(snapshot);
     return values;
 }
 
@@ -622,69 +616,25 @@ static PyObject *
 framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
-    PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
-    PyObject *items = PyList_New(0);
-    if (items == NULL) {
+    PyObject *snapshot = framelocalsproxy_snapshot(frame);
+    if (snapshot == NULL) {
         return NULL;
     }
-
-    for (int i = 0; i < co->co_nlocalsplus; i++) {
-        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-        PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
-
-        if (value) {
-            PyObject *pair = _PyTuple_FromPairSteal(Py_NewRef(name), value);
-            if (pair == NULL) {
-                goto error;
-            }
-
-            if (_PyList_AppendTakeRef((PyListObject *)items, pair) < 0) {
-                goto error;
-            }
-        }
-    }
-
-    // Iterate through the extra locals
-    if (frame->f_extra_locals) {
-        Py_ssize_t j = 0;
-        PyObject *key = NULL;
-        PyObject *value = NULL;
-        while (PyDict_Next(frame->f_extra_locals, &j, &key, &value)) {
-            PyObject *pair = _PyTuple_FromPair(key, value);
-            if (pair == NULL) {
-                goto error;
-            }
-
-            if (_PyList_AppendTakeRef((PyListObject *)items, pair) < 0) {
-                goto error;
-            }
-        }
-    }
-
+    PyObject *items = PyDict_Items(snapshot);
+    Py_DECREF(snapshot);
     return items;
-
-error:
-    Py_DECREF(items);
-    return NULL;
 }
 
 static Py_ssize_t
 framelocalsproxy_length(PyObject *self)
 {
     PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
-    PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
-    Py_ssize_t size = 0;
-
-    if (frame->f_extra_locals != NULL) {
-        assert(PyDict_Check(frame->f_extra_locals));
-        size += PyDict_Size(frame->f_extra_locals);
+    PyObject *snapshot = framelocalsproxy_snapshot(frame);
+    if (snapshot == NULL) {
+        return -1;
     }
-
-    for (int i = 0; i < co->co_nlocalsplus; i++) {
-        if (framelocalsproxy_hasval(frame->f_frame, co, i)) {
-            size++;
-        }
-    }
+    Py_ssize_t size = PyDict_GET_SIZE(snapshot);
+    Py_DECREF(snapshot);
     return size;
 }
 
