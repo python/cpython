@@ -562,6 +562,12 @@ pyobject_dump(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+pyobject_is_gc(PyObject *self, PyObject *obj)
+{
+    return PyBool_FromLong(PyObject_IS_GC(obj));
+}
+
+static PyObject *
 pysentinel_new(PyObject *self, PyObject *args)
 {
     const char *name;
@@ -597,6 +603,7 @@ static PyMethodDef test_methods[] = {
     {"pyobject_is_unique_temporary_new_object", pyobject_is_unique_temporary_new_object, METH_NOARGS},
     {"test_py_try_inc_ref", test_py_try_inc_ref, METH_NOARGS},
     {"test_py_set_immortal", test_py_set_immortal, METH_NOARGS},
+    {"pyobject_is_gc", pyobject_is_gc, METH_O},
     {"test_xincref_doesnt_leak",test_xincref_doesnt_leak,        METH_NOARGS},
     {"test_incref_doesnt_leak", test_incref_doesnt_leak,         METH_NOARGS},
     {"test_xdecref_doesnt_leak",test_xdecref_doesnt_leak,        METH_NOARGS},

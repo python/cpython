@@ -823,6 +823,18 @@ _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(PyObject *op)
 static inline int
 _PyObject_IS_GC(PyObject *obj)
 {
+#ifdef Py_GIL_DISABLED
+    // _PyGC_BITS_IS_GC is cached at object creation time (see new_reference()
+    // in Objects/object.c) for the common case of a type with a NULL
+    // tp_is_gc: this avoids dereferencing the type object on every call.
+    // Only _PyUOpExecutor_Type currently has a non-NULL tp_is_gc, whose
+    // result can change after creation (e.g. once made immortal), so such
+    // objects never get the bit set and always fall through to the general
+    // check below.
+    if (_PyObject_HAS_GC_BITS(obj, _PyGC_BITS_IS_GC)) {
+        return 1;
+    }
+#endif
     PyTypeObject *type = Py_TYPE(obj);
     return (_PyType_IS_GC(type)
             && (type->tp_is_gc == NULL || type->tp_is_gc(obj)));
