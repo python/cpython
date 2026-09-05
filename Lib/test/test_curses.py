@@ -2428,6 +2428,22 @@ class TestCurses(unittest.TestCase):
         panel.set_userptr(A())
         panel.set_userptr(None)
 
+    @requires_curses_func('panel')
+    def test_userptr_dealloc_segfault(self):
+        w = curses.newwin(10, 10)
+        panel = curses.panel.new_panel(w)
+        seen = []
+        class A:
+            def __del__(self):
+                # The panel is being deallocated, so it must already be off
+                # the stack: handing it back here would resurrect an object
+                # whose refcount is zero -- segfaults.
+                seen.append(curses.panel.top_panel() is None)
+        panel.set_userptr(A())
+        del panel
+        gc_collect()
+        self.assertEqual(seen, [True])
+
     @cpython_only
     @requires_curses_func('panel')
     def test_disallow_instantiation(self):
