@@ -1,0 +1,7 @@
+Bound the LZMA dictionary size accepted for decompression to the maximum
+supported by liblzma (1.5 GiB), and default the decompressor memory limit to
+that value.  Previously, a tiny attacker-controlled LZMA stream (for example
+an LZMA-compressed member of a zip file, or a short input tried as an LZMA
+"alone" stream by tarfile's compression detection) could make liblzma
+allocate a multi-gigabyte dictionary up front, exhausting memory.  An
+explicit ``memlimit`` can still be passed to raise or lower the bound.
