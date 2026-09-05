@@ -664,8 +664,7 @@ _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit)
             break;
     }
 
-    result = PyBytes_FromStringAndSize(PyByteArray_AS_STRING(buffer),
-                                       PyByteArray_GET_SIZE(buffer));
+    result = PyObject_CallMethodNoArgs(buffer, &_Py_ID(take_bytes));
     Py_XDECREF(peek);
     Py_DECREF(buffer);
     return result;
