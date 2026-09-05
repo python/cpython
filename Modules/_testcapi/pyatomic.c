@@ -49,6 +49,12 @@ test_atomic_add_##suffix(PyObject *self, PyObject *obj) { \
     assert(x == (dtype)-3); \
     assert(_Py_atomic_add_##suffix(&x, 2) == (dtype)-3); \
     assert(x == (dtype)-1); \
+    assert(_Py_atomic_add_##suffix##_relaxed(&x, 1) == (dtype)-1); \
+    assert(x == 0); \
+    assert(_Py_atomic_add_##suffix##_relaxed(&x, 3) == 0); \
+    assert(x == 3); \
+    assert(_Py_atomic_add_##suffix##_relaxed(&x, -4) == 3); \
+    assert(x == (dtype)-1); \
     Py_RETURN_NONE; \
 }
 FOR_ARITHMETIC_TYPES(IMPL_TEST_ADD)
