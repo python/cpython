@@ -54,10 +54,17 @@ Registering and using tools
 
    Unregister all events and callback functions associated with *tool_id*.
 
+   .. versionadded:: 3.14
+
 .. function:: free_tool_id(tool_id: int, /) -> None
 
    Should be called once a tool no longer requires *tool_id*.
    Will call :func:`clear_tool_id` before releasing *tool_id*.
+
+   .. versionchanged:: 3.14
+      Now calls :func:`clear_tool_id` before releasing *tool_id*.
+      Previously, it would not disable global or local events associated
+      with *tool_id*, nor unregister any callback functions.
 
 .. function:: get_tool(tool_id: int, /) -> str | None
 
