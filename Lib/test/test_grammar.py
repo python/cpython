@@ -193,12 +193,17 @@ class TokenTests(unittest.TestCase):
                ("1jz", 3, "imaginary"),
                ("0xI", 3, "hexadecimal"),
                ("0bz", 3, "binary"),
+               # SyntaxWarning's currently:
+               ("1or 0", 2, " decimal"),
+               ("0or 0", 3, "octal"),
                ])
     def test_end_of_numerical_literals_offset(self, source, offset, msg):
         # gh-149277: verify the error caret points at the first invalid
         # character, not the last valid digit.
-        with self.assertRaises(SyntaxError) as cm:
-            compile(source, "<test>", "eval")
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", SyntaxWarning)
+            with self.assertRaises(SyntaxError) as cm:
+                compile(source, "<test>", "eval")
         self.assertEqual(cm.exception.offset, offset)
         self.assertIn(msg, cm.exception.msg)
 

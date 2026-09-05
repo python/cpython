@@ -70,13 +70,11 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind) {
         r = lookahead(tok, "ot");
     }
     if (r) {
-        tok_backup(tok, c);
         if (_PyTokenizer_parser_warn(tok, PyExc_SyntaxWarning,
                 "invalid %s literal", kind))
         {
             return 0;
         }
-        tok_nextc(tok);
     }
     else /* In future releases, only error will remain. */
     if (c < 128 && is_potential_identifier_char(c)) {
