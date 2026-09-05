@@ -1,0 +1,3 @@
+Fix a bug where a comment placed after a string that ends with an escaped
+quote could leak into the output of a debug f-string and into t-string
+metadata. Now the comment is stripped as expected.
