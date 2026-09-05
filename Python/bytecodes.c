@@ -2891,11 +2891,13 @@ dummy_func(
             EXIT_IF(tp != (PyTypeObject *)type);
         }
 
-        op(_CHECK_MANAGED_OBJECT_HAS_VALUES, (owner -- owner)) {
+        op(_CHECK_MANAGED_OBJECT_HAS_VALUES, (validity_offset/1, owner -- owner)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
             assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-            EXIT_IF(!FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid));
+            assert((char *)&_PyObject_InlineValues(owner_o)->valid ==
+                   (char *)owner_o + validity_offset);
+            EXIT_IF(!FT_ATOMIC_LOAD_UINT8(*((uint8_t *)owner_o + validity_offset)));
         }
 
         op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr, o)) {
@@ -2923,7 +2925,7 @@ dummy_func(
             _CHECK_MANAGED_OBJECT_HAS_VALUES +
             _LOAD_ATTR_INSTANCE_VALUE +
             POP_TOP +
-            unused/5 +
+            unused/4 +
             _PUSH_NULL_CONDITIONAL;
 
         op(_LOAD_ATTR_MODULE, (dict_version/2, index/1, owner -- attr, o)) {
@@ -4252,7 +4254,7 @@ dummy_func(
             _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _CHECK_MANAGED_OBJECT_HAS_VALUES +
-            unused/2 +
+            unused/1 +
             _LOAD_ATTR_METHOD_WITH_VALUES;
 
         op(_LOAD_ATTR_METHOD_NO_DICT, (descr/4, owner -- attr, self)) {
@@ -4286,7 +4288,7 @@ dummy_func(
             _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _CHECK_MANAGED_OBJECT_HAS_VALUES +
-            unused/2 +
+            unused/1 +
             _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES;
 
         op(_LOAD_ATTR_NONDESCRIPTOR_NO_DICT, (descr/4, owner -- attr)) {
