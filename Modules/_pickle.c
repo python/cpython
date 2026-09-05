@@ -10,6 +10,7 @@
 
 #include "Python.h"
 #include "pycore_bytesobject.h"   // _PyBytesWriter
+#include "pycore_call.h"          // _PyObject_Call_Prepend()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_dict.h"          // _PyDict_SetItem_Take2()
@@ -6328,7 +6329,25 @@ load_newobj(PickleState *state, UnpicklerObject *self, int use_kwargs)
         goto error;
     }
 
-    obj = ((PyTypeObject *)cls)->tp_new((PyTypeObject *)cls, args, kwargs);
+    if (Py_TYPE(cls) == &PyType_Type) {
+        /* Fast path: with the default metaclass, an attribute lookup of
+           cls.__new__ is not observable, so tp_new can be called
+           directly. */
+        obj = ((PyTypeObject *)cls)->tp_new((PyTypeObject *)cls, args,
+                                            kwargs);
+    }
+    else {
+        /* Look __new__ up on the class so that a custom metaclass
+           __getattribute__ observes the lookup, as in the Python
+           implementation. */
+        PyObject *func = PyObject_GetAttr(cls, &_Py_ID(__new__));
+        if (func == NULL) {
+            goto error;
+        }
+        PyThreadState *tstate = _PyThreadState_GET();
+        obj = _PyObject_Call_Prepend(tstate, func, cls, args, kwargs);
+        Py_DECREF(func);
+    }
     if (obj == NULL) {
         goto error;
     }
