@@ -101,6 +101,10 @@ def formataddr(pair, charset='utf-8', *, strict=True):
                 from email.charset import Charset
                 charset = Charset(charset)
             encoded_name = charset.header_encode(name)
+            if specialsre.search(encoded_name):
+                # Not RFC 2047-encoded, so quote it like the ASCII branch
+                # below to keep specials from leaking into the header.
+                encoded_name = '"' + escapesre.sub(r'\\\g<0>', encoded_name) + '"'
             return "%s <%s>" % (encoded_name, address)
         else:
             quotes = ''
