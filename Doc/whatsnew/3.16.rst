@@ -685,6 +685,10 @@ xml
   and :meth:`!Document.createEntityReference`.
   (Contributed by Jason Orendorff and Serhiy Storchaka in :gh:`44871`.)
 
+* Add the *validate* option to :class:`xml.sax.saxutils.XMLGenerator`,
+  which makes it check that the generated document is well-formed.
+  (Contributed by Serhiy Storchaka in :gh:`57092`.)
+
 * Add :meth:`!GetSpecifiedAttributeCount` method
   to the :mod:`XML parser <xml.parsers.expat>` objects.
   It tells how many of the reported attributes were given in the start tag
