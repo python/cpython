@@ -1,0 +1,2 @@
+Fix a use-after-free in :mod:`curses` when :func:`curses.initscr` or
+:func:`curses.newterm` follows :func:`curses.new_prescr`.
