@@ -678,12 +678,12 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
             self.skipTest(f"Linux VFS/XFS kernel bug detected: {mtime_ns=}")
 
         with zipfile.ZipFile(TESTFN2, "w") as zipfp:
-            self.assertRaises(struct.error, zipfp.write, TESTFN)
+            self.assertRaises(ValueError, zipfp.write, TESTFN)
 
         with zipfile.ZipFile(TESTFN2, "w", strict_timestamps=False) as zipfp:
             zipfp.write(TESTFN)
             zinfo = zipfp.getinfo(TESTFN)
-            self.assertEqual(zinfo.date_time, (2107, 12, 31, 23, 59, 59))
+            self.assertEqual(zinfo.date_time, (2107, 12, 31, 23, 59, 58))
 
 
 @requires_zlib()
@@ -4511,6 +4511,10 @@ class OtherTests(unittest.TestCase):
         self.assertRaises(ValueError,
                           zipfile.ZipInfo, 'seventies', (1979, 1, 1, 0, 0, 0))
 
+    def test_create_zipinfo_after_2107(self):
+        self.assertRaises(ValueError,
+                          zipfile.ZipInfo, 'future', (2108, 1, 1, 0, 0, 0))
+
     def test_create_empty_zipinfo_repr(self):
         """Before bpo-26185, repr() on empty ZipInfo object was failing."""
         zi = zipfile.ZipInfo(filename="empty")
@@ -5604,6 +5608,50 @@ class ZipInfoTests(unittest.TestCase):
         self.assertEqual(posixpath.basename(zi.filename), 'test_core.py')
         self.assertFalse(zi.is_dir())
         self.assertEqual(zi.file_size, os.path.getsize(__file__))
+
+    def test_from_file_rejects_timestamp_after_2107(self):
+        st = mock.Mock(st_mode=stat.S_IFREG | 0o644,
+                       st_mtime=2**63, st_size=5)
+        mtime = (2108, 1, 1, 0, 0, 0, 0, 1, -1)
+        with mock.patch.object(zipfile.os, 'stat', return_value=st), \
+             mock.patch.object(zipfile.time, 'localtime', return_value=mtime):
+            with self.assertRaises(ValueError):
+                zipfile.ZipInfo.from_file('future')
+
+    def test_from_file_clamps_timestamp_after_2107_round_trip(self):
+        st = mock.Mock(st_mode=stat.S_IFREG | 0o644,
+                       st_mtime=2**63, st_size=5)
+        mtime = (2108, 1, 1, 0, 0, 0, 0, 1, -1)
+        with mock.patch.object(zipfile.os, 'stat', return_value=st), \
+             mock.patch.object(zipfile.time, 'localtime', return_value=mtime):
+            zinfo = zipfile.ZipInfo.from_file(
+                'future', strict_timestamps=False)
+
+        expected = (2107, 12, 31, 23, 59, 58)
+        self.assertEqual(zinfo.date_time, expected)
+        archive = io.BytesIO()
+        with zipfile.ZipFile(archive, 'w') as zf:
+            zf.writestr(zinfo, b'future')
+        with zipfile.ZipFile(archive) as zf:
+            self.assertEqual(zf.getinfo('future').date_time, expected)
+
+    def test_from_file_clamps_localtime_overflow(self):
+        cases = (
+            (2**63, (2107, 12, 31, 23, 59, 58)),
+            (-2**63, (1980, 1, 1, 0, 0, 0)),
+        )
+        for exception in (OverflowError, OSError):
+            for timestamp, expected in cases:
+                with self.subTest(exception=exception, timestamp=timestamp):
+                    st = mock.Mock(st_mode=stat.S_IFREG | 0o644,
+                                   st_mtime=timestamp, st_size=5)
+                    with mock.patch.object(
+                            zipfile.os, 'stat', return_value=st), \
+                         mock.patch.object(zipfile.time, 'localtime',
+                                           side_effect=exception):
+                        zinfo = zipfile.ZipInfo.from_file(
+                            'future', strict_timestamps=False)
+                    self.assertEqual(zinfo.date_time, expected)
 
     def test_from_file_pathlike(self):
         zi = zipfile.ZipInfo.from_file(FakePath(__file__))
