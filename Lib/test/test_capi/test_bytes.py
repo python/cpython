@@ -1,5 +1,7 @@
+import textwrap
 import unittest
 from test.support import import_helper
+from test.support.script_helper import assert_python_failure
 
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 _testcapi = import_helper.import_module('_testcapi')
@@ -378,15 +380,6 @@ class BaseWriterTest:
         writer.format_i(b'y=%i', 456)
         self.assertEqual(writer.finish(), self.result_type(b'x=123, y=456'))
 
-    def test_example_abc(self):
-        self.assertEqual(_testcapi.byteswriter_abc(), b'abc')
-
-    def test_example_resize(self):
-        self.assertEqual(_testcapi.byteswriter_resize(), b'Hello World')
-
-    def test_example_highlevel(self):
-        self.assertEqual(_testcapi.byteswriter_highlevel(), b'Hello World!')
-
 
 class BytesWriterTest(BaseWriterTest, unittest.TestCase):
     result_type = bytes
@@ -423,6 +416,34 @@ class BytesWriterTest(BaseWriterTest, unittest.TestCase):
             unused_text = b'x' * (small_buffer * 2)
             writer.write_bytes(unused_text, len(unused_text))
             self.assertIs(writer.finish_with_size(1), singletons[ch])
+
+    def test_example_abc(self):
+        self.assertEqual(_testcapi.byteswriter_abc(), b'abc')
+
+    def test_example_resize(self):
+        self.assertEqual(_testcapi.byteswriter_resize(), b'Hello World')
+
+    def test_example_highlevel(self):
+        self.assertEqual(_testcapi.byteswriter_highlevel(), b'Hello World!')
+
+    def test_canary_byte(self):
+        small_buffer = _testcapi.PyBytesWriter_small_buffer
+        large_size = small_buffer * 10
+
+        # Test small buffer and large buffer
+        for size in (0, 3, large_size):
+            with self.subTest(size=size):
+                code = textwrap.dedent(f"""
+                    from test.support import SuppressCrashReport
+                    import _testcapi
+                    size = {size}
+                    data = b'x' * size
+                    with SuppressCrashReport():
+                        _testcapi.byteswriter_test_canary_byte(data)
+                """)
+                proc = assert_python_failure('-c', code)
+                self.assertIn(b'Buffer overflow detected in PyBytesWriter',
+                              proc.err)
 
 
 class ByteArrayWriterTest(BaseWriterTest, unittest.TestCase):
