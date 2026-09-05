@@ -754,7 +754,6 @@ static void
 signaldict_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject_GC_UnTrack(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -842,7 +841,6 @@ static PyMethodDef signaldict_methods[] = {
 
 static PyType_Slot signaldict_slots[] = {
     {Py_tp_dealloc, signaldict_dealloc},
-    {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_repr, signaldict_repr},
     {Py_tp_hash, PyObject_HashNotImplemented},
     {Py_tp_getattro, PyObject_GenericGetAttr},
@@ -862,7 +860,7 @@ static PyType_Spec signaldict_spec = {
     .name = "decimal.SignalDictMixin",
     .basicsize = sizeof(PyDecSignalDictObject),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE),
+              Py_TPFLAGS_IMMUTABLETYPE),
     .slots = signaldict_slots,
 };
 
@@ -1445,7 +1443,7 @@ context_new(PyTypeObject *type,
 
     decimal_state *state = get_module_state_by_def(type);
     if (type == state->PyDecContext_Type) {
-        self = PyObject_GC_New(PyDecContextObject, state->PyDecContext_Type);
+        self = PyObject_New(PyDecContextObject, state->PyDecContext_Type);
     }
     else {
         self = (PyDecContextObject *)type->tp_alloc(type, 0);
@@ -1483,21 +1481,7 @@ context_new(PyTypeObject *type,
     self->tstate = NULL;
     self->modstate = state;
 
-    if (type == state->PyDecContext_Type) {
-        PyObject_GC_Track(self);
-    }
-    assert(PyObject_GC_IsTracked((PyObject *)self));
     return (PyObject *)self;
-}
-
-static int
-context_traverse(PyObject *op, visitproc visit, void *arg)
-{
-    PyDecContextObject *self = _PyDecContextObject_CAST(op);
-    Py_VISIT(Py_TYPE(self));
-    Py_VISIT(self->traps);
-    Py_VISIT(self->flags);
-    return 0;
 }
 
 static int
@@ -1527,7 +1511,6 @@ static void
 context_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject_GC_UnTrack(self);
     (void)context_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -2152,7 +2135,7 @@ _decimal_localcontext_impl(PyObject *module, PyObject *local, PyObject *prec,
     }
 
     PyDecContextManagerObject *self;
-    self = PyObject_GC_New(PyDecContextManagerObject,
+    self = PyObject_New(PyDecContextManagerObject,
                            state->PyDecContextManager_Type);
     if (self == NULL) {
         Py_DECREF(local_copy);
@@ -2161,19 +2144,8 @@ _decimal_localcontext_impl(PyObject *module, PyObject *local, PyObject *prec,
 
     self->local = local_copy;
     self->global = Py_NewRef(global);
-    PyObject_GC_Track(self);
 
     return (PyObject *)self;
-}
-
-static int
-ctxmanager_traverse(PyObject *op, visitproc visit, void *arg)
-{
-    PyDecContextManagerObject *self = _PyDecContextManagerObject_CAST(op);
-    Py_VISIT(Py_TYPE(self));
-    Py_VISIT(self->local);
-    Py_VISIT(self->global);
-    return 0;
 }
 
 static int
@@ -2189,7 +2161,6 @@ static void
 ctxmanager_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject_GC_UnTrack(self);
     (void)ctxmanager_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -2233,7 +2204,6 @@ static PyMethodDef ctxmanager_methods[] = {
 static PyType_Slot ctxmanager_slots[] = {
     {Py_tp_dealloc, ctxmanager_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
-    {Py_tp_traverse, ctxmanager_traverse},
     {Py_tp_clear, ctxmanager_clear},
     {Py_tp_methods, ctxmanager_methods},
     {0, NULL},
@@ -2242,7 +2212,7 @@ static PyType_Slot ctxmanager_slots[] = {
 static PyType_Spec ctxmanager_spec = {
     .name = "decimal.ContextManager",
     .basicsize = sizeof(PyDecContextManagerObject),
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+    .flags = (Py_TPFLAGS_DEFAULT |
               Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION),
     .slots = ctxmanager_slots,
 };
@@ -2258,7 +2228,7 @@ PyDecType_New(decimal_state *state, PyTypeObject *type)
     PyDecObject *dec;
 
     if (type == state->PyDec_Type) {
-        dec = PyObject_GC_New(PyDecObject, state->PyDec_Type);
+        dec = PyObject_New(PyDecObject, state->PyDec_Type);
     }
     else {
         dec = (PyDecObject *)type->tp_alloc(type, 0);
@@ -2276,10 +2246,6 @@ PyDecType_New(decimal_state *state, PyTypeObject *type)
     MPD(dec)->alloc = _Py_DEC_MINALLOC;
     MPD(dec)->data = dec->data;
 
-    if (type == state->PyDec_Type) {
-        PyObject_GC_Track(dec);
-    }
-    assert(PyObject_GC_IsTracked((PyObject *)dec));
     return (PyObject *)dec;
 }
 #define dec_alloc(st) PyDecType_New(st, (st)->PyDec_Type)
@@ -2288,7 +2254,6 @@ static void
 dec_dealloc(PyObject *dec)
 {
     PyTypeObject *tp = Py_TYPE(dec);
-    PyObject_GC_UnTrack(dec);
     mpd_del(MPD(dec));
     tp->tp_free(dec);
     Py_DECREF(tp);
@@ -6177,7 +6142,6 @@ static PyType_Slot dec_slots[] = {
     {Py_tp_token, Py_TP_USE_SPEC},
     {Py_tp_dealloc, dec_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
-    {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_repr, dec_repr},
     {Py_tp_hash, dec_hash},
     {Py_tp_str, dec_str},
@@ -6210,7 +6174,7 @@ static PyType_Spec dec_spec = {
     .name = "decimal.Decimal",
     .basicsize = sizeof(PyDecObject),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE),
+              Py_TPFLAGS_IMMUTABLETYPE),
     .slots = dec_slots,
 };
 
@@ -7616,7 +7580,6 @@ static PyMethodDef context_methods [] =
 static PyType_Slot context_slots[] = {
     {Py_tp_token, Py_TP_USE_SPEC},
     {Py_tp_dealloc, context_dealloc},
-    {Py_tp_traverse, context_traverse},
     {Py_tp_clear, context_clear},
     {Py_tp_repr, context_repr},
     {Py_tp_getattro, context_getattr},
@@ -7633,7 +7596,7 @@ static PyType_Spec context_spec = {
     .name = "decimal.Context",
     .basicsize = sizeof(PyDecContextObject),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE),
+              Py_TPFLAGS_IMMUTABLETYPE),
     .slots = context_slots,
 };
 
