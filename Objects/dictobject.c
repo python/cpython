@@ -139,6 +139,7 @@ As a consequence of this, split keys have a maximum size of 16.
 static PyObject* frozendict_new(PyTypeObject *type, PyObject *args,
                                 PyObject *kwds);
 static PyObject* frozendict_new_untracked(PyTypeObject *type);
+static void frozendict_maybe_track(PyObject *op);
 static PyObject* dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static PyObject* dict_new_untracked(PyTypeObject *type);
 static int dict_merge(PyObject *a, PyObject *b, int override, PyObject **dupkey);
@@ -3479,11 +3480,18 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
     // gh-151722: If cls constructor returns a frozendict which is tracked by
     // the GC, create a frozendict copy which is not tracked by the GC.
     //
+    // gh-155176: Since frozendicts whose contents can never be tracked by the
+    // GC are left untracked, being untracked no longer implies that d is
+    // private: also make a copy if d is not uniquely referenced, otherwise
+    // inserting keys below would mutate an object visible elsewhere.
+    //
     // At the function exit, return cls(fd) where fd is a frozendict.
     //
     // Untracking the frozendict requires tracking again the frozendict on
     // error which is more complicated. It's easier to work on a copy.
-    if (PyFrozenDict_Check(d) && _PyObject_GC_IS_TRACKED(d)) {
+    if (PyFrozenDict_Check(d)
+        && (_PyObject_GC_IS_TRACKED(d)
+            || !_PyObject_IsUniquelyReferenced(d))) {
         need_copy = 1;
 
         PyObject *copy = frozendict_new_untracked(&PyFrozenDict_Type);
@@ -3637,7 +3645,12 @@ Done:
         Py_SETREF(d, copy);
     }
     else if (!_PyObject_GC_IS_TRACKED(d)) {
-        _PyObject_GC_TRACK(d);
+        if (PyFrozenDict_Check(d)) {
+            frozendict_maybe_track(d);
+        }
+        else {
+            _PyObject_GC_TRACK(d);
+        }
     }
     return d;
 }
@@ -5202,7 +5215,12 @@ _PyDict_Or(PyObject *self, PyObject *other)
         Py_DECREF(new);
         return NULL;
     }
-    _PyObject_GC_TRACK(new);
+    if (PyFrozenDict_Check(new)) {
+        frozendict_maybe_track(new);
+    }
+    else {
+        _PyObject_GC_TRACK(new);
+    }
     return new;
 }
 
@@ -5472,7 +5490,7 @@ frozendict_vectorcall(PyObject *type, PyObject * const*args,
         }
     }
 
-    _PyObject_GC_TRACK(self);
+    frozendict_maybe_track(self);
     return self;
 }
 
@@ -8502,6 +8520,35 @@ frozendict_new_untracked(PyTypeObject *type)
     return d;
 }
 
+/* Track a fully built frozendict in the GC, unless it can never be part of
+   a reference cycle: an exact frozendict whose keys and values are all
+   guaranteed to never be tracked by the GC.  Subclasses can create reference
+   cycles, so they are always tracked. */
+static void
+frozendict_maybe_track(PyObject *op)
+{
+    assert(PyFrozenDict_Check(op));
+    assert(!_PyObject_GC_IS_TRACKED(op));
+
+    if (PyFrozenDict_CheckExact(op)) {
+        PyObject *key, *value;
+        Py_ssize_t pos = 0;
+        int track = 0;
+        while (_PyDict_Next(op, &pos, &key, &value, NULL)) {
+            if (_PyObject_GC_MAY_BE_TRACKED(key)
+                || _PyObject_GC_MAY_BE_TRACKED(value))
+            {
+                track = 1;
+                break;
+            }
+        }
+        if (!track) {
+            return;
+        }
+    }
+    _PyObject_GC_TRACK(op);
+}
+
 static PyObject *
 frozendict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -8520,7 +8567,7 @@ frozendict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         assert(kwds == NULL);
     }
 
-    _PyObject_GC_TRACK(d);
+    frozendict_maybe_track(d);
     return d;
 }
 
@@ -8566,7 +8613,7 @@ frozendict_copy_impl(PyFrozenDictObject *self)
 
     PyObject *copy = anydict_copy_untracked((PyObject*)self);
     if (copy != NULL) {
-        _PyObject_GC_TRACK(copy);
+        frozendict_maybe_track(copy);
     }
     return copy;
 }
