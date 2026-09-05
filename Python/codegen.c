@@ -4491,7 +4491,13 @@ ex_call:
                                                BUILD_LIST, LIST_APPEND, LIST_EXTEND, 1));
     }
     /* Then keyword arguments */
-    if (nkwelts) {
+    if (nkwelts == 1 &&
+        ((keyword_ty)asdl_seq_GET(keywords, 0))->arg == NULL)
+    {
+        /* A lone ** unpacking: CALL_FUNCTION_EX converts it if needed. */
+        VISIT(c, expr, ((keyword_ty)asdl_seq_GET(keywords, 0))->value);
+    }
+    else if (nkwelts) {
         /* Has a new dict been pushed */
         int have_dict = 0;
 
