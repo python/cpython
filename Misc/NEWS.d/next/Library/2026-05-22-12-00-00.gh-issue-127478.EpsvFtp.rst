@@ -1,0 +1,6 @@
+:mod:`ftplib`: Passive mode data connections now prefer EPSV (RFC 2428) over
+PASV on IPv4 connections, falling back to PASV if the server does not support
+EPSV. EPSV is firewall-transparent as it does not embed an IP address in the
+response, avoiding interference from firewall FTP Application Layer Gateways
+(ALGs). A new class attribute :attr:`~ftplib.FTP.prefer_epsv` (default
+``True``) controls this behavior.
