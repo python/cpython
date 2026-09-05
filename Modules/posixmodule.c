@@ -3201,14 +3201,6 @@ class dir_fd_converter(CConverter):
     def c_default_init(self):
         self.c_default = 'DEFAULT_DIR_FD'
 
-class uid_t_converter(CConverter):
-    type = "uid_t"
-    converter = '_Py_Uid_Converter'
-
-class gid_t_converter(CConverter):
-    type = "gid_t"
-    converter = '_Py_Gid_Converter'
-
 class dev_t_converter(CConverter):
     type = 'dev_t'
     converter = '_Py_Dev_Converter'
@@ -3265,7 +3257,7 @@ class confname_converter(CConverter):
         """, argname=argname, converter=self.converter, table=self.table)
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=e459765bdf453ebf]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=7ceccf55bb600f61]*/
 
 /*[clinic input]
 
