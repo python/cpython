@@ -1575,6 +1575,9 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
         goto bail;
 
     coerced_items = PyList_New(0);
+    if (coerced_items == NULL) {
+        goto bail;
+    }
     it = PyObject_GetIter(items);
     Py_DECREF(items);
     if (it == NULL)
@@ -1598,7 +1601,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
         }
         else if (key == Py_True || key == Py_False || key == Py_None) {
             /* This must come before the PyLong_Check because
-            True and False are also 1 and 0.*/
+               True and False are also 1 and 0.*/
             kstr = _encoded_const(key);
             if (kstr == NULL)
                 goto bail;
