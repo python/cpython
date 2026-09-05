@@ -3779,6 +3779,11 @@ class TestDateTime(TestDate):
             '2009-04-19T12:30:45.-05:00',   # Empty fraction before offset
             '2009-04-19T12:30:45.Z',        # Empty fraction before Z
             '2009-04-19T12:30:45,+05:00',   # Empty fraction (comma) before offset
+            '2009-04-19T12304578',          # Fraction without a decimal mark
+            '2009-04-19T123045789',         # Fraction without a decimal mark
+            '2009-04-19T123045123456789',   # Fraction without a decimal mark
+            '2009-04-19T123045+00000000',   # Offset fraction without decimal mark
+            '2009-04-19T12:30:45+00000000', # Offset fraction without decimal mark
         ]
 
         for bad_str in bad_strs:
@@ -5059,6 +5064,11 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             '12:30:45.-05:00',          # Empty fraction before offset
             '12:30:45.Z',               # Empty fraction before Z
             '12:30:45,+05:00',          # Empty fraction (comma) before offset
+            '12304578',                 # Fraction without a decimal mark
+            '123045789',                # Fraction without a decimal mark
+            '123045123456789',          # Fraction without a decimal mark
+            '123045+00000000',          # Offset fraction without decimal mark
+            '12:30:45+00000000',        # Offset fraction without decimal mark
         ]
 
         for bad_str in bad_strs:
