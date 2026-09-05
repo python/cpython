@@ -2427,6 +2427,31 @@ class CTokenizeTest(TestCase):
             (token.ENDMARKER, "", (1, 0), (1, 0), ""),
         )
 
+    def test_fstring_offsets_survive_buffer_reallocation(self):
+        padding = " " * 9000
+        expression_line = ")=:>{2}}\n"
+        physical_lines = [
+            'f"""\n',
+            "{(\n",
+            padding + "1\n",
+            expression_line,
+            '"""\n',
+        ]
+        source = "".join(physical_lines)
+        chunks = iter([
+            "".join(physical_lines[:2]),
+            "".join(physical_lines[2:4]),
+            physical_lines[4],
+            "",
+        ])
+
+        expected = self._get_tokens(source, extra_tokens=True)
+        tokens = list(tokenize._generate_tokens_from_c_tokenizer(
+            chunks.__next__,
+            extra_tokens=True,
+        ))
+        self.assertEqual(tokens, expected)
+
     def test_extra_tokens_relaxes_lexer_errors(self):
         cases = [
             (
