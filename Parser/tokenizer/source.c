@@ -29,9 +29,8 @@ _PyTok_SourceDiscard(_PyTok_SourceText *source)
         source->bytes[0] = '\0';
     }
     if (source->implicit_lines != NULL) {
-        memset(source->implicit_lines, 0,
-               Py_MIN(((Py_ssize_t)source->nlines + 7) / 8,
-                      source->implicit_cap));
+        Py_ssize_t used = source->nlines / 8 + (source->nlines % 8 != 0);
+        memset(source->implicit_lines, 0, Py_MIN(used, source->implicit_cap));
     }
     source->nlines = 0;
 }
@@ -106,7 +105,7 @@ reserve_checkpoints(_PyTok_SourceText *source, int needed)
 static int
 reserve_implicit_lines(_PyTok_SourceText *source, int nlines)
 {
-    Py_ssize_t needed = ((Py_ssize_t)nlines + 7) / 8;
+    Py_ssize_t needed = nlines / 8 + (nlines % 8 != 0);
     if (needed <= source->implicit_cap) {
         return 0;
     }
