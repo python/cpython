@@ -403,10 +403,17 @@ def determine_num_threads_and_affinity():
     cpus = []
     cores = set()
     max_mhz_all = max(row[3] for row in table)
+    min_mhz_all = min(row[3] for row in table)
+    # Performance cores are not always binned to the same clock, so split them
+    # from the efficiency cores at the midpoint rather than at the maximum.
+    if max_mhz_all != min_mhz_all:
+        min_mhz_wanted = (max_mhz_all + min_mhz_all) / 2
+    else:
+        min_mhz_wanted = 0
     for cpu, node, core, maxmhz in table:
         # Choose only CPUs on the same node, unique cores, and try to avoid
         # "efficiency" cores.
-        if node == 0 and core not in cores and maxmhz == max_mhz_all:
+        if node == 0 and core not in cores and maxmhz >= min_mhz_wanted:
             cpus.append(cpu)
             cores.add(core)
     return cpus
