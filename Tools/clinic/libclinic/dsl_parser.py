@@ -307,6 +307,7 @@ class DSLParser:
         self.critical_section = False
         self.target_critical_section = []
         self.disable_fastcall = False
+        self.vectorcall: bool = False
         self.permit_long_summary = False
         self.permit_long_docstring_body = False
 
@@ -481,6 +482,11 @@ class DSLParser:
             fail("Can't set @staticmethod, function is not a normal callable")
         self.kind = STATIC_METHOD
 
+    def at_vectorcall(self) -> None:
+        if self.vectorcall:
+            fail("Called @vectorcall twice!")
+        self.vectorcall = True
+
     def at_coexist(self) -> None:
         if self.coexist:
             fail("Called @coexist twice!")
@@ -622,6 +628,17 @@ class DSLParser:
         elif name == '__init__':
             self.kind = METHOD_INIT
 
+        # Validate @vectorcall usage.
+        if self.vectorcall:
+            if not self.kind.new_or_init:
+                fail("@vectorcall can only be used with __init__ and __new__ "
+                     "methods currently")
+            # Guaranteed by the __new__ / __init__ checks above.
+            assert cls is not None
+            if not cls.type_object:
+                fail(f"@vectorcall requires the type object of {cls.name!r}, "
+                     f"which was declared without one")
+
     def resolve_return_converter(
         self, full_name: str, forced_converter: str
     ) -> CReturnConverter:
@@ -750,6 +767,7 @@ class DSLParser:
             target_critical_section=self.target_critical_section,
             forced_text_signature=self.forced_text_signature,
             line_number=self.line_number,
+            vectorcall=self.vectorcall,
         )
         self.add_function(func)
 
@@ -1526,6 +1544,27 @@ class DSLParser:
             fail(f"Function {self.function.name!r} uses '*' more than once.")
 
 
+    def check_vectorcall_parameters(self, lineno: int) -> None:
+        assert self.function is not None
+        if not self.function.vectorcall:
+            return
+        for i, p in enumerate(self.function.parameters.values()):
+            if p.group:
+                fail("@vectorcall does not support optional groups",
+                     line_number=lineno)
+            if p.is_vararg() or p.is_var_keyword():
+                continue
+            if isinstance(p.converter, (self_converter,
+                                        defining_class_converter)):
+                continue
+            parse_arg = p.converter.parse_arg(f'args[{i}]',
+                                              p.get_displayname(i),
+                                              limited_capi=False)
+            if parse_arg is None:
+                fail("@vectorcall requires all converters to support "
+                     f"parse_arg(); parameter {p.name!r} does not",
+                     line_number=lineno)
+
     def do_post_block_processing_cleanup(self, lineno: int) -> None:
         """
         Called when processing the block is done.
@@ -1534,6 +1573,7 @@ class DSLParser:
             return
 
         self.check_remaining_star(lineno)
+        self.check_vectorcall_parameters(lineno)
         try:
             self.function.docstring = self.format_docstring()
         except ClinicError as exc:
