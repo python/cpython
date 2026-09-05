@@ -191,8 +191,10 @@ codecctx_errors_set(PyObject *op, PyObject *value, void *Py_UNUSED(closure))
     if (cb == NULL)
         return -1;
 
+    Py_BEGIN_CRITICAL_SECTION(self);
     ERROR_DECREF(self->errors);
     self->errors = cb;
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
