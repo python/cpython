@@ -159,6 +159,25 @@ def _date_to_string(d, aware_datetime):
         d.hour, d.minute, d.second
     )
 
+def _dict_items(d, sort_keys, skipkeys):
+    """Return the (key, value) pairs of a dict, sorted if needed.
+
+    Sorting fails for keys of different types, so non-string keys are
+    removed or reported before sorting.
+    """
+    items = d.items()
+    if sort_keys:
+        if skipkeys:
+            items = [item for item in items if isinstance(item[0], str)]
+            items.sort()
+        else:
+            for key in d:
+                if not isinstance(key, str):
+                    raise TypeError("keys must be strings")
+            items = sorted(items)
+    return items
+
+
 def _escape(text):
     m = _controlCharPat.search(text)
     if m is not None:
@@ -388,14 +407,11 @@ class _PlistWriter(_DumbXMLWriter):
     def write_dict(self, d):
         if d:
             self.begin_element("dict")
-            items = d.items()
-            if self._skipkeys:
-                items = [(k, v) for k, v in items if isinstance(k, str)]
-            if self._sort_keys:
-                items = sorted(items)
-
+            items = _dict_items(d, self._sort_keys, self._skipkeys)
             for key, value in items:
                 if not isinstance(key, str):
+                    if self._skipkeys:
+                        continue
                     raise TypeError("keys must be strings")
                 self.simple_element("key", key)
                 self.write_value(value)
@@ -717,14 +733,11 @@ class _BinaryPlistWriter (object):
         if isinstance(value, (dict, frozendict)):
             keys = []
             values = []
-            items = value.items()
-            if self._skipkeys:
-                items = [(k, v) for k, v in items if isinstance(k, str)]
-            if self._sort_keys:
-                items = sorted(items)
-
+            items = _dict_items(value, self._sort_keys, self._skipkeys)
             for k, v in items:
                 if not isinstance(k, str):
+                    if self._skipkeys:
+                        continue
                     raise TypeError("keys must be strings")
                 keys.append(k)
                 values.append(v)
@@ -838,15 +851,11 @@ class _BinaryPlistWriter (object):
         elif isinstance(value, (dict, frozendict)):
             keyRefs, valRefs = [], []
 
-            rootItems = value.items()
-            if self._skipkeys:
-                rootItems = [(k, v) for k, v in rootItems
-                             if isinstance(k, str)]
-            if self._sort_keys:
-                rootItems = sorted(rootItems)
-
+            rootItems = _dict_items(value, self._sort_keys, self._skipkeys)
             for k, v in rootItems:
                 if not isinstance(k, str):
+                    if self._skipkeys:
+                        continue
                     raise TypeError("keys must be strings")
                 keyRefs.append(self._getrefnum(k))
                 valRefs.append(self._getrefnum(v))
