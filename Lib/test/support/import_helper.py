@@ -105,6 +105,45 @@ def _save_and_remove_modules(names):
     return orig_modules
 
 
+_PARENT_ATTR_MISSING = object()
+
+
+def _save_parent_attrs(names):
+    parent_attrs = {}
+    prefixes = tuple(name + '.' for name in names)
+    removed = {modname for modname in sys.modules
+               if modname in names or modname.startswith(prefixes)}
+    for modname in set(names) | removed:
+        parent_name, _, attr = modname.rpartition('.')
+        if not parent_name:
+            continue
+        if parent_name in removed or parent_name.startswith(prefixes):
+            continue
+        parent = sys.modules.get(parent_name)
+        if parent is None:
+            continue
+        try:
+            value = getattr(parent, attr)
+        except AttributeError:
+            value = _PARENT_ATTR_MISSING
+        parent_attrs[parent_name, attr] = value
+    return parent_attrs
+
+
+def _restore_parent_attrs(parent_attrs):
+    for (parent_name, attr), value in parent_attrs.items():
+        parent = sys.modules.get(parent_name)
+        if parent is None:
+            continue
+        if value is _PARENT_ATTR_MISSING:
+            try:
+                delattr(parent, attr)
+            except AttributeError:
+                pass
+        else:
+            setattr(parent, attr, value)
+
+
 @contextlib.contextmanager
 def frozen_modules(enabled=True):
     """Force frozen modules to be used (or not).
@@ -179,6 +218,7 @@ def import_fresh_module(name, fresh=(), blocked=(), *,
         fresh = list(fresh)
         blocked = list(blocked)
         names = {name, *fresh, *blocked}
+        orig_parent_attrs = _save_parent_attrs(names)
         orig_modules = _save_and_remove_modules(names)
         for modname in blocked:
             sys.modules[modname] = None
@@ -195,6 +235,7 @@ def import_fresh_module(name, fresh=(), blocked=(), *,
         finally:
             _save_and_remove_modules(names)
             sys.modules.update(orig_modules)
+            _restore_parent_attrs(orig_parent_attrs)
 
 
 class CleanImport(object):
