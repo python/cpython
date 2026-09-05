@@ -1,0 +1,6 @@
+:meth:`annotationlib.ForwardRef.evaluate` now resolves :ref:`lazy import
+<lazy-imports>` proxies found in the namespace. With
+:attr:`~annotationlib.Format.FORWARDREF`, a lazy import that fails to resolve
+now results in a :class:`~annotationlib.ForwardRef` instead of the lazy import
+proxy, and with :attr:`~annotationlib.Format.VALUE` the underlying exception is
+propagated.
