@@ -397,6 +397,23 @@ class AsyncGenTest(unittest.TestCase):
                 r"cannot reuse already awaited __anext__\(\)/asend\(\)"):
             an.send(None)
 
+    def test_async_gen_asend_athrow_ag_gen(self):
+        # gh-156980: asend()/athrow() awaitables expose the generator they drive
+        async def gen():
+            yield 1
+
+        g = gen()
+        asend = g.asend(None)
+        athrow = g.athrow(ValueError)
+        try:
+            self.assertIs(asend.ag_gen, g)
+            self.assertIs(athrow.ag_gen, g)
+            with self.assertRaises(AttributeError):
+                asend.ag_gen = None
+        finally:
+            asend.close()
+            athrow.close()
+
     def test_async_gen_asend_throw_concurrent_with_send(self):
         import types
 
