@@ -355,7 +355,11 @@ set_unhashable_type(PyObject *key)
     PyErr_Format(PyExc_TypeError,
                  "cannot use '%T' as a set element (%S)",
                  key, exc);
+    PyObject *exc2 = PyErr_GetRaisedException();
+    PyException_SetCause(exc2, Py_NewRef(exc));
+    PyException_SetContext(exc2, Py_NewRef(exc));
     Py_DECREF(exc);
+    PyErr_SetRaisedException(exc2);
 }
 
 int
