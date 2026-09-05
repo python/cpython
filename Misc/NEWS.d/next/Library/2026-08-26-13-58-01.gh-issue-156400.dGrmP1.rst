@@ -1,0 +1,6 @@
+Fix socket and pipe leaks in :mod:`asyncio` when ``protocol_factory()`` raises
+in :meth:`loop.create_datagram_endpoint
+<asyncio.loop.create_datagram_endpoint>`, :meth:`loop.connect_read_pipe
+<asyncio.loop.connect_read_pipe>`, and :meth:`loop.connect_write_pipe
+<asyncio.loop.connect_write_pipe>`. The socket or pipe is now closed instead
+of leaking until garbage collection.
