@@ -92,6 +92,17 @@ class PyMemDebugTests(unittest.TestCase):
         code = 'import _testcapi; _testcapi.pyobject_malloc_without_gil()'
         self.check_malloc_without_gil(code)
 
+    def test_pyobject_malloc_tp_doc(self):
+        # gh-118909: tp_doc allocated with PyObject_Malloc() (as some
+        # extensions do) must still be freeable when the type is
+        # deallocated, even with debug allocator hooks enabled.
+        assert_python_ok(
+            '-c', 'import _testcapi; _testcapi.test_pyobject_malloc_tp_doc()',
+            PYTHONMALLOC=self.PYTHONMALLOC,
+            MALLOC_CONF="junk:false",
+            MALLOC_OPTIONS="j",
+        )
+
     def check_pyobject_is_freed(self, func_name):
         code = textwrap.dedent(f'''
             import gc, os, sys, _testinternalcapi

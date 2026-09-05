@@ -578,6 +578,46 @@ create_heapctype_with_none_bases_slot(PyObject *self, PyObject *Py_UNUSED(ignore
 }
 
 
+static PyType_Slot NoDocSlots_slots[] = {
+    {0, 0},
+};
+
+static PyType_Spec NoDocSlots_spec = {
+    .name = "_testcapi.PyObjectMallocDocType",
+    .basicsize = sizeof(PyObject),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = NoDocSlots_slots,
+};
+
+static PyObject *
+test_pyobject_malloc_tp_doc(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    /* Regression test for gh-118909: some C extensions (e.g. older
+     * pybind11/nanobind versions) allocate tp_doc with PyObject_Malloc()
+     * directly instead of going through PyType_FromSpec()'s Py_tp_doc
+     * slot, relying on CPython to free it when the type is deallocated.
+     * Make sure that still works when debug allocator hooks are
+     * enabled (PYTHONMALLOC=debug). */
+    PyObject *type = PyType_FromSpec(&NoDocSlots_spec);
+    if (type == NULL) {
+        return NULL;
+    }
+    assert(((PyTypeObject *)type)->tp_doc == NULL);
+
+    static const char doc[] = "some docstring";
+    char *tp_doc = PyObject_Malloc(sizeof(doc));
+    if (tp_doc == NULL) {
+        Py_DECREF(type);
+        return PyErr_NoMemory();
+    }
+    memcpy(tp_doc, doc, sizeof(doc));
+    ((PyTypeObject *)type)->tp_doc = tp_doc;
+
+    Py_DECREF(type);  // triggers type_dealloc(), which frees tp_doc
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"pytype_fromspec_meta",    pytype_fromspec_meta,            METH_O},
     {"test_type_from_ephemeral_spec", test_type_from_ephemeral_spec, METH_NOARGS},
@@ -598,6 +638,7 @@ static PyMethodDef TestMethods[] = {
     {"pytype_getmodulebytoken", pytype_getmodulebytoken, METH_VARARGS},
     {"create_heapctype_with_none_bases_slot",
         create_heapctype_with_none_bases_slot, METH_NOARGS},
+    {"test_pyobject_malloc_tp_doc", test_pyobject_malloc_tp_doc, METH_NOARGS},
     {NULL},
 };
 

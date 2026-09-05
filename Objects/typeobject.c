@@ -16,6 +16,7 @@
 #include "pycore_object_alloc.h"  // _PyObject_MallocWithType()
 #include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
+#include "pycore_pymem.h"         // _PyMem_DebugEnabled()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_slots.h"         // _PySlotIterator_Init
 #include "pycore_symtable.h"      // _Py_Mangle()
@@ -6857,6 +6858,38 @@ _PyTypes_FiniCachedDescriptors(PyInterpreterState *interp)
 }
 
 
+/* Free a heap type's tp_doc.
+ *
+ * tp_doc is documented as being allocated by the type's creator, and
+ * historically some C extensions (e.g. older versions of pybind11 and
+ * nanobind) set it directly with PyObject_Malloc(), relying on CPython
+ * to free it here. gh-114574 switched CPython's own allocation of
+ * tp_doc from PyObject_Malloc() to PyMem_Malloc(). The two domains
+ * share the same underlying allocator in a release build, so this
+ * didn't matter in practice, but a build with the debug allocator
+ * hooks enabled (Py_DEBUG, or PYTHONMALLOC=debug) tags each domain's
+ * blocks and aborts if a block is freed with the wrong one.
+ *
+ * Detect which allocator was actually used, from the tag debug builds
+ * write just before the returned pointer, and free with the matching
+ * function so extensions written against the old contract keep
+ * working. This is a backwards-compatibility fallback, not a stable
+ * API: extensions should allocate tp_doc with PyMem_Malloc() (see
+ * gh-118909).
+ */
+static void
+type_free_tp_doc(char *tp_doc)
+{
+    if (tp_doc != NULL && _PyMem_DebugEnabled()) {
+        char api_id = ((char *)tp_doc)[-(Py_ssize_t)SIZEOF_SIZE_T];
+        if (api_id == 'o') {
+            PyObject_Free(tp_doc);
+            return;
+        }
+    }
+    PyMem_Free(tp_doc);
+}
+
 static void
 type_dealloc(PyObject *self)
 {
@@ -6910,7 +6943,7 @@ type_dealloc(PyObject *self)
     /* A type's tp_doc is heap allocated, unlike the tp_doc slots
      * of most other objects.  It's okay to cast it to char *.
      */
-    PyMem_Free((char *)type->tp_doc);
+    type_free_tp_doc((char *)type->tp_doc);
 
     PyHeapTypeObject *et = (PyHeapTypeObject *)type;
     Py_XDECREF(et->ht_name);

@@ -1565,6 +1565,15 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    type object.  This is exposed as the :attr:`~type.__doc__` attribute on the
    type and instances of the type.
 
+   For a heap type (:c:macro:`Py_TPFLAGS_HEAPTYPE`), if this field is set
+   directly rather than through the :c:data:`Py_tp_doc` slot, the string
+   must be allocated with :c:func:`PyMem_Malloc`, since CPython frees it
+   with :c:func:`PyMem_Free` when the type is deallocated. (As a
+   backwards-compatibility fallback, a string allocated with
+   :c:func:`PyObject_Malloc` is also detected and freed correctly, but
+   this fallback is not guaranteed and may be removed in a future
+   version -- see :gh:`118909`.)
+
    **Inheritance:**
 
    This field is *not* inherited by subtypes.
