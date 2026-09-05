@@ -70,7 +70,7 @@ typedef struct _tokenizer_mode {
 struct tok_state {
     /* Input state; buf <= cur <= inp */
     /* NB an entire line is held in the buffer */
-    char *buf;          /* Owned for file/readline input; source-backed otherwise. */
+    char *buf;
     char *cur;          /* Next character in buffer */
     char *inp;          /* End of data in buffer */
     _PyTok_Off buf_offset; /* Logical offset of buf[0]. */
