@@ -8598,3 +8598,14 @@ PyTypeObject PyFrozenDict_Type = {
     .tp_vectorcall = frozendict_vectorcall,
     .tp_version_tag = _Py_TYPE_VERSION_FROZENDICT,
 };
+
+
+PyObject *
+_PyDict_Freeze(PyObject *dict)
+{
+    assert(dict != NULL);
+    assert(PyDict_CheckExact(dict));
+    assert(_PyObject_IsUniquelyReferenced(dict));
+    dict->ob_type = &PyFrozenDict_Type;
+    return Py_NewRef(dict);
+}
