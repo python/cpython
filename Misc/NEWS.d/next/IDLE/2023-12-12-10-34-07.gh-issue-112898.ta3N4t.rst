@@ -1,0 +1,2 @@
+Remove the "Cancel" button in the "Save On Close" message box on macOS when
+the user has no option to cancel quiting.
