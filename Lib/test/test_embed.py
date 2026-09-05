@@ -137,6 +137,8 @@ class EmbeddingTestsMixin:
         """Runs a test in the embedded interpreter"""
         cmd = [self.test_exe]
         cmd.extend(args)
+        if env is None:
+            env = remove_python_envvars()
         if env is not None and MS_WINDOWS:
             # Windows requires at least the SYSTEMROOT environment variable to
             # start Python.
@@ -628,7 +630,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             with open(filename, 'x') as fp:
                 fp.write(CODE_EXITCODE_123)
 
-            env = dict(os.environ)
+            env = remove_python_envvars()
             env['PYTHONSTARTUP'] = filename
             self.check_program_exitcode("test_init_run_main_interactive_exitcode",
                                         env=env,

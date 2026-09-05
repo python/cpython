@@ -1,0 +1,4 @@
+Fix ``test.test_embed`` to clear ``PYTHON*`` environment variables (including
+``PYTHONSTARTUP``) before running embedded interpreter tests, preventing failures
+when the test runner's environment has these variables set (e.g., by VS Code's
+shell integration).
