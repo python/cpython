@@ -5555,10 +5555,24 @@ class TestWithDirectory(unittest.TestCase):
             self.assertEqual(old_zinfo.filename, "directory4/")
             self.assertEqual(old_zinfo.external_attr, new_zinfo.external_attr)
 
+            # gh-154490: file type bits in *mode* must not leak into the
+            # entry's external attributes; only the permission bits are kept.
+            zf.mkdir("directory5", mode=0o107777)  # S_IFREG | 0o7777
+            zinfo = zf.filelist[4]
+            self.assertEqual(zinfo.filename, "directory5/")
+            self.assertEqual(zinfo.external_attr, (0o47777 << 16) | 0x10)
+
+            zf.mkdir("directory6", mode=0o120555)  # S_IFLNK | 0o555
+            zinfo = zf.filelist[5]
+            self.assertEqual(zinfo.filename, "directory6/")
+            self.assertEqual(zinfo.external_attr, (0o40555 << 16) | 0x10)
+
             target = os.path.join(TESTFN2, "target")
             os.mkdir(target)
             zf.extractall(target)
-            self.assertEqual(set(os.listdir(target)), {"directory", "directory2", "directory3", "directory4"})
+            self.assertEqual(set(os.listdir(target)),
+                             {"directory", "directory2", "directory3",
+                              "directory4", "directory5", "directory6"})
 
     def test_create_directory_with_write(self):
         with zipfile.ZipFile(TESTFN, "w") as zf:
