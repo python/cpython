@@ -1584,14 +1584,9 @@ class EventLoopTestsMixin:
         transport_2.close()
 
     def test_datagram_recvfrom_connection_reset_recovers(self):
-        # gh-127057: on Windows, a UDP socket that previously sent a
-        # datagram to an address that wasn't listening can raise
-        # ConnectionResetError (WSAECONNRESET) on a later receive
-        # attempt: synchronously from WSARecvFrom() on ProactorEventLoop
-        # (instead of via the completion result already handled in
-        # _finish_recvfrom() for gh-91227), or from a plain recvfrom()
-        # on SelectorEventLoop. Either way the transport must keep
-        # working afterwards instead of the read loop dying silently.
+        # gh-127057: a UDP socket that sent a datagram to an address that
+        # wasn't listening can raise ConnectionResetError on a later
+        # receive.  The transport must keep working afterwards.
         loop = self.loop
 
         class Protocol(asyncio.DatagramProtocol):
@@ -1621,27 +1616,21 @@ class EventLoopTestsMixin:
         closed_addr = closed.getsockname()
         closed.close()
 
-        # Trigger a real ICMP port-unreachable now, before the socket is
-        # wrapped in a transport and before any read is armed for it --
-        # on Windows this is what makes a Proactor's first WSARecvFrom()
-        # call raise synchronously.
+        # Trigger the error before the socket is wrapped in a transport,
+        # so that the first read raises synchronously.
         sock.sendto(b'x', closed_addr)
 
         transport, protocol = loop.run_until_complete(
             loop.create_datagram_endpoint(Protocol, sock=sock))
 
-        # The transport must still be able to receive afterwards -- this
-        # is the actual regression check, and must hold regardless of
-        # whether this platform surfaced an error for the bad send above.
         transport.sendto(b'ping', addr)
-        loop.run_until_complete(
-            asyncio.wait_for(protocol.datagram_received_event, 10))
+        loop.run_until_complete(asyncio.wait_for(
+            protocol.datagram_received_event, support.SHORT_TIMEOUT))
         self.assertEqual(protocol.received, [b'ping'])
 
         if sys.platform == 'win32':
-            # Windows reliably reports the bad send via a later recvfrom();
-            # other platforms generally don't deliver ICMP errors to a
-            # plain recv() on an unconnected UDP socket.
+            # Other platforms don't report ICMP errors on an
+            # unconnected UDP socket.
             self.assertEqual(len(protocol.errors), 1)
             self.assertIsInstance(protocol.errors[0], ConnectionResetError)
 

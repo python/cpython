@@ -1,6 +1,3 @@
-Fix :class:`asyncio.ProactorEventLoop` UDP transports so a
-:exc:`ConnectionResetError` raised synchronously from ``WSARecvFrom``
-(reported when the same socket was previously used to send to an
-address that isn't listening) no longer breaks the read loop. This
-complements the existing handling of the equivalent asynchronous
-``ERROR_PORT_UNREACHABLE`` completion result.
+Fix :class:`asyncio.ProactorEventLoop` UDP transports so that a
+:exc:`ConnectionResetError` raised by ``WSARecvFrom`` no longer stops the
+read loop.
