@@ -7,8 +7,8 @@
 Py_LOCAL_INLINE(PyObject *)
 STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
 {
-    char *sepstr = STRINGLIB_STR(sep);
-    const Py_ssize_t seplen = STRINGLIB_LEN(sep);
+    const char *sepstr = STRINGLIB_STR(sep);
+    Py_ssize_t seplen = STRINGLIB_LEN(sep);
     PyObject *res = NULL;
     char *p;
     Py_ssize_t seqlen = 0;
@@ -32,7 +32,7 @@ STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
         Py_DECREF(seq);
         return STRINGLIB_NEW(NULL, 0);
     }
-#ifndef STRINGLIB_MUTABLE
+#if !STRINGLIB_MUTABLE
     if (seqlen == 1) {
         item = PySequence_Fast_GET_ITEM(seq, 0);
         if (STRINGLIB_CHECK_EXACT(item)) {
@@ -63,19 +63,23 @@ STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
         item = PySequence_Fast_GET_ITEM(seq, i);
         if (PyBytes_CheckExact(item)) {
             /* Fast path. */
-            Py_INCREF(item);
-            buffers[i].obj = item;
+            buffers[i].obj = Py_NewRef(item);
             buffers[i].buf = PyBytes_AS_STRING(item);
             buffers[i].len = PyBytes_GET_SIZE(item);
         }
         else {
+            /* item is only borrowed; its __buffer__() may run Python that
+               drops the sequence's last reference to it. */
+            Py_INCREF(item);
             if (PyObject_GetBuffer(item, &buffers[i], PyBUF_SIMPLE) != 0) {
                 PyErr_Format(PyExc_TypeError,
                              "sequence item %zd: expected a bytes-like object, "
                              "%.80s found",
                              i, Py_TYPE(item)->tp_name);
+                Py_DECREF(item);
                 goto error;
             }
+            Py_DECREF(item);
             /* If the backing objects are mutable, then dropping the GIL
              * opens up race conditions where another thread tries to modify
              * the object which we hold a buffer on it. Such code has data
@@ -155,7 +159,7 @@ done:
     for (i = 0; i < nbufs; i++)
         PyBuffer_Release(&buffers[i]);
     if (buffers != static_buffers)
-        PyMem_FREE(buffers);
+        PyMem_Free(buffers);
     return res;
 }
 

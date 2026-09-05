@@ -1,12 +1,17 @@
 """
 Collect various information about Python to help debugging test failures.
 """
-from __future__ import print_function
 import errno
 import re
 import sys
 import traceback
 import warnings
+
+
+MS_WINDOWS = (sys.platform == "win32")
+APPLE = (sys.platform in ("darwin", "ios", "tvos", "watchos"))
+
+COMMAND_TIMEOUT = 60.0
 
 
 def normalize_text(text):
@@ -15,6 +20,25 @@ def normalize_text(text):
     text = str(text)
     text = re.sub(r'\s+', ' ', text)
     return text.strip()
+
+
+def first_line(text):
+    # Get the first line. Return text unchanged if it's empty.
+    lines = text.splitlines()
+    if lines:
+        return lines[0]
+    else:
+        # text is an empty string
+        return text
+
+
+def read_first_line(filename):
+    # Get the first line of a text file and strip trailing spaces
+    try:
+        with open(filename, encoding="utf-8") as fp:
+            return fp.readline().rstrip()
+    except OSError:
+        return ''
 
 
 class PythonInfo:
@@ -78,6 +102,7 @@ def call_func(info_add, name, mod, func_name, *, formatter=None):
 
 def collect_sys(info_add):
     attributes = (
+        '_emscripten_info',
         '_framework',
         'abiflags',
         'api_version',
@@ -96,6 +121,7 @@ def collect_sys(info_add):
         'maxunicode',
         'path',
         'platform',
+        'platlibdir',
         'prefix',
         'thread_info',
         'version',
@@ -104,8 +130,13 @@ def collect_sys(info_add):
     )
     copy_attributes(info_add, sys, 'sys.%s', attributes)
 
-    call_func(info_add, 'sys.androidapilevel', sys, 'getandroidapilevel')
-    call_func(info_add, 'sys.windowsversion', sys, 'getwindowsversion')
+    for func in (
+        '_is_gil_enabled',
+        'getandroidapilevel',
+        'getrecursionlimit',
+        'getwindowsversion',
+    ):
+        call_func(info_add, f'sys.{func}', sys, func)
 
     encoding = sys.getfilesystemencoding()
     if hasattr(sys, 'getfilesystemencodeerrors'):
@@ -124,13 +155,23 @@ def collect_sys(info_add):
             encoding = '%s/%s' % (encoding, errors)
         info_add('sys.%s.encoding' % name, encoding)
 
-    # Were we compiled --with-pydebug or with #define Py_DEBUG?
+    # Were we compiled --with-pydebug?
     Py_DEBUG = hasattr(sys, 'gettotalrefcount')
     if Py_DEBUG:
         text = 'Yes (sys.gettotalrefcount() present)'
     else:
         text = 'No (sys.gettotalrefcount() missing)'
-    info_add('Py_DEBUG', text)
+    info_add('build.Py_DEBUG', text)
+
+    # Were we compiled --with-trace-refs?
+    Py_TRACE_REFS = hasattr(sys, 'getobjects')
+    if Py_TRACE_REFS:
+        text = 'Yes (sys.getobjects() present)'
+    else:
+        text = 'No (sys.getobjects() missing)'
+    info_add('build.Py_TRACE_REFS', text)
+
+    info_add('sys.is_remote_debug_enabled', sys.is_remote_debug_enabled())
 
 
 def collect_platform(info_add):
@@ -149,11 +190,34 @@ def collect_platform(info_add):
     if libc_ver:
         info_add('platform.libc_ver', libc_ver)
 
+    try:
+        os_release = platform.freedesktop_os_release()
+    except OSError:
+        pass
+    else:
+        for key in (
+            'ID',
+            'NAME',
+            'PRETTY_NAME'
+            'VARIANT',
+            'VARIANT_ID',
+            'VERSION',
+            'VERSION_CODENAME',
+            'VERSION_ID',
+        ):
+            if key not in os_release:
+                continue
+            info_add(f'platform.freedesktop_os_release[{key}]',
+                     os_release[key])
+
+    if sys.platform == 'android':
+        call_func(info_add, 'platform.android_ver', platform, 'android_ver')
+
 
 def collect_locale(info_add):
     import locale
 
-    info_add('locale.encoding', locale.getpreferredencoding(False))
+    info_add('locale.getencoding', locale.getencoding())
 
 
 def collect_builtins(info_add):
@@ -209,6 +273,7 @@ def collect_os(info_add):
         'getresgid',
         'getresuid',
         'getuid',
+        'process_cpu_count',
         'uname',
     ):
         call_func(info_add, 'os.%s' % func, os, func)
@@ -238,11 +303,14 @@ def collect_os(info_add):
         "ARCHFLAGS",
         "ARFLAGS",
         "AUDIODEV",
+        "BUILDPYTHON",
         "CC",
         "CFLAGS",
+        "CI",
         "COLUMNS",
         "COMPUTERNAME",
         "COMSPEC",
+        "CONTAINER",
         "CPP",
         "CPPFLAGS",
         "DISPLAY",
@@ -250,11 +318,15 @@ def collect_os(info_add):
         "DISTUTILS_USE_SDK",
         "DYLD_LIBRARY_PATH",
         "ENSUREPIP_OPTIONS",
+        "FORCE_COLOR",
+        "GITHUB_ACTIONS",
         "HISTORY_FILE",
         "HOME",
         "HOMEDRIVE",
         "HOMEPATH",
         "IDLESTARTUP",
+        "IMAGE_OS_VERSION",
+        "IPHONEOS_DEPLOYMENT_TARGET",
         "LANG",
         "LDFLAGS",
         "LDSHARED",
@@ -265,11 +337,13 @@ def collect_os(info_add):
         "MAKEFLAGS",
         "MIXERDEV",
         "MSSDK",
+        "NO_COLOR",
         "PATH",
         "PATHEXT",
         "PIP_CONFIG_FILE",
         "PLAT",
         "POSIXLY_CORRECT",
+        "PYTHON_COLORS",
         "PY_SAX_PARSER",
         "ProgramFiles",
         "ProgramFiles(x86)",
@@ -282,7 +356,6 @@ def collect_os(info_add):
         "TEMP",
         "TERM",
         "TILE_LIBRARY",
-        "TIX_LIBRARY",
         "TMP",
         "TMPDIR",
         "TRAVIS",
@@ -291,15 +364,25 @@ def collect_os(info_add):
         "VIRTUAL_ENV",
         "WAYLAND_DISPLAY",
         "WINDIR",
+        "_PYTHON_HOSTRUNNER",
         "_PYTHON_HOST_PLATFORM",
         "_PYTHON_PROJECT_BASE",
         "_PYTHON_SYSCONFIGDATA_NAME",
+        "_PYTHON_SYSCONFIGDATA_PATH",
         "__PYVENV_LAUNCHER__",
+
+        # Sanitizer options
+        "ASAN_OPTIONS",
+        "LSAN_OPTIONS",
+        "MSAN_OPTIONS",
+        "TSAN_OPTIONS",
+        "UBSAN_OPTIONS",
     ))
     for name, value in os.environ.items():
         uname = name.upper()
         if (uname in ENV_VARS
-           # Copy PYTHON* and LC_* variables
+           # Copy PYTHON* variables like PYTHONPATH
+           # Copy LC_* variables like LC_ALL
            or uname.startswith(("PYTHON", "LC_"))
            # Visual Studio: VS140COMNTOOLS
            or (uname.startswith("VS") and uname.endswith("COMNTOOLS"))):
@@ -367,21 +450,53 @@ def collect_readline(info_add):
             info_add('readline.library', 'GNU readline')
 
 
-def collect_gdb(info_add):
+def run_command(cmd, check=True, **kwargs):
     import subprocess
+    from test.support import has_subprocess_support
 
+    if not has_subprocess_support:
+        # subprocess is not supported by the current platform
+        return ''
+
+    timeout = COMMAND_TIMEOUT
+
+    cmd_str = ' '.join(cmd)
     try:
-        proc = subprocess.Popen(["gdb", "-nx", "--version"],
+        proc = subprocess.Popen(cmd,
                                 stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                universal_newlines=True)
-        version = proc.communicate()[0]
-    except OSError:
-        return
+                                stderr=subprocess.DEVNULL,
+                                text=True,
+                                **kwargs)
+        with proc:
+            try:
+                stdout = proc.communicate(timeout=timeout)[0]
+            except:
+                proc.kill()
+                proc.communicate()
+                raise
 
-    # Only keep the first line
-    version = version.splitlines()[0]
-    info_add('gdb_version', version)
+        if check and proc.returncode:
+            print(f"Command {cmd_str} failed with exit code {proc.returncode}")
+            return ''
+
+        # Strip trailing spaces and newlines
+        stdout = stdout.rstrip()
+        return stdout
+    except FileNotFoundError:
+        return ''
+    except OSError as exc:
+        print(f"Command {cmd_str} failed with: {exc!r}")
+        return ''
+    except subprocess.TimeoutExpired:
+        print(f"Command {cmd_str}: timeout!")
+        return ''
+
+
+def collect_gdb(info_add):
+    version = run_command(["gdb", "-nx", "--version"])
+    if version:
+        # Only keep the first line
+        info_add('gdb_version', first_line(version))
 
 
 def collect_tkinter(info_add):
@@ -430,6 +545,15 @@ def collect_time(info_add):
                 info_add('time.get_clock_info(%s)' % clock, clock_info)
 
 
+def collect_curses(info_add):
+    try:
+        import curses
+    except ImportError:
+        return
+
+    copy_attr(info_add, 'curses.ncurses_version', curses, 'ncurses_version')
+
+
 def collect_datetime(info_add):
     try:
         import datetime
@@ -442,29 +566,43 @@ def collect_datetime(info_add):
 def collect_sysconfig(info_add):
     import sysconfig
 
+    info_add('sysconfig.is_python_build', sysconfig.is_python_build())
+
     for name in (
         'ABIFLAGS',
+        'ALT_SOABI',
         'ANDROID_API_LEVEL',
         'CC',
         'CCSHARED',
         'CFLAGS',
         'CFLAGSFORSHARED',
         'CONFIG_ARGS',
+        'HOSTRUNNER',
         'HOST_GNU_TYPE',
         'MACHDEP',
         'MULTIARCH',
         'OPT',
+        'PGO_PROF_USE_FLAG',
         'PY_CFLAGS',
         'PY_CFLAGS_NODIST',
         'PY_CORE_LDFLAGS',
+        'PY_CORE_EXE_LDFLAGS',
         'PY_LDFLAGS',
         'PY_LDFLAGS_NODIST',
         'PY_STDMODULE_CFLAGS',
         'Py_DEBUG',
         'Py_ENABLE_SHARED',
+        'Py_GIL_DISABLED',
+        'Py_REMOTE_DEBUG',
         'SHELL',
         'SOABI',
+        'SOABI_PLATFORM',
+        'TEST_MODULES',
+        'VAPTH',
+        'abs_builddir',
+        'abs_srcdir',
         'prefix',
+        'srcdir',
     ):
         value = sysconfig.get_config_var(name)
         if name == 'ANDROID_API_LEVEL' and not value:
@@ -472,6 +610,20 @@ def collect_sysconfig(info_add):
             continue
         value = normalize_text(value)
         info_add('sysconfig[%s]' % name, value)
+
+    for name in (
+        'WITH_DOC_STRINGS',
+        'WITH_DTRACE',
+        'WITH_MIMALLOC',
+        'WITH_PYMALLOC',
+        'WITH_VALGRIND',
+    ):
+        value = sysconfig.get_config_var(name)
+        if value:
+            text = 'Yes'
+        else:
+            text = 'No'
+        info_add(f'build.{name}', text)
 
 
 def collect_ssl(info_add):
@@ -501,7 +653,7 @@ def collect_ssl(info_add):
     copy_attributes(info_add, ssl, 'ssl.%s', attributes, formatter=format_attr)
 
     for name, ctx in (
-        ('SSLContext', ssl.SSLContext()),
+        ('SSLContext', ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)),
         ('default_https_context', ssl._create_default_https_context()),
         ('stdlib_context', ssl._create_stdlib_context()),
     ):
@@ -528,10 +680,19 @@ def collect_ssl(info_add):
 
 
 def collect_socket(info_add):
-    import socket
+    try:
+        import socket
+    except ImportError:
+        return
 
-    hostname = socket.gethostname()
-    info_add('socket.hostname', hostname)
+    try:
+        hostname = socket.gethostname()
+    except (OSError, AttributeError):
+        # WASI SDK 16.0 does not have gethostname(2).
+        if sys.platform != "wasi":
+            raise
+    else:
+        info_add('socket.hostname', hostname)
 
 
 def collect_sqlite(info_add):
@@ -540,7 +701,7 @@ def collect_sqlite(info_add):
     except ImportError:
         return
 
-    attributes = ('version', 'sqlite_version')
+    attributes = ('sqlite_version',)
     copy_attributes(info_add, sqlite3, 'sqlite3.%s', attributes)
 
 
@@ -550,8 +711,18 @@ def collect_zlib(info_add):
     except ImportError:
         return
 
-    attributes = ('ZLIB_VERSION', 'ZLIB_RUNTIME_VERSION')
+    attributes = ('ZLIB_VERSION', 'ZLIB_RUNTIME_VERSION', 'ZLIBNG_VERSION')
     copy_attributes(info_add, zlib, 'zlib.%s', attributes)
+
+
+def collect_zstd(info_add):
+    try:
+        import _zstd
+    except ImportError:
+        return
+
+    attributes = ('zstd_version',)
+    copy_attributes(info_add, _zstd, 'zstd.%s', attributes)
 
 
 def collect_expat(info_add):
@@ -580,8 +751,28 @@ def collect_testcapi(info_add):
     except ImportError:
         return
 
-    call_func(info_add, 'pymem.allocator', _testcapi, 'pymem_getallocatorsname')
-    copy_attr(info_add, 'pymem.with_pymalloc', _testcapi, 'WITH_PYMALLOC')
+    for name in (
+        'LONG_MAX',         # always 32-bit on Windows, 64-bit on 64-bit Unix
+        'PY_SSIZE_T_MAX',
+        'SIZEOF_TIME_T',    # 32-bit or 64-bit depending on the platform
+        'SIZEOF_WCHAR_T',   # 16-bit or 32-bit depending on the platform
+    ):
+        copy_attr(info_add, f'_testcapi.{name}', _testcapi, name)
+
+
+def collect_testinternalcapi(info_add):
+    try:
+        import _testinternalcapi
+    except ImportError:
+        return
+
+    call_func(info_add, 'pymem.allocator', _testinternalcapi, 'pymem_getallocatorsname')
+
+    for name in (
+        'SIZEOF_PYGC_HEAD',
+        'SIZEOF_PYOBJECT',
+    ):
+        copy_attr(info_add, f'_testinternalcapi.{name}', _testinternalcapi, name)
 
 
 def collect_resource(info_add):
@@ -600,9 +791,10 @@ def collect_resource(info_add):
 
 
 def collect_test_socket(info_add):
+    import unittest
     try:
         from test import test_socket
-    except ImportError:
+    except (ImportError, unittest.SkipTest):
         return
 
     # all check attributes like HAVE_SOCKET_CAN
@@ -610,22 +802,92 @@ def collect_test_socket(info_add):
                   if name.startswith('HAVE_')]
     copy_attributes(info_add, test_socket, 'test_socket.%s', attributes)
 
+    # Get IOCTL_VM_SOCKETS_GET_LOCAL_CID of /dev/vsock
+    cid = test_socket.get_cid()
+    info_add('test_socket.get_cid', cid)
 
-def collect_test_support(info_add):
+
+def collect_support(info_add):
     try:
         from test import support
     except ImportError:
         return
 
-    attributes = ('IPV6_ENABLED',)
-    copy_attributes(info_add, support, 'test_support.%s', attributes)
+    attributes = (
+        'MS_WINDOWS',
+        'has_fork_support',
+        'has_socket_support',
+        'has_strftime_extensions',
+        'has_subprocess_support',
+        'is_android',
+        'is_emscripten',
+        'is_jython',
+        'is_wasi',
+        'is_wasm32',
+    )
+    copy_attributes(info_add, support, 'support.%s', attributes)
 
-    call_func(info_add, 'test_support._is_gui_available', support, '_is_gui_available')
-    call_func(info_add, 'test_support.python_is_optimized', support, 'python_is_optimized')
+    call_func(info_add, 'support._is_gui_available', support, '_is_gui_available')
+    call_func(info_add, 'support.python_is_optimized', support, 'python_is_optimized')
+
+    info_add('support.check_sanitizer(address=True)',
+             support.check_sanitizer(address=True))
+    info_add('support.check_sanitizer(memory=True)',
+             support.check_sanitizer(memory=True))
+    info_add('support.check_sanitizer(ub=True)',
+             support.check_sanitizer(ub=True))
+    info_add('support.built_with_c_assertions',
+             support.built_with_c_assertions())
+
+
+def collect_support_os_helper(info_add):
+    try:
+        from test.support import os_helper
+    except ImportError:
+        return
+
+    for name in (
+        'can_symlink',
+        'can_xattr',
+        'can_chmod',
+        'can_dac_override',
+    ):
+        func = getattr(os_helper, name)
+        info_add(f'support_os_helper.{name}', func())
+
+
+def collect_support_socket_helper(info_add):
+    try:
+        from test.support import socket_helper
+    except ImportError:
+        return
+
+    attributes = (
+        'IPV6_ENABLED',
+        'has_gethostname',
+    )
+    copy_attributes(info_add, socket_helper, 'support_socket_helper.%s', attributes)
+
+    for name in (
+        'tcp_blackhole',
+    ):
+        func = getattr(socket_helper, name)
+        info_add(f'support_socket_helper.{name}', func())
+
+
+def collect_support_threading_helper(info_add):
+    try:
+        from test.support import threading_helper
+    except ImportError:
+        return
+
+    attributes = (
+        'can_start_thread',
+    )
+    copy_attributes(info_add, threading_helper, 'support_threading_helper.%s', attributes)
 
 
 def collect_cc(info_add):
-    import subprocess
     import sysconfig
 
     CC = sysconfig.get_config_var('CC')
@@ -638,23 +900,17 @@ def collect_cc(info_add):
     except ImportError:
         args = CC.split()
     args.append('--version')
-    try:
-        proc = subprocess.Popen(args,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT,
-                                universal_newlines=True)
-    except OSError:
+
+    stdout = run_command(args)
+    if not stdout:
         # Cannot run the compiler, for example when Python has been
         # cross-compiled and installed on the target platform where the
         # compiler is missing.
-        return
-
-    stdout = proc.communicate()[0]
-    if proc.returncode:
+        #
         # CC --version failed: ignore error
         return
 
-    text = stdout.splitlines()[0]
+    text = first_line(stdout)
     text = normalize_text(text)
     info_add('CC.version', text)
 
@@ -687,34 +943,378 @@ def collect_subprocess(info_add):
     copy_attributes(info_add, subprocess, 'subprocess.%s', ('_USE_POSIX_SPAWN',))
 
 
-def collect_windows(info_add):
+def winreg_query(path):
     try:
-        import ctypes
+        import winreg
     except ImportError:
-        return
+        return None
 
-    if not hasattr(ctypes, 'WinDLL'):
-        return
-
-    ntdll = ctypes.WinDLL('ntdll')
-    BOOLEAN = ctypes.c_ubyte
+    key, path = path.split('\\', 1)
+    sub_key, value = path.rsplit('\\', 1)
+    if key == "HKEY_LOCAL_MACHINE":
+        key = winreg.HKEY_LOCAL_MACHINE
+    else:
+        raise ValueError(f"unknown key {key!r}")
 
     try:
-        RtlAreLongPathsEnabled = ntdll.RtlAreLongPathsEnabled
-    except AttributeError:
-        res = '<function not available>'
+        access = winreg.KEY_READ | winreg.KEY_WOW64_64KEY
+        with winreg.OpenKey(key, sub_key, access=access) as key_handle:
+            result, _ = winreg.QueryValueEx(key_handle, value)
+        return result
+    except OSError:
+        return None
+
+
+def wmi_query(query):
+    try:
+        import _wmi
+    except ImportError:
+        return {}
+
+    try:
+        data = _wmi.exec_query(query)
+    except OSError:
+        return {}
+
+    dict_data = {}
+    for item in data.split("\0"):
+        key, _, value = item.partition("=")
+        dict_data[key] = value
+    return dict_data
+
+
+def collect_windows(info_add):
+    if not MS_WINDOWS:
+        # Code specific to Windows
+        return
+
+    # windows.RtlAreLongPathsEnabled: RtlAreLongPathsEnabled()
+    # windows.is_admin: IsUserAnAdmin()
+    try:
+        import ctypes.util
+        if not hasattr(ctypes, 'WinDLL'):
+            raise ImportError
+    except ImportError:
+        pass
     else:
-        RtlAreLongPathsEnabled.restype = BOOLEAN
-        RtlAreLongPathsEnabled.argtypes = ()
-        res = bool(RtlAreLongPathsEnabled())
-    info_add('windows.RtlAreLongPathsEnabled', res)
+        ntdll = ctypes.WinDLL('ntdll')
+        BOOLEAN = ctypes.c_ubyte
+        try:
+            @ctypes.util.wrap_dll_function(ntdll)
+            def RtlAreLongPathsEnabled() -> BOOLEAN:
+                pass
+        except AttributeError:
+            res = '<function not available>'
+        else:
+            res = bool(RtlAreLongPathsEnabled())
+        info_add('windows.RtlAreLongPathsEnabled', res)
+
+        @ctypes.util.wrap_dll_function(ctypes.windll.shell32)
+        def IsUserAnAdmin() -> BOOLEAN:
+            pass
+        info_add('windows.is_admin', bool(IsUserAnAdmin()))
 
     try:
         import _winapi
-        dll_path = _winapi.GetModuleFileName(sys.dllhandle)
-        info_add('windows.dll_path', dll_path)
-    except (ImportError, AttributeError):
+    except ImportError:
         pass
+    else:
+        try:
+            dll_path = _winapi.GetModuleFileName(sys.dllhandle)
+            info_add('windows.dll_path', dll_path)
+        except AttributeError:
+            pass
+
+        call_func(info_add, 'windows.ansi_code_page', _winapi, 'GetACP')
+        call_func(info_add, 'windows.oem_code_page', _winapi, 'GetOEMCP')
+
+    # Get operating system caption and version using WMI
+    data = wmi_query("SELECT Caption, Version FROM Win32_OperatingSystem")
+    caption = data.get('Caption', '')
+    if caption:
+        info_add('windows.version_caption', caption)
+    version = data.get('Version', '')
+    if version:
+        info_add('windows.version', version)
+
+    # windows.ver: "ver" command
+    output = run_command(["ver"], shell=True)
+    # "ver" output starts with an empty line: remove it
+    output = output.strip()
+    if output:
+        info_add('windows.ver', first_line(output))
+
+    # windows.developer_mode: get AllowDevelopmentWithoutDevLicense registry
+    value = winreg_query(r"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows"
+                         r"\CurrentVersion\AppModelUnlock"
+                         r"\AllowDevelopmentWithoutDevLicense")
+    if value is not None:
+        info_add('windows.developer_mode', "enabled" if value else "disabled")
+
+
+def collect_fips(info_add):
+    try:
+        import _hashlib
+    except ImportError:
+        _hashlib = None
+
+    if _hashlib is not None:
+        call_func(info_add, 'fips.openssl_fips_mode', _hashlib, 'get_fips_mode')
+
+    fips_enabled = read_first_line("/proc/sys/crypto/fips_enabled")
+    if fips_enabled:
+        info_add('fips.linux_crypto_fips_enabled', fips_enabled)
+
+
+def collect_tempfile(info_add):
+    import tempfile
+
+    info_add('tempfile.gettempdir', tempfile.gettempdir())
+
+
+def collect_libregrtest_utils(info_add):
+    try:
+        from test.libregrtest import utils
+    except ImportError:
+        return
+
+    info_add('libregrtests.build_info', ' '.join(utils.get_build_info()))
+
+
+def uptime_boottime():
+    # Use CLOCK_BOOTTIME
+    import time
+    try:
+        return time.clock_gettime(time.CLOCK_BOOTTIME)
+    except (AttributeError, OSError):
+        return None
+
+
+def uptime_linux():
+    # Parse the first member of /proc/uptime
+    line = read_first_line("/proc/uptime")
+    if not line:
+        return
+    try:
+        parts = line.split()
+        if not parts:
+            return
+        return float(parts[0])
+    except ValueError:
+        return
+
+
+def uptime_bsd():
+    # Get sysctlbyname("kern.boottime")
+    try:
+        import _testcapi
+    except ImportError:
+        return None
+    try:
+        return _testcapi.uptime_bsd()
+    except (AttributeError, OSError):
+        return None
+
+
+def uptime_windows():
+    try:
+        import _winapi
+    except ImportError:
+        return None
+    else:
+        return _winapi.GetTickCount64() / 1000.
+
+
+def get_uptime():
+    for func in (uptime_boottime, uptime_linux, uptime_bsd, uptime_windows):
+        uptime = func()
+        if uptime is not None:
+            return uptime
+    return None
+
+
+def get_machine_id():
+    if MS_WINDOWS:
+        machine_guid = winreg_query(r"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft"
+                                    r"\Cryptography\MachineGuid")
+        if machine_guid:
+            return machine_guid
+
+    for filename in (
+        # https://www.freedesktop.org/software/systemd/man/latest/machine-id.html
+        "/etc/machine-id",
+        # BSD
+        "/etc/hostid",
+    ):
+        machine_id = read_first_line(filename)
+        if machine_id:
+            return machine_id
+
+    return None
+
+
+def detect_virt_windows(info_add):
+    # On Windows, use WMI to detect the virtualization.
+    #
+    # Microsoft Hyper-V:
+    # - Win32_Bios.Version = 'VRTUAL - 12001807'
+    # - Win32_Bios.Manufacturer = 'American Megatrends Inc.'
+    # - Win32_ComputerSystem.Model = 'Virtual Machine'
+    # - Win32_ComputerSystem.Manufacturer = 'Microsoft Corporation'
+    #
+    # VMware:
+    # - Win32_ComputerSystem.Model = 'VMware'
+    # - Win32_ComputerSystem.Manufacturer = 'VMWare' (uppercase W in Ware)
+    # - Win32_Bios.SerialNumber starts with 'VMware-'
+    #
+    # QEMU:
+    # - Win32_ComputerSystem.Manufacturer = 'QEMU'
+    # - Win32_ComputerSystem.Model = 'Standard PC (Q35 + ICH9, 2009)'
+    # - Win32_Bios.Version = 'BOCHS  - 1'
+    # - Win32_Bios.Manufacturer = 'EDK II'
+    #
+    # Parallels:
+    # - Win32_Bios.Version = 'PARALLELS'
+    #
+    # VirtualBox:
+    # - Win32_Bios.Version = 'VBOX'
+    # - Win32_ComputerSystem.Model = 'VirtualBox'
+    # - Win32_ComputerSystem.Manufacturer = 'innotek GmbH'
+    #
+    # Amazon EC2:
+    # - Win32_Bios.Version = 'AMAZON - 1'
+    # - Win32_Bios.Manufacturer = 'Amazon EC2'
+    # - Win32_ComputerSystem.Model = 'm7i.4xlarge'
+    # - Win32_ComputerSystem.Manufacturer = 'Amazon EC2'
+
+    KNOWN_VIRT = (
+        'Amazon EC2',
+        'QEMU',
+        'VMware',
+        'VirtualBox',
+        'Xen',
+        'oVirt',
+    )
+    KNOWN_BIOS_VERSIONS = {
+        'PARALLELS': 'Parallels',
+        'VBOX': 'VirtualBox',
+    }
+
+    computer = wmi_query('SELECT Model, Manufacturer FROM Win32_ComputerSystem')
+    computer_model = computer.get('Model', '')
+    computer_manufacturer = computer.get('Manufacturer', '')
+    if computer_manufacturer == 'Amazon EC2':
+        # Log the VM model (ex: 'm7i.4xlarge')
+        info_add('system.computer.model', computer_model)
+        return computer_manufacturer
+    if computer_model in KNOWN_VIRT:
+        return computer_model
+    if computer_manufacturer in KNOWN_VIRT:
+        return computer_manufacturer
+
+    bios = wmi_query('SELECT Version, Manufacturer FROM Win32_Bios')
+
+    bios_version = bios.get('Version', '')
+    if bios_version in KNOWN_VIRT:
+        return bios_version
+    if (bios_version.startswith('VRTUAL - ')
+        and computer_manufacturer == 'Microsoft Corporation'):
+        return 'Microsoft Hyper-V'
+    try:
+        return KNOWN_BIOS_VERSIONS[bios_version]
+    except KeyError:
+        pass
+
+    bios_manufacturer = bios.get('Manufacturer', '')
+    if bios_manufacturer in KNOWN_VIRT:
+        return bios_manufacturer
+
+    # Log the values to update the code if a new VM is discovered
+    if computer_model:
+        info_add('system.computer.model', computer_model)
+    if computer_manufacturer:
+        info_add('system.computer.manufacturer', computer_manufacturer)
+    if bios_version:
+        info_add('system.bios.version', bios_version)
+    if bios_manufacturer:
+        info_add('system.bios.manufacturer', bios_manufacturer)
+
+
+def detect_virt(info_add):
+    if MS_WINDOWS:
+        return detect_virt_windows(info_add)
+
+    # Run systemd-detect-virt command
+    virt = run_command(["systemd-detect-virt"], check=False)
+    if virt and virt != "none":
+        return virt
+
+    # Check if the process in running in a container
+    import os.path
+    if os.path.exists('/.dockerenv'):
+        return 'docker'
+    if os.path.exists('/run/.containerenv'):
+        return 'podman'
+
+    container = read_first_line('/run/systemd/container')
+    if container:
+        return container
+
+    if APPLE:
+        hv_vmm_present = run_command(['sysctl', '-n', 'kern.hv_vmm_present'])
+        if hv_vmm_present == '1':
+            return 'run in a VM (kern.hv_vmm_present is 1)'
+
+    # Other ways to check if running in a container:
+    # * Parse /proc/1/mounts or /proc/1/mountinfo (check "/" filesystem).
+    # * Parse /proc/1/cgroup.
+    # * Parse the first line of /proc/1/sched (check process name is different
+    #   than "init" and "systemd").
+    # * Check / inode.
+    # * On systems using SELinux (Fedora/CentOS/RHEL), check for "container_t"
+    #   label, for example of /proc/1/attr/current.
+    # * Check for "container" variable in /proc/1/environ
+    #   (only root can read this file).
+    # * Check for "container" environment variable.
+    # * Set a specific env var when creating the container image.
+    # * Run virt-what, need to install the script, and must be run as root.
+    # * Check for "GITHUB_ACTIONS" environmant variable (GitHub Action).
+
+
+def collect_system(info_add):
+    boot_id = read_first_line("/proc/sys/kernel/random/boot_id")
+    if boot_id:
+        info_add('system.boot_id', boot_id)
+
+    machine_id = get_machine_id()
+    if machine_id:
+        info_add('system.machine_id', machine_id)
+
+    uptime = get_uptime()
+    if uptime is not None:
+        # truncate microseconds
+        uptime = int(uptime)
+        try:
+            import datetime
+            uptime = str(datetime.timedelta(seconds=uptime))
+        except ImportError:
+            uptime = f'{uptime} sec'
+        info_add('system.uptime', uptime)
+
+    virt = detect_virt(info_add)
+    if virt:
+        info_add('system.virt', virt)
+
+    if APPLE:
+        hardware = run_command(['sysctl', '-n', 'hw.model'])
+        if hardware:
+            info_add('system.hardware', hardware)
+
+
+def collect_importlib(info_add):
+    import importlib.machinery
+    info_add('importlib.extension_suffixes',
+             importlib.machinery.EXTENSION_SUFFIXES)
 
 
 def collect_info(info):
@@ -729,9 +1329,11 @@ def collect_info(info):
 
         collect_builtins,
         collect_cc,
+        collect_curses,
         collect_datetime,
         collect_decimal,
         collect_expat,
+        collect_fips,
         collect_gdb,
         collect_gdbm,
         collect_get_config,
@@ -748,14 +1350,23 @@ def collect_info(info):
         collect_sys,
         collect_sysconfig,
         collect_testcapi,
+        collect_testinternalcapi,
+        collect_tempfile,
         collect_time,
         collect_tkinter,
         collect_windows,
         collect_zlib,
+        collect_zstd,
+        collect_libregrtest_utils,
+        collect_system,
+        collect_importlib,
 
         # Collecting from tests should be last as they have side effects.
         collect_test_socket,
-        collect_test_support,
+        collect_support,
+        collect_support_os_helper,
+        collect_support_socket_helper,
+        collect_support_threading_helper,
     ):
         try:
             collect_func(info_add)
@@ -771,9 +1382,9 @@ def collect_info(info):
 
 
 def dump_info(info, file=None):
-    title = "Python debug information"
+    title = "Python build information"
     print(title)
-    print("=" * len(title))
+    print("#" * len(title))
     print()
 
     infos = info.get_infos()
@@ -781,7 +1392,6 @@ def dump_info(info, file=None):
     for key, value in infos:
         value = value.replace("\n", " ")
         print("%s: %s" % (key, value))
-    print()
 
 
 def main():
@@ -790,6 +1400,7 @@ def main():
     dump_info(info)
 
     if error:
+        print()
         print("Collection failed: exit with error", file=sys.stderr)
         sys.exit(1)
 

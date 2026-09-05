@@ -1,9 +1,7 @@
 """Unit tests for collections.defaultdict."""
 
-import os
 import copy
 import pickle
-import tempfile
 import unittest
 
 from collections import defaultdict
@@ -39,6 +37,9 @@ class TestDefaultDict(unittest.TestCase):
         self.assertIn(42, d2.keys())
         self.assertNotIn(12, d2)
         self.assertNotIn(12, d2.keys())
+        d2.default_factory = list
+        del d2.default_factory
+        self.assertEqual(d2.default_factory, None)
         d2.default_factory = None
         self.assertEqual(d2.default_factory, None)
         try:
@@ -71,27 +72,6 @@ class TestDefaultDict(unittest.TestCase):
         self.assertTrue(d3.default_factory is foo)
         d3[13]
         self.assertEqual(repr(d3), "defaultdict(%s, {13: 43})" % repr(foo))
-
-    def test_print(self):
-        d1 = defaultdict()
-        def foo(): return 42
-        d2 = defaultdict(foo, {1: 2})
-        # NOTE: We can't use tempfile.[Named]TemporaryFile since this
-        # code must exercise the tp_print C code, which only gets
-        # invoked for *real* files.
-        tfn = tempfile.mktemp()
-        try:
-            f = open(tfn, "w+")
-            try:
-                print(d1, file=f)
-                print(d2, file=f)
-                f.seek(0)
-                self.assertEqual(f.readline(), repr(d1) + "\n")
-                self.assertEqual(f.readline(), repr(d2) + "\n")
-            finally:
-                f.close()
-        finally:
-            os.remove(tfn)
 
     def test_copy(self):
         d1 = defaultdict()
@@ -160,18 +140,6 @@ class TestDefaultDict(unittest.TestCase):
             r"sub\(<bound method .*sub\._factory "
             r"of sub\(\.\.\., \{\}\)>, \{\}\)")
 
-        # NOTE: printing a subclass of a builtin type does not call its
-        # tp_print slot. So this part is essentially the same test as above.
-        tfn = tempfile.mktemp()
-        try:
-            f = open(tfn, "w+")
-            try:
-                print(d, file=f)
-            finally:
-                f.close()
-        finally:
-            os.remove(tfn)
-
     def test_callable_arg(self):
         self.assertRaises(TypeError, defaultdict, {})
 
@@ -220,6 +188,51 @@ class TestDefaultDict(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             i |= None
+
+        # frozendict
+        i_fd = i | frozendict(s)
+        self.assertIs(type(i_fd), defaultdict)
+        self.assertIs(i_fd.default_factory, int)
+        self.assertDictEqual(i_fd, {1: "one", 2: 2, 0: "zero"})
+        self.assertEqual(list(i_fd), [1, 2, 0])
+
+        fd_i = frozendict(s) | i
+        self.assertIs(type(fd_i), frozendict)
+        self.assertEqual(fd_i, {1: "one", 2: 2, 0: "zero"})
+        self.assertEqual(list(fd_i), [0, 1, 2])
+
+    def test_factory_conflict_with_set_value(self):
+        key = "conflict_test"
+        count = 0
+
+        def default_factory():
+            nonlocal count
+            count += 1
+            local_count = count
+            if count == 1:
+                test_dict[key]
+            return local_count
+
+        test_dict = defaultdict(default_factory)
+
+        self.assertEqual(count, 0)
+        self.assertEqual(test_dict[key], 2)
+        self.assertEqual(count, 2)
+
+    def test_repr_recursive_factory(self):
+        # gh-145492: defaultdict.__repr__ should not cause infinite recursion
+        # when the factory's __repr__ calls repr() on the defaultdict.
+        class ProblematicFactory:
+            def __call__(self):
+                return {}
+            def __repr__(self):
+                repr(dd)
+                return f"ProblematicFactory for {dd}"
+
+        dd = defaultdict(ProblematicFactory())
+        # Should not raise RecursionError
+        r = repr(dd)
+        self.assertIn("ProblematicFactory for", r)
 
 if __name__ == "__main__":
     unittest.main()

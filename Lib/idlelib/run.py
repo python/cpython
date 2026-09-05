@@ -1,9 +1,10 @@
 """ idlelib.run
 
-Simplified, pyshell.ModifiedInterpreter spawns a subprocess with
+Simplified: pyshell.ModifiedInterpreter spawns a subprocess with
 f'''{sys.executable} -c "__import__('idlelib.run').run.main()"'''
 '.run' is needed because __import__ returns idlelib, not idlelib.run.
 """
+import contextlib
 import functools
 import io
 import linecache
@@ -16,6 +17,7 @@ import _thread as thread
 import threading
 import warnings
 
+import idlelib  # testing
 from idlelib import autocomplete  # AutoComplete, fetch_encodings
 from idlelib import calltip  # Calltip
 from idlelib import debugger_r  # start_debugger
@@ -23,33 +25,46 @@ from idlelib import debugobj_r  # remote_object_tree_item
 from idlelib import iomenu  # encoding
 from idlelib import rpc  # multiple objects
 from idlelib import stackviewer  # StackTreeItem
-import __main__
+from idlelib import util  # fix_scaling
+import __main__  # self.locals in Executive.__init__.
 
 import tkinter  # Use tcl and, if startup fails, messagebox.
-if not hasattr(sys.modules['idlelib.run'], 'firstrun'):
-    # Undo modifications of tkinter by idlelib imports; see bpo-25507.
+
+def scrub_tkinter_submodules():  # Call in main when starting user process.
+    # Undo modifications of tkinter by idlelib imports; see gh-69693.
+    # Which of these submodules got imported (and thus added as a tkinter
+    # attribute) depends on what idlelib pulled in, so tolerate missing
+    # ones rather than assuming a fixed set; see gh-59396.
     for mod in ('simpledialog', 'messagebox', 'font',
                 'dialog', 'filedialog', 'commondialog',
                 'ttk'):
-        delattr(tkinter, mod)
-        del sys.modules['tkinter.' + mod]
-    # Avoid AttributeError if run again; see bpo-37038.
-    sys.modules['idlelib.run'].firstrun = False
+        try:
+            delattr(tkinter, mod)
+            del sys.modules['tkinter.' + mod]
+        except (AttributeError, KeyError):
+            pass
 
 LOCALHOST = '127.0.0.1'
+
+try:
+    eof = 'Ctrl-D (end-of-file)'
+    exit.eof = eof
+    quit.eof = eof
+except NameError: # In case subprocess started with -S (maybe in future).
+    pass
 
 
 def idle_formatwarning(message, category, filename, lineno, line=None):
     """Format warnings the IDLE way."""
 
     s = "\nWarning (from warnings module):\n"
-    s += '  File \"%s\", line %s\n' % (filename, lineno)
+    s += f'  File \"{filename}\", line {lineno}\n'
     if line is None:
         line = linecache.getline(filename, lineno)
     line = line.strip()
     if line:
         s += "    %s\n" % line
-    s += "%s: %s\n" % (category.__name__, message)
+    s += f"{category.__name__}: {message}\n"
     return s
 
 def idle_showwarning_subproc(
@@ -82,21 +97,28 @@ def capture_warnings(capture):
             _warnings_showwarning = None
 
 capture_warnings(True)
-tcl = tkinter.Tcl()
 
-def handle_tk_events(tcl=tcl):
-    """Process any tk events that are ready to be dispatched if tkinter
-    has been imported, a tcl interpreter has been created and tk has been
-    loaded."""
-    tcl.eval("update")
+if idlelib.testing:
+    # gh-121008: When testing IDLE, don't create a Tk object to avoid side
+    # effects such as installing a PyOS_InputHook hook.
+    def handle_tk_events():
+        pass
+else:
+    tcl = tkinter.Tcl()
+
+    def handle_tk_events(tcl=tcl):
+        """Process any tk events that are ready to be dispatched if tkinter
+        has been imported, a tcl interpreter has been created and tk has been
+        loaded."""
+        tcl.eval("update")
 
 # Thread shared globals: Establish a queue between a subthread (which handles
 # the socket) and the main thread (which runs user code), plus global
-# completion, exit and interruptable (the main thread) flags:
+# completion, exit and interruptible (the main thread) flags:
 
 exit_now = False
 quitting = False
-interruptable = False
+interruptible = False
 
 def main(del_exitfunc=False):
     """Start the Python execution server in a subprocess
@@ -116,6 +138,9 @@ def main(del_exitfunc=False):
     register and unregister themselves.
 
     """
+
+    scrub_tkinter_submodules()
+
     global exit_now
     global quitting
     global no_exitfunc
@@ -131,12 +156,13 @@ def main(del_exitfunc=False):
 
     capture_warnings(True)
     sys.argv[:] = [""]
-    sockthread = threading.Thread(target=manage_socket,
-                                  name='SockThread',
-                                  args=((LOCALHOST, port),))
-    sockthread.daemon = True
-    sockthread.start()
-    while 1:
+    threading.Thread(target=manage_socket,
+                     name='SockThread',
+                     args=((LOCALHOST, port),),
+                     daemon=True,
+                    ).start()
+
+    while True:
         try:
             if exit_now:
                 try:
@@ -199,7 +225,7 @@ def show_socket_error(err, address):
     import tkinter
     from tkinter.messagebox import showerror
     root = tkinter.Tk()
-    fix_scaling(root)
+    util.fix_scaling(root)
     root.withdraw()
     showerror(
             "Subprocess Connection Error",
@@ -210,6 +236,19 @@ def show_socket_error(err, address):
             parent=root)
     root.destroy()
 
+
+def get_message_lines(typ, exc, tb):
+    "Return line composing the exception message."
+    if typ in (AttributeError, NameError):
+        # 3.10+ hints are not directly accessible from python (#44026).
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            sys.__excepthook__(typ, exc, tb)
+        return [err.getvalue().split("\n")[-2] + "\n"]
+    else:
+        return traceback.format_exception_only(typ, exc)
+
+
 def print_exception():
     import linecache
     linecache.checkcache()
@@ -217,32 +256,96 @@ def print_exception():
     efile = sys.stderr
     typ, val, tb = excinfo = sys.exc_info()
     sys.last_type, sys.last_value, sys.last_traceback = excinfo
+    sys.last_exc = val
     seen = set()
+    exclude = ("run.py", "rpc.py", "threading.py", "queue.py",
+               "debugger_r.py", "bdb.py")
+    max_group_width = 15
+    max_group_depth = 10
+    group_depth = 0
 
-    def print_exc(typ, exc, tb):
+    def print_exc_group(typ, exc, tb, prefix=""):
+        nonlocal group_depth
+        group_depth += 1
+        prefix2 = prefix or "  "
+        if group_depth > max_group_depth:
+            print(f"{prefix2}| ... (max_group_depth is {max_group_depth})",
+                  file=efile)
+            group_depth -= 1
+            return
+        if tb:
+            if not prefix:
+                print("  + Exception Group Traceback (most recent call last):", file=efile)
+            else:
+                print(f"{prefix}| Exception Group Traceback (most recent call last):", file=efile)
+            tbe = traceback.extract_tb(tb)
+            cleanup_traceback(tbe, exclude)
+            for line in traceback.format_list(tbe):
+                for subline in line.rstrip().splitlines():
+                    print(f"{prefix2}| {subline}", file=efile)
+        lines = get_message_lines(typ, exc, tb)
+        for line in lines:
+            print(f"{prefix2}| {line}", end="", file=efile)
+        num_excs = len(exc.exceptions)
+        if num_excs <= max_group_width:
+            n = num_excs
+        else:
+            n = max_group_width + 1
+        for i, sub in enumerate(exc.exceptions[:n], 1):
+            truncated = (i > max_group_width)
+            first_line_pre = "+-" if i == 1 else "  "
+            title = str(i) if not truncated else '...'
+            print(f"{prefix2}{first_line_pre}+---------------- {title} ----------------", file=efile)
+            if truncated:
+                remaining = num_excs - max_group_width
+                plural = 's' if remaining > 1 else ''
+                print(f"{prefix2}  | and {remaining} more exception{plural}",
+                      file=efile)
+                need_print_underline = True
+            elif id(sub) not in seen:
+                if not prefix:
+                    print_exc(type(sub), sub, sub.__traceback__, "    ")
+                else:
+                    print_exc(type(sub), sub, sub.__traceback__, prefix + "  ")
+                need_print_underline = not isinstance(sub, BaseExceptionGroup)
+            else:
+                print(f"{prefix2}  | <exception {type(sub).__name__} has printed>", file=efile)
+                need_print_underline = True
+            if need_print_underline and i == n:
+                print(f"{prefix2}  +------------------------------------", file=efile)
+        group_depth -= 1
+
+    def print_exc(typ, exc, tb, prefix=""):
         seen.add(id(exc))
         context = exc.__context__
         cause = exc.__cause__
+        prefix2 = f"{prefix}| " if prefix else ""
         if cause is not None and id(cause) not in seen:
-            print_exc(type(cause), cause, cause.__traceback__)
-            print("\nThe above exception was the direct cause "
-                  "of the following exception:\n", file=efile)
+            print_exc(type(cause), cause, cause.__traceback__, prefix)
+            print(f"{prefix2}\n{prefix2}The above exception was the direct cause "
+                  f"of the following exception:\n{prefix2}", file=efile)
         elif (context is not None and
               not exc.__suppress_context__ and
               id(context) not in seen):
-            print_exc(type(context), context, context.__traceback__)
-            print("\nDuring handling of the above exception, "
-                  "another exception occurred:\n", file=efile)
-        if tb:
-            tbe = traceback.extract_tb(tb)
-            print('Traceback (most recent call last):', file=efile)
-            exclude = ("run.py", "rpc.py", "threading.py", "queue.py",
-                       "debugger_r.py", "bdb.py")
-            cleanup_traceback(tbe, exclude)
-            traceback.print_list(tbe, file=efile)
-        lines = traceback.format_exception_only(typ, exc)
-        for line in lines:
-            print(line, end='', file=efile)
+            print_exc(type(context), context, context.__traceback__, prefix)
+            print(f"{prefix2}\n{prefix2}During handling of the above exception, "
+                  f"another exception occurred:\n{prefix2}", file=efile)
+        if isinstance(exc, BaseExceptionGroup):
+            print_exc_group(typ, exc, tb, prefix=prefix)
+        else:
+            if tb:
+                print(f"{prefix2}Traceback (most recent call last):", file=efile)
+                tbe = traceback.extract_tb(tb)
+                cleanup_traceback(tbe, exclude)
+                if prefix:
+                    for line in traceback.format_list(tbe):
+                        for subline in line.rstrip().splitlines():
+                            print(f"{prefix}| {subline}", file=efile)
+                else:
+                    traceback.print_list(tbe, file=efile)
+            lines = get_message_lines(typ, exc, tb)
+            for line in lines:
+                print(f"{prefix2}{line}", end="", file=efile)
 
     print_exc(typ, val, tb)
 
@@ -295,16 +398,6 @@ def exit():
     sys.exit(0)
 
 
-def fix_scaling(root):
-    """Scale fonts on HiDPI displays."""
-    import tkinter.font
-    scaling = float(root.tk.call('tk', 'scaling'))
-    if scaling > 1.4:
-        for name in tkinter.font.names(root):
-            font = tkinter.font.Font(root=root, name=name, exists=True)
-            size = int(font['size'])
-            if size < 0:
-                font['size'] = round(-0.75*size)
 
 
 def fixdoc(fun, text):
@@ -387,14 +480,21 @@ class MyRPCServer(rpc.RPCServer):
             thread.interrupt_main()
         except:
             erf = sys.__stderr__
-            print('\n' + '-'*40, file=erf)
-            print('Unhandled server exception!', file=erf)
-            print('Thread: %s' % threading.current_thread().name, file=erf)
-            print('Client Address: ', client_address, file=erf)
-            print('Request: ', repr(request), file=erf)
-            traceback.print_exc(file=erf)
-            print('\n*** Unrecoverable, server exiting!', file=erf)
-            print('-'*40, file=erf)
+            print(textwrap.dedent(f"""
+            {'-'*40}
+            Unhandled exception in user code execution server!'
+            Thread: {threading.current_thread().name}
+            IDLE Client Address: {client_address}
+            Request: {request!r}
+            """), file=erf)
+            traceback.print_exc(limit=-20, file=erf)
+            print(textwrap.dedent(f"""
+            *** Unrecoverable, server exiting!
+
+            Users should never see this message; it is likely transient.
+            If this recurs, report this with a copy of the message
+            and an explanation of how to make it repeat.
+            {'-'*40}"""), file=erf)
             quitting = True
             thread.interrupt_main()
 
@@ -405,6 +505,9 @@ class StdioFile(io.TextIOBase):
 
     def __init__(self, shell, tags, encoding='utf-8', errors='strict'):
         self.shell = shell
+        # GH-78889: accessing unpickleable attributes freezes Shell.
+        # IDLE only needs methods; allow 'width' for possible use.
+        self.shell._RPCProxy__attributes = {'width': 1}
         self.tags = tags
         self._encoding = encoding
         self._errors = errors
@@ -453,9 +556,7 @@ class StdInputFile(StdioFile):
         result = self._line_buffer
         self._line_buffer = ''
         if size < 0:
-            while True:
-                line = self.shell.readline()
-                if not line: break
+            while line := self.shell.readline():
                 result += line
         else:
             while len(result) < size:
@@ -531,23 +632,26 @@ class MyHandler(rpc.RPCHandler):
         thread.interrupt_main()
 
 
-class Executive(object):
+class Executive:
 
     def __init__(self, rpchandler):
         self.rpchandler = rpchandler
-        self.locals = __main__.__dict__
-        self.calltip = calltip.Calltip()
-        self.autocomplete = autocomplete.AutoComplete()
+        if idlelib.testing is False:
+            self.locals = __main__.__dict__
+            self.calltip = calltip.Calltip()
+            self.autocomplete = autocomplete.AutoComplete()
+        else:
+            self.locals = {}
 
     def runcode(self, code):
-        global interruptable
+        global interruptible
         try:
-            self.usr_exc_info = None
-            interruptable = True
+            self.user_exc_info = None
+            interruptible = True
             try:
                 exec(code, self.locals)
             finally:
-                interruptable = False
+                interruptible = False
         except SystemExit as e:
             if e.args:  # SystemExit called with an argument.
                 ob = e.args[0]
@@ -555,10 +659,17 @@ class Executive(object):
                     print('SystemExit: ' + str(ob), file=sys.stderr)
             # Return to the interactive prompt.
         except:
-            self.usr_exc_info = sys.exc_info()
+            self.user_exc_info = sys.exc_info()  # For testing, hook, viewer.
             if quitting:
                 exit()
-            print_exception()
+            if sys.excepthook is sys.__excepthook__:
+                print_exception()
+            else:
+                try:
+                    sys.excepthook(*self.user_exc_info)
+                except:
+                    self.user_exc_info = sys.exc_info()  # For testing.
+                    print_exception()
             jit = self.rpchandler.console.getvar("<<toggle-jit-stack-viewer>>")
             if jit:
                 self.rpchandler.interp.open_remote_stack_viewer()
@@ -566,7 +677,7 @@ class Executive(object):
             flush_stdout()
 
     def interrupt_the_server(self):
-        if interruptable:
+        if interruptible:
             thread.interrupt_main()
 
     def start_the_debugger(self, gui_adap_oid):
@@ -583,8 +694,8 @@ class Executive(object):
         return self.autocomplete.fetch_completions(what, mode)
 
     def stackviewer(self, flist_oid=None):
-        if self.usr_exc_info:
-            typ, val, tb = self.usr_exc_info
+        if self.user_exc_info:
+            _, exc, tb = self.user_exc_info
         else:
             return None
         flist = None
@@ -592,13 +703,11 @@ class Executive(object):
             flist = self.rpchandler.get_remote_proxy(flist_oid)
         while tb and tb.tb_frame.f_globals["__name__"] in ["rpc", "run"]:
             tb = tb.tb_next
-        sys.last_type = typ
-        sys.last_value = val
-        item = stackviewer.StackTreeItem(flist, tb)
+        exc.__traceback__ = tb
+        item = stackviewer.StackTreeItem(exc, flist)
         return debugobj_r.remote_object_tree_item(item)
 
-
-if __name__ == '__main__':
+if __name__ == '__main__':  # __name__ is 'idlelib.run' in user subprocess.
     from unittest import main
     main('idlelib.idle_test.test_run', verbosity=2)
 

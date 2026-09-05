@@ -605,7 +605,7 @@ How *do* you spell that odd word, anyways?
         # bug 1146.  Prevent a long word to be wrongly wrapped when the
         # preceding word is exactly one character shorter than the width
         self.check_wrap(self.text, 12,
-                        ['Did you say ',
+                        ['Did you say',
                          '"supercalifr',
                          'agilisticexp',
                          'ialidocious?',
@@ -633,12 +633,84 @@ How *do* you spell that odd word, anyways?
 
     def test_max_lines_long(self):
         self.check_wrap(self.text, 12,
-                        ['Did you say ',
+                        ['Did you say',
                          '"supercalifr',
                          'agilisticexp',
                          '[...]'],
                         max_lines=4)
 
+
+class LongWordWithHyphensTestCase(BaseTestCase):
+    def setUp(self):
+        self.wrapper = TextWrapper()
+        self.text1 = '''\
+We used enyzme 2-succinyl-6-hydroxy-2,4-cyclohexadiene-1-carboxylate synthase.
+'''
+        self.text2 = '''\
+1234567890-1234567890--this_is_a_very_long_option_indeed-good-bye"
+'''
+
+    def test_break_long_words_on_hyphen(self):
+        expected = ['We used enyzme 2-succinyl-6-hydroxy-2,4-',
+                    'cyclohexadiene-1-carboxylate synthase.']
+        self.check_wrap(self.text1, 50, expected)
+
+        expected = ['We used', 'enyzme 2-', 'succinyl-', '6-hydroxy-', '2,4-',
+                    'cyclohexad', 'iene-1-', 'carboxylat', 'e', 'synthase.']
+        self.check_wrap(self.text1, 10, expected)
+
+        expected = ['1234567890',  '-123456789', '0--this_is', '_a_very_lo',
+                    'ng_option_', 'indeed-', 'good-bye"']
+        self.check_wrap(self.text2, 10, expected)
+
+    def test_break_long_words_not_on_hyphen(self):
+        expected = ['We used enyzme 2-succinyl-6-hydroxy-2,4-cyclohexad',
+                    'iene-1-carboxylate synthase.']
+        self.check_wrap(self.text1, 50, expected, break_on_hyphens=False)
+
+        expected = ['We used', 'enyzme 2-s', 'uccinyl-6-', 'hydroxy-2,',
+                    '4-cyclohex', 'adiene-1-c', 'arboxylate', 'synthase.']
+        self.check_wrap(self.text1, 10, expected, break_on_hyphens=False)
+
+        expected = ['1234567890',  '-123456789', '0--this_is', '_a_very_lo',
+                    'ng_option_', 'indeed-', 'good-bye"']
+        self.check_wrap(self.text2, 10, expected)
+
+    def test_break_on_hyphen_but_not_long_words(self):
+        expected = ['We used enyzme',
+                    '2-succinyl-6-hydroxy-2,4-cyclohexadiene-1-carboxylate',
+                    'synthase.']
+
+        self.check_wrap(self.text1, 50, expected, break_long_words=False)
+
+        expected = ['We used', 'enyzme',
+                    '2-succinyl-6-hydroxy-2,4-cyclohexadiene-1-carboxylate',
+                    'synthase.']
+        self.check_wrap(self.text1, 10, expected, break_long_words=False)
+
+        expected = ['1234567890',  '-123456789', '0--this_is', '_a_very_lo',
+                    'ng_option_', 'indeed-', 'good-bye"']
+        self.check_wrap(self.text2, 10, expected)
+
+
+    def test_do_not_break_long_words_or_on_hyphens(self):
+        expected = ['We used enyzme',
+                    '2-succinyl-6-hydroxy-2,4-cyclohexadiene-1-carboxylate',
+                    'synthase.']
+        self.check_wrap(self.text1, 50, expected,
+                        break_long_words=False,
+                        break_on_hyphens=False)
+
+        expected = ['We used', 'enyzme',
+                    '2-succinyl-6-hydroxy-2,4-cyclohexadiene-1-carboxylate',
+                    'synthase.']
+        self.check_wrap(self.text1, 10, expected,
+                        break_long_words=False,
+                        break_on_hyphens=False)
+
+        expected = ['1234567890',  '-123456789', '0--this_is', '_a_very_lo',
+                    'ng_option_', 'indeed-', 'good-bye"']
+        self.check_wrap(self.text2, 10, expected)
 
 class IndentTestCases(BaseTestCase):
 
@@ -693,9 +765,66 @@ some (including a hanging indent).'''
 # of IndentTestCase!
 class DedentTestCase(unittest.TestCase):
 
+    def test_type_error(self):
+        with self.assertRaisesRegex(TypeError, "expected str object, not"):
+            dedent(0)
+
+        with self.assertRaisesRegex(TypeError, "expected str object, not"):
+            dedent(b'')
+
     def assertUnchanged(self, text):
         """assert that dedent() has no effect on 'text'"""
         self.assertEqual(text, dedent(text))
+
+    def test_dedent_whitespace(self):
+        # The empty string.
+        text = ""
+        self.assertUnchanged(text)
+
+        # Only spaces.
+        text = "    "
+        expect = ""
+        self.assertEqual(expect, dedent(text))
+
+        # Only tabs.
+        text = "\t\t\t\t"
+        expect = ""
+        self.assertEqual(expect, dedent(text))
+
+        # A mixture.
+        text = " \t  \t\t  \t "
+        expect = ""
+        self.assertEqual(expect, dedent(text))
+
+        # ASCII whitespace.
+        text = "\f\n\r\t\v "
+        expect = "\n"
+        self.assertEqual(expect, dedent(text))
+
+        # One newline.
+        text = "\n"
+        expect = "\n"
+        self.assertEqual(expect, dedent(text))
+
+        # Windows-style newlines.
+        text = "\r\n" * 5
+        expect = "\n" * 5
+        self.assertEqual(expect, dedent(text))
+
+        # Whitespace mixture.
+        text = "    \n\t\n  \n\t\t\n\n\n       "
+        expect = "\n\n\n\n\n\n"
+        self.assertEqual(expect, dedent(text))
+
+        # Lines consisting only of whitespace are always normalised
+        text = "a\n \n\t\n"
+        expect = "a\n\n\n"
+        self.assertEqual(expect, dedent(text))
+
+        # Whitespace characters on non-empty lines are retained
+        text = "a\r\n\r\n\r\n"
+        expect = "a\r\n\n\n"
+        self.assertEqual(expect, dedent(text))
 
     def test_dedent_nomargin(self):
         # No lines indented.

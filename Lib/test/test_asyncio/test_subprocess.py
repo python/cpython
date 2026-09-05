@@ -1,6 +1,8 @@
 import os
+import shlex
 import signal
 import sys
+import textwrap
 import unittest
 import warnings
 from unittest import mock
@@ -10,9 +12,19 @@ from asyncio import base_subprocess
 from asyncio import subprocess
 from test.test_asyncio import utils as test_utils
 from test import support
+from test.support import os_helper, gc_collect
 
-if sys.platform != 'win32':
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
+
+if support.MS_WINDOWS:
+    import msvcrt
+else:
     from asyncio import unix_events
+
+
+if support.check_sanitizer(address=True):
+    raise unittest.SkipTest("Exposes ASAN flakiness in GitHub CI")
 
 # Program blocking
 PROGRAM_BLOCKED = [sys.executable, '-c', 'import time; time.sleep(3600)']
@@ -26,7 +38,7 @@ PROGRAM_CAT = [
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class TestSubprocessTransport(base_subprocess.BaseSubprocessTransport):
@@ -46,8 +58,6 @@ class SubprocessTransportTests(test_utils.TestCase):
 
     def create_transport(self, waiter=None):
         protocol = mock.Mock()
-        protocol.connection_made._is_coroutine = False
-        protocol.process_exited._is_coroutine = False
         transport = TestSubprocessTransport(
                         self.loop, protocol, ['test'], False,
                         None, None, None, 0, waiter=waiter)
@@ -149,6 +159,134 @@ class SubprocessMixin:
         self.assertEqual(exitcode, 0)
         self.assertEqual(stdout, b'some data')
 
+    def test_communicate_none_input(self):
+        args = PROGRAM_CAT
+
+        async def run():
+            proc = await asyncio.create_subprocess_exec(
+                *args,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+            )
+            stdout, stderr = await proc.communicate()
+            return proc.returncode, stdout
+
+        task = run()
+        task = asyncio.wait_for(task, support.LONG_TIMEOUT)
+        exitcode, stdout = self.loop.run_until_complete(task)
+        self.assertEqual(exitcode, 0)
+        self.assertEqual(stdout, b'')
+
+    def test_communicate_cancelled_mid_read_retry(self):
+        # gh-139373: output read before communicate() was cancelled must
+        # be returned by a subsequent communicate() call.
+        code = ('import sys, time;'
+                'sys.stdout.buffer.write(b"first\\n");'
+                'sys.stdout.buffer.flush();'
+                'time.sleep(3600)')
+
+        async def run():
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable, '-c', code,
+                stdout=subprocess.PIPE,
+            )
+            task = asyncio.create_task(proc.communicate())
+            # wait until communicate() has read the first line
+            while not proc._stdout_buf:
+                await asyncio.sleep(0.01)
+            task.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await task
+            proc.kill()
+            stdout, stderr = await proc.communicate()
+            return stdout
+
+        task = asyncio.wait_for(run(), support.LONG_TIMEOUT)
+        stdout = self.loop.run_until_complete(task)
+        self.assertEqual(stdout, b'first\n')
+
+    def test_communicate_cancelled_during_wait_retry(self):
+        # gh-139373: cancellation landing after the output was fully read
+        # but before wait() completed must not lose the output.
+        code = ('import os, time;'
+                'os.write(1, b"all output\\n");'
+                'os.close(1);'
+                'time.sleep(3600)')
+
+        async def run():
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable, '-c', code,
+                stdout=subprocess.PIPE,
+            )
+            task = asyncio.create_task(proc.communicate())
+            # wait until the stdout reader has consumed everything up to
+            # EOF; communicate() is then blocked on wait()
+            while not proc.stdout.at_eof():
+                await asyncio.sleep(0.01)
+            task.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await task
+            proc.kill()
+            stdout, stderr = await proc.communicate()
+            return stdout
+
+        task = asyncio.wait_for(run(), support.LONG_TIMEOUT)
+        stdout = self.loop.run_until_complete(task)
+        self.assertEqual(stdout, b'all output\n')
+
+    def test_communicate_cancelled_input_not_resendable(self):
+        # gh-139373: like subprocess.Popen.communicate(), sending new
+        # input after a cancelled communicate() call is an error.
+        async def run():
+            proc = await asyncio.create_subprocess_exec(
+                *PROGRAM_CAT,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+            )
+            task = asyncio.create_task(proc.communicate(b'data'))
+            await asyncio.sleep(0)
+            task.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await task
+            with self.assertRaises(ValueError):
+                await proc.communicate(b'more data')
+            proc.kill()
+            await proc.communicate()
+
+        self.loop.run_until_complete(
+            asyncio.wait_for(run(), support.LONG_TIMEOUT))
+
+    def test_communicate_cancelled_stdin_retry(self):
+        # gh-139373: input already fed before cancellation is not re-sent
+        # by the retried communicate() call, and the output is preserved.
+        code = ('import sys, time;'
+                'sys.stdout.buffer.write(sys.stdin.buffer.read());'
+                'sys.stdout.buffer.flush();'
+                'time.sleep(3600)')
+
+        async def run():
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable, '-c', code,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+            )
+            task = asyncio.create_task(proc.communicate(b'hello'))
+            # the child echoes stdin only after it is closed, so once
+            # output arrives the input was fully written and
+            # communicate() is blocked on wait()
+            while not proc._stdout_buf:
+                await asyncio.sleep(0.01)
+            task.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await task
+            proc.kill()
+            stdout, stderr = await proc.communicate()
+            return stdout
+
+        task = asyncio.wait_for(run(), support.LONG_TIMEOUT)
+        stdout = self.loop.run_until_complete(task)
+        self.assertEqual(stdout, b'hello')
+
     def test_shell(self):
         proc = self.loop.run_until_complete(
             asyncio.create_subprocess_shell('exit 7')
@@ -172,6 +310,33 @@ class SubprocessMixin:
         proc = self.loop.run_until_complete(
             asyncio.create_subprocess_exec(*args)
         )
+        proc.kill()
+        returncode = self.loop.run_until_complete(proc.wait())
+        if sys.platform == 'win32':
+            self.assertIsInstance(returncode, int)
+            # expect 1 but sometimes get 0
+        else:
+            self.assertEqual(-signal.SIGKILL, returncode)
+
+    def test_kill_issue43884(self):
+        if sys.platform == 'win32':
+            blocking_shell_command = f'"{sys.executable}" -c "import time; time.sleep(2)"'
+        else:
+            blocking_shell_command = 'sleep 1; sleep 1'
+        creationflags = 0
+        if sys.platform == 'win32':
+            from subprocess import CREATE_NEW_PROCESS_GROUP
+            # On windows create a new process group so that killing process
+            # kills the process and all its children.
+            creationflags = CREATE_NEW_PROCESS_GROUP
+        proc = self.loop.run_until_complete(
+            asyncio.create_subprocess_shell(blocking_shell_command,
+            creationflags=creationflags)
+        )
+        self.loop.run_until_complete(asyncio.sleep(1))
+        if sys.platform == 'win32':
+            proc.send_signal(signal.CTRL_BREAK_EVENT)
+        # On windows it is an alias of terminate which sets the return code
         proc.kill()
         returncode = self.loop.run_until_complete(proc.wait())
         if sys.platform == 'win32':
@@ -223,26 +388,43 @@ class SubprocessMixin:
         finally:
             signal.signal(signal.SIGHUP, old_handler)
 
-    def prepare_broken_pipe_test(self):
+    def test_stdin_broken_pipe(self):
         # buffer large enough to feed the whole pipe buffer
         large_data = b'x' * support.PIPE_MAX_SIZE
 
-        # the program ends before the stdin can be feeded
+        rfd, wfd = os.pipe()
+        self.addCleanup(os.close, rfd)
+        self.addCleanup(os.close, wfd)
+        if support.MS_WINDOWS:
+            handle = msvcrt.get_osfhandle(rfd)
+            os.set_handle_inheritable(handle, True)
+            code = textwrap.dedent(f'''
+                import os, msvcrt
+                handle = {handle}
+                fd = msvcrt.open_osfhandle(handle, os.O_RDONLY)
+                os.read(fd, 1)
+            ''')
+            from subprocess import STARTUPINFO
+            startupinfo = STARTUPINFO()
+            startupinfo.lpAttributeList = {"handle_list": [handle]}
+            kwargs = dict(startupinfo=startupinfo)
+        else:
+            code = f'import os; fd = {rfd}; os.read(fd, 1)'
+            kwargs = dict(pass_fds=(rfd,))
+
+        # the program ends before the stdin can be fed
         proc = self.loop.run_until_complete(
             asyncio.create_subprocess_exec(
-                sys.executable, '-c', 'pass',
+                sys.executable, '-c', code,
                 stdin=subprocess.PIPE,
+                **kwargs
             )
         )
 
-        return (proc, large_data)
-
-    def test_stdin_broken_pipe(self):
-        proc, large_data = self.prepare_broken_pipe_test()
-
         async def write_stdin(proc, data):
-            await asyncio.sleep(0.5)
             proc.stdin.write(data)
+            # Only exit the child process once the write buffer is filled
+            os.write(wfd, b'go')
             await proc.stdin.drain()
 
         coro = write_stdin(proc, large_data)
@@ -253,7 +435,16 @@ class SubprocessMixin:
         self.loop.run_until_complete(proc.wait())
 
     def test_communicate_ignore_broken_pipe(self):
-        proc, large_data = self.prepare_broken_pipe_test()
+        # buffer large enough to feed the whole pipe buffer
+        large_data = b'x' * support.PIPE_MAX_SIZE
+
+        # the program ends before the stdin can be fed
+        proc = self.loop.run_until_complete(
+            asyncio.create_subprocess_exec(
+                sys.executable, '-c', 'pass',
+                stdin=subprocess.PIPE,
+            )
+        )
 
         # communicate() must ignore BrokenPipeError when feeding stdin
         self.loop.set_exception_handler(lambda loop, msg: None)
@@ -323,6 +514,46 @@ class SubprocessMixin:
         output, exitcode = self.loop.run_until_complete(len_message(b'abc'))
         self.assertEqual(output.rstrip(), b'3')
         self.assertEqual(exitcode, 0)
+
+    def test_wait_even_if_pipe_is_open(self):
+        # gh-119710: Process.wait() must return once the process exits even
+        # if its stdout pipe is inherited by a grandchild that keeps it open,
+        # so the pipe never reaches EOF. Otherwise wait() hangs forever
+        # despite the returncode being known.
+
+        async def run():
+            # The grandchild inherits the child's stdin and stdout pipes and
+            # keeps both open after the child is killed.  It writes "ready"
+            # so we know it has started, and exits once its stdin hits EOF.
+            code = textwrap.dedent("""\
+                import subprocess, sys
+                subprocess.run([sys.executable, "-c",
+                    "import sys; sys.stdout.write('ready');"
+                    " sys.stdout.flush(); sys.stdin.read()"])
+                """)
+
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable, "-c", code,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+            )
+            try:
+                wait_proc = asyncio.create_task(proc.wait())
+                # Wait until the grandchild holds the inherited pipes; this
+                # also lets the wait() task register its waiter.
+                await proc.stdout.readexactly(5)
+                proc.kill()
+                returncode = await asyncio.wait_for(
+                    wait_proc, timeout=support.SHORT_TIMEOUT)
+                if sys.platform == 'win32':
+                    self.assertIsInstance(returncode, int)
+                else:
+                    self.assertEqual(-signal.SIGKILL, returncode)
+            finally:
+                proc.stdin.close()  # let the grandchild exit
+                await proc.stdout.read()
+
+        self.loop.run_until_complete(run())
 
     def test_empty_input(self):
 
@@ -398,6 +629,27 @@ class SubprocessMixin:
 
         output, exitcode = self.loop.run_until_complete(empty_error())
         self.assertEqual(output, None)
+        self.assertEqual(exitcode, 0)
+
+    @unittest.skipIf(sys.platform not in ('linux', 'android'),
+                     "Don't have /dev/stdin")
+    def test_devstdin_input(self):
+
+        async def devstdin_input(message):
+            code = 'file = open("/dev/stdin"); data = file.read(); print(len(data))'
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable, '-c', code,
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                close_fds=False,
+            )
+            stdout, stderr = await proc.communicate(message)
+            exitcode = await proc.wait()
+            return (stdout, exitcode)
+
+        output, exitcode = self.loop.run_until_complete(devstdin_input(b'abc'))
+        self.assertEqual(output.rstrip(), b'3')
         self.assertEqual(exitcode, 0)
 
     def test_cancel_process_wait(self):
@@ -530,13 +782,6 @@ class SubprocessMixin:
         # the transport was not notified yet
         self.assertFalse(killed)
 
-        # Unlike SafeChildWatcher, FastChildWatcher does not pop the
-        # callbacks if waitpid() is called elsewhere. Let's clear them
-        # manually to avoid a warning when the watcher is detached.
-        if (sys.platform != 'win32' and
-                isinstance(self, SubprocessFastWatcherTests)):
-            asyncio.get_child_watcher()._callbacks.clear()
-
     async def _test_popen_error(self, stdin):
         if sys.platform == 'win32':
             target = 'asyncio.windows_utils.Popen'
@@ -626,95 +871,305 @@ class SubprocessMixin:
     def test_create_subprocess_exec_with_path(self):
         async def execute():
             p = await subprocess.create_subprocess_exec(
-                support.FakePath(sys.executable), '-c', 'pass')
+                os_helper.FakePath(sys.executable), '-c', 'pass')
             await p.wait()
             p = await subprocess.create_subprocess_exec(
-                sys.executable, '-c', 'pass', support.FakePath('.'))
+                sys.executable, '-c', 'pass', os_helper.FakePath('.'))
             await p.wait()
 
         self.assertIsNone(self.loop.run_until_complete(execute()))
 
-    def test_exec_loop_deprecated(self):
-        async def go():
-            with self.assertWarns(DeprecationWarning):
-                proc = await asyncio.create_subprocess_exec(
-                    sys.executable, '-c', 'pass',
-                    loop=self.loop,
-                )
-            await proc.wait()
-        self.loop.run_until_complete(go())
+    async def check_stdout_output(self, coro, output):
+        proc = await coro
+        stdout, _ = await proc.communicate()
+        self.assertEqual(stdout, output)
+        self.assertEqual(proc.returncode, 0)
+        task = asyncio.create_task(proc.wait())
+        await asyncio.sleep(0)
+        self.assertEqual(task.result(), proc.returncode)
 
-    def test_shell_loop_deprecated(self):
-        async def go():
-            with self.assertWarns(DeprecationWarning):
-                proc = await asyncio.create_subprocess_shell(
-                    "exit 0",
-                    loop=self.loop,
-                )
-            await proc.wait()
-        self.loop.run_until_complete(go())
+    def test_create_subprocess_env_shell(self) -> None:
+        async def main() -> None:
+            executable = f'"{sys.executable}"' if sys.platform == "win32" else shlex.quote(sys.executable)
+            cmd = f'''{executable} -c "import os, sys; sys.stdout.write(os.getenv('FOO'))"'''
+            env = os.environ.copy()
+            env["FOO"] = "bar"
+            proc = await asyncio.create_subprocess_shell(
+                cmd, env=env, stdout=subprocess.PIPE
+            )
+            return proc
 
+        self.loop.run_until_complete(self.check_stdout_output(main(), b'bar'))
+
+    def test_create_subprocess_env_exec(self) -> None:
+        async def main() -> None:
+            cmd = [sys.executable, "-c",
+                   "import os, sys; sys.stdout.write(os.getenv('FOO'))"]
+            env = os.environ.copy()
+            env["FOO"] = "baz"
+            proc = await asyncio.create_subprocess_exec(
+                *cmd, env=env, stdout=subprocess.PIPE
+            )
+            return proc
+
+        self.loop.run_until_complete(self.check_stdout_output(main(), b'baz'))
+
+
+    def test_subprocess_concurrent_wait(self) -> None:
+        async def main() -> None:
+            proc = await asyncio.create_subprocess_exec(
+                *PROGRAM_CAT,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+            )
+            stdout, _ = await proc.communicate(b'some data')
+            self.assertEqual(stdout, b"some data")
+            self.assertEqual(proc.returncode, 0)
+            self.assertEqual(await asyncio.gather(*[proc.wait() for _ in range(10)]),
+                             [proc.returncode] * 10)
+
+        self.loop.run_until_complete(main())
+
+    def test_subprocess_protocol_events(self):
+        # gh-108973: Test that all subprocess protocol methods are called.
+        # The protocol methods are not called in a deterministic order.
+        # The order depends on the event loop and the operating system.
+        events = []
+        fds = [1, 2]
+        expected = [
+            ('pipe_data_received', 1, b'stdout'),
+            ('pipe_data_received', 2, b'stderr'),
+            ('pipe_connection_lost', 1),
+            ('pipe_connection_lost', 2),
+            'process_exited',
+        ]
+        per_fd_expected = [
+            'pipe_data_received',
+            'pipe_connection_lost',
+        ]
+
+        class MyProtocol(asyncio.SubprocessProtocol):
+            def __init__(self, exit_future: asyncio.Future) -> None:
+                self.exit_future = exit_future
+
+            def pipe_data_received(self, fd, data) -> None:
+                events.append(('pipe_data_received', fd, data))
+                self.exit_maybe()
+
+            def pipe_connection_lost(self, fd, exc) -> None:
+                events.append(('pipe_connection_lost', fd))
+                self.exit_maybe()
+
+            def process_exited(self) -> None:
+                events.append('process_exited')
+                self.exit_maybe()
+
+            def exit_maybe(self):
+                # Only exit when we got all expected events
+                if len(events) >= len(expected):
+                    self.exit_future.set_result(True)
+
+        async def main() -> None:
+            loop = asyncio.get_running_loop()
+            exit_future = asyncio.Future()
+            code = 'import sys; sys.stdout.write("stdout"); sys.stderr.write("stderr")'
+            transport, _ = await loop.subprocess_exec(lambda: MyProtocol(exit_future),
+                                                      sys.executable, '-c', code, stdin=None)
+            await exit_future
+            transport.close()
+
+            return events
+
+        events = self.loop.run_until_complete(main())
+
+        # First, make sure that we received all events
+        self.assertSetEqual(set(events), set(expected))
+
+        # Second, check order of pipe events per file descriptor
+        per_fd_events = {fd: [] for fd in fds}
+        for event in events:
+            if event == 'process_exited':
+                continue
+            name, fd = event[:2]
+            per_fd_events[fd].append(name)
+
+        for fd in fds:
+            self.assertEqual(per_fd_events[fd], per_fd_expected, (fd, events))
+
+    def test_subprocess_communicate_stdout(self):
+        # See https://github.com/python/cpython/issues/100133
+        async def get_command_stdout(cmd, *args):
+            proc = await asyncio.create_subprocess_exec(
+                cmd, *args, stdout=asyncio.subprocess.PIPE,
+            )
+            stdout, _ = await proc.communicate()
+            return stdout.decode().strip()
+
+        async def main():
+            outputs = [f'foo{i}' for i in range(10)]
+            res = await asyncio.gather(*[get_command_stdout(sys.executable, '-c',
+                                        f'print({out!r})') for out in outputs])
+            self.assertEqual(res, outputs)
+
+        self.loop.run_until_complete(main())
+
+    @unittest.skipIf(sys.platform != 'linux', "Linux only")
+    def test_subprocess_send_signal_race(self):
+        # See https://github.com/python/cpython/issues/87744
+        async def main():
+            for _ in range(10):
+                proc = await asyncio.create_subprocess_exec('sleep', '0.1')
+                await asyncio.sleep(0.1)
+                try:
+                    proc.send_signal(signal.SIGUSR1)
+                except ProcessLookupError:
+                    pass
+                self.assertNotEqual(await proc.wait(), 255)
+
+        self.loop.run_until_complete(main())
+
+    def test_subprocess_read_pipe_cancelled(self):
+        async def main():
+            loop = asyncio.get_running_loop()
+            loop.connect_read_pipe = mock.AsyncMock(side_effect=asyncio.CancelledError)
+            with self.assertRaises(asyncio.CancelledError):
+                await asyncio.create_subprocess_exec(*PROGRAM_BLOCKED, stderr=asyncio.subprocess.PIPE)
+
+        asyncio.run(main())
+        gc_collect()
+
+    def test_subprocess_write_pipe_cancelled(self):
+        async def main():
+            loop = asyncio.get_running_loop()
+            loop.connect_write_pipe = mock.AsyncMock(side_effect=asyncio.CancelledError)
+            with self.assertRaises(asyncio.CancelledError):
+                await asyncio.create_subprocess_exec(*PROGRAM_BLOCKED, stdin=asyncio.subprocess.PIPE)
+
+        asyncio.run(main())
+        gc_collect()
+
+    def test_subprocess_read_write_pipe_cancelled(self):
+        async def main():
+            loop = asyncio.get_running_loop()
+            loop.connect_read_pipe = mock.AsyncMock(side_effect=asyncio.CancelledError)
+            loop.connect_write_pipe = mock.AsyncMock(side_effect=asyncio.CancelledError)
+            with self.assertRaises(asyncio.CancelledError):
+                await asyncio.create_subprocess_exec(
+                    *PROGRAM_BLOCKED,
+                    stdin=asyncio.subprocess.PIPE,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+
+        asyncio.run(main())
+        gc_collect()
 
 if sys.platform != 'win32':
     # Unix
     class SubprocessWatcherMixin(SubprocessMixin):
 
-        Watcher = None
-
         def setUp(self):
             super().setUp()
-            policy = asyncio.get_event_loop_policy()
-            self.loop = policy.new_event_loop()
+            self.loop = asyncio.new_event_loop()
             self.set_event_loop(self.loop)
 
-            watcher = self.Watcher()
-            watcher.attach_loop(self.loop)
-            policy.set_child_watcher(watcher)
+        def test_watcher_implementation(self):
+            loop = self.loop
+            watcher = loop._watcher
+            if unix_events.can_use_pidfd():
+                self.assertIsInstance(watcher, unix_events._PidfdChildWatcher)
+            else:
+                self.assertIsInstance(watcher, unix_events._ThreadedChildWatcher)
 
-        def tearDown(self):
-            super().tearDown()
-            policy = asyncio.get_event_loop_policy()
-            watcher = policy.get_child_watcher()
-            policy.set_child_watcher(None)
-            watcher.attach_loop(None)
-            watcher.close()
+        @unittest.skipUnless(hasattr(os, 'waitid'), 'needs os.waitid()')
+        def test_send_signal_never_targets_reaped_pid(self):
+            # gh-127049: there must be no window between the child watcher
+            # reaping the child and asyncio publishing the exit in which
+            # send_signal() signals the freed (possibly recycled) PID.
+            reaped_pids = set()
+            stale_kills = []
+            orig_waitpid = os.waitpid
+            orig_kill = os.kill
+
+            def waitpid(pid, options):
+                res = orig_waitpid(pid, options)
+                if res[0] != 0:
+                    reaped_pids.add(res[0])
+                return res
+
+            def kill(pid, sig):
+                if pid in reaped_pids:
+                    stale_kills.append(pid)
+                    return
+                orig_kill(pid, sig)
+
+            async def run():
+                with mock.patch('os.waitpid', waitpid), \
+                        mock.patch('os.kill', kill):
+                    proc = await asyncio.create_subprocess_exec(
+                        *PROGRAM_BLOCKED)
+                    proc.kill()
+                    deadline = self.loop.time() + support.SHORT_TIMEOUT
+                    while proc.returncode is None:
+                        if self.loop.time() > deadline:
+                            self.fail('child exit was not published in time')
+                        proc.kill()
+                        await asyncio.sleep(0)
+                    await proc.wait()
+                self.assertEqual(stale_kills, [])
+
+            self.loop.run_until_complete(run())
+
 
     class SubprocessThreadedWatcherTests(SubprocessWatcherMixin,
                                          test_utils.TestCase):
+        def setUp(self):
+            self._original_can_use_pidfd = unix_events.can_use_pidfd
+            # Force the use of the threaded child watcher
+            unix_events.can_use_pidfd = mock.Mock(return_value=False)
+            super().setUp()
 
-        Watcher = unix_events.ThreadedChildWatcher
+        def tearDown(self):
+            unix_events.can_use_pidfd = self._original_can_use_pidfd
+            return super().tearDown()
 
-    class SubprocessMultiLoopWatcherTests(SubprocessWatcherMixin,
-                                          test_utils.TestCase):
+        @unittest.skipUnless(hasattr(os, 'waitid'), 'needs os.waitid()')
+        def test_pid_not_reaped_before_exit_published(self):
+            # gh-127049: the watcher thread must wait for the child
+            # without reaping it: the PID must stay reserved until the
+            # event loop thread reaps it and publishes the exit as one
+            # atomic step.
+            async def run():
+                proc = await asyncio.create_subprocess_exec(
+                    *PROGRAM_BLOCKED)
+                thread = self.loop._watcher._threads.get(proc.pid)
+                self.assertIsNotNone(thread)
+                proc.kill()
+                # Wait for the watcher thread to observe the exit while
+                # the event loop cannot process the notification yet.
+                thread.join(support.SHORT_TIMEOUT)
+                self.assertFalse(thread.is_alive())
+                # The exit has not been published yet...
+                self.assertIsNone(proc.returncode)
+                # ...so the child must still be an unreaped zombie and
+                # signalling its PID must still be safe.  waitid() raises
+                # ChildProcessError if the PID was already reaped (and
+                # possibly recycled by the kernel).
+                os.waitid(os.P_PID, proc.pid,
+                          os.WEXITED | os.WNOWAIT | os.WNOHANG)
+                proc.kill()
+                self.assertEqual(await proc.wait(), -signal.SIGKILL)
 
-        Watcher = unix_events.MultiLoopChildWatcher
-
-    class SubprocessSafeWatcherTests(SubprocessWatcherMixin,
-                                     test_utils.TestCase):
-
-        Watcher = unix_events.SafeChildWatcher
-
-    class SubprocessFastWatcherTests(SubprocessWatcherMixin,
-                                     test_utils.TestCase):
-
-        Watcher = unix_events.FastChildWatcher
-
-    def has_pidfd_support():
-        if not hasattr(os, 'pidfd_open'):
-            return False
-        try:
-            os.close(os.pidfd_open(os.getpid()))
-        except OSError:
-            return False
-        return True
+            self.loop.run_until_complete(run())
 
     @unittest.skipUnless(
-        has_pidfd_support(),
+        unix_events.can_use_pidfd(),
         "operating system does not support pidfds",
     )
     class SubprocessPidfdWatcherTests(SubprocessWatcherMixin,
                                       test_utils.TestCase):
-        Watcher = unix_events.PidfdChildWatcher
+
+        pass
 
 else:
     # Windows
@@ -724,26 +1179,6 @@ else:
             super().setUp()
             self.loop = asyncio.ProactorEventLoop()
             self.set_event_loop(self.loop)
-
-
-class GenericWatcherTests:
-
-    def test_create_subprocess_fails_with_inactive_watcher(self):
-
-        async def execute():
-            watcher = mock.create_authspec(asyncio.AbstractChildWatcher)
-            watcher.is_active.return_value = False
-            asyncio.set_child_watcher(watcher)
-
-            with self.assertRaises(RuntimeError):
-                await subprocess.create_subprocess_exec(
-                    support.FakePath(sys.executable), '-c', 'pass')
-
-            watcher.add_child_handler.assert_not_called()
-
-        self.assertIsNone(self.loop.run_until_complete(execute()))
-
-
 
 
 if __name__ == '__main__':

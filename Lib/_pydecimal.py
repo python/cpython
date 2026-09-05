@@ -13,104 +13,7 @@
 # bug) and will be backported.  At this point the spec is stabilizing
 # and the updates are becoming fewer, smaller, and less significant.
 
-"""
-This is an implementation of decimal floating point arithmetic based on
-the General Decimal Arithmetic Specification:
-
-    http://speleotrove.com/decimal/decarith.html
-
-and IEEE standard 854-1987:
-
-    http://en.wikipedia.org/wiki/IEEE_854-1987
-
-Decimal floating point has finite precision with arbitrarily large bounds.
-
-The purpose of this module is to support arithmetic using familiar
-"schoolhouse" rules and to avoid some of the tricky representation
-issues associated with binary floating point.  The package is especially
-useful for financial applications or for contexts where users have
-expectations that are at odds with binary floating point (for instance,
-in binary floating point, 1.00 % 0.1 gives 0.09999999999999995 instead
-of 0.0; Decimal('1.00') % Decimal('0.1') returns the expected
-Decimal('0.00')).
-
-Here are some examples of using the decimal module:
-
->>> from decimal import *
->>> setcontext(ExtendedContext)
->>> Decimal(0)
-Decimal('0')
->>> Decimal('1')
-Decimal('1')
->>> Decimal('-.0123')
-Decimal('-0.0123')
->>> Decimal(123456)
-Decimal('123456')
->>> Decimal('123.45e12345678')
-Decimal('1.2345E+12345680')
->>> Decimal('1.33') + Decimal('1.27')
-Decimal('2.60')
->>> Decimal('12.34') + Decimal('3.87') - Decimal('18.41')
-Decimal('-2.20')
->>> dig = Decimal(1)
->>> print(dig / Decimal(3))
-0.333333333
->>> getcontext().prec = 18
->>> print(dig / Decimal(3))
-0.333333333333333333
->>> print(dig.sqrt())
-1
->>> print(Decimal(3).sqrt())
-1.73205080756887729
->>> print(Decimal(3) ** 123)
-4.85192780976896427E+58
->>> inf = Decimal(1) / Decimal(0)
->>> print(inf)
-Infinity
->>> neginf = Decimal(-1) / Decimal(0)
->>> print(neginf)
--Infinity
->>> print(neginf + inf)
-NaN
->>> print(neginf * inf)
--Infinity
->>> print(dig / 0)
-Infinity
->>> getcontext().traps[DivisionByZero] = 1
->>> print(dig / 0)
-Traceback (most recent call last):
-  ...
-  ...
-  ...
-decimal.DivisionByZero: x / 0
->>> c = Context()
->>> c.traps[InvalidOperation] = 0
->>> print(c.flags[InvalidOperation])
-0
->>> c.divide(Decimal(0), Decimal(0))
-Decimal('NaN')
->>> c.traps[InvalidOperation] = 1
->>> print(c.flags[InvalidOperation])
-1
->>> c.flags[InvalidOperation] = 0
->>> print(c.flags[InvalidOperation])
-0
->>> print(c.divide(Decimal(0), Decimal(0)))
-Traceback (most recent call last):
-  ...
-  ...
-  ...
-decimal.InvalidOperation: 0 / 0
->>> print(c.flags[InvalidOperation])
-1
->>> c.flags[InvalidOperation] = 0
->>> c.traps[InvalidOperation] = 0
->>> print(c.divide(Decimal(0), Decimal(0)))
-NaN
->>> print(c.flags[InvalidOperation])
-1
->>>
-"""
+"""Python decimal arithmetic module"""
 
 __all__ = [
     # Two major classes
@@ -135,22 +38,25 @@ __all__ = [
     'ROUND_FLOOR', 'ROUND_UP', 'ROUND_HALF_DOWN', 'ROUND_05UP',
 
     # Functions for manipulating contexts
-    'setcontext', 'getcontext', 'localcontext',
+    'setcontext', 'getcontext', 'localcontext', 'IEEEContext',
 
     # Limits for the C version for compatibility
-    'MAX_PREC',  'MAX_EMAX', 'MIN_EMIN', 'MIN_ETINY',
+    'MAX_PREC',  'MAX_EMAX', 'MIN_EMIN', 'MIN_ETINY', 'IEEE_CONTEXT_MAX_BITS',
 
     # C version: compile time choice that enables the thread local context (deprecated, now always true)
     'HAVE_THREADS',
 
     # C version: compile time choice that enables the coroutine local context
-    'HAVE_CONTEXTVAR'
+    'HAVE_CONTEXTVAR',
+
+    # Highest version of the spec this module complies with
+    'SPEC_VERSION',
 ]
 
 __xname__ = __name__    # sys.modules lookup (--without-threads)
 __name__ = 'decimal'    # For pickling
-__version__ = '1.70'    # Highest version of the spec this complies with
-                        # See http://speleotrove.com/decimal/
+SPEC_VERSION = '1.70'   # Highest version of the spec this complies with
+                        # See https://speleotrove.com/decimal/decarith.html
 __libmpdec_version__ = "2.4.2" # compatible libmpdec version
 
 import math as _math
@@ -159,7 +65,7 @@ import sys
 
 try:
     from collections import namedtuple as _namedtuple
-    DecimalTuple = _namedtuple('DecimalTuple', 'sign digits exponent')
+    DecimalTuple = _namedtuple('DecimalTuple', 'sign digits exponent', module='decimal')
 except ImportError:
     DecimalTuple = lambda *args: args
 
@@ -180,10 +86,12 @@ if sys.maxsize == 2**63-1:
     MAX_PREC = 999999999999999999
     MAX_EMAX = 999999999999999999
     MIN_EMIN = -999999999999999999
+    IEEE_CONTEXT_MAX_BITS = 512
 else:
     MAX_PREC = 425000000
     MAX_EMAX = 425000000
     MIN_EMIN = -425000000
+    IEEE_CONTEXT_MAX_BITS = 256
 
 MIN_ETINY = MIN_EMIN - (MAX_PREC-1)
 
@@ -194,13 +102,13 @@ class DecimalException(ArithmeticError):
 
     Used exceptions derive from this.
     If an exception derives from another exception besides this (such as
-    Underflow (Inexact, Rounded, Subnormal) that indicates that it is only
+    Underflow (Inexact, Rounded, Subnormal)) that indicates that it is only
     called if the others are present.  This isn't actually used for
     anything, though.
 
     handle  -- Called when context._raise_error is called and the
-               trap_enabler is not set.  First argument is self, second is the
-               context.  More arguments can be given, those being after
+               trap_enabler is not set.  First argument is self, second is
+               the context.  More arguments can be given, those being after
                the explanation in _raise_error (For example,
                context._raise_error(NewError, '(-x)!', self._sign) would
                call NewError().handle(context, self._sign).)
@@ -242,7 +150,7 @@ class InvalidOperation(DecimalException):
     x ** (+-)INF
     An operand is invalid
 
-    The result of the operation after these is a quiet positive NaN,
+    The result of the operation after this is a quiet positive NaN,
     except when the cause is a signaling NaN, in which case the result is
     also a quiet NaN, but with the original sign, and an optional
     diagnostic information.
@@ -317,11 +225,12 @@ class InvalidContext(InvalidOperation):
     """Invalid context.  Unknown rounding, for example.
 
     This occurs and signals invalid-operation if an invalid context was
-    detected during an operation.  This can occur if contexts are not checked
-    on creation and either the precision exceeds the capability of the
-    underlying concrete representation or an unknown or unsupported rounding
-    was specified.  These aspects of the context need only be checked when
-    the values are required to be used.  The result is [0,qNaN].
+    detected during an operation.  This can occur if contexts are not
+    checked on creation and either the precision exceeds the capability of
+    the underlying concrete representation or an unknown or unsupported
+    rounding was specified.  These aspects of the context need only be
+    checked when the values are required to be used.  The result is
+    [0,qNaN].
     """
 
     def handle(self, context, *args):
@@ -414,8 +323,9 @@ class FloatOperation(DecimalException, TypeError):
     Decimal.from_float() or context.create_decimal_from_float() do not
     set the flag.
 
-    Otherwise (the signal is trapped), only equality comparisons and explicit
-    conversions are silent. All other mixed operations raise FloatOperation.
+    Otherwise (the signal is trapped), only equality comparisons and
+    explicit conversions are silent.  All other mixed operations raise
+    FloatOperation.
     """
 
 # List of public traps and flags
@@ -441,6 +351,10 @@ import contextvars
 
 _current_context_var = contextvars.ContextVar('decimal_context')
 
+_context_attributes = frozenset(
+    ['prec', 'Emin', 'Emax', 'capitals', 'clamp', 'rounding', 'flags', 'traps']
+)
+
 def getcontext():
     """Returns this thread's context.
 
@@ -464,7 +378,7 @@ def setcontext(context):
 
 del contextvars        # Don't contaminate the namespace
 
-def localcontext(ctx=None):
+def localcontext(ctx=None, **kwargs):
     """Return a context manager for a copy of the supplied context
 
     Uses a copy of the current context if no context is specified
@@ -500,8 +414,35 @@ def localcontext(ctx=None):
     >>> print(getcontext().prec)
     28
     """
-    if ctx is None: ctx = getcontext()
-    return _ContextManager(ctx)
+    if ctx is None:
+        ctx = getcontext()
+    ctx_manager = _ContextManager(ctx)
+    for key, value in kwargs.items():
+        if key not in _context_attributes:
+            raise TypeError(f"'{key}' is an invalid keyword argument for this function")
+        setattr(ctx_manager.new_context, key, value)
+    return ctx_manager
+
+
+def IEEEContext(bits, /):
+    """
+    Return a context object initialized to the proper values for one of the
+    IEEE interchange formats.  The argument must be a multiple of 32 and less
+    than IEEE_CONTEXT_MAX_BITS.
+    """
+    if bits <= 0 or bits > IEEE_CONTEXT_MAX_BITS or bits % 32:
+        raise ValueError("argument must be a multiple of 32, "
+                         f"with a maximum of {IEEE_CONTEXT_MAX_BITS}")
+
+    ctx = Context()
+    ctx.prec = 9 * (bits//32) - 2
+    ctx.Emax = 3 * (1 << (bits//16 + 3))
+    ctx.Emin = 1 - ctx.Emax
+    ctx.rounding = ROUND_HALF_EVEN
+    ctx.clamp = 1
+    ctx.traps = dict.fromkeys(_signals, False)
+
+    return ctx
 
 
 ##### Decimal class #######################################################
@@ -511,7 +452,7 @@ def localcontext(ctx=None):
 # numbers.py for more detail.
 
 class Decimal(object):
-    """Floating point class for decimal arithmetic."""
+    """Floating-point class for decimal arithmetic."""
 
     __slots__ = ('_exp','_int','_sign', '_is_special')
     # Generally, the value of the Decimal instance is given by
@@ -668,6 +609,21 @@ class Decimal(object):
             return self
 
         raise TypeError("Cannot convert %r to Decimal" % value)
+
+    @classmethod
+    def from_number(cls, number):
+        """Converts a real number to a decimal number, exactly.
+
+        >>> Decimal.from_number(314)              # int
+        Decimal('314')
+        >>> Decimal.from_number(0.1)              # float
+        Decimal('0.1000000000000000055511151231257827021181583404541015625')
+        >>> Decimal.from_number(Decimal('3.14'))  # another decimal instance
+        Decimal('3.14')
+        """
+        if isinstance(number, (int, Decimal, float)):
+            return cls(number)
+        raise TypeError("Cannot convert %r to Decimal" % number)
 
     @classmethod
     def from_float(cls, f):
@@ -951,7 +907,7 @@ class Decimal(object):
             if self.is_snan():
                 raise TypeError('Cannot hash a signaling NaN value.')
             elif self.is_nan():
-                return _PyHASH_NAN
+                return object.__hash__(self)
             else:
                 if self._sign:
                     return -_PyHASH_INF
@@ -1868,9 +1824,10 @@ class Decimal(object):
         Decimal('123.46')
         >>> round(Decimal('123.456'), -2)
         Decimal('1E+2')
-        >>> round(Decimal('-Infinity'), 37)
+        >>> with localcontext(ExtendedContext):
+        ...     round(Decimal('-Infinity'), 37)
+        ...     round(Decimal('sNaN123'), 0)
         Decimal('NaN')
-        >>> round(Decimal('sNaN123'), 0)
         Decimal('NaN123')
 
         """
@@ -2218,10 +2175,16 @@ class Decimal(object):
             else:
                 return None
 
-            if xc >= 10**p:
+            # An exact power of 10 is representable, but can convert to a
+            # string of any length. But an exact power of 10 shouldn't be
+            # possible at this point.
+            assert xc > 1, self
+            assert xc % 10 != 0, self
+            strxc = str(xc)
+            if len(strxc) > p:
                 return None
             xe = -e-xe
-            return _dec_from_triple(0, str(xc), xe)
+            return _dec_from_triple(0, strxc, xe)
 
         # now y is positive; find m and n such that y = m/n
         if ye >= 0:
@@ -2230,7 +2193,7 @@ class Decimal(object):
             if xe != 0 and len(str(abs(yc*xe))) <= -ye:
                 return None
             xc_bits = _nbits(xc)
-            if xc != 1 and len(str(abs(yc)*xc_bits)) <= -ye:
+            if len(str(abs(yc)*xc_bits)) <= -ye:
                 return None
             m, n = yc, 10**(-ye)
             while m % 2 == n % 2 == 0:
@@ -2243,7 +2206,7 @@ class Decimal(object):
         # compute nth root of xc*10**xe
         if n > 1:
             # if 1 < xc < 2**n then xc isn't an nth power
-            if xc != 1 and xc_bits <= n:
+            if xc_bits <= n:
                 return None
 
             xe, rem = divmod(xe, n)
@@ -2271,13 +2234,18 @@ class Decimal(object):
             return None
         xc = xc**m
         xe *= m
-        if xc > 10**p:
+        # An exact power of 10 is representable, but can convert to a string
+        # of any length. But an exact power of 10 shouldn't be possible at
+        # this point.
+        assert xc > 1, self
+        assert xc % 10 != 0, self
+        str_xc = str(xc)
+        if len(str_xc) > p:
             return None
 
         # by this point the result *is* exactly representable
         # adjust the exponent to get as close as possible to the ideal
         # exponent, if necessary
-        str_xc = str(xc)
         if other._isinteger() and other._sign == 0:
             ideal_exponent = self._exp*int(other)
             zeros = min(xe-ideal_exponent, p-len(str_xc))
@@ -2501,12 +2469,12 @@ class Decimal(object):
 
         return ans
 
-    def __rpow__(self, other, context=None):
+    def __rpow__(self, other, modulo=None, context=None):
         """Swaps self/other and returns __pow__."""
         other = _convert_other(other)
         if other is NotImplemented:
             return other
-        return other.__pow__(self, context=context)
+        return other.__pow__(self, modulo, context=context)
 
     def normalize(self, context=None):
         """Normalize- strip trailing 0s, change anything equal to 0 to 0e0"""
@@ -2936,8 +2904,8 @@ class Decimal(object):
         """Compares self to other using the abstract representations.
 
         This is not like the standard compare, which use their numerical
-        value. Note that a total ordering is defined for all possible abstract
-        representations.
+        value. Note that a total ordering is defined for all possible
+        abstract representations.
         """
         other = _convert_other(other, raiseit=True)
 
@@ -3008,7 +2976,8 @@ class Decimal(object):
     def compare_total_mag(self, other, context=None):
         """Compares self to other using abstract repr., ignoring sign.
 
-        Like compare_total, but with operand's sign ignored and assumed to be 0.
+        Like compare_total, but with operand's sign ignored and assumed to
+        be 0.
         """
         other = _convert_other(other, raiseit=True)
 
@@ -3378,7 +3347,10 @@ class Decimal(object):
         return opa, opb
 
     def logical_and(self, other, context=None):
-        """Applies an 'and' operation between self and other's digits."""
+        """Applies an 'and' operation between self and other's digits.
+
+        Both self and other must be logical numbers.
+        """
         if context is None:
             context = getcontext()
 
@@ -3395,14 +3367,20 @@ class Decimal(object):
         return _dec_from_triple(0, result.lstrip('0') or '0', 0)
 
     def logical_invert(self, context=None):
-        """Invert all its digits."""
+        """Invert all its digits.
+
+        The self must be logical number.
+        """
         if context is None:
             context = getcontext()
         return self.logical_xor(_dec_from_triple(0,'1'*context.prec,0),
                                 context)
 
     def logical_or(self, other, context=None):
-        """Applies an 'or' operation between self and other's digits."""
+        """Applies an 'or' operation between self and other's digits.
+
+        Both self and other must be logical numbers.
+        """
         if context is None:
             context = getcontext()
 
@@ -3419,7 +3397,10 @@ class Decimal(object):
         return _dec_from_triple(0, result.lstrip('0') or '0', 0)
 
     def logical_xor(self, other, context=None):
-        """Applies an 'xor' operation between self and other's digits."""
+        """Applies an 'xor' operation between self and other's digits.
+
+        Both self and other must be logical numbers.
+        """
         if context is None:
             context = getcontext()
 
@@ -3795,6 +3776,10 @@ class Decimal(object):
         # represented in fixed point; rescale them to 0e0.
         if not self and self._exp > 0 and spec['type'] in 'fF%':
             self = self._rescale(0, rounding)
+        if not self and spec['no_neg_0'] and self._sign:
+            adjusted_sign = 0
+        else:
+            adjusted_sign = self._sign
 
         # figure out placement of the decimal point
         leftdigits = self._exp + len(self._int)
@@ -3825,7 +3810,7 @@ class Decimal(object):
 
         # done with the decimal-specific stuff;  hand over the rest
         # of the formatting to the _format_number function
-        return _format_number(self._sign, intpart, fracpart, exp, spec)
+        return _format_number(adjusted_sign, intpart, fracpart, exp, spec)
 
 def _dec_from_triple(sign, coefficient, exponent, special=False):
     """Create a decimal instance directly, without any validation,
@@ -4021,6 +4006,20 @@ class Context(object):
         return nc
     __copy__ = copy
 
+    def __replace__(self, /, **changes):
+        """Returns a copy of self with the specified attributes replaced."""
+        unexpected = changes.keys() - _context_attributes
+        if unexpected:
+            raise TypeError(f'__replace__() got an unexpected keyword '
+                            f'argument {min(unexpected)!r}')
+        nc = self.copy()
+        for name, value in changes.items():
+            if name in ('flags', 'traps') and isinstance(value, list):
+                # As in the constructor, accept a list of signals.
+                value = dict((s, int(s in value)) for s in _signals + value)
+            setattr(nc, name, value)
+        return nc
+
     def _raise_error(self, condition, explanation = None, *args):
         """Handles an error
 
@@ -4129,9 +4128,9 @@ class Context(object):
     def abs(self, a):
         """Returns the absolute value of the operand.
 
-        If the operand is negative, the result is the same as using the minus
-        operation on the operand.  Otherwise, the result is the same as using
-        the plus operation on the operand.
+        If the operand is negative, the result is the same as using the
+        minus operation on the operand.  Otherwise, the result is the same
+        as using the plus operation on the operand.
 
         >>> ExtendedContext.abs(Decimal('2.1'))
         Decimal('2.1')
@@ -4187,16 +4186,17 @@ class Context(object):
     def compare(self, a, b):
         """Compares values numerically.
 
-        If the signs of the operands differ, a value representing each operand
-        ('-1' if the operand is less than zero, '0' if the operand is zero or
-        negative zero, or '1' if the operand is greater than zero) is used in
-        place of that operand for the comparison instead of the actual
-        operand.
+        If the signs of the operands differ, a value representing each
+        operand ('-1' if the operand is less than zero, '0' if the operand
+        is zero or negative zero, or '1' if the operand is greater than
+        zero) is used in place of that operand for the comparison instead of
+        the actual operand.
 
-        The comparison is then effected by subtracting the second operand from
-        the first and then returning a value according to the result of the
-        subtraction: '-1' if the result is less than zero, '0' if the result is
-        zero or negative zero, or '1' if the result is greater than zero.
+        The comparison is then effected by subtracting the second operand
+        from the first and then returning a value according to the result of
+        the subtraction: '-1' if the result is less than zero, '0' if the
+        result is zero or negative zero, or '1' if the result is greater
+        than zero.
 
         >>> ExtendedContext.compare(Decimal('2.1'), Decimal('3'))
         Decimal('-1')
@@ -4259,8 +4259,8 @@ class Context(object):
         """Compares two operands using their abstract representation.
 
         This is not like the standard compare, which use their numerical
-        value. Note that a total ordering is defined for all possible abstract
-        representations.
+        value.  Note that a total ordering is defined for all possible
+        abstract representations.
 
         >>> ExtendedContext.compare_total(Decimal('12.73'), Decimal('127.9'))
         Decimal('-1')
@@ -4287,7 +4287,8 @@ class Context(object):
     def compare_total_mag(self, a, b):
         """Compares two operands using their abstract representation ignoring sign.
 
-        Like compare_total, but with operand's sign ignored and assumed to be 0.
+        Like compare_total, but with operand's sign ignored and assumed to
+        be 0.
         """
         a = _convert_other(a, raiseit=True)
         return a.compare_total_mag(b)
@@ -4945,8 +4946,8 @@ class Context(object):
 
         If either operand is a special value then the general rules apply.
         Otherwise, the operands are multiplied together
-        ('long multiplication'), resulting in a number which may be as long as
-        the sum of the lengths of the two operands.
+        ('long multiplication'), resulting in a number which may be as long
+        as the sum of the lengths of the two operands.
 
         >>> ExtendedContext.multiply(Decimal('1.20'), Decimal('3'))
         Decimal('3.60')
@@ -5222,19 +5223,19 @@ class Context(object):
         """Returns a value equal to 'a' (rounded), having the exponent of 'b'.
 
         The coefficient of the result is derived from that of the left-hand
-        operand.  It may be rounded using the current rounding setting (if the
-        exponent is being increased), multiplied by a positive power of ten (if
-        the exponent is being decreased), or is unchanged (if the exponent is
-        already equal to that of the right-hand operand).
+        operand.  It may be rounded using the current rounding setting (if
+        the exponent is being increased), multiplied by a positive power of
+        ten (if the exponent is being decreased), or is unchanged (if the
+        exponent is already equal to that of the right-hand operand).
 
         Unlike other operations, if the length of the coefficient after the
         quantize operation would be greater than precision then an Invalid
-        operation condition is raised.  This guarantees that, unless there is
-        an error condition, the exponent of the result of a quantize is always
-        equal to that of the right-hand operand.
+        operation condition is raised.  This guarantees that, unless there
+        is an error condition, the exponent of the result of a quantize is
+        always equal to that of the right-hand operand.
 
-        Also unlike other operations, quantize will never raise Underflow, even
-        if the result is subnormal and inexact.
+        Also unlike other operations, quantize will never raise Underflow,
+        even if the result is subnormal and inexact.
 
         >>> ExtendedContext.quantize(Decimal('2.17'), Decimal('0.001'))
         Decimal('2.170')
@@ -5288,13 +5289,13 @@ class Context(object):
         """Returns the remainder from integer division.
 
         The result is the residue of the dividend after the operation of
-        calculating integer division as described for divide-integer, rounded
-        to precision digits if necessary.  The sign of the result, if
-        non-zero, is the same as that of the original dividend.
+        calculating integer division as described for divide-integer,
+        rounded to precision digits if necessary.  The sign of the result,
+        if non-zero, is the same as that of the original dividend.
 
-        This operation will fail under the same conditions as integer division
-        (that is, if integer division on the same two operands would fail, the
-        remainder cannot be calculated).
+        This operation will fail under the same conditions as integer
+        division (that is, if integer division on the same two operands
+        would fail, the remainder cannot be calculated).
 
         >>> ExtendedContext.remainder(Decimal('2.1'), Decimal('3'))
         Decimal('2.1')
@@ -5328,9 +5329,9 @@ class Context(object):
         is chosen).  If the result is equal to 0 then its sign will be the
         sign of a.
 
-        This operation will fail under the same conditions as integer division
-        (that is, if integer division on the same two operands would fail, the
-        remainder cannot be calculated).
+        This operation will fail under the same conditions as integer
+        division (that is, if integer division on the same two operands
+        would fail, the remainder cannot be calculated).
 
         >>> ExtendedContext.remainder_near(Decimal('2.1'), Decimal('3'))
         Decimal('-0.9')
@@ -5388,8 +5389,8 @@ class Context(object):
     def same_quantum(self, a, b):
         """Returns True if the two operands have the same exponent.
 
-        The result is never affected by either the sign or the coefficient of
-        either operand.
+        The result is never affected by either the sign or the coefficient
+        of either operand.
 
         >>> ExtendedContext.same_quantum(Decimal('2.17'), Decimal('0.001'))
         False
@@ -5461,8 +5462,8 @@ class Context(object):
     def sqrt(self, a):
         """Square root of a non-negative number to context precision.
 
-        If the result must be inexact, it is rounded using the round-half-even
-        algorithm.
+        If the result must be inexact, it is rounded using the
+        round-half-even algorithm.
 
         >>> ExtendedContext.sqrt(Decimal('0'))
         Decimal('0')
@@ -6130,7 +6131,7 @@ _parser = re.compile(r"""        # A numeric string consists of:
         (?P<diag>\d*)            # with (possibly empty) diagnostic info.
     )
 #    \s*
-    \Z
+    \z
 """, re.VERBOSE | re.IGNORECASE).match
 
 _all_zeros = re.compile('0*$').match
@@ -6143,7 +6144,7 @@ _exact_half = re.compile('50*$').match
 #
 # A format specifier for Decimal looks like:
 #
-#   [[fill]align][sign][#][0][minimumwidth][,][.precision][type]
+#   [[fill]align][sign][z][#][0][minimumwidth][,][.precision][type]
 
 _parse_format_specifier_regex = re.compile(r"""\A
 (?:
@@ -6151,13 +6152,18 @@ _parse_format_specifier_regex = re.compile(r"""\A
    (?P<align>[<>=^])
 )?
 (?P<sign>[-+ ])?
+(?P<no_neg_0>z)?
 (?P<alt>\#)?
 (?P<zeropad>0)?
-(?P<minimumwidth>(?!0)\d+)?
-(?P<thousands_sep>,)?
-(?:\.(?P<precision>0|(?!0)\d+))?
+(?P<minimumwidth>\d+)?
+(?P<thousands_sep>[,_])?
+(?:\.
+    (?=[\d,_])  # lookahead for digit or separator
+    (?P<precision>\d+)?
+    (?P<frac_separators>[,_])?
+)?
 (?P<type>[eEfFgGn%])?
-\Z
+\z
 """, re.VERBOSE|re.DOTALL)
 
 del re
@@ -6247,6 +6253,9 @@ def _parse_format_specifier(format_spec, _localeconv=None):
             format_dict['thousands_sep'] = ''
         format_dict['grouping'] = [3, 0]
         format_dict['decimal_point'] = '.'
+
+    if format_dict['frac_separators'] is None:
+        format_dict['frac_separators'] = ''
 
     return format_dict
 
@@ -6367,6 +6376,11 @@ def _format_number(is_negative, intpart, fracpart, exp, spec):
 
     sign = _format_sign(is_negative, spec)
 
+    frac_sep = spec['frac_separators']
+    if fracpart and frac_sep:
+        fracpart = frac_sep.join(fracpart[pos:pos + 3]
+                                 for pos in range(0, len(fracpart), 3))
+
     if fracpart or spec['alt']:
         fracpart = spec['decimal_point'] + fracpart
 
@@ -6408,3 +6422,11 @@ _PyHASH_NAN = sys.hash_info.nan
 # _PyHASH_10INV is the inverse of 10 modulo the prime _PyHASH_MODULUS
 _PyHASH_10INV = pow(10, _PyHASH_MODULUS - 2, _PyHASH_MODULUS)
 del sys
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return SPEC_VERSION
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

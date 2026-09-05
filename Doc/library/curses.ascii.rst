@@ -1,93 +1,92 @@
-:mod:`curses.ascii` --- Utilities for ASCII characters
-======================================================
+:mod:`!curses.ascii` --- Utilities for ASCII characters
+=======================================================
 
 .. module:: curses.ascii
    :synopsis: Constants and set-membership functions for ASCII characters.
 
-.. moduleauthor:: Eric S. Raymond <esr@thyrsus.com>
-.. sectionauthor:: Eric S. Raymond <esr@thyrsus.com>
+**Source code:** :source:`Lib/curses/ascii.py`
 
 --------------
 
-The :mod:`curses.ascii` module supplies name constants for ASCII characters and
+The :mod:`!curses.ascii` module supplies name constants for ASCII characters and
 functions to test membership in various ASCII character classes.  The constants
 supplied are names for control characters as follows:
 
-+--------------+----------------------------------------------+
-| Name         | Meaning                                      |
-+==============+==============================================+
-| :const:`NUL` |                                              |
-+--------------+----------------------------------------------+
-| :const:`SOH` | Start of heading, console interrupt          |
-+--------------+----------------------------------------------+
-| :const:`STX` | Start of text                                |
-+--------------+----------------------------------------------+
-| :const:`ETX` | End of text                                  |
-+--------------+----------------------------------------------+
-| :const:`EOT` | End of transmission                          |
-+--------------+----------------------------------------------+
-| :const:`ENQ` | Enquiry, goes with :const:`ACK` flow control |
-+--------------+----------------------------------------------+
-| :const:`ACK` | Acknowledgement                              |
-+--------------+----------------------------------------------+
-| :const:`BEL` | Bell                                         |
-+--------------+----------------------------------------------+
-| :const:`BS`  | Backspace                                    |
-+--------------+----------------------------------------------+
-| :const:`TAB` | Tab                                          |
-+--------------+----------------------------------------------+
-| :const:`HT`  | Alias for :const:`TAB`: "Horizontal tab"     |
-+--------------+----------------------------------------------+
-| :const:`LF`  | Line feed                                    |
-+--------------+----------------------------------------------+
-| :const:`NL`  | Alias for :const:`LF`: "New line"            |
-+--------------+----------------------------------------------+
-| :const:`VT`  | Vertical tab                                 |
-+--------------+----------------------------------------------+
-| :const:`FF`  | Form feed                                    |
-+--------------+----------------------------------------------+
-| :const:`CR`  | Carriage return                              |
-+--------------+----------------------------------------------+
-| :const:`SO`  | Shift-out, begin alternate character set     |
-+--------------+----------------------------------------------+
-| :const:`SI`  | Shift-in, resume default character set       |
-+--------------+----------------------------------------------+
-| :const:`DLE` | Data-link escape                             |
-+--------------+----------------------------------------------+
-| :const:`DC1` | XON, for flow control                        |
-+--------------+----------------------------------------------+
-| :const:`DC2` | Device control 2, block-mode flow control    |
-+--------------+----------------------------------------------+
-| :const:`DC3` | XOFF, for flow control                       |
-+--------------+----------------------------------------------+
-| :const:`DC4` | Device control 4                             |
-+--------------+----------------------------------------------+
-| :const:`NAK` | Negative acknowledgement                     |
-+--------------+----------------------------------------------+
-| :const:`SYN` | Synchronous idle                             |
-+--------------+----------------------------------------------+
-| :const:`ETB` | End transmission block                       |
-+--------------+----------------------------------------------+
-| :const:`CAN` | Cancel                                       |
-+--------------+----------------------------------------------+
-| :const:`EM`  | End of medium                                |
-+--------------+----------------------------------------------+
-| :const:`SUB` | Substitute                                   |
-+--------------+----------------------------------------------+
-| :const:`ESC` | Escape                                       |
-+--------------+----------------------------------------------+
-| :const:`FS`  | File separator                               |
-+--------------+----------------------------------------------+
-| :const:`GS`  | Group separator                              |
-+--------------+----------------------------------------------+
-| :const:`RS`  | Record separator, block-mode terminator      |
-+--------------+----------------------------------------------+
-| :const:`US`  | Unit separator                               |
-+--------------+----------------------------------------------+
-| :const:`SP`  | Space                                        |
-+--------------+----------------------------------------------+
-| :const:`DEL` | Delete                                       |
-+--------------+----------------------------------------------+
++---------------+----------------------------------------------+
+| Name          | Meaning                                      |
++===============+==============================================+
+| .. data:: NUL |                                              |
++---------------+----------------------------------------------+
+| .. data:: SOH | Start of heading, console interrupt          |
++---------------+----------------------------------------------+
+| .. data:: STX | Start of text                                |
++---------------+----------------------------------------------+
+| .. data:: ETX | End of text                                  |
++---------------+----------------------------------------------+
+| .. data:: EOT | End of transmission                          |
++---------------+----------------------------------------------+
+| .. data:: ENQ | Enquiry, goes with :const:`ACK` flow control |
++---------------+----------------------------------------------+
+| .. data:: ACK | Acknowledgement                              |
++---------------+----------------------------------------------+
+| .. data:: BEL | Bell                                         |
++---------------+----------------------------------------------+
+| .. data:: BS  | Backspace                                    |
++---------------+----------------------------------------------+
+| .. data:: TAB | Tab                                          |
++---------------+----------------------------------------------+
+| .. data:: HT  | Alias for :const:`TAB`: "Horizontal tab"     |
++---------------+----------------------------------------------+
+| .. data:: LF  | Line feed                                    |
++---------------+----------------------------------------------+
+| .. data:: NL  | Alias for :const:`LF`: "New line"            |
++---------------+----------------------------------------------+
+| .. data:: VT  | Vertical tab                                 |
++---------------+----------------------------------------------+
+| .. data:: FF  | Form feed                                    |
++---------------+----------------------------------------------+
+| .. data:: CR  | Carriage return                              |
++---------------+----------------------------------------------+
+| .. data:: SO  | Shift-out, begin alternate character set     |
++---------------+----------------------------------------------+
+| .. data:: SI  | Shift-in, resume default character set       |
++---------------+----------------------------------------------+
+| .. data:: DLE | Data-link escape                             |
++---------------+----------------------------------------------+
+| .. data:: DC1 | XON, for flow control                        |
++---------------+----------------------------------------------+
+| .. data:: DC2 | Device control 2, block-mode flow control    |
++---------------+----------------------------------------------+
+| .. data:: DC3 | XOFF, for flow control                       |
++---------------+----------------------------------------------+
+| .. data:: DC4 | Device control 4                             |
++---------------+----------------------------------------------+
+| .. data:: NAK | Negative acknowledgement                     |
++---------------+----------------------------------------------+
+| .. data:: SYN | Synchronous idle                             |
++---------------+----------------------------------------------+
+| .. data:: ETB | End transmission block                       |
++---------------+----------------------------------------------+
+| .. data:: CAN | Cancel                                       |
++---------------+----------------------------------------------+
+| .. data:: EM  | End of medium                                |
++---------------+----------------------------------------------+
+| .. data:: SUB | Substitute                                   |
++---------------+----------------------------------------------+
+| .. data:: ESC | Escape                                       |
++---------------+----------------------------------------------+
+| .. data:: FS  | File separator                               |
++---------------+----------------------------------------------+
+| .. data:: GS  | Group separator                              |
++---------------+----------------------------------------------+
+| .. data:: RS  | Record separator, block-mode terminator      |
++---------------+----------------------------------------------+
+| .. data:: US  | Unit separator                               |
++---------------+----------------------------------------------+
+| .. data:: SP  | Space                                        |
++---------------+----------------------------------------------+
+| .. data:: DEL | Delete                                       |
++---------------+----------------------------------------------+
 
 Note that many of these have little practical significance in modern usage.  The
 mnemonics derive from teleprinter conventions that predate digital computers.
@@ -115,7 +114,7 @@ C library:
 
 .. function:: isblank(c)
 
-   Checks for an ASCII whitespace character; space or horizontal tab.
+   Checks for an ASCII blank character; space or horizontal tab.
 
 
 .. function:: iscntrl(c)
@@ -131,7 +130,7 @@ C library:
 
 .. function:: isgraph(c)
 
-   Checks for ASCII any printable character except space.
+   Checks for any ASCII printable character except space.
 
 
 .. function:: islower(c)
@@ -146,7 +145,7 @@ C library:
 
 .. function:: ispunct(c)
 
-   Checks for any printable ASCII character which is not a space or an alphanumeric
+   Checks for any ASCII printable character which is not a space or an alphanumeric
    character.
 
 
@@ -169,22 +168,26 @@ C library:
 
 .. function:: isctrl(c)
 
-   Checks for an ASCII control character (ordinal values 0 to 31).
+   Checks for an ASCII control character (ordinal values 0 to 31).  Unlike
+   :func:`iscntrl`, this does not include the delete character (0x7f).
 
 
 .. function:: ismeta(c)
 
    Checks for a non-ASCII character (ordinal values 0x80 and above).
 
-These functions accept either integers or single-character strings; when the argument is a
-string, it is first converted using the built-in function :func:`ord`.
+These functions accept an integer, a single-character string, or a
+:class:`curses.complexchar`.
+A string is converted using the built-in function :func:`ord`, and a
+complexchar by the code of its single character; a complexchar that holds
+combining characters is not a single character and matches no class.
 
 Note that all these functions check ordinal bit values derived from the
 character of the string you pass in; they do not actually know anything about
 the host machine's character encoding.
 
-The following two functions take either a single-character string or integer
-byte value; they return a value of the same type.
+The following three functions take either a single-character string or an
+integer byte value; they return a value of the same type.
 
 
 .. function:: ascii(c)
@@ -194,8 +197,13 @@ byte value; they return a value of the same type.
 
 .. function:: ctrl(c)
 
-   Return the control character corresponding to the given character (the character
-   bit value is bitwise-anded with 0x1f).
+   Return the control character corresponding to the given ASCII character (the
+   character bit value is bitwise-anded with 0x1f).  A non-ASCII character has no
+   control character and is returned unchanged.
+
+   .. versionchanged:: next
+      A non-ASCII argument is now returned unchanged instead of masked to a
+      control character.
 
 
 .. function:: alt(c)
@@ -203,7 +211,8 @@ byte value; they return a value of the same type.
    Return the 8-bit character corresponding to the given ASCII character (the
    character bit value is bitwise-ored with 0x80).
 
-The following function takes either a single-character string or integer value;
+The following function takes a single-character string, an integer value, or a
+:class:`curses.complexchar`;
 it returns a string.
 
 

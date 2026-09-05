@@ -31,7 +31,7 @@ Future Functions
    .. versionadded:: 3.5
 
 
-.. function:: ensure_future(obj, \*, loop=None)
+.. function:: ensure_future(obj, *, loop=None)
 
    Return:
 
@@ -51,30 +51,44 @@ Future Functions
 
    .. important::
 
+      Save a reference to the result of this function, to avoid
+      a task disappearing mid-execution.
+
       See also the :func:`create_task` function which is the
-      preferred way for creating new Tasks.
+      preferred way for creating new tasks or use :class:`asyncio.TaskGroup`
+      which keeps reference to the task internally.
 
    .. versionchanged:: 3.5.1
       The function accepts any :term:`awaitable` object.
 
+   .. deprecated:: 3.10
+      Deprecation warning is emitted if *obj* is not a Future-like object
+      and *loop* is not specified and there is no running event loop.
 
-.. function:: wrap_future(future, \*, loop=None)
+
+.. function:: wrap_future(future, *, loop=None)
 
    Wrap a :class:`concurrent.futures.Future` object in a
    :class:`asyncio.Future` object.
 
+   .. deprecated:: 3.10
+      Deprecation warning is emitted if *future* is not a Future-like object
+      and *loop* is not specified and there is no running event loop.
+
+.. _asyncio-future-obj:
 
 Future Object
 =============
 
-.. class:: Future(\*, loop=None)
+.. class:: Future(*, loop=None)
 
    A Future represents an eventual result of an asynchronous
    operation.  Not thread-safe.
 
    Future is an :term:`awaitable` object.  Coroutines can await on
    Future objects until they either have a result or an exception
-   set, or until they are cancelled.
+   set, or until they are cancelled. A Future can be awaited multiple
+   times and the result is same.
 
    Typically Futures are used to enable low-level
    callback-based code (e.g. in protocols implemented using asyncio
@@ -87,8 +101,14 @@ Future Object
    implementations can inject their own optimized implementations
    of a Future object.
 
+   Futures are :ref:`generic <generics>` over the type of their results.
+
    .. versionchanged:: 3.7
       Added support for the :mod:`contextvars` module.
+
+   .. deprecated:: 3.10
+      Deprecation warning is emitted if *loop* is not specified
+      and there is no running event loop.
 
    .. method:: result()
 
@@ -104,20 +124,20 @@ Future Object
       a :exc:`CancelledError` exception.
 
       If the Future's result isn't yet available, this method raises
-      a :exc:`InvalidStateError` exception.
+      an :exc:`InvalidStateError` exception.
 
    .. method:: set_result(result)
 
       Mark the Future as *done* and set its result.
 
-      Raises a :exc:`InvalidStateError` error if the Future is
+      Raises an :exc:`InvalidStateError` error if the Future is
       already *done*.
 
    .. method:: set_exception(exception)
 
       Mark the Future as *done* and set an exception.
 
-      Raises a :exc:`InvalidStateError` error if the Future is
+      Raises an :exc:`InvalidStateError` error if the Future is
       already *done*.
 
    .. method:: done()
@@ -170,13 +190,20 @@ Future Object
       Returns the number of callbacks removed, which is typically 1,
       unless a callback was added more than once.
 
-   .. method:: cancel()
+   .. method:: cancel(msg=None)
 
       Cancel the Future and schedule callbacks.
 
       If the Future is already *done* or *cancelled*, return ``False``.
       Otherwise, change the Future's state to *cancelled*,
       schedule the callbacks, and return ``True``.
+
+      The optional string argument *msg* is passed as the argument to the
+      :exc:`CancelledError` exception raised when a cancelled Future
+      is awaited.
+
+      .. versionchanged:: 3.9
+         Added the *msg* parameter.
 
    .. method:: exception()
 
@@ -255,3 +282,6 @@ the Future has a result::
    - asyncio Future is not compatible with the
      :func:`concurrent.futures.wait` and
      :func:`concurrent.futures.as_completed` functions.
+
+   - :meth:`asyncio.Future.cancel` accepts an optional ``msg`` argument,
+     but :meth:`concurrent.futures.Future.cancel` does not.

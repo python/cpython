@@ -6,7 +6,6 @@ import re
 from tkinter import messagebox
 
 from idlelib.editor import EditorWindow
-from idlelib import iomenu
 
 
 file_line_pats = [
@@ -43,7 +42,7 @@ def file_line_helper(line):
         if match:
             filename, lineno = match.group(1, 2)
             try:
-                f = open(filename, "r")
+                f = open(filename)
                 f.close()
                 break
             except OSError:
@@ -79,6 +78,10 @@ class OutputWindow(EditorWindow):
     def __init__(self, *args):
         EditorWindow.__init__(self, *args)
         self.text.bind("<<goto-file-line>>", self.goto_file_line)
+        # Output is not Python source, so save it as text by default
+        # (gh-65339).
+        self.io.filetypes = self.io.text_filetypes
+        self.io.defaultextension = self.io.text_defaultextension
 
     # Customize EditorWindow
     def ispythonsource(self, filename):
@@ -110,8 +113,7 @@ class OutputWindow(EditorWindow):
         Return:
             Length of text inserted.
         """
-        if isinstance(s, bytes):
-            s = s.decode(iomenu.encoding, "replace")
+        assert isinstance(s, str)
         self.text.insert(mark, s, tags)
         self.text.see(mark)
         self.text.update()
@@ -183,6 +185,7 @@ class OnDemandOutputWindow:
                 text.tag_configure(tag, **cnf)
         text.tag_raise('sel')
         self.write = self.owin.write
+
 
 if __name__ == '__main__':
     from unittest import main

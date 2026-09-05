@@ -1,5 +1,6 @@
 from unittest import mock
 from test import support
+from test.support import force_not_colorized, socket_helper, control_characters_c0
 from test.test_httpservers import NoLogRequestHandler
 from unittest import TestCase
 from wsgiref.util import setup_testing_defaults
@@ -65,6 +66,26 @@ def header_app(environ, start_response):
     ]).encode('iso-8859-1')]
 
 
+def input_app(func_name, *args):
+    def app(e,s):
+        req = getattr(e['wsgi.input'], func_name)(*args)
+        s("200 OK", [("Content-Type", "text/plain; charset=utf-8")])
+        if type(req) is list:
+            resp = b";".join(req)
+        else:
+            resp = req
+        return [resp]
+    return app
+
+
+def errors_app(func_name, *args):
+    def app(e,s):
+        getattr(e['wsgi.errors'], func_name)(*args)
+        s("200 OK", [("Content-Type", "text/plain; charset=utf-8")])
+        return [b"data"]
+    return app
+
+
 def run_amock(app=hello_app, data=b"GET / HTTP/1.0\n\n"):
     server = make_server("", 80, app, MockServer, MockHandler)
     inp = BufferedReader(BytesIO(data))
@@ -79,41 +100,26 @@ def run_amock(app=hello_app, data=b"GET / HTTP/1.0\n\n"):
 
     return out.getvalue(), err.getvalue()
 
-def compare_generic_iter(make_it,match):
-    """Utility to compare a generic 2.1/2.2+ iterator with an iterable
 
-    If running under Python 2.2+, this tests the iterator using iter()/next(),
-    as well as __getitem__.  'make_it' must be a function returning a fresh
+def compare_generic_iter(make_it, match):
+    """Utility to compare a generic iterator with an iterable
+
+    This tests the iterator using iter()/next().
+    'make_it' must be a function returning a fresh
     iterator to be tested (since this may test the iterator twice)."""
 
     it = make_it()
-    n = 0
+    if not iter(it) is it:
+        raise AssertionError
     for item in match:
-        if not it[n]==item: raise AssertionError
-        n+=1
+        if not next(it) == item:
+            raise AssertionError
     try:
-        it[n]
-    except IndexError:
+        next(it)
+    except StopIteration:
         pass
     else:
-        raise AssertionError("Too many items from __getitem__",it)
-
-    try:
-        iter, StopIteration
-    except NameError:
-        pass
-    else:
-        # Only test iter mode under 2.2+
-        it = make_it()
-        if not iter(it) is it: raise AssertionError
-        for item in match:
-            if not next(it) == item: raise AssertionError
-        try:
-            next(it)
-        except StopIteration:
-            pass
-        else:
-            raise AssertionError("Too many items from .__next__()", it)
+        raise AssertionError("Too many items from .__next__()", it)
 
 
 class IntegrationTests(TestCase):
@@ -123,7 +129,7 @@ class IntegrationTests(TestCase):
                 sys.version.split()[0])
         self.assertEqual(out,
             ("HTTP/1.0 200 OK\r\n"
-            "Server: WSGIServer/0.2 " + pyver +"\r\n"
+            "Server: WSGIServer " + pyver + "\r\n"
             "Content-Type: text/plain\r\n"
             "Date: Mon, 05 Jun 2006 18:49:54 GMT\r\n" +
             (has_length and  "Content-Length: 13\r\n" or "") +
@@ -151,7 +157,7 @@ class IntegrationTests(TestCase):
     def test_request_length(self):
         out, err = run_amock(data=b"GET " + (b"x" * 65537) + b" HTTP/1.0\n\n")
         self.assertEqual(out.splitlines()[0],
-                         b"HTTP/1.0 414 Request-URI Too Long")
+                         b"HTTP/1.0 414 URI Too Long")
 
     def test_validated_hello(self):
         out, err = run_amock(validator(hello_app))
@@ -163,9 +169,9 @@ class IntegrationTests(TestCase):
             start_response("200 OK", ('Content-Type','text/plain'))
             return ["Hello, world!"]
         out, err = run_amock(validator(bad_app))
-        self.assertTrue(out.endswith(
+        self.assertEndsWith(out,
             b"A server error occurred.  Please contact the administrator."
-        ))
+        )
         self.assertEqual(
             err.splitlines()[-2],
             "AssertionError: Headers (('Content-Type', 'text/plain')) must"
@@ -188,9 +194,9 @@ class IntegrationTests(TestCase):
         for status, exc_message in tests:
             with self.subTest(status=status):
                 out, err = run_amock(create_bad_app(status))
-                self.assertTrue(out.endswith(
+                self.assertEndsWith(out,
                     b"A server error occurred.  Please contact the administrator."
-                ))
+                )
                 self.assertEqual(err.splitlines()[-2], exc_message)
 
     def test_wsgi_input(self):
@@ -199,13 +205,103 @@ class IntegrationTests(TestCase):
             s("200 OK", [("Content-Type", "text/plain; charset=utf-8")])
             return [b"data"]
         out, err = run_amock(validator(bad_app))
-        self.assertTrue(out.endswith(
+        self.assertEndsWith(out,
             b"A server error occurred.  Please contact the administrator."
-        ))
+        )
         self.assertEqual(
             err.splitlines()[-2], "AssertionError"
         )
 
+    def test_wsgi_input_read(self):
+        bad_app = input_app("read")
+        good_app = input_app("read", 5)
+
+        out, err = run_amock(validator(bad_app))
+        self.assertEndsWith(out,
+             b"A server error occurred.  Please contact the administrator."
+        )
+
+        self.assertEqual(
+            err.splitlines()[-2], "AssertionError"
+        )
+
+        out, err = run_amock(validator(good_app), b"GET / HTTP/1.0\n\nTest 1\nTest 2\n")
+        self.assertEndsWith(out, b"Test ")
+
+    def test_wsgi_input_readlines(self):
+        bad_app = input_app("readlines", 3, 5)
+        good_app = input_app("readlines", 1)
+
+        out, err = run_amock(validator(bad_app))
+        self.assertEndsWith(out,
+            b"A server error occurred.  Please contact the administrator."
+        )
+        self.assertEqual(
+            err.splitlines()[-2], "AssertionError"
+        )
+        out, err = run_amock(validator(good_app), b"GET / HTTP/1.0\n\nTest Line 1\nTest Line 2\n")
+        self.assertEndsWith(out, b"Test Line 1\n")
+
+    def test_wsgi_input_readline(self):
+        bad_app = input_app("readline", 3, 4)
+        good_app = input_app("readline", 2)
+
+        out, err = run_amock(validator(bad_app))
+        self.assertEndsWith(out,
+            b"A server error occurred.  Please contact the administrator."
+        )
+        self.assertEqual(
+            err.splitlines()[-2], "AssertionError"
+        )
+
+        out, err = run_amock(validator(good_app), b"GET / HTTP/1.0\n\nTest 1\nTest 2\n")
+        self.assertEndsWith(out, b"Te")
+
+    def test_wsgi_input_close(self):
+        app = input_app("close")
+        out, err = run_amock(validator(app), b"GET / HTTP/1.0\n\nTest 1\nTest 2\n")
+        self.assertEqual(err.splitlines()[-2], 'AssertionError: input.close() must not be called')
+        self.assertEndsWith(out, b"A server error occurred.  Please contact the administrator.")
+
+    def test_wsgi_input_iter(self):
+        def app(e,s):
+            req = []
+            for line in e['wsgi.input']:
+                req.append(line)
+            s("200 OK", [('Content-Type', 'text/plain; charser=utf-8')])
+            return [b';'.join(req)]
+
+        out, err = run_amock(validator(app), b"GET / HTTP/1.0\n\nTest 1\nTest 2\n")
+        self.assertEndsWith(out, b"Test 1\n;Test 2\n")
+
+    def test_wsgi_errors_write(self):
+        bad_app = errors_app("write", b"Test")
+        good_app = errors_app("write", "Test")
+
+        out, err = run_amock(validator(bad_app), b"GET / HTTP/1.0\n\n")
+        self.assertEqual(err.splitlines()[-2], 'AssertionError')
+
+        out, err = run_amock(validator(good_app), b"GET / HTTP/1.0\n\n")
+        self.assertStartsWith(err, "Test")
+
+    def test_wsgi_errors_writelines(self):
+        bad_app = errors_app("writelines", [1, "Test"])
+        good_app = errors_app("writelines", ["Test", "Test"])
+
+        out, err = run_amock(validator(bad_app), b"GET / HTTP/1.0\n\n")
+        self.assertEqual(err.splitlines()[-2], 'AssertionError')
+
+        out, err = run_amock(validator(good_app), b"GET / HTTP/1.0\n\n")
+        self.assertStartsWith(err, "TestTest")
+
+    def test_wsgi_errors_close(self):
+        app = errors_app("close")
+
+        out, err = run_amock(validator(app), b"GET / HTTP/1.0\n\n")
+        self.assertEqual(err.splitlines()[-2],
+                         'AssertionError: errors.close() must not be called')
+
+    @force_not_colorized
     def test_bytes_validation(self):
         def app(e, s):
             s("200 OK", [
@@ -214,13 +310,13 @@ class IntegrationTests(TestCase):
                 ])
             return [b"data"]
         out, err = run_amock(validator(app))
-        self.assertTrue(err.endswith('"GET / HTTP/1.0" 200 4\n'))
+        self.assertEndsWith(err, '"GET / HTTP/1.0" 200 4\n')
         ver = sys.version.split()[0].encode('ascii')
         py  = python_implementation().encode('ascii')
         pyver = py + b"/" + ver
         self.assertEqual(
                 b"HTTP/1.0 200 OK\r\n"
-                b"Server: WSGIServer/0.2 "+ pyver + b"\r\n"
+                b"Server: WSGIServer " + pyver + b"\r\n"
                 b"Content-Type: text/plain; charset=utf-8\r\n"
                 b"Date: Wed, 24 Dec 2008 13:29:32 GMT\r\n"
                 b"\r\n"
@@ -263,7 +359,7 @@ class IntegrationTests(TestCase):
         class WsgiHandler(NoLogRequestHandler, WSGIRequestHandler):
             pass
 
-        server = make_server(support.HOST, 0, app, handler_class=WsgiHandler)
+        server = make_server(socket_helper.HOST, 0, app, handler_class=WsgiHandler)
         self.addCleanup(server.server_close)
         interrupted = threading.Event()
 
@@ -338,7 +434,6 @@ class UtilityTests(TestCase):
         util.setup_testing_defaults(kw)
         self.assertEqual(util.request_uri(kw,query),uri)
 
-    @support.ignore_warnings(category=DeprecationWarning)
     def checkFW(self,text,size,match):
 
         def make_it(text=text,size=size):
@@ -356,13 +451,6 @@ class UtilityTests(TestCase):
 
         it.close()
         self.assertTrue(it.filelike.closed)
-
-    def test_filewrapper_getitem_deprecation(self):
-        wrapper = util.FileWrapper(StringIO('foobar'), 3)
-        with self.assertWarnsRegex(DeprecationWarning,
-                                   r'Use iterator protocol instead'):
-            # This should have returned 'bar'.
-            self.assertEqual(wrapper[1], 'foo')
 
     def testSimpleShifts(self):
         self.checkShift('','/', '', '/', '')
@@ -525,6 +613,22 @@ class HeaderTests(TestCase):
             '\r\n'
         )
 
+    def testRaisesControlCharacters(self):
+        for c0 in control_characters_c0():
+            with self.subTest(c0):
+                headers = Headers()
+                self.assertRaises(ValueError, headers.__setitem__, f"key{c0}", "val")
+                self.assertRaises(ValueError, headers.add_header, f"key{c0}", "val", param="param")
+                # HTAB (\x09) is allowed in values, not names.
+                if c0 == "\t":
+                    headers["key"] = f"val{c0}"
+                    headers.add_header("key", f"val{c0}")
+                    headers.setdefault(f"key", f"val{c0}")
+                else:
+                    self.assertRaises(ValueError, headers.__setitem__, "key", f"val{c0}")
+                    self.assertRaises(ValueError, headers.add_header, "key", f"val{c0}", param="param")
+                    self.assertRaises(ValueError, headers.add_header, "key", "val", param=f"param{c0}")
+
 class ErrorHandler(BaseCGIHandler):
     """Simple handler subclass for testing BaseHandler"""
 
@@ -578,7 +682,7 @@ class HandlerTests(TestCase):
         # Test handler.environ as a dict
         expected = {}
         setup_testing_defaults(expected)
-        # Handler inherits os_environ variables which are not overriden
+        # Handler inherits os_environ variables which are not overridden
         # by SimpleHandler.add_cgi_vars() (SimpleHandler.base_env)
         for key, value in os_environ.items():
             if key not in expected:
@@ -860,6 +964,37 @@ class HandlerTests(TestCase):
         self.assertIsNotNone(h.headers)
         self.assertIsNotNone(h.status)
         self.assertIsNotNone(h.environ)
+
+    def testRaisesControlCharacters(self):
+        for c0 in control_characters_c0():
+            with self.subTest(c0):
+                base = BaseHandler()
+                with self.assertRaises(ValueError):
+                    base.start_response(c0, [('x', 'y')])
+
+                base = BaseHandler()
+                with self.assertRaises(ValueError):
+                    base.start_response('200 OK', [(c0, 'y')])
+
+                # HTAB (\x09) is allowed in header values, but not in names.
+                base = BaseHandler()
+                if c0 != "\t":
+                    with self.assertRaises(ValueError):
+                        base.start_response('200 OK', [('x', c0)])
+                else:
+                    base.start_response('200 OK', [('x', c0)])
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        from wsgiref import simple_server
+
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(simple_server, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == "__main__":
