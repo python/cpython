@@ -1,5 +1,7 @@
 import pickle
+import sys
 import threading
+import types
 from textwrap import dedent
 import time
 import unittest
@@ -399,6 +401,40 @@ class TestQueueOps(TestBase):
                 obj2 = get()
                 self.assertEqual(obj, obj2)
                 self.assertIsNot(obj, obj2)
+
+    def _check_unpickle_attributeerror_arg(self, arg):
+        # Put an object through a queue where get() must re-import its class
+        # via a module __getattr__ that raises AttributeError(arg).
+        modname = '_test_xi_attrerr'
+        mod = types.ModuleType(modname)
+        class Thing:
+            pass
+        Thing.__module__ = modname
+        Thing.__qualname__ = 'Thing'
+        mod.Thing = Thing
+        sys.modules[modname] = mod
+        self.addCleanup(sys.modules.pop, modname, None)
+        queue = queues.create()
+        queue.put(Thing())
+        del mod.Thing
+        def raise_attributeerror(name):
+            raise AttributeError(arg)
+        mod.__getattr__ = raise_attributeerror
+        with self.assertRaises(interpreters.NotShareableError):
+            queue.get()
+
+    def test_get_unpickle_fails_with_bad_attributeerror_arg(self):
+        # gh-151862: an AttributeError arg that can't be UTF-8 encoded used
+        # to crash (NULL deref); covers both non-str and surrogate-str args.
+        for arg in [42, b'x', None, '\ud800']:
+            with self.subTest(arg=arg):
+                self._check_unpickle_attributeerror_arg(arg)
+
+    def test_get_unpickle_fails_with_str_attributeerror_arg(self):
+        # Positive control: a normal str arg must not crash, locking in the
+        # non-NULL strncmp() path.
+        with self.subTest(arg='boom'):
+            self._check_unpickle_attributeerror_arg('boom')
 
     def test_put_get_same_interpreter(self):
         interp = interpreters.create()
