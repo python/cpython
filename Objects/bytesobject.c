@@ -3629,7 +3629,7 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t size, int resize)
         return 0;
     }
 
-    if (resize & writer->overallocate) {
+    if (resize && writer->overallocate) {
         if (size <= (PY_SSIZE_T_MAX - size / OVERALLOCATE_FACTOR)) {
             size += size / OVERALLOCATE_FACTOR;
         }
