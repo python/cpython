@@ -124,36 +124,43 @@ will automatically close them when done.
 
 .. _dbm-key-value-types:
 
-Key and Value Types
+Key and value types
 -------------------
 
 The accepted types for keys and values vary by backend. Keys and values are
 handled identically:
 
-* **Traditional backends**:
+* **Traditional backends:**
 
-  * :mod:`dbm.gnu` and :mod:`dbm.ndbm`: Accept :class:`str` and :class:`bytes` objects.
-  * :mod:`dbm.dumb`: Accepts :class:`str` and :class:`bytes` objects; :class:`bytearray` is acceptable as a value, but not as a key.
+  * :mod:`dbm.gnu` and :mod:`dbm.ndbm`: Accept :class:`str` and :class:`bytes`
+    objects.
+  * :mod:`dbm.dumb`: Accepts :class:`str` and :class:`bytes` objects;
+    :class:`bytearray` is acceptable as a value, but not as a key.
+
 * **SQLite backend** (:mod:`dbm.sqlite3`): Accepts :class:`str`, :class:`bytes`,
   :class:`int`, :class:`float`, :class:`bool`, :class:`bytearray`,
   :class:`memoryview`, and :class:`array.array` objects.
 
-**Storage Format:**
+**Storage format:**
 
 All keys and values are stored as :class:`bytes` objects in the database.
 When retrieving, you'll always get bytes back, regardless of the original
 type stored.
 
-**Type Conversion Examples:**
+**Type conversion examples:**
 
 * ``db['key'] = 'string'`` stored as ``b'string'``
-* ``db['key'] = bytearray(b'data')`` stored as ``b'data'`` (:mod:`dbm.dumb` and :mod:`dbm.sqlite3` only)
+* ``db['key'] = bytearray(b'data')`` stored as ``b'data'``
+  (:mod:`dbm.dumb` and :mod:`dbm.sqlite3` only)
 * ``db['key'] = 42`` stored as ``b'42'`` (:mod:`dbm.sqlite3` only)
 * ``db['key'] = 3.14`` stored as ``b'3.14'`` (:mod:`dbm.sqlite3` only)
 * ``db['key'] = True`` stored as ``b'1'`` (:mod:`dbm.sqlite3` only)
 * ``db['key'] = False`` stored as ``b'0'`` (:mod:`dbm.sqlite3` only)
-* ``db['key'] = memoryview(b'data')`` stored as ``b'data'`` (:mod:`dbm.sqlite3` only)
-* ``db['key'] = array.array('i', [1, 2, 3])`` stored as bytes (e.g. on little-endian: ``b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00'``) (:mod:`dbm.sqlite3` only)
+* ``db['key'] = memoryview(b'data')`` stored as ``b'data'``
+  (:mod:`dbm.sqlite3` only)
+* ``db['key'] = array.array('i', [1, 2, 3])`` stored as bytes (for example, on
+  little-endian: ``b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00'``)
+  (:mod:`dbm.sqlite3` only)
 
 
 The following example records some hostnames and a corresponding title,  and
