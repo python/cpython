@@ -654,6 +654,13 @@ class TestGetAnnotations(unittest.TestCase):
         result = get_annotations(f, eval_str=True)
         self.assertEqual(result, {'x': int, 'return': str})
 
+    def test_eval_str_wrapped_partial_cycle_self(self):
+        def f(x: 'int') -> 'str': ...
+        f.__wrapped__ = functools.partial(f, 0)
+        # Cycle is detected and broken; globals from f itself are used.
+        result = get_annotations(f, eval_str=True)
+        self.assertEqual(result, {'x': int, 'return': str})
+
     def test_eval_str_wrapped_cycle_mutual(self):
         # gh-146556: mutual __wrapped__ cycle (a -> b -> a) must not hang.
         def a(x: 'int'): ...
@@ -1874,6 +1881,10 @@ class TestTypeRepr(unittest.TestCase):
             type_repr(Template("hi", Interpolation(42, "   "))),
             "Template('hi', Interpolation(42, '   ', None, ''))",
         )
+        self.assertEqual(
+            type_repr(Template("hi", Interpolation(42, "4!2"))),
+            "Template('hi', Interpolation(42, '4!2', None, ''))",
+        )
         # gh138558: perhaps in the future, we can improve this behavior:
         self.assertEqual(type_repr(Template(Interpolation(42, "99"))), "t'{99}'")
 
@@ -2133,7 +2144,12 @@ class TestForwardRefClass(unittest.TestCase):
         self.assertIsNone(fr.__resolved_str_cache__)
 
         self.assertEqual(fr.evaluate(format=Format.STRING), "unknown | str | int | list[str] | tuple[int, ...]")
+
+        # Test that the cache is now set correctly
         self.assertEqual(fr.__resolved_str_cache__, "unknown | str | int | list[str] | tuple[int, ...]")
+
+        # Test that future evaluations return the same cache
+        self.assertIs(fr.evaluate(format=Format.STRING), fr.__resolved_str_cache__)
 
     def test_evaluate_forwardref_format(self):
         fr = ForwardRef("undef")

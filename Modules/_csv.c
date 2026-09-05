@@ -586,9 +586,34 @@ Dialect_reduce(PyObject *self, PyObject *args) {
     return NULL;
 }
 
+PyDoc_STRVAR(dialect_replace_doc,
+"__replace__($self, /, **changes)\n"
+"--\n"
+"\n"
+"Return a copy of the dialect with the specified options replaced.");
+
+static PyObject *
+Dialect_replace(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    if (PyTuple_GET_SIZE(args) != 0) {
+        PyErr_SetString(PyExc_TypeError,
+                        "__replace__() takes no positional arguments");
+        return NULL;
+    }
+    PyObject *newargs = PyTuple_Pack(1, self);
+    if (newargs == NULL) {
+        return NULL;
+    }
+    PyObject *result = dialect_new(Py_TYPE(self), newargs, kwargs);
+    Py_DECREF(newargs);
+    return result;
+}
+
 static struct PyMethodDef dialect_methods[] = {
     {"__reduce__", Dialect_reduce, METH_VARARGS, dialect_reduce_doc},
     {"__reduce_ex__", Dialect_reduce, METH_VARARGS, dialect_reduce_doc},
+    {"__replace__", _PyCFunction_CAST(Dialect_replace),
+     METH_VARARGS | METH_KEYWORDS, dialect_replace_doc},
     {NULL, NULL}
 };
 

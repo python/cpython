@@ -515,7 +515,7 @@ since it is impossible to detect the termination of alien threads.
    This constructor should always be called with keyword arguments.  Arguments
    are:
 
-   *group* should be ``None``; reserved for future extension when a
+   *group* must be ``None`` as it is reserved for future extension when a
    :class:`!ThreadGroup` class is implemented.
 
    *target* is the callable object to be invoked by the :meth:`run` method.

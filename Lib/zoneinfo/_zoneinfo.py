@@ -640,11 +640,11 @@ def _parse_tz_str(tz_str):
 
     parser_re = re.compile(
         r"""
-        (?P<std>[^<0-9:.+-]+|<[a-zA-Z0-9+-]+>)
+        (?P<std>[a-zA-Z]+|<[a-zA-Z0-9+-]+>)
         (?:
             (?P<stdoff>[+-]?\d{1,3}(?::\d{2}(?::\d{2})?)?)
             (?:
-                (?P<dst>[^0-9:.+-]+|<[a-zA-Z0-9+-]+>)
+                (?P<dst>[a-zA-Z]+|<[a-zA-Z0-9+-]+>)
                 (?P<dstoff>[+-]?\d{1,3}(?::\d{2}(?::\d{2})?)?)?
             )? # dst
         )? # stdoff
@@ -672,7 +672,8 @@ def _parse_tz_str(tz_str):
         except ValueError as e:
             raise ValueError(f"Invalid STD offset in {tz_str}") from e
     else:
-        std_offset = 0
+        # The STD offset is required
+        raise ValueError(f"Invalid STD offset in {tz_str}")
 
     if dst_abbr is not None:
         if dst_offset := m.group("dstoff"):
@@ -707,7 +708,7 @@ def _parse_dst_start_end(dststr):
     type = date[:1]
     if type == "M":
         n_is_julian = False
-        m = re.fullmatch(r"M(\d{1,2})\.(\d).(\d)", date, re.ASCII)
+        m = re.fullmatch(r"M(\d{1,2})\.(\d)\.(\d)", date, re.ASCII)
         if m is None:
             raise ValueError(f"Invalid dst start/end date: {dststr}")
         date_offset = tuple(map(int, m.groups()))
@@ -719,6 +720,8 @@ def _parse_dst_start_end(dststr):
         else:
             n_is_julian = False
 
+        if re.fullmatch(r"\d{1,3}", date, re.ASCII) is None:
+            raise ValueError(f"Invalid dst start/end date: {dststr}")
         doy = int(date)
         offset = _DayOffset(doy, n_is_julian)
 

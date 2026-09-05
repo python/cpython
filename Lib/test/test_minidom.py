@@ -354,7 +354,9 @@ class MinidomTest(unittest.TestCase):
 
         child.setAttribute("def", "ghi")
         self.assertEqual(len(child.attributes), 1)
-        self.assertRaises(xml.dom.NotFoundErr, child.removeAttribute, "foo")
+        # removing an absent attribute has no effect
+        child.removeAttribute("foo")
+        self.assertEqual(len(child.attributes), 1)
         child.removeAttribute("def")
         self.assertEqual(len(child.attributes), 0)
         dom.unlink()
@@ -366,8 +368,8 @@ class MinidomTest(unittest.TestCase):
         child.setAttributeNS("http://www.w3.org", "xmlns:python",
                                                 "http://www.python.org")
         child.setAttributeNS("http://www.python.org", "python:abcattr", "foo")
-        self.assertRaises(xml.dom.NotFoundErr, child.removeAttributeNS,
-            "foo", "http://www.python.org")
+        # removing an absent attribute has no effect
+        child.removeAttributeNS("foo", "http://www.python.org")
         self.assertEqual(len(child.attributes), 2)
         child.removeAttributeNS("http://www.python.org", "abcattr")
         self.assertEqual(len(child.attributes), 1)
@@ -639,6 +641,30 @@ class MinidomTest(unittest.TestCase):
             self.assertEqual(
                 dom.getElementsByTagName('B')[0].childNodes[0].toxml(),
                 dom2.getElementsByTagName('B')[0].childNodes[0].toxml())
+
+    def test_isWhitespaceInElementContent(self):
+        # only " \t\r\n" are whitespace in XML (see XML 1.0, 2.3)
+        dom = parseString('<!DOCTYPE a [<!ELEMENT a (b)*><!ELEMENT b (#PCDATA)>]>'
+                          '<a> <b>x</b>\xa0</a>')
+        children = dom.documentElement.childNodes
+        self.assertTrue(children[0].isWhitespaceInElementContent)
+        self.assertFalse(children[2].isWhitespaceInElementContent)
+        dom.unlink()
+
+    def test_remove_whitespace_in_element_content(self):
+        from xml.dom.xmlbuilder import DOMBuilder, DOMInputSource
+        builder = DOMBuilder()
+        builder.setFeature("whitespace-in-element-content", False)
+        source = DOMInputSource()
+        source.byteStream = io.BytesIO(
+            b'<!DOCTYPE a [<!ELEMENT a (b)*><!ELEMENT b (#PCDATA)>]>'
+            b'<a> <b>x</b>\xc2\xa0</a>')
+        dom = builder.parse(source)
+        children = dom.documentElement.childNodes
+        # ignorable whitespace is removed, other characters are not
+        self.assertEqual([node.nodeName for node in children], ['b', '#text'])
+        self.assertEqual(children[1].data, '\xa0')
+        dom.unlink()
 
     def testProcessingInstruction(self):
         dom = parseString('<e><?mypi \t\n data \t\n ?></e>')
@@ -1783,6 +1809,191 @@ class MinidomTest(unittest.TestCase):
         self.checkWholeText(dom1.getElementsByTagName('node')[0].firstChild, '</data>')
         dom2 = parseString(dom1.toprettyxml())
         self.checkWholeText(dom2.getElementsByTagName('node')[0].firstChild, '</data>')
+
+    def testInvalidCharacterErr(self):
+        doc = parseString("<doc/>")
+        impl = getDOMImplementation()
+        for name in ("", "bad name", "1st", "-x", ".x", "a<b", "a&b", "a\tb"):
+            with self.subTest(name=name):
+                self.assertRaises(xml.dom.InvalidCharacterErr,
+                                  doc.createElement, name)
+                self.assertRaises(xml.dom.InvalidCharacterErr,
+                                  doc.createElementNS, None, name)
+                self.assertRaises(xml.dom.InvalidCharacterErr,
+                                  doc.createAttribute, name)
+                self.assertRaises(xml.dom.InvalidCharacterErr,
+                                  doc.createAttributeNS, None, name)
+                self.assertRaises(xml.dom.InvalidCharacterErr,
+                                  doc.createProcessingInstruction, name, "")
+                self.assertRaises(xml.dom.InvalidCharacterErr,
+                                  doc.createEntityReference, name)
+                self.assertRaises(xml.dom.InvalidCharacterErr,
+                                  impl.createDocumentType, name, None, None)
+                self.assertRaises(xml.dom.InvalidCharacterErr,
+                                  doc.documentElement.setAttribute, name, "v")
+                self.assertRaises(xml.dom.InvalidCharacterErr,
+                                  doc.documentElement.setAttributeNS,
+                                  None, name, "v")
+        for name in ("a", "_x", ":x", "a.b-c", "ns:tag", "a1",
+                     "\N{GREEK CAPITAL LETTER OMEGA}", "\N{LINEAR B SYLLABLE B008 A}x"):
+            with self.subTest(name=name):
+                self.assertEqual(doc.createElement(name).tagName, name)
+                self.assertEqual(doc.createAttribute(name).name, name)
+        doc.unlink()
+
+    def testWrongDocumentErr(self):
+        doc = parseString("<doc><child/></doc>")
+        other = parseString("<other/>")
+        elem = doc.documentElement
+        alien = other.createElement("alien")
+        self.assertRaises(xml.dom.WrongDocumentErr, elem.appendChild, alien)
+        self.assertRaises(xml.dom.WrongDocumentErr, elem.insertBefore,
+                          alien, elem.firstChild)
+        self.assertRaises(xml.dom.WrongDocumentErr, elem.replaceChild,
+                          alien, elem.firstChild)
+        self.assertRaises(xml.dom.WrongDocumentErr, doc.appendChild, alien)
+        # the rejected node is left alone
+        self.assertIs(alien.ownerDocument, other)
+        self.assertIsNone(alien.parentNode)
+        # importNode() is the supported way to do this
+        elem.appendChild(doc.importNode(alien, True))
+        self.assertEqual(elem.lastChild.tagName, "alien")
+        doc.unlink()
+        other.unlink()
+
+    def testAncestorLoops(self):
+        doc = parseString("<doc><child><grandchild/></child></doc>")
+        elem = doc.documentElement
+        child = elem.firstChild
+        grandchild = child.firstChild
+        for node in elem, child, grandchild:
+            self.assertRaises(xml.dom.HierarchyRequestErr,
+                              node.appendChild, node)
+        self.assertRaises(xml.dom.HierarchyRequestErr, child.appendChild, elem)
+        self.assertRaises(xml.dom.HierarchyRequestErr,
+                          grandchild.appendChild, elem)
+        self.assertRaises(xml.dom.HierarchyRequestErr,
+                          grandchild.insertBefore, child, None)
+        self.assertRaises(xml.dom.HierarchyRequestErr,
+                          grandchild.replaceChild, elem, None)
+        # the tree is unchanged
+        self.assertIs(child.parentNode, elem)
+        self.assertIs(grandchild.parentNode, child)
+        doc.unlink()
+
+    def testOnlyOneElementAndDocumentType(self):
+        impl = getDOMImplementation()
+        doc = impl.createDocument(None, "root", None)
+        elem = doc.documentElement
+        comment = doc.appendChild(doc.createComment("c"))
+        self.assertRaises(xml.dom.HierarchyRequestErr,
+                          doc.appendChild, doc.createElement("x"))
+        self.assertRaises(xml.dom.HierarchyRequestErr,
+                          doc.insertBefore, doc.createElement("x"), comment)
+        self.assertRaises(xml.dom.HierarchyRequestErr,
+                          doc.replaceChild, doc.createElement("x"), comment)
+        # replacing the document element and reordering it are allowed
+        other = doc.createElement("other")
+        doc.replaceChild(other, elem)
+        self.assertIs(doc.documentElement, other)
+        doc.appendChild(other)
+        self.assertEqual([n.nodeName for n in doc.childNodes],
+                         ["#comment", "other"])
+
+        doc2 = impl.createDocument(None, None, None)
+        doctype = impl.createDocumentType("a", None, None)
+        doc2.appendChild(doctype)
+        self.assertRaises(xml.dom.HierarchyRequestErr, doc2.appendChild,
+                          impl.createDocumentType("b", None, None))
+        # re-adding the same node and replacing it are allowed
+        doc2.appendChild(doctype)
+        doc2.replaceChild(impl.createDocumentType("b", None, None), doctype)
+        doc.unlink()
+        doc2.unlink()
+
+    def testDocumentFragmentChildren(self):
+        doc = parseString('<!DOCTYPE doc [<!NOTATION n SYSTEM "n">]><doc/>')
+        frag = doc.createDocumentFragment()
+        notation = doc.doctype.notations.item(0)
+        self.assertRaises(xml.dom.HierarchyRequestErr,
+                          frag.appendChild, notation)
+        frag.appendChild(doc.createElement("e"))
+        frag.appendChild(doc.createTextNode("t"))
+        frag.appendChild(doc.createComment("c"))
+        self.assertEqual(len(frag.childNodes), 3)
+        doc.unlink()
+
+    def testSetAttributeNodeWrongDocument(self):
+        doc = parseString("<doc a='v'/>")
+        other = parseString("<other b='w'/>")
+        elem = doc.documentElement
+        self.assertRaises(xml.dom.WrongDocumentErr, elem.setAttributeNode,
+                          other.createAttribute("z"))
+        self.assertRaises(xml.dom.WrongDocumentErr, elem.setAttributeNodeNS,
+                          other.createAttributeNS(None, "z"))
+        # an imported attribute belongs to this document and is accepted
+        elem.setAttributeNode(doc.importNode(other.createAttribute("z"), True))
+        self.assertTrue(elem.hasAttribute("z"))
+        # re-setting an own attribute is not an error
+        elem.setAttributeNode(elem.getAttributeNode("a"))
+
+        # the same checks are applied in NamedNodeMap.setNamedItem()
+        attrs = elem.attributes
+        self.assertRaises(xml.dom.WrongDocumentErr, attrs.setNamedItem,
+                          other.createAttribute("y"))
+        self.assertRaises(xml.dom.WrongDocumentErr, attrs.setNamedItemNS,
+                          other.createAttributeNS(None, "y"))
+        attrs.setNamedItem(doc.createAttribute("y"))
+        self.assertTrue(elem.hasAttribute("y"))
+
+        # an attribute of another element of the same document is in use
+        doc2 = parseString("<doc><a x='v'/><b/></doc>")
+        a, b = doc2.documentElement.childNodes
+        self.assertRaises(xml.dom.InuseAttributeErr, b.attributes.setNamedItem,
+                          a.getAttributeNode("x"))
+        doc2.unlink()
+        doc.unlink()
+        other.unlink()
+
+    def testAttrSpecified(self):
+        doc = parseString("<!DOCTYPE doc ["
+                          "  <!ELEMENT doc EMPTY>"
+                          "  <!ATTLIST doc a CDATA 'default' b CDATA #IMPLIED>"
+                          "]><doc b='given'/>")
+        elem = doc.documentElement
+        # attributes defaulted from the DTD are reported too
+        self.assertEqual(sorted(elem.attributes.keys()), ["a", "b"])
+        self.assertEqual(elem.getAttribute("a"), "default")
+        self.assertFalse(elem.getAttributeNode("a").specified)
+        self.assertEqual(elem.getAttribute("b"), "given")
+        self.assertTrue(elem.getAttributeNode("b").specified)
+        doc.unlink()
+
+    def testEntityReference(self):
+        doc = parseString("<doc/>")
+        ref = doc.createEntityReference("ent")
+        self.assertEqual(ref.nodeType, Node.ENTITY_REFERENCE_NODE)
+        self.assertEqual(ref.nodeName, "ent")
+        self.assertIsNone(ref.nodeValue)
+        self.assertIs(ref.ownerDocument, doc)
+        doc.documentElement.appendChild(ref)
+        self.assertEqual(doc.documentElement.toxml(), "<doc>&ent;</doc>")
+        # entity reference nodes are read-only
+        text = doc.createTextNode("x")
+        self.assertRaises(xml.dom.NoModificationAllowedErr,
+                          ref.appendChild, text)
+        self.assertRaises(xml.dom.NoModificationAllowedErr,
+                          ref.insertBefore, text, None)
+        self.assertRaises(xml.dom.NoModificationAllowedErr,
+                          ref.removeChild, text)
+        self.assertRaises(xml.dom.NoModificationAllowedErr,
+                          ref.replaceChild, text, None)
+        self.assertEqual(ref.cloneNode(True).nodeName, "ent")
+        other = parseString("<other/>")
+        self.assertEqual(other.importNode(ref, True).nodeName, "ent")
+        doc.unlink()
+        other.unlink()
+
 
 if __name__ == "__main__":
     unittest.main()

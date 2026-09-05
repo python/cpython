@@ -485,6 +485,10 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a Python generator function.
 
+   .. versionchanged:: 3.10.6
+      :term:`Duck-typed <duck-typing>` function-like objects now return
+      ``True`` if their code object has the :data:`CO_GENERATOR` flag.
+
    .. versionchanged:: 3.13
       Functions wrapped in :func:`functools.partialmethod` now return ``True``
       if the wrapped function is a Python generator function.
@@ -506,6 +510,10 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    .. versionchanged:: 3.8
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a :term:`coroutine function`.
+
+   .. versionchanged:: 3.10.6
+      :term:`Duck-typed <duck-typing>` function-like objects now return
+      ``True`` if their code object has the :data:`CO_COROUTINE` flag.
 
    .. versionchanged:: 3.12
       Sync functions marked with :func:`markcoroutinefunction` now return
@@ -581,6 +589,10 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is an :term:`asynchronous generator` function.
 
+   .. versionchanged:: 3.10.6
+      :term:`Duck-typed <duck-typing>` function-like objects now return
+      ``True`` if their code object has the :data:`CO_ASYNC_GENERATOR` flag.
+
    .. versionchanged:: 3.13
       Functions wrapped in :func:`functools.partialmethod` now return ``True``
       if the wrapped function is a :term:`asynchronous generator` function.
@@ -635,8 +647,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 .. function:: ismethoddescriptor(object)
 
    Return ``True`` if the object is a method descriptor, but not if
-   :func:`ismethod`, :func:`isclass`, :func:`isfunction` or :func:`isbuiltin`
-   are true.
+   :func:`isclass`, :func:`ismethod` or :func:`isfunction` is true.
 
    This, for example, is true of ``int.__add__``.  An object passing this test
    has a :meth:`~object.__get__` method, but not a :meth:`~object.__set__`
@@ -644,10 +655,10 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    attributes varies.  A :attr:`~definition.__name__` attribute is usually
    sensible, and :attr:`~definition.__doc__` often is.
 
-   Methods implemented via descriptors that also pass one of the other tests
-   return ``False`` from the :func:`ismethoddescriptor` test, simply because the
-   other tests promise more -- you can, e.g., count on having the
-   :attr:`~method.__func__` attribute (etc) when an object passes
+   Method descriptors that also pass any of the other tests (:func:`!isclass`,
+   :func:`!ismethod` or :func:`!isfunction`) make this function return ``False``,
+   simply because those other tests promise more -- you can, for example, count
+   on having the :attr:`~method.__func__` attribute when an object passes
    :func:`ismethod`.
 
    .. versionchanged:: 3.13
@@ -658,16 +669,28 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
 .. function:: isdatadescriptor(object)
 
-   Return ``True`` if the object is a data descriptor.
+   Return ``True`` if the object is a data descriptor, but not if
+   :func:`isclass`, :func:`ismethod` or :func:`isfunction` is true.
 
-   Data descriptors have a :attr:`~object.__set__` or a :attr:`~object.__delete__` method.
-   Examples are properties (defined in Python), getsets, and members.  The
-   latter two are defined in C and there are more specific tests available for
-   those types, which is robust across Python implementations.  Typically, data
-   descriptors will also have :attr:`~definition.__name__` and :attr:`!__doc__` attributes
-   (properties, getsets, and members have both of these attributes), but this is
-   not guaranteed.
+   Data descriptors always have a :meth:`~object.__set__` method and/or
+   a :meth:`~object.__delete__` method.  Optionally, they may also have a
+   :meth:`~object.__get__` method.
 
+   Examples of data descriptors are :func:`properties <property>`, getsets and
+   member descriptors.  Note that for the latter two (defined only in C extension
+   modules), more specific tests are available: :func:`isgetsetdescriptor` and
+   :func:`ismemberdescriptor`, respectively.
+
+   While data descriptors may also have :attr:`~definition.__name__` and
+   :attr:`!__doc__` attributes (as properties, getsets and member descriptors
+   do), this is not necessarily the case in general.
+
+   .. versionchanged:: 3.8
+      This function now reports objects with only a :meth:`~object.__set__` method
+      as being data descriptors (the presence of :meth:`~object.__get__` is no
+      longer required for that).  Moreover, objects with :meth:`~object.__delete__`,
+      but not :meth:`~object.__set__`, are now properly recognized as data
+      descriptors as well, which was not the case previously.
 
 .. function:: isgetsetdescriptor(object)
 
@@ -696,9 +719,10 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 Retrieving source code
 ----------------------
 
-.. function:: getdoc(object, *, inherit_class_doc=True, fallback_to_class_doc=True)
+.. function:: getdoc(object, *, inherit_class_doc=True, fallback_to_class_doc=True, dedent=True)
 
-   Get the documentation string for an object, cleaned up with :func:`cleandoc`.
+   Get the documentation string for an object, cleaned up with :func:`cleandoc`
+   (with the same meaning of *dedent*).
    If the documentation string for an object is not provided:
 
    * if the object is a class and *inherit_class_doc* is true (by default),
@@ -719,6 +743,9 @@ Retrieving source code
       Documentation strings on :class:`~functools.cached_property`
       objects are now inherited if not overridden.
 
+   .. versionchanged:: next
+      Added the *dedent* parameter.
+
 
 .. function:: getcomments(object)
 
@@ -732,6 +759,7 @@ Retrieving source code
 .. function:: getfile(object)
 
    Return the name of the (text or binary) file in which an object was defined.
+   An :exc:`OSError` is raised if the source code cannot be retrieved.
    This will fail with a :exc:`TypeError` if the object is a built-in module,
    class, or function.
 
@@ -745,9 +773,10 @@ Retrieving source code
 .. function:: getsourcefile(object)
 
    Return the name of the Python source file in which an object was defined
-   or ``None`` if no way can be identified to get the source.  This
-   will fail with a :exc:`TypeError` if the object is a built-in module, class, or
-   function.
+   or ``None`` if no way can be identified to get the source.  An :exc:`OSError` is
+   raised if the source code cannot be retrieved.
+   This will fail with a :exc:`TypeError` if the object is a built-in module,
+   class, or function.
 
 
 .. function:: getsourcelines(object)
@@ -780,15 +809,23 @@ Retrieving source code
       former.
 
 
-.. function:: cleandoc(doc)
+.. function:: cleandoc(doc, *, dedent=True)
 
    Clean up indentation from docstrings that are indented to line up with blocks
    of code.
 
    All leading whitespace is removed from the first line.  Any leading whitespace
-   that can be uniformly removed from the second line onwards is removed.  Empty
-   lines at the beginning and end are subsequently removed.  Also, all tabs are
-   expanded to spaces.
+   that can be uniformly removed from the second line onwards is removed, unless
+   *dedent* is false.  Empty lines at the beginning and end are subsequently
+   removed.  Also, all tabs are expanded to spaces.
+
+   Since Python 3.13 the compiler removes the indentation of docstrings, so
+   *dedent* only affects documentation strings which are not written as
+   docstrings in the source code, like those generated by Argument Clinic,
+   where the indentation is meaningful.
+
+   .. versionchanged:: next
+      Added the *dedent* parameter.
 
 
 .. _inspect-signature-object:
@@ -1614,10 +1651,11 @@ properties, will be invoked and :meth:`~object.__getattr__` and
 may be called.
 
 For cases where you want passive introspection, like documentation tools, this
-can be inconvenient. :func:`getattr_static` has the same signature as :func:`getattr`
+can be inconvenient. :func:`getattr_static` has a similar signature as :func:`getattr`
 but avoids executing code when it fetches attributes.
 
-.. function:: getattr_static(obj, attr, default=None)
+.. function:: getattr_static(obj, attr)
+              getattr_static(obj, attr, default)
 
    Retrieve attributes without triggering dynamic lookup via the
    descriptor protocol, :meth:`~object.__getattr__`
