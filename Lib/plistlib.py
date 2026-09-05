@@ -243,7 +243,8 @@ class _PlistParser:
         self.stack.pop()
 
     def end_key(self):
-        if self.current_key or not isinstance(self.stack[-1], dict):
+        if (self.current_key or not self.stack
+                or not isinstance(self.stack[-1], dict)):
             raise ValueError("unexpected key at line %d" %
                              self.parser.CurrentLineNumber)
         self.current_key = self.get_data()
