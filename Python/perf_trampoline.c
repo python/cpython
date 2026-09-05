@@ -254,10 +254,18 @@ perf_map_write_entry(void *state, const void *code_addr,
     const char *entry = "";
     if (co->co_qualname != NULL) {
         entry = PyUnicode_AsUTF8(co->co_qualname);
+        if (entry == NULL) {
+            PyErr_Clear();
+            entry = "";
+        }
     }
     const char *filename = "";
     if (co->co_filename != NULL) {
         filename = PyUnicode_AsUTF8(co->co_filename);
+        if (filename == NULL) {
+            PyErr_Clear();
+            filename = "";
+        }
     }
     size_t perf_map_entry_size = snprintf(NULL, 0, "py::%s:%s", entry, filename) + 1;
     char* perf_map_entry = (char*) PyMem_RawMalloc(perf_map_entry_size);
