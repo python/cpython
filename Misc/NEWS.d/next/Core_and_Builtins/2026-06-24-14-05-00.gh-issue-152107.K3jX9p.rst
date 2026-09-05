@@ -1,0 +1,3 @@
+Fix a crash when creating a :class:`dict` item iterator (for example
+``iter(d.items())`` or ``reversed(d.items())``) under a memory-allocation
+failure.  Patch by Jiucheng Zang.
