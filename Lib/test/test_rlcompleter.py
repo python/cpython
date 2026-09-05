@@ -4,6 +4,7 @@ import builtins
 import types
 import rlcompleter
 from test.support import MISSING_C_DOCSTRINGS
+from test.support.import_helper import ensure_lazy_imports
 
 class CompleteMe:
     """ Trivial class used in testing rlcompleter.Completer. """
@@ -251,6 +252,10 @@ class TestRlcompleter(unittest.TestCase):
         self.assertIsNone(completer.complete('memoryview', 1))
         self.assertEqual(completer.complete('Ellipsis', 0), 'Ellipsis()')
         self.assertIsNone(completer.complete('Ellipsis', 1))
+
+    def test_lazy_imports(self):
+        ensure_lazy_imports("rlcompleter", {"inspect", "re"})
+
 
 if __name__ == '__main__':
     unittest.main()
