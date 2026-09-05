@@ -419,6 +419,19 @@ Here are the methods of the :class:`Message` class:
 
          Content-Disposition: attachment; filename*="iso-8859-1''Fu%DFballer.ppt"
 
+      When called without any *_params*, this method stores *_value* the same
+      way :meth:`__setitem__` does, so *_value* may also be an
+      :class:`~email.header.Header` instance, such as those returned by
+      :meth:`items` under a ``compat32`` policy.  Combining a
+      :class:`~email.header.Header` *_value* with *_params* raises
+      :exc:`TypeError`, since the parameters have no defined meaning for it.
+
+      .. versionchanged:: next
+         When no parameters are given, an :class:`~email.header.Header`
+         *_value* is now accepted, consistent with :meth:`__setitem__`.
+         Combining a :class:`~email.header.Header` *_value* with parameters
+         now raises a clear :exc:`TypeError` instead of an internal one.
+
 
    .. method:: replace_header(_name, _value)
 
