@@ -361,6 +361,9 @@ class CLanguage(Language):
         keywords = [k for k in data.keywords if k]
         template_dict['keywords_py'] = ' '.join(c_id(k) + ','
                                                 for k in keywords)
+        if data.kwonly_required and not data.kwonly_optional:
+            # Terminate the required keyword-only parameters.
+            data.format_units.append('|')
         template_dict['format_units'] = ''.join(data.format_units)
         template_dict['parse_arguments'] = ', '.join(data.parse_arguments)
         if data.parse_arguments:
