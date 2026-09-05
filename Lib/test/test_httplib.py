@@ -1348,6 +1348,32 @@ class BasicTest(TestCase):
         self.assertEqual(resp.read(), b'Hello\r\n')
         self.assertTrue(resp.isclosed())
 
+    def test_malformed_content_length(self):
+        # RFC 9112: Content-Length = 1*DIGIT.  Values that int() accepts but
+        # the grammar forbids must not be used to frame the body.
+        for value in ('+5', '5_0'):
+            with self.subTest(value=value):
+                sock = FakeSocket(
+                    'HTTP/1.1 200 OK\r\nContent-Length: %s\r\n\r\nHello\r\n' % value)
+                resp = client.HTTPResponse(sock, method="GET")
+                resp.begin()
+                self.assertIsNone(resp.length)
+                self.assertEqual(resp.read(), b'Hello\r\n')
+                resp.close()
+
+    def test_malformed_chunk_size(self):
+        # RFC 9112: chunk-size = 1*HEXDIG.  Reject sizes that int(_, 16) accepts
+        # but the grammar forbids (a sign, an "0x" prefix or underscores).
+        start = 'HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n'
+        for size in ('-5', '+5', '0x5', '1_f'):
+            with self.subTest(size=size):
+                sock = FakeSocket(start + '%s\r\nHELLO\r\n0\r\n\r\n' % size)
+                resp = client.HTTPResponse(sock, method="GET")
+                resp.begin()
+                self.assertRaises(client.IncompleteRead, resp.read)
+                self.assertTrue(resp.isclosed())
+                resp.close()
+
     def test_incomplete_read(self):
         sock = FakeSocket('HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\nHello\r\n')
         resp = client.HTTPResponse(sock, method="GET")
