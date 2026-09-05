@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PySequence_IterSearch()
 #include "pycore_call.h"          // _PyObject_VectorcallTstate()
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_code.h"          // CO_FAST_FREE
 #include "pycore_descrobject.h"   // _PyMember_GetOffset()
 #include "pycore_dict.h"          // _PyDict_KeysSize()
@@ -10647,21 +10648,58 @@ SLOT1(slot_mp_subscript, __getitem__, PyObject *)
 static int
 slot_mp_ass_subscript(PyObject *self, PyObject *key, PyObject *value)
 {
-    PyObject *stack[3];
-    PyObject *res;
-
-    stack[0] = self;
-    stack[1] = key;
-    if (value == NULL) {
-        res = vectorcall_method(&_Py_ID(__delitem__), stack, 2);
-    }
-    else {
-        stack[2] = value;
-        res = vectorcall_method(&_Py_ID(__setitem__), stack, 3);
-    }
-
-    if (res == NULL)
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *name = value == NULL ? &_Py_ID(__delitem__) : &_Py_ID(__setitem__);
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
+    int unbound = lookup_method(self, name, &cref.ref);
+    if (unbound < 0) {
+        _PyThreadState_PopCStackRef(tstate, &cref);
         return -1;
+    }
+
+    PyObject *func = PyStackRef_AsPyObjectBorrow(cref.ref);
+    if (unbound && Py_IS_TYPE(func, &PyWrapperDescr_Type)) {
+        PyWrapperDescrObject *descr = (PyWrapperDescrObject *)func;
+        wrapperfunc expected_wrapper =
+            value == NULL ? wrap_delitem : wrap_objobjargproc;
+        /* __setitem__ and __delitem__ share mp_ass_subscript. An override of
+           either installs this dispatcher for both methods. Avoid the generic
+           call path when lookup finds the inherited C slot wrapper. */
+        if (descr->d_base->name_strobj == name &&
+            descr->d_base->wrapper == expected_wrapper &&
+            PyObject_TypeCheck(self, PyDescr_TYPE(descr)))
+        {
+            /* Keep recursion handling in sync with _PyObject_MakeTpCall(). */
+            if (_Py_EnterRecursiveCallTstate(
+                    tstate, " while calling a Python object"))
+            {
+                _PyThreadState_PopCStackRef(tstate, &cref);
+                return -1;
+            }
+            objobjargproc slot = (objobjargproc)descr->d_wrapped;
+            int result = slot(self, key, value);
+            _Py_LeaveRecursiveCallTstate(tstate);
+            if (result != -1 && _PyErr_Occurred(tstate)) {
+                /* Match the result check performed by the generic call path. */
+                (void)_Py_CheckFunctionResult(
+                    tstate, func, Py_NewRef(Py_None), NULL);
+                _PyThreadState_PopCStackRef(tstate, &cref);
+                return -1;
+            }
+            int error = result == -1 && _PyErr_Occurred(tstate);
+            _PyThreadState_PopCStackRef(tstate, &cref);
+            return error ? -1 : 0;
+        }
+    }
+
+    PyObject *stack[3] = {self, key, value};
+    PyObject *res = vectorcall_unbound(
+        tstate, unbound, func, stack, value == NULL ? 2 : 3);
+    _PyThreadState_PopCStackRef(tstate, &cref);
+    if (res == NULL) {
+        return -1;
+    }
     Py_DECREF(res);
     return 0;
 }
