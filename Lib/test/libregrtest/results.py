@@ -1,16 +1,13 @@
 import sys
 import trace
 from _colorize import get_colors  # type: ignore[import-not-found]
-from typing import TYPE_CHECKING
+lazy from xml.etree.ElementTree import Element
 
 from .runtests import RunTests
 from .result import State, TestResult, TestStats, Location
 from .utils import (
     StrPath, TestName, TestTuple, TestList, FilterDict,
     printlist, count, format_duration)
-
-if TYPE_CHECKING:
-    from xml.etree.ElementTree import Element
 
 
 # Python uses exit code 1 when an exception is not caught
@@ -41,7 +38,7 @@ class TestResults:
         self.test_times: list[tuple[float, TestName]] = []
         self.stats = TestStats()
         # used by --junit-xml
-        self.testsuite_xml: list['Element'] = []
+        self.testsuite_xml: list[Element] = []
         # used by -T with -j
         self.covered_lines: set[Location] = set()
 
