@@ -1,0 +1,3 @@
+:func:`os.chmod` now raises :exc:`ValueError` when *dir_fd* or
+*follow_symlinks* is used together with a file descriptor *path*, matching
+the documented behaviour and :func:`os.chown`.

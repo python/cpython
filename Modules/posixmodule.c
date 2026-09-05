@@ -4094,6 +4094,21 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
         return NULL;
 #endif
 
+    if (dir_fd_and_fd_invalid("chmod", dir_fd, path->fd)) {
+        return NULL;
+    }
+
+#ifndef MS_WINDOWS
+    /* On Windows, follow_symlinks defaults to False, so doing this check
+       would reject the valid os.chmod(fd, mode). */
+    if (fd_and_follow_symlinks_invalid("chmod",
+                                       path->is_fd,
+                                       follow_symlinks))
+    {
+        return NULL;
+    }
+#endif
+
     if (PySys_Audit("os.chmod", "Oii", path->object, mode,
                     dir_fd == DEFAULT_DIR_FD ? -1 : dir_fd) < 0) {
         return NULL;
