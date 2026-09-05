@@ -1496,6 +1496,13 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.findall(r'[\d&&1]', s), list('1'))
         # A leading '&' is a literal.
         self.assertEqual(re.findall(r'[&&1]', s), list('&1'))
+        # Intersection is not fused under IGNORECASE (case folding can
+        # split an operand), including when the flag comes from a scoped group.
+        for pat in (r'(?i)[\w&&[s]]', r'(?i:[\w&&[s]])'):
+            for c in 'sSſ':
+                self.assertTrue(re.fullmatch(pat, c), (pat, c))
+        self.assertTrue(re.fullmatch(r'(?-i:[\w&&[s]])', 's', re.I))
+        self.assertIsNone(re.fullmatch(r'(?-i:[\w&&[s]])', 'S', re.I))
 
         # Nested sets and lookbehind-mapped operands.
         self.assertEqual(re.findall(r'[a-z--[aeiou]]', s),
