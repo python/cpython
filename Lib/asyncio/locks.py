@@ -488,7 +488,13 @@ class Barrier(mixins._LoopBoundMixin):
 
         self._parties = parties
         self._state = _BarrierState.FILLING
-        self._count = 0       # count tasks in Barrier
+        # Tickets of tasks currently in the barrier, in arrival order for
+        # the current round. A task's index is only assigned once the
+        # round's full set of tickets is known (see _release()), so that
+        # a task leaving early (e.g. via cancellation) can't cause a
+        # later arrival to reuse its index.
+        self._present = []
+        self._release_index = {}
 
     def __repr__(self):
         res = super().__repr__()
@@ -514,17 +520,20 @@ class Barrier(mixins._LoopBoundMixin):
         """
         async with self._cond:
             await self._block() # Block while the barrier drains or resets.
+            ticket = object()
+            self._present.append(ticket)
             try:
-                index = self._count
-                self._count += 1
-                if index + 1 == self._parties:
+                if len(self._present) == self._parties:
                     # We release the barrier
                     await self._release()
                 else:
                     await self._wait()
-                return index
+                return self._release_index[ticket]
             finally:
-                self._count -= 1
+                try:
+                    self._present.remove(ticket)
+                except ValueError:
+                    pass
                 # Wake up any tasks waiting for barrier to drain.
                 self._exit()
 
@@ -547,6 +556,13 @@ class Barrier(mixins._LoopBoundMixin):
     async def _release(self):
         # Release the tasks waiting in the barrier.
 
+        # Assign each currently-present party (including this task, the
+        # last arrival) a unique index in arrival order, before any of
+        # them get a chance to leave self._present.
+        self._release_index = {
+            ticket: i for i, ticket in enumerate(self._present)
+        }
+
         # Enter draining state.
         # Next waiting tasks will be blocked until the end of draining.
         self._state = _BarrierState.DRAINING
@@ -566,9 +582,10 @@ class Barrier(mixins._LoopBoundMixin):
     def _exit(self):
         # If we are the last tasks to exit the barrier, signal any tasks
         # waiting for the barrier to drain.
-        if self._count == 0:
+        if not self._present:
             if self._state in (_BarrierState.RESETTING, _BarrierState.DRAINING):
                 self._state = _BarrierState.FILLING
+            self._release_index = {}
             self._cond.notify_all()
 
     async def reset(self):
@@ -578,7 +595,7 @@ class Barrier(mixins._LoopBoundMixin):
         raised.
         """
         async with self._cond:
-            if self._count > 0:
+            if self._present:
                 if self._state is not _BarrierState.RESETTING:
                     #reset the barrier, waking up tasks
                     self._state = _BarrierState.RESETTING
@@ -605,7 +622,7 @@ class Barrier(mixins._LoopBoundMixin):
     def n_waiting(self):
         """Return the number of tasks currently waiting at the barrier."""
         if self._state is _BarrierState.FILLING:
-            return self._count
+            return len(self._present)
         return 0
 
     @property
