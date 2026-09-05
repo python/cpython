@@ -14,7 +14,11 @@
 #include "Python.h"
 #include "pycore_tuple.h"           // _PyTuple_FromPairSteal
 
-#define WINDOWS_LEAN_AND_MEAN
+#ifdef MS_WINDOWS
+#  define WINDOWS_LEAN_AND_MEAN
+#  include "internal/pycore_fileutils_windows.h"
+#endif
+
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <mswsock.h>
@@ -1627,7 +1631,7 @@ _overlapped_Overlapped_ConnectPipe_impl(OverlappedObject *self,
     HANDLE PipeHandle;
 
     Py_BEGIN_ALLOW_THREADS
-    PipeHandle = CreateFileW(Address,
+    PipeHandle = _Py_WinCreateFile(Address,
                              GENERIC_READ | GENERIC_WRITE,
                              0, NULL, OPEN_EXISTING,
                              FILE_FLAG_OVERLAPPED, NULL);

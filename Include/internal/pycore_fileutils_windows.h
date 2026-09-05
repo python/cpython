@@ -97,6 +97,58 @@ static inline BOOL _Py_GetFileInformationByName_ErrorIsTrustworthy(int error)
     return FALSE;
 }
 
+// Convert absolute paths to relative paths for paths within the installation path
+static const wchar_t* _Py_AbsolutePath_To_RelativePath(const wchar_t* abs_path)
+{
+    const wchar_t* rel_path = NULL;
+    wchar_t process_path[512] = { 0 };
+    if (GetModuleFileNameW(NULL, process_path, 512))
+    {
+        wchar_t* path = wcsrchr(process_path, L'\\');
+        path[1] = L'\0'; // strip process name
+        if (wcsstr(abs_path, process_path))
+            rel_path = &abs_path[wcslen(process_path)];
+    }
+    return rel_path;
+}
+
+static inline HANDLE _Py_WinCreateFile(
+    _In_ LPCWSTR lpFileName,
+    _In_ DWORD dwDesiredAccess,
+    _In_ DWORD dwShareMode,
+    _In_opt_ LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+    _In_ DWORD dwCreationDisposition,
+    _In_ DWORD dwFlagsAndAttributes,
+    _In_opt_ HANDLE hTemplateFile
+)
+{
+#ifndef MS_WINDOWS_DESKTOP
+    if (dwShareMode == 0)
+        dwShareMode = FILE_SHARE_READ;
+
+    CREATEFILE2_EXTENDED_PARAMETERS ext;
+    ZeroMemory(&ext, sizeof(CREATEFILE2_EXTENDED_PARAMETERS));
+    ext.dwSize = sizeof(CREATEFILE2_EXTENDED_PARAMETERS);
+    ext.dwFileAttributes = FILE_ATTRIBUTE_NORMAL;
+    ext.dwFileFlags = dwFlagsAndAttributes & 0xFFFF0000;
+
+    // UWP does not allow absolute paths due security restrictions and only has access to 'AppData'
+    // folder outside of the install path.
+    // If path is contained inside install path (sub folder), use the relative path instead.
+    if (wcschr(lpFileName, L':')) {
+        const wchar_t* rel_path = _Py_AbsolutePath_To_RelativePath(lpFileName);
+        if (rel_path) {
+            return CreateFile2(rel_path, dwDesiredAccess, dwShareMode, dwCreationDisposition, &ext);
+        }
+    }
+
+    return CreateFile2(lpFileName, dwDesiredAccess, dwShareMode, dwCreationDisposition, &ext);
+#else
+    return CreateFileW(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes,
+                       dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
+#endif
+}
+
 #endif
 
 #endif
