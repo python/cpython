@@ -832,6 +832,18 @@ except Exception:
         s = "f'{1}' 'x' 'y'" * 1024
         self.assertEqual(eval(s), '1xy' * 1024)
 
+    @support.requires_resource('cpu')
+    def test_many_fstrings_in_module(self):
+        fields = ''.join(f'{{x{i}}}' for i in range(100))
+        source = ''.join(
+            f"value_{i} = f'{fields}'\n" for i in range(1_000)
+        )
+        namespace = {f'x{i}': str(i) for i in range(100)}
+        expected = ''.join(str(i) for i in range(100))
+        exec(source, namespace)
+        self.assertEqual(namespace['value_0'], expected)
+        self.assertEqual(namespace['value_999'], expected)
+
     def test_format_specifier_expressions(self):
         width = 10
         precision = 4
@@ -1348,6 +1360,9 @@ except Exception:
         self.assertEqual(f'{3!=4:}', 'True')
         self.assertEqual(f'{3!=4!s}', 'True')
         self.assertEqual(f'{3!=4!s:.3}', 'Tru')
+        a = 3
+        b = 4
+        self.assertEqual(f'{a!=b=:>10}', 'a!=b=         1')
 
     def test_equal_equal(self):
         # Because an expression ending in = has special meaning,
@@ -1795,6 +1810,19 @@ print(f'''{{
             _, stdout, _ = assert_python_ok(script)
         self.assertEqual(stdout.decode('utf-8').strip().replace('\r\n', '\n').replace('\r', '\n'),
                          "3\n=3")
+
+    def test_debug_in_file_after_buffer_resize(self):
+        expression = "(\n" + (" " * 64 + "\n") * 256 + "1\n)"
+        expected = expression + "=1"
+        with temp_cwd():
+            script = 'script.py'
+            source = (
+                f"result = f'''{{{expression}=}}'''\n"
+                f"assert result == {expected!r}\n"
+            )
+            with open(script, 'w') as f:
+                f.write(source)
+            assert_python_ok(script)
 
     def test_syntax_warning_infinite_recursion_in_file(self):
         with temp_cwd():

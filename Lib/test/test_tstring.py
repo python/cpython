@@ -1,5 +1,8 @@
 import unittest
 
+from test import support
+from test.support.os_helper import temp_cwd
+from test.support.script_helper import assert_python_ok
 from test.test_string._support import TStringBaseCase, fstring
 
 
@@ -79,6 +82,31 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         )
         self.assertEqual(fstring(t), "Name: Bob, Age: 30")
 
+    def test_interpolation_expression_in_file_after_buffer_resize(self):
+        expression = "(\n" + (" " * 64 + "\n") * 256 + "1\n)"
+        with temp_cwd():
+            script = 'script.py'
+            source = (
+                f"template = t'''{{{expression}}}'''\n"
+                "interpolation = template.interpolations[0]\n"
+                f"assert interpolation.expression == {expression!r}\n"
+            )
+            with open(script, 'w') as f:
+                f.write(source)
+            assert_python_ok(script)
+
+    @support.requires_resource('cpu')
+    def test_many_tstrings_in_module(self):
+        fields = ''.join(f'{{x{i}}}' for i in range(100))
+        source = ''.join(
+            f"value_{i} = t'{fields}'\n" for i in range(1_000)
+        )
+        namespace = {f'x{i}': str(i) for i in range(100)}
+        expected = ''.join(str(i) for i in range(100))
+        exec(source, namespace)
+        self.assertEqual(fstring(namespace['value_0']), expected)
+        self.assertEqual(fstring(namespace['value_999']), expected)
+
     def test_format_specifiers(self):
         # Test basic format specifiers
         value = 3.14159
@@ -87,6 +115,14 @@ class TestTString(unittest.TestCase, TStringBaseCase):
             t, ("Pi: ", ""), [(value, "value", None, ".2f")]
         )
         self.assertEqual(fstring(t), "Pi: 3.14")
+
+        a = 3
+        b = 4
+        t = t"{a!=b:>10}"
+        self.assertTStringEqual(
+            t, ("", ""), [(a != b, "a!=b", None, ">10")]
+        )
+        self.assertEqual(fstring(t), "         1")
 
     def test_conversions(self):
         # Test !s conversion (str)
