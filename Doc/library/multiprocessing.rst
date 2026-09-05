@@ -2511,8 +2511,11 @@ with the :class:`Pool` class.
       one *iterable* argument though, for multiple iterables see :meth:`starmap`).
       It blocks until the result is ready.
 
-      This method chops the iterable into a number of chunks which it submits to
-      the process pool as separate tasks.  The (approximate) size of these
+      This method chops the iterable into a number of chunks and submits each
+      chunk to the process pool as a separate task. A task may therefore
+      process multiple items from the iterable.
+
+      The (approximate) size of these
       chunks can be specified by setting *chunksize* to a positive integer.
 
       Note that it may cause high memory usage for very long iterables. Consider
