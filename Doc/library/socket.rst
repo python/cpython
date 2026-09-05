@@ -1601,12 +1601,12 @@ Socket Objects
       Connect to a remote socket at *address*. The format of *address* depends on the
       address family --- see :ref:`socket-addresses`.
 
-      If the connection is interrupted by a signal, the method waits until the
-      connection completes, or raises a :exc:`TimeoutError` on timeout, if the
-      signal handler doesn't raise an exception and the socket is blocking or has
-      a timeout. For non-blocking sockets, the method raises an
-      :exc:`InterruptedError` exception if the connection is interrupted by a
-      signal (or the exception raised by the signal handler).
+      If the connection is interrupted by a signal and the signal handler raises
+      an exception, the method propagates that exception. Otherwise, the method
+      waits until the connection completes for blocking sockets and sockets with
+      a timeout. If the timeout expires before the connection completes, the
+      method raises a :exc:`TimeoutError`. For non-blocking sockets, the method
+      raises an :exc:`InterruptedError` exception.
 
       .. audit-event:: socket.connect self,address socket.socket.connect
 
