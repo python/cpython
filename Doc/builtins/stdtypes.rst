@@ -1238,6 +1238,14 @@ the underlying generator function:
    that does nothing.
 
 
+The awaitables returned by :meth:`~agen.asend`, :meth:`~agen.athrow` and
+:meth:`~agen.aclose` expose the generator they drive as a read-only
+``ag_gen`` attribute.
+
+.. versionadded:: 3.16
+   The ``ag_gen`` attribute.
+
+
 .. _typesseq:
 
 Sequence Types --- :class:`list`, :class:`tuple`, :class:`range`
