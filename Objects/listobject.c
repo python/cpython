@@ -252,10 +252,11 @@ PyList_New(Py_ssize_t size)
             return NULL;
         }
     }
-    if (size <= 0) {
-        op->ob_item = NULL;
-    }
-    else {
+    op->ob_item = NULL;
+    op->allocated = 0;
+    Py_SET_SIZE(op, size);
+
+    if (size > 0) {
 #ifdef Py_GIL_DISABLED
         _PyListArray *array = list_allocate_array(size);
         if (array == NULL) {
@@ -272,7 +273,7 @@ PyList_New(Py_ssize_t size)
             return PyErr_NoMemory();
         }
     }
-    Py_SET_SIZE(op, size);
+
     op->allocated = size;
     _PyObject_GC_TRACK(op);
     return (PyObject *) op;
