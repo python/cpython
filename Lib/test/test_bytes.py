@@ -3063,5 +3063,18 @@ class FreeThreadingTest(unittest.TestCase):
         with threading_helper.start_threads(threads):
             pass
 
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_free_threading_bytearray_resize_other_thread(self):
+        # Shrinking a bytearray whose buffer another thread owns must not
+        # adopt the immortal single-byte bytes object a the buffer.
+        ba = bytearray(b'abc')
+        thread = threading.Thread(target=ba.resize, args=(1,))
+        with threading_helper.start_threads([thread]):
+            pass
+        ba[0] = ord('X')
+        self.assertEqual(ba, bytearray(b'X'))
+        self.assertEqual(ord(b'a'), ord('a'))
+
 if __name__ == "__main__":
     unittest.main()
