@@ -67,7 +67,7 @@ import itertools
 import os
 import re
 import struct
-from xml.parsers.expat import ParserCreate
+from xml.parsers.expat import ExpatError, ParserCreate
 
 
 PlistFormat = enum.Enum('PlistFormat', 'FMT_XML FMT_BINARY', module=__name__)
@@ -185,7 +185,20 @@ class _PlistParser:
         self.parser.EndElementHandler = self.handle_end_element
         self.parser.CharacterDataHandler = self.handle_data
         self.parser.EntityDeclHandler = self.handle_entity_decl
-        self.parser.ParseFile(fileobj)
+        try:
+            self.parser.ParseFile(fileobj)
+        except ExpatError as e:
+            raise InvalidFileException(str(e)) from e
+        except LookupError as e:
+            # An <?xml ... ?> declaration naming an encoding that Python's
+            # codec registry does not know raises a plain LookupError.  A
+            # KeyError or IndexError from caller-provided code (e.g. a custom
+            # dict_type or file object) is a LookupError subclass and must not
+            # be masked as a malformed-file error, so only translate the exact
+            # LookupError type and let subclasses propagate unchanged.
+            if type(e) is not LookupError:
+                raise
+            raise InvalidFileException(str(e)) from e
         return self.root
 
     def handle_entity_decl(self, entity_name, is_parameter_entity, value, base, system_id, public_id, notation_name):
