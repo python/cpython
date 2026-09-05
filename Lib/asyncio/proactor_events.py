@@ -576,7 +576,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
             if not self._conn_lost:
                 # The error can be transient, e.g. a ConnectionResetError
                 # from a stale ICMP port unreachable notification, so
-                # re-arm the read loop instead of leaving it dead.
+                # reschedule the read loop instead of leaving it dead.
                 self._loop.call_soon(self._loop_reading)
         except exceptions.CancelledError:
             if not self._closing:
