@@ -45,7 +45,8 @@ _getbytevalue(PyObject* arg, int *value)
 
 static void
 bytearray_reinit_from_bytes(PyByteArrayObject *self, Py_ssize_t size,
-                            Py_ssize_t alloc) {
+                            Py_ssize_t alloc)
+{
     /* Only the empty bytes may be immortal. */
     assert((alloc == 0) == _Py_IsImmortal(self->ob_bytes_object));
     self->ob_bytes = self->ob_start = PyBytes_AS_STRING(self->ob_bytes_object);
