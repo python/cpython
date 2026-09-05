@@ -855,6 +855,11 @@ def _build_closure(annotate, owner, is_class, stringifier_dict, *, allow_evaluat
     cell_dict = {}
     for name, cell in zip(annotate.__code__.co_freevars, annotate.__closure__, strict=True):
         cell_dict[name] = cell
+        # This is an internal name for ensuring we get the correct annotations,
+        # so do not replace the original cell.
+        if name == "__conditional_annotations__":
+            new_closure.append(cell)
+            continue
         new_cell = None
         if allow_evaluation:
             try:
