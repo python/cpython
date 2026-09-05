@@ -1,0 +1,2 @@
+Fix the use of the terms "argument" and "parameter" in
+:func:`dis.show_code`.
