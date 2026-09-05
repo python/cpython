@@ -1611,6 +1611,14 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             self.assertRaises(BufferError, ba.take_bytes)
         self.assertEqual(ba.take_bytes(), b'abc')
 
+        # Leaving one byte must not adopt the shared single-byte bytes object
+        # as the buffer.
+        ba = bytearray(b'abc')
+        self.assertEqual(ba.take_bytes(2), b'ab')
+        ba[0] = ord('A')
+        self.assertEqual(ba, bytearray(b'A'))
+        self.assertEqual(ord(b'c'), ord('c'))
+
     @support.cpython_only  # tests an implementation detail
     def test_take_bytes_optimization(self):
         # Validate optimization around taking lots of little chunks out of a

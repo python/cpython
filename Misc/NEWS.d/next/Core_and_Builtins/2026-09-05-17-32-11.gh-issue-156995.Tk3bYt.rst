@@ -1,0 +1,3 @@
+Fix :meth:`bytearray.take_bytes` leaving the bytearray with a shared buffer
+when exactly one byte remained, so that writing to the bytearray modified
+the single-byte :class:`bytes` object with the same value.

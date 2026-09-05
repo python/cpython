@@ -1619,12 +1619,14 @@ bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n)
         return ret;
     }
 
-    // Copy remaining bytes to a new bytes.
-    PyObject *remaining = PyBytes_FromStringAndSize(self->ob_start + to_take,
-                                                    remaining_length);
+    // Copy remaining bytes to a new bytes. Allocate and then copy rather than
+    // so we don't get a shared immortal one-character singleton!
+    PyObject *remaining = PyBytes_FromStringAndSize(NULL, remaining_length);
     if (remaining == NULL) {
         return NULL;
     }
+    memcpy(PyBytes_AS_STRING(remaining), self->ob_start + to_take,
+           remaining_length);
 
     // If the bytes are offset inside the buffer must first align.
     if (self->ob_start != self->ob_bytes) {
