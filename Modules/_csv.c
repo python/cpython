@@ -116,6 +116,7 @@ typedef struct {
     Py_UCS4 delimiter;          /* field separator */
     Py_UCS4 quotechar;          /* quote character */
     Py_UCS4 escapechar;         /* escape character */
+    Py_UCS4 lineterm_maxchar;   /* highest code point in lineterminator */
     PyObject *lineterminator;   /* string to write between records */
 
 } DialectObj;
@@ -332,6 +333,22 @@ _set_str(const char *name, PyObject **target, PyObject *src, const char *dflt)
     return 0;
 }
 
+static Py_UCS4
+str_maxchar(PyObject *s)
+{
+    int kind = PyUnicode_KIND(s);
+    const void *data = PyUnicode_DATA(s);
+    Py_ssize_t len = PyUnicode_GET_LENGTH(s);
+    Py_UCS4 maxchar = 0;
+    for (Py_ssize_t i = 0; i < len; i++) {
+        Py_UCS4 c = PyUnicode_READ(kind, data, i);
+        if (c > maxchar) {
+            maxchar = c;
+        }
+    }
+    return maxchar;
+}
+
 static int
 dialect_check_quoting(int quoting)
 {
@@ -533,6 +550,7 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     DIASET(_set_bool, "skipinitialspace", &self->skipinitialspace, skipinitialspace, false);
     DIASET(_set_bool, "strict", &self->strict, strict, false);
 #undef DIASET
+    self->lineterm_maxchar = str_maxchar(self->lineterminator);
 
     /* validate options */
     if (dialect_check_quoting(self->quoting))
@@ -1165,6 +1183,21 @@ join_reset(WriterObj *self)
 
 #define MEM_INCR 32768
 
+static inline int
+in_lineterminator(Py_UCS4 c, DialectObj *dialect)
+{
+    PyObject *lt = dialect->lineterminator;
+    int kind = PyUnicode_KIND(lt);
+    const void *data = PyUnicode_DATA(lt);
+    Py_ssize_t len = PyUnicode_GET_LENGTH(lt);
+    for (Py_ssize_t i = 0; i < len; i++) {
+        if (PyUnicode_READ(kind, data, i) == c) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 /* Calculate new record length or append field to record.  Return new
  * record length.
  */
@@ -1176,6 +1209,10 @@ join_append_data(WriterObj *self, int field_kind, const void *field_data,
     DialectObj *dialect = self->dialect;
     Py_ssize_t i;
     Py_ssize_t rec_len;
+    /* A character above this cannot be in the line terminator, so the
+       scan below is skipped; the default "\r\n" rejects all ordinary
+       text that way. */
+    Py_UCS4 term_maxchar = dialect->lineterm_maxchar;
 
 #define INCLEN \
     do {\
@@ -1213,9 +1250,7 @@ join_append_data(WriterObj *self, int field_kind, const void *field_data,
             c == dialect->quotechar  ||
             c == '\n'  ||
             c == '\r'  ||
-            PyUnicode_FindChar(
-                dialect->lineterminator, c, 0,
-                PyUnicode_GET_LENGTH(dialect->lineterminator), 1) >= 0) {
+            (c <= term_maxchar && in_lineterminator(c, dialect))) {
             if (dialect->quoting == QUOTE_NONE)
                 want_escape = 1;
             else {
