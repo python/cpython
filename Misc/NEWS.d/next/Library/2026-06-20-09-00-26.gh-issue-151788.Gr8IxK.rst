@@ -1,0 +1,4 @@
+:class:`http.server.SimpleHTTPRequestHandler` now relies on :func:`os.scandir`
+instead of :func:`os.listdir` to build directory listings, thereby reducing
+the total number of :func:`os.stat` calls per entry. This typically improves
+directory listing performance on filesystems where such calls are slow.
