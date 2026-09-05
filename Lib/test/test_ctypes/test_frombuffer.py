@@ -124,6 +124,25 @@ class Test(unittest.TestCase):
         with self.assertRaises(ValueError):
             (c_int * 1).from_buffer_copy(a, 16 * sizeof(c_int))
 
+    def test_from_buffer_b_base_with_ctypes_source(self):
+        class Inner(Structure):
+            _fields_ = [("x", c_int)]
+
+        class Outer(Structure):
+            _fields_ = [("inner", Inner), ("y", c_int)]
+
+        buf = bytearray(sizeof(Outer))
+        outer = Outer.from_buffer(buf)
+        inner = Inner.from_buffer(outer, 0)
+
+        self.assertIs(inner._b_base_, outer)
+
+    def test_from_buffer_b_base_with_non_ctypes_source(self):
+        buf = bytearray(sizeof(c_int))
+        x = c_int.from_buffer(buf)
+
+        self.assertIsNone(x._b_base_)
+
     def test_abstract(self):
         self.assertRaises(TypeError, Array.from_buffer, bytearray(10))
         self.assertRaises(TypeError, Structure.from_buffer, bytearray(10))
