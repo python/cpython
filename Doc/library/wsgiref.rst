@@ -163,12 +163,13 @@ also provides these miscellaneous utilities:
    The resulting objects
    are :term:`iterable`\ s. As the object is iterated over, the
    optional *blksize* parameter will be repeatedly passed to the *filelike*
-   object's :meth:`read` method to obtain bytestrings to yield.  When :meth:`read`
-   returns an empty bytestring, iteration is ended and is not resumable.
+   object's :meth:`~io.BufferedIOBase.read` method to obtain bytestrings to
+   yield.  When :meth:`~io.BufferedIOBase.read` returns an empty bytestring,
+   iteration is ended and is not resumable.
 
-   If *filelike* has a :meth:`close` method, the returned object will also have a
-   :meth:`close` method, and it will invoke the *filelike* object's :meth:`close`
-   method when called.
+   If *filelike* has a :meth:`~io.IOBase.close` method, the returned object will
+   also have a :meth:`!close` method, and it will invoke the *filelike* object's
+   :meth:`~io.IOBase.close` method when called.
 
    Example usage::
 
@@ -222,8 +223,26 @@ manipulation of WSGI response headers using a mapping-like interface.
    :meth:`items` methods.  The lists returned by :meth:`keys` and :meth:`items` can
    include the same key more than once if there is a multi-valued header.  The
    ``len()`` of a :class:`Headers` object is the same as the length of its
-   :meth:`items`, which is the same as the length of the wrapped header list.  In
-   fact, the :meth:`items` method just returns a copy of the wrapped header list.
+   :meth:`items`, which is the same as the length of the wrapped header list.
+
+
+   .. method:: Headers.keys()
+
+      Return a list of all the header field names, in the order the fields
+      appeared in the original header list or were added to this instance.  Any
+      fields deleted and re-inserted are always appended to the header list.
+
+
+   .. method:: Headers.values()
+
+      Return a list of all the header values, in the same order as :meth:`keys`.
+
+
+   .. method:: Headers.items()
+
+      Return a copy of the wrapped header list, as a list of ``(name, value)``
+      pairs in the same order as :meth:`keys`.
+
 
    Calling ``bytes()`` on a :class:`Headers` object returns a formatted bytestring
    suitable for transmission as HTTP response headers.  Each header is placed on a
@@ -282,7 +301,7 @@ that serves WSGI applications.  Each server instance serves a single WSGI
 application on a given host and port.  If you want to serve multiple
 applications on a single host and port, you should create a WSGI application
 that parses ``PATH_INFO`` to select which application to invoke for each
-request.  (E.g., using the :func:`shift_path_info` function from
+request.  (E.g., using the :func:`~wsgiref.util.shift_path_info` function from
 :mod:`wsgiref.util`.)
 
 
@@ -329,8 +348,9 @@ request.  (E.g., using the :func:`shift_path_info` function from
    function can handle all the details for you.
 
    :class:`WSGIServer` is a subclass of :class:`http.server.HTTPServer`, so all
-   of its methods (such as :meth:`serve_forever` and :meth:`handle_request`) are
-   available. :class:`WSGIServer` also provides these WSGI-specific methods:
+   of its methods (such as :meth:`~socketserver.BaseServer.serve_forever` and
+   :meth:`~socketserver.BaseServer.handle_request`) are available.
+   :class:`WSGIServer` also provides these WSGI-specific methods:
 
 
    .. method:: WSGIServer.set_app(application)
@@ -348,6 +368,16 @@ request.  (E.g., using the :func:`shift_path_info` function from
    :meth:`get_app` exists mainly for the benefit of request handler instances.
 
 
+   .. attribute:: WSGIServer.base_environ
+
+      The base set of CGI environment variables the server supplies to every
+      request, such as ``SERVER_NAME``, ``SERVER_PORT`` and
+      ``GATEWAY_INTERFACE``.  It is populated when the server is bound to its
+      address, and :meth:`WSGIRequestHandler.get_environ` copies it to build the
+      environment for each individual request, adding and overriding entries
+      that are specific to that request.
+
+
 .. class:: WSGIRequestHandler(request, client_address, server)
 
    Create an HTTP handler for the given *request* (i.e. a socket), *client_address*
@@ -362,13 +392,12 @@ request.  (E.g., using the :func:`shift_path_info` function from
 
    .. method:: WSGIRequestHandler.get_environ()
 
-      Return a :data:`~wsgiref.types.WSGIEnvironment` dictionary for a
-      request.  The default
-      implementation copies the contents of the :class:`WSGIServer` object's
-      :attr:`base_environ` dictionary attribute and then adds various headers derived
-      from the HTTP request.  Each call to this method should return a new dictionary
-      containing all of the relevant CGI environment variables as specified in
-      :pep:`3333`.
+      Return a :data:`~wsgiref.types.WSGIEnvironment` dictionary for a request.
+      The default implementation copies the contents of the :class:`WSGIServer`
+      object's :attr:`~WSGIServer.base_environ` dictionary attribute and then
+      adds various headers derived from the HTTP request.  Each call to this
+      method should return a new dictionary containing all of the relevant CGI
+      environment variables as specified in :pep:`3333`.
 
 
    .. method:: WSGIRequestHandler.get_stderr()
@@ -403,7 +432,7 @@ absence of errors from this module does not necessarily mean that errors do not
 exist.  However, if this module does produce an error, then it is virtually
 certain that either the server or application is not 100% compliant.
 
-This module is based on the :mod:`paste.lint` module from Ian Bicking's "Python
+This module is based on the :mod:`!paste.lint` module from Ian Bicking's "Python
 Paste" library.
 
 
@@ -530,12 +559,22 @@ input, output, and error streams.
    :meth:`~BaseHandler.get_stderr`, :meth:`~BaseHandler.add_cgi_vars`,
    :meth:`~BaseHandler._write`, and :meth:`~BaseHandler._flush` methods to
    support explicitly setting the
-   environment and streams via the constructor.  The supplied environment and
-   streams are stored in the :attr:`stdin`, :attr:`stdout`, :attr:`stderr`, and
-   :attr:`environ` attributes.
+   environment and streams via the constructor.  The supplied streams are stored
+   in the :attr:`stdin`, :attr:`stdout`, and :attr:`stderr` attributes, and the
+   supplied environment is merged into :attr:`~BaseHandler.environ` when the
+   environment for the request is set up.
 
    The :meth:`~io.BufferedIOBase.write` method of *stdout* should write
    each chunk in full, like :class:`io.BufferedIOBase`.
+
+
+   .. attribute:: SimpleHandler.stdin
+                  SimpleHandler.stdout
+                  SimpleHandler.stderr
+
+      The streams supplied to the constructor.  *stdin* is used as the
+      ``wsgi.input`` stream, *stdout* receives the response, and *stderr* is
+      used as the ``wsgi.errors`` stream.
 
 
 .. class:: BaseHandler()
@@ -645,9 +684,9 @@ input, output, and error streams.
    .. method:: BaseHandler.get_scheme()
 
       Return the URL scheme being used for the current request.  The default
-      implementation uses the :func:`guess_scheme` function from :mod:`wsgiref.util`
-      to guess whether the scheme should be "http" or "https", based on the current
-      request's :attr:`environ` variables.
+      implementation uses the :func:`~wsgiref.util.guess_scheme` function from
+      :mod:`wsgiref.util` to guess whether the scheme should be "http" or
+      "https", based on the current request's :attr:`environ` variables.
 
 
    .. method:: BaseHandler.setup_environ()
@@ -658,6 +697,13 @@ input, output, and error streams.
       :attr:`wsgi_file_wrapper` attribute.  It also inserts a ``SERVER_SOFTWARE`` key
       if not present, as long as the :attr:`origin_server` attribute is a true value
       and the :attr:`server_software` attribute is set.
+
+
+   .. attribute:: BaseHandler.environ
+
+      The :data:`~wsgiref.types.WSGIEnvironment` dictionary for the request
+      currently being processed.  It is created by :meth:`setup_environ` and
+      passed to the application by :meth:`run`.
 
    Methods and attributes for customizing exception handling:
 
