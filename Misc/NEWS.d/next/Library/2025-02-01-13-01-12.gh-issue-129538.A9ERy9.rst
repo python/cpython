@@ -1,0 +1,2 @@
+Ensure that scope ID is preserved when converting the IP address in
+:class:`ipaddress.IPv6Interface`. Patch by John Kagunda.
