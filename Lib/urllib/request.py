@@ -237,7 +237,15 @@ def urlretrieve(url, filename=None, reporthook=None, data=None):
             if reporthook:
                 reporthook(blocknum, bs, size)
 
-            while block := fp.read(bs):
+            while True:
+                try:
+                    block = fp.read(bs)
+                except http.client.IncompleteRead:
+                    # This case has been handled by ContentTooShortError
+                    # below historically.
+                    break
+                if not block:
+                    break
                 read += len(block)
                 tfp.write(block)
                 blocknum += 1
