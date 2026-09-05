@@ -285,7 +285,9 @@ if not executable and program_name and ENV_PATH:
     for p in ENV_PATH.split(DELIM):
         p = joinpath(p, program_name)
         if isxfile(p):
-            executable = p
+            # A relative PATH entry would otherwise leave executable
+            # relative, contrary to the documented behaviour (gh-154160).
+            executable = abspath(p)
             break
 
 if not executable:
