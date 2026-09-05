@@ -1560,12 +1560,12 @@ float.__new__ as float_new
     x: object(c_default="NULL") = 0
     /
 
-Convert a string or number to a floating-point number, if possible.
+Convert a string, number, or bytes-like object to a float, if possible.
 [clinic start generated code]*/
 
 static PyObject *
 float_new_impl(PyTypeObject *type, PyObject *x)
-/*[clinic end generated code: output=ccf1e8dc460ba6ba input=55909f888aa0c8a6]*/
+/*[clinic end generated code: output=ccf1e8dc460ba6ba input=27eb1f7c62226a39]*/
 {
     if (type != &PyFloat_Type) {
         if (x == NULL) {
