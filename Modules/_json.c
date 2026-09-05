@@ -1802,9 +1802,17 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
     PyObject *ident = NULL;
     bool first = true;
 
-    if (PyDict_GET_SIZE(dct) == 0) {
-        /* Fast path */
-        return PyUnicodeWriter_WriteASCII(writer, "{}", 2);
+    if (PyDict_CheckExact(dct)) {
+        if (PyDict_GET_SIZE(dct) == 0) {  /* Fast path */
+            return PyUnicodeWriter_WriteASCII(writer, "{}", 2);
+        }
+    }
+    else {
+        /* We can't use PyDict_GET_SIZE() here since we're dealing with
+           a subclass, see gh-55186. */
+        if (PyMapping_Size(dct) == 0) {  /* Fast path for subclasses */
+            return PyUnicodeWriter_WriteASCII(writer, "{}", 2);
+        }
     }
 
     if (s->markers != Py_None) {
