@@ -773,8 +773,10 @@ class SSLProtocol(protocols.BufferedProtocol):
 
             if count > 0:
                 offset = count
+                # gh-156275: a bytearray slice is a copy, slice a view instead
+                view = memoryview(buf)
                 while offset < wants:
-                    count = self._sslobj.read(wants - offset, buf[offset:])
+                    count = self._sslobj.read(wants - offset, view[offset:])
                     if count > 0:
                         offset += count
                     else:
