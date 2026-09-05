@@ -535,7 +535,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
         except OSError as exc:
             self._protocol.error_received(exc)
             if self._buffer:
-                # Re-arm the write loop so buffered data isn't stranded and
+                # Reschedule the write loop so buffered data isn't stranded and
                 # a paused protocol is eventually resumed (gh-156698).
                 def resume_writing():
                     # a sendto() may have armed a write in the meantime;
