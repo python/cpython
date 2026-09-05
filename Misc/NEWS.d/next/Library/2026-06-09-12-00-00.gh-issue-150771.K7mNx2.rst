@@ -1,0 +1,4 @@
+Fix serialization of :mod:`email` messages using the ``shift_jis`` or
+``euc-jp`` charsets: ``set_content()`` now encodes the payload using
+the output charset, so ``str(m)`` no longer raises
+:exc:`UnicodeEncodeError`.
