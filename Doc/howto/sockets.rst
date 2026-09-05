@@ -169,13 +169,13 @@ a client can detect the end of the reply by receiving 0 bytes.
 But if you plan to reuse your socket for further transfers, you need to realize
 that *there is no* :abbr:`EOT (End of Transfer)` *on a socket.* If a ``recv``
 returns 0 bytes, the connection has been broken. In contrast, you should never
-call ``send`` on a broken socket, as it will raise an :exc:`OSError` rather than
-returning 0.  If the connection has *not* been broken, you may wait on a
-``recv`` forever, because the socket will *not* tell you that there's nothing
-more to read (for now).  Now if you think about that a bit, you'll come to
-realize a fundamental truth of sockets: *messages must either be fixed length*
-(yuck), *or be delimited* (shrug), *or indicate how long they are* (much
-better), *or end by shutting down the connection*. The choice is entirely
+call ``send`` on a broken socket: rather than returning 0, it will normally
+raise an :exc:`OSError`.  If the connection has *not* been broken, you may
+wait on a ``recv`` forever, because the socket will *not* tell you that there's
+nothing more to read (for now).  Now if you think about that a bit, you'll come
+to realize a fundamental truth of sockets: *messages must either be fixed
+length* (yuck), *or be delimited* (shrug), *or indicate how long they are*
+(much better), *or end by shutting down the connection*. The choice is entirely
 yours, (but some ways are righter than others).
 
 Assuming you don't want to end the connection, the simplest solution is a fixed
@@ -199,9 +199,12 @@ length message::
        def mysend(self, msg):
            totalsent = 0
            while totalsent < MSGLEN:
-               # No need to check for 0 here: send() raises OSError
-               # if the connection is broken.
                sent = self.sock.send(msg[totalsent:])
+               if sent == 0:
+                   # A broken connection almost always raises OSError
+                   # from send(); a 0 return is rare, but guard against
+                   # looping forever if it happens.
+                   raise RuntimeError("socket connection broken")
                totalsent = totalsent + sent
 
        def myreceive(self):
