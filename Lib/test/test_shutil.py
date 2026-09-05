@@ -2626,6 +2626,12 @@ class TestWhich(BaseTest, unittest.TestCase):
         # PATH=':': explicitly looks in the current directory
         with os_helper.EnvironmentVarGuard() as env:
             env['PATH'] = os.pathsep
+            if sys.platform == "win32":
+                # shutil.which() only searches the current directory when
+                # _winapi.NeedCurrentDirectoryForExePath() returns true, which
+                # in turn consults NoDefaultCurrentDirectoryInExePath.  Unset
+                # it so an ambient value cannot change what is searched.
+                env.unset('NoDefaultCurrentDirectoryInExePath')
             with unittest.mock.patch('os.confstr', return_value=self.dir, \
                                      create=True), \
                  support.swap_attr(os, 'defpath', self.dir):
