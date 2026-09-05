@@ -235,16 +235,14 @@ VECTORCALL_FINALE_MARKERS_NEW: Final[dict[str, str]] = {
         "{return_value} = {c_basename}_impl({vectorcall_impl_arguments});",
     "init_result_check": "",
 }
-# METHOD_INIT: tp_alloc self, let the int-returning impl initialize it, and
-# return it.  The locals are declared up front so a label can precede
-# {self_alloc} (C11).  Skipping tp_new requires it be PyType_GenericNew, which
-# cannot be asserted: a Windows extension module sees a different address for
-# a dllimport function in a static initializer than in a comparison.
+# METHOD_INIT: Create self through tp_new. In vectorcall we have no tuple of
+# args and want to void constructing one so pass the empty tuple. This is okay
+# for PyType_GenericNew which ignores args.
 VECTORCALL_FINALE_MARKERS_INIT: Final[dict[str, str]] = {
     "init_declarations": "PyObject *self;\nint _result;",
     "self_alloc": libclinic.normalize_snippet("""
-        self = _PyType_CAST(type)->tp_alloc(
-            _PyType_CAST(type), 0);
+        self = _PyType_CAST(type)->tp_new(_PyType_CAST(type),
+            (PyObject *)&_Py_SINGLETON(tuple_empty), NULL);
         if (self == NULL) {{
             goto exit;
         }}
@@ -1414,8 +1412,8 @@ class ParseArgsCodeGen:
     def _vectorcall_type_check(self) -> list[str]:
         """Assert `type` is the one type this vectorcall was generated for.
 
-        The generated code is only correct for that type: __init__ allocates
-        with tp_alloc rather than calling tp_new.  tp_vectorcall is not
+        The generated code is only correct for that type: __init__ calls
+        tp_new with no arguments, then the impl.  tp_vectorcall is not
         inherited, so subclasses never reach it; the assert catches C code
         installing the function on a second type.
         """
@@ -1453,6 +1451,7 @@ class ParseArgsCodeGen:
 
         if self.func.kind is METHOD_INIT:
             markers = VECTORCALL_FINALE_MARKERS_INIT
+            self.codegen.add_include('pycore_runtime.h', '_Py_SINGLETON()')
         else:
             markers = VECTORCALL_FINALE_MARKERS_NEW
         code = libclinic.linear_format("\n".join(lines), **markers)
@@ -1508,8 +1507,8 @@ class ParseArgsCodeGen:
             receiver = "self"
             bind_result = "_result = "
             prologue = libclinic.normalize_snippet("""
-                self = _PyType_CAST(type)->tp_alloc(
-                    _PyType_CAST(type), 0);
+                self = _PyType_CAST(type)->tp_new(_PyType_CAST(type),
+                    (PyObject *)&_Py_SINGLETON(tuple_empty), NULL);
                 if (self == NULL) {{
                     return NULL;
                 }}

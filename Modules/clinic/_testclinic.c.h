@@ -4982,8 +4982,8 @@ vc_posorkw_vectorcall(PyObject *type, PyObject *const *args,
      * vectorcall doesn't deal e.g. with users reassigning __init__. */
     assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
     if (kwnames != NULL || nargs < 1 || nargs > 2) {
-        self = _PyType_CAST(type)->tp_alloc(
-            _PyType_CAST(type), 0);
+        self = _PyType_CAST(type)->tp_new(_PyType_CAST(type),
+            (PyObject *)&_Py_SINGLETON(tuple_empty), NULL);
         if (self == NULL) {
             return NULL;
         }
@@ -5002,8 +5002,8 @@ vc_posorkw_vectorcall(PyObject *type, PyObject *const *args,
     }
     b = args[1];
 skip_optional:
-    self = _PyType_CAST(type)->tp_alloc(
-        _PyType_CAST(type), 0);
+    self = _PyType_CAST(type)->tp_new(_PyType_CAST(type),
+        (PyObject *)&_Py_SINGLETON(tuple_empty), NULL);
     if (self == NULL) {
         goto exit;
     }
@@ -5197,4 +5197,4 @@ vc_kwonly_vectorcall(PyObject *type, PyObject *const *args,
         kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
         NULL, kwnames);
 }
-/*[clinic end generated code: output=89143e35d39bbf80 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=10fcd30a5d85ce11 input=a9049054013a1b77]*/
