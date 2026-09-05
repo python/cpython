@@ -103,6 +103,7 @@
     <ClCompile Include="..\Modules\_testinternalcapi\tokenizer.c" />
     <ClCompile Include="..\Modules\_testinternalcapi\tuple.c" />
     <ClCompile Include="..\Modules\_testinternalcapi\typecache.c" />
+    <ClCompile Include="..\Modules\_testinternalcapi\dict.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />
