@@ -124,6 +124,19 @@ _Py_atomic_add_ssize(Py_ssize_t *obj, Py_ssize_t value)
     return (Py_ssize_t)_Py_atomic_add_intptr((intptr_t *)obj, (intptr_t)value);
 }
 
+static inline Py_ssize_t
+_Py_atomic_add_ssize_relaxed(Py_ssize_t *obj, Py_ssize_t value)
+{
+#if defined(_M_ARM64)
+    _Py_atomic_ASSERT_ARG_TYPE(__int64);
+    return (Py_ssize_t)_InterlockedExchangeAdd64_nf(
+        (volatile __int64 *)obj, (__int64)value);
+#else
+    // Interlocked RMW operations are inherently ordered on x86 and x64.
+    return _Py_atomic_add_ssize(obj, value);
+#endif
+}
+
 
 // --- _Py_atomic_compare_exchange -------------------------------------------
 
@@ -279,6 +292,43 @@ _Py_atomic_compare_exchange_ssize(Py_ssize_t *obj, Py_ssize_t *expected, Py_ssiz
                                            (void*)value);
 }
 
+static inline int
+_Py_atomic_compare_exchange_ssize_relaxed(Py_ssize_t *obj, Py_ssize_t *expected,
+                                          Py_ssize_t desired)
+{
+#if defined(_M_ARM64)
+    _Py_atomic_ASSERT_ARG_TYPE(__int64);
+    Py_ssize_t initial = (Py_ssize_t)_InterlockedCompareExchange64_nf(
+        (volatile __int64 *)obj, (__int64)desired, (__int64)*expected);
+    if (initial == *expected) {
+        return 1;
+    }
+    *expected = initial;
+    return 0;
+#else
+    return _Py_atomic_compare_exchange_ssize(obj, expected, desired);
+#endif
+}
+
+static inline int
+_Py_atomic_compare_exchange_ssize_acq_rel(Py_ssize_t *obj, Py_ssize_t *expected,
+                                          Py_ssize_t desired)
+{
+#if defined(_M_ARM64)
+    _Py_atomic_ASSERT_ARG_TYPE(__int64);
+    Py_ssize_t initial = (Py_ssize_t)_InterlockedCompareExchange64_rel(
+        (volatile __int64 *)obj, (__int64)desired, (__int64)*expected);
+    if (initial == *expected) {
+        // The release CAS and acquire fence provide acq-rel ordering on success.
+        __dmb(_ARM64_BARRIER_ISHLD);
+        return 1;
+    }
+    *expected = initial;
+    return 0;
+#else
+    return _Py_atomic_compare_exchange_ssize(obj, expected, desired);
+#endif
+}
 
 // --- _Py_atomic_exchange ---------------------------------------------------
 

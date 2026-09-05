@@ -111,6 +111,14 @@ _Py_atomic_add_ssize(Py_ssize_t *obj, Py_ssize_t value)
     return atomic_fetch_add((_Atomic(Py_ssize_t)*)obj, value);
 }
 
+static inline Py_ssize_t
+_Py_atomic_add_ssize_relaxed(Py_ssize_t *obj, Py_ssize_t value)
+{
+    _Py_USING_STD;
+    return atomic_fetch_add_explicit((_Atomic(Py_ssize_t)*)obj, value,
+                                     memory_order_relaxed);
+}
+
 
 // --- _Py_atomic_compare_exchange -------------------------------------------
 
@@ -216,6 +224,26 @@ _Py_atomic_compare_exchange_ssize(Py_ssize_t *obj, Py_ssize_t *expected, Py_ssiz
     _Py_USING_STD;
     return atomic_compare_exchange_strong((_Atomic(Py_ssize_t)*)obj,
                                           expected, desired);
+}
+
+static inline int
+_Py_atomic_compare_exchange_ssize_relaxed(Py_ssize_t *obj, Py_ssize_t *expected,
+                                          Py_ssize_t desired)
+{
+    _Py_USING_STD;
+    return atomic_compare_exchange_strong_explicit(
+        (_Atomic(Py_ssize_t)*)obj, expected, desired,
+        memory_order_relaxed, memory_order_relaxed);
+}
+
+static inline int
+_Py_atomic_compare_exchange_ssize_acq_rel(Py_ssize_t *obj, Py_ssize_t *expected,
+                                          Py_ssize_t desired)
+{
+    _Py_USING_STD;
+    return atomic_compare_exchange_strong_explicit(
+        (_Atomic(Py_ssize_t)*)obj, expected, desired,
+        memory_order_acq_rel, memory_order_relaxed);
 }
 
 static inline int
