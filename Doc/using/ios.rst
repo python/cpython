@@ -142,6 +142,13 @@ should ensure these stub binaries are on your path.
 Installing Python on iOS
 ========================
 
+The official iOS release artefact is a framework build, distributed as an
+``XCFramework``; this is the configuration described in the rest of this
+document, and the only one that supports binary extension modules. Static
+builds, where ``libpython`` and every extension module are linked directly into
+the app binary, are also possible, with limitations; see
+:source:`Platforms/Apple/iOS/README.md` for details.
+
 Tools for building iOS apps
 ---------------------------
 
