@@ -551,6 +551,7 @@ codegen_unwind_fblock(compiler *c, location *ploc,
         case COMPILE_FBLOCK_EXCEPTION_HANDLER:
         case COMPILE_FBLOCK_EXCEPTION_GROUP_HANDLER:
         case COMPILE_FBLOCK_ASYNC_COMPREHENSION_GENERATOR:
+        case COMPILE_FBLOCK_INLINED_COMPREHENSION:
         case COMPILE_FBLOCK_STOP_ITERATION:
             return SUCCESS;
 
@@ -4976,8 +4977,11 @@ codegen_push_inlined_comprehension_locals(compiler *c, location loc,
         NEW_JUMP_TARGET_LABEL(c, cleanup);
         state->cleanup = cleanup;
 
-        // no need to push an fblock for this "virtual" try/finally; there can't
-        // be return/continue/break inside a comprehension
+        // Count against CO_MAXBLOCKS: SETUP_FINALLY consumes an except-stack
+        // slot even though return/continue/break cannot appear here.
+        RETURN_IF_ERROR(_PyCompile_PushFBlock(
+            c, loc, COMPILE_FBLOCK_INLINED_COMPREHENSION,
+            cleanup, NO_LABEL, NULL));
         ADDOP_JUMP(c, loc, SETUP_FINALLY, cleanup);
     }
     return SUCCESS;
@@ -5023,6 +5027,8 @@ codegen_pop_inlined_comprehension_locals(compiler *c, location loc,
 {
     if (state->pushed_locals) {
         ADDOP(c, NO_LOCATION, POP_BLOCK);
+        _PyCompile_PopFBlock(c, COMPILE_FBLOCK_INLINED_COMPREHENSION,
+                             state->cleanup);
 
         NEW_JUMP_TARGET_LABEL(c, end);
         ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, end);
