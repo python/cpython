@@ -255,6 +255,14 @@ class UstarReadTest(ReadTest, unittest.TestCase):
         self.add_dir_and_getmember('bar')
         self.add_dir_and_getmember('a'*101)
 
+    def test_extract_name_with_trailing_slash(self):
+        with tarfile.open(tmpname, 'w') as tar:
+            tar.addfile(tarfile.TarInfo('./mydir/'))
+        with tarfile.open(tmpname) as tar:
+            names = tar.getnames()
+            self.assertEqual(names, ['./mydir/'])
+            tar.extract(names[0], TEMPDIR, filter='fully_trusted')
+
     @unittest.skipUnless(hasattr(os, "getuid") and hasattr(os, "getgid"),
                          "Missing getuid or getgid implementation")
     def add_dir_and_getmember(self, name):
