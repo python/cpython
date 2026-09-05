@@ -1519,14 +1519,14 @@ class TracebackException:
                 except SyntaxError:
                     continue
 
-                # Keep token.line but handle offsets correctly
-                self.text = token.line
-                self.offset = token.start[1] + 1
-                self.end_offset = token.end[1] + 1
-                self.lineno = start[0]
-                self.end_lineno = end[0]
-                self.msg = f"invalid syntax. Did you mean '{suggestion}'?"
-                return
+                return (
+                    token.line,
+                    token.start[1] + 1,
+                    token.end[1] + 1,
+                    start[0],
+                    end[0],
+                    f"invalid syntax. Did you mean '{suggestion}'?",
+                )
 
 
     def _format_syntax_error(self, stype, **kwargs):
@@ -1555,31 +1555,38 @@ class TracebackException:
             # text  = "   foo\n"
             # rtext = "   foo"
             # ltext =    "foo"
+            typo = None
             with suppress(Exception):
-                self._find_keyword_typos()
-            text = self.text
+                typo = self._find_keyword_typos()
+            if typo is not None:
+                text, offset, end_offset, lineno, end_lineno, msg = typo
+            else:
+                offset = self.offset
+                end_offset = self.end_offset
+                lineno = self.lineno
+                end_lineno = self.end_lineno
+                msg = self.msg
             rtext = text.rstrip('\n')
             ltext = rtext.lstrip(' \n\f')
             spaces = len(rtext) - len(ltext)
-            if self.offset is None:
+            if offset is None:
                 yield '    {}\n'.format(ltext)
-            elif isinstance(self.offset, int):
-                offset = self.offset
-                if self.lineno == self.end_lineno:
+            elif isinstance(offset, int):
+                if lineno == end_lineno:
                     end_offset = (
-                        self.end_offset
+                        end_offset
                         if (
-                            isinstance(self.end_offset, int)
-                            and self.end_offset != 0
+                            isinstance(end_offset, int)
+                            and end_offset != 0
                         )
                         else offset
                     )
                 else:
                     end_offset = len(rtext) + 1
 
-                if self.text and offset > len(self.text):
+                if text and offset > len(text):
                     offset = len(rtext) + 1
-                if self.text and end_offset > len(self.text):
+                if text and end_offset > len(text):
                     end_offset = len(rtext) + 1
                 if offset >= end_offset or end_offset < 0:
                     end_offset = offset + 1
@@ -1611,7 +1618,9 @@ class TracebackException:
                     )
                 else:
                     yield '    {}\n'.format(ltext)
-        msg = self.msg or "<no detail available>"
+        if not isinstance(text, str):
+            msg = self.msg
+        msg = msg or "<no detail available>"
         yield "{}{}{}: {}{}{}{}\n".format(
             theme.type,
             stype,
