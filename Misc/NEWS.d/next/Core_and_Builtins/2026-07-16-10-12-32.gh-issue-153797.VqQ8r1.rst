@@ -1,0 +1,2 @@
+Fix a crash that could occur after an out-of-memory error when re-importing
+an extension module.
