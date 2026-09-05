@@ -21,8 +21,12 @@ PyAPI_FUNC(int) _PyTok_CursorSetOffset(_PyTok_Cursor *, _PyTok_Off);
 static inline void
 _PyTok_CursorInit(_PyTok_Cursor *cursor, const _PyTok_SourceText *source)
 {
+    _PyTok_Off base = source != NULL ? source->base_offset : 0;
     *cursor = (_PyTok_Cursor){
         .source = source,
+        .pos = base,
+        .line_start = base,
+        .line_end = base,
     };
 }
 
@@ -35,14 +39,16 @@ _PyTok_CursorAdvance(_PyTok_Cursor *cursor)
     assert(cursor->source != NULL);
     assert(cursor->pos >= cursor->line_start);
     assert(cursor->pos <= cursor->line_end);
-    assert(cursor->line_end <= cursor->source->len);
+    assert(cursor->line_start >= cursor->source->base_offset);
+    assert(cursor->line_end - cursor->source->base_offset <= cursor->source->len);
     if (cursor->pos >= cursor->line_end) {
         return EOF;
     }
     if (cursor->pos - cursor->line_start >= INT_MAX) {
         return EOF;
     }
-    return Py_CHARMASK(cursor->source->bytes[cursor->pos++]);
+    return Py_CHARMASK(cursor->source->bytes[
+        cursor->pos++ - cursor->source->base_offset]);
 }
 
 /* Return the byte at a nonnegative distance within the current line, or EOF
@@ -53,13 +59,15 @@ _PyTok_CursorPeek(const _PyTok_Cursor *cursor, int distance)
     assert(cursor->source != NULL);
     assert(cursor->pos >= cursor->line_start);
     assert(cursor->pos <= cursor->line_end);
-    assert(cursor->line_end <= cursor->source->len);
+    assert(cursor->line_start >= cursor->source->base_offset);
+    assert(cursor->line_end - cursor->source->base_offset <= cursor->source->len);
     assert(distance >= 0);
     if (distance < 0 ||
             distance >= cursor->line_end - cursor->pos) {
         return EOF;
     }
-    return Py_CHARMASK(cursor->source->bytes[cursor->pos + distance]);
+    return Py_CHARMASK(cursor->source->bytes[
+        cursor->pos - cursor->source->base_offset + distance]);
 }
 
 #endif
