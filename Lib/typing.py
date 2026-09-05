@@ -1093,6 +1093,33 @@ def _typevar_subst(self, arg):
     return arg
 
 
+def _typeparam_default(tp):
+    """Return the default value of a type parameter.
+
+    If the default refers to a name that is not yet defined, return the
+    corresponding forward reference instead of raising NameError.
+    """
+    try:
+        return tp.__default__
+    except NameError:
+        return annotationlib.call_evaluate_function(
+            tp.evaluate_default, annotationlib.Format.FORWARDREF)
+
+
+def _typevar_prepare_subst(self, alias, args):
+    params = alias.__parameters__
+    i = params.index(self)
+    alen = len(args)
+    if i < alen:
+        # We already have a value for this TypeVar
+        return args
+    if i == alen and self.has_default():
+        # If the TypeVar has a default, use it.
+        return (*args, _typeparam_default(self))
+    raise TypeError(f"Too few arguments for {alias};"
+                    f" actual {alen}, expected at least {i + 1}")
+
+
 def _typevartuple_prepare_subst(self, alias, args):
     params = alias.__parameters__
     typevartuple_index = params.index(self)
@@ -1121,7 +1148,7 @@ def _typevartuple_prepare_subst(self, alias, args):
         raise TypeError(f"Too few arguments for {alias};"
                         f" actual {alen}, expected at least {plen-1}")
     if left == alen - right and self.has_default():
-        replacement = _unpack_args(self.__default__)
+        replacement = _unpack_args(_typeparam_default(self))
     else:
         replacement = args[left: alen - right]
 
@@ -1147,7 +1174,7 @@ def _paramspec_prepare_subst(self, alias, args):
     params = alias.__parameters__
     i = params.index(self)
     if i == len(args) and self.has_default():
-        args = (*args, self.__default__)
+        args = (*args, _typeparam_default(self))
     if i >= len(args):
         raise TypeError(f"Too few arguments for {alias}")
     # Special case where Z[[int, str, bool]] == Z[int, str, bool] in PEP 612.
