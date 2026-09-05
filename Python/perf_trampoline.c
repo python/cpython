@@ -274,7 +274,7 @@ perf_map_init_state(void)
 {
     PyUnstable_PerfMapState_Init();
     trampoline_api.code_padding = 0;
-    trampoline_api.code_alignment = 32;
+    trampoline_api.code_alignment = 4;
     perf_trampoline_type = PERF_TRAMPOLINE_TYPE_MAP;
     return NULL;
 }
