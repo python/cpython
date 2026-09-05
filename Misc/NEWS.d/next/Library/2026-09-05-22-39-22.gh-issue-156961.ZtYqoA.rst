@@ -1,0 +1,3 @@
+Fix :func:`tkinter.font.nametofont` and the :class:`tkinter.font.Font`
+constructor for a font name or description returned by Tk as a Tcl object,
+for example by :meth:`ttk.Style.lookup() <tkinter.ttk.Style.lookup>`.
