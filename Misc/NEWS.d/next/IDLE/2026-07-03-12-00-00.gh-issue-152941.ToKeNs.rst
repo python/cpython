@@ -1,0 +1,3 @@
+Add a Token Browser to IDLE, opened from the new Browse menu.  It lists the
+Python tokens of the editor content, the Shell input, or the selection, with
+the rows colored like the code they come from.
