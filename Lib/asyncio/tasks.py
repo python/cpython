@@ -480,7 +480,7 @@ async def wait_for(fut, timeout):
         try:
             return fut.result()
         except exceptions.CancelledError as exc:
-            raise TimeoutError from exc
+            raise TimeoutError('timed out') from exc
 
     async with timeouts.timeout(timeout):
         return await fut
@@ -617,7 +617,7 @@ class _AsCompletedIterator:
         f = await self._done.get()
         if f is None:
             # Dummy value from _handle_timeout().
-            raise exceptions.TimeoutError
+            raise exceptions.TimeoutError('timed out')
         return f.result() if resolve else f
 
 
