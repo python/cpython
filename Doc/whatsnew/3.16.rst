@@ -979,7 +979,12 @@ C API changes
 New features
 ------------
 
-* TODO
+* :c:func:`PyUnicode_FromFormat` now supports the escaping mode for
+  the ``c``, ``s``, ``S``, ``U`` and ``V`` conversions:
+  with the ``#`` flag, special and non-printable characters in the output
+  are escaped,
+  and with the additional ``+`` flag -- also all non-ASCII characters.
+  (Contributed by Serhiy Storchaka in :gh:`154668`.)
 
 Porting to Python 3.16
 ----------------------
