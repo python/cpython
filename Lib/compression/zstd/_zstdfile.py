@@ -54,6 +54,7 @@ class ZstdFile(_streams.BaseStream):
         self._close_fp = False
         self._mode = _MODE_CLOSED
         self._buffer = None
+        self._write_started = False
 
         if not isinstance(mode, str):
             raise ValueError('mode must be a str')
@@ -68,6 +69,9 @@ class ZstdFile(_streams.BaseStream):
             if level is not None and not isinstance(level, int):
                 raise TypeError('level must be int or None')
             self._mode = _MODE_WRITE
+            # Do not add an empty frame when closing an existing archive in
+            # append mode without writing anything.
+            self._write_started = mode == 'a'
             self._compressor = ZstdCompressor(level=level, options=options,
                                               zstd_dict=zstd_dict)
             self._pos = 0
@@ -131,6 +135,7 @@ class ZstdFile(_streams.BaseStream):
         length = _nbytes(data)
 
         compressed = self._compressor.compress(data)
+        self._write_started = True
         self._fp.write(compressed)
         self._pos += length
         return length
@@ -153,10 +158,11 @@ class ZstdFile(_streams.BaseStream):
             raise ValueError('Invalid mode argument, expected either '
                              'ZstdFile.FLUSH_FRAME or '
                              'ZstdFile.FLUSH_BLOCK')
-        if self._compressor.last_mode == mode:
+        if self._compressor.last_mode == mode and self._write_started:
             return
         # Flush zstd block/frame, and write.
         data = self._compressor.flush(mode)
+        self._write_started = True
         self._fp.write(data)
         if hasattr(self._fp, 'flush'):
             self._fp.flush()
