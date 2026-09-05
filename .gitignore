@@ -5,6 +5,7 @@
 *.cover
 *.iml
 *.o
+*.o.tmp
 *.lto
 *.a
 *.so
@@ -45,10 +46,11 @@ gmon.out
 .pytest_cache/
 .ruff_cache/
 .DS_Store
+.pixi/
 
 *.exe
 
-# Ignore core dumps... but not Tools/msi/core/ or the like.
+# Ignore core dumps... but not .../core/ subdirectories
 core
 !core/
 
@@ -122,10 +124,14 @@ PCbuild/*-pgo
 PCbuild/*.VC.db
 PCbuild/*.VC.opendb
 PCbuild/amd64/
+PCbuild/amd64t/
 PCbuild/arm32/
+PCbuild/arm32t/
 PCbuild/arm64/
+PCbuild/arm64t/
 PCbuild/obj/
 PCbuild/win32/
+PCbuild/win32t/
 Tools/unicode/data/
 /autom4te.cache
 /build/
@@ -136,8 +142,11 @@ Tools/unicode/data/
 /config.status
 /config.status.lineno
 /.ccache
-/cross-build/
+/cross-build*/
+/dist/
 /jit_stencils*.h
+/jit_unwind_info*.h
+.jit-stamp
 /platform
 /profile-clean-stamp
 /profile-run-stamp
@@ -154,7 +163,6 @@ Tools/unicode/data/
 /coverage/
 /externals/
 /htmlcov/
-Tools/msi/obj
 Tools/ssl/amd64
 Tools/ssl/win32
 Tools/freeze/test/outdir
@@ -170,8 +178,12 @@ Python/frozen_modules/MANIFEST
 /python
 !/Python/
 
-# People's custom https://docs.anthropic.com/en/docs/claude-code/memory configs.
-/.claude/
+# Local AI agent scratch state (per-PR and per-branch notebooks, sandbox
+# experiments) and personal agent overrides, none of which are committed.
+/.claude/pr-*
+/.claude/branch-*
+/.claude/sandbox/
+AGENTS.local.md
 CLAUDE.local.md
 
 #### main branch only stuff below this line, things to backport go above. ####

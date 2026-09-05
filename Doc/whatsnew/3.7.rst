@@ -571,7 +571,7 @@ decimal operations to work with the correct context in asynchronous code.
 dataclasses
 -----------
 
-The new :func:`~dataclasses.dataclass` decorator provides a way to declare
+The new :deco:`~dataclasses.dataclass` decorator provides a way to declare
 *data classes*.  A data class describes its attributes using class variable
 annotations.  Its constructor and other magic methods, such as
 :meth:`~object.__repr__`, :meth:`~object.__eq__`, and
@@ -604,7 +604,7 @@ new ABC for access to, opening, and reading *resources* inside packages.
 Resources are roughly similar to files inside packages, but they needn't
 be actual files on the physical file system.  Module loaders can provide a
 :meth:`!get_resource_reader` function which returns
-a :class:`importlib.abc.ResourceReader` instance to support this
+a :class:`!importlib.abc.ResourceReader` instance to support this
 new API.  Built-in file path loaders and zip file loaders both support this.
 
 Contributed by Barry Warsaw and Brett Cannon in :issue:`32248`.
@@ -830,7 +830,7 @@ The new :func:`~contextlib.nullcontext` is a simpler and faster no-op
 context manager than :class:`~contextlib.ExitStack`.
 (Contributed by Jesse-Bakker in :issue:`10049`.)
 
-The new :func:`~contextlib.asynccontextmanager`,
+The new :deco:`~contextlib.asynccontextmanager`,
 :class:`~contextlib.AbstractAsyncContextManager`, and
 :class:`~contextlib.AsyncExitStack` have been added to
 complement their synchronous counterparts.  (Contributed
@@ -921,7 +921,7 @@ return :const:`False` instead and are deprecated.
 functools
 ---------
 
-:func:`functools.singledispatch` now supports registering implementations
+:deco:`functools.singledispatch` now supports registering implementations
 using type annotations.
 (Contributed by Łukasz Langa in :issue:`32227`.)
 
@@ -1043,7 +1043,7 @@ window are shown and hidden in the Options menu.
 importlib
 ---------
 
-The :class:`importlib.abc.ResourceReader` ABC was introduced to
+The :class:`!importlib.abc.ResourceReader` ABC was introduced to
 support the loading of resources from packages.  See also
 :ref:`whatsnew37_importlib_resources`.
 (Contributed by Barry Warsaw, Brett Cannon in :issue:`32248`.)
@@ -2032,7 +2032,7 @@ both deprecated in Python 3.4 now emit :exc:`DeprecationWarning`.
 (Contributed by Matthias Bussonnier in :issue:`29576`.)
 
 The :class:`importlib.abc.ResourceLoader` ABC has been deprecated in
-favour of :class:`importlib.abc.ResourceReader`.
+favour of :class:`!importlib.abc.ResourceReader`.
 
 
 locale

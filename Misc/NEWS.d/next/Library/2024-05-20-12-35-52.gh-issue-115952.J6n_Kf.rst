@@ -1,7 +1,0 @@
-Fix a potential memory denial of service in the :mod:`pickle` module.
-When reading a pickled data received from untrusted source, it could cause
-an arbitrary amount of memory to be allocated, even if the code that is
-allowed to execute is restricted by overriding the
-:meth:`~pickle.Unpickler.find_class` method.
-This could have led to symptoms including a :exc:`MemoryError`, swapping, out
-of memory (OOM) killed processes or containers, or even system crashes.

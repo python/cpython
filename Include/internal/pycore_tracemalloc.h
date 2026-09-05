@@ -21,7 +21,10 @@ struct _PyTraceMalloc_Config {
     } initialized;
 
     /* Is tracemalloc tracing memory allocations?
-       Variable protected by the TABLES_LOCK(). */
+       Variable protected by the TABLES_LOCK() and stored atomically.
+       Atomic store is used so that it can read without locking for the
+       general case of checking if tracemalloc is enabled.
+       */
     int tracing;
 
     /* limit of the number of frames in a traceback, 1 by default.
@@ -41,9 +44,10 @@ struct
 __attribute__((packed))
 #endif
 tracemalloc_frame {
-    /* filename cannot be NULL: "<unknown>" is used if the Python frame
-       filename is NULL */
-    PyObject *filename;
+    /* Interned NUL terminated UTF-8 (surrogatepass) string.
+       Cannot be NULL: "<unknown>" is used if the Python frame filename
+       cannot be captured. */
+    const char *filename;
     unsigned int lineno;
 };
 
@@ -82,7 +86,7 @@ struct _tracemalloc_runtime_state {
        Protected by TABLES_LOCK(). */
     size_t peak_traced_memory;
     /* Hash table used as a set to intern filenames:
-       PyObject* => PyObject*.
+       char* (NUL terminated UTF-8 string) => NULL.
        Protected by the TABLES_LOCK(). */
     _Py_hashtable_t *filenames;
     /* Buffer to store a new traceback in traceback_new().

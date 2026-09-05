@@ -1,1 +1,0 @@
-Protect against specialization failures in the tracing JIT compiler for performance reasons.

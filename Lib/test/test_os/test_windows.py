@@ -27,7 +27,7 @@ class Win32KillTests(unittest.TestCase):
         # subprocess to the parent that the interpreter is ready. When it
         # becomes ready, send *sig* via os.kill to the subprocess and check
         # that the return code is equal to *sig*.
-        import ctypes
+        import ctypes.util
         from ctypes import wintypes
         import msvcrt
 
@@ -35,14 +35,17 @@ class Win32KillTests(unittest.TestCase):
         # process has exited, use PeekNamedPipe to see what's inside stdout
         # without waiting. This is done so we can tell that the interpreter
         # is started and running at a point where it could handle a signal.
-        PeekNamedPipe = ctypes.windll.kernel32.PeekNamedPipe
-        PeekNamedPipe.restype = wintypes.BOOL
-        PeekNamedPipe.argtypes = (wintypes.HANDLE, # Pipe handle
-                                  ctypes.POINTER(ctypes.c_char), # stdout buf
-                                  wintypes.DWORD, # Buffer size
-                                  ctypes.POINTER(wintypes.DWORD), # bytes read
-                                  ctypes.POINTER(wintypes.DWORD), # bytes avail
-                                  ctypes.POINTER(wintypes.DWORD)) # bytes left
+        @ctypes.util.wrap_dll_function(ctypes.windll.kernel32)
+        def PeekNamedPipe(
+            hNamedPipe: wintypes.HANDLE,
+            lpBuffer: ctypes.POINTER(ctypes.c_char),
+            nBufferSize: wintypes.DWORD,
+            lpBytesRead: ctypes.POINTER(wintypes.DWORD),
+            lpTotalBytesAvail: ctypes.POINTER(wintypes.DWORD),
+            lpBytesLeftThisMessage: ctypes.POINTER(wintypes.DWORD),
+        ) -> wintypes.BOOL:
+            pass
+
         msg = "running"
         proc = subprocess.Popen([sys.executable, "-c",
                                  "import sys;"
@@ -126,10 +129,11 @@ class Win32KillTests(unittest.TestCase):
 
         # Make a NULL value by creating a pointer with no argument.
         NULL = ctypes.POINTER(ctypes.c_int)()
-        SetConsoleCtrlHandler = ctypes.windll.kernel32.SetConsoleCtrlHandler
-        SetConsoleCtrlHandler.argtypes = (ctypes.POINTER(ctypes.c_int),
-                                          wintypes.BOOL)
-        SetConsoleCtrlHandler.restype = wintypes.BOOL
+
+        @ctypes.util.wrap_dll_function(ctypes.windll.kernel32)
+        def SetConsoleCtrlHandler(HandlerRoutine: ctypes.POINTER(ctypes.c_int),
+                                  Add: wintypes.BOOL) -> wintypes.BOOL:
+            pass
 
         # Calling this with NULL and FALSE causes the calling process to
         # handle Ctrl+C, rather than ignore it. This property is inherited
@@ -458,17 +462,20 @@ class Win32NtTests(unittest.TestCase):
         import ctypes.wintypes  # noqa: F811
 
         kernel = ctypes.WinDLL('Kernel32.dll', use_last_error=True)
-        kernel.GetCurrentProcess.restype = ctypes.wintypes.HANDLE
+        @ctypes.util.wrap_dll_function(kernel)
+        def GetCurrentProcess() -> ctypes.wintypes.HANDLE:
+            pass
 
-        kernel.GetProcessHandleCount.restype = ctypes.wintypes.BOOL
-        kernel.GetProcessHandleCount.argtypes = (ctypes.wintypes.HANDLE,
-                                                 ctypes.wintypes.LPDWORD)
+        @ctypes.util.wrap_dll_function(kernel)
+        def GetProcessHandleCount(khProcess: ctypes.wintypes.HANDLE,
+                                  pdwHandleCount: ctypes.wintypes.LPDWORD) -> ctypes.wintypes.BOOL:
+            pass
 
         # This is a pseudo-handle that doesn't need to be closed
-        hproc = kernel.GetCurrentProcess()
+        hproc = GetCurrentProcess()
 
         handle_count = ctypes.wintypes.DWORD()
-        ok = kernel.GetProcessHandleCount(hproc, ctypes.byref(handle_count))
+        ok = GetProcessHandleCount(hproc, ctypes.byref(handle_count))
         self.assertEqual(1, ok)
 
         before_count = handle_count.value
@@ -599,6 +606,82 @@ class Win32NtTests(unittest.TestCase):
 
         # st_atime should be the same or later
         self.assertGreaterEqual(stat1.st_atime, stat2.st_atime)
+
+
+class Win32DeviceEncodingTests(unittest.TestCase):
+    # gh-87587: any console file descriptor is supported, not only 0, 1 and 2,
+    # and other character devices are not consoles.
+
+    @staticmethod
+    def expected_encoding(cp):
+        return 'utf-8' if cp == 65001 else 'cp%d' % cp
+
+    def test_console(self):
+        import ctypes
+        kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
+        try:
+            fin = open('CONIN$')
+        except OSError:
+            self.skipTest('no console')
+        with fin:
+            self.assertEqual(os.device_encoding(fin.fileno()),
+                             self.expected_encoding(kernel32.GetConsoleCP()))
+        with open('CONOUT$', 'w') as fout:
+            self.assertEqual(
+                os.device_encoding(fout.fileno()),
+                self.expected_encoding(kernel32.GetConsoleOutputCP()))
+
+    def test_not_a_console(self):
+        with open('NUL', 'w') as f:
+            self.assertTrue(os.isatty(f.fileno()))
+            self.assertIsNone(os.device_encoding(f.fileno()))
+            # Not a console even if it is a standard file descriptor.
+            saved = os.dup(1)
+            try:
+                os.dup2(f.fileno(), 1)
+                encoding = os.device_encoding(1)
+            finally:
+                os.dup2(saved, 1)
+                os.close(saved)
+            self.assertIsNone(encoding)
+
+
+class Win32StatExecutableTests(unittest.TestCase):
+    # gh-84419: Windows strips trailing dots and spaces from the last
+    # component of the path, so they should be ignored when guessing
+    # the execute permissions from the file extension.
+
+    SUFFIXES = ['', ' ', '   ', '.', '..', ' . .']
+
+    def check(self, ext, mask):
+        filename = os_helper.TESTFN + ext
+        create_file(filename)
+        try:
+            for suffix in self.SUFFIXES:
+                with self.subTest(suffix=suffix):
+                    mode = os.stat(filename + suffix).st_mode
+                    self.assertEqual(mode & 0o111, mask)
+        finally:
+            os_helper.unlink(filename)
+
+    def test_executable_extension(self):
+        for ext in '.exe', '.bat', '.cmd', '.com', '.EXE', '.Bat':
+            with self.subTest(ext=ext):
+                self.check(ext, 0o111)
+
+    def test_not_executable_extension(self):
+        for ext in '.txt', '.py', '.exe.txt', '':
+            with self.subTest(ext=ext):
+                self.check(ext, 0)
+
+    def test_extended_path(self):
+        # The \\?\ prefix disables normalization: trailing spaces and dots
+        # are part of the file name.
+        filename = os.path.abspath(os_helper.TESTFN + '.exe')
+        create_file(filename)
+        self.addCleanup(os_helper.unlink, filename)
+        self.assertEqual(os.stat('\\\\?\\' + filename).st_mode & 0o111, 0o111)
+        self.assertRaises(OSError, os.stat, '\\\\?\\' + filename + ' ')
 
 
 if __name__ == "__main__":

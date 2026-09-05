@@ -1,3 +1,0 @@
-Honor :option:`--with-platlibdir` in the pure-Python standard library
-installation path, if ``PLATLIBDIR`` doesn't match the value used in
-``LIBDIR``.

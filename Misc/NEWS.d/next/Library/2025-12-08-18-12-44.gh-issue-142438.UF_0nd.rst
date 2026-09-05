@@ -1,1 +1,0 @@
-Fixed a possible leaked GIL in _PySSL_keylog_callback.

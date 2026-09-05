@@ -217,6 +217,25 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
         # Package without __main__.py
         self.expect_import_error("multiprocessing")
 
+    def test_invalid_names_set_name_attribute(self):
+        cases = [
+            # (mod_name, expected_name)  -- comment indicates raise site
+            ("nonexistent_runpy_test_module",
+                "nonexistent_runpy_test_module"),    # spec is None
+            ("sys.imp.eric", "sys.imp.eric"),        # find_spec error
+            (".relative_name", ".relative_name"),    # relative name rejected
+            ("sys", "sys"),                          # builtin: no code object
+            ("multiprocessing", "multiprocessing"),  # package without __main__
+        ]
+        for mod_name, expected_name in cases:
+            with self.subTest(mod_name=mod_name):
+                try:
+                    run_module(mod_name)
+                except ImportError as exc:
+                    self.assertEqual(exc.name, expected_name)
+                else:
+                    self.fail("Expected ImportError for %r" % mod_name)
+
     def test_library_module(self):
         self.assertEqual(run_module("runpy")["__name__"], "runpy")
 
@@ -320,14 +339,16 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
             self.check_code_execution(create_ns, expected_ns)
             importlib.invalidate_caches()
             __import__(mod_name)
-            os.remove(mod_fname)
             if not sys.dont_write_bytecode:
-                make_legacy_pyc(mod_fname)
+                make_legacy_pyc(mod_fname, allow_compile=True)
                 unload(mod_name)  # In case loader caches paths
+                os.remove(mod_fname)
                 importlib.invalidate_caches()
                 if verbose > 1: print("Running from compiled:", mod_name)
                 self._fix_ns_for_legacy_pyc(expected_ns, alter_sys)
                 self.check_code_execution(create_ns, expected_ns)
+            else:
+                os.remove(mod_fname)
         finally:
             self._del_pkg(pkg_dir)
         if verbose > 1: print("Module executed successfully")
@@ -360,14 +381,16 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
             self.check_code_execution(create_ns, expected_ns)
             importlib.invalidate_caches()
             __import__(mod_name)
-            os.remove(mod_fname)
             if not sys.dont_write_bytecode:
-                make_legacy_pyc(mod_fname)
+                make_legacy_pyc(mod_fname, allow_compile=True)
                 unload(mod_name)  # In case loader caches paths
+                os.remove(mod_fname)
                 if verbose > 1: print("Running from compiled:", pkg_name)
                 importlib.invalidate_caches()
                 self._fix_ns_for_legacy_pyc(expected_ns, alter_sys)
                 self.check_code_execution(create_ns, expected_ns)
+            else:
+                os.remove(mod_fname)
         finally:
             self._del_pkg(pkg_dir)
         if verbose > 1: print("Package executed successfully")
@@ -420,7 +443,7 @@ from ..uncle.cousin import nephew
             importlib.invalidate_caches()
             __import__(mod_name)
             os.remove(mod_fname)
-            if not sys.dont_write_bytecode:
+            if not sys.dont_write_bytecode and sys.implementation.cache_tag:
                 make_legacy_pyc(mod_fname)
                 unload(mod_name)  # In case the loader caches paths
                 if verbose > 1: print("Running from compiled:", mod_name)
@@ -676,6 +699,8 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             self._check_script(script_name, "<run_path>", script_name,
                                script_name, expect_spec=False)
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag')
     def test_script_compiled(self):
         with temp_dir() as script_dir:
             mod_name = 'script'
@@ -696,12 +721,10 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
         with temp_dir() as script_dir:
             mod_name = '__main__'
             script_name = self._make_test_script(script_dir, mod_name)
-            compiled_name = py_compile.compile(script_name, doraise=True)
+            legacy_pyc = make_legacy_pyc(script_name, allow_compile=True)
             os.remove(script_name)
-            if not sys.dont_write_bytecode:
-                legacy_pyc = make_legacy_pyc(script_name)
-                self._check_script(script_dir, "<run_path>", legacy_pyc,
-                                   script_dir, mod_name=mod_name)
+            self._check_script(script_dir, "<run_path>", legacy_pyc,
+                               script_dir, mod_name=mod_name)
 
     def test_directory_error(self):
         with temp_dir() as script_dir:
@@ -709,6 +732,17 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             script_name = self._make_test_script(script_dir, mod_name)
             msg = "can't find '__main__' module in %r" % script_dir
             self._check_import_error(script_dir, msg)
+
+    def test_directory_error_sets_name_attribute(self):
+        with temp_dir() as script_dir:
+            self._make_test_script(script_dir, 'not_main')
+            try:
+                run_path(script_dir)
+            except ImportError as exc:
+                self.assertEqual(exc.name, '__main__')
+            else:
+                self.fail("Expected ImportError for directory without "
+                          "__main__.py")
 
     def test_zipfile(self):
         with temp_dir() as script_dir:
@@ -722,7 +756,8 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
         with temp_dir() as script_dir:
             mod_name = '__main__'
             script_name = self._make_test_script(script_dir, mod_name)
-            compiled_name = py_compile.compile(script_name, doraise=True)
+            compiled_name = script_name + 'c'
+            py_compile.compile(script_name, compiled_name, doraise=True)
             zip_name, fname = make_zip_script(script_dir, 'test_zip',
                                               compiled_name)
             self._check_script(zip_name, "<run_path>", fname, zip_name,

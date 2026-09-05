@@ -2373,6 +2373,8 @@ class FileTestCase(unittest.TestCase):
                 f.read(100)
             with self.assertRaises(io.UnsupportedOperation):
                 f.seek(100)
+            with self.assertRaises(io.UnsupportedOperation):
+                next(iter(f))
         self.assertEqual(f.closed, True)
         with self.assertRaises(ValueError):
             f.readable()

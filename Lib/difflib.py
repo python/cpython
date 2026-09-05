@@ -30,10 +30,10 @@ __all__ = ['get_close_matches', 'ndiff', 'restore', 'SequenceMatcher',
            'Differ','IS_CHARACTER_JUNK', 'IS_LINE_JUNK', 'context_diff',
            'unified_diff', 'diff_bytes', 'HtmlDiff', 'Match']
 
-from _colorize import can_colorize, get_theme
 from heapq import nlargest as _nlargest
 from collections import namedtuple as _namedtuple
 from types import GenericAlias
+lazy from _colorize import can_colorize, get_theme
 
 Match = _namedtuple('Match', 'a b size')
 
@@ -638,15 +638,15 @@ class SequenceMatcher:
         # avail[x] is the number of times x appears in 'b' less the
         # number of times we've seen it in 'a' so far ... kinda
         avail = {}
-        availhas, matches = avail.__contains__, 0
+        matches = 0
         for elt in self.a:
-            if availhas(elt):
+            if elt in avail:
                 numb = avail[elt]
             else:
                 numb = fullbcount.get(elt, 0)
             avail[elt] = numb - 1
             if numb > 0:
-                matches = matches + 1
+                matches += 1
         return _calculate_ratio(matches, len(self.a) + len(self.b))
 
     def real_quick_ratio(self):
@@ -664,7 +664,7 @@ class SequenceMatcher:
     __class_getitem__ = classmethod(GenericAlias)
 
 
-def get_close_matches(word, possibilities, n=3, cutoff=0.6):
+def get_close_matches(word, possibilities, n=3, cutoff=0.6, *, autojunk=True):
     """Use SequenceMatcher to return list of the best "good enough" matches.
 
     word is a sequence for which close matches are desired (typically a
@@ -698,14 +698,16 @@ def get_close_matches(word, possibilities, n=3, cutoff=0.6):
     if not 0.0 <= cutoff <= 1.0:
         raise ValueError("cutoff must be in [0.0, 1.0]: %r" % (cutoff,))
     result = []
-    s = SequenceMatcher()
+    s = SequenceMatcher(autojunk=autojunk)
     s.set_seq2(word)
     for x in possibilities:
         s.set_seq1(x)
-        if s.real_quick_ratio() >= cutoff and \
-           s.quick_ratio() >= cutoff and \
-           s.ratio() >= cutoff:
-            result.append((s.ratio(), x))
+        if s.real_quick_ratio() < cutoff or s.quick_ratio() < cutoff:
+            continue
+
+        ratio = s.ratio()
+        if ratio >= cutoff:
+            result.append((ratio, x))
 
     # Move the best scorers to head of list
     result = _nlargest(n, result)
@@ -808,7 +810,7 @@ class Differ:
     +   5. Flat is better than nested.
     """
 
-    def __init__(self, linejunk=None, charjunk=None):
+    def __init__(self, linejunk=None, charjunk=None, *, autojunk=True):
         """
         Construct a text differencer, with optional filters.
 
@@ -826,10 +828,13 @@ class Differ:
           module-level function `IS_CHARACTER_JUNK` may be used to filter out
           whitespace characters (a blank or tab; **note**: bad idea to include
           newline in this!).  Use of IS_CHARACTER_JUNK is recommended.
+        - `autojunk`: automatic junk diff heuristic
+          (refer to :class:`SequenceMatcher` for specifics).
         """
 
         self.linejunk = linejunk
         self.charjunk = charjunk
+        self.autojunk = autojunk
 
     def compare(self, a, b):
         r"""
@@ -857,7 +862,7 @@ class Differ:
         + emu
         """
 
-        cruncher = SequenceMatcher(self.linejunk, a, b)
+        cruncher = SequenceMatcher(self.linejunk, a, b, autojunk=self.autojunk)
         for tag, alo, ahi, blo, bhi in cruncher.get_opcodes():
             if tag == 'replace':
                 g = self._fancy_replace(a, alo, ahi, b, blo, bhi)
@@ -918,7 +923,7 @@ class Differ:
         # Later, more pathological cases prompted removing recursion
         # entirely.
         cutoff = 0.74999
-        cruncher = SequenceMatcher(self.charjunk)
+        cruncher = SequenceMatcher(self.charjunk, autojunk=self.autojunk)
         crqr = cruncher.real_quick_ratio
         cqr = cruncher.quick_ratio
         cr = cruncher.ratio
@@ -940,10 +945,12 @@ class Differ:
                 cruncher.set_seq1(a[i])
                 # Ordering by cheapest to most expensive ratio is very
                 # valuable, most often getting out early.
-                if (crqr() > best_ratio
-                      and cqr() > best_ratio
-                      and cr() > best_ratio):
-                    best_i, best_j, best_ratio = i, j, cr()
+                if crqr() <= best_ratio or cqr() <= best_ratio:
+                    continue
+
+                ratio = cr()
+                if ratio > best_ratio:
+                    best_i, best_j, best_ratio = i, j, ratio
 
             if best_i is None:
                 # found nothing to synch on yet - move to next j
@@ -1095,7 +1102,7 @@ def _format_range_unified(start, stop):
     return '{},{}'.format(beginning, length)
 
 def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
-                 tofiledate='', n=3, lineterm='\n', *, color=False):
+                 tofiledate='', n=3, lineterm='\n', *, autojunk=True, color=False):
     r"""
     Compare two sequences of lines; generate the delta as a unified diff.
 
@@ -1115,6 +1122,9 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
     Set 'color' to True to enable output in color, similar to
     'git diff --color'. Even if enabled, it can be
     controlled using environment variables such as 'NO_COLOR'.
+
+    Set `autojunk` to False if you don't want automated junk heuristic.
+    See details in :class:`SequenceMatcher.
 
     The unidiff format normally has a header for filenames and modification
     times.  Any or all of these may be specified using strings for
@@ -1146,7 +1156,7 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
 
     _check_types(a, b, fromfile, tofile, fromfiledate, tofiledate, lineterm)
     started = False
-    for group in SequenceMatcher(None,a,b).get_grouped_opcodes(n):
+    for group in SequenceMatcher(None, a, b, autojunk=autojunk).get_grouped_opcodes(n):
         if not started:
             started = True
             fromdate = '\t{}'.format(fromfiledate) if fromfiledate else ''
@@ -1189,7 +1199,7 @@ def _format_range_context(start, stop):
 
 # See http://www.unix.org/single_unix_specification/
 def context_diff(a, b, fromfile='', tofile='',
-                 fromfiledate='', tofiledate='', n=3, lineterm='\n'):
+                 fromfiledate='', tofiledate='', n=3, lineterm='\n', *, autojunk=True):
     r"""
     Compare two sequences of lines; generate the delta as a context diff.
 
@@ -1211,6 +1221,10 @@ def context_diff(a, b, fromfile='', tofile='',
     strings for 'fromfile', 'tofile', 'fromfiledate', and 'tofiledate'.
     The modification times are normally expressed in the ISO 8601 format.
     If not specified, the strings default to blanks.
+
+    The kwarg `autojunk` sets up automated junk heuristic with
+    :class:`SequenceMatcher`, which is used under the hood in this function.
+    See documentation of :class:`SequenceMatcher` for details.
 
     Example:
 
@@ -1235,7 +1249,7 @@ def context_diff(a, b, fromfile='', tofile='',
     _check_types(a, b, fromfile, tofile, fromfiledate, tofiledate, lineterm)
     prefix = dict(insert='+ ', delete='- ', replace='! ', equal='  ')
     started = False
-    for group in SequenceMatcher(None,a,b).get_grouped_opcodes(n):
+    for group in SequenceMatcher(None, a, b, autojunk=autojunk).get_grouped_opcodes(n):
         if not started:
             started = True
             fromdate = '\t{}'.format(fromfiledate) if fromfiledate else ''
@@ -1317,7 +1331,7 @@ def diff_bytes(dfunc, a, b, fromfile=b'', tofile=b'',
     for line in lines:
         yield line.encode('ascii', 'surrogateescape')
 
-def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK):
+def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK, *, autojunk=True):
     r"""
     Compare `a` and `b` (lists of strings); return a `Differ`-style delta.
 
@@ -1334,6 +1348,8 @@ def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK):
       the module-level function IS_CHARACTER_JUNK, which filters out
       whitespace characters (a blank or tab; note: it's a bad idea to
       include newline in this!).
+
+    - autojunk: automatic junk heuristic - refer to :class:`SequenceMatcher` for details
 
     Tools/scripts/ndiff.py is a command-line front-end to this function.
 
@@ -1352,10 +1368,10 @@ def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK):
     + tree
     + emu
     """
-    return Differ(linejunk, charjunk).compare(a, b)
+    return Differ(linejunk, charjunk, autojunk=autojunk).compare(a, b)
 
 def _mdiff(fromlines, tolines, context=None, linejunk=None,
-           charjunk=IS_CHARACTER_JUNK):
+           charjunk=IS_CHARACTER_JUNK, *, autojunk=True):
     r"""Returns generator yielding marked up from/to side by side differences.
 
     Arguments:
@@ -1365,6 +1381,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
                if None, all from/to text lines will be generated.
     linejunk -- passed on to ndiff (see ndiff documentation)
     charjunk -- passed on to ndiff (see ndiff documentation)
+    autojunk -- passed on to ndiff (see ndiff documentation)
 
     This function returns an iterator which returns a tuple:
     (from line tuple, to line tuple, boolean flag)
@@ -1394,7 +1411,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
     change_re = re.compile(r'(\++|\-+|\^+)')
 
     # create the difference iterator to generate the differences
-    diff_lines_iterator = ndiff(fromlines,tolines,linejunk,charjunk)
+    diff_lines_iterator = ndiff(fromlines, tolines, linejunk, charjunk, autojunk=autojunk)
 
     def _make_line(lines, format_key, side, num_lines=[0,0]):
         """Returns line of text with user's change markup and line formatting.
@@ -1734,14 +1751,14 @@ class HtmlDiff(object):
     _default_prefix = 0
 
     def __init__(self,tabsize=8,wrapcolumn=None,linejunk=None,
-                 charjunk=IS_CHARACTER_JUNK):
+                 charjunk=IS_CHARACTER_JUNK, *, autojunk=True):
         """HtmlDiff instance initializer
 
         Arguments:
         tabsize -- tab stop spacing, defaults to 8.
         wrapcolumn -- column number where lines are broken and wrapped,
             defaults to None where lines are not wrapped.
-        linejunk,charjunk -- keyword arguments passed into ndiff() (used by
+        linejunk, charjunk, autojunk -- keyword arguments passed into ndiff() (used by
             HtmlDiff() to generate the side by side HTML differences).  See
             ndiff() documentation for argument default values and descriptions.
         """
@@ -1749,6 +1766,7 @@ class HtmlDiff(object):
         self._wrapcolumn = wrapcolumn
         self._linejunk = linejunk
         self._charjunk = charjunk
+        self._autojunk = autojunk
 
     def make_file(self, fromlines, tolines, fromdesc='', todesc='',
                   context=False, numlines=5, *, charset='utf-8'):
@@ -2012,6 +2030,8 @@ class HtmlDiff(object):
 
         # change tabs to spaces before it gets more difficult after we insert
         # markup
+        # it also removes trailing newlines, causing some diffs to be missed
+        # see: gh-71896
         fromlines,tolines = self._tab_newline_replace(fromlines,tolines)
 
         # create diffs iterator which generates side by side from/to data
@@ -2020,7 +2040,7 @@ class HtmlDiff(object):
         else:
             context_lines = None
         diffs = _mdiff(fromlines,tolines,context_lines,linejunk=self._linejunk,
-                      charjunk=self._charjunk)
+                       charjunk=self._charjunk, autojunk=self._autojunk)
 
         # set up iterator to wrap lines that exceed desired width
         if self._wrapcolumn:

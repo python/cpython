@@ -1,4 +1,0 @@
-Fix incorrect keyword suggestions for syntax errors in :mod:`traceback`. The
-keyword typo suggestion mechanism would incorrectly suggest replacements when
-the extracted source code was incomplete rather than containing an actual typo.
-Patch by Pablo Galindo.
