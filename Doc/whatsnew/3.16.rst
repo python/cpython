@@ -685,6 +685,16 @@ xml
   and :meth:`!Document.createEntityReference`.
   (Contributed by Jason Orendorff and Serhiy Storchaka in :gh:`44871`.)
 
+* Comments and processing instructions which occur outside of the root element
+  are no longer lost in :mod:`xml.etree.ElementTree`.
+  :class:`~xml.etree.ElementTree.ElementTree` now has the
+  :attr:`~xml.etree.ElementTree.ElementTree.children` attribute,
+  a sequence of the children of the document,
+  and :class:`~xml.etree.ElementTree.TreeBuilder` returns them
+  from the new :meth:`!document` method
+  when *insert_comments* or *insert_pis* is true.
+  (Contributed by Serhiy Storchaka in :gh:`68475`.)
+
 * Add :meth:`!GetSpecifiedAttributeCount` method
   to the :mod:`XML parser <xml.parsers.expat>` objects.
   It tells how many of the reported attributes were given in the start tag
