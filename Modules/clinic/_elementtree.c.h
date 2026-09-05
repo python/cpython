@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_SINGLETON()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_elementtree_Element_append__doc__,
@@ -56,7 +57,9 @@ _elementtree_Element_append(PyObject *self, PyTypeObject *cls, PyObject *const *
         goto exit;
     }
     subelement = args[0];
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _elementtree_Element_append_impl((ElementObject *)self, cls, subelement);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -80,7 +83,13 @@ _elementtree_Element_clear_impl(ElementObject *self);
 static PyObject *
 _elementtree_Element_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _elementtree_Element_clear_impl((ElementObject *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _elementtree_Element_clear_impl((ElementObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_elementtree_Element___copy____doc__,
@@ -97,11 +106,18 @@ _elementtree_Element___copy___impl(ElementObject *self, PyTypeObject *cls);
 static PyObject *
 _elementtree_Element___copy__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "__copy__() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return _elementtree_Element___copy___impl((ElementObject *)self, cls);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _elementtree_Element___copy___impl((ElementObject *)self, cls);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_elementtree_Element___deepcopy____doc__,
@@ -126,7 +142,9 @@ _elementtree_Element___deepcopy__(PyObject *self, PyObject *arg)
         goto exit;
     }
     memo = arg;
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _elementtree_Element___deepcopy___impl((ElementObject *)self, memo);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -149,7 +167,9 @@ _elementtree_Element___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
     PyObject *return_value = NULL;
     size_t _return_value;
 
+    Py_BEGIN_CRITICAL_SECTION(self);
     _return_value = _elementtree_Element___sizeof___impl((ElementObject *)self);
+    Py_END_CRITICAL_SECTION();
     if ((_return_value == (size_t)-1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -173,7 +193,13 @@ _elementtree_Element___getstate___impl(ElementObject *self);
 static PyObject *
 _elementtree_Element___getstate__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _elementtree_Element___getstate___impl((ElementObject *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _elementtree_Element___getstate___impl((ElementObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_elementtree_Element___setstate____doc__,
@@ -214,7 +240,9 @@ _elementtree_Element___setstate__(PyObject *self, PyTypeObject *cls, PyObject *c
         goto exit;
     }
     state = args[0];
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _elementtree_Element___setstate___impl((ElementObject *)self, cls, state);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -261,7 +289,9 @@ _elementtree_Element_extend(PyObject *self, PyTypeObject *cls, PyObject *const *
         goto exit;
     }
     elements = args[0];
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _elementtree_Element_extend_impl((ElementObject *)self, cls, elements);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -333,7 +363,9 @@ _elementtree_Element_find(PyObject *self, PyTypeObject *cls, PyObject *const *ar
     }
     namespaces = args[1];
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _elementtree_Element_find_impl((ElementObject *)self, cls, path, namespaces);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -416,7 +448,9 @@ _elementtree_Element_findtext(PyObject *self, PyTypeObject *cls, PyObject *const
     }
     namespaces = args[2];
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _elementtree_Element_findtext_impl((ElementObject *)self, cls, path, default_value, namespaces);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -488,7 +522,9 @@ _elementtree_Element_findall(PyObject *self, PyTypeObject *cls, PyObject *const 
     }
     namespaces = args[1];
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _elementtree_Element_findall_impl((ElementObject *)self, cls, path, namespaces);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -633,7 +669,9 @@ _elementtree_Element_get(PyObject *self, PyObject *const *args, Py_ssize_t nargs
     }
     default_value = args[1];
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _elementtree_Element_get_impl((ElementObject *)self, key, default_value);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -779,7 +817,9 @@ _elementtree_Element_insert(PyObject *self, PyObject *const *args, Py_ssize_t na
         goto exit;
     }
     subelement = args[1];
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _elementtree_Element_insert_impl((ElementObject *)self, index, subelement);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -802,7 +842,13 @@ _elementtree_Element_items_impl(ElementObject *self);
 static PyObject *
 _elementtree_Element_items(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _elementtree_Element_items_impl((ElementObject *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _elementtree_Element_items_impl((ElementObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_elementtree_Element_keys__doc__,
@@ -822,7 +868,13 @@ _elementtree_Element_keys_impl(ElementObject *self);
 static PyObject *
 _elementtree_Element_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _elementtree_Element_keys_impl((ElementObject *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _elementtree_Element_keys_impl((ElementObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_elementtree_Element_makeelement__doc__,
@@ -913,7 +965,9 @@ _elementtree_Element_remove(PyObject *self, PyObject *arg)
         goto exit;
     }
     subelement = arg;
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _elementtree_Element_remove_impl((ElementObject *)self, subelement);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -948,7 +1002,9 @@ _elementtree_Element_set(PyObject *self, PyObject *const *args, Py_ssize_t nargs
     }
     key = args[0];
     value = args[1];
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _elementtree_Element_set_impl((ElementObject *)self, key, value);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -1479,4 +1535,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e2e9cf288c4400f6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2ffa4a65c3586c6d input=a9049054013a1b77]*/

@@ -1,0 +1,7 @@
+Fix a crash in the free-threaded build when concurrently reading and
+mutating an :class:`xml.etree.ElementTree.Element` (for example indexing
+or iterating an element from one thread while another calls
+:meth:`~xml.etree.ElementTree.Element.clear`). The C accelerator's
+``Element`` type had no locking despite declaring free-threading support;
+it now uses critical sections consistently across its methods, slots,
+and property accessors.

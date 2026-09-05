@@ -17,6 +17,7 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_dict.h"          // _PyDict_CopyAsDict()
 #include "pycore_pyhash.h"        // _Py_HashSecret
 #include "pycore_tuple.h"         // _PyTuple_FromPair
@@ -714,6 +715,7 @@ element_dealloc(PyObject *op)
 /* -------------------------------------------------------------------- */
 
 /*[clinic input]
+@critical_section
 _elementtree.Element.append
 
     cls: defining_class
@@ -730,7 +732,7 @@ subelement), but before the end tag for this element.
 static PyObject *
 _elementtree_Element_append_impl(ElementObject *self, PyTypeObject *cls,
                                  PyObject *subelement)
-/*[clinic end generated code: output=d00923711ea317fc input=a59ebce98937a372]*/
+/*[clinic end generated code: output=d00923711ea317fc input=3795dd22fb859996]*/
 {
     elementtreestate *st = get_elementtree_state_by_cls(cls);
     if (element_add_subelement(st, self, subelement) < 0)
@@ -740,6 +742,7 @@ _elementtree_Element_append_impl(ElementObject *self, PyTypeObject *cls,
 }
 
 /*[clinic input]
+@critical_section
 _elementtree.Element.clear
 
 Reset element.
@@ -750,7 +753,7 @@ sets the text and tail attributes to None.
 
 static PyObject *
 _elementtree_Element_clear_impl(ElementObject *self)
-/*[clinic end generated code: output=8bcd7a51f94cfff6 input=135c2ab634d0fdf5]*/
+/*[clinic end generated code: output=8bcd7a51f94cfff6 input=538edacd90a58bae]*/
 {
     clear_extra(self);
 
@@ -761,6 +764,7 @@ _elementtree_Element_clear_impl(ElementObject *self)
 }
 
 /*[clinic input]
+@critical_section
 _elementtree.Element.__copy__
 
     cls: defining_class
@@ -770,7 +774,7 @@ _elementtree.Element.__copy__
 
 static PyObject *
 _elementtree_Element___copy___impl(ElementObject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=da22894421ff2b36 input=91edb92d9f441213]*/
+/*[clinic end generated code: output=da22894421ff2b36 input=3b74fcc0006f8bbf]*/
 {
     Py_ssize_t i;
     ElementObject* element;
@@ -809,6 +813,7 @@ _elementtree_Element___copy___impl(ElementObject *self, PyTypeObject *cls)
 LOCAL(PyObject *) deepcopy(elementtreestate *, PyObject *, PyObject *);
 
 /*[clinic input]
+@critical_section
 _elementtree.Element.__deepcopy__
 
     memo: object(subclass_of="&PyDict_Type")
@@ -818,7 +823,7 @@ _elementtree.Element.__deepcopy__
 
 static PyObject *
 _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
-/*[clinic end generated code: output=eefc3df50465b642 input=a2d40348c0aade10]*/
+/*[clinic end generated code: output=eefc3df50465b642 input=330b3ef60b419786]*/
 {
     Py_ssize_t i;
     ElementObject* element = NULL;
@@ -983,13 +988,14 @@ deepcopy(elementtreestate *st, PyObject *object, PyObject *memo)
 
 
 /*[clinic input]
+@critical_section
 _elementtree.Element.__sizeof__ -> size_t
 
 [clinic start generated code]*/
 
 static size_t
 _elementtree_Element___sizeof___impl(ElementObject *self)
-/*[clinic end generated code: output=baae4e7ae9fe04ec input=54e298c501f3e0d0]*/
+/*[clinic end generated code: output=baae4e7ae9fe04ec input=007e93ab553280ad]*/
 {
     size_t result = _PyObject_SIZE(Py_TYPE(self));
     if (self->extra) {
@@ -1015,13 +1021,14 @@ _elementtree_Element___sizeof___impl(ElementObject *self)
  * pickles.  See issue #16076.
  */
 /*[clinic input]
+@critical_section
 _elementtree.Element.__getstate__
 
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_Element___getstate___impl(ElementObject *self)
-/*[clinic end generated code: output=37279aeeb6bb5b04 input=f0d16d7ec2f7adc1]*/
+/*[clinic end generated code: output=37279aeeb6bb5b04 input=09f1f8ad2afda6db]*/
 {
     Py_ssize_t i;
     PyObject *children, *attrib;
@@ -1172,6 +1179,7 @@ element_setstate_from_Python(elementtreestate *st, ElementObject *self,
 }
 
 /*[clinic input]
+@critical_section
 _elementtree.Element.__setstate__
 
     cls: defining_class
@@ -1183,7 +1191,7 @@ _elementtree.Element.__setstate__
 static PyObject *
 _elementtree_Element___setstate___impl(ElementObject *self,
                                        PyTypeObject *cls, PyObject *state)
-/*[clinic end generated code: output=598bfb5730f71509 input=13830488d35d51f7]*/
+/*[clinic end generated code: output=598bfb5730f71509 input=bdff609c1614e735]*/
 {
     if (!PyDict_CheckExact(state)) {
         PyErr_Format(PyExc_TypeError,
@@ -1253,6 +1261,7 @@ checkpath(PyObject* tag)
 }
 
 /*[clinic input]
+@critical_section
 _elementtree.Element.extend
 
     cls: defining_class
@@ -1267,7 +1276,7 @@ Append subelements from a sequence.
 static PyObject *
 _elementtree_Element_extend_impl(ElementObject *self, PyTypeObject *cls,
                                  PyObject *elements)
-/*[clinic end generated code: output=3e86d37fac542216 input=401ac1d07e13282b]*/
+/*[clinic end generated code: output=3e86d37fac542216 input=b9bbc68abbf758a1]*/
 {
     PyObject* seq;
     Py_ssize_t i;
@@ -1294,6 +1303,7 @@ _elementtree_Element_extend_impl(ElementObject *self, PyTypeObject *cls,
 }
 
 /*[clinic input]
+@critical_section
 _elementtree.Element.find
 
     cls: defining_class
@@ -1313,7 +1323,7 @@ Return the first matching element, or None if no element was found.
 static PyObject *
 _elementtree_Element_find_impl(ElementObject *self, PyTypeObject *cls,
                                PyObject *path, PyObject *namespaces)
-/*[clinic end generated code: output=18f77d393c9fef1b input=3aec422879a342e1]*/
+/*[clinic end generated code: output=18f77d393c9fef1b input=8c75fd3d248e1243]*/
 {
     elementtreestate *st = get_elementtree_state_by_cls(cls);
 
@@ -1343,6 +1353,7 @@ _elementtree_Element_find_impl(ElementObject *self, PyTypeObject *cls,
 }
 
 /*[clinic input]
+@critical_section
 _elementtree.Element.findtext
 
     cls: defining_class
@@ -1367,7 +1378,7 @@ static PyObject *
 _elementtree_Element_findtext_impl(ElementObject *self, PyTypeObject *cls,
                                    PyObject *path, PyObject *default_value,
                                    PyObject *namespaces)
-/*[clinic end generated code: output=6af7a2d96aac32cb input=64610701f762c4f5]*/
+/*[clinic end generated code: output=6af7a2d96aac32cb input=407d7a7228973b57]*/
 {
     elementtreestate *st = get_elementtree_state_by_cls(cls);
 
@@ -1403,6 +1414,7 @@ _elementtree_Element_findtext_impl(ElementObject *self, PyTypeObject *cls,
 }
 
 /*[clinic input]
+@critical_section
 _elementtree.Element.findall
 
     cls: defining_class
@@ -1422,7 +1434,7 @@ Returns list containing all matching elements in document order.
 static PyObject *
 _elementtree_Element_findall_impl(ElementObject *self, PyTypeObject *cls,
                                   PyObject *path, PyObject *namespaces)
-/*[clinic end generated code: output=65e39a1208f3b59e input=2208ddeb5f1cc7c3]*/
+/*[clinic end generated code: output=65e39a1208f3b59e input=f6c35bfdebf25cdc]*/
 {
     elementtreestate *st = get_elementtree_state_by_cls(cls);
 
@@ -1485,6 +1497,7 @@ _elementtree_Element_iterfind_impl(ElementObject *self, PyTypeObject *cls,
 }
 
 /*[clinic input]
+@critical_section
 _elementtree.Element.get
 
     key: object
@@ -1503,7 +1516,7 @@ attribute was not found.
 static PyObject *
 _elementtree_Element_get_impl(ElementObject *self, PyObject *key,
                               PyObject *default_value)
-/*[clinic end generated code: output=523c614142595d75 input=332624526ef81a70]*/
+/*[clinic end generated code: output=523c614142595d75 input=4ad1f904a145305c]*/
 {
     if (self->extra && self->extra->attrib) {
         PyObject *attrib = Py_NewRef(self->extra->attrib);
@@ -1587,16 +1600,23 @@ static PyObject*
 element_getitem(PyObject *op, Py_ssize_t index)
 {
     ElementObject *self = _Element_CAST(op);
+    PyObject *result;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
 
     if (!self->extra || index < 0 || index >= self->extra->length) {
         PyErr_SetString(
             PyExc_IndexError,
             "child index out of range"
             );
-        return NULL;
+        result = NULL;
+    }
+    else {
+        result = Py_NewRef(self->extra->children[index]);
     }
 
-    return Py_NewRef(self->extra->children[index]);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static int
@@ -1610,13 +1630,15 @@ element_bool(PyObject *op)
                      1) < 0) {
         return -1;
     };
-    if (self->extra ? self->extra->length : 0) {
-        return 1;
-    }
-    return 0;
+    int result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = self->extra ? self->extra->length != 0 : 0;
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 /*[clinic input]
+@critical_section
 _elementtree.Element.insert
 
     index: Py_ssize_t
@@ -1629,7 +1651,7 @@ Insert *subelement* at position *index*.
 static PyObject *
 _elementtree_Element_insert_impl(ElementObject *self, Py_ssize_t index,
                                  PyObject *subelement)
-/*[clinic end generated code: output=990adfef4d424c0b input=2886a2266de15ed7]*/
+/*[clinic end generated code: output=990adfef4d424c0b input=0d172a0996fc01c2]*/
 {
     Py_ssize_t i;
 
@@ -1660,6 +1682,7 @@ _elementtree_Element_insert_impl(ElementObject *self, Py_ssize_t index,
 }
 
 /*[clinic input]
+@critical_section
 _elementtree.Element.items
 
 Get element attributes as (name, value) pairs.
@@ -1669,7 +1692,7 @@ Equivalent to attrib.items().
 
 static PyObject *
 _elementtree_Element_items_impl(ElementObject *self)
-/*[clinic end generated code: output=6db2c778ce3f5a4d input=7b5adcd8f774d4e0]*/
+/*[clinic end generated code: output=6db2c778ce3f5a4d input=4e4157508fc9827e]*/
 {
     if (!self->extra || !self->extra->attrib)
         return PyList_New(0);
@@ -1678,6 +1701,7 @@ _elementtree_Element_items_impl(ElementObject *self)
 }
 
 /*[clinic input]
+@critical_section
 _elementtree.Element.keys
 
 Get attribute names.
@@ -1687,7 +1711,7 @@ Equivalent to attrib.keys()
 
 static PyObject *
 _elementtree_Element_keys_impl(ElementObject *self)
-/*[clinic end generated code: output=bc5bfabbf20eeb3c input=6d860fbdb565115d]*/
+/*[clinic end generated code: output=bc5bfabbf20eeb3c input=8c94863c23478b42]*/
 {
     if (!self->extra || !self->extra->attrib)
         return PyList_New(0);
@@ -1699,10 +1723,11 @@ static Py_ssize_t
 element_length(PyObject *op)
 {
     ElementObject *self = _Element_CAST(op);
-    if (!self->extra)
-        return 0;
-
-    return self->extra->length;
+    Py_ssize_t result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = self->extra ? self->extra->length : 0;
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 /*[clinic input]
@@ -1742,6 +1767,7 @@ _elementtree_Element_makeelement_impl(ElementObject *self, PyTypeObject *cls,
 }
 
 /*[clinic input]
+@critical_section
 _elementtree.Element.remove
 
     subelement: object(subclass_of='clinic_state()->Element_Type')
@@ -1760,7 +1786,7 @@ ValueError is raised if a matching element could not be found.
 
 static PyObject *
 _elementtree_Element_remove_impl(ElementObject *self, PyObject *subelement)
-/*[clinic end generated code: output=38fe6c07d6d87d1f input=e035af9d920f785b]*/
+/*[clinic end generated code: output=38fe6c07d6d87d1f input=cf0e4b5dcf1846bd]*/
 {
     Py_ssize_t i;
     // When iterating over the list of children, we need to check that the
@@ -1832,6 +1858,7 @@ element_repr(PyObject *op)
 }
 
 /*[clinic input]
+@critical_section
 _elementtree.Element.set
 
     key: object
@@ -1848,7 +1875,7 @@ and *value* is the attribute value to set it to.
 static PyObject *
 _elementtree_Element_set_impl(ElementObject *self, PyObject *key,
                               PyObject *value)
-/*[clinic end generated code: output=fb938806be3c5656 input=bbaadd68b86636d7]*/
+/*[clinic end generated code: output=fb938806be3c5656 input=170371ba7880c6c0]*/
 {
     PyObject* attrib;
 
@@ -1873,39 +1900,49 @@ element_setitem(PyObject *op, Py_ssize_t index, PyObject* item)
     ElementObject *self = _Element_CAST(op);
     Py_ssize_t i;
     PyObject* old;
+    int result = 0;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
 
     if (!self->extra || index < 0 || index >= self->extra->length) {
         PyErr_SetString(
             PyExc_IndexError,
             "child assignment index out of range");
-        return -1;
+        result = -1;
     }
+    else {
+        old = self->extra->children[index];
 
-    old = self->extra->children[index];
-
-    if (item) {
-        PyTypeObject *tp = Py_TYPE(self);
-        elementtreestate *st = get_elementtree_state_by_type(tp);
-        if (!Element_Check(st, item)) {
-            raise_type_error(item);
-            return -1;
+        if (item) {
+            PyTypeObject *tp = Py_TYPE(self);
+            elementtreestate *st = get_elementtree_state_by_type(tp);
+            if (!Element_Check(st, item)) {
+                raise_type_error(item);
+                result = -1;
+            }
+            else {
+                self->extra->children[index] = Py_NewRef(item);
+            }
+        } else {
+            self->extra->length--;
+            for (i = index; i < self->extra->length; i++)
+                self->extra->children[i] = self->extra->children[i+1];
         }
-        self->extra->children[index] = Py_NewRef(item);
-    } else {
-        self->extra->length--;
-        for (i = index; i < self->extra->length; i++)
-            self->extra->children[i] = self->extra->children[i+1];
+
+        if (result == 0) {
+            Py_DECREF(old);
+        }
     }
 
-    Py_DECREF(old);
-
-    return 0;
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static PyObject *
-element_subscr(PyObject *op, PyObject *item)
+element_subscr_lock_held(PyObject *op, PyObject *item)
 {
     ElementObject *self = _Element_CAST(op);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
 
     if (PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
@@ -1958,10 +1995,21 @@ element_subscr(PyObject *op, PyObject *item)
     }
 }
 
+static PyObject *
+element_subscr(PyObject *op, PyObject *item)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = element_subscr_lock_held(op, item);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
 static int
-element_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
+element_ass_subscr_lock_held(PyObject *op, PyObject *item, PyObject *value)
 {
     ElementObject *self = _Element_CAST(op);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
 
     if (PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
@@ -2147,39 +2195,60 @@ element_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
     }
 }
 
+static int
+element_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
+{
+    int result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = element_ass_subscr_lock_held(op, item, value);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
 static PyObject*
 element_tag_getter(PyObject *op, void *closure)
 {
     ElementObject *self = _Element_CAST(op);
-    PyObject *res = self->tag;
-    return Py_NewRef(res);
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    res = Py_NewRef(self->tag);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 static PyObject*
 element_text_getter(PyObject *op, void *closure)
 {
     ElementObject *self = _Element_CAST(op);
-    return element_get_text(self);
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    res = element_get_text(self);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 static PyObject*
 element_tail_getter(PyObject *op, void *closure)
 {
     ElementObject *self = _Element_CAST(op);
-    return element_get_tail(self);
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    res = element_get_tail(self);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 static PyObject*
 element_attrib_getter(PyObject *op, void *closure)
 {
-    PyObject *res;
+    PyObject *res = NULL;
     ElementObject *self = _Element_CAST(op);
-    if (!self->extra) {
-        if (create_extra(self, NULL) < 0)
-            return NULL;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    if (self->extra || create_extra(self, NULL) == 0) {
+        res = Py_XNewRef(element_get_attrib(self));
     }
-    res = element_get_attrib(self);
-    return Py_XNewRef(res);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 /* macro for setter validation */
@@ -2196,7 +2265,9 @@ element_tag_setter(PyObject *op, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
     ElementObject *self = _Element_CAST(op);
+    Py_BEGIN_CRITICAL_SECTION(self);
     Py_SETREF(self->tag, Py_NewRef(value));
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -2205,7 +2276,9 @@ element_text_setter(PyObject *op, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
     ElementObject *self = _Element_CAST(op);
+    Py_BEGIN_CRITICAL_SECTION(self);
     _set_joined_ptr(&self->text, Py_NewRef(value));
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -2214,7 +2287,9 @@ element_tail_setter(PyObject *op, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
     ElementObject *self = _Element_CAST(op);
+    Py_BEGIN_CRITICAL_SECTION(self);
     _set_joined_ptr(&self->tail, Py_NewRef(value));
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -2229,12 +2304,16 @@ element_attrib_setter(PyObject *op, PyObject *value, void *closure)
         return -1;
     }
     ElementObject *self = _Element_CAST(op);
-    if (!self->extra) {
-        if (create_extra(self, NULL) < 0)
-            return -1;
+    int result = 0;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    if (!self->extra && create_extra(self, NULL) < 0) {
+        result = -1;
     }
-    Py_XSETREF(self->extra->attrib, Py_NewRef(value));
-    return 0;
+    else {
+        Py_XSETREF(self->extra->attrib, Py_NewRef(value));
+    }
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 /******************************* Element iterator ****************************/
