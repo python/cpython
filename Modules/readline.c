@@ -841,7 +841,7 @@ readline_set_auto_history_impl(PyObject *module,
                                int _should_auto_add_history)
 /*[clinic end generated code: output=619c6968246fd82b input=3d413073a1a03355]*/
 {
-    should_auto_add_history = _should_auto_add_history;
+    FT_ATOMIC_STORE_INT_RELAXED(should_auto_add_history, _should_auto_add_history);
     Py_RETURN_NONE;
 }
 
@@ -1590,7 +1590,7 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 
     /* we have a valid line */
     n = strlen(p);
-    if (should_auto_add_history && n > 0) {
+    if (FT_ATOMIC_LOAD_INT_RELAXED(should_auto_add_history) && n > 0) {
         const char *line;
         int length = _py_get_history_length_lock_held();
         if (length > 0) {
