@@ -1,0 +1,1 @@
+Allow build :mod:`!_overlapped` module for Universal Windows Platform.
