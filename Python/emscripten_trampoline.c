@@ -47,6 +47,10 @@ typedef PyObject* (*TrampolineFunc)(int* success,
                                     PyObject* args,
                                     PyObject* kw);
 
+// The JS glue only binds _PyRuntime if it is exported, which an embedder
+// linking libpython does not do.
+EMSCRIPTEN_KEEPALIVE _PyRuntimeState *const _PyEM_runtime = &_PyRuntime;
+
 /**
  * Backwards compatible trampoline works with all JS runtimes
  */
@@ -90,9 +94,12 @@ function getPyEMTrampolinePtr() {
 addOnPreRun(function setEmscriptenTrampoline() {
     const ptr = getPyEMTrampolinePtr();
     const offset = HEAP32[__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET / 4];
-    HEAP32[(__PyRuntime + offset) / 4] = ptr;
+    HEAP32[(HEAPU32[__PyEM_runtime / 4] + offset) / 4] = ptr;
 });
 );
+
+EM_JS_DEPS(_PyEM_TrampolineCall,
+           "$wasmTable,$wasmMemory,$addFunction,$addOnPreRun");
 
 PyObject*
 _PyEM_TrampolineCall(PyCFunctionWithKeywords func,

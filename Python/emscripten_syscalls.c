@@ -54,88 +54,6 @@ __attribute__((constructor)) void __syscall_init_umask(void) {
 #define EM_JS_MACROS(ret, func_name, args, body...)                            \
   EM_JS(ret, func_name, args, body)
 
-EM_JS_MACROS(void, _emscripten_promising_main_js, (void), {
-    // Define FS.createAsyncInputDevice(), This is quite similar to
-    // FS.createDevice() defined here:
-    // https://github.com/emscripten-core/emscripten/blob/4.0.11/src/lib/libfs.js?plain=1#L1642
-    // but instead of returning one byte at a time, the input() function should
-    // return a Uint8Array. This makes the handler code simpler, the
-    // `createAsyncInputDevice` simpler, and everything faster.
-    FS.createAsyncInputDevice = function(parent, name, input) {
-        parent = typeof parent == 'string' ? parent : FS.getPath(parent);
-        var path = PATH.join2(parent, name);
-        var mode = FS_getMode(true, false);
-        FS.createDevice.major ||= 64;
-        var dev = FS.makedev(FS.createDevice.major++, 0);
-        async function getDataBuf() {
-            var buf;
-            try {
-                buf = await input();
-            } catch (e) {
-                throw new FS.ErrnoError(EIO);
-            }
-            if (!buf?.byteLength) {
-                throw new FS.ErrnoError(EAGAIN);
-            }
-            ops._dataBuf = buf;
-        }
-
-        var ops = {
-            _dataBuf: new Uint8Array(0),
-            open(stream) {
-                stream.seekable = false;
-            },
-            async readAsync(stream, buffer, offset, length, pos /* ignored */) {
-                buffer = buffer.subarray(offset, offset + length);
-                if (!ops._dataBuf.byteLength) {
-                    await getDataBuf();
-                }
-                var toRead = Math.min(ops._dataBuf.byteLength, buffer.byteLength);
-                buffer.subarray(0, toRead).set(ops._dataBuf);
-                buffer = buffer.subarray(toRead);
-                ops._dataBuf = ops._dataBuf.subarray(toRead);
-                if (toRead) {
-                    stream.node.atime = Date.now();
-                }
-                return toRead;
-            },
-        };
-        FS.registerDevice(dev, ops);
-        return FS.mkdev(path, mode, dev);
-    };
-    if (!WebAssembly.promising) {
-        // No stack switching support =(
-        return;
-    }
-    const origResolveGlobalSymbol = resolveGlobalSymbol;
-    if (ENVIRONMENT_IS_NODE && !Module.onExit) {
-        Module.onExit = (code) => process.exit(code);
-    }
-    // * wrap the main symbol with WebAssembly.promising,
-    // * call exit_with_live_runtime() to prevent emscripten from shutting down
-    //   the runtime before the promise resolves,
-    // * call onExit / process.exit ourselves, since exit_with_live_runtime()
-    //   prevented Emscripten from calling it normally.
-    resolveGlobalSymbol = function (name, direct = false) {
-        const orig = origResolveGlobalSymbol(name, direct);
-        if (name === "main") {
-            const main = WebAssembly.promising(orig.sym);
-            orig.sym = (...args) => {
-                (async () => {
-                    const ret = await main(...args);
-                    Module.onExit?.(ret);
-                })();
-                _emscripten_exit_with_live_runtime();
-            };
-        }
-        return orig;
-    };
-})
-
-__attribute__((constructor)) void _emscripten_promising_main(void) {
-    _emscripten_promising_main_js();
-}
-
 
 #define IOVEC_T_BUF_OFFSET 0
 #define IOVEC_T_BUF_LEN_OFFSET 4
@@ -156,7 +74,7 @@ EM_JS_MACROS(__externref_t, __maybe_fd_read_async, (
     size_t iovcnt,
     __wasi_size_t *nread
 ), {
-    if (!WebAssembly.promising) {
+    if (!Module.Py_EmscriptenStackSwitching) {
         return null;
     }
     var stream;
@@ -199,6 +117,8 @@ EM_JS_MACROS(__externref_t, __maybe_fd_read_async, (
 };
 );
 
+EM_JS_DEPS(__maybe_fd_read_async, "$SYSCALLS");
+
 // Bind original fd_read syscall to __wasi_fd_read_orig().
 __wasi_errno_t __wasi_fd_read_orig(__wasi_fd_t fd, const __wasi_iovec_t *iovs,
                                    size_t iovs_len, __wasi_size_t *nread)
@@ -238,7 +158,7 @@ _Static_assert(offsetof(struct pollfd, revents) == 6, "Unepxected pollfd struct 
 _Static_assert(sizeof(struct pollfd) == 8, "Unepxected pollfd struct layout");
 
 EM_JS_MACROS(__externref_t, __maybe_poll_async, (intptr_t fds, int nfds, int timeout), {
-    if (!WebAssembly.promising) {
+    if (!Module.Py_EmscriptenStackSwitching) {
         return null;
     }
     return (async function() {
@@ -279,6 +199,8 @@ EM_JS_MACROS(__externref_t, __maybe_poll_async, (intptr_t fds, int nfds, int tim
         }
     })();
 });
+
+EM_JS_DEPS(__maybe_poll_async, "$FS");
 
 // Bind original poll syscall to syscall_poll_orig().
 int syscall_poll_orig(intptr_t fds, int nfds, int timeout)

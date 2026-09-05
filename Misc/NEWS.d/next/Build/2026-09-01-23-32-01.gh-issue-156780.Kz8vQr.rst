@@ -1,0 +1,3 @@
+Emscripten: declare the JS symbols used by :c:macro:`EM_JS` bodies with
+``EM_JS_DEPS``, so that Emscripten includes them instead of silently omitting
+them.

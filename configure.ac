@@ -2452,6 +2452,11 @@ AS_CASE([$ac_sys_system],
 
     AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
       AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE"])
+      AC_DEFINE([Py_EMSCRIPTEN_DYNAMIC_LINKING], [1],
+                [Define if the Emscripten build is linked with -sMAIN_MODULE.])
+    ], [
+      dnl Implied by MAIN_MODULE; the call trampoline's addFunction() needs it.
+      AS_VAR_APPEND([LINKFORSHARED], [" -sALLOW_TABLE_GROWTH"])
     ])
 
     AS_VAR_IF([enable_wasm_pthreads], [yes], [
@@ -5428,10 +5433,13 @@ fi
 dnl Platform-specific C and header files.
 PLATFORM_HEADERS=
 PLATFORM_OBJS=
+dnl Objects linked into the interpreter only, not into libpython.
+PLATFORM_MAIN_OBJS=
 
 AS_CASE([$ac_sys_system],
   [Emscripten], [
     AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_trampoline_wasm.o'])
+    AS_VAR_APPEND([PLATFORM_MAIN_OBJS], [' Programs/emscripten_beforemain.o'])
     AS_VAR_IF([enable_emscripten_syscalls], [yes], [
       AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_syscalls.o'])
     ])
@@ -5440,6 +5448,7 @@ AS_CASE([$ac_sys_system],
 )
 AC_SUBST([PLATFORM_HEADERS])
 AC_SUBST([PLATFORM_OBJS])
+AC_SUBST([PLATFORM_MAIN_OBJS])
 
 # -I${DLINCLDIR} is added to the compile rule for importdl.o
 AC_SUBST([DLINCLDIR])

@@ -879,6 +879,7 @@ TRUE
 MACHDEP_OBJS
 DYNLOADFILE
 DLINCLDIR
+PLATFORM_MAIN_OBJS
 PLATFORM_OBJS
 PLATFORM_HEADERS
 DTRACE_OBJS
@@ -9992,6 +9993,14 @@ then :
 
       as_fn_append LINKFORSHARED " -sMAIN_MODULE"
 
+printf "%s\n" "#define Py_EMSCRIPTEN_DYNAMIC_LINKING 1" >>confdefs.h
+
+
+else case e in #(
+  e)
+            as_fn_append LINKFORSHARED " -sALLOW_TABLE_GROWTH"
+     ;;
+esac
 fi
 
     if test "x$enable_wasm_pthreads" = xyes
@@ -20276,11 +20285,13 @@ fi
 
 PLATFORM_HEADERS=
 PLATFORM_OBJS=
+PLATFORM_MAIN_OBJS=
 
 case $ac_sys_system in #(
   Emscripten) :
 
     as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_trampoline_wasm.o'
+    as_fn_append PLATFORM_MAIN_OBJS ' Programs/emscripten_beforemain.o'
     if test "x$enable_emscripten_syscalls" = xyes
 then :
 
@@ -20292,6 +20303,7 @@ fi
   *) :
      ;;
 esac
+
 
 
 
