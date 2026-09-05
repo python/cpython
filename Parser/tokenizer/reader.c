@@ -78,10 +78,23 @@ reserve_input_buffer(struct tok_state *tok, Py_ssize_t needed)
     assert(tok->inp - tok->buf <= reader->input_buffer_cap);
     _PyLexer_BufferPointers pointers;
     _PyLexer_SaveBufferPointers(tok, tok->buf, &pointers);
+#ifdef Py_DEBUG
+    char *buffer = NULL;
+    Py_ssize_t capacity = reader->input_buffer_cap;
+    if (reserve_buffer(&buffer, &capacity, needed) < 0) {
+        return -1;
+    }
+    memcpy(buffer, tok->buf, (size_t)(tok->inp - tok->buf) + 1);
+    memset(tok->buf, 0xDD, reader->input_buffer_cap);
+    PyMem_Free(tok->buf);
+    tok->buf = buffer;
+    reader->input_buffer_cap = capacity;
+#else
     if (reserve_buffer(
             &tok->buf, &reader->input_buffer_cap, needed) < 0) {
         return -1;
     }
+#endif
     _PyLexer_RestoreBufferPointers(tok, tok->buf, &pointers);
     return 0;
 }
@@ -629,10 +642,8 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
         *tok->inp = '\0';
     }
     else if (!prepared) {
-        int source_will_grow =
-            chunk.len > tok->source.cap - tok->source.len - 1;
         _PyLexer_BufferPointers pointers;
-        if (!reset_buffer && source_will_grow) {
+        if (!reset_buffer) {
             _PyLexer_SaveBufferPointers(
                 tok, tok->source.bytes, &pointers);
         }
@@ -653,7 +664,7 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
             tok->start = NULL;
             tok->multi_line_start = NULL;
         }
-        else if (source_will_grow) {
+        else {
             _PyLexer_RestoreBufferPointers(
                 tok, tok->source.bytes, &pointers);
         }
