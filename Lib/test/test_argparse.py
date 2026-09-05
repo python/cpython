@@ -3175,6 +3175,44 @@ class TestAddSubparsers(TestCase):
                 3                   3 help
             """))
 
+class TestPublicClasses(TestCase):
+    """Test that public names are used for objects returned by parser
+    methods that used to return only private, undocumented types
+    (see gh-101503)."""
+
+    def test_add_subparsers_return_type(self):
+        parser = argparse.ArgumentParser()
+        subparsers = parser.add_subparsers()
+        self.assertIsInstance(subparsers, argparse.SubParsersAction)
+        subparser = subparsers.add_parser('cmd')
+        self.assertIsInstance(subparser, argparse.ArgumentParser)
+
+    def test_add_argument_group_return_type(self):
+        parser = argparse.ArgumentParser()
+        group = parser.add_argument_group('title')
+        self.assertIsInstance(group, argparse.ArgumentGroup)
+
+    def test_add_mutually_exclusive_group_return_type(self):
+        parser = argparse.ArgumentParser()
+        group = parser.add_mutually_exclusive_group()
+        self.assertIsInstance(group, argparse.MutuallyExclusiveGroup)
+        self.assertIsInstance(group, argparse.ArgumentGroup)
+
+    def test_old_private_names_are_aliases(self):
+        # The old, undocumented private names are kept as aliases for
+        # backwards compatibility with code that imported them directly.
+        self.assertIs(argparse._SubParsersAction, argparse.SubParsersAction)
+        self.assertIs(argparse._ArgumentGroup, argparse.ArgumentGroup)
+        self.assertIs(argparse._MutuallyExclusiveGroup,
+                      argparse.MutuallyExclusiveGroup)
+
+    def test_public_names_exported(self):
+        for name in ('SubParsersAction', 'ArgumentGroup',
+                     'MutuallyExclusiveGroup'):
+            with self.subTest(name=name):
+                self.assertIn(name, argparse.__all__)
+
+
 # ============
 # Groups tests
 # ============

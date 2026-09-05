@@ -211,7 +211,7 @@ your usage messages.
 When a custom usage message is specified for the main parser, you may also want to
 consider passing  the ``prog`` argument to :meth:`~ArgumentParser.add_subparsers`
 or the ``prog`` and the ``usage`` arguments to
-:meth:`~_SubParsersAction.add_parser`, to ensure consistent command prefixes and
+:meth:`~SubParsersAction.add_parser`, to ensure consistent command prefixes and
 usage information across subparsers.
 
 
@@ -1733,10 +1733,11 @@ Subcommands
    different functions which require different kinds of command-line arguments.
    :class:`ArgumentParser` supports the creation of such subcommands with the
    :meth:`!add_subparsers` method.  The :meth:`!add_subparsers` method is normally
-   called with no arguments and returns a special action object.  This object
-   has a single method, :meth:`~_SubParsersAction.add_parser`, which takes a
-   command name and any :class:`!ArgumentParser` constructor arguments, and
-   returns an :class:`!ArgumentParser` object that can be modified as usual.
+   called with no arguments and returns a :class:`SubParsersAction` object.
+   This object has a single method, :meth:`~SubParsersAction.add_parser`, which
+   takes a command name and any :class:`!ArgumentParser` constructor arguments,
+   and returns an :class:`!ArgumentParser` object that can be modified as
+   usual.
 
    Description of parameters:
 
@@ -1805,7 +1806,7 @@ Subcommands
    for that particular parser will be printed.  The help message will not
    include parent parser or sibling parser messages.  (A help message for each
    subparser command, however, can be given by supplying the ``help=`` argument
-   to :meth:`~_SubParsersAction.add_parser` as above.)
+   to :meth:`~SubParsersAction.add_parser` as above.)
 
    ::
 
@@ -1919,7 +1920,15 @@ Subcommands
       the main parser.
 
 
-.. method:: _SubParsersAction.add_parser(name, *, help=None, aliases=None, \
+.. class:: SubParsersAction
+
+   The type of the object returned by :meth:`~ArgumentParser.add_subparsers`.
+
+   .. versionadded:: 3.16
+      Previously this class was only available under the private,
+      undocumented name ``argparse._SubParsersAction``.
+
+.. method:: SubParsersAction.add_parser(name, *, help=None, aliases=None, \
                                          deprecated=False, **kwargs)
 
    Create and return a new :class:`ArgumentParser` object for the
@@ -2019,8 +2028,8 @@ Argument groups
        bar    bar help
        --foo FOO  foo help
 
-   The :meth:`add_argument_group` method returns an argument group object which
-   has an :meth:`~ArgumentParser.add_argument` method just like a regular
+   The :meth:`add_argument_group` method returns an :class:`ArgumentGroup`
+   object which has an :meth:`~ArgumentParser.add_argument` method just like a regular
    :class:`ArgumentParser`.  When an argument is added to the group, the parser
    treats it just like a normal argument, but displays the argument in a
    separate group for help messages.  The :meth:`!add_argument_group` method
@@ -2064,6 +2073,16 @@ Argument groups
    .. deprecated:: 3.14
       Passing prefix_chars_ to :meth:`add_argument_group`
       is now deprecated.
+
+
+.. class:: ArgumentGroup
+
+   The type of the object returned by
+   :meth:`~ArgumentParser.add_argument_group`.
+
+   .. versionadded:: 3.16
+      Previously this class was only available under the private,
+      undocumented name ``argparse._ArgumentGroup``.
 
 
 Mutual exclusion
@@ -2127,6 +2146,17 @@ Mutual exclusion
       on a mutually exclusive group now raises an exception. This nesting was
       never supported, often failed to work correctly, and was unintentionally
       exposed through inheritance.
+
+
+.. class:: MutuallyExclusiveGroup
+
+   The type of the object returned by
+   :meth:`~ArgumentParser.add_mutually_exclusive_group`. A subclass of
+   :class:`ArgumentGroup`.
+
+   .. versionadded:: 3.16
+      Previously this class was only available under the private,
+      undocumented name ``argparse._MutuallyExclusiveGroup``.
 
 
 Parser defaults

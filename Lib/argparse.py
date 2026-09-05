@@ -77,6 +77,9 @@ __all__ = [
     'MetavarTypeHelpFormatter',
     'Namespace',
     'Action',
+    'ArgumentGroup',
+    'MutuallyExclusiveGroup',
+    'SubParsersAction',
     'ONE_OR_MORE',
     'OPTIONAL',
     'PARSER',
@@ -1337,7 +1340,7 @@ class _VersionAction(Action):
         parser.exit()
 
 
-class _SubParsersAction(Action):
+class SubParsersAction(Action):
 
     class _ChoicesPseudoAction(Action):
 
@@ -1345,7 +1348,7 @@ class _SubParsersAction(Action):
             metavar = dest = name
             if aliases:
                 metavar += ' (%s)' % ', '.join(aliases)
-            sup = super(_SubParsersAction._ChoicesPseudoAction, self)
+            sup = super(SubParsersAction._ChoicesPseudoAction, self)
             sup.__init__(option_strings=[], dest=dest, help=help,
                          metavar=metavar)
 
@@ -1365,7 +1368,7 @@ class _SubParsersAction(Action):
         self._deprecated = set()
         self._color = True
 
-        super(_SubParsersAction, self).__init__(
+        super(SubParsersAction, self).__init__(
             option_strings=option_strings,
             dest=dest,
             nargs=PARSER,
@@ -1454,6 +1457,10 @@ class _SubParsersAction(Action):
             if not hasattr(namespace, _UNRECOGNIZED_ARGS_ATTR):
                 setattr(namespace, _UNRECOGNIZED_ARGS_ATTR, [])
             getattr(namespace, _UNRECOGNIZED_ARGS_ATTR).extend(arg_strings)
+
+# Deprecated alias, kept for backwards compatibility with code that
+# imported this class under its old, undocumented private name.
+_SubParsersAction = SubParsersAction
 
 class _ExtendAction(_AppendAction):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -1580,7 +1587,7 @@ class _ActionsContainer(object):
         self.register('action', 'count', _CountAction)
         self.register('action', 'help', _HelpAction)
         self.register('action', 'version', _VersionAction)
-        self.register('action', 'parsers', _SubParsersAction)
+        self.register('action', 'parsers', SubParsersAction)
         self.register('action', 'extend', _ExtendAction)
 
         # raise an exception if the conflict handler is invalid
@@ -1699,12 +1706,12 @@ class _ActionsContainer(object):
         return self._add_action(action)
 
     def add_argument_group(self, *args, **kwargs):
-        group = _ArgumentGroup(self, *args, **kwargs)
+        group = ArgumentGroup(self, *args, **kwargs)
         self._action_groups.append(group)
         return group
 
     def add_mutually_exclusive_group(self, **kwargs):
-        group = _MutuallyExclusiveGroup(self, **kwargs)
+        group = MutuallyExclusiveGroup(self, **kwargs)
         self._mutually_exclusive_groups.append(group)
         return group
 
@@ -1892,7 +1899,7 @@ class _ActionsContainer(object):
                 raise ValueError('badly formed help string') from exc
 
 
-class _ArgumentGroup(_ActionsContainer):
+class ArgumentGroup(_ActionsContainer):
 
     def __init__(self, container, title=None, description=None, **kwargs):
         if 'prefix_chars' in kwargs:
@@ -1907,7 +1914,7 @@ class _ArgumentGroup(_ActionsContainer):
         update('conflict_handler', container.conflict_handler)
         update('prefix_chars', container.prefix_chars)
         update('argument_default', container.argument_default)
-        super_init = super(_ArgumentGroup, self).__init__
+        super_init = super(ArgumentGroup, self).__init__
         super_init(description=description, **kwargs)
 
         # group attributes
@@ -1924,21 +1931,25 @@ class _ArgumentGroup(_ActionsContainer):
         self._mutually_exclusive_groups = container._mutually_exclusive_groups
 
     def _add_action(self, action):
-        action = super(_ArgumentGroup, self)._add_action(action)
+        action = super(ArgumentGroup, self)._add_action(action)
         self._group_actions.append(action)
         return action
 
     def _remove_action(self, action):
-        super(_ArgumentGroup, self)._remove_action(action)
+        super(ArgumentGroup, self)._remove_action(action)
         self._group_actions.remove(action)
 
     def add_argument_group(self, *args, **kwargs):
         raise ValueError('argument groups cannot be nested')
 
-class _MutuallyExclusiveGroup(_ArgumentGroup):
+# Deprecated alias, kept for backwards compatibility with code that
+# imported this class under its old, undocumented private name.
+_ArgumentGroup = ArgumentGroup
+
+class MutuallyExclusiveGroup(ArgumentGroup):
 
     def __init__(self, container, required=False):
-        super(_MutuallyExclusiveGroup, self).__init__(container)
+        super(MutuallyExclusiveGroup, self).__init__(container)
         self.required = required
         self._container = container
 
@@ -1956,6 +1967,10 @@ class _MutuallyExclusiveGroup(_ArgumentGroup):
 
     def add_mutually_exclusive_group(self, **kwargs):
         raise ValueError('mutually exclusive groups cannot be nested')
+
+# Deprecated alias, kept for backwards compatibility with code that
+# imported this class under its old, undocumented private name.
+_MutuallyExclusiveGroup = MutuallyExclusiveGroup
 
 def _prog_name(prog=None):
     if prog is not None:

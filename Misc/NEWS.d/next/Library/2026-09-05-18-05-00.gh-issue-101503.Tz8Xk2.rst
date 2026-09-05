@@ -1,0 +1,9 @@
+Add public names :class:`argparse.SubParsersAction`,
+:class:`argparse.ArgumentGroup`, and :class:`argparse.MutuallyExclusiveGroup`
+for the previously private, undocumented types returned by
+:meth:`~argparse.ArgumentParser.add_subparsers`,
+:meth:`~argparse.ArgumentParser.add_argument_group`, and
+:meth:`~argparse.ArgumentParser.add_mutually_exclusive_group` respectively,
+so that code (and type checkers) can reference them without relying on the
+old ``_SubParsersAction``, ``_ArgumentGroup``, and ``_MutuallyExclusiveGroup``
+names, which are kept as aliases for backwards compatibility.
