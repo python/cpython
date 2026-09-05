@@ -11,7 +11,6 @@
 #include "pycore_freelist.h"      // _Py_FREELIST_FREE(), _Py_FREELIST_POP()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_Init()
-#include "pycore_pymath.h"        // _Py_ADJUST_ERANGE2()
 
 
 #define _PyComplexObject_CAST(op)   ((PyComplexObject *)(op))
@@ -27,7 +26,7 @@ class complex "PyComplexObject *" "&PyComplex_Type"
 /* elementary operations on complex numbers */
 
 Py_complex
-_Py_c_sum(Py_complex a, Py_complex b)
+_Py_c_sum(Py_complex a, Py_complex b)  // public API (soft deprecated)
 {
     Py_complex r;
     r.real = a.real + b.real;
@@ -50,7 +49,7 @@ _Py_rc_sum(double a, Py_complex b)
 }
 
 Py_complex
-_Py_c_diff(Py_complex a, Py_complex b)
+_Py_c_diff(Py_complex a, Py_complex b)  // public API (soft deprecated)
 {
     Py_complex r;
     r.real = a.real - b.real;
@@ -76,7 +75,7 @@ _Py_rc_diff(double a, Py_complex b)
 }
 
 Py_complex
-_Py_c_neg(Py_complex a)
+_Py_c_neg(Py_complex a)  // public API (soft deprecated)
 {
     Py_complex r;
     r.real = -a.real;
@@ -85,7 +84,7 @@ _Py_c_neg(Py_complex a)
 }
 
 Py_complex
-_Py_c_prod(Py_complex z, Py_complex w)
+_Py_c_prod(Py_complex z, Py_complex w)  // public API (soft deprecated)
 {
     double a = z.real, b = z.imag, c = w.real, d = w.imag;
     double ac = a*c, bd = b*d, ad = a*d, bc = b*c;
@@ -145,6 +144,28 @@ _Py_c_prod(Py_complex z, Py_complex w)
     return r;
 }
 
+static Py_complex
+c_square(Py_complex z)
+{
+    Py_complex r;
+    double a = z.real, b = z.imag;
+
+    double amb = a - b;
+    r.real = (amb == 0.0) ? 0.0 : amb * (a + b);
+    r.imag = 2.0 * a * b;
+
+    if (isnan(r.real) && isnan(r.imag)) {
+        if (isinf(a) || isinf(b)) {
+            a = copysign(isinf(a) ? 1.0 : 0.0, a);
+            b = copysign(isinf(b) ? 1.0 : 0.0, b);
+            r.real = INFINITY*(a*a - b*b);
+            r.imag = INFINITY*(a*b);
+        }
+    }
+
+    return r;
+}
+
 Py_complex
 _Py_cr_prod(Py_complex a, double b)
 {
@@ -160,12 +181,14 @@ _Py_rc_prod(double a, Py_complex b)
     return _Py_cr_prod(b, a);
 }
 
+#define USE_EFFICIENCT_SCALING_DIV_ALGORITHM 1
+
 /* Avoid bad optimization on Windows ARM64 until the compiler is fixed */
 #ifdef _M_ARM64
 #pragma optimize("", off)
 #endif
-Py_complex
-_Py_c_quot(Py_complex a, Py_complex b)
+static Py_complex
+c_quot(Py_complex a, Py_complex b)
 {
     /******************************************************************
     This was the original algorithm.  It's grossly prone to spurious
@@ -183,28 +206,27 @@ _Py_c_quot(Py_complex a, Py_complex b)
     return r;
     ******************************************************************/
 
+    Py_complex r;      /* the result */
+
+#if !USE_EFFICIENCT_SCALING_DIV_ALGORITHM
+
     /* This algorithm is better, and is pretty obvious:  first divide the
      * numerators and denominator by whichever of {b.real, b.imag} has
      * larger magnitude.  The earliest reference I found was to CACM
      * Algorithm 116 (Complex Division, Robert L. Smith, Stanford
      * University).
      */
-     Py_complex r;      /* the result */
-     const double abs_breal = b.real < 0 ? -b.real : b.real;
-     const double abs_bimag = b.imag < 0 ? -b.imag : b.imag;
+
+    const double abs_breal = b.real < 0 ? -b.real : b.real;
+    const double abs_bimag = b.imag < 0 ? -b.imag : b.imag;
 
     if (abs_breal >= abs_bimag) {
         /* divide tops and bottom by b.real */
-        if (abs_breal == 0.0) {
-            errno = EDOM;
-            r.real = r.imag = 0.0;
-        }
-        else {
-            const double ratio = b.imag / b.real;
-            const double denom = b.real + b.imag * ratio;
-            r.real = (a.real + a.imag * ratio) / denom;
-            r.imag = (a.imag - a.real * ratio) / denom;
-        }
+        /* If b.real == b.imag == 0.0, r.real and r.imag will be NaN. */
+        const double ratio = b.imag / b.real;
+        const double denom = b.real + b.imag * ratio;
+        r.real = (a.real + a.imag * ratio) / denom;
+        r.imag = (a.imag - a.real * ratio) / denom;
     }
     else if (abs_bimag >= abs_breal) {
         /* divide tops and bottom by b.imag */
@@ -219,19 +241,66 @@ _Py_c_quot(Py_complex a, Py_complex b)
         r.real = r.imag = Py_NAN;
     }
 
+#else  // USE_EFFICIENCT_SCALING_DIV_ALGORITHM
+
+    /*  This algorithm is a modified version of the following:
+     *  Douglas M. Priest. Efficient Scaling for Complex Division.
+     *  ACM Transactions on Mathematical Software, 30(4), 2004.
+     */
+
+     int64_t ar, ai, br, bi;  // Assumes IEEE 754 binary64.
+     memcpy(&ar, &a.real, 8);
+     memcpy(&ai, &a.imag, 8);
+     memcpy(&br, &b.real, 8);
+     memcpy(&bi, &b.imag, 8);
+
+     ar &= INT64_MAX;  // Take absolute values.
+     ai &= INT64_MAX;
+     br &= INT64_MAX;
+     bi &= INT64_MAX;
+
+     if (bi == 0)
+         return _Py_cr_quot(a, b.real);
+
+     int64_t amax = (ar > ai) ? ar : ai;
+     int64_t bmax = (br > bi) ? br : bi;
+
+     int64_t s;
+     if (amax < INT64_C(0x072)<<52 && bmax >= INT64_C(0x328)<<52
+         && bmax < INT64_C(0x471)<<52) {
+         // |a| < 2^-909 and 2^-215 <= |b| < 2^114
+         s = ((((INT64_C(0x471)<<52) - bmax) >> 1) & INT64_C(0xfff)<<52)
+           + (INT64_C(0x3ff)<<52);
+     } else {
+         s = (((bmax >> 2) - bmax) + INT64_C(0x6fd7ffffffffffff))
+           & INT64_C(0xfff)<<52;
+     }
+
+     double sf;  // Scale factor's fraction bits are zero.
+     memcpy(&sf, &s, 8);
+
+     double c = b.real * sf;  // exact
+     double d = b.imag * sf;  // exact
+     double t = c*c + d*d;
+
+     c *= sf;  // exact
+     d *= sf;  // exact
+     r.real = (a.real * c + a.imag * d) / t;
+     r.imag = (a.imag * c - a.real * d) / t;
+
+#endif
+
     /* Recover infinities and zeros that computed as nan+nanj.  See e.g.
        the C11, Annex G.5.2, routine _Cdivd(). */
     if (isnan(r.real) && isnan(r.imag)) {
-        if ((isinf(a.real) || isinf(a.imag))
-            && isfinite(b.real) && isfinite(b.imag))
+        if (_Py_c_isinf(a) && _Py_c_isfinite(b))
         {
             const double x = copysign(isinf(a.real) ? 1.0 : 0.0, a.real);
             const double y = copysign(isinf(a.imag) ? 1.0 : 0.0, a.imag);
             r.real = INFINITY * (x*b.real + y*b.imag);
             r.imag = INFINITY * (y*b.real - x*b.imag);
         }
-        else if ((isinf(abs_breal) || isinf(abs_bimag))
-                 && isfinite(a.real) && isfinite(a.imag))
+        else if (_Py_c_isinf(b) && _Py_c_isfinite(a))
         {
             const double x = copysign(isinf(b.real) ? 1.0 : 0.0, b.real);
             const double y = copysign(isinf(b.imag) ? 1.0 : 0.0, b.imag);
@@ -244,39 +313,45 @@ _Py_c_quot(Py_complex a, Py_complex b)
 }
 
 Py_complex
-_Py_cr_quot(Py_complex a, double b)
+_Py_c_quot(Py_complex a, Py_complex b)  // public API (soft deprecated)
 {
-    Py_complex r = a;
-    if (b) {
-        r.real /= b;
-        r.imag /= b;
+    Py_complex r;
+    if (_Py_c_iszero(b)) {
+        errno = EDOM;
+        r.real = r.imag = 0.0;  // As documented, so shall it be done.
     }
     else {
-        errno = EDOM;
-        r.real = r.imag = 0.0;
+        r = c_quot(a, b);
     }
     return r;
 }
 
-/* an equivalent of _Py_c_quot() function, when 1st argument is real */
+Py_complex
+_Py_cr_quot(Py_complex a, double b)
+{
+    Py_complex r = a;
+    // May overflow or may result in NaN.
+    r.real /= b;
+    r.imag /= b;
+    return r;
+}
+
+/* an equivalent of c_quot() function, when 1st argument is real */
 Py_complex
 _Py_rc_quot(double a, Py_complex b)
 {
     Py_complex r;
+
+#if !USE_EFFICIENCT_SCALING_DIV_ALGORITHM
+
     const double abs_breal = b.real < 0 ? -b.real : b.real;
     const double abs_bimag = b.imag < 0 ? -b.imag : b.imag;
 
     if (abs_breal >= abs_bimag) {
-        if (abs_breal == 0.0) {
-            errno = EDOM;
-            r.real = r.imag = 0.0;
-        }
-        else {
-            const double ratio = b.imag / b.real;
-            const double denom = b.real + b.imag * ratio;
-            r.real = a / denom;
-            r.imag = (-a * ratio) / denom;
-        }
+        const double ratio = b.imag / b.real;
+        const double denom = b.real + b.imag * ratio;
+        r.real = a / denom;
+        r.imag = (-a * ratio) / denom;
     }
     else if (abs_bimag >= abs_breal) {
         const double ratio = b.real / b.imag;
@@ -289,8 +364,45 @@ _Py_rc_quot(double a, Py_complex b)
         r.real = r.imag = Py_NAN;
     }
 
-    if (isnan(r.real) && isnan(r.imag) && isfinite(a)
-        && (isinf(abs_breal) || isinf(abs_bimag)))
+#else  // USE_EFFICIENCT_SCALING_DIV_ALGORITHM
+
+     int64_t ar, br, bi;  // Assumes IEEE 754 binary64.
+     memcpy(&ar, &a, 8);
+     memcpy(&br, &b.real, 8);
+     memcpy(&bi, &b.imag, 8);
+
+     ar &= INT64_MAX;  // Take absolute values.
+     br &= INT64_MAX;
+     bi &= INT64_MAX;
+
+     int64_t bmax = (br > bi) ? br : bi;
+
+     int64_t s;
+     if (ar < INT64_C(0x072)<<52 && bmax >= INT64_C(0x328)<<52
+         && bmax < INT64_C(0x471)<<52) {
+         // |a| < 2^-909 and 2^-215 <= |b| < 2^114
+         s = ((((INT64_C(0x471)<<52) - bmax) >> 1) & INT64_C(0xfff)<<52)
+           + (INT64_C(0x3ff)<<52);
+     } else {
+         s = (((bmax >> 2) - bmax) + INT64_C(0x6fd7ffffffffffff))
+           & INT64_C(0xfff)<<52;
+     }
+
+     double sf;  // Scale factor's fraction bits are zero.
+     memcpy(&sf, &s, 8);
+
+     double c = b.real * sf;  // exact
+     double d = b.imag * sf;  // exact
+     double t = c*c + d*d;
+
+     c *= sf;  // exact
+     d *= sf;  // exact
+     r.real = (a * c) / t;
+     r.imag = (-a * d) / t;
+
+#endif
+
+    if (isnan(r.real) && isnan(r.imag) && isfinite(a) && _Py_c_isinf(b))
     {
         const double x = copysign(isinf(b.real) ? 1.0 : 0.0, b.real);
         const double y = copysign(isinf(b.imag) ? 1.0 : 0.0, b.imag);
@@ -304,8 +416,34 @@ _Py_rc_quot(double a, Py_complex b)
 #pragma optimize("", on)
 #endif
 
-Py_complex
-_Py_c_pow(Py_complex a, Py_complex b)
+#define INT_EXP_CUTOFF 100
+
+static Py_complex
+c_powi(Py_complex x, long n)
+{
+    if (n < 0) {
+        x = _Py_rc_quot(1.0, x);
+        n = -n;
+    }
+
+    assert(0 < n && n <= INT_EXP_CUTOFF);
+    while ((n & 1) == 0) {
+        x = c_square(x);
+        n >>= 1;
+    }
+    Py_complex r = x;
+    while (n >>= 1) {
+        x = c_square(x);
+        if (n & 1) {
+            r = _Py_c_prod(r, x);
+        }
+    }
+
+    return r;
+}
+
+static Py_complex
+c_pow(Py_complex a, Py_complex b, int *e)
 {
     Py_complex r;
     double vabs,len,at,phase;
@@ -313,11 +451,19 @@ _Py_c_pow(Py_complex a, Py_complex b)
         r.real = 1.;
         r.imag = 0.;
     }
-    else if (a.real == 0. && a.imag == 0.) {
-        if (b.imag != 0. || b.real < 0.)
-            errno = EDOM;
+    else if (a.real == 0. && a.imag == 0. && (b.imag != 0. || b.real < 0.)) {
         r.real = 0.;
         r.imag = 0.;
+        *e = EDOM;
+    }
+    else if (b.imag == 0.0 && b.real == floor(b.real)
+             && fabs(b.real) <= INT_EXP_CUTOFF) {
+        // The exponent is a small integer value, so use a faster and
+        // more accurate algorithm.
+        r = c_powi(a, (long)b.real);
+        if (_Py_c_isinf(r) && _Py_c_isfinite(a)) {
+            *e = ERANGE;
+        }
     }
     else {
         vabs = hypot(a.real,a.imag);
@@ -330,70 +476,40 @@ _Py_c_pow(Py_complex a, Py_complex b)
         }
         r.real = len*cos(phase);
         r.imag = len*sin(phase);
-
-        /* Don't rely on errno set by the math functions above, for
-           example cos() and sin() set EDOM for an infinite phase. */
-        errno = 0;
-        if (isfinite(a.real) && isfinite(a.imag)
-            && isfinite(b.real) && isfinite(b.imag))
-        {
-            _Py_ADJUST_ERANGE2(r.real, r.imag);
+        if (_Py_c_isinf(r) && _Py_c_isfinite(a) && _Py_c_isfinite(b)) {
+            *e = ERANGE;
         }
     }
     return r;
 }
 
-#define INT_EXP_CUTOFF 100
-
-static Py_complex
-c_powu(Py_complex x, long n)
+Py_complex
+_Py_c_pow(Py_complex a, Py_complex b)  // public API (soft deprecated)
 {
-    assert(0 < n && n <= INT_EXP_CUTOFF);
-    while ((n & 1) == 0) {
-        x = _Py_c_prod(x, x);
-        n >>= 1;
-    }
-    Py_complex r = x;
-    n >>= 1;
-    while (n) {
-        x = _Py_c_prod(x, x);
-        if (n & 1) {
-            r = _Py_c_prod(r, x);
-        }
-        n >>= 1;
-    }
+    Py_complex r;
+    int e = 0;
+    int saved_errno = errno;
+    r = c_pow(a, b, &e);
+    // Sets errno = EDOM on invalid, ERANGE on overflow, else unchanged.
+    errno = (e) ? e : saved_errno;
     return r;
 }
 
-static Py_complex
-c_powi(Py_complex x, long n)
+static double
+c_abs(Py_complex z, int *e)
 {
-    if (n > 0)
-        return c_powu(x, n);
-    else if (n < 0)
-        return _Py_rc_quot(1.0, c_powu(x, -n));
-    else
-        return (Py_complex){1., 0.};
-}
-
-double
-_Py_c_abs(Py_complex z)
-{
-    /* sets errno = ERANGE on overflow;  otherwise errno = 0 */
     double result;
 
-    if (!isfinite(z.real) || !isfinite(z.imag)) {
+    if (!_Py_c_isfinite(z)) {
         /* C99 rules: if either the real or the imaginary part is an
            infinity, return infinity, even if the other part is a
            NaN. */
         if (isinf(z.real)) {
             result = fabs(z.real);
-            errno = 0;
             return result;
         }
         if (isinf(z.imag)) {
             result = fabs(z.imag);
-            errno = 0;
             return result;
         }
         /* either the real or imaginary part is a NaN,
@@ -402,10 +518,20 @@ _Py_c_abs(Py_complex z)
     }
     result = hypot(z.real, z.imag);
     if (!isfinite(result))
-        errno = ERANGE;
-    else
-        errno = 0;
+        *e = ERANGE;
     return result;
+}
+
+double
+_Py_c_abs(Py_complex z)  // public API (soft deprecated)
+{
+    double r;
+    int e = 0;
+    int saved_errno = errno;
+    r = c_abs(z, &e);
+    // Sets errno = ERANGE on overflow, else errno is unchanged.
+    errno = (e) ? e : saved_errno;
+    return r;
 }
 
 static PyObject *
@@ -710,7 +836,6 @@ real_to_complex(PyObject **pobj, Py_complex *pc)
     complex_##NAME(PyObject *v, PyObject *w)                \
     {                                                       \
         Py_complex a;                                       \
-        errno = 0;                                          \
         if (PyComplex_Check(w)) {                           \
             Py_complex b = ((PyComplexObject *)w)->cval;    \
             if (PyComplex_Check(v)) {                       \
@@ -735,18 +860,54 @@ real_to_complex(PyObject **pobj, Py_complex *pc)
             }                                               \
             a = _Py_cr_##FUNC(a, b);                        \
         }                                                   \
-        if (errno == EDOM) {                                \
-            PyErr_SetString(PyExc_ZeroDivisionError,        \
-                            "division by zero");            \
-            return NULL;                                    \
-        }                                                   \
         return PyComplex_FromCComplex(a);                   \
-   }
+    }
 
 COMPLEX_BINOP(add, sum)
 COMPLEX_BINOP(mul, prod)
 COMPLEX_BINOP(sub, diff)
-COMPLEX_BINOP(div, quot)
+
+static PyObject *
+complex_div(PyObject *v, PyObject *w)
+{
+    Py_complex a;
+    if (PyComplex_Check(w)) {
+        Py_complex b = ((PyComplexObject *)w)->cval;
+        if (PyComplex_Check(v)) {
+            if (_Py_c_iszero(b))
+                goto DivByZero;
+            a = ((PyComplexObject *)v)->cval;
+            a = c_quot(a, b);
+        }
+        else if (real_to_double(&v, &a.real) < 0) {
+            return v;
+        }
+        else {
+            if (_Py_c_iszero(b))
+                goto DivByZero;
+            a = _Py_rc_quot(a.real, b);
+        }
+    }
+    else if (!PyComplex_Check(v)) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+    else {
+        a = ((PyComplexObject *)v)->cval;
+        double b;
+        if (real_to_double(&w, &b) < 0) {
+            return w;
+        }
+        if (b == 0.0)
+            goto DivByZero;
+        a = _Py_cr_quot(a, b);
+    }
+    return PyComplex_FromCComplex(a);
+
+  DivByZero:
+    PyErr_SetString(PyExc_ZeroDivisionError,
+                    "division by zero");
+    return NULL;
+}
 
 static PyObject *
 complex_pow(PyObject *v, PyObject *w, PyObject *z)
@@ -760,29 +921,17 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
         PyErr_SetString(PyExc_ValueError, "complex modulo");
         return NULL;
     }
-    errno = 0;
-    // Check whether the exponent has a small integer value, and if so use
-    // a faster and more accurate algorithm.
-    if (b.imag == 0.0 && b.real == floor(b.real)
-        && fabs(b.real) <= INT_EXP_CUTOFF)
-    {
-        p = c_powi(a, (long)b.real);
-        if (isfinite(a.real) && isfinite(a.imag)) {
-            _Py_ADJUST_ERANGE2(p.real, p.imag);
-        }
-    }
-    else {
-        p = _Py_c_pow(a, b);
-    }
+    int e = 0;
+    p = c_pow(a, b, &e);
 
-    if (errno == EDOM) {
+    if (e == EDOM) {
         PyErr_SetString(PyExc_ZeroDivisionError,
                         "zero to a negative or complex power");
         return NULL;
     }
-    else if (errno == ERANGE) {
+    else if (e == ERANGE) {
         PyErr_SetString(PyExc_OverflowError,
-                        "complex exponentiation");
+                        "complex exponentiation result out of range");
         return NULL;
     }
     return PyComplex_FromCComplex(p);
@@ -812,8 +961,9 @@ static PyObject *
 complex_abs(PyObject *op)
 {
     PyComplexObject *v = _PyComplexObject_CAST(op);
-    double result = _Py_c_abs(v->cval);
-    if (errno == ERANGE) {
+    int e = 0;
+    double result = c_abs(v->cval, &e);
+    if (e == ERANGE) {
         PyErr_SetString(PyExc_OverflowError,
                         "absolute value too large");
         return NULL;
