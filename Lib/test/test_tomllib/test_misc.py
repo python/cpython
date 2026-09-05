@@ -10,6 +10,7 @@ from pathlib import Path
 import sys
 import tempfile
 import textwrap
+import time
 import unittest
 from test import support
 from test.support.script_helper import assert_python_ok
@@ -18,6 +19,46 @@ from . import tomllib
 
 
 class TestMiscellaneous(unittest.TestCase):
+    def test_many_keys_under_deep_header(self):
+        # gh-152930: many keys under one deep table header parse correctly.
+        depth = 200
+        num_keys = 2000
+        header = "[" + ".".join(f"h{i}" for i in range(depth)) + "]\n"
+        body = "".join(f"k{i} = {i}\n" for i in range(num_keys))
+        nest = tomllib.loads(header + body)
+        for i in range(depth):
+            nest = nest[f"h{i}"]
+        self.assertEqual(len(nest), num_keys)
+        for i in (0, num_keys // 2, num_keys - 1):
+            with self.subTest(key=i):
+                self.assertEqual(nest[f"k{i}"], i)
+
+    @support.requires_resource('cpu')
+    def test_deep_header_does_not_scale_with_depth(self):
+        # gh-152930: a deep table header must not be re-walked for every key
+        # under it. With the key count fixed, doubling the header depth should
+        # leave the parse time about the same (linear in depth + keys), not
+        # double it (quadratic in depth * keys). The ratio is machine
+        # independent, so a generous bound tolerates load and slow platforms.
+        num_keys = 10000
+        body = "".join(f"k{i} = 1\n" for i in range(num_keys))
+
+        def parse_time(depth):
+            doc = "[" + ".".join(f"h{i}" for i in range(depth)) + "]\n" + body
+            tomllib.loads(doc)  # warm up
+            best = None
+            for _ in range(3):
+                start = time.perf_counter()
+                tomllib.loads(doc)
+                elapsed = time.perf_counter() - start
+                best = elapsed if best is None else min(best, elapsed)
+            return best
+
+        max_depth = tomllib._parser.MAX_KEY_PARTS - 2
+        shallow = parse_time(max_depth // 2)
+        deep = parse_time(max_depth)
+        self.assertLess(deep, shallow * 1.5)
+
     def test_load(self):
         content = "one=1 \n two='two' \n arr=[]"
         expected = {"one": 1, "two": "two", "arr": []}
