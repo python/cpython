@@ -28,16 +28,23 @@ class GrammarVisitor:
 class Grammar:
     def __init__(self, rules: Iterable[Rule], metas: Iterable[tuple[str, str | None]]):
         # Check if there are repeated rules in "rules"
-        all_rules = {}
+        all_rules: dict[str, Rule] = {}
+        # Rules with the "extend" flag do not define new rules; they
+        # are applied to already defined rules when grammars are merged.
+        extensions: list[Rule] = []
         for rule in rules:
-            if rule.name in all_rules:
+            if "extend" in rule.flags:
+                extensions.append(rule)
+            elif rule.name in all_rules:
                 raise GrammarError(f"Repeated rule {rule.name!r}")
-            all_rules[rule.name] = rule
+            else:
+                all_rules[rule.name] = rule
         self.rules = all_rules
+        self.extensions = extensions
         self.metas = dict(metas)
 
     def __str__(self) -> str:
-        return "\n".join(str(rule) for name, rule in self.rules.items())
+        return "\n".join(str(rule) for rule in self)
 
     def __repr__(self) -> str:
         lines = ["Grammar("]
@@ -51,6 +58,7 @@ class Grammar:
 
     def __iter__(self) -> Iterator[Rule]:
         yield from self.rules.values()
+        yield from self.extensions
 
 
 # Global flag whether we want actions in __str__() -- default off.
@@ -132,6 +140,20 @@ class StringLeaf(Leaf):
         return f"StringLeaf({self.value!r})"
 
 
+class Splice(Leaf):
+    """A placeholder for a run of alternatives of the extended rule.
+
+    It can only be used as a whole alternative ("| ...") in a rule
+    with the "extend" flag.
+    """
+
+    def __init__(self) -> None:
+        super().__init__("...")
+
+    def __repr__(self) -> str:
+        return "Splice()"
+
+
 class Rhs:
     def __init__(self, alts: list[Alt]):
         self.alts = alts
@@ -156,10 +178,15 @@ class Rhs:
 
 
 class Alt:
-    def __init__(self, items: list[NamedItem], *, icut: int = -1, action: str | None = None):
+    def __init__(self, items: list[NamedItem], *, icut: int = -1,
+                 action: str | None = None, invalid: bool = False):
         self.items = items
         self.icut = icut
         self.action = action
+        # True for alternatives inserted by a rule extension; they are
+        # only used in the second parsing pass, like references to
+        # invalid_* rules.
+        self.invalid = invalid
 
     def __str__(self) -> str:
         core = " ".join(str(item) for item in self.items)
@@ -193,7 +220,9 @@ class NamedItem:
             return str(self.item)
 
     def __repr__(self) -> str:
-        return f"NamedItem({self.name!r}, {self.item!r})"
+        if self.type is None:
+            return f"NamedItem({self.name!r}, {self.item!r})"
+        return f"NamedItem({self.name!r}, {self.item!r}, {self.type!r})"
 
     def __iter__(self) -> Iterator[Item]:
         yield self.item
@@ -344,6 +373,7 @@ class Cut:
 Plain = Leaf | Group
 Item = Plain | Opt | Repeat | Forced | Lookahead | Rhs | Cut
 RuleName = tuple[str, str | None]
+RuleNameList = list[RuleName]
 MetaTuple = tuple[str, str | None]
 MetaList = list[MetaTuple]
 RuleList = list[Rule]

@@ -302,6 +302,7 @@ Python/optimizer_symbols.c    @markshannon @tomasr8 @Fidget-Spinner @savannahost
 
 # Parser, Lexer, and Grammar
 Grammar/python.gram           @pablogsal @lysnikolaou
+Grammar/python_errors.gram    @pablogsal @lysnikolaou
 Lib/test/test_peg_generator/  @pablogsal @lysnikolaou
 Lib/test/test_tokenize.py     @pablogsal @lysnikolaou
 Lib/tokenize.py               @pablogsal @lysnikolaou

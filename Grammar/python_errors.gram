@@ -1,0 +1,536 @@
+# Rules for generating specialized syntax error messages for invalid
+# Python code. They are not part of the Python grammar (see
+# python.gram); they only improve error reporting.
+#
+# A rule marked with the "extend" flag adds alternatives to the rule
+# with the same name in python.gram:
+#
+# rule_name (extend):
+#     | an_alternative { RAISE... }      <- inserted before all alternatives
+#     | ...
+#     | other_alternative { RAISE... }   <- inserted at a deduced position
+#
+# The added alternatives are only tried in the second parsing pass,
+# after the first pass (without them) has failed, and raise SyntaxError
+# with a specialized message when matched. See "Error handling" in
+# InternalDocs/parser.md.
+#
+# The position of an added alternative is deduced automatically: it is
+# inserted before the leftmost alternative which can match a proper
+# prefix of the code matched by the added alternative (and would thus
+# shadow the error), or after all alternatives if there is no such one.
+#
+# Several rules can be extended at once:
+#
+# (rule_name_1 | rule_name_2) (extend):
+#     | an_alternative { RAISE... }
+#
+# Alternatives written before "..." (which stands for the alternatives
+# of the base rule) are inserted before all of them. This is needed
+# when the position cannot be deduced: when the alternative must
+# preempt one which reports an error itself instead of just failing
+# (because it contains forced tokens (&&) or rules like "block").
+#
+# Rules shared by several alternatives are defined at the end of the
+# file. Their names start with "invalid_" (except for helper rules),
+# which makes the alternatives referencing them second-pass only too.
+
+# ========================= RULE EXTENSIONS ==============================
+
+assignment (extend):
+    | a=invalid_ann_assign_target ':' expression {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+            a,
+            "only single target (not %s) can be annotated",
+            _PyPegen_get_expr_name(a)
+        )}
+    | a=star_named_expression ',' star_named_expressions* ':' expression {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "only single target (not tuple) can be annotated") }
+    | a=expression ':' expression {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "illegal target for annotation") }
+    | (star_targets '=')* a=star_expressions '=' {
+        RAISE_SYNTAX_ERROR_INVALID_TARGET(STAR_TARGETS, a) }
+    | (star_targets '=')* a=yield_expr '=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "assignment to yield expression not possible") }
+    | a=star_expressions augassign annotated_rhs {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+            a,
+            "'%s' is an illegal expression for augmented assignment",
+            _PyPegen_get_expr_name(a)
+        )}
+
+raise_stmt (extend):
+    | a='raise' b='from' {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "did you forget an expression between 'raise' and 'from'?") }
+    | 'raise' expression a='from' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "did you forget an expression after 'from'?") }
+
+del_stmt (extend):
+    | 'del' a=star_expressions {
+        RAISE_SYNTAX_ERROR_INVALID_TARGET(DEL_TARGETS, a) }
+
+assert_stmt (extend):
+    | 'assert' [expression ','] a=expression '=' b=expression {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(
+            a, b,
+            "cannot assign to %s here. Maybe you meant '==' instead of '='?",
+            _PyPegen_get_expr_name(a)) }
+    | 'assert' [expression ','] a=expression ':=' b=expression {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(
+            a, b,
+            "cannot use named expression without parentheses here") }
+    | ...
+
+import_stmt (extend):
+    | a='import' ','.dotted_name+ 'from' dotted_name {
+        RAISE_SYNTAX_ERROR_STARTING_FROM(a, "Did you mean to use 'from ... import ...' instead?") }
+    | 'import' token=NEWLINE {
+        RAISE_SYNTAX_ERROR_STARTING_FROM(token, "Expected one or more names after 'import'") }
+    | ...
+
+import_from (extend):
+    | 'from' ('.' | '...')* dotted_name a="lazy" 'import' import_from_targets {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a,
+            "use 'lazy from ... ' instead of 'from ... lazy import'") }
+    | ...
+
+import_from_targets (extend):
+    | import_from_as_names ',' NEWLINE {
+        RAISE_SYNTAX_ERROR("trailing comma not allowed without surrounding parentheses") }
+    | token=NEWLINE {
+        RAISE_SYNTAX_ERROR_STARTING_FROM(token, "Expected one or more names after 'import'") }
+
+import_from_as_name (extend):
+    | NAME 'as' !(NAME (',' | ')' | ';' | NEWLINE)) a=expression {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a,
+            "cannot use %s as import target", _PyPegen_get_expr_name(a)) }
+    | ...
+
+dotted_as_name (extend):
+    | dotted_name 'as' !(NAME (',' | ')' | ';' | NEWLINE)) a=expression {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a,
+            "cannot use %s as import target", _PyPegen_get_expr_name(a)) }
+    | ...
+
+block (extend):
+    | NEWLINE !INDENT { RAISE_INDENTATION_ERROR("expected an indented block") }
+
+class_def_raw (extend):
+    | 'class' NAME [type_params] ['(' [arguments] ')'] NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+    | a='class' NAME [type_params] ['(' [arguments] ')'] ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after class definition on line %d", a->lineno) }
+    | ...
+
+function_def_raw (extend):
+    | ['async'] a='def' NAME [type_params] '(' [params] ')' ['->' expression] ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after function definition on line %d", a->lineno) }
+    | ['async'] 'def' NAME [type_params] &&'(' [params] ')' ['->' expression] &&':' [func_type_comment] block
+    | ...
+
+params (extend):
+    | a="/" ',' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "at least one parameter must precede /") }
+    | (slash_no_default | slash_with_default) param_maybe_default* a='/' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "/ may appear only once") }
+    | slash_no_default? param_no_default* (slash_with_default | param_with_default+) a=param_no_default {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "parameter without a default follows parameter with a default") }
+    | param_no_default* a='(' param_no_default+ ','? b=')' {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "Function parameters cannot be parenthesized") }
+    | (slash_no_default | slash_with_default)? param_maybe_default* '*' (',' | param_no_default) param_maybe_default* a='/' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "/ must be ahead of *") }
+    | param_maybe_default+ '/' a='*' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expected comma between / and *") }
+    | ...
+
+star_etc (extend):
+    | a='*' (')' | ',' (')' | '**')) { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "named parameters must follow bare *") }
+    | '*' ',' TYPE_COMMENT { RAISE_SYNTAX_ERROR("bare * has associated type comment") }
+    | '*' param a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "var-positional parameter cannot have default value") }
+    | '*' (param_no_default | ',') param_maybe_default* a='*' (param_no_default | ',') {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "* may appear only once") }
+    | ...
+
+kwds (extend):
+    | '**' param a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "var-keyword parameter cannot have default value") }
+    | '**' param ',' a=param { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "parameters cannot follow var-keyword parameter") }
+    | '**' param ',' a[Token*]=('*'|'**'|'/') { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "parameters cannot follow var-keyword parameter") }
+    | ...
+
+default (extend):
+    | a='=' &(')'|',') { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expected default value expression") }
+
+if_stmt (extend):
+    | 'if' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+    | a='if' a=named_expression ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after 'if' statement on line %d", a->lineno) }
+    | ...
+
+elif_stmt (extend):
+    | 'elif' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+    | a='elif' named_expression ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after 'elif' statement on line %d", a->lineno) }
+    | ...
+
+else_block (extend):
+    | a='else' ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after 'else' statement on line %d", a->lineno) }
+    | 'else' ':' block 'elif' { RAISE_SYNTAX_ERROR("'elif' block follows an 'else' block")}
+    | ...
+
+while_stmt (extend):
+    | 'while' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+    | a='while' named_expression ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after 'while' statement on line %d", a->lineno) }
+    | ...
+
+for_stmt (extend):
+    | ['async'] 'for' star_targets 'in' star_expressions NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+    | ['async'] a='for' star_targets 'in' star_expressions ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after 'for' statement on line %d", a->lineno) }
+    | ...
+
+with_stmt (extend):
+    | ['async'] a='with' ','.(expression ['as' star_target])+ ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after 'with' statement on line %d", a->lineno) }
+    | ['async'] a='with' '(' ','.(expressions ['as' star_target])+ ','? ')' ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after 'with' statement on line %d", a->lineno) }
+    | ...
+    | ['async'] 'with' ','.(expression ['as' star_target])+ trailing=',' ':' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(trailing, "the last 'with' item has a trailing comma") }
+    | ['async'] 'with' ','.(expression ['as' star_target])+ NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+    | ['async'] 'with' '(' ','.(expressions ['as' star_target])+ ','? ')' NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+
+with_item (extend):
+    | expression 'as' a=expression &(',' | ')' | ':') {
+        RAISE_SYNTAX_ERROR_INVALID_TARGET(STAR_TARGETS, a) }
+
+try_stmt (extend):
+    | a='try' ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after 'try' statement on line %d", a->lineno) }
+    | 'try' ':' block !('except' | 'finally') { RAISE_SYNTAX_ERROR("expected 'except' or 'finally' block") }
+    | 'try' ':' block* except_block+ a='except' b='*' expression ['as' NAME] ':' {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot have both 'except' and 'except*' on the same 'try'") }
+    | 'try' ':' block* except_star_block+ a='except' [expression ['as' NAME]] ':' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot have both 'except' and 'except*' on the same 'try'") }
+    | ...
+
+except_block (extend):
+    | a='except' expression ['as' NAME ] ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after 'except' statement on line %d", a->lineno) }
+    | a='except' ':' NEWLINE !INDENT { RAISE_INDENTATION_ERROR("expected an indented block after 'except' statement on line %d", a->lineno) }
+    | ...
+    | 'except' a=expression ',' expressions 'as' NAME  ':' {
+        RAISE_SYNTAX_ERROR_STARTING_FROM(a, "multiple exception types must be parenthesized when using 'as'") }
+    | a='except' expression ['as' NAME ] NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+    | a='except' NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+    | 'except' expression 'as' a=expression ':' block {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+            a, "cannot use except statement with %s", _PyPegen_get_expr_name(a)) }
+
+except_star_block (extend):
+    | a='except' '*' expression ['as' NAME ] ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after 'except*' statement on line %d", a->lineno) }
+    | ...
+    | 'except' '*' a=expression ',' expressions 'as' NAME  ':' {
+        RAISE_SYNTAX_ERROR_STARTING_FROM(a, "multiple exception types must be parenthesized when using 'as'") }
+    | a='except' '*' expression ['as' NAME ] NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+    | a='except' '*' (NEWLINE | ':') { RAISE_SYNTAX_ERROR("expected one or more exception types") }
+    | 'except' '*' expression 'as' a=expression ':' block {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+            a, "cannot use except* statement with %s", _PyPegen_get_expr_name(a)) }
+
+finally_block (extend):
+    | a='finally' ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after 'finally' statement on line %d", a->lineno) }
+    | ...
+
+match_stmt (extend):
+    | "match" subject_expr NEWLINE { CHECK_VERSION(void*, 10, "Pattern matching is", RAISE_SYNTAX_ERROR("expected ':'") ) }
+    | a="match" subject=subject_expr ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after 'match' statement on line %d", a->lineno) }
+    | a="case" patterns guard? b=':' block {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(
+            a, b,
+            "case statement must be inside match statement") }
+
+case_block (extend):
+    | "case" patterns guard? NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+    | a="case" patterns guard? ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after 'case' statement on line %d", a->lineno) }
+    | ...
+
+as_pattern (extend):
+    | or_pattern 'as' a="_" { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot use '_' as a target") }
+    | or_pattern 'as' a=expression {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+            a, "cannot use %s as pattern target", _PyPegen_get_expr_name(a)) }
+
+mapping_pattern (extend):
+    | '{' (items_pattern ',')? rest=double_star_pattern ',' items_pattern ','? '}' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+        rest,
+        "double star pattern must be the last (right-most) subpattern in the mapping pattern") }
+
+class_pattern (extend):
+    | name_or_attr '(' a=invalid_class_argument_pattern  { RAISE_SYNTAX_ERROR_KNOWN_RANGE(
+        PyPegen_first_item(a, pattern_ty),
+        PyPegen_last_item(a, pattern_ty),
+        "positional patterns follow keyword patterns") }
+
+type_params (extend):
+    | '[' token=']' {
+        RAISE_SYNTAX_ERROR_STARTING_FROM(
+            token,
+            "Type parameter list cannot be empty")}
+    | ...
+
+type_param (extend):
+    | '*' a=NAME colon=':' e=expression {
+            RAISE_SYNTAX_ERROR_STARTING_FROM(colon, e->kind == Tuple_kind
+                ? "cannot use constraints with TypeVarTuple"
+                : "cannot use bound with TypeVarTuple")
+        }
+    | '**' a=NAME colon=':' e=expression {
+            RAISE_SYNTAX_ERROR_STARTING_FROM(colon, e->kind == Tuple_kind
+                ? "cannot use constraints with ParamSpec"
+                : "cannot use bound with ParamSpec")
+        }
+
+expression (extend):
+    | disjunction 'if' b=disjunction 'else' a='*' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot unpack only part of a conditional expression") }
+    | disjunction 'if' b=disjunction 'else' a='**' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot use dict unpacking on only part of a conditional expression") }
+    |  STRING a=(!STRING expression_without_invalid)+ STRING {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE( PyPegen_first_item(a, expr_ty), PyPegen_last_item(a, expr_ty),
+        "invalid syntax. Is this intended to be part of the string?") }
+    # !(NAME STRING) is not matched so we don't show this error with some invalid string prefixes like: kf"dsfsdf"
+    # Soft keywords need to also be ignored because they can be parsed as NAME NAME
+    | !(NAME STRING | SOFT_KEYWORD) a=disjunction b=expression_without_invalid {
+        _PyPegen_raise_error_for_missing_comma(p, a, b) }
+    | a=disjunction 'if' b=disjunction !('else'|':') { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "expected 'else' after 'if' expression") }
+    | a=disjunction 'if' b=disjunction 'else' !expression {
+        RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("expected expression after 'else', but statement is given") }
+    | a[stmt_ty]=(pass_stmt|break_stmt|continue_stmt) 'if' b=disjunction 'else' c=simple_stmt {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION (a, "expected expression before 'if', but statement is given") }
+    | a='lambda' [lambda_params] b=':' &FSTRING_MIDDLE  {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "f-string: lambda expressions are not allowed without parentheses") }
+    | a='lambda' [lambda_params] b=':' &TSTRING_MIDDLE  {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "t-string: lambda expressions are not allowed without parentheses") }
+    | a=NAME !'(' b=star_expressions {
+        _PyPegen_check_legacy_stmt(p, a) ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b,
+            "Missing parentheses in call to '%U'. Did you mean %U(...)?", a->v.Name.id, a->v.Name.id) : NULL}
+    | ...
+
+star_named_expression_sequence (extend):
+    | a='**' bitwise_or {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot use dict unpacking here") }
+    | invalid_starred_expression_unpacking
+    | ...
+
+named_expression (extend):
+    | invalid_named_expression
+
+bitwise_or (extend):
+    | a=bitwise_or b='|' c='|' {
+        _PyPegen_tokens_are_adjacent(b, c)
+        ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(b, c, "invalid syntax.  Maybe you meant 'or' or '|' instead of '||'?")
+        : NULL
+    }
+
+bitwise_and (extend):
+    | a=bitwise_and b='&' c='&' {
+        _PyPegen_tokens_are_adjacent(b, c)
+        ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(b, c, "invalid syntax.  Maybe you meant 'and' or '&' instead of '&&'?")
+        : NULL
+    }
+
+sum (extend):
+    | sum ('+'|'-'|'*'|'/'|'%'|'//'|'@') a='not' b=inversion { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "'not' after an operator must be parenthesized") }
+
+factor (extend):
+    | ('+' | '-' | '~') a='not' b=factor { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "'not' after an operator must be parenthesized") }
+
+group (extend):
+    | '(' a=starred_expression ')' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot use starred expression here") }
+    | '(' a='**' expression ')' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot use double starred expression here") }
+
+lambda_params (extend):
+    | a="/" ',' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "at least one parameter must precede /") }
+    | (lambda_slash_no_default | lambda_slash_with_default) lambda_param_maybe_default* a='/' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "/ may appear only once") }
+    | lambda_slash_no_default? lambda_param_no_default* (lambda_slash_with_default | lambda_param_with_default+) a=lambda_param_no_default {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "parameter without a default follows parameter with a default") }
+    | lambda_param_no_default* a='(' ','.lambda_param+ ','? b=')' {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "Lambda expression parameters cannot be parenthesized") }
+    | (lambda_slash_no_default | lambda_slash_with_default)? lambda_param_maybe_default* '*' (',' | lambda_param_no_default) lambda_param_maybe_default* a='/' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "/ must be ahead of *") }
+    | lambda_param_maybe_default+ '/' a='*' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expected comma between / and *") }
+    | ...
+
+lambda_star_etc (extend):
+    | '*' (':' | ',' (':' | '**')) { RAISE_SYNTAX_ERROR("named parameters must follow bare *") }
+    | '*' lambda_param a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "var-positional parameter cannot have default value") }
+    | '*' (lambda_param_no_default | ',') lambda_param_maybe_default* a='*' (lambda_param_no_default | ',') {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "* may appear only once") }
+    | ...
+
+lambda_kwds (extend):
+    | '**' lambda_param a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "var-keyword parameter cannot have default value") }
+    | '**' lambda_param ',' a=lambda_param { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "parameters cannot follow var-keyword parameter") }
+    | '**' lambda_param ',' a[Token*]=('*'|'**'|'/') { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "parameters cannot follow var-keyword parameter") }
+    | ...
+
+fstring_replacement_field (extend):
+    | '{' a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "f-string: valid expression required before '='") }
+    | '{' a='!' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "f-string: valid expression required before '!'") }
+    | '{' a=':' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "f-string: valid expression required before ':'") }
+    | '{' a='}' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "f-string: valid expression required before '}'") }
+    | '{' !annotated_rhs { RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting a valid expression after '{'") }
+    | '{' annotated_rhs !('=' | '!' | ':' | '}') {
+        PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting '=', or '!', or ':', or '}'") }
+    | '{' annotated_rhs '=' !('!' | ':' | '}') {
+        PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting '!', or ':', or '}'") }
+    | '{' annotated_rhs '='? invalid_fstring_conversion_character
+    | '{' annotated_rhs '='? ['!' NAME] !(':' | '}') {
+        PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting ':' or '}'") }
+    | '{' annotated_rhs '='? ['!' NAME] ':' fstring_format_spec* !'}' {
+        PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting '}', or format specs") }
+    | '{' annotated_rhs '='? ['!' NAME] !'}' {
+        PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting '}'") }
+
+(tstring_format_spec_replacement_field | tstring_replacement_field) (extend):
+    | '{' a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "t-string: valid expression required before '='") }
+    | '{' a='!' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "t-string: valid expression required before '!'") }
+    | '{' a=':' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "t-string: valid expression required before ':'") }
+    | '{' a='}' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "t-string: valid expression required before '}'") }
+    | '{' !annotated_rhs { RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("t-string: expecting a valid expression after '{'") }
+    | '{' annotated_rhs !('=' | '!' | ':' | '}') {
+        PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("t-string: expecting '=', or '!', or ':', or '}'") }
+    | '{' annotated_rhs '=' !('!' | ':' | '}') {
+        PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("t-string: expecting '!', or ':', or '}'") }
+    | '{' annotated_rhs '='? invalid_tstring_conversion_character
+    | '{' annotated_rhs '='? ['!' NAME] !(':' | '}') {
+        PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("t-string: expecting ':' or '}'") }
+    | '{' annotated_rhs '='? ['!' NAME] ':' fstring_format_spec* !'}' {
+        PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("t-string: expecting '}', or format specs") }
+    | '{' annotated_rhs '='? ['!' NAME] !'}' {
+        PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("t-string: expecting '}'") }
+
+strings (extend):
+    | a=(fstring|string)+ b[expr_ty]=tstring {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(PyPegen_last_item(a, expr_ty), b, "cannot mix t-string literals with string or bytes literals") }
+    | a=tstring+ b[expr_ty]=(fstring|string) {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(PyPegen_last_item(a, expr_ty), b, "cannot mix t-string literals with string or bytes literals") }
+    | ...
+
+dict (extend):
+    | '{' invalid_double_starred_kvpairs '}'
+
+for_if_clause (extend):
+    | 'async'? 'for' (bitwise_or (',' bitwise_or)* [',']) !'in' {
+        RAISE_SYNTAX_ERROR("'in' expected after for-loop variables") }
+
+(for_stmt | for_if_clause) (extend):
+    | 'async'? 'for' a=star_expressions {
+        RAISE_SYNTAX_ERROR_INVALID_TARGET(FOR_TARGETS, a) }
+
+(listcomp | setcomp | genexp) (extend):
+    | '[' a='**' b=expression for_if_clauses {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot use dict unpacking in list comprehension") }
+    | '(' a='**' b=expression for_if_clauses {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot use dict unpacking in generator expression") }
+    | ('[' | '{') a=star_named_expression ',' b=star_named_expressions for_if_clauses {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, PyPegen_last_item(b, expr_ty),
+        "did you forget parentheses around the comprehension target?") }
+    | ('[' | '{') a=star_named_expression b=',' for_if_clauses {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "did you forget parentheses around the comprehension target?") }
+
+arguments (extend):
+    | ((','.(starred_expression | ( assignment_expression | expression !':=') !'=')+ ',' kwargs) | kwargs) a=',' ','.(starred_expression !'=')+ {
+        RAISE_SYNTAX_ERROR_STARTING_FROM(a, "iterable argument unpacking follows keyword argument unpacking") }
+    | a=expression b=for_if_clauses ',' [args | expression for_if_clauses] {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, _PyPegen_get_last_comprehension_item(PyPegen_last_item(b, comprehension_ty)), "Generator expression must be parenthesized") }
+    | a=NAME b='=' expression for_if_clauses {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Maybe you meant '==' or ':=' instead of '='?")}
+    | (args ',')? a=NAME b='=' &(',' | ')') {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "expected argument value expression")}
+    | a=args b=for_if_clauses { _PyPegen_nonparen_genexp_in_call(p, a, b) }
+    | args ',' a=expression b=for_if_clauses {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, _PyPegen_get_last_comprehension_item(PyPegen_last_item(b, comprehension_ty)), "Generator expression must be parenthesized") }
+    | a=args ',' args { _PyPegen_arguments_parsing_error(p, a) }
+
+starred_expression (extend):
+    | invalid_starred_expression_unpacking
+    | ...
+    | '*' { RAISE_SYNTAX_ERROR("Invalid star expression") }
+
+(kwarg_or_starred | kwarg_or_double_starred) (extend):
+    | a[Token*]=('True'|'False'|'None') b='=' {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot assign to %s", PyBytes_AS_STRING(a->bytes)) }
+    | a=NAME b='=' expression for_if_clauses {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Maybe you meant '==' or ':=' instead of '='?")}
+    | !(NAME '=') a=expression b='=' {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(
+            a, b, "expression cannot contain assignment, perhaps you meant \"==\"?") }
+    | a='**' expression '=' b=expression {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot assign to keyword argument unpacking") }
+    # IMPORTANT: Note that the "_without_invalid" suffix causes the rule to not call invalid rules under it
+    | ...
+
+func_type_comment (extend):
+    | TYPE_COMMENT NEWLINE TYPE_COMMENT NEWLINE INDENT {
+        RAISE_SYNTAX_ERROR("Cannot have two type comments on def") }
+
+# ========================= INVALID RULES ================================
+
+expression_without_invalid[expr_ty]:
+    | a=disjunction 'if' b=disjunction 'else' c=expression { _PyAST_IfExp(b, a, c, EXTRA) }
+    | disjunction
+    | lambdef
+invalid_named_expression(memo):
+    | a=expression ':=' expression {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+            a, "cannot use assignment expressions with %s", _PyPegen_get_expr_name(a)) }
+    | a=NAME '=' b=bitwise_or !('='|':=') {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Maybe you meant '==' or ':=' instead of '='?") }
+    | !(list|tuple|genexp|'True'|'None'|'False') a=bitwise_or b='=' bitwise_or !('='|':=') {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot assign to %s here. Maybe you meant '==' instead of '='?",
+                                          _PyPegen_get_expr_name(a)) }
+
+invalid_ann_assign_target[expr_ty]:
+    | list
+    | tuple
+    | '(' a=invalid_ann_assign_target ')' { a }
+invalid_class_argument_pattern[asdl_pattern_seq*]:
+    | [positional_patterns ','] keyword_patterns ',' a=positional_patterns { a }
+invalid_double_starred_kvpairs:
+    | invalid_kvpair_unpacking [',']
+    | ','.double_starred_kvpair+ ',' (invalid_kvpair | invalid_kvpair_unpacking)
+    | expression a=':' &('}'|',') { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expression expected after dictionary key and ':'") }
+invalid_kvpair_unpacking:
+    | a='**' b=if_expression {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid double starred expression. Did you forget to wrap the conditional expression in parentheses?") }
+    | a='*' b=bitwise_or ':' expression { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot use a starred expression in a dictionary key") }
+    | a='**' b=bitwise_or ':' expression { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot use dict unpacking in a dictionary key") }
+    | expression ':' a='*' b=bitwise_or { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot use a starred expression in a dictionary value") }
+    | expression ':' a='**' b=bitwise_or { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot use dict unpacking in a dictionary value") }
+invalid_kvpair:
+    | a=expression !(':') {
+        RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, a->lineno, a->end_col_offset - 1, a->end_lineno, -1, "':' expected after dictionary key") }
+    | expression ':' a='*' bitwise_or { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "cannot use a starred expression in a dictionary value") }
+    | expression ':' a='**' bitwise_or { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "cannot use dict unpacking in a dictionary value") }
+    | expression a=':' &('}'|',') {RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expression expected after dictionary key and ':'") }
+invalid_starred_expression_unpacking:
+    | a='*' b=if_expression {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid starred expression. Did you forget to wrap the conditional expression in parentheses?") }
+    | a='*' expression '=' b=expression { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot assign to iterable argument unpacking") }
+invalid_fstring_conversion_character:
+    | '!' &(':' | '}') { RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: missing conversion character") }
+    | '!' !NAME { RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: invalid conversion character") }
+
+invalid_tstring_conversion_character:
+    | '!' &(':' | '}') { RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("t-string: missing conversion character") }
+    | '!' !NAME { RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("t-string: invalid conversion character") }
