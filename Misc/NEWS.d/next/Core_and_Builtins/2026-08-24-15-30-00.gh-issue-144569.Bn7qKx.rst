@@ -1,0 +1,2 @@
+Optimize ``BINARY_SLICE`` for :class:`bytes` by avoiding temporary
+:class:`slice` object creation.
