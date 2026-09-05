@@ -979,7 +979,8 @@ C API changes
 New features
 ------------
 
-* TODO
+* Add :c:func:`PyMethod_New` function to the limited C API.
+  (Contributed by Nicolas Trangez in :gh:`155588`.)
 
 Porting to Python 3.16
 ----------------------
