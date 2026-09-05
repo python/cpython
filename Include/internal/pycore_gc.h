@@ -314,6 +314,7 @@ static inline void _PyObject_GC_UNTRACK(
 */
 
 extern void _PyGC_InitState(struct _gc_runtime_state *);
+extern void _PyGC_AfterFork(PyThreadState *tstate);
 
 extern Py_ssize_t _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason);
 extern void _PyGC_CollectNoFail(PyThreadState *tstate);
@@ -330,6 +331,12 @@ extern PyObject *_PyGC_GetReferrers(PyInterpreterState *interp, PyObject *objs);
 
 // Functions to clear types free lists
 extern void _PyGC_ClearAllFreeLists(PyInterpreterState *interp);
+
+// Nesting is interpreter-wide. Explicit collections and allocation counting
+// continue, and resuming does not schedule a collection immediately.
+// An in-flight free-threaded collection may still emit start and stop callbacks.
+PyAPI_FUNC(void) _PyGC_DeferAutomaticCollection(PyThreadState *tstate);
+PyAPI_FUNC(void) _PyGC_ResumeAutomaticCollection(PyThreadState *tstate);
 extern void _Py_RunGC(PyThreadState *tstate);
 
 union _PyStackRef;

@@ -2001,8 +2001,12 @@ gc_should_collect(GCState *gcstate)
 {
     int count = _Py_atomic_load_int_relaxed(&gcstate->young.count);
     int threshold = gcstate->young.threshold;
-    int gc_enabled = _Py_atomic_load_int_relaxed(&gcstate->enabled);
-    if (count <= threshold || threshold == 0 || !gc_enabled) {
+    if (count <= threshold || threshold == 0) {
+        return false;
+    }
+    if (!_Py_atomic_load_int_relaxed(&gcstate->enabled) ||
+        _Py_atomic_load_int_relaxed(
+            &gcstate->automatic_collection_pause_count)) {
         return false;
     }
     if (gcstate->old[0].threshold == 0) {
@@ -2065,10 +2069,19 @@ record_deallocation(PyThreadState *tstate)
     }
 }
 
-static void
-gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, int generation)
+static bool
+gc_collect_internal(PyInterpreterState *interp,
+                    struct collection_state *state, int generation)
 {
     _PyEval_StopTheWorld(interp);
+
+    // Close the race with a deferral that started before the world stopped.
+    if (state->reason == _Py_GC_REASON_HEAP &&
+        _Py_atomic_load_int(
+            &state->gcstate->automatic_collection_pause_count)) {
+        _PyEval_StartTheWorld(interp);
+        return false;
+    }
 
     // update collection and allocation counters
     if (generation+1 < NUM_GENERATIONS) {
@@ -2114,7 +2127,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
         if (err < 0) {
             _PyEval_StartTheWorld(interp);
             PyErr_NoMemory();
-            return;
+            return true;
         }
     }
     #endif
@@ -2124,7 +2137,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     if (err < 0) {
         _PyEval_StartTheWorld(interp);
         PyErr_NoMemory();
-        return;
+        return true;
     }
 
 #ifdef GC_DEBUG
@@ -2171,7 +2184,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
         cleanup_worklist(&state->wrcb_to_call);
         cleanup_worklist(&state->objs_to_decref);
         PyErr_NoMemory();
-        return;
+        return true;
     }
 
     // Call tp_clear on objects in the unreachable set. This will cause
@@ -2181,6 +2194,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
 
     // Append objects with legacy finalizers to the "gc.garbage" list.
     handle_legacy_finalizers(state);
+    return true;
 }
 
 static struct gc_generation_stats *
@@ -2233,8 +2247,6 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         s->object_stats.object_visits = 0;
     }
 #endif
-    GC_STAT_ADD(generation, collections, 1);
-
     if (reason != _Py_GC_REASON_SHUTDOWN) {
         invoke_gc_callback(tstate, "start", generation, 0, 0, 0, 0.0);
     }
@@ -2258,7 +2270,18 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         .reason = reason,
     };
 
-    gc_collect_internal(interp, &state, generation);
+    if (!gc_collect_internal(interp, &state, generation)) {
+        if (PyDTrace_GC_DONE_ENABLED()) {
+            PyDTrace_GC_DONE(0);
+        }
+        if (reason != _Py_GC_REASON_SHUTDOWN) {
+            invoke_gc_callback(tstate, "stop", generation, 0, 0, 0, 0.0);
+        }
+        gcstate->frame = NULL;
+        _Py_atomic_store_int(&gcstate->collecting, 0);
+        return 0;
+    }
+    GC_STAT_ADD(generation, collections, 1);
 
     m = state.collected;
     n = state.uncollectable;
@@ -2547,6 +2570,41 @@ PyGC_IsEnabled(void)
 {
     GCState *gcstate = get_gc_state();
     return _Py_atomic_load_int_relaxed(&gcstate->enabled);
+}
+
+void
+_PyGC_DeferAutomaticCollection(PyThreadState *tstate)
+{
+    GCState *gcstate = &tstate->interp->gc;
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    int previous = _Py_atomic_add_int(
+        &gcstate->automatic_collection_pause_count, 1);
+    (void)previous;
+    assert(previous >= 0);
+    assert(tstate_impl->gc.automatic_collection_pause_count >= 0);
+    tstate_impl->gc.automatic_collection_pause_count++;
+}
+
+void
+_PyGC_ResumeAutomaticCollection(PyThreadState *tstate)
+{
+    GCState *gcstate = &tstate->interp->gc;
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    int previous = _Py_atomic_add_int(
+        &gcstate->automatic_collection_pause_count, -1);
+    (void)previous;
+    assert(previous > 0);
+    assert(tstate_impl->gc.automatic_collection_pause_count > 0);
+    tstate_impl->gc.automatic_collection_pause_count--;
+}
+
+void
+_PyGC_AfterFork(PyThreadState *tstate)
+{
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    _Py_atomic_store_int(
+        &tstate->interp->gc.automatic_collection_pause_count,
+        tstate_impl->gc.automatic_collection_pause_count);
 }
 
 /* Public API to invoke gc.collect() from C */
