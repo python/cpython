@@ -21,7 +21,11 @@ main(int argc, char **argv)
 {
         extern int Py_FrozenMain(int, char **);
 """ + ((not __debug__ and """
-        Py_OptimizeFlag++;
+        PyConfig *config;
+        PyConfig_InitPythonConfig(config);
+        config->optimization_level++;
+        Py_InitializeFromConfig(config);
+        PyConfig_Clear(config);
 """) or "")  + """
         PyImport_FrozenModules = _PyImport_FrozenModules;
         return Py_FrozenMain(argc, argv);
