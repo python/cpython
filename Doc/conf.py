@@ -44,6 +44,7 @@ _OPTIONAL_EXTENSIONS = (
     'sphinx_linklint.ext',
     'notfound.extension',
     'sphinxext.opengraph',
+    'sphinxext.rediraffe',
     'sphinxcontrib.rsvgconverter',
 )
 for optional_ext in _OPTIONAL_EXTENSIONS:
@@ -258,6 +259,16 @@ gettext_additional_targets = [
     'literal-block',
 ]
 
+rediraffe_redirects = {
+    # Splitting builtins from library
+    "library/functions.rst": "builtins/functions.rst",
+    "library/stdtypes.rst": "builtins/stdtypes.rst",
+    "library/constants.rst": "builtins/constants.rst",
+    "library/exceptions.rst": "builtins/exceptions.rst",
+    "library/threadsafety.rst": "builtins/threadsafety.rst",
+    "library/time-complexity.rst": "builtins/time-complexity.rst",
+}
+
 # Options for HTML output
 # -----------------------
 
@@ -359,7 +370,13 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
 latex_documents = [
-    ('c-api/index', 'c-api.tex', 'The Python/C API', _doc_authors, 'manual'),
+    (
+        'c-api/index',
+        'c-api.tex',
+        'The Python/C API',
+        _doc_authors,
+        'manual',
+    ),
     (
         'extending/index',
         'extending.tex',
@@ -371,6 +388,13 @@ latex_documents = [
         'installing/index',
         'installing.tex',
         'Installing Python Modules',
+        _doc_authors,
+        'manual',
+    ),
+    (
+        'builtins/index',
+        'builtins.tex',
+        'Python Built-ins Reference',
         _doc_authors,
         'manual',
     ),

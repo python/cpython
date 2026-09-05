@@ -1,11 +1,12 @@
 .. _library-index:
 
 ###############################
-  The Python Standard Library
+  The Python standard library
 ###############################
 
 While :ref:`reference-index` describes the exact syntax and
-semantics of the Python language, this library reference manual
+semantics of the Python language, and :ref:`builtins-index` describes
+the built-ins, this library reference manual
 describes the standard library that is distributed with Python. It also
 describes some of the optional components that are commonly included
 in Python distributions.
@@ -39,12 +40,6 @@ the `Python Package Index <https://pypi.org>`_.
    :maxdepth: 2
 
    intro.rst
-   functions.rst
-   constants.rst
-   stdtypes.rst
-   exceptions.rst
-   threadsafety.rst
-   time-complexity.rst
 
    text.rst
    binary.rst
