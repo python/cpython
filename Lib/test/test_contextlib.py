@@ -1204,6 +1204,109 @@ class TestBaseExitStack:
                 else:
                     self.fail("Expected IndexError, but no exception was raised")
 
+    def test_exit_exception_chaining_no_active_exception(self):
+        # gh-102201: when the body completes normally but several callbacks
+        # raise during unwind, the resulting __context__ chain must match the
+        # one produced by equivalent nested `with` statements (previously the
+        # earlier callback exceptions were dropped from the chain).
+        class RaiseExc:
+            def __init__(self, exc_type):
+                self.exc_type = exc_type
+            def __enter__(self):
+                return self
+            def __exit__(self, *exc_details):
+                raise self.exc_type()
+
+        def context_types(exc):
+            types = []
+            while exc is not None:
+                types.append(type(exc))
+                exc = exc.__context__
+            return types
+
+        # Reference behaviour: three nested ``with`` statements.
+        try:
+            with RaiseExc(IndexError):
+                with RaiseExc(KeyError):
+                    with RaiseExc(AttributeError):
+                        pass
+        except BaseException as exc:
+            reference = context_types(exc)
+
+        try:
+            with self.exit_stack() as stack:
+                stack.enter_context(RaiseExc(IndexError))
+                stack.enter_context(RaiseExc(KeyError))
+                stack.enter_context(RaiseExc(AttributeError))
+        except BaseException as exc:
+            self.assertEqual(context_types(exc),
+                             [IndexError, KeyError, AttributeError])
+            self.assertEqual(context_types(exc), reference)
+        else:
+            self.fail("Expected an exception to propagate")
+
+    def test_exit_exception_bare_raise_no_active_exception(self):
+        # gh-102201: a bare `raise` in a callback during a clean-body unwind
+        # must behave like a bare `raise` in the equivalent nested `with`
+        # (RuntimeError if nothing is active, else re-raise the real previous
+        # exception) and must never expose a private sentinel exception.
+        def bare_raise():
+            raise
+
+        # First callback, nothing active -> RuntimeError, as for a bare `raise`
+        # in an innermost __exit__ after a normal body.
+        try:
+            with self.exit_stack() as stack:
+                stack.callback(bare_raise)
+        except RuntimeError as exc:
+            self.assertIn("No active exception", str(exc))
+        except BaseException as exc:
+            self.fail(f"Expected RuntimeError, got {type(exc).__name__}")
+        else:
+            self.fail("Expected RuntimeError to propagate")
+
+        # A later callback re-raises the real previous exception.
+        def raise_key():
+            raise KeyError
+        try:
+            with self.exit_stack() as stack:
+                stack.callback(bare_raise)   # runs last
+                stack.callback(raise_key)    # runs first
+        except KeyError:
+            pass
+        except BaseException as exc:
+            self.fail(f"Expected KeyError, got {type(exc).__name__}")
+        else:
+            self.fail("Expected KeyError to propagate")
+
+    def test_exit_exception_raise_from_no_active_exception(self):
+        # gh-102201: `raise ... from sys.exception()` in a clean-body callback
+        # must reference the real previous exception (or None), like nested
+        # `with`, never a private sentinel.
+        def raise_from():
+            raise ValueError from sys.exception()
+        def raise_key():
+            raise KeyError
+
+        # First callback: nothing active -> __cause__ is None.
+        try:
+            with self.exit_stack() as stack:
+                stack.callback(raise_from)
+        except ValueError as exc:
+            self.assertIsNone(exc.__cause__)
+        else:
+            self.fail("Expected ValueError to propagate")
+
+        # Later callback: __cause__ is the real previous exception.
+        try:
+            with self.exit_stack() as stack:
+                stack.callback(raise_from)   # runs last
+                stack.callback(raise_key)    # runs first
+        except ValueError as exc:
+            self.assertIsInstance(exc.__cause__, KeyError)
+        else:
+            self.fail("Expected ValueError to propagate")
+
     def test_exit_exception_non_suppressing(self):
         # http://bugs.python.org/issue19092
         def raise_exc(exc):
@@ -1362,7 +1465,7 @@ class TestExitStack(TestBaseExitStack, unittest.TestCase):
     exit_stack = ExitStack
     callback_error_internal_frames = [
         ('__exit__', 'raise exc'),
-        ('__exit__', 'if cb(*exc_details):'),
+        ('__exit__', 'cb_suppress = cb(*exc_details)'),
     ]
 
 
