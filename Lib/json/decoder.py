@@ -355,10 +355,16 @@ class JSONDecoder(object):
         containing a JSON document).
 
         """
-        obj, end = self.raw_decode(s, idx=_w(s, 0).end())
-        end = _w(s, end).end()
+        # Skip the WHITESPACE.match() call (and its match-object allocation)
+        # for the common case where there is no leading whitespace.
+        idx = _w(s, 0).end() if s and s[0] in ' \t\n\r' else 0
+        obj, end = self.raw_decode(s, idx=idx)
+        # Likewise avoid the trailing-whitespace match when the parse already
+        # consumed the whole string.
         if end != len(s):
-            raise JSONDecodeError("Extra data", s, end)
+            end = _w(s, end).end()
+            if end != len(s):
+                raise JSONDecodeError("Extra data", s, end)
         return obj
 
     def raw_decode(self, s, idx=0):
