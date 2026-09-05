@@ -168,8 +168,9 @@ _ctypes_get_errobj(ctypes_state *st, int **pspace)
     }
     else {
         void *space = PyMem_Calloc(2, sizeof(int));
-        if (space == NULL)
-            return NULL;
+        if (space == NULL) {
+            return PyErr_NoMemory();
+        }
         errobj = PyCapsule_New(space, CTYPES_CAPSULE_NAME_PYMEM, pymem_destructor);
         if (errobj == NULL) {
             PyMem_Free(space);
@@ -468,7 +469,7 @@ PyCArgObject_new(ctypes_state *st)
     if (p == NULL)
         return NULL;
     p->pffi_type = NULL;
-    p->tag = '\0';
+    p->tag = "";
     p->obj = NULL;
     memset(&p->value, 0, sizeof(p->value));
     PyObject_GC_Track(p);
@@ -512,45 +513,50 @@ static PyObject *
 PyCArg_repr(PyObject *op)
 {
     PyCArgObject *self = _PyCArgObject_CAST(op);
-    switch(self->tag) {
+
+    if (strlen(self->tag) != 1) {
+        goto generic;
+    }
+
+    switch(self->tag[0]) {
     case 'b':
     case 'B':
-        return PyUnicode_FromFormat("<cparam '%c' (%d)>",
+        return PyUnicode_FromFormat("<cparam '%s' (%d)>",
             self->tag, self->value.b);
     case 'h':
     case 'H':
-        return PyUnicode_FromFormat("<cparam '%c' (%d)>",
+        return PyUnicode_FromFormat("<cparam '%s' (%d)>",
             self->tag, self->value.h);
     case 'i':
     case 'I':
-        return PyUnicode_FromFormat("<cparam '%c' (%d)>",
+        return PyUnicode_FromFormat("<cparam '%s' (%d)>",
             self->tag, self->value.i);
     case 'l':
     case 'L':
-        return PyUnicode_FromFormat("<cparam '%c' (%ld)>",
+        return PyUnicode_FromFormat("<cparam '%s' (%ld)>",
             self->tag, self->value.l);
 
     case 'q':
     case 'Q':
-        return PyUnicode_FromFormat("<cparam '%c' (%lld)>",
+        return PyUnicode_FromFormat("<cparam '%s' (%lld)>",
             self->tag, self->value.q);
     case 'd':
     case 'f': {
-        PyObject *f = PyFloat_FromDouble((self->tag == 'f') ? self->value.f : self->value.d);
+        PyObject *f = PyFloat_FromDouble((strcmp(self->tag, "f") == 0) ? self->value.f : self->value.d);
         if (f == NULL) {
             return NULL;
         }
-        PyObject *result = PyUnicode_FromFormat("<cparam '%c' (%R)>", self->tag, f);
+        PyObject *result = PyUnicode_FromFormat("<cparam '%s' (%R)>", self->tag, f);
         Py_DECREF(f);
         return result;
     }
     case 'c':
         if (is_literal_char((unsigned char)self->value.c)) {
-            return PyUnicode_FromFormat("<cparam '%c' ('%c')>",
+            return PyUnicode_FromFormat("<cparam '%s' ('%c')>",
                 self->tag, self->value.c);
         }
         else {
-            return PyUnicode_FromFormat("<cparam '%c' ('\\x%02x')>",
+            return PyUnicode_FromFormat("<cparam '%s' ('\\x%02x')>",
                 self->tag, (unsigned char)self->value.c);
         }
 
@@ -561,20 +567,16 @@ PyCArg_repr(PyObject *op)
     case 'z':
     case 'Z':
     case 'P':
-        return PyUnicode_FromFormat("<cparam '%c' (%p)>",
+        return PyUnicode_FromFormat("<cparam '%s' (%p)>",
             self->tag, self->value.p);
-        break;
 
     default:
-        if (is_literal_char((unsigned char)self->tag)) {
-            return PyUnicode_FromFormat("<cparam '%c' at %p>",
-                (unsigned char)self->tag, (void *)self);
-        }
-        else {
-            return PyUnicode_FromFormat("<cparam 0x%02x at %p>",
-                (unsigned char)self->tag, (void *)self);
-        }
+        break;
     }
+
+generic:
+    return PyUnicode_FromFormat("<cparam '%s' at %p>",
+        self->tag, (void *)self);
 }
 
 static PyMemberDef PyCArgType_members[] = {
@@ -1658,6 +1660,42 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
     PyErr_Format(PyExc_OSError, "symbol '%s' not found", name);
     return NULL;
 }
+
+// Apple platforms use the dyld API in ctypes.util instead.
+#if defined(HAVE_DL_ITERATE_PHDR) && !defined(__APPLE__)
+#include <link.h>
+
+static int
+_dllist_callback(struct dl_phdr_info *info, size_t size, void *data)
+{
+    PyObject *list = (PyObject *)data;
+    PyObject *name = PyUnicode_DecodeFSDefault(info->dlpi_name);
+    if (name == NULL) {
+        return -1;
+    }
+    int res = PyList_Append(list, name);
+    Py_DECREF(name);
+    return res;
+}
+
+static PyObject *
+dllist(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    // On NetBSD dl_iterate_phdr() only reports the link-map group of the
+    // caller, so it cannot be called via a libffi trampoline.
+    PyObject *list = PyList_New(0);
+    if (list == NULL) {
+        return NULL;
+    }
+    // The return value only echoes the callback result.
+    dl_iterate_phdr(_dllist_callback, list);
+    if (PyErr_Occurred()) {
+        Py_DECREF(list);
+        return NULL;
+    }
+    return list;
+}
+#endif
 #endif
 
 /*
@@ -1807,7 +1845,7 @@ _ctypes_byref_impl(PyObject *module, PyObject *obj, Py_ssize_t offset)
     if (parg == NULL)
         return NULL;
 
-    parg->tag = 'P';
+    parg->tag = "P";
     parg->pffi_type = &ffi_type_pointer;
     parg->obj = Py_NewRef(obj);
     parg->value.p = (char *)((CDataObject *)obj)->b_ptr + offset;
@@ -2034,6 +2072,10 @@ PyMethodDef _ctypes_module_methods[] = {
      "dlopen(name, flag={RTLD_GLOBAL|RTLD_LOCAL}) open a shared library"},
     {"dlclose", py_dl_close, METH_VARARGS, "dlclose a library"},
     {"dlsym", py_dl_sym, METH_VARARGS, "find symbol in shared library"},
+#if defined(HAVE_DL_ITERATE_PHDR) && !defined(__APPLE__)
+    {"dllist", dllist, METH_NOARGS,
+     "dllist() return a list of loaded shared libraries"},
+#endif
 #endif
 #ifdef __APPLE__
      {"_dyld_shared_cache_contains_path", py_dyld_shared_cache_contains_path, METH_VARARGS, "check if path is in the shared cache"},

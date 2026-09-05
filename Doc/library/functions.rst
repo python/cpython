@@ -19,24 +19,25 @@ are always available.  They are listed here in alphabetical order.
 | |  :func:`ascii`        | |  :func:`filter`     | |  :func:`map`        | |  **S**                |
 | |                       | |  :func:`float`      | |  :func:`max`        | |  |func-set|_          |
 | |  **B**                | |  :func:`format`     | |  |func-memoryview|_ | |  :func:`setattr`      |
-| |  :func:`bin`          | |  |func-frozenset|_  | |  :func:`min`        | |  :func:`sentinel`     |
-| |  :func:`bool`         | |                     | |                     | |  :func:`slice`        |
-| |  :func:`breakpoint`   | |  **G**              | |  **N**              | |  :func:`sorted`       |
-| |  |func-bytearray|_    | |  :func:`getattr`    | |  :func:`next`       | |  :func:`staticmethod` |
-| |  |func-bytes|_        | |  :func:`globals`    | |                     | |  |func-str|_          |
-| |                       | |                     | |  **O**              | |  :func:`sum`          |
-| |  **C**                | |  **H**              | |  :func:`object`     | |  :func:`super`        |
-| |  :func:`callable`     | |  :func:`hasattr`    | |  :func:`oct`        | |  **T**                |
-| |  :func:`chr`          | |  :func:`hash`       | |  :func:`open`       | |  |func-tuple|_        |
-| |  :func:`classmethod`  | |  :func:`help`       | |  :func:`ord`        | |  :func:`type`         |
-| |  :func:`compile`      | |  :func:`hex`        | |                     | |                       |
-| |  :func:`complex`      | |                     | |  **P**              | |  **V**                |
-| |                       | |  **I**              | |  :func:`pow`        | |  :func:`vars`         |
-| |  **D**                | |  :func:`id`         | |  :func:`print`      | |                       |
-| |  :func:`delattr`      | |  :func:`input`      | |  :func:`property`   | |  **Z**                |
-| |  |func-dict|_         | |  :func:`int`        | |                     | |  :func:`zip`          |
-| |  :func:`dir`          | |  :func:`isinstance` | |                     | |                       |
-| |  :func:`divmod`       | |  :func:`issubclass` | |                     | |  **_**                |
+| |  :func:`bin`          | |  |func-frozendict|_ | |  :func:`min`        | |  :func:`sentinel`     |
+| |  :func:`bool`         | |  |func-frozenset|_  | |                     | |  :func:`slice`        |
+| |  :func:`breakpoint`   | |                     | |  **N**              | |  :func:`sorted`       |
+| |  |func-bytearray|_    | |  **G**              | |  :func:`next`       | |  :func:`staticmethod` |
+| |  |func-bytes|_        | |  :func:`getattr`    | |                     | |  |func-str|_          |
+| |                       | |  :func:`globals`    | |  **O**              | |  :func:`sum`          |
+| |  **C**                | |                     | |  :func:`object`     | |  :func:`super`        |
+| |  :func:`callable`     | |  **H**              | |  :func:`oct`        | |                       |
+| |  :func:`chr`          | |  :func:`hasattr`    | |  :func:`open`       | |  **T**                |
+| |  :func:`classmethod`  | |  :func:`hash`       | |  :func:`ord`        | |  |func-tuple|_        |
+| |  :func:`compile`      | |  :func:`help`       | |                     | |  :func:`type`         |
+| |  :func:`complex`      | |  :func:`hex`        | |  **P**              | |                       |
+| |                       | |                     | |  :func:`pow`        | |  **V**                |
+| |  **D**                | |  **I**              | |  :func:`print`      | |  :func:`vars`         |
+| |  :func:`delattr`      | |  :func:`id`         | |  :func:`property`   | |                       |
+| |  |func-dict|_         | |  :func:`input`      | |                     | |  **Z**                |
+| |  :func:`dir`          | |  :func:`int`        | |                     | |  :func:`zip`          |
+| |  :func:`divmod`       | |  :func:`isinstance` | |                     | |                       |
+| |                       | |  :func:`issubclass` | |                     | |  **_**                |
 | |                       | |  :func:`iter`       | |                     | |  :func:`__import__`   |
 +-------------------------+-----------------------+-----------------------+-------------------------+
 
@@ -44,6 +45,7 @@ are always available.  They are listed here in alphabetical order.
    used, with replacement texts to make the output in the table consistent
 
 .. |func-dict| replace:: ``dict()``
+.. |func-frozendict| replace:: ``frozendict()``
 .. |func-frozenset| replace:: ``frozenset()``
 .. |func-memoryview| replace:: ``memoryview()``
 .. |func-set| replace:: ``set()``
@@ -63,13 +65,53 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. function:: aiter(async_iterable, /)
+              aiter(callable, /, stop_value, *, stop_exception=StopAsyncIteration)
+              aiter(callable, /, *, stop_exception)
 
-   Return an :term:`asynchronous iterator` for an :term:`asynchronous iterable`.
-   Equivalent to calling ``x.__aiter__()``.
+   Return an :term:`asynchronous iterator` object.
+   The first argument is interpreted very differently
+   depending on the presence of the other arguments.
+   Without other arguments,
+   the single argument must be an :term:`asynchronous iterable`,
+   and the result is equivalent to calling ``x.__aiter__()``.
 
-   Note: Unlike :func:`iter`, :func:`aiter` has no 2-argument variant.
+   If *stop_value* or *stop_exception* is given,
+   then the first argument must be a callable object.
+   The asynchronous iterator created in this case
+   calls *callable* with no arguments and awaits the result
+   for each call to its :meth:`~object.__anext__` method;
+   if the awaited value is equal to *stop_value*,
+   or if the call raises an exception matching *stop_exception*,
+   :exc:`StopAsyncIteration` will be raised,
+   otherwise the value will be returned.
+   The callable is only called when the result of :meth:`~object.__anext__`
+   is awaited.
+
+   *stop_exception* is an exception class or a tuple of exception classes.
+   If *stop_value* is not specified,
+   the iteration stops only when the callable raises an exception.
+   If the callable raises :exc:`StopAsyncIteration`
+   which does not match *stop_exception*,
+   it is replaced with a :exc:`RuntimeError`,
+   as for asynchronous generators (see :pep:`525`).
+
+   For example, reading fixed-size chunks from an asynchronous stream
+   until the end of file is reached::
+
+      from functools import partial
+      async for chunk in aiter(partial(reader.read, 1024), b''):
+          process_chunk(chunk)
+
+   Or consuming an :class:`asyncio.Queue` until it is shut down::
+
+      from asyncio import QueueShutDown
+      async for item in aiter(queue.get, stop_exception=QueueShutDown):
+          process_item(item)
 
    .. versionadded:: 3.10
+
+   .. versionchanged:: next
+      Added the *stop_value* and *stop_exception* parameters.
 
 .. function:: all(iterable, /)
 
@@ -483,10 +525,10 @@ are always available.  They are listed here in alphabetical order.
    :noindex:
 
    Create a new dictionary.  The :class:`dict` object is the dictionary class.
-   See :class:`dict` and :ref:`typesmapping` for documentation about this class.
+   See also :ref:`typesmapping` for documentation about this class.
 
-   For other containers see the built-in :class:`list`, :class:`set`, and
-   :class:`tuple` classes, as well as the :mod:`collections` module.
+   For other containers see the built-in :class:`frozendict`, :class:`list`,
+   :class:`set`, and :class:`tuple` classes, as well as the :mod:`collections` module.
 
 
 .. function:: dir()
@@ -609,9 +651,10 @@ are always available.  They are listed here in alphabetical order.
       untrusted user-supplied input will lead to security vulnerabilities.
 
    The *source* argument is parsed and evaluated as a Python expression
-   (technically speaking, a condition list) using the *globals* and *locals*
-   mappings as global and local namespace.  If the *globals* dictionary is
-   present and does not contain a value for the key ``__builtins__``, a
+   (technically speaking, an :ref:`expression list <exprlists>`)
+   using the *globals* and *locals* mappings as global and local namespace.
+   If the *globals* dictionary is present and does not contain a value for the
+   key ``__builtins__``, a
    reference to the dictionary of the built-in module :mod:`builtins` is
    inserted under that key before *source* is parsed.
    Overriding ``__builtins__`` can be used to restrict or change the available
@@ -630,6 +673,9 @@ are always available.  They are listed here in alphabetical order.
       >>> x = 1
       >>> eval('x+1')
       2
+
+      >>> eval("1, 2")
+      (1, 2)
 
    This function can also be used to execute arbitrary code objects (such as
    those created by :func:`compile`).  In this case, pass a code object instead
@@ -864,12 +910,27 @@ are always available.  They are listed here in alphabetical order.
       if *format_spec* is not an empty string.
 
 
+.. _func-frozendict:
+.. class:: frozendict(**kwargs)
+           frozendict(mapping, /, **kwargs)
+           frozendict(iterable, /, **kwargs)
+   :noindex:
+
+   Create a new frozen dictionary.  The :class:`frozendict` object is a built-in class.
+   See also :ref:`typesmapping` for documentation about this class.
+
+   For other containers see the built-in :class:`dict`, :class:`list`, :class:`set`,
+   and :class:`tuple` classes, as well as the :mod:`collections` module.
+
+   .. versionadded:: 3.15
+
+
 .. _func-frozenset:
 .. class:: frozenset(iterable=(), /)
    :noindex:
 
    Return a new :class:`frozenset` object, optionally with elements taken from
-   *iterable*.  ``frozenset`` is a built-in class.  See :class:`frozenset` and
+   *iterable*.  :class:`frozenset` is a built-in class.  See also
    :ref:`types-set` for documentation about this class.
 
    For other containers see the built-in :class:`set`, :class:`list`,
@@ -1122,21 +1183,33 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. function:: iter(iterable, /)
-              iter(callable, sentinel, /)
+              iter(callable, /, stop_value, *, stop_exception=StopIteration)
+              iter(callable, /, *, stop_exception)
 
    Return an :term:`iterator` object.  The first argument is interpreted very
-   differently depending on the presence of the second argument. Without a
-   second argument, the single argument must be a collection object which supports the
+   differently depending on the presence of the other arguments. Without other
+   arguments, the single argument must be a collection object which supports the
    :term:`iterable` protocol (the :meth:`~object.__iter__` method),
    or it must support
    the sequence protocol (the :meth:`~object.__getitem__` method with integer arguments
    starting at ``0``).  If it does not support either of those protocols,
-   :exc:`TypeError` is raised. If the second argument, *sentinel*, is given,
+   :exc:`TypeError` is raised.
+
+   If *stop_value* or *stop_exception* is given,
    then the first argument must be a callable object.  The iterator created in this case
    will call *callable* with no arguments for each call to its
    :meth:`~iterator.__next__` method; if the value returned is equal to
-   *sentinel*, :exc:`StopIteration` will be raised, otherwise the value will
+   *stop_value*, or if the call raises an exception matching *stop_exception*,
+   :exc:`StopIteration` will be raised, otherwise the value will
    be returned.
+
+   *stop_exception* is an exception class or a tuple of exception classes.
+   If *stop_value* is not specified,
+   the iteration stops only when the callable raises an exception.
+   If the callable raises :exc:`StopIteration`
+   which does not match *stop_exception*,
+   it is replaced with a :exc:`RuntimeError`,
+   as for generators (see :pep:`479`).
 
    See also :ref:`typeiter`.
 
@@ -1148,6 +1221,19 @@ are always available.  They are listed here in alphabetical order.
       with open('mydata.db', 'rb') as f:
           for block in iter(partial(f.read, 64), b''):
               process_block(block)
+
+   *stop_exception* is useful for callables
+   which report exhaustion by raising an exception
+   instead of returning a special value.
+   For example, draining a queue::
+
+      import queue
+      for item in iter(input_queue.get_nowait, stop_exception=queue.Empty):
+          process_item(item)
+
+   .. versionchanged:: next
+      Added the *stop_exception* parameter
+      and allowed passing *stop_value* by keyword.
 
 
 .. function:: len(object, /)
@@ -1663,7 +1749,7 @@ are always available.  They are listed here in alphabetical order.
 
    If given, *doc* will be the docstring of the property attribute. Otherwise, the
    property will copy *fget*'s docstring (if it exists).  This makes it possible to
-   create read-only properties easily using :func:`property` as a :term:`decorator`::
+   create read-only properties easily using :deco:`property` as a :term:`decorator`::
 
       class Parrot:
           def __init__(self):
@@ -1797,7 +1883,7 @@ are always available.  They are listed here in alphabetical order.
    :noindex:
 
    Return a new :class:`set` object, optionally with elements taken from
-   *iterable*.  ``set`` is a built-in class.  See :class:`set` and
+   *iterable*.  :class:`set` is a built-in class.  See also
    :ref:`types-set` for documentation about this class.
 
    For other containers see the built-in :class:`frozenset`, :class:`list`,
@@ -1827,14 +1913,20 @@ are always available.  They are listed here in alphabetical order.
       :func:`setattr`.
 
 
-.. class:: sentinel(name, /)
+.. class:: sentinel(name, /, *, repr=None)
 
    Return a new unique sentinel object.  *name* must be a :class:`str`, and is
-   used as the returned object's representation::
+   used by default as the returned object's representation::
 
       >>> MISSING = sentinel("MISSING")
       >>> MISSING
       MISSING
+
+   The optional *repr* argument can be used to specify a different representation::
+
+      >>> MISSING = sentinel("MISSING", repr="<MISSING>")
+      >>> MISSING
+      <MISSING>
 
    Sentinel objects are truthy and compare equal only to themselves.  They are
    intended to be compared with the :keyword:`is` operator.
@@ -1879,7 +1971,7 @@ are always available.  They are listed here in alphabetical order.
 
    .. attribute:: __module__
 
-      The name of the module where the sentinel was created.
+      The name of the module where the sentinel was created. This attribute is writable.
 
    .. versionadded:: 3.15
 
@@ -1961,7 +2053,7 @@ are always available.  They are listed here in alphabetical order.
    be used in the class definition (such as ``f()``).
 
    Static methods in Python are similar to those found in Java or C++. Also, see
-   :func:`classmethod` for a variant that is useful for creating alternate class
+   :deco:`classmethod` for a variant that is useful for creating alternate class
    constructors.
 
    Like all decorators, it is also possible to call ``staticmethod`` as
@@ -2151,6 +2243,11 @@ are always available.  They are listed here in alphabetical order.
    appropriate metaclass machinery (usually :meth:`~object.__init_subclass__`)
    in the same way that keywords in a class
    definition (besides *metaclass*) would.
+
+   Unlike a :keyword:`class` statement, the three argument form does not
+   call the metaclass ``__prepare__`` method (see :ref:`prepare`).  Use
+   :func:`types.new_class` to dynamically create a class using the
+   appropriate metaclass.
 
    See also :ref:`class-customization`.
 

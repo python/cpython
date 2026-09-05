@@ -1,8 +1,8 @@
 
 /* Write Python objects to files and read them back.
    This is primarily intended for writing and reading compiled Python code,
-   even though dicts, lists, sets and frozensets, not commonly seen in
-   code objects, are supported.
+   even though dicts and frozendicts, lists, sets and frozensets,
+   not commonly seen in code objects, are supported.
    Version 3 of this protocol properly supports circular links
    and sharing. */
 
@@ -106,6 +106,7 @@ module marshal
 #define WFERR_NESTEDTOODEEP 2
 #define WFERR_NOMEMORY 3
 #define WFERR_CODE_NOT_ALLOWED 4
+#define WFERR_EXCEPTION_SET 5  /* An exception has already been raised. */
 
 typedef struct {
     FILE *fp;
@@ -125,11 +126,32 @@ typedef struct {
             *(p)->ptr++ = (c);                          \
     } while(0)
 
+/* Report a failure of the underlying file.  An earlier error is not
+   overwritten. */
+static void
+w_file_error(WFILE *p)
+{
+    int saved_errno = errno;
+    if (p->error != WFERR_OK) {
+        return;
+    }
+    p->error = WFERR_EXCEPTION_SET;
+    if (PyErr_CheckSignals()) {
+        /* The signal handler has raised an exception. */
+        return;
+    }
+    errno = saved_errno;
+    PyErr_SetFromErrno(PyExc_OSError);
+}
+
 static void
 w_flush(WFILE *p)
 {
     assert(p->fp != NULL);
-    fwrite(p->buf, 1, p->ptr - p->buf, p->fp);
+    size_t n = (size_t)(p->ptr - p->buf);
+    if (fwrite(p->buf, 1, n, p->fp) != n) {
+        w_file_error(p);
+    }
     p->ptr = p->buf;
 }
 
@@ -182,7 +204,9 @@ w_string(const void *s, Py_ssize_t n, WFILE *p)
         }
         else {
             w_flush(p);
-            fwrite(s, 1, n, p->fp);
+            if (fwrite(s, 1, n, p->fp) != (size_t)n) {
+                w_file_error(p);
+            }
         }
     }
     else {
@@ -417,7 +441,9 @@ w_ref(PyObject *v, char *flag, WFILE *p)
         }
         // Corresponding code should call w_complete() after
         // writing the object.
-        if (PyCode_Check(v) || PySlice_Check(v) || PyFrozenDict_CheckExact(v)) {
+        if (PyTuple_CheckExact(v) || PyCode_Check(v) || PySlice_Check(v) ||
+            PyFrozenDict_CheckExact(v))
+        {
             w |= 0x80000000LU;
         }
         if (_Py_hashtable_set(p->hashtable, Py_NewRef(v),
@@ -596,6 +622,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         for (i = 0; i < n; i++) {
             w_object(PyTuple_GET_ITEM(v, i), p);
         }
+        w_complete(v, p);
     }
     else if (PyList_CheckExact(v)) {
         W_TYPE(TYPE_LIST, p);
@@ -779,11 +806,36 @@ w_clear_refs(WFILE *wf)
     }
 }
 
+/* Set the exception indicator according to the recorded error. */
+static void
+w_set_exception(WFILE *p)
+{
+    assert(p->error != WFERR_OK);
+    switch (p->error) {
+    case WFERR_NOMEMORY:
+        PyErr_NoMemory();
+        break;
+    case WFERR_NESTEDTOODEEP:
+        PyErr_SetString(PyExc_ValueError,
+                        "object too deeply nested to marshal");
+        break;
+    case WFERR_CODE_NOT_ALLOWED:
+        PyErr_SetString(PyExc_ValueError,
+                        "marshalling code objects is disallowed");
+        break;
+    case WFERR_EXCEPTION_SET:
+        /* An exception has already been raised. */
+        assert(PyErr_Occurred());
+        break;
+    default:
+    case WFERR_UNMARSHALLABLE:
+        PyErr_SetString(PyExc_ValueError,
+                        "unmarshallable object");
+        break;
+    }
+}
+
 /* version currently has no effect for writing ints. */
-/* Note that while the documentation states that this function
- * can error, currently it never does. Setting an exception in
- * this function should be regarded as an API-breaking change.
- */
 void
 PyMarshal_WriteLongToFile(long x, FILE *fp, int version)
 {
@@ -797,6 +849,9 @@ PyMarshal_WriteLongToFile(long x, FILE *fp, int version)
     wf.version = version;
     w_long(x, &wf);
     w_flush(&wf);
+    if (wf.error != WFERR_OK) {
+        w_set_exception(&wf);
+    }
 }
 
 void
@@ -820,6 +875,9 @@ PyMarshal_WriteObjectToFile(PyObject *x, FILE *fp, int version)
     w_object(x, &wf);
     w_clear_refs(&wf);
     w_flush(&wf);
+    if (wf.error != WFERR_OK) {
+        w_set_exception(&wf);
+    }
 }
 
 typedef struct {
@@ -872,6 +930,14 @@ r_string(Py_ssize_t n, RFILE *p)
     if (!p->readable) {
         assert(p->fp != NULL);
         read = fread(p->buf, 1, n, p->fp);
+        if (read != n) {
+            assert(read < n);
+            int saved_errno = errno;
+            if (!PyErr_CheckSignals() && ferror(p->fp)) {
+                errno = saved_errno;
+                PyErr_SetFromErrno(PyExc_OSError);
+            }
+        }
     }
     else {
         PyObject *res, *mview;
@@ -884,21 +950,26 @@ r_string(Py_ssize_t n, RFILE *p)
             return NULL;
 
         res = _PyObject_CallMethod(p->readable, &_Py_ID(readinto), "N", mview);
-        if (res != NULL) {
-            read = PyNumber_AsSsize_t(res, PyExc_ValueError);
-            Py_DECREF(res);
+        if (res == NULL) {
+            return NULL;
+        }
+        read = PyNumber_AsSsize_t(res, PyExc_ValueError);
+        Py_DECREF(res);
+        if (read == -1 && PyErr_Occurred()) {
+            return NULL;
+        }
+        if (read > n) {
+            PyErr_Format(PyExc_ValueError,
+                         "read() returned too much data: "
+                         "%zd bytes requested, %zd returned",
+                         n, read);
+            return NULL;
         }
     }
     if (read != n) {
         if (!PyErr_Occurred()) {
-            if (read > n)
-                PyErr_Format(PyExc_ValueError,
-                             "read() returned too much data: "
-                             "%zd bytes requested, %zd returned",
-                             n, read);
-            else
-                PyErr_SetString(PyExc_EOFError,
-                                "EOF read where not expected");
+            PyErr_SetString(PyExc_EOFError,
+                            "EOF read where not expected");
         }
         return NULL;
     }
@@ -918,6 +989,15 @@ r_byte(RFILE *p)
         int c = getc(p->fp);
         if (c != EOF) {
             return c;
+        }
+        int saved_errno = errno;
+        if (PyErr_CheckSignals()) {
+            return EOF;
+        }
+        if (ferror(p->fp)) {
+            errno = saved_errno;
+            PyErr_SetFromErrno(PyExc_OSError);
+            return EOF;
         }
     }
     else {
@@ -1417,8 +1497,10 @@ r_object(RFILE *p)
             break;
         }
     _read_tuple:
+        idx = r_ref_reserve(flag, p);
+        if (idx < 0)
+            break;
         v = PyTuple_New(n);
-        R_REF(v);
         if (v == NULL)
             break;
 
@@ -1433,7 +1515,7 @@ r_object(RFILE *p)
             }
             PyTuple_SET_ITEM(v, i, v2);
         }
-        retval = v;
+        retval = r_ref_insert(v, idx, flag, p);
         break;
 
     case TYPE_LIST:
@@ -1471,6 +1553,9 @@ r_object(RFILE *p)
         }
         if (type == TYPE_DICT) {
             R_REF(v);
+            if (v == NULL) {
+                break;
+            }
         }
         else {
             idx = r_ref_reserve(flag, p);
@@ -1502,6 +1587,7 @@ r_object(RFILE *p)
         }
         if (type == TYPE_FROZENDICT && v != NULL) {
             Py_SETREF(v, PyFrozenDict_New(v));
+            v = r_ref_insert(v, idx, flag, p);
         }
         retval = v;
         break;
@@ -1841,8 +1927,18 @@ PyMarshal_ReadLastObjectFromFile(FILE *fp)
     if (filesize > 0 && filesize <= REASONABLE_FILE_LIMIT) {
         char* pBuf = (char *)PyMem_Malloc(filesize);
         if (pBuf != NULL) {
+            PyObject *v = NULL;
             size_t n = fread(pBuf, 1, (size_t)filesize, fp);
-            PyObject* v = PyMarshal_ReadObjectFromString(pBuf, n);
+            int saved_errno = errno;
+            if (!PyErr_CheckSignals()) {
+                if (ferror(fp)) {
+                    errno = saved_errno;
+                    PyErr_SetFromErrno(PyExc_OSError);
+                }
+                else {
+                    v = PyMarshal_ReadObjectFromString(pBuf, n);
+                }
+            }
             PyMem_Free(pBuf);
             return v;
         }
@@ -1929,24 +2025,7 @@ _PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code)
     }
     if (wf.error != WFERR_OK) {
         Py_XDECREF(wf.str);
-        switch (wf.error) {
-        case WFERR_NOMEMORY:
-            PyErr_NoMemory();
-            break;
-        case WFERR_NESTEDTOODEEP:
-            PyErr_SetString(PyExc_ValueError,
-                            "object too deeply nested to marshal");
-            break;
-        case WFERR_CODE_NOT_ALLOWED:
-            PyErr_SetString(PyExc_ValueError,
-                            "marshalling code objects is disallowed");
-            break;
-        default:
-        case WFERR_UNMARSHALLABLE:
-            PyErr_SetString(PyExc_ValueError,
-                            "unmarshallable object");
-            break;
-        }
+        w_set_exception(&wf);
         return NULL;
     }
     return wf.str;
@@ -2061,7 +2140,6 @@ marshal_load_impl(PyObject *module, PyObject *file, int allow_code)
 
 /*[clinic input]
 @permit_long_summary
-@permit_long_docstring_body
 marshal.dumps
 
     value: object
@@ -2075,14 +2153,14 @@ marshal.dumps
 
 Return the bytes object that would be written to a file by dump(value, file).
 
-Raise a ValueError exception if value has (or contains an object that has) an
-unsupported type.
+Raise a ValueError exception if value has (or contains an object that
+has) an unsupported type.
 [clinic start generated code]*/
 
 static PyObject *
 marshal_dumps_impl(PyObject *module, PyObject *value, int version,
                    int allow_code)
-/*[clinic end generated code: output=115f90da518d1d49 input=80cd3f30c1637ade]*/
+/*[clinic end generated code: output=115f90da518d1d49 input=dc1edcafd43124c5]*/
 {
     return _PyMarshal_WriteObjectToString(value, version, allow_code);
 }
@@ -2098,13 +2176,13 @@ marshal.loads
 
 Convert the bytes-like object to a value.
 
-If no valid value is found, raise EOFError, ValueError or TypeError.  Extra
-bytes in the input are ignored.
+If no valid value is found, raise EOFError, ValueError or TypeError.
+Extra bytes in the input are ignored.
 [clinic start generated code]*/
 
 static PyObject *
 marshal_loads_impl(PyObject *module, Py_buffer *bytes, int allow_code)
-/*[clinic end generated code: output=62c0c538d3edc31f input=14de68965b45aaa7]*/
+/*[clinic end generated code: output=62c0c538d3edc31f input=286f1dbd6811d2ad]*/
 {
     RFILE rf;
     char *s = bytes->buf;

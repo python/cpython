@@ -100,10 +100,10 @@ To show the individual process IDs involved, here is an expanded example::
 For an explanation of why the ``if __name__ == '__main__'`` part is
 necessary, see :ref:`multiprocessing-programming`.
 
-The arguments to :class:`Process` usually need to be unpickleable from within
-the child process. If you tried typing the above example directly into a REPL it
-could lead to an :exc:`AttributeError` in the child process trying to locate the
-*f* function in the ``__main__`` module.
+The arguments to :class:`Process` usually need to be picklable so they can be
+passed to the child process. If you tried typing the above example directly
+into a REPL it could lead to an :exc:`AttributeError` in the child process
+trying to locate the *f* function in the ``__main__`` module.
 
 
 .. _multiprocessing-start-methods:
@@ -1723,7 +1723,10 @@ inherited by child processes.
    Note that *lock* is a keyword only argument.
 
    Note that an array of :data:`ctypes.c_char` has *value* and *raw*
-   attributes which allow one to use it to store and retrieve strings.
+   attributes which can both be used to store and retrieve byte strings.
+   While *raw* allows interaction with a :class:`bytes` object the full size of
+   the array, reading *value* will terminate after a null byte, like most
+   programming languages handle strings.
 
 
 The :mod:`!multiprocessing.sharedctypes` module
@@ -2533,7 +2536,7 @@ with the :class:`Pool` class.
       Callbacks should complete immediately since otherwise the thread which
       handles the results will get blocked.
 
-   .. method:: imap(func, iterable[, chunksize])
+   .. method:: imap(func, iterable, chunksize=1, *, buffersize=None)
 
       A lazier version of :meth:`.map`.
 
@@ -2547,11 +2550,26 @@ with the :class:`Pool` class.
       ``next(timeout)`` will raise :exc:`multiprocessing.TimeoutError` if the
       result cannot be returned within *timeout* seconds.
 
-   .. method:: imap_unordered(func, iterable[, chunksize])
+      The *iterable* is collected immediately rather than lazily, unless a
+      *buffersize* is specified to limit the number of submitted tasks whose
+      results have not yet been yielded. If the buffer is full, iteration over
+      the *iterables* pauses until a result is yielded from the buffer.
+      To fully utilize pool's capacity when using this feature,
+      set *buffersize* at least to the number of processes in pool
+      (to consume *iterable* as you go), or even higher
+      (to prefetch the next ``N=buffersize-processes`` arguments).
+
+      .. versionchanged:: next
+         Added the *buffersize* parameter.
+
+   .. method:: imap_unordered(func, iterable, chunksize=1, *, buffersize=None)
 
       The same as :meth:`imap` except that the ordering of the results from the
       returned iterator should be considered arbitrary.  (Only when there is
       only one worker process is the order guaranteed to be "correct".)
+
+      .. versionchanged:: next
+         Added the *buffersize* parameter.
 
    .. method:: starmap(func, iterable[, chunksize])
 

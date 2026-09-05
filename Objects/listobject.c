@@ -2922,7 +2922,6 @@ unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
  * duplicated).
  */
 /*[clinic input]
-@permit_long_docstring_body
 @critical_section
 list.sort
 
@@ -2932,18 +2931,18 @@ list.sort
 
 Sort the list in ascending order and return None.
 
-The sort is in-place (i.e. the list itself is modified) and stable (i.e. the
-order of two equal elements is maintained).
+The sort is in-place (i.e. the list itself is modified) and stable
+(i.e. the order of two equal elements is maintained).
 
-If a key function is given, apply it once to each list item and sort them,
-ascending or descending, according to their function values.
+If a key function is given, apply it once to each list item and sort
+them, ascending or descending, according to their function values.
 
 The reverse flag can be set to sort in descending order.
 [clinic start generated code]*/
 
 static PyObject *
 list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
-/*[clinic end generated code: output=57b9f9c5e23fbe42 input=e4f6b6069181ad7d]*/
+/*[clinic end generated code: output=57b9f9c5e23fbe42 input=c145526281e1fb9f]*/
 {
     MergeState ms;
     Py_ssize_t nremaining;
@@ -3455,7 +3454,10 @@ list_richcompare_impl(PyObject *v, PyObject *w, int op)
             Py_RETURN_TRUE;
     }
 
-    /* Search for the first index where items are different */
+    /* Search for the first index where items are different.
+     * We incref vitem/witem before calling PyObject_RichCompareBool, which may
+     * release the GIL and allow the list to be mutated in the meantime.
+     */
     for (i = 0; i < Py_SIZE(vl) && i < Py_SIZE(wl); i++) {
         PyObject *vitem = vl->ob_item[i];
         PyObject *witem = wl->ob_item[i];
@@ -3466,36 +3468,36 @@ list_richcompare_impl(PyObject *v, PyObject *w, int op)
         Py_INCREF(vitem);
         Py_INCREF(witem);
         int k = PyObject_RichCompareBool(vitem, witem, Py_EQ);
+        if (k < 0) {
+            Py_DECREF(vitem);
+            Py_DECREF(witem);
+            return NULL;
+        }
+        if (!k) {
+            /* We have a differing item -- shortcuts for EQ/NE */
+            if (op == Py_EQ) {
+                Py_DECREF(vitem);
+                Py_DECREF(witem);
+                Py_RETURN_FALSE;
+            }
+            if (op == Py_NE) {
+                Py_DECREF(vitem);
+                Py_DECREF(witem);
+                Py_RETURN_TRUE;
+            }
+            /* Compare the differing items using the proper operator */
+            PyObject *result = PyObject_RichCompare(vitem, witem, op);
+            Py_DECREF(vitem);
+            Py_DECREF(witem);
+            return result;
+        }
+
         Py_DECREF(vitem);
         Py_DECREF(witem);
-        if (k < 0)
-            return NULL;
-        if (!k)
-            break;
     }
 
-    if (i >= Py_SIZE(vl) || i >= Py_SIZE(wl)) {
-        /* No more items to compare -- compare sizes */
-        Py_RETURN_RICHCOMPARE(Py_SIZE(vl), Py_SIZE(wl), op);
-    }
-
-    /* We have an item that differs -- shortcuts for EQ/NE */
-    if (op == Py_EQ) {
-        Py_RETURN_FALSE;
-    }
-    if (op == Py_NE) {
-        Py_RETURN_TRUE;
-    }
-
-    /* Compare the final item again using the proper operator */
-    PyObject *vitem = vl->ob_item[i];
-    PyObject *witem = wl->ob_item[i];
-    Py_INCREF(vitem);
-    Py_INCREF(witem);
-    PyObject *result = PyObject_RichCompare(vl->ob_item[i], wl->ob_item[i], op);
-    Py_DECREF(vitem);
-    Py_DECREF(witem);
-    return result;
+    /* All compared elements were equal -- compare sizes */
+    Py_RETURN_RICHCOMPARE(Py_SIZE(vl), Py_SIZE(wl), op);
 }
 
 static PyObject *
@@ -3611,7 +3613,8 @@ static PyMethodDef list_methods[] = {
     LIST_COUNT_METHODDEF
     LIST_REVERSE_METHODDEF
     LIST_SORT_METHODDEF
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("lists are generic over the type of their contents")},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -3793,16 +3796,13 @@ list_ass_subscript_lock_held(PyObject *_self, PyObject *item, PyObject *value)
                     lim = Py_SIZE(self) - cur - 1;
                 }
 
-                memmove(self->ob_item + cur - i,
-                    self->ob_item + cur + 1,
-                    lim * sizeof(PyObject *));
+                ptr_wise_atomic_memmove(self, self->ob_item + cur - i,
+                    self->ob_item + cur + 1, lim);
             }
             cur = start + (size_t)slicelength * step;
             if (cur < (size_t)Py_SIZE(self)) {
-                memmove(self->ob_item + cur - slicelength,
-                    self->ob_item + cur,
-                    (Py_SIZE(self) - cur) *
-                     sizeof(PyObject *));
+                ptr_wise_atomic_memmove(self, self->ob_item + cur - slicelength,
+                    self->ob_item + cur, Py_SIZE(self) - cur);
             }
 
             Py_SET_SIZE(self, Py_SIZE(self) - slicelength);

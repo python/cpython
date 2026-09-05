@@ -268,6 +268,52 @@ class TestDict(TestCase):
         finally:
             _testcapi.clear_dict_watcher(wid)
 
+    def test_racing_split_dict_clear_and_lookup(self):
+        class C:
+            pass
+
+        keys = [f"a{i}" for i in range(16)]
+
+        def make_split_nonembedded():
+            inst = C()
+            for key in keys:
+                setattr(inst, key, keys.index(key))
+            # dict.copy() of a split instance dict yields a split table
+            # with non-embedded values
+            return inst.__dict__.copy()
+
+        d = make_split_nonembedded()
+
+        def clearer():
+            for _ in range(1000):
+                d.clear()
+                d.update(make_split_nonembedded())
+
+        def reader():
+            for _ in range(1000):
+                for k in keys:
+                    d.get(k)
+
+        threading_helper.run_concurrently([clearer, reader, reader])
+
+    def test_racing_embedded_values_clear_and_lookup(self):
+        class C:
+            pass
+
+        obj = C()
+        def writer():
+            for _ in range(1000):
+                obj.x = 1
+                obj.y = 2
+                obj.z = 3
+                obj.__dict__.clear()
+
+        def reader():
+            for _ in range(1000):
+                obj.__dict__.get('x')
+
+        threading_helper.run_concurrently([writer, reader, reader])
+
     def test_racing_dict_update_and_method_lookup(self):
         # gh-144295: test race between dict modifications and method lookups.
         # Uses BytesIO because the race requires a type without Py_TPFLAGS_INLINE_VALUES
@@ -289,6 +335,26 @@ class TestDict(TestCase):
 
         with threading_helper.start_threads([t1, t2]):
             pass
+
+    def test_getstate_race_with_shared_keys(self):
+        box = [None]
+        enter = Barrier(2)
+        leave = Barrier(2)
+
+        def reader():
+            for _ in range(1000):
+                enter.wait()
+                box[0].__getstate__()
+                leave.wait()
+
+        def writer():
+            for i in range(1000):
+                box[0] = type(f"C{i}", (), {})()
+                enter.wait()
+                setattr(box[0], str(i), 1)
+                leave.wait()
+
+        threading_helper.run_concurrently([reader, writer])
 
 if __name__ == "__main__":
     unittest.main()

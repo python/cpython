@@ -17,17 +17,13 @@
 # CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-from __future__ import annotations
-
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 
 from . import commands, input
 from .reader import Reader
 
-
-if False:
-    from .types import SimpleContextManager, KeySpec, CommandName
+lazy from .types import SimpleContextManager, KeySpec, CommandName
 
 
 isearch_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
@@ -265,6 +261,7 @@ class HistoricalReader(Reader):
             (r"\C-s", "forward-history-isearch"),
             (r"\M-r", "restore-history"),
             (r"\M-.", "yank-arg"),
+            (r"\M-_", "yank-arg"),
             (r"\<page down>", "history-search-forward"),
             (r"\x1b[6~", "history-search-forward"),
             (r"\<page up>", "history-search-backward"),
