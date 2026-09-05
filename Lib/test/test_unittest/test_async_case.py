@@ -181,6 +181,57 @@ class TestAsyncCase(unittest.TestCase):
         test.doCleanups()
         self.assertEqual(events, ['asyncSetUp', 'cleanup'])
 
+    def test_exception_in_async_setup(self):
+        class Test(unittest.IsolatedAsyncioTestCase):
+            def setUp(self):
+                self.assertEqual(events, [])
+                events.append('setUp')
+
+            async def asyncSetUp(self):
+                self.assertEqual(events, ['setUp'])
+                events.append('asyncSetUp')
+                self.addAsyncCleanup(self.on_cleanup)
+                raise MyException('Simulated failure')
+
+            async def test_func(self):  # must not be called
+                events.append('test')
+
+            async def asyncTearDown(self):  # must not be called
+                events.append('asyncTearDown')
+
+            def tearDown(self):
+                self.assertEqual(events, ['setUp',
+                                          'asyncSetUp'])
+                events.append('tearDown')
+
+            async def on_cleanup(self):
+                self.assertEqual(events, ['setUp',
+                                          'asyncSetUp',
+                                          'tearDown'])
+                events.append('cleanup')
+
+        events = []
+        test = Test("test_func")
+        result = test.run()
+
+        self.assertEqual(len(result.errors), 1)
+        self.assertIn('MyException: Simulated failure', result.errors[0][1])
+
+        expected = ['setUp', 'asyncSetUp', 'tearDown', 'cleanup']
+        self.assertEqual(events, expected)
+
+        events = []
+        test = Test("test_func")
+        try:
+            test.debug()
+        except MyException:
+            pass
+        else:
+            self.fail('MyException is not raised')
+        self.assertEqual(events, ['setUp', 'asyncSetUp'])
+        test.doCleanups()
+        self.assertEqual(events, ['setUp', 'asyncSetUp'])
+
     def test_exception_in_test(self):
         class Test(unittest.IsolatedAsyncioTestCase):
             async def asyncSetUp(self):
@@ -229,6 +280,9 @@ class TestAsyncCase(unittest.TestCase):
             async def asyncTearDown(self):
                 events.append('asyncTearDown')
                 raise MyException()
+
+            def tearDown(self):  # must not be called
+                events.append('tearDown')
 
             async def on_cleanup(self):
                 events.append('cleanup')
