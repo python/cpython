@@ -199,11 +199,9 @@ length message::
        def mysend(self, msg):
            totalsent = 0
            while totalsent < MSGLEN:
+               # No need to check for 0 here: send() raises OSError
+               # if the connection is broken.
                sent = self.sock.send(msg[totalsent:])
-               if sent == 0:
-                   raise RuntimeError("socket connection broken")
-               # Note: in practice, send() on a broken connection
-               # raises OSError rather than returning 0.
                totalsent = totalsent + sent
 
        def myreceive(self):
