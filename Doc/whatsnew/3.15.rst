@@ -902,6 +902,13 @@ Default interactive shell
   <using-on-controlling-color>`.
   (Contributed by Antonio Cuni and Pablo Galindo in :gh:`130472`.)
 
+* Tab completion now suggests module attributes in ``from ... import`` statements.
+  Attributes can only be suggested once the module is imported, so
+  :term:`stdlib` modules are imported automatically, while for
+  other modules the completer offers to import them when :kbd:`Tab`
+  is pressed a second time.
+  (Contributed by Loïc Simon and Pablo Galindo in :gh:`140870`.)
+
 
 New modules
 ===========
@@ -2112,6 +2119,17 @@ http.server
   and the ``--cgi`` flag from the :program:`python -m http.server`
   command-line interface. They were deprecated in Python 3.13.
   (Contributed by Bénédikt Tran in :gh:`133810`.)
+
+
+importlib
+---------
+
+* The ``load_module()`` methods of :class:`~importlib.abc.Loader` and its
+  subclasses is removed.
+  The import system will no longer call it when defined on custom subclasses.
+  The method has been deprecated in favor of
+  :meth:`~importlib.abc.Loader.exec_module` since Python 3.4.
+  (Contributed by Brett Cannon in :gh:`97850`.)
 
 
 importlib.resources

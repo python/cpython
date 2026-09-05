@@ -4474,12 +4474,14 @@ AC_CACHE_CHECK([for _Float16 support], [ac_cv_float16_supported],
 WITH_SAVE_ENV([
 CFLAGS="$CFLAGS -O0"
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <math.h>
 int main(void)
 {
     _Float16 val = 1.0f16;
+    int test = isinf(val) || isnan(val); /* basic support from libm */
     double d = 3.14;
     val = d;
-    return 0;
+    return test;
 }
 ]])], [ac_cv_float16_supported=yes],
 [ac_cv_float16_supported=no],
@@ -5526,7 +5528,8 @@ AC_CHECK_FUNCS([ \
   getgrnam_r getgrouplist gethostname getitimer getloadavg getlogin getlogin_r \
   getpeername getpgid getpid getppid getpriority _getpty \
   getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid getspent \
-  getspnam gettid getuid getwd grantpt if_nameindex initgroups kill killpg lchown linkat \
+  getspnam gettid getuid getwd grantpt if_indextoname if_nameindex \
+  if_nametoindex initgroups kill killpg lchown linkat \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause \
   pidfd_open pidfd_getfd pidfd_send_signal pipe \

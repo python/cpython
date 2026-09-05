@@ -16745,12 +16745,14 @@ else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
+#include <math.h>
 int main(void)
 {
     _Float16 val = 1.0f16;
+    int test = isinf(val) || isnan(val); /* basic support from libm */
     double d = 3.14;
     val = d;
-    return 0;
+    return test;
 }
 
 _ACEOF
@@ -20803,10 +20805,22 @@ then :
   printf "%s\n" "#define HAVE_GRANTPT 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "if_indextoname" "ac_cv_func_if_indextoname"
+if test "x$ac_cv_func_if_indextoname" = xyes
+then :
+  printf "%s\n" "#define HAVE_IF_INDEXTONAME 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "if_nameindex" "ac_cv_func_if_nameindex"
 if test "x$ac_cv_func_if_nameindex" = xyes
 then :
   printf "%s\n" "#define HAVE_IF_NAMEINDEX 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "if_nametoindex" "ac_cv_func_if_nametoindex"
+if test "x$ac_cv_func_if_nametoindex" = xyes
+then :
+  printf "%s\n" "#define HAVE_IF_NAMETOINDEX 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "initgroups" "ac_cv_func_initgroups"
