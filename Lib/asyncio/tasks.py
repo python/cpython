@@ -913,8 +913,17 @@ def gather(*coros_or_futures, return_exceptions=False):
     return outer
 
 
-def _log_on_exception(fut):
+def _log_on_exception(fut, deferred=False):
     if fut.cancelled():
+        return
+
+    if not deferred:
+        # gh-156321: an exception retrieved by an awaiter must not be reported
+        fut._loop.call_soon(_log_on_exception, fut, True)
+        return
+
+    if not fut._log_traceback:
+        # The exception was retrieved, nothing to report.
         return
 
     exc = fut.exception()
