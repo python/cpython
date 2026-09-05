@@ -354,6 +354,117 @@ class MockGetPathTests(unittest.TestCase):
         actual = getpath(ns, expected)
         self.assertEqual(expected, actual)
 
+    def test_venv_posix_from_symlinked_base(self):
+        # gh-128670: the base interpreter is reached through a public symlink
+        # (e.g. Homebrew's stable opt path) that points to an internal,
+        # versioned location. base_executable must keep the public path so
+        # the internal path is not leaked into a child venv's pyvenv.cfg.
+        ns = MockPosixNamespace(
+            argv0="/venv/bin/python",
+            PREFIX="/real",
+        )
+        ns.add_known_xfile("/venv/bin/python")
+        ns.add_known_xfile("/pub/bin/python")
+        ns.add_known_xfile("/real/bin/python")
+        ns.add_known_link("/venv/bin/python", "/pub/bin/python")
+        ns.add_known_link("/pub/bin/python", "/real/bin/python")
+        ns.add_known_file("/venv/pyvenv.cfg", [
+            r"home = /pub/bin"
+        ])
+        ns.add_known_file("/real/lib/python9.8/os.py")
+        ns.add_known_dir("/real/lib/python9.8/lib-dynload")
+        expected = dict(
+            executable="/venv/bin/python",
+            prefix="/venv",
+            exec_prefix="/venv",
+            base_executable="/pub/bin/python",
+            base_prefix="/real",
+            base_exec_prefix="/real",
+            module_search_paths_set=1,
+            module_search_paths=[
+                "/real/lib/python98.zip",
+                "/real/lib/python9.8",
+                "/real/lib/python9.8/lib-dynload",
+            ],
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
+
+    def test_venv_posix_from_symlinked_base_versioned(self):
+        # gh-128670: like the above, but the venv's primary executable is
+        # 'python' while 'home' only provides the versioned 'python3.8' name.
+        # base_executable must match on the resolved name, not 'python'.
+        ns = MockPosixNamespace(
+            argv0="/venv/bin/python",
+            PREFIX="/real",
+        )
+        ns.add_known_xfile("/venv/bin/python")
+        ns.add_known_xfile("/pub/bin/python3.8")
+        ns.add_known_xfile("/real/bin/python3.8")
+        ns.add_known_link("/venv/bin/python", "/pub/bin/python3.8")
+        ns.add_known_link("/pub/bin/python3.8", "/real/bin/python3.8")
+        ns.add_known_file("/venv/pyvenv.cfg", [
+            r"home = /pub/bin"
+        ])
+        ns.add_known_file("/real/lib/python9.8/os.py")
+        ns.add_known_dir("/real/lib/python9.8/lib-dynload")
+        expected = dict(
+            executable="/venv/bin/python",
+            prefix="/venv",
+            exec_prefix="/venv",
+            base_executable="/pub/bin/python3.8",
+            base_prefix="/real",
+            base_exec_prefix="/real",
+            module_search_paths_set=1,
+            module_search_paths=[
+                "/real/lib/python98.zip",
+                "/real/lib/python9.8",
+                "/real/lib/python9.8/lib-dynload",
+            ],
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
+
+    def test_venv_posix_symlinked_base_mismatch_resolves(self):
+        # gh-128670 safety: if 'home' does not provide an executable that
+        # resolves to the running interpreter, base_executable resolves the
+        # symlink rather than trusting 'home'.
+        ns = MockPosixNamespace(
+            argv0="/venv/bin/python",
+            PREFIX="/real",
+        )
+        ns.add_known_xfile("/venv/bin/python")
+        ns.add_known_xfile("/real/bin/python")
+        ns.add_known_xfile("/pub/bin/python")
+        ns.add_known_xfile("/other/bin/python")
+        ns.add_known_link("/venv/bin/python", "/real/bin/python")
+        ns.add_known_link("/pub/bin/python", "/other/bin/python")
+        ns.add_known_file("/venv/pyvenv.cfg", [
+            r"home = /pub/bin"
+        ])
+        ns.add_known_file("/real/lib/python9.8/os.py")
+        ns.add_known_dir("/real/lib/python9.8/lib-dynload")
+        actual = getpath(ns, {"base_executable": ""})
+        self.assertEqual(actual["base_executable"], "/real/bin/python")
+
+    def test_venv_posix_symlinked_base_no_home_exe(self):
+        # gh-128670 fallback: if 'home' has no matching executable,
+        # base_executable resolves the symlink.
+        ns = MockPosixNamespace(
+            argv0="/venv/bin/python",
+            PREFIX="/real",
+        )
+        ns.add_known_xfile("/venv/bin/python")
+        ns.add_known_xfile("/real/bin/python")
+        ns.add_known_link("/venv/bin/python", "/real/bin/python")
+        ns.add_known_file("/venv/pyvenv.cfg", [
+            r"home = /pub/bin"
+        ])
+        ns.add_known_file("/real/lib/python9.8/os.py")
+        ns.add_known_dir("/real/lib/python9.8/lib-dynload")
+        actual = getpath(ns, {"base_executable": ""})
+        self.assertEqual(actual["base_executable"], "/real/bin/python")
+
     def test_venv_posix_without_home_key(self):
         ns = MockPosixNamespace(
             argv0="/venv/bin/python3",
