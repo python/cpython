@@ -156,7 +156,8 @@ def capture_call_graph(
     try:
         while f is not None:
             # gh-156988: sync gen should not clear the call chain
-            is_async = isinstance(f.f_generator, types.CoroutineType)
+            is_async = isinstance(
+                f.f_generator, (types.CoroutineType, types.AsyncGeneratorType))
             call_stack.append(FrameCallGraphEntry(f))
 
             if is_async:
