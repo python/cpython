@@ -1,0 +1,3 @@
+Previously, descriptors that return themselves from calls to :meth:`~object.__get__` were
+treated as default values in :mod:`dataclasses`. Now, a :exc:`TypeError` is raised if no
+initial value is provided to the :mod:`dataclass <dataclasses>` constructor.
