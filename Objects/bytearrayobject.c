@@ -1619,7 +1619,7 @@ bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n)
         return ret;
     }
 
-    // Copy remaining bytes to a new bytes. Allocate and then copy rather than
+    // Copy remaining bytes to a new bytes. Allocate and then copy
     // so we don't get a shared immortal one-character singleton!
     PyObject *remaining = PyBytes_FromStringAndSize(NULL, remaining_length);
     if (remaining == NULL) {
