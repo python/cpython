@@ -9,6 +9,20 @@
 
 /* ############## ERRORS ############## */
 
+/* Convert a 1-based column in bytes into a 1-based column in characters.
+   The line is UTF-8 encoded, so it is enough to skip continuation bytes. */
+static int
+byte_col_to_char_col(const char *line, int byte_col)
+{
+    int char_col = 1;
+    for (int i = 0; i < byte_col - 1; i++) {
+        if ((line[i] & 0xC0) != 0x80) {
+            char_col++;
+        }
+    }
+    return char_col;
+}
+
 static int
 _syntaxerror_range(struct tok_state *tok, const char *format,
                    int col_offset, int end_col_offset,
@@ -35,8 +49,14 @@ _syntaxerror_range(struct tok_state *tok, const char *format,
     if (col_offset == -1) {
         col_offset = (int)PyUnicode_GET_LENGTH(errtext);
     }
+    else if (col_offset > 0) {
+        col_offset = byte_col_to_char_col(tok->line_start, col_offset);
+    }
     if (end_col_offset == -1) {
         end_col_offset = col_offset;
+    }
+    else if (end_col_offset > 0) {
+        end_col_offset = byte_col_to_char_col(tok->line_start, end_col_offset);
     }
 
     Py_ssize_t line_len = strcspn(tok->line_start, "\n");
