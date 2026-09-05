@@ -133,6 +133,14 @@ coverage: build
 .PHONY: doctest
 doctest: BUILDER = doctest
 doctest:
+	@venv_version=$$($(VENVDIR)/bin/python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])'); \
+	tree_version=$$($(PYTHON) tools/extensions/patchlevel.py --short); \
+	if [ "$$venv_version" != "$$tree_version" ]; then \
+		echo "The venv runs Python $$venv_version, but this source tree is Python $$tree_version."; \
+		echo "The doctests are executed by the venv interpreter, so they would test"; \
+		echo "Python $$venv_version rather than the code documented here."; \
+		exit 1; \
+	fi
 	@$(MAKE) build BUILDER=$(BUILDER) || { \
 	echo "Testing of doctests in the sources finished, look at the" \
 	     "results in build/doctest/output.txt"; \
