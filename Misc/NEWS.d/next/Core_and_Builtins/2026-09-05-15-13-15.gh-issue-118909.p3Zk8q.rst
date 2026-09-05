@@ -1,0 +1,4 @@
+Fix a crash in debug builds (or with :envvar:`PYTHONMALLOC=debug <PYTHONMALLOC>`)
+when deallocating a heap type whose :c:member:`~PyTypeObject.tp_doc` was
+allocated with :c:func:`PyObject_Malloc` instead of :c:func:`PyMem_Malloc`,
+as some C extensions do.
