@@ -433,7 +433,7 @@ class ZipInfo:
     """Class with attributes describing each file in the ZIP archive."""
 
     __slots__ = (
-        'orig_filename',
+        '_orig_filename',
         'filename',
         'date_time',
         'compress_type',
@@ -457,8 +457,6 @@ class ZipInfo:
     )
 
     def __init__(self, filename="NoName", date_time=(1980,1,1,0,0,0)):
-        self.orig_filename = filename   # Original file name in archive
-
         # Terminate the file name at the first null byte and
         # ensure paths always use forward slashes as the directory separator.
         filename = _sanitize_filename(filename)
@@ -488,10 +486,24 @@ class ZipInfo:
         self.external_attr = 0          # External file attributes
         self.compress_size = 0          # Size of the compressed file
         self.file_size = 0              # Size of the uncompressed file
+
+        # Special internal attributes set by class ZipFile when read from an archive:
+        self._orig_filename = None      # Original file name in archive
         self._end_offset = None         # Start of the next local header or central directory
+
         # Other attributes are set by class ZipFile:
         # header_offset         Byte offset to the file header
         # CRC                   CRC-32 of the uncompressed file
+
+    @property
+    def orig_filename(self):
+        return (self._orig_filename if self._orig_filename is not None
+                else self.filename)
+
+    # Maintain backward compatibility in case someone sets it.
+    @orig_filename.setter
+    def orig_filename(self, value):
+        self._orig_filename = value
 
     # Maintain backward compatibility with the old protected attribute name.
     @property
@@ -580,9 +592,9 @@ class ZipInfo:
         else:
             encoding = 'cp437'
         try:
-            return self.filename.encode(encoding), self.flag_bits & ~_MASK_UTF_FILENAME
+            return self.orig_filename.encode(encoding), self.flag_bits & ~_MASK_UTF_FILENAME
         except UnicodeEncodeError:
-            return self.filename.encode('utf-8'), self.flag_bits | _MASK_UTF_FILENAME
+            return self.orig_filename.encode('utf-8'), self.flag_bits | _MASK_UTF_FILENAME
 
     def _decodeExtra(self, filename_crc):
         # Try to decode the extra field.
@@ -2084,6 +2096,7 @@ class ZipFile:
                 filename = filename.decode(self.metadata_encoding or 'cp437')
             # Create ZipInfo instance to store file information
             x = ZipInfo(filename)
+            x._orig_filename = filename
             x.extra = fp.read(centdir[_CD_EXTRA_FIELD_LENGTH])
             x.comment = fp.read(centdir[_CD_COMMENT_LENGTH])
             x.header_offset = centdir[_CD_LOCAL_HEADER_OFFSET]
