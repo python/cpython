@@ -8863,7 +8863,13 @@ _curses_slk_color_impl(PyObject *module, int pair)
 /*[clinic end generated code: output=ffe4de805f9c65f5 input=b1e691a9cc6177ee]*/
 {
     PyCursesStatefulInitialised(module);
-    return curses_check_err(module, slk_color((short)pair), "slk_color", NULL);
+    int rtn;
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+    rtn = extended_slk_color(pair);
+#else
+    rtn = slk_color((short)pair);
+#endif
+    return curses_check_err(module, rtn, "slk_color", NULL);
 }
 #endif /* HAVE_CURSES_SLK_COLOR */
 
