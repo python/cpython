@@ -96,6 +96,77 @@ class SslProtoHandshakeTests(test_utils.TestCase):
             # Restore error logging.
             log.logger.setLevel(log_level)
 
+    def test_shutdown_error_closes_after_flushing(self):
+        app_proto = mock.Mock(spec=asyncio.Protocol)
+        app_proto.eof_received.return_value = False
+        ssl_proto = self.ssl_protocol(proto=app_proto)
+        ssl_proto._state = sslproto.SSLProtocolState.SHUTDOWN
+        ssl_proto._app_state = sslproto.AppProtocolState.STATE_CON_MADE
+        transport = mock.Mock()
+        ssl_proto._transport = transport
+        ssl_proto._sslobj = mock.Mock()
+        shutdown_exc = ssl.SSLError(ssl.SSL_ERROR_SSL, 'shutdown failed')
+        ssl_proto._sslobj.unwrap.side_effect = shutdown_exc
+        ssl_proto._outgoing = mock.Mock()
+        ssl_proto._outgoing.read.side_effect = [b'close notify', b'', b'']
+        ssl_proto._outgoing.pending = 0
+        timeout_handle = mock.Mock()
+        ssl_proto._shutdown_timeout_handle = timeout_handle
+
+        ssl_proto._do_shutdown()
+        ssl_proto.eof_received()
+
+        transport.write.assert_called_once_with(b'close notify')
+        transport._force_close.assert_not_called()
+        test_utils.run_briefly(self.loop)
+        transport.close.assert_called_once_with()
+        timeout_handle.cancel.assert_not_called()
+
+        ssl_proto.connection_lost(None)
+        test_utils.run_briefly(self.loop)
+        app_proto.connection_lost.assert_called_once_with(shutdown_exc)
+        timeout_handle.cancel.assert_called_once_with()
+
+    def test_shutdown_waits_for_resume_writing_before_close(self):
+        app_proto = mock.Mock(spec=asyncio.Protocol)
+        ssl_proto = self.ssl_protocol(proto=app_proto)
+        ssl_proto._state = sslproto.SSLProtocolState.SHUTDOWN
+        ssl_proto._app_state = sslproto.AppProtocolState.STATE_CON_MADE
+        transport = mock.Mock()
+        ssl_proto._transport = transport
+        ssl_proto._sslobj = mock.Mock()
+        shutdown_exc = ssl.SSLError(ssl.SSL_ERROR_SSL, 'shutdown failed')
+        ssl_proto._sslobj.unwrap.side_effect = shutdown_exc
+        ssl_proto._outgoing = mock.Mock()
+        ssl_proto._outgoing.read.return_value = b'close notify'
+        ssl_proto._outgoing.pending = 0
+        ssl_proto._ssl_writing_paused = True
+
+        ssl_proto._do_shutdown()
+        test_utils.run_briefly(self.loop)
+
+        transport.write.assert_not_called()
+        transport.close.assert_not_called()
+
+        ssl_proto.resume_writing()
+        transport.write.assert_called_once_with(b'close notify')
+        test_utils.run_briefly(self.loop)
+        transport.close.assert_called_once_with()
+
+    def test_shutdown_raw_error_takes_precedence(self):
+        app_proto = mock.Mock(spec=asyncio.Protocol)
+        ssl_proto = self.ssl_protocol(proto=app_proto)
+        ssl_proto._state = sslproto.SSLProtocolState.SHUTDOWN
+        ssl_proto._app_state = sslproto.AppProtocolState.STATE_CON_MADE
+        ssl_proto._shutdown_exc = ssl.SSLError(
+            ssl.SSL_ERROR_SSL, 'shutdown failed')
+        raw_exc = ConnectionResetError('raw write failed')
+
+        ssl_proto.connection_lost(raw_exc)
+        test_utils.run_briefly(self.loop)
+
+        app_proto.connection_lost.assert_called_once_with(raw_exc)
+
     def test_connection_lost(self):
         # From issue #472.
         # yield from waiter hang if lost_connection was called.
