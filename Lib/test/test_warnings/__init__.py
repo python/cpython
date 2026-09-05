@@ -2252,6 +2252,25 @@ class DeprecatedTests(PyPublicAPITests):
         with self.assertWarnsRegex(RuntimeWarning, "c will go away soon"):
             c()
 
+    def test_skip_file_prefixes(self):
+        code = """\
+from warnings import deprecated
+
+@deprecated("good as gone", skip_file_prefixes=(__file__,))
+def nested_func() -> Outer:
+    pass
+"""
+        mod = types.ModuleType("mod")
+        mod.__file__ = "/fictional/path/my_test_file.py"
+        exec(code, mod.__dict__)
+
+        with py_warnings.catch_warnings(record=True) as record:
+            py_warnings.simplefilter("always")
+            lineno_expected = sys._getframe().f_lineno + 1  # next line
+            mod.nested_func()
+
+        assert (record[0].filename, record[0].lineno) == (__file__, lineno_expected)
+
     def test_turn_off_warnings(self):
         @deprecated("d will go away soon", category=None)
         def d():
