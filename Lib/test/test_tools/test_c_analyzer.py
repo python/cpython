@@ -1,5 +1,6 @@
 import os.path
 import shutil
+import subprocess
 import tempfile
 import unittest
 
@@ -53,7 +54,11 @@ class StaticAssertTests(unittest.TestCase):
                 self.assertEqual(items[-1].name, 'global_after')
 
     @unittest.skipUnless(shutil.which('gcc'), 'requires gcc')
+    @unittest.skipIf(os.name == 'nt', 'GCC backend does not handle Windows paths')
     def test_preprocess(self):
+        version = subprocess.check_output(['gcc', '--version'], text=True)
+        if 'clang' in version.lower():
+            self.skipTest('requires GNU GCC, not Clang')
         with tempfile.TemporaryDirectory() as tmpdir:
             filename = os.path.join(tmpdir, 'test.c')
             with open(filename, 'w', encoding='utf-8') as source:
