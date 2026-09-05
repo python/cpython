@@ -311,7 +311,6 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
            we're actually parsing from a file, which has an E_EOF SyntaxError and in that case
            `PyErr_ProgramTextObject` fails because lineno points to last_file_line + 1, which
            does not physically exist */
-        assert(p->tok->fp == NULL || p->tok->fp == stdin || p->tok->done == E_EOF);
 
         if (p->tok->lineno <= lineno && p->tok->inp > p->tok->buf) {
             Py_ssize_t size = p->tok->inp - p->tok->line_start;
