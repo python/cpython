@@ -26,7 +26,8 @@ class StressTests(TestBase):
         support.gc_collect()
 
     @threading_helper.requires_working_threading()
-    @support.bigmemtest(size=200, memuse=32*2**20, dry_run=False)
+    @support.bigmemtest(size=200, memuse=32*2**20, dry_run=False,
+                        limit_address_space=False)
     def test_create_many_threaded(self, size):
         alive = []
         start = threading.Event()
@@ -43,7 +44,8 @@ class StressTests(TestBase):
         support.gc_collect()
 
     @threading_helper.requires_working_threading()
-    @support.bigmemtest(size=200, memuse=34*2**20, dry_run=False)
+    @support.bigmemtest(size=200, memuse=34*2**20, dry_run=False,
+                        limit_address_space=False)
     def test_many_threads_running_interp_in_other_interp(self, size):
         start = threading.Event()
         interp = interpreters.create()
