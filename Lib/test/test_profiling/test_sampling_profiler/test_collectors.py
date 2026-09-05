@@ -610,6 +610,25 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertFalse(export_ok)
         self.assertEqual(os.path.getsize(flamegraph_out.name), 0)
 
+    def test_flamegraph_deep_stack_export(self):
+        """A deep stack must export instead of raising RecursionError."""
+        flamegraph_out = tempfile.NamedTemporaryFile(
+            suffix=".html", delete=False
+        )
+        self.addCleanup(close_and_unlink, flamegraph_out)
+
+        collector = FlamegraphCollector(1000)
+        # Deeper than the default recursion limit.
+        frames = [MockFrameInfo("f.py", i + 1, f"f{i}") for i in range(1536)]
+        collector.collect(
+            [MockInterpreterInfo(0, [MockThreadInfo(1, frames)])])
+
+        with captured_stdout(), captured_stderr():
+            export_ok = collector.export(flamegraph_out.name)
+
+        self.assertTrue(export_ok)
+        self.assertGreater(os.path.getsize(flamegraph_out.name), 0)
+
     def test_gecko_collector_basic(self):
         """Test basic GeckoCollector functionality."""
         collector = GeckoCollector(1000)
