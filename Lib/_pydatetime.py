@@ -1560,10 +1560,10 @@ class time:
                 return 2 # arbitrary non-zero value
             else:
                 raise TypeError("cannot compare naive and aware times")
-        myus = (((self._hour * 60 + self._minute) * 60 + self._second)
-                * 1000000 + self._microsecond - myoff._to_microseconds())
-        otus = (((other._hour * 60 + other._minute) * 60 + other._second)
-                * 1000000 + other._microsecond - otoff._to_microseconds())
+        myus = (((self._hour * 60 + self._minute) * 60 + self._second) * 1000000
+                + self._microsecond - myoff._to_microseconds())
+        otus = (((other._hour * 60 + other._minute) * 60 + other._second) * 1000000
+                + other._microsecond - otoff._to_microseconds())
         return _cmp(myus, otus)
 
     def __hash__(self):
