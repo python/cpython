@@ -50,7 +50,7 @@ extern "C" {
 #define HDR_OFF_INTERVAL     (HDR_OFF_START_TIME + HDR_SIZE_START_TIME)
 #define HDR_SIZE_INTERVAL    8
 #define HDR_OFF_SAMPLES      (HDR_OFF_INTERVAL + HDR_SIZE_INTERVAL)
-#define HDR_SIZE_SAMPLES     4
+#define HDR_SIZE_SAMPLES     8
 #define HDR_OFF_THREADS      (HDR_OFF_SAMPLES + HDR_SIZE_SAMPLES)
 #define HDR_SIZE_THREADS     4
 #define HDR_OFF_STR_TABLE    (HDR_OFF_THREADS + HDR_SIZE_THREADS)
@@ -64,6 +64,67 @@ extern "C" {
 
 static_assert(FILE_HEADER_SIZE <= FILE_HEADER_PLACEHOLDER_SIZE,
               "FILE_HEADER_SIZE exceeds FILE_HEADER_PLACEHOLDER_SIZE");
+
+/* Sample header field offsets and sizes */
+#define SMP_OFF_THREAD_ID        0
+#define SMP_SIZE_THREAD_ID       sizeof(uint64_t)
+#define SMP_OFF_INTERPRETER_ID   (SMP_OFF_THREAD_ID + SMP_SIZE_THREAD_ID)
+#define SMP_SIZE_INTERPRETER_ID  sizeof(uint32_t)
+#define SMP_OFF_ENCODING         (SMP_OFF_INTERPRETER_ID + SMP_SIZE_INTERPRETER_ID)
+#define SMP_SIZE_ENCODING        sizeof(uint8_t)
+#define SAMPLE_HEADER_FIXED_SIZE (SMP_OFF_ENCODING + SMP_SIZE_ENCODING)
+
+static_assert(SAMPLE_HEADER_FIXED_SIZE == 13,
+             "SAMPLE_HEADER_FIXED_SIZE must remain 13");
+
+/* Footer field offsets and sizes */
+#define FTR_OFF_STRINGS       0
+#define FTR_SIZE_STRINGS      sizeof(uint32_t)
+#define FTR_OFF_FRAMES        (FTR_OFF_STRINGS + FTR_SIZE_STRINGS)
+#define FTR_SIZE_FRAMES       sizeof(uint32_t)
+#define FTR_OFF_FILE_SIZE     (FTR_OFF_FRAMES + FTR_SIZE_FRAMES)
+#define FTR_SIZE_FILE_SIZE    sizeof(uint64_t)
+#define FTR_OFF_CHECKSUM      (FTR_OFF_FILE_SIZE + FTR_SIZE_FILE_SIZE)
+#define FTR_SIZE_CHECKSUM     (2 * sizeof(uint64_t))
+#define FILE_FOOTER_SIZE      (FTR_OFF_CHECKSUM + FTR_SIZE_CHECKSUM)
+
+static_assert(FILE_FOOTER_SIZE == 32,
+             "FILE_FOOTER_SIZE must remain 32");
+
+/* Optional profiling statistics immediately precede the footer.  The
+ * signature and size live at the end so readers can discover extensions
+ * without changing the fixed header or moving streamed sample data. */
+#define PROFILE_STATS_MAGIC       "TACHSTAT"
+#define PROFILE_STATS_MAGIC_SIZE  8
+#define PROFILE_STATS_VERSION     1
+#define PST_OFF_DURATION          0
+#define PST_SIZE_DURATION         8
+#define PST_OFF_SAMPLE_RATE       (PST_OFF_DURATION + PST_SIZE_DURATION)
+#define PST_SIZE_SAMPLE_RATE      8
+#define PST_OFF_ERROR_RATE        (PST_OFF_SAMPLE_RATE + PST_SIZE_SAMPLE_RATE)
+#define PST_SIZE_ERROR_RATE       8
+#define PST_OFF_MISSED_SAMPLES    (PST_OFF_ERROR_RATE + PST_SIZE_ERROR_RATE)
+#define PST_SIZE_MISSED_SAMPLES   8
+#define PST_OFF_PRESENT           (PST_OFF_MISSED_SAMPLES + PST_SIZE_MISSED_SAMPLES)
+#define PST_SIZE_PRESENT          4
+#define PST_OFF_RESERVED          (PST_OFF_PRESENT + PST_SIZE_PRESENT)
+#define PST_SIZE_RESERVED         4
+#define PST_OFF_MAGIC             (PST_OFF_RESERVED + PST_SIZE_RESERVED)
+#define PST_OFF_VERSION           (PST_OFF_MAGIC + PROFILE_STATS_MAGIC_SIZE)
+#define PST_SIZE_VERSION          4
+#define PST_OFF_SIZE              (PST_OFF_VERSION + PST_SIZE_VERSION)
+#define PST_SIZE_SIZE             4
+#define PROFILE_STATS_SIZE        (PST_OFF_SIZE + PST_SIZE_SIZE)
+#define PROFILE_STATS_V1_SIZE     32
+#define PROFILE_STATS_ERROR_RATE  0x01
+#define PROFILE_STATS_MISSED      0x02
+
+static_assert(PROFILE_STATS_SIZE == 56,
+              "PROFILE_STATS_SIZE must remain 56");
+
+/* Minimum on-disk bytes of a string (1) and frame (7) table entry. */
+#define MIN_STRING_ENTRY_SIZE 1
+#define MIN_FRAME_ENTRY_SIZE  7
 
 /* Buffer sizes: 512KB balances syscall amortization against memory use,
  * and aligns well with filesystem block sizes and zstd dictionary windows */
@@ -82,9 +143,6 @@ static_assert(FILE_HEADER_SIZE <= FILE_HEADER_PLACEHOLDER_SIZE,
 
 /* Maximum stack depth we'll buffer for delta encoding */
 #define MAX_STACK_DEPTH         256
-
-/* Initial capacity for RLE pending buffer */
-#define INITIAL_RLE_CAPACITY    64
 
 /* Initial capacities for dynamic arrays - sized to reduce reallocations */
 #define INITIAL_STRING_CAPACITY 4096
@@ -200,12 +258,6 @@ typedef struct {
     uint8_t opcode;
 } FrameKey;
 
-/* Pending RLE sample - buffered for run-length encoding */
-typedef struct {
-    uint64_t timestamp_delta;
-    uint8_t status;
-} PendingRLESample;
-
 /* Thread entry - tracks per-thread state for delta encoding */
 typedef struct {
     uint64_t thread_id;
@@ -218,16 +270,14 @@ typedef struct {
     size_t prev_stack_capacity;
 
     /* RLE pending buffer - samples waiting to be written as a repeat group */
-    PendingRLESample *pending_rle;
-    size_t pending_rle_count;
-    size_t pending_rle_capacity;
-    int has_pending_rle;  /* Flag: do we have buffered repeats? */
+    uint8_t *pending_rle;
+    size_t pending_rle_bytes;
+    size_t pending_rle_samples;
 } ThreadEntry;
 
 /* Main binary writer structure */
 typedef struct {
     FILE *fp;
-    char *filename;
 
     /* Write buffer for batched I/O */
     uint8_t *write_buffer;
@@ -241,7 +291,13 @@ typedef struct {
     /* Metadata */
     uint64_t start_time_us;
     uint64_t sample_interval_us;
-    uint32_t total_samples;
+    uint64_t total_samples;
+    double duration_sec;
+    double sample_rate;
+    double error_rate;
+    double missed_samples;
+    uint32_t profile_stats_present;
+    int has_profile_stats;
 
     /* String hash table: PyObject* -> uint32_t index */
     _Py_hashtable_t *string_hash;
@@ -285,10 +341,7 @@ typedef struct {
 
 /* Main binary reader structure */
 typedef struct {
-    char *filename;
-
 #if USE_MMAP
-    int fd;
     uint8_t *mapped_data;
     size_t mapped_size;
 #else
@@ -310,8 +363,14 @@ typedef struct {
     int needs_swap;  /* Non-zero if file was written on different-endian system */
     uint64_t start_time_us;
     uint64_t sample_interval_us;
-    uint32_t sample_count;
+    uint64_t sample_count;
     uint32_t thread_count;
+    double duration_sec;
+    double sample_rate;
+    double error_rate;
+    double missed_samples;
+    uint32_t profile_stats_present;
+    int has_profile_stats;
     uint64_t string_table_offset;
     uint64_t frame_table_offset;
 
@@ -496,7 +555,7 @@ grow_array_inplace(void **ptr_addr, size_t count, size_t *capacity, size_t elem_
  * Create a new binary writer.
  *
  * Arguments:
- *   filename: Path to output file
+ *   path: Path to output file
  *   sample_interval_us: Sampling interval in microseconds
  *   compression_type: COMPRESSION_NONE or COMPRESSION_ZSTD
  *   start_time_us: Start timestamp in microseconds (from time.monotonic() * 1e6)
@@ -505,7 +564,7 @@ grow_array_inplace(void **ptr_addr, size_t count, size_t *capacity, size_t elem_
  *   New BinaryWriter* on success, NULL on failure (PyErr set)
  */
 BinaryWriter *binary_writer_create(
-    const char *filename,
+    PyObject *path,
     uint64_t sample_interval_us,
     int compression_type,
     uint64_t start_time_us
@@ -540,6 +599,16 @@ int binary_writer_write_sample(
  */
 int binary_writer_finalize(BinaryWriter *writer);
 
+/* Store measured statistics to write during finalization. */
+int binary_writer_set_stats(
+    BinaryWriter *writer,
+    double duration_sec,
+    double sample_rate,
+    double error_rate,
+    double missed_samples,
+    uint32_t present
+);
+
 /*
  * Destroy a binary writer and free all resources.
  * Safe to call even if writer is partially initialized.
@@ -557,12 +626,12 @@ void binary_writer_destroy(BinaryWriter *writer);
  * Open a binary file for reading.
  *
  * Arguments:
- *   filename: Path to input file
+ *   path: Path to input file
  *
  * Returns:
  *   New BinaryReader* on success, NULL on failure (PyErr set)
  */
-BinaryReader *binary_reader_open(const char *filename);
+BinaryReader *binary_reader_open(PyObject *path);
 
 /*
  * Replay samples from binary file through a collector.

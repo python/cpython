@@ -55,6 +55,7 @@
 #include "frozen_modules/os.h"
 #include "frozen_modules/site.h"
 #include "frozen_modules/stat.h"
+#include "frozen_modules/linecache.h"
 #include "frozen_modules/importlib.util.h"
 #include "frozen_modules/importlib.machinery.h"
 #include "frozen_modules/runpy.h"
@@ -87,6 +88,9 @@ static const struct _frozen stdlib_modules[] = {
     {"os", _Py_M__os, (int)sizeof(_Py_M__os), false},
     {"site", _Py_M__site, (int)sizeof(_Py_M__site), false},
     {"stat", _Py_M__stat, (int)sizeof(_Py_M__stat), false},
+
+    /* pythonrun - interactive */
+    {"linecache", _Py_M__linecache, (int)sizeof(_Py_M__linecache), false},
 
     /* runpy - run module with -m */
     {"importlib.util", _Py_M__importlib_util, (int)sizeof(_Py_M__importlib_util), false},

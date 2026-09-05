@@ -189,6 +189,6 @@ try {
   // Show JavaScript exception and traceback
   console.warn(e);
   // Show Python exception and traceback
-  Module.__Py_DumpTraceback(2, Module._PyGILState_GetThisThreadState());
+  Module.PyUnstable_DumpTraceback(2, Module._PyGILState_GetThisThreadState());
   process.exit(1);
 }

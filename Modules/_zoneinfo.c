@@ -991,7 +991,7 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
     }
 
     if (!PyTuple_CheckExact(data_tuple)) {
-        PyErr_Format(PyExc_TypeError, "Invalid data result type: %r",
+        PyErr_Format(PyExc_TypeError, "Invalid data result type: %R",
                      data_tuple);
         goto error;
     }
@@ -1070,12 +1070,12 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
         }
 
         Py_ssize_t cur_trans_idx = PyLong_AsSsize_t(num);
-        if (cur_trans_idx == -1) {
+        if (cur_trans_idx == -1 && PyErr_Occurred()) {
             goto error;
         }
 
         trans_idx[i] = (size_t)cur_trans_idx;
-        if (trans_idx[i] > self->num_ttinfos) {
+        if (trans_idx[i] >= self->num_ttinfos) {
             PyErr_Format(
                 PyExc_ValueError,
                 "Invalid transition index found while reading TZif: %zd",
@@ -1181,7 +1181,12 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
         self->ttinfo_before = &(self->_ttinfos[0]);
     }
 
-    if (tz_str != Py_None && PyObject_IsTrue(tz_str)) {
+    int has_tz_str = PyObject_IsTrue(tz_str);
+    if (has_tz_str < 0) {
+        goto error;
+    }
+
+    if (has_tz_str) {
         if (parse_tz_str(state, tz_str, &(self->tzrule_after))) {
             goto error;
         }
@@ -1762,6 +1767,9 @@ parse_abbr(const char **p, PyObject **abbr)
             ptr++;
         }
         str_end = ptr;
+        if (str_end == str_start) {
+            return -1;
+        }
         ptr++;
     }
     else {
@@ -2081,7 +2089,7 @@ utcoff_to_dstoff(size_t *trans_idx, long *utcoffs, long *dstoffs,
             dstoff = utcoff - utcoffs[comp_idx];
         }
 
-        if (!dstoff && idx < (num_ttinfos - 1)) {
+        if (!dstoff && idx < (num_ttinfos - 1) && i + 1 < num_transitions) {
             comp_idx = trans_idx[i + 1];
 
             // If the following transition is also DST and we couldn't find
@@ -2308,7 +2316,7 @@ get_local_timestamp(PyObject *dt, int64_t *local_ts)
         }
         hour = PyLong_AsLong(num);
         Py_DECREF(num);
-        if (hour == -1) {
+        if (hour == -1 && PyErr_Occurred()) {
             return -1;
         }
 
@@ -2318,7 +2326,7 @@ get_local_timestamp(PyObject *dt, int64_t *local_ts)
         }
         minute = PyLong_AsLong(num);
         Py_DECREF(num);
-        if (minute == -1) {
+        if (minute == -1 && PyErr_Occurred()) {
             return -1;
         }
 
@@ -2328,7 +2336,7 @@ get_local_timestamp(PyObject *dt, int64_t *local_ts)
         }
         second = PyLong_AsLong(num);
         Py_DECREF(num);
-        if (second == -1) {
+        if (second == -1 && PyErr_Occurred()) {
             return -1;
         }
     }

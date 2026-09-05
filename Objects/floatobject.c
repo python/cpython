@@ -16,6 +16,7 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_stackref.h"      // PyStackRef_AsPyObjectBorrow()
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 
 #include <float.h>                // DBL_MAX
 #include <stdlib.h>               // strtol()
@@ -68,8 +69,6 @@ static PyStructSequence_Field floatinfo_fields[] = {
     {"radix",           "FLT_RADIX -- radix of exponent"},
     {"rounds",          "FLT_ROUNDS -- rounding mode used for arithmetic "
                     "operations"},
-    {"iec_60559",   "test if implementation supports the IEC 60559 "
-                    "floating-point standard"},
     {0}
 };
 
@@ -77,7 +76,7 @@ static PyStructSequence_Desc floatinfo_desc = {
     "sys.float_info",           /* name */
     floatinfo__doc__,           /* doc */
     floatinfo_fields,           /* fields */
-    12
+    11
 };
 
 PyObject *
@@ -115,11 +114,6 @@ PyFloat_GetInfo(void)
     SetDblFlag(DBL_EPSILON);
     SetIntFlag(FLT_RADIX);
     SetIntFlag(FLT_ROUNDS);
-#ifdef __STDC_IEC_559__
-    SetFlag(PyBool_FromLong(1));
-#else
-    SetFlag(PyBool_FromLong(0));
-#endif
 #undef SetIntFlag
 #undef SetDblFlag
 #undef SetFlag
@@ -1546,8 +1540,9 @@ float_as_integer_ratio_impl(PyObject *self)
         if (denominator == NULL)
             goto error;
     }
+    Py_DECREF(py_exponent);
 
-    result_pair = PyTuple_Pack(2, numerator, denominator);
+    return _PyTuple_FromPairSteal(numerator, denominator);
 
 error:
     Py_XDECREF(py_exponent);
@@ -1675,7 +1670,6 @@ float___getnewargs___impl(PyObject *self)
 
 
 /*[clinic input]
-@permit_long_docstring_body
 @classmethod
 float.__getformat__
 
@@ -1688,13 +1682,13 @@ You probably don't want to use this function.
 It exists mainly to be used in Python's test suite.
 
 This function returns whichever of 'IEEE, big-endian' or 'IEEE,
-little-endian' best describes the format of floating-point numbers used by the
-C type named by typestr.
+little-endian' best describes the format of floating-point numbers
+used by the C type named by typestr.
 [clinic start generated code]*/
 
 static PyObject *
 float___getformat___impl(PyTypeObject *type, const char *typestr)
-/*[clinic end generated code: output=2bfb987228cc9628 input=0ae1ba35d192f704]*/
+/*[clinic end generated code: output=2bfb987228cc9628 input=eb1cf45e9bddab72]*/
 {
     if (strcmp(typestr, "double") != 0 && strcmp(typestr, "float") != 0) {
         PyErr_SetString(PyExc_ValueError,
@@ -1901,6 +1895,31 @@ int
 PyFloat_Pack2(double x, char *data, int le)
 {
     unsigned char *p = (unsigned char *)data;
+#if HAVE_FLOAT16
+    /* Conversion can change NaNs type or alter payload.  Here we
+       just fallback to the generic code, instead of providing
+       workarounds as for single/double precision. */
+    if (!isnan(x)) {
+        _Float16 y = (_Float16)x;
+
+        if (isinf(y) && !isinf(x)) {
+            goto Overflow;
+        }
+
+        unsigned char s[sizeof(_Float16)];
+
+        memcpy(s, &y, sizeof(_Float16));
+        if ((_PY_FLOAT_LITTLE_ENDIAN && !le) || (_PY_FLOAT_BIG_ENDIAN && le)) {
+            p[1] = s[0];
+            p[0] = s[1];
+        }
+        else {
+            p[0] = s[0];
+            p[1] = s[1];
+        }
+        return 0;
+    }
+#endif
     unsigned char sign;
     int e;
     double f;
@@ -2096,6 +2115,24 @@ double
 PyFloat_Unpack2(const char *data, int le)
 {
     unsigned char *p = (unsigned char *)data;
+#if HAVE_FLOAT16
+    _Float16 x16;
+
+    if ((_PY_FLOAT_LITTLE_ENDIAN && !le) || (_PY_FLOAT_BIG_ENDIAN && le)) {
+        char buf[2];
+
+        buf[1] = p[0];
+        buf[0] = p[1];
+        memcpy(&x16, buf, 2);
+    }
+    else {
+        memcpy(&x16, p, 2);
+    }
+    if (!isnan(x16)) {
+        return x16;
+    }
+    /* Fallback to the generic code for NaNs, see PyFloat_Pack2(). */
+#endif
     unsigned char sign;
     int e;
     unsigned int f;

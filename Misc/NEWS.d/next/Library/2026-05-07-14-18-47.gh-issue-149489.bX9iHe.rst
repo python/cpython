@@ -1,0 +1,5 @@
+Fix :mod:`~xml.etree.ElementTree` serialization to HTML. The content of
+comments, processing instructions and elements "xmp", "iframe", "noembed",
+"noframes", and "plaintext" is no longer escaped. The "plaintext" element no
+longer have the closing tag. Add support of empty attributes (with value
+``None``).

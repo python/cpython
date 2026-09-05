@@ -39,8 +39,8 @@ the information :func:`init` sets up.
    (e.g. :program:`compress` or :program:`gzip`). The encoding is suitable for use
    as a :mailheader:`Content-Encoding` header, **not** as a
    :mailheader:`Content-Transfer-Encoding` header. The mappings are table driven.
-   Encoding suffixes are case sensitive; type suffixes are first tried case
-   sensitively, then case insensitively.
+   Encoding suffixes are case-sensitive. Suffix mappings and type suffixes are
+   first tried case-sensitively, then case-insensitively.
 
    The optional *strict* argument is a flag specifying whether the list of known MIME types
    is limited to only the official types `registered with IANA
@@ -54,8 +54,8 @@ the information :func:`init` sets up.
    .. versionchanged:: 3.8
       Added support for *url* being a :term:`path-like object`.
 
-   .. deprecated:: 3.13
-      Passing a file path instead of URL is :term:`soft deprecated`.
+   .. soft-deprecated:: 3.13
+      Passing a file path instead of URL.
       Use :func:`guess_file_type` for this.
 
 
@@ -116,12 +116,13 @@ behavior of the module.
       Previously, Windows registry settings were ignored.
 
 
-.. function:: read_mime_types(filename)
+.. function:: read_mime_types(file)
 
-   Load the type map given in the file *filename*, if it exists.  The type map is
-   returned as a dictionary mapping filename extensions, including the leading dot
-   (``'.'``), to strings of the form ``'type/subtype'``.  If the file *filename*
-   does not exist or cannot be read, ``None`` is returned.
+   Load the type map given in the file named by *file*, if it exists.  *file*
+   must be a string specifying the name of the file to read.  The type map is
+   returned as a dictionary mapping file extensions, including the leading dot
+   (``'.'``), to strings of the form ``'type/subtype'``.  If the file does not
+   exist or cannot be read, ``None`` is returned.
 
 
 .. function:: add_type(type, ext, strict=True)
@@ -129,9 +130,19 @@ behavior of the module.
    Add a mapping from the MIME type *type* to the extension *ext*. When the
    extension is already known, the new type will replace the old one. When the type
    is already known the extension will be added to the list of known extensions.
+   Valid extensions are empty or start with a ``'.'``.
+
+   Registered lower-case extensions are matched case-insensitively.
 
    When *strict* is ``True`` (the default), the mapping will be added to the
    official MIME types, otherwise to the non-standard ones.
+
+   .. deprecated:: 3.14
+      *ext* values that do not start with ``'.'`` are deprecated.
+
+   .. versionchanged:: next
+      *ext* now must start with ``'.'``. Otherwise :exc:`ValueError` is raised.
+
 
 
 .. data:: inited
@@ -200,8 +211,8 @@ than one MIME-type database; it provides an interface similar to the one of the
 .. class:: MimeTypes(filenames=(), strict=True)
 
    This class represents a MIME-types database.  By default, it provides access to
-   the same database as the rest of this module. The initial database is a copy of
-   that provided by the module, and may be extended by loading additional
+   the same database as the rest of this module. The initial database is created from
+   Python's built-in MIME type tables. It may be extended by loading additional
    :file:`mime.types`\ -style files into the database using the :meth:`read` or
    :meth:`readfp` methods.  The mapping dictionaries may also be cleared before
    loading additional data if the default data is not desired.
@@ -215,30 +226,32 @@ than one MIME-type database; it provides an interface similar to the one of the
       Dictionary mapping suffixes to suffixes.  This is used to allow recognition of
       encoded files for which the encoding and the type are indicated by the same
       extension.  For example, the :file:`.tgz` extension is mapped to :file:`.tar.gz`
-      to allow the encoding and type to be recognized separately.  This is initially a
-      copy of the global :data:`suffix_map` defined in the module.
+      to allow the encoding and type to be recognized separately.
+      This is initialized with some predefined values.
 
 
    .. attribute:: MimeTypes.encodings_map
 
-      Dictionary mapping filename extensions to encoding types.  This is initially a
-      copy of the global :data:`encodings_map` defined in the module.
+      Dictionary mapping filename extensions to encoding types.
+      This is initialized with some predefined values.
 
 
    .. attribute:: MimeTypes.types_map
 
       Tuple containing two dictionaries, mapping filename extensions to MIME types:
       the first dictionary is for the non-standards types and the second one is for
-      the standard types. They are initialized by :data:`common_types` and
-      :data:`types_map`.
+      the standard types.
+      They are initialized with some predefined values and MIME type
+      information loaded from files specified by the *filenames* argument.
 
 
    .. attribute:: MimeTypes.types_map_inv
 
       Tuple containing two dictionaries, mapping MIME types to a list of filename
       extensions: the first dictionary is for the non-standards types and the
-      second one is for the standard types. They are initialized by
-      :data:`common_types` and :data:`types_map`.
+      second one is for the standard types.
+      They are initialized with some predefined values and MIME type
+      information loaded from files specified by the *filenames* argument.
 
 
    .. method:: MimeTypes.guess_extension(type, strict=True)
@@ -304,12 +317,16 @@ than one MIME-type database; it provides an interface similar to the one of the
       extension is already known, the new type will replace the old one. When the type
       is already known the extension will be added to the list of known extensions.
 
+      Registered lower-case extensions are matched case-insensitively.
+
       When *strict* is ``True`` (the default), the mapping will be added to the
       official MIME types, otherwise to the non-standard ones.
 
-      .. deprecated-removed:: 3.14 3.16
-         Invalid, undotted extensions will raise a
-         :exc:`ValueError` in Python 3.16.
+      .. deprecated:: 3.14
+         *ext* values that do not start with ``'.'`` are deprecated.
+
+      .. versionchanged:: next
+         *ext* now must start with ``'.'``. Otherwise :exc:`ValueError` is raised.
 
 
 .. _mimetypes-cli:
@@ -348,7 +365,7 @@ it converts file extensions to MIME types.
 
 For each ``type`` entry, the script writes a line into the standard output
 stream. If an unknown type occurs, it writes an error message into the
-standard error stream and exits with the return code ``1``.
+standard output stream and exits with the return code ``1``.
 
 
 .. mimetypes-cli-example:
@@ -375,7 +392,7 @@ interface:
 
    $ # get a MIME type for a rare file extension
    $ python -m mimetypes filename.pict
-   error: unknown extension of filename.pict
+   error: media type unknown for filename.pict
 
    $ # now look in the extended database built into Python
    $ python -m mimetypes --lenient filename.pict
@@ -397,7 +414,8 @@ interface:
    $ python -m mimetypes filename.sh filename.nc filename.xxx filename.txt
    type: application/x-sh encoding: None
    type: application/x-netcdf encoding: None
-   error: unknown extension of filename.xxx
+   error: media type unknown for filename.xxx
+   type: text/plain encoding: None
 
    $ # try to feed an unknown MIME type
    $ python -m mimetypes --extension audio/aac audio/opus audio/future audio/x-wav

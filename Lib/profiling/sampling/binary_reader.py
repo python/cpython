@@ -4,6 +4,7 @@ import _remote_debugging
 
 from .gecko_collector import GeckoCollector
 from .stack_collector import FlamegraphCollector, CollapsedStackCollector
+from .jsonl_collector import JsonlCollector
 from .pstats_collector import PstatsCollector
 
 
@@ -117,11 +118,15 @@ def convert_binary_to_format(input_file, output_file, output_format,
             collector = PstatsCollector(interval)
         elif output_format == 'gecko':
             collector = GeckoCollector(interval)
+        elif output_format == "jsonl":
+            collector = JsonlCollector(interval)
         else:
             raise ValueError(f"Unknown output format: {output_format}")
 
         # Replay samples through collector
         count = reader.replay_samples(collector, progress_callback)
+        if hasattr(collector, "set_replay_stats"):
+            collector.set_replay_stats(info)
 
         # Export to target format
         collector.export(output_file)

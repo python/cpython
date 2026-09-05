@@ -23,8 +23,6 @@ the CPython prompt as closely as possible, with the exception of
 allowing multiline input and multiline history entries.
 """
 
-from __future__ import annotations
-
 import _sitebuiltins
 import functools
 import os
@@ -68,6 +66,7 @@ def _clear_screen():
     reader.scheduled_commands.append("clear_screen")
 
 
+# Keep this in sync with _pyrepl.utils.COMMANDS
 REPL_COMMANDS = {
     "exit": _sitebuiltins.Quitter('exit', ''),
     "quit": _sitebuiltins.Quitter('quit' ,''),
@@ -161,7 +160,7 @@ def run_multiline_interactive_console(
             if r.input_trans is r.isearch_trans:
                 r.do_cmd(("isearch-end", [""]))
             r.pos = len(r.get_unicode())
-            r.dirty = True
+            r.invalidate_full()
             r.refresh()
             console.write("\nKeyboardInterrupt\n")
             console.resetbuffer()

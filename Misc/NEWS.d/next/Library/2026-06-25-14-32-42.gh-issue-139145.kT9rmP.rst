@@ -1,0 +1,5 @@
+Fix a busy loop in :mod:`tkinter` on interactive Python.  When a Tcl command
+running its own event loop (such as ``vwait`` or :meth:`!wait_variable`) was
+active and input arrived on stdin, the event loop kept spinning at 100% CPU.
+The stdin file handler is now removed as soon as input is available.  Based on
+a patch by Michiel de Hoon.

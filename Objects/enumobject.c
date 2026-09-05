@@ -78,7 +78,7 @@ enum_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *start)
         Py_DECREF(en);
         return NULL;
     }
-    en->en_result = PyTuple_Pack(2, Py_None, Py_None);
+    en->en_result = _PyTuple_FromPairSteal(Py_None, Py_None);
     if (en->en_result == NULL) {
         Py_DECREF(en);
         return NULL;
@@ -148,7 +148,7 @@ enumerate_vectorcall(PyObject *type, PyObject *const *args,
     }
 
     PyErr_Format(PyExc_TypeError,
-        "enumerate() takes at most 2 arguments (%d given)", nargs + nkwargs);
+        "enumerate() takes at most 2 arguments (%zd given)", nargs + nkwargs);
     return NULL;
 }
 
@@ -226,15 +226,7 @@ enum_next_long(enumobject *en, PyObject* next_item)
         _PyTuple_Recycle(result);
         return result;
     }
-    result = PyTuple_New(2);
-    if (result == NULL) {
-        Py_DECREF(next_index);
-        Py_DECREF(next_item);
-        return NULL;
-    }
-    PyTuple_SET_ITEM(result, 0, next_index);
-    PyTuple_SET_ITEM(result, 1, next_item);
-    return result;
+    return _PyTuple_FromPairSteal(next_index, next_item);
 }
 
 static PyObject *
@@ -276,15 +268,7 @@ enum_next(PyObject *op)
         _PyTuple_Recycle(result);
         return result;
     }
-    result = PyTuple_New(2);
-    if (result == NULL) {
-        Py_DECREF(next_index);
-        Py_DECREF(next_item);
-        return NULL;
-    }
-    PyTuple_SET_ITEM(result, 0, next_index);
-    PyTuple_SET_ITEM(result, 1, next_item);
-    return result;
+    return _PyTuple_FromPairSteal(next_index, next_item);
 }
 
 static PyObject *
@@ -293,10 +277,13 @@ enum_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
     enumobject *en = _enumobject_CAST(op);
     PyObject *result;
     Py_BEGIN_CRITICAL_SECTION(en);
-    if (en->en_longindex != NULL)
+    if (en->en_longindex != NULL) {
         result = Py_BuildValue("O(OO)", Py_TYPE(en), en->en_sit, en->en_longindex);
-    else
-        result = Py_BuildValue("O(On)", Py_TYPE(en), en->en_sit, en->en_index);
+    }
+    else {
+        Py_ssize_t en_index = FT_ATOMIC_LOAD_SSIZE_RELAXED(en->en_index);
+        result = Py_BuildValue("O(On)", Py_TYPE(en), en->en_sit, en_index);
+    }
     Py_END_CRITICAL_SECTION();
     return result;
 }
@@ -306,7 +293,7 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 static PyMethodDef enum_methods[] = {
     {"__reduce__", enum_reduce, METH_NOARGS, reduce_doc},
     {"__class_getitem__",    Py_GenericAlias,
-    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    METH_O|METH_CLASS,       PyDoc_STR("'enumerate' objects are generic over the type of their values")},
     {NULL,              NULL}           /* sentinel */
 };
 

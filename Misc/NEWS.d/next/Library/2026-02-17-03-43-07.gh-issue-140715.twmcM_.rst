@@ -1,1 +1,0 @@
-Add ``%n`` and ``%t`` support to :meth:`~datetime.datetime.strptime`.

@@ -1,0 +1,2 @@
+:c:func:`PyFloat_Pack8` and ``PyFloat_Unpack*`` functions are no longer
+guaranteed to always succeed on CPython.

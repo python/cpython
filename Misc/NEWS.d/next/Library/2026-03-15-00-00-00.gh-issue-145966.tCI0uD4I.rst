@@ -1,2 +1,0 @@
-Non-:exc:`AttributeError` exceptions raised during dialect attribute lookup
-in :mod:`csv` are no longer silently suppressed.
