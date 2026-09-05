@@ -628,6 +628,26 @@ class TestBinaryRoundTrip(BinaryFormatTestBase):
         collector, count = self.roundtrip(samples)
         self.assertEqual(count, 3)
 
+    def test_synthetic_frames_roundtrip(self):
+        """Degraded/sentinel frames (location=None) survive the binary format."""
+        frames = [
+            FrameInfo(("~", None, name, None))
+            for name in (
+                "<GC>",
+                "<native>",
+                "<unknown function>",
+                "<unknown file>",
+                "<unreadable frame>",
+            )
+        ]
+        frames.append(FrameInfo(("app.py", None, "<unknown function>", None)))
+        frames.append(FrameInfo(("<unknown file>", None, "real_func", None)))
+        samples = [[make_interpreter(0, [make_thread(1, frames)])]]
+
+        collector, count = self.roundtrip(samples)
+        self.assertEqual(count, 1)
+        self.assert_samples_equal(samples, collector)
+
 
 class TestBinaryEdgeCases(BinaryFormatTestBase):
     """Tests for edge cases in binary format."""
