@@ -463,6 +463,7 @@ class partialmethod:
         if args and args[-1] is Placeholder:
             raise TypeError("trailing Placeholders are not allowed")
 
+        self._cachedmethod = None
         self.func = func    # setting via attribute setter
         self._args = args
         self._keywords = keywords
@@ -487,6 +488,11 @@ class partialmethod:
         else:
             self._cachetype = 0
         self._func = func
+        method = self._cachedmethod
+        if method is not None:
+            if self._cachetype in (1, 2):
+                method = method.__wrapped__
+            self._keywords = method.keywords
         self._cachedmethod = None
 
     @property
@@ -496,6 +502,11 @@ class partialmethod:
     @args.setter
     def args(self, args):
         self._args = args
+        method = self._cachedmethod
+        if method is not None:
+            if self._cachetype in (1, 2):
+                method = method.__wrapped__
+            self._keywords = method.keywords
         self._cachedmethod = None
 
     @property
@@ -510,7 +521,13 @@ class partialmethod:
     @keywords.setter
     def keywords(self, keywords):
         self._keywords = keywords
-        self._cachedmethod = None
+        method = self._cachedmethod
+        if method is not None:
+            if self._cachetype in (1, 2):
+                method = method.__wrapped__
+            mkeywords = method.keywords
+            mkeywords.clear()
+            mkeywords.update(keywords)
 
     def __make_method(self):
         func = self._func
@@ -538,7 +555,8 @@ class partialmethod:
             return method
 
     def __get__(self, obj, cls=None):
-        if not self._cachetype:
+        cachetype = self._cachetype
+        if not cachetype:
             # Unknown descriptor == unknown binding
             # Get callable at runtime and apply partial on top
             func = self._func
