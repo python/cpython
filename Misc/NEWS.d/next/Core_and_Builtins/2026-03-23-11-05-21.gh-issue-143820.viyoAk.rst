@@ -1,0 +1,1 @@
+Fix assertion failure that occurred when JIT inserting ENTER_EXECUTOR after BINARY_OP_INPLACE_ADD_UNICODE.
