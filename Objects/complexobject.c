@@ -331,6 +331,9 @@ _Py_c_pow(Py_complex a, Py_complex b)
         r.real = len*cos(phase);
         r.imag = len*sin(phase);
 
+        /* Don't rely on errno set by the math functions above, for
+           example cos() and sin() set EDOM for an infinite phase. */
+        errno = 0;
         if (isfinite(a.real) && isfinite(a.imag)
             && isfinite(b.real) && isfinite(b.imag))
         {
