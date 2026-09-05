@@ -3461,9 +3461,14 @@ task_eager_start(_PyThreadStateImpl *ts, asyncio_state *state, TaskObj *task)
     int retval = 0;
 
     PyObject *stepres;
+    // gh-155575: this step runs on the creators stack, hide its exception state
+    _PyErr_StackItem exc_state = { .exc_value = NULL, .previous_item = NULL };
+    _PyErr_StackItem *prev_exc_info = ts->base.exc_info;
+    ts->base.exc_info = &exc_state;
     Py_BEGIN_CRITICAL_SECTION(task);
     stepres = task_step_impl(state, task, NULL);
     Py_END_CRITICAL_SECTION();
+    ts->base.exc_info = prev_exc_info;
     if (stepres == NULL) {
         PyObject *exc = PyErr_GetRaisedException();
         _PyErr_ChainExceptions1(exc);
