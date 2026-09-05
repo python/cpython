@@ -1,0 +1,1 @@
+Add a ``netraw`` test resource and regression coverage for ``SOCK_RAW`` sockets.
