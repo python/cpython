@@ -4599,6 +4599,8 @@ class OtherTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     zipf.write(__file__, 'file')
                 with self.assertRaises(ValueError):
+                    zipf.mkdir('directory')
+                with self.assertRaises(ValueError):
                     zipf.close()
                 w1.write(msg2)
             with zipf.open('baz', mode='w') as w2:
@@ -5559,6 +5561,9 @@ class TestWithDirectory(unittest.TestCase):
             os.mkdir(target)
             zf.extractall(target)
             self.assertEqual(set(os.listdir(target)), {"directory", "directory2", "directory3", "directory4"})
+
+        with self.assertRaises(ValueError):
+            zf.mkdir("closed")
 
     def test_create_directory_with_write(self):
         with zipfile.ZipFile(TESTFN, "w") as zf:
