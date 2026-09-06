@@ -1,0 +1,4 @@
+IDLE's Module Browser no longer puts a Python or folder icon on every line;
+the text of a row already says whether it is a class or a function.
+The Path Browser keeps icons, which now tell a directory, a package and a
+module apart, so a package row no longer says ": package".

@@ -44,8 +44,8 @@ https://www.python.org/psf/trademarks-faq/
 https://www.python.org/psf/trademarks/  # Usage.
 
 
-OTHER GIFS: These are used by browsers using idlelib.tree.
-At least some will not be used when tree is replaced by ttk.Treeview.
+OTHER GIFS: folder, openfolder and python mark the directories, the
+packages and the modules of the Path Browser.
 
 
 Edited 2024 August 26 by TJR.
