@@ -30,6 +30,7 @@ from idlelib.tree import wheel_event
 from idlelib.util import py_extensions
 from idlelib import window
 from idlelib.help import _get_dochome
+from idlelib.selector import SmartSelect, DisableTkDouble1Binding
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
@@ -157,6 +158,8 @@ class EditorWindow:
         text.bind("<<del-word-left>>", self.del_word_left)
         text.bind("<<del-word-right>>", self.del_word_right)
         text.bind("<<beginning-of-line>>", self.home_callback)
+        DisableTkDouble1Binding(root)
+        text.bind('<Double-Button-1>', SmartSelect)
 
         if flist:
             flist.inversedict[self] = key
