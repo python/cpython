@@ -396,6 +396,12 @@ def compile(p, flags=0):
     else:
         pattern = None
 
+    if p.state.flags & SRE_FLAG_LOCALE or p.state.locale_used:
+        import warnings
+        warnings.warn("re.LOCALE and the inline flag (?L) are deprecated",
+                      DeprecationWarning,
+                      stacklevel=4)
+
     code = _code(p, flags)
 
     if flags & SRE_FLAG_DEBUG:
