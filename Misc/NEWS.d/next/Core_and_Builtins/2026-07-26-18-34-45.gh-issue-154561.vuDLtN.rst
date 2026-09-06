@@ -1,0 +1,3 @@
+Fix a race condition in the free-threaded build where concurrent access to
+the same lazy-imported submodule attribute could raise :exc:`AttributeError`.
+Patch by Bartosz Sławecki.
