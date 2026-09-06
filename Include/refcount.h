@@ -280,7 +280,10 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
         _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, new_local);
     }
     else {
-        _Py_atomic_add_ssize(&op->ob_ref_shared, (1 << _Py_REF_SHARED_SHIFT));
+        // The existing reference keeps the object alive; the increment only
+        // needs to extend its lifetime.
+        _Py_atomic_add_ssize_relaxed(&op->ob_ref_shared,
+                                     (1 << _Py_REF_SHARED_SHIFT));
     }
 #elif SIZEOF_VOID_P > 4
     uint32_t cur_refcnt = op->ob_refcnt;

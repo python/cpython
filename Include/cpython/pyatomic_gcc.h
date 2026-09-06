@@ -62,6 +62,10 @@ static inline Py_ssize_t
 _Py_atomic_add_ssize(Py_ssize_t *obj, Py_ssize_t value)
 { return __atomic_fetch_add(obj, value, __ATOMIC_SEQ_CST); }
 
+static inline Py_ssize_t
+_Py_atomic_add_ssize_relaxed(Py_ssize_t *obj, Py_ssize_t value)
+{ return __atomic_fetch_add(obj, value, __ATOMIC_RELAXED); }
+
 
 // --- _Py_atomic_compare_exchange -------------------------------------------
 
@@ -129,6 +133,18 @@ static inline int
 _Py_atomic_compare_exchange_ssize(Py_ssize_t *obj, Py_ssize_t *expected, Py_ssize_t desired)
 { return __atomic_compare_exchange_n(obj, expected, desired, 0,
                                      __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST); }
+
+static inline int
+_Py_atomic_compare_exchange_ssize_relaxed(Py_ssize_t *obj, Py_ssize_t *expected,
+                                          Py_ssize_t desired)
+{ return __atomic_compare_exchange_n(obj, expected, desired, 0,
+                                     __ATOMIC_RELAXED, __ATOMIC_RELAXED); }
+
+static inline int
+_Py_atomic_compare_exchange_ssize_acq_rel(Py_ssize_t *obj, Py_ssize_t *expected,
+                                          Py_ssize_t desired)
+{ return __atomic_compare_exchange_n(obj, expected, desired, 0,
+                                     __ATOMIC_ACQ_REL, __ATOMIC_RELAXED); }
 
 static inline int
 _Py_atomic_compare_exchange_ptr(void *obj, void *expected, void *desired)

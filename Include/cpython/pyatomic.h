@@ -129,6 +129,9 @@ _Py_atomic_add_uintptr(uintptr_t *obj, uintptr_t value);
 static inline Py_ssize_t
 _Py_atomic_add_ssize(Py_ssize_t *obj, Py_ssize_t value);
 
+static inline Py_ssize_t
+_Py_atomic_add_ssize_relaxed(Py_ssize_t *obj, Py_ssize_t value);
+
 
 // --- _Py_atomic_compare_exchange -------------------------------------------
 // Performs an atomic compare-and-exchange.
@@ -178,6 +181,14 @@ _Py_atomic_compare_exchange_uintptr(uintptr_t *obj, uintptr_t *expected, uintptr
 
 static inline int
 _Py_atomic_compare_exchange_ssize(Py_ssize_t *obj, Py_ssize_t *expected, Py_ssize_t desired);
+
+static inline int
+_Py_atomic_compare_exchange_ssize_relaxed(Py_ssize_t *obj, Py_ssize_t *expected,
+                                          Py_ssize_t desired);
+
+static inline int
+_Py_atomic_compare_exchange_ssize_acq_rel(Py_ssize_t *obj, Py_ssize_t *expected,
+                                          Py_ssize_t desired);
 
 // NOTE: `obj` and `expected` are logically `void**` types, but we use `void*`
 // so that we can pass types like `PyObject**` without a cast.

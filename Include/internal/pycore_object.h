@@ -165,7 +165,8 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
         _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, (uint32_t)refcnt);
     }
     else {
-        _Py_atomic_add_ssize(&op->ob_ref_shared, (n << _Py_REF_SHARED_SHIFT));
+        _Py_atomic_add_ssize_relaxed(&op->ob_ref_shared,
+                                     (n << _Py_REF_SHARED_SHIFT));
     }
 #  ifdef Py_REF_DEBUG
     _Py_AddRefTotal(_PyThreadState_GET(), n);
@@ -547,7 +548,7 @@ _Py_TryIncRefShared(PyObject *op)
             return 0;
         }
 
-        if (_Py_atomic_compare_exchange_ssize(
+        if (_Py_atomic_compare_exchange_ssize_relaxed(
                 &op->ob_ref_shared,
                 &shared,
                 shared + (1 << _Py_REF_SHARED_SHIFT))) {
@@ -627,7 +628,7 @@ _Py_NewRefWithLock(PyObject *op)
         if ((shared & _Py_REF_SHARED_FLAG_MASK) == 0) {
             new_shared |= _Py_REF_MAYBE_WEAKREF;
         }
-        if (_Py_atomic_compare_exchange_ssize(
+        if (_Py_atomic_compare_exchange_ssize_relaxed(
                 &op->ob_ref_shared,
                 &shared,
                 new_shared)) {
