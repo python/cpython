@@ -1,5 +1,4 @@
 from annotationlib import Format, ForwardRef
-import asyncio
 import builtins
 import collections
 import copy
@@ -2991,8 +2990,16 @@ class TestGetCoroutineState(unittest.TestCase):
                          {'a': None, 'gencoro': gencoro, 'b': 'spam'})
 
 
-@support.requires_working_socket()
-class TestGetAsyncGenState(unittest.IsolatedAsyncioTestCase):
+def _async_test(async_fn):
+    """Decorator to turn an async function into a synchronous function"""
+    @functools.wraps(async_fn)
+    def wrapper(*args, **kwargs):
+        return run_no_yield_async_fn(async_fn, *args, **kwargs)
+
+    return wrapper
+
+
+class TestGetAsyncGenState(unittest.TestCase):
 
     def setUp(self):
         async def number_asyncgen():
@@ -3000,12 +3007,8 @@ class TestGetAsyncGenState(unittest.IsolatedAsyncioTestCase):
                 yield number
         self.asyncgen = number_asyncgen()
 
-    async def asyncTearDown(self):
-        await self.asyncgen.aclose()
-
-    @classmethod
-    def tearDownClass(cls):
-        asyncio.set_event_loop(None)
+    def tearDown(self):
+        run_no_yield_async_fn(self.asyncgen.aclose)
 
     def _asyncgenstate(self):
         return inspect.getasyncgenstate(self.asyncgen)
@@ -3013,11 +3016,13 @@ class TestGetAsyncGenState(unittest.IsolatedAsyncioTestCase):
     def test_created(self):
         self.assertEqual(self._asyncgenstate(), inspect.AGEN_CREATED)
 
+    @_async_test
     async def test_suspended(self):
         value = await anext(self.asyncgen)
         self.assertEqual(self._asyncgenstate(), inspect.AGEN_SUSPENDED)
         self.assertEqual(value, 0)
 
+    @_async_test
     async def test_closed_after_exhaustion(self):
         countdown = 7
         with self.assertRaises(StopAsyncIteration):
@@ -3026,11 +3031,13 @@ class TestGetAsyncGenState(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(countdown, 1)
         self.assertEqual(self._asyncgenstate(), inspect.AGEN_CLOSED)
 
+    @_async_test
     async def test_closed_after_immediate_exception(self):
         with self.assertRaises(RuntimeError):
             await self.asyncgen.athrow(RuntimeError)
         self.assertEqual(self._asyncgenstate(), inspect.AGEN_CLOSED)
 
+    @_async_test
     async def test_running(self):
         async def running_check_asyncgen():
             for number in range(5):
@@ -3045,6 +3052,9 @@ class TestGetAsyncGenState(unittest.IsolatedAsyncioTestCase):
         await anext(self.asyncgen)
         self.assertEqual(self._asyncgenstate(), inspect.AGEN_SUSPENDED)
 
+
+class TestGetAsyncGenLocals(unittest.TestCase):
+
     def test_easy_debugging(self):
         # repr() and str() of a asyncgen state should contain the state name
         names = 'AGEN_CREATED AGEN_RUNNING AGEN_SUSPENDED AGEN_CLOSED'.split()
@@ -3053,6 +3063,7 @@ class TestGetAsyncGenState(unittest.IsolatedAsyncioTestCase):
             self.assertIn(name, repr(state))
             self.assertIn(name, str(state))
 
+    @_async_test
     async def test_getasyncgenlocals(self):
         async def each(lst, a=None):
             b=(1, 2, 3)
@@ -3080,6 +3091,7 @@ class TestGetAsyncGenState(unittest.IsolatedAsyncioTestCase):
             await anext(numbers)
         self.assertEqual(inspect.getasyncgenlocals(numbers), {})
 
+    @_async_test
     async def test_getasyncgenlocals_empty(self):
         async def yield_one():
             yield 1
