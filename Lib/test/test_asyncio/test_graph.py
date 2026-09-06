@@ -173,6 +173,77 @@ class CallStackTestBase:
 
         self.assertEqual(len(result.call_stack), 2)
 
+    async def test_stack_async_gen_asend(self):
+        # gh-156980: an async_generator_asend must not truncate the stack
+        fut = asyncio.Future()
+        stack_for_consumer = None
+
+        async def deep():
+            await fut
+
+        async def gen():
+            await deep()
+            yield 1
+
+        async def consumer():
+            async for _ in gen():
+                pass
+
+        async def main():
+            nonlocal stack_for_consumer
+
+            async with asyncio.TaskGroup() as g:
+                t = g.create_task(consumer(), name='consumer')
+                for _ in range(5):
+                    await asyncio.sleep(0)
+
+                stack_for_consumer = capture_test_stack(fut=t)
+                fut.set_result(None)
+
+        await main()
+
+        self.assertEqual(stack_for_consumer[0][:2], [
+            'T<consumer>',
+            ['a deep', 'ag gen', 'a consumer'],
+        ])
+
+    async def test_stack_async_gen_aclose(self):
+        # gh-156980: an async_generator_athrow must not truncate the stack
+        fut = asyncio.Future()
+        stack_for_consumer = None
+
+        async def deep():
+            await fut
+
+        async def gen():
+            try:
+                yield 1
+            finally:
+                await deep()
+
+        async def consumer():
+            agen = gen()
+            await anext(agen)
+            await agen.aclose()
+
+        async def main():
+            nonlocal stack_for_consumer
+
+            async with asyncio.TaskGroup() as g:
+                t = g.create_task(consumer(), name='consumer')
+                for _ in range(5):
+                    await asyncio.sleep(0)
+
+                stack_for_consumer = capture_test_stack(fut=t)
+                fut.set_result(None)
+
+        await main()
+
+        self.assertEqual(stack_for_consumer[0][:2], [
+            'T<consumer>',
+            ['a deep', 'ag gen', 'a consumer'],
+        ])
+
     async def test_stack_gather(self):
 
         stack_for_deep = None
