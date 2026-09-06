@@ -1,0 +1,3 @@
+Fix crashes when interpreter queues run out of memory while being listed or
+shared between interpreters. These cases now raise a proper
+:exc:`MemoryError`.
