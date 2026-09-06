@@ -45,6 +45,32 @@ class CopyRegTestCase(unittest.TestCase):
         self.assertRaises(TypeError, copyreg.pickle,
                           C, pickle_C, "not a callable")
 
+    def test_copy(self):
+        def copy_C(obj):
+            return C()
+        copyreg.copy(C, copy_C)
+        try:
+            self.assertIs(copyreg.copy_dispatch_table[C], copy_C)
+        finally:
+            del copyreg.copy_dispatch_table[C]
+
+    def test_noncallable_copy(self):
+        self.assertRaises(TypeError, copyreg.copy,
+                          C, "not a callable")
+
+    def test_deepcopy(self):
+        def deepcopy_C(obj, memo):
+            return C()
+        copyreg.deepcopy(C, deepcopy_C)
+        try:
+            self.assertIs(copyreg.deepcopy_dispatch_table[C], deepcopy_C)
+        finally:
+            del copyreg.deepcopy_dispatch_table[C]
+
+    def test_noncallable_deepcopy(self):
+        self.assertRaises(TypeError, copyreg.deepcopy,
+                          C, "not a callable")
+
     def test_bool(self):
         import copy
         self.assertEqual(True, copy.copy(True))
