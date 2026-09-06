@@ -137,9 +137,10 @@ PyFloat_FromDouble(double fval)
 }
 
 static PyObject *
-float_from_string_inner(const char *s, Py_ssize_t len, void *obj)
+float_from_string_inner(const char *s, Py_ssize_t len, void *data)
 {
     double x;
+    const char *orig_s = s;
     const char *end;
     const char *last = s + len;
     /* strip leading whitespace */
@@ -147,10 +148,7 @@ float_from_string_inner(const char *s, Py_ssize_t len, void *obj)
         s++;
     }
     if (s == last) {
-        PyErr_Format(PyExc_ValueError,
-                     "could not convert string to float: "
-                     "%R", obj);
-        return NULL;
+        goto error;
     }
 
     /* strip trailing whitespace */
@@ -163,10 +161,7 @@ float_from_string_inner(const char *s, Py_ssize_t len, void *obj)
      * fine. */
     x = PyOS_string_to_double(s, (char **)&end, NULL);
     if (end != last) {
-        PyErr_Format(PyExc_ValueError,
-                     "could not convert string to float: "
-                     "%R", obj);
-        return NULL;
+        goto error;
     }
     else if (x == -1.0 && PyErr_Occurred()) {
         return NULL;
@@ -174,7 +169,40 @@ float_from_string_inner(const char *s, Py_ssize_t len, void *obj)
     else {
         return PyFloat_FromDouble(x);
     }
+
+error:
+    // Label followed by a declaration is a C23 extension, so use a sub-scope
+    {
+        PyObject *obj = (PyObject*)data;
+        if (obj == NULL) {
+            obj = PyBytes_FromStringAndSize(orig_s, len);
+            if (obj == NULL) {
+                return NULL;
+            }
+        }
+        else {
+            Py_INCREF(obj);
+        }
+        PyErr_Format(PyExc_ValueError,
+                     "could not convert string to float: "
+                     "%R", obj);
+        Py_DECREF(obj);
+    }
+    return NULL;
 }
+
+
+// Internal API similar to PyFloat_FromString() but doesn't require a Python
+// object. str[len] must be the NUL byte.
+PyObject*
+_PyFloat_FromString(const char *str, Py_ssize_t len)
+{
+    assert(len >= 1);
+    assert(str[len] == '\0');
+    return _Py_string_to_number_with_underscores(str, len, "float", NULL, NULL,
+                                                 float_from_string_inner);
+}
+
 
 PyObject *
 PyFloat_FromString(PyObject *v)
