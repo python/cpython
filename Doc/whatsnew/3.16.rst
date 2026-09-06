@@ -691,6 +691,13 @@ xml
   rather than defaulted from the DTD.
   (Contributed by Jason Orendorff and Serhiy Storchaka in :gh:`44871`.)
 
+* :class:`~xml.etree.ElementTree.XMLPullParser` and
+  :func:`~xml.etree.ElementTree.iterparse` now support the *target* parameter.
+  The reported object is the value returned by the corresponding method of
+  the target, so a large document can be parsed incrementally without
+  building a tree for it.
+  (Contributed by Serhiy Storchaka in :gh:`63102`.)
+
 zipfile
 -------
 
