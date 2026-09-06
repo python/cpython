@@ -969,6 +969,18 @@ class GzipReadTestBase:
         with tarfile.open(tmpname, mode=self.mode):
             pass
 
+    def test_open_short_input_with_fake_lzma_header(self):
+        # A truncated input whose first byte looks like a valid LZMA-alone
+        # properties byte and whose remaining bytes encode a huge dictionary
+        # must fail with ReadError like any other unopenable archive.
+        # Previously the detection loop let liblzma allocate a
+        # multi-gigabyte dictionary from the 13-byte header alone
+        # (memory denial of service).
+        data = b"\x66" + b"\xff" * 12
+        with self.assertRaises(tarfile.ReadError):
+            tarfile.open(fileobj=io.BytesIO(data),
+                         ignore_zeros=True, errorlevel=0)
+
 
 class MiscReadTest(MiscReadTestBase, unittest.TestCase):
     test_fail_comp = None
