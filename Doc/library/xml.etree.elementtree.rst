@@ -1150,6 +1150,34 @@ ElementTree Objects
    of the XML *file* if given.
 
 
+   .. attribute:: children
+
+      A sequence of the children of the document:
+      the root element and the comments and processing instructions
+      which surround it.
+      It can contain at most one element,
+      which is the root element of the tree;
+      adding a second one raises :exc:`ValueError`,
+      and adding anything which is not an element raises :exc:`TypeError`.
+
+      It supports ``len()``, iteration, the :keyword:`in` operator,
+      :func:`reversed`, indexing and slicing (for getting, setting and
+      deleting), and the methods :meth:`!append`, :meth:`!insert`,
+      :meth:`!extend`, :meth:`!remove` and :meth:`!clear`,
+      which have the same signatures as the methods of :class:`list`.
+      It is a view of the tree: it changes when the tree changes,
+      and changing it changes the tree.
+
+      Comments and processing instructions are only added to it when parsing
+      if the parser target collects them; see :class:`TreeBuilder`.
+
+      :meth:`iter` iterates over all children of the document,
+      but :meth:`find`, :meth:`findall` and :meth:`iterfind`
+      search from the root element, so they never return the other children.
+
+      .. versionadded:: next
+
+
    .. method:: _setroot(element)
 
       Replaces the root element for this tree.  This discards the current
@@ -1179,9 +1207,14 @@ ElementTree Objects
 
    .. method:: iter(tag=None)
 
-      Creates and returns a tree iterator for the root element.  The iterator
-      loops over all elements in this tree, in section order.  *tag* is the tag
-      to look for (default is to return all elements).
+      Creates and returns a tree iterator for the document.
+      The iterator loops over all children of the document
+      and their descendants, in document order.
+      *tag* is the tag to look for (default is to return all elements).
+
+      .. versionchanged:: next
+         It iterates over all children of the document,
+         not only over the root element and its descendants.
 
 
    .. method:: iterfind(match, namespaces=None)
@@ -1311,7 +1344,12 @@ TreeBuilder Objects
    create comments and processing instructions.  When not given, the default
    factories will be used.  When *insert_comments* and/or *insert_pis* is true,
    comments/pis will be inserted into the tree if they appear within the root
-   element (but not outside of it).
+   element.  Those which appear outside of it are returned by
+   :meth:`document`.
+
+   .. versionchanged:: next
+      Comments and processing instructions outside the root element
+      are no longer discarded.
 
    .. method:: close()
 
@@ -1322,6 +1360,16 @@ TreeBuilder Objects
    .. method:: data(data)
 
       Adds text to the current element.  *data* is a string.
+
+
+   .. method:: document()
+
+      Returns the children of the document:
+      the root element, and the comments and processing instructions
+      which were inserted outside of it.
+      Returns a list of :class:`Element` instances.
+
+      .. versionadded:: next
 
 
    .. method:: end(tag)
