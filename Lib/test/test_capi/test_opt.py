@@ -640,7 +640,6 @@ class TestUopsOptimization(unittest.TestCase):
         ex = get_first_executor(testfunc)
         return res, ex
 
-
     def test_int_type_propagation(self):
         def testfunc(loops):
             num = 0
@@ -656,9 +655,10 @@ class TestUopsOptimization(unittest.TestCase):
         binop_count = [opname for opname in iter_opnames(ex) if opname == "_BINARY_OP_ADD_INT"]
         guard_tos_int_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_TOS_INT"]
         guard_nos_int_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_NOS_INT"]
+        combined_guard_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_TOS_AND_NOS_INT"]
         self.assertGreaterEqual(len(binop_count), 3)
-        self.assertLessEqual(len(guard_tos_int_count), 1)
-        self.assertLessEqual(len(guard_nos_int_count), 1)
+        self.assertLessEqual(len(guard_tos_int_count) + len(combined_guard_count), 1)
+        self.assertLessEqual(len(guard_nos_int_count) + len(combined_guard_count), 1)
 
     def test_int_type_propagation_through_frame(self):
         def double(x):
@@ -679,9 +679,10 @@ class TestUopsOptimization(unittest.TestCase):
         binop_count = [opname for opname in iter_opnames(ex) if opname == "_BINARY_OP_ADD_INT"]
         guard_tos_int_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_TOS_INT"]
         guard_nos_int_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_NOS_INT"]
+        combined_guard_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_TOS_AND_NOS_INT"]
         self.assertGreaterEqual(len(binop_count), 3)
-        self.assertLessEqual(len(guard_tos_int_count), 1)
-        self.assertLessEqual(len(guard_nos_int_count), 1)
+        self.assertLessEqual(len(guard_tos_int_count) + len(combined_guard_count), 1)
+        self.assertLessEqual(len(guard_nos_int_count) + len(combined_guard_count), 1)
 
     def test_int_type_propagation_from_frame(self):
         def double(x):
@@ -702,9 +703,10 @@ class TestUopsOptimization(unittest.TestCase):
         binop_count = [opname for opname in iter_opnames(ex) if opname == "_BINARY_OP_ADD_INT"]
         guard_tos_int_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_TOS_INT"]
         guard_nos_int_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_NOS_INT"]
+        combined_guard_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_TOS_AND_NOS_INT"]
         self.assertGreaterEqual(len(binop_count), 3)
-        self.assertLessEqual(len(guard_tos_int_count), 1)
-        self.assertLessEqual(len(guard_nos_int_count), 1)
+        self.assertLessEqual(len(guard_tos_int_count) + len(combined_guard_count), 1)
+        self.assertLessEqual(len(guard_nos_int_count) + len(combined_guard_count), 1)
 
     def test_int_impure_region(self):
         def testfunc(loops):
@@ -751,6 +753,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertNotIn("_GUARD_TOS_INT", uops)
         self.assertNotIn("_GUARD_NOS_INT", uops)
+        self.assertNotIn("_GUARD_TOS_AND_NOS_INT", uops)
 
     def test_int_value_numbering(self):
         def testfunc(n):
@@ -770,6 +773,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_GUARD_TOS_INT", uops)
         self.assertNotIn("_GUARD_NOS_INT", uops)
+        self.assertNotIn("_GUARD_TOS_AND_NOS_INT", uops)
         guard_tos_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_TOS_INT"]
         self.assertEqual(len(guard_tos_count), 1)
 
@@ -4041,7 +4045,7 @@ class TestUopsOptimization(unittest.TestCase):
         # a, b are locals with no statically known type. _RECORD_TOS_TYPE /
         # _RECORD_NOS_TYPE (added to the BINARY_OP macro) capture the observed
         # operand types during tracing, and the optimizer then speculatively
-        # emits _GUARD_{TOS,NOS}_FLOAT and specializes the division.
+        # emits a combined float guard and specializes the division.
         def testfunc(args):
             a, b, n = args
             total = 0.0
@@ -4053,14 +4057,13 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertAlmostEqual(res, TIER2_THRESHOLD * (10.0 / 3.0))
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_GUARD_TOS_FLOAT", uops)
-        self.assertIn("_GUARD_NOS_FLOAT", uops)
+        self.assertIn("_GUARD_TOS_AND_NOS_FLOAT", uops)
         self.assertIn("_BINARY_OP_TRUEDIV_FLOAT", uops)
 
     def test_float_remainder_speculative_guards_from_tracing(self):
         # a, b are locals with no statically known type. Tracing records
         # them as floats; the optimizer then speculatively emits
-        # _GUARD_{TOS,NOS}_FLOAT for NB_REMAINDER. That narrows both
+        # _GUARD_TOS_AND_NOS_FLOAT for NB_REMAINDER. That narrows both
         # operands to float, and the _BINARY_OP handler marks the result
         # as a unique float. Downstream, `* 2.0` therefore specializes
         # to _BINARY_OP_MULTIPLY_FLOAT_INPLACE.
@@ -4075,8 +4078,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertAlmostEqual(res, TIER2_THRESHOLD * (10.0 % 3.0) * 2.0)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_GUARD_TOS_FLOAT", uops)
-        self.assertIn("_GUARD_NOS_FLOAT", uops)
+        self.assertIn("_GUARD_TOS_AND_NOS_FLOAT", uops)
         self.assertIn("_BINARY_OP_MULTIPLY_FLOAT_INPLACE", uops)
 
     def test_float_truediv_type_propagation(self):
@@ -5613,8 +5615,9 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
 
         self.assertIn("_BINARY_OP_SUBSCR_INIT_CALL", uops)
-        # _POP_TOP_NOP is a sign the optimizer ran and didn't hit contradiction.
-        self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
+        # The inlined return proves the optimizer completed the callee frame.
+        self.assertIn("_RETURN_VALUE", uops)
+        self.assertNotIn("_POP_TOP_NOP", uops)
 
     def test_load_attr_property_frame(self):
         class B:
@@ -6246,6 +6249,97 @@ class TestUopsOptimization(unittest.TestCase):
                 f1()
         """), PYTHON_JIT="1")
 
+    def test_peephole_cancels_adjacent_push_pop(self):
+        def negated_constant(n):
+            x = 0
+            for i in range(n):
+                a = 1
+                result = -a
+                if result < 0:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(negated_constant, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_UNARY_NEGATIVE", uops)
+        self.assertNotIn("_SWAP", uops)
+
+    def test_peephole_removes_redundant_rrot(self):
+        def add(a, b):
+            return a + b
+
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                x += add(1, 2)
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 3 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_RETURN_VALUE", uops)
+        self.assertEqual(count_ops(ex, "_BINARY_OP_ADD_INT"), 1)
+        self.assertNotIn("_RROT_3", uops)
+
+    def test_combine_adjacent_guards(self):
+        class StrSubclass(str):
+            pass
+
+        cases = (
+            (int, (40, 2), ((40, 2.0), (40.0, 2), (1 << 100, 2)),
+             "_GUARD_TOS_AND_NOS_INT"),
+            (float, (1.5, 2.5), ((1.5, 2), (1, 2.5)),
+             "_GUARD_TOS_AND_NOS_FLOAT"),
+            (str, ("a", "b"),
+             (("a", StrSubclass("b")), (StrSubclass("a"), "b")),
+             "_GUARD_TOS_AND_NOS_UNICODE"),
+        )
+        for (
+            operand_type, good_operands, deopt_operands, combined_guard,
+        ) in cases:
+            with self.subTest(operand_type=operand_type.__name__):
+                def testfunc(left, right, loops):
+                    for _ in range(loops):
+                        result = left + right
+                    return result
+
+                with clear_executors(testfunc):
+                    left, right = good_operands
+                    result = testfunc(left, right, TIER2_THRESHOLD)
+
+                    self.assertEqual(result, left + right)
+                    ex = get_first_executor(testfunc)
+                    self.assertIsNotNone(ex)
+                    uops = get_opnames(ex)
+                    suffix = combined_guard.removeprefix(
+                        "_GUARD_TOS_AND_NOS_"
+                    )
+                    self.assertIn(combined_guard, uops)
+                    self.assertNotIn(f"_GUARD_TOS_{suffix}", uops)
+                    self.assertNotIn(f"_GUARD_NOS_{suffix}", uops)
+                    for left, right in deopt_operands:
+                        self.assertEqual(testfunc(left, right, 1), left + right)
+
+    def test_combine_adjacent_overflowed_guards(self):
+        def testfunc(start, loops):
+            for value in range(start, start + loops):
+                inverted = ~value
+                result = value + inverted
+            return result
+
+        result = testfunc(0, TIER2_THRESHOLD)
+
+        self.assertEqual(result, -1)
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_GUARD_TOS_AND_NOS_OVERFLOWED", uops)
+        self.assertNotIn("_GUARD_TOS_OVERFLOWED", uops)
+        self.assertNotIn("_GUARD_NOS_OVERFLOWED", uops)
+        self.assertEqual(testfunc(1 << 100, 1), -1)
     @isolation.runInSubprocess(timeout=SHORT_TIMEOUT)
     def test_for_iter_side_exit_does_not_self_link(self):
         def exhaust(iterator):
