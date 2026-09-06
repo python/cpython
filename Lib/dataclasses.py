@@ -1284,6 +1284,23 @@ def _get_slots(cls):
             raise TypeError(f"Slots of '{cls.__name__}' cannot be determined")
 
 
+def _unwrap(func):
+    # A copy of `inspect.unwrap()`, to avoid importing `inspect` module.
+    # Keep this in sync with the original.
+    f = func  # remember the original func for error reporting
+    # Memoise by id to tolerate non-hashable objects, but store objects to
+    # ensure they aren't destroyed, which would allow their IDs to be reused.
+    memo = {id(f): f}
+    recursion_limit = sys.getrecursionlimit()
+    while not isinstance(func, type) and hasattr(func, '__wrapped__'):
+        func = func.__wrapped__
+        id_func = id(func)
+        if (id_func in memo) or (len(memo) >= recursion_limit):
+            raise ValueError(f'wrapper loop when unwrapping {f!r}')
+        memo[id_func] = func
+    return func
+
+
 def _update_func_cell_for__class__(f, oldcls, newcls):
     # Returns True if we update a cell, else False.
     if f is None:
@@ -1392,8 +1409,7 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
 
         # If this is a wrapped function, unwrap it.
         if not isinstance(member, type) and hasattr(member, '__wrapped__'):
-            import inspect
-            member = inspect.unwrap(member)
+            member = _unwrap(member)
 
         if isinstance(member, types.FunctionType):
             if _update_func_cell_for__class__(member, cls, newcls):

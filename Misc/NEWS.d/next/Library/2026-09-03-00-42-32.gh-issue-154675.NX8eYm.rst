@@ -1,0 +1,2 @@
+Creating a :func:`~dataclasses.dataclass` with ``slots=True`` no longer
+imports the :mod:`inspect` module.
