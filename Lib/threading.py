@@ -30,7 +30,8 @@ __all__ = ['get_ident', 'active_count', 'Condition', 'current_thread',
            'setprofile', 'settrace', 'local', 'stack_size',
            'excepthook', 'ExceptHookArgs', 'gettrace', 'getprofile',
            'serialize_iterator', 'synchronized_iterator', 'concurrent_tee',
-           'setprofile_all_threads','settrace_all_threads']
+           'setprofile_all_threads','settrace_all_threads',
+           'run', 'run_daemon']
 
 # Rename some stuff so "from threading import *" is safe
 _start_joinable_thread = _thread.start_joinable_thread
@@ -1663,6 +1664,52 @@ def enumerate():
     """
     with _active_limbo_lock:
         return list(_active.values()) + list(_limbo.values())
+
+def run(x, /, *args, **kwargs):
+    """
+    run(func, /, *args, **kwargs) -> Thread object
+    run(config, func, /, *args, **kwargs) -> Thread object
+
+    Return a running thread of func(*args, **kwargs).
+
+    *config* is an optional dict which can be used to pass additional
+    arguments to the Thread constructor.
+
+    """
+    if isinstance(x, dict):
+        if callable(x):
+            raise TypeError("ambiguous first argument: cannot determine if 'func' or 'config'")
+        if not args:
+            raise TypeError("missing positional argument 'func' after 'config'")
+
+        config = x
+        func, *args = args
+    else:
+        config = {}
+        func = x
+
+    thread = Thread(target=func, args=args, kwargs=kwargs, **config)
+    thread.start()
+    return thread
+
+def run_daemon(x, /, *args, **kwargs):
+    """
+    run_daemon(func, /, *args, **kwargs) -> Thread object
+    run_daemon(config, func, /, *args, **kwargs) -> Thread object
+
+    Return a running daemonic thread of func(*args, **kwargs).
+
+    *config* is an optional dict which can be used to pass additional
+    arguments to the Thread constructor.
+
+    """
+    if isinstance(x, dict):
+        if callable(x):
+            raise TypeError("ambiguous first argument: cannot determine if 'func' or 'config'")
+
+        return run({'daemon': True} | x, *args, **kwargs)
+    else:
+        return run({'daemon': True}, x, *args, **kwargs)
 
 
 _threading_atexits = []
