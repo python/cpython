@@ -2595,7 +2595,10 @@ AS_VAR_IF([with_strict_overflow], [yes],
 AC_MSG_CHECKING([for --enable-safety])
 AC_ARG_ENABLE([safety],
   [AS_HELP_STRING([--enable-safety], [enable usage of the security compiler options with no performance overhead])],
-  [AS_VAR_IF([disable_safety], [yes], [enable_safety=no], [enable_safety=yes])], [enable_safety=no])
+  [AS_CASE([$enableval],
+    [yes|no], [enable_safety=$enableval],
+    [AC_MSG_ERROR([invalid --enable-safety option: expected "yes" or "no"])])],
+  [enable_safety=yes])
 AC_MSG_RESULT([$enable_safety])
 
 if test "$enable_safety" = "yes"
@@ -2611,7 +2614,10 @@ fi
 AC_MSG_CHECKING([for --enable-slower-safety])
 AC_ARG_ENABLE([slower-safety],
   [AS_HELP_STRING([--enable-slower-safety], [enable usage of the security compiler options with performance overhead])],
-  [AS_VAR_IF([disable_slower_safety], [yes], [enable_slower_safety=no], [enable_slower_safety=yes])], [enable_slower_safety=no])
+  [AS_CASE([$enableval],
+    [yes|no], [enable_slower_safety=$enableval],
+    [AC_MSG_ERROR([invalid --enable-slower-safety option: expected "yes" or "no"])])],
+  [enable_slower_safety=no])
 AC_MSG_RESULT([$enable_slower_safety])
 
 if test "$enable_slower_safety" = "yes"
