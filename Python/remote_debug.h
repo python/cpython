@@ -29,6 +29,7 @@ extern "C" {
 
 #include "pyconfig.h"
 #include "internal/pycore_ceval.h"
+#include "internal/pycore_pyerrors.h"
 
 #ifdef __linux__
 #    include <elf.h>
@@ -1577,7 +1578,8 @@ _Py_RemoteDebug_WriteRemoteMemory(proc_handle_t *handle, uintptr_t remote_addres
             PyErr_SetString(PyExc_PermissionError, "Not enough permissions to write memory");
             break;
         case KERN_INVALID_ARGUMENT:
-            PyErr_SetString(PyExc_PermissionError, "Invalid argument to mach_vm_write");
+            _PyErr_SetOSErrorWithMessage(PyExc_PermissionError, EINVAL,
+                                         "Invalid argument to mach_vm_write");
             break;
         default:
             PyErr_Format(PyExc_RuntimeError, "Unknown error writing memory: %d", (int)kr);
