@@ -65,6 +65,14 @@ _PyLexer_IsRawString(ftstring_kind kind)
     return kind == RAW_FSTRING || kind == RAW_TSTRING;
 }
 
+/* Supplemental source context for a terminal error. location is the reporting
+   cursor, independent of the scanner cursor; lineno == 0 means absent.
+   The text span may cover multiple physical lines. */
+typedef struct {
+    _PyTok_Loc location;
+    _PyTok_Span text_span;
+} _PyTokenizer_Diagnostic;
+
 /* Tokenizer state */
 struct tok_state {
     /* Input state; buf <= cur <= inp */
@@ -83,6 +91,7 @@ struct tok_state {
     int pendin;         /* Pending indents (if > 0) or dedents (if < 0) */
     int lineno;         /* Current line number */
     _PyTok_Loc start_loc;
+    _PyTokenizer_Diagnostic diagnostic;
     int level;          /* () [] {} Parentheses nesting level */
             /* Used to allow free continuations inside them */
     char parenstack[MAXLEVEL];

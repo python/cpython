@@ -219,11 +219,11 @@ initialize_token(Parser *p, Token *parser_token, struct token *new_token, int to
     parser_token->level = new_token->level;
     parser_token->is_raw = new_token->is_raw;
     parser_token->lineno = new_token->start_loc.lineno;
-    parser_token->col_offset = p->tok->lineno == p->starting_lineno
+    parser_token->col_offset = new_token->end_loc.lineno == p->starting_lineno
         ? p->starting_col_offset + new_token->start_loc.byte_col
         : new_token->start_loc.byte_col;
     parser_token->end_lineno = new_token->end_loc.lineno;
-    parser_token->end_col_offset = p->tok->lineno == p->starting_lineno
+    parser_token->end_col_offset = new_token->end_loc.lineno == p->starting_lineno
         ? p->starting_col_offset + new_token->end_loc.byte_col
         : new_token->end_loc.byte_col;
 

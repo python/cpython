@@ -103,6 +103,7 @@ verify_identifier(struct tok_state *tok)
     assert(PyUnicode_GET_LENGTH(s) > 0);
     if (invalid < PyUnicode_GET_LENGTH(s)) {
         Py_UCS4 ch = PyUnicode_READ_CHAR(s, invalid);
+        const char *error_cursor = tok->cur;
         if (invalid + 1 < PyUnicode_GET_LENGTH(s)) {
             /* Determine the offset in UTF-8 encoded input */
             Py_SETREF(s, PyUnicode_Substring(s, 0, invalid + 1));
@@ -113,14 +114,20 @@ verify_identifier(struct tok_state *tok)
                 tok->done = E_ERROR;
                 return 0;
             }
-            tok->cur = (char *)tok->start + PyBytes_GET_SIZE(s);
+            error_cursor = tok->start + PyBytes_GET_SIZE(s);
         }
         Py_DECREF(s);
         if (Py_UNICODE_ISPRINTABLE(ch)) {
-            _PyTokenizer_syntaxerror(tok, "invalid character '%c' (U+%04X)", ch, ch);
+            _PyTokenizer_syntaxerror_at(
+                tok, tok->line_start,
+                error_cursor - tok->line_start, tok->lineno, -1, -1,
+                "invalid character '%c' (U+%04X)", ch, ch);
         }
         else {
-            _PyTokenizer_syntaxerror(tok, "invalid non-printable character U+%04X", ch);
+            _PyTokenizer_syntaxerror_at(
+                tok, tok->line_start,
+                error_cursor - tok->line_start, tok->lineno, -1, -1,
+                "invalid non-printable character U+%04X", ch);
         }
         return 0;
     }

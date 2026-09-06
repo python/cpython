@@ -240,22 +240,14 @@ _PyTok_DetectEncoding(struct tok_state *tok, const _PyTok_Chunk *first,
         const _PyTok_Chunk *line = cookie_line == 2 ? second : first;
         const char *line_data = line->data + (cookie_line == 1 ? 3 : 0);
         Py_ssize_t line_len = line->len - (cookie_line == 1 ? 3 : 0);
-        const char *saved_line_start = tok->line_start;
-        char *saved_cur = tok->cur;
-        int saved_lineno = tok->lineno;
-        tok->line_start = line_data;
-        tok->cur = (char *)line_data;
-        tok->lineno = cookie_line;
         int end_col = (int)Py_MIN(line_len, INT_MAX);
         if (end_col > 0 && (line_data[end_col - 1] == '\n' ||
                             line_data[end_col - 1] == '\r')) {
             end_col--;
         }
-        _PyTokenizer_syntaxerror_known_range(
-            tok, 0, end_col, "encoding problem: %s with BOM", cookie);
-        tok->line_start = saved_line_start;
-        tok->cur = saved_cur;
-        tok->lineno = saved_lineno;
+        _PyTokenizer_syntaxerror_at(
+            tok, line_data, 0, cookie_line, 0, end_col,
+            "encoding problem: %s with BOM", cookie);
         PyMem_Free(cookie);
         return _PYTOK_ENCODING_ERROR;
     }

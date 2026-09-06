@@ -202,7 +202,10 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, int use_mark, const char *err
     Py_ssize_t col_offset;
     Py_ssize_t end_col_offset = -1;
     if (t->col_offset == -1) {
-        if (p->tok->cur == p->tok->buf) {
+        _PyTokenizer_Diagnostic diagnostic = p->tok->diagnostic;
+        if (diagnostic.location.lineno != 0) {
+            col_offset = diagnostic.location.byte_col;
+        } else if (p->tok->cur == p->tok->buf) {
             col_offset = 0;
         } else {
             const char* start = p->tok->buf  ? p->tok->line_start : p->tok->buf;
@@ -251,12 +254,19 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     PyObject *error_line = NULL;
     PyObject *tmp = NULL;
     p->error_indicator = 1;
+    _PyTokenizer_Diagnostic diagnostic = p->tok->diagnostic;
+    _PyTok_Loc location = diagnostic.location.lineno != 0
+        ? diagnostic.location : (_PyTok_Loc){p->tok->lineno,
+            p->tok->line_start == NULL ? -1 : _PyLexer_ByteColumn(p->tok)};
+    _PyTok_Span text_span = diagnostic.location.lineno != 0
+        ? diagnostic.text_span : _PyLexer_BufferSpan(
+            p->tok, p->tok->line_start, p->tok->inp);
 
     if (end_lineno == CURRENT_POS) {
-        end_lineno = p->tok->lineno;
+        end_lineno = location.lineno;
     }
     if (end_col_offset == CURRENT_POS) {
-        end_col_offset = p->tok->cur - p->tok->line_start;
+        end_col_offset = location.byte_col;
     }
 
     errstr = PyUnicode_FromFormatV(errmsg, va);
@@ -264,8 +274,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
         goto error;
     }
 
-    if (_PyTok_ReaderIsInteractive(p->tok) &&
-            _PyTokenizer_RetainedSource(p->tok) != NULL) {
+    if (_PyTok_ReaderIsInteractive(p->tok) && _PyTokenizer_RetainedSource(p->tok) != NULL) {
         error_line = get_error_line_from_source(p, lineno);
     }
     else if (p->start_rule == Py_file_input) {
@@ -281,13 +290,16 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
            we're actually parsing from a file, which has an E_EOF SyntaxError and in that case
            `PyErr_ProgramTextObject` fails because lineno points to last_file_line + 1, which
            does not physically exist */
-        assert(p->tok->fp == NULL || p->tok->fp == stdin || p->tok->done == E_EOF);
+        assert((p->tok->fp == NULL || p->tok->fp == stdin) || p->tok->done == E_EOF);
 
-        if (p->tok->lineno <= lineno && p->tok->inp > p->tok->buf) {
-            Py_ssize_t size = p->tok->inp - p->tok->line_start;
-            error_line = PyUnicode_DecodeUTF8(p->tok->line_start, size, "replace");
+        if (location.lineno <= lineno &&
+                p->tok->inp > p->tok->buf) {
+            Py_ssize_t size;
+            const char *line = _PyLexer_BufferSpanView(
+                p->tok, text_span, &size);
+            error_line = PyUnicode_DecodeUTF8(line, size, "replace");
         }
-        else if (p->tok->fp == NULL || p->tok->fp == stdin) {
+        else if ((p->tok->fp == NULL || p->tok->fp == stdin)) {
             error_line = get_error_line_from_source(p, lineno);
         }
         else {

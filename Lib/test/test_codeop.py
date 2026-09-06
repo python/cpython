@@ -113,6 +113,17 @@ class CodeopTests(unittest.TestCase):
         av("def f():\n pass\n#foo\n")
         av("@a.b.c\ndef f():\n pass\n")
 
+    @subTests('symbol', ('single', 'exec'))
+    @subTests('prefix', ('', 'f', 't'))
+    def test_incomplete_string_diagnostics(self, symbol, prefix):
+        opening = f'    á = {prefix}"""first\n'
+        source = 'if True:\n' + opening + 'second'
+        with self.assertRaises(_IncompleteInputError) as cm:
+            Compile()(source, '<input>', symbol)
+        text = opening + 'second' + ('\n' if symbol == 'exec' else '')
+        self.assertEqual(cm.exception.args, (
+            'incomplete input', ('<input>', 2, 9, text, 2, -1)))
+
     @subTests('compiler', COMPILERS)
     def test_incomplete(self, compiler):
         ai = functools.partial(self.assertIncomplete, compiler=compiler)
