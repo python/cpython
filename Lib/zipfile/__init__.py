@@ -2434,12 +2434,23 @@ class ZipFile:
                 )
 
             self._writing = True
+            # *removed* is read twice below, so a one-shot iterable must not
+            # be consumed by the first read.  None (scan the archive) is not
+            # the same as an empty sequence, so keep it as is.
+            if removed is not None:
+                removed = list(removed)
+            header_offsets = [(zinfo, zinfo.header_offset)
+                              for zinfo in (*self.filelist, *(removed or ()))]
             try:
                 repacker = _ZipRepacker(
                     strict_descriptor=strict_descriptor,
                     chunk_size=chunk_size,
                 )
                 repacker.repack(self, removed)
+            except BaseException:
+                for zinfo, header_offset in header_offsets:
+                    zinfo.header_offset = header_offset
+                raise
             finally:
                 self._writing = False
 
