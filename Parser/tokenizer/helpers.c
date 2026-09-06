@@ -24,7 +24,8 @@ byte_col_to_char_col(const char *line, int byte_col)
 }
 
 static int
-_syntaxerror_range(struct tok_state *tok, const char *format,
+_syntaxerror_range(struct tok_state *tok, const char *line_start,
+                   Py_ssize_t cursor_offset, int lineno, const char *format,
                    int col_offset, int end_col_offset,
                    va_list vargs)
 {
@@ -40,7 +41,7 @@ _syntaxerror_range(struct tok_state *tok, const char *format,
         goto error;
     }
 
-    errtext = PyUnicode_DecodeUTF8(tok->line_start, tok->cur - tok->line_start,
+    errtext = PyUnicode_DecodeUTF8(line_start, cursor_offset,
                                    "replace");
     if (!errtext) {
         goto error;
@@ -50,19 +51,19 @@ _syntaxerror_range(struct tok_state *tok, const char *format,
         col_offset = (int)PyUnicode_GET_LENGTH(errtext);
     }
     else if (col_offset > 0) {
-        col_offset = byte_col_to_char_col(tok->line_start, col_offset);
+        col_offset = byte_col_to_char_col(line_start, col_offset);
     }
     if (end_col_offset == -1) {
         end_col_offset = col_offset;
     }
     else if (end_col_offset > 0) {
-        end_col_offset = byte_col_to_char_col(tok->line_start, end_col_offset);
+        end_col_offset = byte_col_to_char_col(line_start, end_col_offset);
     }
 
-    Py_ssize_t line_len = strcspn(tok->line_start, "\n");
-    if (line_len != tok->cur - tok->line_start) {
+    Py_ssize_t line_len = strcspn(line_start, "\n");
+    if (line_len != cursor_offset) {
         Py_DECREF(errtext);
-        errtext = PyUnicode_DecodeUTF8(tok->line_start, line_len,
+        errtext = PyUnicode_DecodeUTF8(line_start, line_len,
                                        "replace");
     }
     if (!errtext) {
@@ -71,8 +72,8 @@ _syntaxerror_range(struct tok_state *tok, const char *format,
 
     args = Py_BuildValue("(O(OiiNii))", errmsg,
                          tok->filename ? tok->filename : Py_None,
-                         tok->lineno, col_offset, errtext,
-                         tok->lineno, end_col_offset);
+                         lineno, col_offset, errtext,
+                         lineno, end_col_offset);
     if (args) {
         PyErr_SetObject(PyExc_SyntaxError, args);
         Py_DECREF(args);
@@ -90,7 +91,9 @@ _PyTokenizer_syntaxerror(struct tok_state *tok, const char *format, ...)
     // These errors are cleaned on startup. Todo: Fix it.
     va_list vargs;
     va_start(vargs, format);
-    int ret = _syntaxerror_range(tok, format, -1, -1, vargs);
+    int ret = _syntaxerror_range(
+        tok, _PyLexer_BufferPointer(tok, tok->line_start),
+        tok->cur - tok->line_start, tok->lineno, format, -1, -1, vargs);
     va_end(vargs);
     return ret;
 }
@@ -102,7 +105,24 @@ _PyTokenizer_syntaxerror_known_range(struct tok_state *tok,
 {
     va_list vargs;
     va_start(vargs, format);
-    int ret = _syntaxerror_range(tok, format, col_offset, end_col_offset, vargs);
+    int ret = _syntaxerror_range(
+        tok, _PyLexer_BufferPointer(tok, tok->line_start),
+        tok->cur - tok->line_start, tok->lineno, format,
+        col_offset, end_col_offset, vargs);
+    va_end(vargs);
+    return ret;
+}
+
+int
+_PyTokenizer_syntaxerror_at(
+    struct tok_state *tok, const char *line_start, Py_ssize_t cursor_offset,
+    int lineno, int col_offset, int end_col_offset, const char *format, ...)
+{
+    va_list vargs;
+    va_start(vargs, format);
+    int ret = _syntaxerror_range(
+        tok, line_start, cursor_offset, lineno, format,
+        col_offset, end_col_offset, vargs);
     va_end(vargs);
     return ret;
 }
@@ -118,10 +138,6 @@ _PyTokenizer_indenterror(struct tok_state *tok)
 int
 _PyTokenizer_warn_invalid_escape_sequence(struct tok_state *tok, int first_invalid_escape_char)
 {
-    if (!tok->report_warnings) {
-        return 0;
-    }
-
     PyObject *msg = PyUnicode_FromFormat(
         "\"\\%c\" is an invalid escape sequence. "
         "Such sequences will not work in the future. "
@@ -207,10 +223,6 @@ error:
 int
 _PyTokenizer_parser_warn(struct tok_state *tok, PyObject *category, const char *format, ...)
 {
-    if (!tok->report_warnings) {
-        return 0;
-    }
-
     PyObject *errmsg;
     va_list vargs;
     va_start(vargs, format);
@@ -310,26 +322,21 @@ _PyTokenizer_ensure_utf8(const char *line, struct tok_state *tok, int lineno)
     const char *badchar = NULL;
     const char *c;
     int length;
-    int col_offset = 0;
     const char *line_start = line;
     for (c = line; *c; c += length) {
         if (!(length = valid_utf8((const unsigned char *)c))) {
             badchar = c;
             break;
         }
-        col_offset++;
         if (*c == '\n') {
             lineno++;
-            col_offset = 0;
             line_start = c + 1;
         }
     }
     if (badchar) {
-        tok->lineno = lineno;
-        tok->line_start = line_start;
-        tok->cur = (char *)badchar;
-        _PyTokenizer_syntaxerror_known_range(tok,
-                col_offset + 1, col_offset + 1,
+        _PyTokenizer_syntaxerror_at(
+                tok, line_start, badchar - line_start + 1, lineno,
+                -1, -1,
                 "Non-UTF-8 code starting with '\\x%.2x'"
                 "%s%V on line %i, "
                 "but no encoding declared; "

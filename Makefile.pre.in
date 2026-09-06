@@ -394,12 +394,11 @@ PEGEN_OBJS=		\
 		Parser/peg_api.o
 
 TOKENIZER_OBJS=		\
-		Parser/lexer/buffer.o \
 		Parser/lexer/lexer.o \
 		Parser/lexer/number.o \
 		Parser/lexer/state.o \
 		Parser/lexer/string.o \
-		Parser/tokenizer/cursor.o \
+		Parser/tokenizer/api.o \
 		Parser/tokenizer/decoder.o \
 		Parser/tokenizer/reader.o \
 		Parser/tokenizer/source.o \
@@ -411,11 +410,9 @@ PEGEN_HEADERS= \
 		$(srcdir)/Parser/string_parser.h
 
 TOKENIZER_HEADERS= \
-		Parser/lexer/buffer.h \
-		Parser/lexer/lexer.h \
 		Parser/lexer/lexer_internal.h \
 		Parser/lexer/state.h \
-		Parser/tokenizer/cursor.h \
+		Parser/tokenizer/types.h \
 		Parser/tokenizer/reader.h \
 		Parser/tokenizer/reader_internal.h \
 		Parser/tokenizer/source.h \
@@ -3463,7 +3460,7 @@ MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h $(srcdir)/Modules/addrinfo.
 MODULE__SSL_DEPS=$(srcdir)/Modules/_ssl.h $(srcdir)/Modules/_openssl_mem.h $(srcdir)/Modules/_ssl/cert.c $(srcdir)/Modules/_ssl/debughelpers.c $(srcdir)/Modules/_ssl/misc.c $(srcdir)/Modules/_ssl_data_111.h $(srcdir)/Modules/_ssl_data_300.h $(srcdir)/Modules/socketmodule.h
 MODULE__TESTCAPI_DEPS=$(srcdir)/Modules/_testcapi/parts.h $(srcdir)/Modules/_testcapi/util.h
 MODULE__TESTLIMITEDCAPI_DEPS=$(srcdir)/Modules/_testlimitedcapi/testcapi_long.h $(srcdir)/Modules/_testlimitedcapi/parts.h $(srcdir)/Modules/_testlimitedcapi/util.h
-MODULE__TESTINTERNALCAPI_DEPS=$(srcdir)/Modules/_testinternalcapi/parts.h $(srcdir)/Parser/tokenizer/cursor.h $(srcdir)/Parser/tokenizer/source.h $(srcdir)/Python/ceval.h $(srcdir)/Modules/_testinternalcapi/test_targets.h $(srcdir)/Modules/_testinternalcapi/test_cases.c.h
+MODULE__TESTINTERNALCAPI_DEPS=$(srcdir)/Modules/_testinternalcapi/parts.h $(srcdir)/Parser/tokenizer/source.h $(srcdir)/Parser/tokenizer/types.h $(srcdir)/Python/ceval.h $(srcdir)/Modules/_testinternalcapi/test_targets.h $(srcdir)/Modules/_testinternalcapi/test_cases.c.h
 MODULE__SQLITE3_DEPS=$(srcdir)/Modules/_sqlite/connection.h $(srcdir)/Modules/_sqlite/cursor.h $(srcdir)/Modules/_sqlite/microprotocols.h $(srcdir)/Modules/_sqlite/module.h $(srcdir)/Modules/_sqlite/prepare_protocol.h $(srcdir)/Modules/_sqlite/row.h $(srcdir)/Modules/_sqlite/util.h
 MODULE__ZSTD_DEPS=$(srcdir)/Modules/_zstd/_zstdmodule.h $(srcdir)/Modules/_zstd/buffer.h $(srcdir)/Modules/_zstd/zstddict.h
 

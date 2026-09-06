@@ -103,7 +103,9 @@ _PyTok_NormalizeNewlines(const char *data, Py_ssize_t len, int preserve_crlf,
     }
     result[write] = '\0';
     *out_len = write;
-    *implicit_newline = implicit;
+    if (implicit_newline != NULL) {
+        *implicit_newline = implicit;
+    }
     return result;
 }
 
@@ -238,22 +240,14 @@ _PyTok_DetectEncoding(struct tok_state *tok, const _PyTok_Chunk *first,
         const _PyTok_Chunk *line = cookie_line == 2 ? second : first;
         const char *line_data = line->data + (cookie_line == 1 ? 3 : 0);
         Py_ssize_t line_len = line->len - (cookie_line == 1 ? 3 : 0);
-        const char *saved_line_start = tok->line_start;
-        char *saved_cur = tok->cur;
-        int saved_lineno = tok->lineno;
-        tok->line_start = line_data;
-        tok->cur = (char *)line_data;
-        tok->lineno = cookie_line;
         int end_col = (int)Py_MIN(line_len, INT_MAX);
         if (end_col > 0 && (line_data[end_col - 1] == '\n' ||
                             line_data[end_col - 1] == '\r')) {
             end_col--;
         }
-        _PyTokenizer_syntaxerror_known_range(
-            tok, 0, end_col, "encoding problem: %s with BOM", cookie);
-        tok->line_start = saved_line_start;
-        tok->cur = saved_cur;
-        tok->lineno = saved_lineno;
+        _PyTokenizer_syntaxerror_at(
+            tok, line_data, 0, cookie_line, 0, end_col,
+            "encoding problem: %s with BOM", cookie);
         PyMem_Free(cookie);
         return _PYTOK_ENCODING_ERROR;
     }
@@ -399,10 +393,9 @@ _PyTok_PrepareString(struct tok_state *tok, const char *input, int utf8_only,
     if (stored < 0) {
         return -1;
     }
-    tok->str = tok->source.bytes != NULL ? tok->source.bytes : (char *)"";
     if (!utf8_only &&
             (tok->encoding == NULL || strcmp(tok->encoding, "utf-8") == 0) &&
-            !_PyTokenizer_ensure_utf8(tok->str, tok, 1)) {
+            !_PyTokenizer_ensure_utf8(_PyTok_SourceData(&tok->source), tok, 1)) {
         return -1;
     }
     return 0;

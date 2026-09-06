@@ -128,7 +128,7 @@ def compile_c_extension(
         str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "number.c"),
         str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "state.c"),
         str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "string.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "buffer.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "api.c"),
         str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "decoder.c"),
         str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "reader.c"),
         str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "helpers.c"),

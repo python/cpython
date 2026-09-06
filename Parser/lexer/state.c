@@ -1,81 +1,57 @@
 #include "Python.h"
-#include "pycore_pystate.h"
 #include "pycore_token.h"
 #include "errcode.h"
 
 #include "state.h"
+#include "../tokenizer/helpers.h"
 #include "../tokenizer/reader.h"
 
-/* Never change this */
-#define TABSIZE 8
-
-/* Create and initialize a new tok_state structure */
-struct tok_state *
-_PyTokenizer_tok_new(void)
+ftstring_state *
+_PyLexer_PushFTString(struct tok_state *tok)
 {
-    struct tok_state *tok = (struct tok_state *)PyMem_Calloc(
-                                            1,
-                                            sizeof(struct tok_state));
-    if (tok == NULL) {
-        PyErr_NoMemory();
+    assert(tok->ftstring_depth >= 0 && tok->ftstring_depth <= tok->ftstring_capacity);
+    int next_depth = tok->ftstring_depth + 1;
+    if (next_depth >= MAXFTSTRINGLEVEL) {
+        _PyTokenizer_syntaxerror(
+            tok, "too many nested f-strings or t-strings");
         return NULL;
     }
-
-    tok->buf = tok->cur = tok->inp = NULL;
-    tok->fp_interactive = 0;
-    tok->interactive_src_start = NULL;
-    tok->interactive_src_end = NULL;
-    tok->start = NULL;
-    tok->done = E_OK;
-    tok->fp = NULL;
-    tok->tabsize = TABSIZE;
-    tok->indent = 0;
-    tok->indstack[0] = 0;
-    tok->atbol = 1;
-    tok->pendin = 0;
-    tok->prompt = NULL;
-    tok->lineno = 0;
-    tok->starting_col_offset = -1;
-    tok->col_offset = -1;
-    tok->level = 0;
-    tok->altindstack[0] = 0;
-    tok->input_error = 0;
-    tok->encoding = NULL;
-    tok->filename = NULL;
-    tok->module = NULL;
-    tok->type_comments = 0;
-    tok->interactive_underflow = IUNDERFLOW_NORMAL;
-    tok->str = NULL;
-    tok->report_warnings = 1;
-    tok->tok_extra_tokens = 0;
-    tok->comment_newline = 0;
-    tok->implicit_newline = 0;
-    _PyTok_SourceInit(&tok->source);
-    tok->reader = NULL;
-    tok->tok_mode_stack[0] = (tokenizer_mode){.kind =TOK_REGULAR_MODE, .quote='\0', .quote_size = 0, .in_debug=0};
-    tok->tok_mode_stack_index = 0;
-#ifdef Py_DEBUG
-    tok->debug = _Py_GetConfig()->parser_debug;
-#endif
-    return tok;
+    if (tok->ftstring_depth == tok->ftstring_capacity) {
+        int capacity = Py_MIN(Py_MAX(tok->ftstring_capacity * 2, 4),
+                              MAXFTSTRINGLEVEL);
+        size_t size = (size_t)capacity * sizeof(*tok->ftstring_stack);
+        ftstring_state *stack;
+        if (tok->ftstring_stack == tok->ftstring_stack_inline) {
+            stack = PyMem_Malloc(size);
+            if (stack != NULL) {
+                memcpy(stack, tok->ftstring_stack,
+                       (size_t)tok->ftstring_depth * sizeof(*stack));
+            }
+        }
+        else {
+            stack = PyMem_Realloc(tok->ftstring_stack, size);
+        }
+        if (stack == NULL) {
+            PyErr_NoMemory();
+            tok->done = E_NOMEM;
+            return NULL;
+        }
+        tok->ftstring_stack = stack;
+        tok->ftstring_capacity = capacity;
+    }
+    ftstring_state *state = &tok->ftstring_stack[tok->ftstring_depth];
+    tok->ftstring_depth = next_depth;
+    *state = (ftstring_state){0};
+    return state;
 }
 
-static void
-free_fstring_expressions(struct tok_state *tok)
+void
+_PyLexer_PopFTString(struct tok_state *tok)
 {
-    int index;
-    tokenizer_mode *mode;
-
-    for (index = tok->tok_mode_stack_index; index >= 0; --index) {
-        mode = &(tok->tok_mode_stack[index]);
-        if (mode->last_expr_buffer != NULL) {
-            PyMem_Free(mode->last_expr_buffer);
-            mode->last_expr_buffer = NULL;
-            mode->last_expr_size = 0;
-            mode->last_expr_end = -1;
-            mode->in_format_spec = 0;
-        }
-    }
+    ftstring_state *state = _PyLexer_CurrentFTString(tok);
+    assert(state != NULL);
+    PyMem_Free(state->comments);
+    tok->ftstring_depth--;
 }
 
 /* Free a tok_state structure */
@@ -89,7 +65,12 @@ _PyTokenizer_Free(struct tok_state *tok)
     Py_XDECREF(tok->module);
     _PyTok_ReaderFree(tok);
     _PyTok_SourceClear(&tok->source);
-    free_fstring_expressions(tok);
+    for (int i = 0; i < tok->ftstring_depth; i++) {
+        PyMem_Free(tok->ftstring_stack[i].comments);
+    }
+    if (tok->ftstring_stack != tok->ftstring_stack_inline) {
+        PyMem_Free(tok->ftstring_stack);
+    }
     PyMem_Free(tok);
 }
 
@@ -108,38 +89,20 @@ _PyToken_Init(struct token *token) {
     token->metadata = NULL;
 }
 
-static inline _PyTok_Span
-buffer_span(const struct tok_state *tok, const char *start, const char *end)
-{
-    if (start == NULL) {
-        assert(end == NULL);
-        return (_PyTok_Span){-1, -1};
-    }
-    assert(end != NULL);
-    const char *base = tok->buf;
-    assert(base != NULL);
-    assert(tok->inp >= base);
-    Py_ssize_t start_offset = start - base;
-    Py_ssize_t end_offset = end - base;
-    assert(start_offset >= 0 && start_offset <= end_offset);
-    assert(end_offset <= tok->inp - base);
-    assert(tok->buf_offset <= PY_SSIZE_T_MAX - end_offset);
-    return _PyTok_SpanFromBounds(
-        tok->buf_offset + start_offset, tok->buf_offset + end_offset);
-}
-
 int
-_PyLexer_token_setup(struct tok_state *tok, struct token *token, int type, const char *start, const char *end)
+_PyLexer_token_setup(struct tok_state *tok, struct token *token, int type,
+                      _PyTok_Off start, _PyTok_Off end)
 {
     token->level = tok->level;
-    token->span = buffer_span(tok, start, end);
-    int lineno = ISSTRINGLIT(type) ? tok->first_lineno : tok->lineno;
-    token->start_loc = (_PyTok_Loc){lineno, -1};
-    token->end_loc = (_PyTok_Loc){tok->lineno, -1};
-
-    if (start != NULL && end != NULL) {
-        token->start_loc.byte_col = tok->starting_col_offset;
-        token->end_loc.byte_col = tok->col_offset;
+    token->is_raw = 0;
+    assert((start == -1 && end == -1) || (start >= 0 && end >= start));
+    token->span = (_PyTok_Span){start, end};
+    if (start >= 0) {
+        token->start_loc = tok->start_loc;
+        token->end_loc = (_PyTok_Loc){tok->lineno, _PyLexer_ByteColumn(tok)};
+    }
+    else {
+        token->start_loc = token->end_loc = (_PyTok_Loc){tok->lineno, -1};
     }
     return type;
 }

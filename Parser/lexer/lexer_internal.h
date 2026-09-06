@@ -1,7 +1,8 @@
 #ifndef _PY_LEXER_INTERNAL_H_
 #define _PY_LEXER_INTERNAL_H_
 
-#include "lexer.h"
+#include "errcode.h"
+#include "state.h"
 
 #define is_potential_identifier_start(c) (\
               (c >= 'a' && c <= 'z')\
@@ -16,42 +17,50 @@
                || c == '_'\
                || (c >= 128))
 
-#ifdef Py_DEBUG
-static inline tokenizer_mode *
-TOK_GET_MODE(struct tok_state *tok)
-{
-    assert(tok->tok_mode_stack_index >= 0);
-    assert(tok->tok_mode_stack_index < MAXFSTRINGLEVEL);
-    return &tok->tok_mode_stack[tok->tok_mode_stack_index];
-}
-
-static inline tokenizer_mode *
-TOK_NEXT_MODE(struct tok_state *tok)
-{
-    assert(tok->tok_mode_stack_index >= 0);
-    assert(tok->tok_mode_stack_index + 1 < MAXFSTRINGLEVEL);
-    return &tok->tok_mode_stack[++tok->tok_mode_stack_index];
-}
-#else
-#define TOK_GET_MODE(tok) (&(tok)->tok_mode_stack[(tok)->tok_mode_stack_index])
-#define TOK_NEXT_MODE(tok) (&(tok)->tok_mode_stack[++(tok)->tok_mode_stack_index])
-#endif
-
-#define FTSTRING_MIDDLE(tok_mode) ((tok_mode)->string_kind == TSTRING ? TSTRING_MIDDLE : FSTRING_MIDDLE)
-#define FTSTRING_END(tok_mode) ((tok_mode)->string_kind == TSTRING ? TSTRING_END : FSTRING_END)
-#define TOK_GET_STRING_PREFIX(tok) (TOK_GET_MODE(tok)->string_kind == TSTRING ? 't' : 'f')
-
-#define tok_nextc _PyLexer_nextc
+#define FTSTRING_MIDDLE(state) \
+    (_PyLexer_IsTString((state)->kind) ? TSTRING_MIDDLE : FSTRING_MIDDLE)
+#define FTSTRING_END(state) \
+    (_PyLexer_IsTString((state)->kind) ? TSTRING_END : FSTRING_END)
 #define tok_backup _PyLexer_backup
 
-int _PyLexer_nextc(struct tok_state *);
+static inline int
+tok_failed(const struct tok_state *tok)
+{
+    return tok->done != E_OK && tok->done != E_EOF &&
+           tok->done != E_INTERACT_STOP;
+}
+
+int _PyLexer_refill(struct tok_state *);
+
+static inline int
+tok_nextc(struct tok_state *tok)
+{
+    while (tok->cur == tok->inp) {
+        if (!_PyLexer_refill(tok)) {
+            return EOF;
+        }
+    }
+    assert(tok->cur >= tok->line_start);
+    assert(tok->cur >= tok->source.base_offset);
+    assert(tok->cur - tok->source.base_offset < tok->source.len);
+    if (tok->cur - tok->line_start >= INT_MAX) {
+        tok->done = E_COLUMNOVERFLOW;
+        return EOF;
+    }
+    return Py_CHARMASK(
+        tok->source.bytes[tok->cur++ - tok->source.base_offset]);
+}
+
 void _PyLexer_backup(struct tok_state *, int);
-int _PyLexer_set_ftstring_expr(struct tok_state *, struct token *, char);
+int _PyLexer_record_ftstring_comment(
+    struct tok_state *, ftstring_state *, _PyTok_Off, _PyTok_Off);
+int _PyLexer_finish_ftstring_expr(
+    struct tok_state *, ftstring_state *, struct token *);
 int _PyLexer_check_string_prefixes(struct tok_state *, int, int, int, int, int);
 int _PyLexer_scan_number(struct tok_state *, struct token *, int, int);
 int _PyLexer_scan_fstring_start(struct tok_state *, struct token *, int);
 int _PyLexer_scan_string(struct tok_state *, struct token *, int);
-int _PyLexer_get_normal_mode(struct tok_state *, tokenizer_mode *, struct token *);
-int _PyLexer_get_fstring_mode(struct tok_state *, tokenizer_mode *, struct token *);
+int _PyLexer_get_normal(struct tok_state *, ftstring_state *, struct token *);
+int _PyLexer_get_ftstring(struct tok_state *, ftstring_state *, struct token *);
 
 #endif

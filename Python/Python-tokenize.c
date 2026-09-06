@@ -2,8 +2,6 @@
 #include "errcode.h"
 #include "internal/pycore_critical_section.h"   // Py_BEGIN_CRITICAL_SECTION
 #include "internal/pycore_tuple.h"              // _PyTuple_FromPair
-#include "../Parser/lexer/state.h"
-#include "../Parser/lexer/lexer.h"
 #include "../Parser/tokenizer/tokenizer.h"
 #include "../Parser/pegen.h"                    // _PyPegen_byte_offset_to_character_offset()
 
@@ -34,6 +32,7 @@ typedef struct
 {
     PyObject_HEAD struct tok_state *tok;
     int done;
+    int extra_tokens;
 
     /* Needed to cache line for performance */
     PyObject *last_line;
@@ -71,10 +70,10 @@ tokenizeriter_new_impl(PyTypeObject *type, PyObject *readline,
         Py_DECREF(filename);
         return NULL;
     }
-    self->tok->filename = filename;
-    if (extra_tokens) {
-        self->tok->tok_extra_tokens = 1;
-    }
+    _PyTokenizer_SetContext(self->tok, filename, NULL);
+    Py_DECREF(filename);
+    _PyTokenizer_SetOptions(self->tok, extra_tokens, 0);
+    self->extra_tokens = extra_tokens;
     self->done = 0;
 
     self->last_line = NULL;
@@ -96,14 +95,16 @@ _tokenizer_error(tokenizeriterobject *it)
     const char *msg = NULL;
     PyObject* errtype = PyExc_SyntaxError;
     struct tok_state *tok = it->tok;
-    switch (tok->done) {
+    _PyTokenizer_Info info = _PyTokenizer_GetInfo(tok);
+    switch (info.status) {
         case E_TOKEN:
             msg = "invalid token";
             break;
         case E_EOF:
             PyErr_SetString(PyExc_SyntaxError, "unexpected EOF in multi-line statement");
-            PyErr_SyntaxLocationObject(tok->filename, tok->lineno,
-                                       tok->inp - tok->buf < 0 ? 0 : (int)(tok->inp - tok->buf));
+            PyErr_SyntaxLocationObject(
+                info.filename, info.location.lineno,
+                (int)Py_MAX(0, info.input_span.end - info.input_span.start));
             return -1;
         case E_DEDENT:
             msg = "unindent does not match any outer indentation level";
@@ -139,21 +140,24 @@ _tokenizer_error(tokenizeriterobject *it)
     PyObject* value = NULL;
     int result = 0;
 
-    Py_ssize_t size = tok->inp - tok->buf;
-    assert(tok->buf[size-1] == '\n');
+    Py_ssize_t input_size;
+    const char *input = _PyTokenizer_SpanView(
+        tok, info.input_span, &input_size);
+    Py_ssize_t size = input_size;
+    assert(input[size-1] == '\n');
     size -= 1; // Remove the newline character from the end of the line
-    error_line = PyUnicode_DecodeUTF8(tok->buf, size, "replace");
+    error_line = PyUnicode_DecodeUTF8(input, size, "replace");
     if (!error_line) {
         result = -1;
         goto exit;
     }
 
-    Py_ssize_t offset = _PyPegen_byte_offset_to_character_offset(error_line, tok->inp - tok->buf);
+    Py_ssize_t offset = _PyPegen_byte_offset_to_character_offset(error_line, input_size);
     if (offset == -1) {
         result = -1;
         goto exit;
     }
-    tmp = Py_BuildValue("(OnnOOO)", tok->filename, tok->lineno, offset, error_line, Py_None, Py_None);
+    tmp = Py_BuildValue("(OnnOOO)", info.filename, info.location.lineno, offset, error_line, Py_None, Py_None);
     if (!tmp) {
         result = -1;
         goto exit;
@@ -182,12 +186,12 @@ exit:
 }
 
 static PyObject *
-_get_current_line(tokenizeriterobject *it, const char *line_start, Py_ssize_t size,
-                  int *line_changed)
+_get_current_line(tokenizeriterobject *it, int current_lineno,
+                  const char *line_start, Py_ssize_t size, int *line_changed)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(it);
     PyObject *line;
-    if (it->tok->lineno != it->last_lineno) {
+    if (current_lineno != it->last_lineno) {
         // Line has changed since last token, so we fetch the new line and cache it
         // in the iter object.
         Py_XDECREF(it->last_line);
@@ -205,7 +209,7 @@ _get_current_line(tokenizeriterobject *it, const char *line_start, Py_ssize_t si
 static void
 _get_col_offsets(tokenizeriterobject *it, const struct token *token,
                  const char *token_start, const char *line_start,
-                 PyObject *line, int line_changed,
+                 const char *end_line_start, PyObject *line, int line_changed,
                  Py_ssize_t *col_offset, Py_ssize_t *end_col_offset)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(it);
@@ -225,8 +229,8 @@ _get_col_offsets(tokenizeriterobject *it, const struct token *token,
         }
     }
 
-    if (token_end != NULL && token_end >= it->tok->line_start) {
-        Py_ssize_t end_byte_offset = token_end - it->tok->line_start;
+    if (token_end != NULL && token_end >= end_line_start) {
+        Py_ssize_t end_byte_offset = token_end - end_line_start;
         if (lineno == end_lineno) {
             // Avoid rescanning the prefix of a very long line.
             Py_ssize_t token_col_offset = _PyPegen_byte_offset_to_character_offset_line(line, byte_offset, end_byte_offset);
@@ -234,7 +238,7 @@ _get_col_offsets(tokenizeriterobject *it, const struct token *token,
             it->byte_col_offset_diff += token_end - token_start - token_col_offset;
         }
         else {
-            *end_col_offset = _PyPegen_byte_offset_to_character_offset_raw(it->tok->line_start, end_byte_offset);
+            *end_col_offset = _PyPegen_byte_offset_to_character_offset_raw(end_line_start, end_byte_offset);
             it->byte_col_offset_diff += end_byte_offset - *end_col_offset;
         }
     }
@@ -266,39 +270,38 @@ tokenizeriter_next(PyObject *op)
         it->done = 1;
         goto exit;
     }
-    const char *token_start = NULL;
+    _PyToken_View view;
+    _PyToken_GetView(it->tok, &token, type, &view);
+    const char *token_start = view.text;
     PyObject *str;
     if (token.span.start < 0) {
         assert(token.span.start == -1 && token.span.end == -1);
         str = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
     else {
-        Py_ssize_t token_length;
-        token_start = _PyToken_TextView(
-            it->tok, &token, &token_length);
-        str = PyUnicode_FromStringAndSize(token_start, token_length);
+        str = PyUnicode_FromStringAndSize(token_start, view.length);
     }
     if (str == NULL) {
         goto exit;
     }
 
     int is_trailing_token = 0;
-    if (type == ENDMARKER || (type == DEDENT && it->tok->done == E_EOF)) {
+    if (type == ENDMARKER || (type == DEDENT && view.at_eof)) {
         is_trailing_token = 1;
     }
 
-    const char *line_start = ISSTRINGLIT(type) ? it->tok->multi_line_start : it->tok->line_start;
     PyObject* line = NULL;
     int line_changed = 1;
-    if (it->tok->tok_extra_tokens && is_trailing_token) {
+    if (it->extra_tokens && is_trailing_token) {
         line = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     } else {
-        Py_ssize_t size = it->tok->inp - line_start;
-        if (size >= 1 && it->tok->implicit_newline) {
+        Py_ssize_t size = view.line_length;
+        if (size >= 1 && view.implicit_newline) {
             size -= 1;
         }
 
-        line = _get_current_line(it, line_start, size, &line_changed);
+        line = _get_current_line(
+            it, token.end_loc.lineno, view.line, size, &line_changed);
     }
     if (line == NULL) {
         Py_DECREF(str);
@@ -309,10 +312,10 @@ tokenizeriter_next(PyObject *op)
     Py_ssize_t end_lineno = token.end_loc.lineno;
     Py_ssize_t col_offset = -1;
     Py_ssize_t end_col_offset = -1;
-    _get_col_offsets(it, &token, token_start, line_start, line, line_changed,
-                     &col_offset, &end_col_offset);
+    _get_col_offsets(it, &token, token_start, view.line, view.end_line, line,
+                     line_changed, &col_offset, &end_col_offset);
 
-    if (it->tok->tok_extra_tokens) {
+    if (it->extra_tokens) {
         if (is_trailing_token) {
             lineno = end_lineno = lineno + 1;
             col_offset = end_col_offset = 0;
@@ -324,7 +327,7 @@ tokenizeriter_next(PyObject *op)
         }
         else if (type == NEWLINE) {
             Py_DECREF(str);
-            if (!it->tok->implicit_newline) {
+            if (!view.implicit_newline) {
                 assert(token_start != NULL);
                 if (token_start[0] == '\r') {
                     str = PyUnicode_FromString("\r\n");
@@ -335,7 +338,7 @@ tokenizeriter_next(PyObject *op)
             end_col_offset++;
         }
         else if (type == NL) {
-            if (it->tok->implicit_newline) {
+            if (view.implicit_newline) {
                 Py_DECREF(str);
                 str = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
             }
