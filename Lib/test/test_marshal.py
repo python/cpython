@@ -1,3 +1,5 @@
+import gc
+
 from test import support
 from test.support import is_apple_mobile, os_helper, requires_debug_ranges, is_emscripten
 from test.support.script_helper import assert_python_ok
@@ -899,6 +901,55 @@ class CAPI_TestCase(unittest.TestCase, HelperMixin):
             with self.assertRaises(EOFError):
                 _testcapi.pymarshal_read_object_from_file(os_helper.TESTFN)
             os_helper.unlink(os_helper.TESTFN)
+
+@support.cpython_only
+class GCTrackingTestCase(unittest.TestCase):
+
+    def _not_tracked_instantly(self, t):
+        new = marshal.loads(marshal.dumps(t))
+
+        self.assertFalse(gc.is_tracked(t), t)
+        self.assertFalse(gc.is_tracked(new), new)
+
+    def _not_tracked(self, t):
+        # Nested tuples can take several collections to untrack
+        gc.collect()
+        gc.collect()
+
+        new = marshal.loads(marshal.dumps(t))
+
+        self.assertFalse(gc.is_tracked(t), t)
+        self.assertFalse(gc.is_tracked(new), new)
+
+    def _tracked(self, t):
+        new = marshal.loads(marshal.dumps(t))
+
+        self.assertTrue(gc.is_tracked(t), t)
+        self.assertTrue(gc.is_tracked(new), new)
+
+    def testTuple(self):
+        x, y, z = 1.5, "a", []
+
+        self._not_tracked_instantly(())
+        self._not_tracked_instantly((1,))
+        self._not_tracked_instantly((1, 2))
+        self._not_tracked_instantly((1, 2, "a"))
+        self._not_tracked_instantly((12, 10**10, 'a_' * 100))
+
+        # Test for _PyTuple_Concat
+        self._not_tracked_instantly((1, 2) + (2, 3))
+
+        # Test for _PyTuple_Repeat
+        self._not_tracked_instantly((1, 2) * 5)
+
+        self._not_tracked(((1, x), y, (2, 3)))
+        self._not_tracked((1, 2, (True, False, ())))
+
+        self._tracked(([],))
+        self._tracked(([1],))
+        self._tracked(({},))
+        self._tracked((set(),))
+        self._tracked((x, y, z))
 
 
 if __name__ == "__main__":
