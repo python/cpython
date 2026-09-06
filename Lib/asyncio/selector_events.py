@@ -739,8 +739,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         del self._transports[transp._sock_fd]
         resume_reading = transp.is_reading()
         transp.pause_reading()
-        await transp._make_empty_waiter()
         try:
+            await transp._make_empty_waiter()
             return await self.sock_sendfile(transp._sock, file, offset, count,
                                             fallback=False)
         finally:
