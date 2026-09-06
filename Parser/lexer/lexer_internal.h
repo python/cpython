@@ -1,6 +1,7 @@
 #ifndef _PY_LEXER_INTERNAL_H_
 #define _PY_LEXER_INTERNAL_H_
 
+#include "errcode.h"
 #include "lexer.h"
 
 #define is_potential_identifier_start(c) (\
@@ -43,6 +44,13 @@ TOK_NEXT_MODE(struct tok_state *tok)
 
 #define tok_nextc _PyLexer_nextc
 #define tok_backup _PyLexer_backup
+
+static inline int
+tok_failed(const struct tok_state *tok)
+{
+    return tok->done != E_OK && tok->done != E_EOF &&
+           tok->done != E_INTERACT_STOP;
+}
 
 int _PyLexer_nextc(struct tok_state *);
 void _PyLexer_backup(struct tok_state *, int);

@@ -6,9 +6,6 @@
 #include "state.h"
 #include "../tokenizer/reader.h"
 
-/* Never change this */
-#define TABSIZE 8
-
 /* Create and initialize a new tok_state structure */
 struct tok_state *
 _PyTokenizer_tok_new(void)
@@ -28,18 +25,15 @@ _PyTokenizer_tok_new(void)
     tok->start = NULL;
     tok->done = E_OK;
     tok->fp = NULL;
-    tok->tabsize = TABSIZE;
     tok->indent = 0;
     tok->indstack[0] = 0;
     tok->atbol = 1;
     tok->pendin = 0;
     tok->prompt = NULL;
     tok->lineno = 0;
-    tok->starting_col_offset = -1;
-    tok->col_offset = -1;
+    tok->start_loc = (_PyTok_Loc){-1, -1};
     tok->level = 0;
     tok->altindstack[0] = 0;
-    tok->input_error = 0;
     tok->encoding = NULL;
     tok->filename = NULL;
     tok->module = NULL;
@@ -97,13 +91,12 @@ _PyLexer_token_setup(struct tok_state *tok, struct token *token, int type, const
 {
     token->level = tok->level;
     token->span = _PyLexer_BufferSpan(tok, start, end);
-    int lineno = ISSTRINGLIT(type) ? tok->first_lineno : tok->lineno;
-    token->start_loc = (_PyTok_Loc){lineno, -1};
-    token->end_loc = (_PyTok_Loc){tok->lineno, -1};
-
     if (start != NULL && end != NULL) {
-        token->start_loc.byte_col = tok->starting_col_offset;
-        token->end_loc.byte_col = tok->col_offset;
+        token->start_loc = tok->start_loc;
+        token->end_loc = (_PyTok_Loc){tok->lineno, _PyLexer_ByteColumn(tok)};
+    }
+    else {
+        token->start_loc = token->end_loc = (_PyTok_Loc){tok->lineno, -1};
     }
     return type;
 }

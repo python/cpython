@@ -83,17 +83,13 @@ struct tok_state {
     int done;           /* E_OK normally, E_EOF at EOF, otherwise error code */
     /* NB If done != E_OK, cur must be == inp!!! */
     FILE *fp;           /* Rest of input; NULL if tokenizing a string */
-    int tabsize;        /* Tab spacing */
     int indent;         /* Current indentation index */
     int indstack[MAXINDENT];            /* Stack of indents */
     int atbol;          /* Nonzero if at begin of new line */
     int pendin;         /* Pending indents (if > 0) or dedents (if < 0) */
     const char *prompt;          /* For interactive prompting */
     int lineno;         /* Current line number */
-    int first_lineno;   /* First line of a single line or multi line string
-                           expression (cf. issue 16806) */
-    int starting_col_offset; /* The column offset at the beginning of a token */
-    int col_offset;     /* Current col offset */
+    _PyTok_Loc start_loc;
     int level;          /* () [] {} Parentheses nesting level */
             /* Used to allow free continuations inside them */
     char parenstack[MAXLEVEL];
@@ -104,12 +100,8 @@ struct tok_state {
     /* Stuff for checking on different tab sizes */
     int altindstack[MAXINDENT];         /* Stack of alternate indents */
     /* Stuff for PEP 0263 */
-    int input_error;
     char *encoding;         /* Source encoding. */
     const char* line_start;     /* pointer to start of current line */
-    const char* multi_line_start; /* pointer to start of first line of
-                                     a single line or multi line string
-                                     expression (cf. issue 16806) */
     char* str;          /* Source string being tokenized (if tokenizing from a string)*/
 
     _PyTok_SourceText source;
@@ -161,6 +153,16 @@ _PyLexer_BufferSpanView(const struct tok_state *tok, _PyTok_Span span,
     *length = span.end - span.start;
     (void)_PyLexer_BufferPointer(tok, span.end);
     return _PyLexer_BufferPointer(tok, span.start);
+}
+
+static inline int
+_PyLexer_ByteColumn(const struct tok_state *tok)
+{
+    assert(tok->line_start != NULL);
+    assert(tok->cur >= tok->line_start);
+    Py_ssize_t column = tok->cur - tok->line_start;
+    assert(column <= INT_MAX);
+    return (int)column;
 }
 
 static inline _PyTok_Span

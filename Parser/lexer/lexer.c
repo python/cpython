@@ -7,7 +7,7 @@
 #include "../tokenizer/helpers.h"
 #include "../tokenizer/reader.h"
 
-/* Alternate tab spacing */
+#define TABSIZE 8
 #define ALTTABSIZE 1
 
 
@@ -30,11 +30,10 @@ _PyLexer_nextc(struct tok_state *tok)
     int rc;
     for (;;) {
         if (tok->cur != tok->inp) {
-            if ((unsigned int) tok->col_offset >= (unsigned int) INT_MAX) {
+            if (tok->cur - tok->line_start >= INT_MAX) {
                 tok->done = E_COLUMNOVERFLOW;
                 return EOF;
             }
-            tok->col_offset++;
             return Py_CHARMASK(*tok->cur++); /* Fast path */
         }
         if (tok->done != E_OK) {
@@ -74,7 +73,6 @@ _PyLexer_backup(struct tok_state *tok, int c)
         if ((int)(unsigned char)*tok->cur != Py_CHARMASK(c)) {
             Py_FatalError("tok_backup: wrong character");
         }
-        tok->col_offset--;
     }
 }
 
@@ -88,7 +86,7 @@ verify_identifier(struct tok_state *tok)
         return 1;
     }
     PyObject *s;
-    if (tok->input_error)
+    if (tok_failed(tok))
         return 0;
     s = PyUnicode_DecodeUTF8(tok->start, tok->cur - tok->start, NULL);
     if (s == NULL) {
@@ -165,7 +163,7 @@ _PyLexer_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, str
     const char *p_end = NULL;
   nextline:
     tok->start = NULL;
-    tok->starting_col_offset = -1;
+    tok->start_loc = (_PyTok_Loc){tok->lineno, -1};
     blankline = 0;
 
 
@@ -181,7 +179,7 @@ _PyLexer_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, str
                 col++, altcol++;
             }
             else if (c == '\t') {
-                col = (col / tok->tabsize + 1) * tok->tabsize;
+                col = (col / TABSIZE + 1) * TABSIZE;
                 altcol = (altcol / ALTTABSIZE + 1) * ALTTABSIZE;
             }
             else if (c == '\014')  {/* Control-L (formfeed) */
@@ -269,7 +267,8 @@ _PyLexer_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, str
     }
 
     tok->start = tok->cur;
-    tok->starting_col_offset = tok->col_offset;
+    tok->start_loc = (_PyTok_Loc){
+        tok->lineno, tok->cur != NULL ? _PyLexer_ByteColumn(tok) : -1};
 
     /* Return pending indents/dedents */
     if (tok->pendin != 0) {
@@ -304,7 +303,8 @@ _PyLexer_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, str
 
     /* Set start of current token */
     tok->start = tok->cur == NULL ? NULL : tok->cur - 1;
-    tok->starting_col_offset = tok->col_offset - 1;
+    tok->start_loc = (_PyTok_Loc){
+        tok->lineno, tok->cur != NULL ? _PyLexer_ByteColumn(tok) - 1 : -1};
 
     /* Skip comment, unless it's a type comment */
     if (c == '#') {
@@ -335,7 +335,7 @@ _PyLexer_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, str
 
         if (tok->type_comments) {
             p = tok->start;
-            current_starting_col_offset = tok->starting_col_offset;
+            current_starting_col_offset = tok->start_loc.byte_col;
             prefix = type_comment_prefix;
             while (*prefix && p < tok->cur) {
                 if (*prefix == ' ') {
@@ -387,7 +387,8 @@ _PyLexer_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, str
                 }
                 _PyLexer_token_setup(tok, token, type, p_start, p_end);
                 token->start_loc = (_PyTok_Loc){tok->lineno, start_col_offset};
-                token->end_loc = (_PyTok_Loc){tok->lineno, tok->col_offset};
+                token->end_loc = (_PyTok_Loc){tok->lineno,
+                                              _PyLexer_ByteColumn(tok)};
                 return type;
             }
         }
@@ -708,7 +709,7 @@ int
 _PyTokenizer_Get(struct tok_state *tok, struct token *token)
 {
     int result = tok_get(tok, token);
-    if (tok->input_error) {
+    if (tok_failed(tok)) {
         result = ERRORTOKEN;
     }
     return result;
