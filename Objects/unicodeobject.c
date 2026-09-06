@@ -15209,6 +15209,10 @@ init_stdio_encoding(PyInterpreterState *interp)
 {
     /* Update the stdio encoding to the normalized Python codec name. */
     PyConfig *config = (PyConfig*)_PyInterpreterState_GetConfig(interp);
+    if (config->stdio_encoding == NULL) {
+        /* gh-86427: The encoding is determined for every stream. */
+        return _PyStatus_OK();
+    }
     if (config_get_codec_name(&config->stdio_encoding) < 0) {
         return _PyStatus_ERR("failed to get the Python codec name "
                              "of the stdio encoding");
