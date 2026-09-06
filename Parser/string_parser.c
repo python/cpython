@@ -2,7 +2,6 @@
 #include "pycore_bytesobject.h"   // _PyBytes_DecodeEscape()
 #include "pycore_unicodeobject.h" // _PyUnicode_DecodeUnicodeEscapeInternal()
 
-#include "lexer/state.h"
 #include "pegen.h"
 #include "string_parser.h"
 
@@ -87,8 +86,9 @@ warn_invalid_escape_sequence(Parser *p, const char* buffer, const char *first_in
         col_offset += quote_count;
     }
 
-    if (PyErr_WarnExplicitObject(category, msg, p->tok->filename,
-                                 lineno, p->tok->module, NULL) < 0) {
+    _PyTokenizer_Info info = _PyTokenizer_GetInfo(p->tok);
+    if (PyErr_WarnExplicitObject(category, msg, info.filename,
+                                 lineno, info.module, NULL) < 0) {
         if (PyErr_ExceptionMatches(category)) {
             /* Replace the Syntax/DeprecationWarning exception with a SyntaxError
                to get a more accurate error report */

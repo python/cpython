@@ -3,20 +3,12 @@
 
 #include "object.h"
 #include "../tokenizer/source.h"
+#include "../tokenizer/tokenizer.h"
 
 #define MAXINDENT 100       /* Max indentation level */
 #define MAXLEVEL 200        /* Max parentheses level */
 #define MAXFTSTRINGLEVEL 150
 #define FTSTRING_STACK_INLINE_CAPACITY 1
-
-struct token {
-    int level;
-    int is_raw;
-    _PyTok_Span span;
-    _PyTok_Loc start_loc;
-    _PyTok_Loc end_loc;
-    PyObject *metadata;
-};
 
 typedef enum {
     FTSTRING_MODE_MIDDLE,
@@ -64,14 +56,6 @@ _PyLexer_IsRawString(ftstring_kind kind)
 {
     return kind == RAW_FSTRING || kind == RAW_TSTRING;
 }
-
-/* Supplemental source context for a terminal error. location is the reporting
-   cursor, independent of the scanner cursor; lineno == 0 means absent.
-   The text span may cover multiple physical lines. */
-typedef struct {
-    _PyTok_Loc location;
-    _PyTok_Span text_span;
-} _PyTokenizer_Diagnostic;
 
 /* Tokenizer state */
 struct tok_state {
@@ -204,11 +188,8 @@ _PyLexer_BufferSpan(const struct tok_state *tok, const char *start,
 
 int _PyLexer_token_setup(struct tok_state *tok, struct token *token, int type, const char *start, const char *end);
 
-void _PyTokenizer_Free(struct tok_state *);
 ftstring_state *_PyLexer_PushFTString(struct tok_state *);
 void _PyLexer_PopFTString(struct tok_state *);
-void _PyToken_Free(struct token *);
-void _PyToken_Init(struct token *);
 
 
 #endif

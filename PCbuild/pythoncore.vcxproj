@@ -421,8 +421,8 @@
     <ClInclude Include="..\Objects\stringlib\split.h" />
     <ClInclude Include="..\Objects\unicodetype_db.h" />
     <ClInclude Include="..\Parser\lexer\state.h" />
-    <ClInclude Include="..\Parser\lexer\lexer.h" />
     <ClInclude Include="..\Parser\lexer\lexer_internal.h" />
+    <ClInclude Include="..\Parser\tokenizer\types.h" />
     <ClInclude Include="..\Parser\tokenizer\reader.h" />
     <ClInclude Include="..\Parser\tokenizer\reader_internal.h" />
     <ClInclude Include="..\Parser\tokenizer\source.h" />
@@ -593,6 +593,7 @@
     <ClCompile Include="..\Parser\lexer\string.c" />
     <ClCompile Include="..\Parser\tokenizer\source.c" />
     <ClCompile Include="..\Parser\tokenizer\decoder.c" />
+    <ClCompile Include="..\Parser\tokenizer\api.c" />
     <ClCompile Include="..\Parser\tokenizer\reader.c" />
     <ClCompile Include="..\Parser\tokenizer\helpers.c" />
     <ClCompile Include="..\Parser\token.c" />

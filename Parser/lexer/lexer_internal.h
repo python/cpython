@@ -2,7 +2,7 @@
 #define _PY_LEXER_INTERNAL_H_
 
 #include "errcode.h"
-#include "lexer.h"
+#include "state.h"
 
 #define is_potential_identifier_start(c) (\
               (c >= 'a' && c <= 'z')\

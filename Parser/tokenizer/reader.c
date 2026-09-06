@@ -553,18 +553,6 @@ _PyTok_ReaderIsInteractive(const struct tok_state *tok)
     return tok->reader->kind == _PYTOK_READER_INTERACTIVE;
 }
 
-const char *
-_PyTokenizer_RetainedSource(const struct tok_state *tok)
-{
-    if (tok->reader->kind == _PYTOK_READER_PREPARED) {
-        return _PyTok_SourceData(&tok->source);
-    }
-    if (tok->reader->kind == _PYTOK_READER_INTERACTIVE) {
-        return tok->source.bytes;
-    }
-    return NULL;
-}
-
 void
 _PyTok_ReaderStopInteractive(struct tok_state *tok)
 {

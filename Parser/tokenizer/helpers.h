@@ -17,8 +17,6 @@ int _PyTokenizer_indenterror(struct tok_state *tok);
 int _PyTokenizer_warn_invalid_escape_sequence(struct tok_state *tok, int first_invalid_escape_char);
 int _PyTokenizer_parser_warn(struct tok_state *tok, PyObject *category, const char *format, ...);
 
-void _PyTokenizer_raise_init_error(PyObject *filename);
-
 int _PyTokenizer_ensure_utf8(const char *line, struct tok_state *tok, int lineno);
 
 #ifdef Py_DEBUG

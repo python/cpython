@@ -186,6 +186,7 @@
     <ClCompile Include="..\Parser\lexer\number.c" />
     <ClCompile Include="..\Parser\lexer\string.c" />
     <ClCompile Include="..\Parser\tokenizer\decoder.c" />
+    <ClCompile Include="..\Parser\tokenizer\api.c" />
     <ClCompile Include="..\Parser\tokenizer\reader.c" />
     <ClCompile Include="..\Parser\tokenizer\source.c" />
     <ClCompile Include="..\Parser\tokenizer\helpers.c" />
