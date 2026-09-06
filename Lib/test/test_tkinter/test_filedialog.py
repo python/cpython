@@ -6,7 +6,7 @@ from tkinter import ttk
 from tkinter.commondialog import Dialog
 from test.support import requires, swap_attr
 from test.test_tkinter.support import setUpModule  # noqa: F401
-from test.test_tkinter.support import AbstractTkTest
+from test.test_tkinter.support import AbstractDialogTest, AbstractTkTest
 
 requires('gui')
 
@@ -72,7 +72,7 @@ class CancelResultTest(AbstractTkTest, unittest.TestCase):
                          ('/a', '/b'))
 
 
-class FileDialogTest(AbstractTkTest, unittest.TestCase):
+class FileDialogTest(AbstractDialogTest, unittest.TestCase):
     # The pure-Python FileDialog runs its own modal loop in go(); its logic is
     # exercised here without entering the loop.
 
@@ -195,8 +195,10 @@ class FileDialogTest(AbstractTkTest, unittest.TestCase):
         d.files.delete(0, 'end')
         for name in ('alpha', 'bravo', 'charlie'):
             d.files.insert('end', name)
-        d.files.focus_force()
         d.top.update()
+        # Force the focus right before generating the event: the window
+        # manager can take it back.
+        d.files.focus_force()
         d.files.event_generate('<Key>', keysym='c')
         d.top.update()
         sel = d.files.curselection()
