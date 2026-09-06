@@ -600,12 +600,11 @@ _ctypes_CType_Type___pointer_type___get_impl(PyObject *self)
 @setter
 @deleter
 _ctypes.CType_Type.__pointer_type__
-
 [clinic start generated code]*/
 
 static int
 _ctypes_CType_Type___pointer_type___set_impl(PyObject *self, PyObject *value)
-/*[clinic end generated code: output=6259be8ea21693fa input=7e24bceb1676349b]*/
+/*[clinic end generated code: output=6259be8ea21693fa input=07e8b7a8fcc1efc1]*/
 {
     ctypes_state *st = get_module_state_by_def(Py_TYPE(self));
     StgInfo *info;
@@ -1482,33 +1481,20 @@ class _ctypes.PyCArrayType_Type "CDataObject *" "clinic_state()->PyCArrayType_Ty
 @critical_section
 @setter
 _ctypes.PyCArrayType_Type.raw
+    value: Py_buffer
 [clinic start generated code]*/
 
 static int
-_ctypes_PyCArrayType_Type_raw_set_impl(CDataObject *self, PyObject *value)
-/*[clinic end generated code: output=cf9b2a9fd92e9ecb input=a3717561efc45efd]*/
+_ctypes_PyCArrayType_Type_raw_set_impl(CDataObject *self, Py_buffer *value)
+/*[clinic end generated code: output=273e537dc31f4bbd input=90775c9408b1bb59]*/
 {
-    char *ptr;
-    Py_ssize_t size;
-    Py_buffer view;
-
-    if (PyObject_GetBuffer(value, &view, PyBUF_SIMPLE) < 0)
-        return -1;
-    size = view.len;
-    ptr = view.buf;
-    if (size > self->b_size) {
+    if (value->len > self->b_size) {
         PyErr_SetString(PyExc_ValueError,
                         "byte string too long");
-        goto fail;
+        return -1;
     }
-
-    memcpy(self->b_ptr, ptr, size);
-
-    PyBuffer_Release(&view);
+    memcpy(self->b_ptr, value->buf, value->len);
     return 0;
- fail:
-    PyBuffer_Release(&view);
-    return -1;
 }
 
 /*[clinic input]
@@ -1547,44 +1533,25 @@ _ctypes_PyCArrayType_Type_value_get_impl(CDataObject *self)
 /*[clinic input]
 @critical_section
 @setter
-@deleter
 _ctypes.PyCArrayType_Type.value
+    value: object(subclass_of='&PyBytes_Type', type='PyBytesObject *')
 [clinic start generated code]*/
 
 static int
-_ctypes_PyCArrayType_Type_value_set_impl(CDataObject *self, PyObject *value)
-/*[clinic end generated code: output=39ad655636a28dd5 input=167f0935cbb8d489]*/
+_ctypes_PyCArrayType_Type_value_set_impl(CDataObject *self,
+                                         PyBytesObject *value)
+/*[clinic end generated code: output=21cbd436230dc33e input=47d40501c4ecae23]*/
 {
-    const char *ptr;
-    Py_ssize_t size;
-
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "can't delete attribute");
-        return -1;
-    }
-
-    if (!PyBytes_Check(value)) {
-        PyErr_Format(PyExc_TypeError,
-                     "bytes expected instead of %s instance",
-                     Py_TYPE(value)->tp_name);
-        return -1;
-    } else
-        Py_INCREF(value);
-    size = PyBytes_GET_SIZE(value);
+    Py_ssize_t size = PyBytes_GET_SIZE(value);
     if (size > self->b_size) {
         PyErr_SetString(PyExc_ValueError,
                         "byte string too long");
-        Py_DECREF(value);
         return -1;
     }
 
-    ptr = PyBytes_AS_STRING(value);
-    memcpy(self->b_ptr, ptr, size);
+    memcpy(self->b_ptr, PyBytes_AS_STRING(value), size);
     if (size < self->b_size)
         self->b_ptr[size] = '\0';
-    Py_DECREF(value);
-
     return 0;
 }
 
@@ -5414,21 +5381,14 @@ class _ctypes.Simple "CDataObject *" "clinic_state()->Simple_Type"
 /*[clinic input]
 @critical_section
 @setter
-@deleter
 _ctypes.Simple.value
 [clinic start generated code]*/
 
 static int
 _ctypes_Simple_value_set_impl(CDataObject *self, PyObject *value)
-/*[clinic end generated code: output=f267186118939863 input=4e6c1143d17c2c3f]*/
+/*[clinic end generated code: output=f267186118939863 input=977af9dc9e71e857]*/
 {
     PyObject *result;
-
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "can't delete attribute");
-        return -1;
-    }
 
     ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
     StgInfo *info;
