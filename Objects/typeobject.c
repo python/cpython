@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PySequence_IterSearch()
 #include "pycore_call.h"          // _PyObject_VectorcallTstate()
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_code.h"          // CO_FAST_FREE
 #include "pycore_descrobject.h"   // _PyMember_GetOffset()
 #include "pycore_dict.h"          // _PyDict_KeysSize()
@@ -6990,22 +6991,27 @@ merge_class_dict(PyObject *dict, PyObject *aclass)
             Py_DECREF(bases);
             return -1;
         }
-        else {
-            for (i = 0; i < n; i++) {
-                int status;
-                PyObject *base = PySequence_GetItem(bases, i);
-                if (base == NULL) {
-                    Py_DECREF(bases);
-                    return -1;
-                }
-                status = merge_class_dict(dict, base);
-                Py_DECREF(base);
-                if (status < 0) {
-                    Py_DECREF(bases);
-                    return -1;
-                }
+        if (_Py_EnterRecursiveCall(" in __bases__")) {
+            Py_DECREF(bases);
+            return -1;
+        }
+        for (i = 0; i < n; i++) {
+            int status;
+            PyObject *base = PySequence_GetItem(bases, i);
+            if (base == NULL) {
+                _Py_LeaveRecursiveCall();
+                Py_DECREF(bases);
+                return -1;
+            }
+            status = merge_class_dict(dict, base);
+            Py_DECREF(base);
+            if (status < 0) {
+                _Py_LeaveRecursiveCall();
+                Py_DECREF(bases);
+                return -1;
             }
         }
+        _Py_LeaveRecursiveCall();
         Py_DECREF(bases);
     }
     return 0;
