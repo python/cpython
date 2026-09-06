@@ -1,0 +1,2 @@
+Slightly speed up :func:`os.fwalk` by simplifying handling of inaccessible
+files.
