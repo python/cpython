@@ -4375,8 +4375,8 @@ AS_VAR_IF([ac_sys_system], [Darwin], [
       AC_CHECK_LIB([ffi], [ffi_call], [
         dnl use ffi from SDK root
         have_libffi=yes
-        LIBFFI_CFLAGS="-I${SDKROOT}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"
-        LIBFFI_LIBS="-lffi"
+        LIBFFI_CFLAGS=${LIBFFI_CFLAGS-"-I${SDKROOT}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"}
+        LIBFFI_LIBS=${LIBFFI_LIBS-"-lffi"}
       ])
     ])
   ])

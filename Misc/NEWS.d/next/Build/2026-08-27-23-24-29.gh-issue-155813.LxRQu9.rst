@@ -1,0 +1,3 @@
+On macOS, :option:`LIBFFI_CFLAGS` and :option:`LIBFFI_LIBS` are no longer
+ignored when the SDK provides ``libffi``, so :mod:`ctypes` can again be built
+against a different ``libffi``. Patch by Advit Arora.
