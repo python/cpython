@@ -74,6 +74,9 @@ get_index_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
     if (size == capacity) {
         /* Array is full. Grow array */
         int new_capacity = capacity ? capacity * 2 : 4;
+        if (new_capacity >= MAX_EXECUTORS_SIZE) {
+            return -1;
+        }
         _PyExecutorArray *new = PyMem_Realloc(
             old,
             offsetof(_PyExecutorArray, executors) +
