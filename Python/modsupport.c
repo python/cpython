@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"   // _PyIndex_Check()
+#include "pycore_dict.h"       // _PyDict_SetItem_Take2()
 #include "pycore_object.h"     // _PyType_IsReady()
 #include "pycore_unicodeobject.h"     // _PyUnicodeWriter_FormatV()
 
@@ -174,15 +175,17 @@ do_mkdict(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n)
             return NULL;
         }
         v = do_mkvalue(p_format, p_va);
-        if (v == NULL || PyDict_SetItem(d, k, v) < 0) {
+        if (v == NULL) {
             do_ignore(p_format, p_va, endchar, n - i - 2);
             Py_DECREF(k);
-            Py_XDECREF(v);
             Py_DECREF(d);
             return NULL;
         }
-        Py_DECREF(k);
-        Py_DECREF(v);
+        if (_PyDict_SetItem_Take2((PyDictObject *)d, k, v) < 0) {
+            do_ignore(p_format, p_va, endchar, n - i - 2);
+            Py_DECREF(d);
+            return NULL;
+        }
     }
     if (!check_end(p_format, endchar)) {
         Py_DECREF(d);
