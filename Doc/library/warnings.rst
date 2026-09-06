@@ -566,7 +566,7 @@ Available Functions
    and calls to :func:`simplefilter`.
 
 
-.. decorator:: deprecated(message, /, *, category=DeprecationWarning, stacklevel=1)
+.. decorator:: deprecated(message, /, *, category=DeprecationWarning, stacklevel=1, skip_file_prefixes=())
 
    Decorator to indicate that a class, function or overload is deprecated.
 
@@ -598,12 +598,14 @@ Available Functions
    on use of deprecated objects. For functions, that happens on calls;
    for classes, on instantiation and on creation of subclasses.
    If the *category* is ``None``, no warning is emitted at runtime.
-   The *stacklevel* determines where the
-   warning is emitted. If it is ``1`` (the default), the warning
+   The *stacklevel* and *skip_file_prefixes* entries determine where the
+   warning is emitted. If *stacklevel* is ``1`` (the default), the warning
    is emitted at the direct caller of the deprecated object; if it
    is higher, it is emitted further up the stack.
-   Static type checker behavior is not affected by the *category*
-   and *stacklevel* arguments.
+   Frames in files whose path starts with any of the strings in
+   *skip_file_prefixes* are skipped.
+   Static type checker behavior is not affected by the *category*,
+   *skip_file_prefixes*, and *stacklevel* arguments.
 
    The deprecation message passed to the decorator is saved in the
    ``__deprecated__`` attribute on the decorated object.
@@ -614,6 +616,9 @@ Available Functions
 
    .. versionadded:: 3.13
       See :pep:`702`.
+
+   .. versionchanged:: 3.16
+      Added *skip_file_prefixes*.
 
 
 Available Context Managers
