@@ -12324,7 +12324,7 @@
             uint32_t dict_version = (uint32_t)CURRENT_OPERAND0_32();
             uint16_t index = (uint16_t)CURRENT_OPERAND1_16();
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            if (Py_TYPE(owner_o)->tp_getattro != PyModule_Type.tp_getattro) {
+            if (!PyModule_CheckExact(owner_o)) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache0 = owner;
                 SET_CURRENT_CACHED_VALUES(1);
