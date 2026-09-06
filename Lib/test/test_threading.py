@@ -2608,6 +2608,27 @@ class ThreadingIteratorToolsTests(BaseTestCase):
 
 
 class MiscTestCase(unittest.TestCase):
+    def test_threading_local_fallback_import(self):
+        # gh-156341: threading must still be importable when the platform's
+        # `_thread` module doesn't provide the `_local` type, forcing the
+        # pure Python fallback implementation in `_threading_local`. This
+        # used to raise ImportError due to a circular import between the
+        # two modules.
+        rc, out, err = assert_python_ok("-c", """if 1:
+            import _thread
+            del _thread._local
+            import threading
+            import _threading_local
+            # Sanity check: the pure Python fallback is actually in use,
+            # and it still behaves like a normal thread-local object.
+            assert threading.local is _threading_local.local
+            tlocal = threading.local()
+            tlocal.x = 1
+            assert tlocal.x == 1
+            print("ok")
+            """)
+        self.assertEqual(out.strip(), b"ok")
+
     def test__all__(self):
         restore_default_excepthook(self)
 
