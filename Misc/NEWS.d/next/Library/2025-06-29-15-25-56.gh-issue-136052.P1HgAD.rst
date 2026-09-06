@@ -1,0 +1,1 @@
+Do not create empty MIME encoded-words when preparing e-mail headers.
