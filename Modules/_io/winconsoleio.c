@@ -1209,32 +1209,52 @@ static PyMethodDef winconsoleio_methods[] = {
 
 /* 'closed' and 'mode' are attributes for compatibility with FileIO. */
 
+/*[clinic input]
+@getter
+_io._WindowsConsoleIO.closed
+
+True if the file is closed.
+[clinic start generated code]*/
+
 static PyObject *
-get_closed(PyObject *op, void *Py_UNUSED(closure))
+_io__WindowsConsoleIO_closed_get_impl(winconsoleio *self)
+/*[clinic end generated code: output=5a8df1a0e2bfa766 input=ece879e363f4d6bb]*/
 {
-    winconsoleio *self = winconsoleio_CAST(op);
     return PyBool_FromLong((long)(self->fd == -1));
 }
 
+/*[clinic input]
+@getter
+_io._WindowsConsoleIO.closefd
+
+True if the file descriptor will be closed by close().
+[clinic start generated code]*/
+
 static PyObject *
-get_closefd(PyObject *op, void *Py_UNUSED(closure))
+_io__WindowsConsoleIO_closefd_get_impl(winconsoleio *self)
+/*[clinic end generated code: output=e6a6c7bab25b18c9 input=155722042f7dcf53]*/
 {
-    winconsoleio *self = winconsoleio_CAST(op);
     return PyBool_FromLong((long)(self->closefd));
 }
 
+/*[clinic input]
+@getter
+_io._WindowsConsoleIO.mode
+
+String giving the file mode.
+[clinic start generated code]*/
+
 static PyObject *
-get_mode(PyObject *op, void *Py_UNUSED(closure))
+_io__WindowsConsoleIO_mode_get_impl(winconsoleio *self)
+/*[clinic end generated code: output=2d7c4cabf96e5281 input=e1fa9cd881117c0f]*/
 {
-    winconsoleio *self = winconsoleio_CAST(op);
     return PyUnicode_FromString(self->readable ? "rb" : "wb");
 }
 
 static PyGetSetDef winconsoleio_getsetlist[] = {
-    {"closed", get_closed, NULL, "True if the file is closed"},
-    {"closefd", get_closefd, NULL,
-        "True if the file descriptor will be closed by close()."},
-    {"mode", get_mode, NULL, "String giving the file mode"},
+    _IO__WINDOWSCONSOLEIO_CLOSED_GETSETDEF
+    _IO__WINDOWSCONSOLEIO_CLOSEFD_GETSETDEF
+    _IO__WINDOWSCONSOLEIO_MODE_GETSETDEF
     {NULL},
 };
 
