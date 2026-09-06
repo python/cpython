@@ -1,0 +1,2 @@
+Add *options* and *exist_ok* parameters to :meth:`winreg.CreateKeyEx`.
+Add *options* parameter to :meth:`winreg.OpenKeyEx`.
