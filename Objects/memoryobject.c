@@ -103,13 +103,63 @@ _PyManagedBuffer_FromObject(PyObject *base, int flags)
     return (PyObject *)mbuf;
 }
 
+static inline int
+flags_set_released(int *flags, int released)
+{
+#ifdef Py_GIL_DISABLED
+    int prev = _Py_atomic_load_int_relaxed(flags);
+    if (prev & released) {
+        return 1;
+    }
+    if (!_Py_atomic_compare_exchange_int(flags, &prev, prev | released)) {
+        // RELEASED is the only flag that can change concurrently.
+        assert(prev & released);
+        return 1;
+    }
+    return 0;
+#else
+    int prev = *flags;
+    *flags = prev | released;
+    return (prev & released) != 0;
+#endif
+}
+
+static inline int
+mv_get_flags(PyMemoryViewObject *mv)
+{
+    return FT_ATOMIC_LOAD_INT_RELAXED(mv->flags);
+}
+
+static inline int
+mv_has_flag(PyMemoryViewObject *mv, int bits)
+{
+    return (mv_get_flags(mv) & bits) != 0;
+}
+
+static inline int
+mv_set_released(PyMemoryViewObject *mv)
+{
+    return flags_set_released(&mv->flags, _Py_MEMORYVIEW_RELEASED);
+}
+
+static inline int
+mbuf_has_flag(_PyManagedBufferObject *mbuf, int bits)
+{
+    return (FT_ATOMIC_LOAD_INT(mbuf->flags) & bits) != 0;
+}
+
+static inline int
+mbuf_set_released(_PyManagedBufferObject *mbuf)
+{
+    return flags_set_released(&mbuf->flags, _Py_MANAGED_BUFFER_RELEASED);
+}
+
 static void
 mbuf_release(_PyManagedBufferObject *self)
 {
-    if (self->flags&_Py_MANAGED_BUFFER_RELEASED)
+    if (mbuf_set_released(self)) {
         return;
-
-    self->flags |= _Py_MANAGED_BUFFER_RELEASED;
+    }
 
     /* PyBuffer_Release() decrements master->obj and sets it to NULL. */
     _PyObject_GC_UNTRACK(self);
@@ -120,9 +170,9 @@ static void
 mbuf_dealloc(PyObject *_self)
 {
     _PyManagedBufferObject *self = (_PyManagedBufferObject *)_self;
-    assert(self->exports == 0);
+    assert(FT_ATOMIC_LOAD_SSIZE_RELAXED(self->exports) == 0);
     mbuf_release(self);
-    if (self->flags&_Py_MANAGED_BUFFER_FREE_FORMAT)
+    if (mbuf_has_flag(self, _Py_MANAGED_BUFFER_FREE_FORMAT))
         PyMem_Free(self->master.format);
     PyObject_GC_Del(self);
 }
@@ -139,7 +189,7 @@ static int
 mbuf_clear(PyObject *_self)
 {
     _PyManagedBufferObject *self = (_PyManagedBufferObject *)_self;
-    assert(self->exports >= 0);
+    assert(FT_ATOMIC_LOAD_SSIZE_RELAXED(self->exports) >= 0);
     mbuf_release(self);
     return 0;
 }
@@ -178,8 +228,8 @@ PyTypeObject _PyManagedBuffer_Type = {
 /* In the process of breaking reference cycles mbuf_release() can be
    called before memory_release(). */
 #define BASE_INACCESSIBLE(mv) \
-    (((PyMemoryViewObject *)mv)->flags&_Py_MEMORYVIEW_RELEASED || \
-     ((PyMemoryViewObject *)mv)->mbuf->flags&_Py_MANAGED_BUFFER_RELEASED)
+    (mv_has_flag(_PyMemoryView_CAST(mv), _Py_MEMORYVIEW_RELEASED) || \
+     mbuf_has_flag(_PyMemoryView_CAST(mv)->mbuf, _Py_MANAGED_BUFFER_RELEASED))
 
 #define CHECK_RELEASED(mv) \
     if (BASE_INACCESSIBLE(mv)) {                                  \
@@ -196,17 +246,17 @@ PyTypeObject _PyManagedBuffer_Type = {
     }
 
 #define CHECK_RESTRICTED(mv) \
-    if (((PyMemoryViewObject *)(mv))->flags & _Py_MEMORYVIEW_RESTRICTED) { \
-        PyErr_SetString(PyExc_ValueError,                                  \
-            "cannot create new view on restricted memoryview");            \
-        return NULL;                                                       \
+    if (mv_has_flag(_PyMemoryView_CAST(mv), _Py_MEMORYVIEW_RESTRICTED)) { \
+        PyErr_SetString(PyExc_ValueError,                                 \
+            "cannot create new view on restricted memoryview");           \
+        return NULL;                                                      \
     }
 
 #define CHECK_RESTRICTED_INT(mv) \
-    if (((PyMemoryViewObject *)(mv))->flags & _Py_MEMORYVIEW_RESTRICTED) { \
-        PyErr_SetString(PyExc_ValueError,                                  \
-            "cannot create new view on restricted memoryview");            \
-        return -1;                                                       \
+    if (mv_has_flag(_PyMemoryView_CAST(mv), _Py_MEMORYVIEW_RESTRICTED)) { \
+        PyErr_SetString(PyExc_ValueError,                                 \
+            "cannot create new view on restricted memoryview");           \
+        return -1;                                                        \
     }
 
 /* See gh-92888. These macros signal that we need to check the memoryview
@@ -699,7 +749,7 @@ mbuf_add_view(_PyManagedBufferObject *mbuf, const Py_buffer *src)
     init_flags(mv);
 
     mv->mbuf = (_PyManagedBufferObject*)Py_NewRef(mbuf);
-    mbuf->exports++;
+    FT_ATOMIC_ADD_SSIZE(mbuf->exports, 1);
 
     return (PyObject *)mv;
 }
@@ -729,9 +779,74 @@ mbuf_add_incomplete_view(_PyManagedBufferObject *mbuf, const Py_buffer *src,
     init_shared_values(dest, src);
 
     mv->mbuf = (_PyManagedBufferObject*)Py_NewRef(mbuf);
-    mbuf->exports++;
+    FT_ATOMIC_ADD_SSIZE(mbuf->exports, 1);
 
     return (PyObject *)mv;
+}
+
+#ifdef Py_GIL_DISABLED
+static int
+memoryview_add_export(PyMemoryViewObject *self)
+{
+    int result = 0;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    if (BASE_INACCESSIBLE(self)) {
+        PyErr_SetString(PyExc_ValueError,
+            "operation forbidden on released memoryview object");
+        result = -1;
+    }
+    else {
+        FT_ATOMIC_ADD_SSIZE(self->exports, 1);
+    }
+    Py_END_CRITICAL_SECTION();
+
+    return result;
+}
+#endif
+
+static void
+mbuf_drop_export(_PyManagedBufferObject *mbuf)
+{
+#ifdef Py_GIL_DISABLED
+    Py_ssize_t prev_exports = _Py_atomic_add_ssize(&mbuf->exports, -1);
+#else
+    Py_ssize_t prev_exports = mbuf->exports--;
+#endif
+    assert(prev_exports > 0);
+    if (prev_exports == 1) {
+        mbuf_release(mbuf);
+    }
+}
+
+static inline int
+memoryview_pin(PyMemoryViewObject *self)
+{
+#ifdef Py_GIL_DISABLED
+    FT_ATOMIC_ADD_SSIZE(self->mbuf->exports, 1);
+    if (BASE_INACCESSIBLE(self)) {
+        mbuf_drop_export(self->mbuf);
+        PyErr_SetString(PyExc_ValueError,
+            "operation forbidden on released memoryview object");
+        return -1;
+    }
+    return 0;
+#else
+    if (BASE_INACCESSIBLE(self)) {
+        PyErr_SetString(PyExc_ValueError,
+            "operation forbidden on released memoryview object");
+        return -1;
+    }
+    return 0;
+#endif
+}
+
+static inline void
+memoryview_unpin(PyMemoryViewObject *self)
+{
+#ifdef Py_GIL_DISABLED
+    mbuf_drop_export(self->mbuf);
+#endif
 }
 
 /* Expose a raw memory area as a view of contiguous bytes. flags can be
@@ -804,9 +919,20 @@ PyMemoryView_FromObjectAndFlags(PyObject *v, int flags)
 
     if (PyMemoryView_Check(v)) {
         PyMemoryViewObject *mv = (PyMemoryViewObject *)v;
-        CHECK_RELEASED(mv);
-        CHECK_RESTRICTED(mv);
-        return mbuf_add_view(mv->mbuf, &mv->view);
+        if (memoryview_pin(mv) < 0) {
+            return NULL;
+        }
+        PyObject *result;
+        if (mv_has_flag(mv, _Py_MEMORYVIEW_RESTRICTED)) {
+            PyErr_SetString(PyExc_ValueError,
+                            "cannot create new view on restricted memoryview");
+            result = NULL;
+        }
+        else {
+            result = mbuf_add_view(mv->mbuf, &mv->view);
+        }
+        memoryview_unpin(mv);
+        return result;
     }
     else if (PyObject_CheckBuffer(v)) {
         PyObject *ret;
@@ -1089,11 +1215,7 @@ PyBuffer_ToContiguous(void *buf, const Py_buffer *src, Py_ssize_t len, char orde
 static inline Py_ssize_t
 get_exports(PyMemoryViewObject *buf)
 {
-#ifdef Py_GIL_DISABLED
-    return _Py_atomic_load_ssize_relaxed(&buf->exports);
-#else
-    return buf->exports;
-#endif
+    return FT_ATOMIC_LOAD_SSIZE_RELAXED(buf->exports);
 }
 
 
@@ -1109,14 +1231,11 @@ static void
 _memory_release(PyMemoryViewObject *self)
 {
     assert(get_exports(self) == 0);
-    if (self->flags & _Py_MEMORYVIEW_RELEASED)
+    if (mv_set_released(self)) {
         return;
-
-    self->flags |= _Py_MEMORYVIEW_RELEASED;
-    assert(self->mbuf->exports > 0);
-    if (--self->mbuf->exports == 0) {
-        mbuf_release(self->mbuf);
     }
+
+    mbuf_drop_export(self->mbuf);
 }
 
 /*[clinic input]
@@ -1129,22 +1248,26 @@ static PyObject *
 memoryview_release_impl(PyMemoryViewObject *self)
 /*[clinic end generated code: output=d0b7e3ba95b7fcb9 input=bc71d1d51f4a52f0]*/
 {
+    PyObject *result = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
     Py_ssize_t exports = get_exports(self);
     if (exports == 0) {
         _memory_release(self);
-        Py_RETURN_NONE;
+        result = Py_NewRef(Py_None);
     }
-
-    if (exports > 0) {
+    else if (exports > 0) {
         PyErr_Format(PyExc_BufferError,
             "memoryview has %zd exported buffer%s", exports,
-            exports==1 ? "" : "s");
-        return NULL;
+            exports == 1 ? "" : "s");
     }
+    else {
+        PyErr_SetString(PyExc_SystemError,
+                        "memoryview: negative export count");
+    }
+    Py_END_CRITICAL_SECTION();
 
-    PyErr_SetString(PyExc_SystemError,
-                    "memoryview: negative export count");
-    return NULL;
+    return result;
 }
 
 static void
@@ -1468,25 +1591,9 @@ zero_in_shape(PyMemoryViewObject *mv)
    All casts must result in views that will have the exact byte
    size of the original input. Otherwise, an error is raised.
 */
-/*[clinic input]
-memoryview.cast
-
-    format: unicode
-    shape: object = NULL
-    *
-    order: int(accept={str}) = 'C'
-
-Cast a memoryview to a new format or shape.
-
-With a multidimensional *shape*, *order* selects the result
-layout: 'C' for C-contiguous (row-major, the default) or 'F'
-for Fortran-contiguous (column-major).
-[clinic start generated code]*/
-
 static PyObject *
-memoryview_cast_impl(PyMemoryViewObject *self, PyObject *format,
+memoryview_cast_pinned(PyMemoryViewObject *self, PyObject *format,
                      PyObject *shape, int order)
-/*[clinic end generated code: output=6410d87141f6bb56 input=4a1a2326c59caeb3]*/
 {
     PyMemoryViewObject *mv = NULL;
     Py_ssize_t ndim = 1;
@@ -1499,8 +1606,9 @@ memoryview_cast_impl(PyMemoryViewObject *self, PyObject *format,
         return NULL;
     }
 
-    if (!MV_C_CONTIGUOUS(self->flags)) {
-        if (shape || !MV_F_CONTIGUOUS(self->flags)) {
+    int self_flags = mv_get_flags(self);
+    if (!MV_C_CONTIGUOUS(self_flags)) {
+        if (shape || !MV_F_CONTIGUOUS(self_flags)) {
             PyErr_SetString(PyExc_TypeError,
                 "memoryview: casts are restricted to contiguous views");
             return NULL;
@@ -1545,14 +1653,35 @@ error:
 }
 
 /*[clinic input]
-memoryview.toreadonly
+memoryview.cast
 
-Return a readonly version of the memoryview.
+    format: unicode
+    shape: object = NULL
+    *
+    order: int(accept={str}) = 'C'
+
+Cast a memoryview to a new format or shape.
+
+With a multidimensional *shape*, *order* selects the result
+layout: 'C' for C-contiguous (row-major, the default) or 'F'
+for Fortran-contiguous (column-major).
 [clinic start generated code]*/
 
 static PyObject *
-memoryview_toreadonly_impl(PyMemoryViewObject *self)
-/*[clinic end generated code: output=2c7e056f04c99e62 input=dc06d20f19ba236f]*/
+memoryview_cast_impl(PyMemoryViewObject *self, PyObject *format,
+                     PyObject *shape, int order)
+/*[clinic end generated code: output=6410d87141f6bb56 input=4a1a2326c59caeb3]*/
+{
+    if (memoryview_pin(self) < 0) {
+        return NULL;
+    }
+    PyObject *result = memoryview_cast_pinned(self, format, shape, order);
+    memoryview_unpin(self);
+    return result;
+}
+
+static PyObject *
+memoryview_toreadonly_pinned(PyMemoryViewObject *self)
 {
     CHECK_RELEASED(self);
     CHECK_RESTRICTED(self);
@@ -1566,6 +1695,24 @@ memoryview_toreadonly_impl(PyMemoryViewObject *self)
     return (PyObject *) self;
 }
 
+/*[clinic input]
+memoryview.toreadonly
+
+Return a readonly version of the memoryview.
+[clinic start generated code]*/
+
+static PyObject *
+memoryview_toreadonly_impl(PyMemoryViewObject *self)
+/*[clinic end generated code: output=2c7e056f04c99e62 input=dc06d20f19ba236f]*/
+{
+    if (memoryview_pin(self) < 0) {
+        return NULL;
+    }
+    PyObject *result = memoryview_toreadonly_pinned(self);
+    memoryview_unpin(self);
+    return result;
+}
+
 
 /**************************************************************************/
 /*                               getbuffer                                */
@@ -1576,7 +1723,7 @@ memory_getbuf(PyObject *_self, Py_buffer *view, int flags)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     Py_buffer *base = &self->view;
-    int baseflags = self->flags;
+    int baseflags = mv_get_flags(self);
 
     CHECK_RELEASED_INT(self);
     CHECK_RESTRICTED_INT(self);
@@ -1644,10 +1791,16 @@ memory_getbuf(PyObject *_self, Py_buffer *view, int flags)
         view->shape = NULL;
     }
 
+#ifdef Py_GIL_DISABLED
+    /* memoryview_add_export() keeps the buffer alive or fails. */
+    if (memoryview_add_export(self) < 0) {
+        return -1;
+    }
+#else
+    self->exports++;
+#endif
 
     view->obj = Py_NewRef(self);
-    FT_ATOMIC_ADD_SSIZE(self->exports, 1);
-
     return 0;
 }
 
@@ -2322,15 +2475,8 @@ tolist_rec(PyMemoryViewObject *self, const char *ptr, Py_ssize_t ndim, const Py_
 
 /* Return a list representation of the memoryview. Currently only buffers
    with native format strings are supported. */
-/*[clinic input]
-memoryview.tolist
-
-Return the data in the buffer as a list of elements.
-[clinic start generated code]*/
-
 static PyObject *
-memoryview_tolist_impl(PyMemoryViewObject *self)
-/*[clinic end generated code: output=a6cda89214fd5a1b input=21e7d0c1860b211a]*/
+memoryview_tolist_pinned(PyMemoryViewObject *self)
 {
     const Py_buffer *view = &self->view;
     const char *fmt;
@@ -2356,23 +2502,26 @@ memoryview_tolist_impl(PyMemoryViewObject *self)
 }
 
 /*[clinic input]
-memoryview.tobytes
+memoryview.tolist
 
-    order: str(accept={str, NoneType}, c_default="NULL") = 'C'
-
-Return the data in the buffer as a byte string.
-
-Order can be {'C', 'F', 'A'}.  When order is 'C' or 'F', the data of
-the original array is converted to C or Fortran order.  For
-contiguous views, 'A' returns an exact copy of the physical memory.
-In particular, in-memory Fortran order is preserved.  For
-non-contiguous views, the data is converted to C first.  order=None
-is the same as order='C'.
+Return the data in the buffer as a list of elements.
 [clinic start generated code]*/
 
 static PyObject *
-memoryview_tobytes_impl(PyMemoryViewObject *self, const char *order)
-/*[clinic end generated code: output=1288b62560a32a23 input=119c70aa91791dc8]*/
+memoryview_tolist_impl(PyMemoryViewObject *self)
+/*[clinic end generated code: output=a6cda89214fd5a1b input=21e7d0c1860b211a]*/
+{
+    if (memoryview_pin(self) < 0) {
+        return NULL;
+    }
+    PyObject *result = memoryview_tolist_pinned(self);
+    memoryview_unpin(self);
+    return result;
+}
+
+
+static PyObject *
+memoryview_tobytes_pinned(PyMemoryViewObject *self, const char *order)
 {
     Py_buffer *src = VIEW_ADDR(self);
     char ord = 'C';
@@ -2408,6 +2557,78 @@ memoryview_tobytes_impl(PyMemoryViewObject *self, const char *order)
 }
 
 /*[clinic input]
+memoryview.tobytes
+
+    order: str(accept={str, NoneType}, c_default="NULL") = 'C'
+
+Return the data in the buffer as a byte string.
+
+Order can be {'C', 'F', 'A'}.  When order is 'C' or 'F', the data of
+the original array is converted to C or Fortran order.  For
+contiguous views, 'A' returns an exact copy of the physical memory.
+In particular, in-memory Fortran order is preserved.  For
+non-contiguous views, the data is converted to C first.  order=None
+is the same as order='C'.
+[clinic start generated code]*/
+
+static PyObject *
+memoryview_tobytes_impl(PyMemoryViewObject *self, const char *order)
+/*[clinic end generated code: output=1288b62560a32a23 input=119c70aa91791dc8]*/
+{
+    if (memoryview_pin(self) < 0) {
+        return NULL;
+    }
+    PyObject *result = memoryview_tobytes_pinned(self, order);
+    memoryview_unpin(self);
+    return result;
+}
+
+
+static PyObject *
+memoryview_hex_pinned(PyMemoryViewObject *self, PyObject *sep,
+                    Py_ssize_t bytes_per_sep)
+{
+    Py_buffer *src = VIEW_ADDR(self);
+
+    CHECK_RELEASED(self);
+
+    if (MV_C_CONTIGUOUS(mv_get_flags(self))) {
+        // Prevent 'self' from being freed if computing len(sep) mutates 'self'
+        // in _Py_strhex_with_sep().
+        // See: https://github.com/python/cpython/issues/143195.
+#ifdef Py_GIL_DISABLED
+        if (memoryview_add_export(self) < 0) {
+            return NULL;
+        }
+#else
+        self->exports++;
+#endif
+        PyObject *ret = _Py_strhex_with_sep(src->buf, src->len, sep, bytes_per_sep);
+        FT_ATOMIC_ADD_SSIZE(self->exports, -1);
+        return ret;
+    }
+
+    PyBytesWriter *writer = PyBytesWriter_Create(src->len);
+    if (writer == NULL) {
+        return NULL;
+    }
+
+    if (PyBuffer_ToContiguous(PyBytesWriter_GetData(writer),
+                              src, src->len, 'C') < 0) {
+        PyBytesWriter_Discard(writer);
+        return NULL;
+    }
+
+    PyObject *ret = _Py_strhex_with_sep(
+        PyBytesWriter_GetData(writer),
+        PyBytesWriter_GetSize(writer),
+        sep, bytes_per_sep);
+    PyBytesWriter_Discard(writer);
+
+    return ret;
+}
+
+/*[clinic input]
 memoryview.hex
 
     sep: object = NULL
@@ -2435,45 +2656,20 @@ memoryview_hex_impl(PyMemoryViewObject *self, PyObject *sep,
                     Py_ssize_t bytes_per_sep)
 /*[clinic end generated code: output=c9bb00c7a8e86056 input=3f1c5d08906e3b70]*/
 {
-    Py_buffer *src = VIEW_ADDR(self);
-
-    CHECK_RELEASED(self);
-
-    if (MV_C_CONTIGUOUS(self->flags)) {
-        // Prevent 'self' from being freed if computing len(sep) mutates 'self'
-        // in _Py_strhex_with_sep().
-        // See: https://github.com/python/cpython/issues/143195.
-        FT_ATOMIC_ADD_SSIZE(self->exports, 1);
-        PyObject *ret = _Py_strhex_with_sep(src->buf, src->len, sep, bytes_per_sep);
-        FT_ATOMIC_ADD_SSIZE(self->exports, -1);
-        return ret;
-    }
-
-    PyBytesWriter *writer = PyBytesWriter_Create(src->len);
-    if (writer == NULL) {
+    if (memoryview_pin(self) < 0) {
         return NULL;
     }
-
-    if (PyBuffer_ToContiguous(PyBytesWriter_GetData(writer),
-                              src, src->len, 'C') < 0) {
-        PyBytesWriter_Discard(writer);
-        return NULL;
-    }
-
-    PyObject *ret = _Py_strhex_with_sep(
-        PyBytesWriter_GetData(writer),
-        PyBytesWriter_GetSize(writer),
-        sep, bytes_per_sep);
-    PyBytesWriter_Discard(writer);
-
-    return ret;
+    PyObject *result = memoryview_hex_pinned(self, sep, bytes_per_sep);
+    memoryview_unpin(self);
+    return result;
 }
+
 
 static PyObject *
 memory_repr(PyObject *_self)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
-    if (self->flags & _Py_MEMORYVIEW_RELEASED)
+    if (mv_has_flag(self, _Py_MEMORYVIEW_RELEASED))
         return PyUnicode_FromFormat("<released memory at %p>", self);
     else
         return PyUnicode_FromFormat("<memory at %p>", self);
@@ -2546,9 +2742,9 @@ ptr_from_tuple(const Py_buffer *view, PyObject *tup)
 
 /* Return the item at index. In a one-dimensional view, this is an object
    with the type specified by view->format. Otherwise, the item is a sub-view.
-   The function is used in memory_subscript() and memory_as_sequence. */
+   The function is used in memory_subscript_pinned() and by sq_item. */
 static PyObject *
-memory_item(PyObject *_self, Py_ssize_t index)
+memory_item_pinned(PyObject *_self, Py_ssize_t index)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     Py_buffer *view = &(self->view);
@@ -2674,7 +2870,7 @@ is_multiindex(PyObject *key)
    0-d memoryview objects can be referenced using mv[...] or mv[()]
    but not with anything else. */
 static PyObject *
-memory_subscript(PyObject *_self, PyObject *key)
+memory_subscript_pinned(PyObject *_self, PyObject *key)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     Py_buffer *view;
@@ -2704,7 +2900,7 @@ memory_subscript(PyObject *_self, PyObject *key)
         index = PyNumber_AsSsize_t(key, PyExc_IndexError);
         if (index == -1 && PyErr_Occurred())
             return NULL;
-        return memory_item((PyObject *)self, index);
+        return memory_item_pinned((PyObject *)self, index);
     }
     else if (PySlice_Check(key)) {
         CHECK_RESTRICTED(self);
@@ -2737,7 +2933,7 @@ memory_subscript(PyObject *_self, PyObject *key)
 }
 
 static int
-memory_ass_sub(PyObject *_self, PyObject *key, PyObject *value)
+memory_ass_sub_pinned(PyObject *_self, PyObject *key, PyObject *value)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     Py_buffer *view = &(self->view);
@@ -2827,7 +3023,7 @@ memory_ass_sub(PyObject *_self, PyObject *key, PyObject *value)
         return pack_single(self, ptr, value, fmt);
     }
     if (PySlice_Check(key) || is_multislice(key)) {
-        /* Call memory_subscript() to produce a sliced lvalue, then copy
+        /* Call memory_subscript_pinned() to produce a sliced lvalue, then copy
            rvalue into lvalue. This is already implemented in _testbuffer.c. */
         PyErr_SetString(PyExc_NotImplementedError,
             "memoryview slice assignments are currently restricted "
@@ -2851,6 +3047,42 @@ memory_length(PyObject *_self)
     return self->view.shape[0];
 }
 
+static PyObject *
+memory_item(PyObject *_self, Py_ssize_t index)
+{
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
+    if (memoryview_pin(self) < 0) {
+        return NULL;
+    }
+    PyObject *result = memory_item_pinned(_self, index);
+    memoryview_unpin(self);
+    return result;
+}
+
+static PyObject *
+memory_subscript(PyObject *_self, PyObject *key)
+{
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
+    if (memoryview_pin(self) < 0) {
+        return NULL;
+    }
+    PyObject *result = memory_subscript_pinned(_self, key);
+    memoryview_unpin(self);
+    return result;
+}
+
+static int
+memory_ass_sub(PyObject *_self, PyObject *key, PyObject *value)
+{
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
+    if (memoryview_pin(self) < 0) {
+        return -1;
+    }
+    int result = memory_ass_sub_pinned(_self, key, value);
+    memoryview_unpin(self);
+    return result;
+}
+
 /* As mapping */
 static PyMappingMethods memory_as_mapping = {
     memory_length,                        /* mp_length */
@@ -2871,18 +3103,8 @@ static PySequenceMethods memory_as_sequence = {
 /*                              Counting                                    */
 /****************************************************************************/
 
-/*[clinic input]
-memoryview.count
-
-    value: object
-    /
-
-Count the number of occurrences of a value.
-[clinic start generated code]*/
-
 static PyObject *
-memoryview_count_impl(PyMemoryViewObject *self, PyObject *value)
-/*[clinic end generated code: output=a15cb19311985063 input=e3036ce1ed7d1823]*/
+memoryview_count_pinned(PyMemoryViewObject *self, PyObject *value)
 {
     PyObject *iter = PyObject_GetIter(_PyObject_CAST(self));
     if (iter == NULL) {
@@ -2915,28 +3137,36 @@ memoryview_count_impl(PyMemoryViewObject *self, PyObject *value)
     return PyLong_FromSsize_t(count);
 }
 
+/*[clinic input]
+memoryview.count
+
+    value: object
+    /
+
+Count the number of occurrences of a value.
+[clinic start generated code]*/
+
+static PyObject *
+memoryview_count_impl(PyMemoryViewObject *self, PyObject *value)
+/*[clinic end generated code: output=a15cb19311985063 input=e3036ce1ed7d1823]*/
+{
+    if (memoryview_pin(self) < 0) {
+        return NULL;
+    }
+    PyObject *result = memoryview_count_pinned(self, value);
+    memoryview_unpin(self);
+    return result;
+}
+
+
 
 /**************************************************************************/
 /*                             Lookup                                     */
 /**************************************************************************/
 
-/*[clinic input]
-memoryview.index
-
-    value: object
-    start: slice_index(accept={int}) = 0
-    stop: slice_index(accept={int}, c_default="PY_SSIZE_T_MAX") = sys.maxsize
-    /
-
-Return the index of the first occurrence of a value.
-
-Raises ValueError if the value is not present.
-[clinic start generated code]*/
-
 static PyObject *
-memoryview_index_impl(PyMemoryViewObject *self, PyObject *value,
-                      Py_ssize_t start, Py_ssize_t stop)
-/*[clinic end generated code: output=e0185e3819e549df input=0697a0165bf90b5a]*/
+memoryview_index_pinned(PyMemoryViewObject *self, PyObject *value,
+                        Py_ssize_t start, Py_ssize_t stop)
 {
     const Py_buffer *view = &self->view;
     CHECK_RELEASED(self);
@@ -2973,7 +3203,7 @@ memoryview_index_impl(PyMemoryViewObject *self, PyObject *value,
             // entire loop.
             assert(index < n);
 
-            PyObject *item = memory_item(obj, index);
+            PyObject *item = memory_item_pinned(obj, index);
             if (item == NULL) {
                 return NULL;
             }
@@ -2999,6 +3229,32 @@ memoryview_index_impl(PyMemoryViewObject *self, PyObject *value,
                     "multi-dimensional lookup is not implemented");
     return NULL;
 
+}
+
+/*[clinic input]
+memoryview.index
+
+    value: object
+    start: slice_index(accept={int}) = 0
+    stop: slice_index(accept={int}, c_default="PY_SSIZE_T_MAX") = sys.maxsize
+    /
+
+Return the index of the first occurrence of a value.
+
+Raises ValueError if the value is not present.
+[clinic start generated code]*/
+
+static PyObject *
+memoryview_index_impl(PyMemoryViewObject *self, PyObject *value,
+                      Py_ssize_t start, Py_ssize_t stop)
+/*[clinic end generated code: output=e0185e3819e549df input=0697a0165bf90b5a]*/
+{
+    if (memoryview_pin(self) < 0) {
+        return NULL;
+    }
+    PyObject *result = memoryview_index_pinned(self, value, start, stop);
+    memoryview_unpin(self);
+    return result;
 }
 
 
@@ -3216,7 +3472,7 @@ cmp_rec(const char *p, const char *q,
 }
 
 static PyObject *
-memory_richcompare(PyObject *v, PyObject *w, int op)
+memory_richcompare_pinned(PyObject *v, PyObject *w, int op)
 {
     PyObject *res;
     Py_buffer wbuf, *vv;
@@ -3342,15 +3598,44 @@ result:
     return Py_XNewRef(res);
 }
 
+static PyObject *
+memory_richcompare(PyObject *v, PyObject *w, int op)
+{
+    PyMemoryViewObject *self = (PyMemoryViewObject *)v;
+    if (memoryview_pin(self) < 0) {
+        /* Released memoryviews still compare by identity. */
+        PyErr_Clear();
+        return memory_richcompare_pinned(v, w, op);
+    }
+
+    PyMemoryViewObject *other = NULL;
+    if (PyMemoryView_Check(w) && w != v) {
+        other = (PyMemoryViewObject *)w;
+        if (memoryview_pin(other) < 0) {
+            PyErr_Clear();
+            memoryview_unpin(self);
+            return memory_richcompare_pinned(v, w, op);
+        }
+    }
+
+    PyObject *result = memory_richcompare_pinned(v, w, op);
+    if (other != NULL) {
+        memoryview_unpin(other);
+    }
+    memoryview_unpin(self);
+    return result;
+}
+
 /**************************************************************************/
 /*                                Hash                                    */
 /**************************************************************************/
 
 static Py_hash_t
-memory_hash(PyObject *_self)
+memory_hash_pinned(PyObject *_self)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
-    if (self->hash == -1) {
+    Py_hash_t hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(self->hash);
+    if (hash == -1) {
         Py_buffer *view = &self->view;
         char *mem = view->buf;
         Py_ssize_t ret;
@@ -3372,7 +3657,13 @@ memory_hash(PyObject *_self)
         if (view->obj != NULL) {
             // Prevent 'self' from being freed when computing the item's hash.
             // See https://github.com/python/cpython/issues/142664.
-            FT_ATOMIC_ADD_SSIZE(self->exports, 1);
+#ifdef Py_GIL_DISABLED
+            if (memoryview_add_export(self) < 0) {
+                return -1;
+            }
+#else
+            self->exports++;
+#endif
             Py_hash_t h = PyObject_Hash(view->obj);
             FT_ATOMIC_ADD_SSIZE(self->exports, -1);
             if (h == -1) {
@@ -3381,7 +3672,7 @@ memory_hash(PyObject *_self)
             }
         }
 
-        if (!MV_C_CONTIGUOUS(self->flags)) {
+        if (!MV_C_CONTIGUOUS(mv_get_flags(self))) {
             mem = PyMem_Malloc(view->len);
             if (mem == NULL) {
                 PyErr_NoMemory();
@@ -3394,13 +3685,30 @@ memory_hash(PyObject *_self)
         }
 
         /* Can't fail */
-        self->hash = Py_HashBuffer(mem, view->len);
+        hash = Py_HashBuffer(mem, view->len);
+        FT_ATOMIC_STORE_SSIZE_RELAXED(self->hash, hash);
 
         if (mem != view->buf)
             PyMem_Free(mem);
     }
 
-    return self->hash;
+    return hash;
+}
+
+static Py_hash_t
+memory_hash(PyObject *_self)
+{
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
+    Py_hash_t hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(self->hash);
+    if (hash != -1) {
+        return hash;
+    }
+    if (memoryview_pin(self) < 0) {
+        return -1;
+    }
+    Py_hash_t result = memory_hash_pinned(_self);
+    memoryview_unpin(self);
+    return result;
 }
 
 
@@ -3433,7 +3741,7 @@ _IntTupleFromSsizet(int len, Py_ssize_t *vals)
 }
 
 static PyObject *
-memory_obj_get(PyObject *_self, void *Py_UNUSED(ignored))
+memory_obj_get_pinned(PyObject *_self, void *Py_UNUSED(ignored))
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     Py_buffer *view = &self->view;
@@ -3454,7 +3762,7 @@ memory_nbytes_get(PyObject *_self, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
-memory_format_get(PyObject *_self, void *Py_UNUSED(ignored))
+memory_format_get_pinned(PyObject *_self, void *Py_UNUSED(ignored))
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED(self);
@@ -3514,7 +3822,7 @@ memory_c_contiguous(PyObject *_self, void *Py_UNUSED(ignored))
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED(self);
-    return PyBool_FromLong(MV_C_CONTIGUOUS(self->flags));
+    return PyBool_FromLong(MV_C_CONTIGUOUS(mv_get_flags(self)));
 }
 
 static PyObject *
@@ -3522,7 +3830,7 @@ memory_f_contiguous(PyObject *_self, void *Py_UNUSED(ignored))
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED(self);
-    return PyBool_FromLong(MV_F_CONTIGUOUS(self->flags));
+    return PyBool_FromLong(MV_F_CONTIGUOUS(mv_get_flags(self)));
 }
 
 static PyObject *
@@ -3530,8 +3838,26 @@ memory_contiguous(PyObject *_self, void *Py_UNUSED(ignored))
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED(self);
-    return PyBool_FromLong(MV_ANY_CONTIGUOUS(self->flags));
+    return PyBool_FromLong(MV_ANY_CONTIGUOUS(mv_get_flags(self)));
 }
+
+#define MEMORYVIEW_PINNED_GETTER(name)                                  \
+    static PyObject *                                                   \
+    name(PyObject *_self, void *ignored)                                \
+    {                                                                   \
+        PyMemoryViewObject *self = (PyMemoryViewObject *)_self;         \
+        if (memoryview_pin(self) < 0) {                                 \
+            return NULL;                                                \
+        }                                                               \
+        PyObject *result = name##_pinned(_self, ignored);               \
+        memoryview_unpin(self);                                         \
+        return result;                                                  \
+    }
+
+MEMORYVIEW_PINNED_GETTER(memory_obj_get)
+MEMORYVIEW_PINNED_GETTER(memory_format_get)
+
+#undef MEMORYVIEW_PINNED_GETTER
 
 PyDoc_STRVAR(memory_obj_doc,
              "The underlying object of the memoryview.");
@@ -3636,32 +3962,44 @@ static PyObject *
 memoryiter_next(PyObject *self)
 {
     memoryiterobject *it = (memoryiterobject *)self;
-    PyMemoryViewObject *seq;
-    seq = it->it_seq;
+    PyMemoryViewObject *seq = it->it_seq;
     if (seq == NULL) {
         return NULL;
     }
 
-    if (it->it_index < it->it_length) {
-        CHECK_RELEASED(seq);
-        Py_buffer *view = &(seq->view);
-        char *ptr = (char *)seq->view.buf;
+    if (it->it_index >= it->it_length) {
+        /* Preserve StopIteration for exhausted iterators over released views. */
+        it->it_seq = NULL;
+        Py_DECREF(seq);
+        return NULL;
+    }
+
+#ifdef Py_GIL_DISABLED
+    /* Keep seq alive if another thread exhausts the iterator. */
+    Py_INCREF(seq);
+#endif
+
+    PyObject *result = NULL;
+    if (memoryview_pin(seq) == 0) {
+        Py_buffer *view = &seq->view;
+        char *ptr = (char *)view->buf;
 
         ptr += view->strides[0] * it->it_index++;
         ptr = ADJUST_PTR(ptr, view->suboffsets, 0);
-        if (ptr == NULL) {
-            return NULL;
+        if (ptr != NULL) {
+            result = unpack_single(seq, ptr, it->it_fmt);
         }
-        return unpack_single(seq, ptr, it->it_fmt);
+        memoryview_unpin(seq);
     }
 
-    it->it_seq = NULL;
+#ifdef Py_GIL_DISABLED
     Py_DECREF(seq);
-    return NULL;
+#endif
+    return result;
 }
 
 static PyObject *
-memory_iter(PyObject *seq)
+memory_iter_pinned(PyObject *seq)
 {
     if (!PyMemoryView_Check(seq)) {
         PyErr_BadInternalCall();
@@ -3696,6 +4034,18 @@ memory_iter(PyObject *seq)
     it->it_seq = (PyMemoryViewObject*)Py_NewRef(obj);
     _PyObject_GC_TRACK(it);
     return (PyObject *)it;
+}
+
+static PyObject *
+memory_iter(PyObject *seq)
+{
+    PyMemoryViewObject *self = (PyMemoryViewObject *)seq;
+    if (memoryview_pin(self) < 0) {
+        return NULL;
+    }
+    PyObject *result = memory_iter_pinned(seq);
+    memoryview_unpin(self);
+    return result;
 }
 
 PyTypeObject _PyMemoryIter_Type = {
