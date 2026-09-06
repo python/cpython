@@ -32,7 +32,8 @@ PyAPI_FUNC(PyObject*) _Py_CheckFunctionResult(
     PyObject *result,
     const char *where);
 
-extern PyObject* _PyObject_Call_Prepend(
+// Export for '_pickle' shared extension.
+PyAPI_FUNC(PyObject*) _PyObject_Call_Prepend(
     PyThreadState *tstate,
     PyObject *callable,
     PyObject *obj,
