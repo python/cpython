@@ -370,14 +370,6 @@ get_hmacmodule_state(PyObject *module)
     return (hmacmodule_state *)state;
 }
 
-static inline hmacmodule_state *
-get_hmacmodule_state_by_cls(PyTypeObject *cls)
-{
-    void *state = PyType_GetModuleState(cls);
-    assert(state != NULL);
-    return (hmacmodule_state *)state;
-}
-
 // --- HMAC Object ------------------------------------------------------------
 
 typedef Hacl_Streaming_HMAC_agile_state HACL_HMAC_state;
@@ -735,6 +727,24 @@ has_uint32_t_buffer_length(const Py_buffer *buffer)
 // --- HMAC object ------------------------------------------------------------
 
 /*
+ * Create a zero-initialized untracked HMAC object.
+ *
+ * Return NULL on failure with an exception set.
+ */
+static HMACObject *
+hmac_new_object(PyTypeObject *tp)
+{
+    HMACObject *self = (HMACObject *)tp->tp_alloc(tp, 0);
+    if (self == NULL) {
+        return NULL;
+    }
+    HASHLIB_INIT_MUTEX(self);
+    // tp_alloc initializes the memory to zero but the unknown kind is -1
+    self->kind = Py_hmac_kind_hash_unknown;
+    return self;
+}
+
+/*
  * Use the HMAC information 'info' to populate the corresponding fields.
  *
  * The real 'kind' for BLAKE-2 is obtained once and depends on both static
@@ -745,7 +755,7 @@ hmac_set_hinfo(hmacmodule_state *state,
                HMACObject *self, const py_hmac_hinfo *info)
 {
     assert(info->display_name != NULL);
-    self->name = Py_NewRef(info->display_name);
+    Py_XSETREF(self->name, Py_NewRef(info->display_name));
     assert_is_static_hmac_hash_kind(info->kind);
     self->kind = narrow_hmac_hash_kind(state, info->kind);
     assert(info->block_size <= Py_hmac_hash_max_block_size);
@@ -853,16 +863,15 @@ _hmac_new_impl(PyObject *module, PyObject *keyobj, PyObject *msgobj,
         return NULL;
     }
 
-    HMACObject *self = PyObject_GC_New(HMACObject, state->hmac_type);
+    HMACObject *self = hmac_new_object(state->hmac_type);
     if (self == NULL) {
         return NULL;
     }
-    HASHLIB_INIT_MUTEX(self);
     hmac_set_hinfo(state, self, info);
     int rc;
     // Create the HACL* internal state with the given key.
     Py_buffer key;
-    GET_BUFFER_VIEW_OR_ERROR(keyobj, &key, goto error_on_key);
+    GET_BUFFER_VIEW_OR_ERROR(keyobj, &key, goto error);
     rc = hmac_new_initial_state(self, key.buf, key.len);
     PyBuffer_Release(&key);
     if (rc < 0) {
@@ -886,8 +895,6 @@ _hmac_new_impl(PyObject *module, PyObject *keyobj, PyObject *msgobj,
     PyObject_GC_Track(self);
     return (PyObject *)self;
 
-error_on_key:
-    self->state = NULL;
 error:
     Py_DECREF(self);
     return NULL;
@@ -900,7 +907,7 @@ static void
 hmac_copy_hinfo(HMACObject *out, const HMACObject *src)
 {
     assert(src->name != NULL);
-    out->name = Py_NewRef(src->name);
+    Py_XSETREF(out->name, Py_NewRef(src->name));
     assert(src->kind != Py_hmac_kind_hash_unknown);
     out->kind = src->kind;
     assert(src->block_size <= Py_hmac_hash_max_block_size);
@@ -943,8 +950,7 @@ static PyObject *
 _hmac_HMAC_copy_impl(HMACObject *self, PyTypeObject *cls)
 /*[clinic end generated code: output=a955bfa55b65b215 input=17b2c0ad0b147e36]*/
 {
-    hmacmodule_state *state = get_hmacmodule_state_by_cls(cls);
-    HMACObject *copy = PyObject_GC_New(HMACObject, state->hmac_type);
+    HMACObject *copy = hmac_new_object(cls);
     if (copy == NULL) {
         return NULL;
     }
@@ -961,7 +967,6 @@ _hmac_HMAC_copy_impl(HMACObject *self, PyTypeObject *cls)
         return NULL;
     }
 
-    HASHLIB_INIT_MUTEX(copy);
     PyObject_GC_Track(copy);
     return (PyObject *)copy;
 }
