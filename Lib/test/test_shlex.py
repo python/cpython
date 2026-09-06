@@ -420,6 +420,24 @@ class ShlexTest(unittest.TestCase):
         s.push_source(io.StringIO("hello"))
         self.assertListEqual(list(s), ["hello", "world"])
 
+    def testPushSourceKeepsPushback(self):
+        s = shlex.shlex("parent")
+        stream = io.StringIO("child")
+        s.push_token("pushed")
+        s.push_source(stream)
+        self.assertListEqual(list(s), ["pushed", "child", "parent"])
+        self.assertTrue(stream.closed)
+
+    def testPushSourceAfterEOF(self):
+        for posix in (False, True):
+            with self.subTest(posix=posix):
+                s = shlex.shlex("parent", posix=posix)
+                self.assertEqual(list(s), ["parent"])
+                stream = io.StringIO("child")
+                s.push_source(stream)
+                self.assertEqual(list(s), ["child"])
+                self.assertTrue(stream.closed)
+
     def testPushSourceStreamDebug(self):
         s = shlex.shlex("")
         stream = io.StringIO("hello")
@@ -513,6 +531,29 @@ class ShlexTest(unittest.TestCase):
         s.source = "trigger"
         s.sourcehook = lambda f: (f, io.StringIO("included"))
         self.assertEqual(list(s), ["included", "remaining"])
+
+    def testSourceInclusionAtEOF(self):
+        for posix in (False, True):
+            with self.subTest(posix=posix):
+                s = shlex.shlex("trigger filename", posix=posix)
+                s.source = "trigger"
+                stream = io.StringIO("included")
+                s.sourcehook = lambda f: (f, stream)
+                self.assertEqual(list(s), ["included"])
+                self.assertTrue(stream.closed)
+
+    def testNestedSourceInclusionAtEOF(self):
+        for posix in (False, True):
+            with self.subTest(posix=posix):
+                streams = {
+                    "child": io.StringIO("trigger grandchild"),
+                    "grandchild": io.StringIO("included"),
+                }
+                s = shlex.shlex("trigger child", posix=posix)
+                s.source = "trigger"
+                s.sourcehook = lambda f: (f, streams[f])
+                self.assertEqual(list(s), ["included"])
+                self.assertTrue(all(stream.closed for stream in streams.values()))
 
     def testGetTokenPopsPushbackDebug(self):
         s = shlex.shlex("")
