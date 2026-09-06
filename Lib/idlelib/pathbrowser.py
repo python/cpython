@@ -2,8 +2,13 @@ import importlib.machinery
 import os
 import sys
 
+from tkinter import PhotoImage
+
 from idlelib.browser import ModuleBrowser, ModuleBrowserTreeItem
 from idlelib.tree import TreeItem
+
+# The icon that marks each kind of row, by the tag of its item.
+ICONS = {'directory': 'folder', 'package': 'openfolder', 'module': 'python'}
 
 
 class PathBrowser(ModuleBrowser):
@@ -21,6 +26,16 @@ class PathBrowser(ModuleBrowser):
         "Set window titles."
         self.top.wm_title("Path Browser")
         self.top.wm_iconname("Path Browser")
+
+    def set_icons(self):
+        "Mark directories, packages and modules with the icons in Icons."
+        icondir = os.path.join(os.path.dirname(__file__), "Icons")
+        self.icons = {}  # An image lives only while it is referenced.
+        for tag, name in ICONS.items():
+            image = PhotoImage(master=self.tree,
+                               file=os.path.join(icondir, name + ".gif"))
+            self.icons[tag] = image
+            self.tree.tree.tag_configure(tag, image=image)
 
     def rootnode(self):
         return PathBrowserTreeItem()
@@ -46,10 +61,11 @@ class DirBrowserTreeItem(TreeItem):
         self.packages = packages
 
     def GetText(self):
-        if not self.packages:
-            return self.dir
-        else:
-            return self.packages[-1] + ": package"
+        return self.dir if not self.packages else self.packages[-1]
+
+    def GetTags(self):
+        "Mark the row as a package or a plain directory."
+        return ('package',) if self.packages else ('directory',)
 
     def GetSubList(self):
         try:
