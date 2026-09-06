@@ -95,6 +95,30 @@ class FunctionCalls(unittest.TestCase):
         self.assertEqual(list(collections.OrderedDict(b=1, a=2, c=3)),
                          ['b', 'a', 'c'])
 
+    def test_kwargs_unpacking_mutation_isolated(self):
+        # gh-86199: a callee mutating its **kwargs must never affect the
+        # caller's dict.
+        def fn(**kw):
+            kw['injected'] = None
+        d = {'a': 1}
+        fn(**d)
+        self.assertEqual(d, {'a': 1})
+        e = {}
+        fn(**e)
+        self.assertEqual(e, {})
+
+    @cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_kwargs_unpacking_not_aliased_in_tp_call(self):
+        # gh-86199: a tp_call callee receives a private copy of the kwargs
+        # dict, never the caller's dict.
+        get_kwargs = _testcapi.get_kwargs  # METH_VARARGS | METH_KEYWORDS
+        d = {'a': 1}
+        self.assertIsNot(get_kwargs(**d), d)
+        self.assertEqual(get_kwargs(**d), d)
+        e = {}
+        self.assertIsNot(get_kwargs(**e), e)
+
     def test_frames_are_popped_after_failed_calls(self):
         # GH-93252: stuff blows up if we don't pop the new frame after
         # recovering from failed calls:

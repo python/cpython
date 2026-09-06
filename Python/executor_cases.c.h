@@ -20040,18 +20040,20 @@
         case _MAKE_CALLARGS_A_TUPLE_r33: {
             CHECK_CURRENT_CACHED_VALUES(3);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
+            _PyStackRef kwargs;
             _PyStackRef callargs;
             _PyStackRef func;
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
             _PyStackRef _stack_item_2 = _tos_cache2;
+            kwargs = _stack_item_2;
             callargs = _stack_item_1;
             func = stack_pointer[-1];
             PyObject *callargs_o = PyStackRef_AsPyObjectBorrow(callargs);
             if (!PyTuple_CheckExact(callargs_o)) {
                 stack_pointer[0] = _stack_item_0;
                 stack_pointer[1] = callargs;
-                stack_pointer[2] = _stack_item_2;
+                stack_pointer[2] = kwargs;
                 stack_pointer += 3;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -20079,7 +20081,54 @@
                 _PyFrame_StackPointerInvalidate(frame);
                 stack_pointer += -3;
             }
-            _tos_cache2 = _stack_item_2;
+            PyObject *kwargs_o = PyStackRef_AsPyObjectBorrow(kwargs);
+            if (kwargs_o != NULL && !PyDict_CheckExact(kwargs_o)) {
+                stack_pointer[0] = _stack_item_0;
+                stack_pointer[1] = callargs;
+                stack_pointer[2] = kwargs;
+                stack_pointer += 3;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyFrame_StackPointerValidate(frame);
+                PyObject *dict_o = PyDict_New();
+                _PyFrame_StackPointerInvalidate(frame);
+                if (dict_o == NULL) {
+                    SET_CURRENT_CACHED_VALUES(0);
+                    JUMP_TO_ERROR();
+                }
+                PyObject *dupkey = NULL;
+                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                _PyFrame_StackPointerValidate(frame);
+                int err = _PyDict_MergeUniq(dict_o, kwargs_o, &dupkey);
+                _PyFrame_StackPointerInvalidate(frame);
+                if (err < 0) {
+                    assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                    _PyFrame_StackPointerValidate(frame);
+                    _PyEval_FormatKwargsError(tstate,
+                        PyStackRef_AsPyObjectBorrow(func), kwargs_o, dupkey);
+                    _PyFrame_StackPointerInvalidate(frame);
+                    assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                    _PyFrame_StackPointerValidate(frame);
+                    Py_XDECREF(dupkey);
+                    _PyFrame_StackPointerInvalidate(frame);
+                    assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                    _PyFrame_StackPointerValidate(frame);
+                    Py_DECREF(dict_o);
+                    _PyFrame_StackPointerInvalidate(frame);
+                    SET_CURRENT_CACHED_VALUES(0);
+                    JUMP_TO_ERROR();
+                }
+                assert(dupkey == NULL);
+                _PyStackRef temp = kwargs;
+                kwargs = PyStackRef_FromPyObjectSteal(dict_o);
+                stack_pointer[-1] = kwargs;
+                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                _PyFrame_StackPointerValidate(frame);
+                PyStackRef_CLOSE(temp);
+                _PyFrame_StackPointerInvalidate(frame);
+                stack_pointer += -3;
+            }
+            _tos_cache2 = kwargs;
             _tos_cache1 = callargs;
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(3);
