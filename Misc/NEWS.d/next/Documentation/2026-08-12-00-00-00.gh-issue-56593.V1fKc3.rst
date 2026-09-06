@@ -1,0 +1,5 @@
+Improve the :mod:`difflib` documentation: describe the :class:`difflib.Match`
+named tuple and state that :meth:`~difflib.SequenceMatcher.find_longest_match`
+and :meth:`~difflib.SequenceMatcher.get_matching_blocks` return ``Match``
+objects.  Clarify that the diff functions accept sequences of strings, not
+just lists.
