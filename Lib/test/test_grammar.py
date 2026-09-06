@@ -21,6 +21,7 @@ from test.support import (
     import_helper,
     skip_emscripten_stack_overflow,
     skip_wasi_stack_overflow,
+    subTests,
 )
 from test.support.numbers import (
     VALID_UNDERSCORE_LITERALS,
@@ -179,6 +180,32 @@ class TokenTests(unittest.TestCase):
         check("[0x1ffor x in ()]")
         check("[0x1for x in ()]")
         check("[0xfor x in ()]")
+
+    @subTests('source,offset,msg',
+              [("0xfg", 4, "hexadecimal"),
+               ("0x9g", 4, "hexadecimal"),
+               ("0b1z", 4, "binary"),
+               ("0o7q", 4, "octal"),
+               ("9spam", 2, " decimal"),
+               ("0xfspam", 4, "hexadecimal"),
+               ("1.0x", 4, " decimal"),
+               ("1e3w", 4, " decimal"),
+               ("1jz", 3, "imaginary"),
+               ("0xI", 3, "hexadecimal"),
+               ("0bz", 3, "binary"),
+               # SyntaxWarning's currently:
+               ("1or 0", 2, " decimal"),
+               ("0or 0", 3, "octal"),
+               ])
+    def test_end_of_numerical_literals_offset(self, source, offset, msg):
+        # gh-149277: verify the error caret points at the first invalid
+        # character, not the last valid digit.
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", SyntaxWarning)
+            with self.assertRaises(SyntaxError) as cm:
+                compile(source, "<test>", "eval")
+        self.assertEqual(cm.exception.offset, offset)
+        self.assertIn(msg, cm.exception.msg)
 
     def test_string_literals(self):
         x = ''; y = ""; self.assertTrue(len(x) == 0 and x == y)
