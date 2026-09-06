@@ -679,27 +679,7 @@ show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
 
     /* Print "  source_line\n" */
     if (sourceline) {
-        int kind;
-        const void *data;
-        Py_ssize_t i, len;
-        Py_UCS4 ch;
-        PyObject *truncated;
-
-        kind = PyUnicode_KIND(sourceline);
-        data = PyUnicode_DATA(sourceline);
-        len = PyUnicode_GET_LENGTH(sourceline);
-        for (i=0; i<len; i++) {
-            ch = PyUnicode_READ(kind, data, i);
-            if (ch != ' ' && ch != '\t' && ch != '\014')
-                break;
-        }
-
-        truncated = PyUnicode_Substring(sourceline, i, len);
-        if (truncated == NULL)
-            goto error;
-
         PyFile_WriteObject(sourceline, f_stderr, Py_PRINT_RAW);
-        Py_DECREF(truncated);
         PyFile_WriteString("\n", f_stderr);
     }
     else {
