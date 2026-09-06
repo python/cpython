@@ -124,6 +124,20 @@ class CMathTests(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertAlmostEqual(cmath.e, e_expected, places=9,
             msg="cmath.e is {}; should be {}".format(cmath.e, e_expected))
 
+    def test_precomputed_constants(self):
+        self.assertEqual(
+            cmath.acos(complex(math.inf, math.inf)).real,
+            math.pi / 4,
+        )
+        self.assertEqual(
+            cmath.acos(complex(0.0, math.inf)).real,
+            math.pi / 2,
+        )
+        self.assertEqual(
+            cmath.acos(complex(-math.inf, math.inf)).real,
+            math.pi * 3 / 4,
+        )
+
     def test_infinity_and_nan_constants(self):
         self.assertEqual(cmath.inf.real, math.inf)
         self.assertEqual(cmath.inf.imag, 0.0)
