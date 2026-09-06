@@ -526,7 +526,18 @@ class RunWorkers:
             # these worker threads would never get anything to do.
             self.num_workers = min(self.num_workers, jobs)
 
+    def start_exclusive_locks(self) -> None:
+        # Tests using a machine-wide resource lock each other out through files
+        # in this directory.  A single worker process runs one test at a time
+        # anyway, so it needs no locks.
+        if self.num_workers > 1:
+            os.environ[support.EXCLUSIVE_ENV] = tempfile.gettempdir()
+
+    def stop_exclusive_locks(self) -> None:
+        os.environ.pop(support.EXCLUSIVE_ENV, None)
+
     def start_workers(self) -> None:
+        self.start_exclusive_locks()
         self.workers = [WorkerThread(index, self)
                         for index in range(1, self.num_workers + 1)]
         jobs = self.runtests.get_jobs()
@@ -666,4 +677,5 @@ class RunWorkers:
             # worker when we exit this function
             self.pending.stop()
             self.stop_workers()
+            self.stop_exclusive_locks()
             self.logger.get_mem_usage = None
