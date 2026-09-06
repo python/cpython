@@ -421,6 +421,7 @@ _PyLexer_get_ftstring(struct tok_state *tok, ftstring_state *current, struct tok
            current->replacement_depth <= MAX_EXPR_NESTING);
     const char *p_start = NULL;
     const char *p_end = NULL;
+    int token_type;
     int end_quote_size = 0;
     int unicode_escape = 0;
     int quote = current->quote;
@@ -572,5 +573,7 @@ _PyLexer_get_ftstring(struct tok_state *tok, ftstring_state *current, struct tok
     }
     p_end = tok->cur;
 emit_middle:
-    return MAKE_TOKEN(FTSTRING_MIDDLE(current));
+    token_type = MAKE_TOKEN(FTSTRING_MIDDLE(current));
+    token->is_raw = raw;
+    return token_type;
 }

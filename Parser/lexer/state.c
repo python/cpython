@@ -142,6 +142,7 @@ int
 _PyLexer_token_setup(struct tok_state *tok, struct token *token, int type, const char *start, const char *end)
 {
     token->level = tok->level;
+    token->is_raw = 0;
     token->span = _PyLexer_BufferSpan(tok, start, end);
     if (start != NULL && end != NULL) {
         token->start_loc = tok->start_loc;

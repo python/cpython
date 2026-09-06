@@ -3,6 +3,7 @@
 
 #include "object.h"
 #include "../tokenizer/source.h"
+#include "../tokenizer/tokenizer.h"
 
 #define MAXINDENT 100       /* Max indentation level */
 #define MAXLEVEL 200        /* Max parentheses level */
@@ -17,13 +18,6 @@ enum interactive_underflow_t {
     IUNDERFLOW_STOP,
 };
 
-struct token {
-    int level;
-    _PyTok_Span span;
-    _PyTok_Loc start_loc;
-    _PyTok_Loc end_loc;
-    PyObject *metadata;
-};
 
 typedef enum {
     FTSTRING_MODE_MIDDLE,
@@ -215,8 +209,6 @@ struct tok_state *_PyTokenizer_tok_new(void);
 void _PyTokenizer_Free(struct tok_state *);
 ftstring_state *_PyLexer_PushFTString(struct tok_state *);
 void _PyLexer_PopFTString(struct tok_state *);
-void _PyToken_Free(struct token *);
-void _PyToken_Init(struct token *);
 
 
 #endif

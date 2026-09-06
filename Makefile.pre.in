@@ -401,6 +401,7 @@ TOKENIZER_OBJS=		\
 		Parser/lexer/string.o \
 		Parser/tokenizer/cursor.o \
 		Parser/tokenizer/decoder.o \
+		Parser/tokenizer/api.o \
 		Parser/tokenizer/reader.o \
 		Parser/tokenizer/source.o \
 		Parser/tokenizer/helpers.o
@@ -419,6 +420,7 @@ TOKENIZER_HEADERS= \
 		Parser/tokenizer/reader.h \
 		Parser/tokenizer/reader_internal.h \
 		Parser/tokenizer/source.h \
+		Parser/tokenizer/types.h \
 		Parser/tokenizer/tokenizer.h \
 		Parser/tokenizer/helpers.h
 

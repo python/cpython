@@ -427,6 +427,7 @@
     <ClInclude Include="..\Parser\tokenizer\cursor.h" />
     <ClInclude Include="..\Parser\tokenizer\reader.h" />
     <ClInclude Include="..\Parser\tokenizer\reader_internal.h" />
+    <ClInclude Include="..\Parser\tokenizer\types.h" />
     <ClInclude Include="..\Parser\tokenizer\source.h" />
     <ClInclude Include="..\Parser\tokenizer\helpers.h" />
     <ClInclude Include="..\Parser\tokenizer\tokenizer.h" />
@@ -597,6 +598,7 @@
     <ClCompile Include="..\Parser\tokenizer\cursor.c" />
     <ClCompile Include="..\Parser\tokenizer\source.c" />
     <ClCompile Include="..\Parser\tokenizer\decoder.c" />
+    <ClCompile Include="..\Parser\tokenizer\api.c" />
     <ClCompile Include="..\Parser\tokenizer\reader.c" />
     <ClCompile Include="..\Parser\tokenizer\helpers.c" />
     <ClCompile Include="..\Parser\token.c" />
