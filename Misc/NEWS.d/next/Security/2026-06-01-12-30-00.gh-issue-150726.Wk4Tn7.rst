@@ -1,0 +1,3 @@
+:class:`wsgiref.headers.Headers` now rejects control characters in header
+names and values passed to its constructor even when Python is run with
+:option:`-O`, where the check was previously skipped.
