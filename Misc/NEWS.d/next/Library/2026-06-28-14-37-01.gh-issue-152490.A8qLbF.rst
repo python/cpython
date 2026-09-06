@@ -1,0 +1,1 @@
+Fix :exc:`TypeError` when formatting a :exc:`SyntaxError` raised with :data:`NotImplemented` as its argument, which caused unexpected REPL exit and IDLE Shell restart.
