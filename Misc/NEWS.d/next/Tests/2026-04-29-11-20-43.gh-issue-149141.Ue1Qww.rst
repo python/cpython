@@ -1,0 +1,4 @@
+Test discovery would fail when the path to the source tree contains a
+symlink. Paths that take an alternate route to the same place (eg just the
+real path) would not be considered a subpath, and cause an assert. Instead,
+always resolve to the real path before comparing.
