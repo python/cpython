@@ -228,6 +228,32 @@ class AbstractMemoryTests:
                 self.assertRaises(TypeError, lambda: m >= c)
                 self.assertRaises(TypeError, lambda: c > m)
 
+    def test_compare_1d_concurrent_mutation(self):
+        # Prevent crashes during a mixed format 1-D comparison loop.
+        # Regression test for https://github.com/python/cpython/issues/142663.
+        src1 = array.array("d", [1.0, 2.0])
+        src2 = array.array("l", [1, 2])
+        mv1, mv2 = memoryview(src1), memoryview(src2)
+        self.do_test_compare_concurrent_mutation(src1, mv1, mv2)
+
+    def test_compare_2d_concurrent_mutation(self):
+        # Prevent crashes during a mixed format 2-D comparison loop.
+        # Regression test for https://github.com/python/cpython/issues/142663.
+        src1 = array.array("d", [1.0, 2.0])
+        src2 = array.array("l", [1, 2])
+        mv1 = memoryview(src1).cast("B").cast("d", shape=(1, 2))
+        mv2 = memoryview(src2).cast("B").cast("l", shape=(1, 2))
+        self.do_test_compare_concurrent_mutation(src1, mv1, mv2)
+
+    def do_test_compare_concurrent_mutation(self, src1, mv1, mv2):
+        class S(struct.Struct):
+            def unpack_from(self, buf, /, offset=0):
+                mv1.release()
+                src1.append(3.14)
+                return (1,)
+        with support.swap_attr(struct, "Struct", S):
+            self.assertRaises(BufferError, mv1.__eq__, mv2)
+
     def check_attributes_with_type(self, tp):
         m = self._view(tp(self._source))
         self.assertEqual(m.format, self.format)
