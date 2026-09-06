@@ -298,7 +298,7 @@ maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, PyObject *globals)
         // Can also be controlled by environment variable
         char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
         if (python_lltrace != NULL && *python_lltrace >= '0') {
-            lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
+            lltrace = atoi(python_lltrace);
         }
     }
     if (lltrace >= 5) {
