@@ -1,0 +1,2 @@
+Fix the C analyzer failing on static assertions in free-threaded builds by
+using C11 preprocessing and handling static assertion declarations.
