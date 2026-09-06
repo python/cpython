@@ -1,0 +1,2 @@
+:mod:`optparse`: raise :exc:`~optparse.OptionError` instead of :exc:`TypeError`
+when ``callback_kwargs`` is not a dictionary.
