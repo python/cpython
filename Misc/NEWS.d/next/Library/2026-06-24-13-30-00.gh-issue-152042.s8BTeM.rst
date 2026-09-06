@@ -1,0 +1,6 @@
+Copying an :class:`array.array` subclass with :func:`copy.copy` or
+:func:`copy.deepcopy` now returns an instance of the subclass and preserves its
+instance ``__dict__``, and copying a :class:`collections.deque` subclass now
+preserves its instance ``__dict__``.  Previously the attributes were dropped
+(and, for :class:`!array.array`, the result was a plain array), unlike
+:mod:`pickle`.
