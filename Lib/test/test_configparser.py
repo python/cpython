@@ -2277,6 +2277,17 @@ class SectionlessTestCase(unittest.TestCase):
         cfg.write(output)
         self.assertEqual(output.getvalue(), 'a = 1\n\n')
 
+    def test_write_roundtrip_with_default(self):
+        US = configparser.UNNAMED_SECTION
+        cfg = configparser.ConfigParser(allow_unnamed_section=True)
+        cfg.read_string('key1 = val1\n[DEFAULT]\ndkey = dval\n[sect1]\nkey2 = val2\n')
+        out = io.StringIO()
+        cfg.write(out)
+        cfg2 = configparser.ConfigParser(allow_unnamed_section=True)
+        cfg2.read_string(out.getvalue())
+        self.assertIn('key1', cfg2[US])
+        self.assertNotIn('key1', cfg2.defaults())
+
     def test_disabled_error(self):
         with self.assertRaises(configparser.MissingSectionHeaderError):
             configparser.ConfigParser().read_string("a = 1")
