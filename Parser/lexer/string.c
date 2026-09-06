@@ -7,6 +7,15 @@
 
 #define MAKE_TOKEN(token_type) _PyLexer_token_setup(tok, token, token_type, p_start, p_end)
 
+static void
+rewind_to_string_start(struct tok_state *tok, const char *start,
+                       _PyTok_Loc location)
+{
+    tok->cur = (char *)start + 1;
+    tok->line_start = start - location.byte_col;
+    tok->lineno = location.lineno;
+}
+
 int
 _PyLexer_record_ftstring_comment(struct tok_state *tok, const char *start,
                                  const char *end)
@@ -194,13 +203,6 @@ _PyLexer_scan_fstring_start(struct tok_state *tok, struct token *token, int c)
     int quote = c;
     int quote_size = 1;             /* 1 or 3 */
 
-    /* Nodes of type STRING, especially multi line strings
-       must be handled differently in order to get both
-       the starting line number and the column offset right.
-       (cf. issue 16806) */
-    tok->first_lineno = tok->lineno;
-    tok->multi_line_start = tok->line_start;
-
     /* Find the quote size and start of string */
     int after_quote = tok_nextc(tok);
     if (after_quote == quote) {
@@ -276,13 +278,6 @@ _PyLexer_scan_string(struct tok_state *tok, struct token *token, int c)
     int end_quote_size = 0;
     int has_escaped_quote = 0;
 
-    /* Nodes of type STRING, especially multi line strings
-       must be handled differently in order to get both
-       the starting line number and the column offset right.
-       (cf. issue 16806) */
-    tok->first_lineno = tok->lineno;
-    tok->multi_line_start = tok->line_start;
-
     /* Find the quote size and start of string */
     c = tok_nextc(tok);
     if (c == quote) {
@@ -308,15 +303,8 @@ _PyLexer_scan_string(struct tok_state *tok, struct token *token, int c)
             break;
         }
         if (c == EOF || (quote_size == 1 && c == '\n')) {
-            assert(tok->multi_line_start != NULL);
-            // shift the tok_state's location into
-            // the start of string, and report the error
-            // from the initial quote character
-            tok->cur = (char *)tok->start;
-            tok->cur++;
-            tok->line_start = tok->multi_line_start;
-            int start = tok->lineno;
-            tok->lineno = tok->first_lineno;
+            int end_lineno = tok->lineno;
+            rewind_to_string_start(tok, tok->start, tok->start_loc);
 
             if (INSIDE_FSTRING(tok)) {
                 /* When we are in an f-string, before raising the
@@ -334,7 +322,7 @@ _PyLexer_scan_string(struct tok_state *tok, struct token *token, int c)
 
             if (quote_size == 3) {
                 _PyTokenizer_syntaxerror(tok, "unterminated triple-quoted string literal"
-                                 " (detected at line %d)", start);
+                                 " (detected at line %d)", end_lineno);
                 if (c != '\n') {
                     tok->done = E_EOFS;
                 }
@@ -346,11 +334,11 @@ _PyLexer_scan_string(struct tok_state *tok, struct token *token, int c)
                         tok,
                         "unterminated string literal (detected at line %d); "
                         "perhaps you escaped the end quote?",
-                        start
+                        end_lineno
                     );
                 } else {
                     _PyTokenizer_syntaxerror(
-                        tok, "unterminated string literal (detected at line %d)", start
+                        tok, "unterminated string literal (detected at line %d)", end_lineno
                     );
                 }
                 if (c != '\n') {
@@ -390,8 +378,7 @@ _PyLexer_get_fstring_mode(struct tok_state *tok, tokenizer_mode* current_tok, st
     int unicode_escape = 0;
 
     tok->start = tok->cur;
-    tok->first_lineno = tok->lineno;
-    tok->starting_col_offset = tok->col_offset;
+    tok->start_loc = (_PyTok_Loc){tok->lineno, _PyLexer_ByteColumn(tok)};
 
     // If we start with a bracket, we defer to the normal mode as there is nothing for us to tokenize
     // before it.
@@ -432,9 +419,6 @@ _PyLexer_get_fstring_mode(struct tok_state *tok, tokenizer_mode* current_tok, st
 
 f_string_middle:
 
-    // TODO: This is a bit of a hack, but it works for now. We need to find a better way to handle
-    // this.
-    tok->multi_line_start = tok->line_start;
     while (end_quote_size != current_tok->quote_size) {
         int c = tok_nextc(tok);
         if (tok->done == E_ERROR || tok->done == E_DECODE) {
@@ -447,7 +431,7 @@ f_string_middle:
         );
 
        if (c == EOF || (current_tok->quote_size == 1 && c == '\n')) {
-            if (tok->input_error) {
+            if (tok_failed(tok)) {
                 return MAKE_TOKEN(ERRORTOKEN);
             }
 
@@ -472,7 +456,6 @@ f_string_middle:
                 return MAKE_TOKEN(FTSTRING_MIDDLE(current_tok));
             }
 
-            assert(tok->multi_line_start != NULL);
             // shift the tok_state's location into
             // the start of string, and report the error
             // from the initial quote character

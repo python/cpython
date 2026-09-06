@@ -567,7 +567,6 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
             tok->done = E_INTR;
         }
         else {
-            tok->input_error = 1;
             if (tok->done == E_OK) {
                 tok->done = PyErr_ExceptionMatches(PyExc_MemoryError)
                     ? E_NOMEM : E_ERROR;
@@ -601,7 +600,6 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
             _PyTok_ChunkClear(&chunk);
             tok->done = PyErr_ExceptionMatches(PyExc_MemoryError)
                 ? E_NOMEM : E_ERROR;
-            tok->input_error = 1;
             return 0;
         }
         if (reset_buffer) {
@@ -610,7 +608,6 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
             tok->buf_offset = source_start;
             tok->line_start = tok->buf;
             tok->start = NULL;
-            tok->multi_line_start = NULL;
         }
         else {
             _PyLexer_RestoreBufferPointers(
@@ -633,12 +630,11 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
     }
     tok->implicit_newline = chunk.implicit_newline;
 
-    ADVANCE_LINENO();
+    tok->lineno++;
     if (kind == _PYTOK_READER_FILE &&
             (tok->encoding == NULL || strcmp(tok->encoding, "utf-8") == 0) &&
             !_PyTokenizer_ensure_utf8(tok->cur, tok, tok->lineno)) {
         _PyTok_ChunkClear(&chunk);
-        tok->input_error = 1;
         return 0;
     }
     _PyTok_ChunkClear(&chunk);
@@ -665,6 +661,7 @@ tokenizer_new_with_reader(_PyTok_ReaderKind kind)
     if (reader_is_streaming(kind)) {
         tok->buf = tok->cur = tok->inp =
             (char *)_PyTok_SourceData(&tok->source);
+        tok->line_start = tok->buf;
     }
     return tok;
 }
@@ -683,6 +680,7 @@ tokenizer_from_string(const char *input, int utf8_only, int exec_input,
         return NULL;
     }
     tok->buf = tok->cur = tok->inp = tok->str;
+    tok->line_start = tok->str;
     return tok;
 }
 

@@ -11,7 +11,6 @@ typedef struct {
     Py_ssize_t inp_from_buf;
     Py_ssize_t start_from_buf;
     Py_ssize_t line_start_from_buf;
-    Py_ssize_t multi_line_start_from_buf;
 } _PyLexer_BufferPointers;
 
 void _PyLexer_SaveBufferPointers(

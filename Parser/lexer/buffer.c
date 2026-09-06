@@ -13,8 +13,6 @@ _PyLexer_SaveBufferPointers(struct tok_state *tok, const char *base,
         ? -1 : tok->start - tok->buf;
     pointers->line_start_from_buf = tok->line_start == NULL
         ? -1 : tok->line_start - tok->buf;
-    pointers->multi_line_start_from_buf = tok->multi_line_start == NULL
-        ? -1 : tok->multi_line_start - tok->buf;
 }
 
 void
@@ -28,6 +26,4 @@ _PyLexer_RestoreBufferPointers(struct tok_state *tok, char *base,
         ? NULL : tok->buf + pointers->start_from_buf;
     tok->line_start = pointers->line_start_from_buf < 0
         ? NULL : tok->buf + pointers->line_start_from_buf;
-    tok->multi_line_start = pointers->multi_line_start_from_buf < 0
-        ? NULL : tok->buf + pointers->multi_line_start_from_buf;
 }
