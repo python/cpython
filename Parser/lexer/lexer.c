@@ -561,7 +561,7 @@ _PyLexer_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, str
     /* Check for two-character token */
     {
         int c2 = tok_nextc(tok);
-        int current_token = _PyToken_TwoChars(c, c2);
+        int current_token = _PyToken_TwoChars(c, c2, tok->barry_as_bdfl);
         if (current_token != OP) {
             int c3 = tok_nextc(tok);
             int current_token3 = _PyToken_ThreeChars(c, c2, c3);

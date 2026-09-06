@@ -530,6 +530,13 @@ symtable
   (Contributed by Serhiy Storchaka in :gh:`153844`.)
 
 
+tokenize
+--------
+
+* Invalid token ``<>`` excluded from :mod:`tokenize` output.
+  (Contributed by Sergey B Kirpichev in :gh:`151464`.)
+
+
 tkinter
 -------
 
