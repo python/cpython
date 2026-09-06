@@ -8,8 +8,9 @@
 #include <errcode.h>
 
 #include "lexer/lexer.h"
-#include "tokenizer/tokenizer.h"
 #include "tokenizer/helpers.h"
+#include "tokenizer/reader.h"
+#include "tokenizer/tokenizer.h"
 #include "pegen.h"
 
 #define IDENTIFIER_CACHE_SIZE 2048  // Must be a power of two.
@@ -943,9 +944,7 @@ reset_parser_state_for_error_pass(Parser *p)
     }
     p->mark = 0;
     p->call_invalid_rules = 1;
-    // Don't try to get extra tokens in interactive mode when trying to
-    // raise specialized errors in the second pass.
-    p->tok->interactive_underflow = IUNDERFLOW_STOP;
+    _PyTok_ReaderStopInteractive(p->tok);
 }
 
 static inline int
@@ -961,13 +960,7 @@ _PyPegen_set_syntax_error_metadata(Parser *p) {
         PyErr_SetRaisedException(exc);
         return;
     }
-    const char *source = NULL;
-    if (p->tok->str != NULL) {
-        source = p->tok->str;
-    }
-    if (!source && p->tok->fp_interactive && p->tok->interactive_src_start) {
-        source = p->tok->interactive_src_start;
-    }
+    const char *source = _PyTokenizer_RetainedSource(p->tok);
     PyObject* the_source = NULL;
     if (source) {
         if (p->tok->encoding == NULL) {
@@ -1069,10 +1062,6 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
         }
         return NULL;
     }
-    if (!tok->fp || ps1 != NULL || ps2 != NULL ||
-        PyUnicode_CompareWithASCIIString(filename_ob, "<stdin>") == 0) {
-        tok->fp_interactive = 1;
-    }
     // This transfers the ownership to the tokenizer
     tok->filename = Py_NewRef(filename_ob);
 
@@ -1094,8 +1083,9 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
     result = _PyPegen_run_parser(p);
     _PyPegen_Parser_Free(p);
 
-    if (tok->fp_interactive && tok->interactive_src_start && result && interactive_src != NULL) {
-        *interactive_src = PyUnicode_FromString(tok->interactive_src_start);
+    const char *source = _PyTokenizer_RetainedSource(tok);
+    if (source != NULL && result && interactive_src != NULL) {
+        *interactive_src = PyUnicode_FromString(source);
         if (!*interactive_src || _PyArena_AddPyObject(arena, *interactive_src) < 0) {
             Py_XDECREF(*interactive_src);
             result = NULL;
