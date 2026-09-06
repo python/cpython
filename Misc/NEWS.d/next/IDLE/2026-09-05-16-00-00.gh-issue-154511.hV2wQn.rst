@@ -1,0 +1,5 @@
+Consolidate IDLE's mouse wheel handling in ``idlelib.util``.
+``wheel_event`` moves there from ``idlelib.tree`` and joins ``x11_buttons``,
+which tells whether Tk reports wheel rotations to a widget as
+``<Button-4>``/``<Button-5>`` events, and ``bind_wheel``, which binds
+whichever events Tk sends.
