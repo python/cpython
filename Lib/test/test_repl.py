@@ -198,6 +198,22 @@ class TestInteractiveInterpreter(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         self.assertIn(long_value, output)
 
+    @cpython_only
+    def test_multiline_fstring_source_reallocation(self):
+        long_line = " " * 9000 + "+ 2"
+        user_input = (
+            'value = f"""{(\n'
+            '1\n'
+            f'{long_line}\n'
+            ')}"""\n'
+            'print(value)\n'
+        )
+        p = spawn_repl()
+        p.stdin.write(user_input)
+        output = kill_python(p)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn(">>> 3\n>>> ", output)
+
     def test_close_stdin(self):
         user_input = dedent('''
             import os

@@ -195,6 +195,28 @@ test_tokenizer_source(PyObject *Py_UNUSED(module),
         goto error;
     }
 
+    _PyTok_SourceDiscard(&source);
+    if (check(_PyTok_SourceAppendLine(&source, "a\n", 2, 0) == 4,
+              "wrong retained source offset") < 0 ||
+            _PyTok_SourceLine(&source, 1, &line) < 0 ||
+            check(line.start == 4 && line.end == 6,
+                  "wrong retained source line") < 0 ||
+            _PyTok_SourceLocation(
+                &source, 4, _PYTOK_AFFINITY_LEFT, &loc) < 0 ||
+            check(loc.lineno == 1 && loc.byte_col == 0,
+                  "wrong retained source location") < 0) {
+        goto error;
+    }
+    view = _PyTok_SourceSpanView(
+        &source, _PyTok_SpanFromBounds(4, 5), &view_len);
+    if (check(view != NULL && view_len == 1 && view[0] == 'a',
+              "wrong retained source span") < 0 ||
+            check_system_error(_PyTok_SourceSpanView(
+                &source, _PyTok_SpanFromBounds(0, 1), &view_len) == NULL,
+                "accepted discarded source span") < 0) {
+        goto error;
+    }
+
     _PyTok_SourceClear(&source);
     Py_RETURN_NONE;
 
@@ -296,6 +318,88 @@ test_tokenizer_cursor(PyObject *Py_UNUSED(module),
     }
 #endif
 
+    _PyTok_Off base = source.len;
+    _PyTok_SourceDiscard(&source);
+    if (_PyTok_SourceAppendLine(&source, "ab\n", 3, 0) < 0 ||
+            _PyTok_SourceAppendLine(&source, "cd", 2, 0) < 0) {
+        goto error;
+    }
+    _PyTok_CursorInit(&cursor, &source);
+    if (_PyTok_CursorSetLine(&cursor, 1) < 0 ||
+            check(cursor.pos == base && _PyTok_CursorPeek(&cursor, 1) == 'b',
+                  "wrong retained cursor line") < 0 ||
+            _PyTok_CursorSetLine(&cursor, 2) < 0 ||
+            check(_PyTok_CursorAdvance(&cursor) == 'c',
+                  "wrong retained cursor byte") < 0 ||
+            _PyTok_CursorSetOffset(&cursor, base + 5) < 0 ||
+            check(cursor.lineno == 2 && _PyTok_CursorAdvance(&cursor) == EOF,
+                  "wrong retained cursor EOF") < 0) {
+        goto error;
+    }
+
+    _PyTok_SourceClear(&source);
+    Py_RETURN_NONE;
+
+error:
+    _PyTok_SourceClear(&source);
+    return NULL;
+}
+
+static PyObject *
+test_tokenizer_source_discard(PyObject *Py_UNUSED(module),
+                             PyObject *Py_UNUSED(args))
+{
+    _PyTok_SourceText source;
+    _PyTok_SourceInit(&source);
+    for (int i = 0; i < 260; i++) {
+        if (_PyTok_SourceAppendLine(&source, "x\n", 2, 1) < 0) {
+            goto error;
+        }
+    }
+    char *bytes = source.bytes;
+    _PyTok_Off capacity = source.cap;
+    _PyTok_SourceDiscard(&source);
+    if (check(source.base_offset == 520 && source.len == 0 &&
+                  source.nlines == 0 && source.bytes == bytes &&
+                  source.cap == capacity && source.bytes[0] == '\0',
+              "discard did not preserve source allocation") < 0) {
+        goto error;
+    }
+    for (int i = 0; i < 260; i++) {
+        if (check(_PyTok_SourceAppendLine(&source, "y\n", 2, 0) == 520 + 2 * i,
+                  "wrong source offset after discard") < 0 ||
+                check(!_PyTok_SourceLineIsImplicit(&source, i + 1),
+                      "discard preserved implicit newline flag") < 0) {
+            goto error;
+        }
+    }
+    if (check(source.bytes == bytes && source.cap == capacity,
+              "discarded allocation was not reused") < 0) {
+        goto error;
+    }
+    _PyTok_SourceDiscard(&source);
+    if (check(_PyTok_SourceAppendLine(&source, "tail", 4, 0) == 1040,
+              "wrong source offset after repeated discard") < 0) {
+        goto error;
+    }
+    _PyTok_SourceDiscard(&source);
+    if (check(_PyTok_SourceAppendLine(&source, "z\n", 2, 0) == 1044,
+              "cannot append after discarding unterminated line") < 0) {
+        goto error;
+    }
+    _PyTok_SourceDiscard(&source);
+    source.base_offset = PY_SSIZE_T_MAX - 1;
+    if (check(_PyTok_SourceAppendLine(&source, "z\n", 2, 0) < 0 &&
+                  PyErr_ExceptionMatches(PyExc_MemoryError),
+              "accepted overflowing logical source offset") < 0) {
+        goto error;
+    }
+    PyErr_Clear();
+    if (check(source.len == 0 && source.nlines == 0 &&
+                  source.base_offset == PY_SSIZE_T_MAX - 1,
+              "overflow changed retained source") < 0) {
+        goto error;
+    }
     _PyTok_SourceClear(&source);
     Py_RETURN_NONE;
 
@@ -307,6 +411,7 @@ error:
 static PyMethodDef test_methods[] = {
     {"test_tokenizer_source", test_tokenizer_source, METH_NOARGS},
     {"test_tokenizer_cursor", test_tokenizer_cursor, METH_NOARGS},
+    {"test_tokenizer_source_discard", test_tokenizer_source_discard, METH_NOARGS},
     {NULL},
 };
 

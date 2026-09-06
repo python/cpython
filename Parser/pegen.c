@@ -171,18 +171,17 @@ growable_comment_array_deallocate(growable_comment_array *arr) {
 }
 
 static int
-_get_keyword_or_name_type(Parser *p, struct token *new_token)
+_get_keyword_or_name_type(Parser *p, const char *text, Py_ssize_t length)
 {
-    Py_ssize_t name_len = new_token->end_col_offset - new_token->col_offset;
-    assert(name_len > 0);
+    assert(length > 0);
 
-    if (name_len >= p->n_keyword_lists ||
-        p->keywords[name_len] == NULL ||
-        p->keywords[name_len]->type == -1) {
+    if (length >= p->n_keyword_lists ||
+        p->keywords[length] == NULL ||
+        p->keywords[length]->type == -1) {
         return NAME;
     }
-    for (KeywordToken *k = p->keywords[name_len]; k != NULL && k->type != -1; k++) {
-        if (strncmp(k->str, new_token->start, (size_t)name_len) == 0) {
+    for (KeywordToken *k = p->keywords[length]; k != NULL && k->type != -1; k++) {
+        if (memcmp(k->str, text, (size_t)length) == 0) {
             return k->type;
         }
     }
@@ -193,8 +192,11 @@ static int
 initialize_token(Parser *p, Token *parser_token, struct token *new_token, int token_type) {
     assert(parser_token != NULL);
 
-    parser_token->type = (token_type == NAME) ? _get_keyword_or_name_type(p, new_token) : token_type;
-    parser_token->bytes = PyBytes_FromStringAndSize(new_token->start, new_token->end - new_token->start);
+    Py_ssize_t length;
+    const char *text = _PyToken_TextView(p->tok, new_token, &length);
+    parser_token->type = token_type == NAME
+        ? _get_keyword_or_name_type(p, text, length) : token_type;
+    parser_token->bytes = PyBytes_FromStringAndSize(text, length);
     if (parser_token->bytes == NULL) {
         return -1;
     }
@@ -214,12 +216,14 @@ initialize_token(Parser *p, Token *parser_token, struct token *new_token, int to
     }
 
     parser_token->level = new_token->level;
-    parser_token->lineno = new_token->lineno;
-    parser_token->col_offset = p->tok->lineno == p->starting_lineno ? p->starting_col_offset + new_token->col_offset
-                                                                    : new_token->col_offset;
-    parser_token->end_lineno = new_token->end_lineno;
-    parser_token->end_col_offset = p->tok->lineno == p->starting_lineno ? p->starting_col_offset + new_token->end_col_offset
-                                                                 : new_token->end_col_offset;
+    parser_token->lineno = new_token->start_loc.lineno;
+    parser_token->col_offset = p->tok->lineno == p->starting_lineno
+        ? p->starting_col_offset + new_token->start_loc.byte_col
+        : new_token->start_loc.byte_col;
+    parser_token->end_lineno = new_token->end_loc.lineno;
+    parser_token->end_col_offset = p->tok->lineno == p->starting_lineno
+        ? p->starting_col_offset + new_token->end_loc.byte_col
+        : new_token->end_loc.byte_col;
 
     p->fill += 1;
 
@@ -261,13 +265,14 @@ _PyPegen_fill_token(Parser *p)
 
     // Record and skip '# type: ignore' comments
     while (type == TYPE_IGNORE) {
-        Py_ssize_t len = new_token.end_col_offset - new_token.col_offset;
+        Py_ssize_t len;
+        const char *text = _PyToken_TextView(p->tok, &new_token, &len);
         char *tag = PyMem_Malloc((size_t)len + 1);
         if (tag == NULL) {
             PyErr_NoMemory();
             goto error;
         }
-        strncpy(tag, new_token.start, (size_t)len);
+        memcpy(tag, text, (size_t)len);
         tag[len] = '\0';
         // Ownership of tag passes to the growable array
         if (!growable_comment_array_add(&p->type_ignore_comments, p->tok->lineno, tag)) {
