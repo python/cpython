@@ -183,8 +183,21 @@ def add_annotations(app: Sphinx, doctree: nodes.document) -> None:
                     f"{ROLE_TO_OBJECT_TYPE[record.role]!r} != {objtype!r}"
                 )
                 raise ValueError(msg)
-            annotation = _stable_abi_annotation(record)
-            node.insert(0, annotation)
+
+            # Skip the note if any ancestor has 'omit-stable-abi-notes'
+            # in a 'c_annotations' attribute.
+            ancestor = node
+            while ancestor:
+                if 'omit-stable-abi-notes' in ancestor.get(
+                    'c_annotations',
+                    [],
+                ):
+                    break
+                ancestor = ancestor.parent
+            else:
+                # no skip; add the annotation
+                annotation = _stable_abi_annotation(record)
+                node.insert(0, annotation)
 
         # Unstable API annotation.
         if name.startswith("PyUnstable"):
@@ -445,6 +458,45 @@ class CorrespondingTypeSlot(SphinxDirective):
         return [node]
 
 
+class StableABINote(SphinxDirective):
+    """A manual Stable ABI note
+
+    Normally, notes are auto-generated.
+    This directive allows adding a similarly styled note manually.
+    Pair with omit-stable-abi-notes to override the automatic generation.
+    """
+
+    has_content = True
+
+    def run(self) -> list[nodes.Node]:
+        node = nodes.Element()  # Anonymous container for parsing
+        node.rawsource = '\n'.join(self.content)
+        self.state.nested_parse(self.content, self.content_offset, node)
+        for child in node.children:
+            child.setdefault("classes", []).append('stableabi')
+        return node.children
+
+
+class OmitStableABINotes(SphinxDirective):
+    """A block where automatic Stable ABI notes are not generated
+
+    Normally used for dense lists/tables of definitions, where individual notes
+    are omitted and the whole block has a common manual note.
+    """
+
+    has_content = True
+
+    def run(self) -> list[nodes.Node]:
+        node = nodes.Element()  # Anonymous container for parsing
+        node.rawsource = '\n'.join(self.content)
+        self.state.nested_parse(self.content, self.content_offset, node)
+        for child in node.children:
+            child.setdefault("c_annotations", []).append(
+                'omit-stable-abi-notes',
+            )
+        return node.children
+
+
 def init_annotations(app: Sphinx) -> None:
     # Using domaindata is a bit hack-ish,
     # but allows storing state without a global variable or closure.
@@ -467,6 +519,8 @@ def setup(app: Sphinx) -> ExtensionMetadata:
     app.add_directive("limited-api-list", LimitedAPIList)
     app.add_directive("version-hex-cheatsheet", VersionHexCheatsheet)
     app.add_directive("corresponding-type-slot", CorrespondingTypeSlot)
+    app.add_directive("omit-stable-abi-notes", OmitStableABINotes)
+    app.add_directive("stable-abi-note", StableABINote)
     app.connect("builder-inited", init_annotations)
     app.connect("doctree-read", add_annotations)
 
