@@ -5,8 +5,10 @@ Full Grammar specification
 
 This is the full Python grammar, derived directly from the grammar
 used to generate the CPython parser (see :source:`Grammar/python.gram`).
-The version here omits details related to code generation and
-error recovery.
+The version here omits details related to code generation.
+The rules used only for generating specialized syntax error messages
+are kept in a separate file, :source:`Grammar/python_errors.gram`,
+and are not shown here.
 
 The notation used here is the same as in the preceding docs,
 and is described in the :ref:`notation <notation>` section,

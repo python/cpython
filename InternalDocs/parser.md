@@ -421,8 +421,10 @@ Pegen
 
 Pegen is the parser generator used in CPython to produce the final PEG parser
 used by the interpreter. It is the program that can be used to read the python
-grammar located in [`Grammar/python.gram`](../Grammar/python.gram) and produce
-the final C parser. It contains the following pieces:
+grammar located in [`Grammar/python.gram`](../Grammar/python.gram)
+(together with the rules for generating specialized syntax error messages
+located in [`Grammar/python_errors.gram`](../Grammar/python_errors.gram))
+and produce the final C parser. It contains the following pieces:
 
 - A parser generator that can read a grammar file and produce a PEG parser
   written in Python or C that can parse said grammar. The generator is located at
@@ -488,16 +490,32 @@ Pegen has some special grammatical elements and rules:
 - Strings with double quotes (") (for example, `"match"`) denote SOFT KEYWORDS.
 - Uppercase names (for example, `NAME`) denote tokens in the
   [`Grammar/Tokens`](../Grammar/Tokens) file.
-- Rule names starting with `invalid_` are used for specialized syntax errors.
+- The alternatives used for generating specialized syntax error messages
+  are defined in a separate grammar file,
+  [`Grammar/python_errors.gram`](../Grammar/python_errors.gram),
+  in rule *extensions* (marked with the `extend` flag) which insert them
+  into the rules of the main grammar.
 
-  - These rules are NOT used in the first pass of the parser.
-  - Only if the first pass fails to parse, a second pass including the invalid
-    rules will be executed.
+  - The position of an inserted alternative is deduced automatically: it is
+    inserted before the leftmost alternative of the extended rule which can
+    succeed by matching a proper prefix of the code matched by the inserted
+    alternative (such alternative would shadow the specialized error if it
+    was tried first), or after all alternatives if there is no such
+    alternative.  Alternatives which must preempt a base alternative which
+    reports an error itself (rather than failing cleanly) are written before
+    `...`, which stands for the alternatives of the extended rule, and are
+    inserted before all of them.
+  - The rules used by several inserted alternatives, or referenced from
+    within them, are defined as named rules; their names start with
+    `invalid_` (except for a few helper rules).
+  - The inserted alternatives, and the alternatives referencing `invalid_`
+    rules, are NOT used in the first pass of the parser.
+  - Only if the first pass fails to parse, a second pass including them
+    will be executed.
   - If the parser fails in the second phase with a generic syntax error, the
-    location of the generic failure of the first pass will be used (this avoids
-    reporting incorrect locations due to the invalid rules).
-  - The order of the alternatives involving invalid rules matter
-    (like any rule in PEG).
+    location of the generic failure of the first pass will be used (this
+    avoids reporting incorrect locations due to the error alternatives).
+  - The order of the alternatives matters (like in any rule in PEG).
 
 Tokenization
 ------------
@@ -688,23 +706,28 @@ can impact this.
 > the location of generic syntax errors. Use them carefully at boundaries
 > between rules.
 
-To generate more precise syntax errors, custom rules are used. This is a common
-practice also in context free grammars: the parser will try to accept some
-construct that is known to be incorrect just to report a specific syntax error
-for that construct. In pegen grammars, these rules start with the `invalid_`
-prefix. This is because trying to match these rules normally has a performance
+To generate more precise syntax errors, custom error alternatives are used.
+This is a common practice also in context free grammars: the parser will try
+to accept some construct that is known to be incorrect just to report a
+specific syntax error for that construct. The error alternatives are kept in
+a separate grammar file, [`Grammar/python_errors.gram`](../Grammar/python_errors.gram),
+which extends the rules of the main grammar, so the main grammar in
+[`Grammar/python.gram`](../Grammar/python.gram) by itself produces a complete
+parser which only reports generic syntax errors.
+Trying to match the error alternatives normally has a performance
 impact on parsing (and can also affect the 'correct' grammar itself in some
 tricky cases, depending on the ordering of the rules) so the generated parser
 acts in two phases:
 
 1. The first phase will try to parse the input stream without taking into
-   account rules that start with the `invalid_` prefix. If the parsing
-   succeeds it will return the generated AST and the second phase will be
-   skipped.
+   account the error alternatives (the alternatives inserted by the rule
+   extensions and the alternatives referencing rules with the `invalid_`
+   prefix). If the parsing succeeds it will return the generated AST and the
+   second phase will be skipped.
 
 2. If the first phase failed, a second parsing attempt is done including the
-   rules that start with an `invalid_` prefix. By design this attempt
-   **cannot succeed** and is only executed to give to the invalid rules a
+   error alternatives. By design this attempt
+   **cannot succeed** and is only executed to give to the error alternatives a
    chance to detect specific situations where custom, more precise, syntax
    errors can be raised. This also allows to trade a bit of performance for
    precision reporting errors: given that we know that the input text is
@@ -712,14 +735,16 @@ acts in two phases:
    to stop anyway.
 
 > [!IMPORTANT]
-> When defining invalid rules:
+> When defining error alternatives:
 >
-> - Make sure all custom invalid rules raise
+> - Make sure all custom error alternatives raise
 >   [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError)
 >   exceptions (or a subclass of it).
-> - Make sure **all** invalid rules start with the `invalid_` prefix to not
->   impact performance of parsing correct Python code.
-> - Make sure the parser doesn't behave differently for regular rules when you introduce invalid rules
+> - Define them in [`Grammar/python_errors.gram`](../Grammar/python_errors.gram),
+>   and make sure that the names of all named error rules start with the
+>   `invalid_` prefix, to not impact performance of parsing correct Python
+>   code.
+> - Make sure the parser doesn't behave differently for regular rules when you introduce error alternatives
 >   (see the [how PEG parsers work](#how-peg-parsers-work) section for more information).
 
 You can find a collection of macros to raise specialized syntax errors in the
@@ -730,7 +755,7 @@ displayed when the error is reported.
 
 
 > [!TIP]
-> A good way to test whether an invalid rule will be triggered when you expect
+> A good way to test whether an error alternative will be triggered when you expect
 > is to test if introducing a syntax error **after** valid code triggers the
 > rule or not. For example:
 

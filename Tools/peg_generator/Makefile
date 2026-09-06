@@ -11,7 +11,7 @@ CPYTHON ?= ../../Lib
 MYPY ?= ./venv/bin/mypy
 BLACK ?= ./venv/bin/black
 
-GRAMMAR = ../../Grammar/python.gram
+GRAMMAR = ../../Grammar/python.gram ../../Grammar/python_errors.gram
 TOKENS = ../../Grammar/Tokens
 
 build: peg_extension/parse.c

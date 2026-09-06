@@ -1946,6 +1946,7 @@ regen-pegen:
 	@$(MKDIR_P) $(srcdir)/Parser/lexer
 	PYTHONPATH=$(srcdir)/Tools/peg_generator $(PYTHON_FOR_REGEN) -m pegen -q c \
 		$(srcdir)/Grammar/python.gram \
+		$(srcdir)/Grammar/python_errors.gram \
 		$(srcdir)/Grammar/Tokens \
 		-o $(srcdir)/Parser/parser.c.new
 	$(UPDATE_FILE) --create $(srcdir)/Parser/parser.c $(srcdir)/Parser/parser.c.new
@@ -1994,10 +1995,12 @@ regen-token:
 
 .PHONY: regen-keyword
 regen-keyword:
-	# Regenerate Lib/keyword.py from Grammar/python.gram and Grammar/Tokens
+	# Regenerate Lib/keyword.py from Grammar/python.gram,
+	# Grammar/python_errors.gram and Grammar/Tokens
 	# using Tools/peg_generator/pegen
 	PYTHONPATH=$(srcdir)/Tools/peg_generator $(PYTHON_FOR_REGEN) -m pegen.keywordgen \
 		$(srcdir)/Grammar/python.gram \
+		$(srcdir)/Grammar/python_errors.gram \
 		$(srcdir)/Grammar/Tokens \
 		$(srcdir)/Lib/keyword.py.new
 	$(UPDATE_FILE) $(srcdir)/Lib/keyword.py $(srcdir)/Lib/keyword.py.new
