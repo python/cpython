@@ -1,0 +1,2 @@
+Correct ``errno`` handling in ``abs(complex)``.  Patch by Sergey B
+Kirpichev.

@@ -281,18 +281,33 @@ class CAPIComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         # Test _Py_c_abs()
         _py_c_abs = _testcapi._py_c_abs
 
-        self.assertEqual(_py_c_abs(-1), (1.0, 0))
-        self.assertEqual(_py_c_abs(1j), (1.0, 0))
+        try:
+            _testcapi.set_errno(0)
+            self.assertEqual(_py_c_abs(-1), (1.0, 0))
+            _testcapi.set_errno(0)
+            self.assertEqual(_py_c_abs(1j), (1.0, 0))
 
-        self.assertEqual(_py_c_abs(complex('+inf+1j')), (INF, 0))
-        self.assertEqual(_py_c_abs(complex('-inf+1j')), (INF, 0))
-        self.assertEqual(_py_c_abs(complex('1.25+infj')), (INF, 0))
-        self.assertEqual(_py_c_abs(complex('1.25-infj')), (INF, 0))
+            _testcapi.set_errno(0)
+            self.assertEqual(_py_c_abs(complex('+inf+1j')), (INF, 0))
+            _testcapi.set_errno(0)
+            self.assertEqual(_py_c_abs(complex('-inf+1j')), (INF, 0))
+            _testcapi.set_errno(0)
+            self.assertEqual(_py_c_abs(complex('1.25+infj')), (INF, 0))
+            _testcapi.set_errno(0)
+            self.assertEqual(_py_c_abs(complex('1.25-infj')), (INF, 0))
 
-        self.assertTrue(isnan(_py_c_abs(complex('1.25+nanj'))[0]))
-        self.assertTrue(isnan(_py_c_abs(complex('nan-1j'))[0]))
+            _testcapi.set_errno(0)
+            self.assertTrue(isnan(_py_c_abs(complex('1.25+nanj'))[0]))
+            _testcapi.set_errno(0)
+            self.assertTrue(isnan(_py_c_abs(complex('nan-1j'))[0]))
 
-        self.assertEqual(_py_c_abs(complex(*[DBL_MAX]*2))[1], errno.ERANGE)
+            _testcapi.set_errno(0)
+            self.assertEqual(_py_c_abs(complex(*[DBL_MAX]*2))[1], errno.ERANGE)
+
+            _testcapi.set_errno(errno.EACCES)  # preserve errno
+            self.assertEqual(_py_c_abs(1j), (1, errno.EACCES))
+        finally:
+            _testcapi.set_errno(0)
 
 
 if __name__ == "__main__":
