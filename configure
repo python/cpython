@@ -917,6 +917,7 @@ SHLIB_SUFFIX
 DSYMUTIL_PATH
 DSYMUTIL
 REGEN_JIT_COMMAND
+FRAME_POINTER_CFLAGS
 UNIVERSAL_ARCH_FLAGS
 WASM_STDLIB
 WASM_ASSETS_DIR
@@ -10513,6 +10514,8 @@ fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_frame_pointers" >&5
 printf "%s\n" "$with_frame_pointers" >&6; }
 
+
+FRAME_POINTER_CFLAGS=
 if test "x$ac_cv_gcc_compat" = xyes
 then :
 
@@ -10755,7 +10758,8 @@ esac
 fi
 
     if test -n "$frame_pointer_cflags" && test "x$with_frame_pointers" != xno; then
-      BASECFLAGS="$frame_pointer_cflags $BASECFLAGS"
+      FRAME_POINTER_CFLAGS="$frame_pointer_cflags"
+      BASECFLAGS="$FRAME_POINTER_CFLAGS $BASECFLAGS"
 
 printf "%s\n" "#define _Py_WITH_FRAME_POINTERS 1" >>confdefs.h
 
