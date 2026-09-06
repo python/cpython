@@ -2265,11 +2265,11 @@ Deprecated Python modules, functions and methods
 Deprecated functions and types of the C API
 -------------------------------------------
 
-The :c:type:`Py_UNICODE` has been deprecated by :pep:`393` and will be
-removed in Python 4. All functions using this type are deprecated:
+The :c:type:`!Py_UNICODE` has been deprecated by :pep:`393` and was
+removed in Python 3.16. All functions using this type are deprecated:
 
-Unicode functions and methods using :c:type:`Py_UNICODE` and
-:c:expr:`Py_UNICODE*` types:
+Unicode functions and methods using :c:type:`!Py_UNICODE` and
+``Py_UNICODE*`` types:
 
 * :c:macro:`!PyUnicode_FromUnicode`: use :c:func:`PyUnicode_FromWideChar` or
   :c:func:`PyUnicode_FromKindAndData`
@@ -2328,8 +2328,9 @@ Encoders:
 Deprecated features
 -------------------
 
-The :mod:`array` module's ``'u'`` format code is now deprecated and will be
-removed in Python 4 together with the rest of the (:c:type:`Py_UNICODE`) API.
+The :mod:`array` module's ``'u'`` format code is now deprecated and was later
+removed in Python 3.16 together with the rest of the (:c:type:`!Py_UNICODE`)
+API.
 
 
 Porting to Python 3.3
@@ -2470,7 +2471,7 @@ Porting C code
   All extensions relying on the relevant parts in ``memoryobject.h``
   or ``object.h`` must be rebuilt.
 
-* Due to :ref:`PEP 393 <pep-393>`, the :c:type:`Py_UNICODE` type and all
+* Due to :ref:`PEP 393 <pep-393>`, the :c:type:`!Py_UNICODE` type and all
   functions using this type are deprecated (but will stay available for
   at least five years).  If you were using low-level Unicode APIs to
   construct and access unicode objects and you want to benefit of the
