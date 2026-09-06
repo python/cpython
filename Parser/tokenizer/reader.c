@@ -102,6 +102,7 @@ append_implicit_newline(_PyTok_Reader *reader)
 static int
 pop_decoded_line(_PyTok_Reader *reader, _PyTok_Chunk *chunk)
 {
+    assert(reader->decoded_pos >= 0 && reader->decoded_pos <= reader->decoded_len);
     if (reader->decoded_pos == reader->decoded_len) {
         return 0;
     }
@@ -546,10 +547,13 @@ reset_streaming_buffer(struct tok_state *tok)
 int
 _PyTok_ReaderUnderflow(struct tok_state *tok)
 {
+    assert(tok->cur == tok->inp || (tok->buf != NULL &&
+           tok->cur >= tok->buf && tok->cur < tok->inp));
     _PyTok_ReaderKind kind = tok->reader->kind;
     int prepared = kind == _PYTOK_READER_PREPARED;
     int streaming = reader_is_streaming(kind);
-    int reset_buffer = !prepared && tok->start == NULL && !INSIDE_FSTRING(tok);
+    int reset_buffer = !prepared && tok->start == NULL &&
+        _PyLexer_CurrentFTString(tok) == NULL;
 
     _PyTok_Chunk chunk;
     _PyTok_ReadResult result = reader_next(tok, &chunk);
@@ -621,7 +625,7 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
         tok->interactive_src_end = tok->source.bytes + tok->source.len;
     }
     if (prepared) {
-        if (tok->start == NULL && !INSIDE_FSTRING(tok)) {
+        if (tok->start == NULL && _PyLexer_CurrentFTString(tok) == NULL) {
             tok->buf = tok->cur;
             tok->buf_offset = tok->source.base_offset +
                 (chunk.data - tok->source.bytes);

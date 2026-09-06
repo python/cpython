@@ -4,6 +4,7 @@
 #include "errcode.h"
 
 #include "state.h"
+#include "../tokenizer/helpers.h"
 #include "../tokenizer/reader.h"
 
 /* Create and initialize a new tok_state structure */
@@ -46,12 +47,60 @@ _PyTokenizer_tok_new(void)
     tok->implicit_newline = 0;
     _PyTok_SourceInit(&tok->source);
     tok->reader = NULL;
-    tok->tok_mode_stack[0] = (tokenizer_mode){.kind =TOK_REGULAR_MODE, .quote='\0', .quote_size = 0, .in_debug=0};
-    tok->tok_mode_stack_index = 0;
+    tok->ftstring_stack = tok->ftstring_stack_inline;
+    tok->ftstring_capacity = FTSTRING_STACK_INLINE_CAPACITY;
 #ifdef Py_DEBUG
     tok->debug = _Py_GetConfig()->parser_debug;
 #endif
     return tok;
+}
+
+ftstring_state *
+_PyLexer_PushFTString(struct tok_state *tok)
+{
+    assert(tok->ftstring_depth >= 0 && tok->ftstring_depth <= tok->ftstring_capacity);
+    int next_depth = tok->ftstring_depth + 1;
+    if (next_depth >= MAXFTSTRINGLEVEL) {
+        _PyTokenizer_syntaxerror(
+            tok, "too many nested f-strings or t-strings");
+        return NULL;
+    }
+    if (tok->ftstring_depth == tok->ftstring_capacity) {
+        int capacity = Py_MIN(Py_MAX(tok->ftstring_capacity * 2, 4),
+                              MAXFTSTRINGLEVEL);
+        size_t size = (size_t)capacity * sizeof(*tok->ftstring_stack);
+        ftstring_state *stack;
+        if (tok->ftstring_stack == tok->ftstring_stack_inline) {
+            stack = PyMem_Malloc(size);
+            if (stack != NULL) {
+                memcpy(stack, tok->ftstring_stack,
+                       (size_t)tok->ftstring_depth * sizeof(*stack));
+            }
+        }
+        else {
+            stack = PyMem_Realloc(tok->ftstring_stack, size);
+        }
+        if (stack == NULL) {
+            PyErr_NoMemory();
+            tok->done = E_NOMEM;
+            return NULL;
+        }
+        tok->ftstring_stack = stack;
+        tok->ftstring_capacity = capacity;
+    }
+    ftstring_state *state = &tok->ftstring_stack[tok->ftstring_depth];
+    tok->ftstring_depth = next_depth;
+    *state = (ftstring_state){0};
+    return state;
+}
+
+void
+_PyLexer_PopFTString(struct tok_state *tok)
+{
+    ftstring_state *state = _PyLexer_CurrentFTString(tok);
+    assert(state != NULL);
+    PyMem_Free(state->comments);
+    tok->ftstring_depth--;
 }
 
 /* Free a tok_state structure */
@@ -65,8 +114,11 @@ _PyTokenizer_Free(struct tok_state *tok)
     Py_XDECREF(tok->module);
     _PyTok_ReaderFree(tok);
     _PyTok_SourceClear(&tok->source);
-    for (int i = 0; i <= tok->tok_mode_stack_index; i++) {
-        PyMem_Free(tok->tok_mode_stack[i].comments);
+    for (int i = 0; i < tok->ftstring_depth; i++) {
+        PyMem_Free(tok->ftstring_stack[i].comments);
+    }
+    if (tok->ftstring_stack != tok->ftstring_stack_inline) {
+        PyMem_Free(tok->ftstring_stack);
     }
     PyMem_Free(tok);
 }
