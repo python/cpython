@@ -140,6 +140,15 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         )
         self.assertEqual(fstring(t), "Value: value = 42")
 
+        class C:
+            def __format__(self, spec):
+                return f"FORMAT-{spec}"
+
+        x = y = C()
+        t = t"{x:{y:{value=}}}"
+        self.assertEqual(t.interpolations[0].format_spec,
+                         "FORMAT-value=42")
+
     def test_raw_tstrings(self):
         path = r"C:\Users"
         t = rt"{path}\Documents"
@@ -149,6 +158,14 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         # Test alternative prefix
         t = tr"{path}\Documents"
         self.assertTStringEqual(t, ("", r"\Documents"), [(path, "path")])
+
+        value = 42
+        t = rt"{value:{f'\xFF'}}\n"
+        self.assertTStringEqual(
+            t, ("", "\\n"), [(value, "value", None, 'ÿ')])
+        t = t"{value:{rf'\xFF'}}\n"
+        self.assertTStringEqual(
+            t, ("", "\n"), [(value, "value", None, '\\xFF')])
 
     def test_template_concatenation(self):
         # Test template + template
@@ -217,6 +234,10 @@ class TestTString(unittest.TestCase, TStringBaseCase):
             ("t'{x=!}'", "t-string: missing conversion character"),
             ("t'{x!z}'", "t-string: invalid conversion character 'z': "
                          "expected 's', 'r', or 'a'"),
+            ("f\"{t'{x!z}'}\"", "t-string: invalid conversion character 'z': "
+                                "expected 's', 'r', or 'a'"),
+            ("t'{f\"{x!z}\"}'", "f-string: invalid conversion character 'z': "
+                                "expected 's', 'r', or 'a'"),
             ("t'{lambda:1}'", "t-string: lambda expressions are not allowed "
                               "without parentheses"),
             ("t'{x:{;}}'", "t-string: expecting a valid expression after '{'"),
@@ -286,6 +307,23 @@ class TestTString(unittest.TestCase, TStringBaseCase):
             t, ("\n        Hello,\n        ", "\n        "), [(name, "name")]
         )
         self.assertEqual(fstring(t), "\n        Hello,\n        Python\n        ")
+
+        t = t'{"""a" # inside"""}'
+        self.assertEqual(t.interpolations[0].expression,
+                         '"""a" # inside"""')
+
+        t = t'{"""a""""#" # outside
+}'
+        self.assertEqual(t.interpolations[0].expression, '"""a""""#"')
+
+        x, y = 1, 2
+        t = t'{x != y # outside
+}'
+        self.assertEqual(t.interpolations[0].expression, 'x != y')
+
+        d = {'a#b': 42}
+        t = t'''{f"{d["a#b"]}"}'''
+        self.assertEqual(t.interpolations[0].expression, 'f"{d["a#b"]}"')
 
 if __name__ == '__main__':
     unittest.main()
