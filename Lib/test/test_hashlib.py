@@ -1505,6 +1505,12 @@ class TestTSAN(unittest.TestCase):
     def test_HACL_shake_attributes(self, size, attrname):
         self.check_HACL_attribute(_sha3, f"shake_{size}", attrname)
 
+    @requires_blake2
+    @support.subTests("version", ["blake2s", "blake2b"])
+    @support.subTests("attrname", ["block_size", "digest_size"])
+    def test_HACL_blake2_attributes(self, version, attrname):
+        self.check_HACL_attribute(_blake2, version, attrname)
+
 
 if __name__ == "__main__":
     unittest.main()
