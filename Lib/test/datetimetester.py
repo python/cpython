@@ -4690,6 +4690,10 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         t2 = self.theclass(0, tzinfo=timezone(timedelta(microseconds=1)))
         self.assertGreater(t1, t2)
 
+        t1 = self.theclass(13, 59, 59, 900000, tzinfo=timezone(timedelta(hours=2)))
+        t2 = self.theclass(14, tzinfo=timezone(timedelta(hours=2, microseconds=900000)))
+        self.assertGreater(t1, t2)
+
     def test_subminute_offset_hash(self):
         t1 = self.theclass(12, tzinfo=timezone.utc)
         t2 = self.theclass(12, 0, 1, tzinfo=timezone(timedelta(seconds=1)))
