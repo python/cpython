@@ -1310,6 +1310,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(bytes_characters)[253]);
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(bytes_characters)[254]);
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(bytes_characters)[255]);
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(anon_builtins));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(anon_dictcomp));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(anon_genexpr));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(anon_lambda));
@@ -1587,6 +1588,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(all_threads));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(allow_code));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(alphabet));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(anext));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(any));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(append));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(arg));

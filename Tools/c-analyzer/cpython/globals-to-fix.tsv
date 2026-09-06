@@ -60,7 +60,6 @@ Objects/iterobject.c	-	PyCallIter_Type	-
 Objects/iterobject.c	-	PySeqIter_Type	-
 Objects/iterobject.c	-	_PyACallIter_Type	-
 Objects/iterobject.c	-	_PyACallIterAwaitable_Type	-
-Objects/iterobject.c	-	_PyAnextAwaitable_Type	-
 Objects/lazyimportobject.c	-	PyLazyImport_Type	-
 Objects/listobject.c	-	PyListIter_Type	-
 Objects/listobject.c	-	PyListRevIter_Type	-
@@ -77,7 +76,6 @@ Objects/object.c	-	_PyNone_Type	-
 Objects/object.c	-	_PyNotImplemented_Type	-
 Objects/object.c 	-	_PyACallIter_Type	-
 Objects/object.c 	-	_PyACallIterAwaitable_Type	-
-Objects/object.c 	-	_PyAnextAwaitable_Type	-
 Objects/odictobject.c	-	PyODictItems_Type	-
 Objects/odictobject.c	-	PyODictIter_Type	-
 Objects/odictobject.c	-	PyODictKeys_Type	-

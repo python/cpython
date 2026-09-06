@@ -1960,52 +1960,6 @@ builtin_aiter_impl(PyObject *module, PyObject *object, PyObject *stop_value,
     return _PyACallIter_New(object, stop_value, stop_exception);
 }
 
-PyObject *PyAnextAwaitable_New(PyObject *, PyObject *);
-
-/*[clinic input]
-anext as builtin_anext
-
-    async_iterator as aiterator: object
-    default: object = NULL
-    /
-
-Return the next item from the async iterator.
-
-If default is given and the async iterator is exhausted,
-it is returned instead of raising StopAsyncIteration.
-[clinic start generated code]*/
-
-static PyObject *
-builtin_anext_impl(PyObject *module, PyObject *aiterator,
-                   PyObject *default_value)
-/*[clinic end generated code: output=f02c060c163a81fa input=f3dc5a93f073e5ac]*/
-{
-    PyTypeObject *t;
-    PyObject *awaitable;
-
-    t = Py_TYPE(aiterator);
-    if (t->tp_as_async == NULL || t->tp_as_async->am_anext == NULL) {
-        PyErr_Format(PyExc_TypeError,
-            "'%.200s' object is not an async iterator",
-            t->tp_name);
-        return NULL;
-    }
-
-    awaitable = (*t->tp_as_async->am_anext)(aiterator);
-    if (awaitable == NULL) {
-        return NULL;
-    }
-    if (default_value == NULL) {
-        return awaitable;
-    }
-
-    PyObject* new_awaitable = PyAnextAwaitable_New(
-            awaitable, default_value);
-    Py_DECREF(awaitable);
-    return new_awaitable;
-}
-
-
 /*[clinic input]
 len as builtin_len
 
@@ -3500,7 +3454,6 @@ static PyMethodDef builtin_methods[] = {
     {"max", _PyCFunction_CAST(builtin_max), METH_FASTCALL | METH_KEYWORDS, max_doc},
     {"min", _PyCFunction_CAST(builtin_min), METH_FASTCALL | METH_KEYWORDS, min_doc},
     {"next", _PyCFunction_CAST(builtin_next), METH_FASTCALL, next_doc},
-    BUILTIN_ANEXT_METHODDEF
     BUILTIN_OCT_METHODDEF
     BUILTIN_ORD_METHODDEF
     BUILTIN_POW_METHODDEF
@@ -3538,6 +3491,111 @@ static struct PyModuleDef builtinsmodule = {
     NULL
 };
 
+
+/* Builtins implemented in Python.
+
+   Each entry below pairs the name of a builtin with the Python source that
+   defines it.  _PyBuiltin_InitPythonFunctions() compiles and runs each
+   source in a shared private namespace and copies the named function into
+   the builtins dict.
+
+*/
+
+static const char anext_source[] =
+    "_NOT_GIVEN = object()\n"
+    "\n"
+    "\n"
+    "def anext(async_iterator, default=_NOT_GIVEN, /):\n"
+    "    \"\"\"Return the next item from the async iterator.\n"
+    "\n"
+    "    If default is given and the async iterator is exhausted,\n"
+    "    it is returned instead of raising StopAsyncIteration.\n"
+    "    \"\"\"\n"
+    "    cls = type(async_iterator)\n"
+    "    try:\n"
+    "        # Looked up on the type, like the C slot am_anext.\n"
+    "        anext_method = cls.__anext__\n"
+    "    except AttributeError:\n"
+    "        raise TypeError(\n"
+    "            f\"'{cls.__name__}' object is not an async iterator\"\n"
+    "        ) from None\n"
+    "    awaitable = anext_method(async_iterator)\n"
+    "    if default is _NOT_GIVEN:\n"
+    "        return awaitable\n"
+    "    return _anext_with_default(awaitable, default)\n"
+    "\n"
+    "\n"
+    "async def _anext_with_default(awaitable, default):\n"
+    "    try:\n"
+    "        return await awaitable\n"
+    "    except StopAsyncIteration:\n"
+    "        return default\n";
+
+struct builtin_python_function {
+    PyObject *name;
+    const char *source;
+};
+
+static const struct builtin_python_function builtin_python_functions[] = {
+    {&_Py_ID(anext), anext_source},
+    {NULL, NULL},
+};
+
+_Py_DECLARE_STR(anon_builtins, "<builtins>");
+
+int
+_PyBuiltin_InitPythonFunctions(PyObject *dict)
+{
+    int rc = -1;
+
+    PyObject *globals = PyDict_New();
+    if (globals == NULL) {
+        return -1;
+    }
+    if (PyDict_SetItem(globals, &_Py_ID(__builtins__), dict) < 0) {
+        goto done;
+    }
+    if (PyDict_SetItem(globals, &_Py_ID(__name__), &_Py_ID(builtins)) < 0) {
+        goto done;
+    }
+
+    for (const struct builtin_python_function *f = builtin_python_functions;
+         f->name != NULL; f++)
+    {
+        PyObject *code = Py_CompileStringObject(f->source,
+                                                &_Py_STR(anon_builtins),
+                                                Py_file_input, NULL, 0);
+        if (code == NULL) {
+            goto done;
+        }
+        PyObject *result = PyEval_EvalCode(code, globals, globals);
+        Py_DECREF(code);
+        if (result == NULL) {
+            goto done;
+        }
+        Py_DECREF(result);
+
+        PyObject *func;
+        if (PyDict_GetItemRef(globals, f->name, &func) != 1) {
+            if (!PyErr_Occurred()) {
+                PyErr_Format(PyExc_SystemError,
+                             "builtin %U not defined by its Python source",
+                             f->name);
+            }
+            goto done;
+        }
+        int r = PyDict_SetItem(dict, f->name, func);
+        Py_DECREF(func);
+        if (r < 0) {
+            goto done;
+        }
+    }
+    rc = 0;
+
+done:
+    Py_DECREF(globals);
+    return rc;
+}
 
 PyObject *
 _PyBuiltin_Init(PyInterpreterState *interp)

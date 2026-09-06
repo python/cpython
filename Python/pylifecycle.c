@@ -924,6 +924,10 @@ pycore_init_builtins(PyThreadState *tstate)
         return _PyStatus_ERR("failed to add exceptions to builtins");
     }
 
+    if (_PyBuiltin_InitPythonFunctions(builtins_dict) < 0) {
+        return _PyStatus_ERR("failed to add Python-implemented builtins");
+    }
+
     interp->builtins_copy = PyDict_Copy(interp->builtins);
     if (interp->builtins_copy == NULL) {
         goto error;

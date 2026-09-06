@@ -1305,6 +1305,7 @@ extern "C" {
 }
 
 #define _Py_str_literals_INIT { \
+    INIT_STR(anon_builtins, "<builtins>"), \
     INIT_STR(anon_dictcomp, "<dictcomp>"), \
     INIT_STR(anon_genexpr, "<genexpr>"), \
     INIT_STR(anon_lambda, "<lambda>"), \
@@ -1585,6 +1586,7 @@ extern "C" {
     INIT_ID(all_threads), \
     INIT_ID(allow_code), \
     INIT_ID(alphabet), \
+    INIT_ID(anext), \
     INIT_ID(any), \
     INIT_ID(append), \
     INIT_ID(arg), \
