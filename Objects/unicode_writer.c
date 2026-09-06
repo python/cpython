@@ -358,6 +358,18 @@ _PyUnicodeWriter_WriteStr(_PyUnicodeWriter *writer, PyObject *str)
 
 
 int
+PyUnicodeWriter_WriteRawStr(PyUnicodeWriter *writer, PyObject *str)
+{
+    if (!PyUnicode_Check(str)) {
+        PyErr_Format(PyExc_TypeError, "expect str, got %T", str);
+        return -1;
+    }
+
+    return _PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)writer, str);
+}
+
+
+int
 PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *obj)
 {
     PyTypeObject *type = Py_TYPE(obj);
