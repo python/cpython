@@ -785,6 +785,7 @@ Modules/_zstd/_zstdmodule.c	-	_zstdmodule	-
 Modules/clinic/md5module.c.h	_md5_md5	_keywords	-
 Modules/clinic/grpmodule.c.h	grp_getgrgid	_keywords	-
 Modules/clinic/grpmodule.c.h	grp_getgrnam	_keywords	-
+Modules/clinic/_testclinic_limited.c.h	required_kwonly	_keywords	-
 Objects/object.c	-	constants	static PyObject*[]
 Objects/dictobject.c	-	PyFrozenDict_Type	-
 
