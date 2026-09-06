@@ -1,0 +1,1 @@
+Fix standard library discovery in virtual environments created from a Python executable symlink located outside its base installation.
