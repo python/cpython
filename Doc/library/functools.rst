@@ -123,6 +123,10 @@ The :mod:`!functools` module defines the following functions:
       idempotent for threaded access.  For simultaneous access multiple threads
       might all set the cached value.
 
+      The decorator now calls the mutable mapping method ``setdefault``
+      on the instance's ``__dict__`` attribute; previous versions used
+      item assignment (``__setitem__``).
+
    .. versionchanged:: 3.12
       Prior to Python 3.12, :deco:`!cached_property` included an undocumented lock to
       ensure that in multi-threaded usage the getter function was guaranteed to

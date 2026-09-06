@@ -438,10 +438,6 @@ setitem_lock_held(PyDictObject *mp, PyObject *key, PyObject *value);
 static int
 dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_value,
                     PyObject **result, int incref_result);
-static int
-setdefault_ref_lock_held_known_hash(PyDictObject *mp, PyObject *key,
-                    PyObject *default_value, Py_hash_t hash,
-                    PyObject **result, int incref_result);
 
 #ifndef NDEBUG
 static int _PyObject_InlineValuesConsistencyCheck(PyObject *obj);
