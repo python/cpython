@@ -343,6 +343,10 @@ print_ft_stats(FILE *out, FTStats *stats)
     fprintf(out, "Mutex sleeps (mutex_sleeps): %" PRIu64 "\n", stats->mutex_sleeps);
     fprintf(out, "QSBR polls (qsbr_polls): %" PRIu64 "\n", stats->qsbr_polls);
     fprintf(out, "World stops (world_stops): %" PRIu64 "\n", stats->world_stops);
+    fprintf(out, "World stop total ns (world_stop_total_ns): %" PRIu64 "\n",
+            stats->world_stop_total_ns);
+    fprintf(out, "World stop max ns (world_stop_max_ns): %" PRIu64 "\n",
+            stats->world_stop_max_ns);
 }
 #endif
 
@@ -506,9 +510,13 @@ merge_optimization_stats(OptimizationStats *dest, const OptimizationStats *src)
 static void
 merge_ft_stats(FTStats *dest, const FTStats *src)
 {
-    dest->mutex_sleeps = src->mutex_sleeps;
-    dest->qsbr_polls = src->qsbr_polls;
-    dest->world_stops = src->world_stops;
+    dest->mutex_sleeps += src->mutex_sleeps;
+    dest->qsbr_polls += src->qsbr_polls;
+    dest->world_stops += src->world_stops;
+    dest->world_stop_total_ns += src->world_stop_total_ns;
+    if (src->world_stop_max_ns > dest->world_stop_max_ns) {
+        dest->world_stop_max_ns = src->world_stop_max_ns;
+    }
 }
 
 static void
