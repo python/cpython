@@ -23,8 +23,9 @@ enum interactive_underflow_t {
 
 struct token {
     int level;
-    int lineno, col_offset, end_lineno, end_col_offset;
-    const char *start, *end;
+    _PyTok_Span span;
+    _PyTok_Loc start_loc;
+    _PyTok_Loc end_loc;
     PyObject *metadata;
 };
 
@@ -67,15 +68,15 @@ typedef struct _tokenizer_mode {
 
 /* Tokenizer state */
 struct tok_state {
-    /* Input state; buf <= cur <= inp <= end */
+    /* Input state; buf <= cur <= inp */
     /* NB an entire line is held in the buffer */
-    char *buf;          /* Input buffer, or NULL; malloc'ed if fp != NULL or readline != NULL */
+    char *buf;
     char *cur;          /* Next character in buffer */
     char *inp;          /* End of data in buffer */
+    _PyTok_Off buf_offset; /* Logical offset of buf[0]. */
     int fp_interactive; /* If the file descriptor is interactive */
     char *interactive_src_start; /* The start of the source parsed so far in interactive mode */
     char *interactive_src_end; /* The end of the source parsed so far in interactive mode */
-    const char *end;    /* End of input buffer if buf != NULL */
     const char *start;  /* Start of current token if not NULL */
     int done;           /* E_OK normally, E_EOF at EOF, otherwise error code */
     /* NB If done != E_OK, cur must be == inp!!! */
@@ -128,8 +129,6 @@ struct tok_state {
 #endif
 };
 
-int _PyLexer_type_comment_token_setup(struct tok_state *tok, struct token *token, int type, int col_offset,
-                         int end_col_offset, const char *start, const char *end);
 int _PyLexer_token_setup(struct tok_state *tok, struct token *token, int type, const char *start, const char *end);
 
 struct tok_state *_PyTokenizer_tok_new(void);
