@@ -37,7 +37,7 @@ from annotationlib import Format
 from dataclasses import fields, is_dataclass
 from types import CodeType, ModuleType, MethodType
 from unittest.util import safe_repr
-from functools import wraps, partial
+from functools import partialmethod, wraps, partial
 from threading import RLock
 
 
@@ -107,6 +107,14 @@ def _get_signature_object(func, as_instance, eat_self):
             eat_self = True
         # Use the original decorated method to extract the correct function signature
         func = func.__func__
+    elif isinstance(func, partial):
+        # inspect.signature() already knows how to compute the effective,
+        # post-partial-application signature of a functools.partial object
+        # directly. Don't fall through to the generic func.__call__ lookup
+        # below: partial.__call__ is a C slot wrapper whose own signature is
+        # just the unenforceable "(*args, **kwargs)" of the functools.partial
+        # constructor, not of the wrapped callable.
+        pass
     elif not isinstance(func, FunctionTypes):
         # If we really want to model an instance of the passed type,
         # __call__ should be looked up, not __init__.
@@ -2917,9 +2925,12 @@ def _must_skip(spec, entry, is_type):
             continue
         if isinstance(result, (staticmethod, classmethod)):
             return False
-        elif isinstance(result, FunctionTypes):
+        elif isinstance(result, (FunctionTypes, partialmethod)):
             # Normal method => skip if looked up on type
             # (if looked up on instance, self is already skipped)
+            # functools.partialmethod resolves to a plain function carrying
+            # `self` when looked up via getattr() on the type, see
+            # functools.partialmethod.__get__.
             return is_type
         else:
             return False
