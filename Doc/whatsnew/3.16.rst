@@ -529,6 +529,14 @@ symtable
   like the builtin :func:`compile`.
   (Contributed by Serhiy Storchaka in :gh:`153844`.)
 
+* Inlined list, set and dict comprehensions (:pep:`709`) are now represented
+  as their own symbol table entries, of type
+  :attr:`~symtable.SymbolTableType.INLINED_COMPREHENSION`. Each such entry is
+  a lexical child of the enclosing scope and records the comprehension's own
+  locals, cells, and free names. It does not correspond to a separate
+  compilation unit.
+  (Contributed by Irit Katriel in :gh:`124697`.)
+
 
 tkinter
 -------
