@@ -191,6 +191,26 @@ _PyTok_SourceAppendLine(_PyTok_SourceText *source, const char *bytes,
 }
 
 const char *
+_PyTok_SourceLineView(const _PyTok_SourceText *source, Py_ssize_t lineno,
+                      Py_ssize_t *len)
+{
+    assert(len != NULL);
+    const char *line = _PyTok_SourceData(source);
+    const char *end = line + source->len;
+    while (lineno > 1) {
+        const char *newline = memchr(line, '\n', end - line);
+        if (newline == NULL) {
+            break;
+        }
+        line = newline + 1;
+        lineno--;
+    }
+    const char *newline = memchr(line, '\n', end - line);
+    *len = (newline != NULL ? newline : end) - line;
+    return line;
+}
+
+const char *
 _PyTok_SourceSpanView(const _PyTok_SourceText *source, _PyTok_Span span,
                       Py_ssize_t *len)
 {

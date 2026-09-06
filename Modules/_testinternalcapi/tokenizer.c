@@ -24,6 +24,17 @@ check_system_error(int failed, const char *message)
 }
 
 static int
+check_line_view(const _PyTok_SourceText *source, Py_ssize_t lineno,
+                const char *expected)
+{
+    Py_ssize_t len;
+    const char *line = _PyTok_SourceLineView(source, lineno, &len);
+    return check(len == (Py_ssize_t)strlen(expected) &&
+                 memcmp(line, expected, len) == 0,
+                 "wrong source line view");
+}
+
+static int
 same_cursor(const _PyTok_Cursor *left, const _PyTok_Cursor *right)
 {
     return left->source == right->source &&
@@ -39,6 +50,10 @@ test_tokenizer_source(PyObject *Py_UNUSED(module),
 {
     _PyTok_SourceText source;
     _PyTok_SourceInit(&source);
+
+    if (check_line_view(&source, 1, "") < 0) {
+        goto error;
+    }
 
     _PyTok_Loc loc;
     _PyTok_Line line;
@@ -67,10 +82,20 @@ test_tokenizer_source(PyObject *Py_UNUSED(module),
               "wrong first source offset") < 0 ||
             check(_PyTok_SourceAppendLine(
                       &source, "\xce\xb2\n", 3, 1) == 6,
-                  "wrong second source offset") < 0 ||
-            check(_PyTok_SourceAppendLine(
-                      &source, "nul\0x\n", 6, 0) == 9,
-                  "wrong third source offset") < 0) {
+                  "wrong second source offset") < 0) {
+        goto error;
+    }
+
+    if (check_line_view(&source, PY_SSIZE_T_MIN, "alpha") < 0 ||
+            check_line_view(&source, 1, "alpha") < 0 ||
+            check_line_view(&source, 2, "\xce\xb2") < 0 ||
+            check_line_view(&source, 3, "") < 0 ||
+            check_line_view(&source, PY_SSIZE_T_MAX, "") < 0) {
+        goto error;
+    }
+
+    if (check(_PyTok_SourceAppendLine(&source, "nul\0x\n", 6, 0) == 9,
+              "wrong third source offset") < 0) {
         goto error;
     }
 
@@ -192,6 +217,11 @@ test_tokenizer_source(PyObject *Py_UNUSED(module),
                   "cannot locate unterminated EOF") < 0 ||
             check(loc.lineno == 1 && loc.byte_col == 4,
                   "wrong unterminated EOF location") < 0) {
+        goto error;
+    }
+
+    if (check_line_view(&source, 1, "tail") < 0 ||
+            check_line_view(&source, PY_SSIZE_T_MAX, "tail") < 0) {
         goto error;
     }
 
