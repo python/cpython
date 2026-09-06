@@ -656,6 +656,7 @@ codegen_enter_scope(compiler *c, identifier name, int scope_type,
 {
     RETURN_IF_ERROR(
         _PyCompile_EnterScope(c, name, scope_type, key, lineno, private, umd));
+    RETURN_IF_ERROR_IN_SCOPE(c, _PyCompile_SetQualname(c));
     location loc = LOCATION(lineno, lineno, 0, 0);
     if (scope_type == COMPILE_SCOPE_MODULE) {
         loc.lineno = 0;
