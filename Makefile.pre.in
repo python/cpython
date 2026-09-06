@@ -395,6 +395,7 @@ PEGEN_OBJS=		\
 
 TOKENIZER_OBJS=		\
 		Parser/lexer/lexer.o \
+		Parser/lexer/layout.o \
 		Parser/lexer/number.o \
 		Parser/lexer/state.o \
 		Parser/lexer/string.o \

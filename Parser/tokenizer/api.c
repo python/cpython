@@ -130,10 +130,7 @@ _PyTokenizer_SetOptions(struct tok_state *tok, int extra_tokens,
 void
 _PyTokenizer_ImplyDedents(struct tok_state *tok)
 {
-    if (tok->indent != 0) {
-        tok->pendin = -tok->indent;
-        tok->indent = 0;
-    }
+    _PyLexer_ImplyDedents(tok);
 }
 
 int

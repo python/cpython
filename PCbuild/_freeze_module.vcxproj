@@ -183,6 +183,7 @@
     <ClCompile Include="..\Parser\token.c" />
     <ClCompile Include="..\Parser\lexer\state.c" />
     <ClCompile Include="..\Parser\lexer\lexer.c" />
+    <ClCompile Include="..\Parser\lexer\layout.c" />
     <ClCompile Include="..\Parser\lexer\number.c" />
     <ClCompile Include="..\Parser\lexer\string.c" />
     <ClCompile Include="..\Parser\tokenizer\decoder.c" />
