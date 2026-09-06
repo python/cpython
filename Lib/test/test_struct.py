@@ -424,6 +424,16 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertRaises(OverflowError, struct.pack, "<e", big)
         self.assertRaises(OverflowError, struct.pack, "e", big)
 
+    def test_156867(self):
+        big_real = 1e300
+        self.assertRaises(OverflowError, struct.pack, ">Zf", big_real)
+        self.assertRaises(OverflowError, struct.pack, "<Zf", big_real)
+        self.assertRaises(OverflowError, struct.pack, "Zf", big_real)
+        big_imag = 1e300j
+        self.assertRaises(OverflowError, struct.pack, ">Zf", big_imag)
+        self.assertRaises(OverflowError, struct.pack, "<Zf", big_imag)
+        self.assertRaises(OverflowError, struct.pack, "Zf", big_imag)
+
     def test_1530559(self):
         for code, byteorder in iter_integer_formats():
             format = byteorder + code

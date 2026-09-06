@@ -1,0 +1,3 @@
+Raise :exc:`OverflowError`'s for native ``'Zf'`` format in :func:`struct.pack`,
+like for ``'f'`` format.  Previously overflows in the :c:expr:`float complex`
+type were silent.  Patch by Sergey B Kirpichev.
