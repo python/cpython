@@ -125,16 +125,17 @@ class FixTest(unittest.TestCase):
     def test_fix_scaling(self):
         from tkinter import font
         root = self.root
-        self.addCleanup(root.tk_scaling, root.tk_scaling())
+        scaling = root.tk.call('tk', 'scaling')  # No Misc.tk_scaling yet.
+        self.addCleanup(root.tk.call, 'tk', 'scaling', scaling)
         # Both fonts go with the root; Font.delete_font is a flag.
         pixels = font.Font(root=root, name='TestPixelFont', size=-16)
         points = font.Font(root=root, name='TestPointFont', size=12)
 
-        root.tk_scaling(1.0)
+        root.tk.call('tk', 'scaling', 1.0)
         util.fix_scaling(root)  # No scaling, no change.
         self.assertEqual(int(pixels['size']), -16)
 
-        root.tk_scaling(2.0)
+        root.tk.call('tk', 'scaling', 2.0)
         util.fix_scaling(root)  # A size in pixels becomes one in points.
         self.assertEqual(int(pixels['size']), 12)  # round(-0.75 * -16)
         self.assertEqual(int(points['size']), 12)  # Points are left alone.
