@@ -2,8 +2,6 @@
 
 #include "source.h"
 
-#define LINE_CHECKPOINT_INTERVAL 256
-
 void
 _PyTok_SourceInit(_PyTok_SourceText *source)
 {
@@ -14,7 +12,6 @@ void
 _PyTok_SourceClear(_PyTok_SourceText *source)
 {
     PyMem_Free(source->bytes);
-    PyMem_Free(source->line_checkpoints);
     PyMem_Free(source->implicit_lines);
     _PyTok_SourceInit(source);
 }
@@ -71,34 +68,6 @@ reserve_bytes(_PyTok_SourceText *source, Py_ssize_t needed)
 #endif
     source->bytes = bytes;
     source->cap = cap;
-    return 0;
-}
-
-static int
-reserve_checkpoints(_PyTok_SourceText *source, int needed)
-{
-    if (needed <= source->checkpoints_cap) {
-        return 0;
-    }
-    int cap;
-    if (source->checkpoints_cap == 0) {
-        cap = 16;
-    }
-    else if (source->checkpoints_cap <= INT_MAX / 2) {
-        cap = source->checkpoints_cap * 2;
-    }
-    else {
-        PyErr_NoMemory();
-        return -1;
-    }
-    _PyTok_Off *checkpoints = source->line_checkpoints;
-    PyMem_Resize(checkpoints, _PyTok_Off, cap);
-    if (checkpoints == NULL) {
-        PyErr_NoMemory();
-        return -1;
-    }
-    source->line_checkpoints = checkpoints;
-    source->checkpoints_cap = cap;
     return 0;
 }
 
@@ -165,11 +134,7 @@ _PyTok_SourceAppendLine(_PyTok_SourceText *source, const char *bytes,
         return -1;
     }
     int nlines = source->nlines + 1;
-    int checkpoint = ((nlines - 1) % LINE_CHECKPOINT_INTERVAL) == 0;
-    int checkpoint_count = (nlines - 1) / LINE_CHECKPOINT_INTERVAL + 1;
-    if ((checkpoint &&
-         reserve_checkpoints(source, checkpoint_count) < 0) ||
-            (implicit_newline && reserve_implicit_lines(source, nlines) < 0) ||
+    if ((implicit_newline && reserve_implicit_lines(source, nlines) < 0) ||
             reserve_bytes(source, source->len + len + 1) < 0) {
         return -1;
     }
@@ -178,10 +143,6 @@ _PyTok_SourceAppendLine(_PyTok_SourceText *source, const char *bytes,
     memcpy(source->bytes + start, bytes, len);
     source->len += len;
     source->bytes[source->len] = '\0';
-    if (checkpoint) {
-        source->line_checkpoints[checkpoint_count - 1] =
-            source->base_offset + start;
-    }
     if (implicit_newline) {
         source->implicit_lines[(nlines - 1) / 8] |=
             (unsigned char)(1U << ((nlines - 1) & 7));
@@ -210,19 +171,6 @@ _PyTok_SourceLineView(const _PyTok_SourceText *source, Py_ssize_t lineno,
     return line;
 }
 
-const char *
-_PyTok_SourceSpanView(const _PyTok_SourceText *source, _PyTok_Span span,
-                      Py_ssize_t *len)
-{
-    if (!_PyTok_SpanIsValid(span) || span.start < source->base_offset ||
-            span.end - source->base_offset > source->len || len == NULL) {
-        PyErr_SetString(PyExc_SystemError, "invalid tokenizer source span");
-        return NULL;
-    }
-    *len = span.end - span.start;
-    return _PyTok_SourceData(source) + (span.start - source->base_offset);
-}
-
 int
 _PyTok_SourceLineIsImplicit(const _PyTok_SourceText *source, int lineno)
 {
@@ -232,125 +180,4 @@ _PyTok_SourceLineIsImplicit(const _PyTok_SourceText *source, int lineno)
     }
     return (source->implicit_lines[(lineno - 1) / 8] >>
             ((lineno - 1) & 7)) & 1;
-}
-
-static int
-source_ends_in_newline(const _PyTok_SourceText *source)
-{
-    return source->len > 0 && source->bytes[source->len - 1] == '\n';
-}
-
-static int
-eof_lineno(const _PyTok_SourceText *source)
-{
-    if (source->nlines == 0) {
-        return 1;
-    }
-    return source->nlines + source_ends_in_newline(source);
-}
-
-int
-_PyTok_SourceLine(const _PyTok_SourceText *source, int lineno,
-                  _PyTok_Line *line)
-{
-    if (line == NULL || lineno < 1 || lineno > eof_lineno(source)) {
-        PyErr_SetString(PyExc_SystemError, "invalid tokenizer source line");
-        return -1;
-    }
-    if (lineno > source->nlines) {
-        *line = (_PyTok_Line){
-            .start = source->base_offset + source->len,
-            .end = source->base_offset + source->len,
-        };
-        return 0;
-    }
-
-    int checkpoint = (lineno - 1) / LINE_CHECKPOINT_INTERVAL;
-    int current = checkpoint * LINE_CHECKPOINT_INTERVAL + 1;
-    _PyTok_Off start = source->line_checkpoints[checkpoint];
-    while (current < lineno) {
-        start = _PyTok_SourceFindLineEnd(source, start);
-        if (start < 0) {
-            return -1;
-        }
-        current++;
-    }
-    _PyTok_Off end = source->base_offset + source->len;
-    if (lineno < source->nlines) {
-        end = _PyTok_SourceFindLineEnd(source, start);
-        if (end < 0) {
-            return -1;
-        }
-    }
-    *line = (_PyTok_Line){
-        .start = start,
-        .end = end,
-        .implicit_newline = _PyTok_SourceLineIsImplicit(source, lineno),
-        .contains_nul = memchr(
-            source->bytes + (start - source->base_offset),
-            0, end - start) != NULL,
-    };
-    return 0;
-}
-
-int
-_PyTok_SourceLocation(const _PyTok_SourceText *source, _PyTok_Off offset,
-                      _PyTok_Affinity affinity, _PyTok_Loc *loc)
-{
-    if (offset < source->base_offset ||
-            offset - source->base_offset > source->len || loc == NULL ||
-            (affinity != _PYTOK_AFFINITY_LEFT &&
-             affinity != _PYTOK_AFFINITY_RIGHT)) {
-        PyErr_SetString(PyExc_SystemError, "invalid tokenizer source offset");
-        return -1;
-    }
-    if (source->nlines == 0 ||
-            (offset - source->base_offset == source->len &&
-             source_ends_in_newline(source) &&
-             affinity == _PYTOK_AFFINITY_RIGHT)) {
-        *loc = (_PyTok_Loc){eof_lineno(source), 0};
-        return 0;
-    }
-
-    _PyTok_Off key = offset;
-    if (affinity == _PYTOK_AFFINITY_LEFT && key > source->base_offset) {
-        key--;
-    }
-    int low = 0;
-    int high = (source->nlines - 1) / LINE_CHECKPOINT_INTERVAL + 1;
-    while (low < high) {
-        int middle = low + (high - low) / 2;
-        if (source->line_checkpoints[middle] <= key) {
-            low = middle + 1;
-        }
-        else {
-            high = middle;
-        }
-    }
-    int checkpoint = low - 1;
-    if (checkpoint < 0) {
-        PyErr_SetString(PyExc_SystemError, "corrupt tokenizer source line index");
-        return -1;
-    }
-    int lineno = checkpoint * LINE_CHECKPOINT_INTERVAL + 1;
-    _PyTok_Off start = source->line_checkpoints[checkpoint];
-    while (lineno < source->nlines) {
-        _PyTok_Off end = _PyTok_SourceFindLineEnd(source, start);
-        if (end < 0) {
-            return -1;
-        }
-        if (offset < end ||
-                (offset == end && affinity == _PYTOK_AFFINITY_LEFT)) {
-            break;
-        }
-        start = end;
-        lineno++;
-    }
-    _PyTok_Off byte_col = offset - start;
-    if (byte_col > INT_MAX) {
-        PyErr_SetString(PyExc_OverflowError, "tokenizer column is too large");
-        return -1;
-    }
-    *loc = (_PyTok_Loc){lineno, (int)byte_col};
-    return 0;
 }
