@@ -19,11 +19,12 @@ _PyTokenizer_tok_new(void)
         return NULL;
     }
 
-    tok->buf = tok->cur = tok->inp = NULL;
+    tok->cur = tok->inp = 0;
+    tok->line_start = -1;
     tok->fp_interactive = 0;
     tok->interactive_src_start = NULL;
     tok->interactive_src_end = NULL;
-    tok->start = NULL;
+    tok->start = -1;
     tok->done = E_OK;
     tok->fp = NULL;
     tok->indent = 0;
@@ -139,12 +140,13 @@ _PyToken_Init(struct token *token) {
 }
 
 int
-_PyLexer_token_setup(struct tok_state *tok, struct token *token, int type, const char *start, const char *end)
+_PyLexer_token_setup(struct tok_state *tok, struct token *token, int type, _PyTok_Off start, _PyTok_Off end)
 {
     token->level = tok->level;
     token->is_raw = 0;
-    token->span = _PyLexer_BufferSpan(tok, start, end);
-    if (start != NULL && end != NULL) {
+    assert((start == -1 && end == -1) || (start >= 0 && end >= start));
+    token->span = (_PyTok_Span){start, end};
+    if (start >= 0) {
         token->start_loc = tok->start_loc;
         token->end_loc = (_PyTok_Loc){tok->lineno, _PyLexer_ByteColumn(tok)};
     }

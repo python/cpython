@@ -68,16 +68,13 @@ _PyLexer_IsRawString(ftstring_kind kind)
 
 /* Tokenizer state */
 struct tok_state {
-    /* Input state; buf <= cur <= inp */
-    /* NB an entire line is held in the buffer */
-    char *buf;
-    char *cur;          /* Next character in buffer */
-    char *inp;          /* End of data in buffer */
-    _PyTok_Off buf_offset; /* Logical offset of buf[0]. */
+    _PyTok_Off cur;
+    _PyTok_Off inp;
+    _PyTok_Off buf_offset;
     int fp_interactive; /* If the file descriptor is interactive */
     char *interactive_src_start; /* The start of the source parsed so far in interactive mode */
     char *interactive_src_end; /* The end of the source parsed so far in interactive mode */
-    const char *start;  /* Start of current token if not NULL */
+    _PyTok_Off start;
     int done;           /* E_OK normally, E_EOF at EOF, otherwise error code */
     /* NB If done != E_OK, cur must be == inp!!! */
     FILE *fp;           /* Rest of input; NULL if tokenizing a string */
@@ -99,7 +96,7 @@ struct tok_state {
     int altindstack[MAXINDENT];         /* Stack of alternate indents */
     /* Stuff for PEP 0263 */
     char *encoding;         /* Source encoding. */
-    const char* line_start;     /* pointer to start of current line */
+    _PyTok_Off line_start;
     char* str;          /* Source string being tokenized (if tokenizing from a string)*/
 
     _PyTok_SourceText source;
@@ -149,22 +146,17 @@ _PyLexer_FTStringBracketDepth(const struct tok_state *tok,
 static inline _PyTok_Off
 _PyLexer_BufferOffset(const struct tok_state *tok, const char *position)
 {
-    assert(tok->buf != NULL);
-    assert(tok->inp >= tok->buf);
-    assert(position >= tok->buf && position <= tok->inp);
-    Py_ssize_t offset = position - tok->buf;
-    assert(tok->buf_offset <= PY_SSIZE_T_MAX - offset);
-    return tok->buf_offset + offset;
+    const char *base = _PyTok_SourceData(&tok->source);
+    assert(position >= base && position <= base + tok->source.len);
+    return tok->source.base_offset + (position - base);
 }
 
-static inline char *
+static inline const char *
 _PyLexer_BufferPointer(const struct tok_state *tok, _PyTok_Off offset)
 {
-    assert(tok->buf != NULL);
-    assert(tok->inp >= tok->buf);
-    assert(offset >= tok->buf_offset);
-    assert(offset - tok->buf_offset <= tok->inp - tok->buf);
-    return tok->buf + (offset - tok->buf_offset);
+    assert(offset >= tok->source.base_offset);
+    assert(offset - tok->source.base_offset <= tok->source.len);
+    return _PyTok_SourceData(&tok->source) + (offset - tok->source.base_offset);
 }
 
 static inline const char *
@@ -181,29 +173,14 @@ _PyLexer_BufferSpanView(const struct tok_state *tok, _PyTok_Span span,
 static inline int
 _PyLexer_ByteColumn(const struct tok_state *tok)
 {
-    assert(tok->line_start != NULL);
+    assert(tok->line_start >= 0);
     assert(tok->cur >= tok->line_start);
     Py_ssize_t column = tok->cur - tok->line_start;
     assert(column <= INT_MAX);
     return (int)column;
 }
 
-static inline _PyTok_Span
-_PyLexer_BufferSpan(const struct tok_state *tok, const char *start,
-                    const char *end)
-{
-    if (start == NULL) {
-        assert(end == NULL);
-        return (_PyTok_Span){-1, -1};
-    }
-    assert(end != NULL);
-    assert(start <= end);
-    return _PyTok_SpanFromBounds(
-        _PyLexer_BufferOffset(tok, start),
-        _PyLexer_BufferOffset(tok, end));
-}
-
-int _PyLexer_token_setup(struct tok_state *tok, struct token *token, int type, const char *start, const char *end);
+int _PyLexer_token_setup(struct tok_state *tok, struct token *token, int type, _PyTok_Off start, _PyTok_Off end);
 
 struct tok_state *_PyTokenizer_tok_new(void);
 void _PyTokenizer_Free(struct tok_state *);

@@ -8,17 +8,17 @@
 #define MAKE_TOKEN(token_type) _PyLexer_token_setup(tok, token, token_type, p_start, p_end)
 
 static void
-rewind_to_string_start(struct tok_state *tok, const char *start,
+rewind_to_string_start(struct tok_state *tok, _PyTok_Off start,
                        _PyTok_Loc location)
 {
-    tok->cur = (char *)start + 1;
+    tok->cur = start + 1;
     tok->line_start = start - location.byte_col;
     tok->lineno = location.lineno;
 }
 
 int
 _PyLexer_record_ftstring_comment(struct tok_state *tok, ftstring_state *state,
-                                 const char *start, const char *end)
+                                 _PyTok_Off start, _PyTok_Off end)
 {
     assert(state == _PyLexer_CurrentFTString(tok) && state->mode == FTSTRING_MODE_EXPRESSION);
     if (state->expr_span.end >= 0) {
@@ -50,7 +50,7 @@ _PyLexer_record_ftstring_comment(struct tok_state *tok, ftstring_state *state,
         state->comments = comments;
     }
     comments->spans[comments->count++] =
-        _PyLexer_BufferSpan(tok, start, end);
+        (_PyTok_Span){start, end};
     return 0;
 }
 
@@ -59,13 +59,13 @@ finish_ftstring_expr(struct tok_state *tok, ftstring_state *state,
                      struct token *token)
 {
     assert(token != NULL && state == _PyLexer_CurrentFTString(tok));
-    assert(state->mode == FTSTRING_MODE_EXPRESSION && tok->start != NULL);
+    assert(state->mode == FTSTRING_MODE_EXPRESSION && tok->start >= 0);
 
     if (state->expr_span.end >= 0) {
         return 0;
     }
     assert(state->expr_span.start >= 0);
-    state->expr_span.end = _PyLexer_BufferOffset(tok, tok->start);
+    state->expr_span.end = tok->start;
     int tstring_interpolation = _PyLexer_IsTString(state->kind) &&
         state->replacement_depth == 1;
     if (!(state->debug_expr || tstring_interpolation) || token->metadata) {
@@ -251,8 +251,8 @@ _PyLexer_check_string_prefixes(struct tok_state *tok,
 int
 _PyLexer_scan_fstring_start(struct tok_state *tok, struct token *token, int c)
 {
-    const char *p_start = NULL;
-    const char *p_end = NULL;
+    _PyTok_Off p_start = -1;
+    _PyTok_Off p_end = -1;
 
     int quote = c;
     int quote_size = 1;             /* 1 or 3 */
@@ -284,26 +284,26 @@ _PyLexer_scan_fstring_start(struct tok_state *tok, struct token *token, int c)
     state->quote = quote;
     state->quote_size = quote_size;
     state->paren_level = tok->level;
-    state->start = _PyLexer_BufferOffset(tok, tok->start);
+    state->start = tok->start;
     state->start_loc = tok->start_loc;
     state->expr_span = (_PyTok_Span){-1, -1};
 
     int raw = 0;
     int tstring = 0;
-    switch (*tok->start) {
+    switch (*_PyLexer_BufferPointer(tok, tok->start)) {
         case 'T':
         case 't':
-            raw = Py_TOLOWER(tok->start[1]) == 'r';
+            raw = Py_TOLOWER(_PyLexer_BufferPointer(tok, tok->start)[1]) == 'r';
             tstring = 1;
             break;
         case 'F':
         case 'f':
-            raw = Py_TOLOWER(tok->start[1]) == 'r';
+            raw = Py_TOLOWER(_PyLexer_BufferPointer(tok, tok->start)[1]) == 'r';
             break;
         case 'R':
         case 'r':
             raw = 1;
-            tstring = Py_TOLOWER(tok->start[1]) == 't';
+            tstring = Py_TOLOWER(_PyLexer_BufferPointer(tok, tok->start)[1]) == 't';
             break;
         default:
             Py_UNREACHABLE();
@@ -317,8 +317,8 @@ _PyLexer_scan_fstring_start(struct tok_state *tok, struct token *token, int c)
 int
 _PyLexer_scan_string(struct tok_state *tok, struct token *token, int c)
 {
-    const char *p_start = NULL;
-    const char *p_end = NULL;
+    _PyTok_Off p_start = -1;
+    _PyTok_Off p_end = -1;
 
     int quote = c;
     int quote_size = 1;             /* 1 or 3 */
@@ -419,8 +419,8 @@ _PyLexer_get_ftstring(struct tok_state *tok, ftstring_state *current, struct tok
     assert(current == _PyLexer_CurrentFTString(tok) && current->mode != FTSTRING_MODE_EXPRESSION);
     assert((current->quote_size == 1 || current->quote_size == 3) &&
            current->replacement_depth <= MAX_EXPR_NESTING);
-    const char *p_start = NULL;
-    const char *p_end = NULL;
+    _PyTok_Off p_start = -1;
+    _PyTok_Off p_end = -1;
     int token_type;
     int end_quote_size = 0;
     int unicode_escape = 0;
@@ -453,7 +453,7 @@ _PyLexer_get_ftstring(struct tok_state *tok, ftstring_state *current, struct tok
 
             int end_lineno = tok->lineno;
             rewind_to_string_start(tok,
-                _PyLexer_BufferPointer(tok, current->start),
+                current->start,
                 current->start_loc);
 
             if (quote_size == 3) {
@@ -485,7 +485,7 @@ _PyLexer_get_ftstring(struct tok_state *tok, ftstring_state *current, struct tok
             int peek = tok_nextc(tok);
             if (peek != '{' || in_format_spec) {
                 tok_backup(tok, peek);
-                _PyTok_Off expr_start = _PyLexer_BufferOffset(tok, tok->cur);
+                _PyTok_Off expr_start = tok->cur;
                 tok_backup(tok, c);
                 if (begin_ftstring_expr(tok, current, expr_start) < 0) {
                     return MAKE_TOKEN(ERRORTOKEN);

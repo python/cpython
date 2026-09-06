@@ -34,7 +34,7 @@ tok_failed(const struct tok_state *tok)
 int _PyLexer_nextc(struct tok_state *);
 void _PyLexer_backup(struct tok_state *, int);
 int _PyLexer_record_ftstring_comment(
-    struct tok_state *, ftstring_state *, const char *, const char *);
+    struct tok_state *, ftstring_state *, _PyTok_Off, _PyTok_Off);
 int _PyLexer_ftstring_punctuation(
     struct tok_state *, ftstring_state *, struct token *, int);
 int _PyLexer_close_ftstring_expr(
