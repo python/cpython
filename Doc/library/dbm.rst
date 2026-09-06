@@ -99,8 +99,13 @@ The :meth:`!keys` method returns a list instead of a view object.
 The :meth:`!setdefault` method requires two arguments.
 
 Key and values are always stored as :class:`bytes`. This means that when
-strings are used they are implicitly converted to the default encoding before
-being stored.
+strings are used they are implicitly converted to bytes before being stored.
+The specific encoding used for this conversion is backend-dependent and may
+vary between different dbm implementations and systems. The encoding choice
+is determined by the underlying database implementation. For consistent
+behavior across different backends and to maintain control over the encoding
+process, it is strongly recommended to explicitly convert strings to bytes
+using a specific encoding before storing them.
 
 These objects also support being used in a :keyword:`with` statement, which
 will automatically close them when done.
