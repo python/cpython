@@ -3649,6 +3649,34 @@ while 1:
             end_offset=6,
         )
 
+    def test_triple_equal(self):
+        self._check_error(
+            "a === b",
+            r"Maybe you meant '==' instead of '==='\?",
+            lineno=1,
+            end_lineno=1,
+            offset=3,
+            end_offset=6,
+        )
+        self._check_error(
+            "a == = b",
+            "invalid syntax",
+            lineno=1,
+            end_lineno=1,
+            offset=6,
+            end_offset=7,
+        )
+
+    def test_eq_lt_typo(self):
+        self._check_error(
+            "a =< b",
+            r"Maybe you meant '<=' instead of '=<'\?",
+            lineno=1,
+            end_lineno=1,
+            offset=3,
+            end_offset=5,
+        )
+
     def test_double_pipe(self):
         self._check_error(
             "a || b",
@@ -3665,6 +3693,26 @@ while 1:
             end_lineno=1,
             offset=5,
             end_offset=6,
+        )
+
+    def test_eq_gt_typo(self):
+        self._check_error(
+            "a => b",
+            r"Maybe you meant '>=' instead of '=>'\?",
+            lineno=1,
+            end_lineno=1,
+            offset=3,
+            end_offset=5,
+        )
+
+    def test_eq_bang_typo(self):
+        self._check_error(
+            "a =! b",
+            r"Maybe you meant '!=' instead of '=!'\?",
+            lineno=1,
+            end_lineno=1,
+            offset=3,
+            end_offset=5,
         )
 
 
