@@ -734,7 +734,9 @@ has_uint32_t_buffer_length(const Py_buffer *buffer)
 static HMACObject *
 hmac_new_object(PyTypeObject *tp)
 {
-    HMACObject *self = (HMACObject *)tp->tp_alloc(tp, 0);
+    // Using tp_alloc on GC objects automatically tracks them,
+    // but we need to first set the fields appropriately.
+    HMACObject *self = PyObject_GC_New(HMACObject, tp);
     if (self == NULL) {
         return NULL;
     }
