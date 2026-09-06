@@ -1010,8 +1010,8 @@ class ReTests(unittest.TestCase):
             with self.subTest(char=c):
                 self.assertEqual(bool(ci.fullmatch(c)), expect)
         self.assertTrue(re.fullmatch(r'\p{Alphabetic=No}+', '123 '))
-        # These are engine categories, so (unlike \P of a multi-range
-        # property) they can be negated inside a character class.
+        # These are engine categories, so a negated one joins the set directly
+        # as a CATEGORY rather than being alternated in as a separate branch.
         self.assertTrue(re.fullmatch(r'[\P{Alphabetic}]+', '123 .'))
         self.assertTrue(re.fullmatch(r'[\p{XID_Start}_]+', 'foo_bar'))
 
