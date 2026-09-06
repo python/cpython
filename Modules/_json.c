@@ -166,6 +166,43 @@ ascii_escape_size(const void *input, int kind, Py_ssize_t input_chars)
     Py_ssize_t i;
     Py_ssize_t output_size;
 
+    /* SWAR no-escape fast path (1-byte): when no byte needs escaping the
+       output is just the input plus the two surrounding quotes.  needs-escape
+       is c < 0x20 || c > 0x7e || c == '"' || c == '\\'; skip 8 bytes at a time
+       and fall through to the per-character loop at the first such byte.  The
+       length guard keeps short strings (the common dict key) on the original
+       loop, where the fast path's setup would not pay off. */
+    if (kind == PyUnicode_1BYTE_KIND && input_chars >= 16
+            && input_chars < PY_SSIZE_T_MAX - 2) {
+        const Py_UCS1 *p = (const Py_UCS1 *)input;
+        const uint64_t ones = 0x0101010101010101ULL;
+        const uint64_t high = 0x8080808080808080ULL;
+        const uint64_t bq = 0x22ULL * ones, bs = 0x5cULL * ones;
+        const uint64_t b7f = 0x7fULL * ones, bc = 0xE0ULL * ones;
+        Py_ssize_t j = 0;
+        int needs_escape = 0;
+        for (; j + 8 <= input_chars; j += 8) {
+            uint64_t w;
+            memcpy(&w, p + j, 8);
+            uint64_t mq = w ^ bq; mq = (mq - ones) & ~mq & high;          /* == '"'  */
+            uint64_t ms = w ^ bs; ms = (ms - ones) & ~ms & high;          /* == '\\' */
+            uint64_t vc = w & bc; uint64_t mlo = (vc - ones) & ~vc & high;/* < 0x20  */
+            uint64_t m7 = w ^ b7f; m7 = (m7 - ones) & ~m7 & high;         /* == 0x7f */
+            if (mq | ms | mlo | (w & high) | m7) {  /* (w & high): >= 0x80 */
+                needs_escape = 1;
+                break;
+            }
+        }
+        if (!needs_escape) {
+            for (; j < input_chars; j++) {
+                if (!S_CHAR(p[j])) { needs_escape = 1; break; }
+            }
+        }
+        if (!needs_escape) {
+            return input_chars + 2;
+        }
+    }
+
     /* Compute the output size */
     for (i = 0, output_size = 2; i < input_chars; i++) {
         Py_UCS4 c = PyUnicode_READ(kind, input, i);
