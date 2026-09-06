@@ -1,0 +1,1 @@
+Fix email.mime.image.MIMEImage to respect policy.max_line_length when Base64-encoding image payloads.
