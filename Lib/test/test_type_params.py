@@ -7,7 +7,8 @@ import pickle
 import weakref
 from test.support import check_syntax_error, run_code, run_no_yield_async_fn
 
-from typing import Generic, NoDefault, Sequence, TypeAliasType, TypeVar, TypeVarTuple, ParamSpec, get_args
+from typing import (Callable, Generic, NoDefault, Sequence, TypeAliasType,
+                    TypeVar, TypeVarTuple, ParamSpec, get_args)
 
 
 class TypeParamsInvalidTest(unittest.TestCase):
@@ -1417,6 +1418,111 @@ class DefaultsTest(unittest.TestCase):
 
         self.assertEqual(ns["X1"].__type_params__[0].__default__, "A")
         self.assertEqual(ns["X2"].__type_params__[0].__default__, "B")
+
+    def test_default_refers_to_earlier_type_param(self):
+        class A[T1, T2=T1]: ...
+
+        self.assertEqual(A[int].__args__, (int, int))
+        self.assertEqual(A[int, str].__args__, (int, str))
+
+    def test_default_refers_to_earlier_type_param_chain(self):
+        class A[T1, T2=T1, T3=T2]: ...
+
+        self.assertEqual(A[int].__args__, (int, int, int))
+        self.assertEqual(A[int, str].__args__, (int, str, str))
+        self.assertEqual(A[int, str, bool].__args__, (int, str, bool))
+
+    def test_default_refers_to_earlier_type_param_nested(self):
+        class A[T1, T2=list[T1]]: ...
+
+        self.assertEqual(A[int].__args__, (int, list[int]))
+
+        class B[T1, T2, T3=dict[T1, T2]]: ...
+
+        self.assertEqual(B[int, str].__args__, (int, str, dict[int, str]))
+
+        class C[T1, T2, T3=T1 | T2]: ...
+
+        self.assertEqual(C[int, str].__args__, (int, str, int | str))
+
+        class D[T1, T2=Callable[[T1], T1]]: ...
+
+        self.assertEqual(D[int].__args__, (int, Callable[[int], int]))
+
+    def test_default_refers_to_earlier_type_param_typevartuple(self):
+        class A[T1, *Ts=*tuple[T1, ...]]: ...
+
+        self.assertEqual(A[int].__args__, (int, *tuple[int, ...]))
+
+        class B[T1, T2, *Ts=*tuple[T1, T2]]: ...
+
+        self.assertEqual(B[int, str].__args__, (int, str, int, str))
+
+    def test_default_refers_to_earlier_type_param_paramspec(self):
+        class A[T1, **P=[T1, int]]: ...
+
+        self.assertEqual(A[str].__args__, (str, (str, int)))
+
+        class B[**P, T=int]: ...
+
+        self.assertEqual(B[[int, str]].__args__, ((int, str), int))
+
+    def test_default_refers_to_earlier_type_param_in_base_class(self):
+        # gh-140596: omitting a type parameter with a default when
+        # subclassing used to leave the default unsubstituted, which made
+        # the type parameter it refers to leak into the subclass.
+        class Bar[T, S=T]: ...
+        class Baz[U](Bar[U]): ...
+
+        U, = Baz.__type_params__
+        self.assertEqual(Baz.__orig_bases__[0].__args__, (U, U))
+        self.assertEqual(Baz.__parameters__, (U,))
+        self.assertEqual(Baz[int].__args__, (int,))
+
+    def test_default_refers_to_type_param_from_enclosing_scope(self):
+        # A default that refers to a type variable which is not a type
+        # parameter of the class itself is left untouched.
+        T = TypeVar('T')
+        S = TypeVar('S', default=T)
+        class A(Generic[S]): ...
+
+        self.assertEqual(A[()].__args__, (T,))
+
+    def test_default_refers_to_type_param_supplied_by_the_user(self):
+        T = TypeVar('T')
+        class A[T1, T2=T1]: ...
+
+        self.assertEqual(A[T].__args__, (T, T))
+
+    def test_default_refers_to_itself(self):
+        class A[T1=T1]: ...
+
+        with self.assertRaisesRegex(
+            TypeError,
+            r"The default of type parameter T1 refers to type parameter T1, "
+            r"which is not declared before it",
+        ):
+            A[()]
+
+    def test_default_refers_to_later_type_param(self):
+        class A[T1=T2, T2=int]: ...
+
+        with self.assertRaisesRegex(
+            TypeError,
+            r"The default of type parameter T1 refers to type parameter T2, "
+            r"which is not declared before it",
+        ):
+            A[()]
+
+    def test_defaults_refer_to_each_other(self):
+        class A[T1=T2, T2=T1]: ...
+
+        with self.assertRaisesRegex(
+            TypeError,
+            r"The default of type parameter T1 refers to type parameter T2, "
+            r"which is not declared before it",
+        ):
+            A[()]
 
 
 class TestEvaluateFunctions(unittest.TestCase):
