@@ -5838,6 +5838,38 @@ class EncodedMetadataTests(unittest.TestCase):
         with self.assertRaises(UnicodeDecodeError):
             zipfile.ZipFile(TESTFN, "r", metadata_encoding='utf-8')
 
+    def test_read_invalid_utf8_filename(self):
+        # A file name marked as UTF-8 (general purpose bit 11) but holding
+        # bytes that are not valid UTF-8 is a corrupt archive, not a decoding
+        # error for the caller to handle.
+        def build(name, flag):
+            lfh = struct.pack(zipfile.structFileHeader,
+                              zipfile.stringFileHeader,
+                              20, 0, flag, 0, 0, 0, 0, 0, 0,
+                              len(name), 0) + name
+            cd = struct.pack(zipfile.structCentralDir,
+                             zipfile.stringCentralDir,
+                             20, 0, 20, 0, flag, 0, 0, 0, 0, 0, 0,
+                             len(name), 0, 0, 0, 0, 0, 0) + name
+            eocd = struct.pack(zipfile.structEndArchive,
+                               zipfile.stringEndArchive,
+                               0, 0, 1, 1, len(cd), len(lfh), 0)
+            return lfh + cd + eocd
+
+        # Central directory path (ZipFile()).
+        data = build(b'\xff\xfe', zipfile._MASK_UTF_FILENAME)
+        with self.assertRaisesRegex(zipfile.BadZipFile, 'is marked as UTF-8'):
+            zipfile.ZipFile(io.BytesIO(data))
+
+        # Local file header path (open()); the central directory name is
+        # valid UTF-8 so it is only the header decode that fails.  Keep the
+        # replacement the same length so header offsets stay valid.
+        good = build(b'good', zipfile._MASK_UTF_FILENAME)
+        corrupt = good.replace(b'good', b'\xff\xfe\xff\xfe', 1)
+        with zipfile.ZipFile(io.BytesIO(corrupt)) as zipfp:
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'is marked as UTF-8'):
+                zipfp.read('good')
+
     def test_read_after_append(self):
         newname = '\u56db'  # Han 'four'
         newname2 = 'fünf'  # representable in cp437, but still stored as UTF-8
