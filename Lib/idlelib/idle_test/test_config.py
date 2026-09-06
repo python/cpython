@@ -454,9 +454,6 @@ class IdleConfTest(unittest.TestCase):
         self.assertEqual(idleConf.GetExtensionKeys('ZzDummy'),
            {'<<z-in>>': ['<Control-Shift-KeyRelease-Insert>']})
         userextn.remove_section('ZzDummy')
-# need option key test
-##        key = ['<Option-Key-2>'] if sys.platform == 'darwin' else ['<Alt-Key-2>']
-##        eq(conf.GetExtensionKeys('ZoomHeight'), {'<<zoom-height>>': key})
 
     def test_get_extension_bindings(self):
         userextn.read_string('''
@@ -491,19 +488,27 @@ class IdleConfTest(unittest.TestCase):
     def test_get_current_keyset(self):
         current_platform = sys.platform
         conf = self.mock_config()
+        try:
+            # Ensure that platform isn't darwin
+            sys.platform = 'some-linux'
+            self.assertEqual(conf.GetCurrentKeySet(),
+                             conf.GetKeySet(conf.CurrentKeys()))
 
-        # Ensure that platform isn't darwin
-        sys.platform = 'some-linux'
-        self.assertEqual(conf.GetCurrentKeySet(), conf.GetKeySet(conf.CurrentKeys()))
-
-        # This should not be the same, since replace <Alt- to <Option-.
-        # Above depended on config-extensions.def having Alt keys,
-        # which is no longer true.
-        # sys.platform = 'darwin'
-        # self.assertNotEqual(conf.GetCurrentKeySet(), conf.GetKeySet(conf.CurrentKeys()))
-
-        # Restore platform
-        sys.platform = current_platform
+            # On darwin, '<Alt-' is replaced with '<Option-'.  Add an
+            # extension binding, as the default key sets have no Alt keys.
+            conf.defaultCfg['extensions'].add_section('Foobar')
+            conf.defaultCfg['extensions'].add_section('Foobar_cfgBindings')
+            conf.defaultCfg['extensions'].set('Foobar', 'enable', 'True')
+            conf.defaultCfg['extensions'].set('Foobar_cfgBindings', 'newfoo',
+                                              '<Alt-Shift-Key-F12>')
+            self.assertEqual(conf.GetKeySet(conf.CurrentKeys())['<<newfoo>>'],
+                             ['<Alt-Shift-Key-F12>'])
+            sys.platform = 'darwin'
+            self.assertEqual(conf.GetCurrentKeySet()['<<newfoo>>'],
+                             ['<Option-Shift-Key-F12>'])
+        finally:
+            # Restore platform
+            sys.platform = current_platform
 
     def test_get_keyset(self):
         conf = self.mock_config()
@@ -762,8 +767,29 @@ class ChangesTest(unittest.TestCase):
         changes = self.changes
         changes.add_option('main', 'Indent', 'use-spaces', '1')
         # save_option returns False; cfg_type_changed remains False.
+        self.assertFalse(changes.save_all())
+        self.assertFalse(usermain.has_option('Indent', 'use-spaces'))
+        self.assertEqual(changes, self.empty)
 
-    # TODO: test that save_all calls usercfg Saves.
+    def test_save_all_saves_files(self):
+        eq = self.assertEqual
+        changes = self.changes
+        for parser in testcfg.values():
+            parser.Save = Func()
+        try:
+            # 'main', 'highlight' and 'keys' are saved even if unchanged.
+            self.assertFalse(changes.save_all())
+            eq([testcfg[cfgtype].Save.called
+                for cfgtype in ('main', 'highlight', 'keys', 'extensions')],
+               [1, 1, 1, 0])
+            # A changed configuration type is saved too.
+            changes.add_option('extensions', 'Esec', 'eitem', 'eval')
+            self.assertTrue(changes.save_all())
+            eq(testcfg['extensions'].Save.called, 1)
+        finally:
+            for parser in testcfg.values():
+                del parser.Save
+            userextn.remove_section('Esec')
 
     def test_delete_section(self):
         changes = self.load()

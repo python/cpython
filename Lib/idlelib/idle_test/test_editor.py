@@ -211,7 +211,6 @@ class IndentSearcherTest(unittest.TestCase):
                 self.assertEqual(actual_pair, expected_pair)
 
 
-@unittest.skip('Empty test')
 class RMenuTest(unittest.TestCase):
 
     @classmethod
@@ -220,11 +219,13 @@ class RMenuTest(unittest.TestCase):
         cls.root = Tk()
         cls.root.withdraw()
         cls.window = Editor(root=cls.root)
+        cls.text = cls.window.text
+        cls.window.rmenu = cls.DummyRMenu
 
     @classmethod
     def tearDownClass(cls):
         cls.window._close()
-        del cls.window
+        del cls.window, cls.text
         cls.root.update_idletasks()
         for id in cls.root.after_info():
             cls.root.after_cancel(id)
@@ -234,8 +235,57 @@ class RMenuTest(unittest.TestCase):
     class DummyRMenu:
         def tk_popup(x, y): pass
 
-    def test_rclick(self):
-        pass
+    def click(self, x=0, y=0):
+        """Simulate a right click at the (x, y) pixel of the text.
+
+        Return the index of the clicked character, as computed by the
+        widget itself.  It cannot be computed here, because the geometry
+        of the text is unknown while its window is not mapped.
+        """
+        index = self.text.index(f'@{x},{y}')
+        Event = namedtuple('Event', ['x', 'y', 'x_root', 'y_root'])
+        event = Event(x, y, x_root=0, y_root=0)
+        self.assertEqual(self.window.right_menu_event(event), 'break')
+        return index
+
+    def test_rclick_no_selection(self):
+        text = self.text
+        insert(text, 'one two three')
+        index = self.click()
+        self.assertEqual(text.tag_ranges('sel'), ())
+        self.assertEqual(text.index('insert'), index)
+
+    def test_rclick_outside_selection(self):
+        text = self.text
+        insert(text, 'one two three')
+        # The selection does not contain the clicked character.
+        text.tag_add('sel', '1.5', '1.8')
+        text.mark_set('insert', '1.8')
+        index = self.click()
+        self.assertEqual(text.tag_ranges('sel'), ())
+        self.assertEqual(text.index('insert'), index)
+
+    def test_rclick_inside_selection(self):
+        text = self.text
+        insert(text, 'one two three')
+        # The selection contains the clicked character.
+        index = text.index('@0,0')
+        text.tag_add('sel', index, f'{index}+3c')
+        text.mark_set('insert', 'end-1c')
+        self.click()
+        self.assertEqual(text.index('sel.first'), index)
+        self.assertEqual(text.index('sel.last'), text.index(f'{index}+3c'))
+        self.assertEqual(text.index('insert'), text.index('end-1c'))
+
+    def test_rmenu_check_copy(self):
+        text = self.text
+        insert(text, 'one two three')
+        eq = self.assertEqual
+        eq(self.window.rmenu_check_copy(), 'disabled')
+        eq(self.window.rmenu_check_cut(), 'disabled')
+        text.tag_add('sel', '1.0', '1.3')
+        eq(self.window.rmenu_check_copy(), 'normal')
+        eq(self.window.rmenu_check_cut(), 'normal')
 
 
 if __name__ == '__main__':
