@@ -2130,12 +2130,19 @@ case "$ac_cv_cc_name" in
     # gh-148535: On i686, using -fprofile-update=atomic makes the PGO build
     # way slower (up to 47x slower). So far, the GCC internal error on PGO
     # build was not seen on i686, so don't use this flag on i686.
-    AS_VAR_IF([ac_cv_i686], [no], [
-        AX_CHECK_COMPILE_FLAG(
-            [-fprofile-update=atomic],
-            [PGO_PROF_GEN_FLAG="$PGO_PROF_GEN_FLAG -fprofile-update=atomic"],
-            [])
-    ])
+    # 
+    # gh-148535: On x86_64, -fprofile-update=atomic causes severe lock contention,
+    # making the PGO build 34% slower on multi-core systems. It is now opt-in.
+    AC_ARG_ENABLE([pgo-atomic],
+    [AS_HELP_STRING([--enable-pgo-atomic], [Use -fprofile-update=atomic during PGO builds])],
+    [PGO_PROF_ATOMIC="-fprofile-update=atomic"],
+    [PGO_PROF_ATOMIC=""])
+  AS_VAR_IF([ac_cv_i686], [no], [
+    AX_CHECK_COMPILE_FLAG(
+        [-fprofile-update=atomic],
+        [PGO_PROF_GEN_FLAG="$PGO_PROF_GEN_FLAG $PGO_PROF_ATOMIC"],
+        [])
+  ])
 
     PGO_PROF_USE_FLAG="-fprofile-use -fprofile-correction"
     LLVM_PROF_MERGER="true"
