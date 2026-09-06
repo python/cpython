@@ -1,0 +1,1 @@
+Fix :func:`email.message.Message.get_boundary` strips boundaries twice.
