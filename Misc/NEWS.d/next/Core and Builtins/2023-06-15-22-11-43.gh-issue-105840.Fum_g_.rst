@@ -1,2 +1,0 @@
-Fix possible crashes when specializing function calls with too many
-``__defaults__``.

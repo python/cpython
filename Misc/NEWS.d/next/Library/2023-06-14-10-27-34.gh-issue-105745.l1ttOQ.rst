@@ -1,1 +1,0 @@
-Fix ``webbrowser.Konqueror.open`` method.

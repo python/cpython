@@ -1,8 +1,12 @@
-import _ctypes_test
 import ctypes
 import unittest
 from ctypes import (CDLL, Structure, CFUNCTYPE, sizeof, _CFuncPtr,
                     c_void_p, c_char_p, c_char, c_int, c_uint, c_long)
+from ctypes.util import wrap_dll_function
+from test.support import import_helper
+_ctypes_test = import_helper.import_module("_ctypes_test")
+from ._support import (_CData, PyCFuncPtrType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
+                       Py_TPFLAGS_IMMUTABLETYPE, StructCheckMixin)
 
 
 try:
@@ -14,7 +18,25 @@ except AttributeError:
 lib = CDLL(_ctypes_test.__file__)
 
 
-class CFuncPtrTestCase(unittest.TestCase):
+class CFuncPtrTestCase(unittest.TestCase, StructCheckMixin):
+    def test_inheritance_hierarchy(self):
+        self.assertEqual(_CFuncPtr.mro(), [_CFuncPtr, _CData, object])
+
+        self.assertEqual(PyCFuncPtrType.__name__, "PyCFuncPtrType")
+        self.assertEqual(type(PyCFuncPtrType), type)
+
+    def test_type_flags(self):
+        for cls in _CFuncPtr, PyCFuncPtrType:
+            with self.subTest(cls=cls):
+                self.assertTrue(_CFuncPtr.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+                self.assertFalse(_CFuncPtr.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
+
+    def test_metaclass_details(self):
+        # Cannot call the metaclass __init__ more than once
+        CdeclCallback = CFUNCTYPE(c_int, c_int, c_int)
+        with self.assertRaisesRegex(SystemError, "already initialized"):
+            PyCFuncPtrType.__init__(CdeclCallback, 'ptr', (), {})
+
     def test_basic(self):
         X = WINFUNCTYPE(c_int, c_int, c_int)
 
@@ -67,6 +89,7 @@ class CFuncPtrTestCase(unittest.TestCase):
                         ("hCursor", HCURSOR),
                         ("lpszMenuName", LPCTSTR),
                         ("lpszClassName", LPCTSTR)]
+        self.check_struct(WNDCLASS)
 
         wndclass = WNDCLASS()
         wndclass.lpfnWndProc = WNDPROC(wndproc)
@@ -107,6 +130,74 @@ class CFuncPtrTestCase(unittest.TestCase):
 
     def test_abstract(self):
         self.assertRaises(TypeError, _CFuncPtr, 13, "name", 42, "iid")
+
+    def test_wrap_dll_function(self):
+        @wrap_dll_function(ctypes.pythonapi)
+        def PyObject_GetAttr(op: ctypes.py_object, attr: ctypes.py_object) -> ctypes.py_object:
+            """Call the PythonAPI function underlying getattr"""
+            pass
+
+        class Foo:
+            a = "abc"
+
+        self.assertEqual(PyObject_GetAttr(Foo, "a"), "abc")
+        self.assertEqual(PyObject_GetAttr.__doc__, "Call the PythonAPI function underlying getattr")
+
+        with self.assertRaises(AttributeError):
+            @wrap_dll_function(ctypes.pythonapi)
+            def noexist():
+                pass
+
+        with self.assertRaisesRegex(ValueError, "'PyObject_GetAttrString' missing return type annotation"):
+            @wrap_dll_function(ctypes.pythonapi)
+            def PyObject_GetAttrString(op: ctypes.py_object, attr: ctypes.c_char_p):
+                pass
+
+    def test_wrap_dll_function_non_positional(self):
+        # argtypes describes positional arguments only, so a parameter that
+        # cannot be passed positionally is rejected.
+        regex = "'PyObject_GetAttr' has non-positional parameter"
+
+        with self.assertRaisesRegex(ValueError, regex):
+            @wrap_dll_function(ctypes.pythonapi)
+            def PyObject_GetAttr(op: ctypes.py_object, attr: ctypes.py_object,
+                                 *args: ctypes.c_int) -> ctypes.py_object:
+                pass
+
+        with self.assertRaisesRegex(ValueError, regex):
+            @wrap_dll_function(ctypes.pythonapi)
+            def PyObject_GetAttr(op: ctypes.py_object, attr: ctypes.py_object,
+                                 **kwargs: ctypes.c_int) -> ctypes.py_object:
+                pass
+
+        with self.assertRaisesRegex(ValueError, regex):
+            @wrap_dll_function(ctypes.pythonapi)
+            def PyObject_GetAttr(op: ctypes.py_object, attr: ctypes.py_object,
+                                 *, kwonly: ctypes.c_int) -> ctypes.py_object:
+                pass
+
+        with self.assertRaisesRegex(ValueError, regex):
+            @wrap_dll_function(ctypes.pythonapi)
+            def PyObject_GetAttr(op: ctypes.py_object, attr: ctypes.py_object,
+                                 *, kwonly) -> ctypes.py_object:
+                pass
+
+        # Positional-only parameters have a positional counterpart, so they
+        # are accepted.
+        @wrap_dll_function(ctypes.pythonapi)
+        def PyObject_GetAttr(op: ctypes.py_object, attr: ctypes.py_object,
+                             /) -> ctypes.py_object:
+            pass
+
+        class Foo:
+            a = "abc"
+
+        self.assertEqual(PyObject_GetAttr(Foo, "a"), "abc")
+
+    def test_wrap_dll_function_str_ann(self):
+        from test.test_ctypes import wrap_str_ann
+        version = wrap_str_ann.Py_GetVersion()
+        self.assertIsInstance(version, bytes)
 
 
 if __name__ == '__main__':

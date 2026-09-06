@@ -56,7 +56,7 @@ PyAPI_FUNC(void) PyThreadState_Delete(PyThreadState *);
 
    The caller must hold the GIL.
 
-   See also _PyThreadState_UncheckedGet() and _PyThreadState_GET(). */
+   See also PyThreadState_GetUnchecked() and _PyThreadState_GET(). */
 PyAPI_FUNC(PyThreadState *) PyThreadState_Get(void);
 
 // Alias to PyThreadState_Get()
@@ -119,6 +119,29 @@ PyAPI_FUNC(void) PyGILState_Release(PyGILState_STATE);
 */
 PyAPI_FUNC(PyThreadState *) PyGILState_GetThisThreadState(void);
 
+
+/* PEP 788 -- Protection against interpreter finalization */
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
+
+typedef struct PyInterpreterGuard PyInterpreterGuard;
+typedef struct PyInterpreterView PyInterpreterView;
+
+typedef void PyThreadStateToken;
+
+PyAPI_FUNC(PyInterpreterGuard *) PyInterpreterGuard_FromCurrent(void);
+PyAPI_FUNC(void) PyInterpreterGuard_Close(PyInterpreterGuard *guard);
+PyAPI_FUNC(PyInterpreterGuard *) PyInterpreterGuard_FromView(PyInterpreterView *view);
+
+PyAPI_FUNC(PyInterpreterView *) PyInterpreterView_FromCurrent(void);
+PyAPI_FUNC(void) PyInterpreterView_Close(PyInterpreterView *view);
+PyAPI_FUNC(PyInterpreterView *) PyInterpreterView_FromMain(void);
+
+PyAPI_FUNC(PyThreadStateToken *) PyThreadState_Ensure(PyInterpreterGuard *guard);
+PyAPI_FUNC(PyThreadStateToken *) PyThreadState_EnsureFromView(PyInterpreterView *view);
+PyAPI_FUNC(void) PyThreadState_Release(PyThreadStateToken *tstate);
+
+#endif
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_PYSTATE_H

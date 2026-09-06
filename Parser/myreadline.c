@@ -1,5 +1,5 @@
 
-/* Readline interface for tokenizer.c and [raw_]input() in bltinmodule.c.
+/* Readline interface for the tokenizer and [raw_]input() in bltinmodule.c.
    By default, or when stdin is not a tty device, we have a super
    simple my_readline function using fgets.
    Optionally, we can use the GNU readline library.
@@ -11,18 +11,26 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
-#include "pycore_pystate.h"   // _PyThreadState_GET()
+#include "pycore_interp.h"        // _PyInterpreterState_GetConfig()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_signal.h"        // _PyOS_SigintEvent()
 #ifdef MS_WINDOWS
 #  ifndef WIN32_LEAN_AND_MEAN
-#  define WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
 #  endif
 #  include "windows.h"
 #endif /* MS_WINDOWS */
 
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // isatty()
+#endif
 
-PyThreadState* _PyOS_ReadlineTState = NULL;
 
-static PyThread_type_lock _PyOS_ReadlineLock = NULL;
+// Export the symbol since it's used by the readline shared extension
+PyAPI_DATA(PyThreadState*) _PyOS_ReadlineTState;
+PyThreadState *_PyOS_ReadlineTState = NULL;
+
+static PyMutex _PyOS_ReadlineLock;
 
 int (*PyOS_InputHook)(void) = NULL;
 
@@ -154,8 +162,8 @@ _PyOS_WindowsConsoleReadline(PyThreadState *tstate, HANDLE hStdIn)
                 goto exit;
             err = 0;
             HANDLE hInterruptEvent = _PyOS_SigintEvent();
-            if (WaitForSingleObjectEx(hInterruptEvent, 100, FALSE)
-                    == WAIT_OBJECT_0) {
+            DWORD state = WaitForSingleObjectEx(hInterruptEvent, 100, FALSE);
+            if (state == WAIT_OBJECT_0) {
                 ResetEvent(hInterruptEvent);
                 PyEval_RestoreThread(tstate);
                 s = PyErr_CheckSignals();
@@ -164,7 +172,13 @@ _PyOS_WindowsConsoleReadline(PyThreadState *tstate, HANDLE hStdIn)
                     goto exit;
                 }
             }
-            break;
+            else if (state != WAIT_TIMEOUT) {
+                err = GetLastError();
+                goto exit;
+            }
+            /* The console cancelled the read and flushed its input buffer,
+               but no exception was raised.  Start the read over. */
+            continue;
         }
 
         total_read += n_read;
@@ -336,7 +350,7 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
             break;
         }
         n += strlen(p + n);
-    } while (p[n-1] != '\n');
+    } while (n == 0 || p[n-1] != '\n');
 
     pr = (char *)PyMem_RawRealloc(p, n+1);
     if (pr == NULL) {
@@ -358,8 +372,6 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 char *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *) = NULL;
 
 
-/* Interface used by tokenizer.c and bltinmodule.c */
-
 char *
 PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 {
@@ -367,28 +379,21 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     size_t len;
 
     PyThreadState *tstate = _PyThreadState_GET();
-    if (_PyOS_ReadlineTState == tstate) {
+    if (_Py_atomic_load_ptr_relaxed(&_PyOS_ReadlineTState) == tstate) {
         PyErr_SetString(PyExc_RuntimeError,
                         "can't re-enter readline");
         return NULL;
     }
 
-
+    // GH-123321: We need to acquire the lock before setting
+    // _PyOS_ReadlineTState, otherwise the variable may be nullified by a
+    // different thread.
+    Py_BEGIN_ALLOW_THREADS
+    PyMutex_Lock(&_PyOS_ReadlineLock);
+    _Py_atomic_store_ptr_relaxed(&_PyOS_ReadlineTState, tstate);
     if (PyOS_ReadlineFunctionPointer == NULL) {
         PyOS_ReadlineFunctionPointer = PyOS_StdioReadline;
     }
-
-    if (_PyOS_ReadlineLock == NULL) {
-        _PyOS_ReadlineLock = PyThread_allocate_lock();
-        if (_PyOS_ReadlineLock == NULL) {
-            PyErr_SetString(PyExc_MemoryError, "can't allocate lock");
-            return NULL;
-        }
-    }
-
-    _PyOS_ReadlineTState = tstate;
-    Py_BEGIN_ALLOW_THREADS
-    PyThread_acquire_lock(_PyOS_ReadlineLock, 1);
 
     /* This is needed to handle the unlikely case that the
      * interpreter is in interactive mode *and* stdin/out are not
@@ -412,11 +417,12 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     else {
         rv = (*PyOS_ReadlineFunctionPointer)(sys_stdin, sys_stdout, prompt);
     }
+
+    // gh-123321: Must set the variable and then release the lock before
+    // taking the GIL. Otherwise a deadlock or segfault may occur.
+    _Py_atomic_store_ptr_relaxed(&_PyOS_ReadlineTState, NULL);
+    PyMutex_Unlock(&_PyOS_ReadlineLock);
     Py_END_ALLOW_THREADS
-
-    PyThread_release_lock(_PyOS_ReadlineLock);
-
-    _PyOS_ReadlineTState = NULL;
 
     if (rv == NULL)
         return NULL;

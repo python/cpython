@@ -12,5 +12,10 @@ struct _traceback {
     int tb_lineno;
 };
 
-PyAPI_FUNC(int) _Py_DisplaySourceLine(PyObject *, PyObject *, int, int, int *, PyObject **);
-PyAPI_FUNC(void) _PyTraceback_Add(const char *, const char *, int);
+PyAPI_FUNC(const char*) PyUnstable_DumpTraceback(int fd, PyThreadState *tstate);
+
+PyAPI_FUNC(const char*) PyUnstable_DumpTracebackThreads(
+    int fd,
+    PyInterpreterState *interp,
+    PyThreadState *current_tstate,
+    Py_ssize_t max_threads);

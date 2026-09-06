@@ -47,7 +47,7 @@ class PythonAPITestCase(unittest.TestCase):
 
     @support.refcount_test
     def test_PyObj_FromPtr(self):
-        s = "abc def ghi jkl"
+        s = object()
         ref = sys.getrefcount(s)
         # id(python-object) is the address
         pyobj = _ctypes.PyObj_FromPtr(id(s))

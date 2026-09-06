@@ -34,18 +34,6 @@
 #endif
 
 /*[python input]
-class HANDLE_converter(CConverter):
-    type = 'void *'
-    format_unit = '"_Py_PARSE_UINTPTR"'
-
-    def parse_arg(self, argname, displayname):
-        return """
-            {paramname} = PyLong_AsVoidPtr({argname});
-            if (!{paramname} && PyErr_Occurred()) {{{{
-                goto exit;
-            }}}}
-            """.format(argname=argname, paramname=self.parser_name)
-
 class HANDLE_return_converter(CReturnConverter):
     type = 'void *'
 
@@ -64,7 +52,7 @@ class byte_char_return_converter(CReturnConverter):
         data.declarations.append('char s[1];')
         data.return_value = 's[0]'
         data.return_conversion.append(
-            'return_value = PyBytes_FromStringAndSize(s, 1);\n')
+            f'{data.parser_retval} = PyBytes_FromStringAndSize(s, 1);\n')
 
 class wchar_t_return_converter(CReturnConverter):
     type = 'wchar_t'
@@ -72,9 +60,10 @@ class wchar_t_return_converter(CReturnConverter):
     def render(self, function, data):
         self.declare(data)
         data.return_conversion.append(
-            'return_value = PyUnicode_FromOrdinal(_return_value);\n')
+            f'{data.parser_retval} = '
+            f'PyUnicode_FromOrdinal({data.converter_retval});\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=1e8e9fa3538ec08f]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=f61ae699a69482ba]*/
 
 /*[clinic input]
 module msvcrt
@@ -183,8 +172,8 @@ to os.fdopen() to create a file object.
 [clinic start generated code]*/
 
 static long
-msvcrt_open_osfhandle_impl(PyObject *module, void *handle, int flags)
-/*[clinic end generated code: output=b2fb97c4b515e4e6 input=d5db190a307cf4bb]*/
+msvcrt_open_osfhandle_impl(PyObject *module, HANDLE handle, int flags)
+/*[clinic end generated code: output=646759b9fd02ca7b input=d5db190a307cf4bb]*/
 {
     if (PySys_Audit("msvcrt.open_osfhandle", "Ki", handle, flags) < 0) {
         return -1;
@@ -217,14 +206,15 @@ msvcrt_get_osfhandle_impl(PyObject *module, int fd)
 
 /* Console I/O */
 /*[clinic input]
+@permit_long_summary
 msvcrt.kbhit -> long
 
-Return true if a keypress is waiting to be read.
+Returns a nonzero value if a keypress is waiting to be read. Otherwise, return 0.
 [clinic start generated code]*/
 
 static long
 msvcrt_kbhit_impl(PyObject *module)
-/*[clinic end generated code: output=940dfce6587c1890 input=e70d678a5c2f6acc]*/
+/*[clinic end generated code: output=940dfce6587c1890 input=52c0c44143f3fba5]*/
 {
     return _kbhit();
 }
@@ -315,6 +305,22 @@ msvcrt_getwche_impl(PyObject *module)
 
 #endif /* MS_WINDOWS_DESKTOP */
 
+/* Raise an OSError for a failed _putch()/_putwch() call.
+
+   These functions fail, for example, when the process has no console
+   attached, but the CRT reports the failure without setting errno (and
+   without setting the Windows last error either), so fall back to a
+   generic error message in that case. */
+static PyObject *
+set_console_write_error(void)
+{
+    if (errno != 0) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    PyErr_SetString(PyExc_OSError, "write to console failed");
+    return NULL;
+}
+
 /*[clinic input]
 msvcrt.putch
 
@@ -328,9 +334,16 @@ static PyObject *
 msvcrt_putch_impl(PyObject *module, char char_value)
 /*[clinic end generated code: output=92ec9b81012d8f60 input=ec078dd10cb054d6]*/
 {
+    int res;
+
     _Py_BEGIN_SUPPRESS_IPH
-    _putch(char_value);
+    errno = 0;
+    res = _putch(char_value);
     _Py_END_SUPPRESS_IPH
+
+    if (res == EOF) {
+        return set_console_write_error();
+    }
     Py_RETURN_NONE;
 }
 
@@ -349,11 +362,17 @@ static PyObject *
 msvcrt_putwch_impl(PyObject *module, int unicode_char)
 /*[clinic end generated code: output=a3bd1a8951d28eee input=996ccd0bbcbac4c3]*/
 {
-    _Py_BEGIN_SUPPRESS_IPH
-    _putwch(unicode_char);
-    _Py_END_SUPPRESS_IPH
-    Py_RETURN_NONE;
+    wint_t res;
 
+    _Py_BEGIN_SUPPRESS_IPH
+    errno = 0;
+    res = _putwch(unicode_char);
+    _Py_END_SUPPRESS_IPH
+
+    if (res == WEOF) {
+        return set_console_write_error();
+    }
+    Py_RETURN_NONE;
 }
 
 #endif /* MS_WINDOWS_DESKTOP */
@@ -428,8 +447,8 @@ Only available on Debug builds.
 [clinic start generated code]*/
 
 static void *
-msvcrt_CrtSetReportFile_impl(PyObject *module, int type, void *file)
-/*[clinic end generated code: output=9393e8c77088bbe9 input=290809b5f19e65b9]*/
+msvcrt_CrtSetReportFile_impl(PyObject *module, int type, HANDLE file)
+/*[clinic end generated code: output=55858e446d583c5f input=290809b5f19e65b9]*/
 {
     HANDLE res;
 
@@ -565,15 +584,9 @@ static struct PyMethodDef msvcrt_functions[] = {
 };
 
 static int
-insertptr(PyObject *mod, char *name, void *value)
+insertptr(PyObject *mod, const char *name, void *value)
 {
-    PyObject *v = PyLong_FromVoidPtr(value);
-    if (v == NULL) {
-        return -1;
-    }
-    int rc = PyModule_AddObjectRef(mod, name, v);
-    Py_DECREF(v);
-    return rc;
+    return PyModule_Add(mod, name, PyLong_FromVoidPtr(value));
 }
 
 #define INSERTINT(MOD, NAME, VAL) do {                  \
@@ -620,6 +633,10 @@ exec_module(PyObject* m)
     INSERTPTR(m, "CRTDBG_FILE_STDERR", _CRTDBG_FILE_STDERR);
     INSERTPTR(m, "CRTDBG_FILE_STDOUT", _CRTDBG_FILE_STDOUT);
     INSERTPTR(m, "CRTDBG_REPORT_FILE", _CRTDBG_REPORT_FILE);
+    INSERTINT(m, "OUT_TO_DEFAULT", _OUT_TO_DEFAULT);
+    INSERTINT(m, "OUT_TO_STDERR", _OUT_TO_STDERR);
+    INSERTINT(m, "OUT_TO_MSGBOX", _OUT_TO_MSGBOX);
+    INSERTINT(m, "REPORT_ERRMODE", _REPORT_ERRMODE);
 #endif
 
 #undef INSERTINT
@@ -646,12 +663,7 @@ exec_module(PyObject* m)
                                              _VC_CRT_MINOR_VERSION,
                                              _VC_CRT_BUILD_VERSION,
                                              _VC_CRT_RBUILD_VERSION);
-    if (version == NULL) {
-        return -1;
-    }
-    int st = PyModule_AddObjectRef(m, "CRT_ASSEMBLY_VERSION", version);
-    Py_DECREF(version);
-    if (st < 0) {
+    if (PyModule_Add(m, "CRT_ASSEMBLY_VERSION", version) < 0) {
         return -1;
     }
 #endif
@@ -662,6 +674,7 @@ exec_module(PyObject* m)
 static PyModuleDef_Slot msvcrt_slots[] = {
     {Py_mod_exec, exec_module},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

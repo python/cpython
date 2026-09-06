@@ -51,8 +51,8 @@ Number Protocol
 
    Return a reasonable approximation for the mathematical value of *o1* divided by
    *o2*, or ``NULL`` on failure.  The return value is "approximate" because binary
-   floating point numbers are approximate; it is not possible to represent all real
-   numbers in base two.  This function can return a floating point value when
+   floating-point numbers are approximate; it is not possible to represent all real
+   numbers in base two.  This function can return a floating-point value when
    passed two integers.  This is the equivalent of the Python expression ``o1 / o2``.
 
 
@@ -177,8 +177,8 @@ Number Protocol
 
    Return a reasonable approximation for the mathematical value of *o1* divided by
    *o2*, or ``NULL`` on failure.  The return value is "approximate" because binary
-   floating point numbers are approximate; it is not possible to represent all real
-   numbers in base two.  This function can return a floating point value when
+   floating-point numbers are approximate; it is not possible to represent all real
+   numbers in base two.  This function can return a floating-point value when
    passed two integers.  The operation is done *in-place* when *o1* supports it.
    This is the equivalent of the Python statement ``o1 /= o2``.
 

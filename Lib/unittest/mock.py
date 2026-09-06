@@ -24,7 +24,6 @@ __all__ = (
 )
 
 
-import asyncio
 import contextlib
 import io
 import inspect
@@ -32,8 +31,10 @@ import pprint
 import sys
 import builtins
 import pkgutil
-from asyncio import iscoroutinefunction
+from inspect import iscoroutinefunction
 import threading
+from annotationlib import Format
+from dataclasses import fields, is_dataclass
 from types import CodeType, ModuleType, MethodType
 from unittest.util import safe_repr
 from functools import wraps, partial
@@ -118,7 +119,7 @@ def _get_signature_object(func, as_instance, eat_self):
     else:
         sig_func = func
     try:
-        return func, inspect.signature(sig_func)
+        return func, inspect.signature(sig_func, annotation_format=Format.FORWARDREF)
     except ValueError:
         # Certain callable types are not supported by inspect.signature()
         return None
@@ -212,17 +213,12 @@ def _set_async_signature(mock, original, instance=False, is_async_mock=False):
     # signature as the original.
 
     skipfirst = isinstance(original, type)
-    result = _get_signature_object(original, instance, skipfirst)
-    if result is None:
-        return mock
-    func, sig = result
+    func, sig = _get_signature_object(original, instance, skipfirst)
     def checksig(*args, **kwargs):
         sig.bind(*args, **kwargs)
     _copy_func_details(func, checksig)
 
     name = original.__name__
-    if not name.isidentifier():
-        name = 'funcopy'
     context = {'_checksig_': checksig, 'mock': mock}
     src = """async def %s(*args, **kwargs):
     _checksig_(*args, **kwargs)
@@ -284,7 +280,6 @@ def _setup_func(funcopy, mock, sig):
 
 
 def _setup_async_mock(mock):
-    mock._is_coroutine = asyncio.coroutines._is_coroutine
     mock.await_count = 0
     mock.await_args = None
     mock.await_args_list = _CallList()
@@ -573,12 +568,17 @@ class NonCallableMock(Base):
         __dict__['_mock_methods'] = spec
         __dict__['_spec_asyncs'] = _spec_asyncs
 
+    def _mock_extend_spec_methods(self, spec_methods):
+        methods = self.__dict__.get('_mock_methods') or []
+        methods.extend(spec_methods)
+        self.__dict__['_mock_methods'] = methods
+
     def __get_return_value(self):
         ret = self._mock_return_value
         if self._mock_delegate is not None:
             ret = self._mock_delegate.return_value
 
-        if ret is DEFAULT:
+        if ret is DEFAULT and self._mock_wraps is None:
             ret = self._get_child_mock(
                 _new_parent=self, _new_name='()'
             )
@@ -595,7 +595,7 @@ class NonCallableMock(Base):
 
     __return_value_doc = "The value to be returned when the mock is called."
     return_value = property(__get_return_value, __set_return_value,
-                            __return_value_doc)
+                            doc=__return_value_doc)
 
 
     @property
@@ -633,7 +633,9 @@ class NonCallableMock(Base):
     side_effect = property(__get_side_effect, __set_side_effect)
 
 
-    def reset_mock(self,  visited=None,*, return_value=False, side_effect=False):
+    def reset_mock(self, visited=None, *,
+                   return_value: bool = False,
+                   side_effect: bool = False):
         "Restore the mock object to its initial state."
         if visited is None:
             visited = []
@@ -697,7 +699,7 @@ class NonCallableMock(Base):
             if name.startswith(('assert', 'assret', 'asert', 'aseert', 'assrt')) or name in _ATTRIB_DENY_LIST:
                 raise AttributeError(
                     f"{name!r} is not a valid assertion. Use a spec "
-                    f"for the mock if {name!r} is meant to be an attribute.")
+                    f"for the mock if {name!r} is meant to be an attribute")
 
         with NonCallableMock._lock:
             result = self._mock_children.get(name)
@@ -796,7 +798,7 @@ class NonCallableMock(Base):
         from_type = [e for e in from_type if not e.startswith('_')]
         from_dict = [e for e in from_dict if not e.startswith('_') or
                      _is_magic(e)]
-        return sorted(set(extras + from_type + from_dict + from_child_mocks))
+        return sorted({*extras, *from_type, *from_dict, *from_child_mocks})
 
 
     def __setattr__(self, name, value):
@@ -835,6 +837,9 @@ class NonCallableMock(Base):
             mock_name = f'{self._extract_mock_name()}.{name}'
             raise AttributeError(f'Cannot set {mock_name}')
 
+        if isinstance(value, PropertyMock):
+            self.__dict__[name] = value
+            return
         return object.__setattr__(self, name, value)
 
 
@@ -862,7 +867,7 @@ class NonCallableMock(Base):
 
 
     def _format_mock_failure_message(self, args, kwargs, action='call'):
-        message = 'expected %s not found.\nExpected: %s\nActual: %s'
+        message = 'expected %s not found.\nExpected: %s\n  Actual: %s'
         expected_string = self._format_mock_call_signature(args, kwargs)
         call_args = self.call_args
         actual_string = self._format_mock_call_signature(*call_args)
@@ -930,7 +935,7 @@ class NonCallableMock(Base):
             return _call
 
     def assert_not_called(self):
-        """assert that the mock was never called.
+        """Assert that the mock was never called.
         """
         if self.call_count != 0:
             msg = ("Expected '%s' to not have been called. Called %s times.%s"
@@ -940,7 +945,7 @@ class NonCallableMock(Base):
             raise AssertionError(msg)
 
     def assert_called(self):
-        """assert that the mock was called at least once
+        """Assert that the mock was called at least once.
         """
         if self.call_count == 0:
             msg = ("Expected '%s' to have been called." %
@@ -948,7 +953,7 @@ class NonCallableMock(Base):
             raise AssertionError(msg)
 
     def assert_called_once(self):
-        """assert that the mock was called only once.
+        """Assert that the mock was called only once.
         """
         if not self.call_count == 1:
             msg = ("Expected '%s' to have been called once. Called %s times.%s"
@@ -958,14 +963,14 @@ class NonCallableMock(Base):
             raise AssertionError(msg)
 
     def assert_called_with(self, /, *args, **kwargs):
-        """assert that the last call was made with the specified arguments.
+        """Assert that the last call was made with the specified arguments.
 
         Raises an AssertionError if the args and keyword args passed in are
         different to the last call to the mock."""
         if self.call_args is None:
             expected = self._format_mock_call_signature(args, kwargs)
             actual = 'not called.'
-            error_message = ('expected call not found.\nExpected: %s\nActual: %s'
+            error_message = ('expected call not found.\nExpected: %s\n  Actual: %s'
                     % (expected, actual))
             raise AssertionError(error_message)
 
@@ -980,7 +985,7 @@ class NonCallableMock(Base):
 
 
     def assert_called_once_with(self, /, *args, **kwargs):
-        """assert that the mock was called exactly once and that that call was
+        """Assert that the mock was called exactly once and that call was
         with the specified arguments."""
         if not self.call_count == 1:
             msg = ("Expected '%s' to be called once. Called %s times.%s"
@@ -992,7 +997,7 @@ class NonCallableMock(Base):
 
 
     def assert_has_calls(self, calls, any_order=False):
-        """assert the mock has been called with the specified calls.
+        """Assert the mock has been called with the specified calls.
         The `mock_calls` list is checked for the calls.
 
         If `any_order` is False (the default) then the calls must be
@@ -1015,8 +1020,8 @@ class NonCallableMock(Base):
                                     for e in expected])
                 raise AssertionError(
                     f'{problem}\n'
-                    f'Expected: {_CallList(calls)}'
-                    f'{self._calls_repr(prefix="Actual").rstrip(".")}'
+                    f'Expected: {_CallList(calls)}\n'
+                    f'  Actual: {safe_repr(self.mock_calls)}'
                 ) from cause
             return
 
@@ -1037,7 +1042,7 @@ class NonCallableMock(Base):
 
 
     def assert_any_call(self, /, *args, **kwargs):
-        """assert the mock has been called with the specified arguments.
+        """Assert the mock has been called with the specified arguments.
 
         The assert passes if the mock has *ever* been called, unlike
         `assert_called_with` and `assert_called_once_with` that only pass if
@@ -1090,7 +1095,7 @@ class NonCallableMock(Base):
         return klass(**kw)
 
 
-    def _calls_repr(self, prefix="Calls"):
+    def _calls_repr(self):
         """Renders self.mock_calls as a string.
 
         Example: "\nCalls: [call(1), call(2)]."
@@ -1100,7 +1105,7 @@ class NonCallableMock(Base):
         """
         if not self.mock_calls:
             return ""
-        return f"\n{prefix}: {safe_repr(self.mock_calls)}."
+        return f"\nCalls: {safe_repr(self.mock_calls)}."
 
 
 # Denylist for forbidden attribute names in safe mode
@@ -1174,14 +1179,20 @@ class CallableMixin(Base):
 
     def _increment_mock_call(self, /, *args, **kwargs):
         self.called = True
-        self.call_count += 1
 
         # handle call_args
         # needs to be set here so assertions on call arguments pass before
         # execution in the case of awaited calls
-        _call = _Call((args, kwargs), two=True)
-        self.call_args = _call
-        self.call_args_list.append(_call)
+        with NonCallableMock._lock:
+            # Lock is used here so that call_args_list and call_count are
+            # set atomically otherwise it is possible that by the time call_count
+            # is set another thread may have appended to call_args_list.
+            # The rest of this function relies on list.append being atomic and
+            # skips locking.
+            _call = _Call((args, kwargs), two=True)
+            self.call_args = _call
+            self.call_args_list.append(_call)
+            self.call_count = len(self.call_args_list)
 
         # initial stuff for method_calls:
         do_method_calls = self._mock_parent is not None
@@ -1237,6 +1248,9 @@ class CallableMixin(Base):
                 return result
 
         if self._mock_return_value is not DEFAULT:
+            return self.return_value
+
+        if self._mock_delegate and self._mock_delegate.return_value is not DEFAULT:
             return self.return_value
 
         if self._mock_wraps is not None:
@@ -1356,6 +1370,7 @@ class _patch(object):
         self.autospec = autospec
         self.kwargs = kwargs
         self.additional_patchers = []
+        self.is_started = False
 
 
     def copy(self):
@@ -1468,6 +1483,9 @@ class _patch(object):
 
     def __enter__(self):
         """Perform the patch."""
+        if self.is_started:
+            raise RuntimeError("Patch is already started")
+
         new, spec, spec_set = self.new, self.spec, self.spec_set
         autospec, kwargs = self.autospec, self.kwargs
         new_callable = self.new_callable
@@ -1510,13 +1528,12 @@ class _patch(object):
                 if isinstance(original, type):
                     # If we're patching out a class and there is a spec
                     inherit = True
-            if spec is None and _is_async_obj(original):
-                Klass = AsyncMock
-            else:
-                Klass = MagicMock
-            _kwargs = {}
+
+            # Determine the Klass to use
             if new_callable is not None:
                 Klass = new_callable
+            elif spec is None and _is_async_obj(original):
+                Klass = AsyncMock
             elif spec is not None or spec_set is not None:
                 this_spec = spec
                 if spec_set is not None:
@@ -1529,7 +1546,12 @@ class _patch(object):
                     Klass = AsyncMock
                 elif not_callable:
                     Klass = NonCallableMagicMock
+                else:
+                    Klass = MagicMock
+            else:
+                Klass = MagicMock
 
+            _kwargs = {}
             if spec is not None:
                 _kwargs['spec'] = spec
             if spec_set is not None:
@@ -1595,6 +1617,7 @@ class _patch(object):
         self.temp_original = original
         self.is_local = local
         self._exit_stack = contextlib.ExitStack()
+        self.is_started = True
         try:
             setattr(self.target, self.attribute, new_attr)
             if self.attribute_name is not None:
@@ -1614,6 +1637,9 @@ class _patch(object):
 
     def __exit__(self, *exc_info):
         """Undo the patch."""
+        if not self.is_started:
+            return
+
         if self.is_local and self.temp_original is not DEFAULT:
             setattr(self.target, self.attribute, self.temp_original)
         else:
@@ -1630,6 +1656,7 @@ class _patch(object):
         del self.target
         exit_stack = self._exit_stack
         del self._exit_stack
+        self.is_started = False
         return exit_stack.__exit__(*exc_info)
 
 
@@ -1750,7 +1777,7 @@ def patch(
     the patch is undone.
 
     If `new` is omitted, then the target is replaced with an
-    `AsyncMock if the patched object is an async function or a
+    `AsyncMock` if the patched object is an async function or a
     `MagicMock` otherwise. If `patch` is used as a decorator and `new` is
     omitted, the created mock is passed in as an extra argument to the
     decorated function. If `patch` is used as a context manager the created
@@ -1824,7 +1851,8 @@ def patch(
 class _patch_dict(object):
     """
     Patch a dictionary, or dictionary like object, and restore the dictionary
-    to its original state after the test.
+    to its original state after the test, where the restored dictionary is
+    a copy of the dictionary as it was before the test.
 
     `in_dict` can be a dictionary or a mapping like container. If it is a
     mapping then it must at least support getting, setting and deleting items
@@ -2160,8 +2188,6 @@ class MagicMixin(Base):
 
         if getattr(self, "_mock_methods", None) is not None:
             these_magics = orig_magics.intersection(self._mock_methods)
-
-            remove_magics = set()
             remove_magics = orig_magics - these_magics
 
             for entry in remove_magics:
@@ -2214,6 +2240,17 @@ class MagicMock(MagicMixin, Mock):
         self._mock_add_spec(spec, spec_set)
         self._mock_set_magics()
 
+    def reset_mock(self, /, *args, return_value: bool = False, **kwargs):
+        if (
+            return_value
+            and self._mock_name
+            and _is_magic(self._mock_name)
+        ):
+            # Don't reset return values for magic methods,
+            # otherwise `m.__str__` will start
+            # to return `MagicMock` instances, instead of `str` instances.
+            return_value = False
+        super().reset_mock(*args, return_value=return_value, **kwargs)
 
 
 class MagicProxy(Base):
@@ -2234,8 +2271,11 @@ class MagicProxy(Base):
         return self.create_mock()
 
 
-_CODE_ATTRS = dir(CodeType)
-_CODE_SIG = inspect.signature(partial(CodeType.__init__, None))
+try:
+    _CODE_SIG = inspect.signature(partial(CodeType.__init__, None))
+    _CODE_ATTRS = dir(CodeType)
+except ValueError:
+    _CODE_SIG = None
 
 
 class AsyncMockMixin(Base):
@@ -2245,19 +2285,15 @@ class AsyncMockMixin(Base):
 
     def __init__(self, /, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # iscoroutinefunction() checks _is_coroutine property to say if an
-        # object is a coroutine. Without this check it looks to see if it is a
-        # function/method, which in this case it is not (since it is an
-        # AsyncMock).
-        # It is set through __dict__ because when spec_set is True, this
-        # attribute is likely undefined.
-        self.__dict__['_is_coroutine'] = asyncio.coroutines._is_coroutine
         self.__dict__['_mock_await_count'] = 0
         self.__dict__['_mock_await_args'] = None
         self.__dict__['_mock_await_args_list'] = _CallList()
-        code_mock = NonCallableMock(spec_set=_CODE_ATTRS)
-        code_mock.__dict__["_spec_class"] = CodeType
-        code_mock.__dict__["_spec_signature"] = _CODE_SIG
+        if _CODE_SIG:
+            code_mock = NonCallableMock(spec_set=_CODE_ATTRS)
+            code_mock.__dict__["_spec_class"] = CodeType
+            code_mock.__dict__["_spec_signature"] = _CODE_SIG
+        else:
+            code_mock = NonCallableMock(spec_set=CodeType)
         code_mock.co_flags = (
             inspect.CO_COROUTINE
             + inspect.CO_VARARGS
@@ -2444,7 +2480,7 @@ class AsyncMock(AsyncMockMixin, AsyncMagicMixin, Mock):
     recognized as an async function, and the result of a call is an awaitable:
 
     >>> mock = AsyncMock()
-    >>> iscoroutinefunction(mock)
+    >>> inspect.iscoroutinefunction(mock)
     True
     >>> inspect.isawaitable(mock())
     True
@@ -2734,6 +2770,16 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
                                f'[object={spec!r}]')
     is_async_func = _is_async_func(spec)
     _kwargs = {'spec': spec}
+
+    entries = [(entry, _missing) for entry in dir(spec)]
+    if is_type and instance and is_dataclass(spec):
+        is_dataclass_spec = True
+        dataclass_fields = fields(spec)
+        entries.extend((f.name, f.type) for f in dataclass_fields)
+        dataclass_spec_list = [f.name for f in dataclass_fields]
+    else:
+        is_dataclass_spec = False
+
     if spec_set:
         _kwargs = {'spec_set': spec}
     elif spec is None:
@@ -2743,6 +2789,12 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         _kwargs['_spec_as_instance'] = True
     if not unsafe:
         _check_spec_arg_typos(kwargs)
+
+    _name = kwargs.pop('name', _name)
+    _new_name = _name
+    if _parent is None:
+        # for a top level object no _new_name should be set
+        _new_name = ''
 
     _kwargs.update(kwargs)
 
@@ -2761,15 +2813,10 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
     elif is_type and instance and not _instance_callable(spec):
         Klass = NonCallableMagicMock
 
-    _name = _kwargs.pop('name', _name)
-
-    _new_name = _name
-    if _parent is None:
-        # for a top level object no _new_name should be set
-        _new_name = ''
-
     mock = Klass(parent=_parent, _new_parent=_parent, _new_name=_new_name,
                  name=_name, **_kwargs)
+    if is_dataclass_spec:
+        mock._mock_extend_spec_methods(dataclass_spec_list)
 
     if isinstance(spec, FunctionTypes):
         # should only happen at the top level because we don't
@@ -2784,11 +2831,14 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
     if _parent is not None and not instance:
         _parent._mock_children[_name] = mock
 
+    # Pop wraps from kwargs because it must not be passed to configure_mock.
+    wrapped = kwargs.pop('wraps', None)
     if is_type and not instance and 'return_value' not in kwargs:
         mock.return_value = create_autospec(spec, spec_set, instance=True,
-                                            _name='()', _parent=mock)
+                                            _name='()', _parent=mock,
+                                            wraps=wrapped)
 
-    for entry in dir(spec):
+    for entry, original in entries:
         if _is_magic(entry):
             # MagicMock already does the useful magic methods for us
             continue
@@ -2802,14 +2852,18 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         # AttributeError on being fetched?
         # we could be resilient against it, or catch and propagate the
         # exception when the attribute is fetched from the mock
-        try:
-            original = getattr(spec, entry)
-        except AttributeError:
-            continue
+        if original is _missing:
+            try:
+                original = getattr(spec, entry)
+            except AttributeError:
+                continue
 
-        kwargs = {'spec': original}
+        child_kwargs = {'spec': original}
+        # Wrap child attributes also.
+        if wrapped and hasattr(wrapped, entry):
+            child_kwargs.update(wraps=original)
         if spec_set:
-            kwargs = {'spec_set': original}
+            child_kwargs = {'spec_set': original}
 
         if not isinstance(original, FunctionTypes):
             new = _SpecState(original, spec_set, mock, entry, instance)
@@ -2820,14 +2874,13 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
                 parent = mock.mock
 
             skipfirst = _must_skip(spec, entry, is_type)
-            kwargs['_eat_self'] = skipfirst
+            child_kwargs['_eat_self'] = skipfirst
             if iscoroutinefunction(original):
                 child_klass = AsyncMock
             else:
                 child_klass = MagicMock
             new = child_klass(parent=parent, name=entry, _new_name=entry,
-                              _new_parent=parent,
-                              **kwargs)
+                              _new_parent=parent, **child_kwargs)
             mock._mock_children[entry] = new
             new.return_value = child_klass()
             _check_signature(original, new, skipfirst=skipfirst)
@@ -2838,6 +2891,11 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         # setting as an instance attribute?
         if isinstance(new, FunctionTypes):
             setattr(mock, entry, new)
+    # kwargs are passed with respect to the parent mock so, they are not used
+    # for creating return_value of the parent mock. So, this condition
+    # should be true only for the parent mock if kwargs are given.
+    if _is_instance_mock(mock) and kwargs:
+        mock.configure_mock(**kwargs)
 
     return mock
 
@@ -3012,9 +3070,7 @@ class ThreadingMixin(Base):
     DEFAULT_TIMEOUT = None
 
     def _get_child_mock(self, /, **kw):
-        if "timeout" in kw:
-            kw["timeout"] = kw.pop("timeout")
-        elif isinstance(kw.get("parent"), ThreadingMixin):
+        if isinstance(kw.get("parent"), ThreadingMixin):
             kw["timeout"] = kw["parent"]._mock_wait_timeout
         elif isinstance(kw.get("_new_parent"), ThreadingMixin):
             kw["timeout"] = kw["_new_parent"]._mock_wait_timeout
@@ -3055,6 +3111,10 @@ class ThreadingMixin(Base):
         self._mock_event.set()
 
         return ret_value
+
+    def _increment_mock_call(self, /, *args, **kwargs):
+        with self._mock_calls_events_lock:
+            super()._increment_mock_call(*args, **kwargs)
 
     def wait_until_called(self, *, timeout=_timeout_unset):
         """Wait until the mock object is called.

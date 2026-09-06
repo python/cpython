@@ -1,15 +1,9 @@
-import contextlib
-import sys
+import importlib.resources as resources
+import types
 import unittest
-import uuid
-import pathlib
+from importlib import import_module
 
-from . import data01
-from . import zipdata01, zipdata02
 from . import util
-from importlib import resources, import_module
-from test.support import import_helper, os_helper
-from test.support.os_helper import unlink
 
 
 class ResourceTests:
@@ -17,21 +11,20 @@ class ResourceTests:
 
     def test_is_file_exists(self):
         target = resources.files(self.data) / 'binary.file'
-        self.assertTrue(target.is_file())
+        assert target.is_file()
 
     def test_is_file_missing(self):
         target = resources.files(self.data) / 'not-a-file'
-        self.assertFalse(target.is_file())
+        assert not target.is_file()
 
     def test_is_dir(self):
         target = resources.files(self.data) / 'subdirectory'
-        self.assertFalse(target.is_file())
-        self.assertTrue(target.is_dir())
+        assert not target.is_file()
+        assert target.is_dir()
 
 
-class ResourceDiskTests(ResourceTests, unittest.TestCase):
-    def setUp(self):
-        self.data = data01
+class ResourceDiskTests(ResourceTests, util.DiskSetup, unittest.TestCase):
+    pass
 
 
 class ResourceZipTests(ResourceTests, util.ZipSetup, unittest.TestCase):
@@ -42,33 +35,39 @@ def names(traversable):
     return {item.name for item in traversable.iterdir()}
 
 
-class ResourceLoaderTests(unittest.TestCase):
+class ResourceLoaderTests(util.DiskSetup, unittest.TestCase):
     def test_resource_contents(self):
         package = util.create_package(
-            file=data01, path=data01.__file__, contents=['A', 'B', 'C']
+            file=self.data, path=self.data.__file__, contents=['A', 'B', 'C']
         )
-        self.assertEqual(names(resources.files(package)), {'A', 'B', 'C'})
+        assert names(resources.files(package)) == {'A', 'B', 'C'}
 
     def test_is_file(self):
         package = util.create_package(
-            file=data01, path=data01.__file__, contents=['A', 'B', 'C', 'D/E', 'D/F']
+            file=self.data,
+            path=self.data.__file__,
+            contents=['A', 'B', 'C', 'D/E', 'D/F'],
         )
-        self.assertTrue(resources.files(package).joinpath('B').is_file())
+        assert resources.files(package).joinpath('B').is_file()
 
     def test_is_dir(self):
         package = util.create_package(
-            file=data01, path=data01.__file__, contents=['A', 'B', 'C', 'D/E', 'D/F']
+            file=self.data,
+            path=self.data.__file__,
+            contents=['A', 'B', 'C', 'D/E', 'D/F'],
         )
-        self.assertTrue(resources.files(package).joinpath('D').is_dir())
+        assert resources.files(package).joinpath('D').is_dir()
 
     def test_resource_missing(self):
         package = util.create_package(
-            file=data01, path=data01.__file__, contents=['A', 'B', 'C', 'D/E', 'D/F']
+            file=self.data,
+            path=self.data.__file__,
+            contents=['A', 'B', 'C', 'D/E', 'D/F'],
         )
-        self.assertFalse(resources.files(package).joinpath('Z').is_file())
+        assert not resources.files(package).joinpath('Z').is_file()
 
 
-class ResourceCornerCaseTests(unittest.TestCase):
+class ResourceCornerCaseTests(util.DiskSetup, unittest.TestCase):
     def test_package_has_no_reader_fallback(self):
         """
         Test odd ball packages which:
@@ -77,7 +76,7 @@ class ResourceCornerCaseTests(unittest.TestCase):
         # 3. Are not in a zip file
         """
         module = util.create_package(
-            file=data01, path=data01.__file__, contents=['A', 'B', 'C']
+            file=self.data, path=self.data.__file__, contents=['A', 'B', 'C']
         )
         # Give the module a dummy loader.
         module.__loader__ = object()
@@ -85,151 +84,91 @@ class ResourceCornerCaseTests(unittest.TestCase):
         module.__file__ = '/path/which/shall/not/be/named'
         module.__spec__.loader = module.__loader__
         module.__spec__.origin = module.__file__
-        self.assertFalse(resources.files(module).joinpath('A').is_file())
+        assert not resources.files(module).joinpath('A').is_file()
 
 
-class ResourceFromZipsTest01(util.ZipSetupBase, unittest.TestCase):
-    ZIP_MODULE = zipdata01  # type: ignore
-
+class ResourceFromZipsTest01(util.ZipSetup, unittest.TestCase):
     def test_is_submodule_resource(self):
-        submodule = import_module('ziptestdata.subdirectory')
-        self.assertTrue(resources.files(submodule).joinpath('binary.file').is_file())
+        submodule = import_module('data01.subdirectory')
+        assert resources.files(submodule).joinpath('binary.file').is_file()
 
     def test_read_submodule_resource_by_name(self):
-        self.assertTrue(
-            resources.files('ziptestdata.subdirectory')
-            .joinpath('binary.file')
-            .is_file()
-        )
+        assert resources.files('data01.subdirectory').joinpath('binary.file').is_file()
 
     def test_submodule_contents(self):
-        submodule = import_module('ziptestdata.subdirectory')
-        self.assertEqual(
-            names(resources.files(submodule)), {'__init__.py', 'binary.file'}
-        )
+        submodule = import_module('data01.subdirectory')
+        assert names(resources.files(submodule)) == {'__init__.py', 'binary.file'}
 
     def test_submodule_contents_by_name(self):
-        self.assertEqual(
-            names(resources.files('ziptestdata.subdirectory')),
-            {'__init__.py', 'binary.file'},
-        )
+        assert names(resources.files('data01.subdirectory')) == {
+            '__init__.py',
+            'binary.file',
+        }
 
     def test_as_file_directory(self):
-        with resources.as_file(resources.files('ziptestdata')) as data:
-            assert data.name == 'ziptestdata'
+        with resources.as_file(resources.files('data01')) as data:
+            assert data.name == 'data01'
             assert data.is_dir()
             assert data.joinpath('subdirectory').is_dir()
             assert len(list(data.iterdir()))
         assert not data.parent.exists()
 
 
-class ResourceFromZipsTest02(util.ZipSetupBase, unittest.TestCase):
-    ZIP_MODULE = zipdata02  # type: ignore
+class ResourceFromZipsTest02(util.ZipSetup, unittest.TestCase):
+    MODULE = 'data02'
 
     def test_unrelated_contents(self):
         """
         Test thata zip with two unrelated subpackages return
         distinct resources. Ref python/importlib_resources#44.
         """
-        self.assertEqual(
-            names(resources.files('ziptestdata.one')),
-            {'__init__.py', 'resource1.txt'},
-        )
-        self.assertEqual(
-            names(resources.files('ziptestdata.two')),
-            {'__init__.py', 'resource2.txt'},
-        )
+        assert names(resources.files('data02.one')) == {'__init__.py', 'resource1.txt'}
+        assert names(resources.files('data02.two')) == {'__init__.py', 'resource2.txt'}
 
 
-@contextlib.contextmanager
-def zip_on_path(dir):
-    data_path = pathlib.Path(zipdata01.__file__)
-    source_zip_path = data_path.parent.joinpath('ziptestdata.zip')
-    zip_path = pathlib.Path(dir) / f'{uuid.uuid4()}.zip'
-    zip_path.write_bytes(source_zip_path.read_bytes())
-    sys.path.append(str(zip_path))
-    import_module('ziptestdata')
-
-    try:
-        yield
-    finally:
-        with contextlib.suppress(ValueError):
-            sys.path.remove(str(zip_path))
-
-        with contextlib.suppress(KeyError):
-            del sys.path_importer_cache[str(zip_path)]
-            del sys.modules['ziptestdata']
-
-        with contextlib.suppress(OSError):
-            unlink(zip_path)
-
-
-class DeletingZipsTest(unittest.TestCase):
+class DeletingZipsTest(util.ZipSetup, unittest.TestCase):
     """Having accessed resources in a zip file should not keep an open
     reference to the zip.
     """
 
-    def setUp(self):
-        self.fixtures = contextlib.ExitStack()
-        self.addCleanup(self.fixtures.close)
-
-        modules = import_helper.modules_setup()
-        self.addCleanup(import_helper.modules_cleanup, *modules)
-
-        temp_dir = self.fixtures.enter_context(os_helper.temp_dir())
-        self.fixtures.enter_context(zip_on_path(temp_dir))
-
     def test_iterdir_does_not_keep_open(self):
-        [item.name for item in resources.files('ziptestdata').iterdir()]
+        [item.name for item in resources.files('data01').iterdir()]
 
     def test_is_file_does_not_keep_open(self):
-        resources.files('ziptestdata').joinpath('binary.file').is_file()
+        resources.files('data01').joinpath('binary.file').is_file()
 
     def test_is_file_failure_does_not_keep_open(self):
-        resources.files('ziptestdata').joinpath('not-present').is_file()
+        resources.files('data01').joinpath('not-present').is_file()
 
     @unittest.skip("Desired but not supported.")
     def test_as_file_does_not_keep_open(self):  # pragma: no cover
-        resources.as_file(resources.files('ziptestdata') / 'binary.file')
+        resources.as_file(resources.files('data01') / 'binary.file')
 
     def test_entered_path_does_not_keep_open(self):
         """
         Mimic what certifi does on import to make its bundle
         available for the process duration.
         """
-        resources.as_file(resources.files('ziptestdata') / 'binary.file').__enter__()
+        resources.as_file(resources.files('data01') / 'binary.file').__enter__()
 
     def test_read_binary_does_not_keep_open(self):
-        resources.files('ziptestdata').joinpath('binary.file').read_bytes()
+        resources.files('data01').joinpath('binary.file').read_bytes()
 
     def test_read_text_does_not_keep_open(self):
-        resources.files('ziptestdata').joinpath('utf-8.file').read_text(
-            encoding='utf-8'
-        )
+        resources.files('data01').joinpath('utf-8.file').read_text(encoding='utf-8')
 
 
-class ResourceFromNamespaceTest01(unittest.TestCase):
-    site_dir = str(pathlib.Path(__file__).parent)
-
-    @classmethod
-    def setUpClass(cls):
-        sys.path.append(cls.site_dir)
-
-    @classmethod
-    def tearDownClass(cls):
-        sys.path.remove(cls.site_dir)
-
+class ResourceFromNamespaceTests:
     def test_is_submodule_resource(self):
-        self.assertTrue(
-            resources.files(import_module('namespacedata01'))
+        assert (
+            resources
+            .files(import_module('namespacedata01'))
             .joinpath('binary.file')
             .is_file()
         )
 
     def test_read_submodule_resource_by_name(self):
-        self.assertTrue(
-            resources.files('namespacedata01').joinpath('binary.file').is_file()
-        )
+        assert resources.files('namespacedata01').joinpath('binary.file').is_file()
 
     def test_submodule_contents(self):
         contents = names(resources.files(import_module('namespacedata01')))
@@ -237,7 +176,7 @@ class ResourceFromNamespaceTest01(unittest.TestCase):
             contents.remove('__pycache__')
         except KeyError:
             pass
-        self.assertEqual(contents, {'binary.file', 'utf-8.file', 'utf-16.file'})
+        assert contents == {'subdirectory', 'binary.file', 'utf-8.file', 'utf-16.file'}
 
     def test_submodule_contents_by_name(self):
         contents = names(resources.files('namespacedata01'))
@@ -245,7 +184,58 @@ class ResourceFromNamespaceTest01(unittest.TestCase):
             contents.remove('__pycache__')
         except KeyError:
             pass
-        self.assertEqual(contents, {'binary.file', 'utf-8.file', 'utf-16.file'})
+        assert contents == {'subdirectory', 'binary.file', 'utf-8.file', 'utf-16.file'}
+
+    def test_submodule_sub_contents(self):
+        contents = names(resources.files(import_module('namespacedata01.subdirectory')))
+        try:
+            contents.remove('__pycache__')
+        except KeyError:
+            pass
+        assert contents == {'binary.file'}
+
+    def test_submodule_sub_contents_by_name(self):
+        contents = names(resources.files('namespacedata01.subdirectory'))
+        try:
+            contents.remove('__pycache__')
+        except KeyError:
+            pass
+        assert contents == {'binary.file'}
+
+
+class ResourceFromNamespaceDiskTests(
+    util.DiskSetup,
+    ResourceFromNamespaceTests,
+    unittest.TestCase,
+):
+    MODULE = 'namespacedata01'
+
+
+class ResourceFromNamespaceZipTests(
+    util.ZipSetup,
+    ResourceFromNamespaceTests,
+    unittest.TestCase,
+):
+    MODULE = 'namespacedata01'
+
+
+class MainModuleTests(unittest.TestCase):
+    def test_main_module_with_none_spec(self):
+        """
+        __main__ module with no spec should raise TypeError (for clarity).
+
+        See python/cpython#138531 for details.
+        """
+        # construct a __main__ module with no __spec__.
+        mainmodule = types.ModuleType("__main__")
+
+        assert mainmodule.__spec__ is None
+
+        with self.assertRaises(
+            TypeError,
+            msg="Cannot access resources for '__main__' as it does not appear to correspond to an importable module (its __spec__ is None).",
+        ):
+            resources.files(mainmodule)
 
 
 if __name__ == '__main__':

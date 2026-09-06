@@ -21,18 +21,27 @@ expatreader -- Driver that allows use of the Expat parser with SAX.
 
 from .xmlreader import InputSource
 from .handler import ContentHandler, ErrorHandler
-from ._exceptions import SAXException, SAXNotRecognizedException, \
-                        SAXParseException, SAXNotSupportedException, \
-                        SAXReaderNotAvailable
+from ._exceptions import (SAXException, SAXNotRecognizedException,
+                          SAXParseException, SAXNotSupportedException,
+                          SAXReaderNotAvailable)
 
 
 def parse(source, handler, errorHandler=ErrorHandler()):
+    """Parse an XML document with the default parser.
+
+    source is a system identifier, a path-like object or a file object,
+    handler is a ContentHandler instance, and errorHandler is an
+    ErrorHandler instance.  All work is done by the handler."""
     parser = make_parser()
     parser.setContentHandler(handler)
     parser.setErrorHandler(errorHandler)
     parser.parse(source)
 
 def parseString(string, handler, errorHandler=ErrorHandler()):
+    """Parse an XML document from a string with the default parser.
+
+    string is a str or a bytes-like object, the other arguments are the
+    same as for parse()."""
     import io
     if errorHandler is None:
         errorHandler = ErrorHandler()
@@ -55,7 +64,7 @@ default_parser_list = ["xml.sax.expatreader"]
 # tell modulefinder that importing sax potentially imports expatreader
 _false = 0
 if _false:
-    import xml.sax.expatreader
+    import xml.sax.expatreader    # noqa: F401
 
 import os, sys
 if not sys.flags.ignore_environment and "PY_SAX_PARSER" in os.environ:
@@ -92,3 +101,9 @@ def make_parser(parser_list=()):
 def _create_parser(parser_name):
     drv_module = __import__(parser_name,{},{},['create_parser'])
     return drv_module.create_parser()
+
+
+__all__ = ['ContentHandler', 'ErrorHandler', 'InputSource', 'SAXException',
+           'SAXNotRecognizedException', 'SAXNotSupportedException',
+           'SAXParseException', 'SAXReaderNotAvailable',
+           'default_parser_list', 'make_parser', 'parse', 'parseString']

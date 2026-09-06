@@ -1,10 +1,8 @@
-:mod:`xml.parsers.expat` --- Fast XML parsing using Expat
-=========================================================
+:mod:`!xml.parsers.expat` --- Fast XML parsing using Expat
+==========================================================
 
 .. module:: xml.parsers.expat
    :synopsis: An interface to the Expat non-validating XML parser.
-
-.. moduleauthor:: Paul Prescod <paul@prescod.net>
 
 --------------
 
@@ -16,16 +14,15 @@
    references to these attributes should be marked using the :member: role.
 
 
-.. warning::
+.. note::
 
-   The :mod:`pyexpat` module is not secure against maliciously
-   constructed data.  If you need to parse untrusted or unauthenticated data see
-   :ref:`xml-vulnerabilities`.
+   If you need to parse untrusted or unauthenticated data, see
+   :ref:`xml-security`.
 
 
 .. index:: single: Expat
 
-The :mod:`xml.parsers.expat` module is a Python interface to the Expat
+The :mod:`!xml.parsers.expat` module is a Python interface to the Expat
 non-validating XML parser. The module provides a single extension type,
 :class:`xmlparser`, that represents the current state of an XML parser.  After
 an :class:`xmlparser` object has been created, various attributes of the object
@@ -38,7 +35,7 @@ the XML document.
 This module uses the :mod:`pyexpat` module to provide access to the Expat
 parser.  Direct use of the :mod:`pyexpat` module is deprecated.
 
-This module provides one exception and one type object:
+This module provides the following exception, type object and data items:
 
 
 .. exception:: ExpatError
@@ -56,7 +53,30 @@ This module provides one exception and one type object:
 
    The type of the return values from the :func:`ParserCreate` function.
 
-The :mod:`xml.parsers.expat` module contains two functions:
+
+.. data:: EXPAT_VERSION
+
+   The version string of the Expat library loaded by the interpreter,
+   like ``'expat_2.8.4'``.
+
+
+.. data:: version_info
+
+   The version of the Expat library loaded by the interpreter,
+   as a tuple of three integers: major, minor and micro version.
+
+
+.. data:: features
+
+   The list of the features with which the loaded Expat library
+   was compiled, as ``(name, value)`` pairs.
+   The value is only meaningful for features which have one,
+   like ``'XML_CONTEXT_BYTES'`` or the default protection limits
+   ``'XML_BLAP_ACT_THRES'`` and ``'XML_AT_MAX_AMP'``;
+   for other features, like ``'XML_DTD'`` and ``'XML_NS'``,
+   the value is ``0`` and only the presence of the name is significant.
+
+The :mod:`!xml.parsers.expat` module contains two functions:
 
 
 .. function:: ErrorString(errno)
@@ -64,14 +84,35 @@ The :mod:`xml.parsers.expat` module contains two functions:
    Returns an explanatory string for a given error number *errno*.
 
 
-.. function:: ParserCreate(encoding=None, namespace_separator=None)
+.. function:: ParserCreate(encoding=None, namespace_separator=None, intern=None)
 
-   Creates and returns a new :class:`xmlparser` object.   *encoding*, if specified,
-   must be a string naming the encoding  used by the XML data.  Expat doesn't
-   support as many encodings as Python does, and its repertoire of encodings can't
-   be extended; it supports UTF-8, UTF-16, ISO-8859-1 (Latin1), and ASCII.  If
-   *encoding* [1]_ is given it will override the implicit or explicit encoding of the
-   document.
+   Creates and returns a new :class:`xmlparser` object.
+   *encoding* [1]_, if specified, must be a string naming the encoding
+   used by the XML data.
+   If it is given it will override the implicit or explicit encoding
+   of the document.
+
+   .. impl-detail::
+
+      Expat natively understands and processes UTF-8, UTF-16, UTF-16BE,
+      UTF-16LE, ISO-8859-1, and US-ASCII.
+      For other encodings (including aliases like Latin1 and ASCII) it
+      falls back to Python.
+      It supports most of 8-bit encodings and many multi-byte encodings
+      like Shift_JIS, although only BMP characters (``U+0000-U+FFFF``)
+      are supported with non-native encodings (this restriction is also
+      applied to aliases like UTF8).
+      These restrictions only apply if *encoding* is not given.
+
+      .. versionchanged:: next
+         Added support for multi-byte encodings.
+
+   .. _xmlparser-non-root:
+
+   Parsers created through :func:`!ParserCreate` are called "root" parsers,
+   in the sense that they do not have any parent parser attached. Non-root
+   parsers are created by :meth:`parser.ExternalEntityParserCreate
+   <xmlparser.ExternalEntityParserCreate>`.
 
    Expat can optionally do XML namespace processing for you, enabled by providing a
    value for *namespace_separator*.  The value must be a one-character string; a
@@ -104,11 +145,15 @@ The :mod:`xml.parsers.expat` module contains two functions:
       http://www.python.org/ns/ elem1
       elem2
 
+   *intern*, if given, must be a dictionary.
+   It is used to intern the names of elements and attributes,
+   and is available as the :attr:`~xmlparser.intern` attribute.
+   By default a new empty dictionary is created for every parser.
+
    Due to limitations in the ``Expat`` library used by :mod:`pyexpat`,
    the :class:`xmlparser` instance returned can only be used to parse a single
    XML document.  Call ``ParserCreate`` for each document to provide unique
    parser instances.
-
 
 .. seealso::
 
@@ -126,18 +171,24 @@ XMLParser Objects
 
 .. method:: xmlparser.Parse(data[, isfinal])
 
-   Parses the contents of the string *data*, calling the appropriate handler
-   functions to process the parsed data.  *isfinal* must be true on the final call
-   to this method; it allows the parsing of a single file in fragments,
+   Parses the contents of *data*,
+   calling the appropriate handler functions to process the parsed data.
+   *data* can be a :term:`bytes-like object` or a string.
+   If it is a string, the encoding declaration in the XML data is ignored,
+   and the data is parsed as already decoded text.
+   *isfinal* must be true on the final call to this method;
+   it allows the parsing of a single file in fragments,
    not the submission of multiple files.
-   *data* can be the empty string at any time.
+   *data* can be empty at any time.
 
 
 .. method:: xmlparser.ParseFile(file)
 
-   Parse XML data reading from the object *file*.  *file* only needs to provide
-   the ``read(nbytes)`` method, returning the empty string when there's no more
-   data.
+   Parse XML data reading from the object *file*.
+   *file* only needs to provide the ``read(nbytes)`` method,
+   which returns bytes, and an empty bytes object when there's no more data.
+   Text files are not supported;
+   use :meth:`Parse` for data which is already decoded.
 
 
 .. method:: xmlparser.SetBase(base)
@@ -155,11 +206,31 @@ XMLParser Objects
    or ``None`` if  :meth:`SetBase` hasn't been called.
 
 
+.. method:: xmlparser.GetSpecifiedAttributeCount()
+
+   Return the index just past the attributes given in the start tag.
+   Attributes defaulted from the DTD follow the specified ones,
+   so attributes at lower indices in the list
+   passed to :attr:`StartElementHandler` were given in the start tag.
+   Each attribute takes two items in that list,
+   its name and its value.
+   Only meaningful inside a :attr:`StartElementHandler` call,
+   and only if :attr:`ordered_attributes` is true.
+
+   .. versionadded:: next
+
+
 .. method:: xmlparser.GetInputContext()
 
-   Returns the input data that generated the current event as a string. The data is
-   in the encoding of the entity which contains the text. When called while an
-   event handler is not active, the return value is ``None``.
+   Returns the input data which generated the current event
+   as a :class:`bytes` object.
+   The data is in the encoding of the entity which contains the text.
+   It extends to the end of the currently buffered input,
+   therefore it can contain also the data of the following events,
+   and if the event was generated by a large amount of text,
+   not all of it may be available.
+   When called while an event handler is not active,
+   the return value is ``None``.
 
 
 .. method:: xmlparser.ExternalEntityParserCreate(context[, encoding])
@@ -196,6 +267,167 @@ XMLParser Objects
    :exc:`ExpatError` to be raised with the :attr:`code` attribute set to
    ``errors.codes[errors.XML_ERROR_CANT_CHANGE_FEATURE_ONCE_PARSING]``.
 
+.. method:: xmlparser.SetReparseDeferralEnabled(enabled)
+
+   .. warning::
+
+      Calling ``SetReparseDeferralEnabled(False)`` has security implications,
+      as detailed below; please make sure to understand these consequences
+      prior to using the ``SetReparseDeferralEnabled`` method.
+
+   Expat 2.6.0 introduced a security mechanism called "reparse deferral"
+   where instead of causing denial of service through quadratic runtime
+   from reparsing large tokens, reparsing of unfinished tokens is now delayed
+   by default until a sufficient amount of input is reached.
+   Due to this delay, registered handlers may — depending of the sizing of
+   input chunks pushed to Expat — no longer be called right after pushing new
+   input to the parser.  Where immediate feedback and taking over responsibility
+   of protecting against denial of service from large tokens are both wanted,
+   calling ``SetReparseDeferralEnabled(False)`` disables reparse deferral
+   for the current Expat parser instance, temporarily or altogether.
+   Calling ``SetReparseDeferralEnabled(True)`` allows re-enabling reparse
+   deferral.
+
+   :meth:`!SetReparseDeferralEnabled`
+   has been backported to some prior releases of CPython as a security fix.
+   Check for availability using :func:`hasattr` if used in code running
+   across a variety of Python versions.
+
+   .. versionadded:: 3.13
+
+.. method:: xmlparser.GetReparseDeferralEnabled()
+
+   Returns whether reparse deferral is currently enabled for the given
+   Expat parser instance.
+
+   .. versionadded:: 3.13
+
+
+:class:`!xmlparser` objects have the following methods to tune protections
+against some common XML vulnerabilities.
+
+.. method:: xmlparser.SetBillionLaughsAttackProtectionActivationThreshold(threshold, /)
+
+   Sets the number of output bytes needed to activate protection against
+   `billion laughs`_ attacks.
+
+   The number of output bytes includes amplification from entity expansion
+   and reading DTD files.
+
+   Parser objects usually have a protection activation threshold of 8 MiB,
+   but the actual default value depends on the underlying Expat library.
+
+   An :exc:`ExpatError` is raised if this method is called on a
+   |xml-non-root-parser| parser.
+   The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
+   should not be used as they may have no special meaning.
+
+   :meth:`!SetBillionLaughsAttackProtectionActivationThreshold`
+   has been backported to some prior releases of CPython as a security fix.
+   Check for availability using :func:`hasattr` if used in code running
+   across a variety of Python versions.
+
+   .. note::
+
+      Activation thresholds below 4 MiB are known to break support for DITA 1.3
+      payload and are hence not recommended.
+
+   .. versionadded:: 3.15
+
+.. method:: xmlparser.SetBillionLaughsAttackProtectionMaximumAmplification(max_factor, /)
+
+   Sets the maximum tolerated amplification factor for protection against
+   `billion laughs`_ attacks.
+
+   The amplification factor is calculated as ``(direct + indirect) / direct``
+   while parsing, where ``direct`` is the number of bytes read from
+   the primary document in parsing and ``indirect`` is the number of
+   bytes added by expanding entities and reading of external DTD files.
+
+   The *max_factor* value must be a non-NaN :class:`float` value greater than
+   or equal to 1.0. Peak amplifications of factor 15,000 for the entire payload
+   and of factor 30,000 in the middle of parsing have been observed with small
+   benign files in practice. In particular, the activation threshold should be
+   carefully chosen to avoid false positives.
+
+   Parser objects usually have a maximum amplification factor of 100,
+   but the actual default value depends on the underlying Expat library.
+
+   An :exc:`ExpatError` is raised if this method is called on a
+   |xml-non-root-parser| parser or if *max_factor* is outside the valid range.
+   The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
+   should not be used as they may have no special meaning.
+
+   :meth:`!SetBillionLaughsAttackProtectionMaximumAmplification`
+   has been backported to some prior releases of CPython as a security fix.
+   Check for availability using :func:`hasattr` if used in code running
+   across a variety of Python versions.
+
+   .. note::
+
+      The maximum amplification factor is only considered if the threshold
+      that can be adjusted by :meth:`.SetBillionLaughsAttackProtectionActivationThreshold`
+      is exceeded.
+
+   .. versionadded:: 3.15
+
+.. method:: xmlparser.SetAllocTrackerActivationThreshold(threshold, /)
+
+   Sets the number of allocated bytes of dynamic memory needed to activate
+   protection against disproportionate use of RAM.
+
+   Parser objects usually have an allocation activation threshold of 64 MiB,
+   but the actual default value depends on the underlying Expat library.
+
+   An :exc:`ExpatError` is raised if this method is called on a
+   |xml-non-root-parser| parser.
+   The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
+   should not be used as they may have no special meaning.
+
+   :meth:`!SetAllocTrackerActivationThreshold`
+   has been backported to some prior releases of CPython as a security fix.
+   Check for availability using :func:`hasattr` if used in code running
+   across a variety of Python versions.
+
+   .. versionadded:: 3.15
+
+.. method:: xmlparser.SetAllocTrackerMaximumAmplification(max_factor, /)
+
+   Sets the maximum amplification factor between direct input and bytes
+   of dynamic memory allocated.
+
+   The amplification factor is calculated as ``allocated / direct``
+   while parsing, where ``direct`` is the number of bytes read from
+   the primary document in parsing and ``allocated`` is the number
+   of bytes of dynamic memory allocated in the parser hierarchy.
+
+   The *max_factor* value must be a non-NaN :class:`float` value greater than
+   or equal to 1.0. Amplification factors greater than 100.0 can be observed
+   near the start of parsing even with benign files in practice. In particular,
+   the activation threshold should be carefully chosen to avoid false positives.
+
+   Parser objects usually have a maximum amplification factor of 100,
+   but the actual default value depends on the underlying Expat library.
+
+   An :exc:`ExpatError` is raised if this method is called on a
+   |xml-non-root-parser| parser or if *max_factor* is outside the valid range.
+   The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
+   should not be used as they may have no special meaning.
+
+   :meth:`!SetAllocTrackerMaximumAmplification`
+   has been backported to some prior releases of CPython as a security fix.
+   Check for availability using :func:`hasattr` if used in code running
+   across a variety of Python versions.
+
+   .. note::
+
+      The maximum amplification factor is only considered if the threshold
+      that can be adjusted by :meth:`.SetAllocTrackerActivationThreshold`
+      is exceeded.
+
+   .. versionadded:: 3.15
+
+
 :class:`xmlparser` objects have the following attributes:
 
 
@@ -214,7 +446,8 @@ XMLParser Objects
    :meth:`CharacterDataHandler` callback whenever possible.  This can improve
    performance substantially since Expat normally breaks character data into chunks
    at every line ending.  This attribute is false by default, and may be changed at
-   any time.
+   any time. Note that when it is false, data that does not contain newlines
+   may be chunked too.
 
 
 .. attribute:: xmlparser.buffer_used
@@ -242,6 +475,22 @@ XMLParser Objects
    careful to use what additional information is available from the declarations as
    needed to comply with the standards for the behavior of XML processors.  By
    default, this attribute is false; it may be changed at any time.
+
+
+.. attribute:: xmlparser.intern
+
+   The dictionary used to intern the names of elements and attributes.
+   It is either the dictionary passed as the *intern* argument
+   of :func:`ParserCreate`, or a new dictionary created for this parser.
+
+
+.. attribute:: xmlparser.namespace_prefixes
+
+   If set to a true value, and namespace processing is enabled,
+   the namespace prefix is reported as the third part of the expanded name,
+   separated by the namespace separator.
+   Names which have no prefix are not affected.
+   By default, this attribute is false; it may be changed at any time.
 
 
 The following attributes contain values relating to the most recent error
@@ -307,8 +556,7 @@ otherwise stated.
    encoding of the document text, and an optional "standalone" declaration.
    *version* and *encoding* will be strings, and *standalone* will be ``1`` if the
    document is declared standalone, ``0`` if it is declared not to be standalone,
-   or ``-1`` if the standalone clause was omitted. This is only available with
-   Expat version 1.95.0 or newer.
+   or ``-1`` if the standalone clause was omitted.
 
 
 .. method:: xmlparser.StartDoctypeDeclHandler(doctypeName, systemId, publicId, has_internal_subset)
@@ -317,14 +565,12 @@ otherwise stated.
    ...``).  The *doctypeName* is provided exactly as presented.  The *systemId* and
    *publicId* parameters give the system and public identifiers if specified, or
    ``None`` if omitted.  *has_internal_subset* will be true if the document
-   contains and internal document declaration subset. This requires Expat version
-   1.2 or newer.
+   contains an internal document declaration subset.
 
 
 .. method:: xmlparser.EndDoctypeDeclHandler()
 
-   Called when Expat is done parsing the document type declaration. This requires
-   Expat version 1.2 or newer.
+   Called when Expat is done parsing the document type declaration.
 
 
 .. method:: xmlparser.ElementDeclHandler(name, model)
@@ -339,12 +585,16 @@ otherwise stated.
    declaration declares three attributes, this handler is called three times, once
    for each attribute.  *elname* is the name of the element to which the
    declaration applies and *attname* is the name of the attribute declared.  The
-   attribute type is a string passed as *type*; the possible values are
-   ``'CDATA'``, ``'ID'``, ``'IDREF'``, ... *default* gives the default value for
+   The attribute type is a string passed as *type*:
+   ``'CDATA'``, ``'ID'``, ``'IDREF'``, ``'IDREFS'``, ``'ENTITY'``,
+   ``'ENTITIES'``, ``'NMTOKEN'`` or ``'NMTOKENS'``,
+   an enumeration like ``'(x|y)'``,
+   or a notation list like ``'NOTATION(n1|n2)'``.
+   *default* gives the default value for
    the attribute used when the attribute is not specified by the document instance,
    or ``None`` if there is no default value (``#IMPLIED`` values).  If the
    attribute is required to be given in the document instance, *required* will be
-   true. This requires Expat version 1.95.0 or newer.
+   true.
 
 
 .. method:: xmlparser.StartElementHandler(name, attributes)
@@ -372,15 +622,18 @@ otherwise stated.
    marked content, and ignorable whitespace.  Applications which must distinguish
    these cases can use the :attr:`StartCdataSectionHandler`,
    :attr:`EndCdataSectionHandler`, and :attr:`ElementDeclHandler` callbacks to
-   collect the required information.
+   collect the required information. Note that the character data may be
+   chunked even if it is short and so you may receive more than one call to
+   :meth:`CharacterDataHandler`. Set the :attr:`buffer_text` instance attribute
+   to ``True`` to avoid that.
 
 
 .. method:: xmlparser.UnparsedEntityDeclHandler(entityName, base, systemId, publicId, notationName)
 
-   Called for unparsed (NDATA) entity declarations.  This is only present for
-   version 1.2 of the Expat library; for more recent versions, use
-   :attr:`EntityDeclHandler` instead.  (The underlying function in the Expat
-   library has been declared obsolete.)
+   Called for unparsed (NDATA) entity declarations.
+   If this handler is not set, such declarations are reported by
+   :attr:`EntityDeclHandler`, which is preferred for new code.
+   (The underlying function in the Expat library has been declared obsolete.)
 
 
 .. method:: xmlparser.EntityDeclHandler(entityName, is_parameter_entity, value, base, systemId, publicId, notationName)
@@ -391,8 +644,7 @@ otherwise stated.
    ``None`` for parsed entities, and the name of the notation for unparsed
    entities. *is_parameter_entity* will be true if the entity is a parameter entity
    or false for general entities (most applications only need to be concerned with
-   general entities). This is only available starting with version 1.95.0 of the
-   Expat library.
+   general entities).
 
 
 .. method:: xmlparser.NotationDeclHandler(notationName, base, systemId, publicId)
@@ -446,7 +698,7 @@ otherwise stated.
 
 .. method:: xmlparser.DefaultHandlerExpand(data)
 
-   This is the same as the :func:`DefaultHandler`,  but doesn't inhibit expansion
+   This is the same as the :attr:`DefaultHandler`, but doesn't inhibit expansion
    of internal entities. The entity reference will not be passed to the default
    handler.
 
@@ -462,6 +714,15 @@ otherwise stated.
 
 
 .. method:: xmlparser.ExternalEntityRefHandler(context, base, systemId, publicId)
+
+   .. warning::
+
+      Implementing a handler that accesses local files and/or the network
+      may create a vulnerability to
+      `external entity attacks <https://en.wikipedia.org/wiki/XML_external_entity_attack>`_
+      if :class:`xmlparser` is used with user-provided XML content.
+      Please reflect on your `threat model <https://en.wikipedia.org/wiki/Threat_model>`_
+      before implementing this handler.
 
    Called for references to external entities.  *base* is the current base, as set
    by a previous call to :meth:`SetBase`.  The public and system identifiers,
@@ -481,13 +742,20 @@ otherwise stated.
    :attr:`DefaultHandler` callback, if provided.
 
 
+.. method:: xmlparser.SkippedEntityHandler(entityName, is_parameter_entity)
+
+   Called for entity references which are not expanded,
+   because the parser did not read the declaration of the entity.
+   This happens when the external DTD subset or an external parameter entity
+   is not parsed.
+   *is_parameter_entity* is true for a parameter entity
+   and false for a general entity.
+
+
 .. _expaterror-objects:
 
 ExpatError Exceptions
 ---------------------
-
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 
 :exc:`ExpatError` exceptions have a number of interesting attributes:
 
@@ -572,49 +840,47 @@ Content Model Descriptions
 
 .. module:: xml.parsers.expat.model
 
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 Content models are described using nested tuples.  Each tuple contains four
 values: the type, the quantifier, the name, and a tuple of children.  Children
 are simply additional content model descriptions.
 
 The values of the first two fields are constants defined in the
-:mod:`xml.parsers.expat.model` module.  These constants can be collected in two
+:mod:`!xml.parsers.expat.model` module.  These constants can be collected in two
 groups: the model type group and the quantifier group.
 
 The constants in the model type group are:
 
 
 .. data:: XML_CTYPE_ANY
-   :noindex:
 
    The element named by the model name was declared to have a content model of
    ``ANY``.
 
 
 .. data:: XML_CTYPE_CHOICE
-   :noindex:
 
    The named element allows a choice from a number of options; this is used for
    content models such as ``(A | B | C)``.
 
 
 .. data:: XML_CTYPE_EMPTY
-   :noindex:
 
    Elements which are declared to be ``EMPTY`` have this model type.
 
 
 .. data:: XML_CTYPE_MIXED
-   :noindex:
+
+   The named element allows character data, optionally interspersed with
+   the named children; this is used for content models such as
+   ``(#PCDATA)`` and ``(#PCDATA | A | B)*``.
 
 
 .. data:: XML_CTYPE_NAME
-   :noindex:
+
+   The model names a single element, as for ``A``.
 
 
 .. data:: XML_CTYPE_SEQ
-   :noindex:
 
    Models which represent a series of models which follow one after the other are
    indicated with this model type.  This is used for models such as ``(A, B, C)``.
@@ -623,25 +889,21 @@ The constants in the quantifier group are:
 
 
 .. data:: XML_CQUANT_NONE
-   :noindex:
 
    No modifier is given, so it can appear exactly once, as for ``A``.
 
 
 .. data:: XML_CQUANT_OPT
-   :noindex:
 
    The model is optional: it can appear once or not at all, as for ``A?``.
 
 
 .. data:: XML_CQUANT_PLUS
-   :noindex:
 
    The model must occur one or more times (like ``A+``).
 
 
 .. data:: XML_CQUANT_REP
-   :noindex:
 
    The model must occur zero or more times, as for ``A*``.
 
@@ -653,7 +915,7 @@ Expat error constants
 
 .. module:: xml.parsers.expat.errors
 
-The following constants are provided in the :mod:`xml.parsers.expat.errors`
+The following constants are provided in the :mod:`!xml.parsers.expat.errors`
 module.  These constants are useful in interpreting some of the attributes of
 the :exc:`ExpatError` exception objects raised when an error has occurred.
 Since for backwards compatibility reasons, the constants' value is the error
@@ -725,7 +987,7 @@ The ``errors`` module has the following attributes:
 .. data:: XML_ERROR_NO_ELEMENTS
 
    The document contains no elements (XML requires all documents to contain exactly
-   one top-level element)..
+   one top-level element).
 
 
 .. data:: XML_ERROR_NO_MEMORY
@@ -800,7 +1062,7 @@ The ``errors`` module has the following attributes:
 
    An operation was requested that requires DTD support to be compiled in, but
    Expat was configured without DTD support.  This should never be reported by a
-   standard build of the :mod:`xml.parsers.expat` module.
+   standard build of the :mod:`!xml.parsers.expat` module.
 
 
 .. data:: XML_ERROR_CANT_CHANGE_FEATURE_ONCE_PARSING
@@ -828,7 +1090,7 @@ The ``errors`` module has the following attributes:
 
 .. data:: XML_ERROR_XML_DECL
 
-   The document contained no document element at all.
+   There was an error parsing the XML declaration.
 
 
 .. data:: XML_ERROR_TEXT_DECL
@@ -901,10 +1163,22 @@ The ``errors`` module has the following attributes:
    has been breached.
 
 
+.. data:: XML_ERROR_NOT_STARTED
+
+   The parser was tried to be stopped or suspended before it started.
+
+   .. versionadded:: 3.14
+
+
 .. rubric:: Footnotes
 
-.. [1] The encoding string included in XML output should conform to the
-   appropriate standards. For example, "UTF-8" is valid, but "UTF8" is
-   not. See https://www.w3.org/TR/2006/REC-xml11-20060816/#NT-EncodingDecl
+.. [1] The encoding string included in XML output should conform to
+   the appropriate standards. For example, "UTF-8" is valid, but
+   "UTF8" is not valid in an XML document's declaration, even though
+   Python accepts it as an encoding name.
+   See https://www.w3.org/TR/2006/REC-xml11-20060816/#NT-EncodingDecl
    and https://www.iana.org/assignments/character-sets/character-sets.xhtml.
 
+
+.. _billion laughs: https://en.wikipedia.org/wiki/Billion_laughs_attack
+.. |xml-non-root-parser| replace:: :ref:`non-root <xmlparser-non-root>`

@@ -1,5 +1,5 @@
-:mod:`email.utils`: Miscellaneous utilities
--------------------------------------------
+:mod:`!email.utils`: Miscellaneous utilities
+--------------------------------------------
 
 .. module:: email.utils
    :synopsis: Miscellaneous email package utilities.
@@ -8,7 +8,7 @@
 
 --------------
 
-There are a couple of useful utilities provided in the :mod:`email.utils`
+There are a couple of useful utilities provided in the :mod:`!email.utils`
 module:
 
 .. function:: localtime(dt=None)
@@ -17,8 +17,7 @@ module:
    arguments, return current time.  Otherwise *dt* argument should be a
    :class:`~datetime.datetime` instance, and it is converted to the local time
    zone according to the system time zone database.  If *dt* is naive (that
-   is, ``dt.tzinfo`` is ``None``), it is assumed to be in local time.  The
-   *isdst* parameter is ignored.
+   is, ``dt.tzinfo`` is ``None``), it is assumed to be in local time.
 
    .. versionadded:: 3.3
 
@@ -58,15 +57,20 @@ of the new API.
    begins with angle brackets, they are stripped off.
 
 
-.. function:: parseaddr(address)
+.. function:: parseaddr(address, *, strict=True)
 
    Parse address -- which should be the value of some address-containing field such
    as :mailheader:`To` or :mailheader:`Cc` -- into its constituent *realname* and
    *email address* parts.  Returns a tuple of that information, unless the parse
    fails, in which case a 2-tuple of ``('', '')`` is returned.
 
+   If *strict* is true, use a strict parser which rejects malformed inputs.
 
-.. function:: formataddr(pair, charset='utf-8')
+   .. versionchanged:: 3.13
+      Add *strict* optional parameter and reject malformed inputs by default.
+
+
+.. function:: formataddr(pair, charset='utf-8', *, strict=True)
 
    The inverse of :meth:`parseaddr`, this takes a 2-tuple of the form ``(realname,
    email_address)`` and returns the string value suitable for a :mailheader:`To` or
@@ -78,16 +82,26 @@ of the new API.
    characters.  Can be an instance of :class:`str` or a
    :class:`~email.charset.Charset`.  Defaults to ``utf-8``.
 
+   If *strict* is true (the default), raise :exc:`ValueError` for inputs that
+   contain CR or LF, which are not allowed in an email address.  Set *strict*
+   to ``False`` to allow non-strict inputs.
+
    .. versionchanged:: 3.3
       Added the *charset* option.
 
+   .. versionchanged:: next
+      Added the *strict* parameter.
 
-.. function:: getaddresses(fieldvalues)
+
+.. function:: getaddresses(fieldvalues, *, strict=True)
 
    This method returns a list of 2-tuples of the form returned by ``parseaddr()``.
    *fieldvalues* is a sequence of header field values as might be returned by
-   :meth:`Message.get_all <email.message.Message.get_all>`.  Here's a simple
-   example that gets all the recipients of a message::
+   :meth:`Message.get_all <email.message.Message.get_all>`.
+
+   If *strict* is true, use a strict parser which rejects malformed inputs.
+
+   Here's a simple example that gets all the recipients of a message::
 
       from email.utils import getaddresses
 
@@ -96,6 +110,9 @@ of the new API.
       resent_tos = msg.get_all('resent-to', [])
       resent_ccs = msg.get_all('resent-cc', [])
       all_recipients = getaddresses(tos + ccs + resent_tos + resent_ccs)
+
+   .. versionchanged:: 3.13
+      Add *strict* optional parameter and reject malformed inputs by default.
 
 
 .. function:: parsedate(date)
@@ -148,7 +165,7 @@ of the new API.
 
       Fri, 09 Nov 2001 01:08:47 -0000
 
-   Optional *timeval* if given is a floating point time value as accepted by
+   Optional *timeval* if given is a floating-point time value as accepted by
    :func:`time.gmtime` and :func:`time.localtime`, otherwise the current time is
    used.
 
@@ -195,7 +212,7 @@ of the new API.
    When a header parameter is encoded in :rfc:`2231` format,
    :meth:`Message.get_param <email.message.Message.get_param>` may return a
    3-tuple containing the character set,
-   language, and value.  :func:`collapse_rfc2231_value` turns this into a unicode
+   language, and value.  :func:`collapse_rfc2231_value` turns this into a
    string.  Optional *errors* is passed to the *errors* argument of :class:`str`'s
    :func:`~str.encode` method; it defaults to ``'replace'``.  Optional
    *fallback_charset* specifies the character set to use if the one in the

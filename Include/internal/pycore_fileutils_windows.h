@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 #ifndef Py_BUILD_CORE
-#  error "Py_BUILD_CORE must be defined to include this header"
+#  error "this header requires Py_BUILD_CORE define"
 #endif
 
 #ifdef MS_WINDOWS
@@ -55,7 +55,11 @@ static inline BOOL _Py_GetFileInformationByName(
     static int GetFileInformationByName_init = -1;
 
     if (GetFileInformationByName_init < 0) {
+#ifdef MS_WINDOWS_DESKTOP
         HMODULE hMod = LoadLibraryW(L"api-ms-win-core-file-l2-1-4");
+#else
+        HMODULE hMod = LoadPackagedLibrary(L"api-ms-win-core-file-l2-1-4", 0);
+#endif
         GetFileInformationByName_init = 0;
         if (hMod) {
             GetFileInformationByName = (PGetFileInformationByName)GetProcAddress(

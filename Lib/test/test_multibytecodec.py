@@ -12,6 +12,7 @@ import unittest
 from test import support
 from test.support import os_helper
 from test.support.os_helper import TESTFN
+from test.support.import_helper import import_module
 
 ALL_CJKENCODINGS = [
 # _codecs_cn
@@ -212,7 +213,7 @@ class Test_IncrementalEncoder(unittest.TestCase):
     @support.cpython_only
     def test_subinterp(self):
         # bpo-42846: Test a CJK codec in a subinterpreter
-        import _testcapi
+        _testcapi = import_module("_testcapi")
         encoding = 'cp932'
         text = "Python の開発は、1990 年ごろから開始されています。"
         code = textwrap.dedent("""
@@ -303,7 +304,25 @@ class Test_IncrementalDecoder(unittest.TestCase):
         self.assertRaises(TypeError, decoder.setstate, 123)
         self.assertRaises(TypeError, decoder.setstate, ("invalid", 0))
         self.assertRaises(TypeError, decoder.setstate, (b"1234", "invalid"))
-        self.assertRaises(UnicodeError, decoder.setstate, (b"123456789", 0))
+        self.assertRaises(UnicodeDecodeError, decoder.setstate, (b"123456789", 0))
+
+    def test_setstate_invalid_designation(self):
+        # gh-153603: an unknown charset designation in the state must not crash
+        # the decoder.  0xff is not a registered charset mark and 0x21 ('!') is
+        # a GL byte that triggers the designation lookup.
+        for name in ('iso-2022-jp', 'iso-2022-kr'):
+            with self.subTest(codec=name):
+                decoder = codecs.getincrementaldecoder(name)()
+                decoder.setstate((b'', 0xff))
+                with self.assertRaises(UnicodeDecodeError) as cm:
+                    decoder.decode(b'!', final=True)
+                self.assertEqual(cm.exception.reason,
+                                 'illegal multibyte sequence')
+                self.assertEqual((cm.exception.start, cm.exception.end), (0, 1))
+                # One illegal byte is reported, so error handlers still work.
+                decoder = codecs.getincrementaldecoder(name)(errors='replace')
+                decoder.setstate((b'', 0xff))
+                self.assertEqual(decoder.decode(b'!', final=True), '\ufffd')
 
 class Test_StreamReader(unittest.TestCase):
     def test_bug1728403(self):
@@ -313,7 +332,8 @@ class Test_StreamReader(unittest.TestCase):
                 f.write(b'\xa1')
             finally:
                 f.close()
-            f = codecs.open(TESTFN, encoding='cp949')
+            with self.assertWarns(DeprecationWarning):
+                f = codecs.open(TESTFN, encoding='cp949')
             try:
                 self.assertRaises(UnicodeDecodeError, f.read, 2)
             finally:
@@ -363,6 +383,7 @@ class Test_ISO2022(unittest.TestCase):
             e = '\u3406'.encode(encoding)
             self.assertFalse(any(x > 0x80 for x in e))
 
+    @support.requires_resource('cpu')
     def test_bug1572832(self):
         for x in range(0x10000, 0x110000):
             # Any ISO 2022 codec will cause the segfault

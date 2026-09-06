@@ -1,5 +1,4 @@
 # regression test for SAX 2.0
-# $Id$
 
 from xml.sax import make_parser, ContentHandler, \
                     SAXException, SAXReaderNotAvailable, SAXParseException
@@ -16,15 +15,17 @@ from xml.sax.expatreader import create_parser
 from xml.sax.handler import (feature_namespaces, feature_external_ges,
                              LexicalHandler)
 from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
+from xml import sax
 from io import BytesIO, StringIO
 import codecs
 import os.path
+import pyexpat
 import shutil
 import sys
 from urllib.error import URLError
 import urllib.request
 from test.support import os_helper
-from test.support import findfile
+from test.support import findfile, check__all__
 from test.support.os_helper import FakePath, TESTFN
 
 
@@ -613,6 +614,22 @@ class XmlgenTest:
            '<ns1:doc xmlns:ns1="%s"><udoc></udoc></ns1:doc>' %
                                          ns_uri))
 
+    def test_xmlgen_ns_escaped_uri(self):
+        uri = 'http://example.org/?a="1"&b=<2>'
+        result = self.ioclass()
+        gen = XMLGenerator(result)
+
+        gen.startDocument()
+        gen.startPrefixMapping("ns1", uri)
+        gen.startElementNS((uri, "doc"), "ns1:doc", {})
+        gen.endElementNS((uri, "doc"), "ns1:doc")
+        gen.endPrefixMapping("ns1")
+        gen.endDocument()
+
+        self.assertEqual(result.getvalue(), self.xml(
+            """<ns1:doc xmlns:ns1='http://example.org/?a="1"&amp;b=&lt;2&gt;'>"""
+            "</ns1:doc>"))
+
     def test_xmlgen_ns_empty(self):
         result = self.ioclass()
         gen = XMLGenerator(result, short_empty_elements=True)
@@ -830,8 +847,9 @@ class StreamReaderWriterXmlgenTest(XmlgenTest, unittest.TestCase):
     fname = os_helper.TESTFN + '-codecs'
 
     def ioclass(self):
-        writer = codecs.open(self.fname, 'w', encoding='ascii',
-                             errors='xmlcharrefreplace', buffering=0)
+        with self.assertWarns(DeprecationWarning):
+            writer = codecs.open(self.fname, 'w', encoding='ascii',
+                                errors='xmlcharrefreplace', buffering=0)
         def cleanup():
             writer.close()
             os_helper.unlink(self.fname)
@@ -1214,6 +1232,56 @@ class ExpatReaderTest(XmlTestBase):
 
         self.assertEqual(result.getvalue(), start + b"<doc>text</doc>")
 
+    @unittest.skipIf(pyexpat.version_info < (2, 6, 0),
+                     f'Expat {pyexpat.version_info} does not '
+                     'support reparse deferral')
+    def test_flush_reparse_deferral_enabled(self):
+        result = BytesIO()
+        xmlgen = XMLGenerator(result)
+        parser = create_parser()
+        parser.setContentHandler(xmlgen)
+
+        for chunk in ("<doc", ">"):
+            parser.feed(chunk)
+
+        self.assertEqual(result.getvalue(), start)  # i.e. no elements started
+        self.assertTrue(parser._parser.GetReparseDeferralEnabled())
+
+        parser.flush()
+
+        self.assertTrue(parser._parser.GetReparseDeferralEnabled())
+        self.assertEqual(result.getvalue(), start + b"<doc>")
+
+        parser.feed("</doc>")
+        parser.close()
+
+        self.assertEqual(result.getvalue(), start + b"<doc></doc>")
+
+    def test_flush_reparse_deferral_disabled(self):
+        result = BytesIO()
+        xmlgen = XMLGenerator(result)
+        parser = create_parser()
+        parser.setContentHandler(xmlgen)
+
+        for chunk in ("<doc", ">"):
+            parser.feed(chunk)
+
+        if pyexpat.version_info >= (2, 6, 0):
+            parser._parser.SetReparseDeferralEnabled(False)
+            self.assertEqual(result.getvalue(), start)  # i.e. no elements started
+
+        self.assertFalse(parser._parser.GetReparseDeferralEnabled())
+
+        parser.flush()
+
+        self.assertFalse(parser._parser.GetReparseDeferralEnabled())
+        self.assertEqual(result.getvalue(), start + b"<doc>")
+
+        parser.feed("</doc>")
+        parser.close()
+
+        self.assertEqual(result.getvalue(), start + b"<doc></doc>")
+
     # ===== Locator support
 
     def test_expat_locator_noinfo(self):
@@ -1504,6 +1572,33 @@ class CDATAHandlerTest(unittest.TestCase):
 
         self.assertFalse(self.in_cdata)
         self.assertEqual(self.char_index, 2)
+
+
+class TestModuleAll(unittest.TestCase):
+    def test_all(self):
+        extra = (
+            'ContentHandler',
+            'ErrorHandler',
+            'InputSource',
+            'SAXException',
+            'SAXNotRecognizedException',
+            'SAXNotSupportedException',
+            'SAXParseException',
+            'SAXReaderNotAvailable',
+        )
+        check__all__(self, sax, extra=extra)
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__and__date__(self):
+        for module in (sax.expatreader, sax.handler):
+            with self.subTest(module=module):
+                with self.assertWarnsRegex(
+                    DeprecationWarning,
+                    "'version' is deprecated and slated for removal in Python 3.20",
+                ) as cm:
+                    getattr(module, "version")
+                self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == "__main__":

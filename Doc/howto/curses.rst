@@ -6,9 +6,6 @@
 
 .. currentmodule:: curses
 
-:Author: A.M. Kuchling, Eric S. Raymond
-:Release: 2.04
-
 
 .. topic:: Abstract
 
@@ -43,7 +40,7 @@ appearance---and the curses library will figure out what control codes
 need to be sent to the terminal to produce the right output.  curses
 doesn't provide many user-interface concepts such as buttons, checkboxes,
 or dialogs; if you need such features, consider a user interface library such as
-`Urwid <https://pypi.org/project/urwid/>`_.
+:pypi:`Urwid`.
 
 The curses library was originally written for BSD Unix; the later System V
 versions of Unix from AT&T added many enhancements and new functions. BSD curses
@@ -55,9 +52,8 @@ code, all the functions described here will probably be available.  The older
 versions of curses carried by some proprietary Unixes may not support
 everything, though.
 
-The Windows version of Python doesn't include the :mod:`curses`
-module.  A ported version called `UniCurses
-<https://pypi.org/project/UniCurses>`_ is available.
+The Windows version of Python doesn't include the :mod:`curses` module.
+The third-party :pypi:`windows-curses` package provides the same interface on Windows.
 
 
 The Python curses module
@@ -146,8 +142,8 @@ importing the :func:`curses.wrapper` function and using it like this::
            v = i-10
            stdscr.addstr(i, 0, '10 divided by {} is {}'.format(v, 10/v))
 
-       stdscr.refresh()
-       stdscr.getkey()
+           stdscr.refresh()
+           stdscr.getkey()
 
    wrapper(main)
 
@@ -161,6 +157,8 @@ the state of the terminal, and then re-raises the exception.  Therefore
 your terminal won't be left in a funny state on exception and you'll be
 able to read the exception's message and traceback.
 
+
+.. _windows-and-pads:
 
 Windows and Pads
 ================
@@ -297,17 +295,21 @@ underline, reverse code, or in color.  They'll be explained in more detail in
 the next subsection.
 
 
-The :meth:`~curses.window.addstr` method takes a Python string or
-bytestring as the value to be displayed.  The contents of bytestrings
-are sent to the terminal as-is.  Strings are encoded to bytes using
-the value of the window's :attr:`~window.encoding` attribute; this defaults to
-the default system encoding as returned by :func:`locale.getencoding`.
+The :meth:`~curses.window.addstr` method takes a Python string, bytestring
+or :class:`~curses.complexstr` as the value to be displayed.  The contents
+of bytestrings are sent to the terminal as-is.
+On a build without wide-character support strings are encoded
+using the value of the window's :attr:`~window.encoding` attribute;
+this defaults to the default system encoding
+as returned by :func:`locale.getencoding`.
 
 The :meth:`~curses.window.addch` methods take a character, which can be
-either a string of length 1, a bytestring of length 1, or an integer.
+either a string of length 1, a bytestring of length 1, an integer, or a
+:class:`~curses.complexchar`.
 
-Constants are provided for extension characters; these constants are
-integers greater than 255.  For example, :const:`ACS_PLMINUS` is a +/-
+Constants are provided for the characters of the terminal's alternate
+character set.
+For example, :const:`ACS_PLMINUS` is a +/-
 symbol, and :const:`ACS_ULCORNER` is the upper left corner of a box
 (handy for drawing borders).  You can also use the appropriate Unicode
 character.
@@ -321,11 +323,11 @@ won't be distracting; it can be confusing to have the cursor blinking at some
 apparently random location.
 
 If your application doesn't need a blinking cursor at all, you can
-call ``curs_set(False)`` to make it invisible.  For compatibility
-with older curses versions, there's a ``leaveok(bool)`` function
-that's a synonym for :func:`~curses.curs_set`.  When *bool* is true, the
-curses library will attempt to suppress the flashing cursor, and you
-won't need to worry about leaving it in odd locations.
+call ``curs_set(False)`` to make it invisible.
+The window method :meth:`~curses.window.leaveok` does something different:
+when its argument is true,
+curses leaves the cursor wherever the last update put it,
+instead of moving it back to the window's cursor position.
 
 
 Attributes and Color
@@ -365,6 +367,14 @@ could code::
    stdscr.addstr(0, 0, "Current mode: Typing mode",
                  curses.A_REVERSE)
    stdscr.refresh()
+
+A :class:`~curses.complexchar` carries its attributes and color pair
+together with the text of one character cell,
+and a :class:`~curses.complexstr` is a run of such cells.
+They are what :meth:`~curses.window.in_wch` and
+:meth:`~curses.window.in_wchstr` return,
+so a part of the screen can be read and written back
+with its appearance intact.
 
 The curses library also supports color on those terminals that provide it. The
 most common such terminal is probably the Linux console, followed by color
@@ -429,43 +439,50 @@ User Input
 
 The C curses library offers only very simple input mechanisms. Python's
 :mod:`curses` module adds a basic text-input widget.  (Other libraries
-such as `Urwid <https://pypi.org/project/urwid/>`_ have more extensive
-collections of widgets.)
+such as :pypi:`Urwid` have more extensive collections of widgets.)
 
-There are two methods for getting input from a window:
+There are three methods for getting input from a window:
 
-* :meth:`~curses.window.getch` refreshes the screen and then waits for
+* :meth:`~curses.window.get_wch` refreshes the screen and then waits for
   the user to hit a key, displaying the key if :func:`~curses.echo` has been
   called earlier.  You can optionally specify a coordinate to which
   the cursor should be moved before pausing.
 
-* :meth:`~curses.window.getkey` does the same thing but converts the
-  integer to a string.  Individual characters are returned as
-  1-character strings, and special keys such as function keys return
-  longer strings containing a key name such as ``KEY_UP`` or ``^G``.
+* :meth:`~curses.window.getch` does the same thing but returns the code of
+  the key instead of a character.
+  With ncurses this is a single byte of the key's encoding in the current
+  locale, so a character encoded with several bytes takes several calls,
+  one byte per call.
+
+* :meth:`~curses.window.getkey` does the same as :meth:`!getch` but returns
+  a string:
+  an ordinary key as a 1-character string,
+  and a special key as its name, such as ``KEY_UP``.
 
 It's possible to not wait for the user using the
 :meth:`~curses.window.nodelay` window method. After ``nodelay(True)``,
-:meth:`!getch` and :meth:`!getkey` for the window become
-non-blocking. To signal that no input is ready, :meth:`!getch` returns
-``curses.ERR`` (a value of -1) and :meth:`!getkey` raises an exception.
+the reads for the window become non-blocking.
+To signal that no input is ready,
+:meth:`!get_wch` and :meth:`!getkey` raise an exception,
+and :meth:`!getch` returns ``-1``.
 There's also a :func:`~curses.halfdelay` function, which can be used to (in
-effect) set a timer on each :meth:`!getch`; if no input becomes
+effect) set a timer on each read; if no input becomes
 available within a specified delay (measured in tenths of a second),
-curses raises an exception.
+the read fails the same way.
 
-The :meth:`!getch` method returns an integer; if it's between 0 and 255, it
-represents the ASCII code of the key pressed.  Values greater than 255 are
-special keys such as Page Up, Home, or the cursor keys. You can compare the
-value returned to constants such as :const:`curses.KEY_PPAGE`,
+Special keys such as Page Up, Home, or the cursor keys are returned by all
+three as one of the :ref:`KEY_* constants <curses-key-constants>`,
+all larger than 255.
+You can compare the value returned to constants such as
+:const:`curses.KEY_PPAGE`,
 :const:`curses.KEY_HOME`, or :const:`curses.KEY_LEFT`.  The main loop of
 your program may look something like this::
 
    while True:
-       c = stdscr.getch()
-       if c == ord('p'):
+       c = stdscr.get_wch()
+       if c == 'p':
            PrintDocument()
-       elif c == ord('q'):
+       elif c == 'q':
            break  # Exit the while loop
        elif c == curses.KEY_HOME:
            x = y = 0
@@ -477,16 +494,17 @@ conversion functions  that take either integer or 1-character-string arguments
 and return the same type.  For example, :func:`curses.ascii.ctrl` returns the
 control character corresponding to its argument.
 
-There's also a method to retrieve an entire string,
-:meth:`~curses.window.getstr`.  It isn't used very often, because its
+There's also a method to retrieve an entire line,
+:meth:`~curses.window.get_wstr`.  It isn't used very often, because its
 functionality is quite limited; the only editing keys available are
-the backspace key and the Enter key, which terminates the string.  It
-can optionally be limited to a fixed number of characters. ::
+the erase and kill characters, and the Enter key, which terminates the line.
+It can optionally be limited to a fixed number of characters;
+:meth:`~curses.window.getstr` returns a bytes object instead. ::
 
    curses.echo()            # Enable echoing of characters
 
-   # Get a 15-character string, with the cursor on the top line
-   s = stdscr.getstr(0,0, 15)
+   # Get a line of at most 15 characters, with the cursor on the top line
+   s = stdscr.get_wstr(0,0, 15)
 
 The :mod:`curses.textpad` module supplies a text box that supports an
 Emacs-like set of keybindings.  Various methods of the
@@ -527,7 +545,7 @@ If you're in doubt about the detailed behavior of the curses
 functions, consult the manual pages for your curses implementation,
 whether it's ncurses or a proprietary Unix vendor's.  The manual pages
 will document any quirks, and provide complete lists of all the
-functions, attributes, and :const:`ACS_\*` characters available to
+functions, attributes, and :ref:`ACS_\* <curses-acs-codes>` characters available to
 you.
 
 Because the curses API is so large, some functions aren't supported in
