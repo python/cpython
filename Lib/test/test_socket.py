@@ -1,4 +1,5 @@
 import unittest
+import unittest.mock
 from test import support
 from test.support import os_helper
 from test.support import socket_helper
@@ -1080,6 +1081,17 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertEqual(socket.gethostname(), 'bar')
         finally:
             socket.sethostname(oldhn)
+
+    def test_getfqdn_undefined_address(self):
+        for addr in ('', '0.0.0.0', '::'):
+            with self.subTest(addr=addr):
+                called = []
+                with unittest.mock.patch.object(
+                    socket, 'gethostbyaddr',
+                    side_effect=lambda addr: called.append(addr) or ("", [], [])
+                ):
+                    socket.getfqdn(addr)
+                self.assertFalse(called, f"gethostbyaddr was called for undefined address {addr!r}")
 
     @unittest.skipUnless(hasattr(socket, 'if_nameindex'),
                          'socket.if_nameindex() not available.')
@@ -5712,7 +5724,6 @@ class TestUnixDomain(unittest.TestCase):
     def testEmptyAddress(self):
         # Test that binding empty address fails.
         self.assertRaises(OSError, self.sock.bind, "")
-
 
 class BufferIOTest(SocketConnectedTest):
     """
