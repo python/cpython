@@ -2586,6 +2586,8 @@ statresult_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     /* If we have been initialized from a tuple,
        st_?time might be set to None. Initialize it
        from the int slots.  */
+    /* See also statresult_repr() below, which assumes that the float slots are
+       always initialized. */
     for (i = 7; i <= 9; i++) {
         if (result->ob_item[i+3] == Py_None) {
             Py_DECREF(Py_None);
@@ -2594,6 +2596,63 @@ statresult_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
     return (PyObject*)result;
 }
+
+static PyObject *
+statresult_repr(PyObject *op, PyObject *Py_UNUSED(ignored))
+{
+    // gh-154387: Show the unnamed integer slots 7-9 with following named float
+    // slots st_atime/st_mtime/st_ctime instead of the generic "<unnamed@N>".
+    // The custom statresult_new() above always initializes the float slots.
+    // So it is safe to use the float slots for the repr().
+    PyTypeObject *type = Py_TYPE(op);
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(128);
+    if (writer == NULL) {
+        return NULL;
+    }
+    if (PyUnicodeWriter_WriteUTF8(writer, type->tp_name, -1) < 0) {
+        goto error;
+    }
+    if (PyUnicodeWriter_WriteChar(writer, '(') < 0) {
+        goto error;
+    }
+    // The first 10 packed members: st_mode..st_size and the 3 float times
+    // st_atime/st_mtime/st_ctime (tp_members omits the unnamed slots 7-9).
+    // NB: This approach assumes the 3 unnamed slots are at the end of the
+    // visible members, which is true for the current stat_result_desc.
+    for (Py_ssize_t i = 0; i < 10; i++) {
+        if (i > 0 && PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
+            goto error;
+        }
+        PyMemberDef *member = &type->tp_members[i];
+        if (PyUnicodeWriter_WriteUTF8(writer, member->name, -1) < 0) {
+            goto error;
+        }
+        if (PyUnicodeWriter_WriteChar(writer, '=') < 0) {
+            goto error;
+        }
+        PyObject *value = PyMember_GetOne((const char *)op, member);
+        if (value == NULL) {
+            goto error;
+        }
+        if (PyUnicodeWriter_WriteRepr(writer, value) < 0) {
+            Py_DECREF(value);
+            goto error;
+        }
+        Py_DECREF(value);
+    }
+    if (PyUnicodeWriter_WriteChar(writer, ')') < 0) {
+        goto error;
+    }
+    return PyUnicodeWriter_Finish(writer);
+
+error:
+    PyUnicodeWriter_Discard(writer);
+    return NULL;
+}
+
+static PyMethodDef statresult_repr_methoddef = {
+    "__repr__", statresult_repr, METH_NOARGS, NULL,
+};
 
 static int
 _posix_clear(PyObject *module)
@@ -19052,6 +19111,20 @@ posixmodule_exec(PyObject *m)
     }
     state->statresult_new_orig = ((PyTypeObject *)state->StatResultType)->tp_new;
     ((PyTypeObject *)state->StatResultType)->tp_new = statresult_new;
+    // Install __repr__ through the type dict so repr() and st.__repr__()
+    // resolve to the same function; a raw type->tp_repr assignment leaves the
+    // stale __repr__ wrapper which is readied by PyStructSequence_NewType.
+    PyObject *statresult_repr_descr = PyDescr_NewMethod(
+        (PyTypeObject *)state->StatResultType, &statresult_repr_methoddef);
+    if (statresult_repr_descr == NULL) {
+        return -1;
+    }
+    if (PyObject_SetAttrString(state->StatResultType, "__repr__",
+                               statresult_repr_descr) < 0) {
+        Py_DECREF(statresult_repr_descr);
+        return -1;
+    }
+    Py_DECREF(statresult_repr_descr);
 
     state->StatVFSResultType = (PyObject *)PyStructSequence_NewType(&statvfs_result_desc);
     if (PyModule_AddObjectRef(m, "statvfs_result", state->StatVFSResultType) < 0) {

@@ -1305,6 +1305,28 @@ test_structseq_newtype_null_descr_doc(PyObject *Py_UNUSED(self),
     Py_RETURN_NONE;
 }
 
+static PyObject *
+structseq_newtype_interspersed_unnamed(PyObject *Py_UNUSED(self),
+                              PyObject *Py_UNUSED(args))
+{
+    // gh-154387: unnamed fields may appear anywhere among the visible fields
+    // (here at indices 1 and 3), and a named field may be hidden (here "fifth"
+    // at index 4, since n_in_sequence is 4).
+    PyStructSequence_Field descr_fields[] = {
+        {"first", "field 0"},
+        {PyStructSequence_UnnamedField, "field 1"},
+        {"third", "field 2"},
+        {PyStructSequence_UnnamedField, "field 3"},
+        {"fifth", "field 4"},
+        {NULL, NULL},
+    };
+    PyStructSequence_Desc descr = {
+        "_testcapi.Interspersed", NULL, descr_fields, 4,
+    };
+
+    return (PyObject *)PyStructSequence_NewType(&descr);
+}
+
 typedef struct {
     PyThread_type_lock start_event;
     PyThread_type_lock exit_event;
@@ -3036,6 +3058,8 @@ static PyMethodDef TestMethods[] = {
         test_structseq_newtype_doesnt_leak, METH_NOARGS},
     {"test_structseq_newtype_null_descr_doc",
         test_structseq_newtype_null_descr_doc, METH_NOARGS},
+    {"structseq_newtype_interspersed_unnamed",
+        structseq_newtype_interspersed_unnamed, METH_NOARGS},
     {"pyobject_repr_from_null", pyobject_repr_from_null, METH_NOARGS},
     {"pyobject_str_from_null",  pyobject_str_from_null, METH_NOARGS},
     {"pyobject_bytes_from_null", pyobject_bytes_from_null, METH_NOARGS},
