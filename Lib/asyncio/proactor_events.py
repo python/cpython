@@ -534,7 +534,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
                                                               addr=addr)
         except OSError as exc:
             self._protocol.error_received(exc)
-            if self._buffer:
+            if self._buffer or self._closing:
                 # Reschedule the write loop so buffered data isn't stranded and
                 # a paused protocol is eventually resumed (gh-156698).
                 def resume_writing():
