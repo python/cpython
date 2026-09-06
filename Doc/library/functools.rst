@@ -51,16 +51,15 @@ The :mod:`!functools` module defines the following functions:
    completed and cached.
    However, even when this happens all threads will return the same object.
 
-   .. versionchanged:: next
-      In earlier versions the unbound cache was not guaranteed idempotent
-      for threaded access.
-
    Call-once behavior is not guaranteed because locks are not held during the
    function call. Potentially another call with the same arguments could
    occur while the first call is still running.
 
    .. versionadded:: 3.9
 
+   .. versionchanged:: next
+      In earlier versions the unbound cache was not guaranteed idempotent
+      for threaded access.
 
 .. decorator:: cached_property(func)
 
