@@ -227,25 +227,13 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, int use_mark, const char *err
 static PyObject *
 get_error_line_from_source(Parser *p, Py_ssize_t lineno)
 {
-    const char *cur_line = _PyTokenizer_RetainedSource(p->tok);
-    if (cur_line == NULL) {
+    if (_PyTokenizer_RetainedSource(p->tok) == NULL) {
         return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
-
     Py_ssize_t relative_lineno = p->starting_lineno ? lineno - p->starting_lineno + 1 : lineno;
-    const char *buf_end = cur_line + p->tok->source.len;
-
-    for (int i = 0; i < relative_lineno - 1; i++) {
-        const char *new_line = memchr(cur_line, '\n', buf_end - cur_line);
-        if (new_line == NULL) {
-            break;
-        }
-        cur_line = new_line + 1;
-    }
-
-    const char *next_newline = memchr(cur_line, '\n', buf_end - cur_line);
-    next_newline = next_newline != NULL ? next_newline : buf_end;
-    return PyUnicode_DecodeUTF8(cur_line, next_newline - cur_line, "replace");
+    Py_ssize_t len;
+    const char *line = _PyTok_SourceLineView(&p->tok->source, relative_lineno, &len);
+    return PyUnicode_DecodeUTF8(line, len, "replace");
 }
 
 void *
