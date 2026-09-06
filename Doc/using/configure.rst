@@ -1342,6 +1342,16 @@ See :source:`Platforms/Apple/iOS/README.md`.
 
    Specify the name for the framework (default: ``Python``).
 
+An iOS build configured without ``--enable-framework`` produces a static
+``libpython``, for embedding directly in an app binary. Such a build cannot
+load extension modules at runtime, and so does not support binary wheels; it
+requires ``MODULE_BUILDTYPE=static`` and :option:`--disable-test-modules`, and
+rejects :option:`--enable-shared`. See
+:source:`Platforms/Apple/iOS/README.md` for the full list of limitations.
+
+.. versionadded:: 3.16
+   iOS builds may be configured without a framework.
+
 
 Cross Compiling Options
 -----------------------
