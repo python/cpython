@@ -2016,6 +2016,21 @@ class GeneralModuleTests(unittest.TestCase):
             srv.bind((HOST, 0))
             srv.listen()
 
+    def test_listen_backlog_connect(self):
+        # gh-93316: a negative backlog is passed on to listen(2) instead of
+        # being clamped to 0, and the socket can still accept a connection.
+        # backlog=0 is deliberately not tested here: a system is then free
+        # to not queue any incoming connection at all.
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as srv:
+            srv.bind((HOST, 0))
+            srv.listen(-1)
+            srv.settimeout(support.LOOPBACK_TIMEOUT)
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as cli:
+                cli.settimeout(support.LOOPBACK_TIMEOUT)
+                cli.connect(srv.getsockname())
+                conn, _ = srv.accept()
+                conn.close()
+
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_listen_backlog_overflow(self):
