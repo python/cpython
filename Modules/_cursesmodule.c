@@ -4361,6 +4361,7 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
             curses_wattrset(self, attr, "insnstr") < 0)
         {
             curses_release_wstr(strtype, wstr);
+            Py_XDECREF(bytesobj);
             return NULL;
         }
     }

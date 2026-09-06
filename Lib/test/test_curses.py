@@ -3383,6 +3383,23 @@ class ScreenTests(NewtermTestBase):
         # close() is idempotent.
         screen.close()
 
+    def test_close_then_write_with_attr_keeps_no_reference(self):
+        # A write with an *attr* argument on a detached window fails while
+        # setting the rendition, and has to release the bytes it converted.
+        s = self.make_pty()
+        screen = curses.newterm('xterm', s, s)
+        win = screen.stdscr
+        screen.close()
+        writes = [lambda b: win.addstr(b, curses.A_BOLD),
+                  lambda b: win.addnstr(b, 4, curses.A_BOLD),
+                  lambda b: win.insstr(b, curses.A_BOLD),
+                  lambda b: win.insnstr(b, 4, curses.A_BOLD)]
+        data = b'x' * 8
+        nrefs = sys.getrefcount(data)
+        for write in writes:
+            self.assertRaises(curses.error, write, data)
+        self.assertEqual(sys.getrefcount(data), nrefs)
+
     @requires_curses_func('panel')
     def test_close_then_panel_replace(self):
         # A detached window has no underlying curses window, so replace()
