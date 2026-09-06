@@ -299,6 +299,9 @@ class ParseArgsCodeGen:
         self.max_pos = 0
         self.min_kw_only = 0
         for i, p in enumerate(self.parameters, 1):
+            if p.converter.alias_of is not None:
+                # An alias fills the slot of the parameter which it aliases.
+                continue
             if p.is_keyword_only():
                 assert not p.is_positional_only()
                 if not p.is_optional():
@@ -831,8 +834,7 @@ class ParseArgsCodeGen:
 
         Fall back to the tuple convention if the stack one cannot be used.
         """
-        for p in self.parameters:
-            p.converter.use_converter()
+        self.use_converters()
         if self.limited_capi:
             # _PyArg_ParseStack() is not part of the limited C API.
             self.fastcall = False
@@ -908,6 +910,8 @@ class ParseArgsCodeGen:
                 use_parser_code = False
                 parser_code = []
                 break
+            if p.deprecated_until is not None:
+                parsearg = self.render_deprecated(p, parsearg)
             if has_optional or p.is_optional():
                 has_optional = True
                 parser_code.append(libclinic.normalize_snippet("""
@@ -982,6 +986,71 @@ class ParseArgsCodeGen:
         if self.var_keyword:
             parser_code.append(libclinic.normalize_snippet(self._parse_kwarg(), indent=4))
         self.parser_body(*parser_code)
+
+    def use_converters(self) -> None:
+        """Prepare for parsing all arguments by a single call.
+
+        Such call leaves nowhere to put the code checking a particular
+        argument.
+        """
+        for p in self.parameters:
+            if p.converter.alias_of is not None:
+                fail(f"Parameter {p.name!r} cannot be an alias: "
+                     f"the arguments are not parsed one by one.")
+            if p.deprecated_until is not None:
+                fail(f"Parameter {p.name!r} cannot be deprecated: "
+                     f"the arguments are not parsed one by one.")
+            p.converter.use_converter()
+
+    def render_alias(self, p: Parameter, argname_fmt: str,
+                     parsearg: str) -> str:
+        """Prepend the code checking that the alias is not in conflict.
+
+        Only one of the alternative names can be used in a call.
+        """
+        aliased = p.converter.alias_of
+        assert aliased is not None
+        i = self.parameters.index(aliased)
+        other = f"name ('{aliased.name}')"
+        arg = ''
+        if i < self.max_pos:
+            # The other name can be used for a positional argument too.
+            arg = f', {i} < nargs ? "position ({i + 1})" : "{other}"'
+            other = '%s'
+        return '\n'.join([
+            libclinic.normalize_snippet(f"""
+                if ({argname_fmt % i}) {{{{
+                    PyErr_Format(PyExc_TypeError,
+                            "argument for {self.func.name}() given by "
+                            "name ('{p.name}') and {other}"{arg});
+                    goto exit;
+                }}}}
+                """),
+            libclinic.normalize_snippet(parsearg),
+        ])
+
+    def render_deprecated(self, p: Parameter, parsearg: str) -> str:
+        """Prepend the code warning that the parameter is going away."""
+        assert p.deprecated_until is not None
+        major, minor = p.deprecated_until
+        aliased = p.converter.alias_of
+        instead = "" if aliased is None else f"Use {aliased.name!r} instead. "
+        message = (f"Passing the argument {p.name!r} to "
+                   f"{self.func.fulldisplayname}() is deprecated. {instead}"
+                   f"It will be removed in Python {major}.{minor}.")
+        code = [
+            libclinic.normalize_snippet("""
+                if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                        {}, 1))
+                {{{{
+                    goto exit;
+                }}}}
+                """.format(
+                    libclinic.wrapped_c_string_literal(
+                        message, width=64, subsequent_indent=24))),
+            libclinic.normalize_snippet(parsearg),
+        ]
+        return '\n'.join(code)
 
     def parse_general(self, clang: CLanguage) -> None:
         parsearg: str | None
@@ -1066,6 +1135,13 @@ class ParseArgsCodeGen:
                                     "parameter (after clang)")
                 displayname = p.get_displayname(i+1)
                 parsearg = p.converter.parse_arg(argname_fmt % i, displayname, limited_capi=self.limited_capi)
+                if parsearg is not None:
+                    # The conflict is reported before warning about the
+                    # deprecated name which caused it.
+                    if p.deprecated_until is not None:
+                        parsearg = self.render_deprecated(p, parsearg)
+                    if p.converter.alias_of is not None:
+                        parsearg = self.render_alias(p, argname_fmt, parsearg)
                 if parsearg is None:
                     parser_code = []
                     use_parser_code = False
@@ -1122,8 +1198,7 @@ class ParseArgsCodeGen:
             if self.varpos:
                 parser_code.append(libclinic.normalize_snippet(self._parse_vararg(), indent=4))
         else:
-            for parameter in self.parameters:
-                parameter.converter.use_converter()
+            self.use_converters()
 
             self.declarations = declare_parser(self.func, codegen=self.codegen,
                                                hasformat=True)
