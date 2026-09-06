@@ -542,9 +542,6 @@ _PyLexer_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, str
          int cursor_in_format_with_debug =
              cursor == 1 && (current_tok->in_debug || in_format_spec);
          int cursor_valid = cursor == 0 || cursor_in_format_with_debug;
-        if ((cursor_valid) && !_PyLexer_update_ftstring_expr(tok, c)) {
-            return MAKE_TOKEN(ENDMARKER);
-        }
         if ((cursor_valid) && c != '{' && _PyLexer_set_ftstring_expr(tok, token, c)) {
             return MAKE_TOKEN(ERRORTOKEN);
         }
