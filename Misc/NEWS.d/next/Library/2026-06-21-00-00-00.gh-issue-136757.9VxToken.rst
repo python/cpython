@@ -1,0 +1,2 @@
+Reduce duplicate string allocations in :mod:`tokenize` by reusing static
+strings for exact multi-character operator tokens.
