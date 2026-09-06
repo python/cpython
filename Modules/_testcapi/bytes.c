@@ -151,7 +151,7 @@ writer_write_bytes(PyObject *self_raw, PyObject *args)
         return NULL;
     }
 
-    char *bytes;
+    const char *bytes;
     Py_ssize_t unused_size, size;
     if (!PyArg_ParseTuple(args, "y#n", &bytes, &unused_size, &size)) {
         return NULL;
@@ -353,12 +353,45 @@ error:
 }
 
 
+// Trigger a buffer overflow on purpose to test the canary byte feature
+// which detects buffer overflow
+static PyObject *
+byteswriter_test_canary_byte(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    const char *str;
+    Py_ssize_t len;
+    if (!PyArg_ParseTuple(args, "s#", &str, &len)) {
+        return NULL;
+    }
+
+    PyBytesWriter *writer = PyBytesWriter_Create(0);
+    if (writer == NULL) {
+        goto error;
+    }
+    if (PyBytesWriter_Grow(writer, len) < 0) {
+        goto error;
+    }
+    char *data = PyBytesWriter_GetData(writer);
+    if (len) {
+        memcpy(data, str, len);
+    }
+    data[len] = '#';  // Overflow!
+
+    return PyBytesWriter_Finish(writer);
+
+error:
+    PyBytesWriter_Discard(writer);
+    return NULL;
+}
+
+
 static PyMethodDef test_methods[] = {
     {"bytes_resize", bytes_resize, METH_VARARGS},
     {"bytes_join", bytes_join, METH_VARARGS},
     {"byteswriter_abc", byteswriter_abc, METH_NOARGS},
     {"byteswriter_resize", byteswriter_resize, METH_NOARGS},
     {"byteswriter_highlevel", byteswriter_highlevel, METH_NOARGS},
+    {"byteswriter_test_canary_byte", byteswriter_test_canary_byte, METH_VARARGS},
     {NULL},
 };
 
