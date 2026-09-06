@@ -283,6 +283,57 @@ escape_size(const void *input, int kind, Py_ssize_t input_chars)
     Py_ssize_t i;
     Py_ssize_t output_size;
 
+    /* SWAR no-escape fast path (1-byte): in this 1-byte (Latin-1) mode a code
+       point needs escaping only when c == '"', c == '\\', or c < 0x20; any other
+       byte, including non-ASCII (>= 0x80), is copied verbatim.  Scan eight bytes
+       per iteration and drop to the per-character loop at the first byte that
+       needs escaping.  The loop reads one 8-byte word at a time, so strings
+       shorter than a word stay on that per-character loop, where the setup
+       below would not pay off. */
+    if (kind == PyUnicode_1BYTE_KIND && input_chars >= 8
+            /* the output is input_chars + 2 (the surrounding quotes); keep that
+               addition below from overflowing Py_ssize_t */
+            && input_chars < PY_SSIZE_T_MAX - 2) {
+        const Py_UCS1 *p = (const Py_UCS1 *)input;
+        const uint64_t ones = 0x0101010101010101ULL;  /* 1 in every byte lane */
+        const uint64_t high = 0x8080808080808080ULL;  /* high bit of every lane */
+        const uint64_t bq = 0x22ULL * ones;   /* '"' broadcast to all 8 lanes */
+        const uint64_t bs = 0x5cULL * ones;   /* '\\' broadcast to all 8 lanes */
+        const uint64_t bc = 0xE0ULL * ones;   /* 0xE0 per lane; w & bc is zero in
+                                                 a lane exactly when its byte is
+                                                 < 0x20 (top three bits clear) */
+        Py_ssize_t j = 0;
+        int needs_escape = 0;
+        for (; j + 8 <= input_chars; j += 8) {
+            uint64_t w;
+            memcpy(&w, p + j, 8);
+            /* (v - ones) & ~v & high lights a lane's high bit exactly when that
+               lane is zero, so each mask flags the lanes that matched. */
+            uint64_t mq = w ^ bq;
+            mq = (mq - ones) & ~mq & high;            /* lanes equal to '"'  */
+            uint64_t ms = w ^ bs;
+            ms = (ms - ones) & ~ms & high;            /* lanes equal to '\\' */
+            uint64_t vc = w & bc;
+            uint64_t mlo = (vc - ones) & ~vc & high;  /* lanes < 0x20 */
+            if (mq | ms | mlo) {
+                needs_escape = 1;
+                break;
+            }
+        }
+        if (!needs_escape) {
+            for (; j < input_chars; j++) {
+                Py_UCS1 c = p[j];
+                if (c == '"' || c == '\\' || c < 0x20) {
+                    needs_escape = 1;
+                    break;
+                }
+            }
+        }
+        if (!needs_escape) {
+            return input_chars + 2;
+        }
+    }
+
     /* Compute the output size */
     for (i = 0, output_size = 2; i < input_chars; i++) {
         Py_UCS4 c = PyUnicode_READ(kind, input, i);
