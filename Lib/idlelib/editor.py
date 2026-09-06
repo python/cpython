@@ -1118,7 +1118,13 @@ class EditorWindow:
 
     def last_mtime(self):
         file = self.io.filename
-        return os.path.getmtime(file) if file else 0
+        if not file:
+            return 0
+        try:
+            return os.path.getmtime(file)
+        except OSError:
+            # File gone or inaccessible: keep the last known mtime.
+            return self.mtime
 
     def focus_in_event(self, event):
         mtime = self.last_mtime()
