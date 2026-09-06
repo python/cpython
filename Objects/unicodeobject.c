@@ -8368,6 +8368,51 @@ iconv_grow_writer(PyBytesWriter *writer, char **pout, char **poutend)
     return 0;
 }
 
+/* Return the output and the conversion to the initial shift state; a stateless
+   encoding writes nothing.  Returns 0 on success, -1 on error. */
+static int
+iconv_reset_shift_state(iconv_t cd, PyBytesWriter *writer,
+                        char **pout, char **poutend)
+{
+    for (;;) {
+        /* A NULL input buffer means the reset, but its size is passed as a
+           real pointer: some implementations do not accept a NULL there. */
+        size_t inleft = 0;
+        size_t outleft = (size_t)(*poutend - *pout);
+        /* Only -1 is a failure; a positive result counts nonreversible
+           conversions. */
+        if (iconv(cd, NULL, &inleft, pout, &outleft) != (size_t)-1) {
+            return 0;
+        }
+        if (errno != E2BIG) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            return -1;
+        }
+        if (iconv_grow_writer(writer, pout, poutend) < 0) {
+            return -1;
+        }
+    }
+}
+
+/* Test whether one code point is encodable, on a descriptor separate from the
+   one which writes the output.  Substituting it (e.g. writing SI in
+   ISO-2022-KR) changes the shift state, and dropping such output would
+   desynchronize the descriptor from what is already written. */
+static int
+iconv_encodable(iconv_t cd, const char *cp, size_t unit)
+{
+    char buf[32];       /* enough for one code point with escape sequences */
+    char *inptr = (char *)cp;
+    size_t inleft = unit;
+    char *out = buf;
+    size_t outleft = sizeof(buf);
+
+    iconv(cd, NULL, NULL, NULL, NULL);      /* start in the initial state */
+    /* Only a zero result means that the code point was encoded. */
+    /* See the note above on the void* cast of the iconv() input buffer. */
+    return iconv(cd, (void *)&inptr, &inleft, &out, &outleft) == 0;
+}
+
 /*
  * Encode a str to bytes with iconv().
  *
@@ -8435,6 +8480,8 @@ _PyUnicode_EncodeIconv(const char *encoding, PyObject *unicode,
     const char *uend = data + (size_t)ulen * unit;
     int flushing = 0;
     int careful = 0;            /* feed one code point per iconv() call */
+    /* tests a code point in the careful mode */
+    iconv_t probe_cd = (iconv_t)-1;
 
     /* A generous initial estimate for the output size. */
     writer = PyBytesWriter_Create(ulen + (ulen >> 1) + 16);
@@ -8453,12 +8500,24 @@ _PyUnicode_EncodeIconv(const char *encoding, PyObject *unicode,
         }
         char *out_before = out;
         size_t outleft = (size_t)(outend - out);
-        /* When the whole string is converted, a final iconv() call with a
-           NULL input flushes any pending shift sequence (e.g. ISO-2022). */
-        /* See the note above on the void* cast of the iconv() input buffer. */
-        size_t ret = iconv(cd, flushing ? NULL : (void *)&inptr, &inleft, &out, &outleft);
-        if (!flushing) {
-            up = inptr;
+        size_t ret;
+        if (careful && !flushing
+            && !iconv_encodable(probe_cd, up, (size_t)unit))
+        {
+            /* Do not feed it to cd, whose shift state has to match
+               the written output. */
+            ret = (size_t)-1;
+            errno = EILSEQ;
+        }
+        else {
+            /* When the whole string is converted, a final iconv() call with
+               a NULL input flushes any pending shift sequence (ISO-2022). */
+            /* See the note above on the void* cast of the iconv() input. */
+            ret = iconv(cd, flushing ? NULL : (void *)&inptr, &inleft,
+                        &out, &outleft);
+            if (!flushing) {
+                up = inptr;
+            }
         }
 
         if (ret != (size_t)-1) {
@@ -8467,20 +8526,15 @@ _PyUnicode_EncodeIconv(const char *encoding, PyObject *unicode,
             }
             /* A positive result counts nonreversible conversions: iconv()
                substituted an unencodable character instead of failing with
-               EILSEQ (musl and *BSD citrus do this).  Treat it as unencodable
-               and re-run one code point at a time to locate it. */
+               EILSEQ (musl and *BSD citrus do this). */
             if (ret > 0) {
-                if (!careful) {
-                    careful = 1;
-                    iconv(cd, NULL, NULL, NULL, NULL);
-                    out = PyBytesWriter_GetData(writer);
-                    outend = out + PyBytesWriter_GetSize(writer);
-                    up = ustart;
-                    continue;
+                if (careful) {
+                    /* The probe reported the code point as encodable, but it
+                       was substituted in the current shift state; drop it and
+                       report it. */
+                    out = out_before;
+                    up -= unit;
                 }
-                /* This code point was substituted; drop it and report it. */
-                out = out_before;
-                up -= unit;
             }
             else if (careful && up < uend) {
                 continue;
@@ -8500,6 +8554,23 @@ _PyUnicode_EncodeIconv(const char *encoding, PyObject *unicode,
         else if (errno != EILSEQ && errno != EINVAL) {
             PyErr_SetFromErrno(PyExc_OSError);
             goto done;
+        }
+
+        if (!careful) {
+            /* iconv() can reset the shift state of cd on an unencodable code
+               point, while the output written for the preceding code points
+               stays in the shifted state.  Re-run one code point at a time:
+               then nothing is written for the failed one. */
+            careful = 1;
+            probe_cd = iconv_open_or_set_error(encoding, source, encoding);
+            if (probe_cd == (iconv_t)-1) {
+                goto done;
+            }
+            iconv(cd, NULL, NULL, NULL, NULL);
+            out = PyBytesWriter_GetData(writer);
+            outend = out + PyBytesWriter_GetSize(writer);
+            up = ustart;
+            continue;
         }
 
         /* An unencodable code point at *up; one input unit is one code point. */
@@ -8539,28 +8610,27 @@ _PyUnicode_EncodeIconv(const char *encoding, PyObject *unicode,
             replen = PyBytes_GET_SIZE(repbytes);
         }
 
-        while (outend - out < replen) {
-            if (iconv_grow_writer(writer, &out, &outend) < 0) {
-                if (repbytes != NULL) {
-                    Py_DECREF(repbytes);
-                }
-                else {
-                    Py_DECREF(rep);
-                }
-                goto done;
-            }
+        /* The replacement is copied verbatim, so the output must return to the
+           initial shift state first, or it reads back as encoded data. */
+        int failed = replen > 0
+                     && iconv_reset_shift_state(cd, writer, &out, &outend) < 0;
+        while (!failed && outend - out < replen) {
+            failed = iconv_grow_writer(writer, &out, &outend) < 0;
         }
-        memcpy(out, repdata, replen);
-        out += replen;
+        if (!failed) {
+            memcpy(out, repdata, replen);
+            out += replen;
+        }
         if (repbytes != NULL) {
             Py_DECREF(repbytes);
         }
         else {
             Py_DECREF(rep);
         }
+        if (failed) {
+            goto done;
+        }
         up = ustart + (size_t)newpos * unit;
-        /* Reset the shift state after the injected replacement bytes. */
-        iconv(cd, NULL, NULL, NULL, NULL);
     }
 
     if (PyBytesWriter_Resize(writer, out - (char *)PyBytesWriter_GetData(writer)) < 0) {
@@ -8574,6 +8644,9 @@ done:
         PyBytesWriter_Discard(writer);
     }
     iconv_close(cd);
+    if (probe_cd != (iconv_t)-1) {
+        iconv_close(probe_cd);
+    }
     PyMem_Free(widened);
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
