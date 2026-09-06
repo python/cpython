@@ -206,7 +206,6 @@ initialize_token(Parser *p, Token *parser_token, struct token *new_token, int to
     parser_token->metadata = NULL;
     if (new_token->metadata != NULL) {
         if (_PyArena_AddPyObject(p->arena, new_token->metadata) < 0) {
-            Py_DECREF(new_token->metadata);
             return -1;
         }
         parser_token->metadata = new_token->metadata;
@@ -260,10 +259,10 @@ _PyPegen_fill_token(Parser *p)
 {
     struct token new_token;
     _PyToken_Init(&new_token);
-    int type = _PyTokenizer_Get(p->tok, &new_token);
+    _PyTokenizer_Get(p->tok, &new_token);
 
     // Record and skip '# type: ignore' comments
-    while (type == TYPE_IGNORE) {
+    while (new_token.type == TYPE_IGNORE) {
         Py_ssize_t len;
         const char *text = _PyToken_TextView(p->tok, &new_token, &len);
         char *tag = PyMem_Malloc((size_t)len + 1);
@@ -278,8 +277,10 @@ _PyPegen_fill_token(Parser *p)
             PyErr_NoMemory();
             goto error;
         }
-        type = _PyTokenizer_Get(p->tok, &new_token);
+        _PyTokenizer_Get(p->tok, &new_token);
     }
+
+    int type = new_token.type;
 
     // If we have reached the end and we are in single input mode we need to insert a newline and reset the parsing
     if (p->start_rule == Py_single_input && type == ENDMARKER && p->parsing_started) {
@@ -300,7 +301,9 @@ _PyPegen_fill_token(Parser *p)
     }
 
     Token *t = p->tokens[p->fill];
-    return initialize_token(p, t, &new_token, type);
+    int result = initialize_token(p, t, &new_token, type);
+    _PyToken_Free(&new_token);
+    return result;
 error:
     _PyToken_Free(&new_token);
     return -1;

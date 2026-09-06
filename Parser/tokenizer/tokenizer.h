@@ -9,6 +9,7 @@ struct tok_state;
 /* Initialize before use. metadata owns a reference released by _PyToken_Free;
    a consumer taking that reference must set metadata to NULL. */
 struct token {
+    int type;
     int level;
     int is_raw;
     _PyTok_Span span;
@@ -44,11 +45,17 @@ typedef struct {
     const char *encoding;
 } _PyTokenizer_Info;
 
-int _PyTokenizer_Get(struct tok_state *, struct token *);
+/* Get replaces the initialized token, releasing its previous metadata.
+   Errors are returned as ERRORTOKEN, with or without a Python exception. */
+void _PyTokenizer_Get(struct tok_state *, struct token *);
 void _PyTokenizer_Free(struct tok_state *);
 void _PyTokenizer_raise_init_error(PyObject *filename);
 void _PyToken_Init(struct token *);
-void _PyToken_Free(struct token *);
+static inline void
+_PyToken_Free(struct token *token)
+{
+    Py_CLEAR(token->metadata);
+}
 
 /* Views and borrowed snapshot references remain valid until the tokenizer is
    mutated or freed. Source spans may be discarded when reading more input. */
@@ -56,10 +63,10 @@ _PyTokenizer_Info _PyTokenizer_GetInfo(const struct tok_state *);
 /* An absent token span has a nonnull empty text view. */
 const char *_PyToken_TextView(
     const struct tok_state *, const struct token *, Py_ssize_t *);
-/* Pair the token with the type returned by the most recent Get. text is NULL
-   for an absent span; line includes the token's complete physical line range. */
+/* Use the token from the most recent Get. text is NULL for an absent span;
+   line includes the token's complete physical line range. */
 void _PyToken_GetView(
-    const struct tok_state *tok, const struct token *token, int type,
+    const struct tok_state *tok, const struct token *token,
     _PyToken_View *view);
 const char *_PyTokenizer_SpanView(
     const struct tok_state *, _PyTok_Span, Py_ssize_t *);

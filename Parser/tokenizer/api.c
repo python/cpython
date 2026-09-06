@@ -57,7 +57,7 @@ _PyTokenizer_SpanView(const struct tok_state *tok, _PyTok_Span span,
 
 void
 _PyToken_GetView(const struct tok_state *tok, const struct token *token,
-                 int type, _PyToken_View *view)
+                 _PyToken_View *view)
 {
     assert(view != NULL);
     assert((token->span.start == -1 && token->span.end == -1) ||
@@ -69,7 +69,7 @@ _PyToken_GetView(const struct tok_state *tok, const struct token *token,
         ? NULL : _PyLexer_BufferPointer(tok, token->span.start);
     view->length = token->span.end - token->span.start;
     view->end_line = _PyLexer_BufferPointer(tok, tok->line_start);
-    view->line = ISSTRINGLIT(type)
+    view->line = ISSTRINGLIT(token->type)
         ? view->text - token->start_loc.byte_col : view->end_line;
     view->line_length = tok->inp - tok->line_start +
         (view->end_line - view->line);

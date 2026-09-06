@@ -138,7 +138,8 @@ _PyPegen_tokenize_full_source_to_check_for_errors(Parser *p) {
     _PyToken_Init(&new_token);
 
     for (;;) {
-        switch (_PyTokenizer_Get(p->tok, &new_token)) {
+        _PyTokenizer_Get(p->tok, &new_token);
+        switch (new_token.type) {
             case ERRORTOKEN: {
                 if (PyErr_Occurred()) {
                     ret = -1;

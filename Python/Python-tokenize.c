@@ -257,7 +257,8 @@ tokenizeriter_next(PyObject *op)
     struct token token;
     _PyToken_Init(&token);
 
-    int type = _PyTokenizer_Get(it->tok, &token);
+    _PyTokenizer_Get(it->tok, &token);
+    int type = token.type;
     if (type == ERRORTOKEN) {
         if(!PyErr_Occurred()) {
             _tokenizer_error(it);
@@ -271,7 +272,7 @@ tokenizeriter_next(PyObject *op)
         goto exit;
     }
     _PyToken_View view;
-    _PyToken_GetView(it->tok, &token, type, &view);
+    _PyToken_GetView(it->tok, &token, &view);
     const char *token_start = view.text;
     PyObject *str;
     if (token.span.start < 0) {

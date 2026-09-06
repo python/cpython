@@ -668,9 +668,10 @@ _PyLexer_get_normal(struct tok_state *tok, ftstring_state *current, struct token
 }
 
 
-int
+void
 _PyTokenizer_Get(struct tok_state *tok, struct token *token)
 {
+    _PyToken_Free(token);
     ftstring_state *current = _PyLexer_CurrentFTString(tok);
     int result;
     if (current == NULL) {
@@ -692,5 +693,5 @@ _PyTokenizer_Get(struct tok_state *tok, struct token *token)
     if (tok_failed(tok)) {
         result = ERRORTOKEN;
     }
-    return result;
+    token->type = result;
 }

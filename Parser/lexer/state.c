@@ -125,18 +125,13 @@ _PyTokenizer_Free(struct tok_state *tok)
 }
 
 void
-_PyToken_Free(struct token *token) {
-    Py_XDECREF(token->metadata);
-}
-
-void
 _PyToken_Init(struct token *token) {
-#ifdef Py_DEBUG
-    token->span = (_PyTok_Span){-1, -1};
-    token->start_loc = (_PyTok_Loc){-1, -1};
-    token->end_loc = (_PyTok_Loc){-1, -1};
-#endif
-    token->metadata = NULL;
+    *token = (struct token){
+        .type = -1,
+        .span = {-1, -1},
+        .start_loc = {-1, -1},
+        .end_loc = {-1, -1},
+    };
 }
 
 int
