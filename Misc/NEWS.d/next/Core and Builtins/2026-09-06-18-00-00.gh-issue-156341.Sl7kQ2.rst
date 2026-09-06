@@ -1,0 +1,2 @@
+﻿Fix fallback importing of the :mod:`_threading_local` module when the
+standard library `threading` module has not yet been fully initialized.
