@@ -90,7 +90,7 @@ except ImportError:
 # bpo-46913: Don't test the _sha3 extension on a Python UBSAN build
 # TODO(gh-99108): Revisit this after _sha3 uses HACL*.
 SKIP_SHA3 = _sha3 is None or support.check_sanitizer(ub=True)
-requires_sha3 = unittest.skipUnkess(not SKIP_SHA3, 'requires _sha3')
+requires_sha3 = unittest.skipUnless(not SKIP_SHA3, 'requires _sha3')
 
 
 def hexstr(s):
