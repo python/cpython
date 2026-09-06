@@ -593,7 +593,10 @@ _PyTuple_Concat(PyObject *aa, PyObject *bb)
         dest[i] = Py_NewRef(v);
     }
 
-    _PyObject_GC_TRACK(np);
+    if (_PyObject_GC_IS_TRACKED(aa) || _PyObject_GC_IS_TRACKED(bb))
+    {
+        _PyObject_GC_TRACK(np);
+    }
     return (PyObject *)np;
 }
 
@@ -642,7 +645,10 @@ _PyTuple_Repeat(PyObject *self, Py_ssize_t n)
         _Py_memory_repeat((char *)np->ob_item, sizeof(PyObject *)*output_size,
                           sizeof(PyObject *)*input_size);
     }
-    _PyObject_GC_TRACK(np);
+    if (_PyObject_GC_IS_TRACKED(self))
+    {
+        _PyObject_GC_TRACK(np);
+    }
     return (PyObject *) np;
 }
 

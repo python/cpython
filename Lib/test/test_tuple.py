@@ -319,9 +319,14 @@ class TupleTest(seq_tests.CommonTest):
         self._not_tracked_instantly((1,))
         self._not_tracked_instantly((1, 2))
         self._not_tracked_instantly((1, 2, "a"))
-        self._not_tracked_instantly((1, 2) * 5)
         self._not_tracked_instantly((12, 10**10, 'a_' * 100))
         self._not_tracked_instantly((object(),))
+
+        # Test for _PyTuple_Concat
+        self._not_tracked_instantly((1, 2) + (2, 3))
+
+        # Test for _PyTuple_Repeat
+        self._not_tracked_instantly((1, 2) * 5)
 
         self._not_tracked(((1, x), y, (2, 3)))
         self._not_tracked((1, 2, (None, True, False, ()), int))
