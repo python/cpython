@@ -1,0 +1,5 @@
+:mod:`http.server` now drains any unread declared request body up to
+1 MiB after dispatch on persistent connections, and closes the connection
+when the remainder exceeds that cap, per :rfc:`7230#section-6.3`. This
+prevents the next iteration of the keep-alive loop from parsing leftover
+body bytes as a request line.
