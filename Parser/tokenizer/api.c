@@ -160,11 +160,11 @@ _PyTokenizer_HasTrailingStatement(const struct tok_state *tok)
 int
 _PyTokenizer_IsInteractive(const struct tok_state *tok)
 {
-    return tok->prompt != NULL;
+    return _PyTok_ReaderIsInteractive(tok);
 }
 
 void
 _PyTokenizer_StopInteractive(struct tok_state *tok)
 {
-    tok->interactive_underflow = IUNDERFLOW_STOP;
+    _PyTok_ReaderStopInteractive(tok);
 }
