@@ -44,6 +44,7 @@ static const char copyright[] =
 #include "pycore_long.h"             // _PyLong_GetZero()
 #include "pycore_list.h"             // _PyList_AppendTakeRef()
 #include "pycore_moduleobject.h"     // _PyModule_GetState()
+#include "pycore_object.h"           // _Py_NewReference()
 #include "pycore_tuple.h"            // _PyTuple_FromPairSteal
 #include "pycore_unicodeobject.h"    // _PyUnicode_Copy
 #include "pycore_unicodectype.h"     // _PyUnicode_IsXidStart()
@@ -876,6 +877,12 @@ static int
 pattern_clear(PyObject *op)
 {
     PatternObject *self = _PatternObject_CAST(op);
+    PyObject *cached = _Py_atomic_exchange_ptr(&self->cached_match, NULL);
+    if (cached != NULL) {
+        PyTypeObject *tp = Py_TYPE(cached);
+        PyObject_GC_Del(cached);
+        Py_DECREF(tp);
+    }
     Py_CLEAR(self->groupindex);
     Py_CLEAR(self->indexgroup);
     Py_CLEAR(self->pattern);
@@ -1786,6 +1793,7 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
     if (!self)
         return NULL;
     self->weakreflist = NULL;
+    self->cached_match = NULL;
     self->pattern = NULL;
     self->groupindex = NULL;
     self->indexgroup = NULL;
@@ -2503,7 +2511,24 @@ match_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    (void)match_clear(self);
+    MatchObject *match = _MatchObject_CAST(self);
+    PatternObject *pattern = match->pattern;
+    Py_CLEAR(match->string);
+    Py_CLEAR(match->regs);
+    if (pattern != NULL) {
+        match->pattern = NULL;
+        /* Cache the dead object (it keeps only its type reference) in the
+           pattern for the next match.  The pattern reference is given up
+           either way; if it was the last one, pattern_clear() frees the
+           object just cached. */
+        PyObject *expected = NULL;
+        if (_Py_atomic_compare_exchange_ptr(&pattern->cached_match,
+                                            &expected, self)) {
+            Py_DECREF(pattern);
+            return;
+        }
+        Py_DECREF(pattern);
+    }
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -2948,12 +2973,20 @@ pattern_new_match(_sremodulestate* module_state,
     if (status > 0) {
 
         /* create match object (with room for extra group marks) */
-        /* coverity[ampersand_in_size] */
-        match = PyObject_GC_NewVar(MatchObject,
-                                   module_state->Match_Type,
-                                   2*(pattern->groups+1));
-        if (!match)
-            return NULL;
+        match = (MatchObject *)_Py_atomic_exchange_ptr(&pattern->cached_match,
+                                                       NULL);
+        if (match != NULL) {
+            assert(Py_SIZE(match) == 2*(pattern->groups+1));
+            _Py_NewReference((PyObject *)match);
+        }
+        else {
+            /* coverity[ampersand_in_size] */
+            match = PyObject_GC_NewVar(MatchObject,
+                                       module_state->Match_Type,
+                                       2*(pattern->groups+1));
+            if (!match)
+                return NULL;
+        }
 
         Py_INCREF(pattern);
         match->pattern = pattern;
