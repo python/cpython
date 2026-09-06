@@ -1206,7 +1206,10 @@ def quantiles(data, *, n=4, method='exclusive'):
         result = []
         for i in range(1, n):
             j, delta = divmod(i * m, n)
-            interpolated = (data[j] * (n - delta) + data[j + 1] * delta) / n
+            if (data[j] == data[j + 1]) or not delta:
+                interpolated = data[j] / 1
+            else:
+                interpolated = (data[j] * (n - delta) + data[j + 1] * delta) / n
             result.append(interpolated)
         return result
 
@@ -1217,7 +1220,13 @@ def quantiles(data, *, n=4, method='exclusive'):
             j = i * m // n                               # rescale i to m/n
             j = 1 if j < 1 else ld-1 if j > ld-1 else j  # clamp to 1 .. ld-1
             delta = i*m - j*n                            # exact integer math
-            interpolated = (data[j - 1] * (n - delta) + data[j] * delta) / n
+            # When the endpoints are equal or delta is zero, avoid
+            # the interpolation formula which can be off by 1 ULP
+            # due to floating-point rounding
+            if (data[j - 1] == data[j]) or not delta:
+                interpolated = data[j - 1] / 1
+            else:
+                interpolated = (data[j - 1] * (n - delta) + data[j] * delta) / n
             result.append(interpolated)
         return result
 
