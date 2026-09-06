@@ -1,0 +1,2 @@
+Fix ``getfqdn()`` attempting to resolve the computer's own hostname, instead
+of returning it as-is.
