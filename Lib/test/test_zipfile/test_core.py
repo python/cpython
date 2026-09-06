@@ -1136,6 +1136,54 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
             zipfile.ZipFile(io.BytesIO(zipdata))
         self.assertFalse(zipfile.is_zipfile(io.BytesIO(zipdata)))
 
+    def test_multi_disk_zip64_end_of_central_dir(self):
+        zipdata = self.make_zip64_file()
+        eocd64 = zipdata.rfind(zipfile.stringEndArchive64)
+        disk_fields_offset = eocd64 + struct.calcsize('<4sQ2H')
+
+        for disk_number, disk_start in ((1, 0), (0, 1), (1, 1)):
+            corrupted = bytearray(zipdata)
+            struct.pack_into(
+                '<LL', corrupted, disk_fields_offset,
+                disk_number, disk_start,
+            )
+            with self.subTest(
+                disk_number=disk_number,
+                disk_start=disk_start,
+            ):
+                with self.assertRaisesRegex(zipfile.BadZipFile,
+                                            'multiple disks'):
+                    zipfile.ZipFile(io.BytesIO(corrupted))
+                self.assertFalse(zipfile.is_zipfile(io.BytesIO(corrupted)))
+
+    def test_multi_disk_end_of_central_dir_with_zip64(self):
+        zipdata = self.make_zip64_file()
+        eocd = zipdata.rfind(zipfile.stringEndArchive)
+
+        for disk_number, disk_start in ((1, 0), (0, 1), (1, 1)):
+            corrupted = bytearray(zipdata)
+            struct.pack_into(
+                '<HH', corrupted, eocd + 4,
+                disk_number, disk_start,
+            )
+            with self.subTest(
+                disk_number=disk_number,
+                disk_start=disk_start,
+            ):
+                with self.assertRaisesRegex(zipfile.BadZipFile,
+                                            'multiple disks'):
+                    zipfile.ZipFile(io.BytesIO(corrupted))
+                self.assertFalse(zipfile.is_zipfile(io.BytesIO(corrupted)))
+
+    def test_zip64_end_of_central_dir_disk_sentinels(self):
+        zipdata = bytearray(self.make_zip64_file())
+        eocd = zipdata.rfind(zipfile.stringEndArchive)
+        struct.pack_into('<HH', zipdata, eocd + 4, 0xffff, 0xffff)
+
+        with zipfile.ZipFile(io.BytesIO(zipdata)) as zf:
+            self.assertEqual(zf.namelist(), ['test.txt'])
+        self.assertTrue(zipfile.is_zipfile(io.BytesIO(zipdata)))
+
     def test_zip64_end_of_central_dir_record_not_found(self):
         zipdata = self.make_zip64_file()
         zipdata = zipdata.replace(b"PK\x06\x06", b'\x00'*4)
@@ -4257,6 +4305,34 @@ class OtherTests(unittest.TestCase):
         for N in range(len(zipfiledata)):
             fp = io.BytesIO(zipfiledata[:N])
             self.assertRaises(zipfile.BadZipFile, zipfile.ZipFile, fp)
+
+    def test_multi_disk_end_of_central_dir(self):
+        for comment in (b'', b'comment'):
+            archive = io.BytesIO()
+            with zipfile.ZipFile(archive, 'w') as zf:
+                zf.writestr('entry.txt', b'payload')
+                zf.comment = comment
+            zipdata = archive.getvalue()
+            eocd = zipdata.rfind(zipfile.stringEndArchive)
+
+            for disk_number, disk_start in ((1, 0), (0, 1), (1, 1)):
+                corrupted = bytearray(zipdata)
+                struct.pack_into(
+                    '<HH', corrupted, eocd + 4,
+                    disk_number, disk_start,
+                )
+                with self.subTest(
+                    comment=comment,
+                    disk_number=disk_number,
+                    disk_start=disk_start,
+                ):
+                    with self.assertRaisesRegex(zipfile.BadZipFile,
+                                                'multiple disks'):
+                        zipfile.ZipFile(io.BytesIO(corrupted))
+                    fp = io.BytesIO(corrupted)
+                    pos = fp.seek(5)
+                    self.assertFalse(zipfile.is_zipfile(fp))
+                    self.assertEqual(fp.tell(), pos)
 
     def test_is_zip_valid_file(self):
         """Check that is_zipfile() correctly identifies zip files."""
