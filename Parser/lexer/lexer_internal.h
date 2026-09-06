@@ -35,8 +35,11 @@ int _PyLexer_nextc(struct tok_state *);
 void _PyLexer_backup(struct tok_state *, int);
 int _PyLexer_record_ftstring_comment(
     struct tok_state *, ftstring_state *, const char *, const char *);
-int _PyLexer_finish_ftstring_expr(
-    struct tok_state *, ftstring_state *, struct token *);
+int _PyLexer_ftstring_punctuation(
+    struct tok_state *, ftstring_state *, struct token *, int);
+int _PyLexer_close_ftstring_expr(
+    struct tok_state *, ftstring_state *, int);
+void _PyLexer_mark_ftstring_debug(struct tok_state *, ftstring_state *);
 int _PyLexer_check_string_prefixes(struct tok_state *, int, int, int, int, int);
 int _PyLexer_scan_number(struct tok_state *, struct token *, int, int);
 int _PyLexer_scan_fstring_start(struct tok_state *, struct token *, int);

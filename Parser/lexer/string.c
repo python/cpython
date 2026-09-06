@@ -54,9 +54,9 @@ _PyLexer_record_ftstring_comment(struct tok_state *tok, ftstring_state *state,
     return 0;
 }
 
-int
-_PyLexer_finish_ftstring_expr(struct tok_state *tok, ftstring_state *state,
-                              struct token *token)
+static int
+finish_ftstring_expr(struct tok_state *tok, ftstring_state *state,
+                     struct token *token)
 {
     assert(token != NULL && state == _PyLexer_CurrentFTString(tok));
     assert(state->mode == FTSTRING_MODE_EXPRESSION && tok->start != NULL);
@@ -125,6 +125,82 @@ _PyLexer_finish_ftstring_expr(struct tok_state *tok, ftstring_state *state,
     }
     token->metadata = res;
     return 0;
+}
+
+static int
+begin_ftstring_expr(struct tok_state *tok, ftstring_state *state,
+                    _PyTok_Off expr_start)
+{
+    assert(state->mode != FTSTRING_MODE_EXPRESSION);
+    state->expr_span = (_PyTok_Span){expr_start, -1};
+    if (state->comments != NULL) {
+        state->comments->count = 0;
+    }
+    if (state->replacement_depth >= MAX_EXPR_NESTING) {
+        _PyTokenizer_syntaxerror(
+            tok, "%c-string: expressions nested too deeply",
+            _PyLexer_StringPrefix(state->kind));
+        return -1;
+    }
+    state->replacement_depth++;
+    state->mode = FTSTRING_MODE_EXPRESSION;
+    state->debug_expr = 0;
+    return 0;
+}
+
+int
+_PyLexer_ftstring_punctuation(struct tok_state *tok, ftstring_state *state,
+                              struct token *token, int c)
+{
+    assert(state->mode == FTSTRING_MODE_EXPRESSION);
+    assert(c == ':' || c == '}' || c == '!');
+    if (_PyLexer_FTStringBracketDepth(tok, state) != state->replacement_depth) {
+        return 0;
+    }
+    if (c == '!') {
+        int next = tok_nextc(tok);
+        tok_backup(tok, next);
+        if (next == '=') {
+            return 0;
+        }
+    }
+    if (finish_ftstring_expr(tok, state, token) < 0) {
+        return -1;
+    }
+    if (c == ':') {
+        state->mode = FTSTRING_MODE_FORMAT_SPEC;
+        return COLON;
+    }
+    return 0;
+}
+
+int
+_PyLexer_close_ftstring_expr(struct tok_state *tok, ftstring_state *state,
+                             int c)
+{
+    assert(state->mode == FTSTRING_MODE_EXPRESSION);
+    assert(c == ')' || c == ']' || c == '}');
+    int depth = _PyLexer_FTStringBracketDepth(tok, state);
+    if (depth < 0) {
+        _PyTokenizer_syntaxerror(tok, "%c-string: unmatched '%c'",
+                                _PyLexer_StringPrefix(state->kind), c);
+        return -1;
+    }
+    if (c == '}' && depth == state->replacement_depth - 1) {
+        state->replacement_depth--;
+        state->mode = FTSTRING_MODE_MIDDLE;
+        state->debug_expr = 0;
+    }
+    return 0;
+}
+
+void
+_PyLexer_mark_ftstring_debug(struct tok_state *tok, ftstring_state *state)
+{
+    assert(state->mode == FTSTRING_MODE_EXPRESSION);
+    if (_PyLexer_FTStringBracketDepth(tok, state) == state->replacement_depth) {
+        state->debug_expr = 1;
+    }
 }
 
 int
@@ -408,21 +484,11 @@ _PyLexer_get_ftstring(struct tok_state *tok, ftstring_state *current, struct tok
             int peek = tok_nextc(tok);
             if (peek != '{' || in_format_spec) {
                 tok_backup(tok, peek);
-                current->expr_span = (_PyTok_Span){
-                    _PyLexer_BufferOffset(tok, tok->cur), -1};
-                if (current->comments != NULL) {
-                    current->comments->count = 0;
-                }
+                _PyTok_Off expr_start = _PyLexer_BufferOffset(tok, tok->cur);
                 tok_backup(tok, c);
-                if (current->replacement_depth >= MAX_EXPR_NESTING) {
-                    _PyTokenizer_syntaxerror(
-                        tok, "%c-string: expressions nested too deeply",
-                        _PyLexer_StringPrefix(current->kind));
+                if (begin_ftstring_expr(tok, current, expr_start) < 0) {
                     return MAKE_TOKEN(ERRORTOKEN);
                 }
-                current->replacement_depth++;
-                current->mode = FTSTRING_MODE_EXPRESSION;
-                current->debug_expr = 0;
                 p_start = tok->start;
                 p_end = tok->cur;
                 if (p_start == p_end) {

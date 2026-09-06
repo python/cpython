@@ -552,26 +552,14 @@ _PyLexer_get_normal(struct tok_state *tok, ftstring_state *current, struct token
     /* Punctuation character */
     int is_punctuation = (c == ':' || c == '}' || c == '!');
     if (is_punctuation && current != NULL) {
-        int bracket_depth = _PyLexer_FTStringBracketDepth(tok, current);
-        int at_expression_boundary =
-            bracket_depth == current->replacement_depth;
-        if (at_expression_boundary && c == '!') {
-            int c2 = tok_nextc(tok);
-            if (c2 == '=') {
-                at_expression_boundary = 0;
-            }
-            tok_backup(tok, c2);
-        }
-        if (at_expression_boundary &&
-                _PyLexer_finish_ftstring_expr(tok, current, token)) {
+        int type = _PyLexer_ftstring_punctuation(tok, current, token, c);
+        if (type < 0) {
             return MAKE_TOKEN(ERRORTOKEN);
         }
-
-        if (c == ':' && at_expression_boundary) {
-            current->mode = FTSTRING_MODE_FORMAT_SPEC;
+        if (type != 0) {
             p_start = tok->start;
             p_end = tok->cur;
-            return MAKE_TOKEN(_PyToken_OneChar(c));
+            return MAKE_TOKEN(type);
         }
     }
 
@@ -656,18 +644,9 @@ _PyLexer_get_normal(struct tok_state *tok, ftstring_state *current, struct token
                 }
             }
         }
-
-        if (current != NULL) {
-            int bracket_depth = _PyLexer_FTStringBracketDepth(tok, current);
-            if (bracket_depth < 0) {
-                return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "%c-string: unmatched '%c'",
-                    _PyLexer_StringPrefix(current->kind), c));
-            }
-            if (c == '}' && bracket_depth == current->replacement_depth - 1) {
-                current->replacement_depth--;
-                current->mode = FTSTRING_MODE_MIDDLE;
-                current->debug_expr = 0;
-            }
+        if (current != NULL &&
+                _PyLexer_close_ftstring_expr(tok, current, c) < 0) {
+            return MAKE_TOKEN(ERRORTOKEN);
         }
         break;
     default:
@@ -678,9 +657,8 @@ _PyLexer_get_normal(struct tok_state *tok, ftstring_state *current, struct token
         return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "invalid non-printable character U+%04X", c));
     }
 
-    if (c == '=' && current != NULL &&
-            _PyLexer_FTStringBracketDepth(tok, current) == current->replacement_depth) {
-        current->debug_expr = 1;
+    if (c == '=' && current != NULL) {
+        _PyLexer_mark_ftstring_debug(tok, current);
     }
 
     /* Punctuation character */
@@ -694,9 +672,23 @@ int
 _PyTokenizer_Get(struct tok_state *tok, struct token *token)
 {
     ftstring_state *current = _PyLexer_CurrentFTString(tok);
-    int result = current == NULL || current->mode == FTSTRING_MODE_EXPRESSION
-        ? _PyLexer_get_normal(tok, current, token)
-        : _PyLexer_get_ftstring(tok, current, token);
+    int result;
+    if (current == NULL) {
+        result = _PyLexer_get_normal(tok, NULL, token);
+    }
+    else {
+        switch (current->mode) {
+        case FTSTRING_MODE_EXPRESSION:
+            result = _PyLexer_get_normal(tok, current, token);
+            break;
+        case FTSTRING_MODE_MIDDLE:
+        case FTSTRING_MODE_FORMAT_SPEC:
+            result = _PyLexer_get_ftstring(tok, current, token);
+            break;
+        default:
+            Py_UNREACHABLE();
+        }
+    }
     if (tok_failed(tok)) {
         result = ERRORTOKEN;
     }
