@@ -1,0 +1,2 @@
+Add parameter *mode* in :func:`shelve.open`.
+Patch by Guilherme Crocetti.

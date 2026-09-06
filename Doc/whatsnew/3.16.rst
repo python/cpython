@@ -778,6 +778,12 @@ mimetypes
   undotted extensions raise a :exc:`ValueError`.
   (Contributed by Nikita Sobolev in :gh:`149720`.)
 
+shelve
+------
+
+* Add suport for custom mode in :func:`shelve.open`.
+  (Contributed by Guilherme Crocetti in :gh:`113093`.)
+
 shutil
 ------
 
