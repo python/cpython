@@ -1,0 +1,2 @@
+Improve JIT stencils on macOS AArch64 by disabling unused linker
+optimization hints.
