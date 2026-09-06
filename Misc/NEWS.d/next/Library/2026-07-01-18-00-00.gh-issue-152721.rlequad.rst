@@ -1,0 +1,2 @@
+Fix quadratic replay time in the :mod:`profiling.sampling` binary reader when a
+profile's run-length-encoded samples alternate thread status.
