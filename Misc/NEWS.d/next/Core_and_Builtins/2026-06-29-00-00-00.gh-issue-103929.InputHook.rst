@@ -1,0 +1,1 @@
+Fix repeated calls to :c:var:`PyOS_InputHook` for long input lines.
