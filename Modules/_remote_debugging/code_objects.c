@@ -338,11 +338,16 @@ parse_code_object(RemoteUnwinderObject *unwinder,
                   PyObject **result,
                   const CodeObjectContext *ctx)
 {
+    _Py_DECLARE_STR(unknown_function, "<unknown function>");
+    _Py_DECLARE_STR(unknown_file, "<unknown file>");
+    _Py_DECLARE_STR(unreadable_frame, "<unreadable frame>");
+
     void *key = (void *)ctx->code_addr;
     CachedCodeMetadata *meta = NULL;
     PyObject *func = NULL;
     PyObject *file = NULL;
     PyObject *linetable = NULL;
+    int code_metadata_incomplete = 0;
 
 #ifdef Py_GIL_DISABLED
     // In free threading builds, code object addresses might have the low bit set
@@ -366,30 +371,59 @@ parse_code_object(RemoteUnwinderObject *unwinder,
         if (_Py_RemoteDebug_PagedReadRemoteMemory(
                 &unwinder->handle, real_address, SIZEOF_CODE_OBJ, code_object) < 0)
         {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read code object");
-            goto error;
+            if (_Py_RemoteDebug_IsFatalReadError()) {
+                set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read code object");
+                goto error;
+            }
+            PyErr_Clear();
+            PyObject *tuple = make_frame_info(
+                unwinder, _Py_LATIN1_CHR('~'), Py_None,
+                &_Py_STR(unreadable_frame), Py_None);
+            if (tuple == NULL) {
+                goto error;
+            }
+            *result = tuple;
+            return 0;
         }
 
         func = read_py_str(unwinder,
             GET_MEMBER(uintptr_t, code_object, unwinder->debug_offsets.code_object.qualname), 1024);
         if (!func) {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read function name from code object");
-            goto error;
+            if (_Py_RemoteDebug_IsFatalReadError()) {
+                set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read function name from code object");
+                goto error;
+            }
+            PyErr_Clear();
+            func = Py_NewRef(&_Py_STR(unknown_function));
+            code_metadata_incomplete = 1;
         }
 
         file = read_py_str(unwinder,
             GET_MEMBER(uintptr_t, code_object, unwinder->debug_offsets.code_object.filename), 1024);
         if (!file) {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read filename from code object");
-            goto error;
+            if (_Py_RemoteDebug_IsFatalReadError()) {
+                set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read filename from code object");
+                goto error;
+            }
+            PyErr_Clear();
+            file = Py_NewRef(&_Py_STR(unknown_file));
+            code_metadata_incomplete = 1;
+        }
+
+        if (code_metadata_incomplete) {
+            goto degraded;
         }
 
         linetable = read_py_bytes(unwinder,
             GET_MEMBER(uintptr_t, code_object, unwinder->debug_offsets.code_object.linetable),
             MAX_LINETABLE_SIZE);
         if (!linetable) {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read linetable from code object");
-            goto error;
+            if (_Py_RemoteDebug_IsFatalReadError()) {
+                set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read linetable from code object");
+                goto error;
+            }
+            PyErr_Clear();
+            goto degraded;
         }
 
         meta = PyMem_RawMalloc(sizeof(CachedCodeMetadata));
@@ -541,6 +575,18 @@ done_tlbc:
 
     *result = tuple;
     return 0;
+
+degraded: {
+    PyObject *degraded_tuple = make_frame_info(unwinder, file, Py_None,
+                                               func, Py_None);
+    Py_CLEAR(func);
+    Py_CLEAR(file);
+    if (!degraded_tuple) {
+        return -1;
+    }
+    *result = degraded_tuple;
+    return 0;
+}
 
 error:
     Py_XDECREF(func);
