@@ -2553,6 +2553,75 @@ class PaxWriteTest(GNUWriteTest):
         finally:
             tar.close()
 
+    def _make_malformed_gnusparse_tar(self, pax_entries, following=b""):
+        # Build an in-memory tar: a pax ('x') header with the given
+        # GNU.sparse.* records, then a file member (and any `following` data).
+        def pax_record(key, value):
+            kv = key.encode() + b"=" + value.encode() + b"\n"
+            n = len(kv)
+            p = len(str(n)) + 1 + n
+            while len(str(p)) + 1 + n != p:
+                p = len(str(p)) + 1 + n
+            return str(p).encode() + b" " + kv
+
+        def header(name, size, typeflag):
+            buf = bytearray(512)
+            buf[0:len(name)] = name
+            buf[100:108] = b"0000644\x00"
+            buf[108:116] = b"0000000\x00"
+            buf[116:124] = b"0000000\x00"
+            buf[124:136] = ("%011o\x00" % size).encode()
+            buf[136:148] = b"00000000000\x00"
+            buf[148:156] = b"        "
+            buf[156] = ord(typeflag)
+            buf[257:265] = b"ustar\x0000"
+            chksum = sum(buf) & 0o777777
+            buf[148:156] = ("%06o\x00 " % chksum).encode()
+            return bytes(buf)
+
+        records = b"".join(pax_record(k, v) for k, v in pax_entries)
+        blocks = header(b"././@PaxHeader", len(records), "x")
+        blocks += records + b"\x00" * (-len(records) % 512)
+        blocks += header(b"testfile", 0, "0")
+        if following:
+            blocks += following
+        blocks += b"\x00" * 1024
+        return io.BytesIO(blocks)
+
+    def test_pax_gnusparse_bad_number(self):
+        # A malformed GNU sparse number surfaces as InvalidHeaderError, not a
+        # bare ValueError, so the reader stops (getmembers() truncates).
+        cases = [
+            [("GNU.sparse.map", "1,notanumber")],       # sparse 0.1
+            [("GNU.sparse.size", "notanumber")],
+            [("GNU.sparse.realsize", "notanumber")],
+        ]
+        for entries in cases:
+            with self.subTest(entries=entries):
+                fobj = self._make_malformed_gnusparse_tar(entries)
+                with tarfile.open(fileobj=fobj) as tar:
+                    self.assertEqual(tar.getmembers(), [])
+
+        for data in (b"notanumber\n", b"1\nnotanumber\n"):     # sparse 1.0
+            with self.subTest(data=data):
+                following = data + b"\x00" * (-len(data) % 512)
+                fobj = self._make_malformed_gnusparse_tar(
+                    [("GNU.sparse.major", "1"), ("GNU.sparse.minor", "0")],
+                    following=following)
+                with tarfile.open(fileobj=fobj) as tar:
+                    self.assertEqual(tar.getmembers(), [])
+
+    def test_pax_gnusparse_bad_number_direct(self):
+        # The parsing helpers themselves raise InvalidHeaderError, not
+        # ValueError, mirroring _proc_gnusparse_00.
+        ti = tarfile.TarInfo("x")
+        with self.assertRaises(tarfile.InvalidHeaderError):
+            ti._apply_pax_info({"GNU.sparse.size": "notanumber"},
+                               "utf-8", "strict")
+        with self.assertRaises(tarfile.InvalidHeaderError):
+            ti._apply_pax_info({"GNU.sparse.realsize": "notanumber"},
+                               "utf-8", "strict")
+
     def test_create_pax_header(self):
         # The ustar header should contain values that can be
         # represented reasonably, even if a better (e.g. higher
