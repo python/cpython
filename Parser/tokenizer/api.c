@@ -18,15 +18,11 @@ _PyTokenizer_GetInfo(const struct tok_state *tok)
 {
     _PyTokenizer_Info info = {
         .status = tok->done,
-        .location = {tok->lineno, tok->line_start == NULL
+        .location = {tok->lineno, tok->line_start < 0
             ? -1 : (int)(tok->cur - tok->line_start)},
-        .cursor = tok->cur == NULL
-            ? 0 : _PyLexer_BufferOffset(tok, tok->cur),
-        .input_span = {tok->buf_offset, tok->inp == NULL
-            ? 0 : _PyLexer_BufferOffset(tok, tok->inp)},
-        .line_span = {tok->line_start == NULL
-            ? -1 : _PyLexer_BufferOffset(tok, tok->line_start),
-            tok->inp == NULL ? 0 : _PyLexer_BufferOffset(tok, tok->inp)},
+        .cursor = tok->cur,
+        .input_span = {tok->buf_offset, tok->inp},
+        .line_span = {tok->line_start, tok->inp},
         .level = tok->level,
         .delimiter_loc = {-1, -1},
         .in_formatted_string = tok->ftstring_depth != 0,
@@ -78,7 +74,7 @@ _PyToken_GetView(const struct tok_state *tok, const struct token *token,
     view->text = token->span.start < 0
         ? NULL : _PyLexer_BufferPointer(tok, token->span.start);
     view->length = token->span.end - token->span.start;
-    view->end_line = tok->line_start;
+    view->end_line = _PyLexer_BufferPointer(tok, tok->line_start);
     view->line = ISSTRINGLIT(type)
         ? view->text - token->start_loc.byte_col : view->end_line;
     view->line_length = tok->inp - tok->line_start +
@@ -136,7 +132,7 @@ _PyTokenizer_ImplyDedents(struct tok_state *tok)
 int
 _PyTokenizer_HasTrailingStatement(const struct tok_state *tok)
 {
-    const char *cur = tok->cur;
+    const char *cur = _PyLexer_BufferPointer(tok, tok->cur);
     char c = *cur;
     for (;;) {
         while (c == ' ' || c == '\t' || c == '\n' || c == '\014') {

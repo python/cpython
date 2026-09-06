@@ -90,12 +90,14 @@ _PyToken_Init(struct token *token) {
 }
 
 int
-_PyLexer_token_setup(struct tok_state *tok, struct token *token, int type, const char *start, const char *end)
+_PyLexer_token_setup(struct tok_state *tok, struct token *token, int type,
+                      _PyTok_Off start, _PyTok_Off end)
 {
     token->level = tok->level;
     token->is_raw = 0;
-    token->span = _PyLexer_BufferSpan(tok, start, end);
-    if (start != NULL && end != NULL) {
+    assert((start == -1 && end == -1) || (start >= 0 && end >= start));
+    token->span = (_PyTok_Span){start, end};
+    if (start >= 0) {
         token->start_loc = tok->start_loc;
         token->end_loc = (_PyTok_Loc){tok->lineno, _PyLexer_ByteColumn(tok)};
     }

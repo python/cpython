@@ -9,13 +9,13 @@
 
 static int
 string_error_token(struct tok_state *tok, struct token *token,
-                   const char *start, _PyTok_Loc location)
+                   _PyTok_Off start, _PyTok_Loc location)
 {
     tok->diagnostic = (_PyTokenizer_Diagnostic){
         .location = {location.lineno, location.byte_col + 1},
-        .text_span = _PyLexer_BufferSpan(tok, start - location.byte_col, tok->inp),
+        .text_span = {start - location.byte_col, tok->inp},
     };
-    int type = _PyLexer_token_setup(tok, token, ERRORTOKEN, NULL, NULL);
+    int type = _PyLexer_token_setup(tok, token, ERRORTOKEN, -1, -1);
     token->start_loc = location;
     token->end_loc = (_PyTok_Loc){location.lineno, -1};
     return type;
@@ -23,7 +23,7 @@ string_error_token(struct tok_state *tok, struct token *token,
 
 int
 _PyLexer_record_ftstring_comment(struct tok_state *tok, ftstring_state *state,
-                                 const char *start, const char *end)
+                                 _PyTok_Off start, _PyTok_Off end)
 {
     assert(state == _PyLexer_CurrentFTString(tok) && state->mode == FTSTRING_MODE_EXPRESSION);
     if (state->expr_span.end >= 0) {
@@ -55,7 +55,7 @@ _PyLexer_record_ftstring_comment(struct tok_state *tok, ftstring_state *state,
         state->comments = comments;
     }
     comments->spans[comments->count++] =
-        _PyLexer_BufferSpan(tok, start, end);
+        _PyTok_SpanFromBounds(start, end);
     return 0;
 }
 
@@ -64,13 +64,13 @@ _PyLexer_finish_ftstring_expr(struct tok_state *tok, ftstring_state *state,
                               struct token *token)
 {
     assert(token != NULL && state == _PyLexer_CurrentFTString(tok));
-    assert(state->mode == FTSTRING_MODE_EXPRESSION && tok->start != NULL);
+    assert(state->mode == FTSTRING_MODE_EXPRESSION && tok->start >= 0);
 
     if (state->expr_span.end >= 0) {
         return 0;
     }
     assert(state->expr_span.start >= 0);
-    state->expr_span.end = _PyLexer_BufferOffset(tok, tok->start);
+    state->expr_span.end = tok->start;
     int tstring_interpolation = _PyLexer_IsTString(state->kind) &&
         state->replacement_depth == 1;
     if (!(state->debug_expr || tstring_interpolation) || token->metadata) {
@@ -180,8 +180,8 @@ _PyLexer_check_string_prefixes(struct tok_state *tok,
 int
 _PyLexer_scan_fstring_start(struct tok_state *tok, struct token *token, int c)
 {
-    const char *p_start = NULL;
-    const char *p_end = NULL;
+    _PyTok_Off p_start = -1;
+    _PyTok_Off p_end = -1;
 
     int quote = c;
     int quote_size = 1;             /* 1 or 3 */
@@ -213,26 +213,27 @@ _PyLexer_scan_fstring_start(struct tok_state *tok, struct token *token, int c)
     state->quote = quote;
     state->quote_size = quote_size;
     state->paren_level = tok->level;
-    state->start = _PyLexer_BufferOffset(tok, tok->start);
+    state->start = tok->start;
     state->start_loc = tok->start_loc;
     state->expr_span = (_PyTok_Span){-1, -1};
 
     int raw = 0;
     int tstring = 0;
-    switch (*tok->start) {
+    const char *prefix = _PyLexer_BufferPointer(tok, tok->start);
+    switch (*prefix) {
         case 'T':
         case 't':
-            raw = Py_TOLOWER(tok->start[1]) == 'r';
+            raw = Py_TOLOWER(prefix[1]) == 'r';
             tstring = 1;
             break;
         case 'F':
         case 'f':
-            raw = Py_TOLOWER(tok->start[1]) == 'r';
+            raw = Py_TOLOWER(prefix[1]) == 'r';
             break;
         case 'R':
         case 'r':
             raw = 1;
-            tstring = Py_TOLOWER(tok->start[1]) == 't';
+            tstring = Py_TOLOWER(prefix[1]) == 't';
             break;
         default:
             Py_UNREACHABLE();
@@ -246,8 +247,8 @@ _PyLexer_scan_fstring_start(struct tok_state *tok, struct token *token, int c)
 int
 _PyLexer_scan_string(struct tok_state *tok, struct token *token, int c)
 {
-    const char *p_start = NULL;
-    const char *p_end = NULL;
+    _PyTok_Off p_start = -1;
+    _PyTok_Off p_end = -1;
 
     int quote = c;
     int quote_size = 1;             /* 1 or 3 */
@@ -281,7 +282,8 @@ _PyLexer_scan_string(struct tok_state *tok, struct token *token, int c)
         if (c == EOF || (quote_size == 1 && c == '\n')) {
             int end_lineno = tok->lineno;
             _PyTok_Loc location = tok->start_loc;
-            const char *line = tok->start - location.byte_col;
+            const char *line = _PyLexer_BufferPointer(
+                tok, tok->start - location.byte_col);
             Py_ssize_t cursor_offset = (Py_ssize_t)location.byte_col + 1;
 
             const ftstring_state *state = _PyLexer_CurrentFTString(tok);
@@ -355,8 +357,8 @@ _PyLexer_get_ftstring(struct tok_state *tok, ftstring_state *current, struct tok
     assert(current == _PyLexer_CurrentFTString(tok) && current->mode != FTSTRING_MODE_EXPRESSION);
     assert((current->quote_size == 1 || current->quote_size == 3) &&
            current->replacement_depth <= MAX_EXPR_NESTING);
-    const char *p_start = NULL;
-    const char *p_end = NULL;
+    _PyTok_Off p_start = -1;
+    _PyTok_Off p_end = -1;
     int end_quote_size = 0;
     int unicode_escape = 0;
     int quote = current->quote;
@@ -402,16 +404,14 @@ _PyLexer_get_ftstring(struct tok_state *tok, ftstring_state *current, struct tok
                 if (c != '\n') {
                     tok->done = E_EOFS;
                 }
-                return string_error_token(tok, token,
-                    _PyLexer_BufferPointer(tok, current->start), location);
+                return string_error_token(tok, token, current->start, location);
             }
             else {
                 _PyTokenizer_syntaxerror_at(
                     tok, line, cursor_offset, location.lineno, -1, -1,
                     "unterminated %c-string literal (detected at line %d)",
                     _PyLexer_StringPrefix(current->kind), end_lineno);
-                return string_error_token(tok, token,
-                    _PyLexer_BufferPointer(tok, current->start), location);
+                return string_error_token(tok, token, current->start, location);
             }
         }
 
@@ -426,8 +426,7 @@ _PyLexer_get_ftstring(struct tok_state *tok, ftstring_state *current, struct tok
             int peek = tok_nextc(tok);
             if (peek != '{' || in_format_spec) {
                 tok_backup(tok, peek);
-                current->expr_span = (_PyTok_Span){
-                    _PyLexer_BufferOffset(tok, tok->cur), -1};
+                current->expr_span = (_PyTok_Span){tok->cur, -1};
                 if (current->comments != NULL) {
                     current->comments->count = 0;
                 }

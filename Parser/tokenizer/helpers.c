@@ -92,7 +92,7 @@ _PyTokenizer_syntaxerror(struct tok_state *tok, const char *format, ...)
     va_list vargs;
     va_start(vargs, format);
     int ret = _syntaxerror_range(
-        tok, tok->line_start,
+        tok, _PyLexer_BufferPointer(tok, tok->line_start),
         tok->cur - tok->line_start, tok->lineno, format, -1, -1, vargs);
     va_end(vargs);
     return ret;
@@ -106,7 +106,7 @@ _PyTokenizer_syntaxerror_known_range(struct tok_state *tok,
     va_list vargs;
     va_start(vargs, format);
     int ret = _syntaxerror_range(
-        tok, tok->line_start,
+        tok, _PyLexer_BufferPointer(tok, tok->line_start),
         tok->cur - tok->line_start, tok->lineno, format,
         col_offset, end_col_offset, vargs);
     va_end(vargs);

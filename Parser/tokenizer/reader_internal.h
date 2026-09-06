@@ -44,6 +44,7 @@ typedef struct _PyTok_Reader {
     const char *prompt;
     const char *nextprompt;
 
+
     char *file_buffer;
     Py_ssize_t file_buffer_cap;
     _PyTok_Chunk prefetched_lines[2];
