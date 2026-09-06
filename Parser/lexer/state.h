@@ -72,6 +72,14 @@ typedef struct {
     indentation_level stack[MAXINDENT];
 } lexer_layout_state;
 
+/* Supplemental source context for a terminal error. location is the reporting
+   cursor, independent of the scanner cursor; lineno == 0 means absent.
+   The text span may cover multiple physical lines. */
+typedef struct {
+    _PyTok_Loc location;
+    _PyTok_Span text_span;
+} _PyTokenizer_Diagnostic;
+
 /* Tokenizer state */
 struct tok_state {
     _PyTok_Off buf_offset;
@@ -86,6 +94,7 @@ struct tok_state {
     lexer_layout_state layout;
     int lineno;         /* Current line number */
     _PyTok_Loc start_loc;
+    _PyTokenizer_Diagnostic diagnostic;
     int level;          /* () [] {} Parentheses nesting level */
             /* Used to allow free continuations inside them */
     char parenstack[MAXLEVEL];

@@ -246,7 +246,8 @@ _PyTok_DetectEncoding(struct tok_state *tok, const _PyTok_Chunk *first,
             end_col--;
         }
         _PyTokenizer_syntaxerror_at(
-            tok, line_data, 0, cookie_line, 0, end_col, "encoding problem: %s with BOM", cookie);
+            tok, line_data, 0, cookie_line, 0, end_col,
+            "encoding problem: %s with BOM", cookie);
         PyMem_Free(cookie);
         return _PYTOK_ENCODING_ERROR;
     }
