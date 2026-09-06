@@ -589,7 +589,7 @@ class TracebackCases(unittest.TestCase):
 
     @support.subTests("arg", [NotImplemented, "invalid syntax"])
     def test_format_syntax_error_message(self, arg):
-        exc = SyntaxError(value)
+        exc = SyntaxError(arg)
         lines = traceback.format_exception_only(type(exc), exc)
         result = "".join(lines)
         self.assertIn(str(arg), result)
