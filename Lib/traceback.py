@@ -2104,7 +2104,12 @@ def _find_incompatible_extension_module(module_name):
 
     parent, _, child = module_name.rpartition('.')
     if parent:
-        traversable = importlib.resources.files(parent)
+        try:
+            traversable = importlib.resources.files(parent)
+        except ImportError:
+            # gh-151631: importlib.resources.files() imports the parent
+            # package, which fails when sys.modules[parent] is None.
+            return
     else:
         traversable = importlib.resources.readers.MultiplexedPath(
             *map(pathlib.Path, filter(os.path.isdir, sys.path))
