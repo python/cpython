@@ -59,6 +59,19 @@ _PyLexer_IsRawString(ftstring_kind kind)
     return kind == RAW_FSTRING || kind == RAW_TSTRING;
 }
 
+typedef struct {
+    int column;
+    int alternate_column;
+} indentation_level;
+
+typedef struct {
+    int depth;
+    int pending;
+    int at_bol;
+    int comment_newline;
+    indentation_level stack[MAXINDENT];
+} lexer_layout_state;
+
 /* Tokenizer state */
 struct tok_state {
     _PyTok_Off buf_offset;
@@ -70,10 +83,7 @@ struct tok_state {
     int done;           /* E_OK normally, E_EOF at EOF, otherwise error code */
     /* NB If done != E_OK, cur must be == inp!!! */
     FILE *fp;           /* Rest of input; NULL if tokenizing a string */
-    int indent;         /* Current indentation index */
-    int indstack[MAXINDENT];            /* Stack of indents */
-    int atbol;          /* Nonzero if at begin of new line */
-    int pendin;         /* Pending indents (if > 0) or dedents (if < 0) */
+    lexer_layout_state layout;
     int lineno;         /* Current line number */
     _PyTok_Loc start_loc;
     int level;          /* () [] {} Parentheses nesting level */
@@ -83,8 +93,6 @@ struct tok_state {
     int parencolstack[MAXLEVEL];
     PyObject *filename;
     PyObject *module;
-    /* Stuff for checking on different tab sizes */
-    int altindstack[MAXINDENT];         /* Stack of alternate indents */
     /* Stuff for PEP 0263 */
     char *encoding;         /* Source encoding. */
 
@@ -97,7 +105,6 @@ struct tok_state {
     int ftstring_depth;
     int ftstring_capacity;
     int tok_extra_tokens;
-    int comment_newline;
     int implicit_newline;
 #ifdef Py_DEBUG
     int debug;
@@ -166,6 +173,8 @@ _PyLexer_ByteColumn(const struct tok_state *tok)
 }
 
 int _PyLexer_token_setup(struct tok_state *tok, struct token *token, int type, _PyTok_Off start, _PyTok_Off end);
+
+void _PyLexer_ImplyDedents(struct tok_state *);
 
 void _PyTokenizer_Free(struct tok_state *);
 ftstring_state *_PyLexer_PushFTString(struct tok_state *);

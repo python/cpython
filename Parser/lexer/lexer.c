@@ -7,10 +7,6 @@
 #include "../tokenizer/helpers.h"
 #include "../tokenizer/reader.h"
 
-#define TABSIZE 8
-#define ALTTABSIZE 1
-
-
 #define MAKE_TOKEN(token_type) _PyLexer_token_setup(tok, token, token_type, p_start, p_end)
 
 /* Spaces in this constant are treated as "zero or more spaces or tabs" when
@@ -118,31 +114,6 @@ verify_identifier(struct tok_state *tok)
     return 1;
 }
 
-
-
-static inline int
-tok_continuation_line(struct tok_state *tok) {
-    int c = tok_nextc(tok);
-    if (c == '\r') {
-        c = tok_nextc(tok);
-    }
-    if (c != '\n') {
-        tok->done = E_LINECONT;
-        return -1;
-    }
-    c = tok_nextc(tok);
-    if (c == EOF) {
-        tok->done = E_EOF;
-        tok->cur = tok->inp;
-        return -1;
-    } else {
-        tok_backup(tok, c);
-    }
-    return c;
-}
-
-
-
 int
 _PyLexer_get_normal(struct tok_state *tok, ftstring_state *current, struct token *token)
 {
@@ -160,103 +131,10 @@ _PyLexer_get_normal(struct tok_state *tok, ftstring_state *current, struct token
     blankline = 0;
 
 
-    /* Get indentation level */
-    if (tok->atbol) {
-        int col = 0;
-        int altcol = 0;
-        tok->atbol = 0;
-        int cont_line_col = 0;
-        for (;;) {
-            c = tok_nextc(tok);
-            if (c == ' ') {
-                col++, altcol++;
-            }
-            else if (c == '\t') {
-                col = (col / TABSIZE + 1) * TABSIZE;
-                altcol = (altcol / ALTTABSIZE + 1) * ALTTABSIZE;
-            }
-            else if (c == '\014')  {/* Control-L (formfeed) */
-                col = altcol = 0; /* For Emacs users */
-            }
-            else if (c == '\\') {
-                // Indentation cannot be split over multiple physical lines
-                // using backslashes. This means that if we found a backslash
-                // preceded by whitespace, **the first one we find** determines
-                // the level of indentation of whatever comes next.
-                cont_line_col = cont_line_col ? cont_line_col : col;
-                if ((c = tok_continuation_line(tok)) == -1) {
-                    return MAKE_TOKEN(ERRORTOKEN);
-                }
-            }
-            else if (c == EOF && PyErr_Occurred()) {
-                return MAKE_TOKEN(ERRORTOKEN);
-            }
-            else {
-                break;
-            }
-        }
-        tok_backup(tok, c);
-        if (c == '#' || c == '\n' || c == '\r') {
-            int interactive = _PyTok_ReaderIsInteractive(tok);
-            /* Lines with only whitespace and/or comments
-               shouldn't affect the indentation and are
-               not passed to the parser as NEWLINE tokens,
-               except *totally* empty lines in interactive
-               mode, which signal the end of a command group. */
-            if (col == 0 && c == '\n' && interactive) {
-                blankline = 0; /* Let it through */
-            }
-            else if (interactive && tok->lineno == 1) {
-                /* In interactive mode, if the first line contains
-                   only spaces and/or a comment, let it through. */
-                blankline = 0;
-                col = altcol = 0;
-            }
-            else {
-                blankline = 1; /* Ignore completely */
-            }
-            /* We can't jump back right here since we still
-               may need to skip to the end of a comment */
-        }
-        if (!blankline && tok->level == 0) {
-            col = cont_line_col ? cont_line_col : col;
-            altcol = cont_line_col ? cont_line_col : altcol;
-            if (col == tok->indstack[tok->indent]) {
-                /* No change */
-                if (altcol != tok->altindstack[tok->indent]) {
-                    return MAKE_TOKEN(_PyTokenizer_indenterror(tok));
-                }
-            }
-            else if (col > tok->indstack[tok->indent]) {
-                /* Indent -- always one */
-                if (tok->indent+1 >= MAXINDENT) {
-                    tok->done = E_TOODEEP;
-                    tok->cur = tok->inp;
-                    return MAKE_TOKEN(ERRORTOKEN);
-                }
-                if (altcol <= tok->altindstack[tok->indent]) {
-                    return MAKE_TOKEN(_PyTokenizer_indenterror(tok));
-                }
-                tok->pendin++;
-                tok->indstack[++tok->indent] = col;
-                tok->altindstack[tok->indent] = altcol;
-            }
-            else /* col < tok->indstack[tok->indent] */ {
-                /* Dedent -- any number, must be consistent */
-                while (tok->indent > 0 &&
-                    col < tok->indstack[tok->indent]) {
-                    tok->pendin--;
-                    tok->indent--;
-                }
-                if (col != tok->indstack[tok->indent]) {
-                    tok->done = E_DEDENT;
-                    tok->cur = tok->inp;
-                    return MAKE_TOKEN(ERRORTOKEN);
-                }
-                if (altcol != tok->altindstack[tok->indent]) {
-                    return MAKE_TOKEN(_PyTokenizer_indenterror(tok));
-                }
-            }
+    if (tok->layout.at_bol) {
+        blankline = _PyLexer_BeginLine(tok);
+        if (blankline < 0) {
+            return MAKE_TOKEN(ERRORTOKEN);
         }
     }
 
@@ -264,24 +142,8 @@ _PyLexer_get_normal(struct tok_state *tok, ftstring_state *current, struct token
     tok->start_loc = (_PyTok_Loc){
         tok->lineno, tok->line_start >= 0 ? _PyLexer_ByteColumn(tok) : -1};
 
-    /* Return pending indents/dedents */
-    if (tok->pendin != 0) {
-        if (tok->pendin < 0) {
-            if (tok->tok_extra_tokens) {
-                p_start = tok->cur;
-                p_end = tok->cur;
-            }
-            tok->pendin++;
-            return MAKE_TOKEN(DEDENT);
-        }
-        else {
-            if (tok->tok_extra_tokens) {
-                p_start = tok->buf_offset;
-                p_end = tok->cur;
-            }
-            tok->pendin--;
-            return MAKE_TOKEN(INDENT);
-        }
+    if (tok->layout.pending != 0) {
+        return _PyLexer_IndentationToken(tok, token);
     }
 
     /* Peek ahead at the next character */
@@ -374,7 +236,7 @@ _PyLexer_get_normal(struct tok_state *tok, ftstring_state *current, struct token
                     /* If this type ignore is the only thing on the line, consume the newline also. */
                     if (blankline) {
                         tok_nextc(tok);
-                        tok->atbol = 1;
+                        tok->layout.at_bol = 1;
                     }
                 } else {
                     p_start = _PyLexer_BufferOffset(tok, type_start);
@@ -390,7 +252,7 @@ _PyLexer_get_normal(struct tok_state *tok, ftstring_state *current, struct token
             tok_backup(tok, c);  /* don't eat the newline or EOF */
             p_start = _PyLexer_BufferOffset(tok, p);
             p_end = tok->cur;
-            tok->comment_newline = blankline;
+            tok->layout.comment_newline = blankline;
             return MAKE_TOKEN(COMMENT);
         }
     }
@@ -471,29 +333,12 @@ _PyLexer_get_normal(struct tok_state *tok, ftstring_state *current, struct token
         c = tok_nextc(tok);
     }
 
-    /* Newline */
     if (c == '\n') {
-        tok->atbol = 1;
-        if (blankline || tok->level > 0) {
-            if (tok->tok_extra_tokens) {
-                if (tok->comment_newline) {
-                    tok->comment_newline = 0;
-                }
-                p_start = tok->start;
-                p_end = tok->cur;
-                return MAKE_TOKEN(NL);
-            }
+        int type = _PyLexer_Newline(tok, token, blankline);
+        if (type == 0) {
             goto nextline;
         }
-        if (tok->comment_newline && tok->tok_extra_tokens) {
-            tok->comment_newline = 0;
-            p_start = tok->start;
-            p_end = tok->cur;
-            return MAKE_TOKEN(NL);
-        }
-        p_start = tok->start;
-        p_end = tok->cur - 1; /* Leave '\n' out of the string */
-        return MAKE_TOKEN(NEWLINE);
+        return type;
     }
 
     /* Period or number starting with period? */
@@ -534,7 +379,7 @@ _PyLexer_get_normal(struct tok_state *tok, ftstring_state *current, struct token
 
     /* Line continuation */
     if (c == '\\') {
-        if ((c = tok_continuation_line(tok)) == -1) {
+        if ((c = _PyLexer_ContinueLine(tok)) == -1) {
             return MAKE_TOKEN(ERRORTOKEN);
         }
         goto again; /* Read next line */
