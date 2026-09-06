@@ -65,6 +65,9 @@ struct PyExpat_CAPI
     /* might be NULL for expat < 2.8.0 */
     XML_Bool (*SetHashSalt16Bytes)(
         XML_Parser parser, const uint8_t entropy[16]);
+    void (*SetCdataSectionHandler)(
+        XML_Parser parser, XML_StartCdataSectionHandler start,
+        XML_EndCdataSectionHandler end);
     /* always add new stuff to the end! */
 };
 

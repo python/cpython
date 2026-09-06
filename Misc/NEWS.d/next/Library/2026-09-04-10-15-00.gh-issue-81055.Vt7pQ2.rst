@@ -1,0 +1,6 @@
+Add :class:`xml.etree.ElementTree.CDATA`, a :class:`str` subclass for
+character data which is serialized as a CDATA section.
+:class:`~xml.etree.ElementTree.TreeBuilder` now supports the *insert_cdata*
+argument: if it is true, the content of a CDATA section is added to the tree
+as a :class:`~xml.etree.ElementTree.CDATA` string, so that the section is
+preserved when the tree is serialized.
