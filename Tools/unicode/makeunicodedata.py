@@ -71,9 +71,11 @@ PUA_1 = range(0xE000, 0xF900)
 PUA_15 = range(0xF0000, 0xFFFFE)
 PUA_16 = range(0x100000, 0x10FFFE)
 
-# we use this ranges of PUA_15 to store name aliases and named sequences
-NAME_ALIASES_START = 0xF0000
-NAMED_SEQUENCES_START = 0xF0200
+# we use this ranges of PUA_15 to store alias type labels, name aliases
+# and named sequences
+ALIAS_TYPE_LABELS_START = 0xF0000
+NAME_ALIASES_START = 0xF0200
+NAMED_SEQUENCES_START = 0xF0400
 
 old_versions = ["3.2.0"]
 
@@ -761,15 +763,30 @@ def makeunicodename(unicode, trace):
         Array("dawg_codepoint_to_pos_index1", index1).dump(fp, trace)
         Array("dawg_codepoint_to_pos_index2", index2).dump(fp, trace)
 
-        fprint()
+        fprint(dedent("""
+            typedef struct AliasInfo {
+                int aliased_codepoint;
+                int alias_type_label_codepoint;
+            } alias_info;
+            """))
+
+        fprint('static const unsigned int alias_type_labels_start = %#x;' %
+               ALIAS_TYPE_LABELS_START)
+        fprint('static const unsigned int alias_type_labels_end = %#x;' %
+               (ALIAS_TYPE_LABELS_START + len(unicode.alias_types)))
         fprint('static const unsigned int aliases_start = %#x;' %
                NAME_ALIASES_START)
         fprint('static const unsigned int aliases_end = %#x;' %
                (NAME_ALIASES_START + len(unicode.aliases)))
+        # I’m making max_alias_tuple_length a signed int instead of an
+        # unsigned int. I’m doing this because it’s value will
+        # eventually be cast to Py_ssize_t which is a signed type.
+        fprint('static const int max_alias_tuple_length = %d;' %
+               (unicode.max_alias_tuple_length))
 
-        fprint('static const unsigned int name_aliases[] = {')
-        for name, codepoint in unicode.aliases:
-            fprint('    0x%04X,' % codepoint)
+        fprint('static const alias_info alias_infos[] = {')
+        for aliased_codepoint, alias_type_label_codepoint, alias in unicode.aliases:
+            fprint('    {0x%04X, %s},' % (aliased_codepoint, alias_type_label_codepoint))
         fprint('};')
 
         # In Unicode 6.0.0, the sequences contain at most 4 BMP chars,
@@ -1105,21 +1122,58 @@ class UnicodeData:
         # check for name aliases and named sequences, see #12753
         # aliases and named sequences are not in 3.2.0
         if version != '3.2.0':
+            name_aliases_ucd = UcdFile(NAME_ALIASES, version)
+            self.alias_types = set()
+            for aliased_codepoint, alias, alias_type in name_aliases_ucd:
+                self.alias_types.add(alias_type)
+            # Sorting self.alias_types helps ensure that the
+            # unicodename_db.h file that this script generates is
+            # reproducible.
+            self.alias_types = list(self.alias_types)
+            self.alias_types.sort()
+
             self.aliases = []
-            # store aliases in the Private Use Area 15, in range U+F0000..U+F00FF,
+            alias_tuple_sizes = {}
+            for aliased_codepoint, alias, alias_type in name_aliases_ucd:
+                aliased_codepoint = int(aliased_codepoint, 16)
+                self.aliases.append((
+                        aliased_codepoint,
+                        ALIAS_TYPE_LABELS_START + self.alias_types.index(alias_type),
+                        alias))
+                key = (aliased_codepoint, alias_type)
+                if key not in alias_tuple_sizes:
+                    alias_tuple_sizes[key] = 0
+                alias_tuple_sizes[key] += 1
+            # At the moment, NameAliases.txt appears to be sorted by
+            # code point. As far as I can tell, Unicode does not
+            # guarantee that future versions of NameAliases.txt will
+            # continue to be sorted. We sort self.aliases here because
+            # there is some code in Modules/unicodedata.c that depends
+            # on the alias data being sorted.
+            self.aliases.sort()
+            self.max_alias_tuple_length = max(alias_tuple_sizes.values())
+
+            # Store alias type labels in the Private Use Area 15, in
+            # range U+F0000..U+F01FF, in order to take advantage of the
+            # compression and lookup algorithms used for the other
+            # characters.
+            pua_index = ALIAS_TYPE_LABELS_START
+            for alias_type in self.alias_types:
+                self.table[pua_index].name = alias_type
+                pua_index += 1
+            assert pua_index - ALIAS_TYPE_LABELS_START == len(self.alias_types)
+
+            # store aliases in the Private Use Area 15, in range U+F0200..U+F03FF,
             # in order to take advantage of the compression and lookup
             # algorithms used for the other characters
             pua_index = NAME_ALIASES_START
-            for char, name, abbrev in UcdFile(NAME_ALIASES, version):
-                char = int(char, 16)
-                self.aliases.append((name, char))
-                # also store the name in the PUA 1
-                self.table[pua_index].name = name
+            for aliased_codepoint, type_label_codepoint, alias in self.aliases:
+                self.table[pua_index].name = alias
                 pua_index += 1
             assert pua_index - NAME_ALIASES_START == len(self.aliases)
 
             self.named_sequences = []
-            # store named sequences in the PUA 1, in range U+F0100..,
+            # store named sequences in the PUA 1, in range U+F0400..,
             # in order to take advantage of the compression and lookup
             # algorithms used for the other characters.
 
