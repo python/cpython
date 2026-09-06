@@ -928,6 +928,16 @@ class CAPITest(unittest.TestCase):
             _testcapi.create_heapctype_with_none_bases_slot
         )
 
+    def test_context_exit_uaf(self):
+        # gh-157015: test that PyContext_Exit() doesn't double de-ref
+        # the context if the caller drops its reference right before calling it.
+        import contextvars
+        var = contextvars.ContextVar("test_var")
+        var.set("hello")
+        for _ in range(100):
+            _testcapi.test_context_exit_uaf()
+        self.assertEqual(var.get(), "hello")
+
 
 @requires_limited_api
 class TestHeapTypeRelative(unittest.TestCase):

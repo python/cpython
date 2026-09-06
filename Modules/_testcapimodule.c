@@ -3027,7 +3027,26 @@ uptime_bsd(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
 #endif
 
 
+static PyObject *
+test_context_exit_uaf(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyObject *ctx = PyContext_New();
+    if (ctx == NULL) {
+        return NULL;
+    }
+    if (PyContext_Enter(ctx) < 0) {
+        Py_DECREF(ctx);
+        return NULL;
+    }
+    Py_DECREF(ctx);
+    if (PyContext_Exit(ctx) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
+    {"test_context_exit_uaf", test_context_exit_uaf, METH_NOARGS},
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
     {"test_sizeof_c_types",     test_sizeof_c_types,             METH_NOARGS},

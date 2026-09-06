@@ -1,0 +1,1 @@
+Fix a possible double-decref when exiting a context due to decrementing the context object before updating its internal state.
