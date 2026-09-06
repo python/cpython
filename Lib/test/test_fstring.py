@@ -1657,6 +1657,7 @@ except Exception:
         self.assertEqual(f'{C()=:x}', 'C()=FORMAT-x')
         self.assertEqual(f'{C()=!r:*^20}', 'C()=********REPR********')
         self.assertEqual(f"{C():{20=}}", 'FORMAT-20=20')
+        self.assertEqual(f"{C():{C():{4=}}}", 'FORMAT-FORMAT-4=4')
 
         self.assertRaises(SyntaxError, eval, "f'{C=]'")
 
@@ -1889,6 +1890,9 @@ print(f'''{{
         self.assertEqual(rf"{UnchangedFormat():{'\xFF'}}", 'ÿ')
         self.assertEqual(f"{UnchangedFormat():{r'\xFF'}}", '\\xFF')
         self.assertEqual(rf"{UnchangedFormat():{r'\xFF'}}", '\\xFF')
+
+        self.assertEqual(rf"{UnchangedFormat():{f'\xFF'}}\n", 'ÿ\\n')
+        self.assertEqual(f"{UnchangedFormat():{rf'\xFF'}}\n", '\\xFF\n')
 
         # Test continuation character in format specs
         self.assertEqual(f"""{UnchangedFormat():{'a'\

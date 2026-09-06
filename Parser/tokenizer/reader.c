@@ -134,6 +134,7 @@ append_implicit_newline(_PyTok_Reader *reader)
 static int
 pop_decoded_line(_PyTok_Reader *reader, _PyTok_Chunk *chunk)
 {
+    assert(reader->decoded_pos >= 0 && reader->decoded_pos <= reader->decoded_len);
     if (reader->decoded_pos == reader->decoded_len) {
         return 0;
     }
@@ -603,10 +604,13 @@ reset_streaming_buffer(struct tok_state *tok)
 int
 _PyTok_ReaderUnderflow(struct tok_state *tok)
 {
+    assert(tok->cur == tok->inp || (tok->buf != NULL &&
+           tok->cur >= tok->buf && tok->cur < tok->inp));
     _PyTok_ReaderKind kind = tok->reader->kind;
     int prepared = kind == _PYTOK_READER_PREPARED;
     int streaming = reader_is_streaming(kind);
-    int reset_buffer = !prepared && tok->start == NULL && !INSIDE_FSTRING(tok);
+    int reset_buffer = !prepared && tok->start == NULL &&
+        _PyLexer_CurrentFTString(tok) == NULL;
 
     _PyTok_Chunk chunk;
     _PyTok_ReadResult result = reader_next(tok, &chunk);
@@ -635,6 +639,7 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
         }
         return 0;
     }
+    assert(chunk.data != NULL && chunk.len > 0);
     if (tok->lineno == INT_MAX) {
         PyErr_SetString(PyExc_OverflowError, "too many tokenizer source lines");
         tok->done = E_ERROR;
@@ -678,7 +683,7 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
             (source_start - tok->source.base_offset) + scan_len;
     }
     if (prepared) {
-        if (tok->start == NULL && !INSIDE_FSTRING(tok)) {
+        if (tok->start == NULL && _PyLexer_CurrentFTString(tok) == NULL) {
             tok->buf = tok->cur;
             tok->buf_offset = tok->source.base_offset +
                 (chunk.data - tok->source.bytes);
@@ -709,6 +714,8 @@ tokenizer_new_with_reader(_PyTok_ReaderKind kind)
     tok->done = E_OK;
     tok->atbol = 1;
     tok->start_loc = (_PyTok_Loc){-1, -1};
+    tok->ftstring_stack = tok->ftstring_stack_inline;
+    tok->ftstring_capacity = FTSTRING_STACK_INLINE_CAPACITY;
 #ifdef Py_DEBUG
     tok->debug = _Py_GetConfig()->parser_debug;
 #endif
