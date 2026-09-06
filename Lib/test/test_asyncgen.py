@@ -414,6 +414,33 @@ class AsyncGenTest(unittest.TestCase):
             asend.close()
             athrow.close()
 
+    def test_async_gen_anext_default_ag_gen(self):
+        # gh-157032: anext(agen, default) awaitables expose the generator they drive
+        async def gen():
+            yield 1
+
+        g = gen()
+        an = anext(g, None)
+        try:
+            self.assertIs(an.ag_gen, g)
+            with self.assertRaises(AttributeError):
+                an.ag_gen = None
+        finally:
+            an.close()
+
+        # Non-generator async iterator should not have ag_gen
+        class CustomAsyncIter:
+            async def __anext__(self):
+                return 1
+
+        c = CustomAsyncIter()
+        an_custom = anext(c, None)
+        try:
+            with self.assertRaises(AttributeError):
+                _ = an_custom.ag_gen
+        finally:
+            an_custom.close()
+
     def test_async_gen_asend_throw_concurrent_with_send(self):
         import types
 

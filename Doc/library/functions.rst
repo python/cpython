@@ -139,7 +139,13 @@ are always available.  They are listed here in alphabetical order.
    iterator. If *default* is given, it is returned if the iterator is exhausted,
    otherwise :exc:`StopAsyncIteration` is raised.
 
+   The awaitable returned by :func:`anext` exposes the generator it drives as a
+   read-only ``ag_gen`` attribute if *async_iterator* is an asynchronous generator.
+
    .. versionadded:: 3.10
+
+   .. versionadded:: 3.16
+      The ``ag_gen`` attribute.
 
 .. function:: any(iterable, /)
 

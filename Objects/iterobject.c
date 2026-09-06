@@ -582,6 +582,19 @@ static PyMethodDef anextawaitable_methods[] = {
 };
 
 
+static PyObject *
+anextawaitable_getag_gen(PyObject *op, void *Py_UNUSED(ignored))
+{
+    anextawaitableobject *obj = anextawaitableobject_CAST(op);
+    return PyObject_GetAttrString(obj->wrapped, "ag_gen");
+}
+
+static PyGetSetDef anextawaitable_getsetlist[] = {
+    {"ag_gen", anextawaitable_getag_gen, NULL, NULL},
+    {NULL}      /* Sentinel */
+};
+
+
 static PyAsyncMethods anextawaitable_as_async = {
     PyObject_SelfIter,                          /* am_await */
     0,                                          /* am_aiter */
@@ -619,6 +632,8 @@ PyTypeObject _PyAnextAwaitable_Type = {
     PyObject_SelfIter,                          /* tp_iter */
     anextawaitable_iternext,                    /* tp_iternext */
     anextawaitable_methods,                     /* tp_methods */
+    0,                                          /* tp_members */
+    anextawaitable_getsetlist,                  /* tp_getset */
 };
 
 PyObject *

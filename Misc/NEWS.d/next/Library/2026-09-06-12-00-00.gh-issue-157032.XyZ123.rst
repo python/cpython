@@ -1,0 +1,3 @@
+:func:`asyncio.print_call_graph` no longer loses the call stack of a task
+waiting on :func:`anext` with a default value. The awaitable returned by
+``anext(agen, default)`` now exposes the underlying generator as ``ag_gen``.

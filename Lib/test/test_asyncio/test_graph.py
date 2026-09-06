@@ -244,6 +244,39 @@ class CallStackTestBase:
             ['a deep', 'ag gen', 'a consumer'],
         ])
 
+    async def test_stack_async_gen_anext_default(self):
+        # gh-157032: an anext(agen, default) awaitable must not truncate the stack
+        fut = asyncio.Future()
+        stack_for_consumer = None
+
+        async def deep():
+            await fut
+
+        async def gen():
+            await deep()
+            yield 1
+
+        async def consumer():
+            await anext(gen(), None)
+
+        async def main():
+            nonlocal stack_for_consumer
+
+            async with asyncio.TaskGroup() as g:
+                t = g.create_task(consumer(), name='consumer')
+                for _ in range(5):
+                    await asyncio.sleep(0)
+
+                stack_for_consumer = capture_test_stack(fut=t)
+                fut.set_result(None)
+
+        await main()
+
+        self.assertEqual(stack_for_consumer[0][:2], [
+            'T<consumer>',
+            ['a deep', 'ag gen', 'a consumer'],
+        ])
+
     async def test_stack_gather(self):
 
         stack_for_deep = None
