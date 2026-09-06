@@ -60,6 +60,7 @@ class FunctionKind(enum.Enum):
     METHOD_NEW      = enum.auto()
     GETTER          = enum.auto()
     SETTER          = enum.auto()
+    SETTER_AND_DELETER  = enum.auto()
 
     @functools.cached_property
     def new_or_init(self) -> bool:
@@ -76,6 +77,12 @@ METHOD_INIT: Final = FunctionKind.METHOD_INIT
 METHOD_NEW: Final = FunctionKind.METHOD_NEW
 GETTER: Final = FunctionKind.GETTER
 SETTER: Final = FunctionKind.SETTER
+SETTER_AND_DELETER: Final = FunctionKind.SETTER_AND_DELETER
+
+# The kinds which implement the setter of an entry of PyGetSetDef.
+SETTERS: Final = frozenset({SETTER, SETTER_AND_DELETER})
+# The kinds which implement an entry of PyGetSetDef.
+ACCESSORS: Final = SETTERS | {GETTER}
 
 
 @dc.dataclass(repr=False)
@@ -161,7 +168,7 @@ class Function:
             case FunctionKind.STATIC_METHOD:
                 flags.append('METH_STATIC')
             case _ as kind:
-                acceptable_kinds = {FunctionKind.CALLABLE, FunctionKind.GETTER, FunctionKind.SETTER}
+                acceptable_kinds = {FunctionKind.CALLABLE} | ACCESSORS
                 assert kind in acceptable_kinds, f"unknown kind: {kind!r}"
         if self.coexist:
             flags.append('METH_COEXIST')
