@@ -2549,6 +2549,7 @@ pyexpat_exec(PyObject *mod)
     capi->SetUnknownEncodingHandler = XML_SetUnknownEncodingHandler;
     capi->SetUserData = XML_SetUserData;
     capi->SetStartDoctypeDeclHandler = XML_SetStartDoctypeDeclHandler;
+    capi->SetCdataSectionHandler = XML_SetCdataSectionHandler;
     capi->SetEncoding = XML_SetEncoding;
     capi->DefaultUnknownEncodingHandler = PyUnknownEncodingHandler;
 #if XML_COMBINED_VERSION >= 20100
