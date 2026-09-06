@@ -333,12 +333,9 @@ _PyTokenizer_ensure_utf8(const char *line, struct tok_state *tok, int lineno)
         }
     }
     if (badchar) {
-        tok->lineno = lineno;
-        tok->line_start = _PyLexer_BufferOffset(tok, line_start);
-        tok->cur = _PyLexer_BufferOffset(tok, badchar);
-        _PyTokenizer_syntaxerror_known_range(tok,
-                (int)(badchar - line_start) + 1,
-                (int)(badchar - line_start) + 1,
+        _PyTokenizer_syntaxerror_at(
+                tok, line_start, badchar - line_start + 1, lineno,
+                -1, -1,
                 "Non-UTF-8 code starting with '\\x%.2x'"
                 "%s%V on line %i, "
                 "but no encoding declared; "
