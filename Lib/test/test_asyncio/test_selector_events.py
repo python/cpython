@@ -1195,6 +1195,49 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.assertEqual(transport.get_write_buffer_size(), 0)
         self.assertTrue(self.protocol.connection_lost.called)
 
+    def test_write_ready_resume_writing_closes(self):
+        # gh-156512: closing from resume_writing() must not lose the connection twice
+        self.sock.send.return_value = 2
+
+        def _resume_writing():
+            transport.close()
+
+        self.protocol.resume_writing.side_effect = _resume_writing
+        self.loop.call_exception_handler = mock.Mock()
+
+        transport = self.socket_transport()
+        transport.set_write_buffer_limits(high=1, low=0)
+        transport.write(b'data')
+
+        self.loop.writers[7]._run()
+        test_utils.run_briefly(self.loop)
+
+        self.assertEqual(self.protocol.connection_lost.call_count, 1)
+        self.loop.call_exception_handler.assert_not_called()
+
+    @unittest.skipUnless(selector_events._HAS_SENDMSG, 'no sendmsg')
+    def test_write_sendmsg_resume_writing_closes(self):
+        # gh-156512: same as above, for the sendmsg write path
+        self.sock.send.return_value = 2
+        self.sock.sendmsg.return_value = 2
+
+        def _resume_writing():
+            transport.close()
+
+        self.protocol.resume_writing.side_effect = _resume_writing
+        self.loop.call_exception_handler = mock.Mock()
+
+        transport = self.socket_transport(sendmsg=True)
+        transport.set_write_buffer_limits(high=1, low=0)
+        transport.write(b'data')
+
+        self.loop.writers[7]._run()
+        test_utils.run_briefly(self.loop)
+
+        self.assertEqual(self.protocol.connection_lost.call_count, 1)
+        self.loop.call_exception_handler.assert_not_called()
+
+
 class SelectorSocketTransportBufferedProtocolTests(test_utils.TestCase):
 
     def setUp(self):
