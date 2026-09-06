@@ -234,6 +234,22 @@ nitpick_ignore += [
     ('py:attr', '__wrapped__'),
 ]
 
+# Objects present in the stable_abi.dat but removed from the docs
+# or with suppressed references to them.
+nitpick_ignore += [
+    # pending removal in Python 3.16
+    ('c:data', 'Py_FileSystemDefaultEncodeErrors'),
+    ('c:data', 'Py_FileSystemDefaultEncoding'),
+    ('c:data', 'Py_HasFileSystemDefaultEncoding'),
+    ('c:data', 'Py_UTF8Mode'),
+    # legacy typedefs for sq_slice and sq_ass_slice
+    ('c:type', 'ssizessizeargfunc'),
+    ('c:type', 'ssizessizeobjargproc'),
+    # 'symtable' was exposed by symtable.h but removed in 3.10.
+    # See https://github.com/python/cpython/pull/24910.
+    ('c:type', 'symtable'),
+]
+
 # gh-106948: Copy standard C types declared in the "c:type" domain and C
 # structures declared in the "c:struct" domain to the "c:identifier" domain,
 # since "c:function" markup looks for types in the "c:identifier" domain. Use
