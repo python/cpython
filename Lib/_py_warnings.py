@@ -779,7 +779,7 @@ class deprecated:
     must be after the ``@overload`` decorator for the attribute to
     exist on the overload as returned by ``get_overloads()``.
 
-    See PEP 702 for details.
+    See PEP 702 for details.0
 
     """
     def __init__(
@@ -806,6 +806,7 @@ class deprecated:
         msg = self.message
         category = self.category
         stacklevel = self.stacklevel
+        prefixes = self.skip_file_prefixes
         if category is None:
             arg.__deprecated__ = msg
             return arg
@@ -818,7 +819,7 @@ class deprecated:
             @functools.wraps(original_new)
             def __new__(cls, /, *args, **kwargs):
                 if cls is arg:
-                    _wm.warn(msg, category=category, stacklevel=stacklevel + 1, skip_file_prefixes=self.skip_file_prefixes)
+                    _wm.warn(msg, category=category, stacklevel=stacklevel + 1, skip_file_prefixes=prefixes)
                 if original_new is not object.__new__:
                     return original_new(cls, *args, **kwargs)
                 # Mirrors a similar check in object.__new__.
@@ -842,11 +843,11 @@ class deprecated:
 
                 @functools.wraps(original_init_subclass)
                 def __init_subclass__(*args, **kwargs):
-                    _wm.warn(msg, category=category, stacklevel=stacklevel + 1, skip_file_prefixes=self.skip_file_prefixes)
+                    _wm.warn(msg, category=category, stacklevel=stacklevel + 1, skip_file_prefixes=prefixes)
                     return original_init_subclass(*args, **kwargs)
             else:
                 def __init_subclass__(cls, *args, **kwargs):
-                    _wm.warn(msg, category=category, stacklevel=stacklevel + 1, skip_file_prefixes=self.skip_file_prefixes)
+                    _wm.warn(msg, category=category, stacklevel=stacklevel + 1, skip_file_prefixes=prefixes)
                     return super(arg, cls).__init_subclass__(*args, **kwargs)
 
             arg.__init_subclass__ = classmethod(__init_subclass__)
@@ -860,7 +861,7 @@ class deprecated:
 
             @functools.wraps(arg)
             def wrapper(*args, **kwargs):
-                _wm.warn(msg, category=category, stacklevel=stacklevel + 1, skip_file_prefixes=self.skip_file_prefixes)
+                _wm.warn(msg, category=category, stacklevel=stacklevel + 1, skip_file_prefixes=prefixes)
                 return arg(*args, **kwargs)
 
             if inspect.iscoroutinefunction(arg):
