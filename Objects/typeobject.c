@@ -6546,7 +6546,7 @@ _Py_type_getattro_stackref(PyTypeObject *type, PyObject *name,
     /* Give up */
     if (suppress_missing_attribute == NULL) {
         PyErr_Format(PyExc_AttributeError,
-                     "type object '%.100s' has no attribute '%U'",
+                     "type object '%s' has no attribute %R",
                      type->tp_name, name);
     }
     else {
@@ -6585,7 +6585,7 @@ type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
 
     if (_PyDict_SetItem_LockHeld(dict, name, value) < 0) {
         PyErr_Format(PyExc_AttributeError,
-                     "type object '%.50s' has no attribute '%U'",
+                     "type object '%s' has no attribute %R",
                      ((PyTypeObject*)type)->tp_name, name);
         _PyObject_SetAttributeErrorContext((PyObject *)type, name);
         return -1;
