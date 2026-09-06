@@ -4335,6 +4335,30 @@ class OtherTests(unittest.TestCase):
             f.write('zipfile test data')
         self.assertRaises(ValueError, zipf.write, TESTFN)
 
+    def test_testzip_with_duplicate_names(self):
+        data = io.BytesIO()
+        with zipfile.ZipFile(data, mode="w") as zipf:
+            zipf.writestr("duplicate", b"corrupt")
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                zipf.writestr("duplicate", b"valid")
+
+        zipdata = bytearray(data.getvalue())
+        with zipfile.ZipFile(io.BytesIO(zipdata)) as zipf:
+            zinfo = zipf.infolist()[0]
+            file_header = struct.unpack_from(
+                zipfile.structFileHeader, zipdata, zinfo.header_offset
+            )
+            name_length, extra_length = file_header[-2:]
+        data_offset = (zinfo.header_offset + zipfile.sizeFileHeader
+                       + name_length + extra_length)
+        zipdata[data_offset] ^= 1
+
+        with zipfile.ZipFile(io.BytesIO(zipdata)) as zipf:
+            self.assertRaises(zipfile.BadZipFile, zipf.read,
+                              zipf.infolist()[0])
+            self.assertEqual("duplicate", zipf.testzip())
+
     def test_bad_constructor_mode(self):
         """Check that bad modes passed to ZipFile constructor are caught."""
         self.assertRaises(ValueError, zipfile.ZipFile, TESTFN, "q")

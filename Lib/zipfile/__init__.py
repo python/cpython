@@ -2145,7 +2145,7 @@ class ZipFile:
             try:
                 # Read by chunks, to avoid an OverflowError or a
                 # MemoryError with very large embedded files.
-                with self.open(zinfo.filename, "r") as f:
+                with self.open(zinfo, "r") as f:
                     while f.read(chunk_size):     # Check CRC-32
                         pass
             except BadZipFile:
@@ -2401,8 +2401,7 @@ class ZipFile:
             except KeyError:
                 pass
 
-            # Avoid missing entry if there is another entry having the same name,
-            # to prevent an error on `testzip()`.
+            # Keep the last remaining entry with this name in NameToInfo.
             # Reverse the order as NameToInfo normally stores the last added one.
             for zi in reversed(self.filelist):
                 if zi.filename == zinfo.filename:
