@@ -2414,7 +2414,7 @@ class IPv6Network(_BaseV6, _BaseNetwork):
 
 class _IPv6Constants:
 
-    _linklocal_network = IPv6Network('fe80::/10')
+    _linklocal_network = IPv6Network('fe80::/64')
 
     _multicast_network = IPv6Network('ff00::/8')
 
