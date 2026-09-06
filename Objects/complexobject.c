@@ -381,6 +381,7 @@ _Py_c_abs(Py_complex z)
 {
     /* sets errno = ERANGE on overflow */
     double result;
+    int saved_errno = errno;
 
     if (!isfinite(z.real) || !isfinite(z.imag)) {
         /* C99 rules: if either the real or the imaginary part is an
@@ -388,20 +389,24 @@ _Py_c_abs(Py_complex z)
            NaN. */
         if (isinf(z.real)) {
             result = fabs(z.real);
+            errno = saved_errno;
             return result;
         }
         if (isinf(z.imag)) {
             result = fabs(z.imag);
+            errno = saved_errno;
             return result;
         }
         /* either the real or imaginary part is a NaN,
            and neither is infinite. Result should be NaN. */
+        errno = saved_errno;
         return Py_NAN;
     }
     result = hypot(z.real, z.imag);
-    if (!isfinite(result)) {
+    if (!isfinite(result))
         errno = ERANGE;
-    }
+    else
+        errno = saved_errno;
     return result;
 }
 
@@ -811,11 +816,9 @@ complex_abs(PyObject *op)
     PyComplexObject *v = _PyComplexObject_CAST(op);
     double result;
 
-    result = hypot(v->cval.real, v->cval.imag);
-    /* Testing FE_OVERFLOW floating-point exception is slow. */
-    if (isfinite(v->cval.real) && isfinite(v->cval.imag)
-        && !isfinite(result))
-    {
+    errno = 0;
+    result = _Py_c_abs(v->cval);
+    if (errno == ERANGE) {
         PyErr_SetString(PyExc_OverflowError,
                         "absolute value too large");
         return NULL;
