@@ -6271,6 +6271,13 @@ codegen_pattern_class(compiler *c, pattern_ty p, pattern_context *pc)
     if (nattrs) {
         RETURN_IF_ERROR(validate_kwd_attrs(c, kwd_attrs, kwd_patterns));
     }
+    if (nargs + nattrs == 0) {
+        // Fast path if there are no sub-patterns
+        VISIT(c, expr, p->v.MatchClass.cls);
+        ADDOP_I(c, LOC(p), CALL_INTRINSIC_2, INTRINSIC_MATCH_CLASS_ISINSTANCE);
+        RETURN_IF_ERROR(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
+        return SUCCESS;
+    }
     VISIT(c, expr, p->v.MatchClass.cls);
     PyObject *attr_names = PyTuple_New(nattrs);
     if (attr_names == NULL) {
