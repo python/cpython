@@ -1,0 +1,2 @@
+Preserve :class:`mailbox.mbox`, :class:`mailbox.MMDF`, and
+:class:`mailbox.Babyl` files when replacing a rewritten mailbox fails.
