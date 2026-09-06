@@ -1,3 +1,4 @@
+import contextvars
 import threading
 import unittest
 from test import support
@@ -110,6 +111,44 @@ class ContendedListIterationTest(ContendedTupleIterationTest):
             for m in mutators:
                 m.join()
         self.assert_iterator_results(results, list(seq))
+
+
+class ContendedContextIterationTest(ContendedTupleIterationTest):
+    # A contextvars.Context is iterated by the HAMT iterator, which keeps its
+    # whole depth-first cursor -- including borrowed node pointers -- inside
+    # the iterator object, so sharing one between threads used to crash the
+    # interpreter (gh-154535).
+    def make_testdata(self, n):
+        variables = [contextvars.ContextVar(f'v{i}') for i in range(n)]
+        ctx = contextvars.Context()
+        def populate():
+            for i, var in enumerate(variables):
+                var.set(i)
+        ctx.run(populate)
+        return ctx
+
+    def test_restarted_shared_iterator(self):
+        """Test a shared iterator that is restarted when it is exhausted"""
+        # A single pass over a shared iterator is over too quickly to reliably
+        # desync its cursor. Keep replacing the iterator once it is exhausted
+        # so that the threads stay on top of each other for a while.
+        seq = self.make_testdata(16)
+        cell = [iter(seq)]
+        results = []
+        start = threading.Barrier(NUMTHREADS)
+        def worker():
+            items = []
+            start.wait()
+            for _ in range(NUMITEMS):
+                try:
+                    items.append(next(cell[0]))
+                except StopIteration:
+                    cell[0] = iter(seq)
+            results.extend(items)
+        threads = self.run_threads(worker)
+        for t in threads:
+            t.join()
+        self.assert_iterator_results(results, seq)
 
 
 class ContendedRangeIterationTest(ContendedTupleIterationTest):
