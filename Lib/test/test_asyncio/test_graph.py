@@ -593,6 +593,26 @@ class CallStackTestBase:
         await main()
         self.assertRegex(output[0], r'in generator [\w.<>]+\.gen\(\)')
 
+    async def test_capture_call_graph_generator_keeps_caller_frames(self):
+        # gh-156988: sync gen should not clear the call chain
+        stack = None
+
+        def gen():
+            nonlocal stack
+            graph = asyncio.capture_call_graph()
+            stack = [entry.frame.f_code.co_name for entry in graph.call_stack]
+            yield
+
+        def middle():
+            for _ in gen():
+                pass
+
+        async def main():
+            middle()
+
+        await main()
+        self.assertEqual(stack[:3], ['gen', 'middle', 'main'])
+
 
 @unittest.skipIf(
     not hasattr(asyncio.futures, "_c_future_add_to_awaited_by"),

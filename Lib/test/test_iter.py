@@ -2,6 +2,7 @@
 
 import sys
 import unittest
+from test import support
 from test.support import cpython_only
 from test.support.os_helper import TESTFN, unlink
 from test.support import check_free_after_iterating, ALWAYS_EQ, NEVER_EQ
@@ -248,6 +249,71 @@ class TestCase(unittest.TestCase):
         self.assertEqual(list(exhit), [])
         self.assertEqual(list(empit), [5, 6])
         self.assertEqual(list(a), [0, 1, 2, 3, 4, 5, 6])
+
+    @support.refcount_test
+    def test_seq_class_reentrant_exhaustion(self):
+        # gh-156310: a re-entrant next() from inside __getitem__ (or from
+        # __del__ of the IndexError instance) that exhausts the iterator
+        # used to make the outer next() DECREF the sequence a second time.
+        it = None
+
+        class ReentrantGetItem:
+            def __init__(self):
+                self.calls = 0
+
+            def __getitem__(self, i):
+                self.calls += 1
+                if self.calls == 1:
+                    for _ in it:
+                        pass
+                raise IndexError(i)
+
+        seq = ReentrantGetItem()
+        refcount = sys.getrefcount(seq)
+        it = iter(seq)
+        self.assertEqual(list(it), [])
+        del it
+        support.gc_collect()
+        self.assertEqual(sys.getrefcount(seq), refcount)
+
+        class ReentrantIndexError(IndexError):
+            def __del__(self):
+                try:
+                    next(it)
+                except StopIteration:
+                    pass
+
+        class RaiseReentrant:
+            def __getitem__(self, i):
+                raise ReentrantIndexError(i)
+
+        seq = RaiseReentrant()
+        refcount = sys.getrefcount(seq)
+        it = iter(seq)
+        self.assertEqual(list(it), [])
+        del it
+        support.gc_collect()
+        self.assertEqual(sys.getrefcount(seq), refcount)
+
+        # An outer __getitem__ that succeeds after a re-entrant next()
+        # exhausted the iterator must not revive it.
+        class ReviveGetItem:
+            def __init__(self):
+                self.calls = 0
+
+            def __getitem__(self, i):
+                self.calls += 1
+                if self.calls == 1:
+                    for _ in it:
+                        pass
+                if i >= 3:
+                    raise IndexError(i)
+                return i
+
+        it = iter(ReviveGetItem())
+        self.assertEqual(next(it), 0)
+        self.assertEqual(list(it), [])
+        self.assertEqual(it.__length_hint__(), 0)
 
     def test_reduce_mutating_builtins_iter(self):
         # This is a reproducer of issue #101765
