@@ -595,8 +595,12 @@ static int
 _sre_unicode_iscased_impl(PyObject *module, int character)
 /*[clinic end generated code: output=9c5ddee0dc2bc258 input=51e42c3b8dddb78e]*/
 {
-    unsigned int ch = (unsigned int)character;
-    return ch != sre_lower_unicode(ch) || ch != sre_upper_unicode(ch);
+    Py_UCS4 ch = (Py_UCS4)character;
+    Py_UCS4 mapped[3];
+    /* A cased character can have no simple case mapping, as LATIN SMALL
+       LETTER SHARP S whose uppercase is "SS". */
+    return _PyUnicode_ToUpperFull(ch, mapped) != 1 || mapped[0] != ch ||
+           _PyUnicode_ToLowerFull(ch, mapped) != 1 || mapped[0] != ch;
 }
 
 /*[clinic input]
