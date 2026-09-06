@@ -1,0 +1,2 @@
+Fixed bug in the :mod:`turtle` module's :func:`turtle.circle` method, where calling with speed 0 made some objects disappear.
+Patch by Liam Gersten.
