@@ -2800,6 +2800,13 @@ subtype_dealloc(PyObject *self)
         }
     }
 
+    /* Save the current exception: clear_slots() and the dict/base-dealloc
+           below decref arbitrary attribute values, which may clear
+           tstate->current_exception (gh-89373).  Mirroring slot_tp_finalize(). */
+     PyThreadState *tstate = _PyThreadState_GET();
+     PyObject *exc = _PyErr_GetRaisedException(tstate);   /* preserve in-flight exception */
+
+
     /*  Clear slots up to the nearest base with a different tp_dealloc */
     base = type;
     while ((basedealloc = base->tp_dealloc) == subtype_dealloc) {
@@ -2849,6 +2856,9 @@ subtype_dealloc(PyObject *self)
     if (type_needs_decref) {
         _Py_DECREF_TYPE(type);
     }
+
+    /* Restore the saved exception (see save above). */
+    _PyErr_SetRaisedException(tstate, exc);
 }
 
 static PyTypeObject *solid_base(PyTypeObject *type);
