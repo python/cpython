@@ -3368,14 +3368,12 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
         return 0;
     }
     if (!_PyObject_IsUniquelyReferenced(v)) {
-        if (oldsize < newsize) {
-            *pv = _PyBytes_FromSize(newsize, 0);
-            if (*pv) {
-                memcpy(PyBytes_AS_STRING(*pv), PyBytes_AS_STRING(v), oldsize);
-            }
-        }
-        else {
-            *pv = PyBytes_FromStringAndSize(PyBytes_AS_STRING(v), newsize);
+        // Allocate and then copy so we don't get a shared immortal
+        // one-character singleton!
+        *pv = _PyBytes_FromSize(newsize, 0);
+        if (*pv) {
+            memcpy(PyBytes_AS_STRING(*pv), PyBytes_AS_STRING(v),
+                   Py_MIN(oldsize, newsize));
         }
         Py_DECREF(v);
         return (*pv == NULL) ? -1 : 0;

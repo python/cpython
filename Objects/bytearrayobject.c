@@ -45,7 +45,10 @@ _getbytevalue(PyObject* arg, int *value)
 
 static void
 bytearray_reinit_from_bytes(PyByteArrayObject *self, Py_ssize_t size,
-                            Py_ssize_t alloc) {
+                            Py_ssize_t alloc)
+{
+    /* Only the empty bytes may be immortal. */
+    assert((alloc == 0) == _Py_IsImmortal(self->ob_bytes_object));
     self->ob_bytes = self->ob_start = PyBytes_AS_STRING(self->ob_bytes_object);
     Py_SET_SIZE(self, size);
     FT_ATOMIC_STORE_SSIZE_RELAXED(self->ob_alloc, alloc);
@@ -1619,12 +1622,14 @@ bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n)
         return ret;
     }
 
-    // Copy remaining bytes to a new bytes.
-    PyObject *remaining = PyBytes_FromStringAndSize(self->ob_start + to_take,
-                                                    remaining_length);
+    // Copy remaining bytes to a new bytes. Allocate and then copy
+    // so we don't get a shared immortal one-character singleton!
+    PyObject *remaining = PyBytes_FromStringAndSize(NULL, remaining_length);
     if (remaining == NULL) {
         return NULL;
     }
+    memcpy(PyBytes_AS_STRING(remaining), self->ob_start + to_take,
+           remaining_length);
 
     // If the bytes are offset inside the buffer must first align.
     if (self->ob_start != self->ob_bytes) {
