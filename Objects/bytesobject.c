@@ -1729,6 +1729,19 @@ bytes_hash(PyObject *self)
     return hash;
 }
 
+static PyObject *
+bytes_slice(PyObject *op, Py_ssize_t start, Py_ssize_t length)
+{
+    if (length <= 0) {
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    }
+    if (start == 0 && length == PyBytes_GET_SIZE(op) &&
+        PyBytes_CheckExact(op)) {
+        return Py_NewRef(op);
+    }
+    return PyBytes_FromStringAndSize(PyBytes_AS_STRING(op) + start, length);
+}
+
 static PyObject*
 bytes_subscript(PyObject *op, PyObject* item)
 {
@@ -1759,18 +1772,11 @@ bytes_subscript(PyObject *op, PyObject* item)
         slicelength = PySlice_AdjustIndices(PyBytes_GET_SIZE(self), &start,
                                             &stop, step);
 
-        if (slicelength <= 0) {
+        if (step == 1) {
+            return bytes_slice(op, start, slicelength);
+        }
+        else if (slicelength <= 0) {
             return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
-        }
-        else if (start == 0 && step == 1 &&
-                 slicelength == PyBytes_GET_SIZE(self) &&
-                 PyBytes_CheckExact(self)) {
-            return Py_NewRef(self);
-        }
-        else if (step == 1) {
-            return PyBytes_FromStringAndSize(
-                PyBytes_AS_STRING(self) + start,
-                slicelength);
         }
         else {
             source_buf = PyBytes_AS_STRING(self);
@@ -1793,6 +1799,18 @@ bytes_subscript(PyObject *op, PyObject* item)
                      Py_TYPE(item)->tp_name);
         return NULL;
     }
+}
+
+PyObject *
+_PyBytes_BinarySlice(PyObject *container, PyObject *start_o, PyObject *stop_o)
+{
+    assert(PyBytes_CheckExact(container));
+    Py_ssize_t len = PyBytes_GET_SIZE(container);
+    Py_ssize_t istart, istop;
+    if (!_PyEval_UnpackIndices(start_o, stop_o, len, &istart, &istop)) {
+        return NULL;
+    }
+    return bytes_slice(container, istart, istop - istart);
 }
 
 static int
