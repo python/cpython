@@ -134,6 +134,11 @@ class TestPublicCAPI(BaseTests, unittest.TestCase):
     def test_build_intel_asm(self):
         self.check_build('_testcppext_asm', extra_cflags='-masm=intel')
 
+    # gh-154643: Test that headers don't use undefined macros in #if
+    @unittest.skipIf(support.MS_WINDOWS, "MSVC doesn't support -Werror=undef")
+    def test_build_werror_undef(self):
+        self.check_build('_testcppext_undef', extra_cflags='-Werror=undef')
+
 
 class TestInteralCAPI(BaseTests, unittest.TestCase):
     TEST_INTERNAL_C_API = True
