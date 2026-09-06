@@ -766,8 +766,9 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
     async def _sendfile_native(self, transp, file, offset, count):
         resume_reading = transp.is_reading()
         transp.pause_reading()
-        await transp._make_empty_waiter()
+        empty_waiter = transp._make_empty_waiter()
         try:
+            await empty_waiter
             return await self.sock_sendfile(transp._sock, file, offset, count,
                                             fallback=False)
         finally:
