@@ -444,139 +444,61 @@ class partialmethod:
     Supports wrapping existing descriptors and handles non-descriptor
     callables as instance methods.
     """
-    __slots__ = (
-        "_func", "_args", "_keywords", "__dict__", "__weakref__",
-        "_cachedmethod", "_cachetype"
-    )
+    __slots__ = ("func", "args", "keywords", "__dict__", "__weakref__")
 
     __repr__ = _partial_repr
 
     def __init__(self, func, /, *args, **keywords):
         if isinstance(func, partialmethod):
             # Subclass optimization
-            temp = partial(lambda *_, **__: None, *func._args, **func.keywords)
+            temp = partial(lambda *_, **__: None, *func.args, **func.keywords)
             temp = partial(temp, *args, **keywords)
-            func = func._func
+            func = func.func
             args = temp.args
             keywords = temp.keywords
-
-        if args and args[-1] is Placeholder:
-            raise TypeError("trailing Placeholders are not allowed")
-
-        self._cachedmethod = None
-        self.func = func    # setting via attribute setter
-        self._args = args
-        self._keywords = keywords
-
-    @property
-    def func(self):
-        return self._func
-
-    @func.setter
-    def func(self, func):
-        if isinstance(func, staticmethod):
-            self._cachetype = 1
-        elif isinstance(func, classmethod):
-            self._cachetype = 2
-        elif isinstance(func, (FunctionType, partial)):
-            self._cachetype = 3
-        elif getattr(func, '__get__', None) is None:
-            if not callable(func):
-                raise TypeError(f'the first argument {func!r} must be a callable '
-                                'or a descriptor')
-            self._cachetype = 4
         else:
-            self._cachetype = 0
-        self._func = func
-        method = self._cachedmethod
-        if method is not None:
-            if self._cachetype in (1, 2):
-                method = method.__wrapped__
-            self._keywords = method.keywords
-        self._cachedmethod = None
+            if not callable(func) and not hasattr(func, "__get__"):
+                raise TypeError(f"the first argument {func!r} must be a callable "
+                                "or a descriptor")
+            if args and args[-1] is Placeholder:
+                raise TypeError("trailing Placeholders are not allowed")
 
-    @property
-    def args(self):
-        return self._args
+        self.func = func
+        self.args = args
+        self.keywords = keywords
 
-    @args.setter
-    def args(self, args):
-        self._args = args
-        method = self._cachedmethod
-        if method is not None:
-            if self._cachetype in (1, 2):
-                method = method.__wrapped__
-            self._keywords = method.keywords
-        self._cachedmethod = None
-
-    @property
-    def keywords(self):
-        method = self._cachedmethod
-        if method is None:
-            return self._keywords
-        if self._cachetype in (1, 2):
-            method = method.__wrapped__
-        return method.keywords
-
-    @keywords.setter
-    def keywords(self, keywords):
-        self._keywords = keywords
-        method = self._cachedmethod
-        if method is not None:
-            if self._cachetype in (1, 2):
-                method = method.__wrapped__
-            mkeywords = method.keywords
-            mkeywords.clear()
-            mkeywords.update(keywords)
-
-    def __make_method(self):
-        func = self._func
-        args = self._args
-        keywords = self._keywords
-        cachetype = self._cachetype
-        if cachetype == 1:
-            method = partial(func.__wrapped__, *args, **keywords)
-            method.__isabstractmethod__ = self.__isabstractmethod__
-            return staticmethod(method)
-        elif cachetype == 2:
-            ph_args = (Placeholder,) if args else ()
-            method = partial(func.__wrapped__, *ph_args, *args, **keywords)
-            method.__isabstractmethod__ = self.__isabstractmethod__
-            return classmethod(method)
+    def _make_unbound_method(self):
+        func = self.func
+        args = self.args
+        if not callable(func):
+            def func(*args, **kwds):
+                return self.func(*args, **kwds)
+        if args:
+            method = partial(func, Placeholder, *args, **self.keywords)
         else:
-            # Either:
-            #   a) FunctionType / partial
-            #   b) callable object without __get__
-            #   c) non cacheable callable with __get__ that returned itself
-            ph_args = (Placeholder,) if args else ()
-            method = partial(func, *ph_args, *args, **keywords)
-            method.__isabstractmethod__ = self.__isabstractmethod__
-            method.__partialmethod__ = self
-            return method
+            method = partial(func, **self.keywords)
+        method.__isabstractmethod__ = self.__isabstractmethod__
+        method.__partialmethod__ = self
+        return method
 
     def __get__(self, obj, cls=None):
-        cachetype = self._cachetype
-        if not cachetype:
-            # Unknown descriptor == unknown binding
-            # Get callable at runtime and apply partial on top
-            func = self._func
-            new_func = func.__get__(obj, cls)
-            if new_func is not func:
+        get = getattr(self.func, "__get__", None)
+        result = None
+        if get is not None:
+            new_func = get(obj, cls)
+            if new_func is not self.func:
                 # Assume __get__ returning something new indicates the
                 # creation of an appropriate callable
-                result = partial(new_func, *self._args, **self._keywords)
+                result = partial(new_func, *self.args, **self.keywords)
                 try:
                     result.__self__ = new_func.__self__
                 except AttributeError:
                     pass
-                return result
-            else:
-                return self.__make_method().__get__(obj, cls)
-
-        method = self._cachedmethod
-        if method is None:
-            self._cachedmethod = method = self.__make_method()
-        return method.__get__(obj, cls)
+        if result is None:
+            # If the underlying descriptor didn't do anything, treat this
+            # like an instance method
+            result = self._make_unbound_method().__get__(obj, cls)
+        return result
 
     @property
     def __isabstractmethod__(self):
