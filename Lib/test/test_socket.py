@@ -6466,6 +6466,7 @@ class TestUnixDomain(unittest.TestCase):
         # Test that binding empty address fails.
         self.assertRaises(OSError, self.sock.bind, "")
 
+
 class BufferIOTest(SocketConnectedTest):
     """
     Test the buffer versions of socket.recv() and socket.send().
