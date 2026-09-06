@@ -594,6 +594,9 @@ over UDP sockets.
       If ``port`` is specified as ``None``, a Unix domain socket is created
       using the value in ``host`` - otherwise, a UDP socket is created.
 
+   .. versionchanged:: next
+      Added support for IPv6.
+
    .. method:: emit()
 
       Pickles the record's attribute dictionary and writes it to the socket in
