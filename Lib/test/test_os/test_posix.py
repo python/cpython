@@ -1109,6 +1109,30 @@ class PosixTester(unittest.TestCase):
             self.check_chmod(posix.fchmod, f.fileno())
             self.check_chmod(posix.chmod, f.fileno())
 
+    @os_helper.skip_unless_working_chmod
+    @unittest.skipUnless(os.chmod in os.supports_fd,
+                         "test needs fd support in os.chmod()")
+    @unittest.skipUnless(os.chmod in os.supports_dir_fd,
+                         "test needs dir_fd support in os.chmod()")
+    def test_chmod_fd_with_dir_fd(self):
+        with open(os_helper.TESTFN, 'wb+') as f:
+            dir_fd = os.open(os.curdir, os.O_RDONLY)
+            self.addCleanup(os.close, dir_fd)
+            with self.assertRaisesRegex(ValueError,
+                    'can\'t specify both dir_fd and fd'):
+                posix.chmod(f.fileno(), 0o600, dir_fd=dir_fd)
+
+    @os_helper.skip_unless_working_chmod
+    @unittest.skipUnless(os.chmod in os.supports_fd,
+                         "test needs fd support in os.chmod()")
+    @unittest.skipIf(os.name == 'nt',
+                     'follow_symlinks defaults to False on Windows')
+    def test_chmod_fd_follow_symlinks(self):
+        with open(os_helper.TESTFN, 'wb+') as f:
+            with self.assertRaisesRegex(ValueError,
+                    'cannot use fd and follow_symlinks together'):
+                posix.chmod(f.fileno(), 0o600, follow_symlinks=False)
+
     @unittest.skipUnless(hasattr(posix, 'lchmod'), 'test needs os.lchmod()')
     def test_lchmod_file(self):
         self.check_chmod(posix.lchmod, os_helper.TESTFN)
