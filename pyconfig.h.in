@@ -1907,6 +1907,9 @@
 /* Define if you want to build an interpreter with many run-time checks. */
 #undef Py_DEBUG
 
+/* Define if the Emscripten build is linked with -sMAIN_MODULE. */
+#undef Py_EMSCRIPTEN_DYNAMIC_LINKING
+
 /* Defined if Python is built as a shared library. */
 #undef Py_ENABLE_SHARED
 
