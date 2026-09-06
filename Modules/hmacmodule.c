@@ -741,8 +741,12 @@ hmac_new_object(PyTypeObject *tp)
         return NULL;
     }
     HASHLIB_INIT_MUTEX(self);
-    // tp_alloc initializes the memory to zero but the unknown kind is -1
+    // PyObject_GC_New() does not zero-initialize
+    self->name = NULL;
     self->kind = Py_hmac_kind_hash_unknown;
+    self->block_size = self->digest_size = 0;
+    self->api = (py_hmac_hacl_api){.compute = NULL, .compute_py = NULL};
+    self->state = NULL;
     return self;
 }
 
