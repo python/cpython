@@ -2832,3 +2832,12 @@
 
 [function.PyObject_CallFinalizerFromDealloc]
     added = '3.15'
+
+[function.PyBool_Check]
+    added = '3.16'
+
+[function.PyBytes_Check]
+    added = '3.16'
+
+[function.PyBytes_CheckExact]
+    added = '3.16'

@@ -1,0 +1,5 @@
+In the Limited C API 3.16 and newer, :c:func:`PyBool_Check` is now available
+as a function instead of a macro.
+
+In the Limited C API 3.16 and newer, :c:func:`PyBytes_Check` and
+:c:func:`PyBytes_CheckExact` are now available as functions instead of macros.
