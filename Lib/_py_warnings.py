@@ -779,7 +779,7 @@ class deprecated:
     must be after the ``@overload`` decorator for the attribute to
     exist on the overload as returned by ``get_overloads()``.
 
-    See PEP 702 for details.0
+    See PEP 702 for details.
 
     """
     def __init__(
