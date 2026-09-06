@@ -74,7 +74,7 @@ __all__ = [
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
     "reset_code", "on_github_actions",
     "requires_root_user", "requires_non_root_user",
-    "skip_if_double_rounding",
+    "skip_if_double_rounding", "built_with_c_assertions",
     ]
 
 
@@ -868,7 +868,7 @@ def open_urlresource(url, *args, **kw):
 
     check = kw.pop('check', None)
 
-    filename = urllib.parse.urlparse(url)[2].split('/')[-1] # '/': it's URL!
+    filename = urllib.parse.urlparse(url).path.split('/')[-1] # '/': it's URL!
 
     fn = os.path.join(TEST_DATA_DIR, filename)
 
@@ -1270,26 +1270,22 @@ def set_memlimit(limit: str) -> None:
     max_memuse = memlimit
 
 
-class _MemoryWatchdog:
-    """An object which periodically watches the process' memory consumption
-    and prints it out.
+def _memory_watchdog(pid):
+    """Return a function printing the memory usage of process *pid*.
+
+    The largest value it saw is kept in its ``peak`` attribute.
     """
+    # Imported here: test.support does not depend on test.libregrtest.
+    from test.libregrtest.utils import get_process_memory_usage
 
-    def __init__(self):
-        self.started = False
-
-    def start(self):
-        import subprocess
-        watchdog_script = findfile("memory_watchdog.py")
-        cmd = [sys.executable, watchdog_script, str(os.getpid())]
-        self.mem_watchdog = subprocess.Popen(cmd)
-        self.started = True
-
-    def stop(self):
-        if not self.started:
-            return
-        self.mem_watchdog.terminate()
-        self.mem_watchdog.wait()
+    def watch():
+        mem = get_process_memory_usage(pid)
+        if mem is not None:
+            watch.peak = max(watch.peak, mem)
+            print(f" ... process data size: {mem / (1024 ** 3):.1f} GiB",
+                  flush=True)
+    watch.peak = 0
+    return watch
 
 
 def bigmemtest(size, memuse, dry_run=True):
@@ -1304,8 +1300,14 @@ def bigmemtest(size, memuse, dry_run=True):
     extra argument. If 'dry_run' is true, the value passed to the test method
     may be less than the requested value. If 'dry_run' is false, it means the
     test doesn't support dummy runs when -M is not specified.
+
+    A test that actually allocates the requested memory (that is, one run with
+    -M) runs in a subprocess, so that the memory it uses and the address space
+    it fragments are released when it ends.  A dummy run stays in the process.
     """
     def decorator(f):
+        from test.support import isolation
+
         @functools.wraps(f)
         def wrapper(self):
             size = wrapper.size
@@ -1321,20 +1323,41 @@ def bigmemtest(size, memuse, dry_run=True):
                     "not enough memory: %.1fG minimum needed"
                     % (size * memuse / (1024 ** 3)))
 
-            if real_max_memuse and verbose:
+            if (real_max_memuse and verbose
+                    and not isolation.runningInSubprocess):
                 print()
                 peak = (size * memuse) / (1024 ** 3)
-                print(f" ... expected peak memory use: {peak:.1f} GiB")
-                watchdog = _MemoryWatchdog()
-                watchdog.start()
-            else:
-                watchdog = None
+                # Flushed, so that it precedes the memory usage below.
+                print(f" ... expected peak memory use: {peak:.1f} GiB",
+                      flush=True)
 
-            try:
-                return f(self, maxsize)
-            finally:
+            if (real_max_memuse and has_subprocess_support
+                    and not isolation.runningInSubprocess):
+                # Watch it from here: the output of the subprocess is captured.
+                cls = type(self)
+                qualname = f'{cls.__qualname__}.{f.__name__}'
+                proc = isolation._start_test(cls.__module__, qualname)
+                watchdog = _memory_watchdog(proc.pid) if verbose else None
+                payload, output, returncode = proc.wait(tick=watchdog)
                 if watchdog:
-                    watchdog.stop()
+                    # The subprocess measures its own peak exactly.  What the
+                    # parent sampled is only a lower bound.
+                    maxrss = payload and payload.get('maxrss')
+                    peak = maxrss or watchdog.peak
+                    if peak:
+                        print(f" ... peak memory use: "
+                              f"{peak / (1024 ** 3):.1f} GiB"
+                              f"{'' if maxrss else ' or more'}", flush=True)
+                    majflt = payload and payload.get('majflt')
+                    if majflt:
+                        # The test did not fit in memory, so its timing means
+                        # little.
+                        print(f" ... {majflt} major page faults: the test "
+                              f"waited for the disk", flush=True)
+                isolation._replay_test(self, payload, output, returncode)
+                return
+
+            return f(self, maxsize)
 
         wrapper.size = size
         wrapper.memuse = memuse
@@ -1563,14 +1586,25 @@ print_warning.orig_stderr = sys.stderr
 # to cleanup threads.
 environment_altered = False
 
+# Short descriptions of what was altered, e.g. "unraisable exception".
+# They are reported by regrtest together with the name of the test.
+environment_altered_reasons = []
+
+
+def set_environment_altered(reason):
+    """Set the environment_altered flag and record why it was set."""
+    global environment_altered
+    environment_altered = True
+    if reason not in environment_altered_reasons:
+        environment_altered_reasons.append(reason)
+
+
 def reap_children():
     """Use this function at the end of test_main() whenever sub-processes
     are started.  This will help ensure that no extra children (zombies)
     stick around to hog resources and create problems when looking
     for refleaks.
     """
-    global environment_altered
-
     # Need os.waitpid(-1, os.WNOHANG): Windows is not supported
     if not (hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG')):
         return
@@ -1590,7 +1624,7 @@ def reap_children():
             break
 
         print_warning(f"reap_children() reaped child process {pid}")
-        environment_altered = True
+        set_environment_altered("reaped child process")
 
 
 @contextlib.contextmanager
@@ -3492,3 +3526,18 @@ def check_immutable_type(testcase, type):
     else:
         flags = type_getflags(type)
         testcase.assertTrue(flags & Py_TPFLAGS_IMMUTABLETYPE)
+
+
+def built_with_c_assertions():
+    """Check if Python was built with C assertions (assert())."""
+
+    if MS_WINDOWS:
+        # On Windows, rely on the Py_DEBUG macro to check for assertions
+        return Py_DEBUG
+
+    # Check if the NDEBUG macro is defined in C compiler flags
+    PY_CFLAGS = (sysconfig.get_config_var('PY_CFLAGS') or '')
+    if '-DNDEBUG' in PY_CFLAGS:
+        return False
+
+    return True

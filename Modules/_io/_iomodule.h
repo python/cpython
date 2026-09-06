@@ -4,6 +4,7 @@
 
 #include "exports.h"
 
+#include "pycore_fileutils.h"     // Py_off_t
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
 #include "structmember.h"
@@ -94,8 +95,6 @@ extern int _PyIO_trap_eintr(void);
 
 #ifdef MS_WINDOWS
 
-/* Windows uses long long for offsets */
-typedef long long Py_off_t;
 # define PyLong_AsOff_t     PyLong_AsLongLong
 # define PyLong_FromOff_t   PyLong_FromLongLong
 # define PY_OFF_T_MAX       LLONG_MAX
@@ -106,7 +105,6 @@ typedef long long Py_off_t;
 #else
 
 /* Other platforms use off_t */
-typedef off_t Py_off_t;
 #if (SIZEOF_OFF_T == SIZEOF_SIZE_T)
 # define PyLong_AsOff_t     PyLong_AsSsize_t
 # define PyLong_FromOff_t   PyLong_FromSsize_t

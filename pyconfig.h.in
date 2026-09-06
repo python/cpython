@@ -497,6 +497,9 @@
 /* Define if you have the 'ffi_prep_closure_loc' function. */
 #undef HAVE_FFI_PREP_CLOSURE_LOC
 
+/* Defined if _Float16 C type is supported */
+#undef HAVE_FLOAT16
+
 /* Define to 1 if you have the 'flock' function. */
 #undef HAVE_FLOCK
 
@@ -748,8 +751,14 @@
 /* Define to 1 if you have the <iconv.h> header file. */
 #undef HAVE_ICONV_H
 
+/* Define to 1 if you have the 'if_indextoname' function. */
+#undef HAVE_IF_INDEXTONAME
+
 /* Define to 1 if you have the 'if_nameindex' function. */
 #undef HAVE_IF_NAMEINDEX
+
+/* Define to 1 if you have the 'if_nametoindex' function. */
+#undef HAVE_IF_NAMETOINDEX
 
 /* Define if you have the 'inet_aton' function. */
 #undef HAVE_INET_ATON

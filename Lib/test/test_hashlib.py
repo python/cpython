@@ -54,11 +54,34 @@ if not get_fips_mode:
     def get_fips_mode():
         return 0
 
+
+try:
+    import _md5
+except ImportError:
+    _md5 = None
+requires_md5 = unittest.skipUnless(_md5, 'requires _md5')
+
+
 try:
     import _blake2
 except ImportError:
     _blake2 = None
 requires_blake2 = unittest.skipUnless(_blake2, 'requires _blake2')
+
+
+try:
+    import _sha1
+except ImportError:
+    _sha1 = None
+requires_sha1 = unittest.skipUnless(_sha1, 'requires _sha1')
+
+
+try:
+    import _sha2
+except ImportError:
+    _sha2 = None
+requires_sha2 = unittest.skipUnless(_sha2, 'requires _sha2')
+
 
 try:
     import _sha3
@@ -1447,6 +1470,40 @@ class TestTSAN(unittest.TestCase):
         update = partial(obj.update, blob)
         read = attrgetter(attrname)
         self.check_attribute(update, partial(read, obj), read(obj))
+
+    @requires_md5
+    @support.subTests("attrname", ["block_size", "digest_size"])
+    def test_HACL_md5_attributes(self, attrname):
+        self.check_HACL_attribute(_md5, "md5", attrname)
+
+    @requires_sha1
+    @support.subTests("attrname", ["block_size", "digest_size"])
+    def test_HACL_sha1_attributes(self, attrname):
+        self.check_HACL_attribute(_sha1, "sha1", attrname)
+
+    @requires_sha2
+    @support.subTests("size", [224, 256, 384, 512])
+    @support.subTests("attrname", ["block_size", "digest_size"])
+    def test_HACL_sha2_attributes(self, size, attrname):
+        self.check_HACL_attribute(_sha2, f"sha{size}", attrname)
+
+    @requires_sha3
+    @support.subTests("size", [224, 256, 384, 512])
+    @support.subTests(
+        "attrname",
+        ["block_size", "digest_size", "_capacity_bits", "_rate_bits"],
+    )
+    def test_HACL_sha3_attributes(self, size, attrname):
+        self.check_HACL_attribute(_sha3, f"sha3_{size}", attrname)
+
+    @requires_sha3
+    @support.subTests("size", [128, 256])
+    @support.subTests(
+        "attrname",
+        ["block_size", "digest_size", "_capacity_bits", "_rate_bits"],
+    )
+    def test_HACL_shake_attributes(self, size, attrname):
+        self.check_HACL_attribute(_sha3, f"shake_{size}", attrname)
 
     @requires_blake2
     @support.subTests("version", ["blake2s", "blake2b"])
