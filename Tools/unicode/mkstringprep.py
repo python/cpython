@@ -1,5 +1,4 @@
 import re
-import os
 import unicodedata as unicodedata_current
 from unicodedata import ucd_3_2_0 as unicodedata_320
 
