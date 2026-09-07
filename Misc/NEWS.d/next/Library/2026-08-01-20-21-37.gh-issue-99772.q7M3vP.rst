@@ -1,0 +1,2 @@
+Fix comparisons and hashing of :class:`datetime.time` objects with sub-minute
+UTC offsets.
