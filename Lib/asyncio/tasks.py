@@ -543,8 +543,7 @@ async def _cancel_and_wait(fut):
 
     # gh-157058: awaiting the waiter leaves no edge on fut, add it here
     cur_task = current_task()
-    if cur_task is not None:
-        futures.future_add_to_awaited_by(fut, cur_task)
+    futures.future_add_to_awaited_by(fut, cur_task)
 
     try:
         fut.cancel()
@@ -553,8 +552,7 @@ async def _cancel_and_wait(fut):
         await waiter
     finally:
         fut.remove_done_callback(cb)
-        if cur_task is not None:
-            futures.future_discard_from_awaited_by(fut, cur_task)
+        futures.future_discard_from_awaited_by(fut, cur_task)
 
 
 class _AsCompletedIterator:
