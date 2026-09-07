@@ -920,6 +920,18 @@ class CBytesIOTest(PyBytesIOTest):
         memio = self.ioclass(ba)
         self.assertEqual(sys.getrefcount(ba), old_rc)
 
+    def test_write_with_export(self):
+        memio = self.ioclass(b"abcd")
+        memio.seek(2)
+        with memio.getbuffer() as view:
+            self.assertRaises(BufferError, memio.__init__, b"replacement")
+            self.assertEqual(memio.tell(), 2)
+            self.assertEqual(memio.getvalue(), b"abcd")
+            self.assertEqual(bytes(view), b"abcd")
+        memio.write(b"X")
+        self.assertEqual(memio.getvalue(), b"abXd")
+
+
 class CStringIOTest(PyStringIOTest):
     ioclass = io.StringIO
     UnsupportedOperation = io.UnsupportedOperation
