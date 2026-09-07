@@ -23,43 +23,33 @@ contains_null_bytes(const char* str, size_t size)
     return memchr(str, 0, size) != NULL;
 }
 
-/* Get next char, updating state; error code goes into tok->done */
 int
-_PyLexer_nextc(struct tok_state *tok)
+_PyLexer_refill(struct tok_state *tok)
 {
-    int rc;
-    for (;;) {
-        if (tok->cur != tok->inp) {
-            if (tok->cur - tok->line_start >= INT_MAX) {
-                tok->done = E_COLUMNOVERFLOW;
-                return EOF;
-            }
-            return Py_CHARMASK(tok->source.bytes[tok->cur++ - tok->source.base_offset]); /* Fast path */
-        }
-        if (tok->done != E_OK) {
-            return EOF;
-        }
-        rc = _PyTok_ReaderUnderflow(tok);
-#if defined(Py_DEBUG)
-        if (tok->debug) {
-            fprintf(stderr, "line[%d] = ", tok->lineno);
-            _PyTokenizer_print_escape(stderr, _PyLexer_BufferPointer(tok, tok->cur), tok->inp - tok->cur);
-            fprintf(stderr, "  tok->done = %d\n", tok->done);
-        }
-#endif
-        if (!rc) {
-            tok->cur = tok->inp;
-            return EOF;
-        }
-        tok->line_start = tok->cur;
-
-        if (contains_null_bytes(_PyLexer_BufferPointer(tok, tok->line_start), tok->inp - tok->line_start)) {
-            _PyTokenizer_syntaxerror(tok, "source code cannot contain null bytes");
-            tok->cur = tok->inp;
-            return EOF;
-        }
+    if (tok->done != E_OK) {
+        return 0;
     }
-    Py_UNREACHABLE();
+    int rc = _PyTok_ReaderUnderflow(tok);
+#if defined(Py_DEBUG)
+    if (tok->debug) {
+        fprintf(stderr, "line[%d] = ", tok->lineno);
+        _PyTokenizer_print_escape(stderr, _PyLexer_BufferPointer(tok, tok->cur),
+                                  tok->inp - tok->cur);
+        fprintf(stderr, "  tok->done = %d\n", tok->done);
+    }
+#endif
+    if (!rc) {
+        tok->cur = tok->inp;
+        return 0;
+    }
+    tok->line_start = tok->cur;
+    if (contains_null_bytes(_PyLexer_BufferPointer(tok, tok->line_start),
+                            tok->inp - tok->line_start)) {
+        _PyTokenizer_syntaxerror(tok, "source code cannot contain null bytes");
+        tok->cur = tok->inp;
+        return 0;
+    }
+    return 1;
 }
 
 /* Back-up one character */

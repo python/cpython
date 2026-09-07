@@ -68,13 +68,15 @@ _PyLexer_IsRawString(ftstring_kind kind)
 
 /* Tokenizer state */
 struct tok_state {
+    _PyTok_Off buf_offset;
     _PyTok_Off cur;
     _PyTok_Off inp;
-    _PyTok_Off buf_offset;
+    _PyTok_Off start;
+    _PyTok_Off line_start;
+    _PyTok_SourceText source;
     int fp_interactive; /* If the file descriptor is interactive */
     char *interactive_src_start; /* The start of the source parsed so far in interactive mode */
     char *interactive_src_end; /* The end of the source parsed so far in interactive mode */
-    _PyTok_Off start;
     int done;           /* E_OK normally, E_EOF at EOF, otherwise error code */
     /* NB If done != E_OK, cur must be == inp!!! */
     FILE *fp;           /* Rest of input; NULL if tokenizing a string */
@@ -96,10 +98,8 @@ struct tok_state {
     int altindstack[MAXINDENT];         /* Stack of alternate indents */
     /* Stuff for PEP 0263 */
     char *encoding;         /* Source encoding. */
-    _PyTok_Off line_start;
     char* str;          /* Source string being tokenized (if tokenizing from a string)*/
 
-    _PyTok_SourceText source;
     struct _PyTok_Reader *reader;
 
     int type_comments;      /* Whether to look for type comments */
