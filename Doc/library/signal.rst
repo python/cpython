@@ -1,8 +1,10 @@
-:mod:`signal` --- Set handlers for asynchronous events
-======================================================
+:mod:`!signal` --- Set handlers for asynchronous events
+=======================================================
 
 .. module:: signal
    :synopsis: Set handlers for asynchronous events.
+
+**Source code:** :source:`Lib/signal.py`
 
 --------------
 
@@ -24,6 +26,9 @@ explicitly reset (Python emulates the BSD style interface regardless of the
 underlying implementation), with the exception of the handler for
 :const:`SIGCHLD`, which follows the underlying implementation.
 
+On WebAssembly platforms, signals are emulated and therefore behave
+differently. Several functions and signals are not available on these
+platforms.
 
 Execution of Python signal handlers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -31,7 +36,7 @@ Execution of Python signal handlers
 A Python signal handler does not get executed inside the low-level (C) signal
 handler.  Instead, the low-level signal handler sets a flag which tells the
 :term:`virtual machine` to execute the corresponding Python signal handler
-at a later point(for example at the next :term:`bytecode` instruction).
+at a later point (for example, at the next :term:`bytecode` instruction).
 This has consequences:
 
 * It makes little sense to catch synchronous errors like :const:`SIGFPE` or
@@ -46,6 +51,9 @@ This has consequences:
   arbitrary amount of time, regardless of any signals received.  The Python
   signal handlers will be called when the calculation finishes.
 
+* If the handler raises an exception, it will be raised "out of thin air" in
+  the main thread. See the :ref:`note below <handlers-and-exceptions>` for a
+  discussion.
 
 .. _signals-and-threads:
 
@@ -59,6 +67,11 @@ can't be used as a means of inter-thread communication.  You can use
 the synchronization primitives from the :mod:`threading` module instead.
 
 Besides, only the main thread of the main interpreter is allowed to set a new signal handler.
+
+.. warning::
+
+   Synchronization primitives such as :class:`threading.Lock` should not be used
+   within signal handlers.  Doing so can lead to unexpected deadlocks.
 
 
 Module contents
@@ -84,21 +97,23 @@ The signal module defines three enums:
 
 .. class:: Handlers
 
-   :class:`enum.IntEnum` collection the constants :const:`SIG_DFL` and :const:`SIG_IGN`.
+   :class:`enum.IntEnum` collection of the constants :const:`SIG_DFL` and :const:`SIG_IGN`.
 
    .. versionadded:: 3.5
 
 .. class:: Sigmasks
 
-   :class:`enum.IntEnum` collection the constants :const:`SIG_BLOCK`, :const:`SIG_UNBLOCK` and :const:`SIG_SETMASK`.
+   :class:`enum.IntEnum` collection of the constants :const:`SIG_BLOCK`, :const:`SIG_UNBLOCK` and :const:`SIG_SETMASK`.
 
-   Availability: Unix. See the man page :manpage:`sigprocmask(3)` and
-   :manpage:`pthread_sigmask(3)` for further information.
+   .. availability:: Unix.
+
+      See the man page :manpage:`sigprocmask(2)` and
+      :manpage:`pthread_sigmask(3)` for further information.
 
    .. versionadded:: 3.5
 
 
-The variables defined in the :mod:`signal` module are:
+The variables defined in the :mod:`!signal` module are:
 
 
 .. data:: SIG_DFL
@@ -147,6 +162,8 @@ The variables defined in the :mod:`signal` module are:
 
    Alias to :data:`SIGCHLD`.
 
+   .. availability:: not macOS.
+
 .. data:: SIGCONT
 
    Continue the process if it is currently stopped
@@ -193,9 +210,39 @@ The variables defined in the :mod:`signal` module are:
 
    .. availability:: Unix.
 
+.. data:: SIGPROF
+
+   Profiling timer expired.
+
+   .. availability:: Unix.
+
+.. data:: SIGQUIT
+
+   Terminal quit signal.
+
+   .. availability:: Unix.
+
 .. data:: SIGSEGV
 
    Segmentation fault: invalid memory reference.
+
+.. data:: SIGSTOP
+
+   Stop executing (cannot be caught or ignored).
+
+   .. availability:: Unix.
+
+.. data:: SIGSTKFLT
+
+   Stack fault on coprocessor. The Linux kernel does not raise this signal: it
+   can only be raised in user space.
+
+   .. availability:: Linux.
+
+      On architectures where the signal is available. See
+      the man page :manpage:`signal(7)` for further information.
+
+   .. versionadded:: 3.11
 
 .. data:: SIGTERM
 
@@ -213,9 +260,21 @@ The variables defined in the :mod:`signal` module are:
 
    .. availability:: Unix.
 
+.. data:: SIGVTALRM
+
+   Virtual timer expired.
+
+   .. availability:: Unix.
+
 .. data:: SIGWINCH
 
    Window resize signal.
+
+   .. availability:: Unix.
+
+.. data:: SIGXCPU
+
+   CPU time limit exceeded.
 
    .. availability:: Unix.
 
@@ -224,7 +283,7 @@ The variables defined in the :mod:`signal` module are:
    All the signal numbers are defined symbolically.  For example, the hangup signal
    is defined as :const:`signal.SIGHUP`; the variable names are identical to the
    names used in C programs, as found in ``<signal.h>``.  The Unix man page for
-   ':c:func:`signal`' lists the existing signals (on some systems this is
+   '``signal``' lists the existing signals (on some systems this is
    :manpage:`signal(2)`, on others the list is in :manpage:`signal(7)`). Note that
    not all systems define the same set of signal names; only those names defined by
    the system are defined by this module.
@@ -253,6 +312,7 @@ The variables defined in the :mod:`signal` module are:
 .. data:: NSIG
 
    One more than the number of the highest signal number.
+   Use :func:`valid_signals` to get valid signal numbers.
 
 
 .. data:: ITIMER_REAL
@@ -297,7 +357,7 @@ The variables defined in the :mod:`signal` module are:
    .. versionadded:: 3.3
 
 
-The :mod:`signal` module defines one exception:
+The :mod:`!signal` module defines one exception:
 
 .. exception:: ItimerError
 
@@ -311,7 +371,7 @@ The :mod:`signal` module defines one exception:
       alias of :exc:`OSError`.
 
 
-The :mod:`signal` module defines the following functions:
+The :mod:`!signal` module defines the following functions:
 
 
 .. function:: alarm(time)
@@ -323,8 +383,9 @@ The :mod:`signal` module defines the following functions:
    delivered. If *time* is zero, no alarm is scheduled, and any scheduled alarm is
    canceled.  If the return value is zero, no alarm is currently scheduled.
 
-   .. availability:: Unix.  See the man page :manpage:`alarm(2)` for further
-      information.
+   .. availability:: Unix.
+
+      See the man page :manpage:`alarm(2)` for further information.
 
 
 .. function:: getsignal(signalnum)
@@ -340,9 +401,9 @@ The :mod:`signal` module defines the following functions:
 
 .. function:: strsignal(signalnum)
 
-   Return the system description of the signal *signalnum*, such as
-   "Interrupt", "Segmentation fault", etc. Returns :const:`None` if the signal
-   is not recognized.
+   Returns the description of signal *signalnum*, such as "Interrupt"
+   for :const:`SIGINT`. Returns :const:`None` if *signalnum* has no
+   description. Raises :exc:`ValueError` if *signalnum* is invalid.
 
    .. versionadded:: 3.8
 
@@ -361,8 +422,9 @@ The :mod:`signal` module defines the following functions:
    Cause the process to sleep until a signal is received; the appropriate handler
    will then be called.  Returns nothing.
 
-   .. availability:: Unix.  See the man page :manpage:`signal(2)` for further
-      information.
+   .. availability:: Unix.
+
+      See the man page :manpage:`signal(2)` for further information.
 
    See also :func:`sigwait`, :func:`sigwaitinfo`, :func:`sigtimedwait` and
    :func:`sigpending`.
@@ -384,7 +446,7 @@ The :mod:`signal` module defines the following functions:
 
    See the :manpage:`pidfd_send_signal(2)` man page for more information.
 
-   .. availability:: Linux 5.1+
+   .. availability:: Linux >= 5.1, Android >= :func:`build-time <sys.getandroidapilevel>` API level 31
    .. versionadded:: 3.9
 
 
@@ -398,7 +460,7 @@ The :mod:`signal` module defines the following functions:
    signal to a particular Python thread would be to force a running system call
    to fail with :exc:`InterruptedError`.
 
-   Use :func:`threading.get_ident()` or the :attr:`~threading.Thread.ident`
+   Use :func:`threading.get_ident` or the :attr:`~threading.Thread.ident`
    attribute of :class:`threading.Thread` objects to get a suitable value
    for *thread_id*.
 
@@ -407,8 +469,9 @@ The :mod:`signal` module defines the following functions:
 
    .. audit-event:: signal.pthread_kill thread_id,signalnum signal.pthread_kill
 
-   .. availability:: Unix.  See the man page :manpage:`pthread_kill(3)` for further
-      information.
+   .. availability:: Unix.
+
+      See the man page :manpage:`pthread_kill(3)` for further  information.
 
    See also :func:`os.kill`.
 
@@ -440,7 +503,9 @@ The :mod:`signal` module defines the following functions:
 
    :data:`SIGKILL` and :data:`SIGSTOP` cannot be blocked.
 
-   .. availability:: Unix.  See the man page :manpage:`sigprocmask(2)` and
+   .. availability:: Unix.
+
+      See the man page :manpage:`sigprocmask(2)` and
       :manpage:`pthread_sigmask(3)` for further information.
 
    See also :func:`pause`, :func:`sigpending` and :func:`sigwait`.
@@ -448,11 +513,11 @@ The :mod:`signal` module defines the following functions:
    .. versionadded:: 3.3
 
 
-.. function:: setitimer(which, seconds, interval=0.0)
+.. function:: setitimer(which, seconds, interval=0)
 
    Sets given interval timer (one of :const:`signal.ITIMER_REAL`,
    :const:`signal.ITIMER_VIRTUAL` or :const:`signal.ITIMER_PROF`) specified
-   by *which* to fire after *seconds* (float is accepted, different from
+   by *which* to fire after *seconds* (rounded up to microseconds, different from
    :func:`alarm`) and after that every *interval* seconds (if *interval*
    is non-zero). The interval timer specified by *which* can be cleared by
    setting *seconds* to zero.
@@ -463,12 +528,17 @@ The :mod:`signal` module defines the following functions:
    :const:`signal.ITIMER_VIRTUAL` sends :const:`SIGVTALRM`,
    and :const:`signal.ITIMER_PROF` will deliver :const:`SIGPROF`.
 
-   The old values are returned as a tuple: (delay, interval).
+   The old values are returned as a two-tuple of floats:
+   (``delay``, ``interval``).
 
    Attempting to pass an invalid interval timer will cause an
    :exc:`ItimerError`.
 
    .. availability:: Unix.
+
+   .. versionchanged:: 3.15
+      Accepts any real numbers as *seconds* and *interval*, not only integers
+      or floats.
 
 
 .. function:: getitimer(which)
@@ -480,10 +550,12 @@ The :mod:`signal` module defines the following functions:
 
 .. function:: set_wakeup_fd(fd, *, warn_on_full_buffer=True)
 
-   Set the wakeup file descriptor to *fd*.  When a signal is received, the
-   signal number is written as a single byte into the fd.  This can be used by
-   a library to wakeup a poll or select call, allowing the signal to be fully
-   processed.
+   Set the wakeup file descriptor to *fd*.  When a signal your program has
+   registered a signal handler for is received, the signal number is written as
+   a single byte into the fd.  If you haven't registered a signal handler for
+   the signals you care about, then nothing will be written to the wakeup fd.
+   This can be used by a library to wakeup a poll or select call, allowing the
+   signal to be fully processed.
 
    The old wakeup fd is returned (or -1 if file descriptor wakeup was not
    enabled).  If *fd* is -1, file descriptor wakeup is disabled.
@@ -528,12 +600,13 @@ The :mod:`signal` module defines the following functions:
    calls will be restarted when interrupted by signal *signalnum*, otherwise
    system calls will be interrupted.  Returns nothing.
 
-   .. availability:: Unix.  See the man page :manpage:`siginterrupt(3)`
-      for further information.
+   .. availability:: Unix.
+
+      See the man page :manpage:`siginterrupt(3)` for further information.
 
    Note that installing a signal handler with :func:`signal` will reset the
    restart behaviour to interruptible by implicitly calling
-   :c:func:`siginterrupt` with a true *flag* value for the given signal.
+   :c:func:`!siginterrupt` with a true *flag* value for the given signal.
 
 
 .. function:: signal(signalnum, handler)
@@ -569,8 +642,9 @@ The :mod:`signal` module defines the following functions:
    thread (i.e., the signals which have been raised while blocked).  Return the
    set of the pending signals.
 
-   .. availability:: Unix.  See the man page :manpage:`sigpending(2)` for further
-      information.
+   .. availability:: Unix.
+
+      See the man page :manpage:`sigpending(2)` for further information.
 
    See also :func:`pause`, :func:`pthread_sigmask` and :func:`sigwait`.
 
@@ -583,8 +657,9 @@ The :mod:`signal` module defines the following functions:
    signals specified in the signal set *sigset*.  The function accepts the signal
    (removes it from the pending list of signals), and returns the signal number.
 
-   .. availability:: Unix.  See the man page :manpage:`sigwait(3)` for further
-      information.
+   .. availability:: Unix.
+
+      See the man page :manpage:`sigwait(3)` for further information.
 
    See also :func:`pause`, :func:`pthread_sigmask`, :func:`sigpending`,
    :func:`sigwaitinfo` and :func:`sigtimedwait`.
@@ -604,12 +679,12 @@ The :mod:`signal` module defines the following functions:
    *sigset*.
 
    The return value is an object representing the data contained in the
-   :c:type:`siginfo_t` structure, namely: :attr:`si_signo`, :attr:`si_code`,
-   :attr:`si_errno`, :attr:`si_pid`, :attr:`si_uid`, :attr:`si_status`,
-   :attr:`si_band`.
+   ``siginfo_t`` structure, namely: ``si_signo``, ``si_code``,
+   ``si_errno``, ``si_pid``, ``si_uid``, ``si_status``, ``si_band``.
 
-   .. availability:: Unix.  See the man page :manpage:`sigwaitinfo(2)` for further
-      information.
+   .. availability:: Unix.
+
+      See the man page :manpage:`sigwaitinfo(2)` for further information.
 
    See also :func:`pause`, :func:`sigwait` and :func:`sigtimedwait`.
 
@@ -624,11 +699,12 @@ The :mod:`signal` module defines the following functions:
 .. function:: sigtimedwait(sigset, timeout)
 
    Like :func:`sigwaitinfo`, but takes an additional *timeout* argument
-   specifying a timeout. If *timeout* is specified as :const:`0`, a poll is
+   specifying a timeout. If *timeout* is specified as ``0``, a poll is
    performed. Returns :const:`None` if a timeout occurs.
 
-   .. availability:: Unix.  See the man page :manpage:`sigtimedwait(2)` for further
-      information.
+   .. availability:: Unix.
+
+      See the man page :manpage:`sigtimedwait(2)` for further information.
 
    See also :func:`pause`, :func:`sigwait` and :func:`sigwaitinfo`.
 
@@ -638,6 +714,9 @@ The :mod:`signal` module defines the following functions:
       The function is now retried with the recomputed *timeout* if interrupted
       by a signal not in *sigset* and the signal handler does not raise an
       exception (see :pep:`475` for the rationale).
+
+   .. versionchanged:: 3.15
+      Accepts any real number as *timeout*, not only integer or float.
 
 
 .. _signal-example:
@@ -698,7 +777,75 @@ case, wrap your entry point to catch this exception as follows::
     if __name__ == '__main__':
         main()
 
-Do not set :const:`SIGPIPE`'s disposition to :const:`SIG_DFL`
-in order to avoid :exc:`BrokenPipeError`.  Doing that would cause
-your program to exit unexpectedly also whenever any socket connection
-is interrupted while your program is still writing to it.
+Do not set :const:`SIGPIPE`'s disposition to :const:`SIG_DFL` in
+order to avoid :exc:`BrokenPipeError`.  Doing that would cause
+your program to exit unexpectedly whenever any socket
+connection is interrupted while your program is still writing to
+it.
+
+.. _handlers-and-exceptions:
+
+Note on Signal Handlers and Exceptions
+--------------------------------------
+
+If a signal handler raises an exception, the exception will be propagated to
+the main thread and may be raised after any :term:`bytecode` instruction. Most
+notably, a :exc:`KeyboardInterrupt` may appear at any point during execution.
+Most Python code, including the standard library, cannot be made robust against
+this, and so a :exc:`KeyboardInterrupt` (or any other exception resulting from
+a signal handler) may on rare occasions put the program in an unexpected state.
+
+To illustrate this issue, consider the following code::
+
+    class SpamContext:
+        def __init__(self):
+            self.lock = threading.Lock()
+
+        def __enter__(self):
+            # If KeyboardInterrupt occurs here, everything is fine
+            self.lock.acquire()
+            # If KeyboardInterrupt occurs here, __exit__ will not be called
+            ...
+            # KeyboardInterrupt could occur just before the function returns
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            ...
+            self.lock.release()
+
+For many programs, especially those that merely want to exit on
+:exc:`KeyboardInterrupt`, this is not a problem, but applications that are
+complex or require high reliability should avoid raising exceptions from signal
+handlers. They should also avoid catching :exc:`KeyboardInterrupt` as a means
+of gracefully shutting down.  Instead, they should install their own
+:const:`SIGINT` handler. Below is an example of an HTTP server that avoids
+:exc:`KeyboardInterrupt`::
+
+    import signal
+    import socket
+    from selectors import DefaultSelector, EVENT_READ
+    from http.server import HTTPServer, SimpleHTTPRequestHandler
+
+    interrupt_read, interrupt_write = socket.socketpair()
+
+    def handler(signum, frame):
+        print('Signal handler called with signal', signum)
+        interrupt_write.send(b'\0')
+    signal.signal(signal.SIGINT, handler)
+
+    def serve_forever(httpd):
+        sel = DefaultSelector()
+        sel.register(interrupt_read, EVENT_READ)
+        sel.register(httpd, EVENT_READ)
+
+        while True:
+            for key, _ in sel.select():
+                if key.fileobj == interrupt_read:
+                    interrupt_read.recv(1)
+                    return
+                if key.fileobj == httpd:
+                    httpd.handle_request()
+
+    print("Serving on port 8000")
+    httpd = HTTPServer(('', 8000), SimpleHTTPRequestHandler)
+    serve_forever(httpd)
+    print("Shutdown...")

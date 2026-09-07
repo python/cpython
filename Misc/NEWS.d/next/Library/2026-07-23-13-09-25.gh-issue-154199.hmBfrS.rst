@@ -1,0 +1,2 @@
+Make :func:`ctypes.util.find_msvcrt` always return ``None`` for
+compatibility reasons.

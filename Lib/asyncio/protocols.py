@@ -109,10 +109,6 @@ class Protocol(BaseProtocol):
 class BufferedProtocol(BaseProtocol):
     """Interface for stream protocol with manual buffer control.
 
-    Important: this has been added to asyncio in Python 3.7
-    *on a provisional basis*!  Consider it as an experimental API that
-    might be changed or removed in Python 3.8.
-
     Event methods, such as `create_server` and `create_connection`,
     accept factories that return protocols that implement this interface.
 
@@ -203,6 +199,7 @@ class SubprocessProtocol(BaseProtocol):
 
 def _feed_data_to_buffered_proto(proto, data):
     data_len = len(data)
+    start = 0
     while data_len:
         buf = proto.get_buffer(data_len)
         buf_len = len(buf)
@@ -210,11 +207,11 @@ def _feed_data_to_buffered_proto(proto, data):
             raise RuntimeError('get_buffer() returned an empty buffer')
 
         if buf_len >= data_len:
-            buf[:data_len] = data
+            buf[:data_len] = data[start:] if start else data
             proto.buffer_updated(data_len)
             return
         else:
-            buf[:buf_len] = data[:buf_len]
+            buf[:buf_len] = data[start:start + buf_len]
             proto.buffer_updated(buf_len)
-            data = data[buf_len:]
-            data_len = len(data)
+            start += buf_len
+            data_len -= buf_len

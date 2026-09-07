@@ -11,16 +11,6 @@ extern "C" {
 removed (with effort). */
 #define MAX_CO_EXTRA_USERS 255
 
-/* Forward declarations for PyFrameObject, PyThreadState
-   and PyInterpreterState */
-struct _ts;
-struct _is;
-
-/* struct _ts is defined in cpython/pystate.h */
-typedef struct _ts PyThreadState;
-/* struct _is is defined in internal/pycore_interp.h */
-typedef struct _is PyInterpreterState;
-
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
 PyAPI_FUNC(void) PyInterpreterState_Clear(PyInterpreterState *);
 PyAPI_FUNC(void) PyInterpreterState_Delete(PyInterpreterState *);
@@ -50,10 +40,10 @@ PyAPI_FUNC(int64_t) PyInterpreterState_GetID(PyInterpreterState *);
 /* State unique per thread */
 
 /* New in 3.3 */
-PyAPI_FUNC(int) PyState_AddModule(PyObject*, struct PyModuleDef*);
-PyAPI_FUNC(int) PyState_RemoveModule(struct PyModuleDef*);
+PyAPI_FUNC(int) PyState_AddModule(PyObject*, PyModuleDef*);
+PyAPI_FUNC(int) PyState_RemoveModule(PyModuleDef*);
 #endif
-PyAPI_FUNC(PyObject*) PyState_FindModule(struct PyModuleDef*);
+PyAPI_FUNC(PyObject*) PyState_FindModule(PyModuleDef*);
 
 PyAPI_FUNC(PyThreadState *) PyThreadState_New(PyInterpreterState *);
 PyAPI_FUNC(void) PyThreadState_Clear(PyThreadState *);
@@ -66,7 +56,7 @@ PyAPI_FUNC(void) PyThreadState_Delete(PyThreadState *);
 
    The caller must hold the GIL.
 
-   See also _PyThreadState_UncheckedGet() and _PyThreadState_GET(). */
+   See also PyThreadState_GetUnchecked() and _PyThreadState_GET(). */
 PyAPI_FUNC(PyThreadState *) PyThreadState_Get(void);
 
 // Alias to PyThreadState_Get()
@@ -129,6 +119,29 @@ PyAPI_FUNC(void) PyGILState_Release(PyGILState_STATE);
 */
 PyAPI_FUNC(PyThreadState *) PyGILState_GetThisThreadState(void);
 
+
+/* PEP 788 -- Protection against interpreter finalization */
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
+
+typedef struct PyInterpreterGuard PyInterpreterGuard;
+typedef struct PyInterpreterView PyInterpreterView;
+
+typedef void PyThreadStateToken;
+
+PyAPI_FUNC(PyInterpreterGuard *) PyInterpreterGuard_FromCurrent(void);
+PyAPI_FUNC(void) PyInterpreterGuard_Close(PyInterpreterGuard *guard);
+PyAPI_FUNC(PyInterpreterGuard *) PyInterpreterGuard_FromView(PyInterpreterView *view);
+
+PyAPI_FUNC(PyInterpreterView *) PyInterpreterView_FromCurrent(void);
+PyAPI_FUNC(void) PyInterpreterView_Close(PyInterpreterView *view);
+PyAPI_FUNC(PyInterpreterView *) PyInterpreterView_FromMain(void);
+
+PyAPI_FUNC(PyThreadStateToken *) PyThreadState_Ensure(PyInterpreterGuard *guard);
+PyAPI_FUNC(PyThreadStateToken *) PyThreadState_EnsureFromView(PyInterpreterView *view);
+PyAPI_FUNC(void) PyThreadState_Release(PyThreadStateToken *tstate);
+
+#endif
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_PYSTATE_H

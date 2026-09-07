@@ -17,7 +17,8 @@ __all__ = [
 _UNIVERSAL_CONFIG_VARS = ('CFLAGS', 'LDFLAGS', 'CPPFLAGS', 'BASECFLAGS',
                             'BLDSHARED', 'LDSHARED', 'CC', 'CXX',
                             'PY_CFLAGS', 'PY_LDFLAGS', 'PY_CPPFLAGS',
-                            'PY_CORE_CFLAGS', 'PY_CORE_LDFLAGS')
+                            'PY_CORE_CFLAGS', 'PY_CORE_LDFLAGS',
+                            'PY_CORE_EXE_LDFLAGS')
 
 # configuration variables that may contain compiler calls
 _COMPILER_CONFIG_VARS = ('BLDSHARED', 'LDSHARED', 'CC', 'CXX')
@@ -507,6 +508,11 @@ def get_platform_osx(_config_vars, osname, release, machine):
     # MACOSX_DEPLOYMENT_TARGET.
 
     macver = _config_vars.get('MACOSX_DEPLOYMENT_TARGET', '')
+    if macver and '.' not in macver:
+        # Ensure that the version includes at least a major
+        # and minor version, even if MACOSX_DEPLOYMENT_TARGET
+        # is set to a single-label version like "14".
+        macver += '.0'
     macrelease = _get_system_version() or macver
     macver = macver or macrelease
 

@@ -1,3 +1,0 @@
-Fix a regression in Python 3.11a1 and 3.11a2 where :mod:`sqlite3`
-incorrectly would use ``SQLITE_LIMIT_LENGTH`` when checking SQL statement
-lengths. Now, ``SQLITE_LIMIT_SQL_LENGTH`` is used. Patch by Erlend E. Aasland.

@@ -1,5 +1,3 @@
-#! /usr/bin/env python3
-
 """Conversions to/from quoted-printable transport encoding as per RFC 1521."""
 
 # (Dec 1991 version).
@@ -67,10 +65,7 @@ def encode(input, output, quotetabs, header=False):
             output.write(s + lineEnd)
 
     prevline = None
-    while 1:
-        line = input.readline()
-        if not line:
-            break
+    while line := input.readline():
         outline = []
         # Strip off any readline induced trailing newline
         stripped = b''
@@ -126,9 +121,7 @@ def decode(input, output, header=False):
         return
 
     new = b''
-    while 1:
-        line = input.readline()
-        if not line: break
+    while line := input.readline():
         i, n = 0, len(line)
         if n > 0 and line[n-1:n] == b'\n':
             partial = 0; n = n-1

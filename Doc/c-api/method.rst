@@ -5,10 +5,10 @@
 Instance Method Objects
 -----------------------
 
-.. index:: object: instancemethod
+.. index:: pair: object; instancemethod
 
-An instance method is a wrapper for a :c:data:`PyCFunction` and the new way
-to bind a :c:data:`PyCFunction` to a class object. It replaces the former call
+An instance method is a wrapper for a :c:type:`PyCFunction` and the new way
+to bind a :c:type:`PyCFunction` to a class object. It replaces the former call
 ``PyMethod_New(func, NULL, class)``.
 
 
@@ -27,7 +27,7 @@ to bind a :c:data:`PyCFunction` to a class object. It replaces the former call
 
 .. c:function:: PyObject* PyInstanceMethod_New(PyObject *func)
 
-   Return a new instance method object, with *func* being any callable object
+   Return a new instance method object, with *func* being any callable object.
    *func* is the function that will be called when the instance method is
    called.
 
@@ -47,7 +47,7 @@ to bind a :c:data:`PyCFunction` to a class object. It replaces the former call
 Method Objects
 --------------
 
-.. index:: object: method
+.. index:: pair: object; method
 
 Methods are bound function objects. Methods are always bound to an instance of
 a user-defined class. Unbound methods (methods bound to a class object) are

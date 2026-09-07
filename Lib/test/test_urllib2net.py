@@ -1,9 +1,13 @@
+import contextlib
 import errno
+import sysconfig
 import unittest
+from unittest import mock
 from test import support
 from test.support import os_helper
 from test.support import socket_helper
-from test.test_urllib2 import sanepathname2url
+from test.support import ResourceDenied
+from test.support.warnings_helper import check_no_resource_warning
 
 import os
 import socket
@@ -27,13 +31,6 @@ def _wrap_with_retry_thrice(func, exc):
     def wrapped(*args, **kwargs):
         return _retry_thrice(func, exc, *args, **kwargs)
     return wrapped
-
-# bpo-35411: FTP tests of test_urllib2net randomly fail
-# with "425 Security: Bad IP connecting" on Travis CI
-skip_ftp_test_on_travis = unittest.skipIf('TRAVIS' in os.environ,
-                                          'bpo-35411: skip FTP test '
-                                          'on Travis CI')
-
 
 # Connecting to remote hosts is flaky.  Make it more robust by retrying
 # the connection several times.
@@ -139,14 +136,53 @@ class OtherNetworkTests(unittest.TestCase):
     # XXX The rest of these tests aren't very good -- they don't check much.
     # They do sometimes catch some major disasters, though.
 
-    @skip_ftp_test_on_travis
+    @support.requires_resource('walltime')
     def test_ftp(self):
+        # Testing the same URL twice exercises the caching in CacheFTPHandler
         urls = [
+            'ftp://www.pythontest.net/README',
             'ftp://www.pythontest.net/README',
             ('ftp://www.pythontest.net/non-existent-file',
              None, urllib.error.URLError),
             ]
         self._test_urls(urls, self._extra_handlers())
+
+    @support.requires_resource('walltime')
+    @unittest.skipIf(sysconfig.get_platform() == 'linux-ppc64le',
+                     'leaks on PPC64LE (gh-140691)')
+    def test_ftp_no_leak(self):
+        # gh-140691: When the data connection (but not control connection)
+        # cannot be made established, we shouldn't leave an open socket object.
+
+        class MockError(OSError):
+            pass
+
+        orig_create_connection = socket.create_connection
+        def patched_create_connection(address, *args, **kwargs):
+            """Simulate REJECTing connections to ports other than 21"""
+            host, port = address
+            if port != 21:
+                raise MockError()
+            return orig_create_connection(address, *args, **kwargs)
+
+        url = 'ftp://www.pythontest.net/README'
+        entry = url, None, urllib.error.URLError
+        no_cache_handlers = [urllib.request.FTPHandler()]
+        cache_handlers = self._extra_handlers()
+        with mock.patch('socket.create_connection', patched_create_connection):
+            with check_no_resource_warning(self):
+                # Try without CacheFTPHandler
+                self._test_urls([entry], handlers=no_cache_handlers,
+                                retry=False)
+            with check_no_resource_warning(self):
+                # Try with CacheFTPHandler (uncached)
+                self._test_urls([entry], cache_handlers, retry=False)
+            with check_no_resource_warning(self):
+                # Try with CacheFTPHandler (cached)
+                self._test_urls([entry], cache_handlers, retry=False)
+        # Try without the mock: the handler should not use a closed connection
+        with check_no_resource_warning(self):
+            self._test_urls([url], cache_handlers, retry=False)
 
     def test_file(self):
         TESTFN = os_helper.TESTFN
@@ -155,7 +191,7 @@ class OtherNetworkTests(unittest.TestCase):
             f.write('hi there\n')
             f.close()
             urls = [
-                'file:' + sanepathname2url(os.path.abspath(TESTFN)),
+                urllib.request.pathname2url(os.path.abspath(TESTFN), add_scheme=True),
                 ('file:///nonsensename/etc/passwd', None,
                  urllib.error.URLError),
                 ]
@@ -201,6 +237,7 @@ class OtherNetworkTests(unittest.TestCase):
             self.assertEqual(res.geturl(),
                     "http://www.pythontest.net/index.html#frag")
 
+    @support.requires_resource('walltime')
     def test_redirect_url_withfrag(self):
         redirect_url_with_frag = "http://www.pythontest.net/redir/with_frag/"
         with socket_helper.transient_internet(redirect_url_with_frag):
@@ -222,27 +259,6 @@ class OtherNetworkTests(unittest.TestCase):
             opener.open(request)
             self.assertEqual(request.get_header('User-agent'),'Test-Agent')
 
-    @unittest.skip('XXX: http://www.imdb.com is gone')
-    def test_sites_no_connection_close(self):
-        # Some sites do not send Connection: close header.
-        # Verify that those work properly. (#issue12576)
-
-        URL = 'http://www.imdb.com' # mangles Connection:close
-
-        with socket_helper.transient_internet(URL):
-            try:
-                with urllib.request.urlopen(URL) as res:
-                    pass
-            except ValueError:
-                self.fail("urlopen failed for site not sending \
-                           Connection:close")
-            else:
-                self.assertTrue(res)
-
-            req = urllib.request.urlopen(URL)
-            res = req.read()
-            self.assertTrue(res)
-
     def _test_urls(self, urls, handlers, retry=True):
         import time
         import logging
@@ -259,18 +275,16 @@ class OtherNetworkTests(unittest.TestCase):
                 else:
                     req = expected_err = None
 
+                if expected_err:
+                    context = self.assertRaises(expected_err)
+                else:
+                    context = contextlib.nullcontext()
+
                 with socket_helper.transient_internet(url):
-                    try:
+                    f = None
+                    with context:
                         f = urlopen(url, req, support.INTERNET_TIMEOUT)
-                    # urllib.error.URLError is a subclass of OSError
-                    except OSError as err:
-                        if expected_err:
-                            msg = ("Didn't get expected error(s) %s for %s %s, got %s: %s" %
-                                   (expected_err, url, req, type(err), err))
-                            self.assertIsInstance(err, expected_err, msg)
-                        else:
-                            raise
-                    else:
+                    if f is not None:
                         try:
                             with time_out, \
                                  socket_peer_reset, \
@@ -339,7 +353,7 @@ class TimeoutTest(unittest.TestCase):
 
     FTP_HOST = 'ftp://www.pythontest.net/'
 
-    @skip_ftp_test_on_travis
+    @support.requires_resource('walltime')
     def test_ftp_basic(self):
         self.assertIsNone(socket.getdefaulttimeout())
         with socket_helper.transient_internet(self.FTP_HOST, timeout=None):
@@ -347,7 +361,6 @@ class TimeoutTest(unittest.TestCase):
             self.addCleanup(u.close)
             self.assertIsNone(u.fp.fp.raw._sock.gettimeout())
 
-    @skip_ftp_test_on_travis
     def test_ftp_default_timeout(self):
         self.assertIsNone(socket.getdefaulttimeout())
         with socket_helper.transient_internet(self.FTP_HOST):
@@ -359,7 +372,7 @@ class TimeoutTest(unittest.TestCase):
                 socket.setdefaulttimeout(None)
             self.assertEqual(u.fp.fp.raw._sock.gettimeout(), 60)
 
-    @skip_ftp_test_on_travis
+    @support.requires_resource('walltime')
     def test_ftp_no_timeout(self):
         self.assertIsNone(socket.getdefaulttimeout())
         with socket_helper.transient_internet(self.FTP_HOST):
@@ -371,7 +384,7 @@ class TimeoutTest(unittest.TestCase):
                 socket.setdefaulttimeout(None)
             self.assertIsNone(u.fp.fp.raw._sock.gettimeout())
 
-    @skip_ftp_test_on_travis
+    @support.requires_resource('walltime')
     def test_ftp_timeout(self):
         with socket_helper.transient_internet(self.FTP_HOST):
             u = _urlopen_with_retry(self.FTP_HOST, timeout=60)

@@ -8,6 +8,8 @@
  *
  * 1. https://www.131002.net/siphash/siphash24.c
  * 2. https://www.131002.net/siphash/
+ *
+ * SPDX-License-Identifier: CC0-1.0
  * --------------------------------------------------------------------------
  * HISTORY:
  *
@@ -100,13 +102,14 @@
 
 #include <stddef.h> /* size_t */
 #include <stdint.h> /* uint64_t uint32_t uint8_t */
+#include "fallthrough.h"
 
 /*
  * Workaround to not require a C++11 compiler for using ULL suffix
  * if this code is included and compiled as C++; related GCC warning is:
  * warning: use of C++11 long long integer constant [-Wlong-long]
  */
-#define _SIP_ULL(high, low) (((uint64_t)high << 32) | low)
+#define SIP_ULL(high, low) ((((uint64_t)high) << 32) | (low))
 
 #define SIP_ROTL(x, b) (uint64_t)(((x) << (b)) | ((x) >> (64 - (b))))
 
@@ -126,8 +129,7 @@
    | ((uint64_t)((p)[4]) << 32) | ((uint64_t)((p)[5]) << 40)                   \
    | ((uint64_t)((p)[6]) << 48) | ((uint64_t)((p)[7]) << 56))
 
-#define SIPHASH_INITIALIZER                                                    \
-  { 0, 0, 0, 0, {0}, 0, 0 }
+#define SIPHASH_INITIALIZER {0, 0, 0, 0, {0}, 0, 0}
 
 struct siphash {
   uint64_t v0, v1, v2, v3;
@@ -190,10 +192,10 @@ sip_round(struct siphash *H, const int rounds) {
 
 static struct siphash *
 sip24_init(struct siphash *H, const struct sipkey *key) {
-  H->v0 = _SIP_ULL(0x736f6d65U, 0x70736575U) ^ key->k[0];
-  H->v1 = _SIP_ULL(0x646f7261U, 0x6e646f6dU) ^ key->k[1];
-  H->v2 = _SIP_ULL(0x6c796765U, 0x6e657261U) ^ key->k[0];
-  H->v3 = _SIP_ULL(0x74656462U, 0x79746573U) ^ key->k[1];
+  H->v0 = SIP_ULL(0x736f6d65U, 0x70736575U) ^ key->k[0];
+  H->v1 = SIP_ULL(0x646f7261U, 0x6e646f6dU) ^ key->k[1];
+  H->v2 = SIP_ULL(0x6c796765U, 0x6e657261U) ^ key->k[0];
+  H->v3 = SIP_ULL(0x74656462U, 0x79746573U) ^ key->k[1];
 
   H->p = H->buf;
   H->c = 0;
@@ -235,25 +237,25 @@ sip24_final(struct siphash *H) {
   switch (left) {
   case 7:
     b |= (uint64_t)H->buf[6] << 48;
-    /* fall through */
+    EXPAT_FALLTHROUGH;
   case 6:
     b |= (uint64_t)H->buf[5] << 40;
-    /* fall through */
+    EXPAT_FALLTHROUGH;
   case 5:
     b |= (uint64_t)H->buf[4] << 32;
-    /* fall through */
+    EXPAT_FALLTHROUGH;
   case 4:
     b |= (uint64_t)H->buf[3] << 24;
-    /* fall through */
+    EXPAT_FALLTHROUGH;
   case 3:
     b |= (uint64_t)H->buf[2] << 16;
-    /* fall through */
+    EXPAT_FALLTHROUGH;
   case 2:
     b |= (uint64_t)H->buf[1] << 8;
-    /* fall through */
+    EXPAT_FALLTHROUGH;
   case 1:
     b |= (uint64_t)H->buf[0] << 0;
-    /* fall through */
+    EXPAT_FALLTHROUGH;
   case 0:
     break;
   }

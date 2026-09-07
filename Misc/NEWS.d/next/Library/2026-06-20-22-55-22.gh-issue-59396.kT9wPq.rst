@@ -1,0 +1,22 @@
+The :mod:`tkinter.simpledialog` dialogs were modernized to match the look and
+feel of the native Tk dialogs.
+:class:`!tkinter.simpledialog.SimpleDialog` and the
+:func:`~tkinter.simpledialog.askinteger`,
+:func:`~tkinter.simpledialog.askfloat` and
+:func:`~tkinter.simpledialog.askstring` dialogs are now built from
+the themed :mod:`tkinter.ttk` widgets instead of the classic :mod:`tkinter`
+widgets; the :class:`!tkinter.simpledialog.Dialog` base class still defaults to
+the classic widgets for compatibility.  Both :class:`!Dialog` and
+:class:`!SimpleDialog` gained a *use_ttk*
+parameter that selects between the classic Tk widgets and the themed ttk
+widgets.  :class:`!SimpleDialog` also gained *bitmap* and *detail* parameters,
+draws the standard icons with themed images in the ttk version, and accepts
+mappings of button options as *buttons* entries, where an ``underline`` option
+adds an :kbd:`Alt` key accelerator.
+The font and wrap length of the message and the detail message are taken from
+the Tk option database and can be overridden by the application.
+The dialogs also follow the keyboard conventions of the Tk message box: the
+default ring follows the keyboard focus, the Return key activates the focused
+button, and the :class:`!Dialog` OK and Cancel buttons gained :kbd:`Alt` key
+accelerators.
+Several bugs were also fixed.

@@ -5,12 +5,18 @@ There are two kinds of tables: sets, for which a member test is provided,
 and mappings, for which a mapping function is provided.
 """
 
-from unicodedata import ucd_3_2_0 as unicodedata
+# This check asserts that mkstringprep.py has been run
+# when unicodedata is modified to ensure conformant behavior.
+import unicodedata
 
-assert unicodedata.unidata_version == '3.2.0'
+assert unicodedata.unidata_version == '17.0.0'
+
+from unicodedata import ucd_3_2_0 as unicodedata_320
+
+assert unicodedata_320.unidata_version == '3.2.0'
 
 def in_table_a1(code):
-    if unicodedata.category(code) != 'Cn': return False
+    if unicodedata_320.category(code) != 'Cn': return False
     c = ord(code)
     if 0xFDD0 <= c < 0xFDF0: return False
     return (c & 0xFFFF) not in (0xFFFE, 0xFFFF)
@@ -22,57 +28,233 @@ def in_table_b1(code):
 
 
 b3_exceptions = {
-0xb5:'\u03bc', 0xdf:'ss', 0x130:'i\u0307', 0x149:'\u02bcn',
-0x17f:'s', 0x1f0:'j\u030c', 0x345:'\u03b9', 0x37a:' \u03b9',
-0x390:'\u03b9\u0308\u0301', 0x3b0:'\u03c5\u0308\u0301', 0x3c2:'\u03c3', 0x3d0:'\u03b2',
-0x3d1:'\u03b8', 0x3d2:'\u03c5', 0x3d3:'\u03cd', 0x3d4:'\u03cb',
-0x3d5:'\u03c6', 0x3d6:'\u03c0', 0x3f0:'\u03ba', 0x3f1:'\u03c1',
-0x3f2:'\u03c3', 0x3f5:'\u03b5', 0x587:'\u0565\u0582', 0x1e96:'h\u0331',
-0x1e97:'t\u0308', 0x1e98:'w\u030a', 0x1e99:'y\u030a', 0x1e9a:'a\u02be',
-0x1e9b:'\u1e61', 0x1f50:'\u03c5\u0313', 0x1f52:'\u03c5\u0313\u0300', 0x1f54:'\u03c5\u0313\u0301',
-0x1f56:'\u03c5\u0313\u0342', 0x1f80:'\u1f00\u03b9', 0x1f81:'\u1f01\u03b9', 0x1f82:'\u1f02\u03b9',
-0x1f83:'\u1f03\u03b9', 0x1f84:'\u1f04\u03b9', 0x1f85:'\u1f05\u03b9', 0x1f86:'\u1f06\u03b9',
-0x1f87:'\u1f07\u03b9', 0x1f88:'\u1f00\u03b9', 0x1f89:'\u1f01\u03b9', 0x1f8a:'\u1f02\u03b9',
-0x1f8b:'\u1f03\u03b9', 0x1f8c:'\u1f04\u03b9', 0x1f8d:'\u1f05\u03b9', 0x1f8e:'\u1f06\u03b9',
-0x1f8f:'\u1f07\u03b9', 0x1f90:'\u1f20\u03b9', 0x1f91:'\u1f21\u03b9', 0x1f92:'\u1f22\u03b9',
-0x1f93:'\u1f23\u03b9', 0x1f94:'\u1f24\u03b9', 0x1f95:'\u1f25\u03b9', 0x1f96:'\u1f26\u03b9',
-0x1f97:'\u1f27\u03b9', 0x1f98:'\u1f20\u03b9', 0x1f99:'\u1f21\u03b9', 0x1f9a:'\u1f22\u03b9',
-0x1f9b:'\u1f23\u03b9', 0x1f9c:'\u1f24\u03b9', 0x1f9d:'\u1f25\u03b9', 0x1f9e:'\u1f26\u03b9',
-0x1f9f:'\u1f27\u03b9', 0x1fa0:'\u1f60\u03b9', 0x1fa1:'\u1f61\u03b9', 0x1fa2:'\u1f62\u03b9',
-0x1fa3:'\u1f63\u03b9', 0x1fa4:'\u1f64\u03b9', 0x1fa5:'\u1f65\u03b9', 0x1fa6:'\u1f66\u03b9',
-0x1fa7:'\u1f67\u03b9', 0x1fa8:'\u1f60\u03b9', 0x1fa9:'\u1f61\u03b9', 0x1faa:'\u1f62\u03b9',
-0x1fab:'\u1f63\u03b9', 0x1fac:'\u1f64\u03b9', 0x1fad:'\u1f65\u03b9', 0x1fae:'\u1f66\u03b9',
-0x1faf:'\u1f67\u03b9', 0x1fb2:'\u1f70\u03b9', 0x1fb3:'\u03b1\u03b9', 0x1fb4:'\u03ac\u03b9',
-0x1fb6:'\u03b1\u0342', 0x1fb7:'\u03b1\u0342\u03b9', 0x1fbc:'\u03b1\u03b9', 0x1fbe:'\u03b9',
-0x1fc2:'\u1f74\u03b9', 0x1fc3:'\u03b7\u03b9', 0x1fc4:'\u03ae\u03b9', 0x1fc6:'\u03b7\u0342',
-0x1fc7:'\u03b7\u0342\u03b9', 0x1fcc:'\u03b7\u03b9', 0x1fd2:'\u03b9\u0308\u0300', 0x1fd3:'\u03b9\u0308\u0301',
-0x1fd6:'\u03b9\u0342', 0x1fd7:'\u03b9\u0308\u0342', 0x1fe2:'\u03c5\u0308\u0300', 0x1fe3:'\u03c5\u0308\u0301',
-0x1fe4:'\u03c1\u0313', 0x1fe6:'\u03c5\u0342', 0x1fe7:'\u03c5\u0308\u0342', 0x1ff2:'\u1f7c\u03b9',
-0x1ff3:'\u03c9\u03b9', 0x1ff4:'\u03ce\u03b9', 0x1ff6:'\u03c9\u0342', 0x1ff7:'\u03c9\u0342\u03b9',
-0x1ffc:'\u03c9\u03b9', 0x20a8:'rs', 0x2102:'c', 0x2103:'\xb0c',
-0x2107:'\u025b', 0x2109:'\xb0f', 0x210b:'h', 0x210c:'h',
-0x210d:'h', 0x2110:'i', 0x2111:'i', 0x2112:'l',
-0x2115:'n', 0x2116:'no', 0x2119:'p', 0x211a:'q',
-0x211b:'r', 0x211c:'r', 0x211d:'r', 0x2120:'sm',
-0x2121:'tel', 0x2122:'tm', 0x2124:'z', 0x2128:'z',
-0x212c:'b', 0x212d:'c', 0x2130:'e', 0x2131:'f',
-0x2133:'m', 0x213e:'\u03b3', 0x213f:'\u03c0', 0x2145:'d',
-0x3371:'hpa', 0x3373:'au', 0x3375:'ov', 0x3380:'pa',
-0x3381:'na', 0x3382:'\u03bca', 0x3383:'ma', 0x3384:'ka',
-0x3385:'kb', 0x3386:'mb', 0x3387:'gb', 0x338a:'pf',
-0x338b:'nf', 0x338c:'\u03bcf', 0x3390:'hz', 0x3391:'khz',
-0x3392:'mhz', 0x3393:'ghz', 0x3394:'thz', 0x33a9:'pa',
-0x33aa:'kpa', 0x33ab:'mpa', 0x33ac:'gpa', 0x33b4:'pv',
-0x33b5:'nv', 0x33b6:'\u03bcv', 0x33b7:'mv', 0x33b8:'kv',
-0x33b9:'mv', 0x33ba:'pw', 0x33bb:'nw', 0x33bc:'\u03bcw',
-0x33bd:'mw', 0x33be:'kw', 0x33bf:'mw', 0x33c0:'k\u03c9',
-0x33c1:'m\u03c9', 0x33c3:'bq', 0x33c6:'c\u2215kg', 0x33c7:'co.',
-0x33c8:'db', 0x33c9:'gy', 0x33cb:'hp', 0x33cd:'kk',
-0x33ce:'km', 0x33d7:'ph', 0x33d9:'ppm', 0x33da:'pr',
-0x33dc:'sv', 0x33dd:'wb', 0xfb00:'ff', 0xfb01:'fi',
-0xfb02:'fl', 0xfb03:'ffi', 0xfb04:'ffl', 0xfb05:'st',
-0xfb06:'st', 0xfb13:'\u0574\u0576', 0xfb14:'\u0574\u0565', 0xfb15:'\u0574\u056b',
-0xfb16:'\u057e\u0576', 0xfb17:'\u0574\u056d', 0x1d400:'a', 0x1d401:'b',
+0xb5:'\u03bc', 0xdf:'ss', 0x149:'\u02bcn', 0x17f:'s',
+0x1f0:'j\u030c', 0x23a:'\u023a', 0x23b:'\u023b', 0x23d:'\u023d',
+0x23e:'\u023e', 0x241:'\u0241', 0x243:'\u0243', 0x244:'\u0244',
+0x245:'\u0245', 0x246:'\u0246', 0x248:'\u0248', 0x24a:'\u024a',
+0x24c:'\u024c', 0x24e:'\u024e', 0x345:'\u03b9', 0x370:'\u0370',
+0x372:'\u0372', 0x376:'\u0376', 0x37a:' \u03b9', 0x37f:'\u037f',
+0x390:'\u03b9\u0308\u0301', 0x3b0:'\u03c5\u0308\u0301', 0x3c2:'\u03c3', 0x3cf:'\u03cf',
+0x3d0:'\u03b2', 0x3d1:'\u03b8', 0x3d2:'\u03c5', 0x3d3:'\u03cd',
+0x3d4:'\u03cb', 0x3d5:'\u03c6', 0x3d6:'\u03c0', 0x3f0:'\u03ba',
+0x3f1:'\u03c1', 0x3f2:'\u03c3', 0x3f5:'\u03b5', 0x3f7:'\u03f7',
+0x3f9:'\u03f9', 0x3fa:'\u03fa', 0x3fd:'\u03fd', 0x3fe:'\u03fe',
+0x3ff:'\u03ff', 0x4c0:'\u04c0', 0x4f6:'\u04f6', 0x4fa:'\u04fa',
+0x4fc:'\u04fc', 0x4fe:'\u04fe', 0x510:'\u0510', 0x512:'\u0512',
+0x514:'\u0514', 0x516:'\u0516', 0x518:'\u0518', 0x51a:'\u051a',
+0x51c:'\u051c', 0x51e:'\u051e', 0x520:'\u0520', 0x522:'\u0522',
+0x524:'\u0524', 0x526:'\u0526', 0x528:'\u0528', 0x52a:'\u052a',
+0x52c:'\u052c', 0x52e:'\u052e', 0x587:'\u0565\u0582', 0x10a0:'\u10a0',
+0x10a1:'\u10a1', 0x10a2:'\u10a2', 0x10a3:'\u10a3', 0x10a4:'\u10a4',
+0x10a5:'\u10a5', 0x10a6:'\u10a6', 0x10a7:'\u10a7', 0x10a8:'\u10a8',
+0x10a9:'\u10a9', 0x10aa:'\u10aa', 0x10ab:'\u10ab', 0x10ac:'\u10ac',
+0x10ad:'\u10ad', 0x10ae:'\u10ae', 0x10af:'\u10af', 0x10b0:'\u10b0',
+0x10b1:'\u10b1', 0x10b2:'\u10b2', 0x10b3:'\u10b3', 0x10b4:'\u10b4',
+0x10b5:'\u10b5', 0x10b6:'\u10b6', 0x10b7:'\u10b7', 0x10b8:'\u10b8',
+0x10b9:'\u10b9', 0x10ba:'\u10ba', 0x10bb:'\u10bb', 0x10bc:'\u10bc',
+0x10bd:'\u10bd', 0x10be:'\u10be', 0x10bf:'\u10bf', 0x10c0:'\u10c0',
+0x10c1:'\u10c1', 0x10c2:'\u10c2', 0x10c3:'\u10c3', 0x10c4:'\u10c4',
+0x10c5:'\u10c5', 0x10c7:'\u10c7', 0x10cd:'\u10cd', 0x13a0:'\u13a0',
+0x13a1:'\u13a1', 0x13a2:'\u13a2', 0x13a3:'\u13a3', 0x13a4:'\u13a4',
+0x13a5:'\u13a5', 0x13a6:'\u13a6', 0x13a7:'\u13a7', 0x13a8:'\u13a8',
+0x13a9:'\u13a9', 0x13aa:'\u13aa', 0x13ab:'\u13ab', 0x13ac:'\u13ac',
+0x13ad:'\u13ad', 0x13ae:'\u13ae', 0x13af:'\u13af', 0x13b0:'\u13b0',
+0x13b1:'\u13b1', 0x13b2:'\u13b2', 0x13b3:'\u13b3', 0x13b4:'\u13b4',
+0x13b5:'\u13b5', 0x13b6:'\u13b6', 0x13b7:'\u13b7', 0x13b8:'\u13b8',
+0x13b9:'\u13b9', 0x13ba:'\u13ba', 0x13bb:'\u13bb', 0x13bc:'\u13bc',
+0x13bd:'\u13bd', 0x13be:'\u13be', 0x13bf:'\u13bf', 0x13c0:'\u13c0',
+0x13c1:'\u13c1', 0x13c2:'\u13c2', 0x13c3:'\u13c3', 0x13c4:'\u13c4',
+0x13c5:'\u13c5', 0x13c6:'\u13c6', 0x13c7:'\u13c7', 0x13c8:'\u13c8',
+0x13c9:'\u13c9', 0x13ca:'\u13ca', 0x13cb:'\u13cb', 0x13cc:'\u13cc',
+0x13cd:'\u13cd', 0x13ce:'\u13ce', 0x13cf:'\u13cf', 0x13d0:'\u13d0',
+0x13d1:'\u13d1', 0x13d2:'\u13d2', 0x13d3:'\u13d3', 0x13d4:'\u13d4',
+0x13d5:'\u13d5', 0x13d6:'\u13d6', 0x13d7:'\u13d7', 0x13d8:'\u13d8',
+0x13d9:'\u13d9', 0x13da:'\u13da', 0x13db:'\u13db', 0x13dc:'\u13dc',
+0x13dd:'\u13dd', 0x13de:'\u13de', 0x13df:'\u13df', 0x13e0:'\u13e0',
+0x13e1:'\u13e1', 0x13e2:'\u13e2', 0x13e3:'\u13e3', 0x13e4:'\u13e4',
+0x13e5:'\u13e5', 0x13e6:'\u13e6', 0x13e7:'\u13e7', 0x13e8:'\u13e8',
+0x13e9:'\u13e9', 0x13ea:'\u13ea', 0x13eb:'\u13eb', 0x13ec:'\u13ec',
+0x13ed:'\u13ed', 0x13ee:'\u13ee', 0x13ef:'\u13ef', 0x13f0:'\u13f0',
+0x13f1:'\u13f1', 0x13f2:'\u13f2', 0x13f3:'\u13f3', 0x13f4:'\u13f4',
+0x13f5:'\u13f5', 0x1c89:'\u1c89', 0x1c90:'\u1c90', 0x1c91:'\u1c91',
+0x1c92:'\u1c92', 0x1c93:'\u1c93', 0x1c94:'\u1c94', 0x1c95:'\u1c95',
+0x1c96:'\u1c96', 0x1c97:'\u1c97', 0x1c98:'\u1c98', 0x1c99:'\u1c99',
+0x1c9a:'\u1c9a', 0x1c9b:'\u1c9b', 0x1c9c:'\u1c9c', 0x1c9d:'\u1c9d',
+0x1c9e:'\u1c9e', 0x1c9f:'\u1c9f', 0x1ca0:'\u1ca0', 0x1ca1:'\u1ca1',
+0x1ca2:'\u1ca2', 0x1ca3:'\u1ca3', 0x1ca4:'\u1ca4', 0x1ca5:'\u1ca5',
+0x1ca6:'\u1ca6', 0x1ca7:'\u1ca7', 0x1ca8:'\u1ca8', 0x1ca9:'\u1ca9',
+0x1caa:'\u1caa', 0x1cab:'\u1cab', 0x1cac:'\u1cac', 0x1cad:'\u1cad',
+0x1cae:'\u1cae', 0x1caf:'\u1caf', 0x1cb0:'\u1cb0', 0x1cb1:'\u1cb1',
+0x1cb2:'\u1cb2', 0x1cb3:'\u1cb3', 0x1cb4:'\u1cb4', 0x1cb5:'\u1cb5',
+0x1cb6:'\u1cb6', 0x1cb7:'\u1cb7', 0x1cb8:'\u1cb8', 0x1cb9:'\u1cb9',
+0x1cba:'\u1cba', 0x1cbd:'\u1cbd', 0x1cbe:'\u1cbe', 0x1cbf:'\u1cbf',
+0x1e96:'h\u0331', 0x1e97:'t\u0308', 0x1e98:'w\u030a', 0x1e99:'y\u030a',
+0x1e9a:'a\u02be', 0x1e9b:'\u1e61', 0x1e9e:'\u1e9e', 0x1efa:'\u1efa',
+0x1efc:'\u1efc', 0x1efe:'\u1efe', 0x1f50:'\u03c5\u0313', 0x1f52:'\u03c5\u0313\u0300',
+0x1f54:'\u03c5\u0313\u0301', 0x1f56:'\u03c5\u0313\u0342', 0x1f80:'\u1f00\u03b9', 0x1f81:'\u1f01\u03b9',
+0x1f82:'\u1f02\u03b9', 0x1f83:'\u1f03\u03b9', 0x1f84:'\u1f04\u03b9', 0x1f85:'\u1f05\u03b9',
+0x1f86:'\u1f06\u03b9', 0x1f87:'\u1f07\u03b9', 0x1f88:'\u1f00\u03b9', 0x1f89:'\u1f01\u03b9',
+0x1f8a:'\u1f02\u03b9', 0x1f8b:'\u1f03\u03b9', 0x1f8c:'\u1f04\u03b9', 0x1f8d:'\u1f05\u03b9',
+0x1f8e:'\u1f06\u03b9', 0x1f8f:'\u1f07\u03b9', 0x1f90:'\u1f20\u03b9', 0x1f91:'\u1f21\u03b9',
+0x1f92:'\u1f22\u03b9', 0x1f93:'\u1f23\u03b9', 0x1f94:'\u1f24\u03b9', 0x1f95:'\u1f25\u03b9',
+0x1f96:'\u1f26\u03b9', 0x1f97:'\u1f27\u03b9', 0x1f98:'\u1f20\u03b9', 0x1f99:'\u1f21\u03b9',
+0x1f9a:'\u1f22\u03b9', 0x1f9b:'\u1f23\u03b9', 0x1f9c:'\u1f24\u03b9', 0x1f9d:'\u1f25\u03b9',
+0x1f9e:'\u1f26\u03b9', 0x1f9f:'\u1f27\u03b9', 0x1fa0:'\u1f60\u03b9', 0x1fa1:'\u1f61\u03b9',
+0x1fa2:'\u1f62\u03b9', 0x1fa3:'\u1f63\u03b9', 0x1fa4:'\u1f64\u03b9', 0x1fa5:'\u1f65\u03b9',
+0x1fa6:'\u1f66\u03b9', 0x1fa7:'\u1f67\u03b9', 0x1fa8:'\u1f60\u03b9', 0x1fa9:'\u1f61\u03b9',
+0x1faa:'\u1f62\u03b9', 0x1fab:'\u1f63\u03b9', 0x1fac:'\u1f64\u03b9', 0x1fad:'\u1f65\u03b9',
+0x1fae:'\u1f66\u03b9', 0x1faf:'\u1f67\u03b9', 0x1fb2:'\u1f70\u03b9', 0x1fb3:'\u03b1\u03b9',
+0x1fb4:'\u03ac\u03b9', 0x1fb6:'\u03b1\u0342', 0x1fb7:'\u03b1\u0342\u03b9', 0x1fbc:'\u03b1\u03b9',
+0x1fbe:'\u03b9', 0x1fc2:'\u1f74\u03b9', 0x1fc3:'\u03b7\u03b9', 0x1fc4:'\u03ae\u03b9',
+0x1fc6:'\u03b7\u0342', 0x1fc7:'\u03b7\u0342\u03b9', 0x1fcc:'\u03b7\u03b9', 0x1fd2:'\u03b9\u0308\u0300',
+0x1fd3:'\u03b9\u0308\u0301', 0x1fd6:'\u03b9\u0342', 0x1fd7:'\u03b9\u0308\u0342', 0x1fe2:'\u03c5\u0308\u0300',
+0x1fe3:'\u03c5\u0308\u0301', 0x1fe4:'\u03c1\u0313', 0x1fe6:'\u03c5\u0342', 0x1fe7:'\u03c5\u0308\u0342',
+0x1ff2:'\u1f7c\u03b9', 0x1ff3:'\u03c9\u03b9', 0x1ff4:'\u03ce\u03b9', 0x1ff6:'\u03c9\u0342',
+0x1ff7:'\u03c9\u0342\u03b9', 0x1ffc:'\u03c9\u03b9', 0x20a8:'rs', 0x2102:'c',
+0x2103:'\xb0c', 0x2107:'\u025b', 0x2109:'\xb0f', 0x210b:'h',
+0x210c:'h', 0x210d:'h', 0x2110:'i', 0x2111:'i',
+0x2112:'l', 0x2115:'n', 0x2116:'no', 0x2119:'p',
+0x211a:'q', 0x211b:'r', 0x211c:'r', 0x211d:'r',
+0x2120:'sm', 0x2121:'tel', 0x2122:'tm', 0x2124:'z',
+0x2128:'z', 0x212c:'b', 0x212d:'c', 0x2130:'e',
+0x2131:'f', 0x2132:'\u2132', 0x2133:'m', 0x213e:'\u03b3',
+0x213f:'\u03c0', 0x2145:'d', 0x2183:'\u2183', 0x2c00:'\u2c00',
+0x2c01:'\u2c01', 0x2c02:'\u2c02', 0x2c03:'\u2c03', 0x2c04:'\u2c04',
+0x2c05:'\u2c05', 0x2c06:'\u2c06', 0x2c07:'\u2c07', 0x2c08:'\u2c08',
+0x2c09:'\u2c09', 0x2c0a:'\u2c0a', 0x2c0b:'\u2c0b', 0x2c0c:'\u2c0c',
+0x2c0d:'\u2c0d', 0x2c0e:'\u2c0e', 0x2c0f:'\u2c0f', 0x2c10:'\u2c10',
+0x2c11:'\u2c11', 0x2c12:'\u2c12', 0x2c13:'\u2c13', 0x2c14:'\u2c14',
+0x2c15:'\u2c15', 0x2c16:'\u2c16', 0x2c17:'\u2c17', 0x2c18:'\u2c18',
+0x2c19:'\u2c19', 0x2c1a:'\u2c1a', 0x2c1b:'\u2c1b', 0x2c1c:'\u2c1c',
+0x2c1d:'\u2c1d', 0x2c1e:'\u2c1e', 0x2c1f:'\u2c1f', 0x2c20:'\u2c20',
+0x2c21:'\u2c21', 0x2c22:'\u2c22', 0x2c23:'\u2c23', 0x2c24:'\u2c24',
+0x2c25:'\u2c25', 0x2c26:'\u2c26', 0x2c27:'\u2c27', 0x2c28:'\u2c28',
+0x2c29:'\u2c29', 0x2c2a:'\u2c2a', 0x2c2b:'\u2c2b', 0x2c2c:'\u2c2c',
+0x2c2d:'\u2c2d', 0x2c2e:'\u2c2e', 0x2c2f:'\u2c2f', 0x2c60:'\u2c60',
+0x2c62:'\u2c62', 0x2c63:'\u2c63', 0x2c64:'\u2c64', 0x2c67:'\u2c67',
+0x2c69:'\u2c69', 0x2c6b:'\u2c6b', 0x2c6d:'\u2c6d', 0x2c6e:'\u2c6e',
+0x2c6f:'\u2c6f', 0x2c70:'\u2c70', 0x2c72:'\u2c72', 0x2c75:'\u2c75',
+0x2c7e:'\u2c7e', 0x2c7f:'\u2c7f', 0x2c80:'\u2c80', 0x2c82:'\u2c82',
+0x2c84:'\u2c84', 0x2c86:'\u2c86', 0x2c88:'\u2c88', 0x2c8a:'\u2c8a',
+0x2c8c:'\u2c8c', 0x2c8e:'\u2c8e', 0x2c90:'\u2c90', 0x2c92:'\u2c92',
+0x2c94:'\u2c94', 0x2c96:'\u2c96', 0x2c98:'\u2c98', 0x2c9a:'\u2c9a',
+0x2c9c:'\u2c9c', 0x2c9e:'\u2c9e', 0x2ca0:'\u2ca0', 0x2ca2:'\u2ca2',
+0x2ca4:'\u2ca4', 0x2ca6:'\u2ca6', 0x2ca8:'\u2ca8', 0x2caa:'\u2caa',
+0x2cac:'\u2cac', 0x2cae:'\u2cae', 0x2cb0:'\u2cb0', 0x2cb2:'\u2cb2',
+0x2cb4:'\u2cb4', 0x2cb6:'\u2cb6', 0x2cb8:'\u2cb8', 0x2cba:'\u2cba',
+0x2cbc:'\u2cbc', 0x2cbe:'\u2cbe', 0x2cc0:'\u2cc0', 0x2cc2:'\u2cc2',
+0x2cc4:'\u2cc4', 0x2cc6:'\u2cc6', 0x2cc8:'\u2cc8', 0x2cca:'\u2cca',
+0x2ccc:'\u2ccc', 0x2cce:'\u2cce', 0x2cd0:'\u2cd0', 0x2cd2:'\u2cd2',
+0x2cd4:'\u2cd4', 0x2cd6:'\u2cd6', 0x2cd8:'\u2cd8', 0x2cda:'\u2cda',
+0x2cdc:'\u2cdc', 0x2cde:'\u2cde', 0x2ce0:'\u2ce0', 0x2ce2:'\u2ce2',
+0x2ceb:'\u2ceb', 0x2ced:'\u2ced', 0x2cf2:'\u2cf2', 0x3371:'hpa',
+0x3373:'au', 0x3375:'ov', 0x3380:'pa', 0x3381:'na',
+0x3382:'\u03bca', 0x3383:'ma', 0x3384:'ka', 0x3385:'kb',
+0x3386:'mb', 0x3387:'gb', 0x338a:'pf', 0x338b:'nf',
+0x338c:'\u03bcf', 0x3390:'hz', 0x3391:'khz', 0x3392:'mhz',
+0x3393:'ghz', 0x3394:'thz', 0x33a9:'pa', 0x33aa:'kpa',
+0x33ab:'mpa', 0x33ac:'gpa', 0x33b4:'pv', 0x33b5:'nv',
+0x33b6:'\u03bcv', 0x33b7:'mv', 0x33b8:'kv', 0x33b9:'mv',
+0x33ba:'pw', 0x33bb:'nw', 0x33bc:'\u03bcw', 0x33bd:'mw',
+0x33be:'kw', 0x33bf:'mw', 0x33c0:'k\u03c9', 0x33c1:'m\u03c9',
+0x33c3:'bq', 0x33c6:'c\u2215kg', 0x33c7:'co.', 0x33c8:'db',
+0x33c9:'gy', 0x33cb:'hp', 0x33cd:'kk', 0x33ce:'km',
+0x33d7:'ph', 0x33d9:'ppm', 0x33da:'pr', 0x33dc:'sv',
+0x33dd:'wb', 0xa640:'\ua640', 0xa642:'\ua642', 0xa644:'\ua644',
+0xa646:'\ua646', 0xa648:'\ua648', 0xa64a:'\ua64a', 0xa64c:'\ua64c',
+0xa64e:'\ua64e', 0xa650:'\ua650', 0xa652:'\ua652', 0xa654:'\ua654',
+0xa656:'\ua656', 0xa658:'\ua658', 0xa65a:'\ua65a', 0xa65c:'\ua65c',
+0xa65e:'\ua65e', 0xa660:'\ua660', 0xa662:'\ua662', 0xa664:'\ua664',
+0xa666:'\ua666', 0xa668:'\ua668', 0xa66a:'\ua66a', 0xa66c:'\ua66c',
+0xa680:'\ua680', 0xa682:'\ua682', 0xa684:'\ua684', 0xa686:'\ua686',
+0xa688:'\ua688', 0xa68a:'\ua68a', 0xa68c:'\ua68c', 0xa68e:'\ua68e',
+0xa690:'\ua690', 0xa692:'\ua692', 0xa694:'\ua694', 0xa696:'\ua696',
+0xa698:'\ua698', 0xa69a:'\ua69a', 0xa722:'\ua722', 0xa724:'\ua724',
+0xa726:'\ua726', 0xa728:'\ua728', 0xa72a:'\ua72a', 0xa72c:'\ua72c',
+0xa72e:'\ua72e', 0xa732:'\ua732', 0xa734:'\ua734', 0xa736:'\ua736',
+0xa738:'\ua738', 0xa73a:'\ua73a', 0xa73c:'\ua73c', 0xa73e:'\ua73e',
+0xa740:'\ua740', 0xa742:'\ua742', 0xa744:'\ua744', 0xa746:'\ua746',
+0xa748:'\ua748', 0xa74a:'\ua74a', 0xa74c:'\ua74c', 0xa74e:'\ua74e',
+0xa750:'\ua750', 0xa752:'\ua752', 0xa754:'\ua754', 0xa756:'\ua756',
+0xa758:'\ua758', 0xa75a:'\ua75a', 0xa75c:'\ua75c', 0xa75e:'\ua75e',
+0xa760:'\ua760', 0xa762:'\ua762', 0xa764:'\ua764', 0xa766:'\ua766',
+0xa768:'\ua768', 0xa76a:'\ua76a', 0xa76c:'\ua76c', 0xa76e:'\ua76e',
+0xa779:'\ua779', 0xa77b:'\ua77b', 0xa77d:'\ua77d', 0xa77e:'\ua77e',
+0xa780:'\ua780', 0xa782:'\ua782', 0xa784:'\ua784', 0xa786:'\ua786',
+0xa78b:'\ua78b', 0xa78d:'\ua78d', 0xa790:'\ua790', 0xa792:'\ua792',
+0xa796:'\ua796', 0xa798:'\ua798', 0xa79a:'\ua79a', 0xa79c:'\ua79c',
+0xa79e:'\ua79e', 0xa7a0:'\ua7a0', 0xa7a2:'\ua7a2', 0xa7a4:'\ua7a4',
+0xa7a6:'\ua7a6', 0xa7a8:'\ua7a8', 0xa7aa:'\ua7aa', 0xa7ab:'\ua7ab',
+0xa7ac:'\ua7ac', 0xa7ad:'\ua7ad', 0xa7ae:'\ua7ae', 0xa7b0:'\ua7b0',
+0xa7b1:'\ua7b1', 0xa7b2:'\ua7b2', 0xa7b3:'\ua7b3', 0xa7b4:'\ua7b4',
+0xa7b6:'\ua7b6', 0xa7b8:'\ua7b8', 0xa7ba:'\ua7ba', 0xa7bc:'\ua7bc',
+0xa7be:'\ua7be', 0xa7c0:'\ua7c0', 0xa7c2:'\ua7c2', 0xa7c4:'\ua7c4',
+0xa7c5:'\ua7c5', 0xa7c6:'\ua7c6', 0xa7c7:'\ua7c7', 0xa7c9:'\ua7c9',
+0xa7cb:'\ua7cb', 0xa7cc:'\ua7cc', 0xa7ce:'\ua7ce', 0xa7d0:'\ua7d0',
+0xa7d2:'\ua7d2', 0xa7d4:'\ua7d4', 0xa7d6:'\ua7d6', 0xa7d8:'\ua7d8',
+0xa7da:'\ua7da', 0xa7dc:'\ua7dc', 0xa7f5:'\ua7f5', 0xfb00:'ff',
+0xfb01:'fi', 0xfb02:'fl', 0xfb03:'ffi', 0xfb04:'ffl',
+0xfb05:'st', 0xfb06:'st', 0xfb13:'\u0574\u0576', 0xfb14:'\u0574\u0565',
+0xfb15:'\u0574\u056b', 0xfb16:'\u057e\u0576', 0xfb17:'\u0574\u056d', 0x10426:'\U00010426',
+0x10427:'\U00010427', 0x104b0:'\U000104b0', 0x104b1:'\U000104b1', 0x104b2:'\U000104b2',
+0x104b3:'\U000104b3', 0x104b4:'\U000104b4', 0x104b5:'\U000104b5', 0x104b6:'\U000104b6',
+0x104b7:'\U000104b7', 0x104b8:'\U000104b8', 0x104b9:'\U000104b9', 0x104ba:'\U000104ba',
+0x104bb:'\U000104bb', 0x104bc:'\U000104bc', 0x104bd:'\U000104bd', 0x104be:'\U000104be',
+0x104bf:'\U000104bf', 0x104c0:'\U000104c0', 0x104c1:'\U000104c1', 0x104c2:'\U000104c2',
+0x104c3:'\U000104c3', 0x104c4:'\U000104c4', 0x104c5:'\U000104c5', 0x104c6:'\U000104c6',
+0x104c7:'\U000104c7', 0x104c8:'\U000104c8', 0x104c9:'\U000104c9', 0x104ca:'\U000104ca',
+0x104cb:'\U000104cb', 0x104cc:'\U000104cc', 0x104cd:'\U000104cd', 0x104ce:'\U000104ce',
+0x104cf:'\U000104cf', 0x104d0:'\U000104d0', 0x104d1:'\U000104d1', 0x104d2:'\U000104d2',
+0x104d3:'\U000104d3', 0x10570:'\U00010570', 0x10571:'\U00010571', 0x10572:'\U00010572',
+0x10573:'\U00010573', 0x10574:'\U00010574', 0x10575:'\U00010575', 0x10576:'\U00010576',
+0x10577:'\U00010577', 0x10578:'\U00010578', 0x10579:'\U00010579', 0x1057a:'\U0001057a',
+0x1057c:'\U0001057c', 0x1057d:'\U0001057d', 0x1057e:'\U0001057e', 0x1057f:'\U0001057f',
+0x10580:'\U00010580', 0x10581:'\U00010581', 0x10582:'\U00010582', 0x10583:'\U00010583',
+0x10584:'\U00010584', 0x10585:'\U00010585', 0x10586:'\U00010586', 0x10587:'\U00010587',
+0x10588:'\U00010588', 0x10589:'\U00010589', 0x1058a:'\U0001058a', 0x1058c:'\U0001058c',
+0x1058d:'\U0001058d', 0x1058e:'\U0001058e', 0x1058f:'\U0001058f', 0x10590:'\U00010590',
+0x10591:'\U00010591', 0x10592:'\U00010592', 0x10594:'\U00010594', 0x10595:'\U00010595',
+0x10c80:'\U00010c80', 0x10c81:'\U00010c81', 0x10c82:'\U00010c82', 0x10c83:'\U00010c83',
+0x10c84:'\U00010c84', 0x10c85:'\U00010c85', 0x10c86:'\U00010c86', 0x10c87:'\U00010c87',
+0x10c88:'\U00010c88', 0x10c89:'\U00010c89', 0x10c8a:'\U00010c8a', 0x10c8b:'\U00010c8b',
+0x10c8c:'\U00010c8c', 0x10c8d:'\U00010c8d', 0x10c8e:'\U00010c8e', 0x10c8f:'\U00010c8f',
+0x10c90:'\U00010c90', 0x10c91:'\U00010c91', 0x10c92:'\U00010c92', 0x10c93:'\U00010c93',
+0x10c94:'\U00010c94', 0x10c95:'\U00010c95', 0x10c96:'\U00010c96', 0x10c97:'\U00010c97',
+0x10c98:'\U00010c98', 0x10c99:'\U00010c99', 0x10c9a:'\U00010c9a', 0x10c9b:'\U00010c9b',
+0x10c9c:'\U00010c9c', 0x10c9d:'\U00010c9d', 0x10c9e:'\U00010c9e', 0x10c9f:'\U00010c9f',
+0x10ca0:'\U00010ca0', 0x10ca1:'\U00010ca1', 0x10ca2:'\U00010ca2', 0x10ca3:'\U00010ca3',
+0x10ca4:'\U00010ca4', 0x10ca5:'\U00010ca5', 0x10ca6:'\U00010ca6', 0x10ca7:'\U00010ca7',
+0x10ca8:'\U00010ca8', 0x10ca9:'\U00010ca9', 0x10caa:'\U00010caa', 0x10cab:'\U00010cab',
+0x10cac:'\U00010cac', 0x10cad:'\U00010cad', 0x10cae:'\U00010cae', 0x10caf:'\U00010caf',
+0x10cb0:'\U00010cb0', 0x10cb1:'\U00010cb1', 0x10cb2:'\U00010cb2', 0x10d50:'\U00010d50',
+0x10d51:'\U00010d51', 0x10d52:'\U00010d52', 0x10d53:'\U00010d53', 0x10d54:'\U00010d54',
+0x10d55:'\U00010d55', 0x10d56:'\U00010d56', 0x10d57:'\U00010d57', 0x10d58:'\U00010d58',
+0x10d59:'\U00010d59', 0x10d5a:'\U00010d5a', 0x10d5b:'\U00010d5b', 0x10d5c:'\U00010d5c',
+0x10d5d:'\U00010d5d', 0x10d5e:'\U00010d5e', 0x10d5f:'\U00010d5f', 0x10d60:'\U00010d60',
+0x10d61:'\U00010d61', 0x10d62:'\U00010d62', 0x10d63:'\U00010d63', 0x10d64:'\U00010d64',
+0x10d65:'\U00010d65', 0x118a0:'\U000118a0', 0x118a1:'\U000118a1', 0x118a2:'\U000118a2',
+0x118a3:'\U000118a3', 0x118a4:'\U000118a4', 0x118a5:'\U000118a5', 0x118a6:'\U000118a6',
+0x118a7:'\U000118a7', 0x118a8:'\U000118a8', 0x118a9:'\U000118a9', 0x118aa:'\U000118aa',
+0x118ab:'\U000118ab', 0x118ac:'\U000118ac', 0x118ad:'\U000118ad', 0x118ae:'\U000118ae',
+0x118af:'\U000118af', 0x118b0:'\U000118b0', 0x118b1:'\U000118b1', 0x118b2:'\U000118b2',
+0x118b3:'\U000118b3', 0x118b4:'\U000118b4', 0x118b5:'\U000118b5', 0x118b6:'\U000118b6',
+0x118b7:'\U000118b7', 0x118b8:'\U000118b8', 0x118b9:'\U000118b9', 0x118ba:'\U000118ba',
+0x118bb:'\U000118bb', 0x118bc:'\U000118bc', 0x118bd:'\U000118bd', 0x118be:'\U000118be',
+0x118bf:'\U000118bf', 0x16e40:'\U00016e40', 0x16e41:'\U00016e41', 0x16e42:'\U00016e42',
+0x16e43:'\U00016e43', 0x16e44:'\U00016e44', 0x16e45:'\U00016e45', 0x16e46:'\U00016e46',
+0x16e47:'\U00016e47', 0x16e48:'\U00016e48', 0x16e49:'\U00016e49', 0x16e4a:'\U00016e4a',
+0x16e4b:'\U00016e4b', 0x16e4c:'\U00016e4c', 0x16e4d:'\U00016e4d', 0x16e4e:'\U00016e4e',
+0x16e4f:'\U00016e4f', 0x16e50:'\U00016e50', 0x16e51:'\U00016e51', 0x16e52:'\U00016e52',
+0x16e53:'\U00016e53', 0x16e54:'\U00016e54', 0x16e55:'\U00016e55', 0x16e56:'\U00016e56',
+0x16e57:'\U00016e57', 0x16e58:'\U00016e58', 0x16e59:'\U00016e59', 0x16e5a:'\U00016e5a',
+0x16e5b:'\U00016e5b', 0x16e5c:'\U00016e5c', 0x16e5d:'\U00016e5d', 0x16e5e:'\U00016e5e',
+0x16e5f:'\U00016e5f', 0x16ea0:'\U00016ea0', 0x16ea1:'\U00016ea1', 0x16ea2:'\U00016ea2',
+0x16ea3:'\U00016ea3', 0x16ea4:'\U00016ea4', 0x16ea5:'\U00016ea5', 0x16ea6:'\U00016ea6',
+0x16ea7:'\U00016ea7', 0x16ea8:'\U00016ea8', 0x16ea9:'\U00016ea9', 0x16eaa:'\U00016eaa',
+0x16eab:'\U00016eab', 0x16eac:'\U00016eac', 0x16ead:'\U00016ead', 0x16eae:'\U00016eae',
+0x16eaf:'\U00016eaf', 0x16eb0:'\U00016eb0', 0x16eb1:'\U00016eb1', 0x16eb2:'\U00016eb2',
+0x16eb3:'\U00016eb3', 0x16eb4:'\U00016eb4', 0x16eb5:'\U00016eb5', 0x16eb6:'\U00016eb6',
+0x16eb7:'\U00016eb7', 0x16eb8:'\U00016eb8', 0x1d400:'a', 0x1d401:'b',
 0x1d402:'c', 0x1d403:'d', 0x1d404:'e', 0x1d405:'f',
 0x1d406:'g', 0x1d407:'h', 0x1d408:'i', 0x1d409:'j',
 0x1d40a:'k', 0x1d40b:'l', 0x1d40c:'m', 0x1d40d:'n',
@@ -184,7 +366,16 @@ b3_exceptions = {
 0x1d79c:'\u03bd', 0x1d79d:'\u03be', 0x1d79e:'\u03bf', 0x1d79f:'\u03c0',
 0x1d7a0:'\u03c1', 0x1d7a1:'\u03b8', 0x1d7a2:'\u03c3', 0x1d7a3:'\u03c4',
 0x1d7a4:'\u03c5', 0x1d7a5:'\u03c6', 0x1d7a6:'\u03c7', 0x1d7a7:'\u03c8',
-0x1d7a8:'\u03c9', 0x1d7bb:'\u03c3', }
+0x1d7a8:'\u03c9', 0x1d7bb:'\u03c3', 0x1e900:'\U0001e900', 0x1e901:'\U0001e901',
+0x1e902:'\U0001e902', 0x1e903:'\U0001e903', 0x1e904:'\U0001e904', 0x1e905:'\U0001e905',
+0x1e906:'\U0001e906', 0x1e907:'\U0001e907', 0x1e908:'\U0001e908', 0x1e909:'\U0001e909',
+0x1e90a:'\U0001e90a', 0x1e90b:'\U0001e90b', 0x1e90c:'\U0001e90c', 0x1e90d:'\U0001e90d',
+0x1e90e:'\U0001e90e', 0x1e90f:'\U0001e90f', 0x1e910:'\U0001e910', 0x1e911:'\U0001e911',
+0x1e912:'\U0001e912', 0x1e913:'\U0001e913', 0x1e914:'\U0001e914', 0x1e915:'\U0001e915',
+0x1e916:'\U0001e916', 0x1e917:'\U0001e917', 0x1e918:'\U0001e918', 0x1e919:'\U0001e919',
+0x1e91a:'\U0001e91a', 0x1e91b:'\U0001e91b', 0x1e91c:'\U0001e91c', 0x1e91d:'\U0001e91d',
+0x1e91e:'\U0001e91e', 0x1e91f:'\U0001e91f', 0x1e920:'\U0001e920', 0x1e921:'\U0001e921',
+}
 
 def map_table_b3(code):
     r = b3_exceptions.get(ord(code))
@@ -194,9 +385,9 @@ def map_table_b3(code):
 
 def map_table_b2(a):
     al = map_table_b3(a)
-    b = unicodedata.normalize("NFKC", al)
+    b = unicodedata_320.normalize("NFKC", al)
     bl = "".join([map_table_b3(ch) for ch in b])
-    c = unicodedata.normalize("NFKC", bl)
+    c = unicodedata_320.normalize("NFKC", bl)
     if b != c:
         return c
     else:
@@ -208,29 +399,29 @@ def in_table_c11(code):
 
 
 def in_table_c12(code):
-    return unicodedata.category(code) == "Zs" and code != " "
+    return unicodedata_320.category(code) == "Zs" and code != " "
 
 def in_table_c11_c12(code):
-    return unicodedata.category(code) == "Zs"
+    return unicodedata_320.category(code) == "Zs"
 
 
 def in_table_c21(code):
-    return ord(code) < 128 and unicodedata.category(code) == "Cc"
+    return ord(code) < 128 and unicodedata_320.category(code) == "Cc"
 
 c22_specials = set([1757, 1807, 6158, 8204, 8205, 8232, 8233, 65279] + list(range(8288,8292)) + list(range(8298,8304)) + list(range(65529,65533)) + list(range(119155,119163)))
 def in_table_c22(code):
     c = ord(code)
     if c < 128: return False
-    if unicodedata.category(code) == "Cc": return True
+    if unicodedata_320.category(code) == "Cc": return True
     return c in c22_specials
 
 def in_table_c21_c22(code):
-    return unicodedata.category(code) == "Cc" or \
+    return unicodedata_320.category(code) == "Cc" or \
            ord(code) in c22_specials
 
 
 def in_table_c3(code):
-    return unicodedata.category(code) == "Co"
+    return unicodedata_320.category(code) == "Co"
 
 
 def in_table_c4(code):
@@ -241,7 +432,7 @@ def in_table_c4(code):
 
 
 def in_table_c5(code):
-    return unicodedata.category(code) == "Cs"
+    return unicodedata_320.category(code) == "Cs"
 
 
 c6_set = set(range(65529,65534))
@@ -265,8 +456,8 @@ def in_table_c9(code):
 
 
 def in_table_d1(code):
-    return unicodedata.bidirectional(code) in ("R","AL")
+    return unicodedata_320.bidirectional(code) in ("R","AL")
 
 
 def in_table_d2(code):
-    return unicodedata.bidirectional(code) == "L"
+    return unicodedata_320.bidirectional(code) == "L"

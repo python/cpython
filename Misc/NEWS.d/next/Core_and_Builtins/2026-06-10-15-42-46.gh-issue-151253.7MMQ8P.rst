@@ -1,0 +1,3 @@
+If ``import encodings`` (first import) fails at Python startup, dump the
+Python path configuration to help users debugging their configuration. Patch
+by Victor Stinner.

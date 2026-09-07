@@ -1,0 +1,1 @@
+Warn the user if a file will be overwritten when saving.

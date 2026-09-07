@@ -128,6 +128,27 @@ class TestBase(unittest.TestCase):
             x = [e for e, i in augmented] # a stable sort of s
             check("stability", x, s)
 
+    def test_small_stability(self):
+        from itertools import product
+        from operator import itemgetter
+
+        # Exhaustively test stability across all lists of small lengths
+        # and only a few distinct elements.
+        # This can provoke edge cases that randomization is unlikely to find.
+        # But it can grow very expensive quickly, so don't overdo it.
+        NELTS = 3
+        MAXSIZE = 9
+
+        pick0 = itemgetter(0)
+        for length in range(MAXSIZE + 1):
+            # There are NELTS ** length distinct lists.
+            for t in product(range(NELTS), repeat=length):
+                xs = list(zip(t, range(length)))
+                # Stability forced by index in each element.
+                forced = sorted(xs)
+                # Use key= to hide the index from compares.
+                native = sorted(xs, key=pick0)
+                self.assertEqual(forced, native)
 #==============================================================================
 
 class TestBugs(unittest.TestCase):
@@ -378,6 +399,12 @@ class TestOptimizedCompares(unittest.TestCase):
         self.assertRaises(TypeError, [(1.0, 1.0), (False, "A"), 6].sort)
         self.assertRaises(TypeError, [('a', 1), (1, 'a')].sort)
         self.assertRaises(TypeError, [(1, 'a'), ('a', 1)].sort)
+
+    def test_none_in_tuples(self):
+        expected = [(None, 1), (None, 2)]
+        actual = sorted([(None, 2), (None, 1)])
+        self.assertEqual(actual, expected)
+
 #==============================================================================
 
 if __name__ == "__main__":

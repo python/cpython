@@ -1,2 +1,0 @@
-Settings for :mod:`pyexpat` C extension are now detected by ``configure``.
-The bundled ``expat`` library is built in ``Makefile``.

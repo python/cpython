@@ -33,9 +33,9 @@ insert the import and main lines before the htest lines.
 
 if __name__ == "__main__":
     from unittest import main
-    main('idlelib.idle_test.test_abc', verbosity=2, exit=False)
+    main('idlelib.idle_test.test_abc', verbosity=2)
 
-The ', exit=False' is only needed if an htest follows.
+Add ', exit=False' to the main call if and only if an htest follows.
 
 
 
@@ -146,14 +146,17 @@ python -m unittest -v idlelib.idle_test
 python -m test -v -ugui test_idle
 python -m test.test_idle
 
-The idle tests are 'discovered' by
-idlelib.idle_test.__init__.load_tests, which is also imported into
-test.test_idle. Normally, neither file should be changed when working on
-individual test modules. The third command runs unittest indirectly
-through regrtest. The same happens when the entire test suite is run
-with 'python -m test'. So that command must work for buildbots to stay
-green. Idle tests must not disturb the environment in a way that makes
-other tests fail (issue 18081).
+IDLE tests are 'discovered' by idlelib.idle_test.__init__.load_tests
+when this is imported into test.test_idle. Normally, neither file
+should be changed when working on individual test modules. The third
+command runs unittest indirectly through regrtest. The same happens when
+the entire test suite is run with 'python -m test'. So that command must
+work for buildbots to stay green. IDLE tests must not disturb the
+environment in a way that makes other tests fail (GH-62281).
+
+To test subsets of modules, see idlelib.idle_test.__init__.  This
+can be used to find refleaks or possible sources of "Theme changed"
+tcl messages (GH-71383).
 
 To run an individual Testcase or test method, extend the dotted name
 given to unittest on the command line or use the test -m option.  The
