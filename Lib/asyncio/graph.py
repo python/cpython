@@ -65,6 +65,9 @@ def _build_graph_for_future(
             # A native async generator or duck-type compatible iterator
             st.append(FrameCallGraphEntry(coro.ag_frame))
             coro = coro.ag_await
+        elif hasattr(coro, 'aw_wrapped'):
+            # An asynchronous callable iterator's frameless awaitable.
+            coro = coro.aw_wrapped
         else:
             break
 
