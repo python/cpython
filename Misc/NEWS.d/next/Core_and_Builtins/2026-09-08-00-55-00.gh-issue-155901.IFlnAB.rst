@@ -1,0 +1,2 @@
+Fix :func:`marshal.dumps` taking time exponential in the nesting depth when
+marshalling nested sets.
