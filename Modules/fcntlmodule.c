@@ -152,7 +152,7 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
                 PyBytesWriter_Discard(writer);
                 return NULL;
             }
-            // Truncate the last bytes (guard)
+            // Truncate the trailing guard bytes
             return PyBytesWriter_FinishWithSize(writer, len);
         }
 #undef FCNTL_BUFSZ
@@ -349,7 +349,7 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
                 PyBytesWriter_Discard(writer);
                 return NULL;
             }
-            // Truncate the last bytes (guard)
+            // Truncate the trailing guard bytes
             return PyBytesWriter_FinishWithSize(writer, len);
         }
 #undef IOCTL_BUFSZ
