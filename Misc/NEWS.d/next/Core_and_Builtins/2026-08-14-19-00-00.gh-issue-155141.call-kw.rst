@@ -1,0 +1,3 @@
+Compile pure-keyword calls with 16 to 29 keyword arguments using the faster
+``CALL_KW`` instruction.  This includes common cases such as dataclass
+constructors with many fields.
