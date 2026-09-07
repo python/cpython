@@ -1809,6 +1809,46 @@ class EventLoopTestsMixin:
         loop.run_until_complete(asyncio.wait_for(protocol.lost, 10))
         self.assertTrue(protocol.errors)
 
+    def test_datagram_write_error_close_from_callback(self):
+        # See https://github.com/python/cpython/issues/156920: an
+        # error_received() callback that closes the transport while data
+        # is still queued behind the failing write must still result in
+        # connection_lost() being called eventually, instead of leaving
+        # the transport (and its buffered data) hanging forever.
+        loop = self.loop
+
+        class Protocol(asyncio.DatagramProtocol):
+            def connection_made(self, transport):
+                self.transport = transport
+                self.errors = []
+                self.lost = loop.create_future()
+
+            def error_received(self, exc):
+                self.errors.append(exc)
+                self.transport.close()
+
+            def connection_lost(self, exc):
+                if not self.lost.done():
+                    self.lost.set_result(exc)
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setblocking(False)
+        sock.bind(('127.0.0.1', 0))
+        transport, protocol = loop.run_until_complete(
+            loop.create_datagram_endpoint(Protocol, sock=sock))
+        addr = sock.getsockname()
+
+        # queue an oversized (failing) datagram followed by one that
+        # would otherwise succeed, so the buffer is still non-empty when
+        # error_received() closes the transport.
+        oversized = b'\x00' * 70000
+        transport.sendto(oversized, addr)
+        transport.sendto(b'queued', addr)
+
+        loop.run_until_complete(asyncio.wait_for(protocol.lost, 10))
+        self.assertTrue(protocol.errors)
+        self.assertIsInstance(protocol.errors[0], OSError)
+
     def test_datagram_recvfrom_connection_reset_recovers(self):
         # gh-127057: a UDP socket that sent a datagram to an address that
         # wasn't listening can raise ConnectionResetError on a later
