@@ -469,12 +469,11 @@ class StableABINote(SphinxDirective):
     has_content = True
 
     def run(self) -> list[nodes.Node]:
-        node = nodes.Element()  # Anonymous container for parsing
-        node.rawsource = '\n'.join(self.content)
-        self.state.nested_parse(self.content, self.content_offset, node)
-        for child in node.children:
-            child.setdefault("classes", []).append('stableabi')
-        return node.children
+        self.assert_has_content()
+        nodes = self.parse_content_to_nodes()
+        for node in nodes:
+            node.setdefault("classes", []).append('stableabi')
+        return nodes
 
 
 class OmitStableABINotes(SphinxDirective):
@@ -487,14 +486,13 @@ class OmitStableABINotes(SphinxDirective):
     has_content = True
 
     def run(self) -> list[nodes.Node]:
-        node = nodes.Element()  # Anonymous container for parsing
-        node.rawsource = '\n'.join(self.content)
-        self.state.nested_parse(self.content, self.content_offset, node)
-        for child in node.children:
-            child.setdefault("c_annotations", []).append(
+        self.assert_has_content()
+        nodes = self.parse_content_to_nodes()
+        for node in nodes:
+            node.setdefault("c_annotations", []).append(
                 'omit-stable-abi-notes',
             )
-        return node.children
+        return nodes
 
 
 def init_annotations(app: Sphinx) -> None:
