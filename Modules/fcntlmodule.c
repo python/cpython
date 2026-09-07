@@ -24,6 +24,7 @@
 #define GUARDSZ 8
 // NUL followed by random bytes.
 static const char guard[GUARDSZ] _Py_NONSTRING = "\x00\xfa\x69\xc4\x67\xa3\x6c\x58";
+const char CANARY_BYTE = 0xdd;
 
 /*[clinic input]
 module fcntl
@@ -121,13 +122,14 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
             return PyBytes_FromStringAndSize(buf, len);
         }
         else {
-            PyBytesWriter *writer = PyBytesWriter_Create(len);
+            PyBytesWriter *writer = PyBytesWriter_Create(len + 1);
             if (writer == NULL) {
                 PyBuffer_Release(&view);
                 return NULL;
             }
             char *ptr = PyBytesWriter_GetData(writer);
             memcpy(ptr, view.buf, len);
+            ptr[len] = CANARY_BYTE;
             PyBuffer_Release(&view);
 
             do {
@@ -142,7 +144,7 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
                 PyBytesWriter_Discard(writer);
                 return NULL;
             }
-            if (ptr[len] != '\0') {
+            if (ptr[len] != CANARY_BYTE) {
                 PyErr_SetString(PyExc_SystemError,
                         "Memory corruption in fcntl() due to "
                         "buffer overflow. "
@@ -151,7 +153,8 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
                 PyBytesWriter_Discard(writer);
                 return NULL;
             }
-            return PyBytesWriter_Finish(writer);
+            // Truncate the last byte (canary byte)
+            return PyBytesWriter_FinishWithSize(writer, len);
         }
 #undef FCNTL_BUFSZ
     }
@@ -316,13 +319,14 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
             return PyBytes_FromStringAndSize(buf, len);
         }
         else {
-            PyBytesWriter *writer = PyBytesWriter_Create(len);
+            PyBytesWriter *writer = PyBytesWriter_Create(len + 1);
             if (writer == NULL) {
                 PyBuffer_Release(&view);
                 return NULL;
             }
             char *ptr = PyBytesWriter_GetData(writer);
             memcpy(ptr, view.buf, len);
+            ptr[len] = CANARY_BYTE;
             PyBuffer_Release(&view);
 
             do {
@@ -337,7 +341,7 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
                 PyBytesWriter_Discard(writer);
                 return NULL;
             }
-            if (ptr[len] != '\0') {
+            if (ptr[len] != CANARY_BYTE) {
                 PyErr_SetString(PyExc_SystemError,
                         "Memory corruption in ioctl() due to "
                         "buffer overflow. "
@@ -346,7 +350,8 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
                 PyBytesWriter_Discard(writer);
                 return NULL;
             }
-            return PyBytesWriter_Finish(writer);
+            // Truncate the last byte (canary byte)
+            return PyBytesWriter_FinishWithSize(writer, len);
         }
 #undef IOCTL_BUFSZ
     }
