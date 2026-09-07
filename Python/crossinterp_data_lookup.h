@@ -560,7 +560,7 @@ _float_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *xidata)
 static PyObject *
 _new_complex_object(_PyXIData_t *xidata)
 {
-    Py_complex * value_ptr = xidata->data;
+    Py_complex *value_ptr = xidata->data;
     return PyComplex_FromCComplex(*value_ptr);
 }
 
