@@ -3,7 +3,7 @@ import tkinter
 from tkinter import messagebox, ttk
 from test.support import requires, swap_attr
 from test.test_tkinter.support import setUpModule  # noqa: F401
-from test.test_tkinter.support import AbstractDefaultRootTest, AbstractTkTest
+from test.test_tkinter.support import AbstractDefaultRootTest, AbstractDialogTest
 from tkinter.simpledialog import (Dialog, SimpleDialog,
                                   askinteger, askfloat, askstring,
                                   _QueryInteger, _QueryFloat, _QueryString,
@@ -12,7 +12,7 @@ from tkinter.simpledialog import (Dialog, SimpleDialog,
 requires('gui')
 
 
-class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
+class SimpleDialogTest(AbstractDialogTest, unittest.TestCase):
     # SimpleDialog's modal loop is in go(); its bindings are exercised here by
     # generating events on the constructed dialog, without entering the loop.
 
@@ -45,8 +45,8 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
                          ttk.Style(d.root).lookup('.', 'background'))
         # The bindings work with the themed buttons too.
         self.require_mapped(d.root)
-        d._buttons[0].focus_force()
         d.root.update()
+        d._buttons[0].focus_force()
         d.root.event_generate('<Return>')
         d.root.update()
         self.assertEqual(d.num, 0)
@@ -144,8 +144,8 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
         # the matching button (cf. tk::AmpWidget in tk::MessageBox).
         d = self.create(buttons=['Yes', {'text': 'No', 'underline': 0}])
         self.require_mapped(d.root)
-        d._buttons[0].focus_force()
         d.root.update()
+        d._buttons[0].focus_force()
         d.root.event_generate('<Alt-n>')  # "No" -> underline 0 -> "N"
         d.root.update()
         self.assertEqual(d.num, 1)
@@ -155,8 +155,8 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
         # default and the focus was not moved by keyboard traversal.
         d = self.create(buttons=['Yes', 'No'])  # default 0
         self.require_mapped(d.root)
-        d._buttons[1].focus_force()
         d.root.update()
+        d._buttons[1].focus_force()
         d.root.event_generate('<Return>')
         d.root.update()
         self.assertEqual(d.num, 1)
@@ -165,8 +165,8 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
         # <Tab> moves the focus to the next button; <Return> invokes it.
         d = self.create(buttons=['Yes', 'No'])
         self.require_mapped(d.root)
-        d._buttons[0].focus_force()
         d.root.update()
+        d._buttons[0].focus_force()
         d._buttons[0].event_generate('<Tab>')
         d.root.update()
         d.root.event_generate('<Return>')
@@ -177,8 +177,8 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
         # <Shift-Tab> moves the focus to the previous button.
         d = self.create(buttons=['Yes', 'No'])
         self.require_mapped(d.root)
-        d._buttons[1].focus_force()
         d.root.update()
+        d._buttons[1].focus_force()
         d._buttons[1].event_generate('<Shift-Tab>')
         d.root.update()
         d.root.event_generate('<Return>')
@@ -189,8 +189,8 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
         # <Return> with the focus off the buttons invokes the default button.
         d = self.create()  # default 0
         self.require_mapped(d.root)
-        d.root.focus_force()  # the dialog, not a button, has the focus
         d.root.update()
+        d.root.focus_force()  # the dialog, not a button, has the focus
         d.root.event_generate('<Return>')
         d.root.update()
         self.assertEqual(d.num, 0)
@@ -246,7 +246,7 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(d.go(), 0)
 
 
-class DialogTest(AbstractTkTest, unittest.TestCase):
+class DialogTest(AbstractDialogTest, unittest.TestCase):
     # Dialog's button box is modelled on tk::MessageBox.
 
     def open(self, **kw):
@@ -279,8 +279,8 @@ class DialogTest(AbstractTkTest, unittest.TestCase):
         invoked = []
         cancel = d.children['cancel']
         cancel.configure(command=lambda: invoked.append(True))
-        cancel.focus_force()
         d.update()
+        cancel.focus_force()
         d.event_generate('<Return>')
         d.update()
         self.assertTrue(invoked)
@@ -359,8 +359,8 @@ class DialogTest(AbstractTkTest, unittest.TestCase):
         invoked = []
         cancel = d.children['cancel']  # "&Cancel"
         cancel.configure(command=lambda: invoked.append(True))
-        d.focus_force()
         d.update()
+        d.focus_force()
         d.event_generate('<Alt-c>')
         d.update()
         self.assertTrue(invoked)
@@ -371,8 +371,8 @@ class DialogTest(AbstractTkTest, unittest.TestCase):
         invoked = []
         cancel = d.children['cancel']
         cancel.configure(command=lambda: invoked.append(True))
-        cancel.focus_force()
         d.update()
+        cancel.focus_force()
         d.event_generate('<Return>')
         d.update()
         self.assertEqual(invoked, [True])
@@ -384,8 +384,8 @@ class DialogTest(AbstractTkTest, unittest.TestCase):
         for name in ('ok', 'cancel'):
             d.children[name].configure(command=lambda name=name: invoked.append(name))
         ok = d.children['ok']
-        ok.focus_force()
         d.update()
+        ok.focus_force()
         ok.event_generate('<Tab>')  # OK -> Cancel
         d.update()
         d.event_generate('<Return>')
@@ -399,8 +399,8 @@ class DialogTest(AbstractTkTest, unittest.TestCase):
         for name in ('ok', 'cancel'):
             d.children[name].configure(command=lambda name=name: invoked.append(name))
         cancel = d.children['cancel']
-        cancel.focus_force()
         d.update()
+        cancel.focus_force()
         cancel.event_generate('<Shift-Tab>')  # Cancel -> OK
         d.update()
         d.event_generate('<Return>')
@@ -432,7 +432,7 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
             self.assertRaises(RuntimeError, askinteger, "Go To Line", "Line number")
 
 
-class QueryDialogTest(AbstractTkTest, unittest.TestCase):
+class QueryDialogTest(AbstractDialogTest, unittest.TestCase):
     # The query dialogs are modal: their __init__ blocks in wait_window().
     # Mock that out so the dialog stays alive and can be driven with generated
     # events, exercising the <Return>/<Escape> bindings and the validation.
