@@ -872,9 +872,6 @@ fold_const_match_patterns(expr_ty node, PyArena *ctx_, _PyASTPreprocessState *st
             {
                 PyObject *operand = node->v.UnaryOp.operand->v.Constant.value;
                 PyObject *folded = node->v.UnaryOp.op == USub ? PyNumber_Negative(operand) : PyNumber_Positive(operand);
-                if (folded == NULL) {
-                    return 0;
-                }
                 return make_const(node, folded, ctx_);
             }
             break;
@@ -891,9 +888,6 @@ fold_const_match_patterns(expr_ty node, PyArena *ctx_, _PyASTPreprocessState *st
                     PyObject *left = node->v.BinOp.left->v.Constant.value;
                     PyObject *right = node->v.BinOp.right->v.Constant.value;
                     PyObject *folded = op == Add ? PyNumber_Add(left, right) : PyNumber_Subtract(left, right);
-                    if (folded == NULL) {
-                        return 0;
-                    }
                     return make_const(node, folded, ctx_);
                 }
             }
