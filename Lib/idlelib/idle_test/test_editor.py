@@ -20,7 +20,7 @@ class EditorWindowTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.root.update_idletasks()
-        for id in cls.root.tk.call('after', 'info'):
+        for id in cls.root.after_info():
             cls.root.after_cancel(id)
         cls.root.destroy()
         del cls.root
@@ -114,7 +114,7 @@ class IndentAndNewlineTest(unittest.TestCase):
         cls.window._close()
         del cls.window
         cls.root.update_idletasks()
-        for id in cls.root.tk.call('after', 'info'):
+        for id in cls.root.after_info():
             cls.root.after_cancel(id)
         cls.root.destroy()
         del cls.root
@@ -211,6 +211,7 @@ class IndentSearcherTest(unittest.TestCase):
                 self.assertEqual(actual_pair, expected_pair)
 
 
+@unittest.skip('Empty test')
 class RMenuTest(unittest.TestCase):
 
     @classmethod
@@ -225,7 +226,7 @@ class RMenuTest(unittest.TestCase):
         cls.window._close()
         del cls.window
         cls.root.update_idletasks()
-        for id in cls.root.tk.call('after', 'info'):
+        for id in cls.root.after_info():
             cls.root.after_cancel(id)
         cls.root.destroy()
         del cls.root

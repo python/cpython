@@ -862,6 +862,12 @@ _Py_RemoteDebug_StopAllThreads(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_T
         return 0;
     }
 
+    if (!is_process_alive(unwinder->handle.hProcess)) {
+        PyErr_Format(PyExc_ProcessLookupError,
+            "Process %d has terminated", unwinder->handle.pid);
+        return -1;
+    }
+
     PyErr_Format(PyExc_RuntimeError, "NtSuspendProcess failed: 0x%lx", status);
     return -1;
 }

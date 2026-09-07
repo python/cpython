@@ -1082,6 +1082,14 @@ class TestDistributions(unittest.TestCase):
             self.assertIsInstance(result, int)
             self.assertIn(result, range(11))
 
+    def test_binomialvariate_btrs_random_zero(self):
+        for p, expected in ((0.25, 25), (0.75, 75)):
+            with self.subTest(p=p):
+                g = random.Random()
+                with unittest.mock.patch.object(
+                        g, 'random', side_effect=(0.0, 0.5, 0.5)):
+                    self.assertEqual(g.binomialvariate(100, p), expected)
+
     def test_constant(self):
         g = random.Random()
         N = 100

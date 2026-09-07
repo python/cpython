@@ -7,6 +7,7 @@ import datetime
 import functools
 import gc
 import importlib
+import importlib.util
 import inspect
 import io
 import linecache
@@ -39,7 +40,7 @@ from test.support import cpython_only, import_helper
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
 from test.support import run_no_yield_async_fn, EqualToForwardRef
 from test.support.import_helper import DirsOnSysPath, ready_to_import
-from test.support.os_helper import TESTFN, temp_cwd
+from test.support.os_helper import TESTFN, TESTFN_UNDECODABLE, temp_cwd
 from test.support.script_helper import assert_python_ok, assert_python_failure, kill_python
 from test.support import has_subprocess_support
 from test import support
@@ -779,6 +780,22 @@ class TestRetrievingSourceCode(GetSourceBase):
             expected = expected.strip('\n')
             with self.subTest(i=i):
                 self.assertEqual(func(input), expected)
+
+    def test_cleandoc_no_dedent(self):
+        func = inspect.cleandoc
+        self.assertEqual(func('An\n  indented\n   docstring.', dedent=False),
+                         'An\n  indented\n   docstring.')
+        # Everything else that cleandoc() does still applies.
+        self.assertEqual(func('  An\n\n\tindented\n\n', dedent=False),
+                         'An\n\n        indented')
+
+    def test_getdoc_no_dedent(self):
+        class C:
+            pass
+        # Written as a docstring, it would be dedented by the compiler.
+        C.__doc__ = 'Summary.\n\n  param\n    description'
+        self.assertEqual(inspect.getdoc(C, dedent=False), C.__doc__)
+        self.assertEqual(inspect.getdoc(C), 'Summary.\n\nparam\n  description')
 
     @cpython_only
     def test_c_cleandoc(self):
@@ -6154,10 +6171,10 @@ class TestSignatureDefinitions(unittest.TestCase):
                         'dict', 'frozendict', 'int', 'str'}
         # These need PEP 457 groups
         needs_groups = {"range", "slice", "dir", "getattr",
-                        "next", "iter", "vars"}
+                        "next", "vars"}
         no_signature |= needs_groups
         # These have unrepresentable parameter default values of NULL
-        unsupported_signature = {"anext"}
+        unsupported_signature = {"anext", "aiter", "iter"}
         # These need *args support in Argument Clinic
         needs_varargs = {"min", "max", "__build_class__"}
         no_signature |= needs_varargs
@@ -6311,6 +6328,25 @@ class TestSignatureDefinitions(unittest.TestCase):
         import signal
         self._test_module_has_signatures(signal)
 
+    def test_socket_module_has_signatures(self):
+        import socket
+        # The socket type has no signature, it is created by socket().
+        no_signature = {'SocketType'}
+        # The C default is NULL and None is not accepted
+        unsupported_signature = {'getservbyname', 'getservbyport'}
+        # Not all functions and methods are available on all platforms.
+        unsupported_signature &= vars(socket).keys()
+        # These cannot be converted to Argument Clinic: their behaviour
+        # depends on the number of the arguments.
+        methods_no_signature = {'ioctl', 'sendto', 'setsockopt'}
+        # These have parameters with unrepresentable default values.
+        methods_unsupported_signature = {'listen', 'sendmsg_afalg'}
+        defined = vars(socket.SocketType).keys()
+        self._test_module_has_signatures(socket,
+                no_signature, unsupported_signature,
+                {'SocketType': methods_no_signature & defined},
+                {'SocketType': methods_unsupported_signature & defined})
+
     def test_stat_module_has_signatures(self):
         import stat
         self._test_module_has_signatures(stat)
@@ -6375,7 +6411,7 @@ class TestSignatureDefinitions(unittest.TestCase):
                 methods_unsupported_signature=methods_unsupported_signature)
 
     def test_warnings_module_has_signatures(self):
-        unsupported_signature = {'warn', 'warn_explicit'}
+        unsupported_signature = {'warn_explicit'}
         self._test_module_has_signatures(warnings, unsupported_signature=unsupported_signature)
 
     def test_weakref_module_has_signatures(self):
@@ -6519,6 +6555,19 @@ class TestModuleCLI(unittest.TestCase):
     NO_SOURCE_ERROR = "No source code available for defining module"
     NO_SOURCE_TARGET_ERROR = "Failed to retrieve source code for given target"
 
+    @staticmethod
+    def _expected_cached(module):
+        # assert_python_ok() runs the subprocess in isolated mode (-I), which
+        # ignores PYTHONPYCACHEPREFIX, so compute the expected cached path the
+        # same way (i.e. without any pycache prefix) to stay independent of the
+        # environment the test suite is run in.  Modules without a cached path
+        # (e.g. frozen modules such as ntpath/importlib.machinery on Windows)
+        # report None, so preserve that.
+        if module.__spec__.cached is None:
+            return None
+        with support.swap_attr(sys, 'pycache_prefix', None):
+            return importlib.util.cache_from_source(module.__spec__.origin)
+
     def test_only_source(self):
         module = importlib.import_module('unittest')
         rc, out, err = assert_python_ok('-m', 'inspect',
@@ -6570,18 +6619,38 @@ class TestModuleCLI(unittest.TestCase):
         lines = err.decode().splitlines()
         self.assertEqual(lines, [self.NO_SOURCE_TARGET_ERROR])
 
+    @unittest.skipUnless(TESTFN_UNDECODABLE,
+                         'requires undecodable file names')
+    def test_details_undecodable_path(self):
+        # gh-69370: the path of the module is not encodable in the encoding
+        # of stdout.
+        with temp_cwd() as test_dir:
+            subdir = os.path.join(os.fsencode(test_dir), TESTFN_UNDECODABLE)
+            try:
+                os.mkdir(subdir)
+            except OSError:
+                self.skipTest('undecodable paths are not supported')
+            with open(os.path.join(subdir, b'undecodable_mod.py'), 'w') as f:
+                f.write('"""Module docstring."""\n')
+            rc, out, err = assert_python_ok('-X', 'utf8=0', '-m', 'inspect',
+                                            '--details', 'undecodable_mod',
+                                            PYTHONPATH=os.fsdecode(subdir))
+        self.assertIn(b'Target: undecodable_mod', out)
+        self.assertEqual(err, b'')
+
     def test_details_option_with_package(self):
         module_name = 'unittest'
         module = importlib.import_module(module_name)
         args = support.optim_args_from_interpreter_flags()
         rc, out, err = assert_python_ok(*args, '-m', 'inspect',
                                         module_name, '--details')
+        cached = self._expected_cached(module)
         # Full rendering check on the expected output
         expected_lines = [
             f"Target: {module.__name__}",  # No aliasing
             f"Origin: {module.__spec__.origin}",
             f"Source: {module.__file__}",
-            f"Cached: {module.__spec__.cached}",  # None is still displayed
+            f"Cached: {cached}",  # None is still displayed
             f"Loader: {_clean_object_ids(repr(module.__spec__.loader))}",
             f"Submodule search paths: {module.__path__}",
             "",
@@ -6619,13 +6688,14 @@ class TestModuleCLI(unittest.TestCase):
         args = support.optim_args_from_interpreter_flags()
         rc, out, err = assert_python_ok(*args, '-m', 'inspect',
                                         cli_target, '--details')
+        cached = self._expected_cached(module)
         # Full rendering check on the expected output
         # The error is only informational when reading source details
         expected_lines = [
             f"Target: {cli_target}",  # No aliasing
             f"Origin: {module.__spec__.origin}",
             f"Source: {module.__file__}",
-            f"Cached: {module.__spec__.cached}",  # None is still displayed
+            f"Cached: {cached}",  # None is still displayed
             self.NO_SOURCE_TARGET_ERROR,
             "",
         ]
@@ -6644,12 +6714,13 @@ class TestModuleCLI(unittest.TestCase):
         args = support.optim_args_from_interpreter_flags()
         rc, out, err = assert_python_ok(*args, '-m', 'inspect',
                                         cli_target, '--details')
+        cached = self._expected_cached(module)
         # Full rendering check on the expected output
         expected_lines = [
             f'Target: {defining_target} (looked up as "{cli_target}")',
             f"Origin: {module.__spec__.origin}",
             f"Source: {module.__file__}",
-            f"Cached: {module.__spec__.cached}",  # None is still displayed
+            f"Cached: {cached}",  # None is still displayed
             f"Line: {inspect.findsource(target)[1]}",
             "",
         ]

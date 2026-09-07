@@ -5,21 +5,18 @@ importlib_abc = util.import_importlib('importlib.abc')
 machinery = util.import_importlib('importlib.machinery')
 importlib_util = util.import_importlib('importlib.util')
 
-import errno
 import marshal
 import os
 import py_compile
-import shutil
 import stat
 import sys
 import types
 import unittest
-import warnings
 
-from test.support.import_helper import make_legacy_pyc, unload
+from test.support.import_helper import make_legacy_pyc
 
-from test.test_py_compile import without_source_date_epoch
-from test.test_py_compile import SourceDateEpochTestMeta
+from test.support.os_helper import without_source_date_epoch
+from test.support.os_helper import SourceDateEpochTestMeta
 
 
 class SimpleTest:

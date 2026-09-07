@@ -1,0 +1,7 @@
+:mod:`imaplib` now refreshes the cached capability list after a successful
+:meth:`~imaplib.IMAP4.login` or :meth:`~imaplib.IMAP4.authenticate`, using
+the ``CAPABILITY`` response sent by the server or, if none was sent, by
+querying it, so that capabilities that become available only after
+authentication (such as ``ENABLE`` on Gmail) are recognized.  Capabilities
+advertised in the server greeting are now also used, avoiding a redundant
+``CAPABILITY`` command.

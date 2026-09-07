@@ -738,6 +738,7 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     state->charsize = charsize;
     state->match_all = 0;
     state->must_advance = 0;
+    state->save_marks = 0;
     state->debug = ((pattern->flags & SRE_FLAG_DEBUG) != 0);
 
     state->beginning = ptr;
@@ -1272,8 +1273,7 @@ _sre_SRE_Pattern_split_impl(PatternObject *self, PyObject *string,
             );
         if (!item)
             goto error;
-        status = PyList_Append(list, item);
-        Py_DECREF(item);
+        status = _PyList_AppendTakeRef((PyListObject *)list, item);
         if (status < 0)
             goto error;
 
@@ -1282,8 +1282,7 @@ _sre_SRE_Pattern_split_impl(PatternObject *self, PyObject *string,
             item = state_getslice(&state, i+1, string, 0);
             if (!item)
                 goto error;
-            status = PyList_Append(list, item);
-            Py_DECREF(item);
+            status = _PyList_AppendTakeRef((PyListObject *)list, item);
             if (status < 0)
                 goto error;
         }
@@ -1300,8 +1299,7 @@ _sre_SRE_Pattern_split_impl(PatternObject *self, PyObject *string,
         );
     if (!item)
         goto error;
-    status = PyList_Append(list, item);
-    Py_DECREF(item);
+    status = _PyList_AppendTakeRef((PyListObject *)list, item);
     if (status < 0)
         goto error;
 

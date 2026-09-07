@@ -1,0 +1,2 @@
+Add :meth:`imaplib.IMAP4.move`, a wrapper for the IMAP ``MOVE`` command
+(:rfc:`6851`), analogous to :meth:`~imaplib.IMAP4.copy`.
