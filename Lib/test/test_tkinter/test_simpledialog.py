@@ -3,7 +3,8 @@ import tkinter
 from tkinter import messagebox
 from test.support import requires, swap_attr
 from test.test_tkinter.support import setUpModule  # noqa: F401
-from test.test_tkinter.support import AbstractDefaultRootTest, AbstractTkTest
+from test.test_tkinter.support import (AbstractDefaultRootTest,
+                                       AbstractDialogTest)
 from tkinter.simpledialog import (Dialog, SimpleDialog,
                                   askinteger, askfloat, askstring,
                                   _QueryInteger, _QueryFloat, _QueryString)
@@ -11,7 +12,7 @@ from tkinter.simpledialog import (Dialog, SimpleDialog,
 requires('gui')
 
 
-class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
+class SimpleDialogTest(AbstractDialogTest, unittest.TestCase):
     # SimpleDialog's modal loop is in go(); its bindings are exercised here by
     # generating events on the constructed dialog, without entering the loop.
 
@@ -50,8 +51,8 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
         # <Return> invokes the default button.
         d = self.create()  # default 0
         self.require_mapped(d.root)
-        d.root.focus_force()
         d.root.update()
+        d.root.focus_force()
         d.root.event_generate('<Return>')
         d.root.update()
         self.assertEqual(d.num, 0)
@@ -61,10 +62,9 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
         # open instead of activating a button.
         d = self.create(default=None)
         self.require_mapped(d.root)
-        d.root.focus_force()
-        d.root.update()
         bells = []
         with swap_attr(d.root, 'bell', lambda *a, **k: bells.append(True)):
+            d.root.focus_force()
             d.root.event_generate('<Return>')
             d.root.update()
         self.assertTrue(bells)  # rang the bell
@@ -98,7 +98,7 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(d.go(), 0)
 
 
-class DialogTest(AbstractTkTest, unittest.TestCase):
+class DialogTest(AbstractDialogTest, unittest.TestCase):
     # Dialog is a base class for custom dialogs; exercise it via _QueryInteger.
 
     def open(self, **kw):
@@ -167,7 +167,7 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
             self.assertRaises(RuntimeError, askinteger, "Go To Line", "Line number")
 
 
-class QueryDialogTest(AbstractTkTest, unittest.TestCase):
+class QueryDialogTest(AbstractDialogTest, unittest.TestCase):
     # The query dialogs are modal: their __init__ blocks in wait_window().
     # Mock that out so the dialog stays alive and can be driven with generated
     # events, exercising the <Return>/<Escape> bindings and the validation.
