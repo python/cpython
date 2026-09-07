@@ -684,6 +684,24 @@ class UnparseTestCase(ASTTestCase):
 
             self.check_src_roundtrip(src, out, mode='single')
 
+    @test.support.subTests('case', [
+        "case 'a string':",
+        "case True:",
+        "case _:",
+        "case [*_]:",
+        "case tuple():",
+        "case cls(arg, more=arg2):",
+        "case tuple() | list():",
+        "case [tuple() as obj, _, {'a': a, **more}]:",
+        "case -2:",
+        "case +2:",
+        "case 2 + 3j:",
+        "case +2 - 3j:",
+    ])
+    def test_unparse_match(self, case):
+        src = 'match x:\n    ' + case + '\n        pass'
+        self.check_src_roundtrip(src)
+
 
 class CosmeticTestCase(ASTTestCase):
     """Test if there are cosmetic issues caused by unnecessary additions"""
