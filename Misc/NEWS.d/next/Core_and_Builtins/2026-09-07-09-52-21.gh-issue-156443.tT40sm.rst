@@ -1,0 +1,1 @@
+Keep loop carries as two-digit values in :c:func:`v_lshift`, :c:func:`v_rshift`, and :c:func:`x_divrem`.  This shortens the carry chain on AArch64 and speeds up large-integer shifts and division.
