@@ -107,7 +107,7 @@ static void
 pytime_overflow(void)
 {
     PyErr_SetString(PyExc_OverflowError,
-                    "timestamp too large to convert to C PyTime_t");
+                    "timestamp out of range for C PyTime_t");
 }
 
 
@@ -636,7 +636,7 @@ pytime_from_double(PyTime_t *tp, double value, _PyTime_round_t round,
 
     /* See comments in pytime_double_to_denominator */
     if (!((double)PyTime_MIN <= d && d < -(double)PyTime_MIN)) {
-        pytime_time_t_overflow();
+        pytime_overflow();
         *tp = 0;
         return -1;
     }

@@ -83,6 +83,12 @@ class AutoFileTests:
             fst = os.fstat(self.f.fileno())
             blksize = getattr(fst, 'st_blksize', blksize)
         self.assertEqual(self.f._blksize, blksize)
+        # it is read-only
+        with self.assertRaises(AttributeError):
+            self.f._blksize = blksize
+        with self.assertRaises(AttributeError):
+            del self.f._blksize
+
 
     # verify readinto
     def testReadintoByteArray(self):
@@ -502,6 +508,21 @@ class AutoFileTests:
 class CAutoFileTests(AutoFileTests, unittest.TestCase):
     FileIO = _io.FileIO
     modulename = '_io'
+
+    def testFinalizing(self):
+        # test the private _finalizing attribute
+        self.assertIs(self.f._finalizing, False)
+        self.f._finalizing = True
+        self.assertIs(self.f._finalizing, True)
+        with self.assertRaisesRegex(TypeError,
+                                    'attribute value type must be bool'):
+            self.f._finalizing = 1
+        with self.assertRaisesRegex(TypeError,
+                                    "can't delete numeric/char attribute"):
+            del self.f._finalizing
+        # closing a file which is being finalized emits a ResourceWarning
+        self.f._finalizing = False
+
 
 class PyAutoFileTests(AutoFileTests, unittest.TestCase):
     FileIO = _pyio.FileIO

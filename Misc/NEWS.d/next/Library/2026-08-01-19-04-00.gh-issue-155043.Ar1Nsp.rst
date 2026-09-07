@@ -1,0 +1,1 @@
+:class:`argparse.Namespace` objects now support :func:`copy.replace`.

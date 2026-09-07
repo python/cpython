@@ -1,0 +1,2 @@
+Update pure-Python :class:`io.BytesIO` to close cleanly when the data has an
+export such as a :class:`memoryview`.

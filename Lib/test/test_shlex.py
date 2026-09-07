@@ -1,8 +1,11 @@
 import io
 import itertools
+import os
 import shlex
 import string
+import tempfile
 import unittest
+from unittest.mock import patch
 from test.support import cpython_only
 from test.support import import_helper
 
@@ -375,6 +378,203 @@ class ShlexTest(unittest.TestCase):
         self.assertEqual(shlex_instance.punctuation_chars, punctuation_chars)
         with self.assertRaises(AttributeError):
             shlex_instance.punctuation_chars = False
+
+    def testLinenoAfterNewLine(self):
+        s = shlex.shlex("line 1\nline 2")
+        self.assertEqual(s.lineno, 1)  # before consumption
+        list(s)
+        self.assertEqual(s.lineno, 2)
+
+    def testLinenoAfterComment(self):
+        """Comment handler increments lineno even without a trailing newline."""
+        s = shlex.shlex("line 1 # line 2")
+        list(s)
+        self.assertEqual(s.lineno, 2)
+
+    def testPushToken(self):
+        s = shlex.shlex("b c")
+        s.push_token("a")
+        self.assertListEqual(list(s), ["a", "b", "c"])
+
+    def testPushTokenLifo(self):
+        s = shlex.shlex("")
+        s.push_token("first")
+        s.push_token("last")
+        self.assertListEqual(list(s), ["last", "first"])
+
+    def testPushTokenDebug(self):
+        s = shlex.shlex("")
+        s.debug = 1
+        tok = "a"
+        with patch("builtins.print") as mock_print:
+            s.push_token(tok)
+        mock_print.assert_called_once_with(f"shlex: pushing token {tok!r}")
+
+    def testPushSourceString(self):
+        s = shlex.shlex("world")
+        s.push_source("hello")
+        self.assertListEqual(list(s), ["hello", "world"])
+
+    def testPushSourceStream(self):
+        s = shlex.shlex("world")
+        s.push_source(io.StringIO("hello"))
+        self.assertListEqual(list(s), ["hello", "world"])
+
+    def testPushSourceStreamDebug(self):
+        s = shlex.shlex("")
+        stream = io.StringIO("hello")
+        s.debug = 1
+        with patch("builtins.print") as mock_print:
+            s.push_source(stream)
+        mock_print.assert_called_once_with(f"shlex: pushing to stream {stream}")
+
+    def testPushSourceNewfile(self):
+        """shlex.push_source sets infile to newfile; pop_source restores the original on exhaustion."""
+        original_file = "original.sh"
+        new_file = "new.sh"
+        s = shlex.shlex("b", infile=original_file)
+        s.debug = 1
+        with patch("builtins.print") as mock_print:
+            s.push_source("a", newfile=new_file)
+        mock_print.assert_called_once_with(f"shlex: pushing to file {new_file}")
+        self.assertEqual(s.infile, new_file)
+        s.debug = 0
+        list(s)
+        self.assertEqual(s.infile, original_file)
+
+    def testPopSourceDebug(self):
+        """pop_source emits debug output when debug is set."""
+        s = shlex.shlex("b")
+        original_stream = s.instream
+        s.push_source("a")
+        s.debug = 1
+        with patch("builtins.print") as mock_print:
+            list(s)  # exhausts pushed source and triggers pop_source internally
+        mock_print.assert_any_call(f"shlex: popping to {original_stream}, line 1")
+
+    def testErrorLeaderTracksPosition(self):
+        infile_label = "test.sh"
+        s = shlex.shlex("line 1\nline 2", infile=infile_label)
+        list(s)
+        result = s.error_leader()
+        self.assertEqual(result, f'"{infile_label}", line 2: ')
+
+    def testErrorLeaderOverrides(self):
+        s = shlex.shlex("foo", infile="original.sh")
+        infile_label_override = "override.sh"
+        lineno_override = 42
+        result = s.error_leader(infile=infile_label_override, lineno=lineno_override)
+        self.assertEqual(result, f'"{infile_label_override}", line {lineno_override}: ')
+
+    def testNoClosingQuotation(self):
+        s = shlex.shlex('"foo')
+        with self.assertRaisesRegex(ValueError, "No closing quotation"):
+            list(s)
+
+    def testNoEscapedCharacter(self):
+        s = shlex.shlex("\\", posix=True)
+        with self.assertRaisesRegex(ValueError, "No escaped character"):
+            list(s)
+
+    def testSourcehookStripsQuotes(self):
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".sh", delete_on_close=False) as f:
+            f.write("hello")
+            f.close()
+            s = shlex.shlex("")
+            newfile, stream = s.sourcehook(f'"{f.name}"')
+            stream.close()
+        self.assertEqual(newfile, f.name)
+
+    def testSourcehookAbsolutePath(self):
+        with tempfile.NamedTemporaryFile(mode="w", delete_on_close=False) as f:
+            f.close()
+            s = shlex.shlex("", infile="/some/dir/main.sh")
+            newfile, stream = s.sourcehook(f.name)
+            stream.close()
+        self.assertEqual(newfile, f.name)
+
+    def testSourcehookRelativePath(self):
+        with tempfile.TemporaryDirectory() as d:
+            fpath = os.path.join(d, "included.sh")
+            with open(fpath, "w"):
+                pass
+            s = shlex.shlex("", infile=os.path.join(d, "main.sh"))
+            newfile, stream = s.sourcehook("included.sh")
+            stream.close()
+            self.assertEqual(newfile, fpath)
+
+    def testSourceInclusion(self):
+        """shlex.source sets a trigger keyword: when the lexer reads a token equal
+        to it, the next token is consumed as a filename and passed to
+        sourcehook, which returns a stream to push onto the input stack.
+        Tokens flow from that stream first, then resume from the original.
+        """
+        s = shlex.shlex("trigger filename remaining")
+        s.source = "trigger"
+        s.sourcehook = lambda f: (f, io.StringIO("included"))
+        self.assertEqual(list(s), ["included", "remaining"])
+
+    def testGetTokenPopsPushbackDebug(self):
+        s = shlex.shlex("")
+        s.push_token("hello")
+        s.debug = 1  # set after push_token to isolate the pop-token branch
+        with patch("builtins.print") as mock_print:
+            tok = s.get_token()
+        self.assertEqual(tok, "hello")
+        mock_print.assert_called_once_with("shlex: popping token 'hello'")
+
+    def testDebugWhitespaceInWhitespaceState(self):
+        s = shlex.shlex(" a")
+        s.debug = 2
+        with patch("builtins.print") as mock_print:
+            list(s)
+        mock_print.assert_any_call("shlex: I see whitespace in whitespace state")
+
+    def testDebugWhitespaceInWordState(self):
+        s = shlex.shlex("a b")
+        s.debug = 2
+        with patch("builtins.print") as mock_print:
+            list(s)
+        mock_print.assert_any_call("shlex: I see whitespace in word state")
+
+    def testDebugPunctuationInWordState(self):
+        s = shlex.shlex("a(")
+        s.debug = 2
+        with patch("builtins.print") as mock_print:
+            list(s)
+        mock_print.assert_any_call("shlex: I see punctuation in word state")
+
+    def testDebugRawToken(self):
+        s = shlex.shlex("hello")
+        s.debug = 2
+        with patch("builtins.print") as mock_print:
+            list(s)
+        mock_print.assert_any_call("shlex: raw token='hello'")
+
+    def testDebugEOFInQuote(self):
+        s = shlex.shlex('"oops', posix=True)
+        s.debug = 2
+        with patch('builtins.print') as mock_print:
+            with self.assertRaises(ValueError):
+                list(s)
+        msgs = [call.args[0] for call in mock_print.call_args_list]
+        self.assertTrue(any("EOF in quotes" in m for m in msgs))
+
+    def testDebugEOFInEscape(self):
+        s = shlex.shlex("oops\\", posix=True)
+        s.debug = 2
+        with patch("builtins.print") as mock_print:
+            with self.assertRaises(ValueError):
+                list(s)
+        msgs = [call.args[0] for call in mock_print.call_args_list]
+        self.assertTrue(any("EOF in escape" in m for m in msgs))
+
+    def testDebugStateTrace(self):
+        s = shlex.shlex("a")
+        s.debug = 3
+        with patch("builtins.print") as mock_print:
+            list(s)
+        mock_print.assert_any_call("shlex: in state ' ' I see character: 'a'")
 
     @cpython_only
     def test_lazy_imports(self):

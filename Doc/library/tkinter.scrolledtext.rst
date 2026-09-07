@@ -23,7 +23,16 @@ most normal geometry management behavior.
 Should more specific control be necessary, the following attributes are
 available:
 
-.. class:: ScrolledText(master=None, **kw)
+.. class:: ScrolledText(master=None, *, use_ttk=False, **kw)
+
+   The keyword arguments are passed to the :class:`~tkinter.Text` widget.
+
+   When *use_ttk* is true, the surrounding frame and the scroll bar are the
+   themed :mod:`tkinter.ttk` widgets;
+   the default is the classic :mod:`tkinter` widgets.
+
+   .. versionchanged:: next
+      Added the *use_ttk* parameter.
 
 
    .. attribute:: frame

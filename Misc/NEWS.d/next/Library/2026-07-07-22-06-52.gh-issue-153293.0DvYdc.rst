@@ -1,0 +1,2 @@
+Fix the live sampling profiler TUI keeping stale aggregated opcode
+statistics after a stats reset.

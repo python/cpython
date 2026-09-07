@@ -51,9 +51,6 @@ class pointer_converter(CConverter):
 class OVERLAPPED_converter(pointer_converter):
     type = 'OVERLAPPED *'
 
-class HANDLE_converter(pointer_converter):
-    type = 'HANDLE'
-
 class ULONG_PTR_converter(pointer_converter):
     type = 'ULONG_PTR'
 
@@ -66,13 +63,8 @@ class ULONG_PTR_converter(pointer_converter):
             """,
             argname=argname)
 
-class DWORD_converter(unsigned_long_converter):
-    type = 'DWORD'
-
-class BOOL_converter(int_converter):
-    type = 'BOOL'
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=436f4440630a304c]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=e3b1c126cba99725]*/
 
 /*[clinic input]
 module _overlapped

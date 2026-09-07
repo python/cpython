@@ -542,7 +542,7 @@ class ColorDelegatorTest(unittest.TestCase):
         self._assert_highlighting('case _:', {'KEYWORD': [('1.0', '1.4'),
                                                           ('1.5', '1.6')]})
 
-    def test_lazy_soft_keyword(self):
+    def test_lazy_soft_keyword(self):  # lazy new in 3.15.
         # lazy followed by import
         self._assert_highlighting('lazy import foo',
                                   {'KEYWORD': [('1.0', '1.4'),

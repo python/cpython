@@ -108,9 +108,6 @@ extern int _Py_LegacyLocaleDetected(int warn);
 // Export for 'readline' shared extension
 PyAPI_FUNC(char*) _Py_SetLocaleFromEnv(int category);
 
-// Export for special main.c string compiling with source tracebacks
-int _PyRun_SimpleStringFlagsWithName(const char *command, const char* name, PyCompilerFlags *flags);
-
 
 /* interpreter config */
 

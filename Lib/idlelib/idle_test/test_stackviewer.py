@@ -35,6 +35,8 @@ class StackBrowserTest(unittest.TestCase):
         isi(stackviewer.sc, ScrolledCanvas)
         isi(stackviewer.item, stackviewer.StackTreeItem)
         isi(stackviewer.node, TreeNode)
+        top = stackviewer.sc.frame.winfo_toplevel()
+        self.assertEqual(top.winfo_class(), 'Idle')
 
 
 if __name__ == '__main__':

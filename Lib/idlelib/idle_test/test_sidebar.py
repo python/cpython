@@ -14,7 +14,8 @@ from idlelib.delegator import Delegator
 from idlelib.percolator import Percolator
 import idlelib.pyshell
 from idlelib.pyshell import PyShell, PyShellFileList
-from idlelib.util import fix_scaling, fix_word_breaks, fix_x11_paste
+from idlelib.util import (fix_scaling, fix_word_breaks, fix_x11_paste,
+                          x11_buttons)
 import idlelib.sidebar
 from idlelib.sidebar import get_end_linenumber, get_lineno
 
@@ -689,11 +690,13 @@ class ShellSidebarTest(unittest.TestCase):
         last_lineno = get_end_linenumber(text)
         self.assertIsNotNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
 
-        # Delta for <MouseWheel>, whose meaning is platform-dependent.
+        # Simulate a mouse wheel notch with the events that Tk sends for
+        # one; the delta of a <MouseWheel> event is platform-dependent.
+        buttons = x11_buttons(sidebar.canvas)
         delta = 1 if sidebar.canvas._windowingsystem == 'aqua' else 120
 
         # Scroll up.
-        if sidebar.canvas._windowingsystem == 'x11':
+        if buttons:
             sidebar.canvas.event_generate('<Button-4>', x=0, y=0)
         else:
             sidebar.canvas.event_generate('<MouseWheel>', x=0, y=0, delta=delta)
@@ -701,7 +704,7 @@ class ShellSidebarTest(unittest.TestCase):
         self.assertIsNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
 
         # Scroll back down.
-        if sidebar.canvas._windowingsystem == 'x11':
+        if buttons:
             sidebar.canvas.event_generate('<Button-5>', x=0, y=0)
         else:
             sidebar.canvas.event_generate('<MouseWheel>', x=0, y=0, delta=-delta)
