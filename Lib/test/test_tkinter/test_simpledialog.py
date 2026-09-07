@@ -4,7 +4,7 @@ from tkinter import messagebox
 from test.support import requires, swap_attr
 from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import (AbstractDefaultRootTest,
-                                       AbstractDialogTest)
+                                       AbstractDialogTest, AbstractTkTest)
 from tkinter.simpledialog import (Dialog, SimpleDialog,
                                   askinteger, askfloat, askstring,
                                   _QueryInteger, _QueryFloat, _QueryString)
@@ -12,7 +12,11 @@ from tkinter.simpledialog import (Dialog, SimpleDialog,
 requires('gui')
 
 
-class SimpleDialogTest(AbstractDialogTest, unittest.TestCase):
+class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
+    # The root window is not hidden here (cf. AbstractDialogTest): SimpleDialog
+    # makes its window transient for the master unconditionally, and a
+    # transient of a hidden window is never mapped on Windows, so that go()
+    # would block in wait_visibility().
     # SimpleDialog's modal loop is in go(); its bindings are exercised here by
     # generating events on the constructed dialog, without entering the loop.
 
