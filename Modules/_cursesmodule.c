@@ -1590,7 +1590,10 @@ complexstr_concat(PyObject *a, PyObject *b)
 {
     cursesmodule_state *state = get_cursesmodule_state_by_cls(Py_TYPE(a));
     if (!Py_IS_TYPE(b, state->complexstr_type)) {
-        Py_RETURN_NOTIMPLEMENTED;
+        PyErr_Format(PyExc_TypeError,
+                     "can only concatenate complexstr to complexstr, not %T",
+                     b);
+        return NULL;
     }
     PyCursesComplexStrObject *sa = _PyCursesComplexStrObject_CAST(a);
     PyCursesComplexStrObject *sb = _PyCursesComplexStrObject_CAST(b);

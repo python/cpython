@@ -796,6 +796,9 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(str(s[1:]), 'bc')
         self.assertEqual(str(s[::-1]), 'cbA')
         self.assertEqual(str(s + curses.complexstr(['Z'])), 'AbcZ')
+        # Concatenating anything else raises instead of returning NotImplemented.
+        self.assertRaises(TypeError, lambda: s + 'Z')
+        self.assertRaises(TypeError, lambda: s + cc('Z'))
         # The empty complexstr.
         self.assertEqual(len(curses.complexstr([])), 0)
         self.assertEqual(str(curses.complexstr('')), '')
