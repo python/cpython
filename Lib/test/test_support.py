@@ -17,6 +17,8 @@ import tempfile
 import textwrap
 import unittest
 import warnings
+import zipfile
+import zipimport
 
 from test import support
 from test.support import isolation
@@ -380,6 +382,50 @@ class TestSupport(unittest.TestCase):
             self.assertIn("bar", sys.path)
         self.assertNotIn("foo", sys.path)
         self.assertNotIn("bar", sys.path)
+
+    def test_load_package_tests_not_on_file_system(self):
+        # gh-157144: load_package_tests() loads the tests of a package
+        # which is not on the file system, e.g. inside a zip archive.
+        package = textwrap.dedent('''
+            import os
+            from test.support import load_package_tests
+
+            def load_tests(*args):
+                return load_package_tests(os.path.dirname(__file__), *args)
+        ''')
+        test_module = textwrap.dedent('''
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_zip(self):
+                    pass
+        ''')
+        tmpdir = self.enterContext(os_helper.temp_dir())
+        zip_path = os.path.join(tmpdir, 'zpkg.zip')
+        with zipfile.ZipFile(zip_path, 'w') as zf:
+            zf.writestr('zpkg/__init__.py', package)
+            zf.writestr('zpkg/test_x.py', test_module)
+            # Does not match the default "test*" pattern.
+            zf.writestr('zpkg/other.py', test_module)
+        self.enterContext(import_helper.DirsOnSysPath(zip_path))
+        self.addCleanup(zipimport._zip_directory_cache.pop, zip_path, None)
+        for path in (zip_path, os.path.join(zip_path, 'zpkg')):
+            self.addCleanup(sys.path_importer_cache.pop, path, None)
+        for name in ('zpkg', 'zpkg.test_x', 'zpkg.other'):
+            self.addCleanup(import_helper.unload, name)
+
+        zpkg = importlib.import_module('zpkg')
+        loader = unittest.TestLoader()
+        suite = loader.loadTestsFromModule(zpkg)
+        self.assertEqual(loader.errors, [])
+        self.assertEqual(suite.countTestCases(), 1)
+        self.assertIn('zpkg.test_x', sys.modules)
+        self.assertNotIn('zpkg.other', sys.modules)
+
+        result = unittest.TestResult()
+        suite.run(result)
+        self.assertEqual(result.testsRun, 1)
+        self.assertTrue(result.wasSuccessful(), result.errors)
 
     def test_captured_stdout(self):
         with support.captured_stdout() as stdout:

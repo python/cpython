@@ -37,13 +37,24 @@ def findtestdir(path: StrPath | None = None) -> StrPath:
     return path or os.path.dirname(os.path.dirname(__file__)) or os.curdir
 
 
+def _listdir(testdir: StrPath) -> list[str]:
+    try:
+        return os.listdir(testdir)
+    except NotADirectoryError:
+        # The test package is not on the file system, e.g. it is inside a
+        # zip archive: ask the import system instead.
+        import pkgutil
+        return [name if ispkg else f"{name}.py"
+                for _, name, ispkg in pkgutil.iter_modules([testdir])]
+
+
 def findtests(*, testdir: StrPath | None = None, exclude: Container[str] = (),
               split_test_dirs: set[TestName] = SPLITTESTDIRS,
               base_mod: str = "") -> TestList:
     """Return a list of all applicable test modules."""
     testdir = findtestdir(testdir)
     tests = []
-    for name in os.listdir(testdir):
+    for name in _listdir(testdir):
         mod, ext = os.path.splitext(name)
         if (not mod.startswith("test_")) or (mod in exclude):
             continue

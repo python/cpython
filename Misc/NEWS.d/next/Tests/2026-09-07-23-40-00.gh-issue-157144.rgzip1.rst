@@ -1,0 +1,3 @@
+The test suite can now enumerate test modules and test packages that are not
+on the file system, such as a standard library inside a zip archive on
+:data:`sys.path`.
