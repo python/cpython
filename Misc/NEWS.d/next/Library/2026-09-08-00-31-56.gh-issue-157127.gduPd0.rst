@@ -1,0 +1,2 @@
+Separate the argument names with commas in the :mod:`argparse` error message
+reported for a missing required mutually exclusive group.
