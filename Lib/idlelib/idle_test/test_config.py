@@ -774,8 +774,8 @@ class ChangesTest(unittest.TestCase):
     def test_save_all_saves_files(self):
         eq = self.assertEqual
         changes = self.changes
-        for parser in testcfg.values():
-            parser.Save = Func()
+        for config in testcfg.values():
+            config.Save = Func()
         try:
             # 'main', 'highlight' and 'keys' are saved even if unchanged.
             self.assertFalse(changes.save_all())
@@ -787,8 +787,8 @@ class ChangesTest(unittest.TestCase):
             self.assertTrue(changes.save_all())
             eq(testcfg['extensions'].Save.called, 1)
         finally:
-            for parser in testcfg.values():
-                del parser.Save
+            for config in testcfg.values():
+                del config.Save
             userextn.remove_section('Esec')
 
     def test_delete_section(self):

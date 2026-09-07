@@ -212,6 +212,9 @@ class IndentSearcherTest(unittest.TestCase):
 
 
 class RMenuTest(unittest.TestCase):
+    # Test selection-rclick interaction in right_click_event and
+    # rmenu_check_copy(cut) status settings.  These are part of the rmenu
+    # functions common to all text windows with context windows.
 
     @classmethod
     def setUpClass(cls):

@@ -31,12 +31,16 @@ searchengine = Dummy_searchengine()
 
 
 class Dummy_grep:
-    # Methods tested
-    default_command = grep.GrepDialog.default_command
+    # Simplifications: 1. Don't initialize superclass SearchEngineBase
+    # with searchengine.  2. Use directly set class vars instead of
+    # instance vars set from the GUI.
+    globvar = Var('')  # File name.
+    recvar = Var(False)  # Recurse down directories?
+    engine = searchengine  # Pattern and flags.
+    # Methods tested.
     grep_it = grep.GrepDialog.grep_it
-    # Other stuff needed
-    recvar = Var(False)
-    engine = searchengine
+    default_command = grep.GrepDialog.default_command  # Uses grep_it.
+
     def close(self):  # gui method
         pass
 
