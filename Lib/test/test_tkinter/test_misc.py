@@ -1373,7 +1373,9 @@ class EventTest(AbstractTkTest, unittest.TestCase):
 
         f.focus_force()
         self.root.update()
-        self.assertEqual(len(events), 1, events)
+        # The window manager can take the focus away and give it back,
+        # which makes Tk generate additional focus events.
+        self.assertGreaterEqual(len(events), 1, events)
         e = events[0]
         self.assertIs(e.type, tkinter.EventType.FocusIn)
         self.assertIs(e.widget, f)
