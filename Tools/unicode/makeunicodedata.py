@@ -40,6 +40,9 @@ from typing import Iterator, List, Optional, Set, Tuple
 SCRIPT = os.path.normpath(sys.argv[0])
 VERSION = "3.3"
 
+# Local cache location
+DATA_DIR = os.path.join('Tools', 'unicode', 'data')
+
 # The Unicode Database
 # --------------------
 # When changing UCD version please update
@@ -949,8 +952,6 @@ def merge_old_version(version, new, old):
                                           numeric_changes)),
                         normalization_changes))
 
-
-DATA_DIR = os.path.join('Tools', 'unicode', 'data')
 
 def open_data(template, version):
     local = os.path.join(DATA_DIR, template % ('-'+version,))
