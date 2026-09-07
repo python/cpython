@@ -164,8 +164,8 @@ class FileDialogTest(AbstractDialogTest, unittest.TestCase):
         d = self.open()
         invoked = []
         d.cancel_button.configure(command=lambda: invoked.append(True))
-        d.top.focus_force()
         d.top.update()
+        d.top.focus_force()
         d.top.event_generate('<Alt-c>')  # "&Cancel"
         d.top.update()
         self.assertTrue(invoked)
@@ -174,8 +174,8 @@ class FileDialogTest(AbstractDialogTest, unittest.TestCase):
         # The Escape key cancels the dialog.
         d = self.open()
         d.how = 'spam'
-        d.top.focus_force()
         d.top.update()
+        d.top.focus_force()
         d.top.event_generate('<Escape>')
         d.top.update()
         self.assertIsNone(d.how)
