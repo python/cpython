@@ -325,7 +325,7 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
             }
             char *ptr = PyBytesWriter_GetData(writer);
             memcpy(ptr, view.buf, len);
-            memcpy(buf + len, guard, GUARDSZ);
+            memcpy(ptr + len, guard, GUARDSZ);
             PyBuffer_Release(&view);
 
             do {
