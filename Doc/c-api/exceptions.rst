@@ -1121,7 +1121,7 @@ Exception types
 
    These pointers are part of the :ref:`Stable ABI <stable>` since the
    version in the *S.ABI* column (or since 3.2 when *S.ABI* is empty).
-   Exceptions marked N/A are *not* part of Stable ABI.
+   Exceptions marked N/A are *not* part of the Stable ABI.
 
 .. omit-stable-abi-notes::
 
