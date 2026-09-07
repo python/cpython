@@ -1,1 +1,0 @@
-Document the ``CXX`` environment variable in the :program:`configure` ``--help`` output.
