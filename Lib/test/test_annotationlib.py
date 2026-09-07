@@ -2237,6 +2237,60 @@ class TestForwardRefClass(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "always fails to import"):
             get_annotations(ns["B"], format=Format.VALUE)
 
+    def test_get_annotations_lazy_import(self):
+        ns = {}
+        exec(
+            textwrap.dedent(
+                """
+                lazy from test.test_lazy_import.data.basic2 import x
+                lazy from test.test_lazy_import.data.broken_module import y
+
+                class A:
+                    a: object.fail
+                    b: x
+
+                class B:
+                    a: object.fail
+                    b: y
+                """
+            ),
+            ns,
+        )
+        self.addCleanup(
+            import_helper.unload, "test.test_lazy_import.data.basic2"
+        )
+        self.addCleanup(
+            import_helper.unload, "test.test_lazy_import.data.broken_module"
+        )
+        self.assertIs(type(ns["x"]), types.LazyImportType)
+        self.assertIs(type(ns["y"]), types.LazyImportType)
+
+        annos = get_annotations(ns["A"], format=Format.FORWARDREF)
+        self.assertEqual(
+            annos,
+            {
+                "a": support.EqualToForwardRef(
+                    "object.fail", is_class=True, owner=ns["A"]
+                ),
+                "b": 42,
+            },
+        )
+
+        annos = get_annotations(ns["B"], format=Format.FORWARDREF)
+        self.assertEqual(
+            annos,
+            {
+                "a": support.EqualToForwardRef(
+                    "object.fail", is_class=True, owner=ns["B"]
+                ),
+                "b": support.EqualToForwardRef(
+                    "y", is_class=True, owner=ns["B"]
+                ),
+            },
+        )
+        with self.assertRaisesRegex(ValueError, "always fails to import"):
+            annos["b"].evaluate(format=Format.VALUE)
+
     def test_evaluate_notimplemented_format(self):
         class C:
             x: alias
