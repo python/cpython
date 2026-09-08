@@ -2475,8 +2475,8 @@ static PyObject *
 hamt_baseiter_tp_iternext(PyObject *op)
 {
     PyHamtIterator *it = (PyHamtIterator*)op;
-    PyObject *key = NULL;
-    PyObject *val = NULL;
+    PyObject *key;
+    PyObject *val;
     hamt_iter_t res;
 
     /* The depth-first cursor (i_level, i_pos and i_nodes) is stored in the
@@ -2487,15 +2487,16 @@ hamt_baseiter_tp_iternext(PyObject *op)
        dereference a stale or NULL node.  Serialize the whole descent on the
        iterator; the HAMT itself is immutable, so nothing else needs locking.
 
+       key and val are borrowed references into the tree and stay valid after
+       the lock is released: they are pinned via hi_obj, which this function
+       never drops, and tp_clear (the only other code that drops it) cannot
+       run concurrently because an in-flight tp_iternext call implies the
+       caller owns a reference to the iterator, keeping it reachable.
+
        Concurrent iteration can still skip or repeat items, which matches the
        behaviour of the other free-threaded iterators. */
     Py_BEGIN_CRITICAL_SECTION(op);
     res = hamt_iterator_next(&it->hi_iter, &key, &val);
-    if (res == I_ITEM) {
-        /* hamt_iterator_next() returns borrowed references. */
-        Py_INCREF(key);
-        Py_INCREF(val);
-    }
     Py_END_CRITICAL_SECTION();
 
     switch (res) {
@@ -2504,10 +2505,7 @@ hamt_baseiter_tp_iternext(PyObject *op)
             return NULL;
 
         case I_ITEM: {
-            PyObject *item = (*(it->hi_yield))(key, val);
-            Py_DECREF(key);
-            Py_DECREF(val);
-            return item;
+            return (*(it->hi_yield))(key, val);
         }
 
         default: {
