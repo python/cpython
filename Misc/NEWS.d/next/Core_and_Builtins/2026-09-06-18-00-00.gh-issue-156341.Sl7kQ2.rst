@@ -1,0 +1,2 @@
+Fix fallback importing of ``_threading_local`` when the standard
+library ``threading`` module has not yet been fully initialized.
