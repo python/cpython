@@ -16,6 +16,7 @@ import sysconfig
 import tempfile
 import textwrap
 import unittest
+import unittest.mock
 import warnings
 import zipfile
 import zipimport
@@ -408,6 +409,9 @@ class TestSupport(unittest.TestCase):
             # Does not match the default "test*" pattern.
             zf.writestr('zpkg/other.py', test_module)
         self.enterContext(import_helper.DirsOnSysPath(zip_path))
+        # As when the standard library itself is a zip archive.
+        self.enterContext(unittest.mock.patch.object(
+            support, 'STDLIB_DIR', zip_path))
         self.addCleanup(zipimport._zip_directory_cache.pop, zip_path, None)
         for path in (zip_path, os.path.join(zip_path, 'zpkg')):
             self.addCleanup(sys.path_importer_cache.pop, path, None)

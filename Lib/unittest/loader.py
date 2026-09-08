@@ -2,6 +2,7 @@
 
 import inspect
 import os
+import pkgutil
 import re
 import sys
 import traceback
@@ -59,6 +60,33 @@ def _make_skipped_test(methodname, exception, suiteClass):
 
 def _splitext(path):
     return os.path.splitext(path)[0]
+
+
+def _list_archive_dir(path):
+    """List the modules in *path* when it is not a directory on disk.
+
+    A test package can live inside an archive on sys.path, such as a zip
+    file, where os.listdir() does not work but the path entry finder for
+    the archive still knows the contents (see pkgutil.iter_modules()).
+    Return a sorted list of (name, is_package) pairs, or None if *path* is
+    a directory on the file system or nothing can import from it.
+    """
+    if os.path.isdir(path):
+        return None
+    # Probe the path hooks directly rather than with pkgutil.get_importer(),
+    # which would cache a negative result in sys.path_importer_cache and so
+    # hide a directory created at that path later on.
+    if sys.path_importer_cache.get(path) is None:
+        for hook in sys.path_hooks:
+            try:
+                hook(path)
+            except ImportError:
+                continue
+            break
+        else:
+            return None
+    return sorted((name, ispkg)
+                  for _, name, ispkg in pkgutil.iter_modules([path]))
 
 
 class TestLoader(object):
@@ -241,7 +269,8 @@ class TestLoader(object):
 
         All test modules must be importable from the top level of the project.
         If the start directory is not the top level directory then the top
-        level directory must be specified separately.
+        level directory must be specified separately.  The start directory
+        may also be inside an archive on sys.path, such as a zip file.
 
         If a test package name (directory with '__init__.py') matches the
         pattern then the package will be checked for a 'load_tests' function. If
@@ -287,6 +316,13 @@ class TestLoader(object):
             start_dir = os.path.abspath(start_dir)
             if start_dir != top_level_dir:
                 is_not_importable = not os.path.isfile(os.path.join(start_dir, '__init__.py'))
+        elif _list_archive_dir(os.path.abspath(start_dir)) is not None:
+            # a directory inside an archive on sys.path, such as a zip file
+            start_dir = os.path.abspath(start_dir)
+            if start_dir != top_level_dir:
+                parent, name = os.path.split(start_dir)
+                is_not_importable = (
+                    (name, True) not in (_list_archive_dir(parent) or ()))
         else:
             # support for discovery from dotted module names
             try:
@@ -380,6 +416,9 @@ class TestLoader(object):
 
     def _find_tests(self, start_dir, pattern, namespace=False):
         """Used by discovery. Yields test suites it loads."""
+        # Inside an archive the import system lists the entries and tells
+        # modules and packages apart; on disk the file system does.
+        entries = _list_archive_dir(start_dir)
         # Handle the __init__ in this package
         name = self._get_name_from_path(start_dir)
         # name is '.' when start_dir == top_level_dir (and top_level_dir is by
@@ -388,7 +427,8 @@ class TestLoader(object):
             # name is in self._loading_packages while we have called into
             # loadTestsFromModule with name.
             tests, should_recurse = self._find_test_path(
-                start_dir, pattern, namespace)
+                start_dir, pattern, namespace,
+                kind=None if entries is None else 'package')
             if tests is not None:
                 yield tests
             if not should_recurse:
@@ -396,11 +436,16 @@ class TestLoader(object):
                 # package.
                 return
         # Handle the contents.
-        paths = sorted(os.listdir(start_dir))
-        for path in paths:
+        if entries is None:
+            paths = [(path, None) for path in sorted(os.listdir(start_dir))]
+        else:
+            paths = [(name if ispkg else f'{name}.py',
+                      'package' if ispkg else 'module')
+                     for name, ispkg in entries]
+        for path, kind in paths:
             full_path = os.path.join(start_dir, path)
             tests, should_recurse = self._find_test_path(
-                full_path, pattern, False)
+                full_path, pattern, False, kind=kind)
             if tests is not None:
                 yield tests
             if should_recurse:
@@ -412,16 +457,26 @@ class TestLoader(object):
                 finally:
                     self._loading_packages.discard(name)
 
-    def _find_test_path(self, full_path, pattern, namespace=False):
+    def _find_test_path(self, full_path, pattern, namespace=False,
+                        kind=None):
         """Used by discovery.
 
         Loads tests from a single file, or a directories' __init__.py when
-        passed the directory.
+        passed the directory.  *kind* is 'module' or 'package' for an entry
+        inside an archive, or None to consult the file system.
 
         Returns a tuple (None_or_tests_from_file, should_recurse).
         """
         basename = os.path.basename(full_path)
-        if os.path.isfile(full_path):
+        if kind is None:
+            if os.path.isfile(full_path):
+                kind = 'module'
+            elif os.path.isdir(full_path):
+                init = os.path.join(full_path, '__init__.py')
+                if not namespace and not os.path.isfile(init):
+                    return None, False
+                kind = 'package'
+        if kind == 'module':
             if not VALID_MODULE_NAME.match(basename):
                 # valid Python identifiers only
                 return None, False
@@ -455,11 +510,7 @@ class TestLoader(object):
                     raise ImportError(
                         msg % (mod_name, module_dir, expected_dir))
                 return self.loadTestsFromModule(module, pattern=pattern), False
-        elif os.path.isdir(full_path):
-            if (not namespace and
-                not os.path.isfile(os.path.join(full_path, '__init__.py'))):
-                return None, False
-
+        elif kind == 'package':
             load_tests = None
             tests = None
             name = self._get_name_from_path(full_path)

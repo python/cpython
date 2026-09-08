@@ -38,14 +38,14 @@ def findtestdir(path: StrPath | None = None) -> StrPath:
 
 
 def _listdir(testdir: StrPath) -> list[str]:
-    try:
-        return os.listdir(testdir)
-    except NotADirectoryError:
-        # The test package is not on the file system, e.g. it is inside a
-        # zip archive: ask the import system instead.
+    if not os.path.isdir(testdir):
+        # The test package may be inside an archive on sys.path, such as a
+        # zip file, which the import system can still list.
         import pkgutil
-        return [name if ispkg else f"{name}.py"
-                for _, name, ispkg in pkgutil.iter_modules([testdir])]
+        if pkgutil.get_importer(testdir) is not None:
+            return [name if ispkg else f"{name}.py"
+                    for _, name, ispkg in pkgutil.iter_modules([testdir])]
+    return os.listdir(testdir)
 
 
 def findtests(*, testdir: StrPath | None = None, exclude: Container[str] = (),

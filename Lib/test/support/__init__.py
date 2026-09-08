@@ -173,72 +173,11 @@ def load_package_tests(pkg_dir, loader, standard_tests, pattern):
     if pattern is None:
         pattern = "test*"
     top_dir = STDLIB_DIR
-    if not os.path.isdir(pkg_dir):
-        # The test package is not on the file system, e.g. it is inside a
-        # zip archive: unittest cannot discover it, but the import system
-        # can still list its modules.
-        package_tests = _load_package_tests_from_import_system(
-            pkg_dir, loader, pattern)
-    else:
-        package_tests = loader.discover(start_dir=pkg_dir,
-                                        top_level_dir=top_dir,
-                                        pattern=pattern)
+    package_tests = loader.discover(start_dir=pkg_dir,
+                                    top_level_dir=top_dir,
+                                    pattern=pattern)
     standard_tests.addTests(package_tests)
     return standard_tests
-
-
-def _get_package_name(pkg_dir):
-    """Return the dotted name of the package located in *pkg_dir*."""
-    # The package calling load_package_tests() has already been imported.
-    for name, module in list(sys.modules.items()):
-        try:
-            paths = list(module.__path__)
-        except Exception:
-            continue
-        if pkg_dir in paths:
-            return name
-    # Fall back to the location of the package in the standard library.
-    return os.path.relpath(pkg_dir, STDLIB_DIR).replace(os.sep, '.')
-
-
-def _load_package_tests_from_import_system(pkg_dir, loader, pattern,
-                                           package=None):
-    """Load the tests of a package which is not on the file system.
-
-    Mimic unittest discovery for a package that unittest cannot walk,
-    e.g. a package inside a zip archive, by asking the import system for
-    its modules.
-    """
-    import fnmatch
-    import importlib
-    import pkgutil
-    from unittest.loader import _make_failed_import_test, _make_skipped_test
-
-    if package is None:
-        package = _get_package_name(pkg_dir)
-    tests = []
-    for _, name, ispkg in pkgutil.iter_modules([pkg_dir]):
-        if not ispkg and not fnmatch.fnmatch(f"{name}.py", pattern):
-            continue
-        fullname = f"{package}.{name}"
-        try:
-            module = importlib.import_module(fullname)
-        except unittest.SkipTest as exc:
-            tests.append(_make_skipped_test(fullname, exc, loader.suiteClass))
-            continue
-        except Exception:
-            error_case, error_message = _make_failed_import_test(
-                fullname, loader.suiteClass)
-            loader.errors.append(error_message)
-            tests.append(error_case)
-            continue
-        tests.append(loader.loadTestsFromModule(module, pattern=pattern))
-        if ispkg and getattr(module, 'load_tests', None) is None:
-            # Like unittest discovery, recurse into a sub-package which
-            # does not use the load_tests protocol.
-            tests.extend(_load_package_tests_from_import_system(
-                os.path.join(pkg_dir, name), loader, pattern, fullname))
-    return tests
 
 
 def get_attribute(obj, name):
