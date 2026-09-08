@@ -494,7 +494,7 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
     do { \
         PyObject **_tmp_op_ptr = _Py_CAST(PyObject**, &(op)); \
         PyObject *_tmp_old_op = (*_tmp_op_ptr); \
-        if (_tmp_old_op != NULL) { \
+        if (_tmp_old_op != _Py_NULL) { \
             PyObject *_null_ptr = _Py_NULL; \
             memcpy(_tmp_op_ptr, &_null_ptr, sizeof(PyObject*)); \
             Py_DECREF(_tmp_old_op); \
