@@ -173,6 +173,42 @@ class CallStackTestBase:
 
         self.assertEqual(len(result.call_stack), 2)
 
+    async def test_stack_aiter_callable(self):
+        # gh-157044: aiter(callable, stop) must not truncate the stack
+        fut = asyncio.Future()
+        stack_for_worker = None
+
+        async def deep():
+            await fut
+
+        async def produce():
+            await deep()
+            return 'stop'
+
+        async def worker():
+            async for _ in aiter(produce, 'stop'):
+                pass
+
+        async def main():
+            nonlocal stack_for_worker
+
+            async with asyncio.TaskGroup() as g:
+                t = g.create_task(worker(), name='worker')
+                for _ in range(5):
+                    await asyncio.sleep(0)
+
+                stack_for_worker = capture_test_stack(fut=t)
+                aw = t.get_coro().cr_await
+                self.assertIsNotNone(getattr(aw, 'aw_wrapped', None))
+                fut.set_result(None)
+
+        await main()
+
+        self.assertEqual(stack_for_worker[0][:2], [
+            'T<worker>',
+            ['a deep', 'a produce', 'a worker'],
+        ])
+
     async def test_stack_gather(self):
 
         stack_for_deep = None
