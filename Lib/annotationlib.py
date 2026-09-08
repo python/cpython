@@ -998,29 +998,35 @@ def _is_runtime_constructed(value):
 def _contains_runtime_constructed(value):
     if _is_runtime_constructed(value):
         return True
-    if isinstance(value, (list, tuple, set)):
-        return any(_contains_runtime_constructed(v) for v in value)
     if isinstance(value, dict):
         return any(
             _contains_runtime_constructed(k) or _contains_runtime_constructed(v)
             for k, v in value.items()
         )
+    if isinstance(value, (list, tuple, set, frozenset)):
+        return any(_contains_runtime_constructed(v) for v in value)
     return False
 
 
 def _stringify_annotation_dict(annos, owner):
     # Only read source when fake-globals produced a runtime object we cannot
-    # stringify (lambda, genexpr, or a container holding one).
+    # stringify (lambda, genexpr, or a container holding one), or when the
+    # fallback text still embeds a memory address.
     sourced = _sentinel
     result = {}
     for key, val in annos.items():
-        if _contains_runtime_constructed(val):
+        text = _stringify_single(val)
+        needs_source = (
+            _contains_runtime_constructed(val)
+            or "0x" in text.lower()
+        )
+        if needs_source:
             if sourced is _sentinel:
                 sourced = _string_annotations_from_source(owner)
             if sourced is not None and key in sourced:
                 result[key] = sourced[key]
                 continue
-        result[key] = _stringify_single(val)
+        result[key] = text
     return result
 
 
@@ -1038,6 +1044,11 @@ def _stringify_container(anno):
             return "set()"
         inner = ", ".join(_stringify_single(v) for v in anno)
         return f"{{{inner}}}"
+    if isinstance(anno, frozenset):
+        if not anno:
+            return "frozenset()"
+        inner = ", ".join(_stringify_single(v) for v in anno)
+        return f"frozenset({{{inner}}})"
     inner = ", ".join(
         f"{_stringify_single(k)}: {_stringify_single(v)}"
         for k, v in anno.items()
@@ -1057,7 +1068,10 @@ def _stringify_single(anno):
         # Lambdas and generator expressions are syntax, not name lookups.
         # repr() embeds a memory address; type_repr() is stable.
         return type_repr(anno)
-    elif isinstance(anno, (list, tuple, set, dict)) and _contains_runtime_constructed(anno):
+    elif (
+        isinstance(anno, (list, tuple, set, frozenset, dict))
+        and _contains_runtime_constructed(anno)
+    ):
         return _stringify_container(anno)
     else:
         return repr(anno)
