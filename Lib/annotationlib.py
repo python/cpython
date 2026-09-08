@@ -750,13 +750,20 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             argdefs=annotate.__defaults__,
             kwdefaults=annotate.__kwdefaults__,
         )
-        annos = func(Format.VALUE_WITH_FAKE_GLOBALS)
+        try:
+            annos = func(Format.VALUE_WITH_FAKE_GLOBALS)
+        except ValueError:
+            # Dict comprehensions such as `{k: v for k, v in items}` unpack
+            # each iterated element. Fake-globals iteration yields a single
+            # starred stringifier, so unpacking raises ValueError. Recover
+            # the original annotation text from source when we can.
+            sourced = _string_annotations_from_source(owner)
+            if sourced is not None:
+                return sourced
+            raise
         if _is_evaluate:
             return _stringify_single(annos)
-        return {
-            key: _stringify_single(val)
-            for key, val in annos.items()
-        }
+        return _stringify_annotation_dict(annos, owner)
     elif format == Format.FORWARDREF:
         # FORWARDREF is implemented similarly to STRING, but there are two changes,
         # at the beginning and the end of the process.
@@ -878,6 +885,81 @@ def _build_closure(annotate, owner, is_class, stringifier_dict, *, allow_evaluat
     return tuple(new_closure), cell_dict
 
 
+def _string_annotations_from_source(obj):
+    """Best-effort STRING annotations reconstructed from *obj*'s source AST.
+
+    Used when fake-globals evaluation cannot stringify an annotation (dict
+    comprehensions, lambdas, generator expressions). Returns None if source
+    is unavailable. inspect is imported lazily because it imports this module.
+    """
+    if obj is None:
+        return None
+    try:
+        import inspect
+        import textwrap
+        source = inspect.getsource(obj)
+    except (OSError, TypeError, RecursionError):
+        return None
+    source = textwrap.dedent(source)
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return None
+    if not tree.body:
+        return None
+    node = tree.body[0]
+    result = {}
+    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        for arg in (
+            *node.args.posonlyargs,
+            *node.args.args,
+            *node.args.kwonlyargs,
+        ):
+            if arg.annotation is not None:
+                result[arg.arg] = ast.unparse(arg.annotation)
+        if node.args.vararg is not None and node.args.vararg.annotation is not None:
+            result[node.args.vararg.arg] = ast.unparse(node.args.vararg.annotation)
+        if node.args.kwarg is not None and node.args.kwarg.annotation is not None:
+            result[node.args.kwarg.arg] = ast.unparse(node.args.kwarg.annotation)
+        if node.returns is not None:
+            result["return"] = ast.unparse(node.returns)
+        return result
+    if isinstance(node, ast.ClassDef):
+        for stmt in node.body:
+            if isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Name):
+                result[stmt.target.id] = ast.unparse(stmt.annotation)
+        return result
+    return None
+
+
+def _is_runtime_constructed(value):
+    """True if *value* was created at annotation-eval time and has no AST.
+
+    Lambdas and generator expressions are syntax, not name lookups, so the
+    fake-globals stringifier never sees them. Their repr() embeds a memory
+    address and is not a valid annotation string.
+    """
+    return isinstance(value, (
+        types.FunctionType,
+        types.BuiltinFunctionType,
+        types.MethodType,
+        types.GeneratorType,
+        types.AsyncGeneratorType,
+        types.CoroutineType,
+    ))
+
+
+def _stringify_annotation_dict(annos, owner):
+    sourced = _string_annotations_from_source(owner)
+    result = {}
+    for key, val in annos.items():
+        if sourced is not None and key in sourced and _is_runtime_constructed(val):
+            result[key] = sourced[key]
+        else:
+            result[key] = _stringify_single(val)
+    return result
+
+
 def _stringify_single(anno):
     if anno is ...:
         return "..."
@@ -886,6 +968,10 @@ def _stringify_single(anno):
         return anno
     elif isinstance(anno, _Template):
         return ast.unparse(_template_to_ast(anno))
+    elif _is_runtime_constructed(anno):
+        # Lambdas and generator expressions are syntax, not name lookups.
+        # repr() embeds a memory address; type_repr() is stable.
+        return type_repr(anno)
     else:
         return repr(anno)
 
@@ -1093,6 +1179,13 @@ def type_repr(value):
         if value.__module__ == "builtins":
             return value.__qualname__
         return f"{value.__module__}.{value.__qualname__}"
+    elif isinstance(value, (
+        types.GeneratorType,
+        types.AsyncGeneratorType,
+        types.CoroutineType,
+    )):
+        # repr() of these objects embeds a memory address.
+        return value.__qualname__
     elif isinstance(value, _Template):
         tree = _template_to_ast(value)
         return ast.unparse(tree)
