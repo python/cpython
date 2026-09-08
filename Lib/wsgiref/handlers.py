@@ -84,7 +84,6 @@ def read_environ():
                     v = v.encode(enc, 'replace').decode('iso-8859-1')
 
             # Recover bytes from unicode environ, using surrogate escapes
-            # where available (Python 3.1+).
             else:
                 v = v.encode(enc, esc).decode('iso-8859-1')
 
