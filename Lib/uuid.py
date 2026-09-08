@@ -329,7 +329,7 @@ class UUID:
         raise TypeError('UUID objects are immutable')
 
     def __str__(self):
-        x = self.hex
+        x = self.int.to_bytes(16).hex()
         return f'{x[:8]}-{x[8:12]}-{x[12:16]}-{x[16:20]}-{x[20:]}'
 
     @property
