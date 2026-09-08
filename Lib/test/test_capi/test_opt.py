@@ -12,7 +12,7 @@ import _opcode
 
 from test.support import (script_helper, requires_specialization,
                           import_helper, Py_GIL_DISABLED, requires_jit_enabled,
-                          reset_code)
+                          reset_code, SHORT_TIMEOUT, isolation)
 
 _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
@@ -4875,6 +4875,27 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 3)
         self.assertIn("_POP_TOP_NOP", uops)
 
+    def test_to_bool_noncompact_int(self):
+        # gh-155486: non-compact exact integer should remain specialized
+        # as _TO_BOOL_INT in Tier 2.
+        def f(n, value=1 << 100):
+            for _ in range(n):
+                if not value:
+                    return 0
+                # The second check should reuse the exact-int type established by the first guard.
+                if not value:
+                    return 0
+            return 1
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, 1)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_TO_BOOL_INT", uops)
+        self.assertLessEqual(count_ops(ex, "_GUARD_TOS_EXACT_INT"), 1)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 3)
+        self.assertIn("_POP_TOP_NOP", uops)
+
     def test_to_bool_list(self):
         def f(n):
             for i in range(n):
@@ -6224,6 +6245,28 @@ class TestUopsOptimization(unittest.TestCase):
             for _ in range({TIER2_THRESHOLD + 5}):
                 f1()
         """), PYTHON_JIT="1")
+
+    @isolation.runInSubprocess(timeout=SHORT_TIMEOUT)
+    def test_for_iter_side_exit_does_not_self_link(self):
+        def exhaust(iterator):
+            for _ in iterator:
+                pass
+
+        values = range(TIER2_THRESHOLD)
+        # After the initial trace, MAX_CHAIN_DEPTH side exits cause the final
+        # executor to be installed at FOR_ITER.
+        warmup_iterators = (
+            iter(set(values)),
+            iter(dict.fromkeys(values)),
+            iter(values),
+            enumerate(values),
+            zip(values, values),
+        )
+        for iterator in warmup_iterators:
+            exhaust(iterator)
+
+        # A different iterator type must not link that executor to itself.
+        exhaust(map(bool, values))
 
 def global_identity(x):
     return x

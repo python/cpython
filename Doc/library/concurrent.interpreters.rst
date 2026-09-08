@@ -191,7 +191,7 @@ objects are either directly shared or copied efficiently.  For example:
 * :class:`float`
 * :class:`tuple` (of similarly supported objects)
 
-There is a small number of Python types that actually share mutable
+There are a small number of Python types that actually share mutable
 data between interpreters:
 
 * :class:`memoryview`
@@ -274,7 +274,7 @@ Interpreter objects
 
    .. method:: call(callable, /, *args, **kwargs)
 
-      Return the result of calling running the given function in the
+      Return the result of running the given function in the
       interpreter (in the current thread).
 
    .. _interp-call-in-thread:
