@@ -618,6 +618,8 @@ class BaseCookie(dict):
                 else:
                     parsed_items.append((TYPE_ATTRIBUTE, key, _unquote(value)))
             elif value is not None:
+                if not _is_legal_key(key):
+                    raise CookieError('Illegal key %r' % (key,))
                 parsed_items.append((TYPE_KEYVALUE, key, self.value_decode(value)))
                 morsel_seen = True
             else:
