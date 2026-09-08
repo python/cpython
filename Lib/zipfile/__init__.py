@@ -1204,7 +1204,8 @@ class ZipExtFile(io.BufferedIOBase):
 
     def _set_decompressor(self):
         self._decompressor = _get_decompressor(self._compress_type)
-        self._decompress_bounded = _decompressor_bounds_output(self._decompressor)
+        self._decompress_bounded = _decompressor_bounds_output(
+            self._decompressor)
 
     def _read1(self, n):
         # Read up to n compressed bytes with at most one read() system call,
@@ -1245,7 +1246,8 @@ class ZipExtFile(io.BufferedIOBase):
             data = self._decompressor.decompress(data, max(n, self.MIN_READ_SIZE))
             self._eof = (self._decompressor.eof or
                          self._compress_left <= 0 and
-                         _decompressor_needs_input(self._decompressor, default=True))
+                         _decompressor_needs_input(self._decompressor,
+                                                   default=True))
         else:
             data = self._decompressor.decompress(data)
             self._eof = self._decompressor.eof or self._compress_left <= 0

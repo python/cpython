@@ -4970,8 +4970,12 @@ class ThirdPartyDecompressorTests(unittest.TestCase):
             self.assertEqual(zf.read("member"), data)
             with zf.open("member") as f:
                 self.assertEqual(f.read(100), data[:100])
+                self.assertEqual(f.read1(100), data[100:200])
                 f.seek(-100, os.SEEK_END)
                 self.assertEqual(f.read(), data[-100:])
+                # Rewinding past the read buffer re-creates the decompressor.
+                f.seek(0)
+                self.assertEqual(f.read(), data)
 
 
 class AbstractBadCrcTests:
