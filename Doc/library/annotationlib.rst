@@ -235,8 +235,8 @@ Functions
    annotate functions that support the :attr:`~Format.STRING` format but
    do not have access to the code creating the annotations.
 
-   For example, this is used to implement the :attr:`~Format.STRING` for
-   :class:`typing.TypedDict` classes created through the functional syntax:
+   For example, this is used to implement the :attr:`~Format.STRING` format
+   for :class:`typing.TypedDict` classes created through the functional syntax:
 
    .. doctest::
 

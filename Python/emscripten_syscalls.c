@@ -132,6 +132,10 @@ EM_JS_MACROS(void, _emscripten_promising_main_js, (void), {
     };
 })
 
+EM_JS_DEPS(_emscripten_promising_main,
+           "$FS,$PATH,$FS_getMode,$resolveGlobalSymbol,"
+           "emscripten_exit_with_live_runtime");
+
 __attribute__((constructor)) void _emscripten_promising_main(void) {
     _emscripten_promising_main_js();
 }
@@ -198,6 +202,8 @@ EM_JS_MACROS(__externref_t, __maybe_fd_read_async, (
     })();
 };
 );
+
+EM_JS_DEPS(__maybe_fd_read_async, "$SYSCALLS");
 
 // Bind original fd_read syscall to __wasi_fd_read_orig().
 __wasi_errno_t __wasi_fd_read_orig(__wasi_fd_t fd, const __wasi_iovec_t *iovs,
@@ -279,6 +285,8 @@ EM_JS_MACROS(__externref_t, __maybe_poll_async, (intptr_t fds, int nfds, int tim
         }
     })();
 });
+
+EM_JS_DEPS(__maybe_poll_async, "$FS");
 
 // Bind original poll syscall to syscall_poll_orig().
 int syscall_poll_orig(intptr_t fds, int nfds, int timeout)

@@ -23,8 +23,6 @@ the CPython prompt as closely as possible, with the exception of
 allowing multiline input and multiline history entries.
 """
 
-from __future__ import annotations
-
 import _sitebuiltins
 import functools
 import os

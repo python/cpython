@@ -570,6 +570,7 @@ def collect_sysconfig(info_add):
 
     for name in (
         'ABIFLAGS',
+        'ALT_SOABI',
         'ANDROID_API_LEVEL',
         'CC',
         'CCSHARED',
@@ -595,6 +596,7 @@ def collect_sysconfig(info_add):
         'Py_REMOTE_DEBUG',
         'SHELL',
         'SOABI',
+        'SOABI_PLATFORM',
         'TEST_MODULES',
         'VAPTH',
         'abs_builddir',
@@ -608,14 +610,6 @@ def collect_sysconfig(info_add):
             continue
         value = normalize_text(value)
         info_add('sysconfig[%s]' % name, value)
-
-    PY_CFLAGS = sysconfig.get_config_var('PY_CFLAGS')
-    NDEBUG = (PY_CFLAGS and '-DNDEBUG' in PY_CFLAGS)
-    if NDEBUG:
-        text = 'ignore assertions (macro defined)'
-    else:
-        text= 'build assertions (macro not defined)'
-    info_add('build.NDEBUG',text)
 
     for name in (
         'WITH_DOC_STRINGS',
@@ -842,6 +836,8 @@ def collect_support(info_add):
              support.check_sanitizer(memory=True))
     info_add('support.check_sanitizer(ub=True)',
              support.check_sanitizer(ub=True))
+    info_add('support.built_with_c_assertions',
+             support.built_with_c_assertions())
 
 
 def collect_support_os_helper(info_add):
@@ -1315,6 +1311,12 @@ def collect_system(info_add):
             info_add('system.hardware', hardware)
 
 
+def collect_importlib(info_add):
+    import importlib.machinery
+    info_add('importlib.extension_suffixes',
+             importlib.machinery.EXTENSION_SUFFIXES)
+
+
 def collect_info(info):
     error = False
     info_add = info.add
@@ -1357,6 +1359,7 @@ def collect_info(info):
         collect_zstd,
         collect_libregrtest_utils,
         collect_system,
+        collect_importlib,
 
         # Collecting from tests should be last as they have side effects.
         collect_test_socket,

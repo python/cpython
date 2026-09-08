@@ -211,6 +211,7 @@ class IndentSearcherTest(unittest.TestCase):
                 self.assertEqual(actual_pair, expected_pair)
 
 
+@unittest.skip('Empty test')
 class RMenuTest(unittest.TestCase):
 
     @classmethod

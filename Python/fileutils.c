@@ -78,34 +78,59 @@ get_surrogateescape(_Py_error_handler errors, int *surrogateescape)
 PyObject *
 _Py_device_encoding(int fd)
 {
+#if defined(MS_WINDOWS) && defined(HAVE_WINDOWS_CONSOLE_IO)
+    HANDLE handle;
+    DWORD temp;
+    UINT cp = 0;
+
+    _Py_BEGIN_SUPPRESS_IPH
+    handle = (HANDLE)_get_osfhandle(fd);
+    _Py_END_SUPPRESS_IPH
+    if (handle == INVALID_HANDLE_VALUE) {
+        Py_RETURN_NONE;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    if (GetFileType(handle) == FILE_TYPE_CHAR) {
+        /* GetConsoleMode() only succeeds for a console handle. */
+        if (!GetConsoleMode(handle, &temp)) {
+            /* Assume that access denied implies an output handle. */
+            if (GetLastError() == ERROR_ACCESS_DENIED) {
+                cp = GetConsoleOutputCP();
+            }
+        }
+        else if (GetNumberOfConsoleInputEvents(handle, &temp)) {
+            cp = GetConsoleCP();
+        }
+        else {
+            cp = GetConsoleOutputCP();
+        }
+    }
+    Py_END_ALLOW_THREADS
+
+    /* GetConsoleCP() and GetConsoleOutputCP() return 0 if the application
+       has no console */
+    if (cp == CP_UTF8) {
+        _Py_DECLARE_STR(utf_8, "utf-8");
+        return &_Py_STR(utf_8);
+    }
+    if (cp == 0) {
+        Py_RETURN_NONE;
+    }
+    return PyUnicode_FromFormat("cp%u", (unsigned int)cp);
+#else
     int valid;
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
     valid = isatty(fd);
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
-    if (!valid)
-        Py_RETURN_NONE;
-
-#ifdef MS_WINDOWS
-#ifdef HAVE_WINDOWS_CONSOLE_IO
-    UINT cp;
-    if (fd == 0)
-        cp = GetConsoleCP();
-    else if (fd == 1 || fd == 2)
-        cp = GetConsoleOutputCP();
-    else
-        cp = 0;
-    /* GetConsoleCP() and GetConsoleOutputCP() return 0 if the application
-       has no console */
-    if (cp == 0) {
+    if (!valid) {
         Py_RETURN_NONE;
     }
 
-    return PyUnicode_FromFormat("cp%u", (unsigned int)cp);
-#else
+#ifdef MS_WINDOWS
     Py_RETURN_NONE;
-#endif /* HAVE_WINDOWS_CONSOLE_IO */
 #else
     if (_PyRuntime.preconfig.utf8_mode) {
         _Py_DECLARE_STR(utf_8, "utf-8");
@@ -113,6 +138,7 @@ _Py_device_encoding(int fd)
     }
     return _Py_GetLocaleEncodingObject();
 #endif
+#endif /* MS_WINDOWS && HAVE_WINDOWS_CONSOLE_IO */
 }
 
 
@@ -1103,50 +1129,41 @@ typedef union {
 
 
 void
-_Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag,
+_Py_attribute_data_to_stat(FILE_STANDARD_INFO* standard_info, ULONG reparse_tag,
                            FILE_BASIC_INFO *basic_info, FILE_ID_INFO *id_info,
                            struct _Py_stat_struct *result)
 {
     memset(result, 0, sizeof(*result));
-    result->st_mode = attributes_to_mode(info->dwFileAttributes);
-    result->st_size = (((__int64)info->nFileSizeHigh)<<32) + info->nFileSizeLow;
-    result->st_dev = id_info ? id_info->VolumeSerialNumber : info->dwVolumeSerialNumber;
-    result->st_rdev = 0;
+
+    result->st_size = standard_info->EndOfFile.QuadPart;
+    result->st_nlink = standard_info->NumberOfLinks;
+
     /* st_ctime is deprecated, but we preserve the legacy value in our caller, not here */
-    if (basic_info) {
-        LARGE_INTEGER_to_time_t_nsec(&basic_info->CreationTime, &result->st_birthtime, &result->st_birthtime_nsec);
-        LARGE_INTEGER_to_time_t_nsec(&basic_info->ChangeTime, &result->st_ctime, &result->st_ctime_nsec);
-        LARGE_INTEGER_to_time_t_nsec(&basic_info->LastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
-        LARGE_INTEGER_to_time_t_nsec(&basic_info->LastAccessTime, &result->st_atime, &result->st_atime_nsec);
-    } else {
-        FILE_TIME_to_time_t_nsec(&info->ftCreationTime, &result->st_birthtime, &result->st_birthtime_nsec);
-        FILE_TIME_to_time_t_nsec(&info->ftLastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
-        FILE_TIME_to_time_t_nsec(&info->ftLastAccessTime, &result->st_atime, &result->st_atime_nsec);
-    }
-    result->st_nlink = info->nNumberOfLinks;
+    LARGE_INTEGER_to_time_t_nsec(&basic_info->CreationTime, &result->st_birthtime, &result->st_birthtime_nsec);
+    LARGE_INTEGER_to_time_t_nsec(&basic_info->ChangeTime, &result->st_ctime, &result->st_ctime_nsec);
+    LARGE_INTEGER_to_time_t_nsec(&basic_info->LastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
+    LARGE_INTEGER_to_time_t_nsec(&basic_info->LastAccessTime, &result->st_atime, &result->st_atime_nsec);
 
     if (id_info) {
+        result->st_dev = id_info->VolumeSerialNumber;
         id_128_to_ino file_id;
         file_id.id = id_info->FileId;
         result->st_ino = file_id.st_ino;
         result->st_ino_high = file_id.st_ino_high;
     }
-    if (!result->st_ino && !result->st_ino_high) {
-        /* should only occur for DirEntry_from_find_data, in which case the
-           index is likely to be zero anyway. */
-        result->st_ino = (((uint64_t)info->nFileIndexHigh) << 32) + info->nFileIndexLow;
-    }
+
+    result->st_file_attributes = basic_info->FileAttributes;
+    result->st_mode = attributes_to_mode(result->st_file_attributes);
 
     /* bpo-37834: Only actual symlinks set the S_IFLNK flag. But lstat() will
        open other name surrogate reparse points without traversing them. To
        detect/handle these, check st_file_attributes and st_reparse_tag. */
     result->st_reparse_tag = reparse_tag;
-    if (info->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
+    if (result->st_file_attributes & FILE_ATTRIBUTE_REPARSE_POINT &&
         reparse_tag == IO_REPARSE_TAG_SYMLINK) {
         /* set the bits that make this a symlink */
         result->st_mode = (result->st_mode & ~S_IFMT) | S_IFLNK;
     }
-    result->st_file_attributes = info->dwFileAttributes;
 }
 
 void
@@ -1231,9 +1248,9 @@ int
 _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
 {
 #ifdef MS_WINDOWS
-    BY_HANDLE_FILE_INFORMATION info;
-    FILE_BASIC_INFO basicInfo;
-    FILE_ID_INFO idInfo;
+    FILE_STANDARD_INFO standardInfo = {0};
+    FILE_BASIC_INFO basicInfo = {0};
+    FILE_ID_INFO idInfo = {0};
     FILE_ID_INFO *pIdInfo = &idInfo;
     HANDLE h;
     int type;
@@ -1266,7 +1283,7 @@ _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
         return 0;
     }
 
-    if (!GetFileInformationByHandle(h, &info) ||
+    if (!GetFileInformationByHandleEx(h,FileStandardInfo, &standardInfo, sizeof(standardInfo)) ||
         !GetFileInformationByHandleEx(h, FileBasicInfo, &basicInfo, sizeof(basicInfo))) {
         /* The Win32 error is already set, but we also set errno for
            callers who expect it */
@@ -1279,7 +1296,7 @@ _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
         pIdInfo = NULL;
     }
 
-    _Py_attribute_data_to_stat(&info, 0, &basicInfo, pIdInfo, status);
+    _Py_attribute_data_to_stat(&standardInfo, 0, &basicInfo, pIdInfo, status);
     return 0;
 #else
     return fstat(fd, status);

@@ -678,7 +678,7 @@ class DictTest(unittest.TestCase):
         d = {1: BadRepr()}
         self.assertRaises(Exc, repr, d)
 
-    @support.skip_if_huge_c_stack()
+    @support.run_with_limited_c_stack()
     @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()
     def test_repr_deep(self):
@@ -1402,6 +1402,27 @@ class DictTest(unittest.TestCase):
         self.assertEqual(list(reversed(A(1, 2).__dict__)), ['y', 'x'])
         self.assertEqual(list(reversed(A(1, 0).__dict__)), ['x'])
         self.assertEqual(list(reversed(A(0, 1).__dict__)), ['y'])
+
+    def test_reversed_dict_after_clear_and_restore(self):
+        d = {}
+        for i in range(1000):
+            d[f"k{i}"] = i
+
+        for i in range(1, 1000):
+            del d[f"k{i}"]
+
+        iterators = (
+            reversed(d),
+            reversed(d.keys()),
+            reversed(d.values()),
+            reversed(d.items()),
+        )
+
+        d.clear()
+        d["k0"] = 0
+
+        for it in iterators:
+            self.assertEqual(list(it), [])
 
     def test_dict_copy_order(self):
         # bpo-34320

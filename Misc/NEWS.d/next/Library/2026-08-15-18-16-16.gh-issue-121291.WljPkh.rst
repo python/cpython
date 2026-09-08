@@ -1,0 +1,4 @@
+:class:`enum.Flag` (and :class:`enum.IntFlag`) subclasses no longer have
+a mixin base's own ``__or__``, ``__and__``, ``__xor__``, ``__ror__``,
+``__rand__``, ``__rxor__``, or ``__invert__`` override silently replaced
+by :class:`~enum.Flag`'s default implementation.
