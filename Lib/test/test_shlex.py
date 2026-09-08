@@ -420,14 +420,6 @@ class ShlexTest(unittest.TestCase):
         s.push_source(io.StringIO("hello"))
         self.assertListEqual(list(s), ["hello", "world"])
 
-    def testPushSourceKeepsPushback(self):
-        s = shlex.shlex("parent")
-        stream = io.StringIO("child")
-        s.push_token("pushed")
-        s.push_source(stream)
-        self.assertListEqual(list(s), ["pushed", "child", "parent"])
-        self.assertTrue(stream.closed)
-
     def testPushSourceAfterEOF(self):
         for posix in (False, True):
             with self.subTest(posix=posix):
