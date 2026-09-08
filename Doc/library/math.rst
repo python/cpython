@@ -90,7 +90,7 @@ noted otherwise, all return values are floats.
 :func:`atan(x) <atan>`                                Arc tangent of *x*, in radians
 :func:`atanpi(x) <atanpi>`                            Arc tangent of *x*, in half-turns
 :func:`atan2(y, x) <atan2>`                           ``atan(y / x)``, in radians
-:func:`atan2pi(y, x) <atan2pi>`                       ``atan(y / x)``, in half-turns
+:func:`atan2pi(y, x) <atan2pi>`                       ``atanpi(y / x)``, in half-turns
 :func:`cos(x) <cos>`                                  Cosine of *x* radians
 :func:`cospi(x) <cospi>`                              Cosine of *x⋅π* radians
 :func:`sin(x) <sin>`                                  Sine of *x* radians
