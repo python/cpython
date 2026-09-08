@@ -37,6 +37,9 @@ class TestResult(object):
     _moduleSetUpFailed = False
     def __init__(self, stream=None, descriptions=None, verbosity=None):
         self.failfast = False
+        # How much the test runner reports: 0 -- quiet, 1 -- progress dots,
+        # 2 -- test names, 3 -- also the examples of a doctest.
+        self.verbosity = 1 if verbosity is None else verbosity
         self.failures = []
         self.errors = []
         self.testsRun = 0

@@ -39,6 +39,7 @@ static struct PyModuleDef _testcapimodule;
 // Module state
 typedef struct {
     PyObject *error; // _testcapi.error object
+    Py_ssize_t list_destroys;
 } testcapistate_t;
 
 static testcapistate_t*
@@ -1431,14 +1432,15 @@ pymarshal_write_long_to_file(PyObject* self, PyObject *args)
 
     fp = Py_fopen(filename, "wb");
     if (fp == NULL) {
-        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
     PyMarshal_WriteLongToFile(value, fp, version);
-    assert(!PyErr_Occurred());
 
     fclose(fp);
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -1456,14 +1458,15 @@ pymarshal_write_object_to_file(PyObject* self, PyObject *args)
 
     fp = Py_fopen(filename, "wb");
     if (fp == NULL) {
-        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
     PyMarshal_WriteObjectToFile(obj, fp, version);
-    assert(!PyErr_Occurred());
 
     fclose(fp);
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -1480,7 +1483,6 @@ pymarshal_read_short_from_file(PyObject* self, PyObject *args)
 
     fp = Py_fopen(filename, "rb");
     if (fp == NULL) {
-        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
@@ -1505,7 +1507,6 @@ pymarshal_read_long_from_file(PyObject* self, PyObject *args)
 
     fp = Py_fopen(filename, "rb");
     if (fp == NULL) {
-        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
@@ -1527,7 +1528,6 @@ pymarshal_read_last_object_from_file(PyObject* self, PyObject *args)
 
     FILE *fp = Py_fopen(filename, "rb");
     if (fp == NULL) {
-        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
@@ -1550,7 +1550,6 @@ pymarshal_read_object_from_file(PyObject* self, PyObject *args)
 
     FILE *fp = Py_fopen(filename, "rb");
     if (fp == NULL) {
-        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
@@ -2418,6 +2417,36 @@ failed:
     return NULL;
 }
 
+static int
+_listdestroytracer(PyObject *obj, PyRefTracerEvent event, void *data)
+{
+    if (event == PyRefTracer_DESTROY && PyList_CheckExact(obj)) {
+        _Py_atomic_add_ssize((Py_ssize_t *)data, 1);
+    }
+    return 0;
+}
+
+static PyObject *
+start_counting_list_destroys(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    testcapistate_t *state = get_testcapi_state(self);
+    _Py_atomic_store_ssize(&state->list_destroys, 0);
+    if (PyRefTracer_SetTracer(_listdestroytracer, &state->list_destroys) != 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+stop_counting_list_destroys(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    if (PyRefTracer_SetTracer(NULL, NULL) != 0) {
+        return NULL;
+    }
+    return PyLong_FromSsize_t(
+        _Py_atomic_load_ssize(&get_testcapi_state(self)->list_destroys));
+}
+
 static PyObject *
 function_set_warning(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 {
@@ -3022,6 +3051,8 @@ static PyMethodDef TestMethods[] = {
     {"test_buildvalue_N",        test_buildvalue_N,              METH_NOARGS},
     {"test_buildvalue_p",       test_buildvalue_p,               METH_NOARGS},
     {"test_reftracer",          test_reftracer,                  METH_NOARGS},
+    {"start_counting_list_destroys", start_counting_list_destroys, METH_NOARGS},
+    {"stop_counting_list_destroys", stop_counting_list_destroys, METH_NOARGS},
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
     {"gilstate_ensure_release", gilstate_ensure_release,         METH_NOARGS},
 #ifndef MS_WINDOWS
