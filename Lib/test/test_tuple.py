@@ -294,6 +294,9 @@ class TupleTest(seq_tests.CommonTest):
     def _not_tracked_instantly(self, t):
         self.assertFalse(gc.is_tracked(t), t)
 
+    def _tracked_instantly(self, t):
+        self.assertTrue(gc.is_tracked(t), t)
+
     # Checks that t is not tracked after GC collection.
     def _not_tracked(self, t):
         # Nested tuples can take several collections to untrack
@@ -323,10 +326,14 @@ class TupleTest(seq_tests.CommonTest):
         self._not_tracked_instantly((object(),))
 
         # Test for _PyTuple_Concat
-        self._not_tracked_instantly((1, 2) + (2, 3))
+        self._not_tracked_instantly((1, 2) + (2, 3, 4))
+        self._not_tracked_instantly((x, y,) + (2, 3))
+        self._tracked_instantly((3, 4, 5, [],) + (2, 3))
 
         # Test for _PyTuple_Repeat
         self._not_tracked_instantly((1, 2) * 5)
+        self._not_tracked_instantly((1, x) * 5)
+        self._tracked_instantly((1, []) * 5)
 
         self._not_tracked(((1, x), y, (2, 3)))
         self._not_tracked((1, 2, (None, True, False, ()), int))
