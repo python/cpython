@@ -1,2 +1,0 @@
-Fix a timing dependence in ``test_taskgroup_cancel_keeps_outer_cancellation``
-in ``test_asyncio``, which failed on slow builds.
