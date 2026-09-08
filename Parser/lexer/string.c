@@ -16,6 +16,18 @@ _PyLexer_set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
     if (!(tok_mode->in_debug || tok_mode->string_kind == TSTRING) || token->metadata) {
         return 0;
     }
+
+    Py_ssize_t expr_len = tok_mode->last_expr_size - tok_mode->last_expr_end;
+    if (expr_len < 0) {
+        /* last_expr_end > last_expr_size: happens when '{' and the closing
+           delimiter span different source lines, causing the strlen-based
+           size tracking to underflow.  Treat as a tokenizer error rather
+           than passing a negative length (cast to huge size_t) to malloc or
+           PyUnicode_DecodeUTF8. */
+        tok->done = E_TOKEN;
+        return -1;
+    }
+
     PyObject *res = NULL;
 
     // Look for a # character outside of string literals
@@ -23,7 +35,7 @@ _PyLexer_set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
     int in_string = 0;
     char quote_char = 0;
 
-    for (Py_ssize_t i = 0; i < tok_mode->last_expr_size - tok_mode->last_expr_end; i++) {
+    for (Py_ssize_t i = 0; i < expr_len; i++) {
         char ch = tok_mode->last_expr_buffer[i];
 
         // Skip escaped characters
@@ -60,7 +72,7 @@ _PyLexer_set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
     // If we found a # character in the expression, we need to handle comments
     if (hash_detected) {
         // Allocate buffer for processed result
-        char *result = (char *)PyMem_Malloc((tok_mode->last_expr_size - tok_mode->last_expr_end + 1) * sizeof(char));
+        char *result = (char *)PyMem_Malloc((expr_len + 1) * sizeof(char));
         if (!result) {
             return -1;
         }
@@ -71,7 +83,7 @@ _PyLexer_set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
         quote_char = 0;    // Current string quote char
 
         // Process each character
-        while (i < tok_mode->last_expr_size - tok_mode->last_expr_end) {
+        while (i < expr_len) {
             char ch = tok_mode->last_expr_buffer[i];
 
             // Handle string quotes
@@ -87,11 +99,10 @@ _PyLexer_set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
             }
             // Skip comments
             else if (ch == '#' && !in_string) {
-                while (i < tok_mode->last_expr_size - tok_mode->last_expr_end &&
-                       tok_mode->last_expr_buffer[i] != '\n') {
+                while (i < expr_len && tok_mode->last_expr_buffer[i] != '\n') {
                     i++;
                 }
-                if (i < tok_mode->last_expr_size - tok_mode->last_expr_end) {
+                if (i < expr_len) {
                     result[j++] = '\n';
                 }
             }
@@ -108,7 +119,7 @@ _PyLexer_set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
     } else {
         res = PyUnicode_DecodeUTF8(
             tok_mode->last_expr_buffer,
-            tok_mode->last_expr_size - tok_mode->last_expr_end,
+            expr_len,
             NULL
         );
     }
