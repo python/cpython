@@ -246,10 +246,6 @@ from that must be opted into explicitly at configure time:
 
 A non-framework build is selected by omitting `--enable-framework`;
 `--disable-framework` is accepted as an explicit spelling of the same thing.
-Such a build is also static by default, as `--enable-shared` is off unless
-requested; `--enable-shared` without a framework is rejected, since an iOS app
-can only load a signed framework, never a bare dylib. Neither option therefore
-needs to be given.
 
 The minimal commands for a static build targeting ARM64 iOS devices are then:
 ```
