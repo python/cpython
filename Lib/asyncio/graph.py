@@ -249,7 +249,7 @@ def format_call_graph(
                         f' line {f.f_lineno}, in'
                         f' {tag} {code.co_qualname}()'
                     )
- mar
+
         if st.awaited_by:
             add_line(
                 f'  + Awaited by:'
