@@ -84,6 +84,7 @@ PyStructSequence_New(PyTypeObject *type)
     for (i = 0; i < size; i++)
         obj->ob_item[i] = NULL;
 
+    _PyObject_GC_TRACK(obj);
     return (PyObject*)obj;
 }
 
@@ -265,7 +266,6 @@ structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
         }
     }
 
-    _PyObject_GC_TRACK(res);
     return (PyObject*) res;
 }
 
@@ -449,7 +449,6 @@ structseq_replace(PyObject *op, PyObject *args, PyObject *kwargs)
         }
     }
 
-    _PyObject_GC_TRACK(result);
     return (PyObject *)result;
 
 error:
