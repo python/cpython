@@ -79,3 +79,5 @@ jobs:
       run: python3 Platforms/emscripten run --test
     - name: "Test Repl"
       run: Platforms/emscripten/browser_test/run_test.sh
+    - name: "Test embedding"
+      run: Platforms/emscripten/web_embed_test/run_test.sh
