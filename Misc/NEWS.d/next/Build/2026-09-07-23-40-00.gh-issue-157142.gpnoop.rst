@@ -1,0 +1,4 @@
+Fix the link of ``Programs/_freeze_module`` when extension modules are built
+in (``MODULE_BUILDTYPE=static``) and the test modules are enabled:
+``Modules/getpath_noop.c`` now defines ``_Py_Get_Getpath_CodeObject()``,
+which ``_testinternalcapi`` uses.
