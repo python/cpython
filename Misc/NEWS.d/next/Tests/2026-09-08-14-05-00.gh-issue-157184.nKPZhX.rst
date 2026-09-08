@@ -1,5 +1,0 @@
-Fix the ``multiprocessing`` tests that kill a child process
-(``test_interrupt``, ``test_interrupt_no_handler``, ``test_terminate`` and
-``test_kill``) failing on slow builds: the alarm guarding the ``join()`` of
-the killed child used a fixed 10 second timeout, and now uses
-:data:`~test.support.LONG_TIMEOUT`, which regrtest scales.
