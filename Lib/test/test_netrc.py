@@ -62,6 +62,9 @@ class NetrcTestCase(unittest.TestCase):
             "machine host.domain.com login",
             "machine host.domain.com account",
             "machine host.domain.com password",
+            "machine host.domain.com login \"\"",
+            "machine host.domain.com account \"\"",
+            "machine host.domain.com password \"\"",
             "machine host.domain.com login \"\" account",
             "machine host.domain.com login \"\" password",
             "machine host.domain.com account \"\" password"
@@ -74,6 +77,9 @@ class NetrcTestCase(unittest.TestCase):
             "default login",
             "default account",
             "default password",
+            "default login \"\"",
+            "default account \"\"",
+            "default password \"\"",
             "default login \"\" account",
             "default login \"\" password",
             "default account \"\" password"
@@ -81,6 +87,15 @@ class NetrcTestCase(unittest.TestCase):
         for item in data:
             nrc = self.make_nrc(item)
             self.assertEqual(nrc.hosts['default'], ('', '', ''))
+
+    def test_empty_quoted_token_is_not_eof(self):
+        data = (
+            '"" invalid',
+            'machine host.domain.com "" invalid',
+        )
+        for item in data:
+            with self.subTest(item=item):
+                self.assertRaises(netrc.NetrcParseError, self.make_nrc, item)
 
     def test_invalid_tokens(self):
         data = (

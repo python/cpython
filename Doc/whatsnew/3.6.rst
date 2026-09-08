@@ -517,7 +517,7 @@ Applications that do not use str to represent paths should use
 :func:`os.fsencode` and :func:`os.fsdecode` to ensure their bytes are
 correctly encoded. To revert to the previous behaviour, set
 :envvar:`PYTHONLEGACYWINDOWSFSENCODING` or call
-:func:`sys._enablelegacywindowsfsencoding`.
+:func:`!sys._enablelegacywindowsfsencoding`.
 
 See :pep:`529` for more information and discussion of code modifications that
 may be required.

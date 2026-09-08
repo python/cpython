@@ -18,7 +18,7 @@ The :mod:`!getpass` module provides two functions:
    the string *prompt*, which defaults to ``'Password: '``.  On Unix, the
    prompt is written to the file-like object *stream* using the replace error
    handler if needed.  *stream* defaults to the controlling terminal
-   (:file:`/dev/tty`) or if that is unavailable to ``sys.stderr`` (this
+   (:file:`/dev/tty`) or if that is unavailable to :data:`sys.stderr` (this
    argument is ignored on Windows).
 
    The *echo_char* argument controls how user input is displayed while typing.
@@ -27,12 +27,12 @@ The :mod:`!getpass` module provides two functions:
    typed character is replaced by it. For example, ``echo_char='*'`` will
    display asterisks instead of the actual input.
 
-   If echo free input is unavailable getpass() falls back to printing
-   a warning message to *stream* and reading from ``sys.stdin`` and
+   If echo-free input is unavailable, :func:`getpass` falls back to printing
+   a warning message to *stream* and reading from :data:`sys.stdin` and
    issuing a :exc:`GetPassWarning`.
 
    .. note::
-      If you call getpass from within IDLE, the input may be done in the
+      If you call :func:`getpass` from within IDLE, the input may be done in the
       terminal you launched IDLE from rather than the idle window itself.
 
    .. note::

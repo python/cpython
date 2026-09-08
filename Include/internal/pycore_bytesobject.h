@@ -62,8 +62,10 @@ _PyBytes_ReverseFind(const char *haystack, Py_ssize_t len_haystack,
 //
 // Export for 'array' shared extension.
 PyAPI_FUNC(void)
-_PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
+_PyBytes_RepeatBuffer(char* dest, Py_ssize_t len_dest,
     const char* src, Py_ssize_t len_src);
+
+PyAPI_FUNC(PyObject *) _PyBytes_Repeat(PyObject *self, Py_ssize_t n);
 
 /* _PyBytesObject_SIZE gives the basic size of a bytes object; any memory allocation
    for a bytes object of length n should request PyBytesObject_SIZE + n bytes.

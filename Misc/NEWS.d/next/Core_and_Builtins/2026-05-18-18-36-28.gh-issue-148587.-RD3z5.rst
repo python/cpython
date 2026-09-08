@@ -1,0 +1,1 @@
+:py:attr:`sys.lazy_modules` is now a set instead of a dict as initially spelled out in PEP 810.

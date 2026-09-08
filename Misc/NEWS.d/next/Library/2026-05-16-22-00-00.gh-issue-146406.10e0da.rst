@@ -1,0 +1,3 @@
+Add cross-language hints for ``.clear()`` on :class:`tuple`,
+:class:`frozenset`, and :class:`frozendict`, suggesting the mutable
+counterpart. Follow-up to :gh:`146406`.

@@ -1,0 +1,2 @@
+Fix a reference leak in :exc:`OSError` when attributes are set before
+``super().__init__()``.

@@ -37,6 +37,25 @@ class Dummy_grep:
 _grep = Dummy_grep()
 
 
+class DefaultGlobTest(unittest.TestCase):
+
+    def test_no_path(self):
+        # gh-80504: an unsaved editor or the Shell has no path, so the
+        # pattern uses the current directory, not just '*.py'.
+        self.assertEqual(grep.default_glob(''),
+                         os.path.join(os.getcwd(), '*.py'))
+
+    def test_full_path(self):
+        path = os.path.join(os.path.abspath(os.sep), 'ab', 'foo.py')
+        self.assertEqual(grep.default_glob(path),
+                         os.path.join(os.path.dirname(path), '*.py'))
+
+    def test_other_extension(self):
+        path = os.path.join(os.path.abspath(os.sep), 'ab', 'foo.txt')
+        self.assertEqual(grep.default_glob(path),
+                         os.path.join(os.path.dirname(path), '*.txt'))
+
+
 class FindfilesTest(unittest.TestCase):
 
     @classmethod

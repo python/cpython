@@ -1162,6 +1162,12 @@ from text files and modules with doctests:
    .. versionchanged:: 3.15
       Run each example as a :ref:`subtest <subtests>`.
 
+   .. versionchanged:: next
+      Report every example, as in verbose mode, if the test runner reports
+      more than the test names, i.e. its
+      :attr:`~unittest.TestResult.verbosity` is 3 or higher (for example
+      with ``python -m unittest -vv``).
+
 Under the covers, :func:`DocTestSuite` creates a :class:`unittest.TestSuite` out
 of :class:`!doctest.DocTestCase` instances, and :class:`!DocTestCase` is a
 subclass of :class:`unittest.TestCase`. :class:`!DocTestCase` isn't documented

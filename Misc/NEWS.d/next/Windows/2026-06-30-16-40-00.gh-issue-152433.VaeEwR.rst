@@ -1,0 +1,1 @@
+``_winapi``: implement ``GetVersion()`` UWP alternative.

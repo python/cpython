@@ -406,7 +406,7 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
                     writer->overallocate = (newpos < size);
                 }
 
-                char *rep_str;
+                const char *rep_str;
                 Py_ssize_t rep_len;
                 if (PyBytes_Check(rep)) {
                     rep_str = PyBytes_AS_STRING(rep);

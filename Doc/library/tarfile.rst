@@ -142,6 +142,12 @@ Some facts and figures:
    a Zstandard dictionary used to improve compression of smaller amounts of
    data.
 
+   For modes ``'w:gz'`` and ``'w|gz'``, :func:`tarfile.open` accepts the
+   keyword argument *mtime* to create a gzip archive header with that mtime. By
+   default, the mtime is set to the time of creation of the archive. Use
+   *mtime* ``0`` to generate a compressed stream that does not depend on
+   creation time, for reproducible output.
+
    For special purposes, there is a second format for *mode*:
    ``'filemode|[compression]'``.  :func:`tarfile.open` will return a :class:`TarFile`
    object that processes its data as a stream of blocks.  No random seeking will
@@ -664,7 +670,7 @@ be finalized; only the internally used file object will be closed. See the
    it is best practice to only do so in top-level applications or
    :mod:`site configuration <site>`.
    To set a global default this way, a filter function needs to be wrapped in
-   :func:`staticmethod` to prevent injection of a ``self`` argument.
+   :deco:`staticmethod` to prevent injection of a ``self`` argument.
 
    .. versionchanged:: 3.14
 
@@ -957,6 +963,11 @@ A ``TarInfo`` object has the following public data attributes:
    If *deep* is false, the copy is shallow, i.e. ``pax_headers``
    and any custom attributes are shared with the original ``TarInfo`` object.
 
+   This method is also used by :func:`copy.replace`.
+
+   .. versionchanged:: next
+      Added support for :func:`copy.replace`.
+
 A :class:`TarInfo` object also provides some convenient query methods:
 
 
@@ -1101,6 +1112,10 @@ reused in custom filters:
     paths (in case the name is absolute
     even after stripping slashes, e.g. ``C:/foo`` on Windows).
     This raises :class:`~tarfile.AbsolutePathError`.
+  - Normalize filenames (:attr:`TarInfo.name`) that contain ``..`` components
+    using :func:`os.path.normpath`.
+    Note that this removes internal ``..`` components, which may change the
+    meaning of the name if it traverses symbolic links.
   - :ref:`Refuse <tarfile-extraction-refuse>` to extract files whose absolute
     path (after following symlinks) would end up outside the destination.
     This raises :class:`~tarfile.OutsideDestinationError`.
@@ -1108,6 +1123,10 @@ reused in custom filters:
     (:const:`~stat.S_IWGRP` | :const:`~stat.S_IWOTH`).
 
   Return the modified ``TarInfo`` member.
+
+  .. versionchanged:: next
+
+     Filenames containing ``..`` components are now normalized.
 
 .. function:: data_filter(member, path)
 
@@ -1189,6 +1208,8 @@ Here is an incomplete list of things to consider:
 * Check filenames against an allow-list of characters
   (to filter out control characters, confusables, foreign path separators,
   and so on).
+* Check for platform-specific filename semantics. For example, on Windows
+  some names can have reserved meanings.
 * Check that filenames have expected extensions (discouraging files that
   execute when you “click on them”, or extension-less files like Windows
   special device names).

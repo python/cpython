@@ -26,7 +26,7 @@ def load_tzdata(key):
         # UnicodeEncodeError: If package_name or resource_name are not UTF-8,
         #   such as keys containing a surrogate character.
         # IsADirectoryError: If package_name without a resource_name specified.
-        raise ZoneInfoNotFoundError(f"No time zone found with key {key}")
+        raise ZoneInfoNotFoundError(f"No time zone found with key {key!r}")
 
 
 def load_data(fobj):

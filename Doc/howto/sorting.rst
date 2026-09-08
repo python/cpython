@@ -3,9 +3,6 @@
 Sorting Techniques
 ******************
 
-:Author: Andrew Dalke and Raymond Hettinger
-
-
 Python lists have a built-in :meth:`list.sort` method that modifies the list
 in-place.  There is also a :func:`sorted` built-in function that builds a new
 sorted list from an iterable.
@@ -375,7 +372,7 @@ Odds and Ends
   :meth:`~object.__lt__` is not implemented (see :func:`object.__lt__`
   for details on the mechanics).  To avoid surprises, :pep:`8`
   recommends that all six comparison methods be implemented.
-  The :func:`~functools.total_ordering` decorator is provided to make that
+  The :deco:`~functools.total_ordering` decorator is provided to make that
   task easier.
 
 * Key functions need not depend directly on the objects being sorted. A key

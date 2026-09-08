@@ -1417,6 +1417,9 @@ Connection objects
 
       See :ref:`sqlite3-howto-row-factory` for more details.
 
+      .. versionchanged:: next
+         Deleting the ``row_factory`` attribute is no longer allowed.
+
    .. attribute:: text_factory
 
       A :term:`callable` that accepts a :class:`bytes` parameter
@@ -1425,6 +1428,9 @@ Connection objects
       By default, this attribute is set to :class:`str`.
 
       See :ref:`sqlite3-howto-encoding` for more details.
+
+      .. versionchanged:: next
+         Deleting the ``text_factory`` attribute is no longer allowed.
 
    .. attribute:: total_changes
 
@@ -1709,6 +1715,9 @@ Cursor objects
 
       See :ref:`sqlite3-howto-row-factory` for more details.
 
+      .. versionchanged:: next
+         Deleting the ``row_factory`` attribute is no longer allowed.
+
 
 .. The sqlite3.Row example used to be a how-to. It has now been incorporated
    into the Row reference. We keep the anchor here in order not to break
@@ -1750,6 +1759,10 @@ Blob objects
 .. class:: Blob
 
    .. versionadded:: 3.11
+
+   .. versionchanged:: next
+      :class:`Blob` now supports negative-step slices
+      (e.g. ``blob[9:0:-2]``) for both reading and writing.
 
    A :class:`Blob` instance is a :term:`file-like object`
    that can read and write data in an SQLite :abbr:`BLOB (Binary Large OBject)`.

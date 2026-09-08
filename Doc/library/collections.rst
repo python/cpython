@@ -268,6 +268,15 @@ For example::
         >>> c['sausage'] = 0                        # counter entry with a zero count
         >>> del c['sausage']                        # del actually removes the entry
 
+    Counters maintain insertion order internally but display from most common to
+    least common when possible:
+
+        >>> c = Counter(a=1, b=2, c=3)
+        >>> c                                       # display most common to least
+        Counter({'c': 3, 'b': 2, 'a': 1})
+        >>> list(c.items())                         # original insertion order
+        [('a', 1), ('b', 2), ('c', 3)]
+
     .. versionadded:: 3.1
 
     .. versionchanged:: 3.7 As a :class:`dict` subclass, :class:`Counter`
@@ -483,6 +492,8 @@ or subtracting from an empty counter.
     length deques provide functionality similar to the ``tail`` filter in
     Unix. They are also useful for tracking transactions and other pools of data
     where only the most recent activity is of interest.
+
+    Deques are :ref:`generic <generics>` over the type of their contents.
 
 
     Deque objects support the following methods:
@@ -738,6 +749,9 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
     attribute; it defaults to ``None``. All remaining arguments are treated the same
     as if they were passed to the :class:`dict` constructor, including keyword
     arguments.
+
+    :class:`!defaultdict`\s are :ref:`generic <generics>` over two types,
+    signifying (respectively) the types of the dictionary's keys and values.
 
 
     :class:`defaultdict` objects support the following method in addition to the
@@ -1223,12 +1237,12 @@ original insertion position is changed and moved to the end::
             self.move_to_end(key)
 
 An :class:`OrderedDict` would also be useful for implementing
-variants of :func:`functools.lru_cache`:
+variants of :deco:`functools.lru_cache`:
 
 .. testcode::
 
     from collections import OrderedDict
-    from time import time
+    from time import monotonic
 
     class TimeBoundedLRU:
         "LRU Cache that invalidates and refreshes old entries."
@@ -1243,10 +1257,10 @@ variants of :func:`functools.lru_cache`:
             if args in self.cache:
                 self.cache.move_to_end(args)
                 timestamp, result = self.cache[args]
-                if time() - timestamp <= self.maxage:
+                if monotonic() - timestamp <= self.maxage:
                     return result
             result = self.func(*args)
-            self.cache[args] = time(), result
+            self.cache[args] = monotonic(), result
             if len(self.cache) > self.maxsize:
                 self.cache.popitem(last=False)
             return result

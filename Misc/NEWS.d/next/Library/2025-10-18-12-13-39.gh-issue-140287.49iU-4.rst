@@ -1,2 +1,0 @@
-The :mod:`asyncio` REPL now handles exceptions when executing :envvar:`PYTHONSTARTUP` scripts.
-Patch by Bartosz Sławecki.

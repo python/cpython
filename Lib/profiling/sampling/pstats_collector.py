@@ -1,13 +1,15 @@
 import collections
 import marshal
 import pstats
+lazy from _colorize import ANSIColors
 
-from _colorize import ANSIColors
 from .collector import Collector, extract_lineno
 from .constants import MICROSECONDS_PER_SECOND, PROFILING_MODE_CPU
 
 
 class PstatsCollector(Collector):
+    aggregating = True
+
     def __init__(self, sample_interval_usec, *, skip_idle=False):
         self.result = collections.defaultdict(
             lambda: dict(total_rec_calls=0, direct_calls=0, cumulative_calls=0)
@@ -61,6 +63,7 @@ class PstatsCollector(Collector):
     def export(self, filename):
         self.create_stats()
         self._dump_stats(filename)
+        return True
 
     def _dump_stats(self, file):
         stats_with_marker = dict(self.stats)

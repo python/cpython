@@ -1,0 +1,2 @@
+Fix Argument Clinic generating the flags of the optional groups in
+different order on 32-bit and 64-bit platforms.

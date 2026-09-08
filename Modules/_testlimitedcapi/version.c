@@ -1,8 +1,11 @@
 /* Test version macros in the limited API */
 
 #include "pyconfig.h"  // Py_GIL_DISABLED
-#ifndef Py_GIL_DISABLED
-#  define Py_LIMITED_API 0x030e0000  // Added in 3.14
+#ifdef Py_GIL_DISABLED
+#  define Py_TARGET_ABI3T 0x030f0000
+#else
+   // Need limited C API version 3.14 for Py_PACK_VERSION()
+#  define Py_LIMITED_API 0x030e0000
 #endif
 
 #include "parts.h"

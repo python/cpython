@@ -10,6 +10,7 @@ import os
 import os.path
 import errno
 import functools
+import socket
 import subprocess
 import random
 import string
@@ -29,8 +30,9 @@ except ImportError:
     posix = None
 
 from test import support
-from test.support import os_helper
+from test.support import os_helper, socket_helper
 from test.support.os_helper import TESTFN, FakePath
+from test.support.import_helper import ensure_lazy_imports
 
 TESTFN2 = TESTFN + "2"
 TESTFN_SRC = TESTFN + "_SRC"
@@ -1550,12 +1552,90 @@ class TestCopy(BaseTest, unittest.TestCase):
         except PermissionError as e:
             self.skipTest('os.mkfifo(): %s' % e)
         try:
-            self.assertRaises(shutil.SpecialFileError,
-                                shutil.copyfile, TESTFN, TESTFN2)
-            self.assertRaises(shutil.SpecialFileError,
-                                shutil.copyfile, __file__, TESTFN)
+            self.assertRaisesRegex(shutil.SpecialFileError, 'is a named pipe',
+                                   shutil.copyfile, TESTFN, TESTFN2)
+            self.assertRaisesRegex(shutil.SpecialFileError, 'is a named pipe',
+                                   shutil.copyfile, __file__, TESTFN)
         finally:
             os.remove(TESTFN)
+
+    @socket_helper.skip_unless_bind_unix_socket
+    def test_copyfile_socket(self):
+        sock_path = os.path.join(self.mkdtemp(), 'sock')
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+        try:
+            socket_helper.bind_unix_socket(sock, sock_path)
+        except OSError as e:
+            # AF_UNIX path too long (e.g. on iOS)
+            self.skipTest(f'cannot bind AF_UNIX socket: {e}')
+        self.addCleanup(os_helper.unlink, sock_path)
+        self.assertRaisesRegex(shutil.SpecialFileError, 'is a socket',
+                               shutil.copyfile, sock_path, sock_path + '.copy')
+        self.assertRaisesRegex(shutil.SpecialFileError, 'is a socket',
+                               shutil.copyfile, __file__, sock_path)
+
+    def _check_copyfile_symlink_to_special_file(self, target):
+        tmp_dir = self.mkdtemp()
+        src = os.path.join(tmp_dir, 'src')
+        dst = os.path.join(tmp_dir, 'dst')
+        os.symlink(target, src)
+
+        shutil.copyfile(src, dst, follow_symlinks=False)
+
+        self.assertTrue(os.path.islink(dst))
+        self.assertEqual(os.readlink(dst), target)
+
+    @os_helper.skip_unless_symlink
+    @unittest.skipUnless(os.path.exists('/dev/null'), 'requires /dev/null')
+    def test_copyfile_symlink_to_character_device(self):
+        self._check_copyfile_symlink_to_special_file('/dev/null')
+
+    @os_helper.skip_unless_symlink
+    @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
+    def test_copyfile_symlink_to_named_pipe(self):
+        fifo_path = os.path.join(self.mkdtemp(), 'fifo')
+        try:
+            os.mkfifo(fifo_path)
+        except PermissionError as e:
+            self.skipTest('os.mkfifo(): %s' % e)
+        self._check_copyfile_symlink_to_special_file(fifo_path)
+
+    @os_helper.skip_unless_symlink
+    @socket_helper.skip_unless_bind_unix_socket
+    def test_copyfile_symlink_to_socket(self):
+        sock_path = os.path.join(self.mkdtemp(), 'sock')
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+        try:
+            socket_helper.bind_unix_socket(sock, sock_path)
+        except OSError as e:
+            self.skipTest(f'cannot bind AF_UNIX socket: {e}')
+        self.addCleanup(os_helper.unlink, sock_path)
+        self._check_copyfile_symlink_to_special_file(sock_path)
+
+    @unittest.skipUnless(os.path.exists('/dev/null'), 'requires /dev/null')
+    def test_copyfile_character_device(self):
+        self.assertRaisesRegex(shutil.SpecialFileError, 'is a character device',
+                               shutil.copyfile, '/dev/null', TESTFN)
+        src_file = os.path.join(self.mkdtemp(), 'src')
+        create_file(src_file, 'foo')
+        self.assertRaisesRegex(shutil.SpecialFileError, 'is a character device',
+                               shutil.copyfile, src_file, '/dev/null')
+
+    def test_copyfile_block_device(self):
+        block_dev = None
+        for dev in ['/dev/loop0', '/dev/sda', '/dev/vda', '/dev/disk0']:
+            if os.path.exists(dev) and stat.S_ISBLK(os.stat(dev).st_mode):
+                if os.access(dev, os.R_OK):
+                    block_dev = dev
+                    break
+        if block_dev is None:
+            self.skipTest('no accessible block device found')
+        self.assertRaisesRegex(shutil.SpecialFileError, 'is a block device',
+                               shutil.copyfile, block_dev, TESTFN)
 
     def test_copyfile_return_value(self):
         # copytree returns its destination path.
@@ -1920,8 +2000,8 @@ class TestArchives(BaseTest, unittest.TestCase):
         # testing make_archive with owner and group, with various combinations
         # this works even if there's not gid/uid support
         if UID_GID_SUPPORT:
-            group = grp.getgrgid(0)[0]
-            owner = pwd.getpwuid(0)[0]
+            group = grp.getgrgid(0).gr_name
+            owner = pwd.getpwuid(0).pw_name
         else:
             group = owner = 'root'
 
@@ -1948,8 +2028,8 @@ class TestArchives(BaseTest, unittest.TestCase):
     def test_tarfile_root_owner(self):
         root_dir, base_dir = self._create_files()
         base_name = os.path.join(self.mkdtemp(), 'archive')
-        group = grp.getgrgid(0)[0]
-        owner = pwd.getpwuid(0)[0]
+        group = grp.getgrgid(0).gr_name
+        owner = pwd.getpwuid(0).pw_name
         with os_helper.change_cwd(root_dir), no_chdir:
             archive_name = make_archive(base_name, 'gztar', root_dir, 'dist',
                                         owner=owner, group=group)
@@ -2283,6 +2363,14 @@ class TestArchives(BaseTest, unittest.TestCase):
         unregister_unpack_format('Boo2')
         self.assertEqual(get_unpack_formats(), formats)
 
+    def test_compression_wrappers_not_imported_by_shutil(self):
+        # gh-154904: Importing shutil must not pull in the compression
+        # wrappers: they are only needed once an archive is actually created
+        # or extracted, and importing them measurably slows down every
+        # process that uses shutil.
+        ensure_lazy_imports("shutil",
+                            {"bz2", "lzma", "compression", "compression.zstd"})
+
 
 class TestMisc(BaseTest, unittest.TestCase):
 
@@ -2354,8 +2442,8 @@ class TestMisc(BaseTest, unittest.TestCase):
         check_chown(dirname, gid=gid)
 
         try:
-            user = pwd.getpwuid(uid)[0]
-            group = grp.getgrgid(gid)[0]
+            user = pwd.getpwuid(uid).pw_name
+            group = grp.getgrgid(gid).gr_name
         except KeyError:
             # On some systems uid/gid cannot be resolved.
             pass
@@ -2913,6 +3001,23 @@ class TestMove(BaseTest, unittest.TestCase):
                             'dst (%s) is in src (%s)' % (dst, src))
         finally:
             os_helper.rmtree(TESTFN)
+
+    @os_helper.skip_unless_symlink
+    def test_destinsrc_symlink_bypass(self):
+        tmp = self.mkdtemp()
+        src = os.path.join(tmp, 'src')
+        os.makedirs(src)
+        # tmp/link -> tmp (one level up)
+        link = os.path.join(tmp, 'link')
+        os.symlink(tmp, link)
+        # raw path: tmp/link/src/sub - no src prefix in string space
+        # real path: tmp/src/sub     - physically inside src
+        dst = os.path.join(link, 'src', 'sub')
+        self.assertTrue(
+            shutil._destinsrc(src, dst),
+            msg='_destinsrc failed to detect dst inside src via symlink '
+                '(dst=%s, src=%s)' % (dst, src),
+        )
 
     @os_helper.skip_unless_symlink
     @mock_rename
@@ -3580,8 +3685,6 @@ class PublicAPITests(unittest.TestCase):
         if hasattr(os, 'statvfs') or os.name == 'nt':
             target_api.append('disk_usage')
         self.assertEqual(set(shutil.__all__), set(target_api))
-        with self.assertWarns(DeprecationWarning):
-            from shutil import ExecError  # noqa: F401
 
 
 if __name__ == '__main__':

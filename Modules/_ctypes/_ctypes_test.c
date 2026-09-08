@@ -446,7 +446,7 @@ EXPORT(char *)my_strtok(char *token, const char *delim)
     return strtok(token, delim);
 }
 
-EXPORT(char *)my_strchr(const char *s, int c)
+EXPORT(const char *) my_strchr(const char *s, int c)
 {
     return strchr(s, c);
 }

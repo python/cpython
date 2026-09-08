@@ -1,2 +1,0 @@
-Fix reference leak in :class:`compression.zstd.ZstdDecompressor` when an
-invalid option key is passed.

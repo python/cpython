@@ -1,3 +1,4 @@
+import collections
 import copy
 import pickle
 import dis
@@ -1418,6 +1419,30 @@ class TestSpecializer(TestBase):
                 self.assertEqual(c, 2.0)
                 c = b / a
                 self.assertEqual(c, 0.5)
+                c = a
+                c += b
+                self.assertEqual(c, 9.0)
+                c = b
+                c += a
+                self.assertEqual(c, 9.0)
+                c = a
+                c -= b
+                self.assertEqual(c, 3.0)
+                c = b
+                c -= a
+                self.assertEqual(c, -3.0)
+                c = a
+                c *= b
+                self.assertEqual(c, 18.0)
+                c = b
+                c *= a
+                self.assertEqual(c, 18.0)
+                c = a
+                c /= b
+                self.assertEqual(c, 2.0)
+                c = b
+                c /= a
+                self.assertEqual(c, 0.5)
 
         binary_op_add_extend()
         self.assert_specialized(binary_op_add_extend, "BINARY_OP_EXTEND")
@@ -1635,6 +1660,37 @@ class TestSpecializer(TestBase):
 
         self.assert_specialized(send_yield_from, "SEND_GEN")
         self.assert_no_opcode(send_yield_from, "SEND")
+
+    @cpython_only
+    @requires_specialization
+    def test_send_yield_from_iter(self):
+        L = list(range(100))
+        def send_yield_from():
+            yield from L
+
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            list(send_yield_from())
+
+        self.assert_specialized(send_yield_from, "SEND_VIRTUAL")
+        self.assert_no_opcode(send_yield_from, "SEND")
+
+    @cpython_only
+    @requires_specialization
+    def test_send_async_for(self):
+        async def g():
+            yield None
+
+        async def send_for():
+            async for _ in g():
+                break
+
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            try:
+                send_for().send(None)
+            except StopIteration:
+                pass
+        self.assert_specialized(send_for, "SEND_ASYNC_GEN")
+        self.assert_no_opcode(send_for, "SEND")
 
     @cpython_only
     @requires_specialization
@@ -1863,7 +1919,43 @@ class TestSpecializer(TestBase):
                 self.assertEqual(a[2], 3)
 
         binary_subscr_frozen_dict_subclass()
-        self.assert_no_opcode(binary_subscr_frozen_dict_subclass, "BINARY_OP_SUBSCR_DICT")
+        self.assert_specialized(binary_subscr_frozen_dict_subclass, "BINARY_OP_SUBSCR_DICT")
+        self.assert_no_opcode(binary_subscr_frozen_dict_subclass, "BINARY_OP")
+
+        def binary_subscr_defaultdict():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = collections.defaultdict(lambda: 42, {1: 2, 2: 3})
+                self.assertEqual(a[1], 2)
+                self.assertEqual(a[2], 3)
+                self.assertEqual(a[7], 42)
+
+        binary_subscr_defaultdict()
+        self.assert_specialized(binary_subscr_defaultdict, "BINARY_OP_SUBSCR_DICT")
+        self.assert_no_opcode(binary_subscr_defaultdict, "BINARY_OP")
+
+        def binary_subscr_counter():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = collections.Counter('abcdeabcdabcaba')
+                self.assertEqual(a['a'], 5)
+                self.assertEqual(a['b'], 4)
+                self.assertEqual(a['m'], 0)
+
+        binary_subscr_counter()
+        self.assert_specialized(binary_subscr_counter, "BINARY_OP_SUBSCR_DICT")
+        self.assert_no_opcode(binary_subscr_counter, "BINARY_OP")
+
+        def binary_subscr_dict_subclass_override():
+            class MyDict(dict):
+                def __getitem__(self, key):
+                    return 42
+
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = MyDict()
+                self.assertEqual(a['a'], 42)
+                self.assertEqual(a['b'], 42)
+
+        binary_subscr_dict_subclass_override()
+        self.assert_no_opcode(binary_subscr_dict_subclass_override, "BINARY_OP_SUBSCR_DICT")
 
         def binary_subscr_str_int():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
@@ -1923,6 +2015,29 @@ class TestSpecializer(TestBase):
             store_subscr_frozen_dict()
         self.assert_specialized(store_subscr_frozen_dict, "STORE_SUBSCR_DICT")
         self.assert_no_opcode(store_subscr_frozen_dict, "STORE_SUBSCR")
+
+        def store_subscr_defaultdict():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = collections.defaultdict(int)
+                a[1] = 4
+                self.assertEqual(a[1], 4)
+
+        store_subscr_defaultdict()
+        self.assert_specialized(store_subscr_defaultdict, "STORE_SUBSCR_DICT")
+        self.assert_no_opcode(store_subscr_defaultdict, "STORE_SUBSCR")
+
+        def store_subscr_dict_subclass_override():
+            class MyDict(dict):
+                def __setitem__(self, key, value):
+                    super().__setitem__(key, value * 2)
+
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = MyDict()
+                a['x'] = 5
+                self.assertEqual(a['x'], 10)
+
+        store_subscr_dict_subclass_override()
+        self.assert_no_opcode(store_subscr_dict_subclass_override, "STORE_SUBSCR_DICT")
 
     @cpython_only
     @requires_specialization
@@ -2093,6 +2208,17 @@ class TestSpecializer(TestBase):
             self.assert_no_opcode(load_module_attr_missing, "LOAD_ATTR_MODULE")
         finally:
             sys.modules.pop("test_module_with_getattr", None)
+
+    @cpython_only
+    @requires_specialization
+    def test_specialized_iter_doesnt_skip_send_check(self):
+        def gen_func(seq):
+            yield from seq
+        gen = gen_func(list(range(10)))
+        for _ in range(3):
+            gen.send(None)
+        with self.assertRaises(AttributeError):
+            gen.send(1)
 
 
     @cpython_only

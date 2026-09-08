@@ -4,8 +4,6 @@
 Logging Cookbook
 ================
 
-:Author: Vinay Sajip <vinay_sajip at red-dove dot com>
-
 This page contains a number of recipes related to logging, which have been found
 useful in the past. For links to tutorial and reference information, please see
 :ref:`cookbook-ref-links`.
@@ -1957,7 +1955,7 @@ Subclass ``QueueListener``
     class NNGSocketListener(logging.handlers.QueueListener):
 
         def __init__(self, uri, /, *handlers, **kwargs):
-            # Have a timeout for interruptability, and open a
+            # Have a timeout for interruptibility, and open a
             # subscriber socket
             socket = pynng.Sub0(listen=uri, recv_timeout=500)
             # The b'' subscription matches all topics

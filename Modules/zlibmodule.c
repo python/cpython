@@ -858,7 +858,7 @@ save_unconsumed_input(compobject *self, Py_buffer *data, int err)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
+@permit_long_summary
 zlib.Decompress.decompress
 
     cls: defining_class
@@ -872,15 +872,15 @@ zlib.Decompress.decompress
 
 Return a bytes object containing the decompressed version of the data.
 
-After calling this function, some of the input data may still be stored in
-internal buffers for later processing.
+After calling this function, some of the input data may still be
+stored in internal buffers for later processing.
 Call the flush() method to clear these buffers.
 [clinic start generated code]*/
 
 static PyObject *
 zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
                                 Py_buffer *data, Py_ssize_t max_length)
-/*[clinic end generated code: output=b024a93c2c922d57 input=77de124bd2a2ecc0]*/
+/*[clinic end generated code: output=b024a93c2c922d57 input=9035027c9e4be7fd]*/
 {
     int err = Z_OK;
     Py_ssize_t ibuflen;
@@ -1271,6 +1271,13 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
 
     PyMutex_Lock(&self->mutex);
 
+    /* A previous flush() already reached the end of the stream and freed the
+       decompression state, so there is nothing left to process. */
+    if (!self->is_initialised) {
+        PyMutex_Unlock(&self->mutex);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    }
+
     if (PyObject_GetBuffer(self->unconsumed_tail, &data, PyBUF_SIMPLE) == -1) {
         PyMutex_Unlock(&self->mutex);
         return NULL;
@@ -1327,6 +1334,10 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
             zlib_error(state, self->zst, err, "while finishing decompression");
             goto abort;
         }
+    }
+    else if (err != Z_OK && err != Z_BUF_ERROR) {
+        zlib_error(state, self->zst, err, "while decompressing data");
+        goto abort;
     }
 
     return_value = OutputBuffer_WindowFinish(&buffer, &window, self->zst.avail_out);
@@ -1675,7 +1686,6 @@ error:
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 zlib._ZlibDecompressor.decompress
 
     data: Py_buffer
@@ -1683,25 +1693,26 @@ zlib._ZlibDecompressor.decompress
 
 Decompress *data*, returning uncompressed data as bytes.
 
-If *max_length* is nonnegative, returns at most *max_length* bytes of
-decompressed data. If this limit is reached and further output can be
-produced, *self.needs_input* will be set to ``False``. In this case, the next
-call to *decompress()* may provide *data* as b'' to obtain more of the output.
+If *max_length* is nonnegative, returns at most *max_length* bytes
+of decompressed data.  If this limit is reached and further output
+can be produced, *self.needs_input* will be set to ``False``.  In
+this case, the next call to *decompress()* may provide *data* as b''
+to obtain more of the output.
 
-If all of the input data was decompressed and returned (either because this
-was less than *max_length* bytes, or because *max_length* was negative),
-*self.needs_input* will be set to True.
+If all of the input data was decompressed and returned (either
+because this was less than *max_length* bytes, or because
+*max_length* was negative), *self.needs_input* will be set to True.
 
-Attempting to decompress data after the end of stream is reached raises an
-EOFError.  Any data found after the end of the stream is ignored and saved in
-the unused_data attribute.
+Attempting to decompress data after the end of stream is reached
+raises an EOFError.  Any data found after the end of the stream is
+ignored and saved in the unused_data attribute.
 [clinic start generated code]*/
 
 static PyObject *
 zlib__ZlibDecompressor_decompress_impl(ZlibDecompressor *self,
                                        Py_buffer *data,
                                        Py_ssize_t max_length)
-/*[clinic end generated code: output=ac00dcf73e843e99 input=c9278e791be1152b]*/
+/*[clinic end generated code: output=ac00dcf73e843e99 input=d7862eade3f29d56]*/
 
 {
     PyObject *result = NULL;
@@ -1948,7 +1959,10 @@ zlib_adler32_combine_impl(PyObject *module, unsigned int adler1,
 #else
     z_off_t len = convert_to_z_off_t(len2);
 #endif
-    if (PyErr_Occurred()) {
+    if (len < 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_ValueError, "len2 must be non-negative");
+        }
         return (unsigned int)-1;
     }
     return adler32_combine(adler1, adler2, len);
@@ -2033,7 +2047,10 @@ zlib_crc32_combine_impl(PyObject *module, unsigned int crc1,
 #else
     z_off_t len = convert_to_z_off_t(len2);
 #endif
-    if (PyErr_Occurred()) {
+    if (len < 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_ValueError, "len2 must be non-negative");
+        }
         return (unsigned int)-1;
     }
     return crc32_combine(crc1, crc2, len);

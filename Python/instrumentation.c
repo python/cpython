@@ -989,8 +989,12 @@ call_one_instrument(
     if (res == NULL) {
         return -1;
     }
+    if (res == &_PyInstrumentation_DISABLE) {
+        assert(_Py_IsImmortal(res));
+        return 1;
+    }
     Py_DECREF(res);
-    return (res == &_PyInstrumentation_DISABLE);
+    return 0;
 }
 
 static const int8_t MOST_SIGNIFICANT_BITS[16] = {
@@ -2630,8 +2634,9 @@ capi_call_instrumentation(PyMonitoringState *state, PyObject *codelike, int32_t 
         PyErr_SetString(PyExc_ValueError, "offset must be non-negative");
         return -1;
     }
+    PyObject *offset_obj = NULL;
     if (event != PY_MONITORING_EVENT_LINE) {
-        PyObject *offset_obj = PyLong_FromLong(offset);
+        offset_obj = PyLong_FromLong(offset);
         if (offset_obj == NULL) {
             return -1;
         }
@@ -2672,6 +2677,7 @@ capi_call_instrumentation(PyMonitoringState *state, PyObject *codelike, int32_t 
             }
         }
     }
+    Py_XDECREF(offset_obj);
     return err;
 }
 

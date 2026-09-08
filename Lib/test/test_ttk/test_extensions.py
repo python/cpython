@@ -4,9 +4,13 @@ import tkinter
 from tkinter import ttk
 from test.support import requires, gc_collect
 from test.test_tkinter.support import setUpModule  # noqa: F401
-from test.test_tkinter.support import AbstractTkTest, AbstractDefaultRootTest
+from test.test_tkinter.support import (AbstractTkTest, AbstractDefaultRootTest,
+                                       get_tk_patchlevel, widget_eq)
 
 requires('gui')
+
+from test.test_ttk import test_widgets
+
 
 class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
 
@@ -105,7 +109,7 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
     def test_horizontal_range(self):
         lscale = ttk.LabeledScale(self.root, from_=0, to=10)
         lscale.pack()
-        lscale.update()
+        self.require_mapped(lscale)
 
         linfo_1 = lscale.label.place_info()
         prev_xcoord = lscale.scale.coords()[0]
@@ -134,7 +138,7 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
     def test_variable_change(self):
         x = ttk.LabeledScale(self.root)
         x.pack()
-        x.update()
+        self.require_mapped(x)
 
         curr_xcoord = x.scale.coords()[0]
         newval = x.value + 1
@@ -177,7 +181,7 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
         x = ttk.LabeledScale(self.root)
         x.pack(expand=True, fill='both')
         gc_collect()  # For PyPy or other GCs.
-        x.update()
+        self.require_mapped(x)
 
         width, height = x.master.winfo_width(), x.master.winfo_height()
         width_new, height_new = width * 2, height * 2
@@ -193,7 +197,11 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
         x.destroy()
 
 
-class OptionMenuTest(AbstractTkTest, unittest.TestCase):
+class OptionMenuTest(test_widgets.MenubuttonTest, unittest.TestCase):
+
+    # OptionMenu documents only its own options, not the inherited
+    # Menubutton options (like the classic tkinter.OptionMenu).
+    test_options_in_docstring = None
 
     def setUp(self):
         super().setUp()
@@ -203,6 +211,47 @@ class OptionMenuTest(AbstractTkTest, unittest.TestCase):
         del self.textvar
         super().tearDown()
 
+    def create(self, default='b', values=('a', 'b', 'c'), **kwargs):
+        return ttk.OptionMenu(self.root, self.textvar, default, *values, **kwargs)
+
+    def test_bad_kwarg(self):
+        with self.assertRaisesRegex(tkinter.TclError, r"^unknown option -image$"):
+            ttk.OptionMenu(self.root, self.textvar, 'b', image='')
+
+    def test_configure_class(self):
+        # Unlike a plain Menubutton, OptionMenu does not accept a class at
+        # construction, so only the read-only nature of the option is tested.
+        widget = self.create()
+        self.assertEqual(widget['class'], '')
+        errmsg = 'attempt to change read-only option'
+        if get_tk_patchlevel(self.root) < (8, 6, 0, 'beta', 3):
+            errmsg = 'Attempt to change read-only option'
+        self.checkInvalidParam(widget, 'class', 'Foo', errmsg=errmsg)
+
+    def test_configure_style(self):
+        # Like Menubutton, but OptionMenu does not accept a class at
+        # construction, so the custom-class part of the standard test is omitted.
+        widget = self.create()
+        self.assertEqual(widget['style'], '')
+        self.checkInvalidParam(widget, 'style', 'Foo',
+                               errmsg='Layout Foo not found')
+        style = ttk.Style(self.root)
+        style.configure('Custom.TMenubutton')
+        self.checkParam(widget, 'style', 'Custom.TMenubutton')
+
+    def test_configure_menu(self):
+        # OptionMenu manages its own menu; ['menu'] returns that Menu widget.
+        widget = self.create()
+        self.assertIsInstance(widget['menu'], tkinter.Menu)
+        self.checkParam(widget, 'menu', widget['menu'], eq=widget_eq)
+
+    def test_configure_text(self):
+        # The displayed text is governed by the textvariable.
+        widget = self.create()
+        self.textvar.set('a')
+        self.assertEqual(widget['text'], 'a')
+        self.textvar.set('c')
+        self.assertEqual(widget['text'], 'c')
 
     def test_widget_destroy(self):
         var = tkinter.StringVar(self.root)
@@ -279,6 +328,24 @@ class OptionMenuTest(AbstractTkTest, unittest.TestCase):
         if not success:
             self.fail("Menu callback not invoked")
 
+        optmenu.destroy()
+
+    def test_set_menu(self):
+        optmenu = ttk.OptionMenu(self.root, self.textvar, 'a', 'a', 'b', 'c')
+        menu = optmenu['menu']
+        self.assertEqual(menu.index('end'), 2)
+
+        # set_menu rebuilds the menu with new values and an optional default.
+        optmenu.set_menu('y', 'x', 'y', 'z')
+        self.assertEqual(self.textvar.get(), 'y')
+        self.assertEqual([menu.entrycget(i, 'label') for i in range(3)],
+                         ['x', 'y', 'z'])
+
+        # Without a default the variable is left unchanged.
+        optmenu.set_menu(None, 'p', 'q')
+        self.assertEqual(self.textvar.get(), 'y')
+        self.assertEqual([menu.entrycget(i, 'label') for i in range(2)],
+                         ['p', 'q'])
         optmenu.destroy()
 
     def test_unique_radiobuttons(self):

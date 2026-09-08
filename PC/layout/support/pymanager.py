@@ -66,8 +66,9 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
     if ns.include_freethreaded:
         # Free-threaded distro comes with a tag suffix
         TAG_SUFFIX = "t"
-        TARGET = f"python{VER_MAJOR}.{VER_MINOR}t.exe"
-        TARGETW = f"pythonw{VER_MAJOR}.{VER_MINOR}t.exe"
+        if not ns.include_alias:
+            TARGET = f"python{VER_MAJOR}.{VER_MINOR}t.exe"
+            TARGETW = f"pythonw{VER_MAJOR}.{VER_MINOR}t.exe"
         DISPLAY_TAGS.append("free-threaded")
         FILE_SUFFIX = f"t-{ns.arch}"
 

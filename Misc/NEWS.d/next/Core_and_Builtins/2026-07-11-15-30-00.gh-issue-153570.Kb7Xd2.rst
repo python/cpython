@@ -1,0 +1,2 @@
+Fix a use-after-free in :meth:`bytearray.take_bytes` when the argument's
+:meth:`~object.__index__` method resizes the bytearray. Patch by tonghuaroot.

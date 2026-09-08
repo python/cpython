@@ -215,6 +215,8 @@ The following exceptions are the exceptions that are usually raised.
 
       The object that was accessed for the named attribute.
 
+   When possible, :attr:`name` and :attr:`obj` are set automatically.
+
    .. versionchanged:: 3.10
       Added the :attr:`name` and :attr:`obj` attributes.
 
@@ -983,6 +985,9 @@ their subgroups based on the types of the contained exceptions.
    automatic. The :exc:`ExceptionGroup` constructor, on the other hand,
    raises a :exc:`TypeError` if any contained exception is not an
    :exc:`Exception` subclass.
+
+   Exception groups are :ref:`generic <generics>` over the type of their
+   contained exceptions.
 
    .. impl-detail::
 

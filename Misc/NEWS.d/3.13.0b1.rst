@@ -1429,7 +1429,7 @@ script) without specifying a value for ``UseTIER2``.
 .. nonce: LT27pF
 .. section: Build
 
-The :file:`configure` option :option:`--with-system-libmpdec` now defaults
+The :file:`configure` option :option:`!--with-system-libmpdec` now defaults
 to ``yes``. The bundled copy of ``libmpdecimal`` will be removed in Python
 3.15.
 
@@ -1470,7 +1470,7 @@ Increase WASI stack size from 512 KiB to 8 MiB and the initial memory from
 .. section: Build
 
 :program:`configure` now uses :program:`pkg-config` to detect :mod:`decimal`
-dependencies if the :option:`--with-system-libmpdec` option is given.
+dependencies if the :option:`!--with-system-libmpdec` option is given.
 
 ..
 

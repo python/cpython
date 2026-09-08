@@ -326,7 +326,6 @@ def main():
 
     parser = argparse.ArgumentParser(
         description='Utilities to support installing Python libraries.',
-        color=True,
     )
     parser.add_argument('-l', action='store_const', const=0,
                         default=None, dest='maxlevels',
@@ -338,10 +337,10 @@ def main():
     parser.add_argument('-f', action='store_true', dest='force',
                         help='force rebuild even if timestamps are up to date')
     parser.add_argument('-q', action='count', dest='quiet', default=0,
-                        help='output only error messages; -qq will suppress '
+                        help='output only error messages; `-qq` will suppress '
                              'the error messages as well.')
     parser.add_argument('-b', action='store_true', dest='legacy',
-                        help='use legacy (pre-PEP3147) compiled file locations')
+                        help='use legacy (pre-PEP 3147) compiled file locations')
     parser.add_argument('-d', metavar='DESTDIR',  dest='ddir', default=None,
                         help=('directory to prepend to file paths for use in '
                               'compile-time tracebacks and in runtime '
@@ -367,28 +366,28 @@ def main():
                               'of each file considered for compilation'))
     parser.add_argument('-i', metavar='FILE', dest='flist',
                         help=('add all the files and directories listed in '
-                              'FILE to the list considered for compilation; '
-                              'if "-", names are read from stdin'))
+                              '`FILE` to the list considered for compilation; '
+                              'if `"-"`, names are read from `stdin`'))
     parser.add_argument('compile_dest', metavar='FILE|DIR', nargs='*',
                         help=('zero or more file and directory names '
                               'to compile; if no arguments given, defaults '
-                              'to the equivalent of -l sys.path'))
+                              'to the equivalent of `-l` `sys.path`'))
     parser.add_argument('-j', '--workers', default=1,
                         type=int, help='Run compileall concurrently')
     invalidation_modes = [mode.name.lower().replace('_', '-')
                           for mode in py_compile.PycInvalidationMode]
     parser.add_argument('--invalidation-mode',
                         choices=sorted(invalidation_modes),
-                        help=('set .pyc invalidation mode; defaults to '
-                              '"checked-hash" if the SOURCE_DATE_EPOCH '
+                        help=('set `.pyc` invalidation mode; defaults to '
+                              '`"checked-hash"` if the `SOURCE_DATE_EPOCH` '
                               'environment variable is set, and '
-                              '"timestamp" otherwise.'))
+                              '`"timestamp"` otherwise.'))
     parser.add_argument('-o', action='append', type=int, dest='opt_levels',
                         help=('Optimization levels to run compilation with. '
-                              'Default is -1 which uses the optimization level '
-                              'of the Python interpreter itself (see -O).'))
+                              'Default is `-1` which uses the optimization level '
+                              'of the Python interpreter itself (see `-O`).'))
     parser.add_argument('-e', metavar='DIR', dest='limit_sl_dest',
-                        help='Ignore symlinks pointing outsite of the DIR')
+                        help='Ignore symlinks pointing outsite of the `DIR`')
     parser.add_argument('--hardlink-dupes', action='store_true',
                         dest='hardlink_dupes',
                         help='Hardlink duplicated pyc files')

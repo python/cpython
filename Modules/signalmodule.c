@@ -53,6 +53,10 @@
 #  include <pthread.h>
 #endif
 
+#ifdef HAVE_SYS_PIDFD_H
+#  include <sys/pidfd.h>          // pidfd_send_signal()
+#endif
+
 #ifndef SIG_ERR
 #  define SIG_ERR ((PyOS_sighandler_t)(-1))
 #endif
@@ -450,7 +454,6 @@ signal_raise_signal_impl(PyObject *module, int signalnum)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 signal.signal
 
     signalnum: int
@@ -460,16 +463,17 @@ signal.signal
 Set the action for the given signal.
 
 The action can be SIG_DFL, SIG_IGN, or a callable Python object.
-The previous action is returned.  See getsignal() for possible return values.
+The previous action is returned.  See getsignal() for possible return
+values.
 
 *** IMPORTANT NOTICE ***
-A signal handler function is called with two arguments:
-the first is the signal number, the second is the interrupted stack frame.
+A signal handler function is called with two arguments: the first is
+the signal number, the second is the interrupted stack frame.
 [clinic start generated code]*/
 
 static PyObject *
 signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
-/*[clinic end generated code: output=b44cfda43780f3a1 input=7608656f34fa378b]*/
+/*[clinic end generated code: output=b44cfda43780f3a1 input=99ce4035ec56ffc1]*/
 {
     _signal_module_state *modstate = get_signal_state(module);
     PyObject *old_handler;
@@ -839,7 +843,6 @@ PySignal_SetWakeupFd(int fd)
 
 #ifdef HAVE_SETITIMER
 /*[clinic input]
-@permit_long_docstring_body
 signal.setitimer
 
     which:    int
@@ -849,8 +852,8 @@ signal.setitimer
 
 Sets given itimer (one of ITIMER_REAL, ITIMER_VIRTUAL or ITIMER_PROF).
 
-The timer will fire after value seconds and after that every interval seconds.
-The itimer can be cleared by setting seconds to zero.
+The timer will fire after value seconds and after that every interval
+seconds.  The itimer can be cleared by setting seconds to zero.
 
 Returns old values as a tuple: (delay, interval).
 [clinic start generated code]*/
@@ -858,7 +861,7 @@ Returns old values as a tuple: (delay, interval).
 static PyObject *
 signal_setitimer_impl(PyObject *module, int which, PyObject *seconds,
                       PyObject *interval)
-/*[clinic end generated code: output=65f9dcbddc35527b input=ab5bf2b8f5cff3f4]*/
+/*[clinic end generated code: output=65f9dcbddc35527b input=bd9f0d2ed8614193]*/
 {
     _signal_module_state *modstate = get_signal_state(module);
 
@@ -1019,13 +1022,13 @@ signal.sigwait
 Wait for a signal.
 
 Suspend execution of the calling thread until the delivery of one of the
-signals specified in the signal set sigset.  The function accepts the signal
-and returns the signal number.
+signals specified in the signal set sigset.  The function accepts the
+signal and returns the signal number.
 [clinic start generated code]*/
 
 static PyObject *
 signal_sigwait_impl(PyObject *module, sigset_t sigset)
-/*[clinic end generated code: output=f43770699d682f96 input=a6fbd47b1086d119]*/
+/*[clinic end generated code: output=f43770699d682f96 input=91773742dd416a3e]*/
 {
     int err, signum;
 
@@ -1301,15 +1304,16 @@ signal_pthread_kill_impl(PyObject *module, unsigned long thread_id,
 
 
 // This system call always crashes on older Android versions.
-#if defined(__linux__) && defined(__NR_pidfd_send_signal) && \
-    !(defined(__ANDROID__) && __ANDROID_API__ < 31)
+#if defined(HAVE_PIDFD_SEND_SIGNAL) \
+    || (defined(__linux__) && defined(__NR_pidfd_send_signal) \
+        && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
 /*[clinic input]
 signal.pidfd_send_signal
 
     pidfd: int
     signalnum: int
     siginfo: object = None
-    flags: int = 0
+    flags: unsigned_int(bitwise=True) = 0
     /
 
 Send a signal to a process referred to by a pid file descriptor.
@@ -1317,15 +1321,20 @@ Send a signal to a process referred to by a pid file descriptor.
 
 static PyObject *
 signal_pidfd_send_signal_impl(PyObject *module, int pidfd, int signalnum,
-                              PyObject *siginfo, int flags)
-/*[clinic end generated code: output=2d59f04a75d9cbdf input=2a6543a1f4ac2000]*/
+                              PyObject *siginfo, unsigned int flags)
+/*[clinic end generated code: output=1804b5a19d269104 input=a6e82a3c264fa19d]*/
 
 {
     if (siginfo != Py_None) {
         PyErr_SetString(PyExc_TypeError, "siginfo must be None");
         return NULL;
     }
-    if (syscall(__NR_pidfd_send_signal, pidfd, signalnum, NULL, flags) < 0) {
+#ifdef HAVE_PIDFD_SEND_SIGNAL
+    int res = pidfd_send_signal(pidfd, signalnum, NULL, flags);
+#else
+    int res = syscall(__NR_pidfd_send_signal, pidfd, signalnum, NULL, flags);
+#endif
+    if (res < 0) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
