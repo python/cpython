@@ -233,12 +233,16 @@ _PyCompile_MaybeAddStaticAttributeToClass(compiler *c, expr_ty e)
     return SUCCESS;
 }
 
-static int
-compiler_set_qualname(compiler *c)
+int
+_PyCompile_SetQualname(compiler *c)
 {
     Py_ssize_t stack_size;
     struct compiler_unit *u = c->u;
     PyObject *name, *base;
+
+    if (u->u_scope_type == COMPILE_SCOPE_MODULE) {
+        return SUCCESS;
+    }
 
     base = NULL;
     stack_size = PyList_GET_SIZE(c->c_stack);
@@ -724,9 +728,6 @@ _PyCompile_EnterScope(compiler *c, identifier name, int scope_type,
     u->u_private = Py_XNewRef(private);
 
     c->u = u;
-    if (scope_type != COMPILE_SCOPE_MODULE) {
-        RETURN_IF_ERROR(compiler_set_qualname(c));
-    }
     return SUCCESS;
 }
 
@@ -1735,7 +1736,9 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
 finally:
     Py_XDECREF(consts_list);
     Py_XDECREF(metadata);
-    _PyCompile_ExitScope(c);
+    if (c->u != NULL) {
+        _PyCompile_ExitScope(c);
+    }
     compiler_free(c);
     _PyArena_Free(arena);
     return res;

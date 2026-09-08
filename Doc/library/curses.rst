@@ -2002,7 +2002,8 @@ Other
 
 .. attribute:: window.encoding
 
-   Encoding used to encode method arguments (Unicode strings and characters).
+   Encoding used to encode the string arguments of the methods and to decode
+   their results on a build without wide-character support.
    The encoding attribute is inherited from the parent window when a subwindow
    is created, for example with :meth:`window.subwin`.
    By default, current locale encoding is used (see :func:`locale.getencoding`).

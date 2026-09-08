@@ -1,0 +1,4 @@
+Parser objects of the :mod:`XML parser <xml.parsers.expat>` have a new method
+:meth:`!GetSpecifiedAttributeCount`.
+It tells how many of the attributes reported to :attr:`!StartElementHandler`
+were given in the start tag rather than defaulted from the DTD.
