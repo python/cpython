@@ -74,6 +74,19 @@ _PyLexer_set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
         while (i < tok_mode->last_expr_size - tok_mode->last_expr_end) {
             char ch = tok_mode->last_expr_buffer[i];
 
+            // Copy escaped characters as-is. This keeps an escaped quote from
+            // flipping the in_string state, which would otherwise stop a real
+            // comment from being detected (see the detection loop above).
+            if (ch == '\\') {
+                result[j++] = ch;
+                i++;
+                if (i < tok_mode->last_expr_size - tok_mode->last_expr_end) {
+                    result[j++] = tok_mode->last_expr_buffer[i];
+                    i++;
+                }
+                continue;
+            }
+
             // Handle string quotes
             if (ch == '"' || ch == '\'') {
                 // See comment above to understand this part
