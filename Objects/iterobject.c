@@ -1,6 +1,7 @@
 /* Iterator objects */
 
 #include "Python.h"
+#include "structmember.h"         // PyMemberDef
 #include "pycore_abstract.h"      // _PyObject_HasLen()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
@@ -939,6 +940,12 @@ static PyMethodDef acallawaitable_methods[] = {
     {NULL, NULL}        /* Sentinel */
 };
 
+static PyMemberDef acallawaitable_members[] = {
+    {"aw_wrapped", Py_T_OBJECT_EX, offsetof(acallawaitableobject, aw_wrapped),
+     Py_READONLY, "the awaitable returned by the callable"},
+    {NULL}      /* Sentinel */
+};
+
 static PyAsyncMethods acallawaitable_as_async = {
     PyObject_SelfIter,                          /* am_await */
     0,                                          /* am_aiter */
@@ -958,4 +965,5 @@ PyTypeObject _PyACallIterAwaitable_Type = {
     .tp_iter = PyObject_SelfIter,
     .tp_iternext = acallawaitable_iternext,
     .tp_methods = acallawaitable_methods,
+    .tp_members = acallawaitable_members,
 };
