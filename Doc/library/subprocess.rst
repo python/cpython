@@ -236,8 +236,8 @@ underlying :class:`Popen` interface can be used directly.
 
     .. attribute:: returncode
 
-        Exit status of the child process.  If the process exited due to a
-        signal, this will be the negative signal number.
+        Exit status of the child process, an integer.  If the process
+        exited due to a signal, this will be the negative signal number.
 
     .. attribute:: cmd
 

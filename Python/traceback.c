@@ -12,6 +12,7 @@
 #include "pycore_traceback.h"     // EXCEPTION_TB_HEADER
 
 #include "frameobject.h"          // PyFrame_New()
+#include "../Parser/tokenizer/tokenizer.h"
 
 #include "osdefs.h"               // SEP
 #ifdef HAVE_UNISTD_H
@@ -56,9 +57,6 @@
 #define MAX_STRING_LENGTH 500
 #define MAX_FRAME_DEPTH 100
 #define DEFAULT_MAX_NTHREADS 100
-
-/* Function from Parser/tokenizer/file_tokenizer.c */
-extern char* _PyTokenizer_FindEncodingFilename(int, PyObject *);
 
 /*[clinic input]
 class traceback "PyTracebackObject *" "&PyTraceback_Type"
@@ -176,12 +174,13 @@ tb_lineno_get(PyObject *op, void *Py_UNUSED(_))
 /*[clinic input]
 @critical_section
 @setter
+@deleter
 traceback.tb_next
 [clinic start generated code]*/
 
 static int
 traceback_tb_next_set_impl(PyTracebackObject *self, PyObject *value)
-/*[clinic end generated code: output=d4868cbc48f2adac input=ce66367f85e3c443]*/
+/*[clinic end generated code: output=d4868cbc48f2adac input=936201ff689c5700]*/
 {
     if (!value) {
         PyErr_Format(PyExc_TypeError, "can't delete tb_next attribute");

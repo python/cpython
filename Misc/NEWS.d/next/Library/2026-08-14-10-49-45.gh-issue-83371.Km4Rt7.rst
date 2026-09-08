@@ -1,0 +1,6 @@
+Fix a deadlock in :class:`multiprocessing.pool.Pool` when *callback* or
+*error_callback* raises an exception.
+It killed the thread which handles results, so that the pool hung forever.
+The exception is now the result of the job,
+as an error raised while iterating the input,
+and is raised by :meth:`!AsyncResult.get`.
