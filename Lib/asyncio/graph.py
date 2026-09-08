@@ -65,6 +65,9 @@ def _build_graph_for_future(
             # A native async generator or duck-type compatible iterator
             st.append(FrameCallGraphEntry(coro.ag_frame))
             coro = coro.ag_await
+        elif hasattr(coro, 'aw_wrapped'):
+            # gh-157044: aiter(callable, stop) awaitable wrapping the callable
+            coro = coro.aw_wrapped
         else:
             break
 
@@ -246,7 +249,7 @@ def format_call_graph(
                         f' line {f.f_lineno}, in'
                         f' {tag} {code.co_qualname}()'
                     )
-
+ mar
         if st.awaited_by:
             add_line(
                 f'  + Awaited by:'
