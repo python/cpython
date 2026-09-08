@@ -2108,6 +2108,8 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(stdout));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(step));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(steps));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(stop_exception));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(stop_value));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(store_name));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(strategy));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(strftime));

@@ -125,7 +125,8 @@ _PyLexer_update_ftstring_expr(struct tok_state *tok, char cur)
 {
     assert(tok->cur != NULL);
 
-    Py_ssize_t size = strlen(tok->cur);
+    Py_ssize_t size = cur == 0
+        ? tok->inp - tok->cur : (Py_ssize_t)strlen(tok->cur);
     tokenizer_mode *tok_mode = TOK_GET_MODE(tok);
 
     switch (cur) {
@@ -142,7 +143,8 @@ _PyLexer_update_ftstring_expr(struct tok_state *tok, char cur)
                 goto error;
             }
             tok_mode->last_expr_buffer = new_buffer;
-            strncpy(tok_mode->last_expr_buffer + tok_mode->last_expr_size, tok->cur, size);
+            memcpy(tok_mode->last_expr_buffer + tok_mode->last_expr_size,
+                   tok->cur, size);
             tok_mode->last_expr_size += size;
             break;
         case '{':
@@ -155,7 +157,7 @@ _PyLexer_update_ftstring_expr(struct tok_state *tok, char cur)
             }
             tok_mode->last_expr_size = size;
             tok_mode->last_expr_end = -1;
-            strncpy(tok_mode->last_expr_buffer, tok->cur, size);
+            memcpy(tok_mode->last_expr_buffer, tok->cur, size);
             break;
         case '}':
         case '!':
