@@ -193,6 +193,9 @@ class TokenTests(unittest.TestCase):
                ("1jz", 3, "imaginary"),
                ("0xI", 3, "hexadecimal"),
                ("0bz", 3, "binary"),
+               ("100_a", 5, " decimal"),
+               ("1.__class__", 3, " decimal"),
+               ("1e+-3", 4, " decimal"),
                # SyntaxWarning's currently:
                ("1or 0", 2, " decimal"),
                ("0o1or 0", 4, "octal"),

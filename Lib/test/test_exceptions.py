@@ -299,7 +299,7 @@ class ExceptionTests(unittest.TestCase):
         check('(0x+1)', 1, 4)
         check('x = 0xI', 1, 7)
         check('0010 + 2', 1, 1)
-        check('x = 32e-+4', 1, 8)
+        check('x = 32e-+4', 1, 9)
         check('x = 0o9', 1, 7)
         check('\u03b1 = 0xI', 1, 7)
         check(b'\xce\xb1 = 0xI', 1, 7)
@@ -322,7 +322,7 @@ class ExceptionTests(unittest.TestCase):
         check("""f'''
             {
             (123_a)
-            }'''""", 3, 17)
+            }'''""", 3, 18)
         check("""f'''
             {
             f\"\"\"
@@ -330,7 +330,7 @@ class ExceptionTests(unittest.TestCase):
             (123_a)
             }
             \"\"\"
-            }'''""", 5, 17)
+            }'''""", 5, 18)
         check('''f"""
 
 

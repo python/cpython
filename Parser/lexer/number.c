@@ -47,11 +47,14 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind) {
      * other keyword or identifier.
      */
     int r = 0;
+    int in_exp = 0; /* do we handle exponent now? */
+
     if (c == 'a') {
         r = lookahead(tok, "nd");
     }
     else if (c == 'e') {
         r = lookahead(tok, "lse");
+        in_exp = 1;
     }
     else if (c == 'f') {
         r = lookahead(tok, "or");
@@ -69,6 +72,9 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind) {
     else if (c == 'n') {
         r = lookahead(tok, "ot");
     }
+    if (in_exp) {
+        c = tok_nextc(tok);
+    }
     if (r) {
         if (_PyTokenizer_parser_warn(tok, PyExc_SyntaxWarning,
                 "invalid %s literal", kind))
@@ -80,6 +86,9 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind) {
     if (c < 128 && is_potential_identifier_char(c)) {
         _PyTokenizer_syntaxerror(tok, "invalid %s literal", kind);
         return 0;
+    }
+    if (in_exp) {
+        tok_backup(tok, c);
     }
     return 1;
 }
@@ -98,7 +107,6 @@ tok_decimal_tail(struct tok_state *tok)
         }
         c = tok_nextc(tok);
         if (!Py_ISDIGIT(c)) {
-            tok_backup(tok, c);
             _PyTokenizer_syntaxerror(tok, "invalid decimal literal");
             return 0;
         }
@@ -269,7 +277,6 @@ _PyLexer_scan_number(struct tok_state *tok, struct token *token, int c,
                 if (c == '+' || c == '-') {
                     c = tok_nextc(tok);
                     if (!Py_ISDIGIT(c)) {
-                        tok_backup(tok, c);
                         return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "invalid decimal literal"));
                     }
                 } else if (!Py_ISDIGIT(c)) {
