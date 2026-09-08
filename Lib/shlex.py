@@ -77,8 +77,7 @@ class shlex:
         "Push an input source onto the lexer's input source stack."
         if isinstance(newstream, str):
             newstream = StringIO(newstream)
-        self.filestack.appendleft((self.infile, self.instream, self.lineno,
-                                   self.state))
+        self.filestack.appendleft((self.infile, self.instream, self.lineno))
         self.infile = newfile
         self.instream = newstream
         self.lineno = 1
@@ -92,11 +91,11 @@ class shlex:
     def pop_source(self):
         "Pop the input source stack."
         self.instream.close()
-        (self.infile, self.instream, self.lineno,
-         self.state) = self.filestack.popleft()
+        (self.infile, self.instream, self.lineno) = self.filestack.popleft()
         if self.debug:
             print('shlex: popping to %s, line %d' \
                   % (self.instream, self.lineno))
+        self.state = ' '
 
     def get_token(self):
         "Get a token from the input stream (or from stack if it's nonempty)"
