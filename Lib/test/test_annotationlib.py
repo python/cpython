@@ -545,6 +545,152 @@ class TestStringFormat(unittest.TestCase):
             {"x": "x | <class 'int'>", "y": "<class 'int'>"},
         )
 
+    def test_comprehensions(self):
+        # gh-157056: pair-unpacking comprehensions raised ValueError, and
+        # generator expressions were stringified with a memory address.
+        def f(
+            dictcomp: {k: v for k, v in items},
+            listcomp: [k for k, v in items],
+            setcomp: {k for k, v in items},
+            genexpr: (w for w in seq),
+        ):
+            pass
+
+        anno = get_annotations(f, format=Format.STRING)
+        self.assertEqual(
+            anno,
+            {
+                "dictcomp": "{k: v for k, v in items}",
+                "listcomp": "[k for k, v in items]",
+                "setcomp": "{k for k, v in items}",
+                "genexpr": "(w for w in seq)",
+            },
+        )
+        self.assertNotIn("0x", anno["genexpr"].lower())
+
+    def test_lambda(self):
+        def f(
+            lam: lambda q: q,
+            nested_list: [lambda q: q],
+            nested_dict: {"h": lambda q: q},
+            nested_frozenset: frozenset({lambda q: q}),
+        ):
+            pass
+
+        anno = get_annotations(f, format=Format.STRING)
+        self.assertEqual(
+            anno,
+            {
+                "lam": "lambda q: q",
+                "nested_list": "[lambda q: q]",
+                "nested_dict": "{'h': lambda q: q}",
+                "nested_frozenset": "frozenset({lambda q: q})",
+            },
+        )
+        for value in anno.values():
+            self.assertNotIn("0x", value.lower())
+
+    def test_quoted_string_with_unpack_fallback(self):
+        def f(a: "int", b: {k: v for k, v in items}):
+            pass
+
+        anno = get_annotations(f, format=Format.STRING)
+        self.assertEqual(anno, {"a": "int", "b": "{k: v for k, v in items}"})
+
+    def test_return_varargs_kwargs(self):
+        def f(
+            *xs: {k: v for k, v in items},
+            **kw: lambda q: q,
+        ) -> {k: v for k, v in items}:
+            pass
+
+        anno = get_annotations(f, format=Format.STRING)
+        self.assertEqual(
+            anno,
+            {
+                "xs": "{k: v for k, v in items}",
+                "kw": "lambda q: q",
+                "return": "{k: v for k, v in items}",
+            },
+        )
+
+    def test_nested_and_decorated(self):
+        def deco(fn):
+            return fn
+
+        def outer():
+            @deco
+            def inner(x: {k: v for k, v in items}, y: lambda q: q):
+                pass
+            return inner
+
+        anno = get_annotations(outer(), format=Format.STRING)
+        self.assertEqual(
+            anno,
+            {"x": "{k: v for k, v in items}", "y": "lambda q: q"},
+        )
+
+    def test_async_function(self):
+        async def f(x: {k: v for k, v in items}) -> int:
+            pass
+
+        anno = get_annotations(f, format=Format.STRING)
+        self.assertEqual(anno, {"x": "{k: v for k, v in items}", "return": "int"})
+
+    def test_method_and_staticmethod(self):
+        class C:
+            def meth(self, x: {k: v for k, v in items}) -> str:
+                pass
+
+            @staticmethod
+            def sm(x: lambda q: q):
+                pass
+
+        self.assertEqual(
+            get_annotations(C.meth, format=Format.STRING),
+            {"x": "{k: v for k, v in items}", "return": "str"},
+        )
+        self.assertEqual(
+            get_annotations(C.sm, format=Format.STRING),
+            {"x": "lambda q: q"},
+        )
+
+    def test_class_with_conditional_annotation(self):
+        class C:
+            a: int
+            b: {k: v for k, v in items}
+            if True:
+                c: str
+
+        anno = get_annotations(C, format=Format.STRING)
+        self.assertEqual(
+            anno,
+            {
+                "a": "int",
+                "b": "{k: v for k, v in items}",
+                "c": "str",
+            },
+        )
+
+    def test_string_format_does_not_read_source(self):
+        import inspect
+
+        def f(x: int) -> str:
+            pass
+
+        def boom(*args, **kwargs):
+            raise AssertionError("inspect.getsource should not be consulted")
+
+        with support.swap_attr(inspect, "getsource", boom):
+            anno = get_annotations(f, format=Format.STRING)
+        self.assertEqual(anno, {"x": "int", "return": "str"})
+
+    def test_exec_without_source_still_raises(self):
+        ns = {}
+        exec("def f(x: {k: v for k, v in items}): pass", ns)
+        with self.assertRaisesRegex(ValueError, "values to unpack"):
+            get_annotations(ns["f"], format=Format.STRING)
+
 
 class TestGetAnnotations(unittest.TestCase):
     def test_builtin_type(self):
@@ -1859,6 +2005,12 @@ class TestTypeRepr(unittest.TestCase):
         self.assertEqual(type_repr(len), "len")
         self.assertEqual(type_repr(type_repr), "annotationlib.type_repr")
         self.assertEqual(type_repr(times_three), f"{__name__}.times_three")
+        lam = (lambda q: q)
+        self.assertTrue(type_repr(lam).endswith("<lambda>"))
+        self.assertNotIn("0x", type_repr(lam).lower())
+        gen = (w for w in ())
+        self.assertTrue(type_repr(gen).endswith("<genexpr>"))
+        self.assertNotIn("0x", type_repr(gen).lower())
         self.assertEqual(type_repr(...), "...")
         self.assertEqual(type_repr(None), "None")
         self.assertEqual(type_repr(1), "1")
