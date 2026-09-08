@@ -2147,7 +2147,7 @@ class TestTemporaryDirectory(BaseTestCase):
     def test_cleanup_safe(self):
         """Verify that cleanup uses the safer code path"""
         # This is a regression test. Feel free to add exceptions for new
-        # platforms, but don't forget to update docs.
+        # platforms, but don't forget to update the docs.
         self.assertTrue(tempfile._rmtree_use_dir_fd)
 
 if __name__ == "__main__":
