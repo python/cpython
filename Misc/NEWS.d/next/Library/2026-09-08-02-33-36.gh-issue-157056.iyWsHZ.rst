@@ -1,4 +1,0 @@
-:func:`annotationlib.get_annotations` with ``format=Format.STRING`` no
-longer fails on dict-comprehension annotations, and no longer emits
-non-deterministic strings that embed a memory address for ``lambda`` and
-generator-expression annotations.
