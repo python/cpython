@@ -4453,6 +4453,7 @@ class TestExtractionFilters(unittest.TestCase):
                     self.expect_file("s", symlink_to=os.path.join('..', 'escape'))
 
     @symlink_test
+    @os_helper.skip_unless_hardlink
     def test_sneaky_hardlink_relocation(self):
         with ArchiveMaker() as arc:
             arc.add("a/escape", content="decoy")
