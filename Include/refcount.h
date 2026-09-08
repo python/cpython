@@ -484,7 +484,7 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
     do { \
         _Py_TYPEOF(op)* _tmp_op_ptr = &(op); \
         _Py_TYPEOF(op) _tmp_old_op = (*_tmp_op_ptr); \
-        if (_tmp_old_op != NULL) { \
+        if (_tmp_old_op != _Py_NULL) { \
             *_tmp_op_ptr = _Py_NULL; \
             Py_DECREF(_tmp_old_op); \
         } \
