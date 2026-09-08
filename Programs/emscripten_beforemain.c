@@ -18,6 +18,7 @@ EM_JS(void, _PyEmscripten_BeforeMain_js, (void), {
     // promising() needs the raw export; _main may be a JS wrapper around it.
     const main = WebAssembly.promising(wasmExports.__main_argc_argv);
     _main = (...args) => {
+        Module.Py_EmscriptenStackSwitching = true;
         // Exit the way callMain() would have, once main() is actually done.
         main(...args).then((ret) => exitJS(ret, true)).catch(handleException);
         // Unwind to callMain() without letting it exit: main() is still
