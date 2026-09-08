@@ -1,0 +1,3 @@
+Argument Clinic: report errors on the offending line.
+Errors in a docstring were reported on the line which ends the block, and
+errors detected when generating the code were reported without any position.

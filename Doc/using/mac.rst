@@ -1,3 +1,4 @@
+.. highlight:: none
 
 .. _using-on-mac:
 

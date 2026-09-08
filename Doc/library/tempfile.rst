@@ -257,7 +257,8 @@ The module defines the following user-callable items:
    The file descriptor is :ref:`not inherited by child processes <fd_inheritance>`.
 
    Unlike :func:`TemporaryFile`, the user of :func:`mkstemp` is responsible
-   for deleting the temporary file when done with it.
+   for closing the file descriptor (for example, using :func:`os.close`) and
+   deleting the temporary file (for example, using :func:`os.remove`).
 
    If *suffix* is not ``None``, the file name will end with that suffix,
    otherwise there will be no suffix.  :func:`mkstemp` does not put a dot
@@ -347,8 +348,11 @@ The module defines the following user-callable items:
 
    #. A platform-specific location:
 
-      * On Windows, the directories :file:`C:\\TEMP`, :file:`C:\\TMP`,
-        :file:`\\TEMP`, and :file:`\\TMP`, in that order.
+      * On Windows, the directories
+        :file:`%USERPROFILE%\\AppData\\Local\\Temp`,
+        :file:`%SYSTEMROOT%\\Temp`, :file:`C:\\TEMP`,
+        :file:`C:\\TMP`, :file:`\\TEMP`, and
+        :file:`\\TMP`, in that order.
 
       * On all other platforms, the directories :file:`/tmp`, :file:`/var/tmp`, and
         :file:`/usr/tmp`, in that order.

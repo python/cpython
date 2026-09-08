@@ -316,6 +316,18 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
                 self.assertEqual(dt.utcoffset(), offset.utcoffset, dt)
                 self.assertEqual(dt.dst(), offset.dst, dt)
 
+    def test_datetime_subclass_negative_components(self):
+        class MinusOneDateTime(datetime):
+            hour = minute = second = -1
+
+        zi = self.zone_from_key("UTC")
+        dt = MinusOneDateTime(2024, 1, 1, tzinfo=zi)
+
+        self.assertEqual(dt.utcoffset(), ZERO)
+        self.assertEqual(dt.dst(), ZERO)
+        self.assertEqual(dt.tzname(), "UTC")
+        self.assertEqual(zi.fromutc(dt), datetime(2024, 1, 1, tzinfo=zi))
+
     def test_folds_and_gaps(self):
         test_cases = []
         for key in self.zones():
