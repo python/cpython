@@ -1,2 +1,3 @@
-Correct ``errno`` handling in ``abs(complex)``.  Patch by Sergey B
+Fix spurious :exc:`OverflowError` for ``abs(nan)`` in case :c:data:`errno` was
+previously set to :c:macro:`!ERANGE` by some library call.  Patch by Sergey B
 Kirpichev.
