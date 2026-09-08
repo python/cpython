@@ -1122,6 +1122,20 @@ web_example/python.mjs web_example/python.wasm: $(BUILDPYTHON)
 	cp python.mjs web_example/python.mjs
 	cp python.wasm web_example/python.wasm
 
+WEB_EMBED_TEST_DIR=$(EMSCRIPTEN_DIR)/web_embed_test
+
+# Linked like an embedder would: against libpython.a, without $(LINKFORSHARED)
+# and so without -sMAIN_MODULE or the interpreter's -sEXPORTED_FUNCTIONS.
+web_embed_test/main.js: $(WEB_EMBED_TEST_DIR)/main.c $(LIBRARY) $(ZIP_STDLIB)
+	@mkdir -p web_embed_test
+	$(LINKCC) $(PY_STDMODULE_CFLAGS) $(PY_CORE_EXE_LDFLAGS) -O2 -g0 -o $@ \
+		$(WEB_EMBED_TEST_DIR)/main.c $(LIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) \
+		-sALLOW_MEMORY_GROWTH -sSTACK_SIZE=5MB \
+		--preload-file $(ZIP_STDLIB)@/lib/stdlib.zip
+
+.PHONY: web_embed_test
+web_embed_test: web_embed_test/main.js
+
 .PHONY: web_example
 web_example: web_example/python.mjs web_example/python.worker.mjs web_example/index.html web_example/server.py web_example/$(ZIP_STDLIB)
 
@@ -3288,7 +3302,7 @@ clean-retain-profile: pycremoval
 	find build -name '*.py[co]' -exec rm -f {} ';' || true
 	-rm -f pybuilddir.txt
 	-rm -f _bootstrap_python
-	-rm -rf web_example python.mjs python.wasm python*.symbols python*.map
+	-rm -rf web_example web_embed_test python.mjs python.wasm python*.symbols python*.map
 	-rm -f Programs/_testembed Programs/_freeze_module
 	-rm -rf Python/deepfreeze
 	-rm -f Python/frozen_modules/*.h
