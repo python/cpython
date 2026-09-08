@@ -323,14 +323,14 @@ def _resetperms_at(name, dir_fd, path):
         if _nofollow_mode is not None:
             try:
                 fd = _os.open(name, _nofollow_mode, dir_fd=dir_fd)
-            except (OSError, AttributeError):
+            except OSError:
                 pass
-        else:
-            try:
-                _os.chmod(fd, 0o700)
-            finally:
-                _os.close(fd)
-            return
+            else:
+                try:
+                    _os.chmod(fd, 0o700)
+                finally:
+                    _os.close(fd)
+                return
         # If that did not work, we change by name, which is subject to a race
         # condition.
         stat = _os.lstat(name, dir_fd=dir_fd)
