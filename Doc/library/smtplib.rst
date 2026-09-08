@@ -81,7 +81,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
       :class:`ValueError` to prevent the creation of a non-blocking socket.
 
 .. class:: SMTP_SSL(host='', port=0, local_hostname=None, * [, timeout], \
-                    context=None, source_address=None)
+                    context=None, source_address=None, server_hostname=None)
 
    An :class:`SMTP_SSL` instance behaves exactly the same as instances of
    :class:`SMTP`. :class:`SMTP_SSL` should be used for situations where SSL is
@@ -97,6 +97,12 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    can contain a :class:`~ssl.SSLContext` and allows configuring various
    aspects of the secure connection.  Please read :ref:`ssl-security` for
    best practices.
+
+   The optional keyword-only argument *server_hostname* overrides the
+   hostname used for *Server Name Indication* and certificate matching
+   against *host*.  This is useful when *host* is a pre-resolved IP address
+   or otherwise differs from the hostname the server's certificate should be
+   validated against.  If not given, it defaults to *host*.
 
    .. attribute:: SMTP_SSL.default_port
 
@@ -119,6 +125,9 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
 
    .. versionchanged:: 3.12
       The deprecated *keyfile* and *certfile* parameters have been removed.
+
+   .. versionchanged:: 3.16
+      The *server_hostname* argument was added.
 
 .. class:: LMTP(host='', port=LMTP_PORT, local_hostname=None, \
                 source_address=None[, timeout])
@@ -409,7 +418,7 @@ An :class:`SMTP` instance has the following methods:
    .. versionadded:: 3.5
 
 
-.. method:: SMTP.starttls(*, context=None)
+.. method:: SMTP.starttls(*, context=None, server_hostname=None)
 
    Put the SMTP connection in TLS (Transport Layer Security) mode.  All SMTP
    commands that follow will be encrypted.  You should then call :meth:`ehlo`
@@ -421,6 +430,13 @@ An :class:`SMTP` instance has the following methods:
    Optional *context* parameter is an :class:`ssl.SSLContext` object; This is
    an alternative to using a keyfile and a certfile and if specified both
    *keyfile* and *certfile* should be ``None``.
+
+   Optional *server_hostname* parameter overrides the hostname used for
+   *Server Name Indication* and certificate matching.  This is useful when
+   the address given to :meth:`connect` differs from the hostname the
+   server's certificate should be validated against, for example when
+   connecting to a pre-resolved IP address.  If not given, it defaults to
+   the host used for the connection.
 
    If there has been no previous ``EHLO`` or ``HELO`` command this session,
    this method tries ESMTP ``EHLO`` first.
@@ -449,6 +465,9 @@ An :class:`SMTP` instance has the following methods:
       The error raised for lack of STARTTLS support is now the
       :exc:`SMTPNotSupportedError` subclass instead of the base
       :exc:`SMTPException`.
+
+   .. versionchanged:: 3.16
+      The *server_hostname* argument was added.
 
 
 .. method:: SMTP.sendmail(from_addr, to_addrs, msg, mail_options=(), rcpt_options=())

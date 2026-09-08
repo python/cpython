@@ -761,7 +761,7 @@ class SMTP:
         # We could not login successfully.  Return result of last attempt.
         raise last_exception
 
-    def starttls(self, *, context=None):
+    def starttls(self, *, context=None, server_hostname=None):
         """Puts the connection to the SMTP server into TLS mode.
 
         If there has been no previous EHLO or HELO command this session, this
@@ -772,6 +772,12 @@ class SMTP:
         the identity of the SMTP server and client can be checked. This,
         however, depends on whether the socket module really checks the
         certificates.
+
+        The server_hostname parameter can be used to override the hostname
+        used for SNI and certificate matching, in case it differs from the
+        address given to connect() (for example, when connecting to a
+        pre-resolved IP address). It defaults to the hostname stored from
+        connect().
 
         This method may raise the following exceptions:
 
@@ -788,8 +794,10 @@ class SMTP:
                 raise RuntimeError("No SSL support included in this Python")
             if context is None:
                 context = ssl._create_stdlib_context()
+            if server_hostname is None:
+                server_hostname = self._host
             self.sock = context.wrap_socket(self.sock,
-                                            server_hostname=self._host)
+                                            server_hostname=server_hostname)
             self.file = None
             # RFC 3207:
             # The client MUST discard any knowledge obtained from
@@ -1019,7 +1027,10 @@ if _have_ssl:
         host) is used. If port is omitted, the standard SMTP-over-SSL port
         (465) is used.  local_hostname and source_address have the same meaning
         as they do in the SMTP class.  context also optional, can contain a
-        SSLContext.
+        SSLContext.  The server_hostname parameter can be used to override the
+        hostname used for SNI and certificate matching, in case it differs
+        from host (for example, when host is a pre-resolved IP address); it
+        defaults to host.
 
         """
 
@@ -1027,10 +1038,12 @@ if _have_ssl:
 
         def __init__(self, host='', port=0, local_hostname=None,
                      *, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
-                     source_address=None, context=None):
+                     source_address=None, context=None,
+                     server_hostname=None):
             if context is None:
                 context = ssl._create_stdlib_context()
             self.context = context
+            self._server_hostname = server_hostname
             SMTP.__init__(self, host, port, local_hostname, timeout,
                           source_address)
 
@@ -1038,8 +1051,11 @@ if _have_ssl:
             if self.debuglevel > 0:
                 self._print_debug('connect:', (host, port))
             new_socket = super()._get_socket(host, port, timeout)
+            server_hostname = self._server_hostname
+            if server_hostname is None:
+                server_hostname = self._host
             new_socket = self.context.wrap_socket(new_socket,
-                                                  server_hostname=self._host)
+                                                  server_hostname=server_hostname)
             return new_socket
 
     __all__.append("SMTP_SSL")

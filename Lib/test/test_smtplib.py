@@ -723,6 +723,69 @@ class NonConnectingTests(unittest.TestCase):
             self.assertIsNone(smtp.sock)
 
 
+@unittest.skipUnless(smtplib._have_ssl, 'SSL not available')
+class StartTLSServerHostnameTests(unittest.TestCase):
+    # Verify that starttls() picks the hostname passed to wrap_socket()
+    # for SNI/certificate matching from the server_hostname keyword when
+    # given, and falls back to the connected host (self._host) otherwise.
+
+    def _make_smtp(self):
+        smtp = smtplib.SMTP()
+        smtp.sock = Mock()
+        smtp._host = 'connected.example.com'
+        smtp.ehlo_or_helo_if_needed = Mock()
+        smtp.has_extn = Mock(return_value=True)
+        smtp.docmd = Mock(return_value=(220, b'Go ahead'))
+        return smtp
+
+    def testStarttlsDefaultsToHost(self):
+        smtp = self._make_smtp()
+        original_sock = smtp.sock
+        mock_context = Mock()
+        smtp.starttls(context=mock_context)
+        mock_context.wrap_socket.assert_called_once_with(
+            original_sock, server_hostname='connected.example.com')
+
+    def testStarttlsExplicitServerHostname(self):
+        smtp = self._make_smtp()
+        original_sock = smtp.sock
+        mock_context = Mock()
+        smtp.starttls(context=mock_context,
+                       server_hostname='override.example.org')
+        mock_context.wrap_socket.assert_called_once_with(
+            original_sock, server_hostname='override.example.org')
+
+
+@unittest.skipUnless(smtplib._have_ssl, 'SSL not available')
+class SMTP_SSLServerHostnameTests(unittest.TestCase):
+    # Verify that SMTP_SSL._get_socket() picks the hostname passed to
+    # wrap_socket() from the server_hostname constructor keyword when
+    # given, and falls back to the connected host (self._host) otherwise.
+
+    def testGetSocketDefaultsToHost(self):
+        mock_context = Mock()
+        smtp = smtplib.SMTP_SSL(context=mock_context)
+        smtp._host = 'connected.example.com'
+        with mock.patch.object(smtplib.SMTP, '_get_socket',
+                                return_value=Mock()) as base_get_socket:
+            smtp._get_socket('connected.example.com', 465, 1)
+        mock_context.wrap_socket.assert_called_once_with(
+            base_get_socket.return_value,
+            server_hostname='connected.example.com')
+
+    def testGetSocketExplicitServerHostname(self):
+        mock_context = Mock()
+        smtp = smtplib.SMTP_SSL(context=mock_context,
+                                 server_hostname='override.example.org')
+        smtp._host = 'connected.example.com'
+        with mock.patch.object(smtplib.SMTP, '_get_socket',
+                                return_value=Mock()) as base_get_socket:
+            smtp._get_socket('connected.example.com', 465, 1)
+        mock_context.wrap_socket.assert_called_once_with(
+            base_get_socket.return_value,
+            server_hostname='override.example.org')
+
+
 class DefaultArgumentsTests(unittest.TestCase):
 
     def setUp(self):

@@ -1,0 +1,5 @@
+Add a keyword-only *server_hostname* parameter to
+:meth:`SMTP.starttls() <smtplib.SMTP.starttls>` and to the
+:class:`~smtplib.SMTP_SSL` constructor, so the hostname used for TLS SNI
+and certificate matching can be set independently of the address the
+client connected to. Patch by Yasser Ameur.

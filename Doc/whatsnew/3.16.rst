@@ -521,6 +521,16 @@ shlex
   (Contributed by Jay Berry in :gh:`148846`.)
 
 
+smtplib
+-------
+
+* :meth:`SMTP.starttls() <smtplib.SMTP.starttls>` and the
+  :class:`~smtplib.SMTP_SSL` constructor now accept a keyword-only
+  *server_hostname* parameter to override the hostname used for SNI and
+  certificate matching, independently of the address used to connect.
+  (Contributed by Yasser Ameur in :gh:`157181`.)
+
+
 socket
 ------
 
