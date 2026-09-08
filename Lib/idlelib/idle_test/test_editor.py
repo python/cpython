@@ -270,7 +270,7 @@ class RMenuTest(unittest.TestCase):
         text = self.text
         insert(text, 'one two three')  # 'insert' at 1.13.
         # The selection contains the clicked character.
-        text.tag_add('sel', 1.0, 1.3)  # Select 'one'.
+        text.tag_add('sel', '1.0', '1.3')  # Select 'one'.
         text.mark_set('insert', '1.3')  # If select rightward, 'insert' at 1.3.
         self.click()
         eq((text.index('sel.first'), text.index('sel.last')), ('1.0', '1.3'))
