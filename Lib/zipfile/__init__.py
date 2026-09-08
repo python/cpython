@@ -12,6 +12,7 @@ import struct
 import sys
 import threading
 import time
+lazy import warnings
 
 try:
     import zlib # We may need its compression method
@@ -619,7 +620,6 @@ class ZipInfo:
                         if up_unicode_name:
                             self.filename = _sanitize_filename(up_unicode_name)
                         else:
-                            import warnings
                             warnings.warn("Empty unicode path extra field (0x7075)", stacklevel=2)
                 except struct.error as e:
                     raise BadZipFile("Corrupt unicode path extra field (0x7075)") from e
@@ -689,7 +689,7 @@ class ZipInfo:
             self.external_attr = 0o40775 << 16  # drwxrwxr-x
             self.external_attr |= 0x10  # MS-DOS directory flag
         else:
-            self.external_attr = 0o600 << 16  # ?rw-------
+            self.external_attr = 0o100600 << 16  # -rw-------
         return self
 
     def is_dir(self):
@@ -801,7 +801,16 @@ class LZMADecompressor:
         except AttributeError:
             return b''
 
-    def decompress(self, data):
+    @property
+    def _needs_input(self):
+        # While the LZMA properties header is still being buffered, more input
+        # is required; afterwards defer to the wrapped decompressor so a bounded
+        # decompress() call can be drained across reads.
+        if self._decomp is None:
+            return True
+        return self._decomp.needs_input
+
+    def decompress(self, data, max_length=-1):
         if self._decomp is None:
             self._unconsumed += data
             if len(self._unconsumed) <= 4:
@@ -817,7 +826,7 @@ class LZMADecompressor:
             data = self._unconsumed[4 + psize:]
             del self._unconsumed
 
-        result = self._decomp.decompress(data)
+        result = self._decomp.decompress(data, max_length)
         self.eof = self._decomp.eof
         return result
 
@@ -882,6 +891,13 @@ def _get_compressor(compress_type, compresslevel=None):
         return zstd.ZstdCompressor(level=compresslevel)
     else:
         return None
+
+
+def _decompressor_needs_input(decompressor):
+    # bz2/zstd expose the stdlib decompressor's public needs_input; the LZMA
+    # wrapper keeps it private (_needs_input) to avoid adding public API.
+    needs_input = getattr(decompressor, "needs_input", None)
+    return decompressor._needs_input if needs_input is None else needs_input
 
 
 def _get_decompressor(compress_type):
@@ -1186,8 +1202,15 @@ class ZipExtFile(io.BufferedIOBase):
             data = self._decompressor.unconsumed_tail
             if n > len(data):
                 data += self._read2(n - len(data))
-        else:
+        elif self._compress_type == ZIP_STORED:
             data = self._read2(n)
+        else:
+            # bzip2/lzma/zstd: a bounded decompress() call may leave input
+            # buffered inside the decompressor; drain that before reading more.
+            if _decompressor_needs_input(self._decompressor):
+                data = self._read2(n)
+            else:
+                data = b''
 
         if self._compress_type == ZIP_STORED:
             self._eof = self._compress_left <= 0
@@ -1200,8 +1223,13 @@ class ZipExtFile(io.BufferedIOBase):
             if self._eof:
                 data += self._decompressor.flush()
         else:
-            data = self._decompressor.decompress(data)
-            self._eof = self._decompressor.eof or self._compress_left <= 0
+            # Bound the output of a single decompress() call (mirroring the
+            # DEFLATE path above) so that a small compressed member cannot
+            # expand into one unbounded read.
+            data = self._decompressor.decompress(data, max(n, self.MIN_READ_SIZE))
+            self._eof = (self._decompressor.eof or
+                         self._compress_left <= 0 and
+                         _decompressor_needs_input(self._decompressor))
 
         data = data[:self._left]
         self._left -= len(data)
@@ -2152,7 +2180,6 @@ class ZipFile:
             raise TypeError("comment: expected bytes, got %s" % type(comment).__name__)
         # check for valid comment length
         if len(comment) > ZIP_MAX_COMMENT:
-            import warnings
             warnings.warn('Archive comment is too long; truncating to %d bytes'
                           % ZIP_MAX_COMMENT, stacklevel=2)
             comment = comment[:ZIP_MAX_COMMENT]
@@ -2243,7 +2270,6 @@ class ZipFile:
             if (zinfo._end_offset is not None and
                 zef_file.tell() + zinfo.compress_size > zinfo._end_offset):
                 if zinfo._end_offset == zinfo.header_offset:
-                    import warnings
                     warnings.warn(
                         f"Overlapped entries: {zinfo.orig_filename!r} "
                         f"(possible zip bomb)",
@@ -2397,15 +2423,16 @@ class ZipFile:
         truncation."""
         if self.mode != 'a':
             raise ValueError("repack() requires mode 'a'")
-        if not self.fp:
-            raise ValueError(
-                "Attempt to write to ZIP archive that was already closed")
-        if self._writing:
-            raise ValueError(
-                "Can't write to ZIP archive while an open writing handle exists"
-            )
 
         with self._lock:
+            if not self.fp:
+                raise ValueError(
+                    "Attempt to write to ZIP archive that was already closed")
+            if self._writing or self._fileRefCnt > 1:
+                raise ValueError(
+                    "Can't repack ZIP archive while an open handle exists"
+                )
+
             self._writing = True
             try:
                 repacker = _ZipRepacker(
@@ -2493,7 +2520,6 @@ class ZipFile:
     def _writecheck(self, zinfo):
         """Check for errors before writing a file to the archive."""
         if zinfo.filename in self.NameToInfo:
-            import warnings
             warnings.warn('Duplicate name: %r' % zinfo.filename, stacklevel=3)
         if self.mode not in ('w', 'x', 'a'):
             raise ValueError("write() requires mode 'w', 'x', or 'a'")
@@ -2616,6 +2642,11 @@ class ZipFile:
 
     def __del__(self):
         """Call the "close()" method in case the user forgot."""
+        # gh-81954: Warn if writable ZipFile is implicitly closed.
+        # GC cleanup order is non-deterministic and can result in data loss.
+        if self.fp is not None and self.mode in ('w', 'x', 'a'):
+            warnings.warn(f"unclosed ZipFile {self!r}",
+                          ResourceWarning, source=self, stacklevel=2)
         self.close()
 
     def close(self):

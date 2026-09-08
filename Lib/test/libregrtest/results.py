@@ -30,6 +30,8 @@ class TestResults:
         self.skipped: TestList = []
         self.resource_denied: TestList = []
         self.env_changed: TestList = []
+        # test name => how the test altered the execution environment
+        self.env_changed_reasons: dict[TestName, list[str]] = {}
         self.run_no_tests: TestList = []
         self.rerun: TestList = []
         self.rerun_results: list[TestResult] = []
@@ -107,6 +109,9 @@ class TestResults:
                 self.good.append(test_name)
             case State.ENV_CHANGED:
                 self.env_changed.append(test_name)
+                if result.env_changed_reasons:
+                    self.env_changed_reasons[test_name] = \
+                        result.env_changed_reasons
                 self.rerun_results.append(result)
             case State.SKIPPED:
                 self.skipped.append(test_name)
@@ -254,7 +259,18 @@ class TestResults:
                 print()
                 count_text = count(len(tests_list), count_text)
                 print(title_format.format(count_text))
-                printlist(tests_list)
+                if tests_list is self.env_changed:
+                    # List every test and every reason on a separate line.
+                    for test_name in sorted(tests_list):
+                        reasons = self.env_changed_reasons.get(test_name)
+                        if reasons:
+                            print(f"    {test_name}:")
+                            for reason in reasons:
+                                print(f"        {reason}")
+                        else:
+                            print(f"    {test_name}")
+                else:
+                    printlist(tests_list)
 
         if self.good and not quiet:
             print()

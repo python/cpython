@@ -1,0 +1,3 @@
+Fix a crash in the ISO-2022 decoders when decoding a byte after an unknown
+charset designation is set via the decoder's ``setstate`` method.
+Patch by tonghuaroot.
