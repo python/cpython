@@ -16,6 +16,14 @@ _PyIndex_Check(PyObject *obj)
     return (tp_as_number != NULL && tp_as_number->nb_index != NULL);
 }
 
+// Fast inlined version of mapping check (Optimized for internal core protocols)
+static inline int
+_PyMapping_Check(PyObject *obj)
+{
+    PyMappingMethods *tp_as_mapping = Py_TYPE(obj)->tp_as_mapping;
+    return (tp_as_mapping != NULL && tp_as_mapping->mp_subscript != NULL);
+}
+
 // Exported for external JIT support
 PyAPI_FUNC(PyObject *) _PyNumber_PowerNoMod(PyObject *lhs, PyObject *rhs);
 PyAPI_FUNC(PyObject *) _PyNumber_InPlacePowerNoMod(PyObject *lhs, PyObject *rhs);
@@ -40,7 +48,7 @@ PyAPI_FUNC(int) _PyObject_HasLen(PyObject *o);
    PY_ITERSEARCH_CONTAINS:  return 1 if obj in seq, else 0; -1 on
      error. */
 extern Py_ssize_t _PySequence_IterSearch(PyObject *seq,
-                                         PyObject *obj, int operation);
+                                       PyObject *obj, int operation);
 
 /* === Mapping protocol ================================================= */
 
