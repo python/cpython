@@ -195,7 +195,7 @@ class TokenTests(unittest.TestCase):
                ("0bz", 3, "binary"),
                # SyntaxWarning's currently:
                ("1or 0", 2, " decimal"),
-               ("0or 0", 3, "octal"),
+               ("0o1or 0", 4, "octal"),
                ])
     def test_end_of_numerical_literals_offset(self, source, offset, msg):
         # gh-149277: verify the error caret points at the first invalid
