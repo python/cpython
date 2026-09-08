@@ -339,24 +339,24 @@ class Fraction(numbers.Rational):
         Beware that Fraction.from_float(0.3) != Fraction(3, 10).
 
         """
+        if isinstance(f, float):
+            return cls._from_coprime_ints(*f.as_integer_ratio())
         if isinstance(f, numbers.Integral):
             return cls(f)
-        elif not isinstance(f, float):
-            raise TypeError("%s.from_float() only takes floats, not %r (%s)" %
-                            (cls.__name__, f, type(f).__name__))
-        return cls._from_coprime_ints(*f.as_integer_ratio())
+        raise TypeError("%s.from_float() only takes floats, not %r (%s)" %
+                        (cls.__name__, f, type(f).__name__))
 
     @classmethod
     def from_decimal(cls, dec):
         """Converts a finite Decimal instance to a rational number, exactly."""
         from decimal import Decimal
+        if isinstance(dec, Decimal):
+            return cls._from_coprime_ints(*dec.as_integer_ratio())
         if isinstance(dec, numbers.Integral):
-            dec = Decimal(int(dec))
-        elif not isinstance(dec, Decimal):
-            raise TypeError(
-                "%s.from_decimal() only takes Decimals, not %r (%s)" %
-                (cls.__name__, dec, type(dec).__name__))
-        return cls._from_coprime_ints(*dec.as_integer_ratio())
+            dec = int(dec)
+            return cls._from_coprime_ints(*dec.as_integer_ratio())
+        raise TypeError("%s.from_decimal() only takes Decimals, not %r (%s)" %
+                        (cls.__name__, dec, type(dec).__name__))
 
     @classmethod
     def _from_coprime_ints(cls, numerator, denominator, /):

@@ -1,1 +1,0 @@
-The default queue size is now ``socket.SOMAXCONN`` for :class:`socketserver.TCPServer`.

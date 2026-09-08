@@ -4,14 +4,11 @@
 .. module:: fractions
    :synopsis: Rational numbers.
 
-.. moduleauthor:: Jeffrey Yasskin <jyasskin at gmail.com>
-.. sectionauthor:: Jeffrey Yasskin <jyasskin at gmail.com>
-
 **Source code:** :source:`Lib/fractions.py`
 
 --------------
 
-The :mod:`fractions` module provides support for rational number arithmetic.
+The :mod:`!fractions` module provides support for rational number arithmetic.
 
 
 A Fraction instance can be constructed from a pair of rational numbers, from

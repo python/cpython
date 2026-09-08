@@ -12,7 +12,7 @@
 
 --------------
 
-:mod:`http` is a package that collects several modules for working with the
+:mod:`!http` is a package that collects several modules for working with the
 HyperText Transfer Protocol:
 
 * :mod:`http.client` is a low-level HTTP protocol client; for high-level URL
@@ -22,7 +22,7 @@ HyperText Transfer Protocol:
 * :mod:`http.cookiejar` provides persistence of cookies
 
 
-The :mod:`http` module also defines the following enums that help you work with http related code:
+The :mod:`!http` module also defines the following enums that help you work with http related code:
 
 .. class:: HTTPStatus
 
@@ -139,7 +139,8 @@ equal to the constant name (i.e. ``http.HTTPStatus.OK`` is also available as
 
 .. versionchanged:: 3.13
    Implemented RFC9110 naming for status constants. Old constant names are preserved for
-   backwards compatibility.
+   backwards compatibility: ``413 REQUEST_ENTITY_TOO_LARGE``, ``414 REQUEST_URI_TOO_LONG``,
+   ``416 REQUESTED_RANGE_NOT_SATISFIABLE`` and ``422 UNPROCESSABLE_ENTITY``.
 
 HTTP status category
 --------------------

@@ -24,7 +24,7 @@ Template strings
 Template strings are a mechanism for custom string processing.
 They have the full flexibility of Python's :ref:`f-strings`,
 but return a :class:`Template` instance that gives access
-to the static and interpolated (in curly braces) parts of a string
+to the static and interpolated (in curly brackets) parts of a string
 *before* they are combined.
 
 To write a t-string, use a ``'t'`` prefix instead of an ``'f'``, like so:
@@ -245,6 +245,8 @@ Types
    ...
    3.0 | 1. + 2. | None | .2f
 
+   Interpolations are :ref:`generic <generics>` over the types of their values.
+
    .. rubric:: Attributes
 
    .. attribute:: value
@@ -258,13 +260,16 @@ Types
    .. attribute:: expression
       :type: str
 
-      The text of a valid Python expression, or an empty string.
+      For interpolations created by t-string literals, :attr:`!expression`
+      is the expression text found inside the curly brackets (``{`` & ``}``),
+      including any whitespace, excluding the curly brackets themselves,
+      and ending before the first ``!``, ``:``, or ``=`` if any is present.
+      For manually created interpolations, :attr:`!expression` is the arbitrary
+      string provided when constructing the interpolation instance.
 
-      The :attr:`.expression` is the original text of the
-      interpolation's Python expression, if the interpolation was created
-      from a t-string literal. Developers creating interpolations manually
-      should either set this to an empty string or choose a suitable valid
-      Python expression.
+      We recommend using valid Python expressions or the empty string for the
+      ``expression`` field of manually created :class:`!Interpolation`
+      instances, although this is not enforced at runtime.
 
       >>> t'{1 + 2}'.interpolations[0].expression
       '1 + 2'

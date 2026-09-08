@@ -1,0 +1,2 @@
+:class:`collections.deque` prevent rare crash when calling ``extend`` under
+high memory pressure conditions.

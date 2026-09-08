@@ -1,0 +1,3 @@
+Fixed a crash in :class:`tkinter.Tk` when *className* contains a non-BMP
+character and tkinter is built against Tcl/Tk 8.x.  Such a name is now
+rejected with a :exc:`ValueError`.

@@ -315,16 +315,16 @@ _io._WindowsConsoleIO.__init__
 
 Open a console buffer by file descriptor.
 
-The mode can be 'rb' (default), or 'wb' for reading or writing bytes. All
-other mode characters will be ignored. Mode 'b' will be assumed if it is
-omitted. The *opener* parameter is always ignored.
+The mode can be 'rb' (default), or 'wb' for reading or writing
+bytes.  All other mode characters will be ignored.  Mode 'b' will be
+assumed if it is omitted.  The *opener* parameter is always ignored.
 [clinic start generated code]*/
 
 static int
 _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
                                     const char *mode, int closefd,
                                     PyObject *opener)
-/*[clinic end generated code: output=3fd9cbcdd8d95429 input=7a3eed6bbe998fd9]*/
+/*[clinic end generated code: output=3fd9cbcdd8d95429 input=f31100e2cd724617]*/
 {
     const char *s;
     wchar_t *name = NULL;
@@ -644,8 +644,8 @@ read_console_w(HANDLE handle, DWORD maxlen, DWORD *readlen) {
                 break;
             err = 0;
             HANDLE hInterruptEvent = _PyOS_SigintEvent();
-            if (WaitForSingleObjectEx(hInterruptEvent, 100, FALSE)
-                    == WAIT_OBJECT_0) {
+            DWORD state = WaitForSingleObjectEx(hInterruptEvent, 100, FALSE);
+            if (state == WAIT_OBJECT_0) {
                 ResetEvent(hInterruptEvent);
                 Py_BLOCK_THREADS
                 sig = PyErr_CheckSignals();
@@ -653,6 +653,13 @@ read_console_w(HANDLE handle, DWORD maxlen, DWORD *readlen) {
                 if (sig < 0)
                     break;
             }
+            else if (state != WAIT_TIMEOUT) {
+                err = GetLastError();
+                break;
+            }
+            /* The console cancelled the read and flushed its input buffer,
+               but no exception was raised.  Start the read over. */
+            continue;
         }
         *readlen += n;
 
@@ -673,12 +680,13 @@ read_console_w(HANDLE handle, DWORD maxlen, DWORD *readlen) {
             maxlen += 1;
             Py_BLOCK_THREADS
             newbuf = (wchar_t*)PyMem_Realloc(buf, maxlen * sizeof(wchar_t));
-            Py_UNBLOCK_THREADS
             if (!newbuf) {
                 sig = -1;
                 PyErr_NoMemory();
+                Py_UNBLOCK_THREADS
                 break;
             }
+            Py_UNBLOCK_THREADS
             buf = newbuf;
             /* Only advance by n and not BUFSIZ in this case */
             off += n;
@@ -1253,7 +1261,7 @@ static PyType_Slot winconsoleio_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec winconsoleio_spec = {
+PyType_Spec _Py_winconsoleio_spec = {
     .name = "_io._WindowsConsoleIO",
     .basicsize = sizeof(winconsoleio),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |

@@ -23,7 +23,7 @@ def read_text(inpath: str) -> bytes:
 def compile_and_marshal(name: str, text: bytes) -> bytes:
     filename = f"<frozen {name}>"
     # exec == Py_file_input
-    code = compile(text, filename, "exec", optimize=0, dont_inherit=True)
+    code = compile(text, filename, "exec", optimize=0, dont_inherit=True, module=name)
     return marshal.dumps(code)
 
 

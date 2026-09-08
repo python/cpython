@@ -1,5 +1,7 @@
 import difflib
+from test import support
 from test.support import findfile, force_colorized
+from test.support.import_helper import ensure_lazy_imports
 import unittest
 import doctest
 import sys
@@ -29,6 +31,16 @@ class TestWithAscii(unittest.TestCase):
                 ('delete', 40, 41, 40, 40),
                 ('equal', 41, 81, 40, 80)])
 
+    def test_opcode_caching(self):
+        sm = difflib.SequenceMatcher(None, 'b' * 100, 'a' + 'b' * 100)
+        opcode = sm.get_opcodes()
+        self.assertEqual(opcode,
+            [   ('insert', 0, 0, 0, 1),
+                ('equal', 0, 100, 1, 101)])
+        # Implementation detail: opcodes are cached;
+        # `get_opcodes()` returns the same object
+        self.assertIs(opcode, sm.get_opcodes())
+
     def test_bjunk(self):
         sm = difflib.SequenceMatcher(isjunk=lambda x: x == ' ',
                 a='a' * 40 + 'b' * 40, b='a' * 44 + 'b' * 40)
@@ -44,7 +56,7 @@ class TestWithAscii(unittest.TestCase):
 
 
 class TestAutojunk(unittest.TestCase):
-    """Tests for the autojunk parameter added in 2.7"""
+    """Tests for the autojunk parameter added in SequenceMatcher and higher-level difflib APIs"""
     def test_one_insert_homogenous_sequence(self):
         # By default autojunk=True and the heuristic kicks in for a sequence
         # of length 200+
@@ -59,6 +71,88 @@ class TestAutojunk(unittest.TestCase):
         sm = difflib.SequenceMatcher(None, seq1, seq2, autojunk=False)
         self.assertAlmostEqual(sm.ratio(), 0.9975, places=3)
         self.assertEqual(sm.bpopular, set())
+
+    def test_get_close_matches(self):
+        word = 'a' + 'b' * 200
+        possibilities = ['b' * 200]
+
+        # By default autojunk=True, so 'b' is junk -> ratio ~ 0 -> no matches
+        self.assertEqual(difflib.get_close_matches(word, possibilities, cutoff=0.6), [])
+        self.assertEqual(difflib.get_close_matches(word, possibilities, cutoff=0.6, autojunk=True), [])
+
+        # With autojunk=False, ratio ~ 0.9975 -> match returned
+        self.assertEqual(difflib.get_close_matches(word, possibilities, cutoff=0.6, autojunk=False), ['b' * 200])
+
+    def test_differ_and_ndiff(self):
+        lines1 = ["x\n"] * 200 + ["a\n", "b\n", "c\n"] + ["x\n"] * 50
+        lines2 = ["a\n", "b\n", "c\n"] + ["x\n"] * 250
+
+        # Line-level autojunk propagation
+        d_true = difflib.Differ(autojunk=True)
+        d_false = difflib.Differ(autojunk=False)
+        res_true = list(d_true.compare(lines1, lines2))
+        res_false = list(d_false.compare(lines1, lines2))
+        self.assertNotEqual(res_true, res_false)
+
+        ndiff_true = list(difflib.ndiff(lines1, lines2, autojunk=True))
+        ndiff_false = list(difflib.ndiff(lines1, lines2, autojunk=False))
+        self.assertNotEqual(ndiff_true, ndiff_false)
+        self.assertEqual(ndiff_true, res_true)
+        self.assertEqual(ndiff_false, res_false)
+
+        # Character-level autojunk propagation in Differ (_fancy_replace)
+        line1 = "x" * 200 + "abc" + "x" * 50 + "\n"
+        line2 = "abc" + "x" * 250 + "\n"
+        fancy_true = list(difflib.Differ(autojunk=True).compare([line1], [line2]))
+        fancy_false = list(difflib.Differ(autojunk=False).compare([line1], [line2]))
+        self.assertNotEqual(fancy_true, fancy_false)
+
+    def test_unified_and_context_diff(self):
+        lines1 = ["x\n"] * 200 + ["a\n", "b\n", "c\n"] + ["x\n"] * 50
+        lines2 = ["a\n", "b\n", "c\n"] + ["x\n"] * 250
+
+        u_true = list(difflib.unified_diff(lines1, lines2, autojunk=True))
+        u_false = list(difflib.unified_diff(lines1, lines2, autojunk=False))
+        self.assertNotEqual(u_true, u_false)
+
+        c_true = list(difflib.context_diff(lines1, lines2, autojunk=True))
+        c_false = list(difflib.context_diff(lines1, lines2, autojunk=False))
+        self.assertNotEqual(c_true, c_false)
+
+    def test_htmldiff(self):
+        lines1 = ["x\n"] * 200 + ["a\n", "b\n", "c\n"] + ["x\n"] * 50
+        lines2 = ["a\n", "b\n", "c\n"] + ["x\n"] * 250
+
+        old_prefix = difflib.HtmlDiff._default_prefix
+        try:
+            html_true = difflib.HtmlDiff(autojunk=True).make_file(lines1, lines2)
+            html_false = difflib.HtmlDiff(autojunk=False).make_file(lines1, lines2)
+            self.assertNotEqual(html_true, html_false)
+        finally:
+            difflib.HtmlDiff._default_prefix = old_prefix
+
+    def test_autojunk_signatures(self):
+        import inspect
+
+        funcs = [
+            difflib.get_close_matches,
+            difflib.unified_diff,
+            difflib.context_diff,
+            difflib.ndiff,
+        ]
+        for func in funcs:
+            sig = inspect.signature(func)
+            self.assertIn('autojunk', sig.parameters)
+            param = sig.parameters['autojunk']
+            self.assertEqual(param.default, True)
+            self.assertEqual(param.kind, inspect.Parameter.KEYWORD_ONLY)
+
+        for cls in [difflib.Differ, difflib.HtmlDiff]:
+            sig = inspect.signature(cls.__init__)
+            self.assertIn('autojunk', sig.parameters)
+            param = sig.parameters['autojunk']
+            self.assertEqual(param.default, True)
+
 
 
 class TestSFbugs(unittest.TestCase):
@@ -104,6 +198,26 @@ class TestSFbugs(unittest.TestCase):
         self.assertEqual(
             list(difflib._mdiff(["2"], ["3"], 1)),
             [((1, '\x00-2\x01'), (1, '\x00+3\x01'), True)],
+        )
+
+    def test_mdiff_lopsided_replace(self):
+        self.assertEqual(
+            list(difflib._mdiff(["a\n"] * 4, ["b\n"])),
+            [
+                ((1, '\x00-a\n\x01'), (1, '\x00+b\n\x01'), True),
+                ((2, '\x00-a\n\x01'), ('', '\n'), True),
+                ((3, '\x00-a\n\x01'), ('', '\n'), True),
+                ((4, '\x00-a\n\x01'), ('', '\n'), True),
+            ],
+        )
+        self.assertEqual(
+            list(difflib._mdiff(["a\n"], ["b\n"] * 4)),
+            [
+                ((1, '\x00-a\n\x01'), (1, '\x00+b\n\x01'), True),
+                (('', '\n'), (2, '\x00+b\n\x01'), True),
+                (('', '\n'), (3, '\x00+b\n\x01'), True),
+                (('', '\n'), (4, '\x00+b\n\x01'), True),
+            ],
         )
 
 
@@ -272,6 +386,29 @@ class TestSFpatches(unittest.TestCase):
         self.assertIn('charset="us-ascii"', output)
         self.assertIn('&#305;mpl&#305;c&#305;t', output)
 
+    def test_strip_trailing_newlines_before_diff(self):
+        # characterization test for the current buggy behavior
+        # see: gh-71896
+        html_diff = difflib.HtmlDiff()
+        from_lines = [
+            "Line 1: no newline after",
+            "Line 2: one newline after\n",
+            "Line 3: several newlines after\n\n\n\n\n",
+        ]
+        to_lines = [
+            "Line 1: no newline after",
+            "Line 2: one newline after",  # actually no \n
+            "Line 3: several newlines after",  # actually no \n
+        ]
+        output = html_diff.make_table(from_lines, to_lines)
+        # we (currently) expect no line change, so all equal
+        self.assertNotIn('class="diff_add"', output)
+        self.assertNotIn('class="diff_chg"', output)
+        self.assertNotIn('class="diff_sub"', output)
+        self.assertEqual(output.count('>Line&nbsp;1:&nbsp;no&nbsp;newline&nbsp;after<'), 2)
+        self.assertEqual(output.count('>Line&nbsp;2:&nbsp;one&nbsp;newline&nbsp;after<'), 2)
+        self.assertEqual(output.count('>Line&nbsp;3:&nbsp;several&nbsp;newlines&nbsp;after<'), 2)
+
 class TestDiffer(unittest.TestCase):
     def test_close_matches_aligned(self):
         # Of the 4 closely matching pairs, we want 1 to match with 3,
@@ -292,6 +429,15 @@ class TestDiffer(unittest.TestCase):
                             '?             ^\n',
                             '+ kitten\n',
                             '+ puppy\n'])
+
+    def test_one_insert(self):
+        m = difflib.Differ().compare('b' * 2, 'a' + 'b' * 2)
+        self.assertEqual(list(m), ['+ a', '  b', '  b'])
+
+    def test_one_delete(self):
+        m = difflib.Differ().compare('a' + 'b' * 2, 'b' * 2)
+        self.assertEqual(list(m), ['- a', '  b', '  b'])
+
 
 class TestOutputFormat(unittest.TestCase):
     def test_tab_delimiter(self):
@@ -601,8 +747,34 @@ class TestFindLongest(unittest.TestCase):
         self.assertFalse(self.longer_match_exists(a, b, match.size))
 
 
+class TestCloseMatches(unittest.TestCase):
+    # Happy paths are tested in the doctests of `difflib.get_close_matches`.
+
+    def test_invalid_inputs(self):
+        self.assertRaises(ValueError, difflib.get_close_matches, "spam", ['egg'], n=0)
+        self.assertRaises(ValueError, difflib.get_close_matches, "spam", ['egg'], n=-1)
+        self.assertRaises(ValueError, difflib.get_close_matches, "spam", ['egg'], cutoff=1.1)
+        self.assertRaises(ValueError, difflib.get_close_matches, "spam", ['egg'], cutoff=-0.1)
+
+
+class TestRestore(unittest.TestCase):
+    # Happy paths are tested in the doctests of `difflib.restore`.
+
+    def test_invalid_input(self):
+        with self.assertRaises(ValueError):
+            ''.join(difflib.restore([], 0))
+        with self.assertRaises(ValueError):
+            ''.join(difflib.restore([], 3))
+
+
 def setUpModule():
     difflib.HtmlDiff._default_prefix = 0
+
+
+class LazyImportTest(unittest.TestCase):
+    @support.cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("difflib", {"_colorize"})
 
 
 def load_tests(loader, tests, pattern):

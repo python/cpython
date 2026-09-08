@@ -176,12 +176,6 @@ def docs_modified(file_paths):
     return bool(file_paths)
 
 
-@status("Misc/ACKS updated", modal=True)
-def credit_given(file_paths):
-    """Check if Misc/ACKS has been changed."""
-    return os.path.join('Misc', 'ACKS') in file_paths
-
-
 @status("Misc/NEWS.d updated with `blurb`", modal=True)
 def reported_news(file_paths):
     """Check if Misc/NEWS.d has been changed."""
@@ -215,8 +209,6 @@ def main():
     misc_files = {p for p in file_paths if p.startswith('Misc')}
     # Docs updated.
     docs_modified(has_doc_files)
-    # Misc/ACKS changed.
-    credit_given(misc_files)
     # Misc/NEWS changed.
     reported_news(misc_files)
     # Regenerated configure, if necessary.

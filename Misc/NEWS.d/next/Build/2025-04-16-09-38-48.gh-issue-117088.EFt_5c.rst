@@ -1,1 +1,0 @@
-AIX linker don't support -h option, so avoid it through platform check

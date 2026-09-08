@@ -1,1 +1,0 @@
-:mod:`zoneinfo`: Check in ``<prefix>/share/zoneinfo`` for data files on Windows

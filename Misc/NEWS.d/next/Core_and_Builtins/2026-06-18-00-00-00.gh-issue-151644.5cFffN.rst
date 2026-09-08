@@ -1,0 +1,4 @@
+Fix a data race in :func:`sys.setdlopenflags` and :func:`sys.getdlopenflags`
+when called concurrently in the free-threaded build. The underlying
+``_PyImport_GetDLOpenFlags`` and ``_PyImport_SetDLOpenFlags`` functions now
+use atomic load/store operations.

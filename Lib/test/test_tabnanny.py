@@ -3,15 +3,16 @@
 Glossary:
     * errored    : Whitespace related problems present in file.
 """
-from unittest import TestCase, mock
+
+from unittest import TestCase, main, mock
 import errno
 import os
+import sys
 import tabnanny
 import tokenize
 import tempfile
 import textwrap
-from test.support import (captured_stderr, captured_stdout, script_helper,
-                          findfile)
+from test.support import captured_stderr, captured_stdout, script_helper
 from test.support.os_helper import unlink
 
 
@@ -327,8 +328,7 @@ class TestCommandLine(TestCase):
 
     def test_command_usage(self):
         """Should display usage on no arguments."""
-        path = findfile('tabnanny.py')
-        stderr = f"Usage: {path} [-v] file_or_directory ..."
+        stderr = f"Usage: {sys.executable} -m tabnanny [-v] file_or_directory ..."
         self.validate_cmd(stderr=stderr, expect_failure=True)
 
     def test_quiet_flag(self):
@@ -352,3 +352,17 @@ class TestCommandLine(TestCase):
                 "offending line: '\\tprint(\"world\")'"
             ).strip()
             self.validate_cmd("-vv", path, stdout=stdout, partial=True)
+
+
+class TestModule(TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(tabnanny, "__version__")
+        self.assertEqual(cm.filename, __file__)
+
+
+if __name__ == "__main__":
+    main()

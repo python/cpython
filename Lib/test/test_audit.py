@@ -58,6 +58,9 @@ class AuditTest(unittest.TestCase):
     def test_block_add_hook_baseexception(self):
         self.do_test("test_block_add_hook_baseexception")
 
+    def test_block_add_hook_valueerror(self):
+        self.do_test("test_block_add_hook_valueerror")
+
     def test_marshal(self):
         import_helper.import_module("marshal")
 
@@ -330,6 +333,15 @@ class AuditTest(unittest.TestCase):
         self.assertTrue(any(["cpython.remote_debugger_script" in event for event in events]))
         if returncode:
             self.fail(stderr)
+
+    def test_import_module(self):
+        self.do_test("test_import_module")
+
+    def test_builtin__import__(self):
+        self.do_test("test_builtin__import__")
+
+    def test_import_statement(self):
+        self.do_test("test_import_statement")
 
 if __name__ == "__main__":
     unittest.main()

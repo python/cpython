@@ -1,0 +1,2 @@
+Fix ``hash(frozendict)``: compute the hash of each ``(key, value)`` pair
+correctly. Patch by Victor Stinner.

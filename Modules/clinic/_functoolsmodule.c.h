@@ -71,14 +71,15 @@ exit:
 }
 
 PyDoc_STRVAR(_functools_reduce__doc__,
-"reduce($module, function, iterable, /, initial=<unrepresentable>)\n"
+"reduce($module, function, iterable, /,\n"
+"       initial=functools._initial_missing)\n"
 "--\n"
 "\n"
 "Apply a function of two arguments cumulatively to the items of an iterable, from left to right.\n"
 "\n"
-"This effectively reduces the iterable to a single value.  If initial is present,\n"
-"it is placed before the items of the iterable in the calculation, and serves as\n"
-"a default when the iterable is empty.\n"
+"This effectively reduces the iterable to a single value.  If initial is\n"
+"present, it is placed before the items of the iterable in the\n"
+"calculation, and serves as a default when the iterable is empty.\n"
 "\n"
 "For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5])\n"
 "calculates ((((1 + 2) + 3) + 4) + 5).");
@@ -192,4 +193,4 @@ _functools__lru_cache_wrapper_cache_clear(PyObject *self, PyObject *Py_UNUSED(ig
 
     return return_value;
 }
-/*[clinic end generated code: output=7f2abc718fcc35d5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6d8fdaeba4b520fa input=a9049054013a1b77]*/

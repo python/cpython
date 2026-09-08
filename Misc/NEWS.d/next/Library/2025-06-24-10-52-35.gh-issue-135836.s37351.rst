@@ -1,3 +1,0 @@
-Fix :exc:`IndexError` in :meth:`asyncio.loop.create_connection` that could
-occur when non-\ :exc:`OSError` exception is raised during connection and
-socket's ``close()`` raises :exc:`!OSError`.

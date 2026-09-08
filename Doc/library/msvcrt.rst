@@ -2,10 +2,9 @@
 ===========================================================
 
 .. module:: msvcrt
-   :platform: Windows
    :synopsis: Miscellaneous useful routines from the MS VC++ runtime.
 
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
+**Source code:** :source:`PC/msvcrtmodule.c`
 
 --------------
 
@@ -21,6 +20,8 @@ The module implements both the normal and wide char variants of the console I/O
 api. The normal API deals only with ASCII characters and is of limited use
 for internationalized applications. The wide char API should be used where
 ever possible.
+
+.. availability:: Windows.
 
 .. versionchanged:: 3.3
    Operations in this module now raise :exc:`OSError` where :exc:`IOError`
@@ -134,12 +135,22 @@ Console I/O
 
 .. function:: putch(char)
 
-   Print the byte string *char* to the console without buffering.
+   Print the byte string *char* to the console without buffering.  Raises
+   :exc:`OSError` on failure, for example when the process has no console
+   attached.
+
+   .. versionchanged:: next
+      Failures are now reported by raising :exc:`OSError` instead of being
+      silently ignored.
 
 
 .. function:: putwch(unicode_char)
 
    Wide char variant of :func:`putch`, accepting a Unicode value.
+
+   .. versionchanged:: next
+      Failures are now reported by raising :exc:`OSError` instead of being
+      silently ignored.
 
 
 .. function:: ungetch(char)

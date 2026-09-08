@@ -176,6 +176,11 @@ CDataType_from_buffer(PyObject *type, PyTypeObject *cls, PyObject *const *args, 
             goto exit;
         }
         offset = ival;
+        if (offset < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "offset cannot be negative");
+            goto exit;
+        }
     }
 skip_optional_posonly:
     return_value = CDataType_from_buffer_impl(type, cls, obj, offset);
@@ -242,6 +247,11 @@ CDataType_from_buffer_copy(PyObject *type, PyTypeObject *cls, PyObject *const *a
             goto exit;
         }
         offset = ival;
+        if (offset < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "offset cannot be negative");
+            goto exit;
+        }
     }
 skip_optional_posonly:
     return_value = CDataType_from_buffer_copy_impl(type, cls, &buffer, offset);
@@ -467,6 +477,12 @@ _ctypes_PyCArrayType_Type_raw_set(PyObject *self, PyObject *value, void *Py_UNUS
 {
     int return_value;
 
+    if (value == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute 'raw' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _ctypes_PyCArrayType_Type_raw_set_impl((CDataObject *)self, value);
     Py_END_CRITICAL_SECTION();
@@ -1042,4 +1058,4 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
     }
     return Simple_from_outparm_impl(self, cls);
 }
-/*[clinic end generated code: output=536c9bcf4e05913e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b89feb50c654de3f input=a9049054013a1b77]*/

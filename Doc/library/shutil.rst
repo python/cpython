@@ -4,9 +4,6 @@
 .. module:: shutil
    :synopsis: High-level file operations, including copying.
 
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-.. partly based on the docstrings
-
 **Source code:** :source:`Lib/shutil.py`
 
 .. index::
@@ -15,7 +12,7 @@
 
 --------------
 
-The :mod:`shutil` module offers a number of high-level operations on files and
+The :mod:`!shutil` module offers a number of high-level operations on files and
 collections of files.  In particular, functions are provided  which support file
 copying and removal. For operations on individual files, see also the
 :mod:`os` module.
@@ -67,8 +64,8 @@ Directory and files operations
 
    The destination location must be writable; otherwise, an :exc:`OSError`
    exception will be raised. If *dst* already exists, it will be replaced.
-   Special files such as character or block devices and pipes cannot be
-   copied with this function.
+   Special files such as character or block devices, pipes, and sockets cannot
+   be copied with this function.
 
    If *follow_symlinks* is false and *src* is a symbolic link,
    a new symbolic link will be created instead of copying the
@@ -89,6 +86,16 @@ Directory and files operations
       Platform-specific fast-copy syscalls may be used internally in order to
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
+
+   .. versionchanged:: 3.15
+      :exc:`SpecialFileError` is now also raised for sockets and device files.
+
+.. exception:: SpecialFileError
+
+   This exception is raised when :func:`copyfile` or :func:`copytree` attempt
+   to copy a named pipe, socket, or device file.
+
+   .. versionadded:: 2.7
 
 .. exception:: SameFileError
 
@@ -381,10 +388,14 @@ Directory and files operations
    If *dst* already exists but is not a directory, it may be overwritten
    depending on :func:`os.rename` semantics.
 
-   If the destination is on the current filesystem, then :func:`os.rename` is
-   used. Otherwise, *src* is copied to the destination using *copy_function*
-   and then removed.  In case of symlinks, a new symlink pointing to the target
-   of *src* will be created as the destination and *src* will be removed.
+   :func:`os.rename` is preferably used internally when *src* and the destination are on
+   the same filesystem. In case :func:`os.rename` fails due to :exc:`OSError`
+   (e.g. the user has write permission to the destination file but not to its parent
+   directory), this method falls back to using *copy_function*, in which case
+   *src* is copied to the destination using *copy_function* and then removed.
+
+   In case of symlinks, a new symlink pointing to the target of *src* will be
+   created in or as the destination, and *src* will be removed.
 
    If *copy_function* is given, it must be a callable that takes two arguments,
    *src* and the destination, and will be used to copy *src* to the destination
@@ -508,7 +519,7 @@ Directory and files operations
 
 .. exception:: Error
 
-   This exception collects exceptions that are raised during a multi-file
+   Subclass of :exc:`OSError` collecting exceptions raised during a multi-file
    operation. For :func:`copytree`, the exception argument is a list of 3-tuples
    (*srcname*, *dstname*, *exception*).
 
@@ -533,10 +544,12 @@ On Solaris :func:`os.sendfile` is used.
 
 On Windows :func:`shutil.copyfile` uses a bigger default buffer size (1 MiB
 instead of 64 KiB) and a :func:`memoryview`-based variant of
-:func:`shutil.copyfileobj` is used.
+:func:`shutil.copyfileobj` is used, which still reads and writes in a loop.
+:func:`shutil.copy2` uses the native ``CopyFile2`` call on Windows, which is the most
+efficient method, supports copy-on-write, and preserves metadata.
 
 If the fast-copy operation fails and no data was written in the destination
-file then shutil will silently fallback on using less efficient
+file then shutil will silently fall back to less efficient
 :func:`copyfileobj` function internally.
 
 .. versionchanged:: 3.8
@@ -612,8 +625,8 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    Create an archive file (such as zip or tar) and return its name.
 
-   *base_name* is the name of the file to create, including the path, minus
-   any format-specific extension.
+   *base_name* is a string or :term:`path-like object` specifying the name of
+   the file to create, including the path, minus any format-specific extension.
 
    *format* is the archive format: one of
    "zip" (if the :mod:`zlib` module is available), "tar", "gztar" (if the
@@ -621,13 +634,14 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    available), "xztar" (if the :mod:`lzma` module is available), or "zstdtar"
    (if the :mod:`compression.zstd` module is available).
 
-   *root_dir* is a directory that will be the root directory of the
-   archive, all paths in the archive will be relative to it; for example,
-   we typically chdir into *root_dir* before creating the archive.
+   *root_dir* is a string or :term:`path-like object` specifying a directory
+   that will be the root directory of the archive, all paths in the archive
+   will be relative to it; for example, we typically chdir into *root_dir*
+   before creating the archive.
 
-   *base_dir* is the directory where we start archiving from;
-   i.e. *base_dir* will be the common prefix of all files and
-   directories in the archive.  *base_dir* must be given relative
+   *base_dir* is a string or :term:`path-like object` specifying a directory
+   where we start archiving from; i.e. *base_dir* will be the common prefix of
+   all files and directories in the archive.  *base_dir* must be given relative
    to *root_dir*.  See :ref:`shutil-archiving-example-with-basedir` for how to
    use *base_dir* and *root_dir* together.
 
@@ -662,12 +676,16 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
       This function is now made thread-safe during creation of standard
       ``.zip`` and tar archives.
 
+   .. versionchanged:: 3.15
+      Accepts a :term:`path-like object` for *base_name*, *root_dir* and
+      *base_dir*.
+
 .. function:: get_archive_formats()
 
    Return a list of supported formats for archiving.
    Each element of the returned sequence is a tuple ``(name, description)``.
 
-   By default :mod:`shutil` provides these formats:
+   By default :mod:`!shutil` provides these formats:
 
    - *zip*: ZIP file (if the :mod:`zlib` module is available).
    - *tar*: Uncompressed tar file. Uses POSIX.1-2001 pax format for new archives.
@@ -685,7 +703,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    Register an archiver for the format *name*.
 
-   *function* is the callable that will be used to unpack archives. The callable
+   *function* is the callable that will be used to create archives. The callable
    will receive the *base_name* of the file to create, followed by the
    *base_dir* (which defaults to :data:`os.curdir`) to start archiving from.
    Further arguments are passed as keyword arguments: *owner*, *group*,
@@ -738,8 +756,8 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
       Never extract archives from untrusted sources without prior inspection.
       It is possible that files are created outside of the path specified in
-      the *extract_dir* argument, e.g. members that have absolute filenames
-      starting with "/" or filenames with two dots "..".
+      the *extract_dir* argument, for example, members that have absolute filenames
+      or filenames with ".." components.
 
       Since Python 3.14, the defaults for both built-in formats (zip and tar
       files) will prevent the most dangerous of such security issues,
@@ -784,7 +802,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    Each element of the returned sequence is a tuple
    ``(name, extensions, description)``.
 
-   By default :mod:`shutil` provides these formats:
+   By default :mod:`!shutil` provides these formats:
 
    - *zip*: ZIP file (unpacking compressed files works only if the corresponding
      module is available).
@@ -860,7 +878,7 @@ In the final archive, :file:`please_add.txt` should be included, but
     ...     root_dir='tmp/root',
     ...     base_dir='structure/content',
     ... )
-    '/Users/tarek/my_archive.tar'
+    '/Users/tarek/myarchive.tar'
 
 Listing the files in the resulting archive gives us:
 

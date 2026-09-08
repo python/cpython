@@ -214,9 +214,11 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         return self._stream_reader_wr()
 
     def _replace_transport(self, transport):
-        loop = self._loop
         self._transport = transport
         self._over_ssl = transport.get_extra_info('sslcontext') is not None
+        reader = self._stream_reader
+        if reader is not None:
+            reader._replace_transport(transport)
 
     def connection_made(self, transport):
         if self._reject_connection:
@@ -237,7 +239,17 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         self._over_ssl = transport.get_extra_info('sslcontext') is not None
         if self._client_connected_cb is not None:
             writer = StreamWriter(transport, self, reader, self._loop)
-            res = self._client_connected_cb(reader, writer)
+            try:
+                res = self._client_connected_cb(reader, writer)
+            except Exception as exc:
+                self._loop.call_exception_handler({
+                    'message': 'Unhandled exception in client_connected_cb',
+                    'exception': exc,
+                    'transport': transport,
+                })
+                transport.close()
+                self._strong_reader = None
+                return
             if coroutines.iscoroutine(res):
                 def callback(task):
                     if task.cancelled():
@@ -322,8 +334,6 @@ class StreamWriter:
         assert reader is None or isinstance(reader, StreamReader)
         self._reader = reader
         self._loop = loop
-        self._complete_fut = self._loop.create_future()
-        self._complete_fut.set_result(None)
 
     def __repr__(self):
         info = [self.__class__.__name__, f'transport={self._transport!r}']
@@ -476,6 +486,10 @@ class StreamReader:
         assert self._transport is None, 'Transport already set'
         self._transport = transport
 
+    def _replace_transport(self, transport):
+        assert self._transport is not None, 'Transport not set'
+        self._transport = transport
+
     def _maybe_resume_transport(self):
         if self._paused and len(self._buffer) <= self._limit:
             self._paused = False
@@ -540,17 +554,17 @@ class StreamReader:
             self._waiter = None
 
     async def readline(self):
-        """Read chunk of data from the stream until newline (b'\n') is found.
+        r"""Read chunk of data from the stream until newline (b'\n') is found.
 
-        On success, return chunk that ends with newline. If only partial
+        On success, return chunk that ends with newline.  If only partial
         line can be read due to EOF, return incomplete line without
-        terminating newline. When EOF was reached while no bytes read, empty
-        bytes object is returned.
+        terminating newline.  When EOF was reached while no bytes read,
+        empty bytes object is returned.
 
-        If limit is reached, ValueError will be raised. In that case, if
+        If limit is reached, ValueError will be raised.  In that case, if
         newline was found, complete line including newline will be removed
-        from internal buffer. Else, internal buffer will be cleared. Limit is
-        compared against part of the line without newline.
+        from internal buffer.  Else, internal buffer will be cleared.
+        Limit is compared against part of the line without newline.
 
         If stream was paused, this function will automatically resume it if
         needed.
@@ -668,8 +682,7 @@ class StreamReader:
             # adds data which makes separator be found. That's why we check for
             # EOF *after* inspecting the buffer.
             if self._eof:
-                chunk = bytes(self._buffer)
-                self._buffer.clear()
+                chunk = self._buffer.take_bytes()
                 raise exceptions.IncompleteReadError(chunk, None)
 
             # _wait_for_data() will resume reading if stream was paused.
@@ -679,10 +692,9 @@ class StreamReader:
             raise exceptions.LimitOverrunError(
                 'Separator is found, but chunk is longer than limit', match_start)
 
-        chunk = self._buffer[:match_end]
-        del self._buffer[:match_end]
+        chunk = self._buffer.take_bytes(match_end)
         self._maybe_resume_transport()
-        return bytes(chunk)
+        return chunk
 
     async def read(self, n=-1):
         """Read up to `n` bytes from the stream.
@@ -717,20 +729,16 @@ class StreamReader:
             # collect everything in self._buffer, but that would
             # deadlock if the subprocess sends more than self.limit
             # bytes.  So just call self.read(self._limit) until EOF.
-            blocks = []
-            while True:
-                block = await self.read(self._limit)
-                if not block:
-                    break
-                blocks.append(block)
-            return b''.join(blocks)
+            joined = bytearray()
+            while block := await self.read(self._limit):
+                joined += block
+            return joined.take_bytes()
 
         if not self._buffer and not self._eof:
             await self._wait_for_data('read')
 
         # This will work right even if buffer is less than n bytes
-        data = bytes(memoryview(self._buffer)[:n])
-        del self._buffer[:n]
+        data = self._buffer.take_bytes(min(len(self._buffer), n))
 
         self._maybe_resume_transport()
         return data
@@ -761,18 +769,12 @@ class StreamReader:
 
         while len(self._buffer) < n:
             if self._eof:
-                incomplete = bytes(self._buffer)
-                self._buffer.clear()
+                incomplete = self._buffer.take_bytes()
                 raise exceptions.IncompleteReadError(incomplete, n)
 
             await self._wait_for_data('readexactly')
 
-        if len(self._buffer) == n:
-            data = bytes(self._buffer)
-            self._buffer.clear()
-        else:
-            data = bytes(memoryview(self._buffer)[:n])
-            del self._buffer[:n]
+        data = self._buffer.take_bytes(n)
         self._maybe_resume_transport()
         return data
 

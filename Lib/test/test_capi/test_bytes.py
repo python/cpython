@@ -222,10 +222,10 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(decodeescape(br'x\xa\xy', 'replace'), b'x??y')
         self.assertEqual(decodeescape(br'x\xa\xy', 'ignore'), b'xy')
         self.assertRaises(ValueError, decodeescape, b'\\', 'spam')
-        self.assertEqual(decodeescape(NULL), b'')
         self.assertRaises(OverflowError, decodeescape, b'abc', NULL, PY_SSIZE_T_MAX)
         self.assertRaises(OverflowError, decodeescape, NULL, NULL, PY_SSIZE_T_MAX)
 
+        # INVALID decodeescape(NULL)
         # CRASHES decodeescape(b'abc', NULL, -1)
         # CRASHES decodeescape(NULL, NULL, 1)
 
@@ -297,6 +297,140 @@ class CAPITest(unittest.TestCase):
             bytes_join(b'', 123)
         with self.assertRaises(SystemError):
             bytes_join(b'', NULL)
+
+
+class BaseWriterTest:
+    result_type = NotImplementedError
+
+    def create_writer(self, alloc=0, string=b''):
+        raise NotImplementedError
+
+    def test_create(self):
+        # Test PyBytesWriter_Create()
+        writer = self.create_writer()
+        self.assertEqual(writer.get_size(), 0)
+        self.assertEqual(writer.finish(), self.result_type(b''))
+
+        writer = self.create_writer(3, b'abc')
+        self.assertEqual(writer.get_size(), 3)
+        self.assertEqual(writer.finish(), self.result_type(b'abc'))
+
+    def test_finish_with_size(self):
+        # Test PyBytesWriter_FinishWithSize()
+        writer = self.create_writer(10, b'abc')
+        self.assertEqual(writer.get_size(), 10)
+        self.assertEqual(writer.finish_with_size(3), self.result_type(b'abc'))
+
+        writer = self.create_writer(3, b'abc')
+        with self.assertRaises(SystemError):
+            writer.finish_with_size(-3)
+
+    def test_write_bytes(self):
+         # Test PyBytesWriter_WriteBytes()
+         writer = self.create_writer()
+         writer.write_bytes(b'Hello World!', -1)
+         self.assertEqual(writer.finish(), self.result_type(b'Hello World!'))
+
+         writer = self.create_writer()
+         writer.write_bytes(b'Hello ', -1)
+         writer.write_bytes(b'World! <truncated>', 6)
+         self.assertEqual(writer.finish(), self.result_type(b'Hello World!'))
+
+    def test_resize(self):
+        # Test PyBytesWriter_Resize()
+        writer = self.create_writer()
+        writer.resize(len(b'number=123456'), b'number=123456')
+        writer.resize(len(b'number=123456'), b'')
+        self.assertEqual(writer.get_size(), len(b'number=123456'))
+        self.assertEqual(writer.finish(), self.result_type(b'number=123456'))
+
+        writer = self.create_writer()
+        writer.resize(0, b'')
+        writer.resize(len(b'number=123456'), b'number=123456')
+        self.assertEqual(writer.finish(), self.result_type(b'number=123456'))
+
+        writer = self.create_writer()
+        writer.resize(len(b'number='), b'number=')
+        writer.resize(len(b'number=123456'), b'123456')
+        self.assertEqual(writer.finish(), self.result_type(b'number=123456'))
+
+        writer = self.create_writer()
+        writer.resize(len(b'number='), b'number=')
+        writer.resize(len(b'number='), b'')
+        writer.resize(len(b'number=123456'), b'123456')
+        self.assertEqual(writer.finish(), self.result_type(b'number=123456'))
+
+        writer = self.create_writer()
+        writer.resize(len(b'number'), b'number')
+        writer.resize(len(b'number='), b'=')
+        writer.resize(len(b'number=123'), b'123')
+        writer.resize(len(b'number=123456'), b'456')
+        self.assertEqual(writer.finish(), self.result_type(b'number=123456'))
+
+    def test_format_i(self):
+        # Test PyBytesWriter_Format()
+        writer = self.create_writer()
+        writer.format_i(b'x=%i', 123456)
+        self.assertEqual(writer.finish(), self.result_type(b'x=123456'))
+
+        writer = self.create_writer()
+        writer.format_i(b'x=%i, ', 123)
+        writer.format_i(b'y=%i', 456)
+        self.assertEqual(writer.finish(), self.result_type(b'x=123, y=456'))
+
+    def test_example_abc(self):
+        self.assertEqual(_testcapi.byteswriter_abc(), b'abc')
+
+    def test_example_resize(self):
+        self.assertEqual(_testcapi.byteswriter_resize(), b'Hello World')
+
+    def test_example_highlevel(self):
+        self.assertEqual(_testcapi.byteswriter_highlevel(), b'Hello World!')
+
+
+class BytesWriterTest(BaseWriterTest, unittest.TestCase):
+    result_type = bytes
+
+    def create_writer(self, alloc=0, string=b''):
+        # Test PyBytesWriter_Create()
+        return _testcapi.PyBytesWriter(alloc, string, 0)
+
+    # Only PyBytesWriter_Create() returns singletons
+    def test_singletons(self):
+        empty = b''
+        singletons = {ch: bytes((ch,)) for ch in range(256)}
+        small_buffer = _testcapi.PyBytesWriter_small_buffer
+
+        writer = self.create_writer()
+        self.assertIs(writer.finish(), empty)
+
+        # Test writer larger than small_buffer
+        writer = self.create_writer()
+        unused_text = b'x' * (small_buffer * 2)
+        writer.write_bytes(unused_text, len(unused_text))
+        self.assertIs(writer.finish_with_size(0), empty)
+
+        for ch in range(256):
+            text = bytes((ch,))
+
+            writer = self.create_writer()
+            writer.write_bytes(text, 1)
+            self.assertIs(writer.finish(), singletons[ch])
+
+            # Test writer larger than small_buffer
+            writer = self.create_writer()
+            writer.write_bytes(text, 1)
+            unused_text = b'x' * (small_buffer * 2)
+            writer.write_bytes(unused_text, len(unused_text))
+            self.assertIs(writer.finish_with_size(1), singletons[ch])
+
+
+class ByteArrayWriterTest(BaseWriterTest, unittest.TestCase):
+    result_type = bytearray
+
+    def create_writer(self, alloc=0, string=b''):
+        # Test private _PyBytesWriter_CreateByteArray()
+        return _testcapi.PyBytesWriter(alloc, string, 1)
 
 
 if __name__ == "__main__":

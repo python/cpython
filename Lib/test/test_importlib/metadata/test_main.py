@@ -1,20 +1,18 @@
-import re
-import pickle
-import unittest
 import importlib
-import importlib.metadata
-from test.support import os_helper
+import pickle
+import re
+import unittest
 
 try:
     import pyfakefs.fake_filesystem_unittest as ffs
 except ImportError:
     from .stubs import fake_filesystem_unittest as ffs
+from test.support import os_helper
 
-from . import fixtures
-from ._path import Symlink
 from importlib.metadata import (
     Distribution,
     EntryPoint,
+    MetadataNotFound,
     PackageNotFoundError,
     _unique,
     distributions,
@@ -23,6 +21,9 @@ from importlib.metadata import (
     packages_distributions,
     version,
 )
+
+from . import fixtures
+from ._path import Symlink
 
 
 class BasicTests(fixtures.DistInfoPkg, unittest.TestCase):
@@ -156,6 +157,18 @@ class InvalidMetadataTests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCa
         fixtures.build_files(self.make_pkg('foo-4.2', files={}), self.site_dir)
         dist = Distribution.from_name('foo')
         assert dist.version == "1.0"
+
+    def test_missing_metadata(self):
+        """
+        Dists with a missing metadata file should raise ``MetadataNotFound``.
+
+        Ref python/importlib_metadata#493 and python/cpython#143387.
+        """
+        fixtures.build_files(self.make_pkg('foo-4.3', files={}), self.site_dir)
+        with self.assertRaises(MetadataNotFound):
+            Distribution.from_name('foo').metadata
+        with self.assertRaises(MetadataNotFound):
+            metadata('foo')
 
 
 class NonASCIITests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):

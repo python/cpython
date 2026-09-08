@@ -150,6 +150,11 @@ _hashlib_HASHXOF_digest(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
             goto exit;
         }
         length = ival;
+        if (length < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "length cannot be negative");
+            goto exit;
+        }
     }
     return_value = _hashlib_HASHXOF_digest_impl((HASHobject *)self, length);
 
@@ -223,6 +228,11 @@ _hashlib_HASHXOF_hexdigest(PyObject *self, PyObject *const *args, Py_ssize_t nar
             goto exit;
         }
         length = ival;
+        if (length < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "length cannot be negative");
+            goto exit;
+        }
     }
     return_value = _hashlib_HASHXOF_hexdigest_impl((HASHobject *)self, length);
 
@@ -1855,8 +1865,8 @@ PyDoc_STRVAR(_hashlib_HMAC_hexdigest__doc__,
 "\n"
 "Return hexadecimal digest of the bytes passed to the update() method so far.\n"
 "\n"
-"This may be used to exchange the value safely in email or other non-binary\n"
-"environments.");
+"This may be used to exchange the value safely in email or other\n"
+"non-binary environments.");
 
 #define _HASHLIB_HMAC_HEXDIGEST_METHODDEF    \
     {"hexdigest", (PyCFunction)_hashlib_HMAC_hexdigest, METH_NOARGS, _hashlib_HMAC_hexdigest__doc__},
@@ -1877,8 +1887,8 @@ PyDoc_STRVAR(_hashlib_get_fips_mode__doc__,
 "Determine the OpenSSL FIPS mode of operation.\n"
 "\n"
 "For OpenSSL 3.0.0 and newer it returns the state of the default provider\n"
-"in the default OSSL context. It\'s not quite the same as FIPS_mode() but good\n"
-"enough for unittests.\n"
+"in the default OSSL context. It\'s not quite the same as FIPS_mode() but\n"
+"good enough for unittests.\n"
 "\n"
 "Effectively any non-zero return value indicates FIPS mode;\n"
 "values other than 1 may have additional significance.");
@@ -1976,4 +1986,4 @@ exit:
 #ifndef _HASHLIB_OPENSSL_SHAKE_256_METHODDEF
     #define _HASHLIB_OPENSSL_SHAKE_256_METHODDEF
 #endif /* !defined(_HASHLIB_OPENSSL_SHAKE_256_METHODDEF) */
-/*[clinic end generated code: output=cd5ff436f6dc2938 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cf405e652a340bb2 input=a9049054013a1b77]*/
