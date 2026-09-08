@@ -474,6 +474,14 @@ os
   process via a pidfd.  Available on Linux 5.6+.
   (Contributed by Maurycy Pawłowski-Wieroński in :gh:`149464`.)
 
+* The following functions are now available on Android:
+  :func:`os.chroot`, :func:`os.initgroups`, :func:`os.setegid`,
+  :func:`os.seteuid`, :func:`os.setgid`, :func:`os.setregid`,
+  :func:`os.setresgid`, :func:`os.setresuid`, :func:`os.setreuid`,
+  and :func:`os.setuid`. Calling them without sufficient privileges
+  now raises :exc:`PermissionError` instead of the functions being unavailable.
+  (Contributed by Md Arif in :gh:`152936`.)
+
 
 pydoc
 -----
@@ -511,6 +519,15 @@ shlex
 * Add keyword-only parameter *force* to :func:`shlex.quote` to force quoting
   a string, even if it is already safe for a shell without being quoted.
   (Contributed by Jay Berry in :gh:`148846`.)
+
+
+socket
+------
+
+* The :func:`socket.sethostname` function is now available on Android.
+  Calling it without sufficient privileges now raises :exc:`PermissionError`
+  instead of the function being unavailable.
+  (Contributed by Md Arif in :gh:`152936`.)
 
 
 sqlite3
