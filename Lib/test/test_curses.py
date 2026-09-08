@@ -672,6 +672,11 @@ class TestCurses(unittest.TestCase):
         stdscr.addstr(0, 0, 'abz')
         self.assertEqual(stdscr.in_wstr(0, 0, 0), '')
         self.assertEqual(stdscr.in_wstr(0), '')
+        self.assertEqual(stdscr.in_wstr(0, 0, 2**31), stdscr.in_wstr(0, 0))
+        self.assertRaises(OverflowError, stdscr.in_wstr, 2**1000)
+        self.assertRaises(ValueError, stdscr.in_wstr, -2)
+        self.assertRaises(ValueError, stdscr.in_wstr, 0, 2, -2)
+        self.assertRaises(ValueError, stdscr.in_wstr, -2**1000)
 
     def test_complexchar(self):
         # A complexchar is a styled wide-character cell: str() is its text,
@@ -791,6 +796,9 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(str(s[1:]), 'bc')
         self.assertEqual(str(s[::-1]), 'cbA')
         self.assertEqual(str(s + curses.complexstr(['Z'])), 'AbcZ')
+        # Concatenating anything else raises instead of returning NotImplemented.
+        self.assertRaises(TypeError, lambda: s + 'Z')
+        self.assertRaises(TypeError, lambda: s + cc('Z'))
         # The empty complexstr.
         self.assertEqual(len(curses.complexstr([])), 0)
         self.assertEqual(str(curses.complexstr('')), '')
@@ -871,6 +879,11 @@ class TestCurses(unittest.TestCase):
         # The count is optional and reads to the end of the line by default.
         stdscr.move(0, 0)
         self.assertEqual(str(stdscr.in_wchstr())[:3], 'AbC')
+        self.assertEqual(stdscr.in_wchstr(0, 0, 2**31), stdscr.in_wchstr(0, 0))
+        self.assertRaises(OverflowError, stdscr.in_wchstr, 2**1000)
+        self.assertRaises(ValueError, stdscr.in_wchstr, -2)
+        self.assertRaises(ValueError, stdscr.in_wchstr, 0, 2, -2)
+        self.assertRaises(ValueError, stdscr.in_wchstr, -2**1000)
 
     def test_complexstr_in_write_methods(self):
         # addstr/addnstr/insstr/insnstr also accept a complexstr, written via
@@ -1188,8 +1201,13 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(stdscr.instr(3)[:6], b' AB')
         self.assertEqual(stdscr.instr(0, 2)[:4], b'BCD ')
         self.assertEqual(stdscr.instr(0, 2, 4), b'BCD ')
+        # A huge count is bounded by the line, and is not used to size the
+        # read buffer.
+        self.assertEqual(stdscr.instr(0, 0, 2**31), stdscr.instr(0, 0))
+        self.assertRaises(OverflowError, stdscr.instr, 2**1000)
         self.assertRaises(ValueError, stdscr.instr, -2)
         self.assertRaises(ValueError, stdscr.instr, 0, 2, -2)
+        self.assertRaises(ValueError, stdscr.instr, -2**1000)
         # instr(y, x, 1) reads a single cell byte, so only a character that the
         # window encoding maps to one byte is checked.  inch() returns the cell
         # value, which is the locale byte.
@@ -1205,6 +1223,25 @@ class TestCurses(unittest.TestCase):
                 stdscr.addstr(2, 0, ch)
                 self.assertEqual(stdscr.instr(2, 0, 1), b)
                 self.assertEqual(stdscr.inch(2, 0), v)
+
+    def test_read_long_line(self):
+        # A pad line can be longer than a window, and a character can be
+        # encoded with several bytes, so instr() can read more bytes than
+        # there are cells.  See _encodable for the character set.
+        width = 3000
+        pad = curses.newpad(1, width)
+        for ch in ['z', '\u00e9', '\u20ac', '\u0434', '\uff71']:
+            if not self._storable(ch):
+                continue
+            pad.addstr(0, 0, ch)
+            if pad.getyx()[1] != 1:
+                continue        # a wide character occupies two cells
+            with self.subTest(ch=ch):
+                line = ch * (width - 1) + ' '   # the last cell is left blank
+                pad.addstr(0, 0, line[:-1])
+                self.assertEqual(pad.instr(0, 0), line.encode(pad.encoding))
+                self.assertEqual(pad.in_wstr(0, 0), line)
+                self.assertEqual(str(pad.in_wchstr(0, 0)), line)
 
     def test_coordinate_errors(self):
         # Addressing a cell outside the window raises curses.error.
@@ -2660,6 +2697,23 @@ class TestCurses(unittest.TestCase):
                 box.do_command(ch)
             self.assertEqual(box.gather(), text + ' ')
 
+    @requires_wide_build
+    def test_textbox_double_width(self):
+        # A double-width (East Asian) character occupies two cells.  gather()
+        # reads a whole line at a time so that the second cell, which holds
+        # the same character, is not reported as another one.
+        text = '你好'
+        if not self._encodable(text):
+            self.skipTest('the locale cannot encode %r' % text)
+        box, win = self._make_textbox(1, 12)
+        for ch in text:
+            box.do_command(ch)
+        self.assertEqual(box.gather(), text + ' ')
+        box, win = self._make_textbox(1, 12, stripspaces=False)
+        for ch in text:
+            box.do_command(ch)
+        self.assertEqual(box.gather(), text + ' ' * 8)
+
     def test_textbox_edit_wide(self):
         # edit() reads characters through get_wch().  Each character is pushed
         # with unget_wch(), which on a narrow build requires it to encode to a
@@ -2932,6 +2986,11 @@ class MiscTests(unittest.TestCase):
     def test_has_extended_color_support(self):
         r = curses.has_extended_color_support()
         self.assertIsInstance(r, bool)
+
+    def test_err_and_ok(self):
+        # ERR is negative; it is not a chtype constant.
+        self.assertEqual(curses.ERR, -1)
+        self.assertEqual(curses.OK, 0)
 
     def test_type_names(self):
         # The curses types report their public module rather than the
@@ -3327,6 +3386,23 @@ class ScreenTests(NewtermTestBase):
         # close() is idempotent.
         screen.close()
 
+    def test_close_then_write_with_attr_keeps_no_reference(self):
+        # A write with an *attr* argument on a detached window fails while
+        # setting the rendition, and has to release the bytes it converted.
+        s = self.make_pty()
+        screen = curses.newterm('xterm', s, s)
+        win = screen.stdscr
+        screen.close()
+        writes = [lambda b: win.addstr(b, curses.A_BOLD),
+                  lambda b: win.addnstr(b, 4, curses.A_BOLD),
+                  lambda b: win.insstr(b, curses.A_BOLD),
+                  lambda b: win.insnstr(b, 4, curses.A_BOLD)]
+        data = b'x' * 8
+        nrefs = sys.getrefcount(data)
+        for write in writes:
+            self.assertRaises(curses.error, write, data)
+        self.assertEqual(sys.getrefcount(data), nrefs)
+
     @requires_curses_func('panel')
     def test_close_then_panel_replace(self):
         # A detached window has no underlying curses window, so replace()
@@ -3423,10 +3499,10 @@ class SLKTests(NewtermTestBase):
     # slk_init() must run before newterm()/initscr(), so each test sets up its
     # own screen rather than reusing the one TestCurses builds in setUp().
 
-    def make_slk_screen(self, fmt=0):
+    def make_slk_screen(self, fmt=0, term='xterm'):
         s = self.make_pty()
         curses.slk_init(fmt)
-        return curses.newterm('xterm', s, s)
+        return curses.newterm(term, s, s)
 
     def test_init_reserves_a_line(self):
         # Every layout takes the bottom line for the labels; the index-line
@@ -3508,6 +3584,26 @@ class SLKTests(NewtermTestBase):
         curses.slk_attr_set(curses.A_BOLD)
         curses.slk_attr_set(curses.A_BOLD, 0)
         curses.slk_color(0)
+
+    def test_color_wide_pair(self):
+        # Drive a terminal with enough color pairs to reach past a short,
+        # rather than relying on whatever $TERM happens to be.
+        try:
+            self.make_slk_screen(term='xterm-256color')
+        except curses.error:
+            self.skipTest('no xterm-256color terminfo entry')
+        if not curses.has_colors():
+            self.skipTest('requires colors support')
+        curses.start_color()
+        if not (curses.has_extended_color_support()
+                and curses.COLOR_PAIRS > SHORT_MAX + 1):
+            self.skipTest('requires extended color support')
+        # A pair that does not fit in a short is still a valid pair here.
+        curses.slk_color(SHORT_MAX + 1)
+        # The low 16 bits of this are pair 5, but the pair itself is out of
+        # range, so it must raise instead of selecting pair 5.
+        self.assertRaises(curses.error, curses.slk_color,
+                          curses.COLOR_PAIRS * 2 + 5)
 
 
 @unittest.skipUnless(hasattr(curses, 'newterm'), 'requires curses.newterm()')

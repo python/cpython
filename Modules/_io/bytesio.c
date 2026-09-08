@@ -1126,15 +1126,16 @@ static int
 _io_BytesIO___init___impl(bytesio *self, PyObject *initvalue)
 /*[clinic end generated code: output=65c0c51e24c5b621 input=3da5a74ee4c4f1ac]*/
 {
-    /* In case, __init__ is called multiple times. */
-    self->string_size = 0;
-    self->pos = 0;
-
     if (FT_ATOMIC_LOAD_SSIZE_RELAXED(self->exports) > 0) {
         PyErr_SetString(PyExc_BufferError,
                         "Existing exports of data: object cannot be re-sized");
         return -1;
     }
+
+    /* In case, __init__ is called multiple times. */
+    self->string_size = 0;
+    self->pos = 0;
+
     if (initvalue && initvalue != Py_None) {
         if (PyBytes_CheckExact(initvalue)) {
             Py_XSETREF(self->buf, Py_NewRef(initvalue));

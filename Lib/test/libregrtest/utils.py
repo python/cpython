@@ -330,9 +330,6 @@ def get_build_info():
     # Get most important configure and build options as a list of strings.
     # Example: ['debug', 'ASAN+MSAN'] or ['release', 'LTO+PGO'].
 
-    config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
-    cflags = sysconfig.get_config_var('PY_CFLAGS') or ''
-    cflags += ' ' + (sysconfig.get_config_var('PY_CFLAGS_NODIST') or '')
     ldflags_nodist = sysconfig.get_config_var('PY_LDFLAGS_NODIST') or ''
 
     build = []
@@ -351,18 +348,16 @@ def get_build_info():
             free_threading = f"{free_threading} GIL={int(PYTHON_GIL)}"
         build.append(free_threading)
 
-    if hasattr(sys, 'gettotalrefcount'):
+    if support.Py_DEBUG:
         # --with-pydebug
         build.append('debug')
 
-        if '-DNDEBUG' in cflags:
+        if not support.built_with_c_assertions():
             build.append('without_assert')
     else:
         build.append('release')
 
-        if '--with-assertions' in config_args:
-            build.append('with_assert')
-        elif '-DNDEBUG' not in cflags:
+        if support.built_with_c_assertions():
             build.append('with_assert')
 
     # --enable-experimental-jit

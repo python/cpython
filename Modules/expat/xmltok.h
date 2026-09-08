@@ -169,8 +169,8 @@ typedef int(PTRCALL *SCANNER)(const ENCODING *, const char *, const char *,
 enum XML_Convert_Result {
   XML_CONVERT_COMPLETED = 0,
   XML_CONVERT_INPUT_INCOMPLETE = 1,
-  XML_CONVERT_OUTPUT_EXHAUSTED
-  = 2 /* and therefore potentially input remaining as well */
+  XML_CONVERT_OUTPUT_EXHAUSTED = 2 /* and therefore potentially input remaining
+                                      as well */
 };
 
 struct encoding {
