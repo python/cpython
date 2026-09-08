@@ -1,9 +1,8 @@
-import gc
-
 from test import support
 from test.support import is_apple_mobile, os_helper, requires_debug_ranges, is_emscripten
 from test.support.script_helper import assert_python_ok
 import array
+import gc
 import io
 import marshal
 import sys
@@ -929,6 +928,7 @@ class GCTrackingTestCase(unittest.TestCase):
 
     def testTuple(self):
         x, y, z = 1.5, "a", []
+        t = (True, False, ())
 
         self._not_tracked_instantly(())
         self._not_tracked_instantly((1,))
@@ -943,7 +943,7 @@ class GCTrackingTestCase(unittest.TestCase):
         self._not_tracked_instantly((1, 2) * 5)
 
         self._not_tracked(((1, x), y, (2, 3)))
-        self._not_tracked((1, 2, (True, False, ())))
+        self._not_tracked((1, 2, t))
 
         self._tracked(([],))
         self._tracked(([1],))
