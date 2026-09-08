@@ -4916,6 +4916,64 @@ class ZstdBoundedDecompressTests(AbstractBoundedDecompressTests,
     compression = zipfile.ZIP_ZSTANDARD
 
 
+class ThirdPartyDecompressorTests(unittest.TestCase):
+    # A decompressor installed by replacing _get_decompressor() may support
+    # neither decompress(data, max_length) nor needs_input.  ZipExtFile must
+    # still read through it (unbounded, as before bounded decompression).
+    COMPRESSION = 99
+
+    class Compressor:
+        def compress(self, data):
+            return data
+
+        def flush(self):
+            return b''
+
+    class Decompressor:
+        eof = False
+
+        def decompress(self, data):
+            return data
+
+    def setUp(self):
+        orig_check_compression = zipfile._check_compression
+        orig_get_compressor = zipfile._get_compressor
+        orig_get_decompressor = zipfile._get_decompressor
+
+        def check_compression(compression):
+            if compression != self.COMPRESSION:
+                orig_check_compression(compression)
+
+        def get_compressor(compress_type, compresslevel=None):
+            if compress_type == self.COMPRESSION:
+                return self.Compressor()
+            return orig_get_compressor(compress_type, compresslevel)
+
+        def get_decompressor(compress_type):
+            if compress_type == self.COMPRESSION:
+                return self.Decompressor()
+            return orig_get_decompressor(compress_type)
+
+        self.enterContext(mock.patch.object(
+            zipfile, '_check_compression', check_compression))
+        self.enterContext(mock.patch.object(
+            zipfile, '_get_compressor', get_compressor))
+        self.enterContext(mock.patch.object(
+            zipfile, '_get_decompressor', get_decompressor))
+
+    def test_read_through_third_party_decompressor(self):
+        data = bytes(range(256)) * 256
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", compression=self.COMPRESSION) as zf:
+            zf.writestr("member", data)
+        with zipfile.ZipFile(io.BytesIO(buf.getvalue())) as zf:
+            self.assertEqual(zf.read("member"), data)
+            with zf.open("member") as f:
+                self.assertEqual(f.read(100), data[:100])
+                f.seek(-100, os.SEEK_END)
+                self.assertEqual(f.read(), data[-100:])
+
+
 class AbstractBadCrcTests:
     def test_testzip_with_bad_crc(self):
         """Tests that files with bad CRCs return their name from testzip."""

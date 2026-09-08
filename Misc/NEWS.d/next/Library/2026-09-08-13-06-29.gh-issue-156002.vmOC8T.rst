@@ -1,0 +1,5 @@
+:mod:`zipfile` again reads members through a third-party decompressor
+installed by replacing ``_get_decompressor()``, unbounded as before the
+bounded-decompression fix, instead of raising :exc:`AttributeError`. The
+bound still applies to the standard library's bzip2, LZMA and Zstandard
+decompressors.
