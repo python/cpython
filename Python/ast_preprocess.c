@@ -879,12 +879,11 @@ fold_const_match_patterns(expr_ty node, PyArena *ctx_, _PyASTPreprocessState *st
         case BinOp_kind:
         {
             operator_ty op = node->v.BinOp.op;
-            if (op == Add || op == Sub)
+            if ((op == Add || op == Sub) &&
+                node->v.BinOp.right->kind == Constant_kind)
             {
                 CALL(fold_const_match_patterns, expr_ty, node->v.BinOp.left);
-                CALL(fold_const_match_patterns, expr_ty, node->v.BinOp.right);
-                if (node->v.BinOp.left->kind == Constant_kind &&
-                    node->v.BinOp.right->kind == Constant_kind) {
+                if (node->v.BinOp.left->kind == Constant_kind) {
                     PyObject *left = node->v.BinOp.left->v.Constant.value;
                     PyObject *right = node->v.BinOp.right->v.Constant.value;
                     PyObject *folded = op == Add ? PyNumber_Add(left, right) : PyNumber_Subtract(left, right);
