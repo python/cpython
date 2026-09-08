@@ -1377,18 +1377,29 @@ class TestMH(TestMailbox, unittest.TestCase):
         self._box = self._factory(self._path)
         self.assertEqual(self._box.get_bytes(key), original)
 
-    @unittest.skipUnless(hasattr(os, 'chown'), 'requires os.chown')
+    @unittest.skipUnless(os.name == 'posix', 'requires POSIX permissions')
     def test_set_item_preserves_mode(self):
         key = self._box.add(self._template % 'original')
         path = os.path.join(self._path, str(key))
-        mode = os.stat(path).st_mode | stat.S_ISUID
+        mode = 0o640
         os.chmod(path, mode)
-        if os.stat(path).st_mode != mode:
-            self.skipTest('filesystem does not support set-user-ID mode')
+        if stat.S_IMODE(os.stat(path).st_mode) != mode:
+            self.skipTest('filesystem does not support POSIX permissions')
 
         self._box[key] = self._template % 'replacement'
 
-        self.assertEqual(os.stat(path).st_mode, mode)
+        self.assertEqual(stat.S_IMODE(os.stat(path).st_mode), mode)
+
+    def test_set_item_with_open_file(self):
+        key = self._box.add(self._template % 'original')
+        replacement = self._template % 'replacement'
+        self._box.lock()
+        try:
+            with self._box.get_file(key):
+                self._box[key] = replacement
+            self.assertEqual(self._box.get_bytes(key), replacement.encode('ascii'))
+        finally:
+            self._box.unlock()
 
     def test_list_folders(self):
         # List folders

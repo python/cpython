@@ -18,6 +18,8 @@ import email.message
 import email.generator
 import io
 import contextlib
+import shutil
+import tempfile
 from types import GenericAlias
 try:
     import fcntl
@@ -1069,44 +1071,22 @@ class MH(Mailbox):
                 raise KeyError('No message with key: %s' % key)
             else:
                 raise
-        file_closed = False
         try:
             if self._locked:
                 _lock_file(f)
             try:
-                new_file = _create_temporary(path)
-                try:
+                with tempfile.TemporaryFile(mode='w+b') as new_file:
                     self._dump_message(message, new_file)
-                    _sync_close(new_file)
-                    info = os.fstat(f.fileno())
-                    try:
-                        os.chown(new_file.name, info.st_uid, info.st_gid)
-                    except (AttributeError, OSError):
-                        pass
-                    os.chmod(new_file.name, info.st_mode)
-                    if os.name == 'nt':
-                        # Windows cannot replace an open file.
-                        f.close()
-                        file_closed = True
-                    os.replace(new_file.name, path)
-                except BaseException:
-                    try:
-                        new_file.close()
-                    except OSError:
-                        pass
-                    try:
-                        os.remove(new_file.name)
-                    except OSError:
-                        pass
-                    raise
+                    new_file.seek(0)
+                    os.close(os.open(path, os.O_WRONLY | os.O_TRUNC))
+                    shutil.copyfileobj(new_file, f)
                 if isinstance(message, MHMessage):
                     self._dump_sequences(message, key)
             finally:
                 if self._locked:
                     _unlock_file(f)
         finally:
-            if not file_closed:
-                f.close()
+            _sync_close(f)
 
     def get_message(self, key):
         """Return a Message representation or raise a KeyError."""
