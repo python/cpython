@@ -1,1 +1,2 @@
-Keep loop carries as two-digit values in ``v_lshift``, ``v_rshift``, and ``x_divrem``.  This shortens the carry chain on AArch64 and speeds up large-integer shifts and division.
+Optimize shifts and division of large integers. Speeds up the pyperformance
+``pidigits`` benchmark by ~20% on AArch64.
