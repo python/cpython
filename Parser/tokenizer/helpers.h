@@ -5,10 +5,6 @@
 
 #include "../lexer/state.h"
 
-#define ADVANCE_LINENO() \
-            tok->lineno++; \
-            tok->col_offset = 0;
-
 int _PyTokenizer_syntaxerror(struct tok_state *tok, const char *format, ...);
 int _PyTokenizer_syntaxerror_known_range(struct tok_state *tok, int col_offset, int end_col_offset, const char *format, ...);
 int _PyTokenizer_indenterror(struct tok_state *tok);

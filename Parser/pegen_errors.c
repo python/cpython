@@ -62,7 +62,7 @@ _Pypegen_tokenizer_error(Parser *p)
             msg = "too many levels of indentation";
             break;
         case E_LINECONT: {
-            col_offset = p->tok->cur - p->tok->buf - 1;
+            col_offset = p->tok->cur - p->tok->line_start - 1;
             msg = "unexpected character after line continuation character";
             break;
         }
@@ -163,10 +163,8 @@ _PyPegen_tokenize_full_source_to_check_for_errors(Parser *p) {
 
 exit:
     _PyToken_Free(&new_token);
-    // If we're in an f-string, we want the syntax error in the expression part
-    // to propagate, so that tokenizer errors (like expecting '}') that happen afterwards
-    // do not swallow it.
-    if (PyErr_Occurred() && p->tok->tok_mode_stack_index <= 0) {
+    // Preserve expression errors over later formatted-string errors.
+    if (PyErr_Occurred() && _PyLexer_CurrentFTString(p->tok) == NULL) {
         Py_XDECREF(value);
         Py_XDECREF(type);
         Py_XDECREF(traceback);

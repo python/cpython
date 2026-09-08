@@ -287,7 +287,8 @@ tokenizeriter_next(PyObject *op)
         is_trailing_token = 1;
     }
 
-    const char *line_start = ISSTRINGLIT(type) ? it->tok->multi_line_start : it->tok->line_start;
+    const char *line_start = ISSTRINGLIT(type)
+        ? token_start - token.start_loc.byte_col : it->tok->line_start;
     PyObject* line = NULL;
     int line_changed = 1;
     if (it->tok->tok_extra_tokens && is_trailing_token) {
