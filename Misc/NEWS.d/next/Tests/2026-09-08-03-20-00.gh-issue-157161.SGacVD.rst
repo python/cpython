@@ -1,0 +1,3 @@
+Fix ``test_rollover_based_on_st_birthtime_only`` in ``test_logging`` on slow
+machines: search for the rotated file over the whole duration of the test
+instead of a fixed 5 seconds.
