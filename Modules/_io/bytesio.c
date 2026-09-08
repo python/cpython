@@ -40,7 +40,8 @@ typedef struct {
   * Py_REFCNT(buf) == 1, exports == 0.
   * Py_REFCNT(buf) > 1.  exports == 0,
     first modification or export causes the internal buffer copying.
-  * exports > 0.  Py_REFCNT(buf) == 1, any modifications are forbidden.
+  * exports > 0.  Any modifications are forbidden.  Every exported buffer
+    keeps a reference to buf, so it outlives closing of the bytesio object.
 */
 
 static int
@@ -925,7 +926,7 @@ static PyObject *
 _io_BytesIO_close_impl(bytesio *self)
 /*[clinic end generated code: output=1471bb9411af84a0 input=34ce76d8bd17a23b]*/
 {
-    CHECK_EXPORTS(self);
+    /* The exported buffers keep the internal buffer alive. */
     Py_CLEAR(self->buf);
     Py_RETURN_NONE;
 }
@@ -1125,15 +1126,16 @@ static int
 _io_BytesIO___init___impl(bytesio *self, PyObject *initvalue)
 /*[clinic end generated code: output=65c0c51e24c5b621 input=3da5a74ee4c4f1ac]*/
 {
-    /* In case, __init__ is called multiple times. */
-    self->string_size = 0;
-    self->pos = 0;
-
     if (FT_ATOMIC_LOAD_SSIZE_RELAXED(self->exports) > 0) {
         PyErr_SetString(PyExc_BufferError,
                         "Existing exports of data: object cannot be re-sized");
         return -1;
     }
+
+    /* In case, __init__ is called multiple times. */
+    self->string_size = 0;
+    self->pos = 0;
+
     if (initvalue && initvalue != Py_None) {
         if (PyBytes_CheckExact(initvalue)) {
             Py_XSETREF(self->buf, Py_NewRef(initvalue));
@@ -1281,6 +1283,9 @@ bytesiobuf_getbuffer_lock_held(PyObject *op, Py_buffer *view, int flags)
 
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(b);
 
+    if (check_closed(b)) {
+        return -1;
+    }
     if (FT_ATOMIC_LOAD_SSIZE_RELAXED(b->exports) == 0 && SHARED_BUF(b)) {
         if (unshare_buffer_lock_held(b, b->string_size) < 0)
             return -1;
@@ -1290,6 +1295,9 @@ bytesiobuf_getbuffer_lock_held(PyObject *op, Py_buffer *view, int flags)
     (void)PyBuffer_FillInfo(view, op,
                             PyBytes_AS_STRING(b->buf), b->string_size,
                             0, flags);
+    /* Keep the internal buffer alive: the bytesio object can be closed
+       while the buffer is exported. */
+    view->internal = Py_NewRef(b->buf);
     FT_ATOMIC_ADD_SSIZE(b->exports, 1);
     return 0;
 }
@@ -1311,11 +1319,12 @@ bytesiobuf_getbuffer(PyObject *op, Py_buffer *view, int flags)
 }
 
 static void
-bytesiobuf_releasebuffer(PyObject *op, Py_buffer *Py_UNUSED(view))
+bytesiobuf_releasebuffer(PyObject *op, Py_buffer *view)
 {
     bytesiobuf *obj = bytesiobuf_CAST(op);
     bytesio *b = bytesio_CAST(obj->source);
     FT_ATOMIC_ADD_SSIZE(b->exports, -1);
+    Py_CLEAR(view->internal);
 }
 
 static int

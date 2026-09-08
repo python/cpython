@@ -50,11 +50,11 @@ OPENSSL_OLD_VERSIONS = [
 ]
 
 OPENSSL_RECENT_VERSIONS = [
-    "3.0.21",
-    "3.4.6",
-    "3.5.7",
-    "3.6.3",
-    "4.0.1",
+    "3.0.22",
+    "3.4.7",
+    "3.5.8",
+    "3.6.4",
+    "4.0.2",
     # See make_ssl_data.py for notes on adding a new version.
 ]
 
@@ -65,7 +65,7 @@ LIBRESSL_RECENT_VERSIONS = [
 ]
 
 AWSLC_RECENT_VERSIONS = [
-    "5.0.0",
+    "5.5.0",
 ]
 
 # store files in ../multissl

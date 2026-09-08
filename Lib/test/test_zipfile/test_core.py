@@ -500,7 +500,7 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
         self.make_test_archive(f, compression)
         with zipfile.ZipFile(f, "r") as zipfp:
             zinfo = zipfp.getinfo('strfile')
-            self.assertEqual(zinfo.external_attr, 0o600 << 16)
+            self.assertEqual(zinfo.external_attr, 0o100600 << 16)
 
             zinfo2 = zipfp.getinfo('written-open-w')
             self.assertEqual(zinfo2.external_attr, 0o600 << 16)
@@ -2387,6 +2387,18 @@ class AbstractRepackTests(RepackHelperMixin):
                 with self.assertRaises(ValueError):
                     zh.repack()
         m_repack.assert_not_called()
+
+    @mock.patch.object(zipfile, '_ZipRepacker')
+    def test_repack_reading(self, m_repack):
+        self._prepare_zip_from_test_files(TESTFN, self.test_files)
+        with zipfile.ZipFile(TESTFN, 'a') as zh:
+            with zh.open(self.test_files[0][0]):
+                with self.assertRaises(ValueError):
+                    zh.repack()
+            m_repack.assert_not_called()
+            # Allowed once the reading handle is closed.
+            zh.repack()
+        m_repack.assert_called_once()
 
     @mock.patch.object(zipfile, '_ZipRepacker')
     def test_repack_mode_r(self, m_repack):
@@ -4513,8 +4525,8 @@ class OtherTests(unittest.TestCase):
             zi = zipfile.ZipInfo(base_filename)._for_archive(zf)
             self.assertEqual(zi.compress_level, 1)
             self.assertEqual(zi.compress_type, zipfile.ZIP_STORED)
-            # ?rw- --- ---
-            filemode = stat.S_IRUSR | stat.S_IWUSR
+            # - rw- --- ---
+            filemode = stat.S_IFREG | stat.S_IRUSR | stat.S_IWUSR
             # filemode is stored as the highest 16 bits of external_attr
             self.assertEqual(zi.external_attr >> 16, filemode)
             self.assertEqual(zi.external_attr & 0xFF, 0)  # no MS-DOS flag
@@ -4860,6 +4872,48 @@ class OtherTests(unittest.TestCase):
     def tearDown(self):
         unlink(TESTFN)
         unlink(TESTFN2)
+
+
+class AbstractBoundedDecompressTests:
+    # ZipExtFile._read1() bounds the output of each decompress() call so that a
+    # small member declaring a large uncompressed size cannot expand into one
+    # unbounded read.
+    def test_read1_output_is_bounded(self):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", compression=self.compression) as zf:
+            zf.writestr("big", b"\0" * (4 * 1024 * 1024))
+        with zipfile.ZipFile(io.BytesIO(buf.getvalue())) as zf:
+            with zf.open("big") as f:
+                self.assertLessEqual(len(f._read1(100)), f.MIN_READ_SIZE)
+
+
+class StoredBoundedDecompressTests(AbstractBoundedDecompressTests,
+                                   unittest.TestCase):
+    compression = zipfile.ZIP_STORED
+
+
+@requires_zlib()
+class DeflateBoundedDecompressTests(AbstractBoundedDecompressTests,
+                                    unittest.TestCase):
+    compression = zipfile.ZIP_DEFLATED
+
+
+@requires_bz2()
+class Bzip2BoundedDecompressTests(AbstractBoundedDecompressTests,
+                                  unittest.TestCase):
+    compression = zipfile.ZIP_BZIP2
+
+
+@requires_lzma()
+class LzmaBoundedDecompressTests(AbstractBoundedDecompressTests,
+                                 unittest.TestCase):
+    compression = zipfile.ZIP_LZMA
+
+
+@requires_zstd()
+class ZstdBoundedDecompressTests(AbstractBoundedDecompressTests,
+                                 unittest.TestCase):
+    compression = zipfile.ZIP_ZSTANDARD
 
 
 class AbstractBadCrcTests:

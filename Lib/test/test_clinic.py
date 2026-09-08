@@ -347,7 +347,7 @@ class ClinicWholeFileTest(TestCase):
                 /
             [clinic start generated code]*/
         """
-        self.expect_failure(block, err)
+        self.expect_failure(block, err, lineno=2)
 
     def test_star_after_vararg(self):
         err = "'my_test_func' uses '*' more than once."
@@ -793,6 +793,102 @@ class ClinicWholeFileTest(TestCase):
                 [{dsl} start generated code]*/
             """)
             self.clinic.parse(raw)
+
+    def test_getset_in_ifdef(self):
+        block = """
+            /*[clinic input]
+            output everything block
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            #ifdef CONDITION
+            /*[clinic input]
+            @getter
+            Foo.property
+            [clinic start generated code]*/
+            /*[clinic input]
+            @setter
+            Foo.property
+            [clinic start generated code]*/
+            #endif
+        """
+        generated = self.clinic.parse(dedent(block))
+        self.assertIn("#if defined(CONDITION)", generated)
+        # The getset is undefined if the condition is false.
+        self.assertIn("#ifndef FOO_PROPERTY_GETSETDEF\n"
+                      "    #define FOO_PROPERTY_GETSETDEF\n"
+                      "#endif /* !defined(FOO_PROPERTY_GETSETDEF) */",
+                      generated)
+
+    def test_getset_duplicate(self):
+        for annotation in "@getter", "@setter":
+            with self.subTest(annotation=annotation):
+                self.clinic = _make_clinic(filename="test.c")
+                block = f"""
+                    /*[clinic input]
+                    class Foo "FooObject *" "&Foo_Type"
+                    [clinic start generated code]*/
+                    /*[clinic input]
+                    {annotation}
+                    Foo.property
+                    [clinic start generated code]*/
+                    /*[clinic input]
+                    {annotation}
+                    Foo.property
+                    [clinic start generated code]*/
+                """
+                kind = 'setter' if annotation == '@setter' else 'getter'
+                err = f"Cannot apply @{kind} to 'Foo.property' twice"
+                self.expect_failure(block, err, lineno=10)
+
+    def test_getset_different_c_basename(self):
+        block = """
+            /*[clinic input]
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            /*[clinic input]
+            @getter
+            Foo.property as foo_get
+            [clinic start generated code]*/
+            /*[clinic input]
+            @setter
+            Foo.property as foo_set
+            [clinic start generated code]*/
+        """
+        err = "The accessors of 'Foo.property' must have the same C basename"
+        self.expect_failure(block, err, lineno=10)
+
+    def test_setter_deletion_check(self):
+        block = """
+            /*[clinic input]
+            output everything block
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            /*[clinic input]
+            @setter
+            Foo.property
+            [clinic start generated code]*/
+        """
+        generated = self.clinic.parse(dedent(block))
+        self.assertIn("if (value == NULL) {", generated)
+        self.assertIn("\"attribute 'property' of '%.100s' objects "
+                      "cannot be deleted\"", generated)
+
+    def test_deleter(self):
+        # @deleter means that the setter is called with NULL to delete
+        # the attribute, so it checks the value itself.
+        block = """
+            /*[clinic input]
+            output everything block
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            /*[clinic input]
+            @setter
+            @deleter
+            Foo.property
+            [clinic start generated code]*/
+        """
+        generated = self.clinic.parse(dedent(block))
+        self.assertNotIn("if (value == NULL) {", generated)
 
     def test_var_keyword_non_dict(self):
         err = "'var_keyword_object' is not a valid converter"
@@ -2671,7 +2767,7 @@ class ClinicParserTest(TestCase):
                     {annotation}
                     Foo.property -> int
                 """
-                expected_error = f"{annotation} method cannot define a return type"
+                expected_error = "@getter and @setter methods cannot define a return type"
                 self.expect_failure(block, expected_error, lineno=3)
 
                 block = f"""
@@ -2682,7 +2778,7 @@ class ClinicParserTest(TestCase):
                        obj: int
                        /
                 """
-                expected_error = f"{annotation} methods cannot define parameters"
+                expected_error = "@getter and @setter methods cannot define parameters"
                 self.expect_failure(block, expected_error)
 
     def test_setter_docstring(self):
@@ -2725,8 +2821,50 @@ class ClinicParserTest(TestCase):
                     {dup[1]}
                     Foo.property -> int
                 """
-                expected_error = "Cannot apply both @getter and @setter to the same function!"
+                expected_error = (f"Can't set {dup[1]}, "
+                                  f"function is not a normal callable")
                 self.expect_failure(block, expected_error, lineno=3)
+
+    def test_deleter_without_setter(self):
+        block = """
+            module foo
+            class Foo "" ""
+            @deleter
+            Foo.property
+        """
+        expected_error = "Can't set @deleter, @setter is not applied"
+        self.expect_failure(block, expected_error, lineno=2)
+
+        block = """
+            module foo
+            class Foo "" ""
+            @deleter
+            @setter
+            Foo.property
+        """
+        self.expect_failure(block, expected_error, lineno=2)
+
+    def test_deleter_twice(self):
+        block = """
+            module foo
+            class Foo "" ""
+            @setter
+            @deleter
+            @deleter
+            Foo.property
+        """
+        expected_error = "Cannot apply @deleter twice to the same function!"
+        self.expect_failure(block, expected_error, lineno=4)
+
+    def test_setter_and_deleter(self):
+        function = self.parse_function("""
+            module foo
+            class Foo "" ""
+            @setter
+            @deleter
+            Foo.property
+        """, signatures_in_block=3, function_index=2)
+        self.assertEqual(function.kind, FunctionKind.SETTER_AND_DELETER)
 
     def test_getset_no_class(self):
         for annotation in "@getter", "@setter":
@@ -2925,8 +3063,21 @@ class ClinicParserTest(TestCase):
             m.func
             docstring1
             docstring2
+            docstring3
         """
+        # The line which should have been left blank.
         self.expect_failure(block, err, lineno=3)
+
+    def test_state_func_docstring_long_summary(self):
+        err = "Summary line for 'm.func' is too long!"
+        block = f"""
+            module m
+            m.func
+            {'x' * 100}
+
+            Body.
+        """
+        self.expect_failure(block, err, lineno=2)
 
     def test_state_func_docstring_only_one_param_template(self):
         err = "You may not specify {parameters} more than once in a docstring!"
@@ -2939,6 +3090,7 @@ class ClinicParserTest(TestCase):
                 {parameters}
             these are the params again:
                 {parameters}
+            and this is the end of the docstring
         """
         self.expect_failure(block, err, lineno=7)
 
@@ -3075,6 +3227,64 @@ class ClinicExternalTest(TestCase):
         # Don't change the file modification time
         # if the content does not change
         self.assertEqual(pre_mtime, post_mtime)
+
+    TOUCH_CODE = dedent("""
+        /*[clinic input]
+        module m
+        [clinic start generated code]*/
+
+        /*[clinic input]
+        output everything file
+        m.func
+            a: int
+            /
+
+        Docstring.
+        [clinic start generated code]*/
+    """)
+
+    def test_touch_source(self):
+        # gh-64595: The build system does not know that the source file
+        # depends on the file generated from it, so the modification
+        # times are updated to force the recompilation.
+        def mtimes():
+            return os.stat(fn).st_mtime_ns, os.stat(dest).st_mtime_ns
+
+        def set_mtimes(source, generated):
+            os.utime(fn, ns=(source, source))
+            os.utime(dest, ns=(generated, generated))
+
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write(self.TOUCH_CODE)
+            dest = self.dest_file(fn)
+            self.expect_success(fn)
+            source_mtime, generated_mtime = mtimes()
+            self.assertGreaterEqual(generated_mtime, source_mtime)
+
+            # The generated file is changed, so both files are touched.
+            os.unlink(dest)
+            old = source_mtime - 10**10
+            os.utime(fn, ns=(old, old))
+            self.expect_success(fn)
+            source_mtime, generated_mtime = mtimes()
+            self.assertGreater(source_mtime, old)
+            self.assertGreaterEqual(generated_mtime, source_mtime)
+
+            # Nothing is changed, but the source file is newer, so only
+            # the generated file is touched.
+            set_mtimes(source_mtime - 10**10, source_mtime - 2 * 10**10)
+            old_source_mtime = os.stat(fn).st_mtime_ns
+            self.expect_success(fn)
+            source_mtime, generated_mtime = mtimes()
+            self.assertEqual(source_mtime, old_source_mtime)
+            self.assertGreaterEqual(generated_mtime, source_mtime)
+
+            # Nothing is changed and the generated file is newer,
+            # so no file is touched.
+            self.expect_success(fn)
+            self.assertEqual(mtimes(), (source_mtime, generated_mtime))
 
     def test_cli_force(self):
         invalid_input = dedent("""
@@ -3351,18 +3561,23 @@ class ClinicExternalTest(TestCase):
         """)
         expected_converters = (
             "bool",
+            "BOOL",
             "byte",
             "char",
             "defining_class",
             "double",
+            "DWORD",
             "fildes",
             "float",
+            "HANDLE",
             "int",
             "long",
             "long_long",
             "object",
+            "pid_t",
             "Py_buffer",
             "Py_complex",
+            "Py_off_t",
             "Py_ssize_t",
             "Py_UNICODE",
             "PyByteArrayObject",
@@ -3470,6 +3685,163 @@ class ClinicExternalTest(TestCase):
             with open(fn, "w", encoding="utf-8") as f:
                 f.write("/*[clinic input]\n[clinic start generated code]*/\n")
             self.assertEqual(self.expect_success("--converters", fn), "")
+
+    LIST_CODE = dedent("""
+        /*[clinic input]
+        func
+            a: int
+            /
+
+        Docstring.
+        [clinic start generated code]*/
+
+        /*[clinic input]
+        cloned = func
+        [clinic start generated code]*/
+
+        /*[clinic input]
+        module m
+        class m.C "void *" ""
+        class m.C.D "void *" ""
+        [clinic start generated code]*/
+
+        /*[clinic input]
+        m.C.meth
+            self: self(type="void *")
+            a: object
+            [
+            b: object
+            ]
+            /
+
+        Docstring.
+        [clinic start generated code]*/
+
+        /*[clinic input]
+        @classmethod
+        m.C.__new__
+            a: object
+
+        Docstring.
+        [clinic start generated code]*/
+
+        /*[clinic input]
+        @getter
+        m.C.prop
+        [clinic start generated code]*/
+
+        /*[clinic input]
+        @setter
+        m.C.prop
+        [clinic start generated code]*/
+
+        /*[clinic input]
+        m.C.D.meth
+            self: self(type="void *")
+
+        Docstring.
+        [clinic start generated code]*/
+    """)
+
+    def make_list_file(self, tmp_dir):
+        fn = os.path.join(tmp_dir, "test.c")
+        with open(fn, "w", encoding="utf-8") as f:
+            f.write(self.LIST_CODE)
+        return fn
+
+    LIST_OUTPUT = [
+        "  func($module, a, /)",
+        "  cloned($module, a, /)",
+        "  module m",
+        "    class m.C",
+        # A signature with an option group is only for the docstring.
+        "      m.C.meth(a, [b])",
+        "      m.C(a)",
+        "      getter m.C.prop",
+        "      setter m.C.prop",
+        "      class m.C.D",
+        "        m.C.D.meth($self, /)",
+    ]
+
+    def test_cli_list(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = self.make_list_file(tmp_dir)
+            pre_mtime = os.stat(fn).st_mtime_ns
+            out = self.expect_success("--list", fn)
+            self.assertEqual(out.splitlines(), [fn] + self.LIST_OUTPUT)
+            # Nothing is written.
+            with open(fn, encoding="utf-8") as f:
+                self.assertEqual(f.read(), self.LIST_CODE)
+            self.assertEqual(os.stat(fn).st_mtime_ns, pre_mtime)
+            self.assertEqual(os.listdir(tmp_dir), ["test.c"])
+
+    def test_cli_list_no_clinic_block(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write("int x;\n")
+            self.assertEqual(self.expect_success("--list", fn), "")
+
+    def test_cli_list_no_definitions(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write("/*[clinic input]\n[clinic start generated code]*/\n")
+            self.assertEqual(self.expect_success("--list", fn), "")
+
+    def test_cli_list_make(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = self.make_list_file(tmp_dir)
+            out = self.expect_success("--list", "--make", "--srcdir", tmp_dir)
+            self.assertEqual(out.splitlines(), [fn] + self.LIST_OUTPUT)
+            self.assertEqual(os.listdir(tmp_dir), ["test.c"])
+
+    def test_cli_list_verbose(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = self.make_list_file(tmp_dir)
+            # The progress does not mix with the report.
+            out, err, code = self.run_clinic("-v", "--list", fn)
+            self.assertEqual(code, 0)
+            self.assertEqual(err.splitlines(), [fn])
+            self.assertEqual(out.splitlines(), [fn] + self.LIST_OUTPUT)
+
+    def test_cli_list_checksum_mismatch(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = self.make_list_file(tmp_dir)
+            with open(fn, "a", encoding="utf-8") as f:
+                f.write("/*[clinic end generated code: "
+                        "output=0123456789abcdef input=fedcba9876543210]*/\n")
+            _, err = self.expect_failure("--list", fn)
+            self.assertIn("Checksum mismatch!", err)
+            # The check is skipped with --force.
+            out = self.expect_success("-f", "--list", fn)
+            self.assertEqual(out.splitlines(), [fn] + self.LIST_OUTPUT)
+            self.assertEqual(os.listdir(tmp_dir), ["test.c"])
+
+    def test_cli_list_external(self):
+        # A file which uses getters, setters and nested classes.
+        source = support.findfile('clinic.test.c')
+        out = self.expect_success("--list", source)
+        lines = out.splitlines()
+        self.assertEqual(lines[0], source)
+        for line in ("  class Test",
+                     "    getter Test.property",
+                     "    setter Test.property",
+                     "    Test.class_method($type, /)",
+                     "  module m",
+                     "    class m.T"):
+            with self.subTest(line=line):
+                self.assertIn(line, lines)
+
+    def test_cli_fail_list_and_dry_run(self):
+        for opt in "--dry-run", "--diff":
+            with self.subTest(opt=opt):
+                _, err = self.expect_failure("--list", opt, "test.c")
+                self.assertIn("can't use --dry-run or --diff with --list", err)
+
+    def test_cli_fail_list_and_converters(self):
+        _, err = self.expect_failure("--list", "--converters", "test.c")
+        self.assertIn("can't use --converters with --list", err)
 
     def test_cli_fail_directory(self):
         with os_helper.temp_dir() as tmp_dir:
@@ -4613,6 +4985,18 @@ class ClinicFunctionalTest(unittest.TestCase):
         kwds = {'y': 'y', 'z': 'z'}
         self.assertEqual(ac_tester.kwds_with_pos_only(1, 2, y='y', z='z'), (1, 2, kwds))
         self.assertEqual(ac_tester.kwds_with_pos_only(1, 2, **kwds), (1, 2, kwds))
+
+    def test_kwds_with_optional_pos_only(self):
+        with self.assertRaises(TypeError):
+            ac_tester.kwds_with_optional_pos_only()
+        with self.assertRaises(TypeError):
+            ac_tester.kwds_with_optional_pos_only(y='y')
+        self.assertEqual(ac_tester.kwds_with_optional_pos_only(1), (1, None, {}))
+        self.assertEqual(ac_tester.kwds_with_optional_pos_only(1, 2), (1, 2, {}))
+        self.assertEqual(ac_tester.kwds_with_optional_pos_only(1, y='y'),
+                         (1, None, {'y': 'y'}))
+        self.assertEqual(ac_tester.kwds_with_optional_pos_only(1, 2, y='y'),
+                         (1, 2, {'y': 'y'}))
 
     def test_kwds_with_stararg(self):
         self.assertEqual(ac_tester.kwds_with_stararg(), ((), {}))

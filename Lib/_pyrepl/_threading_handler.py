@@ -1,30 +1,9 @@
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 import traceback
 
 
-TYPE_CHECKING = False
-if TYPE_CHECKING:
-    from threading import Thread
-    from types import TracebackType
-    from typing import Protocol
-
-    class ExceptHookArgs(Protocol):
-        @property
-        def exc_type(self) -> type[BaseException]: ...
-        @property
-        def exc_value(self) -> BaseException | None: ...
-        @property
-        def exc_traceback(self) -> TracebackType | None: ...
-        @property
-        def thread(self) -> Thread | None: ...
-
-    class ShowExceptions(Protocol):
-        def __call__(self) -> int: ...
-        def add(self, s: str) -> None: ...
-
-    from .reader import Reader
+lazy from threading import ExceptHookArgs
+lazy from .reader import Reader
 
 
 def install_threading_hook(reader: Reader) -> None:
