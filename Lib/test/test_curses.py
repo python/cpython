@@ -3459,6 +3459,10 @@ class ScreenTests(NewtermTestBase):
             with self.assertRaises(curses.error):
                 prescr.use(func)
         # Affecting the state before initscr() is what such a screen is for.
+        # use_env() sets a process-wide default rather than a property of the
+        # screen it is called on, so restore it: with it off, newterm() has no
+        # size for a terminfo entry without one (such as "linux") and fails.
+        self.addCleanup(curses.use_env, True)
         prescr.use(lambda scr: curses.use_env(False))
         # The current screen is unchanged.
         screen.stdscr.refresh()
