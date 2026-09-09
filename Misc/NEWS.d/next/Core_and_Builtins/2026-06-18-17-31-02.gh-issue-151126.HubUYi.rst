@@ -1,3 +1,3 @@
-Fix missing error handling in interpreter queues when listing queues or sharing a queue between interpreters. Memory allocation failures now raise
-:exc:`MemoryError` instead of returning without an exception set.
+Fix missing error handling in interpreter queues when listing queues or sharing a queue between interpreters. 
+Memory allocation failures now raise :exc:`MemoryError` instead of returning without an exception set.
 
