@@ -1,2 +1,2 @@
-Speed up :func:`csv.writer` by up to 2.9x when fields contain no special 
+Speed up :func:`csv.writer` by up to 2.9x when fields contain no special
 characters.
