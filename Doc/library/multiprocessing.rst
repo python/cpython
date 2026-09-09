@@ -1245,6 +1245,14 @@ Miscellaneous
    For this to work, it must be called before the forkserver process has been
    launched (before creating a :class:`Pool` or starting a :class:`Process`).
 
+   Only modules directly imported at top level by *module_names* are preloaded.
+   If a preloaded module lazily imports dependencies inside functions or methods
+   (for example, :meth:`datetime.datetime.strptime` importing ``_strptime`` on
+   its first invocation), those dependencies are not loaded into the forkserver
+   process and will instead be imported separately in each child process upon
+   first use. To inherit those as well, call such functions at module level
+   within a preloaded module.
+
    The *on_error* parameter controls how :exc:`ImportError` exceptions during
    module preloading are handled: ``"ignore"`` (default) silently ignores
    failures, ``"warn"`` causes the forkserver subprocess to emit an
