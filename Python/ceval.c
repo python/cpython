@@ -1793,7 +1793,6 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
 
     /* Copy all positional arguments into local variables */
     Py_ssize_t j, n;
-    int missing_self_hint = suggest_missing_self(func, co, args, argcount);
     if (argcount > co->co_argcount) {
         n = co->co_argcount;
     }
@@ -1936,6 +1935,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
 
     /* Check the number of positional arguments */
     if ((argcount > co->co_argcount) && !(co->co_flags & CO_VARARGS)) {
+        int missing_self_hint = suggest_missing_self(func, co, args, argcount);
         too_many_positional(tstate, co, argcount, func->func_defaults, localsplus,
                             func->func_qualname, missing_self_hint);
         goto fail_post_args;
