@@ -1242,6 +1242,16 @@ Miscellaneous
    processes. This can be used as a performance enhancement to avoid repeated
    work in every process.
 
+   Only the modules named in *module_names* are imported, together with
+   whatever those modules import at module level. A module imported inside a
+   function body is not imported in the forkserver process, and is therefore
+   imported again in every child process, the first time that function runs
+   there. For example, preloading :mod:`datetime` does not cover
+   ``_strptime``, which :meth:`~datetime.datetime.strptime` imports on its
+   first call, so every child pays for that import privately. To share such
+   modules as well, call the function at the module level of a preloaded
+   module, so that the import happens in the forkserver process.
+
    For this to work, it must be called before the forkserver process has been
    launched (before creating a :class:`Pool` or starting a :class:`Process`).
 
