@@ -41,7 +41,7 @@ def capture_test_stack(*, fut=None, depth=1):
         return ret
 
     buf = io.StringIO()
-    asyncio.print_call_graph(fut, file=buf, depth=depth+1)
+    asyncio.print_call_graph(fut, file=buf, depth=depth)
 
     stack = asyncio.capture_call_graph(fut, depth=depth)
     return walk(stack), buf.getvalue()
@@ -484,6 +484,32 @@ class CallStackTestBase:
         with self.assertRaises(TypeError):
             asyncio.capture_call_graph("not a future")
 
+    async def test_print_call_graph_innermost_frame(self):
+        # gh-156327: print_call_graph() must not report its own frame
+        buf = io.StringIO()
+        lineno = sys._getframe().f_lineno + 1
+        asyncio.print_call_graph(file=buf)
+        first_frame = buf.getvalue().splitlines()[2]
+        self.assertIn(f'File {__file__!r}, line {lineno},', first_frame)
+
+    async def test_call_graph_finished_task(self):
+        # gh-156408: the call graph must not record a finished coroutine's None frame
+        async def boom():
+            raise ValueError
+
+        done = asyncio.create_task(asyncio.sleep(0), name='done')
+        failed = asyncio.create_task(boom(), name='failed')
+        cancelled = asyncio.create_task(asyncio.Event().wait(), name='cancelled')
+        cancelled.cancel()
+        await asyncio.gather(done, failed, cancelled, return_exceptions=True)
+
+        for task in (done, failed, cancelled):
+            with self.subTest(task=task.get_name()):
+                buf = io.StringIO()
+                asyncio.print_call_graph(task, file=buf)
+                self.assertEqual(asyncio.capture_call_graph(task).call_stack, ())
+                self.assertIn(f"name={task.get_name()!r}", buf.getvalue())
+
     async def test_capture_call_graph_no_current_task(self):
         results = []
 
@@ -566,6 +592,26 @@ class CallStackTestBase:
 
         await main()
         self.assertRegex(output[0], r'in generator [\w.<>]+\.gen\(\)')
+
+    async def test_capture_call_graph_generator_keeps_caller_frames(self):
+        # gh-156988: sync gen should not clear the call chain
+        stack = None
+
+        def gen():
+            nonlocal stack
+            graph = asyncio.capture_call_graph()
+            stack = [entry.frame.f_code.co_name for entry in graph.call_stack]
+            yield
+
+        def middle():
+            for _ in gen():
+                pass
+
+        async def main():
+            middle()
+
+        await main()
+        self.assertEqual(stack[:3], ['gen', 'middle', 'main'])
 
 
 @unittest.skipIf(
