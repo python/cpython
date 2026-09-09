@@ -5988,6 +5988,15 @@ _socket_sethostname(PyObject *module, PyObject *hnobj)
     Py_buffer buf;
     int res, flag = 0;
 
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return set_error();
+    }
+#endif
+
 #if defined(_AIX) || (defined(__sun) && defined(__SVR4) && Py_SUNOS_VERSION <= 510)
 /* issue #18259, sethostname is not declared in any useful header file on AIX
  * the same is true for Solaris 10 */
