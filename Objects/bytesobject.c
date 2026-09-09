@@ -2981,13 +2981,18 @@ fail:
     return NULL;
 }
 
-static PyObject*
-_PyBytes_FromSequence_lock_held(PyObject *x)
+/* Fast path for a list or tuple of ints.
+   Return 1 on success (*result set to the new bytes object),
+   0 to fall back to the slow path (an item is not an int; no exception
+   set), or -1 on error (with an exception set). */
+static int
+_PyBytes_FromSequence_lock_held(PyObject *x, PyObject **result)
 {
+    *result = NULL;
     Py_ssize_t size = PySequence_Fast_GET_SIZE(x);
     PyBytesWriter *writer = PyBytesWriter_Create(size);
     if (writer == NULL) {
-        return NULL;
+        return -1;
     }
     char *str = PyBytesWriter_GetData(writer);
     assert(_PyBytesWriter_GetAllocated(writer) >= size);
@@ -2998,19 +3003,19 @@ _PyBytes_FromSequence_lock_held(PyObject *x)
         if (value == -1 && PyErr_Occurred()) {
             PyBytesWriter_Discard(writer);
             PyErr_Clear();
-            /* Py_None as a fallback sentinel to the slow path */
-            Py_RETURN_NONE;
+            return 0;
         }
 
         if (value < 0 || value >= 256) {
             PyErr_SetString(PyExc_ValueError,
                             "bytes must be in range(0, 256)");
             PyBytesWriter_Discard(writer);
-            return NULL;
+            return -1;
         }
         *str++ = (char) value;
     }
-    return PyBytesWriter_FinishWithPointer(writer, str);
+    *result = PyBytesWriter_FinishWithPointer(writer, str);
+    return *result != NULL ? 1 : -1;
 }
 
 static PyObject *
@@ -3092,13 +3097,16 @@ PyBytes_FromObject(PyObject *x)
         return _PyBytes_FromBuffer(x);
 
     if (PyList_CheckExact(x) || PyTuple_CheckExact(x)) {
+        int rc;
         Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST(x);
-        result = _PyBytes_FromSequence_lock_held(x);
+        rc = _PyBytes_FromSequence_lock_held(x, &result);
         Py_END_CRITICAL_SECTION_SEQUENCE_FAST();
-        /* Py_None as a fallback sentinel to the slow path */
-        if (result != Py_None) {
+        if (rc != 0) {
+            /* Success (result is the new bytes object) or error
+               (result is NULL with an exception set). */
             return result;
         }
+        /* rc == 0: an item is not an int; use the slow path below. */
     }
 
     if (!PyUnicode_Check(x)) {
