@@ -1,6 +1,7 @@
 import os
 import base64
 import gettext
+import sys
 import unittest
 import unittest.mock
 from functools import partial
@@ -663,6 +664,70 @@ class GNUTranslationParsingTest(GettextBaseTest):
         with open(MOFILE, 'rb') as fp:
             t = gettext.GNUTranslations(fp)
             self.assertEqual(t.info()["plural-forms"], "nplurals=2; plural=(n != 1);")
+
+    @property
+    def expected_filename(self):
+        if sys.platform == 'win32':
+            return r'xx\\LC_MESSAGES\\gettext.mo'
+        return 'xx/LC_MESSAGES/gettext.mo'
+
+    def test_raise_descriptive_error_for_incorrect_content_type(self):
+        with open(MOFILE, 'wb') as fp:
+            # below is msgfmt run on such a PO file:
+            # msgid ""
+            # msgstr ""
+            # "Content-Type: text/plain; charste=UTF-8\n"
+            fp.write(
+                b'\xde\x12\x04\x95\x00\x00\x00\x00\x01\x00\x00\x00\x1c\x00\x00\x00$\x00\x00\x00\x03\x00\x00\x00,\x00'
+                b'\x00\x00\x00\x00\x00\x008\x00\x00\x00(\x00\x00\x009\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00Content-Type: text/plain; charste=UTF-8\n\x00'
+            )
+        with self.assertRaisesRegex(
+            ValueError,
+            f"expected 'charset=' in Content-Type metadata in {self.expected_filename}, "
+            f"got 'text/plain; charste=UTF-8'"
+        ):
+            with open(MOFILE, 'rb') as fp:
+                gettext.GNUTranslations(fp)
+
+    def test_raise_descriptive_error_for_incorrect_plural_forms(self):
+        with open(MOFILE, 'wb') as fp:
+            # below is msgfmt run on such a PO file:
+            # msgid ""
+            # msgstr ""
+            # "Plural-Forms: \n"
+            fp.write(
+                b'\xde\x12\x04\x95\x00\x00\x00\x00\x01\x00\x00\x00\x1c\x00\x00\x00$\x00\x00\x00\x03\x00\x00\x00,\x00'
+                b'\x00\x00\x00\x00\x00\x008\x00\x00\x00\x0f\x00\x00\x009\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00\x00Plural-Forms: \n\x00'
+            )
+        with self.assertRaisesRegex(
+            ValueError,
+            f"expected ';' and 'plural=' in Plural-Forms metadata in {self.expected_filename}, got ''",
+        ):
+            with open(MOFILE, 'rb') as fp:
+                gettext.GNUTranslations(fp)
+
+
+    def test_raise_descriptive_error_for_incorrect_plural_forms_with_semicolon(self):
+        with open(MOFILE, 'wb') as fp:
+            # below is msgfmt run on such a PO file:
+            # msgid ""
+            # msgstr ""
+            # "Plural-Forms: nplurals=1; prulal=0;\n"
+            fp.write(
+                b'\xde\x12\x04\x95\x00\x00\x00\x00\x01\x00\x00\x00\x1c\x00\x00\x00$\x00\x00\x00\x03\x00\x00\x00,\x00'
+                b'\x00\x00\x00\x00\x00\x008\x00\x00\x00$\x00\x00\x009\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00Plural-Forms: nplurals=1; prulal=0;\n\x00'
+
+            )
+        with self.assertRaisesRegex(
+            ValueError,
+            f"expected ';' and 'plural=' in Plural-Forms metadata in {self.expected_filename}, "
+            "got 'nplurals=1; prulal=0;'"
+        ):
+            with open(MOFILE, 'rb') as fp:
+                gettext.GNUTranslations(fp)
 
 
 class UnicodeTranslationsTest(GettextBaseTest):
