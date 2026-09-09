@@ -262,7 +262,7 @@ framelocalsproxy_getitem_lock_held(PyFrameObject *frame, PyObject *key)
         }
     }
 
-    // KeyError is raised by the caller, outside the synchronized region.
+    // KeyError is raised by the caller, outside the stop the world pause.
     return NULL;
 }
 
@@ -307,7 +307,7 @@ add_overwritten_fast_local(PyFrameObject *frame, PyObject *obj)
 }
 
 // The replaced value is returned in `*old_value` (strong reference or
-// NULL) so that its destructor runs outside the synchronized region.
+// NULL) so that its destructor runs outside the stop the world pause.
 static int
 framelocalsproxy_setitem_lock_held(PyFrameObject *frame, PyObject *key,
                                    PyObject *value, PyObject **old_value)
