@@ -274,9 +274,11 @@ Input options
 
    Used for half-delay mode, which is similar to cbreak mode in that characters
    typed by the user are immediately available to the program. However, after
-   blocking for *tenths* tenths of seconds, :meth:`~window.getch` returns ``-1``
-   if nothing has been typed.  The value of *tenths* must be a number between
-   ``1`` and ``255``.  Use :func:`nocbreak` to leave half-delay mode.
+   blocking for *tenths* tenths of seconds, if nothing has been typed,
+   :meth:`~window.getch` returns ``-1``, while :meth:`~window.getkey` and
+   :meth:`~window.get_wch` raise :exc:`curses.error`.
+   The value of *tenths* must be a number between ``1`` and ``255``.
+   Use :func:`nocbreak` to leave half-delay mode.
 
 .. function:: meta(flag)
 
@@ -891,8 +893,10 @@ Querying the terminal
 
 .. function:: termname()
 
-   Return the value of the environment variable :envvar:`TERM`, as a bytes
-   object.
+   Return the name of the terminal in use, as a bytes object.
+   This is the name passed to :func:`initscr`, :func:`newterm` or
+   :func:`setupterm`, or the value of the :envvar:`TERM` environment variable
+   if none was given.  Some curses libraries truncate it to 14 characters.
 
 .. function:: longname()
 
@@ -1215,8 +1219,8 @@ Adding and inserting text
    Insert character *ch* with attributes *attr* before the character under the
    cursor, or at ``(y, x)`` if specified.  All characters to the right of the
    cursor are shifted one position right, with the rightmost character on the
-   line being lost.  The cursor position does not change (after moving to *y*,
-   *x*, if specified).
+   line being lost.
+   The cursor position does not change (after moving to *y*, *x*, if specified).
 
    .. versionchanged:: next
       Wide and combining characters, and :class:`complexchar` cells, are now
@@ -1241,8 +1245,8 @@ Adding and inserting text
 
    Insert a character string (as many characters as will fit on the line) before
    the character under the cursor, up to *n* characters.   If *n* is negative,
-   the entire string is inserted. All characters to the right of the cursor are
-   shifted right, with the rightmost characters on the line being lost.
+   the entire string is inserted. All characters to the right of the
+   cursor are shifted right, with the rightmost characters on the line being lost.
    The cursor position does not change (after moving to *y*, *x*, if specified).
 
    .. versionchanged:: next
@@ -1860,9 +1864,9 @@ Output options
 .. method:: window.scroll([lines=1])
 
    Scroll the screen or scrolling region.  Scroll upward by *lines* lines if
-   *lines* is positive, or downward if it is negative.  Raise
-   :exc:`curses.error` unless scrolling has been enabled for the window with
-   :meth:`scrollok`.
+   *lines* is positive, or downward if it is negative.
+   Raise :exc:`curses.error` unless scrolling has been enabled for the window
+   with :meth:`scrollok`.
 
 .. method:: window.setscrreg(top, bottom)
 
