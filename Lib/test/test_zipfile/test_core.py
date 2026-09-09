@@ -33,7 +33,9 @@ from test.support.os_helper import (
     with_source_date_epoch, without_source_date_epoch,
 )
 from test.support.import_helper import ensure_lazy_imports
-from test.support.warnings_helper import check_no_resource_warning
+from test.support.warnings_helper import (
+    check_no_resource_warning, ignore_warnings,
+)
 
 
 TESTFN2 = TESTFN + "2"
@@ -4920,8 +4922,7 @@ class MonkeypatchedDecompressorTests(unittest.TestCase):
     # Some third-party projects monkey-patch _get_decompressor() to add
     # additional compression schemes. This can break at any time as the
     # internal compressor objects change.
-    # To protect users, we try to keep this case working (until it becomes
-    # too big of a burden, or we make the API public).
+    # To protect users, we try to keep this case working (see ).
     # See also: GH-156002 and GH-113756.
     COMPRESSION = 99
 
@@ -4972,7 +4973,9 @@ class MonkeypatchedDecompressorTests(unittest.TestCase):
         with zipfile.ZipFile(buf, "w", compression=self.COMPRESSION) as zf:
             zf.writestr("member", data)
         self.assertIn(data.swapcase(), buf.getvalue())
-        with zipfile.ZipFile(io.BytesIO(buf.getvalue())) as zf:
+        with (ignore_warnings(category=DeprecationWarning,
+                              message='.*two argumentzs.*'),
+              zipfile.ZipFile(io.BytesIO(buf.getvalue())) as zf):
             self.assertEqual(zf.read("member"), data)
             with zf.open("member") as f:
                 self.assertEqual(f.read(100), data[:100])

@@ -1,5 +1,6 @@
 :mod:`zipfile` again reads members through a third-party decompressor
-installed by replacing the private ``_get_decompressor()``, unbounded as
-before the bounded-decompression fix, instead of raising
-:exc:`AttributeError`. The bound still applies to the standard library's
-bzip2, LZMA and Zstandard decompressors.
+installed by monkey-patching the private ``_get_decompressor()`` to return an
+object that only implements old BZ2Decompressor API from Python 3.3.
+Calling to decompress() with one argument is deprecated.
+Note that decompressors without ``needs_input`` and two-argument
+``decompress()`` are vulnerable to :cve:`2026-15310`.
