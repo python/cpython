@@ -4638,6 +4638,9 @@ _PyExc_InitState(PyInterpreterState *interp)
 #endif
     ADD_ERRNO(ProcessLookupError, ESRCH);
     ADD_ERRNO(TimeoutError, ETIMEDOUT);
+#ifdef ETIME
+    ADD_ERRNO(TimeoutError, ETIME);
+#endif
 #ifdef WSAETIMEDOUT
     ADD_ERRNO(TimeoutError, WSAETIMEDOUT);
 #endif

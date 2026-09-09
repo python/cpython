@@ -844,7 +844,11 @@ depending on the system error code.
 .. exception:: TimeoutError
 
    Raised when a system function timed out at the system level.
-   Corresponds to :c:data:`errno` :py:const:`~errno.ETIMEDOUT`.
+   Corresponds to :c:data:`errno` :py:const:`~errno.ETIMEDOUT`
+   and :py:const:`~errno.ETIME`.
+
+   .. versionchanged:: next
+      :py:const:`~errno.ETIME` is now mapped to :exc:`TimeoutError`.
 
 .. versionadded:: 3.3
    All the above :exc:`OSError` subclasses were added.
