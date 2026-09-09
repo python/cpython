@@ -1774,8 +1774,6 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
     /* Create a dictionary for keyword parameters (**kwags) */
     PyObject *kwdict;
     Py_ssize_t i;
-    /* Set below once the "too many positional arguments" precondition is
-       known; must be initialized before the fail_pre_positional exit. */
     PyObject *first_argument = NULL;
     if (co->co_flags & CO_VARKEYWORDS) {
         kwdict = PyDict_New();
