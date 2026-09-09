@@ -6766,20 +6766,23 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         # At this point, the log file should be rotated if the rotation
         # is based on creation time but should be not if it's based on
         # modification time.  The rotated file is named after the creation
-        # time of the log file, so look back over the whole duration of the
-        # test, plus a margin: the file was created in setUp(), and the
-        # names have a resolution of one second.
-        found = False
+        # time of the log file, so search back over the whole time the test
+        # took rather than over a fixed number of seconds.
         now = datetime.datetime.now()
-        go_back = int((now - start).total_seconds()) + 2
-        for secs in range(go_back + 1):
+        test_duration = int((now - start).total_seconds())
+        # Two seconds of margin on top of that: the log file is created in
+        # setUp(), a moment before the test starts, and the name has a
+        # resolution of one second.
+        oldest = test_duration + 2
+        found = False
+        for secs in range(oldest + 1):   # inclusive of oldest
             prev = now - datetime.timedelta(seconds=secs)
             fn = self.fn + prev.strftime(".%Y-%m-%d_%H-%M-%S")
             found = os.path.exists(fn)
             if found:
                 self.rmfiles.append(fn)
                 break
-        msg = 'No rotated files found, went back %d seconds' % go_back
+        msg = 'No rotated files found, went back %d seconds' % oldest
         if not found:
             # print additional diagnostics
             dn, fn = os.path.split(self.fn)
