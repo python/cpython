@@ -11252,33 +11252,16 @@
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyObject *dict_o = PyStackRef_AsPyObjectBorrow(dict);
             PyObject *update_o = PyStackRef_AsPyObjectBorrow(update);
-            PyObject *dupkey = NULL;
-            stack_pointer[0] = update;
-            stack_pointer += 1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyFrame_StackPointerValidate(frame);
-            int err = _PyDict_MergeUniq(dict_o, update_o, &dupkey);
-            _PyFrame_StackPointerInvalidate(frame);
-            if (err < 0) {
-                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
-                _PyFrame_StackPointerValidate(frame);
-                _PyEval_FormatKwargsError(tstate, callable_o, update_o, dupkey);
-                _PyFrame_StackPointerInvalidate(frame);
-                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
-                _PyFrame_StackPointerValidate(frame);
-                Py_XDECREF(dupkey);
-                _PyFrame_StackPointerInvalidate(frame);
+            if (_PyEval_MergeKwargs(tstate, callable_o, dict_o, update_o) < 0) {
+                stack_pointer[0] = update;
+                stack_pointer += 1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
             u = update;
             _tos_cache0 = u;
-            _tos_cache1 = PyStackRef_ZERO_BITS;
-            _tos_cache2 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
             break;
         }

@@ -6002,20 +6002,7 @@
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
                 PyObject *dict_o = PyStackRef_AsPyObjectBorrow(dict);
                 PyObject *update_o = PyStackRef_AsPyObjectBorrow(update);
-                PyObject *dupkey = NULL;
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyFrame_StackPointerValidate(frame);
-                int err = _PyDict_MergeUniq(dict_o, update_o, &dupkey);
-                _PyFrame_StackPointerInvalidate(frame);
-                if (err < 0) {
-                    assert(stack_pointer == _PyFrame_GetStackPointer(frame));
-                    _PyFrame_StackPointerValidate(frame);
-                    _PyEval_FormatKwargsError(tstate, callable_o, update_o, dupkey);
-                    _PyFrame_StackPointerInvalidate(frame);
-                    assert(stack_pointer == _PyFrame_GetStackPointer(frame));
-                    _PyFrame_StackPointerValidate(frame);
-                    Py_XDECREF(dupkey);
-                    _PyFrame_StackPointerInvalidate(frame);
+                if (_PyEval_MergeKwargs(tstate, callable_o, dict_o, update_o) < 0) {
                     JUMP_TO_LABEL(error);
                 }
                 u = update;

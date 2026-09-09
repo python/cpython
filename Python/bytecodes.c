@@ -2650,12 +2650,8 @@ dummy_func(
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyObject *dict_o = PyStackRef_AsPyObjectBorrow(dict);
             PyObject *update_o = PyStackRef_AsPyObjectBorrow(update);
-            PyObject *dupkey = NULL;
 
-            int err = _PyDict_MergeUniq(dict_o, update_o, &dupkey);
-            if (err < 0) {
-                _PyEval_FormatKwargsError(tstate, callable_o, update_o, dupkey);
-                Py_XDECREF(dupkey);
+            if (_PyEval_MergeKwargs(tstate, callable_o, dict_o, update_o) < 0) {
                 ERROR_NO_POP();
             }
             u = update;
