@@ -2099,7 +2099,7 @@ Mutual exclusion
      >>> group.add_argument('--bar', action='store_false')
      >>> parser.parse_args([])
      usage: PROG [-h] (--foo | --bar)
-     PROG: error: one of the arguments --foo, --bar is required
+     PROG: error: one of the following arguments is required: --foo, --bar
 
    Note that currently mutually exclusive argument groups do not support the
    *title* and *description* arguments of
