@@ -3821,12 +3821,6 @@ PyObject*
 PyBytesWriter_FinishWithPointer(PyBytesWriter *writer, void *buf)
 {
     Py_ssize_t size = (char*)buf - byteswriter_data(writer);
-    if (size < 0 || size > byteswriter_allocated(writer)) {
-        PyBytesWriter_Discard(writer);
-        PyErr_SetString(PyExc_ValueError, "invalid end pointer");
-        return NULL;
-    }
-
     return PyBytesWriter_FinishWithSize(writer, size);
 }
 
