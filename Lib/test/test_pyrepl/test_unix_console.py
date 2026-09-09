@@ -6,6 +6,7 @@ import sys
 import threading
 import unittest
 from functools import partial
+from _colorize import ANSIColors
 from test.support import force_color, os_helper, force_not_colorized_test_class
 from test.support import threading_helper
 
@@ -146,6 +147,24 @@ class TestConsole(TestCase):
         _, con = handle_events_unix_console(events)
         self.assertNotIn(call(ANY, b'\n'), _os_write.mock_calls)
         con.restore()
+
+    def test_reset_on_finish(self, _os_write):
+        # gh-152068: finish() must emit the ANSI reset sequence so any
+        # active color does not leak past the prompt.
+        code = "1"
+        events = code_to_events(code)
+        _, con = handle_events_unix_console(events)
+        con.finish()
+        _os_write.assert_any_call(ANY, ANSIColors.RESET.encode(con.encoding))
+        con.restore()
+
+    def test_reset_on_restore(self, _os_write):
+        # gh-152068: restore() must emit the ANSI reset sequence.
+        code = "1"
+        events = code_to_events(code)
+        _, con = handle_events_unix_console(events)
+        con.restore()
+        _os_write.assert_any_call(ANY, ANSIColors.RESET.encode(con.encoding))
 
     def test_newline(self, _os_write):
         code = "\n"

@@ -1,0 +1,2 @@
+Fix :meth:`sqlite3.Connection.iterdump` raising :exc:`sqlite3.OperationalError`
+when a table name contains a single quote. Patch by tonghuaroot.

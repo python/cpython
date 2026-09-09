@@ -6,7 +6,8 @@ from tkinter import TclError
 from test import support
 from test.support import requires
 from test.test_tkinter.support import setUpModule  # noqa: F401
-from test.test_tkinter.support import AbstractTkTest, get_tk_patchlevel
+from test.test_tkinter.support import (AbstractTkTest, get_tk_patchlevel,
+                                       requires_tk)
 
 requires('gui')
 
@@ -123,6 +124,25 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
         self.assertFalse(new_theme != self.style.theme_use())
 
         self.style.theme_use(curr_theme)
+
+    @requires_tk(9, 0)
+    def test_theme_styles(self):
+        # The 'default' theme is always available and defines the base styles.
+        default_styles = self.style.theme_styles('default')
+        self.assertIsInstance(default_styles, tuple)
+        self.assertIn('.', default_styles)
+        self.assertIn('TButton', default_styles)
+
+        # Without an argument the current theme is used.
+        styles = self.style.theme_styles()
+        self.assertIsInstance(styles, tuple)
+        self.assertIn('.', styles)
+
+        for theme in self.style.theme_names():
+            self.assertIsInstance(self.style.theme_styles(theme), tuple)
+
+        self.assertRaises(tkinter.TclError,
+                          self.style.theme_styles, 'nonexistingname')
 
     def test_theme_settings(self):
         style = self.style
@@ -420,7 +440,8 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
 
         b = ttk.Label(self.root, style='TestWidget')
         b.pack(expand=True, fill='both')
-        self.assertEqual(b.winfo_reqwidth(), 134)
+        # The exact width varies with the Tk version and display scaling.
+        self.assertGreater(b.winfo_reqwidth(), 130)
         self.assertEqual(b.winfo_reqheight(), 100)
 
         style.theme_use(curr_theme)

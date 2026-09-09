@@ -1,0 +1,2 @@
+Store measured duration and sampling rate in Tachyon binary profiles so they
+remain available in replayed flamegraphs.

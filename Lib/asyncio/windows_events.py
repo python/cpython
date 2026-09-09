@@ -16,7 +16,6 @@ import struct
 import time
 import weakref
 
-from . import events
 from . import base_subprocess
 from . import futures
 from . import exceptions
@@ -29,8 +28,7 @@ from .log import logger
 
 __all__ = (
     'SelectorEventLoop', 'ProactorEventLoop', 'IocpProactor',
-    '_DefaultEventLoopPolicy', '_WindowsSelectorEventLoopPolicy',
-    '_WindowsProactorEventLoopPolicy', 'EventLoop',
+    'EventLoop',
 )
 
 
@@ -408,7 +406,7 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
             raise
         except BaseException:
             transp.close()
-            await transp._wait()
+            await tasks.shield(transp._wait())
             raise
 
         return transp
@@ -762,6 +760,46 @@ class IocpProactor:
         s.settimeout(0)
         return s
 
+    def _process_completion_status(self, status):
+        """Process a single status from the completion port.
+
+        A caller that waits on the completion port itself can pass each
+        status it receives here.
+        """
+        err, transferred, key, address = status
+        try:
+            f, ov, obj, callback = self._cache.pop(address)
+        except KeyError:
+            if self._loop.get_debug():
+                self._loop.call_exception_handler({
+                    'message': ('GetQueuedCompletionStatus() returned an '
+                                'unexpected event'),
+                    'status': ('err=%s transferred=%s key=%#x address=%#x'
+                               % (err, transferred, key, address)),
+                })
+
+            # key is either zero, or it is used to return a pipe
+            # handle which should be closed to avoid a leak.
+            if key not in (0, _overlapped.INVALID_HANDLE_VALUE):
+                _winapi.CloseHandle(key)
+            return
+
+        if obj in self._stopped_serving:
+            f.cancel()
+        # Don't call the callback if _register() already read the result or
+        # if the overlapped has been cancelled
+        elif not f.done():
+            try:
+                value = callback(transferred, key, ov)
+            except OSError as e:
+                f.set_exception(e)
+                self._results.append(f)
+            else:
+                f.set_result(value)
+                self._results.append(f)
+            finally:
+                f = None
+
     def _poll(self, timeout=None):
         if timeout is None:
             ms = INFINITE
@@ -780,39 +818,8 @@ class IocpProactor:
                 break
             ms = 0
 
-            err, transferred, key, address = status
-            try:
-                f, ov, obj, callback = self._cache.pop(address)
-            except KeyError:
-                if self._loop.get_debug():
-                    self._loop.call_exception_handler({
-                        'message': ('GetQueuedCompletionStatus() returned an '
-                                    'unexpected event'),
-                        'status': ('err=%s transferred=%s key=%#x address=%#x'
-                                   % (err, transferred, key, address)),
-                    })
-
-                # key is either zero, or it is used to return a pipe
-                # handle which should be closed to avoid a leak.
-                if key not in (0, _overlapped.INVALID_HANDLE_VALUE):
-                    _winapi.CloseHandle(key)
-                continue
-
-            if obj in self._stopped_serving:
-                f.cancel()
-            # Don't call the callback if _register() already read the result or
-            # if the overlapped has been cancelled
-            elif not f.done():
-                try:
-                    value = callback(transferred, key, ov)
-                except OSError as e:
-                    f.set_exception(e)
-                    self._results.append(f)
-                else:
-                    f.set_result(value)
-                    self._results.append(f)
-                finally:
-                    f = None
+            # gh-154971: split out so custom event loops can call it directly
+            self._process_completion_status(status)
 
         # Remove unregistered futures
         for ov in self._unregistered:
@@ -893,14 +900,4 @@ class _WindowsSubprocessTransport(base_subprocess.BaseSubprocessTransport):
 
 SelectorEventLoop = _WindowsSelectorEventLoop
 
-
-class _WindowsSelectorEventLoopPolicy(events._BaseDefaultEventLoopPolicy):
-    _loop_factory = SelectorEventLoop
-
-
-class _WindowsProactorEventLoopPolicy(events._BaseDefaultEventLoopPolicy):
-    _loop_factory = ProactorEventLoop
-
-
-_DefaultEventLoopPolicy = _WindowsProactorEventLoopPolicy
 EventLoop = ProactorEventLoop

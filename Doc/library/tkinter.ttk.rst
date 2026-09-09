@@ -11,21 +11,28 @@
 --------------
 
 The :mod:`!tkinter.ttk` module provides access to the Tk themed widget set,
-introduced in Tk 8.5. It provides additional benefits including anti-aliased font
-rendering under X11 and window transparency (requiring a composition
-window manager on X11).
+introduced in Tk 8.5.
+Its widgets adapt their appearance to the platform's native theme,
+giving an application a better and more consistent look and feel
+than the classic :mod:`tkinter` widgets, whose appearance is fixed.
 
 The basic idea for :mod:`!tkinter.ttk` is to separate, to the extent possible,
 the code implementing a widget's behavior from the code implementing its
 appearance.
+
+Ttk widgets are used just like the classic :mod:`tkinter` widgets
+and share the same machinery:
+the widget hierarchy, the geometry managers, variable coupling and event binding.
+Those foundational concepts are covered in the :mod:`tkinter` documentation
+and are not repeated here.
 
 .. versionadded:: 3.1
 
 
 .. seealso::
 
-   `Tk Widget Styling Support <https://core.tcl.tk/tips/doc/trunk/tip/48.md>`_
-      A document introducing theming support for Tk
+   `Tk Widget Styling Support (TIP #48) <https://tip.tcl-lang.org/48.html>`_
+      The Tcl Improvement Proposal that introduced the themed widget styling engine.
 
 
 Using Ttk
@@ -42,23 +49,25 @@ To override the basic Tk widgets, the import should follow the Tk import::
 
 That code causes several :mod:`!tkinter.ttk` widgets (:class:`Button`,
 :class:`Checkbutton`, :class:`Entry`, :class:`Frame`, :class:`Label`,
-:class:`LabelFrame`, :class:`Menubutton`, :class:`PanedWindow`,
-:class:`Radiobutton`, :class:`Scale` and :class:`Scrollbar`) to
+:class:`LabelFrame`, :class:`Menubutton`, :class:`OptionMenu`,
+:class:`PanedWindow`, :class:`Radiobutton`, :class:`Scale`,
+:class:`Scrollbar` and :class:`Spinbox`) to
 automatically replace the Tk widgets.
+
+.. note::
+
+   Overriding the classic widgets with ``from tkinter.ttk import *``
+   is convenient for adapting existing code,
+   but new code is usually clearer if it imports the module
+   as ``from tkinter import ttk`` and refers to the themed widgets explicitly,
+   such as ``ttk.Button``.
 
 This has the direct benefit of using the new widgets which gives a better look
 and feel across platforms; however, the replacement widgets are not completely
 compatible.
-The main difference is that widget options such as "fg", "bg" and others
+The main difference is that widget options such as ``fg``, ``bg`` and others
 related to widget styling are no longer present in Ttk widgets.
 Instead, use the :class:`ttk.Style <Style>` class for improved styling effects.
-
-
-.. seealso::
-
-   `Converting existing applications to use Tile widgets <https://tktable.sourceforge.net/tile/doc/converting.txt>`_
-     A monograph (using Tcl terminology) about differences typically
-     encountered when moving applications to use the new widgets.
 
 
 Ttk widgets
@@ -70,7 +79,7 @@ Ttk comes with 18 widgets, twelve of which already existed in tkinter:
 :class:`Radiobutton`, :class:`Scale`, :class:`Scrollbar`, and :class:`Spinbox`.
 The other six are new: :class:`Combobox`, :class:`Notebook`,
 :class:`Progressbar`, :class:`Separator`, :class:`Sizegrip` and
-:class:`Treeview`. And all them are subclasses of :class:`Widget`.
+:class:`Treeview`. All of them are subclasses of :class:`Widget`.
 
 Using the Ttk widgets gives the application an improved look and feel.
 As discussed above, there are differences in how the styling is coded.
@@ -116,9 +125,10 @@ All the :mod:`!ttk` Widgets accept the following options:
 |           | read-only, and may only be specified when the window is      |
 |           | created.                                                     |
 +-----------+--------------------------------------------------------------+
-| cursor    | Specifies the mouse cursor to be used for the widget. If set |
-|           | to the empty string (the default), the cursor is inherited   |
-|           | from the parent widget.                                      |
+| cursor    | Specifies the mouse cursor to be used for the widget.  See   |
+|           | the *cursor* option type under :ref:`Tk-option-data-types`.  |
+|           | If set to the empty string (the default), the cursor is      |
+|           | inherited from the parent widget.                            |
 +-----------+--------------------------------------------------------------+
 | takefocus | Determines whether the window accepts the focus during       |
 |           | keyboard traversal. 0, 1 or an empty string is returned.     |
@@ -288,6 +298,8 @@ the methods :meth:`tkinter.Widget.cget <tkinter.Misc.cget>` and
       widget state according to it and return a new *statespec* indicating
       which flags were changed. If *statespec* is not specified, returns
       the currently enabled state flags.
+
+      Not to be confused with :meth:`Wm.state <tkinter.Wm.state>`.
 
    *statespec* will usually be a list or a tuple.
 
@@ -461,6 +473,9 @@ ttk.Spinbox
 
 .. class:: Spinbox
 
+   With a non-integer increment, see :ref:`numeric values and the locale
+   <tkinter-numeric-locale>`.
+
    .. versionadded:: 3.8
 
    .. method:: get()
@@ -589,6 +604,11 @@ ttk.Notebook
 
       Removes the tab specified by *tab_id*, unmaps and unmanages the
       associated window.
+
+      This shadows the inherited geometry-manager :meth:`!forget`;
+      use :meth:`~tkinter.Pack.pack_forget`, :meth:`~tkinter.Grid.grid_forget`
+      or :meth:`~tkinter.Place.place_forget` to remove the widget itself from
+      its manager.
 
 
    .. method:: hide(tab_id)
@@ -872,8 +892,8 @@ This widget accepts the following specific options:
    The *selectmode* option gained the values ``"single"`` and ``"multiple"``;
    the new widget options *selecttype* (``"item"`` or ``"cell"`` selection),
    *striped* (zebra-striped rows), and *titlecolumns* / *titleitems* (columns
-   or rows frozen against scrolling) were introduced; and items gained a
-   *hidden* option.
+   or rows frozen against scrolling) were introduced; the column *separator*
+   option was added; and items gained a *hidden* option.
    Tk 9.1 added the *rowheight* and *headingheight* options.
 
 
@@ -988,6 +1008,9 @@ ttk.Treeview
       *item* is not visible (that is, if it is a descendant of a closed item
       or is scrolled offscreen), returns an empty string.
 
+      This shadows the inherited :meth:`!Misc.bbox`;
+      use :meth:`~tkinter.Misc.grid_bbox` for the grid bounding box.
+
 
    .. method:: get_children(item=None)
 
@@ -1025,6 +1048,9 @@ ttk.Treeview
          The minimum width of the column in pixels. The treeview widget will
          not make the column any smaller than specified by this option when
          the widget is resized or the user drags a column.
+      *separator*: ``True``/``False``
+         Specifies whether a column separator should be drawn to the right of
+         the column.
       *stretch*: ``True``/``False``
          Specifies whether the column's width should be adjusted when
          the widget is resized.
@@ -1060,6 +1086,9 @@ ttk.Treeview
 
       If *item* is specified, sets the focus item to *item*. Otherwise, returns
       the current focus item, or '' if there is none.
+
+      This shadows the inherited :meth:`!Misc.focus`;
+      use :meth:`~tkinter.Misc.focus_set` to focus the widget itself.
 
 
    .. method:: heading(column, option=None, **kw)
@@ -1179,8 +1208,9 @@ ttk.Treeview
 
    .. method:: next(item)
 
-      Returns the identifier of *item*'s next sibling, or '' if *item* is the
-      last child of its parent.
+      Returns the identifier of *item*'s next sibling,
+      or '' if *item* is the last child of its parent.
+      Equivalent to ``after_item(item, hidden=True, recurse=False)``.
 
 
    .. method:: parent(item)
@@ -1191,8 +1221,412 @@ ttk.Treeview
 
    .. method:: prev(item)
 
-      Returns the identifier of *item*'s previous sibling, or '' if *item* is
-      the first child of its parent.
+      Returns the identifier of *item*'s previous sibling,
+      or '' if *item* is the first child of its parent.
+      Equivalent to ``before_item(item, hidden=True, recurse=False)``.
+
+
+   .. method:: after_item(item, *, hidden=False, recurse=True)
+
+      Returns the identifier of the item after *item*
+      (the first child, a next sibling, or a next sibling of an ancestor),
+      or '' if there is none.
+      By default only visible items are considered;
+      if *hidden* is true, hidden items are included too.
+      If *recurse* is false, only siblings of *item* are considered
+      (see :meth:`next`).
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: before_item(item, *, hidden=False, recurse=True)
+
+      Returns the identifier of the item before *item*
+      (a previous sibling or the parent of *item*),
+      or '' if there is none.
+      By default only visible items are considered;
+      if *hidden* is true, hidden items are included too.
+      If *recurse* is false, only siblings of *item* are considered
+      (see :meth:`prev`).
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: depth(item)
+
+      Returns the number of levels between *item* and the root item.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: haschildren(item)
+
+      Returns ``True`` if *item* has children, ``False`` otherwise.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: visible(item)
+
+      Returns ``True`` if *item* is visible, ``False`` otherwise.
+      An item is visible if it is not detached, not hidden,
+      and all of its ancestors are open and not hidden.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: size(item, *, hidden=False, recurse=False)
+
+      Returns the number of children of *item*.
+      If *hidden* is true, hidden items are included.
+      If *recurse* is true, all descendants of *item* are included.
+      Use ``''`` for the root item.
+      ``size(item, hidden=True)`` equals ``len(get_children(item))``
+      (which always includes hidden items).
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: range(first, last, *, hidden=False, recurse=True)
+
+      Returns a tuple of items from *first* through *last*, inclusive.
+      If *hidden* is true, hidden items are included.
+      If *recurse* is false, descendants and ancestors are excluded.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: identifier(item, index)
+
+      Returns the identifier of the item at *index*
+      within *item*'s list of children.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: current()
+
+      Returns the current item id and column id as a 2-tuple,
+      or an empty tuple if there is none.
+      The current item is the item under the mouse pointer.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: expand(*items, recurse=False)
+
+      Set all of the specified items to the open state.
+      If *recurse* is true, also open all of their descendants;
+      this requires Tk 9.1.
+      Use ``''`` for the root item.
+      ``expand(item)`` is equivalent to ``item(item, open=True)``.
+
+      .. versionadded:: next
+
+
+   .. method:: collapse(*items, recurse=False)
+
+      Set all of the specified items to the closed state.
+      If *recurse* is true, also close all of their descendants;
+      this requires Tk 9.1.
+      Use ``''`` for the root item.
+      ``collapse(item)`` is equivalent to ``item(item, open=False)``.
+
+      .. versionadded:: next
+
+
+   .. method:: hide(*items, recurse=False)
+
+      Hide all of the specified items and all of their child items.
+      If *recurse* is true, also hide all of their descendants.
+      Use ``''`` for the root item.
+      ``hide(item)`` is equivalent to ``item(item, hidden=True)``.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: unhide(*items, recurse=False)
+
+      Unhide all of the specified items.
+      If *recurse* is true, also unhide all of their descendants.
+      Use ``''`` for the root item.
+      ``unhide(item)`` is equivalent to ``item(item, hidden=False)``.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: detached(item=None)
+
+      Returns information about detached items
+      (see :meth:`detach`).
+      Without arguments, returns a tuple of all detached items,
+      but not their descendants (see :meth:`detached_all`).
+      With *item*, returns whether *item* is detached; since Tk 9.1, also
+      returns ``True`` if an ancestor of *item* is detached.
+
+      Requires Tk 9.0 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: detached_all()
+
+      Returns a tuple of all detached items and all of their descendants
+      (see :meth:`detach`).
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: cellfocus(cell=None)
+
+      Get or set the focus cell.
+      Without *cell*, returns the focus cell as an ``(item, column)`` 2-tuple,
+      or an empty tuple if there is none.
+      With *cell*, sets the focus cell; use ``''`` to clear it.
+      A cell is specified as an ``(item, column)`` pair.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: sort(parent, *, column=None, command=None, dictionary=False, integer=False, real=False, nocase=False, decreasing=False, ignoreempty=False, recurse=False)
+
+      Sort the children of *parent*.
+      By default the children are sorted by the value of the first display
+      column, as Unicode strings, in increasing order.
+      *column* selects the column to sort on.
+      *dictionary*, *integer* and *real* select the comparison type;
+      *nocase* makes string comparison case-insensitive.
+      *command* is a function of two values
+      returning a negative, zero or positive number.
+      *decreasing* reverses the order.
+      *ignoreempty* skips empty values (with *integer* or *real*).
+      *recurse* also sorts all descendants.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: search(parent, pattern, *, columns=None, start=None, stop=None, dictionary=False, integer=False, real=False, nocase=False, glob=False, regexp=False, backwards=False, hidden=False, recurse=False, wraparound=False)
+
+      Search *parent*'s children for *pattern*
+      and return the identifier of the first matching item,
+      or ``''`` if there is no match.
+      By default *pattern* is matched for exact equality
+      against the value of each displayed column, as Unicode strings,
+      searching forwards through the direct children of *parent*.
+      *glob* or *regexp* select glob-style or regular expression matching;
+      *dictionary*, *integer* and *real* select the comparison type;
+      *nocase* makes it case-insensitive.
+      *columns* limits the search to the given columns.
+      *start* and *stop* bound the search;
+      *backwards* reverses its direction;
+      *wraparound* continues from the other end.
+      *hidden* also searches hidden and closed items;
+      *recurse* searches all descendants.
+
+      See :meth:`search_all`, :meth:`search_cell` and :meth:`search_all_cells`.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: search_all(parent, pattern, **kwargs)
+
+      Like :meth:`search`,
+      but returns a tuple of the identifiers of all matching items.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: search_cell(parent, pattern, **kwargs)
+
+      Like :meth:`search`,
+      but returns the first matching cell as an ``(item, column)`` 2-tuple,
+      or an empty tuple if there is no match.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: search_all_cells(parent, pattern, **kwargs)
+
+      Like :meth:`search`,
+      but returns a tuple of all matching cells,
+      each an ``(item, column)`` 2-tuple.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: cellselection()
+
+      Returns a tuple of the selected cells, each an ``(item, column)``
+      2-tuple.
+      The cell selection is independent from the item selection
+      (see :meth:`selection`).
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: cellselection_set(*cells)
+
+      The specified cells become the new cell selection.
+      Each cell is an ``(item, column)`` pair.
+      Call without arguments to clear the cell selection.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: cellselection_add(*cells)
+
+      Add the specified cells to the cell selection.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: cellselection_remove(*cells)
+
+      Remove the specified cells from the cell selection.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: cellselection_set_range(first, last, *, hidden=True, recurse=True)
+
+      Set the cell selection to the rectangle of cells from *first* to *last*.
+      *first* and *last* are the opposite corner cells,
+      each an ``(item, column)`` pair, and must be in displayed columns.
+      All other cells are unselected.
+      If *hidden* is false, hidden cells are excluded;
+      if *recurse* is false, cells in descendant items are excluded.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: cellselection_add_range(first, last, *, hidden=True, recurse=True)
+
+      Like :meth:`cellselection_set_range`,
+      but adds the rectangle of cells to the cell selection
+      instead of replacing it.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: cellselection_remove_range(first, last, *, hidden=True, recurse=True)
+
+      Like :meth:`cellselection_set_range`,
+      but removes the rectangle of cells from the cell selection.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: cellselection_anchor(cell=None)
+
+      Get or set the cell selection anchor.
+      Without *cell*, returns the anchor as an ``(item, column)`` 2-tuple,
+      or an empty tuple if it is unset.
+      With *cell*, sets the anchor; use ``''`` to unset it.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: cellselection_includes(*cells)
+
+      Returns whether all of the specified cells are selected.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: cellselection_present()
+
+      Returns whether any cell is selected.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: tag_cell_add(tagname, *cells)
+
+      Add the given tag to each of the specified cells.
+      Each cell is an ``(item, column)`` pair.
+      Cell tags are independent from item tags.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: tag_cell_remove(tagname, *cells)
+
+      Remove the given tag from each of the specified cells.
+      If no cell is specified, the tag is removed from all cells.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
+
+
+   .. method:: tag_cell_has(tagname, cell=None)
+
+      Test for a cell tag, or list the cells that have it.
+      If *cell* is specified, returns whether that cell has the given tag.
+      Otherwise returns a tuple of all cells (as ``(item, column)`` 2-tuples)
+      that have the tag.
+
+      Requires Tk 9.1 or newer.
+
+      .. versionadded:: next
 
 
    .. method:: see(item)
@@ -1304,8 +1738,13 @@ If you don't know the class name of a widget, use the method
 
 .. seealso::
 
-   `Tcl'2004 conference presentation <https://tktable.sourceforge.net/tile/tile-tcl2004.pdf>`_
-      This document explains how the theme engine works
+   `Introduction to the Tk theme engine <https://www.tcl-lang.org/man/tcl9.0/TkCmd/ttk_intro.html>`_
+      The ``ttk::intro`` man page explains how the theme engine works.
+
+   `The Tile Widget Set <https://tktable.sourceforge.net/tile/tile-tcl2004.pdf>`_
+      Joe English's 2004 paper introducing the theme engine
+      (then the separate *Tile* extension),
+      with diagrams of how elements and layouts make up a widget's appearance.
 
 
 .. class:: Style
@@ -1598,6 +2037,16 @@ If you don't know the class name of a widget, use the method
       Returns a tuple of all known themes.
 
 
+   .. method:: theme_styles(themename=None)
+
+      Returns a tuple of all styles in *themename*.
+      If *themename* is not given, the current theme is used.
+
+      .. versionadded:: next
+
+      Availability: Tk 9.0.
+
+
    .. method:: theme_use(themename=None)
 
       If *themename* is not given, returns the theme in use.  Otherwise, sets
@@ -1681,6 +2130,9 @@ and inherits the common methods of :class:`Widget`.
       Return a tuple ``(x, y, width, height)`` giving the bounding box of the
       character at the given *index*.
 
+      This shadows the inherited :meth:`!Misc.bbox`;
+      use :meth:`~tkinter.Misc.grid_bbox` for the grid bounding box.
+
    .. method:: identify(x, y)
 
       Return the name of the element under the point given by *x* and *y*, or
@@ -1732,8 +2184,11 @@ and inherits the common methods of :class:`Widget`.
    display in the menu.
    A *command* keyword argument may be given to specify a callable that is
    invoked with the selected value whenever the selection changes; the *style*
-   keyword argument sets the style used by the underlying menubutton; and the
-   *name* keyword argument sets the Tk widget name.
+   keyword argument sets the style used by the underlying menubutton; the
+   *direction* keyword argument sets where the menu is posted relative to the
+   menubutton (one of ``'above'``, ``'below'`` (the default), ``'left'``,
+   ``'right'`` or ``'flush'``); and the *name* keyword argument sets the Tk
+   widget name.
 
    .. method:: set_menu(default=None, *values)
 
@@ -1773,6 +2228,11 @@ and inherits the common methods of :class:`Widget`.
 
       Remove *child*, which may be either an integer index or the name of a
       managed subwindow, from the panes.
+
+      This shadows the inherited geometry-manager :meth:`!forget`;
+      use :meth:`~tkinter.Pack.pack_forget`, :meth:`~tkinter.Grid.grid_forget`
+      or :meth:`~tkinter.Place.place_forget` to remove the widget itself from
+      its manager.
 
    .. method:: pane(pane, option=None, **kw)
 

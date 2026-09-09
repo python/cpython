@@ -1340,20 +1340,12 @@ paramspec_new_impl(PyTypeObject *type, PyObject *name, PyObject *bound,
         PyErr_SetString(PyExc_ValueError, "Variance cannot be specified with infer_variance.");
         return NULL;
     }
-    if (bound != NULL) {
-        bound = type_check(bound, "Bound must be a type.");
-        if (bound == NULL) {
-            return NULL;
-        }
-    }
     PyObject *module = caller();
     if (module == NULL) {
-        Py_XDECREF(bound);
         return NULL;
     }
     PyObject *ps = (PyObject *)paramspec_alloc(
         name, bound, default_value, covariant, contravariant, infer_variance, module);
-    Py_XDECREF(bound);
     Py_DECREF(module);
     return ps;
 }
@@ -1634,23 +1626,12 @@ typevartuple_impl(PyTypeObject *type, PyObject *name, PyObject *bound,
         PyErr_SetString(PyExc_ValueError, "Variance cannot be specified with infer_variance.");
         return NULL;
     }
-    if (Py_IsNone(bound)) {
-        bound = NULL;
-    }
-    if (bound != NULL) {
-        bound = type_check(bound, "Bound must be a type.");
-        if (bound == NULL) {
-            return NULL;
-        }
-    }
     PyObject *module = caller();
     if (module == NULL) {
-        Py_XDECREF(bound);
         return NULL;
     }
     PyObject *result = (PyObject *)typevartuple_alloc(
         name, bound, default_value, covariant, contravariant, infer_variance, module);
-    Py_XDECREF(bound);
     Py_DECREF(module);
     return result;
 }
@@ -2164,7 +2145,7 @@ typealias.__new__ as typealias_new
     name: object(subclass_of="&PyUnicode_Type")
     value: object
     *
-    type_params: object = NULL
+    type_params: object(c_default="NULL") = ()
     qualname: object(c_default="NULL") = None
 
 Create a TypeAliasType.
@@ -2173,7 +2154,7 @@ Create a TypeAliasType.
 static PyObject *
 typealias_new_impl(PyTypeObject *type, PyObject *name, PyObject *value,
                    PyObject *type_params, PyObject *qualname)
-/*[clinic end generated code: output=b7f6d9f1c577cd9c input=cbec290f8c4886ef]*/
+/*[clinic end generated code: output=b7f6d9f1c577cd9c input=6516623275f87b5e]*/
 {
     if (type_params != NULL && !PyTuple_Check(type_params)) {
         PyErr_SetString(PyExc_TypeError, "type_params must be a tuple");

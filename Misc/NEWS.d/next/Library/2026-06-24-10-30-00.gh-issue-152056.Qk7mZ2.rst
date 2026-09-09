@@ -1,0 +1,5 @@
+Optimize matching of a character set that contains a single character
+category, such as ``[\d]`` or ``[^\s]``: it is now compiled to a single
+``CATEGORY`` opcode, the same as the corresponding ``\d`` or ``\S`` escape,
+instead of being wrapped in an ``IN`` block.  This speeds up matching and
+reduces the size of the compiled byte code.  Patch by Pieter Eendebak.

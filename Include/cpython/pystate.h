@@ -143,6 +143,7 @@ struct _ts {
     struct _PyInterpreterFrame *base_frame;
 
     struct _PyInterpreterFrame *last_profiled_frame;
+    uintptr_t last_profiled_frame_seq;
 
     Py_tracefunc c_profilefunc;
     Py_tracefunc c_tracefunc;

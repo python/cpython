@@ -1,0 +1,1 @@
+Fix command quoting in :exc:`subprocess.CalledProcessError`. Contributed by Benjy Wiener.

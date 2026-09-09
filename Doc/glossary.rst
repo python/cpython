@@ -509,7 +509,7 @@ Glossary
       A piece of syntax which can be evaluated to some value.  In other words,
       an expression is an accumulation of expression elements like literals,
       names, attribute access, operators or function calls which all return a
-      value.  In contrast to many other languages, not all language constructs
+      value.  Not all language constructs
       are expressions.  There are also :term:`statement`\s which cannot be used
       as expressions, such as :keyword:`while`.  Assignments are also statements,
       not expressions.
@@ -942,7 +942,7 @@ Glossary
    list
       A built-in Python :term:`sequence`.  Despite its name it is more akin
       to an array in other languages than to a linked list since access to
-      elements is *O*\ (1).
+      elements is *O*\ (1).  See :ref:`time-complexity`.
 
    list comprehension
       A compact way to process all or part of the elements in a sequence and
@@ -1514,6 +1514,14 @@ Glossary
 
    stdlib
       An abbreviation of :term:`standard library`.
+
+   steal
+      In Python's C API, "*stealing*" an argument means that ownership of the
+      argument is transferred to the called function.
+      The caller must not use that reference after the call.
+      Generally, functions that "steal" an argument do so even if they fail.
+
+      See :ref:`api-refcountdetails` for a full explanation.
 
    strong reference
       In Python's C API, a strong reference is a reference to an object

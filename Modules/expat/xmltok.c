@@ -12,7 +12,7 @@
    Copyright (c) 2002      Greg Stein <gstein@users.sourceforge.net>
    Copyright (c) 2002-2016 Karl Waclawek <karl@waclawek.net>
    Copyright (c) 2005-2009 Steven Solie <steven@solie.ca>
-   Copyright (c) 2016-2024 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2016-2026 Sebastian Pipping <sebastian@pipping.org>
    Copyright (c) 2016      Pascal Cuoq <cuoq@trust-in-soft.com>
    Copyright (c) 2016      Don Lewis <truckman@apache.org>
    Copyright (c) 2017      Rhodri James <rhodri@wildebeest.org.uk>
@@ -25,6 +25,8 @@
    Copyright (c) 2022      Sean McBride <sean@rogue-research.com>
    Copyright (c) 2023      Hanno Böck <hanno@gentoo.org>
    Copyright (c) 2025      Alfonso Gregory <gfunni234@gmail.com>
+   Copyright (c) 2026      Nick Begg <nick@stunttruck.net>
+   Copyright (c) 2026      Kartik Kenchi <netliomax25@gmail.com>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -45,6 +47,8 @@
    DAMAGES OR  OTHER LIABILITY, WHETHER  IN AN  ACTION OF CONTRACT,  TORT OR
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+   SPDX-License-Identifier: MIT
 */
 
 #include "expat_config.h"
@@ -58,6 +62,7 @@
 #endif
 
 #include "internal.h"
+#include "fallthrough.h"
 #include "xmltok.h"
 #include "nametab.h"
 
@@ -641,7 +646,7 @@ unicode_byte_type(char hi, char lo) {
           *(*toP)++ = lo;                                                      \
           break;                                                               \
         }                                                                      \
-        /* fall through */                                                     \
+        EXPAT_FALLTHROUGH;                                                     \
       case 0x1:                                                                \
       case 0x2:                                                                \
       case 0x3:                                                                \
@@ -703,9 +708,10 @@ unicode_byte_type(char hi, char lo) {
     enum XML_Convert_Result res = XML_CONVERT_COMPLETED;                       \
     UNUSED_P(enc);                                                             \
     fromLim = *fromP + (((fromLim - *fromP) >> 1) << 1); /* shrink to even */  \
-    /* Avoid copying first half only of surrogate */                           \
+    /* Avoid copying the first half (2 bytes) of surrogate pairs (4 bytes) */  \
     if (fromLim - *fromP > ((toLim - *toP) << 1)                               \
-        && (GET_HI(fromLim - 2) & 0xF8) == 0xD8) {                             \
+        && /* are the last two bytes a high surrogate (0xD800-0xDBFF)? */      \
+        (GET_HI(fromLim - 2) & 0xFC) == 0xD8) {                                \
       fromLim -= 2;                                                            \
       res = XML_CONVERT_INPUT_INCOMPLETE;                                      \
     }                                                                          \
@@ -1175,6 +1181,13 @@ doParseXmlDecl(const ENCODING *(*encodingFinder)(const ENCODING *, const char *,
       *versionPtr = val;
     if (versionEndPtr)
       *versionEndPtr = ptr;
+    /* The version number must not be empty; VersionNum requires at least
+       one character.  The encoding and standalone pseudo-attributes below
+       already reject an empty value, so keep version consistent. */
+    if (val == ptr - enc->minBytesPerChar) {
+      *badPtr = val;
+      return 0;
+    }
     if (! parsePseudoAttribute(enc, ptr, end, &name, &nameEnd, &val, &ptr)) {
       *badPtr = ptr;
       return 0;
@@ -1557,7 +1570,7 @@ initScan(const ENCODING *const *encodingTable, const INIT_ENCODING *enc,
     case 0xEF: /* possibly first byte of UTF-8 BOM */
       if (INIT_ENC_INDEX(enc) == ISO_8859_1_ENC && state == XML_CONTENT_STATE)
         break;
-      /* fall through */
+      EXPAT_FALLTHROUGH;
     case 0x00:
     case 0x3C:
       return XML_TOK_PARTIAL;

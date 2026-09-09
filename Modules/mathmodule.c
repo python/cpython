@@ -220,6 +220,12 @@ static const double logpi = 1.144729885849400174143427351353058711647;
 static double
 m_acospi(double x)
 {
+    if (x >= 0.5) {
+        /* acos(x) = 2*asin(sqrt((1 - x)/2)).  1 - x is exact here.
+           Some libms (old fdlibm derivatives) lose precision in acos(x)
+           near x = 1, while asin() is accurate for small arguments. */
+        return 2.0*asin(sqrt((1.0 - x)/2.0))/pi;
+    }
     double r = acos(x)/pi;
     if (isgreater(r, 1.0)) {
         return 1.0;
@@ -250,7 +256,7 @@ m_asinpi(double x)
 
 #ifndef HAVE_ATANPI
 /*
-   asin(x)/pi.  It conforms to C23 Annex 'F'.
+   atan(x)/pi.  It conforms to C23 Annex 'F'.
 */
 
 static double
@@ -268,7 +274,7 @@ m_atanpi(double x)
 
 #ifndef HAVE_ATAN2PI
 /*
-   asin(x)/pi.  It conforms to C23 Annex 'F'.
+   atan2(y, x)/pi.  It conforms to C23 Annex 'F'.
 */
 
 static double
@@ -1130,7 +1136,7 @@ FUNC1D(atanh, atanh, 0,
 FUNC1D(atanpi, m_atanpi, 0,
       "atanpi($module, x, /)\n--\n\n"
       "Return the arc tangent (measured in half-turns) of x.\n\n"
-      "The result is between 0 and 1.",
+      "The result is between -1/2 and 1/2.",
       "expected a number in range from -1 up to 1, got %s")
 FUNC1(cbrt, cbrt, 0,
       "cbrt($module, x, /)\n--\n\n"
@@ -1337,10 +1343,10 @@ FUNC1D(tan, tan, 0,
 FUNC1(tanh, tanh, 0,
       "tanh($module, x, /)\n--\n\n"
       "Return the hyperbolic tangent of x.")
-FUNC1D(tanpi, m_tanpi, 1,
+FUNC1D(tanpi, m_tanpi, 0,
       "tanpi($module, x, /)\n--\n\n"
       "Return the tangent of x (measured in half-turns).",
-      "expected a finite input, got %s")
+      "expected a finite input not equal to a half-integer, got %s")
 
 /* Precision summation function as msum() by Raymond Hettinger in
    <https://code.activestate.com/recipes/393090-binary-floating-point-summation-accurate-to-full-p/>,

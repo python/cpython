@@ -15,9 +15,9 @@ The :mod:`!tkinter.simpledialog` module contains convenience classes and
 functions for creating simple modal dialogs to get a value from the user.
 
 
-.. function:: askfloat(title, prompt, *, initialvalue=None, minvalue=None, maxvalue=None, parent=None)
-              askinteger(title, prompt, *, initialvalue=None, minvalue=None, maxvalue=None, parent=None)
-              askstring(title, prompt, *, initialvalue=None, show=None, parent=None)
+.. function:: askfloat(title, prompt, *, initialvalue=None, minvalue=None, maxvalue=None, parent=None, use_ttk=True)
+              askinteger(title, prompt, *, initialvalue=None, minvalue=None, maxvalue=None, parent=None, use_ttk=True)
+              askstring(title, prompt, *, initialvalue=None, show=None, parent=None, use_ttk=True)
 
    Prompt the user to enter a value of the desired type and return it, or
    ``None`` if the dialog is cancelled.
@@ -29,12 +29,22 @@ functions for creating simple modal dialogs to get a value from the user.
    *maxvalue*, which bound the accepted value.
    :func:`askstring` also accepts *show*, a character used to mask the entered
    text, for example ``'*'`` to hide a password.
+   They use the themed :mod:`tkinter.ttk` widgets; pass ``use_ttk=False`` for
+   the classic widgets.
 
-.. class:: Dialog(parent, title=None)
+.. class:: Dialog(parent, title=None, *, use_ttk=False)
 
    The base class for custom dialogs.
    Instantiating it shows the dialog modally and returns once the user closes
    it; the entered value is then available in the :attr:`!result` attribute.
+   When *use_ttk* is false (the default), the dialog is built from the classic
+   :mod:`tkinter` widgets, modelled on the classic ``tk_dialog``; when true,
+   from the themed :mod:`tkinter.ttk` widgets, modelled on the Tk message box.
+   The default is classic for compatibility, since the themed widgets set a
+   themed background that classic widgets added in :meth:`body` would not match.
+
+   .. versionchanged:: next
+      Added the *use_ttk* parameter.
 
    .. attribute:: result
 
@@ -74,14 +84,32 @@ functions for creating simple modal dialogs to get a value from the user.
       the initial focus.
 
 
-.. class:: SimpleDialog(master, text='', buttons=[], default=None, cancel=None, title=None, class_=None)
+.. class:: SimpleDialog(master, text='', buttons=[], default=None, cancel=None, title=None, class_=None, *, bitmap=None, detail='', use_ttk=True)
 
    A simple modal dialog that displays the message *text* above a row of push
-   buttons whose labels are given by *buttons*, and returns the index of the
-   button the user presses.
-   *default* is the index of the button activated by the Return key, *cancel*
-   the index returned when the window is closed through the window manager,
-   *title* the window title, and *class_* the Tk class name of the window.
+   buttons given by *buttons*, and returns the index of the button the user
+   presses.
+   Each entry of *buttons* is either a button label, or a mapping of button
+   options such as ``{'text': 'OK', 'underline': 0}``; an ``underline`` option
+   makes :kbd:`Alt` plus the underlined character invoke the button.
+   *default* is the index of the default button, activated by the Return key
+   when no button has the focus, *cancel* the index returned when the window is
+   closed through the window manager, *title* the window title, and *class_*
+   the Tk class name of the window.
+   *bitmap* is the name of a bitmap displayed beside the message
+   (for example ``'warning'`` or ``'question'``); the standard names
+   ``'error'``, ``'info'``, ``'question'`` and ``'warning'`` are shown as
+   themed icons when *use_ttk* is true.
+   *detail* is a secondary message displayed below *text*.
+   When *use_ttk* is true (the default), the dialog is built from the themed
+   :mod:`tkinter.ttk` widgets, modelled on the Tk message box; when false, from
+   the classic :mod:`tkinter` widgets, modelled on ``tk_dialog``.
+
+   .. versionchanged:: next
+      The dialog is now built from the themed :mod:`tkinter.ttk` widgets by
+      default, instead of the classic :mod:`tkinter` widgets.
+      Added the *bitmap*, *detail* and *use_ttk* parameters.
+      Entries of *buttons* may be mappings of button options.
 
    .. method:: go()
 
@@ -131,17 +159,26 @@ listed below:
 The below functions when called create a modal, native look-and-feel dialog,
 wait for the user's selection, and return it.
 The exact return value depends on the function (see below); when the dialog is
-cancelled it is an empty string, an empty tuple, an empty list or ``None``.
+cancelled it is the empty value documented for that function -- an empty
+string, an empty tuple, an empty list or ``None``.
 
 .. function:: askopenfile(mode="r", **options)
-              askopenfiles(mode="r", **options)
 
-   Create an :class:`Open` dialog.
-   :func:`askopenfile` returns the opened file object, or ``None`` if the
-   dialog is cancelled.
-   :func:`askopenfiles` returns a list of the opened file objects, or an empty
-   list if cancelled.
+   Create an :class:`Open` dialog and return the opened file object,
+   or ``None`` if the dialog is cancelled.
+   The file is opened in mode *mode* (read-only ``'r'`` by default).
+
+.. function:: askopenfiles(mode="r", **options)
+
+   Create an :class:`Open` dialog and return a list of the opened file objects,
+   or an empty list if cancelled.
    The files are opened in mode *mode* (read-only ``'r'`` by default).
+
+   .. deprecated-removed:: next 3.19
+      Opening several files at once is error-prone,
+      and the returned list cannot be used in a :keyword:`with` statement.
+      Iterate over the names returned by :func:`askopenfilenames`
+      and open them one by one instead.
 
 .. function:: asksaveasfile(mode="w", **options)
 
@@ -172,25 +209,32 @@ cancelled it is an empty string, an empty tuple, an empty list or ``None``.
 
 .. class:: Open(master=None, **options)
            SaveAs(master=None, **options)
+           Directory(master=None, **options)
 
-   The above two classes provide native dialog windows for saving and loading
-   files.
+   The above three classes provide native dialog windows for loading and saving
+   files and for selecting a directory.
 
 **Convenience classes**
 
 The below classes are used for creating file/directory windows from scratch.
 These do not emulate the native look-and-feel of the platform.
 
-.. class:: Directory(master=None, **options)
-
-   Create a dialog prompting the user to select a directory.
-
 .. note::  The *FileDialog* class should be subclassed for custom event
    handling and behaviour.
 
-.. class:: FileDialog(master, title=None)
+.. class:: FileDialog(master, title=None, *, use_ttk=True)
 
    Create a basic file selection dialog.
+   Its layout -- a filter entry, side-by-side directory and file lists, and a
+   selection entry -- follows the classic Motif file selection dialog.
+   When *use_ttk* is true (the default), the dialog is built from the themed
+   :mod:`tkinter.ttk` widgets; when false, from the classic :mod:`tkinter`
+   widgets.
+
+   .. versionchanged:: next
+      The dialog is now built from the themed :mod:`tkinter.ttk` widgets by
+      default, instead of the classic :mod:`tkinter` widgets.
+      Added the *use_ttk* parameter.
 
    .. method:: cancel_command(event=None)
 
@@ -252,20 +296,26 @@ These do not emulate the native look-and-feel of the platform.
       Update the current file selection to *file*.
 
 
-.. class:: LoadFileDialog(master, title=None)
+.. class:: LoadFileDialog(master, title=None, *, use_ttk=True)
 
    A subclass of FileDialog that creates a dialog window for selecting an
    existing file.
+
+   .. versionchanged:: next
+      Added the *use_ttk* parameter.
 
    .. method:: ok_command()
 
       Test that a file is provided and that the selection indicates an
       already existing file.
 
-.. class:: SaveFileDialog(master, title=None)
+.. class:: SaveFileDialog(master, title=None, *, use_ttk=True)
 
    A subclass of FileDialog that creates a dialog window for selecting a
    destination file.
+
+   .. versionchanged:: next
+      Added the *use_ttk* parameter.
 
    .. method:: ok_command()
 
@@ -308,23 +358,25 @@ the classic (non-themed) Tk widgets.
 
 .. data:: DIALOG_ICON
 
-   The name of the default bitmap (``'questhead'``) displayed by a
-   :class:`Dialog`.
+   The name of a bitmap (``'questhead'``) suitable for use as the *bitmap*
+   of a :class:`Dialog`.
 
 .. class:: Dialog(master=None, cnf={}, **kw)
 
    Display a modal dialog box built from the classic (non-themed) Tk widgets
    and wait for the user to press one of its buttons.
-   The options, given through *cnf* or as keyword arguments, include *title*
-   (the window title), *text* (the message), *bitmap* (an icon,
-   :data:`DIALOG_ICON` by default), *default* (the index of the default button)
-   and *strings* (the sequence of button labels).
+   The options, given through *cnf* or as keyword arguments, are all required:
+   *title* (the window title), *text* (the message), *bitmap* (the name of a
+   bitmap icon, such as :data:`DIALOG_ICON`), *default* (the index of the
+   default button) and *strings* (the sequence of button labels).
    After construction, the :attr:`!num` attribute holds the index of the button
    the user pressed.
 
    .. method:: destroy()
 
-      Destroy the dialog window.
+      Do nothing.
+      The dialog window is destroyed automatically before the constructor
+      returns, so there is nothing left for this method to do.
 
 
 .. seealso::

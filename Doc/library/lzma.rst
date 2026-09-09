@@ -152,35 +152,14 @@ Compressing and decompressing data in memory
    :func:`compress`.
 
    The *format* argument specifies what container format should be used.
-   Possible values are:
-
-   * :const:`FORMAT_XZ`: The ``.xz`` container format.
-      This is the default format.
-
-   * :const:`FORMAT_ALONE`: The legacy ``.lzma`` container format.
-      This format is more limited than ``.xz`` -- it does not support integrity
-      checks or multiple filters.
-
-   * :const:`FORMAT_RAW`: A raw data stream, not using any container format.
-      This format specifier does not support integrity checks, and requires that
-      you always specify a custom filter chain (for both compression and
-      decompression). Additionally, data compressed in this manner cannot be
-      decompressed using :const:`FORMAT_AUTO` (see :class:`LZMADecompressor`).
+   Possible values are :const:`FORMAT_XZ` (the default),
+   :const:`FORMAT_ALONE` and :const:`FORMAT_RAW`.
 
    The *check* argument specifies the type of integrity check to include in the
    compressed data. This check is used when decompressing, to ensure that the
-   data has not been corrupted. Possible values are:
-
-   * :const:`CHECK_NONE`: No integrity check.
-     This is the default (and the only acceptable value) for
-     :const:`FORMAT_ALONE` and :const:`FORMAT_RAW`.
-
-   * :const:`CHECK_CRC32`: 32-bit Cyclic Redundancy Check.
-
-   * :const:`CHECK_CRC64`: 64-bit Cyclic Redundancy Check.
-     This is the default for :const:`FORMAT_XZ`.
-
-   * :const:`CHECK_SHA256`: 256-bit Secure Hash Algorithm.
+   data has not been corrupted. Possible values are :const:`CHECK_NONE`,
+   :const:`CHECK_CRC32`, :const:`CHECK_CRC64` (the default for
+   :const:`FORMAT_XZ`) and :const:`CHECK_SHA256`.
 
    If the specified check is not supported, an :class:`LZMAError` is raised.
 
@@ -410,6 +389,106 @@ relative branches, calls and jumps in the code to use absolute addressing, with
 the aim of increasing the redundancy that can be exploited by the compressor.
 These filters support one option, ``start_offset``. This specifies the address
 that should be mapped to the beginning of the input data. The default is 0.
+
+
+Constants
+---------
+
+The following module-level constants are provided for use as the *format*,
+*check*, *preset* and *filters* arguments of the classes and functions above.
+
+Container formats:
+
+.. data:: FORMAT_XZ
+
+   The ``.xz`` container format.
+
+.. data:: FORMAT_ALONE
+
+   The legacy ``.lzma`` container format.  This format is more limited than
+   ``.xz`` -- it does not support integrity checks or multiple filters.
+
+.. data:: FORMAT_RAW
+
+   A raw data stream, not using any container format.  This format specifier
+   does not support integrity checks, and requires that you always specify a
+   custom filter chain (for both compression and decompression).  Additionally,
+   data compressed in this manner cannot be decompressed using
+   :const:`FORMAT_AUTO`.
+
+.. data:: FORMAT_AUTO
+
+   Used for decompression only.  The container format is detected
+   automatically, so that both ``.xz`` and ``.lzma`` files can be decompressed.
+
+Integrity checks:
+
+.. data:: CHECK_NONE
+
+   No integrity check.  This is the default (and the only acceptable value) for
+   :const:`FORMAT_ALONE` and :const:`FORMAT_RAW`.
+
+.. data:: CHECK_CRC32
+
+   A 32-bit Cyclic Redundancy Check.
+
+.. data:: CHECK_CRC64
+
+   A 64-bit Cyclic Redundancy Check.  This is the default for
+   :const:`FORMAT_XZ`.
+
+.. data:: CHECK_SHA256
+
+   A 256-bit Secure Hash Algorithm.
+
+.. data:: CHECK_UNKNOWN
+
+   The integrity check used by a stream could not yet be determined.  This may
+   be the value of the :attr:`LZMADecompressor.check` attribute until enough of
+   the input has been decoded.
+
+.. data:: CHECK_ID_MAX
+
+   The largest supported integrity-check ID.
+
+Compression presets:
+
+.. data:: PRESET_DEFAULT
+
+   The default compression preset, equivalent to preset level ``6``.
+
+.. data:: PRESET_EXTREME
+
+   A flag that may be bitwise OR-ed with a preset level (``0`` to ``9``) to
+   select a slower but more thorough variant of that preset.
+
+Filter IDs and options:
+
+.. data:: FILTER_LZMA1
+          FILTER_LZMA2
+
+   The LZMA1 and LZMA2 compression filters.  :const:`FILTER_LZMA1` is for use
+   with :const:`FORMAT_ALONE`, while :const:`FILTER_LZMA2` is for use with
+   :const:`FORMAT_XZ` and :const:`FORMAT_RAW`.
+
+.. data:: FILTER_DELTA
+
+   The delta filter.
+
+.. data:: MODE_FAST
+          MODE_NORMAL
+
+   Compression modes that may be used as the ``mode`` option of a filter
+   specifier (see :ref:`filter-chain-specs`).
+
+.. data:: MF_HC3
+          MF_HC4
+          MF_BT2
+          MF_BT3
+          MF_BT4
+
+   Match finders that may be used as the ``mf`` option of a filter specifier
+   (see :ref:`filter-chain-specs`).
 
 
 Examples

@@ -72,7 +72,7 @@ class TextWrapper:
     #   Hello/ /there/ /--/ /you/ /goof-/ball,/ /use/ /the/ /-b/ /option!
     # (after stripping out empty strings).
     word_punct = r'[\w!"\'&.,?]'
-    letter = r'[^\d\W]'
+    letter = r'[\w--\d]'
     whitespace = r'[%s]' % re.escape(_whitespace)
     nowhitespace = '[^' + whitespace[1:]
     wordsep_re = re.compile(r'''
