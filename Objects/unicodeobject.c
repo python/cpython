@@ -886,7 +886,7 @@ xmlcharrefreplace(PyBytesWriter *writer, char *str,
         char buffer[11];
         Py_UCS4 ch = PyUnicode_READ(kind, data, i);
         size = snprintf(buffer, sizeof(buffer), "&#%d;", ch);
-        assert(5 <= size && (size_t)size <= (sizeof(buffer) - 1));
+        assert(4 <= size && (size_t)size <= (sizeof(buffer) - 1));
 
         memcpy(str, buffer, size);
         str += size;
