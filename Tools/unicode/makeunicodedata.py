@@ -28,6 +28,7 @@
 
 import dataclasses
 import os
+import subprocess
 import sys
 import zipfile
 
@@ -126,6 +127,7 @@ def maketables(trace=0):
     makeunicodename(unicode, trace)
     makeunicodedata(unicode, trace)
     makeunicodetype(unicode, trace)
+    makestringprep()
 
 
 # --------------------------------------------------------------------
@@ -710,6 +712,19 @@ def makeunicodename(unicode, trace):
         for _, prefix in derived_name_range_names:
             fprint('    "%s",' % prefix)
         fprint('};')
+
+
+def makestringprep():
+    FILE = "Lib/stringprep.py"
+
+    print("--- Preparing", FILE, "...")
+
+    MKSTRINGPREP = "Tools/unicode/mkstringprep.py"
+
+    with open(FILE, "w") as f:
+        f.truncate()
+        subprocess.check_call([sys.executable, MKSTRINGPREP], stdout=f)
+
 
 def merge_old_version(version, new, old):
     # Changes to exclusion file not implemented yet
