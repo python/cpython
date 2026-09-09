@@ -452,6 +452,8 @@ class BytesWriterTest(BaseWriterTest, unittest.TestCase):
                 proc = assert_python_failure('-c', code)
                 self.assertIn(b'Buffer overflow detected in PyBytesWriter',
                               proc.err)
+                self.assertIn(f'at position {size}'.encode(),
+                              proc.err)
 
 
 class ByteArrayWriterTest(BaseWriterTest, unittest.TestCase):

@@ -465,24 +465,19 @@ byteswriter_test_canary_byte(PyObject *Py_UNUSED(module), PyObject *args)
         return NULL;
     }
 
-    PyBytesWriter *writer = PyBytesWriter_Create(0);
+    PyBytesWriter *writer = PyBytesWriter_Create(len);
     if (writer == NULL) {
-        goto error;
+        return NULL;
     }
-    if (PyBytesWriter_Grow(writer, len) < 0) {
-        goto error;
-    }
+
     char *data = PyBytesWriter_GetData(writer);
     if (len) {
         memcpy(data, str, len);
     }
     data[len] = '#';  // Overflow!
 
+    // In debug mode, PyBytesWriter_Finish() checks for buffer overflow
     return PyBytesWriter_Finish(writer);
-
-error:
-    PyBytesWriter_Discard(writer);
-    return NULL;
 }
 
 
