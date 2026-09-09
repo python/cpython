@@ -844,6 +844,42 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
             _remote_debugging.BinaryReader(missing)
         self.assertEqual(os.fspath(cm.exception.filename), os.fspath(missing))
 
+    def test_writer_rejects_malformed_samples(self):
+        """Malformed sample containers raise TypeError instead of crashing."""
+        cases = (
+            ("stack_frames", 42),
+            ("interp_info", [42]),
+            ("interp_info", [()]),
+            ("interp_info", [(0,)]),
+            ("threads", [(0, 42)]),
+            ("thread_info", [(0, [42])]),
+            ("thread_info", [(0, [()])]),
+            ("thread_info", [(0, [(1,)])]),
+            ("thread_info", [(0, [(1, 0)])]),
+            ("frame_list", [(0, [(1, 0, 42)])]),
+            ("frame_info", [(0, [(1, 0, [42])])]),
+            ("frame_info", [(0, [(1, 0, [()])])]),
+            ("frame_info", [(0, [(1, 0, [("a.py",)])])]),
+            ("frame_info", [(0, [(1, 0, [("a.py", None)])])]),
+            ("frame_info", [(0, [(1, 0, [("a.py", None, "f")])])]),
+            ("location", [(0, [(1, 0, [("a.py", 42, "f", None)])])]),
+            ("location", [(0, [(1, 0, [("a.py", (), "f", None)])])]),
+            ("location", [(0, [(1, 0, [("a.py", (1,), "f", None)])])]),
+            ("location", [(0, [(1, 0, [("a.py", (1, 1), "f", None)])])]),
+            ("location", [(0, [(1, 0, [("a.py", (1, 1, 0), "f", None)])])]),
+        )
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+
+        for field, sample in cases:
+            with self.subTest(field=field, sample=sample):
+                with _remote_debugging.BinaryWriter(
+                    filename, 1000, 0, compression=0
+                ) as writer:
+                    with self.assertRaisesRegex(TypeError, field):
+                        writer.write_sample(sample, 2000)
+
     def test_writer_handles_empty_stack_first_sample(self):
         """BinaryWriter.write_sample tolerates an empty stack on a fresh thread.
 
