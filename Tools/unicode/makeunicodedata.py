@@ -837,7 +837,7 @@ def makestringprep():
     import unicodedata
     if unicodedata.unidata_version != UNIDATA_VERSION:
         print()
-        print("!! Skipping mkstringprep -- mimatched Unicode version !!")
+        print("!! Skipping mkstringprep -- mismatched Unicode version !!")
         print()
         print("Please compile CPython with the updated Unicode database,")
         print("then use that interpreter to run:")
