@@ -1,4 +1,0 @@
-Fix a buffer overflow in the ``xmlcharrefreplace`` error handler of 8-bit
-encoding (such as ``ascii`` and ``latin1``). Previously, a buffer overflow
-wrote one NUL byte in the stack memory if the output length was exactly 512
-bytes. Patch by Victor Stinner.
