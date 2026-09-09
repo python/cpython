@@ -1,5 +1,3 @@
-import string
-
 from idlelib.delegator import Delegator
 
 # tkinter import not needed because module does not create widgets,
@@ -251,10 +249,8 @@ class InsertCommand(Command):
         self.chars = self.chars + cmd.chars
         return True
 
-    alphanumeric = string.ascii_letters + string.digits + "_"
-
     def classify(self, c):
-        if c in self.alphanumeric:
+        if ('a' + c).isidentifier():
             return "alphanumeric"
         if c == "\n":
             return "newline"
