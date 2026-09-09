@@ -1,0 +1,1 @@
+Added documentation for various ways to decode newlines in :mod:`io`
