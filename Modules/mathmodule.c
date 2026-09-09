@@ -1343,10 +1343,10 @@ FUNC1D(tan, tan, 0,
 FUNC1(tanh, tanh, 0,
       "tanh($module, x, /)\n--\n\n"
       "Return the hyperbolic tangent of x.")
-FUNC1D(tanpi, m_tanpi, 1,
+FUNC1D(tanpi, m_tanpi, 0,
       "tanpi($module, x, /)\n--\n\n"
       "Return the tangent of x (measured in half-turns).",
-      "expected a finite input, got %s")
+      "expected a finite input not equal to a half-integer, got %s")
 
 /* Precision summation function as msum() by Raymond Hettinger in
    <https://code.activestate.com/recipes/393090-binary-floating-point-summation-accurate-to-full-p/>,
