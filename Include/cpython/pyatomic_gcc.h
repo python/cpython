@@ -191,6 +191,79 @@ _Py_atomic_compare_exchange_ptr(void *obj, void *expected, void *desired)
                                      __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST); }
 
 
+// --- _Py_atomic_compare_exchange_relaxed -----------------------------------
+
+static inline int
+_Py_atomic_compare_exchange_int_relaxed(int *obj, int *expected, int desired)
+{ return __atomic_compare_exchange_n(obj, expected, desired, 0,
+                                     __ATOMIC_RELAXED, __ATOMIC_RELAXED); }
+
+static inline int
+_Py_atomic_compare_exchange_int8_relaxed(int8_t *obj, int8_t *expected, int8_t desired)
+{ return __atomic_compare_exchange_n(obj, expected, desired, 0,
+                                     __ATOMIC_RELAXED, __ATOMIC_RELAXED); }
+
+static inline int
+_Py_atomic_compare_exchange_int16_relaxed(int16_t *obj, int16_t *expected, int16_t desired)
+{ return __atomic_compare_exchange_n(obj, expected, desired, 0,
+                                     __ATOMIC_RELAXED, __ATOMIC_RELAXED); }
+
+static inline int
+_Py_atomic_compare_exchange_int32_relaxed(int32_t *obj, int32_t *expected, int32_t desired)
+{ return __atomic_compare_exchange_n(obj, expected, desired, 0,
+                                     __ATOMIC_RELAXED, __ATOMIC_RELAXED); }
+
+static inline int
+_Py_atomic_compare_exchange_int64_relaxed(int64_t *obj, int64_t *expected, int64_t desired)
+{ return __atomic_compare_exchange_n(obj, expected, desired, 0,
+                                     __ATOMIC_RELAXED, __ATOMIC_RELAXED); }
+
+static inline int
+_Py_atomic_compare_exchange_intptr_relaxed(intptr_t *obj, intptr_t *expected, intptr_t desired)
+{ return __atomic_compare_exchange_n(obj, expected, desired, 0,
+                                     __ATOMIC_RELAXED, __ATOMIC_RELAXED); }
+
+static inline int
+_Py_atomic_compare_exchange_uint_relaxed(unsigned int *obj, unsigned int *expected, unsigned int desired)
+{ return __atomic_compare_exchange_n(obj, expected, desired, 0,
+                                     __ATOMIC_RELAXED, __ATOMIC_RELAXED); }
+
+static inline int
+_Py_atomic_compare_exchange_uint8_relaxed(uint8_t *obj, uint8_t *expected, uint8_t desired)
+{ return __atomic_compare_exchange_n(obj, expected, desired, 0,
+                                     __ATOMIC_RELAXED, __ATOMIC_RELAXED); }
+
+static inline int
+_Py_atomic_compare_exchange_uint16_relaxed(uint16_t *obj, uint16_t *expected, uint16_t desired)
+{ return __atomic_compare_exchange_n(obj, expected, desired, 0,
+                                     __ATOMIC_RELAXED, __ATOMIC_RELAXED); }
+
+static inline int
+_Py_atomic_compare_exchange_uint32_relaxed(uint32_t *obj, uint32_t *expected, uint32_t desired)
+{ return __atomic_compare_exchange_n(obj, expected, desired, 0,
+                                     __ATOMIC_RELAXED, __ATOMIC_RELAXED); }
+
+static inline int
+_Py_atomic_compare_exchange_uint64_relaxed(uint64_t *obj, uint64_t *expected, uint64_t desired)
+{ return __atomic_compare_exchange_n(obj, expected, desired, 0,
+                                     __ATOMIC_RELAXED, __ATOMIC_RELAXED); }
+
+static inline int
+_Py_atomic_compare_exchange_uintptr_relaxed(uintptr_t *obj, uintptr_t *expected, uintptr_t desired)
+{ return __atomic_compare_exchange_n(obj, expected, desired, 0,
+                                     __ATOMIC_RELAXED, __ATOMIC_RELAXED); }
+
+static inline int
+_Py_atomic_compare_exchange_ssize_relaxed(Py_ssize_t *obj, Py_ssize_t *expected, Py_ssize_t desired)
+{ return __atomic_compare_exchange_n(obj, expected, desired, 0,
+                                     __ATOMIC_RELAXED, __ATOMIC_RELAXED); }
+
+static inline int
+_Py_atomic_compare_exchange_ptr_relaxed(void *obj, void *expected, void *desired)
+{ return __atomic_compare_exchange_n((void **)obj, (void **)expected, desired, 0,
+                                     __ATOMIC_RELAXED, __ATOMIC_RELAXED); }
+
+
 // --- _Py_atomic_exchange ---------------------------------------------------
 
 static inline int
