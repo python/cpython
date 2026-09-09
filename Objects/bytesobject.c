@@ -3756,12 +3756,12 @@ PyBytesWriter_FinishWithSize(PyBytesWriter *writer, Py_ssize_t size)
     // example, _PyBytes_Resize() raises SystemError on negative size.
     if (size < 0) {
         PyErr_Format(PyExc_ValueError, "size must be positive");
-        return NULL;
+        goto error;
     }
 
     if (size > writer->size) {
         PyErr_SetString(PyExc_ValueError, "size larger than allocated size");
-        return NULL;
+        goto error;
     }
 
     PyObject *result;
