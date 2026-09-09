@@ -1774,6 +1774,9 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
     /* Create a dictionary for keyword parameters (**kwags) */
     PyObject *kwdict;
     Py_ssize_t i;
+    /* Set below once the "too many positional arguments" precondition is
+       known; must be initialized before the fail_pre_positional exit. */
+    PyObject *first_argument = NULL;
     if (co->co_flags & CO_VARKEYWORDS) {
         kwdict = PyDict_New();
         if (kwdict == NULL) {
@@ -1794,7 +1797,6 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
        argument cleanup below may close args[0] before the hint is computed.
        The pin is only needed when the "too many positional arguments"
        error is about to be raised. */
-    PyObject *first_argument = NULL;
     if (argcount > co->co_argcount && !(co->co_flags & CO_VARARGS)) {
         first_argument = Py_NewRef(PyStackRef_AsPyObjectBorrow(args[0]));
     }
