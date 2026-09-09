@@ -1,3 +1,2 @@
-Speed up :func:`csv.writer` by up to 2.9x.  Writing a field no longer calls
-:c:func:`PyUnicode_FindChar` on the dialect's ``lineterminator`` once per
-character.
+Speed up :func:`csv.writer` by up to 2.9x when fields contain no special 
+characters.
