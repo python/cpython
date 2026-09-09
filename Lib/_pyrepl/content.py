@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
 
 from .utils import ColorSpan, StyleRef, THEME, iter_display_chars, unbracket, wlen

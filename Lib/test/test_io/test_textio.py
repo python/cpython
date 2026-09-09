@@ -1448,6 +1448,29 @@ def _to_memoryview(buf):
 class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
     shutdown_error = "LookupError: unknown encoding: ascii"
 
+    def test_chunk_size(self):
+        t = self.TextIOWrapper(self.BytesIO(), encoding="utf-8")
+        self.assertGreater(t._CHUNK_SIZE, 0)
+        t._CHUNK_SIZE = 1024
+        self.assertEqual(t._CHUNK_SIZE, 1024)
+        with self.assertRaisesRegex(ValueError,
+                                    'a strictly positive integer is required'):
+            t._CHUNK_SIZE = 0
+        with self.assertRaises(TypeError):
+            t._CHUNK_SIZE = 'x'
+        with self.assertRaises(ValueError):
+            t._CHUNK_SIZE = sys.maxsize + 1
+        with self.assertRaises(ValueError):
+            t._CHUNK_SIZE = -sys.maxsize - 2
+        with self.assertRaises(ValueError):
+            t._CHUNK_SIZE = 2**1000
+        with self.assertRaises(ValueError):
+            t._CHUNK_SIZE = -2**1000
+        with self.assertRaisesRegex(AttributeError, 'cannot be deleted'):
+            del t._CHUNK_SIZE
+        # a failed assignment does not change the value
+        self.assertEqual(t._CHUNK_SIZE, 1024)
+
     def test_initialization(self):
         r = self.BytesIO(b"\xc3\xa9\n\n")
         b = self.BufferedReader(r, 1000)
@@ -1609,6 +1632,49 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
             make_text(DetachOnWrite(self.MockRawIO()))
             wrapper.write('x')
             self.assertRaisesRegex(ValueError, "detached", wrapper.read)
+
+    def test_reentrant_seek_during_tell(self):
+        # gh-153539: reading short of _CHUNK_SIZE leaves residual bytes in the
+        # snapshot, so tell() re-decodes and calls the decoder's getstate(); a
+        # reentrant seek() there must not free the snapshot tell() still uses.
+        # C-only: _pyio binds next_input as a strong local and cannot crash.
+        wrapper = None
+        armed = False
+
+        class ReentrantDecoder(codecs.IncrementalDecoder):
+            def decode(self, input, final=False):
+                return bytes(input).decode("latin-1")
+            def getstate(self):
+                nonlocal armed
+                if wrapper is not None and armed:
+                    armed = False
+                    wrapper.seek(0)
+                return (b"", 0)
+            def setstate(self, state):
+                pass
+
+        def search(name):
+            if name != "reentrant_tell_test":
+                return None
+            return codecs.CodecInfo(
+                name=name,
+                encode=lambda s, e='strict': (s.encode("latin-1"), len(s)),
+                decode=lambda b, e='strict': (bytes(b).decode("latin-1"), len(b)),
+                incrementaldecoder=ReentrantDecoder)
+
+        codecs.register(search)
+        self.addCleanup(codecs.unregister, search)
+        raw = self.BytesIO(b"abcdefghijklmnop" * 8)
+        wrapper = self.TextIOWrapper(self.BufferedReader(raw),
+                                     encoding="reentrant_tell_test", newline="")
+        wrapper._CHUNK_SIZE = 8
+        wrapper.read(5)
+        armed = True
+        self.assertIsInstance(wrapper.tell(), int)
+        # tell() at the snapshot boundary takes the early return that owns and
+        # must release next_input; exercise it too (leak-checked under -R).
+        wrapper.seek(0)
+        self.assertIsInstance(wrapper.tell(), int)
 
 
 class PyTextIOWrapperTest(TextIOWrapperTest, PyTestCase):

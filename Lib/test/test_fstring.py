@@ -1603,6 +1603,8 @@ except Exception:
         self.assertEqual(f'''{
 3
 =}''', '\n3\n=3')
+        x = 1
+        self.assertEqual(eval('f"""{(\nx\n)=}"""'), '(\nx\n)=1')
 
         # Since = is handled specially, make sure all existing uses of
         # it still work.
@@ -1655,6 +1657,7 @@ except Exception:
         self.assertEqual(f'{C()=:x}', 'C()=FORMAT-x')
         self.assertEqual(f'{C()=!r:*^20}', 'C()=********REPR********')
         self.assertEqual(f"{C():{20=}}", 'FORMAT-20=20')
+        self.assertEqual(f"{C():{C():{4=}}}", 'FORMAT-FORMAT-4=4')
 
         self.assertRaises(SyntaxError, eval, "f'{C=]'")
 
@@ -1677,6 +1680,20 @@ except Exception:
 
         self.assertEqual(f'{" # nooo "=}', '" # nooo "=\' # nooo \'')
         self.assertEqual(f'{" \" # nooo \" "=}', '" \\" # nooo \\" "=\' " # nooo " \'')
+        self.assertEqual(f'{"""a" # inside"""=}',
+                         '"""a" # inside"""=\'a" # inside\'')
+        self.assertEqual(f"{'''a' # inside'''=}",
+                         "'''a' # inside'''=\"a' # inside\"")
+        self.assertEqual(f'{"""a""""#" # outside
+=}', '"""a""""#" \n=\'a#\'')
+
+        x, y = 1, 2
+        self.assertEqual(f'{x != y # outside
+=}', 'x != y \n=True')
+
+        d = {'a#b': 42}
+        self.assertEqual(f'''{f"{d["a#b"]}"=}''',
+                         'f"{d["a#b"]}"=\'42\'')
 
         self.assertEqual(f'{ # some comment goes here
   """hello"""=}',  ' \n  """hello"""=\'hello\'')

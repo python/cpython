@@ -2389,6 +2389,18 @@ class AbstractRepackTests(RepackHelperMixin):
         m_repack.assert_not_called()
 
     @mock.patch.object(zipfile, '_ZipRepacker')
+    def test_repack_reading(self, m_repack):
+        self._prepare_zip_from_test_files(TESTFN, self.test_files)
+        with zipfile.ZipFile(TESTFN, 'a') as zh:
+            with zh.open(self.test_files[0][0]):
+                with self.assertRaises(ValueError):
+                    zh.repack()
+            m_repack.assert_not_called()
+            # Allowed once the reading handle is closed.
+            zh.repack()
+        m_repack.assert_called_once()
+
+    @mock.patch.object(zipfile, '_ZipRepacker')
     def test_repack_mode_r(self, m_repack):
         self._prepare_zip_from_test_files(TESTFN, self.test_files)
         with zipfile.ZipFile(TESTFN, 'r') as zh:
@@ -4860,6 +4872,48 @@ class OtherTests(unittest.TestCase):
     def tearDown(self):
         unlink(TESTFN)
         unlink(TESTFN2)
+
+
+class AbstractBoundedDecompressTests:
+    # ZipExtFile._read1() bounds the output of each decompress() call so that a
+    # small member declaring a large uncompressed size cannot expand into one
+    # unbounded read.
+    def test_read1_output_is_bounded(self):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", compression=self.compression) as zf:
+            zf.writestr("big", b"\0" * (4 * 1024 * 1024))
+        with zipfile.ZipFile(io.BytesIO(buf.getvalue())) as zf:
+            with zf.open("big") as f:
+                self.assertLessEqual(len(f._read1(100)), f.MIN_READ_SIZE)
+
+
+class StoredBoundedDecompressTests(AbstractBoundedDecompressTests,
+                                   unittest.TestCase):
+    compression = zipfile.ZIP_STORED
+
+
+@requires_zlib()
+class DeflateBoundedDecompressTests(AbstractBoundedDecompressTests,
+                                    unittest.TestCase):
+    compression = zipfile.ZIP_DEFLATED
+
+
+@requires_bz2()
+class Bzip2BoundedDecompressTests(AbstractBoundedDecompressTests,
+                                  unittest.TestCase):
+    compression = zipfile.ZIP_BZIP2
+
+
+@requires_lzma()
+class LzmaBoundedDecompressTests(AbstractBoundedDecompressTests,
+                                 unittest.TestCase):
+    compression = zipfile.ZIP_LZMA
+
+
+@requires_zstd()
+class ZstdBoundedDecompressTests(AbstractBoundedDecompressTests,
+                                 unittest.TestCase):
+    compression = zipfile.ZIP_ZSTANDARD
 
 
 class AbstractBadCrcTests:

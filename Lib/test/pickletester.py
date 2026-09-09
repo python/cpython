@@ -846,6 +846,20 @@ class AbstractUnpickleTests:
                        b'q\x00oq\x01}q\x02b.').replace(b'X', xname)
             self.assert_is_copy(X(*args), self.loads(pickle2))
 
+    def test_load_bad_constructor(self):
+        # gh-154002: a TypeError raised by an old-style instance constructor
+        # during INST/OBJ unpickling propagates unchanged.  The pure-Python
+        # unpickler used to replace it with one that carried the traceback
+        # object in its args.
+        #  0: (    MARK
+        #  1: I        INT        1
+        #  4: i        INST       '__main__ BadConstructor' (MARK at 0)
+        # 28: .    STOP
+        data = b'(I1\ni__main__\nBadConstructor\n.'
+        with self.assertRaises(TypeError) as cm:
+            self.loads(data)
+        self.assertEqual(cm.exception.args, ("bad constructor",))
+
     def test_maxint64(self):
         maxint64 = (1 << 63) - 1
         data = b'I' + str(maxint64).encode("ascii") + b'\n.'

@@ -681,8 +681,11 @@ bytearray_setslice(PyByteArrayObject *self, Py_ssize_t lo, Py_ssize_t hi,
         bytes = vbytes.buf;
     }
 
+    // gh-153578: __buffer__() may have resized self; re-clamp both bounds.
     if (lo < 0)
         lo = 0;
+    else if (lo > Py_SIZE(self))
+        lo = Py_SIZE(self);
     if (hi < lo)
         hi = lo;
     if (hi > Py_SIZE(self))

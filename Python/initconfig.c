@@ -2710,8 +2710,30 @@ config_init_stdio_encoding(PyConfig *config,
 
     /* Choose the default error handler based on the current locale. */
     if (config->stdio_encoding == NULL) {
-        status = config_get_locale_encoding(config, preconfig,
-                                            &config->stdio_encoding);
+#ifdef MS_WINDOWS
+        /* gh-86427: use the console code page.  Only one encoding can be
+           specified, so the output code page is used: it affects two
+           streams of three. */
+        UINT cp = config->legacy_windows_stdio ? GetConsoleOutputCP() : 0;
+        if (cp != 0) {
+            if (cp == CP_UTF8) {
+                status = PyConfig_SetString(config, &config->stdio_encoding,
+                                            L"utf-8");
+            }
+            else {
+                wchar_t encoding[20];
+                swprintf(encoding, Py_ARRAY_LENGTH(encoding), L"cp%u",
+                         (unsigned int)cp);
+                status = PyConfig_SetString(config, &config->stdio_encoding,
+                                            encoding);
+            }
+        }
+        else
+#endif
+        {
+            status = config_get_locale_encoding(config, preconfig,
+                                                &config->stdio_encoding);
+        }
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }

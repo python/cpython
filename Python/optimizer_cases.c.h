@@ -581,6 +581,16 @@
             break;
         }
 
+        case _GUARD_TOS_EXACT_INT: {
+            JitOptRef value;
+            value = stack_pointer[-1];
+            if (sym_matches_type(value, &PyLong_Type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            sym_set_type(value, &PyLong_Type);
+            break;
+        }
+
         case _GUARD_NOS_OVERFLOWED: {
             break;
         }

@@ -7314,7 +7314,7 @@ unicode_encode_ucs1(PyObject *unicode,
                     writer->overallocate = (newpos < size);
                 }
 
-                char *rep_str;
+                const char *rep_str;
                 Py_ssize_t rep_len;
                 if (PyBytes_Check(rep)) {
                     /* Directly copy bytes result to output. */
