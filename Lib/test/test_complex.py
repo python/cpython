@@ -8,7 +8,7 @@ from test.support.numbers import (
 )
 
 from random import random
-from math import isnan, copysign, ulp
+from math import isnan, copysign
 import operator
 
 INF = float("inf")
@@ -517,19 +517,13 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                         self.assertNotEqual(r1.imag, 0.0)
                     self.assertTrue(r2.real == 0.0 or r2.imag == 0.0)
 
-    @support.requires_IEEE_754
     def test_pow_small_negative_integer_exponents(self):
-        z = complex(float.fromhex('0x1.47e9c711723f5p+81'),
-                    float.fromhex('0x1.38afd1168e49fp+85'))
-        expected = complex(float.fromhex('0x0.4000000000000p-1022'),
-                           float.fromhex('0x0.3ffffffffffffp-1022'))
-        for exponent in (-12, -12.0, complex(-12.0, 0.0)):
-            with self.subTest(exponent=exponent):
-                result = z ** exponent
-                self.assertLessEqual(abs(result.real - expected.real),
-                                     4 * ulp(expected.real))
-                self.assertLessEqual(abs(result.imag - expected.imag),
-                                     4 * ulp(expected.imag))
+        for z, expected in [(complex(2**86, 0), complex(2**-1032, 0)),
+                            (complex(0, 2**86), complex(2**-1032, 0)),
+                            (complex(2**85, 2**85), complex(-2**-1026, 0))]:
+            for exponent in (-12, -12.0, complex(-12)):
+                with self.subTest(z=z, exponent=exponent):
+                    self.assertEqual(z**exponent, expected)
 
     def test_boolcontext(self):
         for i in range(100):

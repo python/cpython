@@ -368,23 +368,21 @@ c_powu(Py_complex x, long n)
 static Py_complex
 c_powi(Py_complex x, long n)
 {
-     if (n > 0)
-        return c_powu(x,n);
-    else if (n == 0)
-         return (Py_complex){1., 0.};
-
+    if (n > 0) {
+        return c_powu(x, n);
+    }
+    if (n == 0) {
+        return (Py_complex){1., 0.};
+    }
     double m = fabs(x.real) > fabs(x.imag) ? x.real : x.imag;
-
     if (m && isfinite(m)) {
         int e;
-
         frexp(m, &e);
-
         if (-e*n > 800) {
             x = (Py_complex){ldexp(x.real, -e), ldexp(x.imag, -e)};
             x = _Py_rc_quot(1.0, c_powu(x, -n));
-            x.real = ldexp(x.real, (int)(e * n));
-            x.imag = ldexp(x.imag, (int)(e * n));
+            x.real = ldexp(x.real, (int)(e*n));
+            x.imag = ldexp(x.imag, (int)(e*n));
             return x;
         }
     }
