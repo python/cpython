@@ -1601,6 +1601,14 @@ class TarInfo(object):
         # Fetch the next header.
         try:
             next = self._fromtarfile(tarfile, dircheck=False)
+        except EOFHeaderError:
+            if self.type == XGLTYPE:
+                # If this is a global header at the end of the archive
+                # (no regular members follow), let the EOFHeaderError
+                # propagate so the caller handles end-of-archive normally.
+                tarfile.offset = tarfile.fileobj.tell() - BLOCKSIZE
+                raise
+            raise SubsequentHeaderError("end of file header") from None
         except HeaderError as e:
             raise SubsequentHeaderError(str(e)) from None
 
@@ -2188,7 +2196,9 @@ class TarFile(object):
            than once in the archive, its last occurrence is assumed to be the
            most up-to-date version.
         """
-        tarinfo = self._getmember(name.rstrip('/'))
+        tarinfo = self._getmember(name)
+        if tarinfo is None and name.endswith('/'):
+            tarinfo = self._getmember(name.rstrip('/'))
         if tarinfo is None:
             raise KeyError("filename %r not found" % name)
         return tarinfo

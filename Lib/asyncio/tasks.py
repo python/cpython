@@ -562,9 +562,11 @@ class _AsCompletedIterator:
         self._timeout_handle = None
 
         loop = events.get_event_loop()
+        self._cur_task = current_task()
         todo = {ensure_future(aw, loop=loop) for aw in set(aws)}
         for f in todo:
             f.add_done_callback(self._handle_completion)
+            futures.future_add_to_awaited_by(f, self._cur_task)
         if todo and timeout is not None:
             self._timeout_handle = (
                 loop.call_later(timeout, self._handle_timeout)
@@ -595,6 +597,7 @@ class _AsCompletedIterator:
     def _handle_timeout(self):
         for f in self._todo:
             f.remove_done_callback(self._handle_completion)
+            futures.future_discard_from_awaited_by(f, self._cur_task)
             self._done.put_nowait(None)  # Sentinel for _wait_for_one().
         self._todo.clear()  # Can't do todo.remove(f) in the loop.
 
@@ -602,6 +605,7 @@ class _AsCompletedIterator:
         if not self._todo:
             return  # _handle_timeout() was here first.
         self._todo.remove(f)
+        futures.future_discard_from_awaited_by(f, self._cur_task)
         self._done.put_nowait(f)
         if not self._todo and self._timeout_handle is not None:
             self._timeout_handle.cancel()

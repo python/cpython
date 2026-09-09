@@ -1226,6 +1226,10 @@ for the 64-bit version, `www.nuget.org/packages/pythonx86
 `www.nuget.org/packages/pythonarm64
 <https://www.nuget.org/packages/pythonarm64>`_ for the ARM64 version
 
+Resolve error ``Unable to find package 'python'`` from a misconfigured ``nuget.config`` using::
+
+   nuget.exe sources add -Name "nuget.org" -source "https://api.nuget.org/v3/index.json"
+
 Free-threaded packages
 ----------------------
 

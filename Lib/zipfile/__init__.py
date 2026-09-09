@@ -801,7 +801,16 @@ class LZMADecompressor:
         except AttributeError:
             return b''
 
-    def decompress(self, data):
+    @property
+    def _needs_input(self):
+        # While the LZMA properties header is still being buffered, more input
+        # is required; afterwards defer to the wrapped decompressor so a bounded
+        # decompress() call can be drained across reads.
+        if self._decomp is None:
+            return True
+        return self._decomp.needs_input
+
+    def decompress(self, data, max_length=-1):
         if self._decomp is None:
             self._unconsumed += data
             if len(self._unconsumed) <= 4:
@@ -817,7 +826,7 @@ class LZMADecompressor:
             data = self._unconsumed[4 + psize:]
             del self._unconsumed
 
-        result = self._decomp.decompress(data)
+        result = self._decomp.decompress(data, max_length)
         self.eof = self._decomp.eof
         return result
 
@@ -882,6 +891,13 @@ def _get_compressor(compress_type, compresslevel=None):
         return zstd.ZstdCompressor(level=compresslevel)
     else:
         return None
+
+
+def _decompressor_needs_input(decompressor):
+    # bz2/zstd expose the stdlib decompressor's public needs_input; the LZMA
+    # wrapper keeps it private (_needs_input) to avoid adding public API.
+    needs_input = getattr(decompressor, "needs_input", None)
+    return decompressor._needs_input if needs_input is None else needs_input
 
 
 def _get_decompressor(compress_type):
@@ -1186,8 +1202,15 @@ class ZipExtFile(io.BufferedIOBase):
             data = self._decompressor.unconsumed_tail
             if n > len(data):
                 data += self._read2(n - len(data))
-        else:
+        elif self._compress_type == ZIP_STORED:
             data = self._read2(n)
+        else:
+            # bzip2/lzma/zstd: a bounded decompress() call may leave input
+            # buffered inside the decompressor; drain that before reading more.
+            if _decompressor_needs_input(self._decompressor):
+                data = self._read2(n)
+            else:
+                data = b''
 
         if self._compress_type == ZIP_STORED:
             self._eof = self._compress_left <= 0
@@ -1200,8 +1223,13 @@ class ZipExtFile(io.BufferedIOBase):
             if self._eof:
                 data += self._decompressor.flush()
         else:
-            data = self._decompressor.decompress(data)
-            self._eof = self._decompressor.eof or self._compress_left <= 0
+            # Bound the output of a single decompress() call (mirroring the
+            # DEFLATE path above) so that a small compressed member cannot
+            # expand into one unbounded read.
+            data = self._decompressor.decompress(data, max(n, self.MIN_READ_SIZE))
+            self._eof = (self._decompressor.eof or
+                         self._compress_left <= 0 and
+                         _decompressor_needs_input(self._decompressor))
 
         data = data[:self._left]
         self._left -= len(data)
