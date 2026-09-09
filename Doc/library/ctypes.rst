@@ -708,7 +708,7 @@ Specifying function pointers using type annotations
 
       @wrap_dll_function(dll_to_wrap)
       def function_ptr_name(arg_name: ctypes_type, ...) -> ctypes_type:
-         """Optional docstring. There should be no function body."""
+          """Optional docstring. There should be no function body."""
 
    The body of the decorated function is ignored, and any parameters that are
    missing type annotations are skipped. The names of the parameters are ignored
@@ -728,7 +728,7 @@ Specifying function pointers using type annotations
 
       @wrap_dll_function(ctypes.pythonapi)
       def PyObject_GetAttrString(op: ctypes.py_object, attr: ctypes.c_char_p) -> ctypes.py_object:
-         pass
+          pass
 
       PyObject_GetAttrString(42, b"real")
 
