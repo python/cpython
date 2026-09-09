@@ -4916,24 +4916,29 @@ class ZstdBoundedDecompressTests(AbstractBoundedDecompressTests,
     compression = zipfile.ZIP_ZSTANDARD
 
 
-class ThirdPartyDecompressorTests(unittest.TestCase):
-    # A decompressor installed by replacing _get_decompressor() may support
-    # neither decompress(data, max_length) nor needs_input.  ZipExtFile must
-    # still read through it (unbounded, as before bounded decompression).
+class MonkeypatchedDecompressorTests(unittest.TestCase):
+    # Some third-party projects monkey-patch _get_decompressor() to add
+    # additional compression schemes. This can break at any time as the
+    # internal compressor objects change.
+    # To protect users, we try to keep this case working (until it becomes
+    # too big of a burden, or we make the API public).
+    # See also: GH-156002 and GH-113756.
     COMPRESSION = 99
 
     class Compressor:
+        """Compressor with only the original BZ2Compressor API"""
         def compress(self, data):
-            return data
+            return data.swapcase()
 
         def flush(self):
             return b''
 
     class Decompressor:
+        """Decmpressor with only the 3.3+ BZ2Decompressor API"""
         eof = False
 
         def decompress(self, data):
-            return data
+            return data.swapcase()
 
     def setUp(self):
         orig_check_compression = zipfile._check_compression
@@ -4961,11 +4966,12 @@ class ThirdPartyDecompressorTests(unittest.TestCase):
         self.enterContext(mock.patch.object(
             zipfile, '_get_decompressor', get_decompressor))
 
-    def test_read_through_third_party_decompressor(self):
-        data = bytes(range(256)) * 256
+    def test_roundtrip_monkeypatched_decompressor(self):
+        data = bytes(range(256)) * 8
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w", compression=self.COMPRESSION) as zf:
             zf.writestr("member", data)
+        self.assertIn(data.swapcase(), buf.getvalue())
         with zipfile.ZipFile(io.BytesIO(buf.getvalue())) as zf:
             self.assertEqual(zf.read("member"), data)
             with zf.open("member") as f:
