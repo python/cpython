@@ -2983,8 +2983,7 @@ fail:
 
 /* Fast path for a list or tuple of ints.
    Return 1 on success (*result set to the new bytes object),
-   0 to fall back to the slow path (an item is not an int; no exception
-   set), or -1 on error (with an exception set). */
+   0 to fall back to the slow path, or -1 on error (with an exception set). */
 static int
 _PyBytes_FromSequence_lock_held(PyObject *x, PyObject **result)
 {
@@ -3102,11 +3101,8 @@ PyBytes_FromObject(PyObject *x)
         rc = _PyBytes_FromSequence_lock_held(x, &result);
         Py_END_CRITICAL_SECTION_SEQUENCE_FAST();
         if (rc != 0) {
-            /* Success (result is the new bytes object) or error
-               (result is NULL with an exception set). */
             return result;
         }
-        /* rc == 0: an item is not an int; use the slow path below. */
     }
 
     if (!PyUnicode_Check(x)) {
