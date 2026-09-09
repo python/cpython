@@ -384,15 +384,6 @@ class BaseWriterTest:
         writer.format_i(b'y=%i', 456)
         self.assertEqual(writer.finish(), self.result_type(b'x=123, y=456'))
 
-    def test_example_abc(self):
-        self.assertEqual(_testcapi.byteswriter_abc(), b'abc')
-
-    def test_example_resize(self):
-        self.assertEqual(_testcapi.byteswriter_resize(), b'Hello World')
-
-    def test_example_highlevel(self):
-        self.assertEqual(_testcapi.byteswriter_highlevel(), b'Hello World!')
-
 
 class BytesWriterTest(BaseWriterTest, unittest.TestCase):
     result_type = bytes
@@ -429,6 +420,15 @@ class BytesWriterTest(BaseWriterTest, unittest.TestCase):
             unused_text = b'x' * (small_buffer * 2)
             writer.write_bytes(unused_text, len(unused_text))
             self.assertIs(writer.finish_with_size(1), singletons[ch])
+
+    def test_example_abc(self):
+        self.assertEqual(_testcapi.byteswriter_abc(), b'abc')
+
+    def test_example_resize(self):
+        self.assertEqual(_testcapi.byteswriter_resize(), b'Hello World')
+
+    def test_example_highlevel(self):
+        self.assertEqual(_testcapi.byteswriter_highlevel(), b'Hello World!')
 
 
 class ByteArrayWriterTest(BaseWriterTest, unittest.TestCase):
