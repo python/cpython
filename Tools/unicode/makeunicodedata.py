@@ -28,6 +28,7 @@
 
 import dataclasses
 import os
+import subprocess
 import sys
 import re
 import zipfile
@@ -39,12 +40,18 @@ from typing import Iterator, List, Optional, Set, Tuple
 SCRIPT = os.path.normpath(sys.argv[0])
 VERSION = "3.3"
 
+# Local cache location
+DATA_DIR = os.path.join('Tools', 'unicode', 'data')
+
 # The Unicode Database
 # --------------------
 # When changing UCD version please update
-#   * Doc/library/stdtypes.rst, and
+#   * Doc/library/stdtypes.rst (four occurrences)
 #   * Doc/library/unicodedata.rst
+#   * Doc/library/re.rst
 #   * Doc/reference/lexical_analysis.rst (three occurrences)
+# and optionally (comments)
+#   * Lib/re/_properties.py (three occurrences)
 UNIDATA_VERSION = "17.0.0"
 UNICODE_DATA = "UnicodeData%s.txt"
 COMPOSITION_EXCLUSIONS = "CompositionExclusions%s.txt"
@@ -166,6 +173,7 @@ def maketables(trace=0):
     makeunicodename(unicode, trace)
     makeunicodedata(unicode, trace)
     makeunicodetype(unicode, trace)
+    makestringprep()
 
 
 # --------------------------------------------------------------------
@@ -342,15 +350,21 @@ def makeunicodedata(unicode, trace):
         fprint("#define TOTAL_FIRST",total_first)
         fprint("#define TOTAL_LAST",total_last)
         fprint("struct reindex{int start;short count,index;};")
+        # The reindex tables are read only by find_nfc_index(), which scans
+        # forward while .start <= code.  The trailing sentinel's .start must
+        # exceed every codepoint (so the scan stops with a single comparison)
+        # and fit the signed int .start field.
+        nfc_sentinel = 0x7fffffff
+        assert sys.maxunicode < nfc_sentinel <= 0x7fffffff
         fprint("static struct reindex nfc_first[] = {")
         for start,end in comp_first_ranges:
             fprint("    { %d, %d, %d}," % (start,end-start,comp_first[start]))
-        fprint("    {0,0,0}")
+        fprint("    {0x%x, 0, 0}" % nfc_sentinel)
         fprint("};\n")
         fprint("static struct reindex nfc_last[] = {")
         for start,end in comp_last_ranges:
             fprint("  { %d, %d, %d}," % (start,end-start,comp_last[start]))
-        fprint("  {0,0,0}")
+        fprint("  {0x%x, 0, 0}" % nfc_sentinel)
         fprint("};\n")
 
         # FIXME: <fl> the following tables could be made static, and
@@ -801,6 +815,40 @@ def makeunicodename(unicode, trace):
             fprint('    "%s",' % prefix)
         fprint('};')
 
+
+def makestringprep():
+    FILE = "Lib/stringprep.py"
+
+    RFC_LOCAL = os.path.join(DATA_DIR, "rfc3454.txt")
+    RFC_URL = "https://www.rfc-editor.org/rfc/rfc3454.txt"
+
+    print("--- Preparing", FILE, "...")
+
+    # mkstringprep expects a local copy of RFC 3454. Download it now.
+    # (stringprep is used for URL handling, and if it's not matched
+    # with the compiled unicodedata, downloads would fail.)
+    if not os.path.exists(RFC_LOCAL):
+        download_data(RFC_LOCAL, RFC_URL)
+
+    MKSTRINGPREP = "Tools/unicode/mkstringprep.py"
+
+    # mkstringprep needs to be run with a Python version that has "its"
+    # unicode data, since it uses str.lower() and similar.
+    import unicodedata
+    if unicodedata.unidata_version != UNIDATA_VERSION:
+        print()
+        print("!! Skipping mkstringprep -- mismatched Unicode version !!")
+        print()
+        print("Please compile CPython with the updated Unicode database,")
+        print("then use that interpreter to run:")
+        print(f"    python {MKSTRINGPREP} > {FILE}")
+        return
+
+    with open(FILE, "w") as f:
+        f.truncate()
+        subprocess.check_call([sys.executable, MKSTRINGPREP], stdout=f)
+
+
 def merge_old_version(version, new, old):
     # Changes to exclusion file not implemented yet
     if old.exclusions != new.exclusions:
@@ -822,6 +870,10 @@ def merge_old_version(version, new, old):
             # Characters unassigned in the new version ought to
             # be unassigned in the old one
             assert old.table[i] is None
+            # Without a change record the old view would fall
+            # through to the new default, so record the old value
+            if old.bidi_classes[i] != new.bidi_classes[i]:
+                bidir_changes[i] = BIDIRECTIONAL_NAMES.index(old.bidi_classes[i] or '')
             continue
         # check characters unassigned in the old version
         if old.table[i] is None:
@@ -901,24 +953,27 @@ def merge_old_version(version, new, old):
                         normalization_changes))
 
 
-DATA_DIR = os.path.join('Tools', 'unicode', 'data')
-
 def open_data(template, version):
     local = os.path.join(DATA_DIR, template % ('-'+version,))
     if not os.path.exists(local):
-        import urllib.request
         if version == '3.2.0':
             # irregular url structure
             url = ('https://www.unicode.org/Public/3.2-Update/'+template) % ('-'+version,)
         else:
             url = ('https://www.unicode.org/Public/%s/ucd/'+template) % (version, '')
-        os.makedirs(os.path.dirname(local), exist_ok=True)
-        urllib.request.urlretrieve(url, filename=local)
+        download_data(local, url)
     if local.endswith('.txt'):
         return open(local, encoding='utf-8')
     else:
         # Unihan.zip
         return open(local, 'rb')
+
+
+def download_data(local, url):
+    import urllib.request
+    os.makedirs(os.path.dirname(local), exist_ok=True)
+    print(f'Downloading {url} to {local}')
+    urllib.request.urlretrieve(url, filename=local)
 
 
 def expand_range(char_range: str) -> Iterator[int]:

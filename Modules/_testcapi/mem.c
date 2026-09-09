@@ -2,6 +2,28 @@
 
 #include <stddef.h>
 
+#if defined(__APPLE__)
+#  include <TargetConditionals.h>
+   // Older macOS SDKs do not define TARGET_OS_OSX
+#  if !defined(TARGET_OS_OSX)
+#    define TARGET_OS_OSX 1
+#  endif
+#  if TARGET_OS_OSX
+#    include <errno.h>              // errno, ESRCH
+#    include <libproc.h>            // proc_pidinfo(), PROC_PIDTASKINFO
+#    include <sys/proc_info.h>      // struct proc_taskinfo
+#  endif
+#endif
+
+#ifdef __FreeBSD__
+#  include <fcntl.h>              // O_RDONLY
+#  include <kvm.h>                // kvm_openfiles()
+#  include <limits.h>             // _POSIX2_LINE_MAX
+#  include <sys/sysctl.h>         // KERN_PROC_PID
+#  include <sys/user.h>           // kinfo_proc definition
+#  include <unistd.h>             // sysconf()
+#endif
+
 
 typedef struct {
     PyMemAllocatorEx alloc;
@@ -320,6 +342,53 @@ test_setallocators(PyMemAllocatorDomain domain)
     CHECK_CTX("calloc free");
     if (hook.free_ptr != ptr) {
         error_msg = "calloc free invalid pointer";
+        goto fail;
+    }
+
+    /* realloc(NULL, size) should behave like malloc(size) */
+    size_t size3 = 100;
+    void *ptr3;
+    switch(domain) {
+        case PYMEM_DOMAIN_RAW:
+            ptr3 = PyMem_RawRealloc(NULL, size3);
+            break;
+        case PYMEM_DOMAIN_MEM:
+            ptr3 = PyMem_Realloc(NULL, size3);
+            break;
+        case PYMEM_DOMAIN_OBJ:
+            ptr3 = PyObject_Realloc(NULL, size3);
+            break;
+        default:
+            ptr3 = NULL;
+            break;
+    }
+
+    CHECK_CTX("realloc(NULL, size)");
+    if (ptr3 == NULL) {
+        error_msg = "realloc(NULL, size) failed";
+        goto fail;
+    }
+    if (hook.realloc_ptr != NULL || hook.realloc_new_size != size3) {
+        error_msg = "realloc(NULL, size) invalid parameters";
+        goto fail;
+    }
+
+    hook.free_ptr = NULL;
+    switch(domain) {
+        case PYMEM_DOMAIN_RAW:
+            PyMem_RawFree(ptr3);
+            break;
+        case PYMEM_DOMAIN_MEM:
+            PyMem_Free(ptr3);
+            break;
+        case PYMEM_DOMAIN_OBJ:
+            PyObject_Free(ptr3);
+            break;
+    }
+
+    CHECK_CTX("realloc(NULL, size) free");
+    if (hook.free_ptr != ptr3) {
+        error_msg = "unexpected pointer passed to free";
         goto fail;
     }
 
@@ -684,6 +753,74 @@ error:
 }
 
 
+#if TARGET_OS_OSX || defined(__FreeBSD__)
+// Return RSS only. Per-process swap usage isn't readily available
+static PyObject*
+get_process_memory_usage(PyObject *self, PyObject *args)
+{
+    int pid;
+    if (!PyArg_ParseTuple(args, "i", &pid)) {
+        return NULL;
+    }
+
+#if TARGET_OS_OSX
+    // macOS: proc_pidinfo(PROC_PIDTASKINFO).pti_resident_size
+    struct proc_taskinfo pti;
+    int ret = proc_pidinfo(pid, PROC_PIDTASKINFO, 0, &pti, sizeof(pti));
+    if (ret <= 0) {
+        if (errno == 0) {
+            // proc_pidinfo() can return 0 without setting errno when the
+            // process does not exist.
+            errno = ESRCH;
+        }
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+
+    return PyLong_FromUnsignedLongLong(pti.pti_resident_size);
+#else
+    // FreeBSD: kvm_getprocs(KERN_PROC_PID) and ki_rssize * page_size
+    long page_size = sysconf(_SC_PAGESIZE);
+    if (page_size <= 0) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+
+    // Using /dev/null for vmcore avoids needing dump file.
+    // NULL for kernel file uses running kernel.
+    char errbuf[_POSIX2_LINE_MAX];
+    kvm_t *kd = kvm_openfiles(NULL, "/dev/null", NULL, O_RDONLY, errbuf);
+    if (kd == NULL) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+
+    // KERN_PROC_PID filters for the specific process ID.
+    int n_procs;
+    struct kinfo_proc *kp = kvm_getprocs(kd, KERN_PROC_PID, pid, &n_procs);
+    if (kp == NULL) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        goto error;
+    }
+    if (n_procs <= 0) {
+        // Process with PID not found
+        errno = ESRCH;
+        PyErr_SetFromErrno(PyExc_OSError);
+        goto error;
+    }
+    assert(n_procs == 1);
+
+    // ki_rssize is in pages. Convert to bytes.
+    size_t rss = (size_t)kp[0].ki_rssize * page_size;
+    kvm_close(kd);
+
+    return PyLong_FromSize_t(rss);
+
+error:
+    kvm_close(kd);
+    return NULL;
+#endif
+}
+#endif
+
+
 static PyMethodDef test_methods[] = {
     {"pymem_api_misuse",              pymem_api_misuse,              METH_NOARGS},
     {"pymem_buffer_overflow",         pymem_buffer_overflow,         METH_NOARGS},
@@ -698,6 +835,9 @@ static PyMethodDef test_methods[] = {
     {"test_pymem_setrawallocators",   test_pymem_setrawallocators,   METH_NOARGS},
     {"test_pyobject_new",             test_pyobject_new,             METH_NOARGS},
     {"test_pyobject_setallocators",   test_pyobject_setallocators,   METH_NOARGS},
+#if TARGET_OS_OSX || defined(__FreeBSD__)
+    {"get_process_memory_usage",      get_process_memory_usage,      METH_VARARGS},
+#endif
 
     // Tracemalloc tests
     {"tracemalloc_track",             tracemalloc_track,             METH_VARARGS},

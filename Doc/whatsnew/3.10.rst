@@ -996,7 +996,7 @@ dataclasses
 __slots__
 ~~~~~~~~~
 
-Added ``slots`` parameter in :func:`dataclasses.dataclass` decorator.
+Added ``slots`` parameter in :deco:`dataclasses.dataclass` decorator.
 (Contributed by Yurii Karabas in :issue:`42269`)
 
 Keyword-only fields
@@ -1446,8 +1446,8 @@ as a positional-only argument.
 types
 -----
 
-Reintroduce the :data:`types.EllipsisType`, :data:`types.NoneType`
-and :data:`types.NotImplementedType` classes, providing a new set
+Reintroduce the :class:`types.EllipsisType`, :class:`types.NoneType`
+and :class:`types.NotImplementedType` classes, providing a new set
 of types readily interpretable by type checkers.
 (Contributed by Bas van Beek in :issue:`41810`.)
 
@@ -1485,9 +1485,9 @@ is a :class:`typing.TypedDict`.
 
 Subclasses of ``typing.Protocol`` which only have data variables declared
 will now raise a ``TypeError`` when checked with ``isinstance`` unless they
-are decorated with :func:`~typing.runtime_checkable`.  Previously, these checks
+are decorated with :deco:`~typing.runtime_checkable`.  Previously, these checks
 passed silently.  Users should decorate their
-subclasses with the :func:`!runtime_checkable` decorator
+subclasses with the :deco:`!runtime_checkable` decorator
 if they want runtime protocols.
 (Contributed by Yurii Karabas in :issue:`38908`.)
 
@@ -1928,7 +1928,7 @@ Changes in the Python API
   (Contributed by Yurii Karabas, Andrew Svetlov, Yury Selivanov and Kyle Stanley
   in :issue:`42392`.)
 
-* The :data:`types.FunctionType` constructor now inherits the current builtins
+* The :class:`types.FunctionType` constructor now inherits the current builtins
   if the *globals* dictionary has no ``"__builtins__"`` key, rather than using
   ``{"None": None}`` as builtins: same behavior as :func:`eval` and
   :func:`exec` functions.  Defining a function with ``def function(...): ...``

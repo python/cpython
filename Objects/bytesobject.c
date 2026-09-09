@@ -32,7 +32,7 @@ class bytes "PyBytesObject *" "&PyBytes_Type"
 /* Forward declaration */
 static void* _PyBytesWriter_ResizeAndUpdatePointer(PyBytesWriter *writer,
                                                    Py_ssize_t size, void *data);
-static Py_ssize_t _PyBytesWriter_GetAllocated(PyBytesWriter *writer);
+static Py_ssize_t _PyBytesWriter_ResizeToAllocated(PyBytesWriter *writer);
 
 
 #define CHARACTERS _Py_SINGLETON(bytes_characters)
@@ -1850,12 +1850,13 @@ bytes___bytes___impl(PyBytesObject *self)
 #define BOTHSTRIP 2
 
 /*[clinic input]
+@permit_long_summary
 bytes.split
 
     sep: object = None
         The delimiter according which to split the bytes.
-        None (the default value) means split on ASCII whitespace characters
-        (space, tab, return, newline, formfeed, vertical tab).
+        None (the default value) means split on ASCII whitespace
+        characters (space, tab, return, newline, formfeed, vertical tab).
     maxsplit: Py_ssize_t = -1
         Maximum number of splits to do.
         -1 (the default value) means no limit.
@@ -1865,7 +1866,7 @@ Return a list of the sections in the bytes, using sep as the delimiter.
 
 static PyObject *
 bytes_split_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t maxsplit)
-/*[clinic end generated code: output=52126b5844c1d8ef input=8b809b39074abbfa]*/
+/*[clinic end generated code: output=52126b5844c1d8ef input=330ff95d92544b05]*/
 {
     Py_ssize_t len = PyBytes_GET_SIZE(self), n;
     const char *s = PyBytes_AS_STRING(self), *sub;
@@ -1887,7 +1888,6 @@ bytes_split_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t maxsplit)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 bytes.partition
 
     sep: Py_buffer
@@ -1895,17 +1895,17 @@ bytes.partition
 
 Partition the bytes into three parts using the given separator.
 
-This will search for the separator sep in the bytes. If the separator is found,
-returns a 3-tuple containing the part before the separator, the separator
-itself, and the part after it.
+This will search for the separator sep in the bytes.  If the
+separator is found, returns a 3-tuple containing the part before the
+separator, the separator itself, and the part after it.
 
-If the separator is not found, returns a 3-tuple containing the original bytes
-object and two empty bytes objects.
+If the separator is not found, returns a 3-tuple containing the
+original bytes object and two empty bytes objects.
 [clinic start generated code]*/
 
 static PyObject *
 bytes_partition_impl(PyBytesObject *self, Py_buffer *sep)
-/*[clinic end generated code: output=f532b392a17ff695 input=31c55a0cebaf7722]*/
+/*[clinic end generated code: output=f532b392a17ff695 input=2e6e551ea4f8b95a]*/
 {
     return stringlib_partition(
         (PyObject*) self,
@@ -1915,7 +1915,6 @@ bytes_partition_impl(PyBytesObject *self, Py_buffer *sep)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 bytes.rpartition
 
     sep: Py_buffer
@@ -1923,17 +1922,18 @@ bytes.rpartition
 
 Partition the bytes into three parts using the given separator.
 
-This will search for the separator sep in the bytes, starting at the end. If
-the separator is found, returns a 3-tuple containing the part before the
-separator, the separator itself, and the part after it.
+This will search for the separator sep in the bytes, starting at the
+end.  If the separator is found, returns a 3-tuple containing the
+part before the separator, the separator itself, and the part after
+it.
 
-If the separator is not found, returns a 3-tuple containing two empty bytes
-objects and the original bytes object.
+If the separator is not found, returns a 3-tuple containing two
+empty bytes objects and the original bytes object.
 [clinic start generated code]*/
 
 static PyObject *
 bytes_rpartition_impl(PyBytesObject *self, Py_buffer *sep)
-/*[clinic end generated code: output=191b114cbb028e50 input=9ea5a3ab0b02bf52]*/
+/*[clinic end generated code: output=191b114cbb028e50 input=f7d24f722a5470a4]*/
 {
     return stringlib_rpartition(
         (PyObject*) self,
@@ -1943,17 +1943,18 @@ bytes_rpartition_impl(PyBytesObject *self, Py_buffer *sep)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
+@permit_long_summary
 bytes.rsplit = bytes.split
 
 Return a list of the sections in the bytes, using sep as the delimiter.
 
-Splitting is done starting at the end of the bytes and working to the front.
+Splitting is done starting at the end of the bytes and working to
+the front.
 [clinic start generated code]*/
 
 static PyObject *
 bytes_rsplit_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t maxsplit)
-/*[clinic end generated code: output=ba698d9ea01e1c8f input=55b6eaea1f3d7046]*/
+/*[clinic end generated code: output=ba698d9ea01e1c8f input=ba9bee56285f43e4]*/
 {
     Py_ssize_t len = PyBytes_GET_SIZE(self), n;
     const char *s = PyBytes_AS_STRING(self), *sub;
@@ -2173,7 +2174,6 @@ do_argstrip(PyBytesObject *self, int striptype, PyObject *bytes)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 bytes.strip
 
     bytes: object = None
@@ -2181,12 +2181,13 @@ bytes.strip
 
 Strip leading and trailing bytes contained in the argument.
 
-If the argument is omitted or None, strip leading and trailing ASCII whitespace.
+If the argument is omitted or None, strip leading and trailing ASCII
+whitespace.
 [clinic start generated code]*/
 
 static PyObject *
 bytes_strip_impl(PyBytesObject *self, PyObject *bytes)
-/*[clinic end generated code: output=c7c228d3bd104a1b input=71904cd278c0ee03]*/
+/*[clinic end generated code: output=c7c228d3bd104a1b input=9ffea5f752032bd0]*/
 {
     return do_argstrip(self, BOTHSTRIP, bytes);
 }
@@ -2246,6 +2247,7 @@ bytes_count_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
 
 
 /*[clinic input]
+@permit_long_summary
 bytes.translate
 
     table: object
@@ -2255,14 +2257,15 @@ bytes.translate
 
 Return a copy with each character mapped by the given translation table.
 
-All characters occurring in the optional argument delete are removed.
-The remaining characters are mapped through the given translation table.
+All characters occurring in the optional argument delete are
+removed.  The remaining characters are mapped through the given
+translation table.
 [clinic start generated code]*/
 
 static PyObject *
 bytes_translate_impl(PyBytesObject *self, PyObject *table,
                      PyObject *deletechars)
-/*[clinic end generated code: output=43be3437f1956211 input=0ecdf159f654233c]*/
+/*[clinic end generated code: output=43be3437f1956211 input=bddcdef0a87895d2]*/
 {
     const char *input;
     char *output;
@@ -2380,7 +2383,6 @@ bytes_translate_impl(PyBytesObject *self, PyObject *table,
 /*[clinic input]
 
 @permit_long_summary
-@permit_long_docstring_body
 @staticmethod
 bytes.maketrans
 
@@ -2390,15 +2392,15 @@ bytes.maketrans
 
 Return a translation table usable for the bytes or bytearray translate method.
 
-The returned table will be one where each byte in frm is mapped to the byte at
-the same position in to.
+The returned table will be one where each byte in frm is mapped to
+the byte at the same position in to.
 
 The bytes objects frm and to must be of the same length.
 [clinic start generated code]*/
 
 static PyObject *
 bytes_maketrans_impl(Py_buffer *frm, Py_buffer *to)
-/*[clinic end generated code: output=a36f6399d4b77f6f input=a06b75f44d933fb3]*/
+/*[clinic end generated code: output=a36f6399d4b77f6f input=3a577e5badfea8f7]*/
 {
     return _Py_bytes_maketrans(frm, to);
 }
@@ -2433,6 +2435,7 @@ bytes_replace_impl(PyBytesObject *self, Py_buffer *old, Py_buffer *new,
 /** End DALKE **/
 
 /*[clinic input]
+@permit_long_summary
 bytes.removeprefix as bytes_removeprefix
 
     prefix: Py_buffer
@@ -2440,13 +2443,14 @@ bytes.removeprefix as bytes_removeprefix
 
 Return a bytes object with the given prefix string removed if present.
 
-If the bytes starts with the prefix string, return bytes[len(prefix):].
-Otherwise, return a copy of the original bytes.
+If the bytes starts with the prefix string, return
+bytes[len(prefix):].  Otherwise, return a copy of the original
+bytes.
 [clinic start generated code]*/
 
 static PyObject *
 bytes_removeprefix_impl(PyBytesObject *self, Py_buffer *prefix)
-/*[clinic end generated code: output=f006865331a06ab6 input=0c93bac817a8502c]*/
+/*[clinic end generated code: output=f006865331a06ab6 input=3a2672bcee61d7a7]*/
 {
     const char *self_start = PyBytes_AS_STRING(self);
     Py_ssize_t self_len = PyBytes_GET_SIZE(self);
@@ -2469,6 +2473,7 @@ bytes_removeprefix_impl(PyBytesObject *self, Py_buffer *prefix)
 }
 
 /*[clinic input]
+@permit_long_summary
 bytes.removesuffix as bytes_removesuffix
 
     suffix: Py_buffer
@@ -2476,14 +2481,14 @@ bytes.removesuffix as bytes_removesuffix
 
 Return a bytes object with the given suffix string removed if present.
 
-If the bytes ends with the suffix string and that suffix is not empty,
-return bytes[:-len(prefix)].  Otherwise, return a copy of the original
-bytes.
+If the bytes ends with the suffix string and that suffix is not
+empty, return bytes[:-len(prefix)].  Otherwise, return a copy of the
+original bytes.
 [clinic start generated code]*/
 
 static PyObject *
 bytes_removesuffix_impl(PyBytesObject *self, Py_buffer *suffix)
-/*[clinic end generated code: output=d887d308e3242eeb input=9f4e1da8c637bbf1]*/
+/*[clinic end generated code: output=d887d308e3242eeb input=04df5f18a36f69d7]*/
 {
     const char *self_start = PyBytes_AS_STRING(self);
     Py_ssize_t self_len = PyBytes_GET_SIZE(self);
@@ -2563,11 +2568,11 @@ bytes.decode
     encoding: str(c_default="NULL") = 'utf-8'
         The encoding with which to decode the bytes.
     errors: str(c_default="NULL") = 'strict'
-        The error handling scheme to use for the handling of decoding errors.
-        The default is 'strict' meaning that decoding errors raise a
-        UnicodeDecodeError. Other possible values are 'ignore' and 'replace'
-        as well as any other name registered with codecs.register_error that
-        can handle UnicodeDecodeErrors.
+        The error handling scheme to use for the handling of decoding
+        errors.  The default is 'strict' meaning that decoding errors
+        raise a UnicodeDecodeError.  Other possible values are 'ignore'
+        and 'replace' as well as any other name registered with
+        codecs.register_error that can handle UnicodeDecodeErrors.
 
 Decode the bytes using the codec registered for encoding.
 [clinic start generated code]*/
@@ -2575,27 +2580,27 @@ Decode the bytes using the codec registered for encoding.
 static PyObject *
 bytes_decode_impl(PyBytesObject *self, const char *encoding,
                   const char *errors)
-/*[clinic end generated code: output=5649a53dde27b314 input=958174769d2a40ca]*/
+/*[clinic end generated code: output=5649a53dde27b314 input=94e9b8524f1d7f37]*/
 {
     return PyUnicode_FromEncodedObject((PyObject*)self, encoding, errors);
 }
 
 
 /*[clinic input]
-@permit_long_docstring_body
+@permit_long_summary
 bytes.splitlines
 
     keepends: bool = False
 
 Return a list of the lines in the bytes, breaking at line boundaries.
 
-Line breaks are not included in the resulting list unless keepends is given and
-true.
+Line breaks are not included in the resulting list unless keepends
+is given and true.
 [clinic start generated code]*/
 
 static PyObject *
 bytes_splitlines_impl(PyBytesObject *self, int keepends)
-/*[clinic end generated code: output=3484149a5d880ffb input=d17968d2a355fe55]*/
+/*[clinic end generated code: output=3484149a5d880ffb input=8734672f34430514]*/
 {
     return stringlib_splitlines(
         (PyObject*) self, PyBytes_AS_STRING(self),
@@ -2746,8 +2751,8 @@ bytes.hex
     sep: object = NULL
         An optional single character or byte to separate hex bytes.
     bytes_per_sep: Py_ssize_t = 1
-        How many bytes between separators.  Positive values count from the
-        right, negative values count from the left.
+        How many bytes between separators.  Positive values count from
+        the right, negative values count from the left.
 
 Create a string of hexadecimal numbers from a bytes object.
 
@@ -2765,7 +2770,7 @@ Example:
 
 static PyObject *
 bytes_hex_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t bytes_per_sep)
-/*[clinic end generated code: output=588821f02cb9d8f5 input=bd8eceb755d8230f]*/
+/*[clinic end generated code: output=588821f02cb9d8f5 input=b8d40cf203d172dc]*/
 {
     const char *argbuf = PyBytes_AS_STRING(self);
     Py_ssize_t arglen = PyBytes_GET_SIZE(self);
@@ -2994,7 +2999,6 @@ _PyBytes_FromSequence_lock_held(PyObject *x, PyObject **result)
         return -1;
     }
     char *str = PyBytesWriter_GetData(writer);
-    assert(_PyBytesWriter_GetAllocated(writer) >= size);
 
     PyObject *const *items = PySequence_Fast_ITEMS(x);
     for (Py_ssize_t i = 0; i < size; i++) {
@@ -3031,8 +3035,8 @@ _PyBytes_FromIterator(PyObject *it, PyObject *x)
     if (writer == NULL) {
         return NULL;
     }
+    size = _PyBytesWriter_ResizeToAllocated(writer);
     char *str = PyBytesWriter_GetData(writer);
-    size = _PyBytesWriter_GetAllocated(writer);
 
     /* Run the iterator to exhaustion */
     for (i = 0; ; i++) {
@@ -3066,7 +3070,9 @@ _PyBytes_FromIterator(PyObject *it, PyObject *x)
             if (str == NULL) {
                 goto error;
             }
-            size = _PyBytesWriter_GetAllocated(writer);
+
+            // Set the writer size to its allocated size
+            size = _PyBytesWriter_ResizeToAllocated(writer);
         }
         *str++ = (char) value;
     }
@@ -3340,6 +3346,7 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
         Py_DECREF(v);
         return (*pv == NULL) ? -1 : 0;
     }
+    assert(v != bytes_get_empty());
 
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(v);
@@ -3588,7 +3595,7 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t size, int resize)
         return 0;
     }
 
-    if (resize & writer->overallocate) {
+    if (resize && writer->overallocate) {
         if (size <= (PY_SSIZE_T_MAX - size / OVERALLOCATE_FACTOR)) {
             size += size / OVERALLOCATE_FACTOR;
         }
@@ -3706,6 +3713,19 @@ PyBytesWriter_Discard(PyBytesWriter *writer)
 PyObject*
 PyBytesWriter_FinishWithSize(PyBytesWriter *writer, Py_ssize_t size)
 {
+    // Check for negative size here to raise ValueError in all cases, rather
+    // than having a different exception depending on the code path. For
+    // example, _PyBytes_Resize() raises SystemError on negative size.
+    if (size < 0) {
+        PyErr_Format(PyExc_ValueError, "size must be positive");
+        goto error;
+    }
+
+    if (size > writer->size) {
+        PyErr_SetString(PyExc_ValueError, "size larger than allocated size");
+        goto error;
+    }
+
     PyObject *result;
     if (size == 0) {
         result = bytes_get_empty();
@@ -3725,13 +3745,23 @@ PyBytesWriter_FinishWithSize(PyBytesWriter *writer, Py_ssize_t size)
                 }
             }
         }
+
         result = writer->obj;
         writer->obj = NULL;
+
+        if (size == 1 && !writer->use_bytearray) {
+            // Get the single byte singleton
+            unsigned char ch = PyBytes_AS_STRING(result)[0];
+            PyObject *op = (PyObject*)CHARACTER(ch);
+            assert(_Py_IsImmortal(op));
+            Py_SETREF(result, op);
+        }
     }
     else if (writer->use_bytearray) {
         result = PyByteArray_FromStringAndSize(writer->small_buffer, size);
     }
     else {
+        // The function returns single byte singleton if size equals 1
         result = PyBytes_FromStringAndSize(writer->small_buffer, size);
     }
     PyBytesWriter_Discard(writer);
@@ -3753,12 +3783,6 @@ PyObject*
 PyBytesWriter_FinishWithPointer(PyBytesWriter *writer, void *buf)
 {
     Py_ssize_t size = (char*)buf - byteswriter_data(writer);
-    if (size < 0 || size > byteswriter_allocated(writer)) {
-        PyBytesWriter_Discard(writer);
-        PyErr_SetString(PyExc_ValueError, "invalid end pointer");
-        return NULL;
-    }
-
     return PyBytesWriter_FinishWithSize(writer, size);
 }
 
@@ -3774,13 +3798,6 @@ Py_ssize_t
 PyBytesWriter_GetSize(PyBytesWriter *writer)
 {
     return _PyBytesWriter_GetSize(writer);
-}
-
-
-static Py_ssize_t
-_PyBytesWriter_GetAllocated(PyBytesWriter *writer)
-{
-    return byteswriter_allocated(writer);
 }
 
 
@@ -3882,4 +3899,16 @@ PyBytesWriter_Format(PyBytesWriter *writer, const char *format, ...)
 
     Py_ssize_t size = buf - byteswriter_data(writer);
     return PyBytesWriter_Resize(writer, size);
+}
+
+
+// Resize the writer to its allocated size.
+// Return the new size.
+// The function cannot fail.
+static Py_ssize_t
+_PyBytesWriter_ResizeToAllocated(PyBytesWriter *writer)
+{
+    Py_ssize_t allocated = byteswriter_allocated(writer);
+    writer->size = allocated;
+    return allocated;
 }

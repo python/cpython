@@ -924,7 +924,7 @@ class CAPITest(unittest.TestCase):
     def test_tp_bases_slot_none(self):
         self.assertRaisesRegex(
             TypeError,
-            "metaclass conflict",
+            "bases must be types",
             _testcapi.create_heapctype_with_none_bases_slot
         )
 
@@ -3043,22 +3043,37 @@ class TestVersions(unittest.TestCase):
 
     def test_pack_full_version_ctypes(self):
         ctypes = import_helper.import_module('ctypes')
-        ctypes_func = ctypes.pythonapi.Py_PACK_FULL_VERSION
-        ctypes_func.restype = ctypes.c_uint32
-        ctypes_func.argtypes = [ctypes.c_int] * 5
+        import ctypes.util  # noqa: F811
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_PACK_FULL_VERSION(
+            x: ctypes.c_int,
+            y: ctypes.c_int,
+            z: ctypes.c_int,
+            level: ctypes.c_int,
+            serial: ctypes.c_int,
+        ) -> ctypes.c_uint32:
+            pass
+
         for *args, expected in self.full_cases:
             with self.subTest(hexversion=hex(expected)):
-                result = ctypes_func(*args)
+                result = Py_PACK_FULL_VERSION(*args)
                 self.assertEqual(result, expected)
 
     def test_pack_version_ctypes(self):
         ctypes = import_helper.import_module('ctypes')
-        ctypes_func = ctypes.pythonapi.Py_PACK_VERSION
-        ctypes_func.restype = ctypes.c_uint32
-        ctypes_func.argtypes = [ctypes.c_int] * 2
+        import ctypes.util  # noqa: F811
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_PACK_VERSION(
+            x: ctypes.c_int,
+            y: ctypes.c_int,
+        ) -> ctypes.c_uint32:
+            pass
+
         for *args, expected in self.xy_cases:
             with self.subTest(hexversion=hex(expected)):
-                result = ctypes_func(*args)
+                result = Py_PACK_VERSION(*args)
                 self.assertEqual(result, expected)
 
 

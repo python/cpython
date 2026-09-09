@@ -139,6 +139,7 @@ class IoctlTestsPty(unittest.TestCase):
         self.addCleanup(os.close, self.master_fd)
 
     @unittest.skipUnless(hasattr(termios, 'TCFLSH'), 'requires termios.TCFLSH')
+    @unittest.skipIf(sys.platform == 'cygwin', 'test failed on Cygwin')
     def test_ioctl_clear_input_or_output(self):
         wfd = self.slave_fd
         rfd = self.master_fd

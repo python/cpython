@@ -231,15 +231,19 @@ the *new_callable* argument to :func:`patch`.
     Create a new :class:`Mock` object. :class:`Mock` takes several optional arguments
     that specify the behaviour of the Mock object:
 
-    * *spec*: This can be either a list of strings or an existing object (a
-      class or instance) that acts as the specification for the mock object. If
-      you pass in an object then a list of strings is formed by calling dir on
+    * *spec*: This can be either a list or tuple of strings,
+      or an existing object (a class or instance)
+      that acts as the specification for the mock object.
+      If you pass in an object then a list of strings is formed by calling dir on
       the object (excluding unsupported magic attributes and methods).
       Accessing any attribute not in this list will raise an :exc:`AttributeError`.
 
       If *spec* is an object (rather than a list of strings) then
       :attr:`~object.__class__` returns the class of the spec object. This
       allows mocks to pass :func:`isinstance` tests.
+
+      .. versionchanged:: next
+         :func:`dir` now works for a mock created with a tuple *spec*.
 
     * *spec_set*: A stricter variant of *spec*. If used, attempting to *set*
       or get an attribute on the mock that isn't on the object passed as
@@ -345,7 +349,7 @@ the *new_callable* argument to :func:`patch`.
 
     .. method:: assert_any_call(*args, **kwargs)
 
-        assert the mock has been called with the specified arguments.
+        Assert the mock has been called with the specified arguments.
 
         The assert passes if the mock has *ever* been called, unlike
         :meth:`assert_called_with` and :meth:`assert_called_once_with` that
@@ -360,7 +364,7 @@ the *new_callable* argument to :func:`patch`.
 
     .. method:: assert_has_calls(calls, any_order=False)
 
-        assert the mock has been called with the specified calls.
+        Assert the mock has been called with the specified calls.
         The :attr:`mock_calls` list is checked for the calls.
 
         If *any_order* is false then the calls must be
@@ -448,9 +452,9 @@ the *new_callable* argument to :func:`patch`.
 
     .. method:: mock_add_spec(spec, spec_set=False)
 
-        Add a spec to a mock. *spec* can either be an object or a
-        list of strings. Only attributes on the *spec* can be fetched as
-        attributes from the mock.
+        Add a spec to a mock.
+        *spec* can either be an object or a list or tuple of strings.
+        Only attributes on the *spec* can be fetched as attributes from the mock.
 
         If *spec_set* is true then only attributes on the spec can be set.
 
@@ -2223,7 +2227,7 @@ return something else::
    >>> mock == 3
    True
 
-The return value of :meth:`MagicMock.__iter__` can be any iterable object and isn't
+The return value of :meth:`!__iter__` can be any iterable object and isn't
 required to be an iterator:
 
    >>> mock = MagicMock()
@@ -2347,12 +2351,10 @@ chained call:
     <MagicMock name='mock().method().other()()' id='...'>
     >>> kall = call(1).method(arg='foo').other('bar')(2.0)
     >>> kall.call_list()
-    [
-        call(1),
-        call().method(arg='foo'),
-        call().method().other('bar'),
-        call().method().other()(2.0),
-    ]
+    [call(1),
+     call().method(arg='foo'),
+     call().method().other('bar'),
+     call().method().other()(2.0)]
     >>> m.mock_calls == kall.call_list()
     True
 
@@ -2541,7 +2543,7 @@ Alternatively you can just use ``vars(my_mock)`` (instance members) and
 mock_open
 ~~~~~~~~~
 
-.. function:: mock_open(mock=None, read_data=None)
+.. function:: mock_open(mock=None, read_data='')
 
    A helper function to create a mock to replace the use of :func:`open`. It works
    for :func:`open` called directly or used as a context manager.

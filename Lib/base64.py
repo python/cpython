@@ -1,4 +1,4 @@
-"""Base16, Base32, Base64 (RFC 3548), Base85 and Ascii85 data encodings"""
+"""Base16, Base32, Base64 (RFC 4648), Base85 and Ascii85 data encodings"""
 
 # Modified 04-Oct-1995 by Jack Jansen to use binascii module
 # Modified 30-Dec-2003 by Barry Warsaw to add full RFC 3548 support
@@ -219,7 +219,7 @@ the input is incorrectly padded or if there are non-alphabet
 characters present in the input.
 '''
 _B32_DECODE_MAP01_DOCSTRING = '''
-RFC 3548 allows for optional mapping of the digit 0 (zero) to the
+RFC 4648 allows for optional mapping of the digit 0 (zero) to the
 letter O (oh), and for optional mapping of the digit 1 (one) to
 either the letter I (eye) or letter L (el).  The optional argument
 map01 when not None, specifies which letter the digit 1 should be
@@ -266,7 +266,7 @@ b32hexdecode.__doc__ = _B32_DECODE_DOCSTRING.format(encoding='base32hex',
                                                     extra_args='')
 
 
-# RFC 3548, Base 16 Alphabet specifies uppercase, but hexlify() returns
+# RFC 4648, Base 16 Alphabet specifies uppercase, but hexlify() returns
 # lowercase.  The RFC also recommends against accepting input case
 # insensitively.
 def b16encode(s, *, wrapcol=0):

@@ -44,7 +44,7 @@ BaseException___setstate__(PyObject *self, PyObject *state)
 {
     PyObject *return_value = NULL;
 
-    Py_BEGIN_CRITICAL_SECTION(self);
+    Py_BEGIN_CRITICAL_SECTION(state);
     return_value = BaseException___setstate___impl((PyBaseExceptionObject *)self, state);
     Py_END_CRITICAL_SECTION();
 
@@ -380,4 +380,4 @@ BaseExceptionGroup_subgroup(PyObject *self, PyObject *matcher_value)
 
     return return_value;
 }
-/*[clinic end generated code: output=fcf70b3b71f3d14a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e63b88d0443b4f92 input=a9049054013a1b77]*/

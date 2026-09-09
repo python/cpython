@@ -81,6 +81,29 @@ lazy_import_dealloc(PyObject *op)
     Py_TYPE(op)->tp_free(op);
 }
 
+/* Specialize the error message for failed attribute lookups. */
+static PyObject *
+lazy_import_getattro(PyObject *op, PyObject *name)
+{
+    PyObject *value = _PyObject_GenericGetAttrWithDict(op, name, NULL, /* suppress */1);
+    if (value == NULL) {
+        if (PyErr_Occurred()) {
+            // pass up non-AttributeError exception
+            return NULL;
+        }
+        PyObject *lz_name = _PyLazyImport_GetName(op);
+        if (lz_name == NULL) {
+            return NULL;
+        }
+        PyErr_Format(PyExc_AttributeError,
+                     "cannot access attribute %R on unresolved lazy import %R",
+                     name, lz_name);
+        Py_DECREF(lz_name);
+        return NULL;
+    }
+    return value;
+}
+
 static PyObject *
 lazy_import_name(PyLazyImportObject *m)
 {
@@ -135,7 +158,7 @@ PyDoc_STRVAR(lazy_import_doc,
 "lazy_import(builtins, name, fromlist=None, /)\n"
 "--\n"
 "\n"
-"Represents a deferred import that will be resolved on first use.\n"
+"Represents a lazy import that will be resolved on first use.\n"
 "\n"
 "Instances of this object accessed from the global scope will be\n"
 "automatically imported based upon their name and then replaced with\n"
@@ -149,6 +172,7 @@ PyTypeObject PyLazyImport_Type = {
     .tp_repr = lazy_import_repr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_doc = lazy_import_doc,
+    .tp_getattro = lazy_import_getattro,
     .tp_traverse = lazy_import_traverse,
     .tp_clear = lazy_import_clear,
     .tp_methods = lazy_import_methods,

@@ -108,6 +108,7 @@ typedef struct {
 typedef struct {
     PyObject_HEAD
     bz_stream bzs;
+    int bzerror;
     char eof;           /* Py_T_BOOL expects a char */
     PyObject *unused_data;
     char needs_input;
@@ -435,8 +436,11 @@ decompress_buf(BZ2Decompressor *d, Py_ssize_t max_length)
 
         d->bzs_avail_in_real += bzs->avail_in;
 
-        if (catch_bz2_error(bzret))
+        if (catch_bz2_error(bzret)) {
+            d->bzerror = bzret;
+            FT_ATOMIC_STORE_CHAR_RELAXED(d->needs_input, 0);
             goto error;
+        }
         if (bzret == BZ_STREAM_END) {
             FT_ATOMIC_STORE_CHAR_RELAXED(d->eof, 1);
             break;
@@ -577,7 +581,6 @@ error:
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 _bz2.BZ2Decompressor.decompress
 
     data: Py_buffer
@@ -585,32 +588,40 @@ _bz2.BZ2Decompressor.decompress
 
 Decompress *data*, returning uncompressed data as bytes.
 
-If *max_length* is nonnegative, returns at most *max_length* bytes of
-decompressed data. If this limit is reached and further output can be
-produced, *self.needs_input* will be set to ``False``. In this case, the next
-call to *decompress()* may provide *data* as b'' to obtain more of the output.
+If *max_length* is nonnegative, returns at most *max_length* bytes
+of decompressed data.  If this limit is reached and further output
+can be produced, *self.needs_input* will be set to ``False``.  In
+this case, the next call to *decompress()* may provide *data* as b''
+to obtain more of the output.
 
-If all of the input data was decompressed and returned (either because this
-was less than *max_length* bytes, or because *max_length* was negative),
-*self.needs_input* will be set to True.
+If all of the input data was decompressed and returned (either
+because this was less than *max_length* bytes, or because
+*max_length* was negative), *self.needs_input* will be set to True.
 
-Attempting to decompress data after the end of stream is reached raises an
-EOFError.  Any data found after the end of the stream is ignored and saved in
-the unused_data attribute.
+Attempting to decompress data after the end of stream is reached
+raises an EOFError.  Any data found after the end of the stream is
+ignored and saved in the unused_data attribute.
 [clinic start generated code]*/
 
 static PyObject *
 _bz2_BZ2Decompressor_decompress_impl(BZ2Decompressor *self, Py_buffer *data,
                                      Py_ssize_t max_length)
-/*[clinic end generated code: output=23e41045deb240a3 input=3703e78f91757655]*/
+/*[clinic end generated code: output=23e41045deb240a3 input=7f68faa9ff7a1b51]*/
 {
     PyObject *result = NULL;
 
     PyMutex_Lock(&self->mutex);
-    if (self->eof)
+    if (self->eof) {
         PyErr_SetString(PyExc_EOFError, "End of stream already reached");
-    else
+    }
+    else if (self->bzerror) {
+        // Re-entering BZ2_bzDecompress() after an error can write out of bounds.
+        PyErr_SetString(PyExc_ValueError,
+                        "Decompressor is unusable after a previous error");
+    }
+    else {
         result = decompress(self, data->buf, data->len, max_length);
+    }
     PyMutex_Unlock(&self->mutex);
     return result;
 }
@@ -638,6 +649,7 @@ _bz2_BZ2Decompressor_impl(PyTypeObject *type)
     }
 
     self->mutex = (PyMutex){0};
+    self->bzerror = 0;
     self->needs_input = 1;
     self->bzs_avail_in_real = 0;
     self->input_buffer = NULL;

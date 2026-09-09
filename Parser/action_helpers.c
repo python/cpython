@@ -2,6 +2,7 @@
 #include "pycore_pystate.h"         // _PyInterpreterState_GET()
 #include "pycore_runtime.h"         // _PyRuntime
 #include "pycore_unicodeobject.h"   // _PyUnicode_InternImmortal()
+#include "pycore_pyerrors.h"        // _PyErr_EmitSyntaxWarning()
 
 #include "pegen.h"
 #include "string_parser.h"          // _PyPegen_decode_string()
@@ -254,7 +255,11 @@ _set_seq_context(Parser *p, asdl_expr_seq *seq, expr_context_ty ctx)
     }
     for (Py_ssize_t i = 0; i < len; i++) {
         expr_ty e = asdl_seq_GET(seq, i);
-        asdl_seq_SET(new_seq, i, _PyPegen_set_expr_context(p, e, ctx));
+        expr_ty new_e = _PyPegen_set_expr_context(p, e, ctx);
+        if (!new_e) {
+            return NULL;
+        }
+        asdl_seq_SET(new_seq, i, new_e);
     }
     return new_seq;
 }
@@ -268,19 +273,21 @@ _set_name_context(Parser *p, expr_ty e, expr_context_ty ctx)
 static expr_ty
 _set_tuple_context(Parser *p, expr_ty e, expr_context_ty ctx)
 {
-    return _PyAST_Tuple(
-            _set_seq_context(p, e->v.Tuple.elts, ctx),
-            ctx,
-            EXTRA_EXPR(e, e));
+    asdl_expr_seq *seq = _set_seq_context(p, e->v.Tuple.elts, ctx);
+    if (!seq && PyErr_Occurred()) {
+        return NULL;
+    }
+    return _PyAST_Tuple(seq, ctx, EXTRA_EXPR(e, e));
 }
 
 static expr_ty
 _set_list_context(Parser *p, expr_ty e, expr_context_ty ctx)
 {
-    return _PyAST_List(
-            _set_seq_context(p, e->v.List.elts, ctx),
-            ctx,
-            EXTRA_EXPR(e, e));
+    asdl_expr_seq *seq = _set_seq_context(p, e->v.List.elts, ctx);
+    if (!seq && PyErr_Occurred()) {
+        return NULL;
+    }
+    return _PyAST_List(seq, ctx, EXTRA_EXPR(e, e));
 }
 
 static expr_ty
@@ -300,8 +307,11 @@ _set_attribute_context(Parser *p, expr_ty e, expr_context_ty ctx)
 static expr_ty
 _set_starred_context(Parser *p, expr_ty e, expr_context_ty ctx)
 {
-    return _PyAST_Starred(_PyPegen_set_expr_context(p, e->v.Starred.value, ctx),
-                          ctx, EXTRA_EXPR(e, e));
+    expr_ty inner = _PyPegen_set_expr_context(p, e->v.Starred.value, ctx);
+    if (!inner) {
+        return NULL;
+    }
+    return _PyAST_Starred(inner, ctx, EXTRA_EXPR(e, e));
 }
 
 /* Creates an `expr_ty` equivalent to `expr` but with `ctx` as context */
@@ -991,6 +1001,13 @@ result_token_with_metadata(Parser *p, void *result, PyObject *metadata)
     return res;
 }
 
+static char
+formatted_string_prefix(const Parser *p)
+{
+    const ftstring_state *state = _PyLexer_CurrentFTString(p->tok);
+    return state == NULL ? 'f' : _PyLexer_StringPrefix(state->kind);
+}
+
 ResultTokenWithMetadata *
 _PyPegen_check_fstring_conversion(Parser *p, Token* conv_token, expr_ty conv)
 {
@@ -998,7 +1015,7 @@ _PyPegen_check_fstring_conversion(Parser *p, Token* conv_token, expr_ty conv)
         return RAISE_SYNTAX_ERROR_KNOWN_RANGE(
             conv_token, conv,
             "%c-string: conversion type must come right after the exclamation mark",
-            TOK_GET_STRING_PREFIX(p->tok)
+            formatted_string_prefix(p)
         );
     }
 
@@ -1007,7 +1024,7 @@ _PyPegen_check_fstring_conversion(Parser *p, Token* conv_token, expr_ty conv)
             !(first == 's' || first == 'r' || first == 'a')) {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(conv,
                                             "%c-string: invalid conversion character %R: expected 's', 'r', or 'a'",
-                                            TOK_GET_STRING_PREFIX(p->tok),
+                                            formatted_string_prefix(p),
                                             conv->v.Name.id);
         return NULL;
     }
@@ -1168,7 +1185,14 @@ expr_ty _PyPegen_collect_call_seqs(Parser *p, asdl_expr_seq *a, asdl_seq *b,
     }
 
     asdl_expr_seq *starreds = _PyPegen_seq_extract_starred_exprs(p, b);
+    if (!starreds && PyErr_Occurred()) {
+        return NULL;
+    }
+
     asdl_keyword_seq *keywords = _PyPegen_seq_delete_starred_exprs(p, b);
+    if (!keywords && PyErr_Occurred()) {
+        return NULL;
+    }
 
     if (starreds) {
         total_len += asdl_seq_LEN(starreds);
@@ -1327,7 +1351,8 @@ _PyPegen_decode_fstring_part(Parser* p, int is_raw, expr_ty constant, Token* tok
 }
 
 static asdl_expr_seq *
-_get_resized_exprs(Parser *p, Token *a, asdl_expr_seq *raw_expressions, Token *b, enum string_kind_t string_kind)
+_get_resized_exprs(Parser *p, Token *a, asdl_expr_seq *raw_expressions,
+                   Token *b, ftstring_kind string_kind)
 {
     Py_ssize_t n_items = asdl_seq_LEN(raw_expressions);
     Py_ssize_t total_items = n_items;
@@ -1353,15 +1378,13 @@ _get_resized_exprs(Parser *p, Token *a, asdl_expr_seq *raw_expressions, Token *b
     for (Py_ssize_t i = 0; i < n_items; i++) {
         expr_ty item = asdl_seq_GET(raw_expressions, i);
 
-        // This should correspond to a JoinedStr node of two elements
-        // created _PyPegen_formatted_value. This situation can only be the result of
-        // a (f|t)-string debug expression where the first element is a constant with the text and the second
-        // a formatted value with the expression.
+        /* Debug expressions arrive as JoinedStr(text, value); flatten them
+           into the surrounding string. */
         if (item->kind == JoinedStr_kind) {
             asdl_expr_seq *values = item->v.JoinedStr.values;
             if (asdl_seq_LEN(values) != 2) {
                 PyErr_Format(PyExc_SystemError,
-                             string_kind == TSTRING
+                             _PyLexer_IsTString(string_kind)
                              ? "unexpected TemplateStr node without debug data in t-string at line %d"
                              : "unexpected JoinedStr node without debug data in f-string at line %d",
                              item->lineno);
@@ -1373,7 +1396,9 @@ _get_resized_exprs(Parser *p, Token *a, asdl_expr_seq *raw_expressions, Token *b
             asdl_seq_SET(seq, index++, first);
 
             expr_ty second = asdl_seq_GET(values, 1);
-            assert((string_kind == TSTRING && second->kind == Interpolation_kind) || second->kind == FormattedValue_kind);
+            assert((_PyLexer_IsTString(string_kind) &&
+                    second->kind == Interpolation_kind) ||
+                   second->kind == FormattedValue_kind);
             asdl_seq_SET(seq, index++, second);
 
             continue;
@@ -1416,6 +1441,9 @@ expr_ty
 _PyPegen_template_str(Parser *p, Token *a, asdl_expr_seq *raw_expressions, Token *b) {
 
     asdl_expr_seq *resized_exprs = _get_resized_exprs(p, a, raw_expressions, b, TSTRING);
+    if (resized_exprs == NULL) {
+        return NULL;
+    }
     return _PyAST_TemplateStr(resized_exprs, a->lineno, a->col_offset,
                               b->end_lineno, b->end_col_offset,
                               p->arena);
@@ -1425,6 +1453,9 @@ expr_ty
 _PyPegen_joined_str(Parser *p, Token* a, asdl_expr_seq* raw_expressions, Token*b) {
 
     asdl_expr_seq *resized_exprs = _get_resized_exprs(p, a, raw_expressions, b, FSTRING);
+    if (resized_exprs == NULL) {
+        return NULL;
+    }
     return _PyAST_JoinedStr(resized_exprs, a->lineno, a->col_offset,
                             b->end_lineno, b->end_col_offset,
                             p->arena);
@@ -1437,12 +1468,8 @@ expr_ty _PyPegen_decoded_constant_from_token(Parser* p, Token* tok) {
         return NULL;
     }
 
-    // Check if we're inside a raw f-string for format spec decoding
-    int is_raw = 0;
-    if (INSIDE_FSTRING(p->tok)) {
-        tokenizer_mode *mode = TOK_GET_MODE(p->tok);
-        is_raw = mode->raw;
-    }
+    const ftstring_state *state = _PyLexer_CurrentFTString(p->tok);
+    int is_raw = state != NULL && _PyLexer_IsRawString(state->kind);
 
     PyObject* str = _PyPegen_decode_string(p, is_raw, bstr, bsize, tok);
     if (str == NULL) {
@@ -1458,7 +1485,7 @@ expr_ty _PyPegen_decoded_constant_from_token(Parser* p, Token* tok) {
 }
 
 expr_ty _PyPegen_constant_from_token(Parser* p, Token* tok) {
-    char* bstr = PyBytes_AsString(tok->bytes);
+    const char* bstr = PyBytes_AsString(tok->bytes);
     if (bstr == NULL) {
         return NULL;
     }
@@ -1476,7 +1503,7 @@ expr_ty _PyPegen_constant_from_token(Parser* p, Token* tok) {
 }
 
 expr_ty _PyPegen_constant_from_string(Parser* p, Token* tok) {
-    char* the_str = PyBytes_AsString(tok->bytes);
+    const char* the_str = PyBytes_AsString(tok->bytes);
     if (the_str == NULL) {
         return NULL;
     }
@@ -1574,7 +1601,7 @@ expr_ty _PyPegen_interpolation(Parser *p, expr_ty expression, Token *debug, Resu
         end_col_offset, arena
     );
 
-    if (!debug) {
+    if (!interpolation || !debug) {
         return interpolation;
     }
 
@@ -1585,6 +1612,9 @@ expr_ty _PyPegen_interpolation(Parser *p, expr_ty expression, Token *debug, Resu
     }
 
     asdl_expr_seq *values = _Py_asdl_expr_seq_new(2, arena);
+    if (!values) {
+        return NULL;
+    }
     asdl_seq_SET(values, 0, debug_text);
     asdl_seq_SET(values, 1, interpolation);
     return _PyAST_JoinedStr(values, lineno, col_offset, debug_end_line, debug_end_offset, p->arena);
@@ -1601,7 +1631,7 @@ expr_ty _PyPegen_formatted_value(Parser *p, expr_ty expression, Token *debug, Re
         end_col_offset, arena
     );
 
-    if (!debug) {
+    if (!formatted_value || !debug) {
         return formatted_value;
     }
 
@@ -1631,6 +1661,9 @@ expr_ty _PyPegen_formatted_value(Parser *p, expr_ty expression, Token *debug, Re
     }
 
     asdl_expr_seq *values = _Py_asdl_expr_seq_new(2, arena);
+    if (!values) {
+        return NULL;
+    }
     asdl_seq_SET(values, 0, debug_text);
     asdl_seq_SET(values, 1, formatted_value);
     return _PyAST_JoinedStr(values, lineno, col_offset, debug_end_line, debug_end_offset, p->arena);
@@ -1898,6 +1931,9 @@ _build_concatenated_joined_str(Parser *p, asdl_expr_seq *strings,
 {
     asdl_expr_seq *values = _build_concatenated_str(p, strings, lineno,
         col_offset, end_lineno, end_col_offset, arena);
+    if (!values) {
+        return NULL;
+    }
     return _PyAST_JoinedStr(values, lineno, col_offset, end_lineno, end_col_offset, p->arena);
 }
 
@@ -1908,6 +1944,9 @@ _PyPegen_concatenate_tstrings(Parser *p, asdl_expr_seq *strings,
 {
     asdl_expr_seq *values = _build_concatenated_str(p, strings, lineno,
         col_offset, end_lineno, end_col_offset, arena);
+    if (!values) {
+        return NULL;
+    }
     return _PyAST_TemplateStr(values, lineno, col_offset, end_lineno,
         end_col_offset, arena);
 }
@@ -1973,11 +2012,64 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
         col_offset, end_lineno, end_col_offset, arena);
 }
 
+static int
+_warn_relative_import_of_lazy(Parser *p, asdl_seq *dots, expr_ty module)
+{
+    // Warn about `from . lazy import x`: the whitespace between the dots and
+    // the module name is insignificant, so this is parsed exactly like
+    // `from .lazy import x` (an import of the relative module "lazy"), but it
+    // is most likely a transposition of `lazy from . import x` (PEP 810).
+    if (p->call_invalid_rules) {
+        return 0;
+    }
+
+    // Only fire if there is whitespace between the last dot and the name,
+    // i.e. not for the common `from .lazy import x` spelling.
+    Token *last_dot = asdl_seq_GET_UNTYPED(dots, asdl_seq_LEN(dots) - 1);
+    if (
+        last_dot->end_lineno == module->lineno
+        && last_dot->end_col_offset == module->col_offset
+    ) {
+        return 0;
+    }
+
+    int count = _PyPegen_seq_count_dots(dots);
+    char *buf = PyMem_RawMalloc(count + 1);
+    if (buf == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    memset(buf, '.', count);
+    buf[count] = '\0';
+
+    PyObject *msg = PyUnicode_FromFormat(
+        "'from %s lazy import' is the same as 'from %slazy import'; "
+        "did you mean 'lazy from %s import'?",
+        buf, buf, buf);
+    PyMem_RawFree(buf);
+    if (msg == NULL) {
+        return -1;
+    }
+
+    int res = _PyErr_EmitSyntaxWarning(msg,
+                                       p->tok->filename,
+                                       module->lineno,
+                                       module->col_offset + 1,
+                                       module->end_lineno,
+                                       module->end_col_offset + 1,
+                                       p->tok->module);
+    Py_DECREF(msg);
+    return res;
+}
+
 stmt_ty
-_PyPegen_checked_future_import(Parser *p, identifier module, asdl_alias_seq * names,
-                               int level, expr_ty lazy_token, int lineno,
-                               int col_offset, int end_lineno, int end_col_offset,
-                               PyArena *arena) {
+_PyPegen_checked_from_import(Parser *p, asdl_seq *dots, expr_ty module_name,
+                             asdl_alias_seq *names, expr_ty lazy_token, int lineno,
+                             int col_offset, int end_lineno, int end_col_offset,
+                             PyArena *arena)
+{
+    identifier module = module_name->v.Name.id;
+    int level = _PyPegen_seq_count_dots(dots);
     if (level == 0 && PyUnicode_CompareWithASCIIString(module, "__future__") == 0) {
         if (lazy_token) {
             RAISE_SYNTAX_ERROR_KNOWN_LOCATION(lazy_token,
@@ -1989,6 +2081,15 @@ _PyPegen_checked_future_import(Parser *p, identifier module, asdl_alias_seq * na
             if (PyUnicode_CompareWithASCIIString(alias->name, "barry_as_FLUFL") == 0) {
                 p->flags |= PyPARSE_BARRY_AS_BDFL;
             }
+        }
+    }
+    else if (
+        level > 0
+        && lazy_token == NULL
+        && PyUnicode_CompareWithASCIIString(module, "lazy") == 0
+    ) {
+        if (_warn_relative_import_of_lazy(p, dots, module_name) < 0) {
+            return NULL;
         }
     }
     return _PyAST_ImportFrom(module, names, level, lazy_token ? 1 : 0, lineno,

@@ -292,12 +292,13 @@ def load(fp, *, cls=None, object_hook=None, parse_float=None,
     ``object_hook`` is also defined, the ``object_pairs_hook`` takes
     priority.
 
-    ``array_hook`` is an optional function that will be called with the result
-    of any literal array decode (a ``list``). The return value of this function will
-    be used instead of the ``list``. This feature can be used along
-    ``object_pairs_hook`` to customize the resulting data structure - for example,
-    by setting that to ``frozendict`` and ``array_hook`` to ``tuple``, one can get
-    a deep immutable data structute from any JSON data.
+    ``array_hook`` is an optional function that will be called with the
+    result of any literal array decode (a ``list``).  The return value of
+    this function will be used instead of the ``list``.  This feature can
+    be used along ``object_pairs_hook`` to customize the resulting data
+    structure - for example, by setting that to ``frozendict`` and
+    ``array_hook`` to ``tuple``, one can get a deep immutable data structure
+    from any JSON data.
 
     To use a custom ``JSONDecoder`` subclass, specify it with the ``cls``
     kwarg; otherwise ``JSONDecoder`` is used.
@@ -306,7 +307,7 @@ def load(fp, *, cls=None, object_hook=None, parse_float=None,
         cls=cls, object_hook=object_hook,
         parse_float=parse_float, parse_int=parse_int,
         parse_constant=parse_constant, object_pairs_hook=object_pairs_hook,
-        array_hook=None, **kw)
+        array_hook=array_hook, **kw)
 
 
 def loads(s, *, cls=None, object_hook=None, parse_float=None,
@@ -327,12 +328,13 @@ def loads(s, *, cls=None, object_hook=None, parse_float=None,
     ``object_hook`` is also defined, the ``object_pairs_hook`` takes
     priority.
 
-    ``array_hook`` is an optional function that will be called with the result
-    of any literal array decode (a ``list``). The return value of this function will
-    be used instead of the ``list``. This feature can be used along
-    ``object_pairs_hook`` to customize the resulting data structure - for example,
-    by setting that to ``frozendict`` and ``array_hook`` to ``tuple``, one can get
-    a deep immutable data structute from any JSON data.
+    ``array_hook`` is an optional function that will be called with the
+    result of any literal array decode (a ``list``).  The return value of
+    this function will be used instead of the ``list``.  This feature can
+    be used along ``object_pairs_hook`` to customize the resulting data
+    structure - for example, by setting that to ``frozendict`` and
+    ``array_hook`` to ``tuple``, one can get a deep immutable data structure
+    from any JSON data.
 
     ``parse_float``, if specified, will be called with the string
     of every JSON float to be decoded. By default this is equivalent to

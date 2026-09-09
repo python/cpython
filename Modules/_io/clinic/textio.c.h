@@ -16,7 +16,8 @@ PyDoc_STRVAR(_io__TextIOBase_detach__doc__,
 "\n"
 "Separate the underlying buffer from the TextIOBase and return it.\n"
 "\n"
-"After the underlying buffer has been detached, the TextIO is in an unusable state.");
+"After the underlying buffer has been detached, the TextIO is in\n"
+"an unusable state.");
 
 #define _IO__TEXTIOBASE_DETACH_METHODDEF    \
     {"detach", _PyCFunction_CAST(_io__TextIOBase_detach), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__TextIOBase_detach__doc__},
@@ -40,8 +41,8 @@ PyDoc_STRVAR(_io__TextIOBase_read__doc__,
 "\n"
 "Read at most size characters from stream.\n"
 "\n"
-"Read from underlying buffer until we have size characters or we hit EOF.\n"
-"If size is negative or omitted, read until EOF.");
+"Read from underlying buffer until we have size characters or we hit\n"
+"EOF.  If size is negative or omitted, read until EOF.");
 
 #define _IO__TEXTIOBASE_READ_METHODDEF    \
     {"read", _PyCFunction_CAST(_io__TextIOBase_read), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__TextIOBase_read__doc__},
@@ -665,7 +666,9 @@ _io_TextIOWrapper___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         goto exit;
     }
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_TextIOWrapper___init___impl((textio *)self, buffer, encoding, errors, newline, line_buffering, write_through);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -964,8 +967,8 @@ PyDoc_STRVAR(_io_TextIOWrapper_tell__doc__,
 "\n"
 "Return the stream position as an opaque number.\n"
 "\n"
-"The return value of tell() can be given as input to seek(), to restore a\n"
-"previous stream position.");
+"The return value of tell() can be given as input to seek(), to\n"
+"restore a previous stream position.");
 
 #define _IO_TEXTIOWRAPPER_TELL_METHODDEF    \
     {"tell", (PyCFunction)_io_TextIOWrapper_tell, METH_NOARGS, _io_TextIOWrapper_tell__doc__},
@@ -1322,10 +1325,41 @@ _io_TextIOWrapper__CHUNK_SIZE_set(PyObject *self, PyObject *value, void *Py_UNUS
 {
     int return_value;
 
+    if (value == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '_CHUNK_SIZE' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_TextIOWrapper__CHUNK_SIZE_set_impl((textio *)self, value);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
-/*[clinic end generated code: output=c38e6cd5ff4b7eea input=a9049054013a1b77]*/
+
+#if !defined(_io_TextIOWrapper_buffer_DOCSTR)
+#  define _io_TextIOWrapper_buffer_DOCSTR NULL
+#endif
+#if defined(_IO_TEXTIOWRAPPER_BUFFER_GETSETDEF)
+#  undef _IO_TEXTIOWRAPPER_BUFFER_GETSETDEF
+#  define _IO_TEXTIOWRAPPER_BUFFER_GETSETDEF {"buffer", (getter)_io_TextIOWrapper_buffer_get, (setter)_io_TextIOWrapper_buffer_set, _io_TextIOWrapper_buffer_DOCSTR},
+#else
+#  define _IO_TEXTIOWRAPPER_BUFFER_GETSETDEF {"buffer", (getter)_io_TextIOWrapper_buffer_get, NULL, _io_TextIOWrapper_buffer_DOCSTR},
+#endif
+
+static PyObject *
+_io_TextIOWrapper_buffer_get_impl(textio *self);
+
+static PyObject *
+_io_TextIOWrapper_buffer_get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io_TextIOWrapper_buffer_get_impl((textio *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+/*[clinic end generated code: output=e93032a0691ff0e4 input=a9049054013a1b77]*/

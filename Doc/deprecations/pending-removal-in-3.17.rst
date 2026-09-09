@@ -37,6 +37,13 @@ Pending removal in Python 3.17
     is deprecated and scheduled for removal in Python 3.17.
     (Contributed by Stan Ulbrych in :gh:`136702`.)
 
+* :mod:`profile`:
+
+  - The :mod:`!profile` module is deprecated and will be removed in
+    Python 3.17. Use :mod:`profiling.tracing` instead, which provides a
+    compatible API. See :pep:`799` for details.
+    (Contributed by Pablo Galindo and László Kiss Kollár in :gh:`138122`.)
+
 * :mod:`webbrowser`:
 
   - :class:`!webbrowser.MacOSXOSAScript` is deprecated in favour of
@@ -68,3 +75,13 @@ Pending removal in Python 3.17
 
     See :pep:`PEP 688 <688#current-options>` for more details.
     (Contributed by Shantanu Jain in :gh:`91896`.)
+
+* :mod:`tkinter`:
+
+  - The :class:`!tkinter.Variable` methods :meth:`!trace_variable`,
+    :meth:`!trace` (an alias of :meth:`!trace_variable`),
+    :meth:`!trace_vdelete` and :meth:`!trace_vinfo`, deprecated since
+    Python 3.14, are scheduled for removal in Python 3.17.
+    Use :meth:`!trace_add`, :meth:`!trace_remove` and :meth:`!trace_info`
+    instead.
+    (Contributed by Serhiy Storchaka in :gh:`120220`.)

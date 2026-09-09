@@ -1,0 +1,5 @@
+Fix a race condition in :mod:`asyncio` on Unix where
+:meth:`asyncio.subprocess.Process.send_signal`, :meth:`~asyncio.subprocess.Process.terminate`
+or :meth:`~asyncio.subprocess.Process.kill` could signal an unrelated process
+that was recycled onto the PID of the already-reaped child when ThreadedChildWatcher is used.
+Patch by Kumar Aditya.

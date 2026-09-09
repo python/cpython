@@ -225,7 +225,9 @@ write_str(stringio *self, PyObject *obj)
 
     if (self->state == STATE_ACCUMULATING) {
         if (self->string_size == self->pos) {
-            if (PyUnicodeWriter_WriteStr(self->writer, decoded))
+            // gh-149046: Avoid PyUnicodeWriter_WriteStr() which calls str(obj)
+            // on str subclasses
+            if (_PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)self->writer, decoded))
                 goto fail;
             goto success;
         }
@@ -405,8 +407,10 @@ _io_StringIO_readline_impl(stringio *self, Py_ssize_t size)
 }
 
 static PyObject *
-stringio_iternext(PyObject *op)
+stringio_iternext_lock_held(PyObject *op)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
+
     PyObject *line;
     stringio *self = stringio_CAST(op);
 
@@ -440,6 +444,16 @@ stringio_iternext(PyObject *op)
     }
 
     return line;
+}
+
+static PyObject *
+stringio_iternext(PyObject *op)
+{
+    PyObject *ret;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    ret = stringio_iternext_lock_held(op);
+    Py_END_CRITICAL_SECTION();
+    return ret;
 }
 
 /*[clinic input]
@@ -497,7 +511,8 @@ _io.StringIO.seek
 
 Change stream position.
 
-Seek to character offset pos relative to position indicated by whence:
+Seek to character offset pos relative to position indicated by
+whence:
     0  Start of stream (the default).  pos should be >= 0;
     1  Current position - pos must be 0;
     2  End of stream - pos must be 0.
@@ -506,7 +521,7 @@ Returns the new absolute position.
 
 static PyObject *
 _io_StringIO_seek_impl(stringio *self, Py_ssize_t pos, int whence)
-/*[clinic end generated code: output=e9e0ac9a8ae71c25 input=c75ced09343a00d7]*/
+/*[clinic end generated code: output=e9e0ac9a8ae71c25 input=ffef24668fd71a5d]*/
 {
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);

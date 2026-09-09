@@ -1,0 +1,6 @@
+:mod:`tracemalloc` no longer acquires the :term:`GIL` nor creates a
+temporary thread state to trace memory allocations: traceback frames now
+store plain UTF-8 strings instead of Python str objects, and tracebacks are
+captured using the Python thread state already associated with the calling
+thread, even if it is not attached. Threads without a Python thread state
+record the traceback as ``<unknown>``.

@@ -1,0 +1,1 @@
+:class:`decimal.Context` objects now support :func:`copy.replace`.

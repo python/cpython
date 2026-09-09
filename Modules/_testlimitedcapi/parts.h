@@ -7,8 +7,10 @@
 #include "pyconfig.h"   // Py_GIL_DISABLED
 
 // Use the limited C API
-#if !defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
-   // need limited C API version 3.5 for PyModule_AddFunctions()
+#ifdef Py_GIL_DISABLED
+   // Cannot test the limited C API
+#elif !defined(Py_LIMITED_API)
+   // Need limited C API version 3.5 for PyModule_AddFunctions()
 #  define Py_LIMITED_API 0x03050000
 #endif
 
@@ -25,6 +27,7 @@
 int _PyTestLimitedCAPI_Init_Abstract(PyObject *module);
 int _PyTestLimitedCAPI_Init_ByteArray(PyObject *module);
 int _PyTestLimitedCAPI_Init_Bytes(PyObject *module);
+int _PyTestLimitedCAPI_Init_Capsule(PyObject *module);
 int _PyTestLimitedCAPI_Init_Codec(PyObject *module);
 int _PyTestLimitedCAPI_Init_Complex(PyObject *module);
 int _PyTestLimitedCAPI_Init_Dict(PyObject *module);
@@ -45,5 +48,8 @@ int _PyTestLimitedCAPI_Init_Unicode(PyObject *module);
 int _PyTestLimitedCAPI_Init_VectorcallLimited(PyObject *module);
 int _PyTestLimitedCAPI_Init_Version(PyObject *module);
 int _PyTestLimitedCAPI_Init_File(PyObject *module);
+int _PyTestLimitedCAPI_Init_Weakref(PyObject *module);
+int _PyTestLimitedCAPI_Init_Run(PyObject *module);
+int _PyTestLimitedCAPI_Init_Type(PyObject *module);
 
 #endif // Py_TESTLIMITEDCAPI_PARTS_H

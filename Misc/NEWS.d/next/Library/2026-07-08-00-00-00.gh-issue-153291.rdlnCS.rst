@@ -1,0 +1,4 @@
+Fix a data race in :func:`readline.get_completer` and
+:func:`readline.get_pre_input_hook` on the :term:`free-threaded <free
+threading>` build: the getters read the stored hook without the critical
+section that the corresponding setters hold.

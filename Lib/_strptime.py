@@ -238,7 +238,7 @@ class LocaleTime(object):
                         current_format = current_format.replace(tz, "%Z")
             # Transform all non-ASCII digits to digits in range U+0660 to U+0669.
             if not current_format.isascii() and self.LC_alt_digits is None:
-                current_format = re_sub(r'\d(?<![0-9])',
+                current_format = re_sub(r'[\d--0-9]',
                                         lambda m: chr(0x0660 + int(m[0])),
                                         current_format)
             for old, new in replacement_pairs:

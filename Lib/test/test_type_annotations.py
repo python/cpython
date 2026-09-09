@@ -1,5 +1,6 @@
 import annotationlib
 import inspect
+import itertools
 import textwrap
 import types
 import unittest
@@ -485,6 +486,13 @@ class DeferredEvaluationTests(unittest.TestCase):
         ns = run_code("x: [y for y in range(10)]")
         self.assertEqual(ns["__annotate__"](1), {"x": list(range(10))})
 
+    def test_class_annotation_dunder_classdict(self):
+        ns = run_code("""
+            class C:
+                __classdict__: int
+        """)
+        self.assertEqual(ns["C"].__annotations__, {"__classdict__": int})
+
     def test_future_annotations(self):
         code = """
         from __future__ import annotations
@@ -889,3 +897,18 @@ class RegressionTests(unittest.TestCase):
                 mod = build_module(code)
                 annos = mod.__annotations__
                 self.assertEqual(annos, {"annotated_name": 0})
+
+    # gh-154902
+    def test_conditional_annotations_rebound(self):
+        # user code can rebind __conditional_annotations__ to any object
+        lefts = ("__conditional_annotations__",
+                 'globals()["__conditional_annotations__"]')
+        values = ("0", "{}", "[]", "''", "object()", "frozenset()")
+        for left, value in itertools.product(lefts, values):
+            with self.subTest(left=left, value=value):
+                code = f"""
+                    {left} = {value}
+                    x: int
+                """
+                with self.assertRaises(TypeError):
+                    run_code(code)

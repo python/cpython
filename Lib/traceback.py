@@ -115,10 +115,10 @@ def extract_tb(tb, limit=None):
     This is useful for alternate formatting of stack traces.  If
     'limit' is omitted or None, all entries are extracted.  A
     pre-processed stack trace entry is a FrameSummary object
-    containing attributes filename, lineno, name, and line
-    representing the information that is usually printed for a stack
-    trace.  The line is a string with leading and trailing
-    whitespace stripped; if the source is not available it is None.
+    representing the information that is usually printed for a
+    stack trace. The line attribute is a string with
+    leading and trailing whitespace stripped; if the source is not
+    available the corresponding attribute is None.
     """
     return StackSummary._extract_from_extended_frame_gen(
         _walk_tb_with_full_positions(tb), limit=limit)
@@ -295,9 +295,8 @@ def extract_stack(f=None, limit=None):
 
     The return value has the same format as for extract_tb().  The
     optional 'f' and 'limit' arguments have the same meaning as for
-    print_stack().  Each item in the list is a quadruple (filename,
-    line number, function name, text), and the entries are in order
-    from oldest to newest stack frame.
+    print_stack().  Each item in the list is a FrameSummary object,
+    and the entries are in order from oldest to newest stack frame.
     """
     if f is None:
         f = sys._getframe().f_back
@@ -325,7 +324,7 @@ class FrameSummary:
       active when the frame was captured.
     - :attr:`name` The name of the function or method that was executing
       when the frame was captured.
-    - :attr:`line` The text from the linecache module for the
+    - :attr:`line` The text from the linecache module for the line
       of code that was running when the frame was captured.
     - :attr:`locals` Either None if locals were not supplied, or a dict
       mapping the name to the repr() of the variable.
@@ -1053,7 +1052,7 @@ def _wlen(s: str) -> int:
 
 
 def _display_width(line, offset=None):
-    """Calculate the extra amount of width space the given source
+    """Calculate the amount of width space the given source
     code segment might take if it were to be displayed on a fixed
     width output device. Supports wide unicode characters and emojis."""
 
@@ -1134,7 +1133,7 @@ class TracebackException:
     def __init__(self, exc_type, exc_value, exc_traceback, *, limit=None,
             lookup_lines=True, capture_locals=False, compact=False,
             max_group_width=15, max_group_depth=10, save_exc_type=True, _seen=None):
-        # NB: we need to accept exc_traceback, exc_value, exc_traceback to
+        # NB: we need to accept exc_type, exc_value, exc_traceback to
         # permit backwards compat with the existing API, otherwise we
         # need stub thunk objects just to glue it together.
         # Handle loops in __cause__ or __context__.
@@ -1486,11 +1485,22 @@ class TracebackException:
             # Limit the number of possible matches to try
             max_matches = 3
             matches = []
+
+            hint = _get_cross_language_keyword_hint(wrong_name)
+            if hint:
+                matches.append(hint)
             if _suggestions is not None:
-                suggestion = _suggestions._generate_suggestions(keyword.kwlist, wrong_name)
+                suggestion = _suggestions._generate_suggestions(keyword.kwlist + keyword.softkwlist, wrong_name)
                 if suggestion:
                     matches.append(suggestion)
-            matches.extend(difflib.get_close_matches(wrong_name, keyword.kwlist, n=max_matches, cutoff=0.5))
+            matches.extend(
+                difflib.get_close_matches(
+                    wrong_name,
+                    keyword.kwlist + keyword.softkwlist,
+                    n=max_matches,
+                    cutoff=0.5
+                )
+            )
             matches = matches[:max_matches]
             for suggestion in matches:
                 if not suggestion or suggestion == wrong_name:
@@ -1775,6 +1785,10 @@ _CROSS_LANGUAGE_HINTS = frozendict({
     # frozendict -- mutable method on immutable type (user expected a dict)
     "update": ((frozenset, "Did you mean to use a 'set' object?", True),
                (frozendict, "Did you mean to use a 'dict' object?", True)),
+    # clear() -- shared across immutable container types (user expected the mutable counterpart)
+    "clear": ((tuple, "Did you mean to use a 'list' object?", True),
+              (frozenset, "Did you mean to use a 'set' object?", True),
+              (frozendict, "Did you mean to use a 'dict' object?", True)),
     # float -- bitwise operators belong to int
     "__or__": ((float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True),),
     "__and__": ((float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True),),
@@ -1783,6 +1797,17 @@ _CROSS_LANGUAGE_HINTS = frozendict({
     "__rshift__": ((float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True),),
 })
 
+
+# Cross-language keyword suggestions.
+_CROSS_LANGUAGE_KEYWORD_HINTS = frozendict({
+    # C/C++ equivalents
+    'switch': 'match',
+    'delete': 'del',
+    # function define equivalents
+    'function': 'def',
+    'func': 'def',
+    'void': 'def',
+})
 
 def _substitution_cost(ch_a, ch_b):
     if ch_a == ch_b:
@@ -1861,6 +1886,12 @@ def _get_cross_language_hint(obj, wrong_name):
                 return hint
             return f"Did you mean '.{hint}'?"
     return None
+
+
+def _get_cross_language_keyword_hint(wrong_name):
+    """Check if wrong_name is a common keyword from another language
+    """
+    return _CROSS_LANGUAGE_KEYWORD_HINTS.get(wrong_name)
 
 
 def _get_safe___dir__(obj):

@@ -1136,7 +1136,7 @@ What is the most efficient way to concatenate many strings together?
 :class:`str` and :class:`bytes` objects are immutable, therefore concatenating
 many strings together is inefficient as each concatenation creates a new
 object.  In the general case, the total runtime cost is quadratic in the
-total string length.
+total string length.  See :ref:`time-complexity` for more information.
 
 To accumulate many :class:`str` objects, the recommended idiom is to place
 them into a list and call :meth:`str.join` at the end::
@@ -2003,7 +2003,7 @@ How do I cache method calls?
 ----------------------------
 
 The two principal tools for caching methods are
-:func:`functools.cached_property` and :func:`functools.lru_cache`.  The
+:deco:`functools.cached_property` and :deco:`functools.lru_cache`.  The
 former stores results at the instance level and the latter at the class
 level.
 

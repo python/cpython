@@ -68,32 +68,19 @@ def testcommon(formatstr, args, output=None, limit=None, overflowok=False):
     testformat(b_format, args, b_output, limit, overflowok)
     testformat(ba_format, args, ba_output, limit, overflowok)
 
-def test_exc(formatstr, args, exception, excmsg):
-    try:
-        testformat(formatstr, args)
-    except exception as exc:
-        if str(exc) == excmsg:
-            if verbose:
-                print("yes")
-        else:
-            if verbose: print('no')
-            print('Unexpected ', exception, ':', repr(str(exc)))
-            raise
-    except:
-        if verbose: print('no')
-        print('Unexpected exception')
-        raise
-    else:
-        raise TestFailed('did not get expected exception: %s' % excmsg)
-
-def test_exc_common(formatstr, args, exception, excmsg):
-    # test str and bytes
-    test_exc(formatstr, args, exception, excmsg)
-    if isinstance(args, dict):
-        args = {k.encode('ascii'): v for k, v in args.items()}
-    test_exc(formatstr.encode('ascii'), args, exception, excmsg)
 
 class FormatTest(unittest.TestCase):
+
+    def check_exc(self, formatstr, args, exception, excmsg):
+        with self.assertRaisesRegex(exception, re.escape(excmsg)):
+            testformat(formatstr, args)
+
+    def check_exc_common(self, formatstr, args, exception, excmsg):
+        # test str and bytes
+        self.check_exc(formatstr, args, exception, excmsg)
+        if isinstance(args, dict):
+            args = {k.encode('ascii'): v for k, v in args.items()}
+        self.check_exc(formatstr.encode('ascii'), args, exception, excmsg)
 
     def test_common_format(self):
         # test the format identifiers that work the same across
@@ -271,6 +258,7 @@ class FormatTest(unittest.TestCase):
 
         if verbose:
             print('Testing exceptions')
+        test_exc_common = self.check_exc_common
         test_exc_common('abc %', (), ValueError, "stray % at position 4")
         test_exc_common('abc % %s', 1, ValueError,
                         "stray % at position 4 or unexpected format character '%' at position 6")
@@ -365,6 +353,7 @@ class FormatTest(unittest.TestCase):
         # Test exception for unknown format characters, etc.
         if verbose:
             print('Testing exceptions')
+        test_exc = self.check_exc
         test_exc('abc %b', 1, ValueError,
                  "unsupported format %b at position 4")
         test_exc("abc %\nd", 1, ValueError,
@@ -468,6 +457,7 @@ class FormatTest(unittest.TestCase):
         # Test exception for unknown format characters, etc.
         if verbose:
             print('Testing exceptions')
+        test_exc = self.check_exc
         test_exc(b"abc %\nd", 1, ValueError,
                  "stray % at position 4 or unexpected format character with code 0x0a at position 5")
         test_exc(b"abc %'d", 1, ValueError,

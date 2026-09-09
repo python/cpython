@@ -64,6 +64,8 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         self.isabs = os.path.isabs
         self.splitdrive = os.path.splitdrive
         self._config_vars = sysconfig._CONFIG_VARS, copy(sysconfig._CONFIG_VARS)
+        self._cached_prefixes = (sysconfig._config_vars_cached_prefix,
+                                 sysconfig._config_vars_cached_exec_prefix)
         self._added_envvars = []
         self._changed_envvars = []
         for var in ('MACOSX_DEPLOYMENT_TARGET', 'PATH'):
@@ -92,6 +94,11 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         sysconfig._CONFIG_VARS = self._config_vars[0]
         sysconfig._CONFIG_VARS.clear()
         sysconfig._CONFIG_VARS.update(self._config_vars[1])
+        # Restoring _CONFIG_VARS is not enough: if the cached prefixes are
+        # left over from the test, the next get_config_vars() call finds
+        # the cache stale and replaces _CONFIG_VARS with a new dict.
+        (sysconfig._config_vars_cached_prefix,
+         sysconfig._config_vars_cached_exec_prefix) = self._cached_prefixes
         for var, value in self._changed_envvars:
             os.environ[var] = value
         for var in self._added_envvars:
@@ -457,6 +464,15 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         soabi = sysconfig.get_config_var('SOABI')
         self.assertIn(soabi, _imp.extension_suffixes()[0])
 
+    @unittest.skipIf(not _imp.extension_suffixes(), "stub loader has no suffixes")
+    @unittest.skipIf(sys.platform == "win32", "Does not apply to Windows")
+    @unittest.skipIf(sysconfig.get_config_var('SOABI_PLATFORM') == 0,
+                     "SOABI_PLATFORM is undefined")
+    def test_soabi_platform(self):
+        soabi_platform = sysconfig.get_config_var('SOABI_PLATFORM')
+        soabi = sysconfig.get_config_var('SOABI')
+        self.assertIn(soabi_platform, soabi)
+
     def test_library(self):
         library = sysconfig.get_config_var('LIBRARY')
         ldlibrary = sysconfig.get_config_var('LDLIBRARY')
@@ -575,6 +591,12 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
             else: # 8 byte pointer size
                 expected_suffixes = 'x86_64-linux-gnu.so', 'x86_64-linux-musl.so'
             self.assertEndsWith(suffix, expected_suffixes)
+
+    @unittest.skipIf(sysconfig.get_config_var('PY_BUILTIN_HASHLIB_HASHES') is None,
+                     'PY_BUILTIN_HASHLIB_HASHES required for this test')
+    def test_PY_BUILTIN_HASHLIB_HASHES_in_vars(self):
+        vars = sysconfig.get_config_vars()
+        self.assertFalse(vars['PY_BUILTIN_HASHLIB_HASHES'].startswith('"'))
 
     @unittest.skipUnless(sys.platform == 'android', 'Android-specific test')
     def test_android_ext_suffix(self):

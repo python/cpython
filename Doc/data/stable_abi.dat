@@ -1,7 +1,7 @@
 role,name,added,ifdef_note,struct_abi_kind
 macro,METH_CLASS,3.2,,
 macro,METH_COEXIST,3.2,,
-macro,METH_FASTCALL,3.7,,
+macro,METH_FASTCALL,3.10,,
 macro,METH_METHOD,3.7,,
 macro,METH_NOARGS,3.2,,
 macro,METH_O,3.2,,

@@ -2835,14 +2835,6 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(y, 0)
 
     def test_patma_265(self):
-        x = 0.25 - 1.75j
-        match x:
-            case 0.25 - +1.75j:
-                y = 0
-        self.assertEqual(x, 0.25 - 1.75j)
-        self.assertEqual(y, 0)
-
-    def test_patma_266(self):
         x = 0
         match x:
             case +1e1000:
@@ -2851,6 +2843,15 @@ class TestPatma(unittest.TestCase):
                 y = 1
         self.assertEqual(x, 0)
         self.assertEqual(y, 1)
+
+    def test_patma_frozendict_class_self(self):
+        x = frozendict()
+        match x:
+            case frozendict(z):
+                y = 0
+        self.assertEqual(x, frozendict())
+        self.assertEqual(y, 0)
+        self.assertIs(z, x)
 
     def test_patma_runtime_checkable_protocol(self):
         # Runtime-checkable protocol
@@ -3317,6 +3318,34 @@ class TestSyntaxErrors(unittest.TestCase):
         self.assert_syntax_error("""
         match ...:
             case {0: _, 0j: _}:
+                pass
+        """)
+
+    def test_duplicate_sign_in_complex_1(self):
+        self.assert_syntax_error("""
+        match ...:
+            case 0 ++ 0j:
+                pass
+        """)
+
+    def test_duplicate_sign_in_complex_2(self):
+        self.assert_syntax_error("""
+        match ...:
+            case 0 -+ 0j:
+                pass
+        """)
+
+    def test_duplicate_sign_in_complex_3(self):
+        self.assert_syntax_error("""
+        match ...:
+            case 0 +- 0j:
+                pass
+        """)
+
+    def test_duplicate_sign_in_complex_4(self):
+        self.assert_syntax_error("""
+        match ...:
+            case 0 -- 0j:
                 pass
         """)
 

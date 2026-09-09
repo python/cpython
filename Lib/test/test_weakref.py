@@ -167,6 +167,11 @@ class ReferencesTestCase(TestBase):
         self.check_basic_callback(create_function)
         self.check_basic_callback(create_bound_method)
 
+    def test_non_callable_callback(self):
+        c = C()
+        self.assertRaises(TypeError, weakref.ref, c, 42)
+        self.assertRaises(TypeError, weakref.proxy, c, 42)
+
     @support.cpython_only
     def test_cfunction(self):
         _testcapi = import_helper.import_module("_testcapi")
@@ -1019,7 +1024,7 @@ class ReferencesTestCase(TestBase):
         del x
         support.gc_collect()
 
-    @support.cpython_only
+    @support.nomemtest
     def test_no_memory_when_clearing(self):
         # gh-118331: Make sure we do not raise an exception from the destructor
         # when clearing weakrefs if allocating the intermediate tuple fails.

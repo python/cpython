@@ -1,0 +1,1 @@
+Fix multiple :class:`bytearray` crashes and reference leaks caused by skipping :meth:`~object.__init__` and broken state setup code.

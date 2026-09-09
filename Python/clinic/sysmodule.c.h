@@ -1367,7 +1367,8 @@ PyDoc_STRVAR(sys__stats_dump__doc__,
 "\n"
 "Dump stats to file, and clears the stats.\n"
 "\n"
-"Return False if no statistics were not dumped because stats gathering was off.");
+"Return False if no statistics were not dumped because stats gathering\n"
+"was off.");
 
 #define SYS__STATS_DUMP_METHODDEF    \
     {"_stats_dump", (PyCFunction)sys__stats_dump, METH_NOARGS, sys__stats_dump__doc__},
@@ -1515,16 +1516,16 @@ PyDoc_STRVAR(sys_remote_exec__doc__,
 "Executes a file containing Python code in a given remote Python process.\n"
 "\n"
 "This function returns immediately, and the code will be executed by the\n"
-"target process\'s main thread at the next available opportunity, similarly\n"
-"to how signals are handled. There is no interface to determine when the\n"
-"code has been executed. The caller is responsible for making sure that\n"
-"the file still exists whenever the remote process tries to read it and that\n"
-"it hasn\'t been overwritten.\n"
+"target process\'s main thread at the next available opportunity,\n"
+"similarly to how signals are handled.  There is no interface to\n"
+"determine when the code has been executed.  The caller is responsible\n"
+"for making sure that the file still exists whenever the remote process\n"
+"tries to read it and that it hasn\'t been overwritten.\n"
 "\n"
-"The remote process must be running a CPython interpreter of the same major\n"
-"and minor version as the local process. If either the local or remote\n"
-"interpreter is pre-release (alpha, beta, or release candidate) then the\n"
-"local and remote interpreters must be the same exact version.\n"
+"The remote process must be running a CPython interpreter of the same\n"
+"major and minor version as the local process.  If either the local or\n"
+"remote interpreter is pre-release (alpha, beta, or release candidate)\n"
+"then the local and remote interpreters must be the same exact version.\n"
 "\n"
 "Args:\n"
 "     pid (int): The process ID of the target Python process.\n"
@@ -1886,8 +1887,8 @@ PyDoc_STRVAR(sys_set_lazy_imports__doc__,
 "\n"
 "The mode parameter must be one of the following strings:\n"
 "- \"all\": All top-level imports become potentially lazy\n"
-"- \"none\": All lazy imports are suppressed (even explicitly marked ones)\n"
-"- \"normal\": Only explicitly marked imports (with \'lazy\' keyword) are lazy\n"
+"- \"normal\": Only explicitly marked imports (with \'lazy\' keyword) are\n"
+"  lazy\n"
 "\n"
 "In addition to the mode, lazy imports can be controlled via the filter\n"
 "provided to sys.set_lazy_imports_filter");
@@ -1951,7 +1952,6 @@ PyDoc_STRVAR(sys_get_lazy_imports__doc__,
 "Gets the global lazy imports mode.\n"
 "\n"
 "Returns \"all\" if all top level imports are potentially lazy.\n"
-"Returns \"none\" if all explicitly marked lazy imports are suppressed.\n"
 "Returns \"normal\" if only explicitly marked imports are lazy.");
 
 #define SYS_GET_LAZY_IMPORTS_METHODDEF    \
@@ -2089,4 +2089,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=ba849b6e4b9f1ba3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8a4482f9c5c493e5 input=a9049054013a1b77]*/

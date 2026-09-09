@@ -31,6 +31,8 @@ _Py_CODEUNIT *_PyJIT_Entry(
 int _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size_t length);
 void _PyJIT_Free(_PyExecutorObject *executor);
 PyAPI_FUNC(int) _PyJIT_AddressInJitCode(PyInterpreterState *interp, uintptr_t addr);
+PyAPI_FUNC(void) _Py_jit_assert_within_stack_bounds(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int lineno);
+PyAPI_FUNC(int) _Py_jit_assertion_failure(int line);
 
 #endif  // _Py_JIT
 

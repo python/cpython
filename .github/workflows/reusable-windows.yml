@@ -22,18 +22,16 @@ permissions:
 
 env:
   FORCE_COLOR: 1
-  IncludeUwp: >-
-    true
 
 jobs:
   build:
     name: Build and test (${{ inputs.arch }}, ${{ inputs.interpreter }})
-    runs-on: ${{ inputs.arch == 'arm64' && 'windows-11-arm' || 'windows-2025-vs2026' }}
+    runs-on: ${{ inputs.arch == 'arm64' && 'windows-11-arm' || 'windows-2025' }}
     timeout-minutes: 60
     env:
       ARCH: ${{ inputs.arch }}
     steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       with:
         persist-credentials: false
     - name: Register MSVC problem matcher
@@ -47,7 +45,7 @@ jobs:
         -e -v
         ${{ inputs.interpreter == 'switch-case' && '-d' || '--tail-call-interp -c Release' }}
         -p "${ARCH}"
-        ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
+        ${{ inputs.free-threading && '--disable-gil' || '' }}
       shell: bash
     - name: Display build info
       run: .\\python.bat -m test.pythoninfo
@@ -57,5 +55,5 @@ jobs:
         -p "${ARCH}"
         -q --fast-ci
         ${{ inputs.interpreter == 'switch-case' && '-d' || '' }}
-        ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
+        ${{ inputs.free-threading && '--disable-gil' || '' }}
       shell: bash

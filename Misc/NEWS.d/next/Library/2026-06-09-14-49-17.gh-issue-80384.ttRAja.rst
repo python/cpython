@@ -1,0 +1,2 @@
+:func:`weakref.ref` and :func:`weakref.proxy` now raise :exc:`TypeError` if
+the *callback* argument is not callable or ``None``.
