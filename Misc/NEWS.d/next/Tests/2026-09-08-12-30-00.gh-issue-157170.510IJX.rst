@@ -1,3 +1,0 @@
-Fix ``test_curses`` failing with 138 errors when ``TERM`` names a terminfo
-entry without a size, such as ``linux`` on the CI runners:
-``test_use_prescr_screen`` now restores :func:`curses.use_env`.
