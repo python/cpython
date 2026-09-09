@@ -98,6 +98,7 @@ Behind the scenes there are some features included with possible
 extensions in mind. These will be commented and documented elsewhere.
 """
 
+import errno
 import tkinter as TK
 import types
 import math
@@ -1558,13 +1559,16 @@ class TurtleScreen(TurtleScreenBase):
         filename = Path(filename)
         if not filename.parent.exists():
             raise FileNotFoundError(
-                f"The directory '{filename.parent}' does not exist."
-                " Cannot save to it."
+                errno.ENOENT,
+                "The directory does not exist. Cannot save to it",
+                str(filename.parent),
             )
         if not overwrite and filename.exists():
             raise FileExistsError(
-                f"The file '{filename}' already exists. To overwrite it use"
-                " the 'overwrite=True' argument of the save function."
+                errno.EEXIST,
+                "The file already exists. To overwrite it use"
+                " the 'overwrite=True' argument of the save function",
+                str(filename),
             )
         if (ext := filename.suffix) not in {".ps", ".eps"}:
             raise ValueError(

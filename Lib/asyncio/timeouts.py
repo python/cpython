@@ -1,4 +1,5 @@
 import enum
+import errno
 
 from types import TracebackType
 
@@ -112,7 +113,7 @@ class Timeout:
                 # Since there are no new cancel requests, we're
                 # handling this.
                 if issubclass(exc_type, exceptions.CancelledError):
-                    raise TimeoutError from exc_val
+                    raise TimeoutError(errno.ETIMEDOUT, 'timed out') from exc_val
                 elif exc_val is not None:
                     self._insert_timeout_error(exc_val)
                     if isinstance(exc_val, ExceptionGroup):
@@ -134,7 +135,7 @@ class Timeout:
     def _insert_timeout_error(exc_val: BaseException) -> None:
         while exc_val.__context__ is not None:
             if isinstance(exc_val.__context__, exceptions.CancelledError):
-                te = TimeoutError()
+                te = TimeoutError(errno.ETIMEDOUT, 'timed out')
                 te.__context__ = te.__cause__ = exc_val.__context__
                 exc_val.__context__ = te
                 break

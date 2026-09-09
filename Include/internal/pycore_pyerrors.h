@@ -137,6 +137,16 @@ PyAPI_FUNC(void) _PyErr_SetString(
     const char *string);
 
 /*
+ * Raise an OSError subclass with an explicit errno value, so that the
+ * resulting exception has a meaningful errno attribute.  msg is used as
+ * strerror.  Prefer PyErr_SetFromErrno() when the C errno is already set.
+ */
+PyAPI_FUNC(void) _PyErr_SetOSErrorWithMessage(
+    PyObject *exception,
+    int err,
+    const char *msg);
+
+/*
  * Set an exception with the error message decoded from the current locale
  * encoding (LC_CTYPE).
  *

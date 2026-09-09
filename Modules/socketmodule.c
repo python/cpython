@@ -1048,8 +1048,10 @@ sock_call_ex(PySocketSockObject *s,
             if (res == 1) {
                 if (err)
                     *err = SOCK_TIMEOUT_ERR;
-                else
-                    PyErr_SetString(PyExc_TimeoutError, "timed out");
+                else {
+                    errno = ETIMEDOUT;
+                    PyErr_SetFromErrno(PyExc_TimeoutError);
+                }
                 return -1;
             }
 
@@ -4784,7 +4786,8 @@ _socket_socket_sendall_impl(PySocketSockObject *s, Py_buffer *pbuf,
             }
 
             if (timeout <= 0) {
-                PyErr_SetString(PyExc_TimeoutError, "timed out");
+                errno = ETIMEDOUT;
+                PyErr_SetFromErrno(PyExc_TimeoutError);
                 goto done;
             }
         }
