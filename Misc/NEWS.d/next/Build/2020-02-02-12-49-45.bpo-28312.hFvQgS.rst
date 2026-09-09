@@ -1,0 +1,3 @@
+Provide a message better suited to AIX when LONG_BIT definition is wrong by
+mentioning OBJECT_MODE setting, rather than gcc/glibc (not native to AIX).
+Patch by M. Felt.
