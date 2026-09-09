@@ -305,6 +305,9 @@ class TestWarnings(unittest.TestCase):
 
 class TestPreExecutionHook(unittest.TestCase):
 
+    def test_hook_is_unset_by_default(self):
+        self.assertIsNone(_pyrepl.pre_execution_hook)
+
     def _run_interactive(self, statements, *, pre_execution_hook=None):
         from _pyrepl.simple_interact import run_multiline_interactive_console
 
@@ -332,7 +335,6 @@ class TestPreExecutionHook(unittest.TestCase):
                     _pyrepl,
                     "pre_execution_hook",
                     pre_execution_hook,
-                    create=True,
                 )
             )
 
