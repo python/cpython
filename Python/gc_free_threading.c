@@ -2058,9 +2058,9 @@ record_deallocation(PyThreadState *tstate)
             if (new_count < 0) {
                 new_count = 0;
             }
-        } while (!_Py_atomic_compare_exchange_int(&gcstate->young.count,
-                                                  &count,
-                                                  new_count));
+        } while (!_Py_atomic_compare_exchange_int_relaxed(&gcstate->young.count,
+                                                          &count,
+                                                          new_count));
         gc->alloc_count = 0;
     }
 }
