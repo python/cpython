@@ -2,8 +2,10 @@ import contextlib
 import io
 import warnings
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from textwrap import dedent
+
+import _pyrepl
 
 from test.support import force_not_colorized
 
@@ -299,3 +301,66 @@ class TestWarnings(unittest.TestCase):
         count = sum("'return' in a 'finally' block" in str(w.message)
                     for w in caught)
         self.assertEqual(count, 1)
+
+
+class TestPreExecutionHook(unittest.TestCase):
+
+    def _run_interactive(self, statements, *, pre_execution_hook=None):
+        from _pyrepl.simple_interact import run_multiline_interactive_console
+
+        console = InteractiveColoredConsole()
+        statement_iter = iter(statements)
+
+        def fake_multiline_input(more_lines, ps1, ps2):
+            try:
+                return next(statement_iter)
+            except StopIteration:
+                raise EOFError
+
+        patches = [
+            patch(
+                "_pyrepl.simple_interact.multiline_input",
+                side_effect=fake_multiline_input,
+            ),
+            patch("_pyrepl.simple_interact._get_reader"),
+            patch("_pyrepl.simple_interact.append_history_file"),
+            patch("_pyrepl.readline._setup"),
+        ]
+        if pre_execution_hook is not None:
+            patches.append(
+                patch.object(
+                    _pyrepl,
+                    "pre_execution_hook",
+                    pre_execution_hook,
+                    create=True,
+                )
+            )
+
+        output = io.StringIO()
+        with contextlib.ExitStack() as stack:
+            for context_manager in patches:
+                stack.enter_context(context_manager)
+            stack.enter_context(contextlib.redirect_stdout(output))
+            stack.enter_context(contextlib.redirect_stderr(output))
+            run_multiline_interactive_console(console)
+
+        return output.getvalue()
+
+    def test_hook_called_with_statement(self):
+        hook = MagicMock()
+        self._run_interactive(["x = 1"], pre_execution_hook=hook)
+        hook.assert_called_once_with("x = 1")
+
+    def test_hook_exception_does_not_break_repl(self):
+        def bad_hook(command):
+            raise RuntimeError("hook error")
+
+        self._run_interactive(
+            ["x = 1", "y = 2"],
+            pre_execution_hook=bad_hook,
+        )
+
+    def test_hook_not_called_for_repl_commands(self):
+        hook = MagicMock()
+        self._run_interactive(["clear"], pre_execution_hook=hook)
+        hook.assert_not_called()
