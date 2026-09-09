@@ -4922,8 +4922,8 @@ class MonkeypatchedDecompressorTests(unittest.TestCase):
     # Some third-party projects monkey-patch _get_decompressor() to add
     # additional compression schemes. This can break at any time as the
     # internal compressor objects change.
-    # To protect users, we try to keep this case working (see ).
-    # See also: GH-156002 and GH-113756.
+    # To protect users, we try to keep this case working.
+    # See also: GH-156002 and GH-113767.
     COMPRESSION = 99
 
     class Compressor:
@@ -4935,7 +4935,7 @@ class MonkeypatchedDecompressorTests(unittest.TestCase):
             return b''
 
     class Decompressor:
-        """Decmpressor with only the 3.3+ BZ2Decompressor API"""
+        """Decompressor with only the 3.3+ BZ2Decompressor API"""
         eof = False
 
         def decompress(self, data):
@@ -4974,7 +4974,7 @@ class MonkeypatchedDecompressorTests(unittest.TestCase):
             zf.writestr("member", data)
         self.assertIn(data.swapcase(), buf.getvalue())
         with (ignore_warnings(category=DeprecationWarning,
-                              message='.*two argumentzs.*'),
+                              message='.*two arguments.*'),
               zipfile.ZipFile(io.BytesIO(buf.getvalue())) as zf):
             self.assertEqual(zf.read("member"), data)
             with zf.open("member") as f:
