@@ -1906,6 +1906,12 @@ sys.monitoring
   These replace and deprecate the :monitoring-event:`!BRANCH` event.
   (Contributed by Mark Shannon in :gh:`122548`.)
 
+* Add :func:`sys.monitoring.clear_tool_id` to unregister all events and
+  callback functions associated with a tool identifier.
+  :func:`sys.monitoring.free_tool_id` now calls it before releasing the
+  tool identifier, instead of leaving its events and callbacks registered.
+  (Contributed by Tian Gao in :gh:`116750`.)
+
 
 sysconfig
 ---------
