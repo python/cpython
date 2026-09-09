@@ -260,19 +260,6 @@ class Test_Csv(unittest.TestCase):
                          escapechar='\\', quoting=csv.QUOTE_MINIMAL)
 
     def test_write_lineterminator(self):
-        for lineterminator in '\r\n', '\n', '\r', '!@#', '\0':
-            with self.subTest(lineterminator=lineterminator):
-                with StringIO() as sio:
-                    writer = csv.writer(sio, lineterminator=lineterminator)
-                    writer.writerow(['a', 'b'])
-                    writer.writerow([1, 2])
-                    writer.writerow(['\r', '\n'])
-                    self.assertEqual(sio.getvalue(),
-                                     f'a,b{lineterminator}'
-                                     f'1,2{lineterminator}'
-                                     f'"\r","\n"{lineterminator}')
-
-    def test_write_lineterminator_in_field(self):
         for lineterminator in ('\r\n', '\n', '\r', '!@#', '\0', '\x85',
                                '\u2028', '\U0001f600'):
             with self.subTest(lineterminator=lineterminator):
@@ -289,21 +276,15 @@ class Test_Csv(unittest.TestCase):
                                      f'"a{lineterminator[-1]}b",c{lineterminator}')
 
     def test_write_lineterminator_quoting(self):
-        for lineterminator, plain in ('!@#', ' ?A'), ('\u2028', '\u2027\u2029'):
+        for lineterminator, plain in (('!@#', ' ?A'),
+                                      ('\u2028', '\u2027\u2029'),
+                                      ('', '\0')):
             with self.subTest(lineterminator=lineterminator):
                 for c in lineterminator:
                     self._write_test([f'a{c}b', 'c'], f'"a{c}b",c',
                                      lineterminator=lineterminator)
                 self._write_test([f'a{plain}b', 'c'], f'a{plain}b,c',
                                  lineterminator=lineterminator)
-
-    def test_write_empty_lineterminator(self):
-        with StringIO() as sio:
-            writer = csv.writer(sio, lineterminator='')
-            writer.writerow(['a', 'b'])
-            writer.writerow(['\0', 'c'])
-            writer.writerow(['\r', '\n'])
-            self.assertEqual(sio.getvalue(), 'a,b\0,c"\r","\n"')
 
     def test_write_iterable(self):
         self._write_test(iter(['a', 1, 'p,q']), 'a,1,"p,q"')
