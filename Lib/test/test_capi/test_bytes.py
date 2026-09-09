@@ -1,5 +1,6 @@
 import textwrap
 import unittest
+from test import support
 from test.support import import_helper
 from test.support.script_helper import assert_python_failure
 
@@ -432,6 +433,7 @@ class BytesWriterTest(BaseWriterTest, unittest.TestCase):
     def test_example_highlevel(self):
         self.assertEqual(_testcapi.byteswriter_highlevel(), b'Hello World!')
 
+    @unittest.skipUnless(support.Py_DEBUG, 'need a Python debug build')
     def test_canary_byte(self):
         small_buffer = _testcapi.PyBytesWriter_small_buffer
         large_size = small_buffer * 10
