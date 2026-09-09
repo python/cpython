@@ -1670,14 +1670,13 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
 
 static int
 suggest_missing_self(PyFunctionObject *func, PyCodeObject *co,
-                     _PyStackRef const *args, Py_ssize_t argcount)
+                     PyObject *first_argument, Py_ssize_t argcount)
 {
     /* Missing self shows up as exactly one extra positional argument. */
     if ((co->co_argcount + 1) != argcount) {
         return 0;
     }
 
-    PyObject *first_argument = PyStackRef_AsPyObjectBorrow(args[0]);
     if (first_argument == NULL || PyType_Check(first_argument)) {
         // When first arg is NULL, it's not really about self
         // If its a type object, then its a classmethod.
@@ -1789,6 +1788,15 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
     }
     else {
         kwdict = NULL;
+    }
+
+    /* Pin the first argument for the "missing self" hint: the surplus
+       argument cleanup below may close args[0] before the hint is computed.
+       The pin is only needed when the "too many positional arguments"
+       error is about to be raised. */
+    PyObject *first_argument = NULL;
+    if (argcount > co->co_argcount && !(co->co_flags & CO_VARARGS)) {
+        first_argument = Py_NewRef(PyStackRef_AsPyObjectBorrow(args[0]));
     }
 
     /* Copy all positional arguments into local variables */
@@ -1935,7 +1943,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
 
     /* Check the number of positional arguments */
     if ((argcount > co->co_argcount) && !(co->co_flags & CO_VARARGS)) {
-        int missing_self_hint = suggest_missing_self(func, co, args, argcount);
+        int missing_self_hint = suggest_missing_self(func, co, first_argument, argcount);
         too_many_positional(tstate, co, argcount, func->func_defaults, localsplus,
                             func->func_qualname, missing_self_hint);
         goto fail_post_args;
@@ -1996,6 +2004,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
             goto fail_post_args;
         }
     }
+    Py_XDECREF(first_argument);
     return 0;
 
 fail_pre_positional:
@@ -2012,6 +2021,7 @@ fail_post_positional:
     }
     /* fall through */
 fail_post_args:
+    Py_XDECREF(first_argument);
     return -1;
 }
 
