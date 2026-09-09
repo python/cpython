@@ -1,0 +1,5 @@
+The :attr:`~http.client.HTTPResponse.url` attribute is now always set when an
+:class:`~http.client.HTTPResponse` is created.  Previously it was left unset on
+responses created directly via :mod:`http.client`, so accessing ``url`` (or the
+deprecated ``geturl()``) raised :exc:`AttributeError`.  Patch by Felipe
+Rodrigues.

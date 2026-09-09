@@ -302,6 +302,10 @@ class HTTPResponse(io.BufferedIOBase):
         self.will_close = _UNKNOWN      # conn will close at end of response
         self._max_headers = None        # configured header count limit
 
+        # URL of the resource, set by urllib but otherwise passed in here so
+        # that geturl()/url work on responses created directly via http.client.
+        self.url = url
+
     def _read_status(self):
         line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
         if len(line) > _MAXLINE:
