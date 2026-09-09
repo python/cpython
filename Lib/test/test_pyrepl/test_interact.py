@@ -346,7 +346,7 @@ class TestPreExecutionHook(unittest.TestCase):
             stack.enter_context(contextlib.redirect_stderr(output))
             run_multiline_interactive_console(console)
 
-        return output.getvalue()
+        return output.getvalue(), console.locals
 
     def test_hook_called_with_statement(self):
         hook = MagicMock()
@@ -354,13 +354,15 @@ class TestPreExecutionHook(unittest.TestCase):
         hook.assert_called_once_with("x = 1")
 
     def test_hook_exception_does_not_break_repl(self):
-        def bad_hook(command):
-            raise RuntimeError("hook error")
-
-        self._run_interactive(
+        hook = MagicMock(side_effect=RuntimeError("hook error"))
+        output, namespace = self._run_interactive(
             ["x = 1", "y = 2"],
-            pre_execution_hook=bad_hook,
+            pre_execution_hook=hook,
         )
+        self.assertEqual(hook.call_count, 2)
+        self.assertEqual(namespace["x"], 1)
+        self.assertEqual(namespace["y"], 2)
+        self.assertNotIn("hook error", output)
 
     def test_hook_not_called_for_repl_commands(self):
         hook = MagicMock()
