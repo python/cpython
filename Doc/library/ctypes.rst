@@ -3207,7 +3207,7 @@ fields, or any other data types containing pointer type fields.
       that should be merged into a containing structure or union.
 
 
-.. decorator:: struct(*, align=None, layout, endian='native', pack=None)
+.. decorator:: struct(*, align=None, layout=None, endian='native', pack=None)
    :module: ctypes.util
 
    A :term:`decorator` that allows generating structure types using an
@@ -3244,14 +3244,18 @@ fields, or any other data types containing pointer type fields.
 
    .. code-block:: python
 
+      from typing import Annotated
+      from ctypes import c_ssize_t, c_void_p
+      from ctypes.util import struct, CFieldInfo
+
       @struct
       class PyObject:
-         ob_refcnt: c_ssize_t
-         ob_type: c_void_p
+          ob_refcnt: c_ssize_t
+          ob_type: c_void_p
 
       @struct
       class PyHovercraftObject:
-         ob_base: Annotated[PyObject, CFieldInfo(anonymous=True)]
+          ob_base: Annotated[PyObject, CFieldInfo(anonymous=True)]
 
    .. versionadded:: next
 
