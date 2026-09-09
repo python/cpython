@@ -846,6 +846,39 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertEqual(frame_info.code_context[0], "# line 1\n")
         self.assertEqual(frame_info.code_context[1], "'A module docstring.'\n")
 
+    def test_getframeinfo_no_lineno(self):
+        # gh-89726: some instructions carry no line number, so a frame
+        # stopped on one has f_lineno set to None.  getframeinfo() must
+        # report that rather than failing.
+        def f():
+            try:
+                raise ValueError
+            except ValueError:
+                pass
+
+        infos = []
+
+        def trace(frame, event, arg):
+            if frame.f_code is f.__code__ and frame.f_lineno is None:
+                infos.append(inspect.getframeinfo(frame))
+            frame.f_trace_opcodes = True
+            return trace
+
+        old_trace = sys.gettrace()
+        sys.settrace(trace)
+        try:
+            f()
+        finally:
+            sys.settrace(old_trace)
+
+        self.assertTrue(infos, 'no frame with f_lineno set to None')
+        for info in infos:
+            with self.subTest(info=info):
+                self.assertIsNone(info.lineno)
+                self.assertIsNone(info.code_context)
+                self.assertIsNone(info.index)
+                self.assertEqual(info.function, 'f')
+
     def test_getsource(self):
         self.assertSourceEqual(git.abuse, 29, 39)
         self.assertSourceEqual(mod.StupidGit, 21, 51)
