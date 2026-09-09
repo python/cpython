@@ -5630,20 +5630,11 @@ dummy_func(
             }
             PyObject *kwargs_o = PyStackRef_AsPyObjectBorrow(kwargs);
             if (kwargs_o != NULL && !PyDict_CheckExact(kwargs_o)) {
-                PyObject *dict_o = PyDict_New();
+                PyObject *dict_o = _PyEval_KwargsToDict(
+                    tstate, PyStackRef_AsPyObjectBorrow(func), kwargs_o);
                 if (dict_o == NULL) {
                     ERROR_NO_POP();
                 }
-                PyObject *dupkey = NULL;
-                int err = _PyDict_MergeUniq(dict_o, kwargs_o, &dupkey);
-                if (err < 0) {
-                    _PyEval_FormatKwargsError(tstate,
-                        PyStackRef_AsPyObjectBorrow(func), kwargs_o, dupkey);
-                    Py_XDECREF(dupkey);
-                    Py_DECREF(dict_o);
-                    ERROR_NO_POP();
-                }
-                assert(dupkey == NULL);
                 _PyStackRef temp = kwargs;
                 kwargs = PyStackRef_FromPyObjectSteal(dict_o);
                 PyStackRef_CLOSE(temp);

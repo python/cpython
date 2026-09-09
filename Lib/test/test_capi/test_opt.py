@@ -5800,6 +5800,25 @@ class TestUopsOptimization(unittest.TestCase):
 
     def test_dict_merge(self):
         def testfunc(n):
+            d = {"a": 1}
+            e = {"b": 2}
+            def f(**kwargs):
+                return kwargs
+            for _ in range(n):
+                x = f(**d, **e)
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, {"a": 1, "b": 2})
+        uops = get_opnames(ex)
+
+        self.assertIn("_DICT_MERGE", uops)
+        self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
+
+    def test_call_function_ex_single_kwargs_unpack(self):
+        # gh-86199: f(**d) no longer copies d with DICT_MERGE
+        def testfunc(n):
             d = {"a": 1, "b": 2}
             def f(**kwargs):
                 return kwargs
@@ -5811,9 +5830,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, {"a": 1, "b": 2})
         uops = get_opnames(ex)
 
-        self.assertIn("_DICT_MERGE", uops)
-        self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
-        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
+        self.assertNotIn("_DICT_MERGE", uops)
+        self.assertIn("_MAKE_CALLARGS_A_TUPLE", uops)
 
     def test_list_extend(self):
         def testfunc(n):
