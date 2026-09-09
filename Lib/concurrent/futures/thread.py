@@ -9,6 +9,7 @@ from concurrent.futures import _base
 import itertools
 import queue
 import threading
+import time
 import types
 import weakref
 import os
@@ -251,7 +252,7 @@ class ThreadPoolExecutor(_base.Executor):
                 if work_item is not None:
                     work_item.future.set_exception(self.BROKEN(self._broken))
 
-    def shutdown(self, wait=True, *, cancel_futures=False):
+    def shutdown(self, wait=True, *, cancel_futures=False, timeout=None):
         with self._shutdown_lock:
             self._shutdown = True
             if cancel_futures:
@@ -269,6 +270,12 @@ class ThreadPoolExecutor(_base.Executor):
             # _work_queue.get(block=True) from permanently blocking.
             self._work_queue.put(None)
         if wait:
+            end_time = None if timeout is None else time.monotonic() + timeout
             for t in self._threads:
-                t.join()
+                if end_time is None:
+                    t.join()
+                else:
+                    t.join(max(0, end_time - time.monotonic()))
+                    if t.is_alive():
+                        raise _base.TimeoutError()
     shutdown.__doc__ = _base.Executor.shutdown.__doc__

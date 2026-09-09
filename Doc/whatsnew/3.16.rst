@@ -136,6 +136,12 @@ concurrent.futures
   Use method :meth:`!close` to explicitly close the iterator.
   (Contributed by xzmeng and Serhiy Storchaka in :gh:`108518`.)
 
+  * :meth:`concurrent.futures.Executor.shutdown` now accepts a *timeout*
+  parameter to limit how long it waits for the executor to shut down.
+  :exc:`TimeoutError` is raised if the executor does not shut down within
+  the specified time.
+  (Contributed by Ilham Al Rahm in :gh:`72165`.)
+
 
 csv
 ---

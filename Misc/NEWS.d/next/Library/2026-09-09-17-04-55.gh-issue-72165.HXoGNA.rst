@@ -1,0 +1,2 @@
+Add a *timeout* parameter to :meth:`concurrent.futures.Executor.shutdown` to
+limit how long it waits for the executor to shut down.

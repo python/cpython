@@ -688,7 +688,7 @@ class Executor(object):
                     future.cancel()
         return result_iterator()
 
-    def shutdown(self, wait=True, *, cancel_futures=False):
+    def shutdown(self, wait=True, *, cancel_futures=False, timeout=None):
         """Clean-up the resources associated with the Executor.
 
         It is safe to call this method several times. Otherwise, no other
@@ -701,6 +701,10 @@ class Executor(object):
             cancel_futures: If True then shutdown will cancel all pending
                 futures. Futures that are completed or running will not be
                 cancelled.
+            timeout: The maximum number of seconds to wait for the executor to
+                shut down. If the timeout expires before the executor shuts down,
+                TimeoutError is raised. Running futures are not cancelled and may
+                continue executing after this method returns.
         """
         pass
 

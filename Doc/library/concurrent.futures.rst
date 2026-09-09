@@ -93,7 +93,7 @@ Executor Objects
          The returned iterator is no longer automatically closed if a *fn*
          call raises an exception.
 
-   .. method:: shutdown(wait=True, *, cancel_futures=False)
+   .. method:: shutdown(wait=True, *, cancel_futures=False, timeout=None)
 
       Signal the executor that it should free any resources that it is using
       when the currently pending futures are done executing.  Calls to
@@ -112,6 +112,15 @@ Executor Objects
       futures that the executor has not started running. Any futures that
       are completed or running won't be cancelled, regardless of the value
       of *cancel_futures*.
+
+      If *timeout* is not ``None``, this method will wait at most the given
+      number of seconds for the executor to shut down. The timeout has no
+      effect when *wait* is false. If the timeout expires while waiting,
+      :exc:`TimeoutError` is raised. Running futures are not cancelled and may
+      continue executing after this method returns.
+
+      .. versionchanged:: next
+         Added the *timeout* parameter.
 
       If both *cancel_futures* and *wait* are ``True``, all futures that the
       executor has started running will be completed prior to this method

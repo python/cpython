@@ -54,6 +54,7 @@ import multiprocessing as mp
 import multiprocessing.connection
 from multiprocessing.queues import Queue
 import threading
+import time
 import weakref
 from functools import partial
 import itertools
@@ -973,7 +974,7 @@ class ProcessPoolExecutor(_base.Executor):
                               buffersize=buffersize)
         return _base._MapResultIterator(_chain_from_iterable_of_lists(results))
 
-    def shutdown(self, wait=True, *, cancel_futures=False):
+    def shutdown(self, wait=True, *, cancel_futures=False, timeout=None):
         with self._shutdown_lock:
             self._cancel_pending_futures = cancel_futures
             self._shutdown_thread = True
@@ -982,7 +983,14 @@ class ProcessPoolExecutor(_base.Executor):
                 self._executor_manager_thread_wakeup.wakeup()
 
         if self._executor_manager_thread is not None and wait:
-            self._executor_manager_thread.join()
+            end_time = None if timeout is None else time.monotonic() + timeout
+            if end_time is None:
+                self._executor_manager_thread.join()
+            else:
+                self._executor_manager_thread.join(
+                    max(0, end_time - time.monotonic()))
+                if self._executor_manager_thread.is_alive():
+                    raise _base.TimeoutError()
         # To reduce the risk of opening too many files, remove references to
         # objects that use file descriptors.
         self._executor_manager_thread = None

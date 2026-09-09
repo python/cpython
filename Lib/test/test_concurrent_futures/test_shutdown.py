@@ -110,6 +110,38 @@ class ExecutorShutdownTest:
         # one finished.
         self.assertGreater(len(others), 0)
 
+    def test_shutdown_timeout(self):
+        # A zero timeout raises while work is still running.
+        future = self.executor.submit(time.sleep, 0.1)
+        with self.assertRaises(futures.TimeoutError):
+            self.executor.shutdown(timeout=0)
+        self.assertFalse(future.done())
+
+        future.result(timeout=support.SHORT_TIMEOUT)
+
+    def test_shutdown_timeout_expires(self):
+        # A positive timeout raises when shutdown takes longer than allowed.
+        future = self.executor.submit(time.sleep, 0.1)
+        with self.assertRaises(futures.TimeoutError):
+            self.executor.shutdown(timeout=0.01)
+        self.assertFalse(future.done())
+
+        future.result(timeout=support.SHORT_TIMEOUT)
+
+    def test_shutdown_timeout_completed(self):
+        # Shutdown succeeds when all work finishes before the timeout.
+        future = self.executor.submit(pow, 2, 5)
+        future.result(timeout=support.SHORT_TIMEOUT)
+        self.executor.shutdown(timeout=support.SHORT_TIMEOUT)
+
+    def test_shutdown_timeout_wait_false(self):
+        # wait=False returns immediately without using the timeout.
+        future = self.executor.submit(time.sleep, 0.1)
+        self.executor.shutdown(wait=False, timeout=0)
+        self.assertFalse(future.done())
+
+        future.result(timeout=support.SHORT_TIMEOUT)
+
     def test_hang_gh83386(self):
         """shutdown(wait=False) doesn't hang at exit with running futures.
 
