@@ -2066,12 +2066,15 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
                 memcpy(ptr, &x, sizeof(x));
             }
             else {
-                if (PyFloat_Pack4(c.real, ptr, endian) < 0) {
+                char tmp[4];
+
+                if (PyFloat_Pack4(c.real, tmp, endian) < 0) {
                     goto err_occurred;
                 }
-                if (PyFloat_Pack4(c.imag, ptr + sizeof(float), endian) < 0) {
+                if (PyFloat_Pack4(c.imag, ptr + 4, endian) < 0) {
                     goto err_occurred;
                 }
+                memcpy(ptr, tmp, 4);
             }
             break;
 
