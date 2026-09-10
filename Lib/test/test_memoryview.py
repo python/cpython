@@ -932,7 +932,6 @@ class OtherTest(unittest.TestCase):
         self.assertIsNone(wr())
 
     def test_overflows_in_floats(self):
-        array = import_helper.import_module("array")
         half_data = array.array('e', [0.0])
         float_data = array.array('f', [0.0])
         complex_data = array.array('Zf', [0.0])
