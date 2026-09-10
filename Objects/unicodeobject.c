@@ -963,7 +963,7 @@ xmlcharrefreplace(_PyBytesWriter *writer, char *str,
     for (i = collstart; i < collend; ++i) {
         // Use snprintf() with a temporary buffer to not write the trailing
         // NUL byte in the writer buffer.
-        Py_BUILD_ASSERT(_Py_MAX_UNICODE <= 0x10ffff);
+        Py_BUILD_ASSERT(MAX_UNICODE <= 0x10ffff);
         // len('&#1114111;\0') is 11 bytes.
         char buffer[11];
         Py_UCS4 ch = PyUnicode_READ(kind, data, i);
