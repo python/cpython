@@ -288,18 +288,16 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
                 Py_MIN(requested_size, Py_SIZE(self)));
     }
 
-    int ret = _PyBytes_Resize(&obj->ob_bytes_object, alloc);
-    if (ret == -1) {
-        obj->ob_bytes_object = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
-        size = alloc = 0;
+    if (_PyBytes_ResizeKeepOnError(&obj->ob_bytes_object, alloc) < 0) {
+        return -1;
     }
+
     bytearray_reinit_from_bytes(obj, size, alloc);
     if (alloc != size) {
         /* Add mid-buffer null; end provided by bytes. */
         obj->ob_bytes[size] = '\0';
     }
-
-    return ret;
+    return 0;
 }
 
 int
@@ -1632,10 +1630,7 @@ bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n)
         self->ob_start = self->ob_bytes;
     }
 
-    if (_PyBytes_Resize(&self->ob_bytes_object, to_take) == -1) {
-        assert(self->ob_bytes_object == NULL);
-        self->ob_bytes_object = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
-        bytearray_reinit_from_bytes(self, 0, 0);
+    if (_PyBytes_ResizeKeepOnError(&self->ob_bytes_object, to_take) == -1) {
         Py_DECREF(remaining);
         return NULL;
     }

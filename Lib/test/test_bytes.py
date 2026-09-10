@@ -1555,6 +1555,21 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertRaises(MemoryError, bytearray().resize, sys.maxsize)
         self.assertRaises(MemoryError, bytearray(1000).resize, sys.maxsize)
 
+    def test_resize_error(self):
+        # gh-157242: If bytearray.resize() fails (memory allocation failure),
+        # the bytearray must be left unchanged.
+        _testcapi = import_helper.import_module('_testcapi')
+
+        data = b'some data'
+        ba = bytearray(data)
+        try:
+            with self.assertRaises(MemoryError):
+                _testcapi.set_nomemory(0)
+                ba.resize(1024)
+        finally:
+            _testcapi.remove_mem_hooks()
+        self.assertEqual(ba, data)
+
     def test_take_bytes(self):
         ba = bytearray(b'ab')
         self.assertEqual(ba.take_bytes(), b'ab')
