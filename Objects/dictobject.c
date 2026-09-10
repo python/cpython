@@ -121,6 +121,7 @@ As a consequence of this, split keys have a maximum size of 16.
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_code.h"          // stats
 #include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION, Py_END_CRITICAL_SECTION
+#include "pycore_descrobject.h"   // _PyDictProxy_GetMapping()
 #include "pycore_dict.h"          // export _PyDict_SizeOf()
 #include "pycore_freelist.h"      // _PyFreeListState_GET()
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
@@ -4305,11 +4306,21 @@ dict_merge(PyObject *a, PyObject *b, int override, PyObject **dupkey)
 
     PyDictObject *mp = _PyAnyDict_CAST(a);
 
+    /* Mapping proxies (including type.__dict__) wrap a real dict. Unwrap
+     * so we take the locked dict-to-dict path instead of iterating the
+     * proxy without holding the underlying dict's critical section.
+     * See gh-157217.
+     */
+    PyObject *source = b;
+    if (PyObject_TypeCheck(b, &PyDictProxy_Type)) {
+        source = _PyDictProxy_GetMapping(b);
+    }
+
     int res = 0;
-    if (PyAnyDict_Check(b) && (Py_TYPE(b)->tp_iter == dict_iter)) {
-        PyDictObject *other = (PyDictObject*)b;
+    if (PyAnyDict_Check(source) && (Py_TYPE(source)->tp_iter == dict_iter)) {
+        PyDictObject *other = (PyDictObject*)source;
         int res;
-        Py_BEGIN_CRITICAL_SECTION2(a, b);
+        Py_BEGIN_CRITICAL_SECTION2(a, source);
         assert(can_modify_dict(mp));
         res = dict_dict_merge((PyDictObject *)a, other, override, dupkey);
         ASSERT_CONSISTENT(a);
