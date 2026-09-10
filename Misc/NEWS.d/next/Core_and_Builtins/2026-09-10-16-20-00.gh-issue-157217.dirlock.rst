@@ -1,0 +1,4 @@
+Fix :func:`dir` raising :exc:`RuntimeError` on the free-threaded build
+when another thread concurrently inserts into a class ``__dict__``.
+``dict.update()`` and related merges now take the locked dict-to-dict path
+when the source is a :class:`types.MappingProxyType` wrapping a dict.
