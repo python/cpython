@@ -49,7 +49,10 @@ except ImportError:
     ShareableList = None
 from os import DirEntry
 from re import Pattern, Match
-from types import GenericAlias, MappingProxyType, AsyncGeneratorType, CoroutineType, GeneratorType
+from types import (
+    AsyncGeneratorType, CoroutineType, GeneratorType, GenericAlias,
+    MappingProxyType,
+)
 from tempfile import TemporaryDirectory, SpooledTemporaryFile
 from urllib.parse import SplitResult, ParseResult
 from unittest.case import _AssertRaisesContext
@@ -98,11 +101,22 @@ _UNPACKED_TUPLES = [
 ]
 
 
+def generic_function[T]():
+    pass
+
+
+class GenericMethod:
+    def method[T](self):
+        pass
+
+
 class BaseTest(unittest.TestCase):
     """Test basics."""
     generic_types = [type, tuple, list, dict, frozendict,
                      set, frozenset, enumerate, memoryview,
                      slice,
+                     generic_function, GenericMethod().method, max,
+                     dict.fromkeys,
                      defaultdict, deque,
                      SequenceMatcher,
                      dircmp,
@@ -213,6 +227,26 @@ class BaseTest(unittest.TestCase):
         t = list[int]
         with self.assertRaises(TypeError):
             t[int]
+
+    class Dummy:
+        pass
+
+    def test_callable_alias_does_not_set_orig_class(self):
+        dummy_type = self.Dummy
+
+        def function[T]():
+            result = dummy_type()
+            result.__orig_class__ = str
+            return result
+
+        class Class:
+            def method[T](self):
+                result = dummy_type()
+                result.__orig_class__ = str
+                return result
+
+        self.assertIs(function[int]().__orig_class__, str)
+        self.assertIs(Class().method[int]().__orig_class__, str)
 
     def test_generic_subclass(self):
         class MyList(list):
