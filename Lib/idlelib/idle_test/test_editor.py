@@ -211,8 +211,10 @@ class IndentSearcherTest(unittest.TestCase):
                 self.assertEqual(actual_pair, expected_pair)
 
 
-@unittest.skip('Empty test')
 class RMenuTest(unittest.TestCase):
+    # Test selection-rclick interaction in right_click_event and
+    # rmenu_check_copy(cut) status settings.  These are part of the rmenu
+    # functions common to all text windows with context windows.
 
     @classmethod
     def setUpClass(cls):
@@ -220,11 +222,13 @@ class RMenuTest(unittest.TestCase):
         cls.root = Tk()
         cls.root.withdraw()
         cls.window = Editor(root=cls.root)
+        cls.text = cls.window.text
+        cls.window.rmenu = cls.DummyRMenu
 
     @classmethod
     def tearDownClass(cls):
         cls.window._close()
-        del cls.window
+        del cls.window, cls.text
         cls.root.update_idletasks()
         for id in cls.root.after_info():
             cls.root.after_cancel(id)
@@ -234,8 +238,54 @@ class RMenuTest(unittest.TestCase):
     class DummyRMenu:
         def tk_popup(x, y): pass
 
-    def test_rclick(self):
-        pass
+    def click(self):
+        """Simulate a right click at(text pixel 0,0).
+        """
+        Event = namedtuple('Event', ['x', 'y', 'x_root', 'y_root'])
+        event = Event(0, 0, 0, 0)
+        self.assertEqual(self.window.right_menu_event(event), 'break')
+        # This assertion should be moved to a new method that also
+        # text that dummy rmenu.tk_popup is called.
+
+    def test_rclick_not_in_a_selection(self):
+        # Like left click, 'insert' moves to click and any selection is deleted.
+        eq = self.assertEqual
+        text = self.text
+        insert(text, 'one two three')
+        # Selection exists but not clicked.
+        text.tag_add('sel', '1.4', '1.7')  # 'two' selected.
+        text.mark_set('insert', '1.7')  # Outside of selection.
+        self.click()
+        eq(text.tag_ranges('sel'), ())
+        eq(text.index('insert'), '1.0')
+        # No selection to click, same result.
+        text.mark_set('insert', '1.8')
+        index = self.click()
+        eq(text.tag_ranges('sel'), ())
+        eq(text.index('insert'), '1.0')
+
+    def test_rclick_inside_selection(self):
+        # Unlike left click, selection is not deleted.
+        eq = self.assertEqual
+        text = self.text
+        insert(text, 'one two three')  # 'insert' at 1.13.
+        # The selection contains the clicked character.
+        text.tag_add('sel', '1.0', '1.3')  # Select 'one'.
+        text.mark_set('insert', '1.3')  # If select rightward, 'insert' at 1.3.
+        self.click()
+        eq((text.index('sel.first'), text.index('sel.last')), ('1.0', '1.3'))
+        eq(text.index('insert'), '1.3')
+
+    def test_rmenu_check_copy(self):
+        # copy and cut only valid for click inside selection.
+        eq = self.assertEqual
+        text = self.text
+        insert(text, 'one two three')
+        eq(self.window.rmenu_check_copy(), 'disabled')
+        eq(self.window.rmenu_check_cut(), 'disabled')
+        text.tag_add('sel', '1.0', '1.3')  # Includes '1.0' click.
+        eq(self.window.rmenu_check_copy(), 'normal')
+        eq(self.window.rmenu_check_cut(), 'normal')
 
 
 if __name__ == '__main__':
