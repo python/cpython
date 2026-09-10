@@ -3,7 +3,12 @@ var Scorer = {
     let [docname, title, anchor, descr, score, filename] = result;
 
     // boost the score of built-in functions and types
-    const builtinPages = ["library/stdtypes", "library/functions"];
+    const builtinPages = [
+      "library/stdtypes",
+      "library/functions",
+      "library/exceptions",
+      "library/constants",
+    ];
     if (builtinPages.includes(docname)) {
       score += 7;
     }
