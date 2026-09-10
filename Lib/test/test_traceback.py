@@ -3904,7 +3904,7 @@ class TestTracebackException(unittest.TestCase):
     def test_dont_swallow_cause_or_context_of_falsey_exception(self):
         # see gh-132308: Ensure that __cause__ or __context__ attributes of exceptions
         # that evaluate as falsey are included in the output. For falsey term,
-        # see https://docs.python.org/3/library/stdtypes.html#truth-value-testing.
+        # see https://docs.python.org/3/builtins/stdtypes.html#truth-value-testing.
 
         try:
             raise FalseyException from KeyError
@@ -4123,7 +4123,7 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
     def test_dont_swallow_subexceptions_of_falsey_exceptiongroup(self):
         # see gh-132308: Ensure that subexceptions of exception groups
         # that evaluate as falsey are displayed in the output. For falsey term,
-        # see https://docs.python.org/3/library/stdtypes.html#truth-value-testing.
+        # see https://docs.python.org/3/builtins/stdtypes.html#truth-value-testing.
 
         try:
             raise FalseyExceptionGroup("Gih", (KeyError(), NameError()))
