@@ -259,16 +259,6 @@ gettext_additional_targets = [
     'literal-block',
 ]
 
-rediraffe_redirects = {
-    # Splitting builtins from library
-    "library/functions.rst": "builtins/functions.rst",
-    "library/stdtypes.rst": "builtins/stdtypes.rst",
-    "library/constants.rst": "builtins/constants.rst",
-    "library/exceptions.rst": "builtins/exceptions.rst",
-    "library/threadsafety.rst": "builtins/threadsafety.rst",
-    "library/time-complexity.rst": "builtins/time-complexity.rst",
-}
-
 # Options for HTML output
 # -----------------------
 
@@ -630,3 +620,16 @@ if 'create-social-cards' not in tags:  # noqa: F821
         '<meta property="og:image:width" content="200">',
         '<meta property="og:image:height" content="200">',
     )
+
+# Options for sphinxext-rediraffe
+# -------------------------------
+
+rediraffe_redirects = {
+    # Splitting builtins from library
+    "library/functions.rst": "builtins/functions.rst",
+    "library/stdtypes.rst": "builtins/stdtypes.rst",
+    "library/constants.rst": "builtins/constants.rst",
+    "library/exceptions.rst": "builtins/exceptions.rst",
+    "library/threadsafety.rst": "builtins/threadsafety.rst",
+    "library/time-complexity.rst": "builtins/time-complexity.rst",
+}
