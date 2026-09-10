@@ -3344,15 +3344,16 @@ PyBytes_ConcatAndDel(PyObject **pv, PyObject *w)
    does *not* include that), and a trailing \0 byte is stored.
 */
 
-static int
-bytes_resize(PyObject **pv, Py_ssize_t newsize, int clear_obj_on_error)
+// Similar to _PyBytes_Resize(), but leaves the object unchanged on error.
+int
+_PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize)
 {
     PyObject *v = *pv;
     PyObject *result;
 
     if (!PyBytes_Check(v) || newsize < 0) {
         PyErr_BadInternalCall();
-        goto error;
+        return -1;
     }
 
     Py_ssize_t oldsize = PyBytes_GET_SIZE(v);
@@ -3364,7 +3365,7 @@ bytes_resize(PyObject **pv, Py_ssize_t newsize, int clear_obj_on_error)
     if (oldsize == 0) {
         result = _PyBytes_FromSize(newsize, 0);
         if (result == NULL) {
-            goto error;
+            return -1;
         }
         *pv = result;
         Py_DECREF(v);
@@ -3380,7 +3381,7 @@ bytes_resize(PyObject **pv, Py_ssize_t newsize, int clear_obj_on_error)
     if (!_PyObject_IsUniquelyReferenced(v)) {
         result = _PyBytes_FromSize(newsize, 0);
         if (!result) {
-            goto error;
+            return -1;
         }
 
         memcpy(PyBytes_AS_STRING(result), PyBytes_AS_STRING(v), Py_MIN(oldsize, newsize));
@@ -3390,22 +3391,16 @@ bytes_resize(PyObject **pv, Py_ssize_t newsize, int clear_obj_on_error)
     }
 
     assert(v != bytes_get_empty());
+    result = (PyObject *)PyObject_Realloc(v, PyBytesObject_SIZE + newsize);
+    if (result == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(v);
 #endif
     _PyReftracerTrack(v, PyRefTracer_DESTROY);
-    result = (PyObject *)PyObject_Realloc(v, PyBytesObject_SIZE + newsize);
-    if (result == NULL) {
-        if (clear_obj_on_error) {
-            *pv = NULL;
-#ifdef Py_REF_DEBUG
-            _Py_DecRefTotal(_PyThreadState_GET());
-#endif
-            PyObject_Free(v);
-        }
-        PyErr_NoMemory();
-        return -1;
-    }
 
     v = result;
     _Py_NewReferenceNoTotal(v);
@@ -3415,28 +3410,19 @@ bytes_resize(PyObject **pv, Py_ssize_t newsize, int clear_obj_on_error)
     set_ob_shash(sv, -1);          /* invalidate cached hash value */
     *pv = v;
     return 0;
-
-error:
-    if (clear_obj_on_error) {
-        *pv = NULL;
-        Py_DECREF(v);
-    }
-    return -1;
 }
 
 
 int
 _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
 {
-    return bytes_resize(pv, newsize, 1);
-}
-
-
-// Similar to _PyBytes_Resize(), but leaves the object unchanged on error.
-int
-_PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize)
-{
-    return bytes_resize(pv, newsize, 0);
+    int res = _PyBytes_ResizeKeepOnError(pv, newsize);
+    if (res < 0) {
+        PyObject *v = *pv;
+        *pv = NULL;
+        Py_DECREF(v);
+    }
+    return res;
 }
 
 
