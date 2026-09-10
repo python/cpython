@@ -706,7 +706,7 @@ A hexadecimal string takes the form::
 
    [sign] ['0x'] integer ['.' fraction] ['p' exponent]
 
-where the optional ``sign`` may by either ``+`` or ``-``, ``integer``
+where the optional ``sign`` may be either ``+`` or ``-``, ``integer``
 and ``fraction`` are strings of hexadecimal digits, and ``exponent``
 is a decimal integer with an optional leading sign.  Case is not
 significant, and there must be at least one hexadecimal digit in
@@ -891,10 +891,12 @@ many numeric contexts, ``False`` and ``True`` behave like the integers 0 and 1, 
 However, relying on this is discouraged; explicitly convert using :func:`int`
 instead.
 
+.. _iterator-types:
+
 .. _typeiter:
 
-Iterator Types
-==============
+Iteration-related types
+=======================
 
 .. index::
    single: iterator protocol
@@ -906,6 +908,9 @@ Python supports a concept of iteration over containers.  This is implemented
 using two distinct methods; these are used to allow user-defined classes to
 support iteration.  Sequences, described below in more detail, always support
 the iteration methods.
+
+Iterables
+---------
 
 One method needs to be defined for container objects to provide :term:`iterable`
 support:
@@ -923,9 +928,13 @@ support:
    :c:member:`~PyTypeObject.tp_iter` slot of the type structure for Python
    objects in the Python/C API.
 
+.. _stdtypes-iterators:
+
+Iterators
+---------
+
 The iterator objects themselves are required to support the following two
 methods, which together form the :dfn:`iterator protocol`:
-
 
 .. method:: iterator.__iter__()
 
@@ -955,16 +964,278 @@ Implementations that do not obey this property are deemed broken.
 
 .. _generator-types:
 
-Generator Types
+Generator types
 ---------------
 
-Python's :term:`generator`\s provide a convenient way to implement the iterator
-protocol.  If a container object's :meth:`~object.__iter__` method is implemented as a
-generator, it will automatically return an iterator object (technically, a
-generator object) supplying the :meth:`~iterator.__iter__` and :meth:`~generator.__next__`
-methods.
-More information about generators can be found in :ref:`the documentation for
-the yield expression <yieldexpr>`.
+Python's :term:`generators <generator>` -- or more precisely,
+:term:`generator functions <generator function>` and
+:term:`generator iterators <generator iterator>` -- provide a convenient way
+to implement the iterator protocol.
+
+A function that contains one or more :ref:`yield expressions <yieldexpr>`
+is a :term:`generator function`.
+For example::
+
+   >>> def count_to_three():
+   ...     yield 0
+   ...     yield 1
+   ...     yield 2
+   ...     yield 3
+
+Generator functions behave as regular
+:ref:`user-defined functions <user-defined-funcs>`
+(for example, they have the same attributes), except that calling a generator
+function returns a :ref:`generator iterator <generator-methods>`::
+
+   >>> count_to_three()
+   <generator object count_to_three at 0x7f33a2305000>
+
+Iterating a generator iterator executes code of the underlying
+generator function, producing each :keyword:`yield`\ed value in turn::
+
+   >>> for number in count_to_three():
+   ...     print(number)
+   0
+   1
+   2
+   3
+
+   >>> list(count_to_three())
+   [0, 1, 2, 3]
+
+One common use for generator functions is implementing the
+:meth:`~object.__iter__` method of custom iterable objects.
+For example::
+
+   >>> class CardDeck:
+   ...     def __iter__(self):
+   ...         yield 'three of clubs'
+   ...         yield 'ace of hearts'
+
+   >>> list(CardDeck())
+   ['three of clubs', 'ace of hearts']
+
+
+.. index:: pair: object; generator
+.. _generator-methods:
+
+Generator iterators
+^^^^^^^^^^^^^^^^^^^
+
+Generator iterators implement the
+:ref:`iterator protocol <stdtypes-iterators>`.
+Iterating them drives execution of the underlying generator function.
+
+.. index:: pair: exception; StopIteration
+
+.. method:: generator.__next__()
+
+   Starts the execution of a generator function or resumes it at the
+   :ref:`yield expression <yieldexpr>` where the function is currently suspended.
+   When a generator function is resumed with a :meth:`~generator.__next__`
+   method, the current yield expression always evaluates to :const:`None`.
+   The execution then continues to the next yield expression, where the
+   generator is suspended again, and the value of the expression after the
+   :keyword:`yield` keyword is returned to :meth:`~generator.__next__`'s
+   caller.
+   If the generator exits without yielding another value,
+   :meth:`~generator.__next__` raises a :exc:`StopIteration` exception,
+   signalling that iteration has completed.
+
+   This method is normally called implicitly, for example by a :keyword:`for`
+   loop, or by the built-in :func:`next` function.
+
+Generator iterators have a few more methods than generic iterators, which
+can be used to control the execution of the underlying generator function:
+
+.. method:: generator.send(value)
+
+   "Sends" a value into the generator function: the *value* argument becomes
+   the result of the current yield expression.
+
+   Otherwise, this method behaves like :meth:`~generator.__next__`: it resumes
+   the underlying function and either returns the next yielded value or raises
+   :exc:`StopIteration`.
+
+   When :meth:`send` is called to start the generator, it must be called
+   with :const:`None` as the argument, because there is no current yield
+   expression that could receive the value.
+
+
+.. method:: generator.throw(value)
+            generator.throw(type[, value[, traceback]])
+
+   Raises an exception at the point where the generator is currently suspended.
+
+   Otherwise, this method behaves like :meth:`~generator.__next__`: it resumes
+   the underlying function and either returns the next yielded value or raises
+   :exc:`StopIteration`.
+   If the generator function does not catch the passed-in exception, or
+   raises a different exception, then that exception propagates to the caller.
+
+   When :meth:`throw` is called to start the generator, the generator
+   immediately exits (that is, subsequent calls to :meth:`~generator.__next__`
+   will raise :exc:`StopIteration`) and the thrown exception is propagated to
+   :meth:`throw`'s caller.
+
+   In typical use, this is called with a single argument, an exception instance,
+   similar to the way the :keyword:`raise` keyword is used.
+
+   For backwards compatibility, however, the second signature is
+   supported, following a convention from older versions of Python.
+   The *type* argument should be an exception class, and *value*
+   should be an exception instance. If the *value* is not provided, the
+   *type* constructor is called to get an instance. If *traceback*
+   is provided, it is set on the exception, otherwise any existing
+   :attr:`~BaseException.__traceback__` attribute stored in *value* may
+   be cleared.
+
+   .. versionchanged:: 3.12
+
+      The second signature \(type\[, value\[, traceback\]\]\) is deprecated and
+      may be removed in a future version of Python.
+
+.. index:: pair: exception; GeneratorExit
+
+.. method:: generator.close()
+
+   Raises a :exc:`GeneratorExit` exception at the point where the generator
+   function is currently suspended (equivalent to calling ``throw(GeneratorExit)``).
+
+   If the generator function has already exited (due to an exception or
+   normal return), or raises :exc:`GeneratorExit` (by not catching the
+   exception), :meth:`close` returns :const:`None`.
+   If the generator yields a value, a :exc:`RuntimeError` is raised.
+   If the generator raises any other exception, it is propagated to the caller.
+   If a generator returns a value upon being closed, that value is returned
+   by :meth:`close`.
+
+   When a generator iterator is garbage collected before it has exited,
+   :meth:`~generator.close` is called automatically.
+
+   .. versionchanged:: 3.13
+
+      If a generator returns a value upon being closed, the value is returned
+      by :meth:`close`.
+      Previously, it returned ``None``.
+
+
+Calling any of the generator methods (:meth:`~generator.__next__`,
+:meth:`~generator.send`, :meth:`~generator.throw`, :meth:`~generator.close`)
+while one of these methods is already executing
+raises a :exc:`ValueError` exception.
+
+
+.. index:: pair: object; asynchronous-generator
+.. _asynchronous-generator-methods:
+
+Asynchronous generator iterators
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This subsection describes the methods of an asynchronous generator iterator,
+which are used to control the execution of an asynchronous generator function.
+
+
+.. index:: pair: exception; StopAsyncIteration
+
+.. method:: agen.__anext__()
+   :async:
+
+   Returns an :term:`awaitable` which when run starts to execute the
+   asynchronous generator function or resumes it at the
+   :ref:`yield expression <yieldexpr>` where the function is currently suspended.
+   When an asynchronous generator function is resumed with an
+   :meth:`~agen.__anext__` method, the current yield expression always
+   evaluates to :const:`None` in the returned awaitable, which when run will
+   continue to the next yield expression.
+   The value of the expression after the :keyword:`yield` keyword is the value
+   of the :exc:`StopIteration` exception raised by the completing coroutine.
+   If the asynchronous generator exits without yielding another value, the
+   awaitable instead raises a :exc:`StopAsyncIteration` exception,
+   signalling that the asynchronous iteration has completed.
+
+   This method is normally called implicitly by an :keyword:`async for` loop,
+   or by the built-in :func:`anext` function.
+
+
+Asynchronous generator-iterators have a few more methods than generic
+asynchronous iterators, which can be used to control the execution of
+the underlying generator function:
+
+.. method:: agen.asend(value)
+   :async:
+
+   Returns an awaitable which, when run, "sends" a value into the underlying
+   asynchronous generator function: the *value* argument becomes
+   the result of the current yield expression.
+
+   Otherwise, this method behaves like :meth:`~agen.__anext__`: when the
+   returned awaitable runs, it resumes the underlying function and either
+   returns the next yielded value as the value of the raised
+   :exc:`StopIteration`, or raises :exc:`StopAsyncIteration`.
+
+   When :meth:`asend` is called to start the asynchronous
+   generator, it must be called with :const:`None` as the argument,
+   because there is no yield expression that could receive the value.
+
+
+.. method:: agen.athrow(value)
+            agen.athrow(type[, value[, traceback]])
+   :async:
+
+   Returns an awaitable that, when run, raises an exception at the point where
+   the underlying asynchronous generator function is currently suspended.
+
+   Otherwise, this method behaves like :meth:`~agen.__anext__`: when the
+   returned awaitable runs, it resumes the underlying function (with an
+   exception raised) and either returns the next yielded value as the value of
+   the raised :exc:`StopIteration`, or raises :exc:`StopAsyncIteration`.
+   If the underlying function does not catch the passed-in exception, or
+   raises a different exception, then when the awaitable is run, that
+   exception propagates to the caller of the awaitable.
+
+   When :meth:`~agen.athrow` is called to start the generator, the generator
+   exits when the awaitable runs (that is, subsequent results from
+   :meth:`~agen.__anext__` will raise :exc:`StopAsyncIteration` when run)
+   and the thrown exception is propagated to the awaitable's caller.
+
+   In typical use, this is called with a single argument, an exception instance,
+   similar to the way the :keyword:`raise` keyword is used.
+
+   For backwards compatibility, however, the second signature is
+   supported.
+   An exception instance is created from three arguments in the same way as in
+   :meth:`generator.throw`.
+
+   .. versionchanged:: 3.12
+
+      The second signature \(type\[, value\[, traceback\]\]\) is deprecated and
+      may be removed in a future version of Python.
+
+
+.. index:: pair: exception; GeneratorExit
+
+.. method:: agen.aclose()
+   :async:
+
+   Returns an awaitable that when run will throw a :exc:`GeneratorExit` into
+   the underlying asynchronous generator function at the point where it is
+   currently suspended (equivalent to calling ``athrow(GeneratorExit)``).
+
+   If the asynchronous generator function then exits gracefully, is already
+   closed, or raises :exc:`GeneratorExit` (by not catching the exception),
+   then the returned awaitable will raise a :exc:`StopIteration` exception.
+   Any further awaitables returned by subsequent calls to the asynchronous
+   generator will raise a :exc:`StopAsyncIteration` exception.
+
+   If the asynchronous generator yields a value, a :exc:`RuntimeError` is
+   raised by the awaitable.
+   If the asynchronous generator raises any other exception, that exception
+   is propagated to the caller of the awaitable.
+
+   If the asynchronous generator has already exited due to an exception or
+   normal exit, then further calls to :meth:`aclose` will return an awaitable
+   that does nothing.
 
 
 .. _typesseq:
@@ -998,6 +1269,9 @@ restrictions imposed by *s*.
 The ``in`` and ``not in`` operations have the same priorities as the
 comparison operations. The ``+`` (concatenation) and ``*`` (repetition)
 operations have the same priority as the corresponding numeric operations. [3]_
+
+See :ref:`time-complexity` for the costs of the various sequence
+operations.
 
 .. index::
    triple: operations on; sequence; types
@@ -1120,6 +1394,8 @@ Notes:
    they are greater.  If *i* or *j* are omitted or ``None``, they become
    "end" values (which end depends on the sign of *k*).  Note, *k* cannot be zero.
    If *k* is ``None``, it is treated like ``1``.
+
+.. _typesseq-repeated-concatenation:
 
 (6)
    Concatenating immutable sequences always results in a new object.  This
@@ -1345,7 +1621,7 @@ Mutable sequence types also support the following methods:
    :no-typesetting:
 .. method:: sequence.pop(index=-1, /)
 
-   Retrieve the item at *index* and also removes it from *sequence*.
+   Retrieve the item at *index* and also remove it from *sequence*.
    By default, the last item in *sequence* is removed and returned.
 
 .. method:: bytearray.remove(value, /)
@@ -2120,7 +2396,7 @@ expression support in the :mod:`re` module).
    one character, ``False`` otherwise.  Alphabetic characters are those characters defined
    in the Unicode character database as "Letter", i.e., those with general category
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
-   from the `Alphabetic property defined in the section 4.10 'Letters, Alphabetic, and
+   from the `Alphabetic property defined in section 4.10 'Letters, Alphabetic, and
    Ideographic' of the Unicode Standard
    <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-4/#G91002>`__.
    For example:
@@ -2590,7 +2866,8 @@ expression support in the :mod:`re` module).
 
    Return a list of the words in the string, using *sep* as the delimiter string.
    If *maxsplit* is given, at most *maxsplit* splits are done, the *rightmost*
-   ones.  If *sep* is not specified or ``None``, any whitespace string is a
+   ones.  If *sep* is not specified or ``None``, any
+   :meth:`whitespace <str.isspace>` string is a
    separator.  Except for splitting from the right, :meth:`rsplit` behaves like
    :meth:`split` which is described in detail below.
 
@@ -2651,7 +2928,8 @@ expression support in the :mod:`re` module).
       ['1', '2', '3<4']
 
    If *sep* is not specified or is ``None``, a different splitting algorithm is
-   applied: runs of consecutive whitespace are regarded as a single separator,
+   applied: runs of consecutive :meth:`whitespace <str.isspace>` are regarded
+   as a single separator,
    and the result will contain no empty strings at the start or end if the
    string has leading or trailing whitespace.  Consequently, splitting an empty
    string or a string consisting of just whitespace with a ``None`` separator
@@ -3042,7 +3320,7 @@ replacement field. For example::
    '0.333333'
    >>> f'{one_third:_^+10}'
    '___+1/3___'
-   >>> >>> f'{one_third!r:_^20}'
+   >>> f'{one_third!r:_^20}'
    '___Fraction(1, 3)___'
    >>> f'{one_third = :~>10}~'
    'one_third = ~~~~~~~1/3~'
@@ -3052,12 +3330,12 @@ replacement field. For example::
 Template String Literals (t-strings)
 ------------------------------------
 
-An :dfn:`t-string` (formally a :dfn:`template string literal`) is
+A :dfn:`t-string` (formally a :dfn:`template string literal`) is
 a string literal that is prefixed with ``t`` or ``T``.
 
 These strings follow the same syntax and evaluation rules as
 :ref:`formatted string literals <stdtypes-fstrings>`,
-with for the following differences:
+with the following differences:
 
 * Rather than evaluating to a ``str`` object, template string literals evaluate
   to a :class:`string.templatelib.Template` object.
@@ -3084,7 +3362,7 @@ with for the following differences:
   The :class:`!Interpolation` instance for the expression will be created as
   normal, except that :attr:`~string.templatelib.Interpolation.conversion` will
   be set to '``r``' (:func:`repr`) by default.
-  If an explicit conversion or format specifier are provided,
+  If an explicit conversion or format specifier is provided,
   this will override the default behaviour.
 
 
@@ -3461,7 +3739,7 @@ objects.
 
    .. classmethod:: fromhex(string, /)
 
-      This :class:`bytearray` class method returns bytearray object, decoding
+      This :class:`bytearray` class method returns a bytearray object, decoding
       the given string object.  The string must contain two hexadecimal digits
       per byte, with ASCII whitespace being ignored.
 
@@ -3915,7 +4193,8 @@ produce new objects.
    Return a copy of the sequence with specified leading bytes removed.  The
    *bytes* argument is a binary sequence specifying the set of byte values to
    be removed.  If omitted or ``None``, the *bytes* argument defaults
-   to removing ASCII whitespace.  The *bytes* argument is not a prefix;
+   to removing :meth:`ASCII whitespace <bytes.isspace>`.
+   The *bytes* argument is not a prefix;
    rather, all combinations of its values are stripped::
 
       >>> b'   spacious   '.lstrip()
@@ -3959,7 +4238,8 @@ produce new objects.
    Split the binary sequence into subsequences of the same type, using *sep*
    as the delimiter string. If *maxsplit* is given, at most *maxsplit* splits
    are done, the *rightmost* ones.  If *sep* is not specified or ``None``,
-   any subsequence consisting solely of ASCII whitespace is a separator.
+   any subsequence consisting solely of
+   :meth:`ASCII whitespace <bytes.isspace>` is a separator.
    Except for splitting from the right, :meth:`rsplit` behaves like
    :meth:`split` which is described in detail below.
 
@@ -3970,7 +4250,8 @@ produce new objects.
    Return a copy of the sequence with specified trailing bytes removed.  The
    *bytes* argument is a binary sequence specifying the set of byte values to
    be removed.  If omitted or ``None``, the *bytes* argument defaults to
-   removing ASCII whitespace.  The *bytes* argument is not a suffix; rather,
+   removing :meth:`ASCII whitespace <bytes.isspace>`.
+   The *bytes* argument is not a suffix; rather,
    all combinations of its values are stripped::
 
       >>> b'   spacious   '.rstrip()
@@ -4023,7 +4304,8 @@ produce new objects.
       [b'1', b'2', b'3<4']
 
    If *sep* is not specified or is ``None``, a different splitting algorithm
-   is applied: runs of consecutive ASCII whitespace are regarded as a single
+   is applied: runs of consecutive :meth:`ASCII whitespace <bytes.isspace>`
+   are regarded as a single
    separator, and the result will contain no empty strings at the start or
    end if the sequence has leading or trailing whitespace.  Consequently,
    splitting an empty sequence or a sequence consisting solely of ASCII
@@ -4046,7 +4328,8 @@ produce new objects.
    Return a copy of the sequence with specified leading and trailing bytes
    removed. The *bytes* argument is a binary sequence specifying the set of
    byte values to be removed.  If omitted or ``None``, the *bytes*
-   argument defaults to removing ASCII whitespace. The *bytes* argument is
+   argument defaults to removing :meth:`ASCII whitespace <bytes.isspace>`.
+   The *bytes* argument is
    not a prefix or suffix; rather, all combinations of its values are
    stripped::
 
@@ -4420,7 +4703,7 @@ the ``%`` operator (modulo).
 This is also known as the bytes *formatting* or *interpolation* operator.
 Given ``format % values`` (where *format* is a bytes object), ``%`` conversion
 specifications in *format* are replaced with zero or more elements of *values*.
-The effect is similar to using the :c:func:`sprintf` in the C language.
+The effect is similar to using the :c:func:`sprintf` function in the C language.
 
 If *format* requires a single argument, *values* may be a single non-tuple
 object. [5]_  Otherwise, *values* must be a tuple with exactly the number of
@@ -4621,7 +4904,7 @@ copying.
    underlying data.
 
    ``len(view)`` is equal to the length of :meth:`~memoryview.tolist`, which
-   is the nested list representation of the view. If ``view.ndim = 1``,
+   is the nested list representation of the view. If ``view.ndim == 1``,
    this is equal to the number of elements in the view.
 
    .. versionchanged:: 3.12
@@ -4706,7 +4989,7 @@ copying.
       :class:`collections.abc.Sequence`
 
    .. versionchanged:: 3.5
-      memoryviews can now be indexed with tuple of integers.
+      memoryviews can now be indexed with a tuple of integers.
 
    .. versionchanged:: 3.14
       memoryview is now a :term:`generic type`.
@@ -5139,6 +5422,7 @@ computing mathematical operations such as intersection, union, difference, and
 symmetric difference.
 (For other containers see the built-in :class:`dict`, :class:`list`,
 and :class:`tuple` classes, and the :mod:`collections` module.)
+See :ref:`time-complexity` for the costs of the various set operations.
 
 Like other collections, sets support ``x in set``, ``len(set)``, and ``for x in
 set``.  Being an unordered collection, sets do not record element position or
@@ -5363,6 +5647,8 @@ There are currently two standard mapping types, the :dfn:`dictionary` and
 (For other containers see the built-in
 :class:`list`, :class:`set`, and :class:`tuple` classes, and the
 :mod:`collections` module.)
+See :ref:`time-complexity` for the costs of the various dictionary
+operations.
 
 A dictionary's keys are *almost* arbitrary values.  Values that are not
 :term:`hashable`, that is, values containing lists, dictionaries or other
@@ -6175,7 +6461,7 @@ enables cleaner type hinting syntax compared to subscripting :class:`typing.Unio
 
    .. note::
 
-      The ``|`` operand cannot be used at runtime to define unions where one or
+      The ``|`` operator cannot be used at runtime to define unions where one or
       more members is a forward reference. For example, ``int | "Foo"``, where
       ``"Foo"`` is a reference to a class not yet defined, will fail at
       runtime. For unions which include forward references, present the
@@ -6334,7 +6620,7 @@ Methods
 Methods are functions that are called using the attribute notation.
 There are two flavors: :ref:`built-in methods <builtin-methods>`
 (such as :meth:`~list.append` on lists)
-and :ref:`class instance method <instance-methods>`.
+and :ref:`class instance methods <instance-methods>`.
 Built-in methods are described with the types that support them.
 
 If you access a method (a function defined in a class namespace) through an

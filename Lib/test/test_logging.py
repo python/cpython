@@ -2212,6 +2212,24 @@ class IPv6SysLogHandlerTest(SysLogHandlerTest):
         super(IPv6SysLogHandlerTest, self).tearDown()
 
 @support.requires_working_socket()
+class UnresolvableSysLogAddressTest(BaseTest):
+
+    """Test for SysLogHandler with a temporarily unresolvable address."""
+
+    @patch('socket.getaddrinfo')
+    def test_unresolvable_address(self, mock_getaddrinfo):
+        # The address can be unresolvable when the handler is created.
+        mock_getaddrinfo.side_effect = socket.gaierror
+        hdlr = logging.handlers.SysLogHandler(('localhost', 514))
+        self.addCleanup(hdlr.close)
+        self.assertIsNone(hdlr.socket)
+        # It is resolved again when a record is emitted.
+        calls = mock_getaddrinfo.call_count
+        with support.captured_stderr():
+            hdlr.emit(logging.makeLogRecord({'msg': 'sp\xe4m'}))
+        self.assertGreater(mock_getaddrinfo.call_count, calls)
+
+@support.requires_working_socket()
 @threading_helper.requires_working_threading()
 class HTTPHandlerTest(BaseTest):
     """Test for HTTPHandler."""
@@ -6446,11 +6464,12 @@ class BaseFileTest(BaseTest):
         self.rmfiles = []
 
     def tearDown(self):
-        for fn in self.rmfiles:
-            os.unlink(fn)
-        if os.path.exists(self.fn):
-            os.unlink(self.fn)
-        BaseTest.tearDown(self)
+        try:
+            for fn in self.rmfiles:
+                os_helper.unlink(fn)
+            os_helper.unlink(self.fn)
+        finally:
+            BaseTest.tearDown(self)
 
     def assertLogFile(self, filename):
         "Assert a log file is there and register it for deletion"

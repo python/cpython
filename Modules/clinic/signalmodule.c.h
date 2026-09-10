@@ -689,7 +689,7 @@ exit:
 
 #endif /* defined(HAVE_PTHREAD_KILL) */
 
-#if (defined(__linux__) && defined(__NR_pidfd_send_signal) && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
+#if (defined(HAVE_PIDFD_SEND_SIGNAL) || (defined(__linux__) && defined(__NR_pidfd_send_signal) && !(defined(__ANDROID__) && __ANDROID_API__ < 31)))
 
 PyDoc_STRVAR(signal_pidfd_send_signal__doc__,
 "pidfd_send_signal($module, pidfd, signalnum, siginfo=None, flags=0, /)\n"
@@ -702,7 +702,7 @@ PyDoc_STRVAR(signal_pidfd_send_signal__doc__,
 
 static PyObject *
 signal_pidfd_send_signal_impl(PyObject *module, int pidfd, int signalnum,
-                              PyObject *siginfo, int flags);
+                              PyObject *siginfo, unsigned int flags);
 
 static PyObject *
 signal_pidfd_send_signal(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -711,7 +711,7 @@ signal_pidfd_send_signal(PyObject *module, PyObject *const *args, Py_ssize_t nar
     int pidfd;
     int signalnum;
     PyObject *siginfo = Py_None;
-    int flags = 0;
+    unsigned int flags = 0;
 
     if (!_PyArg_CheckPositional("pidfd_send_signal", nargs, 2, 4)) {
         goto exit;
@@ -731,9 +731,21 @@ signal_pidfd_send_signal(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 4) {
         goto skip_optional;
     }
-    flags = PyLong_AsInt(args[3]);
-    if (flags == -1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[3], &flags, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
 skip_optional:
     return_value = signal_pidfd_send_signal_impl(module, pidfd, signalnum, siginfo, flags);
@@ -742,7 +754,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(__linux__) && defined(__NR_pidfd_send_signal) && !(defined(__ANDROID__) && __ANDROID_API__ < 31)) */
+#endif /* (defined(HAVE_PIDFD_SEND_SIGNAL) || (defined(__linux__) && defined(__NR_pidfd_send_signal) && !(defined(__ANDROID__) && __ANDROID_API__ < 31))) */
 
 #ifndef SIGNAL_ALARM_METHODDEF
     #define SIGNAL_ALARM_METHODDEF
@@ -795,4 +807,4 @@ exit:
 #ifndef SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
     #define SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
 #endif /* !defined(SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF) */
-/*[clinic end generated code: output=0731d6f05c42c09a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2a04ec31f49b1c93 input=a9049054013a1b77]*/

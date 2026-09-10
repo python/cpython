@@ -6054,6 +6054,22 @@ class GenericTests(BaseTestCase):
                     with self.assertRaises(TypeError):
                         a[int]
 
+    def test_parameter_added_after_parameters_cached(self):
+        # gh-155752: GenericAlias parameters are cached before substitution, so
+        # an argument can gain __typing_subst__ after the tuple is calculated.
+        class Parameter:
+            pass
+
+        first = Parameter()
+        first.__typing_subst__ = lambda value: value
+        late = Parameter()
+        alias = types.GenericAlias(dict, (first, late))
+        self.assertEqual(alias.__parameters__, (first,))
+        late.__typing_subst__ = lambda value: value
+
+        with self.assertRaisesRegex(TypeError, "not found in __parameters__"):
+            alias[0]
+
     def test_return_non_tuple_while_unpacking(self):
         # GH-138497: GenericAlias objects didn't ensure that __typing_subst__ actually
         # returned a tuple
@@ -9806,6 +9822,7 @@ class AnnotatedTests(BaseTestCase):
         for args in itertools.permutations(get_args(expr1)):
             with self.subTest(args=args):
                 self.assertEqual(expr1, reduce(operator.or_, args))
+                self.assertEqual(expr1, Union[args])
 
         expr2 = Union[Annotated[int, 1], str, Annotated[str, {}], int]
         for args in itertools.permutations(get_args(expr2)):

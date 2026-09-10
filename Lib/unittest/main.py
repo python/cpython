@@ -161,9 +161,12 @@ class TestProgram(object):
     def _getParentArgParser(self):
         parser = argparse.ArgumentParser(add_help=False)
 
+        # Counted, not a constant: the namespace is the TestProgram, whose
+        # verbosity is already 1, so -v still gives 2 and -vv gives 3.
         parser.add_argument('-v', '--verbose', dest='verbosity',
-                            action='store_const', const=2,
-                            help='Verbose output')
+                            action='count', default=1,
+                            help='Verbose output, twice to also report '
+                                 'the examples of a doctest')
         parser.add_argument('-q', '--quiet', dest='verbosity',
                             action='store_const', const=0,
                             help='Quiet output')
