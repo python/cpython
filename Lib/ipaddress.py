@@ -1574,6 +1574,10 @@ class IPv4Network(_BaseV4, _BaseNetwork):
               integer representing the prefix length (e.g. 24) or a string
               representing the prefix mask (e.g. '255.255.255.0').
 
+            strict: A boolean. If true, ensure that we have been passed
+              a true network address, eg, 192.0.2.0/24 and not an
+              IP address on a network, eg, 192.0.2.1/24.
+
         Raises:
             AddressValueError: If ipaddress isn't a valid IPv4 address.
             NetmaskValueError: If the netmask isn't valid for
@@ -2365,14 +2369,14 @@ class IPv6Network(_BaseV6, _BaseNetwork):
               IPv6Network(int(IPv6Network('2001:db8::'))) ==
                 IPv6Network('2001:db8::')
 
-              The address can also be a two-tuple of an address description
-              and a netmask, where the address description is either a
-              string, a 128-bits integer, a 16-bytes packed integer, or an
-              existing IPv6Address object; and the netmask is an integer
-              representing the prefix length.
+              The address can also be a two-tuple of an address description and
+              a netmask, where the address description is either a string, a
+              128-bit integer, a 16-byte packed integer, or an existing
+              IPv6Address object; and the netmask is an integer representing
+              the prefix length.
 
             strict: A boolean. If true, ensure that we have been passed
-              A true network address, eg, 2001:db8::1000/124 and not an
+              a true network address, eg, 2001:db8::1000/124 and not an
               IP address on a network, eg, 2001:db8::1/124.
 
         Raises:
