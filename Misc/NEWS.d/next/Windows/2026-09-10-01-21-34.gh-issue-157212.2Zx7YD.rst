@@ -1,0 +1,4 @@
+Fix compilation of free-threaded builds and extension modules on Windows
+ARM64 with MinGW toolchains. ``_Py_ThreadId()`` used ``__getReg()``, an
+intrinsic that is not available for MinGW ARM64; the thread environment
+block is now read from ``x18`` directly. Patch by Christian Aurich.

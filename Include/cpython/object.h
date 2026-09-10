@@ -523,7 +523,9 @@ _Py_ThreadId(void)
 #elif defined(__MINGW32__) && defined(_M_IX86)
     tid = __readfsdword(24);
 #elif defined(__MINGW32__) && defined(_M_ARM64)
-    tid = __getReg(18);
+    // Windows on ARM64 keeps the TEB in x18. The __getReg() intrinsic used by
+    // the MSVC branch above is not available for MinGW ARM64.
+    __asm__ ("mov %0, x18" : "=r" (tid));
 #elif defined(__i386__)
     __asm__("{movl %%gs:0, %0|mov %0, dword ptr gs:[0]}" : "=r" (tid));  // 32-bit always uses GS
 #elif defined(__MACH__) && defined(__x86_64__)
